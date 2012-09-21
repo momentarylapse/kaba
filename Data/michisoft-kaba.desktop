@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kaba
+Name[de]=Kaba
+Comment=Executes Kaba Scripts
+Comment[de]=Ausführen von Kaba Scripten
+Categories=Development;Building;
+#NoDisplay=true
+TryExec=/usr/bin/kaba
+Exec=/usr/bin/kaba
+Icon=/usr/share/kaba/Data/icon.ico
+MimeType=text/michisoft-kaba
+

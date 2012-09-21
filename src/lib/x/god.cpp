@@ -1,0 +1,1519 @@
+/*----------------------------------------------------------------------------*\
+| God                                                                          |
+| -> manages objetcs and interactions                                          |
+| -> loads and stores the world data (level)                                   |
+|                                                                              |
+| vital properties:                                                            |
+|                                                                              |
+| last updated: 2009.11.22 (c) by MichiSoft TM                                 |
+\*----------------------------------------------------------------------------*/
+#include <algorithm>
+#include "x.h"
+
+
+//#define _debug_matrices_
+
+
+#ifdef _X_ALLOW_ODE_
+	bool ode_world_created = false;
+	dWorldID world_id;
+	dSpaceID space_id;
+	dJointGroupID contactgroup;
+	#define USE_ODE
+inline void qx2ode(quaternion *qq, dQuaternion q)
+{
+	q[0] = qq->w;
+	q[1] = qq->x;
+	q[2] = qq->y;
+	q[3] = qq->z;
+}
+inline void qode2x(const dQuaternion q, quaternion *qq)
+{
+	qq->w = q[0];
+	qq->x = q[1];
+	qq->y = q[2];
+	qq->z = q[3];
+}
+#endif
+
+bool PhysicsEnabled, CollisionsEnabled;
+int PhysicsNumSteps, PhysicsNumLinkSteps;
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	int PhysicsTimer;
+	float PhysicsTimeCol, PhysicsTimePhysics, PhysicsTimeLinks;
+	bool PhysicsStopOnCollision = false;
+#endif
+
+
+// content of the world
+Array<CObject*> Object;
+CObject *terrain_object;
+CObject *Ego;
+
+// esotherical (not in the world)
+bool AddAllObjectsToLists;
+
+// music fields
+int NumMusicFields;
+sMusicField MusicFieldGlobal,MusicField[GOD_MAX_MUSICFIELDS];
+int MusicCurrent;
+
+// force fields
+int NumForceFields;
+sGodForceField *ForceField[GOD_MAX_FORCEFIELDS];
+sMusicField *MusicFieldCurrent;
+
+vector GlobalG;
+sLevelData LevelData;
+Array<float> ScriptVar;
+static int GodNumReservedObjects;
+
+
+// game data
+string InitialWorldFile, SecondWorldFile, CurrentWorldFile;
+color BackGroundColor;
+Array<CModel*> SkyBox;
+color GlobalAmbient;
+Fog GlobalFog;
+int SunLight;
+float SpeedOfSound;
+
+
+Array<CTerrain*> Terrain;
+
+
+
+
+// partial models
+static Array<PartialModel> SortedNonTrans, SortedTrans;
+
+// network messages
+bool GodNetMsgEnabled;
+s_net_message_list NetMsg;
+void AddNetMsg(int msg, int argi0, const string &args)
+{
+	if (NetMsg.num_msgs>=GOD_MAX_NET_MSGS){
+		//for (int i=0;i<NetMsg.num_msgs;i++)
+		//	...
+		return;
+	}
+	NetMsg.arg_i[NetMsg.num_msgs][0] = argi0;
+	NetMsg.arg_s[NetMsg.num_msgs] = args;
+	NetMsg.msg[NetMsg.num_msgs++] = msg;
+}
+
+
+int num_insane=0;
+
+inline bool TestVectorSanity(vector &v, const char *name)
+{
+	if (inf_v(v)){
+		num_insane++;
+		v=v_0;
+		if (num_insane>100)
+			return false;
+		msg_error(format("Vektor %s unendlich!!!!!!!",name));
+		return true;
+	}
+	return false;
+}
+
+void TestObjectSanity(const char *str)
+{
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	for (int i=0;i<Object.num;i++)
+		if (object[i]){
+			CObject *o=object[i];
+			/*if (((int)o>1500000000)||((int)o<10000000)){
+				msg_write(str);
+				msg_error("Objekt-Pointer kaputt!");
+				msg_write(i);
+				msg_write((int)o);
+			}*/
+			bool e=false;
+			e|=TestVectorSanity(o->Pos,"Pos");
+			e|=TestVectorSanity(o->Vel,"Vel");
+			e|=TestVectorSanity(o->ForceExt,"ForceExt");
+			e|=TestVectorSanity(o->TorqueExt,"TorqueExt");
+			e|=TestVectorSanity(o->ForceInt,"ForceInt");
+			e|=TestVectorSanity(o->TorqueInt,"TorqueInt");
+			e|=TestVectorSanity(o->Ang,"Ang");
+			e|=TestVectorSanity(o->Rot,"Rot");
+			if (e){
+				msg_write(string2("%s:  objekt[%d] (%s) unendlich!!!!",str,i,o->Name));
+				HuiRaiseError("Physik...");
+			}
+		}
+#endif
+}
+
+
+
+
+
+
+
+void GodInit()
+{
+	msg_db_r("GodInit",1);
+	GlobalG=v_0;
+	NumForceFields = 0;
+
+	terrain_object = new CObject();
+	terrain_object->UpdateMatrix();
+
+#if 0
+	COctree *octree = new COctree(v_0, 100);
+	sOctreeLocationData dummy_loc;
+	vector min =vector(23,31,9);
+	vector max =vector(40,50,39);
+	octree->Insert(min, max, (void*)1, &dummy_loc);
+	min =vector(23,31,9);
+	max =vector(24,32,10);
+	octree->Insert(min, max, (void*)2, &dummy_loc);
+
+	Array<void*> a;
+	vector pos = vector(24, 30, 20);
+	octree->GetPointNeighbourhood(pos, 100, a);
+
+	msg_write("---Octree-Test---");
+	msg_write(a.num);
+	for (int i=0;i<a.num;i++)
+		msg_write(p2s(a[i]));
+	//exit(0);
+	msg_write("-----------------");
+#endif
+
+	
+	
+
+#ifdef USE_ODE
+	contactgroup = dJointGroupCreate(0);
+#endif
+
+	msg_db_l(1);
+}
+
+void GodReset()
+{
+	msg_db_r("GodReset",1);
+	GodNetMsgEnabled = false;
+	NetMsg.num_msgs = 0;
+
+	// terrains
+	msg_db_m("-terrains",2);
+	for (int i=0;i<Terrain.num;i++)
+		delete(Terrain[i]);
+	Terrain.clear();
+
+	// objects
+	msg_db_m("-objects",2);
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			GodDeleteObject(i);
+	Object.clear();
+	GodNumReservedObjects = 0;
+	
+	SortedTrans.clear();
+	SortedNonTrans.clear();
+
+
+	// force fields
+	msg_db_m("-force fields",2);
+	for (int i=0;i<NumForceFields;i++)
+		delete(ForceField[i]);
+	NumForceFields = 0;
+	
+	msg_db_m("-stuff",2);
+
+	// music
+	/*if (meta->MusicEnabled){
+		NixSoundStop(MusicCurrent);
+	}*/
+
+	// skybox
+	//   (models deleted by meta)
+	SkyBox.clear();
+	
+
+	// initial data for empty world...
+	GlobalAmbient = color(1,0.4f,0.4f,0.4f);
+	GlobalFog._color = White;
+	GlobalFog.mode = FogExp;
+	GlobalFog.density = 0.001f;
+	GlobalFog.enabled = false;
+	GlobalFog.start = 0;
+	GlobalFog.end = 100000;
+	SpeedOfSound = 1000;
+
+	NixMaxDepth = 100000.0f;
+	NixMinDepth = 1.0f;
+	
+	PhysicsEnabled = false;
+	CollisionsEnabled = true;
+	PhysicsNumSteps = 10;
+	PhysicsNumLinkSteps = 5;
+
+
+	// physics
+	msg_db_m("-physics",2);
+	LinksReset();
+#ifdef USE_ODE
+	if (ode_world_created){
+		dWorldDestroy(world_id);
+		dSpaceDestroy(space_id);
+	}
+	world_id = dWorldCreate();
+	space_id = dSimpleSpaceCreate(0);
+	//space_id = dHashSpaceCreate(0);
+	/*int m1, m2;
+	dHashSpaceGetLevels(space_id, &m1, &m2);
+	printf("hash:    %d  %d\n", m1, m2);*/
+	ode_world_created = true;
+	terrain_object->body_id = 0;
+	msg_db_r("-dCreateSphere",2);
+	terrain_object->geom_id = dCreateSphere(0, 1); // space, radius
+	msg_db_l(2)
+	dGeomSetBody(terrain_object->geom_id, terrain_object->body_id);
+#endif
+	
+	
+	msg_db_l(1);
+}
+
+void GodResetLevelData()
+{
+	LevelData.world_filename = "";
+	LevelData.terrain.clear();
+	LevelData.object.clear();
+	LevelData.skybox_filename.clear();
+	LevelData.skybox_ang.clear();
+	LevelData.script_filename.clear();
+	LevelData.script_var.clear();
+
+	LevelData.ego_index = -1;
+	LevelData.background_color = Gray;
+	LevelData.sun_enabled = false;
+	//LevelData.sun_color[3];
+	LevelData.sun_ang = vector(1, 0, 0);
+	LevelData.ambient = color(1, 0.4f, 0.4f, 0.4f);
+
+	LevelData.gravity = v_0;
+	LevelData.fog.enabled = false;
+}
+
+color ReadColor3(CFile *f)
+{
+	int c[3];
+	for (int i=0;i<3;i++)
+		c[i] = f->ReadFloat();
+	return ColorFromIntRGB(c);
+}
+
+color ReadColor4(CFile *f)
+{
+	int c[4];
+	for (int i=0;i<4;i++)
+		c[i] = f->ReadFloat();
+	return ColorFromIntARGB(c);
+}
+
+bool GodLoadWorldFromLevelData()
+{
+	msg_db_r("GodLoadWorldFromLevelData", 1);
+	GodNetMsgEnabled = false;
+	bool ok = true;
+
+	GlobalG = LevelData.gravity;
+	GlobalFog = LevelData.fog;
+
+	// script var
+	ScriptVar = LevelData.script_var;
+
+	// set up light (sun and ambient)
+	GlobalAmbient = LevelData.ambient;
+	NixSetAmbientLight(GlobalAmbient);
+
+	SunLight = FxLightCreate();
+	FxLightSetDirectional(SunLight, LevelData.sun_ang.ang2dir(),
+					LevelData.sun_color[0],
+					LevelData.sun_color[1],
+					LevelData.sun_color[2]);
+	FxLightEnable(SunLight, LevelData.sun_enabled);
+
+	// skybox
+	SkyBox.resize(LevelData.skybox_filename.num);
+	for (int i=0;i<SkyBox.num;i++){
+		SkyBox[i] = MetaLoadModel(LevelData.skybox_filename[i]);
+		if (SkyBox[i])
+			SkyBox[i]->ang = LevelData.skybox_ang[i];
+		LevelData.skybox_filename[i].clear();
+	}
+	LevelData.skybox_filename.clear();
+	LevelData.skybox_ang.clear();
+	BackGroundColor = LevelData.background_color;
+
+	// objects
+	Ego = NULL;
+	Object.clear(); // make sure the "missing" objects are NULL
+	Object.resize(LevelData.object.num);
+	GodNumReservedObjects = LevelData.object.num;
+	foreachi(LevelData.object, o, i)
+		if (o->filename.num > 0){
+			CObject *oo = GodCreateObject(o->filename, o->name, o->pos, o->ang, i);
+			ok &= (oo >= 0);
+			if (oo){
+				oo->vel = o->vel;
+				oo->rot = o->rot;
+			}
+			if (LevelData.ego_index == i)
+				Ego = oo;
+			if (i % 5 == 0)
+				MetaDrawSplashScreen("Objects", (float)i / (float)LevelData.object.num / 5 * 3);
+		}
+	LevelData.object.clear();
+	AddAllObjectsToLists = true;
+
+	// terrains
+	foreachi(LevelData.terrain, t, i){
+		MetaDrawSplashScreen("Terrain...", 0.6f + (float)i / (float)LevelData.terrain.num * 0.4f);
+		CTerrain *tt = new CTerrain(t->filename, t->pos);
+		Terrain.add(tt);
+		ok &= !tt->error;
+	}
+	LevelData.terrain.clear();
+
+	GodNetMsgEnabled = true;
+	msg_db_l(1);
+	return ok;
+}
+
+bool GodLoadWorld(const string &filename)
+{
+	msg_db_r("GodLoadWorld", 1);
+	LevelData.world_filename = filename;
+
+// read world file
+//   and put the data into LevelData
+	CFile *f = OpenFile(MapDir + filename + ".world");
+	if (!f){
+		msg_db_l(1);
+		return false;
+	}
+
+	int ffv = f->ReadFileFormatVersion();
+	if (ffv != 10){
+		msg_error(format("wrong file format: %d (10 expected)", ffv));
+		FileClose(f);
+		msg_db_l(1);
+		return false;
+	}
+	bool ok = true;
+	GodResetLevelData();
+
+	// Terrains
+	int n = f->ReadIntC();
+	for (int i=0;i<n;i++){
+		LevelDataTerrain t;
+		t.filename = f->ReadStr();
+		f->ReadVector(&t.pos);
+		LevelData.terrain.add(t);
+	}
+
+	// Gravity
+	f->ReadComment();
+	f->ReadVector(&LevelData.gravity);
+
+	// EgoIndex
+	LevelData.ego_index = f->ReadIntC();
+
+	// Background
+	f->ReadComment();
+	LevelData.background_color = ReadColor4(f);
+	n = f->ReadInt();
+	for (int i=0;i<n;i++){
+		LevelData.skybox_filename.add(f->ReadStr());
+		LevelData.skybox_ang.add(v_0);
+	}
+
+	// Fog
+	LevelData.fog.enabled = f->ReadBoolC();
+	LevelData.fog.mode = f->ReadWord();
+	LevelData.fog.start = f->ReadFloat();
+	LevelData.fog.end = f->ReadFloat();
+	LevelData.fog.density = f->ReadFloat();
+	LevelData.fog._color = ReadColor4(f);
+
+	// Music
+	MusicFieldGlobal.NumMusicFiles = f->ReadIntC();
+	for (int i=0;i<MusicFieldGlobal.NumMusicFiles;i++)
+		MusicFieldGlobal.MusicFile[i] = f->ReadStr();
+	MusicFieldCurrent = &MusicFieldGlobal;
+	MusicCurrent = -1;
+
+	// Objects
+	n = f->ReadIntC();
+	for (int i=0;i<n;i++){
+		LevelDataObject o;
+		o.filename = f->ReadStr();
+		o.name = f->ReadStr();
+		f->ReadVector(&o.pos);
+		f->ReadVector(&o.ang);
+		o.vel = v_0;
+		o.rot = v_0;
+		LevelData.object.add(o);
+	}
+
+	// Scripts
+	n = f->ReadIntC();
+	for (int i=0;i<n;i++){
+		LevelData.script_filename.add(f->ReadStr());
+		int nr = f->ReadInt();
+		for (int j=0;j<nr;j++){
+			f->ReadStr();
+			f->ReadInt();
+		}
+	}
+
+	// ScriptVars
+	n = f->ReadIntC();
+	LevelData.script_var.resize(n);
+	for (int i=0;i<n;i++)
+		LevelData.script_var[i] = f->ReadFloat();
+
+	// light
+	if (f->ReadStr() != "#"){
+		// Sun
+		LevelData.sun_enabled = f->ReadBool();
+		for (int i=0;i<3;i++)
+			LevelData.sun_color[i] = ReadColor3(f);
+		LevelData.sun_ang.x = f->ReadFloat();
+		LevelData.sun_ang.y = f->ReadFloat();
+		LevelData.sun_ang.z = 0;
+		// Ambient
+		f->ReadComment();
+		LevelData.ambient = ReadColor3(f);
+	}
+
+	// Fields
+	/*NumMusicFields=0;
+	int NumFields=f->ReadIntC();
+	for (int i=0;i<NumFields;i++){
+		vector min,max;
+		int kind=f->ReadInt();
+		min.x=(float)f->ReadInt();
+		min.y=(float)f->ReadInt();
+		min.z=(float)f->ReadInt();
+		max.x=(float)f->ReadInt();
+		max.y=(float)f->ReadInt();
+		max.z=(float)f->ReadInt();
+		if (kind==FieldKindLight){
+			bool sunenabled;
+			color ambient;
+			sunenabled=f->ReadBool();
+			float r=(float)f->ReadInt()/255.0f;
+			float g=(float)f->ReadInt()/255.0f;
+			float b=(float)f->ReadInt()/255.0f;
+			ambient=color(0,r,g,b);
+			fx->AddLighField(min,max,sunenabled,ambient);
+		}
+		if (kind==FieldKindMusic){
+			MusicField[NumMusicFields].PosMin=min;
+			MusicField[NumMusicFields].PosMax=max;
+			MusicField[NumMusicFields].NumMusicFiles=f->ReadInt();
+			for (int n=0;n<MusicField[NumMusicFields].NumMusicFiles;n++)
+				strcpy(MusicField[NumMusicFields].MusicFile[n],f->ReadStr());
+			NumMusicFields++;
+		}
+	}*/
+	// Politics
+	// Groups
+	// Waypoints
+
+	FileClose(f);
+	MusicFieldGlobal.NumMusicFiles = 0;
+
+	ok &= GodLoadWorldFromLevelData();
+
+	msg_db_l(1);
+	return ok;
+}
+
+CObject *GetObjectByName(const string &name)
+{
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			if (name == Object[i]->name){
+				//msg_write(i);
+				return Object[i];
+			}
+	msg_error(format("object \"%s\" not found!", name.c_str()));
+	return NULL;
+}
+
+bool NextObject(CObject **o)
+{
+	int id=-1;
+	if (*o)
+		id = (*o)->object_id;
+	for (int i=id+1;i<Object.num;i++)
+		if (Object[i]){
+			*o = Object[i];
+			return true;
+		}
+	return false;
+}
+
+void _cdecl GodObjectEnsureExistence(int id)
+{
+	if (id >= Object.num)
+		return;
+	if (!Object[id]){
+		// reload...
+	}
+}
+
+// mode: -1 = all...
+int GodFindObjects(vector &pos, float radius, int mode, Array<CObject*> &a)
+{
+	//bool mask_passive = (mode >= 0);
+	//bool mask_active = (
+
+	// well... until scripts can initialize local super arrays... m(-_-)m
+	//a.init(sizeof(CObject*));
+	//     \(^_^)/   now they can!
+	
+	// old method.... better use octree...
+	for (int i=0;i<Object.num;i++)
+		if (Object[i]){
+			if (_vec_length_fuzzy_(pos - Object[i]->pos) < radius)
+				a.add(Object[i]);
+		}
+	return a.num;
+}
+
+typedef void object_callback_func(CObject*);
+
+CObject *GodCreateObject(const string &filename, const string &name, const vector &pos, const vector &ang, int w_index)
+{
+	if (ResettingGame){
+		msg_error("CreateObject during game reset");
+		return NULL;
+	}
+	msg_db_r("GodCreateObject", 2);
+	int on=w_index;
+	if (on<0){
+		// ..... better use a list of "empty" objects???
+		for (int i=GodNumReservedObjects;i<Object.num;i++)
+			if (!Object[i])
+				on=i;
+	}else{
+		if (on >= Object.num)
+			Object.resize(on+1);
+		if (Object[on]){
+			msg_error("CreateObject:  object index already in use " + i2s(on));
+			msg_db_l(2);
+			return Object[on];
+		}
+	}
+	if (on<0){
+		on = Object.num;
+		CObject *p = NULL;
+		Object.add(p);
+	}
+	//msg_write(on);
+	CObject *o = (CObject*)MetaLoadModel(filename);
+	if (!o){
+		msg_db_l(2);
+		return NULL;
+	}
+	//CObject *o = new CObject(filename, name, pos);
+	Object[on] = o;
+	GodRegisterModel((CModel*)o);
+	o->object_id = on;
+	o->name = name;
+	o->pos = pos;
+	o->ang = ang;
+	o->UpdateMatrix();
+	o->UpdateTheta();
+//	strcpy(ObjectFilename[on], filename);
+
+#ifdef USE_ODE
+	if (o->active_physics){
+		o->body_id = dBodyCreate(world_id);
+		dBodySetPosition(o->body_id, pos.x, pos.y, pos.z);
+		dMass m;
+		dMassSetParameters(&m, o->mass, 0, 0, 0, o->theta._00, o->theta._11, o->theta._22, o->theta._01, o->theta._02, o->theta._12);
+		dBodySetMass(o->body_id, &m);
+		dBodySetData(o->body_id, o);
+		dQuaternion qq;
+		quaternion q;
+		QuaternionRotationV(q, ang);
+		qx2ode(&q, qq);
+		dBodySetQuaternion(o->body_id, qq);
+	}else
+		o->body_id = 0;
+
+	vector d = o->max - o->min;
+	o->geom_id = dCreateBox(space_id, d.x, d.y, d.z); //dCreateSphere(0, 1); // space, radius
+//	msg_write((int)o->geom_id);
+	dGeomSetBody(o->geom_id, o->body_id);
+#endif
+
+
+	// object wants a script
+	if (o->_template->script_filename.num > 0){
+		if (MetaObjectScriptInit)
+			((object_callback_func*)MetaObjectScriptInit)(o);
+	}
+
+	if ((GodNetMsgEnabled) && (NetworkEnabled))
+		AddNetMsg(NetMsgCreateObject, on, filename);
+
+	msg_db_l(2);
+	return o;
+}
+
+
+CObject *_cdecl _CreateObject(const string &filename, const vector &pos)
+{
+	return GodCreateObject(filename, filename, pos, v_0);
+}
+
+void db_o(const char *msg)
+{
+#ifdef _X_DEBUG_MODEL_MANAGER_
+	msg_write(msg);
+#endif
+}
+
+// un-object a model
+void GodDeleteObject(int index)
+{
+	if (!Object[index])
+		return;
+	if (Object[index]->object_id < 0)
+		return;
+	msg_db_r("DeleteObject",1);
+#ifdef _X_DEBUG_MODEL_MANAGER_
+	msg_write("del ob");
+	msg_write(index);
+	msg_write(p2s(Object[index]));
+	msg_write(p2s(Object[index]->Template));
+	msg_write(Object[index]->Template->Filename);
+#endif
+
+#ifdef USE_ODE
+	db_o(i2s((int)Object[index]->body_id).c_str());
+	if (Object[index]->body_id != 0){
+		db_o("bd");
+		dBodyDestroy(Object[index]->body_id);
+		db_o("/bd");
+	}
+	
+		db_o(".");
+	Object[index]->body_id = 0;
+	db_o(i2s((int)Object[index]->geom_id).c_str());
+	if (Object[index]->geom_id != 0){
+		db_o("gd");
+		dGeomDestroy(Object[index]->geom_id);
+		db_o("/gd");
+	}
+	db_o(".");
+	Object[index]->geom_id = 0;
+#endif
+
+	db_o("a");
+
+	// script callback
+	if (Object[index]->_template->script_on_kill)
+		((object_callback_func*)Object[index]->_template->script_on_kill)(Object[index]);
+	db_o("b");
+
+	// ego...
+	if (Object[index] == Ego)
+		Ego = NULL;
+
+	// remove from list
+	Object[index]->object_id = -1;
+	Object[index] = NULL;
+	db_o("c");
+
+	// the actual deletion of the model will be done by MetaDelete
+
+	if ((GodNetMsgEnabled) && (NetworkEnabled))
+		AddNetMsg(NetMsgDeleteObject, index, "");
+	db_o("/del");
+	msg_db_l(1);
+}
+
+void AddNewForceField(vector pos,vector dir,int kind,int shape,float r,float v,float a,bool visible,float t)
+{
+	ForceField[NumForceFields]=new sGodForceField;
+	ForceField[NumForceFields]->Kind=kind;
+	ForceField[NumForceFields]->Pos=pos;
+	ForceField[NumForceFields]->Dir=dir;
+	ForceField[NumForceFields]->Radius=r;
+	ForceField[NumForceFields]->Vel=v;
+	ForceField[NumForceFields]->Acc=a;
+	ForceField[NumForceFields]->Visible=visible;
+	ForceField[NumForceFields]->TimeToLife=t;
+	NumForceFields++;
+}
+
+void DoForceFields()
+{
+	for (int f=0;f<NumForceFields;f++){
+		if (ForceField[f]->TimeToLife<0){
+			delete(ForceField[f]);
+			NumForceFields--;
+			for (int f2=f;f2<NumForceFields;f2++)
+				ForceField[f2]=ForceField[f2+1];
+			f--;
+			continue;
+		}
+
+		// die eigendlichen Berechnungen
+		ForceField[f]->TimeToLife -= Elapsed;
+		ForceField[f]->Radius += Elapsed * ForceField[f]->Vel;
+		for (int o=0;o<Object.num;o++)
+			if (Object[o]->active_physics)
+				if (Object[o]->pos.bounding_cube(ForceField[f]->Pos, ForceField[f]->Radius)){
+					float d = (Object[o]->pos - ForceField[f]->Pos).length();
+					if (d < ForceField[f]->Radius){
+						vector n = Object[o]->pos - ForceField[f]->Pos;
+						float d = n.length();
+						n /= d;
+						if (ForceField[f]->Kind == FFKindRadialConst)
+							Object[o]->vel += ForceField[f]->Acc*Elapsed*n;
+						if (ForceField[f]->Kind == FFKindRadialLinear)
+							Object[o]->vel += ForceField[f]->Acc*Elapsed*n*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
+						if (ForceField[f]->Kind == FFKindDirectionalConst)
+							Object[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir;
+						if (ForceField[f]->Kind == FFKindDirectionalLinear)
+							Object[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
+					}
+				}
+	}
+}
+
+void DoSounds()
+{
+#if 0
+	sMusicField *MusicFieldLast=MusicFieldCurrent;
+	MusicFieldCurrent=&MusicFieldGlobal;
+	for (int i=0;i<NumMusicFields;i++)
+		if (VecBetween(cam->Pos,MusicField[i].PosMin,MusicField[i].PosMax))
+			MusicFieldCurrent=&MusicField[i];
+
+	//if (!MusicEnabled)
+	//	return;
+
+	bool ChooseNew=false;
+
+	if (NixSoundEnded(MusicCurrent))
+		ChooseNew=true;
+	if (MusicFieldCurrent!=MusicFieldLast)
+		ChooseNew=true;
+	if (MusicCurrent<0)
+		ChooseNew=true;
+
+	// neue Musik laden
+	if (ChooseNew){
+		if (MusicCurrent>=0)
+			NixSoundStop(MusicCurrent);
+		if (MusicFieldCurrent->NumMusicFiles>0){
+			int n=int(float(rand())*float(MusicFieldCurrent->NumMusicFiles)/float(RAND_MAX));
+			MusicCurrent=MetaLoadSound(MusicFieldCurrent->MusicFile[n]);
+			NixSoundPlay(MusicCurrent,false);
+		}
+	}
+#endif
+}
+
+void SetSoundState(bool paused,float scale,bool kill,bool restart)
+{
+#if 0
+	if (kill){
+		NixSoundStop(MusicCurrent);
+	}
+	if (restart){
+		NixSoundPlay(MusicCurrent,false);
+	}
+	/*if (!meta->MusicEnabled)
+		return;*/
+
+	MetaListenerRate=paused?0:scale;
+
+	vector nv=v_0;
+	if (paused)
+		SoundSetListener(nv,nv,nv);
+#endif
+}
+
+vector _cdecl GetG(vector &pos)
+{
+	// homogener, konstanter Anteil (Welt)
+	vector g=GlobalG;
+/*		// radiale Kraftfelder
+		for (int i=0;i<FxNumForceFields;i++)
+			if (FxForceField[i]->Used)
+				if (fx->ForceField[i]->Enabled)
+					if (VecBoundingBox(pos,fx->ForceField[i]->Pos,fx->ForceField[i]->RadiusMax)){
+						float r=VecLength(fx->ForceField[i]->Pos-pos);
+						if ((r>fx->ForceField[i]->RadiusMin)&&(r<fx->ForceField[i]->RadiusMax)){
+							vector dir=(fx->ForceField[i]->Pos-pos)/r;
+							if (fx->ForceField[i]->InvQuadratic)
+								g+= dir * (10000.0f/(r*r))*fx->ForceField[i]->Strength;
+							else
+								g+= dir * (1-r/fx->ForceField[i]->RadiusMax)*fx->ForceField[i]->Strength;
+						}
+					}*/
+	return g;
+}
+
+
+
+#ifdef USE_ODE
+
+void PhysicsDataToODE()
+{
+	msg_db_r("PhysicsDataToODE", 3);
+	// data.. x -> ode
+	for (int i=0;i<Object.num;i++)
+		if (Object[i]){
+			dBodyID b = Object[i]->body_id;
+			if (b != 0){
+				dBodyAddForce(b, Object[i]->force_ext.x, Object[i]->force_ext.y, Object[i]->force_ext.z);
+				dBodyAddTorque(b, Object[i]->torque_ext.x, Object[i]->torque_ext.y, Object[i]->torque_ext.z);
+				dBodySetPosition(b, Object[i]->pos.x, Object[i]->pos.y, Object[i]->pos.z);
+				dBodySetLinearVel(b, Object[i]->vel.x, Object[i]->vel.y, Object[i]->vel.z);
+				dBodySetAngularVel(b, Object[i]->rot.x, Object[i]->rot.y, Object[i]->rot.z);
+				quaternion q;
+				dQuaternion qq;
+				QuaternionRotationV(q, Object[i]->ang);
+				qx2ode(&q, qq);
+				dBodySetQuaternion(b, qq);
+			}
+		}
+	msg_db_l(3);
+}
+
+void PhysicsDataFromODE()
+{
+	msg_db_r("PhysicsDataFromODE", 3);
+	// data.. ode -> x
+	for (int i=0;i<Object.num;i++)
+		if (Object[i]){
+			dBodyID b = Object[i]->body_id;
+			if (b != 0){
+				Object[i]->pos = *(vector*)dBodyGetPosition(b);
+				Object[i]->vel = *(vector*)dBodyGetLinearVel(b);
+				Object[i]->rot = *(vector*)dBodyGetAngularVel(b);
+				quaternion q;
+				qode2x(dBodyGetQuaternion(b), &q);
+				Object[i]->ang = q.get_angles();
+				Object[i]->UpdateMatrix();
+				Object[i]->UpdateTheta();
+				Object[i]->_ResetPhysAbsolute_();
+			}
+		}
+	msg_db_l(3);
+}
+
+#endif
+
+void GodDoCollisionDetection()
+{
+	msg_db_r("GodDoCollisionDetection", 2);
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	PhysicsDebugColData.Num = 0;
+#endif
+	
+	// object <-> terrain
+	msg_db_m("---T4G",4);
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			if (Object[i]->active_physics)
+				if (!Object[i]->frozen)
+					Test4Ground(Object[i]);
+
+	TestObjectSanity("God::Coll   1");
+
+	// object <-> object
+	msg_db_m("---T4O",4);
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			for (int j=i+1;j<Object.num;j++)
+				if (Object[j])
+					if ((!Object[i]->frozen) || (!Object[j]->frozen))
+						if (!ObjectsLinked(Object[i],Object[j]))
+							Test4Object(Object[i],Object[j]);
+
+	TestObjectSanity("God::Coll   2");
+	
+	DoCollisionObservers();
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	PhysicsTimeCol += HuiGetTime(PhysicsTimer);
+#endif
+	msg_db_l(2);
+}
+
+void ApplyGravity()
+{
+	msg_db_m("--G",3);
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			if (!Object[i]->frozen){
+				float ttf = Object[i]->time_till_freeze;
+				vector g = Object[i]->mass * Object[i]->g_factor * GlobalG;
+				Object[i]->AddForce(g, v_0);
+				//                                                     GetG(Object[i]->Pos));
+				Object[i]->time_till_freeze = ttf;
+			}
+}
+
+void ResetExternalForces()
+{
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			Object[i]->force_ext = Object[i]->torque_ext = v_0;
+}
+
+
+void GodCalcMove()
+{
+	if (Elapsed == 0)
+		return;
+
+	msg_db_r("GodCalcMove",2);
+	//CreateObjectLists();
+	NumRealColTests = 0;
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	HuiGetTime(PhysicsTimer);
+#endif
+
+	TestObjectSanity("God::CM prae");
+
+	// no physics?
+	if (!PhysicsEnabled){
+		for (int i=0;i<Object.num;i++)
+			if (Object[i])
+				Object[i]->UpdateMatrix();
+		ResetExternalForces();
+		msg_db_l(2);
+		return;
+	}else if (!CollisionsEnabled){
+		for (int i=0;i<Object.num;i++)
+			if (Object[i])
+				//if (!Object[i]->Frozen)
+					Object[i]->DoPhysics();
+		ResetExternalForces();
+		msg_db_l(2);
+		return;
+	}
+
+	// force fields
+	//DoForceFields();
+
+	// add gravitation
+	ApplyGravity();
+	
+
+	// do the physics several times to increase precision!
+	float elapsed_temp = Elapsed;
+	Elapsed /= (float)PhysicsNumSteps;
+	for (int ttt=0;ttt<PhysicsNumSteps;ttt++){
+
+#ifdef USE_ODE
+		PhysicsDataToODE();
+#endif
+
+		TestObjectSanity("God::CM prae Links");
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+		PhysicsTimePhysics += HuiGetTime(PhysicsTimer);
+#endif
+
+		// statics and hinges...
+		msg_db_m("--L",3);
+		DoLinks(PhysicsNumLinkSteps);
+
+		TestObjectSanity("God::CM post Links");
+
+#ifndef USE_ODE
+		// propagate through space
+		msg_db_m("--P",3);
+		for (int i=0;i<Object.num;i++)
+			if (Object[i])
+				//if (!Object[i]->Frozen)
+					Object[i]->DoPhysics();
+#endif
+
+
+		TestObjectSanity("God::CM   1");
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+		PhysicsTimePhysics += HuiGetTime(PhysicsTimer);
+#endif
+
+		// collision detection
+		GodDoCollisionDetection();
+
+#ifdef USE_ODE
+		// physics...
+		dWorldQuickStep(world_id, Elapsed);
+		dJointGroupEmpty(contactgroup);
+		PhysicsDataFromODE();
+#endif
+
+		TestObjectSanity("God::CM   2");
+
+
+	}
+	Elapsed = elapsed_temp;
+
+	ResetExternalForces();
+
+#if 0
+	// mainly model animation
+	for (int i=0;i<NumObjects;i++)
+		if (ObjectExisting[i])
+			Object[i]->CalcMove();
+#endif
+
+
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	PhysicsTimePhysics += HuiGetTime(PhysicsTimer);
+#endif
+
+	msg_db_l(2);
+}
+
+void GodCalcMove2()
+{
+	// mainly model animation
+	for (int i=0;i<Object.num;i++)
+		if (Object[i])
+			Object[i]->CalcMove();
+}
+
+typedef void on_collide_object_func(CObject*,CObject*);
+typedef void on_collide_terrain_func(CObject*,CTerrain*);
+
+void Test4Ground(CObject *o)
+{
+	for (int i=0;i<Terrain.num;i++){
+		if (CollideObjectTerrain(o, Terrain[i])){
+			//msg->Write(string2("   col %d <-> terrain %d",i,j));
+
+			if (inf_v(o->vel))
+				msg_error("inf   Test4Ground Vel 1");
+
+			// script callback function
+			if (o->_template->script_on_collide_terrain)
+				((on_collide_terrain_func*)o->_template->script_on_collide_terrain)(o, Terrain[i]);
+
+			terrain_object->SetMaterial(Terrain[i]->material, SetMaterialFriction);
+			terrain_object->object_id = i + 0x40000000; //(1<<30);
+			ColData.o2 = terrain_object;
+			
+			// physical reaction
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+			if (Elapsed > 0)
+#endif
+			HandleCollision();
+
+	// debugging
+	if (inf_v(o->vel)){
+		msg_error("inf   Test4Ground Vel 2");
+		msg_write(o->name);
+		msg_write(format("num = %d",ColData.num));
+		for (int j=0;j<ColData.num;j++){
+			msg_write(format("n = (%f  %f  %f)", ColData.normal[j].x, ColData.normal[j].y, ColData.normal[j].z));
+			msg_write(format("p = (%f  %f  %f)", ColData.pos[j].x, ColData.pos[j].y, ColData.pos[j].z));
+			msg_write(format("depth = %f", ColData.depth));
+		}
+	}
+		}
+	}
+}
+
+void Test4Object(CObject *o1,CObject *o2)
+{
+	msg_db_r("Test4Object",5);
+
+	// Kollision?
+	if (!CollideObjects(o1, o2)){
+		msg_db_l(5);
+		return;
+	}
+
+	// debugging
+	if (inf_v(o1->vel))
+			msg_error("inf   Test4Object Vel 1   (1)");
+	if (inf_v(o2->vel))
+			msg_error("inf   Test4Object Vel 1   (2)");
+
+	// script callback functions
+	if (o1->_template->script_on_collide_object)
+		((on_collide_object_func*)o1->_template->script_on_collide_object)(o1, o2);
+	
+	if (o2->_template->script_on_collide_object)
+		((on_collide_object_func*)o2->_template->script_on_collide_object)(o2, o1);
+
+	// physical reaction
+#ifdef _X_ALLOW_PHYSICS_DEBUG_
+	if (Elapsed > 0)
+#endif	
+	HandleCollision();
+	
+
+	// debugging
+	if (inf_v(o1->vel)){
+		msg_error("inf   Test4Object Vel 2    (1)");
+		msg_write(o1->name);
+		msg_write(o2->name);
+		msg_write(format("num = %d", ColData.num));
+		for (int j=0;j<ColData.num;j++){
+			msg_write(format("n = (%f  %f  %f)", ColData.normal[j].x, ColData.normal[j].y, ColData.normal[j].z));
+			msg_write(format("p = (%f  %f  %f)", ColData.pos[j].x, ColData.pos[j].y, ColData.pos[j].z));
+			msg_write(format("depth = %f", ColData.depth));
+		}
+	}
+	if (inf_v(o2->vel)){
+		msg_error("inf   Test4Object Vel 2    (2)");
+		msg_write(o1->name);
+		msg_write(o2->name);
+		msg_write(format("num = %d", ColData.num));
+		for (int j=0;j<ColData.num;j++){
+			msg_write(format("n = (%f  %f  %f)", ColData.normal[j].x, ColData.normal[j].y, ColData.normal[j].z));
+			msg_write(format("p = (%f  %f  %f)", ColData.pos[j].x, ColData.pos[j].y, ColData.pos[j].z));
+			msg_write(format("depth = %f", ColData.depth[j]));
+		}
+	}
+	msg_db_l(5);
+}
+
+bool GodTrace(vector &p1, vector &p2, vector &tp, bool simple_test, int o_ignore)
+{
+	msg_db_r("GodTrace",4);
+	vector dir = p2 - p1;
+	float range = dir.length();
+	dir /= range;
+	float d, dmin = range;
+	vector c;
+	TraceHitType=TraceHitNone;
+	TraceHitIndex=-1;
+	TraceHitSubModel=-1;
+	for (int i=0;i<Terrain.num;i++){
+		if (Terrain[i]->Trace(p1, p2, dir, range, c, simple_test)){
+			if (simple_test){
+				TraceHitType=TraceHitTerrain;
+				TraceHitIndex=i;
+				msg_db_l(4);
+				return true;
+			}
+			d=(p1-c).length();
+			if (d<dmin){
+				dmin=d;
+				tp=c;
+				TraceHitType=TraceHitTerrain;
+				TraceHitIndex=i;
+			}
+		}
+	}
+	for (int i=0;i<Object.num;i++)
+		if (Object[i]){
+			if (i==o_ignore)
+				continue;
+			TraceHitSubModelTemp=-1;
+			vector p2t=p1+dir*dmin;
+			if (Object[i]->Trace(p1, p2t, dir, dmin, c, simple_test)){
+				if (simple_test){
+					TraceHitType=TraceHitObject;
+					TraceHitIndex=i;
+					msg_db_l(4);
+					return true;
+				}
+				d=(p1-c).length();
+				if (d<dmin){
+					dmin=d;
+					tp=c;
+					TraceHitType=TraceHitObject;
+					TraceHitIndex=i;
+					TraceHitSubModel=TraceHitSubModelTemp;
+				}
+			}
+		}
+	msg_db_l(4);
+	if (dmin<range)
+		return true;
+	return false;
+}
+
+// do everything needed before drawing the objects
+void GodPreDraw(vector &cam_pos)
+{
+	msg_db_r("GodPreDraw",2);
+	AddAllObjectsToLists=false;
+
+// sort models by depth
+	/*MetaClearSorted();
+	// objects
+	msg_db_m("--O",3);
+	for (int i=0;i<NumObjects;i++)
+		if (ObjectExisting[i])
+			Object[i]->Draw(cam_pos);*/
+	msg_db_l(2);
+}
+
+void GodDrawSorted();
+
+// actually draw the objects
+void GodDraw()
+{
+	msg_db_r("GodDraw",3);
+	// draw the sorted models
+	//MetaDrawSorted();
+	GodDrawSorted();
+	msg_db_m("b",3);
+
+	// force fields ....(obsolete?!)
+	NixSetAlpha(AlphaSourceAlpha,AlphaOne);
+	NixSetCull(CullNone);
+	NixSetZ(false,true);
+	for (int i=0;i<NumForceFields;i++)
+		if (ForceField[i]->Visible){
+			color c=color(ForceField[i]->TimeToLife/4,1,1,1);
+			NixSetMaterial(c,c,Black,0,Black);
+			FxDrawBall(ForceField[i]->Pos,ForceField[i]->Radius,8,16);
+		}
+	NixSetZ(true,true);
+	NixSetCull(CullDefault);
+	NixSetAlpha(AlphaNone);
+
+	msg_db_l(3);
+}
+
+// add a model to the (possible) rendering list
+void GodRegisterModel(CModel *m)
+{
+	msg_db_r("GodRegisterModel",2);
+	
+	for (int i=0;i<m->material.num;i++){
+		Material *mat = &m->material[i];
+		bool trans = !mat->alpha_z_buffer; //false;
+		/*if (mat->TransparencyMode>0){
+			if (mat->TransparencyMode == TransparencyModeFunctions)
+				trans = true;
+			if (mat->TransparencyMode == TransparencyModeFactor)
+				trans = true;
+		}*/
+
+		PartialModel p;
+		p.model = m;
+		p.material = mat;
+		p.mat_index = i;
+		p.transparent = trans;
+		p.shadow = false;
+		if (trans)
+			SortedTrans.add(p);
+	    else
+			SortedNonTrans.add(p);
+	}
+
+	for (int i=0;i<m->fx.num;i++)
+		if (m->fx[i])
+			FxEnable(m->fx[i], true);
+	
+	m->registered = true;
+	
+	// sub models
+	for (int i=0;i<m->bone.num;i++)
+		if (m->bone[i].model)
+			GodRegisterModel(m->bone[i].model);
+	msg_db_l(2);
+}
+
+// remove a model from the (possible) rendering list
+void GodUnregisterModel(CModel *m)
+{
+	msg_db_r("GodUnregisterModel",2);
+	//printf("%p   %s\n", m, MetaGetModelFilename(m));
+	
+	for (int i=SortedTrans.num-1;i>=0;i--)
+		if (SortedTrans[i].model == m)
+			SortedTrans.erase(i);
+	for (int i=SortedNonTrans.num-1;i>=0;i--)
+		if (SortedNonTrans[i].model == m)
+			SortedNonTrans.erase(i);
+
+	if (!ResettingGame)
+		for (int i=0;i<m->fx.num;i++)
+			if (m->fx[i])
+				FxEnable(m->fx[i], false);
+	
+	m->registered = false;
+	//msg_db_m("med",2);
+	//printf("%d\n", m->NumBones);
+
+	// sub models
+	for (int i=0;i<m->bone.num;i++)
+		if (m->bone[i].model)
+			GodUnregisterModel(m->bone[i].model);
+	msg_db_l(2);
+}
+
+inline bool is_ignored(CModel *m)
+{
+	for (int i=0;i<cur_cam->ignore.num;i++)
+		if (m == cur_cam->ignore[i])
+			return true;
+	return false;
+}
+
+inline void fill_pmv(vector &pos, Array<PartialModel> &p, Array<PartialModelView> &vp, bool do_sort, bool sort_inv)
+{
+	vp.clear();
+	for (int i=0;i<p.num;i++){
+		CModel *m = p[i].model;
+		vector dpos = pos - m->pos;
+		
+		int detail = SkinHigh;
+		float dist = _vec_length_(dpos); // real distance to the camera
+		float dist_2 = dist * DetailFactorInv; // more adequate distance value
+
+		// ignore?
+		if (is_ignored(m))
+			continue;
+
+		// which level of detail?
+		if (dist_2 > m->detail_dist[2]){		detail = -1;	continue;	}
+		else if (dist_2 > m->detail_dist[1])	detail = SkinLow;
+		else if (dist_2 > m->detail_dist[0])	detail = SkinMedium;
+
+		PartialModelView pmv;
+		pmv.p = &p[i];
+		pmv.z = dist;
+		pmv.detail = detail;
+		vp.add(pmv);
+
+		// shadows...
+		if ((ShadowLevel > 0) && (detail == SkinHigh) && (p[i].mat_index == 0) && (m->allow_shadow)){
+			int sd = ShadowLowerDetail ? SkinMedium : SkinHigh;
+			if (m->skin[sd]->sub[p[i].mat_index].num_triangles > 0)
+				FxAddShadow(m, sd);
+		}
+	}
+	if ((do_sort) && (vp.num > 0)){
+		// sorting (FAR ones first
+		std::sort(&vp[0], &vp[vp.num]);
+		if (sort_inv)
+			// sorting (NEAR ones first)
+			std::reverse(&vp[0], &vp[vp.num]);
+	}
+}
+
+inline void draw_pmv(Array<PartialModelView> &vp)
+{
+	// camera frustrum data
+	vector pos = cur_cam->pos;
+	vector dir = cur_cam->ang.ang2dir();
+	vector a2;
+	a2 = VecAngAdd(vector(0, +0.9, 0), cur_cam->ang);
+	vector dir_l = a2.ang2dir();
+	a2 = VecAngAdd(vector(0, -0.9, 0), cur_cam->ang);
+	vector dir_r = a2.ang2dir();
+	a2 = VecAngAdd(vector(+1.0, 0, 0), cur_cam->ang);
+	vector dir_t = a2.ang2dir();
+	a2 = VecAngAdd(vector(-1.0, 0, 0), cur_cam->ang);
+	vector dir_b = a2.ang2dir();
+	
+	for (int i=0;i<vp.num;i++){
+		PartialModel *p = (PartialModel*)vp[i].p;
+		CModel *m = p->model;
+		vector dpos = pos - m->pos;
+
+		// camera frustrum testing
+		if (dpos * dir > m->radius)
+			continue;
+		if (dpos * dir_l > m->radius)
+			continue;
+		if (dpos * dir_r > m->radius)
+			continue;
+		if (dpos * dir_t > m->radius)
+			continue;
+		if (dpos * dir_b > m->radius)
+			continue;
+
+		#ifdef _X_ALLOW_FX_
+			//FxTestForLightField(SortedNonTrans[i]->pos);
+		#endif
+
+		// draw!
+		MetaSetMaterial(p->material);
+		//m->Draw(0, m->_matrix, true, false);//p->shadow);
+		m->JustDraw(p->mat_index, vp[i].detail);
+				
+		#ifdef _X_ALLOW_FX_
+			//FxResetLightField();
+		#endif
+	}
+}
+
+static int fill_frame = 100;
+
+int ffframe = 0;
+
+void GroupDuplicates()
+{
+	for (int i=0;i<Object.num;i++){}
+}
+
+void GodDrawSorted()
+{
+#ifdef _X_ALLOW_MODEL_
+	msg_db_r("GodDrawSorted",2);
+
+	ffframe ++;
+	if ((ffframe % 100) == 0)
+		GroupDuplicates();
+
+// fill data structures
+	//fill_frame ++;
+	//if (fill_frame > 10){
+		// TODO: refill when SortedNonTrans or SortedNonTrans change... pointers...vector allocation...
+		vector pos = cur_cam->pos;
+		fill_pmv(pos, SortedNonTrans, cur_cam->pmvd.opaque, SortingEnabled, true);
+		fill_pmv(pos, SortedTrans, cur_cam->pmvd.trans, true, false);
+		fill_frame = 0;
+	//}
+
+// non-transparent models
+	// overlapping each other
+	if (ZBufferEnabled)
+		NixSetZ(true,true);
+	else
+		NixSetZ(false,false);
+
+	// drawing
+	draw_pmv(cur_cam->pmvd.opaque);
+
+//transparent models
+	// test but don't write
+	if (ZBufferEnabled)
+		NixSetZ(false,true);
+
+	// drawing
+	draw_pmv(cur_cam->pmvd.trans);
+
+	
+	// reset the z buffer
+	NixSetZ(true,true);
+	msg_db_l(2);
+#endif
+}
