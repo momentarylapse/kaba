@@ -406,8 +406,8 @@ bool type_is_simple_class(sType *t)
 		return false;
 	if (t->GetFunc("__assign__") >= 0)
 		return false;
-	foreach(t->Element, e)
-		if (!type_is_simple_class(e->Type))
+	foreach(sClassElement &e, t->Element)
+		if (!type_is_simple_class(e.Type))
 			return false;
 	return true;
 }

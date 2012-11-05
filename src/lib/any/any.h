@@ -14,8 +14,6 @@ enum
 	TYPE_HASH
 };
 
-class HashPair;
-
 class Any
 {
 public:
@@ -27,10 +25,13 @@ public:
 	Any(const string &s);
 	Any(const char *s);
 	Any(const Array<Any> &a);
-	Any(const Array<HashPair> &a);
+	//Any(const HashMap &a);
 	~Any();
 	void clear();
-	string dump() const;
+	string str() const;
+	int _int() const;
+	float _float() const;
+	bool _bool() const;
 	Any &operator = (const Any &a);
 	Any operator + (const Any &a) const;
 	Any operator - (const Any &a) const;
@@ -39,11 +40,12 @@ public:
 	// array
 	void add(const Any &a);
 	void append(const Any &a);
+	const Any &operator[] (int index) const;
 	Any &operator[] (int index);
 	Any &back();
 
 	// hash
-	Any operator[] (const string &key) const;
+	const Any &operator[] (const string &key) const;
 	Any &operator[] (const string &key);
 
 	// data
@@ -60,13 +62,10 @@ public:
 	void set_array(const Array<Any> &a){	*this = a;	}
 	void _add(const Any &a){	Any b = *this + a;	*this = b;	}
 	void _sub(const Any &a){	Any b = *this - a;	*this = b;	}
-};
-
-class HashPair
-{
-public:
-	string key;
-	Any value;
+	Any at(int i) const;
+	void aset(int i, const Any &value);
+	Any get(const string &key) const;
+	void hset(const string &key, const Any &value);
 };
 
 
@@ -75,9 +74,6 @@ extern Any EmptyHash;
 extern Any EmptyArray;
 
 void print(const Any &a);
-
-
-#define foreacha(a,p)	foreach(*(Array<Any>*)(a).data, p)
 
 
 

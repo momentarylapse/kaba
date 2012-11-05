@@ -586,11 +586,25 @@ void SIAddPackageMath()
 			func_add_param("f",			TypeFloat);
 		class_add_func("__assign__",			TypeVoid,			any_p(mf((tmf)&Any::set_bool)));
 			func_add_param("b",			TypeBool);
-		class_add_func("str",		TypeString,			any_p(mf((tmf)&Any::dump)));
 		class_add_func("__iadd__",			TypeVoid,			any_p(mf((tmf)&Any::_add)));
 			func_add_param("a",			TypeAny);
 		class_add_func("__isub__",			TypeVoid,			any_p(mf((tmf)&Any::_sub)));
 			func_add_param("a",			TypeAny);
+		class_add_func("clear",	TypeVoid, any_p(mf((tmf)&Any::clear)));
+		class_add_func("get",			TypeAny,			any_p(mf((tmf)&Any::get)));
+			func_add_param("key",			TypeString);
+		class_add_func("hset",			TypeVoid,			any_p(mf((tmf)&Any::hset)));
+			func_add_param("key",			TypeString);
+			func_add_param("value",			TypeAny);
+		class_add_func("at",			TypeAny,			any_p(mf((tmf)&Any::at)));
+			func_add_param("index",			TypeInt);
+		class_add_func("aset",			TypeVoid,			any_p(mf((tmf)&Any::aset)));
+			func_add_param("index",			TypeString);
+			func_add_param("value",			TypeAny);
+		class_add_func("bool",		TypeBool,			any_p(mf((tmf)&Any::_bool)));
+		class_add_func("int",		TypeInt,			any_p(mf((tmf)&Any::_int)));
+		class_add_func("float",		TypeFloat,			any_p(mf((tmf)&Any::_float)));
+		class_add_func("str",		TypeString,			any_p(mf((tmf)&Any::str)));
 	
 	add_func_special("complex",		TypeComplex,	CommandComplexSet);
 		func_add_param("x",		TypeFloat);

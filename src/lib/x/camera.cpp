@@ -37,8 +37,8 @@ void CameraInit()
 void CameraReset()
 {
 	msg_db_r("CameraReset",1);
-	foreach(camera, c)
-		delete(*c);
+	foreach(Camera *c, camera)
+		delete(c);
 	camera.clear();
 
 	// create the main-view ("cam")
@@ -318,8 +318,7 @@ void CameraCalcMove()
 {
 	msg_db_r("CamCalcMove",2);
 
-	foreach(camera, iv){
-		Camera *v = *iv;
+	foreach(Camera *v, camera){
 		if (!v->enabled)
 			continue;
 

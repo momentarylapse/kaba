@@ -163,10 +163,10 @@ void NixUpdateLights()
 	//glLoadIdentity();
 	glLoadMatrixf((float*)&NixViewMatrix);
 
-	foreachi(NixLight, l, i){
-		if (!l->Used)
+	foreachi(sLight &l, NixLight, i){
+		if (!l.Used)
 			continue;
-		if (!l->Enabled)
+		if (!l.Enabled)
 			continue;
 	//	if (OGLLightNo[i]<0)	continue;
 		float f[4];
@@ -176,15 +176,15 @@ void NixUpdateLights()
 		else
 			f[3]=1;
 		glLightfv(OGLLightNo[i],GL_POSITION,f);*/
-		if (l->Type == LightTypeDirectional){
-			f[0] = l->Dir.x;
-			f[1] = l->Dir.y;
-			f[2] = l->Dir.z;
+		if (l.Type == LightTypeDirectional){
+			f[0] = l.Dir.x;
+			f[1] = l.Dir.y;
+			f[2] = l.Dir.z;
 			f[3] = 0;
-		}else if (l->Type == LightTypeRadial){
-			f[0] = l->Pos.x;
-			f[1] = l->Pos.y;
-			f[2] = l->Pos.z;
+		}else if (l.Type == LightTypeRadial){
+			f[0] = l.Pos.x;
+			f[1] = l.Pos.y;
+			f[2] = l.Pos.z;
 			f[3] = 1;
 		}
 		glLightfv(GL_LIGHT0+i,GL_POSITION,f);
@@ -575,8 +575,8 @@ void NixScreenShot(const string &filename, int width, int height)
 			}
 	}
 	// set alpha to 1
-	foreach(image.data, c)
-		*c |= 0xff000000;
+	for (int i=0;i<image.data.num;i++)
+		image.data[i] |= 0xff000000;
 	// save
 	image.Save(filename);
 	image.Delete();

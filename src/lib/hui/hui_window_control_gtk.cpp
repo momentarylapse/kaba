@@ -222,9 +222,9 @@ HuiControl *CHuiWindow ::_GetControl_(const string &id)
 
 	// search backwards -> multiple AddText()s with identical ids
 	//   will always set their own text
-	foreachb(control, c)
-		if ((*c)->id == id)
-			return *c;
+	foreachb(HuiControl *c, control)
+		if (c->id == id)
+			return c;
 
 	if (id.num != 0){
 		// ...test if exists in menu/toolbar before reporting an error!
@@ -278,9 +278,9 @@ void SetImageById(CHuiWindow *win, const string &id)
 	if ((id == "ok") || (id == "cancel") || (id == "apply"))
 		win->SetImage(id, "hui:" + id);
 	else if (id != "")
-		foreach(_HuiCommand_, c)
-			if ((c->id == id) && (c->image != ""))
-				win->SetImage(id, c->image);
+		foreach(HuiCommand &c, _HuiCommand_)
+			if ((c.id == id) && (c.image != ""))
+				win->SetImage(id, c.image);
 }
 
 
@@ -340,7 +340,8 @@ void CHuiWindow::AddText(const string &title,int x,int y,int width,int height,co
 {
 	GetPartStrings(id, title);
 	GtkWidget *l = gtk_label_new("");
-	gtk_label_set_line_wrap(GTK_LABEL(l),true);
+	if (OptionString.find("wrap") >= 0)
+		gtk_label_set_line_wrap(GTK_LABEL(l),true);
 	if (OptionString.find("center") >= 0)
 		gtk_misc_set_alignment(GTK_MISC(l), 0.5f, 0.5f);
 	else if (OptionString.find("right") >= 0)
@@ -466,11 +467,11 @@ void CHuiWindow::AddRadioButton(const string &title,int x,int y,int width,int he
 	GetPartStrings(id, title);
 	string group_id = id.substr(0, id.find(":"));
 	GSList *group = NULL;
-	foreach(control, c)
-		if ((*c)->type == HuiKindRadioButton)
-			if ((*c)->id.find(":"))
-				if ((*c)->id.substr(0, (*c)->id.find(":")) == group_id)
-					group = gtk_radio_button_get_group(GTK_RADIO_BUTTON((*c)->widget));
+	foreach(HuiControl *c, control)
+		if (c->type == HuiKindRadioButton)
+			if (c->id.find(":"))
+				if (c->id.substr(0, c->id.find(":")) == group_id)
+					group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(c->widget));
 		
 	GtkWidget *cb = gtk_radio_button_new_with_label(group, sys_str(PartString[0]));
 	g_signal_connect(G_OBJECT(cb), "toggled", G_CALLBACK(&OnGtkRadioButtonToggle), this);
@@ -897,23 +898,23 @@ void CHuiWindow::EmbedDialog(const string &id, int x, int y)
 	if (res){
 		if (res->type != "SizableDialog")
 			return;
-		foreachi(res->cmd, cmd, i){
+		foreachi(HuiResourceCommand &cmd, res->cmd, i){
 			//msg_db_m(format("%d:  %d / %d",j,(cmd->type & 1023),(cmd->type >> 10)).c_str(),4);
 			//if ((cmd->type & 1023)==HuiCmdDialogAddControl){
 
-			string target_id = cmd->s_param[0];
-			int target_page = cmd->i_param[4];
+			string target_id = cmd.s_param[0];
+			int target_page = cmd.i_param[4];
 			if (i > 0)
 				SetTarget(target_id, target_page);
-			int _x = (i == 0) ? x : cmd->i_param[0];
-			int _y = (i == 0) ? y : cmd->i_param[1];
-			HuiWindowAddControl( this, cmd->type, HuiGetLanguage(cmd->id),
+			int _x = (i == 0) ? x : cmd.i_param[0];
+			int _y = (i == 0) ? y : cmd.i_param[1];
+			HuiWindowAddControl( this, cmd.type, HuiGetLanguage(cmd.id),
 								_x, _y,
-								cmd->i_param[2], cmd->i_param[3],
-								cmd->id);
-			Enable(cmd->id, cmd->enabled);
-			if (cmd->image.num > 0)
-				SetImage(cmd->id, cmd->image);
+								cmd.i_param[2], cmd.i_param[3],
+								cmd.id);
+			Enable(cmd.id, cmd.enabled);
+			if (cmd.image.num > 0)
+				SetImage(cmd.id, cmd.image);
 		}
 	}
 }
@@ -1688,6 +1689,20 @@ Array<int> CHuiWindow::GetMultiSelection(const string &_id)
 			}
 	}
 	return sel;
+}
+
+void CHuiWindow::SetMultiSelection(const string &_id, Array<int> &sel)
+{
+	HuiControl *c = _GetControl_(_id);
+	if (!c)
+		return;
+	if (c->type==HuiKindListView){
+		GtkTreeSelection *s = gtk_tree_view_get_selection(GTK_TREE_VIEW(c->widget));
+		gtk_tree_selection_set_mode(s, GTK_SELECTION_MULTIPLE);
+		gtk_tree_selection_unselect_all(s);
+		for (int j=0;j<sel.num;j++)
+			gtk_tree_selection_select_iter(s, &c->_item_[sel[j]]);
+	}
 }
 
 // delete all the content

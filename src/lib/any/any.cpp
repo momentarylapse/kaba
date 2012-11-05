@@ -1,10 +1,13 @@
 #include "any.h"
+#include "../base/map.h"
 
-DynamicArray _empty_dummy_hash_ = {NULL, 0, 0, sizeof(HashPair)};
+typedef Map<string, Any> HashMap;
+
+HashMap _empty_dummy_hash_;
 DynamicArray _empty_dummy_array_ = {NULL, 0, 0, sizeof(Any)};
 
 Any EmptyVar;
-Any EmptyHash = *(Array<HashPair>*)&_empty_dummy_hash_;
+//Any EmptyHash = _empty_dummy_hash_;
 Any EmptyArray = *(Array<Any>*)&_empty_dummy_array_;
 
 
@@ -84,12 +87,12 @@ Any::Any(const Array<Any> &a)
 	*((Array<Any>*)data) = a;
 }
 
-Any::Any(const Array<HashPair> &a)
+/*Any::Any(const HashMap &a)
 {
 	type = TYPE_HASH;
-	data = new Array<HashPair>;
-	*((Array<HashPair>*)data) = a;
-}
+	data = new HashMap;
+	*((HashMap*)data) = a;
+}*/
 
 Any::~Any()
 {	clear();	}
@@ -108,14 +111,14 @@ void Any::clear()
 	else if (type == TYPE_ARRAY)
 		delete((Array<Any>*)data);
 	else if (type == TYPE_HASH)
-		delete((Array<HashPair>*)data);
+		delete((HashMap*)data);
 	else if (type != TYPE_NONE)
-		msg_error("Any.clear: " + type_name(type));
+		msg_error("Any.clear(): " + type_name(type));
 	type = TYPE_NONE;
 	data = NULL;
 }
 
-string Any::dump() const
+string Any::str() const
 {
 	if (type == TYPE_INT)
 		return i2s(*(int*)data);
@@ -127,32 +130,56 @@ string Any::dump() const
 		return "\"" + *(string*)data + "\"";
 	else if (type == TYPE_ARRAY){
 		string s = "[";
-		foreach(*(Array<Any>*)data, p){
+		foreach(Any &p, *(Array<Any>*)data){
 			if (s.num > 1)
 				s += ", ";
-			s += p->dump();
+			s += p.str();
 		}
 		return s + "]";
 	}else if (type == TYPE_HASH){
 		string s = "[";
-		foreach(*(Array<HashPair>*)data, p){
+		foreach(HashMap::Entry &p, *(HashMap*)data){
 			if (s.num > 1)
 				s += ", ";
-			s += "\"" + p->key + "\" -> " + p->value.dump();
+			s += "\"" + p.key + "\" : " + p.value.str();
 		}
 		return s + "]";
 	}else if (type == TYPE_NONE)
 		return "<empty>";
 	else
-		return "unhandled Any.dump: " + type_name(type);
+		return "unhandled Any.str(): " + type_name(type);
+}
+
+bool Any::_bool() const
+{
+	if (type == TYPE_BOOL)
+		return *(bool*)data;
+	msg_error("Any.bool(): " + type_name(type));
+	return false;
+}
+
+int Any::_int() const
+{
+	if (type == TYPE_INT)
+		return *(int*)data;
+	msg_error("Any.int(): " + type_name(type));
+	return 0;
+}
+
+float Any::_float() const
+{
+	if (type == TYPE_FLOAT)
+		return *(float*)data;
+	msg_error("Any.float(): " + type_name(type));
+	return 0;
 }
 
 void print(const Any &a)
-{	msg_write(a.dump());	}
+{	msg_write(a.str());	}
 
 Any &Any::operator = (const Any &a)
 {
-	//msg_write(format("%s = %s  %p = %p", type->Name, a.type->Name, this, &a));
+	//msg_write(format("%s = %s  %p = %p", type_name(type).c_str(), type_name(a.type).c_str(), this, &a));
 	if (&a != this){
 		clear();
 		type = a.type;
@@ -172,8 +199,8 @@ Any &Any::operator = (const Any &a)
 			data = new Array<Any>;
 			*(Array<Any>*)data = *(Array<Any>*)a.data;
 		}else if (a.type == TYPE_HASH){
-			data = new Array<HashPair>;
-			*(Array<HashPair>*)data = *(Array<HashPair>*)a.data;
+			data = new HashMap;
+			*(HashMap*)data = *(HashMap*)a.data;
 		}else if (a.type != TYPE_NONE){
 			type = TYPE_NONE;
 			msg_error("Any = Any: " + type_name(a.type));
@@ -246,7 +273,7 @@ void Any::add(const Any &a)
 			((Array<Any>*)data)->add(a);
 		}
 	}else{
-		msg_error("Any.add: not an array: " + type_name(type));
+		msg_error("Any.add(): not an array: " + type_name(type));
 	}
 }
 
@@ -264,11 +291,19 @@ void Any::append(const Any &a)
 			((Array<Any>*)data)->append(*(Array<Any>*)a.data);
 		}
 	}else{
-		msg_error("Any.append: not an array: " + type_name(type) + " " + type_name(a.type));
+		msg_error("Any.append(): not an array: " + type_name(type) + " " + type_name(a.type));
 	}
 }
 
 Any &Any::operator[] (int index)
+{
+	if (type == TYPE_ARRAY)
+		return (*(Array<Any>*)data)[index];
+	msg_error("Any[]: not an array: " + type_name(type));
+	return EmptyVar;
+}
+
+const Any &Any::operator[] (int index) const
 {
 	if (type == TYPE_ARRAY)
 		return (*(Array<Any>*)data)[index];
@@ -284,16 +319,10 @@ Any &Any::back()
 	return EmptyVar;
 }
 
-Any Any::operator[] (const string &key) const
+const Any &Any::operator[] (const string &key) const
 {
-	msg_error("[] const");
-	if (type == TYPE_HASH){
-		foreach(*(Array<HashPair>*)data, p)
-			if (p->key == key)
-				return p->value;
-		msg_error("Any[]: key not found: " + key);
-		return EmptyVar;
-	}
+	if (type == TYPE_HASH)
+		return (*(HashMap*)data)[key];
 	msg_error("Any[]: not a hash array: " + type_name(type));
 	return EmptyVar;
 }
@@ -302,18 +331,32 @@ Any &Any::operator[] (const string &key)
 {
 	if (type == TYPE_NONE){
 		type = TYPE_HASH;
-		data = new Array<HashPair>;
+		data = new HashMap;
 	}
 	if (type == TYPE_HASH){
-		foreach(*(Array<HashPair>*)data, p)
-			if (p->key == key)
-				return p->value;
-		HashPair pp = {key, EmptyVar};
-		((Array<HashPair>*)data)->add(pp);
-		//msg_error("Any[]: key not found: " + key);
-		return ((Array<HashPair>*)data)->back().value;
+		//msg_write(p2s(&(*(HashMap*)data)[key]));
+		return (*(HashMap*)data)[key];
 	}
 	msg_error("Any[]: not a hash array: " + type_name(type));
 	return EmptyVar;
 }
 
+Any Any::at(int i) const
+{
+	return (*this)[i];
+}
+
+void Any::aset(int i, const Any &value)
+{
+	(*this)[i] = value;
+}
+
+Any Any::get(const string &key) const
+{
+	return (*this)[key];
+}
+
+void Any::hset(const string &key, const Any &value)
+{
+	(*this)[key] = value;
+}

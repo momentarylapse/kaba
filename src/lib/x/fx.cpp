@@ -144,18 +144,18 @@ void FxReset()
 	msg_db_r("FxReset",1);
 	
 	// particles
-	foreach(Particle, p)
-		delete(*p);
+	foreach(sParticle *p, Particle)
+		delete(p);
 	Particle.clear();
 	
 	// beams
-	foreach(Beam, b)
-		delete(*b);
+	foreach(sParticle *b, Beam)
+		delete(b);
 	Beam.clear();
 	
 	// effects
-	foreach(Effect, e)
-		delete(*e); // TODO call script-destructor
+	foreach(sEffect *e, Effect)
+		delete(e); // TODO call script-destructor
 	Effect.clear();
 
 	// shadows
@@ -180,8 +180,8 @@ void FxReset()
 int fx_get_num_effects()
 {
 	int n=0;
-	foreach(Effect, f)
-		if ((*f)->used)
+	foreach(sEffect *fx, Effect)
+		if (fx->used)
 			n ++;
 	return n;
 }
@@ -190,11 +190,11 @@ int fx_get_num_effects()
 int fx_get_num_particles()
 {
 	int n=0;
-	foreach(Particle, p)
-		if ((*p)->used)
+	foreach(sParticle *p, Particle)
+		if (p->used)
 			n ++;
-	foreach(Beam, p)
-		if ((*p)->used)
+	foreach(sParticle *p, Beam)
+		if (p->used)
 			n ++;
 	return n;
 }
@@ -910,23 +910,23 @@ void FxDrawShadows()
 		NixVBClear(ShadowVB[0]);
 		if (update_slow)
 			NixVBClear(ShadowVB[1]);
-		foreach(Shadow, s){
-			if ((s->slow) && (!update_slow))
+		foreach(sShadow &s, Shadow){
+			if ((s.slow) && (!update_slow))
 				continue;
-			matrix m = *s->mat;
+			matrix m = *s.mat;
 			matrix inv;
 			MatrixTranspose(inv, m);
-			LightDir = s->LightSource;
+			LightDir = s.LightSource;
 			vector rel_light = LightDir.transform_normal(inv);
 
-			const vector *v = s->v;
+			const vector *v = s.v;
 			/*int *e = s.e;
 			if (!e)
 				continue;*/
 
 			NumEdges=0;
-			for (int tt=0;tt<s->num_mat;tt++){
-				SubSkin *sub = &s->skin->sub[tt];
+			for (int tt=0;tt<s.num_mat;tt++){
+				SubSkin *sub = &s.skin->sub[tt];
 				for (int t=0;t<sub->num_triangles;t++){
 					if (NumEdges >= MAX_EDGES_PER_SHADOW)
 						break;
@@ -942,7 +942,7 @@ void FxDrawShadows()
 				}
 			}
 
-			int vb = s->slow ? ShadowVB[1] : ShadowVB[0];
+			int vb = s.slow ? ShadowVB[1] : ShadowVB[0];
 			for (int i=0;i<NumEdges;i++){
 				//msg_write(i);
 				vector p1 = m * v[Edge[i*2  ]];
@@ -1178,8 +1178,7 @@ void FxCalcMove()
 
 // effecsts
 	msg_db_m("-fx",3);
-	foreach(Effect, ifx){
-		sEffect *fx = *ifx;
+	foreach(sEffect *fx, Effect){
 		if ((fx->used) && (fx->enabled)){
 			
 			// automaticly controlled by models
@@ -1223,8 +1222,7 @@ void FxCalcMove()
 
 // particles
 	msg_db_m("--Pa",3);
-	foreach(Particle, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Particle){
 		if (p->used){
 			if (p->func){
 				p->elapsed += Elapsed;
@@ -1244,8 +1242,7 @@ void FxCalcMove()
 
 // beams
 	msg_db_m("--Bm",3);
-	foreach(Beam, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Beam){
 		if (p->used){
 			if (p->func){
 				p->elapsed += Elapsed;
@@ -1342,8 +1339,7 @@ void DrawParticles()
 {
 	NixSetWorldMatrix(m_id);
 	NixEnableLighting(true);
-	foreach(Particle, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Particle){
 		if ((p->used) && (p->enabled)){
 			if (p->type == XContainerParticle){
 				NixSetTexture(p->texture);
@@ -1388,8 +1384,7 @@ void DrawParticlesNew()
 	vector ve_y = e_y.transform_normal(mi);
 
 	
-	foreach(Particle, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Particle){
 		if ((p->used) && (p->enabled))
 			if (p->type == XContainerParticle){
 				NixSetTexture(p->texture);
@@ -1427,8 +1422,7 @@ void DrawBeams()
 #endif
 	NixSetWorldMatrix(m_id);
 	NixEnableLighting(true);
-	foreach(Beam, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Beam){
 		if ((p->used) && (p->enabled)){
 			vector r = VecCrossProduct(dir, p->parameter);
 			r.normalize();
@@ -1463,8 +1457,7 @@ void DrawBeamsNew()
 #ifdef _X_ALLOW_CAMERA_
 	dir = cur_cam->ang.ang2dir();
 #endif
-	foreach(Beam, ip){
-		sParticle *p = *ip;
+	foreach(sParticle *p, Beam){
 		if ((p->used) && (p->enabled)){
 			vector r = VecCrossProduct(dir, p->parameter);
 			r.normalize();

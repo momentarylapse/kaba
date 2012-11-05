@@ -655,8 +655,8 @@ int _cdecl MetaLoadXFont(const string &filename)
 	if (filename.num == 0)
 		return 0;
 
-	foreachi(_XFont_, ff, i)
-		if ((*ff)->filename  == filename.sys_filename())
+	foreachi(XFont *ff, _XFont_, i)
+		if (ff->filename  == filename.sys_filename())
 			return i;
 	CFile *f = OpenFile(MaterialDir + filename + ".xfont");
 	if (!f)

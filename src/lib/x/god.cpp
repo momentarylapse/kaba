@@ -359,13 +359,13 @@ bool GodLoadWorldFromLevelData()
 	Object.clear(); // make sure the "missing" objects are NULL
 	Object.resize(LevelData.object.num);
 	GodNumReservedObjects = LevelData.object.num;
-	foreachi(LevelData.object, o, i)
-		if (o->filename.num > 0){
-			CObject *oo = GodCreateObject(o->filename, o->name, o->pos, o->ang, i);
+	foreachi(LevelDataObject &o, LevelData.object, i)
+		if (o.filename.num > 0){
+			CObject *oo = GodCreateObject(o.filename, o.name, o.pos, o.ang, i);
 			ok &= (oo >= 0);
 			if (oo){
-				oo->vel = o->vel;
-				oo->rot = o->rot;
+				oo->vel = o.vel;
+				oo->rot = o.rot;
 			}
 			if (LevelData.ego_index == i)
 				Ego = oo;
@@ -376,9 +376,9 @@ bool GodLoadWorldFromLevelData()
 	AddAllObjectsToLists = true;
 
 	// terrains
-	foreachi(LevelData.terrain, t, i){
+	foreachi(LevelDataTerrain &t, LevelData.terrain, i){
 		MetaDrawSplashScreen("Terrain...", 0.6f + (float)i / (float)LevelData.terrain.num * 0.4f);
-		CTerrain *tt = new CTerrain(t->filename, t->pos);
+		CTerrain *tt = new CTerrain(t.filename, t.pos);
 		Terrain.add(tt);
 		ok &= !tt->error;
 	}

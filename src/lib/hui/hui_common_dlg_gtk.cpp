@@ -145,9 +145,9 @@ void HuiErrorBox(CHuiWindow *win,const string &title,const string &text)
 void HuiAboutBox(CHuiWindow *win)
 {
 	Array<char*> _a_;
-	foreach(HuiPropAuthors, author){
-		char *p = new char[author->num + 1];
-		strcpy(p, author->c_str());
+	foreach(string &author, HuiPropAuthors){
+		char *p = new char[author.num + 1];
+		strcpy(p, author.c_str());
 		_a_.add(p);
 	}
 	_a_.add(NULL);
@@ -164,8 +164,8 @@ void HuiAboutBox(CHuiWindow *win)
 		"copyright", HuiPropCopyright.c_str(),
 		NULL);
 
-	foreach(_a_, aa)
-		delete(*aa);
+	foreach(char *aa, _a_)
+		delete(aa);
 }
 
 

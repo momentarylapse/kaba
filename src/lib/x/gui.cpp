@@ -51,15 +51,15 @@ inline void AddDrawable(XContainer *p, float z)
 
 void AddAllDrawables()
 {
-	foreach(Text, t)
-		if (((*t)->used) && ((*t)->enabled))
-			AddDrawable(*t, (*t)->pos.z);
-	foreach(Picture, p)
-		if (((*p)->used) && ((*p)->enabled))
-			AddDrawable(*p, (*p)->pos.z);
-	foreach(Picture3D, p)
-		if (((*p)->used) && ((*p)->enabled))
-			AddDrawable(*p, (*p)->z);
+	foreach(sText *t, Text)
+		if ((t->used) && (t->enabled))
+			AddDrawable(t, t->pos.z);
+	foreach(sPicture *p, Picture)
+		if ((p->used) && (p->enabled))
+			AddDrawable(p, p->pos.z);
+	foreach(sPicture3D *p, Picture3D)
+		if ((p->used) && (p->enabled))
+			AddDrawable(p, p->z);
 }
 
 sText *GuiCreateText(const vector &pos, float size, const color &col, const string &str)
@@ -198,8 +198,7 @@ bool sPicture::IsMouseOver()
 					pos.y,	pos.y+height);
 
 	// grouping correction?
-	foreachi(Grouping, ig, j){
-		sGrouping *g = *ig;
+	foreachi(sGrouping *g, Grouping, j){
 		for (int k=0;k<g->picture.num;k++)
 			if (&g->picture[k] == (void*)this){
 				if (!g->enabled)
@@ -229,8 +228,7 @@ bool sText::IsMouseOver()
 	rect r=rect(x,x+w,pos.y,pos.y+size);
 
 	// grouping correction?
-	foreachi(Grouping, ig, j){
-		sGrouping *g = *ig;
+	foreachi(sGrouping *g, Grouping, j){
 		for (int k=0;k<g->text.num;k++)
 			if (&g->text[k]==(void*)this){
 				if (!g->enabled)
@@ -548,14 +546,14 @@ void GuiDraw()
 	NixSpecularEnable(false);
 
 	 // drawing
-	foreach(Drawable, d){
-		int type = d->p->type;
+	foreach(sDrawable &d, Drawable){
+		int type = d.p->type;
 		if (type == XContainerText)
-			GuiDrawText((sText*)d->p);
+			GuiDrawText((sText*)d.p);
 		else if (type == XContainerPicture)
-			GuiDrawPicture((sPicture*)d->p);
+			GuiDrawPicture((sPicture*)d.p);
 		else if (type == XContainerPicture3d)
-			GuiDrawPicture3D((sPicture3D*)d->p);
+			GuiDrawPicture3D((sPicture3D*)d.p);
 		/*else if (type == XContainerView){
 		}*/
 	}

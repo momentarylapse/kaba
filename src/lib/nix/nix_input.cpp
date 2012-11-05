@@ -200,9 +200,9 @@ void NixUpdateInput()
 {
 	NixInputDataLast = NixInputDataCurrent;
 	NixKeyRep = -2;
-	foreach(NixInputEvent, e){
-		if (e->message == "hui:key-down")
-			NixKeyRep = e->key;
+	foreach(HuiEvent &e, NixInputEvent){
+		if (e.message == "hui:key-down")
+			NixKeyRep = e.key;
 	}
 
 	if (NixMouseStolen){
@@ -212,10 +212,10 @@ void NixUpdateInput()
 		NixInputDataCurrent.x = mx0;
 		NixInputDataCurrent.y = my0;
 		NixInputDataCurrent.dx = NixInputDataCurrent.dy = NixInputDataCurrent.dz = 0;
-		foreach(NixInputEvent, e){
-			NixInputDataCurrent.dx += e->dx;
-			NixInputDataCurrent.dy += e->dy;
-			NixInputDataCurrent.dz += e->dz;
+		foreach(HuiEvent &e, NixInputEvent){
+			NixInputDataCurrent.dx += e.dx;
+			NixInputDataCurrent.dy += e.dy;
+			NixInputDataCurrent.dz += e.dz;
 		}
 		NixInputDataCurrent.x += NixInputDataCurrent.dx;
 		NixInputDataCurrent.y += NixInputDataCurrent.dy;

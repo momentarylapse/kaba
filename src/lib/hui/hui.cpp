@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.4.20.1";
+string HuiVersion = "0.4.21.0";
 
 
 #include <stdio.h>
@@ -84,6 +84,7 @@ Array<HuiClosedWindow> _HuiClosedWindow_;
 
 
 extern bool HuiConfigChanged;
+bool _HuiScreenOpened_ = false;
 
 // HUI configuration
 string HuiComboBoxSeparator;
@@ -220,6 +221,32 @@ void HuiRunLaterM(int time_ms, HuiEventHandler *object, void (HuiEventHandler::*
 	#endif
 }
 
+void _HuiMakeUsable_()
+{
+	if (_HuiScreenOpened_)
+		return;
+#ifdef HUI_API_WIN
+
+	//InitCommonControls(); comctl32.lib
+	CoInitialize(NULL);
+	//WinStandartFont=CreateFont(8,0,0,0,FW_NORMAL,FALSE,FALSE,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,"MS Sans Serif");
+	hui_win_default_font=(HFONT)GetStockObject(DEFAULT_GUI_FONT);
+
+	hui_win_main_icon=ExtractIcon(hui_win_instance,sys_str(_pgmptr),0);
+
+#endif
+#ifdef HUI_API_GTK
+	gtk_init(NULL, NULL);
+	#ifdef OS_LINUX
+		_hui_x_display_ = XOpenDisplay(0);
+	#endif
+
+	invisible_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+
+#endif
+	_HuiScreenOpened_ = true;
+}
+
 void HuiInit()
 {
 	#ifdef OS_WINDOWS
@@ -254,16 +281,6 @@ void HuiInit()
 	//msg_db_m(format("[%s]", HuiVersion),1);
 
 
-	#ifdef HUI_API_WIN
-
-		//InitCommonControls(); comctl32.lib
-		CoInitialize(NULL);
-		//WinStandartFont=CreateFont(8,0,0,0,FW_NORMAL,FALSE,FALSE,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,"MS Sans Serif");
-		hui_win_default_font=(HFONT)GetStockObject(DEFAULT_GUI_FONT);
-
-		hui_win_main_icon=ExtractIcon(hui_win_instance,sys_str(_pgmptr),0);		
-
-	#endif
 	#ifdef OS_WINDOWS
 		// timers
 		if (QueryPerformanceFrequency((LARGE_INTEGER *) &perf_cnt)){
@@ -271,15 +288,6 @@ void HuiInit()
 			time_scale=1.0f/perf_cnt;
 		}else 
 			time_scale=0.001f;
-
-	#endif
-	#ifdef HUI_API_GTK
-		gtk_init(NULL, NULL);
-		#ifdef OS_LINUX
-			_hui_x_display_ = XOpenDisplay(0);
-		#endif
-
-		invisible_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
 
 	#endif
 
@@ -494,9 +502,9 @@ void HuiPushMainLevel()
 void HuiCleanUpMainLevel()
 {
 	msg_db_r("HuiCleanUpMainLevel",2);
-	foreachb(HuiWindow, w)
-		if ((*w)->_GetMainLevel_() >= HuiMainLevel)
-			delete(*w);
+	foreachb(CHuiWindow *w, HuiWindow)
+		if (w->_GetMainLevel_() >= HuiMainLevel)
+			delete(w);
 	HuiSetIdleFunction(NULL);
 	msg_db_l(2);
 }
@@ -599,8 +607,8 @@ string HuiWaitTillWindowClosed(CHuiWindow *win)
 		bool killed = false;
 		while(!killed){
 			HuiDoSingleMainLoop();
-			foreach(_HuiClosedWindow_, cw)
-				if (cw->unique_id == uid)
+			foreach(HuiClosedWindow &cw, _HuiClosedWindow_)
+				if (cw.unique_id == uid)
 					killed = true;
 		}
 	}
@@ -608,9 +616,9 @@ string HuiWaitTillWindowClosed(CHuiWindow *win)
 	//msg_write("cleanup");
 
 	// clean up
-	foreachbi(_HuiClosedWindow_, cw, i)
-		if (cw->unique_id == uid){
-			last_id = cw->last_id;
+	foreachi(HuiClosedWindow &cw, _HuiClosedWindow_, i)
+		if (cw.unique_id == uid){
+			last_id = cw.last_id;
 			_HuiClosedWindow_.erase(i);
 		}
 	msg_db_l(1);

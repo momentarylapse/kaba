@@ -324,13 +324,13 @@ void CModel::ResetData()
 
 	// fx
 	fx.resize(_template->fx.num);
-	foreachi(_template->fx, tf, i){
-		if (tf->type == FXTypeLight)
-			fx[i] = FxCreateLight(this, tf->vertex, tf->radius, tf->am, tf->di, tf->sp);
-		else if (tf->type == FXTypeSound)
-			fx[i] = FxCreateSound(this, tf->vertex, tf->filename, tf->radius, tf->speed);
-		else if (tf->type == FXTypeScript)
-			fx[i] = FxCreateScript(this, tf->vertex, tf->filename);
+	foreachi(ModelEffectData &tf, _template->fx, i){
+		if (tf.type == FXTypeLight)
+			fx[i] = FxCreateLight(this, tf.vertex, tf.radius, tf.am, tf.di, tf.sp);
+		else if (tf.type == FXTypeSound)
+			fx[i] = FxCreateSound(this, tf.vertex, tf.filename, tf.radius, tf.speed);
+		else if (tf.type == FXTypeScript)
+			fx[i] = FxCreateScript(this, tf.vertex, tf.filename);
 	}
 
 	// script vars
