@@ -311,11 +311,6 @@ void jpg_decode(unsigned char *b,s_jpg_color_info ci)
 		for (int j=0;j<8;j++)
 			jpg_cos_table[i][j] = (float)cos( (2*i+1)*j*pi/16.0f ) * ((j == 0) ? 1.0f / sqrt(2.0f) : 1.0f);
 
-
-/*CFile *f=new CFile();
-f->Create("test");
-f->SetBinaryMode(true);*/
-
 	// read data
 	int bit_off=0;
 	int prev[3]={0,0,0};
@@ -325,20 +320,15 @@ f->SetBinaryMode(true);*/
 			// 3 colors
 			for (int c=0;c<3;c++){
 				// sub blocks
-				for (int i=0;i<ci.h[c];i++)
-					for (int j=0;j<ci.v[c];j++){
+				for (int j=0;j<ci.v[c];j++)
+					for (int i=0;i<ci.h[c];i++){
 						jpg_decode_huffman(ci.ac[c],ci.dc[c],b,bit_off,prev[c],coeff);
 						jpg_cosine_retransform(coeff,ci.q[c],col_block);
-						jpg_combine_blocks(col_block,sx,sy,ci.h[c],ci.v[c],j,i,col[c]);
+						jpg_combine_blocks(col_block,sx,sy,ci.h[c],ci.v[c],i,j,col[c]);
 					}
 			}
 			jpg_insert_into_image(col[0],col[1],col[2],sx,sy,x,y);
 		}
-
-		//f->WriteBuffer(image.data,image.width*image.height*3);
-
-/*f->Close();
-delete(f);*/
 
 	delete[](col[0]);
 	delete[](col[1]);
