@@ -353,6 +353,7 @@ void NixReloadTexture(int texture)
 	}else{
 		Image image;
 		image.LoadFlipped(filename);
+		image.SetMode(Image::ModeRGBA);
 
 		if (!image.error){
 			glBindTexture(GL_TEXTURE_2D, NixTexture[texture].glTexture);
@@ -382,7 +383,7 @@ void NixReloadTexture(int texture)
 			if (NixTextureIconSize > 0){
 				image.Scale(NixTextureIconSize, NixTextureIconSize);
 				image.FlipV();
-				image.CopyTo(NixTexture[texture].Icon);
+				NixTexture[texture].Icon = image;
 			}
 			image.Delete();
 		}
