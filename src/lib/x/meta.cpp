@@ -23,6 +23,10 @@
 | last updated: 2009.12.09 (c) by MichiSoft TM                                 |
 \*----------------------------------------------------------------------------*/
 #include "x.h"
+#ifdef _X_ALLOW_SCRIPT_
+	#include "../script/script.h"
+	extern string Script::Directory;
+#endif
 
 string MetaVersion = "0.3.1.4";
 
@@ -58,15 +62,15 @@ string MapDir, ObjectDir, ScriptDir, MaterialDir;
 void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
 str_float_func *MetaDrawSplashScreen;
 void *MetaObjectScriptInit;
-CModel *ModelToIgnore;
+Model *ModelToIgnore;
 
 // models
 struct sModelRefCopy
 {
-	CModel *model;
+	Model *model;
 	int OriginalIndex;
 };
-static Array<CModel*> ModelOriginal, ModelOriginal2;
+static Array<Model*> ModelOriginal, ModelOriginal2;
 static Array<sModelRefCopy> ModelCopy, ModelCopy2;
 
 // materials
@@ -78,7 +82,7 @@ Array<XFont*> _XFont_;
 
 
 
-CModel *NoModel;
+Model *NoModel;
 
 #define _xfont_char_ae_		248
 #define _xfont_char_oe_		249
@@ -201,8 +205,7 @@ void MetaSetDirs(const string &texture_dir, const string &map_dir, const string 
 	ScriptDir = script_dir;
 	MaterialDir = material_dir;
 #ifdef _X_ALLOW_SCRIPT_
-	extern string ScriptDirectory;
-	ScriptDirectory = script_dir;
+	Script::Directory = script_dir;
 #endif
 }
 
@@ -291,7 +294,7 @@ static void db_o(const string &msg)
 	#endif
 }
 
-void AddModelCopy(CModel *m, int orig_id)
+void AddModelCopy(Model *m, int orig_id)
 {
 	sModelRefCopy c;
 	c.model = m;
@@ -301,21 +304,21 @@ void AddModelCopy(CModel *m, int orig_id)
 	MetaListUpdate();
 }
 
-void AddModelOrig(CModel *m)
+void AddModelOrig(Model *m)
 {
 	ModelOriginal.add(m);
 	db_o(p2s(m));
 	MetaListUpdate();
 }
 
-void ReplaceModelOrig(int id, CModel *m)
+void ReplaceModelOrig(int id, Model *m)
 {
-	CModel *m0 = ModelOriginal[id];
+	Model *m0 = ModelOriginal[id];
 	ModelOriginal[id] = m;
 	ModelOriginal2[id] = m;
 }
 
-CModel *MetaLoadModel(const string &filename)
+Model *MetaLoadModel(const string &filename)
 {
 #ifdef _X_ALLOW_MODEL_
 	if (filename.num == 0)
@@ -331,7 +334,7 @@ CModel *MetaLoadModel(const string &filename)
 	for (int i=0;i<ModelOriginal.num;i++){
 		if (filename == ModelOriginal[i]->_template->filename){
 			//msg_write("copy...");
-			CModel *m = ModelOriginal[i]->GetCopy(ModelCopyRecursive);
+			Model *m = ModelOriginal[i]->GetCopy(ModelCopyRecursive);
 			AddModelCopy(m, i);
 			db_o("#######");
 			msg_db_l(2);
@@ -340,7 +343,7 @@ CModel *MetaLoadModel(const string &filename)
 	}
 
 	//msg_write("new....");
-	CModel *m = new CModel(filename);
+	Model *m = new Model(filename);
 	if (m->error){
 		msg_db_l(2);
 		return NULL;
@@ -354,7 +357,7 @@ CModel *MetaLoadModel(const string &filename)
 }
 
 // make sure we can edit this object without destroying an original one
-void MetaModelMakeEditable(CModel *m)
+void MetaModelMakeEditable(Model *m)
 {
 #ifdef _X_ALLOW_GOD_
 	msg_db_r("MetaModelMakeEditable", 2);
@@ -377,14 +380,14 @@ void MetaModelMakeEditable(CModel *m)
 		}
 
 		// create a "temporary" copy and save it as the original
-		CModel *m2 = m->GetCopy(ModelCopyKeepSubModels | ModelCopyInverse);
+		Model *m2 = m->GetCopy(ModelCopyKeepSubModels | ModelCopyInverse);
 		ReplaceModelOrig(id, m2);
 
 		// swap data
-		char *data = new char[sizeof(CModel)];
-		memcpy(data, m, sizeof(CModel));
-		memcpy(m, m2, sizeof(CModel));
-		memcpy(m2, data, sizeof(CModel));
+		char *data = new char[sizeof(Model)];
+		memcpy(data, m, sizeof(Model));
+		memcpy(m, m2, sizeof(Model));
+		memcpy(m2, data, sizeof(Model));
 		delete[](data);
 
 		// create copy
@@ -408,7 +411,7 @@ void MetaModelMakeEditable(CModel *m)
 #endif
 }
 
-CModel *MetaCopyModel(CModel *m)
+Model *MetaCopyModel(Model *m)
 {
 #ifdef _X_ALLOW_MODEL_
 	if (!m)
@@ -435,7 +438,7 @@ CModel *MetaCopyModel(CModel *m)
 		return NULL;
 	}
 
-	CModel *copy = ModelOriginal[id]->GetCopy(ModelCopyRecursive);
+	Model *copy = ModelOriginal[id]->GetCopy(ModelCopyRecursive);
 	AddModelCopy(copy, id);
 	
 	msg_db_l(2);
@@ -445,7 +448,7 @@ CModel *MetaCopyModel(CModel *m)
 #endif
 }
 
-bool MetaIsModel(CModel *m)
+bool MetaIsModel(Model *m)
 {
 	for (int i=0;i<ModelCopy.num;i++)
 		if (ModelCopy[i].model == m)
@@ -456,7 +459,7 @@ bool MetaIsModel(CModel *m)
 	return false;
 }
 
-void MetaDeleteModel(CModel *m)
+void MetaDeleteModel(Model *m)
 {
 #ifdef _X_ALLOW_MODEL_
 	if (!m)	return;
@@ -607,30 +610,30 @@ void _cdecl MetaDelete(void *p)
 	if (false){}
 #ifdef _X_ALLOW_GUI_
 	else if (type == XContainerPicture)
-		GuiDeletePicture((sPicture*)p);
+		Gui::DeletePicture((Gui::Picture*)p);
 	else if (type == XContainerPicture3d)
-		GuiDeletePicture3D((sPicture3D*)p);
+		Gui::DeletePicture3d((Gui::Picture3d*)p);
 	else if (type == XContainerText)
-		GuiDeleteText((sText*)p);
+		Gui::DeleteText((Gui::Text*)p);
 	else if (type == XContainerGrouping)
-		GuiDeleteGrouping((sGrouping*)p);
+		Gui::DeleteGrouping((Gui::Grouping*)p);
 #endif
 #ifdef _X_ALLOW_FX_
 	else if (type == XContainerParticle)
-		FxParticleDelete((sParticle*)p);
+		FxParticleDelete((Particle*)p);
 	else if (type == XContainerParticleRot)
-		FxParticleDelete((sParticle*)p);
+		FxParticleDelete((Particle*)p);
 	else if (type == XContainerParticleBeam)
-		FxParticleDelete((sParticle*)p);
+		FxParticleDelete((Particle*)p);
 	else if (type == XContainerEffect)
-		FxDelete((sEffect*)p);
+		FxDelete((Effect*)p);
 #endif
 #ifdef _X_ALLOW_CAMERA_
 	else if (type == XContainerView)
 		DeleteCamera((Camera*)p);
 #endif
 	else // TODO: recognize models!
-		MetaDeleteModel((CModel*)p);
+		MetaDeleteModel((Model*)p);
 	msg_db_l(2);
 }
 

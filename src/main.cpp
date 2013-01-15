@@ -83,8 +83,8 @@ int hui_main(Array<string> arg)
 		if (arg[1] == "-v"){
 			msg_right();
 			msg_write(AppName + " " + AppVersion);
-			msg_write("Script-Version: " + ScriptVersion);
-			msg_write("Bibliothek-Version: " + ScriptDataVersion);
+			msg_write("Script-Version: " + Script::Version);
+			msg_write("Bibliothek-Version: " + Script::DataVersion);
 			msg_write("Hui-Version: " + HuiVersion);
 			msg_left();
 			return 0;
@@ -96,9 +96,9 @@ int hui_main(Array<string> arg)
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
 	MetaInit();
-	ScriptInit();
-	//ScriptLinkDynamicExternalData();
-	ScriptStackSize = 10485760; // 10 mb (mib)
+	Script::Init();
+	//Script::LinkDynamicExternalData();
+	Script::StackSize = 10485760; // 10 mb (mib)
 
 	// script file as parameter?
 	string filename;
@@ -114,9 +114,9 @@ int hui_main(Array<string> arg)
 	}
 
 	// compile
-	ScriptCompileSilently = true;
+	Script::CompileSilently = true;
 	SilentFiles = true;
-	CScript *s = LoadScript(filename, true);
+	Script::Script *s = Script::Load(filename, true);
 
 	// set working directory -> script file
 	//msg_write(HuiInitialWorkingDirectory);
@@ -142,11 +142,11 @@ int hui_main(Array<string> arg)
 			msg_db_l(1);
 		}
 	}
-	RemoveScript(s);
+	Script::Remove(s);
 
 	// end
 	msg_db_l(1);
-	ScriptEnd();
+	Script::End();
 	MetaEnd();
 	msg_end();
 	return 0;

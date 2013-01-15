@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| CTerrain                                                                     |
+| Terrain                                                                      |
 | -> terrain of a world                                                        |
 |                                                                              |
 | vital properties:                                                            |
@@ -8,8 +8,6 @@
 \*----------------------------------------------------------------------------*/
 #if !defined(TERRAIN_H__INCLUDED_)
 #define TERRAIN_H__INCLUDED_
-
-class CTerrain;
 
 
 #define TERRAIN_MAX_TEXTURES		8
@@ -24,13 +22,13 @@ enum{
 #define TerrainUpdatePlanes		4
 #define TerrainUpdateAll		7
 
-class CTerrain
+class Terrain
 {
 public:
-	CTerrain(){};
-	CTerrain(const string &filename, const vector &pos);
+	Terrain();
+	Terrain(const string &filename, const vector &pos);
 	bool Load(const string &filename, const vector &pos, bool deep = true);
-	~CTerrain();
+	~Terrain();
 	void reset();
 	void Update(int x1,int x2,int z1,int z2,int mode);
 	float gimme_height(const vector &p);

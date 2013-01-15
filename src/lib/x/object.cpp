@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| CObject                                                                      |
+| Object                                                                       |
 | -> physical entities of a model in the game                                  |
 | -> manages physics on its own                                                |
 |                                                                              |
@@ -54,9 +54,9 @@ inline bool TestVectorSanity(vector &v,char *name)
 
 
 // Standart-Objekt
-CObject::CObject(const char *filename, const char *name, const vector &pos)
+Object::Object(const char *filename, const char *name, const vector &pos)
 {
-	msg_db_r("CObject", 1);
+	msg_db_r("Object", 1);
 	msg_db_m(filename, 2);
 	strcpy(Name, name);
 	Pos = pos;
@@ -109,11 +109,11 @@ CObject::CObject(const char *filename, const char *name, const vector &pos)
 static matrix _terrain_matrix_;
 
 // neutral object (for terrains,...)
-CObject::CObject(CModel *mod)
+Object::Object(Model *mod)
 {
 	//msg_right();
 	//msg_write("terrain object");
-	memset(this,0,sizeof(CObject));
+	memset(this,0,sizeof(Object));
 	strcpy(Name,"-terrain-");
 	model=mod;
 	Visible=false;
@@ -141,9 +141,9 @@ CObject::CObject(CModel *mod)
 	//msg_left();
 }
 
-CObject::~CObject()
+Object::~Object()
 {
-	msg_db_r("~CObject",1);
+	msg_db_r("~Object",1);
 	Inventary_ma.clear();
 	ScriptVar_ma.clear();
 	if (model)
@@ -153,7 +153,7 @@ CObject::~CObject()
 #endif
 
 // neutral object (for terrains,...)
-CObject::CObject()
+Object::Object()
 {
 	//msg_right();
 	//msg_write("terrain object");
@@ -180,7 +180,7 @@ CObject::CObject()
 	//msg_left();
 }
 
-void CObject::AddForce(const vector &f, const vector &rho)
+void Object::AddForce(const vector &f, const vector &rho)
 {
 	if (Elapsed <= 0)
 		return;
@@ -194,7 +194,7 @@ void CObject::AddForce(const vector &f, const vector &rho)
 	unfreeze(this);
 }
 
-void CObject::AddTorque(const vector &t)
+void Object::AddTorque(const vector &t)
 {
 	if (Elapsed <= 0)
 		return;
@@ -205,18 +205,18 @@ void CObject::AddTorque(const vector &t)
 	unfreeze(this);
 }
 
-void CObject::MakeVisible(bool _visible_)
+void Object::MakeVisible(bool _visible_)
 {
 	if (_visible_ == visible)
 		return;
 	if (_visible_)
-		GodRegisterModel((CModel*)this);
+		GodRegisterModel((Model*)this);
 	else
-		GodUnregisterModel((CModel*)this);
+		GodUnregisterModel((Model*)this);
 	visible = _visible_;
 }
 
-void CObject::DoPhysics()
+void Object::DoPhysics()
 {
 	if (Elapsed<=0)
 		return;
@@ -307,14 +307,14 @@ void CObject::DoPhysics()
 
 
 #if 0
-CObject *CObject::CuttingPlane(plane pl)
+Object *Object::CuttingPlane(plane pl)
 {
 	/*msg_db_out(3,"\nObjectCP");
 	msg_db_out(3,Name);
-	CObject *child=NULL;
+	Object *child=NULL;
 	if (model){
 		// abgespaltenes Objekt
-		child=new CObject(NULL);
+		child=new Object(NULL);
 		(*child)=(*this);
 		child->model=model->GetCopy();true);
 		plane ipl;
@@ -332,7 +332,7 @@ CObject *CObject::CuttingPlane(plane pl)
 #endif
 
 /*
-bool CObject::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
+bool Object::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
 {
 	if (!PassivePhysics)
 		return false;
@@ -346,7 +346,7 @@ bool CObject::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp
 }*/
 
 // den Traegheitstensor in Welt-Koordinaten ausrichten
-void CObject::UpdateTheta()
+void Object::UpdateTheta()
 {
 	if (active_physics){
 		matrix3 r,r_inv;
@@ -360,7 +360,7 @@ void CObject::UpdateTheta()
 	}
 }
 
-void CObject::UpdateMatrix()
+void Object::UpdateMatrix()
 {
 	matrix trans,rot;
 	MatrixRotation(rot, ang);
@@ -369,7 +369,7 @@ void CObject::UpdateMatrix()
 }
 
 // scripts have to call this after 
-void CObject::UpdateData()
+void Object::UpdateData()
 {
 	unfreeze(this);
 	if (!active_physics){

@@ -2,69 +2,99 @@
 #include "x.h"
 
 
+
+extern matrix NixProjectionMatrix, NixProjectionMatrix2d, NixViewMatrix, NixWorldMatrix;
+
+namespace Gui{
+
+struct SubPicture
+{
+	Picture *picture;
+	vector pos;
+	color _color;
+	bool enabled;
+};
+
+struct SubPicture3d
+{
+	Picture3d *picture_3d;
+	matrix _matrix;
+	float z;
+	color _color;
+	bool enabled;
+};
+
+struct SubText
+{
+	Text *text;
+	vector pos;
+	color _color;
+	bool enabled;
+};
+
 // stuff (for the scripts)
-Array<sText*> Text;
-Array<sPicture*> Picture;
-Array<sPicture3D*> Picture3D;
-Array<sGrouping*> Grouping;
-sGrouping *CurrentGrouping;
+Array<Text*> Texts;
+Array<Picture*> Pictures;
+Array<Picture3d*> Picture3ds;
+Array<Grouping*> Groupings;
+Grouping *CurrentGrouping;
 
-void GuiGroupingAddPicture(sGrouping *grouping, sPicture *picture);
-void GuiGroupingAddPicture3D(sGrouping *grouping, sPicture3D *picture3d);
-void GuiGroupingAddText(sGrouping *grouping, sText *text);
+void GroupingAddPicture(Grouping *grouping, Picture *picture);
+void GroupingAddPicture3D(Grouping *grouping, Picture3d *picture3d);
+void GroupingAddText(Grouping *grouping, Text *text);
 
-struct sDrawable
+struct Drawable
 {
 	float z;
 	XContainer *p;
 
-	bool operator < (const sDrawable &d) const
+	bool operator < (const Drawable &d) const
 	{	return z > d.z;	}
 };
 
-Array<sDrawable> Drawable;
+Array<Drawable> Drawables;
 
 
-void GuiReset()
+void Reset()
 {
 	msg_db_r("GuiReset",1);
-	for (int i=0;i<Text.num;i++)
-		Text[i]->used = false;
-	for (int i=0;i<Picture.num;i++)
-		Picture[i]->used = false;
-	for (int i=0;i<Picture3D.num;i++)
-		Picture3D[i]->used = false;
-	for (int i=0;i<Grouping.num;i++)
-		Grouping[i]->used = false;
-	Drawable.clear();
+	for (int i=0;i<Texts.num;i++)
+		Texts[i]->used = false;
+	for (int i=0;i<Pictures.num;i++)
+		Pictures[i]->used = false;
+	for (int i=0;i<Picture3ds.num;i++)
+		Picture3ds[i]->used = false;
+	for (int i=0;i<Groupings.num;i++)
+		Groupings[i]->used = false;
+	Drawables.clear();
 	CurrentGrouping = NULL;
 	msg_db_l(1);
 }
 
 inline void AddDrawable(XContainer *p, float z)
 {
-	sDrawable d;
+	Drawable d;
 	d.z = z;
 	d.p = p;
-	Drawable.add(d);
+	Drawables.add(d);
 }
 
 void AddAllDrawables()
 {
-	foreach(sText *t, Text)
+	foreach(Text *t, Texts)
 		if ((t->used) && (t->enabled))
 			AddDrawable(t, t->pos.z);
-	foreach(sPicture *p, Picture)
+	foreach(Picture *p, Pictures)
 		if ((p->used) && (p->enabled))
 			AddDrawable(p, p->pos.z);
-	foreach(sPicture3D *p, Picture3D)
+	foreach(Picture3d *p, Picture3ds)
 		if ((p->used) && (p->enabled))
 			AddDrawable(p, p->z);
 }
 
-sText *GuiCreateText(const vector &pos, float size, const color &col, const string &str)
+Text *CreateText(const vector &pos, float size, const color &col, const string &str)
 {
-	xcont_find_new(XContainerText, sText, t, Text);
+	xcont_find_new(XContainerText, Text, t, Texts);
 	// default data to show existence...
 	t->enabled = true;
 	t->centric = false;
@@ -75,22 +105,22 @@ sText *GuiCreateText(const vector &pos, float size, const color &col, const stri
 	t->size = size;
 	t->text = str;
 	if (CurrentGrouping)
-		GuiGroupingAddText(CurrentGrouping, t);
+		GroupingAddText(CurrentGrouping, t);
 	return t;
 }
 
-void GuiDeleteText(sText *text)
+void DeleteText(Text *text)
 {
-	for (int i=0;i<Text.num;i++)
-		if (Text[i] == text){
-			Text[i]->used = false;
+	for (int i=0;i<Texts.num;i++)
+		if (Texts[i] == text){
+			Texts[i]->used = false;
 			break;
 		}
 }
 
-sPicture *GuiCreatePicture(const vector &pos, float width, float height, int texture)
+Picture *CreatePicture(const vector &pos, float width, float height, int texture)
 {
-	xcont_find_new(XContainerPicture, sPicture, p, Picture);
+	xcont_find_new(XContainerPicture, Picture, p, Pictures);
 	// default data to show existence...
 	p->enabled = true;
 	p->tc_inverted = false;
@@ -102,22 +132,22 @@ sPicture *GuiCreatePicture(const vector &pos, float width, float height, int tex
 	p->texture = texture;
 	p->shader = -1;
 	if (CurrentGrouping)
-		GuiGroupingAddPicture(CurrentGrouping, p);
+		GroupingAddPicture(CurrentGrouping, p);
 	return p;
 }
 
-void GuiDeletePicture(sPicture *picture)
+void DeletePicture(Picture *picture)
 {
-	for (int i=0;i<Picture.num;i++)
-		if (Picture[i] == picture){
-			Picture[i]->used = false;
+	for (int i=0;i<Pictures.num;i++)
+		if (Pictures[i] == picture){
+			Pictures[i]->used = false;
 			break;
 		}
 }
 
-sPicture3D *GuiCreatePicture3D(CModel *model, const matrix &mat, float z)
+Picture3d *CreatePicture3d(Model *model, const matrix &mat, float z)
 {
-	xcont_find_new(XContainerPicture3d, sPicture3D, p, Picture3D);
+	xcont_find_new(XContainerPicture3d, Picture3d, p, Picture3ds);
 	// default data to show existence...
 	p->enabled = true;
 	p->lighting = false;
@@ -129,22 +159,22 @@ sPicture3D *GuiCreatePicture3D(CModel *model, const matrix &mat, float z)
 /*	else
 		MatrixTranslation(p->_matrix, vector(0.5f, 0.5f, 0));*/
 	if (CurrentGrouping)
-		GuiGroupingAddPicture3D(CurrentGrouping, p);
+		GroupingAddPicture3D(CurrentGrouping, p);
 	return p;
 }
 
-void GuiDeletePicture3D(sPicture3D *picture3d)
+void DeletePicture3d(Picture3d *picture3d)
 {
-	for (int i=0;i<Picture3D.num;i++)
-		if (Picture3D[i] == picture3d){
-			Picture3D[i]->used = false;
+	for (int i=0;i<Picture3ds.num;i++)
+		if (Picture3ds[i] == picture3d){
+			Picture3ds[i]->used = false;
 			break;
 		}
 }
 
-sGrouping *GuiCreateGrouping(const vector &pos, bool set_current)
+Grouping *CreateGrouping(const vector &pos, bool set_current)
 {
-	xcont_find_new(XContainerGrouping, sGrouping, g, Grouping);
+	xcont_find_new(XContainerGrouping, Grouping, g, Groupings);
 	// default data...
 	g->enabled = true;
 	g->pos = pos;
@@ -157,40 +187,40 @@ sGrouping *GuiCreateGrouping(const vector &pos, bool set_current)
 	return g;
 }
 
-void GuiDeleteGrouping(sGrouping *grouping)
+void DeleteGrouping(Grouping *grouping)
 {
-	for (int i=0;i<Grouping.num;i++)
-		if (Grouping[i] == grouping){
-			Grouping[i]->used = false;
+	for (int i=0;i<Groupings.num;i++)
+		if (Groupings[i] == grouping){
+			Groupings[i]->used = false;
 			break;
 		}
 }
 
-void GuiGroupingAddPicture(sGrouping *grouping, sPicture *picture)
+void GroupingAddPicture(Grouping *grouping, Picture *picture)
 {
 	if ((!grouping) || (!picture))	return;
-	sSubPicture p;
+	SubPicture p;
 	p.picture = picture;
 	grouping->picture.add(p);
 }
 
-void GuiGroupingAddPicture3D(sGrouping *grouping, sPicture3D *picture3d)
+void GroupingAddPicture3D(Grouping *grouping, Picture3d *picture3d)
 {
 	if ((!grouping)||(!picture3d))	return;
-	sSubPicture3D p;
+	SubPicture3d p;
 	p.picture_3d = picture3d;
 	grouping->picture_3d.add(p);
 }
 
-void GuiGroupingAddText(sGrouping *grouping, sText *text)
+void GroupingAddText(Grouping *grouping, Text *text)
 {
 	if ((!grouping)||(!text))	return;
-	sSubText t;
+	SubText t;
 	t.text = text;
 	grouping->text.add(t);
 }
 
-bool sPicture::IsMouseOver()
+bool Picture::IsMouseOver()
 {
 //	if (!enabled)
 //		return false;
@@ -198,7 +228,7 @@ bool sPicture::IsMouseOver()
 					pos.y,	pos.y+height);
 
 	// grouping correction?
-	foreachi(sGrouping *g, Grouping, j){
+	foreachi(Grouping *g, Groupings, j){
 		for (int k=0;k<g->picture.num;k++)
 			if (&g->picture[k] == (void*)this){
 				if (!g->enabled)
@@ -207,7 +237,7 @@ bool sPicture::IsMouseOver()
 				r.x2 += g->pos.x;
 				r.y1 += g->pos.y;
 				r.y2 += g->pos.y;
-				j+=Grouping.num;
+				j+=Groupings.num;
 				break;
 			}
 	}
@@ -216,7 +246,7 @@ bool sPicture::IsMouseOver()
 	return ((NixMouseRel.x>r.x1)&&(NixMouseRel.x<r.x2)&&(NixMouseRel.y>r.y1)&&(NixMouseRel.y<r.y2));
 }
 
-bool sText::IsMouseOver()
+bool Text::IsMouseOver()
 {
 //	if (!enabled)
 //		return false;
@@ -228,7 +258,7 @@ bool sText::IsMouseOver()
 	rect r=rect(x,x+w,pos.y,pos.y+size);
 
 	// grouping correction?
-	foreachi(sGrouping *g, Grouping, j){
+	foreachi(Grouping *g, Groupings, j){
 		for (int k=0;k<g->text.num;k++)
 			if (&g->text[k]==(void*)this){
 				if (!g->enabled)
@@ -237,7 +267,7 @@ bool sText::IsMouseOver()
 				r.x2 += g->pos.x;
 				r.y1 += g->pos.y;
 				r.y2 += g->pos.y;
-				j+=Grouping.num;
+				j+=Groupings.num;
 				break;
 			}
 	}
@@ -282,13 +312,13 @@ inline void MatrixAddTrans(matrix &m,vector &v)
 	//m.e[14]+=v.z;
 }
 
-inline void apply_grouping(sGrouping *g)
+inline void apply_grouping(Grouping *g)
 {
 	if (!g->used)
 		return;
 	for (int i=0;i<g->picture.num;i++){
-		sSubPicture *sp = &g->picture[i];
-		sPicture *p = sp->picture;
+		SubPicture *sp = &g->picture[i];
+		Picture *p = sp->picture;
 		
 		sp->enabled = p->enabled;
 		p->enabled &= g->enabled;
@@ -298,8 +328,8 @@ inline void apply_grouping(sGrouping *g)
 		p->_color = ColorMultiply(p->_color, g->_color);
 	}
 	for (int i=0;i<g->picture_3d.num;i++){
-		sSubPicture3D *sp = &g->picture_3d[i];
-		sPicture3D *p = sp->picture_3d;
+		SubPicture3d *sp = &g->picture_3d[i];
+		Picture3d *p = sp->picture_3d;
 		
 		sp->enabled = p->enabled;
 		p->enabled &= g->enabled;
@@ -311,8 +341,8 @@ inline void apply_grouping(sGrouping *g)
 		p->_color = ColorMultiply(p->_color, g->_color);
 	}
 	for (int i=0;i<g->text.num;i++){
-		sSubText *st = &g->text[i];
-		sText *t = st->text;
+		SubText *st = &g->text[i];
+		Text *t = st->text;
 		
 		st->enabled = t->enabled;
 		t->enabled &= g->enabled;
@@ -323,21 +353,21 @@ inline void apply_grouping(sGrouping *g)
 	}
 }
 
-inline void unapply_grouping(sGrouping *g)
+inline void unapply_grouping(Grouping *g)
 {
 	if (!g->used)
 		return;
 	for (int i=0;i<g->picture.num;i++){
-		sSubPicture *sp = &g->picture[i];
-		sPicture *p = sp->picture;
+		SubPicture *sp = &g->picture[i];
+		Picture *p = sp->picture;
 		
 		p->enabled = sp->enabled;
 		p->pos = sp->pos;
 		p->_color = sp->_color;
 	}
 	for (int i=0;i<g->picture_3d.num;i++){
-		sSubPicture3D *sp = &g->picture_3d[i];
-		sPicture3D *p = sp->picture_3d;
+		SubPicture3d *sp = &g->picture_3d[i];
+		Picture3d *p = sp->picture_3d;
 		
 		p->enabled = sp->enabled;
 		p->z = sp->z;
@@ -345,8 +375,8 @@ inline void unapply_grouping(sGrouping *g)
 		p->_color = sp->_color;
 	}
 	for (int i=0;i<g->text.num;i++){
-		sSubText *st = &g->text[i];
-		sText *t = st->text;
+		SubText *st = &g->text[i];
+		Text *t = st->text;
 		
 		t->enabled = st->enabled;
 		t->pos = st->pos;
@@ -354,7 +384,7 @@ inline void unapply_grouping(sGrouping *g)
 	}
 }
 
-inline void GuiDrawPicture(sPicture *p)
+inline void DrawPicture(Picture *p)
 {
 	if (!p->enabled)
 		return;
@@ -399,7 +429,7 @@ inline void GuiDrawPicture(sPicture *p)
 		NixSetShader(-1);
 }
 
-inline void GuiDrawText(sText *t)
+inline void DrawText(Text *t)
 {
 	if (!t->enabled)
 		return;
@@ -422,9 +452,7 @@ void mout(const matrix &m)
 }
 
 
-extern matrix NixProjectionMatrix, NixProjectionMatrix2d, NixViewMatrix, NixWorldMatrix;
-
-inline void GuiDrawPicture3D(sPicture3D *p)
+inline void DrawPicture3d(Picture3d *p)
 {
 	if (!p->enabled)
 		return;
@@ -512,7 +540,7 @@ inline void GuiDrawPicture3D(sPicture3D *p)
 #endif
 }
 
-void GuiDraw()
+void Draw()
 {
 	msg_db_r("GuiDraw", 2);
 	// save old state
@@ -523,12 +551,12 @@ void GuiDraw()
 
 
 	// groupings
-	for (int i=0;i<Grouping.num;i++)
-		apply_grouping(Grouping[i]);
+	for (int i=0;i<Groupings.num;i++)
+		apply_grouping(Groupings[i]);
 
 	// sorting
 	AddAllDrawables();
-	std::sort(&Drawable[0], &Drawable[Drawable.num]);
+	std::sort(&Drawables[0], &Drawables[Drawables.num]);
 
 	// drawing
 	NixSetAlpha(AlphaNone);
@@ -546,18 +574,18 @@ void GuiDraw()
 	NixSpecularEnable(false);
 
 	 // drawing
-	foreach(sDrawable &d, Drawable){
+	foreach(Drawable &d, Drawables){
 		int type = d.p->type;
 		if (type == XContainerText)
-			GuiDrawText((sText*)d.p);
+			DrawText((Text*)d.p);
 		else if (type == XContainerPicture)
-			GuiDrawPicture((sPicture*)d.p);
+			DrawPicture((Picture*)d.p);
 		else if (type == XContainerPicture3d)
-			GuiDrawPicture3D((sPicture3D*)d.p);
+			DrawPicture3d((Picture3d*)d.p);
 		/*else if (type == XContainerView){
 		}*/
 	}
-	Drawable.clear();
+	Drawables.clear();
 	NixSetAlpha(AlphaNone);
 	NixSetZ(true, true);
 	NixSpecularEnable(true);
@@ -566,7 +594,9 @@ void GuiDraw()
 	XFontZ =_XFontZ;
 
 	// groupings
-	for (int i=0;i<Grouping.num;i++)
-		unapply_grouping(Grouping[i]);
+	for (int i=0;i<Groupings.num;i++)
+		unapply_grouping(Groupings[i]);
 	 msg_db_l(2);
 }
+
+};

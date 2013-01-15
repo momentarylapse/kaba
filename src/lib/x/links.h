@@ -10,7 +10,7 @@
 
 struct sLink{
 	int type;
-	CObject *o1, *o2;
+	Object *o1, *o2;
 	vector p, rho1, rho2, d1, d2, d3, d4;
 	float param_f1, param_f2, friction;
 	float k_s, k_d, c_fdf, c_fdt;
@@ -55,22 +55,22 @@ enum{
 extern Array<sLink> Link;
 
 void LinksReset();
-int _cdecl AddLinkSpring(CObject *o1, CObject *o2, const vector &p1, const vector &p2, float dx0, float k);
-int _cdecl AddLinkBall(CObject *o1, CObject *o2, const vector &p);
-int _cdecl AddLinkHinge(CObject *o1, CObject *o2, const vector &p, const vector &ax);
-int _cdecl AddLinkHinge2(CObject *o1, CObject *o2, const vector &p, const vector &ax1, const vector &ax2);
-int _cdecl AddLinkSlider(CObject *o1, CObject *o2, const vector &ax);
-int _cdecl AddLinkUniversal(CObject *o1, CObject *o2, const vector &p, const vector &ax1, const vector &ax2);
+int _cdecl AddLinkSpring(Object *o1, Object *o2, const vector &p1, const vector &p2, float dx0, float k);
+int _cdecl AddLinkBall(Object *o1, Object *o2, const vector &p);
+int _cdecl AddLinkHinge(Object *o1, Object *o2, const vector &p, const vector &ax);
+int _cdecl AddLinkHinge2(Object *o1, Object *o2, const vector &p, const vector &ax1, const vector &ax2);
+int _cdecl AddLinkSlider(Object *o1, Object *o2, const vector &ax);
+int _cdecl AddLinkUniversal(Object *o1, Object *o2, const vector &p, const vector &ax1, const vector &ax2);
 
-void _cdecl AddLinkContact(CObject *o1, CObject *o2, const vector &cp, const vector &n, float depth, const vector &dv, float c_static, float c_dynamic);
+void _cdecl AddLinkContact(Object *o1, Object *o2, const vector &cp, const vector &n, float depth, const vector &dv, float c_static, float c_dynamic);
 
-/*int _cdecl AddLinkSpring(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2, float dx, float k);
-int _cdecl AddLinkHinge(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2, const vector &ax1, const vector &ax2);
-int _cdecl AddLinkHingeAbs(CObject *o1, CObject *o2, const vector &p, const vector &ax);
-int _cdecl AddLinkBall(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2);
-int _cdecl AddLinkBallAbs(CObject *o1, CObject *o2, const vector &p);*/
+/*int _cdecl AddLinkSpring(Object *o1, Object *o2, const vector &rho1, const vector &rho2, float dx, float k);
+int _cdecl AddLinkHinge(Object *o1, Object *o2, const vector &rho1, const vector &rho2, const vector &ax1, const vector &ax2);
+int _cdecl AddLinkHingeAbs(Object *o1, Object *o2, const vector &p, const vector &ax);
+int _cdecl AddLinkBall(Object *o1, Object *o2, const vector &rho1, const vector &rho2);
+int _cdecl AddLinkBallAbs(Object *o1, Object *o2, const vector &p);*/
 void DoLinks(int steps);
-void GodGetLinkedList(CObject *o, Array<CObject*> &list);
+void GodGetLinkedList(Object *o, Array<Object*> &list);
 //void _cdecl LinkHingeSetTorque(int l, float t);
 //void _cdecl LinkHingeSetAxis(int l, const vector &ax1, const vector &ax2);
 
@@ -85,7 +85,7 @@ float _cdecl LinkGetPositionAxis(int l, int axis);
 void LinkCalcContactFriction();
 void LinkRemoveContacts();
 
-inline bool ObjectsLinked(CObject *o1, CObject *o2)
+inline bool ObjectsLinked(Object *o1, Object *o2)
 {
 	//return false;
 	for (int l=0;l<Link.num;l++){

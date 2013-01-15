@@ -12,7 +12,7 @@
 extern string MetaVersion;
 
 #ifndef _X_ALLOW_MODEL_
-	#define CModel		void
+	#define Model		void
 	#define Material	void
 	#define MetaMove	void
 #endif
@@ -72,11 +72,11 @@ typedef void str_float_func(const string&,float);
 	void MetaSetDirs(const string &texture_dir, const string &map_dir, const string &object_dir, const string &sound_dir, const string &script_dir, const string &material_dir);
 
 // models
-	CModel *_cdecl MetaLoadModel(const string &filename);
-	CModel *MetaCopyModel(CModel *m);
-	void _cdecl MetaDeleteModel(CModel *m);
-	void _cdecl MetaModelMakeEditable(CModel *m);
-	int _cdecl MetaGetModelOID(CModel *m);
+	Model *_cdecl MetaLoadModel(const string &filename);
+	Model *MetaCopyModel(Model *m);
+	void _cdecl MetaDeleteModel(Model *m);
+	void _cdecl MetaModelMakeEditable(Model *m);
+	int _cdecl MetaGetModelOID(Model *m);
 
 // materials
 	Material *MetaLoadMaterial(const string &filename,bool as_default=false);
@@ -97,7 +97,7 @@ typedef void str_float_func(const string&,float);
 	extern void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
 	extern str_float_func *MetaDrawSplashScreen;
 	extern void *MetaObjectScriptInit;
-	extern CModel *ModelToIgnore;
+	extern Model *ModelToIgnore;
 
 	extern float MetaListenerRate;
 

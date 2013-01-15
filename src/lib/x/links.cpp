@@ -28,7 +28,7 @@ char *v2s(vector v);
 
 struct sCluster
 {
-	Array<CObject> object;
+	Array<Object> object;
 	//Array<sLink> link;
 };
 Array<sCluster> Cluster;
@@ -45,7 +45,7 @@ void LinksReset()
 	Cluster.clear();
 }
 
-inline void ob_add_force_torque(CObject *o, const vector &force, const vector &torque)
+inline void ob_add_force_torque(Object *o, const vector &force, const vector &torque)
 {
 	o->force_int += force;
 	o->torque_int += torque;
@@ -55,12 +55,12 @@ inline void ob_add_force_torque(CObject *o, const vector &force, const vector &t
 #endif
 }
 
-inline void ob_add_force(CObject *o, const vector &force, const vector &rho)
+inline void ob_add_force(Object *o, const vector &force, const vector &rho)
 {
 	ob_add_force_torque(o, force, rho ^ force);
 }
 
-sLink *AddLink(CObject *o1, CObject *o2, int type)
+sLink *AddLink(Object *o1, Object *o2, int type)
 {
 	sLink l;
 	memset(&l, 0, sizeof(l));
@@ -75,7 +75,7 @@ sLink *AddLink(CObject *o1, CObject *o2, int type)
 }
 
 
-int AddLinkSpring(CObject *o1, CObject *o2, const vector &p1, const vector &p2, float dx0, float k)
+int AddLinkSpring(Object *o1, Object *o2, const vector &p1, const vector &p2, float dx0, float k)
 {
 	msg_db_r("AddLinkSpring", 2);
 	sLink *l = AddLink(o1, o2, LinkTypeSpring);
@@ -90,7 +90,7 @@ int AddLinkSpring(CObject *o1, CObject *o2, const vector &p1, const vector &p2, 
 	return Link.num - 1;
 }
 
-int AddLinkBall(CObject *o1, CObject *o2, const vector &p)
+int AddLinkBall(Object *o1, Object *o2, const vector &p)
 {
 	msg_db_r("AddLinkBall", 2);
 	sLink *l = AddLink(o1, o2, LinkTypeBall);
@@ -118,7 +118,7 @@ int AddLinkBall(CObject *o1, CObject *o2, const vector &p)
 	return Link.num - 1;
 }
 
-int AddLinkHinge(CObject *o1, CObject *o2, const vector &p, const vector &ax)
+int AddLinkHinge(Object *o1, Object *o2, const vector &p, const vector &ax)
 {
 	msg_db_r("AddLinkHinge", 2);
 	sLink *l = AddLink(o1, o2, LinkTypeHinge);
@@ -147,7 +147,7 @@ int AddLinkHinge(CObject *o1, CObject *o2, const vector &p, const vector &ax)
 	return Link.num - 1;
 }
 
-int AddLinkHinge2(CObject *o1, CObject *o2, const vector &p, const vector &ax1, const vector &ax2)
+int AddLinkHinge2(Object *o1, Object *o2, const vector &p, const vector &ax1, const vector &ax2)
 {
 	msg_db_r("AddLinkHinge2", 2);
 #ifdef USE_ODE
@@ -166,7 +166,7 @@ int AddLinkHinge2(CObject *o1, CObject *o2, const vector &p, const vector &ax1, 
 #endif
 }
 
-int AddLinkSlider(CObject *o1, CObject *o2, const vector &ax)
+int AddLinkSlider(Object *o1, Object *o2, const vector &ax)
 {
 	msg_db_r("AddLinkSlider", 2);
 #ifdef USE_ODE
@@ -183,7 +183,7 @@ int AddLinkSlider(CObject *o1, CObject *o2, const vector &ax)
 #endif
 }
 
-int AddLinkUniversal(CObject *o1, CObject *o2, const vector &p, const vector &ax1, const vector &ax2)
+int AddLinkUniversal(Object *o1, Object *o2, const vector &p, const vector &ax1, const vector &ax2)
 {
 	msg_db_r("AddLinkUniversal", 2);
 #ifdef USE_ODE
@@ -350,7 +350,7 @@ void LinkSetRangeAxis(int l, int axis, float min, float max)
 
 #if 0
 
-int AddLinkSpring(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2, float dx, float k)
+int AddLinkSpring(Object *o1, Object *o2, const vector &rho1, const vector &rho2, float dx, float k)
 {
 	msg_db_r("AddLinkSpring", 2);
 	sLink *l=AddLink(o1,o2,LinkTypeSpring);
@@ -363,7 +363,7 @@ int AddLinkSpring(CObject *o1, CObject *o2, const vector &rho1, const vector &rh
 }
 
 // e12 is some vector orthogonal to ax1
-int AddLinkHinge(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2, const vector &ax1, const vector &ax2)
+int AddLinkHinge(Object *o1, Object *o2, const vector &rho1, const vector &rho2, const vector &ax1, const vector &ax2)
 {
 	msg_db_r("AddLinkHinge", 2);
 	sLink *l = AddLink(o1, o2, LinkTypeHinge);
@@ -391,7 +391,7 @@ int AddLinkHinge(CObject *o1, CObject *o2, const vector &rho1, const vector &rho
 }
 
 
-int AddLinkHingeAbs(CObject *o1, CObject *o2, const vector &p, const vector &ax)
+int AddLinkHingeAbs(Object *o1, Object *o2, const vector &p, const vector &ax)
 {
 	msg_db_r("AddLinkHingeAbs", 2);
 	matrix im1,im2;
@@ -407,7 +407,7 @@ int AddLinkHingeAbs(CObject *o1, CObject *o2, const vector &p, const vector &ax)
 	return AddLinkHinge(o1,o2,rho1,rho2,ax1,ax2);
 }
 
-int AddLinkBall(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2)
+int AddLinkBall(Object *o1, Object *o2, const vector &rho1, const vector &rho2)
 {
 	msg_db_r("AddLinkBall", 2);
 	sLink *l=AddLink(o1,o2,LinkTypeBall);
@@ -426,7 +426,7 @@ int AddLinkBall(CObject *o1, CObject *o2, const vector &rho1, const vector &rho2
 	return Link.num-1;
 }
 
-int AddLinkBallAbs(CObject *o1, CObject *o2, const vector &p)
+int AddLinkBallAbs(Object *o1, Object *o2, const vector &p)
 {
 	msg_db_r("AddLinkBallAbs", 2);
 	matrix im1,im2;
@@ -478,7 +478,7 @@ void LinkHingeSetAxis(int l, const vector &ax1, const vector &ax2)
 #endif
 
 // Ebene mit n durch cp relativ zu o1
-void AddLinkContact(CObject *o1, CObject *o2, const vector &cp, const vector &n, float depth, const vector &dv, float c_static, float c_dynamic)
+void AddLinkContact(Object *o1, Object *o2, const vector &cp, const vector &n, float depth, const vector &dv, float c_static, float c_dynamic)
 {
 	msg_db_r("AddLinkContact", 2);
 	sLink *l = AddLink(o1, o2, LinkTypeContact);
@@ -531,7 +531,7 @@ static bool TestMatrix3Sanity(matrix3 &m, const char *name)
 }
 
 
-inline void DoLinkSpring(sLink *&l,CObject *&o1,CObject *&o2)
+inline void DoLinkSpring(sLink *&l,Object *&o1,Object *&o2)
 {
 	// current coordinate frame
 	vector rho1,rho2,p1,p2;
@@ -565,7 +565,7 @@ static matrix_n J,JT,W,JW,JWJ;
 static vector_n lambda, Q, JWQ, rhs, Qc, C, dtC;
 static vector L1,L2,wxL1,wxL2;
 
-inline void DoLinkBall(sLink *&l,CObject *&o1,CObject *&o2,int nc)
+inline void DoLinkBall(sLink *&l,Object *&o1,Object *&o2,int nc)
 {
 	// some values
 	vector r1,r2,dtr1,dtr2;
@@ -627,7 +627,7 @@ inline void DoLinkBall(sLink *&l,CObject *&o1,CObject *&o2,int nc)
 	}
 }
 
-inline void DoLinkHinge(sLink *&l,CObject *&o1,CObject *&o2,int nc)
+inline void DoLinkHinge(sLink *&l,Object *&o1,Object *&o2,int nc)
 {
 	// some values
 	vector r1,r2,dtr1,dtr2,d1,d2,d3,d4,dtd1,dtd2,dtd3,dtd4;
@@ -720,7 +720,7 @@ inline void DoLinkHinge(sLink *&l,CObject *&o1,CObject *&o2,int nc)
 	}
 }
 
-inline void DoLinkStatic(sLink *&l,CObject *&o1,CObject *&o2,int nc)
+inline void DoLinkStatic(sLink *&l,Object *&o1,Object *&o2,int nc)
 {
 	// some values
 	vector r1,r2,dtr1,dtr2,d1,d2,d3,d4,dtd1,dtd2,dtd3,dtd4;
@@ -800,7 +800,7 @@ inline void DoLinkStatic(sLink *&l,CObject *&o1,CObject *&o2,int nc)
 	}
 }
 
-inline void DoLinkContact(sLink *&l,CObject *&o1,CObject *&o2,int &nc, matrix_n &dtJ)
+inline void DoLinkContact(sLink *&l,Object *&o1,Object *&o2,int &nc, matrix_n &dtJ)
 {
 	vector n,dtn,r1,r2,dtr1,dtr2;
 	/*msg_write(v2s(l->d1));
@@ -903,7 +903,7 @@ inline void DoLinkContact(sLink *&l,CObject *&o1,CObject *&o2,int &nc, matrix_n 
 			J.e[0][0]=-2*dp.x;	J.e[0][1]=-2*dp.y;	J.e[0][2]=-2*dp.z;	J.e[0][3]=0;		J.e[0][4]=0;		J.e[0][5]=0;
 		}*/
 
-inline void HandleDtJdtq(CObject *o1, CObject *o2, int nc, matrix_n &dtJ, vector_n &rhs)
+inline void HandleDtJdtq(Object *o1, Object *o2, int nc, matrix_n &dtJ, vector_n &rhs)
 {
 	vector_n dtq, dtJdtq;
 	dtq.n = nc;
@@ -930,7 +930,7 @@ inline void HandleDtJdtq(CObject *o1, CObject *o2, int nc, matrix_n &dtJ, vector
 		rhs.e[k] -= dtJdtq.e[k];
 }
 
-inline bool all_frozen(CObject *o1, CObject *o2)
+inline bool all_frozen(Object *o1, Object *o2)
 {		
 	if (o1->frozen){
 		if (o2){
@@ -946,8 +946,8 @@ void DoAllSpings()
 	for (int i=0;i<Link.num;i++){
 		sLink *l = &Link[i];
 		if (l->type == LinkTypeSpring){
-			CObject *o1 = l->o1;
-			CObject *o2 = l->o2;
+			Object *o1 = l->o1;
+			Object *o2 = l->o2;
 		
 			//if (all_frozen(o1, o2))
 			//	continue;
@@ -964,8 +964,8 @@ void DoLinksStep()
 //		msg_write(string2("-------------------------------------- Link[%d] ---------------",i));
 		sLink *l = &Link[i];
 		//l->o2=-1;
-		CObject *o1 = l->o1;
-		CObject *o2 = l->o2;
+		Object *o1 = l->o1;
+		Object *o2 = l->o2;
 
 		if (all_frozen(o1, o2))
 			continue;
@@ -1181,8 +1181,8 @@ void DoLinksStep()
 #ifdef APPLY_FORCES_LATER
 	for (int i=0;i<Link.num;i++){
 		sLink *l = &Link[i];
-		CObject *o1 = l->o1;
-		CObject *o2 = l->o2;
+		Object *o1 = l->o1;
+		Object *o2 = l->o2;
 		o1->force_int += l->f1;
 		o1->torque_int += l->t1;
 		if (o2){
@@ -1272,7 +1272,7 @@ void DoLinks(int steps)
 
 	
 #ifdef _X_ALLOW_PHYSICS_DEBUG_
-	CObject *o = NULL;
+	Object *o = NULL;
 	while(NextObject(&o)){
 		if (o->ID >= MaxObjects)
 			break;
@@ -1302,8 +1302,8 @@ void LinkCalcContactFriction()
 	for (int i=0;i<Link.num;i++)
 		if (Link[i].type==LinkTypeContact){
 			sLink *l = &Link[i];
-			CObject *o1 = l->o1;
-			CObject *o2 = l->o2;
+			Object *o1 = l->o1;
+			Object *o2 = l->o2;
 			vector f = l->sf1; // force on contact
 			float f_n = fabs(l->n * f); // normal force
 			float dv_orth = l->dv * l->n;
@@ -1341,8 +1341,8 @@ void LinkCalcContactFriction()
 	for (int i=0;i<Link.num;i++)
 		if (Link[i].type==LinkTypeContact){
 			sLink *l = &Link[i];
-			CObject *o1 = l->o1;
-			CObject *o2 = l->o2;
+			Object *o1 = l->o1;
+			Object *o2 = l->o2;
 			vector r1, r2;
 			r1 = o1->_matrix.transform_normal(l->rho1);
 			r2 = o2->_matrix.transform_normal(l->rho2);
@@ -1360,7 +1360,7 @@ void LinkCalcContactFriction()
 		}
 }
 
-inline void link_add_to_list(Array<CObject*> &list, CObject *o)
+inline void link_add_to_list(Array<Object*> &list, Object *o)
 {
 	for (int i=0;i<list.num;i++)
 		if (list[i] == o)
@@ -1368,7 +1368,7 @@ inline void link_add_to_list(Array<CObject*> &list, CObject *o)
 	list.add(o);
 }
 
-void GodGetLinkedList(CObject *o, Array<CObject*> &list)
+void GodGetLinkedList(Object *o, Array<Object*> &list)
 {
 	list.clear();
 	if (!o)

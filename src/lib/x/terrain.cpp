@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| CTerrain                                                                     |
+| Terrain                                                                      |
 | -> terrain of a world                                                        |
 |                                                                              |
 | vital properties:                                                            |
@@ -14,20 +14,26 @@
 //#define max(a,b)		(((a)>(b))?(a):(b))
 //#define min(a,b)		(((a)<(b))?(a):(b))
 
-void CTerrain::reset()
+void Terrain::reset()
 {
 	filename = "";
 	error = false;
 	num_x = num_z = 0;
 	changed = false;
+	vertex_buffer = -1;
 }
 
-CTerrain::CTerrain(const string &_filename_, const vector &_pos_)
+Terrain::Terrain()
+{
+	reset();
+}
+
+Terrain::Terrain(const string &_filename_, const vector &_pos_)
 {
 	Load(_filename_, _pos_);
 }
 
-bool CTerrain::Load(const string &_filename_, const vector &_pos_, bool deep)
+bool Terrain::Load(const string &_filename_, const vector &_pos_, bool deep)
 {
 	msg_db_r("loading terrain", 1);
 	msg_write("loading terrain: " + _filename_);
@@ -35,7 +41,6 @@ bool CTerrain::Load(const string &_filename_, const vector &_pos_, bool deep)
 
 	reset();
 
-	error=false;
 	filename = _filename_;
 	CFile *f = OpenFile(MapDir + filename + ".map");
 	if (f){
@@ -118,7 +123,7 @@ bool CTerrain::Load(const string &_filename_, const vector &_pos_, bool deep)
 	return !error;
 }
 
-CTerrain::~CTerrain()
+Terrain::~Terrain()
 {
 	msg_db_r("~Terrain",1);
 	NixDeleteVB(vertex_buffer);
@@ -126,7 +131,7 @@ CTerrain::~CTerrain()
 }
 
 // die Normalen-Vektoren in einem bestimmten Abschnitt der Karte neu berechnen
-void CTerrain::Update(int x1,int x2,int z1,int z2,int mode)
+void Terrain::Update(int x1,int x2,int z1,int z2,int mode)
 {
 	msg_db_r("terrain::update",1);
 	if (x1<0)		x1=0;
@@ -183,7 +188,7 @@ void CTerrain::Update(int x1,int x2,int z1,int z2,int mode)
 	msg_db_l(1);
 }
 
-float CTerrain::gimme_height(const vector &p) // liefert die interpolierte Hoehe zu einer Position
+float Terrain::gimme_height(const vector &p) // liefert die interpolierte Hoehe zu einer Position
 {
 	float x = p.x;
 	float z = p.z;
@@ -212,7 +217,7 @@ float CTerrain::gimme_height(const vector &p) // liefert die interpolierte Hoehe
 	return he+pos.y;
 }
 
-float CTerrain::gimme_height_n(const vector &p, vector &n)
+float Terrain::gimme_height_n(const vector &p, vector &n)
 {
 	float he=gimme_height(p);
 	vector vdx=vector(pattern.x, dhx,0            );
@@ -223,7 +228,7 @@ float CTerrain::gimme_height_n(const vector &p, vector &n)
 }
 
 // Daten fuer das Darstellen des Bodens
-void CTerrain::CalcDetail()
+void Terrain::CalcDetail()
 {
 	for (int x1=0;x1<(num_x-1)/32+1;x1++)
 		for (int z1=0;z1<(num_z-1)/32+1;z1++){
@@ -265,7 +270,7 @@ inline void add_edge(int &num, int e0, int e1)
 
 // for collision detection:
 //    get a part of the terrain
-void CTerrain::GetTriangleHull(void *hull, vector &_pos_, float _radius_)
+void Terrain::GetTriangleHull(void *hull, vector &_pos_, float _radius_)
 {
 	//msg_db_r("Terrain::GetTriangleHull", 1);
 	TriangleHull *h = (TriangleHull*)hull;
@@ -326,7 +331,7 @@ void CTerrain::GetTriangleHull(void *hull, vector &_pos_, float _radius_)
 	//msg_db_l(1);
 }
 
-inline bool TracePattern(CTerrain *t,vector &p1,vector &p2,vector &tp,int x,int z,float y_min,int dir,float range)
+inline bool TracePattern(Terrain *t,vector &p1,vector &p2,vector &tp,int x,int z,float y_min,int dir,float range)
 {
 	// trace beam too high above this pattern?
 	if ( (t->height[Index2(t,x,z)]<y_min) && (t->height[Index2(t,x,z+1)]<y_min) && (t->height[Index2(t,x+1,z)]<y_min) && (t->height[Index2(t,x+1,z+1)]<y_min) )
@@ -362,7 +367,7 @@ inline bool TracePattern(CTerrain *t,vector &p1,vector &p2,vector &tp,int x,int 
 	return (dmin1<range);
 }
 
-bool CTerrain::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
+bool Terrain::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
 {
 	msg_db_m("terrain::Trace",4);
 	float dmin=range+1;
@@ -447,7 +452,7 @@ bool CTerrain::Trace(vector &p1, vector &p2, vector &dir, float range, vector &t
 	return false;
 }
 
-void CTerrain::Draw()
+void Terrain::Draw()
 {
 	msg_db_r("terrain::Draw",3);
 	redraw = false;

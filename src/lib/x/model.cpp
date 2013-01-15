@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| CModel                                                                       |
+| Model                                                                        |
 | -> can be a skeleton                                                         |
 |    -> sub-models                                                             |
 |    -> animation data                                                         |
@@ -38,7 +38,7 @@ static void VecOut(vector v)
 	msg_write(format("vector(	%.2f, %.2f,	%.2f	);",v.x,v.y,v.z));
 }
 
-void MoveTimeAdd(CModel *m,int operation_no,float elapsed,float v,bool loop);
+void MoveTimeAdd(Model *m,int operation_no,float elapsed,float v,bool loop);
 
 
 int TraceHitType,TraceHitIndex,TraceHitSubModel,TraceHitSubModelTemp;
@@ -47,7 +47,7 @@ int TraceHitType,TraceHitIndex,TraceHitSubModel,TraceHitSubModelTemp;
 
 
 // make a copy of all the data
-void CopySkinNew(CModel *m, Skin *orig, Skin **copy)
+void CopySkinNew(Model *m, Skin *orig, Skin **copy)
 {
 	msg_db_r("CopySkinNew",1);
 	(*copy) = new Skin;
@@ -78,7 +78,7 @@ void CopySkinNew(CModel *m, Skin *orig, Skin **copy)
 }
 
 // create a new skin but reference the data
-void CopySkinAsReference(CModel *m, Skin *orig, Skin **copy)
+void CopySkinAsReference(Model *m, Skin *orig, Skin **copy)
 {
 	msg_db_r("CopySkin(ref)",1);
 	(*copy) = new Skin;
@@ -98,7 +98,7 @@ void CopySkinAsReference(CModel *m, Skin *orig, Skin **copy)
 }
 
 // update physical data in world coordinates
-void CModel::_UpdatePhysAbsolute_()
+void Model::_UpdatePhysAbsolute_()
 {
 	msg_db_r("CalcPhysAbs",1);
 	PhysicalSkinAbsolute *a = &phys_absolute;
@@ -142,7 +142,7 @@ void CModel::_UpdatePhysAbsolute_()
 }
 
 // mark data as obsolete
-void CModel::_ResetPhysAbsolute_()
+void Model::_ResetPhysAbsolute_()
 {
 	msg_db_r("ResetPhysAbsolute",1);
 	phys_absolute.is_ok=false;
@@ -156,7 +156,7 @@ void CModel::_ResetPhysAbsolute_()
 // hopefully these functions will be obsolete with the next fileformat
 
 // how big is the model
-void AppraiseDimensions(CModel *m)
+void AppraiseDimensions(Model *m)
 {
 	float rad = 0;
 	
@@ -185,7 +185,7 @@ void AppraiseDimensions(CModel *m)
 }
 
 // make sure we have enough vertex buffers
-void CreateVB(CModel *m, Skin *s)
+void CreateVB(Model *m, Skin *s)
 {
 #ifdef MODEL_TEMP_VB
 	return;
@@ -203,7 +203,7 @@ void CreateVB(CModel *m, Skin *s)
 }
 
 
-void PostProcessSkin(CModel *m, Skin *s)
+void PostProcessSkin(Model *m, Skin *s)
 {
 
 	CreateVB(m,s);
@@ -219,7 +219,7 @@ void PostProcessSkin(CModel *m, Skin *s)
 	}
 }
 
-void PostProcessPhys(CModel *m, PhysicalSkin *s)
+void PostProcessPhys(Model *m, PhysicalSkin *s)
 {
 	m->phys_absolute.p = NULL;
 	m->phys_absolute.pl = NULL;
@@ -235,7 +235,7 @@ color file_read_color(CFile *f)
 	return color((float)a/255.0f,(float)r/255.0f,(float)g/255.0f,(float)b/255.0f);
 }
 
-void ApplyMaterial(CModel *model, Material *m, Material *m2, bool user_colors)
+void ApplyMaterial(Model *model, Material *m, Material *m2, bool user_colors)
 {
 	if (!user_colors){
 		m->ambient = m2->ambient;
@@ -285,7 +285,7 @@ static vector get_normal_by_index(int index)
 	return vector( cos(wxy) * swz, sin(wxy) * swz, cwz);
 }
 
-void CModel::ResetData()
+void Model::ResetData()
 {
 	msg_db_r("ResetData", 2);
 	registered = false;
@@ -361,7 +361,7 @@ void read_color(CFile *f, color &c)
 	c.b = (float)f->ReadInt() / 255.0f;
 }
 
-void CModel::reset()
+void Model::reset()
 {
 	error = false;
 	pos = ang = vel = rot = v_0;
@@ -383,7 +383,7 @@ void CModel::reset()
 }
 
 // completely load an original model (all data is its own)
-CModel::CModel(const string &filename)
+Model::Model(const string &filename)
 {
 	msg_db_r("loading model", 1);
 	reset();
@@ -758,12 +758,12 @@ CModel::CModel(const string &filename)
 
 
 // only used by GetCopy() !!!
-CModel::CModel()
+Model::Model()
 {
 	_template = (ModelTemplate*)0x42;
 }
 
-void CModel::SetMaterial(Material *m, int mode)
+void Model::SetMaterial(Material *m, int mode)
 {
 	if ((mode & SetMaterialFriction)>0){
 		rc_jump = m->rc_jump;
@@ -779,7 +779,7 @@ void CopyPhysicalSkin(PhysicalSkin *orig, PhysicalSkin **copy)
 	(**copy) = (*orig);
 }
 
-CModel *CModel::GetCopy(int mode)
+Model *Model::GetCopy(int mode)
 {
 	msg_db_r("model::GetCopy",1);
 
@@ -787,8 +787,8 @@ CModel *CModel::GetCopy(int mode)
 		msg_error("model: copy of copy");
 
 
-	CModel *m = new CModel();
-	//memcpy(m, this, sizeof(CModel));
+	Model *m = new Model();
+	//memcpy(m, this, sizeof(Model));
 	*m = *this;
 
 	//Fx.forget(); ...
@@ -866,7 +866,7 @@ CModel *CModel::GetCopy(int mode)
 
 // delete only the data owned by this model
 //    don't delete sub models ...done by meta
-CModel::~CModel()
+Model::~Model()
 {
 	msg_db_r("~model",1);
 #ifdef _X_DEBUG_MODEL_MANAGER_
@@ -984,7 +984,7 @@ CModel::~CModel()
 }
 
 // non-animated state
-vector CModel::_GetBonePos(int index)
+vector Model::_GetBonePos(int index)
 {
 	int r = bone[index].parent;
 	if (r < 0)
@@ -1000,10 +1000,10 @@ int get_num_trias(Skin *s)
 	return n;
 }
 
-void CModel::SetBoneModel(int index, CModel *sub)
+void Model::SetBoneModel(int index, Model *sub)
 {
 	if ((index < 0) || (index >= bone.num)){
-		msg_error(format("CModel::SetBoneModel: (%s) invalid bone index %d", GetFilename().c_str(), index));
+		msg_error(format("Model::SetBoneModel: (%s) invalid bone index %d", GetFilename().c_str(), index));
 		return;
 	}
 	msg_db_r("Model::SetBoneModel",2);
@@ -1025,7 +1025,7 @@ void CModel::SetBoneModel(int index, CModel *sub)
 	msg_db_l(2);
 }
 
-void CModel::CalcMove()
+void Model::CalcMove()
 {
 	if (TimeScale == 0)
 		return;
@@ -1276,7 +1276,7 @@ void CModel::CalcMove()
 // kuerzester Abstand:
 // spaeter mit _vec_between_ und unterschiedlichen TPs rechnen, statt mit _vec_length_
 //###############################################################################
-bool CModel::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
+bool Model::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp, bool simple_test)
 {
 	if (!passive_physics)
 		return false;
@@ -1399,7 +1399,7 @@ bool CModel::Trace(vector &p1, vector &p2, vector &dir, float range, vector &tp,
 }
 
 
-vector _cdecl CModel::GetVertex(int index, int skin_no)
+vector _cdecl Model::GetVertex(int index, int skin_no)
 {
 	Skin *s = skin[skin_no];
 	vector v;
@@ -1415,7 +1415,7 @@ vector _cdecl CModel::GetVertex(int index, int skin_no)
 }
 
 // reset all animation data for a model (needed in each frame before applying animations!)
-void CModel::ResetAnimation()
+void Model::ResetAnimation()
 {
 	num_move_operations = 0;
 	/*for (int i=0;i<NumSkelettonPoints;i++)
@@ -1424,7 +1424,7 @@ void CModel::ResetAnimation()
 }
 
 // did the animation reach its end?
-bool CModel::IsAnimationDone(int operation_no)
+bool Model::IsAnimationDone(int operation_no)
 {
 	int move_no = move_operation[operation_no].move;
 	if (move_no < 0)
@@ -1436,7 +1436,7 @@ bool CModel::IsAnimationDone(int operation_no)
 }
 
 // dumbly add the correct animation time, ignore animation's ending
-void MoveTimeAdd(CModel *m,int operation_no,float elapsed,float v,bool loop)
+void MoveTimeAdd(Model *m,int operation_no,float elapsed,float v,bool loop)
 {
 #ifdef _X_ALLOW_MODEL_
 	int move_no = m->move_operation[operation_no].move;
@@ -1465,7 +1465,7 @@ void MoveTimeAdd(CModel *m,int operation_no,float elapsed,float v,bool loop)
 // apply an animate to a model
 //   a new animation "layer" is being added for mixing several animations
 //   the variable <time> is being increased
-bool CModel::Animate(int mode, float param1, float param2, int move_no, float &time, float elapsed, float vel_param, bool loop)
+bool Model::Animate(int mode, float param1, float param2, int move_no, float &time, float elapsed, float vel_param, bool loop)
 {
 	if (!meta_move)
 		return false;
@@ -1487,7 +1487,7 @@ bool CModel::Animate(int mode, float param1, float param2, int move_no, float &t
 }
 
 // get the number of frames for a particular animation
-int CModel::GetFrames(int move_no)
+int Model::GetFrames(int move_no)
 {
 	if (!meta_move)
 		return 0;
@@ -1495,7 +1495,7 @@ int CModel::GetFrames(int move_no)
 }
 
 // edit skelettal animation via script
-void CModel::BeginEditAnimation()
+void Model::BeginEditAnimation()
 {
 	if (!meta_move)
 		return;
@@ -1507,7 +1507,7 @@ void CModel::BeginEditAnimation()
 }
 
 // make sure, the model/skin is editable and not just a reference.... (soon)
-void CModel::BeginEdit(int detail)
+void Model::BeginEdit(int detail)
 {
 	msg_db_r("model.BeginEdit", 1);
 	MetaModelMakeEditable(this);
@@ -1520,7 +1520,7 @@ void CModel::BeginEdit(int detail)
 }
 
 // force an update for this model/skin
-void CModel::EndEdit(int detail)
+void Model::EndEdit(int detail)
 {
 	for (int i=0;i<material.num;i++){
 		skin[detail]->sub[i].force_update = true;
@@ -1533,7 +1533,7 @@ void CModel::EndEdit(int detail)
 
 
 // make sure we can edit this object without destroying an original one
-void CModel::MakeEditable()
+void Model::MakeEditable()
 {
 	msg_db_r("model.MakeEditable", 1);
 	// original -> create copy
@@ -1548,13 +1548,13 @@ void CModel::MakeEditable()
 	msg_db_l(1);
 }
 
-string CModel::GetFilename()
+string Model::GetFilename()
 {
 	return _template->filename;
 }
 
 
-void CModel::JustDraw(int mat_no, int detail)
+void Model::JustDraw(int mat_no, int detail)
 {
 	msg_db_r("model.JustDraw",5);
 	_detail_needed_[detail] = true;
@@ -1666,7 +1666,7 @@ void CModel::JustDraw(int mat_no, int detail)
 }
 
 #if 0
-void CModel::SortingTest(vector &pos,const vector &dpos,matrix *mat,bool allow_shadow)
+void Model::SortingTest(vector &pos,const vector &dpos,matrix *mat,bool allow_shadow)
 {
 	for (int i=0;i<bone.num;i++)
 		if (boneModel[i]){
@@ -1704,7 +1704,7 @@ void CModel::SortingTest(vector &pos,const vector &dpos,matrix *mat,bool allow_s
 }
 #endif
 
-void CModel::Draw(int detail, bool set_fx, bool allow_shadow)
+void Model::Draw(int detail, bool set_fx, bool allow_shadow)
 {
 	if	(detail<SkinHigh)
 		return;

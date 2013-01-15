@@ -69,7 +69,7 @@ public:
 	void StopScript();
 
 	Array<plane> clipping_plane;
-	Array<CModel*> ignore;
+	Array<Model*> ignore;
 
 	matrix m_all, im_all;
 	vector Project(const vector &v);

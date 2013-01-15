@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.4.21.1";
+string HuiVersion = "0.4.24.0";
 
 
 #include <stdio.h>
@@ -104,7 +104,7 @@ Array<string> HuiArgument;
 	float time_scale;
 #endif
 #ifdef HUI_API_GTK
-	void *invisible_cursor;
+	void *invisible_cursor = NULL;
 #endif
 
 Array<string> HuiMakeArgs(int num_args, char *args[])
@@ -179,7 +179,7 @@ void HuiSetIdleFunction(hui_callback *idle_function)
 	HuiIdleFunction = idle_function;
 }
 
-void HuiSetIdleFunctionM(HuiEventHandler *object, void (HuiEventHandler::*function)())
+void _HuiSetIdleFunctionM(HuiEventHandler *object, void (HuiEventHandler::*function)())
 {
 #ifdef HUI_API_GTK
 	bool old_idle = (HuiIdleFunction) || ((hui_idle_object) && (hui_idle_member_function));
@@ -208,7 +208,7 @@ void HuiRunLater(int time_ms, hui_callback *function)
 	#endif
 }
 
-void HuiRunLaterM(int time_ms, HuiEventHandler *object, void (HuiEventHandler::*function)())
+void _HuiRunLaterM(int time_ms, HuiEventHandler *object, void (HuiEventHandler::*function)())
 {
 	#ifdef HUI_API_WIN
 		msg_todo("HuiRunLater");
@@ -546,7 +546,9 @@ void HuiEnd()
 		//	XCloseDisplay(hui_x_display);
 #endif
 
+#if GTK_MAJOR_VERSION == 3
 		g_object_unref(invisible_cursor);
+#endif
 #endif
 		if (HuiConfigChanged)
 			HuiSaveConfigFile();

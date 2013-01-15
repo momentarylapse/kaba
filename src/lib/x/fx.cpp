@@ -48,7 +48,7 @@ struct sShadow{
 
 struct sCubeMap{
 	int CubeMap;
-	CModel *model;
+	Model *model;
 	bool Dynamical;
 	int Frame;
 	int Size;
@@ -73,11 +73,11 @@ struct sLightField{
 };
 
 // particles
-static Array<sParticle*> Particle;
-static Array<sParticle*> Beam;
+static Array<Particle*> Particles;
+static Array<Particle*> Beams;
 
 // effects
-static Array<sEffect*> Effect;
+static Array<Effect*> Effects;
 
 // force fields
 //int NumForceFields;
@@ -104,7 +104,7 @@ static int NumCubeMaps;
 static sCubeMap CubeMap[FX_MAX_CUBEMAPS];
 
 static int NumTails;
-static sTail *Tail[FX_MAX_TAILS];
+static Tail *Tails[FX_MAX_TAILS];
 
 int MirrorLevelMax=1;
 
@@ -144,19 +144,19 @@ void FxReset()
 	msg_db_r("FxReset",1);
 	
 	// particles
-	foreach(sParticle *p, Particle)
+	foreach(Particle *p, Particles)
 		delete(p);
-	Particle.clear();
+	Particles.clear();
 	
 	// beams
-	foreach(sParticle *b, Beam)
+	foreach(Particle *b, Beams)
 		delete(b);
-	Beam.clear();
+	Beams.clear();
 	
 	// effects
-	foreach(sEffect *e, Effect)
+	foreach(Effect *e, Effects)
 		delete(e); // TODO call script-destructor
-	Effect.clear();
+	Effects.clear();
 
 	// shadows
 	Shadow.clear();
@@ -180,7 +180,7 @@ void FxReset()
 int fx_get_num_effects()
 {
 	int n=0;
-	foreach(sEffect *fx, Effect)
+	foreach(Effect *fx, Effects)
 		if (fx->used)
 			n ++;
 	return n;
@@ -190,10 +190,10 @@ int fx_get_num_effects()
 int fx_get_num_particles()
 {
 	int n=0;
-	foreach(sParticle *p, Particle)
+	foreach(Particle *p, Particles)
 		if (p->used)
 			n ++;
-	foreach(sParticle *p, Beam)
+	foreach(Particle *p, Beams)
 		if (p->used)
 			n ++;
 	return n;
@@ -205,7 +205,7 @@ int fx_get_num_particles()
 // particles
 //#########################################################################
 
-inline void particle_init(sParticle *p, const vector &pos, const vector &param, int texture, particle_callback *func, float time_to_live, float radius)
+inline void particle_init(Particle *p, const vector &pos, const vector &param, int texture, particle_callback *func, float time_to_live, float radius)
 {
 	p->enabled = true;
 	p->suicidal = (time_to_live >= 0);
@@ -222,42 +222,42 @@ inline void particle_init(sParticle *p, const vector &pos, const vector &param, 
 	p->radius = radius;
 }
 
-/*sParticle *FxParticleCreate(int type, const vector &pos, const vector &param, int texture, particle_callback *func, float time_to_live, float radius)
+/*Particle *FxParticleCreate(int type, const vector &pos, const vector &param, int texture, particle_callback *func, float time_to_live, float radius)
 {
 	msg_db_r("new particle",2);
-	xcont_find_new(sParticle, p, Particle);
+	xcont_find_new(Particle, p, Particles);
 	msg_db_l(2);
 	return p;
 }*/
 
-sParticle *FxParticleCreateDef(const vector &pos, int texture, particle_callback *func, float time_to_live, float radius)
+Particle *FxParticleCreateDef(const vector &pos, int texture, particle_callback *func, float time_to_live, float radius)
 {
 	msg_db_r("new particle",2);
-	xcont_find_new(XContainerParticle, sParticle, p, Particle);
+	xcont_find_new(XContainerParticle, Particle, p, Particles);
 	particle_init(p, pos, v_0, texture, func, time_to_live, radius);
 	msg_db_l(2);
 	return p;
 }
 
-sParticle *FxParticleCreateRot(const vector &pos, const vector &ang, int texture, particle_callback *func, float time_to_live, float radius)
+Particle *FxParticleCreateRot(const vector &pos, const vector &ang, int texture, particle_callback *func, float time_to_live, float radius)
 {
 	msg_db_r("new particle rot",2);
-	xcont_find_new(XContainerParticleRot, sParticle, p, Particle);
+	xcont_find_new(XContainerParticleRot, Particle, p, Particles);
 	particle_init(p, pos, ang, texture, func, time_to_live, radius);
 	msg_db_l(2);
 	return p;
 }
 
-sParticle *FxParticleCreateBeam(const vector &pos, const vector &length, int texture, particle_callback *func, float time_to_live, float radius)
+Particle *FxParticleCreateBeam(const vector &pos, const vector &length, int texture, particle_callback *func, float time_to_live, float radius)
 {
 	msg_db_r("new beam",2);
-	xcont_find_new(XContainerParticleBeam, sParticle, p, Beam);
+	xcont_find_new(XContainerParticleBeam, Particle, p, Beams);
 	particle_init(p, pos, length, texture, func, time_to_live, radius);
 	msg_db_l(2);
 	return p;
 }
 
-void FxParticleDelete(sParticle *particle)
+void FxParticleDelete(Particle *particle)
 {
 	particle->used = false;
 }
@@ -266,10 +266,10 @@ void FxParticleDelete(sParticle *particle)
 // effects
 //#########################################################################
 
-sEffect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callback *del_func,float time_to_live)
+Effect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callback *del_func,float time_to_live)
 {
 	msg_db_r("new effect",2);
-	xcont_find_new(XContainerEffect, sEffect, p, Effect);
+	xcont_find_new(XContainerEffect, Effect, p, Effects);
 	p->enabled = true;
 	p->suicidal = (time_to_live >= 0);
 	p->pos = pos;
@@ -285,15 +285,15 @@ sEffect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_call
 	msg_db_l(2);
 	return p;
 }
-sEffect *FxCreateScript(CModel *m, int vertex, const string &filename)
+Effect *FxCreateScript(Model *m, int vertex, const string &filename)
 {
 	msg_db_r("FxCreateScript", 2);
-	sEffect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
+	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
 	fx->type = FXTypeScript;
 #ifdef _X_ALLOW_X_
-	CScript *s = LoadScript(filename);
+	Script::Script *s = Script::Load(filename);
 	if (!s->Error){
 		particle_callback *func_create = (particle_callback*)s->MatchFunction("OnEffectCreate", "void", 1, "effect");
 		fx->func = (particle_callback*)s->MatchFunction("OnEffectIterate", "void", 1, "effect");
@@ -307,10 +307,10 @@ sEffect *FxCreateScript(CModel *m, int vertex, const string &filename)
 	return fx;
 }
 
-sEffect *FxCreateLight(CModel *m, int vertex, float radius, const color &am, const color &di, const color &sp)
+Effect *FxCreateLight(Model *m, int vertex, float radius, const color &am, const color &di, const color &sp)
 {
 	msg_db_r("FxCreateLight", 2);
-	sEffect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
+	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
 	fx->type = FXTypeLight;
@@ -324,10 +324,10 @@ sEffect *FxCreateLight(CModel *m, int vertex, float radius, const color &am, con
 	return fx;
 }
 
-sEffect *FxCreateSound(CModel *m, int vertex, const string &filename, float radius, float speed)
+Effect *FxCreateSound(Model *m, int vertex, const string &filename, float radius, float speed)
 {
 	msg_db_r("FxCreateSound", 2);
-	sEffect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
+	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
 	fx->type = FXTypeSound;
@@ -341,12 +341,12 @@ sEffect *FxCreateSound(CModel *m, int vertex, const string &filename, float radi
 	return fx;
 }
 
-void _cdecl FxDelete(sEffect *effect)
+void _cdecl FxDelete(Effect *effect)
 {
 	msg_db_r("FxDelete", 3);
 	if (effect)
-		for (int i=0;i<Effect.num;i++)
-			if (effect == Effect[i]){
+		for (int i=0;i<Effects.num;i++)
+			if (effect == Effects[i]){
 				effect->used = false;
 				effect->enabled = false;
 
@@ -365,7 +365,7 @@ void _cdecl FxDelete(sEffect *effect)
 	msg_db_l(3);
 }
 
-void FxEnable(sEffect *fx, bool enabled)
+void FxEnable(Effect *fx, bool enabled)
 {
 	msg_db_r("FxEnable", 3);
 	fx->enabled = enabled;
@@ -386,12 +386,12 @@ void FxEnable(sEffect *fx, bool enabled)
 }
 
 #if 0
-sEffect *FxCreateByModel(CModel *m, sModelEffectData *data)
+Effect *FxCreateByModel(Model *m, sModelEffectData *data)
 {
 #ifdef _X_ALLOW_X_
 	msg_db_r("new effect model",2);
 	vector pos = v0; // ...well, not yet.... would have to be managed and not loaded unless model has been drawn once
-	sEffect *fx = FxCreate(pos, NULL, NULL, -1);
+	Effect *fx = FxCreate(pos, NULL, NULL, -1);
 	fx->type = data->type;
 	fx->model = m;
 	fx->vertex = data->vertex;
@@ -420,7 +420,7 @@ sEffect *FxCreateByModel(CModel *m, sModelEffectData *data)
 #endif
 }
 
-void FxUpdateByModel(sEffect *&effect,const vector &pos,const vector &last_pos)
+void FxUpdateByModel(Effect *&effect,const vector &pos,const vector &last_pos)
 {
 	if (!effect)
 		return;
@@ -431,9 +431,9 @@ void FxUpdateByModel(sEffect *&effect,const vector &pos,const vector &last_pos)
 	effect->Enabled=true;
 	if (effect->type==FXTypeScriptPreLoad){
 		msg_db_r("script effect",1);
-		typedef sEffect* t_fx_creation_func(const vector*);
+		typedef Effect* t_fx_creation_func(const vector*);
 		t_fx_creation_func *f = *(t_fx_creation_func**)effect->ScriptVar.data;
-		sEffect *fx=f(&pos);
+		Effect *fx=f(&pos);
 		fx->model=effect->model;
 		fx->vertex=effect->vertex;
 		FxDelete(effect);
@@ -445,9 +445,9 @@ void FxUpdateByModel(sEffect *&effect,const vector &pos,const vector &last_pos)
 
 void FxResetByModel()
 {
-	for (int i=0;i<Effect.num;i++)
-		if (Effect[i]->type!=FXTypeScript){
-			Effect[i]->Enabled=false;
+	for (int i=0;i<Effects.num;i++)
+		if (Effects[i]->type!=FXTypeScript){
+			Effects[i]->Enabled=false;
 		}
 }
 #endif
@@ -599,7 +599,7 @@ int FxCubeMapNew(int size)
 	return NumCubeMaps-1;
 }
 
-void FxCubeMapCreate(int cube_map,CModel *m)
+void FxCubeMapCreate(int cube_map,Model *m)
 {
 	CubeMap[cube_map].Dynamical=true;
 	CubeMap[cube_map].model=m;
@@ -790,10 +790,10 @@ void FxDrawShining(const Skin *s,const int *tex,const matrix &m,const vector &de
 #endif
 }
 
-void FxTailToDraw(sTail *tail)
+void FxTailToDraw(Tail *tail)
 {
 	if (NumTails>=FX_MAX_TAILS)	return;
-	Tail[NumTails]=tail;
+	Tails[NumTails]=tail;
 	NumTails++;
 }
 
@@ -845,7 +845,7 @@ void FxDrawTails()
 
 vector SunDir = e_y;
 
-void FxAddShadow(CModel *m, int detail)
+void FxAddShadow(Model *m, int detail)
 {
 	if (ShadowLevel < 1)
 		return;
@@ -1178,7 +1178,7 @@ void FxCalcMove()
 
 // effecsts
 	msg_db_m("-fx",3);
-	foreach(sEffect *fx, Effect){
+	foreach(Effect *fx, Effects){
 		if ((fx->used) && (fx->enabled)){
 			
 			// automaticly controlled by models
@@ -1222,7 +1222,7 @@ void FxCalcMove()
 
 // particles
 	msg_db_m("--Pa",3);
-	foreach(sParticle *p, Particle){
+	foreach(Particle *p, Particles){
 		if (p->used){
 			if (p->func){
 				p->elapsed += Elapsed;
@@ -1242,7 +1242,7 @@ void FxCalcMove()
 
 // beams
 	msg_db_m("--Bm",3);
-	foreach(sParticle *p, Beam){
+	foreach(Particle *p, Beams){
 		if (p->used){
 			if (p->func){
 				p->elapsed += Elapsed;
@@ -1339,7 +1339,7 @@ void DrawParticles()
 {
 	NixSetWorldMatrix(m_id);
 	NixEnableLighting(true);
-	foreach(sParticle *p, Particle){
+	foreach(Particle *p, Particles){
 		if ((p->used) && (p->enabled)){
 			if (p->type == XContainerParticle){
 				NixSetTexture(p->texture);
@@ -1384,7 +1384,7 @@ void DrawParticlesNew()
 	vector ve_y = e_y.transform_normal(mi);
 
 	
-	foreach(sParticle *p, Particle){
+	foreach(Particle *p, Particles){
 		if ((p->used) && (p->enabled))
 			if (p->type == XContainerParticle){
 				NixSetTexture(p->texture);
@@ -1422,7 +1422,7 @@ void DrawBeams()
 #endif
 	NixSetWorldMatrix(m_id);
 	NixEnableLighting(true);
-	foreach(sParticle *p, Beam){
+	foreach(Particle *p, Beams){
 		if ((p->used) && (p->enabled)){
 			vector r = VecCrossProduct(dir, p->parameter);
 			r.normalize();
@@ -1457,7 +1457,7 @@ void DrawBeamsNew()
 #ifdef _X_ALLOW_CAMERA_
 	dir = cur_cam->ang.ang2dir();
 #endif
-	foreach(sParticle *p, Beam){
+	foreach(Particle *p, Beams){
 		if ((p->used) && (p->enabled)){
 			vector r = VecCrossProduct(dir, p->parameter);
 			r.normalize();

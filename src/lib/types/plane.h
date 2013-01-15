@@ -1,4 +1,10 @@
 
+#ifndef _TYPES_PLANE_INCLUDED_
+#define _TYPES_PLANE_INCLUDED_
+
+class vector;
+class matrix;
+
 struct plane
 {
 	vector n;
@@ -29,3 +35,5 @@ void GetBaryCentric(const vector &P,const vector &A,const vector &B,const vector
 extern float LineIntersectsTriangleF,LineIntersectsTriangleG;
 bool LineIntersectsTriangle(const vector &t1,const vector &t2,const vector &t3,const vector &l1,const vector &l2,vector &col,bool vm);
 bool LineIntersectsTriangle2(const plane &pl, const vector &t1,const vector &t2,const vector &t3,const vector &l1,const vector &l2,vector &col,bool vm);
+
+#endif

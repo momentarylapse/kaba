@@ -47,25 +47,25 @@ int PhysicsNumSteps, PhysicsNumLinkSteps;
 
 
 // content of the world
-Array<CObject*> Object;
-CObject *terrain_object;
-CObject *Ego;
+Array<Object*> Objects;
+Object *terrain_object;
+Object *Ego;
 
 // esotherical (not in the world)
 bool AddAllObjectsToLists;
 
 // music fields
 int NumMusicFields;
-sMusicField MusicFieldGlobal,MusicField[GOD_MAX_MUSICFIELDS];
+MusicField MusicFieldGlobal,MusicFields[GOD_MAX_MUSICFIELDS];
 int MusicCurrent;
 
 // force fields
 int NumForceFields;
-sGodForceField *ForceField[GOD_MAX_FORCEFIELDS];
-sMusicField *MusicFieldCurrent;
+GodForceField *ForceField[GOD_MAX_FORCEFIELDS];
+MusicField *MusicFieldCurrent;
 
 vector GlobalG;
-sLevelData LevelData;
+GodLevelData LevelData;
 Array<float> ScriptVar;
 static int GodNumReservedObjects;
 
@@ -73,14 +73,14 @@ static int GodNumReservedObjects;
 // game data
 string InitialWorldFile, SecondWorldFile, CurrentWorldFile;
 color BackGroundColor;
-Array<CModel*> SkyBox;
+Array<Model*> SkyBox;
 color GlobalAmbient;
 Fog GlobalFog;
 int SunLight;
 float SpeedOfSound;
 
 
-Array<CTerrain*> Terrain;
+Array<Terrain*> Terrains;
 
 
 
@@ -122,9 +122,9 @@ inline bool TestVectorSanity(vector &v, const char *name)
 void TestObjectSanity(const char *str)
 {
 #ifdef _X_ALLOW_PHYSICS_DEBUG_
-	for (int i=0;i<Object.num;i++)
-		if (object[i]){
-			CObject *o=object[i];
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i]){
+			Object *o=Objects[i];
 			/*if (((int)o>1500000000)||((int)o<10000000)){
 				msg_write(str);
 				msg_error("Objekt-Pointer kaputt!");
@@ -160,7 +160,7 @@ void GodInit()
 	GlobalG=v_0;
 	NumForceFields = 0;
 
-	terrain_object = new CObject();
+	terrain_object = new Object();
 	terrain_object->UpdateMatrix();
 
 #if 0
@@ -203,16 +203,16 @@ void GodReset()
 
 	// terrains
 	msg_db_m("-terrains",2);
-	for (int i=0;i<Terrain.num;i++)
-		delete(Terrain[i]);
-	Terrain.clear();
+	for (int i=0;i<Terrains.num;i++)
+		delete(Terrains[i]);
+	Terrains.clear();
 
 	// objects
 	msg_db_m("-objects",2);
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
 			GodDeleteObject(i);
-	Object.clear();
+	Objects.clear();
 	GodNumReservedObjects = 0;
 	
 	SortedTrans.clear();
@@ -356,12 +356,12 @@ bool GodLoadWorldFromLevelData()
 
 	// objects
 	Ego = NULL;
-	Object.clear(); // make sure the "missing" objects are NULL
-	Object.resize(LevelData.object.num);
+	Objects.clear(); // make sure the "missing" objects are NULL
+	Objects.resize(LevelData.object.num);
 	GodNumReservedObjects = LevelData.object.num;
 	foreachi(LevelDataObject &o, LevelData.object, i)
 		if (o.filename.num > 0){
-			CObject *oo = GodCreateObject(o.filename, o.name, o.pos, o.ang, i);
+			Object *oo = GodCreateObject(o.filename, o.name, o.pos, o.ang, i);
 			ok &= (oo >= 0);
 			if (oo){
 				oo->vel = o.vel;
@@ -378,8 +378,8 @@ bool GodLoadWorldFromLevelData()
 	// terrains
 	foreachi(LevelDataTerrain &t, LevelData.terrain, i){
 		MetaDrawSplashScreen("Terrain...", 0.6f + (float)i / (float)LevelData.terrain.num * 0.4f);
-		CTerrain *tt = new CTerrain(t.filename, t.pos);
-		Terrain.add(tt);
+		Terrain *tt = new Terrain(t.filename, t.pos);
+		Terrains.add(tt);
 		ok &= !tt->error;
 	}
 	LevelData.terrain.clear();
@@ -540,26 +540,26 @@ bool GodLoadWorld(const string &filename)
 	return ok;
 }
 
-CObject *GetObjectByName(const string &name)
+Object *GetObjectByName(const string &name)
 {
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			if (name == Object[i]->name){
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			if (name == Objects[i]->name){
 				//msg_write(i);
-				return Object[i];
+				return Objects[i];
 			}
 	msg_error(format("object \"%s\" not found!", name.c_str()));
 	return NULL;
 }
 
-bool NextObject(CObject **o)
+bool NextObject(Object **o)
 {
 	int id=-1;
 	if (*o)
 		id = (*o)->object_id;
-	for (int i=id+1;i<Object.num;i++)
-		if (Object[i]){
-			*o = Object[i];
+	for (int i=id+1;i<Objects.num;i++)
+		if (Objects[i]){
+			*o = Objects[i];
 			return true;
 		}
 	return false;
@@ -567,35 +567,35 @@ bool NextObject(CObject **o)
 
 void _cdecl GodObjectEnsureExistence(int id)
 {
-	if (id >= Object.num)
+	if (id >= Objects.num)
 		return;
-	if (!Object[id]){
+	if (!Objects[id]){
 		// reload...
 	}
 }
 
 // mode: -1 = all...
-int GodFindObjects(vector &pos, float radius, int mode, Array<CObject*> &a)
+int GodFindObjects(vector &pos, float radius, int mode, Array<Object*> &a)
 {
 	//bool mask_passive = (mode >= 0);
 	//bool mask_active = (
 
 	// well... until scripts can initialize local super arrays... m(-_-)m
-	//a.init(sizeof(CObject*));
+	//a.init(sizeof(Object*));
 	//     \(^_^)/   now they can!
 	
 	// old method.... better use octree...
-	for (int i=0;i<Object.num;i++)
-		if (Object[i]){
-			if (_vec_length_fuzzy_(pos - Object[i]->pos) < radius)
-				a.add(Object[i]);
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i]){
+			if (_vec_length_fuzzy_(pos - Objects[i]->pos) < radius)
+				a.add(Objects[i]);
 		}
 	return a.num;
 }
 
-typedef void object_callback_func(CObject*);
+typedef void object_callback_func(Object*);
 
-CObject *GodCreateObject(const string &filename, const string &name, const vector &pos, const vector &ang, int w_index)
+Object *GodCreateObject(const string &filename, const string &name, const vector &pos, const vector &ang, int w_index)
 {
 	if (ResettingGame){
 		msg_error("CreateObject during game reset");
@@ -605,32 +605,32 @@ CObject *GodCreateObject(const string &filename, const string &name, const vecto
 	int on=w_index;
 	if (on<0){
 		// ..... better use a list of "empty" objects???
-		for (int i=GodNumReservedObjects;i<Object.num;i++)
-			if (!Object[i])
+		for (int i=GodNumReservedObjects;i<Objects.num;i++)
+			if (!Objects[i])
 				on=i;
 	}else{
-		if (on >= Object.num)
-			Object.resize(on+1);
-		if (Object[on]){
+		if (on >= Objects.num)
+			Objects.resize(on+1);
+		if (Objects[on]){
 			msg_error("CreateObject:  object index already in use " + i2s(on));
 			msg_db_l(2);
-			return Object[on];
+			return Objects[on];
 		}
 	}
 	if (on<0){
-		on = Object.num;
-		CObject *p = NULL;
-		Object.add(p);
+		on = Objects.num;
+		Object *p = NULL;
+		Objects.add(p);
 	}
 	//msg_write(on);
-	CObject *o = (CObject*)MetaLoadModel(filename);
+	Object *o = (Object*)MetaLoadModel(filename);
 	if (!o){
 		msg_db_l(2);
 		return NULL;
 	}
-	//CObject *o = new CObject(filename, name, pos);
-	Object[on] = o;
-	GodRegisterModel((CModel*)o);
+	//Object *o = new Object(filename, name, pos);
+	Objects[on] = o;
+	GodRegisterModel((Model*)o);
 	o->object_id = on;
 	o->name = name;
 	o->pos = pos;
@@ -676,7 +676,7 @@ CObject *GodCreateObject(const string &filename, const string &name, const vecto
 }
 
 
-CObject *_cdecl _CreateObject(const string &filename, const vector &pos)
+Object *_cdecl _CreateObject(const string &filename, const vector &pos)
 {
 	return GodCreateObject(filename, filename, pos, v_0);
 }
@@ -691,53 +691,53 @@ void db_o(const char *msg)
 // un-object a model
 void GodDeleteObject(int index)
 {
-	if (!Object[index])
+	if (!Objects[index])
 		return;
-	if (Object[index]->object_id < 0)
+	if (Objects[index]->object_id < 0)
 		return;
 	msg_db_r("DeleteObject",1);
 #ifdef _X_DEBUG_MODEL_MANAGER_
 	msg_write("del ob");
 	msg_write(index);
-	msg_write(p2s(Object[index]));
-	msg_write(p2s(Object[index]->Template));
-	msg_write(Object[index]->Template->Filename);
+	msg_write(p2s(Objects[index]));
+	msg_write(p2s(Objects[index]->Template));
+	msg_write(Objects[index]->Template->Filename);
 #endif
 
 #ifdef USE_ODE
-	db_o(i2s((int)Object[index]->body_id).c_str());
-	if (Object[index]->body_id != 0){
+	db_o(i2s((int)Objects[index]->body_id).c_str());
+	if (Objects[index]->body_id != 0){
 		db_o("bd");
-		dBodyDestroy(Object[index]->body_id);
+		dBodyDestroy(Objects[index]->body_id);
 		db_o("/bd");
 	}
 	
 		db_o(".");
-	Object[index]->body_id = 0;
-	db_o(i2s((int)Object[index]->geom_id).c_str());
-	if (Object[index]->geom_id != 0){
+	Objects[index]->body_id = 0;
+	db_o(i2s((int)Objects[index]->geom_id).c_str());
+	if (Objects[index]->geom_id != 0){
 		db_o("gd");
-		dGeomDestroy(Object[index]->geom_id);
+		dGeomDestroy(Objects[index]->geom_id);
 		db_o("/gd");
 	}
 	db_o(".");
-	Object[index]->geom_id = 0;
+	Objects[index]->geom_id = 0;
 #endif
 
 	db_o("a");
 
 	// script callback
-	if (Object[index]->_template->script_on_kill)
-		((object_callback_func*)Object[index]->_template->script_on_kill)(Object[index]);
+	if (Objects[index]->_template->script_on_kill)
+		((object_callback_func*)Objects[index]->_template->script_on_kill)(Objects[index]);
 	db_o("b");
 
 	// ego...
-	if (Object[index] == Ego)
+	if (Objects[index] == Ego)
 		Ego = NULL;
 
 	// remove from list
-	Object[index]->object_id = -1;
-	Object[index] = NULL;
+	Objects[index]->object_id = -1;
+	Objects[index] = NULL;
 	db_o("c");
 
 	// the actual deletion of the model will be done by MetaDelete
@@ -750,7 +750,7 @@ void GodDeleteObject(int index)
 
 void AddNewForceField(vector pos,vector dir,int kind,int shape,float r,float v,float a,bool visible,float t)
 {
-	ForceField[NumForceFields]=new sGodForceField;
+	ForceField[NumForceFields]=new GodForceField;
 	ForceField[NumForceFields]->Kind=kind;
 	ForceField[NumForceFields]->Pos=pos;
 	ForceField[NumForceFields]->Dir=dir;
@@ -777,22 +777,22 @@ void DoForceFields()
 		// die eigendlichen Berechnungen
 		ForceField[f]->TimeToLife -= Elapsed;
 		ForceField[f]->Radius += Elapsed * ForceField[f]->Vel;
-		for (int o=0;o<Object.num;o++)
-			if (Object[o]->active_physics)
-				if (Object[o]->pos.bounding_cube(ForceField[f]->Pos, ForceField[f]->Radius)){
-					float d = (Object[o]->pos - ForceField[f]->Pos).length();
+		for (int o=0;o<Objects.num;o++)
+			if (Objects[o]->active_physics)
+				if (Objects[o]->pos.bounding_cube(ForceField[f]->Pos, ForceField[f]->Radius)){
+					float d = (Objects[o]->pos - ForceField[f]->Pos).length();
 					if (d < ForceField[f]->Radius){
-						vector n = Object[o]->pos - ForceField[f]->Pos;
+						vector n = Objects[o]->pos - ForceField[f]->Pos;
 						float d = n.length();
 						n /= d;
 						if (ForceField[f]->Kind == FFKindRadialConst)
-							Object[o]->vel += ForceField[f]->Acc*Elapsed*n;
+							Objects[o]->vel += ForceField[f]->Acc*Elapsed*n;
 						if (ForceField[f]->Kind == FFKindRadialLinear)
-							Object[o]->vel += ForceField[f]->Acc*Elapsed*n*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
+							Objects[o]->vel += ForceField[f]->Acc*Elapsed*n*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
 						if (ForceField[f]->Kind == FFKindDirectionalConst)
-							Object[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir;
+							Objects[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir;
 						if (ForceField[f]->Kind == FFKindDirectionalLinear)
-							Object[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
+							Objects[o]->vel += ForceField[f]->Acc*Elapsed*ForceField[f]->Dir*(ForceField[f]->Radius-d)/ForceField[f]->Radius;
 					}
 				}
 	}
@@ -881,18 +881,18 @@ void PhysicsDataToODE()
 {
 	msg_db_r("PhysicsDataToODE", 3);
 	// data.. x -> ode
-	for (int i=0;i<Object.num;i++)
-		if (Object[i]){
-			dBodyID b = Object[i]->body_id;
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i]){
+			dBodyID b = Objects[i]->body_id;
 			if (b != 0){
-				dBodyAddForce(b, Object[i]->force_ext.x, Object[i]->force_ext.y, Object[i]->force_ext.z);
-				dBodyAddTorque(b, Object[i]->torque_ext.x, Object[i]->torque_ext.y, Object[i]->torque_ext.z);
-				dBodySetPosition(b, Object[i]->pos.x, Object[i]->pos.y, Object[i]->pos.z);
-				dBodySetLinearVel(b, Object[i]->vel.x, Object[i]->vel.y, Object[i]->vel.z);
-				dBodySetAngularVel(b, Object[i]->rot.x, Object[i]->rot.y, Object[i]->rot.z);
+				dBodyAddForce(b, Objects[i]->force_ext.x, Objects[i]->force_ext.y, Objects[i]->force_ext.z);
+				dBodyAddTorque(b, Objects[i]->torque_ext.x, Objects[i]->torque_ext.y, Objects[i]->torque_ext.z);
+				dBodySetPosition(b, Objects[i]->pos.x, Objects[i]->pos.y, Objects[i]->pos.z);
+				dBodySetLinearVel(b, Objects[i]->vel.x, Objects[i]->vel.y, Objects[i]->vel.z);
+				dBodySetAngularVel(b, Objects[i]->rot.x, Objects[i]->rot.y, Objects[i]->rot.z);
 				quaternion q;
 				dQuaternion qq;
-				QuaternionRotationV(q, Object[i]->ang);
+				QuaternionRotationV(q, Objects[i]->ang);
 				qx2ode(&q, qq);
 				dBodySetQuaternion(b, qq);
 			}
@@ -904,19 +904,19 @@ void PhysicsDataFromODE()
 {
 	msg_db_r("PhysicsDataFromODE", 3);
 	// data.. ode -> x
-	for (int i=0;i<Object.num;i++)
-		if (Object[i]){
-			dBodyID b = Object[i]->body_id;
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i]){
+			dBodyID b = Objects[i]->body_id;
 			if (b != 0){
-				Object[i]->pos = *(vector*)dBodyGetPosition(b);
-				Object[i]->vel = *(vector*)dBodyGetLinearVel(b);
-				Object[i]->rot = *(vector*)dBodyGetAngularVel(b);
+				Objects[i]->pos = *(vector*)dBodyGetPosition(b);
+				Objects[i]->vel = *(vector*)dBodyGetLinearVel(b);
+				Objects[i]->rot = *(vector*)dBodyGetAngularVel(b);
 				quaternion q;
 				qode2x(dBodyGetQuaternion(b), &q);
-				Object[i]->ang = q.get_angles();
-				Object[i]->UpdateMatrix();
-				Object[i]->UpdateTheta();
-				Object[i]->_ResetPhysAbsolute_();
+				Objects[i]->ang = q.get_angles();
+				Objects[i]->UpdateMatrix();
+				Objects[i]->UpdateTheta();
+				Objects[i]->_ResetPhysAbsolute_();
 			}
 		}
 	msg_db_l(3);
@@ -933,23 +933,23 @@ void GodDoCollisionDetection()
 	
 	// object <-> terrain
 	msg_db_m("---T4G",4);
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			if (Object[i]->active_physics)
-				if (!Object[i]->frozen)
-					Test4Ground(Object[i]);
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			if (Objects[i]->active_physics)
+				if (!Objects[i]->frozen)
+					Test4Ground(Objects[i]);
 
 	TestObjectSanity("God::Coll   1");
 
 	// object <-> object
 	msg_db_m("---T4O",4);
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			for (int j=i+1;j<Object.num;j++)
-				if (Object[j])
-					if ((!Object[i]->frozen) || (!Object[j]->frozen))
-						if (!ObjectsLinked(Object[i],Object[j]))
-							Test4Object(Object[i],Object[j]);
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			for (int j=i+1;j<Objects.num;j++)
+				if (Objects[j])
+					if ((!Objects[i]->frozen) || (!Objects[j]->frozen))
+						if (!ObjectsLinked(Objects[i],Objects[j]))
+							Test4Object(Objects[i],Objects[j]);
 
 	TestObjectSanity("God::Coll   2");
 	
@@ -964,22 +964,22 @@ void GodDoCollisionDetection()
 void ApplyGravity()
 {
 	msg_db_m("--G",3);
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			if (!Object[i]->frozen){
-				float ttf = Object[i]->time_till_freeze;
-				vector g = Object[i]->mass * Object[i]->g_factor * GlobalG;
-				Object[i]->AddForce(g, v_0);
-				//                                                     GetG(Object[i]->Pos));
-				Object[i]->time_till_freeze = ttf;
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			if (!Objects[i]->frozen){
+				float ttf = Objects[i]->time_till_freeze;
+				vector g = Objects[i]->mass * Objects[i]->g_factor * GlobalG;
+				Objects[i]->AddForce(g, v_0);
+				//                                                     GetG(Objects[i]->Pos));
+				Objects[i]->time_till_freeze = ttf;
 			}
 }
 
 void ResetExternalForces()
 {
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			Object[i]->force_ext = Object[i]->torque_ext = v_0;
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			Objects[i]->force_ext = Objects[i]->torque_ext = v_0;
 }
 
 
@@ -1000,17 +1000,17 @@ void GodCalcMove()
 
 	// no physics?
 	if (!PhysicsEnabled){
-		for (int i=0;i<Object.num;i++)
-			if (Object[i])
-				Object[i]->UpdateMatrix();
+		for (int i=0;i<Objects.num;i++)
+			if (Objects[i])
+				Objects[i]->UpdateMatrix();
 		ResetExternalForces();
 		msg_db_l(2);
 		return;
 	}else if (!CollisionsEnabled){
-		for (int i=0;i<Object.num;i++)
-			if (Object[i])
-				//if (!Object[i]->Frozen)
-					Object[i]->DoPhysics();
+		for (int i=0;i<Objects.num;i++)
+			if (Objects[i])
+				//if (!Objects[i]->Frozen)
+					Objects[i]->DoPhysics();
 		ResetExternalForces();
 		msg_db_l(2);
 		return;
@@ -1047,10 +1047,10 @@ void GodCalcMove()
 #ifndef USE_ODE
 		// propagate through space
 		msg_db_m("--P",3);
-		for (int i=0;i<Object.num;i++)
-			if (Object[i])
-				//if (!Object[i]->Frozen)
-					Object[i]->DoPhysics();
+		for (int i=0;i<Objects.num;i++)
+			if (Objects[i])
+				//if (!Objects[i]->Frozen)
+					Objects[i]->DoPhysics();
 #endif
 
 
@@ -1082,7 +1082,7 @@ void GodCalcMove()
 	// mainly model animation
 	for (int i=0;i<NumObjects;i++)
 		if (ObjectExisting[i])
-			Object[i]->CalcMove();
+			Objects[i]->CalcMove();
 #endif
 
 
@@ -1096,18 +1096,18 @@ void GodCalcMove()
 void GodCalcMove2()
 {
 	// mainly model animation
-	for (int i=0;i<Object.num;i++)
-		if (Object[i])
-			Object[i]->CalcMove();
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i])
+			Objects[i]->CalcMove();
 }
 
-typedef void on_collide_object_func(CObject*,CObject*);
-typedef void on_collide_terrain_func(CObject*,CTerrain*);
+typedef void on_collide_object_func(Object*,Object*);
+typedef void on_collide_terrain_func(Object*,Terrain*);
 
-void Test4Ground(CObject *o)
+void Test4Ground(Object *o)
 {
-	for (int i=0;i<Terrain.num;i++){
-		if (CollideObjectTerrain(o, Terrain[i])){
+	for (int i=0;i<Terrains.num;i++){
+		if (CollideObjectTerrain(o, Terrains[i])){
 			//msg->Write(string2("   col %d <-> terrain %d",i,j));
 
 			if (inf_v(o->vel))
@@ -1115,9 +1115,9 @@ void Test4Ground(CObject *o)
 
 			// script callback function
 			if (o->_template->script_on_collide_terrain)
-				((on_collide_terrain_func*)o->_template->script_on_collide_terrain)(o, Terrain[i]);
+				((on_collide_terrain_func*)o->_template->script_on_collide_terrain)(o, Terrains[i]);
 
-			terrain_object->SetMaterial(Terrain[i]->material, SetMaterialFriction);
+			terrain_object->SetMaterial(Terrains[i]->material, SetMaterialFriction);
 			terrain_object->object_id = i + 0x40000000; //(1<<30);
 			ColData.o2 = terrain_object;
 			
@@ -1142,7 +1142,7 @@ void Test4Ground(CObject *o)
 	}
 }
 
-void Test4Object(CObject *o1,CObject *o2)
+void Test4Object(Object *o1,Object *o2)
 {
 	msg_db_r("Test4Object",5);
 
@@ -1209,8 +1209,8 @@ bool GodTrace(vector &p1, vector &p2, vector &tp, bool simple_test, int o_ignore
 	TraceHitType=TraceHitNone;
 	TraceHitIndex=-1;
 	TraceHitSubModel=-1;
-	for (int i=0;i<Terrain.num;i++){
-		if (Terrain[i]->Trace(p1, p2, dir, range, c, simple_test)){
+	for (int i=0;i<Terrains.num;i++){
+		if (Terrains[i]->Trace(p1, p2, dir, range, c, simple_test)){
 			if (simple_test){
 				TraceHitType=TraceHitTerrain;
 				TraceHitIndex=i;
@@ -1226,13 +1226,13 @@ bool GodTrace(vector &p1, vector &p2, vector &tp, bool simple_test, int o_ignore
 			}
 		}
 	}
-	for (int i=0;i<Object.num;i++)
-		if (Object[i]){
+	for (int i=0;i<Objects.num;i++)
+		if (Objects[i]){
 			if (i==o_ignore)
 				continue;
 			TraceHitSubModelTemp=-1;
 			vector p2t=p1+dir*dmin;
-			if (Object[i]->Trace(p1, p2t, dir, dmin, c, simple_test)){
+			if (Objects[i]->Trace(p1, p2t, dir, dmin, c, simple_test)){
 				if (simple_test){
 					TraceHitType=TraceHitObject;
 					TraceHitIndex=i;
@@ -1267,7 +1267,7 @@ void GodPreDraw(vector &cam_pos)
 	msg_db_m("--O",3);
 	for (int i=0;i<NumObjects;i++)
 		if (ObjectExisting[i])
-			Object[i]->Draw(cam_pos);*/
+			Objects[i]->Draw(cam_pos);*/
 	msg_db_l(2);
 }
 
@@ -1300,7 +1300,7 @@ void GodDraw()
 }
 
 // add a model to the (possible) rendering list
-void GodRegisterModel(CModel *m)
+void GodRegisterModel(Model *m)
 {
 	msg_db_r("GodRegisterModel",2);
 	
@@ -1340,7 +1340,7 @@ void GodRegisterModel(CModel *m)
 }
 
 // remove a model from the (possible) rendering list
-void GodUnregisterModel(CModel *m)
+void GodUnregisterModel(Model *m)
 {
 	msg_db_r("GodUnregisterModel",2);
 	//printf("%p   %s\n", m, MetaGetModelFilename(m));
@@ -1368,7 +1368,7 @@ void GodUnregisterModel(CModel *m)
 	msg_db_l(2);
 }
 
-inline bool is_ignored(CModel *m)
+inline bool is_ignored(Model *m)
 {
 	for (int i=0;i<cur_cam->ignore.num;i++)
 		if (m == cur_cam->ignore[i])
@@ -1380,7 +1380,7 @@ inline void fill_pmv(vector &pos, Array<PartialModel> &p, Array<PartialModelView
 {
 	vp.clear();
 	for (int i=0;i<p.num;i++){
-		CModel *m = p[i].model;
+		Model *m = p[i].model;
 		vector dpos = pos - m->pos;
 		
 		int detail = SkinHigh;
@@ -1435,7 +1435,7 @@ inline void draw_pmv(Array<PartialModelView> &vp)
 	
 	for (int i=0;i<vp.num;i++){
 		PartialModel *p = (PartialModel*)vp[i].p;
-		CModel *m = p->model;
+		Model *m = p->model;
 		vector dpos = pos - m->pos;
 
 		// camera frustrum testing
@@ -1471,7 +1471,7 @@ int ffframe = 0;
 
 void GroupDuplicates()
 {
-	for (int i=0;i<Object.num;i++){}
+	for (int i=0;i<Objects.num;i++){}
 }
 
 void GodDrawSorted()

@@ -16,7 +16,7 @@
 #define GOD_MAX_MUSICFIELDS		64
 
 
-struct sGodForceField
+struct GodForceField
 {
 	vector Pos,Dir;
 	int Shape,Kind;
@@ -50,7 +50,7 @@ struct LevelDataScriptRule
 	int location;
 };
 
-struct sLevelData
+struct GodLevelData
 {
 	string world_filename;
 	Array<string> skybox_filename;
@@ -71,7 +71,7 @@ struct sLevelData
 	Fog fog;
 };
 
-struct sMusicField
+struct MusicField
 {
 	vector PosMin,PosMax;
 	int NumMusicFiles;
@@ -79,7 +79,7 @@ struct sMusicField
 };
 
 struct PartialModel{
-	CModel *model;
+	Model *model;
 	Material *material;
 	int mat_index;
 	float d;
@@ -91,7 +91,7 @@ struct PartialModel{
 // game data
 extern string InitialWorldFile, SecondWorldFile, CurrentWorldFile;
 extern color BackGroundColor;
-extern Array<CModel*> SkyBox;
+extern Array<Model*> SkyBox;
 extern color GlobalAmbient;
 extern Fog GlobalFog;
 extern int SunLight;
@@ -121,10 +121,10 @@ bool GodLoadWorldFromLevelData();
 bool GodLoadWorld(const string &filename);
 
 extern bool GodNetMsgEnabled;
-CObject* _cdecl GodCreateObject(const string &filename, const string &name, const vector &pos, const vector &ang, int w_index=-1);
+Object* _cdecl GodCreateObject(const string &filename, const string &name, const vector &pos, const vector &ang, int w_index=-1);
 void GodDeleteObject(int index);
-void GodRegisterModel(CModel *m);
-void GodUnregisterModel(CModel *m);
+void GodRegisterModel(Model *m);
+void GodUnregisterModel(Model *m);
 void AddNewForceField(vector pos,vector dir,int kind,int shape,float r,float v,float a,bool visible,float t);
 //void DoSounds();
 void SetSoundState(bool paused,float scale,bool kill,bool restart);
@@ -132,41 +132,41 @@ vector _cdecl GetG(vector &pos);
 void GodCalcMove();
 void GodCalcMove2(); // debug
 void GodDoCollisionDetection();
-void GodRegisterModel(CModel *m);
+void GodRegisterModel(Model *m);
 void GodDraw();
-CObject *_cdecl GetObjectByName(const string &name);
-bool _cdecl NextObject(CObject **o);
+Object *_cdecl GetObjectByName(const string &name);
+bool _cdecl NextObject(Object **o);
 void _cdecl GodObjectEnsureExistence(int id);
-int _cdecl GodFindObjects(vector &pos, float radius, int mode, Array<CObject*> &a);
+int _cdecl GodFindObjects(vector &pos, float radius, int mode, Array<Object*> &a);
 
-void Test4Ground(CObject *o);
-void Test4Object(CObject *o1,CObject *o2);
+void Test4Ground(Object *o);
+void Test4Object(Object *o1,Object *o2);
 bool _cdecl GodTrace(vector &p1,vector &p2,vector &tp,bool simple_test,int o_ignore=-1);
 
 	// content of the world
-extern Array<CObject*> Object;
-extern CObject *Ego;
-extern CObject *terrain_object;
+extern Array<Object*> Objects;
+extern Object *Ego;
+extern Object *terrain_object;
 
 // esotherical (not in the world)
 extern bool AddAllObjectsToLists;
 
 // music fields
 extern int NumMusicFields;
-extern sMusicField MusicFieldGlobal,MusicField[GOD_MAX_MUSICFIELDS];
+extern MusicField MusicFieldGlobal,MusicFields[GOD_MAX_MUSICFIELDS];
 extern int MusicCurrent;
 
 // force fields
 extern int NumForceFields;
-extern sGodForceField *ForceField[GOD_MAX_FORCEFIELDS];
-extern sMusicField *MusicFieldCurrent;
+extern GodForceField *ForceField[GOD_MAX_FORCEFIELDS];
+extern MusicField *MusicFieldCurrent;
 
 extern vector GlobalG;
-extern sLevelData LevelData;
+extern GodLevelData LevelData;
 extern Array<float> ScriptVar;
 
 
-extern Array<CTerrain*> Terrain;
+extern Array<Terrain*> Terrains;
 
 // network messages
 struct s_net_message_list
@@ -176,7 +176,7 @@ struct s_net_message_list
 };
 extern s_net_message_list NetMsg;
 
-CObject *_cdecl _CreateObject(const string &filename, const vector &pos);
+Object *_cdecl _CreateObject(const string &filename, const vector &pos);
 
 
 #define FFKindRadialConst		0

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------*\
-| CModel                                                                       |
-| -> can be a skeleton                                                        |
+| Model                                                                        |
+| -> can be a skeleton                                                         |
 |    -> sub-models                                                             |
 |    -> animation data                                                         |
 | -> model                                                                     |
@@ -271,7 +271,7 @@ struct Bone
 {
 	int parent;
 	vector pos;
-	CModel *model;
+	Model *model;
 	// current skeletal data
 	matrix dmatrix;
 	quaternion cur_ang;
@@ -322,7 +322,7 @@ struct ModelTemplate
 	}
 };
 
-typedef CModel *pModel;
+typedef Model *pModel;
 typedef void *_fx_pointer_;
 
 enum{
@@ -333,26 +333,26 @@ enum{
 	ModelCopyInverse = 16
 };
 
-class CModel
+class Model
 {
 public:
 	// creation
-	CModel(const string &filename);
-	CModel(); // only used by GetCopy()
-	CModel *GetCopy(int mode);
+	Model(const string &filename);
+	Model(); // only used by GetCopy()
+	Model *GetCopy(int mode);
 	void ResetData();
 	void MakeEditable();
 	void SetMaterial(Material *material, int mode);
 	//void Update();
 	void reset();
-	~CModel();
+	~Model();
 
 	// animate me
 	void _cdecl CalcMove();
 
 	// skeleton
 	vector _GetBonePos(int index);
-	void SetBoneModel(int index, CModel *sub);
+	void SetBoneModel(int index, Model *sub);
 
 	// animation
 	vector _cdecl GetVertex(int index,int skin);
@@ -407,7 +407,7 @@ public:
 
 	// script data (own)
 	string name, description;
-	Array<CModel*> inventary;
+	Array<Model*> inventary;
 	Array<float> script_var;
 	void *script_data;
 
@@ -437,7 +437,7 @@ public:
 	int _detail_; // per view (more than once a frame...)
 
 	// effects (own)
-	Array<sEffect*> fx;
+	Array<Effect*> fx;
 
 	// skeleton (own)
 	Array<Bone> bone;

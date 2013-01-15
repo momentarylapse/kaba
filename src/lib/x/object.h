@@ -12,23 +12,23 @@
 
 
 
-class CObject : public CModel
+class Object : public Model
 {
 public:
-//	CObject(const char *filename, const char *name, const vector &pos);
-//	CObject(CModel *model);
-	CObject();
-//	~CObject();
+//	Object(const char *filename, const char *name, const vector &pos);
+//	Object(Model *model);
+	Object();
+//	~Object();
 	void UpdateMatrix();
 
 	void UpdateData(); // script...
 
 	void UpdateTheta();
-//	void SetMaterial(sMaterial *material, int mode);
+//	void SetMaterial(Material *material, int mode);
 //	void ObjectCalcMove();
 	void DoPhysics();
 //	CObject *CuttingPlane(plane pl);
-//	void CorrectVel(CObject *partner);
+//	void CorrectVel(Object *partner);
 
 	void AddForce(const vector &f, const vector &rho);
 	void AddTorque(const vector &t);

@@ -132,6 +132,7 @@ class HuiDrawingContext
 	void _cdecl DrawPolygon(float *x, float *y, int num_points);
 	void _cdecl DrawPolygonMA(Array<float> &x, Array<float> &y);
 	void _cdecl DrawRect(float x1, float y1, float w, float h);
+	void _cdecl DrawRect(const rect &r);
 	void _cdecl DrawCircle(float x, float y, float radius);
 	void _cdecl DrawStr(float x, float y, const string &str);
 	float _cdecl GetStrWidth(const string &str);
@@ -200,8 +201,14 @@ public:
 	void _cdecl AllowEvents(const string &msg);
 	void _cdecl Event(const string &id, hui_callback *function);
 	void _cdecl EventX(const string &id, const string &msg, hui_callback *function);
-	void EventM(const string &id, HuiEventHandler *handler, void (HuiEventHandler::*function)());
-	void EventMX(const string &id, const string &msg, HuiEventHandler *handler, void (HuiEventHandler::*function)());
+	void _EventM(const string &id, HuiEventHandler *handler, void (HuiEventHandler::*function)());
+	void _EventMX(const string &id, const string &msg, HuiEventHandler *handler, void (HuiEventHandler::*function)());
+	template<typename T>
+	void EventM(const string &id, HuiEventHandler* handler, T fun)
+	{	_EventM(id, handler, (void(HuiEventHandler::*)())fun);	}
+	template<typename T>
+	void EventMX(const string &id, const string &msg, HuiEventHandler* handler, T fun)
+	{	_EventMX(id, msg, handler, (void(HuiEventHandler::*)())fun);	}
 	bool _SendEvent_(HuiEvent *e);
 
 	// creating controls
@@ -261,6 +268,7 @@ public:
 	void _cdecl Check(const string &id, bool checked);
 	bool _cdecl IsChecked(const string &id);
 	void _cdecl SetImage(const string &id, const string &image);
+	void _cdecl SetTooltip(const string &id, const string &tip);
 	Array<int> _cdecl GetMultiSelection(const string &id);
 	void _cdecl SetMultiSelection(const string &id, Array<int> &sel);
 	void _cdecl Reset(const string &id);

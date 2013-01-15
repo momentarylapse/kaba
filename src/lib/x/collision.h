@@ -13,24 +13,24 @@ struct CollisionData
 	vector normal[MAX_COLLISIONS]; // directing from o1 to o2
 	float depth[MAX_COLLISIONS];
 
-	CObject *o1, *o2;
+	Object *o1, *o2;
 };
 
 
 extern CollisionData ColData, *pColData;
 
-//	int GetCollision(CModel *partner, matrix *mat,matrix *mat_old,CollisionData &col,bool set_crash);
+//	int GetCollision(Model *partner, matrix *mat,matrix *mat_old,CollisionData &col,bool set_crash);
 
 
-bool CollideObjects(CObject *o1, CObject *o2);
+bool CollideObjects(Object *o1, Object *o2);
 #ifdef _X_ALLOW_TERRAIN_
-bool CollideObjectTerrain(CObject *o, CTerrain *t);//terrain);
+bool CollideObjectTerrain(Object *o, Terrain *t);//terrain);
 #endif
 
 
 
 
-bool CollideModels(CModel *m1, CModel *m2); // model - model
-bool CollideModelTerrain(CModel *m, TriangleHull *hull); // model - triangles
+bool CollideModels(Model *m1, Model *m2); // model - model
+bool CollideModelTerrain(Model *m, TriangleHull *hull); // model - triangles
 
 #endif

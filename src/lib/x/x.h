@@ -5,10 +5,10 @@
 #include "../nix/nix.h"
 #include "../file/file.h"
 
-class CModel;
-class CObject;
-class CTerrain;
-struct sEffect;
+class Model;
+class Object;
+class Terrain;
+struct Effect;
 struct Material;
 struct Skin;
 struct CollisionData;

@@ -19,7 +19,7 @@ typedef void effect_enable_func(void *, bool);
 
 #define FX_MAX_TAIL_STEPS		8
 
-struct sParticle : XContainer
+struct Particle : XContainer
 {
 	bool suicidal;
 	vector pos, vel, parameter;
@@ -31,7 +31,7 @@ struct sParticle : XContainer
 	float func_delta_t, elapsed;
 };
 
-struct sEffect : XContainer
+struct Effect : XContainer
 {
 	bool suicidal;
 	vector pos, vel;
@@ -40,7 +40,7 @@ struct sEffect : XContainer
 	effect_enable_func *func_enable;
 	float func_delta_t, elapsed;
 	Array<float> script_var;
-	CModel *model;
+	Model *model;
 	int vertex, type;
 };
 
@@ -51,17 +51,17 @@ enum{
 	FXTypeForceField,
 };
 
-/*struct sForceField{
+/*struct ForceField{
 	bool Used,Enabled;
 	vector Pos;
 	float Strength,RadiusMin,RadiusMax,TimeToLife;
 	bool InvQuadratic,Dieable;
 };*/
 
-struct sTail{
+struct Tail{
 	int NumSteps;
 	float MaxLifeTime;
-	CModel *model;
+	Model *model;
 	matrix mat[FX_MAX_TAIL_STEPS+1];
 	float StepLifeTime[FX_MAX_TAIL_STEPS+1];
 };
@@ -77,20 +77,20 @@ void FxReset();
 
 // particles
 //sParticle *FxParticleCreate(int type,const vector &pos,const vector &param,int texture,particle_callback *func,float time_to_live,float radius);
-sParticle *_cdecl FxParticleCreateDef(const vector &pos,int texture,particle_callback *func,float time_to_live,float radius);
-sParticle *_cdecl FxParticleCreateRot(const vector &pos,const vector &ang,int texture,particle_callback *func,float time_to_live,float radius);
-sParticle *_cdecl FxParticleCreateBeam(const vector &pos,const vector &length,int texture,particle_callback *func,float time_to_live,float radius);
-void _cdecl FxParticleDelete(sParticle *particle);
+Particle *_cdecl FxParticleCreateDef(const vector &pos,int texture,particle_callback *func,float time_to_live,float radius);
+Particle *_cdecl FxParticleCreateRot(const vector &pos,const vector &ang,int texture,particle_callback *func,float time_to_live,float radius);
+Particle *_cdecl FxParticleCreateBeam(const vector &pos,const vector &length,int texture,particle_callback *func,float time_to_live,float radius);
+void _cdecl FxParticleDelete(Particle *particle);
 
 // effects
-sEffect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callback *del_func,float time_to_live);
-sEffect *_cdecl FxCreateScript(CModel *m, int vertex, const string &filename);
-sEffect *_cdecl FxCreateLight(CModel *m, int vertex, float radius, const color &am, const color &di, const color &sp);
-sEffect *_cdecl FxCreateSound(CModel *m, int vertex, const string &filename, float radius, float speed);
-void _cdecl FxDelete(sEffect *effect);
-void _cdecl FxEnable(sEffect *effect, bool enabled);
-//sEffect *FxCreateByModel(CModel *m,sModelEffectData *data);
-//void FxUpdateByModel(sEffect *&effect,const vector &pos,const vector &last_pos);
+Effect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callback *del_func,float time_to_live);
+Effect *_cdecl FxCreateScript(Model *m, int vertex, const string &filename);
+Effect *_cdecl FxCreateLight(Model *m, int vertex, float radius, const color &am, const color &di, const color &sp);
+Effect *_cdecl FxCreateSound(Model *m, int vertex, const string &filename, float radius, float speed);
+void _cdecl FxDelete(Effect *effect);
+void _cdecl FxEnable(Effect *effect, bool enabled);
+//sEffect *FxCreateByModel(Model *m,sModelEffectData *data);
+//void FxUpdateByModel(Effect *&effect,const vector &pos,const vector &last_pos);
 //void FxResetByModel();
 
 // force fields
@@ -111,7 +111,7 @@ void _cdecl FxLightEnable(int index,bool enabled);
 // cube maps
 int FxCubeMapNew(int size);
 void FxCubeMapCreate(int cube_map,int tex0,int tex1,int tex2,int tex3,int tex4,int tex5);
-void FxCubeMapCreate(int cube_map,CModel *m);
+void FxCubeMapCreate(int cube_map,Model *m);
 void FxCubeMapDraw(int cube_map,int buffer,float density);
 
 // stuff
@@ -123,9 +123,9 @@ void FxCreateSpat(int buffer,const vector &p0,const vector &p1,const vector &p2,
 void FxDrawSpat(const vector &p0,const vector &p1,const vector &p2,const vector &p3);
 void FxCreateCube(int buffer,const vector &a,const vector &b);
 void FxDrawShining(const Skin *s,const int *tex,const matrix *m,const vector &delta); // parallel
-void FxTailToDraw(sTail *tail); // rotatable
+void FxTailToDraw(Tail *tail); // rotatable
 void FxDrawTails();
-void FxAddShadow(CModel *m, int detail);
+void FxAddShadow(Model *m, int detail);
 void FxDrawShadows();
 void FxDrawMirrors(Skin *s, const matrix &m);
 void FxDrawMetal(Skin *s, const matrix &m, float density);

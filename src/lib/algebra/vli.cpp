@@ -492,8 +492,7 @@ string vli::to_string() const
 	}
 	if (sign)
 		s.add('-');
-	s.reverse();
-	return s;
+	return s.reverse();
 }
 
 

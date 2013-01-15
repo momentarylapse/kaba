@@ -8,7 +8,7 @@
 
 struct sObjectSD{
 	vector Pos,Vel,Ang,Rot;
-	CObject *o,*p;
+	Object *o,*p;
 	bool ok;
 }ObjectSD[2];
 
@@ -19,12 +19,12 @@ inline bool ainf_v(vector &v)
 	return (v.length_fuzzy() > 100000000000.0f);
 }
 
-bool ObjectInfinity(CObject *o)
+bool ObjectInfinity(Object *o)
 {
 	return ( ainf_v(o->pos) || ainf_v(o->vel)  || ainf_v(o->rot) || ainf_v(o->ang)  );
 }
 
-void SaveObjectData(CObject *o,CObject *p,int index)
+void SaveObjectData(Object *o,Object *p,int index)
 {
 	ObjectSD[index].Pos=o->pos;
 	ObjectSD[index].Vel=o->vel;
@@ -35,7 +35,7 @@ void SaveObjectData(CObject *o,CObject *p,int index)
 	ObjectSD[index].p=p;
 }
 
-void TestObjectData(CObject *o,int index,const char *str)
+void TestObjectData(Object *o,int index,const char *str)
 {
 	if (!ObjectSD[index].ok)
 		return;
@@ -48,7 +48,7 @@ void TestObjectData(CObject *o,int index,const char *str)
 }
 
 
-static void DoHit(CObject *o1,CObject *o2,CollisionData *col,int i_max,float rc_jump,float rc_sliding,float rc_rolling)
+static void DoHit(Object *o1,Object *o2,CollisionData *col,int i_max,float rc_jump,float rc_sliding,float rc_rolling)
 {
 	msg_db_r("DoHit",10);
 	int i;
@@ -212,7 +212,7 @@ inline void vx2ode(vector *vv, dVector3 v)
 	v[2] = vv->z;
 }
 
-static void HandleCollisionsSemiOde(CObject *o1, CObject *o2, CollisionData *col, float rc_jump, float rc_static, float rc_gliding, float rc_rolling)
+static void HandleCollisionsSemiOde(Object *o1, Object *o2, CollisionData *col, float rc_jump, float rc_static, float rc_gliding, float rc_rolling)
 {
 	if (o1->body_id == o2->body_id){
 		msg_error("HandleCollisionsSemiOde: beide Objekte id=id");
@@ -251,8 +251,8 @@ void HandleCollision()
 {
 	msg_db_r("HandleCollision",10);
 
-	CObject *o1 = pColData->o1;
-	CObject *o2 = pColData->o2;
+	Object *o1 = pColData->o1;
+	Object *o2 = pColData->o2;
 	
 	float rc_jump	=1-((1-o1->rc_jump)*(1-o2->rc_jump));
 	float rc_static	=(o1->rc_static+o2->rc_static)/2;

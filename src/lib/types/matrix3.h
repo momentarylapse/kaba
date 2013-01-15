@@ -1,4 +1,9 @@
 
+#ifndef _TYPES_MATRIX3_INCLUDED_
+#define _TYPES_MATRIX3_INCLUDED_
+
+class vector;
+
 struct matrix3
 {
 public:
@@ -88,3 +93,5 @@ void _cdecl Matrix3Transpose(matrix3 &mo, const matrix3 &mi);
 void _cdecl Matrix3Rotation(matrix3 &m, const vector &ang);
 void _cdecl Matrix3RotationQ(matrix3 &m, const quaternion &q);
 
+
+#endif

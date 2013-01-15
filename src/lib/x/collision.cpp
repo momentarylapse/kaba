@@ -67,13 +67,13 @@ enum{
 
 int NumObservers=0;
 #define MODEL_MAX_OBSERVERS			4096
-static CModel *obs_ma=NULL,*obs_mb=NULL;
+static Model *obs_ma=NULL,*obs_mb=NULL;
 static int obs_type,obs_i1,obs_i2;
 static bool obs_ok=false;
 
 struct sObserver
 {
-	CModel *ma,*mb;
+	Model *ma,*mb;
 	int type;
 	int i1,i2,i3,i4;
 	bool still_ok;
@@ -1681,7 +1681,7 @@ inline bool GetCollisionPhysHull(	PhysicalSkin *o,PhysicalSkinAbsolute *o_abs,
 
 
 // model - model
-bool CollideModels(CModel *m1, CModel *m2)
+bool CollideModels(Model *m1, Model *m2)
 {
 	msg_db_r("Collide mm",4);
 
@@ -1731,7 +1731,7 @@ bool CollideModels(CModel *m1, CModel *m2)
 }
 
 // model - hull
-bool CollideModelTerrain(CModel *m, TriangleHull *hull)
+bool CollideModelTerrain(Model *m, TriangleHull *hull)
 {
 	msg_db_r("Collide mt",4);
 
@@ -1769,7 +1769,7 @@ bool CollideModelTerrain(CModel *m, TriangleHull *hull)
 
 
 // object - object
-bool CollideObjects(CObject *o1, CObject *o2)
+bool CollideObjects(Object *o1, Object *o2)
 {
 	pColData->num = 0;
 
@@ -1800,7 +1800,7 @@ bool CollideObjects(CObject *o1, CObject *o2)
 		CollLevel = 0;
 		pColData->o1 = o1;
 		pColData->o2 = o2;
-		CollideModels((CModel*)o1, (CModel*)o2);
+		CollideModels((Model*)o1, (Model*)o2);
 		msg_db_l(3);
 
 	}
@@ -1812,7 +1812,7 @@ bool CollideObjects(CObject *o1, CObject *o2)
 }
 
 // Objekt - Modell
-/*bool CollideObjects(CModel *partner,matrix *mat,matrix *mat_old,sCollisionData &col,bool set_crash)
+/*bool CollideObjects(Model *partner,matrix *mat,matrix *mat_old,sCollisionData &col,bool set_crash)
 {
 	if (!partner)
 		return 0;
@@ -1843,7 +1843,7 @@ bool CollideObjects(CObject *o1, CObject *o2)
 TriangleHull temp_hull;
 
 // Objekt - Terrain
-bool CollideObjectTerrain(CObject *o, CTerrain *terrain)
+bool CollideObjectTerrain(Object *o, Terrain *terrain)
 {
 	pColData->num = 0;
 //	if ((!o->Moved))
@@ -1875,7 +1875,7 @@ bool CollideObjectTerrain(CObject *o, CTerrain *terrain)
 		CollLevel = 0;
 		pColData->o1 = o;
 		pColData->o2 = terrain_object;
-		CollideModelTerrain((CModel*)o, &temp_hull);
+		CollideModelTerrain((Model*)o, &temp_hull);
 
 		msg_db_l(3);
 	}

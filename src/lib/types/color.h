@@ -1,4 +1,7 @@
 
+#ifndef _TYPES_COLOR_INCLUDED_
+#define _TYPES_COLOR_INCLUDED_
+
 struct color
 {
 public:
@@ -20,8 +23,12 @@ public:
 	{	return color(a*f , r*f , g*f , b*f);	}
 	friend color operator * (float f, color &c)
 	{	return c * f;	}
-	color operator * (color &c) const
+	void operator *= (float f)
+	{	a *= f;	r *= f;	g *= f;	b *= f;	}
+	color operator * (const color &c) const
 	{	return color(a*c.a , r*c.r , g*c.g , b*c.b);	}
+	void operator *= (const color &c)
+	{	a*=c.a;	r*=c.r;	g*=c.g;	b*=c.b;	}
 	void clamp();
 	string str()
 	{	return format("(%f, %f, %f, %f)", r, g, b, a);	}
@@ -47,3 +54,4 @@ static color Blue   = color(1, 0, 0, 1);
 static color Yellow = color(1, 1, 1, 0);
 static color Orange = color(1, 1, 0.5f, 0);
 
+#endif

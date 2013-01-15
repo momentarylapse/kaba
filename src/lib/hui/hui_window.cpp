@@ -58,7 +58,7 @@ void CHuiWindow::_Init_(CHuiWindow *_root, bool _allow_root, int _mode)
 
 	used_by_nix = false;
 	is_resizable = ((_mode & HuiWinModeResizable) > 0);
-	border_width = 8;
+	border_width = 5;
 	allowed = true;
 	allow_keys = true;
 	parent = _root;
@@ -229,7 +229,7 @@ void CHuiWindow::EventX(const string &id, const string &msg, hui_callback *funct
 	event.add(e);
 }
 
-void CHuiWindow::EventM(const string &id, HuiEventHandler *handler, void (HuiEventHandler::*function)())
+void CHuiWindow::_EventM(const string &id, HuiEventHandler *handler, void (HuiEventHandler::*function)())
 {
 	HuiWinEvent e;
 	e.id = id;
@@ -240,7 +240,7 @@ void CHuiWindow::EventM(const string &id, HuiEventHandler *handler, void (HuiEve
 	event.add(e);
 }
 
-void CHuiWindow::EventMX(const string &id, const string &msg, HuiEventHandler *handler, void (HuiEventHandler::*function)())
+void CHuiWindow::_EventMX(const string &id, const string &msg, HuiEventHandler *handler, void (HuiEventHandler::*function)())
 {
 	HuiWinEvent e;
 	e.id = id;

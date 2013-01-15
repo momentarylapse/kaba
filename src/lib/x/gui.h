@@ -2,8 +2,11 @@
 #define GUI_H__INCLUDED_
 
 
+namespace Gui
+{
 
-struct sText : XContainer
+
+struct Text : XContainer
 {
 	bool centric, vertical;
 	int font;
@@ -14,7 +17,7 @@ struct sText : XContainer
 	bool IsMouseOver();
 };
 
-struct sPicture : XContainer
+struct Picture : XContainer
 {
 	bool tc_inverted;
 	vector pos;
@@ -27,12 +30,12 @@ struct sPicture : XContainer
 	bool IsMouseOver();
 };
 
-struct sPicture3D : XContainer
+struct Picture3d : XContainer
 {
 	bool lighting, world_3d;
 	float z;
 	matrix _matrix;
-	CModel *model;
+	Model *model;
 	color _color;
 	// temp data
 	bool ch_alpha, ch_color;
@@ -45,55 +48,36 @@ struct sPicture3D : XContainer
 	bool IsMouseOver();
 };
 
-struct sSubPicture
-{
-	sPicture *picture;
-	vector pos;
-	color _color;
-	bool enabled;
-};
+struct SubPicture;
+struct SubPicture3d;
+struct SubText;
 
-struct sSubPicture3D
-{
-	sPicture3D *picture_3d;
-	matrix _matrix;
-	float z;
-	color _color;
-	bool enabled;
-};
-
-struct sSubText
-{
-	sText *text;
-	vector pos;
-	color _color;
-	bool enabled;
-};
-
-struct sGrouping : XContainer
+struct Grouping : XContainer
 {
 	vector pos;
 	color _color;
 
-	Array<sSubPicture> picture;
-	Array<sSubPicture3D> picture_3d;
-	Array<sSubText> text;
+	Array<SubPicture> picture;
+	Array<SubPicture3d> picture_3d;
+	Array<SubText> text;
 };
 
 
-sText *_cdecl GuiCreateText(const vector &pos, float size, const color &col, const string &str);
-void GuiDeleteText(sText *text);
-sPicture *_cdecl GuiCreatePicture(const vector &pos, float width, float height, int texture);
-void GuiDeletePicture(sPicture *picture);
-sPicture3D *_cdecl GuiCreatePicture3D(CModel *model, const matrix &mat, float z);
-void GuiDeletePicture3D(sPicture3D *picture3d);
-sGrouping *_cdecl GuiCreateGrouping(const vector &pos, bool set_current);
-void GuiDeleteGrouping(sGrouping *grouping);
+Text *_cdecl CreateText(const vector &pos, float size, const color &col, const string &str);
+void DeleteText(Text *text);
+Picture *_cdecl CreatePicture(const vector &pos, float width, float height, int texture);
+void DeletePicture(Picture *picture);
+Picture3d *_cdecl CreatePicture3d(Model *model, const matrix &mat, float z);
+void DeletePicture3d(Picture3d *picture3d);
+Grouping *_cdecl CreateGrouping(const vector &pos, bool set_current);
+void DeleteGrouping(Grouping *grouping);
 
-void GuiReset();
-void GuiDraw();
+void Reset();
+void Draw();
 
 
-extern sGrouping *CurrentGrouping;
+extern Grouping *CurrentGrouping;
+
+};
 
 #endif
