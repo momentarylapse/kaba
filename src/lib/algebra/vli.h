@@ -1,3 +1,5 @@
+#ifndef _VLI_INCLUDED_
+#define _VLI_INCLUDED_
 
 class vli
 {
@@ -67,3 +69,4 @@ public:
 	Array<unsigned int> data;
 };
 
+#endif

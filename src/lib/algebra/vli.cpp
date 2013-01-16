@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "../base/base.h"
 #include "algebra.h"
-#include "../file/file.h"
 
 //#define vlidb(m)	msg_write((m));
 #define vlidb(m)
@@ -305,7 +305,7 @@ vli vli::operator *(const vli &v) const
 			t.shift_units(i);
 		r.add_abs(t.data);
 	}
-	r.sign = (sign ^ v.sign) && (r.data.back() != 0);
+	r.sign = (sign != v.sign) && (r.data.back() != 0);
 	return r;
 }
 
@@ -427,6 +427,8 @@ void vli::div(const vli &divisor, vli &remainder)
 //		printf("div %d\n", divisor.data.num);
 		//exit(0);
 	}
+	if ((data.back() == 0) && (data.num > 1))
+		data.pop();
 	sign = sign ^ divisor.sign;
 //	printf("----------\n");
 }
