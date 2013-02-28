@@ -1,5 +1,7 @@
 #include "../file/file.h"
 #include "threads.h"
+#include "work.h"
+#include "mutex.h"
 
 #include "../hui/hui.h"
 
@@ -8,15 +10,15 @@ static int num_threads = 0;
 
 static thread_work_func_t *cur_work_func;
 
-int work_thread[MAX_THREADS];
+static Thread *work_thread[MAX_THREADS];
 
-static int mx_work_list = -1;
+static Mutex *mx_work_list = NULL;
 static Array<int> thread_work[MAX_THREADS];
 static int work_given, work_size, work_partition;
 
 #if 1
 
-void work_func(int, void *p)
+void work_func(void *p)
 {
 	int work_id = (int)(long)p;
 	cur_work_func(work_id);
@@ -33,8 +35,10 @@ bool WorkDo(thread_work_func_t *func, thread_status_func_t *status_func)
 
 	// run threads
 	cur_work_func = func;
-	for (int i=0;i<num_threads;i++)
-		work_thread[i] = ThreadCreate(work_func, (void*)i);
+	for (int i=0;i<num_threads;i++){
+		work_thread[i] = new Thread;
+		work_thread[i]->Call(work_func, (void*)i);
+	}
 	
 	// main program: update gui
 	bool all_done = false;
@@ -47,16 +51,15 @@ bool WorkDo(thread_work_func_t *func, thread_status_func_t *status_func)
 			thread_abort = !status_func();
 		all_done = true;
 		for (int i=0;i<num_threads;i++)
-			all_done &= ThreadDone(work_thread[i]);
+			all_done &= work_thread[i]->IsDone();
 	}
 
-	if (thread_abort){
+	if (!thread_abort){
 		for (int i=0;i<num_threads;i++)
-			ThreadKill(work_thread[i]);
-	}else{
-		for (int i=0;i<num_threads;i++)
-			ThreadWaitTillDone(work_thread[i]);
+			work_thread[i]->Join();
 	}
+	for (int i=0;i<num_threads;i++)
+		delete(work_thread[i]);
 	
 	msg_db_l(1);
 	return !thread_abort;
@@ -83,12 +86,12 @@ scheduled_work_func_t *scheduled_work_func;
 
 bool WorkSchedule(int work_id, int work_size)
 {
-	if (mx_work_list < 0)
-		mx_work_list = MutexCreate();
-	MutexLock(mx_work_list);
+	if (!mx_work_list)
+		mx_work_list = new Mutex;
+	mx_work_list->Lock();
 	thread_work[work_id].clear();
 	if (work_given >= work_size){
-		MutexUnlock(mx_work_list);
+		mx_work_list->Unlock();
 		return false;
 	}
 	for (int i=work_given;i<work_size;i++){
@@ -97,7 +100,7 @@ bool WorkSchedule(int work_id, int work_size)
 		if (thread_work[work_id].num >= work_partition)
 			break;
 	}
-	MutexUnlock(mx_work_list);
+	mx_work_list->Unlock();
 	return true;
 }
 

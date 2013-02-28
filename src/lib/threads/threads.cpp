@@ -9,10 +9,9 @@
 	#include <unistd.h>
 #endif
 
-struct sThread
+struct ThreadInternal
 {
-	bool used, running;
-	int index;
+	bool running;
 	void *p;
 	thread_func_t *f;
 #ifdef OS_WINDOWS
@@ -24,22 +23,7 @@ struct sThread
 };
 
 
-Array<sThread> Thread;
-
-sThread *get_new_thread()
-{
-	for (int i=0;i<Thread.num;i++)
-		if (!Thread[i].used){
-			Thread[i].used = true;
-			return &Thread[i];
-		}
-	sThread t;
-	t.used = true;
-	t.index = Thread.num;
-	Thread.add(t);
-	return &Thread.back();
-}
-
+static Array<Thread*> _Thread_List_;
 
 
 //------------------------------------------------------------------------------
@@ -63,6 +47,16 @@ int ThreadGetNumCores()
 
 //------------------------------------------------------------------------------
 // low level
+
+Thread::Thread()
+{
+	__init__();
+}
+
+Thread::~Thread()
+{
+	__delete__();
+}
 
 #ifdef OS_WINDOWS
 
@@ -135,55 +129,56 @@ int ThreadGetId()
 #endif
 #ifdef OS_LINUX
 
-void *thread_start_func(void *p)
+
+void Thread::__init__()
 {
-	int thread_id = (int)(long)p;
-	Thread[thread_id].f(thread_id, Thread[thread_id].p);
-	Thread[thread_id].running = false;
+	internal = new ThreadInternal;
+	internal->running = false;
+	_Thread_List_.add(this);
+}
+
+static void *thread_start_func(void *p)
+{
+	Thread *t = (Thread*)p;
+	t->internal->f(t->internal->p);
+	t->internal->running = false;
 	return NULL;
 }
 
 // create and run a new thread
-int ThreadCreate(thread_func_t *f, void *param)
+void Thread::Call(thread_func_t *f, void *param)
 {
-	sThread *t = get_new_thread();
-	t->f = f;
-	t->p = param;
-	t->running = true;
-	int ret = pthread_create(&t->thread, NULL, &thread_start_func, (void*)t->index);
+	internal->f = f;
+	internal->p = param;
+	internal->running = true;
+	int ret = pthread_create(&internal->thread, NULL, &thread_start_func, (void*)this);
 
-	if (ret != 0){
-		t->running = false;
-		t->used = false;
-		return -1;
-	}
-	return t->index;
+	if (ret != 0)
+		internal->running = false;
 }
 
 
-void ThreadDelete(int thread)
+void Thread::__delete__()
 {
-	if (thread < 0)
-		return;
-	ThreadKill(thread);
-	Thread[thread].used = false;
+	Kill();
+	for (int i=0;i<_Thread_List_.num;i++)
+		if (_Thread_List_[i] == this)
+			_Thread_List_.erase(i);
+	delete(internal);
 }
 
-void ThreadKill(int thread)
+void Thread::Kill()
 {
-	if (thread < 0)
-		return;
-	if (Thread[thread].running)
-		pthread_cancel(Thread[thread].thread);
-	Thread[thread].running = false;
+	if (internal->running)
+		pthread_cancel(internal->thread);
+	internal->running = false;
 }
 
-void ThreadWaitTillDone(int thread)
+void Thread::Join()
 {
-	if (thread < 0)
-		return;
-	if (Thread[thread].running)
-		pthread_join(Thread[thread].thread, NULL);
+	if (internal->running)
+		pthread_join(internal->thread, NULL);
+	internal->running = false;
 }
 
 void ThreadExit()
@@ -191,23 +186,37 @@ void ThreadExit()
 	pthread_exit(NULL);
 }
 
-int ThreadGetId()
+Thread *ThreadSelf()
 {
 	pthread_t s = pthread_self();
-	for (int i=0;i<Thread.num;i++)
-		if (s == Thread[i].thread)
-			return i;
-	return -1;
+	for (int i=0;i<_Thread_List_.num;i++)
+		if (_Thread_List_[i]->internal->thread == s)
+			return _Thread_List_[i];
+	return NULL;
 }
 
 
 #endif
 
 
-bool ThreadDone(int thread)
+bool Thread::IsDone()
 {
-	if (thread < 0)
-		return true;
-	return !Thread[thread].running;
+	return !internal->running;
+}
+
+
+ThreadBase::ThreadBase(){}
+
+ThreadBase::~ThreadBase(){}
+
+static void _thread_base_run_(void *p)
+{
+	ThreadBase *t = (ThreadBase*)p;
+	t->OnRun();
+}
+
+void ThreadBase::Run()
+{
+	Call(&_thread_base_run_, this);
 }
 

@@ -6,11 +6,21 @@
 #if !defined(MUTEX_H_INCLUDED)
 #define MUTEX_H_INCLUDED
 
+struct MutexInternal;
 
-// mutexes
-int MutexCreate();
-void MutexLock(int mutex);
-void MutexUnlock(int mutex);
+class Mutex
+{
+public:
+	Mutex();
+	~Mutex();
+	void Lock();
+	void Unlock();
+
+	void __init__();
+	void __delete__();
+private:
+	MutexInternal *internal;
+};
 
 
 #endif

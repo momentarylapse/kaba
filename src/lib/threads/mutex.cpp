@@ -1,4 +1,4 @@
-#include "threads.h"
+#include "mutex.h"
 #include "../file/file.h"
 
 #ifdef OS_WINDOWS
@@ -13,10 +13,8 @@
 // mutexes
 
 
-struct sMutex
+struct MutexInternal
 {
-	bool used;
-	int index;
 #ifdef OS_WINDOWS
 	HANDLE mutex;
 #endif
@@ -25,67 +23,63 @@ struct sMutex
 #endif
 };
 
-Array<sMutex> Mutex;
-
-sMutex *get_new_mutex()
+Mutex::Mutex()
 {
-	for (int i=0;i<Mutex.num;i++)
-		if (!Mutex[i].used){
-			Mutex[i].used = true;
-			return &Mutex[i];
-		}
-	sMutex t;
-	t.used = true;
-	t.index = Mutex.num;
-	Mutex.add(t);
-	return &Mutex.back();
+	__init__();
+}
+
+Mutex::~Mutex()
+{
+	__delete__();
 }
 
 #ifdef OS_WINDOWS
 
-int MutexCreate()
+void Mutex::__init__()
 {
-	sMutex *m = get_new_mutex();
-	m->mutex = CreateMutex(NULL, false, NULL);
-	return m->index;
+	internal = new MutexInternal;
+	internal->mutex = CreateMutex(NULL, false, NULL);
 }
 
-void MutexLock(int mutex)
+void Mutex::Lock()
 {
-	if (mutex < 0)
-		return;
-	WaitForSingleObject(Mutex[mutex].mutex, INFINITE);
+	WaitForSingleObject(internal->mutex, INFINITE);
 }
 
-void MutexUnlock(int mutex)
+void Mutex::Unlock()
 {
-	if (mutex < 0)
-		return;
-	ReleaseMutex(Mutex[mutex].mutex);
+	ReleaseMutex(internalmutex);
+}
+
+void Mutex::__delete__()
+{
+	DestroyMutex(&internal->mutex); ?
+	delete(internal);
 }
 
 #endif
 #ifdef OS_LINUX
 
-int MutexCreate()
+void Mutex::__init__()
 {
-	sMutex *m = get_new_mutex();
-	pthread_mutex_init(&m->mutex, NULL);
-	return m->index;
+	internal = new MutexInternal;
+	pthread_mutex_init(&internal->mutex, NULL);
 }
 
-void MutexLock(int mutex)
+void Mutex::Lock()
 {
-	if (mutex < 0)
-		return;
-	pthread_mutex_lock(&Mutex[mutex].mutex);
+	pthread_mutex_lock(&internal->mutex);
 }
 
-void MutexUnlock(int mutex)
+void Mutex::Unlock()
 {
-	if (mutex < 0)
-		return;
-	pthread_mutex_unlock(&Mutex[mutex].mutex);
+	pthread_mutex_unlock(&internal->mutex);
+}
+
+void Mutex::__delete__()
+{
+	pthread_mutex_destroy(&internal->mutex);
+	delete(internal);
 }
 #endif
 

@@ -9,21 +9,38 @@
 // auxiliary
 int ThreadGetNumCores();
 
-typedef void thread_func_t(int, void*);
+typedef void thread_func_t(void*);
 typedef bool thread_status_func_t();
 
-// low level
-int ThreadCreate(thread_func_t *f, void *param = 0);
-//void ThreadRun(int thread);
-void ThreadDelete(int thread);
-void ThreadKill(int thread);
-void ThreadWaitTillDone(int thread);
-bool ThreadDone(int thread);
-void ThreadExit();
-int ThreadGetId();
+struct ThreadInternal;
 
-#include "mutex.h"
-#include "work.h"
+class Thread
+{
+public:
+	Thread();
+	~Thread();
+	void Call(thread_func_t *f, void *param = 0);
+	bool IsDone();
+	void Kill();
+	void Join();
+
+	void __init__();
+	void __delete__();
+
+	ThreadInternal *internal;
+};
+
+class ThreadBase : public Thread
+{
+public:
+	ThreadBase();
+	virtual ~ThreadBase();
+	void Run();
+	virtual void OnRun() = 0;
+};
+
+void ThreadExit();
+Thread *ThreadSelf();
 
 
 #endif

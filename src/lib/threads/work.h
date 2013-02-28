@@ -7,7 +7,7 @@
 #define WORK_H_INCLUDED
 
 
-#define MAX_THREADS			8
+#define MAX_THREADS			32
 
 typedef void thread_work_func_t(int);
 typedef void scheduled_work_func_t(int, int);
