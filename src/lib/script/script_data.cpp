@@ -752,6 +752,8 @@ void SIAddPackageBase()
 		class_add_func("hex", TypeString, mf((tmf)&string::hex));
 			func_add_param("inverted",		TypeBool);
 		class_add_func("unhex", TypeString, mf((tmf)&string::unhex));
+		class_add_func("match", TypeBool, mf((tmf)&string::match));
+			func_add_param("glob",		TypeString);
 		class_add_func("int", TypeInt, mf((tmf)&string::_int));
 		class_add_func("float", TypeFloat, mf((tmf)&string::_float));
 		class_add_func("trim", TypeString, mf((tmf)&string::trim));
@@ -1176,6 +1178,11 @@ void LinkSemiExternalFunc(const string &name, void *pointer)
 	c.return_type = TypeUnknown; // unusable until defined via "extern" in the script!
 	c.is_semi_external = true;
 	PreCommands.add(c);
+}
+
+void _LinkSemiExternalClassFunc(const string &name, void (DummyClass::*function)())
+{
+	LinkSemiExternalFunc(name, (void*)function);
 }
 
 void End()
