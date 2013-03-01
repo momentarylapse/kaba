@@ -27,7 +27,7 @@ public:
 	bool Connect(const string &addr, int port);
 	void Close();
 	void SetBlocking(bool blocking);
-	bool ConnectionLost();
+	bool IsConnected();
 
 	// send / receive directly
 	string Read();
@@ -49,6 +49,8 @@ public:
 	void operator>>(string &s);
 	void operator>>(vector &v);
 	void _read_buffered_(void *p, int size);
+	void SetBufferPos(int pos);
+	int GetBufferPos();
 
 	// buffered write
 	void WriteInt(int i);
@@ -70,11 +72,11 @@ public:
 	void __delete__();
 	void __assign__(const Socket &other);
 private:
+	int uid;
 	int s;
 	string *buffer;
 	int buffer_pos;
 	bool last_op_reading;
-	bool connection_lost;
 };
 
 void NetInit();

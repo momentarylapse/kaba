@@ -33,16 +33,12 @@
 #endif
 
 
-#define NET_MAX_BUFFER		(1048576*4)
-#define NET_MAX_SEND			4096
 #define NET_DEBUG			0
 
-static string Buffer;
-static int BufferUsed;
 float NetConnectTimeout=5.0f;
-static int BlockStartPos=-1,BlockSize;
 
 static bool NetInitialized = false;
+static int NetCurrentSocketID = 1;
 
 
 void so(int dbg,const string &str)
@@ -90,7 +86,7 @@ void Socket::__init__()
 	buffer = new string;
 	buffer_pos = 0;
 	last_op_reading = false;
-	connection_lost = false;
+	uid = NetCurrentSocketID ++;
 }
 
 void Socket::__delete__()
@@ -307,37 +303,39 @@ bool Socket::Connect(const string &addr,int port)
 	return true;
 }
 
-bool Socket::ConnectionLost()
+bool Socket::IsConnected()
 {
-	/*if (s>=0)
-		return con[s].connection_lost;*/
-	return connection_lost;
+	return (s >= 0);
 }
 
 char _net_temp_buf_[65536];
 
 string Socket::Read()
 {
+	if (s < 0)
+		return "";
 	int r = recv(s, _net_temp_buf_, sizeof(_net_temp_buf_), 0);
 	if (r > 0){
 		//msg_write("Read: " + string(_net_temp_buf_, r).hex(false));
 		return string(_net_temp_buf_, r);
 	}
-	connection_lost = true;
 	msg_error("recv");
+	Close();
 	return "";
 }
 
 bool Socket::Write(const string &buf)
 {
+	if (s < 0)
+		return false;
 	int sent = 0;
 	char *b = (char*)buf.data;
 	//msg_write("Write: " + buf.hex(false));
 	while (sent < buf.num){
 		int r = send(s, b, buf.num - sent, 0);
 		if (r <= 0){
-			connection_lost = true;
 			msg_error("send");
+			Close();
 			return false;
 		}
 		b += r;
@@ -350,6 +348,8 @@ bool Socket::Write(const string &buf)
 
 bool Socket::CanWrite()
 {
+	if (s < 0)
+		return false;
 	fd_set w;
 	FD_ZERO(&w);
 	FD_SET(((unsigned)s),&w);
@@ -362,6 +362,8 @@ bool Socket::CanWrite()
 
 bool Socket::CanRead()
 {
+	if (s < 0)
+		return false;
 	fd_set r;
 	FD_ZERO(&r);
 	FD_SET(((unsigned)s),&r);
@@ -375,6 +377,8 @@ bool Socket::CanRead()
 
 void Socket::_read_buffered_(void *p, int size)
 {
+	if (s < 0)
+		return;
 	last_op_reading = true;
 	//msg_write(format("r s=%d  p=%d  b=%d", size, buffer_pos, buffer->num));
 	while (size > (buffer->num - buffer_pos))
@@ -444,6 +448,20 @@ void Socket::operator>>(string &s)
 
 void Socket::operator>>(vector &v)
 {	v = ReadVector();	}
+
+int Socket::GetBufferPos()
+{
+	return buffer_pos;
+}
+
+void Socket::SetBufferPos(int pos)
+{
+	if (s < 0)
+		return;
+	while (pos > buffer->num)
+		*buffer += Read();
+	buffer_pos = pos;
+}
 
 
 #define _test_first_write_() \

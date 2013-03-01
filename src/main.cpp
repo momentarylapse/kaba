@@ -7,7 +7,7 @@
 #include "lib/script/script.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.2.7.0";
+string AppVersion = "0.2.7.1";
 
 #if 0
 

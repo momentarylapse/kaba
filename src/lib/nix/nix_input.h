@@ -17,7 +17,7 @@ void _cdecl NixResetInput();
 // keys
 bool _cdecl NixGetKey(int key);
 bool _cdecl NixGetKeyDown(int key);
-bool _cdecl NixGetKeyDownRep(int key);
+int _cdecl NixGetKeyDownRep();
 bool _cdecl NixGetKeyUp(int key);
 string _cdecl NixGetKeyChar(int key);
 

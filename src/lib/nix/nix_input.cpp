@@ -251,9 +251,6 @@ void NixResetInput()
 }
 
 
-float NixGetMDir()
-{	return NixInputDataCurrent.mw;	}
-
 
 void NixResetCursor()
 {
@@ -317,9 +314,9 @@ bool NixGetKeyDown(int key)
 		return NixInputDataCurrent.key[key] && !NixInputDataLast.key[key];
 }
 
-bool NixGetKeyDownRep(int key)
+int NixGetKeyDownRep()
 {
-	return (key == NixKeyRep);
+	return NixKeyRep;
 }
 
 bool NixGetKeyUp(int key)

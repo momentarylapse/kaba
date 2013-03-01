@@ -1170,13 +1170,13 @@ void PreScript::FindFunctionSingleParameter(int p, Type **WantedType, Function *
 
 	WantedType[p] = TypeUnknown;
 	if (cmd->kind == KindFunction){
-		if (cmd->script)
-			WantedType[p] = cmd->script->pre_script->Functions[cmd->link_nr]->literal_param_type[p];
-		else
-			WantedType[p] = Functions[cmd->link_nr]->literal_param_type[p];
+		Function *ff = cmd->script ? cmd->script->pre_script->Functions[cmd->link_nr] : Functions[cmd->link_nr];
+		if (p < ff->num_params)
+			WantedType[p] = ff->literal_param_type[p];
+	}else if (cmd->kind == KindCompilerFunction){
+		if (p < PreCommands[cmd->link_nr].param.num)
+			WantedType[p] = PreCommands[cmd->link_nr].param[p].type;
 	}
-	if (cmd->kind == KindCompilerFunction)
-		WantedType[p] = PreCommands[cmd->link_nr].param[p].type;
 	// link parameters
 	cmd->param[p] = Param;
 	msg_db_l(4);

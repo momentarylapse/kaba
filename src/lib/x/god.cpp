@@ -93,6 +93,8 @@ bool GodNetMsgEnabled;
 s_net_message_list NetMsg;
 void AddNetMsg(int msg, int argi0, const string &args)
 {
+	if ((!GodNetMsgEnabled) || (!NetworkEnabled))
+		return;
 	if (NetMsg.num_msgs>=GOD_MAX_NET_MSGS){
 		//for (int i=0;i<NetMsg.num_msgs;i++)
 		//	...
@@ -668,8 +670,7 @@ Object *GodCreateObject(const string &filename, const string &name, const vector
 			((object_callback_func*)MetaObjectScriptInit)(o);
 	}
 
-	if ((GodNetMsgEnabled) && (NetworkEnabled))
-		AddNetMsg(NetMsgCreateObject, on, filename);
+	AddNetMsg(NetMsgCreateObject, on, filename);
 
 	msg_db_l(2);
 	return o;
@@ -742,8 +743,7 @@ void GodDeleteObject(int index)
 
 	// the actual deletion of the model will be done by MetaDelete
 
-	if ((GodNetMsgEnabled) && (NetworkEnabled))
-		AddNetMsg(NetMsgDeleteObject, index, "");
+	AddNetMsg(NetMsgDeleteObject, index, "");
 	db_o("/del");
 	msg_db_l(1);
 }
