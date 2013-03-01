@@ -461,6 +461,9 @@ void SIAddPackageMath()
 		class_add_element("y2",	TypeFloat,	12);
 		class_add_func("width",		TypeFloat,			mf((tmf)&rect::width));
 		class_add_func("height",	TypeFloat,			mf((tmf)&rect::height));
+		class_add_func("inside",	TypeBool,			mf((tmf)&rect::inside));
+			func_add_param("x",	TypeFloat);
+			func_add_param("y",	TypeFloat);
 		class_add_func("str",		TypeString,			mf((tmf)&rect::str));
 	
 	add_class(TypeColor);
