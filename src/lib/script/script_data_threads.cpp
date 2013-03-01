@@ -15,6 +15,8 @@ namespace Script{
 #ifdef _X_USE_THREADS_
 	#define thread_p(p)		(void*)p
 #else
+	typedef int Thread;
+	typedef int Mutex;
 	#define thread_p(p)		NULL
 #endif
 
@@ -25,9 +27,9 @@ void SIAddPackageThread()
 
 	set_cur_package("thread");
 
-	Type *TypeThread    = add_type  ("Thread",		0);
+	Type *TypeThread    = add_type  ("Thread",		sizeof(Thread));
 	Type *TypeThreadP   = add_type_p("Thread*",		TypeThread);
-	Type *TypeMutex     = add_type  ("Mutex",		0);
+	Type *TypeMutex     = add_type  ("Mutex",		sizeof(Mutex));
 
 	add_class(TypeThread);
 		class_add_func("__init__",		TypeVoid,	thread_p(mf((tmf)&Thread::__init__)));

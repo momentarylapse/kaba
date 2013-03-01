@@ -78,6 +78,7 @@ int hui_main(Array<string> arg)
 	HuiInitExtended("kaba", AppVersion, NULL, false, "");
 	HuiEndKeepMsgAlive = true;
 
+
 	// tell versions
 	if (arg.num > 1)
 		if (arg[1] == "-v"){

@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.10.4.0";
+string DataVersion = "0.10.5.0";
 
 
 
@@ -60,6 +60,8 @@ Type *TypeQuaternion;
  // internal:
 Type *TypePointerPs;
 Type *TypePointerList;
+Type *TypeCharPs;
+Type *TypeBoolPs;
 Type *TypeBoolList;
 Type *TypeIntPs;
 Type *TypeIntList;
@@ -654,6 +656,7 @@ void SIAddPackageBase()
 	TypePointerPs		= add_type_p("void*&",		TypePointer, FLAG_SILENT);
 	TypePointerList		= add_type_a("void*[]",		TypePointer, -1);
 	TypeBool			= add_type  ("bool",		sizeof(bool), FLAG_CALL_BY_VALUE);
+	TypeBoolPs			= add_type_p("bool&",		TypeBool, FLAG_SILENT);
 	TypeBoolList		= add_type_a("bool[]",		TypeBool, -11);
 	TypeInt				= add_type  ("int",			sizeof(int), FLAG_CALL_BY_VALUE);
 	TypeIntPs			= add_type_p("int&",		TypeInt, FLAG_SILENT);
@@ -665,6 +668,7 @@ void SIAddPackageBase()
 	TypeFloatArrayP		= add_type_p("float[?]*",	TypeFloatArray);
 	TypeFloatList		= add_type_a("float[]",		TypeFloat, -1);
 	TypeChar			= add_type  ("char",		sizeof(char), FLAG_CALL_BY_VALUE);
+	TypeCharPs			= add_type_p("char&",		TypeChar, FLAG_SILENT);
 	TypeCString			= add_type_a("cstring",		TypeChar, 256);	// cstring := char[256]
 	TypeString			= add_type_a("string",		TypeChar, -1);	// string := char[]
 	TypeStringList		= add_type_a("string[]",	TypeString, -1);
