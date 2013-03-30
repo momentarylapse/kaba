@@ -2,8 +2,11 @@
 #include "threads.h"
 #include "work.h"
 #include "mutex.h"
+#include "../config.h"
 
+#ifdef _X_USE_HUI_
 #include "../hui/hui.h"
+#endif
 
 static int OverwriteThreadNum = -1;
 static int num_threads = 0;
@@ -45,8 +48,11 @@ bool WorkDo(thread_work_func_t *func, thread_status_func_t *status_func)
 	bool thread_abort = false;
 	while((!all_done) && (!thread_abort)){
 		
+#ifdef _X_USE_HUI_
 		HuiDoSingleMainLoop();
-		HuiSleep(100);
+		HuiSleep(30);
+#endif
+
 		if (status_func)
 			thread_abort = !status_func();
 		all_done = true;
