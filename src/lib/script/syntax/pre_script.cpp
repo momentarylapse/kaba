@@ -3002,36 +3002,10 @@ void PreScript::Simplify()
 	msg_db_l(2);
 }
 
-void PreScript::BreakDownHighLevelOperators()
-{
-	msg_db_r("BreakDownHighLevelOperators", 4);
-	
-	for (int i=0;i<Commands.num;i++){
-		Command *c = Commands[i];
-		if (c->kind != KindOperator)
-			continue;
-		/*switch(c->LinkNr){
-			case OperatorClassAssign:
-				for (int i=0;i<signed(c->Param[0]->Type->Size)/4;i++){
-				OCAddInstruction(Opcode,OpcodeSize,inMovEaxM,pk[1],param[1],i*4);
-				OCAddInstruction(Opcode,OpcodeSize,inMovMEax,pk[0],param[0],i*4);
-			}
-			for (int i=4*signed(com->Param[0]->Type->Size/4);i<signed(com->Param[0]->Type->Size);i++){
-				OCAddInstruction(Opcode,OpcodeSize,inMovAlM8,pk[1],param[1],i);
-				OCAddInstruction(Opcode,OpcodeSize,inMovM8Al,pk[0],param[0],i);
-			}
-			break;
-			}*/
-	}
-	msg_db_l(4);
-}
-
 // split arrays and address shifts into simpler commands...
 void PreScript::BreakDownComplicatedCommands()
 {
 	msg_db_r("BreakDownComplicatedCommands", 4);
-
-	BreakDownHighLevelOperators();
 	
 	for (int i=0;i<Commands.num;i++){
 		Command *c = Commands[i];

@@ -250,7 +250,6 @@ public:
 	// neccessary conversions
 	void ConvertCallByReference();
 	void BreakDownComplicatedCommands();
-	void BreakDownHighLevelOperators();
 	void MapLocalVariablesToStack();
 
 	// data creation

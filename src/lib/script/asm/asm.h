@@ -294,7 +294,7 @@ const char *Disassemble(void *code, int length = -1, bool allow_comments = true)
 extern bool Error;
 extern int ErrorLine;
 
-bool AddInstruction(char *oc, int &ocs, int inst, int param1_type, void *param1, int param2_type, void *param2, int offset = 0, int insert_at = -1);
+bool AddInstruction(char *oc, int &ocs, int inst, int param1_type = PKNone, void *param1 = NULL, int param2_type = PKNone, void *param2 = NULL, int offset = 0, int insert_at = -1);
 void SetInstructionSet(int set);
 bool ImmediateAllowed(int inst);
 extern int CodeLength, OCParam;
