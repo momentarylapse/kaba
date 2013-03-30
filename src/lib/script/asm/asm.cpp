@@ -1,19 +1,23 @@
-#include "../file/file.h"
-#include "dasm.h"
+#include "../../base/base.h"
+#include "../../file/file.h"
+#include "asm.h"
 #include <stdio.h>
 
+namespace Asm
+{
 
-int AsmCodeLength;
-int AsmOCParam;
-bool AsmError;
-int AsmErrorLine;
+
+int CodeLength;
+int OCParam;
+bool Error;
+int ErrorLine;
 
 
 const char *code_buffer;
 char mne[128];
 bool EndOfLine;
 bool EndOfCode;
-sAsmMetaInfo *CurrentAsmMetaInfo = NULL;
+MetaInfo *CurrentMetaInfo = NULL;
 //bool use_mode16 = false;
 int LineNo;
 static bool mode16;
@@ -22,11 +26,11 @@ static bool small_addr;
 //static bool ConstantIsLabel, UnknownLabel;
 static bool UnknownLabel;
 
-void AsmSetError(const string &str)
+void SetError(const string &str)
 {
 	msg_error(format("%s\nline %d",str.c_str(),LineNo+1));
-	AsmErrorLine = LineNo;
-	AsmError = true;
+	ErrorLine = LineNo;
+	Error = true;
 }
 
 
@@ -65,6 +69,7 @@ enum{
 	//Size48,
 	Size16or32,
 	Size32or48,
+	Size64,
 	SizeUnknown
 };
 
@@ -73,6 +78,7 @@ inline int absolute_size(int s)
 	if (s == Size8)		return 1;
 	if (s == Size16)	return 2;
 	if (s == Size32)	return 4;
+	if (s == Size64)	return 8;
 	return 0;
 }
 
@@ -377,6 +383,7 @@ const char *SizeOut(int size)
 	if (size == Size32)		return "32";
 	if (size == Size16or32)	return "16/32";
 	if (size == Size32or48)	return "32/48";
+	if (size == Size64)		return "64";
 	return "???";
 }
 
@@ -618,9 +625,9 @@ int RegRoot[42] = {
 	RegSt0, RegSt1, RegSt2, RegSt3, RegSt4, RegSt5, RegSt6, RegSt7
 };
 
-void AsmInit()
+void Init()
 {
-	AsmError = false;
+	Error = false;
 	
 	Register.clear();
 	add_reg("eax",	RegEax,	RegGroupGeneral,	Size32);
@@ -670,7 +677,7 @@ void AsmInit()
 	add_reg("st6",	RegSt6,	-1,	Size32);
 	add_reg("st7",	RegSt7,	-1,	Size32);
 
-	// create easy to acces array
+	// create easy to access array
 	RegisterByID.clear();
 	for (int i=0;i<Register.num;i++){
 		if (RegisterByID.num <= Register[i].id)
@@ -1231,7 +1238,7 @@ inline void GetFromModRM(sInstParam &p, sInstParamFuzzy &pf, unsigned char modrm
 				if (rm == 0x01)	p.reg = RegisterByID[RegEcx];
 				if (rm == 0x02)	p.reg = RegisterByID[RegEdx];
 				if (rm == 0x03)	p.reg = RegisterByID[RegEbx];
-				//if (rm == 0x04){p.reg = NULL;	p.disp = DispModeSIB;	p.type = ParamTImmediate;}//p.type = ParamTInvalid;	AsmError("kein SIB byte...");}
+				//if (rm == 0x04){p.reg = NULL;	p.disp = DispModeSIB;	p.type = ParamTImmediate;}//p.type = ParamTInvalid;	Error("kein SIB byte...");}
 				if (rm == 0x04){p.reg = RegisterByID[RegEax];	p.disp = DispModeSIB;	} // eax = provisoric
 				if (rm == 0x05){p.reg = NULL;	p.type = ParamTImmediate;	}
 				if (rm == 0x06)	p.reg = RegisterByID[RegEsi];
@@ -1353,13 +1360,13 @@ inline void ReadParamData(char *&cur, sInstParam &p)
 }
 
 // convert some opcode into (human readable) assembler language
-const char *Opcode2Asm(void *_code_,int length,bool allow_comments)
+const char *Disassemble(void *_code_,int length,bool allow_comments)
 {
-	msg_db_r("Opcode2Asm", 1+ASM_DB_LEVEL);
+	msg_db_r("Disassemble", 1+ASM_DB_LEVEL);
 	/*if (!Instruction)
 		SetInstructionSet(InstructionSetDefault);*/
 	
-	AsmError = false;
+	Error = false;
 
 	char *code = (char*)_code_;
 
@@ -1375,8 +1382,8 @@ const char *Opcode2Asm(void *_code_,int length,bool allow_comments)
 	// opcode points to the start of the instruction (mov)
 	char *cur = code;
 	mode16 = false;
-	if (CurrentAsmMetaInfo)
-		mode16 = CurrentAsmMetaInfo->Mode16;
+	if (CurrentMetaInfo)
+		mode16 = CurrentMetaInfo->Mode16;
 
 
 	while(code < end){
@@ -1389,38 +1396,38 @@ const char *Opcode2Asm(void *_code_,int length,bool allow_comments)
 		if (code >= end)
 			break;
 
-		if (AsmError){
+		if (Error){
 			msg_db_l(1+ASM_DB_LEVEL);
 			return "";
 		}
 
 		// special info
-		if (CurrentAsmMetaInfo){
+		if (CurrentMetaInfo){
 
 			// labels
-			for (int i=0;i<CurrentAsmMetaInfo->Label.num;i++)
-				if ((long)code - (long)orig == CurrentAsmMetaInfo->Label[i].Pos)
-					bufstr += "    " + CurrentAsmMetaInfo->Label[i].Name + ":\n";
+			for (int i=0;i<CurrentMetaInfo->label.num;i++)
+				if ((long)code - (long)orig == CurrentMetaInfo->label[i].Pos)
+					bufstr += "    " + CurrentMetaInfo->label[i].Name + ":\n";
 
 			// data blocks
 			bool inserted = false;
-			for (int i=0;i<CurrentAsmMetaInfo->Data.num;i++){
-				//printf("%d  %d  %d  %d\n", CurrentAsmMetaInfo->Data[i].Pos, (long)code, (long)orig, (long)code - (long)orig);
-				if ((long)code - (long)orig == CurrentAsmMetaInfo->Data[i].Pos){
+			for (int i=0;i<CurrentMetaInfo->data.num;i++){
+				//printf("%d  %d  %d  %d\n", CurrentMetaInfo->data[i].Pos, (long)code, (long)orig, (long)code - (long)orig);
+				if ((long)code - (long)orig == CurrentMetaInfo->data[i].Pos){
 					//msg_write("data");
-					if (CurrentAsmMetaInfo->Data[i].Size==1){
+					if (CurrentMetaInfo->data[i].Size==1){
 						bufstr += "  db\t";
 						bufstr += d2h(cur,1);
-					}else if (CurrentAsmMetaInfo->Data[i].Size==2){
+					}else if (CurrentMetaInfo->data[i].Size==2){
 						bufstr += "  dw\t";
 						bufstr += d2h(cur,2);
-					}else if (CurrentAsmMetaInfo->Data[i].Size==4){
+					}else if (CurrentMetaInfo->data[i].Size==4){
 						bufstr += "  dd\t";
 						bufstr += d2h(cur,4);
 					}else{
 						bufstr += "  ds \t...";
 					}
-					cur += CurrentAsmMetaInfo->Data[i].Size;
+					cur += CurrentMetaInfo->data[i].Size;
 					bufstr += "\n";
 					inserted = true;
 				}
@@ -1429,9 +1436,9 @@ const char *Opcode2Asm(void *_code_,int length,bool allow_comments)
 				continue;
 
 			// change of bits (processor mode)
-			for (int i=0;i<CurrentAsmMetaInfo->BitChange.num;i++)
-				if ((long)code-(long)orig == CurrentAsmMetaInfo->BitChange[i].Pos){
-					mode16 = (CurrentAsmMetaInfo->BitChange[i].Bits == 16);
+			for (int i=0;i<CurrentMetaInfo->bit_change.num;i++)
+				if ((long)code-(long)orig == CurrentMetaInfo->bit_change[i].Pos){
+					mode16 = (CurrentMetaInfo->bit_change[i].Bits == 16);
 					small_param = mode16;
 					small_addr = mode16;
 					if (mode16)
@@ -1923,7 +1930,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 		// first part (must be a register)
 		char part[128];
 		strcpy(part, param);
-		for (int i=0;i<strlen(param);i++)
+		for (unsigned int i=0;i<strlen(param);i++)
 			if ((param[i] == ' ') || (param[i] == '+'))
 				part[i] = 0;
 		int offset = strlen(part);
@@ -1937,7 +1944,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 			p.type = ParamTInvalid;
 
 		// second part (...up till now only hex)
-		for (int i=offset;i<strlen(param);i++)
+		for (unsigned int i=offset;i<strlen(param);i++)
 			if ((param[i] != ' ') && (param[i] != '+')){
 				offset = i;
 				break;
@@ -1975,7 +1982,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 				sInstParam sub;
 				GetParam(sub, &param[i+1], pn);
 				if (sub.type != ParamTImmediate){
-					AsmSetError("error in hex parameter:  " + string(param));
+					SetError("error in hex parameter:  " + string(param));
 					p.type = PKInvalid;
 					msg_db_l(1+ASM_DB_LEVEL);
 					return;						
@@ -1986,7 +1993,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 				p.type = ParamTImmediateDouble;
 				break;
 			}else{
-				AsmSetError(format("evil character in hex parameter:  \"%s\"",param));
+				SetError(format("evil character in hex parameter:  \"%s\"",param));
 				p.type = ParamTInvalid;
 				msg_db_l(1+ASM_DB_LEVEL);
 				return;
@@ -2009,7 +2016,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 
 	// label substitude
 	}else if (strcmp(param,"$")==0){
-		p.value = CurrentAsmMetaInfo->CurrentOpcodePos + CurrentAsmMetaInfo->CodeOrigin;
+		p.value = CurrentMetaInfo->CurrentOpcodePos + CurrentMetaInfo->CodeOrigin;
 		p.type = ParamTImmediate;
 		p.is_label = true;
 		if (DebugAsm)
@@ -2027,12 +2034,12 @@ void GetParam(sInstParam &p, char *param, int pn)
 				msg_db_l(1+ASM_DB_LEVEL);
 				return;
 			}
-		if (CurrentAsmMetaInfo){
+		if (CurrentMetaInfo){
 			string sparam = param;
 			// existing label
-			for (int i=0;i<CurrentAsmMetaInfo->Label.num;i++)
-				if (CurrentAsmMetaInfo->Label[i].Name == sparam){
-					p.value = CurrentAsmMetaInfo->Label[i].Pos + CurrentAsmMetaInfo->CodeOrigin;
+			for (int i=0;i<CurrentMetaInfo->label.num;i++)
+				if (CurrentMetaInfo->label[i].Name == sparam){
+					p.value = CurrentMetaInfo->label[i].Pos + CurrentMetaInfo->CodeOrigin;
 					p.type = ParamTImmediate;
 					p.is_label = true;
 					if (DebugAsm)
@@ -2041,9 +2048,9 @@ void GetParam(sInstParam &p, char *param, int pn)
 					return;
 				}
 			// C-Script variable (global)
-			for (int i=0;i<CurrentAsmMetaInfo->GlobalVar.num;i++){
-				if (CurrentAsmMetaInfo->GlobalVar[i].Name == sparam){
-					p.value = (long)CurrentAsmMetaInfo->GlobalVar[i].Pos;
+			for (int i=0;i<CurrentMetaInfo->global_var.num;i++){
+				if (CurrentMetaInfo->global_var[i].Name == sparam){
+					p.value = (long)CurrentMetaInfo->global_var[i].Pos;
 					p.type = ParamTImmediate;
 					p.deref = true;
 					if (DebugAsm)
@@ -2054,13 +2061,13 @@ void GetParam(sInstParam &p, char *param, int pn)
 			}
 			// not yet existing label...
 			if (param[0]=='_'){
-				sAsmWantedLabel w;
+				WantedLabel w;
 				w.Name = param;
 				w.Size = 0;
 				w.Pos = -1;
 				w.Add = 0;
 				w.ParamNo = pn;
-				CurrentAsmMetaInfo->WantedLabel.add(w);
+				CurrentMetaInfo->wanted_label.add(w);
 				UnknownLabel = true;
 				if (DebugAsm)
 					printf("wanted label:  \"%s\"\n",param);
@@ -2073,7 +2080,7 @@ void GetParam(sInstParam &p, char *param, int pn)
 		}
 	}
 	if (p.type == ParamTInvalid)
-		AsmSetError(format("unknown parameter:  \"%s\"", param));
+		SetError(format("unknown parameter:  \"%s\"", param));
 	msg_db_l(1+ASM_DB_LEVEL);
 }
 
@@ -2122,12 +2129,12 @@ void OpcodeAddImmideate(char *oc, int &ocs, sInstParamFuzzy &ip, sInstParam &p, 
 
 	// wanted label -> set new information
 	if ((UnknownLabel) && ((p.type == ParamTImmediate) || (p.type == ParamTImmediateDouble)))
-		for (int i=0;i<CurrentAsmMetaInfo->WantedLabel.num;i++){
-			sAsmWantedLabel *w = &CurrentAsmMetaInfo->WantedLabel[i];
+		for (int i=0;i<CurrentMetaInfo->wanted_label.num;i++){
+			WantedLabel *w = &CurrentMetaInfo->wanted_label[i];
 			if ((pn == w->ParamNo) && (w->Pos < 0)){
 				//msg_error("--------------------------- got wanted label!??");
 				// the constant is just fake, since its value is still unknown!
-				w->Pos = ocs + CurrentAsmMetaInfo->PreInsertionLength;
+				w->Pos = ocs + CurrentMetaInfo->PreInsertionLength;
 				w->Size = size;
 			}
 		}
@@ -2139,38 +2146,38 @@ void OpcodeAddImmideate(char *oc, int &ocs, sInstParamFuzzy &ip, sInstParam &p, 
 		insert_val(oc, ocs, p.value >> 32, 2); // bits 33-47
 }
 
-bool AsmAddInstructionLowLevel(char *oc, int &ocs, int inst, sInstParam &wp1, sInstParam &wp2, int offset, int insert_at);
+bool AddInstructionLowLevel(char *oc, int &ocs, int inst, sInstParam &wp1, sInstParam &wp2, int offset, int insert_at);
 
 // convert human readable asm code into opcode
-const char *Asm2Opcode(const char *code)
+const char *Assemble(const char *code)
 {
 	msg_db_r("Asm2Opcode", 1+ASM_DB_LEVEL);
 	/*if (!Instruction)
 		SetInstructionSet(InstructionSetDefault);*/
 	
-	AsmError = false;
+	Error = false;
 
 	
-	AsmCodeLength = 0; // beginning of block -> current char
-	if (CurrentAsmMetaInfo){
-		CurrentAsmMetaInfo->PreInsertionLength = CurrentAsmMetaInfo->CurrentOpcodePos; // position of the block withing (overall) opcode
+	CodeLength = 0; // beginning of block -> current char
+	if (CurrentMetaInfo){
+		CurrentMetaInfo->PreInsertionLength = CurrentMetaInfo->CurrentOpcodePos; // position of the block withing (overall) opcode
 	}
-	// CurrentAsmMetaInfo->CurrentOpcodePos // Anfang aktuelle Zeile im gesammten Opcode
+	// CurrentMetaInfo->CurrentOpcodePos // Anfang aktuelle Zeile im gesammten Opcode
 	code_buffer = code; // Asm-Source-Puffer
 	LineNo = 0;
-	if (CurrentAsmMetaInfo)
-		LineNo = CurrentAsmMetaInfo->LineOffset;
+	if (CurrentMetaInfo)
+		LineNo = CurrentMetaInfo->LineOffset;
 	LineNo -= 2; // ????
 	int pos = 0;
 	char cmd[128], param1[128], param2[128];
 	sInstParam p1, p2;
 	mode16 = false;
-	if (CurrentAsmMetaInfo)
-		mode16 = CurrentAsmMetaInfo->Mode16;
+	if (CurrentMetaInfo)
+		mode16 = CurrentMetaInfo->Mode16;
 	EndOfCode = false;
 	while(true){
-		resize_buffer(AsmCodeLength + 128);
-		if (AsmError){
+		resize_buffer(CodeLength + 128);
+		if (Error){
 			msg_db_l(1+ASM_DB_LEVEL);
 			return "";
 		}
@@ -2181,9 +2188,9 @@ const char *Asm2Opcode(const char *code)
 		strcpy(param1, "");
 		strcpy(param2, "");
 		UnknownLabel = false;
-		if (CurrentAsmMetaInfo){
-			CurrentAsmMetaInfo->CurrentOpcodePos = CurrentAsmMetaInfo->PreInsertionLength + AsmCodeLength;
-			//msg_write(CurrentAsmMetaInfo->CurrentOpcodePos);
+		if (CurrentMetaInfo){
+			CurrentMetaInfo->CurrentOpcodePos = CurrentMetaInfo->PreInsertionLength + CodeLength;
+			//msg_write(CurrentMetaInfo->CurrentOpcodePos);
 		}
 
 
@@ -2217,7 +2224,7 @@ const char *Asm2Opcode(const char *code)
 		GetParam(p1, param1, 0);
 		GetParam(p2, param2, 1);
 		if ((p1.type == ParamTInvalid) || (p2.type == ParamTInvalid)){
-			AsmCodeLength=-1;
+			CodeLength=-1;
 			msg_db_l(1+ASM_DB_LEVEL);
 			return "";
 		}
@@ -2229,12 +2236,12 @@ const char *Asm2Opcode(const char *code)
 			mode16 = true;
 			small_addr = true;
 			small_param = true;
-			if (CurrentAsmMetaInfo){
-				CurrentAsmMetaInfo->Mode16 = true;
-				sAsmBitChange b;
-				b.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				CurrentMetaInfo->Mode16 = true;
+				BitChange b;
+				b.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				b.Bits = 16;
-				CurrentAsmMetaInfo->BitChange.add(b);
+				CurrentMetaInfo->bit_change.add(b);
 			}
 			done=true;
 		}
@@ -2243,46 +2250,46 @@ const char *Asm2Opcode(const char *code)
 			mode16 = false;
 			small_addr = false;
 			small_param = false;
-			if (CurrentAsmMetaInfo){
-				CurrentAsmMetaInfo->Mode16 = false;
-				sAsmBitChange b;
-				b.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				CurrentMetaInfo->Mode16 = false;
+				BitChange b;
+				b.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				b.Bits = 32;
-				CurrentAsmMetaInfo->BitChange.add(b);
+				CurrentMetaInfo->bit_change.add(b);
 			}
 			done=true;
 		}
 		if (strcmp(cmd,"db")==0){
 			so("Daten:   1 byte");
-			if (CurrentAsmMetaInfo){
-				sAsmData d;
-				d.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				AsmData d;
+				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				d.Size = 1;
-				CurrentAsmMetaInfo->Data.add(d);
+				CurrentMetaInfo->data.add(d);
 			}
-			buffer[AsmCodeLength++]=(char)(long)p1.value;
+			buffer[CodeLength++]=(char)(long)p1.value;
 			done=true;
 		}
 		if (strcmp(cmd,"dw")==0){
 			so("Daten:   2 byte");
-			if (CurrentAsmMetaInfo){
-				sAsmData d;
-				d.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				AsmData d;
+				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				d.Size = 2;
-				CurrentAsmMetaInfo->Data.add(d);
+				CurrentMetaInfo->data.add(d);
 			}
-			*(short*)&buffer[AsmCodeLength]=(short)(long)p1.value;	AsmCodeLength+=2;
+			*(short*)&buffer[CodeLength]=(short)(long)p1.value;	CodeLength+=2;
 			done=true;
 		}
 		if (strcmp(cmd,"dd")==0){
 			so("Daten:   4 byte");
-			if (CurrentAsmMetaInfo){
-				sAsmData d;
-				d.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				AsmData d;
+				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				d.Size = 4;
-				CurrentAsmMetaInfo->Data.add(d);
+				CurrentMetaInfo->data.add(d);
 			}
-			*(int*)&buffer[AsmCodeLength]=(long)p1.value;	AsmCodeLength+=4;
+			*(int*)&buffer[CodeLength]=(long)p1.value;	CodeLength+=4;
 			done=true;
 		}
 		if ((strcmp(cmd,"ds")==0)||(strcmp(cmd,"dz")==0)){
@@ -2290,54 +2297,54 @@ const char *Asm2Opcode(const char *code)
 			char *s = (char*)p1.value;
 			int l=strlen(s);
 			if (strcmp(cmd,"dz")==0)	l++;
-			if (CurrentAsmMetaInfo){
-				sAsmData d;
-				d.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
+			if (CurrentMetaInfo){
+				AsmData d;
+				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
 				d.Size = l;
-				CurrentAsmMetaInfo->Data.add(d);
+				CurrentMetaInfo->data.add(d);
 			}
-			memcpy(&buffer[AsmCodeLength], s, l);
-			AsmCodeLength += l;
+			memcpy(&buffer[CodeLength], s, l);
+			CodeLength += l;
 			done=true;
 		}
 		if (strcmp(cmd,"org")==0){
-			if (CurrentAsmMetaInfo)
-				CurrentAsmMetaInfo->CodeOrigin = (long)p1.value;
+			if (CurrentMetaInfo)
+				CurrentMetaInfo->CodeOrigin = (long)p1.value;
 			done=true;
 		}
 		if (cmd[strlen(cmd)-1]==':'){
 			so("Label");
-			if (CurrentAsmMetaInfo){
+			if (CurrentMetaInfo){
 				cmd[strlen(cmd)-1]=0;
 				so(cmd);
-				sAsmLabel l;
+				Label l;
 				l.Name = cmd;
-				l.Pos = CurrentAsmMetaInfo->CurrentOpcodePos;
-				CurrentAsmMetaInfo->Label.add(l);
+				l.Pos = CurrentMetaInfo->CurrentOpcodePos;
+				CurrentMetaInfo->label.add(l);
 
 				//msg_write("-------------label-----------------------");
 
 				// die bisherigen Platzhalter ersetzen
-				for (int i=0;i<CurrentAsmMetaInfo->WantedLabel.num;i++)
-					if (CurrentAsmMetaInfo->WantedLabel[i].Name == cmd){
-						sAsmWantedLabel *w = &CurrentAsmMetaInfo->WantedLabel[i];
+				for (int i=0;i<CurrentMetaInfo->wanted_label.num;i++)
+					if (CurrentMetaInfo->wanted_label[i].Name == cmd){
+						WantedLabel *w = &CurrentMetaInfo->wanted_label[i];
 						//msg_error("    -> wanted");
-						//printf("cop %d   orig %d  add %d  pos %d  pil %d\n", (long)CurrentAsmMetaInfo->CurrentOpcodePos, (long)CurrentAsmMetaInfo->CodeOrigin, (long)w->Add, w->Pos, CurrentAsmMetaInfo->PreInsertionLength);
+						//printf("cop %d   orig %d  add %d  pos %d  pil %d\n", (long)CurrentMetaInfo->CurrentOpcodePos, (long)CurrentMetaInfo->CodeOrigin, (long)w->Add, w->Pos, CurrentMetaInfo->PreInsertionLength);
 
 						// location???
 						char *a = NULL;
 						// int this asm block?
-						if (w->Pos >= CurrentAsmMetaInfo->PreInsertionLength){
+						if (w->Pos >= CurrentMetaInfo->PreInsertionLength){
 							//msg_write("inside");
 							// inside
-							a = &buffer[w->Pos - CurrentAsmMetaInfo->PreInsertionLength];
-							//msg_write(w->Pos - CurrentAsmMetaInfo->PreInsertionLength);
+							a = &buffer[w->Pos - CurrentMetaInfo->PreInsertionLength];
+							//msg_write(w->Pos - CurrentMetaInfo->PreInsertionLength);
 						}else{
 							//msg_write("before");
 							// before asm
-							a = &CurrentAsmMetaInfo->Opcode[w->Pos];
+							a = &CurrentMetaInfo->Opcode[w->Pos];
 						}
-						int lvalue = CurrentAsmMetaInfo->CurrentOpcodePos + CurrentAsmMetaInfo->CodeOrigin + w->Add;
+						int lvalue = CurrentMetaInfo->CurrentOpcodePos + CurrentMetaInfo->CodeOrigin + w->Add;
 						/*msg_write(lvalue);
 						msg_write(w->Size);*/
 
@@ -2347,7 +2354,7 @@ const char *Asm2Opcode(const char *code)
 						//InsertConstant(lvalue, w->Size, -1, a);
 
 						// remove from list
-						CurrentAsmMetaInfo->WantedLabel.erase(i);
+						CurrentMetaInfo->wanted_label.erase(i);
 						i--;
 					}
 			}
@@ -2366,19 +2373,19 @@ const char *Asm2Opcode(const char *code)
 			if (strcmp(InstructionName[i].name, cmd) == 0)
 				inst = InstructionName[i].inst;
 		if (inst < 0){
-			AsmSetError("unknown instruction:  " + string(cmd));
-			AsmCodeLength=-1;
+			SetError("unknown instruction:  " + string(cmd));
+			CodeLength=-1;
 			msg_db_l(1+ASM_DB_LEVEL);
 			return "";
 		}
 		// praefix
 		if (small_param != mode16)
-			buffer[AsmCodeLength ++] = 0x66;
+			buffer[CodeLength ++] = 0x66;
 
 		// command
-		if (!AsmAddInstructionLowLevel(buffer, AsmCodeLength, inst, p1, p2, 0, 0)){
-			AsmSetError(format("instruction is not compatible with its parameters (a):  %s %s, %s", cmd, param1, param2));
-			AsmCodeLength=-1;
+		if (!AddInstructionLowLevel(buffer, CodeLength, inst, p1, p2, 0, 0)){
+			SetError(format("instruction is not compatible with its parameters (a):  %s %s, %s", cmd, param1, param2));
+			CodeLength=-1;
 			msg_db_l(1+ASM_DB_LEVEL);
 			return "";
 		}
@@ -2559,7 +2566,7 @@ inline char CreatePartialModRMByte(sInstParamFuzzy &pf, sInstParam &p)
 		}
 	}
 	if (pf.mrm_mode != MRMNone)
-		AsmSetError(format("unhandled modrm %d %d %s %d %s", pf.mrm_mode, p.type, p.reg?p.reg->name:"", p.deref, SizeOut(pf.size)));
+		SetError(format("unhandled modrm %d %d %s %d %s", pf.mrm_mode, p.type, p.reg?p.reg->name:"", p.deref, SizeOut(pf.size)));
 	return 0x00;
 }
 
@@ -2592,11 +2599,11 @@ void OpcodeAddInstruction(char *oc, int &ocs, sInstruction *inst, sInstParam &p1
 	// encountered some interesting labels?
 	bool lc_relative = ((inst->name[0] == 'j') && (inst->param1._type_ != ParamTImmediateDouble)) || (strcmp(inst->name, "call") == 0) || (strstr(inst->name, "loop"));
 	// inst->param1.immediate_is_relative
-	if ((!UnknownLabel) && (lc_relative) && (CurrentAsmMetaInfo)){
+	if ((!UnknownLabel) && (lc_relative) && (CurrentMetaInfo)){
 		// relative jump.... use label only relatively!!!
 		//msg_write("----rel----");
-		//printf("ocp %d   orig %d  cmd %d\n", CurrentAsmMetaInfo->CurrentOpcodePos, CurrentAsmMetaInfo->CodeOrigin, CalcCommandSize(inst, ip1, ip2, p1, p2));
-		int diff = CurrentAsmMetaInfo->CurrentOpcodePos + CurrentAsmMetaInfo->CodeOrigin + CalcCommandSize(inst, ip1, ip2, p1, p2);
+		//printf("ocp %d   orig %d  cmd %d\n", CurrentMetaInfo->CurrentOpcodePos, CurrentMetaInfo->CodeOrigin, CalcCommandSize(inst, ip1, ip2, p1, p2));
+		int diff = CurrentMetaInfo->CurrentOpcodePos + CurrentMetaInfo->CodeOrigin + CalcCommandSize(inst, ip1, ip2, p1, p2);
 		/*msg_write(diff);
 		msg_write(p1.is_label);
 		msg_write(p2.is_label);*/
@@ -2604,7 +2611,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, sInstruction *inst, sInstParam &p1
 		if (p2.is_label)	p2.value -= diff;
 	}
 
-	AsmOCParam = ocs;
+	OCParam = ocs;
 
 	OpcodeAddImmideate(oc, ocs, ip1, p1, 0);
 	OpcodeAddImmideate(oc, ocs, ip2, p2, 1);
@@ -2612,7 +2619,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, sInstruction *inst, sInstParam &p1
 	msg_db_l(1+ASM_DB_LEVEL);
 }
 
-bool AsmAddInstructionLowLevel(char *oc, int &ocs, int inst, sInstParam &wp1, sInstParam &wp2, int offset, int insert_at)
+bool AddInstructionLowLevel(char *oc, int &ocs, int inst, sInstParam &wp1, sInstParam &wp2, int offset, int insert_at)
 {
 	msg_db_r("AsmAddInstructionLow", 1+ASM_DB_LEVEL);
 
@@ -2643,7 +2650,7 @@ bool AsmAddInstructionLowLevel(char *oc, int &ocs, int inst, sInstParam &wp1, sI
 	if (ninst >= 0)
 		OpcodeAddInstruction(oc, ocs, &Instruction[ninst], wp1, wp2);
 	/*else
-		AsmError(string("unknown instruction:  ",cmd));*/
+		Error(string("unknown instruction:  ",cmd));*/
 	//msg_write(d2h(&oc[ocs0], ocs - ocs0, false));
 	
 	msg_db_l(1+ASM_DB_LEVEL);
@@ -2707,7 +2714,7 @@ void param2str(string &str, int type, void *param)
 	}
 }
 
-bool AsmAddInstruction(char *oc, int &ocs, int inst, int param1_type, void *param1, int param2_type, void *param2, int offset, int insert_at)
+bool AddInstruction(char *oc, int &ocs, int inst, int param1_type, void *param1, int param2_type, void *param2, int offset, int insert_at)
 {
 	msg_db_r("AsmAddInstruction", 1+ASM_DB_LEVEL);
 	/*if (!Instruction)
@@ -2723,8 +2730,8 @@ bool AsmAddInstruction(char *oc, int &ocs, int inst, int param1_type, void *para
 	sInstParam wp1 = _make_param_(param1_type, (long)param1);
 	sInstParam wp2 = _make_param_(param2_type, (long)param2);
 
-	AsmOCParam = ocs;
-	bool ok = AsmAddInstructionLowLevel(oc, ocs, inst, wp1, wp2, offset, insert_at);
+	OCParam = ocs;
+	bool ok = AddInstructionLowLevel(oc, ocs, inst, wp1, wp2, offset, insert_at);
 	if (!ok){
 		bool found = false;
 		for (int i=0;i<NumInstructionNames;i++)
@@ -2732,18 +2739,18 @@ bool AsmAddInstruction(char *oc, int &ocs, int inst, int param1_type, void *para
 				string ps1, ps2;
 				param2str(ps1, param1_type, param1);
 				param2str(ps2, param2_type, param2);
-				AsmSetError(format("command not compatible with its parameters\n%s %s, %s", InstructionName[i].name, ps1.c_str(), ps2.c_str()));
+				SetError(format("command not compatible with its parameters\n%s %s, %s", InstructionName[i].name, ps1.c_str(), ps2.c_str()));
 				found = true;
 			}
 		if (!found)
-			AsmSetError(format("instruction unknown: %d", inst));
+			SetError(format("instruction unknown: %d", inst));
 	}
 	
 	msg_db_l(1+ASM_DB_LEVEL);
 	return ok;
 }
 
-bool AsmImmediateAllowed(int inst)
+bool ImmediateAllowed(int inst)
 {
 	for (int i=0;i<Instruction.num;i++)
 		if (Instruction[i].inst == inst)
@@ -2751,3 +2758,5 @@ bool AsmImmediateAllowed(int inst)
 				return true;
 	return false;
 }
+
+};

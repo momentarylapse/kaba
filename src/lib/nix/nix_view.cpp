@@ -11,10 +11,15 @@
 #include "../image/image.h"
 #endif
 
+void TestGLError(const string &);
+
+void NixUpdateLights();
+
 
 matrix NixViewMatrix, NixProjectionMatrix, NixInvProjectionMatrix;
 matrix NixProjectionMatrix2d;
 matrix NixWorldMatrix, NixWorldViewProjectionMatrix;
+vector _NixCamPos_;
 float View3DWidth,View3DHeight,View3DCenterX,View3DCenterY,NixView3DRatio;	// 3D transformation
 float View2DScaleX,View2DScaleY;				// 2D transformation
 int PerspectiveModeSize, PerspectiveModeCenter, PerspectiveMode2DScale;
@@ -44,6 +49,7 @@ void _NixSetMode2d()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	NixMode3d = false;
+	TestGLError("Set2d");
 }
 
 void _NixSetMode3d()
@@ -56,6 +62,7 @@ void _NixSetMode3d()
 	glLoadMatrixf((float*)&NixViewMatrix);
 	glMultMatrixf((float*)&NixWorldMatrix);
 	NixMode3d = true;
+	TestGLError("Set3d");
 }
 
 void NixResize()
@@ -99,6 +106,7 @@ void NixResize()
 	NixSetProjection(_NixProjectionPerspective, _NixProjectionRelative);
 	NixSetView(NixViewMatrix);
 
+	TestGLError("Resize");
 	msg_db_l(5);
 }
 
@@ -111,6 +119,7 @@ void NixSetWorldMatrix(const matrix &mat)
 		glLoadMatrixf((float*)&NixViewMatrix);
 		glMultMatrixf((float*)&NixWorldMatrix);
 	}
+	TestGLError("SetWorldMatrix");
 }
 
 void NixSetPerspectiveMode(int mode,float param1,float param2)
@@ -155,44 +164,6 @@ void NixSetPerspectiveMode(int mode,float param1,float param2)
 	}
 }
 
-void NixUpdateLights()
-{
-	// OpenGL muss Lichter neu ausrichten, weil sie in Kamera-Koordinaten gespeichert werden!
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	//glLoadIdentity();
-	glLoadMatrixf((float*)&NixViewMatrix);
-
-	foreachi(sLight &l, NixLight, i){
-		if (!l.Used)
-			continue;
-		if (!l.Enabled)
-			continue;
-	//	if (OGLLightNo[i]<0)	continue;
-		float f[4];
-		/*f[0]=LightVector[i].x;	f[1]=LightVector[i].y;	f[2]=LightVector[i].z;
-		if (LightDirectional[i])
-			f[3]=0;
-		else
-			f[3]=1;
-		glLightfv(OGLLightNo[i],GL_POSITION,f);*/
-		if (l.Type == LightTypeDirectional){
-			f[0] = l.Dir.x;
-			f[1] = l.Dir.y;
-			f[2] = l.Dir.z;
-			f[3] = 0;
-		}else if (l.Type == LightTypeRadial){
-			f[0] = l.Pos.x;
-			f[1] = l.Pos.y;
-			f[2] = l.Pos.z;
-			f[3] = 1;
-		}
-		glLightfv(GL_LIGHT0+i,GL_POSITION,f);
-		//msg_write(i);
-	}
-	glPopMatrix();
-}
-
 static vector ViewPos,ViewDir;
 static vector Frustrum[8];
 static plane FrustrumPl[6];
@@ -227,6 +198,7 @@ void NixSetView(const vector &view_pos,const vector &view_ang,const vector &scal
 	//PlaneFromPoints(FrustrumPl[3],Frustrum[1],Frustrum[5],Frustrum[7]); // rechte Ebene
 	//PlaneFromPoints(FrustrumPl[4],Frustrum[0],Frustrum[4],Frustrum[5]); // untere Ebene
 	//PlaneFromPoints(FrustrumPl[5],Frustrum[2],Frustrum[3],Frustrum[7]); // obere Ebene*/
+	TestGLError("SetView");
 }
 
 // 3D-Matrizen erstellen (Einstellungen ueber SetPerspectiveMode vor NixStart() zu treffen)
@@ -236,6 +208,7 @@ void NixSetView(const vector &view_pos,const vector &view_ang,const vector &scal
 
 void NixSetProjection(bool perspective, bool relative)
 {
+	TestGLError("SetPro prae");
 	// projection 2d
 	matrix s, t;
 	// OpenGl hat (0,0) in Fenster-Mitte und berdeckt einen Bereich von -1 bis 1 (x und y)
@@ -263,6 +236,7 @@ void NixSetProjection(bool perspective, bool relative)
 	}else{
 		NixProjectionMatrix = NixProjectionMatrix2d;
 	}
+	TestGLError("SetPro a");
 
 
 	glMatrixMode(GL_PROJECTION);
@@ -270,6 +244,7 @@ void NixSetProjection(bool perspective, bool relative)
 		glLoadMatrixf((float*)&NixProjectionMatrix);
 	else
 		glLoadMatrixf((float*)&NixProjectionMatrix2d);
+	TestGLError("SetPro b");
 	
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -280,6 +255,7 @@ void NixSetProjection(bool perspective, bool relative)
 	MatrixInverse(NixInvProjectionMatrix, NixProjectionMatrix);
 	_NixProjectionPerspective = perspective;
 	_NixProjectionRelative = relative;
+	TestGLError("SetPro post");
 }
 
 void NixSetProjectionMatrix(const matrix &mat)
@@ -307,6 +283,7 @@ void NixSetProjectionMatrix(const matrix &mat)
 	NixWorldMatrix = m_id;
 
 	MatrixInverse(NixInvProjectionMatrix, NixProjectionMatrix);
+	TestGLError("SetProMat");
 }
 
 void NixSetView(const matrix &view_mat)
@@ -369,16 +346,15 @@ bool NixStart(int texture)
 		return false;
 
 	msg_db_r("NixStart", 2);
+	TestGLError("Start prae");
 
 	NixNumTrias=0;
 	RenderingToTexture=texture;
 	//msg_write(string("Start ",i2s(texture)));
 	if (texture<0){
 		#ifdef OS_WINDOWS
-			#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
-				if (OGLDynamicTextureSupport)
-					glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-			#endif
+			if (OGLDynamicTextureSupport)
+				glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			if (!wglMakeCurrent(hDC,hRC)){
 				msg_error("wglMakeCurrent");
 				msg_write(GetLastError());
@@ -391,30 +367,30 @@ bool NixStart(int texture)
 			//glXSwapBuffers(hui_x_display, GDK_WINDOW_XWINDOW(NixWindow->gl_widget->window));
 		#endif			
 	}else{
-		#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
-			if (OGLDynamicTextureSupport){
+		if (OGLDynamicTextureSupport){
 
-				glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, NixTexture[texture].glFrameBuffer );
-				//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, NixTexture[texture].glDepthRenderBuffer );
-				glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, NixTexture[texture].glTexture, 0 );
-				glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, NixTexture[texture].glDepthRenderBuffer );
-				GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-				if (status == GL_FRAMEBUFFER_COMPLETE_EXT){
-					//msg_write("hurra");
-				}else{
-					msg_write("we're screwed! (NixStart with dynamic texture target)");
-					msg_db_l(2);
-					return false;
-				}
+			glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, NixTextures[texture].glFrameBuffer );
+			//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, NixTextures[texture].glDepthRenderBuffer );
+			glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, NixTextures[texture].glTexture, 0 );
+			glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, NixTextures[texture].glDepthRenderBuffer );
+			GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+			if (status == GL_FRAMEBUFFER_COMPLETE_EXT){
+				//msg_write("hurra");
+			}else{
+				msg_write("we're screwed! (NixStart with dynamic texture target)");
+				msg_db_l(2);
+				return false;
 			}
-		#endif
+		}
 	}
+	TestGLError("Start 1");
 	glClearColor(0.0f,0.0f,0.0f,0.0f);
 	glDisable(GL_SCISSOR_TEST);
 	//glClearStencil(0);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	//glClear(GL_COLOR_BUFFER_BIT);
+	TestGLError("Start 2");
 
 	// adjust target size
 	if (texture < 0){
@@ -430,8 +406,8 @@ bool NixStart(int texture)
 		}
 	}else{
 		// texture
-		NixTargetWidth = NixTexture[texture].Width;
-		NixTargetHeight = NixTexture[texture].Height;
+		NixTargetWidth = NixTextures[texture].width;
+		NixTargetHeight = NixTextures[texture].height;
 	}
 	VPx1 = VPy1 = 0;
 	VPx2 = NixTargetWidth;
@@ -443,6 +419,7 @@ bool NixStart(int texture)
 		NixUpdateInput();*/
 
 	//msg_write("-ok?");
+	TestGLError("Start post");
 	msg_db_l(2);
 	return true;
 }
@@ -473,6 +450,7 @@ void NixStartPart(int x1,int y1,int x2,int y2,bool set_centric)
 			NixSetProjectionMatrix(NixProjectionMatrix2d);
 		NixSetView(NixViewMatrix);
 	}
+	TestGLError("StartPart");
 }
 
 void NixEnd()
@@ -480,6 +458,7 @@ void NixEnd()
 	if (!Rendering)
 		return;
 	msg_db_r("NixEnd", 2);
+	TestGLError("End prae");
 	Rendering=false;
 	NixSetTexture(-1);
 	glDisable(GL_SCISSOR_TEST);
@@ -499,12 +478,11 @@ void NixEnd()
 				glXSwapBuffers(hui_x_display,GDK_WINDOW_XID(gtk_widget_get_window(NixWindow->gl_widget)));
 		#endif
 	}
-	#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
-		if (OGLDynamicTextureSupport)
-			glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
-	#endif
+	if (OGLDynamicTextureSupport)
+		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 
 	NixProgressTextureLifes();
+	TestGLError("End post");
 	msg_db_l(2);
 }
 
@@ -521,6 +499,7 @@ void NixSetClipPlane(int index,const plane &pl)
 	glClipPlane(GL_CLIP_PLANE0+index,d);
 	glPopMatrix();
 	//msg_todo("SetClipPlane fuer OpenGL");
+	TestGLError("SetClip");
 }
 
 void NixEnableClipPlane(int index,bool enabled)
@@ -529,6 +508,7 @@ void NixEnableClipPlane(int index,bool enabled)
 		glEnable(GL_CLIP_PLANE0+index);
 	else
 		glDisable(GL_CLIP_PLANE0+index);
+	TestGLError("EnableClip");
 }
 
 void NixScreenShot(const string &filename, int width, int height)
@@ -623,6 +603,7 @@ void NixGetVecProject(vector &vout,const vector &vin)
 	vout.y=((ViewPort[1]*2+ViewPort[3])-vout.y*16)/2;
 	vout.x=((ViewPort[0]*2+ViewPort[2])+vout.x*16)/2;
 	vout.z=0.99999997f;*/
+	TestGLError("VecPro");
 }
 
 // world -> screen (0...1,0...1,0...1)
@@ -649,6 +630,7 @@ void NixGetVecUnproject(vector &vout,const vector &vin)
 	vout.x=(float)x;
 	vout.y=(float)y;
 	vout.z=(float)z;
+	TestGLError("VecUnpro");
 }
 
 // screen (0...1,0...1,0...1) -> world

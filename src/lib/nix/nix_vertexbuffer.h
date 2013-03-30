@@ -10,8 +10,7 @@
 
 
 // vertex buffers
-int _cdecl NixCreateVB(int max_trias,int index=-1);
-int _cdecl NixCreateVBM(int max_trias,int num_textures,int index=-1);
+int _cdecl NixCreateVB(int max_trias, int num_textures);
 void _cdecl NixDeleteVB(int buffer);
 bool NixVBAddTria(int buffer,	const vector &p1,const vector &n1,float tu1,float tv1,
 								const vector &p2,const vector &n2,float tu2,float tv2,

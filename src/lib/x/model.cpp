@@ -30,13 +30,8 @@
 #define DynamicNormalCorrect
 
 
-#define MODEL_MAX_EDGES	65536
+//#define MODEL_MAX_EDGES			65536
 
-
-static void VecOut(vector v)
-{
-	msg_write(format("vector(	%.2f, %.2f,	%.2f	);",v.x,v.y,v.z));
-}
 
 void MoveTimeAdd(Model *m,int operation_no,float elapsed,float v,bool loop);
 
@@ -62,12 +57,12 @@ void CopySkinNew(Model *m, Skin *orig, Skin **copy)
 	// subs
 	(*copy)->sub.make_own();
 	for (int mm=0;mm<orig->sub.num;mm++){
-		SubSkin *sub = &(*copy)->sub[mm];
+		SubSkin &sub = (*copy)->sub[mm];
 
 		// copy data
-		sub->triangle_index.make_own();
-		sub->normal.make_own();
-		sub->skin_vertex.make_own();
+		sub.triangle_index.make_own();
+		sub.normal.make_own();
+		sub.skin_vertex.make_own();
 		
 		// reset the vertex buffers
 		(*copy)->sub[mm].vertex_buffer = -1;
@@ -191,12 +186,8 @@ void CreateVB(Model *m, Skin *s)
 	return;
 #else
 	for (int t=0;t<s->sub.num;t++){
-		if (s->sub[t].vertex_buffer < 0){
-			if (m->material[t].num_textures == 1)
-				s->sub[t].vertex_buffer = NixCreateVB(s->sub[t].num_triangles);
-			else
-				s->sub[t].vertex_buffer = NixCreateVBM(s->sub[t].num_triangles, m->material[t].num_textures);
-		}
+		if (s->sub[t].vertex_buffer < 0)
+			s->sub[t].vertex_buffer = NixCreateVB(s->sub[t].num_triangles, m->material[t].num_textures);
 		s->sub[t].force_update = true;
 	}
 #endif
@@ -235,42 +226,91 @@ color file_read_color(CFile *f)
 	return color((float)a/255.0f,(float)r/255.0f,(float)g/255.0f,(float)b/255.0f);
 }
 
-void ApplyMaterial(Model *model, Material *m, Material *m2, bool user_colors)
+
+Material::Material()
+{
+	num_textures = 0;
+	for (int i=0;i<MODEL_MAX_TEXTURES;i++)
+		texture[i] = -1;
+	cube_map = -1;
+	shader = -1;
+}
+
+Material::~Material()
+{
+
+}
+
+
+static bool _alpha_enabled_ = false;
+static bool _shader_prog_used_ = false;
+
+void Material::apply()
+{
+	NixSetMaterial(ambient, diffuse, specular, shininess, emission);
+	if ((shader >= 0) || (_shader_prog_used_)){
+		NixSetShader(shader);
+		_shader_prog_used_ = (shader >= 0);
+	}
+
+	if (transparency_mode > 0){
+		if (transparency_mode == TransparencyModeFunctions)
+			NixSetAlpha(alpha_source, alpha_destination);
+		else if (transparency_mode == TransparencyModeFactor)
+			NixSetAlpha(alpha_factor);
+		else if (transparency_mode == TransparencyModeColorKeyHard)
+			NixSetAlpha(AlphaColorKeyHard);
+		else if (transparency_mode == TransparencyModeColorKeySmooth)
+			NixSetAlpha(AlphaColorKeySmooth);
+		_alpha_enabled_ = true;
+	}else if (_alpha_enabled_){
+		NixSetAlpha(AlphaNone);
+		_alpha_enabled_ = false;
+	}
+	if (cube_map >= 0){
+		// evil hack
+		texture[3] = cube_map;
+		NixSetTextures(texture, 4);
+	}else
+		NixSetTextures(texture, num_textures);
+}
+
+void Material::copy_from(Model *model, Material *m2, bool user_colors)
 {
 	if (!user_colors){
-		m->ambient = m2->ambient;
-		m->diffuse = m2->diffuse;
-		m->specular = m2->specular;
-		m->emission = m2->emission;
-		m->shininess = m2->shininess;
+		ambient = m2->ambient;
+		diffuse = m2->diffuse;
+		specular = m2->specular;
+		emission = m2->emission;
+		shininess = m2->shininess;
 	}
-	int nt = m->num_textures;
+	int nt = num_textures;
 	if (nt > m2->num_textures)
 		nt = m2->num_textures;
 	for (int i=0;i<nt;i++)
-		if (m->texture[i] < 0)
-			m->texture[i] = m2->texture[i];
-	if (m->transparency_mode == TransparencyModeDefault){
-		m->transparency_mode = m2->transparency_mode;
-		m->alpha_source = m2->alpha_source;
-		m->alpha_destination = m2->alpha_destination;
-		m->alpha_factor = m2->alpha_factor;
-		m->alpha_z_buffer = m2->alpha_z_buffer;
+		if (texture[i] < 0)
+			texture[i] = m2->texture[i];
+	if (transparency_mode == TransparencyModeDefault){
+		transparency_mode = m2->transparency_mode;
+		alpha_source = m2->alpha_source;
+		alpha_destination = m2->alpha_destination;
+		alpha_factor = m2->alpha_factor;
+		alpha_z_buffer = m2->alpha_z_buffer;
 	}
-	m->reflection_mode = m2->reflection_mode;
-	m->reflection_density = m2->reflection_density;
-	m->cube_map = m2->cube_map;
-#ifdef _X_ALLOW_FX_
-	if ((m->cube_map < 0) && (m2->cube_map_size > 0) && (m->reflection_mode == ReflectionCubeMapDynamical)){
-		m->cube_map = FxCubeMapNew(m2->cube_map_size);
-		FxCubeMapCreate(m->cube_map, model);
+	reflection_mode = m2->reflection_mode;
+	reflection_density = m2->reflection_density;
+	cube_map = m2->cube_map;
+/*#ifdef _X_ALLOW_FX_
+	if ((cube_map < 0) && (m2->cube_map_size > 0) && (reflection_mode == ReflectionCubeMapDynamical)){
+		cube_map = FxCubeMapNew(m2->cube_map_size);
+		FxCubeMapCreate(cube_map, model);
 	}
-#endif
-	m->shader = m2->shader;
-	m->rc_static = m2->rc_static;
-	m->rc_sliding = m2->rc_sliding;
-	m->rc_jump = m2->rc_jump;
-	m->rc_rolling = m2->rc_rolling;
+#endif*/
+	shader = m2->shader;
+	rc_static = m2->rc_static;
+	rc_sliding = m2->rc_sliding;
+	rc_jump = m2->rc_jump;
+	rc_rolling = m2->rc_rolling;
 }
 
 
@@ -448,7 +488,7 @@ Model::Model(const string &filename)
 		m->num_textures = f->ReadInt();
 		for (int t=0;t<m->num_textures;t++)
 			m->texture[t] = NixLoadTexture(f->ReadStr());
-		ApplyMaterial(this, m, mat_from_file, user_colors);
+		m->copy_from(this, mat_from_file, user_colors);
 	}
 	
 	// Physical Skin
@@ -1559,109 +1599,69 @@ void Model::JustDraw(int mat_no, int detail)
 	msg_db_r("model.JustDraw",5);
 	_detail_needed_[detail] = true;
 	Skin *s = skin[detail];
-	SubSkin *sub = &s->sub[mat_no];
+	SubSkin &sub = s->sub[mat_no];
 	vector *p = &s->vertex[0];
 	if (vertex_dyn[detail])
 		p = vertex_dyn[detail];
-	vector *n = &sub->normal[0];
+	vector *n = &sub.normal[0];
 	if (normal_dyn[detail])
 		n = normal_dyn[detail];
-	int *tv = &sub->triangle_index[0];
-	float *sv = &sub->skin_vertex[0];
+	int *tv = &sub.triangle_index[0];
+	float *sv = &sub.skin_vertex[0];
 	Material *m = &material[mat_no];
 
-#ifdef MODEL_TEMP_VB
-
-	TODO
-	int nt=0;
-	for (int t=0;t<num_textures;t++){
-		NixVBClear(VBTemp);
-		for (int i=nt;i<nt+s->texture_num_triangles[t];i++){
-			int va=tv[i*3  ]  ,vb=tv[i*3+1]  ,vc=tv[i*3+2];
-			int sa=ts[i*3  ]*2,sb=ts[i*3+1]*2,sc=ts[i*3+2]*2;
-			NixVBAddTria(VBTemp,	p[va],n[i*3  ],sv[sa],sv[sa+1],
-									p[vb],n[i*3+1],sv[sb],sv[sb+1],
-									p[vc],n[i*3+2],sv[sc],sv[sc+1]);
-		}
-		/*NixVBFillIndexed(	VBTemp,
-								s->num_vertices,
-								s->num_triangles,
-								&s->vertex[0],
-								&s->Normal[0],
-								&s->skin_vertex[0],
-								&s->triangle_index[0]);*/
-		NixDraw3D(Texture[t],VBTemp,mat);
-#ifdef _X_ALLOW_FX_
-		if ((CubeMap>=0)&&(ReflectionDensity>0)){
-			NixSetMaterial(Ambient,Black,Black,0,Emission);
-			FxCubeMapDraw(CubeMap,VBTemp,mat,ReflectionDensity);
-		}
-#endif
-		nt+=s->texture_num_triangles[t];
-	}
-
-#else
 	//-----------------------------------------------------
 
-	if (sub->force_update){
+	if (sub.force_update){
 			
 		// vertex buffer existing?
-		if (sub->vertex_buffer < 0){
+		if (sub.vertex_buffer < 0){
 			msg_db_m("vb not existing -> new",3);
-			if (m->num_textures == 1)
-				sub->vertex_buffer = NixCreateVB(sub->num_triangles);
-			else
-				sub->vertex_buffer = NixCreateVBM(sub->num_triangles, m->num_textures);
+			sub.vertex_buffer = NixCreateVB(sub.num_triangles, m->num_textures);
 		}
 		msg_db_m("empty",6);
-		NixVBClear(sub->vertex_buffer);
+		NixVBClear(sub.vertex_buffer);
 		msg_db_m("new...",6);
 		if (m->num_textures == 1){
-			for (int i=0;i<sub->num_triangles;i++){
+			for (int i=0;i<sub.num_triangles;i++){
 				//msg_write(i);
 				int va=tv[i*3  ]  ,vb=tv[i*3+1]  ,vc=tv[i*3+2];
-				NixVBAddTria(	sub->vertex_buffer,
+				NixVBAddTria(	sub.vertex_buffer,
 								p[va],n[i*3  ],sv[i*6  ],sv[i*6+1],
 								p[vb],n[i*3+1],sv[i*6+2],sv[i*6+3],
 								p[vc],n[i*3+2],sv[i*6+4],sv[i*6+5]);
 			}
 		}else{
-			for (int i=0;i<sub->num_triangles;i++){
+			for (int i=0;i<sub.num_triangles;i++){
 				float tc[3][MODEL_MAX_TEXTURES * 2];
 				for (int k=0;k<3;k++)
 					for (int j=0;j<m->num_textures;j++){
-						tc[k][j * 2    ] = sub->skin_vertex[j * sub->num_triangles * 6 + i * 6 + k * 2];
-						tc[k][j * 2 + 1] = sub->skin_vertex[j * sub->num_triangles * 6 + i * 6 + k * 2 + 1];
+						tc[k][j * 2    ] = sub.skin_vertex[j * sub.num_triangles * 6 + i * 6 + k * 2];
+						tc[k][j * 2 + 1] = sub.skin_vertex[j * sub.num_triangles * 6 + i * 6 + k * 2 + 1];
 					}
 				//msg_write(i);
 				int va=tv[i*3  ]  ,vb=tv[i*3+1]  ,vc=tv[i*3+2];
-				NixVBAddTriaM(	sub->vertex_buffer,
+				NixVBAddTriaM(	sub.vertex_buffer,
 								p[va],n[i*3  ],tc[0],
 								p[vb],n[i*3+1],tc[1],
 								p[vc],n[i*3+2],tc[2]);
 			}
 		}
 		msg_db_m("--ok",6);
-		sub->force_update = false;
+		sub.force_update = false;
 	}
 
 
 	NixSetWorldMatrix(_matrix);
-	if (m->num_textures == 1){
-		NixSetTexture(m->texture[0]);
-		NixDraw3D(sub->vertex_buffer);
-	}else{
-		NixSetTextures(m->texture, m->num_textures);
-		NixDraw3DM(sub->vertex_buffer);
-	}
-#ifdef _X_ALLOW_FX_
+	NixDraw3D(sub.vertex_buffer);
+
+/*#ifdef _X_ALLOW_FX_
 	if ((m->cube_map >= 0) && (m->reflection_density > 0)){
 		//_Pos_ = *_matrix_get_translation_(_matrix);
 		NixSetMaterial(m->ambient, Black, Black, 0, m->emission);
-		FxCubeMapDraw(m->cube_map, sub->vertex_buffer, m->reflection_density);
+		FxCubeMapDraw(m->cube_map, sub.vertex_buffer, m->reflection_density);
 	}
-#endif
-#endif
+#endif*/
 	msg_db_l(5);
 }
 
@@ -1706,11 +1706,11 @@ void Model::SortingTest(vector &pos,const vector &dpos,matrix *mat,bool allow_sh
 
 void Model::Draw(int detail, bool set_fx, bool allow_shadow)
 {
-	if	(detail<SkinHigh)
+	if	(detail < SkinHigh)
 		return;
 //	msg_write("d");
 #ifdef _X_ALLOW_FX_
-	// Schatten?
+	// shadows?
 /*	if ((ShadowLevel>0)&&(set_fx)&&(detail==SkinHigh)&&(allow_shadow)){//(TransparencyMode<=0))
 		int sd = ShadowLowerDetail ? SkinMedium : SkinHigh;
 		//if (Skin[sd]->num_triangles>0)
@@ -1718,28 +1718,19 @@ void Model::Draw(int detail, bool set_fx, bool allow_shadow)
 			//FxAddShadow(Skin[sd],vertex_dyn[sd],Matrix,100000);//Diameter*5);
 	}*/
 
-	// ist die Oberflaeche ein Spiegel?
+	// mirror?
 	/*if (Material[0].ReflectionMode==ReflectionMirror)
 		FxDrawMirrors(Skin[detail],mat);*/
 #endif
 
 
 	for (int i=0;i<material.num;i++){
-		MetaSetMaterial(&material[i]);
+		material[i].apply();
 
-		// endlich wirklich mahlen!!!
+		// finally... really draw!!!
 		JustDraw(i, detail);
-		NixSetShader(-1);
+		//NixSetShader(-1);
 		NixSetAlpha(AlphaNone);
 	}
-
-/*
-#ifdef _X_ALLOW_FX_
-	if (material[0].reflection_mode == ReflectionMetal)
-		FxDrawMetal(skin[detail], _matrix, material[0].reflection_density);
-#endif
-
-	if (material[0].transparency_mode > 0)
-		NixSetAlpha(AlphaNone);*/
 }
 

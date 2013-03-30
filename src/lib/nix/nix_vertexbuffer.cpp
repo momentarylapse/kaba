@@ -8,10 +8,23 @@
 #include "nix.h"
 #include "nix_common.h"
 
-Array<sVertexBuffer> NixVB;
+
+
+struct NixVertexBuffer
+{
+	int NumTrias, NumPoints, MaxTrias, NumTextures;
+	bool Indexed, Used, NotedFull;
+	//OGLVertex3D* glVertices;
+	vector *glVertices;
+	vector *glNormals;
+	float *glTexCoords[4];
+};
+
+Array<NixVertexBuffer> NixVB;
 
 
 // bei angegebenem index wird der bestehende VB neu erstellt
+#if 0
 int NixCreateVB(int max_trias,int index)
 {
 	msg_db_r("creating vertex buffer", 1);
@@ -52,23 +65,22 @@ int NixCreateVB(int max_trias,int index)
 	msg_db_l(1);
 	return index;
 }
+#endif
 
-int NixCreateVBM(int max_trias,int num_textures,int index)
+int NixCreateVB(int max_trias, int num_textures)
 {
 	msg_db_r(format("creating vertex buffer (%d tex coords)",num_textures).c_str(), 1);
-	bool create = (index < 0);
 	if (num_textures > NIX_MAX_TEXTURELEVELS)
 		num_textures = NIX_MAX_TEXTURELEVELS;
-	if (create){
-		index = NixVB.num;
-		for (int i=0;i<NixVB.num;i++)
-			if (!NixVB[i].Used){
-				index = i;
-				break;
-			}
-		if (index == NixVB.num)
-			NixVB.resize(NixVB.num + 1);
-	}
+	int index = NixVB.num;
+	for (int i=0;i<NixVB.num;i++)
+		if (!NixVB[i].Used){
+			index = i;
+			break;
+		}
+	if (index == NixVB.num)
+		NixVB.resize(NixVB.num + 1);
+
 	NixVB[index].glVertices = new vector[max_trias*3];
 	NixVB[index].glNormals = new vector[max_trias*3];
 	bool failed = ((!NixVB[index].glVertices) || (!NixVB[index].glNormals));
@@ -118,7 +130,7 @@ bool NixVBAddTria(int buffer,	const vector &p1,const vector &n1,float tu1,float 
 								const vector &p2,const vector &n2,float tu2,float tv2,
 								const vector &p3,const vector &n3,float tu3,float tv3)
 {
-	sVertexBuffer &vb = NixVB[buffer];
+	NixVertexBuffer &vb = NixVB[buffer];
 	if (vb.NumTrias > vb.MaxTrias){
 		if (!vb.NotedFull){
 			msg_error("too many triangles in the vertex buffer!");
@@ -153,7 +165,7 @@ bool NixVBAddTriaM(int buffer,	const vector &p1,const vector &n1,const float *t1
 								const vector &p3,const vector &n3,const float *t3)
 {
 	if (buffer<0)	return false;
-	sVertexBuffer &vb = NixVB[buffer];
+	NixVertexBuffer &vb = NixVB[buffer];
 	if (vb.NumTrias > vb.MaxTrias){
 		if (!vb.NotedFull){
 			msg_error("too many triangles in the vertex buffer!");
@@ -186,7 +198,7 @@ bool NixVBAddTriaM(int buffer,	const vector &p1,const vector &n1,const float *t1
 // for each triangle there have to be 3 vertices (p[i],n[i],t[i*2],t[i*2+1])
 void NixVBAddTrias(int buffer,int num_trias,const vector *p,const vector *n,const float *t)
 {
-	sVertexBuffer &vb = NixVB[buffer];
+	NixVertexBuffer &vb = NixVB[buffer];
 	memcpy(vb.glVertices, p, sizeof(vector) * num_trias * 3);
 	memcpy(vb.glNormals, n, sizeof(vector) * num_trias * 3);
 	//memcpy(OGLVBTexCoords[buffer][0],t,sizeof(float)*num_trias*6);
@@ -206,7 +218,7 @@ void NixVBAddTriasIndexed(int buffer,int num_points,int num_trias,const vector *
 
 void NixVBClear(int buffer)
 {
-	sVertexBuffer &vb = NixVB[buffer];
+	NixVertexBuffer &vb = NixVB[buffer];
 	vb.NumTrias = 0;
 	vb.NumPoints = 0;
 	vb.Indexed = false;
@@ -220,3 +232,49 @@ int NixVBGetMaxTrias(int buffer)
 	return NixVB[buffer].MaxTrias;
 }
 
+
+
+void NixDraw3D(int buffer)
+{
+	if (buffer < 0)
+		return;
+	_NixSetMode3d();
+
+	NixVertexBuffer &vb = NixVB[buffer];
+
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, vb.glVertices);
+	glNormalPointer(GL_FLOAT, 0, vb.glNormals);
+
+	// set multitexturing
+	if (OGLMultiTexturingSupport){
+		for (int i=0;i<vb.NumTextures;i++){
+			glClientActiveTexture(GL_TEXTURE0 + i);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glTexCoordPointer(2, GL_FLOAT, 0, vb.glTexCoords[i]);
+		}
+	}else{
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, 0, vb.glTexCoords[0]);
+	}
+
+	// draw
+	glDrawArrays(GL_TRIANGLES, 0, vb.NumTrias * 3);
+
+	// unset multitexturing
+	/*if (OGLMultiTexturingSupport){
+		for (int i=1;i<vb.NumTextures;i++){
+			glActiveTexture(GL_TEXTURE0 + i);
+			glDisable(GL_TEXTURE_2D);
+			glClientActiveTexture(GL_TEXTURE0 + i);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+		glActiveTexture(GL_TEXTURE0);
+		glClientActiveTexture(GL_TEXTURE0);
+	}*/
+
+	NixNumTrias += vb.NumTrias;
+	TestGLError("Draw3D");
+}

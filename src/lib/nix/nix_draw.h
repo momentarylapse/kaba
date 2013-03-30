@@ -23,7 +23,6 @@ void _cdecl NixDrawLine3D(const vector &l1, const vector &l2);
 void _cdecl NixDrawRect(float x1, float x2, float y1, float y2, float depth);
 void _cdecl NixDraw2D(const rect &src, const rect &dest, float depth);
 void _cdecl NixDraw3D(int buffer);
-void _cdecl NixDraw3DM(int buffer);
 void _cdecl NixDrawSpriteR(const rect &src, const vector &pos, const rect &dest);
 void _cdecl NixDrawSprite(const rect &src, const vector &pos, float radius);
 void _cdecl NixDraw3DCubeMapped(int cube_map, int vertex_buffer);

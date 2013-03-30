@@ -190,6 +190,11 @@ struct Material
 
 	// friction
 	float rc_jump, rc_static, rc_sliding, rc_rolling;
+
+	Material();
+	~Material();
+	void apply();
+	void copy_from(Model *model, Material *m, bool user_colors);
 };
 
 // single animation

@@ -310,10 +310,10 @@ Script::Script(const string &filename, bool just_analyse)
 	if ((!Error) && (!JustAnalyse) && (pre_script->FlagDisassemble)){
 		msg_write("disasm");
 		msg_write(OpcodeSize);
-		msg_write(Opcode2Asm(ThreadOpcode,ThreadOpcodeSize));
+		msg_write(Asm::Disassemble(ThreadOpcode,ThreadOpcodeSize));
 		msg_write("\n\n");
-		//printf("%s\n\n", Opcode2Asm(Opcode,OpcodeSize));
-		msg_write(Opcode2Asm(Opcode,OpcodeSize));
+		//printf("%s\n\n", Asm::Disassemble(Opcode,OpcodeSize));
+		msg_write(Asm::Disassemble(Opcode,OpcodeSize));
 	}
 
 	pop_cur_script();
@@ -485,7 +485,7 @@ int OCOParam;
 void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL, int offset = 0)
 {
 	int code = 0;
-	int pk[2] = {PKNone, PKNone};
+	int pk[2] = {Asm::PKNone, Asm::PKNone};
 	void *p[2] = {NULL, NULL};
 	int m = -1;
 	int size = 32;
@@ -500,74 +500,74 @@ void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL
 
 	
 	switch(inst){
-		case inNop:			code = inst_nop;	break;
-		case inPushEbp:		code = inst_push;	pk[0] = PKRegister;	p[0] = (void*)RegEbp;	break;
-		case inMovEbpEsp:	code = inst_mov;	pk[0] = PKRegister;	p[0] = (void*)RegEbp;	pk[1] = PKRegister;	p[1] = (void*)RegEsp;	break;
-		case inMovEspM:		code = inst_mov;	pk[0] = PKRegister;	p[0] = (void*)RegEsp;	m = 1;	break;
-		case inMovEdxpi8Eax:code = inst_mov;	pk[0] = PKEdxRel;	p[0] = param;	pk[1] = PKRegister;	p[1] = (void*)RegEax;	break;
-		case inLeave:		code = inst_leave;	break;
-		case inRet:			code = inst_ret;	break;
-		case inRet4:		code = inst_ret;	pk[0] = PKConstant16;	p[0] = (void*)4;	break;
-		case inMovEaxM:		code = inst_mov;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inMovMEax:		code = inst_mov;	pk[1] = PKRegister;	p[1] = (void*)RegEax;	m = 0;	break;
-		case inMovEdxM:		code = inst_mov;	pk[0] = PKRegister;	p[0] = (void*)RegEdx;	m = 1;	break;
-		case inMovMEdx:		code = inst_mov;	pk[1] = PKRegister;	p[1] = (void*)RegEdx;	m = 0;	break;
-		case inMovAlM8:		code = inst_mov_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inMovAhM8:		code = inst_mov_b;	pk[0] = PKRegister;	p[0] = (void*)RegAh;	m = 1;	size = 8;	break;
-		case inMovBlM8:		code = inst_mov_b;	pk[0] = PKRegister;	p[0] = (void*)RegBl;	m = 1;	size = 8;	break;
-		case inMovBhM8:		code = inst_mov_b;	pk[0] = PKRegister;	p[0] = (void*)RegBh;	m = 1;	size = 8;	break;
-		case inMovClM8:		code = inst_mov_b;	pk[0] = PKRegister;	p[0] = (void*)RegCl;	m = 1;	size = 8;	break;
-		case inMovM8Al:		code = inst_mov_b;	pk[1] = PKRegister;	p[1] = (void*)RegAl;	m = 0;	size = 8;	break;
-		case inMovMEbp:		code = inst_mov;	pk[1] = PKRegister;	p[1] = (void*)RegEbp;	m = 0;	break;
-		case inMovMEsp:		code = inst_mov;	pk[1] = PKRegister;	p[1] = (void*)RegEsp;	m = 0;	break;
-		case inLeaEaxM:		code = inst_lea;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inLeaEdxM:		code = inst_lea;	pk[0] = PKRegister;	p[0] = (void*)RegEdx;	m = 1;	break;
-		case inPushM:		code = inst_push;	m = 0;	break;
-		case inPushEax:		code = inst_push;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	break;
-		case inPushEdx:		code = inst_push;	pk[0] = PKRegister;	p[0] = (void*)RegEdx;	break;
-		case inPopEax:		code = inst_pop;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	break;
-		case inPopEsp:		code = inst_pop;	pk[0] = PKRegister;	p[0] = (void*)RegEsp;	break;
-		case inAndEaxM:		code = inst_and;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inOrEaxM:		code = inst_or;		pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inXorEaxM:		code = inst_xor;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inAddEaxM:		code = inst_add;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inAddEdxM:		code = inst_add;	pk[0] = PKRegister;	p[0] = (void*)RegEdx;	m = 1;	break;
-		case inAddMEax:		code = inst_add;	pk[1] = PKRegister;	p[1] = (void*)RegEax;	m = 0;	break;
-		case inSubEaxM:		code = inst_sub;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inSubMEax:		code = inst_sub;	pk[1] = PKRegister;	p[1] = (void*)RegEax;	m = 0;	break;
-		case inMulEaxM:		code = inst_imul;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inDivEaxM:		code = inst_div;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inDivEaxEbx:	code = inst_div;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	pk[1] = PKRegister;	p[1] = (void*)RegEbx;	break;
-		case inCmpEaxM:		code = inst_cmp;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	m = 1;	break;
-		case inCmpAlM8:		code = inst_cmp_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inCmpM80:		code = inst_cmp_b;	pk[1] = PKConstant8;	p[1] = NULL;	m = 0;	size = 8;	break;
-		case inSetzAl:		code = inst_setz_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inSetnzAl:		code = inst_setnz_b;pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inSetnleAl:	code = inst_setnle_b;pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inSetnlAl:		code = inst_setnl_b;pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inSetlAl:		code = inst_setl_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inSetleAl:		code = inst_setle_b;pk[0] = PKRegister;	p[0] = (void*)RegAl;	break;
-		case inAndAlM8:		code = inst_and_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inOrAlM8:		code = inst_or_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inXorAlM8:		code = inst_xor_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inAddAlM8:		code = inst_add_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inAddM8Al:		code = inst_add_b;	pk[1] = PKRegister;	p[1] = (void*)RegAl;	m = 0;	size = 8;	break;
-		case inSubAlM8:		code = inst_sub_b;	pk[0] = PKRegister;	p[0] = (void*)RegAl;	m = 1;	size = 8;	break;
-		case inSubM8Al:		code = inst_sub_b;	pk[1] = PKRegister;	p[1] = (void*)RegAl;	m = 0;	size = 8;	break;
-		case inCallRel32:	code = inst_call;	m = 0;	break;
-		case inJmpEax:		code = inst_jmp;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	break;
-		case inJmpC32:		code = inst_jmp;	m = 0;	break;
-		case inJzC8:		code = inst_jz_b;	m = 0;	size = 8;	break;
-		case inJzC32:		code = inst_jz;		m = 0;	size = 8;	break;
-		case inLoadfM:		code = inst_fld;	m = 0;	break;
-		case inSavefM:		code = inst_fstp;	m = 0;	break;
-		case inLoadfiM:		code = inst_fild;	m = 0;	break;
-		case inAddfM:		code = inst_fadd;	m = 0;	break;
-		case inSubfM:		code = inst_fsub;	m = 0;	break;
-		case inMulfM:		code = inst_fmul;	m = 0;	break;
-		case inDivfM:		code = inst_fdiv;	m = 0;	break;
-		case inShrEaxCl:	code = inst_shr;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	pk[1] = PKRegister;	p[1] = (void*)RegCl;	break;
-		case inShlEaxCl:	code = inst_shl;	pk[0] = PKRegister;	p[0] = (void*)RegEax;	pk[1] = PKRegister;	p[1] = (void*)RegCl;	break;
+		case inNop:			code = Asm::inst_nop;	break;
+		case inPushEbp:		code = Asm::inst_push;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEbp;	break;
+		case inMovEbpEsp:	code = Asm::inst_mov;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEbp;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEsp;	break;
+		case inMovEspM:		code = Asm::inst_mov;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEsp;	m = 1;	break;
+		case inMovEdxpi8Eax:code = Asm::inst_mov;	pk[0] = Asm::PKEdxRel;	p[0] = param;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEax;	break;
+		case inLeave:		code = Asm::inst_leave;	break;
+		case inRet:			code = Asm::inst_ret;	break;
+		case inRet4:		code = Asm::inst_ret;	pk[0] = Asm::PKConstant16;	p[0] = (void*)4;	break;
+		case inMovEaxM:		code = Asm::inst_mov;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inMovMEax:		code = Asm::inst_mov;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEax;	m = 0;	break;
+		case inMovEdxM:		code = Asm::inst_mov;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEdx;	m = 1;	break;
+		case inMovMEdx:		code = Asm::inst_mov;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEdx;	m = 0;	break;
+		case inMovAlM8:		code = Asm::inst_mov_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inMovAhM8:		code = Asm::inst_mov_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAh;	m = 1;	size = 8;	break;
+		case inMovBlM8:		code = Asm::inst_mov_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegBl;	m = 1;	size = 8;	break;
+		case inMovBhM8:		code = Asm::inst_mov_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegBh;	m = 1;	size = 8;	break;
+		case inMovClM8:		code = Asm::inst_mov_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegCl;	m = 1;	size = 8;	break;
+		case inMovM8Al:		code = Asm::inst_mov_b;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegAl;	m = 0;	size = 8;	break;
+		case inMovMEbp:		code = Asm::inst_mov;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEbp;	m = 0;	break;
+		case inMovMEsp:		code = Asm::inst_mov;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEsp;	m = 0;	break;
+		case inLeaEaxM:		code = Asm::inst_lea;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inLeaEdxM:		code = Asm::inst_lea;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEdx;	m = 1;	break;
+		case inPushM:		code = Asm::inst_push;	m = 0;	break;
+		case inPushEax:		code = Asm::inst_push;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	break;
+		case inPushEdx:		code = Asm::inst_push;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEdx;	break;
+		case inPopEax:		code = Asm::inst_pop;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	break;
+		case inPopEsp:		code = Asm::inst_pop;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEsp;	break;
+		case inAndEaxM:		code = Asm::inst_and;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inOrEaxM:		code = Asm::inst_or;		pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inXorEaxM:		code = Asm::inst_xor;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inAddEaxM:		code = Asm::inst_add;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inAddEdxM:		code = Asm::inst_add;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEdx;	m = 1;	break;
+		case inAddMEax:		code = Asm::inst_add;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEax;	m = 0;	break;
+		case inSubEaxM:		code = Asm::inst_sub;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inSubMEax:		code = Asm::inst_sub;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEax;	m = 0;	break;
+		case inMulEaxM:		code = Asm::inst_imul;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inDivEaxM:		code = Asm::inst_div;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inDivEaxEbx:	code = Asm::inst_div;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegEbx;	break;
+		case inCmpEaxM:		code = Asm::inst_cmp;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	m = 1;	break;
+		case inCmpAlM8:		code = Asm::inst_cmp_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inCmpM80:		code = Asm::inst_cmp_b;	pk[1] = Asm::PKConstant8;	p[1] = NULL;	m = 0;	size = 8;	break;
+		case inSetzAl:		code = Asm::inst_setz_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inSetnzAl:		code = Asm::inst_setnz_b;pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inSetnleAl:	code = Asm::inst_setnle_b;pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inSetnlAl:		code = Asm::inst_setnl_b;pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inSetlAl:		code = Asm::inst_setl_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inSetleAl:		code = Asm::inst_setle_b;pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	break;
+		case inAndAlM8:		code = Asm::inst_and_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inOrAlM8:		code = Asm::inst_or_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inXorAlM8:		code = Asm::inst_xor_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inAddAlM8:		code = Asm::inst_add_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inAddM8Al:		code = Asm::inst_add_b;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegAl;	m = 0;	size = 8;	break;
+		case inSubAlM8:		code = Asm::inst_sub_b;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegAl;	m = 1;	size = 8;	break;
+		case inSubM8Al:		code = Asm::inst_sub_b;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegAl;	m = 0;	size = 8;	break;
+		case inCallRel32:	code = Asm::inst_call;	m = 0;	break;
+		case inJmpEax:		code = Asm::inst_jmp;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	break;
+		case inJmpC32:		code = Asm::inst_jmp;	m = 0;	break;
+		case inJzC8:		code = Asm::inst_jz_b;	m = 0;	size = 8;	break;
+		case inJzC32:		code = Asm::inst_jz;		m = 0;	size = 8;	break;
+		case inLoadfM:		code = Asm::inst_fld;	m = 0;	break;
+		case inSavefM:		code = Asm::inst_fstp;	m = 0;	break;
+		case inLoadfiM:		code = Asm::inst_fild;	m = 0;	break;
+		case inAddfM:		code = Asm::inst_fadd;	m = 0;	break;
+		case inSubfM:		code = Asm::inst_fsub;	m = 0;	break;
+		case inMulfM:		code = Asm::inst_fmul;	m = 0;	break;
+		case inDivfM:		code = Asm::inst_fdiv;	m = 0;	break;
+		case inShrEaxCl:	code = Asm::inst_shr;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegCl;	break;
+		case inShlEaxCl:	code = Asm::inst_shl;	pk[0] = Asm::PKRegister;	p[0] = (void*)Asm::RegEax;	pk[1] = Asm::PKRegister;	p[1] = (void*)Asm::RegCl;	break;
 		default:
 			msg_todo(format("unhandled instruction: %d", inst));
 			cur_script->DoErrorInternal("asm error");
@@ -577,7 +577,7 @@ void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL
 	
 	// const as global var?
 	if (kind == KindRefToConst){
-		if (!AsmImmediateAllowed(code)){
+		if (!Asm::ImmediateAllowed(code)){
 			//msg_write("evil");
 			kind = KindVarGlobal;
 		}
@@ -592,17 +592,17 @@ void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL
 	if ((m >= 0) && (kind >= 0)){
 	
 		if (kind == KindVarLocal){
-			pk[m] = PKLocal;
+			pk[m] = Asm::PKLocal;
 			p[m] = (void*)((long)param + offset);
 		}else if (kind == KindVarGlobal){
-			pk[m] = PKDerefConstant;
+			pk[m] = Asm::PKDerefConstant;
 			p[m] = (void*)((long)param + offset);
 		}else if (kind == KindConstant){
-			pk[m] = (size == 8) ? PKConstant8 : PKConstant32;
+			pk[m] = (size == 8) ? Asm::PKConstant8 : Asm::PKConstant32;
 			p[m] = param;
 		}else if (kind == KindRefToConst){
 			kind = KindConstant;
-			pk[m] = (size == 8) ? PKConstant8 : PKConstant32;
+			pk[m] = (size == 8) ? Asm::PKConstant8 : Asm::PKConstant32;
 			p[m] = *(void**)((long)param + offset);
 		}else if ((kind == KindRefToLocal) || (kind == KindRefToGlobal)){
 			if (kind == KindRefToLocal)
@@ -611,8 +611,8 @@ void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL
 				OCAddInstruction(oc, ocs, inMovEdxM, KindVarGlobal, param);
 			if (offset != 0)
 				OCAddInstruction(oc, ocs, inAddEdxM, KindConstant, (char*)(long)offset);
-			pk[m] = PKDerefRegister;
-			p[m] = (void*)RegEdx;
+			pk[m] = Asm::PKDerefRegister;
+			p[m] = (void*)Asm::RegEdx;
 		}else{
 			msg_error("kind unhandled");
 			msg_write(kind);
@@ -620,10 +620,10 @@ void OCAddInstruction(char *oc, int &ocs, int inst, int kind, void *param = NULL
 	}
 	
 	// compile
-	if (!AsmAddInstruction(oc, ocs, code, pk[0], p[0], pk[1], p[1]))
+	if (!Asm::AddInstruction(oc, ocs, code, pk[0], p[0], pk[1], p[1]))
 		cur_script->DoErrorInternal("asm error");
 
-	OCOParam = AsmOCParam;
+	OCOParam = Asm::OCParam;
 }
 
 /*enum{
@@ -645,14 +645,14 @@ void OCAddEspAdd(char *oc,int &ocs,int d)
 {
 	if (d>0){
 		if (d>120)
-			AsmAddInstruction(oc, ocs, inst_add, PKRegister, (void*)RegEsp, PKConstant32, (void*)(long)d);
+			Asm::AddInstruction(oc, ocs, Asm::inst_add, Asm::PKRegister, (void*)Asm::RegEsp, Asm::PKConstant32, (void*)(long)d);
 		else
-			AsmAddInstruction(oc, ocs, inst_add_b, PKRegister, (void*)RegEsp, PKConstant8, (void*)(long)d);
+			Asm::AddInstruction(oc, ocs, Asm::inst_add_b, Asm::PKRegister, (void*)Asm::RegEsp, Asm::PKConstant8, (void*)(long)d);
 	}else if (d<0){
 		if (d<-120)
-			AsmAddInstruction(oc, ocs, inst_sub, PKRegister, (void*)RegEsp, PKConstant32, (void*)(long)(-d));
+			Asm::AddInstruction(oc, ocs, Asm::inst_sub, Asm::PKRegister, (void*)Asm::RegEsp, Asm::PKConstant32, (void*)(long)(-d));
 		else
-			AsmAddInstruction(oc, ocs, inst_sub_b, PKRegister, (void*)RegEsp, PKConstant8, (void*)(long)(-d));
+			Asm::AddInstruction(oc, ocs, Asm::inst_sub_b, Asm::PKRegister, (void*)Asm::RegEsp, Asm::PKConstant8, (void*)(long)(-d));
 	}
 }
 
@@ -780,7 +780,7 @@ void Script::CompileOsEntryPoint()
 		if ((pre_script->FlagCompileOS) || (c.type == TypeString)){
 			int offset = 0;
 			if (pre_script->AsmMetaInfo)
-				offset = ((sAsmMetaInfo*)pre_script->AsmMetaInfo)->CodeOrigin;
+				offset = pre_script->AsmMetaInfo->CodeOrigin;
 			cnst[i] = (char*)(long)(OpcodeSize + offset);
 			int s = c.type->size;
 			if (c.type == TypeString)
@@ -923,8 +923,8 @@ void Script::Compiler()
 
 		if (!Error)
 			if (pre_script->AsmMetaInfo)
-				if (((sAsmMetaInfo*)pre_script->AsmMetaInfo)->WantedLabel.num > 0)
-					_do_error_(format("unknown name in assembler code:  \"%s\"", ((sAsmMetaInfo*)pre_script->AsmMetaInfo)->WantedLabel[0].Name.c_str()), 2,);
+				if (pre_script->AsmMetaInfo->wanted_label.num > 0)
+					_do_error_(format("unknown name in assembler code:  \"%s\"", pre_script->AsmMetaInfo->wanted_label[0].Name.c_str()), 2,);
 	}
 
 

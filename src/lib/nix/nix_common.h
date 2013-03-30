@@ -76,32 +76,30 @@
 extern bool OGLMultiTexturingSupport;
 extern bool OGLShaderSupport;
 
-#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
-	#ifdef OS_WINDOWS
-		extern PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT;
-		extern PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT;
-		extern PFNGLDELETERENDERBUFFERSEXTPROC glDeleteRenderbuffersEXT;
-		extern PFNGLGENRENDERBUFFERSEXTPROC glGenRenderbuffersEXT;
-		extern PFNGLRENDERBUFFERSTORAGEEXTPROC glRenderbufferStorageEXT;
-		extern PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC glGetRenderbufferParameterivEXT;
-		extern PFNGLISFRAMEBUFFEREXTPROC glIsFramebufferEXT;
-		extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT;
-		extern PFNGLDELETEFRAMEBUFFERSEXTPROC glDeleteFramebuffersEXT;
-		extern PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT;
-		extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC glCheckFramebufferStatusEXT;
-		extern PFNGLFRAMEBUFFERTEXTURE1DEXTPROC glFramebufferTexture1DEXT;
-		extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT;
-		extern PFNGLFRAMEBUFFERTEXTURE3DEXTPROC glFramebufferTexture3DEXT;
-		extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbufferEXT;
-		extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC glGetFramebufferAttachmentParameterivEXT;
-		extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
-	#endif
-
-	extern bool OGLDynamicTextureSupport;
+#ifdef OS_WINDOWS
+	extern PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT;
+	extern PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT;
+	extern PFNGLDELETERENDERBUFFERSEXTPROC glDeleteRenderbuffersEXT;
+	extern PFNGLGENRENDERBUFFERSEXTPROC glGenRenderbuffersEXT;
+	extern PFNGLRENDERBUFFERSTORAGEEXTPROC glRenderbufferStorageEXT;
+	extern PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC glGetRenderbufferParameterivEXT;
+	extern PFNGLISFRAMEBUFFEREXTPROC glIsFramebufferEXT;
+	extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT;
+	extern PFNGLDELETEFRAMEBUFFERSEXTPROC glDeleteFramebuffersEXT;
+	extern PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT;
+	extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC glCheckFramebufferStatusEXT;
+	extern PFNGLFRAMEBUFFERTEXTURE1DEXTPROC glFramebufferTexture1DEXT;
+	extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT;
+	extern PFNGLFRAMEBUFFERTEXTURE3DEXTPROC glFramebufferTexture3DEXT;
+	extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbufferEXT;
+	extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC glGetFramebufferAttachmentParameterivEXT;
+	extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #endif
+
+extern bool OGLDynamicTextureSupport;
 extern bool NixGLDoubleBuffered;
 extern int NixOGLFontDPList;
-extern int NixglShaderCurrent;
+extern int NixGLCurrentProgram;
 
 
 extern matrix NixViewMatrix, NixProjectionMatrix, NixInvProjectionMatrix;
@@ -115,43 +113,7 @@ extern bool NixEnabled3D;
 
 extern int NixFontGlyphWidth[256];
 
-
-// light-sources
-enum{
-	LightTypeDirectional,
-	LightTypeRadial
-};
-struct sLight{
-	bool Used,Allowed,Enabled;
-	int Type;
-	int OGLLightNo;
-	int Light;
-	vector Pos,Dir;
-	float Radius;
-	color Ambient,Diffuse,Specular;
-};
-
-extern Array<sLight> NixLight;
-
-
-struct sVertexBuffer
-{
-	int NumTrias, NumPoints, MaxTrias, NumTextures;
-	bool Indexed, Used, NotedFull;
-	//OGLVertex3D* glVertices;
-	vector *glVertices;
-	vector *glNormals;
-	float *glTexCoords[4];
-};
-
-extern Array<sVertexBuffer> NixVB;
-
-struct sShaderFile
-{
-	int glShader;
-};
-
-extern Array<sShaderFile> NixShader;
+void TestGLError(const string &);
 
 
 

@@ -58,7 +58,7 @@ Array<void*> MetaDeleteStuffList;
 
 
 // game data
-string MapDir, ObjectDir, ScriptDir, MaterialDir;
+string MapDir, ObjectDir, ScriptDir, MaterialDir, FontDir;
 void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
 str_float_func *MetaDrawSplashScreen;
 void *MetaObjectScriptInit;
@@ -74,7 +74,7 @@ static Array<Model*> ModelOriginal, ModelOriginal2;
 static Array<sModelRefCopy> ModelCopy, ModelCopy2;
 
 // materials
-static Array<Material*> _Material_;
+static Array<Material*> MetaMaterial;
 
 // fonts
 Array<XFont*> _XFont_;
@@ -118,7 +118,6 @@ void MetaInit()
 #ifdef _X_ALLOW_MODEL_
 	// create the default material's default values
 	Material *m = new Material;
-	_Material_.add(m);
 	m->name = "-default-";
 	m->num_textures = 0;
 	m->ambient = White;
@@ -140,6 +139,7 @@ void MetaInit()
 	m->rc_static = 0.8f;
 	m->rc_sliding = 0.4f;
 	m->rc_rolling = 0.90f;
+	MetaMaterial.add(m);
 	
 	ModelToIgnore = NULL;
 #endif
@@ -149,12 +149,8 @@ void MetaInit()
 
 void MetaEnd()
 {
-#ifdef _X_ALLOW_MODEL_
-	delete(_Material_[0]);
-	_Material_.clear();
-#endif
-
 	MetaReset();
+	delete(MetaMaterial[0]);
 }
 
 void MetaReset()
@@ -182,6 +178,13 @@ void MetaReset()
 	ModelOriginal2.clear();
 	ModelCopy2.clear();
 
+	// delete materials
+#ifdef _X_ALLOW_MODEL_
+	for (int i=1;i<MetaMaterial.num;i++)
+		delete(MetaMaterial[i]);
+#endif
+	MetaMaterial.resize(1);
+
 	MetaDeleteStuffList.clear();
 
 	ModelToIgnore=NULL;
@@ -194,9 +197,10 @@ void MetaReset()
 	msg_db_l(1);
 }
 
-void MetaSetDirs(const string &texture_dir, const string &map_dir, const string &object_dir, const string &sound_dir, const string &script_dir, const string &material_dir)
+void MetaSetDirs(const string &texture_dir, const string &map_dir, const string &object_dir, const string &sound_dir, const string &script_dir, const string &material_dir, const string &font_dir)
 {
 	NixTextureDir = texture_dir;
+	NixShaderDir = material_dir;
 	MapDir = map_dir;
 	ObjectDir = object_dir;
 #ifdef _X_USE_SOUND_
@@ -204,6 +208,7 @@ void MetaSetDirs(const string &texture_dir, const string &map_dir, const string 
 #endif
 	ScriptDir = script_dir;
 	MaterialDir = material_dir;
+	FontDir = font_dir;
 #ifdef _X_ALLOW_SCRIPT_
 	Script::Directory = script_dir;
 #endif
@@ -496,16 +501,16 @@ Material *MetaLoadMaterial(const string &filename, bool as_default)
 #ifdef _X_ALLOW_MODEL_
 	// an empty name loads the default material
 	if (filename.num == 0)
-		return _Material_[0];
+		return MetaMaterial[0];
 
 	if (!as_default){
-		for (int i=1;i<_Material_.num;i++)
-			if (_Material_[i]->name == filename)
-				return _Material_[i];
+		for (int i=0;i<MetaMaterial.num;i++)
+			if (MetaMaterial[i]->name == filename)
+				return MetaMaterial[i];
 	}
 	CFile *f = OpenFile(MaterialDir + filename + ".material");
 	if (!f)
-		return FileErrorsAreCritical ? NULL : _Material_[0];
+		return FileErrorsAreCritical ? NULL : MetaMaterial[0];
 	Material *m = new Material;
 
 	int ffv=f->ReadFileFormatVersion();
@@ -546,26 +551,30 @@ Material *MetaLoadMaterial(const string &filename, bool as_default)
 		m->cube_map_size=f->ReadInt();
 		int cmt[6];
 		for (int i=0;i<6;i++)
-			cmt[i]=NixLoadTexture(f->ReadStr());
+			cmt[i] = NixLoadTexture(f->ReadStr());
 #ifdef _X_ALLOW_FX_
-		/*if (m->ReflectionMode == ReflectionCubeMapDynamical){
-			m->CubeMap=FxCubeMapNew(m->CubeMapSize);
-			FxCubeMapCreate(m->CubeMap,cmt[0],cmt[1],cmt[2],cmt[3],cmt[4],cmt[5]);
-		}*/
+		if (m->reflection_mode == ReflectionCubeMapDynamical){
+			//m->cube_map = FxCubeMapNew(m->cube_map_size);
+			//FxCubeMapCreate(m->cube_map,cmt[0],cmt[1],cmt[2],cmt[3],cmt[4],cmt[5]);
+		}else if (m->reflection_mode == ReflectionCubeMapStatic){
+			m->cube_map = NixCreateCubeMap(m->cube_map_size);
+			for (int i=0;i<6;i++)
+				NixFillCubeMap(m->cube_map, i, cmt[i]);
+		}
 #endif
 		// ShaderFile
 		string ShaderFile = f->ReadStrC();
-		m->shader = MetaLoadShader(ShaderFile);
+		m->shader = NixLoadShader(ShaderFile);
 		// Physics
 		m->rc_jump=(float)f->ReadIntC()*0.001f;
 		m->rc_static=(float)f->ReadInt()*0.001f;
 		m->rc_sliding=(float)f->ReadInt()*0.001f;
 		m->rc_rolling=(float)f->ReadInt()*0.001f;
 
-		_Material_.add(m);
+		MetaMaterial.add(m);
 	}else{
 		msg_error(format("wrong file format: %d (expected: 4)", ffv));
-		m = _Material_[0];
+		m = MetaMaterial[0];
 	}
 	FileClose(f);
 	return m;
@@ -573,34 +582,6 @@ Material *MetaLoadMaterial(const string &filename, bool as_default)
 	return NULL;
 }
 
-static bool _alpha_enabled_ = false;
-static bool _shader_file_used_ = false;
-
-void MetaSetMaterial(Material *m)
-{
-#ifdef _X_ALLOW_MODEL_
-	NixSetMaterial(m->ambient,m->diffuse,m->specular,m->shininess,m->emission);
-	if ((m->shader >= 0) || (_shader_file_used_)){
-		NixSetShader(m->shader);
-		_shader_file_used_ = (m->shader >= 0);
-	}
-	
-	if (m->transparency_mode > 0){
-		if (m->transparency_mode == TransparencyModeFunctions)
-			NixSetAlpha(m->alpha_source, m->alpha_destination);
-		else if (m->transparency_mode == TransparencyModeFactor)
-			NixSetAlpha(m->alpha_factor);
-		else if (m->transparency_mode == TransparencyModeColorKeyHard)
-			NixSetAlpha(AlphaColorKeyHard);
-		else if (m->transparency_mode == TransparencyModeColorKeySmooth)
-			NixSetAlpha(AlphaColorKeySmooth);
-		_alpha_enabled_ = true;
-	}else if (_alpha_enabled_){
-		NixSetAlpha(AlphaNone);
-		_alpha_enabled_ = false;
-	}
-#endif
-}
 
 void _cdecl MetaDelete(void *p)
 {
@@ -652,7 +633,19 @@ void MetaDeleteSelection()
 	msg_db_l(1);
 }
 
-int _cdecl MetaLoadXFont(const string &filename)
+static string str_utf8_to_ubyte(const string &str)
+{
+	string r;
+	for (int i=0;i<str.num;i++)
+		if (((unsigned int)str[i] & 0x80) > 0){
+			r.add(((str[i] & 0x1f) << 6) + (str[i + 1] & 0x3f));
+			i ++;
+		}else
+			r.add(str[i]);
+	return r;
+}
+
+int _cdecl MetaLoadFont(const string &filename)
 {
 	// "" -> default font
 	if (filename.num == 0)
@@ -661,7 +654,7 @@ int _cdecl MetaLoadXFont(const string &filename)
 	foreachi(XFont *ff, _XFont_, i)
 		if (ff->filename  == filename.sys_filename())
 			return i;
-	CFile *f = OpenFile(MaterialDir + filename + ".xfont");
+	CFile *f = OpenFile(FontDir + filename + ".xfont");
 	if (!f)
 		return -1;
 	int ffv=f->ReadFileFormatVersion();
@@ -672,10 +665,10 @@ int _cdecl MetaLoadXFont(const string &filename)
 		int tx = 1;
 		int ty = 1;
 		if (font->texture >= 0){
-			tx = NixTexture[font->texture].Width;
-			ty = NixTexture[font->texture].Height;
+			tx = NixTextures[font->texture].width;
+			ty = NixTextures[font->texture].height;
 		}
-		font->num_glyphs = f->ReadWordC();
+		int num_glyphs = f->ReadWordC();
 		int height=f->ReadByteC();
 		int y1=f->ReadByteC();
 		int y2=f->ReadByteC();
@@ -685,22 +678,10 @@ int _cdecl MetaLoadXFont(const string &filename)
 		font->x_factor=(float)f->ReadByteC()*0.01f;
 		font->y_factor=(float)f->ReadByteC()*0.01f;
 		f->ReadComment();
-		for (int i=0;i<256;i++)
-			font->table[i] = -1;
 		int x=0,y=0;
-		for (int i=0;i<font->num_glyphs;i++){
+		for (int i=0;i<num_glyphs;i++){
 			string name = f->ReadStr();
-			int c=(unsigned char)name[0];
-			if ((name[0]=='&') && (name.num > 1)){
-				if (name[1]=='a')	c=_xfont_char_ae_;
-				if (name[1]=='o')	c=_xfont_char_oe_;
-				if (name[1]=='u')	c=_xfont_char_ue_;
-				if (name[1]=='A')	c=_xfont_char_Ae_;
-				if (name[1]=='O')	c=_xfont_char_Oe_;
-				if (name[1]=='U')	c=_xfont_char_Ue_;
-				if (name[1]=='s')	c=_xfont_char_ss_;
-			}
-			font->table[c]=i;
+			int c = (unsigned char)str_utf8_to_ubyte(name)[0];
 			int w=f->ReadByte();
 			int x1=f->ReadByte();
 			int x2=f->ReadByte();
@@ -717,16 +698,16 @@ int _cdecl MetaLoadXFont(const string &filename)
 											(float)(x+0.5f+w)/(float)tx,
 											(float)y/(float)ty,
 											(float)(y+height)/(float)ty);
-			font->glyph[i] = g;
+			font->glyph[c] = g;
 			x+=w;
 		}
-		int u=(unsigned char)f->ReadStrC()[0];
+		/*int u=(unsigned char)f->ReadStrC()[0];
 		font->unknown_glyph_no = font->table[u];
 		if (font->unknown_glyph_no<0)
 			font->unknown_glyph_no=0;
 		for (int i=0;i<256;i++)
 			if (font->table[i] < 0)
-				font->table[i] = font->unknown_glyph_no;
+				font->table[i] = font->unknown_glyph_no;*/
 		_XFont_.add(font);
 	}else{
 		msg_error(format("wrong file format: %d (expected: 2)",ffv));
@@ -734,31 +715,6 @@ int _cdecl MetaLoadXFont(const string &filename)
 	FileClose(f);
 
 	return _XFont_.num-1;
-}
-
-string str_utf8_to_xfont(const string &str)
-{
-	string r;
-	for (int i=0;i<str.num;i++)
-		if (str[i] == (signed char)0xc3){
-			if (str[i+1] == (signed char)0xa4)
-				r.add(_xfont_char_ae_);
-			else if (str[i+1] == (signed char)0xb6)
-				r.add(_xfont_char_oe_);
-			else if (str[i+1] == (signed char)0xbc)
-				r.add(_xfont_char_ue_);
-			else if (str[i+1] == (signed char)0x9f)
-				r.add(_xfont_char_ss_);
-			else if (str[i+1] == (signed char)0x84)
-				r.add(_xfont_char_Ae_);
-			else if (str[i+1] == (signed char)0x96)
-				r.add(_xfont_char_Oe_);
-			else if (str[i+1] == (signed char)0x9c)
-				r.add(_xfont_char_Ue_);
-			i ++;
-		}else
-			r.add(str[i]);
-	return r;
 }
 
 // retrieve the width of a given text
@@ -769,10 +725,9 @@ float _cdecl XFGetWidth(float height,const string &str)
 		return 0;
 	float w = 0;
 	float xf = height * f->x_factor;
-	string s = str_utf8_to_xfont(str);
+	string s = str_utf8_to_ubyte(str);
 	for (int i=0;i<s.num;i++){
 		int n = (unsigned char)s[i];
-		n = f->table[n];
 		w += f->glyph[n].dx * xf;
 	}
 	return w;
@@ -795,7 +750,7 @@ float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centr
 	float w=0;
 	y-=f->y_offset*yf;
 	rect d;
-	string s = str_utf8_to_xfont(str);
+	string s = str_utf8_to_ubyte(str);
 	for (int i=0;i<s.num;i++){
 		if (s[i]=='\r')
 			continue;
@@ -805,7 +760,6 @@ float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centr
 			continue;
 		}
 		int n=(unsigned char)s[i];
-		n=f->table[n];
 		d.x1=(x+w-f->glyph[n].x_offset*xf);
 		d.x2=(x+w+f->glyph[n].dx2     *xf);
 		d.y1=(y             );
@@ -831,14 +785,13 @@ float _cdecl XFDrawVertStr(float x,float y,float height,const string &str)
 	float yf=height*f->y_factor;
 	y-=f->y_offset*yf;
 	rect d;
-	string s = str_utf8_to_xfont(str);
+	string s = str_utf8_to_ubyte(str);
 	for (int i=0;i<s.num;i++){
 		if (s[i]=='\r')
 			continue;
 		if (s[i]=='\n')
 			continue;
 		int n=(unsigned char)s[i];
-		n=f->table[n];
 		d.x1=(x-f->glyph[n].x_offset*xf);
 		d.x2=(x+f->glyph[n].dx2     *xf);
 		d.y1=(y             );
@@ -849,12 +802,5 @@ float _cdecl XFDrawVertStr(float x,float y,float height,const string &str)
 	NixSetAlpha(AlphaNone);
 	msg_db_l(10);
 	return 0;
-}
-
-int _cdecl MetaLoadShader(const string &filename)
-{
-	if (filename.num > 0)
-		return NixLoadShader(MaterialDir + filename + ".fx");
-	return -1;
 }
 

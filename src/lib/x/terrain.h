@@ -53,11 +53,9 @@ public:
 	int vertex_buffer;
 	int partition[128][128], partition_old[128][128];
 	vector pattern, min, max;
-	Material *material;
+	Material material;
 	string material_file;
 
-	int num_textures;
-	int texture[TERRAIN_MAX_TEXTURES];
 	string texture_file[TERRAIN_MAX_TEXTURES];
 	vector texture_scale[TERRAIN_MAX_TEXTURES];
 

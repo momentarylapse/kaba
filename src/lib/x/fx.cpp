@@ -9,17 +9,15 @@
 \*----------------------------------------------------------------------------*/
 #include "x.h"
 
-string FxVersion = "0.3.2.0";
+string FxVersion = "0.3.3.0";
 
-	 
+
 
 #define FX_MAX_FORCEFIELDS		128
-#define FX_MAX_LIGHTS			1024
 #define FX_MAX_ENABLED_LIGHTS	16
 #define FX_MAX_LIGHT_FIELDS		128
 #define FX_MAX_SHADOWS			256
 #define FX_MAX_MIRRORS			128
-#define FX_MAX_CUBEMAPS			16
 #define FX_MAX_TAILS			128
 
 #ifdef _X_ALLOW_X_
@@ -58,20 +56,6 @@ struct sMirror{
 	vector p[3];
 };
 
-struct sLight{
-	bool Directional,Enabled;
-	int Light;
-	vector Pos,Dir;
-	float Radius;
-	color Ambient,Diffuse,Specular;
-};
-
-struct sLightField{
-	vector Min,Max;
-	bool SunEnabled;
-	color Ambient;
-};
-
 // particles
 static Array<Particle*> Particles;
 static Array<Particle*> Beams;
@@ -83,16 +67,6 @@ static Array<Effect*> Effects;
 //int NumForceFields;
 //sForceField *ForceField[FX_MAX_FORCEFIELDS];
 
-// lights
-static int NumLights,NumNixLights,LightIndex[FX_MAX_LIGHTS];
-static sLight *Light[FX_MAX_LIGHTS];
-static bool LightExisting[FX_MAX_LIGHTS];
-
-// light fields
-bool FxLightFieldsEnabled;
-static int NumLightFields;
-static sLightField *LightField[FX_MAX_LIGHT_FIELDS];
-
 static Array<sShadow> Shadow;
 
 static int NumMirrors;
@@ -100,8 +74,7 @@ static sMirror *Mirror[FX_MAX_MIRRORS];
 render_func *FxRenderFunc;
 static int MirrorLevel;
 
-static int NumCubeMaps;
-static sCubeMap CubeMap[FX_MAX_CUBEMAPS];
+static Array<sCubeMap> CubeMap;
 
 static int NumTails;
 static Tail *Tails[FX_MAX_TAILS];
@@ -110,8 +83,6 @@ int MirrorLevelMax=1;
 
 vector CamDir;
 
-int FxTexMetal;
-
 int ShadowVB[2];
 int ShadowCounter = 0;
 bool ShadowRecalc = true;
@@ -119,22 +90,14 @@ bool ShadowRecalc = true;
 #define MODEL_MAX_TRIANGLES		65536
 #define MODEL_MAX_VERTICES		65536
 
-void FxInit(const string &tex_file, const string &tex_file_metal, const string &tex_file_water)
+void FxInit()
 {
 	msg_db_r("FxInit",0);
-#ifdef _X_ALLOW_FX_
-	FxTexMetal=NixLoadTexture(tex_file_metal);
-#endif
-	FxVB=NixCreateVB(MODEL_MAX_TRIANGLES*4);
-	ShadowVB[0]=NixCreateVB(32768);
-	ShadowVB[1]=NixCreateVB(32768);
-	FxLightFieldsEnabled=true;
+	FxVB = NixCreateVB(MODEL_MAX_TRIANGLES * 4, 1);
+	ShadowVB[0] = NixCreateVB(32768, 1);
+	ShadowVB[1] = NixCreateVB(32768, 1);
 	NumForceFields=0;
-	NumLights=0;
-	//NumNixLights=0;
-	NumLightFields=0;
 	NumTails=0;
-	NumCubeMaps=0;
 	FxRenderFunc=NULL;
 	msg_db_l(0);
 }
@@ -165,14 +128,6 @@ void FxReset()
 	/*msg_db_m("force fields",2);
 	for (int i=0;i<NumForceFields;i++)
 		FxForceFieldDelete(i);*/
-	msg_db_m("lights",2);
-	for (int i=0;i<NumLights;i++)
-		FxLightDelete(i);
-	msg_db_m("light fields",2);
-	for (int i=0;i<NumLightFields;i++)
-		delete(LightField[i]);
-//	NumLights=0;
-	NumLightFields=0;
 	msg_db_l(1);
 }
 
@@ -315,7 +270,9 @@ Effect *FxCreateLight(Model *m, int vertex, float radius, const color &am, const
 	fx->model = m;
 	fx->type = FXTypeLight;
 	fx->script_var.resize(14);
-	*(int*)&fx->script_var[0] = FxLightCreate();
+#ifdef _X_ALLOW_LIGHT_
+	*(int*)&fx->script_var[0] = Light::Create();
+#endif
 	fx->script_var[1] = radius;
 	*(color*)&fx->script_var[2] = am;
 	*(color*)&fx->script_var[6] = di;
@@ -377,7 +334,9 @@ void FxEnable(Effect *fx, bool enabled)
 			SoundSetData(*(int*)&fx->script_var[0], fx->pos, fx->vel, fx->script_var[1], fx->script_var[1] * 0.2f, 0, 0);
 #endif
 	}else if (fx->type == FXTypeLight){
-		FxLightEnable(*(int*)&fx->script_var[0], enabled);
+#ifdef _X_ALLOW_LIGHT_
+		Light::Enable(*(int*)&fx->script_var[0], enabled);
+#endif
 	}
 
 	if (fx->func_enable)
@@ -513,94 +472,25 @@ void FxForceFieldEnable(int index,bool enabled)
 }
 #endif
 
-//#########################################################################
-// light
-//#########################################################################
-int FxLightCreate()
-{
-	msg_db_r("create light",2);
-	msg_write("new light");
-	for (int i=0;i<NumLights;i++)
-		if (!LightExisting[i]){
-			LightExisting[i]=true;
-			//Light[i]=new sLight;
-			msg_db_l(2);
-			return i;
-		}
-	if (NumLights>=FX_MAX_LIGHTS){
-		msg_write("FX: too many lights");
-		msg_db_l(2);
-		return -1;
-	}
-	Light[NumLights]=new sLight;
-	LightExisting[NumLights]=true;
-	if (NumLights>=NumNixLights){
-		LightIndex[NumNixLights]=NixCreateLight();
-		Light[NumLights]->Light=LightIndex[NumNixLights];
-		NumNixLights++;
-	}else{
-		Light[NumLights]->Light=LightIndex[NumLights];
-	}
-	NixEnableLight(Light[NumLights]->Light,false);
-	NumLights++;
-	msg_db_l(2);
-	return NumLights-1;
-}
-
-void FxLightDelete(int index)
-{
-	if ((index < 0) || (index >= NumLights))
-		return;
-	if (!LightExisting[index])
-		return;
-	NixEnableLight(Light[index]->Light, false);
-	LightExisting[index] = false;
-}
-
-void FxLightSetDirectional(int index,const vector &dir,const color &am,const color &di,const color &sp)
-{
-	if ((index<0)||(index>=NumLights))	return;
-	Light[index]->Directional=true;
-	Light[index]->Dir=dir;
-	Light[index]->Ambient=am;
-	Light[index]->Diffuse=di;
-	Light[index]->Specular=sp;
-	NixSetLightDirectional(LightIndex[Light[index]->Light],dir,am,di,sp);
-}
-
-void FxLightSetRadial(int index,const vector &pos,float radius,const color &am,const color &di,const color &sp)
-{
-	if ((index<0)||(index>=NumLights))	return;
-	Light[index]->Directional=false;
-	Light[index]->Pos=pos;
-	Light[index]->Radius=radius;
-	Light[index]->Ambient=am;
-	Light[index]->Diffuse=di;
-	Light[index]->Specular=sp;
-	NixSetLightRadial(LightIndex[Light[index]->Light],pos,radius,am,di,sp);
-}
-
-void FxLightEnable(int index,bool enabled)
-{
-	if ((index<0)||(index>=NumLights))	return;
-	NixEnableLight(LightIndex[Light[index]->Light],enabled);
-}
 
 //#########################################################################
 // cube maps
 //#########################################################################
 int FxCubeMapNew(int size)
 {
-	CubeMap[NumCubeMaps].CubeMap=NixCreateCubeMap(size);
-	CubeMap[NumCubeMaps].Size=size;
-	CubeMap[NumCubeMaps].Dynamical=false;
-	CubeMap[NumCubeMaps].Frame=-2;
-	NumCubeMaps++;
-	return NumCubeMaps-1;
+	sCubeMap c;
+	c.CubeMap = NixCreateCubeMap(size);
+	c.Size = size;
+	c.Dynamical = false;
+	c.Frame = -2;
+	CubeMap.add(c);
+	return CubeMap.num - 1;
 }
 
 void FxCubeMapCreate(int cube_map,Model *m)
 {
+	if (cube_map < 0)
+		return;
 	CubeMap[cube_map].Dynamical=true;
 	CubeMap[cube_map].model=m;
 	CubeMap[cube_map].Frame=-2;
@@ -608,16 +498,25 @@ void FxCubeMapCreate(int cube_map,Model *m)
 
 void FxCubeMapCreate(int cube_map,int tex0,int tex1,int tex2,int tex3,int tex4,int tex5)
 {
+	if (cube_map < 0)
+		return;
 	CubeMap[cube_map].Dynamical=false;
-	NixSetCubeMap(CubeMap[cube_map].CubeMap,tex0,tex1,tex2,tex3,tex4,tex5);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 0, tex0);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 1, tex1);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 2, tex2);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 3, tex3);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 4, tex4);
+	NixFillCubeMap(CubeMap[cube_map].CubeMap, 5, tex5);
 }
 
 void FxCubeMapDraw(int cube_map,int buffer,float density)
 {
-	bool el=NixLightingEnabled;
+	if (cube_map < 0)
+		return;
+	bool el = NixLightingEnabled;
 	NixEnableLighting(!CubeMap[cube_map].Dynamical);
 	NixSetAlpha(density);
-	NixDraw3DCubeMapped(CubeMap[cube_map].CubeMap,buffer);
+	NixDraw3DCubeMapped(CubeMap[cube_map].CubeMap, buffer);
 	NixSetAlpha(AlphaNone);
 	NixEnableLighting(el);
 }
@@ -1103,69 +1002,6 @@ void TCTransform(float &u,float &v,vector n,vector p)
 
 static vector p[MODEL_MAX_VERTICES];
 
-void FxDrawMetal(Skin *s,const matrix &m,float density)
-{
-#if 0
-#ifdef _X_ALLOW_X_
-	float u[3],v[3];
-	for (int i=0;i<s->NumVertices;i++)
-		VecTransform(p[i],m,s->Vertex[i]);
-	NixVBClear(FxVB);
-	for (int i=0;i<s->NumTriangles;i++){
-		int a=s->TriangleIndex[i*3  ];
-		int b=s->TriangleIndex[i*3+1];
-		int c=s->TriangleIndex[i*3+2];
-		TCTransform(u[0],v[0],s->Normal[i*3  ],p[a]);
-		TCTransform(u[1],v[1],s->Normal[i*3+1],p[b]);
-		TCTransform(u[2],v[2],s->Normal[i*3+2],p[c]);
-		NixVBAddTria(FxVB,	s->Vertex[a],s->Normal[a],u[0],v[0],
-							s->Vertex[b],s->Normal[b],u[1],v[1],
-							s->Vertex[c],s->Normal[c],u[2],v[2]);
-	}
-	NixSetAlpha(density);
-	NixSpecularEnable(true);
-	NixDraw3D(FxTexMetal,FxVB,m);
-	NixSpecularEnable(false);
-	NixSetAlpha(AlphaNone);
-#endif
-#endif
-}
-
-void FxAddLighField(const vector &min,const vector &max,bool sun,const color &ambient)
-{
-	LightField[NumLightFields]=new sLightField;
-	LightField[NumLightFields]->Min=min;
-	LightField[NumLightFields]->Max=max;
-	LightField[NumLightFields]->SunEnabled=sun;
-	LightField[NumLightFields]->Ambient=ambient;
-	NumLightFields++;
-}
-
-void FxTestForLightField(const vector &pos)
-{
-#ifdef _X_ALLOW_SKY_
-/*	if ((!LightFieldsEnabled)||(!sky->WeatherDeltaTime)||(!sky->AstronomyEnabled))	return;
-	for (int i=0;i<NumLightFields;i++)
-		if (VecBetween(pos,LightField[i]->Min,LightField[i]->Max)){
-			LightEnable(0,LightField[i]->SunEnabled);
-			NixSetAmbientLight(LightField[i]->Ambient);
-			NixEnableFog(!LightField[i]->SunEnabled);
-		}*/
-#endif
-}
-
-void FxResetLightField()
-{
-#ifdef _X_ALLOW_SKY_
-	if ((!LightFieldsEnabled)||(!sky->WeatherDeltaTime)||(!sky->AstronomyEnabled))	return;
-/*	if (NumLights>0){
-		LightEnable(0,true);
-		NixEnableFog(true);
-		NixSetAmbientLight(sky->SunAmbient);
-	}*/
-#endif
-}
-
 //#########################################################################
 // common stuff
 //#########################################################################
@@ -1186,11 +1022,14 @@ void FxCalcMove()
 				fx->pos = fx->model->GetVertex(fx->vertex, 0);
 			
 			if (fx->type == FXTypeLight){
-				FxLightSetRadial(	*(int*)&fx->script_var[0],
-									fx->pos, fx->script_var[1],
+#ifdef _X_ALLOW_LIGHT_
+				Light::SetColors(	*(int*)&fx->script_var[0],
 									*(color*)&fx->script_var[2],
 									*(color*)&fx->script_var[6],
 									*(color*)&fx->script_var[10]);
+				Light::SetRadial(	*(int*)&fx->script_var[0],
+									fx->pos, fx->script_var[1]);
+#endif
 			}else if (fx->type==FXTypeSound){
 #ifdef _X_USE_SOUND_
 				SoundSetData(*(int*)&fx->script_var[0], fx->pos, fx->vel, fx->script_var[1], fx->script_var[1] * 0.2f, 1, fx->script_var[2]);
@@ -1263,7 +1102,7 @@ void FxCalcMove()
 #ifdef _X_ALLOW_CAMERA_
 	// dynamical cube maps
 	msg_db_m("--CubeMap",3);
-	for (int i=0;i<NumCubeMaps;i++)
+	for (int i=0;i<CubeMap.num;i++)
 		if (CubeMap[i].Dynamical)
 			if (CubeMap[i].model->_detail_>=0){
 				vector pos = CubeMap[i].model->pos;
@@ -1311,20 +1150,10 @@ void FxDraw1()
 
 	//msg_write("light");
 	//msg_write(NumLights);
-	for (int i=0;i<NumLights;i++){
-		//msg_write(i);
-		if (LightExisting[i]){
-			//msg_write("e");
-			if (Light[i]->Enabled){
-				//msg_write("n");
-				if (Light[i]->Directional){
-					//msg_write("d");
-					SunDir = Light[i]->Dir;
-					//msg_write(i);
-				}
-			}
-		}
-	}
+#ifdef _X_ALLOW_LIGHT_
+	SunDir = Light::GetSunDir();
+#endif
+	
 	//msg_write("ok");
 	msg_db_l(2);
 }

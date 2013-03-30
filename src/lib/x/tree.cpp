@@ -1,5 +1,27 @@
 #include "x.h"
 
+#define TREE_MAX_DEPTH			12
+
+
+struct OctreeBranch
+{
+	OctreeBranch(const vector &center, float radius, OctreeBranch *parent);
+	~OctreeBranch();
+	vector center;
+	float radius;
+	OctreeBranch *child[8]; // links to all 8 children
+	OctreeBranch *parent; // link to upper level
+	Array<void*> data;
+};
+
+// store this with the data...
+/*struct OctreeLocationData
+{
+	OctreeBranch *branch;
+	int path[TREE_MAX_DEPTH];
+	int data_id;
+};*/
+
 inline bool bounding_box_inside(const vector &a1, const vector &a2, const vector &b1, const vector &b2)
 {
 	if (b1.x < a1.x)	return false;
@@ -27,80 +49,70 @@ vector OctreePos[8]={
 	vector(1,0,0),	vector(1,0,1),	vector(1,1,0),	vector(1,1,1)
 };
 
-// make children usable
-inline void octree_create_branch(sOctreeBranch *b)
+OctreeBranch::OctreeBranch(const vector &_center, float _radius, OctreeBranch *_parent)
 {
-	b->child = new sOctreeBranch[8];
-	float child_size = b->Size * 0.5f;
-	vector child_d = vector(child_size, child_size, child_size);
-	for (int i=0;i<8;i++){
-		b->child[i].Size = child_size;
-		b->child[i].Min = b->Min + OctreePos[i] * child_size;
-		b->child[i].Max = b->child[i].Min + child_d;
-		b->child[i].child = NULL;
-	}
+	center = _center;
+	radius = _radius;
+	parent = _parent;
+	for (int i=0;i<8;i++)
+		child[i] = NULL;
 }
 
-COctree::COctree(const vector &pos, float radius)
+OctreeBranch::~OctreeBranch()
 {
-	parent = NULL;
-	Min = pos - vector(radius, radius, radius);
-	Max = pos + vector(radius, radius, radius);
-	Size = radius * 2;
-	child = NULL;
-	//octree_create_branch((sOctreeBranch*)this);
+	for (int i=0;i<8;i++)
+		if (child[i])
+			delete(child[i]);
 }
 
-void COctree::Insert(const vector &pos, float radius, void *data, sOctreeLocationData *loc)
+Octree::Octree(const vector &_pos, float _radius)
 {
-	vector min = pos - vector(radius, radius, radius);
-	vector max = pos + vector(radius, radius, radius);
-	Insert(min, max, data, loc);
+	root = new OctreeBranch(_pos, _radius, NULL);
 }
 
-void COctree::Insert(const vector &min, const vector &max, void *data, sOctreeLocationData *loc)
+Octree::~Octree()
 {
-	//msg_write("insert");
-	// which level to insert into?
-	sOctreeBranch *b = (sOctreeBranch*) this;
+	delete(root);
+}
+
+void Octree::Insert(const vector &pos, float radius, void *data)
+{
+	OctreeBranch *b = root;
 	for (int l=0;l<TREE_MAX_DEPTH;l++){
-		loc->path[l] = -1;
-		if (!b->child)
-			octree_create_branch(b);
-		// inside a child?       (would be faster to compare to b->Pos to deside which child...)
-		bool inside = false;
-		for (int i=0;i<8;i++)
-			if (bounding_box_inside(b->child[i].Min, b->child[i].Max, min, max)){
-				inside = true;
-				//msg_write(string2("%d -> %d", l, i));
-				b = &b->child[i];
-				loc->path[l] = i;
-				break;
-			}
-		// not in any child -> use this level
-		if (!inside)
+		vector dpos = pos - b->center;
+		int sub = 7;
+		if (dpos.x < 0){
+			dpos.x = - dpos.x;
+			sub -= 4;
+		}
+		if (dpos.y < 0){
+			dpos.y = - dpos.y;
+			sub -= 2;
+		}
+		if (dpos.z < 0){
+			dpos.z = - dpos.z;
+			sub -= 1;
+		}
+		if ((dpos.x < radius) || (dpos.y < radius) || (dpos.z < radius))
 			break;
+		if (!b->child[sub]){
+			float r = b->radius * 0.5f;
+			b->child[sub] = new OctreeBranch(b->center + OctreePos[sub] * r, r, b);
+		}
+		b = b->child[sub];
 	}
-
-	/*msg_write("-----");
-	msg_write(string2("%f  %f  %f", b->Min.x, b->Min.y, b->Min.z));
-	msg_write(string2("%f  %f  %f", b->Max.x, b->Max.y, b->Max.z));*/
-	// insert into b
 	b->data.add(data);
-	loc->branch = b;
-	loc->data_id = b->data.num - 1;
 }
 
-void COctree::GetNeighbouringPairs(Array<sOctreePair> &pair)
+void Octree::GetNeighbouringPairs(Array<TreePair> &pair)
 {
 }
 
-void COctree::GetPointNeighbourhood(const vector &pos, float radius, Array<void*> &data)
+void Octree::GetPointNeighbourhood(const vector &pos, float radius, Array<void*> &data)
 {
 	//msg_write("point");
-	data.clear();
 	
-	sOctreeBranch *b = (sOctreeBranch*) this;
+	/*OctreeBranch *b = (OctreeBranch*) this;
 	for (int l=0;l<TREE_MAX_DEPTH;l++){
 		// items from this level
 		for (int i=0;i<b->data.num;i++){
@@ -123,5 +135,106 @@ void COctree::GetPointNeighbourhood(const vector &pos, float radius, Array<void*
 		// not in any child -> done
 		if (!inside)
 			return;
+	}*/
+}
+
+void Octree::Get(const vector &pos, Array<void*> &data)
+{
+	OctreeBranch *b = root;
+	while (b){
+		data.append(b->data);
+		vector dpos = pos - b->center;
+		int sub = 0;
+		if (dpos.x > 0)
+			sub += 4;
+		if (dpos.y > 0)
+			sub += 2;
+		if (dpos.z > 0)
+			sub += 1;
+		b = b->child[sub];
+	}
+}
+
+
+
+
+struct QuadtreeBranch
+{
+	QuadtreeBranch(const vector &center, float radius, QuadtreeBranch *parent);
+	~QuadtreeBranch();
+	vector center;
+	float radius;
+	QuadtreeBranch *child[4]; // links to all 4 children
+	QuadtreeBranch *parent; // link to upper level
+	Array<void*> data;
+};
+
+vector QuadtreePos[4]={
+	vector(0,0,0),	vector(0,0,1),	vector(1,0,0),	vector(1,0,1)
+};
+
+QuadtreeBranch::QuadtreeBranch(const vector &_center, float _radius, QuadtreeBranch *_parent)
+{
+	center = _center;
+	radius = _radius;
+	parent = _parent;
+	for (int i=0;i<4;i++)
+		child[i] = NULL;
+}
+
+QuadtreeBranch::~QuadtreeBranch()
+{
+	for (int i=0;i<4;i++)
+		if (child[i])
+			delete(child[i]);
+}
+
+Quadtree::Quadtree(const vector &_pos, float _radius)
+{
+	root = new QuadtreeBranch(_pos, _radius, NULL);
+}
+
+Quadtree::~Quadtree()
+{
+	delete(root);
+}
+
+void Quadtree::Insert(const vector &pos, float radius, void *data)
+{
+	QuadtreeBranch *b = root;
+	for (int l=0;l<TREE_MAX_DEPTH;l++){
+		vector dpos = pos - b->center;
+		int sub = 3;
+		if (dpos.x < 0){
+			dpos.x = - dpos.x;
+			sub -= 2;
+		}
+		if (dpos.z < 0){
+			dpos.z = - dpos.z;
+			sub -= 1;
+		}
+		if ((dpos.x < radius) || (dpos.z < radius))
+			break;
+		if (!b->child[sub]){
+			float r = b->radius * 0.5f;
+			b->child[sub] = new QuadtreeBranch(b->center + QuadtreePos[sub] * r, r, b);
+		}
+		b = b->child[sub];
+	}
+	b->data.add(data);
+}
+
+void Quadtree::Get(const vector &pos, Array<void*> &data)
+{
+	QuadtreeBranch *b = root;
+	while (b){
+		data.append(b->data);
+		vector dpos = pos - b->center;
+		int sub = 0;
+		if (dpos.x > 0)
+			sub += 2;
+		if (dpos.z > 0)
+			sub += 1;
+		b = b->child[sub];
 	}
 }

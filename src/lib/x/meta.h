@@ -33,8 +33,7 @@ struct XFont
 {
 	string filename;
 	int texture;
-	int num_glyphs;
-	int table[256], unknown_glyph_no;
+	int unknown_glyph_no;
 	XGlyph glyph[256];
 	float y_offset, height, x_factor, y_factor;
 };
@@ -69,7 +68,7 @@ typedef void str_float_func(const string&,float);
 	void MetaCalcMove();
 
 // data to CMeta
-	void MetaSetDirs(const string &texture_dir, const string &map_dir, const string &object_dir, const string &sound_dir, const string &script_dir, const string &material_dir);
+	void MetaSetDirs(const string &texture_dir, const string &map_dir, const string &object_dir, const string &sound_dir, const string &script_dir, const string &material_dir, const string &font_dir);
 
 // models
 	Model *_cdecl MetaLoadModel(const string &filename);
@@ -80,10 +79,9 @@ typedef void str_float_func(const string&,float);
 
 // materials
 	Material *MetaLoadMaterial(const string &filename,bool as_default=false);
-	void MetaSetMaterial(Material *m);
 
 // fonts
-	int _cdecl MetaLoadXFont(const string &filename);
+	int _cdecl MetaLoadFont(const string &filename);
 
 // all
 	void _cdecl MetaDelete(void *p);
@@ -93,7 +91,7 @@ typedef void str_float_func(const string&,float);
 
 
 // game data
-	extern string MapDir, ObjectDir, SoundDir, ScriptDir, MaterialDir;
+	extern string MapDir, ObjectDir, SoundDir, ScriptDir, MaterialDir, FontDir;
 	extern void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
 	extern str_float_func *MetaDrawSplashScreen;
 	extern void *MetaObjectScriptInit;
@@ -111,8 +109,6 @@ typedef void str_float_func(const string&,float);
 float _cdecl XFGetWidth(float h,const string &str);
 float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centric=false);
 float _cdecl XFDrawVertStr(float x,float y,float h,const string &str);
-int _cdecl MetaLoadShader(const string &filename);
-int _cdecl MetaMusicLoad(const string &filename);
 
 enum{
 	ErrorLoadingWorld,

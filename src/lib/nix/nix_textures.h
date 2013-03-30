@@ -15,42 +15,38 @@ void NixTexturesInit();
 void NixReleaseTextures();
 void NixReincarnateTextures();
 void NixProgressTextureLifes();
-void NixSetShaderTexturesDX(void *fx,int texture0,int texture1,int texture2,int texture3);
-void NixSetCubeMapDX(int texture);
-void NixRenderToTextureBeginDX(int texture);
-void NixRenderToTextureEndDX(int texture);
 
+int NixCreateEmptyTexture();
 int NixLoadTexture(const string &filename);
-int _cdecl NixCreateDynamicTexture(int width,int height);
+int _cdecl NixCreateDynamicTexture(int width, int height);
+void NixOverwriteTexture(int texture, const Image &image);
 //void NixReloadTexture(int texture);
 //void NixUnloadTexture(int texture);
 void NixSetTexture(int texture);
-void NixSetTextures(int *texture,int num_textures);
-void NixSetTextureVideoFrame(int texture,int frame);
-void NixTextureVideoMove(int texture,float elapsed);
+void NixSetTextures(int *texture, int num_textures);
+void NixSetTextureVideoFrame(int texture, int frame);
+void NixTextureVideoMove(int texture, float elapsed);
 int NixCreateCubeMap(int size);
 void NixRenderToCubeMap(int cube_map,vector &pos,callback_function *render_scene,int mask);
-void NixSetCubeMap(int cube_map,int tex0,int tex1,int tex2,int tex3,int tex4,int tex5);
+void NixFillCubeMap(int cube_map, int side, int source_tex);
 
 
 
-struct sNixTexture
+struct NixTexture
 {
-	string Filename;
-	int Width, Height;
-	bool IsDynamic, Valid;
-	int LifeTime;
+	string filename;
+	int width, height;
+	bool is_dynamic, valid, is_cube_map;
+	int life_time;
 	
 	unsigned int glTexture;
-	#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
-		unsigned int glFrameBuffer;
-		unsigned int glDepthRenderBuffer;
-	#endif
+	unsigned int glFrameBuffer;
+	unsigned int glDepthRenderBuffer;
 
-	Image Icon;
+	Image icon;
 };
 
-extern Array<sNixTexture> NixTexture;
+extern Array<NixTexture> NixTextures;
 
 extern int NixTextureIconSize;
 

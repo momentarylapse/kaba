@@ -14,7 +14,7 @@
 #include "nix_common.h"
 
 
-string NixVersion = "0.10.0.0";
+string NixVersion = "0.10.1.0";
 
 
 // libraries (in case Visual C++ is used)
@@ -26,6 +26,8 @@ string NixVersion = "0.10.0.0";
 	#pragma comment(lib,"strmiids.lib")
 	#pragma comment(lib,"vfw32.lib")
 #endif
+
+void TestGLError(const string &);
 
 
 /*
@@ -63,6 +65,23 @@ libraries to link:
 	#endif
 #endif
 
+
+void TestGLError(const string &pos)
+{
+	int err = glGetError();
+	if (err == GL_NO_ERROR)
+	{}//msg_write("GL_NO_ERROR");
+	else if (err == GL_INVALID_ENUM)
+		msg_error("GL_INVALID_ENUM at " + pos);
+	else if (err == GL_INVALID_VALUE)
+		msg_error("GL_INVALID_VALUE at " + pos);
+	else if (err == GL_INVALID_OPERATION)
+		msg_error("GL_INVALID_OPERATION at " + pos);
+	else if (err == GL_INVALID_FRAMEBUFFER_OPERATION)
+		msg_error("GL_INVALID_FRAMEBUFFER_OPERATION at " + pos);
+	else
+		msg_error(i2s(err) + " at " + pos);
+}
 
 
 
@@ -129,7 +148,6 @@ int VBTemp;
 #endif
 bool OGLMultiTexturingSupport = false;
 bool OGLShaderSupport = false;
-#ifdef NIX_ALLOW_DYNAMIC_TEXTURE
 	#ifdef OS_WINDOWS
 		extern PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT = NULL;
 		extern PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT = NULL;
@@ -169,7 +187,6 @@ bool OGLShaderSupport = false;
 		HPBUFFERARB odt_hPBuffer[NIX_MAX_TEXTURES];
 		HDC         odt_hDC[NIX_MAX_TEXTURES];
 		HGLRC       odt_hRC[NIX_MAX_TEXTURES];*/
-#endif
 
 static int OGLPixelFormat;
 #ifdef OS_LINUX
@@ -575,6 +592,8 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,CHuiW
 	NixScreenWidth = NixDesktopWidth;
 	NixScreenHeight = NixDesktopHeight;
 
+	TestGLError("Init a");
+
 	// reset data
 	NixApi = -1;
 	NixApiName = "";
@@ -604,6 +623,7 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,CHuiW
 		msg_left();
 		return;
 	}
+	TestGLError("Init c");
 
 	// more default values of the engine
 	if (NixWindow){
@@ -631,8 +651,10 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,CHuiW
 
 	NixTexturesInit();
 
-	VBTemp=NixCreateVB(10240);
-	NixUsable=true;
+	VBTemp = NixCreateVB(10240, 1);
+	NixUsable = true;
+
+	TestGLError("Init post");
 
 
 	msg_ok();
@@ -982,7 +1004,6 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 		OGLShaderSupport = true;
 #endif
 
-	#ifdef  NIX_ALLOW_DYNAMIC_TEXTURE
 		msg_db_m("-RenderToTexture-Support",1);
 
 		
@@ -1019,7 +1040,6 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 				}
 #endif
 			}
-		#endif // NIX_ALLOW_DYNAMIC_TEXTURE
 
 }
 
@@ -1168,6 +1188,7 @@ void NixSetWire(bool enabled)
 		glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 		glEnable(GL_CULL_FACE);
 	}
+	TestGLError("SetWire");
 }
 
 void NixSetCull(int mode)
@@ -1182,13 +1203,13 @@ void NixSetCull(int mode)
 	if (mode==CullNone)		glDisable(GL_CULL_FACE);
 	if (mode==CullCCW)		glCullFace(GL_FRONT);
 	if (mode==CullCW)		glCullFace(GL_BACK);
+	TestGLError("SetCull");
 }
 
 void NixSetZ(bool Write, bool Test)
 {
 	if (Test){
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_DEPTH);
 		glEnable(GL_DEPTH_TEST);
 		if (Write)
 			glDepthMask(1);
@@ -1196,16 +1217,14 @@ void NixSetZ(bool Write, bool Test)
 			glDepthMask(0);
 	}else{
 		if (Write){
-			glEnable(GL_DEPTH);
-			//glDisable(GL_DEPTH_TEST);
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_ALWAYS);
 			glDepthMask(1);
 		}else{
 			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_DEPTH);
 		}
 	}
+	TestGLError("Setz");
 }
 
 void NixSetAlpha(int mode)
@@ -1230,6 +1249,7 @@ void NixSetAlpha(int mode)
 			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 			break;
 	}
+	TestGLError("SetAlpha");
 }
 
 void NixSetAlphaM(int mode)
@@ -1256,6 +1276,7 @@ void NixSetAlpha(int src,int dst)
 	glEnable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
 	glBlendFunc(OGLGetAlphaMode(src),OGLGetAlphaMode(dst));
+	TestGLError("SetAlphaII");
 }
 
 void NixSetAlphaSD(int src,int dst)
@@ -1270,20 +1291,19 @@ void NixSetAlpha(float factor)
 	glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,di);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	TestGLError("SetAlphaF");
 }
 
 void NixSetStencil(int mode,unsigned long param)
 {
 	glStencilMask(0xffffffff);
+	
 	if (mode==StencilNone){
-		glDisable(GL_STENCIL);
 		glDisable(GL_STENCIL_TEST);
 	}else if (mode==StencilReset){
 		glClearStencil(param);
 		glClear(GL_STENCIL_BUFFER_BIT);
 	}else if ((mode==StencilIncrease)||(mode==StencilDecrease)||(mode==StencilDecreaseNotNegative)||(mode==StencilSet)){
-		glEnable(GL_STENCIL);
-		//glDisable(GL_STENCIL_TEST);
 		glEnable(GL_STENCIL_TEST);
 		glStencilFunc(GL_ALWAYS,param,0xffffffff);
 		if (mode==StencilIncrease)
@@ -1293,7 +1313,6 @@ void NixSetStencil(int mode,unsigned long param)
 		else if (mode==StencilSet)
 			glStencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);
 	}else if ((mode==StencilMaskEqual)||(mode==StencilMaskNotEqual)||(mode==StencilMaskLessEqual)||(mode==StencilMaskLess)||(mode==StencilMaskGreaterEqual)||(mode==StencilMaskGreater)){
-		glEnable(GL_STENCIL);
 		glEnable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 		if (mode==StencilMaskEqual)
@@ -1309,6 +1328,7 @@ void NixSetStencil(int mode,unsigned long param)
 		else if (mode==StencilMaskGreater)
 			glStencilFunc(GL_GREATER,param,0xffffffff);
 	}
+	TestGLError("SetStencil");
 }
 
 // mode=FogLinear:			start/end
@@ -1323,6 +1343,7 @@ void NixSetFog(int mode,float start,float end,float density,const color &c)
 	glFogf(GL_FOG_START,start);
 	glFogf(GL_FOG_END,end);
 	glHint(GL_FOG_HINT,GL_DONT_CARE); // ??
+	TestGLError("SetFog");
 }
 
 void NixEnableFog(bool Enabled)
@@ -1331,4 +1352,5 @@ void NixEnableFog(bool Enabled)
 		glEnable(GL_FOG);
 	else
 		glDisable(GL_FOG);
+	TestGLError("SetEnableFog");
 }

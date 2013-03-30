@@ -87,6 +87,9 @@ enum
 #ifdef _X_ALLOW_GUI_
 	#include "gui.h"
 #endif
+#ifdef _X_ALLOW_LIGHT_
+	#include "light.h"
+#endif
 
 #endif
 

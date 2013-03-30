@@ -14,11 +14,11 @@ static color NixColor = White;
 
 
 
-
 void NixSetColor(const color &c)
 {
 	NixColor = c;
 	glColor4fv((float*)&c);
+	TestGLError("SetColor");
 }
 
 color NixGetColor()
@@ -56,6 +56,7 @@ void NixDrawStr(float x, float y, const string &str)
 	glListBase(NixOGLFontDPList);
 	glCallLists(str2.num,GL_UNSIGNED_BYTE,(char*)str2.data);
 	glRasterPos3f(0,0,0);
+	TestGLError("DrawStr");
 	msg_db_l(10);
 }
 
@@ -126,6 +127,7 @@ void NixDrawLine(float x1, float y1, float x2, float y2, float depth)
 		glEnd();
 	}
 #endif
+	TestGLError("DrawLine");
 }
 
 void NixDrawLines(float *x, float *y, int num_lines, bool contiguous, float depth)
@@ -161,6 +163,7 @@ void NixDrawLines(float *x, float *y, int num_lines, bool contiguous, float dept
 		glDisable(GL_LINE_SMOOTH);
 		glDisable(GL_BLEND);
 	}
+	TestGLError("DrawLines");
 }
 
 void NixDrawLineV(float x, float y1, float y2, float depth)
@@ -197,6 +200,7 @@ void NixDrawLine3D(const vector &l1, const vector &l2)
 	if ((p1.z>0)&&(p2.z>0)&&(p1.z<1)&&(p2.z<1))
 		NixDrawLine(p1.x, p1.y, p2.x, p2.y, (p1.z + p2.z)/2);*/
 	//NixDrawLine(l1.x, l1.y, l2.x, l2.y, (l1.z+l2.z)/2);
+	TestGLError("DrawLine3d");
 }
 
 void NixDrawRect(float x1, float x2, float y1, float y2, float depth)
@@ -246,106 +250,13 @@ void NixDraw2D(const rect &src, const rect &dest, float depth)
 		glTexCoord2f(src.x2,1-src.y2);
 		glVertex3f(dest.x2,dest.y2,depth);
 	glEnd();
-}
-
-void NixDraw3D(int buffer)
-{
-	if (buffer<0)	return;
-	_NixSetMode3d();
-
-	sVertexBuffer *vb = &NixVB[buffer];
-
-#if 1
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_NORMAL_ARRAY );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	glVertexPointer( 3, GL_FLOAT, 0, vb->glVertices );
-	glNormalPointer( GL_FLOAT, 0, vb->glNormals );
-#ifdef OS_LINUX
-	glClientActiveTexture(GL_TEXTURE0_ARB);
-#endif
-	glTexCoordPointer( 2, GL_FLOAT, 0, vb->glTexCoords[0] );
-	glDrawArrays(GL_TRIANGLES,0,vb->NumTrias*3);
-	//glDrawArrays(GL_TRIANGLE_STRIP,0,vb->NumTrias*3);
-#else
-
-	for (int i=0;i<VBNumTrias[buffer];i++){
-		glBegin(GL_TRIANGLES);
-			glTexCoord2f(	vb->glVertices[i*3  ].tu,vb->glVertices[i*3  ].tv);
-			glNormal3f(		vb->glVertices[i*3  ].nx,vb->glVertices[i*3  ].ny,vb->glVertices[i*3  ].nz);
-			glVertex3f(		vb->glVertices[i*3  ].x ,vb->glVertices[i*3  ].y ,vb->glVertices[i*3  ].z );
-			glTexCoord2f(	vb->glVertices[i*3+1].tu,vb->glVertices[i*3+1].tv);
-			glNormal3f(		vb->glVertices[i*3+1].nx,vb->glVertices[i*3+1].ny,vb->glVertices[i*3+1].nz);
-			glVertex3f(		vb->glVertices[i*3+1].x ,vb->glVertices[i*3+1].y ,vb->glVertices[i*3+1].z );
-			glTexCoord2f(	vb->glVertices[i*3+2].tu,vb->glVertices[i*3+2].tv);
-			glNormal3f(		vb->glVertices[i*3+2].nx,vb->glVertices[i*3+2].ny,vb->glVertices[i*3+2].nz);
-			glVertex3f(		vb->glVertices[i*3+2].x ,vb->glVertices[i*3+2].y ,vb->glVertices[i*3+2].z );
-		glEnd();
-	}
-#endif
-	NixNumTrias += vb->NumTrias;
-}
-
-void NixDraw3DM(int buffer)
-{
-	if (buffer<0)	return;
-	sVertexBuffer *vb = &NixVB[buffer];
-	_NixSetMode3d();
-
-#if 1
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_NORMAL_ARRAY );
-	glVertexPointer( 3, GL_FLOAT, 0, vb->glVertices );
-	glNormalPointer( GL_FLOAT, 0, vb->glNormals );
-
-	// set multitexturing
-	if (OGLMultiTexturingSupport){
-		for (int i=0;i<vb->NumTextures;i++){
-			glClientActiveTexture(GL_TEXTURE0+i);
-			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-			glTexCoordPointer( 2, GL_FLOAT, 0, vb->glTexCoords[i] );
-		}
-	}else{
-		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		glTexCoordPointer( 2, GL_FLOAT, 0, vb->glTexCoords[0] );
-	}
-
-	// draw
-	glDrawArrays(GL_TRIANGLES,0,vb->NumTrias*3);
-
-	// unset multitexturing
-	if (OGLMultiTexturingSupport){
-		for (int i=1;i<vb->NumTextures;i++){
-			glActiveTexture(GL_TEXTURE0+i);
-			glDisable(GL_TEXTURE_2D);
-			glClientActiveTexture(GL_TEXTURE0+i);
-			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		}
-		glActiveTexture(GL_TEXTURE0);
-		glClientActiveTexture(GL_TEXTURE0);
-	}
-#else
-
-	for (int i=0;i<vb->NumTrias;i++){
-		glBegin(GL_TRIANGLES);
-			glTexCoord2f(	vb->glVertices[i*3  ].tu,vb->glVertices[i*3  ].tv);
-			glNormal3f(		vb->glVertices[i*3  ].nx,vb->glVertices[i*3  ].ny,vb->glVertices[i*3  ].nz);
-			glVertex3f(		vb->glVertices[i*3  ].x ,vb->glVertices[i*3  ].y ,vb->glVertices[i*3  ].z );
-			glTexCoord2f(	vb->glVertices[i*3+1].tu,vb->glVertices[i*3+1].tv);
-			glNormal3f(		vb->glVertices[i*3+1].nx,vb->glVertices[i*3+1].ny,vb->glVertices[i*3+1].nz);
-			glVertex3f(		vb->glVertices[i*3+1].x ,vb->glVertices[i*3+1].y ,vb->glVertices[i*3+1].z );
-			glTexCoord2f(	vb->glVertices[i*3+2].tu,vb->glVertices[i*3+2].tv);
-			glNormal3f(		vb->glVertices[i*3+2].nx,vb->glVertices[i*3+2].ny,vb->glVertices[i*3+2].nz);
-			glVertex3f(		vb->glVertices[i*3+2].x ,vb->glVertices[i*3+2].y ,vb->glVertices[i*3+2].z );
-		glEnd();
-	}
-#endif
-	NixNumTrias+=vb->NumTrias;
+	TestGLError("Draw2D");
 }
 
 void NixDraw3DCubeMapped(int cube_map,int buffer)
 {
 	if (buffer<0)	return;
+	if (cube_map<0)	return;
 	_NixSetMode3d();
 
 #ifdef NIX_API_DIRECTX9
@@ -371,11 +282,27 @@ void NixDraw3DCubeMapped(int cube_map,int buffer)
 #endif
 #ifdef NIX_API_OPENGL
 	if (NixApi==NIX_API_OPENGL){
-		msg_todo("Draw3DCubeMapped for OpenGL");
+		NixSetTexture(cube_map);
+		TestGLError("Draw3dCube 0");
+		glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+		glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+		glTexGenf(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+		TestGLError("Draw3dCube a");
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+		glEnable(GL_TEXTURE_GEN_R);
+		TestGLError("Draw3dCube c");
+		//glEnable(GL_TEXTURE_CUBE_MAP_ARB);
+		NixDraw3D(buffer);
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		glDisable(GL_TEXTURE_GEN_R);
+		NixSetTexture(-1);
 
 		//Draw3D(-1,buffer,mat);
 	}
 #endif
+	TestGLError("Draw3dCube");
 }
 
 void NixDrawSpriteR(const rect &src, const vector &pos, const rect &dest)
@@ -418,4 +345,5 @@ void NixResetToColor(const color &c)
 {
 	glClearColor(c.r, c.g, c.b, c.a);
 	glClear(GL_COLOR_BUFFER_BIT);
+	TestGLError("ResetToColor");
 }

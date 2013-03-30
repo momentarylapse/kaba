@@ -59,22 +59,27 @@ bool Terrain::Load(const string &_filename_, const vector &_pos_, bool deep)
 			pattern.y = 0;
 			pattern.z = f->ReadFloat();
 			// Textures
-			num_textures = f->ReadIntC();
+			int num_textures = f->ReadIntC();
 			for (int i=0;i<num_textures;i++){
 				texture_file[i] = f->ReadStr();
-				if (deep)
-					texture[i] = NixLoadTexture(texture_file[i]);
 				texture_scale[i].x = f->ReadFloat();
 				texture_scale[i].y = 0;
 				texture_scale[i].z = f->ReadFloat();
 			}
 			// Material
 			material_file = f->ReadStr();
-			if (deep)
-				material = MetaLoadMaterial(material_file);
-
 			if (deep){
-				// Height
+
+				// load textures
+				material.num_textures = num_textures;
+				for (int i=0;i<num_textures;i++)
+					material.texture[i] = NixLoadTexture(texture_file[i]);
+
+				// material file
+				Material *material_from_file = MetaLoadMaterial(material_file);
+				material.copy_from(NULL, material_from_file, false);
+
+				// height
 				for (int x=0;x<num_x+1;x++)
 					for (int z=0;z<num_z+1;z++)
 						height[Index(x,z)] = f->ReadFloat();
@@ -82,21 +87,7 @@ bool Terrain::Load(const string &_filename_, const vector &_pos_, bool deep)
 					for (int z=0;z<num_z/32+1;z++)
 						partition[x][z] = -1;
 
-				// material dependence
-				if (material->num_textures > num_textures){
-					for (int i=num_textures;i<material->num_textures;i++){
-						texture[i] = -1;
-						texture_scale[i] = vector(0.1f, 0, 0.1f);
-					}
-					num_textures = material->num_textures;
-				}
-				for (int i=0;i<material->num_textures;i++)
-					if (texture[i] < 0)
-						texture[i] = material->texture[i];
-				if (num_textures == 1)
-					vertex_buffer = NixCreateVB(65536);
-				else if (num_textures > 1)
-					vertex_buffer = NixCreateVBM(65536, num_textures);
+				vertex_buffer = NixCreateVB(65536, num_textures);
 			}
 		}else{
 			msg_error(format("wrong file format: %d (4 expected)",ffv));
@@ -566,7 +557,7 @@ void Terrain::Draw()
 
 						// multitexturing
 						float ta[8],tb[8],tc[8],td[8];
-						for (int i=0;i<num_textures;i++){
+						for (int i=0;i<material.num_textures;i++){
 							ta[i*2]=(float) x   *texture_scale[i].x,	ta[i*2+1]=(float) z   *texture_scale[i].z;
 							tb[i*2]=(float)(x+e)*texture_scale[i].x,	tb[i*2+1]=(float) z   *texture_scale[i].z;
 							tc[i*2]=(float) x   *texture_scale[i].x,	tc[i*2+1]=(float)(z+e)*texture_scale[i].z;
@@ -574,7 +565,7 @@ void Terrain::Draw()
 						}
 
 						// add to buffer
-						if (num_textures==1){
+						if (material.num_textures==1){
 							NixVBAddTria(vertex_buffer,	va,na,ta[0],ta[1],
 														vc,nc,tc[0],tc[1],
 														vd,nd,td[0],td[1]);
@@ -593,19 +584,15 @@ void Terrain::Draw()
 			}
 	}
 
-	//NixSetMaterial(White, White, White, 0, Black);
-	MetaSetMaterial(material);
-	//NixSetShader(-1);
+#ifdef _X_ALLOW_LIGHT_
+	Light::Apply(cur_cam->pos);
+#endif
+
+	material.apply();
 
 	// the actual drawing
 	NixSetWorldMatrix(m_id);
-	if (num_textures == 1){
-		NixSetTexture(texture[0]);
-		NixDraw3D(vertex_buffer);
-	}else if (num_textures>1){
-		NixSetTextures(texture, num_textures);
-		NixDraw3DM(vertex_buffer);
-	}
+	NixDraw3D(vertex_buffer);
 
 	pos_old = cur_cam->pos;
 	force_redraw = false;

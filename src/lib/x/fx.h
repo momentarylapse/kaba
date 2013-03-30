@@ -72,7 +72,7 @@ extern render_func *FxRenderFunc;
 extern int MirrorLevelMax;
 extern bool FxLightFieldsEnabled;
 
-void FxInit(const string &tex_file, const string &tex_file_metal, const string &tex_file_water);
+void FxInit();
 void FxReset();
 
 // particles
@@ -101,13 +101,6 @@ void FxForceFieldDelete(int index);
 void FxForceFieldEnable(int index,bool enabled);
 void FxForceFieldCalcMove(int index);*/
 
-// lights
-int _cdecl FxLightCreate();
-void _cdecl FxLightSetDirectional(int index,const vector &dir,const color &am,const color &di,const color &sp);
-void _cdecl FxLightSetRadial(int index,const vector &pos,float radius,const color &am,const color &di,const color &sp);
-void _cdecl FxLightDelete(int index);
-void _cdecl FxLightEnable(int index,bool enabled);
-
 // cube maps
 int FxCubeMapNew(int size);
 void FxCubeMapCreate(int cube_map,int tex0,int tex1,int tex2,int tex3,int tex4,int tex5);
@@ -128,10 +121,6 @@ void FxDrawTails();
 void FxAddShadow(Model *m, int detail);
 void FxDrawShadows();
 void FxDrawMirrors(Skin *s, const matrix &m);
-void FxDrawMetal(Skin *s, const matrix &m, float density);
-void FxAddLighField(const vector &min, const vector &max, bool sun, const color &ambient);
-void FxTestForLightField(const vector &pos);
-void FxResetLightField();
 
 void FxCalcMove();
 void FxDraw1();

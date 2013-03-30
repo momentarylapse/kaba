@@ -1,43 +1,51 @@
 #if !defined(TREE_H__INCLUDED_)
 #define TREE_H__INCLUDED_
 
-#define TREE_MAX_DEPTH			12
 
-struct sOctreeBranch
-{
-	vector Min, Max; // bounding box
-	vector Pos;
-	float Size;
-	sOctreeBranch *child; // links to all 8 children
-	sOctreeBranch *parent; // link to upper level
-	Array<void*> data;
-};
+struct OctreeBranch;
+struct QuadtreeBranch;
 
-// store this with the data...
-struct sOctreeLocationData
-{
-	sOctreeBranch *branch;
-	int path[TREE_MAX_DEPTH];
-	int data_id;
-};
-
-struct sOctreePair
+struct TreePair
 {
 	void *a, *b;
 };
 
-class COctree : sOctreeBranch
+class Octree
 {
-	public:
-	COctree(const vector &pos, float radius);
+public:
+	Octree(const vector &pos, float radius);
+	~Octree();
 
 	// data management
-	void Insert(const vector &pos, float radius, void *data, sOctreeLocationData *loc);
-	void Insert(const vector &min, const vector &max, void *data, sOctreeLocationData *loc);
+	void Insert(const vector &pos, float radius, void *data);
+	void Remove(void *data);
 
 	// tests
-	void GetNeighbouringPairs(Array<sOctreePair> &pair);
+	void GetNeighbouringPairs(Array<TreePair> &pair);
 	void GetPointNeighbourhood(const vector &pos, float radius, Array<void*> &data);
+	void Get(const vector &pos, Array<void*> &data);
+	
+private:
+	OctreeBranch *root;
+};
+
+class Quadtree
+{
+public:
+	Quadtree(const vector &pos, float radius);
+	~Quadtree();
+
+	// data management
+	void Insert(const vector &pos, float radius, void *data);
+	void Remove(void *data);
+
+	// tests
+	void GetNeighbouringPairs(Array<TreePair> &pair);
+	void GetPointNeighbourhood(const vector &pos, float radius, Array<void*> &data);
+	void Get(const vector &pos, Array<void*> &data);
+	
+private:
+	QuadtreeBranch *root;
 };
 
 #endif
