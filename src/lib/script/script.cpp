@@ -10,7 +10,7 @@
 #include <stdarg.h>
 #include "script.h"
 
-#include "../00_config.h"
+#include "../config.h"
 #ifdef _X_ALLOW_META_
 	#include "../x/x.h"
 #endif

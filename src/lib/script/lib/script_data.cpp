@@ -14,7 +14,7 @@
 #endif
 #include "../script.h"
 #include "script_data_common.h"
-#include "../../00_config.h"
+#include "../../config.h"
 
 
 

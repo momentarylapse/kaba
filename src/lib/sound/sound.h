@@ -10,7 +10,7 @@
 #ifndef _SOUND_EXISTS_
 #define _SOUND_EXISTS_
 
-#include "../00_config.h"
+#include "../config.h"
 #include "../file/file.h"
 
 

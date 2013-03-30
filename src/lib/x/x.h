@@ -1,7 +1,7 @@
 #ifndef _GAME_EXISTS_
 #define _GAME_EXISTS_
 
-#include "../00_config.h"
+#include "../config.h"
 #include "../nix/nix.h"
 #include "../file/file.h"
 

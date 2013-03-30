@@ -2,3 +2,5 @@ Debug
 Release
 message.txt
 kaba
+*.o
+*.a

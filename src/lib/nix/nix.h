@@ -15,7 +15,7 @@
 
 
 
-#include "../00_config.h"
+#include "../config.h"
 
 
 #include "nix_config.h"

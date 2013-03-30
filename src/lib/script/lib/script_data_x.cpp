@@ -1,6 +1,6 @@
 #include "../../file/file.h"
 #include "../script.h"
-#include "../../00_config.h"
+#include "../../config.h"
 #include "script_data_common.h"
 
 
@@ -8,7 +8,7 @@
 	#include "../../x/x.h"
 #endif
 #ifdef _X_ALLOW_X_
-	#include "../../networking.h"
+	#include "../../../networking.h"
 #endif
 
 namespace Script{

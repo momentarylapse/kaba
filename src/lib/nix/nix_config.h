@@ -10,7 +10,7 @@
 #ifndef _NIX_CONFIG_EXISTS_
 #define _NIX_CONFIG_EXISTS_
 
-#include "../00_config.h"
+#include "../config.h"
 
 
 
