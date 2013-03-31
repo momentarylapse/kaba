@@ -20,7 +20,8 @@ enum{
 	RegCs, RegDs, RegSs, RegEs, RegFs, RegGs, // segment
 	RegCr0, RegCr1, RegCr2, RegCr3,
 	RegSt0, RegSt1, RegSt2, RegSt3, RegSt4, RegSt5, RegSt6, RegSt7,
-	RegRax, RegRcx, RegRdx, RegRbx, RegRsp, RegRsi, RegRdi, RegRbp
+	RegRax, RegRcx, RegRdx, RegRbx, RegRsp, RegRsi, RegRdi, RegRbp, // 8 byte
+	NUM_REGISTERS
 };
 
 extern int RegRoot[];
@@ -31,13 +32,13 @@ enum{
 	PKRegister,			// eAX
 	PKDerefRegister,	// [eAX]
 	PKLocal,			// [ebp + 0x0000]
-	PKStackRel,			// [esp + 0x0000]
 	PKEdxRel,			// [edx + 0x0000]
 	PKConstant32,		// 0x00000000
 	PKConstant16,		// 0x0000
 	PKConstant8,		// 0x00
 	PKConstantDouble,   // 0x00:0x0000   ...
-	PKDerefConstant		// [0x0000]
+	PKDerefConstant,	// [0x0000]
+	PKLabel				// _label
 };
 
 
@@ -227,8 +228,10 @@ enum{
 	inst_cld,
 	inst_std,
 	
-	NumInstructionNames
+	NUM_INSTRUCTION_NAMES
 };
+
+string GetInstructionName(int inst);
 
 struct GlobalVar
 {
@@ -239,7 +242,8 @@ struct GlobalVar
 struct Label
 {
 	string Name;
-	int Pos; // relative to CodeOrigin (Opcode[0])
+	int InstNo;
+	int Value;
 };
 
 struct WantedLabel
@@ -248,7 +252,9 @@ struct WantedLabel
 	int Pos; // position to fill into     relative to CodeOrigin (Opcode[0])
 	int Size; // number of bytes to fill
 	int Add; // to add to the value...
-	int ParamNo; // -> 0:param1 / 1:param2
+	int LabelNo;
+	int InstNo;
+	bool Relative;
 };
 
 struct AsmData
@@ -272,8 +278,8 @@ struct MetaInfo
 	bool Mode16;
 	int LineOffset; // number of script lines preceding asm block (to give correct error messages)
 
-	Array<Label> label;
-	Array<WantedLabel> wanted_label;
+	//Array<Label> label;
+	//Array<WantedLabel> wanted_label;
 
 	Array<AsmData> data;
 	Array<BitChange> bit_change;
@@ -281,55 +287,44 @@ struct MetaInfo
 };
 
 
-struct sInstructionName{
-	int inst;
-	const char *name;
-	int rw1, rw2; // parameter is read(1), modified(2) or both (3)
+struct InstructionWithParams;
+struct InstructionWithParamsList : public Array<InstructionWithParams>
+{
+	InstructionWithParamsList(int line_offset);
+	~InstructionWithParamsList();
+
+	void add_easy(int inst, int param1_type = PKNone, void *param1 = NULL, int param2_type = PKNone, void *param2 = NULL);
+	int add_label(const string &name, bool declaring);
+
+	void AppendFromSource(const char *code);
+	void ShrinkJumps(void *oc, int ocs);
+	void Optimize(void *oc, int ocs);
+	void Compile(void *oc, int &ocs);
+	void LinkWantedLabels(void *oc);
+	bool AddInstruction(char *oc, int &ocs, int n);
+
+	Array<Label> label;
+	Array<WantedLabel> wanted_label;
+	int current_line;
+	int current_inst;
 };
-extern sInstructionName InstructionName[];
 
 void Init();
-const char *Assemble(const char *code);
-const char *Disassemble(void *code, int length = -1, bool allow_comments = true);
+bool Assemble(const char *code, char *oc, int &ocs);
+string Disassemble(void *code, int length = -1, bool allow_comments = true);
 extern bool Error;
 extern int ErrorLine;
+extern string ErrorMessage;
 
-bool AddInstruction(char *oc, int &ocs, int inst, int param1_type = PKNone, void *param1 = NULL, int param2_type = PKNone, void *param2 = NULL, int offset = 0, int insert_at = -1);
+bool AddInstruction(char *oc, int &ocs, int inst, int param1_type = PKNone, void *param1 = NULL, int param2_type = PKNone, void *param2 = NULL);
 void SetInstructionSet(int set);
 bool ImmediateAllowed(int inst);
-extern int CodeLength, OCParam;
+extern int OCParam;
 extern MetaInfo *CurrentMetaInfo;
 
-inline void GetInstructionParamFlags(int inst, bool &p1_read, bool &p1_write, bool &p2_read, bool &p2_write)
-{
-	for (int i=0;i<NumInstructionNames;i++)
-		if (InstructionName[i].inst == inst){
-			p1_read = ((InstructionName[i].rw1 & 1) > 0);
-			p1_write = ((InstructionName[i].rw1 & 2) > 0);
-			p2_read = ((InstructionName[i].rw2 & 1) > 0);
-			p2_write = ((InstructionName[i].rw2 & 2) > 0);
-		}
-}
-
-inline bool GetInstructionAllowConst(int inst)
-{
-	if ((inst == inst_div) || (inst == inst_idiv))
-		return false;
-	for (int i=0;i<NumInstructionNames;i++)
-		if (InstructionName[i].inst == inst)
-			return (InstructionName[i].name[0] != 'f');
-	return true;
-}
-
-inline bool GetInstructionAllowGenReg(int inst)
-{
-	if (inst == inst_lea)
-		return false;
-	for (int i=0;i<NumInstructionNames;i++)
-		if (InstructionName[i].inst == inst)
-			return (InstructionName[i].name[0] != 'f');
-	return true;
-}
+void GetInstructionParamFlags(int inst, bool &p1_read, bool &p1_write, bool &p2_read, bool &p2_write);
+bool GetInstructionAllowConst(int inst);
+bool GetInstructionAllowGenReg(int inst);
 
 };
 
