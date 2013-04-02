@@ -951,13 +951,16 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
     font = fontInfo->fid;*/ 
 			//font=XLoadFont(display,"-adobe-new century schoolbook-medium-r-normal--14-140-75-75-p-82-iso8859-1");
 		x_font=XLoadQueryFont(hui_x_display,"*century*medium-r-normal*--14*");
-			/*if (font<0)
-				font=XLoadFont(display,"*medium-r-normal*--14*");
-			if (font<0)
-				font=XLoadFont(display,"*--14*");*/
-	msg_write(NixOGLFontDPList);
-	NixOGLFontDPList = 1000;
-		glXUseXFont(x_font->fid,0,256,NixOGLFontDPList);
+		if (!x_font)
+			x_font = XLoadQueryFont(hui_x_display,"*medium-r-normal*--14*");
+		if (!x_font)
+			x_font = XLoadQueryFont(hui_x_display,"*--14*");
+		if (x_font){
+			msg_write(NixOGLFontDPList);
+			NixOGLFontDPList = 1000;
+			glXUseXFont(x_font->fid,0,256,NixOGLFontDPList);
+		}else
+			msg_error("could not load any font");
 		/*	int num;   
 		char **fl=XListFonts(GLWin.dpy, "*", 10240, &num);
 			msg_write(num);

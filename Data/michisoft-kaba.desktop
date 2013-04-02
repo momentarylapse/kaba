@@ -8,7 +8,7 @@ Comment[de]=Ausführen von Kaba Scripten
 Categories=Development;Building;
 #NoDisplay=true
 TryExec=/usr/bin/kaba
-Exec=/usr/bin/kaba
+Exec=/usr/bin/kaba --gui %u
 Icon=/usr/share/kaba/Data/icon.ico
 MimeType=text/michisoft-kaba
 

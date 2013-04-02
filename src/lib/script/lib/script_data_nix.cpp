@@ -27,7 +27,7 @@ extern Type *TypeHuiWindowP; // -> script_data_hui.cpp
 
 void SIAddPackageNix()
 {
-	msg_db_r("SIAddPackageNix", 3);
+	msg_db_f("SIAddPackageNix", 3);
 	
 	set_cur_package("nix");
 	
@@ -218,7 +218,7 @@ void SIAddPackageNix()
 	add_func("NixLoadShader",										TypeInt,	nix_p(&NixLoadShader));
 		func_add_param("filename",		TypeString);
 	add_func("NixCreateShader",										TypeInt,	nix_p(&NixCreateShader));
-		func_add_param("filename",		TypeString);
+		func_add_param("source",		TypeString);
 	add_func("NixUnrefShader",										TypeVoid,	nix_p(&NixUnrefShader));
 		func_add_param("index",		TypeInt);
 	add_func("NixSetShaderData",					TypeVoid,	nix_p(&NixSetShaderData));
@@ -310,8 +310,6 @@ void SIAddPackageNix()
 #endif
 	add_const("VBTemp",     TypeInt,    nix_p(VBTemp));
 	add_const("NixVersion", TypeString, nix_p(&NixVersion));
-
-	msg_db_l(3);
 }
 
 };
