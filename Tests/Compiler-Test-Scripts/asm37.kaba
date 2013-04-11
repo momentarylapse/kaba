@@ -1,0 +1,20 @@
+#show
+#disasm
+//#noexec
+
+float w[]
+
+void main()
+
+	w.resize(2)
+	
+	w[0] = cos(0.1)// * sin(pi/2)
+	w[1] = w[0]
+	print w[1]
+	
+	w[1] = cos(w[0])
+	print w[1]
+	
+	//float f = 3, g = 4
+	//f = f * 2 + g
+	//print f

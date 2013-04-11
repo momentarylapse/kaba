@@ -1,0 +1,22 @@
+#show
+//#disasm
+
+
+class Class
+	int i
+	int b
+	void f()
+		print self.i
+	//void g()
+	//	self.i ++
+	void h(int i)
+		print i
+
+Class *c, d
+void main()
+	c = &d
+	c.i = 13
+	//d.i = 14
+	c.f()
+	//c.f(&d)
+	c.h(1000)

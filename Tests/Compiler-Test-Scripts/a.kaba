@@ -1,0 +1,15 @@
+#show
+#disasm
+
+void main()
+	char t[1024]
+	skin a = &t
+	vector v[20]
+	a.Vertex = &v
+	a.Vertex[0] = e_x
+	a.Vertex[1] = e_y
+	a.Vertex[2] = e_z
+	
+	print a.Vertex[0]
+	print a.Vertex[1]
+	print a.Vertex[2]

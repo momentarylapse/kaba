@@ -1,0 +1,24 @@
+//#show
+
+class c
+	int x
+	void __init__()
+		nil
+	void __delete__()
+		nil
+	void __assign__(c other)
+		self.x = other.x
+	void __iadd__(c other)
+		self.x += other.x
+	c __add__(c other)
+		c temp
+		temp.x = self.x + other.x
+		return temp
+
+void main()
+	c a, b, d
+	a.x = 13
+	b.x = 1
+	//d = a.__add__(b)
+	d = b + a
+	print d.x

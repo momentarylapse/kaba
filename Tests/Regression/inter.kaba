@@ -1,0 +1,8 @@
+void main()
+	FloatInterpolator fi
+	//fi.set_type("
+	fi.add(0.0, 1)
+	fi.add(1.0, 1)
+	fi.add(-1.0, 1)
+	
+	print fi.get_list(rangef(0, 1, 0.1))

@@ -1,0 +1,9 @@
+#show
+#disasm
+
+void main()
+	if true
+		print "ja"
+	else
+		print "nein"
+	print "x"

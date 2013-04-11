@@ -1,0 +1,13 @@
+#show
+#disasm
+
+void main()
+	vector v = vector(pi, 0, 1) + e_y
+	//float f = vector(pi, 0, 1).x
+	//vector v = e_x + e_y * pi + e_z * pi
+	//vector v = e_x + e_y
+	print v
+	
+	float f = 2
+	f = f * f + f * f + 2
+	print f

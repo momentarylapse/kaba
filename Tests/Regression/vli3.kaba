@@ -1,0 +1,13 @@
+
+
+void main()
+	vli v = "10000000000"
+	vli w = "3"
+	
+	vli r
+	v.idiv(w, r)
+	print v.str() + " mod " + r.str()
+	
+	v = "100000000000"
+	v.idiv(w, r)
+	print v.str() + " mod " + r.str()

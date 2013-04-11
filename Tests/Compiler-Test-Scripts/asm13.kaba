@@ -1,0 +1,9 @@
+#show
+#disasm
+void main()
+	int a[10]
+	int b[10]*
+	b = &a
+	a[2] = 4
+	int i = 2
+	print b[i]

@@ -1,0 +1,24 @@
+//#show
+//#disasm
+
+class c
+	int x
+	int a[]
+	void __init__()
+		print "init!!!"
+		self.a.__init__()
+		self.x = -1
+	void f(int x)
+		self.x = x
+		self.a.add(20)
+
+void main()
+	c a
+	a.a.add(13)
+	a.a.add(14)
+	a.a.add(15)
+	print a.a
+	print a.x
+	a.f(130)
+	print a.x
+	print a.a

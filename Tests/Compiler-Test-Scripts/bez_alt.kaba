@@ -1,0 +1,193 @@
+HuiWindow MainWin
+
+#define NUM_LINE_PARTS	500
+
+vector c[], d[], d2[]
+float w[]
+int MouseOver, Selected
+
+vector ViewPos, ViewAng
+float ViewRadius
+vector MouseUn
+bool ShowData
+
+float Factorial(int n)
+	int i
+	float f = 1
+	for i, 1, n + 1
+		f *= i
+	return f
+
+float NOverK(int n, int k)
+	return Factorial(n) / Factorial(k) / Factorial(n - k)
+
+vector NDiff()
+	vector diff = v0
+	int i
+	for i, 0, c.num
+		diff += pow(-1, c.num - 1 - i) * NOverK(c.num - 1, i) * c[i]
+	return diff
+
+void DrawPoly()
+	LineWidth = 1
+	float r = 3
+	int i
+	for i, 0, c.num
+		vector p
+		VecProject(p, c[i])
+		color col = color(1, 0.3, 0.3, 0.3)
+		if i == MouseOver
+			col = Red
+		NixDraw2D(-1, col, r01, rect(p.x - r, p.x + r, p.y - r, p.y + r), 0.2)
+		if i > 0
+			vector q
+			VecProject(q, c[i - 1])
+			NixDrawLine(q.x, q.y, p.x, p.y, color(1, 0.7, 0.7, 0.7), 0.3)
+
+void DrawBezier()
+	LineWidth = 3
+	int i, j, k
+	d = c
+	d2 = c
+	vector q, p
+	if c.num > 1
+		for i, 0, NUM_LINE_PARTS + 1
+			float t = i2f(i) / i2f(NUM_LINE_PARTS)
+			for j, 0, c.num - 1
+				for k, 0, c.num - j - 1
+					d2[k] = d[k] * (1 - t) + d[k + 1] * t
+				d = d2
+			VecProject(p, d[0])
+			if i > 0
+				NixDrawLine(q.x, q.y, p.x, p.y, color(1, 0, 0, 0.7), 0.1)
+			q = p
+
+void Render()
+	//NixSetZ(false, false)
+	NixSetViewV(true, ViewPos - VecAng2Dir(ViewAng) * ViewRadius, ViewAng)
+	NixStart(-1)
+	NixDraw2D(-1, White, r01, Target, 0.999)
+	
+	if ShowData
+		NixDrawStr(10, 10, c.num + " Punkte")
+		vector d = NDiff()
+		NixDrawStr(10, 40, d.x + "  /  " + d.y + "  /  " + d.z)
+	
+	DrawPoly()
+	
+	DrawBezier()
+	
+	NixEnd()
+
+void IdleFunc()
+	Render()
+	
+void FindMouseOver()
+	MouseOver = -1
+	int i
+	for i, 0, c.num
+		float r = 4
+		vector p
+		VecProject(p, c[i])
+		if (p.x > Mouse.x - r) and (p.x < Mouse.x + r) and (p.y > Mouse.y - r) and (p.y < Mouse.y + r)
+			MouseOver = i
+
+void Increase()
+	int i
+	
+	// neue Kontroll-Punkte
+	d = c
+	for i, 1, c.num
+		float alpha = i2f(i) / c.num
+		c[i] = alpha * d[i - 1] + (1 - alpha) * d[i]
+	c.push(&d[d.num - 1])
+
+void Decrease()
+	if c.num > 0
+		int i, j
+
+		// w berechnen
+		w.resize(c.num)
+		for i, 0, c.num
+			w[i] = pow(-1, c.num - 1 - i) * NOverK(c.num - 1, i)
+
+		// projizieren c -> d
+		d = c
+		for i, 0, c.num
+			for j, 0, c.num
+				d[i] -= w[i] * w[j] * c[j] / sum2f(w)
+		// d -= w * norm(w*c) / normf(w)
+
+		// Grad erniedrigen
+		int n = c.num - 1
+		c[0] = d[0]
+		for i, 1, c.num
+			c[i] = d[i] * n / (n - i) - c[i - 1] * i / (n - i)
+		c.erase(n)
+		
+
+void MessageFunc(int message)
+	if message == HuiMsgClose
+		HuiEnd()
+	NixUpdateInput()
+	vector p
+	VecProject(p, ViewPos)
+	VecUnproject(MouseUn, Mouse + e_z * p.z)
+	
+	FindMouseOver()
+	
+	if GetButtonDown(0)
+		if MouseOver < 0
+			c.push(&MouseUn)
+		else
+			Selected = MouseOver
+	if Selected >= 0
+		VecProject(p, c[Selected])
+		VecUnproject(MouseUn, Mouse + e_z * p.z)
+		c[Selected] = MouseUn
+	if !GetButton(0)
+		Selected = -1
+	if GetButton(2)
+		vector dang = vector(MouseD.y, MouseD.x, 0) * 0.003
+		ViewAng = VecAngAdd(dang, ViewAng)
+	if GetButton(1)
+		vector dang = vector(MouseD.y, MouseD.x, 0) * 0.003
+		ViewPos -= VecAng2Dir(ViewAng) * ViewRadius
+		ViewAng = VecAngAdd(dang, ViewAng)
+		ViewPos += VecAng2Dir(ViewAng) * ViewRadius
+	if GetKeyDown(KeyF1)
+		c.clear()
+	if GetKeyDown(KeyM)
+		c.clear()
+		c.push(&v0)
+		c.push(&e_x)
+		c.push(&e_y)
+		c.push(&e_z)
+		c.push(&vector(1, 1, 0))
+	if GetKeyDown(KeySpace)
+		Increase()
+	if GetKeyDown(KeyBackspace)
+		Decrease()
+	if GetKeyDown(KeyF2)
+		ShowData = !ShowData
+
+void main()
+	MainWin = HuiCreateNixWindow("Bezier", -1, -1, 800, 600, &MessageFunc)
+	MainWin.SetMaximized(true)
+	MainWin.Update()
+	
+	Selected = -1
+	ShowData = false
+	
+	ViewPos = v0
+	ViewAng = v0
+	ViewRadius = 2
+	
+	NixInit(NixApiOpenGL, 800, 600, 32, false, MainWin)
+	NixSetFontColor(Black)
+	SmoothLines = true
+	
+	HuiSetIdleFunction(&IdleFunc)
+	
+	
+	HuiRun()

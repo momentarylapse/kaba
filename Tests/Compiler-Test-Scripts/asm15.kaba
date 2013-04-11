@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	//print 1 <= 2
+	int i= 32
+	print i >> 2

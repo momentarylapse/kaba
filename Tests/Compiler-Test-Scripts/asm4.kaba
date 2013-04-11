@@ -1,0 +1,10 @@
+#disasm
+
+int *p
+
+void main()
+	int i
+	p = &i
+	*p = 4
+	i = *p + 1
+	print i

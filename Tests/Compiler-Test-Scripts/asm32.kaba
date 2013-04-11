@@ -1,0 +1,10 @@
+#show
+#disasm
+
+void main()
+	string s
+	//s = "hallo"
+	//s += " michi"
+	s = "hallo" + " michi"
+	print s
+	print (s == "hallo michi")

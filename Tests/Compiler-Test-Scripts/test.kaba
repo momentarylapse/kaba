@@ -1,0 +1,18 @@
+#show
+#show_prae
+//#disasm
+
+string ss
+
+string f()
+	ss = "hallo 12345678901234567890"
+	return ss
+
+string g()
+	return "Michi sdfkjsdhfksjdhfkjhdsfj"
+	
+void main()
+	string s = f() + " " + g()
+	print s
+	print &ss
+	print &f()

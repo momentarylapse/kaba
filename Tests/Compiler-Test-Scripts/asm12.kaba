@@ -1,0 +1,6 @@
+#show
+#disasm
+void main()
+	vector v = vector(1,2,3)
+	vector *p = &v
+	print p.y

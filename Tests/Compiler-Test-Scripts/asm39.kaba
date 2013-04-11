@@ -1,0 +1,105 @@
+#show
+#disasm
+//#noexec
+
+#define MAX_STROKES		32
+#define MAX_POINTS		512
+#define NUM_W			256
+
+struct sStroke
+	int NumPoints
+	float x[MAX_POINTS],y[MAX_POINTS]
+	// erweitert
+	float l
+	float dl[MAX_POINTS]
+	float w[NUM_W]
+	float mx, my, dx, dy
+sStroke stroke[MAX_STROKES]
+float temp_w[MAX_POINTS]
+
+
+
+void CreateW(sStroke *s)
+	//print "create"
+	//print s
+	//print s.NumPoints
+	s.l = 0
+	int i, j
+	for i, 0, s.NumPoints-1
+		s.dl[i] = sqrt(sqr(s.x[i+1] - s.x[i]) + sqr(s.y[i+1] - s.y[i]))
+		s.l += s.dl[i]
+		temp_w[i] = atan2(s.x[i+1] - s.x[i], s.y[i+1] - s.y[i]) / (2*pi) + 0.5
+	print "a"
+	for i, 0, s.NumPoints-1
+		s.dl[i]/=s.l
+	print "b"
+	// w interpolieren
+	for i, 0, NUM_W-1
+		float li = i2f(i) / i2f(NUM_W - 1)
+		float lj=0
+		for j, 0, s.NumPoints-1
+			if (li >= lj) and (li <= lj + s.dl[j])
+				s.w[i]=temp_w[j]
+				break
+			lj+=s.dl[j]
+	print "c"
+	//print s.NumPoints
+	s.w[NUM_W-1] = temp_w[s.NumPoints-2]
+	print "d"
+	// bounding box (relativ zur Box des Zeichens)
+	int i
+	float x0=1, x1=0, y0=1, y1=0
+	for i, 0, s.NumPoints
+		print i
+		if x0 > s.x[i]
+			x0 = s.x[i]
+		print "d1"
+		if x1 < s.x[i]
+			x1 = s.x[i]
+		print "d2"
+		if y0 > s.y[i]
+			y0 = s.y[i]
+		print "d3"
+		if y1 < s.y[i]
+			y1 = s.y[i]
+		print "d4"
+	print "e"
+	/*s.dx = (x1 - x0) / bbw
+	s.mx = 0.5 + ((x0 + x1) / 2 - bbmx) / bbw
+	s.dy = (y1 - y0) / bbh
+	s.my = 0.5 + ((y0 + y1) / 2 - bbmy) / bbh
+	print "f"
+	s.l /= (bbw + bbh) / 2*/
+	print "/create"
+
+void main()
+	stroke[0].NumPoints = 32
+	CreateW(&stroke[0])
+/*	file f//=FileOpen("../Kaba/Scripte/Kanji/Kanji/0.txt")
+	//int n = f.ReadInt()
+	//print n
+	int i //= 0
+	//for i, 0, n
+	//stroke[i].NumPoints=f.ReadInt()
+	//print stroke[i].NumPoints
+	sStroke *s //= &stroke[0]
+	//stroke[0].NumPoints = 13
+	s.w[NUM_W-1]=temp_w[s.NumPoints-2]
+	float x0=1, x1=0, y0=1, y1=0
+	for i, 0, s.NumPoints
+		print i
+		if x0 > s.x[i]
+			x0 = s.x[i]
+		print "d1"
+		if x1 < s.x[i]
+			x1 = s.x[i]
+		print "d2"
+		if y0 > s.y[i]
+			y0 = s.y[i]
+		print "d3"
+		if y1 < s.y[i]
+			y1 = s.y[i]
+		print "d4"
+	//stroke[0].x[0] = 3
+	//print x0
+	*/

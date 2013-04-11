@@ -1,0 +1,7 @@
+#show
+
+int i[]
+
+void main()
+	i = rangei(0,100)
+	print i.num

@@ -1,0 +1,14 @@
+#disasm
+#show
+
+string ss
+
+void main()
+	string s
+	s = "hallo" //+ " michi"
+	//print s
+	//string s= "ksjdhfkjshdfkjhsdf"
+//	string *p = &"ksjdhfkjshdfkjhsdf"
+	//s+="uuu"
+	//print i2s(10)//"hallo"
+	//print "hallo"

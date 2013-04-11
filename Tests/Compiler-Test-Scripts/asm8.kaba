@@ -1,0 +1,15 @@
+#show
+#disasm
+
+vector v[2]
+
+void main()
+	//v[0].x = pi
+	//v[0].y = pi
+	//v[1].z = pi
+	vector w[2]
+	w[0].x = pi
+	w[0].y = pi
+	w[0].z = pi
+	float *f = &w[1].y
+	print w[0]

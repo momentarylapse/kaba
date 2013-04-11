@@ -1,0 +1,11 @@
+#show
+#disasm
+
+void main()
+	object o
+	//if (4 == 3) and !o.OnGround
+	//if (4 == 3) and !o.OnGround
+	if true
+		nil
+	else if o.OnGround
+		nil

@@ -1,0 +1,12 @@
+//#show
+
+void main()
+	vector i[]
+	
+	//i = i
+	vector v = vector(2,3,4)
+	i.add(v)
+	i.add(vector(1,2,3))
+	i.add(e_x)
+	forall ii in i
+		print ii

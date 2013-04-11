@@ -1,0 +1,4 @@
+void main()
+	print "äöü"
+	int ä = 1
+	print ä

@@ -1,0 +1,25 @@
+#show
+#disasm
+
+class c
+	int x
+	vector v
+	void __assign__(c other)
+		print "sdkjfh"
+		self.v = other.v
+		print "----"
+
+void main()
+	c a[]
+	c i
+	i.x = -1
+	i.v = e_x
+	a.add(i)
+	
+	
+	c b[]
+	b = a
+	a[0].v = v_0
+	print a[0].v
+	print b[0].v
+	

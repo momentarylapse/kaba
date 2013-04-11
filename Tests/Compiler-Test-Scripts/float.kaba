@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	print 2.0 <= 1.0
+	print 1.0 <= 1.0
+	print 1.0 <= 2.0

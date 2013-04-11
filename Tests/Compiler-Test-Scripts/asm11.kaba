@@ -1,0 +1,14 @@
+#show
+#disasm
+
+void f()
+	int d = 4
+	print "hallo michi"
+	print d
+
+void main()
+	int a = 3
+	print "hallo"
+	print a
+	f()
+	f()

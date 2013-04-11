@@ -1,0 +1,6 @@
+void main()
+	any a, b
+	a = 2
+	b = pi
+	a += b
+	print a.str()

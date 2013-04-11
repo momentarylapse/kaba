@@ -1,0 +1,16 @@
+#show
+#disasm
+
+void main()
+	float f = 1
+	//f = sin(0.1)
+	//print f
+	//float f = pi
+	int j = f
+	//print f2i(pi)
+	vector v = v0
+	int i
+	for i, 0, 10000000
+		j = f
+		//f + f * f * f + f * (f - f * f)
+		//v += v

@@ -1,0 +1,21 @@
+#show
+#show_prae
+
+int a[]
+
+void f(int b[])
+	print &b
+	print &b[0]
+	//b = m_id
+	print b.num
+	print b[2]
+
+void main()
+	print &a
+	print &a[0]
+	a.resize(100)
+	print &a[0]
+	a[0] = 42
+	a[1] = 43
+	a[2] = 44
+	f(a)

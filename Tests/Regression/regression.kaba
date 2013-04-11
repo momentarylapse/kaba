@@ -1,0 +1,30 @@
+bool test(string filename)
+	string s = filename.head(filename.num - 4)
+	s += ".kaba"
+	_exec_("kaba '" + s + "' > out")
+	string r1 = FileRead("out")
+	string r2 = FileRead(filename)
+
+	
+	for int i, s.num, 42
+		s.add(' ')
+	if r1 == r2
+		print s + "ok"
+		return true
+
+	print s + "Fehler"
+	print "--------------------------------------------------"
+	print "erwartet:"
+	print r2
+	print "--------------------------------------------------"
+	print "Ausgabe:"
+	print r1
+	print "--------------------------------------------------"
+	return false
+
+void main()
+	DirEntry list[]
+	list = DirSearch(".", "*.reg", false)
+	forall e in list
+		test(e.name)
+	_exec_("rm out")

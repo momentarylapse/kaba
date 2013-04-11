@@ -1,0 +1,10 @@
+#show
+#disasm
+
+void f(color c)
+	print c
+
+void main()
+	color c = White
+	f(color(1,2,3,4))
+	f(c)

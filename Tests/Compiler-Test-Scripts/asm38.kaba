@@ -1,0 +1,11 @@
+#show
+#disasm
+//#noexec
+
+vector a[]
+
+void main()
+	a.resize(6)
+	a[5].y = 2
+	
+	print a[5]

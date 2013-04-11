@@ -25,7 +25,6 @@
 #include "x.h"
 #ifdef _X_ALLOW_SCRIPT_
 	#include "../script/script.h"
-	extern string Script::Directory;
 #endif
 
 string MetaVersion = "0.3.1.4";
@@ -210,7 +209,7 @@ void MetaSetDirs(const string &texture_dir, const string &map_dir, const string 
 	MaterialDir = material_dir;
 	FontDir = font_dir;
 #ifdef _X_ALLOW_SCRIPT_
-	Script::Directory = script_dir;
+	Script::config.Directory = script_dir;
 #endif
 }
 

@@ -1,0 +1,21 @@
+void main()
+	string s, t, u
+	s = "hallo "
+	s += "---"
+	//s += i2s(13)
+	s.add('m')
+	s.add('i')
+	s.add('c')
+	s.add('h')
+	s.add('i')
+	print s
+	t = s
+	int i
+	for i, 0, 1000
+		t += s
+	//printx t
+	print t.num
+	u = t.substr(9,50)
+	print u
+	t.clear()
+	s.clear()

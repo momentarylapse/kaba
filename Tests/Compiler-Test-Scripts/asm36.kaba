@@ -1,0 +1,11 @@
+#show
+#disasm
+#noexec
+
+
+void main()
+	//vector dang = vector(MouseD.y, MouseD.x, 0) * 0.003
+	//float f = MouseD.x * 0.003
+	vector dang = vector(MouseD.y, MouseD.x, 0) //* 0.003
+	
+	//float *f = &MouseD.y

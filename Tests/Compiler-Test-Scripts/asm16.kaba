@@ -1,0 +1,10 @@
+#show
+#disasm
+
+void main()
+	/*char c = '0'
+	c += 1
+	print c2i(c)*/
+	
+	bool b = &b
+	print b

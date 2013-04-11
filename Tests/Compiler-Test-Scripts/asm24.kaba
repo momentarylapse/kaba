@@ -1,0 +1,8 @@
+#show
+#disasm
+
+vector f(float x)
+	return vector(x, 2, 3) + e_x
+
+void main()
+	print f(2) + f(4) * 2

@@ -1,0 +1,18 @@
+#show
+#disasm
+
+int a[10][3]
+int b[10]
+
+void main()
+	int i// = 2
+	//a[i][i+2] = 4
+	//  * ( &a + 12 * i + 4 * (i + 2) ) = 4
+	
+	a[2][2] = 3
+	int *p = &a[2][2]
+	print p
+	print &a[0]
+	print &a[1]
+	print &a[2]
+	//b[0] = 0

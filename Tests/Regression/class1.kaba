@@ -1,0 +1,6 @@
+//#show
+//#disasm
+
+void main()
+	File f
+	f.WriteInt(1)

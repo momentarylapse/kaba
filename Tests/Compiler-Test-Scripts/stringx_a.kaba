@@ -1,0 +1,7 @@
+//#show
+#disasm
+
+void main()
+	int i[]
+	i.add(3)
+	print i[0]

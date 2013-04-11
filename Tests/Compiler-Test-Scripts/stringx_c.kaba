@@ -1,0 +1,12 @@
+string s, t
+
+void main()
+	s = "test,hallo,michi"
+	t = "kleiner,Test"
+	s = s.replace("l",t)
+	
+	string ss[]
+	ss = s.explode(",")
+	int i
+	for i, 0, ss.num
+		print ss[i]

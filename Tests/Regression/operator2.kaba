@@ -1,0 +1,9 @@
+//#show
+
+
+void main()
+	string a, b, c
+	a = "hallo"
+	b = " test"
+	c = a + b
+	print c

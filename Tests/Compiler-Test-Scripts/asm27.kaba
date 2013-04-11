@@ -1,0 +1,21 @@
+#show
+#disasm
+
+int a[]
+
+void f(int b[])
+	print &b
+	//print "a"
+	//print b.num
+	//print b[0]
+	b.push(5)
+	
+
+void main()
+	print &a
+	a.push(4)
+	f(a)
+	
+	print a[0]
+	print a[1]
+	

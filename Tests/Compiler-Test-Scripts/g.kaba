@@ -1,0 +1,8 @@
+#show
+
+void main()
+	if !true
+		print "a"
+	else
+		print "b"
+	print "c"

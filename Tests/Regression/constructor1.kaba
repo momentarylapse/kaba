@@ -1,0 +1,6 @@
+//#show
+//#disasm
+
+void main()
+	Image i
+	print i.data.num

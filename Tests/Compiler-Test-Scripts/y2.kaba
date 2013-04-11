@@ -1,0 +1,6 @@
+//#show
+//#disasm
+
+void main()
+	int a, b
+	a=b

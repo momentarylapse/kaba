@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	int i = -24, j = -5
+	//i = i / j
+	print i / j

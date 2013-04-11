@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	vector v
+	v.x = pi
+	print v

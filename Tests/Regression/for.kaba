@@ -1,0 +1,26 @@
+//#disasm
+//#show_prae
+
+int a[]
+
+void fill(int x[])
+	forall y in x
+		if y == 5
+			continue
+		y += 100
+
+void main()
+	// a = 2
+	//for int i, 0, 10
+	//	a.add(i*2)
+	//print a
+	a = range(0,13)
+	print a
+	fill(a)
+	print a
+	
+	forall j in a
+		j += 100
+	
+	forall j in a
+		print j

@@ -1,0 +1,12 @@
+#show
+#disasm
+//#noexec
+
+vector a[]
+
+void main()
+	//int *a, *b
+	//*a = *b
+	a.push(e_z)
+	a[0] = a[0] + a[0]
+	print a[0]

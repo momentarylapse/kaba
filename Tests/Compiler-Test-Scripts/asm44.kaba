@@ -1,0 +1,819 @@
+/*------------------------------------------------------------*\
+|                                                              |
+| Character-Manager                                            |
+|  - verwaltet die Figuren                                     |
+|  - Verhalten und "KI"                                        |
+|                                                              |
+| letzte Aenderung: 2007.12.13                                 |
+\*------------------------------------------------------------*/
+
+//#rule	NetworkSend		0	"CMNetworkSend"
+//#rule	NetworkRecieve		0	"CMNetworkRecieve"
+
+#define NumSpecialItems		6
+
+class sQueueAction
+	int type
+	float arg_f
+	int arg_i1, arg_i2
+
+class sCharacter
+	object o
+	int Type
+	int TalkingTo
+
+	sQueueAction QueueAction[]
+
+	int MoveMovement,MoveActing
+	float MoveTimeMovement,MoveTimeActing
+	
+	item Item[NumSpecialItems]
+
+	bool Slow
+	bool Swimming
+	float FlyingTime
+	float Ang
+
+	vector rot // Drache...
+
+sCharacter Character[]
+
+enum
+	CTHumanoid
+	CTDragon
+
+#define MinFlyingTime		0.2 // wie lange warten, bis zur Sprunganimation
+
+bool use_blurry
+
+// Script Variablen der Figuren
+enum
+	// "Konstanten" aus dem Editor
+	SVMana
+	SVManaMax
+	SVAbilitySpeed
+	SVAbilityPersistence
+	SVAbilityBow
+	SVAbility1Hand
+	SVAbility2Hand
+	SVVelRun
+	SVVelWalk
+	SVVelJump
+	SVVelSwim
+	// dynamische Variablen
+	SVUsing
+	SVUsedBy
+/*	SVMoveMovement
+	SVTimeMovement
+	SVMoveActing
+	SVTimeActing*/
+
+// Script-Variablen
+#define _Mana		Var[SVMana]
+#define _ManaMax	Var[SVManaMax]
+#define _VelRun		Var[SVVelRun]
+#define _VelWalk	Var[SVVelWalk]
+#define _VelJump	Var[SVVelJump]
+#define _VelSwim	Var[SVVelSwim]
+#define _Using		VarI[SVUsing]
+#define _UsedBy		VarI[SVUsedBy]
+
+// spezielle Items von Charakteren
+enum
+	ItemWeaponR
+	ItemWeaponL
+	ItemBeltR
+	ItemBeltL
+	ItemBack
+	ItemClothing
+
+// Knochen
+#define CBTorso			0
+#define CBWeaponR		19
+#define CBWeaponL		18
+#define CBBack			20
+#define CBBeltR			22
+#define CBBeltL			21
+
+// Queue-Actions
+enum
+	QARest		// f: WarteZeit
+	QAAttack	// i1: Richtung
+	QAPullBow
+	QAByAnimation	// i1: Animation
+	QAExchangeItems	// i1: ItemSource, i2: ItemDest
+	QATake		// i1: Objekt
+	QADeath
+
+// Animations-Indizes
+#define MoveStanding			0
+#define MoveStandingSword		1
+#define MoveStandingBow			3
+#define MoveSwimming			9
+#define MoveWalkingFw			10
+#define MoveRunningFw			20
+#define MoveJumping			30
+#define MoveDying			31
+#define MoveRHandToRBelt		40
+#define MoveRHandToLBelt		41
+#define MoveRHandToBack			42
+#define MoveRHandToHead			43
+#define MoveRHandToLHand		44
+#define MoveRHandToLow			45
+#define MoveRHandToHigh			46
+#define MoveRHandFromRBelt		47
+#define MoveRHandFromLBelt		48
+#define MoveRHandFromBack		49
+#define MoveRHandFromHead		50
+#define MoveRHandFromLHand		51
+#define MoveRHandFromLow		52
+#define MoveRHandFromHigh		53
+#define MoveAttackingSword		60
+#define MoveAttackingBow		80
+
+class sArrow
+	object Object
+	float TimeToLive
+	float Damage
+	int Creator
+
+sArrow Arrow[]
+
+#define MAX_ARROW_LIFETIME		20.0
+
+//------------------------------------------------------------------------
+// Character-Steuerung
+
+sCharacter *GetCharByObject(object o)
+	sCharacter *c
+	forall c, Character
+		if c.o == o
+			return c
+	return nil
+
+
+// Figur bewegen
+void CharMove(sCharacter *c, float w, bool jump)
+	object o = c.o
+	vector v
+	vector dir, right, d2, r2
+	if o.Life > 0
+		VecNormalTransform( dir  , o.Model.Matrix, e_z )
+		VecNormalTransform( right, o.Model.Matrix, e_x )
+		if ( c.Type == CTDragon ) and ( !o.OnGround )
+			// nur "Steuer-Befehle" fuer spaeter...
+			o.VelS = v0
+			if w >= 0
+				o.VelS.z = cos(w)
+		else
+			if c.Swimming
+				v = dir * cos(w) + right * sin(w)
+				v *= - o._VelSwim
+			else
+				VecNormalTransform( dir  , o.Model.Matrix, e_z )
+				VecNormalTransform( right, o.Model.Matrix, e_x )
+				d2 = VecCrossProduct( o.GroundNormal, right )
+				r2 = VecCrossProduct( o.GroundNormal, dir )
+				VecNormalize( d2, d2 )
+				VecNormalize( r2, r2 )
+				v = d2 * cos( w ) - r2 * sin( w )
+				if c.Slow
+					v *= o._VelWalk
+				else
+					v *= o._VelRun
+			if w >= 0
+				o.AddForce(v * 200, v0)
+				o.VelS = v
+			else
+				o.VelS = v0
+		if o.OnGround and jump
+			o.Vel -= o.GroundNormal * o._VelJump
+			c.FlyingTime = MinFlyingTime + 0.001
+
+// Vereinfachung...
+model ItemGetModel(item i)
+	if i
+		return i.Model
+	return nil
+
+// Inventar bereinigen
+//   - zu "volle" Items aufspalten
+//   - leere Items loeschen
+void InventaryUpdate(object o)
+	int i, j, k
+	for i, 0, o.Item.num
+		item it = o.Item[i]
+		if it
+			// zu voll?
+			/*if it.QuantityMax > it.Quantity
+				for j, i + 1, o.Item.num
+					if it.OID == inv[j].OID
+						it.Quantity += inv[j].Quantity
+						int k = j
+						while inv[k]
+							inv[k] = inv[k+1]
+							k ++
+						j --*/
+			// leeres Item -> loeschen
+			if it.Quantity < 1
+				o.Item.erase(i)
+				i --
+		else
+			o.Item.erase(i)
+			i --
+
+
+// Inventar bereinigen
+//   - Items am Koerper -> Modell anhaengen
+//   - zu "volle" Items aufspalten
+//   - leere Items loeschen
+void CharUpdateInventary( sCharacter *c )
+	object o = c.o
+	model m = o.Model
+
+	m.SetBoneModel(CBBeltR,    ItemGetModel(c.Item[ItemBeltR]))
+	m.SetBoneModel(CBBeltL,    ItemGetModel(c.Item[ItemBeltL]))
+	m.SetBoneModel(CBBack,     ItemGetModel(c.Item[ItemBack]))
+//	m.SetBoneModel(CBClothing, ItemGetModel(c.Item[ItemClothing]))
+	m.SetBoneModel(CBWeaponR,  ItemGetModel(c.Item[ItemWeaponR]))
+	m.SetBoneModel(CBWeaponL,  ItemGetModel(c.Item[ItemWeaponL]))
+	
+	// naja....nur provisorisch...?
+	if c.Item[ItemWeaponR]
+		if c.Item[ItemWeaponR].Kind == 7
+			model w = m.Bone[CBWeaponR].Model
+			m.SetBoneModel(CBWeaponR, nil)
+			m.SetBoneModel(CBWeaponL, w)
+	
+	InventaryUpdate( o )
+
+// ???
+void CharItemMovea( sCharacter *c, int source, int dest )
+	object o = c.o
+	item *s, *d
+	if source >= NumSpecialItems
+		s = &o.Item[source - NumSpecialItems]
+	else
+		s = &c.Item[source]
+	if dest >= NumSpecialItems
+		d = &o.Item[dest - NumSpecialItems]
+	else
+		d = &c.Item[dest]
+	*d = *s
+	o.Item[source].Quantity = 0
+	if source < 0
+		*s = nil
+	CharUpdateInventary(c)
+
+// herumliegendes Objekt nehmen (jetzt!)
+void CharTakeNow( sCharacter *c, int o )
+	print( c.o.Name + " nimmt " + Object[o].Name )
+	//if id == ego_id
+	//	_SetMessage("Item aufgenommen!")
+	c.o.Item.push( LoadItem( *Object[o].ItemFilename ) )
+	InventaryUpdate( c.o )
+	//stringout( "delete" )
+	DeleteObject( o )
+	//stringout( "ok" )
+
+// einer anderen Figur ein Item geben
+bool CharGiveItems( sCharacter *ce, sCharacter *cc, string filename, int num )
+	object oe = ce.o
+	object oc = cc.o
+	
+	int oid = GetItemOID( filename )
+	int ae = -1
+	int i
+	for i, 0, oe.Item.num
+		if oid == oe.Item[i].OID
+			if oe.Item[i].Quantity >= num
+				ae = i
+	print( ae )
+	if ae >= 0
+		i = oc.Item.num
+		oc.Item.push( LoadItem( filename ) )
+		print( oe.Name + " gibt " + oc.Item[i].Name + " an " + oc.Name )
+		//intout(oid)
+		//intout(num)
+		oc.Item[i].Quantity = num
+		CharUpdateInventary( cc )
+		oe.Item[ae].Quantity -= num
+		CharUpdateInventary( ce )
+		//stringout( "ok" )
+		return true
+	return false
+
+
+void CharExchangeItemsNow( sCharacter *c, int source, int dest )
+	object o = c.o
+	item *s, *d
+	if source >= NumSpecialItems
+		s = &o.Item[source - NumSpecialItems]
+	else
+		s = &c.Item[source]
+	if dest >= NumSpecialItems
+		d = &o.Item[dest - NumSpecialItems]
+	else
+		d = &c.Item[dest]
+	item t = *s
+	*s = *d
+	*d = t
+	CharUpdateInventary( c )
+
+// jemanden ansprechen
+void CharTalkStart( sCharacter *c, sCharacter *c2 )
+	print( c.o.Name + " spricht " + c2.o.Name + " an" )
+//	if id==ego_id
+//		_SetMessage("Spreche "+CObject[id2].Name+" an!")
+	c.o._Using = c2.o.ID
+	c2.o._UsedBy = c.o.ID
+
+// Gespraech beenden
+void CharTalkEnd( sCharacter *c )
+	int o = c.o._Using
+	c.o._Using=-1
+	Object[o]._UsedBy=-1
+	print( c.o.Name + " beendet Gespr&ach mit " + Object[o].Name )
+
+// Pfeil abschiessen
+void EmitArrow( sCharacter *c )
+	vector pos
+	VecTransform( pos, c.o.Model.Bone[CBWeaponR].DMatrix, v0 )
+	object o = CreateObject( "Items/Weapons/arrow", pos + c.o.Pos )
+	o.Ang = VecAngAdd( vector( c.Ang, 0, 0 ), c.o.Ang )
+	float speed = 2000.0
+	o.Vel = VecAng2Dir( o.Ang ) * speed + c.o.Vel
+	o.GFactor = 0.2
+	sArrow a
+	a.Object = o
+	a.Damage = 40.0
+	a.TimeToLive = MAX_ARROW_LIFETIME
+	a.Creator = c.o.ID
+	Arrow.push(a)
+
+// den aktuellen Befehl versuchen auszufuehren
+void CharStartAction( sCharacter *c )
+	c.MoveActing = -1
+	c.MoveTimeActing = 0
+	if c.QueueAction.num > 0
+		sQueueAction *a = &c.QueueAction[0]
+		print( "starte Aktion: " + a.type )
+		if a.type == QAAttack
+			c.MoveActing = MoveAttackingSword + a.arg_i1
+		else if a.type == QAPullBow
+			c.MoveActing = MoveAttackingBow
+			EmitArrow( c )
+		else if a.type == QAByAnimation
+			print(a.arg_f)
+			c.MoveActing = a.arg_f
+			print(c.MoveActing)
+		else if a.type == QAExchangeItems
+			CharExchangeItemsNow( c, a.arg_i1, a.arg_i2 )
+		else if a.type == QATake
+			int o = a.arg_i1
+			print(o)
+			CharTakeNow( c, o )
+
+// neuen Befehl in Warteschlange aufnehmen
+void CharAddAction( sCharacter *c, int action, float arg_f, int arg_i1, int arg_i2 )
+	//stringout( "neue Aktion: " + i2s( action ) )
+	sQueueAction a
+	a.type = action
+	a.arg_f = arg_f
+	a.arg_i1 = arg_i1
+	a.arg_i2 = arg_i2
+	c.QueueAction.push(a)
+
+// Angriff beginnen (-> Warteschlange)
+void CharAttack( sCharacter *c, int dir )
+	if c.Item[ItemWeaponR] and ( c.QueueAction.num < 1 )
+		c.QueueAction.clear()
+		if c.Item[ItemWeaponR].Kind == 7
+			CharAddAction( c, QAPullBow, 0, 0, 0 )
+		else
+			CharAddAction( c, QAAttack, 0, dir, 0 )
+		CharAddAction( c, QARest, 0.5, 0, 0 )
+		CharStartAction( c )
+
+// (-> Warteschlange)
+void CharExchangeItems( sCharacter *c, int s, int d )
+	if c.QueueAction.num < 1
+		//stringout("Tausche Items");
+		
+		// zur Vereinfachung sortieren...
+		if s > d
+			int t = s
+			s = d
+			d = t
+		
+		//...
+		int an1, an2
+		if s == ItemWeaponR
+			if d == ItemWeaponL
+				an1 = MoveRHandToLHand
+				an2 = MoveRHandFromLHand
+			else if d == ItemBeltR
+				an1 = MoveRHandToRBelt
+				an2 = MoveRHandFromRBelt
+			else if d == ItemBeltL
+				an1 = MoveRHandToLBelt
+				an2 = MoveRHandFromLBelt
+			else if d == ItemBack
+				an1 = MoveRHandToBack
+				an2 = MoveRHandFromBack
+			else if d == ItemClothing
+				an1 = MoveRHandToHead
+				an2 = MoveRHandFromHead
+		/*if (s==ItemWeaponL){
+			if (d==ItemBeltR){		an1=MoveLHandToRBelt;	an2=MoveLHandFromRBelt;	}
+			if (d==ItemBeltL){		an1=MoveLHandToLBelt;	an2=MoveLHandFromLBelt;	}
+			if (d==ItemBack){		an1=MoveLHandToBack;	an2=MoveLHandFromBack;	}
+			if (d==ItemClothing){	an1=MoveLHandToHead;	an2=MoveLHandFromHead;	}
+		}*/
+		CharAddAction( c, QAByAnimation, 0, an1, 0 )
+		CharAddAction( c, QAExchangeItems, 0, s, d )
+		CharAddAction( c, QAByAnimation, 0, an2, 0 )
+		CharStartAction( c )
+
+// herumliegendes Objekt nehmen (-> Warteschlange)
+void CharTake( sCharacter *c, int o )
+	if c.QueueAction.num < 1
+		CharAddAction( c, QAByAnimation, 0, MoveRHandToLow, 0 )
+		CharAddAction( c, QATake, 0, o, 0 )
+		CharAddAction( c, QAByAnimation, 0, MoveRHandFromLow, 0 )
+		CharStartAction( c )
+
+vector GetBoneVector(object o,int bone,vector v)
+	vector r
+	VecTransform(r,o.Model.Bone[bone].DMatrix,v)
+	VecTransform(r,o.Model.Matrix,r)
+	return r
+
+// testen, ob die Figur beim Schlag etwas getroffen hat
+bool CharTestHit( sCharacter *c )
+	object o = c.o
+	model m = o.Model
+	if !m.Bone[CBWeaponR].Model
+		return false
+	if c.MoveTimeActing / m.GetFrames( c.MoveActing ) < 0.4
+		return false
+	
+	// Trace-Test
+	//ModelGetCollision(....)
+	vector cp
+	vector a = GetBoneVector( o, CBWeaponR, v0 )
+	vector b = GetBoneVector( o, CBWeaponR, vector( 0, -70.0, 0 ) )
+	bool hit = Trace( a, b, cp, false, o.ID )
+	
+	// irgendetwas getroffen?
+	if hit
+		particle p = CreateParticle( cp, -1, nil, 10, 3 ) // Debug!!!
+		if TraceHitType == TraceHitObject
+		
+			// Character getroffen? -> Schaden
+			sCharacter *chit = GetCharByObject(Object[TraceHitIndex])
+			if chit
+				p.Color = Red // Debug!!!
+				Object[TraceHitIndex].Life -= 20.0
+	return hit
+
+// naechste Figur zum Steuern waehlen
+void CharNext()
+	sCharacter *c = nil
+	if ego
+		c = GetCharByObject(ego)
+	Character.iterate(c)
+	ego = c.o
+
+// vorherige Figur zum Steuern waehlen
+void CharPrevious()
+	sCharacter *c = nil
+	if ego
+		c = GetCharByObject(ego)
+	Character.iterate_back(c)
+	ego = c.o
+
+
+//------------------------------------------------------------------------
+// Verwaltung
+
+// eine neue Figur registrieren
+void AddCharacter( object o, int type )
+	print( "neuer Character: " + o.Name )
+	sCharacter c
+	c.o = o
+	c.Type = type
+	o.Model.AllowShadow = true
+	
+	int i
+	for i, 0, NumSpecialItems
+		c.Item[i] = nil
+	
+	// sicher gehen, dass das Modell eigene Daten besitzt
+	model m = o.Model
+	m.MakeEditable()
+	
+	// Rotation verhindern
+	o.Model.Theta._11 *= 1000.0
+	o.Model.Theta._22 *= 1000.0
+	o.Model.Theta._33 *= 1000.0
+
+	// default data
+	c.MoveTimeMovement = 0
+	c.MoveTimeActing = 0
+	c.Slow = false
+	c.Swimming = false
+
+	// naja... Scripte kennen leider noch keine automatische Initialisierungen... m(-_-)m
+	c.QueueAction._manual_init_(sizeof(sQueueAction))
+	c.MoveActing = -1
+	
+	c.FlyingTime = 0
+	c.Ang = 0
+	
+	// leeres Inventar...
+	o.Item.resize(0)
+	Character.push(c)
+
+void CMNetworkSend()
+//	stringout("CMNetworkSend()")
+	/*
+	if (NetIAmHost)
+		NetWriteInt(NumCharacters);
+		int i=0;
+		while(i<NumCharacters){
+			NetWriteStrL(&Char[i].Type,sizeof(sCharacter)-5);
+			i++;
+		}
+	}
+	
+	if (NetIAmClient){
+		NetWriteInt(ego_id);
+		if (ego_id>=0){
+			NetWriteStrL(&Char[ego_id].Type,sizeof(sCharacter)-5);
+		}
+	}*/
+//	stringout("//CMNetworkSend()");
+
+void CMNetworkRecieve()
+//	stringout("CMNetworkRecieve()");
+	/*int n,i,l;
+		
+	if (NetIAmClient){
+		n=NetReadInt();
+		
+		i=0;
+		while(i<n){
+			if (ego_id==i)
+				NetReadStrL(&Char[NumCharacters].Type,l);
+			else
+				NetReadStrL(&Char[i].Type,l);
+			i++;
+		}
+	}
+	
+	if (NetIAmHost){
+		int id=NetReadInt();
+		if (id>=0)
+			NetReadStrL(&Char[id].Type,l);
+	}*/
+//	stringout("//CMNetworkRecieve()");
+
+void main()
+	use_blurry = false
+	PhysicsEnabled = true
+	
+	if NetIAmClient
+		//ego=GetObject("friend")
+		print("----------------------------------------Client!")
+	
+	
+	print("Character Manager l&auft...")
+	
+	
+	while true
+		//stringout("char")
+		
+	// Charaktere
+		sCharacter *c
+		forall c, Character
+			//pointerout(c)
+			//pointerout(c.o)
+			//stringout(c.o.Name)
+			object o = c.o
+			model m = o.Model
+			
+			if o.OnGround
+				c.FlyingTime = 0
+			else
+				c.FlyingTime += elapsed
+			//stringout("a")
+
+			// aufrecht ausrichten (Gravitation)
+			if ( c.Type == CTHumanoid ) or ( ( c.Type == CTDragon ) and ( o.OnGround ) )
+				vector d_up, d_dir, d_right
+				VecNormalize( d_up, - GetG( o.Pos ) )
+				VecNormalTransform( d_right, m.Matrix, e_x )
+				VecNormalize( d_dir, VecCrossProduct( d_right, d_up ) )
+				o.Ang = VecDir2Ang2( d_dir, d_up )
+				matrix m_r,m_t
+				MatrixTranslation( m_t, o.Pos )
+				MatrixRotation( m_r, o.Ang )
+				MatrixMultiply( m.Matrix, m_t, m_r )
+				/*o.Ang.x=0
+				o.Ang.z=0*/
+				o.Rot = v0
+				c.rot = v0
+
+			//stringout("b")
+			// tot?
+			if o.Life <= 0
+				m.ResetMove()
+				c.QueueAction.clear()
+				CharAddAction(c, QAByAnimation, 0, 0, 0)
+				if c.MoveMovement != MoveDying
+					c.MoveMovement = MoveDying
+					c.MoveTimeMovement = 0
+				m.Move( MoveOpSet, 0, 0, c.MoveMovement, c.MoveTimeMovement, elapsed, 0, false )
+			else
+				// Drachen fliegen lassen
+				if ( c.Type == CTDragon ) and ( !o.OnGround )
+
+					vector d_old = VecAng2Dir( o.Ang )
+					matrix mat
+					vector dir, up, right, g0
+					MatrixRotation( mat, o.Ang )
+					VecTransform( up   , mat, e_y )
+					VecTransform( right, mat, e_x )
+					dir = VecAng2Dir( o.Ang )
+					VecNormalize( g0, GetG( o.Pos ) )
+					float v_tang = VecDotProduct( o.Vel, d_old )
+
+
+				// Rotation
+					float HalfSpeed=600//1200
+					c.rot.y=VecDotProduct(right,g0)*v_tang/HalfSpeed*0.02
+					o.Rot=v0 // die Physik der Engine unterdruecken...
+					vector d_rot=c.rot*elapsed
+					o.Ang=VecAngAdd(d_rot,o.Ang)
+
+				// Reibung
+					float FrictionTang=0.90//0.85
+					float FrictionOrth=0.60
+					MatrixRotation(mat,o.Ang)
+					VecTransform(up   ,mat,e_y)
+					VecTransform(right,mat,e_x)
+					dir=VecAng2Dir(o.Ang)
+					vector v_orth=o.Vel-d_old*v_tang
+					o.Vel= v_orth*pow(FrictionOrth,elapsed) + v_tang*dir*pow(FrictionTang,elapsed)
+
+				// Beschleunigung
+					float AccFw=1000
+					float AccBw=500
+					if o.VelS.z>0
+						o.Vel+=dir*AccFw*elapsed
+					if o.VelS.z<0
+						o.Vel-=dir*AccBw*elapsed
+
+				// Gravitation
+					float Elevation = 100.0
+					float el_a = VecDotProduct(up,g0)
+					if el_a<0
+						el_a=-el_a
+					float el_b=v_tang/HalfSpeed*Elevation
+					if el_b<0
+						el_b=-el_b
+					o.Vel+=up*elapsed*el_a*el_b
+					//float g_a=VecLength(VecCrossProduct(up,e_y))
+					//float g_b=1.0f/(v_tang/HalfSpeed + 1.0f)
+					//float g_fac=g_b;//sqrt(sqr(g_a) + sqr(g_b) )
+					//if (g_fac<0)	g_fac=-g_fac
+					//o.Vel+=GetG(o.Pos)*elapsed*(g_fac-1)
+					//o.GFactor=0
+
+				// Animationen
+				m.ResetMove()
+
+				// Bewegungsanimation
+				if c.Type == CTHumanoid
+					if c.FlyingTime < MinFlyingTime
+						//floatout(o.Vel.x)
+						// Geschwindigkeit relativ zum Boden
+						vector ground_v=o.Vel
+						if o.GroundID<0x40000000 // Objekt oder Terrain?
+							ground_v-=Object[o.GroundID].Vel+Object[o.GroundID].VelS
+						vector surface_v=VecCrossProduct(ground_v,o.GroundNormal)
+						float v=VecLength(surface_v)
+						if v<o._VelRun*0.02
+							// Stand-Animation
+							c.MoveMovement=MoveStanding
+							if o.Item[ItemWeaponR]
+								if o.Item[ItemWeaponR].Kind==7
+									c.MoveMovement=MoveStandingBow
+								else
+									c.MoveMovement=MoveStandingSword
+						else if c.Slow
+							// Geh-Animation
+							c.MoveMovement=MoveWalkingFw
+						else
+							// Renn-Animation
+							c.MoveMovement=MoveRunningFw
+					else if c.Swimming
+						// Schwimm-Animation
+						c.MoveMovement=MoveSwimming
+					else
+						// Sprung-/Fall-Animation
+						c.MoveMovement=MoveJumping
+					m.Move(MoveOpSet,0,0,c.MoveMovement,c.MoveTimeMovement,elapsed,v,true)
+				else if c.Type==CTDragon
+					if o.OnGround
+						m.Move(MoveOpSet,0,0,0,c.MoveTimeMovement,elapsed,0,true)
+					else
+						float t0=0
+						if o.VelS.z>0
+							// acceleration
+							m.Move(MoveOpSet,0,0,10,c.MoveTimeMovement,elapsed,0,true)
+						else if o.VelS.z<0
+							// stopping
+							m.Move(MoveOpSet,0,0,13,c.MoveTimeMovement,elapsed,0,true)
+						// up
+						float AnimFactor=0.8
+						m.Move(MoveOpAdd1Factor,-c.rot.x*AnimFactor,0,11,t0,0,0,false)
+						// right
+						m.Move(MoveOpAdd1Factor,-c.rot.z*AnimFactor,0,12,t0,0,0,false)
+
+			// Aktionen
+			//stringout("d")
+			bool is_over=true
+			float dt=elapsed
+			while (c.QueueAction.num>0) and is_over
+				sQueueAction *q = &c.QueueAction[0]
+				if (q.type == QAByAnimation) or (q.type == QAPullBow)
+					// Aktion per Animation
+					is_over = m.Move(MoveOpSetNewKeyed,0,0,c.MoveActing,c.MoveTimeActing,dt,0,false)
+				else if q.type == QAAttack
+					// Aktion per Animation oder durch Treffer beenden
+					is_over = m.Move(MoveOpSetNewKeyed,0,0,c.MoveActing,c.MoveTimeActing,dt,0,false) or CharTestHit(c)
+				else if q.type == QARest
+					// Warte-Zeit
+					q.arg_f -= dt
+					is_over = (q.arg_f < 0)
+				else
+					// sofort fertig
+					is_over = true
+
+				if is_over
+					c.QueueAction.erase(0)
+					CharStartAction(c)
+				dt = 0
+			c.Swimming = false
+			
+			if c.Type == CTHumanoid
+				if m.Bone[CBWeaponR].Model
+					//m.Bone[CBWeaponR].Model.TestCollisions = true
+					m.Bone[CBWeaponR].Model.TestCollisions = false
+
+				//m.SetBoneModel(CBWeaponR, o.Item[11].model)
+		
+	// Pfeile
+		sArrow *a 
+		//stringout("arr")
+		forall a, Arrow
+			object o = a.Object
+			a.TimeToLive -= elapsed
+			bool arrow_hit = false
+			bool arrow_hit_static = false
+			int arrow_hit_char = -1
+			// Ausrichtung
+			vector dir
+			VecNormalize( dir, o.Vel )
+			o.Ang = VecDir2Ang( dir )
+			// Treffer?
+			vector p1 = o.Pos + dir * 20.0
+			vector p2 = o.Pos - o.Vel * elapsed
+			vector tp
+			if Trace( p1, p2, tp, false, a.Creator )
+				//particle ap = CreateParticle( tp, -1, NULL, 10, 4 )
+				arrow_hit = true
+				if TraceHitType == TraceHitObject
+					arrow_hit_static = !Object[ TraceHitIndex ].ActivePhysics
+					arrow_hit_char = Character.index(GetCharByObject(Object[ TraceHitIndex ]))
+				//if arrow_hit_char > 0
+				//	ap.Color = Red
+			
+			// "Feuer"....
+			//CreateParticle( p1, -1, NULL, 1, 10 )
+			
+			if arrow_hit or ( a.TimeToLive < 0 )
+				if arrow_hit_char >= 0
+					Character[arrow_hit_char].o.Life -= a.Damage
+				if arrow_hit_static
+					o.ActivePhysics = false
+					o.PassivePhysics = false
+					o.Vel = v0
+					o.Pos = tp
+				else
+					DeleteObject( o.ID )
+				Arrow.erasep(a)
+		
+		wait_of()

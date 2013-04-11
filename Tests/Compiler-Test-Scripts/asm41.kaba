@@ -1,0 +1,10 @@
+#show
+#disasm
+#noexec
+
+object o
+
+void main()
+	float phi
+	o.Ang = vector( 0, pi + phi, 0 )
+	//vector v = vector( 0, pi + phi, 0 )

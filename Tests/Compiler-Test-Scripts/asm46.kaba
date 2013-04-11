@@ -1,0 +1,13 @@
+#show
+#disasm
+
+int a[], b[]
+
+void main()
+	a.add(1)
+	b.add(2)
+	
+	a[0] = b[0]
+	
+	print a[0]
+	print b[0]

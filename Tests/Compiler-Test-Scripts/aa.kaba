@@ -1,0 +1,6 @@
+#show
+#disasm
+
+void main()
+	//color c = color(1,2,3,4)
+	vector v = vector(1,2,3)

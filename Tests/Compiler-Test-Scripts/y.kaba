@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	complex i
+	i = complex(4, 2) * ci
+	print i

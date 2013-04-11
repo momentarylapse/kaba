@@ -1,0 +1,12 @@
+int i
+
+class T
+	void __init__()
+		print "init"
+		i = 4
+
+T t
+
+void main()
+	print "test"
+	print i

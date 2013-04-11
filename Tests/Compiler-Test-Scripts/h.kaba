@@ -1,0 +1,10 @@
+//#show
+//#show_post
+
+int a[]
+
+void main()
+	a = rangei(0,10)
+	int *i
+	forall i, a
+		print *i

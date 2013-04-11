@@ -1,0 +1,7 @@
+#show
+#disasm
+
+void main()
+	float f
+	f = pi + pi
+	print f

@@ -1,0 +1,10 @@
+#show
+#disasm
+
+int a[10]
+
+void main()
+	int b[10]*
+	b = &a
+	
+	b[2] = 1

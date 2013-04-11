@@ -1,0 +1,11 @@
+//#show
+
+int i[8]
+int p[0]*
+
+void main()
+	i[2] = 13
+
+	p = &i
+	
+	print p[2]

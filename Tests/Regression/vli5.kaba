@@ -1,0 +1,10 @@
+void main()
+	vli a = "7353404411"
+	vli b = "7352204413"
+	
+	vli r
+	a.idiv(b, r)
+	print a.str()
+	print r.str()
+	
+	

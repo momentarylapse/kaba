@@ -1,0 +1,2 @@
+void main()
+	print "kleiner Test".upper().lower().upper().lower().upper().lower().upper().lower().upper().lower().upper().lower().explode("e").join("E").replace("t", "XX")

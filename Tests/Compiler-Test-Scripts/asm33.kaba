@@ -1,0 +1,19 @@
+//#show
+//#disasm
+//#noexec
+
+vector a[]
+
+void main()
+	//int i
+	//i *= i
+	
+	a.push(e_x)
+	
+	
+	vector v = e_y
+	//v -= a[0]
+//	print v
+
+	a[0] -= v
+	print a[0]

@@ -1,0 +1,15 @@
+#show
+#disasm
+//#noexec
+
+void _main(int l)
+	int i = 3
+	print i
+	wait_of()
+	print l
+	
+	if l < 10
+		_main(l + 1)
+	
+void main()
+	_main(0)

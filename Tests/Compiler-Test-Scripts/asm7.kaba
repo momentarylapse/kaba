@@ -1,0 +1,8 @@
+#show
+#disasm
+
+int a[1<<10]
+
+void main()
+	int i = 1+2*234+234*4+4
+	print i

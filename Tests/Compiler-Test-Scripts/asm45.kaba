@@ -1,0 +1,8 @@
+#show
+#disasm
+#noexec
+
+text ttt
+
+void main()
+	ttt.enabled=ttt.enabled

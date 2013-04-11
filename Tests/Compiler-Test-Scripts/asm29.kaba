@@ -1,0 +1,10 @@
+#show
+#disasm
+
+int b[]
+
+void main()
+	b.push(1)
+	b.push(2)
+	b.push(3)
+	print b[1]

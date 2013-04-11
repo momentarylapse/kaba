@@ -1,0 +1,4 @@
+#include "include.kaba"
+
+void main()
+	f(e_x)

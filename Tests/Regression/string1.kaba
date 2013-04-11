@@ -1,0 +1,24 @@
+void main()
+	string a = "hallo"
+	a += " Welt - "
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a += a
+	a.add('x')
+	print a
+	
+	string s[]
+	s = a.explode(" - ")
+	
+	forall ss in s
+		print ss
+		ss.clear()

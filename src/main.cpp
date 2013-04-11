@@ -85,7 +85,7 @@ void execute(Script::Script *s, Array<string> &arg)
 	// set working directory -> script file
 	//msg_write(HuiInitialWorkingDirectory);
 	HuiSetDirectory(HuiInitialWorkingDirectory);
-	HuiSetDirectory(s->pre_script->Filename.dirname());
+	HuiSetDirectory(s->syntax->Filename.dirname());
 
 	main_arg_func *f_arg = (main_arg_func*)s->MatchFunction("main", "void", 1, "string[]");
 	main_void_func *f_void = (main_void_func*)s->MatchFunction("main", "void", 0);
@@ -135,7 +135,7 @@ int hui_main(Array<string> arg)
 	MetaInit();
 	Script::Init();
 	//Script::LinkDynamicExternalData();
-	Script::StackSize = 10485760; // 10 mb (mib)
+	Script::config.StackSize = 10485760; // 10 mb (mib)
 
 	// script file as parameter?
 	string filename;
@@ -151,7 +151,7 @@ int hui_main(Array<string> arg)
 	}
 
 	// compile
-	Script::CompileSilently = true;
+	Script::config.CompileSilently = true;
 	SilentFiles = true;
 
 	try{

@@ -1,0 +1,13 @@
+#show
+
+complex z[]
+
+void main()
+	z.push(complex(1,2))
+	z.push(complex(123,2))
+	z.push(complex(1,324))
+	z.push(complex(1,2))
+	print z[0]
+	print z[1]
+	print z[2]
+	print z[3]

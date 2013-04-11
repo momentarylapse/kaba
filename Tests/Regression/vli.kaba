@@ -1,0 +1,8 @@
+void main()
+	vli a, b, r
+	a = -31
+	b = 101
+	a = a.pow(b)
+	print a >= b
+	r = a + b
+	print r.str()

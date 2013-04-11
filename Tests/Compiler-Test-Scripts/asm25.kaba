@@ -1,0 +1,12 @@
+#show
+#disasm
+
+int i
+
+void main()
+	if !false
+		asm{
+			mov eax, 0x04
+			mov i, eax
+		}
+	print i

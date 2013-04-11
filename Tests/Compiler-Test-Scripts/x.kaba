@@ -1,0 +1,8 @@
+#os
+#disasm
+
+void main()
+	asm{
+		mov.b [eax], 'M'
+		call_far [eax]
+	}

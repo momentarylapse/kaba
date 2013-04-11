@@ -1,0 +1,6 @@
+#show
+#disasm
+
+void main()
+	//bool b = (2.0 <= 1.0)
+	print 2.0 >= 1.0

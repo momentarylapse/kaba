@@ -1,0 +1,12 @@
+#show
+#disasm
+
+complex z[]
+
+void main()
+	int i
+	for i, 0, 10
+		z.push(complex(i,2))
+		
+	for i, 0, z.num
+		print z[i]

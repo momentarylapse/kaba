@@ -1,0 +1,2 @@
+void f(vector v)
+	print v

@@ -1,0 +1,12 @@
+HuiWindow win
+
+void func(int message)
+	print "hallo"
+	if message == HuiMsgClose
+		HuiEnd()
+
+void main()
+	win = HuiCreateDialog("...", 600, 400, nil, false, &func)
+	win.Update()
+	
+	HuiRun()

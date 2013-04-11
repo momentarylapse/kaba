@@ -1,0 +1,14 @@
+
+void main()
+	/*string s = "hallo"
+	print s
+	print "-  welt  -".substr(3, 4)
+	HuiInfoBox(nil, "test", s)*/
+	
+	
+	/*int i
+	for i, 0, 10
+		print i*/
+		
+	print "01234567890123456789".num
+	print "01234567890123456789"

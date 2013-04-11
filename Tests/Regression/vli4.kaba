@@ -1,0 +1,9 @@
+
+
+void main()
+	vli v = "999999998443"
+	vli w = "29"
+	
+	vli r
+	v.idiv(w, r)
+	print v.str() + " mod " + r.str()

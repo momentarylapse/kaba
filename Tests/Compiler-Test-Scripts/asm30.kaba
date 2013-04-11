@@ -1,0 +1,18 @@
+#show
+#disasm
+
+float a[], c[]
+
+void f(float b[])
+	c = b
+	b.push(4)
+	print sum2f(b)
+
+void main()
+	a.push(1)
+	a.push(2)
+	a.push(3)
+	f(a)
+	//c = a
+	print sum2f(c)
+	

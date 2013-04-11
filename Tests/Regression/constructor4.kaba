@@ -1,0 +1,18 @@
+//#show
+//#disasm
+
+class c
+	int x
+	void __init__()
+		self.x = -1
+		print "init"
+	void __delete__()
+		print "delete"
+		print self.x
+
+void main()
+	c a[]
+	a.resize(14)
+//	a.add(cc)
+	//print a.num
+	//print a[0].x

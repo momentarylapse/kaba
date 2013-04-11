@@ -1,0 +1,6 @@
+#show
+#disasm
+
+void main()
+	float f, g
+	f = g+ g * pi

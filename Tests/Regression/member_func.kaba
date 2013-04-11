@@ -1,0 +1,3 @@
+void main()
+	print "hallo".replace("a", "b").replace("l", "w").upper()
+	print "a\\b\\ccc\\dd".explode("\\").join("--")
