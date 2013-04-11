@@ -1,5 +1,5 @@
-#show
-#disasm
+//#show
+//#disasm
 
 class c
 	int x
@@ -7,7 +7,6 @@ class c
 	void __assign__(c other)
 		print "sdkjfh"
 		self.v = other.v
-		print "----"
 
 void main()
 	c a[]
