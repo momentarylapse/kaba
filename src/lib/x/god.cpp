@@ -709,7 +709,7 @@ void GodDeleteObject(int index)
 #endif
 
 #ifdef USE_ODE
-	db_o(i2s((int)Objects[index]->body_id).c_str());
+	db_o(p2s(Objects[index]->body_id).c_str());
 	if (Objects[index]->body_id != 0){
 		db_o("bd");
 		dBodyDestroy(Objects[index]->body_id);
@@ -718,7 +718,7 @@ void GodDeleteObject(int index)
 	
 		db_o(".");
 	Objects[index]->body_id = 0;
-	db_o(i2s((int)Objects[index]->geom_id).c_str());
+	db_o(p2s(Objects[index]->geom_id).c_str());
 	if (Objects[index]->geom_id != 0){
 		db_o("gd");
 		dGeomDestroy(Objects[index]->geom_id);

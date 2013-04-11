@@ -92,19 +92,18 @@ bool ShadowRecalc = true;
 
 void FxInit()
 {
-	msg_db_r("FxInit",0);
+	msg_db_f("FxInit",0);
 	FxVB = NixCreateVB(MODEL_MAX_TRIANGLES * 4, 1);
 	ShadowVB[0] = NixCreateVB(32768, 1);
 	ShadowVB[1] = NixCreateVB(32768, 1);
 	NumForceFields=0;
 	NumTails=0;
 	FxRenderFunc=NULL;
-	msg_db_l(0);
 }
 
 void FxReset()
 {
-	msg_db_r("FxReset",1);
+	msg_db_f("FxReset",1);
 	
 	// particles
 	foreach(Particle *p, Particles)
@@ -128,7 +127,6 @@ void FxReset()
 	/*msg_db_m("force fields",2);
 	for (int i=0;i<NumForceFields;i++)
 		FxForceFieldDelete(i);*/
-	msg_db_l(1);
 }
 
 // for DEBUG output
@@ -179,36 +177,32 @@ inline void particle_init(Particle *p, const vector &pos, const vector &param, i
 
 /*Particle *FxParticleCreate(int type, const vector &pos, const vector &param, int texture, particle_callback *func, float time_to_live, float radius)
 {
-	msg_db_r("new particle",2);
+	msg_db_f("new particle",2);
 	xcont_find_new(Particle, p, Particles);
-	msg_db_l(2);
 	return p;
 }*/
 
 Particle *FxParticleCreateDef(const vector &pos, int texture, particle_callback *func, float time_to_live, float radius)
 {
-	msg_db_r("new particle",2);
+	msg_db_f("new particle",2);
 	xcont_find_new(XContainerParticle, Particle, p, Particles);
 	particle_init(p, pos, v_0, texture, func, time_to_live, radius);
-	msg_db_l(2);
 	return p;
 }
 
 Particle *FxParticleCreateRot(const vector &pos, const vector &ang, int texture, particle_callback *func, float time_to_live, float radius)
 {
-	msg_db_r("new particle rot",2);
+	msg_db_f("new particle rot",2);
 	xcont_find_new(XContainerParticleRot, Particle, p, Particles);
 	particle_init(p, pos, ang, texture, func, time_to_live, radius);
-	msg_db_l(2);
 	return p;
 }
 
 Particle *FxParticleCreateBeam(const vector &pos, const vector &length, int texture, particle_callback *func, float time_to_live, float radius)
 {
-	msg_db_r("new beam",2);
+	msg_db_f("new beam",2);
 	xcont_find_new(XContainerParticleBeam, Particle, p, Beams);
 	particle_init(p, pos, length, texture, func, time_to_live, radius);
-	msg_db_l(2);
 	return p;
 }
 
@@ -223,7 +217,7 @@ void FxParticleDelete(Particle *particle)
 
 Effect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callback *del_func,float time_to_live)
 {
-	msg_db_r("new effect",2);
+	msg_db_f("new effect",2);
 	xcont_find_new(XContainerEffect, Effect, p, Effects);
 	p->enabled = true;
 	p->suicidal = (time_to_live >= 0);
@@ -237,34 +231,34 @@ Effect *_cdecl FxCreate(const vector &pos,particle_callback *func,particle_callb
 	p->func_enable = NULL;
 	p->model = NULL;
 	p->type = FXTypeScript;
-	msg_db_l(2);
 	return p;
 }
 Effect *FxCreateScript(Model *m, int vertex, const string &filename)
 {
-	msg_db_r("FxCreateScript", 2);
+	msg_db_f("FxCreateScript", 2);
 	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
 	fx->type = FXTypeScript;
 #ifdef _X_ALLOW_X_
-	Script::Script *s = Script::Load(filename);
-	if (!s->Error){
+	try{
+		Script::Script *s = Script::Load(filename);
 		particle_callback *func_create = (particle_callback*)s->MatchFunction("OnEffectCreate", "void", 1, "effect");
 		fx->func = (particle_callback*)s->MatchFunction("OnEffectIterate", "void", 1, "effect");
 		fx->func_del = (particle_callback*)s->MatchFunction("OnEffectDelete", "void", 1, "effect");
 		fx->func_enable = (effect_enable_func*)s->MatchFunction("OnEffectEnable", "void", 2, "effect", "bool");
 		if (func_create)
 			func_create(fx);
+	}catch(Script::Exception &e){
+		e.print();
 	}
 #endif
-	msg_db_l(2);
 	return fx;
 }
 
 Effect *FxCreateLight(Model *m, int vertex, float radius, const color &am, const color &di, const color &sp)
 {
-	msg_db_r("FxCreateLight", 2);
+	msg_db_f("FxCreateLight", 2);
 	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
@@ -277,13 +271,12 @@ Effect *FxCreateLight(Model *m, int vertex, float radius, const color &am, const
 	*(color*)&fx->script_var[2] = am;
 	*(color*)&fx->script_var[6] = di;
 	*(color*)&fx->script_var[10] = sp;
-	msg_db_l(2);
 	return fx;
 }
 
 Effect *FxCreateSound(Model *m, int vertex, const string &filename, float radius, float speed)
 {
-	msg_db_r("FxCreateSound", 2);
+	msg_db_f("FxCreateSound", 2);
 	Effect *fx = FxCreate(m->GetVertex(vertex, 0), NULL, NULL, -1);
 	fx->vertex = vertex;
 	fx->model = m;
@@ -294,13 +287,12 @@ Effect *FxCreateSound(Model *m, int vertex, const string &filename, float radius
 #endif
 	fx->script_var[1] = radius;
 	fx->script_var[2] = speed;
-	msg_db_l(2);
 	return fx;
 }
 
 void _cdecl FxDelete(Effect *effect)
 {
-	msg_db_r("FxDelete", 3);
+	msg_db_f("FxDelete", 3);
 	if (effect)
 		for (int i=0;i<Effects.num;i++)
 			if (effect == Effects[i]){
@@ -319,12 +311,11 @@ void _cdecl FxDelete(Effect *effect)
 
 				effect->script_var.clear();
 			}
-	msg_db_l(3);
 }
 
 void FxEnable(Effect *fx, bool enabled)
 {
-	msg_db_r("FxEnable", 3);
+	msg_db_f("FxEnable", 3);
 	fx->enabled = enabled;
 	if (fx->type == FXTypeSound){
 #ifdef _X_USE_SOUND_
@@ -341,14 +332,13 @@ void FxEnable(Effect *fx, bool enabled)
 
 	if (fx->func_enable)
 		fx->func_enable(fx, enabled);
-	msg_db_l(3);
 }
 
 #if 0
 Effect *FxCreateByModel(Model *m, sModelEffectData *data)
 {
 #ifdef _X_ALLOW_X_
-	msg_db_r("new effect model",2);
+	msg_db_f("new effect model",2);
 	vector pos = v0; // ...well, not yet.... would have to be managed and not loaded unless model has been drawn once
 	Effect *fx = FxCreate(pos, NULL, NULL, -1);
 	fx->type = data->type;
@@ -372,7 +362,6 @@ Effect *FxCreateByModel(Model *m, sModelEffectData *data)
 		}
 		//fx->Enabled=false;
 	}
-	msg_db_l(2);
 	return fx;
 #else
 	return NULL;
@@ -383,13 +372,13 @@ void FxUpdateByModel(Effect *&effect,const vector &pos,const vector &last_pos)
 {
 	if (!effect)
 		return;
-	msg_db_r("FxUpdateByModel", 1);
+	msg_db_f("FxUpdateByModel", 1);
 	effect->Pos=pos;
 	if (Elapsed>0)
 		effect->Vel=(pos-last_pos)/Elapsed;
 	effect->Enabled=true;
 	if (effect->type==FXTypeScriptPreLoad){
-		msg_db_r("script effect",1);
+		msg_db_f("script effect",1);
 		typedef Effect* t_fx_creation_func(const vector*);
 		t_fx_creation_func *f = *(t_fx_creation_func**)effect->ScriptVar.data;
 		Effect *fx=f(&pos);
@@ -397,9 +386,7 @@ void FxUpdateByModel(Effect *&effect,const vector &pos,const vector &last_pos)
 		fx->vertex=effect->vertex;
 		FxDelete(effect);
 		effect=fx;
-		msg_db_l(1);
 	}
-	msg_db_l(1);
 }
 
 void FxResetByModel()
@@ -418,7 +405,7 @@ void FxResetByModel()
 int FxForceFieldNew()
 {
     int i,n=-1;
-	msg_db_r("new forcefield",2);
+	msg_db_f("new forcefield",2);
 	msg_db_m(i2s(NumForceFields),3);
 	for (i=0;i<NumForceFields;i++)
 		if (!ForceField[i]->Used){
@@ -428,7 +415,6 @@ int FxForceFieldNew()
 	if (n<0){
 		if (NumForceFields>=FX_MAX_FORCEFIELDS){
 			msg_error("FX: too many force fields!");
-			msg_db_l(2);
 			return -1;
 		}
 		n=NumForceFields;
@@ -437,7 +423,6 @@ int FxForceFieldNew()
 	}
 	ForceField[n]->Used=true;
 	FxForceFieldEnable(n,true);
-	msg_db_l(2);
 	return n;
 }
 
@@ -796,7 +781,7 @@ inline void AddEdge(int *edge, int &NumEdges, int p1, int p2)
 
 void FxDrawShadows()
 {
-	msg_db_r("FxDrawShadows",2);
+	msg_db_f("FxDrawShadows",2);
 
 	int NumEdges;
 	vector LightDir;
@@ -902,8 +887,6 @@ void FxDrawShadows()
 
 	// reset all shadows
 	Shadow.clear();
-
-	msg_db_l(2);
 }
 
 // pro Polygon in der Oberflaeche ein Spiegel!
@@ -1007,7 +990,7 @@ static vector p[MODEL_MAX_VERTICES];
 //#########################################################################
 void FxCalcMove()
 {
-	msg_db_r("FXCalcMove",2);
+	msg_db_f("FXCalcMove",2);
 #ifdef _X_ALLOW_CAMERA_
 	CamDir = Cam->ang.ang2dir();
 #endif
@@ -1132,13 +1115,11 @@ void FxCalcMove()
 	ModelToIgnore = NULL;
 	NumMirrors = 0;
 	ShadowRecalc = true;
-
-	msg_db_l(2);
 }
 
 void FxDraw1()
 {
-	msg_db_r("FXDraw1",2);
+	msg_db_f("FXDraw1",2);
 	/*NixSetCull(CullNone);
 	NixSetZ(false,true);
 	NixSetAlpha(AlphaSourceColor,AlphaOne);
@@ -1155,7 +1136,6 @@ void FxDraw1()
 #endif
 	
 	//msg_write("ok");
-	msg_db_l(2);
 }
 
 #include <GL/gl.h>
@@ -1319,7 +1299,7 @@ void DrawBeamsNew()
 
 void FxDraw2()
 {
-	msg_db_r("FXDraw2",2);
+	msg_db_f("FXDraw2",2);
 
 	FxDrawShadows();
 
@@ -1351,6 +1331,5 @@ void FxDraw2()
 	NixSetZ(true,true);
 	NixSetAlpha(AlphaNone);	
 	NixSetCull(CullDefault);
-	msg_db_l(2);
 }
 

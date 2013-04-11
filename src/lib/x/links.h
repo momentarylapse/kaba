@@ -4,6 +4,7 @@
 
 
 #ifdef _X_ALLOW_ODE_
+#define dSINGLE
 #include <ode/ode.h>
 #endif
 

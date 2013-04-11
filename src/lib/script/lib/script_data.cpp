@@ -32,7 +32,26 @@ CompilerConfiguration config;
 
 Script *GlobalDummyScript = NULL;
 
+struct ExternalLinkData
+{
+	string name;
+	void *pointer;
+};
 Array<ExternalLinkData> ExternalLinks;
+
+struct ClassOffsetData
+{
+	string class_name, element;
+	int offset;
+};
+Array<ClassOffsetData> ClassOffsets;
+
+struct ClassSizeData
+{
+	string class_name;
+	int size;
+};
+Array<ClassSizeData> ClassSizes;
 
 
 //------------------------------------------------------------------------------------------------//
@@ -363,6 +382,7 @@ void func_add_param(const string &name, Type *type)
 void script_make_super_array(Type *t, SyntaxTree *ps)
 {
 	msg_db_f("make_super_array", 4);
+
 	add_class(t);
 		class_add_element("num", TypeInt, config.PointerSize);
 
@@ -1115,6 +1135,8 @@ void Init(int instruction_set, int abi)
 void ResetExternalLinkData()
 {
 	ExternalLinks.clear();
+	ClassOffsets.clear();
+	ClassSizes.clear();
 }
 
 // program variables - specific to the surrounding program, can't always be there...
@@ -1137,6 +1159,38 @@ void *GetExternalLink(const string &name)
 		if (l.name == name)
 			return l.pointer;
 	return NULL;
+}
+
+void DeclareClassSize(const string &class_name, int size)
+{
+	ClassSizeData d;
+	d.class_name = class_name;
+	d.size = size;
+	ClassSizes.add(d);
+}
+
+void DeclareClassOffset(const string &class_name, const string &element, int offset)
+{
+	ClassOffsetData d;
+	d.class_name = class_name;
+	d.element = element;
+	d.offset = offset;
+	ClassOffsets.add(d);
+}
+
+int ProcessClassOffset(const string &class_name, const string &element, int offset)
+{
+	foreach(ClassOffsetData &d, ClassOffsets)
+		if ((d.class_name == class_name) && (d.element == element))
+			return d.offset;
+	return offset;
+}
+int ProcessClassSize(const string &class_name, int size)
+{
+	foreach(ClassSizeData &d, ClassSizes)
+		if (d.class_name == class_name)
+			return d.size;
+	return size;
 }
 
 void End()

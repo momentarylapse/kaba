@@ -1,4 +1,4 @@
-#include "include_source.kaba"
+use "include_source.kaba"
 
 void main()
 	f()

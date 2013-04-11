@@ -216,7 +216,7 @@ static void HandleCollisionsSemiOde(Object *o1, Object *o2, CollisionData *col, 
 {
 	if (o1->body_id == o2->body_id){
 		msg_error("HandleCollisionsSemiOde: beide Objekte id=id");
-		msg_write((int)o1->body_id);
+		msg_write(p2s(o1->body_id));
 		msg_write(o1->name);
 		msg_write(o2->name);
 		return;

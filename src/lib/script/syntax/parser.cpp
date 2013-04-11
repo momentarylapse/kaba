@@ -164,25 +164,22 @@ void *SyntaxTree::GetConstantValue()
 }
 
 
-void DoClassFunction(SyntaxTree *ps, Command *Operand, Type *t, int f_no, Function *f)
+Command *DoClassFunction(SyntaxTree *ps, Command *ob, ClassFunction &cf, Function *f)
 {
 	msg_db_f("DoClassFunc", 1);
 
-	// create a command for the object
-	Command *ob = ps->cp_command(Operand);
-
-	//msg_write(LinkNr2Str(ps, Operand->Kind, Operand->Nr));
+	Command *cmd = ps->AddCommand();
 
 	// the function
-	ClassFunction &cf = t->function[f_no];
-	Operand->script = cf.script;
-    Operand->kind = KindFunction;
-	Operand->link_nr = cf.nr;
+	cmd->script = cf.script;
+	cmd->kind = KindFunction;
+	cmd->link_nr = cf.nr;
 	Function *ff = cf.script->syntax->Functions[cf.nr];
-	Operand->type = ff->literal_return_type;
-	Operand->num_params = ff->num_params;
-	ps->GetFunctionCall(ff->name, Operand, f);
-	Operand->instance = ob;
+	cmd->type = ff->literal_return_type;
+	cmd->num_params = ff->num_params;
+	ps->GetFunctionCall(ff->name, cmd, f);
+	cmd->instance = ob;
+	return cmd;
 }
 
 Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Function *f)
@@ -206,13 +203,12 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Function *f)
 		}
 
 	// class function?
-	for (int e=0;e<type->function.num;e++)
-		if (Exp.cur == type->function[e].name){
+	foreach(ClassFunction &cf, type->function)
+		if (Exp.cur == cf.name){
 			if (!deref)
 				ref_command_old(this, Operand);
 			Exp.next();
-			DoClassFunction(this, Operand, type, e, f);
-			return Operand;
+			return DoClassFunction(this, Operand, cf, f);
 		}
 
 	DoError("unknown element of " + type->name);
@@ -1275,13 +1271,13 @@ void SyntaxTree::ParseImport()
 	string name = Exp.cur;
 	if (name.find(".kaba") >= 0){
 
-		string filename = Filename.dirname() + name.substr(1, name.num - 2); // remove "
+		string filename = script->Filename.dirname() + name.substr(1, name.num - 2); // remove "
 		filename = filename.no_recursion();
 
 		msg_right();
 		Script *include;
 		try{
-			include = Load(filename, true, script->JustAnalyse);
+			include = Load(filename, script->JustAnalyse);
 		}catch(Exception &e){
 			string msg = "in imported file:\n\"" + e.message + "\"";
 			DoError(msg);
@@ -1371,7 +1367,7 @@ void SyntaxTree::ParseClass()
 
 	// create class and type
 	int nt0 = Types.num;
-	Type *t = CreateNewType(name, 0, false, false, false, 0, NULL);
+	Type *_class = CreateNewType(name, 0, false, false, false, 0, NULL);
 	if (nt0 == Types.num){
 		Exp.rewind();
 		DoError("class already exists");
@@ -1385,7 +1381,7 @@ void SyntaxTree::ParseClass()
 		bool found = false;
 		if (ancestor->element.num > 0){
 			// inheritance of elements
-			t->element = ancestor->element;
+			_class->element = ancestor->element;
 			_offset = ancestor->size;
 			found = true;
 		}
@@ -1393,7 +1389,7 @@ void SyntaxTree::ParseClass()
 			// inheritance of functions
 			foreach(ClassFunction &f, ancestor->function)
 				if ((f.name != "__init__") && (f.name != "__delete__") && (f.name != "__assign__"))
-					t->function.add(f);
+					_class->function.add(f);
 			found = true;
 		}
 		if (!found)
@@ -1440,7 +1436,7 @@ void SyntaxTree::ParseClass()
 			if (is_function){
 				Exp.cur_exp = ie;
 				Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
-				ParseClassFunction(t, next_extern);
+				ParseClassFunction(_class, next_extern);
 
 				break;
 			}
@@ -1448,24 +1444,25 @@ void SyntaxTree::ParseClass()
 
 			if (type_needs_alignment(type))
 				_offset = mem_align(_offset, 4);
-			so(format("Class-Element: %s %s  Offset: %d", type->name.c_str(), el.name.c_str(), _offset));
+			_offset = ProcessClassOffset(_class->name, el.name, _offset);
+			so(format("Class-Element: %s %s  Offset: %d", _class->name.c_str(), el.name.c_str(), _offset));
 			if ((Exp.cur != ",") && (!Exp.end_of_line()))
 				DoError("\",\" or newline expected after class element");
 			el.offset = _offset;
 			_offset += type->size;
-			t->element.add(el);
+			_class->element.add(el);
 			if (Exp.end_of_line())
 				break;
 			Exp.next();
 		}
 	}
-	foreach(ClassElement &e, t->element)
+	foreach(ClassElement &e, _class->element)
 		if (type_needs_alignment(e.type))
 			_offset = mem_align(_offset, 4);
-	t->size = _offset;
+	_class->size = ProcessClassSize(_class->name, _offset);
 
 
-	CreateImplicitFunctions(t, false);
+	CreateImplicitFunctions(_class, false);
 
 	Exp.cur_line --;
 }

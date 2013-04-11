@@ -85,7 +85,7 @@ void execute(Script::Script *s, Array<string> &arg)
 	// set working directory -> script file
 	//msg_write(HuiInitialWorkingDirectory);
 	HuiSetDirectory(HuiInitialWorkingDirectory);
-	HuiSetDirectory(s->syntax->Filename.dirname());
+	HuiSetDirectory(s->Filename.dirname());
 
 	main_arg_func *f_arg = (main_arg_func*)s->MatchFunction("main", "void", 1, "string[]");
 	main_void_func *f_void = (main_void_func*)s->MatchFunction("main", "void", 0);
@@ -155,7 +155,7 @@ int hui_main(Array<string> arg)
 	SilentFiles = true;
 
 	try{
-		Script::Script *s = Script::Load(filename, true);
+		Script::Script *s = Script::Load(filename);
 		execute(s, arg);
 	}catch(Script::Exception &e){
 		if (use_gui)
