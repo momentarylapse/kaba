@@ -397,9 +397,9 @@ void Script::Execute()
 	}else{
 #ifdef _X_ALLOW_META_
 		if (WaitingMode==WaitingModeRT)
-			TimeToWait-=ElapsedRT;
+			TimeToWait -= Engine.ElapsedRT;
 		else
-			TimeToWait-=Elapsed;
+			TimeToWait -= Engine.Elapsed;
 		if (TimeToWait>0){
 			return;
 		}

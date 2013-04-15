@@ -7,7 +7,7 @@ enum TypeFlag
 	FLAG_SILENT = 2,
 };
 
-void set_cur_package(const string &name);
+void add_package(const string &name, bool used_by_default);
 Type *add_type(const string &name, int size, TypeFlag = FLAG_NONE);
 Type *add_type_p(const string &name, Type *sub_type, TypeFlag = FLAG_NONE);
 Type *add_type_a(const string &name, Type *sub_type, int array_length);

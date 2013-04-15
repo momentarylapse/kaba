@@ -38,26 +38,35 @@ struct XFont
 	float y_offset, height, x_factor, y_factor;
 };
 
-extern string AppName;
-extern int NumRealColTests;
-extern float TimeScale,TimeScaleLast,Elapsed,ElapsedRT;
+struct EngineData
+{
+	string AppName;
+	bool Debug, ShowTimings, ConsoleEnabled, WireMode;
+	bool Record;
+	float DetailLevel;
+	float DetailFactorInv;
+	int ShadowLevel;
+	bool ShadowLowerDetail;
+	int ShadowLight;
+	color ShadowColor;
+	
+	int Multisampling;
+	bool CullingEnabled, SortingEnabled, ZBufferEnabled;
+	bool ResettingGame;
+	int DefaultFont;
+	string InitialWorldFile, SecondWorldFile;
+	bool PhysicsEnabled, CollisionsEnabled;
+	int MirrorLevelMax;
+	
+	int NumRealColTests;
+	
+	float FpsMax, FpsMin;
+	float TimeScale, Elapsed, ElapsedRT;
 
-extern bool FileErrorsAreCritical;
+	bool FileErrorsAreCritical;
+};
+extern EngineData Engine;
 
-
-// game configuration
-extern bool Debug,ShowTimings,ConsoleEnabled,WireMode;
-extern bool Record;
-extern int DetailLevel;
-extern float DetailFactorInv;
-extern int ShadowLevel,ShadowLight;
-extern color ShadowColor;
-extern bool ShadowLowerDetail;
-extern float FpsMax,FpsMin;
-extern int Multisampling;
-extern bool NetworkEnabled,CullingEnabled,SortingEnabled,ZBufferEnabled;
-extern int XFontIndex,DefaultFont;
-extern bool ResettingGame;
 
 typedef void str_float_func(const string&,float);
 
@@ -92,23 +101,17 @@ typedef void str_float_func(const string&,float);
 
 // game data
 	extern string MapDir, ObjectDir, SoundDir, ScriptDir, MaterialDir, FontDir;
-	extern void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
-	extern str_float_func *MetaDrawSplashScreen;
-	extern void *MetaObjectScriptInit;
 	extern Model *ModelToIgnore;
 
-	extern float MetaListenerRate;
+	//extern float MetaListenerRate;
 
 // only used by meta itself and the editor...
-	extern Array<XFont*> _XFont_;
-	// gui...
-	extern int XFontIndex, DefaultFont;
-	extern float XFontZ;
+	extern Array<XFont*> XFonts;
 
 
-float _cdecl XFGetWidth(float h,const string &str);
-float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centric=false);
-float _cdecl XFDrawVertStr(float x,float y,float h,const string &str);
+float _cdecl XFGetWidth(float h, const string &str, int font);
+float _cdecl XFDrawStr(float x, float y, float z, float height, const string &str, int font, bool centric = false);
+float _cdecl XFDrawVertStr(float x, float y, float z, float h, const string &str, int font);
 
 enum{
 	ErrorLoadingWorld,

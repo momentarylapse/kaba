@@ -41,7 +41,7 @@ void SIAddPackageHui()
 {
 	msg_db_f("SIAddPackageHui", 3);
 
-	set_cur_package("hui");
+	add_package("hui", false);
 	
 	Type*
 	TypeHuiMenu				= add_type  ("Menu",	0);

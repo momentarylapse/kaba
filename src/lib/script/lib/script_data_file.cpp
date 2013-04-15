@@ -35,7 +35,7 @@ void SIAddPackageFile()
 {
 	msg_db_f("SIAddPackageFile", 3);
 
-	set_cur_package("file");
+	add_package("file", false);
 
 	Type*
 	TypeFile			= add_type  ("File",		0);

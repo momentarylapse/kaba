@@ -29,7 +29,7 @@ extern Type *TypeIntList;
 
 void SIAddPackageImage()
 {
-	set_cur_package("image");
+	add_package("image", false);
 
 	TypeImage			= add_type  ("Image",		sizeof(Image));
 

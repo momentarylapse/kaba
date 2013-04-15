@@ -182,7 +182,7 @@ Object::Object()
 
 void Object::AddForce(const vector &f, const vector &rho)
 {
-	if (Elapsed <= 0)
+	if (Engine.Elapsed <= 0)
 		return;
 	if (!active_physics)
 		return;
@@ -196,7 +196,7 @@ void Object::AddForce(const vector &f, const vector &rho)
 
 void Object::AddTorque(const vector &t)
 {
-	if (Elapsed <= 0)
+	if (Engine.Elapsed <= 0)
 		return;
 	if (!active_physics)
 		return;
@@ -218,7 +218,7 @@ void Object::MakeVisible(bool _visible_)
 
 void Object::DoPhysics()
 {
-	if (Elapsed<=0)
+	if (Engine.Elapsed<=0)
 		return;
 	msg_db_r("object::DoPhysics",2);
 	msg_db_m(name.c_str(),3);
@@ -236,8 +236,8 @@ void Object::DoPhysics()
 			acc = force_int * mass_inv;
 
 			// integrate the equations of motion.... "euler method"
-			vel += acc * Elapsed;
-			pos += vel * Elapsed;
+			vel += acc * Engine.Elapsed;
+			pos += vel * Engine.Elapsed;
 
 		if (inf_v(acc))	msg_error("inf   CalcMove Acc");
 		if (inf_v(vel))	msg_error("inf   CalcMove Vel  2");
@@ -252,16 +252,16 @@ void Object::DoPhysics()
 			QuaternionRotationV( q, ang );
 			q_w = quaternion( 0, rot );
 			q_dot = 0.5f * q_w * q;
-			q += q_dot * Elapsed;
+			q += q_dot * Engine.Elapsed;
 			ang = q.get_angles();
 
 			#ifdef _realistic_calculation_
-				vector L = theta * rot + torque_int * Elapsed;
+				vector L = theta * rot + torque_int * Engine.Elapsed;
 				UpdateTheta();
 				rot = theta_inv * L;
 			#else
 				UpdateTheta();
-				rot += theta_inv * torque_int * Elapsed;
+				rot += theta_inv * torque_int * Engine.Elapsed;
 			#endif
 		}
 	}
@@ -294,7 +294,7 @@ void Object::DoPhysics()
 		unfreeze(this);
 		on_ground=false;
 	}else if (!frozen){
-		time_till_freeze -= Elapsed;
+		time_till_freeze -= Engine.Elapsed;
 		if (time_till_freeze < 0){
 			frozen = true;
 			force_ext = torque_ext = v_0;

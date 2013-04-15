@@ -69,7 +69,6 @@ struct Tail{
 typedef void render_func();
 extern render_func *FxRenderFunc;
 
-extern int MirrorLevelMax;
 extern bool FxLightFieldsEnabled;
 
 void FxInit();

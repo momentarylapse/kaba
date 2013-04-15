@@ -59,6 +59,9 @@ void SetImmortal(SyntaxTree *ps)
 // import data from an included script file
 void SyntaxTree::AddIncludeData(Script *s)
 {
+	foreach(Script *i, Includes)
+		if (i == s)
+			return;
 	msg_db_f("AddIncludeData",5);
 	Includes.add(s);
 	SyntaxTree *ps = s->syntax;
@@ -67,13 +70,12 @@ void SyntaxTree::AddIncludeData(Script *s)
 		SetImmortal(ps);
 
 	// defines
-	for (int i=0;i<ps->Defines.num;i++)
-		Defines.add(ps->Defines[i]);
+	Defines.append(ps->Defines);
 
-	ExpressionBuffer::Line *cur_line = Exp.cur_line;
+	/*ExpressionBuffer::Line *cur_line = Exp.cur_line;
 	PreCompiler(script->JustAnalyse);
 	Exp.cur_line = cur_line;
-	Exp.cur_exp = 0;
+	Exp.cur_exp = 0;*/
 
 
 	// types
@@ -222,6 +224,10 @@ void SyntaxTree::PreCompiler(bool just_analyse)
 		Exp.cur_line = &Exp.line[i];
 		if (Exp.line[i].exp[0].name[0] == '#'){
 			HandleMacro(Exp.cur_line, i, NumIfDefs, IfDefed, just_analyse);
+		}else if (strcmp(Exp.line[i].exp[0].name, "use") == 0){
+			ParseImport();
+			Exp.line.erase(i);
+			i --;
 		}else{
 			Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 

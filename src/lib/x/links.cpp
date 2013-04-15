@@ -1199,7 +1199,7 @@ void DoLinksStep()
 //   http://wiki.michi.is-a-geek.org/index.php?cmd=show&article=Spielephysik_mit_Zwangsbedingungen
 void DoLinks(int steps)
 {
-	if (Elapsed <= 0)
+	if (Engine.Elapsed <= 0)
 		return;
 #ifdef USE_ODE
 	for (int i=0;i<Link.num;i++){
@@ -1218,7 +1218,7 @@ void DoLinks(int steps)
 			a.x = dJointGetAMotorAngle(Link[i].motor_id, 0);
 			a.y = dJointGetAMotorAngle(Link[i].motor_id, 1);
 			a.z = dJointGetAMotorAngle(Link[i].motor_id, 2);
-			v = (a - Link[i].d4) / Elapsed;
+			v = (a - Link[i].d4) / Engine.Elapsed;
 			dJointAddAMotorTorques(Link[i].motor_id,	Link[i].param_f1 - v.x * Link[i].friction,
 			    										Link[i].param_f2 - v.y * Link[i].friction,
 														                 - v.z * Link[i].friction);

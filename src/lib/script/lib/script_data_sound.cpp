@@ -21,7 +21,7 @@ extern Type *TypeFloatList;
 
 void SIAddPackageSound()
 {
-	set_cur_package("sound");
+	add_package("sound", false);
 	
 	// sound
 	add_func("SoundEmit",									TypeInt,	sound_p(&SoundEmit));

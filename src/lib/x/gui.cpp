@@ -100,7 +100,7 @@ Text *CreateText(const vector &pos, float size, const color &col, const string &
 	t->centric = false;
 	t->vertical = false;
 	t->pos = pos;
-	t->font = DefaultFont;
+	t->font = Engine.DefaultFont;
 	t->_color = col;
 	t->size = size;
 	t->text = str;
@@ -250,8 +250,7 @@ bool Text::IsMouseOver()
 {
 //	if (!enabled)
 //		return false;
-	XFontIndex = font;
-	float w = XFGetWidth(size, text);
+	float w = XFGetWidth(size, text, font);
 	float x = pos.x;
 	if (centric)
 		x-=w/2;
@@ -433,13 +432,11 @@ inline void DrawText(Text *t)
 {
 	if (!t->enabled)
 		return;
-	XFontIndex = t->font;
-	XFontZ = t->pos.z;
 	NixSetColor(t->_color);
 	if (t->vertical)
-		XFDrawVertStr(t->pos.x * MaxX, t->pos.y * MaxY, t->size * MaxY, t->text);
+		XFDrawVertStr(t->pos.x * MaxX, t->pos.y * MaxY, t->pos.z, t->size * MaxY, t->text, t->font);
 	else
-		XFDrawStr(t->pos.x * MaxX, t->pos.y * MaxY, t->size * MaxY, t->text, t->centric);
+		XFDrawStr(t->pos.x * MaxX, t->pos.y * MaxY, t->pos.z, t->size * MaxY, t->text, t->font, t->centric);
 	//NixSetZ(true, true);
 }
 
@@ -543,9 +540,6 @@ inline void DrawPicture3d(Picture3d *p)
 void Draw()
 {
 	msg_db_r("GuiDraw", 2);
-	// save old state
-	int _XFontIndex = XFontIndex;
-	float _XFontZ = XFontZ;
 
 	NixEnableLighting(false);
 
@@ -590,8 +584,6 @@ void Draw()
 	NixSetZ(true, true);
 	NixSpecularEnable(true);
 	NixSetShader(-1);
-	XFontIndex = _XFontIndex;
-	XFontZ =_XFontZ;
 
 	// groupings
 	for (int i=0;i<Groupings.num;i++)

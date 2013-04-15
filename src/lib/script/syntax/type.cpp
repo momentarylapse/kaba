@@ -3,6 +3,21 @@
 
 namespace Script{
 
+
+Type::Type()//const string &_name, int _size, SyntaxTree *_owner)
+{
+	//name = _name;
+	owner = NULL;//_owner;
+	size = 0;//_size;
+	is_array = false;
+	is_super_array = false;
+	array_length = 0;
+	is_pointer = false;
+	is_silent = false;
+	parent = NULL;
+	force_call_by_value = false;
+};
+
 bool Type::UsesCallByReference()
 {	return ((!force_call_by_value) && (!is_pointer)) || (is_array);	}
 

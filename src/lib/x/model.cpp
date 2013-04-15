@@ -1067,7 +1067,7 @@ void Model::SetBoneModel(int index, Model *sub)
 
 void Model::CalcMove()
 {
-	if (TimeScale == 0)
+	if (Engine.TimeScale == 0)
 		return;
 
 	msg_db_r("model::CalcMove",3);
@@ -1083,7 +1083,7 @@ void Model::CalcMove()
 		// "auto-animated"
 		if (num_move_operations == -1){
 			// default: just run a single animation
-			MoveTimeAdd(this, 0, Elapsed, 0, true);
+			MoveTimeAdd(this, 0, Engine.Elapsed, 0, true);
 			move_operation[0].operation = MoveOpSet;
 			move_operation[0].move = 0;
 			num_ops = 1;

@@ -24,17 +24,8 @@ struct ClassFunction{
 };
 
 struct Type{
-	Type(){
-		owner = NULL;
-		size = 0;
-		is_array = false;
-		is_super_array = false;
-		array_length = 0;
-		is_pointer = false;
-		is_silent = false;
-		parent = NULL;
-		force_call_by_value = false;
-	};
+	Type();
+	//Type(const string &name, int size, SyntaxTree *owner);
 	string name;
 	int size; // complete size of type
 	int array_length;

@@ -180,6 +180,7 @@ public:
 	Type *GetPointerType(Type *sub);
 	void TestArrayDefinition(Type **type, bool is_pointer);
 	bool GetExistence(const string &name, Function *f);
+	bool GetExistenceShared(const string &name);
 	void LinkMostImportantOperator(Array<Command*> &Operand, Array<Command*> &Operator, Array<int> &op_exp);
 	Command *LinkOperator(int op_no, Command *param1, Command *param2);
 	Command *GetOperandExtension(Command *Operand, Function *f);
@@ -252,7 +253,6 @@ public:
 	bool FlagOverwriteVariablesOffset;
 	int VariablesOffset;
 
-	int NumOwnTypes;
 	Array<Type*> Types;
 	Array<Script*> Includes;
 	Array<Define> Defines;

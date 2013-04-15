@@ -89,14 +89,21 @@ struct PartialModel{
 
 
 // game data
-extern string InitialWorldFile, SecondWorldFile, CurrentWorldFile;
-extern color BackGroundColor;
-extern Array<Model*> SkyBox;
-extern color GlobalAmbient;
-extern Fog GlobalFog;
-extern int SunLight;
-extern float SpeedOfSound;
-extern bool PhysicsEnabled, CollisionsEnabled;
+struct WorldData
+{
+	string filename;
+	color background;
+	Array<Model*> skybox;
+	color ambient;
+	Fog fog;
+	int sun;
+	float speed_of_sound;
+
+	vector gravity;
+	Array<float> var;
+};
+extern WorldData World;
+
 extern int PhysicsNumSteps, PhysicsNumLinkSteps;
 
 #ifdef _X_ALLOW_ODE_
@@ -161,9 +168,7 @@ extern int NumForceFields;
 extern GodForceField *ForceField[GOD_MAX_FORCEFIELDS];
 extern MusicField *MusicFieldCurrent;
 
-extern vector GlobalG;
 extern GodLevelData LevelData;
-extern Array<float> ScriptVar;
 
 
 extern Array<Terrain*> Terrains;

@@ -5,8 +5,6 @@
 
 namespace Script{
 
-extern Script *GlobalDummyScript;
-
 //#define ScriptDebug
 
 
@@ -137,11 +135,10 @@ SyntaxTree::SyntaxTree(Script *_script)
 	cur_func = NULL;
 	script = _script;
 
-	NumOwnTypes = 0;
-
 	// "include" default stuff
-	if (GlobalDummyScript)
-		Includes.add(GlobalDummyScript);
+	foreach(Package &p, Packages)
+		if (p.used_by_default)
+			AddIncludeData(p.script);
 }
 
 
@@ -439,6 +436,49 @@ void exlink_make_var_local(SyntaxTree *ps, Type *t, int var_no)
 	ps->GetExistenceLink.instance = NULL;
 }
 
+bool SyntaxTree::GetExistenceShared(const string &name)
+{
+	msg_db_f("GetExistenceShared", 3);
+	MultipleFunctionList.clear();
+	GetExistenceLink.type = TypeUnknown;
+	GetExistenceLink.num_params = 0;
+	GetExistenceLink.script = script;
+	GetExistenceLink.instance = NULL;
+
+	// global variables (=local variables in "RootOfAllEvil")
+	foreachi(LocalVariable &v, RootOfAllEvil.var, i)
+		if (v.name == name){
+			GetExistenceLink.type = v.type;
+			GetExistenceLink.link_nr = i;
+			GetExistenceLink.kind = KindVarGlobal;
+			return true;
+		}
+
+	// then the (self-coded) functions
+	foreachi(Function *f, Functions, i)
+		if (f->name == name){
+			GetExistenceLink.kind = KindFunction;
+			GetExistenceLink.link_nr = i;
+			GetExistenceLink.type = f->literal_return_type;
+			GetExistenceLink.num_params = f->num_params;
+			return true;
+		}
+
+	// types
+	int w = WhichType(name);
+	if (w >= 0){
+		GetExistenceLink.kind = KindType;
+		GetExistenceLink.link_nr = w;
+		return true;
+	}
+
+	// ...unknown
+	GetExistenceLink.type = TypeUnknown;
+	GetExistenceLink.kind = KindUnknown;
+	GetExistenceLink.link_nr = 0;
+	return false;
+}
+
 bool SyntaxTree::GetExistence(const string &name, Function *func)
 {
 	msg_db_f("GetExistence", 3);
@@ -458,24 +498,9 @@ bool SyntaxTree::GetExistence(const string &name, Function *func)
 		}
 	}
 
-	// then global variables (=local variables in "RootOfAllEvil")
-	foreachi(LocalVariable &v, RootOfAllEvil.var, i)
-		if (v.name == name){
-			GetExistenceLink.type = v.type;
-			GetExistenceLink.link_nr = i;
-			GetExistenceLink.kind = KindVarGlobal;
-			return true;
-		}
-
-	// then the (self-coded) functions
-	foreachi(Function *f, Functions, i)
-		if (f->name == name){
-			GetExistenceLink.kind = KindFunction;
-			GetExistenceLink.link_nr = i;
-			GetExistenceLink.type = f->literal_return_type;
-			GetExistenceLink.num_params = f->num_params;
-			return true;
-		}
+	// shared stuff (global variables, functions)
+	if (GetExistenceShared(name))
+		return true;
 
 	// then the compiler functions
 	int w = WhichCompilerFunction(name);
@@ -495,19 +520,9 @@ bool SyntaxTree::GetExistence(const string &name, Function *func)
 		return true;
 	}
 
-	// types
-	w = WhichType(name);
-	if (w >= 0){
-		GetExistenceLink.kind = KindType;
-		GetExistenceLink.link_nr = w;
-		return true;
-	}
-
 	// in include files (only global)...
 	foreach(Script *i, Includes)
-		if (i->syntax->GetExistence(name, NULL)){
-			if (i->syntax->GetExistenceLink.script != i) // nicht rekursiv!!!
-				continue;
+		if (i->syntax->GetExistenceShared(name)){
 			memcpy(&GetExistenceLink, &(i->syntax->GetExistenceLink), sizeof(Command));
 			GetExistenceLink.script = i;
 			//msg_error(string2("\"%s\" in Include gefunden!  %s", name, GetExistenceLink.Type->Name));
@@ -530,7 +545,7 @@ void SyntaxTree::CommandSetCompilerFunction(int CF, Command *Com)
 // a function the compiler knows
 	Com->kind = KindCompilerFunction;
 	Com->link_nr = CF;
-	Com->script = GlobalDummyScript;
+	Com->script = Packages[0].script;
 	Com->instance = NULL;
 
 	Com->num_params = PreCommands[CF].param.num;
@@ -542,7 +557,7 @@ void SyntaxTree::CommandSetCompilerFunction(int CF, Command *Com)
 }
 
 // expression naming a type
-Type *SyntaxTree::GetType(const string &name,bool force)
+Type *SyntaxTree::GetType(const string &name, bool force)
 {
 	Type *type = NULL;
 	for (int i=0;i<Types.num;i++)
@@ -580,7 +595,6 @@ void SyntaxTree::AddType(Type **type)
 	so("AddType: " + t->name);
 	(*type) = t;
 	Types.add(t);
-	NumOwnTypes ++;
 
 	if (t->is_super_array)
 		script_make_super_array(t, this);
@@ -1019,31 +1033,24 @@ SyntaxTree::~SyntaxTree()
 	Exp.clear();
 
 	// delete all types created by this script
-	for (int i=Types.num-NumOwnTypes;i<Types.num;i++)
-		if (Types[i]->owner == this) // redundant...
-			delete(Types[i]);
+	foreach(Type *t, Types)
+		delete(t);
 
-	
-	msg_db_m("asm", 8);
 	if (AsmMetaInfo)
 		delete(AsmMetaInfo);
 	
-	msg_db_m("const", 8);
 	foreach(Constant &c, Constants)
 		if (c.owner == this)
 			delete[](c.data);
 
+	foreach(Command *c, Commands)
+		delete(c);
+
+	foreach(Block *b, Blocks)
+		delete(b);
 	
-	msg_db_m("cmd", 8);
-	for (int i=0;i<Commands.num;i++)
-		delete(Commands[i]);
-
-	msg_db_m("rest", 8);
-
-	for (int i=0;i<Blocks.num;i++)
-		delete(Blocks[i]);
-	for (int i=0;i<Functions.num;i++)
-		delete(Functions[i]);
+	foreach(Function *f, Functions)
+		delete(f);
 }
 
 void SyntaxTree::ShowCommand(Command *c)

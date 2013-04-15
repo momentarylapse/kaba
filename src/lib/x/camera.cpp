@@ -335,18 +335,18 @@ void CameraCalcMove()
 		// script-controlled camera animation
 			v->auto_over = 0;
 			if (v->real_time)
-				v->flight_time_el += ElapsedRT;
+				v->flight_time_el += Engine.ElapsedRT;
 			else
-				v->flight_time_el += Elapsed;
+				v->flight_time_el += Engine.Elapsed;
 			if (v->flight_time_el >= v->flight_time){
 				//v->Pos=v->Pos1;
 				//v->Vel=v->Vel1;
 				if (v->real_time){
 					v->vel_rt = v->vel_1;
-					v->vel = v->vel_rt / TimeScale;
+					v->vel = v->vel_rt / Engine.TimeScale;
 				}else{
 					v->vel = v->vel_1;
-					v->vel_rt = v->vel * TimeScale;
+					v->vel_rt = v->vel * Engine.TimeScale;
 				}
 				v->ang = v->ang_1;
 				if (v->cam_point_nr >= 0){
@@ -365,10 +365,10 @@ void CameraCalcMove()
 				v->pos = v->a_pos*t3 + v->b_pos*t2 + v->vel_0*t + v->pos_0;
 				if (v->real_time){
 					v->vel_rt = v->vel_0 + 3*v->a_pos*t2 + 2*v->b_pos*t;
-					v->vel = v->vel_rt / TimeScale;
+					v->vel = v->vel_rt / Engine.TimeScale;
 				}else{
 					v->vel = v->vel_0 + 3*v->a_pos*t2 + 2*v->b_pos*t;
-					v->vel_rt = v->vel*TimeScale;
+					v->vel_rt = v->vel * Engine.TimeScale;
 				}
 				// linear angular interpolation
 				//View[i]->Ang=VecAngInterpolate(    ...View[i]->Ang0 + View[i]->Rot*t;
@@ -377,11 +377,11 @@ void CameraCalcMove()
 			}
 		}else{
 
-			float elapsed=Elapsed;
+			float elapsed = Engine.Elapsed;
 			if (elapsed==0)
 				elapsed=0.000001f;
-			v->vel = (v->pos - v->last_pos)/elapsed;
-			v->vel_rt = (v->pos - v->last_pos)/ElapsedRT;
+			v->vel = (v->pos - v->last_pos) / elapsed;
+			v->vel_rt = (v->pos - v->last_pos) / Engine.ElapsedRT;
 		}
 		if (v->jump_to_pos)
 			v->vel = v->vel_rt = v_0;

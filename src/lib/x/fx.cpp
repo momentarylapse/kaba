@@ -79,8 +79,6 @@ static Array<sCubeMap> CubeMap;
 static int NumTails;
 static Tail *Tails[FX_MAX_TAILS];
 
-int MirrorLevelMax=1;
-
 vector CamDir;
 
 int ShadowVB[2];
@@ -731,7 +729,7 @@ vector SunDir = e_y;
 
 void FxAddShadow(Model *m, int detail)
 {
-	if (ShadowLevel < 1)
+	if (Engine.ShadowLevel < 1)
 		return;
 	if (Shadow.num >= FX_MAX_SHADOWS)
 		return;
@@ -877,7 +875,7 @@ void FxDrawShadows()
 		NixSetStencil(StencilMaskNotEqual, 0);
 		NixSetAlpha(AlphaMaterial);
 
-		NixSetColor(ShadowColor);
+		NixSetColor(Engine.ShadowColor);
 		NixDraw2D(r_id, NixTargetRect, 0);
 
 		NixSetStencil(StencilNone);
@@ -1021,7 +1019,7 @@ void FxCalcMove()
 	
 			// script callback
 			if (fx->func){
-				fx->elapsed+=Elapsed;
+				fx->elapsed += Engine.Elapsed;
 				if (fx->func_delta_t <= 0){
 					fx->func(fx);
 					fx->elapsed=0;
@@ -1033,9 +1031,9 @@ void FxCalcMove()
 			}
 	
 			// general behaviour
-			fx->pos += fx->vel * Elapsed;
+			fx->pos += fx->vel * Engine.Elapsed;
 			if (fx->suicidal){
-				fx->time_to_live -= Elapsed;
+				fx->time_to_live -= Engine.Elapsed;
 				if (fx->time_to_live < 0)
 					FxDelete(fx);
 			}
@@ -1047,15 +1045,15 @@ void FxCalcMove()
 	foreach(Particle *p, Particles){
 		if (p->used){
 			if (p->func){
-				p->elapsed += Elapsed;
+				p->elapsed += Engine.Elapsed;
 				if (p->elapsed >= p->func_delta_t){
 					p->func(p);
 					p->elapsed = 0;
 				}
 			}
-			p->pos += p->vel * Elapsed;
+			p->pos += p->vel * Engine.Elapsed;
 			if (p->suicidal){
-				p->time_to_live -= Elapsed;
+				p->time_to_live -= Engine.Elapsed;
 				if (p->time_to_live<0)
 					FxParticleDelete(p);
 			}
@@ -1067,15 +1065,15 @@ void FxCalcMove()
 	foreach(Particle *p, Beams){
 		if (p->used){
 			if (p->func){
-				p->elapsed += Elapsed;
+				p->elapsed += Engine.Elapsed;
 				if (p->elapsed >= p->func_delta_t){
 					p->func(p);
 					p->elapsed = 0;
 				}
 			}
-			p->pos += p->vel * Elapsed;
+			p->pos += p->vel * Engine.Elapsed;
 			if (p->suicidal){
-				p->time_to_live -= Elapsed;
+				p->time_to_live -= Engine.Elapsed;
 				if (p->time_to_live<0)
 					FxParticleDelete(p);
 			}

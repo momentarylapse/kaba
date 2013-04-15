@@ -30,8 +30,6 @@ string DataVersion = "0.10.99.0";
 
 CompilerConfiguration config;
 
-Script *GlobalDummyScript = NULL;
-
 struct ExternalLinkData
 {
 	string name;
@@ -106,64 +104,67 @@ Type *TypeImage;
 
 
 Array<Package> Packages;
-Package *cur_package = NULL;
-int cur_package_index = -1;
+Script *cur_package_script = NULL;
+int cur_package_index;
 
 
-void set_cur_package(const string &name)
+void add_package(const string &name, bool used_by_default)
 {
-	cur_package_index = Packages.num;
 	Package p;
 	p.name = name;
+	p.used_by_default = true;//used_by_default;
+	p.script = new Script;
+	p.script->Filename = name;
 	Packages.add(p);
-	cur_package = &Packages.back();
+	cur_package_script = p.script;
+	cur_package_index = Packages.num - 1;
 }
 
 Type *add_type(const string &name, int size, TypeFlag flag)
 {
 	msg_db_f("add_type", 4);
 	Type *t = new Type;
-	t->owner = GlobalDummyScript->syntax;
+	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->size = size;
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
-	GlobalDummyScript->syntax->Types.add(t);
+	cur_package_script->syntax->Types.add(t);
 	return t;
 }
 Type *add_type_p(const string &name, Type *sub_type, TypeFlag flag)
 {
 	msg_db_f("add_type_p", 4);
 	Type *t = new Type;
-	t->owner = GlobalDummyScript->syntax;
+	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->size = config.PointerSize;
 	t->is_pointer = true;
 	if ((flag & FLAG_SILENT) > 0)
 		t->is_silent = true;
 	t->parent = sub_type;
-	GlobalDummyScript->syntax->Types.add(t);
+	cur_package_script->syntax->Types.add(t);
 	return t;
 }
 Type *add_type_a(const string &name, Type *sub_type, int array_length)
 {
 	msg_db_f("add_type_a", 4);
 	Type *t = new Type;
-	t->owner = GlobalDummyScript->syntax;
+	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->parent = sub_type;
 	if (array_length < 0){
 		// super array
 		t->size = config.SuperArraySize;
 		t->is_super_array = true;
-		//script_make_super_array(t); // do it later !!!
+		script_make_super_array(t);
 	}else{
 		// standard array
 		t->size = sub_type->size * array_length;
 		t->is_array = true;
 		t->array_length = array_length;
 	}
-	GlobalDummyScript->syntax->Types.add(t);
+	cur_package_script->syntax->Types.add(t);
 	return t;
 }
 
@@ -260,7 +261,7 @@ void class_add_func(const string &name, Type *return_type, void *func)
 	msg_db_f("add_class_func", 4);
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		foreach(Type *t, GlobalDummyScript->syntax->Types)
+		foreach(Type *t, cur_package_script->syntax->Types)
 			if ((t->is_pointer) && (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -268,7 +269,7 @@ void class_add_func(const string &name, Type *return_type, void *func)
 	cur_func->_class = cur_class;
 	ClassFunction f;
 	f.name = name;
-	f.script = GlobalDummyScript;
+	f.script = cur_package_script;
 	f.nr = cmd;
 	f.return_type = return_type;
 	cur_class->function.add(f);
@@ -291,8 +292,8 @@ void add_const(const string &name, Type *type, void *value)
 		*(void**)c.data = value;
 	else
 		memcpy(c.data, value, type->size);
-	c.owner = GlobalDummyScript->syntax;
-	GlobalDummyScript->syntax->Constants.add(c);
+	c.owner = cur_package_script->syntax;
+	cur_package_script->syntax->Constants.add(c);
 }
 
 //------------------------------------------------------------------------------------------------//
@@ -302,8 +303,8 @@ void add_const(const string &name, Type *type, void *value)
 
 void add_ext_var(const string &name, Type *type, void *var)
 {
-	GlobalDummyScript->syntax->AddVar(name, type, &GlobalDummyScript->syntax->RootOfAllEvil);
-	GlobalDummyScript->g_var.add((char*)var);
+	cur_package_script->syntax->AddVar(name, type, &cur_package_script->syntax->RootOfAllEvil);
+	cur_package_script->g_var.add((char*)var);
 };
 
 //------------------------------------------------------------------------------------------------//
@@ -336,12 +337,12 @@ int add_func(const string &name, Type *return_type, void *func, bool is_class)
 	f->literal_return_type = return_type;
 	f->num_params = 0;
 	f->_class = NULL;
-	GlobalDummyScript->syntax->Functions.add(f);
-	GlobalDummyScript->func.add((void (*)())func);
+	cur_package_script->syntax->Functions.add(f);
+	cur_package_script->func.add((void (*)())func);
 	cur_cmd = NULL;
 	cur_func = f;
 	cur_class_func = NULL;
-	return GlobalDummyScript->syntax->Functions.num - 1;
+	return cur_package_script->syntax->Functions.num - 1;
 }
 
 int add_compiler_func(const string &name, Type *return_type, int index)
@@ -569,15 +570,15 @@ void add_type_cast(int penalty, Type *source, Type *dest, const string &cmd, voi
 		if (PreCommands[i].name == cmd){
 			c.kind = KindCompilerFunction;
 			c.func_no = i;
-			c.script = GlobalDummyScript;
+			c.script = cur_package_script;
 			break;
 		}
 	if (c.func_no < 0)
-	for (int i=0;i<GlobalDummyScript->syntax->Functions.num;i++)
-		if (GlobalDummyScript->syntax->Functions[i]->name == cmd){
+	for (int i=0;i<cur_package_script->syntax->Functions.num;i++)
+		if (cur_package_script->syntax->Functions[i]->name == cmd){
 			c.kind = KindFunction;
 			c.func_no = i;
-			c.script = GlobalDummyScript;
+			c.script = cur_package_script;
 			break;
 		}
 	if (c.func_no < 0){
@@ -644,7 +645,7 @@ void SIAddPackageBase()
 {
 	msg_db_f("SIAddPackageBase", 3);
 
-	set_cur_package("base");
+	add_package("base", true);
 
 	// internal
 	TypeUnknown			= add_type  ("-unknown-",	0); // should not appear anywhere....or else we're screwed up!
@@ -955,17 +956,6 @@ void SIAddOperators()
 	add_operator(OperatorSubtract,		TypeVector,		TypeVoid,		TypeVector);
 }
 
-void SIAddSuperArrays()
-{
-	msg_db_f("SIAddSuperArrays", 3);
-
-	foreach(Type *t, GlobalDummyScript->syntax->Types)
-		if (t->is_super_array){
-			//msg_error(string("super array:  ", t->name));
-			script_make_super_array(t);
-		}
-}
-
 void SIAddCommands()
 {
 	msg_db_f("SIAddCommands", 3);
@@ -1070,8 +1060,6 @@ void Init(int instruction_set, int abi)
 	config.CompileSilently = false;
 	config.ShowCompilerStats = true;
 
-	GlobalDummyScript = new Script;
-
 	SIAddPackageBase();
 	SIAddBasicCommands();
 
@@ -1089,13 +1077,10 @@ void Init(int instruction_set, int abi)
 	SIAddPackageX();
 
 	cur_package_index = 0;
-	cur_package = &Packages[0];
+	cur_package_script = Packages[0].script;
 	SIAddCommands();
 	
 	SIAddOperators();
-	SIAddSuperArrays();
-
-
 
 
 

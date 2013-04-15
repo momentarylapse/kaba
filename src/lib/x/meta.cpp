@@ -27,28 +27,14 @@
 	#include "../script/script.h"
 #endif
 
-string MetaVersion = "0.3.1.4";
+string MetaVersion = "0.3.2.0";
 
-float TimeScale=1.0f,TimeScaleLast,TimeScalePreBrake=1.0f,Elapsed,ElapsedRT;
 
-int NumRealColTests;
 
-bool FileErrorsAreCritical=false;
 
 // game configuration
-bool Debug,ShowTimings,ConsoleEnabled,WireMode;
-bool Record;
-int DetailLevel;
-float DetailFactorInv;
-int ShadowLevel,ShadowLight;
-color ShadowColor;
-bool ShadowLowerDetail;
-float FpsMax,FpsMin;
-int Multisampling = 0;
-bool NetworkEnabled,CullingEnabled,SortingEnabled,ZBufferEnabled;
-int XFontIndex, DefaultFont;
-float XFontZ;
-bool ResettingGame = false;
+
+EngineData Engine;
 
 
 
@@ -58,9 +44,6 @@ Array<void*> MetaDeleteStuffList;
 
 // game data
 string MapDir, ObjectDir, ScriptDir, MaterialDir, FontDir;
-void *MetaExitProgram,*MetaFindHosts,*MetaLoadWorld,*MetaScreenShot,*MetaLoadGameFromHost,*MetaSaveGameState,*MetaLoadGameState;
-str_float_func *MetaDrawSplashScreen;
-void *MetaObjectScriptInit;
 Model *ModelToIgnore;
 
 // models
@@ -76,7 +59,7 @@ static Array<sModelRefCopy> ModelCopy, ModelCopy2;
 static Array<Material*> MetaMaterial;
 
 // fonts
-Array<XFont*> _XFont_;
+Array<XFont*> XFonts;
 
 
 
@@ -96,23 +79,23 @@ Model *NoModel;
 void MetaInit()
 {
 	msg_db_r("Meta",1);
-	XFontIndex=0;
-	DefaultFont=0;
-	// unnessessary...
-	ModelOriginal.clear();
-	ModelCopy.clear();
-	_XFont_.clear();
+	Engine.DefaultFont = 0;
 
-	ZBufferEnabled=true;
-	CullingEnabled=false;
-	SortingEnabled=false;
-	ConsoleEnabled=false;
+	Engine.ZBufferEnabled = true;
+	Engine.CullingEnabled = false;
+	Engine.SortingEnabled = false;
+	Engine.ConsoleEnabled = false;
+	Engine.ResettingGame = false;
 
-	FpsMax=60;
-	FpsMin=10;
+	Engine.FpsMax = 60;
+	Engine.FpsMin = 10;
 
-	DetailLevel=100;
-	DetailFactorInv=1.0f;
+	Engine.DetailLevel = 100;
+	Engine.DetailFactorInv = 1.0f;
+	Engine.MirrorLevelMax = 1;
+	
+	Engine.TimeScale = 1.0f;
+	Engine.FileErrorsAreCritical = false;
 
 #ifdef _X_ALLOW_MODEL_
 	// create the default material's default values
@@ -186,13 +169,11 @@ void MetaReset()
 
 	MetaDeleteStuffList.clear();
 
-	ModelToIgnore=NULL;
-	DefaultFont=0;
-	XFontZ=0;
-	XFontIndex=0;
-	ShadowLight=0;
-	ShadowLowerDetail=false;
-	ShadowColor=color(0.5f,0,0,0);
+	ModelToIgnore = NULL;
+	Engine.DefaultFont = 0;
+	Engine.ShadowLight = 0;
+	Engine.ShadowLowerDetail = false;
+	Engine.ShadowColor = color(0.5f, 0, 0, 0);
 	msg_db_l(1);
 }
 
@@ -221,7 +202,7 @@ void MetaCalcMove()
 #endif*/
 	 msg_todo("MetaCalcMove...");
 	
-	DetailFactorInv=100.0f/(float)DetailLevel;
+	Engine.DetailFactorInv = 100.0f/(float)Engine.DetailLevel;
 }
 
 inline bool EqualChars(char a,char b)
@@ -509,7 +490,7 @@ Material *MetaLoadMaterial(const string &filename, bool as_default)
 	}
 	CFile *f = OpenFile(MaterialDir + filename + ".material");
 	if (!f)
-		return FileErrorsAreCritical ? NULL : MetaMaterial[0];
+		return Engine.FileErrorsAreCritical ? NULL : MetaMaterial[0];
 	Material *m = new Material;
 
 	int ffv=f->ReadFileFormatVersion();
@@ -650,7 +631,7 @@ int _cdecl MetaLoadFont(const string &filename)
 	if (filename.num == 0)
 		return 0;
 
-	foreachi(XFont *ff, _XFont_, i)
+	foreachi(XFont *ff, XFonts, i)
 		if (ff->filename  == filename.sys_filename())
 			return i;
 	CFile *f = OpenFile(FontDir + filename + ".xfont");
@@ -707,19 +688,19 @@ int _cdecl MetaLoadFont(const string &filename)
 		for (int i=0;i<256;i++)
 			if (font->table[i] < 0)
 				font->table[i] = font->unknown_glyph_no;*/
-		_XFont_.add(font);
+		XFonts.add(font);
 	}else{
 		msg_error(format("wrong file format: %d (expected: 2)",ffv));
 	}
 	FileClose(f);
 
-	return _XFont_.num-1;
+	return XFonts.num-1;
 }
 
 // retrieve the width of a given text
-float _cdecl XFGetWidth(float height,const string &str)
+float _cdecl XFGetWidth(float height, const string &str, int font)
 {
-	XFont *f = _XFont_[XFontIndex];
+	XFont *f = XFonts[font];
 	if (!f)
 		return 0;
 	float w = 0;
@@ -733,14 +714,14 @@ float _cdecl XFGetWidth(float height,const string &str)
 }
 
 // display a string with our font (values relative to screen)
-float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centric)
+float _cdecl XFDrawStr(float x, float y, float z, float height, const string &str, int font, bool centric)
 {
-	XFont *f = _XFont_[XFontIndex];
+	XFont *f = XFonts[font];
 	if (!f)
 		return 0;
 	msg_db_r("XFDrawStr",10);
 	if (centric)
-		x-=XFGetWidth(height,str)/2;
+		x -= XFGetWidth(height, str, font) / 2;
 	NixSetAlpha(AlphaSourceAlpha,AlphaSourceInvAlpha);
 		//NixSetAlpha(AlphaMaterial);
 	NixSetTexture(f->texture);
@@ -763,7 +744,7 @@ float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centr
 		d.x2=(x+w+f->glyph[n].dx2     *xf);
 		d.y1=(y             );
 		d.y2=(y+f->height*yf);
-		NixDraw2D(f->glyph[n].src, d, XFontZ);
+		NixDraw2D(f->glyph[n].src, d, z);
 		w += f->glyph[n].dx * xf;
 	}
 	NixSetAlpha(AlphaNone);
@@ -772,9 +753,9 @@ float _cdecl XFDrawStr(float x,float y,float height,const string &str,bool centr
 }
 
 // vertically display a text 
-float _cdecl XFDrawVertStr(float x,float y,float height,const string &str)
+float _cdecl XFDrawVertStr(float x, float y, float z, float height, const string &str, int font)
 {
-	XFont *f = _XFont_[XFontIndex];
+	XFont *f = XFonts[font];
 	if (!f)
 		return 0;
 	msg_db_r("XFDrawVertStr",10);
@@ -795,7 +776,7 @@ float _cdecl XFDrawVertStr(float x,float y,float height,const string &str)
 		d.x2=(x+f->glyph[n].dx2     *xf);
 		d.y1=(y             );
 		d.y2=(y+f->height*yf);
-		NixDraw2D(f->glyph[n].src, d, XFontZ);
+		NixDraw2D(f->glyph[n].src, d, z);
 		y+=yf*0.8f;
 	}
 	NixSetAlpha(AlphaNone);

@@ -314,7 +314,7 @@ void SIAddPackageMath()
 {
 	msg_db_f("SIAddPackageMath", 3);
 
-	set_cur_package("math");
+	add_package("math", false);
 
 	// types
 	TypeComplex		= add_type  ("complex",		sizeof(float) * 2);

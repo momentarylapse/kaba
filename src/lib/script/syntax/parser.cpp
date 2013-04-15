@@ -1215,7 +1215,6 @@ void SyntaxTree::TestArrayDefinition(Type **type, bool is_pointer)
 		(*type) = GetPointerType((*type));
 	}
 	if (Exp.cur == "["){
-		Type nt;
 		int array_size;
 		string or_name = (*type)->name;
 		int or_name_length = or_name.num;
@@ -1284,7 +1283,12 @@ void SyntaxTree::ParseImport()
 		msg_left();
 		AddIncludeData(include);
 	}else{
-		DoError("can't import packages ,,,yet");
+		foreach(Package &p, Packages)
+			if (p.name == name){
+				AddIncludeData(p.script);
+				return;
+			}
+		DoError("unknown package: " + name);
 	}
 }
 
@@ -1692,11 +1696,11 @@ void SyntaxTree::Parser()
 		}
 
 
-		if ((Exp.cur == "import") || (Exp.cur == "use")){
+		/*if ((Exp.cur == "import") || (Exp.cur == "use")){
 			ParseImport();
 
 		// enum
-		}else if (Exp.cur == "enum"){
+		}else*/ if (Exp.cur == "enum"){
 			ParseEnum();
 
 		// class
