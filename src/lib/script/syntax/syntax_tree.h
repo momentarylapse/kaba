@@ -26,7 +26,6 @@ struct Define
 // for any type of constant used in the script
 struct Constant
 {
-	SyntaxTree *owner;
 	string name;
 	char *data;
 	Type *type;
@@ -83,7 +82,7 @@ struct Block
 	Array<Command*> command; // ID of command in global command array
 };
 
-struct LocalVariable
+struct Variable
 {
 	Type *type; // for creating instances
 	string name;
@@ -100,7 +99,7 @@ struct Function
 	// block of code
 	Block *block;
 	// local variables
-	Array<LocalVariable> var;
+	Array<Variable> var;
 	Type *literal_param_type[SCRIPT_MAX_PARAMS];
 	Type *_class;
 	Type *return_type;
@@ -187,7 +186,7 @@ public:
 	Command *GetOperandExtensionElement(Command *Operand, Function *f);
 	Command *GetOperandExtensionArray(Command *Operand, Function *f);
 	Command *GetCommand(Function *f);
-	void GetCompleteCommand(Block *block, Function *f);
+	void ParseCompleteCommand(Block *block, Function *f);
 	Command *GetOperand(Function *f);
 	Command *GetPrimitiveOperator(Function *f);
 	void FindFunctionParameters(int &np, Type **WantedType, Function *f, Command *cmd);
@@ -195,7 +194,14 @@ public:
 	void GetFunctionCall(const string &f_name, Command *Operand, Function *f);
 	bool GetSpecialFunctionCall(const string &f_name, Command *Operand, Function *f);
 	void CheckParamLink(Command *link, Type *type, const string &f_name = "", int param_no = -1);
-	void GetSpecialCommand(Block *block, Function *f);
+	void ParseSpecialCommand(Block *block, Function *f);
+	void ParseSpecialCommandFor(Block *block, Function *f);
+	void ParseSpecialCommandForall(Block *block, Function *f);
+	void ParseSpecialCommandWhile(Block *block, Function *f);
+	void ParseSpecialCommandBreak(Block *block, Function *f);
+	void ParseSpecialCommandContinue(Block *block, Function *f);
+	//void ParseSpecialCommandReturn(Block *block, Function *f);
+	void ParseSpecialCommandIf(Block *block, Function *f);
 
 	void CreateAsmMetaInfo();
 
@@ -237,8 +243,6 @@ public:
 
 // data
 
-	string Buffer;
-	int BufferLength, BufferPos;
 	ExpressionBuffer Exp;
 	Command GetExistenceLink;
 

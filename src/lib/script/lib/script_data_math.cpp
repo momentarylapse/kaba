@@ -905,7 +905,7 @@ void SIAddPackageMath()
 		func_add_param("max",	TypeInt);
 	add_func("rand",			TypeFloat,		(void*)&randf);
 		func_add_param("max",	TypeFloat);
-	add_func("rand_seed",		TypeInt,		(void*)&srand);
+	add_func("rand_seed",		TypeVoid,		(void*)&srand);
 		func_add_param("seed",	TypeInt);
 
 	

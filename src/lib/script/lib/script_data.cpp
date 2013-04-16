@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.10.99.0";
+string DataVersion = "0.11.0.0";
 
 CompilerConfiguration config;
 
@@ -292,7 +292,6 @@ void add_const(const string &name, Type *type, void *value)
 		*(void**)c.data = value;
 	else
 		memcpy(c.data, value, type->size);
-	c.owner = cur_package_script->syntax;
 	cur_package_script->syntax->Constants.add(c);
 }
 
@@ -368,7 +367,7 @@ void func_add_param(const string &name, Type *type)
 		p.type = type;
 		cur_cmd->param.add(p);
 	}else if (cur_func){
-		LocalVariable v;
+		Variable v;
 		v.name = name;
 		v.type = type;
 		cur_func->var.add(v);

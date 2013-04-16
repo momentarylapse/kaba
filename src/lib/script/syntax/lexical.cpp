@@ -77,10 +77,6 @@ void ExpressionBuffer::clear()
 {
 	cur_line = NULL;
 	line.clear();
-	if (buffer){
-		delete[]buffer;
-		buffer = NULL;
-	}
 	cur_line = &temp_line;
 	cur_exp = -1;
 	comment_level = 0;
@@ -96,9 +92,7 @@ void ExpressionBuffer::add_line()
 void ExpressionBuffer::insert(const char *_name, int pos, int index)
 {
 	Expression e;
-	e.name = buf_cur;
-	buf_cur += strlen(_name) + 1;
-	strcpy(e.name, _name);
+	e.name = _name;
 	e.pos = pos;
 	if (index < 0)
 		// at the end...
@@ -152,16 +146,14 @@ int GetKind(char c)
 	return ExpKindLetter;
 }
 
-void ExpressionBuffer::Analyse(SyntaxTree *ps, const char *source)
+void ExpressionBuffer::Analyse(SyntaxTree *ps, const string &source)
 {
 	msg_db_f("Analyse", 4);
 	syntax = ps;
 	clear();
-	buffer = new char[strlen(source)*2];
-	buf_cur = buffer;
 
 	// scan all lines
-	const char *buf = source;
+	const char *buf = (char*)source.data;
 	for (int i=0;true;i++){
 		//exp_add_line(&Exp);
 		cur_line->physical_line = i;
@@ -172,15 +164,11 @@ void ExpressionBuffer::Analyse(SyntaxTree *ps, const char *source)
 
 	// glue together lines ending with a "\" or ","
 	for (int i=0;i<(int)line.num-1;i++){
-		if ((strcmp(line[i].exp.back().name, "\\") == 0) || (strcmp(line[i].exp.back().name, ",") == 0)){
-			int d = (strcmp(line[i].exp.back().name, "\\") == 0) ? 1 : 0;
+		if ((line[i].exp.back().name == "\\") || (line[i].exp.back().name == ",")){
 			// glue... (without \\ but with ,)
-			for (int j=d;j<line[i + 1].exp.num;j++){
-				ExpressionBuffer::Expression e;
-				e.name = line[i + 1].exp[j].name;
-				e.pos = 0; // line[i + 1].exp[j].name;
-				line[i].exp.add(e);
-			}
+			if (line[i].exp.back().name == "\\")
+				line[i].exp.pop();
+			line[i].exp.append(line[i + 1].exp);
 			// remove line
 			line.erase(i + 1);
 			i --;

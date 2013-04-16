@@ -420,7 +420,7 @@ void SyntaxTree::CheckParamLink(Command *link, Type *type, const string &f_name,
 			// no need to do anything...
 		}else{
 			Exp.rewind();
-			DoError(format("(c) parameter %d for function \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
+			DoError(format("(c) parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
 		}
 
 	// normal type cast
@@ -434,7 +434,8 @@ void SyntaxTree::CheckParamLink(Command *link, Type *type, const string &f_name,
 			so("TypeCast");
 			apply_type_cast(this, tc, link);
 		}else{
-			DoError(format("(a) parameter %d for function \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
+			Exp.rewind();
+			DoError(format("parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
 		}
 	}
 }
@@ -880,244 +881,285 @@ Command *SyntaxTree::GetCommand(Function *f)
 	return Operand[0];
 }
 
-
-void SyntaxTree::GetSpecialCommand(Block *block, Function *f)
+void SyntaxTree::ParseSpecialCommandFor(Block *block, Function *f)
 {
-	msg_db_f("GetSpecialCommand", 4);
-
-	// special commands...
-	if (Exp.cur == "for"){
-		// variable
+	msg_db_f("ParseSpecialCommandFor", 4);
+	// variable
+	Exp.next();
+	Command *for_var;
+	// internally declared?
+	bool internally = false;
+	if ((Exp.cur == "int") || (Exp.cur == "float")){
+		Type *t = (Exp.cur == "int") ? TypeInt : TypeFloat;
+		internally = true;
 		Exp.next();
-		Command *for_var;
-		// internally declared?
-		bool internally = false;
-		if ((Exp.cur == "int") || (Exp.cur == "float")){
-			Type *t = (Exp.cur == "int") ? TypeInt : TypeFloat;
-			internally = true;
-			Exp.next();
-			int var_no = AddVar(Exp.cur, t, f);
-			exlink_make_var_local(this, t, var_no);
- 			for_var = cp_command(&GetExistenceLink);
-		}else{
-			GetExistence(Exp.cur, f);
- 			for_var = cp_command(&GetExistenceLink);
-			if ((!is_variable(for_var->kind)) || ((for_var->type != TypeInt) && (for_var->type != TypeFloat)))
-				DoError("int or float variable expected after \"for\"");
-		}
+		int var_no = AddVar(Exp.cur, t, f);
+		exlink_make_var_local(this, t, var_no);
+			for_var = cp_command(&GetExistenceLink);
+	}else{
+		GetExistence(Exp.cur, f);
+			for_var = cp_command(&GetExistenceLink);
+		if ((!is_variable(for_var->kind)) || ((for_var->type != TypeInt) && (for_var->type != TypeFloat)))
+			DoError("int or float variable expected after \"for\"");
+	}
+	Exp.next();
+
+	// first value
+	if (Exp.cur != ",")
+		DoError("\",\" expected after variable in for");
+	Exp.next();
+	Command *val0 = GetCommand(f);
+	CheckParamLink(val0, for_var->type, "for", 1);
+
+	// last value
+	if (Exp.cur != ",")
+		DoError("\",\" expected after first value in for");
+	Exp.next();
+	Command *val1 = GetCommand(f);
+	CheckParamLink(val1, for_var->type, "for", 2);
+
+	Command *val_step = NULL;
+	if (Exp.cur == ","){
 		Exp.next();
+		val_step = GetCommand(f);
+		CheckParamLink(val_step, for_var->type, "for", 2);
+	}
 
-		// first value
-		if (Exp.cur != ",")
-			DoError("\",\" expected after variable in for");
-		Exp.next();
-		Command *val0 = GetCommand(f);
-		if (val0->type != for_var->type){
-			Exp.rewind();
-			DoError(format("%s expected as first value of for", for_var->type->name.c_str()));
-		}
+	// implement
+	// for_var = val0
+	Command *cmd_assign = add_command_operator(for_var, val0, OperatorIntAssign);
+	block->command.add(cmd_assign);
 
-		// last value
-		if (Exp.cur != ",")
-			DoError("\",\" expected after variable in for");
-		Exp.next();
-		Command *val1 = GetCommand(f);
-		if (val1->type != for_var->type){
-			Exp.rewind();
-			DoError(format("%s expected as last value of for", for_var->type->name.c_str()));
-		}
+	// while(for_var < val1)
+	Command *cmd_cmp = add_command_operator(for_var, val1, OperatorIntSmaller);
 
-		// implement
-		// for_var = val0
-		Command *cmd_assign = add_command_operator(for_var, val0, OperatorIntAssign);
-		block->command.add(cmd_assign);
+	Command *cmd_while = add_command_compilerfunc(CommandFor);
+	cmd_while->param[0] = cmd_cmp;
+	block->command.add(cmd_while);
+	ExpectNewline();
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	int loop_block_no = Blocks.num; // should get created...soon
+	ParseCompleteCommand(block, f);
 
-		// while(for_var < val1)
-		Command *cmd_cmp = add_command_operator(for_var, val1, OperatorIntSmaller);
-
-		Command *cmd_while = add_command_compilerfunc(CommandFor);
-		cmd_while->param[0] = cmd_cmp;
-		block->command.add(cmd_while);
-		ExpectNewline();
-		// ...block
-		Exp.next_line();
-		ExpectIndent();
-		int loop_block_no = Blocks.num; // should get created...soon
-		GetCompleteCommand(block, f);
-
-		// ...for_var += 1
-		Command *cmd_inc;
-		if (for_var->type == TypeInt){
+	// ...for_var += 1
+	Command *cmd_inc;
+	if (for_var->type == TypeInt){
+		if (val_step)
+			cmd_inc = add_command_operator(for_var, val_step, OperatorIntAddS);
+		else
 			cmd_inc = add_command_operator(for_var, val1 /*dummy*/, OperatorIntIncrease);
-		}else{
+	}else{
+		if (!val_step){
 			int nc = AddConstant(TypeFloat);
 			*(float*)Constants[nc].data = 1.0;
-			Command *val_add = add_command_const(nc);
-			cmd_inc = add_command_operator(for_var, val_add, OperatorFloatAddS);
+			val_step = add_command_const(nc);
 		}
-		Block *loop_block = Blocks[loop_block_no];
-		loop_block->command.add(cmd_inc); // add to loop-block
+		cmd_inc = add_command_operator(for_var, val_step, OperatorFloatAddS);
+	}
+	Block *loop_block = Blocks[loop_block_no];
+	loop_block->command.add(cmd_inc); // add to loop-block
 
-		// <for_var> declared internally?
-		// -> force it out of scope...
-		if (internally)
-			f->var[for_var->link_nr].name = "-out-of-scope-";
-
-	}else if (Exp.cur == "forall"){
-		// for index
-		int var_no_index = AddVar("-for_index-", TypeInt, f);
-		exlink_make_var_local(this, TypeInt, var_no_index);
- 		Command *for_index = cp_command(&GetExistenceLink);
-
-		// variable
-		Exp.next();
-		string var_name = Exp.cur;
-		Exp.next();
-
-		// super array
-		if (Exp.cur != "in")
-			DoError("\"in\" expected after variable in forall");
-		Exp.next();
-		Command *for_array = GetOperand(f);
-		if (!for_array->type->is_super_array)
-			DoError("list expected as second parameter in \"forall\"");
-		//Exp.next();
-
-		// variable...
-		Type *var_type = for_array->type->parent;
-		int var_no = AddVar(var_name, var_type, f);
-		exlink_make_var_local(this, var_type, var_no);
- 		Command *for_var = cp_command(&GetExistenceLink);
-
-		// 0
-		int nc = AddConstant(TypeInt);
-		*(int*)Constants[nc].data = 0;
-		Command *val0 = add_command_const(nc);
-
-		// implement
-		// for_index = 0
-		Command *cmd_assign = add_command_operator(for_index, val0, OperatorIntAssign);
-		block->command.add(cmd_assign);
-
-		// array.num
-		Command *val1 = AddCommand();
-		val1->kind = KindAddressShift;
-		val1->link_nr = config.PointerSize;
-		val1->type = TypeInt;
-		val1->num_params = 1;
-		val1->param[0] = for_array;
-
-		// while(for_index < val1)
-		Command *cmd_cmp = add_command_operator(for_index, val1, OperatorIntSmaller);
-
-		Command *cmd_while = add_command_compilerfunc(CommandFor);
-		cmd_while->param[0] = cmd_cmp;
-		block->command.add(cmd_while);
-		ExpectNewline();
-		// ...block
-		Exp.next_line();
-		ExpectIndent();
-		int loop_block_no = Blocks.num; // should get created...soon
-		GetCompleteCommand(block, f);
-
-		// ...for_index += 1
-		Command *cmd_inc = add_command_operator(for_index, val1 /*dummy*/, OperatorIntIncrease);
-		Block *loop_block = Blocks[loop_block_no];
-		loop_block->command.add(cmd_inc); // add to loop-block
-
-		// &for_var
-		Command *for_var_ref = AddCommand();
-		command_make_ref(this, for_var_ref, for_var);
-
-		// &array.data[for_index]
-		Command *array_el = AddCommand();
-		array_el->kind = KindPointerAsArray;
-		array_el->num_params = 2;
-		array_el->param[0] = shift_command(for_array, false, 0, GetPointerType(var_type));
-		array_el->param[1] = for_index;
-		array_el->type = var_type;
-		Command *array_el_ref = AddCommand();
-		command_make_ref(this, array_el_ref, array_el);
-
-		// &for_var = &array[for_index]
-		Command *cmd_var_assign = add_command_operator(for_var_ref, array_el_ref, OperatorPointerAssign);
-		loop_block->command.insert(cmd_var_assign, 0);
-
-		// ref...
-		f->var[var_no].type = GetPointerType(var_type);
-		foreach(Command *c, loop_block->command)
-			conv_cbr(this, c, var_no);
-
-		// force for_var out of scope...
+	// <for_var> declared internally?
+	// -> force it out of scope...
+	if (internally)
 		f->var[for_var->link_nr].name = "-out-of-scope-";
-		f->var[for_index->link_nr].name = "-out-of-scope-";
+}
 
-	}else if (Exp.cur == "while"){
-		Exp.next();
-		Command *cmd_cmp = GetCommand(f);
-		CheckParamLink(cmd_cmp, TypeBool, "while", 0);
-		ExpectNewline();
+void SyntaxTree::ParseSpecialCommandForall(Block *block, Function *f)
+{
+	msg_db_f("ParseSpecialCommandForall", 4);
+	// for index
+	int var_no_index = AddVar("-for_index-", TypeInt, f);
+	exlink_make_var_local(this, TypeInt, var_no_index);
+		Command *for_index = cp_command(&GetExistenceLink);
 
-		Command *cmd_while = add_command_compilerfunc(CommandWhile);
-		cmd_while->param[0] = cmd_cmp;
-		block->command.add(cmd_while);
-		// ...block
-		Exp.next_line();
-		ExpectIndent();
-		GetCompleteCommand(block, f);
- 	}else if (Exp.cur == "break"){
-		Exp.next();
-		Command *cmd = add_command_compilerfunc(CommandBreak);
-		block->command.add(cmd);
-	}else if (Exp.cur == "continue"){
-		Exp.next();
-		Command *cmd = add_command_compilerfunc(CommandContinue);
-		block->command.add(cmd);
-	}else if (Exp.cur == "if"){
-		int ind = Exp.cur_line->indent;
-		Exp.next();
-		Command *cmd_cmp = GetCommand(f);
-		CheckParamLink(cmd_cmp, TypeBool, "if", 0);
-		ExpectNewline();
+	// variable
+	Exp.next();
+	string var_name = Exp.cur;
+	Exp.next();
 
-		Command *cmd_if = add_command_compilerfunc(CommandIf);
-		cmd_if->param[0] = cmd_cmp;
-		block->command.add(cmd_if);
-		// ...block
-		Exp.next_line();
-		ExpectIndent();
-		GetCompleteCommand(block, f);
-		Exp.next_line();
+	// super array
+	if (Exp.cur != "in")
+		DoError("\"in\" expected after variable in forall");
+	Exp.next();
+	Command *for_array = GetOperand(f);
+	if (!for_array->type->is_super_array)
+		DoError("list expected as second parameter in \"forall\"");
+	//Exp.next();
 
-		// else?
-		if ((!Exp.end_of_file()) && (Exp.cur == "else") && (Exp.cur_line->indent >= ind)){
-			cmd_if->link_nr = CommandIfElse;
-			Exp.next();
-			// iterative if
-			if (Exp.cur == "if"){
-				// sub-if's in a new block
-				Block *new_block = AddBlock();
-				// parse the next if
-				GetCompleteCommand(new_block, f);
-				// command for the found block
-				Command *cmd_block = AddCommand();
-				cmd_block->kind = KindBlock;
-				cmd_block->link_nr = new_block->index;
-				// ...
-				block->command.add(cmd_block);
-				return;
-			}
-			ExpectNewline();
-			// ...block
-			Exp.next_line();
-			ExpectIndent();
-			GetCompleteCommand(block, f);
-			//Exp.next_line();
-		}else{
-			Exp.cur_line --;
-			Exp.cur_exp = Exp.cur_line->exp.num - 1;
-			Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+	// variable...
+	Type *var_type = for_array->type->parent;
+	int var_no = AddVar(var_name, var_type, f);
+	exlink_make_var_local(this, var_type, var_no);
+		Command *for_var = cp_command(&GetExistenceLink);
+
+	// 0
+	int nc = AddConstant(TypeInt);
+	*(int*)Constants[nc].data = 0;
+	Command *val0 = add_command_const(nc);
+
+	// implement
+	// for_index = 0
+	Command *cmd_assign = add_command_operator(for_index, val0, OperatorIntAssign);
+	block->command.add(cmd_assign);
+
+	// array.num
+	Command *val1 = AddCommand();
+	val1->kind = KindAddressShift;
+	val1->link_nr = config.PointerSize;
+	val1->type = TypeInt;
+	val1->num_params = 1;
+	val1->param[0] = for_array;
+
+	// while(for_index < val1)
+	Command *cmd_cmp = add_command_operator(for_index, val1, OperatorIntSmaller);
+
+	Command *cmd_while = add_command_compilerfunc(CommandFor);
+	cmd_while->param[0] = cmd_cmp;
+	block->command.add(cmd_while);
+	ExpectNewline();
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	int loop_block_no = Blocks.num; // should get created...soon
+	ParseCompleteCommand(block, f);
+
+	// ...for_index += 1
+	Command *cmd_inc = add_command_operator(for_index, val1 /*dummy*/, OperatorIntIncrease);
+	Block *loop_block = Blocks[loop_block_no];
+	loop_block->command.add(cmd_inc); // add to loop-block
+
+	// &for_var
+	Command *for_var_ref = AddCommand();
+	command_make_ref(this, for_var_ref, for_var);
+
+	// &array.data[for_index]
+	Command *array_el = AddCommand();
+	array_el->kind = KindPointerAsArray;
+	array_el->num_params = 2;
+	array_el->param[0] = shift_command(for_array, false, 0, GetPointerType(var_type));
+	array_el->param[1] = for_index;
+	array_el->type = var_type;
+	Command *array_el_ref = AddCommand();
+	command_make_ref(this, array_el_ref, array_el);
+
+	// &for_var = &array[for_index]
+	Command *cmd_var_assign = add_command_operator(for_var_ref, array_el_ref, OperatorPointerAssign);
+	loop_block->command.insert(cmd_var_assign, 0);
+
+	// ref...
+	f->var[var_no].type = GetPointerType(var_type);
+	foreach(Command *c, loop_block->command)
+		conv_cbr(this, c, var_no);
+
+	// force for_var out of scope...
+	f->var[for_var->link_nr].name = "-out-of-scope-";
+	f->var[for_index->link_nr].name = "-out-of-scope-";
+}
+
+void SyntaxTree::ParseSpecialCommandWhile(Block *block, Function *f)
+{
+	msg_db_f("ParseSpecialCommandWhile", 4);
+	Exp.next();
+	Command *cmd_cmp = GetCommand(f);
+	CheckParamLink(cmd_cmp, TypeBool, "while", 0);
+	ExpectNewline();
+
+	Command *cmd_while = add_command_compilerfunc(CommandWhile);
+	cmd_while->param[0] = cmd_cmp;
+	block->command.add(cmd_while);
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	ParseCompleteCommand(block, f);
+}
+
+void SyntaxTree::ParseSpecialCommandBreak(Block *block, Function *f)
+{
+	msg_db_f("ParseSpecialCommandBreak", 4);
+	Exp.next();
+	Command *cmd = add_command_compilerfunc(CommandBreak);
+	block->command.add(cmd);
+}
+
+void SyntaxTree::ParseSpecialCommandContinue(Block *block, Function *f)
+{
+	msg_db_f("ParseSpecialCommandContinue", 4);
+	Exp.next();
+	Command *cmd = add_command_compilerfunc(CommandContinue);
+	block->command.add(cmd);
+}
+
+/*void SyntaxTree::ParseSpecialCommandReturn(Block *block, Function *f)
+{
+}*/
+
+void SyntaxTree::ParseSpecialCommandIf(Block *block, Function *f)
+{
+	msg_db_f("ParseSpecialCommandIf", 4);
+	int ind = Exp.cur_line->indent;
+	Exp.next();
+	Command *cmd_cmp = GetCommand(f);
+	CheckParamLink(cmd_cmp, TypeBool, "if", 0);
+	ExpectNewline();
+
+	Command *cmd_if = add_command_compilerfunc(CommandIf);
+	cmd_if->param[0] = cmd_cmp;
+	block->command.add(cmd_if);
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	ParseCompleteCommand(block, f);
+	Exp.next_line();
+
+	// else?
+	if ((!Exp.end_of_file()) && (Exp.cur == "else") && (Exp.cur_line->indent >= ind)){
+		cmd_if->link_nr = CommandIfElse;
+		Exp.next();
+		// iterative if
+		if (Exp.cur == "if"){
+			// sub-if's in a new block
+			Block *new_block = AddBlock();
+			// parse the next if
+			ParseCompleteCommand(new_block, f);
+			// command for the found block
+			Command *cmd_block = AddCommand();
+			cmd_block->kind = KindBlock;
+			cmd_block->link_nr = new_block->index;
+			// ...
+			block->command.add(cmd_block);
+			return;
 		}
+		ExpectNewline();
+		// ...block
+		Exp.next_line();
+		ExpectIndent();
+		ParseCompleteCommand(block, f);
+		//Exp.next_line();
+	}else{
+		Exp.cur_line --;
+		Exp.cur_exp = Exp.cur_line->exp.num - 1;
+		Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+	}
+}
+
+void SyntaxTree::ParseSpecialCommand(Block *block, Function *f)
+{
+	// special commands...
+	if (Exp.cur == "for"){
+		ParseSpecialCommandFor(block, f);
+	}else if (Exp.cur == "forall"){
+		ParseSpecialCommandForall(block, f);
+	}else if (Exp.cur == "while"){
+		ParseSpecialCommandWhile(block, f);
+ 	}else if (Exp.cur == "break"){
+		ParseSpecialCommandBreak(block, f);
+	}else if (Exp.cur == "continue"){
+		ParseSpecialCommandContinue(block, f);
+	}else if (Exp.cur == "if"){
+		ParseSpecialCommandIf(block, f);
 	}
 }
 
@@ -1126,7 +1168,7 @@ void SyntaxTree::GetSpecialCommand(Block *block, Function *f)
 }*/
 
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
-void SyntaxTree::GetCompleteCommand(Block *block, Function *f)
+void SyntaxTree::ParseCompleteCommand(Block *block, Function *f)
 {
 	msg_db_f("GetCompleteCommand", 4);
 	// cur_exp = 0!
@@ -1152,7 +1194,7 @@ void SyntaxTree::GetCompleteCommand(Block *block, Function *f)
 			if (((i > 0) && (Exp.cur_line->indent < last_indent)) || (Exp.end_of_file()))
 				break;
 
-			GetCompleteCommand(new_block, f);
+			ParseCompleteCommand(new_block, f);
 			Exp.next_line();
 		}
 		Exp.cur_line --;
@@ -1176,14 +1218,18 @@ void SyntaxTree::GetCompleteCommand(Block *block, Function *f)
 
 			// assignment?
 			if (Exp.cur == "="){
-				Exp.rewind();
+				//Exp.rewind();
+				// insert variable name because declaration might end with "[]"
+				Exp.insert(f->var.back().name.c_str(), 0, Exp.cur_exp);
+				Exp.cur = f->var.back().name;
+				// parse assignment
 				Command *c = GetCommand(f);
 				block->command.add(c);
 			}
 			if (Exp.end_of_line())
 				break;
 			if ((Exp.cur != ",") && (!Exp.end_of_line()))
-				DoError("\",\", \"=\" or newline expected after definition of local variable");
+				DoError("\",\", \"=\" or newline expected after declaration of local variable");
 			Exp.next();
 		}
 		return;
@@ -1192,7 +1238,7 @@ void SyntaxTree::GetCompleteCommand(Block *block, Function *f)
 
 	// commands (the actual code!)
 		if ((Exp.cur == "for") || (Exp.cur == "forall") || (Exp.cur == "while") || (Exp.cur == "break") || (Exp.cur == "continue") || (Exp.cur == "if")){
-			GetSpecialCommand(block, f);
+			ParseSpecialCommand(block, f);
 
 		}else{
 
@@ -1506,21 +1552,6 @@ void SyntaxTree::ParseGlobalConst(const string &name, Type *type)
 	c->name = name;
 }
 
-void CopyFuncDataToExternal(Function *f, PreCommand *c, bool is_class_func)
-{
-#if 0
-	c->is_class_function = is_class_func;
-	c->return_type = f->return_type;
-	c->param.clear();
-	for (int j=0;j<f->num_params;j++){
-		PreCommandParam p;
-		p.name = f->var[j].name;
-		p.type = f->var[j].type;
-		c->param.add(p);
-	}
-#endif
-}
-
 Type *SyntaxTree::ParseVariableDefSingle(Type *type, Function *f, bool as_param)
 {
 	msg_db_f("ParseVariableDefSingle", 6);
@@ -1659,7 +1690,7 @@ void SyntaxTree::ParseFunction(Type *class_type, bool as_extern)
 			break;
 
 		// command or local definition
-		GetCompleteCommand(f->block, f);
+		ParseCompleteCommand(f->block, f);
 	}
 	cur_func = NULL;
 
@@ -1704,7 +1735,7 @@ void SyntaxTree::Parser()
 			ParseEnum();
 
 		// class
-		}else if ((Exp.cur == "struct") || (Exp.cur == "class")){
+		}else if (Exp.cur == "class"){
 			ParseClass();
 
 		}else{
@@ -1714,7 +1745,7 @@ void SyntaxTree::Parser()
 			Exp.rewind();
 			bool is_function = false;
 			for (int j=1;j<Exp.cur_line->exp.num-1;j++)
-				if (strcmp(Exp.cur_line->exp[j].name, "(") == 0)
+				if (Exp.cur_line->exp[j].name == "(")
 				    is_function = true;
 
 			// own function?

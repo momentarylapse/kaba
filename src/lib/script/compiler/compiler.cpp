@@ -63,7 +63,7 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 
 void init_all_global_objects(SyntaxTree *ps, Function *f, Array<char*> &g_var)
 {
-	foreachi(LocalVariable &v, f->var, i){
+	foreachi(Variable &v, f->var, i){
 		ClassFunction *cf = v.type->GetConstructor();
 		if (!cf)
 			continue;
@@ -153,7 +153,7 @@ void Script::MapGlobalVariablesToMemory()
 	// global variables -> into Memory
 	so("glob.Var.");
 	g_var.resize(syntax->RootOfAllEvil.var.num);
-	foreachi(LocalVariable &v, syntax->RootOfAllEvil.var, i){
+	foreachi(Variable &v, syntax->RootOfAllEvil.var, i){
 		if (v.is_extern){
 			g_var[i] = (char*)GetExternalLink(v.name);
 			if (!g_var[i])
