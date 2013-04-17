@@ -342,9 +342,7 @@ bool SyntaxTree::GetSpecialFunctionCall(const string &f_name, Command *Operand, 
 		return true;
 	}
 
-	// sizeof
-	if ((Operand->kind == KindCompilerFunction) && (Operand->link_nr == CommandReturn))
-		DoError("return");
+	DoError("evil special function");
 
 	return false;
 }
@@ -488,11 +486,6 @@ void SyntaxTree::GetFunctionCall(const string &f_name, Command *Operand, Functio
 		np = 1;
 		FindFunctionSingleParameter(0, WantedType, f, Operand);
 	}
-
-
-	// return: parameter type by function
-	if ((Operand->kind == KindCompilerFunction) && (Operand->link_nr == CommandReturn))
-		WantedType[0] = f->literal_return_type;
 
 	// test compatibility
 	if (np != Operand->num_params){
@@ -1092,9 +1085,22 @@ void SyntaxTree::ParseSpecialCommandContinue(Block *block, Function *f)
 	block->command.add(cmd);
 }
 
-/*void SyntaxTree::ParseSpecialCommandReturn(Block *block, Function *f)
+void SyntaxTree::ParseSpecialCommandReturn(Block *block, Function *f)
 {
-}*/
+	msg_db_f("ParseSpecialCommandReturn", 4);
+	Exp.next();
+	Command *cmd = add_command_compilerfunc(CommandReturn);
+	block->command.add(cmd);
+	if (f->return_type == TypeVoid){
+		cmd->num_params = 0;
+	}else{
+		Command *cmd_value = GetCommand(f);
+		CheckParamLink(cmd_value, f->return_type, "return", 0);
+		cmd->num_params = 1;
+		cmd->param[0] = cmd_value;
+	}
+	ExpectNewline();
+}
 
 void SyntaxTree::ParseSpecialCommandIf(Block *block, Function *f)
 {
@@ -1158,6 +1164,8 @@ void SyntaxTree::ParseSpecialCommand(Block *block, Function *f)
 		ParseSpecialCommandBreak(block, f);
 	}else if (Exp.cur == "continue"){
 		ParseSpecialCommandContinue(block, f);
+	}else if (Exp.cur == "return"){
+		ParseSpecialCommandReturn(block, f);
 	}else if (Exp.cur == "if"){
 		ParseSpecialCommandIf(block, f);
 	}
@@ -1237,7 +1245,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block, Function *f)
 
 
 	// commands (the actual code!)
-		if ((Exp.cur == "for") || (Exp.cur == "forall") || (Exp.cur == "while") || (Exp.cur == "break") || (Exp.cur == "continue") || (Exp.cur == "if")){
+		if ((Exp.cur == "for") || (Exp.cur == "forall") || (Exp.cur == "while") || (Exp.cur == "break") || (Exp.cur == "continue") || (Exp.cur == "return") || (Exp.cur == "if")){
 			ParseSpecialCommand(block, f);
 
 		}else{

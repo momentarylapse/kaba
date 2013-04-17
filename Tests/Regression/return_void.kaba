@@ -1,0 +1,8 @@
+void f()
+	print "hallo"
+	return
+	print "test"
+
+void main()
+	f()
+	print "ok"

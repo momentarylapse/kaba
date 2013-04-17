@@ -1,0 +1,34 @@
+//#show
+
+class T
+	int i
+	void __init__()
+		self.i = 13
+		print "init"
+		print self.i
+	void __delete__()
+		print "delete"
+		print self.i
+	void __assign__(T other)
+		print "assign"
+		print self.i
+		print other.i
+		self.i = other.i
+/*int f()
+	T t
+	return 2
+	return 1
+
+void main()
+	int a = 7
+	print a
+	print f()create_con
+	print a*/
+
+T f()
+	//print "f"
+	T r
+	return r
+
+void main()
+	f()

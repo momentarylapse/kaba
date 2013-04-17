@@ -796,7 +796,7 @@ void SIAddBasicCommands()
 
 
 // "intern" functions
-	add_compiler_func("return",		TypeVoid,	CommandReturn);
+	add_compiler_func("-return-",		TypeVoid,	CommandReturn);
 		func_add_param("return_value",	TypeVoid); // return: ParamType will be defined by the parser!
 	add_compiler_func("-if-",		TypeVoid,	CommandIf);
 		func_add_param("b",	TypeBool);

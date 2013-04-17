@@ -200,7 +200,7 @@ public:
 	void ParseSpecialCommandWhile(Block *block, Function *f);
 	void ParseSpecialCommandBreak(Block *block, Function *f);
 	void ParseSpecialCommandContinue(Block *block, Function *f);
-	//void ParseSpecialCommandReturn(Block *block, Function *f);
+	void ParseSpecialCommandReturn(Block *block, Function *f);
 	void ParseSpecialCommandIf(Block *block, Function *f);
 
 	void CreateAsmMetaInfo();
