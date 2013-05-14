@@ -47,7 +47,7 @@
 #include "../base/base.h"
 #include "../file/file.h"
 #include "../hui/hui.h"
-#include "../types/types.h"
+#include "../math/math.h"
 
 
 typedef void callback_function();

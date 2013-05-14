@@ -9,7 +9,7 @@
 
 // TODO: cache small buffers...
 
- #include "../types/types.h"
+ #include "../math/math.h"
  #include "sound.h"
 
 #ifdef SOUND_ALLOW_OPENAL

@@ -556,16 +556,22 @@ void SyntaxTree::CommandSetCompilerFunction(int CF, Command *Com)
 }
 
 // expression naming a type
-Type *SyntaxTree::GetType(const string &name, bool force)
+Type *SyntaxTree::FindType(const string &name)
 {
-	Type *type = NULL;
 	for (int i=0;i<Types.num;i++)
 		if (name == Types[i]->name)
-			type = Types[i];
+			return Types[i];
 	foreach(Script *inc, Includes)
 		for (int i=0;i<inc->syntax->Types.num;i++)
 			if (name == inc->syntax->Types[i]->name)
-				type = inc->syntax->Types[i];
+				return inc->syntax->Types[i];
+	return NULL;
+}
+
+// expression naming a type
+Type *SyntaxTree::GetType(const string &name, bool force)
+{
+	Type *type = FindType(name);
 	if ((force) && (!type))
 		DoError("unknown type");
 	if (type)

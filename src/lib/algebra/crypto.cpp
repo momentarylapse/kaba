@@ -8,7 +8,7 @@
 #include "../base/base.h"
 #include "vli.h"
 #include "crypto.h"
-#include "../types/types.h"
+#include "../math/math.h"
 
 int vli_count_bits(vli &v)
 {

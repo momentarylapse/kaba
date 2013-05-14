@@ -40,6 +40,7 @@ struct Type{
 	bool UsesCallByReference();
 	bool UsesReturnByMemory();
 	bool is_simple_class();
+	bool IsDerivedFrom(Type *root) const;
 	int GetFunc(const string &name);
 	ClassFunction *GetConstructor();
 	ClassFunction *GetDestructor();

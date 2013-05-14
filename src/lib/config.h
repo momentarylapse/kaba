@@ -67,28 +67,3 @@
 
 
 
-//#####################################################################
-// X9-Engine
-//
-// components each with its own file
-// uncomment the ones with their files in this project
-//#####################################################################
-
-
-#define _X_ALLOW_CAMERA_
-#define _X_ALLOW_GOD_
-#define _X_ALLOW_COLLISION_
-#define _X_ALLOW_PHYSICS_
-#define _X_ALLOW_MATRIXN_
-#define _X_ALLOW_LINKS_
-#define _X_ALLOW_TREE_
-#define _X_ALLOW_TERRAIN_
-#define _X_ALLOW_FX_
-#define _X_ALLOW_META_
-#define _X_ALLOW_MODEL_
-#define _X_ALLOW_OBJECT_
-#define _X_ALLOW_GUI_
-//#define _X_ALLOW_MODEL_ANIMATION_
-#define _X_ALLOW_SCRIPT_
-//#define _X_ALLOW_X_
-

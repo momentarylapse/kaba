@@ -1836,7 +1836,7 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm)
 	p.value = 0;
 	if (p.type == ParamTImmediate){
 		if (p.deref){
-			int size = has_modrm ? state.AddrSize : Size64;
+			int size = has_modrm ? state.AddrSize : state.FullRegisterSize;
 			memcpy(&p.value, cur, size);
 			cur += size;
 		}else{

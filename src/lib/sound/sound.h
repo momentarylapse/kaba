@@ -12,6 +12,7 @@
 
 #include "../config.h"
 #include "../file/file.h"
+#include "../math/math.h"
 
 
 extern string SoundDir;

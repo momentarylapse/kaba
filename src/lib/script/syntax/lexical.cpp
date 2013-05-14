@@ -124,25 +124,15 @@ int GetKind(char c)
 {
 	if (isNumber(c))
 		return ExpKindNumber;
-	else if (isLetter(c))
-		return ExpKindLetter;
+	/*else if (isLetter(c))
+		return ExpKindLetter;*/
 	else if (isSpacing(c))
 		return ExpKindSpacing;
 	else if (isSign(c))
 		return ExpKindSign;
-	else if (c==0)
+	else if (c == 0)
 		return -1;
-
-/*	msg_write("evil char");
-	insert_into_buffer(this, format("   '%c' (%2x)   ", c, c).c_str(), 0);
-	msg_write(cur_exp);
-	msg_write(p2s(cur_name));
-	msg_write(cur_name);
-	//cur_exp = cur_line->exp.num;
-	//sprintf(cur_line->exp[cur_exp].name, "   '%c' (%2x)   ", c, c);
-	//sprintf(cur_name, "   '%c' (%2x)   ", c, c);
-	DoError("evil character found!");
-	return -1;*/
+	// allow all other characters as letters
 	return ExpKindLetter;
 }
 
@@ -176,12 +166,7 @@ void ExpressionBuffer::Analyse(SyntaxTree *ps, const string &source)
 		}
 	}
 
-	/*for (int i=0;i<line.num;i++){
-		msg_write("--------------------");
-		msg_write(line[i].indent);
-		for (int j=0;j<line[i].exp.num;j++)
-			msg_write(line[i].exp[j].name);
-	}*/
+	//show();
 
 	
 	// safety
@@ -192,6 +177,16 @@ void ExpressionBuffer::Analyse(SyntaxTree *ps, const string &source)
 		e.name = str_eol;
 		e.pos = line[i].length;
 		line[i].exp.add(e);
+	}
+}
+
+void ExpressionBuffer::show()
+{
+	for (int i=0;i<line.num;i++){
+		msg_write("--------------------");
+		msg_write(line[i].indent);
+		for (int j=0;j<line[i].exp.num;j++)
+			msg_write(line[i].exp[j].name);
 	}
 }
 
@@ -212,7 +207,7 @@ bool ExpressionBuffer::AnalyseLine(const char *source, ExpressionBuffer::Line *l
 	l->length = pos;
 	if (l->exp.num > 0)
 		line.add(*l);
-	return (source[pos] == 0);
+	return source[pos] == 0;
 }
 
 // reads at most one line
@@ -232,7 +227,7 @@ bool ExpressionBuffer::DoMultiLineComment(const char *source, int &pos)
 				pos ++;
 				return false;
 			}
-		}else if ((source[pos] == 0)){// || (BufferPos>=BufferLength)){
+		}else if (source[pos] == 0){
 			syntax->DoError("comment exceeds end of file");
 		}
 		pos ++;

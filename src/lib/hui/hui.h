@@ -13,11 +13,11 @@
 #define _HUI_EXISTS_
 
 #include "hui_common.h"
-#include "../types/types.h"
 #ifdef _X_USE_IMAGE_
 	#include "../image/image.h"
 #else
 	typedef int Image;
+	typedef int color;
 #endif
 
 extern string HuiVersion;

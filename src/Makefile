@@ -5,9 +5,8 @@ MAINSOURCE = main.cpp
 all : $(BIN)
 MODULES = \
  lib/script/script.a \
- lib/x/x.a \
  lib/file/file.a \
- lib/types/types.a \
+ lib/math/math.a \
  lib/nix/nix.a \
  lib/image/image.a \
  lib/net/net.a \
@@ -24,7 +23,7 @@ CPP  = g++
 GLOBALFLAGS = -g
 LIB_DIR = lib
 CXXFLAGS = `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
-CXXFLAGSLINKING =  `pkg-config --cflags --libs gtk+-3.0` -lGL -lGLU -I/usr/include/AL -lopenal -lvorbis -lvorbisfile $(GLOBALFLAGS)
+CXXFLAGSLINKING =  `pkg-config --cflags --libs gtk+-3.0` -lGL -lGLU -lX11 -I/usr/include/AL -lopenal -lvorbis -lvorbisfile $(GLOBALFLAGS)
 
 
 $(BIN) : $(MAINSOURCE) $(OBJ) $(MODULES)
@@ -46,10 +45,9 @@ include lib/hui/hui.mk
 include lib/nix/nix.mk
 include lib/image/image.mk
 include lib/sound/sound.mk
-include lib/x/x.mk
 include lib/script/script.mk
 include lib/net/net.mk
-include lib/types/types.mk
+include lib/math/math.mk
 include lib/any/any.mk
 include lib/algebra/algebra.mk
 include lib/threads/threads.mk

@@ -14,6 +14,7 @@
 class CHuiMenu;
 class HuiEvent;
 class CHuiWindow;
+class rect;
 
 
 struct HuiCompleteWindowMessage

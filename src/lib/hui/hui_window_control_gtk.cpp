@@ -1,6 +1,7 @@
 #include "hui.h"
 #include "hui_internal.h"
 #ifdef HUI_API_GTK
+#include "../math/math.h"
 
 #ifndef OS_WINDOWS
 #include <pango/pangocairo.h>

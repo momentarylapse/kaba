@@ -173,6 +173,7 @@ public:
 	// syntax analysis
 	Type *GetConstantType();
 	void *GetConstantValue();
+	Type *FindType(const string &name);
 	Type *GetType(const string &name, bool force);
 	void AddType(Type **type);
 	Type *CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Type *sub);

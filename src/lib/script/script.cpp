@@ -11,8 +11,8 @@
 #include "script.h"
 
 #include "../config.h"
-#ifdef _X_ALLOW_META_
-	#include "../x/x.h"
+#ifdef _X_ALLOW_X_
+	#include "../../meta.h"
 #endif
 
 #ifdef OS_LINUX
@@ -24,7 +24,7 @@
 
 namespace Script{
 
-string Version = "0.11.0.1";
+string Version = "0.11.1.0";
 
 //#define ScriptDebug
 
@@ -269,18 +269,13 @@ Script::~Script()
 }
 
 
-
-static string single_command;
-
-
 // bad:  should clean up in case of errors!
 void ExecuteSingleScriptCommand(const string &cmd)
 {
 	if (cmd.num < 1)
 		return;
 	msg_db_f("ExecuteSingleScriptCmd", 2);
-	single_command = cmd;
-	msg_write("script command: " + single_command);
+	msg_write("script command: " + cmd);
 
 	// empty script
 	Script *s = new Script();
@@ -289,7 +284,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 	try{
 
 // find expressions
-	ps->Exp.Analyse(ps, single_command.c_str());
+	ps->Exp.Analyse(ps, cmd + string("\0", 1));
 	if (ps->Exp.line[0].exp.num < 1){
 		//clear_exp_buffer(&ps->Exp);
 		delete(s);
@@ -362,6 +357,47 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 	return NULL;
 }
 
+void *Script::MatchClassFunction(const string &_class, bool allow_derived, const string &name, const string &return_type, int num_params, ...)
+{
+	msg_db_f("MatchClassFunction", 2);
+
+	// process argument list
+	va_list marker;
+	va_start(marker, num_params);
+	string param_type[SCRIPT_MAX_PARAMS];
+	for (int p=0;p<num_params;p++)
+		param_type[p] = string(va_arg(marker, char*));
+	va_end(marker);
+
+	Type *root_type = syntax->FindType(_class);
+	if (!root_type)
+		return NULL;
+
+	// match
+	foreachi(Function *f, syntax->Functions, i){
+		if (!f->_class)
+			continue;
+		if (!f->_class->IsDerivedFrom(root_type))
+			continue;
+		if ((f->name.match("*." + name)) && (f->literal_return_type->name == return_type) && (num_params == f->num_params)){
+
+			bool params_ok = true;
+			for (int j=0;j<num_params;j++)
+				//if ((*f)->Var[j].Type->name != param_type[j])
+				if (f->literal_param_type[j]->name != param_type[j])
+					params_ok = false;
+			if (params_ok){
+				if (JustAnalyse)
+					return (void*)0xdeadbeaf;
+				else
+					return (void*)func[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 void print_var(void *p, const string &name, Type *t)
 {
 	msg_write(t->name + " " + name + " = " + t->var2str(p));
@@ -395,7 +431,7 @@ void Script::Execute()
 		first_execution();
 		//msg_left();
 	}else{
-#ifdef _X_ALLOW_META_
+#ifdef _X_ALLOW_X_
 		if (WaitingMode==WaitingModeRT)
 			TimeToWait -= Engine.ElapsedRT;
 		else

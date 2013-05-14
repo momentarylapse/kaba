@@ -46,6 +46,17 @@ bool Type::is_simple_class()
 	return true;
 }
 
+bool Type::IsDerivedFrom(Type *root) const
+{
+	if (this == root)
+		return true;
+	if ((is_super_array) || (is_array) || (is_pointer))
+		return false;
+	if (!parent)
+		return false;
+	return parent->IsDerivedFrom(root);
+}
+
 int Type::GetFunc(const string &name)
 {
 	foreachi(ClassFunction &f, function, i)

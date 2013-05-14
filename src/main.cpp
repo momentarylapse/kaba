@@ -3,7 +3,6 @@
 #include "lib/hui/hui.h"
 #include "lib/nix/nix.h"
 #include "lib/net/net.h"
-#include "lib/x/x.h"
 #include "lib/script/script.h"
 
 string AppName = "Kaba";
@@ -132,7 +131,6 @@ int hui_main(Array<string> arg)
 	msg_db_r("main", 1);
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
-	MetaInit();
 	Script::Init();
 	//Script::LinkDynamicExternalData();
 	Script::config.StackSize = 10485760; // 10 mb (mib)
@@ -167,7 +165,6 @@ int hui_main(Array<string> arg)
 	// end
 	msg_db_l(1);
 	Script::End();
-	MetaEnd();
 	msg_end();
 	return 0;
 }

@@ -4,50 +4,19 @@
 #include "script_data_common.h"
 
 
-#ifdef _X_ALLOW_META_
-	#include "../../x/x.h"
-	#include "../../x/meta.h"
-#endif
 #ifdef _X_ALLOW_X_
+	#include "../../../world/world.h"
+	#include "../../../world/object.h"
+	#include "../../../world/model_manager.h"
+	#include "../../../world/terrain.h"
+	#include "../../../world/camera.h"
+	#include "../../../physics/links.h"
+	#include "../../../gui/font.h"
+	#include "../../../gui/gui.h"
+	#include "../../../fx/fx.h"
+	#include "../../../fx/light.h"
+	#include "../../../meta.h"
 	#include "../../../networking.h"
-#endif
-
-#ifdef _X_ALLOW_META_
-	#define meta_p(p)	(void*)p
-#else
-	#define meta_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_GOD_
-	#define god_p(p)	(void*)p
-#else
-	#define god_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_MODEL_
-	#define mod_p(p)	(void*)p
-#else
-	#define mod_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_FX_
-	#define fx_p(p)	(void*)p
-#else
-	#define fx_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_LIGHT_
-	#define light_p(p)	(void*)p
-#else
-	#define light_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_GUI_
-	#define gui_p(p)	(void*)p
-#else
-	#define gui_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_CAMERA_
-	#define cam_p(p)	(void*)p
-#else
-	#define cam_p(p)	NULL
-#endif
-#ifdef _X_ALLOW_X_
 	#define x_p(p)		(void*)p
 	void ExitProgram();
 	void ScreenShot();
@@ -91,8 +60,10 @@ Type *TypeSkinPArray;
 Type *TypeSubSkin;
 Type *TypeSubSkinList;
 Type *TypeMaterial;
+Type *TypeMaterialP;
 Type *TypeMaterialList;
 Type *TypeFog;
+Type *TypeTraceData;
 Type *TypeTerrain;
 Type *TypeTerrainP;
 Type *TypeTerrainPList;
@@ -121,7 +92,7 @@ extern Type *TypeSocketP;
 extern Type *TypeSocketList;
 
 
-#ifdef _X_ALLOW_GUI_
+#ifdef _X_ALLOW_X_
 	static Gui::Text *_text;
 	#define	GetDAText(x)		long(&_text->x)-long(_text)
 	static Gui::Picture *_picture;
@@ -130,27 +101,13 @@ extern Type *TypeSocketList;
 	#define	GetDAPicture3D(x)	long(&_picture3d->x)-long(_picture3d)
 	static Gui::Grouping *_grouping;
 	#define	GetDAGrouping(x)	long(&_grouping->x)-long(_grouping)
-#else
-	#define	GetDAText(x)		0
-	#define	GetDAPicture(x)		0
-	#define	GetDAPicture3D(x)	0
-	#define	GetDAGrouping(x)	0
-#endif
-#ifdef _X_ALLOW_FX_
 	static Particle *_particle;
 	#define	GetDAParticle(x)	long(&_particle->x)-long(_particle)
 	static Effect *_effect;
 	#define	GetDAEffect(x)		long(&_effect->x)-long(_effect)
-#else
-	#define	GetDAParticle(x)	0
-	#define	GetDABeam(x)		0
-	#define	GetDAEffect(x)		0
-#endif
-#ifdef _X_ALLOW_MODEL_
 	static Bone *_bone;
 	#define	GetDABone(x)		long(&_bone->x)-long(_bone)
 	static Model *_model;
-	#define sizeof_Bone			sizeof(Bone)
 	#define	GetDAModel(x)		long(&_model->x)-long(_model)
 	static Skin *_skin;
 	#define	GetDASkin(x)		long(&_skin->x)-long(_skin)
@@ -158,16 +115,6 @@ extern Type *TypeSocketList;
 	#define	GetDASubSkin(x)		long(&_subskin->x)-long(_subskin)
 	static Material *_material;
 	#define	GetDAMaterial(x)	long(&_material->x)-long(_material)
-#else
-	#define	GetDAItem(x)		0
-	#define	GetDABone(x)		0
-	#define sizeof_Bone			0
-	#define	GetDAModel(x)		0
-	#define	GetDASkin(x)		0
-	#define	GetDASubSkin(x)		0
-	#define	GetDAMaterial(x)	0
-#endif
-#ifdef _X_ALLOW_X_
 	static Fog *_fog;
 	static WorldData *_world_data;
 	static EngineData *_engine_data;
@@ -185,28 +132,40 @@ extern Type *TypeSocketList;
 			void __delete__(){clear();}
 			void __assign__(HostDataList &other){*this = other;}
 	};
-#else
-	#define	GetDAFog(x)			0
-	#define	GetDAWorld(x)			0
-	#define	GetDAEngine(x)			0
-	#define	GetDANetwork(x)			0
-	#define	GetDAHostData(x)			0
-#endif
-#ifdef _X_ALLOW_CAMERA_
 	static Camera *_camera;
 	#define	GetDACamera(x)		long(&_camera->x)-long(_camera)
-#else
-	#define	GetDACamera(x)		0
-#endif
-#ifdef _X_ALLOW_TERRAIN_
 	static Terrain *_terrain;
 	#define	GetDATerrain(x)		long(&_terrain->x)-long(_terrain)
+	static TraceData *_tracedata;
+	#define	GetDATraceData(x)		long(&_tracedata->x)-long(_tracedata)
 #else
+	#define	GetDAText(x)		0
+	#define	GetDAPicture(x)		0
+	#define	GetDAPicture3D(x)	0
+	#define	GetDAGrouping(x)	0
+	#define	GetDAParticle(x)	0
+	#define	GetDABeam(x)		0
+	#define	GetDAEffect(x)		0
+	#define	GetDAItem(x)		0
+	#define	GetDABone(x)		0
+	#define	GetDAModel(x)		0
+	#define	GetDASkin(x)		0
+	#define	GetDASubSkin(x)		0
+	#define	GetDAMaterial(x)	0
+	#define	GetDAFog(x)			0
+	#define	GetDAWorld(x)		0
+	#define	GetDAEngine(x)		0
+	#define	GetDANetwork(x)		0
+	#define	GetDAHostData(x)	0
+	#define	GetDACamera(x)		0
 	#define	GetDATerrain(x)		0
+	#define	GetDATraceData(x)	0
+	typedef int TraceData;
+	typedef int Bone;
 #endif
 
 
-#ifdef _X_ALLOW_GOD_
+#ifdef _X_ALLOW_X_
 void amd64_model_get_vertex(vector &r, Model *m, int a, int b)
 {	r = m->GetVertex(a, b);	}
 void amd64_camera_project(vector &r, Camera *c, vector &v)
@@ -236,7 +195,7 @@ void SIAddPackageX()
 	TypeModelPPs		= add_type_p("model&",		TypeModelP);
 	TypeModelPList		= add_type_a("model[]",		TypeModelP, -1);
 	TypeModelPListPs	= add_type_p("model[]&",	TypeModelPList, FLAG_SILENT);
-	TypeBone			= add_type  ("Bone",		sizeof_Bone);
+	TypeBone			= add_type  ("Bone",		sizeof(Bone));
 	TypeBoneList		= add_type_a("Bone[]",		TypeBone, -1);
 	TypeText			= add_type  ("Text",		0);
 	TypeTextP			= add_type_p("text",		TypeText);
@@ -260,8 +219,10 @@ void SIAddPackageX()
 	TypeSubSkin			= add_type  ("SubSkin",		0);
 	TypeSubSkinList		= add_type_a("SubSkin[]",	TypeSubSkin, -1);
 	TypeMaterial		= add_type  ("Material",	0);
+	TypeMaterialP		= add_type_p("Material*",	TypeMaterial);
 	TypeMaterialList	= add_type_a("Material[]",	TypeMaterial, -1);
 	TypeFog				= add_type  ("Fog",			0);
+	TypeTraceData		= add_type  ("TraceData",	sizeof(TraceData));
 	TypeTerrain			= add_type  ("Terrain",		0);
 	TypeTerrainP		= add_type_p("terrain",		TypeTerrain);
 	TypeTerrainPList	= add_type_a("terrain[]",	TypeTerrainP, -1);
@@ -284,7 +245,7 @@ void SIAddPackageX()
 		class_add_element("texture",		TypeInt,		GetDAPicture(texture));
 		class_add_element("source",			TypeRect,		GetDAPicture(source));
 		class_add_element("shader",			TypeInt,		GetDAPicture(shader));
-		class_add_func("IsMouseOver",		TypeBool,	gui_p(mf((tmf)&Gui::Picture::IsMouseOver)));
+		class_add_func("IsMouseOver",		TypeBool,	x_p(mf((tmf)&Gui::Picture::IsMouseOver)));
 	
 	add_class(TypePicture3D);
 		class_add_element("enabled",		TypeBool,		GetDAPicture3D(enabled));
@@ -308,7 +269,7 @@ void SIAddPackageX()
 		class_add_element("size",			TypeFloat,		GetDAText(size));
 		class_add_element("color",			TypeColor,		GetDAText(_color));
 		class_add_element("text",			TypeString,		GetDAText(text));
-		class_add_func("IsMouseOver",		TypeBool,	gui_p(mf((tmf)&Gui::Text::IsMouseOver)));
+		class_add_func("IsMouseOver",		TypeBool,	x_p(mf((tmf)&Gui::Text::IsMouseOver)));
 	
 	add_class(TypeParticle);
 		class_add_element("enabled",		TypeBool,		GetDAParticle(enabled));
@@ -349,7 +310,7 @@ void SIAddPackageX()
 		class_add_element("time_to_live",	TypeFloat,		GetDAEffect(time_to_live));
 		class_add_element("var",			TypeFloatList,	GetDAEffect(script_var));
 		class_add_element("var_i",			TypeIntList,	GetDAEffect(script_var));
-		class_add_element("var_p",			TypePointerList,GetDAEffect(script_var));
+		class_add_element("var_p",			TypePointerList,GetDAEffect(script_var_p));
 		class_add_element("func_delta_t",	TypeFloat,		GetDAEffect(func_delta_t));
 		class_add_element("elapsed",		TypeFloat,		GetDAEffect(elapsed));
 		class_add_element("func",			TypePointer,	GetDAEffect(func));
@@ -387,6 +348,12 @@ void SIAddPackageX()
 		class_add_element("density",		TypeFloat,		GetDAFog(density));
 		class_add_element("color",			TypeColor,		GetDAFog(_color));
 
+	add_class(TypeTraceData);
+		class_add_element("type",		TypeInt,		GetDATraceData(type));
+		class_add_element("point",		TypeVector,		GetDATraceData(point));
+		class_add_element("terrain",	TypeTerrainP,	GetDATraceData(terrain));
+		class_add_element("model",		TypeModelP,		GetDATraceData(model));
+		class_add_element("object",		TypeModelP,		GetDATraceData(object));
 
 	add_class(TypeBone);
 		class_add_element("parent",		TypeInt,		GetDABone(parent));
@@ -409,6 +376,7 @@ void SIAddPackageX()
 		class_add_element("ground_normal",	TypeVector,		GetDAModel(ground_normal));
 		class_add_element("g_factor",		TypeFloat,		GetDAModel(g_factor));
 		class_add_element("object_id",		TypeInt,		GetDAModel(object_id));
+		class_add_element("parent",			TypeModelP,		GetDAModel(parent));
 		//class_add_element("visible",		TypeBool,		GetDAModel(visible));
 		class_add_element("active_physics",	TypeBool,		GetDAModel(active_physics));
 		class_add_element("passive_physics",	TypeBool,		GetDAModel(passive_physics));
@@ -420,17 +388,9 @@ void SIAddPackageX()
 		class_add_element("detail_dist",	TypeFloatArray,	GetDAModel(detail_dist));
 		class_add_element("var",			TypeFloatList,	GetDAModel(script_var));
 		class_add_element("var_i",			TypeIntList,	GetDAModel(script_var));
-		class_add_element("var_p",			TypePointerList,GetDAModel(script_var));
+		//class_add_element("var_p",			TypePointerList,GetDAModel(script_var));
 		class_add_element("data",			TypePointer,	GetDAModel(script_data));
 		class_add_element("item",			TypeModelPList,	GetDAModel(inventary));
-		class_add_func("AddForce",		TypeVoid,	god_p(mf((tmf)&Object::AddForce)));
-			func_add_param("force",		TypeVector);
-			func_add_param("rho",		TypeVector);
-		class_add_func("AddTorque",		TypeVoid,	god_p(mf((tmf)&Object::AddTorque)));
-			func_add_param("torque",		TypeVector);
-		class_add_func("MakeVisible",		TypeVoid,		god_p(mf((tmf)&Object::MakeVisible)));
-			func_add_param("visible",		TypeBool);
-		class_add_func("UpdateData",		TypeVoid,		god_p(mf((tmf)&Object::UpdateData)));
 		class_add_element("skin",			TypeSkinPArray,	GetDAModel(skin));
 		class_add_element("skin0",			TypeSkinP,		GetDAModel(skin[0]));
 		class_add_element("skin1",			TypeSkinP,		GetDAModel(skin[1]));
@@ -441,15 +401,23 @@ void SIAddPackageX()
 		class_add_element("max",			TypeVector,		GetDAModel(max));
 		class_add_element("test_collisions",	TypeBool,		GetDAModel(test_collisions));
 		class_add_element("allow_shadow",	TypeBool,		GetDAModel(allow_shadow));
-/*	add_func("CalcMove",					TypeVoid,		mod_p(mf((tmf)&Model::CalcMove)));
-	add_func("Draw",						TypeVoid,		mod_p(mf((tmf)&Model::Draw)));
+		class_add_func("AddForce",		TypeVoid,	x_p(mf((tmf)&Object::AddForce)));
+			func_add_param("force",		TypeVector);
+			func_add_param("rho",		TypeVector);
+		class_add_func("AddTorque",		TypeVoid,	x_p(mf((tmf)&Object::AddTorque)));
+			func_add_param("torque",		TypeVector);
+		class_add_func("MakeVisible",		TypeVoid,		x_p(mf((tmf)&Object::MakeVisible)));
+			func_add_param("visible",		TypeBool);
+		class_add_func("UpdateData",		TypeVoid,		x_p(mf((tmf)&Object::UpdateData)));
+/*	add_func("CalcMove",					TypeVoid,		x_p(mf((tmf)&Model::CalcMove)));
+	add_func("Draw",						TypeVoid,		x_p(mf((tmf)&Model::Draw)));
 		func_add_param("skin",				TypeInt);
 		func_add_param("fx",				TypeBool);*/
 		class_add_func("GetVertex",		TypeVector,		amd64_wrap(mf((tmf)&Model::GetVertex), (void*)&amd64_model_get_vertex));
 			func_add_param("index",			TypeInt);
 			func_add_param("skin",			TypeInt);
-		class_add_func("ResetAnimation",		TypeVoid,		mod_p(mf((tmf)&Model::ResetAnimation)));
-		class_add_func("Animate",				TypeBool,		mod_p(mf((tmf)&Model::Animate)));
+		class_add_func("ResetAnimation",		TypeVoid,		x_p(mf((tmf)&Model::ResetAnimation)));
+		class_add_func("Animate",				TypeBool,		x_p(mf((tmf)&Model::Animate)));
 			func_add_param("operation",		TypeInt);
 			func_add_param("param1",		TypeFloat);
 			func_add_param("param2",		TypeFloat);
@@ -458,18 +426,19 @@ void SIAddPackageX()
 			func_add_param("dt",			TypeFloat);
 			func_add_param("v",				TypeFloat);
 			func_add_param("loop",			TypeBool);
-		class_add_func("GetFrames",		TypeInt,		mod_p(mf((tmf)&Model::GetFrames)));
+		class_add_func("GetFrames",		TypeInt,		x_p(mf((tmf)&Model::GetFrames)));
 			func_add_param("move",			TypeInt);
-		class_add_func("BeginEditAnimation",	TypeVoid,		mod_p(mf((tmf)&Model::BeginEditAnimation)));
-		class_add_func("MakeEditable",		TypeVoid,		mod_p(mf((tmf)&Model::MakeEditable)));
-		class_add_func("BeginEdit",		TypeVoid,		mod_p(mf((tmf)&Model::BeginEdit)));
+		class_add_func("BeginEditAnimation",	TypeVoid,		x_p(mf((tmf)&Model::BeginEditAnimation)));
+		class_add_func("MakeEditable",		TypeVoid,		x_p(mf((tmf)&Model::MakeEditable)));
+		class_add_func("BeginEdit",		TypeVoid,		x_p(mf((tmf)&Model::BeginEdit)));
 			func_add_param("skin",			TypeInt);
-		class_add_func("EndEdit",			TypeVoid,		mod_p(mf((tmf)&Model::EndEdit)));
+		class_add_func("EndEdit",			TypeVoid,		x_p(mf((tmf)&Model::EndEdit)));
 			func_add_param("skin",			TypeInt);
-		class_add_func("SetBoneModel",		TypeVoid,		mod_p(mf((tmf)&Model::SetBoneModel)));
+		class_add_func("SetBoneModel",		TypeVoid,		x_p(mf((tmf)&Model::SetBoneModel)));
 			func_add_param("index",			TypeInt);
 			func_add_param("bone",			TypeModelP);
-		class_add_func("GetFilename",		TypeString,		mod_p(mf((tmf)&Model::GetFilename)));
+		class_add_func("GetFilename",		TypeString,		x_p(mf((tmf)&Model::GetFilename)));
+		class_add_func("GetRoot",			TypeModelP,		x_p(mf((tmf)&Model::GetRoot)));
 
 	add_class(TypeTerrain);
 		class_add_element("pos",			TypeVector,		GetDATerrain(pos));
@@ -477,15 +446,15 @@ void SIAddPackageX()
 		class_add_element("num_z",			TypeInt,		GetDATerrain(num_z));
 		class_add_element("height",			TypeFloatList,	GetDATerrain(height));
 		class_add_element("pattern",		TypeVector,		GetDATerrain(pattern));
-		class_add_element("material",		TypeMaterial,	GetDATerrain(material));
+		class_add_element("material",		TypeMaterialP,	GetDATerrain(material));
 		class_add_element("texture_scale",	TypeVectorArray,GetDATerrain(texture_scale));
-		class_add_func("Update",			TypeVoid,		god_p(mf((tmf)&Terrain::Update)));
+		class_add_func("Update",			TypeVoid,		x_p(mf((tmf)&Terrain::Update)));
 			func_add_param("x1",		TypeInt);
 			func_add_param("x2",		TypeInt);
 			func_add_param("z1",		TypeInt);
 			func_add_param("z2",		TypeInt);
 			func_add_param("mode",		TypeInt);
-		class_add_func("GetHeight",			TypeFloat,		god_p(mf((tmf)&Terrain::gimme_height)));
+		class_add_func("GetHeight",			TypeFloat,		x_p(mf((tmf)&Terrain::gimme_height)));
 			func_add_param("p",			TypeVector);
 
 	add_class(TypeCamera);
@@ -506,10 +475,10 @@ void SIAddPackageX()
 		class_add_element("max_depth",		TypeFloat,		GetDACamera(max_depth));
 		class_add_element("clipping_plane",	TypePlaneList,	GetDACamera(clipping_plane));
 		class_add_element("ignore",			TypeModelPList,	GetDACamera(ignore));
-		class_add_func("StartScript",		TypeVoid,	cam_p(mf((tmf)&Camera::StartScript)));
+		class_add_func("StartScript",		TypeVoid,	x_p(mf((tmf)&Camera::StartScript)));
 			func_add_param("filename",		TypeString);
 			func_add_param("dpos",			TypeVector);
-		class_add_func("StopScript",		TypeVoid,	cam_p(mf((tmf)&Camera::StopScript)));
+		class_add_func("StopScript",		TypeVoid,	x_p(mf((tmf)&Camera::StopScript)));
 		class_add_func("Project",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Project), (void*)&amd64_camera_project));
 			func_add_param("v",			TypeVector);
 		class_add_func("Unproject",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Unproject), (void*)&amd64_camera_unproject));
@@ -528,6 +497,7 @@ void SIAddPackageX()
 
 	add_class(TypeEngineData);
 		class_add_element("app_name",		TypeString,		GetDAEngine(AppName));
+		class_add_element("version",		TypeString,		GetDAEngine(Version));
 		class_add_element("elapsed",		TypeFloat,		GetDAEngine(Elapsed));
 		class_add_element("elapsed_rt",		TypeFloat,		GetDAEngine(ElapsedRT));
 		class_add_element("time_scale",		TypeFloat,		GetDAEngine(TimeScale));
@@ -575,7 +545,7 @@ void SIAddPackageX()
 		class_add_func("__assign__",		TypeVoid,	x_p(mf((tmf)&HostDataList::__assign__)));
 			func_add_param("other",			TypeHostDataList);
 	
-	add_func("XFDrawStr",			TypeFloat,	meta_p(&XFDrawStr));
+	add_func("XFDrawStr",			TypeFloat,	x_p(&XFDrawStr));
 		func_add_param("x",			TypeFloat);
 		func_add_param("y",			TypeFloat);
 		func_add_param("z",			TypeFloat);
@@ -583,66 +553,66 @@ void SIAddPackageX()
 		func_add_param("str",		TypeString);
 		func_add_param("font",		TypeInt);
 		func_add_param("centric",	TypeBool);
-	add_func("XFDrawVertStr",		TypeFloat,	meta_p(&XFDrawVertStr));
+	add_func("XFDrawVertStr",		TypeFloat,	x_p(&XFDrawVertStr));
 		func_add_param("x",			TypeFloat);
 		func_add_param("y",			TypeFloat);
 		func_add_param("z",			TypeFloat);
 		func_add_param("size",		TypeFloat);
 		func_add_param("str",		TypeString);
 		func_add_param("font",		TypeInt);
-	add_func("XFGetWidth",			TypeFloat,	meta_p(&XFGetWidth));
+	add_func("XFGetWidth",			TypeFloat,	x_p(&XFGetWidth));
 		func_add_param("size",		TypeFloat);
 		func_add_param("s",		TypeString);
 		func_add_param("font",		TypeInt);
-	add_func("LoadFont",			TypeInt,	meta_p(&MetaLoadFont));
+	add_func("LoadFont",			TypeInt,	x_p(&LoadFont));
 		func_add_param("filename",		TypeString);
-	add_func("CreatePicture",										TypePictureP,	gui_p(&Gui::CreatePicture));
+	add_func("CreatePicture",										TypePictureP,	x_p(&Gui::CreatePicture));
 		func_add_param("pos",		TypeVector);
 		func_add_param("width",		TypeFloat);
 		func_add_param("height",	TypeFloat);
 		func_add_param("texture",	TypeInt);
-	add_func("CreatePicture3D",								TypePicture3DP,	gui_p(&Gui::CreatePicture3d));
+	add_func("CreatePicture3D",								TypePicture3DP,	x_p(&Gui::CreatePicture3d));
 		func_add_param("m",			TypeModelP);
 		func_add_param("mat",		TypeMatrix);
 		func_add_param("z",			TypeFloat);
-	add_func("CreateText",												TypeTextP,	gui_p(&Gui::CreateText));
+	add_func("CreateText",												TypeTextP,	x_p(&Gui::CreateText));
 		func_add_param("pos",		TypeVector);
 		func_add_param("size",		TypeFloat);
 		func_add_param("c",			TypeColor);
 		func_add_param("str",		TypeString);
-	add_func("CreateGrouping",										TypeGroupingP,	gui_p(&Gui::CreateGrouping));
+	add_func("CreateGrouping",										TypeGroupingP,	x_p(&Gui::CreateGrouping));
 		func_add_param("pos",		TypeVector);
 		func_add_param("set_cur",	TypeBool);
-	add_func("CreateParticle",										TypeParticleP,	fx_p(&FxParticleCreateDef));
+	add_func("CreateParticle",										TypeParticleP,	x_p(&FxParticleCreateDef));
 		func_add_param("pos",		TypeVector);
 		func_add_param("texture",		TypeInt);
 		func_add_param("func",		TypePointer);
 		func_add_param("life",		TypeFloat);
 		func_add_param("radius",		TypeFloat);
-	add_func("CreateParticleRot",								TypeParticleP,	fx_p(&FxParticleCreateRot));
+	add_func("CreateParticleRot",								TypeParticleP,	x_p(&FxParticleCreateRot));
 		func_add_param("pos",		TypeVector);
 		func_add_param("ang",		TypeVector);
 		func_add_param("texture",		TypeInt);
 		func_add_param("func",		TypePointer);
 		func_add_param("life",		TypeFloat);
 		func_add_param("radius",		TypeFloat);
-	add_func("CreateBeam",										TypeBeamP,	fx_p(&FxParticleCreateBeam));
+	add_func("CreateBeam",										TypeBeamP,	x_p(&FxParticleCreateBeam));
 		func_add_param("pos",		TypeVector);
 		func_add_param("length",		TypeVector);
 		func_add_param("texture",		TypeInt);
 		func_add_param("func",		TypePointer);
 		func_add_param("life",		TypeFloat);
 		func_add_param("radius",		TypeFloat);
-	add_func("CreateEffect",										TypeEffectP,	fx_p(&FxCreate));
+	add_func("CreateEffect",										TypeEffectP,	x_p(&FxCreate));
 		func_add_param("pos",		TypeVector);
 		func_add_param("func",		TypePointer);
 		func_add_param("del_func",		TypePointer);
 		func_add_param("life",		TypeFloat);
-	add_func("LoadModel",												TypeModelP,	meta_p(&MetaLoadModel));
+	add_func("LoadModel",												TypeModelP,	x_p(&LoadModel));
 		func_add_param("filename",		TypeString);
-/*	add_func("GetModelOID",												TypeInt,	meta_p(&MetaGetModelOID));
+/*	add_func("GetModelOID",												TypeInt,	x_p(&MetaGetModelOID));
 		func_add_param("filename",		TypeString);*/
-	add_func("CreateCamera",												TypeCameraP,	cam_p(&CreateCamera));
+	add_func("CreateCamera",												TypeCameraP,	x_p(&CreateCamera));
 		func_add_param("pos",		TypeVector);
 		func_add_param("ang",		TypeVector);
 		func_add_param("dest",		TypeRect);
@@ -650,33 +620,33 @@ void SIAddPackageX()
 	
 	// engine
 	// effects
-	add_func("LightCreate",							TypeInt,	light_p(&Light::Create));
-	add_func("LightSetColors",			TypeVoid,	light_p(&Light::SetColors));
+	add_func("LightCreate",							TypeInt,	x_p(&Light::Create));
+	add_func("LightSetColors",			TypeVoid,	x_p(&Light::SetColors));
 		func_add_param("index",		TypeInt);
 		func_add_param("ambient",		TypeColor);
 		func_add_param("diffuse",		TypeColor);
 		func_add_param("specular",		TypeColor);
-	add_func("LightSetDirectional",			TypeVoid,	light_p(&Light::SetDirectional));
+	add_func("LightSetDirectional",			TypeVoid,	x_p(&Light::SetDirectional));
 		func_add_param("index",		TypeInt);
 		func_add_param("dir",		TypeVector);
-	add_func("LightSetRadial",					TypeVoid,	light_p(&Light::SetRadial));
+	add_func("LightSetRadial",					TypeVoid,	x_p(&Light::SetRadial));
 		func_add_param("index",		TypeInt);
 		func_add_param("pos",		TypeVector);
 		func_add_param("radius",		TypeFloat);
-	add_func("LightEnable",							TypeVoid,	light_p(&Light::Enable));
+	add_func("LightEnable",							TypeVoid,	x_p(&Light::Enable));
 		func_add_param("index",		TypeInt);
 		func_add_param("enabled",		TypeBool);
-	add_func("LightDelete",							TypeVoid,	light_p(&Light::Delete));
+	add_func("LightDelete",							TypeVoid,	x_p(&Light::Delete));
 		func_add_param("index",		TypeInt);
 	// game
 	add_func("ExitProgram",									TypeVoid,	x_p(ExitProgram));
 	add_func("ScreenShot",									TypeVoid,	x_p(ScreenShot));
 	add_func("FindHosts",									TypeHostDataList,	x_p(FindHosts));
-	add_func("XDelete",											TypeVoid,	meta_p(&MetaDelete));
+	add_func("XDelete",											TypeVoid,	x_p(&MetaDelete));
 		func_add_param("p",		TypePointer);
-	add_func("XDeleteLater",						TypeVoid,	god_p(&MetaDeleteLater));
+	add_func("XDeleteLater",						TypeVoid,	x_p(&MetaDeleteLater));
 		func_add_param("p",		TypePointer);
-	add_func("XDeleteSelection",						TypeVoid,	god_p(&MetaDeleteSelection));
+	add_func("XDeleteSelection",						TypeVoid,	x_p(&MetaDeleteSelection));
 	add_func("LoadWorld",									TypeVoid,	x_p(LoadWorldSoon));
 		func_add_param("filename",		TypeString);
 	add_func("LoadGameFromHost",					TypeVoid,	x_p(LoadGameFromHostSoon));
@@ -685,16 +655,16 @@ void SIAddPackageX()
 		func_add_param("filename",		TypeString);
 	add_func("LoadGameState",							TypeVoid,	x_p(LoadGameStateSoon));
 		func_add_param("filename",		TypeString);
-	add_func("GetObjectByName",							TypeModelP,	god_p(&GetObjectByName));
+	add_func("GetObjectByName",							TypeModelP,	x_p(&GetObjectByName));
 		func_add_param("name",		TypeString);
-	add_func("FindObjects",								TypeInt,	god_p(&GodFindObjects));
+	add_func("FindObjects",								TypeInt,	x_p(&GodFindObjects));
 		func_add_param("pos",		TypeVector);
 		func_add_param("radius",	TypeFloat);
 		func_add_param("mode",		TypeInt);
 		func_add_param("o",			TypeModelPListPs);
-	add_func("NextObject",									TypeBool,	god_p(&NextObject));
+	add_func("NextObject",									TypeBool,	x_p(&NextObject));
 		func_add_param("o",		TypeModelPPs);
-	add_func("CreateObject",							TypeModelP,	god_p(&_CreateObject));
+	add_func("CreateObject",							TypeModelP,	x_p(&_CreateObject));
 		func_add_param("filename",		TypeString);
 		func_add_param("pos",		TypeVector);
 	add_func("SplashScreen",					TypeVoid,	x_p(DrawSplashScreen));
@@ -703,103 +673,101 @@ void SIAddPackageX()
 	add_func("RenderScene",									TypeVoid, 	NULL);
 	add_func("GetG",											TypeVector,	amd64_wrap((void*)&GetG, (void*)&amd64_getg));
 		func_add_param("pos",		TypeVector);
-	add_func("Trace",											TypeBool,	god_p(&GodTrace));
+	add_func("Trace",											TypeBool,	x_p(&GodTrace));
 		func_add_param("p1",		TypeVector);
 		func_add_param("p2",		TypeVector);
-		func_add_param("tp",		TypeVector);
+		func_add_param("d",			TypeTraceData);
 		func_add_param("simple_test",	TypeBool);
 		func_add_param("o_ignore",		TypeInt);
-	add_func("LinkAddSpring",							TypeInt,	god_p(&AddLinkSpring));
+	add_func("LinkAddSpring",							TypeInt,	x_p(&AddLinkSpring));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("p1",		TypeVector);
 		func_add_param("p2",		TypeVector);
 		func_add_param("dx0",		TypeFloat);
 		func_add_param("k",			TypeFloat);
-	add_func("LinkAddBall",									TypeInt,	god_p(&AddLinkBall));
+	add_func("LinkAddBall",									TypeInt,	x_p(&AddLinkBall));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("p",			TypeVector);
-	add_func("LinkAddHinge",							TypeInt,	god_p(&AddLinkHinge));
+	add_func("LinkAddHinge",							TypeInt,	x_p(&AddLinkHinge));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("p"	,		TypeVector);
 		func_add_param("ax",		TypeVector);
-	add_func("LinkAddHinge2",							TypeInt,	god_p(&AddLinkHinge2));
+	add_func("LinkAddHinge2",							TypeInt,	x_p(&AddLinkHinge2));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("p"	,		TypeVector);
 		func_add_param("ax1",		TypeVector);
 		func_add_param("ax2",		TypeVector);
-	add_func("LinkAddSlider",									TypeInt,	god_p(&AddLinkSlider));
+	add_func("LinkAddSlider",									TypeInt,	x_p(&AddLinkSlider));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("ax",		TypeVector);
-	add_func("LinkAddUniversal",									TypeInt,	god_p(&AddLinkUniversal));
+	add_func("LinkAddUniversal",									TypeInt,	x_p(&AddLinkUniversal));
 		func_add_param("o1",		TypeModelP);
 		func_add_param("o2",		TypeModelP);
 		func_add_param("p",			TypeVector);
 		func_add_param("ax1",		TypeVector);
 		func_add_param("ax2",		TypeVector);
-	add_func("LinkSetTorque",					TypeVoid,	god_p(&LinkSetTorque));
+	add_func("LinkSetTorque",					TypeVoid,	x_p(&LinkSetTorque));
 		func_add_param("link",		TypeInt);
 		func_add_param("torque",	TypeFloat);
-	add_func("LinkSetTorqueAxis",					TypeVoid,	god_p(&LinkSetTorqueAxis));
+	add_func("LinkSetTorqueAxis",					TypeVoid,	x_p(&LinkSetTorqueAxis));
 		func_add_param("link",		TypeInt);
 		func_add_param("axis",		TypeInt);
 		func_add_param("torque",	TypeFloat);
-	add_func("LinkSetRange",					TypeVoid,	god_p(&LinkSetRange));
+	add_func("LinkSetRange",					TypeVoid,	x_p(&LinkSetRange));
 		func_add_param("link",		TypeInt);
 		func_add_param("min",		TypeFloat);
 		func_add_param("max",		TypeFloat);
-	add_func("LinkSetRangeAxis",					TypeVoid,	god_p(&LinkSetRangeAxis));
+	add_func("LinkSetRangeAxis",					TypeVoid,	x_p(&LinkSetRangeAxis));
 		func_add_param("link",		TypeInt);
 		func_add_param("axis",		TypeInt);
 		func_add_param("min",		TypeFloat);
 		func_add_param("max",		TypeFloat);
-	add_func("LinkSetFriction",		TypeVoid,	god_p(&LinkSetFriction));
+	add_func("LinkSetFriction",		TypeVoid,	x_p(&LinkSetFriction));
 		func_add_param("link",		TypeInt);
 		func_add_param("friction",	TypeFloat);
-	/*add_func("LinkSetFrictionAxis",		TypeVoid,	god_p(&LinkSetFrictionAxis));
+	/*add_func("LinkSetFrictionAxis",		TypeVoid,	x_p(&LinkSetFrictionAxis));
 		func_add_param("link",		TypeInt);
 		func_add_param("axis",		TypeInt);
 		func_add_param("friction",	TypeFloat);*/
-	add_func("LinkGetPosition",					TypeFloat,	god_p(&LinkGetPosition));
+	add_func("LinkGetPosition",					TypeFloat,	x_p(&LinkGetPosition));
 		func_add_param("link",		TypeInt);
-	add_func("LinkGetPositionAxis",					TypeFloat,	god_p(&LinkGetPositionAxis));
+	add_func("LinkGetPositionAxis",					TypeFloat,	x_p(&LinkGetPositionAxis));
 		func_add_param("link",		TypeInt);
 		func_add_param("axis",		TypeInt);
 
 	
 
 	// game variables
-	add_ext_var("World", 			TypeWorldData,	god_p(&World));
+	add_ext_var("World", 			TypeWorldData,	x_p(&World));
 	add_ext_var("Engine", 			TypeEngineData,	x_p(&Engine));
 	add_ext_var("Net", 				TypeNetworkData,x_p(&Net));
-	add_ext_var("Object",			TypeModelPList,	god_p(&Objects));
-	add_ext_var("Ego",				TypeModelP,		god_p(&Ego));
-	add_ext_var("Terrain",			TypeTerrainPList,god_p(&Terrains));
-	add_ext_var("Cam",				TypeCameraP,		cam_p(&Cam));
-	add_ext_var("TraceHitType",		TypeInt,		god_p(&TraceHitType));
-	add_ext_var("TraceHitIndex",	TypeInt,		god_p(&TraceHitIndex));
-	add_ext_var("TraceHitSubModel", TypeInt,		god_p(&TraceHitSubModel));
-	add_ext_var("CurrentGrouping",	TypeGroupingP,	gui_p(&Gui::CurrentGrouping));
+	add_ext_var("Object",			TypeModelPList,	x_p(&Objects));
+	add_ext_var("Ego",				TypeModelP,		x_p(&Ego));
+	add_ext_var("Terrain",			TypeTerrainPList,x_p(&Terrains));
+	add_ext_var("Cam",				TypeCameraP,		x_p(&Cam));
+	add_ext_var("CurrentGrouping",	TypeGroupingP,	x_p(&Gui::CurrentGrouping));
 
 	
 	// model skins
-	add_const("SkinHigh",   TypeInt, god_p(SkinHigh));
-	add_const("SkinMedium", TypeInt, god_p(SkinMedium));
-	add_const("SkinLow",    TypeInt, god_p(SkinLow));
+	add_const("SkinHigh",   TypeInt, x_p(SkinHigh));
+	add_const("SkinMedium", TypeInt, x_p(SkinMedium));
+	add_const("SkinLow",    TypeInt, x_p(SkinLow));
 	// trace
-	add_const("TraceHitTerrain", TypeInt, god_p(TraceHitTerrain));
-	add_const("TraceHitObject",  TypeInt, god_p(TraceHitObject));
+	add_const("TraceTypeNone",    TypeInt, x_p(TraceTypeNone));
+	add_const("TraceTypeTerrain", TypeInt, x_p(TraceTypeTerrain));
+	add_const("TraceTypeModel",   TypeInt, x_p(TraceTypeModel));
 	// animation operations
-	add_const("MoveOpSet",         TypeInt, god_p(MoveOpSet));
-	add_const("MoveOpSetNewKeyed", TypeInt, god_p(MoveOpSetNewKeyed));
-	add_const("MoveOpSetOldKeyed", TypeInt, god_p(MoveOpSetOldKeyed));
-	add_const("MoveOpAdd1Factor",  TypeInt, god_p(MoveOpAdd1Factor));
-	add_const("MoveOpMix1Factor",  TypeInt, god_p(MoveOpMix1Factor));
-	add_const("MoveOpMix2Factor",  TypeInt, god_p(MoveOpMix2Factor));
+	add_const("MoveOpSet",         TypeInt, x_p(MoveOpSet));
+	add_const("MoveOpSetNewKeyed", TypeInt, x_p(MoveOpSetNewKeyed));
+	add_const("MoveOpSetOldKeyed", TypeInt, x_p(MoveOpSetOldKeyed));
+	add_const("MoveOpAdd1Factor",  TypeInt, x_p(MoveOpAdd1Factor));
+	add_const("MoveOpMix1Factor",  TypeInt, x_p(MoveOpMix1Factor));
+	add_const("MoveOpMix2Factor",  TypeInt, x_p(MoveOpMix2Factor));
 	
 }
 

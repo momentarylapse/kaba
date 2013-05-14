@@ -7,7 +7,7 @@
 | last update: 2007.11.19 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
 
- #include "../types/types.h"
+ #include "../math/math.h"
  #include "sound.h"
 
 
