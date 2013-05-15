@@ -174,12 +174,7 @@ void amd64_camera_unproject(vector &r, Camera *c, vector &v)
 {	r = c->Unproject(v);	}
 void amd64_getg(vector &r, vector &v)
 {	r = GetG(v);	}
-static void *amd64_wrap(void *orig, void *wrap)
-{
-	if (config.instruction_set == Asm::InstructionSetAMD64)
-		return wrap;
-	return orig;
-}
+#define amd64_wrap(orig, wrap)	((config.instruction_set == Asm::InstructionSetAMD64) ? ((void*)(wrap)) : ((void*)(orig)))
 #else
 #define amd64_wrap(a, b)	NULL
 #endif
@@ -413,7 +408,7 @@ void SIAddPackageX()
 	add_func("Draw",						TypeVoid,		x_p(mf((tmf)&Model::Draw)));
 		func_add_param("skin",				TypeInt);
 		func_add_param("fx",				TypeBool);*/
-		class_add_func("GetVertex",		TypeVector,		amd64_wrap(mf((tmf)&Model::GetVertex), (void*)&amd64_model_get_vertex));
+		class_add_func("GetVertex",		TypeVector,		amd64_wrap(mf((tmf)&Model::GetVertex), &amd64_model_get_vertex));
 			func_add_param("index",			TypeInt);
 			func_add_param("skin",			TypeInt);
 		class_add_func("ResetAnimation",		TypeVoid,		x_p(mf((tmf)&Model::ResetAnimation)));
@@ -479,9 +474,9 @@ void SIAddPackageX()
 			func_add_param("filename",		TypeString);
 			func_add_param("dpos",			TypeVector);
 		class_add_func("StopScript",		TypeVoid,	x_p(mf((tmf)&Camera::StopScript)));
-		class_add_func("Project",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Project), (void*)&amd64_camera_project));
+		class_add_func("Project",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Project), &amd64_camera_project));
 			func_add_param("v",			TypeVector);
-		class_add_func("Unproject",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Unproject), (void*)&amd64_camera_unproject));
+		class_add_func("Unproject",		TypeVector,	amd64_wrap(mf((tmf)&Camera::Unproject), &amd64_camera_unproject));
 			func_add_param("v",			TypeVector);
 	
 	add_class(TypeWorldData);
@@ -671,7 +666,7 @@ void SIAddPackageX()
 		func_add_param("status",		TypeString);
 		func_add_param("progress",		TypeFloat);
 	add_func("RenderScene",									TypeVoid, 	NULL);
-	add_func("GetG",											TypeVector,	amd64_wrap((void*)&GetG, (void*)&amd64_getg));
+	add_func("GetG",											TypeVector,	amd64_wrap(&GetG, &amd64_getg));
 		func_add_param("pos",		TypeVector);
 	add_func("Trace",											TypeBool,	x_p(&GodTrace));
 		func_add_param("p1",		TypeVector);

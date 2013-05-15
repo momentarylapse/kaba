@@ -497,6 +497,12 @@ void Serializer::add_function_call_amd64(Script *script, int func_no)
 	foreachb(SerialCommandParam &p, stack_param)
 		add_cmd(Asm::inst_push, p);
 	MaxPushSize = max(MaxPushSize, push_size);
+
+	// xmm0-7
+	foreachib(SerialCommandParam &p, xmm_param, i){
+		int reg = Asm::RegXmm0 + i;
+		add_cmd(Asm::inst_movss, param_reg(TypeReg128, reg), p);
+	}
 	
 	// rdi, rsi,rdx, rcx, r8, r9 
 	int param_regs_root[6] = {7, 6, 2, 1, 8, 9};
@@ -505,17 +511,21 @@ void Serializer::add_function_call_amd64(Script *script, int func_no)
 		int reg = get_reg(root, p.type->size);
 		if (reg >= 0){
 			add_cmd(Asm::inst_mov, param_reg(p.type, reg), p);
+			add_reg_channel(reg, cmd.num - 1, -100); // -> call
 		}else{
 			// some registers are not 8bit'able
 			add_cmd(Asm::inst_mov, p_al, p);
-			add_cmd(Asm::inst_mov, param_reg(TypeReg32, get_reg(root, 4)), p_eax);
+			reg = get_reg(root, 4);
+			add_cmd(Asm::inst_mov, param_reg(TypeReg32, reg), p_eax);
+			add_reg_channel(Asm::RegEax, cmd.num - 2, cmd.num - 1);
+			add_reg_channel(reg, cmd.num - 1, -100); // -> call
 		}
 	}
-	// xmm0-7 
-	foreachib(SerialCommandParam &p, xmm_param, i){
-		int reg = Asm::RegXmm0 + i;
-		add_cmd(Asm::inst_movss, param_reg(TypeReg128, reg), p);
-	}
+
+	// extend reg channels to call
+	foreach(RegChannel &r, reg_channel)
+		if (r.last == -100)
+			r.last = cmd.num;
 
 	void *func = (void*)script->func[func_no];
 	if (!func)

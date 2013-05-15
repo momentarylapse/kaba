@@ -1,0 +1,21 @@
+
+class TraceData2
+	vector pos
+	model o
+	terrain t
+
+class Model2
+	vector pos
+	int object_id
+
+void Trace2(vector a, vector b, TraceData2 td, bool c, int ignore)
+	print ignore
+
+void main()
+	TraceData2 td
+	vector p1, p2
+	Model2 m
+	m.object_id = 13
+	Model2 *p = &m
+	Trace2(p1, p2, td, false, p.object_id)
+	

@@ -137,10 +137,10 @@ HuiResource *HuiGetResource(const string &id)
 CHuiWindow *HuiCreateResourceDialog(const string &id, CHuiWindow *root)
 {
 	//return HuiCreateDialog("-dialog not found in resource-",200,100,root,true,mf);
-	msg_db_r("HuiCreateResourceDialog",1);
+	msg_db_f("HuiCreateResourceDialog",1);
 	HuiResource *res = HuiGetResource(id);
 	if (!res){
-		msg_db_l(1);
+		msg_error(format("HuiCreateResourceDialog  (id=%s)  m(-_-)m",id.c_str()));
 		return NULL;
 	}
 	
@@ -185,12 +185,10 @@ CHuiWindow *HuiCreateResourceDialog(const string &id, CHuiWindow *root)
 			dlg->SetImage(cmd.id, cmd.image);
 	}
 	msg_db_m("  \\(^_^)/",1);
-	msg_db_l(1);
 	return dlg;
 	
 	/*msg_error(format("HuiCreateResourceDialog  (id=%d)  m(-_-)m",id));
 	CHuiWindow *d=HuiCreateDialog(format("-dialog (id=%d) not found in resource-",id),300,200,root,true,mf);
-	msg_db_l(1);
 	return d;*/
 }
 
@@ -225,20 +223,18 @@ CHuiMenu *_create_res_menu_(HuiResource *res, int &index, int num)
 
 CHuiMenu *HuiCreateResourceMenu(const string &id)
 {
-	msg_db_r("HuiCreateResourceMenu",1);
+	msg_db_f("HuiCreateResourceMenu",1);
 	msg_db_m(id.c_str(),2);
 	
 	HuiResource *res = HuiGetResource(id);
 	if (!res){
 		msg_error(format("HuiCreateResourceMenu  (id=%d)  m(-_-)m", id.c_str()).c_str());
-		msg_db_l(1);
 		return NULL;
 	}
 
 	int i = 0;
 	msg_db_m("  \\(^_^)/",1);
 	CHuiMenu *m = _create_res_menu_(res, i, res->i_param[0]);
-	msg_db_l(1);
 	return m;
 }
 
