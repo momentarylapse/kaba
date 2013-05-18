@@ -1,0 +1,23 @@
+//#show
+
+class Sub
+	int i
+	void __init__()
+		self.i = 13
+		print "Sub.init"
+	void __delete__()
+		print "Sub.delete"
+
+class Test //: Sub
+	int j
+	Sub s
+	void __init__()
+		self.j = 14
+		print "Test.init"
+	void __delete__()
+		print "Test.delete"
+
+void main()
+	Test t
+	print t.s.i
+	print t.j

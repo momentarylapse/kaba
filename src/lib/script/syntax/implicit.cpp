@@ -5,26 +5,20 @@
 
 namespace Script{
 
-void CreateImplicitConstructor(SyntaxTree *ps, Type *t)
+void SyntaxTree::ImplementImplicitConstructor(Function *f, Type *t)
 {
-	// create function
-	Function *f = ps->AddFunction(t->name + ".__init__", TypeVoid);
-	int fn = ps->Functions.num - 1;
-	f->_class = t;
-	ps->AddVar("self", ps->GetPointerType(t), f);
-
-	Command *self = ps->AddCommand();
+	Command *self = AddCommand();
 	self->kind = KindVarLocal;
 	self->link_nr = 0;
-	self->type = ps->GetPointerType(t);
+	self->type = GetPointerType(t);
 
 	if (t->is_super_array){
 		foreach(ClassFunction &ff, t->function)
 			if (ff.name == "__mem_init__"){
-				int nc = ps->AddConstant(TypeInt);
-				*(int*)ps->Constants[nc].data = t->parent->size;
-				Command *c = ps->add_command_classfunc(t, ff, self);
-				Command *p = ps->add_command_const(nc);
+				int nc = AddConstant(TypeInt);
+				*(int*)Constants[nc].data = t->parent->size;
+				Command *c = add_command_classfunc(t, ff, self);
+				Command *p = add_command_const(nc);
 				c->param[0] = p;
 				c->num_params = 1;
 				f->block->command.add(c);
@@ -36,16 +30,27 @@ void CreateImplicitConstructor(SyntaxTree *ps, Type *t)
 			ClassFunction *ff = e.type->GetConstructor();
 			if (!ff)
 				continue;
-			Command *p = ps->AddCommand();
+			Command *p = AddCommand();
 			p->kind = KindDerefAddressShift;
 			p->link_nr = e.offset;
 			p->type = e.type;
 			p->num_params = 1;
 			p->param[0] = self;
-			Command *c = ps->add_command_classfunc(t, *ff, ps->ref_command(p));
+			Command *c = add_command_classfunc(t, *ff, ref_command(p));
 			f->block->command.add(c);
 		}
 	}
+}
+
+void CreateImplicitConstructor(SyntaxTree *ps, Type *t)
+{
+	// create function
+	Function *f = ps->AddFunction(t->name + ".__init__", TypeVoid);
+	int fn = ps->Functions.num - 1;
+	f->_class = t;
+	ps->AddVar("self", ps->GetPointerType(t), f);
+
+	ps->ImplementImplicitConstructor(f, t);
 
 	ClassFunction cf;
 	cf.nr = fn;
@@ -53,6 +58,39 @@ void CreateImplicitConstructor(SyntaxTree *ps, Type *t)
 	cf.return_type = TypeVoid;
 	cf.script = ps->script;
 	t->function.add(cf);
+}
+
+
+void SyntaxTree::ImplementImplicitDestructor(Function *f, Type *t)
+{
+	Command *self = AddCommand();
+	self->kind = KindVarLocal;
+	self->link_nr = 0;
+	self->type = GetPointerType(t);
+
+	if (t->is_super_array){
+		foreach(ClassFunction &ff, t->function)
+			if (ff.name == "clear"){
+				Command *c = add_command_classfunc(t, ff, self);
+				f->block->command.add(c);
+			}
+	}else{
+
+		// call child destructors
+		foreach(ClassElement &e, t->element){
+			ClassFunction *ff = e.type->GetDestructor();
+			if (!ff)
+				continue;
+			Command *p = AddCommand();
+			p->kind = KindDerefAddressShift;
+			p->link_nr = e.offset;
+			p->type = e.type;
+			p->num_params = 1;
+			p->param[0] = self;
+			Command *c = add_command_classfunc(t, *ff, ref_command(p));
+			f->block->command.add(c);
+		}
+	}
 }
 
 void CreateImplicitDestructor(SyntaxTree *ps, Type *t)
@@ -63,35 +101,7 @@ void CreateImplicitDestructor(SyntaxTree *ps, Type *t)
 	f->_class = t;
 	ps->AddVar("self", ps->GetPointerType(t), f);
 
-	Command *self = ps->AddCommand();
-	self->kind = KindVarLocal;
-	self->link_nr = 0;
-	self->type = ps->GetPointerType(t);
-
-	if (t->is_super_array){
-		foreach(ClassFunction &ff, t->function)
-			if (ff.name == "clear"){
-				Command *c = ps->add_command_classfunc(t, ff, self);
-				f->block->command.add(c);
-			}
-	}else{
-
-		// call child destructors
-		foreach(ClassElement &e, t->element){
-			ClassFunction *ff = e.type->GetDestructor();
-			if (!ff)
-				continue;
-			Command *p = ps->AddCommand();
-			p->kind = KindDerefAddressShift;
-			p->link_nr = e.offset;
-			p->type = e.type;
-			p->num_params = 1;
-			p->param[0] = self;
-			Command *c = ps->add_command_classfunc(t, *ff, ps->ref_command(p));
-			f->block->command.add(c);
-		}
-	}
-
+	ps->ImplementImplicitDestructor(f, t);
 
 	ClassFunction cf;
 	cf.nr = fn;

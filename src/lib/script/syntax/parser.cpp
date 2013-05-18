@@ -1698,6 +1698,10 @@ void SyntaxTree::ParseFunction(Type *class_type, bool as_extern)
 
 	ExpressionBuffer::Line *this_line = Exp.cur_line;
 
+	// auto implement constructor?
+	if (f->name.tail(9) == ".__init__")
+		ImplementImplicitConstructor(f, class_type);
+
 
 // instructions
 	while(true){
@@ -1715,6 +1719,10 @@ void SyntaxTree::ParseFunction(Type *class_type, bool as_extern)
 		// command or local definition
 		ParseCompleteCommand(f->block, f);
 	}
+
+	// auto implement destructor?
+	if (f->name.tail(11) == ".__delete__")
+		ImplementImplicitDestructor(f, class_type);
 	cur_func = NULL;
 
 	Exp.cur_line --;

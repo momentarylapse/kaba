@@ -167,6 +167,8 @@ public:
 	// pre compiler
 	void PreCompiler(bool just_analyse);
 	void HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse);
+	void ImplementImplicitConstructor(Function *f, Type *t);
+	void ImplementImplicitDestructor(Function *f, Type *t);
 	void CreateImplicitFunctions(Type *t, bool relocate_last_function);
 	void CreateAllImplicitFunctions(bool relocate_last_function);
 
