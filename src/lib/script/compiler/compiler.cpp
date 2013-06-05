@@ -347,6 +347,14 @@ void Script::Compiler()
 		}
 	}
 
+// link virtual functions into vtables
+	foreach(Type *t, syntax->Types){
+		int n = 0;
+		foreach(ClassFunction &cf, t->function)
+			if (cf.is_virtual)
+				t->vtable[n ++] = (void*)cf.script->func[cf.nr];
+	}
+
 
 // "task" for the first execution of main() -> ThreadOpcode
 	if (!syntax->FlagCompileOS)

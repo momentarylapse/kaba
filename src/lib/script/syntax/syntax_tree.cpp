@@ -117,6 +117,27 @@ Command *SyntaxTree::add_command_operator(Command *p1, Command *p2, int op)
 	return cmd;
 }
 
+
+Command *SyntaxTree::add_command_local_var(int no, Type *type)
+{
+	Command *cmd = AddCommand();
+	cmd->kind = KindVarLocal;
+	cmd->link_nr = no;
+	cmd->type = type;
+	return cmd;
+}
+
+Command *SyntaxTree::add_command_parray(Command *p, Command *index, Type *type)
+{
+	Command *cmd_el = AddCommand();
+	cmd_el->kind = KindPointerAsArray;
+	cmd_el->type = type;
+	cmd_el->param[0] = p;
+	cmd_el->param[1] = index;
+	cmd_el->num_params = 2;
+	return cmd_el;
+}
+
 SyntaxTree::SyntaxTree(Script *_script)
 {
 	FlagShow = false;
@@ -881,8 +902,7 @@ void SyntaxTree::BreakDownComplicatedCommands()
 
 			Command *c_index = c->param[1];
 			// & array
-			Command *c_ref_array = cp_command(c->param[0]);
-			ref_command_old(this, c_ref_array);
+			Command *c_ref_array = ref_command(c->param[0]);
 			// create command for size constant
 			int nc = AddConstant(TypeInt);
 			*(int*)Constants[nc].data = el_type->size;
@@ -935,8 +955,7 @@ void SyntaxTree::BreakDownComplicatedCommands()
 //        -> shift
 
 			// & struct
-			Command *c_ref_struct = cp_command(c->param[0]);
-			ref_command_old(this, c_ref_struct);
+			Command *c_ref_struct = ref_command(c->param[0]);
 			// create command for shift constant
 			int nc = AddConstant(TypeInt);
 			*(int*)Constants[nc].data = c->link_nr;

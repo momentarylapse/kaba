@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.11.1.0";
+string DataVersion = "0.11.2.0";
 
 CompilerConfiguration config;
 
@@ -267,12 +267,7 @@ void class_add_func(const string &name, Type *return_type, void *func)
 	}
 	int cmd = add_func(tname + "." + name, return_type, func, true);
 	cur_func->_class = cur_class;
-	ClassFunction f;
-	f.name = name;
-	f.script = cur_package_script;
-	f.nr = cmd;
-	f.return_type = return_type;
-	cur_class->function.add(f);
+	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
 	cur_class_func = &cur_class->function.back();
 }
 

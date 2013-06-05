@@ -154,7 +154,7 @@ public:
 	void ParseEnum();
 	void ParseClass();
 	void ParseFunction(Type *class_type, bool as_extern);
-	void ParseClassFunction(Type *t, bool as_extern);
+	void ParseClassFunction(Type *t, bool as_extern, bool as_virtual);
 	Type *ParseVariableDefSingle(Type *type, Function *f, bool as_param = false);
 	void ParseVariableDef(bool single, Function *f);
 	void ParseGlobalConst(const string &name, Type *type);
@@ -170,7 +170,6 @@ public:
 	void ImplementImplicitConstructor(Function *f, Type *t);
 	void ImplementImplicitDestructor(Function *f, Type *t);
 	void CreateImplicitFunctions(Type *t, bool relocate_last_function);
-	void CreateAllImplicitFunctions(bool relocate_last_function);
 
 	// syntax analysis
 	Type *GetConstantType();
@@ -225,6 +224,8 @@ public:
 	Command *add_command_classfunc(Type *class_type, ClassFunction &f, Command *inst);
 	Command *add_command_const(int nc);
 	Command *add_command_operator(Command *p1, Command *p2, int op);
+	Command *add_command_local_var(int no, Type *type);
+	Command *add_command_parray(Command *p, Command *index, Type *type);
 	Command *cp_command(Command *c);
 	Command *cp_command_deep(Command *c);
 	Command *ref_command(Command *sub);

@@ -1364,14 +1364,14 @@ void SyntaxTree::ParseEnum()
 			Exp.next();
 
 			// explicit value
-			if (Exp.cur == ":"){
+			if (Exp.cur == "="){
 				Exp.next();
 				ExpectNoNewline();
 				Type *type = GetConstantType();
 				if (type == TypeInt)
 					value = *(int*)GetConstantValue();
 				else
-					DoError("integer constant expected after \":\" for explicit value of enum");
+					DoError("integer constant expected after \"=\" for explicit value of enum");
 				Exp.next();
 			}
 			*(int*)c->data = value ++;
@@ -1390,18 +1390,19 @@ void SyntaxTree::ParseEnum()
 	Exp.cur_line --;
 }
 
-void SyntaxTree::ParseClassFunction(Type *t, bool as_extern)
+void SyntaxTree::ParseClassFunction(Type *t, bool as_extern, bool as_virtual)
 {
 	ParseFunction(t, as_extern);
 
-	ClassFunction cf;
 	Function *f = Functions.back();
+	ClassFunction cf;
 	cf.name = f->name.substr(t->name.num + 1, -1);
 	cf.nr = Functions.num - 1;
 	cf.return_type = f->return_type;
 	cf.script = script;
 	for (int i=0;i<f->num_params;i++)
 		cf.param_type.add(f->var[i].type);
+	cf.is_virtual = as_virtual;
 	t->function.add(cf);
 }
 
@@ -1410,6 +1411,23 @@ inline bool type_needs_alignment(Type *t)
 	if (t->is_array)
 		return type_needs_alignment(t->parent);
 	return (t->size >= 4);
+}
+
+bool class_has_virtual_functions(SyntaxTree *ps)
+{
+	ExpressionBuffer::Line *l = ps->Exp.cur_line;
+	bool found = false;
+	l ++;
+	while(l != &ps->Exp.line[ps->Exp.line.num - 1]){
+		if (l->indent == 0)
+			break;
+		if ((l->indent == 1) && (l->exp[0].name == "virtual")){
+			found = true;
+			break;
+		}
+		l ++;
+	}
+	return found;
 }
 
 void SyntaxTree::ParseClass()
@@ -1455,6 +1473,16 @@ void SyntaxTree::ParseClass()
 	}
 	ExpectNewline();
 
+	// virtual functions?
+	bool has_virtual = class_has_virtual_functions(this);
+	if (has_virtual){
+		ClassElement el;
+		el.name = "-vtable-";
+		el.type = TypePointer;
+		el.offset = 0;
+		_offset = config.PointerSize;
+	}
+
 	// elements
 	for (int num=0;true;num++){
 		Exp.next_line();
@@ -1467,6 +1495,13 @@ void SyntaxTree::ParseClass()
 		next_extern = false;
 		if (Exp.cur == "extern"){
 			next_extern = true;
+			Exp.next();
+		}
+
+		// virtual?
+		bool next_virtual = false;
+		if (Exp.cur == "virtual"){
+			next_virtual = true;
 			Exp.next();
 		}
 		int ie = Exp.cur_exp;
@@ -1494,7 +1529,7 @@ void SyntaxTree::ParseClass()
 			if (is_function){
 				Exp.cur_exp = ie;
 				Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
-				ParseClassFunction(_class, next_extern);
+				ParseClassFunction(_class, next_extern, next_virtual);
 
 				break;
 			}
@@ -1531,6 +1566,15 @@ void SyntaxTree::ParseClass()
 		if (type_needs_alignment(e.type))
 			_offset = mem_align(_offset, 4);
 	_class->size = ProcessClassSize(_class->name, _offset);
+	if (has_virtual){
+		int n = 0;
+		foreach(ClassFunction &cf, _class->function)
+			if (cf.is_virtual)
+				n ++;
+		typedef void *__pointer;
+		_class->vtable = new __pointer[n];
+	}
+
 
 
 	CreateImplicitFunctions(_class, false);

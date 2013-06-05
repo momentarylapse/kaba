@@ -32,20 +32,16 @@ public:
 	matrix operator + (const matrix &m) const;
 	matrix operator - (const matrix &m) const;
 	matrix operator * (const matrix &m) const;
-	/*matrix operator * (float f) const
-	{
-		matrix r;
-		for (int i=0;i<16;i++)
-			r.e[i]=e[i]*f;
-		return r;
-	}
+	matrix operator * (float f) const;
 	friend matrix operator * (float f, const matrix &m)
-	{	return m*f;	}*/
+	{	return m*f;	}
 	matrix operator *= (const matrix &m);
 	vector operator * (const vector &v) const;
+	float determinant() const;
 	vector transform_normal(const vector &v) const;
 	vector untransform(const vector &v) const;
 	vector project(const vector &v) const;
+	vector unproject(const vector &v) const;
 	string str() const;
 
 	// kaba
@@ -67,6 +63,7 @@ void _cdecl MatrixRotationView(matrix &m,const vector &ang);
 void _cdecl MatrixRotationQ(matrix &m,const quaternion &q);
 void _cdecl MatrixScale(matrix &m,float fx,float fy,float fz);
 void _cdecl MatrixReflect(matrix &m,const plane &pl);
+void _cdecl MatrixPerspective(matrix &m, float fovy, float aspect, float z_near, float z_far);
 
 matrix _cdecl MatrixMultiply2(const matrix &m2,const matrix &m1);
 matrix _cdecl MatrixRotation2(const vector &ang);

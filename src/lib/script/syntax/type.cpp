@@ -4,6 +4,15 @@
 namespace Script{
 
 
+ClassFunction::ClassFunction(const string &_name, Type *_return_type, Script *s, int no)
+{
+	name = _name;
+	return_type = _return_type;
+	script = s;
+	nr = no;
+	is_virtual = false;
+}
+
 Type::Type()//const string &_name, int _size, SyntaxTree *_owner)
 {
 	//name = _name;
@@ -16,7 +25,14 @@ Type::Type()//const string &_name, int _size, SyntaxTree *_owner)
 	is_silent = false;
 	parent = NULL;
 	force_call_by_value = false;
+	vtable = NULL;
 };
+
+Type::~Type()
+{
+	if (vtable)
+		delete[](vtable);
+}
 
 bool Type::UsesCallByReference()
 {	return ((!force_call_by_value) && (!is_pointer)) || (is_array);	}
@@ -33,6 +49,8 @@ bool Type::is_simple_class()
 	/*if (is_array)
 		return false;*/
 	if (is_super_array)
+		return false;
+	if (vtable)
 		return false;
 	if (GetConstructor())
 		return false;

@@ -4,7 +4,7 @@ MATH_DIR = $(LIB_DIR)/math
 MATH_BIN  = $(MATH_DIR)/math.a
 MATH_OBJ  = $(MATH_DIR)/math.o $(MATH_DIR)/complex.o $(MATH_DIR)/vector.o \
    $(MATH_DIR)/matrix.o $(MATH_DIR)/matrix3.o $(MATH_DIR)/quaternion.o $(MATH_DIR)/plane.o \
-   $(MATH_DIR)/rect.o $(MATH_DIR)/interpolation.o $(MATH_DIR)/random.o
+   $(MATH_DIR)/rect.o $(MATH_DIR)/interpolation.o $(MATH_DIR)/random.o $(MATH_DIR)/ray.o
 MATH_CXXFLAGS = $(GLOBALFLAGS)
 
 $(MATH_BIN) : $(MATH_OBJ)
@@ -40,3 +40,6 @@ $(MATH_DIR)/interpolation.o : $(MATH_DIR)/interpolation.cpp
 
 $(MATH_DIR)/random.o : $(MATH_DIR)/random.cpp
 	$(CPP) -c $(MATH_DIR)/random.cpp -o $@ $(MATH_CXXFLAGS)
+
+$(MATH_DIR)/ray.o : $(MATH_DIR)/ray.cpp
+	$(CPP) -c $(MATH_DIR)/ray.cpp -o $@ $(MATH_CXXFLAGS)

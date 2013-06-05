@@ -307,6 +307,7 @@ void NixDraw3DCubeMapped(int cube_map,int buffer)
 
 void NixDrawSpriteR(const rect &src, const vector &pos, const rect &dest)
 {
+#if 0
 	rect d;
 	float depth;
 	vector p;
@@ -329,6 +330,7 @@ void NixDrawSpriteR(const rect &src, const vector &pos, const rect &dest)
 	d.y1=p.y+f*(dest.y1)*NixViewScale.y*NixTargetHeight*NixView3DRatio;
 	d.y2=p.y+f*(dest.y2)*NixViewScale.y*NixTargetHeight*NixView3DRatio;
 	NixDraw2D(src, d, depth);
+#endif
 }
 
 void NixDrawSprite(const rect &src,const vector &pos,float radius)

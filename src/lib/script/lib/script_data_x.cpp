@@ -464,6 +464,7 @@ void SIAddPackageX()
 		class_add_element("vel",			TypeVector,		GetDACamera(vel));
 		class_add_element("rot",			TypeVector,		GetDACamera(rot));
 		class_add_element("zoom",			TypeFloat,		GetDACamera(zoom));
+		class_add_element("scale_x",		TypeFloat,		GetDACamera(scale_x));
 		class_add_element("dest",			TypeRect,		GetDACamera(dest));
 		class_add_element("z",				TypeFloat,		GetDACamera(z));
 		class_add_element("min_depth",		TypeFloat,		GetDACamera(min_depth));

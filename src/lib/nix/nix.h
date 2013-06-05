@@ -36,7 +36,7 @@ extern string NixVersion;
 //--------------------------------------------------------------------//
 void avi_close(int texture);
 
-void _cdecl NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,CHuiWindow *win);
+void _cdecl NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWindow *win);
 void _cdecl NixSetVideoMode(const string &api,int xres,int yres,int depth,bool fullscreen);
 void NixTellUsWhatsWrong();
 void NixKillDeviceObjects();

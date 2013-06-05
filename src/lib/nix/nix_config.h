@@ -122,27 +122,12 @@ enum{
 #define ShadingPlane			0
 #define ShadingRound			1
 
-enum{
-	// vanishing point (center of projection)
-	PerspectiveCenterSet,			// keep values set
-	PerspectiveCenterAutoTarget,	// center always in center of target (window, texture)
-	// mapped size of perspective view
-	PerspectiveSizeSet,				// keep values set
-	PerspectiveSizeAutoTarget,		// align size to target
-	PerspectiveSizeAutoScreen,		// align size to screen
-	// size of the 2D transformation (screen pixels per vertex unit)
-	Perspective2DScaleSet,			// keep values set
-	Perspective2DScaleAutoTarget,	// target has height and width of 1
-	Perspective2DScaleAutoScreen,	// screen has height and width of 1
-	// apsect ratio
-	PerspectiveRatioSet				// use a user specified apsect ratio
-};
 
 
 extern int NixFontHeight;
 extern string NixFontName;
 
-extern CHuiWindow *NixWindow;
+extern HuiWindow *NixWindow;
 
 extern int NixApi;
 extern string NixApiName;
@@ -160,7 +145,6 @@ extern int NixNumTrias;
 
 extern string NixTextureDir;
 extern int NixTextureMaxFramesToLive, NixMaxVideoTextureSize;
-extern float NixMaxDepth, NixMinDepth;
 
 extern int VBTemp; // vertex buffer for 1-frame geometries
 

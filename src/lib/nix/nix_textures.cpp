@@ -393,10 +393,10 @@ void unset_textures(int num_textures)
 	// unset multitexturing
 	if (OGLMultiTexturingSupport){
 		for (int i=num_textures;i<_nix_num_textures_activated_;i++){
-			glActiveTexture(GL_TEXTURE0+i);
+			glActiveTexture(GL_TEXTURE0 + i);
+			glClientActiveTexture(GL_TEXTURE0 + i);
 			glDisable(GL_TEXTURE_2D);
 			glDisable(GL_TEXTURE_CUBE_MAP);
-			glClientActiveTexture(GL_TEXTURE0 + i);
 			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
 		glActiveTexture(GL_TEXTURE0);
@@ -433,34 +433,30 @@ void NixSetTexture(int texture)
 
 void NixSetTextures(int *texture, int num_textures)
 {
+	if (!OGLMultiTexturingSupport){
+		NixSetTexture(num_textures > 0 ? texture[0] : -1);
+		return;
+	}
 	for (int i=0;i<num_textures;i++)
 		if (texture[i] >= 0)
 			refresh_texture(texture[i]);
 	unset_textures(num_textures);
 
 	// set multitexturing
-	if (OGLMultiTexturingSupport){
-		for (int i=0;i<num_textures;i++){
-			if (texture[i] < 0)
-				continue;
-			glActiveTexture(GL_TEXTURE0+i);
-			if (NixTextures[texture[i]].is_cube_map){
-				glEnable(GL_TEXTURE_CUBE_MAP);
-				glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture[i]].glTexture);
-			}else{
-				glEnable(GL_TEXTURE_2D);
-				glBindTexture(GL_TEXTURE_2D,NixTextures[texture[i]].glTexture);
-			}
-		}
-	}else if (texture[0] >= 0){
-		if (NixTextures[texture[0]].is_cube_map){
+	for (int i=0;i<num_textures;i++){
+		if (texture[i] < 0)
+			continue;
+		glActiveTexture(GL_TEXTURE0+i);
+		if (NixTextures[texture[i]].is_cube_map){
 			glEnable(GL_TEXTURE_CUBE_MAP);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture[0]].glTexture);
+			glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture[i]].glTexture);
 		}else{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D,NixTextures[texture[0]].glTexture);
+			glBindTexture(GL_TEXTURE_2D,NixTextures[texture[i]].glTexture);
 		}
+		//TestGLError("SetTex"+i2s(i));
 	}
+	TestGLError("SetTextures");
 
 	_nix_num_textures_activated_ = num_textures;
 	if (NixGLCurrentProgram > 0)

@@ -28,7 +28,7 @@ Array<sLight> NixLight;*/
 
 bool NixLightingEnabled;
 
-void TestGLError(const string &);
+void TestGLError(const char*);
 
 
 // general ability of using lights

@@ -134,7 +134,7 @@ HuiResource *HuiGetResource(const string &id)
 	return NULL;
 }
 
-CHuiWindow *HuiCreateResourceDialog(const string &id, CHuiWindow *root)
+HuiWindow *HuiCreateResourceDialog(const string &id, HuiWindow *root)
 {
 	//return HuiCreateDialog("-dialog not found in resource-",200,100,root,true,mf);
 	msg_db_f("HuiCreateResourceDialog",1);
@@ -149,7 +149,7 @@ CHuiWindow *HuiCreateResourceDialog(const string &id, CHuiWindow *root)
 	msg_db_m(i2s(res->i_param[1]).c_str(),2);
 
 	// dialog
-	CHuiWindow *dlg;
+	HuiWindow *dlg;
 	if (res->type == "SizableDialog")
 		dlg = HuiCreateSizableDialog(HuiGetLanguage(res->id), res->i_param[0], res->i_param[1], root, res->b_param[0]);
 	else
@@ -192,10 +192,10 @@ CHuiWindow *HuiCreateResourceDialog(const string &id, CHuiWindow *root)
 	return d;*/
 }
 
-CHuiMenu *_create_res_menu_(HuiResource *res, int &index, int num)
+HuiMenu *_create_res_menu_(HuiResource *res, int &index, int num)
 {
 	msg_db_r("_create_res_menu_",2);
-	CHuiMenu *menu = new CHuiMenu();
+	HuiMenu *menu = new HuiMenu();
 	//msg_db_out(2,i2s(n));
 	for (int i=0;i<num;i++){
 		//msg_db_out(2,i2s(j));
@@ -210,7 +210,7 @@ CHuiMenu *_create_res_menu_(HuiResource *res, int &index, int num)
 			menu->AddSeparator();
 		if (cmd->type == "ItemPopup"){
 			index ++;
-			CHuiMenu *sub = _create_res_menu_(res, index, cmd->i_param[0]);
+			HuiMenu *sub = _create_res_menu_(res, index, cmd->i_param[0]);
 			menu->AddSubMenu(get_lang(cmd->id, "", true), cmd->id, sub);
 			index --;
 		}
@@ -221,7 +221,7 @@ CHuiMenu *_create_res_menu_(HuiResource *res, int &index, int num)
 	return menu;
 }
 
-CHuiMenu *HuiCreateResourceMenu(const string &id)
+HuiMenu *HuiCreateResourceMenu(const string &id)
 {
 	msg_db_f("HuiCreateResourceMenu",1);
 	msg_db_m(id.c_str(),2);
@@ -234,7 +234,7 @@ CHuiMenu *HuiCreateResourceMenu(const string &id)
 
 	int i = 0;
 	msg_db_m("  \\(^_^)/",1);
-	CHuiMenu *m = _create_res_menu_(res, i, res->i_param[0]);
+	HuiMenu *m = _create_res_menu_(res, i, res->i_param[0]);
 	return m;
 }
 

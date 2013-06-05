@@ -11,11 +11,13 @@
 // configuring the view
 void _NixSetMode2d();
 void _NixSetMode3d();
-void _cdecl NixSetPerspectiveMode(int mode, float param1 = 0, float param2 = 0);
-void _cdecl NixSetProjection(bool perspective, bool relative);
+void _cdecl NixSetProjectionPerspective();
+void _cdecl NixSetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max);
+void _cdecl NixSetProjectionOrtho(bool relative);
+void _cdecl NixSetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max);
 void _cdecl NixSetProjectionMatrix(const matrix &mat);
 void _cdecl NixSetWorldMatrix(const matrix &mat);
-void _cdecl NixSetView(const vector &view_pos, const vector &view_ang, const vector &scale);
+void _cdecl NixSetView(const vector &view_pos, const vector &view_ang);
 void _cdecl NixSetView(const matrix &view_mat);
 void _cdecl NixSetViewV(const vector &view_pos, const vector &view_ang);
 void _cdecl NixSetViewM(const matrix &view_mat);
@@ -29,7 +31,7 @@ void _cdecl NixEnableClipPlane(int index, bool enabled);
 void NixResize();
 
 bool _cdecl NixStart(int texture = -1);
-void _cdecl NixStartPart(int x1, int y1, int x2, int y2, bool set_centric);
+void _cdecl NixScissor(const rect &r);
 void _cdecl NixEnd();
 
 void _cdecl NixScreenShot(const string &filename, int width = -1, int height = -1);

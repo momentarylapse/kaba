@@ -21,6 +21,7 @@ struct complex;
 struct matrix;
 struct matrix3;
 struct quaternion;
+struct Ray;
 
 
 #include "../base/base.h"
@@ -34,6 +35,7 @@ struct quaternion;
 #include "complex.h"
 #include "interpolation.h"
 #include "random.h"
+#include "ray.h"
 
 
 
