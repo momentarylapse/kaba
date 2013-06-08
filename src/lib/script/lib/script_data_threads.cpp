@@ -34,12 +34,12 @@ void SIAddPackageThread()
 	add_class(TypeThread);
 		class_add_func("__init__",		TypeVoid,	thread_p(mf((tmf)&Thread::__init__)));
 		class_add_func("__delete__",		TypeVoid,	thread_p(mf((tmf)&Thread::__delete__)));
-		class_add_func("Call",		TypeVoid,	thread_p(mf((tmf)&Thread::Call)));
-			func_add_param("func",				TypePointer);
-			func_add_param("param",				TypePointer);
+		class_add_func("Run",		TypeVoid,	thread_p(mf((tmf)&Thread::Run)));
+		class_add_func("OnRun",		TypeVoid,	thread_p(mf((tmf)&Thread::OnRun)));
 		class_add_func("IsDone",		TypeBool,	thread_p(mf((tmf)&Thread::IsDone)));
 		class_add_func("Kill",		TypeVoid,	thread_p(mf((tmf)&Thread::Kill)));
 		class_add_func("Join",		TypeVoid,	thread_p(mf((tmf)&Thread::Join)));
+		TypeThread->LinkVirtualTable();
 
 	add_class(TypeMutex);
 		class_add_func("__init__",		TypeVoid,	thread_p(mf((tmf)&Mutex::__init__)));
@@ -51,7 +51,7 @@ void SIAddPackageThread()
 	add_func("ThreadExit",				TypeVoid,	thread_p(&ThreadExit));
 	add_func("ThreadSelf",				TypeThreadP,thread_p(&ThreadSelf));
 	
-	add_func("WorkDo",					TypeBool,	thread_p(&WorkDo));
+	/*add_func("WorkDo",					TypeBool,	thread_p(&WorkDo));
 		func_add_param("func",				TypePointer);
 		func_add_param("status_func",		TypePointer);
 	add_func("WorkDoScheduled",			TypeBool,	thread_p(&WorkDoScheduled));
@@ -61,7 +61,7 @@ void SIAddPackageThread()
 		func_add_param("work_partition",	TypeInt);
 	add_func("WorkGetNumThreads",		TypeInt,	thread_p(&WorkGetNumThreads));
 	add_func("WorkGetTotal",			TypeInt,	thread_p(&WorkGetTotal));
-	add_func("WorkGetDone",				TypeInt,	thread_p(&WorkGetDone));
+	add_func("WorkGetDone",				TypeInt,	thread_p(&WorkGetDone));*/
 }
 
 };

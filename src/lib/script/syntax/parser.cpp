@@ -1390,7 +1390,7 @@ void SyntaxTree::ParseEnum()
 	Exp.cur_line --;
 }
 
-void SyntaxTree::ParseClassFunction(Type *t, bool as_extern, bool as_virtual)
+void SyntaxTree::ParseClassFunction(Type *t, bool as_extern, int virtual_index)
 {
 	ParseFunction(t, as_extern);
 
@@ -1398,11 +1398,22 @@ void SyntaxTree::ParseClassFunction(Type *t, bool as_extern, bool as_virtual)
 	ClassFunction cf;
 	cf.name = f->name.substr(t->name.num + 1, -1);
 	cf.nr = Functions.num - 1;
-	cf.return_type = f->return_type;
 	cf.script = script;
+	cf.return_type = f->return_type;
 	for (int i=0;i<f->num_params;i++)
 		cf.param_type.add(f->var[i].type);
-	cf.is_virtual = as_virtual;
+	cf.virtual_index = virtual_index;
+
+	// overwrite?
+	foreach(ClassFunction &_cf, t->function)
+		if (_cf.name == cf.name)
+			if ((_cf.return_type == cf.return_type) && (_cf.param_type.num == cf.param_type.num)){
+				if ((virtual_index < 0) && (_cf.virtual_index >= 0))
+					DoError("can only overwrite a virtual function with another virtual function");
+				_cf.nr = cf.nr;
+				_cf.script = cf.script;
+				return;
+			}
 	t->function.add(cf);
 }
 
@@ -1413,21 +1424,19 @@ inline bool type_needs_alignment(Type *t)
 	return (t->size >= 4);
 }
 
-bool class_has_virtual_functions(SyntaxTree *ps)
+int class_count_virtual_functions(SyntaxTree *ps)
 {
 	ExpressionBuffer::Line *l = ps->Exp.cur_line;
-	bool found = false;
+	int count = 0;
 	l ++;
 	while(l != &ps->Exp.line[ps->Exp.line.num - 1]){
 		if (l->indent == 0)
 			break;
-		if ((l->indent == 1) && (l->exp[0].name == "virtual")){
-			found = true;
-			break;
-		}
+		if ((l->indent == 1) && (l->exp[0].name == "virtual"))
+			count ++;
 		l ++;
 	}
-	return found;
+	return count;
 }
 
 void SyntaxTree::ParseClass()
@@ -1474,14 +1483,20 @@ void SyntaxTree::ParseClass()
 	ExpectNewline();
 
 	// virtual functions?
-	bool has_virtual = class_has_virtual_functions(this);
-	if (has_virtual){
+	int parent_virtual_count = 0;
+	if (_class->parent)
+		parent_virtual_count = _class->parent->num_virtual;
+	int virtual_count = class_count_virtual_functions(this) + parent_virtual_count;
+	if (virtual_count){
 		ClassElement el;
 		el.name = "-vtable-";
 		el.type = TypePointer;
 		el.offset = 0;
 		_offset = config.PointerSize;
+		_class->vtable = new VirtualTable[virtual_count];
+		_class->num_virtual = virtual_count;
 	}
+	virtual_count = parent_virtual_count;
 
 	// elements
 	for (int num=0;true;num++){
@@ -1529,7 +1544,7 @@ void SyntaxTree::ParseClass()
 			if (is_function){
 				Exp.cur_exp = ie;
 				Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
-				ParseClassFunction(_class, next_extern, next_virtual);
+				ParseClassFunction(_class, next_extern, next_virtual ? (virtual_count ++) : -1);
 
 				break;
 			}
@@ -1566,14 +1581,6 @@ void SyntaxTree::ParseClass()
 		if (type_needs_alignment(e.type))
 			_offset = mem_align(_offset, 4);
 	_class->size = ProcessClassSize(_class->name, _offset);
-	if (has_virtual){
-		int n = 0;
-		foreach(ClassFunction &cf, _class->function)
-			if (cf.is_virtual)
-				n ++;
-		typedef void *__pointer;
-		_class->vtable = new __pointer[n];
-	}
 
 
 

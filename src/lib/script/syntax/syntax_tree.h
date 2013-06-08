@@ -154,7 +154,7 @@ public:
 	void ParseEnum();
 	void ParseClass();
 	void ParseFunction(Type *class_type, bool as_extern);
-	void ParseClassFunction(Type *t, bool as_extern, bool as_virtual);
+	void ParseClassFunction(Type *t, bool as_extern, int virtual_index);
 	Type *ParseVariableDefSingle(Type *type, Function *f, bool as_param = false);
 	void ParseVariableDef(bool single, Function *f);
 	void ParseGlobalConst(const string &name, Type *type);

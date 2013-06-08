@@ -9,8 +9,8 @@
 // auxiliary
 int ThreadGetNumCores();
 
-typedef void thread_func_t(void*);
-typedef bool thread_status_func_t();
+//typedef void thread_func_t(void*);
+//typedef bool thread_status_func_t();
 
 struct ThreadInternal;
 
@@ -18,25 +18,18 @@ class Thread
 {
 public:
 	Thread();
-	~Thread();
-	void Call(thread_func_t *f, void *param = 0);
+	virtual ~Thread();
+	void Run();
 	bool IsDone();
 	void Kill();
 	void Join();
+
+	virtual void OnRun(){}// = 0;
 
 	void __init__();
 	void __delete__();
 
 	ThreadInternal *internal;
-};
-
-class ThreadBase : public Thread
-{
-public:
-	ThreadBase();
-	virtual ~ThreadBase();
-	void Run();
-	virtual void OnRun() = 0;
 };
 
 void ThreadExit();

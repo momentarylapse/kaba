@@ -237,12 +237,18 @@ static PreCommand *cur_cmd = NULL;
 static Function *cur_func = NULL;
 static Type *cur_class;
 static ClassFunction *cur_class_func = NULL;
+static void **cur_vtable = NULL;
 
 void add_class(Type *root_type)//, PreScript *ps = NULL)
 {
 	msg_db_f("add_class", 4);
 	cur_class = root_type;
+	cur_vtable = NULL;
 }
+
+#define class_set_vtable(type) \
+	type type##Instance; \
+	cur_vtable = *(void***)&type##Instance;
 
 void class_add_element(const string &name, Type *type, int offset)
 {
@@ -265,10 +271,23 @@ void class_add_func(const string &name, Type *return_type, void *func)
 			if ((t->is_pointer) && (t->parent == cur_class))
 				tname = t->name;
 	}
-	int cmd = add_func(tname + "." + name, return_type, func, true);
-	cur_func->_class = cur_class;
-	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
-	cur_class_func = &cur_class->function.back();
+	long p = (long)func;
+	if ((p & 1) > 0){
+		// virtual function
+		int index = p / sizeof(void*);
+		func = cur_vtable[index];
+		int cmd = add_func(tname + "." + name + "[virtual]", return_type, func, true);
+		cur_func->_class = cur_class;
+		cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
+		cur_class_func = &cur_class->function.back();
+		cur_class_func->virtual_index = index;
+	}else{
+		// normal function
+		int cmd = add_func(tname + "." + name, return_type, func, true);
+		cur_func->_class = cur_class;
+		cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
+		cur_class_func = &cur_class->function.back();
+	}
 }
 
 
@@ -608,6 +627,23 @@ public:
 	string str(){	return p2s(p);	}
 };
 
+class VirtualTest
+{
+public:
+	int i;
+	VirtualTest(){}
+	virtual ~VirtualTest(){}
+	void __init__();
+	virtual void f_virtual(){		msg_write(i);msg_write("VirtualTest.f_virtual()");	}
+	void f_normal(){		msg_write(i);msg_write("VirtualTest.f_normal()");	}
+	void test(){	msg_write("VirtualTest.test()"); f_virtual();	}
+};
+static VirtualTest VirtualTestInstance;
+void VirtualTest::__init__(){
+	*(VirtualTable*)this = *(VirtualTable*)&VirtualTestInstance;
+	msg_write("VirtualTest.init()");
+}
+
 void SIAddPackageBase()
 {
 	msg_db_f("SIAddPackageBase", 3);
@@ -647,6 +683,8 @@ void SIAddPackageBase()
 	TypeString			= add_type_a("string",		TypeChar, -1);	// string := char[]
 	TypeStringList		= add_type_a("string[]",	TypeString, -1);
 	
+	Type *TypeVirtualTest=add_type  ("VirtualTest",	sizeof(VirtualTest));
+
 	add_class(TypeInt);
 		class_add_func("str", TypeString, mf((tmf)&IntClass::str));
 	add_class(TypeFloat);
@@ -726,6 +764,17 @@ void SIAddPackageBase()
 			func_add_param("other",		TypeStringList);
 		class_add_func("join", TypeString, mf((tmf)&StringList::join));
 			func_add_param("glue",		TypeString);
+
+
+	add_class(TypeVirtualTest);
+		class_set_vtable(VirtualTest);
+		class_add_element("i", TypeInt, offsetof(VirtualTest, i));
+		class_add_func("__init__", TypeVoid, mf((tmf)&VirtualTest::__init__));
+		class_add_func("f_virtual", TypeVoid, mf((tmf)&VirtualTest::f_virtual));
+		class_add_func("f_normal", TypeVoid, mf((tmf)&VirtualTest::f_normal));
+		class_add_func("test", TypeVoid, mf((tmf)&VirtualTest::test));
+		cur_class->vtable = new VirtualTable[3];
+		cur_class->LinkVirtualTable();
 
 
 	add_const("nil", TypePointer, NULL);

@@ -9,19 +9,24 @@
 
 #define MAX_THREADS			32
 
-typedef void thread_work_func_t(int);
-typedef void scheduled_work_func_t(int, int);
+class ThreadedWork
+{
+public:
+	ThreadedWork(int total_size, int partition_size);
+	virtual ~ThreadedWork();
+	virtual void DoStep(int index) = 0;
+	virtual bool OnStatus(){	return false;	}
+	bool Run();
 
-// hight level
-bool WorkDo(thread_work_func_t *func, thread_status_func_t *status_func = 0);
+	int total_size, partition_size;
+	Array<Thread*> thread;
 
-//bool WorkSchedule(int work_id, int work_size);
+	int work_given;
+	Mutex *mx_list;
 
-// very high level
-bool WorkDoScheduled(scheduled_work_func_t *func, thread_status_func_t *status_func, int _work_size_, int _work_partition_);
-int WorkGetNumThreads();
-int WorkGetTotal();
-int WorkGetDone();
+	int GetTotal();
+	int GetDone();
+};
 
 
 #endif

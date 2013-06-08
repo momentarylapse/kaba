@@ -1,23 +1,112 @@
 #include "../file/file.h"
 #include "threads.h"
-#include "work.h"
 #include "mutex.h"
-#include "../config.h"
+#include "work.h"
 
-#ifdef _X_USE_HUI_
-#include "../hui/hui.h"
-#endif
 
 static int OverwriteThreadNum = -1;
-static int num_threads = 0;
 
-static thread_work_func_t *cur_work_func;
+class WorkerThread : public Thread
+{
+public:
+	WorkerThread(int _id)
+	{
+		id = _id;
+	}
+	bool Schedule()
+	{
+		if (!work->mx_list)
+			work->mx_list = new Mutex;
+		work->mx_list->Lock();
+		num = 0;
+		if (work->work_given >= work->total_size){
+			work->mx_list->Unlock();
+			return false;
+		}
+		first = work->work_given;
+		num = min(work->total_size - work->work_given, work->partition_size);
+		work->work_given += num;
+		work->mx_list->Unlock();
+		return true;
+	}
+	virtual void OnRun()
+	{
+		while(Schedule()){
+			for (int i=0;i<num;i++)
+				work->DoStep(first + i);
+		}
+	}
 
-static Thread *work_thread[MAX_THREADS];
+	ThreadedWork *work;
+	int id;
+	int first, num;
+};
 
-static Mutex *mx_work_list = NULL;
-static Array<int> thread_work[MAX_THREADS];
-static int work_given, work_size, work_partition;
+ThreadedWork::ThreadedWork(int _total_size, int _partition_size)
+{
+	total_size = _total_size;
+	partition_size = _partition_size;
+	work_given = 0;
+
+	// use max. number of cores?
+	int num_threads = ThreadGetNumCores();
+	if (OverwriteThreadNum >= 0)
+		num_threads = OverwriteThreadNum;
+
+	for (int i=0;i<num_threads;i++)
+		thread.add(new WorkerThread(i));
+}
+
+ThreadedWork::~ThreadedWork()
+{
+	foreach(Thread *t, thread)
+		delete(t);
+}
+
+bool ThreadedWork::Run()
+{
+	msg_db_r("WorkDo", 1);
+
+	// run threads
+	for (int i=0;i<thread.num;i++)
+		thread[i]->Run();
+
+	// main program: update gui
+	bool all_done = false;
+	bool thread_abort = false;
+	while((!all_done) && (!thread_abort)){
+
+/*#ifdef _X_USE_HUI_
+		HuiDoSingleMainLoop();
+		HuiSleep(30);
+#endif*/
+
+		thread_abort = !OnStatus();
+		all_done = true;
+		for (int i=0;i<thread.num;i++)
+			all_done &= thread[i]->IsDone();
+	}
+
+	if (!thread_abort){
+		for (int i=0;i<thread.num;i++)
+			thread[i]->Join();
+	}
+
+	msg_db_l(1);
+	return !thread_abort;
+}
+
+int ThreadedWork::GetTotal()
+{
+	return total_size;
+}
+
+int ThreadedWork::GetDone()
+{
+	return work_given;
+}
+
+#if 0
 
 #if 1
 
@@ -146,3 +235,4 @@ int WorkGetDone()
 {
 	return work_given;
 }
+#endif

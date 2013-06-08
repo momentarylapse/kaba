@@ -12,8 +12,6 @@
 struct ThreadInternal
 {
 	bool running;
-	void *p;
-	thread_func_t *f;
 #ifdef OS_WINDOWS
 	HANDLE thread;
 #endif
@@ -140,16 +138,15 @@ void Thread::__init__()
 static void *thread_start_func(void *p)
 {
 	Thread *t = (Thread*)p;
-	t->internal->f(t->internal->p);
+	t->OnRun();
 	t->internal->running = false;
 	return NULL;
 }
 
+
 // create and run a new thread
-void Thread::Call(thread_func_t *f, void *param)
+void Thread::Run()
 {
-	internal->f = f;
-	internal->p = param;
 	internal->running = true;
 	int ret = pthread_create(&internal->thread, NULL, &thread_start_func, (void*)this);
 
@@ -202,21 +199,5 @@ Thread *ThreadSelf()
 bool Thread::IsDone()
 {
 	return !internal->running;
-}
-
-
-ThreadBase::ThreadBase(){}
-
-ThreadBase::~ThreadBase(){}
-
-static void _thread_base_run_(void *p)
-{
-	ThreadBase *t = (ThreadBase*)p;
-	t->OnRun();
-}
-
-void ThreadBase::Run()
-{
-	Call(&_thread_base_run_, this);
 }
 
