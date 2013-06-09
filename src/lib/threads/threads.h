@@ -29,6 +29,7 @@ public:
 	void __init__();
 	void __delete__();
 
+	bool running;
 	ThreadInternal *internal;
 };
 

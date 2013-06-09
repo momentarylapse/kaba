@@ -237,7 +237,7 @@ static PreCommand *cur_cmd = NULL;
 static Function *cur_func = NULL;
 static Type *cur_class;
 static ClassFunction *cur_class_func = NULL;
-static void **cur_vtable = NULL;
+void **cur_vtable = NULL;
 
 void add_class(Type *root_type)//, PreScript *ps = NULL)
 {
@@ -245,10 +245,6 @@ void add_class(Type *root_type)//, PreScript *ps = NULL)
 	cur_class = root_type;
 	cur_vtable = NULL;
 }
-
-#define class_set_vtable(type) \
-	type type##Instance; \
-	cur_vtable = *(void***)&type##Instance;
 
 void class_add_element(const string &name, Type *type, int offset)
 {
@@ -275,9 +271,13 @@ void class_add_func(const string &name, Type *return_type, void *func)
 	if ((p & 1) > 0){
 		// virtual function
 		int index = p / sizeof(void*);
-		func = cur_vtable[index];
-		int cmd = add_func(tname + "." + name + "[virtual]", return_type, func, true);
-		cur_func->_class = cur_class;
+		int cmd = -1;
+		cur_func = NULL;
+		if (cur_vtable){
+			func = cur_vtable[index];
+			cmd = add_func(tname + "." + name + "[virtual]", return_type, func, true);
+			cur_func->_class = cur_class;
+		}
 		cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
 		cur_class_func = &cur_class->function.back();
 		cur_class_func->virtual_index = index;
@@ -381,9 +381,11 @@ void func_add_param(const string &name, Type *type)
 		Variable v;
 		v.name = name;
 		v.type = type;
-		cur_func->var.add(v);
-		cur_func->literal_param_type[cur_func->num_params] = type;
-		cur_func->num_params ++;
+		if (cur_func){
+			cur_func->var.add(v);
+			cur_func->literal_param_type[cur_func->num_params] = type;
+			cur_func->num_params ++;
+		}
 		if (cur_class_func)
 			cur_class_func->param_type.add(type);
 	}

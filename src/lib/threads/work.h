@@ -12,11 +12,11 @@
 class ThreadedWork
 {
 public:
-	ThreadedWork(int total_size, int partition_size);
+	ThreadedWork();
 	virtual ~ThreadedWork();
-	virtual void DoStep(int index) = 0;
-	virtual bool OnStatus(){	return false;	}
-	bool Run();
+	virtual void DoStep(int index){}
+	virtual bool OnStatus(){	return true;	}
+	bool Run(int total_size, int partition_size);
 
 	int total_size, partition_size;
 	Array<Thread*> thread;
@@ -26,6 +26,9 @@ public:
 
 	int GetTotal();
 	int GetDone();
+
+	void __init__();
+	void __delete__();
 };
 
 

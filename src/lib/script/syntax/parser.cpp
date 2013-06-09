@@ -1461,24 +1461,24 @@ void SyntaxTree::ParseClass()
 	if (Exp.cur == ":"){
 		so("vererbung der struktur");
 		Exp.next();
-		Type *ancestor = GetType(Exp.cur, true);
+		Type *parent = GetType(Exp.cur, true);
 		bool found = false;
-		if (ancestor->element.num > 0){
+		if (parent->element.num > 0){
 			// inheritance of elements
-			_class->element = ancestor->element;
-			_offset = ancestor->size;
+			_class->element = parent->element;
 			found = true;
 		}
-		if (ancestor->function.num > 0){
+		if (parent->function.num > 0){
 			// inheritance of functions
-			foreach(ClassFunction &f, ancestor->function)
+			foreach(ClassFunction &f, parent->function)
 				if ((f.name != "__init__") && (f.name != "__delete__") && (f.name != "__assign__"))
 					_class->function.add(f);
 			found = true;
 		}
 		if (!found)
-			DoError(format("parental type in class definition after \":\" has to be a class, but (%s) is not", ancestor->name.c_str()));
-		_class->parent = ancestor;
+			DoError(format("parental type in class definition after \":\" has to be a class, but (%s) is not", parent->name.c_str()));
+		_class->parent = parent;
+		_offset = parent->size;
 	}
 	ExpectNewline();
 
@@ -1487,12 +1487,18 @@ void SyntaxTree::ParseClass()
 	if (_class->parent)
 		parent_virtual_count = _class->parent->num_virtual;
 	int virtual_count = class_count_virtual_functions(this) + parent_virtual_count;
-	if (virtual_count){
-		ClassElement el;
-		el.name = "-vtable-";
-		el.type = TypePointer;
-		el.offset = 0;
-		_offset = config.PointerSize;
+	if (virtual_count > 0){
+		if (_class->parent){
+			if (!_class->parent->vtable)
+				DoError("no virtual functions allowed when inheriting from class without virtual functions");
+		}else{
+			ClassElement el;
+			el.name = "-vtable-";
+			el.type = TypePointer;
+			el.offset = 0;
+			_class->element.add(el);
+			_offset = config.PointerSize;
+		}
 		_class->vtable = new VirtualTable[virtual_count];
 		_class->num_virtual = virtual_count;
 	}

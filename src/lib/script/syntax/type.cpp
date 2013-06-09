@@ -1,6 +1,7 @@
 #include "../../base/base.h"
 #include "type.h"
 #include "../script.h"
+#include "../../file/file.h"
 
 namespace Script{
 
@@ -108,8 +109,11 @@ void Type::LinkVirtualTable()
 
 	// link virtual functions into vtable
 	foreach(ClassFunction &cf, function)
-		if (cf.virtual_index >= 0)
-			vtable[cf.virtual_index] = (void*)cf.script->func[cf.nr];
+		if (cf.virtual_index >= 0){
+			if (cf.nr >= 0)
+				vtable[cf.virtual_index] = (void*)cf.script->func[cf.nr];
+			num_virtual = max(cf.virtual_index + 1, num_virtual);
+		}
 }
 
 string Type::var2str(void *p)
