@@ -38,11 +38,11 @@ enum
 	KindVarLocal,
 	KindVarGlobal,
 	KindVarFunction,
-	KindEnum,				// = single enum entry
 	KindConstant,
 	// execution
-	KindFunction,			// = script defined functions
-	KindCompilerFunction,	// = compiler functions
+	KindFunction,			// = real function call
+	KindVirtualFunction,	// = virtual function call
+	KindCompilerFunction,	// = special internal functions
 	KindBlock,				// = block of commands {...}
 	KindOperator,
 	KindPrimitiveOperator,	// provisorical...

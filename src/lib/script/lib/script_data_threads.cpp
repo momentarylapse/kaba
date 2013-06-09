@@ -17,6 +17,7 @@ namespace Script{
 #else
 	typedef int Thread;
 	typedef int Mutex;
+	typedef int ThreadedWork;
 	#define thread_p(p)		NULL
 #endif
 

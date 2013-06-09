@@ -26,7 +26,7 @@ extern bool next_const;
 inline bool type_match(Type *type, bool is_class, Type *wanted);
 inline bool direct_type_match(Type *a, Type *b)
 {
-	return ( (a==b) || ( (a->is_pointer) && (b->is_pointer) ) );
+	return ( (a==b) || ( (a->is_pointer) && (b->is_pointer) ) || (a->IsDerivedFrom(b)) );
 }
 inline bool type_match_with_cast(Type *type, bool is_class, bool is_modifiable, Type *wanted, int &penalty, int &cast);
 
@@ -172,12 +172,18 @@ Command *DoClassFunction(SyntaxTree *ps, Command *ob, ClassFunction &cf, Functio
 
 	// the function
 	cmd->script = cf.script;
-	cmd->kind = KindFunction;
-	cmd->link_nr = cf.nr;
 	Function *ff = cf.script->syntax->Functions[cf.nr];
 	cmd->type = ff->literal_return_type;
 	cmd->num_params = ff->num_params;
-	ps->GetFunctionCall(ff->name, cmd, f);
+	if (cf.virtual_index >= 0){
+		cmd->kind = KindVirtualFunction;
+		cmd->link_nr = cf.virtual_index;
+		ps->GetFunctionCall("?." + cf.name, cmd, f);
+	}else{
+		cmd->kind = KindFunction;
+		cmd->link_nr = cf.nr;
+		ps->GetFunctionCall(ff->name, cmd, f);
+	}
 	cmd->instance = ob;
 	return cmd;
 }
@@ -475,7 +481,7 @@ void SyntaxTree::GetFunctionCall(const string &f_name, Command *Operand, Functio
 
 
 
-	// find (and provisorically link) the parameters in the source
+	// find (and provisional link) the parameters in the source
 	int np;
 	Type *WantedType[SCRIPT_MAX_PARAMS];
 
@@ -656,6 +662,8 @@ inline bool type_match(Type *type, bool is_class, Type *wanted)
 	if ((type->is_pointer) && (wanted == TypePointer))
 		return true;
 	if ((is_class) && (wanted == TypeClass))
+		return true;
+	if (type->IsDerivedFrom(wanted))
 		return true;
 	return false;
 }

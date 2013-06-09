@@ -102,6 +102,14 @@ ClassFunction *Type::GetDestructor()
 	return NULL;
 }
 
+ClassFunction *Type::GetVirtualFunction(int virtual_index)
+{
+	foreach(ClassFunction &f, function)
+		if (f.virtual_index == virtual_index)
+			return &f;
+	return NULL;
+}
+
 void Type::LinkVirtualTable()
 {
 	if (!vtable)

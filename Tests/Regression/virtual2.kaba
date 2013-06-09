@@ -1,0 +1,18 @@
+//#show
+
+class Base
+	virtual void d()
+		print "Base.d"
+
+class Derived : Base
+	virtual void d()
+		print "Derived.d"
+
+void f(Base b)
+	b.d()
+
+void main()
+	Base b
+	Derived d
+	f(b)
+	f(d)

@@ -52,6 +52,7 @@ struct Type{
 	int GetFunc(const string &name);
 	ClassFunction *GetConstructor();
 	ClassFunction *GetDestructor();
+	ClassFunction *GetVirtualFunction(int virtual_index);
 	void LinkVirtualTable();
 	string var2str(void *p);
 };
