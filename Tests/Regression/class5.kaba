@@ -1,7 +1,7 @@
 //#show
 //#disasm
 
-class c
+class Test
 	int x
 	void __init__()
 		self.x = -1
@@ -11,5 +11,6 @@ class c
 
 
 void main()
-	c *a = new c
-	delete c
+	Test *a = new Test
+	print a.x
+	delete a

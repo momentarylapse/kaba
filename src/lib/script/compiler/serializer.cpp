@@ -342,17 +342,17 @@ static Array<SerialCommandParam> CompilerFunctionParam;
 static SerialCommandParam CompilerFunctionReturn = {-1, NULL, NULL};
 static SerialCommandParam CompilerFunctionInstance = {-1, NULL, NULL};
 
-void AddFuncParam(SerialCommandParam &p)
+void AddFuncParam(const SerialCommandParam &p)
 {
 	CompilerFunctionParam.add(p);
 }
 
-void AddFuncReturn(SerialCommandParam &r)
+void AddFuncReturn(const SerialCommandParam &r)
 {
 	CompilerFunctionReturn = r;
 }
 
-void AddFuncInstance(SerialCommandParam &inst)
+void AddFuncInstance(const SerialCommandParam &inst)
 {
 	CompilerFunctionInstance = inst;
 }
@@ -1356,6 +1356,21 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 						add_cmd(Asm::inst_ret);
 					}
 					break;
+				case CommandNew:
+					AddFuncParam(param_const(TypeInt, (void*)ret.type->parent->size));
+					AddFuncReturn(ret);
+					if (!syntax_tree->GetExistence("-malloc-", cur_func))
+						DoError("-malloc- not found????");
+					AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_nr);
+					add_cmd_constructor(ret, -1);
+					break;
+				case CommandDelete:
+					add_cmd_destructor(param[0], false);
+					AddFuncParam(param[0]);
+					if (!syntax_tree->GetExistence("-free-", cur_func))
+						DoError("-free- not found????");
+					AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_nr);
+					break;
 				case CommandWaitOneFrame:
 				case CommandWait:
 				case CommandWaitRT:{
@@ -1509,7 +1524,7 @@ void Serializer::SerializeBlock(Block *block, int level)
 }
 
 // modus: KindVarLocal/KindVarTemp
-//    -1: -return-   -> don't destruct
+//    -1: -return-/new   -> don't destruct
 void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 {
 	Type *class_type = param.type;
@@ -1533,15 +1548,23 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 		InsertedConstructorFunc.add(param);
 }
 
-void Serializer::add_cmd_destructor(SerialCommandParam &param)
+void Serializer::add_cmd_destructor(SerialCommandParam &param, bool ref)
 {
-	ClassFunction *f = param.type->GetDestructor();
-	if (!f)
-		return;
-	SerialCommandParam inst;
-	AddReference(param, TypePointer, inst);
-	AddFuncInstance(inst);
-	AddClassFunctionCall(f);
+	if (ref){
+		ClassFunction *f = param.type->GetDestructor();
+		if (!f)
+			return;
+		SerialCommandParam inst;
+		AddReference(param, TypePointer, inst);
+		AddFuncInstance(inst);
+		AddClassFunctionCall(f);
+	}else{
+		ClassFunction *f = param.type->parent->GetDestructor();
+		if (!f)
+			return;
+		AddFuncInstance(param);
+		AddClassFunctionCall(f);
+	}
 }
 
 void Serializer::FillInConstructorsFunc()
