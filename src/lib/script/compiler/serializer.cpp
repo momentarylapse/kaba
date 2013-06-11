@@ -409,9 +409,9 @@ void Serializer::fc_x86_end(int push_size)
 	Type *type = CompilerFunctionReturn.type;
 
 	if (push_size > 127)
-		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegEsp), param_const(TypeInt, (void*)push_size));
+		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegEsp), param_const(TypeInt, (void*)(long)push_size));
 	else if (push_size > 0)
-		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegEsp), param_const(TypeChar, (void*)push_size));
+		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegEsp), param_const(TypeChar, (void*)(long)push_size));
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) && (!type->UsesReturnByMemory())){
@@ -579,7 +579,7 @@ void Serializer::add_virtual_function_call_x86(int virtual_index)
 
 	add_cmd(Asm::inst_mov, p_eax, CompilerFunctionInstance);
 	add_cmd(Asm::inst_mov, p_eax, p_deref_eax);
-	add_cmd(Asm::inst_add, p_eax, param_const(TypeInt, (void*)(4 * virtual_index)));
+	add_cmd(Asm::inst_add, p_eax, param_const(TypeInt, (void*)(long)(4 * virtual_index)));
 	add_cmd(Asm::inst_mov, param_reg(TypePointer, Asm::RegEdx), p_deref_eax);
 	add_cmd(Asm::inst_call, param_reg(TypePointer, Asm::RegEdx)); // the actual call
 
@@ -588,7 +588,18 @@ void Serializer::add_virtual_function_call_x86(int virtual_index)
 
 void Serializer::add_virtual_function_call_amd64(int virtual_index)
 {
-	DoError("virtual function call on amd64 not yet implemented!");
+	//DoError("virtual function call on amd64 not yet implemented!");
+	msg_db_f("AddFunctionCallAmd64", 4);
+
+	int push_size = fc_amd64_begin();
+
+	add_cmd(Asm::inst_mov, p_rax, CompilerFunctionInstance);
+	add_cmd(Asm::inst_mov, p_eax, p_deref_eax);
+	add_cmd(Asm::inst_add, p_eax, param_const(TypeInt, (void*)(long)(8 * virtual_index)));
+	add_cmd(Asm::inst_mov, p_eax, p_deref_eax);
+	add_cmd(Asm::inst_call, p_eax); // the actual call
+
+	fc_amd64_end(push_size);
 }
 
 void Serializer::AddFunctionCall(Script *script, int func_no)
@@ -1357,7 +1368,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 					}
 					break;
 				case CommandNew:
-					AddFuncParam(param_const(TypeInt, (void*)ret.type->parent->size));
+					AddFuncParam(param_const(TypeInt, (void*)(long)ret.type->parent->size));
 					AddFuncReturn(ret);
 					if (!syntax_tree->GetExistence("-malloc-", cur_func))
 						DoError("-malloc- not found????");
