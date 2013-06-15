@@ -1,0 +1,8 @@
+
+
+void main()
+	float f[]
+	f.add(1)
+	f.add(2)
+	f.add(3)
+	print f
