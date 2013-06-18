@@ -32,7 +32,7 @@ public:
 	{
 		while(Schedule()){
 			for (int i=0;i<num;i++)
-				work->DoStep(first + i);
+				work->DoStep(first + i, id);
 		}
 	}
 
@@ -99,7 +99,10 @@ bool ThreadedWork::Run(int _total_size, int _partition_size)
 			all_done &= thread[i]->IsDone();
 	}
 
-	if (!thread_abort){
+	if (thread_abort){
+		for (int i=0;i<thread.num;i++)
+			thread[i]->Kill();
+	}else{
 		for (int i=0;i<thread.num;i++)
 			thread[i]->Join();
 	}

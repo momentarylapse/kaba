@@ -61,6 +61,7 @@ void SIAddPackageThread()
 			func_add_param("partition_size", TypeInt);
 		class_add_func("DoStep",		TypeVoid,	thread_p(mf((tmf)&ThreadedWork::DoStep)));
 			func_add_param("index", TypeInt);
+			func_add_param("worker_id", TypeInt);
 		class_add_func("OnStatus",		TypeBool,	thread_p(mf((tmf)&ThreadedWork::OnStatus)));
 		class_add_func("GetTotal",		TypeInt,	thread_p(mf((tmf)&ThreadedWork::GetTotal)));
 		class_add_func("GetDone",		TypeInt,	thread_p(mf((tmf)&ThreadedWork::GetDone)));

@@ -6,6 +6,8 @@
 #if !defined(WORK_H_INCLUDED)
 #define WORK_H_INCLUDED
 
+#include "threads.h"
+#include "mutex.h"
 
 #define MAX_THREADS			32
 
@@ -14,7 +16,7 @@ class ThreadedWork
 public:
 	ThreadedWork();
 	virtual ~ThreadedWork();
-	virtual void DoStep(int index){}
+	virtual void DoStep(int index, int worker_id){}
 	virtual bool OnStatus(){	return true;	}
 	bool Run(int total_size, int partition_size);
 
