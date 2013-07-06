@@ -68,7 +68,7 @@ void try_init_global_var(Type *type, char* g_var)
 			try_init_global_var(type->parent, g_var + i * type->parent->size);
 		return;
 	}
-	ClassFunction *cf = type->GetConstructor();
+	ClassFunction *cf = type->GetDefaultConstructor();
 	if (!cf)
 		return;
 	typedef void init_func(void *);
@@ -111,7 +111,7 @@ void Script::AllocateStack()
 	Stack = NULL;
 	foreach(Command *cmd, syntax->Commands){
 		if (cmd->kind == KindCompilerFunction)
-			if ((cmd->link_nr == CommandWait) || (cmd->link_nr == CommandWaitRT) || (cmd->link_nr == CommandWaitOneFrame)){
+			if ((cmd->link_no == CommandWait) || (cmd->link_no == CommandWaitRT) || (cmd->link_no == CommandWaitOneFrame)){
 				Stack = new char[config.StackSize];
 				break;
 			}
@@ -300,7 +300,7 @@ void Script::Compiler()
 {
 	msg_db_f("Compiler",2);
 
-	syntax->MapLocalVariablesToStack();
+	syntax->MapLocalVariablesToStackX86();
 
 	syntax->BreakDownComplicatedCommands();
 #ifdef ScriptDebug
@@ -370,7 +370,10 @@ void Script::Compiler()
 
 	//_expand(Opcode,OpcodeSize);
 
-	WaitingMode = WaitingModeFirst;
+	if (first_execution)
+		WaitingMode = WaitingModeFirst;
+	else
+		WaitingMode = WaitingModeNone;
 
 	if (ShowCompilerStats){
 		msg_write("--------------------------------");

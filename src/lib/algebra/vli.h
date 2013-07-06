@@ -8,6 +8,7 @@ public:
 	vli(const vli &v);
 	vli(int v);
 	vli(const string &str);
+	~vli();
 
 private:
 	void shift_bits(int n);

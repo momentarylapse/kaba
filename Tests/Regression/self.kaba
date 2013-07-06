@@ -1,0 +1,17 @@
+//#show
+//#disasm
+
+class Test
+	int i
+	void p()
+		print i
+	void f(int x)
+		p()
+		i = x
+		p()
+
+
+void main()
+	Test t
+	t.i = 13
+	t.f(3)

@@ -13,14 +13,36 @@
 	#include <gdk/gdkx.h>
 #endif
 
-Array<HuiEvent> NixInputEvent;
+vector NixMouse, NixMouseRel, NixMouseD, NixMouseDRel;
+
+
+bool AllowWindowsKeyInput = false;
+
+bool NixMouseStolen = false;
+int NixStealMouseDx = 0;
+int NixStealMouseDy = 0;
+
+static Array<HuiEvent> NixInputEvent;
+static vector _NixMouseDSum;
 int NixKeyRep;
 
 void NixOnEvent()
 {
 	HuiEvent *e = HuiGetEvent();
-	//if ((e->dx != 0) || (e->dy != 0))
-	//	msg_write(format("d:  %d  %d", e->dx, e->dy));
+	_NixMouseDSum += vector(e->dx, e->dy, e->dz);
+	if (e->message == "hui:mouse-move"){
+		//msg_write(format("d:  %d  %d", e->dx, e->dy));
+		if (NixMouseStolen){
+			int x0 = MaxX / 2;
+			int y0 = MaxY / 2;
+			int dx = (e->mx - x0);
+			int dy = (e->my - y0);
+			if ((abs(dx) > 50) || (abs(dy) > 50)){
+				//msg_write("---shift");
+				NixWindow->SetCursorPos(x0, y0);
+			}
+		}
+	}
 	NixInputEvent.add(*e);
 }
 
@@ -43,18 +65,12 @@ void NixInputInit()
 	NixWindow->Event("hui:right-button-up", &NixOnEvent);
 }
 
-vector NixMouse, NixMouseRel, NixMouseD, NixMouseDRel;
-
-static bool KeyBufferRead;
-
-bool AllowWindowsKeyInput=false;
-
-bool NixMouseStolen = false;
-
 void NixStealMouse(bool steal)
 {
 	NixMouseStolen = steal;
 	NixWindow->ShowCursor(!steal);
+
+	NixWindow->SetCursorPos(MaxX / 2, MaxY / 2);
 }
 
 #if 0
@@ -206,28 +222,21 @@ void NixUpdateInput()
 	}
 
 	if (NixMouseStolen){
+		// copy (but keep x,y)
 		float mx0 = NixInputDataCurrent.x;
 		float my0 = NixInputDataCurrent.y;
 		NixInputDataCurrent = NixWindow->input;
 		NixInputDataCurrent.x = mx0;
 		NixInputDataCurrent.y = my0;
-		NixInputDataCurrent.dx = NixInputDataCurrent.dy = NixInputDataCurrent.dz = 0;
-		foreach(HuiEvent &e, NixInputEvent){
-			NixInputDataCurrent.dx += e.dx;
-			NixInputDataCurrent.dy += e.dy;
-			NixInputDataCurrent.dz += e.dz;
-		}
-		NixInputDataCurrent.x += NixInputDataCurrent.dx;
-		NixInputDataCurrent.y += NixInputDataCurrent.dy;
+
+		NixInputDataCurrent.dx = _NixMouseDSum.x;
+		NixInputDataCurrent.dy = _NixMouseDSum.y;
+		NixInputDataCurrent.dz = _NixMouseDSum.z;
+		NixInputDataCurrent.x += _NixMouseDSum.x;
+		NixInputDataCurrent.y += _NixMouseDSum.y;
 		NixInputDataCurrent.x = clampf(NixInputDataCurrent.x, 0, NixTargetWidth - 1);
 		NixInputDataCurrent.y = clampf(NixInputDataCurrent.y, 0, NixTargetHeight - 1);
 		//msg_write(format("%f  %f", NixInputDataCurrent.x, NixWindow->input.x));
-		int x0 = MaxX / 2;
-		int y0 = MaxY / 2;
-		int dx = (NixWindow->input.x - x0);
-		int dy = (NixWindow->input.y - y0);
-		if ((abs(dx) > 50) || (abs(dy) > 50))
-			NixWindow->SetCursorPos(x0, y0);
 	}else
 		NixInputDataCurrent = NixWindow->input;
 
@@ -239,6 +248,8 @@ void NixUpdateInput()
 	NixMouseRel = vector((float)NixInputDataCurrent.x / (float)NixTargetWidth, (float)NixInputDataCurrent.y / (float)NixTargetHeight, 0);
 	NixMouseD = vector(NixInputDataCurrent.dx, NixInputDataCurrent.dy, NixInputDataCurrent.dz);
 	NixMouseDRel = vector((float)NixInputDataCurrent.dx / (float)NixTargetWidth, (float)NixInputDataCurrent.dy / (float)NixTargetHeight, NixInputDataCurrent.dz);
+
+	_NixMouseDSum = v_0;
 }
 
 void NixResetInput()

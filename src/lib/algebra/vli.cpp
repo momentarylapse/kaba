@@ -153,16 +153,19 @@ vli::vli(const string &str)
 	}
 }
 
+vli::~vli()
+{
+	data.clear();
+}
+
 void vli::__init__()
 {
-	data.__init__();
-	data.add(0);
-	sign = false;
+	new(this) vli;
 }
 
 void vli::__delete__()
 {
-	data.clear();
+	this->~vli();
 }
 
 void vli::shift_units(int n)

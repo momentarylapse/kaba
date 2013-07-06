@@ -259,7 +259,11 @@ string Crypto::str()
 
 void Crypto::__init__()
 {
-	n.__init__();
-	k.__init__();
+	new(this) Crypto;
+}
+
+void Crypto::__delete__()
+{
+	this->~Crypto();
 }
 

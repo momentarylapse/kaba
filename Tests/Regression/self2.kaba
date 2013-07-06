@@ -1,0 +1,16 @@
+//#show
+
+class Test
+	float x, y
+	float projectx(float _x)
+		return x + _x
+	float projecty(float _y)
+		return y + _y
+	complex project(complex z)
+		return complex(projectx(z.x), projecty(z.y))
+
+void main()
+	Test t
+	t.x = 2
+	t.y = 2
+	print t.project(complex(10, 20))

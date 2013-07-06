@@ -711,34 +711,34 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 	if (link->kind == KindVarFunction){
 		so(" -var-func");
 		if (syntax_tree->FlagCompileOS)
-			p.p = (char*)((long)script->func[link->link_nr] - (long)&script->Opcode[0] + (syntax_tree->AsmMetaInfo)->CodeOrigin);
+			p.p = (char*)((long)script->func[link->link_no] - (long)&script->Opcode[0] + (syntax_tree->AsmMetaInfo)->CodeOrigin);
 		else
-			p.p = (char*)script->func[link->link_nr];
+			p.p = (char*)script->func[link->link_no];
 		p.kind = KindVarGlobal;
 	}else if (link->kind == KindMemory){
 		so(" -mem");
-		p.p = (char*)(long)link->link_nr;
+		p.p = (char*)(long)link->link_no;
 		p.kind = KindVarGlobal;
 	}else if (link->kind == KindAddress){
 		so(" -addr");
-		p.p = (char*)&link->link_nr;
+		p.p = (char*)&link->link_no;
 		p.kind = KindRefToConst;
 	}else if (link->kind == KindVarGlobal){
 		so(" -global");
-		p.p = link->script->g_var[link->link_nr];
+		p.p = link->script->g_var[link->link_no];
 		if (!p.p)
-			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_nr].name);
+			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
 	}else if (link->kind == KindVarLocal){
 		so(" -local");
-		p.p = (char*)(long)cur_func->var[link->link_nr]._offset;
+		p.p = (char*)(long)cur_func->var[link->link_no]._offset;
 	}else if (link->kind == KindLocalMemory){
 		so(" -local mem");
-		p.p = (char*)(long)link->link_nr;
+		p.p = (char*)(long)link->link_no;
 		p.kind = KindVarLocal;
 	}else if (link->kind == KindLocalAddress){
 		so(" -local addr");
 		SerialCommandParam param;
-		param.p = (char*)(long)link->link_nr;
+		param.p = (char*)(long)link->link_no;
 		param.kind = KindVarLocal;
 		param.type = TypePointer;
 		param.shift = 0;
@@ -750,8 +750,8 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			p.kind = KindVarGlobal;
 		else
 			p.kind = KindRefToConst;
-		p.p = script->cnst[link->link_nr];
-	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindCompilerFunction)){
+		p.p = script->cnst[link->link_no];
+	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction)){
 		p = SerializeCommand(link, level, index);
 	}else if (link->kind == KindReference){
 		//so(Kind2Str(link->Meta->Kind));
@@ -771,16 +771,19 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			p.p = param.p;
 		}*/
 		AddDereference(param, p);
+	}else if (link->kind == KindVarTemp){
+		// only used by <new> operator
+		p.p = (char*)link->link_no;
 	}else{
 		DoError("unexpected type of parameter: " + Kind2Str(link->kind));
 	}
 }
 
 
-void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, SerialCommandParam &ret)
+void Serializer::SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret)
 {
 	msg_db_f("SerializeOperator", 4);
-	switch(com->link_nr){
+	switch(com->link_no){
 		case OperatorIntAssign:
 		case OperatorFloatAssign:
 		case OperatorPointerAssign:
@@ -856,14 +859,14 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 		case OperatorPointerEqual:
 		case OperatorPointerNotEqual:
 			add_cmd(Asm::inst_cmp, param[0], param[1]);
-			if (com->link_nr==OperatorIntEqual)			add_cmd(Asm::inst_setz, ret);
-			if (com->link_nr==OperatorIntNotEqual)		add_cmd(Asm::inst_setnz, ret);
-			if (com->link_nr==OperatorIntGreater)		add_cmd(Asm::inst_setnle, ret);
-			if (com->link_nr==OperatorIntGreaterEqual)	add_cmd(Asm::inst_setnl, ret);
-			if (com->link_nr==OperatorIntSmaller)		add_cmd(Asm::inst_setl, ret);
-			if (com->link_nr==OperatorIntSmallerEqual)	add_cmd(Asm::inst_setle, ret);
-			if (com->link_nr==OperatorPointerEqual)		add_cmd(Asm::inst_setz, ret);
-			if (com->link_nr==OperatorPointerNotEqual)	add_cmd(Asm::inst_setnz, ret);
+			if (com->link_no==OperatorIntEqual)			add_cmd(Asm::inst_setz, ret);
+			if (com->link_no==OperatorIntNotEqual)		add_cmd(Asm::inst_setnz, ret);
+			if (com->link_no==OperatorIntGreater)		add_cmd(Asm::inst_setnle, ret);
+			if (com->link_no==OperatorIntGreaterEqual)	add_cmd(Asm::inst_setnl, ret);
+			if (com->link_no==OperatorIntSmaller)		add_cmd(Asm::inst_setl, ret);
+			if (com->link_no==OperatorIntSmallerEqual)	add_cmd(Asm::inst_setle, ret);
+			if (com->link_no==OperatorPointerEqual)		add_cmd(Asm::inst_setz, ret);
+			if (com->link_no==OperatorPointerNotEqual)	add_cmd(Asm::inst_setnz, ret);
 			break;
 		case OperatorIntBitAnd:
 			add_cmd(Asm::inst_mov, ret, param[0]);
@@ -901,10 +904,10 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 		case OperatorFloatMultiplyS:
 		case OperatorFloatDivideS:
 			add_cmd(Asm::inst_fld, param[0]);
-			if (com->link_nr==OperatorFloatAddS)			add_cmd(Asm::inst_fadd, param[1]);
-			if (com->link_nr==OperatorFloatSubtractS)	add_cmd(Asm::inst_fsub, param[1]);
-			if (com->link_nr==OperatorFloatMultiplyS)	add_cmd(Asm::inst_fmul, param[1]);
-			if (com->link_nr==OperatorFloatDivideS)		add_cmd(Asm::inst_fdiv, param[1]);
+			if (com->link_no==OperatorFloatAddS)			add_cmd(Asm::inst_fadd, param[1]);
+			if (com->link_no==OperatorFloatSubtractS)	add_cmd(Asm::inst_fsub, param[1]);
+			if (com->link_no==OperatorFloatMultiplyS)	add_cmd(Asm::inst_fmul, param[1]);
+			if (com->link_no==OperatorFloatDivideS)		add_cmd(Asm::inst_fdiv, param[1]);
 			add_cmd(Asm::inst_fstp, param[0]);
 			break;
 		case OperatorFloatAdd:
@@ -912,10 +915,10 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 		case OperatorFloatMultiply:
 		case OperatorFloatDivide:
 			add_cmd(Asm::inst_fld, param[0]);
-			if (com->link_nr==OperatorFloatAdd)			add_cmd(Asm::inst_fadd, param[1]);
-			if (com->link_nr==OperatorFloatSubtract)		add_cmd(Asm::inst_fsub, param[1]);
-			if (com->link_nr==OperatorFloatMultiply)		add_cmd(Asm::inst_fmul, param[1]);
-			if (com->link_nr==OperatorFloatDivide)		add_cmd(Asm::inst_fdiv, param[1]);
+			if (com->link_no==OperatorFloatAdd)			add_cmd(Asm::inst_fadd, param[1]);
+			if (com->link_no==OperatorFloatSubtract)		add_cmd(Asm::inst_fsub, param[1]);
+			if (com->link_no==OperatorFloatMultiply)		add_cmd(Asm::inst_fmul, param[1]);
+			if (com->link_no==OperatorFloatDivide)		add_cmd(Asm::inst_fdiv, param[1]);
 			add_cmd(Asm::inst_fstp, ret);
 			break;
 		case OperatorFloatMultiplyFI:
@@ -994,12 +997,12 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 		//case OperatorComplexMultiplySCF:
 		//case OperatorComplexDivideS:
 			add_cmd(Asm::inst_fld, param_shift(param[0], 0, TypeFloat));
-			if (com->link_nr == OperatorComplexAddS)			add_cmd(Asm::inst_fadd, param_shift(param[1], 0, TypeFloat));
-			if (com->link_nr == OperatorComplexSubtractS)	add_cmd(Asm::inst_fsub, param_shift(param[1], 0, TypeFloat));
+			if (com->link_no == OperatorComplexAddS)			add_cmd(Asm::inst_fadd, param_shift(param[1], 0, TypeFloat));
+			if (com->link_no == OperatorComplexSubtractS)	add_cmd(Asm::inst_fsub, param_shift(param[1], 0, TypeFloat));
 			add_cmd(Asm::inst_fstp, param_shift(param[0], 0, TypeFloat));
 			add_cmd(Asm::inst_fld, param_shift(param[0], 4, TypeFloat));
-			if (com->link_nr == OperatorComplexAddS)			add_cmd(Asm::inst_fadd, param_shift(param[1], 4, TypeFloat));
-			if (com->link_nr == OperatorComplexSubtractS)	add_cmd(Asm::inst_fsub, param_shift(param[1], 4, TypeFloat));
+			if (com->link_no == OperatorComplexAddS)			add_cmd(Asm::inst_fadd, param_shift(param[1], 4, TypeFloat));
+			if (com->link_no == OperatorComplexSubtractS)	add_cmd(Asm::inst_fsub, param_shift(param[1], 4, TypeFloat));
 			add_cmd(Asm::inst_fstp, param_shift(param[0], 4, TypeFloat));
 			break;
 		case OperatorComplexAdd:
@@ -1007,12 +1010,12 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 //		case OperatorFloatMultiply:
 //		case OperatorFloatDivide:
 			add_cmd(Asm::inst_fld, param_shift(param[0], 0, TypeFloat));
-			if (com->link_nr == OperatorComplexAdd)		add_cmd(Asm::inst_fadd, param_shift(param[1], 0, TypeFloat));
-			if (com->link_nr == OperatorComplexSubtract)	add_cmd(Asm::inst_fsub, param_shift(param[1], 0, TypeFloat));
+			if (com->link_no == OperatorComplexAdd)		add_cmd(Asm::inst_fadd, param_shift(param[1], 0, TypeFloat));
+			if (com->link_no == OperatorComplexSubtract)	add_cmd(Asm::inst_fsub, param_shift(param[1], 0, TypeFloat));
 			add_cmd(Asm::inst_fstp, param_shift(ret, 0, TypeFloat));
 			add_cmd(Asm::inst_fld, param_shift(param[0], 4, TypeFloat));
-			if (com->link_nr == OperatorComplexAdd)		add_cmd(Asm::inst_fadd, param_shift(param[1], 4, TypeFloat));
-			if (com->link_nr == OperatorComplexSubtract)	add_cmd(Asm::inst_fsub, param_shift(param[1], 4, TypeFloat));
+			if (com->link_no == OperatorComplexAdd)		add_cmd(Asm::inst_fadd, param_shift(param[1], 4, TypeFloat));
+			if (com->link_no == OperatorComplexSubtract)	add_cmd(Asm::inst_fsub, param_shift(param[1], 4, TypeFloat));
 			add_cmd(Asm::inst_fstp, param_shift(ret, 4, TypeFloat));
 			break;
 		case OperatorComplexMultiply:
@@ -1080,14 +1083,14 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 		case OperatorBoolSmaller:
 		case OperatorBoolSmallerEqual:
 			add_cmd(Asm::inst_cmp, param[0], param[1]);
-			if ((com->link_nr == OperatorCharEqual) || (com->link_nr == OperatorBoolEqual))
+			if ((com->link_no == OperatorCharEqual) || (com->link_no == OperatorBoolEqual))
 				add_cmd(Asm::inst_setz, ret);
-			else if ((com->link_nr ==OperatorCharNotEqual) || (com->link_nr == OperatorBoolNotEqual))
+			else if ((com->link_no ==OperatorCharNotEqual) || (com->link_no == OperatorBoolNotEqual))
 				add_cmd(Asm::inst_setnz, ret);
-			else if (com->link_nr == OperatorBoolGreater)		add_cmd(Asm::inst_setnle, ret);
-			else if (com->link_nr == OperatorBoolGreaterEqual)	add_cmd(Asm::inst_setnl, ret);
-			else if (com->link_nr == OperatorBoolSmaller)		add_cmd(Asm::inst_setl, ret);
-			else if (com->link_nr == OperatorBoolSmallerEqual)	add_cmd(Asm::inst_setle, ret);
+			else if (com->link_no == OperatorBoolGreater)		add_cmd(Asm::inst_setnle, ret);
+			else if (com->link_no == OperatorBoolGreaterEqual)	add_cmd(Asm::inst_setnl, ret);
+			else if (com->link_no == OperatorBoolSmaller)		add_cmd(Asm::inst_setl, ret);
+			else if (com->link_no == OperatorBoolSmallerEqual)	add_cmd(Asm::inst_setle, ret);
 			break;
 		case OperatorBoolAnd:
 			add_cmd(Asm::inst_mov, ret, param[0]);
@@ -1198,7 +1201,293 @@ void Serializer::SerializeOperator(Command *com, SerialCommandParam *param, Seri
 			}
 			break;
 		default:
-			DoError("unimplemented operator: " + PreOperators[com->link_nr].str());
+			DoError("unimplemented operator: " + PreOperators[com->link_no].str());
+	}
+}
+
+void Serializer::SerializeCompilerFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, int level, int index, int marker_before_params)
+{
+	switch(com->link_no){
+		/*case CommandSine:
+			break;*/
+		case CommandIf:{
+			// cmp;  jz m;  -block-  m;
+			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
+			int m_after_true = add_marker_after_command(level, index + 1);
+			add_cmd(Asm::inst_jz, param_marker(m_after_true));
+			}break;
+		case CommandIfElse:{
+			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
+			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
+			int m_after_true = add_marker_after_command(level, index + 1);
+			int m_after_false = add_marker_after_command(level, index + 2);
+			add_cmd(Asm::inst_jz, param_marker(m_after_true)); // jz ...
+			add_jump_after_command(level, index + 1, m_after_false); // insert before <m_after_true> is inserted!
+			}break;
+		case CommandWhile:
+		case CommandFor:{
+			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
+			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
+			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
+			int marker_after_while = add_marker_after_command(level, index + 1);
+			add_cmd(Asm::inst_jz, param_marker(marker_after_while));
+			add_jump_after_command(level, index + 1, marker_before_params); // insert before <marker_after_while> is inserted!
+
+			int marker_continue = marker_before_params;
+			if (com->link_no == CommandFor){
+				// NextCommand is a block!
+				if (NextCommand->kind != KindBlock)
+					DoError("command block in \"for\" loop missing");
+				marker_continue = add_marker_after_command(level + 1, syntax_tree->Blocks[NextCommand->link_no]->command.num - 2);
+			}
+			LoopData l = {marker_continue, marker_after_while, level, index};
+			loop.add(l);
+			}break;
+		case CommandBreak:
+			add_cmd(Asm::inst_jmp, param_marker(loop.back().marker_break));
+			break;
+		case CommandContinue:
+			add_cmd(Asm::inst_jmp, param_marker(loop.back().marker_continue));
+			break;
+		case CommandReturn:
+			if (com->num_params > 0){
+				if (cur_func->return_type->UsesReturnByMemory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
+					FillInDestructors(false);
+					// internally handled...
+#if 0
+					int s = mem_align(cur_func->return_type->size);
+
+					// slow
+					/*SerialCommandParam p, p_deref;
+					p.kind = KindVarLocal;
+					p.type = TypeReg32;
+					p.p = (char*) 0x8;
+					p.shift = 0;
+					for (int j=0;j<s/4;j++){
+						AddDereference(p, p_deref);
+						add_cmd(Asm::inst_mov, p_deref, param_shift(param[0], j * 4, TypeInt));
+						add_cmd(Asm::inst_add, p, param_const(TypeInt, (void*)0x4));
+					}*/
+
+					// test
+					SerialCommandParam p_edx = param_reg(TypeReg32, Asm::RegEdx), p_deref_edx;
+					SerialCommandParam p_ret_addr;
+					p_ret_addr.kind = KindVarLocal;
+					p_ret_addr.type = TypeReg32;
+					p_ret_addr.p = (char*)0x8;
+					p_ret_addr.shift = 0;
+					int c_0 = cmd.num;
+					add_cmd(Asm::inst_mov, p_edx, p_ret_addr);
+					AddDereference(p_edx, p_deref_edx, TypeReg32);
+					for (int j=0;j<s/4;j++)
+						add_cmd(Asm::inst_mov, param_shift(p_deref_edx, j * 4, TypeInt), param_shift(param[0], j * 4, TypeInt));
+					add_reg_channel(Asm::RegEdx, c_0, cmd.num - 1);
+#endif
+
+					add_cmd(Asm::inst_ret);
+					if (config.instruction_set == Asm::InstructionSetX86)
+						add_cmd(Asm::inst_ret, param_const(TypeReg16, (void*)4));
+					else
+						add_cmd(Asm::inst_ret);
+				}else{ // store return directly in eax / fpu stack (4 byte)
+					SerialCommandParam t;
+					add_temp(cur_func->return_type, t);
+					add_cmd(Asm::inst_mov, t, param[0]);
+					FillInDestructors(false);
+					if (cur_func->return_type == TypeFloat){
+						if (config.instruction_set == Asm::InstructionSetAMD64)
+							add_cmd(Asm::inst_movss, param_reg(TypeReg128, Asm::RegXmm0), t);
+						else
+							add_cmd(Asm::inst_fld, t);
+					}else if (cur_func->return_type->size == 1){
+						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::RegAl), t);
+					}else if (cur_func->return_type->size == 8){
+						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::RegRax), t);
+					}else
+						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::RegEax), t);
+					add_cmd(Asm::inst_leave);
+					add_cmd(Asm::inst_ret);
+				}
+			}else{
+				FillInDestructors(false);
+				add_cmd(Asm::inst_leave);
+				add_cmd(Asm::inst_ret);
+			}
+			break;
+		case CommandNew:
+			AddFuncParam(param_const(TypeInt, (void*)(long)ret.type->parent->size));
+			AddFuncReturn(ret);
+			if (!syntax_tree->GetExistence("-malloc-", cur_func))
+				DoError("-malloc- not found????");
+			AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_no);
+			if (com->param[0]){
+				// copy + edit command
+				Command sub = *com->param[0];
+				Command c_ret(KindVarTemp, (long)ret.p, script, ret.type);
+				sub.instance = &c_ret;
+				SerializeCommand(&sub, level, index);
+			}else
+				add_cmd_constructor(ret, -1);
+			break;
+		case CommandDelete:
+			add_cmd_destructor(param[0], false);
+			AddFuncParam(param[0]);
+			if (!syntax_tree->GetExistence("-free-", cur_func))
+				DoError("-free- not found????");
+			AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_no);
+			break;
+		case CommandWaitOneFrame:
+		case CommandWait:
+		case CommandWaitRT:{
+			DoError("wait commands are deprecated");
+				// set waiting state
+					// GlobalWaitingMode = mode
+					// GlobalWaitingTime = time
+					SerialCommandParam p_mode = param_global(TypeInt, &GlobalWaitingMode);
+					SerialCommandParam p_ttw = param_global(TypeFloat, &GlobalTimeToWait);
+					if (com->link_no == CommandWaitOneFrame){
+						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeRT));
+						add_cmd(Asm::inst_mov, p_ttw, param_const(TypeFloat, NULL));
+					}else if (com->link_no == CommandWait){
+						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeGT));
+						add_cmd(Asm::inst_mov, p_ttw, param[0]);
+					}else if (com->link_no == CommandWaitRT){
+						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeRT));
+						add_cmd(Asm::inst_mov, p_ttw, param[0]);
+					}
+					if (config.instruction_set == Asm::InstructionSetAMD64){
+						SerialCommandParam p_deref_rax;
+						p_deref_rax.kind = KindDerefRegister;
+						p_deref_rax.p = (char*)Asm::RegRax;
+						p_deref_rax.type = TypePointer;
+						p_deref_rax.shift = 0;
+					
+				// save script state
+					// stack[-16] = rbp
+					// stack[-24] = rsp
+					// stack[-32] = rip
+					add_cmd(Asm::inst_mov, p_rax, param_const(TypePointer, &script->Stack[config.StackSize-16]));
+					add_cmd(Asm::inst_mov, p_deref_rax, param_reg(TypeReg64, Asm::RegRbp));
+					add_cmd(Asm::inst_mov, p_rax, param_const(TypePointer, &script->Stack[config.StackSize-24]));
+					add_cmd(Asm::inst_mov, p_deref_rax, param_reg(TypeReg64, Asm::RegRsp));
+					add_cmd(Asm::inst_mov, param_reg(TypeReg64, Asm::RegRsp), param_const(TypePointer, &script->Stack[config.StackSize-24]));
+					add_cmd(Asm::inst_call, param_const(TypePointer, NULL)); // push rip
+				// load return
+					// mov rsp, &stack[-8]
+					// pop rsp
+					// mov rbp, rsp
+					// leave
+					// ret
+					add_cmd(Asm::inst_mov, param_reg(TypeReg64, Asm::RegRsp), param_const(TypePointer, &script->Stack[config.StackSize-8])); // start of the script stack
+					add_cmd(Asm::inst_pop, param_reg(TypeReg64, Asm::RegRsp)); // old stackpointer (real program)
+					add_cmd(Asm::inst_mov, param_reg(TypeReg64, Asm::RegRbp), param_reg(TypeReg64, Asm::RegRsp));
+					add_cmd(Asm::inst_leave);
+					add_cmd(Asm::inst_ret);
+				// here comes the "waiting"...
+
+				// reload script state (rip already loaded)
+					// rbp = &stack[-16]
+					// rsp = &stack[-24]
+					// GlobalWaitingMode = WaitingModeNone
+					add_cmd(Asm::inst_mov, p_rax, param_const(TypePointer, &script->Stack[config.StackSize-16]));
+					add_cmd(Asm::inst_mov, param_reg(TypeReg64, Asm::RegRbp), p_deref_rax);
+					add_cmd(Asm::inst_mov, p_rax, param_const(TypePointer, &script->Stack[config.StackSize-24]));
+					add_cmd(Asm::inst_mov, param_reg(TypeReg64, Asm::RegRsp), p_deref_rax);
+					add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeNone));
+
+					}else{
+
+						// save script state
+							// stack[ -8] = ebp
+							// stack[-12] = esp
+							// stack[-16] = eip
+							add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-8]));
+							add_cmd(Asm::inst_mov, p_deref_eax, param_reg(TypeReg32, Asm::RegEbp));
+							add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-12]));
+							add_cmd(Asm::inst_mov, p_deref_eax, param_reg(TypeReg32, Asm::RegEsp));
+							add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), param_const(TypePointer, &script->Stack[config.StackSize-12]));
+							add_cmd(Asm::inst_call, param_const(TypePointer, NULL)); // push eip
+						// load return
+							// mov esp, &stack[-4]
+							// pop esp
+							// mov ebp, esp
+							// leave
+							// ret
+							add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), param_const(TypePointer, &script->Stack[config.StackSize-4])); // start of the script stack
+							add_cmd(Asm::inst_pop, param_reg(TypeReg32, Asm::RegEsp)); // old stackpointer (real program)
+							add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEbp), param_reg(TypeReg32, Asm::RegEsp));
+							add_cmd(Asm::inst_leave);
+							add_cmd(Asm::inst_ret);
+						// here comes the "waiting"...
+
+						// reload script state (eip already loaded)
+							// ebp = &stack[-8]
+							// esp = &stack[-12]
+							// GlobalWaitingMode = WaitingModeNone
+							add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-8]));
+							add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEbp), p_deref_eax);
+							add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-12]));
+							add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), p_deref_eax);
+							add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeNone));
+					}
+					}break;
+		case CommandIntToFloat:
+			add_cmd(Asm::inst_fild, param[0]);
+			add_cmd(Asm::inst_fstp, ret);
+			break;
+		case CommandFloatToInt:
+			// round to nearest...
+			//add_cmd(Asm::inst_fld, param[0]);
+			//add_cmd(Asm::inst_fistp, ret);
+
+			// round to zero...
+			SerialCommandParam t1, t2;
+			add_temp(TypeReg16, t1);
+			add_temp(TypeInt, t2);
+			add_cmd(Asm::inst_fld, param[0]);
+			add_cmd(Asm::inst_fnstcw, t1);
+			add_cmd(Asm::inst_movzx, p_eax, t1);
+			add_cmd(Asm::inst_mov, p_ah, param_const(TypeChar, (void*)0x0c));
+			add_cmd(Asm::inst_mov, t2, p_eax);
+			add_reg_channel(Asm::RegEax, cmd.num - 3, cmd.num - 1);
+			add_cmd(Asm::inst_fldcw, param_shift(t2, 0, TypeReg16));
+			add_cmd(Asm::inst_fistp, ret);
+			add_cmd(Asm::inst_fldcw, t1);
+			break;
+		case CommandIntToChar:
+			add_cmd(Asm::inst_mov, p_eax_int, param[0]);
+			add_cmd(Asm::inst_mov, ret, p_al_char);
+			add_reg_channel(Asm::RegEax, cmd.num - 2, cmd.num - 1);
+			break;
+		case CommandCharToInt:
+			add_cmd(Asm::inst_mov, p_eax_int, param_const(TypeInt, (void*)0x0));
+			add_cmd(Asm::inst_mov, p_al_char, param[0]);
+			add_cmd(Asm::inst_mov, ret, p_eax);
+			add_reg_channel(Asm::RegEax, cmd.num - 3, cmd.num - 1);
+			break;
+		case CommandPointerToBool:
+			add_cmd(Asm::inst_cmp, param[0], param_const(TypePointer, NULL));
+			add_cmd(Asm::inst_setnz, ret);
+			break;
+		case CommandAsm:
+			add_cmd(inst_asm);
+			break;
+		case CommandRectSet:
+			add_cmd(Asm::inst_mov, param_shift(ret, 12, TypeFloat), param[3]);
+		case CommandVectorSet:
+			add_cmd(Asm::inst_mov, param_shift(ret, 8, TypeFloat), param[2]);
+		case CommandComplexSet:
+			add_cmd(Asm::inst_mov, param_shift(ret, 4, TypeFloat), param[1]);
+			add_cmd(Asm::inst_mov, param_shift(ret, 0, TypeFloat), param[0]);
+			break;
+		case CommandColorSet:
+			add_cmd(Asm::inst_mov, param_shift(ret, 12, TypeFloat), param[0]);
+			add_cmd(Asm::inst_mov, param_shift(ret, 0, TypeFloat), param[1]);
+			add_cmd(Asm::inst_mov, param_shift(ret, 4, TypeFloat), param[2]);
+			add_cmd(Asm::inst_mov, param_shift(ret, 8, TypeFloat), param[3]);
+			break;
+		default:
+			DoError("compiler function unimplemented: " + PreCommands[com->link_no].name);
 	}
 }
 
@@ -1209,7 +1498,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 
 	// for/while need a marker to this point
 	int marker_before_params = -1;
-	if ((com->kind == KindCompilerFunction) && ((com->link_nr == CommandWhile) || (com->link_nr == CommandFor)))
+	if ((com->kind == KindCompilerFunction) && ((com->link_no == CommandWhile) || (com->link_no == CommandFor)))
 		marker_before_params = add_marker();
 
 	// return value
@@ -1217,15 +1506,26 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 	bool create_constructor_for_return = ((com->kind != KindCompilerFunction) && (com->kind != KindFunction) && (com->kind != KindVirtualFunction));
 	add_temp(com->type, ret, create_constructor_for_return);
 
+
+	// special new-operator work-around
+	if ((com->kind == KindCompilerFunction) && (com->link_no == CommandNew)){
+		if (com->num_params > 0){
+			if (!com->param[0]->instance)
+				com->num_params = 0;
+		}else
+			com->param[0] = NULL;
+	}
+
 	// compile parameters
-	SerialCommandParam param[SCRIPT_MAX_PARAMS];
+	Array<SerialCommandParam> param;
+	param.resize(com->num_params);
 	for (int p=0;p<com->num_params;p++)
 		SerializeParameter(com->param[p], level, index, param[p]);
 
 	// class function -> compile instance
 	bool is_class_function = false;
 	if ((com->kind == KindFunction) || (com->kind == KindVirtualFunction)){
-		if (com->script->syntax->Functions[com->link_nr]->_class)
+		if (com->script->syntax->Functions[com->link_no]->_class)
 			is_class_function = true;
 	}
 	SerialCommandParam instance = {-1, NULL, NULL};
@@ -1236,21 +1536,21 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 		// super_array automatically referenced...
 	}
 
-	    
+
 	if (com->kind == KindOperator){
 		SerializeOperator(com, param, ret);
-		
+
 	}else if (com->kind == KindFunction){
 
 		for (int p=0;p<com->num_params;p++)
 			AddFuncParam(param[p]);
-			
+
 		AddFuncReturn(ret);
-			
+
 		if (is_class_function)
 			AddFuncInstance(instance);
-			
-		AddFunctionCall(com->script, com->link_nr);
+
+		AddFunctionCall(com->script, com->link_no);
 
 	}else if (com->kind == KindVirtualFunction){
 
@@ -1260,240 +1560,11 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 		AddFuncReturn(ret);
 		AddFuncInstance(instance);
 
-		AddClassFunctionCall(instance.type->parent->GetVirtualFunction(com->link_nr));
+		AddClassFunctionCall(instance.type->parent->GetVirtualFunction(com->link_no));
 	}else if (com->kind == KindCompilerFunction){
-			switch(com->link_nr){
-				/*case CommandSine:
-					break;*/
-				case CommandIf:{
-					// cmp;  jz m;  -block-  m;
-					add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
-					int m_after_true = add_marker_after_command(level, index + 1);
-					add_cmd(Asm::inst_jz, param_marker(m_after_true));
-					}break;
-				case CommandIfElse:{
-					// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
-					add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
-					int m_after_true = add_marker_after_command(level, index + 1);
-					int m_after_false = add_marker_after_command(level, index + 2);
-					add_cmd(Asm::inst_jz, param_marker(m_after_true)); // jz ...
-					add_jump_after_command(level, index + 1, m_after_false); // insert before <m_after_true> is inserted!
-					}break;
-				case CommandWhile:
-				case CommandFor:{
-					// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
-					// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
-					add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, (void*)0x0));
-					int marker_after_while = add_marker_after_command(level, index + 1);
-					add_cmd(Asm::inst_jz, param_marker(marker_after_while));
-					add_jump_after_command(level, index + 1, marker_before_params); // insert before <marker_after_while> is inserted!
-
-					int marker_continue = marker_before_params;
-					if (com->link_nr == CommandFor){
-						// NextCommand is a block!
-						if (NextCommand->kind != KindBlock)
-							DoError("command block in \"for\" loop missing");
-						marker_continue = add_marker_after_command(level + 1, syntax_tree->Blocks[NextCommand->link_nr]->command.num - 2);
-					}
-					LoopData l = {marker_continue, marker_after_while, level, index};
-					loop.add(l);
-					}break;
-				case CommandBreak:
-					add_cmd(Asm::inst_jmp, param_marker(loop.back().marker_break));
-					break;
-				case CommandContinue:
-					add_cmd(Asm::inst_jmp, param_marker(loop.back().marker_continue));
-					break;
-				case CommandReturn:
-					if (com->num_params > 0){
-						if (cur_func->return_type->UsesReturnByMemory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
-							FillInDestructors(false);
-							// internally handled...
-#if 0
-							int s = mem_align(cur_func->return_type->size);
-
-							// slow
-							/*SerialCommandParam p, p_deref;
-							p.kind = KindVarLocal;
-							p.type = TypeReg32;
-							p.p = (char*) 0x8;
-							p.shift = 0;
-							for (int j=0;j<s/4;j++){
-								AddDereference(p, p_deref);
-								add_cmd(Asm::inst_mov, p_deref, param_shift(param[0], j * 4, TypeInt));
-								add_cmd(Asm::inst_add, p, param_const(TypeInt, (void*)0x4));
-							}*/
-
-							// test
-							SerialCommandParam p_edx = param_reg(TypeReg32, Asm::RegEdx), p_deref_edx;
-							SerialCommandParam p_ret_addr;
-							p_ret_addr.kind = KindVarLocal;
-							p_ret_addr.type = TypeReg32;
-							p_ret_addr.p = (char*)0x8;
-							p_ret_addr.shift = 0;
-							int c_0 = cmd.num;
-							add_cmd(Asm::inst_mov, p_edx, p_ret_addr);
-							AddDereference(p_edx, p_deref_edx, TypeReg32);
-							for (int j=0;j<s/4;j++)
-								add_cmd(Asm::inst_mov, param_shift(p_deref_edx, j * 4, TypeInt), param_shift(param[0], j * 4, TypeInt));
-							add_reg_channel(Asm::RegEdx, c_0, cmd.num - 1);
-#endif
-
-							add_cmd(Asm::inst_ret);
-							if (config.instruction_set == Asm::InstructionSetX86)
-								add_cmd(Asm::inst_ret, param_const(TypeReg16, (void*)4));
-							else
-								add_cmd(Asm::inst_ret);
-						}else{ // store return directly in eax / fpu stack (4 byte)
-							SerialCommandParam t;
-							add_temp(cur_func->return_type, t);
-							add_cmd(Asm::inst_mov, t, param[0]);
-							FillInDestructors(false);
-							if (cur_func->return_type == TypeFloat){
-								if (config.instruction_set == Asm::InstructionSetAMD64)
-									add_cmd(Asm::inst_movss, param_reg(TypeReg128, Asm::RegXmm0), t);
-								else
-									add_cmd(Asm::inst_fld, t);
-							}else if (cur_func->return_type->size == 1)
-								add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::RegAl), t);
-							else
-								add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::RegEax), t);
-							add_cmd(Asm::inst_leave);
-							add_cmd(Asm::inst_ret);
-						}
-					}else{
-						FillInDestructors(false);
-						add_cmd(Asm::inst_leave);
-						add_cmd(Asm::inst_ret);
-					}
-					break;
-				case CommandNew:
-					AddFuncParam(param_const(TypeInt, (void*)(long)ret.type->parent->size));
-					AddFuncReturn(ret);
-					if (!syntax_tree->GetExistence("-malloc-", cur_func))
-						DoError("-malloc- not found????");
-					AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_nr);
-					add_cmd_constructor(ret, -1);
-					break;
-				case CommandDelete:
-					add_cmd_destructor(param[0], false);
-					AddFuncParam(param[0]);
-					if (!syntax_tree->GetExistence("-free-", cur_func))
-						DoError("-free- not found????");
-					AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_nr);
-					break;
-				case CommandWaitOneFrame:
-				case CommandWait:
-				case CommandWaitRT:{
-				// set waiting state
-					// GlobalWaitingMode = mode
-					// GlobalWaitingTime = time
-					SerialCommandParam p_mode = param_global(TypeInt, &GlobalWaitingMode);
-					SerialCommandParam p_ttw = param_global(TypeFloat, &GlobalTimeToWait);
-					if (com->link_nr == CommandWaitOneFrame){
-						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeRT));
-						add_cmd(Asm::inst_mov, p_ttw, param_const(TypeFloat, NULL));
-					}else if (com->link_nr == CommandWait){
-						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeGT));
-						add_cmd(Asm::inst_mov, p_ttw, param[0]);
-					}else if (com->link_nr == CommandWaitRT){
-						add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeRT));
-						add_cmd(Asm::inst_mov, p_ttw, param[0]);
-					}
-					
-				// save script state
-					// stack[ -8] = ebp
-					// stack[-12] = esp
-					// stack[-16] = eip
-					add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-8]));
-					add_cmd(Asm::inst_mov, p_deref_eax, param_reg(TypeReg32, Asm::RegEbp));
-					add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-12]));
-					add_cmd(Asm::inst_mov, p_deref_eax, param_reg(TypeReg32, Asm::RegEsp));
-					add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), param_const(TypePointer, &script->Stack[config.StackSize-12]));
-					add_cmd(Asm::inst_call, param_const(TypePointer, NULL)); // push eip
-				// load return
-					// mov esp, &stack[-4]
-					// pop esp
-					// mov ebp, esp
-					// leave
-					// ret
-					add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), param_const(TypePointer, &script->Stack[config.StackSize-4])); // start of the script stack
-					add_cmd(Asm::inst_pop, param_reg(TypeReg32, Asm::RegEsp)); // old stackpointer (real program)
-					add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEbp), param_reg(TypeReg32, Asm::RegEsp));
-					add_cmd(Asm::inst_leave);
-					add_cmd(Asm::inst_ret);
-				// here comes the "waiting"...
-
-				// reload script state (eip already loaded)
-					// ebp = &stack[-8]
-					// esp = &stack[-12]
-					// GlobalWaitingMode = WaitingModeNone
-					add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-8]));
-					add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEbp), p_deref_eax);
-					add_cmd(Asm::inst_mov, p_eax, param_const(TypePointer, &script->Stack[config.StackSize-12]));
-					add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::RegEsp), p_deref_eax);
-					add_cmd(Asm::inst_mov, p_mode, param_const(TypeInt, (void*)WaitingModeNone));
-					}break;
-				case CommandIntToFloat:
-					add_cmd(Asm::inst_fild, param[0]);
-					add_cmd(Asm::inst_fstp, ret);
-					break;
-				case CommandFloatToInt:
-					// round to nearest...
-					//add_cmd(Asm::inst_fld, param[0]);
-					//add_cmd(Asm::inst_fistp, ret);
-
-					// round to zero...
-					SerialCommandParam t1, t2;
-					add_temp(TypeReg16, t1);
-					add_temp(TypeInt, t2);
-					add_cmd(Asm::inst_fld, param[0]);
-					add_cmd(Asm::inst_fnstcw, t1);
-					add_cmd(Asm::inst_movzx, p_eax, t1);
-					add_cmd(Asm::inst_mov, p_ah, param_const(TypeChar, (void*)0x0c));
-					add_cmd(Asm::inst_mov, t2, p_eax);
-					add_reg_channel(Asm::RegEax, cmd.num - 3, cmd.num - 1);
-					add_cmd(Asm::inst_fldcw, param_shift(t2, 0, TypeReg16));
-					add_cmd(Asm::inst_fistp, ret);
-					add_cmd(Asm::inst_fldcw, t1);
-					break;
-				case CommandIntToChar:
-					add_cmd(Asm::inst_mov, p_eax_int, param[0]);
-					add_cmd(Asm::inst_mov, ret, p_al_char);
-					add_reg_channel(Asm::RegEax, cmd.num - 2, cmd.num - 1);
-					break;
-				case CommandCharToInt:
-					add_cmd(Asm::inst_mov, p_eax_int, param_const(TypeInt, (void*)0x0));
-					add_cmd(Asm::inst_mov, p_al_char, param[0]);
-					add_cmd(Asm::inst_mov, ret, p_eax);
-					add_reg_channel(Asm::RegEax, cmd.num - 3, cmd.num - 1);
-					break;
-				case CommandPointerToBool:
-					add_cmd(Asm::inst_cmp, param[0], param_const(TypePointer, NULL));
-					add_cmd(Asm::inst_setnz, ret);
-					break;
-				case CommandAsm:
-					add_cmd(inst_asm);
-					break;
-				case CommandRectSet:
-					add_cmd(Asm::inst_mov, param_shift(ret, 12, TypeFloat), param[3]);
-				case CommandVectorSet:
-					add_cmd(Asm::inst_mov, param_shift(ret, 8, TypeFloat), param[2]);
-				case CommandComplexSet:
-					add_cmd(Asm::inst_mov, param_shift(ret, 4, TypeFloat), param[1]);
-					add_cmd(Asm::inst_mov, param_shift(ret, 0, TypeFloat), param[0]);
-					break;
-				case CommandColorSet:
-					add_cmd(Asm::inst_mov, param_shift(ret, 12, TypeFloat), param[0]);
-					add_cmd(Asm::inst_mov, param_shift(ret, 0, TypeFloat), param[1]);
-					add_cmd(Asm::inst_mov, param_shift(ret, 4, TypeFloat), param[2]);
-					add_cmd(Asm::inst_mov, param_shift(ret, 8, TypeFloat), param[3]);
-					break;
-				default:
-					DoError("compiler function unimplemented: " + PreCommands[com->link_nr].name);
-			}
+		SerializeCompilerFunction(com, param, ret, level, index, marker_before_params);
 	}else if (com->kind == KindBlock){
-		SerializeBlock(syntax_tree->Blocks[com->link_nr], level + 1);
+		SerializeBlock(syntax_tree->Blocks[com->link_no], level + 1);
 	}else{
 		//so("---???");
 		//DoError(string("type of command is unimplemented (call Michi!): ",Kind2Str(com->Kind)));
@@ -1541,7 +1612,7 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 	Type *class_type = param.type;
 	if (modus == -1)
 		class_type = class_type->parent;
-	ClassFunction *f = class_type->GetConstructor();
+	ClassFunction *f = class_type->GetDefaultConstructor();
 	if (!f)
 		return;
 	if (modus == -1){
@@ -2588,7 +2659,7 @@ void Serializer::SerializeFunction(Function *f)
 	// outro (if last command != return)
 	bool need_outro = true;
 	if (f->block->command.num > 0)
-		if ((f->block->command.back()->kind == KindCompilerFunction) && (f->block->command.back()->link_nr == CommandReturn))
+		if ((f->block->command.back()->kind == KindCompilerFunction) && (f->block->command.back()->link_no == CommandReturn))
 			need_outro = false;
 	if (need_outro){
 		FillInDestructors(false);

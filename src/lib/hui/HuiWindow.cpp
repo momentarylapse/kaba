@@ -8,6 +8,8 @@
 
 #include "hui.h"
 #include "hui_internal.h"
+#include "Controls/HuiControl.h"
+#include "HuiToolbar.h"
 
 
 // for unique window identifiers
@@ -16,8 +18,6 @@ static int current_uid = 0;
 extern int HuiMainLevel;
 
 HuiWindow *HuiCurWindow = NULL;
-
-//extern int allow_signal_level; // visual studio needs this line.... (-_-)
 
 // recursively find a menu item and execute message_function
 /*bool TestMenuID(CHuiMenu *menu, const string &id, message_function *mf)
@@ -53,6 +53,22 @@ HuiWindow::HuiWindow(const string &title, int x, int y, int width, int height, H
 	_Init_(title, x, y, width, height, root, allow_root, mode);
 }
 
+HuiWindow::HuiWindow()
+{
+	_Init_("", -1, -1, 0, 0, NULL, true, HuiWinModeDummy);
+}
+
+HuiWindow::HuiWindow(const string &title, int x, int y, int width, int height)
+{
+	_Init_(title, x, y, width, height, NULL, true, HuiWinModeResizable | HuiWinModeControls);
+}
+
+void HuiWindow::__init_ext__(const string& title, int x, int y, int width, int height)
+{
+	msg_write("init ext");
+	new(this) HuiWindow(title, x, y, width, height);
+}
+
 
 HuiWindow::HuiWindow(const string &id, HuiWindow *parent, bool allow_parent)
 {
@@ -72,7 +88,7 @@ HuiWindow::HuiWindow(const string &id, HuiWindow *parent, bool allow_parent)
 
 	// toolbar?
 	if (res->s_param[1].num > 0)
-		ToolbarSetByID(res->s_param[1]);
+		toolbar[HuiToolbarTop]->SetByID(res->s_param[1]);
 
 	// controls
 	foreach(HuiResourceCommand &cmd, res->cmd){
@@ -121,13 +137,10 @@ void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 	}
 	menu = popup = NULL;
 	statusbar_enabled = false;
-	for (int i=0;i<4;i++){
-		toolbar[i].enabled = false;
-		toolbar[i].text_enabled = true;
-		toolbar[i].large_icons = true;
-		toolbar[i].item.clear();
-	}
-	cur_toolbar = &toolbar[HuiToolbarTop];
+	toolbar[HuiToolbarTop] = new HuiToolbar(this);
+	toolbar[HuiToolbarLeft] = new HuiToolbar(this, true);
+	toolbar[HuiToolbarRight] = new HuiToolbar(this, true);
+	toolbar[HuiToolbarBottom] = new HuiToolbar(this);
 	input.reset();
 	tab_creation_page = -1;
 
@@ -150,6 +163,9 @@ void HuiWindow::_CleanUp_()
 	c.win = this;
 	c.last_id = cur_id;
 	_HuiClosedWindow_.add(c);
+
+	for (int i=0;i<4;i++)
+		delete(toolbar[i]);
 
 	for (int i=0;i<control.num;i++)
 		delete(control[i]);
@@ -441,7 +457,7 @@ void HuiWindow::FromResource(const string &id)
 
 	// toolbar?
 	if (res->s_param[1].num > 0)
-		ToolbarSetByID(res->s_param[1]);
+		toolbar[HuiToolbarTop]->SetByID(res->s_param[1]);
 
 	// controls
 	foreach(HuiResourceCommand &cmd, res->cmd){
@@ -468,29 +484,233 @@ void HuiWindow::FromResource(const string &id)
 	msg_db_l(1);
 }
 
-HuiWindow *HuiCreateWindow(const string &title,int x,int y,int width,int height)
+//----------------------------------------------------------------------------------
+// data exchanging functions for control items
+
+
+#define test_controls(_id, c)	\
+	string tid = (_id.num == 0) ? cur_id : _id; \
+	foreach(HuiControl *c, control) \
+		if (c->id == tid)
+
+// replace all the text
+//    for all
+void HuiWindow::SetString(const string &_id, const string &str)
 {
-	return new HuiWindow(	title,
-							x, y, width, height,
-							NULL, true,
-							HuiWinModeResizable);
+	if (id == _id)
+		SetTitle(str);
+	test_controls(_id, c)
+		c->SetString(str);
 }
 
-HuiWindow *HuiCreateNixWindow(const string &title,int x,int y,int width,int height)
+// replace all the text with a numerical value (int)
+//    for all
+// select an item
+//    for ComboBox, TabControl, ListView?
+void HuiWindow::SetInt(const string &_id, int n)
 {
-	return new HuiWindow(	title,
-							x, y, width, height,
-							NULL, true,
-							HuiWinModeResizable | HuiWinModeNix);
+	test_controls(_id, c)
+		c->SetInt(n);
 }
 
-HuiWindow *HuiCreateControlWindow(const string &title,int x,int y,int width,int height)
+// replace all the text with a float
+//    for all
+void HuiWindow::SetFloat(const string &_id, float f)
 {
-	return new HuiWindow(	title,
-							x, y, width, height,
-							NULL, true,
-							HuiWinModeResizable | HuiWinModeControls);
+	test_controls(_id, c)
+		c->SetFloat(f);
 }
+
+void HuiWindow::SetImage(const string &_id, const string &image)
+{
+	test_controls(_id, c)
+		c->SetImage(image);
+}
+
+void HuiWindow::SetTooltip(const string &_id, const string &tip)
+{
+	test_controls(_id, c)
+		c->SetTooltip(tip);
+}
+
+
+// add a single line/string
+//    for ComboBox, ListView, ListViewTree, ListViewIcons
+void HuiWindow::AddString(const string &_id, const string &str)
+{
+	test_controls(_id, c)
+		c->AddString(str);
+}
+
+// add a single line as a child in the tree of a ListViewTree
+//    for ListViewTree
+void HuiWindow::AddChildString(const string &_id, int parent_row, const string &str)
+{
+	test_controls(_id, c)
+		c->AddChildString(parent_row, str);
+}
+
+// change a single line in the tree of a ListViewTree
+//    for ListViewTree
+void HuiWindow::ChangeString(const string &_id,int row,const string &str)
+{
+	test_controls(_id, c)
+		c->ChangeString(row, str);
+}
+
+// listview / treeview
+string HuiWindow::GetCell(const string &_id, int row, int column)
+{
+	test_controls(_id, c)
+		return c->GetCell(row, column);
+	return "";
+}
+
+// listview / treeview
+void HuiWindow::SetCell(const string &_id, int row, int column, const string &str)
+{
+	test_controls(_id, c)
+		c->SetCell(row, column, str);
+}
+
+void HuiWindow::SetColor(const string &_id, const color &col)
+{
+	test_controls(_id, c)
+		c->SetColor(col);
+}
+
+// retrieve the text
+//    for edit
+string HuiWindow::GetString(const string &_id)
+{
+	test_controls(_id, c)
+		return c->GetString();
+	return "";
+}
+
+// retrieve the text as a numerical value (int)
+//    for edit
+// which item/line is selected?
+//    for ComboBox, TabControl, ListView
+int HuiWindow::GetInt(const string &_id)
+{
+	test_controls(_id, c)
+		return c->GetInt();
+	return 0;
+}
+
+// retrieve the text as a numerical value (float)
+//    for edit
+float HuiWindow::GetFloat(const string &_id)
+{
+	test_controls(_id, c)
+		return c->GetFloat();
+	return 0;
+}
+
+color HuiWindow::GetColor(const string &_id)
+{
+	test_controls(_id, c)
+		return c->GetColor();
+	return Black;
+}
+
+// switch control to usable/unusable
+//    for all
+void HuiWindow::Enable(const string &_id,bool enabled)
+{
+	test_controls(_id, c)
+		c->Enable(enabled);
+}
+
+// show/hide control
+//    for all
+void HuiWindow::HideControl(const string &_id,bool hide)
+{
+	test_controls(_id, c)
+		c->Hide(hide);
+}
+
+// mark as "checked"
+//    for CheckBox, ToolBarItemCheckable
+void HuiWindow::Check(const string &_id,bool checked)
+{
+	test_controls(_id, c)
+		c->Check(checked);
+}
+
+// is marked as "checked"?
+//    for CheckBox
+bool HuiWindow::IsChecked(const string &_id)
+{
+	test_controls(_id, c)
+		return c->IsChecked();
+	return false;
+}
+
+// which lines are selected?
+//    for ListView
+Array<int> HuiWindow::GetMultiSelection(const string &_id)
+{
+	test_controls(_id, c)
+		return c->GetMultiSelection();
+	Array<int> sel;
+	return sel;
+}
+
+void HuiWindow::SetMultiSelection(const string &_id, Array<int> &sel)
+{
+	test_controls(_id, c)
+		c->SetMultiSelection(sel);
+}
+
+// delete all the content
+//    for ComboBox, ListView
+void HuiWindow::Reset(const string &_id)
+{
+	test_controls(_id, c)
+		c->Reset();
+}
+
+void HuiWindow::CompletionAdd(const string &_id, const string &text)
+{
+	test_controls(_id, c)
+		c->CompletionAdd(text);
+}
+
+void HuiWindow::CompletionClear(const string &_id)
+{
+	test_controls(_id, c)
+		c->CompletionClear();
+}
+
+// expand a single row
+//    for TreeView
+void HuiWindow::Expand(const string &_id, int row, bool expand)
+{
+	test_controls(_id, c)
+		c->Expand(row, expand);
+}
+
+// expand all rows
+//    for TreeView
+void HuiWindow::ExpandAll(const string &_id, bool expand)
+{
+	test_controls(_id, c)
+		c->ExpandAll(expand);
+}
+
+// is column in tree expanded?
+//    for TreeView
+bool HuiWindow::IsExpanded(const string &_id, int row)
+{
+	test_controls(_id, c)
+		return false;
+	return false;
+}
+
+
+
 
 HuiWindow *HuiCreateDialog(const string &title,int width,int height,HuiWindow *root,bool allow_root)
 {
@@ -508,12 +728,6 @@ HuiWindow *HuiCreateSizableDialog(const string &title,int width,int height,HuiWi
 							HuiWinModeControls | HuiWinModeResizable);
 }
 
-// mainly for script usage...
-void HuiCloseWindow(HuiWindow *win)
-{
-	delete(win);
-}
-
 void HuiFuncIgnore()
 {
 }
@@ -521,4 +735,34 @@ void HuiFuncIgnore()
 void HuiFuncClose()
 {
 	delete(HuiGetEvent()->win);
+}
+
+HuiNixWindow::HuiNixWindow(const string& title, int x, int y, int width, int height) :
+	HuiWindow(title, x, y, width, height, NULL, true, HuiWinModeResizable | HuiWinModeNix)
+{
+}
+
+void HuiNixWindow::__init_ext__(const string& title, int x, int y, int width, int height)
+{
+	new(this) HuiNixWindow(title, x, y, width, height);
+}
+
+HuiDialog::HuiDialog(const string& title, int width, int height, HuiWindow* root, bool allow_root) :
+	HuiWindow(title, -1, -1, width, height, root, allow_root, HuiWinModeControls | HuiWinModeResizable)
+{
+}
+
+void HuiDialog::__init_ext__(const string& title, int width, int height, HuiWindow* root, bool allow_root)
+{
+	new(this) HuiDialog(title, width, height, root, allow_root);
+}
+
+HuiFixedDialog::HuiFixedDialog(const string& title, int width, int height, HuiWindow* root, bool allow_root) :
+	HuiWindow(title, -1, -1, width, height, root, allow_root, HuiWinModeControls)
+{
+}
+
+void HuiFixedDialog::__init_ext__(const string& title, int width, int height, HuiWindow* root, bool allow_root)
+{
+	new(this) HuiFixedDialog(title, width, height, root, allow_root);
 }

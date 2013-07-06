@@ -106,7 +106,9 @@ void execute(Script::Script *s, Array<string> &arg)
 int hui_main(Array<string> arg)
 {
 	// hui
-	HuiInitExtended("kaba", AppVersion, NULL, false, "");
+	HuiInit("kaba", false, "");
+	HuiSetProperty("name", AppName);
+	HuiSetProperty("version", AppVersion);
 	HuiEndKeepMsgAlive = true;
 
 	bool use_gui = false;

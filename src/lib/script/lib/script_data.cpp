@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.12.0.0";
+string DataVersion = "0.12.0.1";
 
 CompilerConfiguration config;
 
@@ -268,12 +268,14 @@ void class_add_func(const string &name, Type *return_type, void *func)
 				tname = t->name;
 	}
 	long p = (long)func;
-	if ((cur_vtable) && ((p & 1) > 0)){
+	if ((cur_class->vtable) && ((p & 1) > 0)){
 		// virtual function
 		int index = p / sizeof(void*);
 		int cmd = -1;
 		cur_func = NULL;
-		func = cur_vtable[index];
+		func = NULL;
+		if (cur_vtable)
+			func = cur_vtable[index];
 		cmd = add_func(tname + "." + name + "[virtual]", return_type, func, true);
 		cur_func->_class = cur_class;
 		cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
@@ -339,9 +341,7 @@ Array<PreCommand> PreCommands;
 
 int add_func(const string &name, Type *return_type, void *func, bool is_class)
 {
-	Function *f = new Function;
-	f->name = name;
-	f->return_type = return_type;
+	Function *f = new Function(name, return_type);
 	f->literal_return_type = return_type;
 	f->num_params = 0;
 	f->_class = NULL;
@@ -638,18 +638,16 @@ class VirtualTest
 {
 public:
 	int i;
-	VirtualTest(){}
-	virtual ~VirtualTest(){}
-	void __init__();
+	static bool enable_logging;
+	VirtualTest(){	if (enable_logging)	msg_write("VirtualTest.init()");	i = 13;	}
+	virtual ~VirtualTest(){	__delete__();	}
+	void __init__(){	new(this) VirtualTest;	}
+	virtual void __delete__(){	if (enable_logging) msg_write("VirtualTest.delete()");	}
 	virtual void f_virtual(){		msg_write(i);msg_write("VirtualTest.f_virtual()");	}
 	void f_normal(){		msg_write(i);msg_write("VirtualTest.f_normal()");	}
 	void test(){	msg_write("VirtualTest.test()"); f_virtual();	}
 };
-static VirtualTest VirtualTestInstance;
-void VirtualTest::__init__(){
-	*(VirtualTable*)this = *(VirtualTable*)&VirtualTestInstance;
-	msg_write("VirtualTest.init()");
-}
+bool VirtualTest::enable_logging;
 
 void SIAddPackageBase()
 {
@@ -773,15 +771,18 @@ void SIAddPackageBase()
 			func_add_param("glue",		TypeString);
 
 
+	VirtualTest::enable_logging = false;
 	add_class(TypeVirtualTest);
 		class_set_vtable(VirtualTest);
+		cur_class->vtable = new VirtualTable[10];
 		class_add_element("i", TypeInt, offsetof(VirtualTest, i));
 		class_add_func("__init__", TypeVoid, mf((tmf)&VirtualTest::__init__));
+		class_add_func("__delete__", TypeVoid, mf((tmf)&VirtualTest::__delete__));
 		class_add_func("f_virtual", TypeVoid, mf((tmf)&VirtualTest::f_virtual));
 		class_add_func("f_normal", TypeVoid, mf((tmf)&VirtualTest::f_normal));
 		class_add_func("test", TypeVoid, mf((tmf)&VirtualTest::test));
-		cur_class->vtable = new VirtualTable[3];
 		cur_class->LinkVirtualTable();
+	VirtualTest::enable_logging = true;
 
 
 	add_const("nil", TypePointer, NULL);

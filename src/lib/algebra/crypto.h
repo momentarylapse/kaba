@@ -18,6 +18,7 @@ struct Crypto
 	string str();
 
 	void __init__();
+	void __delete__();
 };
 
 void _cdecl CryptoCreateKeys(Crypto &key1, Crypto &key2, const string &type, int bits);

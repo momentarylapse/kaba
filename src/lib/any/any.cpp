@@ -1,9 +1,9 @@
 #include "any.h"
 #include "../base/map.h"
 
-typedef Map<string, Any> HashMap;
+typedef Map<string, Any> AnyHashMap;
 
-HashMap _empty_dummy_hash_;
+AnyHashMap _empty_dummy_hash_;
 DynamicArray _empty_dummy_array_ = {NULL, 0, 0, sizeof(Any)};
 
 Any EmptyVar;
@@ -32,8 +32,7 @@ Any::Any()
 
 void Any::__init__()
 {
-	type = TYPE_NONE;
-	data = NULL;
+	new(this) Any;
 }
 
 Any::Any(const Any &a)
@@ -111,7 +110,7 @@ void Any::clear()
 	else if (type == TYPE_ARRAY)
 		delete((Array<Any>*)data);
 	else if (type == TYPE_HASH)
-		delete((HashMap*)data);
+		delete((AnyHashMap*)data);
 	else if (type != TYPE_NONE)
 		msg_error("Any.clear(): " + type_name(type));
 	type = TYPE_NONE;
@@ -138,7 +137,7 @@ string Any::str() const
 		return s + "]";
 	}else if (type == TYPE_HASH){
 		string s = "[";
-		foreach(HashMap::Entry &p, *(HashMap*)data){
+		foreach(AnyHashMap::Entry &p, *(AnyHashMap*)data){
 			if (s.num > 1)
 				s += ", ";
 			s += "\"" + p.key + "\" : " + p.value.str();
@@ -199,8 +198,8 @@ Any &Any::operator = (const Any &a)
 			data = new Array<Any>;
 			*(Array<Any>*)data = *(Array<Any>*)a.data;
 		}else if (a.type == TYPE_HASH){
-			data = new HashMap;
-			*(HashMap*)data = *(HashMap*)a.data;
+			data = new AnyHashMap;
+			*(AnyHashMap*)data = *(AnyHashMap*)a.data;
 		}else if (a.type != TYPE_NONE){
 			type = TYPE_NONE;
 			msg_error("Any = Any: " + type_name(a.type));
@@ -322,7 +321,7 @@ Any &Any::back()
 const Any &Any::operator[] (const string &key) const
 {
 	if (type == TYPE_HASH)
-		return (*(HashMap*)data)[key];
+		return (*(AnyHashMap*)data)[key];
 	msg_error("Any[]: not a hash array: " + type_name(type));
 	return EmptyVar;
 }
@@ -331,11 +330,11 @@ Any &Any::operator[] (const string &key)
 {
 	if (type == TYPE_NONE){
 		type = TYPE_HASH;
-		data = new HashMap;
+		data = new AnyHashMap;
 	}
 	if (type == TYPE_HASH){
 		//msg_write(p2s(&(*(HashMap*)data)[key]));
-		return (*(HashMap*)data)[key];
+		return (*(AnyHashMap*)data)[key];
 	}
 	msg_error("Any[]: not a hash array: " + type_name(type));
 	return EmptyVar;
