@@ -217,6 +217,7 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Function *f)
 		}
 
 	DoError("unknown element of " + type->name);
+	return NULL;
 }
 
 Command *SyntaxTree::GetOperandExtensionArray(Command *Operand, Function *f)
@@ -332,7 +333,7 @@ bool SyntaxTree::GetSpecialFunctionCall(const string &f_name, Command *Operand, 
 			(*(int*)(Constants[nc].data)) = Types[nt]->size;
 		else if ((GetExistence(Exp.cur, f)) && ((GetExistenceLink.kind == KindVarGlobal) || (GetExistenceLink.kind == KindVarLocal)))
 			(*(int*)(Constants[nc].data)) = GetExistenceLink.type->size;
-		else if (type == GetConstantType())
+		else if (type = GetConstantType())
 			(*(int*)(Constants[nc].data)) = type->size;
 		else
 			DoError("type-name or variable name expected in sizeof(...)");
@@ -1417,7 +1418,7 @@ void SyntaxTree::ParseClassFunction(Type *t, bool as_extern, int virtual_index)
 	cf.return_type = f->return_type;
 	for (int i=0;i<f->num_params;i++)
 		cf.param_type.add(f->var[i].type);
-	cf.virtual_index = virtual_index;
+	cf.virtual_index = ProcessClassOffset(t->name, cf.name, virtual_index);
 
 	// overwrite?
 	foreach(ClassFunction &_cf, t->function)
@@ -1448,6 +1449,8 @@ int class_count_virtual_functions(SyntaxTree *ps)
 		if (l->indent == 0)
 			break;
 		if ((l->indent == 1) && (l->exp[0].name == "virtual"))
+			count ++;
+		else if ((l->indent == 1) && (l->exp[0].name == "extern") && (l->exp[1].name == "virtual"))
 			count ++;
 		l ++;
 	}

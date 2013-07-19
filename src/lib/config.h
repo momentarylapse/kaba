@@ -20,7 +20,7 @@
 // graphical user interface in the hui/* files
 //#####################################################################
 
-//#define HUI_USE_GTK_ON_WINDOWS		// use gtk instead of windows api on windows
+#define HUI_USE_GTK_ON_WINDOWS		// use gtk instead of windows api on windows
 
 
 
@@ -61,8 +61,8 @@
 //#####################################################################
 
 
-#define SOUND_ALLOW_OPENAL				1
-#define SOUND_ALLOW_OGG					1
+//#define SOUND_ALLOW_OPENAL				1
+//#define SOUND_ALLOW_OGG					1
 //#define SOUND_ALLOW_FLAC				1
 
 

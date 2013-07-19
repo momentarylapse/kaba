@@ -11,14 +11,14 @@
 struct Crypto
 {
 	Crypto(){}
-	void from_str(const string &s);
+	void _cdecl from_str(const string &s);
 	vli n, k;
-	string Encrypt(const string &s);
-	string Decrypt(const string &s, bool cut = true);
-	string str();
+	string _cdecl Encrypt(const string &s);
+	string _cdecl Decrypt(const string &s, bool cut = true);
+	string _cdecl str();
 
-	void __init__();
-	void __delete__();
+	void _cdecl __init__();
+	void _cdecl __delete__();
 };
 
 void _cdecl CryptoCreateKeys(Crypto &key1, Crypto &key2, const string &type, int bits);

@@ -13,11 +13,11 @@ class Mutex
 public:
 	Mutex();
 	~Mutex();
-	void Lock();
-	void Unlock();
+	void _cdecl Lock();
+	void _cdecl Unlock();
 
-	void __init__();
-	void __delete__();
+	void _cdecl __init__();
+	void _cdecl __delete__();
 private:
 	MutexInternal *internal;
 };

@@ -45,6 +45,12 @@
 #include "array.h"
 #include "strings.h"
 
+#ifndef and
+	#define and &&
+#endif
+#ifndef or
+	#define or ||
+#endif
 
 #ifndef max
 	#define max(a,b)	(((a) > (b)) ? (a) : (b))

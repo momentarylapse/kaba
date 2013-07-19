@@ -1,11 +1,14 @@
 /*
- * HuiToolItemButton.cpp
+ * HuiToolItemButtonGtk.cpp
  *
  *  Created on: 26.06.2013
  *      Author: michi
  */
 
 #include "HuiToolItemButton.h"
+
+
+#ifdef HUI_API_GTK
 
 void *get_gtk_image(const string &image, bool large);
 
@@ -33,3 +36,4 @@ HuiToolItemButton::~HuiToolItemButton()
 {
 }
 
+#endif

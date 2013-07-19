@@ -19,50 +19,50 @@ private:
 	void normalize();
 
 public:
-	void operator = (const vli &v);
-	void operator += (const vli &v);
-	void operator -= (const vli &v);
-	void operator *= (const vli &v)
+	void _cdecl operator = (const vli &v);
+	void _cdecl operator += (const vli &v);
+	void _cdecl operator -= (const vli &v);
+	void _cdecl operator *= (const vli &v)
 	{	*this = *this * v;	}
-	vli operator + (const vli &v) const
+	vli _cdecl operator + (const vli &v) const
 	{	vli r = *this; r += v;	return r;	}
-	vli operator - (const vli &v) const
+	vli _cdecl operator - (const vli &v) const
 	{	vli r = *this; r -= v;	return r;	}
-	vli operator * (const vli &v) const;
-	void div(unsigned int divisor, unsigned int &remainder);
-	void div(const vli &divisor, vli &remainder);
-	int compare_abs(const vli &v) const;
-	int compare(const vli &v) const;
-	bool operator == (const vli &v) const;
-	bool operator != (const vli &v) const
+	vli _cdecl operator * (const vli &v) const;
+	void _cdecl div(unsigned int divisor, unsigned int &remainder);
+	void _cdecl div(const vli &divisor, vli &remainder);
+	int _cdecl compare_abs(const vli &v) const;
+	int _cdecl compare(const vli &v) const;
+	bool _cdecl operator == (const vli &v) const;
+	bool _cdecl operator != (const vli &v) const
 	{	return !(*this == v);	}
-	bool operator < (const vli &v) const;
-	bool operator <= (const vli &v) const
+	bool _cdecl operator < (const vli &v) const;
+	bool _cdecl operator <= (const vli &v) const
 	{	return !(v < *this);	}
-	bool operator > (const vli &v) const
+	bool _cdecl operator > (const vli &v) const
 	{	return (v < *this);	}
-	bool operator >= (const vli &v) const
+	bool _cdecl operator >= (const vli &v) const
 	{	return !(*this < v);	}
-	string to_string() const;
-	string dump() const;
+	string _cdecl to_string() const;
+	string _cdecl dump() const;
 
 	// higher functions
-	vli pow(const vli &e) const;
-	vli pow_mod(const vli &e, const vli &m) const;
-	vli gcd(const vli &v) const;
+	vli _cdecl pow(const vli &e) const;
+	vli _cdecl pow_mod(const vli &e, const vli &m) const;
+	vli _cdecl gcd(const vli &v) const;
 	
 	// kaba
-	void __init__();
-	void __delete__();
-	void set_vli(const vli &v)
+	void _cdecl __init__();
+	void _cdecl __delete__();
+	void _cdecl set_vli(const vli &v)
 	{	*this = v;	}
-	void set_int(int i)
+	void _cdecl set_int(int i)
 	{	*this = i;	}
-	void set_str(const string &s)
+	void _cdecl set_str(const string &s)
 	{	*this = s;	}
-	void idiv(const vli &d, vli &rem)
+	void _cdecl idiv(const vli &d, vli &rem)
 	{	div(d, rem);	}
-	vli _div(const vli &d, vli &rem) const
+	vli _cdecl _div(const vli &d, vli &rem) const
 	{	vli r = *this;	r.div(d, rem);	return r;	}
 
 	// data

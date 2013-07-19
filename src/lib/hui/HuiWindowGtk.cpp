@@ -513,7 +513,9 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 	gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
 	// tool bars
+#if GTK_MAJOR_VERSION >= 3
 	gtk_style_context_add_class(gtk_widget_get_style_context(toolbar[HuiToolbarTop]->widget), "primary-toolbar");
+#endif
 	gtk_box_pack_start(GTK_BOX(vbox), toolbar[HuiToolbarTop]->widget, FALSE, FALSE, 0);
 
 
@@ -624,7 +626,7 @@ void HuiWindow::Show()
 {
 	gtk_widget_show(window);
 #ifdef OS_WINDOWS
-	hWnd = (HWND)gdk_win32_drawable_get_handle(window->window);
+	hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_root_window(window));
 #endif
 
 	allow_input = true;
@@ -988,7 +990,9 @@ void HuiWindow::SetCursorPos(int x, int y)
 		input.x = x;
 		input.y = y;
 		// TODO GTK3
+#ifdef OS_LINUX
 		XWarpPointer(hui_x_display, None, GDK_WINDOW_XID(gtk_widget_get_window(gl_widget)), 0, 0, 0, 0, x, y);
+#endif
 	}
 #if 0
 	irect ri = GetInterior();

@@ -1,0 +1,17 @@
+// IDs
+enum{
+	HMM_SCRIPT_MESSAGES_DIALOG,
+	HMM_MESSAGES
+};
+
+
+
+	// dialog
+	dlg=HuiCreateDialog("Nachrichten des Scriptes",485,390,MainWin,false,&MessageFunc);
+	dlg->SetID(HMM_SCRIPT_MESSAGES_DIALOG);
+	dlg->AddEdit("",0,0,485,390,HMM_MESSAGES);
+	dlg->Enable(HMM_MESSAGES,false);
+	dlg->Update();
+
+
+

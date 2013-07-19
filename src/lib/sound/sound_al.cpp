@@ -422,5 +422,31 @@ void MusicStep(int index)
 	msg_db_l(1);
 }
 
+#else
+
+
+void SoundInit(){}
+void SoundExit(){}
+int SoundLoad(const string &filename){ return -1; }
+void SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop){}
+void SoundDelete(int index){}
+void SoundClearSmallCache(){}
+void SoundPlay(int index, bool repeat){}
+void SoundStop(int index){}
+void SoundPause(int index, bool pause){}
+bool SoundIsPlaying(int index){ return false; }
+bool SoundEnded(int index){ return false; }
+void SoundSetData(int index, const vector &pos, const vector &vel, float min_dist, float max_dist, float speed, float volume){}
+void SoundSetListener(const vector &pos, const vector &ang, const vector &vel, float v_sound){}
+int MusicLoad(const string &filename){ return -1; }
+void MusicDelete(int index){}
+void MusicPlay(int index, bool repeat){}
+void MusicSetRate(int index,float rate){}
+void MusicStop(int index){}
+void MusicPause(int index,bool pause){}
+bool MusicIsPlaying(int index){ return false; }
+bool MusicEnded(int index){ return false; }
+void MusicStep(int index){}
+
 #endif
 

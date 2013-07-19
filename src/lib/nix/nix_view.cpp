@@ -69,7 +69,7 @@ void NixResize()
 		NixTargetWidth=1;
 	if (NixTargetHeight<=0)
 		NixTargetHeight=1;
-	NixTargetRect = rect(0, NixTargetWidth, 0, NixTargetHeight);
+	NixTargetRect = rect(0, (float)NixTargetWidth, 0, (float)NixTargetHeight);
 
 	// screen
 	glViewport(0,0,NixTargetWidth,NixTargetHeight);
@@ -149,7 +149,7 @@ void create_pixel_projection_matrix(matrix &m)
 
 void NixSetProjectionPerspective()
 {
-	NixSetProjectionPerspectiveExt(NixTargetWidth / 2, NixTargetHeight / 2, NixTargetHeight, NixTargetHeight, 1, 10000);
+	NixSetProjectionPerspectiveExt((float)NixTargetWidth / 2, (float)NixTargetHeight / 2, (float)NixTargetHeight, (float)NixTargetHeight, 1, 10000);
 }
 
 // center_x/y: pixel coordinates of perspective center
@@ -366,7 +366,7 @@ void NixScissor(const rect &_r)
 		glEnable(GL_SCISSOR_TEST);
 	else
 		glDisable(GL_SCISSOR_TEST);
-	glScissor(r.x1, NixTargetHeight - r.y2, r.x2 - r.x1, r.y2 - r.y1);
+	glScissor((int)r.x1, NixTargetHeight - (int)r.y2, (int)r.width(), (int)r.height());
 	glClearDepth(1.0f);
 	TestGLError("StartPart");
 }

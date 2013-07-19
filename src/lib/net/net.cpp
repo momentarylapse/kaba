@@ -72,6 +72,16 @@ void NetInit()
 
 Socket::Socket()
 {
+	__init__();
+}
+
+Socket::~Socket()
+{
+	__delete__();
+}
+
+void Socket::__init__()
+{
 	s = -1;
 	buffer = new string;
 	buffer_pos = 0;
@@ -79,21 +89,11 @@ Socket::Socket()
 	uid = NetCurrentSocketID ++;
 }
 
-Socket::~Socket()
+void Socket::__delete__()
 {
 	if (s >= 0)
 		Close();
 	delete(buffer);
-}
-
-void Socket::__init__()
-{
-	new(this) Socket;
-}
-
-void Socket::__delete__()
-{
-	this->~Socket();
 }
 
 Socket Socket::operator=(const Socket &other)
@@ -286,7 +286,7 @@ bool Socket::Connect(const string &addr,int port)
 			so(0,WSAGetLastError());
 		#endif
 		Close();
-		return -1;
+		return false;
 	}
 
 	/*if (connect(s, (struct sockaddr *)&host_addr, sizeof(host_addr))==-1){

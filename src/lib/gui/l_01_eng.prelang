@@ -1,0 +1,143 @@
+// Language
+English
+// Num IDs
+29
+// Data (ID,Text)
+about
+About...
+cancel
+Cancel
+command_dialog
+Text command
+compile
+Compile
+compile_and_run
+Run (fast)
+compile_and_run_verbose
+Run (debug)
+copy
+Copy
+cut
+Cut
+execute_command
+Execute command
+exit
+Exit
+find
+
+follow
+Follow
+menu_edit
+Edit
+menu_file
+File
+menu_help
+Help
+menu_script
+Script
+new
+New
+ok
+OK
+open
+Open...
+paste
+Paste
+redo
+Redo
+reload
+Reload
+save
+Save
+save_as
+Save as...
+script_help
+Scripting help
+script_messages_dialog
+Messages from the script
+settings
+
+show_data
+Show data type
+undo
+Undo
+// Num Language Strings
+38
+// Data (ID,Text)
+                  Close dialog box to exit program.
+                  Close dialog box to exit program.
+ ist abgestürzt!\t\tDie letzten Zeilen der Datei message.txt:
+
+!bold\\Kommentar/Geschehnisse:
+!bold\\Comment/What happened:
+!bold\\Name:
+!bold\\Name:
+\"%s\" nicht gefunden
+\"%s\" not found
+(anonym)
+(anonymous)
+- Keine Funktionen -
+- no functions -
+...done
+...done
+Abbrechen
+Cancel
+Alles (*.*)
+any file (*.*)
+Beschreibung
+Description
+Compilieren: %s         Opcode: %db         Ausführen: %s
+compiling: %s        opcode: %db       execution: %s
+Datei lässt sich nicht öffnen
+File doesn't want to be opened
+Datei nicht UTF-8 kompatibel
+File is not UTF-8 coded
+Datei speichern
+Save file
+Datei öffnen
+Open file
+Fehler
+Error
+Fehlerbericht
+Bug report
+Fehlerbericht an Michi senden
+Send bug report to Michi
+Ist halt irgendwie passiert...
+Just happend somehow...
+Nachrichten
+Messages
+Neben diesen Angaben wird noch der Inhalt der Datei message.txt geschickt
+Furthermore the content of message.txt will be sent along
+OK
+OK
+Script ist fehler-frei übersetzbar!        (in %s)
+script compilable without errors!    (in %s)
+Script nicht ausführbar. (#os)
+script not executable. (#os)
+Sie haben die Entropie erhöht. Wollen Sie Ihr Werk speichern?
+You increased entropy. Do you wish to save your efforts?
+Texteditor und Kaba-Compiler
+Text editor and Kaba compiler
+Zeile  %d : %d
+Line  %d : %d
+beim Ausführen des Scriptes:\n
+during script execution:\n
+demütige aber höfliche Frage
+Quite a polite question
+eingefügt
+pasted
+gespeichert
+saved
+i'm now going to clean up...
+i'm now going to clean up...
+kopiert
+copied
+message.txt öffnen
+Open message.txt
+neu geladen
+reloaded
+nur *.kaba-Dataien können übersetzt werden!
+only *.kaba files can be compiled
+program has crashed, error handler has been called... maybe SegFault... m(-_-)m
+program has crashed, error handler has been called... maybe SegFault... m(-_-)m
+#

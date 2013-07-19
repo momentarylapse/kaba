@@ -16,9 +16,9 @@ class ThreadedWork
 public:
 	ThreadedWork();
 	virtual ~ThreadedWork();
-	virtual void DoStep(int index, int worker_id){}
-	virtual bool OnStatus(){	return true;	}
-	bool Run(int total_size, int partition_size);
+	virtual void _cdecl DoStep(int index, int worker_id){}
+	virtual bool _cdecl OnStatus(){	return true;	}
+	bool _cdecl Run(int total_size, int partition_size);
 
 	int total_size, partition_size;
 	Array<Thread*> thread;
@@ -26,11 +26,11 @@ public:
 	int work_given;
 	Mutex *mx_list;
 
-	int GetTotal();
-	int GetDone();
+	int _cdecl GetTotal();
+	int _cdecl GetDone();
 
-	void __init__();
-	void __delete__();
+	void _cdecl __init__();
+	virtual void _cdecl __delete__();
 };
 
 

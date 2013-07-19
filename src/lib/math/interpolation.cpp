@@ -21,7 +21,9 @@ Interpolator<T>::Interpolator(Type _type)
 template<class T>
 void Interpolator<T>::__init__()
 {
-	new(this) Interpolator<T>(TYPE_LERP);
+	type = TYPE_LERP;
+	part.__init__();
+	clear();
 }
 
 template<class T>

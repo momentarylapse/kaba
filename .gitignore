@@ -1,6 +1,10 @@
 Debug
 Release
+Unoptimized
+ipch
 message.txt
 kaba
 *.o
 *.a
+Kaba.sdf
+Kaba.opensdf

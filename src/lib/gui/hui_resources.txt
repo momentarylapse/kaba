@@ -1,0 +1,737 @@
+t3
+// Number Of Resources
+3
+// Resource
+Dialog
+command_dialog
+
+1
+550
+65
+0
+0
+0
+1
+0
+
+
+3
+Edit
+command
+
+1
+5
+5
+540
+25
+-1
+0
+0
+
+
+DefButton
+ok
+hui:ok
+1
+445
+35
+100
+25
+-1
+0
+0
+
+
+Button
+cancel
+hui:cancel
+1
+340
+35
+100
+25
+-1
+0
+0
+
+
+// Resource
+Dialog
+script_messages_dialog
+
+1
+485
+390
+0
+0
+0
+0
+0
+
+
+1
+Edit
+messages
+
+0
+0
+0
+485
+390
+-1
+0
+0
+
+
+// Resource
+Menu
+menu
+
+1
+4
+0
+0
+0
+0
+0
+0
+
+
+32
+ItemPopup
+menu_file
+
+1
+9
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+new
+hui:new
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+open
+hui:open
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+save
+hui:save
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+save_as
+hui:save-as
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+reload
+hui:refresh
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+Item
+follow
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+exit
+hui:quit
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemPopup
+menu_edit
+
+1
+11
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+undo
+hui:undo
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+redo
+hui:redo
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+cut
+hui:cut
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+copy
+hui:copy
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+paste
+hui:paste
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+find
+hui:find
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+execute_command
+hui:execute
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+settings
+hui:preferences
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemPopup
+menu_script
+
+1
+5
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+show_data
+hui:find
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+compile
+hui:media-record
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+compile_and_run_verbose
+hui:media-play
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+compile_and_run
+hui:media-play
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemPopup
+menu_help
+
+1
+3
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+script_help
+hui:help
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemSeparator
+
+
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+ItemImage
+about
+hui:about
+1
+0
+0
+0
+0
+0
+0
+0
+
+
+// Number Of Languages
+2
+// Language
+Deutsch
+// NumIDs
+32
+// Text
+about
+Info...
+cancel
+Abbrechen
+command
+
+command_dialog
+Text-Befehl
+compile
+Übersetzen
+compile_and_run
+Ausführen (schnell)
+compile_and_run_verbose
+Ausführen (Debug)
+copy
+Kopieren
+cut
+Ausschneiden
+execute_command
+Befehl ausführen...
+exit
+Beenden
+find
+Suchen...
+follow
+Verfolgen
+menu
+
+menu_edit
+Bearbeiten
+menu_file
+Datei
+menu_help
+Hilfe
+menu_script
+Script
+messages
+
+new
+Neu
+ok
+OK
+open
+Öffnen
+paste
+Einfügen
+redo
+Wiederherstellen
+reload
+Aktualisieren
+save
+Speichern
+save_as
+Speichern unter
+script_help
+Script-Hilfe
+script_messages_dialog
+Nachrichten des Scriptes
+settings
+Einstellungen...
+show_data
+Datentypen zeigen
+undo
+Rückgängig
+// Num Language Strings
+0
+// Text
+// Language
+English
+// NumIDs
+32
+// Text
+about
+About...
+cancel
+Cancel
+command
+
+command_dialog
+Text command
+compile
+Compile
+compile_and_run
+Run (fast)
+compile_and_run_verbose
+Run (debug)
+copy
+Copy
+cut
+Cut
+execute_command
+Execute command
+exit
+Exit
+find
+
+follow
+Follow
+menu
+
+menu_edit
+Edit
+menu_file
+File
+menu_help
+Help
+menu_script
+Script
+messages
+
+new
+New
+ok
+OK
+open
+Open...
+paste
+Paste
+redo
+Redo
+reload
+Reload
+save
+Save
+save_as
+Save as...
+script_help
+Scripting help
+script_messages_dialog
+Messages from the script
+settings
+
+show_data
+Show data type
+undo
+Undo
+// Num Language Strings
+37
+// Text
+                  Close dialog box to exit program.
+                  Close dialog box to exit program.
+!bold\\Kommentar/Geschehnisse:
+!bold\\Comment/What happened:
+!bold\\Name:
+!bold\\Name:
+\"%s\" nicht gefunden
+\"%s\" not found
+(anonym)
+(anonymous)
+- Keine Funktionen -
+- no functions -
+...done
+...done
+Abbrechen
+Cancel
+Alles (*.*)
+any file (*.*)
+Beschreibung
+Description
+Compilieren: %s         Opcode: %db         Ausführen: %s
+compiling: %s        opcode: %db       execution: %s
+Datei lässt sich nicht öffnen
+File doesn't want to be opened
+Datei nicht UTF-8 kompatibel
+File is not UTF-8 coded
+Datei speichern
+Save file
+Datei öffnen
+Open file
+Fehler
+Error
+Fehlerbericht
+Bug report
+Fehlerbericht an Michi senden
+Send bug report to Michi
+Ist halt irgendwie passiert...
+Just happend somehow...
+Nachrichten
+Messages
+Neben diesen Angaben wird noch der Inhalt der Datei message.txt geschickt
+Furthermore the content of message.txt will be sent along
+OK
+OK
+Script ist fehler-frei übersetzbar!        (in %s)
+script compilable without errors!    (in %s)
+Script nicht ausführbar. (#os)
+script not executable. (#os)
+Sie haben die Entropie erhöht. Wollen Sie Ihr Werk speichern?
+You increased entropy. Do you wish to save your efforts?
+Texteditor und Kaba-Compiler
+Text editor and Kaba compiler
+Zeile  %d : %d
+Line  %d : %d
+beim Ausführen des Scriptes:\n
+during script execution:\n
+demütige aber höfliche Frage
+Quite a polite question
+eingefügt
+pasted
+gespeichert
+saved
+i'm now going to clean up...
+i'm now going to clean up...
+kopiert
+copied
+message.txt öffnen
+Open message.txt
+neu geladen
+reloaded
+nur *.kaba-Dataien können übersetzt werden!
+only *.kaba files can be compiled
+program has crashed, error handler has been called... maybe SegFault... m(-_-)m
+program has crashed, error handler has been called... maybe SegFault... m(-_-)m
+#

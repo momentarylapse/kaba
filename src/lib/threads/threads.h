@@ -7,7 +7,7 @@
 #define THREADS_H_INCLUDED
 
 // auxiliary
-int ThreadGetNumCores();
+int _cdecl ThreadGetNumCores();
 
 //typedef void thread_func_t(void*);
 //typedef bool thread_status_func_t();
@@ -19,22 +19,22 @@ class Thread
 public:
 	Thread();
 	virtual ~Thread();
-	void Run();
-	bool IsDone();
-	void Kill();
-	void Join();
+	void _cdecl Run();
+	bool _cdecl IsDone();
+	void _cdecl Kill();
+	void _cdecl Join();
 
-	virtual void OnRun(){}// = 0;
+	virtual void _cdecl OnRun(){}// = 0;
 
-	void __init__();
-	void __delete__();
+	void _cdecl __init__();
+	virtual void _cdecl __delete__();
 
 	bool running;
 	ThreadInternal *internal;
 };
 
-void ThreadExit();
-Thread *ThreadSelf();
+void _cdecl ThreadExit();
+Thread *_cdecl ThreadSelf();
 
 
 #endif

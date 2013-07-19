@@ -129,7 +129,7 @@ sAudioFile load_wave_file(const string &filename)
 	sAudioFile r;
 	r.buffer = NULL;
 //	ProgressStatus(_("lade wave"), 0);
-	CFile *f = OpenFileSilent(filename);
+	CFile *f = FileOpenSilent(filename);
 	if (!f){
 		msg_db_l(1);
 		return r;
@@ -308,6 +308,13 @@ void load_ogg_end(sAudioStream *as)
 		delete[](as->buffer);
 }
 
+#else
+
+sAudioFile load_ogg_file(const string &filename){ sAudioFile r; return r; }
+sAudioStream load_ogg_start(const string &filename){ sAudioStream r; return r; }
+void load_ogg_step(sAudioStream *as){}
+void load_ogg_end(sAudioStream *as){}
+
 #endif
 
 void save_wave_file(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
@@ -318,7 +325,7 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 	int bytes_per_sample = (bits / 8) * channels;
 	int samples = min(data_r.num, data_l.num);
 	
-	CFile *f = CreateFile(filename);
+	CFile *f = FileCreate(filename);
 	f->SetBinaryMode(true);
 	f->WriteBuffer("RIFF", 4);
 	f->WriteInt(44 + bytes_per_sample * samples); // file size (bytes)

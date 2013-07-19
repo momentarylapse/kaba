@@ -14,7 +14,7 @@
 #include "nix_common.h"
 
 
-string NixVersion = "0.11.0.0";
+string NixVersion = "0.11.0.1";
 
 
 // libraries (in case Visual C++ is used)
@@ -146,48 +146,36 @@ int VBTemp;
 	PFNGLUSEPROGRAMPROC glUseProgram = NULL;
 	PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
 	PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
+	PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
+	PFNGLDELETESHADERPROC glDeleteShader = NULL;
+	PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
+	PFNGLUNIFORM1FPROC glUniform1f = NULL;
+	PFNGLUNIFORM3FPROC glUniform3f = NULL;
+	PFNGLUNIFORM1IPROC glUniform1i = NULL;
 #endif
 bool OGLMultiTexturingSupport = false;
 bool OGLShaderSupport = false;
-	#ifdef OS_WINDOWS
-		extern PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT = NULL;
-		extern PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT = NULL;
-		extern PFNGLDELETERENDERBUFFERSEXTPROC glDeleteRenderbuffersEXT = NULL;
-		extern PFNGLGENRENDERBUFFERSEXTPROC glGenRenderbuffersEXT = NULL;
-		extern PFNGLRENDERBUFFERSTORAGEEXTPROC glRenderbufferStorageEXT = NULL;
-		extern PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC glGetRenderbufferParameterivEXT = NULL;
-		extern PFNGLISFRAMEBUFFEREXTPROC glIsFramebufferEXT = NULL;
-		extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT = NULL;
-		extern PFNGLDELETEFRAMEBUFFERSEXTPROC glDeleteFramebuffersEXT = NULL;
-		extern PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT = NULL;
-		extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC glCheckFramebufferStatusEXT = NULL;
-		extern PFNGLFRAMEBUFFERTEXTURE1DEXTPROC glFramebufferTexture1DEXT = NULL;
-		extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT = NULL;
-		extern PFNGLFRAMEBUFFERTEXTURE3DEXTPROC glFramebufferTexture3DEXT = NULL;
-		extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbufferEXT = NULL;
-		extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC glGetFramebufferAttachmentParameterivEXT = NULL;
-		extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT = NULL;
-	#else
-		#endif
-		bool OGLDynamicTextureSupport = false;
-
-/*		// WGL_ARB_extensions_string
-		PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = NULL;
-		// WGL_ARB_pbuffer
-		PFNWGLCREATEPBUFFERARBPROC    wglCreatePbufferARB    = NULL;
-		PFNWGLGETPBUFFERDCARBPROC     wglGetPbufferDCARB     = NULL;
-		PFNWGLRELEASEPBUFFERDCARBPROC wglReleasePbufferDCARB = NULL;
-		PFNWGLDESTROYPBUFFERARBPROC   wglDestroyPbufferARB   = NULL;
-		PFNWGLQUERYPBUFFERARBPROC     wglQueryPbufferARB     = NULL;
-		// WGL_ARB_pixel_format
-		PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = NULL;
-		// WGL_ARB_render_texture
-		PFNWGLBINDTEXIMAGEARBPROC     wglBindTexImageARB     = NULL;
-		PFNWGLRELEASETEXIMAGEARBPROC  wglReleaseTexImageARB  = NULL;
-		PFNWGLSETPBUFFERATTRIBARBPROC wglSetPbufferAttribARB = NULL;
-		HPBUFFERARB odt_hPBuffer[NIX_MAX_TEXTURES];
-		HDC         odt_hDC[NIX_MAX_TEXTURES];
-		HGLRC       odt_hRC[NIX_MAX_TEXTURES];*/
+bool OGLDynamicTextureSupport = false;
+#ifdef OS_WINDOWS
+	PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT = NULL;
+	PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT = NULL;
+	PFNGLDELETERENDERBUFFERSEXTPROC glDeleteRenderbuffersEXT = NULL;
+	PFNGLGENRENDERBUFFERSEXTPROC glGenRenderbuffersEXT = NULL;
+	PFNGLRENDERBUFFERSTORAGEEXTPROC glRenderbufferStorageEXT = NULL;
+	PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC glGetRenderbufferParameterivEXT = NULL;
+	PFNGLISFRAMEBUFFEREXTPROC glIsFramebufferEXT = NULL;
+	PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT = NULL;
+	PFNGLDELETEFRAMEBUFFERSEXTPROC glDeleteFramebuffersEXT = NULL;
+	PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT = NULL;
+	PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC glCheckFramebufferStatusEXT = NULL;
+	PFNGLFRAMEBUFFERTEXTURE1DEXTPROC glFramebufferTexture1DEXT = NULL;
+	PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT = NULL;
+	PFNGLFRAMEBUFFERTEXTURE3DEXTPROC glFramebufferTexture3DEXT = NULL;
+	PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC glFramebufferRenderbufferEXT = NULL;
+	PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC glGetFramebufferAttachmentParameterivEXT = NULL;
+	PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT = NULL;
+#else
+#endif
 
 static int OGLPixelFormat;
 #ifdef OS_LINUX
@@ -483,7 +471,7 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWi
 		NixTargetWidth = 800;
 		NixTargetHeight = 600;
 	}
-	NixTargetRect = rect(0, NixTargetWidth, 0, NixTargetHeight);
+	NixTargetRect = rect(0, (float)NixTargetWidth, 0, (float)NixTargetHeight);
 	NixSetCull(CullDefault);
 	NixSetWire(false);
 	NixSetAlpha(AlphaNone);
@@ -827,9 +815,8 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 		// multitexturing
 		glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
 		glClientActiveTexture = (PFNGLCLIENTACTIVETEXTUREPROC)wglGetProcAddress("glClientActiveTexture");
-		if (glActiveTexture && glClientActiveTexture)
-			OGLMultiTexturingSupport = true;
-		else
+		OGLMultiTexturingSupport = (glActiveTexture && glClientActiveTexture);
+		if (!OGLMultiTexturingSupport)
 			msg_error("no multitexturing support");
 
 		// shader
@@ -844,11 +831,17 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 		glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
 		glGetProgramiv = (PFNGLGETPROGRAMIVPROC)wglGetProcAddress("glGetProgramiv");
 		glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
-		if (glCreateShader && glShaderSource && glCompileShader && glAttachShader
+		glDeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
+		glDeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
+		glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
+		glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
+		glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
+		glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
+		OGLShaderSupport = (glCreateShader && glShaderSource && glCompileShader && glAttachShader
 			&& glGetShaderiv && glGetShaderInfoLog && glCreateProgram && glLinkProgram
-			&& glUseProgram && glGetProgramiv && glGetProgramInfoLog)
-			OGLShaderSupport = true;
-		else
+			&& glUseProgram && glGetProgramiv && glGetProgramInfoLog && glDeleteShader && glDeleteProgram
+			&& glGetUniformLocation && glUniform1f && glUniform1i && glUniform3f);
+		if (!OGLShaderSupport)
 			msg_error("no shader support");
 #else
 		OGLMultiTexturingSupport = true;

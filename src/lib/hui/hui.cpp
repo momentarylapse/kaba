@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.4.92.1";
+string HuiVersion = "0.4.93.0";
 
 
 #include <stdio.h>
@@ -28,13 +28,13 @@ string HuiVersion = "0.4.92.1";
 	#include <tchar.h>
 	#pragma comment(lib,"winmm.lib")
 	#ifdef HUI_API_GTK
-		#pragma comment(lib,"gtk-win32-2.0.lib")
+		#pragma comment(lib,"gtk-win32-3.0.lib")
 		#pragma comment(lib,"glib-2.0.lib")
 		#pragma comment(lib,"pango-1.0.lib")
 		#pragma comment(lib,"pangowin32-1.0.lib")
 		#pragma comment(lib,"cairo.lib")
 		#pragma comment(lib,"pangocairo-1.0.lib")
-		#pragma comment(lib,"gdk-win32-2.0.lib")
+		#pragma comment(lib,"gdk-win32-3.0.lib")
 		#pragma comment(lib,"gdk_pixbuf-2.0.lib")
 		#pragma comment(lib,"gobject-2.0.lib")
 	#else
@@ -93,7 +93,7 @@ string HuiComboBoxSeparator;
 bool HuiCreateHiddenWindows;
 
 string HuiAppFilename;
-string HuiAppDirectory;			// dir of changeable files (ie. ~/app/)
+string HuiAppDirectory;			// dir of changeable files (ie. ~/.app/)
 string HuiAppDirectoryStatic;	// dir of static files (ie. /usr/shar/app)
 string HuiInitialWorkingDirectory;
 Array<string> HuiArgument;
@@ -136,14 +136,29 @@ int hui_main(Array<string>);
 
 #ifdef OS_WINDOWS
 
+#ifdef _CONSOLE
+
+int _tmain(int NumArgs, _TCHAR *Args[])
+{
+	return hui_main(HuiMakeArgs(NumArgs, Args));
+}
+
+#else
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
 	Array<string> a;
+	a.add("-dummy-");
+	string s = lpCmdLine;
+	if (s.num > 0)
+		a.add(s);
 	return hui_main(a);
 }
+
+#endif
 
 #endif
 #ifdef OS_LINUX
@@ -212,7 +227,7 @@ void HuiSetIdleFunction(hui_callback *idle_function)
 {
 #ifdef HUI_API_GTK
 	bool old_idle = (HuiIdleFunction) || ((hui_idle_object) && (hui_idle_member_function));
-	bool new_idle = idle_function;
+	bool new_idle = (bool)idle_function;
 	if ((new_idle) && (!old_idle))
 		idle_id = g_idle_add_full(300, GtkIdleFunction, NULL, NULL);
 	if ((!new_idle) && (old_idle) && (idle_id >= 0)){
@@ -278,7 +293,7 @@ void _HuiMakeUsable_()
 	//WinStandartFont=CreateFont(8,0,0,0,FW_NORMAL,FALSE,FALSE,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,"MS Sans Serif");
 	hui_win_default_font=(HFONT)GetStockObject(DEFAULT_GUI_FONT);
 
-	hui_win_main_icon=ExtractIcon(hui_win_instance,sys_str(_pgmptr),0);
+	hui_win_main_icon=ExtractIcon(hui_win_instance,sys_str(HuiAppFilename),0);
 
 #endif
 #ifdef HUI_API_GTK
@@ -296,8 +311,19 @@ void _HuiMakeUsable_()
 void HuiInitBase()
 {
 	#ifdef OS_WINDOWS
-		HuiAppFilename = _pgmptr;
+#if 0
+		char *ttt = NULL;
+	msg_write("base0");
+	int r = _get_pgmptr(&ttt);
+	msg_write("base00");
+		msg_write(r);
+	msg_write(ttt);
+	msg_write("base01");
+		HuiAppFilename = ttt;
+	msg_write("base1");
 		HuiAppDirectory = HuiAppFilename.dirname();
+	msg_write("base12");
+#endif
 		hui_win_instance = (HINSTANCE)GetModuleHandle(NULL);
 	#endif
 	#ifdef OS_LINUX

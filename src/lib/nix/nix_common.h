@@ -72,6 +72,12 @@
 	extern PFNGLUSEPROGRAMPROC glUseProgram;
 	extern PFNGLGETPROGRAMIVPROC glGetProgramiv;
 	extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+	extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
+	extern PFNGLDELETESHADERPROC glDeleteShader;
+	extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+	extern PFNGLUNIFORM1FPROC glUniform1f;
+	extern PFNGLUNIFORM3FPROC glUniform3f;
+	extern PFNGLUNIFORM1IPROC glUniform1i;
 #endif
 extern bool OGLMultiTexturingSupport;
 extern bool OGLShaderSupport;

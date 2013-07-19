@@ -1,0 +1,81 @@
+// IDs
+enum{
+	HMM_MENU,
+	HMM_MENU_FILE,
+	HMM_NEW,
+	HMM_NEW_HEX,
+	HMM_OPEN,
+	HMM_OPEN_HEX,
+	HMM_SAVE,
+	HMM_SAVE_AS,
+	HMM_EXIT,
+	HMM_MENU_EDIT,
+	HMM_SHOW_DATA,
+	HMM_EXECUTE_COMMAND,
+	HMM_CUT,
+	HMM_COPY,
+	HMM_COPY_HEX,
+	HMM_PASTE,
+	HMM_PASTE_HEX,
+	HMM_RELOAD,
+	HMM_FOLLOW,
+	HMM_UNDO,
+	HMM_REDO,
+	HMM_MENU_SCRIPT,
+	HMM_COMPILE,
+	HMM_COMPILE_AND_RUN_VERBOSE,
+	HMM_COMPILE_AND_RUN,
+	HMM_MENU_VIEW,
+	HMM_VIEW_1,
+	HMM_VIEW_1B,
+	HMM_VIEW_2,
+	HMM_VIEW_3,
+	HMM_MENU_HELP,
+	HMM_SCRIPT_HELP,
+	HMM_ABOUT
+};
+
+
+
+	// menu
+	CHuiMenu *Menu=new CHuiMenu();
+		Menu->SetID(HMM_MENU);
+		CHuiMenu *sub_menu_1=new CHuiMenu();
+		sub_menu_1->AddEntryImage("Neu",HuiImageNew,HMM_NEW);
+		sub_menu_1->AddEntryImage("&Offnen",HuiImageOpen,HMM_OPEN);
+		sub_menu_1->AddEntryImage("Speichern",HuiImageSave,HMM_SAVE);
+		sub_menu_1->AddEntryImage("Speichern unter",HuiImageSaveAs,HMM_SAVE_AS);
+		sub_menu_1->AddSeparator();
+		sub_menu_1->AddEntryImage("Aktualisieren",HuiImageRefresh,HMM_RELOAD);
+		sub_menu_1->AddEntry("Verfolgen",HMM_FOLLOW);
+		sub_menu_1->AddSeparator();
+		sub_menu_1->AddEntryImage("Beenden",HuiImageQuit,HMM_EXIT);
+	Menu->AddSubMenu("Datei",HMM_MENU_FILE,sub_menu_1);
+		CHuiMenu *sub_menu_563=new CHuiMenu();
+		sub_menu_563->AddEntryImage("R&uckg&angig",HuiImageUndo,HMM_UNDO);
+		sub_menu_563->AddEntryImage("Wiederherstellen",HuiImageRedo,HMM_REDO);
+		sub_menu_563->AddSeparator();
+		sub_menu_563->AddEntryImage("Ausschneiden",HuiImageCut,HMM_CUT);
+		sub_menu_563->AddEntryImage("Kopieren",HuiImageCopy,HMM_COPY);
+		sub_menu_563->AddEntryImage("Einf&ugen",HuiImagePaste,HMM_PASTE);
+		sub_menu_563->AddSeparator();
+		sub_menu_563->AddEntryImage("Suchen...",HuiImageFind,HMM_FIND);
+		sub_menu_563->AddEntryImage("Befehl ausf&uhren...",HuiImageExecute,HMM_EXECUTE_COMMAND);
+		sub_menu_563->AddSeparator();
+		sub_menu_563->AddEntryImage("Einstellungen...",HuiImagePreferences,HMM_SETTINGS);
+	Menu->AddSubMenu("Bearbeiten",HMM_MENU_EDIT,sub_menu_563);
+		CHuiMenu *sub_menu_193=new CHuiMenu();
+		sub_menu_193->AddEntryImage("Datentypen zeigen",HuiImageFind,HMM_SHOW_DATA);
+		sub_menu_193->AddSeparator();
+		sub_menu_193->AddEntryImage("&Ubersetzen",HuiImageSpellCheck,HMM_COMPILE);
+		sub_menu_193->AddEntryImage("Ausf&uhren (Debug)",HuiImageMediaPlay,HMM_COMPILE_AND_RUN_VERBOSE);
+		sub_menu_193->AddEntryImage("Ausf&uhren (schnell)",HuiImageMediaPlay,HMM_COMPILE_AND_RUN);
+	Menu->AddSubMenu("Script",HMM_MENU_SCRIPT,sub_menu_193);
+		CHuiMenu *sub_menu_585=new CHuiMenu();
+		sub_menu_585->AddEntryImage("Script-Hilfe",HuiImageHelp,HMM_SCRIPT_HELP);
+		sub_menu_585->AddSeparator();
+		sub_menu_585->AddEntryImage("Info...",HuiImageAbout,HMM_ABOUT);
+	Menu->AddSubMenu("Hilfe",HMM_MENU_HELP,sub_menu_585);
+
+
+
