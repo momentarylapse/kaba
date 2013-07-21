@@ -180,6 +180,22 @@ void HuiWindow::_CleanUp_()
 		}
 }
 
+// default handler when trying to close the windows
+void HuiWindow::OnCloseRequest()
+{
+	msg_write("default close handler");
+	int level = _GetMainLevel_();
+	delete(this);
+	
+	// no message function (and last window in this main level): end program
+	// ...or at least end nested main level
+	foreach(HuiWindow *w, HuiWindows)
+		if (w->_GetMainLevel_() >= level)
+			return;
+	msg_write("end...");
+	HuiEnd();
+}
+
 
 // identify window (for automatic title assignment with language strings)
 void HuiWindow::SetID(const string &_id)

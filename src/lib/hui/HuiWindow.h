@@ -158,7 +158,7 @@ public:
 	virtual void _cdecl OnRightButtonUp(){}
 	virtual void _cdecl OnDoubleClick(){}
 	virtual void _cdecl OnMouseWheel(){}
-	virtual bool _cdecl CanClose(){ return true; }
+	virtual void _cdecl OnCloseRequest();
 	virtual void _cdecl OnKeyDown(){}
 	virtual void _cdecl OnKeyUp(){}
 	virtual void _cdecl OnResize(){}

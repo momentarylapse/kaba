@@ -530,20 +530,24 @@ void HuiDoSingleMainLoop()
 #endif
 #ifdef HUI_API_GTK
 
+	msg_write("a");
 	// push idle function
 	hui_callback *_if_ = HuiIdleFunction;
 	HuiEventHandler *_io_ = hui_idle_object;
 	void (HuiEventHandler::*_imf_)() = hui_idle_member_function;
 
 	HuiSetIdleFunction(NULL);
+	msg_write("b");
 	while(gtk_events_pending())
 		gtk_main_iteration();
+	msg_write("c");
 
 	// pop idle function
 	if (_if_)
 		HuiSetIdleFunction(_if_);
 	else if ((_io_) && (_imf_))
 		HuiSetIdleFunctionM(_io_, _imf_);
+	msg_write("d");
 #endif
 }
 

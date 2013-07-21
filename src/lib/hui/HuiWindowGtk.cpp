@@ -167,18 +167,8 @@ gboolean OnGtkWindowClose(GtkWidget *widget, GdkEvent *event, gpointer user_data
 	HuiEvent e = HuiEvent("", "hui:close");
 	if (win->_SendEvent_(&e))
 		return true;
-	if (!win->CanClose())
-		return true;
-	
-	// no message function (and last window in this main level): end program
-	// ...or at least end nested main level
-	int n = 0;
-	foreach(HuiWindow *w, HuiWindows)
-		if (w->_GetMainLevel_() >= win->_GetMainLevel_())
-			n ++;
-	if (n == 1)
-		HuiEnd();
-	return false;
+	win->OnCloseRequest();
+	return true;
 }
 
 void OnGtkWindowResize(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data)
