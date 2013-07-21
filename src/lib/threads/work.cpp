@@ -28,7 +28,7 @@ public:
 		work->mx_list->Unlock();
 		return true;
 	}
-	virtual void OnRun()
+	virtual void _cdecl OnRun()
 	{
 		while(Schedule()){
 			for (int i=0;i<num;i++)

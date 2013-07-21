@@ -163,7 +163,6 @@ bool process_key(GdkEventKey *event, GtkWidget *KeyReciever, HuiWindow *win, boo
 
 gboolean OnGtkWindowClose(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-	msg_write("on gtk close");
 	HuiWindow *win = (HuiWindow *)user_data;
 	HuiEvent e = HuiEvent("", "hui:close");
 	if (win->_SendEvent_(&e))
@@ -592,7 +591,23 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 
 HuiWindow::~HuiWindow()
 {
-	msg_db_f("HuiWindow.del",0);
+	msg_db_f("HuiWindow.~", 1);
+
+	if (!window)
+		return;
+
+	// quick'n'dirty fix (gtk destroys its widgets recursively)
+	foreach(HuiControl *c, control)
+		c->widget = NULL;
+
+	_CleanUp_();
+
+	gtk_widget_destroy(window);
+}
+
+void HuiWindow::__delete__()
+{
+	msg_db_f("HuiWindow.del", 1);
 
 	if (!window)
 		return;
@@ -619,8 +634,7 @@ void HuiWindow::Show()
 
 string HuiWindow::Run()
 {
-
-	msg_db_r("HuiWindow.Run",1);
+	msg_db_f("HuiWindow.Run",1);
 	Show();
 	int uid = unique_id;
 	/*msg_write((int)win);
@@ -660,7 +674,6 @@ string HuiWindow::Run()
 #ifdef HUI_API_GTK
 	if (GetParent()){
 		gtk_dialog_run(GTK_DIALOG(window));
-		msg_write("Run/a0");
 	}else{
 		bool killed = false;
 		while(!killed){
@@ -671,7 +684,6 @@ string HuiWindow::Run()
 		}
 	}
 #endif
-	msg_write("Run/a");
 	//msg_write("cleanup");
 
 	// clean up
@@ -680,8 +692,6 @@ string HuiWindow::Run()
 			last_id = cw.last_id;
 			_HuiClosedWindow_.erase(i);
 		}
-	msg_write("Run/b");
-	msg_db_l(1);
 	return last_id;
 }
 
@@ -721,7 +731,7 @@ void HuiWindow::AllowEvents(const string &msg)
 
 void HuiWindow::SetMenu(HuiMenu *_menu)
 {
-	msg_db_r("SetMenu", 1);
+	msg_db_f("SetMenu", 1);
 	// remove old menu...
 	if (menu){
 		Array<HuiControl*> list = menu->get_all_controls();
@@ -759,7 +769,6 @@ void HuiWindow::SetMenu(HuiMenu *_menu)
 		control.append(list);
 	}else
 		gtk_widget_hide(menubar);
-	msg_db_l(1);
 }
 
 // show/hide without closing the window

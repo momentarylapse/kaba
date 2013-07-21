@@ -16,7 +16,7 @@ int ThreadGetNumCores();
 
 struct ThreadInternal;
 
-class Thread
+class Thread : public VirtualBase
 {
 public:
 	Thread();

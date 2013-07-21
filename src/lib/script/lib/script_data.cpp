@@ -678,12 +678,13 @@ class VirtualTest : public VirtualBase
 public:
 	int i;
 	static bool enable_logging;
-	VirtualTest(){	if (enable_logging)	msg_write("VirtualTest.init()");	i = 13;	}
-	void _cdecl __init__(){	new(this) VirtualTest;	}
-	//virtual void _cdecl __delete__(){	if (enable_logging) msg_write("VirtualTest.delete()");	}
-	virtual void _cdecl f_virtual(){		msg_write(i);msg_write("VirtualTest.f_virtual()");	}
-	void _cdecl f_normal(){		msg_write(i);msg_write("VirtualTest.f_normal()");	}
-	void _cdecl test(){	msg_write("VirtualTest.test()"); f_virtual();	}
+	VirtualTest(){ if (enable_logging) msg_write("VirtualTest.init()"); i = 13; }
+	virtual ~VirtualTest(){ if (enable_logging) msg_write("VirtualTest.~"); }
+	void _cdecl __init__(){ new(this) VirtualTest; }
+	virtual void _cdecl __delete__(){ if (enable_logging) msg_write("VirtualTest.delete()"); }
+	virtual void _cdecl f_virtual(){ msg_write(i); msg_write("VirtualTest.f_virtual()"); }
+	void _cdecl f_normal(){ msg_write(i); msg_write("VirtualTest.f_normal()"); }
+	void _cdecl test(){ msg_write("VirtualTest.test()"); f_virtual(); }
 };
 bool VirtualTest::enable_logging;
 

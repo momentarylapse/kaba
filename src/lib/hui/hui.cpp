@@ -345,7 +345,7 @@ void HuiInitBase()
 	}
 	HuiRunning = false;
 
-	msg_db_r("Hui",1);
+	msg_db_f("Hui",1);
 	//msg_db_m(format("[%s]", HuiVersion),1);
 
 
@@ -367,8 +367,6 @@ void HuiInitBase()
 	HuiLanguaged=false;
 	HuiCreateHiddenWindows=false;
 	HuiPushMainLevel();
-
-	msg_db_l(1);
 }
 
 void HuiInit(const string &program, bool load_res, const string &def_lang)
@@ -468,7 +466,7 @@ void HuiInit(const string &program, bool load_res, const string &def_lang)
 
 int HuiRun()
 {
-	msg_db_r("HuiRun",1);
+	msg_db_f("HuiRun",1);
 	HuiRunning = true;
 	HuiMainLevelRunning[HuiMainLevel] = true;
 	//HuiPushMainLevel();
@@ -500,13 +498,12 @@ int HuiRun()
 #ifdef HUI_API_GTK
 	gtk_main();
 #endif
-	msg_db_l(1);
 	return 0;
 }
 
 void HuiDoSingleMainLoop()
 {
-	msg_db_r("HuiDoSingleMainLoop",1);
+	msg_db_f("HuiDoSingleMainLoop",1);
 #ifdef HUI_API_WIN
 	MSG messages;
 	messages.message=0;
@@ -548,32 +545,28 @@ void HuiDoSingleMainLoop()
 	else if ((_io_) && (_imf_))
 		HuiSetIdleFunctionM(_io_, _imf_);
 #endif
-	msg_db_l(1);
 }
 
 void HuiPushMainLevel()
 {
-	msg_db_r("HuiPushMainLevel",2);
+	msg_db_f("HuiPushMainLevel",2);
 	HuiMainLevel ++;
 	HuiMainLevelRunning.add(false);
-	msg_db_l(2);
 }
 
 void HuiCleanUpMainLevel()
 {
-	msg_db_r("HuiCleanUpMainLevel",2);
+	msg_db_f("HuiCleanUpMainLevel",2);
 	foreachb(HuiWindow *w, HuiWindows)
 		if (w->_GetMainLevel_() >= HuiMainLevel){
-			msg_write("clean up ml -> delete");
 			delete(w);
 		}
 	HuiSetIdleFunction(NULL);
-	msg_db_l(2);
 }
 
 void HuiPopMainLevel()
 {
-	msg_db_r("HuiPopMainLevel",2);
+	msg_db_f("HuiPopMainLevel",2);
 	HuiCleanUpMainLevel();
 	HuiMainLevel --;
 	
@@ -582,13 +575,12 @@ void HuiPopMainLevel()
 	else
 		HuiMainLevelRunning.pop();
 	HuiDoSingleMainLoop();
-	msg_db_l(2);
 }
 
 // ends the system loop of the HuiRun() command
 void HuiEnd()
 {
-	msg_db_r("HuiEnd",1);
+	msg_db_r("HuiEnd", 1);
 
 	if (HuiMainLevel > 0)
 		HuiCleanUpMainLevel();

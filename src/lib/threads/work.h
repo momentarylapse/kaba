@@ -11,7 +11,7 @@
 
 #define MAX_THREADS			32
 
-class ThreadedWork
+class ThreadedWork : public VirtualBase
 {
 public:
 	ThreadedWork();

@@ -166,6 +166,11 @@ void HuiWindow::_CleanUp_()
 
 	for (int i=0;i<control.num;i++)
 		delete(control[i]);
+	control.clear();
+	id.clear();
+	cur_id.clear();
+	event.clear();
+	input.reset();
 	
 	// unregister window
 	for (int i=0;i<HuiWindows.num;i++)

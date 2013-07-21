@@ -132,6 +132,9 @@ void Type::LinkVirtualTable()
 	if (parent)
 		for (int i=0;i<parent->num_virtual;i++)
 			vtable[i] = parent->vtable[i];
+#ifdef OS_WINDOWS
+	vtable[0] = mf(&VirtualBase::__delete_win__);
+#endif
 
 	// link virtual functions into vtable
 	foreach(ClassFunction &cf, function)
@@ -157,6 +160,9 @@ void Type::LinkExternalVirtualTable(void *p)
 	for (int i=0;i<num_virtual;i++)
 		vtable[i] = t[i];
 	// this should also link the "real" c++ destructor
+#ifdef OS_WINDOWS
+	vtable[0] = mf(&VirtualBase::__delete_win__);
+#endif
 }
 
 bool Type::DeriveFrom(Type* root)
