@@ -28,7 +28,7 @@ public:
 		work->mx_list->Unlock();
 		return true;
 	}
-	virtual void _cdecl OnRun()
+	virtual void OnRun()
 	{
 		while(Schedule()){
 			for (int i=0;i<num;i++)
@@ -43,6 +43,16 @@ public:
 
 ThreadedWork::ThreadedWork()
 {
+	__init__();
+}
+
+ThreadedWork::~ThreadedWork()
+{
+	__delete__();
+}
+
+void ThreadedWork::__init__()
+{
 	thread.__init__();
 	mx_list = NULL;
 	// use max. number of cores?
@@ -52,17 +62,6 @@ ThreadedWork::ThreadedWork()
 
 	for (int i=0;i<num_threads;i++)
 		thread.add(new WorkerThread(i, this));
-}
-
-ThreadedWork::~ThreadedWork()
-{
-	foreach(Thread *t, thread)
-		delete(t);
-}
-
-void ThreadedWork::__init__()
-{
-	new(this) ThreadedWork;
 }
 
 void ThreadedWork::__delete__()

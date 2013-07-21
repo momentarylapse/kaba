@@ -7,7 +7,6 @@
 
 #include "HuiToolItemButton.h"
 
-
 #ifdef HUI_API_GTK
 
 void *get_gtk_image(const string &image, bool large);

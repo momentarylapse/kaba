@@ -93,8 +93,6 @@ void SIAddPackageHui()
 			func_add_param("sub_menu",	TypeHuiMenuP);
 
 	add_class(TypeHuiWindow);
-		class_set_vtable(HuiWindow);
-		TypeHuiWindow->vtable = new VirtualTable[30];
 		class_add_func("__init__",		TypeVoid,		mf(&HuiWindow::__init_ext__));
 			func_add_param("title",		TypeString);
 			func_add_param("x",		TypeInt);
@@ -348,7 +346,7 @@ void SIAddPackageHui()
 		class_add_func_virtual("CanClose", TypeBool, mf(&HuiWindow::CanClose));
 		class_add_func("BeginDraw",								TypeHuiPainterP,		mf(&HuiWindow::BeginDraw));
 			func_add_param("id",		TypeString);
-		TypeHuiWindow->LinkVirtualTable();
+		class_set_vtable(HuiWindow);
 
 	add_class(TypeHuiNixWindow);
 		TypeHuiNixWindow->DeriveFrom(TypeHuiWindow);

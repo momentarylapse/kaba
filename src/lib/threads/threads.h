@@ -6,8 +6,10 @@
 #if !defined(THREADS_H_INCLUDED)
 #define THREADS_H_INCLUDED
 
+#include "../base/base.h"
+
 // auxiliary
-int _cdecl ThreadGetNumCores();
+int ThreadGetNumCores();
 
 //typedef void thread_func_t(void*);
 //typedef bool thread_status_func_t();

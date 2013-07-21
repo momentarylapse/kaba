@@ -76,7 +76,7 @@ class HuiControlTreeView;
 class HuiControlGrid;
 class HuiControlRadioButton;
 
-class HuiWindow : public HuiEventHandler
+class HuiWindow : public VirtualBase, public HuiEventHandler
 {
 	friend class HuiToolbar;
 	friend class HuiControl;
@@ -91,9 +91,8 @@ public:
 	HuiWindow(const string &title, int x, int y, int width, int height, HuiWindow *parent, bool allow_parent, int mode);
 	HuiWindow(const string &title, int x, int y, int width, int height);
 	HuiWindow(const string &id, HuiWindow *parent, bool allow_parent);
-	virtual ~HuiWindow();
 	void _cdecl __init_ext__(const string &title, int x, int y, int width, int height);
-	virtual void _cdecl __delete__();
+	virtual ~HuiWindow();
 
 	void _Init_(const string &title, int x, int y, int width, int height, HuiWindow *parent, bool allow_parent, int mode);
 	void _InitGeneric_(HuiWindow *parent, bool allow_parent, int mode);

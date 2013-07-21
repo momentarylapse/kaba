@@ -65,7 +65,6 @@ HuiWindow::HuiWindow(const string &title, int x, int y, int width, int height)
 
 void HuiWindow::__init_ext__(const string& title, int x, int y, int width, int height)
 {
-	msg_write("init ext");
 	new(this) HuiWindow(title, x, y, width, height);
 }
 
@@ -116,7 +115,7 @@ HuiWindow::HuiWindow(const string &id, HuiWindow *parent, bool allow_parent)
 
 void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 {
-	msg_db_r("Window::_InitGeneric_", 2);
+	msg_db_f("Window::_InitGeneric_", 2);
 	_HuiMakeUsable_();
 	HuiWindows.add(this);
 
@@ -151,13 +150,11 @@ void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 	main_level = HuiMainLevel;
 
 	SetTarget("", 0);
-
-	msg_db_l(2);
 }
 
 void HuiWindow::_CleanUp_()
 {
-	msg_db_r("Window::_CleanUp_", 2);
+	msg_db_f("Window::_CleanUp_", 2);
 	HuiClosedWindow c;
 	c.unique_id = unique_id;
 	c.win = this;
@@ -176,7 +173,6 @@ void HuiWindow::_CleanUp_()
 			HuiWindows.erase(i);
 			break;
 		}
-	msg_db_l(2);
 }
 
 
@@ -317,7 +313,7 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 {
 	if (!allow_input)
 		return false;
-	msg_db_r("SendEvent", 2);
+	msg_db_f("SendEvent", 2);
 	//msg_write(e->id);
 	//msg_write(e->message);
 	HuiCurWindow = this;
@@ -363,10 +359,8 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 
 		// window closed by callback?
 		foreach(HuiClosedWindow &cw, _HuiClosedWindow_)
-			if (cw.win == this){
-				msg_db_l(2);
+			if (cw.win == this)
 				return sent;
-			}
 	}
 
 	// reset
@@ -374,7 +368,6 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 	input.dy = 0;
 	input.dz = 0;
 
-	msg_db_l(2);
 	return sent;
 }
 
@@ -432,10 +425,10 @@ void HuiWindowAddControl(HuiWindow *win, const string &type, const string &title
 
 void HuiWindow::FromResource(const string &id)
 {
-	msg_db_r("Window.FromResource",1);
+	msg_db_f("Window.FromResource",1);
 	HuiResource *res = HuiGetResource(id);
 	if (!res)
-		msg_db_l(1);
+		return;
 
 	// title
 	SetTitle(HuiGetLanguage(res->id));
@@ -481,7 +474,6 @@ void HuiWindow::FromResource(const string &id)
 			SetImage(cmd.id, cmd.image);
 	}
 	msg_db_m("  \\(^_^)/",1);
-	msg_db_l(1);
 }
 
 //----------------------------------------------------------------------------------
@@ -714,18 +706,12 @@ bool HuiWindow::IsExpanded(const string &_id, int row)
 
 HuiWindow *HuiCreateDialog(const string &title,int width,int height,HuiWindow *root,bool allow_root)
 {
-	return new HuiWindow(	title,
-							-1, -1, width, height,
-							root, allow_root,
-							HuiWinModeControls);
+	return new HuiFixedDialog(title, width, height, root, allow_root);
 }
 
 HuiWindow *HuiCreateSizableDialog(const string &title,int width,int height,HuiWindow *root,bool allow_root)
 {
-	return new HuiWindow(	title,
-							-1, -1, width, height,
-							root, allow_root,
-							HuiWinModeControls | HuiWinModeResizable);
+	return new HuiDialog(title, width, height, root, allow_root);
 }
 
 void HuiFuncIgnore()

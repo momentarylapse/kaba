@@ -424,7 +424,6 @@ void MusicStep(int index)
 
 #else
 
-
 void SoundInit(){}
 void SoundExit(){}
 int SoundLoad(const string &filename){ return -1; }

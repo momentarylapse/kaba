@@ -6,6 +6,8 @@
 #if !defined(MUTEX_H_INCLUDED)
 #define MUTEX_H_INCLUDED
 
+#include "../base/base.h"
+
 struct MutexInternal;
 
 class Mutex

@@ -34,10 +34,6 @@ void SIAddPackageThread()
 	Type *TypeThreadedWork = add_type  ("ThreadedWork", sizeof(ThreadedWork));
 
 	add_class(TypeThread);
-#ifdef _X_USE_THREADS_
-		class_set_vtable(Thread);
-#endif
-		TypeThread->vtable = new VirtualTable[10];
 		class_add_func("__init__",		TypeVoid,	thread_p(mf(&Thread::__init__)));
 		class_add_func_virtual("__delete__",		TypeVoid,	thread_p(mf(&Thread::__delete__)));
 		class_add_func("Run",		TypeVoid,	thread_p(mf(&Thread::Run)));
@@ -45,7 +41,9 @@ void SIAddPackageThread()
 		class_add_func("IsDone",		TypeBool,	thread_p(mf(&Thread::IsDone)));
 		class_add_func("Kill",		TypeVoid,	thread_p(mf(&Thread::Kill)));
 		class_add_func("Join",		TypeVoid,	thread_p(mf(&Thread::Join)));
-		TypeThread->LinkVirtualTable();
+#ifdef _X_USE_THREADS_
+		class_set_vtable(Thread);
+#endif
 
 	add_class(TypeMutex);
 		class_add_func("__init__",		TypeVoid,	thread_p(mf(&Mutex::__init__)));
@@ -54,10 +52,6 @@ void SIAddPackageThread()
 		class_add_func("Unlock",	TypeVoid,	thread_p(mf(&Mutex::Unlock)));
 
 	add_class(TypeThreadedWork);
-#ifdef _X_USE_THREADS_
-		class_set_vtable(ThreadedWork);
-#endif
-		TypeThreadedWork->vtable = new VirtualTable[10];
 		class_add_func("__init__",		TypeVoid,	thread_p(mf(&ThreadedWork::__init__)));
 		class_add_func_virtual("__delete__",		TypeVoid,	thread_p(mf(&ThreadedWork::__delete__)));
 		class_add_func("Run",		TypeBool,	thread_p(mf(&ThreadedWork::Run)));
@@ -69,7 +63,9 @@ void SIAddPackageThread()
 		class_add_func_virtual("OnStatus",		TypeBool,	thread_p(mf(&ThreadedWork::OnStatus)));
 		class_add_func("GetTotal",		TypeInt,	thread_p(mf(&ThreadedWork::GetTotal)));
 		class_add_func("GetDone",		TypeInt,	thread_p(mf(&ThreadedWork::GetDone)));
-		TypeThreadedWork->LinkVirtualTable();
+#ifdef _X_USE_THREADS_
+		class_set_vtable(ThreadedWork);
+#endif
 
 	add_func("ThreadGetNumCores",		TypeInt,	thread_p(&ThreadGetNumCores));
 	add_func("ThreadExit",				TypeVoid,	thread_p(&ThreadExit));

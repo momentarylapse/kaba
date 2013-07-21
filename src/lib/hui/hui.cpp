@@ -17,7 +17,6 @@
 
 string HuiVersion = "0.4.93.0";
 
-
 #include <stdio.h>
 #include <signal.h>
 #ifdef OS_WINDOWS
@@ -367,7 +366,6 @@ void HuiInitBase()
 	HuiErrorFunction=NULL;
 	HuiLanguaged=false;
 	HuiCreateHiddenWindows=false;
-
 	HuiPushMainLevel();
 
 	msg_db_l(1);
@@ -565,8 +563,10 @@ void HuiCleanUpMainLevel()
 {
 	msg_db_r("HuiCleanUpMainLevel",2);
 	foreachb(HuiWindow *w, HuiWindows)
-		if (w->_GetMainLevel_() >= HuiMainLevel)
+		if (w->_GetMainLevel_() >= HuiMainLevel){
+			msg_write("clean up ml -> delete");
 			delete(w);
+		}
 	HuiSetIdleFunction(NULL);
 	msg_db_l(2);
 }

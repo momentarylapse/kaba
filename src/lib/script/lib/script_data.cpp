@@ -237,13 +237,11 @@ static PreCommand *cur_cmd = NULL;
 static Function *cur_func = NULL;
 static Type *cur_class;
 static ClassFunction *cur_class_func = NULL;
-void **cur_vtable = NULL;
 
 void add_class(Type *root_type)//, PreScript *ps = NULL)
 {
 	msg_db_f("add_class", 4);
 	cur_class = root_type;
-	cur_vtable = NULL;
 }
 
 void class_add_element(const string &name, Type *type, int offset)
@@ -258,24 +256,11 @@ void class_add_element(const string &name, Type *type, int offset)
 
 int add_func(const string &name, Type *return_type, void *func, bool is_class);
 
-void _class_add_func_normal(const string &tname, const string &name, Type *return_type, void *func)
-{
-	int cmd = add_func(tname + "." + name, return_type, func, true);
-	cur_func->_class = cur_class;
-	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
-	cur_class_func = &cur_class->function.back();
-}
-
 void _class_add_func_virtual(const string &tname, const string &name, Type *return_type, int index)
 {
-	int cmd = -1;
-	cur_func = NULL;
-	void *func = NULL;
-	if (cur_vtable)
-		func = cur_vtable[index];
 //	msg_write("virtual: " + tname + "." + name);
 //	msg_write(index);
-	cmd = add_func(tname + "." + name + "[virtual]", return_type, func, true);
+	int cmd = add_func(tname + "." + name + "[virtual]", return_type, NULL, true);
 	cur_func->_class = cur_class;
 	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
 	cur_class_func = &cur_class->function.back();
@@ -291,20 +276,10 @@ void class_add_func(const string &name, Type *return_type, void *func)
 			if ((t->is_pointer) && (t->parent == cur_class))
 				tname = t->name;
 	}
-	if (config.abi == AbiWindows32){
-		_class_add_func_normal(tname, name, return_type, func);
-	}else{
-	
-		long p = (long)func;
-		if ((cur_class->vtable) && ((p & 1) > 0)){
-			// virtual function
-			int index = p / sizeof(void*);
-			_class_add_func_virtual(tname, name, return_type, index);
-		}else{
-			_class_add_func_normal(tname, name, return_type, func);
-		}
-
-	}
+	int cmd = add_func(tname + "." + name, return_type, func, true);
+	cur_func->_class = cur_class;
+	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
+	cur_class_func = &cur_class->function.back();
 }
 
 void class_add_func_virtual(const string &name, Type *return_type, void *func)
@@ -323,7 +298,7 @@ void class_add_func_virtual(const string &name, Type *return_type, void *func)
 		}
 		unsigned char *pp = (unsigned char*)func;
 		//if ((cur_class->vtable) && (pp[0] == 0x8b) && (pp[1] == 0x01) && (pp[2] == 0xff) && (pp[3] == 0x60)){
-		if ((cur_class->vtable) && (pp[0] == 0x8b) && (pp[1] == 0x44) && (pp[2] == 0x24) && (pp[4] == 0x8b) && (pp[5] == 0x00) && (pp[6] == 0xff) && (pp[7] == 0x60)){
+		if ((pp[0] == 0x8b) && (pp[1] == 0x44) && (pp[2] == 0x24) && (pp[4] == 0x8b) && (pp[5] == 0x00) && (pp[6] == 0xff) && (pp[7] == 0x60)){
 			// 8b.44.24.**    8b.00     ff.60.10
 			// virtual function
 			int index = (int)pp[8] / 4;
@@ -336,15 +311,22 @@ void class_add_func_virtual(const string &name, Type *return_type, void *func)
 	}else{
 	
 		long p = (long)func;
-		if ((cur_class->vtable) && ((p & 1) > 0)){
+		if ((p & 1) > 0){
 			// virtual function
 			int index = p / sizeof(void*);
 			_class_add_func_virtual(tname, name, return_type, index);
-		}else{
+		}else if (!func){
 			_class_add_func_virtual(tname, name, return_type, 0);
+		}else{
+			msg_error("Script class_add_func_virtual(" + tname + "." + name + "):  can't read virtual index");
 		}
 
 	}
+}
+
+void class_link_vtable(void *p)
+{
+	cur_class->LinkExternalVirtualTable(p);
 }
 
 
@@ -691,15 +673,14 @@ public:
 	string _cdecl str(){	return p2s(p);	}
 };
 
-class VirtualTest
+class VirtualTest : public VirtualBase
 {
 public:
 	int i;
 	static bool enable_logging;
 	VirtualTest(){	if (enable_logging)	msg_write("VirtualTest.init()");	i = 13;	}
-	virtual ~VirtualTest(){	__delete__();	}
 	void _cdecl __init__(){	new(this) VirtualTest;	}
-	virtual void _cdecl __delete__(){	if (enable_logging) msg_write("VirtualTest.delete()");	}
+	//virtual void _cdecl __delete__(){	if (enable_logging) msg_write("VirtualTest.delete()");	}
 	virtual void _cdecl f_virtual(){		msg_write(i);msg_write("VirtualTest.f_virtual()");	}
 	void _cdecl f_normal(){		msg_write(i);msg_write("VirtualTest.f_normal()");	}
 	void _cdecl test(){	msg_write("VirtualTest.test()"); f_virtual();	}
@@ -829,15 +810,13 @@ void SIAddPackageBase()
 
 	VirtualTest::enable_logging = false;
 	add_class(TypeVirtualTest);
-		class_set_vtable(VirtualTest);
-		cur_class->vtable = new VirtualTable[10];
 		class_add_element("i", TypeInt, offsetof(VirtualTest, i));
 		class_add_func("__init__", TypeVoid, mf(&VirtualTest::__init__));
 		class_add_func_virtual("__delete__", TypeVoid, mf(&VirtualTest::__delete__));
 		class_add_func_virtual("f_virtual", TypeVoid, mf(&VirtualTest::f_virtual));
 		class_add_func("f_normal", TypeVoid, mf(&VirtualTest::f_normal));
 		class_add_func("test", TypeVoid, mf(&VirtualTest::test));
-		cur_class->LinkVirtualTable();
+		class_set_vtable(VirtualTest);
 	VirtualTest::enable_logging = true;
 
 

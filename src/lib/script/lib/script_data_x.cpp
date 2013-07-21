@@ -242,8 +242,6 @@ void SIAddPackageX()
 	// bone, subskin, material...
 
 	add_class(TypePicture);
-		class_set_vtable_x(Picture);
-		TypePicture->vtable = new VirtualTable[20];
 		class_add_element("enabled",		TypeBool,		GetDAPicture(enabled));
 		class_add_element("tc_inverted",	TypeBool,		GetDAPicture(tc_inverted));
 		class_add_element("pos",			TypeVector,		GetDAPicture(pos));
@@ -268,11 +266,9 @@ void SIAddPackageX()
 		class_add_func_virtual("OnMouseEnter", TypeVoid, x_p(mf(&Picture::OnMouseEnter)));
 		class_add_func_virtual("OnMouseLeave", TypeVoid, x_p(mf(&Picture::OnMouseLeave)));
 		class_add_func_virtual("IsMouseOver", TypeBool, x_p(mf(&Picture::IsMouseOver)));
-		TypePicture->LinkVirtualTable();
+		class_set_vtable_x(Picture);
 	
 	add_class(TypePicture3D);
-		class_set_vtable_x(Picture3d);
-		TypePicture3D->vtable = new VirtualTable[20];
 		class_add_element("enabled",		TypeBool,		GetDAPicture3D(enabled));
 		class_add_element("lighting",		TypeBool,		GetDAPicture3D(lighting));
 		class_add_element("world_3d",		TypeBool,		GetDAPicture3D(world_3d));
@@ -293,11 +289,9 @@ void SIAddPackageX()
 		class_add_func_virtual("OnMouseEnter", TypeVoid, x_p(mf(&Picture3d::OnMouseEnter)));
 		class_add_func_virtual("OnMouseLeave", TypeVoid, x_p(mf(&Picture3d::OnMouseLeave)));
 		class_add_func_virtual("IsMouseOver", TypeBool, x_p(mf(&Picture3d::IsMouseOver)));
-		TypePicture3D->LinkVirtualTable();
+		class_set_vtable_x(Picture3d);
 	
 	add_class(TypeLayer);
-		class_set_vtable_x(Layer);
-		TypeLayer->vtable = new VirtualTable[20];
 		class_add_element("enabled",		TypeBool,		GetDALayer(enabled));
 		class_add_element("pos",			TypeVector,		GetDALayer(pos));
 		class_add_element("color",			TypeColor,		GetDALayer(_color));
@@ -316,11 +310,9 @@ void SIAddPackageX()
 		class_add_func_virtual("IsMouseOver", TypeBool, x_p(mf(&Layer::IsMouseOver)));
 		class_add_func("add", TypeVoid, x_p(mf(&Layer::add)));
 			func_add_param("p", TypeLayerP);
-		TypeLayer->LinkVirtualTable();
+		class_set_vtable_x(Layer);
 	
 	add_class(TypeText);
-		class_set_vtable_x(Text);
-		TypeText->vtable = new VirtualTable[20];
 		class_add_element("enabled",		TypeBool,		GetDAText(enabled));
 		class_add_element("centric",		TypeBool,		GetDAText(centric));
 		class_add_element("vertical",		TypeBool,		GetDAText(vertical));
@@ -344,11 +336,9 @@ void SIAddPackageX()
 		class_add_func_virtual("OnMouseEnter", TypeVoid, x_p(mf(&Text::OnMouseEnter)));
 		class_add_func_virtual("OnMouseLeave", TypeVoid, x_p(mf(&Text::OnMouseLeave)));
 		class_add_func_virtual("IsMouseOver", TypeBool, x_p(mf(&Text::IsMouseOver)));
-		TypeText->LinkVirtualTable();
+		class_set_vtable_x(Test);
 	
 	add_class(TypeParticle);
-		class_set_vtable_x(Particle);
-		TypeParticle->vtable = new VirtualTable[10];
 		class_add_element("enabled",		TypeBool,		GetDAParticle(enabled));
 		class_add_element("suicidal",		TypeBool,		GetDAParticle(suicidal));
 		class_add_element("pos",			TypeVector,		GetDAParticle(pos));
@@ -375,11 +365,9 @@ void SIAddPackageX()
 			func_add_param("radius", TypeFloat);
 		class_add_func_virtual("__delete__", TypeVoid, x_p(mf(&Particle::__delete__)));
 		class_add_func_virtual("OnIterate", TypeVoid, x_p(mf(&Particle::OnIterate)));
-		TypeParticle->LinkVirtualTable();
+		class_set_vtable_x(Particle);
 
 	add_class(TypeBeam);
-		class_set_vtable_x(Beam);
-		TypeBeam->vtable = new VirtualTable[10];
 		class_add_element("enabled",		TypeBool,		GetDAParticle(enabled));
 		class_add_element("suicidal",		TypeBool,		GetDAParticle(suicidal));
 		class_add_element("pos",			TypeVector,		GetDAParticle(pos));
@@ -401,11 +389,9 @@ void SIAddPackageX()
 		class_add_func("__init__", TypeVoid, x_p(mf(&Beam::__init__)));
 		class_add_func_virtual("__delete__", TypeVoid, x_p(mf(&Beam::__delete__)));
 		class_add_func_virtual("OnIterate", TypeVoid, x_p(mf(&Beam::OnIterate)));
-		TypeBeam->LinkVirtualTable();
+		class_set_vtable_x(Beam);
 	
 	add_class(TypeEffect);
-		class_set_vtable_x(Effect);
-		TypeEffect->vtable = new VirtualTable[10];
 		class_add_element("enabled",		TypeBool,		GetDAEffect(enabled));
 		class_add_element("suicidal",		TypeBool,		GetDAEffect(suicidal));
 		class_add_element("pos",			TypeVector,		GetDAEffect(pos));
@@ -420,7 +406,7 @@ void SIAddPackageX()
 		class_add_func_virtual("OnIterate", TypeVoid, x_p(mf(&Effect::OnIterate)));
 		class_add_func_virtual("OnEnable", TypeVoid, x_p(mf(&Effect::OnEnable)));
 			func_add_param("enabled", TypeBool);
-		TypeEffect->LinkVirtualTable();
+		class_set_vtable_x(Effect);
 
 	add_class(TypeSkin);
 		class_add_element("vertex",			TypeVectorList,	GetDASkin(vertex));
@@ -562,8 +548,6 @@ void SIAddPackageX()
 			func_add_param("p",			TypeVector);
 
 	add_class(TypeCamera);
-		class_set_vtable_x(Camera);
-		TypeCamera->vtable = new VirtualTable[10];
 		class_add_element("enabled",		TypeBool,		GetDACamera(enabled));
 		class_add_element("show",			TypeBool,		GetDACamera(show));
 		class_add_element("texture_out",	TypeInt,		GetDACamera(output_texture));
@@ -597,7 +581,7 @@ void SIAddPackageX()
 			func_add_param("v",			TypeVector);
 		class_add_func("Unproject",		TypeVector,	amd64_wrap(mf(&Camera::Unproject), &amd64_camera_unproject));
 			func_add_param("v",			TypeVector);
-		TypeCamera->LinkVirtualTable();
+		class_set_vtable_x(Camera);
 	
 	add_class(TypeWorldData);
 		class_add_element("filename",		TypeString,		GetDAWorld(filename));

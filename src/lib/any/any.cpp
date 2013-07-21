@@ -32,8 +32,7 @@ Any::Any()
 
 void Any::__init__()
 {
-	type = TYPE_NONE;
-	data = NULL;
+	new(this) Any;
 }
 
 Any::Any(const Any &a)

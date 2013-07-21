@@ -15,7 +15,6 @@
 
 #include <signal.h>
 
-
 extern hui_callback *HuiIdleFunction, *HuiErrorFunction;
 extern Array<HuiWindow*> HuiWindows;
 

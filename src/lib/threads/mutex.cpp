@@ -48,12 +48,12 @@ void Mutex::Lock()
 
 void Mutex::Unlock()
 {
-	ReleaseMutex(internal->mutex);
+	ReleaseMutex(internalmutex);
 }
 
 void Mutex::__delete__()
 {
-	CloseHandle(internal->mutex);
+	DestroyMutex(&internal->mutex); ?
 	delete(internal);
 }
 
@@ -82,3 +82,4 @@ void Mutex::__delete__()
 	delete(internal);
 }
 #endif
+

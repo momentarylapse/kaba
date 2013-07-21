@@ -7,7 +7,6 @@
 
 #include "HuiControlGroup.h"
 
-
 #ifdef HUI_API_GTK
 
 HuiControlGroup::HuiControlGroup(const string &title, const string &id) :

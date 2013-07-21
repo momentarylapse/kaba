@@ -7,7 +7,6 @@
 
 #include "HuiControlColorButton.h"
 
-
 #ifdef HUI_API_GTK
 
 void OnGtkButtonPress(GtkWidget *widget, gpointer data);

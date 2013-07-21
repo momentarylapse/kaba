@@ -22,7 +22,6 @@ struct ThreadInternal
 
 static Array<Thread*> _Thread_List_;
 
-#if 0
 
 //------------------------------------------------------------------------------
 // auxiliary
@@ -46,9 +45,14 @@ int ThreadGetNumCores()
 //------------------------------------------------------------------------------
 // low level
 
-void Thread::__init__()
+Thread::Thread()
 {
-	new(this) Thread;
+	__init__();
+}
+
+Thread::~Thread()
+{
+	__delete__();
 }
 
 #ifdef OS_WINDOWS
@@ -56,14 +60,14 @@ void Thread::__init__()
 
 DWORD WINAPI thread_start_func(__in LPVOID p)
 {
-	Thread *t = (Thread*)p;
-	t->OnRun();
-	t->running = false;
-	return NULL;
+	int thread_id = (int)(long)p;
+	Thread[thread_id].f(thread_id, Thread[thread_id].p);
+	Thread[thread_id].running = false;
+	return 0;
 }
 
 // create and run a new thread
-void Thread::Run()
+int ThreadCreate(thread_func_t *f, void *param)
 {
 	sThread *t = get_new_thread();
 	t->f = f;
@@ -88,7 +92,7 @@ void ThreadDelete(int thread)
 	Thread[thread].used = false;
 }
 
-void Thread::Kill()
+void ThreadKill(int thread)
 {
 	if (thread < 0)
 		return;
@@ -97,12 +101,14 @@ void Thread::Kill()
 	Thread[thread].running = false;
 }
 
-void Thread::Join()
+void ThreadWaitTillDone(int thread)
 {
-	WaitForSingleObject(internal->thread, INFINITE);
+	if (thread < 0)
+		return;
+	WaitForSingleObject(Thread[thread].thread, INFINITE);
 }
 
-void Thread::Exit()
+void ThreadExit()
 {
 	ExitThread(0);
 }
@@ -121,7 +127,7 @@ int ThreadGetId()
 #ifdef OS_LINUX
 
 
-void Thread::Thread()
+void Thread::__init__()
 {
 	internal = NULL;
 	running = false;
@@ -151,16 +157,6 @@ void Thread::Run()
 
 
 void Thread::__delete__()
-{
-	Kill();
-	for (int i=0;i<_Thread_List_.num;i++)
-		if (_Thread_List_[i] == this)
-			_Thread_List_.erase(i);
-	if (internal)
-		delete(internal);
-}
-
-Thread::~Thread()
 {
 	Kill();
 	for (int i=0;i<_Thread_List_.num;i++)
@@ -201,57 +197,9 @@ Thread *ThreadSelf()
 
 #endif
 
-#endif
 
 bool Thread::IsDone()
 {
 	return !running;
 }
 
-
-
-
-
-
-
-
-Thread::Thread()
-{
-}
-
-void Thread::Run()
-{
-}
-
-
-void Thread::__init__()
-{
-}
-
-void Thread::__delete__()
-{
-}
-
-Thread::~Thread()
-{
-}
-
-void Thread::Kill()
-{
-}
-
-void Thread::Join()
-{
-}
-
-void ThreadExit()
-{
-}
-
-Thread *ThreadSelf()
-{
-	return NULL;
-}
-
-int ThreadGetNumCores()
-{	return 1;	}

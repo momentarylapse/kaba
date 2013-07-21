@@ -57,6 +57,7 @@ public:
 	ClassFunction *GetDestructor();
 	ClassFunction *GetVirtualFunction(int virtual_index);
 	void LinkVirtualTable();
+	void LinkExternalVirtualTable(void *p);
 	string var2str(void *p);
 };
 extern Type *TypeUnknown;

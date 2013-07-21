@@ -7,7 +7,6 @@
 
 #include "HuiControlSpinButton.h"
 
-
 #ifdef HUI_API_GTK
 
 void OnGtkEditChange(GtkWidget *widget, gpointer data);
