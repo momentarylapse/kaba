@@ -343,7 +343,12 @@ void SIAddPackageHui()
 		class_add_func_virtual("OnMiddleButtonUp", TypeVoid, mf(&HuiWindow::OnMiddleButtonUp));
 		class_add_func_virtual("OnRightButtonUp", TypeVoid, mf(&HuiWindow::OnRightButtonUp));
 		class_add_func_virtual("OnDoubleClick", TypeVoid, mf(&HuiWindow::OnDoubleClick));
-		class_add_func_virtual("OnCloseRequest", TypeBool, mf(&HuiWindow::OnCloseRequest));
+		class_add_func_virtual("OnCloseRequest", TypeVoid, mf(&HuiWindow::OnCloseRequest));
+		class_add_func_virtual("OnKeyDown", TypeVoid, mf(&HuiWindow::OnKeyDown));
+		class_add_func_virtual("OnKeyUp", TypeVoid, mf(&HuiWindow::OnKeyUp));
+		class_add_func_virtual("OnResize", TypeVoid, mf(&HuiWindow::OnResize));
+		class_add_func_virtual("OnMove", TypeVoid, mf(&HuiWindow::OnMove));
+		class_add_func_virtual("OnRedraw", TypeVoid, mf(&HuiWindow::OnRedraw));
 		class_add_func("BeginDraw",								TypeHuiPainterP,		mf(&HuiWindow::BeginDraw));
 			func_add_param("id",		TypeString);
 		class_set_vtable(HuiWindow);

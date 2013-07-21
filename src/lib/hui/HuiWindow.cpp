@@ -183,7 +183,6 @@ void HuiWindow::_CleanUp_()
 // default handler when trying to close the windows
 void HuiWindow::OnCloseRequest()
 {
-	msg_write("default close handler");
 	int level = _GetMainLevel_();
 	delete(this);
 	
@@ -192,7 +191,6 @@ void HuiWindow::OnCloseRequest()
 	foreach(HuiWindow *w, HuiWindows)
 		if (w->_GetMainLevel_() >= level)
 			return;
-	msg_write("end...");
 	HuiEnd();
 }
 

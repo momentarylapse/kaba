@@ -258,8 +258,8 @@ int add_func(const string &name, Type *return_type, void *func, bool is_class);
 
 void _class_add_func_virtual(const string &tname, const string &name, Type *return_type, int index)
 {
-//	msg_write("virtual: " + tname + "." + name);
-//	msg_write(index);
+	//msg_write("virtual: " + tname + "." + name);
+	//msg_write(index);
 	int cmd = add_func(tname + "." + name + "[virtual]", return_type, NULL, true);
 	cur_func->_class = cur_class;
 	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));

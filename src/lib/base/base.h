@@ -66,7 +66,9 @@ public:
 	virtual void _cdecl __delete__(){}
 	
 #ifdef OS_WINDOWS
-	void __thiscall __delete_win__(){ __delete__(); }
+	void __thiscall __delete_external__(){ __delete__(); }
+#else
+	void __delete_external__(){ __delete__(); }
 #endif
 };
 
@@ -76,7 +78,7 @@ public:
 // instances in the main program can be delete()ed
 
 // classes derived by kaba overwrite __delete__()
-//    they also overwrite ~() with __delete_win__()     (windows only)
+//    they also overwrite ~() with __delete_external__()
 
 
 #endif
