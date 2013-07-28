@@ -9,7 +9,7 @@
 #ifndef _HUI_WINDOW_EXISTS_
 #define _HUI_WINDOW_EXISTS_
 
-//#include "hui_common.h"
+#include "hui_input.h"
 
 class HuiMenu;
 class HuiEvent;
@@ -53,19 +53,6 @@ public:
 	irect(){};
 	irect(int x1,int x2,int y1,int y2)
 	{	this->x1=x1;	this->x2=x2;	this->y1=y1;	this->y2=y2;	}
-};
-
-class HuiEventHandler : public VirtualBase
-{
-public:
-};
-
-struct HuiWinEvent
-{
-	string id, message;
-	hui_callback *function;
-	void (HuiEventHandler::*member_function)();
-	HuiEventHandler *object;
 };
 
 class HuiToolbar;
@@ -293,7 +280,7 @@ private:
 	int border_width;
 	Array<HuiControl*> control;
 	HuiControl *cur_control;
-	Array<HuiWinEvent> event;
+	Array<HuiEventListener> event;
 	HuiMenu *menu, *popup;
 	bool statusbar_enabled;
 	bool allowed, allow_keys;

@@ -16,9 +16,9 @@ static DirEntry *_dir_entry;
 class DirEntryList : public Array<DirEntry>
 {
 public:
-	void __assign__(const DirEntryList &o)
+	void _cdecl __assign__(const DirEntryList &o)
 	{	*this = o;	}
-	string str()
+	string _cdecl str()
 	{
 		string s = "[";
 		for (int i=0;i<num;i++){

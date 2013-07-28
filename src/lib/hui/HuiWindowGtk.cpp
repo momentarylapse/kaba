@@ -577,6 +577,11 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 		gtk_widget_show(edit);
 	}*/
 	//###########################################################################################
+
+	
+#ifdef OS_WINDOWS
+	hWnd = NULL;
+#endif
 }
 
 HuiWindow::~HuiWindow()
@@ -616,7 +621,7 @@ void HuiWindow::Show()
 {
 	gtk_widget_show(window);
 #ifdef OS_WINDOWS
-	hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_root_window(window));
+	hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(window));
 #endif
 
 	allow_input = true;
@@ -889,7 +894,7 @@ irect HuiWindow::GetInterior()
 			h = gdk_window_get_height(gtk_widget_get_window(window));
 		}
 		//msg_write(string2("getinter2 %d %d %d %d", x, y, w, h));
-		if ((w < 0) || (h < 0) || (w > r.x2) || (h > r.y2))
+		if ((w <= 0) || (h <= 0) || (w > r.x2) || (h > r.y2))
 			return r;
 		r.x1 = x;
 		r.y1 = y;

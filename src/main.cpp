@@ -8,73 +8,6 @@
 string AppName = "Kaba";
 string AppVersion = "0.2.8.0";
 
-#if 0
-
-#if 1
-void fff(int a)
-{
-	//int sdf = a +b;
-}
-
-/*void f(int a)
-{
-	int bb = 3;
-	ff(a, 4);
-}*/
-
-vector ff(int u)
-{
-	return e_x;
-}
-void f()
-{
-	//int a = 0;
-	fff(3);
-}
-
-void _f()
-{
-	vector a = ff(5);
-}
-#else
-
-class C
-{
-	public:
-	int i;
-	void f(int a)
-	{
-		i+=a;
-		//return e_x;
-	}
-};
-
-void ff()
-{
-	C c;
-	c.f(3);
-	c.f(3);
-}
-#endif
-
-int hui_main(Array<string> arg)
-{
-	// hui
-//	HuiInitExtended("kaba", AppName, NULL, (void*)&NixNetSendBugReport, false, "");
-	HuiEndKeepMsgAlive = true;
-	msg_init();
-
-	Asm::Init();
-
-	//msg_write(Opcode2Asm((void*)&C::f, -1));
-	//msg_write(Opcode2Asm((void*)&ff, -1));
-	//msg_write(Opcode2Asm((void*)&fff, -1));
-	msg_write(Asm::Disassemble((void*)&fff, -1));
-	msg_write(Asm::Disassemble((void*)&f, -1));
-
-	return 0;
-}
-#else
 
 typedef void main_arg_func(const Array<string>&);
 typedef void main_void_func();
@@ -91,14 +24,12 @@ void execute(Script::Script *s, Array<string> &arg)
 
 	if (f_arg){
 		// special execution...
-		msg_db_r("Execute main(arg)", 1);
+		msg_db_f("Execute main(arg)", 1);
 		f_arg(arg.sub(2, -1));
-		msg_db_l(1);
 	}else if (f_void){
 		// default execution
-		msg_db_r("Execute main()", 1);
+		msg_db_f("Execute main()", 1);
 		f_void();
-		msg_db_l(1);
 	}
 	Script::Remove(s);
 }
@@ -139,9 +70,9 @@ int hui_main(Array<string> arg)
 
 	// script file as parameter?
 	string filename;
-	if (arg.num > 1)
+	if (arg.num > 1){
 		filename = arg[1];
-	else{
+	}else{
 		if (!HuiFileDialogOpen(NULL, _("Script &offnen"), "", "*.kaba", "*.kaba")){
 			msg_end();
 			return 0;
@@ -170,5 +101,4 @@ int hui_main(Array<string> arg)
 	msg_end();
 	return 0;
 }
-#endif
 

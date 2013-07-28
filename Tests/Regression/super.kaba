@@ -17,7 +17,7 @@ class Test : Base
 		super.__init__(_x)
 		print "Test.init"
 		y = _y
-	virtual void f()
+	overwrite void f()
 		print "Test.f"
 
 void main()

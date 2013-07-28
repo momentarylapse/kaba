@@ -285,46 +285,38 @@ bool HuiWindow::GetMouse(int &x, int &y, int button)
 
 void HuiWindow::Event(const string &id, hui_callback *function)
 {
-	HuiWinEvent e;
+	HuiEventListener e;
 	e.id = id;
 	e.message = "*";
 	e.function = function;
-	e.object = NULL;
-	e.member_function = NULL;
 	event.add(e);
 	
 }
 
 void HuiWindow::EventX(const string &id, const string &msg, hui_callback *function)
 {
-	HuiWinEvent e;
+	HuiEventListener e;
 	e.id = id;
 	e.message = msg;
 	e.function = function;
-	e.object = NULL;
-	e.member_function = NULL;
 	event.add(e);
 }
 
 void HuiWindow::_EventM(const string &id, HuiEventHandler *handler, void (HuiEventHandler::*function)())
 {
-	HuiWinEvent e;
+	HuiEventListener e;
 	e.id = id;
 	e.message = ":def:";
-	e.function = NULL;
-	e.object = handler;
-	e.member_function = function;
+	e.function = HuiCallback(handler, function);
 	event.add(e);
 }
 
 void HuiWindow::_EventMX(const string &id, const string &msg, HuiEventHandler *handler, void (HuiEventHandler::*function)())
 {
-	HuiWinEvent e;
+	HuiEventListener e;
 	e.id = id;
 	e.message = msg;
-	e.function = NULL;
-	e.object = handler;
-	e.member_function = function;
+	e.function = HuiCallback(handler, function);
 	event.add(e);
 }
 
@@ -362,17 +354,13 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 		_SetCurID_(e->message);
 
 	bool sent = false;
-	foreach(HuiWinEvent &ee, event){
+	foreach(HuiEventListener &ee, event){
 		if (!_HuiEventMatch_(e, ee.id, ee.message))
 			continue;
 		
 		// send the event
-		if (ee.function){
-			ee.function();
-			sent = true;
-		}else if ((ee.object) && (ee.member_function)){
-			// send the event (member)
-			(ee.object->*ee.member_function)();
+		if (ee.function.is_set()){
+			ee.function.call();
 			sent = true;
 		}
 

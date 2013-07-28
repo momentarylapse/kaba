@@ -48,7 +48,7 @@ string str_utf8_to_ubyte(const string &str)
 
 void NixDrawStr(float x, float y, const string &str)
 {
-	msg_db_r("NixDrawStr",10);
+	msg_db_f("NixDrawStr",10);
 	string str2 = str_utf8_to_ubyte(str);
 	_NixSetMode2d();
 
@@ -57,7 +57,6 @@ void NixDrawStr(float x, float y, const string &str)
 	glCallLists(str2.num,GL_UNSIGNED_BYTE,(char*)str2.data);
 	glRasterPos3f(0,0,0);
 	TestGLError("DrawStr");
-	msg_db_l(10);
 }
 
 int NixGetStrWidth(const string &str)

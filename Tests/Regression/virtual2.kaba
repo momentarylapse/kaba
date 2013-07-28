@@ -5,7 +5,7 @@ class Base
 		print "Base.d"
 
 class Derived : Base
-	virtual void d()
+	overwrite void d()
 		print "Derived.d"
 
 void f(Base b)

@@ -599,6 +599,7 @@ void set_video_mode_gl(int xres, int yres, int depth)
 #ifdef HUI_API_WIN
 		hDC = GetDC(NixWindow->hWnd);
 #else
+	NixWindow->hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(NixWindow->window));
 	#ifdef NIX_GL_IN_WIDGET
 		hDC = GetDC((HWND)gdk_win32_drawable_get_handle(NixWindow->gl_widget->window));
 	#else
@@ -606,7 +607,7 @@ void set_video_mode_gl(int xres, int yres, int depth)
 	#endif
 #endif
 		if (!hDC){
-			HuiErrorBox(NixWindow, "Fehler", "GetDC...");
+			HuiErrorBox(NixWindow, "Fehler", "GetDC..." + i2s(GetLastError()));
 			exit(0);
 		}
 		OGLPixelFormat = ChoosePixelFormat(hDC, &pfd);

@@ -475,8 +475,13 @@ void exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 void exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 {
 	Command *self = ps->add_command_local_var(f->get_var("self"), ps->GetPointerType(f->_class));
-	ps->GetExistenceLink.kind = KindFunction;
-	ps->GetExistenceLink.link_no = cf.nr;
+	if (cf.virtual_index >= 0){
+		ps->GetExistenceLink.kind = KindVirtualFunction;
+		ps->GetExistenceLink.link_no = cf.virtual_index;
+	}else{
+		ps->GetExistenceLink.kind = KindFunction;
+		ps->GetExistenceLink.link_no = cf.nr;
+	}
 	ps->GetExistenceLink.script = cf.script;
 	ps->GetExistenceLink.type = cf.return_type;
 	ps->GetExistenceLink.num_params = cf.param_type.num;

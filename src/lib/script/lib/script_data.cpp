@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.12.0.1";
+string DataVersion = "0.12.5.0";
 
 CompilerConfiguration config;
 
@@ -265,6 +265,7 @@ void _class_add_func_virtual(const string &tname, const string &name, Type *retu
 	cur_class->function.add(ClassFunction(name, return_type, cur_package_script, cmd));
 	cur_class_func = &cur_class->function.back();
 	cur_class_func->virtual_index = index;
+	cur_class->num_virtual = max(cur_class->num_virtual, index + 1);
 }
 
 void class_add_func(const string &name, Type *return_type, void *func)
@@ -449,6 +450,7 @@ void script_make_super_array(Type *t, SyntaxTree *ps)
 			func_add_param("start",		TypeInt);
 			func_add_param("num",		TypeInt);
 
+		// FIXME  wrong for complicated classes
 		if (t->parent->is_simple_class()){
 			if (!t->parent->UsesCallByReference()){
 				if (t->parent->is_pointer){
