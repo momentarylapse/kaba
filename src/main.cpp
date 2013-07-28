@@ -6,7 +6,7 @@
 #include "lib/script/script.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.2.8.0";
+string AppVersion = "0.3.0.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -34,6 +34,14 @@ void execute(Script::Script *s, Array<string> &arg)
 	Script::Remove(s);
 }
 
+void dump_to_file(Script::Script *s, const string &out_file)
+{
+	CFile *f = FileCreate(out_file);
+	f->SetBinaryMode(true);
+	f->WriteBuffer(s->Opcode, s->OpcodeSize);
+	delete(f);
+}
+
 int hui_main(Array<string> arg)
 {
 	// hui
@@ -43,10 +51,14 @@ int hui_main(Array<string> arg)
 	HuiEndKeepMsgAlive = true;
 
 	bool use_gui = false;
+	int instruction_set = -1;
+	int abi = -1;
+	string out_file;
 
-	if (arg.num > 1){
-		// tell versions
-		if (arg[1] == "-v"){
+	// parameters
+	for (int i=1;i<arg.num;i++){
+		if (arg[i] == "-v"){
+			// tell versions
 			msg_right();
 			msg_write(AppName + " " + AppVersion);
 			msg_write("Script-Version: " + Script::Version);
@@ -54,9 +66,26 @@ int hui_main(Array<string> arg)
 			msg_write("Hui-Version: " + HuiVersion);
 			msg_left();
 			return 0;
-		}else if ((arg[1] == "--gui") || (arg[1] == "-g")){
+		}else if ((arg[i] == "--gui") || (arg[i] == "-g")){
 			use_gui = true;
-			arg.erase(1);
+			arg.erase(i);
+		}else if (arg[i] == "--amd64"){
+			instruction_set = Asm::InstructionSetAMD64;
+			arg.erase(i);
+		}else if (arg[i] == "--x86"){
+			instruction_set = Asm::InstructionSetX86;
+			arg.erase(i);
+		}else if (arg[i] == "-o"){
+			if (arg.num < i + 1){
+				msg_error("Dateiname nach -o erwartet");
+				return -1;
+			}
+			out_file = arg[i + 1];
+			arg.erase(i);
+			arg.erase(i);
+		}else if (arg[i][0] == '-'){
+			msg_error("unbekannte Option: " + arg[i]);
+			return -1;
 		}
 	}
 
@@ -64,7 +93,7 @@ int hui_main(Array<string> arg)
 	msg_db_r("main", 1);
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
-	Script::Init();
+	Script::Init(instruction_set, abi);
 	//Script::LinkDynamicExternalData();
 	Script::config.StackSize = 10485760; // 10 mb (mib)
 
@@ -87,7 +116,10 @@ int hui_main(Array<string> arg)
 
 	try{
 		Script::Script *s = Script::Load(filename);
-		execute(s, arg);
+		if (out_file.num > 0)
+			dump_to_file(s, out_file);
+		else
+			execute(s, arg);
 	}catch(Script::Exception &e){
 		if (use_gui)
 			HuiErrorBox(NULL, _("Fehler in Script"), e.message);
