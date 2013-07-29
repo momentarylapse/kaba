@@ -20,7 +20,9 @@ enum{
 	Size128 = 16,
 	/*SizeVariable = -5,
 	Size32or48 = -6,*/
-	SizeUnknown = -7
+	SizeUnknown = -7,
+	Size16_16 = -8,
+	Size16_32 = -9,
 };
 
 InstructionSetData InstructionSet;
@@ -296,6 +298,7 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{inst_call,		"call",		1},
 	{inst_call_far,	"call_far", 1},
 	{inst_jmp,		"jmp",		1},
+	{inst_jmp_far,	"jmp_far",		1},
 	{inst_lock,		"lock"},
 	{inst_rep,		"rep"},
 	{inst_repne,	"repne"},
@@ -330,9 +333,9 @@ enum{
 // short parameter type
 enum{
 	__Dummy__ = 10000,
-	Eb,Ew,Ed,Eq,
+	Eb,Ew,Ed,Eq,Eww,Ewd,
 	Gb,Gw,Gd,Gq,
-	Ib,Iw,Id,Iq,
+	Ib,Iw,Id,Iq,Iww,Iwd,
 	Ob,Ow,Od,Oq,
 	Rb,Rw,Rd,Rq,
 	Cb,Cw,Cd,Cq,
@@ -464,6 +467,8 @@ string SizeOut(int size)
 	if (size == Size48)		return "48";
 	if (size == Size64)		return "64";
 	if (size == Size128)		return "128";
+	if (size == Size16_16)		return "16:16";
+	if (size == Size16_32)		return "16:32";
 	return "???";
 }
 
@@ -589,7 +594,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 			return false;
 		}
 	// general reg / mem
-	if ((param == Eb) || (param == Eq) || (param == Ew) || (param == Ed)){
+	if ((param == Eb) || (param == Eq) || (param == Ew) || (param == Ed) || (param == Eww) || (param == Ewd)){
 		ip._type_ = ParamTInvalid;//ParamTRegisterOrMem;
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
@@ -600,6 +605,8 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		if (param == Ew)	ip.size = Size16;
 		if (param == Ed)	ip.size = Size32;
 		if (param == Eq)	ip.size = Size64;
+		if (param == Eww)	ip.size = Size16_16;
+		if (param == Ewd)	ip.size = Size16_32;
 		return true;
 	}
 	// general reg (reg)
@@ -627,13 +634,15 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		return true;
 	}
 	// immediate
-	if ((param == Ib) || (param == Iq) || (param == Iw) || (param == Id)){
+	if ((param == Ib) || (param == Iq) || (param == Iw) || (param == Id) || (param == Iww) || (param == Iwd)){
 		ip._type_ = ParamTImmediate;
 		ip.allow_immediate = true;
 		if (param == Ib)	ip.size = Size8;
 		if (param == Iw)	ip.size = Size16;
 		if (param == Id)	ip.size = Size32;
 		if (param == Iq)	ip.size = Size64;
+		if (param == Iww)	ip.size = Size16_16;
+		if (param == Iwd)	ip.size = Size16_32;
 		return false;
 	}
 	// immediate (relative)
@@ -1436,6 +1445,8 @@ void Init(int set)
 	add_inst(inst_jmp,	0xe9,	1,	-1,	Jd,	-1, OptMediumParam);
 	add_inst(inst_jmp,	0xe9,	1,	-1,	Jq,	-1, OptBigParam);
 //	add_inst(inst_jmp		,0xea	,1	,-1, Ap, -1); TODO
+	add_inst(inst_jmp_far, 0xea, 1, -1, Iww, -1, OptSmallParam);
+	add_inst(inst_jmp_far, 0xea, 1, -1, Iwd, -1, OptMediumParam);
 	add_inst(inst_jmp		,0xeb	,1	,-1, Jb, -1);
 	add_inst(inst_in		,0xec	,1	,-1, RegAl, RegDx);
 	add_inst(inst_in		,0xed	,1	,-1, RegEax, RegDx);
@@ -1495,13 +1506,14 @@ void Init(int set)
 	add_inst(inst_call_far,	0xff,	1,	3,	Ew,	-1, OptSmallParam); // Ep instead of Ev...
 	add_inst(inst_call_far,	0xff,	1,	3,	Ed,	-1, OptMediumParam);
 	add_inst(inst_call_far,	0xff,	1,	3,	Eq,	-1, OptBigParam);
-	add_inst(inst_jmp,	0xff,	1,	4,	Ew,	-1, OptSmallParam);
-	add_inst(inst_jmp,	0xff,	1,	4,	Ed,	-1, OptMediumParam);
-	add_inst(inst_jmp,	0xff,	1,	4,	Eq,	-1, OptBigParam);
-	//	add_inst(inst_jmp		,0xff	,1	,5	,Ep	,-1	);
-	add_inst(inst_push,	0xff,	1,	6,	Ew,	-1, OptSmallParam);
-	add_inst(inst_push,	0xff,	1,	6,	Ed,	-1, OptMediumParam);
-	add_inst(inst_push,	0xff,	1,	6,	Eq,	-1, OptBigParam);
+	add_inst(inst_jmp, 0xff, 1,	4, Ew, -1, OptSmallParam);
+	add_inst(inst_jmp, 0xff, 1,	4, Ed, -1, OptMediumParam);
+	add_inst(inst_jmp, 0xff, 1,	4, Eq, -1, OptBigParam);
+	add_inst(inst_jmp_far, 0xff, 1, 5, Eww, -1, OptSmallParam);
+	add_inst(inst_jmp_far, 0xff, 1, 5, Ewd, -1, OptMediumParam);
+	add_inst(inst_push, 0xff, 1, 6, Ew, -1, OptSmallParam);
+	add_inst(inst_push, 0xff, 1, 6, Ed, -1, OptMediumParam);
+	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OptBigParam);
 
 	// sse
 	add_inst(inst_movss,	0x100ff3,	3,	-1,	Xx, Ed);
@@ -1546,13 +1558,15 @@ string InstructionParam::str()
 			return reg->name;
 	}else if (type == ParamTImmediate){
 		//msg_write("im");
+		if ((size == Size16_16) || (size == Size16_32))
+			return format("%s:%s", d2h(&((char*)&value)[4], 2).c_str(), d2h(&value, state.ParamSize).c_str());
 		if (deref)
 			return format(" [%s]", d2h(&value, state.AddrSize).c_str());
 		return d2h(&value, size);
-	}/*else if (type == ParamTImmediateDouble){
+	/*}else if (type == ParamTImmediateExt){
 		//msg_write("im");
-		return format("%s:%s", d2h(&((char*)&value)[4], 2).c_str(), d2h(&value, state.ParamSize).c_str());
-	}*/
+		return format("%s:%s", d2h(&((char*)&value)[4], 2).c_str(), d2h(&value, state.ParamSize).c_str());*/
+	}
 #if 0
 	for (int i=0;i<Registers.num;i++)
 		if (param==Registers[i].reg){
@@ -1833,10 +1847,18 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm)
 			memcpy(&p.value, cur, size);
 			cur += size;
 		}else{
-			memcpy(&p.value, cur, p.size);
-			cur += p.size;
+			if ((p.size == Size16_16) || (p.size == Size16_32)){
+				int size = (p.size == Size16_16) ? 2 : 4;
+				memcpy((char*)&p.value, cur, size);
+				cur += size;
+				memcpy((char*)&p.value + 4, cur, 2);
+				cur += 2;
+			}else{
+				memcpy(&p.value, cur, p.size);
+				cur += p.size;
+			}
 		}
-	/*}else if (p.type == ParamTImmediateDouble){
+	/*}else if (p.type == ParamTImmediateExt){
 		if (state.ParamSize == Size16){ // addr?
 			*(short*)&p.value = *(short*)cur;	cur += 2;	((short*)&p.value)[2] = *(short*)cur;	cur += 2;
 		}else{
@@ -2484,9 +2506,8 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				v*=16;
 				v+=param[i]-'0';
 			}else if (param[i]==':'){
-				SetError("':' currently not supported");
-				/*InstructionParam sub;
-				GetParam(sub, param.tail(param.num - i), list, pn);
+				InstructionParam sub;
+				GetParam(sub, param.tail(param.num - i - 1), list, pn);
 				if (sub.type != ParamTImmediate){
 					SetError("error in hex parameter:  " + string(param));
 					p.type = PKInvalid;
@@ -2495,7 +2516,10 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				p.value = (long)v;
 				p.value <<= 32;
 				p.value += sub.value;
-				p.type = ParamTImmediateDouble;*/
+				p.size = Size16_32;
+				if (sub.size == Size16)
+					p.size = Size16_16;
+				p.type = ParamTImmediate;//Ext;
 				break;
 			}else{
 				SetError("evil character in hex parameter:  \"" + param + "\"");
@@ -2610,9 +2634,10 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 				else
 					size = Size64;
 			}
-		}
-	/*}else if (p.type == ParamTImmediateDouble){
-		size = state.ParamSize;  // bits 0-15  /  0-31 */
+		}else if ((p.size == Size16_16) || (p.size == Size16_32))
+			size = state.ParamSize;  // bits 0-15  /  0-31
+	//}else if (p.type == ParamTImmediateExt){
+	//	size = state.ParamSize;  // bits 0-15  /  0-31
 	}else if (p.type == ParamTRegister){
 		if (p.disp == DispMode8)	size = Size8;
 		if (p.disp == DispMode16)	size = Size16;
@@ -2621,6 +2646,8 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 		return;
 
 	bool rel = ((inst.name[0] == 'j') /*&& (inst.param1._type_ != ParamTImmediateDouble)*/) || (inst.name == "call") || (inst.name.find("loop") >= 0);
+	if (inst.inst == inst_jmp_far)
+		rel = false;
 	if (p.is_label){
 		WantedLabel w;
 		w.Pos = ocs;// + CurrentMetaInfo->PreInsertionLength;
@@ -2638,8 +2665,9 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 	append_val(oc, ocs, value, size);
 
 
-/*	if (p.type == ParamTImmediateDouble)
-		append_val(oc, ocs, p.value >> 32, 2); // bits 33-47 */
+	//if (p.type == ParamTImmediateExt)
+	if ((p.type == ParamTImmediate) && ((p.size == Size16_16) || (p.size == Size16_32)))
+		append_val(oc, ocs, p.value >> 32, 2); // bits 33-47
 }
 
 void InstructionWithParamsList::LinkWantedLabels(void *oc)
@@ -2687,7 +2715,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		if (CurrentMetaInfo->Mode16)
 			state.DefaultSize = Size16;
 	state.EndOfCode = false;
-	while((unsigned)pos < _code.num - 2){
+	while(pos < _code.num - 2){
 
 		string cmd, param1, param2;
 
@@ -2917,9 +2945,10 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 	}
 
 	// immediate double
-/*	if (wanted_p.type == ParamTImmediateDouble){
-		if ((allow_immediate) && (_type_ == ParamTImmediateDouble))
-			return true;
+	/*if (wanted_p.type == ParamTImmediateExt){
+		msg_write("imx");
+		if (allow_memory_address)
+			return (size == wanted_p.size);
 	}*/
 
 	// reg

@@ -183,6 +183,7 @@ enum{
 	inst_call,
 	inst_call_far,
 	inst_jmp,
+	inst_jmp_far,
 	inst_lock,
 	inst_rep,
 	inst_repne,
