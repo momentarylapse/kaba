@@ -220,11 +220,7 @@ void Script::LinkOsEntryPoint()
 		if (ff->name == "main")
 			nf = index;
 	if (nf>=0){
-		int lll=((long)func[nf]-(long)&Opcode[TaskReturnOffset]);
-		if (syntax->FlagCompileInitialRealMode)
-			lll+=5;
-		else
-			lll+=3;
+		int lll = ((long)func[nf]-(long)&Opcode[TaskReturnOffset]) + 3;
 		//printf("insert   %d  an %d\n", lll, OCORA);
 		//msg_write(lll);
 		//msg_write(d2h(&lll,4,false));
@@ -334,7 +330,7 @@ void Script::Compiler()
 
 // compiling an operating system?
 //   -> create an entry point for execution... so we can just call Opcode like a function
-	if ((syntax->FlagCompileOS)||(syntax->FlagCompileInitialRealMode))
+	if (syntax->FlagAddEntryPoint)
 		CompileOsEntryPoint();
 
 
@@ -364,7 +360,7 @@ void Script::Compiler()
 
 
 
-	if (syntax->FlagCompileOS)
+	if (syntax->FlagAddEntryPoint)
 		LinkOsEntryPoint();
 
 

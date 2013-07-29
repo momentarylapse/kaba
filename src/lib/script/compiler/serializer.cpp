@@ -2858,7 +2858,9 @@ void Serializer::Assemble(char *Opcode, int &OpcodeSize)
 	// intro + allocate stack memory
 	StackMaxSize += MaxPushSize;
 	StackMaxSize = mem_align(StackMaxSize, config.StackFrameAlign);
-	list->add_func_intro(StackMaxSize);
+
+	if (!syntax_tree->FlagNoFunctionFrame)
+		list->add_func_intro(StackMaxSize);
 
 	for (int i=0;i<cmd.num;i++){
 

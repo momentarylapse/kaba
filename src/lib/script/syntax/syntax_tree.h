@@ -270,7 +270,8 @@ public:
 	bool FlagNoExecution;
 	bool FlagImmortal;
 	bool FlagCompileOS;
-	bool FlagCompileInitialRealMode;
+	bool FlagNoFunctionFrame;
+	bool FlagAddEntryPoint;
 	bool FlagOverwriteVariablesOffset;
 	int VariablesOffset;
 

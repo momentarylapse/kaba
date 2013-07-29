@@ -133,7 +133,8 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	FlagShowPrae = false;
 	FlagDisassemble = false;
 	FlagCompileOS = false;
-	FlagCompileInitialRealMode = false;
+	FlagNoFunctionFrame = false;
+	FlagAddEntryPoint = false;
 	FlagOverwriteVariablesOffset = false;
 	FlagImmortal = false;
 	FlagNoExecution = false;
@@ -307,7 +308,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 	//msg_error("zu coden: CreateAsmMetaInfo");
 	if (!AsmMetaInfo){
 		AsmMetaInfo = new Asm::MetaInfo;
-		AsmMetaInfo->Mode16 = FlagCompileInitialRealMode;
+		AsmMetaInfo->Mode16 = false;
 		AsmMetaInfo->CodeOrigin = 0; // FIXME:  &Opcode[0] ????
 	}
 	AsmMetaInfo->Opcode = script->Opcode;

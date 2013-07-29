@@ -68,13 +68,13 @@ int hui_main(Array<string> arg)
 			return 0;
 		}else if ((arg[i] == "--gui") || (arg[i] == "-g")){
 			use_gui = true;
-			arg.erase(i);
+			arg.erase(i --);
 		}else if (arg[i] == "--amd64"){
 			instruction_set = Asm::InstructionSetAMD64;
-			arg.erase(i);
+			arg.erase(i --);
 		}else if (arg[i] == "--x86"){
 			instruction_set = Asm::InstructionSetX86;
-			arg.erase(i);
+			arg.erase(i --);
 		}else if (arg[i] == "-o"){
 			if (arg.num < i + 1){
 				msg_error("Dateiname nach -o erwartet");
@@ -82,7 +82,7 @@ int hui_main(Array<string> arg)
 			}
 			out_file = arg[i + 1];
 			arg.erase(i);
-			arg.erase(i);
+			arg.erase(i --);
 		}else if (arg[i][0] == '-'){
 			msg_error("unbekannte Option: " + arg[i]);
 			return -1;
