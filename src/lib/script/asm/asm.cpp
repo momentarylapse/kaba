@@ -1900,21 +1900,21 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			bool inserted = false;
 			for (int i=0;i<CurrentMetaInfo->data.num;i++){
 				//printf("%d  %d  %d  %d\n", CurrentMetaInfo->data[i].Pos, (long)code, (long)orig, (long)code - (long)orig);
-				if ((long)code - (long)orig == CurrentMetaInfo->data[i].Pos){
+				if ((long)code - (long)orig == CurrentMetaInfo->data[i].offset){
 					//msg_write("data");
-					if (CurrentMetaInfo->data[i].Size==1){
+					if (CurrentMetaInfo->data[i].size==1){
 						bufstr += "  db\t";
 						bufstr += d2h(cur,1);
-					}else if (CurrentMetaInfo->data[i].Size==2){
+					}else if (CurrentMetaInfo->data[i].size==2){
 						bufstr += "  dw\t";
 						bufstr += d2h(cur,2);
-					}else if (CurrentMetaInfo->data[i].Size==4){
+					}else if (CurrentMetaInfo->data[i].size==4){
 						bufstr += "  dd\t";
 						bufstr += d2h(cur,4);
 					}else{
 						bufstr += "  ds \t...";
 					}
-					cur += CurrentMetaInfo->data[i].Size;
+					cur += CurrentMetaInfo->data[i].size;
 					bufstr += "\n";
 					inserted = true;
 				}
@@ -1924,8 +1924,8 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 
 			// change of bits (processor mode)
 			for (int i=0;i<CurrentMetaInfo->bit_change.num;i++)
-				if ((long)code-(long)orig == CurrentMetaInfo->bit_change[i].Pos){
-					state.DefaultSize = (CurrentMetaInfo->bit_change[i].Bits == 16) ? Size16 : Size32;
+				if ((long)code-(long)orig == CurrentMetaInfo->bit_change[i].offset){
+					state.DefaultSize = (CurrentMetaInfo->bit_change[i].bits == 16) ? Size16 : Size32;
 					state.reset();
 					if (state.DefaultSize == Size16)
 						bufstr += "   bits_16\n";
@@ -2748,8 +2748,8 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			if (CurrentMetaInfo){
 				CurrentMetaInfo->Mode16 = true;
 				BitChange b;
-				b.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				b.Bits = 16;
+				b.cmd_pos = num;
+				b.bits = 16;
 				CurrentMetaInfo->bit_change.add(b);
 			}
 			continue;
@@ -2760,41 +2760,44 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			if (CurrentMetaInfo){
 				CurrentMetaInfo->Mode16 = false;
 				BitChange b;
-				b.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				b.Bits = 32;
+				b.cmd_pos = num;
+				b.bits = 32;
 				CurrentMetaInfo->bit_change.add(b);
 			}
 			continue;
-#if 0
+
 		}else if (cmd == "db"){
 			so("Daten:   1 byte");
 			if (CurrentMetaInfo){
 				AsmData d;
-				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				d.Size = 1;
+				d.cmd_pos = num;
+				d.size = 1;
+				d.data = new int;
+				*(int*)d.data = (long)p1.value;
 				CurrentMetaInfo->data.add(d);
 			}
-			buffer[CodeLength++]=(char)(long)p1.value;
 			continue;
 		}else if (cmd == "dw"){
 			so("Daten:   2 byte");
 			if (CurrentMetaInfo){
 				AsmData d;
-				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				d.Size = 2;
+				d.cmd_pos = num;
+				d.size = 2;
+				d.data = new int;
+				*(int*)d.data = (long)p1.value;
 				CurrentMetaInfo->data.add(d);
 			}
-			*(short*)&buffer[CodeLength]=(short)(long)p1.value;	CodeLength+=2;
 			continue;
 		}else if (cmd == "dd"){
 			so("Daten:   4 byte");
 			if (CurrentMetaInfo){
 				AsmData d;
-				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				d.Size = 4;
+				d.cmd_pos = num;
+				d.size = 4;
+				d.data = new int;
+				*(int*)d.data = (long)p1.value;
 				CurrentMetaInfo->data.add(d);
 			}
-			*(int*)&buffer[CodeLength]=(long)p1.value;	CodeLength+=4;
 			continue;
 		}else if ((cmd == "ds") || (cmd == "dz")){
 			so("Daten:   String");
@@ -2804,14 +2807,15 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 				l ++;
 			if (CurrentMetaInfo){
 				AsmData d;
-				d.Pos = CurrentMetaInfo->CurrentOpcodePos;
-				d.Size = l;
+				d.cmd_pos = num;
+				d.size = l;
+				d.data = new char[l];
+				memcpy(d.data, s, l);
 				CurrentMetaInfo->data.add(d);
 			}
-			memcpy(&buffer[CodeLength], s, l);
-			CodeLength += l;
+			//memcpy(&buffer[CodeLength], s, l);
+			//CodeLength += l;
 			continue;
-#endif
 		}else if (cmd == "org"){
 			if (CurrentMetaInfo)
 				CurrentMetaInfo->CodeOrigin = (long)p1.value;
@@ -3196,13 +3200,27 @@ void InstructionWithParamsList::Optimize(void *oc, int ocs)
 void InstructionWithParamsList::Compile(void *oc, int &ocs)
 {
 	state.DefaultSize = Size32;
-	// FIXME
-	if (CurrentMetaInfo->bit_change.num > 0)
-		if (CurrentMetaInfo->bit_change[0].Bits == 16)
-			state.DefaultSize = Size16;
 	state.reset();
 
 	for (int i=0;i<num+1;i++){
+		// bit change
+		foreach(BitChange &b, CurrentMetaInfo->bit_change)
+			if (b.cmd_pos == i){
+				state.DefaultSize = Size32;
+				if (b.bits == 16)
+					state.DefaultSize = Size16;
+				state.reset();
+				b.offset = ocs;
+			}
+
+		// data?
+		foreach(AsmData &d, CurrentMetaInfo->data)
+			if (d.cmd_pos == i){
+				d.offset = ocs;
+				memcpy((char*)oc+ ocs, d.data, d.size);
+				ocs += d.size;
+			}
+
 		// defining a label?
 		for (int j=0;j<label.num;j++)
 			if (i == label[j].InstNo){

@@ -230,14 +230,17 @@ struct WantedLabel
 
 struct AsmData
 {
-	int Size; // number of bytes
-	int Pos; // relative to CodeOrigin (Opcode[0])
+	int size; // number of bytes
+	int cmd_pos;
+	int offset; // relative to CodeOrigin (Opcode[0])
+	void *data;
 };
 
 struct BitChange
 {
-	int Pos; // relative to CodeOrigin (Opcode[0])
-	int Bits;
+	int cmd_pos;
+	int offset; // relative to CodeOrigin (Opcode[0])
+	int bits;
 };
 
 struct MetaInfo
