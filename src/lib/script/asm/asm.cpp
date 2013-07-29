@@ -21,8 +21,6 @@ enum{
 	/*SizeVariable = -5,
 	Size32or48 = -6,*/
 	SizeUnknown = -7,
-	Size16_16 = -8,
-	Size16_32 = -9,
 };
 
 InstructionSetData InstructionSet;
@@ -333,9 +331,9 @@ enum{
 // short parameter type
 enum{
 	__Dummy__ = 10000,
-	Eb,Ew,Ed,Eq,Eww,Ewd,
+	Eb,Ew,Ed,Eq,E48,
 	Gb,Gw,Gd,Gq,
-	Ib,Iw,Id,Iq,Iww,Iwd,
+	Ib,Iw,Id,Iq,I48,
 	Ob,Ow,Od,Oq,
 	Rb,Rw,Rd,Rq,
 	Cb,Cw,Cd,Cq,
@@ -467,8 +465,6 @@ string SizeOut(int size)
 	if (size == Size48)		return "48";
 	if (size == Size64)		return "64";
 	if (size == Size128)		return "128";
-	if (size == Size16_16)		return "16:16";
-	if (size == Size16_32)		return "16:32";
 	return "???";
 }
 
@@ -481,6 +477,8 @@ string get_size_name(int size)
 		return "word";
 	if (size == Size32)
 		return "dword";
+	if (size == Size48)
+		return "s48";
 	if (size == Size64)
 		return "qword";
 	if (size == Size128)
@@ -594,7 +592,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 			return false;
 		}
 	// general reg / mem
-	if ((param == Eb) || (param == Eq) || (param == Ew) || (param == Ed) || (param == Eww) || (param == Ewd)){
+	if ((param == Eb) || (param == Eq) || (param == Ew) || (param == Ed) || (param == E48)){
 		ip._type_ = ParamTInvalid;//ParamTRegisterOrMem;
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
@@ -605,8 +603,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		if (param == Ew)	ip.size = Size16;
 		if (param == Ed)	ip.size = Size32;
 		if (param == Eq)	ip.size = Size64;
-		if (param == Eww)	ip.size = Size16_16;
-		if (param == Ewd)	ip.size = Size16_32;
+		if (param == E48)	ip.size = Size48;
 		return true;
 	}
 	// general reg (reg)
@@ -634,15 +631,14 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		return true;
 	}
 	// immediate
-	if ((param == Ib) || (param == Iq) || (param == Iw) || (param == Id) || (param == Iww) || (param == Iwd)){
+	if ((param == Ib) || (param == Iq) || (param == Iw) || (param == Id) || (param == I48)){
 		ip._type_ = ParamTImmediate;
 		ip.allow_immediate = true;
 		if (param == Ib)	ip.size = Size8;
 		if (param == Iw)	ip.size = Size16;
 		if (param == Id)	ip.size = Size32;
 		if (param == Iq)	ip.size = Size64;
-		if (param == Iww)	ip.size = Size16_16;
-		if (param == Iwd)	ip.size = Size16_32;
+		if (param == I48)	ip.size = Size48;
 		return false;
 	}
 	// immediate (relative)
@@ -1445,8 +1441,8 @@ void Init(int set)
 	add_inst(inst_jmp,	0xe9,	1,	-1,	Jd,	-1, OptMediumParam);
 	add_inst(inst_jmp,	0xe9,	1,	-1,	Jq,	-1, OptBigParam);
 //	add_inst(inst_jmp		,0xea	,1	,-1, Ap, -1); TODO
-	add_inst(inst_jmp_far, 0xea, 1, -1, Iww, -1, OptSmallParam);
-	add_inst(inst_jmp_far, 0xea, 1, -1, Iwd, -1, OptMediumParam);
+	add_inst(inst_jmp_far, 0xea, 1, -1, Id, -1, OptSmallParam);
+	add_inst(inst_jmp_far, 0xea, 1, -1, I48, -1, OptMediumParam);
 	add_inst(inst_jmp		,0xeb	,1	,-1, Jb, -1);
 	add_inst(inst_in		,0xec	,1	,-1, RegAl, RegDx);
 	add_inst(inst_in		,0xed	,1	,-1, RegEax, RegDx);
@@ -1509,8 +1505,8 @@ void Init(int set)
 	add_inst(inst_jmp, 0xff, 1,	4, Ew, -1, OptSmallParam);
 	add_inst(inst_jmp, 0xff, 1,	4, Ed, -1, OptMediumParam);
 	add_inst(inst_jmp, 0xff, 1,	4, Eq, -1, OptBigParam);
-	add_inst(inst_jmp_far, 0xff, 1, 5, Eww, -1, OptSmallParam);
-	add_inst(inst_jmp_far, 0xff, 1, 5, Ewd, -1, OptMediumParam);
+	add_inst(inst_jmp_far, 0xff, 1, 5, Ed, -1, OptSmallParam);
+	add_inst(inst_jmp_far, 0xff, 1, 5, E48, -1, OptMediumParam);
 	add_inst(inst_push, 0xff, 1, 6, Ew, -1, OptSmallParam);
 	add_inst(inst_push, 0xff, 1, 6, Ed, -1, OptMediumParam);
 	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OptBigParam);
@@ -1558,8 +1554,6 @@ string InstructionParam::str()
 			return reg->name;
 	}else if (type == ParamTImmediate){
 		//msg_write("im");
-		if ((size == Size16_16) || (size == Size16_32))
-			return format("%s:%s", d2h(&((char*)&value)[4], 2).c_str(), d2h(&value, state.ParamSize).c_str());
 		if (deref)
 			return format(" [%s]", d2h(&value, state.AddrSize).c_str());
 		return d2h(&value, size);
@@ -1847,16 +1841,8 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm)
 			memcpy(&p.value, cur, size);
 			cur += size;
 		}else{
-			if ((p.size == Size16_16) || (p.size == Size16_32)){
-				int size = (p.size == Size16_16) ? 2 : 4;
-				memcpy((char*)&p.value, cur, size);
-				cur += size;
-				memcpy((char*)&p.value + 4, cur, 2);
-				cur += 2;
-			}else{
-				memcpy(&p.value, cur, p.size);
-				cur += p.size;
-			}
+			memcpy(&p.value, cur, p.size);
+			cur += p.size;
 		}
 	/*}else if (p.type == ParamTImmediateExt){
 		if (state.ParamSize == Size16){ // addr?
@@ -2505,7 +2491,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			}else if ((param[i]>='0')&&(param[i]<='9')){
 				v*=16;
 				v+=param[i]-'0';
-			}else if (param[i]==':'){
+			/*}else if (param[i]==':'){
 				InstructionParam sub;
 				GetParam(sub, param.tail(param.num - i - 1), list, pn);
 				if (sub.type != ParamTImmediate){
@@ -2514,13 +2500,11 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 					return;						
 				}
 				p.value = (long)v;
-				p.value <<= 32;
+				p.value <<= 8 * sub.size;
 				p.value += sub.value;
-				p.size = Size16_32;
-				if (sub.size == Size16)
-					p.size = Size16_16;
+				p.size = sub.size;
 				p.type = ParamTImmediate;//Ext;
-				break;
+				break;*/
 			}else{
 				SetError("evil character in hex parameter:  \"" + param + "\"");
 				p.type = ParamTInvalid;
@@ -2533,6 +2517,8 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			if (param.num > 6)
 				p.size = Size32;
 			if (param.num > 10)
+				p.size = Size48;
+			if (param.num > 14)
 				p.size = Size64;
 		}
 		if (DebugAsm){
@@ -2634,8 +2620,7 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 				else
 					size = Size64;
 			}
-		}else if ((p.size == Size16_16) || (p.size == Size16_32))
-			size = state.ParamSize;  // bits 0-15  /  0-31
+		}
 	//}else if (p.type == ParamTImmediateExt){
 	//	size = state.ParamSize;  // bits 0-15  /  0-31
 	}else if (p.type == ParamTRegister){
@@ -2663,11 +2648,6 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 	}
 
 	append_val(oc, ocs, value, size);
-
-
-	//if (p.type == ParamTImmediateExt)
-	if ((p.type == ParamTImmediate) && ((p.size == Size16_16) || (p.size == Size16_32)))
-		append_val(oc, ocs, p.value >> 32, 2); // bits 33-47
 }
 
 void InstructionWithParamsList::LinkWantedLabels(void *oc)

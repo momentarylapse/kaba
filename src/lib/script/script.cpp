@@ -225,6 +225,7 @@ Script::Script()
 	ReferenceCounter = 0;
 
 	cur_func = NULL;
+	first_execution = NULL;
 	WaitingMode = WaitingModeFirst;
 	TimeToWait = 0;
 	ShowCompilerStats = !config.CompileSilently;

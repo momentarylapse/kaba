@@ -341,7 +341,8 @@ void add_const(const string &name, Type *type, void *value)
 	Constant c;
 	c.name = name;
 	c.type = type;
-	c.data = new char[max(type->size, config.PointerSize)];
+	c.data = new char[max(type->size, 8)];//config.PointerSize)];
+	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) || (type == TypeFloat) || (type == TypeChar)  || (type == TypeBool) || (type->is_pointer))
 		*(void**)c.data = value;
 	else
