@@ -980,18 +980,18 @@ void Init(int set)
 	add_inst(inst_ltr		,0x000f	,2	,3	,Ew	,-1);
 	add_inst(inst_verr		,0x000f	,2	,4	,Ew	,-1);
 	add_inst(inst_verw		,0x000f	,2	,5	,Ew	,-1);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Ew,	-1, OptSmallParam);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Ed,	-1, OptMediumParam);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Eq,	-1, OptBigParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Ew,	-1, OptSmallParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Ed,	-1, OptMediumParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Eq,	-1, OptBigParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Ew,	-1, OptSmallParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Ed,	-1, OptMediumParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Eq,	-1, OptBigParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Ew,	-1, OptSmallParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Ed,	-1, OptMediumParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Eq,	-1, OptBigParam);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Mw,	-1, OptSmallParam);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Md,	-1, OptMediumParam);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Mq,	-1, OptBigParam);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Mw,	-1, OptSmallParam);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Md,	-1, OptMediumParam);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Mq,	-1, OptBigParam);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Mw,	-1, OptSmallParam);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Md,	-1, OptMediumParam);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Mq,	-1, OptBigParam);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Mw,	-1, OptSmallParam);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Md,	-1, OptMediumParam);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Mq,	-1, OptBigParam);
 	add_inst(inst_smsw		,0x010f	,2	,4	,Ew	,-1);
 	add_inst(inst_lmsw		,0x010f	,2	,6	,Ew	,-1);
 	add_inst(inst_mov		,0x200f	,2	,-1	,Rd	,Cd); // Fehler im Algorhytmus!!!!  (wirklich ???) -> Fehler in Tabelle?!?
@@ -1983,25 +1983,25 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 
 		// instruction
 		CPUInstruction *inst = NULL;
-		for (int i=0;i<CPUInstructions.num;i++){
-			if (CPUInstructions[i].code_size == 0)
+		foreach(CPUInstruction &ci, CPUInstructions){
+			if (ci.code_size == 0)
 				continue;
-			if (!CPUInstructions[i].has_fixed_param){
-				if (CPUInstructions[i].has_small_param != (state.ParamSize == Size16))
+			if (!ci.has_fixed_param){
+				if (ci.has_small_param != (state.ParamSize == Size16))
 					continue;
-				if (CPUInstructions[i].has_big_param != (state.ParamSize == Size64))
+				if (ci.has_big_param != (state.ParamSize == Size64))
 					continue;
 			}
 			// opcode correct?
 			bool ok = true;
-			for (int j=0;j<CPUInstructions[i].code_size;j++)
-				if (cur[j] != ((char*)&CPUInstructions[i].code)[j])
+			for (int j=0;j<ci.code_size;j++)
+				if (cur[j] != ((char*)&ci.code)[j])
 					ok = false;
 			// cap correct?
-			if (CPUInstructions[i].cap >= 0)
-				ok &= ((unsigned char)CPUInstructions[i].cap == ((unsigned)cur[1] / 8) % 8);
+			if (ci.cap >= 0)
+				ok &= ((unsigned char)ci.cap == (((unsigned)cur[ci.code_size] >> 3) & 0x07));
 			if (ok){
-				inst = &CPUInstructions[i];
+				inst = &ci;
 				cur += inst->code_size;
 				break;
 			}
