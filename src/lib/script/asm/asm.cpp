@@ -2672,7 +2672,7 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 
 		int value = l.Value;
 		if (w.Relative)
-			value -= (long)oc + w.Pos + w.Size; // TODO first byte after command
+			value -= CurrentMetaInfo->CodeOrigin + w.Pos + w.Size; // TODO first byte after command
 
 		insert_val((char*)oc, w.Pos, value, w.Size);
 
