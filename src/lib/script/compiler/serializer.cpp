@@ -711,7 +711,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 	if (link->kind == KindVarFunction){
 		so(" -var-func");
 		if (syntax_tree->FlagCompileOS)
-			p.p = (char*)((long)script->func[link->link_no] - (long)&script->Opcode[0] + (syntax_tree->AsmMetaInfo)->CodeOrigin);
+			p.p = (char*)((long)script->func[link->link_no] - (long)&script->Opcode[0] + (syntax_tree->AsmMetaInfo)->OverwriteCodeOrigin);
 		else
 			p.p = (char*)script->func[link->link_no];
 		p.kind = KindVarGlobal;

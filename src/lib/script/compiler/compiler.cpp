@@ -202,7 +202,7 @@ void Script::CompileOsEntryPoint()
 		if ((syntax->FlagCompileOS) || (c.type == TypeString)){
 			int offset = 0;
 			if (syntax->AsmMetaInfo)
-				offset = syntax->AsmMetaInfo->CodeOrigin;
+				offset = syntax->AsmMetaInfo->OverwriteCodeOrigin;
 			cnst[i] = (char*)(long)(OpcodeSize + offset);
 			int s = c.type->size;
 			if (c.type == TypeString)

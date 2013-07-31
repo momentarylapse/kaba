@@ -169,6 +169,12 @@ struct InstructionName{
 
 // rw1/2: 
 InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
+	{inst_db,		"db"},
+	{inst_dw,		"dw"},
+	{inst_dd,		"dd"},
+	{inst_ds,		"ds"},
+	{inst_dz,		"dz"},
+
 	{inst_add,		"add",		3, 1},
 	{inst_adc,		"adc",		3, 1},
 	{inst_sub,		"sub",		3, 1},
@@ -938,6 +944,9 @@ void Init(int set)
 	}
 
 	CPUInstructions.clear();
+	add_inst(inst_db		,0x00	,0	,-1	,Ib	,-1);
+	add_inst(inst_dw		,0x00	,0	,-1	,Iw	,-1);
+	add_inst(inst_dd		,0x00	,0	,-1	,Id	,-1);
 	add_inst(inst_add		,0x00	,1	,-1	,Eb	,Gb);
 	add_inst(inst_add		,0x01	,1	,-1	,Ew	,Gw, OptSmallParam);
 	add_inst(inst_add		,0x01	,1	,-1	,Ed	,Gd, OptMediumParam);
@@ -1975,6 +1984,8 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 		// instruction
 		CPUInstruction *inst = NULL;
 		for (int i=0;i<CPUInstructions.num;i++){
+			if (CPUInstructions[i].code_size == 0)
+				continue;
 			if (!CPUInstructions[i].has_fixed_param){
 				if (CPUInstructions[i].has_small_param != (state.ParamSize == Size16))
 					continue;
@@ -2421,6 +2432,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		so("Deref:");
 		//bool u16 = use_mode16;
 		GetParam(p, param.substr(1, -2), list, pn);
+		p.size = SizeUnknown;
 		p.deref = true;
 		//use_mode16 = u16;
 
@@ -2670,6 +2682,14 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 	}
 }
 
+void add_data_inst(InstructionWithParamsList *l, int size)
+{
+	AsmData d;
+	d.cmd_pos = l->num;
+	d.size = size;
+	CurrentMetaInfo->data.add(d);
+}
+
 void InstructionWithParamsList::AppendFromSource(const string &_code)
 {
 	msg_db_f("AppendFromSource", 1+ASM_DB_LEVEL);
@@ -2776,38 +2796,14 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 
 		}else if (cmd == "db"){
 			so("Daten:   1 byte");
-			if (CurrentMetaInfo){
-				AsmData d;
-				d.cmd_pos = num;
-				d.size = 1;
-				d.data = new int;
-				*(int*)d.data = (long)p1.value;
-				CurrentMetaInfo->data.add(d);
-			}
-			continue;
+			add_data_inst(this, 1);
 		}else if (cmd == "dw"){
 			so("Daten:   2 byte");
-			if (CurrentMetaInfo){
-				AsmData d;
-				d.cmd_pos = num;
-				d.size = 2;
-				d.data = new int;
-				*(int*)d.data = (long)p1.value;
-				CurrentMetaInfo->data.add(d);
-			}
-			continue;
+			add_data_inst(this, 2);
 		}else if (cmd == "dd"){
 			so("Daten:   4 byte");
-			if (CurrentMetaInfo){
-				AsmData d;
-				d.cmd_pos = num;
-				d.size = 4;
-				d.data = new int;
-				*(int*)d.data = (long)p1.value;
-				CurrentMetaInfo->data.add(d);
-			}
-			continue;
-		}else if ((cmd == "ds") || (cmd == "dz")){
+			add_data_inst(this, 4);
+		}/*else if ((cmd == "ds") || (cmd == "dz")){
 			so("Daten:   String");
 			char *s = (char*)p1.value;
 			int l=strlen(s);
@@ -2824,11 +2820,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			//memcpy(&buffer[CodeLength], s, l);
 			//CodeLength += l;
 			continue;
-		}else if (cmd == "org"){
-			if (CurrentMetaInfo)
-				CurrentMetaInfo->CodeOrigin = (long)p1.value;
-			continue;
-		}else if (cmd[cmd.num - 1] == ':'){
+		}*/else if (cmd[cmd.num - 1] == ':'){
 			so("Label");
 			cmd.resize(cmd.num - 1);
 			so(cmd);
@@ -3157,7 +3149,7 @@ void InstructionWithParamsList::AddInstruction(char *oc, int &ocs, int n)
 		state.LineNo = iwp.line;
 		for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
 			if (InstructionNames[i].inst == iwp.inst)
-				SetError("command not compatible with its parameters\n" + InstructionNames[i].name + " " + iwp.p1.str() + " " + iwp.p2.str());
+				SetError("command not compatible with its parameters\n" + InstructionNames[i].name + " " + iwp.p1.str() + ", " + iwp.p2.str());
 		SetError(format("instruction unknown: %d", iwp.inst));
 	}
 
@@ -3210,6 +3202,9 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 {
 	state.DefaultSize = Size32;
 	state.reset();
+	CurrentMetaInfo->CodeOrigin = (long)oc;
+	if (CurrentMetaInfo->OverwriteCodeOrigin > 0)
+		CurrentMetaInfo->CodeOrigin = CurrentMetaInfo->OverwriteCodeOrigin;
 
 	for (int i=0;i<num+1;i++){
 		// bit change
@@ -3224,17 +3219,14 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 
 		// data?
 		foreach(AsmData &d, CurrentMetaInfo->data)
-			if (d.cmd_pos == i){
+			if (d.cmd_pos == i)
 				d.offset = ocs;
-				memcpy((char*)oc+ ocs, d.data, d.size);
-				ocs += d.size;
-			}
 
 		// defining a label?
 		for (int j=0;j<label.num;j++)
 			if (i == label[j].InstNo){
 				so("defining found: " + label[j].Name);
-				label[j].Value = (long)oc + ocs;
+				label[j].Value = CurrentMetaInfo->CodeOrigin + ocs;
 			}
 		if (i >= num)
 			break;

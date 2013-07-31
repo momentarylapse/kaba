@@ -118,7 +118,7 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 					if (d.Dest.num != 1)
 						DoError("offset value expected after __CODE_ORIGIN__");
 					CreateAsmMetaInfo();
-					((Asm::MetaInfo*)AsmMetaInfo)->CodeOrigin = s2i2(d.Dest[0]);
+					((Asm::MetaInfo*)AsmMetaInfo)->OverwriteCodeOrigin = s2i2(d.Dest[0]);
 				}else
 					DoError("unknown compiler flag (define starting and ending with \"__\"): " + d.Source);
 			}else

@@ -1,0 +1,13 @@
+#disasm
+int i
+void main()
+	i = 10
+	asm{
+		mov i, 0x00000010
+		jmp _label
+		dd 0x00001000
+		_label:
+		mov eax, [_label]
+		mov i, eax
+	}
+	print i

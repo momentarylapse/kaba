@@ -309,7 +309,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 	if (!AsmMetaInfo){
 		AsmMetaInfo = new Asm::MetaInfo;
 		AsmMetaInfo->Mode16 = false;
-		AsmMetaInfo->CodeOrigin = 0; // FIXME:  &Opcode[0] ????
+		AsmMetaInfo->OverwriteCodeOrigin = 0;
 	}
 	AsmMetaInfo->Opcode = script->Opcode;
 	AsmMetaInfo->global_var.clear();

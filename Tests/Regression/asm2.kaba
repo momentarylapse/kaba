@@ -1,0 +1,10 @@
+int i
+void main()
+	i = 10
+	asm{
+		mov i, 0x00000010
+		jmp _label
+		mov i, 0x00000020
+		_label:
+	}
+	print i
