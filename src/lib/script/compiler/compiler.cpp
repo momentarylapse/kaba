@@ -184,6 +184,14 @@ void Script::MapGlobalVariablesToMemory()
 	memset(Memory, 0, MemorySize); // reset all global variables to 0
 }
 
+void Script::AlignOpcode()
+{
+	int ocs_new = mem_align(OpcodeSize, config.FunctionAlign);
+	for (int i=OpcodeSize;i<ocs_new;i++)
+		Opcode[i] = 0x90;
+	OpcodeSize = ocs_new;
+}
+
 static int OCORA;
 void Script::CompileOsEntryPoint()
 {
@@ -211,20 +219,22 @@ void Script::CompileOsEntryPoint()
 			OpcodeSize += s;
 		}
 	}
+
+	AlignOpcode();
 }
 
 void Script::LinkOsEntryPoint()
 {
-	int nf=-1;
+	int nf = -1;
 	foreachi(Function *ff, syntax->Functions, index)
 		if (ff->name == "main")
 			nf = index;
-	if (nf>=0){
-		int lll = ((long)func[nf]-(long)&Opcode[TaskReturnOffset]) + 3;
+	if (nf >= 0){
+		int lll = (long)func[nf] - (long)Opcode - TaskReturnOffset;
 		//printf("insert   %d  an %d\n", lll, OCORA);
 		//msg_write(lll);
 		//msg_write(d2h(&lll,4,false));
-		*(int*)&Opcode[OCORA]=lll;
+		*(int*)&Opcode[OCORA] = lll;
 	}
 }
 

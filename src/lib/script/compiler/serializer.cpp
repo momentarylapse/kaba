@@ -2960,14 +2960,6 @@ void Serializer::DoErrorLink(const string &msg)
 	script->DoErrorLink(msg);
 }
 
-void do_func_align(char *Opcode, int &OpcodeSize)
-{
-	int ocs_new = mem_align(OpcodeSize, config.FunctionAlign);
-	for (int i=OpcodeSize;i<ocs_new;i++)
-		Opcode[i] = 0x90;
-	OpcodeSize = ocs_new;
-}
-
 Serializer::Serializer(Script *s)
 {
 	script = s;
@@ -2988,8 +2980,6 @@ void Script::CompileFunction(Function *f, char *Opcode, int &OpcodeSize)
 	if (syntax->FlagShow)
 		msg_write("serializing " + f->name + " -------------------");
 
-	do_func_align(Opcode, OpcodeSize);
-
 	cur_func = f;
 	Serializer d = Serializer(this);
 
@@ -3002,6 +2992,7 @@ void Script::CompileFunction(Function *f, char *Opcode, int &OpcodeSize)
 	}catch(Asm::Exception &e){
 		throw Exception(e, this);
 	}
+	AlignOpcode();
 }
 
 };
