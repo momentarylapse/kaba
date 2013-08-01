@@ -207,13 +207,13 @@ void Script::CompileOsEntryPoint()
 
 	// put strings into Opcode!
 	foreachi(Constant &c, syntax->Constants, i){
-		if ((syntax->FlagCompileOS) || (c.type == TypeString)){
+		if (syntax->FlagCompileOS){// && (c.type == TypeCString)){
 			int offset = 0;
 			if (syntax->AsmMetaInfo)
 				offset = syntax->AsmMetaInfo->OverwriteCodeOrigin;
 			cnst[i] = (char*)(long)(OpcodeSize + offset);
 			int s = c.type->size;
-			if (c.type == TypeString)
+			if (c.type == TypeCString)
 				s = strlen(c.data) + 1;
 			memcpy(&Opcode[OpcodeSize], (void*)c.data, s);
 			OpcodeSize += s;
@@ -334,14 +334,15 @@ void Script::Compiler()
 	AllocateOpcode();
 
 
-	syntax->PreProcessorAddresses(this);
-
-
 
 // compiling an operating system?
 //   -> create an entry point for execution... so we can just call Opcode like a function
 	if (syntax->FlagAddEntryPoint)
 		CompileOsEntryPoint();
+
+
+
+	syntax->PreProcessorAddresses(this);
 
 
 // compile functions into Opcode
