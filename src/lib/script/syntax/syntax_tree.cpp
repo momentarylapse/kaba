@@ -141,6 +141,7 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	AsmMetaInfo = NULL;
 	cur_func = NULL;
 	script = _script;
+	AsmMetaInfo = new Asm::MetaInfo;
 
 	// "include" default stuff
 	foreach(Package &p, Packages)
@@ -305,13 +306,6 @@ void SyntaxTree::DoError(const string &str, int overwrite_line)
 void SyntaxTree::CreateAsmMetaInfo()
 {
 	msg_db_f("CreateAsmMetaInfo",5);
-	//msg_error("zu coden: CreateAsmMetaInfo");
-	if (!AsmMetaInfo){
-		AsmMetaInfo = new Asm::MetaInfo;
-		AsmMetaInfo->Mode16 = false;
-		AsmMetaInfo->OverwriteCodeOrigin = 0;
-	}
-	AsmMetaInfo->Opcode = script->Opcode;
 	AsmMetaInfo->global_var.clear();
 	for (int i=0;i<RootOfAllEvil.var.num;i++){
 		Asm::GlobalVar v;

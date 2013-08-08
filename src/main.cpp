@@ -42,6 +42,45 @@ void dump_to_file(Script::Script *s, const string &out_file)
 	delete(f);
 }
 
+void export_symbols(Script::Script *s, const string &symbols_out_file)
+{
+	CFile *f = FileCreate(symbols_out_file);
+	foreachi(Script::Function *fn, s->syntax->Functions, i){
+		f->WriteStr(fn->name);
+		f->WriteInt((long)s->func[i] - (long)s->Opcode + s->syntax->AsmMetaInfo->CodeOrigin);
+	}
+	foreachi(Script::Variable &v, s->syntax->RootOfAllEvil.var, i){
+		f->WriteStr(v.name);
+		f->WriteInt((long)s->g_var[i]);
+	}
+	delete(f);
+}
+
+void import_symbols(const string &symbols_in_file)
+{
+	CFile *f = FileOpen(symbols_in_file);
+	while (!f->Eof){
+		string name = f->ReadStr();
+		int pos = f->ReadInt();
+		Script::LinkExternal(name, (void*)(long)pos);
+	}
+	/*foreachi(Script::Function *fn, s->syntax->Functions, i){
+		if (fn->name.head(5) == "lib__")
+			f->WriteStr(fn->name.substr(5, -1));
+		else
+			f->WriteStr(fn->name);
+		f->WriteInt((long)s->func[i]);
+	}
+	foreachi(Script::Variable &v, s->syntax->RootOfAllEvil.var, i){
+		if (v.name.head(5) == "lib__")
+			f->WriteStr(v.name.substr(5, -1));
+		else
+			f->WriteStr(v.name);
+		f->WriteInt((long)s->g_var[i]);
+	}*/
+	delete(f);
+}
+
 int hui_main(Array<string> arg)
 {
 	// hui
@@ -53,7 +92,7 @@ int hui_main(Array<string> arg)
 	bool use_gui = false;
 	int instruction_set = -1;
 	int abi = -1;
-	string out_file;
+	string out_file, symbols_out_file, symbols_in_file;
 
 	// parameters
 	for (int i=1;i<arg.num;i++){
@@ -83,6 +122,22 @@ int hui_main(Array<string> arg)
 			out_file = arg[i + 1];
 			arg.erase(i);
 			arg.erase(i --);
+		}else if (arg[i] == "--export-symbols"){
+			if (arg.num < i + 1){
+				msg_error("Dateiname nach --export-symbols erwartet");
+				return -1;
+			}
+			symbols_out_file = arg[i + 1];
+			arg.erase(i);
+			arg.erase(i --);
+		}else if (arg[i] == "--import-symbols"){
+			if (arg.num < i + 1){
+				msg_error("Dateiname nach --import-symbols erwartet");
+				return -1;
+			}
+			symbols_in_file = arg[i + 1];
+			arg.erase(i);
+			arg.erase(i --);
 		}else if (arg[i][0] == '-'){
 			msg_error("unbekannte Option: " + arg[i]);
 			return -1;
@@ -96,6 +151,9 @@ int hui_main(Array<string> arg)
 	Script::Init(instruction_set, abi);
 	//Script::LinkDynamicExternalData();
 	Script::config.StackSize = 10485760; // 10 mb (mib)
+
+	if (symbols_in_file.num > 0)
+		import_symbols(symbols_in_file);
 
 	// script file as parameter?
 	string filename;
@@ -116,6 +174,8 @@ int hui_main(Array<string> arg)
 
 	try{
 		Script::Script *s = Script::Load(filename);
+		if (symbols_out_file.num > 0)
+			export_symbols(s, symbols_out_file);
 		if (out_file.num > 0)
 			dump_to_file(s, out_file);
 		else

@@ -710,10 +710,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 	//so(Kind2Str(link->Kind));
 	if (link->kind == KindVarFunction){
 		so(" -var-func");
-		if (syntax_tree->FlagCompileOS)
-			p.p = (char*)((long)script->func[link->link_no] - (long)&script->Opcode[0] + (syntax_tree->AsmMetaInfo)->OverwriteCodeOrigin);
-		else
-			p.p = (char*)script->func[link->link_no];
+		p.p = (char*)script->func[link->link_no];
 		p.kind = KindVarGlobal;
 	}else if (link->kind == KindMemory){
 		so(" -mem");
@@ -2622,8 +2619,6 @@ void Serializer::SerializeFunction(Function *f)
 	init_serializing();
 
 	syntax_tree->CreateAsmMetaInfo();
-	syntax_tree->AsmMetaInfo->CurrentOpcodePos = script->OpcodeSize;
-	syntax_tree->AsmMetaInfo->PreInsertionLength = script->OpcodeSize;
 	syntax_tree->AsmMetaInfo->LineOffset = 0;
 	Asm::CurrentMetaInfo = syntax_tree->AsmMetaInfo;
 

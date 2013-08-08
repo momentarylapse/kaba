@@ -135,6 +135,8 @@ void Script::AllocateOpcode()
 #endif
 	if (((long)Opcode==-1)||((long)ThreadOpcode==-1))
 		DoErrorInternal("CScript:  could not allocate executable memory");
+	if (syntax->AsmMetaInfo->CodeOrigin == 0)
+		syntax->AsmMetaInfo->CodeOrigin = (long)Opcode;
 	OpcodeSize=0;
 	ThreadOpcodeSize=0;
 }
@@ -208,10 +210,7 @@ void Script::CompileOsEntryPoint()
 	// put strings into Opcode!
 	foreachi(Constant &c, syntax->Constants, i){
 		if (syntax->FlagCompileOS){// && (c.type == TypeCString)){
-			int offset = 0;
-			if (syntax->AsmMetaInfo)
-				offset = syntax->AsmMetaInfo->OverwriteCodeOrigin;
-			cnst[i] = (char*)(long)(OpcodeSize + offset);
+			cnst[i] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin);
 			int s = c.type->size;
 			if (c.type == TypeCString)
 				s = strlen(c.data) + 1;
@@ -230,7 +229,7 @@ void Script::LinkOsEntryPoint()
 		if (ff->name == "main")
 			nf = index;
 	if (nf >= 0){
-		int lll = (long)func[nf] - (long)Opcode - TaskReturnOffset;
+		int lll = (long)func[nf] - syntax->AsmMetaInfo->CodeOrigin - TaskReturnOffset;
 		//printf("insert   %d  an %d\n", lll, OCORA);
 		//msg_write(lll);
 		//msg_write(d2h(&lll,4,false));
@@ -310,6 +309,7 @@ void Script::CompileTaskEntryPoint()
 void Script::Compiler()
 {
 	msg_db_f("Compiler",2);
+	Asm::CurrentMetaInfo = syntax->AsmMetaInfo;
 
 	syntax->MapLocalVariablesToStack();
 
@@ -353,8 +353,9 @@ void Script::Compiler()
 			func[i] = (t_func*)GetExternalLink(f->name);
 			if (!func[i])
 				DoErrorLink("external function " + f->name + " not linkable");
+			//func[i] = (t_func*)((long)func[i] + (long)Opcode - syntax->AsmMetaInfo->CodeOrigin);
 		}else{
-			func[i] = (t_func*)&Opcode[OpcodeSize];
+			func[i] = (t_func*)(syntax->AsmMetaInfo->CodeOrigin + OpcodeSize);
 			CompileFunction(f, Opcode, OpcodeSize);
 		}
 	}
@@ -376,7 +377,8 @@ void Script::Compiler()
 
 
 	// initialize global objects
-	init_all_global_objects(syntax, g_var);
+	if (!syntax->FlagCompileOS)
+		init_all_global_objects(syntax, g_var);
 
 	//msg_db_out(1,GetAsm(Opcode,OpcodeSize));
 

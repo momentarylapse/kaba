@@ -59,6 +59,7 @@ static ParserState state;
 
 const char *code_buffer;
 MetaInfo *CurrentMetaInfo = NULL;
+MetaInfo DummyMetaInfo;
 
 Exception::Exception(const string &_message, const string &_expression, int _line, int _column)
 {
@@ -109,6 +110,14 @@ static void so(int i)
 // penalty:  0 -> max output
 #define ASM_DB_LEVEL	10
 
+
+
+MetaInfo::MetaInfo()
+{
+	Mode16 = false;
+	CodeOrigin = 0;
+	LineOffset = 0;
+}
 
 
 
@@ -2647,7 +2656,7 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 		rel = false;
 	if (p.is_label){
 		WantedLabel w;
-		w.Pos = ocs;// + CurrentMetaInfo->PreInsertionLength;
+		w.Pos = ocs;
 		w.Size = size;
 		w.LabelNo = value;
 		w.Name = list.label[p.value].Name;
@@ -2656,7 +2665,7 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 		list.wanted_label.add(w);
 		so("add wanted label");
 	}else if (rel){
-		value -= (long)oc + ocs + size + next_param_size; // TODO ...first byte of next opcode
+		value -= CurrentMetaInfo->CodeOrigin + ocs + size + next_param_size; // TODO ...first byte of next opcode
 	}
 
 	append_val(oc, ocs, value, size);
@@ -2696,11 +2705,8 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 
 	const char *code = _code.c_str();
 
-	if (CurrentMetaInfo){
-		CurrentMetaInfo->PreInsertionLength = CurrentMetaInfo->CurrentOpcodePos; // position of the block withing (overall) opcode
-	}else{
+	if (!CurrentMetaInfo)
 		SetError("no CurrentMetaInfo");
-	}
 
 	state.LineNo = CurrentMetaInfo->LineOffset;
 	state.ColumnNo = 0;
@@ -2721,12 +2727,6 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 
 		//msg_write("..");
 		state.reset();
-#if 0
-		if (CurrentMetaInfo){
-			CurrentMetaInfo->CurrentOpcodePos = CurrentMetaInfo->PreInsertionLength + CodeLength;
-			//msg_write(CurrentMetaInfo->CurrentOpcodePos);
-		}
-#endif
 
 
 	// interpret asm code (1 line)
@@ -3202,9 +3202,10 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 {
 	state.DefaultSize = Size32;
 	state.reset();
-	CurrentMetaInfo->CodeOrigin = (long)oc;
-	if (CurrentMetaInfo->OverwriteCodeOrigin > 0)
-		CurrentMetaInfo->CodeOrigin = CurrentMetaInfo->OverwriteCodeOrigin;
+	if (!CurrentMetaInfo){
+		DummyMetaInfo.CodeOrigin = (long)oc;
+		CurrentMetaInfo = &DummyMetaInfo;
+	}
 
 	for (int i=0;i<num+1;i++){
 		// bit change

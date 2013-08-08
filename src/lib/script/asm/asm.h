@@ -252,11 +252,7 @@ struct BitChange
 
 struct MetaInfo
 {
-	long CurrentOpcodePos; // current position in the opcode buffer (including script)
-	int PreInsertionLength; // size of script opcode preceding the asm block
 	long CodeOrigin; // how to interpret opcode buffer[0]
-	long OverwriteCodeOrigin;
-	char *Opcode; // entire opcode of the script
 	bool Mode16;
 	int LineOffset; // number of script lines preceding asm block (to give correct error messages)
 
@@ -266,6 +262,8 @@ struct MetaInfo
 	Array<AsmData> data;
 	Array<BitChange> bit_change;
 	Array<GlobalVar> global_var;
+
+	MetaInfo();
 };
 
 
