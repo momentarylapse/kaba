@@ -1189,6 +1189,13 @@ void LinkExternal(const string &name, void *pointer)
 	l.name = name;
 	l.pointer = pointer;
 	ExternalLinks.add(l);
+	if (name.head(5) == "lib__"){
+		string sname = name.substr(5, -1);
+		foreach(Package &p, Packages)
+			foreachi(Function *f, p.script->syntax->Functions, i)
+				if (f->name == sname)
+					p.script->func[i] = (void(*)())pointer;
+	}
 }
 
 void *GetExternalLink(const string &name)
