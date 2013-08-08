@@ -47,7 +47,7 @@ void export_symbols(Script::Script *s, const string &symbols_out_file)
 	CFile *f = FileCreate(symbols_out_file);
 	foreachi(Script::Function *fn, s->syntax->Functions, i){
 		f->WriteStr(fn->name);
-		f->WriteInt((long)s->func[i] - (long)s->Opcode + s->syntax->AsmMetaInfo->CodeOrigin);
+		f->WriteInt((long)s->func[i]);
 	}
 	foreachi(Script::Variable &v, s->syntax->RootOfAllEvil.var, i){
 		f->WriteStr(v.name);
@@ -93,6 +93,7 @@ int hui_main(Array<string> arg)
 	int instruction_set = -1;
 	int abi = -1;
 	string out_file, symbols_out_file, symbols_in_file;
+	bool allow_std_lib = true;
 
 	// parameters
 	for (int i=1;i<arg.num;i++){
@@ -113,6 +114,9 @@ int hui_main(Array<string> arg)
 			arg.erase(i --);
 		}else if (arg[i] == "--x86"){
 			instruction_set = Asm::InstructionSetX86;
+			arg.erase(i --);
+		}else if (arg[i] == "--no-std-lib"){
+			allow_std_lib = false;
 			arg.erase(i --);
 		}else if (arg[i] == "-o"){
 			if (arg.num < i + 1){
@@ -148,7 +152,7 @@ int hui_main(Array<string> arg)
 	msg_db_r("main", 1);
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
-	Script::Init(instruction_set, abi);
+	Script::Init(instruction_set, abi, allow_std_lib);
 	//Script::LinkDynamicExternalData();
 	Script::config.StackSize = 10485760; // 10 mb (mib)
 

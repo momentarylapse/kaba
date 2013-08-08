@@ -358,7 +358,7 @@ void add_const(const string &name, Type *type, void *value)
 void add_ext_var(const string &name, Type *type, void *var)
 {
 	cur_package_script->syntax->AddVar(name, type, &cur_package_script->syntax->RootOfAllEvil);
-	cur_package_script->g_var.add((char*)var);
+	cur_package_script->g_var.add(config.allow_std_lib ? (char*)var : NULL);
 };
 
 //------------------------------------------------------------------------------------------------//
@@ -387,7 +387,7 @@ int add_func(const string &name, Type *return_type, void *func, bool is_class)
 	f->num_params = 0;
 	f->_class = NULL;
 	cur_package_script->syntax->Functions.add(f);
-	cur_package_script->func.add((void (*)())func);
+	cur_package_script->func.add(config.allow_std_lib ? (void (*)())func : NULL);
 	cur_cmd = NULL;
 	cur_func = f;
 	cur_class_func = NULL;
@@ -1082,7 +1082,7 @@ void SIAddPackageImage();
 void SIAddPackageSound();
 void SIAddPackageX();
 
-void Init(int instruction_set, int abi)
+void Init(int instruction_set, int abi, bool allow_std_lib)
 {
 	msg_db_f("ScriptInit", 1);
 
@@ -1102,6 +1102,7 @@ void Init(int instruction_set, int abi)
 #endif
 		}
 	}
+	config.allow_std_lib = allow_std_lib;
 	config.PointerSize = Asm::InstructionSet.pointer_size;
 	//config.SuperArraySize = config.PointerSize + 3 * sizeof(int);
 	config.SuperArraySize = sizeof(DynamicArray);
