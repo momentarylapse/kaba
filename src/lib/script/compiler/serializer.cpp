@@ -710,7 +710,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 	//so(Kind2Str(link->Kind));
 	if (link->kind == KindVarFunction){
 		so(" -var-func");
-		p.p = (char*)script->func[link->link_no];
+		p.p = (char*)link->script->func[link->link_no];
 		p.kind = KindVarGlobal;
 	}else if (link->kind == KindMemory){
 		so(" -mem");
@@ -1314,8 +1314,8 @@ void Serializer::SerializeCompilerFunction(Command *com, Array<SerialCommandPara
 		case CommandNew:
 			AddFuncParam(param_const(TypeInt, (void*)(long)ret.type->parent->size));
 			AddFuncReturn(ret);
-			if (!syntax_tree->GetExistence("-malloc-", cur_func))
-				DoError("-malloc- not found????");
+			if (!syntax_tree->GetExistence("@malloc", cur_func))
+				DoError("@malloc not found????");
 			AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_no);
 			if (com->param[0]){
 				// copy + edit command
@@ -1329,8 +1329,8 @@ void Serializer::SerializeCompilerFunction(Command *com, Array<SerialCommandPara
 		case CommandDelete:
 			add_cmd_destructor(param[0], false);
 			AddFuncParam(param[0]);
-			if (!syntax_tree->GetExistence("-free-", cur_func))
-				DoError("-free- not found????");
+			if (!syntax_tree->GetExistence("@free", cur_func))
+				DoError("@free not found????");
 			AddFunctionCall(syntax_tree->GetExistenceLink.script, syntax_tree->GetExistenceLink.link_no);
 			break;
 		case CommandWaitOneFrame:

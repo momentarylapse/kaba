@@ -53,6 +53,7 @@ void export_symbols(Script::Script *s, const string &symbols_out_file)
 		f->WriteStr(v.name);
 		f->WriteInt((long)s->g_var[i]);
 	}
+	f->WriteStr("#");
 	delete(f);
 }
 
@@ -61,23 +62,11 @@ void import_symbols(const string &symbols_in_file)
 	CFile *f = FileOpen(symbols_in_file);
 	while (!f->Eof){
 		string name = f->ReadStr();
+		if (name == "#")
+			break;
 		int pos = f->ReadInt();
 		Script::LinkExternal(name, (void*)(long)pos);
 	}
-	/*foreachi(Script::Function *fn, s->syntax->Functions, i){
-		if (fn->name.head(5) == "lib__")
-			f->WriteStr(fn->name.substr(5, -1));
-		else
-			f->WriteStr(fn->name);
-		f->WriteInt((long)s->func[i]);
-	}
-	foreachi(Script::Variable &v, s->syntax->RootOfAllEvil.var, i){
-		if (v.name.head(5) == "lib__")
-			f->WriteStr(v.name.substr(5, -1));
-		else
-			f->WriteStr(v.name);
-		f->WriteInt((long)s->g_var[i]);
-	}*/
 	delete(f);
 }
 
