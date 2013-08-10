@@ -133,6 +133,7 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	FlagShowPrae = false;
 	FlagDisassemble = false;
 	FlagCompileOS = false;
+	FlagStringConstAsCString = false;
 	FlagNoFunctionFrame = false;
 	FlagAddEntryPoint = false;
 	FlagOverwriteVariablesOffset = false;

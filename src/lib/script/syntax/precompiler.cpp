@@ -105,6 +105,8 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 			if ((d.Source.num > 4) && (d.Source.head(2) == "__") && (d.Source.tail(2) == "__")){
 				if (d.Source == "__OS__"){
 					FlagCompileOS = true;
+				}else if (d.Source == "__STRING_CONST_AS_CSTRING__"){
+					FlagStringConstAsCString = true;
 				}else if (d.Source == "__NO_FUNCTION_FRAME__"){
 					FlagNoFunctionFrame = true;
 				}else if (d.Source == "__ADD_ENTRY_POINT__"){

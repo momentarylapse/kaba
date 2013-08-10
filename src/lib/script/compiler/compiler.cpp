@@ -212,8 +212,18 @@ void Script::CompileOsEntryPoint()
 		if (syntax->FlagCompileOS){// && (c.type == TypeCString)){
 			cnst[i] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin);
 			int s = c.type->size;
-			if (c.type == TypeCString)
+			if (c.type == TypeString){
+				// const string -> variable length
+				s = strlen(syntax->Constants[i].data) + 1;
+
+				*(void**)&Opcode[OpcodeSize] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin + config.SuperArraySize); // .data
+				*(int*)&Opcode[OpcodeSize + config.PointerSize    ] = s - 1; // .num
+				*(int*)&Opcode[OpcodeSize + config.PointerSize + 4] = 0; // .reserved
+				*(int*)&Opcode[OpcodeSize + config.PointerSize + 8] = 1; // .item_size
+				OpcodeSize += config.SuperArraySize;
+			}else if (c.type == TypeCString){
 				s = strlen(c.data) + 1;
+			}
 			memcpy(&Opcode[OpcodeSize], (void*)c.data, s);
 			OpcodeSize += s;
 		}

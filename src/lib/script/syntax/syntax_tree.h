@@ -270,6 +270,7 @@ public:
 	bool FlagNoExecution;
 	bool FlagImmortal;
 	bool FlagCompileOS;
+	bool FlagStringConstAsCString;
 	bool FlagNoFunctionFrame;
 	bool FlagAddEntryPoint;
 	bool FlagOverwriteVariablesOffset;

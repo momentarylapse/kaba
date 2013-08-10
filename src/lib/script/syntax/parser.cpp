@@ -106,7 +106,7 @@ Type *SyntaxTree::GetConstantType()
 
 	// string "..."
 	if ((Exp.cur[0] == '"') && (Exp.cur.back() == '"'))
-		return FlagCompileOS ? TypeCString : TypeString;
+		return FlagStringConstAsCString ? TypeCString : TypeString;
 
 	// numerical (int/float)
 	Type *type = TypeInt;
