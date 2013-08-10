@@ -1104,8 +1104,10 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	}
 	config.allow_std_lib = allow_std_lib;
 	config.PointerSize = Asm::InstructionSet.pointer_size;
-	//config.SuperArraySize = config.PointerSize + 3 * sizeof(int);
-	config.SuperArraySize = sizeof(DynamicArray);
+	if ((abi >= 0) || (instruction_set >= 0))
+		config.SuperArraySize = config.PointerSize + 3 * sizeof(int);
+	else
+		config.SuperArraySize = sizeof(DynamicArray);
 	config.StackSize = SCRIPT_DEFAULT_STACK_SIZE;
 
 	config.allow_simplification = true;
@@ -1190,7 +1192,7 @@ void LinkExternal(const string &name, void *pointer)
 	l.pointer = pointer;
 	ExternalLinks.add(l);
 	if (name.head(5) == "lib__"){
-		string sname = name.substr(5, -1);
+		string sname = name.substr(5, -1).replace("@list", "[]");
 		foreach(Package &p, Packages)
 			foreachi(Function *f, p.script->syntax->Functions, i)
 				if (f->name == sname)

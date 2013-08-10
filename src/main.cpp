@@ -83,6 +83,7 @@ int hui_main(Array<string> arg)
 	int abi = -1;
 	string out_file, symbols_out_file, symbols_in_file;
 	bool allow_std_lib = true;
+	bool error = false;
 
 	// parameters
 	for (int i=1;i<arg.num;i++){
@@ -178,12 +179,13 @@ int hui_main(Array<string> arg)
 			HuiErrorBox(NULL, _("Fehler in Script"), e.message);
 		else
 			msg_error(e.message);
+		error = true;
 	}
 
 	// end
 	msg_db_l(1);
 	Script::End();
 	msg_end();
-	return 0;
+	return error ? -1 : 0;
 }
 
