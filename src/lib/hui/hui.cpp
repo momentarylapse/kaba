@@ -385,7 +385,7 @@ int HuiRun()
 	bool got_message;
 	while ((!HuiHaveToExit)&&(WM_QUIT!=messages.message)){
 		bool allow=true;
-		if (HuiIdleFunction)
+		if (HuiIdleFunction.is_set())
 			got_message=(PeekMessage(&messages,NULL,0U,0U,PM_REMOVE)!=0);
 		else
 			got_message=(GetMessage(&messages,NULL,0,0)!=0);
@@ -399,8 +399,8 @@ int HuiRun()
 					break;
 				}
 		}
-		if ((HuiIdleFunction)&&(allow))
-			HuiIdleFunction();
+		if ((HuiIdleFunction.is_set()) && (allow))
+			HuiIdleFunction.call();
 	}
 #endif
 #ifdef HUI_API_GTK
@@ -519,14 +519,23 @@ void HuiEnd()
 }
 
 
+static int _HuiCurrentImageNo_ = 0;
+
 string HuiSetImage(const Image &image)
 {
 	sHuiImage img;
 	img.type = 1;
 	img.image = image;
-	img.filename = format("image:%d", HuiImage.num);
+	img.filename = format("image:%d", _HuiCurrentImageNo_ ++);
 	HuiImage.add(img);
 	return img.filename;
+}
+
+void HuiDeleteImage(const string &name)
+{
+	for (int i=0;i<HuiImage.num;i++)
+		if (HuiImage[i].filename == name)
+			HuiImage.erase(i);
 }
 
 

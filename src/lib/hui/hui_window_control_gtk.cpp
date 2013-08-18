@@ -181,6 +181,14 @@ void HuiWindow::_InsertControl_(HuiControl *c, int x, int y, int width, int heig
 				gtk_widget_set_size_request(frame, width, 28);
 				op_x = GtkAttachOptions(0);
 			}
+			if (OptionString.find("height") >= 0){
+				string ww = OptionString.substr(OptionString.find("height") + 7, -1);
+				if (ww.find(","))
+					ww = ww.substr(0, ww.find(","));
+				int height = s2i(ww);
+				gtk_widget_set_size_request(frame, -1, height);
+				op_y = GtkAttachOptions(0);
+			}
 
 			// TODO
 			unsigned int nx, ny;
@@ -531,8 +539,11 @@ void HuiWindow::RemoveControl(const string &id)
 void HuiWindow::Redraw(const string &_id)
 {
 	HuiControl *c = _GetControl_(_id);
-	if (c)
-		gdk_window_invalidate_rect(gtk_widget_get_window(c->widget), NULL, false);
+	if (c){
+		GdkWindow *w = gtk_widget_get_window(c->widget);
+		if (w)
+			gdk_window_invalidate_rect(w, NULL, false);
+	}
 }
 
 void HuiWindow::RedrawRect(const string &_id, int x, int y, int w, int h)
