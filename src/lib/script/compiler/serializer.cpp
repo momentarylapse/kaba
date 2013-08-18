@@ -2646,6 +2646,9 @@ void Serializer::SerializeFunction(Function *f)
 
 	// function
 	SerializeBlock(f->block, 0);
+
+	SimplifyIfStatements();
+
 	if (script->syntax->FlagShow)
 		cmd_list_out();
 	
@@ -2679,6 +2682,32 @@ void Serializer::SerializeFunction(Function *f)
 	}
 
 	//cmd_list_out();
+}
+
+
+void Serializer::SimplifyIfStatements()
+{
+	for (int i=0;i<cmd.num - 4;i++){
+		if ((cmd[i].inst == Asm::inst_cmp) && (cmd[i+2].inst == Asm::inst_cmp) && (cmd[i+3].inst == Asm::inst_jz)){
+			if (cmd[i+1].inst == Asm::inst_setl)
+				cmd[i+3].inst = Asm::inst_jnl;
+			else if (cmd[i+1].inst == Asm::inst_setle)
+				cmd[i+3].inst = Asm::inst_jnle;
+			else if (cmd[i+1].inst == Asm::inst_setnl)
+				cmd[i+3].inst = Asm::inst_jl;
+			else if (cmd[i+1].inst == Asm::inst_setnle)
+				cmd[i+3].inst = Asm::inst_jle;
+			else if (cmd[i+1].inst == Asm::inst_setz)
+				cmd[i+3].inst = Asm::inst_jnz;
+			else if (cmd[i+1].inst == Asm::inst_setnz)
+				cmd[i+3].inst = Asm::inst_jz;
+			else
+				continue;
+
+			cmd.erase(i + 2);
+			cmd.erase(i + 1);
+		}
+	}
 }
 
 

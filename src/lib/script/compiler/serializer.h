@@ -106,6 +106,8 @@ struct Serializer
 	void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret);
 	void AddFunctionIntro(Function *f);
 
+	void SimplifyIfStatements();
+
 	void cmd_list_out();
 
 	void add_reg_channel(int reg, int first, int last);

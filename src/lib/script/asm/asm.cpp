@@ -3172,7 +3172,7 @@ void InstructionWithParamsList::ShrinkJumps(void *oc, int ocs)
 
 	// try shrinking
 	foreachi(InstructionWithParams &iwp, *this, i){
-		if ((iwp.inst == inst_jmp) || (iwp.inst == inst_jz) || (iwp.inst == inst_jnz)){
+		if ((iwp.inst == inst_jmp) || (iwp.inst == inst_jz) || (iwp.inst == inst_jnz) || (iwp.inst == inst_jl) || (iwp.inst == inst_jnl) || (iwp.inst == inst_jle) || (iwp.inst == inst_jnle)){
 			if (iwp.p1.is_label){
 				int target = label[iwp.p1.value].InstNo;
 
