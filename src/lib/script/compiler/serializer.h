@@ -107,6 +107,8 @@ struct Serializer
 	void AddFunctionIntro(Function *f);
 
 	void SimplifyIfStatements();
+	void SimplifyFloatStore();
+	void TryMergeTempVars();
 
 	void cmd_list_out();
 

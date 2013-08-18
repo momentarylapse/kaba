@@ -2646,8 +2646,11 @@ void Serializer::SerializeFunction(Function *f)
 
 	// function
 	SerializeBlock(f->block, 0);
+	ScanTempVarUsage();
 
 	SimplifyIfStatements();
+	TryMergeTempVars();
+	SimplifyFloatStore();
 
 	if (script->syntax->FlagShow)
 		cmd_list_out();
@@ -2704,8 +2707,47 @@ void Serializer::SimplifyIfStatements()
 			else
 				continue;
 
-			cmd.erase(i + 2);
-			cmd.erase(i + 1);
+			remove_cmd(i + 2);
+			remove_cmd(i + 1);
+		}
+	}
+}
+
+void Serializer::TryMergeTempVars()
+{
+	return;
+	for (int i=0;i<cmd.num;i++)
+		if (cmd[i].inst == Asm::inst_mov)
+			if ((cmd[i].p1.kind == KindVarTemp) && (cmd[i].p2.kind == KindVarTemp)){
+				int v1 = (long)cmd[i].p1.p;
+				int v2 = (long)cmd[i].p2.p;
+				if ((temp_var[v1].first == i) && (temp_var[v2].last == i)){
+					// swap v1 -> v2
+					for (int j=i+1;j<=temp_var[v1].last;j++){
+						if (((cmd[j].p1.kind == KindVarTemp) || (cmd[j].p1.kind == KindDerefVarTemp)) && ((long)cmd[j].p1.p == v1))
+							cmd[j].p1.p = (char*)(long)v2;
+						if (((cmd[j].p2.kind == KindVarTemp) || (cmd[j].p2.kind == KindDerefVarTemp)) && ((long)cmd[j].p2.p == v1))
+							cmd[j].p2.p = (char*)(long)v2;
+					}
+					temp_var[v2].last = temp_var[v1].last;
+				}
+				remove_cmd(i);
+				remove_temp_var(v1);
+			}
+}
+
+void Serializer::SimplifyFloatStore()
+{
+	for (int i=0;i<cmd.num - 1;i++){
+		if ((cmd[i].inst == Asm::inst_fstp) && (cmd[i+1].inst == Asm::inst_mov)){
+			if (cmd[i].p1.kind == KindVarTemp){
+				int v = (long)cmd[i].p1.p;
+				if ((temp_var[v].first == i) && (temp_var[v].last == i+1)){
+					cmd[i].p1 = cmd[i+1].p1;
+					remove_cmd(i + 1);
+					remove_temp_var(v);
+				}
+			}
 		}
 	}
 }
@@ -2889,7 +2931,7 @@ void Serializer::Assemble(char *Opcode, int &OpcodeSize)
 	for (int i=0;i<cmd.num;i++){
 
 		if (cmd[i].inst == inst_marker){
-			//msg_write("marker _kaba_" + i2s(cmd[i].p1.kind));
+			//msg_write("marker _kaba_" + i2s((long)cmd[i].p1.p));
 			list->add_label("_kaba_" + i2s((long)cmd[i].p1.p), true);
 		}else if (cmd[i].inst == inst_asm){
 			AddAsmBlock(list, script);
