@@ -44,12 +44,12 @@ void SIAddPackageHui()
 	add_package("hui", false);
 	
 	Type*
-	TypeHuiMenu		= add_type  ("Menu",	0);
+	TypeHuiMenu		= add_type  ("Menu",  sizeof(HuiMenu));
 	Type*
-	TypeHuiMenuP	= add_type_p("menu",		TypeHuiMenu);
+	TypeHuiMenuP	= add_type_p("Menu*", TypeHuiMenu);
 	Type*
 	TypeHuiWindow	= add_type  ("Window", sizeof(HuiWindow));
-	TypeHuiWindowP	= add_type_p("window",	TypeHuiWindow);
+	TypeHuiWindowP	= add_type_p("Window*",	TypeHuiWindow);
 	Type*
 	TypeHuiNixWindow= add_type  ("NixWindow", sizeof(HuiWindow));
 	Type*
@@ -57,15 +57,15 @@ void SIAddPackageHui()
 	Type*
 	TypeHuiFixedDialog= add_type  ("FixedDialog", sizeof(HuiWindow));
 	Type*
-	TypeHuiEvent	= add_type  ("Event",		0);
+	TypeHuiEvent	= add_type  ("Event", 0);
 	Type*
-	TypeHuiEventP	= add_type_p("event",	TypeHuiEvent);
+	TypeHuiEventP	= add_type_p("Event*", TypeHuiEvent);
 	Type*
-	TypeHuiPainter	= add_type  ("Painter",	0);
+	TypeHuiPainter	= add_type  ("Painter", 0);
 	Type*
-	TypeHuiPainterP	= add_type_p("painter",	TypeHuiPainter);
+	TypeHuiPainterP	= add_type_p("Painter*", TypeHuiPainter);
 	Type*
-	TypeHuiTimer	= add_type  ("Timer",	0);
+	TypeHuiTimer	= add_type  ("Timer", 0);
 
 	
 	add_func("GetKeyName",									TypeString,	hui_p(&HuiGetKeyName));

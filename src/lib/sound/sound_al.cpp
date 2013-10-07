@@ -30,6 +30,8 @@
 	#include <AL/alc.h>
 #endif
 
+extern Array<Sound*> Sounds;
+extern Array<Music*> Musics;
 
 
 struct sSmallAudio
@@ -51,7 +53,7 @@ ALCcontext *al_context = NULL;
 
 void SoundInit()
 {
-	msg_db_r("SoundInit", 0);
+	msg_db_f("SoundInit", 0);
 
 	al_dev = alcOpenDevice(NULL);
 	if (al_dev){
@@ -68,13 +70,11 @@ void SoundInit()
 	//bool ok = alutInit(NULL, 0);
 	if (!ok)
 		msg_error("sound init (openal)");
-
-	msg_db_l(0);
 }
 
 void SoundExit()
 {
-	msg_db_r("SoundExit", 1);
+	msg_db_f("SoundExit", 1);
 	SoundReset();
 	if (al_context)
 		alcDestroyContext(al_context);
@@ -83,12 +83,11 @@ void SoundExit()
 		alcCloseDevice(al_dev);
 	al_dev = NULL;
 //	alutExit();
-	msg_db_l(1);
 }
 
-int SoundLoad(const string &filename)
+Sound *SoundLoad(const string &filename)
 {
-	msg_db_r("SoundLoad", 1);
+	msg_db_f("SoundLoad", 1);
 	int id = -1;
 
 	// cached?
@@ -104,30 +103,11 @@ int SoundLoad(const string &filename)
 	sAudioFile af;
 	if (cached < 0)
 		af = load_sound_file(SoundDir + filename);
+
+	Sound *s = new Sound;
 	
 	if (((af.channels == 1) && (af.buffer)) || (cached >= 0)){
-
-		// get data structure
-		sSound *s = NULL;
-		for (int i=0;i<Sound.num;i++)
-			if (!Sound[i].Used){
-				s = &Sound[i];
-				id = i;
-				break;
-			}
-		if (!s){
-			id = Sound.num;
-			sSound ss;
-			Sound.add(ss);
-			s = &Sound.back();
-		}
 		
-		s->Used = true;
-		s->Suicidal = false;
-		s->Pos = v_0;
-		s->Vel = v_0;
-		s->Volume = 1;
-		s->Speed = 1;
 		alGenSources(1, &s->al_source);
 		if (cached >= 0){
 			s->al_buffer = SmallAudioCache[cached].al_buffer;
@@ -158,33 +138,47 @@ int SoundLoad(const string &filename)
 	}
 	if ((af.buffer) && (cached < 0))
 	    delete[](af.buffer);
-	msg_db_l(1);
-	return id;
+	return s;
 }
 
 
-void SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop)
+Sound *SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop)
 {
-	int id = SoundLoad(filename);
-	if (id >= 0){
-		sSound *s = &Sound[id];
-		s->Suicidal = true;
-		SoundSetData(id, pos, v_0, min_dist, max_dist, speed, volume);
-		SoundPlay(id, loop);
-	}
+	Sound *s = SoundLoad(filename);
+	s->Suicidal = true;
+	s->SetData(pos, v_0, min_dist, max_dist, speed, volume);
+	s->Play(loop);
+	return s;
 }
 
-void SoundDelete(int index)
+Sound::Sound()
 {
-	if (!SoundUsable(index))
-		return;
-	SoundStop(index);
-	Sound[index].Used = false;
+	Suicidal = false;
+	Pos = v_0;
+	Vel = v_0;
+	Volume = 1;
+	Speed = 1;
+	al_source = 0;
+	al_buffer = 0;
+	Sounds.add(this);
+}
+
+Sound::~Sound()
+{
+	Stop();
 	for (int i=0;i<SmallAudioCache.num;i++)
-		if (Sound[index].al_buffer == SmallAudioCache[i].al_buffer)
+		if (al_buffer == SmallAudioCache[i].al_buffer)
 			SmallAudioCache[i].ref_count --;
-	//alDeleteBuffers(1, &Sound[index].al_buffer);
-	alDeleteSources(1, &Sound[index].al_source);
+	//alDeleteBuffers(1, &al_buffer);
+	alDeleteSources(1, &al_source);
+	for (int i=0;i<Sounds.num;i++)
+		if (Sounds[i] == this)
+			Sounds.erase(i);
+}
+
+void Sound::__delete__()
+{
+	this->~Sound();
 }
 
 void SoundClearSmallCache()
@@ -194,63 +188,52 @@ void SoundClearSmallCache()
 	SmallAudioCache.clear();
 }
 
-void SoundPlay(int index, bool repeat)
+void Sound::Play(bool loop)
 {
-	if (!SoundUsable(index))
-		return;
-	alSourcei (Sound[index].al_source, AL_LOOPING, repeat);
-	alSourcePlay(Sound[index].al_source);
+	alSourcei(al_source, AL_LOOPING, loop);
+	alSourcePlay(al_source);
 }
 
-void SoundStop(int index)
+void Sound::Stop()
 {
-	if (!SoundUsable(index))
-		return;
-	alSourceStop(Sound[index].al_source);
+	alSourceStop(al_source);
 }
 
-void SoundPause(int index, bool pause)
+void Sound::Pause(bool pause)
 {
-	if (!SoundUsable(index))
-		return;
 	int state;
-	alGetSourcei(Sound[index].al_source, AL_SOURCE_STATE, &state);
+	alGetSourcei(al_source, AL_SOURCE_STATE, &state);
 	if ((pause) && (state == AL_PLAYING))
-		alSourcePause(Sound[index].al_source);
+		alSourcePause(al_source);
 	else if ((!pause) && (state == AL_PAUSED))
-		alSourcePlay(Sound[index].al_source);
+		alSourcePlay(al_source);
 }
 
-bool SoundIsPlaying(int index)
+bool Sound::IsPlaying()
 {
-	if (!SoundUsable(index))
-		return false;
 	int state;
-	alGetSourcei(Sound[index].al_source, AL_SOURCE_STATE, &state);
+	alGetSourcei(al_source, AL_SOURCE_STATE, &state);
 	return (state == AL_PLAYING);
 }
 
-bool SoundEnded(int index)
+bool Sound::Ended()
 {
-	return !SoundIsPlaying(index); // TODO... (paused...)
+	return !IsPlaying(); // TODO... (paused...)
 }
 
-void SoundSetData(int index, const vector &pos, const vector &vel, float min_dist, float max_dist, float speed, float volume)
+void Sound::SetData(const vector &pos, const vector &vel, float min_dist, float max_dist, float speed, float volume)
 {
-	if (SoundUsable(index)){
-		sSound *s = &Sound[index];
-		s->Pos = pos;
-		s->Vel = vel;
-		s->Volume = volume;
-		s->Speed = speed;
-		alSourcef (s->al_source, AL_PITCH,    s->Speed);
-		alSourcef (s->al_source, AL_GAIN,     s->Volume * VolumeSound);
-		alSource3f(s->al_source, AL_POSITION, s->Pos.x, s->Pos.y, s->Pos.z);
-		alSource3f(s->al_source, AL_VELOCITY, s->Vel.x, s->Vel.y, s->Vel.z);
-		//alSourcei (s->al_source, AL_LOOPING,  false);
-		alSourcef (s->al_source, AL_REFERENCE_DISTANCE, min_dist);
-		alSourcef (s->al_source, AL_MAX_DISTANCE, max_dist);
-	}
+	Pos = pos;
+	Vel = vel;
+	Volume = volume;
+	Speed = speed;
+	alSourcef (al_source, AL_PITCH,    Speed);
+	alSourcef (al_source, AL_GAIN,     Volume * VolumeSound);
+	alSource3f(al_source, AL_POSITION, Pos.x, Pos.y, Pos.z);
+	alSource3f(al_source, AL_VELOCITY, Vel.x, Vel.y, Vel.z);
+	//alSourcei (al_source, AL_LOOPING,  false);
+	alSourcef (al_source, AL_REFERENCE_DISTANCE, min_dist);
+	alSourcef (al_source, AL_MAX_DISTANCE, max_dist);
 }
 
 void SoundSetListener(const vector &pos, const vector &ang, const vector &vel, float v_sound)
@@ -273,64 +256,46 @@ void SoundSetListener(const vector &pos, const vector &ang, const vector &vel, f
 	alSpeedOfSound(v_sound);
 }
 
-bool stream(int buf, sAudioStream *as)
+bool sAudioStream::stream(int buf)
 {
-	msg_db_r("stream", 1);
-	if (as->state != StreamStateReady){
-		msg_db_l(1);
+	msg_db_f("stream", 1);
+	if (state != StreamStateReady)
 		return false;
-	}
-	load_sound_step(as);
-	if (as->channels == 2){
-		if (as->bits == 8)
-			alBufferData(buf, AL_FORMAT_STEREO8, as->buffer, as->buf_samples * 2, as->freq);
-		else if (as->bits == 16)
-			alBufferData(buf, AL_FORMAT_STEREO16, as->buffer, as->buf_samples * 4, as->freq);
+	load_sound_step(this);
+	if (channels == 2){
+		if (bits == 8)
+			alBufferData(buf, AL_FORMAT_STEREO8, buffer, buf_samples * 2, freq);
+		else if (bits == 16)
+			alBufferData(buf, AL_FORMAT_STEREO16, buffer, buf_samples * 4, freq);
 	}else{
-		if (as->bits == 8)
-			alBufferData(buf, AL_FORMAT_MONO8, as->buffer, as->buf_samples, as->freq);
-		else if (as->bits == 16)
-			alBufferData(buf, AL_FORMAT_MONO16, as->buffer, as->buf_samples * 2, as->freq);
+		if (bits == 8)
+			alBufferData(buf, AL_FORMAT_MONO8, buffer, buf_samples, freq);
+		else if (bits == 16)
+			alBufferData(buf, AL_FORMAT_MONO16, buffer, buf_samples * 2, freq);
 	}
-	msg_db_l(1);
 	return true;
 }
 
-int MusicLoad(const string &filename)
+Music *MusicLoad(const string &filename)
 {
-	msg_db_r("load music", 0);
-	int channels, bits, samples, freq;
+	msg_db_f("load music", 0);
 	msg_write(SoundDir + filename);
 	int id = -1;
 	sAudioStream as = load_sound_start(SoundDir + filename);
 
+	Music *m = new Music();
+
 	if (as.state == StreamStateReady){
 
-		sMusic *m = NULL;
-		for (int i=0;i<Music.num;i++)
-			if (!Music[i].Used){
-				m = &Music[i];
-				id = i;
-				break;
-			}
-		if (!m){
-			id = Music.num;
-			sMusic mm;
-			Music.add(mm);
-			m = &Music.back();
-		}
-		m->Used = true;
-		m->Volume = 1;
-		m->Speed = 1;
 		alGenSources(1, &m->al_source);
 		alGenBuffers(2, m->al_buffer);
 		m->stream = as;
 
 		// start streaming
 		int num_buffers = 0;
-		if (stream(m->al_buffer[0], &as))
+		if (as.stream(m->al_buffer[0]))
 			num_buffers ++;
-		if (stream(m->al_buffer[1], &as))
+		if (as.stream(m->al_buffer[1]))
 			num_buffers ++;
 		alSourceQueueBuffers(m->al_source, num_buffers, m->al_buffer);
 
@@ -340,112 +305,114 @@ int MusicLoad(const string &filename)
 		alSourcei(m->al_source, AL_LOOPING,         false);
 		alSourcei(m->al_source, AL_SOURCE_RELATIVE, AL_TRUE);
 	}
-	msg_db_l(0);
-	return id;
+	return m;
 }
 
-void MusicDelete(int index)
+Music::Music()
 {
-	if (!MusicUsable(index))
-		return;
-	MusicStop(index);
-	alSourceUnqueueBuffers(Music[index].al_source, 2, Music[index].al_buffer);
-	load_sound_end(&Music[index].stream);
-	alDeleteBuffers(2, Music[index].al_buffer);
-	alDeleteSources(1, &Music[index].al_source);
-	Music[index].Used = false;
+	Volume = 1;
+	Speed = 1;
+	al_source = 0;
+	al_buffer[0] = 0;
+	al_buffer[1] = 0;
+	Musics.add(this);
 }
 
-void MusicPlay(int index, bool repeat)
+Music::~Music()
 {
-	if (!MusicUsable(index))
-		return;
-	sMusic *m = &Music[index];
-	//alSourcei   (m->al_source, AL_LOOPING, repeat);
-	alSourcePlay(m->al_source);
-	alSourcef(m->al_source, AL_GAIN, m->Volume * VolumeMusic);
+	Stop();
+	alSourceUnqueueBuffers(al_source, 2, al_buffer);
+	load_sound_end(&stream);
+	alDeleteBuffers(2, al_buffer);
+	alDeleteSources(1, &al_source);
+	for (int i=0;i<Musics.num;i++)
+		if (Musics[i] == this)
+			Musics.erase(i);
 }
 
-void MusicSetRate(int index,float rate)
+void Music::__delete__()
+{
+	this->~Music();
+}
+
+void Music::Play(bool loop)
+{
+	//alSourcei   (al_source, AL_LOOPING, loop);
+	alSourcePlay(al_source);
+	alSourcef(al_source, AL_GAIN, Volume * VolumeMusic);
+}
+
+void Music::SetRate(float rate)
 {
 }
 
-void MusicStop(int index)
+void Music::Stop()
 {
-	if (!MusicUsable(index))
-		return;
-	alSourceStop(Music[index].al_source);
+	alSourceStop(al_source);
 }
 
-void MusicPause(int index,bool pause)
+void Music::Pause(bool pause)
 {
-	if (!MusicUsable(index))
-		return;
 	int state;
-	alGetSourcei(Music[index].al_source, AL_SOURCE_STATE, &state);
+	alGetSourcei(al_source, AL_SOURCE_STATE, &state);
 	if ((pause) && (state == AL_PLAYING))
-		alSourcePause(Music[index].al_source);
+		alSourcePause(al_source);
 	else if ((!pause) && (state == AL_PAUSED))
-		alSourcePlay(Music[index].al_source);
+		alSourcePlay(al_source);
 }
 
-bool MusicIsPlaying(int index)
+bool Music::IsPlaying()
 {
-	if (!MusicUsable(index))
-		return false;
 	int state;
-	alGetSourcei(Music[index].al_source, AL_SOURCE_STATE, &state);
+	alGetSourcei(al_source, AL_SOURCE_STATE, &state);
 	return (state == AL_PLAYING);
 }
 
-bool MusicEnded(int index)
+bool Music::Ended()
 {
-	return !MusicIsPlaying(index);
+	return !IsPlaying();
 }
 
-void MusicStep(int index)
+void Music::Iterate()
 {
-	//if (!MusicIsPlaying(index))
-	if (!MusicUsable(index))
-		return;
-	msg_db_r("MusicStep", 1);
-	sMusic *m = &Music[index];
-	alSourcef(m->al_source, AL_GAIN, m->Volume * VolumeMusic);
+	msg_db_f("MusicStep", 1);
+	alSourcef(al_source, AL_GAIN, Volume * VolumeMusic);
 	int processed;
-	alGetSourcei(m->al_source, AL_BUFFERS_PROCESSED, &processed);
+	alGetSourcei(al_source, AL_BUFFERS_PROCESSED, &processed);
 	while(processed --){
 		ALuint buf;
-		alSourceUnqueueBuffers(m->al_source, 1, &buf);
-		if (stream(buf, &m->stream))
-			alSourceQueueBuffers(m->al_source, 1, &buf);
+		alSourceUnqueueBuffers(al_source, 1, &buf);
+		if (stream.stream(buf))
+			alSourceQueueBuffers(al_source, 1, &buf);
 	}
-	msg_db_l(1);
 }
 
 #else
 
 void SoundInit(){}
 void SoundExit(){}
-int SoundLoad(const string &filename){ return -1; }
-void SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop){}
-void SoundDelete(int index){}
+Sound* SoundLoad(const string &filename){ return NULL; }
+Sound* SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop){ return NULL; }
+Sound::Sound(){}
+Sound::~Sound(){}
+void Sound::__delete__(){}
 void SoundClearSmallCache(){}
-void SoundPlay(int index, bool repeat){}
-void SoundStop(int index){}
-void SoundPause(int index, bool pause){}
-bool SoundIsPlaying(int index){ return false; }
-bool SoundEnded(int index){ return false; }
-void SoundSetData(int index, const vector &pos, const vector &vel, float min_dist, float max_dist, float speed, float volume){}
+void Sound::Play(bool repeat){}
+void Sound::Stop(){}
+void Sound::Pause(bool pause){}
+bool Sound::IsPlaying(){ return false; }
+bool Sound::Ended(){ return false; }
+void Sound::SetData(const vector &pos, const vector &vel, float min_dist, float max_dist, float speed, float volume){}
 void SoundSetListener(const vector &pos, const vector &ang, const vector &vel, float v_sound){}
-int MusicLoad(const string &filename){ return -1; }
-void MusicDelete(int index){}
-void MusicPlay(int index, bool repeat){}
-void MusicSetRate(int index,float rate){}
-void MusicStop(int index){}
-void MusicPause(int index,bool pause){}
-bool MusicIsPlaying(int index){ return false; }
-bool MusicEnded(int index){ return false; }
-void MusicStep(int index){}
+Music *MusicLoad(const string &filename){ return NULL; }
+Music::~Music(){}
+void Music::Play(bool repeat){}
+void Music::SetRate(float rate){}
+void Music::Stop(){}
+void Music::Pause(bool pause){}
+bool Music::IsPlaying(){ return false; }
+bool Music::Ended(){ return false; }
+void Music::Iterate(){}
 
 #endif
 

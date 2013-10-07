@@ -19,52 +19,32 @@
 
 string SoundDir;
 
-Array<sSound> Sound;
-Array<sMusic> Music;
-void MusicStep(int index);
+Array<Sound*> Sounds;
+Array<Music*> Musics;
 
 float VolumeMusic = 1.0f, VolumeSound = 1.0f;
 
 void SoundCalcMove()
 {
-	msg_db_r("SoundCalcMove", 1);
-	for (int i=0;i<Sound.num;i++)
-		if (SoundUsable(i))
-			if (Sound[i].Suicidal)
-				if (SoundEnded(i))
-					SoundDelete(i);
-	for (int i=0;i<Music.num;i++)
-		MusicStep(i);
-	msg_db_l(1);
+	msg_db_f("SoundCalcMove", 1);
+	for (int i=Sounds.num-1;i>=0;i--)
+			if (Sounds[i]->Suicidal)
+				if (Sounds[i]->Ended())
+					delete(Sounds[i]);
+	for (int i=0;i<Musics.num;i++)
+		Musics[i]->Iterate();
 }
 
 void SoundReset()
 {
-	msg_db_r("SoundReset", 1);
-	for (int i=0;i<Sound.num;i++)
-		SoundDelete(i);
-	for (int i=0;i<Music.num;i++)
-		MusicDelete(i);
+	msg_db_f("SoundReset", 1);
+	for (int i=Sounds.num-1;i>=0;i--)
+		delete(Sounds[i]);
+	Sounds.clear();
+	for (int i=Musics.num-1;i>=0;i--)
+		delete(Musics[i]);
+	Musics.clear();
 	SoundClearSmallCache();
-	msg_db_l(1);
-}
-
-bool SoundUsable(int index)
-{
-	if ((index < 0) || (index >= Sound.num))
-		return false;
-	if (Sound[index].Used)
-		return true;
-	return false;
-}
-
-bool MusicUsable(int index)
-{
-	if ((index < 0) || (index >= Music.num))
-		return false;
-	if (Music[index].Used)
-		return true;
-	return false;
 }
 
 sAudioFile EmptyAudioFile = {0, 0, 0, 0, NULL};
@@ -125,22 +105,19 @@ void load_sound_end(sAudioStream *as)
 
 sAudioFile load_wave_file(const string &filename)
 {
-	msg_db_r("load_wave_file", 1);
+	msg_db_f("load_wave_file", 1);
 	sAudioFile r;
 	r.buffer = NULL;
 //	ProgressStatus(_("lade wave"), 0);
 	CFile *f = FileOpenSilent(filename);
-	if (!f){
-		msg_db_l(1);
+	if (!f)
 		return r;
-	}
 	char *data = new char[f->GetSize()];
 	f->SetBinaryMode(true);
 	char header[44];
 	f->ReadBuffer(header, 44);
 	if ((header[0] != 'R') or (header[1] != 'I') or (header[2] != 'F') or (header[3] != 'F')){
 		msg_error("wave file does not start with \"RIFF\"");
-		msg_db_l(1);
 		return r;
 	}
 	/*if (*(int*)&header[4] != f->GetSize())
@@ -148,12 +125,10 @@ sAudioFile load_wave_file(const string &filename)
 		// sometimes 0x2400ff7f*/
 	if ((header[8] != 'W') or (header[9] != 'A') or (header[10] != 'V') or (header[11] != 'E') or (header[12] != 'f') or (header[13] != 'm') or (header[14] != 't') or (header[15] != ' ')){
 		msg_error("\"WAVEfmt \" expected in wave file");
-		msg_db_l(1);
 		return r;
 	}
 	if ((*(int*)&header[16] != 16) or (*(short*)&header[20] != 1)){
 		msg_write("wave file does not have format 16/1");
-		msg_db_l(1);
 		return r;
 	}
 	r.channels = *(short*)&header[22];
@@ -163,7 +138,6 @@ sAudioFile load_wave_file(const string &filename)
 	int byte_per_sample = (r.bits / 8) * r.channels;
 	if ((header[36] != 'd') or (header[37] != 'a') or (header[38] != 't') or (header[39] != 'a')){
 		msg_error("\"data\" expected in wave file");
-		msg_db_l(1);
 		return r;
 	}
 	int size = *(int*)&header[40];
@@ -197,7 +171,6 @@ sAudioFile load_wave_file(const string &filename)
 	FileClose(f);
 	r.buffer = data;
 	
-	msg_db_l(1);
 	return r;
 }
 
@@ -208,13 +181,12 @@ char ogg_buffer[4096];
 
 sAudioFile load_ogg_file(const string &filename)
 {
-	msg_db_r("load_ogg_file", 1);
+	msg_db_f("load_ogg_file", 1);
 	sAudioFile r = EmptyAudioFile;
 	OggVorbis_File vf;
 	
 	if (ov_fopen((char*)filename.c_str(), &vf)){
 		msg_error("ogg: ov_fopen failed");
-		msg_db_l(1);
 		return r;
 	}
 	vorbis_info *vi = ov_info(&vf, -1);
@@ -243,7 +215,6 @@ sAudioFile load_ogg_file(const string &filename)
 	ov_clear(&vf);
 	r.samples = read / bytes_per_sample;
 	r.buffer = data;
-	msg_db_l(1);
 	return r;
 }
 
@@ -259,7 +230,6 @@ sAudioStream load_ogg_start(const string &filename)
 	if (ov_fopen((char*)filename.c_str(), (OggVorbis_File*)r.vf)){
 		r.state = StreamStateError;
 		msg_error("ogg: ov_fopen failed");
-		msg_db_l(1);
 		return r;
 	}
 	vorbis_info *vi = ov_info((OggVorbis_File*)r.vf, -1);
@@ -362,11 +332,10 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 
 void SoundSaveFile(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
 {
-	msg_db_r("saving sound file", 0);
+	msg_db_f("saving sound file", 0);
 	string ext = filename.extension();
 	if (ext == "wav")
 		save_wave_file(filename, data_r, data_l, freq, channels, bits);
 	else
 		msg_error("unhandled file extension: " + ext);
-	msg_db_l(0);
 }

@@ -121,17 +121,14 @@ void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 
 	_HuiClosedWindow_.clear();
 
-	used_by_nix = false;
 	is_resizable = ((_mode & HuiWinModeResizable) > 0);
 	border_width = 5;
 	allowed = true;
 	allow_keys = true;
 	parent = _root;
-	terror_child = NULL;
+	main_input_control = NULL;
 	if (parent){
 		parent->allowed = _allow_root;
-		if (!parent->allowed)
-			parent->terror_child = this;
 		parent->sub_window.add(this);
 	}
 	menu = popup = NULL;
@@ -142,6 +139,7 @@ void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 	toolbar[HuiToolbarBottom] = new HuiToolbar(this);
 	input.reset();
 	tab_creation_page = -1;
+	root_control = NULL;
 
 	id = "";
 	num_float_decimals = 3;
@@ -164,9 +162,11 @@ void HuiWindow::_CleanUp_()
 	for (int i=0;i<4;i++)
 		delete(toolbar[i]);
 
-	for (int i=0;i<control.num;i++)
-		delete(control[i]);
-	control.clear();
+	while (control.num > 0){
+		HuiControl *c = control[0];
+		control.erase(0);
+		delete(c);
+	}
 	id.clear();
 	cur_id.clear();
 	event.clear();
@@ -206,6 +206,7 @@ void HuiWindow::SetID(const string &_id)
 // align window relative to another window (like..."top right corner")
 void HuiWindow::SetPositionSpecial(HuiWindow *win,int mode)
 {
+#if 0
 	irect rp=win->GetOuterior();
 	irect ro=GetOuterior();
 	int x=ro.x1,y=ro.y1;
@@ -218,6 +219,7 @@ void HuiWindow::SetPositionSpecial(HuiWindow *win,int mode)
 	if ((mode & HuiBottom)>0)
 		y=rp.y2 - (ro.y2-ro.y1) -2;
 	SetPosition(x,y);
+#endif
 }
 
 void HuiWindow::SetBorderWidth(int width)
@@ -320,6 +322,13 @@ void HuiWindow::_EventMX(const string &id, const string &msg, HuiEventHandler *h
 	event.add(e);
 }
 
+void HuiWindow::RemoveEventHandlers(HuiEventHandler *handler)
+{
+	for (int i=event.num-1;i>=0;i--)
+		if (event[i].function.has_handler(handler))
+			event.erase(i);
+}
+
 bool HuiWindow::_SendEvent_(HuiEvent *e)
 {
 	if (!allow_input)
@@ -329,13 +338,8 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 	//msg_write(e->message);
 	HuiCurWindow = this;
 	e->win = this;
-	if (e->id.num > 0){
-		e->mx = input.area_x;
-		e->my = input.area_y;
-	}else{
-		e->mx = input.x;
-		e->my = input.y;
-	}
+	e->mx = input.x;
+	e->my = input.y;
 	e->dx = input.dx;
 	e->dy = input.dy;
 	e->dz = input.dz;
@@ -368,6 +372,7 @@ bool HuiWindow::_SendEvent_(HuiEvent *e)
 		foreach(HuiClosedWindow &cw, _HuiClosedWindow_)
 			if (cw.win == this)
 				return sent;
+		_foreach_it_.update();
 	}
 
 	// reset
@@ -428,6 +433,14 @@ void HuiWindowAddControl(HuiWindow *win, const string &type, const string &title
 		win->AddRadioButton(title, x, y, width, height, id);
 	else if (type == "ToggleButton")
 		win->AddToggleButton(title, x, y, width, height, id);
+	else if (type == "Expander")
+		win->AddExpander(title, x, y, width, height, id);
+	else if (type == "Scroller")
+		win->AddScroller(title, x, y, width, height, id);
+	else if (type == "Paned")
+		win->AddPaned(title, x, y, width, height, id);
+	else if (type == "Separator")
+		win->AddSeparator(title, x, y, width, height, id);
 }
 
 void HuiWindow::FromResource(const string &id)
@@ -708,6 +721,19 @@ bool HuiWindow::IsExpanded(const string &_id, int row)
 	return false;
 }
 
+void HuiWindow::DeleteControl(const string &_id)
+{
+	for(int i=control.num-1;i>=0;i--)
+		if (control[i]->id == _id)
+			delete(control[i]);
+}
+
+void HuiWindow::SetOptions(const string &_id, const string &options)
+{
+	test_controls(_id, c)
+		c->SetOptions(options);
+}
+
 
 
 
@@ -731,8 +757,9 @@ void HuiFuncClose()
 }
 
 HuiNixWindow::HuiNixWindow(const string& title, int x, int y, int width, int height) :
-	HuiWindow(title, x, y, width, height, NULL, true, HuiWinModeResizable | HuiWinModeNix)
+	HuiWindow(title, x, y, width, height, NULL, true, HuiWinModeResizable)
 {
+	AddDrawingArea("", 0, 0, 0, 0, "nix-area");
 }
 
 void HuiNixWindow::__init_ext__(const string& title, int x, int y, int width, int height)

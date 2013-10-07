@@ -2,7 +2,7 @@
 //#disasm
 
 void main()
-	file f = FileCreate("__test__")
+	File *f = FileCreate("__test__")
 	f.WriteInt(1)
 	FileClose(f)
 

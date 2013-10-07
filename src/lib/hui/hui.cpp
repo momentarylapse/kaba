@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.4.94.0";
+string HuiVersion = "0.5.1.1";
 
 #include <stdio.h>
 #include <signal.h>
@@ -183,7 +183,7 @@ int main(int NumArgs, char *Args[])
 		if (HuiIdleFunction.is_set())
 			HuiIdleFunction.call();
 		else
-			HuiSleep(10);
+			HuiSleep(0.010f);
 		return TRUE;
 	}
 

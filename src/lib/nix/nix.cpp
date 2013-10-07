@@ -12,9 +12,10 @@
 \*----------------------------------------------------------------------------*/
 #include "nix.h"
 #include "nix_common.h"
+#include "../hui/Controls/HuiControl.h"
 
 
-string NixVersion = "0.11.0.1";
+string NixVersion = "0.11.9.0";
 
 
 // libraries (in case Visual C++ is used)
@@ -57,7 +58,7 @@ libraries to link:
 */
 
 
-//#define NIX_GL_IN_WIDGET
+#define NIX_GL_IN_WIDGET
 
 #ifdef OS_WINDOWS
 	#ifdef HUI_API_GTK
@@ -89,6 +90,7 @@ void TestGLError(const char *pos)
 
 // environment
 HuiWindow *NixWindow;
+string NixControlID;
 bool NixUsable,NixDoingEvilThingsToTheDevice;
 
 // things'n'stuff
@@ -313,6 +315,9 @@ XVisualInfo *choose_visual()
 		}
 	}
 
+	HuiControl *c = NixWindow->_GetControl_(NixControlID);
+	GtkWidget *gl_widget = c->widget;
+
 	// ok?
 	if (vi->visualid != gdk_visualid){
 
@@ -331,13 +336,13 @@ XVisualInfo *choose_visual()
 		gtk_widget_realize(NixWindow->gl_widget);*/
 
 		// no ...just apply color map
-		gtk_widget_set_visual(NixWindow->gl_widget, visual);
+		gtk_widget_set_visual(gl_widget, visual);
 	}
 
 	// realize the widget...
-	gtk_widget_show(NixWindow->gl_widget);
-	gtk_widget_realize(NixWindow->gl_widget);
-	gdk_window_invalidate_rect(gtk_widget_get_window(NixWindow->gl_widget), NULL, false);
+	gtk_widget_show(gl_widget);
+	gtk_widget_realize(gl_widget);
+	gdk_window_invalidate_rect(gtk_widget_get_window(gl_widget), NULL, false);
 	gdk_window_process_all_updates();
 
 	// look for the gdk-ish one...
@@ -354,7 +359,7 @@ XVisualInfo *choose_visual()
 			if (value == gdk_visualid){
 				msg_db_m("  -> match!", 1);
 				//msg_write("-----------hurraaaaaaaaaaaaaa");
-				vi->visual = GDK_VISUAL_XVISUAL(gdk_window_get_visual(NixWindow->gl_widget->window));
+				vi->visual = GDK_VISUAL_XVISUAL(gdk_window_get_visual(gl_widget->window));
 				vi->visualid = gdk_visualid;
 			}
 	}*/
@@ -365,7 +370,7 @@ XVisualInfo *choose_visual()
 #endif
 
 
-void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWindow *win)
+void NixInit(const string &api, HuiWindow *win, const string &id)
 {
 	NixUsable = false;
 	if (!msg_inited)
@@ -376,8 +381,7 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWi
 	msg_write("[" + NixVersion + "]");
 	
 	NixWindow = win;
-	/*if (NixWindow)
-		NixWindow->used_by_nix = true;*/
+	NixControlID = id;
 	NixFullscreen = false; // before nix is started, we're hopefully not in fullscreen mode
 
 #ifdef HUI_API_WIN
@@ -455,7 +459,7 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWi
 	NixCullingInverted = false;
 
 	// set the new video mode
-	NixSetVideoMode(api, xres, yres, depth, fullscreen);
+	NixSetVideoMode(api, 640, 480, false);
 	if (NixFatalError != FatalErrorNone){
 		msg_left();
 		return;
@@ -464,14 +468,13 @@ void NixInit(const string &api,int xres,int yres,int depth,bool fullscreen,HuiWi
 
 	// more default values of the engine
 	if (NixWindow){
-		irect r = NixWindow->GetInterior();
-		NixTargetWidth = r.x2 - r.x1;
-		NixTargetHeight = r.y2 - r.y1;
+		NixWindow->_GetControl_(NixControlID)->GetSize(NixTargetWidth, NixTargetHeight);
 	}else{
 		NixTargetWidth = 800;
 		NixTargetHeight = 600;
 	}
 	NixTargetRect = rect(0, (float)NixTargetWidth, 0, (float)NixTargetHeight);
+
 	NixSetCull(CullDefault);
 	NixSetWire(false);
 	NixSetAlpha(AlphaNone);
@@ -548,17 +551,29 @@ void NixReincarnateDeviceObjects()
 }
 
 
+bool nixDevNeedsUpdate = true;
 
-void set_video_mode_gl(int xres, int yres, int depth)
+
+void set_video_mode_gl(int xres, int yres)
 {
+	HuiControl *c = NixWindow->_GetControl_(NixControlID);
+	gtk_widget_set_double_buffered(c->widget, false);
+
+
 	#ifdef OS_WINDOWS
 
 #ifdef NIX_GL_IN_WIDGET
 	// realize the widget...
-	gtk_widget_show(NixWindow->gl_widget);
-	gtk_widget_realize(NixWindow->gl_widget);
-	gdk_window_invalidate_rect(NixWindow->gl_widget->window, NULL, false);
+	gtk_widget_show(c->widget);
+	gtk_widget_realize(c->widget);
+	gdk_window_invalidate_rect(gtk_widget_get_window(c->widget), NULL, false);
 	gdk_window_process_all_updates();
+	
+	/*HuiSleep(1);
+	for (int i=0;i<20;i++)
+		HuiDoSingleMainLoop();
+	HuiSleep(1);*/
+
 #endif
 	
 	bool was_fullscreen = NixFullscreen;
@@ -578,7 +593,7 @@ void set_video_mode_gl(int xres, int yres, int depth)
 		dmScreenSettings.dmSize=sizeof(dmScreenSettings);
 		dmScreenSettings.dmPelsWidth=xres;
 		dmScreenSettings.dmPelsHeight=yres;
-		dmScreenSettings.dmBitsPerPel=depth;
+		dmScreenSettings.dmBitsPerPel=32;
 		dmScreenSettings.dmFields=DM_BITSPERPEL|DM_PELSWIDTH|DM_PELSHEIGHT;
 		ChangeDisplaySettings(&dmScreenSettings,CDS_FULLSCREEN);
 	}
@@ -587,21 +602,28 @@ void set_video_mode_gl(int xres, int yres, int depth)
 								1,						// versions nummer
 								PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
 								PFD_TYPE_RGBA,
-								NixFullscreen?depth:NixDesktopDepth,
+								32,
 								//8, 0, 8, 8, 8, 16, 8, 24,
 								0, 0, 0, 0, 0, 0, 0, 0, 0,
 								0, 0, 0, 0,
-								24,						// 24Bit Z-Buffer
-								1,						// one stencil buffer
+								24,						// 24bit Z-Buffer
+								8,						// 8bit stencil buffer
 								0,						// no "Auxiliary"-buffer
 								PFD_MAIN_PLANE,
 								0, 0, 0, 0 };
 #ifdef HUI_API_WIN
 		hDC = GetDC(NixWindow->hWnd);
 #else
+
+	
+
+
 	NixWindow->hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(NixWindow->window));
+//	msg_write(p2s((HWND)GDK_WINDOW_HWND(gtk_widget_get_window(NixWindow->window))));
+//	msg_write(p2s((HWND)GDK_WINDOW_HWND(gtk_widget_get_window(NixWindow->gl_widget))));
 	#ifdef NIX_GL_IN_WIDGET
-		hDC = GetDC((HWND)gdk_win32_drawable_get_handle(NixWindow->gl_widget->window));
+		//hDC = GetDC((HWND)gdk_win32_drawable_get_handle(NixWindow->gl_widget->window));
+		hDC = GetDC((HWND)GDK_WINDOW_HWND(gtk_widget_get_window(c->widget)));
 	#else
 		hDC = GetDC(NixWindow->hWnd);
 	#endif
@@ -664,7 +686,7 @@ void set_video_mode_gl(int xres, int yres, int depth)
 	attr.border_pixel=0;*/
 	//Window win=GDK_WINDOW_XWINDOW(NixWindow->window->window);
 #endif
-		Window win = GDK_WINDOW_XID(gtk_widget_get_window(NixWindow->gl_widget));
+		Window win = GDK_WINDOW_XID(gtk_widget_get_window(c->widget));
 		context = glXCreateContext(hui_x_display, vi, 0, GL_TRUE);
 		glXMakeCurrent(hui_x_display, win, context);
 
@@ -888,7 +910,7 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 
 }
 
-void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool fullscreen)
+void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 {
 	msg_db_r("setting video mode",0);
 
@@ -898,7 +920,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool full
 	if (NixApiName == "NoApi")
 		fullscreen=false;
 	if (fullscreen){
-		msg_db_m(format("[ %s - fullscreen - %d x %d x %d ]", NixApiName.c_str(), xres, yres, depth).c_str(), 0);
+		msg_db_m(format("[ %s - fullscreen - %d x %d ]", NixApiName.c_str(), xres, yres).c_str(), 0);
 	}else{
 		msg_db_m(format("[ %s - window mode ]", NixApiName.c_str()).c_str(), 0);
 		xres=NixDesktopWidth;
@@ -927,7 +949,9 @@ void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool full
 	NixKillDeviceObjects();
 
 
-	set_video_mode_gl(xres, yres, depth);
+	set_video_mode_gl(xres, yres);
+
+	
 
 	/*			char *ext = (char*)glGetString( GL_EXTENSIONS );
 				if (ext){
@@ -941,6 +965,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool full
 
 
 	NixDoingEvilThingsToTheDevice = false;
+
 	CreateFontGlyphWidth();
 
 	// adjust window for new mode
@@ -969,7 +994,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool full
 	if (NixFullscreen){
 		NixScreenWidth=xres;
 		NixScreenHeight=yres;
-		NixScreenDepth=depth;
+		NixScreenDepth=32;
 	}else{
 		NixScreenWidth			=NixDesktopWidth;
 		NixScreenHeight			=NixDesktopHeight;
@@ -984,7 +1009,10 @@ void NixSetVideoMode(const string &api, int xres, int yres, int depth, bool full
 						SWP_SHOWWINDOW );
 #endif*/
 	}
-
+	
+	NixStart(-1);
+	NixDrawStr(100, 100, "test");
+	NixEnd();
 
 // recreate vertex buffers and textures
 	NixReincarnateDeviceObjects();

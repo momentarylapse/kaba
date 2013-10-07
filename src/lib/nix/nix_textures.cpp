@@ -444,9 +444,12 @@ void NixSetTextures(int *texture, int num_textures)
 
 	// set multitexturing
 	for (int i=0;i<num_textures;i++){
-		if (texture[i] < 0)
-			continue;
 		glActiveTexture(GL_TEXTURE0+i);
+		if (texture[i] < 0){
+			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_TEXTURE_CUBE_MAP);
+			continue;
+		}
 		if (NixTextures[texture[i]].is_cube_map){
 			glEnable(GL_TEXTURE_CUBE_MAP);
 			glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture[i]].glTexture);

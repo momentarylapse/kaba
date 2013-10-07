@@ -24,7 +24,7 @@
 
 namespace Script{
 
-string Version = "0.12.5.2";
+string Version = "0.12.5.3";
 
 //#define ScriptDebug
 
@@ -163,6 +163,24 @@ void DeleteAllScripts(bool even_immortal, bool force)
 	for (int i=0;i<num_ps;i++)
 		msg_write(string2("  fehlt:   %s  %p  (%d)",ppn[i],ppp[i],pps[i]));
 	*/
+}
+
+
+extern Array<Script*> PublicScript;
+
+Type *GetDynamicType(void *p)
+{
+	VirtualTable *pp = *(VirtualTable**)p;
+	foreach(Script *s, PublicScript){
+		foreach(Type *t, s->syntax->Types){
+			if (t->num_virtual > 0){
+				if (t->vtable == pp){
+					return t;
+				}
+			}
+		}
+	}
+	return NULL;
 }
 
 void Script::Load(const string &filename, bool just_analyse)

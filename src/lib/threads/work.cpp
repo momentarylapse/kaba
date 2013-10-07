@@ -88,11 +88,6 @@ bool ThreadedWork::Run(int _total_size, int _partition_size)
 	bool thread_abort = false;
 	while((!all_done) && (!thread_abort)){
 
-/*#ifdef _X_USE_HUI_
-		HuiDoSingleMainLoop();
-		HuiSleep(30);
-#endif*/
-
 		thread_abort = !OnStatus();
 		all_done = true;
 		for (int i=0;i<thread.num;i++)

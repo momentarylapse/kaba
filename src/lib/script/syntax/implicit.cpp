@@ -469,8 +469,6 @@ void SyntaxTree::CreateImplicitArrayAdd(Type *t)
 	t->function.add(cf);
 }
 
-
-
 void SyntaxTree::CreateImplicitFunctions(Type *t, bool relocate_last_function)
 {
 	int num_funcs = Functions.num;
@@ -506,8 +504,15 @@ void SyntaxTree::CreateImplicitFunctions(Type *t, bool relocate_last_function)
 					CreateImplicitComplexConstructor(t);
 		if (!t->GetDestructor())
 			CreateImplicitDestructor(t);
-		if (t->GetFunc("__assign__") < 0)
-			CreateImplicitAssign(t);
+		if (t->GetFunc("__assign__") < 0){
+			// implement only if parent has also done so
+			if (t->parent){
+				if (t->parent->GetFunc("__assign__") >= 0)
+					CreateImplicitAssign(t);
+			}else{
+				CreateImplicitAssign(t);
+			}
+		}
 	}
 
 	if (relocate_last_function && (num_funcs != Functions.num)){
