@@ -1410,9 +1410,13 @@ void SyntaxTree::ParseEnum()
 
 void SyntaxTree::ParseClassFunctionHeader(Type *t, bool as_extern, int virtual_index, bool overwrite)
 {
-	ParseFunctionHeader(t, as_extern);
+	Function *f = ParseFunctionHeader(t, as_extern);
+	int n = -1;
+	foreachi(Function *g, Functions, i)
+		if (f == g)
+			n = i;
 
-	t->AddFunction(this, Functions.num - 1, virtual_index, overwrite);
+	t->AddFunction(this, n, virtual_index, overwrite);
 }
 
 inline bool type_needs_alignment(Type *t)
@@ -1727,7 +1731,7 @@ void Function::Update(Type *class_type)
 	}
 }
 
-void SyntaxTree::ParseFunctionHeader(Type *class_type, bool as_extern)
+Function *SyntaxTree::ParseFunctionHeader(Type *class_type, bool as_extern)
 {
 	msg_db_f("ParseFunctionHeader", 4);
 
@@ -1786,6 +1790,7 @@ void SyntaxTree::ParseFunctionHeader(Type *class_type, bool as_extern)
 			break;
 		Exp.next_line();
 	}
+	return f;
 }
 
 void SyntaxTree::ParseFunctionBody(Function *f)

@@ -161,7 +161,7 @@ public:
 	void ParseImport();
 	void ParseEnum();
 	void ParseClass();
-	void ParseFunctionHeader(Type *class_type, bool as_extern);
+	Function *ParseFunctionHeader(Type *class_type, bool as_extern);
 	void ParseFunctionBody(Function *f);
 	void ParseClassFunctionHeader(Type *t, bool as_extern, int virtual_index, bool overwrite);
 	bool ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line);

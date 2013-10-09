@@ -518,7 +518,7 @@ void SyntaxTree::AddFunctionHeadersForClass(Type *t)
 		add_func_header(this, t, "__assign__", TypeVoid, t, "other");
 	}else if (t->is_array){
 		add_func_header(this, t, "__assign__", TypeVoid, t, "other");
-	}else /*if (!t->is_simple_class())*/{//needs_init){
+	}else if (!t->is_simple_class()){//needs_init){
 		if (!t->GetDefaultConstructor())
 			add_func_header(this, t, "__init__", TypeVoid, TypeVoid, "");
 		if (!t->GetDestructor())
