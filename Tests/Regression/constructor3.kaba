@@ -4,14 +4,14 @@
 class c
 	int x
 	void __init__()
-		self.x = -1
+		x = -1
 		print "init"
 	void __delete__()
 		print "delete"
-		print self.x
+		print x
 	void __assign__(c other)
 		print "assign"
-		self.x = other.x
+		x = other.x
 
 void main()
 	c a[]

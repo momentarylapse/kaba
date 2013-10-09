@@ -1,0 +1,27 @@
+//#show
+//#disasm
+
+class A
+	int i
+	B b[]
+
+class B
+	int j
+	void __init__()
+		j = 24
+
+void main()
+	B b
+	A a
+	a.b.add(b)
+	b.j = 13
+	a.b.add(b)
+	b.j = 4
+	a.b.add(b)
+	forall bb in a.b
+		print bb.j
+	print "main"
+	f()
+	
+void f()
+	print "f"

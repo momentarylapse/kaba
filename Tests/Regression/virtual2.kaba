@@ -1,4 +1,5 @@
 //#show
+//#disasm
 
 class Base
 	virtual void d()

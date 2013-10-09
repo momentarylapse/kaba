@@ -536,8 +536,8 @@ void SIAddPackageX()
 		class_add_element("max",			TypeVector,		GetDAModel(max));
 		class_add_element("test_collisions",	TypeBool,		GetDAModel(test_collisions));
 		class_add_element("allow_shadow",	TypeBool,		GetDAModel(allow_shadow));
-		class_add_func("__init__",				TypeVoid,		x_p(mf(&Model::__init__)));
-		class_add_func_virtual("__delete__",				TypeVoid,		x_p(mf(&Model::__delete__)));
+		class_add_func("__init__", TypeVoid, x_p(mf(&Model::__init__)));
+		class_add_func_virtual("__delete__", TypeVoid, x_p(mf(&Model::__delete__)));
 		class_add_func("AddForce",		TypeVoid,	x_p(mf(&Object::AddForce)));
 			func_add_param("force",		TypeVector);
 			func_add_param("rho",		TypeVector);

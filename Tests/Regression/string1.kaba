@@ -1,3 +1,6 @@
+//#show
+//#disasm
+
 void main()
 	string a = "hallo"
 	a += " Welt - "

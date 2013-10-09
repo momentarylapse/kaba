@@ -370,6 +370,20 @@ void Script::Compiler()
 		}
 	}
 
+// link functions
+	foreach(Asm::WantedLabel &l, functions_to_link){
+		string name = l.Name.substr(10, -1);
+		bool found = false;
+		foreachi(Function *f, syntax->Functions, i)
+			if (f->name == name){
+				*(int*)&Opcode[l.Pos] = (char*)func[i] - (char*)&Opcode[l.Pos + 4];
+				found = true;
+				break;
+			}
+		if (!found)
+			DoErrorLink("could not link function: " + name);
+	}
+
 // link virtual functions into vtables
 	foreach(Type *t, syntax->Types)
 		t->LinkVirtualTable();

@@ -6,7 +6,7 @@
 #include "lib/script/script.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.3.0.0";
+string AppVersion = "0.13.0.0";
 
 
 typedef void main_arg_func(const Array<string>&);

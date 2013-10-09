@@ -1,0 +1,15 @@
+class Test
+	int a, b
+	void __delete__()
+		print "del " + a
+
+void main()
+	Test a[]
+	for int i, 0, 10
+		Test t
+		t.a = i
+		a.add(t)
+	a.remove(3)
+	a.remove(6)
+	forall tt in a
+		print tt.a
