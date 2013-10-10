@@ -722,6 +722,15 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		so(" -var-func");
 		p.p = (char*)link->script->func[link->link_no];
 		p.kind = KindVarGlobal;
+		if (!p.p){
+			if (link->script == script){
+				p.p = (char*)(long)(link->link_no + 0xefef0000);
+				script->function_vars_to_link.add(link->link_no);
+			}else
+				DoErrorLink("could not link function as variable: " + link->script->syntax->Functions[link->link_no]->name);
+			//p.kind = Asm::PKLabel;
+			//p.p = (char*)(long)list->add_label("kaba-func:" + link->script->syntax->Functions[link->link_no]->name, false);
+		}
 	}else if (link->kind == KindMemory){
 		so(" -mem");
 		p.p = (char*)(long)link->link_no;

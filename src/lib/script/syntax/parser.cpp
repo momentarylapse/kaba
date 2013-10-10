@@ -1471,7 +1471,7 @@ void SyntaxTree::ParseClass()
 	int cur_virtual_index = _class->num_virtual;
 
 	// elements
-	for (int num=0;true;num++){
+	for (int num=0;!Exp.end_of_file();num++){
 		Exp.next_line();
 		if (Exp.cur_line->indent <= indent0) //(unindented)
 			break;
