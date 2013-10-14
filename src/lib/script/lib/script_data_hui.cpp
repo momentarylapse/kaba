@@ -135,7 +135,7 @@ void SIAddPackageHui()
 		class_add_func("Activate",										TypeVoid,		mf(&HuiWindow::Activate));
 			func_add_param("id",		TypeInt);
 		class_add_func("IsActive",										TypeVoid,		mf(&HuiWindow::IsActive));
-			func_add_param("recursive",	TypeBool);
+			func_add_param("id",	TypeString);
 		class_add_func("AddButton",										TypeVoid,		mf(&HuiWindow::AddButton));
 			func_add_param("title",		TypeString);
 			func_add_param("x",			TypeInt);
@@ -251,7 +251,7 @@ void SIAddPackageHui()
 			func_add_param("width",		TypeInt);
 			func_add_param("height",	TypeInt);
 			func_add_param("id",		TypeString);
-		class_add_func("AddControlTable",										TypeVoid,		mf(&HuiWindow::AddControlTable));
+		class_add_func("AddGrid",										TypeVoid,		mf(&HuiWindow::AddControlTable));
 			func_add_param("title",		TypeString);
 			func_add_param("x",			TypeInt);
 			func_add_param("y",			TypeInt);
@@ -355,15 +355,13 @@ void SIAddPackageHui()
 		class_add_func_virtual("OnCloseRequest", TypeVoid, mf(&HuiWindow::OnCloseRequest));
 		class_add_func_virtual("OnKeyDown", TypeVoid, mf(&HuiWindow::OnKeyDown));
 		class_add_func_virtual("OnKeyUp", TypeVoid, mf(&HuiWindow::OnKeyUp));
-		class_add_func_virtual("OnResize", TypeVoid, mf(&HuiWindow::OnResize));
-		class_add_func_virtual("OnMove", TypeVoid, mf(&HuiWindow::OnMove));
-		class_add_func_virtual("OnRedraw", TypeVoid, mf(&HuiWindow::OnRedraw));
+		class_add_func_virtual("OnDraw", TypeVoid, mf(&HuiWindow::OnDraw));
 		class_add_func("BeginDraw",								TypeHuiPainterP,		mf(&HuiWindow::BeginDraw));
 			func_add_param("id",		TypeString);
 		class_set_vtable(HuiWindow);
 
 	add_class(TypeHuiNixWindow);
-		TypeHuiNixWindow->DeriveFrom(TypeHuiWindow);
+		TypeHuiNixWindow->DeriveFrom(TypeHuiWindow, false);
 		TypeHuiNixWindow->vtable = TypeHuiWindow->vtable;
 		class_add_func("__init__",		TypeVoid,		mf(&HuiNixWindow::__init_ext__));
 			func_add_param("title",		TypeString);
@@ -371,9 +369,11 @@ void SIAddPackageHui()
 			func_add_param("y",		TypeInt);
 			func_add_param("width",		TypeInt);
 			func_add_param("height",		TypeInt);
+		class_add_func_virtual("__delete__",		TypeVoid,		mf(&HuiWindow::__delete__));
+		class_set_vtable(HuiWindow);
 
 	add_class(TypeHuiDialog);
-		TypeHuiDialog->DeriveFrom(TypeHuiWindow);
+		TypeHuiDialog->DeriveFrom(TypeHuiWindow, false);
 		TypeHuiDialog->vtable = TypeHuiWindow->vtable;
 		class_add_func("__init__",		TypeVoid,		mf(&HuiDialog::__init_ext__));
 			func_add_param("title",		TypeString);
@@ -381,9 +381,11 @@ void SIAddPackageHui()
 			func_add_param("height",		TypeInt);
 			func_add_param("root",		TypeHuiWindowP);
 			func_add_param("allow_root",TypeBool);
+		class_add_func_virtual("__delete__",		TypeVoid,		mf(&HuiWindow::__delete__));
+		class_set_vtable(HuiWindow);
 
 	add_class(TypeHuiFixedDialog);
-		TypeHuiFixedDialog->DeriveFrom(TypeHuiWindow);
+		TypeHuiFixedDialog->DeriveFrom(TypeHuiWindow, false);
 		TypeHuiFixedDialog->vtable = TypeHuiWindow->vtable;
 		class_add_func("__init__",		TypeVoid,		mf(&HuiFixedDialog::__init_ext__));
 			func_add_param("title",		TypeString);
@@ -391,6 +393,8 @@ void SIAddPackageHui()
 			func_add_param("height",		TypeInt);
 			func_add_param("root",		TypeHuiWindowP);
 			func_add_param("allow_root",TypeBool);
+		class_add_func_virtual("__delete__",		TypeVoid,		mf(&HuiWindow::__delete__));
+		class_set_vtable(HuiWindow);
 	
 	add_class(TypeHuiPainter);
 		class_add_element("width",		TypeInt,	GetDAPainter(width));

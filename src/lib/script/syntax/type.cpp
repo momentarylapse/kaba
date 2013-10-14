@@ -88,10 +88,10 @@ bool Type::IsDerivedFrom(Type *root) const
 	return parent->IsDerivedFrom(root);
 }
 
-ClassFunction *Type::GetFunc(const string &name, Type *return_type, int num_params)
+ClassFunction *Type::GetFunc(const string &_name, Type *return_type, int num_params)
 {
 	foreachi(ClassFunction &f, function, i)
-		if ((f.name == name) && (f.return_type == return_type) && (f.param_type.num == num_params))
+		if ((f.name == _name) && (f.return_type == return_type) && (f.param_type.num == num_params))
 			return &f;
 	return NULL;
 }
@@ -237,7 +237,7 @@ void Type::AddFunction(SyntaxTree *s, int func_no, int virtual_index, bool overw
 		function.add(cf);
 }
 
-bool Type::DeriveFrom(Type* root)
+bool Type::DeriveFrom(Type* root, bool increase_size)
 {
 	parent = root;
 	bool found = false;
@@ -249,12 +249,13 @@ bool Type::DeriveFrom(Type* root)
 	if (parent->function.num > 0){
 		// inheritance of functions
 		foreach(ClassFunction &f, parent->function){
-			if ((f.name != "__init__") && (f.name != "__init_comp__") && (f.name != "__delete__") && (f.name != "__assign__"))
+			if ((f.name != "__init__") && (f.name != "__delete__") && (f.name != "__assign__"))
 				function.add(f);
 		}
 		found = true;
 	}
-	size += parent->size;
+	if (increase_size)
+		size += parent->size;
 	num_virtual += parent->num_virtual;
 	return found;
 }
