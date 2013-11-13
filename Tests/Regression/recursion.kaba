@@ -18,7 +18,7 @@ void main()
 	a.b.add(b)
 	b.j = 4
 	a.b.add(b)
-	forall bb in a.b
+	for bb in a.b
 		print bb.j
 	print "main"
 	f()

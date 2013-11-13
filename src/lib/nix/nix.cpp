@@ -15,7 +15,7 @@
 #include "../hui/Controls/HuiControl.h"
 
 
-string NixVersion = "0.11.9.0";
+string NixVersion = "0.12.0.0";
 
 
 // libraries (in case Visual C++ is used)
@@ -120,7 +120,7 @@ bool NixCullingInverted;
 int NixFontHeight=20;
 string NixFontName = "Times New Roman";
 
-int VBTemp;
+NixVertexBuffer *VBTemp;
 
 #ifdef OS_WINDOWS
 	static HMENU hMenu;
@@ -490,7 +490,7 @@ void NixInit(const string &api, HuiWindow *win, const string &id)
 
 	NixTexturesInit();
 
-	VBTemp = NixCreateVB(10240, 1);
+	VBTemp = new NixVertexBuffer(1);
 	NixUsable = true;
 
 	TestGLError("Init post");
@@ -1010,7 +1010,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 #endif*/
 	}
 	
-	NixStart(-1);
+	NixStart();
 	NixDrawStr(100, 100, "test");
 	NixEnd();
 

@@ -10,20 +10,7 @@
 
 string NixShaderDir;
 
-struct NixShader
-{
-	string filename;
-	int glProgram;
-	int reference_count;
-	NixShader()
-	{
-		glProgram = -1;
-		reference_count = 0;
-	}
-};
-
-
-static Array<NixShader> NixShaders;
+static Array<NixShader*> NixShaders;
 
 int NixGLCurrentProgram = 0;
 
@@ -91,7 +78,7 @@ int create_gl_shader(const string &source, int type)
 	return gl_shader;
 }
 
-int NixCreateShader(const string &source)
+NixShader *NixCreateShader(const string &source)
 {
 	string source_vertex = get_inside_of_tag(source, "VertexShader");
 	if (source_vertex.num == 0)
@@ -103,19 +90,19 @@ int NixCreateShader(const string &source)
 	if (source_vertex.num + source_fragment.num == 0){
 		NixShaderError = "no shader tags found (<VertexShader>...</VertexShader> or <FragmentShader>...</FragmentShader>)";
 		msg_error(NixShaderError);
-		return -1;
+		return NULL;
 	}
 
 	int gl_shader_v = create_gl_shader(source_vertex, GL_VERTEX_SHADER);
 	if ((gl_shader_v < 0) && (source_vertex.num > 0))
-		return -1;
+		return NULL;
 	int gl_shader_f = create_gl_shader(source_fragment, GL_FRAGMENT_SHADER);
 	if ((gl_shader_f < 0) && (source_fragment.num > 0))
-		return -1;
+		return NULL;
 
 	int gl_prog = create_empty_shader_program();
 	if (gl_prog < 0)
-		return -1;
+		return NULL;
 
 
 	if (gl_shader_v >= 0){
@@ -140,103 +127,97 @@ int NixCreateShader(const string &source)
 		NixShaderError.resize(size);
 		msg_error("while linking the shader program: " + NixShaderError);
 		msg_left();
-		return -1;
+		return NULL;
 	}
 
-	NixShader *s = NULL;
-	int index;
-	foreachi(NixShader &ss, NixShaders, i)
-		if (ss.glProgram < 0){
-			s = &ss;
-			index = i;
-			break;
-		}
-	if (!s){
-		index = NixShaders.num;
-		NixShaders.resize(NixShaders.num + 1);
-		s = &NixShaders.back();
-	}
-	s->reference_count = 1;
-	s->filename = "-no file-";
+	NixShader *s = new NixShader;
 	s->glProgram = gl_prog;
 	NixShaderError = "";
 
 	TestGLError("CreateShader");
-	return index;
+	return s;
 }
 
-int NixLoadShader(const string &filename)
+NixShader *NixLoadShader(const string &filename)
 {
 	if (filename.num == 0)
-		return -1;
+		return NULL;
 	string fn = NixShaderDir + filename;
-	foreachi(NixShader &s, NixShaders, i)
-		if ((s.filename == fn) && (s.glProgram >= 0)){
-			NixShaders[i].reference_count ++;
-			return i;
+	foreachi(NixShader *s, NixShaders, i)
+		if ((s->filename == fn) && (s->glProgram >= 0)){
+			s->reference_count ++;
+			return s;
 		}
 
 	msg_write("loading shader: " + fn);
 	msg_right();
 
 	string source = FileRead(fn);
-	int shader = NixCreateShader(source);
-	if (shader >= 0)
-		NixShaders[shader].filename = fn;
+	NixShader *shader = NixCreateShader(source);
+	if (shader)
+		shader->filename = fn;
 
 	msg_left();
 	return shader;
 }
 
-void NixUnrefShader(int index)
+NixShader::NixShader()
 {
-	if (index < 0)
-		return;
-	NixShader &s = NixShaders[index];
-	s.reference_count --;
-	if ((s.reference_count <= 0) && (s.glProgram >= 0)){
-		msg_write("delete shader: " + s.filename);
-		glDeleteProgram(s.glProgram);
+	NixShaders.add(this);
+	reference_count = 1;
+	filename = "-no file-";
+	glProgram = -1;
+}
+
+NixShader::~NixShader()
+{
+	msg_write("delete shader: " + filename);
+	glDeleteProgram(glProgram);
+	TestGLError("NixUnrefShader");
+	glProgram = -1;
+	filename = "";
+}
+
+void NixShader::unref()
+{
+	reference_count --;
+	if ((reference_count <= 0) && (glProgram >= 0)){
+		msg_write("delete shader: " + filename);
+		glDeleteProgram(glProgram);
 		TestGLError("NixUnrefShader");
-		s.glProgram = -1;
-		s.filename = "";
+		glProgram = -1;
+		filename = "";
 	}
 }
 
 void NixDeleteAllShaders()
 {
-	foreachib(NixShader &s, NixShaders, i)
-		if (s.glProgram >= 0){
-			glDeleteProgram(s.glProgram);
-			TestGLError("NixDeleteAllShaders");
-		}
+	foreachib(NixShader *s, NixShaders, i)
+		delete(s);
 	NixShaders.clear();
 }
 
-void NixSetShader(int index)
+void NixSetShader(NixShader *s)
 {
 	if (!OGLShaderSupport)
 		return;
 	NixGLCurrentProgram = 0;
-	if (index >= 0)
-		NixGLCurrentProgram = NixShaders[index].glProgram;
+	if (s)
+		NixGLCurrentProgram = s->glProgram;
 	glUseProgram(NixGLCurrentProgram);
 	TestGLError("SetProgram");
 }
 
-void NixSetShaderData(int index, const string &var_name, const void *data, int size)
+void NixShader::set_data(const string &var_name, const void *data, int size)
 {
-	if (index<0)
-		return;
 	if (!OGLShaderSupport)
 		return;
-	NixShader &s = NixShaders[index];
-	NixSetShader(index);
+	NixSetShader(this);
 
-	int loc = glGetUniformLocation(s.glProgram, var_name.c_str());
+	int loc = glGetUniformLocation(glProgram, var_name.c_str());
 	glUniform1f(loc, *(float*)data);
 
-	NixSetShader(-1);
+	NixSetShader(NULL);
 		
 	/*int loc = glGetUniformLocationARB(my_program, “my_color_texture”);
 
@@ -247,10 +228,8 @@ glUniform1iARB(my_sampler_uniform_location, i);*/
 	TestGLError("SetShaderData");
 }
 
-void NixGetShaderData(int index, const string &var_name, void *data, int size)
+void NixShader::get_data(const string &var_name, void *data, int size)
 {
-	if (index<0)
-		return;
 	if (!OGLShaderSupport)
 		return;
 	msg_todo("NixGetShaderData for OpenGL");

@@ -54,7 +54,7 @@ typedef void callback_function();
 
 
 
-#define NIX_MAX_TEXTURELEVELS	4
+#define NIX_MAX_TEXTURELEVELS	8
 
 enum{
 	FatalErrorNone,
@@ -146,6 +146,7 @@ extern int NixNumTrias;
 extern string NixTextureDir;
 extern int NixTextureMaxFramesToLive, NixMaxVideoTextureSize;
 
-extern int VBTemp; // vertex buffer for 1-frame geometries
+class NixVertexBuffer;
+extern NixVertexBuffer *VBTemp; // vertex buffer for 1-frame geometries
 
 #endif

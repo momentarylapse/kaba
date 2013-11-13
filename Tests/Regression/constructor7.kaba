@@ -8,5 +8,5 @@ void main()
 	i.add(v)
 	i.add(vector(1,2,3))
 	i.add(e_x)
-	forall ii in i
+	for ii in i
 		print ii

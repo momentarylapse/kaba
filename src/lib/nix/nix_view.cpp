@@ -28,7 +28,7 @@ float NixViewJitterX = 0, NixViewJitterY = 0;
 
 static int OGLViewPort[4];
 
-int RenderingToTexture = -1;
+NixTexture *RenderingToTexture = NULL;
 
 #ifdef OS_WINDOWS
 	extern HDC hDC;
@@ -282,7 +282,12 @@ bool Rendering=false;
 	extern bool nixDevNeedsUpdate;
 #endif
 
-bool NixStart(int texture)
+bool NixStart()
+{
+	return NixStartIntoTexture(NULL);
+}
+
+bool NixStartIntoTexture(NixTexture *texture)
 {
 	if (NixDoingEvilThingsToTheDevice)
 		return false;
@@ -335,7 +340,7 @@ bool NixStart(int texture)
 	NixNumTrias=0;
 	RenderingToTexture=texture;
 	//msg_write("Start " + i2s(texture));
-	if (texture<0){
+	if (!texture){
 		#ifdef OS_WINDOWS
 	//		if (OGLDynamicTextureSupport)
 	//			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -352,10 +357,10 @@ bool NixStart(int texture)
 	}else{
 		if (OGLDynamicTextureSupport){
 
-			glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, NixTextures[texture].glFrameBuffer );
-			//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, NixTextures[texture].glDepthRenderBuffer );
-			glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, NixTextures[texture].glTexture, 0 );
-			glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, NixTextures[texture].glDepthRenderBuffer );
+			glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, texture->glFrameBuffer );
+			//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
+			glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture->glTexture, 0 );
+			glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
 			GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 			if (status == GL_FRAMEBUFFER_COMPLETE_EXT){
 				//msg_write("hurra");
@@ -375,7 +380,7 @@ bool NixStart(int texture)
 	TestGLError("Start 2");
 
 	// adjust target size
-	if (texture < 0){
+	if (!texture){
 		if (NixFullscreen){
 			// fullscreen mode
 			NixTargetWidth = NixScreenWidth;
@@ -386,8 +391,8 @@ bool NixStart(int texture)
 		}
 	}else{
 		// texture
-		NixTargetWidth = NixTextures[texture].width;
-		NixTargetHeight = NixTextures[texture].height;
+		NixTargetWidth = texture->width;
+		NixTargetHeight = texture->height;
 	}
 	NixResize();
 	Rendering = true;
@@ -423,10 +428,9 @@ void NixEnd()
 		return;
 	msg_db_f("NixEnd", 2);
 	TestGLError("End prae");
-	Rendering=false;
-	NixSetTexture(-1);
+	Rendering = false;
 	glDisable(GL_SCISSOR_TEST);
-	if (RenderingToTexture<0){
+	if (!RenderingToTexture){
 		// auf den Bildschirm
 		#ifdef OS_WINDOWS
 			if (RenderingToTexture<0)
@@ -445,7 +449,7 @@ void NixEnd()
 		#endif
 	}
 	if (OGLDynamicTextureSupport)
-		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	NixProgressTextureLifes();
 	TestGLError("End post");
@@ -522,13 +526,13 @@ void NixScreenShot(const string &filename, int width, int height)
 	for (int i=0;i<image.data.num;i++)
 		image.data[i] |= 0xff000000;
 	// save
-	image.Save(filename);
+	image.save(filename);
 	msg_write("screenshot saved: " + filename.sys_filename());
 }
 
 void NixScreenShotToImage(Image &image)
 {
-	image.Create(NixTargetWidth, NixTargetHeight, Black);
+	image.create(NixTargetWidth, NixTargetHeight, Black);
 	glReadBuffer(GL_FRONT);
 	glReadPixels(	0,
 					0,

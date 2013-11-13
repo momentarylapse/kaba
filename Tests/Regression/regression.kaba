@@ -25,6 +25,6 @@ bool test(string filename)
 void main()
 	DirEntry list[]
 	list = DirSearch(".", "*.reg", false)
-	forall e in list
+	for e in list
 		test(e.name)
 	_exec_("rm out")

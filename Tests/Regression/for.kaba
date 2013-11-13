@@ -4,7 +4,7 @@
 int a[]
 
 void fill(int x[])
-	forall y in x
+	for y in x
 		if y == 5
 			continue
 		y += 100
@@ -19,8 +19,8 @@ void main()
 	fill(a)
 	print a
 	
-	forall j in a
+	for j in a
 		j += 100
 	
-	forall j in a
+	for j in a
 		print j

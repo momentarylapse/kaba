@@ -8,6 +8,8 @@
 #ifndef _NIX_DRAW_EXISTS_
 #define _NIX_DRAW_EXISTS_
 
+class NixVertexBuffer;
+class NixTexture;
 
 void _cdecl NixResetToColor(const color &c);
 void _cdecl NixSetColor(const color &c);
@@ -22,10 +24,9 @@ void _cdecl NixDrawLines(float *x, float *y, int num_lines, bool contiguous, flo
 void _cdecl NixDrawLine3D(const vector &l1, const vector &l2);
 void _cdecl NixDrawRect(float x1, float x2, float y1, float y2, float depth);
 void _cdecl NixDraw2D(const rect &src, const rect &dest, float depth);
-void _cdecl NixDraw3D(int buffer);
 void _cdecl NixDrawSpriteR(const rect &src, const vector &pos, const rect &dest);
 void _cdecl NixDrawSprite(const rect &src, const vector &pos, float radius);
-void _cdecl NixDraw3DCubeMapped(int cube_map, int vertex_buffer);
+void _cdecl NixDraw3DCubeMapped(NixTexture *cube_map, NixVertexBuffer *vb);
 
 extern float NixLineWidth;
 extern bool NixSmoothLines;

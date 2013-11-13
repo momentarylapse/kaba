@@ -8,6 +8,8 @@
 #ifndef _NIX_VIEW_EXISTS_
 #define _NIX_VIEW_EXISTS_
 
+class NixTexture;
+
 // configuring the view
 void _NixSetMode2d();
 void _NixSetMode3d();
@@ -30,7 +32,8 @@ void _cdecl NixSetClipPlane(int index, const plane &pl);
 void _cdecl NixEnableClipPlane(int index, bool enabled);
 void NixResize();
 
-bool _cdecl NixStart(int texture = -1);
+bool _cdecl NixStart();
+bool _cdecl NixStartIntoTexture(NixTexture *t);
 void _cdecl NixScissor(const rect &r);
 void _cdecl NixEnd();
 

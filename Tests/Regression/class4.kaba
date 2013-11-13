@@ -8,6 +8,6 @@ class f : File
 void main()
 	f *a
 	a = FileCreate("__test__")
-	a.WriteInt(2)
+	a << 2
 	a.func()
-	FileClose(a)
+	delete(a)

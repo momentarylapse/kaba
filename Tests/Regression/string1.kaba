@@ -22,6 +22,6 @@ void main()
 	string s[]
 	s = a.explode(" - ")
 	
-	forall ss in s
+	for ss in s
 		print ss
 		ss.clear()

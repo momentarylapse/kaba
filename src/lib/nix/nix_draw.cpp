@@ -252,10 +252,12 @@ void NixDraw2D(const rect &src, const rect &dest, float depth)
 	TestGLError("Draw2D");
 }
 
-void NixDraw3DCubeMapped(int cube_map,int buffer)
+void NixDraw3DCubeMapped(NixTexture *cube_map, NixVertexBuffer *vb)
 {
-	if (buffer<0)	return;
-	if (cube_map<0)	return;
+	if (!vb)
+		return;
+	if (!cube_map->is_cube_map)
+		return;
 	_NixSetMode3d();
 
 #ifdef NIX_API_DIRECTX9
@@ -292,11 +294,11 @@ void NixDraw3DCubeMapped(int cube_map,int buffer)
 		glEnable(GL_TEXTURE_GEN_R);
 		TestGLError("Draw3dCube c");
 		//glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-		NixDraw3D(buffer);
+		vb->draw();
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
 		glDisable(GL_TEXTURE_GEN_R);
-		NixSetTexture(-1);
+		NixSetTexture(NULL);
 
 		//Draw3D(-1,buffer,mat);
 	}

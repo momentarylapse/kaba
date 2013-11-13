@@ -13,13 +13,10 @@
 
 string NixTextureDir = "";
 
-Array<NixTexture> NixTextures;
+Array<NixTexture*> NixTextures;
 
 int NixTextureIconSize = 0;
 
-
-void NixReloadTexture(int texture);
-void NixUnloadTexture(int texture);
 
 void NixSetDefaultShaderData(int num_textures, const vector &cam_pos);
 extern vector _NixCamPos_;
@@ -186,79 +183,91 @@ void NixTexturesInit()
 void NixReleaseTextures()
 {
 	for (int i=0;i<NixTextures.num;i++){
-		glBindTexture(GL_TEXTURE_2D,NixTextures[i].glTexture);
-		glDeleteTextures(1,(unsigned int*)&NixTextures[i].glTexture);
+		glBindTexture(GL_TEXTURE_2D, NixTextures[i]->glTexture);
+		glDeleteTextures(1, (unsigned int*)&NixTextures[i]->glTexture);
 	}
 }
 
 void NixReincarnateTextures()
 {
 	for (int i=0;i<NixTextures.num;i++){
-		glGenTextures(1,&NixTextures[i].glTexture);
-		NixReloadTexture(i);
+		glGenTextures(1, &NixTextures[i]->glTexture);
+		NixTextures[i]->reload();
 	}
 }
 
 void NixProgressTextureLifes()
 {
 	for (int i=0;i<NixTextures.num;i++)
-		if (NixTextures[i].life_time >= 0){
-			NixTextures[i].life_time ++;
-			if (NixTextures[i].life_time >= NixTextureMaxFramesToLive)
-				NixUnloadTexture(i);
+		if (NixTextures[i]->life_time >= 0){
+			NixTextures[i]->life_time ++;
+			if (NixTextures[i]->life_time >= NixTextureMaxFramesToLive)
+				NixTextures[i]->unload();
 		}
 }
 
-int NixCreateEmptyTexture()
+NixTexture::NixTexture()
 {
-	NixTexture t;
-	t.filename = "-empty-";
-	t.is_dynamic = false;
-	t.is_cube_map = false;
-	t.valid = true;
-	t.life_time = 0;
+	filename = "-empty-";
+	is_dynamic = false;
+	is_cube_map = false;
+	valid = true;
+	life_time = 0;
 #ifdef NIX_ALLOW_VIDEO_TEXTURE
-	t.avi_info = NULL;
+	avi_info = NULL;
 #endif
-	glGenTextures(1, &t.glTexture);
+	glGenTextures(1, &glTexture);
+	glFrameBuffer = 0;
+	glDepthRenderBuffer = 0;
+	width = height = 0;
 
-	NixTextures.add(t);
-	
-	return NixTextures.num - 1;
+	NixTextures.add(this);
 }
 
-int NixLoadTexture(const string &filename)
+NixTexture::~NixTexture()
+{
+	unload();
+}
+
+void NixTexture::__init__()
+{
+	new(this) NixTexture;
+}
+
+void NixTexture::__delete__()
+{
+	this->~NixTexture();
+}
+
+NixTexture *NixLoadTexture(const string &filename)
 {
 	if (filename.num < 1)
-		return -1;
+		return NULL;
 	for (int i=0;i<NixTextures.num;i++)
-		if (filename == NixTextures[i].filename)
-			return NixTextures[i].valid ? i : -1;
+		if (filename == NixTextures[i]->filename)
+			return NixTextures[i]->valid ? NixTextures[i] : NULL;
 
 	// test existence
 	if (!file_test_existence(NixTextureDir + filename)){
 		msg_error("texture file does not exist: " + filename);
-		return -1;
+		return NULL;
 	}
 
-	int tex = NixCreateEmptyTexture();
-	NixTextures[tex].filename = filename;
-	NixReloadTexture(tex);
-	return tex;
+	NixTexture *t = new NixTexture;
+	t->filename = filename;
+	t->reload();
+	return t;
 }
 
-void NixReloadTexture(int texture)
+void NixTexture::reload()
 {
-	if (texture < 0)
-		return;
 	msg_db_r("NixReloadTexture", 1);
-	msg_write("loading texture: " + NixTextures[texture].filename);
+	msg_write("loading texture: " + filename);
 
-	NixTexture *t = &NixTextures[texture];
-	string filename = NixTextureDir + t->filename;
+	string _filename = NixTextureDir + filename;
 
 	// test the file's existence
-	int h=_open(sys_str_f(filename), 0);
+	int h=_open(sys_str_f(_filename), 0);
 	if (h<0){
 		msg_error("texture file does not exist!");
 		msg_db_l(1);
@@ -270,7 +279,7 @@ void NixReloadTexture(int texture)
 		avi_info[texture]=NULL;
 	#endif
 
-	string extension = t->filename.extension();
+	string extension = filename.extension();
 
 // AVI
 	if (extension == "avi"){
@@ -278,7 +287,7 @@ void NixReloadTexture(int texture)
 		#ifdef NIX_ALLOW_VIDEO_TEXTURE
 			avi_info[texture]=new s_avi_info;
 
-			glBindTexture(GL_TEXTURE_2D,t->glTexture);
+			glBindTexture(GL_TEXTURE_2D, glTexture);
 			glEnable(GL_TEXTURE_2D);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -297,33 +306,31 @@ void NixReloadTexture(int texture)
 		#endif
 	}else{
 		Image image;
-		image.LoadFlipped(filename);
-		NixOverwriteTexture(texture, image);
+		image.loadFlipped(_filename);
+		overwrite(image);
 	}
-	t->life_time = 0;
+	life_time = 0;
 	msg_db_l(1);
 }
 
-void NixOverwriteTexture__(int texture, int target, int subtarget, const Image &image)
+void NixOverwriteTexture__(NixTexture *t, int target, int subtarget, const Image &image)
 {
-	if (texture < 0)
+	if (!t)
 		return;
 	msg_db_r("NixOverwriteTexture", 1);
-
-	NixTexture &t = NixTextures[texture];
 
 	#ifdef NIX_ALLOW_VIDEO_TEXTURE
 		avi_info[texture]=NULL;
 	#endif
 
-	image.SetMode(Image::ModeRGBA);
+	image.setMode(Image::ModeRGBA);
 
 	if (!image.error){
 		glEnable(target);
-		glBindTexture(target, t.glTexture);
+		glBindTexture(target, t->glTexture);
 		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		if (t.is_dynamic){
+		if (t->is_dynamic){
 			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}else{
@@ -332,7 +339,7 @@ void NixOverwriteTexture__(int texture, int target, int subtarget, const Image &
 			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}
 #ifdef GL_GENERATE_MIPMAP
-		if (!t.is_dynamic)
+		if (!t->is_dynamic)
 			glTexParameteri(target, GL_GENERATE_MIPMAP, GL_TRUE);
 		if (image.alpha_used) 
 			glTexImage2D(subtarget, 0, GL_RGBA8, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data);
@@ -349,40 +356,39 @@ void NixOverwriteTexture__(int texture, int target, int subtarget, const Image &
 		//gluBuild2DMipmaps(subtarget,4,NixImage.width,NixImage.height,GL_RGBA,GL_UNSIGNED_BYTE,NixImage.data);
 		//glTexImage2D(subtarget,0,GL_RGBA8,128,128,0,GL_RGBA,GL_UNSIGNED_BYTE,NixImage.data);
 		//glTexImage2D(subtarget,0,4,256,256,0,4,GL_UNSIGNED_BYTE,NixImage.data);
-		t.width = image.width;
-		t.height = image.height;
+		t->width = image.width;
+		t->height = image.height;
 		if (NixTextureIconSize > 0){
-			t.icon = image;
-			t.icon.Scale(NixTextureIconSize, NixTextureIconSize);
-			t.icon.FlipV();
+			t->icon = *image.scale(NixTextureIconSize, NixTextureIconSize);
+			t->icon.flipV();
 		}
 	}
 	TestGLError("OverwriteTexture");
-	t.life_time = 0;
+	t->life_time = 0;
 	msg_db_l(1);
 }
 
-void NixOverwriteTexture(int texture, const Image &image)
+void NixTexture::overwrite(const Image &image)
 {
-	NixOverwriteTexture__(texture, GL_TEXTURE_2D, GL_TEXTURE_2D, image);
+	NixOverwriteTexture__(this, GL_TEXTURE_2D, GL_TEXTURE_2D, image);
 }
 
-void NixUnloadTexture(int texture)
+void NixTexture::unload()
 {
 	msg_db_r("NixUnloadTexture", 1);
-	msg_write("unloading Texture: " + NixTextures[texture].filename);
-	glBindTexture(GL_TEXTURE_2D,NixTextures[texture].glTexture);
-	glDeleteTextures(1,(unsigned int*)&NixTextures[texture].glTexture);
-	NixTextures[texture].life_time = -1;
+	msg_write("unloading Texture: " + filename);
+	glBindTexture(GL_TEXTURE_2D, glTexture);
+	glDeleteTextures(1, (unsigned int*)&glTexture);
+	life_time = -1;
 	msg_db_l(1);
 }
 
-inline void refresh_texture(int texture)
+inline void refresh_texture(NixTexture *t)
 {
-	if (texture >= 0){
-		if (NixTextures[texture].life_time < 0)
-			NixReloadTexture(texture);
-		NixTextures[texture].life_time = 0;
+	if (t){
+		if (t->life_time < 0)
+			t->reload();
+		t->life_time = 0;
 	}
 }
 
@@ -405,17 +411,17 @@ void unset_textures(int num_textures)
 	_nix_num_textures_activated_ = num_textures;
 }
 
-void NixSetTexture(int texture)
+void NixSetTexture(NixTexture *t)
 {
-	refresh_texture(texture);
+	refresh_texture(t);
 	unset_textures(1);
-	if (texture>=0){
-		if (NixTextures[texture].is_cube_map){
+	if (t){
+		if (t->is_cube_map){
 			glEnable(GL_TEXTURE_CUBE_MAP);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture].glTexture);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, t->glTexture);
 		}else{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D,NixTextures[texture].glTexture);
+			glBindTexture(GL_TEXTURE_2D, t->glTexture);
 			/*if (TextureIsDynamic[texture]){
 				#ifdef OS_WONDOWS
 				#endif
@@ -431,10 +437,13 @@ void NixSetTexture(int texture)
 		NixSetDefaultShaderData(1, _NixCamPos_);
 }
 
-void NixSetTextures(int *texture, int num_textures)
+void NixSetTextures(NixTexture **texture, int num_textures)
 {
 	if (!OGLMultiTexturingSupport){
-		NixSetTexture(num_textures > 0 ? texture[0] : -1);
+		if (num_textures > 0)
+			NixSetTexture(texture[0]);
+		else
+			NixSetTexture(NULL);
 		return;
 	}
 	for (int i=0;i<num_textures;i++)
@@ -445,17 +454,17 @@ void NixSetTextures(int *texture, int num_textures)
 	// set multitexturing
 	for (int i=0;i<num_textures;i++){
 		glActiveTexture(GL_TEXTURE0+i);
-		if (texture[i] < 0){
+		if (!texture[i]){
 			glDisable(GL_TEXTURE_2D);
 			glDisable(GL_TEXTURE_CUBE_MAP);
 			continue;
 		}
-		if (NixTextures[texture[i]].is_cube_map){
+		if (texture[i]->is_cube_map){
 			glEnable(GL_TEXTURE_CUBE_MAP);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,NixTextures[texture[i]].glTexture);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, texture[i]->glTexture);
 		}else{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D,NixTextures[texture[i]].glTexture);
+			glBindTexture(GL_TEXTURE_2D, texture[i]->glTexture);
 		}
 		//TestGLError("SetTex"+i2s(i));
 	}
@@ -497,40 +506,41 @@ void NixTextureVideoMove(int texture,float elapsed)
 }
 
 
-int NixCreateDynamicTexture(int width,int height)
+NixDynamicTexture::NixDynamicTexture(int _width, int _height)
 {
-	msg_db_r("NixCreateDynamicTexture", 1);
-	msg_write(format("creating dynamic texture [%d x %d] ", width, height));
+	msg_db_r("NixDynamicTexture", 1);
+	msg_write(format("creating dynamic texture [%d x %d] ", _width, _height));
 	if (!OGLDynamicTextureSupport)
-		return -1;
-	int tex = NixCreateEmptyTexture();
-	NixTexture &t = NixTextures[tex];
-	t.filename = "-dynamic-";
-	t.width = width;
-	t.height = height;
-	t.is_dynamic = true;
+		return;
+	filename = "-dynamic-";
+	width = _width;
+	height = _height;
+	is_dynamic = true;
 	
 	// create the render target stuff
-	glGenFramebuffersEXT(1, &t.glFrameBuffer);
-	glGenRenderbuffersEXT(1, &t.glDepthRenderBuffer);
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, t.glDepthRenderBuffer);
+	glGenFramebuffersEXT(1, &glFrameBuffer);
+	glGenRenderbuffersEXT(1, &glDepthRenderBuffer);
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, glDepthRenderBuffer);
 	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
-	
-	/*glGenFramebuffers(1, &t.glFrameBuffer);
-	glGenRenderbuffers(1, &t.glDepthRenderBuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, t.glDepthRenderBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);*/
 
 	// create the actual (dynamic) texture
 	Image image;
-	image.Create(width, height, Black);
-	NixOverwriteTexture(tex, image);
+	image.create(width, height, Black);
+	overwrite(image);
 
 	msg_db_l(1);
-	return tex;
 
 }
 
+void NixDynamicTexture::__init__(int width, int height)
+{
+	new(this) NixDynamicTexture(width, height);
+}
+
+bool NixTexture::start_render()
+{
+	return NixStartIntoTexture(this);
+}
 
 
 static int NixCubeMapTarget[] = {
@@ -542,33 +552,31 @@ static int NixCubeMapTarget[] = {
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 };
 
-int NixCreateCubeMap(int size)
+NixCubeMap::NixCubeMap(int size)
 {
-	msg_db_r("NixCreateCubeMap", 1);
+	msg_db_r("NixCubeMap", 1);
 	msg_write(format("creating cube map [ %d x %d x 6 ]", size, size));
-	int tex = NixCreateEmptyTexture();
-	NixTexture &t = NixTextures[tex];
-	t.width = size;
-	t.height = size;
-	t.is_cube_map = true;
-	t.filename = "-cubemap-";
+	width = size;
+	height = size;
+	is_cube_map = true;
+	filename = "-cubemap-";
 	msg_db_l(1);
-	return tex;
 }
 
-void NixFillCubeMap(int cube_map, int side, int source_tex)
+void NixCubeMap::__init__(int size)
 {
-	if ((cube_map < 0) || (source_tex < 0))
+	new(this) NixCubeMap(size);
+}
+
+void NixTexture::fill_cube_map(int side, NixTexture *source)
+{
+	if (!is_cube_map)
 		return;
-	NixTexture &c = NixTextures[cube_map];
-	NixTexture &s = NixTextures[source_tex];
-	if (!c.is_cube_map)
-		return;
-	if (s.is_cube_map)
+	if (source->is_cube_map)
 		return;
 	Image image;
-	image.Load(NixTextureDir + s.filename);
-	NixOverwriteTexture__(cube_map, GL_TEXTURE_CUBE_MAP, NixCubeMapTarget[side], image);
+	image.load(NixTextureDir + source->filename);
+	NixOverwriteTexture__(this, GL_TEXTURE_CUBE_MAP, NixCubeMapTarget[side], image);
 }
 
 void SetCubeMatrix(vector pos,vector ang)
@@ -586,7 +594,7 @@ void SetCubeMatrix(vector pos,vector ang)
 #endif
 }
 
-void NixRenderToCubeMap(int cube_map,vector &pos,callback_function *render_func,int mask)
+void NixTexture::render_to_cube_map(vector &pos,callback_function *render_func,int mask)
 {
 	if (mask<1)	return;
 	// TODO

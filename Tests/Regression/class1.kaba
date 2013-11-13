@@ -3,6 +3,6 @@
 
 void main()
 	File *f = FileCreate("__test__")
-	f.WriteInt(1)
-	FileClose(f)
+	f << 1
+	delete(f)
 

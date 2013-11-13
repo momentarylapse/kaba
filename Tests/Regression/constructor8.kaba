@@ -6,7 +6,7 @@ class c
 	vector v
 	void __assign__(c other)
 		print "sdkjfh"
-		self.v = other.v
+		v = other.v
 
 void main()
 	c a[]
