@@ -736,7 +736,7 @@ void SIAddPackageMath()
 		class_add_func("geti",		TypeInt, mf(&Random::geti));
 			func_add_param("max",		TypeInt);
 		class_add_func("getu",		TypeFloat, mf(&Random::getu));
-		class_add_func("geti",		TypeFloat, mf(&Random::getf));
+		class_add_func("getf",		TypeFloat, mf(&Random::getf));
 			func_add_param("min",		TypeFloat);
 			func_add_param("max",		TypeFloat);
 		class_add_func("in_ball",		TypeVector, amd64_wrap(mf(&Random::in_ball), &amd64_vec_rand_in_ball));
