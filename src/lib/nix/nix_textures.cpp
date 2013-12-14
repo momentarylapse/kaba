@@ -572,6 +572,8 @@ void NixTexture::fill_cube_map(int side, NixTexture *source)
 {
 	if (!is_cube_map)
 		return;
+	if (!source)
+		return;
 	if (source->is_cube_map)
 		return;
 	Image image;

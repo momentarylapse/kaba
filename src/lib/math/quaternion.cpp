@@ -239,7 +239,11 @@ void QuaternionInterpolate(quaternion &q,const quaternion &q1,const quaternion &
 // convert a quaternion into 3 angles (ZXY)
 vector quaternion::get_angles() const
 {
-	// really bad!
+	vector ang;
+	ang.x = asin(2*(w*x - z*y));
+	ang.y = atan2(2*(w*y+x*z), 1-2*(y*y+x*x));
+	ang.z = atan2(2*(w*z+x*y), 1-2*(z*z+x*x));
+/*	// really bad!
 	vector ang,v;
 	matrix m,x,y;
 	MatrixRotationQ(m,*this);
@@ -251,7 +255,7 @@ vector quaternion::get_angles() const
 	MatrixMultiply(m,y,m);
 	MatrixMultiply(m,x,m);
 	v=m*vector(1000.0f,0,0);
-	ang.z=atan2f(v.y,v.x);
+	ang.z=atan2f(v.y,v.x);*/
 	return ang;
 }
 
@@ -291,4 +295,23 @@ vector quaternion::get_axis() const
 float quaternion::get_angle() const
 {
 	return acosf(w)*2;
+}
+
+void QuaternionDrag(quaternion &q, const vector &up, const vector &dang)
+{
+	quaternion dq;
+	QuaternionRotationV(dq, dang);
+	if ((up.x != 0) || (up.y != 0) || (up.z < 0)){
+		vector ax = e_z ^ up;
+		ax.normalize();
+		vector up2 = up;
+		up2.normalize();
+		quaternion T;
+		QuaternionRotationA(T, ax, acos(up2.z));
+		quaternion TT = T;
+		TT.inverse();
+		QuaternionRotationV(dq, dang);
+		dq = TT * dq * T;
+	}
+	q = q * dq;
 }

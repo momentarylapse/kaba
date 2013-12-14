@@ -1,0 +1,18 @@
+//#show
+
+class sOnlineChar
+	string name
+	float var[]
+
+void xx(sOnlineChar c)
+	//print c.var
+	for v in c.var
+		print v
+
+
+void main()
+	sOnlineChar c
+	c.var = rangef(0, 10, 1)
+	xx(c)
+
+
