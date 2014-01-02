@@ -153,29 +153,34 @@ void QuaternionRotationV(quaternion &q,const vector &ang)
 }
 
 // create a quaternion from a (rotation-) matrix
-void QuaternionRotationM(quaternion &q,const matrix &m)
+void QuaternionRotationM(quaternion &q, const matrix &m)
 {
-	float tr=m._00+m._11+m._22;
-	float w=acosf((tr-1)/2);
-	if ((w<0.00000001f)&&(w>-0.00000001f))
+	float tr = m._00 + m._11 + m._22;
+	float w = acosf((tr - 1) / 2);
+	if ((w < 0.00000001f) && (w > -0.00000001f))
 		QuaternionIdentity(q);
 	else{
-		float s=0.5f/sinf(w);
+		float s = 0.5f / sinf(w);
 		vector n;
-		n.x=(m._21-m._12)*s;
-		n.y=(m._02-m._20)*s;
-		n.z=(m._10-m._01)*s;
+		n.x = (m._21 - m._12) * s;
+		n.y = (m._02 - m._20) * s;
+		n.z = (m._10 - m._01) * s;
 		n.normalize();
-		QuaternionRotationA(q,n,w);
+		QuaternionRotationA(q, n, w);
 	}
 }
 
 // invert a quaternion rotation
-void quaternion::inverse()
+void quaternion::invert()
 {
 	x = -x;
 	y = -y;
 	z = -z;
+}
+
+quaternion quaternion::bar() const
+{
+	return quaternion(w, vector(-x, -y, -z));
 }
 
 // unite 2 rotations (first rotate by q1, then by q2: q = q2*q1)
@@ -267,20 +272,20 @@ void QuaternionScale(quaternion &q,float f)
 
 	q.w=cosf(w*f/2);
 	float factor=sinf(w*f/2)/sinf(w/2);
-	q.x=q.x*factor;
-	q.y=q.y*factor;
-	q.z=q.z*factor;
+	q.x *= factor;
+	q.y *= factor;
+	q.z *= factor;
 }
 
 // quaternion correction
 void quaternion::normalize()
 {
-	float l=sqrtf((x*x)+(y*y)+(z*z)+(w*w));
-	l=1.0f/l;
+	float l = sqrtf(x*x + y*y + z*z + w*w);
+	l = 1.0f / l;
+	w *= l;
 	x *= l;
 	y *= l;
 	z *= l;
-	w *= l;
 }
 
 // the axis of our quaternion rotation
@@ -297,21 +302,28 @@ float quaternion::get_angle() const
 	return acosf(w)*2;
 }
 
-void QuaternionDrag(quaternion &q, const vector &up, const vector &dang)
+void QuaternionDrag(quaternion &q, const vector &up, const vector &dang, bool reset_z)
 {
-	quaternion dq;
-	QuaternionRotationV(dq, dang);
-	if ((up.x != 0) || (up.y != 0) || (up.z < 0)){
+	quaternion T, TT;
+	bool is_not_z = (up.x != 0) || (up.y != 0) || (up.z < 0);
+	if (is_not_z){
 		vector ax = e_z ^ up;
 		ax.normalize();
 		vector up2 = up;
 		up2.normalize();
-		quaternion T;
 		QuaternionRotationA(T, ax, acos(up2.z));
-		quaternion TT = T;
-		TT.inverse();
-		QuaternionRotationV(dq, dang);
-		dq = TT * dq * T;
+		TT = T.bar();
+		q = T * q * TT;
 	}
-	q = q * dq;
+
+	vector ang = q.get_angles();
+	ang.x = clampf(ang.x + dang.x, -pi/2+0.01f, pi/2-0.01f);
+	ang.y += dang.y;
+	ang.z += dang.z;
+	if (reset_z)
+		ang.z = 0;
+	QuaternionRotationV(q, ang);
+
+	if (is_not_z)
+		q = TT * q * T;
 }

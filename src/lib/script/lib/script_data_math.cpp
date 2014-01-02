@@ -310,6 +310,8 @@ char *CastComplex2StringP(complex *z)
 // amd64 complex return wrappers
 void amd64_comlist_sum(complex &r, ComplexList &l)
 {	r = l.sum();	}
+void amd64_com_bar(complex &r, complex &c)
+{	r = c.bar();	}
 
 // amd64 vector return wrappers
 void amd64_vec_dir2ang(vector &r, vector &v)
@@ -354,6 +356,8 @@ void amd64_quat_mul(quaternion &r, quaternion &a, quaternion&b)
 {	r = a * b;	}
 void amd64_quat_vec_mul(vector &r, quaternion &a, vector &b)
 {	r = a * b;	}
+void amd64_quat_bar(quaternion &r, quaternion &a)
+{	r = a.bar();	}
 
 // amd64 color return wrappers
 void amd64_col_hsb(color &r, float a, float h, float s, float b)
@@ -509,6 +513,7 @@ void SIAddPackageMath()
 		class_add_element("y",		TypeFloat,	4);
 		class_add_func("abs",		TypeFloat,			mf(&complex::abs));
 		class_add_func("absSqr",	TypeFloat,			mf(&complex::abs_sqr));
+		class_add_func("bar",		TypeComplex, 		amd64_wrap(mf(&complex::bar), &amd64_com_bar));
 		class_add_func("str",		TypeString,			mf(&complex::str));
 	
 	add_class(TypeVector);
@@ -548,7 +553,8 @@ void SIAddPackageMath()
 			func_add_param("other",	TypeVector);
 		class_add_func("__imul__", TypeVoid, mf(&quaternion::imul));
 			func_add_param("other",	TypeQuaternion);
-		class_add_func("inverse",	TypeVoid,	mf(&quaternion::inverse));
+		class_add_func("invert",	TypeVoid,	mf(&quaternion::invert));
+		class_add_func("bar",		TypeQuaternion,	amd64_wrap(mf(&quaternion::bar), &amd64_quat_bar));
 		class_add_func("normalize",	TypeVoid,	mf(&quaternion::normalize));
 		class_add_func("getAngles",	TypeVector,	amd64_wrap(mf(&quaternion::get_angles), &amd64_quat_get_angles));
 		class_add_func("str",		TypeString,			mf(&quaternion::str));
@@ -942,6 +948,7 @@ void SIAddPackageMath()
 		func_add_param("q",		TypeQuaternion);
 		func_add_param("up",		TypeVector);
 		func_add_param("dang",		TypeVector);
+		func_add_param("reset_z",		TypeBool);
 	// plane
 	add_func("PlaneFromPoints",	TypeVoid,	(void*)&PlaneFromPoints);
 		func_add_param("pl",		TypePlane);
