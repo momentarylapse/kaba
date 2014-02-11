@@ -339,7 +339,7 @@ bool NixStartIntoTexture(NixTexture *texture)
 
 	NixNumTrias=0;
 	RenderingToTexture=texture;
-	//msg_write("Start " + i2s(texture));
+	//msg_write("Start " + p2s(texture));
 	if (!texture){
 		#ifdef OS_WINDOWS
 	//		if (OGLDynamicTextureSupport)
@@ -352,7 +352,8 @@ bool NixStartIntoTexture(NixTexture *texture)
 		#endif
 
 		#ifdef OS_LINUX
-			//glXSwapBuffers(hui_x_display, GDK_WINDOW_XWINDOW(NixWindow->gl_widget->window));
+			//HuiControl *c = NixWindow->_GetControl_(NixControlID);
+			//glXSwapBuffers(hui_x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
 		#endif			
 	}else{
 		if (OGLDynamicTextureSupport){

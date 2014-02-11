@@ -13,9 +13,10 @@
 #include "nix.h"
 #include "nix_common.h"
 #include "../hui/Controls/HuiControl.h"
+#include "../hui/Controls/HuiControlDrawingArea.h"
 
 
-string NixVersion = "0.12.0.0";
+string NixVersion = "0.12.0.2";
 
 
 // libraries (in case Visual C++ is used)
@@ -69,7 +70,7 @@ libraries to link:
 
 void TestGLError(const char *pos)
 {
-#if 0
+#if 1
 	int err = glGetError();
 	if (err == GL_NO_ERROR)
 	{}//msg_write("GL_NO_ERROR");
@@ -86,6 +87,17 @@ void TestGLError(const char *pos)
 #endif
 }
 
+#ifdef OS_LINUX
+int xerrorhandler(Display *dsp, XErrorEvent *error)
+{
+	char errorstring[128];
+	XGetErrorText(dsp, error->error_code, errorstring, 128);
+
+	msg_error(string("X error: ") + errorstring);
+	HuiRaiseError(string("X error: ") + errorstring);
+	exit(-1);
+}
+#endif
 
 
 // environment
@@ -291,12 +303,22 @@ int attrListDblAccum[]={
 
 XVisualInfo *choose_visual()
 {
-	msg_db_r("choose_visual", 3);
+	msg_db_f("choose_visual", 1);
 	int screen = DefaultScreen(hui_x_display);
+
+	HuiControl *c = NixWindow->_GetControl_(NixControlID);
+	HuiControlDrawingArea *da = dynamic_cast<HuiControlDrawingArea*>(c);
+	GtkWidget *gl_widget = c->widget;
+	if (gtk_widget_get_realized(gl_widget)){
+		msg_error("realized -> reset");
+		da->HardReset();
+		gl_widget = c->widget;
+	}
 
 	// we need this one!
 	//   at least if possible...
-	int gdk_visualid = XVisualIDFromVisual(GDK_VISUAL_XVISUAL(gdk_window_get_visual(gtk_widget_get_window(NixWindow->window))));
+	/*int gdk_visualid = XVisualIDFromVisual(GDK_VISUAL_XVISUAL(gdk_window_get_visual(gtk_widget_get_window(NixWindow->window))));
+	msg_write(gdk_visualid);*/
 
 	// let glx select a visual
 	XVisualInfo *vi = glXChooseVisual(hui_x_display, screen, attrListDblAccum);
@@ -315,15 +337,20 @@ XVisualInfo *choose_visual()
 		}
 	}
 
-	HuiControl *c = NixWindow->_GetControl_(NixControlID);
-	GtkWidget *gl_widget = c->widget;
+	/*gdk_visualid = XVisualIDFromVisual(GDK_VISUAL_XVISUAL(gdk_window_get_visual(gtk_widget_get_window(gl_widget))));
+	msg_write(gdk_visualid);
+	if (gtk_widget_get_realized(gl_widget)){
+		msg_error("realized 2");
+	}*/
 
 	// ok?
-	if (vi->visualid != gdk_visualid){
+	/*if (vi->visualid != gdk_visualid)*/{
+		//msg_write(format("%d!=%d", vi->visualid, gdk_visualid));
 
 		// translate visual to gdk
 		GdkScreen *gdk_screen = gdk_screen_get_default();
 		GdkVisual *visual = gdk_x11_screen_lookup_visual(gdk_screen, vi->visualid);
+		//msg_write(p2s(visual));
 		// TODO GTK3
 		//GdkColormap *colormap = gdk_colormap_new(visual, FALSE);
 
@@ -345,6 +372,9 @@ XVisualInfo *choose_visual()
 	gdk_window_invalidate_rect(gtk_widget_get_window(gl_widget), NULL, false);
 	gdk_window_process_all_updates();
 
+	int gdk_visualid = XVisualIDFromVisual(GDK_VISUAL_XVISUAL(gdk_window_get_visual(gtk_widget_get_window(gl_widget))));
+	//msg_write(gdk_visualid);
+
 	// look for the gdk-ish one...
 	/*msg_db_m("-gdk/glx visual mismatch", 1);
 	int n_fb_conf;
@@ -364,7 +394,6 @@ XVisualInfo *choose_visual()
 			}
 	}*/
 
-	msg_db_l(3);
 	return vi;
 }
 #endif
@@ -380,6 +409,8 @@ void NixInit(const string &api, HuiWindow *win, const string &id)
 	msg_right();
 	msg_write("[" + NixVersion + "]");
 	
+
+
 	NixWindow = win;
 	NixControlID = id;
 	NixFullscreen = false; // before nix is started, we're hopefully not in fullscreen mode
@@ -407,6 +438,7 @@ void NixInit(const string &api, HuiWindow *win, const string &id)
 	NixDesktopDepth=mode.dmBitsPerPel;
 #endif
 #ifdef OS_LINUX
+	XSetErrorHandler(xerrorhandler);
 	#ifdef NIX_ALLOW_FULLSCREEN
 		XF86VidModeModeInfo **modes;
 		int NumModes;
@@ -556,6 +588,7 @@ bool nixDevNeedsUpdate = true;
 
 void set_video_mode_gl(int xres, int yres)
 {
+	msg_db_f("set_video_mode_gl", 1);
 	HuiControl *c = NixWindow->_GetControl_(NixControlID);
 	gtk_widget_set_double_buffered(c->widget, false);
 
@@ -689,6 +722,7 @@ void set_video_mode_gl(int xres, int yres)
 		Window win = GDK_WINDOW_XID(gtk_widget_get_window(c->widget));
 		context = glXCreateContext(hui_x_display, vi, 0, GL_TRUE);
 		glXMakeCurrent(hui_x_display, win, context);
+		TestGLError("glXMakeCurrent");
 
 
 #if 0
@@ -781,7 +815,7 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 			msg_error("-no direct rendering!");
 	#endif // OS_LINUX
 
-	msg_db_m("-setting properties",1);
+	msg_db_m("-setting properties", 1);
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -790,10 +824,11 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 	#ifdef OS_LINUX
 		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
 	#endif
+		TestGLError("prop");
 
 	
 	// font
-	msg_db_m("-font",1);
+	msg_db_m("-font", 1);
 //	NixOGLFontDPList=glGenLists(256);
 	#ifdef OS_WINDOWS
 		HFONT hFont=CreateFont(NixFontHeight,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,FF_DONTCARE|DEFAULT_PITCH,hui_tchar_str(NixFontName));
@@ -815,7 +850,7 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 		if (!x_font)
 			x_font = XLoadQueryFont(hui_x_display,"*--14*");
 		if (x_font){
-			msg_write(NixOGLFontDPList);
+			//msg_write(NixOGLFontDPList);
 			NixOGLFontDPList = 1000;
 			glXUseXFont(x_font->fid,0,256,NixOGLFontDPList);
 		}else
@@ -827,11 +862,13 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 			msg_write(fl[i]);
 		XFreeFontNames(fl);
 			printf("----\n");*/
+		TestGLError("font");
 
 
 #endif
 		
-		char *ext = (char*)glGetString( GL_EXTENSIONS );
+		char *ext = (char*)glGetString(GL_EXTENSIONS);
+		//msg_write(p2s(ext));
 		
 #ifdef OS_WINDOWS
 
@@ -871,10 +908,10 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 		OGLShaderSupport = true;
 #endif
 
-		msg_db_m("-RenderToTexture-Support",1);
+		msg_db_m("-RenderToTexture-Support", 1);
 
-		
-		if (strstr(ext,"EXT_framebuffer_object")==NULL){
+		if (ext){
+			if (strstr(ext,"EXT_framebuffer_object")==NULL){
 				msg_error("EXT_framebuffer_object extension was not found");
 			}else{
 				OGLDynamicTextureSupport = true;
@@ -907,12 +944,14 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 				}
 #endif
 			}
+		}
+		TestGLError("end");
 
 }
 
 void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 {
-	msg_db_r("setting video mode",0);
+	msg_db_f("setting video mode", 1);
 
 	NixApiName = api;
 	if (NixApiName == "")
@@ -927,10 +966,8 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 		yres=NixDesktopHeight;
 	}
 
-	if (NixApiName == "NoApi"){
-		msg_db_l(0);
+	if (NixApiName == "NoApi")
 		return;
-	}
 
 	
 
@@ -940,7 +977,6 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 	else{
 		msg_error("unknown graphics api: " + NixApiName);
 		NixFatalError = FatalErrorUnknownApi;
-		msg_db_l(0);
 		return;
 	}
 	NixUsable = false;
@@ -1009,7 +1045,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 						SWP_SHOWWINDOW );
 #endif*/
 	}
-	
+	TestGLError("xxx");
 	NixStart();
 	NixDrawStr(100, 100, "test");
 	NixEnd();
@@ -1019,8 +1055,6 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 
 	NixUsable = true;
 	NixResize();
-
-	msg_db_l(0);
 }
 
 void NixTellUsWhatsWrong()

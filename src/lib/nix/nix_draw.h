@@ -12,6 +12,7 @@ class NixVertexBuffer;
 class NixTexture;
 
 void _cdecl NixResetToColor(const color &c);
+void _cdecl NixResetZ();
 void _cdecl NixSetColor(const color &c);
 color _cdecl NixGetColor();
 void _cdecl NixDrawChar(float x, float y, char c);
