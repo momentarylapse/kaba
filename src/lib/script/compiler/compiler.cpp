@@ -389,7 +389,6 @@ void import_includes(Script *s)
 	Set<Script*> includes;
 	add_includes(s, includes);
 	foreach(Script *i, includes){
-		msg_write("i:  " + i->Filename);
 		import_deep(s->syntax, i->syntax);
 	}
 }

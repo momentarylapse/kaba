@@ -29,12 +29,13 @@ void SyntaxTree::AddIncludeData(Script *s)
 	if (FlagImmortal)
 		SetImmortal(ps);
 
-	FlagCompileOS = ps->FlagCompileOS;
-	FlagAddEntryPoint = ps->FlagAddEntryPoint;
-	FlagNoFunctionFrame = ps->FlagNoFunctionFrame;
-	FlagOverwriteVariablesOffset = ps->FlagOverwriteVariablesOffset;
-	FlagStringConstAsCString = ps->FlagStringConstAsCString;
-	VariablesOffset = ps->VariablesOffset;
+	FlagCompileOS |= ps->FlagCompileOS;
+	FlagAddEntryPoint |= ps->FlagAddEntryPoint;
+	FlagNoFunctionFrame |= ps->FlagNoFunctionFrame;
+	FlagOverwriteVariablesOffset |= ps->FlagOverwriteVariablesOffset;
+	if (ps->FlagOverwriteVariablesOffset)
+		VariablesOffset = ps->VariablesOffset;
+	FlagStringConstAsCString |= ps->FlagStringConstAsCString;
 	if (ps->AsmMetaInfo->CodeOrigin != (long)ps->script->Opcode)
 		AsmMetaInfo->CodeOrigin = ps->AsmMetaInfo->CodeOrigin;
 
