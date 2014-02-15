@@ -70,7 +70,6 @@ enum
 	KindRegister,
 	KindDerefRegister,
 	KindMarker,
-	KindAsmBlock,
 };
 
 struct Command;
@@ -78,9 +77,8 @@ struct Command;
 // {...}-block
 struct Block
 {
-	int root;
 	int index;
-	Array<Command*> command; // ID of command in global command array
+	Array<Command*> command;
 };
 
 struct Variable
@@ -128,6 +126,7 @@ struct Command
 	// return value
 	Type *type;
 	Command(int kind, int link_no, Script *script, Type *type);
+	Block *block() const;
 };
 
 struct AsmBlock
@@ -231,6 +230,7 @@ public:
 	// neccessary conversions
 	void ConvertCallByReference();
 	void BreakDownComplicatedCommands();
+	void BreakDownComplicatedCommand(Command *c);
 	void MapLocalVariablesToStack();
 
 	// data creation
@@ -253,9 +253,9 @@ public:
 	Command *shift_command(Command *sub, bool deref, int shift, Type *type);
 
 	// pre processor
-	void PreProcessCommand(Script *s, Command *c);
+	void PreProcessCommand(Command *c);
 	void PreProcessor(Script *s);
-	void PreProcessCommandAddresses(Script *s, Command *c);
+	void PreProcessCommandAddresses(Command *c);
 	void PreProcessorAddresses(Script *s);
 	void Simplify();
 

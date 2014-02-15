@@ -1197,7 +1197,6 @@ void SyntaxTree::ParseCompleteCommand(Block *block, Function *f)
 		Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 		msg_db_f("Block", 4);
 		Block *new_block = AddBlock();
-		new_block->root = block->index;
 
 		Command *c = AddCommand(KindBlock, new_block->index, TypeVoid);
 		block->command.add(c);
@@ -1285,7 +1284,7 @@ void SyntaxTree::TestArrayDefinition(Type **type, bool is_pointer)
 
 			// find array index
 			Command *c = GetCommand(&RootOfAllEvil);
-			PreProcessCommand(NULL, c);
+			PreProcessCommand(c);
 
 			if ((c->kind != KindConstant) || (c->type != TypeInt))
 				DoError("only constants of type \"int\" allowed for size of arrays");
@@ -1322,7 +1321,7 @@ void SyntaxTree::ParseImport()
 		msg_right();
 		Script *include;
 		try{
-			include = Load(filename, script->JustAnalyse);
+			include = Load(filename, script->JustAnalyse || FlagCompileOS);
 		}catch(Exception &e){
 			string msg = "in imported file:\n\"" + e.message + "\"";
 			DoError(msg);
@@ -1590,7 +1589,7 @@ void SyntaxTree::ParseGlobalConst(const string &name, Type *type)
 
 	// find const value
 	Command *cv = GetCommand(&RootOfAllEvil);
-	PreProcessCommand(NULL, cv);
+	PreProcessCommand(cv);
 
 	if ((cv->kind != KindConstant) || (cv->type != type))
 		DoError(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));

@@ -25,9 +25,7 @@ void SyntaxTree::AddIncludeData(Script *s)
 		if (i == s)
 			return;
 	msg_db_f("AddIncludeData",5);
-	Includes.add(s);
 	SyntaxTree *ps = s->syntax;
-	s->ReferenceCounter ++;
 	if (FlagImmortal)
 		SetImmortal(ps);
 
@@ -41,6 +39,14 @@ void SyntaxTree::AddIncludeData(Script *s)
 
 	// defines
 	Defines.append(ps->Defines);
+
+
+	/*if (FlagCompileOS){
+		import_deep(this, ps);
+	}else{*/
+		Includes.add(s);
+		s->ReferenceCounter ++;
+	//}
 
 	/*ExpressionBuffer::Line *cur_line = Exp.cur_line;
 	PreCompiler(script->JustAnalyse);
