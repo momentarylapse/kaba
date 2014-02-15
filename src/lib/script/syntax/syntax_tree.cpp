@@ -141,7 +141,6 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	FlagOverwriteVariablesOffset = false;
 	FlagImmortal = false;
 	FlagNoExecution = false;
-	AsmMetaInfo = NULL;
 	cur_func = NULL;
 	script = _script;
 	AsmMetaInfo = new Asm::MetaInfo;

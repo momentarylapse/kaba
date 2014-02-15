@@ -31,6 +31,14 @@ void SyntaxTree::AddIncludeData(Script *s)
 	if (FlagImmortal)
 		SetImmortal(ps);
 
+	FlagCompileOS = ps->FlagCompileOS;
+	FlagAddEntryPoint = ps->FlagAddEntryPoint;
+	FlagNoFunctionFrame = ps->FlagNoFunctionFrame;
+	FlagOverwriteVariablesOffset = ps->FlagOverwriteVariablesOffset;
+	FlagStringConstAsCString = ps->FlagStringConstAsCString;
+	VariablesOffset = ps->VariablesOffset;
+	AsmMetaInfo->CodeOrigin = ps->AsmMetaInfo->CodeOrigin;
+
 	// defines
 	Defines.append(ps->Defines);
 
