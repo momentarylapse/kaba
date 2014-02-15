@@ -343,22 +343,32 @@ void relink_calls(SyntaxTree *ps, SyntaxTree *a, SyntaxTree *b, int const_off, i
 	}
 }
 
-void import_deep(SyntaxTree *a, SyntaxTree *b)
+struct IncludeTranslationData
 {
-	int const_off = a->Constants.num;
+	int const_off;
+	int func_off;
+	int var_off;
+	SyntaxTree *source;
+};
+
+IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
+{
+	IncludeTranslationData d;
+	d.const_off = a->Constants.num;
+	d.var_off = a->RootOfAllEvil.var.num;
+	d.func_off = a->Functions.num;
+	d.source = b;
+
 	foreach(Constant &c, b->Constants){
 		int n = a->AddConstant(c.type);
 		int size = (c.type == TypeString) ? 256 : c.type->size;
 		memcpy(a->Constants[n].data, c.data, size);
 	}
-
-	int var_off = a->RootOfAllEvil.var.num;
 	foreach(Variable &v, b->RootOfAllEvil.var){
 		Variable vv = v;
 		a->RootOfAllEvil.var.add(vv);
 	}
 
-	int func_off = a->Functions.num;
 	foreach(Function *f, b->Functions){
 		Function *ff = a->AddFunction(f->name, f->return_type);
 		*ff = *f;
@@ -370,8 +380,7 @@ void import_deep(SyntaxTree *a, SyntaxTree *b)
 		a->AsmBlocks.add(ab);
 	}
 
-	relink_calls(a, a, b, const_off, var_off, func_off);
-	relink_calls(b, a, b, const_off, var_off, func_off);
+	return d;
 }
 
 void add_includes(Script *s, Set<Script*> &includes)
@@ -388,8 +397,15 @@ void import_includes(Script *s)
 {
 	Set<Script*> includes;
 	add_includes(s, includes);
+	Array<IncludeTranslationData> da;
+	foreach(Script *i, includes)
+		da.add(import_deep(s->syntax, i->syntax));
+
 	foreach(Script *i, includes){
-		import_deep(s->syntax, i->syntax);
+		foreach(IncludeTranslationData &d, da){
+			relink_calls(s->syntax, s->syntax, d.source, d.const_off, d.var_off, d.func_off);
+			relink_calls(i->syntax, s->syntax, d.source, d.const_off, d.var_off, d.func_off);
+		}
 	}
 }
 
