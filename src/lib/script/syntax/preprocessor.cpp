@@ -214,7 +214,7 @@ void SyntaxTree::PreProcessCommandAddresses(Command *c)
 	}
 }
 
-void SyntaxTree::PreProcessor(Script *s)
+void SyntaxTree::PreProcessor()
 {
 	msg_db_f("PreProcessor", 4);
 	foreach(Function *f, Functions){
@@ -225,7 +225,7 @@ void SyntaxTree::PreProcessor(Script *s)
 	//Show();
 }
 
-void SyntaxTree::PreProcessorAddresses(Script *s)
+void SyntaxTree::PreProcessorAddresses()
 {
 	msg_db_f("PreProcessorAddr", 4);
 	foreach(Function *f, Functions){

@@ -748,7 +748,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			p.kind = KindVarGlobal;
 		else
 			p.kind = KindRefToConst;
-		p.p = script->cnst[link->link_no];
+		p.p = link->script->cnst[link->link_no];
 	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){
 		p = SerializeCommand(link, level, index);
 	}else if (link->kind == KindReference){
@@ -2910,7 +2910,7 @@ void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s)
 		s->DoError("asm block mismatch");
 	ps->AsmMetaInfo->LineOffset = ps->AsmBlocks[0].line;
 	list->AppendFromSource(ps->AsmBlocks[0].block);
-	//ps->AsmBlocks.erase(0);
+	ps->AsmBlocks.erase(0);
 }
 
 void Serializer::Assemble(char *Opcode, int &OpcodeSize)

@@ -411,7 +411,7 @@ void Script::Compiler()
 #endif
 
 	syntax->Simplify();
-	syntax->PreProcessor(this);
+	syntax->PreProcessor();
 
 	if (syntax->FlagShow)
 		syntax->Show();
@@ -434,7 +434,7 @@ void Script::Compiler()
 
 
 
-	syntax->PreProcessorAddresses(this);
+	syntax->PreProcessorAddresses();
 
 
 // compile functions into Opcode
@@ -446,8 +446,6 @@ void Script::Compiler()
 				DoErrorLink("external function " + f->name + " not linkable");
 			//func[i] = (t_func*)((long)func[i] + (long)Opcode - syntax->AsmMetaInfo->CodeOrigin);
 		}else{
-			if (f->name == "strlen")
-				syntax->ShowFunction(f);
 			func[i] = (t_func*)(syntax->AsmMetaInfo->CodeOrigin + OpcodeSize);
 			CompileFunction(f, Opcode, OpcodeSize);
 		}

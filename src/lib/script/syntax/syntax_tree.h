@@ -254,9 +254,9 @@ public:
 
 	// pre processor
 	void PreProcessCommand(Command *c);
-	void PreProcessor(Script *s);
+	void PreProcessor();
 	void PreProcessCommandAddresses(Command *c);
-	void PreProcessorAddresses(Script *s);
+	void PreProcessorAddresses();
 	void Simplify();
 
 	// debug displaying

@@ -174,7 +174,7 @@ void SyntaxTree::LoadAndParseFile(const string &filename, bool just_analyse)
 
 	Simplify();
 	
-	PreProcessor(NULL);
+	PreProcessor();
 
 	if (FlagShow)
 		Show();
@@ -287,8 +287,6 @@ int Function::AddVar(const string &name, Type *type)
 	v.name = name;
 	v.type = type;
 	v.is_extern = next_extern;
-	if (this->name == "strlen")
-		msg_error("add " + name);
 	var.add(v);
 	return var.num - 1;
 }
@@ -512,8 +510,6 @@ bool SyntaxTree::GetExistence(const string &name, Function *func)
 		// first test local variables
 		foreachi(Variable &v, func->var, i){
 			if (v.name == name){
-				if (func->name == "strlen")
-					msg_error("found: " + v.name + " " + i2s(i));
 				exlink_make_var_local(this, v.type, i);
 				return true;
 			}
@@ -1123,7 +1119,7 @@ SyntaxTree::~SyntaxTree()
 
 void SyntaxTree::ShowCommand(Command *c)
 {
-	msg_write("[" + Kind2Str(c->kind) + "] " + c->type->name + " " + LinkNr2Str(c->script->syntax,c->kind,c->link_no));
+	msg_write("[" + Kind2Str(c->kind) + "] " + c->type->name + " " + LinkNr2Str(c->script->syntax,c->kind,c->link_no) + " << " + c->script->Filename);
 	msg_right();
 	if (c->instance)
 		ShowCommand(c->instance);

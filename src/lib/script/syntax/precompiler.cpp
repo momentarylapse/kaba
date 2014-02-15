@@ -35,7 +35,8 @@ void SyntaxTree::AddIncludeData(Script *s)
 	FlagOverwriteVariablesOffset = ps->FlagOverwriteVariablesOffset;
 	FlagStringConstAsCString = ps->FlagStringConstAsCString;
 	VariablesOffset = ps->VariablesOffset;
-	AsmMetaInfo->CodeOrigin = ps->AsmMetaInfo->CodeOrigin;
+	if (ps->AsmMetaInfo->CodeOrigin != (long)ps->script->Opcode)
+		AsmMetaInfo->CodeOrigin = ps->AsmMetaInfo->CodeOrigin;
 
 	// defines
 	Defines.append(ps->Defines);
