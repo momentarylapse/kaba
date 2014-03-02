@@ -175,11 +175,21 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Function *f)
 		deref = true;
 	}
 
+	// super
+	if ((type->parent) && (Exp.cur == "super")){
+		Exp.next();
+		if (deref){
+			Operand->type = type->parent->GetPointer();
+			return Operand;
+		}
+		return ref_command(Operand, type->parent->GetPointer());
+	}
+
 	// find element
 	for (int e=0;e<type->element.num;e++)
 		if (Exp.cur == type->element[e].name){
 			Exp.next();
-			return 	shift_command(Operand, deref, type->element[e].offset, type->element[e].type);
+			return shift_command(Operand, deref, type->element[e].offset, type->element[e].type);
 		}
 
 	// class function?
@@ -1690,8 +1700,6 @@ void Function::Update(Type *class_type)
 	_class = class_type;
 	if (class_type){
 		AddVar("self", class_type->GetPointer());
-		if (class_type->parent)
-			AddVar("super", class_type->parent->GetPointer());
 
 		// convert name to Class.Function
 		name = class_type->name + "." +  name;

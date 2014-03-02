@@ -49,9 +49,10 @@ void ref_command_old(SyntaxTree *ps, Command *c)
 	command_make_ref(ps, c, t);
 }
 
-Command *SyntaxTree::ref_command(Command *sub)
+Command *SyntaxTree::ref_command(Command *sub, Type *overwrite_type)
 {
-	Command *c = AddCommand(KindReference, 0, sub->type->GetPointer());
+	Type *t = overwrite_type ? overwrite_type : sub->type->GetPointer();
+	Command *c = AddCommand(KindReference, 0, t);
 	c->num_params = 1;
 	c->param[0] = sub;
 	return c;
@@ -515,6 +516,10 @@ bool SyntaxTree::GetExistence(const string &name, Function *func)
 			}
 		}
 		if (func->_class){
+			if ((name == "super") && (func->_class->parent)){
+				exlink_make_var_local(this, func->_class->parent->GetPointer(), func->get_var("self"));
+				return true;
+			}
 			// class elements (within a class function)
 			foreach(ClassElement &e, func->_class->element)
 				if (e.name == name){
@@ -1028,8 +1033,6 @@ void MapLVSX86Self(Function *f)
 			if (v.name == "self"){
 				v._offset = f->_param_size;
 				f->_param_size += 4;
-			}else if (v.name == "super"){
-				v._offset = f->var[f->get_var("self")]._offset;
 			}
 	}
 }
@@ -1057,7 +1060,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 			}
 
 			foreachi(Variable &v, f->var, i){
-				if ((f->_class) && ((v.name == "self") || (v.name == "super")))
+				if ((f->_class) && (v.name == "self"))
 					continue;
 				if (v.name == "-return-")
 					continue;
@@ -1076,14 +1079,9 @@ void SyntaxTree::MapLocalVariablesToStack()
 			f->_var_size = 0;
 			
 			foreachi(Variable &v, f->var, i){
-				if ((f->_class) && (v.name == "super")){
-					// map "super" to "self"
-					v._offset = f->var[f->get_var("self")]._offset;
-				}else{
-					int s = mem_align(v.type->size, 4);
-					v._offset = - f->_var_size - s;
-					f->_var_size += s;
-				}
+				int s = mem_align(v.type->size, 4);
+				v._offset = - f->_var_size - s;
+				f->_var_size += s;
 			}
 		}
 	}

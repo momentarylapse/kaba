@@ -248,7 +248,7 @@ public:
 	Command *add_command_parray(Command *p, Command *index, Type *type);
 	Command *cp_command(Command *c);
 	Command *cp_command_deep(Command *c);
-	Command *ref_command(Command *sub);
+	Command *ref_command(Command *sub, Type *overwrite_type = NULL);
 	Command *deref_command(Command *sub);
 	Command *shift_command(Command *sub, bool deref, int shift, Type *type);
 

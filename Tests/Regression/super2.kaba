@@ -1,0 +1,22 @@
+//#show
+//#disasm
+
+class Parent
+	int a, b
+	void f()
+		print "parent"
+		print a
+
+class Child : Parent
+	int c
+	overwrite void f()
+		print super.a
+		print "child"
+		super.f()
+
+void main()
+	Child c
+	c.a = 13
+	c.f()
+	c.super.f()
+

@@ -26,7 +26,7 @@
 
 namespace Script{
 
-string DataVersion = "0.13.8.0";
+string DataVersion = "0.13.9.0";
 
 CompilerConfiguration config;
 

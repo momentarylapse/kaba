@@ -503,8 +503,8 @@ HuiPainter *HuiWindow::BeginDraw(const string &_id)
 		//gdk_drawable_get_size(gtk_widget_get_window(c->widget), &hui_drawing_context.width, &hui_drawing_context.height);
 		hui_drawing_context.width = gdk_window_get_width(gtk_widget_get_window(c->widget));
 		hui_drawing_context.height = gdk_window_get_height(gtk_widget_get_window(c->widget));
-		//hui_drawing_context.SetFontSize(16);
-		hui_drawing_context.SetFont("Sans", 16, false, false);
+		//hui_drawing_context.setFontSize(16);
+		hui_drawing_context.setFont("Sans", 16, false, false);
 	}
 	return &hui_drawing_context;
 }

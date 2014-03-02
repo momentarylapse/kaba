@@ -123,6 +123,7 @@ void HuiWindow::_InitGeneric_(HuiWindow *_root, bool _allow_root, int _mode)
 
 	is_resizable = ((_mode & HuiWinModeResizable) > 0);
 	border_width = 5;
+	expander_indent = 20;
 	allowed = true;
 	allow_keys = true;
 	parent = _root;
@@ -225,6 +226,11 @@ void HuiWindow::SetPositionSpecial(HuiWindow *win,int mode)
 void HuiWindow::SetBorderWidth(int width)
 {
 	border_width = width;
+}
+
+void HuiWindow::SetIndent(int indent)
+{
+	expander_indent = indent;
 }
 
 void HuiWindow::SetDecimals(int decimals)

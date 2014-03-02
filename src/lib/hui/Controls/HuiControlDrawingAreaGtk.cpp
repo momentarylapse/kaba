@@ -249,15 +249,16 @@ void HuiControlDrawingArea::HardReset()
 	//mask = GDK_ALL_EVENTS_MASK;
 	g_object_set(G_OBJECT(da), "events", mask, NULL);
 
-	if (grab_focus){
-		gtk_widget_set_can_focus(da, true);
-		gtk_widget_grab_focus(da);
-	}
 	widget = da;
 	gtk_widget_set_hexpand(widget, true);
 	gtk_widget_set_vexpand(widget, true);
 
 	gtk_container_add(GTK_CONTAINER(parent), widget);
+
+	if (grab_focus){
+		gtk_widget_set_can_focus(da, true);
+		gtk_widget_grab_focus(da);
+	}
 }
 
 #endif

@@ -52,6 +52,8 @@ class HuiControlListView;
 class HuiControlTreeView;
 class HuiControlGrid;
 class HuiControlRadioButton;
+class HuiControlGroup;
+class HuiControlExpander;
 
 class HuiWindow : public HuiEventHandler
 {
@@ -62,6 +64,8 @@ class HuiWindow : public HuiEventHandler
 	friend class HuiControlTreeView;
 	friend class HuiControlGrid;
 	friend class HuiControlRadioButton;
+	friend class HuiControlGroup;
+	friend class HuiControlExpander;
 	friend class HuiMenu;
 public:
 	HuiWindow();
@@ -98,6 +102,7 @@ public:
 	void _cdecl SetMenu(HuiMenu *menu);
 	HuiMenu* _cdecl GetMenu();
 	void _cdecl SetBorderWidth(int width);
+	void _cdecl SetIndent(int indent);
 	HuiWindow* _cdecl GetParent();
 	void _cdecl FromResource(const string &id);
 
@@ -271,6 +276,7 @@ private:
 	int num_float_decimals;
 	bool is_resizable;
 	int border_width;
+	int expander_indent;
 	Array<HuiControl*> control;
 	HuiControl *cur_control;
 	HuiControl *root_control;
