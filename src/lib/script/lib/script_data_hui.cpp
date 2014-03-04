@@ -139,6 +139,8 @@ void SIAddPackageHui()
 			func_add_param("id",		TypeInt);
 		class_add_func("isActive",										TypeVoid,		mf(&HuiWindow::IsActive));
 			func_add_param("id",	TypeString);
+		class_add_func("fromSource",	TypeVoid,		mf(&HuiWindow::FromSource));
+			func_add_param("source",		TypeString);
 		class_add_func("addButton",										TypeVoid,		mf(&HuiWindow::AddButton));
 			func_add_param("title",		TypeString);
 			func_add_param("x",			TypeInt);

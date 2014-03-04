@@ -425,7 +425,7 @@ void HuiWindow::EmbedDialog(const string &id, int x, int y)
 	if (res){
 		if (res->type != "SizableDialog")
 			return;
-		foreachi(HuiResourceCommand &cmd, res->cmd, i){
+		foreachi(HuiResource &cmd, res->children, i){
 			//msg_db_m(format("%d:  %d / %d",j,(cmd->type & 1023),(cmd->type >> 10)).c_str(),4);
 			//if ((cmd->type & 1023)==HuiCmdDialogAddControl){
 

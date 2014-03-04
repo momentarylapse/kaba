@@ -19,6 +19,15 @@ bool next_const = false;
 
 void conv_cbr(SyntaxTree *ps, Command *&c, int var);
  
+void Constant::setInt(int i)
+{
+	(*(int*)(value.data)) = i;
+}
+
+int Constant::getInt()
+{
+	return (*(int*)(value.data));
+}
 
 Command *SyntaxTree::cp_command(Command *c)
 {
@@ -299,10 +308,7 @@ int SyntaxTree::AddConstant(Type *type)
 	Constant c;
 	c.name = "-none-";
 	c.type = type;
-	int s = max(type->size, config.PointerSize);
-	if (type == TypeString)
-		s = 256;
-	c.data = new char[s];
+	c.value.resize(max(type->size, config.PointerSize));
 	Constants.add(c);
 	return Constants.num - 1;
 }
@@ -921,7 +927,7 @@ void SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		Command *c_ref_array = ref_command(c->param[0]);
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		*(int*)Constants[nc].data = el_type->size;
+		Constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
 		Command *c_offset = add_command_operator(c_index, c_size, OperatorIntMultiply);
@@ -947,7 +953,7 @@ void SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		Command *c_ref_array = c->param[0];
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		*(int*)Constants[nc].data = el_type->size;
+		Constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
 		Command *c_offset = add_command_operator(c_index, c_size, OperatorIntMultiply);
@@ -972,7 +978,7 @@ void SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		Command *c_ref_struct = ref_command(c->param[0]);
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		*(int*)Constants[nc].data = c->link_no;
+		Constants[nc].setInt(c->link_no);
 		Command *c_shift = add_command_const(nc);
 		// address = &struct + shift
 		Command *c_address = add_command_operator(c_ref_struct, c_shift, OperatorIntAdd);
@@ -993,7 +999,7 @@ void SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		Command *c_ref_struct = c->param[0];
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		*(int*)Constants[nc].data = c->link_no;
+		Constants[nc].setInt(c->link_no);
 		Command *c_shift = add_command_const(nc);
 		// address = &struct + shift
 		Command *c_address = add_command_operator(c_ref_struct, c_shift, OperatorIntAdd);
@@ -1101,9 +1107,6 @@ SyntaxTree::~SyntaxTree()
 
 	if (AsmMetaInfo)
 		delete(AsmMetaInfo);
-	
-	foreach(Constant &c, Constants)
-		delete[](c.data);
 
 	foreach(Command *c, Commands)
 		delete(c);

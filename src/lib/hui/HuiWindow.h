@@ -18,6 +18,7 @@ class HuiWindow;
 class HuiPainter;
 class HuiToolbar;
 class rect;
+class HuiResourceNew;
 
 
 struct HuiCompleteWindowMessage
@@ -105,6 +106,7 @@ public:
 	void _cdecl SetIndent(int indent);
 	HuiWindow* _cdecl GetParent();
 	void _cdecl FromResource(const string &id);
+	void _cdecl FromSource(const string &source);
 
 
 	void _cdecl SetCursorPos(int x,int y);
@@ -176,6 +178,8 @@ public:
 	void _cdecl AddPaned(const string &title,int x,int y,int width,int height,const string &id);
 
 	void _cdecl EmbedDialog(const string &id, int x, int y);
+	void _cdecl EmbedSource(const string &source, const string &parent_id, int x, int y);
+	void EmbedResource(HuiResourceNew &c, const string &parent_id, int x, int y);
 
 // using controls
 	// string
@@ -317,6 +321,14 @@ public:
 };
 
 extern HuiWindow *HuiCurWindow;
+
+
+class HuiSourceDialog : public HuiWindow
+{
+public:
+	HuiSourceDialog(const string &source, HuiWindow *root);
+	void _cdecl __init_ext__(const string &source, HuiWindow *root);
+};
 
 void _cdecl HuiWindowAddControl(HuiWindow *win, const string &type, const string &title, int x, int y, int width, int height, const string &id);
 

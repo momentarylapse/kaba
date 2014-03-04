@@ -108,34 +108,30 @@ Type *SyntaxTree::GetConstantType()
 
 static int _some_int_;
 static float _some_float_;
-static char _some_string_[2048];
 
-void *SyntaxTree::GetConstantValue()
+string SyntaxTree::GetConstantValue()
 {
 	Type *type = GetConstantType();
 // named constants
 	if (FoundConstantNr >= 0)
-		return FoundConstantScript->syntax->Constants[FoundConstantNr].data;
+		return FoundConstantScript->syntax->Constants[FoundConstantNr].value;
 // literal
 	if (type == TypeChar){
 		_some_int_ = Exp.cur[1];
-		return &_some_int_;
+		return string((char*)&_some_int_, sizeof(int));
 	}
 	if ((type == TypeString) || (type == TypeCString)){
-		for (int i=0;i<Exp.cur.num - 2;i++)
-			_some_string_[i] = Exp.cur[i+1];
-		_some_string_[Exp.cur.num - 2] = 0;
-		return _some_string_;
+		return Exp.cur.substr(1, -2);
 	}
 	if (type == TypeInt){
 		_some_int_ = s2i2(Exp.cur);
-		return &_some_int_;
+		return string((char*)&_some_int_, sizeof(int));
 	}
 	if (type == TypeFloat){
 		_some_float_ = Exp.cur._float();
-		return &_some_float_;
+		return string((char*)&_some_float_, sizeof(float));
 	}
-	return NULL;
+	return "";
 }
 
 
@@ -312,13 +308,13 @@ bool SyntaxTree::GetSpecialFunctionCall(const string &f_name, Command *Operand, 
 
 		Type *type = FindType(Exp.cur);
 		if (type){
-			(*(int*)(Constants[nc].data)) = type->size;
+			Constants[nc].setInt(type->size);
 		}else if ((GetExistence(Exp.cur, f)) && ((GetExistenceLink.kind == KindVarGlobal) || (GetExistenceLink.kind == KindVarLocal))){
-			(*(int*)(Constants[nc].data)) = GetExistenceLink.type->size;
+			Constants[nc].setInt(GetExistenceLink.type->size);
 		}else{
 			type = GetConstantType();
 			if (type)
-				(*(int*)(Constants[nc].data)) = type->size;
+				Constants[nc].setInt(type->size);
 			else
 				DoError("type-name or variable name expected in sizeof(...)");
 		}
@@ -624,10 +620,7 @@ Command *SyntaxTree::GetOperand(Function *f)
 			if (t != TypeUnknown){
 				Operand = AddCommand(KindConstant, AddConstant(t), t);
 				// constant for parameter (via variable)
-				int size = t->size;
-				if (t == TypeString)
-					size = 256;
-				memcpy(Constants[Operand->link_no].data, GetConstantValue(), size);
+				Constants[Operand->link_no].value = GetConstantValue();
 				Exp.next();
 			}else{
 				//Operand.Kind=0;
@@ -707,19 +700,19 @@ void apply_type_cast(SyntaxTree *ps, int tc, Command *param)
 	if (tc < 0)
 		return;
 	if (param->kind == KindConstant){
-		char *data_old = ps->Constants[param->link_no].data;
-		char *data_new = (char*)TypeCasts[tc].func(data_old);
-		if ((TypeCasts[tc].dest->is_array) || (TypeCasts[tc].dest->is_super_array)){
+		string data_old = ps->Constants[param->link_no].value;
+		string data_new = TypeCasts[tc].func(data_old);
+		/*if ((TypeCasts[tc].dest->is_array) || (TypeCasts[tc].dest->is_super_array)){
 			// arrays as return value -> reference!
 			int size = TypeCasts[tc].dest->size;
 			if (TypeCasts[tc].dest == TypeString)
-				size = 256;
+				size = SCRIPT_MAX_STRING_CONST_LENGTH;
 			delete[] data_old;
 			ps->Constants[param->link_no].data = new char[size];
 			data_new = *(char**)data_new;
 			memcpy(ps->Constants[param->link_no].data, data_new, size);
-		}else
-			memcpy(ps->Constants[param->link_no].data, data_new, TypeCasts[tc].dest->size);
+		}else*/
+			ps->Constants[param->link_no].value = data_new;
 		ps->Constants[param->link_no].type = TypeCasts[tc].dest;
 		param->type = TypeCasts[tc].dest;
 	}else{
@@ -969,7 +962,7 @@ void SyntaxTree::ParseSpecialCommandFor(Block *block, Function *f)
 	}else{
 		if (!val_step){
 			int nc = AddConstant(TypeFloat);
-			*(float*)Constants[nc].data = 1.0;
+			*(float*)Constants[nc].value.data = 1.0;
 			val_step = add_command_const(nc);
 		}
 		cmd_inc = add_command_operator(for_var, val_step, OperatorFloatAddS);
@@ -1013,7 +1006,7 @@ void SyntaxTree::ParseSpecialCommandForall(Block *block, Function *f)
 
 	// 0
 	int nc = AddConstant(TypeInt);
-	*(int*)Constants[nc].data = 0;
+	Constants[nc].setInt(0);
 	Command *val0 = add_command_const(nc);
 
 	// implement
@@ -1298,7 +1291,7 @@ void SyntaxTree::TestArrayDefinition(Type **type, bool is_pointer)
 
 			if ((c->kind != KindConstant) || (c->type != TypeInt))
 				DoError("only constants of type \"int\" allowed for size of arrays");
-			array_size = *(int*)Constants[c->link_no].data;
+			array_size = Constants[c->link_no].getInt();
 			//Exp.next();
 			if (Exp.cur != "]")
 				DoError("\"]\" expected after array size");
@@ -1371,12 +1364,12 @@ void SyntaxTree::ParseEnum()
 				ExpectNoNewline();
 				Type *type = GetConstantType();
 				if (type == TypeInt)
-					value = *(int*)GetConstantValue();
+					value = *(int*)GetConstantValue().data;
 				else
 					DoError("integer constant expected after \"=\" for explicit value of enum");
 				Exp.next();
 			}
-			*(int*)c->data = value ++;
+			c->setInt(value ++);
 
 			if (Exp.end_of_line())
 				break;

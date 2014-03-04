@@ -85,7 +85,7 @@ void Script::AllocateMemory()
 		int s = c.type->size;
 		if (c.type == TypeString){
 			// const string -> variable length   (+ super array frame)
-			s = strlen(c.data) + 1 + config.SuperArraySize;
+			s = c.value.num + config.SuperArraySize;
 		}
 		MemorySize += mem_align(s, 4);
 	}
@@ -143,15 +143,15 @@ void Script::MapConstantsToMemory()
 		int s = c.type->size;
 		if (c.type == TypeString){
 			// const string -> variable length
-			s = strlen(syntax->Constants[i].data) + 1;
+			s = syntax->Constants[i].value.num;
 
 			*(void**)&Memory[MemorySize] = &Memory[MemorySize + config.SuperArraySize]; // .data
-			*(int*)&Memory[MemorySize + config.PointerSize    ] = s - 1; // .num
+			*(int*)&Memory[MemorySize + config.PointerSize    ] = s; // .num
 			*(int*)&Memory[MemorySize + config.PointerSize + 4] = 0; // .reserved
 			*(int*)&Memory[MemorySize + config.PointerSize + 8] = 1; // .item_size
 			MemorySize += config.SuperArraySize;
 		}
-		memcpy(&Memory[MemorySize], (void*)c.data, s);
+		memcpy(&Memory[MemorySize], (void*)c.value.data, s);
 		MemorySize += mem_align(s, 4);
 	}
 }
@@ -204,18 +204,22 @@ void Script::CompileOsEntryPoint()
 			int s = c.type->size;
 			if (c.type == TypeString){
 				// const string -> variable length
-				s = strlen(syntax->Constants[i].data) + 1;
+				s = syntax->Constants[i].value .num;
 
 				*(void**)&Opcode[OpcodeSize] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin + config.SuperArraySize); // .data
-				*(int*)&Opcode[OpcodeSize + config.PointerSize    ] = s - 1; // .num
+				*(int*)&Opcode[OpcodeSize + config.PointerSize    ] = s; // .num
 				*(int*)&Opcode[OpcodeSize + config.PointerSize + 4] = 0; // .reserved
 				*(int*)&Opcode[OpcodeSize + config.PointerSize + 8] = 1; // .item_size
 				OpcodeSize += config.SuperArraySize;
 			}else if (c.type == TypeCString){
-				s = strlen(c.data) + 1;
+				s = syntax->Constants[i].value .num;
 			}
-			memcpy(&Opcode[OpcodeSize], (void*)c.data, s);
+			memcpy(&Opcode[OpcodeSize], (void*)c.value.data, s);
 			OpcodeSize += s;
+
+			// cstring -> 0 terminated
+			if (c.type == TypeCString)
+				Opcode[OpcodeSize ++] = 0;
 		}
 	}
 
@@ -359,15 +363,9 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 	d.func_off = a->Functions.num;
 	d.source = b;
 
-	foreach(Constant &c, b->Constants){
-		int n = a->AddConstant(c.type);
-		int size = (c.type == TypeString) ? 256 : c.type->size;
-		memcpy(a->Constants[n].data, c.data, size);
-	}
-	foreach(Variable &v, b->RootOfAllEvil.var){
-		Variable vv = v;
-		a->RootOfAllEvil.var.add(vv);
-	}
+	a->Constants.append(b->Constants);
+
+	a->RootOfAllEvil.var.append(b->RootOfAllEvil.var);
 
 	foreach(Function *f, b->Functions){
 		Function *ff = a->AddFunction(f->name, f->return_type);

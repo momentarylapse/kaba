@@ -4,7 +4,7 @@
 
 namespace Script{
 
-typedef void op_func(void *r, void *a, void *b);
+typedef void op_func(string &r, string &a, string &b);
 
 //static Function *cur_func;
 
@@ -64,11 +64,11 @@ void SyntaxTree::PreProcessCommand(Command *c)
 				}else{
 					// pre process operator
 					int nc = AddConstant(o->return_type);
-					void *d1 = Constants[c->param[0]->link_no].data;
-					void *d2 = NULL;
+					string d1 = Constants[c->param[0]->link_no].value;
+					string d2;
 					if (c->num_params > 1)
-						d2 = Constants[c->param[1]->link_no].data;
-					f(Constants[nc].data, d1, d2);
+						d2 = Constants[c->param[1]->link_no].value;
+					f(Constants[nc].value, d1, d2);
 					c->script = script;
 					c->kind = KindConstant;
 					c->link_no = nc;
@@ -84,11 +84,11 @@ void SyntaxTree::PreProcessCommand(Command *c)
 		if (all_consts){
 			int nc = AddConstant(c->type);
 			int el_size = c->type->parent->size;
-			DynamicArray *da = (DynamicArray*)Constants[nc].data;
+			DynamicArray *da = (DynamicArray*)Constants[nc].value.data;
 			da->init(el_size);
 			da->resize(c->num_params);
 			for (int i=0; i<c->num_params; i++)
-				memcpy((char*)da->data + el_size * i, Constants[c->param[i]->link_no].data, el_size);
+				memcpy((char*)da->data + el_size * i, Constants[c->param[i]->link_no].value.data, el_size);
 			c->kind = KindConstant;
 			c->script = script;
 			c->link_no = nc;
@@ -170,14 +170,15 @@ void SyntaxTree::PreProcessCommandAddresses(Command *c)
 				op_func *f = (op_func*)o->func;
 				if (is_address){
 					// pre process address
-					void *d1 = (void*)&c->param[0]->link_no;
-					void *d2 = (void*)&c->param[1]->link_no;
+					string d1 = string((char*)&c->param[0]->link_no, 4);
+					string d2 = string((char*)&c->param[1]->link_no, 4);
 					if (c->param[0]->kind == KindConstant)
-					    d1 = Constants[c->param[0]->link_no].data;
+					    d1 = Constants[c->param[0]->link_no].value;
 					if (c->param[1]->kind == KindConstant)
-					    d2 = Constants[c->param[1]->link_no].data;
-					void *r = (void*)&c->link_no;
+					    d2 = Constants[c->param[1]->link_no].value;
+					string r = "--------";
 					f(r, d1, d2);
+					c->link_no = *(int*)r.data;
 					c->kind = is_local ? KindLocalAddress : KindAddress;
 					c->num_params = 0;
 				}
