@@ -1519,9 +1519,11 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 
 	// class function -> compile instance
 	bool is_class_function = false;
-	if ((com->kind == KindFunction) || (com->kind == KindVirtualFunction)){
+	if (com->kind == KindFunction){
 		if (com->script->syntax->Functions[com->link_no]->_class)
 			is_class_function = true;
+	}else if (com->kind == KindVirtualFunction){
+		is_class_function = true;
 	}
 	SerialCommandParam instance = {-1, NULL, NULL};
 	if (is_class_function){

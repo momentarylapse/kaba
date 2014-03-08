@@ -1887,8 +1887,8 @@ void SyntaxTree::Parser()
 
 	ParseAllFunctionBodies();
 
-	foreach(Type *t, Types)
-		AutoImplementFunctions(t);
+	for (int i=0; i<Types.num; i++)
+		AutoImplementFunctions(Types[i]);
 }
 
 }
