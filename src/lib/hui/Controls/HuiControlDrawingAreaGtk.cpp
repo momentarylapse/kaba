@@ -8,6 +8,7 @@
 #include "HuiControlDrawingArea.h"
 #include "../hui.h"
 #include "../hui_internal.h"
+#include <math.h>
 
 #ifdef HUI_API_GTK
 
@@ -42,7 +43,7 @@ gboolean OnGtkAreaMouseMove(GtkWidget *widget, GdkEventMotion *event, gpointer u
 {
 	// ignore if SetCursorPosition() was used...
 	if (GtkAreaMouseSet >= 0){
-		if ((event->x != GtkAreaMouseSetX) || (event->y != GtkAreaMouseSetY)){
+		if ((fabs(event->x - GtkAreaMouseSetX) > 2.0f) || (fabs(event->y - GtkAreaMouseSetY) > 2.0f)){
 			GtkAreaMouseSet --;
 			//msg_write(format("ignore fail %.0f\t%0.f", event->x, event->y));
 			return false;
@@ -52,7 +53,7 @@ gboolean OnGtkAreaMouseMove(GtkWidget *widget, GdkEventMotion *event, gpointer u
 	}
 
 	HuiControl *c = (HuiControl*)user_data;
-	win_set_input(c->win, event);
+	win_set_input(c->panel->win, event);
 
 	// gtk hinting system doesn't work?
 	// always use the real (current) cursor
@@ -70,10 +71,12 @@ gboolean OnGtkAreaMouseMove(GtkWidget *widget, GdkEventMotion *event, gpointer u
 	return false;
 }
 
-gboolean OnGtkAreaButtonDown(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+gboolean OnGtkAreaButton(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	HuiControl *c = (HuiControl*)user_data;
-	win_set_input(c->win, event);
+	win_set_input(c->panel->win, event);
+
+	// build message
 	string msg = "hui:";
 	if (event->button == 1)
 		msg += "left";
@@ -83,25 +86,12 @@ gboolean OnGtkAreaButtonDown(GtkWidget *widget, GdkEventButton *event, gpointer 
 		msg += "right";
 	if (event->type == GDK_2BUTTON_PRESS)
 		msg += "-double-click";
-	else
+	else if (event->type == GDK_BUTTON_PRESS)
 		msg += "-button-down";
-	gtk_widget_grab_focus(widget);
-	c->Notify(msg, false);
-	return false;
-}
+	else
+		msg += "-button-up";
 
-gboolean OnGtkAreaButtonUp(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-	HuiControl *c = (HuiControl*)user_data;
-	win_set_input(c->win, event);
-	string msg = "hui:";
-	if (event->button == 1)
-		msg += "left";
-	else if (event->button == 2)
-		msg += "middle";
-	else if (event->button == 3)
-		msg += "right";
-	msg += "-button-up";
+	gtk_widget_grab_focus(widget);
 	c->Notify(msg, false);
 	return false;
 }
@@ -109,17 +99,15 @@ gboolean OnGtkAreaButtonUp(GtkWidget *widget, GdkEventButton *event, gpointer us
 gboolean OnGtkAreaMouseWheel(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
 	HuiControl *c = (HuiControl*)user_data;
-	if (c->win){
+	if (c->panel->win){
 		if (event->direction == GDK_SCROLL_UP)
-			c->win->input.dz = 1;
+			c->panel->win->input.dz = 1;
 		else if (event->direction == GDK_SCROLL_DOWN)
-			c->win->input.dz = -1;
+			c->panel->win->input.dz = -1;
 		c->Notify("hui:mouse-wheel", false);
 	}
 	return false;
 }
-
-
 
 void _get_hui_key_id_(GdkEventKey *event, int &key, int &key_code)
 {
@@ -161,10 +149,10 @@ bool area_process_key(GdkEventKey *event, HuiControl *c, bool down)
 		return false;
 
 	//c->win->input.key_code = key;
-	c->win->input.key[key] = down;
+	c->panel->win->input.key[key] = down;
 
 	if (down){
-		c->win->input.key_code = key_code;
+		c->panel->win->input.key_code = key_code;
 	}
 
 	c->Notify(down ? "hui:key-down" : "hui:key-up", false);
@@ -195,8 +183,8 @@ HuiControlDrawingArea::HuiControlDrawingArea(const string &title, const string &
 	g_signal_connect(G_OBJECT(da), "key-release-event", G_CALLBACK(&OnGtkAreaKeyUp), this);
 	//g_signal_connect(G_OBJECT(da), "size-request", G_CALLBACK(&OnGtkAreaResize), this);
 	g_signal_connect(G_OBJECT(da), "motion-notify-event", G_CALLBACK(&OnGtkAreaMouseMove), this);
-	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&OnGtkAreaButtonDown), this);
-	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&OnGtkAreaButtonUp), this);
+	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&OnGtkAreaButton), this);
+	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&OnGtkAreaButton), this);
 	g_signal_connect(G_OBJECT(da), "scroll-event", G_CALLBACK(&OnGtkAreaMouseWheel), this);
 	//g_signal_connect(G_OBJECT(w), "focus-in-event", G_CALLBACK(&focus_in_event), this);
 	int mask;
@@ -236,8 +224,8 @@ void HuiControlDrawingArea::HardReset()
 	g_signal_connect(G_OBJECT(da), "key-release-event", G_CALLBACK(&OnGtkAreaKeyUp), this);
 	//g_signal_connect(G_OBJECT(da), "size-request", G_CALLBACK(&OnGtkAreaResize), this);
 	g_signal_connect(G_OBJECT(da), "motion-notify-event", G_CALLBACK(&OnGtkAreaMouseMove), this);
-	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&OnGtkAreaButtonDown), this);
-	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&OnGtkAreaButtonUp), this);
+	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&OnGtkAreaButton), this);
+	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&OnGtkAreaButton), this);
 	g_signal_connect(G_OBJECT(da), "scroll-event", G_CALLBACK(&OnGtkAreaMouseWheel), this);
 	//g_signal_connect(G_OBJECT(w), "focus-in-event", G_CALLBACK(&focus_in_event), this);
 	int mask;

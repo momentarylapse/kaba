@@ -14,13 +14,14 @@
 class HuiControlTabControl : public HuiControl
 {
 public:
-	HuiControlTabControl(const string &text, const string &id, HuiWindow *win);
+	HuiControlTabControl(const string &text, const string &id, HuiPanel *panel);
 	virtual ~HuiControlTabControl();
 	virtual string GetString();
 	virtual void __SetString(const string &str);
 	virtual void __SetInt(int i);
 	virtual int GetInt();
 	virtual void __AddString(const string &str);
+	virtual void __SetOption(const string &op, const string &value);
 
 	virtual void add(HuiControl *child, int x, int y);
 	void addPage(const string &str);

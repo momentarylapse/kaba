@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.5.5.0";
+string HuiVersion = "0.5.7.1";
 
 #include <stdio.h>
 #include <signal.h>
@@ -79,7 +79,7 @@ int HuiMainLevel = -1;
 Array<bool> HuiMainLevelRunning;
 
 Array<HuiWindow*> HuiWindows;
-Array<HuiClosedWindow> _HuiClosedWindow_;
+Array<HuiClosedPanel> HuiClosedPanels;
 
 
 bool _HuiScreenOpened_ = false;
@@ -358,8 +358,6 @@ void HuiInit(const string &program, bool load_res, const string &def_lang)
 		HuiSetProperty("logo", HuiAppDirectoryStatic + "Data/icon.svg");
 	else if (file_test_existence(HuiAppDirectoryStatic + "Data/icon.ico"))
 		HuiSetProperty("logo", HuiAppDirectoryStatic + "Data/icon.ico");
-	if (file_test_existence(HuiAppDirectoryStatic + "Data/license_small.txt"))
-		HuiSetProperty("license", FileRead(HuiAppDirectoryStatic + "Data/license_small.txt"));
 }
 
 

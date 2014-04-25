@@ -99,18 +99,16 @@ gboolean OnGtkWindowClose(GtkWidget *widget, GdkEvent *event, gpointer user_data
 	return true;
 }
 
-gboolean focus_in_event(GtkWidget *widget, GdkEventFocus *event, gpointer user_data)
+gboolean OnGtkWindowFocus(GtkWidget *widget, GdkEventFocus *event, gpointer user_data)
 {
+	HuiWindow *win = (HuiWindow *)user_data;
 	// make sure the contro/alt/shift keys are unset
-	HuiWindow *win = win_from_widget(widget);
-	if (win){
 
-		// reset all keys
-		memset(&win->input.key, 0, sizeof(win->input.key));
-		/*win->input.key[KEY_RSHIFT] = win->input.key[KEY_LSHIFT] = false;
-		win->input.key[KEY_RCONTROL] = win->input.key[KEY_LCONTROL] = false;
-		win->input.key[KEY_RALT] = win->input.key[KEY_LALT] = false;*/
-	}
+	// reset all keys
+	memset(&win->input.key, 0, sizeof(win->input.key));
+	/*win->input.key[KEY_RSHIFT] = win->input.key[KEY_LSHIFT] = false;
+	win->input.key[KEY_RCONTROL] = win->input.key[KEY_LCONTROL] = false;
+	win->input.key[KEY_RALT] = win->input.key[KEY_LALT] = false;*/
 	return false;
 }
 
@@ -128,6 +126,7 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 	msg_db_f("HuiWindow()",1);
 
 	window = NULL;
+	win = this;
 	if ((mode & HuiWinModeDummy) > 0)
 		return;
 
@@ -177,6 +176,8 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 		gtk_window_resize(GTK_WINDOW(window), width, height);
 	else
 		gtk_widget_set_size_request(window, width, height);
+	desired_width = width;
+	desired_height = height;
 
 	// icon
 	string logo = HuiGetProperty("logo");
@@ -185,6 +186,7 @@ void HuiWindow::_Init_(const string &title, int x, int y, int width, int height,
 
 	// catch signals
 	g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(&OnGtkWindowClose), this);
+	g_signal_connect(G_OBJECT(window), "focus-in-event", G_CALLBACK(&OnGtkWindowFocus), this);
 
 	// fill in some stuff
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
@@ -335,8 +337,8 @@ string HuiWindow::Run()
 		bool killed = false;
 		while(!killed){
 			HuiDoSingleMainLoop();
-			foreach(HuiClosedWindow &cw, _HuiClosedWindow_)
-				if (cw.unique_id == uid)
+			foreach(HuiClosedPanel &cp, HuiClosedPanels)
+				if (cp.unique_id == uid)
 					killed = true;
 		}
 	}
@@ -344,10 +346,11 @@ string HuiWindow::Run()
 	//msg_write("cleanup");
 
 	// clean up
-	foreachi(HuiClosedWindow &cw, _HuiClosedWindow_, i)
-		if (cw.unique_id == uid){
-			last_id = cw.last_id;
-			_HuiClosedWindow_.erase(i);
+	foreachi(HuiClosedPanel &cp, HuiClosedPanels, i)
+		if (cp.unique_id == uid){
+			if (cp.last_id.num > 0)
+				last_id = cp.last_id;
+			HuiClosedPanels.erase(i);
 		}
 	return last_id;
 }
@@ -377,7 +380,7 @@ void HuiWindow::SetMenu(HuiMenu *_menu)
 	// insert new menu
 	menu = _menu;
 	if (menu){
-		menu->set_win(this);
+		menu->set_panel(this);
 		gtk_widget_show(menubar);
 		gtk_num_menus = menu->item.num;
 		for (int i=0;i<menu->item.num;i++){
@@ -419,6 +422,8 @@ void HuiWindow::GetPosition(int &x, int &y)
 
 void HuiWindow::SetSize(int width, int height)
 {
+	desired_width = width;
+	desired_height = height;
 	if (parent)
 		gtk_widget_set_size_request(window, width, height);
 	else
@@ -436,41 +441,26 @@ void HuiWindow::GetSize(int &width, int &height)
 void HuiWindow::SetSizeDesired(int width, int height)
 {
 	// bad hack
-	bool maximized = (gdk_window_get_state(gtk_widget_get_window(window)) & GDK_WINDOW_STATE_MAXIMIZED) > 0;
+	bool maximized = IsMaximized();
 	if (maximized)
 		gtk_window_unmaximize(GTK_WINDOW(window));
 	gtk_window_resize(GTK_WINDOW(window), width, height);
 	if (maximized)
 		gtk_window_maximize(GTK_WINDOW(window));
+	desired_width = width;
+	desired_height = height;
 }
 
 // get the window position and size it had wouldn't it be maximized (including the frame and menu/toolbars...)
 //    if not maximized this behaves like <GetOuterior>
 void HuiWindow::GetSizeDesired(int &width, int &height)
 {
-	// bad hack
-	bool maximized = (gdk_window_get_state(gtk_widget_get_window(window)) & GDK_WINDOW_STATE_MAXIMIZED) > 0;
-	if (maximized){
-		// very nasty hack   m(-_-)m
-		width = 800;
-		height = 600;
+	if (IsMaximized()){
+		width = desired_width;
+		height = desired_height;
 	}else{
 		gtk_window_get_size(GTK_WINDOW(window), &width, &height);
 	}
-	/*if (maximized){
-		gtk_window_unmaximize(GTK_WINDOW(window));
-		for (int i=0;i<5;i++)
-			HuiDoSingleMainLoop();
-	}
-	gtk_window_get_position(GTK_WINDOW(window),&r.x1,&r.y1);
-	gtk_window_get_size(GTK_WINDOW(window),&r.x2,&r.y2);
-	r.x2+=r.x1;
-	r.y2+=r.y1;
-	if (maximized){
-		gtk_window_maximize(GTK_WINDOW(window));
-		for (int i=0;i<20;i++)
-			HuiDoSingleMainLoop();
-	}*/
 }
 
 void HuiWindow::ShowCursor(bool show)
@@ -499,6 +489,7 @@ extern int GtkAreaMouseSetX, GtkAreaMouseSetY;
 void HuiWindow::SetCursorPos(int x, int y)
 {
 	if (main_input_control){
+		//msg_write(format("set cursor %d %d  ->  %d %d", (int)input.x, (int)input.y, x, y));
 		GtkAreaMouseSet = 2;
 		GtkAreaMouseSetX = x;
 		GtkAreaMouseSetY = y;
@@ -507,6 +498,7 @@ void HuiWindow::SetCursorPos(int x, int y)
 		// TODO GTK3
 #ifdef OS_LINUX
 		XWarpPointer(hui_x_display, None, GDK_WINDOW_XID(gtk_widget_get_window(main_input_control->widget)), 0, 0, 0, 0, x, y);
+		XFlush(hui_x_display);
 #endif
 #ifdef OS_WINDOWS
 		RECT r;
@@ -518,22 +510,25 @@ void HuiWindow::SetCursorPos(int x, int y)
 
 void HuiWindow::SetMaximized(bool maximized)
 {
-	if (maximized)
+	if (maximized){
+		if (!IsMaximized())
+			gtk_window_get_size(GTK_WINDOW(window), &desired_width, &desired_height);
 		gtk_window_maximize(GTK_WINDOW(window));
-	else
+	}else{
 		gtk_window_unmaximize(GTK_WINDOW(window));
+	}
 }
 
 bool HuiWindow::IsMaximized()
 {
-	int state=gdk_window_get_state(gtk_widget_get_window(window));
-	return ((state & GDK_WINDOW_STATE_MAXIMIZED)>0);
+	int state = gdk_window_get_state(gtk_widget_get_window(window));
+	return ((state & GDK_WINDOW_STATE_MAXIMIZED) > 0);
 }
 
 bool HuiWindow::IsMinimized()
 {
-	int state=gdk_window_get_state(gtk_widget_get_window(window));
-	return ((state & GDK_WINDOW_STATE_ICONIFIED)>0);
+	int state = gdk_window_get_state(gtk_widget_get_window(window));
+	return ((state & GDK_WINDOW_STATE_ICONIFIED) > 0);
 }
 
 void HuiWindow::SetFullscreen(bool fullscreen)
@@ -560,17 +555,17 @@ void HuiWindow::SetStatusText(const string &str)
 
 
 // give our window the focus....and try to focus the specified control item
-void HuiWindow::Activate(const string &control_id)
+void HuiPanel::Activate(const string &control_id)
 {
-	gtk_widget_grab_focus(window);
-	gtk_window_present(GTK_WINDOW(window));
+	gtk_widget_grab_focus(win->window);
+	gtk_window_present(GTK_WINDOW(win->window));
 	if (control_id.num > 0)
 		for (int i=0;i<control.num;i++)
 			if (control_id == control[i]->id)
 				control[i]->Focus();
 }
 
-bool HuiWindow::IsActive(const string &control_id)
+bool HuiPanel::IsActive(const string &control_id)
 {
 	if (control_id.num > 0){
 		for (int i=0;i<control.num;i++)
@@ -578,7 +573,7 @@ bool HuiWindow::IsActive(const string &control_id)
 				return control[i]->HasFocus();
 		return false;
 	}
-	return gtk_widget_has_focus(window);
+	return gtk_widget_has_focus(win->window);
 }
 
 

@@ -14,7 +14,7 @@
 class HuiControlTreeView : public HuiControl
 {
 public:
-	HuiControlTreeView(const string &title, const string &id, HuiWindow *win);
+	HuiControlTreeView(const string &title, const string &id, HuiPanel *panel);
 	virtual ~HuiControlTreeView();
 	virtual string GetString();
 	virtual void __SetString(const string &str);
@@ -31,6 +31,7 @@ public:
 	virtual void Expand(int row, bool expand);
 	virtual void ExpandAll(bool expand);
 	virtual bool IsExpanded(int row);
+	virtual void __SetOption(const string &op, const string &value);
 
 #ifdef HUI_API_GTK
 	Array<GtkTreeIter> _item_;

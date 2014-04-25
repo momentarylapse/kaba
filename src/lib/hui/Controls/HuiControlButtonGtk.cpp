@@ -49,4 +49,10 @@ void HuiControlButton::SetImage(const string& str)
 #endif
 }
 
+void HuiControlButton::__SetOption(const string &op, const string &value)
+{
+	if (op == "flat")
+		gtk_button_set_relief(GTK_BUTTON(widget), GTK_RELIEF_NONE);
+}
+
 #endif

@@ -13,6 +13,7 @@
 #include "../../image/image.h"
 
 class HuiWindow;
+class HuiPanel;
 
 extern int allow_signal_level; // -> hui_window_control.cpp
 
@@ -43,7 +44,7 @@ public:
 	bool enabled;
 	bool is_button_bar;
 	bool grab_focus;
-	HuiWindow *win;
+	HuiPanel *panel;
 	HuiControl *parent;
 	Array<HuiControl*> children;
 
@@ -93,6 +94,7 @@ public:
 
 	virtual void add(HuiControl *child, int x, int y){}
 	void SetOptions(const string &options);
+	virtual void __SetOption(const string &op, const string &value){}
 	void GetSize(int &w, int &h);
 
 	void Notify(const string &message = "", bool is_default = true);

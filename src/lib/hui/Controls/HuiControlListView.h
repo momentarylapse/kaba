@@ -14,7 +14,7 @@
 class HuiControlListView : public HuiControl
 {
 public:
-	HuiControlListView(const string &text, const string &id, HuiWindow *win);
+	HuiControlListView(const string &text, const string &id, HuiPanel *panel);
 	virtual ~HuiControlListView();
 	virtual string GetString();
 	virtual void __SetString(const string &str);
@@ -27,6 +27,7 @@ public:
 	virtual Array<int> GetMultiSelection();
 	virtual void __SetMultiSelection(Array<int> &sel);
 	virtual void __Reset();
+	virtual void __SetOption(const string &op, const string &value);
 
 #ifdef HUI_API_GTK
 	Array<GtkTreeIter> _item_;

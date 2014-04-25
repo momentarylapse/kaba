@@ -14,10 +14,13 @@
 class HuiControlSlider : public HuiControl
 {
 public:
-	HuiControlSlider(const string &text, const string &id, bool horizontal);
+	HuiControlSlider(const string &text, const string &id, bool vertical);
 	virtual ~HuiControlSlider();
 	virtual float GetFloat();
 	virtual void __SetFloat(float f);
+	virtual void __AddString(const string &s);
+	virtual void __SetOption(const string &op, const string &value);
+	bool vertical;
 };
 
 #endif /* HUICONTROLSLIDER_H_ */
