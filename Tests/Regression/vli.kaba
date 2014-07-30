@@ -5,4 +5,4 @@ void main()
 	a = a.pow(b)
 	print a >= b
 	r = a + b
-	print r.str()
+	print r

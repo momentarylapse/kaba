@@ -123,6 +123,7 @@ struct Command
 {
 	int kind, link_no;
 	Script *script;
+	int ref_count;
 	// parameters
 	int num_params;
 	Command *param[SCRIPT_MAX_PARAMS];
@@ -132,6 +133,7 @@ struct Command
 	Type *type;
 	Command(int kind, int link_no, Script *script, Type *type);
 	Block *block() const;
+	void set_param(int index, Command *p);
 };
 
 struct AsmBlock
@@ -217,10 +219,10 @@ public:
 	Command *GetPrimitiveOperator(Function *f);
 	void FindFunctionParameters(int &np, Type **WantedType, Function *f, Command *cmd);
 	void FindFunctionSingleParameter(int p, Type **WantedType, Function *f, Command *cmd);
-	void GetFunctionCall(const string &f_name, Command *Operand, Function *f);
+	Command *GetFunctionCall(const string &f_name, Command *Operand, Function *f);
 	Command *DoClassFunction(Command *ob, ClassFunction &cf, Function *f);
-	bool GetSpecialFunctionCall(const string &f_name, Command *Operand, Function *f);
-	void CheckParamLink(Command *link, Type *type, const string &f_name = "", int param_no = -1);
+	Command *GetSpecialFunctionCall(const string &f_name, Command *Operand, Function *f);
+	Command *CheckParamLink(Command *link, Type *type, const string &f_name = "", int param_no = -1);
 	void ParseSpecialCommand(Block *block, Function *f);
 	void ParseSpecialCommandFor(Block *block, Function *f);
 	void ParseSpecialCommandForall(Block *block, Function *f);
@@ -235,7 +237,7 @@ public:
 	// neccessary conversions
 	void ConvertCallByReference();
 	void BreakDownComplicatedCommands();
-	void BreakDownComplicatedCommand(Command *c);
+	Command *BreakDownComplicatedCommand(Command *c);
 	void MapLocalVariablesToStack();
 
 	// data creation
@@ -247,6 +249,7 @@ public:
 	Command *AddCommand(int kind, int link_no, Type *type);
 	Command *add_command_compilerfunc(int cf);
 	Command *add_command_classfunc(Type *class_type, ClassFunction *f, Command *inst);
+	Command *add_command_func(Script *script, int no, Type *return_type);
 	Command *add_command_const(int nc);
 	Command *add_command_operator(Command *p1, Command *p2, int op);
 	Command *add_command_local_var(int no, Type *type);
@@ -254,13 +257,13 @@ public:
 	Command *cp_command(Command *c);
 	Command *cp_command_deep(Command *c);
 	Command *ref_command(Command *sub, Type *overwrite_type = NULL);
-	Command *deref_command(Command *sub);
+	Command *deref_command(Command *sub, Type *overwrite_type = NULL);
 	Command *shift_command(Command *sub, bool deref, int shift, Type *type);
 
 	// pre processor
-	void PreProcessCommand(Command *c);
+	Command *PreProcessCommand(Command *c);
 	void PreProcessor();
-	void PreProcessCommandAddresses(Command *c);
+	Command *PreProcessCommandAddresses(Command *c);
 	void PreProcessorAddresses();
 	void Simplify();
 

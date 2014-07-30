@@ -3,4 +3,4 @@ void main()
 	a = 2
 	b = pi
 	a += b
-	print a.str()
+	print a

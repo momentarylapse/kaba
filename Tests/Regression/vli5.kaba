@@ -4,7 +4,7 @@ void main()
 	
 	vli r
 	a.idiv(b, r)
-	print a.str()
-	print r.str()
+	print a
+	print r
 	
 	
