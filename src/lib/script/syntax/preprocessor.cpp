@@ -141,9 +141,9 @@ Command *SyntaxTree::PreProcessCommand(Command *c)
 			c->block()->command[i] = PreProcessCommand(c->block()->command[i]);
 	}
 	for (int i=0;i<c->num_params;i++)
-		c->param[i] = PreProcessCommand(c->param[i]);
+		c->set_param(i, PreProcessCommand(c->param[i]));
 	if (c->instance)
-		c->instance = PreProcessCommand(c->instance);
+		c->set_instance(PreProcessCommand(c->instance));
 	
 
 	// process...
@@ -302,12 +302,12 @@ Command *SyntaxTree::PreProcessCommandAddresses(Command *c)
 	// recursion
 	if (c->kind == KindBlock){
 		for (int i=0;i<c->block()->command.num;i++)
-			c->block()->command[i] = PreProcessCommandAddresses(c->block()->command[i]);
+			c->block()->set(i, PreProcessCommandAddresses(c->block()->command[i]));
 	}
 	for (int i=0;i<c->num_params;i++)
-		c->param[i] = PreProcessCommandAddresses(c->param[i]);
+		c->set_param(i, PreProcessCommandAddresses(c->param[i]));
 	if (c->instance)
-		c->instance = PreProcessCommandAddresses(c->instance);
+		c->set_instance(PreProcessCommandAddresses(c->instance));
 	
 
 	// process...
@@ -336,10 +336,7 @@ Command *SyntaxTree::PreProcessCommandAddresses(Command *c)
 					    d2 = Constants[c->param[1]->link_no].value;
 					string r = "--------";
 					f(r, d1, d2);
-					c->link_no = *(int*)r.data;
-					c->kind = is_local ? KindLocalAddress : KindAddress;
-					c->num_params = 0;
-					return c;
+					return AddCommand(is_local ? KindLocalAddress : KindAddress, *(int*)r.data, c->type);
 				}
 			}
 		}
@@ -347,30 +344,22 @@ Command *SyntaxTree::PreProcessCommandAddresses(Command *c)
 		if (c->script){
 			if ((c->param[0]->kind == KindVarGlobal) || (c->param[0]->kind == KindVarLocal) || (c->param[0]->kind == KindConstant)){
 				// pre process ref var
-				c->kind = KindAddress;
-				c->num_params = 0;
 				if (c->param[0]->kind == KindVarGlobal){
-					c->link_no = (long)c->param[0]->script->g_var[c->param[0]->link_no];
+					return AddCommand(KindAddress, (long)c->param[0]->script->g_var[c->param[0]->link_no], c->type, c->param[0]->script);
 				}else if (c->param[0]->kind == KindVarLocal){
-					c->link_no = (long)cur_func->var[c->param[0]->link_no]._offset;
-					c->kind = KindLocalAddress;
-				}else if (c->param[0]->kind == KindConstant){
-					c->link_no = (long)c->param[0]->script->cnst[c->param[0]->link_no];
+					return AddCommand(KindLocalAddress, (long)cur_func->var[c->param[0]->link_no]._offset, c->type);
+				}else /*if (c->param[0]->kind == KindConstant)*/{
+					return AddCommand(KindAddress, (long)c->param[0]->script->cnst[c->param[0]->link_no], c->type, c->param[0]->script);
 				}
-				return c;
 			}
 		}
 	}else if (c->kind == KindDereference){
 		if (c->param[0]->kind == KindAddress){
 			// pre process deref address
-			c->kind = KindMemory;
-			c->link_no = c->param[0]->link_no;
-			c->num_params = 0;
+			return AddCommand(KindMemory, c->param[0]->link_no, c->type);
 		}else if (c->param[0]->kind == KindLocalAddress){
 			// pre process deref local address
-			c->kind = KindLocalMemory;
-			c->link_no = c->param[0]->link_no;
-			c->num_params = 0;
+			return AddCommand(KindLocalMemory, c->param[0]->link_no, c->type);
 		}
 	}
 	return c;

@@ -82,6 +82,8 @@ struct Block
 {
 	int index;
 	Array<Command*> command;
+	void add(Command *c);
+	void set(int index, Command *c);
 };
 
 struct Variable
@@ -133,7 +135,9 @@ struct Command
 	Type *type;
 	Command(int kind, int link_no, Script *script, Type *type);
 	Block *block() const;
+	void set_num_params(int n);
 	void set_param(int index, Command *p);
+	void set_instance(Command *p);
 };
 
 struct AsmBlock
@@ -247,15 +251,16 @@ public:
 
 	// command
 	Command *AddCommand(int kind, int link_no, Type *type);
+	Command *AddCommand(int kind, int link_no, Type *type, Script *s);
 	Command *add_command_compilerfunc(int cf);
-	Command *add_command_classfunc(Type *class_type, ClassFunction *f, Command *inst);
+	Command *add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual = false);
 	Command *add_command_func(Script *script, int no, Type *return_type);
 	Command *add_command_const(int nc);
 	Command *add_command_operator(Command *p1, Command *p2, int op);
 	Command *add_command_local_var(int no, Type *type);
 	Command *add_command_parray(Command *p, Command *index, Type *type);
+	Command *add_command_block(Block *b);
 	Command *cp_command(Command *c);
-	Command *cp_command_deep(Command *c);
 	Command *ref_command(Command *sub, Type *overwrite_type = NULL);
 	Command *deref_command(Command *sub, Type *overwrite_type = NULL);
 	Command *shift_command(Command *sub, bool deref, int shift, Type *type);
