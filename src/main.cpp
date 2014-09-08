@@ -70,7 +70,7 @@ void import_symbols(const string &symbols_in_file)
 	delete(f);
 }
 
-int hui_main(Array<string> arg)
+int hui_main(const Array<string> &arg0)
 {
 	// hui
 	HuiInit("kaba", false, "");
@@ -86,6 +86,7 @@ int hui_main(Array<string> arg)
 	bool error = false;
 
 	// parameters
+	Array<string> arg = arg0;
 	for (int i=1;i<arg.num;i++){
 		if (arg[i] == "-v"){
 			// tell versions
