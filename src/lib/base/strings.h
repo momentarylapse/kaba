@@ -17,14 +17,14 @@ class string : public DynamicArray
 	string();
 	string(const string &s);
 	string(const char *str);
-	string(const char *str, int l);
+	string(const void *str, int l);
 	void _cdecl __init__();
 	~string();
 
 	// functions
-	void _cdecl add(char c)
+	void _cdecl add(unsigned char c)
 	{	append_1_single(c);	}
-	void _cdecl insert(int pos, char c)
+	void _cdecl insert(int pos, unsigned char c)
 	{	resize(num + 1);	for (int i=num-2;i>=pos;i--) (*this)[i+1] = (*this)[i];	(*this)[pos] = c;	}
 	void _cdecl erase(int index)
 	{	delete_single(index);	}
@@ -45,6 +45,11 @@ class string : public DynamicArray
 	string _cdecl hex(bool inverted = false) const;
 	string _cdecl unhex() const;
 	bool _cdecl match(const string &glob) const;
+	int _cdecl utf8len() const;
+	string utf16_to_utf8() const;
+	string latin_to_utf8() const;
+	Array<int> utf8_to_utf32() const;
+	Array<int> utf16_to_utf32() const;
 	int _cdecl hash() const;
 	int _cdecl _int() const;
 	long long _cdecl _int64() const;
@@ -75,8 +80,8 @@ class string : public DynamicArray
 	{
 		if (num != s.num)
 			return false;
-		char *a = (char*)data;
-		char *b = (char*)s.data;
+		unsigned char *a = (unsigned char*)data;
+		unsigned char *b = (unsigned char*)s.data;
 		for (int i=0;i<num;i++){
 			if (*a != *b)
 				return false;
@@ -95,13 +100,13 @@ class string : public DynamicArray
 	{	return compare(s) <= 0;	}
 	bool _cdecl operator >= (const string &s) const
 	{	return compare(s) >= 0;	}
-	char operator[] (int index) const
-	{	return ((char*)data)[index];	}
-	char &operator[] (int index)
-	{	return ((char*)data)[index];	}
-	char &_cdecl back()
+	unsigned char operator[] (int index) const
+	{	return ((unsigned char*)data)[index];	}
+	unsigned char &operator[] (int index)
+	{	return ((unsigned char*)data)[index];	}
+	unsigned char &_cdecl back()
 	{	return (*this)[num - 1];	}
-	char _cdecl back() const
+	unsigned char _cdecl back() const
 	{	return (*this)[num - 1];	}
 };
 
@@ -133,6 +138,7 @@ string _cdecl d2h(const void *data, int bytes, bool inverted = true);
 string _cdecl h2d(const string &hex_str, int bytes);
 
 string _cdecl implode(const Array<string> &a, const string &glue);
+string _cdecl utf32_to_utf8(const Array<int> &s);
 
 //--------------------------------------------------------------
 // regular expressions

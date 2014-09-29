@@ -29,21 +29,21 @@
 
 string::string()
 {
-	init(sizeof(char));
+	init(sizeof(unsigned char));
 }
 
 string::string(const char *str)
 {
-	init(sizeof(char));
+	init(sizeof(unsigned char));
 	int l = strlen(str);
 	resize(l);
 	if (l > 0)
 		memcpy(data, str, l);
 }
 
-string::string(const char *str, int l)
+string::string(const void *str, int l)
 {
-	init(sizeof(char));
+	init(sizeof(unsigned char));
 	resize(l);
 	if (l > 0)
 		memcpy(data, str, l);
@@ -51,7 +51,7 @@ string::string(const char *str, int l)
 
 string::string(const string &s)
 {
-	init(sizeof(char));
+	init(sizeof(unsigned char));
 	assign(&s);
 }
 
@@ -83,7 +83,7 @@ string string::substr(int start, int length) const
 		length = num - start;
 	if (length > 0){
 		r.resize(length);
-		memcpy(r.data, &((char*)data)[start], length);
+		memcpy(r.data, &((unsigned char*)data)[start], length);
 	}
 	return r;
 }
@@ -96,8 +96,8 @@ string string::tail(int size) const
 
 int string::find(const string &s, int start) const
 {
-	char *b = (char*)data;
-	char *aa = (char*)s.data;
+	unsigned char *b = (unsigned char*)data;
+	unsigned char *aa = (unsigned char*)s.data;
 	for (int i=start;i<num - s.num + 1;i++){
 		bool ok = true;
 		for (int j=0;j<s.num;j++)
@@ -113,8 +113,8 @@ int string::find(const string &s, int start) const
 
 int string::rfind(const string &s, int start) const
 {
-	char *b = (char*)data;
-	char *aa = (char*)s.data;
+	unsigned char *b = (unsigned char*)data;
+	unsigned char *aa = (unsigned char*)s.data;
 	if (start < 0)
 		start = num - 1;
 	for (int i=start;i>=0;i--){
@@ -132,27 +132,27 @@ int string::rfind(const string &s, int start) const
 
 int string::compare(const string &s) const
 {
-	char *a = (char*)data;
+	unsigned char *a = (unsigned char*)data;
 	int n = num;
 	if (num > s.num)
 		n = s.num;
 	for (int i=0;i<n;i++){
 		if (s[i] != a[i])
-			return (int)(unsigned char)a[i] - (int)(unsigned char)s[i];
+			return (int)a[i] - (int)s[i];
 	}
 	return num - s.num;
 }
 
-inline int ichar(char a)
+inline int ichar(unsigned char a)
 {
 	if ((a >= 'A') && (a <= 'Z'))
-		return (int)(unsigned char)a - (int)(unsigned char)'A' + (int)(unsigned char)'a';
-	return (int)(unsigned char)a;
+		return (int)a - (int)'A' + (int)'a';
+	return (int)a;
 }
 
 int string::icompare(const string &s) const
 {
-	char *a = (char*)data;
+	unsigned char *a = (unsigned char*)data;
 	int n = num;
 	if (num > s.num)
 		n = s.num;
@@ -167,8 +167,8 @@ string string::reverse() const
 {
 	string r;
 	r.resize(num);
-	char *a = (char*)data;
-	char *b = (char*)r.data;
+	unsigned char *a = (unsigned char*)data;
+	unsigned char *b = (unsigned char*)r.data;
 	for (int i=0;i<num;i++)
 		b[num - i - 1] = a[i];
 	return r;
@@ -198,11 +198,11 @@ void string::replace0(int start, int length, const string &str)
 {
 	if (start + length > num)
 		return;
-	char *s = (char*)data;
+	unsigned char *s = (unsigned char*)data;
 	int d = str.num - length;
 	if (d > 0){
 		resize(num + d);
-		s = (char*)data;
+		s = (unsigned char*)data;
 		for (int i=num-1;i>=start+length;i--)
 			s[i] = s[i - d];
 	}
@@ -880,6 +880,102 @@ bool string::match(const string &glob) const
 	if (tail(g.back().num) != g.back())
 		return false;
 	return true;
+}
+
+int string::utf8len() const
+{
+	int l = 0;
+	for (int i=0; i<num; i++)
+		if (((*this)[i] & 0x80) == 0)
+			l ++;
+	return l;
+}
+
+
+string utf8_char(unsigned int code)
+{
+	char r[6] = "";
+	if ((code & 0xffffff80) == 0){ // 7bit
+		return string((char*)&code, 1);
+	}else if ((code & 0xfffff800) == 0){ // 11bit
+		r[1] = (code & 0x003f) | 0x80;        // 00-05
+		r[0] = ((code & 0x07c0) >> 6) | 0xc0; // 06-10
+		return string(r, 2);
+	}else if ((code & 0xffff0000) == 0){ // 16bit
+		r[2] = (code & 0x003f) | 0x80;         // 00-05
+		r[1] = ((code & 0x0fc0) >> 6) | 0x80;  // 06-11
+		r[0] = ((code & 0xf000) >> 12) | 0xe0; // 12-15
+		return string(r, 3);
+	}else if ((code & 0xffe00000) == 0){ // 21bit
+		r[3] = (code & 0x0000003f) | 0x80;         // 00-05
+		r[2] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
+		r[1] = ((code & 0x0003f000) >> 12) | 0x80; // 12-17
+		r[0] = ((code & 0x001c0000) >> 18) | 0xf0; // 18-20
+		return string(r, 4);
+	}else if ((code & 0xffe00000) == 0){ // 26bit
+		r[4] = (code & 0x0000003f) | 0x80;         // 00-05
+		r[3] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
+		r[2] = ((code & 0x0003f000) >> 12) | 0x80; // 12-17
+		r[1] = ((code & 0x00fc0000) >> 18) | 0x80; // 18-23
+		r[1] = ((code & 0x03000000) >> 24) | 0xf4; // 24-25
+		return string(r, 5);
+	}else{ // 31bit
+		r[5] = (code & 0x0000003f) | 0x80;         // 00-05
+		r[4] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
+		r[3] = ((code & 0x0003f000) >> 12) | 0x80; // 12-17
+		r[2] = ((code & 0x00fc0000) >> 18) | 0x80; // 18-23
+		r[1] = ((code & 0x3f000000) >> 24) | 0x80; // 24-29
+		r[0] = ((code & 0x40000000) >> 30) | 0xfc; // 30
+		return string(r, 6);
+	}
+}
+
+Array<int> string::utf16_to_utf32() const
+{
+	Array<int> r;
+	bool big_endian = false;
+	unsigned int last = 0;
+	for (int i=0; i<num-1; i+=2){
+		if (((*this)[i] == 0xff) && ((*this)[i+1] == 0xfe)){
+			big_endian = false;
+			continue;
+		}else if (((*this)[i] == 0xfe) && ((*this)[i+1] == 0xff)){
+			big_endian = true;
+			continue;
+		}
+		unsigned int code = (*this)[i] | ((*this)[i+1] << 8);
+		if (big_endian)
+			code = (*this)[i+1] | ((*this)[i] << 8);
+		//msg_write(string((char*)&code, 2).hex());
+
+		if ((code < 0xd800) || (code > 0xdbff))
+			r.add(code);
+		else if ((last >= 0xdc00) && (last <= 0xdfff))
+			r.add(0x010000 | ((code - 0xd800) << 12) | (last - 0xdc00));
+		last = code;
+	}
+	return r;
+}
+
+string string::utf16_to_utf8() const
+{
+	return utf32_to_utf8(utf16_to_utf32());
+}
+
+string string::latin_to_utf8() const
+{
+	string r;
+	for (int i=0; i<num; i++)
+		r += utf8_char((*this)[i]);
+	return r;
+}
+
+string utf32_to_utf8(const Array<int> &s)
+{
+	string r;
+	for (int i=0; i<s.num; i++)
+		r += utf8_char(s[i]);
+	return r;
 }
 
 /*
