@@ -13,20 +13,18 @@ HuiControlScroller::HuiControlScroller(const string &title, const string &id) :
 	HuiControl(HuiKindScroller, id)
 {
 	widget = gtk_scrolled_window_new(NULL, NULL);
-	viewport = gtk_viewport_new(NULL, NULL);
-	gtk_container_add(GTK_CONTAINER(widget), viewport);
-	gtk_widget_show(viewport);
-	SetOptions(OptionString);
-}
-
-HuiControlScroller::~HuiControlScroller()
-{
+	viewport = NULL;
+	//viewport = gtk_viewport_new(NULL, NULL);
+	//gtk_container_add(GTK_CONTAINER(widget), viewport);
+	//gtk_widget_show(viewport);
+	setOptions(OptionString);
 }
 
 void HuiControlScroller::add(HuiControl *child, int x, int y)
 {
 	GtkWidget *child_widget = child->get_frame();
-	gtk_container_add(GTK_CONTAINER(viewport), child_widget);
+	//gtk_container_add(GTK_CONTAINER(viewport), child_widget);
+	gtk_container_add(GTK_CONTAINER(widget), child_widget);
 	children.add(child);
 	child->parent = this;
 }

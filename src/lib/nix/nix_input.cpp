@@ -47,7 +47,7 @@ void NixOnEvent()
 			if ((abs(dx) > 100) || (abs(dy) > 100)){
 				//msg_write(format("S:  %d  %d", x0, y0));
 				//msg_write("---shift");
-				NixWindow->SetCursorPos(x0, y0);
+				NixWindow->setCursorPos(x0, y0);
 			}
 		}
 	}else if (e->message == "hui:key-down"){
@@ -67,24 +67,24 @@ void NixInputInit()
 	NixInputDataCurrent.reset();
 	NixInputDataLast.reset();
 
-	NixWindow->EventX(NixControlID, "hui:mouse-move", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:mouse-wheel", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:key-down", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:key-up", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:left-button-down", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:left-button-up", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:middle-button-down", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:middle-button-up", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:right-button-down", &NixOnEvent);
-	NixWindow->EventX(NixControlID, "hui:right-button-up", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:mouse-move", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:mouse-wheel", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:key-down", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:key-up", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:left-button-down", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:left-button-up", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:middle-button-down", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:middle-button-up", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:right-button-down", &NixOnEvent);
+	NixWindow->eventSX(NixControlID, "hui:right-button-up", &NixOnEvent);
 }
 
 void NixStealMouse(bool steal)
 {
 	NixMouseStolen = steal;
-	NixWindow->ShowCursor(!steal);
+	NixWindow->showCursor(!steal);
 
-	NixWindow->SetCursorPos(MaxX / 2, MaxY / 2);
+	NixWindow->setCursorPos(MaxX / 2, MaxY / 2);
 }
 
 #if 0
@@ -326,7 +326,7 @@ bool NixGetButtonUp(int but)
 
 bool NixGetKey(int key)
 {
-	return NixWindow->GetKey(key);
+	return NixWindow->getKey(key);
 }
 
 bool NixGetKeyDown(int key)

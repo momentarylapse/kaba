@@ -388,7 +388,7 @@ bool NixStartIntoTexture(NixTexture *texture)
 			NixTargetHeight = NixScreenHeight;
 		}else{
 			// window mode
-			NixWindow->_GetControl_(NixControlID)->GetSize(NixTargetWidth, NixTargetHeight);
+			NixWindow->_get_control_(NixControlID)->getSize(NixTargetWidth, NixTargetHeight);
 		}
 	}else{
 		// texture
@@ -444,7 +444,7 @@ void NixEnd()
 			#endif
 			//glutSwapBuffers();
 			if (NixGLDoubleBuffered){
-				HuiControl *c = NixWindow->_GetControl_(NixControlID);
+				HuiControl *c = NixWindow->_get_control_(NixControlID);
 				glXSwapBuffers(hui_x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
 			}
 		#endif

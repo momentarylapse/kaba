@@ -85,19 +85,19 @@ HuiControl::~HuiControl()
 
 #ifdef HUI_API_WIN
 
-void HuiControl::Enable(bool _enabled)
+void HuiControl::enable(bool _enabled)
 {
 }
 
-void HuiControl::Hide(bool hidden)
+void HuiControl::hide(bool hidden)
 {
 }
 
-void HuiControl::SetTooltip(const string& str)
+void HuiControl::setTooltip(const string& str)
 {
 }
 
-void HuiControl::Focus()
+void HuiControl::focus()
 {
 }
 
@@ -113,13 +113,13 @@ GtkWidget *HuiControl::get_frame()
 	return widget;
 }
 
-void HuiControl::Enable(bool _enabled)
+void HuiControl::enable(bool _enabled)
 {
     enabled = _enabled;
 	gtk_widget_set_sensitive(widget, enabled);
 }
 
-void HuiControl::Hide(bool hidden)
+void HuiControl::hide(bool hidden)
 {
 	if (hidden)
 		gtk_widget_hide(widget);
@@ -127,22 +127,22 @@ void HuiControl::Hide(bool hidden)
 		gtk_widget_show(widget);
 }
 
-void HuiControl::SetTooltip(const string& str)
+void HuiControl::setTooltip(const string& str)
 {
 	gtk_widget_set_tooltip_text(widget, sys_str(str));
 }
 
-void HuiControl::Focus()
+void HuiControl::focus()
 {
 	gtk_widget_grab_focus(widget);
 }
 
-bool HuiControl::HasFocus()
+bool HuiControl::hasFocus()
 {
 	return gtk_widget_has_focus(widget);
 }
 
-void HuiControl::SetOptions(const string &options)
+void HuiControl::setOptions(const string &options)
 {
 	Array<string> a = options.explode(",");
 	int width = -1;
@@ -175,15 +175,15 @@ void HuiControl::SetOptions(const string &options)
 			else if (a0 == "margin-bottom")
 				gtk_widget_set_margin_bottom(get_frame(), a1._int());
 			else
-				__SetOption(a0, a1);
+				__setOption(a0, a1);
 		}else
-			__SetOption(aa, "");
+			__setOption(aa, "");
 	}
 	if ((width >= 0) || (height >= 0))
 		gtk_widget_set_size_request(get_frame(), width, height);
 }
 
-void HuiControl::GetSize(int &w, int &h)
+void HuiControl::getSize(int &w, int &h)
 {
 	w = gdk_window_get_width(gtk_widget_get_window(widget));
 	h = gdk_window_get_height(gtk_widget_get_window(widget));
@@ -191,89 +191,96 @@ void HuiControl::GetSize(int &w, int &h)
 
 #endif
 
-bool HuiControl::IsEnabled()
+bool HuiControl::isEnabled()
 {
 	return enabled;
 }
 
-void HuiControl::Reset()
+void HuiControl::reset()
 {
 	allow_signal_level ++;
-	__Reset();
+	__reset();
 	allow_signal_level --;
 }
 
-void HuiControl::SetString(const string& str)
+void HuiControl::setString(const string& str)
 {
 	allow_signal_level ++;
-	__SetString(str);
+	__setString(str);
 	allow_signal_level --;
 }
 
-void HuiControl::AddString(const string& str)
+void HuiControl::addString(const string& str)
 {
 	allow_signal_level ++;
-	__AddString(str);
+	__addString(str);
 	allow_signal_level --;
 }
 
-void HuiControl::SetInt(int i)
+void HuiControl::setInt(int i)
 {
 	allow_signal_level ++;
-	__SetInt(i);
+	__setInt(i);
 	allow_signal_level --;
 }
 
-void HuiControl::SetFloat(float f)
+void HuiControl::setFloat(float f)
 {
 	allow_signal_level ++;
-	__SetFloat(f);
+	__setFloat(f);
 	allow_signal_level --;
 }
 
-void HuiControl::SetColor(const color& c)
+void HuiControl::setColor(const color& c)
 {
 	allow_signal_level ++;
-	__SetColor(c);
+	__setColor(c);
 	allow_signal_level --;
 }
 
-void HuiControl::AddChildString(int parent_row, const string& str)
+void HuiControl::addChildString(int parent_row, const string& str)
 {
 	allow_signal_level ++;
-	__AddChildString(parent_row, str);
+	__addChildString(parent_row, str);
 	allow_signal_level --;
 }
 
-void HuiControl::ChangeString(int row, const string& str)
+void HuiControl::changeString(int row, const string& str)
 {
 	allow_signal_level ++;
-	__ChangeString(row, str);
+	__changeString(row, str);
 	allow_signal_level --;
 }
 
-void HuiControl::SetCell(int row, int column, const string& str)
+void HuiControl::setCell(int row, int column, const string& str)
 {
 	allow_signal_level ++;
-	__SetCell(row, column, str);
+	__setCell(row, column, str);
 	allow_signal_level --;
 }
 
-void HuiControl::SetMultiSelection(Array<int>& sel)
+void HuiControl::setSelection(Array<int>& sel)
 {
 	allow_signal_level ++;
-	__SetMultiSelection(sel);
+	__setSelection(sel);
 	allow_signal_level --;
 }
 
-void HuiControl::Check(bool checked)
+void HuiControl::check(bool checked)
 {
 	allow_signal_level ++;
-	__Check(checked);
+	__check(checked);
 	allow_signal_level --;
 }
 
-void HuiControl::Notify(const string &message, bool is_default)
+void HuiControl::setFont(const string &font_name)
+{
+	PangoFontDescription *font_desc = pango_font_description_from_string(font_name.c_str());
+	gtk_widget_override_font(widget, font_desc);
+	pango_font_description_free(font_desc);
+}
+
+void HuiControl::notify(const string &message, bool is_default)
 {
 	if (allow_signal_level > 0)
 		return;
@@ -282,14 +289,14 @@ void HuiControl::Notify(const string &message, bool is_default)
 		return;
 	}
 	msg_db_m("Control.Notify", 2);
-	panel->_SetCurID_(id);
+	panel->_set_cur_id_(id);
 	if (id.num == 0)
 		return;
 	notify_push(this);
 	HuiEvent e = HuiEvent(id, message);
 	_HuiSendGlobalCommand_(&e);
 	e.is_default = is_default;
-	panel->_SendEvent_(&e);
+	panel->_send_event_(&e);
 
 	if (notify_is_deleted(this)){
 		notify_pop();
@@ -299,32 +306,32 @@ void HuiControl::Notify(const string &message, bool is_default)
 	HuiWindow *win = panel->win;
 	if (this == win->main_input_control){
 		if (message == "hui:mouse-move")
-			win->OnMouseMove();
+			win->onMouseMove();
 		else if (message == "hui:mouse-wheel")
-			win->OnMouseWheel();
+			win->onMouseWheel();
 		else if (message == "hui:mouse-enter")
-			win->OnMouseEnter();
+			win->onMouseEnter();
 		else if (message == "hui:mouse-leave")
-			win->OnMouseLeave();
+			win->onMouseLeave();
 		else if (message == "hui:left-button-down")
-			win->OnLeftButtonDown();
+			win->onLeftButtonDown();
 		else if (message == "hui:left-button-up")
-			win->OnLeftButtonUp();
+			win->onLeftButtonUp();
 		else if (message == "hui:middle-button-down")
-			win->OnMiddleButtonDown();
+			win->onMiddleButtonDown();
 		else if (message == "hui:middle-button-up")
-			win->OnMiddleButtonUp();
+			win->onMiddleButtonUp();
 		else if (message == "hui:right-button-down")
-			win->OnRightButtonDown();
+			win->onRightButtonDown();
 		else if (message == "hui:right-button-up")
-			win->OnRightButtonUp();
+			win->onRightButtonUp();
 		else if (message == "hui:key-down"){
-			win->OnKeyDown();
+			win->onKeyDown();
 			WinTrySendByKeyCode(win, HuiGetEvent()->key_code);
 		}else if (message == "hui:key-up")
-			win->OnKeyUp();
+			win->onKeyUp();
 		else if (message == "hui:draw")
-			win->OnDraw();
+			win->onDraw();
 	}else if (type == HuiKindMultilineEdit){
 		if (message == "hui:key-down"){
 			if (((HuiControlMultilineEdit*)this)->handle_keys)

@@ -57,6 +57,7 @@ void _cdecl NixSetFog(int mode,float start,float end,float density,const color &
 void _cdecl NixEnableFog(bool enabled);
 void _cdecl NixSetStencil(int mode,unsigned long param=0);
 void _cdecl NixSetShading(int mode);
+void _cdecl NixSetOffset(float offset);
 
 
 extern rect NixTargetRect;

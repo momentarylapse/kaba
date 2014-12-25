@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.5.9.0";
+string HuiVersion = "0.5.10.0";
 
 #include <stdio.h>
 #include <signal.h>
@@ -226,7 +226,7 @@ void _HuiRunLater(float time, HuiCallback *c)
 		msg_todo("HuiRunLater");
 	#endif
 	#ifdef HUI_API_GTK
-		g_timeout_add_full(300, (int)(time * 1000), &GtkRunLaterFunction, (void*)c, NULL);
+		g_timeout_add_full(300, max((int)(time * 1000), 1), &GtkRunLaterFunction, (void*)c, NULL);
 	#endif
 }
 
@@ -460,7 +460,7 @@ void HuiCleanUpMainLevel()
 {
 	msg_db_f("HuiCleanUpMainLevel",2);
 	foreachb(HuiWindow *w, HuiWindows)
-		if (w->_GetMainLevel_() >= HuiMainLevel){
+		if (w->_get_main_level_() >= HuiMainLevel){
 			delete(w);
 		}
 	HuiSetIdleFunction(NULL);

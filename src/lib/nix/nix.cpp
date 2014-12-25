@@ -16,7 +16,7 @@
 #include "../hui/Controls/HuiControlDrawingArea.h"
 
 
-string NixVersion = "0.12.0.2";
+string NixVersion = "0.12.0.3";
 
 
 // libraries (in case Visual C++ is used)
@@ -306,12 +306,12 @@ XVisualInfo *choose_visual()
 	msg_db_f("choose_visual", 1);
 	int screen = DefaultScreen(hui_x_display);
 
-	HuiControl *c = NixWindow->_GetControl_(NixControlID);
+	HuiControl *c = NixWindow->_get_control_(NixControlID);
 	HuiControlDrawingArea *da = dynamic_cast<HuiControlDrawingArea*>(c);
 	GtkWidget *gl_widget = c->widget;
 	if (gtk_widget_get_realized(gl_widget)){
 		msg_error("realized -> reset");
-		da->HardReset();
+		da->hardReset();
 		gl_widget = c->widget;
 	}
 
@@ -500,7 +500,7 @@ void NixInit(const string &api, HuiWindow *win, const string &id)
 
 	// more default values of the engine
 	if (NixWindow){
-		NixWindow->_GetControl_(NixControlID)->GetSize(NixTargetWidth, NixTargetHeight);
+		NixWindow->_get_control_(NixControlID)->getSize(NixTargetWidth, NixTargetHeight);
 	}else{
 		NixTargetWidth = 800;
 		NixTargetHeight = 600;
@@ -556,8 +556,8 @@ void NixKill()
 		#endif
 	}
 	if (NixWindow){
-		NixWindow->SetFullscreen(false);
-		NixWindow->ShowCursor(true);
+		NixWindow->setFullscreen(false);
+		NixWindow->showCursor(true);
 	}
 }
 
@@ -589,7 +589,7 @@ bool nixDevNeedsUpdate = true;
 void set_video_mode_gl(int xres, int yres)
 {
 	msg_db_f("set_video_mode_gl", 1);
-	HuiControl *c = NixWindow->_GetControl_(NixControlID);
+	HuiControl *c = NixWindow->_get_control_(NixControlID);
 	gtk_widget_set_double_buffered(c->widget, false);
 
 
@@ -1005,7 +1005,7 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 	CreateFontGlyphWidth();
 
 	// adjust window for new mode
-	NixWindow->SetFullscreen(NixFullscreen);
+	NixWindow->setFullscreen(NixFullscreen);
 	//NixWindow->SetPosition(0, 0);
 /*#ifdef OS_WINDOWS
 	msg_db_m("-window",1);
@@ -1127,6 +1127,17 @@ void NixSetZ(bool Write, bool Test)
 		}
 	}
 	TestGLError("Setz");
+}
+
+void NixSetOffset(float offset)
+{
+	if (offset > 0){
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(1.0f, 1.0f);
+	}else{
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(0, 0);
+	}
 }
 
 void NixSetAlpha(int mode)
