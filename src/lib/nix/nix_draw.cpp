@@ -188,7 +188,7 @@ void NixDrawLineH(float x1, float x2, float y, float depth)
 void NixDrawLine3D(const vector &l1, const vector &l2)
 {
 	_NixSetMode3d();
-	glLineWidth(1);
+	glLineWidth(NixLineWidth);
 	glBegin(GL_LINES);
 		glVertex3fv((float*)&l1);
 		glVertex3fv((float*)&l2);
