@@ -312,7 +312,7 @@ bool NixStartIntoTexture(NixTexture *texture)
 								0,						// no "Auxiliary"-buffer
 								PFD_MAIN_PLANE,
 								0, 0, 0, 0 };
-		GtkWidget *gl_widget = NixWindow->_GetControl_(NixControlID)->widget;
+		GtkWidget *gl_widget = NixWindow->_get_control_(NixControlID)->widget;
 	
 		hDC = GetDC((HWND)GDK_WINDOW_HWND(gtk_widget_get_window(gl_widget)));
 		//hDC = GetDC(hWndSubWindow);

@@ -42,8 +42,8 @@ void NixOnEvent()
 		if (NixMouseStolen){
 			int x0 = MaxX / 2;
 			int y0 = MaxY / 2;
-			int dx = (e->mx - x0);
-			int dy = (e->my - y0);
+			int dx = ((int)e->mx - x0);
+			int dy = ((int)e->my - y0);
 			if ((abs(dx) > 100) || (abs(dy) > 100)){
 				//msg_write(format("S:  %d  %d", x0, y0));
 				//msg_write("---shift");
@@ -248,8 +248,8 @@ void NixUpdateInput()
 		NixInputDataCurrent.dz = _NixMouseDSum.z;
 		NixInputDataCurrent.x += _NixMouseDSum.x;
 		NixInputDataCurrent.y += _NixMouseDSum.y;
-		NixInputDataCurrent.x = clampf(NixInputDataCurrent.x, 0, NixTargetWidth - 1);
-		NixInputDataCurrent.y = clampf(NixInputDataCurrent.y, 0, NixTargetHeight - 1);
+		NixInputDataCurrent.x = clampf(NixInputDataCurrent.x, 0, (float)NixTargetWidth - 1);
+		NixInputDataCurrent.y = clampf(NixInputDataCurrent.y, 0, (float)NixTargetHeight - 1);
 		//msg_write(format("%f  %f", NixInputDataCurrent.x, NixWindow->input.x));
 		memcpy(NixInputDataCurrent.key, NixInputAccum.key, sizeof(NixInputAccum.key));
 	}else
@@ -271,8 +271,8 @@ void NixResetInput()
 {
 	NixUpdateInput();
 	NixInputDataCurrent.reset();
-	NixInputDataCurrent.x = NixTargetWidth / 2;
-	NixInputDataCurrent.y = NixTargetHeight / 2;
+	NixInputDataCurrent.x = (float)NixTargetWidth / 2;
+	NixInputDataCurrent.y = (float)NixTargetHeight / 2;
 	NixInputDataLast = NixInputDataCurrent;
 }
 

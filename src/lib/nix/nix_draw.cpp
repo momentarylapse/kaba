@@ -135,7 +135,7 @@ void NixDrawLines(float *x, float *y, int num_lines, bool contiguous, float dept
 	// internal line drawing function \(^_^)/
 	if (NixSmoothLines){
 		// antialiasing!
-		glLineWidth(NixLineWidth + 0.5);
+		glLineWidth(NixLineWidth + 0.5f);
 		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_BLEND);

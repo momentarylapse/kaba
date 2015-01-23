@@ -78,9 +78,14 @@
 	extern PFNGLUNIFORM1FPROC glUniform1f;
 	extern PFNGLUNIFORM3FPROC glUniform3f;
 	extern PFNGLUNIFORM1IPROC glUniform1i;
+	// buffer
+	extern PFNGLGENBUFFERSPROC glGenBuffers;
+	extern PFNGLBINDBUFFERPROC glBindBuffer;
+	extern PFNGLBUFFERDATAPROC glBufferData;
 #endif
 extern bool OGLMultiTexturingSupport;
 extern bool OGLShaderSupport;
+extern bool OGLVertexBufferSupport;
 
 #ifdef OS_WINDOWS
 	extern PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT;

@@ -166,10 +166,15 @@ NixVertexBuffer *VBTemp;
 	PFNGLUNIFORM1FPROC glUniform1f = NULL;
 	PFNGLUNIFORM3FPROC glUniform3f = NULL;
 	PFNGLUNIFORM1IPROC glUniform1i = NULL;
+	
+	PFNGLGENBUFFERSPROC glGenBuffers = NULL;
+	PFNGLBINDBUFFERPROC glBindBuffer = NULL;
+	PFNGLBUFFERDATAPROC glBufferData = NULL;
 #endif
 bool OGLMultiTexturingSupport = false;
 bool OGLShaderSupport = false;
 bool OGLDynamicTextureSupport = false;
+bool OGLVertexBufferSupport = false;
 #ifdef OS_WINDOWS
 	PFNGLISRENDERBUFFEREXTPROC glIsRenderbufferEXT = NULL;
 	PFNGLBINDRENDERBUFFEREXTPROC glBindRenderbufferEXT = NULL;
@@ -903,9 +908,18 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 			&& glGetUniformLocation && glUniform1f && glUniform1i && glUniform3f);
 		if (!OGLShaderSupport)
 			msg_error("no shader support");
+
+		
+		glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+		glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+		glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+		OGLVertexBufferSupport = (glGenBuffers && glBindBuffer && glBufferData);
+		if (!OGLVertexBufferSupport)
+			msg_error("no vertex buffer support");
 #else
 		OGLMultiTexturingSupport = true;
 		OGLShaderSupport = true;
+		OGLVertexBufferSupport = true;
 #endif
 
 		msg_db_m("-RenderToTexture-Support", 1);
