@@ -2,13 +2,13 @@
 //#disasm
 
 void main()
-	int i[][] = [[1, 2, 3], [2, 3, 4, 5]]
+	int[][] i = [[1, 2, 3], [2, 3, 4, 5]]
 	
 	for a in i
 		print a
 	
 	int a = 3
-	int n[] = [a, 2, a+1]
+	int[] n = [a, 2, a+1]
 	print n
-	string s[] = ["hallo", "welt"]
+	string[] s = ["hallo", "welt"]
 	print s

@@ -3,7 +3,7 @@
 
 class c
 	int a
-	int x[]
+	int[] x
 
 void main()
 	c a, b

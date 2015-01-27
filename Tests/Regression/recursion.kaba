@@ -3,7 +3,7 @@
 
 class A
 	int i
-	B b[]
+	B[] b
 
 class B
 	int j

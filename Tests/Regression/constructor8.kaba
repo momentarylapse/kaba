@@ -9,14 +9,14 @@ class c
 		v = other.v
 
 void main()
-	c a[]
+	c[] a
 	c i
 	i.x = -1
 	i.v = e_x
 	a.add(i)
 	
 	
-	c b[]
+	c[] b
 	b = a
 	a[0].v = v_0
 	print a[0].v

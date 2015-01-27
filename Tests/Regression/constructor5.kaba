@@ -15,7 +15,7 @@ class c
 
 void main()
 	print "--------------"
-	c a[]
+	c[] a
 	a.resize(10)
 	print "--------------"
 	c cc

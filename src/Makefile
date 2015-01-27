@@ -52,6 +52,9 @@ include lib/any/any.mk
 include lib/algebra/algebra.mk
 include lib/threads/threads.mk
 
+test : all
+	cd ../Tests/Regression; kaba regression.kaba
+
 clean :
 	#rm -f $(OBJ) $(BIN)
 	#rm -f temp/* $(BIN)

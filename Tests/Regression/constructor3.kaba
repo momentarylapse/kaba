@@ -14,7 +14,7 @@ class c
 		x = other.x
 
 void main()
-	c a[]
+	c[] a
 	c cc
 	cc.x = 13
 	a.resize(14)

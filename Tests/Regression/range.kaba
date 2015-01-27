@@ -1,6 +1,5 @@
 void main()
-	float f[]
-	f = rangef(0, 2, 0.1345)
+	float[] f = rangef(0, 2, 0.1345)
 	print f
 	
 	print range(0, 100).sum()

@@ -4,7 +4,7 @@ class Test
 		print "del " + a
 
 void main()
-	Test a[]
+	Test[] a
 	for int i, 0, 10
 		Test t
 		t.a = i

@@ -1,5 +1,5 @@
 int f()
-	int e[]
+	int[] e
 	e = range(5, 10)
 	return e[3]
 

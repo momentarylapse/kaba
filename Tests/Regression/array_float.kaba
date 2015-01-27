@@ -1,7 +1,7 @@
 
 
 void main()
-	float f[]
+	float[] f
 	f.add(1)
 	f.add(2)
 	f.add(3)

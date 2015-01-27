@@ -3,7 +3,7 @@
 
 class c
 	int x
-	int a[]
+	int[] a
 	void __init__()
 		print "init!!!"
 		self.a.__init__()

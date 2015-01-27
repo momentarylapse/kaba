@@ -1,5 +1,5 @@
 void main()
-	float a[]
+	float[] a
 	a = rangef(0, 2, 0.1)
 	print a.subarray(2,2)
 	a.subarray(2,2) = rangef(0,1,0.8)

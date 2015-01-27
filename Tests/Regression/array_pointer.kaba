@@ -4,7 +4,7 @@
 class Test
 	int a, b
 
-Test *p[]
+Test*[] p
 
 void main()
 	print p.num

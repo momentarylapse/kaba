@@ -1,5 +1,5 @@
 void main()
-	int i[], j[], k[]
+	int[] i, j, k
 	i = range(0, 10)
 	j.add(2)
 	j.add(5)

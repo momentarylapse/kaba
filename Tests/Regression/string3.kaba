@@ -9,7 +9,6 @@ void main()
 	a = a.replace("h", n)
 	print a
 	
-	string s[]
-	s = a.explode("W")
+	string[] s = a.explode("W")
 	print s
 	print "---"

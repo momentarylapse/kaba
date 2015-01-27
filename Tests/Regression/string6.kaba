@@ -1,6 +1,5 @@
 void main()
 	string s = "a/test/c/"
-	string e[]
-	e = s.explode("/")
+	string[] e = s.explode("/")
 	print e
 	print e.join("---")

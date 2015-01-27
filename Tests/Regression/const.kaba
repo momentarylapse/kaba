@@ -1,6 +1,6 @@
 const int N = 5
-int x[N]
-int y[N*2]
+int[N] x
+int[N*2] y
 
 void main()
 	print sizeof(x)

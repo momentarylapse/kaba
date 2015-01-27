@@ -15,11 +15,11 @@ class c
 
 void main()
 	print "--------------"
-	c a[]
+	c[] a
 	a.resize(10)
 	a[2].x = 13
 	print "--------------"
-	c b[]
+	c[] b
 	b = a
 	a[2].x = 100000
 	print "--------------"

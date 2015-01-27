@@ -1,9 +1,9 @@
 //#disasm
 //#show_prae
 
-int a[]
+int[] a
 
-void fill(int x[])
+void fill(int[] x)
 	for y in x
 		if y == 5
 			continue
