@@ -1,8 +1,8 @@
 
 void main()
-	for float f, pi, 10, 1.5
+	for f in pi:10:1.5
 		print f
-	for int i, 0, 10
+	for i in 0:10
 		print i
-	for int i, 0, 100, 7
+	for i in 0:100:7
 		print i

@@ -1,0 +1,16 @@
+void main()
+	float[] list = [0.1, 0.5, 7.4]
+	for f,i in list
+		print i
+		print f
+	
+	float[3] a
+	a[0] = 0.2
+	a[1] = 0.3
+	a[2] = 1.0
+	for f,i in a
+		print i
+		print f
+		
+	for i in 0:10:pi
+		print i

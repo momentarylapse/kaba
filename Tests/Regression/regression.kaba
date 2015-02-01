@@ -6,7 +6,7 @@ bool test(string filename)
 	string r2 = FileRead(filename)
 
 	
-	for int i, s.num, 42
+	for i in s.num:42
 		s.add(' ')
 	if r1 == r2
 		print s + "ok"

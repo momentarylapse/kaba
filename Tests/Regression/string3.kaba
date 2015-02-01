@@ -1,7 +1,6 @@
 void main()
 	string a = "hallo Welt"
-	int i
-	for i, 0, 10
+	for i in 0:10
 		a += a
 	print a.substr(4,3)
 	string n = "ll"
