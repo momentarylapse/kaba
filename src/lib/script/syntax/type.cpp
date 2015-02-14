@@ -84,6 +84,30 @@ bool Type::is_simple_class()
 	return true;
 }
 
+bool Type::usable_as_super_array()
+{
+	if (is_super_array)
+		return true;
+	if (is_array)
+		return false;
+	if (is_pointer)
+		return false;
+	if (parent)
+		return parent->usable_as_super_array();
+	return false;
+}
+
+Type *Type::GetArrayElement()
+{
+	if ((is_array) or (is_super_array))
+		return parent;
+	if (is_pointer)
+		return NULL;
+	if (parent)
+		return parent->GetArrayElement();
+	return NULL;
+}
+
 bool Type::needs_constructor()
 {
 	if (!UsesCallByReference())
@@ -107,12 +131,18 @@ bool Type::needs_destructor()
 		return false;
 	if (is_super_array)
 		return true;
-	if (parent)
+	if (parent){
+		if (parent->GetDestructor())
+			return true;
 		if (parent->needs_destructor())
 			return true;
-	foreach(ClassElement &e, element)
+	}
+	foreach(ClassElement &e, element){
+		if (e.type->GetDestructor())
+			return true;
 		if (e.type->needs_destructor())
 			return true;
+	}
 	return false;
 }
 
