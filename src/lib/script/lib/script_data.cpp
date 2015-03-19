@@ -1310,12 +1310,12 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	config.instruction_set = Asm::InstructionSet.set;
 	config.abi = abi;
 	if (abi < 0){
-		if (config.instruction_set == Asm::InstructionSetAMD64){
+		if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 			config.abi = AbiGnu64;
 #ifdef WIN64
 			config.abi = AbiWindows64;
 #endif
-		}else if (config.instruction_set == Asm::InstructionSetX86){
+		}else if (config.instruction_set == Asm::INSTRUCTION_SET_X86){
 			config.abi = AbiGnu32;
 #ifdef WIN32
 			config.abi = AbiWindows32;

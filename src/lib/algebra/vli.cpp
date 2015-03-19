@@ -6,6 +6,17 @@
 //#define vlidb(m)	msg_write((m));
 #define vlidb(m)
 
+#ifdef CPU_ARM
+
+// TODO
+inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh){}
+inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned int &orem){}
+inline void _add_(unsigned int &a, unsigned int b, bool &carry){}
+inline void _sub_(unsigned int &a, unsigned int b, bool &carry){}
+
+#else
+
+
 
 inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh)
 {
@@ -109,6 +120,8 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry)
 		: "%eax");
 #endif
 }
+
+#endif
 
 
 vli::vli()

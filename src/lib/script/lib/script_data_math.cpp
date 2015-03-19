@@ -361,7 +361,7 @@ void amd64_col_mul_c(color &r, color &a, color &b)
 void amd64_col_mul_f(color &r, color &a, float b)
 {	r = a * b;	}
 
-#define amd64_wrap(orig, wrap)	((config.instruction_set == Asm::InstructionSetAMD64) ? ((void*)(wrap)) : ((void*)(orig)))
+#define amd64_wrap(orig, wrap)	((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) ? ((void*)(wrap)) : ((void*)(orig)))
 
 
 void __complex_set(complex &r, float x, float y)

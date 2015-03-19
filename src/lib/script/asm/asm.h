@@ -7,8 +7,9 @@ namespace Asm
 
 // instruction sets
 enum{
-	InstructionSetX86,
-	InstructionSetAMD64
+	INSTRUCTION_SET_X86,
+	INSTRUCTION_SET_AMD64,
+	INSTRUCTION_SET_ARM
 };
 
 struct InstructionSetData
@@ -21,20 +22,21 @@ extern InstructionSetData InstructionSet;
 
 // single registers
 enum{
-	RegEax, RegEcx, RegEdx, RegEbx, RegEsp, RegEsi, RegEdi, RegEbp, // 4 byte
-	RegAx, RegCx, RegDx, RegBx, RegBp, RegSp, RegSi, RegDi, // 2 byte
-	RegAl, RegCl, RegDl, RegBl, RegAh, RegCh, RegDh, RegBh, // 1 byte
-	RegCs, RegDs, RegSs, RegEs, RegFs, RegGs, // segment
-	RegCr0, RegCr1, RegCr2, RegCr3,
-	RegSt0, RegSt1, RegSt2, RegSt3, RegSt4, RegSt5, RegSt6, RegSt7,
-	RegRax, RegRcx, RegRdx, RegRbx, RegRsp, RegRsi, RegRdi, RegRbp, // 8 byte
-	RegR8, RegR9, RegR10, RegR11, RegR12, RegR13, RegR14, RegR15,
-	RegR8d, RegR9d, RegR10d, RegR11d, RegR12d, RegR13d, RegR14d, RegR15d,
-	RegXmm0, RegXmm1, RegXmm2, RegXmm3, RegXmm4, RegXmm5, RegXmm6, RegXmm7, // 16 byte
+	REG_EAX, REG_ECX, REG_EDX, REG_EBX, REG_ESP, REG_ESI, REG_EDI, REG_EBP, // 4 byte
+	REG_AX, REG_CX, REG_DX, REG_BX, REG_BP, REG_SP, REG_SI, REG_DI, // 2 byte
+	REG_AL, REG_CL, REG_DL, REG_BL, REG_AH, REG_CH, REG_DH, REG_BH, // 1 byte
+	REG_CS, REG_DS, REG_SS, REG_ES, REG_FS, REG_GS, // segment
+	REG_CR0, REG_CR1, REG_RC2, REG_CR3,
+	REG_ST0, REG_ST1, REG_ST2, REG_ST3, REG_ST4, REG_ST5, REG_ST6, REG_ST7,
+	REG_RAX, REG_RCX, REG_RDX, REG_RBX, REG_RSP, REG_RSI, REG_RDI, REG_RBP, // 8 byte
+	REG_R0, REG_R1, REG_R2, REG_R3, REG_R4, REG_R5, REG_R6, REG_R7, // ARM
+	REG_R8, REG_R9, REG_R10, REG_R11, REG_R12, REG_R13, REG_R14, REG_R15, // ARM 4 byte / AMD64 8 byte
+	REG_R8D, REG_R9D, REG_R10D, REG_R11D, REG_R12D, REG_R13D, REG_R14D, REG_R15D,
+	REG_XMM0, REG_XMM1, REG_XMM2, REG_XMM3, REG_XMM4, REG_XMM5, REG_XMM6, REG_XMM7, // 16 byte
 	NUM_REGISTERS
 };
 
-const int NUM_REG_ROOTS = 32;
+const int NUM_REG_ROOTS = 40;
 const int MAX_REG_SIZE = 16;
 
 extern int RegRoot[];
@@ -42,15 +44,15 @@ extern int RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
 string GetRegName(int reg);
 
 enum{
-	PKInvalid,
-	PKNone,
-	PKRegister,			// eAX
-	PKDerefRegister,	// [eAX]
-	PKLocal,			// [ebp + 0x0000]
-	PKEdxRel,			// [edx + 0x0000]
-	PKConstant,			// 0x00000000
-	PKDerefConstant,	// [0x00000000]
-	PKLabel				// _label
+	PK_INVALID,
+	PK_NONE,
+	PK_REGISTER,        // eAX
+	PK_DEREF_REGISTER,  // [eAX]
+	PK_LOCAL,           // [ebp + 0x0000]
+	PK_EDX_REL,         // [edx + 0x0000]
+	PK_CONSTANT,        // 0x00000000
+	PK_DEREF_CONSTANT,  // [0x00000000]
+	PK_LABEL            // _label
 };
 
 
@@ -211,6 +213,10 @@ enum{
 	inst_movss,
 	inst_movsd,
 	
+	// ARM
+	inst_b,
+	inst_bl,
+
 	NUM_INSTRUCTION_NAMES
 };
 
@@ -218,49 +224,49 @@ string GetInstructionName(int inst);
 
 struct GlobalVar
 {
-	string Name;
-	void *Pos; // points into the memory of a script
-	int Size;
+	string name;
+	void *pos; // points into the memory of a script
+	int size;
 };
 
 struct Label
 {
-	string Name;
-	int InstNo;
-	int Value;
+	string name;
+	int inst_no;
+	int value;
 };
 
 struct WantedLabel
 {
-	string Name;
-	int Pos; // position to fill into     relative to CodeOrigin (Opcode[0])
-	int Size; // number of bytes to fill
-	int Add; // to add to the value...
-	int LabelNo;
-	int InstNo;
-	bool Relative;
+	string name;
+	int pos; // position to fill into     relative to CodeOrigin (Opcode[0])
+	int size; // number of bytes to fill
+	int add; // to add to the value...
+	int label_no;
+	int inst_no;
+	bool relative;
 };
 
 struct AsmData
 {
 	int size; // number of bytes
 	int cmd_pos;
-	int offset; // relative to CodeOrigin (Opcode[0])
+	int offset; // relative to code_origin (Opcode[0])
 	//void *data;
 };
 
 struct BitChange
 {
 	int cmd_pos;
-	int offset; // relative to CodeOrigin (Opcode[0])
+	int offset; // relative to code_origin (Opcode[0])
 	int bits;
 };
 
 struct MetaInfo
 {
-	long CodeOrigin; // how to interpret opcode buffer[0]
-	bool Mode16;
-	int LineOffset; // number of script lines preceding asm block (to give correct error messages)
+	long code_origin; // how to interpret opcode buffer[0]
+	bool mode16;
+	int line_offset; // number of script lines preceding asm block (to give correct error messages)
 
 	//Array<Label> label;
 	//Array<WantedLabel> wanted_label;
@@ -279,7 +285,7 @@ struct InstructionWithParamsList : public Array<InstructionWithParams>
 	InstructionWithParamsList(int line_offset);
 	~InstructionWithParamsList();
 
-	void add_easy(int inst, int param1_type = PKNone, int param1_size = -1, void *param1 = NULL, int param2_type = PKNone, int param2_size = -1, void *param2 = NULL);
+	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
 	int add_label(const string &name, bool declaring);
 
 	void add_func_intro(int stack_alloc_size);
@@ -313,7 +319,7 @@ public:
 	int line, column;
 };
 
-void AddInstruction(char *oc, int &ocs, int inst, int param1_type = PKNone, int param1_size = -1, void *param1 = NULL, int param2_type = PKNone, int param2_size = -1, void *param2 = NULL);
+void AddInstruction(char *oc, int &ocs, int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
 void SetInstructionSet(int set);
 bool ImmediateAllowed(int inst);
 extern int OCParam;

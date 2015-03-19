@@ -41,14 +41,14 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 {
 	if (d>0){
 		if (d>120)
-			list->add_easy(Asm::inst_add, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKConstant, 4, (void*)(long)d);
+			list->add_easy(Asm::inst_add, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_CONSTANT, 4, (void*)(long)d);
 		else
-			list->add_easy(Asm::inst_add, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKConstant, 1, (void*)(long)d);
+			list->add_easy(Asm::inst_add, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_CONSTANT, 1, (void*)(long)d);
 	}else if (d<0){
 		if (d<-120)
-			list->add_easy(Asm::inst_sub, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKConstant, 4, (void*)(long)(-d));
+			list->add_easy(Asm::inst_sub, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_CONSTANT, 4, (void*)(long)(-d));
 		else
-			list->add_easy(Asm::inst_sub, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKConstant, 1, (void*)(long)(-d));
+			list->add_easy(Asm::inst_sub, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_CONSTANT, 1, (void*)(long)(-d));
 	}
 }
 
@@ -137,8 +137,8 @@ void Script::AllocateOpcode()
 #endif
 	if (((long)Opcode==-1)||((long)ThreadOpcode==-1))
 		DoErrorInternal("Script:  could not allocate executable memory");
-	if (syntax->AsmMetaInfo->CodeOrigin == 0)
-		syntax->AsmMetaInfo->CodeOrigin = (long)Opcode;
+	if (syntax->AsmMetaInfo->code_origin == 0)
+		syntax->AsmMetaInfo->code_origin = (long)Opcode;
 	OpcodeSize=0;
 	ThreadOpcodeSize=0;
 }
@@ -202,20 +202,20 @@ void Script::CompileOsEntryPoint()
 			nf = index;
 	// call
 	if (nf>=0)
-		Asm::AddInstruction(Opcode, OpcodeSize, Asm::inst_call, Asm::PKConstant, 4, NULL);
+		Asm::AddInstruction(Opcode, OpcodeSize, Asm::inst_call, Asm::PK_CONSTANT, 4, NULL);
 	TaskReturnOffset=OpcodeSize;
 	OCORA = Asm::OCParam;
 
 	// put strings into Opcode!
 	foreachi(Constant &c, syntax->Constants, i){
 		if (syntax->FlagCompileOS){// && (c.type == TypeCString)){
-			cnst[i] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin);
+			cnst[i] = (char*)(OpcodeSize + syntax->AsmMetaInfo->code_origin);
 			int s = c.type->size;
 			if (c.type == TypeString){
 				// const string -> variable length
 				s = syntax->Constants[i].value .num;
 
-				*(void**)&Opcode[OpcodeSize] = (char*)(OpcodeSize + syntax->AsmMetaInfo->CodeOrigin + config.SuperArraySize); // .data
+				*(void**)&Opcode[OpcodeSize] = (char*)(OpcodeSize + syntax->AsmMetaInfo->code_origin + config.SuperArraySize); // .data
 				*(int*)&Opcode[OpcodeSize + config.PointerSize    ] = s; // .num
 				*(int*)&Opcode[OpcodeSize + config.PointerSize + 4] = 0; // .reserved
 				*(int*)&Opcode[OpcodeSize + config.PointerSize + 8] = 1; // .item_size
@@ -242,7 +242,7 @@ void Script::LinkOsEntryPoint()
 		if (ff->name == "main")
 			nf = index;
 	if (nf >= 0){
-		int lll = (long)func[nf] - syntax->AsmMetaInfo->CodeOrigin - TaskReturnOffset;
+		int lll = (long)func[nf] - syntax->AsmMetaInfo->code_origin - TaskReturnOffset;
 		//printf("insert   %d  an %d\n", lll, OCORA);
 		//msg_write(lll);
 		//msg_write(d2h(&lll,4,false));
@@ -274,22 +274,22 @@ void Script::CompileTaskEntryPoint()
 
 	first_execution = (t_func*)&ThreadOpcode[ThreadOpcodeSize];
 	// intro
-	list->add_easy(Asm::inst_push, Asm::PKRegister, 4, (void*)Asm::RegEbp); // within the actual program
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEbp, Asm::PKRegister, 4, (void*)Asm::RegEsp);
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKDerefConstant, 4, (void*)&Stack[config.StackSize]); // start of the script stack
-	list->add_easy(Asm::inst_push, Asm::PKRegister, 4, (void*)Asm::RegEbp); // address of the old stack
+	list->add_easy(Asm::inst_push, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP); // within the actual program
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP);
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_DEREF_CONSTANT, 4, (void*)&Stack[config.StackSize]); // start of the script stack
+	list->add_easy(Asm::inst_push, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP); // address of the old stack
 	AddEspAdd(list, -12); // space for wait() task data
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEbp, Asm::PKRegister, 4, (void*)Asm::RegEsp);
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEax, Asm::PKConstant, 4, (void*)WaitingModeNone); // "reset"
-	list->add_easy(Asm::inst_mov, Asm::PKDerefConstant, 4, (void*)&WaitingMode, Asm::PKRegister, 4, (void*)Asm::RegEax);
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP);
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_EAX, Asm::PK_CONSTANT, 4, (void*)WaitingModeNone); // "reset"
+	list->add_easy(Asm::inst_mov, Asm::PK_DEREF_CONSTANT, 4, (void*)&WaitingMode, Asm::PK_REGISTER, 4, (void*)Asm::REG_EAX);
 
 	// call main()
-	list->add_easy(Asm::inst_call, Asm::PKConstant, 4, _main_);
+	list->add_easy(Asm::inst_call, Asm::PK_CONSTANT, 4, _main_);
 
 	// outro
 	AddEspAdd(list, 12); // make space for wait() task data
-	list->add_easy(Asm::inst_pop, Asm::PKRegister, 4, (void*)Asm::RegEsp);
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEbp, Asm::PKRegister, 4, (void*)Asm::RegEsp);
+	list->add_easy(Asm::inst_pop, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP);
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP);
 	list->add_easy(Asm::inst_leave);
 	list->add_easy(Asm::inst_ret);
 
@@ -297,13 +297,13 @@ void Script::CompileTaskEntryPoint()
 	int label_cont = list->add_label("_continue_execution", true);
 
 	// Intro
-	list->add_easy(Asm::inst_push, Asm::PKRegister, 4, (void*)Asm::RegEbp); // within the external program
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEbp, Asm::PKRegister, 4, (void*)Asm::RegEsp);
-	list->add_easy(Asm::inst_mov, Asm::PKDerefConstant, 4, &Stack[config.StackSize - 4], Asm::PKRegister, 4, (void*)Asm::RegEbp); // save the external ebp
-	list->add_easy(Asm::inst_mov, Asm::PKRegister, 4, (void*)Asm::RegEsp, Asm::PKDerefConstant, 4, &Stack[config.StackSize - 16]); // to the eIP of the script
-	list->add_easy(Asm::inst_pop, Asm::PKRegister, 4, (void*)Asm::RegEax);
-	list->add_easy(Asm::inst_add, Asm::PKRegister, 4, (void*)Asm::RegEax, Asm::PKConstant, 4, (void*)AfterWaitOCSize);
-	list->add_easy(Asm::inst_jmp, Asm::PKRegister, 4, (void*)Asm::RegEax);
+	list->add_easy(Asm::inst_push, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP); // within the external program
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP);
+	list->add_easy(Asm::inst_mov, Asm::PK_DEREF_CONSTANT, 4, &Stack[config.StackSize - 4], Asm::PK_REGISTER, 4, (void*)Asm::REG_EBP); // save the external ebp
+	list->add_easy(Asm::inst_mov, Asm::PK_REGISTER, 4, (void*)Asm::REG_ESP, Asm::PK_DEREF_CONSTANT, 4, &Stack[config.StackSize - 16]); // to the eIP of the script
+	list->add_easy(Asm::inst_pop, Asm::PK_REGISTER, 4, (void*)Asm::REG_EAX);
+	list->add_easy(Asm::inst_add, Asm::PK_REGISTER, 4, (void*)Asm::REG_EAX, Asm::PK_CONSTANT, 4, (void*)AfterWaitOCSize);
+	list->add_easy(Asm::inst_jmp, Asm::PK_REGISTER, 4, (void*)Asm::REG_EAX);
 	//list->add_easy(Asm::inst_leave);
 	//list->add_easy(Asm::inst_ret);
 	/*OCAddChar(0x90);
@@ -312,8 +312,8 @@ void Script::CompileTaskEntryPoint()
 
 	list->Compile(ThreadOpcode, ThreadOpcodeSize);
 
-	first_execution = (t_func*)(long)list->label[label_first].Value;
-	continue_execution = (t_func*)(long)list->label[label_cont].Value;
+	first_execution = (t_func*)(long)list->label[label_first].value;
+	continue_execution = (t_func*)(long)list->label[label_cont].value;
 
 	delete(list);
 }
@@ -468,18 +468,18 @@ void Script::Compiler()
 				DoErrorLink("external function " + f->name + " not linkable");
 			//func[i] = (t_func*)((long)func[i] + (long)Opcode - syntax->AsmMetaInfo->CodeOrigin);
 		}else{
-			func[i] = (t_func*)(syntax->AsmMetaInfo->CodeOrigin + OpcodeSize);
+			func[i] = (t_func*)(syntax->AsmMetaInfo->code_origin + OpcodeSize);
 			CompileFunction(f, Opcode, OpcodeSize);
 		}
 	}
 
 // link functions
 	foreach(Asm::WantedLabel &l, functions_to_link){
-		string name = l.Name.substr(10, -1);
+		string name = l.name.substr(10, -1);
 		bool found = false;
 		foreachi(Function *f, syntax->Functions, i)
 			if (f->name == name){
-				*(int*)&Opcode[l.Pos] = (long)func[i] - (syntax->AsmMetaInfo->CodeOrigin + l.Pos + 4);
+				*(int*)&Opcode[l.pos] = (long)func[i] - (syntax->AsmMetaInfo->code_origin + l.pos + 4);
 				found = true;
 				break;
 			}

@@ -36,8 +36,8 @@ void SyntaxTree::AddIncludeData(Script *s)
 	if (ps->FlagOverwriteVariablesOffset)
 		VariablesOffset = ps->VariablesOffset;
 	FlagStringConstAsCString |= ps->FlagStringConstAsCString;
-	if (ps->AsmMetaInfo->CodeOrigin != (long)ps->script->Opcode)
-		AsmMetaInfo->CodeOrigin = ps->AsmMetaInfo->CodeOrigin;
+	if (ps->AsmMetaInfo->code_origin != (long)ps->script->Opcode)
+		AsmMetaInfo->code_origin = ps->AsmMetaInfo->code_origin;
 
 	// defines
 	Defines.append(ps->Defines);
@@ -135,7 +135,7 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 				}else if (d.Source == "__CODE_ORIGIN__"){
 					if (d.Dest.num != 1)
 						DoError("offset value expected after __CODE_ORIGIN__");
-					AsmMetaInfo->CodeOrigin = (long)s2i2(d.Dest[0]);
+					AsmMetaInfo->code_origin = (long)s2i2(d.Dest[0]);
 				}else
 					DoError("unknown compiler flag (define starting and ending with \"__\"): " + d.Source);
 			}else

@@ -288,9 +288,9 @@ void SyntaxTree::CreateAsmMetaInfo()
 	AsmMetaInfo->global_var.clear();
 	for (int i=0;i<RootOfAllEvil.var.num;i++){
 		Asm::GlobalVar v;
-		v.Name = RootOfAllEvil.var[i].name;
-		v.Size = RootOfAllEvil.var[i].type->size;
-		v.Pos = script->g_var[i];
+		v.name = RootOfAllEvil.var[i].name;
+		v.size = RootOfAllEvil.var[i].type->size;
+		v.pos = script->g_var[i];
 		AsmMetaInfo->global_var.add(v);
 	}
 }
@@ -1057,7 +1057,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 	msg_db_f("MapLocalVariablesToStack", 1);
 	foreach(Function *f, Functions){
 		f->_param_size = 2 * config.PointerSize; // space for return value and eBP
-		if (config.instruction_set == Asm::InstructionSetX86){
+		if (config.instruction_set == Asm::INSTRUCTION_SET_X86){
 			f->_var_size = 0;
 
 			if (config.abi == AbiWindows32){
@@ -1090,7 +1090,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 					f->_var_size += s;
 				}				
 			}
-		}else if (config.instruction_set == Asm::InstructionSetAMD64){
+		}else if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 			f->_var_size = 0;
 			
 			foreachi(Variable &v, f->var, i){

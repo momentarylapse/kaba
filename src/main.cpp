@@ -100,11 +100,14 @@ int hui_main(const Array<string> &arg0)
 		}else if ((arg[i] == "--gui") || (arg[i] == "-g")){
 			use_gui = true;
 			arg.erase(i --);
+		}else if (arg[i] == "--arm"){
+			instruction_set = Asm::INSTRUCTION_SET_ARM;
+			arg.erase(i --);
 		}else if (arg[i] == "--amd64"){
-			instruction_set = Asm::InstructionSetAMD64;
+			instruction_set = Asm::INSTRUCTION_SET_AMD64;
 			arg.erase(i --);
 		}else if (arg[i] == "--x86"){
-			instruction_set = Asm::InstructionSetX86;
+			instruction_set = Asm::INSTRUCTION_SET_X86;
 			arg.erase(i --);
 		}else if (arg[i] == "--no-std-lib"){
 			allow_std_lib = false;

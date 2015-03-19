@@ -11,16 +11,17 @@ int OCParam;
 
 
 
-enum{
-	Size8 = 1,
-	Size16 = 2,
-	Size32 = 4,
-	Size48 = 6,
-	Size64 = 8,
-	Size128 = 16,
-	/*SizeVariable = -5,
-	Size32or48 = -6,*/
-	SizeUnknown = -7,
+enum
+{
+	SIZE_8 = 1,
+	SIZE_16 = 2,
+	SIZE_32 = 4,
+	SIZE_48 = 6,
+	SIZE_64 = 8,
+	SIZE_128 = 16,
+	/*SIZE_VARIABLE = -5,
+	SIZE_32OR48 = -6,*/
+	SIZE_UNKNOWN = -7,
 };
 
 InstructionSetData InstructionSet;
@@ -39,12 +40,12 @@ struct ParserState
 	int FullRegisterSize;
 	void init()
 	{
-		DefaultSize = Size32;
+		DefaultSize = SIZE_32;
 		FullRegisterSize = InstructionSet.pointer_size;
 
 		if (CurrentMetaInfo)
-			if (CurrentMetaInfo->Mode16)
-				DefaultSize = Size16;
+			if (CurrentMetaInfo->mode16)
+				DefaultSize = SIZE_16;
 	}
 	void reset()
 	{
@@ -113,15 +114,16 @@ static void so(int i)
 
 MetaInfo::MetaInfo()
 {
-	Mode16 = false;
-	CodeOrigin = 0;
-	LineOffset = 0;
+	mode16 = false;
+	code_origin = 0;
+	line_offset = 0;
 }
 
 
 
 // groups of registers
-enum{
+enum
+{
 	RegGroupNone,
 	RegGroupGeneral,
 	RegGroupGeneral2,
@@ -133,7 +135,8 @@ enum{
 };
 
 
-struct Register{
+struct Register
+{
 	string name;
 	int id, group, size;
 	bool extend_mod_rm;
@@ -169,7 +172,8 @@ string GetRegName(int reg)
 	return RegisterByID[reg]->name;
 }
 
-struct InstructionName{
+struct InstructionName
+{
 	int inst;
 	string name;
 	int rw1, rw2; // parameter is read(1), modified(2) or both (3)
@@ -332,6 +336,9 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 
 	{inst_movss,		"movss"},
 	{inst_movsd,		"movsd"},
+
+	{inst_b,		"b"},
+	{inst_bl,		"bl"},
 	
 	{-1,			"???"}
 };
@@ -339,18 +346,20 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 
 
 // parameter types
-enum{
-	ParamTImmediate,
-	ParamTRegister,
-	ParamTRegisterOrMem, // ...
-	ParamTMemory,
-	//ParamTSIB,
-	ParamTNone,
-	ParamTInvalid
+enum
+{
+	PARAMT_IMMEDIATE,
+	PARAMT_REGISTER,
+	PARAMT_REGISTER_OR_MEM, // ...
+	PARAMT_MEMORY,
+	//PARAMT_SIB,
+	PARAMT_NONE,
+	PARAMT_INVALID
 };
 
 // short parameter type
-enum{
+enum
+{
 	__Dummy__ = 10000,
 	Eb,Ew,Ed,Eq,E48,
 	Gb,Gw,Gd,Gq,
@@ -364,20 +373,22 @@ enum{
 };
 
 // displacement for registers
-enum{
-	DispModeNone,	// reg
-	DispMode8,		// reg + 8bit
-	DispMode16,		// reg + 16bit
-	DispMode32,		// reg + 32bit
-	DispModeSIB,	// SIB-byte
-	DispMode8SIB,	// SIB-byte + 8bit
-	DispModeReg2,	// reg + reg2
-	DispMode8Reg2,	// reg + reg2 + 8bit
-	DispMode16Reg2	// reg + reg2 + 16bit
+enum
+{
+	DISP_MODE_NONE,     // reg
+	DISP_MODE_8,        // reg + 8bit
+	DISP_MODE_16,       // reg + 16bit
+	DISP_MODE_32,       // reg + 32bit
+	DISP_MODE_SIB,      // SIB-byte
+	DISP_MODE_8_SIB,    // SIB-byte + 8bit
+	DISP_MODE_REG2,     // reg + reg2
+	DISP_MODE_8_REG2,   // reg + reg2 + 8bit
+	DISP_MODE_16_REG2   // reg + reg2 + 16bit
 };
 
 // a real parameter (usable)
-struct InstructionParam{
+struct InstructionParam
+{
 	int type;
 	int disp;
 	Register *reg, *reg2;
@@ -389,7 +400,8 @@ struct InstructionParam{
 	string str(bool hide_size = false);
 };
 
-struct InstructionWithParams{
+struct InstructionWithParams
+{
 	int inst;
 	InstructionParam p1, p2;
 	int line, col;
@@ -427,38 +439,38 @@ int InstructionWithParamsList::add_label(const string &name, bool declaring)
 	// label already in use? (used before declared)
 	if (declaring){
 		foreachi(Label &l, label, i)
-			if (l.InstNo < 0)
-				if (l.Name == name){
-					l.InstNo = num;
+			if (l.inst_no < 0)
+				if (l.name == name){
+					l.inst_no = num;
 					so("----redecl");
 					return i;
 				}
 	}else{
 		foreachi(Label &l, label, i)
-			if (l.Name == name){
+			if (l.name == name){
 				so("----reuse");
 				return i;
 			}
 	}
 	Label l;
-	l.Name = name;
-	l.InstNo = declaring ? num : -1;
-	l.Value = -1;
+	l.name = name;
+	l.inst_no = declaring ? num : -1;
+	l.value = -1;
 	label.add(l);
 	return label.num - 1;
 }
 
 void InstructionWithParamsList::add_func_intro(int stack_alloc_size)
 {
-	long reg_bp = (InstructionSet.set == InstructionSetAMD64) ? RegRbp : RegEbp;
-	long reg_sp = (InstructionSet.set == InstructionSetAMD64) ? RegRsp : RegEsp;
+	long reg_bp = (InstructionSet.set == INSTRUCTION_SET_AMD64) ? REG_RBP : REG_EBP;
+	long reg_sp = (InstructionSet.set == INSTRUCTION_SET_AMD64) ? REG_RSP : REG_ESP;
 	int s = InstructionSet.pointer_size;
-	add_easy(inst_push, PKRegister, s, (void*)reg_bp);
-	add_easy(inst_mov, PKRegister, s, (void*)reg_bp, PKRegister, s, (void*)reg_sp);
+	add_easy(inst_push, PK_REGISTER, s, (void*)reg_bp);
+	add_easy(inst_mov, PK_REGISTER, s, (void*)reg_bp, PK_REGISTER, s, (void*)reg_sp);
 	if (stack_alloc_size > 127){
-		add_easy(inst_sub, PKRegister, s, (void*)reg_sp, PKConstant, Size32, (void*)(long)stack_alloc_size);
+		add_easy(inst_sub, PK_REGISTER, s, (void*)reg_sp, PK_CONSTANT, SIZE_32, (void*)(long)stack_alloc_size);
 	}else if (stack_alloc_size > 0){
-		add_easy(inst_sub, PKRegister, s, (void*)reg_sp, PKConstant, Size8, (void*)(long)stack_alloc_size);
+		add_easy(inst_sub, PK_REGISTER, s, (void*)reg_sp, PK_CONSTANT, SIZE_8, (void*)(long)stack_alloc_size);
 	}
 }
 
@@ -466,49 +478,51 @@ void InstructionWithParamsList::add_func_return(int return_size)
 {
 	add_easy(inst_leave);
 	if (return_size > 4)
-		add_easy(inst_ret, PKConstant, Size16, (void*)4);
+		add_easy(inst_ret, PK_CONSTANT, SIZE_16, (void*)4);
 	else
 		add_easy(inst_ret);
 }
 
 // which part of the modr/m byte is used
-enum{
-	MRMNone,
-	MRMReg,
-	MRMModRM
+enum
+{
+	MRM_NONE,
+	MRM_REG,
+	MRM_MOD_RM
 };
 
 string SizeOut(int size)
 {
-	if (size == Size8)		return "8";
-	if (size == Size16)		return "16";
-	if (size == Size32)		return "32";
-	if (size == Size48)		return "48";
-	if (size == Size64)		return "64";
-	if (size == Size128)		return "128";
+	if (size == SIZE_8)		return "8";
+	if (size == SIZE_16)		return "16";
+	if (size == SIZE_32)		return "32";
+	if (size == SIZE_48)		return "48";
+	if (size == SIZE_64)		return "64";
+	if (size == SIZE_128)		return "128";
 	return "???";
 }
 
 
 string get_size_name(int size)
 {
-	if (size == Size8)
+	if (size == SIZE_8)
 		return "byte";
-	if (size == Size16)
+	if (size == SIZE_16)
 		return "word";
-	if (size == Size32)
+	if (size == SIZE_32)
 		return "dword";
-	if (size == Size48)
+	if (size == SIZE_48)
 		return "s48";
-	if (size == Size64)
+	if (size == SIZE_64)
 		return "qword";
-	if (size == Size128)
+	if (size == SIZE_128)
 		return "dqword";
 	return "";
 }
 
 // parameter definition (filter for real parameters)
-struct InstructionParamFuzzy{
+struct InstructionParamFuzzy
+{
 	bool used;
 	bool allow_memory_address;	// [0x12.34...]
 	bool allow_memory_indirect;	// [eax]    [eax + ...]
@@ -540,11 +554,11 @@ void InstructionParamFuzzy::print() const
 			t += "	[Mem + ind]";
 		if (reg)
 			t += "  " + reg->name;
-		if (size != SizeUnknown)
+		if (size != SIZE_UNKNOWN)
 			t += "  " + SizeOut(size);
-		if (mrm_mode == MRMReg)
+		if (mrm_mode == MRM_REG)
 			t += "   /r";
-		else if (mrm_mode == MRMModRM)
+		else if (mrm_mode == MRM_MOD_RM)
 			t += "   /m";
 	}else{
 		t += "	None";
@@ -553,7 +567,8 @@ void InstructionParamFuzzy::print() const
 }
 
 // an instruction/opcode the cpu offers
-struct CPUInstruction{
+struct CPUInstruction
+{
 	int inst;
 	int code, code_size, cap;
 	bool has_modrm, has_small_param, has_small_addr, has_big_param, has_big_addr, has_fixed_param;
@@ -592,21 +607,21 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 {
 	ip.reg = NULL;
 	ip.reg_group = RegGroupNone;
-	ip.mrm_mode = MRMNone;
+	ip.mrm_mode = MRM_NONE;
 	ip.reg_group = -1;
-	ip._type_ = ParamTInvalid;
+	ip._type_ = PARAMT_INVALID;
 	ip.allow_register = false;
 	ip.allow_immediate = false;
 	ip.allow_memory_address = false;
 	ip.allow_memory_indirect = false;
 	ip.immediate_is_relative = false;
-	if (param < 0){	ip.used = false;	ip._type_ = ParamTNone;	return false;	}
+	if (param < 0){	ip.used = false;	ip._type_ = PARAMT_NONE;	return false;	}
 	ip.used = true;
 
 	// is it a register?
 	for (int i=0;i<Registers.num;i++)
 		if (Registers[i].id == param){
-			ip._type_ = ParamTRegister;
+			ip._type_ = PARAMT_REGISTER;
 			ip.reg = &Registers[i];
 			ip.allow_register = true;
 			ip.reg_group = Registers[i].group;
@@ -615,116 +630,116 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		}
 	// general reg / mem
 	if ((param == Eb) || (param == Eq) || (param == Ew) || (param == Ed) || (param == E48)){
-		ip._type_ = ParamTInvalid;//ParamTRegisterOrMem;
+		ip._type_ = PARAMT_INVALID;//ParamTRegisterOrMem;
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
 		ip.reg_group = RegGroupGeneral;
-		ip.mrm_mode = MRMModRM;
-		if (param == Eb)	ip.size = Size8;
-		if (param == Ew)	ip.size = Size16;
-		if (param == Ed)	ip.size = Size32;
-		if (param == Eq)	ip.size = Size64;
-		if (param == E48)	ip.size = Size48;
+		ip.mrm_mode = MRM_MOD_RM;
+		if (param == Eb)	ip.size = SIZE_8;
+		if (param == Ew)	ip.size = SIZE_16;
+		if (param == Ed)	ip.size = SIZE_32;
+		if (param == Eq)	ip.size = SIZE_64;
+		if (param == E48)	ip.size = SIZE_48;
 		return true;
 	}
 	// general reg (reg)
 	if ((param == Gb) || (param == Gq) || (param == Gw) || (param == Gd)){
-		ip._type_ = ParamTRegister;
+		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
 		ip.reg_group = RegGroupGeneral;
-		ip.mrm_mode = MRMReg;
-		if (param == Gb)	ip.size = Size8;
-		if (param == Gw)	ip.size = Size16;
-		if (param == Gd)	ip.size = Size32;
-		if (param == Gq)	ip.size = Size64;
+		ip.mrm_mode = MRM_REG;
+		if (param == Gb)	ip.size = SIZE_8;
+		if (param == Gw)	ip.size = SIZE_16;
+		if (param == Gd)	ip.size = SIZE_32;
+		if (param == Gq)	ip.size = SIZE_64;
 		return true;
 	}
 	// general reg (mod)
 	if ((param == Rb) || (param == Rq) || (param == Rw) || (param == Rd)){
-		ip._type_ = ParamTRegister;
+		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
 		ip.reg_group = RegGroupGeneral;
-		ip.mrm_mode = MRMModRM;
-		if (param == Rb)	ip.size = Size8;
-		if (param == Rw)	ip.size = Size16;
-		if (param == Rd)	ip.size = Size32;
-		if (param == Rq)	ip.size = Size64;
+		ip.mrm_mode = MRM_MOD_RM;
+		if (param == Rb)	ip.size = SIZE_8;
+		if (param == Rw)	ip.size = SIZE_16;
+		if (param == Rd)	ip.size = SIZE_32;
+		if (param == Rq)	ip.size = SIZE_64;
 		return true;
 	}
 	// immediate
 	if ((param == Ib) || (param == Iq) || (param == Iw) || (param == Id) || (param == I48)){
-		ip._type_ = ParamTImmediate;
+		ip._type_ = PARAMT_IMMEDIATE;
 		ip.allow_immediate = true;
-		if (param == Ib)	ip.size = Size8;
-		if (param == Iw)	ip.size = Size16;
-		if (param == Id)	ip.size = Size32;
-		if (param == Iq)	ip.size = Size64;
-		if (param == I48)	ip.size = Size48;
+		if (param == Ib)	ip.size = SIZE_8;
+		if (param == Iw)	ip.size = SIZE_16;
+		if (param == Id)	ip.size = SIZE_32;
+		if (param == Iq)	ip.size = SIZE_64;
+		if (param == I48)	ip.size = SIZE_48;
 		return false;
 	}
 	// immediate (relative)
 	if ((param == Jb) || (param == Jq) || (param == Jw) || (param == Jd)){
-		ip._type_ = ParamTImmediate;
+		ip._type_ = PARAMT_IMMEDIATE;
 		ip.allow_immediate = true;
 		ip.immediate_is_relative = true;
-		if (param == Jb)	ip.size = Size8;
-		if (param == Jw)	ip.size = Size16;
-		if (param == Jd)	ip.size = Size32;
-		if (param == Jq)	ip.size = Size64;
+		if (param == Jb)	ip.size = SIZE_8;
+		if (param == Jw)	ip.size = SIZE_16;
+		if (param == Jd)	ip.size = SIZE_32;
+		if (param == Jq)	ip.size = SIZE_64;
 		return false;
 	}
 	// mem
 	if ((param == Ob) || (param == Oq) || (param == Ow) || (param == Od)){
-		ip._type_ = ParamTMemory;
+		ip._type_ = PARAMT_MEMORY;
 		ip.allow_memory_address = true;
-		if (param == Ob)	ip.size = Size8;
-		if (param == Ow)	ip.size = Size16;
-		if (param == Od)	ip.size = Size32;
-		if (param == Oq)	ip.size = Size64;
+		if (param == Ob)	ip.size = SIZE_8;
+		if (param == Ow)	ip.size = SIZE_16;
+		if (param == Od)	ip.size = SIZE_32;
+		if (param == Oq)	ip.size = SIZE_64;
 		return false;
 	}
 	// mem
 	if ((param == Mb) || (param == Mq) || (param == Mw) || (param == Md)){
-		ip._type_ = ParamTInvalid; // ...
+		ip._type_ = PARAMT_INVALID; // ...
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
 		ip.reg_group = RegGroupGeneral;
-		ip.mrm_mode = MRMModRM;
-		if (param == Mb)	ip.size = Size8;
-		if (param == Mw)	ip.size = Size16;
-		if (param == Md)	ip.size = Size32;
-		if (param == Mq)	ip.size = Size64;
+		ip.mrm_mode = MRM_MOD_RM;
+		if (param == Mb)	ip.size = SIZE_8;
+		if (param == Mw)	ip.size = SIZE_16;
+		if (param == Md)	ip.size = SIZE_32;
+		if (param == Mq)	ip.size = SIZE_64;
 		return true;
 	}
 	// control reg
 	if ((param == Cb) || (param == Cd) || (param == Cw) || (param == Cd)){
-		ip._type_ = ParamTRegister;
+		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
 		ip.reg_group = RegGroupControl;
-		ip.mrm_mode = MRMReg;
-		if (param == Cb)	ip.size = Size8;
-		if (param == Cw)	ip.size = Size16;
-		if (param == Cd)	ip.size = Size32;
-		if (param == Cq)	ip.size = Size64;
+		ip.mrm_mode = MRM_REG;
+		if (param == Cb)	ip.size = SIZE_8;
+		if (param == Cw)	ip.size = SIZE_16;
+		if (param == Cd)	ip.size = SIZE_32;
+		if (param == Cq)	ip.size = SIZE_64;
 		return true;
 	}
 	// segment reg
 	if (param == Sw){
-		ip._type_ = ParamTRegister;
+		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
 		ip.reg_group = RegGroupSegment;
-		ip.mrm_mode = MRMReg;
-		ip.size = Size16;
+		ip.mrm_mode = MRM_REG;
+		ip.size = SIZE_16;
 		return true;
 	}
 	// xmm reg (reg)
 	if (param == Xx){
-		ip._type_ = ParamTRegister;
+		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
 		ip.reg_group = RegGroupXmm;
-		ip.mrm_mode = MRMReg;
-		ip.size = Size128;
+		ip.mrm_mode = MRM_REG;
+		ip.size = SIZE_128;
 		return true;
 	}
 	msg_error("asm: unknown instparam (call Michi!)");
@@ -735,11 +750,11 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 
 enum
 {
-	OptSmallParam = 1,
-	OptSmallAddr,
-	OptBigParam,
-	OptBigAddr,
-	OptMediumParam,
+	OPT_SMALL_PARAM = 1,
+	OPT_SMALL_ADDR,
+	OPT_BIG_PARAM,
+	OPT_BIG_ADDR,
+	OPT_MEDIUM_PARAM,
 };
 
 void add_inst(int inst, int code, int code_size, int cap, int param1, int param2, int opt = 0, bool ignore = false)
@@ -755,21 +770,46 @@ void add_inst(int inst, int code, int code_size, int cap, int param1, int param2
 	bool m1 = _get_inst_param_(param1, i.param1);
 	bool m2 = _get_inst_param_(param2, i.param2);
 	i.has_modrm  = m1 || m2 || (cap >= 0);
-	i.has_small_param = (opt == OptSmallParam);
-	i.has_small_addr = (opt == OptSmallAddr);
-	i.has_big_param = (opt == OptBigParam);
-	i.has_big_addr = (opt == OptBigAddr);
-	i.has_fixed_param = (opt != OptSmallParam) && (opt != OptMediumParam) && (opt != OptBigParam);
-	if ((i.has_big_param) && (InstructionSet.set != InstructionSetAMD64))
+	i.has_small_param = (opt == OPT_SMALL_PARAM);
+	i.has_small_addr = (opt == OPT_SMALL_ADDR);
+	i.has_big_param = (opt == OPT_BIG_PARAM);
+	i.has_big_addr = (opt == OPT_BIG_ADDR);
+	i.has_fixed_param = (opt != OPT_SMALL_PARAM) && (opt != OPT_MEDIUM_PARAM) && (opt != OPT_BIG_PARAM);
+	if ((i.has_big_param) && (InstructionSet.set != INSTRUCTION_SET_AMD64))
 		return;
 
 	if (inst == inst_lea)
-		i.param2.size = SizeUnknown;
+		i.param2.size = SIZE_UNKNOWN;
 	
 	i.name = InstructionNames[NUM_INSTRUCTION_NAMES].name;
 	for (int j=0;j<NUM_INSTRUCTION_NAMES;j++)
 		if (inst == InstructionNames[j].inst)
 			i.name = InstructionNames[j].name;
+	CPUInstructions.add(i);
+}
+
+enum
+{
+	AP_NONE,
+	AP_REG_12,
+	AP_REG_16,
+	AP_OFFSET24_0,
+	AP_IMM12_0,
+	AP_SHIFTED12_0,
+};
+
+
+void add_inst_arm(int inst, int code, int param1, int param2 = AP_NONE, int param3 = AP_NONE)
+{
+	CPUInstruction i;
+	memset(&i.param1, 0, sizeof(i.param1));
+	memset(&i.param2, 0, sizeof(i.param2));
+	i.inst = inst;
+	i.code = code;
+	i.code_size = 4;
+	i.cap = 0;
+
+	i.name = GetInstructionName(inst);
 	CPUInstructions.add(i);
 }
 
@@ -812,145 +852,142 @@ bool GetInstructionAllowGenReg(int inst)
 	return true;
 }
 
-/*
-#define NumInstructionsX86		319
-CPUInstruction InstructionX86[NumInstructionsX86]={
-};
 
-int NumInstructions=0;
-sInstruction *Instruction=NULL;
 
-void SetInstructionSet(int set)
+int QueryInstructionSet()
 {
-	msg_db_f("SetInstructionSet", 1+ASM_DB_LEVEL);
-	if (set==InstructionSetDefault){
-		if (sizeof(long)==8)
-			set=InstructionSetAMD64;
-		else
-			set=InstructionSetX86;
-	}
-	
-	set=InstructionSetX86;
-	
-	if (set==InstructionSetX86){
-		NumInstructions=NumInstructionsX86;
-		Instruction=InstructionX86;
-		so("--------------------------------x86");
-	}
-	
-	// build name table
-	for (int i=0;i<NumInstructions;i++){
-		Instruction[i].name==InstructionName[NUM_INSTRUCTION_NAMES].name;
-		for (int j=0;j<NUM_INSTRUCTION_NAMES;j++)
-			if (Instruction[i].inst==InstructionName[j].inst)
-				Instruction[i].name=InstructionName[j].name;
-	}
-}*/
+#ifdef CPU_AMD64
+	return INSTRUCTION_SET_AMD64;
+#endif
+#ifdef CPU_X86
+	return INSTRUCTION_SET_X86;
+#endif
+#ifdef CPU_ARM
+	return INSTRUCTION_SET_ARM;
+#endif
+	msg_error("Asm: unknown instruction set");
+	return INSTRUCTION_SET_X86;
+}
 
 
-
-void Init(int set)
+void InitARM()
 {
-	if (set < 0){
-		if (sizeof(void*) == 8)
-			set = InstructionSetAMD64;
-		else if (sizeof(void*) == 4)
-			set = InstructionSetX86;
-		else{
-			msg_error("Asm: unknown instruction set");
-			set = InstructionSetX86;
-		}
-	}
-	InstructionSet.set = set;
-	InstructionSet.pointer_size = 4;
-	if (set == InstructionSetAMD64)
-		InstructionSet.pointer_size = 8;
+	Registers.clear();
+	add_reg("r0",	REG_R0,	RegGroupGeneral,	SIZE_32,	0);
+	add_reg("r1",	REG_R1,	RegGroupGeneral,	SIZE_32,	1);
+	add_reg("r2",	REG_R2,	RegGroupGeneral,	SIZE_32,	2);
+	add_reg("r3",	REG_R3,	RegGroupGeneral,	SIZE_32,	3);
+	add_reg("r4",	REG_R4,	RegGroupGeneral,	SIZE_32,	4);
+	add_reg("r5",	REG_R5,	RegGroupGeneral,	SIZE_32,	5);
+	add_reg("r6",	REG_R6,	RegGroupGeneral,	SIZE_32,	6);
+	add_reg("r7",	REG_R7,	RegGroupGeneral,	SIZE_32,	7);
+	add_reg("r8",	REG_R8,	RegGroupGeneral,	SIZE_32,	8);
+	add_reg("r9",	REG_R9,	RegGroupGeneral,	SIZE_32,	9);
+	add_reg("r10",	REG_R10,	RegGroupGeneral,	SIZE_32,	10);
+	add_reg("r11",	REG_R11,	RegGroupGeneral,	SIZE_32,	11);
+	add_reg("r12",	REG_R12,	RegGroupGeneral,	SIZE_32,	12);
+	add_reg("r13",	REG_R13,	RegGroupGeneral,	SIZE_32,	13);
+	add_reg("r14",	REG_R14,	RegGroupGeneral,	SIZE_32,	14);
+	add_reg("r15",	REG_R15,	RegGroupGeneral,	SIZE_32,	15);
 
-	for (int i=0;i<NUM_REG_ROOTS;i++)
-		for (int j=0;j<=MAX_REG_SIZE;j++)
-			RegResize[i][j] = -1;
+	// create easy to access array
+	RegisterByID.clear();
+	for (int i=0;i<Registers.num;i++){
+		if (RegisterByID.num <= Registers[i].id)
+			RegisterByID.resize(Registers[i].id + 1);
+		RegisterByID[Registers[i].id] = &Registers[i];
+	}
+
+	CPUInstructions.clear();
+	add_inst_arm(inst_b,    0x0a000000 ,0);
+	add_inst_arm(inst_bl,   0x0b000000 ,0);
+}
+
+void InitX86()
+{
+	int set = InstructionSet.set;
 
 	Registers.clear();
-	add_reg("rax",	RegRax,	RegGroupGeneral,	Size64,	0);
-	add_reg("eax",	RegEax,	RegGroupGeneral,	Size32,	0);
-	add_reg("ax",	RegAx,	RegGroupGeneral,	Size16,	0);
-	add_reg("ah",	RegAh,	RegGroupGeneral,	Size8,	0); // RegResize[] will be overwritten by al
-	add_reg("al",	RegAl,	RegGroupGeneral,	Size8,	0);
-	add_reg("rcx",	RegRcx,	RegGroupGeneral,	Size64,	1);
-	add_reg("ecx",	RegEcx,	RegGroupGeneral,	Size32,	1);
-	add_reg("cx",	RegCx,	RegGroupGeneral,	Size16,	1);
-	add_reg("ch",	RegCh,	RegGroupGeneral,	Size8,	1);
-	add_reg("cl",	RegCl,	RegGroupGeneral,	Size8,	1);
-	add_reg("rdx",	RegRdx,	RegGroupGeneral,	Size64,	2);
-	add_reg("edx",	RegEdx,	RegGroupGeneral,	Size32,	2);
-	add_reg("dx",	RegDx,	RegGroupGeneral,	Size16,	2);
-	add_reg("dh",	RegDh,	RegGroupGeneral,	Size8,	2);
-	add_reg("dl",	RegDl,	RegGroupGeneral,	Size8,	2);
-	add_reg("rbx",	RegRbx,	RegGroupGeneral,	Size64,	3);
-	add_reg("ebx",	RegEbx,	RegGroupGeneral,	Size32,	3);
-	add_reg("bx",	RegBx,	RegGroupGeneral,	Size16,	3);
-	add_reg("bh",	RegBh,	RegGroupGeneral,	Size8,	3);
-	add_reg("bl",	RegBl,	RegGroupGeneral,	Size8,	3);
+	add_reg("rax",	REG_RAX,	RegGroupGeneral,	SIZE_64,	0);
+	add_reg("eax",	REG_EAX,	RegGroupGeneral,	SIZE_32,	0);
+	add_reg("ax",	REG_AX,	RegGroupGeneral,	SIZE_16,	0);
+	add_reg("ah",	REG_AH,	RegGroupGeneral,	SIZE_8,	0); // RegResize[] will be overwritten by al
+	add_reg("al",	REG_AL,	RegGroupGeneral,	SIZE_8,	0);
+	add_reg("rcx",	REG_RCX,	RegGroupGeneral,	SIZE_64,	1);
+	add_reg("ecx",	REG_ECX,	RegGroupGeneral,	SIZE_32,	1);
+	add_reg("cx",	REG_CX,	RegGroupGeneral,	SIZE_16,	1);
+	add_reg("ch",	REG_CH,	RegGroupGeneral,	SIZE_8,	1);
+	add_reg("cl",	REG_CL,	RegGroupGeneral,	SIZE_8,	1);
+	add_reg("rdx",	REG_RDX,	RegGroupGeneral,	SIZE_64,	2);
+	add_reg("edx",	REG_EDX,	RegGroupGeneral,	SIZE_32,	2);
+	add_reg("dx",	REG_DX,	RegGroupGeneral,	SIZE_16,	2);
+	add_reg("dh",	REG_DH,	RegGroupGeneral,	SIZE_8,	2);
+	add_reg("dl",	REG_DL,	RegGroupGeneral,	SIZE_8,	2);
+	add_reg("rbx",	REG_RBX,	RegGroupGeneral,	SIZE_64,	3);
+	add_reg("ebx",	REG_EBX,	RegGroupGeneral,	SIZE_32,	3);
+	add_reg("bx",	REG_BX,	RegGroupGeneral,	SIZE_16,	3);
+	add_reg("bh",	REG_BH,	RegGroupGeneral,	SIZE_8,	3);
+	add_reg("bl",	REG_BL,	RegGroupGeneral,	SIZE_8,	3);
 
-	add_reg("rsp",	RegRsp,	RegGroupGeneral,	Size64,	4);
-	add_reg("esp",	RegEsp,	RegGroupGeneral,	Size32,	4);
-	add_reg("sp",	RegSp,	RegGroupGeneral,	Size16,	4);
-	add_reg("rbp",	RegRbp,	RegGroupGeneral,	Size64,	5);
-	add_reg("ebp",	RegEbp,	RegGroupGeneral,	Size32,	5);
-	add_reg("bp",	RegBp,	RegGroupGeneral,	Size16,	5);
-	add_reg("rsi",	RegRsi,	RegGroupGeneral,	Size64,	6);
-	add_reg("esi",	RegEsi,	RegGroupGeneral,	Size32,	6);
-	add_reg("si",	RegSi,	RegGroupGeneral,	Size16,	6);
-	add_reg("rdi",	RegRdi,	RegGroupGeneral,	Size64,	7);
-	add_reg("edi",	RegEdi,	RegGroupGeneral,	Size32,	7);
-	add_reg("di",	RegDi,	RegGroupGeneral,	Size16,	7);
+	add_reg("rsp",	REG_RSP,	RegGroupGeneral,	SIZE_64,	4);
+	add_reg("esp",	REG_ESP,	RegGroupGeneral,	SIZE_32,	4);
+	add_reg("sp",	REG_SP,	RegGroupGeneral,	SIZE_16,	4);
+	add_reg("rbp",	REG_RBP,	RegGroupGeneral,	SIZE_64,	5);
+	add_reg("ebp",	REG_EBP,	RegGroupGeneral,	SIZE_32,	5);
+	add_reg("bp",	REG_BP,	RegGroupGeneral,	SIZE_16,	5);
+	add_reg("rsi",	REG_RSI,	RegGroupGeneral,	SIZE_64,	6);
+	add_reg("esi",	REG_ESI,	RegGroupGeneral,	SIZE_32,	6);
+	add_reg("si",	REG_SI,	RegGroupGeneral,	SIZE_16,	6);
+	add_reg("rdi",	REG_RDI,	RegGroupGeneral,	SIZE_64,	7);
+	add_reg("edi",	REG_EDI,	RegGroupGeneral,	SIZE_32,	7);
+	add_reg("di",	REG_DI,	RegGroupGeneral,	SIZE_16,	7);
 
-	add_reg("r8",	RegR8,	RegGroupGeneral2,	Size64,	8);
-	add_reg("r8d",	RegR8d,	RegGroupGeneral2,	Size32,	8);
-	add_reg("r9",	RegR9,	RegGroupGeneral2,	Size64,	9);
-	add_reg("r9d",	RegR9d,	RegGroupGeneral2,	Size32,	9);
-	add_reg("r10",	RegR10,	RegGroupGeneral2,	Size64,	10);
-	add_reg("r10d",	RegR10d,RegGroupGeneral2,	Size32,	10);
-	add_reg("r11",	RegR11,	RegGroupGeneral2,	Size64,	10);
-	add_reg("r11d",	RegR11d,RegGroupGeneral2,	Size32,	11);
-	add_reg("r12",	RegR12,	RegGroupGeneral2,	Size64,	12);
-	add_reg("r12d",	RegR12d,RegGroupGeneral2,	Size32,	12);
-	add_reg("r13",	RegR13,	RegGroupGeneral2,	Size64,	13);
-	add_reg("r13d",	RegR13d,RegGroupGeneral2,	Size32,	13);
-	add_reg("r14",	RegR14,	RegGroupGeneral2,	Size64,	14);
-	add_reg("r14d",	RegR14d,RegGroupGeneral2,	Size32,	14);
-	add_reg("r15",	RegR15,	RegGroupGeneral2,	Size64,	15);
-	add_reg("r15d",	RegR15d,RegGroupGeneral2,	Size32,	15);
+	add_reg("r8",	REG_R8,	RegGroupGeneral2,	SIZE_64,	8);
+	add_reg("r8d",	REG_R8D,	RegGroupGeneral2,	SIZE_32,	8);
+	add_reg("r9",	REG_R9,	RegGroupGeneral2,	SIZE_64,	9);
+	add_reg("r9d",	REG_R9D,	RegGroupGeneral2,	SIZE_32,	9);
+	add_reg("r10",	REG_R10,	RegGroupGeneral2,	SIZE_64,	10);
+	add_reg("r10d",	REG_R10D,RegGroupGeneral2,	SIZE_32,	10);
+	add_reg("r11",	REG_R11,	RegGroupGeneral2,	SIZE_64,	10);
+	add_reg("r11d",	REG_R11D,RegGroupGeneral2,	SIZE_32,	11);
+	add_reg("r12",	REG_R12,	RegGroupGeneral2,	SIZE_64,	12);
+	add_reg("r12d",	REG_R12D,RegGroupGeneral2,	SIZE_32,	12);
+	add_reg("r13",	REG_R13,	RegGroupGeneral2,	SIZE_64,	13);
+	add_reg("r13d",	REG_R13D,RegGroupGeneral2,	SIZE_32,	13);
+	add_reg("r14",	REG_R14,	RegGroupGeneral2,	SIZE_64,	14);
+	add_reg("r14d",	REG_R14D,RegGroupGeneral2,	SIZE_32,	14);
+	add_reg("r15",	REG_R15,	RegGroupGeneral2,	SIZE_64,	15);
+	add_reg("r15d",	REG_R15D,RegGroupGeneral2,	SIZE_32,	15);
 
-	add_reg("cs",	RegCs,	RegGroupSegment,	Size16);
-	add_reg("ss",	RegSs,	RegGroupSegment,	Size16);
-	add_reg("ds",	RegDs,	RegGroupSegment,	Size16);
-	add_reg("es",	RegEs,	RegGroupSegment,	Size16);
-	add_reg("fs",	RegFs,	RegGroupSegment,	Size16);
-	add_reg("gs",	RegGs,	RegGroupSegment,	Size16);
+	add_reg("cs",	REG_CS,	RegGroupSegment,	SIZE_16);
+	add_reg("ss",	REG_SS,	RegGroupSegment,	SIZE_16);
+	add_reg("ds",	REG_DS,	RegGroupSegment,	SIZE_16);
+	add_reg("es",	REG_ES,	RegGroupSegment,	SIZE_16);
+	add_reg("fs",	REG_FS,	RegGroupSegment,	SIZE_16);
+	add_reg("gs",	REG_GS,	RegGroupSegment,	SIZE_16);
 
-	add_reg("cr0",	RegCr0,	RegGroupControl,	Size32);
-	add_reg("cr1",	RegCr1,	RegGroupControl,	Size32);
-	add_reg("cr2",	RegCr2,	RegGroupControl,	Size32);
-	add_reg("cr3",	RegCr3,	RegGroupControl,	Size32);
+	add_reg("cr0",	REG_CR0,	RegGroupControl,	SIZE_32);
+	add_reg("cr1",	REG_CR1,	RegGroupControl,	SIZE_32);
+	add_reg("cr2",	REG_RC2,	RegGroupControl,	SIZE_32);
+	add_reg("cr3",	REG_CR3,	RegGroupControl,	SIZE_32);
 
-	add_reg("st0",	RegSt0,	RegGroupX87,	Size32,	16); // ??? 32
-	add_reg("st1",	RegSt1,	RegGroupX87,	Size32,	17);
-	add_reg("st2",	RegSt2,	RegGroupX87,	Size32,	18);
-	add_reg("st3",	RegSt3,	RegGroupX87,	Size32,	19);
-	add_reg("st4",	RegSt4,	RegGroupX87,	Size32,	20);
-	add_reg("st5",	RegSt5,	RegGroupX87,	Size32,	21);
-	add_reg("st6",	RegSt6,	RegGroupX87,	Size32,	22);
-	add_reg("st7",	RegSt7,	RegGroupX87,	Size32,	23);
+	add_reg("st0",	REG_ST0,	RegGroupX87,	SIZE_32,	16); // ??? 32
+	add_reg("st1",	REG_ST1,	RegGroupX87,	SIZE_32,	17);
+	add_reg("st2",	REG_ST2,	RegGroupX87,	SIZE_32,	18);
+	add_reg("st3",	REG_ST3,	RegGroupX87,	SIZE_32,	19);
+	add_reg("st4",	REG_ST4,	RegGroupX87,	SIZE_32,	20);
+	add_reg("st5",	REG_ST5,	RegGroupX87,	SIZE_32,	21);
+	add_reg("st6",	REG_ST6,	RegGroupX87,	SIZE_32,	22);
+	add_reg("st7",	REG_ST7,	RegGroupX87,	SIZE_32,	23);
 
-	add_reg("xmm0",	RegXmm0,	RegGroupXmm,	Size128);
-	add_reg("xmm1",	RegXmm1,	RegGroupXmm,	Size128);
-	add_reg("xmm2",	RegXmm2,	RegGroupXmm,	Size128);
-	add_reg("xmm3",	RegXmm3,	RegGroupXmm,	Size128);
-	add_reg("xmm4",	RegXmm4,	RegGroupXmm,	Size128);
-	add_reg("xmm5",	RegXmm5,	RegGroupXmm,	Size128);
-	add_reg("xmm6",	RegXmm6,	RegGroupXmm,	Size128);
-	add_reg("xmm7",	RegXmm7,	RegGroupXmm,	Size128);
+	add_reg("xmm0",	REG_XMM0,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm1",	REG_XMM1,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm2",	REG_XMM2,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm3",	REG_XMM3,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm4",	REG_XMM4,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm5",	REG_XMM5,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm6",	REG_XMM6,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm7",	REG_XMM7,	RegGroupXmm,	SIZE_128);
 
 	// create easy to access array
 	RegisterByID.clear();
@@ -965,70 +1002,70 @@ void Init(int set)
 	add_inst(inst_dw		,0x00	,0	,-1	,Iw	,-1);
 	add_inst(inst_dd		,0x00	,0	,-1	,Id	,-1);
 	add_inst(inst_add		,0x00	,1	,-1	,Eb	,Gb);
-	add_inst(inst_add		,0x01	,1	,-1	,Ew	,Gw, OptSmallParam);
-	add_inst(inst_add		,0x01	,1	,-1	,Ed	,Gd, OptMediumParam);
-	add_inst(inst_add		,0x01	,1	,-1	,Eq	,Gq, OptBigParam);
+	add_inst(inst_add		,0x01	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
+	add_inst(inst_add		,0x01	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_add		,0x01	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
 	add_inst(inst_add		,0x02	,1	,-1	,Gb	,Eb);
-	add_inst(inst_add		,0x03	,1	,-1	,Gw	,Eq, OptSmallParam);
-	add_inst(inst_add		,0x03	,1	,-1	,Gd	,Ed, OptMediumParam);
-	add_inst(inst_add		,0x03	,1	,-1	,Gq	,Eq, OptBigParam);
-	add_inst(inst_add		,0x04	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_add		,0x05	,1	,-1	,RegAx, Iw, OptSmallParam);
-	add_inst(inst_add		,0x05	,1	,-1	,RegEax, Id, OptMediumParam);
-	add_inst(inst_add		,0x05	,1	,-1	,RegRax, Id, OptBigParam);
-	add_inst(inst_push		,0x06	,1	,-1	,RegEs	,-1);
-	add_inst(inst_pop		,0x07	,1	,-1	,RegEs	,-1);
+	add_inst(inst_add		,0x03	,1	,-1	,Gw	,Eq, OPT_SMALL_PARAM);
+	add_inst(inst_add		,0x03	,1	,-1	,Gd	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_add		,0x03	,1	,-1	,Gq	,Eq, OPT_BIG_PARAM);
+	add_inst(inst_add		,0x04	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_add		,0x05	,1	,-1	,REG_AX, Iw, OPT_SMALL_PARAM);
+	add_inst(inst_add		,0x05	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_add		,0x05	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
+	add_inst(inst_push		,0x06	,1	,-1	,REG_ES	,-1);
+	add_inst(inst_pop		,0x07	,1	,-1	,REG_ES	,-1);
 	add_inst(inst_or		,0x08	,1	,-1	,Eb	,Gb);
-	add_inst(inst_or		,0x09	,1	,-1	,Ew	,Gw, OptSmallParam);
-	add_inst(inst_or		,0x09	,1	,-1	,Ed	,Gd, OptMediumParam);
-	add_inst(inst_or		,0x09	,1	,-1	,Eq	,Gq, OptBigParam);
+	add_inst(inst_or		,0x09	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
+	add_inst(inst_or		,0x09	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_or		,0x09	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
 	add_inst(inst_or		,0x0a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_or		,0x0c	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_or		,0x0d	,1	,-1	,RegAx,	Iw, OptSmallParam);
-	add_inst(inst_or		,0x0d	,1	,-1	,RegEax,	Id, OptMediumParam);
-	add_inst(inst_or		,0x0d	,1	,-1	,RegRax,	Id, OptBigParam);
-	add_inst(inst_push		,0x0e	,1	,-1	,RegCs	,-1);
+	add_inst(inst_or,	0x0b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_or,	0x0b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_or,	0x0b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_or		,0x0c	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_or		,0x0d	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_or		,0x0d	,1	,-1	,REG_EAX,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_or		,0x0d	,1	,-1	,REG_RAX,	Id, OPT_BIG_PARAM);
+	add_inst(inst_push		,0x0e	,1	,-1	,REG_CS	,-1);
 	add_inst(inst_sldt		,0x000f	,2	,0	,Ew	,-1);
 	add_inst(inst_str		,0x000f	,2	,1	,Ew	,-1);
 	add_inst(inst_lldt		,0x000f	,2	,2	,Ew	,-1);
 	add_inst(inst_ltr		,0x000f	,2	,3	,Ew	,-1);
 	add_inst(inst_verr		,0x000f	,2	,4	,Ew	,-1);
 	add_inst(inst_verw		,0x000f	,2	,5	,Ew	,-1);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Mw,	-1, OptSmallParam);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Md,	-1, OptMediumParam);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Mq,	-1, OptBigParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Mw,	-1, OptSmallParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Md,	-1, OptMediumParam);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Mq,	-1, OptBigParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Mw,	-1, OptSmallParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Md,	-1, OptMediumParam);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Mq,	-1, OptBigParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Mw,	-1, OptSmallParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Md,	-1, OptMediumParam);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Mq,	-1, OptBigParam);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_sgdt,	0x010f,	2,	0,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_sidt,	0x010f,	2,	1,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_lgdt,	0x010f,	2,	2,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_lidt,	0x010f,	2,	3,	Mq,	-1, OPT_BIG_PARAM);
 	add_inst(inst_smsw		,0x010f	,2	,4	,Ew	,-1);
 	add_inst(inst_lmsw		,0x010f	,2	,6	,Ew	,-1);
 	add_inst(inst_mov		,0x200f	,2	,-1	,Rd	,Cd); // Fehler im Algorhytmus!!!!  (wirklich ???) -> Fehler in Tabelle?!?
 	add_inst(inst_mov		,0x220f	,2	,-1	,Cd	,Rd);
-	add_inst(inst_jo		,0x800f	,2	,-1	,Id	,-1, OptMediumParam); // 16/32 bit???
-	add_inst(inst_jno		,0x810f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jb		,0x820f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnb		,0x830f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jz		,0x840f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnz		,0x850f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jbe		,0x860f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnbe		,0x870f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_js		,0x880f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jns		,0x890f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jp		,0x8a0f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnp		,0x8b0f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jl		,0x8c0f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnl		,0x8d0f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jle		,0x8e0f	,2	,-1	,Id	,-1, OptMediumParam);
-	add_inst(inst_jnle		,0x8f0f	,2	,-1	,Id	,-1, OptMediumParam);
+	add_inst(inst_jo		,0x800f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM); // 16/32 bit???
+	add_inst(inst_jno		,0x810f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jb		,0x820f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnb		,0x830f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jz		,0x840f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnz		,0x850f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jbe		,0x860f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnbe		,0x870f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_js		,0x880f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jns		,0x890f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jp		,0x8a0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnp		,0x8b0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jl		,0x8c0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnl		,0x8d0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jle		,0x8e0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jnle		,0x8f0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
 	add_inst(inst_seto		,0x900f	,2	,-1	,Eb	,-1);
 	add_inst(inst_setno		,0x910f	,2	,-1	,Eb	,-1);
 	add_inst(inst_setb		,0x920f	,2	,-1	,Eb	,-1);
@@ -1045,158 +1082,158 @@ void Init(int set)
 	add_inst(inst_setnl		,0x9d0f	,2	,-1	,Eb	,-1);
 	add_inst(inst_setle		,0x9e0f	,2	,-1	,Eb	,-1);
 	add_inst(inst_setnle	,0x9f0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gw,	Eb, OptSmallParam);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gd,	Eb, OptMediumParam);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gq,	Eb, OptBigParam);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gd,	Ew, OptMediumParam);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gq,	Ew, OptBigParam);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gw,	Eb, OptSmallParam);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gd,	Eb, OptMediumParam);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gq,	Eb, OptBigParam);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gd,	Ew, OptMediumParam);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gq,	Ew, OptBigParam);
+	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
+	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
+	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
+	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
+	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
+	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
+	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
+	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
+	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
+	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
 	add_inst(inst_adc,	0x10	,1	,-1	,Eb	,Gb);
-	add_inst(inst_adc,	0x11,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_adc,	0x11,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_adc,	0x11,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_adc,	0x11,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_adc,	0x11,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_adc,	0x11,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_adc,	0x12	,1	,-1	,Gb	,Eb);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_adc,	0x14	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_adc,	0x15	,1	,-1	,RegAx,	Iw, OptSmallParam);
-	add_inst(inst_adc,	0x15	,1	,-1	,RegEax, Id, OptMediumParam);
-	add_inst(inst_adc,	0x15	,1	,-1	,RegRax, Id, OptBigParam);
-	add_inst(inst_push,	0x16	,1	,-1	,RegSs, -1);
-	add_inst(inst_pop,	0x17	,1	,-1	,RegSs, -1);
+	add_inst(inst_adc,	0x13,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_adc,	0x13,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_adc,	0x13,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_adc,	0x14	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_adc,	0x15	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_adc,	0x15	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_adc,	0x15	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
+	add_inst(inst_push,	0x16	,1	,-1	,REG_SS, -1);
+	add_inst(inst_pop,	0x17	,1	,-1	,REG_SS, -1);
 	add_inst(inst_sbb,	0x18	,1	,-1	,Eb	,Gb);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_sbb,	0x19,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_sbb,	0x19,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_sbb,	0x19,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_sbb,	0x1a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_sbb,	0x1c	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,RegRax	,Id, OptBigParam);
-	add_inst(inst_push,	0x1e	,1	,-1	,RegDs	,-1);
-	add_inst(inst_pop,	0x1f	,1	,-1	,RegDs	,-1);
+	add_inst(inst_sbb,	0x1b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_sbb,	0x1b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_sbb,	0x1b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_sbb,	0x1c	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(inst_push,	0x1e	,1	,-1	,REG_DS	,-1);
+	add_inst(inst_pop,	0x1f	,1	,-1	,REG_DS	,-1);
 	add_inst(inst_and,	0x20	,1	,-1	,Eb	,Gb);
-	add_inst(inst_and,	0x21,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_and,	0x21,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_and,	0x21,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_and,	0x21,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_and,	0x21,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_and,	0x21,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_and,	0x22	,1	,-1	,Gb	,Eb);
-	add_inst(inst_and,	0x23,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_and,	0x23,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_and,	0x23,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_and,	0x24	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_and,	0x25	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_and,	0x25	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_and,	0x25	,1	,-1	,RegRax	,Id, OptBigParam);
+	add_inst(inst_and,	0x23,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_and,	0x23,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_and,	0x23,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_and,	0x24	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_and,	0x25	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_and,	0x25	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_and,	0x25	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
 	add_inst(inst_sub,	0x28	,1	,-1	,Eb	,Gb);
-	add_inst(inst_sub,	0x29,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_sub,	0x29,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_sub,	0x29,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_sub,	0x29,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_sub,	0x29,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_sub,	0x29,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_sub,	0x2a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_sub,	0x2c	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_sub,	0x2d	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_sub,	0x2d	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_sub,	0x2d	,1	,-1	,RegRax	,Id, OptBigParam);
+	add_inst(inst_sub,	0x2b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_sub,	0x2b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_sub,	0x2b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_sub,	0x2c	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_sub,	0x2d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_sub,	0x2d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_sub,	0x2d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
 	add_inst(inst_xor,	0x30	,1	,-1	,Eb	,Gb);
-	add_inst(inst_xor,	0x31,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_xor,	0x31,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_xor,	0x31,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_xor,	0x31,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_xor,	0x31,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_xor,	0x31,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_xor,	0x32	,1	,-1	,Gb	,Eb);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_xor,	0x34	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_xor,	0x35	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_xor,	0x35	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_xor,	0x35	,1	,-1	,RegRax	,Iq, OptBigParam);
+	add_inst(inst_xor,	0x33,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_xor,	0x33,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_xor,	0x33,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_xor,	0x34	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_xor,	0x35	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_xor,	0x35	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_xor,	0x35	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
 	add_inst(inst_cmp,	0x38	,1	,-1	,Eb	,Gb);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_cmp,	0x39,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_cmp,	0x39,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_cmp,	0x39,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_cmp,	0x3a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_cmp,	0x3c	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,RegRax	,Id, OptBigParam);
-	if (set == InstructionSetX86){
-		add_inst(inst_inc		,0x40	,1	,-1	,RegEax	,-1);
-		add_inst(inst_inc		,0x41	,1	,-1	,RegEcx	,-1);
-		add_inst(inst_inc		,0x42	,1	,-1	,RegEdx	,-1);
-		add_inst(inst_inc		,0x43	,1	,-1	,RegEbx	,-1);
-		add_inst(inst_inc		,0x44	,1	,-1	,RegEsp	,-1);
-		add_inst(inst_inc		,0x45	,1	,-1	,RegEbp	,-1);
-		add_inst(inst_inc		,0x46	,1	,-1	,RegEsi	,-1);
-		add_inst(inst_inc		,0x47	,1	,-1	,RegEdi	,-1);
-		add_inst(inst_dec		,0x48	,1	,-1	,RegEax	,-1);
-		add_inst(inst_dec		,0x49	,1	,-1	,RegEcx	,-1);
-		add_inst(inst_dec		,0x4a	,1	,-1	,RegEdx	,-1);
-		add_inst(inst_dec		,0x4b	,1	,-1	,RegEbx	,-1);
-		add_inst(inst_dec		,0x4c	,1	,-1	,RegEsp	,-1);
-		add_inst(inst_dec		,0x4d	,1	,-1	,RegEbp	,-1);
-		add_inst(inst_dec		,0x4e	,1	,-1	,RegEsi	,-1);
-		add_inst(inst_dec		,0x4f	,1	,-1	,RegEdi	,-1);
+	add_inst(inst_cmp,	0x3b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_cmp,	0x3b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_cmp,	0x3b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(inst_cmp,	0x3c	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	if (set == INSTRUCTION_SET_X86){
+		add_inst(inst_inc		,0x40	,1	,-1	,REG_EAX	,-1);
+		add_inst(inst_inc		,0x41	,1	,-1	,REG_ECX	,-1);
+		add_inst(inst_inc		,0x42	,1	,-1	,REG_EDX	,-1);
+		add_inst(inst_inc		,0x43	,1	,-1	,REG_EBX	,-1);
+		add_inst(inst_inc		,0x44	,1	,-1	,REG_ESP	,-1);
+		add_inst(inst_inc		,0x45	,1	,-1	,REG_EBP	,-1);
+		add_inst(inst_inc		,0x46	,1	,-1	,REG_ESI	,-1);
+		add_inst(inst_inc		,0x47	,1	,-1	,REG_EDI	,-1);
+		add_inst(inst_dec		,0x48	,1	,-1	,REG_EAX	,-1);
+		add_inst(inst_dec		,0x49	,1	,-1	,REG_ECX	,-1);
+		add_inst(inst_dec		,0x4a	,1	,-1	,REG_EDX	,-1);
+		add_inst(inst_dec		,0x4b	,1	,-1	,REG_EBX	,-1);
+		add_inst(inst_dec		,0x4c	,1	,-1	,REG_ESP	,-1);
+		add_inst(inst_dec		,0x4d	,1	,-1	,REG_EBP	,-1);
+		add_inst(inst_dec		,0x4e	,1	,-1	,REG_ESI	,-1);
+		add_inst(inst_dec		,0x4f	,1	,-1	,REG_EDI	,-1);
 	}
-	if (set == InstructionSetX86){
-		add_inst(inst_push		,0x50	,1	,-1	,RegEax	,-1);
-		add_inst(inst_push		,0x51	,1	,-1	,RegEcx	,-1);
-		add_inst(inst_push		,0x52	,1	,-1	,RegEdx	,-1);
-		add_inst(inst_push		,0x53	,1	,-1	,RegEbx	,-1);
-		add_inst(inst_push		,0x54	,1	,-1	,RegEsp	,-1);
-		add_inst(inst_push		,0x55	,1	,-1	,RegEbp	,-1);
-		add_inst(inst_push		,0x56	,1	,-1	,RegEsi	,-1);
-		add_inst(inst_push		,0x57	,1	,-1	,RegEdi	,-1);
-		add_inst(inst_pop		,0x58	,1	,-1	,RegEax	,-1);
-		add_inst(inst_pop		,0x59	,1	,-1	,RegEcx	,-1);
-		add_inst(inst_pop		,0x5a	,1	,-1	,RegEdx	,-1);
-		add_inst(inst_pop		,0x5b	,1	,-1	,RegEbx	,-1);
-		add_inst(inst_pop		,0x5c	,1	,-1	,RegEsp	,-1);
-		add_inst(inst_pop		,0x5d	,1	,-1	,RegEbp	,-1);
-		add_inst(inst_pop		,0x5e	,1	,-1	,RegEsi	,-1);
-		add_inst(inst_pop		,0x5f	,1	,-1	,RegEdi	,-1);
-	}else if (set == InstructionSetAMD64){
-		add_inst(inst_push		,0x50	,1	,-1	,RegRax	,-1);
-		add_inst(inst_push		,0x51	,1	,-1	,RegRcx	,-1);
-		add_inst(inst_push		,0x52	,1	,-1	,RegRdx	,-1);
-		add_inst(inst_push		,0x53	,1	,-1	,RegRbx	,-1);
-		add_inst(inst_push		,0x54	,1	,-1	,RegRsp	,-1);
-		add_inst(inst_push		,0x55	,1	,-1	,RegRbp	,-1);
-		add_inst(inst_push		,0x56	,1	,-1	,RegRsi	,-1);
-		add_inst(inst_push		,0x57	,1	,-1	,RegRdi	,-1);
-		add_inst(inst_pop		,0x58	,1	,-1	,RegRax	,-1);
-		add_inst(inst_pop		,0x59	,1	,-1	,RegRcx	,-1);
-		add_inst(inst_pop		,0x5a	,1	,-1	,RegRdx	,-1);
-		add_inst(inst_pop		,0x5b	,1	,-1	,RegRbx	,-1);
-		add_inst(inst_pop		,0x5c	,1	,-1	,RegRsp	,-1);
-		add_inst(inst_pop		,0x5d	,1	,-1	,RegRbp	,-1);
-		add_inst(inst_pop		,0x5e	,1	,-1	,RegRsi	,-1);
-		add_inst(inst_pop		,0x5f	,1	,-1	,RegRdi	,-1);
+	if (set == INSTRUCTION_SET_X86){
+		add_inst(inst_push		,0x50	,1	,-1	,REG_EAX	,-1);
+		add_inst(inst_push		,0x51	,1	,-1	,REG_ECX	,-1);
+		add_inst(inst_push		,0x52	,1	,-1	,REG_EDX	,-1);
+		add_inst(inst_push		,0x53	,1	,-1	,REG_EBX	,-1);
+		add_inst(inst_push		,0x54	,1	,-1	,REG_ESP	,-1);
+		add_inst(inst_push		,0x55	,1	,-1	,REG_EBP	,-1);
+		add_inst(inst_push		,0x56	,1	,-1	,REG_ESI	,-1);
+		add_inst(inst_push		,0x57	,1	,-1	,REG_EDI	,-1);
+		add_inst(inst_pop		,0x58	,1	,-1	,REG_EAX	,-1);
+		add_inst(inst_pop		,0x59	,1	,-1	,REG_ECX	,-1);
+		add_inst(inst_pop		,0x5a	,1	,-1	,REG_EDX	,-1);
+		add_inst(inst_pop		,0x5b	,1	,-1	,REG_EBX	,-1);
+		add_inst(inst_pop		,0x5c	,1	,-1	,REG_ESP	,-1);
+		add_inst(inst_pop		,0x5d	,1	,-1	,REG_EBP	,-1);
+		add_inst(inst_pop		,0x5e	,1	,-1	,REG_ESI	,-1);
+		add_inst(inst_pop		,0x5f	,1	,-1	,REG_EDI	,-1);
+	}else if (set == INSTRUCTION_SET_AMD64){
+		add_inst(inst_push		,0x50	,1	,-1	,REG_RAX	,-1);
+		add_inst(inst_push		,0x51	,1	,-1	,REG_RCX	,-1);
+		add_inst(inst_push		,0x52	,1	,-1	,REG_RDX	,-1);
+		add_inst(inst_push		,0x53	,1	,-1	,REG_RBX	,-1);
+		add_inst(inst_push		,0x54	,1	,-1	,REG_RSP	,-1);
+		add_inst(inst_push		,0x55	,1	,-1	,REG_RBP	,-1);
+		add_inst(inst_push		,0x56	,1	,-1	,REG_RSI	,-1);
+		add_inst(inst_push		,0x57	,1	,-1	,REG_RDI	,-1);
+		add_inst(inst_pop		,0x58	,1	,-1	,REG_RAX	,-1);
+		add_inst(inst_pop		,0x59	,1	,-1	,REG_RCX	,-1);
+		add_inst(inst_pop		,0x5a	,1	,-1	,REG_RDX	,-1);
+		add_inst(inst_pop		,0x5b	,1	,-1	,REG_RBX	,-1);
+		add_inst(inst_pop		,0x5c	,1	,-1	,REG_RSP	,-1);
+		add_inst(inst_pop		,0x5d	,1	,-1	,REG_RBP	,-1);
+		add_inst(inst_pop		,0x5e	,1	,-1	,REG_RSI	,-1);
+		add_inst(inst_pop		,0x5f	,1	,-1	,REG_RDI	,-1);
 	}
 	add_inst(inst_pusha		,0x60	,1	,-1	,-1	,-1);
 	add_inst(inst_popa		,0x61	,1	,-1	,-1	,-1);
-	add_inst(inst_push,	0x68,	1,	-1,	Iw,	-1, OptSmallParam);
-	add_inst(inst_push,	0x68,	1,	-1,	Id,	-1, OptMediumParam);
-	add_inst(inst_push,	0x68,	1,	-1,	Iq,	-1, OptBigParam);
-	add_inst(inst_imul,	0x69,	1,	-1,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_imul,	0x69,	1,	-1,	Ed,	Id, OptMediumParam);
-	add_inst(inst_imul,	0x69,	1,	-1,	Eq,	Id, OptBigParam);
+	add_inst(inst_push,	0x68,	1,	-1,	Iw,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_push,	0x68,	1,	-1,	Id,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_push,	0x68,	1,	-1,	Iq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_imul,	0x69,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_imul,	0x69,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_imul,	0x69,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
 	add_inst(inst_push		,0x6a	,1	,-1	,Ib	,-1);
 	add_inst(inst_jo		,0x70	,1	,-1	,Jb	,-1);
 	add_inst(inst_jno		,0x71	,1	,-1	,Jb	,-1);
@@ -1223,149 +1260,149 @@ void Init(int set)
 	add_inst(inst_sub		,0x80	,1	,5	,Eb	,Ib);
 	add_inst(inst_xor		,0x80	,1	,6	,Eb	,Ib);
 	add_inst(inst_cmp		,0x80	,1	,7	,Eb	,Ib);
-	add_inst(inst_add,	0x81,	1,	0,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_add,	0x81,	1,	0,	Ed,	Id, OptMediumParam);
-	add_inst(inst_add,	0x81,	1,	0,	Eq,	Id, OptBigParam);
-	add_inst(inst_or,	0x81,	1,	1,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_or,	0x81,	1,	1,	Ed,	Id, OptMediumParam);
-	add_inst(inst_or,	0x81,	1,	1,	Eq,	Id, OptBigParam);
-	add_inst(inst_adc,	0x81,	1,	2,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_adc,	0x81,	1,	2,	Ed,	Id, OptMediumParam);
-	add_inst(inst_adc,	0x81,	1,	2,	Eq,	Id, OptBigParam);
-	add_inst(inst_sbb,	0x81,	1,	3,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_sbb,	0x81,	1,	3,	Ed,	Id, OptMediumParam);
-	add_inst(inst_sbb,	0x81,	1,	3,	Eq,	Id, OptBigParam);
-	add_inst(inst_and,	0x81,	1,	4,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_and,	0x81,	1,	4,	Ed,	Id, OptMediumParam);
-	add_inst(inst_and,	0x81,	1,	4,	Eq,	Id, OptBigParam);
-	add_inst(inst_sub,	0x81,	1,	5,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_sub,	0x81,	1,	5,	Ed,	Id, OptMediumParam);
-	add_inst(inst_sub,	0x81,	1,	5,	Eq,	Id, OptBigParam);
-	add_inst(inst_xor,	0x81,	1,	6,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_xor,	0x81,	1,	6,	Ed,	Id, OptMediumParam);
-	add_inst(inst_xor,	0x81,	1,	6,	Eq,	Id, OptBigParam);
-	add_inst(inst_cmp,	0x81,	1,	7,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_cmp,	0x81,	1,	7,	Ed,	Id, OptMediumParam);
-	add_inst(inst_cmp,	0x81,	1,	7,	Eq,	Id, OptBigParam);
-	add_inst(inst_add,	0x83,	1,	0,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_add,	0x83,	1,	0,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_add,	0x83,	1,	0,	Eq,	Ib, OptBigParam);
-	add_inst(inst_or,	0x83,	1,	1,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_or,	0x83,	1,	1,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_or,	0x83,	1,	1,	Eq,	Ib, OptBigParam);
-	add_inst(inst_adc,	0x83,	1,	2,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_adc,	0x83,	1,	2,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_adc,	0x83,	1,	2,	Eq,	Ib, OptBigParam);
-	add_inst(inst_sbb,	0x83,	1,	3,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_sbb,	0x83,	1,	3,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_sbb,	0x83,	1,	3,	Eq,	Ib, OptBigParam);
-	add_inst(inst_and,	0x83,	1,	4,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_and,	0x83,	1,	4,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_and,	0x83,	1,	4,	Eq,	Ib, OptBigParam);
-	add_inst(inst_sub,	0x83,	1,	5,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_sub,	0x83,	1,	5,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_sub,	0x83,	1,	5,	Eq,	Ib, OptBigParam);
-	add_inst(inst_xor,	0x83,	1,	6,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_xor,	0x83,	1,	6,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_xor,	0x83,	1,	6,	Eq,	Ib, OptBigParam);
-	add_inst(inst_cmp,	0x83,	1,	7,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_cmp,	0x83,	1,	7,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_cmp,	0x83,	1,	7,	Eq,	Ib, OptBigParam);
+	add_inst(inst_add,	0x81,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_add,	0x81,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_add,	0x81,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_or,	0x81,	1,	1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_or,	0x81,	1,	1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_or,	0x81,	1,	1,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_adc,	0x81,	1,	2,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_adc,	0x81,	1,	2,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_adc,	0x81,	1,	2,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_sbb,	0x81,	1,	3,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_sbb,	0x81,	1,	3,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_sbb,	0x81,	1,	3,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_and,	0x81,	1,	4,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_and,	0x81,	1,	4,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_and,	0x81,	1,	4,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_sub,	0x81,	1,	5,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_sub,	0x81,	1,	5,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_sub,	0x81,	1,	5,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_xor,	0x81,	1,	6,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_xor,	0x81,	1,	6,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_xor,	0x81,	1,	6,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_cmp,	0x81,	1,	7,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_cmp,	0x81,	1,	7,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_cmp,	0x81,	1,	7,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_add,	0x83,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_add,	0x83,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_add,	0x83,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_or,	0x83,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_or,	0x83,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_or,	0x83,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_adc,	0x83,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_adc,	0x83,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_adc,	0x83,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_sbb,	0x83,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_sbb,	0x83,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_sbb,	0x83,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_and,	0x83,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_and,	0x83,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_and,	0x83,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_sub,	0x83,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_sub,	0x83,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_sub,	0x83,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_xor,	0x83,	1,	6,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_xor,	0x83,	1,	6,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_xor,	0x83,	1,	6,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_cmp,	0x83,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_cmp,	0x83,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_cmp,	0x83,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
 	add_inst(inst_test,	0x84	,1	,-1	,Eb	,Gb);
-	add_inst(inst_test,	0x85,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_test,	0x85,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_test,	0x85,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_test,	0x85,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_test,	0x85,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_test,	0x85,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_xchg,	0x86	,1	,-1	,Eb	,Gb);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_xchg,	0x87,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_xchg,	0x87,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg,	0x87,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_mov,	0x88	,1	,-1	,Eb	,Gb);
-	add_inst(inst_mov,	0x89,	1,	-1,	Ew,	Gw, OptSmallParam);
-	add_inst(inst_mov,	0x89,	1,	-1,	Ed,	Gd, OptMediumParam);
-	add_inst(inst_mov,	0x89,	1,	-1,	Eq,	Gq, OptBigParam);
+	add_inst(inst_mov,	0x89,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(inst_mov,	0x89,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov,	0x89,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
 	add_inst(inst_mov,	0x8a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gw,	Ew, OptSmallParam);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gd,	Ed, OptMediumParam);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gq,	Eq, OptBigParam);
+	add_inst(inst_mov,	0x8b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(inst_mov,	0x8b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov,	0x8b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
 	add_inst(inst_mov,	0x8c	,1	,-1	,Ew	,Sw	);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gw,	Ew, OptSmallParam);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gd,	Ed, OptMediumParam);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gw,	Mw, OptSmallParam);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gd,	Md, OptMediumParam);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gq,	Mq, OptBigParam);
-	add_inst(inst_mov,	0x8e	,1	,-1	,Sw	,Ew, OptMediumParam);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Ew,	-1, OptSmallParam);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Ed,	-1, OptMediumParam);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Eq,	-1, OptBigParam);
+	add_inst(inst_lea,	0x8d,	1,	-1,	Gw,	Mw, OPT_SMALL_PARAM);
+	add_inst(inst_lea,	0x8d,	1,	-1,	Gd,	Md, OPT_MEDIUM_PARAM);
+	add_inst(inst_lea,	0x8d,	1,	-1,	Gq,	Mq, OPT_BIG_PARAM);
+	add_inst(inst_mov,	0x8e	,1	,-1	,Sw	,Ew, OPT_MEDIUM_PARAM);
+	add_inst(inst_pop,	0x8f,	1,	-1,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_pop,	0x8f,	1,	-1,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_pop,	0x8f,	1,	-1,	Eq,	-1, OPT_BIG_PARAM);
 	add_inst(inst_nop		,0x90	,1	,-1	,-1	,-1);
-	add_inst(inst_xchg		,0x91	,1	,-1	,RegAx	,RegCx, OptSmallParam);
-	add_inst(inst_xchg		,0x92	,1	,-1	,RegAx	,RegDx, OptSmallParam);
-	add_inst(inst_xchg		,0x93	,1	,-1	,RegAx	,RegBx, OptSmallParam);
-	add_inst(inst_xchg		,0x94	,1	,-1	,RegAx	,RegSp, OptSmallParam);
-	add_inst(inst_xchg		,0x95	,1	,-1	,RegAx	,RegBp, OptSmallParam);
-	add_inst(inst_xchg		,0x96	,1	,-1	,RegAx	,RegSi, OptSmallParam);
-	add_inst(inst_xchg		,0x97	,1	,-1	,RegAx	,RegDi, OptSmallParam);
-	add_inst(inst_xchg		,0x91	,1	,-1	,RegEax	,RegEcx, OptMediumParam);
-	add_inst(inst_xchg		,0x92	,1	,-1	,RegEax	,RegEdx, OptMediumParam);
-	add_inst(inst_xchg		,0x93	,1	,-1	,RegEax	,RegEbx, OptMediumParam);
-	add_inst(inst_xchg		,0x94	,1	,-1	,RegEax	,RegEsp, OptMediumParam);
-	add_inst(inst_xchg		,0x95	,1	,-1	,RegEax	,RegEbp, OptMediumParam);
-	add_inst(inst_xchg		,0x96	,1	,-1	,RegEax	,RegEsi, OptMediumParam);
-	add_inst(inst_xchg		,0x97	,1	,-1	,RegEax	,RegEdi, OptMediumParam);
-	add_inst(inst_xchg		,0x91	,1	,-1	,RegRax	,RegRcx, OptBigParam);
-	add_inst(inst_xchg		,0x92	,1	,-1	,RegRax	,RegRdx, OptBigParam);
-	add_inst(inst_xchg		,0x93	,1	,-1	,RegRax	,RegRbx, OptBigParam);
-	add_inst(inst_xchg		,0x94	,1	,-1	,RegRax	,RegRsp, OptBigParam);
-	add_inst(inst_xchg		,0x95	,1	,-1	,RegRax	,RegRbp, OptBigParam);
-	add_inst(inst_xchg		,0x96	,1	,-1	,RegRax	,RegRsi, OptBigParam);
-	add_inst(inst_xchg		,0x97	,1	,-1	,RegRax	,RegRdi, OptBigParam);
+	add_inst(inst_xchg		,0x91	,1	,-1	,REG_AX	,REG_CX, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x92	,1	,-1	,REG_AX	,REG_DX, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x93	,1	,-1	,REG_AX	,REG_BX, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x94	,1	,-1	,REG_AX	,REG_SP, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x95	,1	,-1	,REG_AX	,REG_BP, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x96	,1	,-1	,REG_AX	,REG_SI, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x97	,1	,-1	,REG_AX	,REG_DI, OPT_SMALL_PARAM);
+	add_inst(inst_xchg		,0x91	,1	,-1	,REG_EAX	,REG_ECX, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x92	,1	,-1	,REG_EAX	,REG_EDX, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x93	,1	,-1	,REG_EAX	,REG_EBX, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x94	,1	,-1	,REG_EAX	,REG_ESP, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x95	,1	,-1	,REG_EAX	,REG_EBP, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x96	,1	,-1	,REG_EAX	,REG_ESI, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x97	,1	,-1	,REG_EAX	,REG_EDI, OPT_MEDIUM_PARAM);
+	add_inst(inst_xchg		,0x91	,1	,-1	,REG_RAX	,REG_RCX, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x92	,1	,-1	,REG_RAX	,REG_RDX, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x93	,1	,-1	,REG_RAX	,REG_RBX, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x94	,1	,-1	,REG_RAX	,REG_RSP, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x95	,1	,-1	,REG_RAX	,REG_RBP, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x96	,1	,-1	,REG_RAX	,REG_RSI, OPT_BIG_PARAM);
+	add_inst(inst_xchg		,0x97	,1	,-1	,REG_RAX	,REG_RDI, OPT_BIG_PARAM);
 	add_inst(inst_cbw_cwde	,0x98	,1	,-1	,-1 ,-1);
 	add_inst(inst_cgq_cwd	,0x99	,1	,-1	,-1 ,-1);
-	add_inst(inst_mov		,0xa0	,1	,-1	,RegAl	,Ob, 0, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,RegAx	,Ow, OptSmallParam, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,RegEax	,Od, OptMediumParam, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,RegRax	,Oq, OptBigParam, true);
-	add_inst(inst_mov		,0xa2	,1	,-1	,Ob	,RegAl, 0, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Ow,	RegAx, OptSmallParam, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Od,	RegEax, OptMediumParam, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Oq,	RegRax, OptBigParam, true);
+	add_inst(inst_mov		,0xa0	,1	,-1	,REG_AL	,Ob, 0, true);
+	add_inst(inst_mov		,0xa1	,1	,-1	,REG_AX	,Ow, OPT_SMALL_PARAM, true);
+	add_inst(inst_mov		,0xa1	,1	,-1	,REG_EAX	,Od, OPT_MEDIUM_PARAM, true);
+	add_inst(inst_mov		,0xa1	,1	,-1	,REG_RAX	,Oq, OPT_BIG_PARAM, true);
+	add_inst(inst_mov		,0xa2	,1	,-1	,Ob	,REG_AL, 0, true);
+	add_inst(inst_mov,	0xa3,	1,	-1,	Ow,	REG_AX, OPT_SMALL_PARAM, true);
+	add_inst(inst_mov,	0xa3,	1,	-1,	Od,	REG_EAX, OPT_MEDIUM_PARAM, true);
+	add_inst(inst_mov,	0xa3,	1,	-1,	Oq,	REG_RAX, OPT_BIG_PARAM, true);
 	add_inst(inst_movs_b_ds_esi_es_edi	,0xa4	,1	,-1	,-1,-1);
 	add_inst(inst_movs_ds_esi_es_edi	,0xa5	,1	,-1	,-1,-1);
 	add_inst(inst_cmps_b_ds_esi_es_edi	,0xa6	,1	,-1	,-1,-1);
 	add_inst(inst_cmps_ds_esi_es_edi	,0xa7	,1	,-1	,-1,-1);
-	add_inst(inst_mov		,0xb0	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_mov		,0xb1	,1	,-1	,RegCl	,Ib);
-	add_inst(inst_mov		,0xb2	,1	,-1	,RegDl	,Ib);
-	add_inst(inst_mov		,0xb3	,1	,-1	,RegBl	,Ib);
-	add_inst(inst_mov		,0xb4	,1	,-1	,RegAh	,Ib);
-	add_inst(inst_mov		,0xb5	,1	,-1	,RegCh	,Ib);
-	add_inst(inst_mov		,0xb6	,1	,-1	,RegDh	,Ib);
-	add_inst(inst_mov		,0xb7	,1	,-1	,RegBh	,Ib);
-	add_inst(inst_mov		,0xb8	,1	,-1	,RegEax	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xb9	,1	,-1	,RegEcx	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xba	,1	,-1	,RegEdx	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xbb	,1	,-1	,RegEbx	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xbc	,1	,-1	,RegEsp	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xbd	,1	,-1	,RegEbp	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xbe	,1	,-1	,RegEsi	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xbf	,1	,-1	,RegEdi	,Id, OptMediumParam);
-	add_inst(inst_mov		,0xb8	,1	,-1	,RegAx	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xb9	,1	,-1	,RegCx	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xba	,1	,-1	,RegDx	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xbb	,1	,-1	,RegBx	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xbc	,1	,-1	,RegSp	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xbd	,1	,-1	,RegBp	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xbe	,1	,-1	,RegSi	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xbf	,1	,-1	,RegDi	,Iw, OptSmallParam);
-	add_inst(inst_mov		,0xb8	,1	,-1	,RegRax	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xb9	,1	,-1	,RegRcx	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xba	,1	,-1	,RegRdx	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xbb	,1	,-1	,RegRbx	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xbc	,1	,-1	,RegRsp	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xbd	,1	,-1	,RegRbp	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xbe	,1	,-1	,RegRsi	,Iq, OptBigParam);
-	add_inst(inst_mov		,0xbf	,1	,-1	,RegRdi	,Iq, OptBigParam);
+	add_inst(inst_mov		,0xb0	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_mov		,0xb1	,1	,-1	,REG_CL	,Ib);
+	add_inst(inst_mov		,0xb2	,1	,-1	,REG_DL	,Ib);
+	add_inst(inst_mov		,0xb3	,1	,-1	,REG_BL	,Ib);
+	add_inst(inst_mov		,0xb4	,1	,-1	,REG_AH	,Ib);
+	add_inst(inst_mov		,0xb5	,1	,-1	,REG_CH	,Ib);
+	add_inst(inst_mov		,0xb6	,1	,-1	,REG_DH	,Ib);
+	add_inst(inst_mov		,0xb7	,1	,-1	,REG_BH	,Ib);
+	add_inst(inst_mov		,0xb8	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xb9	,1	,-1	,REG_ECX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xba	,1	,-1	,REG_EDX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xbb	,1	,-1	,REG_EBX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xbc	,1	,-1	,REG_ESP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xbd	,1	,-1	,REG_EBP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xbe	,1	,-1	,REG_ESI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xbf	,1	,-1	,REG_EDI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov		,0xb8	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xb9	,1	,-1	,REG_CX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xba	,1	,-1	,REG_DX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xbb	,1	,-1	,REG_BX	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xbc	,1	,-1	,REG_SP	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xbd	,1	,-1	,REG_BP	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xbe	,1	,-1	,REG_SI	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xbf	,1	,-1	,REG_DI	,Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov		,0xb8	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xb9	,1	,-1	,REG_RCX	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xba	,1	,-1	,REG_RDX	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xbb	,1	,-1	,REG_RBX	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xbc	,1	,-1	,REG_RSP	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xbd	,1	,-1	,REG_RBP	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xbe	,1	,-1	,REG_RSI	,Iq, OPT_BIG_PARAM);
+	add_inst(inst_mov		,0xbf	,1	,-1	,REG_RDI	,Iq, OPT_BIG_PARAM);
 	// Shift Group 2
 	add_inst(inst_rol		,0xc0	,1	,0	,Eb	,Ib);
 	add_inst(inst_ror		,0xc0	,1	,1	,Eb	,Ib);
@@ -1374,59 +1411,59 @@ void Init(int set)
 	add_inst(inst_shl		,0xc0	,1	,4	,Eb	,Ib);
 	add_inst(inst_shr		,0xc0	,1	,5	,Eb	,Ib);
 	add_inst(inst_sar		,0xc0	,1	,7	,Eb	,Ib);
-	add_inst(inst_rol,	0xc1,	1,	0,	Ew,	Ib, OptSmallParam); // even though the table says Iv
-	add_inst(inst_rol,	0xc1,	1,	0,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_rol,	0xc1,	1,	0,	Eq,	Ib, OptBigParam);
-	add_inst(inst_ror,	0xc1,	1,	1,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_ror,	0xc1,	1,	1,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_ror,	0xc1,	1,	1,	Eq,	Ib, OptBigParam);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Eq,	Ib, OptBigParam);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Eq,	Ib, OptBigParam);
-	add_inst(inst_shl,	0xc1,	1,	4,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_shl,	0xc1,	1,	4,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_shl,	0xc1,	1,	4,	Eq,	Ib, OptBigParam);
-	add_inst(inst_shr,	0xc1,	1,	5,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_shr,	0xc1,	1,	5,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_shr,	0xc1,	1,	5,	Eq,	Ib, OptBigParam);
-	add_inst(inst_sar,	0xc1,	1,	7,	Ew,	Ib, OptSmallParam);
-	add_inst(inst_sar,	0xc1,	1,	7,	Ed,	Ib, OptMediumParam);
-	add_inst(inst_sar,	0xc1,	1,	7,	Eq,	Ib, OptBigParam);
+	add_inst(inst_rol,	0xc1,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM); // even though the table says Iv
+	add_inst(inst_rol,	0xc1,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_rol,	0xc1,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_ror,	0xc1,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_ror,	0xc1,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_ror,	0xc1,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_rcl,	0xc1,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_rcl,	0xc1,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_rcl,	0xc1,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_rcr,	0xc1,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_rcr,	0xc1,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_rcr,	0xc1,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_shl,	0xc1,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_shl,	0xc1,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_shl,	0xc1,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_shr,	0xc1,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_shr,	0xc1,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_shr,	0xc1,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(inst_sar,	0xc1,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(inst_sar,	0xc1,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(inst_sar,	0xc1,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
 	add_inst(inst_ret		,0xc2	,1	,-1	,Iw	,-1);
 	add_inst(inst_ret		,0xc3	,1	,-1	,-1	,-1);
 	add_inst(inst_mov		,0xc6	,1	,-1	,Eb	,Ib);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Ed,	Id, OptMediumParam);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Eq,	Id, OptBigParam);
+	add_inst(inst_mov,	0xc7,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_mov,	0xc7,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_mov,	0xc7,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
 	add_inst(inst_leave		,0xc9	,1	,-1	,-1	,-1);
 	add_inst(inst_ret_far	,0xca	,1	,-1	,Iw	,-1);
 	add_inst(inst_ret_far	,0xcb	,1	,-1	,-1	,-1);
 	add_inst(inst_int		,0xcd	,1	,-1	,Ib	,-1);
 	add_inst(inst_iret		,0xcf	,1	,-1	,-1	,-1);
-	add_inst(inst_rol,	0xd3,	1,	0,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_rol,	0xd3,	1,	0,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_rol,	0xd3,	1,	0,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_ror,	0xd3,	1,	1,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_ror,	0xd3,	1,	1,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_ror,	0xd3,	1,	1,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_shl,	0xd3,	1,	4,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_shl,	0xd3,	1,	4,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_shl,	0xd3,	1,	4,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_shr,	0xd3,	1,	5,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_shr,	0xd3,	1,	5,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_shr,	0xd3,	1,	5,	Eq,	RegCl, OptBigParam);
-	add_inst(inst_sar,	0xd3,	1,	7,	Ew,	RegCl, OptSmallParam);
-	add_inst(inst_sar,	0xd3,	1,	7,	Ed,	RegCl, OptMediumParam);
-	add_inst(inst_sar,	0xd3,	1,	7,	Eq,	RegCl, OptBigParam);
+	add_inst(inst_rol,	0xd3,	1,	0,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_rol,	0xd3,	1,	0,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_rol,	0xd3,	1,	0,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_ror,	0xd3,	1,	1,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_ror,	0xd3,	1,	1,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_ror,	0xd3,	1,	1,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_rcl,	0xd3,	1,	2,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_rcl,	0xd3,	1,	2,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_rcl,	0xd3,	1,	2,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_rcr,	0xd3,	1,	3,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_rcr,	0xd3,	1,	3,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_rcr,	0xd3,	1,	3,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_shl,	0xd3,	1,	4,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_shl,	0xd3,	1,	4,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_shl,	0xd3,	1,	4,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_shr,	0xd3,	1,	5,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_shr,	0xd3,	1,	5,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_shr,	0xd3,	1,	5,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(inst_sar,	0xd3,	1,	7,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(inst_sar,	0xd3,	1,	7,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(inst_sar,	0xd3,	1,	7,	Eq,	REG_CL, OPT_BIG_PARAM);
 	add_inst(inst_fadd,	0xd8,	1,	0,	Ed,	-1);
 	add_inst(inst_fadd,	0xdc,	1,	0,	Eq,	-1);
 	add_inst(inst_fmul,	0xd8,	1,	1,	Ed,	-1);
@@ -1446,8 +1483,8 @@ void Init(int set)
 	add_inst(inst_fstp,	0xdd,	1,	3,	Mq,	-1);
 	add_inst(inst_fldcw,	0xd9,	1,	5,	Mw,	-1);
 	add_inst(inst_fnstcw,	0xd9,	1,	7,	Mw,	-1);
-	add_inst(inst_fxch		,0xc9d9	,2	,-1	,RegSt0	,RegSt1);
-	add_inst(inst_fucompp	,0xe9da	,2	,-1	,RegSt0	,RegSt1);
+	add_inst(inst_fxch		,0xc9d9	,2	,-1	,REG_ST0	,REG_ST1);
+	add_inst(inst_fucompp	,0xe9da	,2	,-1	,REG_ST0	,REG_ST1);
 
 	add_inst(inst_fsqrt,	0xfad9,	2,	-1,	-1, -1);
 	add_inst(inst_fsin,	0xfed9,	2,	-1,	-1, -1);
@@ -1461,28 +1498,28 @@ void Init(int set)
 	add_inst(inst_fmulp,	0xde,	1,	1,	Ed,	-1);
 	add_inst(inst_fsubp,	0xde,	1,	5,	Ed,	-1);
 	add_inst(inst_fdivp,	0xde,	1,	7,	Ed,	-1); // de.f9 ohne Parameter...?
-	add_inst(inst_fnstsw	,0xe0df	,2	,-1	,RegAx	,-1);
+	add_inst(inst_fnstsw	,0xe0df	,2	,-1	,REG_AX	,-1);
 	add_inst(inst_loopne	,0xe0	,1	,-1	,Jb	,-1);
 	add_inst(inst_loope		,0xe1	,1	,-1	,Jb	,-1);
 	add_inst(inst_loop		,0xe2	,1	,-1	,Jb	,-1);
-	add_inst(inst_in		,0xe4	,1	,-1	,RegAl	,Ib);
-	add_inst(inst_in		,0xe5	,1	,-1	,RegEax,Ib);
-	add_inst(inst_out		,0xe6	,1	,-1	,Ib	,RegAl);
-	add_inst(inst_out		,0xe7	,1	,-1	,Ib	,RegEax);
-	add_inst(inst_call,	0xe8,	1,	-1,	Jw,	-1, OptSmallParam); // well... "Av" in tyble
-	add_inst(inst_call,	0xe8,	1,	-1,	Jd,	-1, OptMediumParam);
-	add_inst(inst_call,	0xe8,	1,	-1,	Jq,	-1, OptBigParam);
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jw,	-1, OptSmallParam); // miswritten in the table
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jd,	-1, OptMediumParam);
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jq,	-1, OptBigParam);
+	add_inst(inst_in		,0xe4	,1	,-1	,REG_AL	,Ib);
+	add_inst(inst_in		,0xe5	,1	,-1	,REG_EAX,Ib);
+	add_inst(inst_out		,0xe6	,1	,-1	,Ib	,REG_AL);
+	add_inst(inst_out		,0xe7	,1	,-1	,Ib	,REG_EAX);
+	add_inst(inst_call,	0xe8,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // well... "Av" in tyble
+	add_inst(inst_call,	0xe8,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_call,	0xe8,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_jmp,	0xe9,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // miswritten in the table
+	add_inst(inst_jmp,	0xe9,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jmp,	0xe9,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
 //	add_inst(inst_jmp		,0xea	,1	,-1, Ap, -1); TODO
-	add_inst(inst_jmp_far, 0xea, 1, -1, Id, -1, OptSmallParam);
-	add_inst(inst_jmp_far, 0xea, 1, -1, I48, -1, OptMediumParam);
+	add_inst(inst_jmp_far, 0xea, 1, -1, Id, -1, OPT_SMALL_PARAM);
+	add_inst(inst_jmp_far, 0xea, 1, -1, I48, -1, OPT_MEDIUM_PARAM);
 	add_inst(inst_jmp		,0xeb	,1	,-1, Jb, -1);
-	add_inst(inst_in		,0xec	,1	,-1, RegAl, RegDx);
-	add_inst(inst_in		,0xed	,1	,-1, RegEax, RegDx);
-	add_inst(inst_out		,0xee	,1	,-1, RegDx, RegAl);
-	add_inst(inst_out		,0xef	,1	,-1, RegDx, RegEax);
+	add_inst(inst_in		,0xec	,1	,-1, REG_AL, REG_DX);
+	add_inst(inst_in		,0xed	,1	,-1, REG_EAX, REG_DX);
+	add_inst(inst_out		,0xee	,1	,-1, REG_DX, REG_AL);
+	add_inst(inst_out		,0xef	,1	,-1, REG_DX, REG_EAX);
 	add_inst(inst_lock		,0xf0	,1	,-1	,-1	,-1);
 	/*add_inst(inst_repne		,0xf2	,1	,-1	,-1	,-1);
 	add_inst(inst_rep		,0xf3	,1	,-1	,-1	,-1);*/
@@ -1492,31 +1529,31 @@ void Init(int set)
 	add_inst(inst_test		,0xf6	,1	,0	,Eb	,Ib);
 	add_inst(inst_not		,0xf6	,1	,2	,Eb	,-1);
 	add_inst(inst_neg		,0xf6	,1	,3	,Eb	,-1);
-	add_inst(inst_mul		,0xf6	,1	,4	,RegAl	,Eb);
-	add_inst(inst_imul		,0xf6	,1	,5	,RegAl	,Eb);
-	add_inst(inst_div		,0xf6	,1	,6	,RegAl	,Eb);
+	add_inst(inst_mul		,0xf6	,1	,4	,REG_AL	,Eb);
+	add_inst(inst_imul		,0xf6	,1	,5	,REG_AL	,Eb);
+	add_inst(inst_div		,0xf6	,1	,6	,REG_AL	,Eb);
 	add_inst(inst_idiv		,0xf6	,1	,7	,Eb	,-1);
-	add_inst(inst_test,	0xf7,	1,	0,	Ew,	Iw, OptSmallParam);
-	add_inst(inst_test,	0xf7,	1,	0,	Ed,	Id, OptMediumParam);
-	add_inst(inst_test,	0xf7,	1,	0,	Eq,	Id, OptBigParam);
-	add_inst(inst_not,	0xf7,	1,	2,	Ew,	-1, OptSmallParam);
-	add_inst(inst_not,	0xf7,	1,	2,	Ed,	-1, OptMediumParam);
-	add_inst(inst_not,	0xf7,	1,	2,	Eq,	-1, OptBigParam);
-	add_inst(inst_neg,	0xf7,	1,	3,	Ew,	-1, OptSmallParam);
-	add_inst(inst_neg,	0xf7,	1,	3,	Ed,	-1, OptMediumParam);
-	add_inst(inst_neg,	0xf7,	1,	3,	Eq,	-1, OptBigParam);
-	add_inst(inst_mul		,0xf7	,1	,4	,RegEax	,Ed, OptMediumParam);
-	add_inst(inst_imul		,0xf7	,1	,5	,RegEax	,Ed, OptMediumParam);
-	add_inst(inst_div		,0xf7	,1	,6	,RegEax	,Ed, OptMediumParam);
-	add_inst(inst_idiv		,0xf7	,1	,7	,RegEax	,Ed, OptMediumParam);
-	add_inst(inst_mul		,0xf7	,1	,4	,RegAx	,Ed, OptSmallParam);
-	add_inst(inst_imul		,0xf7	,1	,5	,RegAx	,Ed, OptSmallParam);
-	add_inst(inst_div		,0xf7	,1	,6	,RegAx	,Ed, OptSmallParam);
-	add_inst(inst_idiv		,0xf7	,1	,7	,RegAx	,Ed, OptSmallParam);
-	add_inst(inst_mul		,0xf7	,1	,4	,RegRax	,Eq, OptBigParam);
-	add_inst(inst_imul		,0xf7	,1	,5	,RegRax	,Eq, OptBigParam);
-	add_inst(inst_div		,0xf7	,1	,6	,RegRax	,Eq, OptBigParam);
-	add_inst(inst_idiv		,0xf7	,1	,7	,RegRax	,Eq, OptBigParam);
+	add_inst(inst_test,	0xf7,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(inst_test,	0xf7,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(inst_test,	0xf7,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(inst_not,	0xf7,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_not,	0xf7,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_not,	0xf7,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_neg,	0xf7,	1,	3,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_neg,	0xf7,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_neg,	0xf7,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_mul		,0xf7	,1	,4	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_imul		,0xf7	,1	,5	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_div		,0xf7	,1	,6	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_idiv		,0xf7	,1	,7	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(inst_mul		,0xf7	,1	,4	,REG_AX	,Ed, OPT_SMALL_PARAM);
+	add_inst(inst_imul		,0xf7	,1	,5	,REG_AX	,Ed, OPT_SMALL_PARAM);
+	add_inst(inst_div		,0xf7	,1	,6	,REG_AX	,Ed, OPT_SMALL_PARAM);
+	add_inst(inst_idiv		,0xf7	,1	,7	,REG_AX	,Ed, OPT_SMALL_PARAM);
+	add_inst(inst_mul		,0xf7	,1	,4	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(inst_imul		,0xf7	,1	,5	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(inst_div		,0xf7	,1	,6	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(inst_idiv		,0xf7	,1	,7	,REG_RAX	,Eq, OPT_BIG_PARAM);
 	add_inst(inst_clc		,0xf8	,1	,-1	,-1	,-1);
 	add_inst(inst_stc		,0xf9	,1	,-1	,-1	,-1);
 	add_inst(inst_cli		,0xfa	,1	,-1	,-1	,-1);
@@ -1525,26 +1562,26 @@ void Init(int set)
 	add_inst(inst_std		,0xfd	,1	,-1	,-1	,-1);
 	add_inst(inst_inc		,0xfe	,1	,0	,Eb	,-1);
 	add_inst(inst_dec		,0xfe	,1	,1	,Eb	,-1);
-	add_inst(inst_inc,	0xff,	1,	0,	Ew,	-1, OptSmallParam);
-	add_inst(inst_inc,	0xff,	1,	0,	Ed,	-1, OptMediumParam);
-	add_inst(inst_inc,	0xff,	1,	0,	Eq,	-1, OptBigParam);
-	add_inst(inst_dec,	0xff,	1,	1,	Ew,	-1, OptSmallParam);
-	add_inst(inst_dec,	0xff,	1,	1,	Ed,	-1, OptMediumParam);
-	add_inst(inst_dec,	0xff,	1,	1,	Eq,	-1, OptBigParam);
-	add_inst(inst_call,	0xff,	1,	2,	Ew,	-1, OptSmallParam);
-	add_inst(inst_call,	0xff,	1,	2,	Ed,	-1, OptMediumParam);
-	add_inst(inst_call,	0xff,	1,	2,	Eq,	-1, OptBigParam);
-	add_inst(inst_call_far,	0xff,	1,	3,	Ew,	-1, OptSmallParam); // Ep instead of Ev...
-	add_inst(inst_call_far,	0xff,	1,	3,	Ed,	-1, OptMediumParam);
-	add_inst(inst_call_far,	0xff,	1,	3,	Eq,	-1, OptBigParam);
-	add_inst(inst_jmp, 0xff, 1,	4, Ew, -1, OptSmallParam);
-	add_inst(inst_jmp, 0xff, 1,	4, Ed, -1, OptMediumParam);
-	add_inst(inst_jmp, 0xff, 1,	4, Eq, -1, OptBigParam);
-	add_inst(inst_jmp_far, 0xff, 1, 5, Ed, -1, OptSmallParam);
-	add_inst(inst_jmp_far, 0xff, 1, 5, E48, -1, OptMediumParam);
-	add_inst(inst_push, 0xff, 1, 6, Ew, -1, OptSmallParam);
-	add_inst(inst_push, 0xff, 1, 6, Ed, -1, OptMediumParam);
-	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OptBigParam);
+	add_inst(inst_inc,	0xff,	1,	0,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_inc,	0xff,	1,	0,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_inc,	0xff,	1,	0,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_dec,	0xff,	1,	1,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_dec,	0xff,	1,	1,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_dec,	0xff,	1,	1,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_call,	0xff,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(inst_call,	0xff,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_call,	0xff,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_call_far,	0xff,	1,	3,	Ew,	-1, OPT_SMALL_PARAM); // Ep instead of Ev...
+	add_inst(inst_call_far,	0xff,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(inst_call_far,	0xff,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(inst_jmp, 0xff, 1,	4, Ew, -1, OPT_SMALL_PARAM);
+	add_inst(inst_jmp, 0xff, 1,	4, Ed, -1, OPT_MEDIUM_PARAM);
+	add_inst(inst_jmp, 0xff, 1,	4, Eq, -1, OPT_BIG_PARAM);
+	add_inst(inst_jmp_far, 0xff, 1, 5, Ed, -1, OPT_SMALL_PARAM);
+	add_inst(inst_jmp_far, 0xff, 1, 5, E48, -1, OPT_MEDIUM_PARAM);
+	add_inst(inst_push, 0xff, 1, 6, Ew, -1, OPT_SMALL_PARAM);
+	add_inst(inst_push, 0xff, 1, 6, Ed, -1, OPT_MEDIUM_PARAM);
+	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OPT_BIG_PARAM);
 
 	// sse
 	add_inst(inst_movss,	0x100ff3,	3,	-1,	Xx, Ed);
@@ -1553,17 +1590,39 @@ void Init(int set)
 	add_inst(inst_movsd,	0x110ff2,	3,	-1,	Eq, Xx);
 }
 
+
+
+void Init(int set)
+{
+	if (set < 0)
+		set = QueryInstructionSet();
+
+	InstructionSet.set = set;
+	InstructionSet.pointer_size = 4;
+	if (set == INSTRUCTION_SET_AMD64)
+		InstructionSet.pointer_size = 8;
+
+	for (int i=0;i<NUM_REG_ROOTS;i++)
+		for (int j=0;j<=MAX_REG_SIZE;j++)
+			RegResize[i][j] = -1;
+
+	if (set == INSTRUCTION_SET_ARM)
+		InitARM();
+	else
+		InitX86();
+}
+
 // convert an asm parameter into a human readable expression
 string InstructionParam::str(bool hide_size)
 {
 	msg_db_f("AddParam", 1+ASM_DB_LEVEL);
 	//msg_write("----");
 	//msg_write(p.type);
-	if (type == ParamTInvalid){
+	if (type == PARAMT_INVALID){
 		return "-\?\?\?-";
-	}else if (type == ParamTNone){
+	}else if (type == PARAMT_NONE){
 		return "";
-	}else if (type == ParamTRegister){
+	}else if (type == PARAMT_REGISTER){
 			//msg_write((long)reg);
 			//msg_write((long)disp);
 		if (deref){
@@ -1571,25 +1630,25 @@ string InstructionParam::str(bool hide_size)
 			string ss;
 			if (!hide_size)
 				ss = get_size_name(size) + " ";
-			if (disp == DispModeNone)
+			if (disp == DISP_MODE_NONE)
 				return ss + "[" + reg->name + "]";
-			else if (disp == DispMode8)
+			else if (disp == DISP_MODE_8)
 				return ss + format("[%s + 0x%02x]", reg->name.c_str(), value);
-			else if (disp == DispMode16)
+			else if (disp == DISP_MODE_16)
 				return ss + format("[%s + 0x%04x]", reg->name.c_str(), value);
-			else if (disp == DispMode32)
+			else if (disp == DISP_MODE_32)
 				return ss + format("[%s + 0x%08x]", reg->name.c_str(), value);
-			else if (disp == DispModeSIB)
+			else if (disp == DISP_MODE_SIB)
 				return "SIB[...][...]";
-			else if (disp == DispMode8SIB)
+			else if (disp == DISP_MODE_8_SIB)
 				return ss + format("[SIB... + 0x%02x]", value);
-			else if (disp == DispMode8Reg2)
+			else if (disp == DISP_MODE_8_REG2)
 				return ss + format("[%s + %s + 0x%02x]", reg->name.c_str(), reg2->name.c_str(), value);
-			else if (disp == DispModeReg2)
+			else if (disp == DISP_MODE_REG2)
 				return ss + "[" + reg->name + " + " + reg2->name + "]";
 		}else
 			return reg->name;
-	}else if (type == ParamTImmediate){
+	}else if (type == PARAMT_IMMEDIATE){
 		//msg_write("im");
 		if (deref)
 			return get_size_name(size) + " " + format("[%s]", d2h(&value, state.AddrSize).c_str());
@@ -1678,76 +1737,76 @@ inline void UnfuzzyParam(InstructionParam &p, InstructionParamFuzzy &pf)
 	msg_db_f("UnfuzzyParam", 2+ASM_DB_LEVEL);
 	p.type = pf._type_;
 	p.reg2 = NULL;
-	p.disp = DispModeNone;
+	p.disp = DISP_MODE_NONE;
 	p.reg = pf.reg;
 	if ((p.reg) && (state.ExtendModRMBase)){
-		if ((p.reg->id >= RegRax) && (p.reg->id <= RegRbp))
-			p.reg = RegisterByID[p.reg->id + RegR8 - RegRax];
+		if ((p.reg->id >= REG_RAX) && (p.reg->id <= REG_RBP))
+			p.reg = RegisterByID[p.reg->id + REG_R8 - REG_RAX];
 	}
 	p.size = pf.size;
 	p.deref = false; // well... FIXME
 	p.value = 0;
 	p.is_label = false;
-	if (pf._type_ == ParamTMemory){
-		p.type = ParamTImmediate;
+	if (pf._type_ == PARAMT_MEMORY){
+		p.type = PARAMT_IMMEDIATE;
 		p.deref = true;
 	}
 }
 
 int GetModRMRegister(int reg, int size)
 {
-	if (size == Size8){
-		if (reg == 0x00)	return RegAl;
-		if (reg == 0x01)	return RegCl;
-		if (reg == 0x02)	return RegDl;
-		if (reg == 0x03)	return RegBl;
-		if (reg == 0x04)	return RegAh;
-		if (reg == 0x05)	return RegCh;
-		if (reg == 0x06)	return RegDh;
-		if (reg == 0x07)	return RegBh;
-	}else if (size == Size16){
-		if (reg == 0x00)	return RegAx;
-		if (reg == 0x01)	return RegCx;
-		if (reg == 0x02)	return RegDx;
-		if (reg == 0x03)	return RegBx;
-		if (reg == 0x04)	return RegSp;
-		if (reg == 0x05)	return RegBp;
-		if (reg == 0x06)	return RegSi;
-		if (reg == 0x07)	return RegDi;
-	}else if (size == Size32){
-		if (reg == 0x00)	return RegEax;
-		if (reg == 0x01)	return RegEcx;
-		if (reg == 0x02)	return RegEdx;
-		if (reg == 0x03)	return RegEbx;
-		if (reg == 0x04)	return RegEsp;
-		if (reg == 0x05)	return RegEbp;
-		if (reg == 0x06)	return RegEsi;
-		if (reg == 0x07)	return RegEdi;
-		if (reg == 0x08)	return RegR8d;
-		if (reg == 0x09)	return RegR9d;
-		if (reg == 0x0a)	return RegR10d;
-		if (reg == 0x0b)	return RegR11d;
-		if (reg == 0x0c)	return RegR12d;
-		if (reg == 0x0d)	return RegR13d;
-		if (reg == 0x0e)	return RegR14d;
-		if (reg == 0x0f)	return RegR15d;
-	}else if (size == Size64){
-		if (reg == 0x00)	return RegRax;
-		if (reg == 0x01)	return RegRcx;
-		if (reg == 0x02)	return RegRdx;
-		if (reg == 0x03)	return RegRbx;
-		if (reg == 0x04)	return RegRsp;
-		if (reg == 0x05)	return RegRbp;
-		if (reg == 0x06)	return RegRsi;
-		if (reg == 0x07)	return RegRdi;
-		if (reg == 0x08)	return RegR8;
-		if (reg == 0x09)	return RegR9;
-		if (reg == 0x0a)	return RegR10;
-		if (reg == 0x0b)	return RegR11;
-		if (reg == 0x0c)	return RegR12;
-		if (reg == 0x0d)	return RegR13;
-		if (reg == 0x0e)	return RegR14;
-		if (reg == 0x0f)	return RegR15;
+	if (size == SIZE_8){
+		if (reg == 0x00)	return REG_AL;
+		if (reg == 0x01)	return REG_CL;
+		if (reg == 0x02)	return REG_DL;
+		if (reg == 0x03)	return REG_BL;
+		if (reg == 0x04)	return REG_AH;
+		if (reg == 0x05)	return REG_CH;
+		if (reg == 0x06)	return REG_DH;
+		if (reg == 0x07)	return REG_BH;
+	}else if (size == SIZE_16){
+		if (reg == 0x00)	return REG_AX;
+		if (reg == 0x01)	return REG_CX;
+		if (reg == 0x02)	return REG_DX;
+		if (reg == 0x03)	return REG_BX;
+		if (reg == 0x04)	return REG_SP;
+		if (reg == 0x05)	return REG_BP;
+		if (reg == 0x06)	return REG_SI;
+		if (reg == 0x07)	return REG_DI;
+	}else if (size == SIZE_32){
+		if (reg == 0x00)	return REG_EAX;
+		if (reg == 0x01)	return REG_ECX;
+		if (reg == 0x02)	return REG_EDX;
+		if (reg == 0x03)	return REG_EBX;
+		if (reg == 0x04)	return REG_ESP;
+		if (reg == 0x05)	return REG_EBP;
+		if (reg == 0x06)	return REG_ESI;
+		if (reg == 0x07)	return REG_EDI;
+		if (reg == 0x08)	return REG_R8D;
+		if (reg == 0x09)	return REG_R9D;
+		if (reg == 0x0a)	return REG_R10D;
+		if (reg == 0x0b)	return REG_R11D;
+		if (reg == 0x0c)	return REG_R12D;
+		if (reg == 0x0d)	return REG_R13D;
+		if (reg == 0x0e)	return REG_R14D;
+		if (reg == 0x0f)	return REG_R15D;
+	}else if (size == SIZE_64){
+		if (reg == 0x00)	return REG_RAX;
+		if (reg == 0x01)	return REG_RCX;
+		if (reg == 0x02)	return REG_RDX;
+		if (reg == 0x03)	return REG_RBX;
+		if (reg == 0x04)	return REG_RSP;
+		if (reg == 0x05)	return REG_RBP;
+		if (reg == 0x06)	return REG_RSI;
+		if (reg == 0x07)	return REG_RDI;
+		if (reg == 0x08)	return REG_R8;
+		if (reg == 0x09)	return REG_R9;
+		if (reg == 0x0a)	return REG_R10;
+		if (reg == 0x0b)	return REG_R11;
+		if (reg == 0x0c)	return REG_R12;
+		if (reg == 0x0d)	return REG_R13;
+		if (reg == 0x0e)	return REG_R14;
+		if (reg == 0x0f)	return REG_R15;
 	}
 	msg_error("unhandled mod/rm register: " + i2s(reg) + " (size " + i2s(size) + ")");
 	return 0;
@@ -1756,76 +1815,76 @@ int GetModRMRegister(int reg, int size)
 inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigned char modrm)
 {
 	msg_db_f("GetFromModRM", 2+ASM_DB_LEVEL);
-	if (pf.mrm_mode == MRMReg){
+	if (pf.mrm_mode == MRM_REG){
 		unsigned char reg = modrm & 0x38; // bits 5, 4, 3
-		p.type = ParamTRegister;
+		p.type = PARAMT_REGISTER;
 		p.deref = false;
 		if (pf.reg_group == RegGroupSegment){
-			if (reg == 0x00)	p.reg = RegisterByID[RegEs];
-			if (reg == 0x08)	p.reg = RegisterByID[RegCs];
-			if (reg == 0x10)	p.reg = RegisterByID[RegSs];
-			if (reg == 0x18)	p.reg = RegisterByID[RegDs];
-			if (reg == 0x20)	p.reg = RegisterByID[RegFs];
-			if (reg == 0x28)	p.reg = RegisterByID[RegGs];
+			if (reg == 0x00)	p.reg = RegisterByID[REG_ES];
+			if (reg == 0x08)	p.reg = RegisterByID[REG_CS];
+			if (reg == 0x10)	p.reg = RegisterByID[REG_SS];
+			if (reg == 0x18)	p.reg = RegisterByID[REG_DS];
+			if (reg == 0x20)	p.reg = RegisterByID[REG_FS];
+			if (reg == 0x28)	p.reg = RegisterByID[REG_GS];
 		}else if (pf.reg_group == RegGroupControl){
-			if (reg == 0x00)	p.reg = RegisterByID[RegCr0];
-			if (reg == 0x08)	p.reg = RegisterByID[RegCr1];
-			if (reg == 0x10)	p.reg = RegisterByID[RegCr2];
-			if (reg == 0x18)	p.reg = RegisterByID[RegCr3];
+			if (reg == 0x00)	p.reg = RegisterByID[REG_CR0];
+			if (reg == 0x08)	p.reg = RegisterByID[REG_CR1];
+			if (reg == 0x10)	p.reg = RegisterByID[REG_RC2];
+			if (reg == 0x18)	p.reg = RegisterByID[REG_CR3];
 		}else if (pf.reg_group == RegGroupXmm){
-			p.reg = RegisterByID[RegXmm0 + (reg >> 3)];
+			p.reg = RegisterByID[REG_XMM0 + (reg >> 3)];
 		}else{
 			reg = (reg >> 3) | (state.ExtendModRMReg ? 0x08 : 0x00);
 			p.reg = RegisterByID[GetModRMRegister(reg, p.size)];
 		}
-	}else if (pf.mrm_mode == MRMModRM){
+	}else if (pf.mrm_mode == MRM_MOD_RM){
 		unsigned char mod = modrm & 0xc0; // bits 7, 6
 		unsigned char rm = modrm & 0x07; // bits 2, 1, 0
 		if (state.ExtendModRMBase)	rm |= 0x08;
 		if (mod == 0x00){
-			if (state.AddrSize == Size16){
-				p.type = ParamTRegister;
+			if (state.AddrSize == SIZE_16){
+				p.type = PARAMT_REGISTER;
 				p.deref = true;
-				if (rm == 0x00){p.reg = RegisterByID[RegBx];	p.reg2 = RegisterByID[RegSi];	p.disp = DispModeReg2;	}
-				if (rm == 0x01){p.reg = RegisterByID[RegBx];	p.reg2 = RegisterByID[RegDi];	p.disp = DispModeReg2;	}
-				if (rm == 0x02){p.reg = RegisterByID[RegBp];	p.reg2 = RegisterByID[RegSi];	p.disp = DispModeReg2;	}
-				if (rm == 0x03){p.reg = RegisterByID[RegBp];	p.reg2 = RegisterByID[RegDi];	p.disp = DispModeReg2;	}
-				if (rm == 0x04)	p.reg = RegisterByID[RegSi];
-				if (rm == 0x05)	p.reg = RegisterByID[RegDi];
-				if (rm == 0x06){p.reg = NULL;	p.type = ParamTImmediate;	}
-				if (rm == 0x07)	p.reg = RegisterByID[RegBx];
+				if (rm == 0x00){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_SI];	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x01){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_DI];	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x02){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_SI];	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x03){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_DI];	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x04)	p.reg = RegisterByID[REG_SI];
+				if (rm == 0x05)	p.reg = RegisterByID[REG_DI];
+				if (rm == 0x06){p.reg = NULL;	p.type = PARAMT_IMMEDIATE;	}
+				if (rm == 0x07)	p.reg = RegisterByID[REG_BX];
 			}else{
-				p.type = ParamTRegister;
+				p.type = PARAMT_REGISTER;
 				p.deref = true;
 				//if (rm == 0x04){p.reg = NULL;	p.disp = DispModeSIB;	p.type = ParamTImmediate;}//p.type = ParamTInvalid;	Error("kein SIB byte...");}
-				if (rm == 0x04){p.reg = RegisterByID[RegEax];	p.disp = DispModeSIB;	} // eax = provisoric
-				else if (rm == 0x05){p.reg = NULL;	p.type = ParamTImmediate;	}
+				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_SIB;	} // eax = provisoric
+				else if (rm == 0x05){p.reg = NULL;	p.type = PARAMT_IMMEDIATE;	}
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, Size32)];
+					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32)];
 			}
 		}else if ((mod == 0x40) || (mod == 0x80)){
-			if (state.AddrSize == Size16){
-				p.type = ParamTRegister;
+			if (state.AddrSize == SIZE_16){
+				p.type = PARAMT_REGISTER;
 				p.deref = true;
-				if (rm == 0x00){p.reg = RegisterByID[RegBx];	p.reg2 = RegisterByID[RegSi];	p.disp = (mod == 0x40) ? DispMode8Reg2 : DispMode16Reg2;	}
-				if (rm == 0x01){p.reg = RegisterByID[RegBx];	p.reg2 = RegisterByID[RegDi];	p.disp = (mod == 0x40) ? DispMode8Reg2 : DispMode16Reg2;	}
-				if (rm == 0x02){p.reg = RegisterByID[RegBp];	p.reg2 = RegisterByID[RegSi];	p.disp = (mod == 0x40) ? DispMode8Reg2 : DispMode16Reg2;	}
-				if (rm == 0x03){p.reg = RegisterByID[RegBp];	p.reg2 = RegisterByID[RegDi];	p.disp = (mod == 0x40) ? DispMode8Reg2 : DispMode16Reg2;	}
-				if (rm == 0x04){p.reg = RegisterByID[RegSi];	p.disp = (mod == 0x40) ? DispMode8 : DispMode16;	}
-				if (rm == 0x05){p.reg = RegisterByID[RegDi];	p.disp = (mod == 0x40) ? DispMode8 : DispMode16;	}
-				if (rm == 0x06){p.reg = RegisterByID[RegBp];	p.disp = (mod == 0x40) ? DispMode8 : DispMode16;	}
-				if (rm == 0x07){p.reg = RegisterByID[RegBx];	p.disp = (mod == 0x40) ? DispMode8 : DispMode16;	}
+				if (rm == 0x00){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x01){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x02){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x03){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x04){p.reg = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x05){p.reg = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x06){p.reg = RegisterByID[REG_BP];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x07){p.reg = RegisterByID[REG_BX];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
 			}else{
-				p.type = ParamTRegister;
+				p.type = PARAMT_REGISTER;
 				p.deref = true;
-				p.disp = (mod == 0x40) ? DispMode8 : DispMode32;
+				p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_32;
 				//if (rm == 0x04){p.reg = NULL;	p.type = ParamTInvalid;	}
-				if (rm == 0x04){p.reg = RegisterByID[RegEax];	p.disp = DispMode8SIB;	} // eax = provisoric
+				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_8_SIB;	} // eax = provisoric
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, Size32)];
+					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32)];
 			}
 		}else if (mod == 0xc0){
-			p.type = ParamTRegister;
+			p.type = PARAMT_REGISTER;
 			p.deref = false;
 			if (state.ExtendModRMBase)	rm |= 0x08;
 			p.reg = RegisterByID[GetModRMRegister(rm, p.size)];
@@ -1835,8 +1894,8 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 
 inline void TryGetSIB(InstructionParam &p, char *&cur)
 {
-	if ((p.disp == DispModeSIB) || (p.disp == DispMode8SIB)){
-		bool disp8 = (p.disp == DispMode8SIB);
+	if ((p.disp == DISP_MODE_SIB) || (p.disp == DISP_MODE_8_SIB)){
+		bool disp8 = (p.disp == DISP_MODE_8_SIB);
 		char sib = *cur;
 		cur++;
 		unsigned char ss = (sib & 0xc0); // bits 7, 6
@@ -1851,21 +1910,21 @@ inline void TryGetSIB(InstructionParam &p, char *&cur)
 		//if (p.disp == DispModeSIB){
 			if (ss == 0x00){ // scale factor 1
 				p.deref = true;
-				p.disp = disp8 ? DispMode8Reg2 : DispModeReg2;
-				if (base == 0x00)		p.reg = RegisterByID[RegEax];
-				else if (base == 0x01)	p.reg = RegisterByID[RegEcx];
-				else if (base == 0x02)	p.reg = RegisterByID[RegEdx];
-				else if (base == 0x03)	p.reg = RegisterByID[RegEbx];
-				else if (base == 0x04)	p.reg = RegisterByID[RegEsp];
-				else p.disp = DispModeSIB; // ...
-				if (index == 0x00)		p.reg2 = RegisterByID[RegEax];
-				else if (index == 0x08)	p.reg2 = RegisterByID[RegEcx];
-				else if (index == 0x10)	p.reg2 = RegisterByID[RegEdx];
-				else if (index == 0x18)	p.reg2 = RegisterByID[RegEbx];
-				else if (index == 0x28)	p.reg2 = RegisterByID[RegEbp];
-				else if (index == 0x30)	p.reg2 = RegisterByID[RegEsi];
-				else if (index == 0x38)	p.reg2 = RegisterByID[RegEdi];
-				else p.disp = disp8 ? DispMode8 : DispModeNone;
+				p.disp = disp8 ? DISP_MODE_8_REG2 : DISP_MODE_REG2;
+				if (base == 0x00)		p.reg = RegisterByID[REG_EAX];
+				else if (base == 0x01)	p.reg = RegisterByID[REG_ECX];
+				else if (base == 0x02)	p.reg = RegisterByID[REG_EDX];
+				else if (base == 0x03)	p.reg = RegisterByID[REG_EBX];
+				else if (base == 0x04)	p.reg = RegisterByID[REG_ESP];
+				else p.disp = DISP_MODE_SIB; // ...
+				if (index == 0x00)		p.reg2 = RegisterByID[REG_EAX];
+				else if (index == 0x08)	p.reg2 = RegisterByID[REG_ECX];
+				else if (index == 0x10)	p.reg2 = RegisterByID[REG_EDX];
+				else if (index == 0x18)	p.reg2 = RegisterByID[REG_EBX];
+				else if (index == 0x28)	p.reg2 = RegisterByID[REG_EBP];
+				else if (index == 0x30)	p.reg2 = RegisterByID[REG_ESI];
+				else if (index == 0x38)	p.reg2 = RegisterByID[REG_EDI];
+				else p.disp = disp8 ? DISP_MODE_8 : DISP_MODE_NONE;
 			}
 		//}
 	}
@@ -1876,7 +1935,7 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm)
 	msg_db_f("ReadParamData", 2+ASM_DB_LEVEL);
 	//char *o = cur;
 	p.value = 0;
-	if (p.type == ParamTImmediate){
+	if (p.type == PARAMT_IMMEDIATE){
 		if (p.deref){
 			int size = has_modrm ? state.AddrSize : state.FullRegisterSize; // Ov/Mv...
 			memcpy(&p.value, cur, size);
@@ -1891,23 +1950,235 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm)
 		}else{
 			memcpy(&p.value, cur, 6);		cur += 6;
 		}*/
-	}else if (p.type == ParamTRegister){
-		if ((p.disp == DispMode8) || (p.disp == DispMode8Reg2) || (p.disp == DispMode8SIB)){
+	}else if (p.type == PARAMT_REGISTER){
+		if ((p.disp == DISP_MODE_8) || (p.disp == DISP_MODE_8_REG2) || (p.disp == DISP_MODE_8_SIB)){
 			*(char*)&p.value = *cur;		cur ++;
-		}else if (p.disp == DispMode16){
+		}else if (p.disp == DISP_MODE_16){
 			*(short*)&p.value = *(short*)cur;		cur += 2;
-		}else if (p.disp == DispMode32){
+		}else if (p.disp == DISP_MODE_32){
 			*(int*)&p.value = *(int*)cur;		cur += 4;
 		}
 	}
 	//msg_write((long)cur - (long)o);
 }
 
-// convert some opcode into (human readable) assembler language
-string Disassemble(void *_code_,int length,bool allow_comments)
+string arm_cond_to_str(int cond)
 {
-	msg_db_f("Disassemble", 1+ASM_DB_LEVEL);
+	if (cond == 0)
+		return "[=] ";
+	if (cond == 1)
+		return "[!=] ";
+	if (cond == 2)
+		return "[CS] ";
+	if (cond == 3)
+		return "[CC] ";
+	if (cond == 4)
+		return "[-] ";
+	if (cond == 5)
+		return "[+] ";
+	if (cond == 6)
+		return "[OF] ";
+	if (cond == 7)
+		return "[!OF] ";
+	if (cond == 8)
+		return "[HI] ";
+	if (cond == 9)
+		return "[LS] ";
+	if (cond == 10)
+		return "[>=] ";
+	if (cond == 11)
+		return "[<] ";
+	if (cond == 12)
+		return "[>] ";
+	if (cond == 13)
+		return "[<=] ";
+	if (cond == 14)
+		return "";
+	return "???";
+}
 
+string show_reg(int r)
+{
+	return format("r%d", r);
+}
+
+string show_opcode(int code)
+{
+	if (code == 0)
+		return("and");
+	if (code == 1)
+		return("eor");
+	if (code == 2)
+		return("sub");
+	if (code == 3)
+		return("rsb");
+	if (code == 4)
+		return("add");
+	if (code == 5)
+		return("adc");
+	if (code == 6)
+		return("sbc");
+	if (code == 7)
+		return("rsc");
+	if (code == 8)
+		return("tst");
+	if (code == 9)
+		return("teq");
+	if (code == 10)
+		return("cmp");
+	if (code == 11)
+		return("cmn");
+	if (code == 12)
+		return("orr");
+	if (code == 13)
+		return("mov");
+	if (code == 14)
+		return("bic");
+	if (code == 15)
+		return("mvn");
+	return "???";
+}
+
+string show_imm(int imm)
+{
+	int r = ((imm >> 8) & 0xf);
+	int n = (imm & 0xff);
+	return format("%d", n << r);
+}
+
+string show_shift_reg(int code)
+{
+	string s;
+	s += show_reg(code & 0xf);
+	if (((code >> 5) & 0x3) == 0)
+		s += "<<";
+	else
+		s += ">>";
+	if ((code >> 4) & 0x1){
+		s += show_reg((code >> 8) & 0xf);
+	}else{
+		int r = ((code >> 7) & 0x1f);
+		s += format("%d", r);
+	}
+	return s;
+}
+
+string show_data_opcode(int code)
+{
+	string s;
+	//printf("data ");
+	s += show_opcode((code >> 21) & 15);
+	if ((code >> 20) & 1)
+		s += " [S]";
+	s += " " + show_reg((code >> 16) & 15);
+	s += " " + show_reg((code >> 12) & 15);
+	if ((code >> 25) & 1)
+		s += " " + show_imm((code & 0xfff));
+	else
+		s += " " + show_shift_reg((code & 0xfff));
+	return s;
+}
+
+string show_branch(int code)
+{
+	string s;
+	if ((code >> 24) & 1)
+		s += "bl";
+	else
+		s += "b";
+	s += format(" %06x", (code & 0x00ffffff));
+	return s;
+}
+
+string show_data_transfer(int code)
+{
+	string s;
+	bool bb = ((code >> 22) & 1);
+	bool ll = ((code >> 20) & 1);
+	if (ll)
+		s += "ldr";
+	else
+		s += "str";
+	if (bb)
+		s += "b";
+	int Rn = (code >> 16) & 0xf;
+	int Rd = (code >> 12) & 0xf;
+	s += " " + show_reg(Rd);
+	bool imm = ((code >> 25) & 1);
+	bool pre = ((code >> 24) & 1);
+	bool up = ((code >> 23) & 1);
+	bool ww = ((code >> 21) & 1);
+	if (imm){
+		s += " --shifted reg--";
+	}else{
+		s += " [" + show_reg(Rn) + format("%s%d]", (up ? "+" : "-"), code & 0xfff);
+	}
+	return s;
+}
+
+string show_data_block_transfer(int code)
+{
+	string s;
+	if ((code >> 20) & 1)
+		s += "ldm";
+	else
+		s += "stm";
+	bool pp = ((code >> 24) & 1);
+	bool uu = ((code >> 23) & 1);
+	bool ww = ((code >> 21) & 1);
+	if (!pp and uu)
+		s += "ia";
+	else if (pp and uu)
+		s += "ib";
+	else if (!pp and !uu)
+		s += "da";
+	else if (pp and !uu)
+		s += "db";
+	s += " {";
+	int Rn = (code >> 16) & 0xf;
+	bool first = true;
+	for (int i=0; i<16; i++)
+		if (code & (1 << i)){
+			if (!first)
+				s += ",";
+			s += show_reg(i);
+			first = false;
+		}
+	s += "} [" + show_reg(Rn) + "]";
+	return s;
+}
+
+string DisassembleARM(void *_code_,int length,bool allow_comments)
+{
+	string buf;
+	int *code = (int*)_code_;
+	for (int ni=0; ni<length/4; ni++){
+		int cur = code[ni];
+
+		int x = (cur >> 25) & 0x7;
+
+		buf += string((char*)&cur, 4).hex(true).substr(2, -1);
+		buf += "  ";
+		buf += arm_cond_to_str((cur >> 28) & 0xf);
+
+
+		if (((cur >> 26) & 3) == 0)
+			buf += show_data_opcode(cur);
+		else if (((cur >> 26) & 0x3) == 0b01)
+			buf += show_data_transfer(cur);
+		else if (x == 0b100)
+			buf += show_data_block_transfer(cur);
+		else if (x == 0b101)
+			buf += show_branch(cur);
+
+
+		buf += "\n";
+	}
+	return buf;
+}
+
+string DisassembleX86(void *_code_,int length,bool allow_comments)
+{
 	char *code = (char*)_code_;
 
 	string param;
@@ -1922,7 +2193,7 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 	// opcode points to the start of the instruction (mov)
 	char *cur = code;
 	state.init();
-	state.DefaultSize = Size32;
+	state.DefaultSize = SIZE_32;
 
 
 	while(code < end){
@@ -1941,8 +2212,8 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 #if 0
 			// TODO
 			for (int i=0;i<CurrentMetaInfo->label.num;i++)
-				if ((long)code - (long)orig == CurrentMetaInfo->label[i].Pos)
-					bufstr += "    " + CurrentMetaInfo->label[i].Name + ":\n";
+				if ((long)code - (long)orig == CurrentMetaInfo->label[i].pos)
+					bufstr += "    " + CurrentMetaInfo->label[i].name + ":\n";
 #endif
 
 			// data blocks
@@ -1974,9 +2245,9 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			// change of bits (processor mode)
 			for (int i=0;i<CurrentMetaInfo->bit_change.num;i++)
 				if ((long)code-(long)orig == CurrentMetaInfo->bit_change[i].offset){
-					state.DefaultSize = (CurrentMetaInfo->bit_change[i].bits == 16) ? Size16 : Size32;
+					state.DefaultSize = (CurrentMetaInfo->bit_change[i].bits == 16) ? SIZE_16 : SIZE_32;
 					state.reset();
-					if (state.DefaultSize == Size16)
+					if (state.DefaultSize == SIZE_16)
 						bufstr += "   bits_16\n";
 					else
 						bufstr += "   bits_32\n";
@@ -1988,29 +2259,29 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 		// prefix (size/segment register)
 		Register *seg = NULL;
 		if (cur[0]==0x67){
-			state.AddrSize = (state.DefaultSize == Size32) ? Size16 : Size32;
+			state.AddrSize = (state.DefaultSize == SIZE_32) ? SIZE_16 : SIZE_32;
 			cur++;
 		}
 		if (cur[0]==0x66){
-			state.ParamSize = (state.DefaultSize == Size32) ? Size16 : Size32;
+			state.ParamSize = (state.DefaultSize == SIZE_32) ? SIZE_16 : SIZE_32;
 			cur++;
 		}
-		if (InstructionSet.set == InstructionSetAMD64){
+		if (InstructionSet.set == INSTRUCTION_SET_AMD64){
 			if ((cur[0] & 0xf0) == 0x40){
 				if ((cur[0] & 0x08) > 0)
-					state.ParamSize = Size64;
+					state.ParamSize = SIZE_64;
 				state.ExtendModRMReg = ((cur[0] & 0x04) > 0);
 				state.ExtendModRMIndex = ((cur[0] & 0x02) > 0);
 				state.ExtendModRMBase = ((cur[0] & 0x01) > 0);
 				cur++;
 			}
 		}
-		if (cur[0]==0x2e){	seg = RegisterByID[RegCs];	cur++;	}
-		else if (cur[0]==0x36){	seg = RegisterByID[RegSs];	cur++;	}
-		else if (cur[0]==0x3e){	seg = RegisterByID[RegDs];	cur++;	}
-		else if (cur[0]==0x26){	seg = RegisterByID[RegEs];	cur++;	}
-		else if (cur[0]==0x64){	seg = RegisterByID[RegFs];	cur++;	}
-		else if (cur[0]==0x65){	seg = RegisterByID[RegGs];	cur++;	}
+		if (cur[0]==0x2e){	seg = RegisterByID[REG_CS];	cur++;	}
+		else if (cur[0]==0x36){	seg = RegisterByID[REG_SS];	cur++;	}
+		else if (cur[0]==0x3e){	seg = RegisterByID[REG_DS];	cur++;	}
+		else if (cur[0]==0x26){	seg = RegisterByID[REG_ES];	cur++;	}
+		else if (cur[0]==0x64){	seg = RegisterByID[REG_FS];	cur++;	}
+		else if (cur[0]==0x65){	seg = RegisterByID[REG_GS];	cur++;	}
 		opcode=cur;
 
 		// instruction
@@ -2019,9 +2290,9 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			if (ci.code_size == 0)
 				continue;
 			if (!ci.has_fixed_param){
-				if (ci.has_small_param != (state.ParamSize == Size16))
+				if (ci.has_small_param != (state.ParamSize == SIZE_16))
 					continue;
-				if (ci.has_big_param != (state.ParamSize == Size64))
+				if (ci.has_big_param != (state.ParamSize == SIZE_64))
 					continue;
 			}
 			// opcode correct?
@@ -2041,9 +2312,9 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 				char modrm = cur[ci.code_size];
 				GetFromModRM(p1, ci.param1, modrm);
 				GetFromModRM(p2, ci.param2, modrm);
-				if ((p1.type == ParamTRegister) && (!p1.deref) && (!ci.param1.allow_register))
+				if ((p1.type == PARAMT_REGISTER) && (!p1.deref) && (!ci.param1.allow_register))
 					continue;
-				if ((p2.type == ParamTRegister) && (!p2.deref) && (!ci.param2.allow_register))
+				if ((p2.type == PARAMT_REGISTER) && (!p2.deref) && (!ci.param2.allow_register))
 					continue;
 			}
 			if (ok){
@@ -2089,18 +2360,18 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			str += inst->name;
 
 			// parameters
-			if ((state.ParamSize != state.DefaultSize) && ((p1.type != ParamTRegister) || (p1.deref)) && ((p2.type != ParamTRegister) || p2.deref)){
-				if (state.ParamSize == Size16)
+			if ((state.ParamSize != state.DefaultSize) && ((p1.type != PARAMT_REGISTER) || (p1.deref)) && ((p2.type != PARAMT_REGISTER) || p2.deref)){
+				if (state.ParamSize == SIZE_16)
 					str += " word";
-				else if (state.ParamSize == Size32)
+				else if (state.ParamSize == SIZE_32)
 					str += " dword";
-				else if (state.ParamSize == Size64)
+				else if (state.ParamSize == SIZE_64)
 					str += " qword";
 			}
-			bool hide_size = p2.type != ParamTNone;
-			if (p1.type != ParamTNone)
+			bool hide_size = p2.type != PARAMT_NONE;
+			if (p1.type != PARAMT_NONE)
 				str += " " + p1.str(hide_size);
-			if (p2.type != ParamTNone)
+			if (p2.type != PARAMT_NONE)
 				str += ", " + p2.str(hide_size);
 			
 			
@@ -2116,230 +2387,6 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			bufstr += str;
 			bufstr += "\n";
 
-#if 0
-			
-			bool e_first=false;
-			char modRM;
-			int mod,Reg,rm;
-			if ((p1>=0)||(p2>=0)){
-				if ((p1==Ed)||(p1==Ew)||(p1==Eb)||(p1==Sw)||(p2==Ed)||(p2==Ew)||(p2==Eb)||(p2==Sw)){
-					e_first=((p1==Ed)||(p1==Ew)||(p1==Eb)) && (p1!=Sw);
-					if (!e_first){	int t=p1;		p1=p2;			p2=t;	}
-					if (!e_first){	int t=pp1;		pp1=pp2;		pp2=t;	}
-					if (!e_first){	int t=disp1;	disp1=disp2;	disp2=t;	}
-					cur++;
-					modRM=cur[0];
-					mod=(unsigned char)modRM/64;
-					Reg=((unsigned char)modRM/8)%8;
-					rm=(unsigned char)modRM%8;
-					if (mod==0){
-						if (mode16){
-							if (rm==0)	pp1=pBX_pSI;
-							if (rm==1)	pp1=pBX_pDI;
-							if (rm==2)	pp1=pBP_pSI;
-							if (rm==3)	pp1=pBP_pDI;
-							if (rm==4)	pp1=pSI;
-							if (rm==5)	pp1=pDI;
-							if (rm==6){	pp1=disp16;	disp1=*(short*)&cur[1];	cur+=2;	}
-							if (rm==7)	pp1=pBX;
-						}else{
-							if (rm==0)	pp1=peAX;
-							if (rm==1)	pp1=peCX;
-							if (rm==2)	pp1=peDX;
-							if (rm==3)	pp1=peBX;
-							if (rm==4){	pp1=pp;		disp1=cur[1];		cur++;	}
-							if (rm==5){	pp1=disp32;	disp1=*(int*)&cur[1];	cur+=4; }
-							if (rm==6)	pp1=peSI;
-							if (rm==7)	pp1=peDI;
-						}
-					}else if (mod==1){
-						if (mode16){
-							if (rm==0)	pp1=d8_pBX_pSI;
-							if (rm==1)	pp1=d8_pBX_pDI;
-							if (rm==2)	pp1=d8_pBP_pSI;
-							if (rm==3)	pp1=d8_pBP_pDI;
-							if (rm==4)	pp1=d8_pSI;
-							if (rm==5)	pp1=d8_pDI;
-							if (rm==6)	pp1=d8_pBP;
-							if (rm==7)	pp1=d8_pBX;
-							disp1=cur[1];	cur++;
-						}else{
-							if (rm==0)	pp1=d8_peAX;
-							if (rm==1)	pp1=d8_peCX;
-							if (rm==2)	pp1=d8_peDX;
-							if (rm==3)	pp1=d8_peBX;
-							if (rm==4){	pp1=d8_pp;		disp1=cur[1];		cur++;	}
-							if (rm==5)	pp1=d8_peBP;
-							if (rm==6)	pp1=d8_peSI;
-							if (rm==7)	pp1=d8_peDI;
-							disp1=cur[1];	cur++;
-						}
-					}else if (mod==2){
-						if (mode16){
-							if (rm==0)	pp1=d16_pBX_pSI;
-							if (rm==1)	pp1=d16_pBX_pDI;
-							if (rm==2)	pp1=d16_pBP_pSI;
-							if (rm==3)	pp1=d16_pBP_pDI;
-							if (rm==4)	pp1=d16_pSI;
-							if (rm==5)	pp1=d16_pDI;
-							if (rm==6)	pp1=d16_pBP;
-							if (rm==7)	pp1=d16_pBX;
-							disp1=*(short*)&cur[1];	cur+=2;
-						}else{
-							if (rm==0)	pp1=d32_peAX;
-							if (rm==1)	pp1=d32_peCX;
-							if (rm==2)	pp1=d32_peDX;
-							if (rm==3)	pp1=d32_peBX;
-							if (rm==4){	pp1=d32_pp;		disp1=cur[1];		cur++;	}
-							if (rm==5)	pp1=d32_peBP;
-							if (rm==6)	pp1=d32_peSI;
-							if (rm==7)	pp1=d32_peDI;
-							disp1=*(int*)&cur[1];	cur+=4;
-						}
-					}else if (mod==3){
-						if (p1==Eb){
-							if (rm==0)	pp1=AL;
-							if (rm==1)	pp1=CL;
-							if (rm==2)	pp1=DL;
-							if (rm==3)	pp1=BL;
-							if (rm==4)	pp1=AH;
-							if (rm==5)	pp1=CH;
-							if (rm==6)	pp1=DH;
-							if (rm==7)	pp1=BH;
-						}else if (p1==Ew){
-							if (rm==0)	pp1=AX;
-							if (rm==1)	pp1=CX;
-							if (rm==2)	pp1=DX;
-							if (rm==3)	pp1=BX;
-							if (rm==4)	pp1=SP;
-							if (rm==5)	pp1=BP;
-							if (rm==6)	pp1=SI;
-							if (rm==7)	pp1=DI;
-						}else if (p1==Ed){
-							if (rm==0)	pp1=eAX;
-							if (rm==1)	pp1=eCX;
-							if (rm==2)	pp1=eDX;
-							if (rm==3)	pp1=eBX;
-							if (rm==4)	pp1=eSP;
-							if (rm==5)	pp1=eBP;
-							if (rm==6)	pp1=eSI;
-							if (rm==7)	pp1=eDI;
-						}
-					}
-					if (p2==Gb){
-						if (Reg==0)	pp2=AL;
-						if (Reg==1)	pp2=CL;
-						if (Reg==2)	pp2=DL;
-						if (Reg==3)	pp2=BL;
-						if (Reg==4)	pp2=AH;
-						if (Reg==5)	pp2=CH;
-						if (Reg==6)	pp2=DH;
-						if (Reg==7)	pp2=BH;
-					}else if (p2==Gw){
-						if (Reg==0)	pp2=AX;
-						if (Reg==1)	pp2=CX;
-						if (Reg==2)	pp2=DX;
-						if (Reg==3)	pp2=BX;
-						if (Reg==4)	pp2=SP;
-						if (Reg==5)	pp2=BP;
-						if (Reg==6)	pp2=SI;
-						if (Reg==7)	pp2=DI;
-					}else if (p2==Gd){
-						if (Reg==0)	pp2=eAX;
-						if (Reg==1)	pp2=eCX;
-						if (Reg==2)	pp2=eDX;
-						if (Reg==3)	pp2=eBX;
-						if (Reg==4)	pp2=eSP;
-						if (Reg==5)	pp2=eBP;
-						if (Reg==6)	pp2=eSI;
-						if (Reg==7)	pp2=eDI;
-					}else if (p2==Sw){
-						if (Reg==0)	pp2=ES;
-						if (Reg==1)	pp2=CS;
-						if (Reg==2)	pp2=SS;
-						if (Reg==3)	pp2=DS;
-						if (Reg==4)	pp2=FS;
-						if (Reg==5)	pp2=GS;
-					}else if (p2==Cd){
-						if (Reg==0)	pp2=CR0;
-						if (Reg==1)	pp2=CR1;
-						if (Reg==2)	pp2=CR2;
-						if (Reg==3)	pp2=CR3;
-					}else if ((p2==Ob)||(p2==Ow)||(p2==Od)){
-						if (small_param){
-							pp2=disp16;
-							disp2=*(short*)&cur[1];	cur+=2;
-						}else{
-							pp2=disp32;
-							disp2=*(int*)&cur[1];	cur+=4;
-						}
-					}
-
-					if (!e_first){	int t=pp1;	pp1=pp2;	pp2=t;	}
-					if (!e_first){	int t=p1;	p1=p2;		p2=t;	}
-					if (!e_first){	int t=disp1;	disp1=disp2;	disp2=t;	}
-				}else if ((p1==Ob)||(p1==Ow)||(p1==Od)){
-					if (small_param){
-						pp1=disp16;
-						disp1=*(short*)&cur[1];	cur+=2;
-					}else{
-						pp1=disp32;
-						disp1=*(int*)&cur[1];	cur+=4;
-					}
-				}else if (p1==Ip){
-					if (small_param){	disp1=*(short*)&cur[1];	cur+=2;	}
-					else{				disp1=*(int*)&cur[1];	cur+=4;	}
-					ParamConstantDouble=*(short*)&cur[1];	cur+=2;
-				}else if (p1==Id){
-					disp1=*(int*)&cur[1];	cur+=4;
-				}else if (p1==Iw){
-					disp1=*(short*)&cur[1];	cur+=2;
-				}else if (p1==Ib){
-					disp1=cur[1];	cur++;
-				}
-				// Param2
-				if ((p2==Ob)||(p2==Ow)||(p2==Od)){
-					if (small_param){
-						pp2=disp16;
-						disp2=*(short*)&cur[1];	cur+=2;
-					}else{
-						pp2=disp32;
-						disp2=*(int*)&cur[1];	cur+=4;
-					}
-				}else if (p2==Id){
-					disp2=*(int*)&cur[1];	cur+=4;
-				}else if (p2==Iw){
-					disp2=*(short*)&cur[1];	cur+=2;
-				}else if (p2==Ib){
-					disp2=cur[1];	cur++;
-				}
-				//for (int i=0;i<32-l;i++)
-				//	strcat(str," ");
-				strcat(param," ");
-				AddParam(param,pp1,disp1);
-				if (p2>=0){
-					strcat(param,", ");
-					AddParam(param,pp2,disp2);
-				}
-			}
-			char str[128];		strcpy(str,"");
-			if (seg==CS)	strcat(str,"CS: ");
-			if (seg==SS)	strcat(str,"SS: ");
-			if (seg==DS)	strcat(str,"DS: ");
-			if (seg==ES)	strcat(str,"ES: ");
-			if (seg==FS)	strcat(str,"FS: ");
-			if (seg==GS)	strcat(str,"GS: ");
-			strcat(str,string(CPUInstructions[ae].name,param));
-			strcat(buffer,str);
-			if (allow_comments){
-				int l=strlen(str);
-				strcat(buffer," ");
-				for (int ii=0;ii<48-l;ii++)
-					strcat(buffer," ");
-				strcat(buffer,"// ");
-				strcat(buffer,d2h(code,1+long(cur)-long(code),false));
-			}
-#endif
 		}else{
 			//msg_write(string2("????? -                          unknown         // %s\n",d2h(code,1+long(cur)-long(code),false)));
 			bufstr += format("????? -                          unknown         // %s\n",d2h(code,1+long(cur)-long(code),false).c_str());
@@ -2351,6 +2398,18 @@ string Disassemble(void *_code_,int length,bool allow_comments)
 			break;
 	}
 	return bufstr;
+}
+
+
+
+// convert some opcode into (human readable) assembler language
+string Disassemble(void *code, int length, bool allow_comments)
+{
+	msg_db_f("Disassemble", 1+ASM_DB_LEVEL);
+
+	if (InstructionSet.set == INSTRUCTION_SET_ARM)
+		return DisassembleARM(code, length, allow_comments);
+	return DisassembleX86(code, length, allow_comments);
 }
 
 // skip unimportant code (whitespace/comments)
@@ -2460,17 +2519,17 @@ string FindMnemonic(int &pos)
 void GetParam(InstructionParam &p, const string &param, InstructionWithParamsList &list, int pn)
 {
 	msg_db_f("GetParam", 1+ASM_DB_LEVEL);
-	p.type = ParamTInvalid;
+	p.type = PARAMT_INVALID;
 	p.reg = NULL;
 	p.deref = false;
-	p.size = SizeUnknown;
-	p.disp = DispModeNone;
+	p.size = SIZE_UNKNOWN;
+	p.disp = DISP_MODE_NONE;
 	p.is_label = false;
 	//msg_write(param);
 
 	// none
 	if (param.num == 0){
-		p.type = ParamTNone;
+		p.type = PARAMT_NONE;
 
 	// deref
 	}else if ((param[0] == '[') && (param[param.num-1] == ']')){
@@ -2479,7 +2538,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		so("Deref:");
 		//bool u16 = use_mode16;
 		GetParam(p, param.substr(1, -2), list, pn);
-		p.size = SizeUnknown;
+		p.size = SIZE_UNKNOWN;
 		p.deref = true;
 		//use_mode16 = u16;
 
@@ -2490,7 +2549,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		char *ps = new char[param.num - 1];
 		strcpy(ps, param.substr(1, -2).c_str());
 		p.value = (long)ps;
-		p.type = ParamTImmediate;
+		p.type = PARAMT_IMMEDIATE;
 
 	// complex...
 	}else if (param.find("+") >= 0){
@@ -2507,13 +2566,13 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				part.add(param[i]);
 		int offset = part.num;
 		GetParam(sub, part, list, pn);
-		if (sub.type == ParamTRegister){
+		if (sub.type == PARAMT_REGISTER){
 			//msg_write("reg");
-			p.type = ParamTRegister;
-			p.size = Size32;
+			p.type = PARAMT_REGISTER;
+			p.size = SIZE_32;
 			p.reg = sub.reg;
 		}else
-			p.type = ParamTInvalid;
+			p.type = PARAMT_INVALID;
 
 		// second part (...up till now only hex)
 		for (int i=offset;i<param.num;i++)
@@ -2523,21 +2582,21 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			}
 		part = param.substr(offset, -1);
 		GetParam(sub, part, list, pn);
-		if (sub.type == ParamTImmediate){
+		if (sub.type == PARAMT_IMMEDIATE){
 			//msg_write("c2 = im");
 			if (((long)sub.value & 0xffffff00) == 0)
-				p.disp = DispMode8;
+				p.disp = DISP_MODE_8;
 			else
-				p.disp = DispMode32;
+				p.disp = DISP_MODE_32;
 			p.value = sub.value;
 		}else
-			p.type = ParamTInvalid;
+			p.type = PARAMT_INVALID;
 
 		
 
 	// hex const
 	}else if ((param[0] == '0') && (param[1] == 'x')){
-		p.type = ParamTImmediate;
+		p.type = PARAMT_IMMEDIATE;
 		long long v = 0;
 		for (int i=2;i<param.num;i++){
 			if (param[i] == '.'){
@@ -2566,19 +2625,19 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				break;*/
 			}else{
 				SetError("evil character in hex parameter:  \"" + param + "\"");
-				p.type = ParamTInvalid;
+				p.type = PARAMT_INVALID;
 				return;
 			}
 			p.value = (long)v;
-			p.size = Size8;
+			p.size = SIZE_8;
 			if (param.num > 4)
-				p.size = Size16;
+				p.size = SIZE_16;
 			if (param.num > 6)
-				p.size = Size32;
+				p.size = SIZE_32;
 			if (param.num > 10)
-				p.size = Size48;
+				p.size = SIZE_48;
 			if (param.num > 14)
-				p.size = Size64;
+				p.size = SIZE_64;
 		}
 		if (DebugAsm){
 			printf("hex const:  %s\n",d2h((char*)&p.value,p.size).c_str());
@@ -2587,16 +2646,16 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 	// char const
 	}else if ((param[0] == '\'') && (param[param.num - 1] == '\'')){
 		p.value = (long)param[1];
-		p.type = ParamTImmediate;
-		p.size = Size8;
+		p.type = PARAMT_IMMEDIATE;
+		p.size = SIZE_8;
 		if (DebugAsm)
 			printf("hex const:  %s\n",d2h((char*)&p.value,1).c_str());
 
 	// label substitude
 	}else if (param == "$"){
 		p.value = list.add_label(param, true);
-		p.type = ParamTImmediate;
-		p.size = Size32;
+		p.type = PARAMT_IMMEDIATE;
+		p.size = SIZE_32;
 		p.is_label = true;
 		so("label:  " + param + "\n");
 		
@@ -2604,7 +2663,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		// register
 		for (int i=0;i<Registers.num;i++)
 			if (Registers[i].name == param){
-				p.type = ParamTRegister;
+				p.type = PARAMT_REGISTER;
 				p.reg = &Registers[i];
 				p.size = Registers[i].size;
 				so("Register:  " + Registers[i].name + "\n");
@@ -2612,20 +2671,20 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			}
 		// existing label
 		for (int i=0;i<list.label.num;i++)
-			if (list.label[i].Name == param){
+			if (list.label[i].name == param){
 				p.value = i;
-				p.type = ParamTImmediate;
-				p.size = Size32;
+				p.type = PARAMT_IMMEDIATE;
+				p.size = SIZE_32;
 				p.is_label = true;
 				so("label:  " + param + "\n");
 				return;
 			}
 		// script variable (global)
 		for (int i=0;i<CurrentMetaInfo->global_var.num;i++){
-			if (CurrentMetaInfo->global_var[i].Name == param){
-				p.value = (long)CurrentMetaInfo->global_var[i].Pos;
-				p.type = ParamTImmediate;
-				p.size = CurrentMetaInfo->global_var[i].Size;
+			if (CurrentMetaInfo->global_var[i].name == param){
+				p.value = (long)CurrentMetaInfo->global_var[i].pos;
+				p.type = PARAMT_IMMEDIATE;
+				p.size = CurrentMetaInfo->global_var[i].size;
 				p.deref = true;
 				so("global variable:  \"" + param + "\"\n");
 				return;
@@ -2635,13 +2694,13 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		if (param[0]=='_'){
 			so("label as param:  \"" + param + "\"\n");
 			p.value = list.add_label(param, false);
-			p.type = ParamTImmediate;
+			p.type = PARAMT_IMMEDIATE;
 			p.is_label = true;
-			p.size = Size32;
+			p.size = SIZE_32;
 			return;
 		}
 	}
-	if (p.type == ParamTInvalid)
+	if (p.type == PARAMT_INVALID)
 		SetError("unknown parameter:  \"" + param + "\"\n");
 }
 
@@ -2669,24 +2728,24 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 {
 	long long value = p.value;
 	int size = 0;
-	if (p.type == ParamTImmediate){
+	if (p.type == PARAMT_IMMEDIATE){
 		size = p.size;
 		if (p.deref){
 			//---msg_write("deref....");
 			size = state.AddrSize; // inst.has_big_addr
-			if (InstructionSet.set == InstructionSetAMD64){
+			if (InstructionSet.set == INSTRUCTION_SET_AMD64){
 				if (inst.has_modrm)
 					value -= (long)oc + ocs + size + next_param_size; // amd64 uses RIP-relative addressing!
 				else
-					size = Size64; // Ov/Mv...
+					size = SIZE_64; // Ov/Mv...
 			}
 		}
 	//}else if (p.type == ParamTImmediateExt){
 	//	size = state.ParamSize;  // bits 0-15  /  0-31
-	}else if (p.type == ParamTRegister){
-		if (p.disp == DispMode8)	size = Size8;
-		if (p.disp == DispMode16)	size = Size16;
-		if (p.disp == DispMode32)	size = Size32;
+	}else if (p.type == PARAMT_REGISTER){
+		if (p.disp == DISP_MODE_8)	size = SIZE_8;
+		if (p.disp == DISP_MODE_16)	size = SIZE_16;
+		if (p.disp == DISP_MODE_32)	size = SIZE_32;
 	}else
 		return;
 
@@ -2695,16 +2754,16 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 		rel = false;
 	if (p.is_label){
 		WantedLabel w;
-		w.Pos = ocs;
-		w.Size = size;
-		w.LabelNo = (int)value;
-		w.Name = list.label[p.value].Name;
-		w.Relative = rel;
-		w.InstNo = list.current_inst;
+		w.pos = ocs;
+		w.size = size;
+		w.label_no = (int)value;
+		w.name = list.label[p.value].name;
+		w.relative = rel;
+		w.inst_no = list.current_inst;
 		list.wanted_label.add(w);
 		so("add wanted label");
 	}else if (rel){
-		value -= CurrentMetaInfo->CodeOrigin + ocs + size + next_param_size; // TODO ...first byte of next opcode
+		value -= CurrentMetaInfo->code_origin + ocs + size + next_param_size; // TODO ...first byte of next opcode
 	}
 
 	//---msg_write("imm " + i2s(size));
@@ -2714,16 +2773,16 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 void InstructionWithParamsList::LinkWantedLabels(void *oc)
 {
 	foreachib(WantedLabel &w, wanted_label, i){
-		Label &l = label[w.LabelNo];
-		if (l.Value == -1)
+		Label &l = label[w.label_no];
+		if (l.value == -1)
 			continue;
 		so("linking label");
 
-		int value = l.Value;
-		if (w.Relative)
-			value -= CurrentMetaInfo->CodeOrigin + w.Pos + w.Size; // TODO first byte after command
+		int value = l.value;
+		if (w.relative)
+			value -= CurrentMetaInfo->code_origin + w.pos + w.size; // TODO first byte after command
 
-		insert_val((char*)oc, w.Pos, value, w.Size);
+		insert_val((char*)oc, w.pos, value, w.size);
 
 
 		wanted_label.erase(i);
@@ -2748,7 +2807,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 	if (!CurrentMetaInfo)
 		SetError("no CurrentMetaInfo");
 
-	state.LineNo = CurrentMetaInfo->LineOffset;
+	state.LineNo = CurrentMetaInfo->line_offset;
 	state.ColumnNo = 0;
 
 	// CurrentMetaInfo->CurrentOpcodePos // Anfang aktuelle Zeile im gesammten Opcode
@@ -2756,10 +2815,10 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 
 	int pos = 0;
 	InstructionParam p1, p2;
-	state.DefaultSize = Size32;
+	state.DefaultSize = SIZE_32;
 	if (CurrentMetaInfo)
-		if (CurrentMetaInfo->Mode16)
-			state.DefaultSize = Size16;
+		if (CurrentMetaInfo->mode16)
+			state.DefaultSize = SIZE_16;
 	state.EndOfCode = false;
 	while(pos < _code.num - 2){
 
@@ -2782,11 +2841,11 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			param1 = FindMnemonic(pos);
 			if ((param1 == "dword") || (param1 == "word") || (param1 == "qword")){
 				if (param1 == "word")
-					state.ParamSize = Size16;
+					state.ParamSize = SIZE_16;
 				else if (param1 == "dword")
-					state.ParamSize = Size32;
+					state.ParamSize = SIZE_32;
 				else if (param1 == "qword")
-					state.ParamSize = Size64;
+					state.ParamSize = SIZE_64;
 				if (!state.EndOfLine)
 					param1 = FindMnemonic(pos);
 			}
@@ -2805,16 +2864,16 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		// parameters
 		GetParam(p1, param1, *this, 0);
 		GetParam(p2, param2, *this, 1);
-		if ((p1.type == ParamTInvalid) || (p2.type == ParamTInvalid))
+		if ((p1.type == PARAMT_INVALID) || (p2.type == PARAMT_INVALID))
 			return;
 
 	// special stuff
 		if (cmd == "bits_16"){
 			so("16 bit Modus!");
-			state.DefaultSize = Size16;
+			state.DefaultSize = SIZE_16;
 			state.reset();
 			if (CurrentMetaInfo){
-				CurrentMetaInfo->Mode16 = true;
+				CurrentMetaInfo->mode16 = true;
 				BitChange b;
 				b.cmd_pos = num;
 				b.bits = 16;
@@ -2823,10 +2882,10 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			continue;
 		}else if (cmd == "bits_32"){
 			so("32 bit Modus!");
-			state.DefaultSize = Size32;
+			state.DefaultSize = SIZE_32;
 			state.reset();
 			if (CurrentMetaInfo){
-				CurrentMetaInfo->Mode16 = false;
+				CurrentMetaInfo->mode16 = false;
 				BitChange b;
 				b.cmd_pos = num;
 				b.bits = 32;
@@ -2903,7 +2962,7 @@ bool Assemble(const char *code, char *oc, int &ocs)
 	/*if (!Instruction)
 		SetInstructionSet(InstructionSetDefault);*/
 
-	InstructionWithParamsList list = InstructionWithParamsList(CurrentMetaInfo->LineOffset);
+	InstructionWithParamsList list = InstructionWithParamsList(CurrentMetaInfo->line_offset);
 
 	list.AppendFromSource(code);
 
@@ -2919,7 +2978,7 @@ inline bool _size_match_(InstructionParamFuzzy &inst_p, InstructionParam &wanted
 {
 	if (inst_p.size == wanted_p.size)
 		return true;
-	if ((inst_p.size == SizeUnknown) || (wanted_p.size == SizeUnknown))
+	if ((inst_p.size == SIZE_UNKNOWN) || (wanted_p.size == SIZE_UNKNOWN))
 		return true;
 /*	if ((inst_p.size == SizeVariable) && ((wanted_p.size == Size16) || (wanted_p.size == Size32)))
 		return true;*/
@@ -2938,15 +2997,15 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 	//ParamFuzzyOut(&inst_p);
 	
 	// none
-	if ((wanted_p.type == ParamTNone) || (!used))
-		return (wanted_p.type == ParamTNone) && (!used);
+	if ((wanted_p.type == PARAMT_NONE) || (!used))
+		return (wanted_p.type == PARAMT_NONE) && (!used);
 
-	if ((size != SizeUnknown) && (wanted_p.size != SizeUnknown))
+	if ((size != SIZE_UNKNOWN) && (wanted_p.size != SIZE_UNKNOWN))
 		if (size != wanted_p.size)
 			return false;
 
 	// immediate
-	if (wanted_p.type == ParamTImmediate){
+	if (wanted_p.type == PARAMT_IMMEDIATE){
 		if ((allow_memory_address) && (wanted_p.deref))
 			return true;
 		if ((allow_immediate) && (!wanted_p.deref)){
@@ -2964,11 +3023,11 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 	}*/
 
 	// reg
-	if (wanted_p.type == ParamTRegister){
+	if (wanted_p.type == PARAMT_REGISTER){
 		// direct match
 		if ((allow_register) && (reg)){
 			if (wanted_p.reg)
-				if ((reg->id >= RegRax) && (reg->id <= RegRbp) && (wanted_p.reg->id == reg->id + RegR8 - RegRax))
+				if ((reg->id >= REG_RAX) && (reg->id <= REG_RBP) && (wanted_p.reg->id == reg->id + REG_R8 - REG_RAX))
 					return true;
 			return ((reg == wanted_p.reg) && (_deref_match_(*this, wanted_p)));
 		}
@@ -2996,46 +3055,46 @@ InstructionParam _make_param_(int type, int size, long long param)
 {
 	InstructionParam i;
 	i.reg = NULL;
-	i.size = SizeUnknown;
+	i.size = SIZE_UNKNOWN;
 	i.deref = false;
 	i.value = 0;
-	i.disp = DispModeNone;
+	i.disp = DISP_MODE_NONE;
 	i.is_label = false;
-	if (type == PKNone){
-		i.type = ParamTNone;
-	}else if (type == PKConstant){
-		i.type = ParamTImmediate;
+	if (type == PK_NONE){
+		i.type = PARAMT_NONE;
+	}else if (type == PK_CONSTANT){
+		i.type = PARAMT_IMMEDIATE;
 		i.size = size;
 		i.value = param;
-	}else if (type == PKLabel){
-		i.type = ParamTImmediate;
-		i.size = Size32;
+	}else if (type == PK_LABEL){
+		i.type = PARAMT_IMMEDIATE;
+		i.size = SIZE_32;
 		i.value = param;
 		i.is_label = true;
-	}else if (type == PKDerefConstant){
-		i.type = ParamTImmediate;
+	}else if (type == PK_DEREF_CONSTANT){
+		i.type = PARAMT_IMMEDIATE;
 		i.deref = true;
 		i.size = size;
 		i.value = param;
-	}else if (type == PKEdxRel){
-		i.type = ParamTRegister;
-		i.reg = RegisterByID[RegEdx];
+	}else if (type == PK_EDX_REL){
+		i.type = PARAMT_REGISTER;
+		i.reg = RegisterByID[REG_EDX];
 		i.deref = true;
-		i.disp = ((param < 120) && (param > -120)) ? DispMode8 : DispMode32;
+		i.disp = ((param < 120) && (param > -120)) ? DISP_MODE_8 : DISP_MODE_32;
 		i.value = param;
-	}else if (type == PKLocal){
-		i.type = ParamTRegister;
-		i.reg = RegisterByID[RegEbp];
+	}else if (type == PK_LOCAL){
+		i.type = PARAMT_REGISTER;
+		i.reg = RegisterByID[REG_EBP];
 		i.deref = true;
 		i.size = size;
-		i.disp = ((param < 120) && (param > -120)) ? DispMode8 : DispMode32;
+		i.disp = ((param < 120) && (param > -120)) ? DISP_MODE_8 : DISP_MODE_32;
 		i.value = param;
-	}else if (type == PKRegister){
-		i.type = ParamTRegister;
+	}else if (type == PK_REGISTER){
+		i.type = PARAMT_REGISTER;
 		i.reg = RegisterByID[(long)param];
 		i.size = i.reg->size;
-	}else if (type == PKDerefRegister){
-		i.type = ParamTRegister;
+	}else if (type == PK_DEREF_REGISTER){
+		i.type = PARAMT_REGISTER;
 		i.reg = RegisterByID[(long)param];
 		i.size = size;
 		i.deref = true;
@@ -3046,15 +3105,15 @@ InstructionParam _make_param_(int type, int size, long long param)
 int GetModRMReg(Register *r)
 {
 	int id = r->id;
-	if ((id == RegR8)  || (id == RegR8d)  || (id == RegRax) || (id == RegEax) || (id == RegAx) || (id == RegAl))	return 0x00;
-	if ((id == RegR9)  || (id == RegR9d)  || (id == RegRcx) || (id == RegEcx) || (id == RegCx) || (id == RegCl))	return 0x01;
-	if ((id == RegR10) || (id == RegR10d) || (id == RegRdx) || (id == RegEdx) || (id == RegDx) || (id == RegDl))	return 0x02;
-	if ((id == RegR11) || (id == RegR11d) || (id == RegRbx) || (id == RegEbx) || (id == RegBx) || (id == RegBl))	return 0x03;
-	if ((id == RegR12) || (id == RegR12d) || (id == RegRsp) || (id == RegEsp) || (id == RegSp) || (id == RegAh))	return 0x04;
-	if ((id == RegR13) || (id == RegR13d) || (id == RegRbp) || (id == RegEbp) || (id == RegBp) || (id == RegCh))	return 0x05;
-	if ((id == RegR14) || (id == RegR14d) || (id == RegRsi) || (id == RegEsi) || (id == RegSi) || (id == RegDh))	return 0x06;
-	if ((id == RegR15) || (id == RegR15d) || (id == RegRdi) || (id == RegEdi) || (id == RegDi) || (id == RegBh))	return 0x07;
-	if ((id >= RegXmm0) && (id <= RegXmm7))	return (id - RegXmm0);
+	if ((id == REG_R8)  || (id == REG_R8D)  || (id == REG_RAX) || (id == REG_EAX) || (id == REG_AX) || (id == REG_AL))	return 0x00;
+	if ((id == REG_R9)  || (id == REG_R9D)  || (id == REG_RCX) || (id == REG_ECX) || (id == REG_CX) || (id == REG_CL))	return 0x01;
+	if ((id == REG_R10) || (id == REG_R10D) || (id == REG_RDX) || (id == REG_EDX) || (id == REG_DX) || (id == REG_DL))	return 0x02;
+	if ((id == REG_R11) || (id == REG_R11D) || (id == REG_RBX) || (id == REG_EBX) || (id == REG_BX) || (id == REG_BL))	return 0x03;
+	if ((id == REG_R12) || (id == REG_R12D) || (id == REG_RSP) || (id == REG_ESP) || (id == REG_SP) || (id == REG_AH))	return 0x04;
+	if ((id == REG_R13) || (id == REG_R13D) || (id == REG_RBP) || (id == REG_EBP) || (id == REG_BP) || (id == REG_CH))	return 0x05;
+	if ((id == REG_R14) || (id == REG_R14D) || (id == REG_RSI) || (id == REG_ESI) || (id == REG_SI) || (id == REG_DH))	return 0x06;
+	if ((id == REG_R15) || (id == REG_R15D) || (id == REG_RDI) || (id == REG_EDI) || (id == REG_DI) || (id == REG_BH))	return 0x07;
+	if ((id >= REG_XMM0) && (id <= REG_XMM7))	return (id - REG_XMM0);
 	SetError("GetModRMReg: register not allowed: " + r->name);
 	return 0;
 }
@@ -3064,36 +3123,36 @@ inline int CreatePartialModRMByte(InstructionParamFuzzy &pf, InstructionParam &p
 	int r = -1;
 	if (p.reg)
 		r = p.reg->id;
-	if (pf.mrm_mode == MRMReg){
-		if (r == RegEs)	return 0x00;
-		if (r == RegCs)	return 0x08;
-		if (r == RegSs)	return 0x10;
-		if (r == RegDs)	return 0x18;
-		if (r == RegFs)	return 0x20;
-		if (r == RegGs)	return 0x28;
-		if (r == RegCr0)	return 0x00;
-		if (r == RegCr1)	return 0x08;
-		if (r == RegCr2)	return 0x10;
-		if (r == RegCr3)	return 0x18;
+	if (pf.mrm_mode == MRM_REG){
+		if (r == REG_ES)	return 0x00;
+		if (r == REG_CS)	return 0x08;
+		if (r == REG_SS)	return 0x10;
+		if (r == REG_DS)	return 0x18;
+		if (r == REG_FS)	return 0x20;
+		if (r == REG_GS)	return 0x28;
+		if (r == REG_CR0)	return 0x00;
+		if (r == REG_CR1)	return 0x08;
+		if (r == REG_RC2)	return 0x10;
+		if (r == REG_CR3)	return 0x18;
 		int mrm = GetModRMReg(p.reg) << 3;
 		if (p.reg->extend_mod_rm)
 			mrm += 0x0400; // REXR
 		return mrm;
-	}else if (pf.mrm_mode == MRMModRM){
+	}else if (pf.mrm_mode == MRM_MOD_RM){
 		if (p.deref){
-			if (state.AddrSize == Size16){
-				if ((p.type == ParamTImmediate) && (p.deref))	return 0x06;
+			if (state.AddrSize == SIZE_16){
+				if ((p.type == PARAMT_IMMEDIATE) && (p.deref))	return 0x06;
 			}else{
-				if ((r == RegEax) || (r == RegRax))	return (p.disp == DispModeNone) ? 0x00 : ((p.disp == DispMode8) ? 0x40 : 0x80); // default = DispMode32
-				if ((r == RegEcx) || (r == RegRcx))	return (p.disp == DispModeNone) ? 0x01 : ((p.disp == DispMode8) ? 0x41 : 0x81);
-				if ((r == RegEdx) || (r == RegRdx))	return (p.disp == DispModeNone) ? 0x02 : ((p.disp == DispMode8) ? 0x42 : 0x82);
-				if ((r == RegEbx) || (r == RegRbx))	return (p.disp == DispModeNone) ? 0x03 : ((p.disp == DispMode8) ? 0x43 : 0x83);
+				if ((r == REG_EAX) || (r == REG_RAX))	return (p.disp == DISP_MODE_NONE) ? 0x00 : ((p.disp == DISP_MODE_8) ? 0x40 : 0x80); // default = DispMode32
+				if ((r == REG_ECX) || (r == REG_RCX))	return (p.disp == DISP_MODE_NONE) ? 0x01 : ((p.disp == DISP_MODE_8) ? 0x41 : 0x81);
+				if ((r == REG_EDX) || (r == REG_RDX))	return (p.disp == DISP_MODE_NONE) ? 0x02 : ((p.disp == DISP_MODE_8) ? 0x42 : 0x82);
+				if ((r == REG_EBX) || (r == REG_RBX))	return (p.disp == DISP_MODE_NONE) ? 0x03 : ((p.disp == DISP_MODE_8) ? 0x43 : 0x83);
 				// sib			return 4;
 				// disp32		return 5;
-				if ((p.type == ParamTImmediate) && (p.deref))	return 0x05;
-				if ((r == RegEbp) || (r == RegRbp))	return (p.disp == DispMode8) ? 0x45 : 0x85;
-				if ((r == RegEsi) || (r == RegRsi))	return (p.disp == DispModeNone) ? 0x06 : ((p.disp == DispMode8) ? 0x46 : 0x86);
-				if ((r == RegEdi) || (r == RegRdi))	return (p.disp == DispModeNone) ? 0x07 : ((p.disp == DispMode8) ? 0x47 : 0x87);
+				if ((p.type == PARAMT_IMMEDIATE) && (p.deref))	return 0x05;
+				if ((r == REG_EBP) || (r == REG_RBP))	return (p.disp == DISP_MODE_8) ? 0x45 : 0x85;
+				if ((r == REG_ESI) || (r == REG_RSI))	return (p.disp == DISP_MODE_NONE) ? 0x06 : ((p.disp == DISP_MODE_8) ? 0x46 : 0x86);
+				if ((r == REG_EDI) || (r == REG_RDI))	return (p.disp == DISP_MODE_NONE) ? 0x07 : ((p.disp == DISP_MODE_8) ? 0x47 : 0x87);
 			}
 		}else{
 			int mrm = GetModRMReg(p.reg) | 0xc0;
@@ -3102,7 +3161,7 @@ inline int CreatePartialModRMByte(InstructionParamFuzzy &pf, InstructionParam &p
 			return mrm;
 		}
 	}
-	if (pf.mrm_mode != MRMNone)
+	if (pf.mrm_mode != MRM_NONE)
 		SetError(format("unhandled modrm %d %d %s %d %s", pf.mrm_mode, p.type, (p.reg?p.reg->name.c_str():""), p.deref, SizeOut(pf.size).c_str()));
 	return 0x00;
 }
@@ -3121,7 +3180,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 	//---msg_write("add inst " + inst.name);
 
 	// 16/32 bit toggle prefix
-	if ((!inst.has_fixed_param) && (inst.has_small_param != (state.DefaultSize == Size16)))
+	if ((!inst.has_fixed_param) && (inst.has_small_param != (state.DefaultSize == SIZE_16)))
 		append_val(oc, ocs, 0x66, 1);
 
 	int mod_rm = 0;
@@ -3131,7 +3190,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 	// REX prefix
 	char rex = mod_rm >> 8;
 	if ((inst.param1.reg) && (p1.reg))
-		if ((inst.param1.reg->id >= RegRax) && (inst.param1.reg->id <= RegRbp) && (inst.param1.reg->id == p1.reg->id + RegRax - RegR8))
+		if ((inst.param1.reg->id >= REG_RAX) && (inst.param1.reg->id <= REG_RBP) && (inst.param1.reg->id == p1.reg->id + REG_RAX - REG_R8))
 			rex = 0x01;
 	if (inst.has_big_param)//state.ParamSize == Size64)
 		rex |= 0x08;
@@ -3149,7 +3208,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 	OCParam = ocs;
 
 	int param2_size = 0;
-	if (p2.type == ParamTImmediate)
+	if (p2.type == PARAMT_IMMEDIATE)
 		param2_size = p2.size;
 
 	OpcodeAddImmideate(oc, ocs, p1, inst, list, param2_size);
@@ -3222,7 +3281,7 @@ void InstructionWithParamsList::ShrinkJumps(void *oc, int ocs)
 	foreachi(InstructionWithParams &iwp, *this, i){
 		if ((iwp.inst == inst_jmp) || (iwp.inst == inst_jz) || (iwp.inst == inst_jnz) || (iwp.inst == inst_jl) || (iwp.inst == inst_jnl) || (iwp.inst == inst_jle) || (iwp.inst == inst_jnle)){
 			if (iwp.p1.is_label){
-				int target = label[(int)iwp.p1.value].InstNo;
+				int target = label[(int)iwp.p1.value].inst_no;
 
 				// jump distance
 				int dist = 0;
@@ -3234,7 +3293,7 @@ void InstructionWithParamsList::ShrinkJumps(void *oc, int ocs)
 
 				if (dist < 127){
 					so("really shrink");
-					iwp.p1.size = Size8;
+					iwp.p1.size = SIZE_8;
 				}
 			}
 		}
@@ -3248,10 +3307,10 @@ void InstructionWithParamsList::Optimize(void *oc, int ocs)
 
 void InstructionWithParamsList::Compile(void *oc, int &ocs)
 {
-	state.DefaultSize = Size32;
+	state.DefaultSize = SIZE_32;
 	state.reset();
 	if (!CurrentMetaInfo){
-		DummyMetaInfo.CodeOrigin = (long)oc;
+		DummyMetaInfo.code_origin = (long)oc;
 		CurrentMetaInfo = &DummyMetaInfo;
 	}
 
@@ -3259,9 +3318,9 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 		// bit change
 		foreach(BitChange &b, CurrentMetaInfo->bit_change)
 			if (b.cmd_pos == i){
-				state.DefaultSize = Size32;
+				state.DefaultSize = SIZE_32;
 				if (b.bits == 16)
-					state.DefaultSize = Size16;
+					state.DefaultSize = SIZE_16;
 				state.reset();
 				b.offset = ocs;
 			}
@@ -3273,9 +3332,9 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 
 		// defining a label?
 		for (int j=0;j<label.num;j++)
-			if (i == label[j].InstNo){
-				so("defining found: " + label[j].Name);
-				label[j].Value = CurrentMetaInfo->CodeOrigin + ocs;
+			if (i == label[j].inst_no){
+				so("defining found: " + label[j].name);
+				label[j].value = CurrentMetaInfo->code_origin + ocs;
 			}
 		if (i >= num)
 			break;
@@ -3287,11 +3346,11 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 	LinkWantedLabels(oc);
 
 	foreach(WantedLabel &l, wanted_label){
-		if (l.Name.head(10) == "kaba-func:")
+		if (l.name.head(10) == "kaba-func:")
 			continue;
-		state.LineNo = (*this)[l.InstNo].line;
-		state.ColumnNo = (*this)[l.InstNo].col;
-		SetError("undeclared label used: " + l.Name);
+		state.LineNo = (*this)[l.inst_no].line;
+		state.ColumnNo = (*this)[l.inst_no].col;
+		SetError("undeclared label used: " + l.name);
 	}
 }
 
@@ -3299,10 +3358,10 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 void param2str(string &str, int type, int size, void *param)
 {
 	switch(type){
-		case PKNone:
+		case PK_NONE:
 			str = "---";
 			break;
-		case PKRegister:
+		case PK_REGISTER:
 			str = "reg ";
 			if (((long)param >= 0) && ((long)param < RegisterByID.num)){
 				if (RegisterByID[(long)param])
@@ -3312,7 +3371,7 @@ void param2str(string &str, int type, int size, void *param)
 			}else
 				str += "-----evil----";
 			break;
-		case PKDerefRegister:
+		case PK_DEREF_REGISTER:
 			str = get_size_name(size) + " deref reg ";
 			if (((long)param >= 0) && ((long)param < RegisterByID.num)){
 				if (RegisterByID[(long)param])
@@ -3322,19 +3381,19 @@ void param2str(string &str, int type, int size, void *param)
 			}else
 				str += "-----evil----";
 			break;
-		case PKLocal:
+		case PK_LOCAL:
 			str = get_size_name(size) + " local " + d2h(&param, 4);
 			break;
-		case PKEdxRel:
+		case PK_EDX_REL:
 			str = "edx rel " + d2h(&param, 4);
 			break;
-		case PKConstant:
+		case PK_CONSTANT:
 			str = "const " + d2h(&param, size);
 			break;
 		/*case PKConstantDouble:
 			str = "const 2x " + d2h(&param, 6);
 			break;*/
-		case PKDerefConstant:
+		case PK_DEREF_CONSTANT:
 			str = get_size_name(size) + "deref const [" + d2h(&param, 4) + "]";
 			break;
 		default:
@@ -3348,7 +3407,7 @@ void AddInstruction(char *oc, int &ocs, int inst, int param1_type, int param1_si
 	msg_db_f("AsmAddInstruction", 1+ASM_DB_LEVEL);
 	/*if (!CPUInstructions)
 		SetInstructionSet(InstructionSetDefault);*/
-	state.DefaultSize = Size32;
+	state.DefaultSize = SIZE_32;
 	state.reset();
 	/*msg_write("--------");
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
