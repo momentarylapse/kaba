@@ -70,6 +70,17 @@ void import_symbols(const string &symbols_in_file)
 	delete(f);
 }
 
+
+void Test1(int a)
+{
+	msg_write("out: " + i2s(a));
+}
+
+int Test2()
+{
+	return 2001;
+}
+
 int hui_main(const Array<string> &arg0)
 {
 	// hui
@@ -83,6 +94,7 @@ int hui_main(const Array<string> &arg0)
 	int abi = -1;
 	string out_file, symbols_out_file, symbols_in_file;
 	bool allow_std_lib = true;
+	bool disassemble = false;
 	bool error = false;
 
 	// parameters
@@ -111,6 +123,9 @@ int hui_main(const Array<string> &arg0)
 			arg.erase(i --);
 		}else if (arg[i] == "--no-std-lib"){
 			allow_std_lib = false;
+			arg.erase(i --);
+		}else if (arg[i] == "--disasm"){
+			disassemble = true;
 			arg.erase(i --);
 		}else if (arg[i] == "-o"){
 			if (arg.num < i + 1){
@@ -150,6 +165,10 @@ int hui_main(const Array<string> &arg0)
 	//Script::LinkDynamicExternalData();
 	Script::config.stack_size = 10485760; // 10 mb (mib)
 
+
+	Script::LinkExternal("Test1", (void*)&Test1);
+	Script::LinkExternal("Test2", (void*)&Test2);
+
 	if (symbols_in_file.num > 0)
 		import_symbols(symbols_in_file);
 
@@ -174,10 +193,23 @@ int hui_main(const Array<string> &arg0)
 		Script::Script *s = Script::Load(filename);
 		if (symbols_out_file.num > 0)
 			export_symbols(s, symbols_out_file);
-		if (out_file.num > 0)
+		if (out_file.num > 0){
 			dump_to_file(s, out_file);
-		else
-			execute(s, arg);
+		}else{
+			if (disassemble)
+				msg_write(Asm::Disassemble(s->Opcode, s->OpcodeSize, true));
+			typedef int ifii(int, int);
+			ifii *fp = (ifii*)s->func.back();
+			//execute(s, arg);
+
+			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet()){
+				if (fp){
+					msg_write("run...");
+					int r = (*fp)(13, 20);
+					msg_write("return:  " + i2s(r));
+				}
+			}
+		}
 	}catch(Script::Exception &e){
 		if (use_gui)
 			HuiErrorBox(NULL, _("Fehler in Script"), e.message);

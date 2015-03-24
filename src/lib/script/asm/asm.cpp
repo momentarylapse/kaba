@@ -951,7 +951,7 @@ bool GetInstructionAllowGenReg(int inst)
 
 
 
-int QueryInstructionSet()
+int QueryLocalInstructionSet()
 {
 #ifdef CPU_AMD64
 	return INSTRUCTION_SET_AMD64;
@@ -1692,7 +1692,7 @@ void InitX86()
 void Init(int set)
 {
 	if (set < 0)
-		set = QueryInstructionSet();
+		set = QueryLocalInstructionSet();
 
 	InstructionSet.set = set;
 	InstructionSet.pointer_size = 4;

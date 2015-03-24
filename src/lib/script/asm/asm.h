@@ -397,6 +397,7 @@ struct InstructionWithParamsList : public Array<InstructionWithParams>
 };
 
 void Init(int instruction_set = -1);
+int QueryLocalInstructionSet();
 bool Assemble(const char *code, char *oc, int &ocs);
 string Disassemble(void *code, int length = -1, bool allow_comments = true);
 
