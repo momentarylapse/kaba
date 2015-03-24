@@ -25,6 +25,7 @@ struct ParserState
 	bool ExtendModRMReg;
 	bool ExtendModRMIndex;
 	int FullRegisterSize;
+	InstructionWithParamsList *list;
 	void init()
 	{
 		DefaultSize = SIZE_32;
@@ -33,14 +34,24 @@ struct ParserState
 		if (CurrentMetaInfo)
 			if (CurrentMetaInfo->mode16)
 				DefaultSize = SIZE_16;
+
+		list = NULL;
 	}
-	void reset()
+	void reset(InstructionWithParamsList *_list)
 	{
 		ParamSize = DefaultSize;
 		AddrSize = DefaultSize;
 		ExtendModRMBase = false;
 		ExtendModRMReg = false;
 		ExtendModRMIndex = false;
+		list = _list;
+	}
+	string get_label(int i)
+	{
+		if (list)
+			if ((i >= 0) and (i < list->label.num))
+				return list->label[i].name;
+		return "_label_" + i2s(i);
 	}
 };
 static ParserState state;
@@ -524,8 +535,13 @@ void InstructionWithParamsList::add2(int inst, const InstructionParam &p1, const
 void InstructionWithParamsList::show()
 {
 	msg_write("--------------");
-	foreach(Asm::InstructionWithParams &i, *this)
+	state.reset(this);
+	foreachi(Asm::InstructionWithParams &i, *this, n){
+		foreach(Label &l, label)
+			if (l.inst_no == n)
+				msg_write("    " + l.name + ":");
 		msg_write(i.str());
+	}
 }
 
 int InstructionWithParamsList::add_label(const string &name, bool declaring)
@@ -1770,10 +1786,12 @@ string InstructionParam::str(bool hide_size)
 				s.add(RegisterByID[REG_R0 + i]->name);
 		return "{" + implode(s, ",") + "}";
 	}else if (type == PARAMT_IMMEDIATE){
-		//msg_write("im");
+		string s = d2h(&value, deref ? state.AddrSize : size);
+		if (is_label)
+			s = state.get_label(value);
 		if (deref)
-			return get_size_name(size) + " " + format("[%s]", d2h(&value, state.AddrSize).c_str());
-		return d2h(&value, size);
+			return get_size_name(size) + " [" + s + "]";
+		return s;
 	/*}else if (type == ParamTImmediateExt){
 		//msg_write("im");
 		return format("%s:%s", d2h(&((char*)&value)[4], 2).c_str(), d2h(&value, state.ParamSize).c_str());*/
@@ -2249,7 +2267,7 @@ string DisassembleX86(void *_code_,int length,bool allow_comments)
 
 
 	while(code < end){
-		state.reset();
+		state.reset(NULL);
 		opcode = cur;
 		code = cur;
 
@@ -2298,7 +2316,7 @@ string DisassembleX86(void *_code_,int length,bool allow_comments)
 			for (int i=0;i<CurrentMetaInfo->bit_change.num;i++)
 				if ((long)code-(long)orig == CurrentMetaInfo->bit_change[i].offset){
 					state.DefaultSize = (CurrentMetaInfo->bit_change[i].bits == 16) ? SIZE_16 : SIZE_32;
-					state.reset();
+					state.reset(NULL);
 					if (state.DefaultSize == SIZE_16)
 						bufstr += "   bits_16\n";
 					else
@@ -2762,6 +2780,8 @@ inline void insert_val(char *oc, int &ocs, long long val, int size)
 		oc[ocs] = (char)val;
 	else if (size == 2)
 		*(short*)&oc[ocs] = (short)val;
+	else if (size == 3)
+		*(int*)&oc[ocs - 1] = (*(int*)&oc[ocs - 1] & 0xff000000) | ((int)val & 0x00ffffff);
 	else if (size == 4)
 		*(int*)&oc[ocs] = (int)val;
 	else if (size == 8)
@@ -2830,10 +2850,14 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 			continue;
 		so("linking label");
 
-		int value = l.value;
-		if (w.relative)
+		long long value = l.value;
+		if (w.relative){
 			value -= CurrentMetaInfo->code_origin + w.pos + w.size; // TODO first byte after command
+			if (InstructionSet.set == INSTRUCTION_SET_ARM)
+				value = (value - 8) >> 2;
+		}
 
+		msg_write("link " + i2s(w.pos));
 		insert_val((char*)oc, w.pos, value, w.size);
 
 
@@ -2877,7 +2901,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		string cmd, param1, param2, param3;
 
 		//msg_write("..");
-		state.reset();
+		state.reset(this);
 
 
 	// interpret asm code (1 line)
@@ -2927,7 +2951,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		if (cmd == "bits_16"){
 			so("16 bit Modus!");
 			state.DefaultSize = SIZE_16;
-			state.reset();
+			state.reset(this);
 			if (CurrentMetaInfo){
 				CurrentMetaInfo->mode16 = true;
 				BitChange b;
@@ -2939,7 +2963,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		}else if (cmd == "bits_32"){
 			so("32 bit Modus!");
 			state.DefaultSize = SIZE_32;
-			state.reset();
+			state.reset(this);
 			if (CurrentMetaInfo){
 				CurrentMetaInfo->mode16 = false;
 				BitChange b;
@@ -3242,7 +3266,7 @@ void InstructionWithParamsList::AddInstruction(char *oc, int &ocs, int n)
 	int ocs0 = ocs;
 	InstructionWithParams &iwp = (*this)[n];
 	current_inst = n;
-	state.reset();
+	state.reset(this);
 
 	// test if any instruction matches our wishes
 	int ninst = -1;
@@ -3340,7 +3364,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 
 	InstructionWithParams &iwp = (*this)[n];
 	current_inst = n;
-	state.reset();
+	state.reset(this);
 
 	int code = 0;
 
@@ -3443,7 +3467,19 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			code |= 0x0b000000;
 		else
 			code |= 0x0a000000;
-		code |= (iwp.p[0].value & 0x00ffffff);
+		int value = iwp.p[0].value;
+		if (iwp.p[0].is_label){
+			WantedLabel w;
+			w.pos = ocs + 1;
+			w.size = 3;
+			w.label_no = (int)value;
+			w.name = label[value].name;
+			w.relative = true;
+			w.inst_no = n;
+			wanted_label.add(w);
+			so("add wanted label");
+		}
+		code |= (value & 0x00ffffff);
 	}else if (iwp.inst == inst_dd){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
 		code = iwp.p[0].value;
@@ -3494,7 +3530,7 @@ void InstructionWithParamsList::Optimize(void *oc, int ocs)
 void InstructionWithParamsList::Compile(void *oc, int &ocs)
 {
 	state.DefaultSize = SIZE_32;
-	state.reset();
+	state.reset(this);
 	if (!CurrentMetaInfo){
 		DummyMetaInfo.code_origin = (long)oc;
 		CurrentMetaInfo = &DummyMetaInfo;
@@ -3507,7 +3543,7 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 				state.DefaultSize = SIZE_32;
 				if (b.bits == 16)
 					state.DefaultSize = SIZE_16;
-				state.reset();
+				state.reset(this);
 				b.offset = ocs;
 			}
 
@@ -3535,7 +3571,7 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 	LinkWantedLabels(oc);
 
 	foreach(WantedLabel &l, wanted_label){
-		if (l.name.head(10) == "kaba-func:")
+		if (l.name.head(10) == "kaba_func_")
 			continue;
 		state.LineNo = (*this)[l.inst_no].line;
 		state.ColumnNo = (*this)[l.inst_no].col;
@@ -3549,7 +3585,7 @@ void AddInstruction(char *oc, int &ocs, int inst, const InstructionParam &p1, co
 	/*if (!CPUInstructions)
 		SetInstructionSet(InstructionSetDefault);*/
 	state.DefaultSize = SIZE_32;
-	state.reset();
+	state.reset(NULL);
 	/*msg_write("--------");
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
 		if (InstructionName[i].inst == inst)

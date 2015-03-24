@@ -267,7 +267,7 @@ struct Label
 {
 	string name;
 	int inst_no;
-	int value;
+	long long value;
 };
 
 struct WantedLabel
@@ -298,7 +298,7 @@ struct BitChange
 
 struct MetaInfo
 {
-	long code_origin; // how to interpret opcode buffer[0]
+	long long code_origin; // how to interpret opcode buffer[0]
 	bool mode16;
 	int line_offset; // number of script lines preceding asm block (to give correct error messages)
 

@@ -1030,7 +1030,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			}else
 				DoErrorLink("could not link function as variable: " + link->script->syntax->Functions[link->link_no]->name);
 			//p.kind = Asm::PKLabel;
-			//p.p = (char*)(long)list->add_label("kaba-func:" + link->script->syntax->Functions[link->link_no]->name, false);
+			//p.p = (char*)(long)list->add_label("kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			p.p = add_global_ref((void*)p.p);
@@ -3480,7 +3480,7 @@ inline Asm::InstructionParam get_param(int inst, SerialCommandParam &p, Asm::Ins
 	if (p.kind < 0){
 		return Asm::param_none;
 	}else if (p.kind == KindMarker){
-		return Asm::param_imm(list->add_label("kaba:" + i2s(p.p), false), 4);
+		return Asm::param_label(list->add_label("kaba_" + i2s(p.p), false), 4);
 	}else if (p.kind == KindRegister){
 		if (p.shift > 0)
 			s->DoErrorInternal("get_param: reg + shift");
@@ -3527,9 +3527,9 @@ inline Asm::InstructionParam get_param(int inst, SerialCommandParam &p, Asm::Ins
 void assemble_cmd(Asm::InstructionWithParamsList *list, SerialCommand &c, Script *s)
 {
 	if (c.inst == inst_call_label){
-		//msg_write("marker kaba:" + i2s((long)cmd[i].p[0].p));
+		//msg_write("marker kaba_" + i2s((long)cmd[i].p[0].p));
 		Function *f = (Function*)c.p[0].p;
-		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba-func:" + f->name, false), 4));
+		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba_func_" + f->name, false), 4));
 		return;
 	}
 	// translate parameters
@@ -3544,9 +3544,9 @@ void assemble_cmd(Asm::InstructionWithParamsList *list, SerialCommand &c, Script
 void assemble_cmd_arm(Asm::InstructionWithParamsList *list, SerialCommand &c, Script *s)
 {
 	if (c.inst == inst_call_label){
-		//msg_write("marker kaba:" + i2s((long)cmd[i].p[0].p));
+		//msg_write("marker kaba_" + i2s((long)cmd[i].p[0].p));
 		Function *f = (Function*)c.p[0].p;
-		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba-func:" + f->name, false), 4));
+		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba_func_" + f->name, false), 4));
 		return;
 	}
 	// translate parameters
@@ -3712,8 +3712,7 @@ void Serializer::Assemble(char *Opcode, int &OpcodeSize)
 	for (int i=0;i<cmd.num;i++){
 
 		if (cmd[i].inst == inst_marker){
-			//msg_write("marker kaba:" + i2s(cmd[i].p[0].p));
-			list->add_label("kaba:" + i2s(cmd[i].p[0].p), true);
+			list->add_label("kaba_" + i2s(cmd[i].p[0].p), true);
 		}else if (cmd[i].inst == inst_asm){
 			AddAsmBlock(list, script);
 		}else{
