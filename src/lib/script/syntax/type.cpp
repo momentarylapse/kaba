@@ -220,7 +220,7 @@ void Type::LinkVirtualTable()
 	if (parent)
 		for (int i=0;i<parent->vtable.num;i++)
 			vtable[i] = parent->vtable[i];
-	if (config.abi == AbiWindows32)
+	if (config.abi == ABI_WINDOWS_32)
 		vtable[0] = mf(&VirtualBase::__delete_external__);
 	else
 		vtable[1] = mf(&VirtualBase::__delete_external__);
@@ -242,18 +242,20 @@ void Type::LinkExternalVirtualTable(void *p)
 	// link script functions according to external vtable
 	VirtualTable *t = (VirtualTable*)p;
 	vtable.clear();
+	int max_vindex = 1;
 	foreach(ClassFunction &cf, function)
 		if (cf.virtual_index >= 0){
 			if (cf.nr >= 0)
 				cf.script->func[cf.nr] = (t_func*)t[cf.virtual_index];
 			if (cf.virtual_index >= vtable.num)
-				vtable.resize(cf.virtual_index + 1);
+				max_vindex = max(max_vindex, cf.virtual_index);
 		}
+	vtable.resize(max_vindex + 1);
 
 	for (int i=0;i<vtable.num;i++)
 		vtable[i] = t[i];
 	// this should also link the "real" c++ destructor
-	if (config.abi == AbiWindows32)
+	if ((config.abi == ABI_WINDOWS_32) || (config.abi == ABI_WINDOWS_64))
 		vtable[0] = mf(&VirtualBase::__delete_external__);
 	else
 		vtable[1] = mf(&VirtualBase::__delete_external__);
@@ -288,7 +290,7 @@ string func_signature(Function *f)
 
 Type *Type::GetPointer()
 {
-	return owner->CreateNewType(name + "*", config.PointerSize, true, false, false, 0, this);
+	return owner->CreateNewType(name + "*", config.pointer_size, true, false, false, 0, this);
 }
 
 Type *Type::GetRoot()

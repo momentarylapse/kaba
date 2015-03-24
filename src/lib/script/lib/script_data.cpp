@@ -143,7 +143,7 @@ Type *add_type_p(const string &name, Type *sub_type, ScriptFlag flag)
 	Type *t = new Type;
 	t->owner = cur_package_script->syntax;
 	t->name = name;
-	t->size = config.PointerSize;
+	t->size = config.pointer_size;
 	t->is_pointer = true;
 	if ((flag & FLAG_SILENT) > 0)
 		t->is_silent = true;
@@ -160,7 +160,7 @@ Type *add_type_a(const string &name, Type *sub_type, int array_length)
 	t->parent = sub_type;
 	if (array_length < 0){
 		// super array
-		t->size = config.SuperArraySize;
+		t->size = config.super_array_size;
 		t->is_super_array = true;
 		script_make_super_array(t);
 	}else{
@@ -309,7 +309,7 @@ void class_add_func_virtual(const string &name, Type *return_type, void *func, S
 			if ((t->is_pointer) && (t->parent == cur_class))
 				tname = t->name;
 	}
-	if (config.abi == AbiWindows32){
+	if (config.abi == ABI_WINDOWS_32){
 		if (!func){
 			_class_add_func_virtual(tname, name, return_type, 0, flag);
 			return;
@@ -804,7 +804,7 @@ void SIAddPackageBase()
 	TypeFloat32			= add_type  ("float32",		sizeof(float), FLAG_CALL_BY_VALUE);
 	TypeFloat64			= add_type  ("float64",		sizeof(double), FLAG_CALL_BY_VALUE);
 	TypeChar			= add_type  ("char",		sizeof(char), FLAG_CALL_BY_VALUE);
-	TypeDynamicArray	= add_type  ("@DynamicArray", config.SuperArraySize);
+	TypeDynamicArray	= add_type  ("@DynamicArray", config.super_array_size);
 
 
 
@@ -815,7 +815,7 @@ void SIAddPackageBase()
 
 
 	add_class(TypeDynamicArray);
-		class_add_element("num", TypeInt, config.PointerSize);
+		class_add_element("num", TypeInt, config.pointer_size);
 		class_add_func("swap", TypeVoid, mf(&DynamicArray::swap));
 			func_add_param("i1", TypeInt);
 			func_add_param("i2", TypeInt);
@@ -1308,37 +1308,39 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 	Asm::Init(instruction_set);
 	config.instruction_set = Asm::InstructionSet.set;
-	config.abi = abi;
 	if (abi < 0){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
-			config.abi = AbiGnu64;
-#ifdef WIN64
-			config.abi = AbiWindows64;
+			abi = ABI_GNU_64;
+#ifdef OS_WINDOWS
+			abi = ABI_WINDOWS_64;
 #endif
 		}else if (config.instruction_set == Asm::INSTRUCTION_SET_X86){
-			config.abi = AbiGnu32;
-#ifdef WIN32
-			config.abi = AbiWindows32;
+			abi = ABI_GNU_32;
+#ifdef OS_WINDOWS
+			abi = ABI_WINDOWS_32;
 #endif
+		}else if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+			abi = ABI_GNU_ARM_32;
 		}
 	}
+	config.abi = abi;
 	config.allow_std_lib = allow_std_lib;
-	config.PointerSize = Asm::InstructionSet.pointer_size;
+	config.pointer_size = Asm::InstructionSet.pointer_size;
 	if ((abi >= 0) || (instruction_set >= 0))
-		config.SuperArraySize = config.PointerSize + 3 * sizeof(int);
+		config.super_array_size = config.pointer_size + 3 * sizeof(int);
 	else
-		config.SuperArraySize = sizeof(DynamicArray);
-	config.StackSize = SCRIPT_DEFAULT_STACK_SIZE;
+		config.super_array_size = sizeof(DynamicArray);
+	config.stack_size = SCRIPT_DEFAULT_STACK_SIZE;
 
 	config.allow_simplification = true;
 	config.allow_registers = true;
-	config.UseConstAsGlobalVar = false;
-	config.StackMemAlign = 8;
-	config.FunctionAlign = 2 * config.PointerSize;
-	config.StackFrameAlign = 2 * config.PointerSize;
+	config.use_const_as_global_var = false;
+	config.stack_mem_align = 8;
+	config.function_align = 2 * config.pointer_size;
+	config.stack_frame_align = 2 * config.pointer_size;
 
-	config.CompileSilently = false;
-	config.ShowCompilerStats = true;
+	config.compile_silently = false;
+	config.show_compiler_stats = true;
 
 	SIAddPackageBase();
 	SIAddBasicCommands();

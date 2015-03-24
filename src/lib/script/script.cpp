@@ -165,7 +165,7 @@ void Script::Load(const string &filename, bool just_analyse)
 	Filename = filename.sys_filename();
 
 	// read file
-	CFile *f = FileOpen(config.Directory + filename);
+	CFile *f = FileOpen(config.directory + filename);
 	if (!f){
 		DoError("script file not loadable");
 	}
@@ -229,7 +229,7 @@ Script::Script()
 	first_execution = NULL;
 	WaitingMode = WaitingModeFirst;
 	TimeToWait = 0;
-	ShowCompilerStats = !config.CompileSilently;
+	ShowCompilerStats = !config.compile_silently;
 
 	Opcode = NULL;
 	OpcodeSize = 0;

@@ -148,7 +148,7 @@ int hui_main(const Array<string> &arg0)
 	NetInit();
 	Script::Init(instruction_set, abi, allow_std_lib);
 	//Script::LinkDynamicExternalData();
-	Script::config.StackSize = 10485760; // 10 mb (mib)
+	Script::config.stack_size = 10485760; // 10 mb (mib)
 
 	if (symbols_in_file.num > 0)
 		import_symbols(symbols_in_file);
@@ -167,7 +167,7 @@ int hui_main(const Array<string> &arg0)
 	}
 
 	// compile
-	Script::config.CompileSilently = true;
+	Script::config.compile_silently = true;
 	SilentFiles = true;
 
 	try{

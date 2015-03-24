@@ -307,23 +307,14 @@ void *mf(tmf vmf);
 typedef void (_cdecl DummyClassVirtual::*vtmf)();
 void *vmf(vtmf vmf);*/
 
-template<typename T>
-void* mf(T tmf)
-{
-	union{
-		T f;
-		void *p;
-	}pp;
-	pp.f = tmf;
-	return pp.p;
-}
-
 enum
 {
-	AbiGnu32,
-	AbiGnu64,
-	AbiWindows32,
-	AbiWindows64,
+	ABI_GNU_32,
+	ABI_GNU_64,
+	ABI_WINDOWS_32,
+	ABI_WINDOWS_64,
+	ABI_GNU_ARM_32,
+	ABI_GNU_ARM_64,
 };
 
 struct CompilerConfiguration
@@ -332,25 +323,42 @@ struct CompilerConfiguration
 	int abi;
 	bool allow_std_lib;
 
-	int StackSize;
-	int PointerSize;
-	int SuperArraySize;
+	int stack_size;
+	int pointer_size;
+	int super_array_size;
 
 	bool allow_simplification;
 	bool allow_registers;
 
-	string Directory;
-	bool CompileSilently;
-	bool ShowCompilerStats;
-	bool UseConstAsGlobalVar;
+	string directory;
+	bool compile_silently;
+	bool show_compiler_stats;
+	bool use_const_as_global_var;
 
-	int StackMemAlign;
-	int FunctionAlign;
-	int StackFrameAlign;
+	int stack_mem_align;
+	int function_align;
+	int stack_frame_align;
 
 };
 
 extern CompilerConfiguration config;
+
+
+
+
+template<typename T>
+void* mf(T tmf)
+{
+	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
+		return NULL;
+	union{
+		T f;
+		void *p;
+	}pp;
+	pp.f = tmf;
+	return pp.p;
+}
+
 
 void Init(int instruction_set = -1, int abi = -1, bool allow_std_lib = true);
 void End();

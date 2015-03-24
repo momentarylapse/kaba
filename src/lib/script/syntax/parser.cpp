@@ -1056,7 +1056,7 @@ void SyntaxTree::ParseSpecialCommandForall(Block *block, Function *f)
 	Command *val1;
 	if (for_array->type->usable_as_super_array()){
 		// array.num
-		val1 = AddCommand(KindAddressShift, config.PointerSize, TypeInt);
+		val1 = AddCommand(KindAddressShift, config.pointer_size, TypeInt);
 		val1->set_num_params(1);
 		val1->set_param(0, for_array);
 	}else{
@@ -1546,7 +1546,7 @@ void SyntaxTree::ParseClass()
 			// element "-vtable-" being derived
 		}else{
 			foreach(ClassElement &e, _class->element)
-				e.offset = ProcessClassOffset(_class->name, e.name, e.offset + config.PointerSize);
+				e.offset = ProcessClassOffset(_class->name, e.name, e.offset + config.pointer_size);
 
 			ClassElement el;
 			el.name = "-vtable-";
@@ -1554,7 +1554,7 @@ void SyntaxTree::ParseClass()
 			el.offset = 0;
 			el.hidden = true;
 			_class->element.insert(el, 0);
-			_offset += config.PointerSize;
+			_offset += config.pointer_size;
 		}
 	}
 

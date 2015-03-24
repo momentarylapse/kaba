@@ -43,17 +43,6 @@ extern int RegRoot[];
 extern int RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
 string GetRegName(int reg);
 
-enum{
-	PK_INVALID,
-	PK_NONE,
-	PK_REGISTER,        // eAX
-	PK_DEREF_REGISTER,  // [eAX]
-	PK_LOCAL,           // [ebp + 0x0000]
-	PK_EDX_REL,         // [edx + 0x0000]
-	PK_CONSTANT,        // 0x00000000
-	PK_DEREF_CONSTANT,  // [0x00000000]
-	PK_LABEL            // _label
-};
 
 
 enum{
@@ -217,7 +206,52 @@ enum{
 	inst_b,
 	inst_bl,
 
+	inst_ldr,
+	inst_ldrb,
+//	inst_str,
+	inst_strb,
+
+	inst_ldmia,
+	inst_ldmib,
+	inst_ldmda,
+	inst_ldmdb,
+	inst_stmia,
+	inst_stmib,
+	inst_stmda,
+	inst_stmdb,
+
+	inst_eor,
+	inst_rsb,
+	inst_sbc,
+	inst_rsc,
+	inst_tst,
+	inst_teq,
+	inst_cmn,
+	inst_orr,
+	inst_bic,
+	inst_mvn,
+
 	NUM_INSTRUCTION_NAMES
+};
+
+enum
+{
+	ARM_COND_EQUAL,
+	ARM_COND_NOT_EQUAL,
+	ARM_COND_CARRY_SET,
+	ARM_COND_CARRY_CLEAR,
+	ARM_COND_NEGATIVE,
+	ARM_COND_POSITIVE,
+	ARM_COND_OVERFLOW,
+	ARM_COND_NO_OVERFLOW,
+	ARM_COND_UNSIGNED_HIGHER,
+	ARM_COND_UNSIGNED_LOWER_SAME,
+	ARM_COND_GREATER_EQUAL,
+	ARM_COND_LESS_THAN,
+	ARM_COND_GREATER_THAN,
+	ARM_COND_LESS_EQUAL,
+	ARM_COND_ALWAYS,
+	ARM_COND_UNKNOWN,
 };
 
 string GetInstructionName(int inst);
@@ -279,13 +313,67 @@ struct MetaInfo
 };
 
 
-struct InstructionWithParams;
+struct Register;
+
+// a real parameter (usable)
+struct InstructionParam
+{
+	InstructionParam();
+	int type;
+	int disp;
+	Register *reg, *reg2;
+	bool deref;
+	int size;
+	long long value; // disp or immediate
+	bool is_label;
+	bool write_back;
+	string str(bool hide_size = false);
+};
+
+struct InstructionWithParams
+{
+	int inst;
+	int condition; // ARM
+	InstructionParam p[3];
+	int line, col;
+	int size;
+	int addr_size;
+	int param_size;
+	string str(bool hide_size = false);
+};
+
+
+enum
+{
+	SIZE_8 = 1,
+	SIZE_16 = 2,
+	SIZE_32 = 4,
+	SIZE_48 = 6,
+	SIZE_64 = 8,
+	SIZE_128 = 16,
+	/*SIZE_VARIABLE = -5,
+	SIZE_32OR48 = -6,*/
+	SIZE_UNKNOWN = -7,
+};
+
+extern InstructionParam param_none;
+InstructionParam param_reg(int reg);
+InstructionParam param_reg_set(int set);
+InstructionParam param_deref_reg(int reg, int size);
+InstructionParam param_deref_reg_shift(int reg, int shift, int size);
+InstructionParam param_deref_reg_shift_reg(int reg, int reg2, int size);
+InstructionParam param_imm(long long value, int size);
+InstructionParam param_deref_imm(long long value, int size);
+InstructionParam param_label(long long value, int size);
+
 struct InstructionWithParamsList : public Array<InstructionWithParams>
 {
 	InstructionWithParamsList(int line_offset);
 	~InstructionWithParamsList();
 
-	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
+//	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
+	void add2(int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2 = param_none);
+	void add_arm(int cond, int inst, const InstructionParam &p1, const InstructionParam &p2 = param_none, const InstructionParam &p3 = param_none);
 	int add_label(const string &name, bool declaring);
 
 	void add_func_intro(int stack_alloc_size);
@@ -297,6 +385,9 @@ struct InstructionWithParamsList : public Array<InstructionWithParams>
 	void Compile(void *oc, int &ocs);
 	void LinkWantedLabels(void *oc);
 	void AddInstruction(char *oc, int &ocs, int n);
+	void AddInstructionARM(char *oc, int &ocs, int n);
+
+	void show();
 
 	Array<Label> label;
 	Array<WantedLabel> wanted_label;
@@ -319,7 +410,7 @@ public:
 	int line, column;
 };
 
-void AddInstruction(char *oc, int &ocs, int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
+void AddInstruction(char *oc, int &ocs, int inst, const InstructionParam &p1, const InstructionParam &p2 = param_none, const InstructionParam &p3 = param_none);
 void SetInstructionSet(int set);
 bool ImmediateAllowed(int inst);
 extern int OCParam;

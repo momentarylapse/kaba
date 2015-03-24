@@ -141,7 +141,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Type *t)
 			DoError(format("%s.__assign__(): no %s.resize() found", t->name.c_str(), t->name.c_str()));
 
 		// self.resize(other.num)
-		Command *other_num = shift_command(other, false, config.PointerSize, TypeInt);
+		Command *other_num = shift_command(other, false, config.pointer_size, TypeInt);
 
 		Command *cmd_resize = add_command_classfunc(f_resize, cp_command(self));
 		cmd_resize->set_num_params(1);
@@ -277,7 +277,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Type *t)
 
 	Command *self = add_command_local_var(f->get_var("self"), t->GetPointer());
 
-	Command *self_num = shift_command(cp_command(self), true, config.PointerSize, TypeInt);
+	Command *self_num = shift_command(cp_command(self), true, config.pointer_size, TypeInt);
 
 	Command *for_var = add_command_local_var(f->get_var("for_var"), TypeInt);
 
@@ -333,7 +333,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Type *t)
 
 	Command *self = add_command_local_var(f->get_var("self"), t->GetPointer());
 
-	Command *self_num = shift_command(cp_command(self), true, config.PointerSize, TypeInt);
+	Command *self_num = shift_command(cp_command(self), true, config.pointer_size, TypeInt);
 
 	Command *for_var = add_command_local_var(f->get_var("for_var"), TypeInt);
 
@@ -450,7 +450,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Type *t)
 
 	Command *self = add_command_local_var(f->get_var("self"), t->GetPointer());
 
-	Command *self_num = shift_command(cp_command(self), true, config.PointerSize, TypeInt);
+	Command *self_num = shift_command(cp_command(self), true, config.pointer_size, TypeInt);
 
 
 	// resize(self.num + 1)

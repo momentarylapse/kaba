@@ -73,6 +73,8 @@ enum
 	KindRegister,
 	KindDerefRegister,
 	KindMarker,
+	KindGlobalLookup,        // ARM
+	KindGlobalLookupAddress, // ARM
 };
 
 struct Command;

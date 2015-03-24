@@ -4,7 +4,7 @@
 
 // which operating system?
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN64)
 	#define OS_WINDOWS
 #else
 	#define OS_LINUX
