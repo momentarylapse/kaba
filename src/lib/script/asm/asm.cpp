@@ -2854,7 +2854,7 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 		if (w.relative){
 			value -= CurrentMetaInfo->code_origin + w.pos + w.size; // TODO first byte after command
 			if (InstructionSet.set == INSTRUCTION_SET_ARM)
-				value = (value - 8) >> 2;
+				value = (value - 4) >> 2;
 		}
 
 		msg_write("link " + i2s(w.pos));
