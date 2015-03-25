@@ -374,7 +374,10 @@ struct InstructionWithParamsList : public Array<InstructionWithParams>
 //	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
 	void add2(int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2 = param_none);
 	void add_arm(int cond, int inst, const InstructionParam &p1, const InstructionParam &p2 = param_none, const InstructionParam &p3 = param_none);
-	int add_label(const string &name, bool declaring);
+
+	int add_label(const string &name);
+	int get_label(const string &name);
+	void *get_label_value(const string &name);
 
 	void add_func_intro(int stack_alloc_size);
 	void add_func_return(int return_size);

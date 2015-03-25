@@ -270,7 +270,7 @@ void Script::CompileTaskEntryPoint()
 
 	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
 
-	int label_first = list->add_label("_first_execution", true);
+	int label_first = list->add_label("_first_execution");
 
 	first_execution = (t_func*)&ThreadOpcode[ThreadOpcodeSize];
 	// intro
@@ -294,7 +294,7 @@ void Script::CompileTaskEntryPoint()
 	list->add2(Asm::inst_ret);
 
 	// "task" for execution after some wait()
-	int label_cont = list->add_label("_continue_execution", true);
+	int label_cont = list->add_label("_continue_execution");
 
 	// Intro
 	list->add2(Asm::inst_push, Asm::param_reg(Asm::REG_EBP)); // within the external program
@@ -460,18 +460,7 @@ void Script::Compiler()
 
 
 // compile functions into Opcode
-	func.resize(syntax->Functions.num);
-	foreachi(Function *f, syntax->Functions, i){
-		if (f->is_extern){
-			func[i] = (t_func*)GetExternalLink(f->name);
-			if (!func[i])
-				DoErrorLink("external function " + f->name + " not linkable");
-			//func[i] = (t_func*)((long)func[i] + (long)Opcode - syntax->AsmMetaInfo->CodeOrigin);
-		}else{
-			func[i] = (t_func*)(syntax->AsmMetaInfo->code_origin + OpcodeSize);
-			CompileFunction(f, Opcode, OpcodeSize);
-		}
-	}
+	CompileFunctions(Opcode, OpcodeSize);
 
 // link functions
 	foreach(Asm::WantedLabel &l, functions_to_link){

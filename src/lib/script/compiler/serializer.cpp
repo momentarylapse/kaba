@@ -161,11 +161,9 @@ string SerialCommand::str() const
 {
 	//msg_db_f("cmd_out", 4);
 	if (inst == inst_marker)
-		return format("-- Marker %d --", p[0].p);
+		return format("-- Label %d --", p[0].p);
 	if (inst == inst_asm)
 		return format("-- Asm %d --", p[0].p);
-	if (inst == inst_call_label)
-		return "call  (by label) " + ((Function*)p[0].p)->name;
 	string t;
 	if (cond != Asm::ARM_COND_ALWAYS)
 		t += "[cond]";
@@ -216,7 +214,7 @@ void Serializer::add_cmd(int cond, int inst, const SerialCommandParam &p1, const
 	cmd.add(c);
 
 	// call violates all used registers...
-	if ((inst == Asm::inst_call) or (inst == inst_call_label))
+	if (inst == Asm::inst_call)
 		for (int i=0;i<map_reg_root.num;i++){
 			add_reg_channel(get_reg(i, 4), cmd.num - 1, cmd.num - 1);
 		}
@@ -328,28 +326,29 @@ void Serializer::move_param(SerialCommandParam &p, int from, int to)
 	}
 }
 
-int Serializer::add_marker(int m)
+// l is an asm label index
+int Serializer::add_marker(int l)
 {
 	SerialCommandParam p = p_none;
-	if (m < 0)
-		m = num_markers ++;
+	if (l < 0)
+		l = list->get_label("kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 	p.kind = KindMarker;
-	p.p = m;
+	p.p = l;
 	add_cmd(inst_marker, p);
-	return m;
+	return l;
 }
 
 int Serializer::add_marker_after_command(int level, int index)
 {
-	int n = num_markers ++;
-	AddLaterData m = {StuffKindMarker, n, level, index};
+	int n = list->get_label("kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+	AddLaterData m = {STUFF_KIND_MARKER, n, level, index};
 	add_later.add(m);
 	return n;
 }
 
 void Serializer::add_jump_after_command(int level, int index, int marker)
 {
-	AddLaterData j = {StuffKindJump, marker, level, index};
+	AddLaterData j = {STUFF_KIND_JUMP, marker, level, index};
 	add_later.add(j);
 }
 
@@ -460,11 +459,12 @@ void SerializerX86::add_function_call(Script *script, int func_no)
 
 	int push_size = fc_begin();
 
-	void *func = (void*)script->func[func_no];
-	if (!func){
-		//DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);*/
-		add_cmd(inst_call_label, param_const(TypePointer, (long)script->syntax->Functions[func_no])); // the actual call
+	if (script == this->script){
+		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
 	}else{
+		void *func = (void*)script->func[func_no];
+		if (!func)
+			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
 		add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 		// function pointer will be shifted later...
 	}
@@ -596,15 +596,15 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 
 	int push_size = fc_begin();
 
-	void *func = (void*)script->func[func_no];
-	if (!func){
-		//DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);*/
-		add_cmd(inst_call_label, param_const(TypePointer, (long)script->syntax->Functions[func_no])); // the actual call
+	if (script == this->script){
+		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
 	}else{
-		//add_cmd(Asm::inst_call, param_const(TypePointer, func)); // the actual call
+		void *func = (void*)script->func[func_no];
+		if (!func)
+			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
 		add_cmd(Asm::inst_call, param_const(TypeReg32, (long)func)); // the actual call
+		// function pointer will be shifted later...
 	}
-	// function pointer will be shifted later...
 
 	fc_end(push_size);
 }
@@ -748,11 +748,12 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 {
 	int push_size = fc_begin();
 
-	void *func = (void*)script->func[func_no];
-	if (!func){
-		//DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);*/
-		add_cmd(inst_call_label, param_const(TypePointer, (long)script->syntax->Functions[func_no])); // the actual call
+	if (script == this->script){
+		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
 	}else{
+		void *func = (void*)script->func[func_no];
+		if (!func)
+			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
 		add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 		// function pointer will be shifted later...
 	}
@@ -2023,10 +2024,10 @@ void Serializer::SerializeBlock(Block *block, int level)
 		// any markers / jumps to add?
 		for (int j=add_later.num-1;j>=0;j--)
 			if ((level == add_later[j].level) && (i == add_later[j].index)){
-				if (add_later[j].kind == StuffKindMarker)
-					add_marker(add_later[j].marker);
-				else if (add_later[j].kind == StuffKindJump)
-					add_cmd(Asm::inst_jmp, param_marker(add_later[j].marker));
+				if (add_later[j].kind == STUFF_KIND_MARKER)
+					add_marker(add_later[j].label);
+				else if (add_later[j].kind == STUFF_KIND_JUMP)
+					add_cmd(Asm::inst_jmp, param_marker(add_later[j].label));
 				add_later.erase(j);
 			}
 
@@ -2533,7 +2534,7 @@ bool Serializer::ParamUntouchedInInterval(SerialCommandParam &p, int first, int 
 		for (int i=first;i<=last;i++){
 			
 			// call violates all!
-			if ((cmd[i].inst == Asm::inst_call) || (cmd[i].inst == inst_call_label))
+			if (cmd[i].inst == Asm::inst_call)
 				return false;
 
 			// div violates eax and edx
@@ -3290,7 +3291,7 @@ void Serializer::SerializeFunction(Function *f)
 		msg_write(add_later.num);
 		for (int i=0;i<add_later.num;i++){
 			msg_write(add_later[i].kind);
-			msg_write(add_later[i].marker);
+			msg_write(add_later[i].label);
 			msg_write(add_later[i].index);
 			msg_write(add_later[i].level);
 		}
@@ -3475,15 +3476,15 @@ void SerializerARM::DoMapping()
 }
 
 
-inline Asm::InstructionParam get_param(int inst, SerialCommandParam &p, Asm::InstructionWithParamsList *list, Script *s)
+Asm::InstructionParam Serializer::get_param(int inst, SerialCommandParam &p)
 {
 	if (p.kind < 0){
 		return Asm::param_none;
 	}else if (p.kind == KindMarker){
-		return Asm::param_label(list->add_label("kaba_" + i2s(p.p), false), 4);
+		return Asm::param_label(p.p, 4);
 	}else if (p.kind == KindRegister){
 		if (p.shift > 0)
-			s->DoErrorInternal("get_param: reg + shift");
+			script->DoErrorInternal("get_param: reg + shift");
 		return Asm::param_reg(p.p);
 		//param_size = p.type->size;
 	}else if (p.kind == KindDerefRegister){
@@ -3494,7 +3495,7 @@ inline Asm::InstructionParam get_param(int inst, SerialCommandParam &p, Asm::Ins
 	}else if (p.kind == KindVarGlobal){
 		int size = p.type->size;
 		if ((size != 1) && (size != 2) && (size != 4) && (size != 8))
-			s->DoErrorInternal("get_param: evil global of type " + p.type->name);
+			script->DoErrorInternal("get_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	}else if (p.kind == KindVarLocal){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
@@ -3516,43 +3517,31 @@ inline Asm::InstructionParam get_param(int inst, SerialCommandParam &p, Asm::Ins
 		}
 	}else if (p.kind == KindConstant){
 		if (p.shift > 0)
-			s->DoErrorInternal("get_param: const + shift");
+			script->DoErrorInternal("get_param: const + shift");
 		return Asm::param_imm(p.p, p.type->size);
 	}else
-		s->DoErrorInternal("get_param: unexpected param..." + Kind2Str(p.kind));
+		script->DoErrorInternal("get_param: unexpected param..." + Kind2Str(p.kind));
 	return Asm::param_none;
 }
 
 
-void assemble_cmd(Asm::InstructionWithParamsList *list, SerialCommand &c, Script *s)
+void Serializer::assemble_cmd(SerialCommand &c)
 {
-	if (c.inst == inst_call_label){
-		//msg_write("marker kaba_" + i2s((long)cmd[i].p[0].p));
-		Function *f = (Function*)c.p[0].p;
-		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba_func_" + f->name, false), 4));
-		return;
-	}
 	// translate parameters
-	Asm::InstructionParam p1 = get_param(c.inst, c.p[0], list, s);
-	Asm::InstructionParam p2 = get_param(c.inst, c.p[1], list, s);
+	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
+	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
 
 	// assemble instruction
 	//list->current_line = c.
 	list->add2(c.inst, p1, p2);
 }
 
-void assemble_cmd_arm(Asm::InstructionWithParamsList *list, SerialCommand &c, Script *s)
+void Serializer::assemble_cmd_arm(SerialCommand &c)
 {
-	if (c.inst == inst_call_label){
-		//msg_write("marker kaba_" + i2s((long)cmd[i].p[0].p));
-		Function *f = (Function*)c.p[0].p;
-		list->add2(Asm::inst_call, Asm::param_label(list->add_label("kaba_func_" + f->name, false), 4));
-		return;
-	}
 	// translate parameters
-	Asm::InstructionParam p1 = get_param(c.inst, c.p[0], list, s);
-	Asm::InstructionParam p2 = get_param(c.inst, c.p[1], list, s);
-	Asm::InstructionParam p3 = get_param(c.inst, c.p[2], list, s);
+	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
+	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
+	Asm::InstructionParam p3 = get_param(c.inst, c.p[2]);
 
 	// assemble instruction
 	//list->current_line = c.
@@ -3686,7 +3675,7 @@ void SerializerARM::CorrectReturn()
 		}
 }
 
-void Serializer::Assemble(char *Opcode, int &OpcodeSize)
+void Serializer::Assemble()
 {
 	msg_db_f("Serializer.Assemble", 2);
 
@@ -3694,6 +3683,8 @@ void Serializer::Assemble(char *Opcode, int &OpcodeSize)
 	if (config.instruction_set != Asm::INSTRUCTION_SET_ARM)
 		stack_max_size += max_push_size;
 	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
+
+	list->add_label("kaba_func_" + i2s(cur_func_index));
 
 	if (!syntax_tree->FlagNoFunctionFrame){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
@@ -3712,25 +3703,17 @@ void Serializer::Assemble(char *Opcode, int &OpcodeSize)
 	for (int i=0;i<cmd.num;i++){
 
 		if (cmd[i].inst == inst_marker){
-			list->add_label("kaba_" + i2s(cmd[i].p[0].p), true);
+			list->add_label(list->label[cmd[i].p[0].p].name);
 		}else if (cmd[i].inst == inst_asm){
 			AddAsmBlock(list, script);
 		}else{
 
 			if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-				assemble_cmd_arm(list, cmd[i], script);
+				assemble_cmd_arm(cmd[i]);
 			else
-				assemble_cmd(list, cmd[i], script);
+				assemble_cmd(cmd[i]);
 		}
 	}
-
-	//msg_write(Opcode2Asm(Opcode, OpcodeSize));
-
-
-	list->show();
-
-	list->Optimize(Opcode, OpcodeSize);
-	list->Compile(Opcode, OpcodeSize);
 }
 
 void Serializer::DoError(const string &msg)
@@ -3743,31 +3726,30 @@ void Serializer::DoErrorLink(const string &msg)
 	script->DoErrorLink(msg);
 }
 
-Serializer::Serializer(Script *s)
+Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list)
 {
 	script = s;
 	syntax_tree = s->syntax;
-	list = new Asm::InstructionWithParamsList(0);
+	list = _list;
 	max_push_size = 0;
 }
 
 Serializer::~Serializer()
 {
-	delete(list);
 }
 
-Serializer *CreateSerializer(Script *s)
+Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list)
 {
 	if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)
-		return new SerializerAMD64(s);
+		return new SerializerAMD64(s, list);
 	if (config.instruction_set == Asm::INSTRUCTION_SET_X86)
-		return new SerializerX86(s);
+		return new SerializerX86(s, list);
 	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-		return new SerializerARM(s);
+		return new SerializerARM(s, list);
 	return NULL;
 }
 
-void Script::CompileFunction(Function *f, char *Opcode, int &OpcodeSize)
+void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list)
 {
 	msg_db_f("Compile Function", 2);
 
@@ -3775,12 +3757,13 @@ void Script::CompileFunction(Function *f, char *Opcode, int &OpcodeSize)
 		msg_write("serializing " + f->name + " -------------------");
 
 	cur_func = f;
-	Serializer *d = CreateSerializer(this);
+	Serializer *d = CreateSerializer(this, list);
 
 	try{
+		d->cur_func_index = index;
 		d->SerializeFunction(f);
 		d->DoMapping();
-		d->Assemble(Opcode, OpcodeSize);
+		d->Assemble();
 	}catch(Exception &e){
 		throw e;
 	}catch(Asm::Exception &e){
@@ -3789,6 +3772,40 @@ void Script::CompileFunction(Function *f, char *Opcode, int &OpcodeSize)
 	functions_to_link.append(d->list->wanted_label);
 	AlignOpcode();
 	delete(d);
+}
+
+void Script::CompileFunctions(char *oc, int &ocs)
+{
+	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
+
+	// create assembler
+	func.resize(syntax->Functions.num);
+	foreachi(Function *f, syntax->Functions, i){
+		if (f->is_extern){
+			func[i] = (t_func*)GetExternalLink(f->name);
+			if (!func[i])
+				DoErrorLink("external function " + f->name + " not linkable");
+		}else{
+			AssembleFunction(i, f, list);
+		}
+	}
+
+
+	list->show();
+
+	// assemble into opcode
+	list->Optimize(oc, ocs);
+	list->Compile(oc, ocs);
+
+
+	// get function addresses
+	foreachi(Function *f, syntax->Functions, i){
+		if (!f->is_extern){
+			func[i] = (t_func*)list->get_label_value("kaba_func_" + i2s(i));
+		}
+	}
+
+	delete(list);
 }
 
 };

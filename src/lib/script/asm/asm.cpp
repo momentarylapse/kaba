@@ -544,31 +544,49 @@ void InstructionWithParamsList::show()
 	}
 }
 
-int InstructionWithParamsList::add_label(const string &name, bool declaring)
+int InstructionWithParamsList::add_label(const string &name)
 {
 	so("add_label: " + name);
 	// label already in use? (used before declared)
-	if (declaring){
-		foreachi(Label &l, label, i)
-			if (l.inst_no < 0)
-				if (l.name == name){
-					l.inst_no = num;
-					so("----redecl");
-					return i;
-				}
-	}else{
-		foreachi(Label &l, label, i)
+	foreachi(Label &l, label, i)
+		if (l.inst_no < 0)
 			if (l.name == name){
-				so("----reuse");
+				if ((l.inst_no >= 0) and (name != "$"))
+					SetError("label already declared: " + name);
+				l.inst_no = num;
+				so("----redecl");
 				return i;
 			}
-	}
 	Label l;
 	l.name = name;
-	l.inst_no = declaring ? num : -1;
+	l.inst_no = num;
 	l.value = -1;
 	label.add(l);
 	return label.num - 1;
+}
+
+int InstructionWithParamsList::get_label(const string &name)
+{
+	so("add_label: " + name);
+	foreachi(Label &l, label, i)
+		if (l.name == name){
+			so("----reuse");
+			return i;
+		}
+	Label l;
+	l.name = name;
+	l.inst_no = -1;
+	l.value = -1;
+	label.add(l);
+	return label.num - 1;
+}
+
+void *InstructionWithParamsList::get_label_value(const string &name)
+{
+	foreach(Label &l, label)
+		if (l.name == name)
+			return (void*)l.value;
+	return NULL;
 }
 
 void InstructionWithParamsList::add_func_intro(int stack_alloc_size)
@@ -2715,58 +2733,38 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 
 	// char const
 	}else if ((param[0] == '\'') && (param[param.num - 1] == '\'')){
-		p.value = (long)param[1];
-		p.type = PARAMT_IMMEDIATE;
-		p.size = SIZE_8;
+		p = param_imm((long)param[1], SIZE_8);
 		if (DebugAsm)
 			printf("hex const:  %s\n",d2h((char*)&p.value,1).c_str());
 
 	// label substitude
 	}else if (param == "$"){
-		p.value = list.add_label(param, true);
-		p.type = PARAMT_IMMEDIATE;
-		p.size = SIZE_32;
-		p.is_label = true;
-		so("label:  " + param + "\n");
+		p = param_label(list.add_label(param), SIZE_32);
 		
 	}else{
 		// register
 		for (int i=0;i<Registers.num;i++)
 			if (Registers[i].name == param){
-				p.type = PARAMT_REGISTER;
-				p.reg = &Registers[i];
-				p.size = Registers[i].size;
-				so("Register:  " + Registers[i].name + "\n");
+				p = param_reg(Registers[i].id);
 				return;
 			}
 		// existing label
 		for (int i=0;i<list.label.num;i++)
 			if (list.label[i].name == param){
-				p.value = i;
-				p.type = PARAMT_IMMEDIATE;
-				p.size = SIZE_32;
-				p.is_label = true;
-				so("label:  " + param + "\n");
+				p = param_label(i, SIZE_32);
 				return;
 			}
 		// script variable (global)
 		for (int i=0;i<CurrentMetaInfo->global_var.num;i++){
 			if (CurrentMetaInfo->global_var[i].name == param){
-				p.value = (long)CurrentMetaInfo->global_var[i].pos;
-				p.type = PARAMT_IMMEDIATE;
-				p.size = CurrentMetaInfo->global_var[i].size;
-				p.deref = true;
-				so("global variable:  \"" + param + "\"\n");
+				p = param_deref_imm((long)CurrentMetaInfo->global_var[i].pos, CurrentMetaInfo->global_var[i].size);
 				return;
 			}
 		}
 		// not yet existing label...
 		if (param[0]=='_'){
 			so("label as param:  \"" + param + "\"\n");
-			p.value = list.add_label(param, false);
-			p.type = PARAMT_IMMEDIATE;
-			p.is_label = true;
-			p.size = SIZE_32;
+			p = param_label(list.get_label(param), SIZE_32);
 			return;
 		}
 	}
@@ -3003,7 +3001,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 			so("Label");
 			cmd.resize(cmd.num - 1);
 			so(cmd);
-			add_label(cmd, true);
+			add_label(cmd);
 
 			continue;
 		}
@@ -3455,15 +3453,9 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= arm_reg_no(iwp.p[1].reg);
 		code |= arm_reg_no(iwp.p[2].reg) << 8;
-	}else if (iwp.inst == inst_call){
+	}else if ((iwp.inst == inst_bl) or (iwp.inst == inst_b) or (iwp.inst == inst_jmp) or (iwp.inst == inst_call)){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
-		// bl
-		code |= 0x0b000000;
-		int value = (iwp.p[0].value - (long)&oc[ocs] - 8) >> 2;
-		code |= (value & 0x00ffffff);
-	}else if ((iwp.inst == inst_bl) or (iwp.inst == inst_b) or (iwp.inst == inst_jmp)){
-		arm_expect(iwp, PARAMT_IMMEDIATE);
-		if (iwp.inst == inst_bl)
+		if ((iwp.inst == inst_bl) or (iwp.inst == inst_call))
 			code |= 0x0b000000;
 		else
 			code |= 0x0a000000;
@@ -3478,7 +3470,8 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			w.inst_no = n;
 			wanted_label.add(w);
 			so("add wanted label");
-		}
+		}else if (iwp.inst == inst_call)
+			value = (iwp.p[0].value - (long)&oc[ocs] - 8) >> 2;
 		code |= (value & 0x00ffffff);
 	}else if (iwp.inst == inst_dd){
 		arm_expect(iwp, PARAMT_IMMEDIATE);

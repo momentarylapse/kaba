@@ -18,9 +18,6 @@ struct RegChannel
 enum{
 	inst_marker = 10000,
 	inst_asm,
-	inst_func_intro,
-	inst_func_outro,
-	inst_call_label,
 };
 
 struct LoopData
@@ -63,19 +60,19 @@ struct TempVar
 
 struct AddLaterData
 {
-	int kind, marker, level, index;
+	int kind, label, level, index;
 };
 
 enum{
-	StuffKindMarker,
-	StuffKindJump,
+	STUFF_KIND_MARKER,
+	STUFF_KIND_JUMP,
 };
 
 
 class Serializer
 {
 public:
-	Serializer(Script *script);
+	Serializer(Script *script, Asm::InstructionWithParamsList *list);
 	virtual ~Serializer();
 
 	Array<SerialCommand> cmd;
@@ -83,6 +80,7 @@ public:
 	Script *script;
 	SyntaxTree *syntax_tree;
 	Function *cur_func;
+	int cur_func_index;
 	bool call_used;
 	Command *next_command;
 	bool temp_var_ranges_defined;
@@ -106,7 +104,10 @@ public:
 	void DoError(const string &msg);
 	void DoErrorLink(const string &msg);
 
-	void Assemble(char *Opcode, int &OpcodeSize);
+	void Assemble();
+	void assemble_cmd(SerialCommand &c);
+	void assemble_cmd_arm(SerialCommand &c);
+	Asm::InstructionParam get_param(int inst, SerialCommandParam &p);
 
 	void SerializeFunction(Function *f);
 	void SerializeBlock(Block *block, int level);
@@ -191,7 +192,7 @@ public:
 class SerializerX86 : public Serializer
 {
 public:
-	SerializerX86(Script *script) : Serializer(script){};
+	SerializerX86(Script *script, Asm::InstructionWithParamsList *list) : Serializer(script, list){};
 	virtual ~SerializerX86(){}
 	virtual void add_function_call(Script *script, int func_no);
 	virtual void add_virtual_function_call(int virtual_index);
@@ -210,7 +211,7 @@ public:
 class SerializerAMD64 : public SerializerX86
 {
 public:
-	SerializerAMD64(Script *script) : SerializerX86(script){};
+	SerializerAMD64(Script *script, Asm::InstructionWithParamsList *list) : SerializerX86(script, list){};
 	virtual ~SerializerAMD64(){}
 	virtual void add_function_call(Script *script, int func_no);
 	virtual void add_virtual_function_call(int virtual_index);
@@ -224,7 +225,7 @@ public:
 class SerializerARM : public Serializer
 {
 public:
-	SerializerARM(Script *script) : Serializer(script){};
+	SerializerARM(Script *script, Asm::InstructionWithParamsList *list) : Serializer(script, list){};
 	virtual ~SerializerARM(){}
 	virtual void add_function_call(Script *script, int func_no);
 	virtual void add_virtual_function_call(int virtual_index);

@@ -59,7 +59,8 @@ public:
 	void AllocateStack();
 	void AllocateOpcode();
 	void AlignOpcode();
-	void CompileFunction(Function *f, char *Opcode, int &OpcodeSize);
+	void AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list);
+	void CompileFunctions(char *oc, int &ocs);
 	void CompileOsEntryPoint();
 	void LinkOsEntryPoint();
 	void CompileTaskEntryPoint();
