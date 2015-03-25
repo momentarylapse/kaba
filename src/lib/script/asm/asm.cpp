@@ -2875,10 +2875,10 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 				int size = w.size;
 				if (size == SIZE_8L4)
 					size = 2;
-				value -= CurrentMetaInfo->code_origin + w.pos + size;
+				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
 				int inst = (*this)[w.inst_no].inst;
 				if ((inst == inst_bl) or (inst == inst_b))
-					value = (value - 4) >> 2;
+					value = value >> 2;
 			}else{
 				value -= CurrentMetaInfo->code_origin + w.pos + w.size;
 			}
