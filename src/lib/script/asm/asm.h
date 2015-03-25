@@ -279,6 +279,7 @@ struct WantedLabel
 	int label_no;
 	int inst_no;
 	bool relative;
+	bool abs;
 };
 
 struct AsmData
@@ -347,10 +348,12 @@ enum
 {
 	SIZE_8 = 1,
 	SIZE_16 = 2,
+	SIZE_24 = 3,
 	SIZE_32 = 4,
 	SIZE_48 = 6,
 	SIZE_64 = 8,
 	SIZE_128 = 16,
+	SIZE_8L4 = -13,
 	/*SIZE_VARIABLE = -5,
 	SIZE_32OR48 = -6,*/
 	SIZE_UNKNOWN = -7,
@@ -378,6 +381,8 @@ struct InstructionWithParamsList : public Array<InstructionWithParams>
 	int add_label(const string &name);
 	int get_label(const string &name);
 	void *get_label_value(const string &name);
+
+	void add_wanted_label(int pos, int label_no, int inst_no, bool rel, bool abs, int size);
 
 	void add_func_intro(int stack_alloc_size);
 	void add_func_return(int return_size);

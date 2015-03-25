@@ -169,8 +169,10 @@ string SerialCommand::str() const
 		t += "[cond]";
 	t += Asm::GetInstructionName(inst);
 	t += p[0].str();
-	t += p[1].str();
-	t += p[2].str();
+	if (p[1].kind >= 0)
+		t += "," + p[1].str();
+	if (p[2].kind >= 0)
+		t += "," + p[2].str();
 	return t;
 }
 
@@ -3684,6 +3686,11 @@ void Serializer::Assemble()
 		stack_max_size += max_push_size;
 	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
 
+	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		foreach(void *p, global_refs)
+			list->add2(Asm::inst_dd, Asm::param_imm((long)p, 4));
+	}
+
 	list->add_label("kaba_func_" + i2s(cur_func_index));
 
 	if (!syntax_tree->FlagNoFunctionFrame){
@@ -3794,8 +3801,12 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	list->show();
 
 	// assemble into opcode
-	list->Optimize(oc, ocs);
-	list->Compile(oc, ocs);
+	try{
+		list->Optimize(oc, ocs);
+		list->Compile(oc, ocs);
+	}catch(Asm::Exception &e){
+		throw Exception(e, this);
+	}
 
 
 	// get function addresses

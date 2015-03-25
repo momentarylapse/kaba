@@ -60,6 +60,8 @@ const char *code_buffer;
 MetaInfo *CurrentMetaInfo = NULL;
 MetaInfo DummyMetaInfo;
 
+int arm_encode_8l4(unsigned int value);
+
 Exception::Exception(const string &_message, const string &_expression, int _line, int _column)
 {
 	if (_expression.num > 0)
@@ -587,6 +589,21 @@ void *InstructionWithParamsList::get_label_value(const string &name)
 		if (l.name == name)
 			return (void*)l.value;
 	return NULL;
+}
+
+
+void InstructionWithParamsList::add_wanted_label(int pos, int label_no, int inst_no, bool rel, bool abs, int size)
+{
+	WantedLabel w;
+	w.pos = pos;
+	w.size = size;
+	w.label_no = label_no;
+	w.name = label[label_no].name;
+	w.relative = true;
+	w.abs = true;
+	w.inst_no = inst_no;
+	wanted_label.add(w);
+	so("add wanted label");
 }
 
 void InstructionWithParamsList::add_func_intro(int stack_alloc_size)
@@ -2774,17 +2791,20 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 
 inline void insert_val(char *oc, int &ocs, long long val, int size)
 {
-	if (size == 1)
+	if (size == SIZE_8)
 		oc[ocs] = (char)val;
-	else if (size == 2)
+	else if (size == SIZE_16)
 		*(short*)&oc[ocs] = (short)val;
-	else if (size == 3)
+	else if (size == SIZE_24)
 		*(int*)&oc[ocs - 1] = (*(int*)&oc[ocs - 1] & 0xff000000) | ((int)val & 0x00ffffff);
-	else if (size == 4)
+	else if (size == SIZE_32)
 		*(int*)&oc[ocs] = (int)val;
-	else if (size == 8)
+	else if (size == SIZE_64)
 		*(long long int*)&oc[ocs] = val;
-	else
+	else if (size == SIZE_8L4){
+		val = arm_encode_8l4(val);
+		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
+	}else if (size > 0)
 		memcpy(&oc[ocs], &val, size);
 }
 
@@ -2850,10 +2870,21 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 
 		long long value = l.value;
 		if (w.relative){
-			value -= CurrentMetaInfo->code_origin + w.pos + w.size; // TODO first byte after command
-			if (InstructionSet.set == INSTRUCTION_SET_ARM)
-				value = (value - 4) >> 2;
+			// TODO first byte after command
+			if (InstructionSet.set == INSTRUCTION_SET_ARM){
+				int size = w.size;
+				if (size == SIZE_8L4)
+					size = 2;
+				value -= CurrentMetaInfo->code_origin + w.pos + size;
+				int inst = (*this)[w.inst_no].inst;
+				if ((inst == inst_bl) or (inst == inst_b))
+					value = (value - 4) >> 2;
+			}else{
+				value -= CurrentMetaInfo->code_origin + w.pos + w.size;
+			}
 		}
+		if ((w.abs) and (value < 0))
+			value = - value;
 
 		msg_write("link " + i2s(w.pos));
 		insert_val((char*)oc, w.pos, value, w.size);
@@ -3321,7 +3352,7 @@ int arm_reg_no(Register *r)
 	return -1;
 }
 
-int arm_encode_imm(unsigned int value)
+int arm_encode_8l4(unsigned int value)
 {
 	for (int ex=0; ex<=30; ex+=2){
 		unsigned int mask = (0xffffff00 >> ex) | (0xffffff00 << (32-ex));
@@ -3354,6 +3385,13 @@ void arm_expect(InstructionWithParams &c, int type0 = PARAMT_NONE, int type1 = P
 	for (int i=0; i<3; i++)
 		if (c.p[i].type != t[i])
 			SetError(format("param #%d expected to be %s: ", i+1, "???") + c.str());
+}
+
+inline bool label_after_now(InstructionWithParamsList *list, int label_no, int now)
+{
+	if (list->label[label_no].inst_no < 0)
+		return true;
+	return list->label[label_no].inst_no > now;
 }
 
 void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
@@ -3393,8 +3431,12 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 				SetError("p3.disp != DISP_MODE_NONE");
 		}else if (iwp.p[2].type == PARAMT_IMMEDIATE){
 			arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER, PARAMT_IMMEDIATE);
-			code |= arm_encode_imm(iwp.p[2].value) << 0;
-			code |= 1 << 25;
+			if (iwp.p[2].is_label){
+				add_wanted_label(ocs + 2, iwp.p[2].value, n, false, false, SIZE_8L4);
+			}else{
+				code |= arm_encode_8l4(iwp.p[2].value) << 0;
+				code |= 1 << 25;
+			}
 		}/*else if (iwp.p[2].type == PARAMT_REGISTER_SHIFT){
 			msg_write("TODO reg shift");
 			code |= arm_reg_no(iwp.p[2].reg) << 0;
@@ -3414,14 +3456,21 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		else if (iwp.inst == inst_strb)
 			code |= 0x04400000;
 
+		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)){
+			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_8L4);
+			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+		}
+
 		code |= arm_reg_no(iwp.p[0].reg) << 12;
 		code |= arm_reg_no(iwp.p[1].reg) << 16;
 
 		if ((iwp.p[1].disp == DISP_MODE_8) or (iwp.p[1].disp == DISP_MODE_32)){
+			if ((iwp.p[1].value > 0x0fff) or (iwp.p[1].value < - 0x0fff))
+				SetError("offset larger than 12 bit: " + iwp.str());
 			if (iwp.p[1].value >= 0)
-				code |= 0x01800000 | iwp.p[1].value;
+				code |= 0x01800000 | (iwp.p[1].value & 0x0fff);
 			else
-				code |= 0x01000000 | (-iwp.p[1].value);
+				code |= 0x01000000 | ((-iwp.p[1].value) & 0x0fff);
 		}else if (iwp.p[1].disp == DISP_MODE_REG2){
 			if (iwp.p[1].value >= 0)
 				code |= 0x03800000;
@@ -3461,15 +3510,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			code |= 0x0a000000;
 		int value = iwp.p[0].value;
 		if (iwp.p[0].is_label){
-			WantedLabel w;
-			w.pos = ocs + 1;
-			w.size = 3;
-			w.label_no = (int)value;
-			w.name = label[value].name;
-			w.relative = true;
-			w.inst_no = n;
-			wanted_label.add(w);
-			so("add wanted label");
+			add_wanted_label(ocs + 1, value, n, true, false, SIZE_24);
 		}else if (iwp.inst == inst_call)
 			value = (iwp.p[0].value - (long)&oc[ocs] - 8) >> 2;
 		code |= (value & 0x00ffffff);
