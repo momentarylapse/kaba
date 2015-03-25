@@ -594,13 +594,15 @@ void *InstructionWithParamsList::get_label_value(const string &name)
 
 void InstructionWithParamsList::add_wanted_label(int pos, int label_no, int inst_no, bool rel, bool abs, int size)
 {
+	if ((label_no < 0) or (label_no >= label.num))
+		SetError("illegal wanted label request");
 	WantedLabel w;
 	w.pos = pos;
 	w.size = size;
 	w.label_no = label_no;
 	w.name = label[label_no].name;
-	w.relative = true;
-	w.abs = true;
+	w.relative = rel;
+	w.abs = abs;
 	w.inst_no = inst_no;
 	wanted_label.add(w);
 	so("add wanted label");
@@ -2843,15 +2845,9 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 	if (inst.inst == inst_jmp_far)
 		rel = false;
 	if (p.is_label){
-		WantedLabel w;
-		w.pos = ocs;
-		w.size = size;
-		w.label_no = (int)value;
-		w.name = list.label[p.value].name;
-		w.relative = rel;
-		w.inst_no = list.current_inst;
-		list.wanted_label.add(w);
-		so("add wanted label");
+		if ((InstructionSet.set == INSTRUCTION_SET_AMD64) and (p.deref))
+			rel = true;
+		list.add_wanted_label(ocs, p.value, list.current_inst, rel, false, size);
 	}else if (rel){
 		value -= CurrentMetaInfo->code_origin + ocs + size + next_param_size; // TODO ...first byte of next opcode
 	}
@@ -2870,23 +2866,23 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 
 		long long value = l.value;
 		if (w.relative){
+			int size = w.size;
+			if (size == SIZE_8L4)
+				size = 2;
+
 			// TODO first byte after command
 			if (InstructionSet.set == INSTRUCTION_SET_ARM){
-				int size = w.size;
-				if (size == SIZE_8L4)
-					size = 2;
 				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
 				int inst = (*this)[w.inst_no].inst;
 				if ((inst == inst_bl) or (inst == inst_b))
 					value = value >> 2;
 			}else{
-				value -= CurrentMetaInfo->code_origin + w.pos + w.size;
+				value -= CurrentMetaInfo->code_origin + w.pos + size;
 			}
 		}
 		if ((w.abs) and (value < 0))
 			value = - value;
 
-		msg_write("link " + i2s(w.pos));
 		insert_val((char*)oc, w.pos, value, w.size);
 
 

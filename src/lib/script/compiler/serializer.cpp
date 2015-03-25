@@ -333,7 +333,7 @@ int Serializer::add_marker(int l)
 {
 	SerialCommandParam p = p_none;
 	if (l < 0)
-		l = list->get_label("kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+		l = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 	p.kind = KindMarker;
 	p.p = l;
 	add_cmd(inst_marker, p);
@@ -342,7 +342,7 @@ int Serializer::add_marker(int l)
 
 int Serializer::add_marker_after_command(int level, int index)
 {
-	int n = list->get_label("kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+	int n = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 	AddLaterData m = {STUFF_KIND_MARKER, n, level, index};
 	add_later.add(m);
 	return n;
@@ -462,7 +462,7 @@ void SerializerX86::add_function_call(Script *script, int func_no)
 	int push_size = fc_begin();
 
 	if (script == this->script){
-		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
+		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
@@ -599,7 +599,7 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 	int push_size = fc_begin();
 
 	if (script == this->script){
-		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
+		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
@@ -751,7 +751,7 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 	int push_size = fc_begin();
 
 	if (script == this->script){
-		add_cmd(Asm::inst_call, param_marker(list->get_label("kaba_func_" + i2s(func_no))));
+		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
@@ -1033,7 +1033,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			}else
 				DoErrorLink("could not link function as variable: " + link->script->syntax->Functions[link->link_no]->name);
 			//p.kind = Asm::PKLabel;
-			//p.p = (char*)(long)list->add_label("kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
+			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			p.p = add_global_ref((void*)p.p);
@@ -3691,7 +3691,7 @@ void Serializer::Assemble()
 			list->add2(Asm::inst_dd, Asm::param_imm((long)p, 4));
 	}
 
-	list->add_label("kaba_func_" + i2s(cur_func_index));
+	list->add_label("_kaba_func_" + i2s(cur_func_index));
 
 	if (!syntax_tree->FlagNoFunctionFrame){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
@@ -3812,7 +3812,7 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	// get function addresses
 	foreachi(Function *f, syntax->Functions, i){
 		if (!f->is_extern){
-			func[i] = (t_func*)list->get_label_value("kaba_func_" + i2s(i));
+			func[i] = (t_func*)list->get_label_value("_kaba_func_" + i2s(i));
 		}
 	}
 
