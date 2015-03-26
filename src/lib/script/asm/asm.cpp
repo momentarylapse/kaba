@@ -2874,8 +2874,9 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 			if (InstructionSet.set == INSTRUCTION_SET_ARM){
 				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
 				int inst = (*this)[w.inst_no].inst;
-				if ((inst == inst_bl) or (inst == inst_b))
+				if ((inst == inst_bl) or (inst == inst_b) or (inst == inst_call) or (inst == inst_jmp)){
 					value = value >> 2;
+				}
 			}else{
 				value -= CurrentMetaInfo->code_origin + w.pos + size;
 			}
