@@ -96,7 +96,12 @@ public:
 
 	Array<AddLaterData> add_later;
 
-	Array<void*> global_refs;
+	struct GlobalRef
+	{
+		int label;
+		void *p;
+	};
+	Array<GlobalRef> global_refs;
 	int add_global_ref(void *p);
 
 	Asm::InstructionWithParamsList *list;

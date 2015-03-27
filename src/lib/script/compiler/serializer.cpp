@@ -1006,10 +1006,13 @@ void Serializer::AddDereference(SerialCommandParam &param, SerialCommandParam &r
 
 int Serializer::add_global_ref(void *p)
 {
-	foreachi(void *pp, global_refs, i)
-		if (pp == p)
+	foreachi(GlobalRef &g, global_refs, i)
+		if (g.p == p)
 			return i;
-	global_refs.add(p);
+	GlobalRef g;
+	g.p = p;
+	g.label = -1;
+	global_refs.add(g);
 	return global_refs.num - 1;
 }
 
@@ -2274,9 +2277,11 @@ void SerializerARM::CorrectUnallowedParamCombis()
 		if (cmd[i].inst >= inst_marker)
 			continue;
 
+
 		if (cmd[i].inst == Asm::inst_mov){
 			if ((cmd[i].p[0].kind != KindRegister) and (cmd[i].p[1].kind != KindRegister)){
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
+				i ++;
 			}
 		}else if (is_data_op2(cmd[i].inst)){
 			if (cmd[i].p[1].kind != KindRegister){
@@ -3456,11 +3461,9 @@ void SerializerARM::ConvertGlobalLookups()
 
 void SerializerARM::DoMapping()
 {
-	msg_write("global refs:");
-	foreach(void *p, global_refs)
-		msg_write(p2s(p));
-
 	FindReferencedTempVars();
+
+	// --- remove unnecessary temp vars
 
 	TryMapTempVarsRegisters();
 
@@ -3687,8 +3690,10 @@ void Serializer::Assemble()
 	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
 
 	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-		foreach(void *p, global_refs)
-			list->add2(Asm::inst_dd, Asm::param_imm((long)p, 4));
+		foreachi(GlobalRef &g, global_refs, i){
+			g.label = add_marker();
+			list->add2(Asm::inst_dd, Asm::param_imm((long)g.p, 4));
+		}
 	}
 
 	list->add_label("_kaba_func_" + i2s(cur_func_index));
