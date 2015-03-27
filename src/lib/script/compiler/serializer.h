@@ -243,6 +243,7 @@ public:
 
 	virtual void DoMapping();
 	void ConvertGlobalLookups();
+	virtual void CorrectUnallowedParamCombisGlobal();
 	virtual void CorrectUnallowedParamCombis();
 	virtual void CorrectUnallowedParamCombis2(SerialCommand &c);
 	virtual void CorrectReturn();

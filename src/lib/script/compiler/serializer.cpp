@@ -820,6 +820,7 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 					add_temp(cur_func->return_type, t);
 					FillInDestructors(false);
 					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)){
+						add_reg_channel(Asm::REG_R0, cmd.num, cmd.num);
 						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::REG_R0), param[0]);
 					}else{
 						DoError("return != int");
@@ -1725,11 +1726,15 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 						else
 							add_cmd(Asm::inst_fld, t);
 					}else if (cur_func->return_type->size == 1){
+						add_reg_channel(Asm::REG_EAX, cmd.num, cmd.num);
 						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::REG_AL), t);
 					}else if (cur_func->return_type->size == 8){
+						add_reg_channel(Asm::REG_EAX, cmd.num, cmd.num);
 						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::REG_RAX), t);
-					}else
+					}else{
+						add_reg_channel(Asm::REG_EAX, cmd.num, cmd.num);
 						add_cmd(Asm::inst_mov, param_reg(cur_func->return_type, Asm::REG_EAX), t);
+					}
 					AddFunctionOutro(cur_func);
 				}
 			}else{
@@ -2223,70 +2228,78 @@ inline bool _____arm_param_combi_allowed(int inst, SerialCommandParam &p1, Seria
 	return true;
 }
 
-void inline arm_transfer_by_reg_in(Serializer *s, SerialCommand &c, int i, int pno)
+void inline arm_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, int pno)
+{
+	SerialCommandParam p = c.p[pno];
+	int r = s->find_unused_reg(i, i, /*p.type->size*/ 4, false);
+	SerialCommandParam pr = param_reg(p.type, r);
+	s->add_reg_channel(r, i, s->cmd.num);
+	s->cmd[i].p[pno]  = pr;
+	s->add_cmd(c.cond, Asm::inst_mov, pr, p, p_none);
+	s->move_last_cmd(i);
+	i ++;
+}
+
+void inline arm_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, int pno)
+{
+	SerialCommandParam p = c.p[pno];
+	int r = s->find_unused_reg(i, i, p.type->size, false);
+	SerialCommandParam pr = param_reg(p.type, r);
+	s->add_reg_channel(r, i, s->cmd.num);
+	c.p[pno]  = pr;
+	s->add_cmd(c.cond, Asm::inst_mov, p, pr, p_none);
+	s->move_last_cmd(i+1);
+}
+
+void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
 	msg_write("in " + Kind2Str(p.kind));
-	if (p.kind == KindVarLocal){
-		int r = s->find_unused_reg(i, i, /*p.type->size*/ 4, false);
-		SerialCommandParam pr = param_reg(p.type, r);
-		s->add_reg_channel(r, i, s->cmd.num);
-		s->cmd[i].p[pno]  = pr;
-		s->add_cmd(c.cond, Asm::inst_mov, pr, p, p_none);
-		s->move_last_cmd(i);
-	}else if (p.kind == KindGlobalLookup){
-		// cmd ..., global
+	// cmd ..., global
 
-		// mov r2, [ref]
-		// ldr r1, [r2]
-		// cmd ..., r1
-		int r1 = s->find_unused_reg(i, i, p.type->size, false);
-		int r2 = s->find_unused_reg(i, i, 4, false);
-		SerialCommandParam pr1 = param_reg(p.type, r1);
+	// mov r2, [ref]
+	// ldr r1, [r2]
+	// cmd ..., r1
 
 
-		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_shift(param_deref_reg(TypePointer, Asm::REG_R15), (long)s->global_refs[p.p].p, TypePointer), p_none);
-		s->move_last_cmd(i);
-		s->add_cmd(c.cond, Asm::inst_ldr, pr1, param_deref_reg(TypePointer, r2), p_none);
-		s->move_last_cmd(i+1);
-		c.p[pno] = pr1;
+	int r2 = s->find_unused_reg(i, i, 4, false);
+	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_marker(s->global_refs[p.p].label), p_none);
+	s->move_last_cmd(i);
 
-		s->add_reg_channel(r1, i + 1, i + 2);
-		s->add_reg_channel(r2, i, i + 1);
-	}
+	int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
+	s->add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
+	s->move_last_cmd(i+1);
+
+	s->cmd[i+2].p[pno] = param_reg(p.type, r1);
+
+	s->add_reg_channel(r1, i + 1, i + 2);
+	s->add_reg_channel(r2, i, i + 1);
+	i += 2;
 }
 
-void inline arm_transfer_by_reg_out(Serializer *s, SerialCommand &c, int i, int pno)
+void inline arm_gr_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	msg_write("out " + Kind2Str(p.kind));
-	if (p.kind == KindVarLocal){
-		int r = s->find_unused_reg(i, i, p.type->size, false);
-		SerialCommandParam pr = param_reg(p.type, r);
-		s->add_reg_channel(r, i, s->cmd.num);
-		c.p[pno]  = pr;
-		s->add_cmd(c.cond, Asm::inst_mov, p, pr, p_none);
-		s->move_last_cmd(i+1);
-	}else if (p.kind == KindGlobalLookup){
-		// cmd global, ...
+	msg_write("out " + c.str());
+	// cmd global, ...
 
-		// cmd r1, ...
-		// mov r2, [ref]
-		// str r1, [r2]
-		int r1 = s->find_unused_reg(i, i, p.type->size, false);
-		int r2 = s->find_unused_reg(i, i, 4, false);
-		SerialCommandParam pr1 = param_reg(p.type, r1);
+	// cmd r1, ...
+	// mov r2, [ref]
+	// str r1, [r2]
 
 
-		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_shift(param_deref_reg(TypePointer, Asm::REG_R15), (long)s->global_refs[p.p].p, TypePointer), p_none);
-		s->move_last_cmd(i+1);
-		s->add_cmd(c.cond, Asm::inst_str, pr1, param_deref_reg(TypePointer, r2), p_none);
-		s->move_last_cmd(i+2);
-		c.p[pno] = pr1;
+	int r2 = s->find_unused_reg(i, i, 4, false);
+	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_marker(s->global_refs[p.p].label), p_none);
+	s->move_last_cmd(i+1);
+	s->add_reg_channel(r2, i+1, i+1); // TODO... not exactly what we want...
 
-		s->add_reg_channel(r1, i, i + 2);
-		s->add_reg_channel(r2, i + 1, i + 2);
-	}
+	int r1 = s->find_unused_reg(i, i+1, p.type->size, false);
+	s->add_cmd(c.cond, Asm::inst_str, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
+	s->move_last_cmd(i+2);
+
+	s->cmd[i].p[pno] = param_reg(p.type, r1);
+
+	s->add_reg_channel(r1, i, i + 2);
 }
 
 inline bool is_data_op3(int inst)
@@ -2316,6 +2329,42 @@ inline bool is_data_op2(int inst)
 	return false;
 }
 
+void SerializerARM::CorrectUnallowedParamCombisGlobal()
+{
+	msg_db_f("CorrectCombis", 3);
+	for (int i=cmd.num-1;i>=0;i--){
+		if (cmd[i].inst >= inst_marker)
+			continue;
+
+		if (cmd[i].inst == Asm::inst_mov){
+			if (cmd[i].p[1].kind == KindGlobalLookup){
+				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
+			}
+			if (cmd[i].p[0].kind == KindGlobalLookup){
+				arm_gr_transfer_by_reg_out(this, cmd[i], i, 0);
+			}
+		}/*else if (is_data_op2(cmd[i].inst)){
+			if (cmd[i].p[1].kind != KindRegister){
+				arm_transfer_by_reg_in(this, cmd[i], i, 1);
+			}
+			if (cmd[i].p[0].kind != KindRegister){
+				arm_transfer_by_reg_in(this, cmd[i], i, 0);
+			}
+		}else if (is_data_op3(cmd[i].inst)){
+			if (cmd[i].p[1].kind != KindRegister){
+				arm_transfer_by_reg_in(this, cmd[i], i, 1);
+			}
+			if (cmd[i].p[2].kind != KindRegister){
+				arm_transfer_by_reg_in(this, cmd[i], i, 2);
+			}
+			if (cmd[i].p[0].kind != KindRegister){
+				arm_transfer_by_reg_out(this, cmd[i], i, 0);
+			}
+		}*/
+	}
+	ScanTempVarUsage();
+}
+
 void SerializerARM::CorrectUnallowedParamCombis()
 {
 	msg_db_f("CorrectCombis", 3);
@@ -2324,51 +2373,25 @@ void SerializerARM::CorrectUnallowedParamCombis()
 			continue;
 
 		if (cmd[i].inst == Asm::inst_mov){
-			if (cmd[i].p[1].kind != KindRegister){
-				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-				//i ++;
-			}
-			if (cmd[i].p[0].kind != KindRegister){
-				//arm_transfer_by_reg_out(this, cmd[i], i, 0);
-				//i ++;
-			}
-#if 0
-			if (cmd[i].p[1].kind == KindRegister){
-				/*if (cmd[i].p[0].kind == KindGlobalLookup){
-					arm_transfer_by_reg_out(this, cmd[i], i, 0);
-				}*/
-			}else if (cmd[i].p[0].kind == KindRegister){
-				/*if (cmd[i].p[0].kind == KindVarLocal){
-					cmd[i].inst = Asm::inst_ldr;
-				}else if (cmd[i].p[0].kind == KindGlobalLookup){
-					//arm_transfer_by_reg_out(this, cmd[i], i, 0);
-				}*/
-			}else{
-				if ()
+			if ((cmd[i].p[0].kind != KindRegister) and (cmd[i].p[1].kind != KindRegister)){
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
 			}
-#endif
 		}else if (is_data_op2(cmd[i].inst)){
 			if (cmd[i].p[1].kind != KindRegister){
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-				i ++;
 			}
 			if (cmd[i].p[0].kind != KindRegister){
 				arm_transfer_by_reg_in(this, cmd[i], i, 0);
-				i ++;
 			}
 		}else if (is_data_op3(cmd[i].inst)){
 			if (cmd[i].p[1].kind != KindRegister){
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-				i ++;
 			}
 			if (cmd[i].p[2].kind != KindRegister){
 				arm_transfer_by_reg_in(this, cmd[i], i, 2);
-				i ++;
 			}
 			if (cmd[i].p[0].kind != KindRegister){
 				arm_transfer_by_reg_out(this, cmd[i], i, 0);
-				i ++;
 			}
 		}
 	}
@@ -3536,7 +3559,19 @@ void SerializerARM::DoMapping()
 
 	//ResolveDerefTempAndLocal();
 
+	CorrectUnallowedParamCombisGlobal();
+
+	if (script->syntax->FlagShow){
+		msg_write("post global:");
+		cmd_list_out();
+	}
+
 	CorrectUnallowedParamCombis();
+
+	if (script->syntax->FlagShow){
+		msg_write("post local:");
+		cmd_list_out();
+	}
 
 	for (int i=0; i<cmd.num; i++)
 		CorrectUnallowedParamCombis2(cmd[i]);
