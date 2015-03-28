@@ -368,6 +368,7 @@ InstructionParam param_deref_reg_shift_reg(int reg, int reg2, int size);
 InstructionParam param_imm(long long value, int size);
 InstructionParam param_deref_imm(long long value, int size);
 InstructionParam param_label(long long value, int size);
+InstructionParam param_deref_label(long long value, int size);
 
 struct InstructionWithParamsList : public Array<InstructionWithParams>
 {

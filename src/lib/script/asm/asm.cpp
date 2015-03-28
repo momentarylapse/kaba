@@ -508,6 +508,17 @@ InstructionParam param_label(long long value, int size)
 	return p;
 }
 
+InstructionParam param_deref_label(long long value, int size)
+{
+	InstructionParam p;
+	p.type = PARAMT_IMMEDIATE;
+	p.size = size;
+	p.value = value;
+	p.is_label = true;
+	p.deref = true;
+	return p;
+}
+
 void InstructionWithParamsList::add_arm(int cond, int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2, const InstructionParam &p3)
 {
 	InstructionWithParams i;
@@ -3602,8 +3613,6 @@ void InstructionWithParamsList::Compile(void *oc, int &ocs)
 	LinkWantedLabels(oc);
 
 	foreach(WantedLabel &l, wanted_label){
-		if (l.name.head(10) == "kaba_func_")
-			continue;
 		state.LineNo = (*this)[l.inst_no].line;
 		state.ColumnNo = (*this)[l.inst_no].col;
 		SetError("undeclared label used: " + l.name);

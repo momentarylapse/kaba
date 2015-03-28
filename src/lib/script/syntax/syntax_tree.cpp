@@ -227,6 +227,7 @@ string Kind2Str(int kind)
 	if (kind == KindLocalMemory)		return "local memory";
 	if (kind == KindDerefRegister)		return "deref register";
 	if (kind == KindMarker)				return "marker";
+	if (kind == KindDerefMarker)		return "deref marker";
 	if (kind == KindGlobalLookup)		return "global lookup";
 	if (kind == KindGlobalLookupAddress)return "global lookup address";
 	if (kind == KindRefToLocal)			return "ref to local";

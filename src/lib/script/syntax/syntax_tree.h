@@ -73,6 +73,7 @@ enum
 	KindRegister,
 	KindDerefRegister,
 	KindMarker,
+	KindDerefMarker,
 	KindGlobalLookup,        // ARM
 	KindGlobalLookupAddress, // ARM
 };

@@ -121,6 +121,16 @@ inline SerialCommandParam param_marker(int m)
 	return p;
 }
 
+inline SerialCommandParam param_deref_marker(Type *type, int m)
+{
+	SerialCommandParam p;
+	p.type = type;
+	p.kind = KindDerefMarker;
+	p.p = m;
+	p.shift = 0;
+	return p;
+}
+
 inline SerialCommandParam param_reg(Type *type, int reg)
 {
 	SerialCommandParam p;
@@ -2254,7 +2264,7 @@ void inline arm_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, int
 void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	msg_write("in " + Kind2Str(p.kind));
+	msg_write("in " + c.str());
 	// cmd ..., global
 
 	// mov r2, [ref]
@@ -2263,7 +2273,7 @@ void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, i
 
 
 	int r2 = s->find_unused_reg(i, i, 4, false);
-	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_marker(s->global_refs[p.p].label), p_none);
+	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 	s->move_last_cmd(i);
 
 	int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
@@ -2289,7 +2299,7 @@ void inline arm_gr_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, 
 
 
 	int r2 = s->find_unused_reg(i, i, 4, false);
-	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_marker(s->global_refs[p.p].label), p_none);
+	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 	s->move_last_cmd(i+1);
 	s->add_reg_channel(r2, i+1, i+1); // TODO... not exactly what we want...
 
@@ -2337,30 +2347,23 @@ void SerializerARM::CorrectUnallowedParamCombisGlobal()
 			continue;
 
 		if (cmd[i].inst == Asm::inst_mov){
-			if (cmd[i].p[1].kind == KindGlobalLookup){
+			if (cmd[i].p[1].kind == KindGlobalLookup)
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
-			if (cmd[i].p[0].kind == KindGlobalLookup){
+			if (cmd[i].p[0].kind == KindGlobalLookup)
 				arm_gr_transfer_by_reg_out(this, cmd[i], i, 0);
-			}
-		}/*else if (is_data_op2(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister){
-				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
-			if (cmd[i].p[0].kind != KindRegister){
-				arm_transfer_by_reg_in(this, cmd[i], i, 0);
-			}
+		}else if (is_data_op2(cmd[i].inst)){
+			if (cmd[i].p[0].kind == KindGlobalLookup)
+				arm_gr_transfer_by_reg_in(this, cmd[i], i, 0);
+			if (cmd[i].p[1].kind == KindGlobalLookup)
+				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
 		}else if (is_data_op3(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister){
-				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
-			if (cmd[i].p[2].kind != KindRegister){
-				arm_transfer_by_reg_in(this, cmd[i], i, 2);
-			}
-			if (cmd[i].p[0].kind != KindRegister){
-				arm_transfer_by_reg_out(this, cmd[i], i, 0);
-			}
-		}*/
+			if (cmd[i].p[1].kind == KindGlobalLookup)
+				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
+			if (cmd[i].p[2].kind == KindGlobalLookup)
+				arm_gr_transfer_by_reg_in(this, cmd[i], i, 2);
+			if (cmd[i].p[0].kind == KindGlobalLookup)
+				arm_gr_transfer_by_reg_out(this, cmd[i], i, 0);
+		}
 	}
 	ScanTempVarUsage();
 }
@@ -3361,6 +3364,10 @@ void Serializer::SerializeFunction(Function *f)
 	SerializeBlock(f->block, 0);
 	ScanTempVarUsage();
 
+	msg_write("get global ref labels");
+	foreachi(GlobalRef &g, global_refs, i)
+		g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
+
 	SimplifyIfStatements();
 	TryMergeTempVars();
 	SimplifyFloatStore();
@@ -3559,6 +3566,11 @@ void SerializerARM::DoMapping()
 
 	//ResolveDerefTempAndLocal();
 
+	if (script->syntax->FlagShow){
+		msg_write("pre global:");
+		cmd_list_out();
+	}
+
 	CorrectUnallowedParamCombisGlobal();
 
 	if (script->syntax->FlagShow){
@@ -3587,6 +3599,8 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialCommandParam &p)
 		return Asm::param_none;
 	}else if (p.kind == KindMarker){
 		return Asm::param_label(p.p, 4);
+	}else if (p.kind == KindDerefMarker){
+		return Asm::param_deref_label(p.p, p.type->size);
 	}else if (p.kind == KindRegister){
 		if (p.shift > 0)
 			script->DoErrorInternal("get_param: reg + shift");
@@ -3762,6 +3776,8 @@ void SerializerARM::CorrectUnallowedParamCombis2(SerialCommand &c)
 				c.inst = Asm::inst_ldrb;
 			else
 				c.inst = Asm::inst_ldr;
+		}else if (c.p[1].kind == KindDerefMarker){
+			c.inst = Asm::inst_ldr;
 		}
 	}
 }
@@ -3791,7 +3807,7 @@ void Serializer::Assemble()
 
 	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 		foreachi(GlobalRef &g, global_refs, i){
-			g.label = add_marker();
+			g.label = list->add_label(format("_kaba_ref_%d_%d", cur_func_index, i));
 			list->add2(Asm::inst_dd, Asm::param_imm((long)g.p, 4));
 		}
 	}
