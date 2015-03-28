@@ -229,7 +229,8 @@ string Kind2Str(int kind)
 	if (kind == KindMarker)				return "marker";
 	if (kind == KindDerefMarker)		return "deref marker";
 	if (kind == KindGlobalLookup)		return "global lookup";
-	if (kind == KindGlobalLookupAddress)return "global lookup address";
+	if (kind == KindDerefGlobalLookup)	return "deref global lookup";
+	if (kind == KindImmediate)			return "immediate";
 	if (kind == KindRefToLocal)			return "ref to local";
 	if (kind == KindRefToGlobal)		return "ref to global";
 	if (kind == KindRefToConst)			return "ref to const";

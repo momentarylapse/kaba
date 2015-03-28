@@ -1027,6 +1027,16 @@ int Serializer::add_global_ref(void *p)
 	return global_refs.num - 1;
 }
 
+bool const_is_arm_representable(int value)
+{
+	for (int ex=0; ex<=30; ex+=2){
+		unsigned int mask = (0xffffff00 >> ex) | (0xffffff00 << (32-ex));
+		if ((value & mask) == 0)
+			return true;
+	}
+	return false;
+}
+
 // create data for a (function) parameter
 //   and compile its command if the parameter is executable itself
 void Serializer::SerializeParameter(Command *link, int level, int index, SerialCommandParam &p)
@@ -1051,14 +1061,14 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		}
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			p.p = add_global_ref((void*)p.p);
-			p.kind = KindGlobalLookup;
+			p.kind = KindDerefGlobalLookup;
 		}
 	}else if (link->kind == KindMemory){
 		p.p = link->link_no;
 		p.kind = KindVarGlobal;
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			p.p = add_global_ref((void*)p.p);
-			p.kind = KindGlobalLookup;
+			p.kind = KindDerefGlobalLookup;
 		}
 	}else if (link->kind == KindAddress){
 		p.p = (long)&link->link_no;
@@ -1069,7 +1079,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			p.p = add_global_ref((void*)p.p);
-			p.kind = KindGlobalLookup;
+			p.kind = KindDerefGlobalLookup;
 		}
 	}else if (link->kind == KindVarLocal){
 		p.p = cur_func->var[link->link_no]._offset;
@@ -1091,8 +1101,14 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			p.kind = KindRefToConst;
 		p.p = (long)link->script->cnst[link->link_no];
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			p.p = add_global_ref((void*)p.p);
-			p.kind = KindGlobalLookup;
+			int c = *(int*)p.p;
+			if (const_is_arm_representable(c)){
+				p.p = c;
+				p.kind = KindImmediate;
+			}else{
+				p.p = add_global_ref(*(int**)p.p);
+				p.kind = KindGlobalLookup;
+			}
 		}
 	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){
 		p = SerializeCommand(link, level, index);
@@ -2265,51 +2281,83 @@ void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, i
 {
 	SerialCommandParam p = c.p[pno];
 	msg_write("in " + c.str());
-	// cmd ..., global
+	if (p.kind == KindDerefGlobalLookup){
+		// cmd ..., [global ref]
 
-	// mov r2, [ref]
-	// ldr r1, [r2]
-	// cmd ..., r1
+		// mov r2, [ref]
+		// ldr r1, [r2]
+		// cmd ..., r1
 
 
-	int r2 = s->find_unused_reg(i, i, 4, false);
-	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
-	s->move_last_cmd(i);
-	s->add_reg_channel(r2, i, i + 1);
+		int r2 = s->find_unused_reg(i, i, 4, false);
+		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
+		s->move_last_cmd(i);
+		s->add_reg_channel(r2, i, i + 1);
 
-	int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
-	s->add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
-	s->move_last_cmd(i+1);
-	s->add_reg_channel(r1, i + 1, i + 2);
+		int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
+		s->add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
+		s->move_last_cmd(i+1);
+		s->add_reg_channel(r1, i + 1, i + 2);
 
-	s->cmd[i+2].p[pno] = param_reg(p.type, r1);
+		s->cmd[i+2].p[pno] = param_reg(p.type, r1);
 
-	i += 2;
+		i += 2;
+	}else{
+		// cmd ..., global
+
+		// mov r1, [ref]
+		// cmd ..., r1
+
+
+		int r1 = s->find_unused_reg(i, i, 4, false);
+		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r1), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
+		s->move_last_cmd(i);
+		s->add_reg_channel(r1, i, i + 1);
+
+		s->cmd[i+1].p[pno] = param_reg(p.type, r1);
+
+		i += 1;
+	}
 }
 
 void inline arm_gr_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
 	msg_write("out " + c.str());
-	// cmd global, ...
+	if (p.kind == KindDerefGlobalLookup){
+		// cmd [global ref], ...
 
-	// cmd r1, ...
-	// mov r2, [ref]
-	// str r1, [r2]
+		// cmd r1, ...
+		// mov r2, [ref]
+		// str r1, [r2]
 
 
-	int r2 = s->find_unused_reg(i, i, 4, false);
-	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
-	s->move_last_cmd(i+1);
-	s->add_reg_channel(r2, i+1, i+1); // TODO... not exactly what we want...
+		int r2 = s->find_unused_reg(i, i, 4, false);
+		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
+		s->move_last_cmd(i+1);
+		s->add_reg_channel(r2, i+1, i+1); // TODO... not exactly what we want...
 
-	int r1 = s->find_unused_reg(i, i+1, p.type->size, false);
-	s->add_cmd(c.cond, Asm::inst_str, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
-	s->move_last_cmd(i+2);
+		int r1 = s->find_unused_reg(i, i+1, p.type->size, false);
+		s->add_cmd(c.cond, Asm::inst_str, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
+		s->move_last_cmd(i+2);
 
-	s->cmd[i].p[pno] = param_reg(p.type, r1);
+		s->cmd[i].p[pno] = param_reg(p.type, r1);
 
-	s->add_reg_channel(r1, i, i + 2);
+		s->add_reg_channel(r1, i, i + 2);
+	}else{
+		// cmd global, ...
+
+		// cmd r1, ...
+		// str r1, [ref]
+
+
+		int r1 = s->find_unused_reg(i, i, 4, false);
+		s->add_cmd(c.cond, Asm::inst_str, param_reg(TypePointer, r1), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
+		s->move_last_cmd(i+1);
+		s->add_reg_channel(r1, i, i+1);
+
+		s->cmd[i].p[pno] = param_reg(p.type, r1);
+	}
 }
 
 inline bool is_data_op3(int inst)
@@ -2339,63 +2387,58 @@ inline bool is_data_op2(int inst)
 	return false;
 }
 
+inline bool is_global_lookup(SerialCommandParam &p)
+{
+	return (p.kind == KindDerefGlobalLookup) or (p.kind == KindGlobalLookup);
+}
+
+// create global lookup accesses
 void SerializerARM::CorrectUnallowedParamCombisGlobal()
 {
 	msg_db_f("CorrectCombis", 3);
 	for (int i=cmd.num-1;i>=0;i--){
-		if (cmd[i].inst >= inst_marker)
-			continue;
-
 		if (cmd[i].inst == Asm::inst_mov){
-			if (cmd[i].p[1].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[1]))
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
-			if (cmd[i].p[0].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[0]))
 				arm_gr_transfer_by_reg_out(this, cmd[i], i, 0);
 		}else if (is_data_op2(cmd[i].inst)){
-			if (cmd[i].p[0].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[0]))
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 0);
-			if (cmd[i].p[1].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[1]))
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
 		}else if (is_data_op3(cmd[i].inst)){
-			if (cmd[i].p[1].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[1]))
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 1);
-			if (cmd[i].p[2].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[2]))
 				arm_gr_transfer_by_reg_in(this, cmd[i], i, 2);
-			if (cmd[i].p[0].kind == KindGlobalLookup)
+			if (is_global_lookup(cmd[i].p[0]))
 				arm_gr_transfer_by_reg_out(this, cmd[i], i, 0);
 		}
 	}
 	ScanTempVarUsage();
 }
 
+// create local variable accesses
 void SerializerARM::CorrectUnallowedParamCombis()
 {
 	msg_db_f("CorrectCombis", 3);
 	for (int i=cmd.num-1;i>=0;i--){
-		if (cmd[i].inst >= inst_marker)
-			continue;
-
 		if (cmd[i].inst == Asm::inst_mov){
-			if ((cmd[i].p[0].kind != KindRegister) and (cmd[i].p[1].kind != KindRegister)){
+			if ((cmd[i].p[0].kind != KindRegister) and (cmd[i].p[1].kind != KindRegister))
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
 		}else if (is_data_op2(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister){
+			if (cmd[i].p[1].kind != KindRegister)
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
-			if (cmd[i].p[0].kind != KindRegister){
+			if (cmd[i].p[0].kind != KindRegister)
 				arm_transfer_by_reg_in(this, cmd[i], i, 0);
-			}
 		}else if (is_data_op3(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister){
+			if (cmd[i].p[1].kind != KindRegister)
 				arm_transfer_by_reg_in(this, cmd[i], i, 1);
-			}
-			if (cmd[i].p[2].kind != KindRegister){
+			if (cmd[i].p[2].kind != KindRegister)
 				arm_transfer_by_reg_in(this, cmd[i], i, 2);
-			}
-			if (cmd[i].p[0].kind != KindRegister){
+			if (cmd[i].p[0].kind != KindRegister)
 				arm_transfer_by_reg_out(this, cmd[i], i, 0);
-			}
 		}
 	}
 	ScanTempVarUsage();
@@ -3637,6 +3680,8 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialCommandParam &p)
 	}else if (p.kind == KindConstant){
 		if (p.shift > 0)
 			script->DoErrorInternal("get_param: const + shift");
+		return Asm::param_imm(p.p, p.type->size);
+	}else if (p.kind == KindImmediate){
 		return Asm::param_imm(p.p, p.type->size);
 	}else
 		script->DoErrorInternal("get_param: unexpected param..." + Kind2Str(p.kind));

@@ -74,8 +74,9 @@ enum
 	KindDerefRegister,
 	KindMarker,
 	KindDerefMarker,
+	KindImmediate,
 	KindGlobalLookup,        // ARM
-	KindGlobalLookupAddress, // ARM
+	KindDerefGlobalLookup,   // ARM
 };
 
 struct Command;
