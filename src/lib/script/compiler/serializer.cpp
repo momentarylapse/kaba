@@ -2275,15 +2275,15 @@ void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, i
 	int r2 = s->find_unused_reg(i, i, 4, false);
 	s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 	s->move_last_cmd(i);
+	s->add_reg_channel(r2, i, i + 1);
 
 	int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
 	s->add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
 	s->move_last_cmd(i+1);
+	s->add_reg_channel(r1, i + 1, i + 2);
 
 	s->cmd[i+2].p[pno] = param_reg(p.type, r1);
 
-	s->add_reg_channel(r1, i + 1, i + 2);
-	s->add_reg_channel(r2, i, i + 1);
 	i += 2;
 }
 

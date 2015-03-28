@@ -3469,6 +3469,9 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
 		}
 
+		if (iwp.p[0].reg == iwp.p[1].reg)
+			SetError("not allowed to use the same register for destination and addressing: " + iwp.str());
+
 		code |= arm_reg_no(iwp.p[0].reg) << 12;
 		code |= arm_reg_no(iwp.p[1].reg) << 16;
 
