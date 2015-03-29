@@ -205,6 +205,7 @@ enum{
 	// ARM
 	inst_b,
 	inst_bl,
+	inst_blx,
 
 	inst_ldr,
 	inst_ldrb,

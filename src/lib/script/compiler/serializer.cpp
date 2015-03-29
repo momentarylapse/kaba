@@ -151,6 +151,27 @@ inline SerialCommandParam param_deref_reg(Type *type, int reg)
 	return p;
 }
 
+inline SerialCommandParam param_lookup(Type *type, int ref)
+{
+	SerialCommandParam p;
+	p.type = TypePointer;
+	p.p = ref;
+	p.kind = KindGlobalLookup;
+	p.shift = 0;
+	return p;
+}
+
+inline SerialCommandParam param_deref_lookup(Type *type, int ref)
+{
+	SerialCommandParam p;
+	p.type = TypePointer;
+	p.p = ref;
+	p.kind = KindDerefGlobalLookup;
+	p.shift = 0;
+
+	return p;
+}
+
 string SerialCommandParam::str() const
 {
 	string str;
@@ -760,14 +781,21 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 {
 	int push_size = fc_begin();
 
-	if (script == this->script){
+	if ((script == this->script) and (!script->syntax->Functions[func_no]->is_extern)){
 		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
 			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
-		add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
-		// function pointer will be shifted later...
+		if (abs((long)func - (long)script->Opcode) < 30000000){
+			add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
+			// function pointer will be shifted later...
+		}else{
+			int r = find_unused_reg(cmd.num-1, cmd.num-1, 4, false);
+			add_cmd(Asm::inst_mov, param_reg(TypePointer, r), param_lookup(TypePointer, add_global_ref(func)));
+			add_cmd(Asm::inst_call, param_reg(TypePointer, r));
+			add_reg_channel(r, cmd.num-2, cmd.num-1);
+		}
 	}
 
 	fc_end(push_size);
@@ -1059,17 +1087,13 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 			//p.kind = Asm::PKLabel;
 			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			p.p = add_global_ref((void*)p.p);
-			p.kind = KindDerefGlobalLookup;
-		}
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
+			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindMemory){
 		p.p = link->link_no;
 		p.kind = KindVarGlobal;
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			p.p = add_global_ref((void*)p.p);
-			p.kind = KindDerefGlobalLookup;
-		}
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
+			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindAddress){
 		p.p = (long)&link->link_no;
 		p.kind = KindRefToConst;
@@ -1077,22 +1101,15 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		p.p = (long)link->script->g_var[link->link_no];
 		if (!p.p)
 			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			p.p = add_global_ref((void*)p.p);
-			p.kind = KindDerefGlobalLookup;
-		}
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
+			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindVarLocal){
 		p.p = cur_func->var[link->link_no]._offset;
 	}else if (link->kind == KindLocalMemory){
 		p.p = link->link_no;
 		p.kind = KindVarLocal;
 	}else if (link->kind == KindLocalAddress){
-		SerialCommandParam param;
-		param.p = link->link_no;
-		param.kind = KindVarLocal;
-		param.type = TypePointer;
-		param.shift = 0;
-
+		SerialCommandParam param = param_local(TypePointer, link->link_no);
 		AddReference(param, link->type, p);
 	}else if (link->kind == KindConstant){
 		if ((config.use_const_as_global_var) || (syntax_tree->FlagCompileOS))
@@ -1106,8 +1123,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 				p.p = c;
 				p.kind = KindImmediate;
 			}else{
-				p.p = add_global_ref(*(int**)p.p);
-				p.kind = KindGlobalLookup;
+				p = param_lookup(p.type, add_global_ref(*(int**)p.p));
 			}
 		}
 	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){

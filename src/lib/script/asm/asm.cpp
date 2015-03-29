@@ -339,6 +339,7 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 
 	{inst_b,		"b"},
 	{inst_bl,		"bl"},
+	{inst_blx,		"blx"},
 
 	{inst_ldr,		"ldr"},
 	{inst_ldrb,		"ldrb"},
@@ -2207,6 +2208,16 @@ InstructionWithParams disarm_branch(int code)
 	return i;
 }
 
+InstructionWithParams disarm_blx(int code)
+{
+	InstructionWithParams i;
+	i.inst = inst_blx;
+	i.p[0] = param_reg(REG_R0 + ((code >> 0) & 15));
+	i.p[1] = param_none;
+	i.p[2] = param_none;
+	return i;
+}
+
 InstructionWithParams disarm_data_transfer(int code)
 {
 	InstructionWithParams i;
@@ -2276,7 +2287,9 @@ string DisassembleARM(void *_code_,int length,bool allow_comments)
 		iwp.p[0] = param_none;
 		iwp.p[1] = param_none;
 		iwp.p[2] = param_none;
-		if (((cur >> 26) & 3) == 0){
+		if ((cur & 0x0ff000f0) == 0x01200030){
+			iwp = disarm_blx(cur);
+		}else if (((cur >> 26) & 3) == 0){
 			if ((cur & 0x0fe000f0) == 0x00000090)
 				iwp = disarm_data_opcode_mul(cur);
 			else
@@ -3513,6 +3526,10 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= arm_reg_no(iwp.p[1].reg);
 		code |= arm_reg_no(iwp.p[2].reg) << 8;
+	}else if ((iwp.inst == inst_blx) or ((iwp.inst == inst_call) and (iwp.p[0].type == PARAMT_REGISTER))){
+		arm_expect(iwp, PARAMT_REGISTER);
+		code |= 0x01200030;
+		code |= arm_reg_no(iwp.p[0].reg);
 	}else if ((iwp.inst == inst_bl) or (iwp.inst == inst_b) or (iwp.inst == inst_jmp) or (iwp.inst == inst_call)){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
 		if ((iwp.inst == inst_bl) or (iwp.inst == inst_call))
