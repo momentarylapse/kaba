@@ -168,7 +168,7 @@ public:
 	virtual void CorrectUnallowedParamCombis() = 0;
 	virtual void CorrectUnallowedParamCombis2(SerialCommand &c) = 0;
 
-	int find_unused_reg(int first, int last, int size, bool allow_eax);
+	int find_unused_reg(int first, int last, int size, int exclude = -1);
 	void solve_deref_temp_local(int c, int np, bool is_local);
 	void ResolveDerefTempAndLocal();
 	bool ParamUntouchedInInterval(SerialCommandParam &p, int first, int last);

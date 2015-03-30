@@ -791,7 +791,7 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 			add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 			// function pointer will be shifted later...
 		}else{
-			int r = find_unused_reg(cmd.num-1, cmd.num-1, 4, false);
+			int r = find_unused_reg(cmd.num-1, cmd.num-1, 4);
 			add_cmd(Asm::inst_mov, param_reg(TypePointer, r), param_lookup(TypePointer, add_global_ref(func)));
 			add_cmd(Asm::inst_call, param_reg(TypePointer, r));
 			add_reg_channel(r, cmd.num-2, cmd.num-1);
@@ -2273,7 +2273,7 @@ inline bool _____arm_param_combi_allowed(int inst, SerialCommandParam &p1, Seria
 void inline arm_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	int r = s->find_unused_reg(i, i, /*p.type->size*/ 4, false);
+	int r = s->find_unused_reg(i, i, /*p.type->size*/ 4);
 	SerialCommandParam pr = param_reg(p.type, r);
 	s->add_reg_channel(r, i, s->cmd.num);
 	s->cmd[i].p[pno]  = pr;
@@ -2285,7 +2285,7 @@ void inline arm_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, int 
 void inline arm_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	int r = s->find_unused_reg(i, i, p.type->size, false);
+	int r = s->find_unused_reg(i, i, p.type->size);
 	SerialCommandParam pr = param_reg(p.type, r);
 	s->add_reg_channel(r, i, s->cmd.num);
 	c.p[pno]  = pr;
@@ -2305,17 +2305,18 @@ void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, i
 		// cmd ..., r1
 
 
-		int r2 = s->find_unused_reg(i, i, 4, false);
+		int r2 = s->find_unused_reg(i, i, 4);
 		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 		s->move_last_cmd(i);
-		s->add_reg_channel(r2, i, i + 1);
 
-		int r1 = s->find_unused_reg(i+1, i+1, p.type->size, false);
+		int r1 = s->find_unused_reg(i+1, i+1, p.type->size, r2);
 		s->add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
 		s->move_last_cmd(i+1);
-		s->add_reg_channel(r1, i + 1, i + 2);
 
 		s->cmd[i+2].p[pno] = param_reg(p.type, r1);
+
+		s->add_reg_channel(r2, i, i + 1);
+		s->add_reg_channel(r1, i + 1, i + 2);
 
 		i += 2;
 	}else{
@@ -2325,7 +2326,7 @@ void inline arm_gr_transfer_by_reg_in(Serializer *s, SerialCommand &c, int &i, i
 		// cmd ..., r1
 
 
-		int r1 = s->find_unused_reg(i, i, 4, false);
+		int r1 = s->find_unused_reg(i, i, 4);
 		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r1), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 		s->move_last_cmd(i);
 		s->add_reg_channel(r1, i, i + 1);
@@ -2348,18 +2349,18 @@ void inline arm_gr_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, 
 		// str r1, [r2]
 
 
-		int r2 = s->find_unused_reg(i, i, 4, false);
+		int r2 = s->find_unused_reg(i, i, 4);
 		s->add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 		s->move_last_cmd(i+1);
-		s->add_reg_channel(r2, i+1, i+1); // TODO... not exactly what we want...
 
-		int r1 = s->find_unused_reg(i, i+1, p.type->size, false);
+		int r1 = s->find_unused_reg(i, i+1, p.type->size, r2);
 		s->add_cmd(c.cond, Asm::inst_str, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
 		s->move_last_cmd(i+2);
 
 		s->cmd[i].p[pno] = param_reg(p.type, r1);
 
 		s->add_reg_channel(r1, i, i + 2);
+		s->add_reg_channel(r2, i+1, i+2);
 	}else{
 		// cmd global, ...
 
@@ -2367,7 +2368,7 @@ void inline arm_gr_transfer_by_reg_out(Serializer *s, SerialCommand &c, int &i, 
 		// str r1, [ref]
 
 
-		int r1 = s->find_unused_reg(i, i, 4, false);
+		int r1 = s->find_unused_reg(i, i, 4);
 		s->add_cmd(c.cond, Asm::inst_str, param_reg(TypePointer, r1), param_deref_marker(TypePointer, s->global_refs[p.p].label), p_none);
 		s->move_last_cmd(i+1);
 		s->add_reg_channel(r1, i, i+1);
@@ -2460,14 +2461,12 @@ void SerializerARM::CorrectUnallowedParamCombis()
 	ScanTempVarUsage();
 }
 
-int Serializer::find_unused_reg(int first, int last, int size, bool allow_eax)
+int Serializer::find_unused_reg(int first, int last, int size, int exclude)
 {
 	for (int r=0;r<map_reg_root.num;r++)
-		if (!is_reg_root_used_in_interval(map_reg_root[r], first, last))
-			return get_reg(map_reg_root[r], size);
-	if (allow_eax)
-		if (!is_reg_root_used_in_interval(0, first, last))
-			return get_reg(0, size);
+		if (map_reg_root[r] != exclude)
+			if (!is_reg_root_used_in_interval(map_reg_root[r], first, last))
+				return get_reg(map_reg_root[r], size);
 	return -1;
 }
 
@@ -2486,7 +2485,7 @@ void Serializer::solve_deref_temp_local(int c, int np, bool is_local)
 	p.shift = 0;
 	p.type = type_pointer;
 
-	int reg = find_unused_reg(c, c, config.pointer_size, true);
+	int reg = find_unused_reg(c, c, config.pointer_size);
 	if (reg < 0)
 		script->DoErrorInternal("solve_deref_temp_local... no registers available");
 	SerialCommandParam p_reg = param_reg(type_pointer, reg);
@@ -2608,14 +2607,14 @@ void Serializer::ResolveDerefTempAndLocal()
 			Type *type_pointer = TypePointer;
 			Type *type_data = cmd[i].p[0].type;
 
-			int reg = find_unused_reg(i, i, type_data->size, true);
+			int reg = find_unused_reg(i, i, type_data->size);
 			if (reg < 0)
 				DoError("deref local... both sides... .no registers available");
 			
 			SerialCommandParam p_reg = param_reg(type_data, reg);
 			add_reg_channel(reg, i, i); // temp
 			
-			int reg2 = find_unused_reg(i, i, config.pointer_size, true);
+			int reg2 = find_unused_reg(i, i, config.pointer_size);
 			if (reg2 < 0)
 				DoError("deref temp/local... both sides... .no registers available");
 			SerialCommandParam p_reg2 = param_reg(type_pointer, reg2);
@@ -3064,10 +3063,11 @@ void Serializer::MapTempVar(int vi)
 			if ((reg_channel[i].first <= last) && (reg_channel[i].last >= first))
 				reg_root_used[reg_channel[i].reg_root] = true;
 		for (int i=0;i<map_reg_root.num;i++)
-			if (!reg_root_used[map_reg_root[i]]){
-				reg = get_reg(map_reg_root[i], v.type->size);
-				break;
-			}
+			if (map_reg_root[i] != 0)
+				if (!reg_root_used[map_reg_root[i]]){
+					reg = get_reg(map_reg_root[i], v.type->size);
+					break;
+				}
 	}
 
 	if (reg >= 0)
@@ -3404,7 +3404,7 @@ void Serializer::SerializeFunction(Function *f)
 
 	}else{
 	if (config.allow_registers){
-	//	MapRegRoot.add(0); // eax
+		map_reg_root.add(0); // eax
 		map_reg_root.add(1); // ecx
 		map_reg_root.add(2); // edx
 	//	MapRegRoot.add(3); // ebx
