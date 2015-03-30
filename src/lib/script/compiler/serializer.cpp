@@ -492,7 +492,7 @@ void SerializerX86::add_function_call(Script *script, int func_no)
 
 	int push_size = fc_begin();
 
-	if (script == this->script){
+	if ((script == this->script) and (!script->syntax->Functions[func_no]->is_extern)){
 		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
@@ -629,7 +629,7 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 
 	int push_size = fc_begin();
 
-	if (script == this->script){
+	if ((script == this->script) and (!script->syntax->Functions[func_no]->is_extern)){
 		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
