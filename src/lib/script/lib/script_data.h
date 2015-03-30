@@ -331,6 +331,7 @@ struct CompilerConfiguration
 	bool allow_registers;
 
 	string directory;
+	bool verbose;
 	bool compile_silently;
 	bool show_compiler_stats;
 	bool use_const_as_global_var;

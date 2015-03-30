@@ -146,16 +146,12 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	GetExistenceLink(KindUnknown, 0, NULL, TypeVoid),
 	RootOfAllEvil(this, "RootOfAllEvil", TypeVoid)
 {
-	FlagShow = false;
-	FlagShowPrae = false;
-	FlagDisassemble = false;
 	FlagCompileOS = false;
 	FlagStringConstAsCString = false;
 	FlagNoFunctionFrame = false;
 	FlagAddEntryPoint = false;
 	FlagOverwriteVariablesOffset = false;
 	FlagImmortal = false;
-	FlagNoExecution = false;
 	cur_func = NULL;
 	script = _script;
 	AsmMetaInfo = new Asm::MetaInfo;
@@ -179,7 +175,7 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 
 	Parser();
 	
-	if (FlagShowPrae)
+	if (config.verbose)
 		Show();
 
 	ConvertCallByReference();
@@ -191,7 +187,7 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	
 	PreProcessor();
 
-	if (FlagShow)
+	if (config.verbose)
 		Show();
 
 	Exp.clear();

@@ -95,6 +95,7 @@ int hui_main(const Array<string> &arg0)
 	string out_file, symbols_out_file, symbols_in_file;
 	bool allow_std_lib = true;
 	bool disassemble = false;
+	bool verbose = false;
 	bool error = false;
 
 	// parameters
@@ -123,6 +124,10 @@ int hui_main(const Array<string> &arg0)
 			arg.erase(i --);
 		}else if (arg[i] == "--no-std-lib"){
 			allow_std_lib = false;
+			arg.erase(i --);
+		}else if (arg[i] == "--verbose"){
+			verbose = true;
+			disassemble = true;
 			arg.erase(i --);
 		}else if (arg[i] == "--disasm"){
 			disassemble = true;
@@ -186,7 +191,8 @@ int hui_main(const Array<string> &arg0)
 	}
 
 	// compile
-	Script::config.compile_silently = true;
+	Script::config.compile_silently = !verbose;
+	Script::config.verbose = verbose;
 	SilentFiles = true;
 
 	try{
@@ -198,17 +204,9 @@ int hui_main(const Array<string> &arg0)
 		}else{
 			if (disassemble)
 				msg_write(Asm::Disassemble(s->Opcode, s->OpcodeSize, true));
-			typedef int ifii(int, int);
-			ifii *fp = (ifii*)s->func.back();
-			//execute(s, arg);
 
-			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet()){
-				if (fp){
-					msg_write("run...");
-					int r = (*fp)(13, 20);
-					msg_write("return:  " + i2s(r));
-				}
-			}
+			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet())
+				execute(s, arg);
 		}
 	}catch(Script::Exception &e){
 		if (use_gui)

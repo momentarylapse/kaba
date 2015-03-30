@@ -1340,6 +1340,7 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	config.stack_frame_align = 2 * config.pointer_size;
 
 	config.compile_silently = false;
+	config.verbose = false;
 	config.show_compiler_stats = true;
 
 	SIAddPackageBase();

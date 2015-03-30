@@ -435,7 +435,7 @@ void Script::Compiler()
 	syntax->Simplify();
 	syntax->PreProcessor();
 
-	if (syntax->FlagShow)
+	if (config.verbose)
 		syntax->Show();
 
 	AllocateMemory();

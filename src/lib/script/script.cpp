@@ -178,7 +178,7 @@ void Script::Load(const string &filename, bool just_analyse)
 		Compiler();
 	/*if (pre_script->FlagShow)
 		pre_script->Show();*/
-	if ((!JustAnalyse) && (syntax->FlagDisassemble)){
+	if ((!JustAnalyse) && (config.verbose)){
 		if (ThreadOpcodeSize > 0){
 			msg_write(format("ThreadOpcode: %d bytes", ThreadOpcodeSize));
 			msg_write(Asm::Disassemble(ThreadOpcode, ThreadOpcodeSize));

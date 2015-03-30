@@ -287,10 +287,6 @@ public:
 	Command GetExistenceLink;
 
 	// compiler options
-	bool FlagShowPrae;
-	bool FlagShow;
-	bool FlagDisassemble;
-	bool FlagNoExecution;
 	bool FlagImmortal;
 	bool FlagCompileOS;
 	bool FlagStringConstAsCString;

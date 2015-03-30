@@ -3423,7 +3423,6 @@ void Serializer::SerializeFunction(Function *f)
 	SerializeBlock(f->block, 0);
 	ScanTempVarUsage();
 
-	msg_write("get global ref labels");
 	foreachi(GlobalRef &g, global_refs, i)
 		g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
 
@@ -3431,7 +3430,7 @@ void Serializer::SerializeFunction(Function *f)
 	TryMergeTempVars();
 	SimplifyFloatStore();
 
-	if (script->syntax->FlagShow)
+	if (config.verbose)
 		cmd_list_out();
 	
 
@@ -3599,7 +3598,7 @@ void SerializerX86::DoMapping()
 	for (int i=0; i<cmd.num; i++)
 		CorrectUnallowedParamCombis2(cmd[i]);
 
-	if (script->syntax->FlagShow)
+	if (config.verbose)
 		cmd_list_out();
 }
 
@@ -3625,21 +3624,21 @@ void SerializerARM::DoMapping()
 
 	//ResolveDerefTempAndLocal();
 
-	if (script->syntax->FlagShow){
+	if (config.verbose){
 		msg_write("pre global:");
 		cmd_list_out();
 	}
 
 	CorrectUnallowedParamCombisGlobal();
 
-	if (script->syntax->FlagShow){
+	if (config.verbose){
 		msg_write("post global:");
 		cmd_list_out();
 	}
 
 	CorrectUnallowedParamCombis();
 
-	if (script->syntax->FlagShow){
+	if (config.verbose){
 		msg_write("post local:");
 		cmd_list_out();
 	}
@@ -3647,7 +3646,7 @@ void SerializerARM::DoMapping()
 	for (int i=0; i<cmd.num; i++)
 		CorrectUnallowedParamCombis2(cmd[i]);
 
-	if (script->syntax->FlagShow)
+	if (config.verbose)
 		cmd_list_out();
 }
 
@@ -3942,7 +3941,7 @@ void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParams
 {
 	msg_db_f("Compile Function", 2);
 
-	if (syntax->FlagShow)
+	if (config.verbose)
 		msg_write("serializing " + f->name + " -------------------");
 
 	cur_func = f;
@@ -3980,7 +3979,8 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	}
 
 
-	list->show();
+	if (config.verbose)
+		list->show();
 
 	// assemble into opcode
 	try{

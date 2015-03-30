@@ -71,10 +71,6 @@ void SyntaxTree::AddIncludeData(Script *s)
 
 enum{
 	MacroDefine,
-	MacroDisasm,
-	MacroNoExec,
-	MacroShow,
-	MacroShowPrae,
 	MacroImmortal,
 	NumMacroNames
 };
@@ -82,10 +78,6 @@ enum{
 string MacroName[NumMacroNames] =
 {
 	"#define",
-	"#disasm",
-	"#noexec",
-	"#show",
-	"#show_prae",
 	"#immortal",
 };
 
@@ -141,18 +133,6 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 			}else
 				// normal define
 				Defines.add(d);
-			break;
-		case MacroDisasm:
-			FlagDisassemble=true;
-			break;
-		case MacroShow:
-			FlagShow=true;
-			break;
-		case MacroShowPrae:
-			FlagShowPrae=true;
-			break;
-		case MacroNoExec:
-			FlagNoExecution=true;
 			break;
 		case MacroImmortal:
 			SetImmortal(this);
