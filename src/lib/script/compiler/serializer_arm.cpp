@@ -326,13 +326,11 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 			//p.kind = Asm::PKLabel;
 			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
+		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindMemory){
 		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindAddress){
-		p.p = (long)&link->link_no;
-		p.kind = KindRefToConst;
+		return param_lookup(p.type, add_global_ref(&link->link_no));
 	}else if (link->kind == KindVarGlobal){
 		if (!link->script->g_var[link->link_no])
 			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
@@ -357,6 +355,7 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){
 		return SerializeCommand(link, level, index);
 	}else if (link->kind == KindReference){
+		msg_error("ref");
 		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return AddReference(param, link->type);
