@@ -421,10 +421,10 @@ int SerializerX86::fc_begin()
 	Type *type = CompilerFunctionReturn.type;
 
 	// return data too big... push address
-	SerialCommandParam ret_temp, ret_ref;
+	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer, ret_ref);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -510,10 +510,10 @@ int SerializerAMD64::fc_begin()
 	Type *type = CompilerFunctionReturn.type;
 
 	// return data too big... push address
-	SerialCommandParam ret_temp, ret_ref;
+	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer, ret_ref);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -530,7 +530,7 @@ int SerializerAMD64::fc_begin()
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer, ret_ref);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
 		CompilerFunctionParam.insert(ret_ref, 0);
 	}
 
@@ -678,10 +678,10 @@ int SerializerARM::fc_begin()
 	Type *type = CompilerFunctionReturn.type;
 
 	// return data too big... push address
-	SerialCommandParam ret_temp, ret_ref;
+	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer, ret_ref);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -698,7 +698,7 @@ int SerializerARM::fc_begin()
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer, ret_ref);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
 		CompilerFunctionParam.insert(ret_ref, 0);
 	}
 
@@ -990,9 +990,10 @@ void Serializer::AddClassFunctionCall(ClassFunction *cf)
 
 
 // creates res...
-void Serializer::AddReference(SerialCommandParam &param, Type *type, SerialCommandParam &ret)
+SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *type)
 {
 	msg_db_f("AddReference", 3);
+	SerialCommandParam ret;
 	ret.type = type;
 	ret.shift = 0;
 	if (param.kind == KindRefToConst){
@@ -1005,6 +1006,8 @@ void Serializer::AddReference(SerialCommandParam &param, Type *type, SerialComma
 		ret = param;
 		param.kind = KindVarTemp;
 	}else{
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
+			DoError("reference in ARM");
 		add_temp(type, ret);
 		if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 			add_cmd(Asm::inst_lea, p_rax, param);
@@ -1015,11 +1018,13 @@ void Serializer::AddReference(SerialCommandParam &param, Type *type, SerialComma
 		}
 		add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 	}
+	return ret;
 }
 
-void Serializer::AddDereference(SerialCommandParam &param, SerialCommandParam &ret, Type *force_type)
+SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Type *force_type)
 {
 	msg_db_f("AddDereference", 4);
+	SerialCommandParam ret;
 	/*add_temp(TypePointer, ret);
 	SerialCommandParam temp;
 	add_temp(TypePointer, temp);
@@ -1040,6 +1045,7 @@ void Serializer::AddDereference(SerialCommandParam &param, SerialCommandParam &r
 		add_cmd(Asm::inst_mov, temp, param);
 		deref_temp(temp, ret);
 	}
+	return ret;
 }
 
 
@@ -1067,9 +1073,10 @@ bool const_is_arm_representable(int value)
 
 // create data for a (function) parameter
 //   and compile its command if the parameter is executable itself
-void Serializer::SerializeParameter(Command *link, int level, int index, SerialCommandParam &p)
+SerialCommandParam Serializer::SerializeParameter(Command *link, int level, int index)
 {
 	msg_db_f("SerializeParameter", 4);
+	SerialCommandParam p;
 	p.kind = link->kind;
 	p.type = link->type;
 	p.p = 0;
@@ -1093,7 +1100,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		p.p = link->link_no;
 		p.kind = KindVarGlobal;
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
+			return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindAddress){
 		p.p = (long)&link->link_no;
 		p.kind = KindRefToConst;
@@ -1102,7 +1109,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		if (!p.p)
 			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-			p = param_deref_lookup(p.type, add_global_ref((void*)p.p));
+			return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindVarLocal){
 		p.p = cur_func->var[link->link_no]._offset;
 	}else if (link->kind == KindLocalMemory){
@@ -1110,7 +1117,7 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 		p.kind = KindVarLocal;
 	}else if (link->kind == KindLocalAddress){
 		SerialCommandParam param = param_local(TypePointer, link->link_no);
-		AddReference(param, link->type, p);
+		return AddReference(param, link->type);
 	}else if (link->kind == KindConstant){
 		if ((config.use_const_as_global_var) || (syntax_tree->FlagCompileOS))
 			p.kind = KindVarGlobal;
@@ -1123,32 +1130,31 @@ void Serializer::SerializeParameter(Command *link, int level, int index, SerialC
 				p.p = c;
 				p.kind = KindImmediate;
 			}else{
-				p = param_lookup(p.type, add_global_ref(*(int**)p.p));
+				return param_lookup(p.type, add_global_ref(*(int**)p.p));
 			}
 		}
 	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){
 		p = SerializeCommand(link, level, index);
 	}else if (link->kind == KindReference){
-		SerialCommandParam param;
-		SerializeParameter(link->param[0], level, index, param);
+		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
-		AddReference(param, link->type, p);
+		return AddReference(param, link->type);
 	}else if (link->kind == KindDereference){
-		SerialCommandParam param;
-		SerializeParameter(link->param[0], level, index, param);
+		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		/*if ((param.kind == KindVarLocal) || (param.kind == KindVarGlobal)){
 			p.type = param.type->sub_type;
 			if (param.kind == KindVarLocal)		p.kind = KindRefToLocal;
 			if (param.kind == KindVarGlobal)	p.kind = KindRefToGlobal;
 			p.p = param.p;
 		}*/
-		AddDereference(param, p);
+		return AddDereference(param);
 	}else if (link->kind == KindVarTemp){
 		// only used by <new> operator
 		p.p = link->link_no;
 	}else{
 		DoError("unexpected type of parameter: " + Kind2Str(link->kind));
 	}
+	return p;
 }
 
 
@@ -1988,7 +1994,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 	Array<SerialCommandParam> param;
 	param.resize(com->num_params);
 	for (int p=0;p<com->num_params;p++)
-		SerializeParameter(com->param[p], level, index, param[p]);
+		param[p] = SerializeParameter(com->param[p], level, index);
 
 	// class function -> compile instance
 	bool is_class_function = false;
@@ -2000,7 +2006,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 	}
 	SerialCommandParam instance = {-1, 0, NULL};
 	if (is_class_function){
-		SerializeParameter(com->instance, level, index, instance);
+		instance = SerializeParameter(com->instance, level, index);
 		// super_array automatically referenced...
 	}
 
@@ -2044,7 +2050,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, int level, int ind
 		ClassFunction *cf = com->type->GetFunc("add", TypeVoid, 1);
 		if (!cf)
 			DoError(format("[..]: can not find %s.add() function???", com->type->name.c_str()));
-		AddReference(ret, com->type->GetPointer(), instance);
+		instance = AddReference(ret, com->type->GetPointer());
 		for (int i=0; i<com->num_params; i++){
 			AddFuncInstance(instance);
 			AddFuncParam(param[i]);
@@ -2103,8 +2109,7 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 	if (modus == -1){
 		AddFuncInstance(param);
 	}else{
-		SerialCommandParam inst;
-		AddReference(param, TypePointer, inst);
+		SerialCommandParam inst = AddReference(param, TypePointer);
 		AddFuncInstance(inst);
 	}
 
@@ -2121,8 +2126,7 @@ void Serializer::add_cmd_destructor(SerialCommandParam &param, bool ref)
 		ClassFunction *f = param.type->GetDestructor();
 		if (!f)
 			return;
-		SerialCommandParam inst;
-		AddReference(param, TypePointer, inst);
+		SerialCommandParam inst = AddReference(param, TypePointer);
 		AddFuncInstance(inst);
 		AddClassFunctionCall(f);
 	}else{

@@ -116,7 +116,7 @@ public:
 
 	void SerializeFunction(Function *f);
 	void SerializeBlock(Block *block, int level);
-	void SerializeParameter(Command *link, int level, int index, SerialCommandParam &param);
+	virtual SerialCommandParam SerializeParameter(Command *link, int level, int index);
 	SerialCommandParam SerializeCommand(Command *com, int level, int index);
 	virtual void SerializeCompilerFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, int level, int index, int marker_before_params) = 0;
 	virtual void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret) = 0;
@@ -182,8 +182,8 @@ public:
 	virtual void add_virtual_function_call(int virtual_index) = 0;
 	virtual int fc_begin() = 0;
 	virtual void fc_end(int push_size) = 0;
-	void AddReference(SerialCommandParam &param, Type *type, SerialCommandParam &ret);
-	void AddDereference(SerialCommandParam &param, SerialCommandParam &ret, Type *force_type = NULL);
+	SerialCommandParam AddReference(SerialCommandParam &param, Type *type);
+	SerialCommandParam AddDereference(SerialCommandParam &param, Type *force_type = NULL);
 
 	void MapTempVarToReg(int vi, int reg);
 	void add_stack_var(Type *type, int first, int last, SerialCommandParam &p);
