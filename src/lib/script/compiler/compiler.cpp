@@ -458,6 +458,9 @@ void Script::Compiler()
 
 	syntax->PreProcessorAddresses();
 
+	if (config.verbose)
+		syntax->Show();
+
 
 // compile functions into Opcode
 	CompileFunctions(Opcode, OpcodeSize);

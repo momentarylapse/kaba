@@ -456,17 +456,27 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 		ret = param;
 		param.kind = KindVarTemp;
 	}else{
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-			DoError("reference in ARM: " + param.str());
-		add_temp(type, ret);
-		if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
-			add_cmd(Asm::inst_lea, p_rax, param);
-			add_cmd(Asm::inst_mov, ret, p_rax);
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+			if (param.kind == KindVarLocal){
+				int r = find_unused_reg(cmd.num - 1, cmd.num - 1, 4);
+				add_temp(type, ret);
+				add_cmd(Asm::inst_add, param_reg(TypePointer, r), param_reg(TypePointer, Asm::REG_R13), param_const(TypeInt, param.p));
+				add_cmd(Asm::inst_mov, ret, param_reg(TypePointer, r));
+				add_reg_channel(r, cmd.num - 2, cmd.num - 1);
+			}else{
+				DoError("reference in ARM: " + param.str());
+			}
 		}else{
-			add_cmd(Asm::inst_lea, p_eax, param);
-			add_cmd(Asm::inst_mov, ret, p_eax);
+			add_temp(type, ret);
+			if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
+				add_cmd(Asm::inst_lea, p_rax, param);
+				add_cmd(Asm::inst_mov, ret, p_rax);
+			}else{
+				add_cmd(Asm::inst_lea, p_eax, param);
+				add_cmd(Asm::inst_mov, ret, p_eax);
+			}
+			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 		}
-		add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 	}
 	return ret;
 }
