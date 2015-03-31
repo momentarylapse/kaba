@@ -394,7 +394,7 @@ Function *SyntaxTree::AddFunction(const string &name, Type *type)
 	return f;
 }
 
-Command::Command(int _kind, int _link_no, Script *_script, Type *_type)
+Command::Command(int _kind, long long _link_no, Script *_script, Type *_type)
 {
 	type = _type;
 	kind = _kind;
@@ -427,14 +427,14 @@ void Command::set_param(int index, Command *p)
 	set_command(param[index], p);
 }
 
-Command *SyntaxTree::AddCommand(int kind, int link_no, Type *type)
+Command *SyntaxTree::AddCommand(int kind, long long link_no, Type *type)
 {
 	Command *c = new Command(kind, link_no, script, type);
 	Commands.add(c);
 	return c;
 }
 
-Command *SyntaxTree::AddCommand(int kind, int link_no, Type *type, Script *s)
+Command *SyntaxTree::AddCommand(int kind, long long link_no, Type *type, Script *s)
 {
 	Command *c = new Command(kind, link_no, s, type);
 	Commands.add(c);

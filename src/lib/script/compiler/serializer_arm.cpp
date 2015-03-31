@@ -330,7 +330,7 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 	}else if (link->kind == KindMemory){
 		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == KindAddress){
-		return param_lookup(p.type, add_global_ref(&link->link_no));
+		return param_lookup(p.type, add_global_ref((void*)(long)link->link_no));
 	}else if (link->kind == KindVarGlobal){
 		if (!link->script->g_var[link->link_no])
 			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);

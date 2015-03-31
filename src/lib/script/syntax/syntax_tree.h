@@ -129,7 +129,8 @@ struct Function
 // single operand/command
 struct Command
 {
-	int kind, link_no;
+	int kind;
+	long long link_no;
 	Script *script;
 	int ref_count;
 	// parameters
@@ -139,7 +140,7 @@ struct Command
 	Command *instance;
 	// return value
 	Type *type;
-	Command(int kind, int link_no, Script *script, Type *type);
+	Command(int kind, long long link_no, Script *script, Type *type);
 	Block *block() const;
 	void set_num_params(int n);
 	void set_param(int index, Command *p);
@@ -253,8 +254,8 @@ public:
 	Function *AddFunction(const string &name, Type *type);
 
 	// command
-	Command *AddCommand(int kind, int link_no, Type *type);
-	Command *AddCommand(int kind, int link_no, Type *type, Script *s);
+	Command *AddCommand(int kind, long long link_no, Type *type);
+	Command *AddCommand(int kind, long long link_no, Type *type, Script *s);
 	Command *add_command_compilerfunc(int cf);
 	Command *add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual = false);
 	Command *add_command_func(Script *script, int no, Type *return_type);
