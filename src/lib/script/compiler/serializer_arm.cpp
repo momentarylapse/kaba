@@ -125,7 +125,7 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 		void *func = (void*)script->func[func_no];
 		if (!func)
 			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
-		if (abs((long)func - (long)script->Opcode) < 30000000){
+		if (abs((long)func - (long)this->script->Opcode) < 30000000){
 			add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 			// function pointer will be shifted later...
 		}else{
