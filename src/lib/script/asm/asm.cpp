@@ -3528,7 +3528,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		code |= arm_reg_no(iwp.p[2].reg) << 8;
 	}else if ((iwp.inst == inst_blx) or ((iwp.inst == inst_call) and (iwp.p[0].type == PARAMT_REGISTER))){
 		arm_expect(iwp, PARAMT_REGISTER);
-		code |= 0x01200030;
+		code |= 0x012fff30;
 		code |= arm_reg_no(iwp.p[0].reg);
 	}else if ((iwp.inst == inst_bl) or (iwp.inst == inst_b) or (iwp.inst == inst_jmp) or (iwp.inst == inst_call)){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
