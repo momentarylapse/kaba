@@ -129,7 +129,11 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 			add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 			// function pointer will be shifted later...
 		}else{
-			int r = find_unused_reg(cmd.num-1, cmd.num-1, 4);
+
+			// TODO FIXME
+			// really find a usable register...
+
+			int r = Asm::REG_R4;//find_unused_reg(cmd.num-1, cmd.num-1, 4);
 			add_cmd(Asm::inst_mov, param_reg(TypePointer, r), param_lookup(TypePointer, add_global_ref(func)));
 			add_cmd(Asm::inst_call, param_reg(TypePointer, r));
 			add_reg_channel(r, cmd.num-2, cmd.num-1);
