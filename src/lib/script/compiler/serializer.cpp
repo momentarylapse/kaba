@@ -208,8 +208,8 @@ void Serializer::cmd_list_out()
 		msg_write(format("%3d: ", i) + cmd[i].str());
 	if (false){
 		msg_write("-----------");
-		for (int i=0;i<reg_channel.num;i++)
-			msg_write(format("  %d   %d -> %d", reg_channel[i].reg_root, reg_channel[i].first, reg_channel[i].last));
+		foreach(RegChannel &r, reg_channel)
+			msg_write(format("  %d   %d -> %d", r.reg_root, r.first, r.last));
 		msg_write("-----------");
 		if (temp_var_ranges_defined)
 			for (int i=0;i<temp_var.num;i++)
@@ -458,7 +458,7 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 	}else{
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			if (param.kind == KindVarLocal){
-				int r = find_unused_reg(cmd.num - 1, cmd.num - 1, 4);
+				int r = find_unused_reg(-1, -1, 4);
 				add_temp(type, ret);
 				add_cmd(Asm::inst_add, param_reg(TypePointer, r), param_reg(TypePointer, Asm::REG_R13), param_const(TypeInt, param.p));
 				add_cmd(Asm::inst_mov, ret, param_reg(TypePointer, r));
@@ -797,7 +797,8 @@ int Serializer::find_unused_reg(int first, int last, int size, int exclude)
 		if (map_reg_root[r] != exclude)
 			if (!is_reg_root_used_in_interval(map_reg_root[r], first, last))
 				return get_reg(map_reg_root[r], size);
-	DoError("no free register of size " + i2s(size));
+	cmd_list_out();
+	DoError(format("no free register of size %d   in %d:%d", size, first, last));
 	return -1;
 }
 
@@ -1561,16 +1562,6 @@ void Serializer::SerializeFunction(Function *f)
 	SerializeBlock(f->block, 0);
 	ScanTempVarUsage();
 
-	foreachi(GlobalRef &g, global_refs, i)
-		g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
-
-	SimplifyIfStatements();
-	TryMergeTempVars();
-	SimplifyFloatStore();
-
-	if (config.verbose)
-		cmd_list_out();
-	
 
 
 	// outro (if last command != return)
@@ -1582,6 +1573,19 @@ void Serializer::SerializeFunction(Function *f)
 		FillInDestructors(false);
 		AddFunctionOutro(f);
 	}
+
+	// map global ref labels
+	foreachi(GlobalRef &g, global_refs, i)
+		g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
+
+	SimplifyIfStatements();
+	TryMergeTempVars();
+	SimplifyFloatStore();
+
+	if (config.verbose)
+		cmd_list_out();
+	
+
 
 
 	if (add_later.num > 0){
