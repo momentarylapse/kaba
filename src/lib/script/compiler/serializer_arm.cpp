@@ -292,6 +292,12 @@ void SerializerARM::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 			add_cmd(Asm::ARM_COND_LESS_EQUAL,     Asm::inst_mov, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_GREATER_THAN, Asm::inst_mov, ret, param_const(TypeBool, 0), p_none);
 			break;
+		case OperatorIntIncrease:
+			add_cmd(Asm::inst_add, param[0], param[0], param_const(TypeInt, 0x1));
+			break;
+		case OperatorIntDecrease:
+			add_cmd(Asm::inst_sub, param[0], param[0], param_const(TypeInt, 0x1));
+			break;
 		default:
 			DoError("unimplemented operator: " + PreOperators[com->link_no].str());
 	}
