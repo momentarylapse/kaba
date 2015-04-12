@@ -485,7 +485,8 @@ void SerializerARM::transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 void SerializerARM::gr_transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	msg_write("in " + c.str());
+	if (config.verbose)
+		msg_write("in " + c.str());
 	if (p.kind == KindDerefGlobalLookup){
 		// cmd ..., [global ref]
 
@@ -529,7 +530,8 @@ void SerializerARM::gr_transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 void SerializerARM::gr_transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	msg_write("out " + c.str());
+	if (config.verbose)
+		msg_write("out " + c.str());
 	if (p.kind == KindDerefGlobalLookup){
 		// cmd [global ref], ...
 
