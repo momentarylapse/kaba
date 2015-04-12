@@ -355,14 +355,12 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{inst_stmda,		"stmda"},
 	{inst_stmdb,		"stmdb"},
 
-	{inst_eor,	"eor"},
 	{inst_rsb,	"rsb"},
 	{inst_sbc,	"sbc"},
 	{inst_rsc,	"rsc"},
 	{inst_tst,	"tst"},
 	{inst_teq,	"teq"},
 	{inst_cmn,	"cmn"},
-	{inst_orr,	"orr"},
 	{inst_bic,	"bic"},
 	{inst_mvn,	"mvn"},
 	
@@ -427,11 +425,18 @@ InstructionWithParamsList::InstructionWithParamsList(int line_no)
 InstructionWithParamsList::~InstructionWithParamsList()
 {}
 
+Register *get_reg(int reg)
+{
+	if ((reg < 0) or (reg >= RegisterByID.num))
+		SetError("invalid register index: " + i2s(reg));
+	return RegisterByID[reg];
+}
+
 InstructionParam param_reg(int reg)
 {
 	InstructionParam p;
 	p.type = PARAMT_REGISTER;
-	p.reg = RegisterByID[reg];
+	p.reg = get_reg(reg);
 	p.size = p.reg->size;
 	return p;
 }
@@ -440,7 +445,7 @@ InstructionParam param_deref_reg(int reg, int size)
 {
 	InstructionParam p;
 	p.type = PARAMT_REGISTER;
-	p.reg = RegisterByID[reg];
+	p.reg = get_reg(reg);
 	p.size = size;
 	p.deref = true;
 	return p;
@@ -459,7 +464,7 @@ InstructionParam param_deref_reg_shift(int reg, int shift, int size)
 {
 	InstructionParam p;
 	p.type = PARAMT_REGISTER;
-	p.reg = RegisterByID[reg];
+	p.reg = get_reg(reg);
 	p.size = size;
 	p.deref = true;
 	p.value = shift;
@@ -471,9 +476,9 @@ InstructionParam param_deref_reg_shift_reg(int reg, int reg2, int size)
 {
 	InstructionParam p;
 	p.type = PARAMT_REGISTER;
-	p.reg = RegisterByID[reg];
+	p.reg = get_reg(reg);
 	p.size = size;
-	p.reg2 = RegisterByID[reg2];
+	p.reg2 = get_reg(reg2);
 	p.deref = true;
 	p.value = 1;
 	p.disp = DISP_MODE_REG2;
@@ -2116,10 +2121,10 @@ string show_reg(int r)
 	return format("r%d", r);
 }
 
-int ARMDataInstructions[16] =
+int ARM_DATA_INSTRUCTIONS[16] =
 {
 	inst_and,
-	inst_eor,
+	inst_xor,
 	inst_sub,
 	inst_rsb,
 	inst_add,
@@ -2130,7 +2135,7 @@ int ARMDataInstructions[16] =
 	inst_teq,
 	inst_cmp,
 	inst_cmn,
-	inst_orr,
+	inst_or,
 	inst_mov,
 	inst_bic,
 	inst_mvn
@@ -2165,7 +2170,7 @@ InstructionParam disarm_shift_reg(int code)
 InstructionWithParams disarm_data_opcode(int code)
 {
 	InstructionWithParams i;
-	i.inst = ARMDataInstructions[(code >> 21) & 15];
+	i.inst = ARM_DATA_INSTRUCTIONS[(code >> 21) & 15];
 	if (((code >> 20) & 1) and (i.inst != inst_cmp) and (i.inst != inst_cmn) and (i.inst != inst_teq) and (i.inst != inst_tst))
 		msg_write(GetInstructionName(i.inst) + "[S]");
 	i.p[0] = param_reg(REG_R0 + ((code >> 12) & 15));
@@ -3428,7 +3433,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 	code = iwp.condition << 28;
 	int nn = -1;
 	for (int i=0; i<16; i++)
-		if (iwp.inst == ARMDataInstructions[i])
+		if (iwp.inst == ARM_DATA_INSTRUCTIONS[i])
 			nn = i;
 	if (nn >= 0){
 		if ((iwp.inst == inst_cmp) or (iwp.inst == inst_cmn) or (iwp.inst == inst_tst) or (iwp.inst == inst_teq) or (iwp.inst == inst_mov)){

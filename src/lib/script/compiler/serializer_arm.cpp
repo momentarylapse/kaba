@@ -4,7 +4,7 @@
 
 
 namespace Asm{
-	extern int ARMDataInstructions[16]; // -> asm.cpp
+	extern int ARM_DATA_INSTRUCTIONS[16]; // -> asm.cpp
 };
 
 namespace Script{
@@ -292,11 +292,71 @@ void SerializerARM::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 			add_cmd(Asm::ARM_COND_LESS_EQUAL,     Asm::inst_mov, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_GREATER_THAN, Asm::inst_mov, ret, param_const(TypeBool, 0), p_none);
 			break;
+		case OperatorIntBitAnd:
+			add_cmd(Asm::inst_and, ret, param[0], param[1]);
+			break;
+		case OperatorIntBitOr:
+			add_cmd(Asm::inst_or, ret, param[0], param[1]);
+			break;
+		case OperatorIntNegate:
+			add_cmd(Asm::inst_mov, ret, param_const(TypeInt, 0x0));
+			add_cmd(Asm::inst_sub, ret, ret, param[0]);
+			break;
 		case OperatorIntIncrease:
 			add_cmd(Asm::inst_add, param[0], param[0], param_const(TypeInt, 0x1));
 			break;
 		case OperatorIntDecrease:
 			add_cmd(Asm::inst_sub, param[0], param[0], param_const(TypeInt, 0x1));
+			break;
+	// bool/char
+		case OperatorCharEqual:
+		case OperatorCharNotEqual:
+		case OperatorBoolEqual:
+		case OperatorBoolNotEqual:
+		case OperatorBoolGreater:
+		case OperatorBoolGreaterEqual:
+		case OperatorBoolSmaller:
+		case OperatorBoolSmallerEqual:
+			add_cmd(Asm::inst_cmp, param[0], param[1]);
+			if ((com->link_no == OperatorCharEqual) || (com->link_no == OperatorBoolEqual))
+				add_cmd(Asm::inst_setz, ret);
+			else if ((com->link_no ==OperatorCharNotEqual) || (com->link_no == OperatorBoolNotEqual))
+				add_cmd(Asm::inst_setnz, ret);
+			else if (com->link_no == OperatorBoolGreater)		add_cmd(Asm::inst_setnle, ret);
+			else if (com->link_no == OperatorBoolGreaterEqual)	add_cmd(Asm::inst_setnl, ret);
+			else if (com->link_no == OperatorBoolSmaller)		add_cmd(Asm::inst_setl, ret);
+			else if (com->link_no == OperatorBoolSmallerEqual)	add_cmd(Asm::inst_setle, ret);
+			break;
+		case OperatorBoolAnd:
+			add_cmd(Asm::inst_and, ret, param[0], param[1]);
+			break;
+		case OperatorBoolOr:
+			add_cmd(Asm::inst_or, ret, param[0], param[1]);
+			break;
+		case OperatorCharAddS:
+			add_cmd(Asm::inst_add, param[0], param[0], param[1]);
+			break;
+		case OperatorCharSubtractS:
+			add_cmd(Asm::inst_sub, param[0], param[0], param[1]);
+			break;
+		case OperatorCharAdd:
+			add_cmd(Asm::inst_add, ret, param[0], param[1]);
+			break;
+		case OperatorCharSubtract:
+			add_cmd(Asm::inst_sub, ret, param[0], param[1]);
+			break;
+		case OperatorCharBitAnd:
+			add_cmd(Asm::inst_and, ret, param[0], param[1]);
+			break;
+		case OperatorCharBitOr:
+			add_cmd(Asm::inst_or, ret, param[0], param[1]);
+			break;
+		case OperatorBoolNegate:
+			add_cmd(Asm::inst_xor, ret, param[0], param_const(TypeBool, 0x1));
+			break;
+		case OperatorCharNegate:
+			add_cmd(Asm::inst_mov, ret, param_const(TypeChar, 0x0));
+			add_cmd(Asm::inst_sub, ret, ret, param[0]);
 			break;
 		default:
 			DoError("unimplemented operator: " + PreOperators[com->link_no].str());
@@ -414,7 +474,7 @@ void SerializerARM::transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 void SerializerARM::transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 {
 	SerialCommandParam p = c.p[pno];
-	int r = find_unused_reg(i, i, p.type->size);
+	int r = find_unused_reg(i, i, 4);//p.type->size);
 	SerialCommandParam pr = param_reg(p.type, r);
 	add_reg_channel(r, i, cmd.num);
 	c.p[pno]  = pr;
@@ -438,7 +498,7 @@ void SerializerARM::gr_transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 		add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, global_refs[p.p].label), p_none);
 		move_last_cmd(i);
 
-		int r1 = find_unused_reg(i+1, i+1, p.type->size, r2);
+		int r1 = find_unused_reg(i+1, i+1, 4/*p.type->size*/, r2);
 		add_cmd(c.cond, Asm::inst_ldr, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
 		move_last_cmd(i+1);
 
@@ -482,7 +542,7 @@ void SerializerARM::gr_transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 		add_cmd(c.cond, Asm::inst_mov, param_reg(TypePointer, r2), param_deref_marker(TypePointer, global_refs[p.p].label), p_none);
 		move_last_cmd(i+1);
 
-		int r1 = find_unused_reg(i, i+1, p.type->size, r2);
+		int r1 = find_unused_reg(i, i+1, 4 /*p.type->size*/, r2);
 		add_cmd(c.cond, Asm::inst_str, param_reg(p.type, r1), param_deref_reg(TypePointer, r2), p_none);
 		move_last_cmd(i+2);
 
@@ -513,7 +573,7 @@ inline bool is_data_op3(int inst)
 	if (inst == Asm::inst_mul)
 		return true;
 	for (int i=0; i<16; i++)
-		if (inst == Asm::ARMDataInstructions[i])
+		if (inst == Asm::ARM_DATA_INSTRUCTIONS[i])
 			return true;
 	return false;
 }

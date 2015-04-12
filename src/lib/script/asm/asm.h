@@ -221,14 +221,12 @@ enum{
 	inst_stmda,
 	inst_stmdb,
 
-	inst_eor,
 	inst_rsb,
 	inst_sbc,
 	inst_rsc,
 	inst_tst,
 	inst_teq,
 	inst_cmn,
-	inst_orr,
 	inst_bic,
 	inst_mvn,
 

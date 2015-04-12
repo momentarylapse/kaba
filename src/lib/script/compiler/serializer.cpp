@@ -7,7 +7,7 @@
 
 
 namespace Asm{
-	extern int ARMDataInstructions[16]; // -> asm.cpp
+	extern int ARM_DATA_INSTRUCTIONS[16]; // -> asm.cpp
 };
 
 namespace Script{
@@ -797,6 +797,7 @@ int Serializer::find_unused_reg(int first, int last, int size, int exclude)
 		if (map_reg_root[r] != exclude)
 			if (!is_reg_root_used_in_interval(map_reg_root[r], first, last))
 				return get_reg(map_reg_root[r], size);
+	DoError("no free register of size " + i2s(size));
 	return -1;
 }
 
@@ -1532,6 +1533,7 @@ void Serializer::SerializeFunction(Function *f)
 	stack_offset = f->_var_size;
 	stack_max_size = f->_var_size;
 	temp_var_ranges_defined = false;
+	map_reg_root.clear();
 	
 
 	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
