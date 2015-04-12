@@ -350,14 +350,16 @@ extern CompilerConfiguration config;
 template<typename T>
 void* mf(T tmf)
 {
-	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-		return NULL;
 	union{
 		T f;
-		void *p;
+		struct{
+			long p;
+			long i;
+		};
 	}pp;
 	pp.f = tmf;
-	return pp.p;
+	// on ARM the "virtual bit" is in i, on x86 it is in p
+	return (void*)(pp.p | (pp.i & 1));
 }
 
 
