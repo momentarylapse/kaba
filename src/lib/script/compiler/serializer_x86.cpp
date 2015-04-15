@@ -1061,9 +1061,11 @@ void SerializerX86::CorrectUnallowedParamCombis()
 
 		//msg_error("correct");
 		//msg_write(p.type->name);
-		*pp = param_reg(p.type, get_reg(0, p.type->size));
+		int reg = find_unused_reg(i, i, p.type->size);
+		*pp = param_reg(p.type, reg);
 		add_cmd(Asm::inst_mov, *pp, p);
 		move_last_cmd(i);
+		add_reg_channel(reg, i, i + 1);
 	}
 	ScanTempVarUsage();
 }
