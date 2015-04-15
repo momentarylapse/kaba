@@ -30,6 +30,7 @@ void Serializer::add_temp(Type *t, SerialCommandParam &param, bool add_construct
 	if (t != TypeVoid){
 		TempVar v;
 		v.first = -1;
+		v.last = -1;
 		v.type = t;
 		v.force_stack = (t->size > config.pointer_size) || (t->is_super_array) || (t->is_array) || (t->element.num > 0);
 		v.entangled = 0;

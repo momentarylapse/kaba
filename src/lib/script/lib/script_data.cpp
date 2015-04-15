@@ -1326,8 +1326,8 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	config.abi = abi;
 	config.allow_std_lib = allow_std_lib;
 	config.pointer_size = Asm::InstructionSet.pointer_size;
-	if ((abi >= 0) || (instruction_set >= 0))
-		config.super_array_size = config.pointer_size + 3 * sizeof(int);
+	if ((abi >= 0) or (instruction_set >= 0))
+		config.super_array_size = mem_align(config.pointer_size + 3 * sizeof(int), config.pointer_size);
 	else
 		config.super_array_size = sizeof(DynamicArray);
 	config.stack_size = SCRIPT_DEFAULT_STACK_SIZE;
