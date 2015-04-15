@@ -131,12 +131,12 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 
 	int push_size = fc_begin();
 
-	if ((script == this->script) and (!script->syntax->Functions[func_no]->is_extern)){
+	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
 		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
-			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
+			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);
 		add_cmd(Asm::inst_call, param_const(TypeReg32, (long)func)); // the actual call
 		// function pointer will be shifted later...
 	}
@@ -245,7 +245,7 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 {
 	// push 8 bit -> push 32 bit
 	if (c.inst == Asm::inst_push)
-		if (c.p[0].kind == KindRegister)
+		if (c.p[0].kind == KIND_REGISTER)
 			c.p[0].p = reg_resize(c.p[0].p, config.pointer_size);
 
 
@@ -253,7 +253,7 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 	// evil hack to allow inconsistent param types (in address shifts)
 	if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 		if ((c.inst == Asm::inst_add) || (c.inst == Asm::inst_mov)){
-			if ((c.p[0].kind == KindRegister) && (c.p[1].kind == KindRefToConst)){
+			if ((c.p[0].kind == KIND_REGISTER) && (c.p[1].kind == KIND_REF_TO_CONST)){
 				if (c.p[0].type->is_pointer){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize a");
@@ -277,7 +277,7 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 #ifdef debug_evil_corrections
 					msg_write(cmd2str(c));
 #endif
-				}else*/ if (c.p[1].kind == KindRegister){
+				}else*/ if (c.p[1].kind == KIND_REGISTER){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize c");
 					msg_write(cmd2str(c));
@@ -290,7 +290,7 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 				}
 			}
 			if ((c.p[0].type->size < 8) && (c.p[1].type->size == 8)){
-				if ((c.p[0].kind == KindRegister) && ((c.p[1].kind == KindRegister) || (c.p[1].kind == KindDerefRegister))){
+				if ((c.p[0].kind == KIND_REGISTER) && ((c.p[1].kind == KIND_REGISTER) || (c.p[1].kind == KIND_DEREF_REGISTER))){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize d");
 					msg_write(cmd2str(c));

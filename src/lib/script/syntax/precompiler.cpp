@@ -13,41 +13,41 @@ extern long long s2i2(const string &str);
 
 void SetImmortal(SyntaxTree *ps)
 {
-	ps->FlagImmortal = true;
-	for (int i=0;i<ps->Includes.num;i++)
-		SetImmortal(ps->Includes[i]->syntax);
+	ps->flag_immortal = true;
+	for (int i=0;i<ps->includes.num;i++)
+		SetImmortal(ps->includes[i]->syntax);
 }
 
 // import data from an included script file
 void SyntaxTree::AddIncludeData(Script *s)
 {
-	foreach(Script *i, Includes)
+	foreach(Script *i, includes)
 		if (i == s)
 			return;
 	msg_db_f("AddIncludeData",5);
 	SyntaxTree *ps = s->syntax;
-	if (FlagImmortal)
+	if (flag_immortal)
 		SetImmortal(ps);
 
-	FlagCompileOS |= ps->FlagCompileOS;
-	FlagAddEntryPoint |= ps->FlagAddEntryPoint;
-	FlagNoFunctionFrame |= ps->FlagNoFunctionFrame;
-	FlagOverwriteVariablesOffset |= ps->FlagOverwriteVariablesOffset;
-	if (ps->FlagOverwriteVariablesOffset)
-		VariablesOffset = ps->VariablesOffset;
-	FlagStringConstAsCString |= ps->FlagStringConstAsCString;
-	if (ps->AsmMetaInfo->code_origin != (long)ps->script->Opcode)
-		AsmMetaInfo->code_origin = ps->AsmMetaInfo->code_origin;
+	flag_compile_os |= ps->flag_compile_os;
+	flag_add_entry_point |= ps->flag_add_entry_point;
+	flag_no_function_frame |= ps->flag_no_function_frame;
+	flag_overwrite_variables_offset |= ps->flag_overwrite_variables_offset;
+	if (ps->flag_overwrite_variables_offset)
+		variables_offset = ps->variables_offset;
+	flag_string_const_as_cstring |= ps->flag_string_const_as_cstring;
+	if (ps->asm_meta_info->code_origin != (long)ps->script->opcode)
+		asm_meta_info->code_origin = ps->asm_meta_info->code_origin;
 
 	// defines
-	Defines.append(ps->Defines);
+	defines.append(ps->defines);
 
 
 	/*if (FlagCompileOS){
 		import_deep(this, ps);
 	}else{*/
-		Includes.add(s);
-		s->ReferenceCounter ++;
+		includes.add(s);
+		s->reference_counter ++;
 	//}
 
 	/*ExpressionBuffer::Line *cur_line = Exp.cur_line;
@@ -112,27 +112,27 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 			// special defines?
 			if ((d.Source.num > 4) && (d.Source.head(2) == "__") && (d.Source.tail(2) == "__")){
 				if (d.Source == "__OS__"){
-					FlagCompileOS = true;
+					flag_compile_os = true;
 				}else if (d.Source == "__STRING_CONST_AS_CSTRING__"){
-					FlagStringConstAsCString = true;
+					flag_string_const_as_cstring = true;
 				}else if (d.Source == "__NO_FUNCTION_FRAME__"){
-					FlagNoFunctionFrame = true;
+					flag_no_function_frame = true;
 				}else if (d.Source == "__ADD_ENTRY_POINT__"){
-					FlagAddEntryPoint = true;
+					flag_add_entry_point = true;
 				}else if (d.Source == "__VARIABLE_OFFSET__"){
-					FlagOverwriteVariablesOffset = true;
+					flag_overwrite_variables_offset = true;
 					if (d.Dest.num != 1)
 						DoError("offset value expected after __VARIABLE_OFFSET__");
-					VariablesOffset = (int)s2i2(d.Dest[0]);
+					variables_offset = (int)s2i2(d.Dest[0]);
 				}else if (d.Source == "__CODE_ORIGIN__"){
 					if (d.Dest.num != 1)
 						DoError("offset value expected after __CODE_ORIGIN__");
-					AsmMetaInfo->code_origin = (long)s2i2(d.Dest[0]);
+					asm_meta_info->code_origin = (long)s2i2(d.Dest[0]);
 				}else
 					DoError("unknown compiler flag (define starting and ending with \"__\"): " + d.Source);
 			}else
 				// normal define
-				Defines.add(d);
+				defines.add(d);
 			break;
 		case MacroImmortal:
 			SetImmortal(this);
@@ -172,7 +172,7 @@ void SyntaxTree::PreCompiler(bool just_analyse)
 			// replace by definition?
 			int num_defs_inserted = 0;
 			while(!Exp.end_of_line()){
-				foreachi(Define &d, Defines, j){
+				foreachi(Define &d, defines, j){
 					if (Exp.cur == d.Source){
 						int pos = Exp.cur_line->exp[Exp.cur_exp].pos;
 						Exp.remove(Exp.cur_exp);

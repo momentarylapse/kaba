@@ -35,13 +35,13 @@ float GlobalTimeToWait;
 Exception::Exception(const string &_message, const string &_expression, int _line, int _column, Script *s) :
 	Asm::Exception(_message, _expression, _line, _column)
 {
-	message +=  ", " + s->Filename;
+	message +=  ", " + s->filename;
 }
 
 Exception::Exception(const Asm::Exception &e, Script *s) :
 	Asm::Exception(e)
 {
-	message = "assembler: " + message + ", " + s->Filename;
+	message = "assembler: " + message + ", " + s->filename;
 }
 
 
@@ -61,7 +61,7 @@ Script *Load(const string &filename, bool just_analyse)
 
 	// already loaded?
 	for (int i=0;i<PublicScript.num;i++)
-		if (PublicScript[i]->Filename == filename.sys_filename())
+		if (PublicScript[i]->filename == filename.sys_filename())
 			return PublicScript[i];
 	
 	// load
@@ -81,7 +81,7 @@ Script *Load(const string &filename, bool just_analyse)
 Script *CreateForSource(const string &buffer, bool just_analyse)
 {
 	Script *s = new Script;
-	s->JustAnalyse = just_analyse;
+	s->just_analyse = just_analyse;
 	try{
 		s->syntax->ParseBuffer(buffer, just_analyse);
 
@@ -98,8 +98,8 @@ void Remove(Script *s)
 {
 	msg_db_f("RemoveScript", 1);
 	// remove references
-	for (int i=0;i<s->syntax->Includes.num;i++)
-		s->syntax->Includes[i]->ReferenceCounter --;
+	for (int i=0;i<s->syntax->includes.num;i++)
+		s->syntax->includes[i]->reference_counter --;
 
 	// put on to-delete-list
 	DeadScript.add(s);
@@ -111,7 +111,7 @@ void Remove(Script *s)
 
 	// delete all deletables
 	for (int i=DeadScript.num-1;i>=0;i--)
-		if (DeadScript[i]->ReferenceCounter <= 0){
+		if (DeadScript[i]->reference_counter <= 0){
 			delete(DeadScript[i]);
 			DeadScript.erase(i);
 		}
@@ -123,7 +123,7 @@ void DeleteAllScripts(bool even_immortal, bool force)
 
 	// try to erase them...
 	foreachb(Script *s, PublicScript)
-		if ((!s->syntax->FlagImmortal) || (even_immortal))
+		if ((!s->syntax->flag_immortal) || (even_immortal))
 			Remove(s);
 
 	// undead... really KILL!
@@ -150,7 +150,7 @@ Type *GetDynamicType(void *p)
 {
 	VirtualTable *pp = *(VirtualTable**)p;
 	foreach(Script *s, PublicScript){
-		foreach(Type *t, s->syntax->Types){
+		foreach(Type *t, s->syntax->types){
 			if (t->vtable.data == pp)
 				return t;
 		}
@@ -158,11 +158,11 @@ Type *GetDynamicType(void *p)
 	return NULL;
 }
 
-void Script::Load(const string &filename, bool just_analyse)
+void Script::Load(const string &_filename, bool _just_analyse)
 {
 	msg_db_f("loading script", 1);
-	JustAnalyse = just_analyse;
-	Filename = filename.sys_filename();
+	just_analyse = _just_analyse;
+	filename = _filename.sys_filename();
 
 	// read file
 	CFile *f = FileOpen(config.directory + filename);
@@ -174,18 +174,18 @@ void Script::Load(const string &filename, bool just_analyse)
 	syntax->ParseBuffer(buffer, just_analyse);
 
 
-	if (!JustAnalyse)
+	if (!just_analyse)
 		Compiler();
 	/*if (pre_script->FlagShow)
 		pre_script->Show();*/
-	if ((!JustAnalyse) && (config.verbose)){
-		if (ThreadOpcodeSize > 0){
-			msg_write(format("ThreadOpcode: %d bytes", ThreadOpcodeSize));
-			msg_write(Asm::Disassemble(ThreadOpcode, ThreadOpcodeSize));
+	if ((!just_analyse) && (config.verbose)){
+		if (thread_opcode_size > 0){
+			msg_write(format("ThreadOpcode: %d bytes", thread_opcode_size));
+			msg_write(Asm::Disassemble(thread_opcode, thread_opcode_size));
 			msg_write("\n\n");
 		}
-		msg_write(format("Opcode: %d bytes", OpcodeSize));
-		msg_write(Asm::Disassemble(Opcode, OpcodeSize));
+		msg_write(format("Opcode: %d bytes", opcode_size));
+		msg_write(Asm::Disassemble(opcode, opcode_size));
 	}
 }
 
@@ -208,12 +208,12 @@ void Script::SetVariable(const string &name, void *data)
 {
 	msg_db_f("SetVariable", 4);
 	//msg_write(name);
-	for (int i=0;i<syntax->RootOfAllEvil.var.num;i++)
-		if (syntax->RootOfAllEvil.var[i].name == name){
+	for (int i=0;i<syntax->root_of_all_evil.var.num;i++)
+		if (syntax->root_of_all_evil.var[i].name == name){
 			/*msg_write("var");
 			msg_write(pre_script->RootOfAllEvil.Var[i].Type->Size);
 			msg_write((int)g_var[i]);*/
-			memcpy(g_var[i], data, syntax->RootOfAllEvil.var[i].type->size);
+			memcpy(g_var[i], data, syntax->root_of_all_evil.var[i].type->size);
 			return;
 		}
 	msg_error("CScript.SetVariable: variable " + name + " not found");
@@ -221,24 +221,24 @@ void Script::SetVariable(const string &name, void *data)
 
 Script::Script()
 {
-	Filename = "-empty script-";
+	filename = "-empty script-";
 
-	ReferenceCounter = 0;
+	reference_counter = 0;
 
 	cur_func = NULL;
 	first_execution = NULL;
-	WaitingMode = WaitingModeFirst;
-	TimeToWait = 0;
-	ShowCompilerStats = !config.compile_silently;
+	waiting_mode = WAITING_MODE_FIRST;
+	time_to_wait = 0;
+	show_compiler_stats = !config.compile_silently;
 
-	Opcode = NULL;
-	OpcodeSize = 0;
-	ThreadOpcode = NULL;
-	ThreadOpcodeSize = 0;
-	Memory = NULL;
-	MemorySize = 0;
-	MemoryUsed = 0;
-	Stack = NULL;
+	opcode = NULL;
+	opcode_size = 0;
+	thread_opcode = NULL;
+	thread_opcode_size = 0;
+	memory = NULL;
+	memory_size = 0;
+	memory_used = 0;
+	stack = NULL;
 
 	syntax = new SyntaxTree(this);
 }
@@ -246,30 +246,30 @@ Script::Script()
 Script::~Script()
 {
 	msg_db_f("~CScript", 4);
-	if ((Memory) && (!JustAnalyse)){
+	if ((memory) && (!just_analyse)){
 		//delete[](Memory);
 		#ifdef OS_WINDOWS
-			VirtualFree(Memory, 0, MemorySize);
+			VirtualFree(memory, 0, memory_size);
 		#else
-			int r = munmap(Memory, MemorySize);
+			int r = munmap(memory, memory_size);
 		#endif
 	}
-	if (Opcode){
+	if (opcode){
 		#ifdef OS_WINDOWS
-			VirtualFree(Opcode, 0, MEM_RELEASE);
+			VirtualFree(opcode, 0, MEM_RELEASE);
 		#else
-			int r = munmap(Opcode, SCRIPT_MAX_OPCODE);
+			int r = munmap(opcode, SCRIPT_MAX_OPCODE);
 		#endif
 	}
-	if (ThreadOpcode){
+	if (thread_opcode){
 		#ifdef OS_WINDOWS
-			VirtualFree(ThreadOpcode, 0, MEM_RELEASE);
+			VirtualFree(thread_opcode, 0, MEM_RELEASE);
 		#else
-			int r = munmap(ThreadOpcode, SCRIPT_MAX_THREAD_OPCODE);
+			int r = munmap(thread_opcode, SCRIPT_MAX_THREAD_OPCODE);
 		#endif
 	}
-	if (Stack)
-		delete[](Stack);
+	if (stack)
+		delete[](stack);
 	//msg_write(string2("-----------            Memory:         %p",Memory));
 	delete(syntax);
 }
@@ -344,7 +344,7 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 	va_end(marker);
 
 	// match
-	foreachi(Function *f, syntax->Functions, i)
+	foreachi(Function *f, syntax->functions, i)
 		if (((f->name == name) || (name == "*")) && (f->literal_return_type->name == return_type) && (num_params == f->num_params)){
 
 			bool params_ok = true;
@@ -353,7 +353,7 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 				if (f->literal_param_type[j]->name != param_type[j])
 					params_ok = false;
 			if (params_ok){
-				if (JustAnalyse)
+				if (just_analyse)
 					return (void*)0xdeadbeaf;
 				else
 					return (void*)func[i];
@@ -380,7 +380,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 		return NULL;
 
 	// match
-	foreachi(Function *f, syntax->Functions, i){
+	foreachi(Function *f, syntax->functions, i){
 		if (!f->_class)
 			continue;
 		if (!f->_class->IsDerivedFrom(root_type))
@@ -393,7 +393,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 				if (f->literal_param_type[j]->name != param_type[j])
 					params_ok = false;
 			if (params_ok){
-				if (JustAnalyse)
+				if (just_analyse)
 					return (void*)0xdeadbeaf;
 				else
 					return (void*)func[i];
@@ -411,7 +411,7 @@ void print_var(void *p, const string &name, Type *t)
 
 void Script::ShowVars(bool include_consts)
 {
-	foreachi(Variable &v, syntax->RootOfAllEvil.var, i)
+	foreachi(Variable &v, syntax->root_of_all_evil.var, i)
 		print_var((void*)g_var[i], v.name, v.type);
 	/*if (include_consts)
 		foreachi(LocalVariable &c, pre_script->Constant, i)
@@ -420,31 +420,31 @@ void Script::ShowVars(bool include_consts)
 
 void Script::Execute()
 {
-	if (WaitingMode == WaitingModeNone)
+	if (waiting_mode == WAITING_MODE_NONE)
 		return;
 	shift_right=0;
 	//msg_db_f(string("Execute ",pre_script->Filename),1);
 	msg_db_f("Execute", 1);{
-	msg_db_f(Filename.c_str(),1);
+	msg_db_f(filename.c_str(),1);
 
 	// handle wait-commands
-	if (WaitingMode == WaitingModeFirst){
-		GlobalWaitingMode = WaitingModeNone;
+	if (waiting_mode == WAITING_MODE_FIRST){
+		GlobalWaitingMode = WAITING_MODE_NONE;
 		msg_db_f("->First",1);
 		//msg_right();
 		first_execution();
 		//msg_left();
 	}else{
 #ifdef _X_ALLOW_X_
-		if (WaitingMode==WaitingModeRT)
-			TimeToWait -= Engine.ElapsedRT;
+		if (waiting_mode==WaitingModeRT)
+			time_to_wait -= Engine.ElapsedRT;
 		else
-			TimeToWait -= Engine.Elapsed;
-		if (TimeToWait>0){
+			time_to_wait -= Engine.Elapsed;
+		if (time_to_wait>0){
 			return;
 		}
 #endif
-		GlobalWaitingMode=WaitingModeNone;
+		GlobalWaitingMode=WAITING_MODE_NONE;
 		//msg_write(ThisObject);
 		msg_db_f("->Continue",1);
 		//msg_write(">---");
@@ -454,8 +454,8 @@ void Script::Execute()
 		//msg_write("ok");
 		//msg_left();
 	}
-	WaitingMode=GlobalWaitingMode;
-	TimeToWait=GlobalTimeToWait;
+	waiting_mode=GlobalWaitingMode;
+	time_to_wait=GlobalTimeToWait;
 	}
 }
 

@@ -119,13 +119,13 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 {
 	int push_size = fc_begin();
 
-	if ((script == this->script) and (!script->syntax->Functions[func_no]->is_extern)){
+	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
 		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
-			DoErrorLink("could not link function " + script->syntax->Functions[func_no]->name);
-		if (abs((long)func - (long)this->script->Opcode) < 30000000){
+			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);
+		if (abs((long)func - (long)this->script->opcode) < 30000000){
 			add_cmd(Asm::inst_call, param_const(TypePointer, (long)func)); // the actual call
 			// function pointer will be shifted later...
 		}else{
@@ -149,13 +149,13 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 {
 
 	switch(com->link_no){
-		case CommandIf:{
+		case COMMAND_IF:{
 			// cmp;  jz m;  -block-  m;
 			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, 0x0));
 			int m_after_true = add_marker_after_command(level, index + 1);
 			add_cmd(Asm::ARM_COND_EQUAL, Asm::inst_b, param_marker(m_after_true), p_none, p_none);
 			}break;
-		case CommandIfElse:{
+		case COMMAND_IF_ELSE:{
 			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, 0x0));
 			int m_after_true = add_marker_after_command(level, index + 1);
@@ -163,8 +163,8 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 			add_cmd(Asm::ARM_COND_EQUAL, Asm::inst_b, param_marker(m_after_true), p_none, p_none); // jz ...
 			add_jump_after_command(level, index + 1, m_after_false); // insert before <m_after_true> is inserted!
 			}break;
-		case CommandWhile:
-		case CommandFor:{
+		case COMMAND_WHILE:
+		case COMMAND_FOR:{
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
 			add_cmd(Asm::inst_cmp, param[0], param_const(TypeBool, 0x0));
@@ -173,22 +173,22 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 			add_jump_after_command(level, index + 1, marker_before_params); // insert before <marker_after_while> is inserted!
 
 			int marker_continue = marker_before_params;
-			if (com->link_no == CommandFor){
+			if (com->link_no == COMMAND_FOR){
 				// NextCommand is a block!
-				if (next_command->kind != KindBlock)
+				if (next_command->kind != KIND_BLOCK)
 					DoError("command block in \"for\" loop missing");
 				marker_continue = add_marker_after_command(level + 1, next_command->block()->command.num - 2);
 			}
 			LoopData l = {marker_continue, marker_after_while, level, index};
 			loop.add(l);
 			}break;
-		case CommandBreak:
+		case COMMAND_BREAK:
 			add_cmd(Asm::inst_b, param_marker(loop.back().marker_break));
 			break;
-		case CommandContinue:
+		case COMMAND_CONTINUE:
 			add_cmd(Asm::inst_b, param_marker(loop.back().marker_continue));
 			break;
-		case CommandReturn:
+		case COMMAND_RETURN:
 			if (com->num_params > 0){
 				if (cur_func->return_type->UsesReturnByMemory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
 					FillInDestructors(false);
@@ -212,7 +212,7 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 				AddFunctionOutro(cur_func);
 			}
 			break;
-		case CommandAsm:
+		case COMMAND_ASM:
 			add_cmd(inst_asm);
 			break;
 		default:
@@ -384,52 +384,52 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 	p.p = 0;
 	p.shift = 0;
 	//Type *rt=link->;
-	if (link->kind == KindVarFunction){
+	if (link->kind == KIND_VAR_FUNCTION){
 		p.p = (long)link->script->func[link->link_no];
-		p.kind = KindVarGlobal;
+		p.kind = KIND_VAR_GLOBAL;
 		if (!p.p){
 			if (link->script == script){
 				p.p = link->link_no + 0xefef0000;
 				script->function_vars_to_link.add(link->link_no);
 			}else
-				DoErrorLink("could not link function as variable: " + link->script->syntax->Functions[link->link_no]->name);
+				DoErrorLink("could not link function as variable: " + link->script->syntax->functions[link->link_no]->name);
 			//p.kind = Asm::PKLabel;
 			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
 		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
-	}else if (link->kind == KindMemory){
+	}else if (link->kind == KIND_MEMORY){
 		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
-	}else if (link->kind == KindAddress){
+	}else if (link->kind == KIND_ADDRESS){
 		return param_lookup(p.type, add_global_ref((void*)(long)link->link_no));
-	}else if (link->kind == KindVarGlobal){
+	}else if (link->kind == KIND_VAR_GLOBAL){
 		if (!link->script->g_var[link->link_no])
-			script->DoErrorLink("variable is not linkable: " + link->script->syntax->RootOfAllEvil.var[link->link_no].name);
+			script->DoErrorLink("variable is not linkable: " + link->script->syntax->root_of_all_evil.var[link->link_no].name);
 		return param_deref_lookup(p.type, add_global_ref(link->script->g_var[link->link_no]));
-	}else if (link->kind == KindVarLocal){
+	}else if (link->kind == KIND_VAR_LOCAL){
 		p.p = cur_func->var[link->link_no]._offset;
-	}else if (link->kind == KindLocalMemory){
+	}else if (link->kind == KIND_LOCAL_MEMORY){
 		p.p = link->link_no;
-		p.kind = KindVarLocal;
-	}else if (link->kind == KindLocalAddress){
+		p.kind = KIND_VAR_LOCAL;
+	}else if (link->kind == KIND_LOCAL_ADDRESS){
 		SerialCommandParam param = param_local(TypePointer, link->link_no);
 		return AddReference(param, link->type);
-	}else if (link->kind == KindConstant){
+	}else if (link->kind == KIND_CONSTANT){
 		void *pp = link->script->cnst[link->link_no];
 		int c = *(int*)pp;
 		if (const_is_arm_representable(c)){
 			p.p = c;
-			p.kind = KindImmediate;
+			p.kind = KIND_IMMEDIATE;
 		}else{
 			return param_lookup(p.type, add_global_ref(*(int**)pp));
 		}
-	}else if ((link->kind==KindOperator) || (link->kind==KindFunction) || (link->kind==KindVirtualFunction) || (link->kind==KindCompilerFunction) || (link->kind==KindArrayBuilder)){
+	}else if ((link->kind==KIND_OPERATOR) || (link->kind==KIND_FUNCTION) || (link->kind==KIND_VIRTUAL_FUNCTION) || (link->kind==KIND_COMPILER_FUNCTION) || (link->kind==KIND_ARRAY_BUILDER)){
 		return SerializeCommand(link, level, index);
-	}else if (link->kind == KindReference){
+	}else if (link->kind == KIND_REFERENCE){
 		msg_error("ref");
 		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return AddReference(param, link->type);
-	}else if (link->kind == KindDereference){
+	}else if (link->kind == KIND_DEREFERENCE){
 		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		/*if ((param.kind == KindVarLocal) || (param.kind == KindVarGlobal)){
 			p.type = param.type->sub_type;
@@ -438,7 +438,7 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 			p.p = param.p;
 		}*/
 		return AddDereference(param);
-	}else if (link->kind == KindVarTemp){
+	}else if (link->kind == KIND_VAR_TEMP){
 		// only used by <new> operator
 		p.p = link->link_no;
 	}else{
@@ -453,9 +453,9 @@ inline bool _____arm_param_combi_allowed(int inst, SerialCommandParam &p1, Seria
 //	if (inst >= Asm::inst_marker)
 //		return true;
 	if (inst == Asm::inst_mov)
-		return (p1.kind == KindRegister) and (p2.kind == KindRegister);
+		return (p1.kind == KIND_REGISTER) and (p2.kind == KIND_REGISTER);
 	if (inst == Asm::inst_add)
-		return (p1.kind == KindRegister) and (p2.kind == KindRegister) and (p3.kind == KindRegister);
+		return (p1.kind == KIND_REGISTER) and (p2.kind == KIND_REGISTER) and (p3.kind == KIND_REGISTER);
 	return true;
 }
 
@@ -487,7 +487,7 @@ void SerializerARM::gr_transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 	SerialCommandParam p = c.p[pno];
 	if (config.verbose)
 		msg_write("in " + c.str());
-	if (p.kind == KindDerefGlobalLookup){
+	if (p.kind == KIND_DEREF_GLOBAL_LOOKUP){
 		// cmd ..., [global ref]
 
 		// mov r2, [ref]
@@ -532,7 +532,7 @@ void SerializerARM::gr_transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 	SerialCommandParam p = c.p[pno];
 	if (config.verbose)
 		msg_write("out " + c.str());
-	if (p.kind == KindDerefGlobalLookup){
+	if (p.kind == KIND_DEREF_GLOBAL_LOOKUP){
 		// cmd [global ref], ...
 
 		// cmd r1, ...
@@ -597,7 +597,7 @@ inline bool is_data_op2(int inst)
 
 inline bool is_global_lookup(SerialCommandParam &p)
 {
-	return (p.kind == KindDerefGlobalLookup) or (p.kind == KindGlobalLookup);
+	return (p.kind == KIND_DEREF_GLOBAL_LOOKUP) or (p.kind == KIND_GLOBAL_LOOKUP);
 }
 
 // create global lookup accesses
@@ -633,19 +633,19 @@ void SerializerARM::CorrectUnallowedParamCombis()
 	msg_db_f("CorrectCombis", 3);
 	for (int i=cmd.num-1;i>=0;i--){
 		if (cmd[i].inst == Asm::inst_mov){
-			if ((cmd[i].p[0].kind != KindRegister) and (cmd[i].p[1].kind != KindRegister))
+			if ((cmd[i].p[0].kind != KIND_REGISTER) and (cmd[i].p[1].kind != KIND_REGISTER))
 				transfer_by_reg_in(cmd[i], i, 1);
 		}else if (is_data_op2(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister)
+			if (cmd[i].p[1].kind != KIND_REGISTER)
 				transfer_by_reg_in(cmd[i], i, 1);
-			if (cmd[i].p[0].kind != KindRegister)
+			if (cmd[i].p[0].kind != KIND_REGISTER)
 				transfer_by_reg_in(cmd[i], i, 0);
 		}else if (is_data_op3(cmd[i].inst)){
-			if (cmd[i].p[1].kind != KindRegister)
+			if (cmd[i].p[1].kind != KIND_REGISTER)
 				transfer_by_reg_in(cmd[i], i, 1);
-			if (cmd[i].p[2].kind != KindRegister)
+			if (cmd[i].p[2].kind != KIND_REGISTER)
 				transfer_by_reg_in(cmd[i], i, 2);
-			if (cmd[i].p[0].kind != KindRegister)
+			if (cmd[i].p[0].kind != KIND_REGISTER)
 				transfer_by_reg_out(cmd[i], i, 0);
 		}
 	}
@@ -731,7 +731,7 @@ void SerializerARM::ConvertGlobalLookups()
 {
 	for (int i=0; i<cmd.num; i++)
 		for (int k=0; k<3; k++)
-			if (cmd[i].p[k].kind == KindGlobalLookup){
+			if (cmd[i].p[k].kind == KIND_GLOBAL_LOOKUP){
 
 			}
 }
@@ -778,7 +778,7 @@ void SerializerARM::DoMapping()
 void SerializerARM::CorrectUnallowedParamCombis2(SerialCommand &c)
 {
 	if (c.inst == Asm::inst_mov){
-		if (c.p[0].kind == KindVarLocal){
+		if (c.p[0].kind == KIND_VAR_LOCAL){
 			if (c.p[0].type->size == 1)
 				c.inst = Asm::inst_strb;
 			else
@@ -786,12 +786,12 @@ void SerializerARM::CorrectUnallowedParamCombis2(SerialCommand &c)
 			SerialCommandParam p = c.p[0];
 			c.p[0] = c.p[1];
 			c.p[1] = p;
-		}else if (c.p[1].kind == KindVarLocal){
+		}else if (c.p[1].kind == KIND_VAR_LOCAL){
 			if (c.p[1].type->size == 1)
 				c.inst = Asm::inst_ldrb;
 			else
 				c.inst = Asm::inst_ldr;
-		}else if (c.p[1].kind == KindDerefMarker){
+		}else if (c.p[1].kind == KIND_DEREF_MARKER){
 			c.inst = Asm::inst_ldr;
 		}
 	}

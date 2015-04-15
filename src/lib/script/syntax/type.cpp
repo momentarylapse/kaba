@@ -28,7 +28,7 @@ ClassFunction::ClassFunction(const string &_name, Type *_return_type, Script *s,
 
 Function* ClassFunction::GetFunc()
 {
-	return script->syntax->Functions[nr];
+	return script->syntax->functions[nr];
 }
 
 Type::Type()//const string &_name, int _size, SyntaxTree *_owner)
@@ -303,7 +303,7 @@ Type *Type::GetRoot()
 
 void Type::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overwrite)
 {
-	Function *f = s->Functions[func_no];
+	Function *f = s->functions[func_no];
 	ClassFunction cf;
 	cf.name = f->name.substr(name.num + 1, -1);
 	cf.nr = func_no;

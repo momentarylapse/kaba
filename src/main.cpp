@@ -17,7 +17,7 @@ void execute(Script::Script *s, Array<string> &arg)
 	// set working directory -> script file
 	//msg_write(HuiInitialWorkingDirectory);
 	HuiSetDirectory(HuiInitialWorkingDirectory);
-	HuiSetDirectory(s->Filename.dirname());
+	HuiSetDirectory(s->filename.dirname());
 
 	main_arg_func *f_arg = (main_arg_func*)s->MatchFunction("main", "void", 1, "string[]");
 	main_void_func *f_void = (main_void_func*)s->MatchFunction("main", "void", 0);
@@ -38,18 +38,18 @@ void dump_to_file(Script::Script *s, const string &out_file)
 {
 	CFile *f = FileCreate(out_file);
 	f->SetBinaryMode(true);
-	f->WriteBuffer(s->Opcode, s->OpcodeSize);
+	f->WriteBuffer(s->opcode, s->opcode_size);
 	delete(f);
 }
 
 void export_symbols(Script::Script *s, const string &symbols_out_file)
 {
 	CFile *f = FileCreate(symbols_out_file);
-	foreachi(Script::Function *fn, s->syntax->Functions, i){
+	foreachi(Script::Function *fn, s->syntax->functions, i){
 		f->WriteStr(fn->name);
 		f->WriteInt((long)s->func[i]);
 	}
-	foreachi(Script::Variable &v, s->syntax->RootOfAllEvil.var, i){
+	foreachi(Script::Variable &v, s->syntax->root_of_all_evil.var, i){
 		f->WriteStr(v.name);
 		f->WriteInt((long)s->g_var[i]);
 	}
@@ -203,7 +203,7 @@ int hui_main(const Array<string> &arg0)
 			dump_to_file(s, out_file);
 		}else{
 			if (disassemble)
-				msg_write(Asm::Disassemble(s->Opcode, s->OpcodeSize, true));
+				msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
 
 			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet())
 				execute(s, arg);

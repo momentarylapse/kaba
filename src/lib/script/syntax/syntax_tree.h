@@ -36,47 +36,47 @@ struct Constant
 
 enum
 {
-	KindUnknown,
+	KIND_UNKNOWN,
 	// data
-	KindVarLocal,
-	KindVarGlobal,
-	KindVarFunction,
-	KindConstant,
+	KIND_VAR_LOCAL,
+	KIND_VAR_GLOBAL,
+	KIND_VAR_FUNCTION,
+	KIND_CONSTANT,
 	// execution
-	KindFunction,			// = real function call
-	KindVirtualFunction,	// = virtual function call
-	KindCompilerFunction,	// = special internal functions
-	KindBlock,				// = block of commands {...}
-	KindOperator,
-	KindPrimitiveOperator,	// provisorical...
+	KIND_FUNCTION,           // = real function call
+	KIND_VIRTUAL_FUNCTION,   // = virtual function call
+	KIND_COMPILER_FUNCTION,  // = special internal functions
+	KIND_BLOCK,              // = block of commands {...}
+	KIND_OPERATOR,
+	KIND_PRIMITIVE_OPERATOR, // tentative...
 	// data altering
-	KindAddressShift,		// = . "struct"
-	KindArray,				// = []
-	KindPointerAsArray,		// = []
-	KindReference,			// = &
-	KindDereference,		// = *
-	KindDerefAddressShift,	// = ->
-	KindRefToLocal,
-	KindRefToGlobal,
-	KindRefToConst,
-	KindAddress,			// &global (for pre processing address shifts)
-	KindMemory,				// global (but LinkNr = address)
-	KindLocalAddress,		// &local (for pre processing address shifts)
-	KindLocalMemory,		// local (but LinkNr = address)
+	KIND_ADDRESS_SHIFT,      // = . "struct"
+	KIND_ARRAY,              // = []
+	KIND_POINTER_AS_ARRAY,   // = []
+	KIND_REFERENCE,          // = &
+	KIND_DEREFERENCE,        // = *
+	KIND_DEREF_ADDRESS_SHIFT,// = ->
+	KIND_REF_TO_LOCAL,
+	KIND_REF_TO_GLOBAL,
+	KIND_REF_TO_CONST,
+	KIND_ADDRESS,            // &global (for pre processing address shifts)
+	KIND_MEMORY,             // global (but LinkNr = address)
+	KIND_LOCAL_ADDRESS,      // &local (for pre processing address shifts)
+	KIND_LOCAL_MEMORY,       // local (but LinkNr = address)
 	// special
-	KindType,
-	KindArrayBuilder,
+	KIND_TYPE,
+	KIND_ARRAY_BUILDER,
 	// compilation
-	KindVarTemp,
-	KindDerefVarTemp,
-	KindDerefVarLocal,
-	KindRegister,
-	KindDerefRegister,
-	KindMarker,
-	KindDerefMarker,
-	KindImmediate,
-	KindGlobalLookup,        // ARM
-	KindDerefGlobalLookup,   // ARM
+	KIND_VAR_TEMP,
+	KIND_DEREF_VAR_TEMP,
+	KIND_DEREF_VAR_LOCAL,
+	KIND_REGISTER,
+	KIND_DEREF_REGISTER,
+	KIND_MARKER,
+	KIND_DEREF_MARKER,
+	KIND_IMMEDIATE,
+	KIND_GLOBAL_LOOKUP,       // ARM
+	KIND_DEREF_GLOBAL_LOOKUP, // ARM
 };
 
 struct Command;
@@ -288,29 +288,29 @@ public:
 	Command GetExistenceLink;
 
 	// compiler options
-	bool FlagImmortal;
-	bool FlagCompileOS;
-	bool FlagStringConstAsCString;
-	bool FlagNoFunctionFrame;
-	bool FlagAddEntryPoint;
-	bool FlagOverwriteVariablesOffset;
-	int VariablesOffset;
+	bool flag_immortal;
+	bool flag_compile_os;
+	bool flag_string_const_as_cstring;
+	bool flag_no_function_frame;
+	bool flag_add_entry_point;
+	bool flag_overwrite_variables_offset;
+	int variables_offset;
 
-	Array<Type*> Types;
-	Array<Script*> Includes;
-	Array<Define> Defines;
-	Asm::MetaInfo *AsmMetaInfo;
-	Array<AsmBlock> AsmBlocks;
-	Array<Constant> Constants;
-	Array<Block*> Blocks;
-	Array<Function*> Functions;
-	Array<Command*> Commands;
+	Array<Type*> types;
+	Array<Script*> includes;
+	Array<Define> defines;
+	Asm::MetaInfo *asm_meta_info;
+	Array<AsmBlock> asm_blocks;
+	Array<Constant> constants;
+	Array<Block*> blocks;
+	Array<Function*> functions;
+	Array<Command*> commands;
 
-	Function RootOfAllEvil;
+	Function root_of_all_evil;
 
 	Script *script;
 	Function *cur_func;
-	int ForIndexCount;
+	int for_index_count;
 };
 
 string Kind2Str(int kind);
