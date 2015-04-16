@@ -1918,17 +1918,21 @@ void Script::CompileFunctions(char *oc, int &ocs)
 {
 	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
 
-	// create assembler
 	func.resize(syntax->functions.num);
-	foreachi(Function *f, syntax->functions, i){
+
+	// link external functions
+	foreachi(Function *f, syntax->functions, i)
 		if (f->is_extern){
 			func[i] = (t_func*)GetExternalLink(f->name);
 			if (!func[i])
 				DoErrorLink("external function " + f->name + " not linkable");
-		}else{
+		}
+
+	// create assembler
+	foreachi(Function *f, syntax->functions, i)
+		if (!f->is_extern){
 			AssembleFunction(i, f, list);
 		}
-	}
 
 
 	if (config.verbose)
