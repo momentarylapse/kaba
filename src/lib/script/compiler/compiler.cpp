@@ -130,12 +130,12 @@ void Script::AllocateOpcode()
 #else
 	opcode = (char*)mmap(0, max_opcode, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS | MAP_EXECUTABLE | MAP_32BIT, -1, 0);
 	thread_opcode = (char*)mmap(0, SCRIPT_MAX_THREAD_OPCODE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS | MAP_EXECUTABLE | MAP_32BIT, -1, 0);
-	if (((long)opcode==-1)||((long)thread_opcode==-1)){
+	if (((long)opcode==-1) or ((long)thread_opcode==-1)){
 		opcode = new char[max_opcode];
 		thread_opcode = new char[SCRIPT_MAX_THREAD_OPCODE];
 	}
 #endif
-	if (((long)opcode==-1)||((long)thread_opcode==-1))
+	if (((long)opcode==-1) or ((long)thread_opcode==-1))
 		DoErrorInternal("Script:  could not allocate executable memory");
 	if (syntax->asm_meta_info->code_origin == 0)
 		syntax->asm_meta_info->code_origin = (long)opcode;
@@ -147,6 +147,8 @@ void Script::MapConstantsToMemory()
 {
 	// constants -> Memory
 	cnst.resize(syntax->constants.num);
+	if (syntax->flag_compile_os)
+		return;
 	foreachi(Constant &c, syntax->constants, i){
 		cnst[i] = &memory[memory_size];
 		int s = c.type->size;
@@ -336,33 +338,41 @@ bool find_and_replace(char *opcode, int opcode_size, char *pattern, int size, ch
 	return false;
 }
 
-void relink_calls(SyntaxTree *ps, SyntaxTree *a, SyntaxTree *b, int const_off, int var_off, int func_off)
-{
-	foreach(Command *c, ps->commands){
-		// keep commands... just redirect var/const/func
-		//msg_write(p2s(c->script));
-		if (c->script != b->script)
-			continue;
-		if (c->kind == KIND_VAR_GLOBAL){
-			c->link_no += var_off;
-			c->script = a->script;
-		}else if (c->kind == KIND_CONSTANT){
-			c->link_no += const_off;
-			c->script = a->script;
-		}else if ((c->kind == KIND_FUNCTION) || (c->kind == KIND_VAR_FUNCTION)){
-			c->link_no += func_off;
-			c->script = a->script;
-		}
-	}
-}
-
 struct IncludeTranslationData
 {
 	int const_off;
 	int func_off;
 	int var_off;
-	SyntaxTree *source;
+	Script *source;
 };
+
+void relink_calls(Script *s, Script *a, IncludeTranslationData &d)
+{
+	foreach(Command *c, s->syntax->commands){
+		// keep commands... just redirect var/const/func
+		//msg_write(p2s(c->script));
+		if (c->script != d.source)
+			continue;
+		if (c->kind == KIND_VAR_GLOBAL){
+			c->link_no += d.var_off;
+			c->script = a;
+		}else if (c->kind == KIND_CONSTANT){
+			c->link_no += d.const_off;
+			c->script = a;
+		}else if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VAR_FUNCTION)){
+			c->link_no += d.func_off;
+			c->script = a;
+		}
+	}
+
+	// we might need some constructors later on...
+	foreach(Type *t, s->syntax->types)
+		foreach(ClassFunction &f, t->function)
+			if (f.script == d.source){
+				f.script = a;
+				f.nr += d.func_off;
+			}
+}
 
 IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 {
@@ -370,7 +380,7 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 	d.const_off = a->constants.num;
 	d.var_off = a->root_of_all_evil.var.num;
 	d.func_off = a->functions.num;
-	d.source = b;
+	d.source = b->script;
 
 	a->constants.append(b->constants);
 
@@ -390,28 +400,29 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 	return d;
 }
 
-void add_includes(Script *s, Set<Script*> &includes)
+void find_all_includes_rec(Script *s, Set<Script*> &includes)
 {
 	foreach(Script *i, s->syntax->includes){
 		if (i->filename.find(".kaba") < 0)
 			continue;
 		includes.add(i);
-		add_includes(i, includes);
+		find_all_includes_rec(i, includes);
 	}
 }
 
 void import_includes(Script *s)
 {
 	Set<Script*> includes;
-	add_includes(s, includes);
+	find_all_includes_rec(s, includes);
 	Array<IncludeTranslationData> da;
 	foreach(Script *i, includes)
 		da.add(import_deep(s->syntax, i->syntax));
 
+	// we need to also correct the includes, since we kept the blocks/commands there
 	foreach(Script *i, includes){
 		foreach(IncludeTranslationData &d, da){
-			relink_calls(s->syntax, s->syntax, d.source, d.const_off, d.var_off, d.func_off);
-			relink_calls(i->syntax, s->syntax, d.source, d.const_off, d.var_off, d.func_off);
+			relink_calls(s, s, d);
+			relink_calls(i, s, d);
 		}
 	}
 }
