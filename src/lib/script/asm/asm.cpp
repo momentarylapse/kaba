@@ -1713,10 +1713,10 @@ void InitX86()
 	add_inst(inst_imul		,0xf7	,1	,5	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
 	add_inst(inst_div		,0xf7	,1	,6	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
 	add_inst(inst_idiv		,0xf7	,1	,7	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_mul		,0xf7	,1	,4	,REG_AX	,Ed, OPT_SMALL_PARAM);
-	add_inst(inst_imul		,0xf7	,1	,5	,REG_AX	,Ed, OPT_SMALL_PARAM);
-	add_inst(inst_div		,0xf7	,1	,6	,REG_AX	,Ed, OPT_SMALL_PARAM);
-	add_inst(inst_idiv		,0xf7	,1	,7	,REG_AX	,Ed, OPT_SMALL_PARAM);
+	add_inst(inst_mul		,0xf7	,1	,4	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(inst_imul		,0xf7	,1	,5	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(inst_div		,0xf7	,1	,6	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(inst_idiv		,0xf7	,1	,7	,REG_AX	,Ew, OPT_SMALL_PARAM);
 	add_inst(inst_mul		,0xf7	,1	,4	,REG_RAX	,Eq, OPT_BIG_PARAM);
 	add_inst(inst_imul		,0xf7	,1	,5	,REG_RAX	,Eq, OPT_BIG_PARAM);
 	add_inst(inst_div		,0xf7	,1	,6	,REG_RAX	,Eq, OPT_BIG_PARAM);
