@@ -158,17 +158,21 @@ Type *GetDynamicType(void *p)
 	return NULL;
 }
 
+Array<Script*> loading_script_stack;
+
 void Script::Load(const string &_filename, bool _just_analyse)
 {
 	msg_db_f("loading script", 1);
+	loading_script_stack.add(this);
 	just_analyse = _just_analyse;
 	filename = _filename.sys_filename();
 
+	try{
+
 	// read file
 	CFile *f = FileOpen(config.directory + filename);
-	if (!f){
+	if (!f)
 		DoError("script file not loadable");
-	}
 	string buffer = f->ReadComplete();
 	delete(f);
 	syntax->ParseBuffer(buffer, just_analyse);
@@ -187,6 +191,12 @@ void Script::Load(const string &_filename, bool _just_analyse)
 		msg_write(format("Opcode: %d bytes", opcode_size));
 		msg_write(Asm::Disassemble(opcode, opcode_size));
 	}
+
+	}catch(Exception &e){
+		loading_script_stack.pop();
+		throw e;
+	}
+	loading_script_stack.pop();
 }
 
 void Script::DoError(const string &str, int overwrite_line)

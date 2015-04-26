@@ -1318,6 +1318,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block, Function *f)
 	ExpectNewline();
 }
 
+extern Array<Script*> loading_script_stack;
 
 void SyntaxTree::ParseImport()
 {
@@ -1329,6 +1330,12 @@ void SyntaxTree::ParseImport()
 
 		string filename = script->filename.dirname() + name.substr(1, name.num - 2); // remove "
 		filename = filename.no_recursion();
+
+
+
+		foreach(Script *ss, loading_script_stack)
+			if (ss->filename == filename.sys_filename())
+				DoError("recursive include");
 
 		msg_right();
 		Script *include;

@@ -24,6 +24,7 @@ void SyntaxTree::AddIncludeData(Script *s)
 	foreach(Script *i, includes)
 		if (i == s)
 			return;
+
 	msg_db_f("AddIncludeData",5);
 	SyntaxTree *ps = s->syntax;
 	if (flag_immortal)
