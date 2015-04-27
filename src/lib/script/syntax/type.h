@@ -42,6 +42,7 @@ public:
 	int array_length;
 	bool is_array, is_super_array; // mutially exclusive!
 	bool is_pointer, is_silent; // pointer silent (&)
+	bool fully_parsed;
 	Array<ClassElement> element;
 	Array<ClassFunction> function;
 	Type *parent;
@@ -52,6 +53,7 @@ public:
 	bool UsesCallByReference();
 	bool UsesReturnByMemory();
 	bool is_simple_class();
+	bool is_size_known();
 	Type *GetArrayElement();
 	bool usable_as_super_array();
 	bool needs_constructor();

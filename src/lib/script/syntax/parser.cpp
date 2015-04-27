@@ -1525,6 +1525,10 @@ void SyntaxTree::ParseClass()
 				continue;
 			}
 
+			// check parsing dependencies
+			if (!type->is_size_known())
+				DoError("size of type " + type->name + " is not known at this point");
+
 
 			// add element
 			if (type_needs_alignment(type))
@@ -1572,6 +1576,8 @@ void SyntaxTree::ParseClass()
 	_class->size = ProcessClassSize(_class->name, _offset);
 
 	AddFunctionHeadersForClass(_class);
+
+	_class->fully_parsed = true;
 
 	Exp.cur_line --;
 }
@@ -1847,9 +1853,10 @@ void SyntaxTree::ParseAllClassNames()
 			if (Exp.cur == "class"){
 				Exp.next();
 				int nt0 = types.num;
-				CreateNewType(Exp.cur, 0, false, false, false, 0, NULL);
+				Type *t = CreateNewType(Exp.cur, 0, false, false, false, 0, NULL);
 				if (nt0 == types.num)
 					DoError("class already exists");
+				t->fully_parsed = false;
 			}
 		}
 		Exp.next_line();

@@ -43,6 +43,7 @@ Type::Type()//const string &_name, int _size, SyntaxTree *_owner)
 	is_silent = false;
 	parent = NULL;
 	force_call_by_value = false;
+	fully_parsed = true;
 };
 
 Type::~Type()
@@ -123,6 +124,18 @@ bool Type::needs_constructor()
 		if (e.type->needs_constructor())
 			return true;
 	return false;
+}
+
+bool Type::is_size_known()
+{
+	if (!fully_parsed)
+		return false;
+	if ((is_super_array) or (is_pointer))
+		return true;
+	foreach(ClassElement &e, element)
+		if (!e.type->is_size_known())
+			return false;
+	return true;
 }
 
 bool Type::needs_destructor()
