@@ -427,164 +427,134 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 			break;
 		case OperatorFloatMultiplyFI:
-		case OperatorFloat64MultiplyFI:
-			add_cmd(Asm::INST_FILD, param[1]);
-			add_cmd(Asm::INST_FMUL, param[0]);
-			add_cmd(Asm::INST_FSTP, ret);
+			add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			break;
 		case OperatorFloatMultiplyIF:
+			add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			break;
+		case OperatorFloat64MultiplyFI:
+			add_cmd(Asm::INST_CVTSI2SD, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MULSD, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
+			break;
 		case OperatorFloat64MultiplyIF:
-			add_cmd(Asm::INST_FILD, param[0]);
-			add_cmd(Asm::INST_FMUL, param[1]);
-			add_cmd(Asm::INST_FSTP, ret);
+			add_cmd(Asm::INST_CVTSI2SD, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 			break;
 		case OperatorFloatEqual:
-		case OperatorFloat64Equal:
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_AND, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_CMP, p_ah, param_const(TypeChar, 0x40));
-			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 4, cmd.num - 2);
-			break;
 		case OperatorFloatNotEqual:
-		case OperatorFloat64NotEqual:
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_AND, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_CMP, p_ah, param_const(TypeChar, 0x40));
-			add_cmd(Asm::INST_SETNZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 4, cmd.num - 2);
-			break;
 		case OperatorFloatGreater:
-		case OperatorFloat64Greater:
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_TEST, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 3, cmd.num - 2);
-			break;
 		case OperatorFloatGreaterEqual:
-		case OperatorFloat64GreaterEqual:
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_TEST, p_ah, param_const(TypeChar, 0x05));
-			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 3, cmd.num - 2);
-			break;
 		case OperatorFloatSmaller:
-		case OperatorFloat64Smaller:
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_TEST, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 3, cmd.num - 2);
-			break;
 		case OperatorFloatSmallerEqual:
-		case OperatorFloat64SmallerEqual:
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FLD, param[1]);
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_TEST, p_ah, param_const(TypeChar, 0x05));
-			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 3, cmd.num - 2);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_UCOMISS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatEqual)			add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no==OperatorFloatNotEqual)		add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no==OperatorFloatGreater)		add_cmd(Asm::INST_SETNBE, ret);
+			if (com->link_no==OperatorFloatGreaterEqual)	add_cmd(Asm::INST_SETNB, ret);
+			if (com->link_no==OperatorFloatSmaller)		add_cmd(Asm::INST_SETB, ret);
+			if (com->link_no==OperatorFloatSmallerEqual)	add_cmd(Asm::INST_SETBE, ret);
 			break;
+		case OperatorFloat64Equal:
+		case OperatorFloat64NotEqual:
+		case OperatorFloat64Greater:
+		case OperatorFloat64GreaterEqual:
+		case OperatorFloat64Smaller:
+		case OperatorFloat64SmallerEqual:
+			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
+			add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64Equal)			add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no==OperatorFloat64NotEqual)		add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no==OperatorFloat64Greater)		add_cmd(Asm::INST_SETNBE, ret);
+			if (com->link_no==OperatorFloat64GreaterEqual)	add_cmd(Asm::INST_SETNB, ret);
+			if (com->link_no==OperatorFloat64Smaller)		add_cmd(Asm::INST_SETB, ret);
+			if (com->link_no==OperatorFloat64SmallerEqual)	add_cmd(Asm::INST_SETBE, ret);
+			break;
+
 		case OperatorFloatNegate:
 			add_cmd(Asm::INST_MOV, ret, param[0]);
 			add_cmd(Asm::INST_XOR, ret, param_const(TypeInt, 0x80000000));
 			break;
 // complex
 		case OperatorComplexAddS:
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(param[0], 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(param[0], 4, TypeFloat32), p_xmm0);
+			break;
 		case OperatorComplexSubtractS:
-		//case OperatorComplexMultiplySCF:
-		//case OperatorComplexDivideS:
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			if (com->link_no == OperatorComplexAddS)			add_cmd(Asm::INST_FADD, param_shift(param[1], 0, TypeFloat32));
-			if (com->link_no == OperatorComplexSubtractS)	add_cmd(Asm::INST_FSUB, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			if (com->link_no == OperatorComplexAddS)			add_cmd(Asm::INST_FADD, param_shift(param[1], 4, TypeFloat32));
-			if (com->link_no == OperatorComplexSubtractS)	add_cmd(Asm::INST_FSUB, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(param[0], 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(param[0], 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexAdd:
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
+			break;
 		case OperatorComplexSubtract:
-//		case OperatorFloatMultiply:
-//		case OperatorFloatDivide:
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			if (com->link_no == OperatorComplexAdd)		add_cmd(Asm::INST_FADD, param_shift(param[1], 0, TypeFloat32));
-			if (com->link_no == OperatorComplexSubtract)	add_cmd(Asm::INST_FSUB, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 0, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			if (com->link_no == OperatorComplexAdd)		add_cmd(Asm::INST_FADD, param_shift(param[1], 4, TypeFloat32));
-			if (com->link_no == OperatorComplexSubtract)	add_cmd(Asm::INST_FSUB, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexMultiply:
-			// r.x = a.y * b.y
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 0, TypeFloat32));
-			// r.x = a.x * b.x - r.x
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSUB, param_shift(ret, 0, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 0, TypeFloat32));
-			// r.y = a.y * b.x
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 4, TypeFloat32));
-			// r.y += a.x * b.y
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FADD, param_shift(ret, 4, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 4, TypeFloat32));
+			// xmm1 = a.y * b.y
+			add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 4, TypeFloat32));
+			// r.x = a.x * b.x - xmm1
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_SUBSS, p_xmm0, p_xmm1);
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			// xmm1 = a.y * b.x
+			add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 0, TypeFloat32));
+			// r.y = a.x * b.y + xmm1
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_ADDSS, p_xmm0, p_xmm1);
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexMultiplyFC:
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 0, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FMUL, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexMultiplyCF:
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param[1]);
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 0, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_FMUL, param[1]);
-			add_cmd(Asm::INST_FSTP, param_shift(ret, 4, TypeFloat32));
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexEqual:
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_AND, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_CMP, p_ah, param_const(TypeChar, 0x40));
+			add_cmd(Asm::INST_CMP, param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
 			add_cmd(Asm::INST_SETZ, ret);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 4, cmd.num - 2);
-			add_cmd(Asm::INST_FLD, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_FLD, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_FUCOMPP, p_st0, p_st1);
-			add_cmd(Asm::INST_FNSTSW, p_ax);
-			add_cmd(Asm::INST_AND, p_ah, param_const(TypeChar, 0x45));
-			add_cmd(Asm::INST_CMP, p_ah, param_const(TypeChar, 0x40));
-			add_cmd(Asm::INST_SETZ, p_ah);
-			add_cmd(Asm::INST_AND, ret, p_ah);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 5, cmd.num - 1);
+			add_cmd(Asm::INST_CMP, param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
+			add_cmd(Asm::INST_SETZ, p_al);
+			add_cmd(Asm::INST_AND, ret, p_al);
+			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 			break;
 // bool/char
 		case OperatorCharEqual:
@@ -646,65 +616,65 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 // vector
 		case OperatorVectorAddS:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FADD, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSTP, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorMultiplyS:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FMUL, param[1]);
-				add_cmd(Asm::INST_FSTP, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorDivideS:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FDIV, param[1]);
-				add_cmd(Asm::INST_FSTP, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
+				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorSubtractS:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSUB, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSTP, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorAdd:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FADD, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSTP, param_shift(ret, i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorSubtract:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSUB, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSTP, param_shift(ret, i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorMultiplyVF:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FMUL, param[1]);
-				add_cmd(Asm::INST_FSTP, param_shift(ret, i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorMultiplyFV:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param[0]);
-				add_cmd(Asm::INST_FMUL, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FSTP, param_shift(ret, i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+				add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorDivideVF:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FLD, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FDIV, param[1]);
-				add_cmd(Asm::INST_FSTP, param_shift(ret, i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
+				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
 		case OperatorVectorNegate:

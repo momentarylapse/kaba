@@ -1722,6 +1722,7 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialCommandParam &p)
 			return Asm::param_deref_reg(p.p, p.type->size);
 	}else if (p.kind == KIND_VAR_GLOBAL){
 		int size = p.type->size;
+		// compiler self-test
 		if ((size != 1) && (size != 2) && (size != 4) && (size != 8))
 			script->DoErrorInternal("get_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);

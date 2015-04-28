@@ -340,8 +340,11 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	// sse
 	{INST_MOVSS,  "movss",  64+3, 64+1},
 	{INST_MOVSD,  "movsd",  64+3, 64+1},
+	{INST_MOVUPS, "movups", 64+3, 64+1},
+	{INST_MOVAPS, "movaps", 64+3, 64+1},
 	{INST_ADDSS,  "addss",  64+3, 64+1},
 	{INST_ADDSD,  "addsd",  64+3, 64+1},
+	{INST_ADDPS,  "addps",  64+3, 64+1},
 	{INST_SUBSS,  "subss",  64+3, 64+1},
 	{INST_SUBSD,  "subsd",  64+3, 64+1},
 	{INST_MULSS,  "mulss",  64+3, 64+1},
@@ -354,8 +357,14 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_MINSD,  "minsd",  64+3, 64+1},
 	{INST_MAXSS,  "maxss",  64+3, 64+1},
 	{INST_MAXSD,  "maxsd",  64+3, 64+1},
-	{INST_CVTTSS2SI,  "cvttss2si",  64+3, 64+1},
+	{INST_CVTTSS2SI, "cvttss2si", 64+3, 64+1},
+	{INST_CVTTSD2SI, "cvttsd2si", 64+3, 64+1},
 	{INST_CVTSI2SS,  "cvtsi2ss",  64+3, 64+1},
+	{INST_CVTSI2SD,  "cvtsi2sd",  64+3, 64+1},
+	{INST_COMISS,    "comiss",    64+3, 64+1},
+	{INST_COMISD,    "comisd",    64+3, 64+1},
+	{INST_UCOMISS,   "ucomiss",   64+3, 64+1},
+	{INST_UCOMISD,   "ucomisd",   64+3, 64+1},
 
 	{INST_B,		"b"},
 	{INST_BL,		"bl"},
@@ -418,7 +427,7 @@ enum
 	Mb,Mw,Md,Mq,
 	Jb,Jw,Jd,Jq,
 	Sw,Xx,
-	XMd,XMq
+	XMd,XMq,XMdq
 };
 
 // displacement for registers
@@ -832,7 +841,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		return true;
 	}
 	// xmm reg / mem
-	if ((param == XMd) || (param == XMq)){
+	if ((param == XMd) || (param == XMq) || (param == XMdq)){
 		ip._type_ = PARAMT_INVALID;//ParamTRegisterOrMem;
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
@@ -841,6 +850,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == XMd)	ip.size = SIZE_32;
 		if (param == XMq)	ip.size = SIZE_64;
+		if (param == XMdq)	ip.size = SIZE_128;
 		return true;
 	}
 	// general reg (reg)
@@ -1785,22 +1795,33 @@ void InitX86()
 	add_inst(INST_MOVSS,  0x110ff3, 3, -1, XMd, Xx);
 	add_inst(INST_MOVSD,  0x100ff2, 3, -1, Xx, XMq);
 	add_inst(INST_MOVSD,  0x110ff2, 3, -1, XMq, Xx);
+	add_inst(INST_MOVUPS, 0x100f,   2, -1, Xx, XMdq);
+	add_inst(INST_MOVUPS, 0x110f,   2, -1, XMdq, Xx);
+	add_inst(INST_MOVAPS, 0x280f,   2, -1, Xx, XMdq);
+	add_inst(INST_MOVAPS, 0x290f,   2, -1, XMdq, Xx);
 	add_inst(INST_ADDSS,  0x580ff3, 3, -1, Xx, XMd);
-	add_inst(INST_ADDSD,  0x580ff2, 3, -1, Xx, Eq);
-	add_inst(INST_SUBSS,  0x5c0ff3, 3, -1, Xx, Ed);
-	add_inst(INST_SUBSD,  0x5c0ff2, 3, -1, Xx, Eq);
-	add_inst(INST_MULSS,  0x590ff3, 3, -1, Xx, Ed);
-	add_inst(INST_MULSD,  0x590ff2, 3, -1, Xx, Eq);
-	add_inst(INST_DIVSS,  0x5e0ff3, 3, -1, Xx, Ed);
-	add_inst(INST_DIVSD,  0x5e0ff2, 3, -1, Xx, Eq);
-	add_inst(INST_SQRTSS, 0x510ff3, 3, -1, Xx, Ed);
-	add_inst(INST_SQRTSD, 0x510ff2, 3, -1, Xx, Eq);
-	add_inst(INST_MINSS,  0x5d0ff3, 3, -1, Xx, Ed);
-	add_inst(INST_MINSD,  0x5d0ff2, 3, -1, Xx, Eq);
-	add_inst(INST_MAXSS,  0x5f0ff3, 3, -1, Xx, Ed);
-	add_inst(INST_MAXSD,  0x5f0ff2, 3, -1, Xx, Eq);
-	add_inst(INST_CVTTSS2SI,  0x2c0ff3, 3, -1, Rd, XMd);
+	add_inst(INST_ADDSD,  0x580ff2, 3, -1, Xx, XMq);
+	add_inst(INST_ADDPS,  0x580f,   2, -1, Xx, XMdq);
+	add_inst(INST_SUBSS,  0x5c0ff3, 3, -1, Xx, XMd);
+	add_inst(INST_SUBSD,  0x5c0ff2, 3, -1, Xx, XMq);
+	add_inst(INST_MULSS,  0x590ff3, 3, -1, Xx, XMd);
+	add_inst(INST_MULSD,  0x590ff2, 3, -1, Xx, XMq);
+	add_inst(INST_DIVSS,  0x5e0ff3, 3, -1, Xx, XMd);
+	add_inst(INST_DIVSD,  0x5e0ff2, 3, -1, Xx, XMq);
+	add_inst(INST_SQRTSS, 0x510ff3, 3, -1, Xx, XMd);
+	add_inst(INST_SQRTSD, 0x510ff2, 3, -1, Xx, XMq);
+	add_inst(INST_MINSS,  0x5d0ff3, 3, -1, Xx, XMd);
+	add_inst(INST_MINSD,  0x5d0ff2, 3, -1, Xx, XMq);
+	add_inst(INST_MAXSS,  0x5f0ff3, 3, -1, Xx, XMd);
+	add_inst(INST_MAXSD,  0x5f0ff2, 3, -1, Xx, XMq);
+	add_inst(INST_CVTTSS2SI, 0x2c0ff3, 3, -1, Rd, XMd);
+	add_inst(INST_CVTTSD2SI, 0x2c0ff2, 3, -1, Rq, XMd);
 	add_inst(INST_CVTSI2SS,  0x2a0ff3, 3, -1, Xx, Ed);
+	add_inst(INST_CVTSI2SD,  0x2a0ff2, 3, -1, Xx, Eq);
+	add_inst(INST_COMISS,    0x2f0f,   2, -1, Xx, XMd);
+	add_inst(INST_COMISD,    0x2f0f66, 3, -1, Xx, XMq);
+	add_inst(INST_UCOMISS,   0x2e0f,   2, -1, Xx, XMd);
+	add_inst(INST_UCOMISD,   0x2e0f66, 3, -1, Xx, XMq);
 }
 
 
