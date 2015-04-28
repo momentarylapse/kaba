@@ -41,14 +41,14 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 {
 	if (d > 0){
 		if (d > 120)
-			list->add2(Asm::inst_add, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 4));
+			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 4));
 		else
-			list->add2(Asm::inst_add, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 1));
+			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 1));
 	}else if (d < 0){
 		if (d < -120)
-			list->add2(Asm::inst_sub, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 4));
+			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 4));
 		else
-			list->add2(Asm::inst_sub, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 1));
+			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 1));
 	}
 }
 
@@ -204,7 +204,7 @@ void Script::CompileOsEntryPoint()
 			nf = index;
 	// call
 	if (nf>=0)
-		Asm::AddInstruction(opcode, opcode_size, Asm::inst_call, Asm::param_imm(0, 4));
+		Asm::AddInstruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset=opcode_size;
 	OCORA = Asm::OCParam;
 
@@ -276,36 +276,36 @@ void Script::CompileTaskEntryPoint()
 
 	first_execution = (t_func*)&thread_opcode[thread_opcode_size];
 	// intro
-	list->add2(Asm::inst_push, Asm::param_reg(Asm::REG_EBP)); // within the actual program
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size], 4)); // start of the script stack
-	list->add2(Asm::inst_push, Asm::param_reg(Asm::REG_EBP)); // address of the old stack
+	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the actual program
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size], 4)); // start of the script stack
+	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // address of the old stack
 	AddEspAdd(list, -12); // space for wait() task data
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(WAITING_MODE_NONE, 4)); // "reset"
-	list->add2(Asm::inst_mov, Asm::param_deref_imm((long)&waiting_mode, 4), Asm::param_reg(Asm::REG_EAX));
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(WAITING_MODE_NONE, 4)); // "reset"
+	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&waiting_mode, 4), Asm::param_reg(Asm::REG_EAX));
 
 	// call main()
-	list->add2(Asm::inst_call, Asm::param_imm((long)_main_, 4));
+	list->add2(Asm::INST_CALL, Asm::param_imm((long)_main_, 4));
 
 	// outro
 	AddEspAdd(list, 12); // make space for wait() task data
-	list->add2(Asm::inst_pop, Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::inst_leave);
-	list->add2(Asm::inst_ret);
+	list->add2(Asm::INST_POP, Asm::param_reg(Asm::REG_ESP));
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
+	list->add2(Asm::INST_LEAVE);
+	list->add2(Asm::INST_RET);
 
 	// "task" for execution after some wait()
 	int label_cont = list->add_label("_continue_execution");
 
 	// Intro
-	list->add2(Asm::inst_push, Asm::param_reg(Asm::REG_EBP)); // within the external program
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::inst_mov, Asm::param_deref_imm((long)&stack[config.stack_size - 4], 4), Asm::param_reg(Asm::REG_EBP)); // save the external ebp
-	list->add2(Asm::inst_mov, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size - 16], 4)); // to the eIP of the script
-	list->add2(Asm::inst_pop, Asm::param_reg(Asm::REG_EAX));
-	list->add2(Asm::inst_add, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(AfterWaitOCSize, 4));
-	list->add2(Asm::inst_jmp, Asm::param_reg(Asm::REG_EAX));
+	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the external program
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
+	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&stack[config.stack_size - 4], 4), Asm::param_reg(Asm::REG_EBP)); // save the external ebp
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size - 16], 4)); // to the eIP of the script
+	list->add2(Asm::INST_POP, Asm::param_reg(Asm::REG_EAX));
+	list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(AfterWaitOCSize, 4));
+	list->add2(Asm::INST_JMP, Asm::param_reg(Asm::REG_EAX));
 	//list->add2(Asm::inst_leave);
 	//list->add2(Asm::inst_ret);
 	/*OCAddChar(0x90);

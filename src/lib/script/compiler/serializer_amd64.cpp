@@ -60,11 +60,11 @@ int SerializerAMD64::fc_begin()
 	// push parameters onto stack
 	push_size = 8 * stack_param.num;
 	if (push_size > 127)
-		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeInt, push_size));
+		add_cmd(Asm::INST_ADD, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeInt, push_size));
 	else if (push_size > 0)
-		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeChar, push_size));
+		add_cmd(Asm::INST_ADD, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeChar, push_size));
 	foreachb(SerialCommandParam &p, stack_param)
-		add_cmd(Asm::inst_push, p);
+		add_cmd(Asm::INST_PUSH, p);
 	max_push_size = max(max_push_size, push_size);
 
 	// xmm0-7
@@ -82,13 +82,13 @@ int SerializerAMD64::fc_begin()
 		int root = param_regs_root[i];
 		int reg = get_reg(root, p.type->size);
 		if (reg >= 0){
-			add_cmd(Asm::inst_mov, param_reg(p.type, reg), p);
+			add_cmd(Asm::INST_MOV, param_reg(p.type, reg), p);
 			add_reg_channel(reg, cmd.num - 1, -100); // -> call
 		}else{
 			// some registers are not 8bit'able
-			add_cmd(Asm::inst_mov, p_al, p);
+			add_cmd(Asm::INST_MOV, p_al, p);
 			reg = get_reg(root, 4);
-			add_cmd(Asm::inst_mov, param_reg(TypeReg32, reg), p_eax);
+			add_cmd(Asm::INST_MOV, param_reg(TypeReg32, reg), p_eax);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 			add_reg_channel(reg, cmd.num - 1, -100); // -> call
 		}
@@ -113,13 +113,13 @@ void SerializerAMD64::fc_end(int push_size)
 		else if (type == TypeFloat64)
 			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
 		else if (type->size == 1){
-			add_cmd(Asm::inst_mov, CompilerFunctionReturn, p_al);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_al);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 		}else if (type->size == 4){
-			add_cmd(Asm::inst_mov, CompilerFunctionReturn, p_eax);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_eax);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 		}else{
-			add_cmd(Asm::inst_mov, CompilerFunctionReturn, p_rax);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_rax);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 		}
 	}
@@ -132,12 +132,12 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 	int push_size = fc_begin();
 
 	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
-		add_cmd(Asm::inst_call, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
+		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
 		if (!func)
 			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);
-		add_cmd(Asm::inst_call, param_const(TypeReg32, (long)func)); // the actual call
+		add_cmd(Asm::INST_CALL, param_const(TypeReg32, (long)func)); // the actual call
 		// function pointer will be shifted later...
 	}
 
@@ -151,11 +151,11 @@ void SerializerAMD64::add_virtual_function_call(int virtual_index)
 
 	int push_size = fc_begin();
 
-	add_cmd(Asm::inst_mov, p_rax, CompilerFunctionInstance);
-	add_cmd(Asm::inst_mov, p_eax, p_deref_eax);
-	add_cmd(Asm::inst_add, p_eax, param_const(TypeInt, 8 * virtual_index));
-	add_cmd(Asm::inst_mov, p_eax, p_deref_eax);
-	add_cmd(Asm::inst_call, p_eax); // the actual call
+	add_cmd(Asm::INST_MOV, p_rax, CompilerFunctionInstance);
+	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
+	add_cmd(Asm::INST_ADD, p_eax, param_const(TypeInt, 8 * virtual_index));
+	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
+	add_cmd(Asm::INST_CALL, p_eax); // the actual call
 
 	fc_end(push_size);
 }
@@ -215,12 +215,12 @@ void SerializerAMD64::AddFunctionIntro(Function *f)
 		int root = param_regs_root[i];
 		int reg = get_reg(root, p.type->size);
 		if (reg >= 0){
-			add_cmd(Asm::inst_mov, param_local(p.type, p._offset), param_reg(p.type, reg));
+			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_reg(p.type, reg));
 			add_reg_channel(reg, cmd.num - 1, cmd.num - 1);
 		}else{
 			// some registers are not 8bit'able
-			add_cmd(Asm::inst_mov, p_eax, param_reg(TypeReg32, get_reg(root, 4)));
-			add_cmd(Asm::inst_mov, param_local(p.type, p._offset), param_reg(p.type, get_reg(0, p.type->size)));
+			add_cmd(Asm::INST_MOV, p_eax, param_reg(TypeReg32, get_reg(root, 4)));
+			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_reg(p.type, get_reg(0, p.type->size)));
 			add_reg_channel(reg, cmd.num - 2, cmd.num - 2);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 		}
@@ -237,14 +237,14 @@ void SerializerAMD64::AddFunctionIntro(Function *f)
 
 void SerializerAMD64::AddFunctionOutro(Function *f)
 {
-	add_cmd(Asm::inst_leave);
-	add_cmd(Asm::inst_ret);
+	add_cmd(Asm::INST_LEAVE);
+	add_cmd(Asm::INST_RET);
 }
 
 void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 {
 	// push 8 bit -> push 32 bit
-	if (c.inst == Asm::inst_push)
+	if (c.inst == Asm::INST_PUSH)
 		if (c.p[0].kind == KIND_REGISTER)
 			c.p[0].p = reg_resize(c.p[0].p, config.pointer_size);
 
@@ -252,7 +252,7 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 	// FIXME
 	// evil hack to allow inconsistent param types (in address shifts)
 	if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
-		if ((c.inst == Asm::inst_add) || (c.inst == Asm::inst_mov)){
+		if ((c.inst == Asm::INST_ADD) || (c.inst == Asm::INST_MOV)){
 			if ((c.p[0].kind == KIND_REGISTER) && (c.p[1].kind == KIND_REF_TO_CONST)){
 				if (c.p[0].type->is_pointer){
 #ifdef debug_evil_corrections

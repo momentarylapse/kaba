@@ -183,159 +183,159 @@ struct InstructionName
 
 // rw1/2: 
 InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
-	{inst_db,		"db"},
-	{inst_dw,		"dw"},
-	{inst_dd,		"dd"},
-	{inst_ds,		"ds"},
-	{inst_dz,		"dz"},
+	{INST_DB,		"db"},
+	{INST_DW,		"dw"},
+	{INST_DD,		"dd"},
+	{INST_DS,		"ds"},
+	{INST_DZ,		"dz"},
 
-	{inst_add,		"add",		3, 1},
-	{inst_adc,		"adc",		3, 1},
-	{inst_sub,		"sub",		3, 1},
-	{inst_sbb,		"sbb",		3, 1},
-	{inst_inc,		"inc",		3},
-	{inst_dec,		"dec",		3},
-	{inst_mul,		"mul",		3, 1},
-	{inst_imul,		"imul",		3, 1},
-	{inst_div,		"div",		64+3, 64+1},
-	{inst_idiv,		"idiv",		64+3, 64+1},
-	{inst_mov,		"mov",		2, 1},
-	{inst_movzx,	"movzx",	2, 1},
-	{inst_movsx,	"movsx",	2, 1},
-	{inst_and,		"and",		3, 1},
-	{inst_or,		"or",		3, 1},
-	{inst_xor,		"xor",		3, 1},
-	{inst_not,		"not",		3},
-	{inst_neg,		"neg",		3},
-	{inst_pop,		"pop",		2},
-	{inst_popa,		"popa",		2},
-	{inst_push,		"push",		1},
-	{inst_pusha,	"pusha",	1},
+	{INST_ADD,		"add",		3, 1},
+	{INST_ADC,		"adc",		3, 1},
+	{INST_SUB,		"sub",		3, 1},
+	{INST_SBB,		"sbb",		3, 1},
+	{INST_INC,		"inc",		3},
+	{INST_DEC,		"dec",		3},
+	{INST_MUL,		"mul",		3, 1},
+	{INST_IMUL,		"imul",		3, 1},
+	{INST_DIV,		"div",		64+3, 64+1},
+	{INST_IDIV,		"idiv",		64+3, 64+1},
+	{INST_MOV,		"mov",		2, 1},
+	{INST_MOVZX,	"movzx",	2, 1},
+	{INST_MOVSX,	"movsx",	2, 1},
+	{INST_AND,		"and",		3, 1},
+	{INST_OR,		"or",		3, 1},
+	{INST_XOR,		"xor",		3, 1},
+	{INST_NOT,		"not",		3},
+	{INST_NEG,		"neg",		3},
+	{INST_POP,		"pop",		2},
+	{INST_POPA,		"popa",		2},
+	{INST_PUSH,		"push",		1},
+	{INST_PUSHA,	"pusha",	1},
 	
-	{inst_jo,		"jo",		1},
-	{inst_jno,		"jno",		1},
-	{inst_jb,		"jb",		1},
-	{inst_jnb,		"jnb",		1},
-	{inst_jz,		"jz",		1},
-	{inst_jnz,		"jnz",		1},
-	{inst_jbe,		"jbe",		1},
-	{inst_jnbe,		"jnbe",		1},
-	{inst_js,		"js",		1},
-	{inst_jns,		"jns",		1},
-	{inst_jp,		"jp",		1},
-	{inst_jnp,		"jnp",		1},
-	{inst_jl,		"jl",		1},
-	{inst_jnl,		"jnl",		1},
-	{inst_jle,		"jle",		1},
-	{inst_jnle,		"jnle",		1},
+	{INST_JO,		"jo",		1},
+	{INST_JNO,		"jno",		1},
+	{INST_JB,		"jb",		1},
+	{INST_JNB,		"jnb",		1},
+	{INST_JZ,		"jz",		1},
+	{INST_JNZ,		"jnz",		1},
+	{INST_JBE,		"jbe",		1},
+	{INST_JNBE,		"jnbe",		1},
+	{INST_JS,		"js",		1},
+	{INST_JNS,		"jns",		1},
+	{INST_JP,		"jp",		1},
+	{INST_JNP,		"jnp",		1},
+	{INST_JL,		"jl",		1},
+	{INST_JNL,		"jnl",		1},
+	{INST_JLE,		"jle",		1},
+	{INST_JNLE,		"jnle",		1},
 	
-	{inst_cmp,		"cmp",		1, 1},
+	{INST_CMP,		"cmp",		1, 1},
 	
-	{inst_seto,		"seto",		2},
-	{inst_setno,	"setno",	2},
-	{inst_setb,		"setb",		2},
-	{inst_setnb,	"setnb",	2},
-	{inst_setz,		"setz",		2},
-	{inst_setnz,	"setnz",	2},
-	{inst_setbe,	"setbe",	2},
-	{inst_setnbe,	"setnbe",	2},
-	{inst_sets,		"sets",		2},
-	{inst_setns,	"setns",	2},
-	{inst_setp,		"setp",		2},
-	{inst_setnp,	"setnp",	2},
-	{inst_setl,		"setl",		2},
-	{inst_setnl,	"setnl",	2},
-	{inst_setle,	"setle",	2},
-	{inst_setnle,	"setnle",	2},
+	{INST_SETO,		"seto",		2},
+	{INST_SETNO,	"setno",	2},
+	{INST_SETB,		"setb",		2},
+	{INST_SETNB,	"setnb",	2},
+	{INST_SETZ,		"setz",		2},
+	{INST_SETNZ,	"setnz",	2},
+	{INST_SETBE,	"setbe",	2},
+	{INST_SETNBE,	"setnbe",	2},
+	{INST_SETS,		"sets",		2},
+	{INST_SETNS,	"setns",	2},
+	{INST_SETP,		"setp",		2},
+	{INST_SETNP,	"setnp",	2},
+	{INST_SETL,		"setl",		2},
+	{INST_SETNL,	"setnl",	2},
+	{INST_SETLE,	"setle",	2},
+	{INST_SETNLE,	"setnle",	2},
 	
-	{inst_sldt,		"sldt"},
-	{inst_str,		"str"},
-	{inst_lldt,		"lldt"},
-	{inst_ltr,		"ltr"},
-	{inst_verr,		"verr"},
-	{inst_verw,		"verw"},
-	{inst_sgdt,		"sgdt"},
-	{inst_sidt,		"sidt"},
-	{inst_lgdt,		"lgdt"},
-	{inst_lidt,		"lidt"},
-	{inst_smsw,		"smsw"},
-	{inst_lmsw,		"lmsw"},
+	{INST_SLDT,		"sldt"},
+	{INST_STR,		"str"},
+	{INST_LLDT,		"lldt"},
+	{INST_LTR,		"ltr"},
+	{INST_VERR,		"verr"},
+	{INST_VERW,		"verw"},
+	{INST_SGDT,		"sgdt"},
+	{INST_SIDT,		"sidt"},
+	{INST_LGDT,		"lgdt"},
+	{INST_LIDT,		"lidt"},
+	{INST_SMSW,		"smsw"},
+	{INST_LMSW,		"lmsw"},
 	
-	{inst_test,		"test",		1, 1},
-	{inst_xchg,		"xchg",		3, 3},
-	{inst_lea,		"lea", 		32+2, 32+1},
-	{inst_nop,		"nop"},
-	{inst_cbw_cwde,	"cbw/cwde"},
-	{inst_cgq_cwd,	"cgq/cwd"},
-	{inst_movs_ds_esi_es_edi,	"movs_ds:esi,es:edi"},
-	{inst_movs_b_ds_esi_es_edi,	"movs.b_ds:esi,es:edi"},
-	{inst_cmps_ds_esi_es_edi,	"cmps_ds:esi,es:edi"},
-	{inst_cmps_b_ds_esi_es_edi,	"cmps.b_ds:esi,es:edi"},
-	{inst_rol,		"rol",		3, 1},
-	{inst_ror,		"ror",		3, 1},
-	{inst_rcl,		"rcl",		3, 1},
-	{inst_rcr,		"rcr",		3, 1},
-	{inst_shl,		"shl",		3, 1},
-	{inst_shr,		"shr",		3, 1},
-	{inst_sar,		"sar",		3, 1},
-	{inst_ret,		"ret",		1},
-	{inst_leave,	"leave",	1},
-	{inst_ret_far,	"ret_far",	1},
-	{inst_int,		"int",		1},
-	{inst_iret,		"iret",		1},
+	{INST_TEST,		"test",		1, 1},
+	{INST_XCHG,		"xchg",		3, 3},
+	{INST_LEA,		"lea", 		32+2, 32+1},
+	{INST_NOP,		"nop"},
+	{INST_CBW_CWDE,	"cbw/cwde"},
+	{INST_CGQ_CWD,	"cgq/cwd"},
+	{INST_MOVS_DS_ESI_ES_EDI,	"movs_ds:esi,es:edi"},
+	{INST_MOVS_B_DS_ESI_ES_EDI,	"movs.b_ds:esi,es:edi"},
+	{INST_CMPS_DS_ESI_ES_EDI,	"cmps_ds:esi,es:edi"},
+	{INST_CMPS_B_DS_ESI_ES_EDI,	"cmps.b_ds:esi,es:edi"},
+	{INST_ROL,		"rol",		3, 1},
+	{INST_ROR,		"ror",		3, 1},
+	{INST_RCL,		"rcl",		3, 1},
+	{INST_RCR,		"rcr",		3, 1},
+	{INST_SHL,		"shl",		3, 1},
+	{INST_SHR,		"shr",		3, 1},
+	{INST_SAR,		"sar",		3, 1},
+	{INST_RET,		"ret",		1},
+	{INST_LEAVE,	"leave",	1},
+	{INST_RET_FAR,	"ret_far",	1},
+	{INST_INT,		"int",		1},
+	{INST_IRET,		"iret",		1},
 	
 	// x87
-	{inst_fadd,		"fadd",		64+32+1},
-	{inst_fmul,		"fmul",		64+32+1},
-	{inst_fsub,		"fsub",		64+32+1},
-	{inst_fdiv,		"fdiv",		64+32+1},
-	{inst_fld,		"fld",		64+32+1},
-	{inst_fld1,		"fld1",		64+32+0},
-	{inst_fldz,		"fldz",		64+32+0},
-	{inst_fldpi,	"fldpi",	64+32+0},
-	{inst_fst,		"fst",		64+32+2},
-	{inst_fstp,		"fstp",		64+32+2},
-	{inst_fild,		"fild",		64+32+1},
-	{inst_faddp,	"faddp",	64+32+1},
-	{inst_fmulp,	"fmulp",	64+32+1},
-	{inst_fsubp,	"fsubp",	64+32+1},
-	{inst_fdivp,	"fdivp",	64+32+1},
-	{inst_fldcw,	"fldcw",	64+32+1},
-	{inst_fnstcw,	"fnstcw",	64+32+2},
-	{inst_fnstsw,	"fnstsw",	64+32+2},
-	{inst_fistp,	"fistp",	64+32+2},
-	{inst_fxch,		"fxch",		64+32+3, 64+32+3},
-	{inst_fsqrt,	"fsqrt",	64+32+3},
-	{inst_fsin,		"fsin",		64+32+3},
-	{inst_fcos,		"fcos",		64+32+3},
-	{inst_fptan,	"fptan",	64+32+3},
-	{inst_fpatan,	"fpatan",	64+32+3},
-	{inst_fyl2x,	"fyl2x",	64+32+3},
-	{inst_fchs,		"fchs",		64+32+3},
-	{inst_fabs,		"fabs",		64+32+3},
-	{inst_fucompp,	"fucompp",	64+32+1, 64+32+1},
+	{INST_FADD,		"fadd",		64+32+1},
+	{INST_FMUL,		"fmul",		64+32+1},
+	{INST_FSUB,		"fsub",		64+32+1},
+	{INST_FDIV,		"fdiv",		64+32+1},
+	{INST_FLD,		"fld",		64+32+1},
+	{INST_FLD1,		"fld1",		64+32+0},
+	{INST_FLDZ,		"fldz",		64+32+0},
+	{INST_FLDPI,	"fldpi",	64+32+0},
+	{INST_FST,		"fst",		64+32+2},
+	{INST_FSTP,		"fstp",		64+32+2},
+	{INST_FILD,		"fild",		64+32+1},
+	{INST_FADDP,	"faddp",	64+32+1},
+	{INST_FMULP,	"fmulp",	64+32+1},
+	{INST_FSUBP,	"fsubp",	64+32+1},
+	{INST_FDIVP,	"fdivp",	64+32+1},
+	{INST_FLDCW,	"fldcw",	64+32+1},
+	{INST_FNSTCW,	"fnstcw",	64+32+2},
+	{INST_FNSTSW,	"fnstsw",	64+32+2},
+	{INST_FISTP,	"fistp",	64+32+2},
+	{INST_FXCH,		"fxch",		64+32+3, 64+32+3},
+	{INST_FSQRT,	"fsqrt",	64+32+3},
+	{INST_FSIN,		"fsin",		64+32+3},
+	{INST_FCOS,		"fcos",		64+32+3},
+	{INST_FPTAN,	"fptan",	64+32+3},
+	{INST_FPATAN,	"fpatan",	64+32+3},
+	{INST_FYL2X,	"fyl2x",	64+32+3},
+	{INST_FCHS,		"fchs",		64+32+3},
+	{INST_FABS,		"fabs",		64+32+3},
+	{INST_FUCOMPP,	"fucompp",	64+32+1, 64+32+1},
 	
-	{inst_loop,		"loop"},
-	{inst_loope,	"loope"},
-	{inst_loopne,	"loopne"},
-	{inst_in,		"in",		2, 1},
-	{inst_out,		"out",		1, 1},
+	{INST_LOOP,		"loop"},
+	{INST_LOOPE,	"loope"},
+	{INST_LOOPNE,	"loopne"},
+	{INST_IN,		"in",		2, 1},
+	{INST_OUT,		"out",		1, 1},
 	
-	{inst_call,		"call",		1},
-	{inst_call_far,	"call_far", 1},
-	{inst_jmp,		"jmp",		1},
-	{inst_jmp_far,	"jmp_far",		1},
-	{inst_lock,		"lock"},
-	{inst_rep,		"rep"},
-	{inst_repne,	"repne"},
-	{inst_hlt,		"hlt"},
-	{inst_cmc,		"cmc"},
-	{inst_clc,		"clc"},
-	{inst_stc,		"stc"},
-	{inst_cli,		"cli"},
-	{inst_sti,		"sti"},
-	{inst_cld,		"cld"},
-	{inst_std,		"std"},
+	{INST_CALL,		"call",		1},
+	{INST_CALL_FAR,	"call_far", 1},
+	{INST_JMP,		"jmp",		1},
+	{INST_JMP_FAR,	"jmp_far",		1},
+	{INST_LOCK,		"lock"},
+	{INST_REP,		"rep"},
+	{INST_REPNE,	"repne"},
+	{INST_HLT,		"hlt"},
+	{INST_CMC,		"cmc"},
+	{INST_CLC,		"clc"},
+	{INST_STC,		"stc"},
+	{INST_CLI,		"cli"},
+	{INST_STI,		"sti"},
+	{INST_CLD,		"cld"},
+	{INST_STD,		"std"},
 
 	// sse
 	{INST_MOVSS,  "movss",  64+3, 64+1},
@@ -355,32 +355,32 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_MAXSS,  "maxss",  64+3, 64+1},
 	{INST_MAXSD,  "maxsd",  64+3, 64+1},
 
-	{inst_b,		"b"},
-	{inst_bl,		"bl"},
-	{inst_blx,		"blx"},
+	{INST_B,		"b"},
+	{INST_BL,		"bl"},
+	{INST_BLX,		"blx"},
 
-	{inst_ldr,		"ldr"},
-	{inst_ldrb,		"ldrb"},
+	{INST_LDR,		"ldr"},
+	{INST_LDRB,		"ldrb"},
 //	{inst_str,		"str"},
-	{inst_strb,		"strb"},
+	{INST_STRB,		"strb"},
 
-	{inst_ldmia,		"ldmia"},
-	{inst_ldmib,		"ldmib"},
-	{inst_ldmda,		"ldmda"},
-	{inst_ldmdb,		"ldmdb"},
-	{inst_stmia,		"stmia"},
-	{inst_stmib,		"stmib"},
-	{inst_stmda,		"stmda"},
-	{inst_stmdb,		"stmdb"},
+	{INST_LDMIA,		"ldmia"},
+	{INST_LDMIB,		"ldmib"},
+	{INST_LDMDA,		"ldmda"},
+	{INST_LDMDB,		"ldmdb"},
+	{INST_STMIA,		"stmia"},
+	{INST_STMIB,		"stmib"},
+	{INST_STMDA,		"stmda"},
+	{INST_STMDB,		"stmdb"},
 
-	{inst_rsb,	"rsb"},
-	{inst_sbc,	"sbc"},
-	{inst_rsc,	"rsc"},
-	{inst_tst,	"tst"},
-	{inst_teq,	"teq"},
-	{inst_cmn,	"cmn"},
-	{inst_bic,	"bic"},
-	{inst_mvn,	"mvn"},
+	{INST_RSB,	"rsb"},
+	{INST_SBC,	"sbc"},
+	{INST_RSC,	"rsc"},
+	{INST_TST,	"tst"},
+	{INST_TEQ,	"teq"},
+	{INST_CMN,	"cmn"},
+	{INST_BIC,	"bic"},
+	{INST_MVN,	"mvn"},
 	
 	{-1,			"???"}
 };
@@ -650,22 +650,22 @@ void InstructionWithParamsList::add_func_intro(int stack_alloc_size)
 	long reg_bp = (InstructionSet.set == INSTRUCTION_SET_AMD64) ? REG_RBP : REG_EBP;
 	long reg_sp = (InstructionSet.set == INSTRUCTION_SET_AMD64) ? REG_RSP : REG_ESP;
 	int s = InstructionSet.pointer_size;
-	add2(inst_push, param_reg(reg_bp));
-	add2(inst_mov, param_reg(reg_bp), param_reg(reg_sp));
+	add2(INST_PUSH, param_reg(reg_bp));
+	add2(INST_MOV, param_reg(reg_bp), param_reg(reg_sp));
 	if (stack_alloc_size > 127){
-		add2(inst_sub, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_32));
+		add2(INST_SUB, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_32));
 	}else if (stack_alloc_size > 0){
-		add2(inst_sub, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_8));
+		add2(INST_SUB, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_8));
 	}
 }
 
 void InstructionWithParamsList::add_func_return(int return_size)
 {
-	add2(inst_leave);
+	add2(INST_LEAVE);
 	if (return_size > 4)
-		add2(inst_ret, param_imm(4, SIZE_16));
+		add2(INST_RET, param_imm(4, SIZE_16));
 	else
-		add2(inst_ret);
+		add2(INST_RET);
 }
 
 // which part of the modr/m byte is used
@@ -963,7 +963,7 @@ void add_inst(int inst, int code, int code_size, int cap, int param1, int param2
 	if ((i.has_big_param) && (InstructionSet.set != INSTRUCTION_SET_AMD64))
 		return;
 
-	if (inst == inst_lea)
+	if (inst == INST_LEA)
 		i.param2.size = SIZE_UNKNOWN;
 	
 	i.name = InstructionNames[NUM_INSTRUCTION_NAMES].name;
@@ -1080,8 +1080,8 @@ void InitARM()
 	}
 
 	CPUInstructions.clear();
-	add_inst_arm(inst_b,    0x0a000000 ,0);
-	add_inst_arm(inst_bl,   0x0b000000 ,0);
+	add_inst_arm(INST_B,    0x0a000000 ,0);
+	add_inst_arm(INST_BL,   0x0b000000 ,0);
 }
 
 void InitX86()
@@ -1151,6 +1151,7 @@ void InitX86()
 	add_reg("cr1",	REG_CR1,	RegGroupControl,	SIZE_32);
 	add_reg("cr2",	REG_RC2,	RegGroupControl,	SIZE_32);
 	add_reg("cr3",	REG_CR3,	RegGroupControl,	SIZE_32);
+	add_reg("cr4",	REG_CR4,	RegGroupControl,	SIZE_32);
 
 	add_reg("st0",	REG_ST0,	RegGroupX87,	SIZE_32,	16); // ??? 32
 	add_reg("st1",	REG_ST1,	RegGroupX87,	SIZE_32,	17);
@@ -1179,590 +1180,590 @@ void InitX86()
 	}
 
 	CPUInstructions.clear();
-	add_inst(inst_db		,0x00	,0	,-1	,Ib	,-1);
-	add_inst(inst_dw		,0x00	,0	,-1	,Iw	,-1);
-	add_inst(inst_dd		,0x00	,0	,-1	,Id	,-1);
-	add_inst(inst_add		,0x00	,1	,-1	,Eb	,Gb);
-	add_inst(inst_add		,0x01	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
-	add_inst(inst_add		,0x01	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_add		,0x01	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
-	add_inst(inst_add		,0x02	,1	,-1	,Gb	,Eb);
-	add_inst(inst_add		,0x03	,1	,-1	,Gw	,Eq, OPT_SMALL_PARAM);
-	add_inst(inst_add		,0x03	,1	,-1	,Gd	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_add		,0x03	,1	,-1	,Gq	,Eq, OPT_BIG_PARAM);
-	add_inst(inst_add		,0x04	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_add		,0x05	,1	,-1	,REG_AX, Iw, OPT_SMALL_PARAM);
-	add_inst(inst_add		,0x05	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_add		,0x05	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
-	add_inst(inst_push		,0x06	,1	,-1	,REG_ES	,-1);
-	add_inst(inst_pop		,0x07	,1	,-1	,REG_ES	,-1);
-	add_inst(inst_or		,0x08	,1	,-1	,Eb	,Gb);
-	add_inst(inst_or		,0x09	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
-	add_inst(inst_or		,0x09	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_or		,0x09	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
-	add_inst(inst_or		,0x0a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_or,	0x0b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_or		,0x0c	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_or		,0x0d	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_or		,0x0d	,1	,-1	,REG_EAX,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_or		,0x0d	,1	,-1	,REG_RAX,	Id, OPT_BIG_PARAM);
-	add_inst(inst_push		,0x0e	,1	,-1	,REG_CS	,-1);
-	add_inst(inst_sldt		,0x000f	,2	,0	,Ew	,-1);
-	add_inst(inst_str		,0x000f	,2	,1	,Ew	,-1);
-	add_inst(inst_lldt		,0x000f	,2	,2	,Ew	,-1);
-	add_inst(inst_ltr		,0x000f	,2	,3	,Ew	,-1);
-	add_inst(inst_verr		,0x000f	,2	,4	,Ew	,-1);
-	add_inst(inst_verw		,0x000f	,2	,5	,Ew	,-1);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Mw,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Md,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_sgdt,	0x010f,	2,	0,	Mq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Mw,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Md,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_sidt,	0x010f,	2,	1,	Mq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Mw,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Md,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_lgdt,	0x010f,	2,	2,	Mq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Mw,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Md,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_lidt,	0x010f,	2,	3,	Mq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_smsw		,0x010f	,2	,4	,Ew	,-1);
-	add_inst(inst_lmsw		,0x010f	,2	,6	,Ew	,-1);
-	add_inst(inst_mov		,0x200f	,2	,-1	,Rd	,Cd); // Fehler im Algorhytmus!!!!  (wirklich ???) -> Fehler in Tabelle?!?
-	add_inst(inst_mov		,0x220f	,2	,-1	,Cd	,Rd);
-	add_inst(inst_jo		,0x800f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM); // 16/32 bit???
-	add_inst(inst_jno		,0x810f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jb		,0x820f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnb		,0x830f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jz		,0x840f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnz		,0x850f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jbe		,0x860f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnbe		,0x870f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_js		,0x880f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jns		,0x890f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jp		,0x8a0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnp		,0x8b0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jl		,0x8c0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnl		,0x8d0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jle		,0x8e0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jnle		,0x8f0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_seto		,0x900f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setno		,0x910f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setb		,0x920f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnb		,0x930f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setz		,0x940f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnz		,0x950f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setbe		,0x960f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnbe	,0x970f	,2	,-1	,Eb	,-1);
-	add_inst(inst_sets		,0x980f	,2	,-1	,Eb	,-1); // error in table... "Ev"
-	add_inst(inst_setns		,0x990f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setp		,0x9a0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnp		,0x9b0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setl		,0x9c0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnl		,0x9d0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setle		,0x9e0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_setnle	,0x9f0f	,2	,-1	,Eb	,-1);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_imul,	0xaf0f,	2,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
-	add_inst(inst_movzx,	0xb60f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
-	add_inst(inst_movzx,	0xb70f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
-	add_inst(inst_movsx,	0xbe0f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
-	add_inst(inst_movsx,	0xbf0f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
-	add_inst(inst_adc,	0x10	,1	,-1	,Eb	,Gb);
-	add_inst(inst_adc,	0x11,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_adc,	0x11,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_adc,	0x11,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_adc,	0x12	,1	,-1	,Gb	,Eb);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_adc,	0x13,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_adc,	0x14	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_adc,	0x15	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_adc,	0x15	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_adc,	0x15	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
-	add_inst(inst_push,	0x16	,1	,-1	,REG_SS, -1);
-	add_inst(inst_pop,	0x17	,1	,-1	,REG_SS, -1);
-	add_inst(inst_sbb,	0x18	,1	,-1	,Eb	,Gb);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_sbb,	0x19,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_sbb,	0x1a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_sbb,	0x1b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_sbb,	0x1c	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_sbb,	0x1d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
-	add_inst(inst_push,	0x1e	,1	,-1	,REG_DS	,-1);
-	add_inst(inst_pop,	0x1f	,1	,-1	,REG_DS	,-1);
-	add_inst(inst_and,	0x20	,1	,-1	,Eb	,Gb);
-	add_inst(inst_and,	0x21,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_and,	0x21,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_and,	0x21,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_and,	0x22	,1	,-1	,Gb	,Eb);
-	add_inst(inst_and,	0x23,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_and,	0x23,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_and,	0x23,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_and,	0x24	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_and,	0x25	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_and,	0x25	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_and,	0x25	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
-	add_inst(inst_sub,	0x28	,1	,-1	,Eb	,Gb);
-	add_inst(inst_sub,	0x29,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_sub,	0x29,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_sub,	0x29,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_sub,	0x2a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_sub,	0x2b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_sub,	0x2c	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_sub,	0x2d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_sub,	0x2d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_sub,	0x2d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
-	add_inst(inst_xor,	0x30	,1	,-1	,Eb	,Gb);
-	add_inst(inst_xor,	0x31,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_xor,	0x31,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_xor,	0x31,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_xor,	0x32	,1	,-1	,Gb	,Eb);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_xor,	0x33,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_xor,	0x34	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_xor,	0x35	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_xor,	0x35	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_xor,	0x35	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_cmp,	0x38	,1	,-1	,Eb	,Gb);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_cmp,	0x39,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_cmp,	0x3a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_cmp,	0x3b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_cmp,	0x3c	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_cmp,	0x3d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_DB		,0x00	,0	,-1	,Ib	,-1);
+	add_inst(INST_DW		,0x00	,0	,-1	,Iw	,-1);
+	add_inst(INST_DD		,0x00	,0	,-1	,Id	,-1);
+	add_inst(INST_ADD		,0x00	,1	,-1	,Eb	,Gb);
+	add_inst(INST_ADD		,0x01	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
+	add_inst(INST_ADD		,0x01	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD		,0x01	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
+	add_inst(INST_ADD		,0x02	,1	,-1	,Gb	,Eb);
+	add_inst(INST_ADD		,0x03	,1	,-1	,Gw	,Eq, OPT_SMALL_PARAM);
+	add_inst(INST_ADD		,0x03	,1	,-1	,Gd	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD		,0x03	,1	,-1	,Gq	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_ADD		,0x04	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_ADD		,0x05	,1	,-1	,REG_AX, Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADD		,0x05	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD		,0x05	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH		,0x06	,1	,-1	,REG_ES	,-1);
+	add_inst(INST_POP		,0x07	,1	,-1	,REG_ES	,-1);
+	add_inst(INST_OR		,0x08	,1	,-1	,Eb	,Gb);
+	add_inst(INST_OR		,0x09	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
+	add_inst(INST_OR		,0x09	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR		,0x09	,1	,-1	,Eq	,Gq, OPT_BIG_PARAM);
+	add_inst(INST_OR		,0x0a	,1	,-1	,Gb	,Eb);
+	add_inst(INST_OR,	0x0b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_OR,	0x0b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR,	0x0b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_OR		,0x0c	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_OR		,0x0d	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_OR		,0x0d	,1	,-1	,REG_EAX,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR		,0x0d	,1	,-1	,REG_RAX,	Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH		,0x0e	,1	,-1	,REG_CS	,-1);
+	add_inst(INST_SLDT		,0x000f	,2	,0	,Ew	,-1);
+	add_inst(INST_STR		,0x000f	,2	,1	,Ew	,-1);
+	add_inst(INST_LLDT		,0x000f	,2	,2	,Ew	,-1);
+	add_inst(INST_LTR		,0x000f	,2	,3	,Ew	,-1);
+	add_inst(INST_VERR		,0x000f	,2	,4	,Ew	,-1);
+	add_inst(INST_VERW		,0x000f	,2	,5	,Ew	,-1);
+	add_inst(INST_SGDT,	0x010f,	2,	0,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_SGDT,	0x010f,	2,	0,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_SGDT,	0x010f,	2,	0,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_SIDT,	0x010f,	2,	1,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_SIDT,	0x010f,	2,	1,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_SIDT,	0x010f,	2,	1,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_LGDT,	0x010f,	2,	2,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_LGDT,	0x010f,	2,	2,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_LGDT,	0x010f,	2,	2,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_LIDT,	0x010f,	2,	3,	Mw,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_LIDT,	0x010f,	2,	3,	Md,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_LIDT,	0x010f,	2,	3,	Mq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_SMSW		,0x010f	,2	,4	,Ew	,-1);
+	add_inst(INST_LMSW		,0x010f	,2	,6	,Ew	,-1);
+	add_inst(INST_MOV		,0x200f	,2	,-1	,Rd	,Cd); // Fehler im Algorhytmus!!!!  (wirklich ???) -> Fehler in Tabelle?!?
+	add_inst(INST_MOV		,0x220f	,2	,-1	,Cd	,Rd);
+	add_inst(INST_JO		,0x800f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM); // 16/32 bit???
+	add_inst(INST_JNO		,0x810f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JB		,0x820f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNB		,0x830f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JZ		,0x840f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNZ		,0x850f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JBE		,0x860f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNBE		,0x870f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JS		,0x880f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNS		,0x890f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JP		,0x8a0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNP		,0x8b0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JL		,0x8c0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNL		,0x8d0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JLE		,0x8e0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JNLE		,0x8f0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_SETO		,0x900f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNO		,0x910f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETB		,0x920f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNB		,0x930f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETZ		,0x940f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNZ		,0x950f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETBE		,0x960f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNBE	,0x970f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETS		,0x980f	,2	,-1	,Eb	,-1); // error in table... "Ev"
+	add_inst(INST_SETNS		,0x990f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETP		,0x9a0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNP		,0x9b0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETL		,0x9c0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNL		,0x9d0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETLE		,0x9e0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_SETNLE	,0x9f0f	,2	,-1	,Eb	,-1);
+	add_inst(INST_IMUL,	0xaf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_IMUL,	0xaf0f,	2,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_IMUL,	0xaf0f,	2,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_MOVZX,	0xb60f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
+	add_inst(INST_MOVZX,	0xb60f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOVZX,	0xb60f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
+	add_inst(INST_MOVZX,	0xb70f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_MOVZX,	0xb70f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOVZX,	0xb70f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
+	add_inst(INST_MOVSX,	0xbe0f,	2,	-1,	Gw,	Eb, OPT_SMALL_PARAM);
+	add_inst(INST_MOVSX,	0xbe0f,	2,	-1,	Gd,	Eb, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOVSX,	0xbe0f,	2,	-1,	Gq,	Eb, OPT_BIG_PARAM);
+	add_inst(INST_MOVSX,	0xbf0f,	2,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_MOVSX,	0xbf0f,	2,	-1,	Gd,	Ew, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOVSX,	0xbf0f,	2,	-1,	Gq,	Ew, OPT_BIG_PARAM);
+	add_inst(INST_ADC,	0x10	,1	,-1	,Eb	,Gb);
+	add_inst(INST_ADC,	0x11,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x11,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x11,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_ADC,	0x12	,1	,-1	,Gb	,Eb);
+	add_inst(INST_ADC,	0x13,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x13,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x13,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_ADC,	0x14	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_ADC,	0x15	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x15	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x15	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH,	0x16	,1	,-1	,REG_SS, -1);
+	add_inst(INST_POP,	0x17	,1	,-1	,REG_SS, -1);
+	add_inst(INST_SBB,	0x18	,1	,-1	,Eb	,Gb);
+	add_inst(INST_SBB,	0x19,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x19,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x19,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_SBB,	0x1a	,1	,-1	,Gb	,Eb);
+	add_inst(INST_SBB,	0x1b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x1b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x1b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_SBB,	0x1c	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH,	0x1e	,1	,-1	,REG_DS	,-1);
+	add_inst(INST_POP,	0x1f	,1	,-1	,REG_DS	,-1);
+	add_inst(INST_AND,	0x20	,1	,-1	,Eb	,Gb);
+	add_inst(INST_AND,	0x21,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x21,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x21,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_AND,	0x22	,1	,-1	,Gb	,Eb);
+	add_inst(INST_AND,	0x23,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x23,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x23,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_AND,	0x24	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_AND,	0x25	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x25	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x25	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x28	,1	,-1	,Eb	,Gb);
+	add_inst(INST_SUB,	0x29,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x29,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x29,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x2a	,1	,-1	,Gb	,Eb);
+	add_inst(INST_SUB,	0x2b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x2b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x2b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x2c	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x30	,1	,-1	,Eb	,Gb);
+	add_inst(INST_XOR,	0x31,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x31,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x31,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x32	,1	,-1	,Gb	,Eb);
+	add_inst(INST_XOR,	0x33,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x33,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x33,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x34	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_XOR,	0x35	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x35	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x35	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x38	,1	,-1	,Eb	,Gb);
+	add_inst(INST_CMP,	0x39,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x39,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x39,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x3a	,1	,-1	,Gb	,Eb);
+	add_inst(INST_CMP,	0x3b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x3b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x3b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x3c	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
 	if (set == INSTRUCTION_SET_X86){
-		add_inst(inst_inc		,0x40	,1	,-1	,REG_EAX	,-1);
-		add_inst(inst_inc		,0x41	,1	,-1	,REG_ECX	,-1);
-		add_inst(inst_inc		,0x42	,1	,-1	,REG_EDX	,-1);
-		add_inst(inst_inc		,0x43	,1	,-1	,REG_EBX	,-1);
-		add_inst(inst_inc		,0x44	,1	,-1	,REG_ESP	,-1);
-		add_inst(inst_inc		,0x45	,1	,-1	,REG_EBP	,-1);
-		add_inst(inst_inc		,0x46	,1	,-1	,REG_ESI	,-1);
-		add_inst(inst_inc		,0x47	,1	,-1	,REG_EDI	,-1);
-		add_inst(inst_dec		,0x48	,1	,-1	,REG_EAX	,-1);
-		add_inst(inst_dec		,0x49	,1	,-1	,REG_ECX	,-1);
-		add_inst(inst_dec		,0x4a	,1	,-1	,REG_EDX	,-1);
-		add_inst(inst_dec		,0x4b	,1	,-1	,REG_EBX	,-1);
-		add_inst(inst_dec		,0x4c	,1	,-1	,REG_ESP	,-1);
-		add_inst(inst_dec		,0x4d	,1	,-1	,REG_EBP	,-1);
-		add_inst(inst_dec		,0x4e	,1	,-1	,REG_ESI	,-1);
-		add_inst(inst_dec		,0x4f	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_INC		,0x40	,1	,-1	,REG_EAX	,-1);
+		add_inst(INST_INC		,0x41	,1	,-1	,REG_ECX	,-1);
+		add_inst(INST_INC		,0x42	,1	,-1	,REG_EDX	,-1);
+		add_inst(INST_INC		,0x43	,1	,-1	,REG_EBX	,-1);
+		add_inst(INST_INC		,0x44	,1	,-1	,REG_ESP	,-1);
+		add_inst(INST_INC		,0x45	,1	,-1	,REG_EBP	,-1);
+		add_inst(INST_INC		,0x46	,1	,-1	,REG_ESI	,-1);
+		add_inst(INST_INC		,0x47	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_DEC		,0x48	,1	,-1	,REG_EAX	,-1);
+		add_inst(INST_DEC		,0x49	,1	,-1	,REG_ECX	,-1);
+		add_inst(INST_DEC		,0x4a	,1	,-1	,REG_EDX	,-1);
+		add_inst(INST_DEC		,0x4b	,1	,-1	,REG_EBX	,-1);
+		add_inst(INST_DEC		,0x4c	,1	,-1	,REG_ESP	,-1);
+		add_inst(INST_DEC		,0x4d	,1	,-1	,REG_EBP	,-1);
+		add_inst(INST_DEC		,0x4e	,1	,-1	,REG_ESI	,-1);
+		add_inst(INST_DEC		,0x4f	,1	,-1	,REG_EDI	,-1);
 	}
 	if (set == INSTRUCTION_SET_X86){
-		add_inst(inst_push		,0x50	,1	,-1	,REG_EAX	,-1);
-		add_inst(inst_push		,0x51	,1	,-1	,REG_ECX	,-1);
-		add_inst(inst_push		,0x52	,1	,-1	,REG_EDX	,-1);
-		add_inst(inst_push		,0x53	,1	,-1	,REG_EBX	,-1);
-		add_inst(inst_push		,0x54	,1	,-1	,REG_ESP	,-1);
-		add_inst(inst_push		,0x55	,1	,-1	,REG_EBP	,-1);
-		add_inst(inst_push		,0x56	,1	,-1	,REG_ESI	,-1);
-		add_inst(inst_push		,0x57	,1	,-1	,REG_EDI	,-1);
-		add_inst(inst_pop		,0x58	,1	,-1	,REG_EAX	,-1);
-		add_inst(inst_pop		,0x59	,1	,-1	,REG_ECX	,-1);
-		add_inst(inst_pop		,0x5a	,1	,-1	,REG_EDX	,-1);
-		add_inst(inst_pop		,0x5b	,1	,-1	,REG_EBX	,-1);
-		add_inst(inst_pop		,0x5c	,1	,-1	,REG_ESP	,-1);
-		add_inst(inst_pop		,0x5d	,1	,-1	,REG_EBP	,-1);
-		add_inst(inst_pop		,0x5e	,1	,-1	,REG_ESI	,-1);
-		add_inst(inst_pop		,0x5f	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_PUSH		,0x50	,1	,-1	,REG_EAX	,-1);
+		add_inst(INST_PUSH		,0x51	,1	,-1	,REG_ECX	,-1);
+		add_inst(INST_PUSH		,0x52	,1	,-1	,REG_EDX	,-1);
+		add_inst(INST_PUSH		,0x53	,1	,-1	,REG_EBX	,-1);
+		add_inst(INST_PUSH		,0x54	,1	,-1	,REG_ESP	,-1);
+		add_inst(INST_PUSH		,0x55	,1	,-1	,REG_EBP	,-1);
+		add_inst(INST_PUSH		,0x56	,1	,-1	,REG_ESI	,-1);
+		add_inst(INST_PUSH		,0x57	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_POP		,0x58	,1	,-1	,REG_EAX	,-1);
+		add_inst(INST_POP		,0x59	,1	,-1	,REG_ECX	,-1);
+		add_inst(INST_POP		,0x5a	,1	,-1	,REG_EDX	,-1);
+		add_inst(INST_POP		,0x5b	,1	,-1	,REG_EBX	,-1);
+		add_inst(INST_POP		,0x5c	,1	,-1	,REG_ESP	,-1);
+		add_inst(INST_POP		,0x5d	,1	,-1	,REG_EBP	,-1);
+		add_inst(INST_POP		,0x5e	,1	,-1	,REG_ESI	,-1);
+		add_inst(INST_POP		,0x5f	,1	,-1	,REG_EDI	,-1);
 	}else if (set == INSTRUCTION_SET_AMD64){
-		add_inst(inst_push		,0x50	,1	,-1	,REG_RAX	,-1);
-		add_inst(inst_push		,0x51	,1	,-1	,REG_RCX	,-1);
-		add_inst(inst_push		,0x52	,1	,-1	,REG_RDX	,-1);
-		add_inst(inst_push		,0x53	,1	,-1	,REG_RBX	,-1);
-		add_inst(inst_push		,0x54	,1	,-1	,REG_RSP	,-1);
-		add_inst(inst_push		,0x55	,1	,-1	,REG_RBP	,-1);
-		add_inst(inst_push		,0x56	,1	,-1	,REG_RSI	,-1);
-		add_inst(inst_push		,0x57	,1	,-1	,REG_RDI	,-1);
-		add_inst(inst_pop		,0x58	,1	,-1	,REG_RAX	,-1);
-		add_inst(inst_pop		,0x59	,1	,-1	,REG_RCX	,-1);
-		add_inst(inst_pop		,0x5a	,1	,-1	,REG_RDX	,-1);
-		add_inst(inst_pop		,0x5b	,1	,-1	,REG_RBX	,-1);
-		add_inst(inst_pop		,0x5c	,1	,-1	,REG_RSP	,-1);
-		add_inst(inst_pop		,0x5d	,1	,-1	,REG_RBP	,-1);
-		add_inst(inst_pop		,0x5e	,1	,-1	,REG_RSI	,-1);
-		add_inst(inst_pop		,0x5f	,1	,-1	,REG_RDI	,-1);
+		add_inst(INST_PUSH		,0x50	,1	,-1	,REG_RAX	,-1);
+		add_inst(INST_PUSH		,0x51	,1	,-1	,REG_RCX	,-1);
+		add_inst(INST_PUSH		,0x52	,1	,-1	,REG_RDX	,-1);
+		add_inst(INST_PUSH		,0x53	,1	,-1	,REG_RBX	,-1);
+		add_inst(INST_PUSH		,0x54	,1	,-1	,REG_RSP	,-1);
+		add_inst(INST_PUSH		,0x55	,1	,-1	,REG_RBP	,-1);
+		add_inst(INST_PUSH		,0x56	,1	,-1	,REG_RSI	,-1);
+		add_inst(INST_PUSH		,0x57	,1	,-1	,REG_RDI	,-1);
+		add_inst(INST_POP		,0x58	,1	,-1	,REG_RAX	,-1);
+		add_inst(INST_POP		,0x59	,1	,-1	,REG_RCX	,-1);
+		add_inst(INST_POP		,0x5a	,1	,-1	,REG_RDX	,-1);
+		add_inst(INST_POP		,0x5b	,1	,-1	,REG_RBX	,-1);
+		add_inst(INST_POP		,0x5c	,1	,-1	,REG_RSP	,-1);
+		add_inst(INST_POP		,0x5d	,1	,-1	,REG_RBP	,-1);
+		add_inst(INST_POP		,0x5e	,1	,-1	,REG_RSI	,-1);
+		add_inst(INST_POP		,0x5f	,1	,-1	,REG_RDI	,-1);
 	}
-	add_inst(inst_pusha		,0x60	,1	,-1	,-1	,-1);
-	add_inst(inst_popa		,0x61	,1	,-1	,-1	,-1);
-	add_inst(inst_push,	0x68,	1,	-1,	Iw,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_push,	0x68,	1,	-1,	Id,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_push,	0x68,	1,	-1,	Iq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_imul,	0x69,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_imul,	0x69,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_imul,	0x69,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_push		,0x6a	,1	,-1	,Ib	,-1);
-	add_inst(inst_jo		,0x70	,1	,-1	,Jb	,-1);
-	add_inst(inst_jno		,0x71	,1	,-1	,Jb	,-1);
-	add_inst(inst_jb		,0x72	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnb		,0x73	,1	,-1	,Jb	,-1);
-	add_inst(inst_jz		,0x74	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnz		,0x75	,1	,-1	,Jb	,-1);
-	add_inst(inst_jbe		,0x76	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnbe		,0x77	,1	,-1	,Jb	,-1);
-	add_inst(inst_js		,0x78	,1	,-1	,Jb	,-1);
-	add_inst(inst_jns		,0x79	,1	,-1	,Jb	,-1);
-	add_inst(inst_jp		,0x7a	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnp		,0x7b	,1	,-1	,Jb	,-1);
-	add_inst(inst_jl		,0x7c	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnl		,0x7d	,1	,-1	,Jb	,-1);
-	add_inst(inst_jle		,0x7e	,1	,-1	,Jb	,-1);
-	add_inst(inst_jnle		,0x7f	,1	,-1	,Jb	,-1);
+	add_inst(INST_PUSHA		,0x60	,1	,-1	,-1	,-1);
+	add_inst(INST_POPA		,0x61	,1	,-1	,-1	,-1);
+	add_inst(INST_PUSH,	0x68,	1,	-1,	Iw,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_PUSH,	0x68,	1,	-1,	Id,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_PUSH,	0x68,	1,	-1,	Iq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_IMUL,	0x69,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_IMUL,	0x69,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_IMUL,	0x69,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH		,0x6a	,1	,-1	,Ib	,-1);
+	add_inst(INST_JO		,0x70	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNO		,0x71	,1	,-1	,Jb	,-1);
+	add_inst(INST_JB		,0x72	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNB		,0x73	,1	,-1	,Jb	,-1);
+	add_inst(INST_JZ		,0x74	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNZ		,0x75	,1	,-1	,Jb	,-1);
+	add_inst(INST_JBE		,0x76	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNBE		,0x77	,1	,-1	,Jb	,-1);
+	add_inst(INST_JS		,0x78	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNS		,0x79	,1	,-1	,Jb	,-1);
+	add_inst(INST_JP		,0x7a	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNP		,0x7b	,1	,-1	,Jb	,-1);
+	add_inst(INST_JL		,0x7c	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNL		,0x7d	,1	,-1	,Jb	,-1);
+	add_inst(INST_JLE		,0x7e	,1	,-1	,Jb	,-1);
+	add_inst(INST_JNLE		,0x7f	,1	,-1	,Jb	,-1);
 	// Immediate Group 1
-	add_inst(inst_add		,0x80	,1	,0	,Eb	,Ib);
-	add_inst(inst_or		,0x80	,1	,1	,Eb	,Ib);
-	add_inst(inst_adc		,0x80	,1	,2	,Eb	,Ib);
-	add_inst(inst_sbb		,0x80	,1	,3	,Eb	,Ib);
-	add_inst(inst_and		,0x80	,1	,4	,Eb	,Ib);
-	add_inst(inst_sub		,0x80	,1	,5	,Eb	,Ib);
-	add_inst(inst_xor		,0x80	,1	,6	,Eb	,Ib);
-	add_inst(inst_cmp		,0x80	,1	,7	,Eb	,Ib);
-	add_inst(inst_add,	0x81,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_add,	0x81,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_add,	0x81,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_or,	0x81,	1,	1,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_or,	0x81,	1,	1,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_or,	0x81,	1,	1,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_adc,	0x81,	1,	2,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_adc,	0x81,	1,	2,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_adc,	0x81,	1,	2,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_sbb,	0x81,	1,	3,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_sbb,	0x81,	1,	3,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_sbb,	0x81,	1,	3,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_and,	0x81,	1,	4,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_and,	0x81,	1,	4,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_and,	0x81,	1,	4,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_sub,	0x81,	1,	5,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_sub,	0x81,	1,	5,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_sub,	0x81,	1,	5,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_xor,	0x81,	1,	6,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_xor,	0x81,	1,	6,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_xor,	0x81,	1,	6,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_cmp,	0x81,	1,	7,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_cmp,	0x81,	1,	7,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_cmp,	0x81,	1,	7,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_add,	0x83,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_add,	0x83,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_add,	0x83,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_or,	0x83,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_or,	0x83,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_or,	0x83,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_adc,	0x83,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_adc,	0x83,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_adc,	0x83,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_sbb,	0x83,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_sbb,	0x83,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_sbb,	0x83,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_and,	0x83,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_and,	0x83,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_and,	0x83,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_sub,	0x83,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_sub,	0x83,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_sub,	0x83,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_xor,	0x83,	1,	6,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_xor,	0x83,	1,	6,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_xor,	0x83,	1,	6,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_cmp,	0x83,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_cmp,	0x83,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_cmp,	0x83,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_test,	0x84	,1	,-1	,Eb	,Gb);
-	add_inst(inst_test,	0x85,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_test,	0x85,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_test,	0x85,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_xchg,	0x86	,1	,-1	,Eb	,Gb);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg,	0x87,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_mov,	0x88	,1	,-1	,Eb	,Gb);
-	add_inst(inst_mov,	0x89,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
-	add_inst(inst_mov,	0x89,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov,	0x89,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
-	add_inst(inst_mov,	0x8a	,1	,-1	,Gb	,Eb);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov,	0x8b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(inst_mov,	0x8c	,1	,-1	,Ew	,Sw	);
+	add_inst(INST_ADD		,0x80	,1	,0	,Eb	,Ib);
+	add_inst(INST_OR		,0x80	,1	,1	,Eb	,Ib);
+	add_inst(INST_ADC		,0x80	,1	,2	,Eb	,Ib);
+	add_inst(INST_SBB		,0x80	,1	,3	,Eb	,Ib);
+	add_inst(INST_AND		,0x80	,1	,4	,Eb	,Ib);
+	add_inst(INST_SUB		,0x80	,1	,5	,Eb	,Ib);
+	add_inst(INST_XOR		,0x80	,1	,6	,Eb	,Ib);
+	add_inst(INST_CMP		,0x80	,1	,7	,Eb	,Ib);
+	add_inst(INST_ADD,	0x81,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADD,	0x81,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD,	0x81,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_OR,	0x81,	1,	1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_OR,	0x81,	1,	1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR,	0x81,	1,	1,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_ADC,	0x81,	1,	2,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x81,	1,	2,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x81,	1,	2,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_SBB,	0x81,	1,	3,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x81,	1,	3,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x81,	1,	3,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_AND,	0x81,	1,	4,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x81,	1,	4,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x81,	1,	4,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x81,	1,	5,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x81,	1,	5,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x81,	1,	5,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x81,	1,	6,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x81,	1,	6,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x81,	1,	6,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x81,	1,	7,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x81,	1,	7,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x81,	1,	7,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_ADD,	0x83,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_ADD,	0x83,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD,	0x83,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_OR,	0x83,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_OR,	0x83,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR,	0x83,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_ADC,	0x83,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x83,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x83,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_SBB,	0x83,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x83,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x83,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_AND,	0x83,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x83,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x83,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x83,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x83,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x83,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x83,	1,	6,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x83,	1,	6,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x83,	1,	6,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x83,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x83,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x83,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_TEST,	0x84	,1	,-1	,Eb	,Gb);
+	add_inst(INST_TEST,	0x85,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_TEST,	0x85,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_TEST,	0x85,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_XCHG,	0x86	,1	,-1	,Eb	,Gb);
+	add_inst(INST_XCHG,	0x87,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG,	0x87,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG,	0x87,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_MOV,	0x88	,1	,-1	,Eb	,Gb);
+	add_inst(INST_MOV,	0x89,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV,	0x89,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV,	0x89,	1,	-1,	Eq,	Gq, OPT_BIG_PARAM);
+	add_inst(INST_MOV,	0x8a	,1	,-1	,Gb	,Eb);
+	add_inst(INST_MOV,	0x8b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
+	add_inst(INST_MOV,	0x8b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV,	0x8b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
+	add_inst(INST_MOV,	0x8c	,1	,-1	,Ew	,Sw	);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gw,	Ew, OptSmallParam);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gd,	Ed, OptMediumParam);
 	//add_inst(inst_lea,	0x8d,	1,	-1,	Gq,	Eq, OptBigParam);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gw,	Mw, OPT_SMALL_PARAM);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gd,	Md, OPT_MEDIUM_PARAM);
-	add_inst(inst_lea,	0x8d,	1,	-1,	Gq,	Mq, OPT_BIG_PARAM);
-	add_inst(inst_mov,	0x8e	,1	,-1	,Sw	,Ew, OPT_MEDIUM_PARAM);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_pop,	0x8f,	1,	-1,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_nop		,0x90	,1	,-1	,-1	,-1);
-	add_inst(inst_xchg		,0x91	,1	,-1	,REG_AX	,REG_CX, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x92	,1	,-1	,REG_AX	,REG_DX, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x93	,1	,-1	,REG_AX	,REG_BX, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x94	,1	,-1	,REG_AX	,REG_SP, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x95	,1	,-1	,REG_AX	,REG_BP, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x96	,1	,-1	,REG_AX	,REG_SI, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x97	,1	,-1	,REG_AX	,REG_DI, OPT_SMALL_PARAM);
-	add_inst(inst_xchg		,0x91	,1	,-1	,REG_EAX	,REG_ECX, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x92	,1	,-1	,REG_EAX	,REG_EDX, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x93	,1	,-1	,REG_EAX	,REG_EBX, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x94	,1	,-1	,REG_EAX	,REG_ESP, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x95	,1	,-1	,REG_EAX	,REG_EBP, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x96	,1	,-1	,REG_EAX	,REG_ESI, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x97	,1	,-1	,REG_EAX	,REG_EDI, OPT_MEDIUM_PARAM);
-	add_inst(inst_xchg		,0x91	,1	,-1	,REG_RAX	,REG_RCX, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x92	,1	,-1	,REG_RAX	,REG_RDX, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x93	,1	,-1	,REG_RAX	,REG_RBX, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x94	,1	,-1	,REG_RAX	,REG_RSP, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x95	,1	,-1	,REG_RAX	,REG_RBP, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x96	,1	,-1	,REG_RAX	,REG_RSI, OPT_BIG_PARAM);
-	add_inst(inst_xchg		,0x97	,1	,-1	,REG_RAX	,REG_RDI, OPT_BIG_PARAM);
-	add_inst(inst_cbw_cwde	,0x98	,1	,-1	,-1 ,-1);
-	add_inst(inst_cgq_cwd	,0x99	,1	,-1	,-1 ,-1);
-	add_inst(inst_mov		,0xa0	,1	,-1	,REG_AL	,Ob, 0, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,REG_AX	,Ow, OPT_SMALL_PARAM, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,REG_EAX	,Od, OPT_MEDIUM_PARAM, true);
-	add_inst(inst_mov		,0xa1	,1	,-1	,REG_RAX	,Oq, OPT_BIG_PARAM, true);
-	add_inst(inst_mov		,0xa2	,1	,-1	,Ob	,REG_AL, 0, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Ow,	REG_AX, OPT_SMALL_PARAM, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Od,	REG_EAX, OPT_MEDIUM_PARAM, true);
-	add_inst(inst_mov,	0xa3,	1,	-1,	Oq,	REG_RAX, OPT_BIG_PARAM, true);
-	add_inst(inst_movs_b_ds_esi_es_edi	,0xa4	,1	,-1	,-1,-1);
-	add_inst(inst_movs_ds_esi_es_edi	,0xa5	,1	,-1	,-1,-1);
-	add_inst(inst_cmps_b_ds_esi_es_edi	,0xa6	,1	,-1	,-1,-1);
-	add_inst(inst_cmps_ds_esi_es_edi	,0xa7	,1	,-1	,-1,-1);
-	add_inst(inst_mov		,0xb0	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_mov		,0xb1	,1	,-1	,REG_CL	,Ib);
-	add_inst(inst_mov		,0xb2	,1	,-1	,REG_DL	,Ib);
-	add_inst(inst_mov		,0xb3	,1	,-1	,REG_BL	,Ib);
-	add_inst(inst_mov		,0xb4	,1	,-1	,REG_AH	,Ib);
-	add_inst(inst_mov		,0xb5	,1	,-1	,REG_CH	,Ib);
-	add_inst(inst_mov		,0xb6	,1	,-1	,REG_DH	,Ib);
-	add_inst(inst_mov		,0xb7	,1	,-1	,REG_BH	,Ib);
-	add_inst(inst_mov		,0xb8	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xb9	,1	,-1	,REG_ECX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xba	,1	,-1	,REG_EDX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xbb	,1	,-1	,REG_EBX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xbc	,1	,-1	,REG_ESP	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xbd	,1	,-1	,REG_EBP	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xbe	,1	,-1	,REG_ESI	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xbf	,1	,-1	,REG_EDI	,Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov		,0xb8	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xb9	,1	,-1	,REG_CX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xba	,1	,-1	,REG_DX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xbb	,1	,-1	,REG_BX	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xbc	,1	,-1	,REG_SP	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xbd	,1	,-1	,REG_BP	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xbe	,1	,-1	,REG_SI	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xbf	,1	,-1	,REG_DI	,Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov		,0xb8	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xb9	,1	,-1	,REG_RCX	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xba	,1	,-1	,REG_RDX	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xbb	,1	,-1	,REG_RBX	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xbc	,1	,-1	,REG_RSP	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xbd	,1	,-1	,REG_RBP	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xbe	,1	,-1	,REG_RSI	,Iq, OPT_BIG_PARAM);
-	add_inst(inst_mov		,0xbf	,1	,-1	,REG_RDI	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_LEA,	0x8d,	1,	-1,	Gw,	Mw, OPT_SMALL_PARAM);
+	add_inst(INST_LEA,	0x8d,	1,	-1,	Gd,	Md, OPT_MEDIUM_PARAM);
+	add_inst(INST_LEA,	0x8d,	1,	-1,	Gq,	Mq, OPT_BIG_PARAM);
+	add_inst(INST_MOV,	0x8e	,1	,-1	,Sw	,Ew, OPT_MEDIUM_PARAM);
+	add_inst(INST_POP,	0x8f,	1,	-1,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_POP,	0x8f,	1,	-1,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_POP,	0x8f,	1,	-1,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_NOP		,0x90	,1	,-1	,-1	,-1);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_AX	,REG_CX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_AX	,REG_DX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_AX	,REG_BX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_AX	,REG_SP, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_AX	,REG_BP, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_AX	,REG_SI, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_AX	,REG_DI, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_EAX	,REG_ECX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_EAX	,REG_EDX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_EAX	,REG_EBX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_EAX	,REG_ESP, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_EAX	,REG_EBP, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_EAX	,REG_ESI, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_EAX	,REG_EDI, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_RAX	,REG_RCX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_RAX	,REG_RDX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_RAX	,REG_RBX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_RAX	,REG_RSP, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_RAX	,REG_RBP, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_RAX	,REG_RSI, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_RAX	,REG_RDI, OPT_BIG_PARAM);
+	add_inst(INST_CBW_CWDE	,0x98	,1	,-1	,-1 ,-1);
+	add_inst(INST_CGQ_CWD	,0x99	,1	,-1	,-1 ,-1);
+	add_inst(INST_MOV		,0xa0	,1	,-1	,REG_AL	,Ob, 0, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_AX	,Ow, OPT_SMALL_PARAM, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_EAX	,Od, OPT_MEDIUM_PARAM, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_RAX	,Oq, OPT_BIG_PARAM, true);
+	add_inst(INST_MOV		,0xa2	,1	,-1	,Ob	,REG_AL, 0, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Ow,	REG_AX, OPT_SMALL_PARAM, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Od,	REG_EAX, OPT_MEDIUM_PARAM, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Oq,	REG_RAX, OPT_BIG_PARAM, true);
+	add_inst(INST_MOVS_B_DS_ESI_ES_EDI	,0xa4	,1	,-1	,-1,-1);
+	add_inst(INST_MOVS_DS_ESI_ES_EDI	,0xa5	,1	,-1	,-1,-1);
+	add_inst(INST_CMPS_B_DS_ESI_ES_EDI	,0xa6	,1	,-1	,-1,-1);
+	add_inst(INST_CMPS_DS_ESI_ES_EDI	,0xa7	,1	,-1	,-1,-1);
+	add_inst(INST_MOV		,0xb0	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_MOV		,0xb1	,1	,-1	,REG_CL	,Ib);
+	add_inst(INST_MOV		,0xb2	,1	,-1	,REG_DL	,Ib);
+	add_inst(INST_MOV		,0xb3	,1	,-1	,REG_BL	,Ib);
+	add_inst(INST_MOV		,0xb4	,1	,-1	,REG_AH	,Ib);
+	add_inst(INST_MOV		,0xb5	,1	,-1	,REG_CH	,Ib);
+	add_inst(INST_MOV		,0xb6	,1	,-1	,REG_DH	,Ib);
+	add_inst(INST_MOV		,0xb7	,1	,-1	,REG_BH	,Ib);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_ECX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,REG_EDX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_EBX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_ESP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_EBP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_ESI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_EDI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_CX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,REG_DX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_BX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_SP	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_BP	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_SI	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_DI	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_RCX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,REG_RDX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_RBX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_RSP	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_RBP	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_RSI	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_RDI	,Iq, OPT_BIG_PARAM);
 	// Shift Group 2
-	add_inst(inst_rol		,0xc0	,1	,0	,Eb	,Ib);
-	add_inst(inst_ror		,0xc0	,1	,1	,Eb	,Ib);
-	add_inst(inst_rcl		,0xc0	,1	,2	,Eb	,Ib);
-	add_inst(inst_rcr		,0xc0	,1	,3	,Eb	,Ib);
-	add_inst(inst_shl		,0xc0	,1	,4	,Eb	,Ib);
-	add_inst(inst_shr		,0xc0	,1	,5	,Eb	,Ib);
-	add_inst(inst_sar		,0xc0	,1	,7	,Eb	,Ib);
-	add_inst(inst_rol,	0xc1,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM); // even though the table says Iv
-	add_inst(inst_rol,	0xc1,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_rol,	0xc1,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_ror,	0xc1,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_ror,	0xc1,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_ror,	0xc1,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_rcl,	0xc1,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_rcr,	0xc1,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_shl,	0xc1,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_shl,	0xc1,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_shl,	0xc1,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_shr,	0xc1,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_shr,	0xc1,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_shr,	0xc1,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_sar,	0xc1,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
-	add_inst(inst_sar,	0xc1,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
-	add_inst(inst_sar,	0xc1,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
-	add_inst(inst_ret		,0xc2	,1	,-1	,Iw	,-1);
-	add_inst(inst_ret		,0xc3	,1	,-1	,-1	,-1);
-	add_inst(inst_mov		,0xc6	,1	,-1	,Eb	,Ib);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_mov,	0xc7,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_leave		,0xc9	,1	,-1	,-1	,-1);
-	add_inst(inst_ret_far	,0xca	,1	,-1	,Iw	,-1);
-	add_inst(inst_ret_far	,0xcb	,1	,-1	,-1	,-1);
-	add_inst(inst_int		,0xcd	,1	,-1	,Ib	,-1);
-	add_inst(inst_iret		,0xcf	,1	,-1	,-1	,-1);
-	add_inst(inst_rol,	0xd3,	1,	0,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_rol,	0xd3,	1,	0,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_rol,	0xd3,	1,	0,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_ror,	0xd3,	1,	1,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_ror,	0xd3,	1,	1,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_ror,	0xd3,	1,	1,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_rcl,	0xd3,	1,	2,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_rcr,	0xd3,	1,	3,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_shl,	0xd3,	1,	4,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_shl,	0xd3,	1,	4,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_shl,	0xd3,	1,	4,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_shr,	0xd3,	1,	5,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_shr,	0xd3,	1,	5,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_shr,	0xd3,	1,	5,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_sar,	0xd3,	1,	7,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(inst_sar,	0xd3,	1,	7,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(inst_sar,	0xd3,	1,	7,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(inst_fadd,	0xd8,	1,	0,	Ed,	-1);
-	add_inst(inst_fadd,	0xdc,	1,	0,	Eq,	-1);
-	add_inst(inst_fmul,	0xd8,	1,	1,	Ed,	-1);
-	add_inst(inst_fmul,	0xdc,	1,	1,	Eq,	-1);
-	add_inst(inst_fsub,	0xd8,	1,	4,	Ed,	-1);
-	add_inst(inst_fsub,	0xdc,	1,	4,	Eq,	-1);
-	add_inst(inst_fdiv,	0xd8,	1,	6,	Ed,	-1);
-	add_inst(inst_fdiv,	0xdc,	1,	6,	Eq,	-1);
-	add_inst(inst_fld,	0xd9,	1,	0,	Md,	-1);
-	add_inst(inst_fld,	0xdd,	1,	0,	Mq,	-1);
-	add_inst(inst_fld1,	0xe8d9,	2,	-1,	-1,	-1);
-	add_inst(inst_fldz,	0xeed9,	2,	-1,	-1,	-1);
-	add_inst(inst_fldpi,	0xebd9,	2,	-1,	-1,	-1);
-	add_inst(inst_fst,	0xd9,	1,	2,	Md,	-1);
-	add_inst(inst_fst,	0xdd,	1,	2,	Mq,	-1);
-	add_inst(inst_fstp,	0xd9,	1,	3,	Md,	-1);
-	add_inst(inst_fstp,	0xdd,	1,	3,	Mq,	-1);
-	add_inst(inst_fldcw,	0xd9,	1,	5,	Mw,	-1);
-	add_inst(inst_fnstcw,	0xd9,	1,	7,	Mw,	-1);
-	add_inst(inst_fxch		,0xc9d9	,2	,-1	,REG_ST0	,REG_ST1);
-	add_inst(inst_fucompp	,0xe9da	,2	,-1	,REG_ST0	,REG_ST1);
+	add_inst(INST_ROL		,0xc0	,1	,0	,Eb	,Ib);
+	add_inst(INST_ROR		,0xc0	,1	,1	,Eb	,Ib);
+	add_inst(INST_RCL		,0xc0	,1	,2	,Eb	,Ib);
+	add_inst(INST_RCR		,0xc0	,1	,3	,Eb	,Ib);
+	add_inst(INST_SHL		,0xc0	,1	,4	,Eb	,Ib);
+	add_inst(INST_SHR		,0xc0	,1	,5	,Eb	,Ib);
+	add_inst(INST_SAR		,0xc0	,1	,7	,Eb	,Ib);
+	add_inst(INST_ROL,	0xc1,	1,	0,	Ew,	Ib, OPT_SMALL_PARAM); // even though the table says Iv
+	add_inst(INST_ROL,	0xc1,	1,	0,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROL,	0xc1,	1,	0,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_ROR,	0xc1,	1,	1,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_ROR,	0xc1,	1,	1,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROR,	0xc1,	1,	1,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_RCL,	0xc1,	1,	2,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_RCL,	0xc1,	1,	2,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCL,	0xc1,	1,	2,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_RCR,	0xc1,	1,	3,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_RCR,	0xc1,	1,	3,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCR,	0xc1,	1,	3,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_SHL,	0xc1,	1,	4,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_SHL,	0xc1,	1,	4,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHL,	0xc1,	1,	4,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_SHR,	0xc1,	1,	5,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_SHR,	0xc1,	1,	5,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHR,	0xc1,	1,	5,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_SAR,	0xc1,	1,	7,	Ew,	Ib, OPT_SMALL_PARAM);
+	add_inst(INST_SAR,	0xc1,	1,	7,	Ed,	Ib, OPT_MEDIUM_PARAM);
+	add_inst(INST_SAR,	0xc1,	1,	7,	Eq,	Ib, OPT_BIG_PARAM);
+	add_inst(INST_RET		,0xc2	,1	,-1	,Iw	,-1);
+	add_inst(INST_RET		,0xc3	,1	,-1	,-1	,-1);
+	add_inst(INST_MOV		,0xc6	,1	,-1	,Eb	,Ib);
+	add_inst(INST_MOV,	0xc7,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV,	0xc7,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV,	0xc7,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_LEAVE		,0xc9	,1	,-1	,-1	,-1);
+	add_inst(INST_RET_FAR	,0xca	,1	,-1	,Iw	,-1);
+	add_inst(INST_RET_FAR	,0xcb	,1	,-1	,-1	,-1);
+	add_inst(INST_INT		,0xcd	,1	,-1	,Ib	,-1);
+	add_inst(INST_IRET		,0xcf	,1	,-1	,-1	,-1);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Ew,	REG_CL, OPT_SMALL_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_FADD,	0xd8,	1,	0,	Ed,	-1);
+	add_inst(INST_FADD,	0xdc,	1,	0,	Eq,	-1);
+	add_inst(INST_FMUL,	0xd8,	1,	1,	Ed,	-1);
+	add_inst(INST_FMUL,	0xdc,	1,	1,	Eq,	-1);
+	add_inst(INST_FSUB,	0xd8,	1,	4,	Ed,	-1);
+	add_inst(INST_FSUB,	0xdc,	1,	4,	Eq,	-1);
+	add_inst(INST_FDIV,	0xd8,	1,	6,	Ed,	-1);
+	add_inst(INST_FDIV,	0xdc,	1,	6,	Eq,	-1);
+	add_inst(INST_FLD,	0xd9,	1,	0,	Md,	-1);
+	add_inst(INST_FLD,	0xdd,	1,	0,	Mq,	-1);
+	add_inst(INST_FLD1,	0xe8d9,	2,	-1,	-1,	-1);
+	add_inst(INST_FLDZ,	0xeed9,	2,	-1,	-1,	-1);
+	add_inst(INST_FLDPI,	0xebd9,	2,	-1,	-1,	-1);
+	add_inst(INST_FST,	0xd9,	1,	2,	Md,	-1);
+	add_inst(INST_FST,	0xdd,	1,	2,	Mq,	-1);
+	add_inst(INST_FSTP,	0xd9,	1,	3,	Md,	-1);
+	add_inst(INST_FSTP,	0xdd,	1,	3,	Mq,	-1);
+	add_inst(INST_FLDCW,	0xd9,	1,	5,	Mw,	-1);
+	add_inst(INST_FNSTCW,	0xd9,	1,	7,	Mw,	-1);
+	add_inst(INST_FXCH		,0xc9d9	,2	,-1	,REG_ST0	,REG_ST1);
+	add_inst(INST_FUCOMPP	,0xe9da	,2	,-1	,REG_ST0	,REG_ST1);
 
-	add_inst(inst_fsqrt,	0xfad9,	2,	-1,	-1, -1);
-	add_inst(inst_fsin,	0xfed9,	2,	-1,	-1, -1);
-	add_inst(inst_fcos,	0xffd9,	2,	-1,	-1, -1);
-	add_inst(inst_fptan,	0xf2d9,	2,	-1,	-1, -1);
-	add_inst(inst_fpatan,	0xf3d9,	2,	-1,	-1, -1);
-	add_inst(inst_fyl2x,	0xf1d9,	2,	-1,	-1, -1);
-	add_inst(inst_fistp,	0xdb	,1	,3	,Md	,-1);
-	add_inst(inst_fild,	0xdb,	1,	0,	Ed,	-1);
-	add_inst(inst_faddp,	0xde,	1,	0,	Ed,	-1);
-	add_inst(inst_fmulp,	0xde,	1,	1,	Ed,	-1);
-	add_inst(inst_fsubp,	0xde,	1,	5,	Ed,	-1);
-	add_inst(inst_fdivp,	0xde,	1,	7,	Ed,	-1); // de.f9 ohne Parameter...?
-	add_inst(inst_fnstsw	,0xe0df	,2	,-1	,REG_AX	,-1);
-	add_inst(inst_loopne	,0xe0	,1	,-1	,Jb	,-1);
-	add_inst(inst_loope		,0xe1	,1	,-1	,Jb	,-1);
-	add_inst(inst_loop		,0xe2	,1	,-1	,Jb	,-1);
-	add_inst(inst_in		,0xe4	,1	,-1	,REG_AL	,Ib);
-	add_inst(inst_in		,0xe5	,1	,-1	,REG_EAX,Ib);
-	add_inst(inst_out		,0xe6	,1	,-1	,Ib	,REG_AL);
-	add_inst(inst_out		,0xe7	,1	,-1	,Ib	,REG_EAX);
-	add_inst(inst_call,	0xe8,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // well... "Av" in tyble
-	add_inst(inst_call,	0xe8,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_call,	0xe8,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // miswritten in the table
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jmp,	0xe9,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_FSQRT,	0xfad9,	2,	-1,	-1, -1);
+	add_inst(INST_FSIN,	0xfed9,	2,	-1,	-1, -1);
+	add_inst(INST_FCOS,	0xffd9,	2,	-1,	-1, -1);
+	add_inst(INST_FPTAN,	0xf2d9,	2,	-1,	-1, -1);
+	add_inst(INST_FPATAN,	0xf3d9,	2,	-1,	-1, -1);
+	add_inst(INST_FYL2X,	0xf1d9,	2,	-1,	-1, -1);
+	add_inst(INST_FISTP,	0xdb	,1	,3	,Md	,-1);
+	add_inst(INST_FILD,	0xdb,	1,	0,	Ed,	-1);
+	add_inst(INST_FADDP,	0xde,	1,	0,	Ed,	-1);
+	add_inst(INST_FMULP,	0xde,	1,	1,	Ed,	-1);
+	add_inst(INST_FSUBP,	0xde,	1,	5,	Ed,	-1);
+	add_inst(INST_FDIVP,	0xde,	1,	7,	Ed,	-1); // de.f9 ohne Parameter...?
+	add_inst(INST_FNSTSW	,0xe0df	,2	,-1	,REG_AX	,-1);
+	add_inst(INST_LOOPNE	,0xe0	,1	,-1	,Jb	,-1);
+	add_inst(INST_LOOPE		,0xe1	,1	,-1	,Jb	,-1);
+	add_inst(INST_LOOP		,0xe2	,1	,-1	,Jb	,-1);
+	add_inst(INST_IN		,0xe4	,1	,-1	,REG_AL	,Ib);
+	add_inst(INST_IN		,0xe5	,1	,-1	,REG_EAX,Ib);
+	add_inst(INST_OUT		,0xe6	,1	,-1	,Ib	,REG_AL);
+	add_inst(INST_OUT		,0xe7	,1	,-1	,Ib	,REG_EAX);
+	add_inst(INST_CALL,	0xe8,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // well... "Av" in tyble
+	add_inst(INST_CALL,	0xe8,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_CALL,	0xe8,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_JMP,	0xe9,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // miswritten in the table
+	add_inst(INST_JMP,	0xe9,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JMP,	0xe9,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
 //	add_inst(inst_jmp		,0xea	,1	,-1, Ap, -1); TODO
-	add_inst(inst_jmp_far, 0xea, 1, -1, Id, -1, OPT_SMALL_PARAM);
-	add_inst(inst_jmp_far, 0xea, 1, -1, I48, -1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jmp		,0xeb	,1	,-1, Jb, -1);
-	add_inst(inst_in		,0xec	,1	,-1, REG_AL, REG_DX);
-	add_inst(inst_in		,0xed	,1	,-1, REG_EAX, REG_DX);
-	add_inst(inst_out		,0xee	,1	,-1, REG_DX, REG_AL);
-	add_inst(inst_out		,0xef	,1	,-1, REG_DX, REG_EAX);
-	add_inst(inst_lock		,0xf0	,1	,-1	,-1	,-1);
+	add_inst(INST_JMP_FAR, 0xea, 1, -1, Id, -1, OPT_SMALL_PARAM);
+	add_inst(INST_JMP_FAR, 0xea, 1, -1, I48, -1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JMP		,0xeb	,1	,-1, Jb, -1);
+	add_inst(INST_IN		,0xec	,1	,-1, REG_AL, REG_DX);
+	add_inst(INST_IN		,0xed	,1	,-1, REG_EAX, REG_DX);
+	add_inst(INST_OUT		,0xee	,1	,-1, REG_DX, REG_AL);
+	add_inst(INST_OUT		,0xef	,1	,-1, REG_DX, REG_EAX);
+	add_inst(INST_LOCK		,0xf0	,1	,-1	,-1	,-1);
 	/*add_inst(inst_repne		,0xf2	,1	,-1	,-1	,-1);
 	add_inst(inst_rep		,0xf3	,1	,-1	,-1	,-1);*/
-	add_inst(inst_hlt		,0xf4	,1	,-1	,-1	,-1);
-	add_inst(inst_cmc		,0xf5	,1	,-1	,-1	,-1);
+	add_inst(INST_HLT		,0xf4	,1	,-1	,-1	,-1);
+	add_inst(INST_CMC		,0xf5	,1	,-1	,-1	,-1);
 	// Unary Group 3
-	add_inst(inst_test		,0xf6	,1	,0	,Eb	,Ib);
-	add_inst(inst_not		,0xf6	,1	,2	,Eb	,-1);
-	add_inst(inst_neg		,0xf6	,1	,3	,Eb	,-1);
-	add_inst(inst_mul		,0xf6	,1	,4	,REG_AL	,Eb);
-	add_inst(inst_imul		,0xf6	,1	,5	,REG_AL	,Eb);
-	add_inst(inst_div		,0xf6	,1	,6	,REG_AL	,Eb);
-	add_inst(inst_idiv		,0xf6	,1	,7	,Eb	,-1);
-	add_inst(inst_test,	0xf7,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
-	add_inst(inst_test,	0xf7,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(inst_test,	0xf7,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
-	add_inst(inst_not,	0xf7,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_not,	0xf7,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_not,	0xf7,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_neg,	0xf7,	1,	3,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_neg,	0xf7,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_neg,	0xf7,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_mul		,0xf7	,1	,4	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_imul		,0xf7	,1	,5	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_div		,0xf7	,1	,6	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_idiv		,0xf7	,1	,7	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(inst_mul		,0xf7	,1	,4	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(inst_imul		,0xf7	,1	,5	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(inst_div		,0xf7	,1	,6	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(inst_idiv		,0xf7	,1	,7	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(inst_mul		,0xf7	,1	,4	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(inst_imul		,0xf7	,1	,5	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(inst_div		,0xf7	,1	,6	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(inst_idiv		,0xf7	,1	,7	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(inst_clc		,0xf8	,1	,-1	,-1	,-1);
-	add_inst(inst_stc		,0xf9	,1	,-1	,-1	,-1);
-	add_inst(inst_cli		,0xfa	,1	,-1	,-1	,-1);
-	add_inst(inst_sti		,0xfb	,1	,-1	,-1	,-1);
-	add_inst(inst_cld		,0xfc	,1	,-1	,-1	,-1);
-	add_inst(inst_std		,0xfd	,1	,-1	,-1	,-1);
-	add_inst(inst_inc		,0xfe	,1	,0	,Eb	,-1);
-	add_inst(inst_dec		,0xfe	,1	,1	,Eb	,-1);
-	add_inst(inst_inc,	0xff,	1,	0,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_inc,	0xff,	1,	0,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_inc,	0xff,	1,	0,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_dec,	0xff,	1,	1,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_dec,	0xff,	1,	1,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_dec,	0xff,	1,	1,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_call,	0xff,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
-	add_inst(inst_call,	0xff,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_call,	0xff,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_call_far,	0xff,	1,	3,	Ew,	-1, OPT_SMALL_PARAM); // Ep instead of Ev...
-	add_inst(inst_call_far,	0xff,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
-	add_inst(inst_call_far,	0xff,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(inst_jmp, 0xff, 1,	4, Ew, -1, OPT_SMALL_PARAM);
-	add_inst(inst_jmp, 0xff, 1,	4, Ed, -1, OPT_MEDIUM_PARAM);
-	add_inst(inst_jmp, 0xff, 1,	4, Eq, -1, OPT_BIG_PARAM);
-	add_inst(inst_jmp_far, 0xff, 1, 5, Ed, -1, OPT_SMALL_PARAM);
-	add_inst(inst_jmp_far, 0xff, 1, 5, E48, -1, OPT_MEDIUM_PARAM);
-	add_inst(inst_push, 0xff, 1, 6, Ew, -1, OPT_SMALL_PARAM);
-	add_inst(inst_push, 0xff, 1, 6, Ed, -1, OPT_MEDIUM_PARAM);
-	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OPT_BIG_PARAM);
+	add_inst(INST_TEST		,0xf6	,1	,0	,Eb	,Ib);
+	add_inst(INST_NOT		,0xf6	,1	,2	,Eb	,-1);
+	add_inst(INST_NEG		,0xf6	,1	,3	,Eb	,-1);
+	add_inst(INST_MUL		,0xf6	,1	,4	,REG_AL	,Eb);
+	add_inst(INST_IMUL		,0xf6	,1	,5	,REG_AL	,Eb);
+	add_inst(INST_DIV		,0xf6	,1	,6	,REG_AL	,Eb);
+	add_inst(INST_IDIV		,0xf6	,1	,7	,Eb	,-1);
+	add_inst(INST_TEST,	0xf7,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_TEST,	0xf7,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_TEST,	0xf7,	1,	0,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(INST_NOT,	0xf7,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_NOT,	0xf7,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_NOT,	0xf7,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_NEG,	0xf7,	1,	3,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_NEG,	0xf7,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_NEG,	0xf7,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_CLC		,0xf8	,1	,-1	,-1	,-1);
+	add_inst(INST_STC		,0xf9	,1	,-1	,-1	,-1);
+	add_inst(INST_CLI		,0xfa	,1	,-1	,-1	,-1);
+	add_inst(INST_STI		,0xfb	,1	,-1	,-1	,-1);
+	add_inst(INST_CLD		,0xfc	,1	,-1	,-1	,-1);
+	add_inst(INST_STD		,0xfd	,1	,-1	,-1	,-1);
+	add_inst(INST_INC		,0xfe	,1	,0	,Eb	,-1);
+	add_inst(INST_DEC		,0xfe	,1	,1	,Eb	,-1);
+	add_inst(INST_INC,	0xff,	1,	0,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_INC,	0xff,	1,	0,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_INC,	0xff,	1,	0,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_DEC,	0xff,	1,	1,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_DEC,	0xff,	1,	1,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_DEC,	0xff,	1,	1,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_CALL,	0xff,	1,	2,	Ew,	-1, OPT_SMALL_PARAM);
+	add_inst(INST_CALL,	0xff,	1,	2,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_CALL,	0xff,	1,	2,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_CALL_FAR,	0xff,	1,	3,	Ew,	-1, OPT_SMALL_PARAM); // Ep instead of Ev...
+	add_inst(INST_CALL_FAR,	0xff,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
+	add_inst(INST_CALL_FAR,	0xff,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
+	add_inst(INST_JMP, 0xff, 1,	4, Ew, -1, OPT_SMALL_PARAM);
+	add_inst(INST_JMP, 0xff, 1,	4, Ed, -1, OPT_MEDIUM_PARAM);
+	add_inst(INST_JMP, 0xff, 1,	4, Eq, -1, OPT_BIG_PARAM);
+	add_inst(INST_JMP_FAR, 0xff, 1, 5, Ed, -1, OPT_SMALL_PARAM);
+	add_inst(INST_JMP_FAR, 0xff, 1, 5, E48, -1, OPT_MEDIUM_PARAM);
+	add_inst(INST_PUSH, 0xff, 1, 6, Ew, -1, OPT_SMALL_PARAM);
+	add_inst(INST_PUSH, 0xff, 1, 6, Ed, -1, OPT_MEDIUM_PARAM);
+	add_inst(INST_PUSH, 0xff, 1, 6, Eq, -1, OPT_BIG_PARAM);
 
 	// sse
 	add_inst(INST_MOVSS,  0x100ff3, 3, -1, Xx, Ed);
@@ -2013,6 +2014,7 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 			if (reg == 0x08)	p.reg = RegisterByID[REG_CR1];
 			if (reg == 0x10)	p.reg = RegisterByID[REG_RC2];
 			if (reg == 0x18)	p.reg = RegisterByID[REG_CR3];
+			if (reg == 0x20)	p.reg = RegisterByID[REG_CR4];
 		}else if (pf.reg_group == RegGroupXmm){
 			p.reg = RegisterByID[REG_XMM0 + (reg >> 3)];
 		}else{
@@ -2151,22 +2153,22 @@ string show_reg(int r)
 
 int ARM_DATA_INSTRUCTIONS[16] =
 {
-	inst_and,
-	inst_xor,
-	inst_sub,
-	inst_rsb,
-	inst_add,
-	inst_adc,
-	inst_sbc,
-	inst_rsc,
-	inst_tst,
-	inst_teq,
-	inst_cmp,
-	inst_cmn,
-	inst_or,
-	inst_mov,
-	inst_bic,
-	inst_mvn
+	INST_AND,
+	INST_XOR,
+	INST_SUB,
+	INST_RSB,
+	INST_ADD,
+	INST_ADC,
+	INST_SBC,
+	INST_RSC,
+	INST_TST,
+	INST_TEQ,
+	INST_CMP,
+	INST_CMN,
+	INST_OR,
+	INST_MOV,
+	INST_BIC,
+	INST_MVN
 };
 
 int arm_decode_imm(int imm)
@@ -2199,7 +2201,7 @@ InstructionWithParams disarm_data_opcode(int code)
 {
 	InstructionWithParams i;
 	i.inst = ARM_DATA_INSTRUCTIONS[(code >> 21) & 15];
-	if (((code >> 20) & 1) and (i.inst != inst_cmp) and (i.inst != inst_cmn) and (i.inst != inst_teq) and (i.inst != inst_tst))
+	if (((code >> 20) & 1) and (i.inst != INST_CMP) and (i.inst != INST_CMN) and (i.inst != INST_TEQ) and (i.inst != INST_TST))
 		msg_write(GetInstructionName(i.inst) + "[S]");
 	i.p[0] = param_reg(REG_R0 + ((code >> 12) & 15));
 	i.p[1] = param_reg(REG_R0 + ((code >> 16) & 15));
@@ -2207,8 +2209,8 @@ InstructionWithParams disarm_data_opcode(int code)
 		i.p[2] = param_imm(arm_decode_imm(code & 0xfff), SIZE_32);
 	else
 		i.p[2] = disarm_shift_reg(code & 0xfff);
-	if ((i.inst == inst_cmp) or (i.inst == inst_cmn) or (i.inst == inst_tst) or (i.inst == inst_teq) or (i.inst == inst_mov)){
-		if ((i.inst == inst_cmp) or (i.inst == inst_cmn))
+	if ((i.inst == INST_CMP) or (i.inst == INST_CMN) or (i.inst == INST_TST) or (i.inst == INST_TEQ) or (i.inst == INST_MOV)){
+		if ((i.inst == INST_CMP) or (i.inst == INST_CMN))
 			i.p[0] = i.p[1];
 		i.p[1] = i.p[2];
 		i.p[2] = param_none;
@@ -2219,7 +2221,7 @@ InstructionWithParams disarm_data_opcode(int code)
 InstructionWithParams disarm_data_opcode_mul(int code)
 {
 	InstructionWithParams i;
-	i.inst = inst_mul;
+	i.inst = INST_MUL;
 	if ((code >> 20) & 1)
 		msg_write(" [S]");
 	i.p[0] = param_reg(REG_R0 + ((code >> 16) & 15));
@@ -2232,9 +2234,9 @@ InstructionWithParams disarm_branch(int code)
 {
 	InstructionWithParams i;
 	if ((code >> 24) & 1)
-		i.inst = inst_bl;
+		i.inst = INST_BL;
 	else
-		i.inst = inst_b;
+		i.inst = INST_B;
 	i.p[0] = param_imm(code & 0x00ffffff, SIZE_32);
 	i.p[1] = param_none;
 	i.p[2] = param_none;
@@ -2244,7 +2246,7 @@ InstructionWithParams disarm_branch(int code)
 InstructionWithParams disarm_blx(int code)
 {
 	InstructionWithParams i;
-	i.inst = inst_blx;
+	i.inst = INST_BLX;
 	i.p[0] = param_reg(REG_R0 + ((code >> 0) & 15));
 	i.p[1] = param_none;
 	i.p[2] = param_none;
@@ -2257,9 +2259,9 @@ InstructionWithParams disarm_data_transfer(int code)
 	bool bb = ((code >> 22) & 1);
 	bool ll = ((code >> 20) & 1);
 	if (ll)
-		i.inst = bb ? inst_ldrb : inst_ldr;
+		i.inst = bb ? INST_LDRB : INST_LDR;
 	else
-		i.inst = bb ? inst_strb : inst_str;
+		i.inst = bb ? INST_STRB : INST_STR;
 	int Rn = (code >> 16) & 0xf;
 	int Rd = (code >> 12) & 0xf;
 	i.p[0] = param_reg(REG_R0 + Rd);
@@ -2288,13 +2290,13 @@ InstructionWithParams disarm_data_block_transfer(int code)
 	bool uu = ((code >> 23) & 1);
 	bool ww = ((code >> 21) & 1);
 	if (!pp and uu)
-		i.inst = ll ? inst_ldmia : inst_stmia;
+		i.inst = ll ? INST_LDMIA : INST_STMIA;
 	else if (pp and uu)
-		i.inst = ll ? inst_ldmib : inst_stmib;
+		i.inst = ll ? INST_LDMIB : INST_STMIB;
 	else if (!pp and !uu)
-		i.inst = ll ? inst_ldmda : inst_stmda;
+		i.inst = ll ? INST_LDMDA : INST_STMDA;
 	else if (pp and !uu)
-		i.inst = ll ? inst_ldmdb : inst_stmdb;
+		i.inst = ll ? INST_LDMDB : INST_STMDB;
 	int Rn = (code >> 16) & 0xf;
 	i.p[0] = param_reg(REG_R0 + Rn);
 	i.p[1] = param_reg_set(code & 0xffff);
@@ -2316,7 +2318,7 @@ string DisassembleARM(void *_code_,int length,bool allow_comments)
 		buf += "    ";
 
 		InstructionWithParams iwp;
-		iwp.inst = inst_nop;
+		iwp.inst = INST_NOP;
 		iwp.p[0] = param_none;
 		iwp.p[1] = param_none;
 		iwp.p[2] = param_none;
@@ -2899,7 +2901,7 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 		return;
 
 	bool rel = ((inst.name[0] == 'j') /*&& (inst.param1._type_ != ParamTImmediateDouble)*/) || (inst.name == "call") || (inst.name.find("loop") >= 0);
-	if (inst.inst == inst_jmp_far)
+	if (inst.inst == INST_JMP_FAR)
 		rel = false;
 	if (p.is_label){
 		if ((InstructionSet.set == INSTRUCTION_SET_AMD64) and (p.deref))
@@ -2931,7 +2933,7 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 			if (InstructionSet.set == INSTRUCTION_SET_ARM){
 				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
 				int inst = (*this)[w.inst_no].inst;
-				if ((inst == inst_bl) or (inst == inst_b) or (inst == inst_call) or (inst == inst_jmp)){
+				if ((inst == INST_BL) or (inst == INST_B) or (inst == INST_CALL) or (inst == INST_JMP)){
 					value = value >> 2;
 				}
 			}else{
@@ -3261,6 +3263,7 @@ inline int CreatePartialModRMByte(InstructionParamFuzzy &pf, InstructionParam &p
 		if (r == REG_CR1)	return 0x08;
 		if (r == REG_RC2)	return 0x10;
 		if (r == REG_CR3)	return 0x18;
+		if (r == REG_CR4)	return 0x20;
 		int mrm = GetModRMReg(p.reg) << 3;
 		if (p.reg->extend_mod_rm)
 			mrm += 0x0400; // REXR
@@ -3421,14 +3424,14 @@ int arm_encode_8l4(unsigned int value)
 
 bool inline arm_is_load_store_reg(int inst)
 {
-	return (inst == inst_ldr) or (inst == inst_ldrb) or (inst == inst_str) or (inst == inst_strb);
+	return (inst == INST_LDR) or (inst == INST_LDRB) or (inst == INST_STR) or (inst == INST_STRB);
 }
 
 bool inline arm_is_load_store_multi(int inst)
 {
-	if ((inst == inst_ldmia) or (inst == inst_ldmib) or (inst == inst_ldmda) or (inst == inst_ldmdb))
+	if ((inst == INST_LDMIA) or (inst == INST_LDMIB) or (inst == INST_LDMDA) or (inst == INST_LDMDB))
 		return true;
-	if ((inst == inst_stmia) or (inst == inst_stmib) or (inst == inst_stmda) or (inst == inst_stmdb))
+	if ((inst == INST_STMIA) or (inst == INST_STMIB) or (inst == INST_STMDA) or (inst == INST_STMDB))
 		return true;
 	return false;
 }
@@ -3464,16 +3467,16 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		if (iwp.inst == ARM_DATA_INSTRUCTIONS[i])
 			nn = i;
 	if (nn >= 0){
-		if ((iwp.inst == inst_cmp) or (iwp.inst == inst_cmn) or (iwp.inst == inst_tst) or (iwp.inst == inst_teq) or (iwp.inst == inst_mov)){
+		if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ) or (iwp.inst == INST_MOV)){
 			iwp.p[2] = iwp.p[1];
-			if ((iwp.inst == inst_cmp) or (iwp.inst == inst_cmn)){
+			if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN)){
 				iwp.p[1] = iwp.p[0];
 				iwp.p[0] = param_reg(REG_R0);
 			}else{
 				iwp.p[1] = param_reg(REG_R0);
 			}
 		}
-		bool ss = (iwp.inst == inst_cmp) or (iwp.inst == inst_cmn) or (iwp.inst == inst_tst) or (iwp.inst == inst_teq);
+		bool ss = (iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ);
 		code |= 0x0 << 26;
 		code |= (nn << 21);
 		if (ss)
@@ -3501,13 +3504,13 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		code |= arm_reg_no(iwp.p[0].reg) << 12;
 		code |= arm_reg_no(iwp.p[1].reg) << 16;
 	}else if (arm_is_load_store_reg(iwp.inst)){
-		if (iwp.inst == inst_ldr)
+		if (iwp.inst == INST_LDR)
 			code |= 0x04100000;
-		else if (iwp.inst == inst_ldrb)
+		else if (iwp.inst == INST_LDRB)
 			code |= 0x04500000;
-		else if (iwp.inst == inst_str)
+		else if (iwp.inst == INST_STR)
 			code |= 0x04000000;
-		else if (iwp.inst == inst_strb)
+		else if (iwp.inst == INST_STRB)
 			code |= 0x04400000;
 
 		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)){
@@ -3537,9 +3540,9 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		}
 	}else if (arm_is_load_store_multi(iwp.inst)){
 		arm_expect(iwp, PARAMT_REGISTER, PARAMT_IMMEDIATE);
-		bool ll = ((iwp.inst == inst_ldmia) or (iwp.inst == inst_ldmib) or (iwp.inst == inst_ldmda) or (iwp.inst == inst_ldmdb));
-		bool uu = ((iwp.inst == inst_ldmia) or (iwp.inst == inst_ldmib) or (iwp.inst == inst_stmia) or (iwp.inst == inst_stmib));
-		bool pp = ((iwp.inst == inst_ldmib) or (iwp.inst == inst_ldmdb) or (iwp.inst == inst_stmib) or (iwp.inst == inst_stmdb));
+		bool ll = ((iwp.inst == INST_LDMIA) or (iwp.inst == INST_LDMIB) or (iwp.inst == INST_LDMDA) or (iwp.inst == INST_LDMDB));
+		bool uu = ((iwp.inst == INST_LDMIA) or (iwp.inst == INST_LDMIB) or (iwp.inst == INST_STMIA) or (iwp.inst == INST_STMIB));
+		bool pp = ((iwp.inst == INST_LDMIB) or (iwp.inst == INST_LDMDB) or (iwp.inst == INST_STMIB) or (iwp.inst == INST_STMDB));
 		bool ww = true;
 		if (ll)
 			code |= 0x08100000;
@@ -3553,29 +3556,29 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			code |= 0x00200000;
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= iwp.p[1].value & 0xffff;
-	}else if (iwp.inst == inst_mul){
+	}else if (iwp.inst == INST_MUL){
 		code |= 0x00000090;
 		arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER, PARAMT_REGISTER);
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= arm_reg_no(iwp.p[1].reg);
 		code |= arm_reg_no(iwp.p[2].reg) << 8;
-	}else if ((iwp.inst == inst_blx) or ((iwp.inst == inst_call) and (iwp.p[0].type == PARAMT_REGISTER))){
+	}else if ((iwp.inst == INST_BLX) or ((iwp.inst == INST_CALL) and (iwp.p[0].type == PARAMT_REGISTER))){
 		arm_expect(iwp, PARAMT_REGISTER);
 		code |= 0x012fff30;
 		code |= arm_reg_no(iwp.p[0].reg);
-	}else if ((iwp.inst == inst_bl) or (iwp.inst == inst_b) or (iwp.inst == inst_jmp) or (iwp.inst == inst_call)){
+	}else if ((iwp.inst == INST_BL) or (iwp.inst == INST_B) or (iwp.inst == INST_JMP) or (iwp.inst == INST_CALL)){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
-		if ((iwp.inst == inst_bl) or (iwp.inst == inst_call))
+		if ((iwp.inst == INST_BL) or (iwp.inst == INST_CALL))
 			code |= 0x0b000000;
 		else
 			code |= 0x0a000000;
 		int value = iwp.p[0].value;
 		if (iwp.p[0].is_label){
 			add_wanted_label(ocs + 1, value, n, true, false, SIZE_24);
-		}else if (iwp.inst == inst_call)
+		}else if (iwp.inst == INST_CALL)
 			value = (iwp.p[0].value - (long)&oc[ocs] - 8) >> 2;
 		code |= (value & 0x00ffffff);
-	}else if (iwp.inst == inst_dd){
+	}else if (iwp.inst == INST_DD){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
 		code = iwp.p[0].value;
 	}else{
@@ -3595,7 +3598,7 @@ void InstructionWithParamsList::ShrinkJumps(void *oc, int ocs)
 
 	// try shrinking
 	foreachi(InstructionWithParams &iwp, *this, i){
-		if ((iwp.inst == inst_jmp) || (iwp.inst == inst_jz) || (iwp.inst == inst_jnz) || (iwp.inst == inst_jl) || (iwp.inst == inst_jnl) || (iwp.inst == inst_jle) || (iwp.inst == inst_jnle)){
+		if ((iwp.inst == INST_JMP) || (iwp.inst == INST_JZ) || (iwp.inst == INST_JNZ) || (iwp.inst == INST_JL) || (iwp.inst == INST_JNL) || (iwp.inst == INST_JLE) || (iwp.inst == INST_JNLE)){
 			if (iwp.p[0].is_label){
 				int target = label[(int)iwp.p[0].value].inst_no;
 
