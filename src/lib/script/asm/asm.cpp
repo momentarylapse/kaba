@@ -124,14 +124,14 @@ MetaInfo::MetaInfo()
 // groups of registers
 enum
 {
-	RegGroupNone,
-	RegGroupGeneral,
-	RegGroupGeneral2,
-	RegGroupSegment,
-	RegGroupFlags,
-	RegGroupControl,
-	RegGroupX87,
-	RegGroupXmm,
+	REG_GROUP_NONE,
+	REG_GROUP_GENERAL,
+	REG_GROUP_GENERAL2,
+	REG_GROUP_SEGMENT,
+	REG_GROUP_FLAGS,
+	REG_GROUP_CONTROL,
+	REG_GROUP_X87,
+	REG_GROUP_XMM,
 };
 
 
@@ -153,8 +153,8 @@ void add_reg(const string &name, int id, int group, int size, int root = -1)
 	r.name = name;
 	r.id = id;
 	r.group = group;
-	if (group == RegGroupGeneral2){
-		r.group = RegGroupGeneral;
+	if (group == REG_GROUP_GENERAL2){
+		r.group = REG_GROUP_GENERAL;
 		r.extend_mod_rm = true;
 	}
 	r.size = size;
@@ -354,6 +354,8 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_MINSD,  "minsd",  64+3, 64+1},
 	{INST_MAXSS,  "maxss",  64+3, 64+1},
 	{INST_MAXSD,  "maxsd",  64+3, 64+1},
+	{INST_CVTSS2SI,  "cvtss2si",  64+3, 64+1},
+	{INST_CVTSI2SS,  "cvtsi2ss",  64+3, 64+1},
 
 	{INST_B,		"b"},
 	{INST_BL,		"bl"},
@@ -416,6 +418,7 @@ enum
 	Mb,Mw,Md,Mq,
 	Jb,Jw,Jd,Jq,
 	Sw,Xx,
+	XMd,XMq
 };
 
 // displacement for registers
@@ -791,7 +794,7 @@ bool CPUInstruction::match(InstructionWithParams &iwp)
 bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 {
 	ip.reg = NULL;
-	ip.reg_group = RegGroupNone;
+	ip.reg_group = REG_GROUP_NONE;
 	ip.mrm_mode = MRM_NONE;
 	ip.reg_group = -1;
 	ip._type_ = PARAMT_INVALID;
@@ -819,7 +822,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
-		ip.reg_group = RegGroupGeneral;
+		ip.reg_group = REG_GROUP_GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Eb)	ip.size = SIZE_8;
 		if (param == Ew)	ip.size = SIZE_16;
@@ -828,11 +831,23 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		if (param == E48)	ip.size = SIZE_48;
 		return true;
 	}
+	// xmm reg / mem
+	if ((param == XMd) || (param == XMq)){
+		ip._type_ = PARAMT_INVALID;//ParamTRegisterOrMem;
+		ip.allow_register = true;
+		ip.allow_memory_address = true;
+		ip.allow_memory_indirect = true;
+		ip.reg_group = REG_GROUP_XMM;
+		ip.mrm_mode = MRM_MOD_RM;
+		if (param == XMd)	ip.size = SIZE_32;
+		if (param == XMq)	ip.size = SIZE_64;
+		return true;
+	}
 	// general reg (reg)
 	if ((param == Gb) || (param == Gq) || (param == Gw) || (param == Gd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = RegGroupGeneral;
+		ip.reg_group = REG_GROUP_GENERAL;
 		ip.mrm_mode = MRM_REG;
 		if (param == Gb)	ip.size = SIZE_8;
 		if (param == Gw)	ip.size = SIZE_16;
@@ -844,7 +859,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if ((param == Rb) || (param == Rq) || (param == Rw) || (param == Rd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = RegGroupGeneral;
+		ip.reg_group = REG_GROUP_GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Rb)	ip.size = SIZE_8;
 		if (param == Rw)	ip.size = SIZE_16;
@@ -889,7 +904,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip._type_ = PARAMT_INVALID; // ...
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
-		ip.reg_group = RegGroupGeneral;
+		ip.reg_group = REG_GROUP_GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Mb)	ip.size = SIZE_8;
 		if (param == Mw)	ip.size = SIZE_16;
@@ -901,7 +916,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if ((param == Cb) || (param == Cd) || (param == Cw) || (param == Cd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = RegGroupControl;
+		ip.reg_group = REG_GROUP_CONTROL;
 		ip.mrm_mode = MRM_REG;
 		if (param == Cb)	ip.size = SIZE_8;
 		if (param == Cw)	ip.size = SIZE_16;
@@ -913,7 +928,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if (param == Sw){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = RegGroupSegment;
+		ip.reg_group = REG_GROUP_SEGMENT;
 		ip.mrm_mode = MRM_REG;
 		ip.size = SIZE_16;
 		return true;
@@ -922,7 +937,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if (param == Xx){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = RegGroupXmm;
+		ip.reg_group = REG_GROUP_XMM;
 		ip.mrm_mode = MRM_REG;
 		ip.size = SIZE_128;
 		return true;
@@ -1054,22 +1069,22 @@ int QueryLocalInstructionSet()
 void InitARM()
 {
 	Registers.clear();
-	add_reg("r0",	REG_R0,	RegGroupGeneral,	SIZE_32,	0);
-	add_reg("r1",	REG_R1,	RegGroupGeneral,	SIZE_32,	1);
-	add_reg("r2",	REG_R2,	RegGroupGeneral,	SIZE_32,	2);
-	add_reg("r3",	REG_R3,	RegGroupGeneral,	SIZE_32,	3);
-	add_reg("r4",	REG_R4,	RegGroupGeneral,	SIZE_32,	4);
-	add_reg("r5",	REG_R5,	RegGroupGeneral,	SIZE_32,	5);
-	add_reg("r6",	REG_R6,	RegGroupGeneral,	SIZE_32,	6);
-	add_reg("r7",	REG_R7,	RegGroupGeneral,	SIZE_32,	7);
-	add_reg("r8",	REG_R8,	RegGroupGeneral,	SIZE_32,	8);
-	add_reg("r9",	REG_R9,	RegGroupGeneral,	SIZE_32,	9);
-	add_reg("r10",	REG_R10,	RegGroupGeneral,	SIZE_32,	10);
-	add_reg("r11",	REG_R11,	RegGroupGeneral,	SIZE_32,	11);
-	add_reg("r12",	REG_R12,	RegGroupGeneral,	SIZE_32,	12);
-	add_reg("r13",	REG_R13,	RegGroupGeneral,	SIZE_32,	13);
-	add_reg("r14",	REG_R14,	RegGroupGeneral,	SIZE_32,	14);
-	add_reg("r15",	REG_R15,	RegGroupGeneral,	SIZE_32,	15);
+	add_reg("r0",	REG_R0,	REG_GROUP_GENERAL,	SIZE_32,	0);
+	add_reg("r1",	REG_R1,	REG_GROUP_GENERAL,	SIZE_32,	1);
+	add_reg("r2",	REG_R2,	REG_GROUP_GENERAL,	SIZE_32,	2);
+	add_reg("r3",	REG_R3,	REG_GROUP_GENERAL,	SIZE_32,	3);
+	add_reg("r4",	REG_R4,	REG_GROUP_GENERAL,	SIZE_32,	4);
+	add_reg("r5",	REG_R5,	REG_GROUP_GENERAL,	SIZE_32,	5);
+	add_reg("r6",	REG_R6,	REG_GROUP_GENERAL,	SIZE_32,	6);
+	add_reg("r7",	REG_R7,	REG_GROUP_GENERAL,	SIZE_32,	7);
+	add_reg("r8",	REG_R8,	REG_GROUP_GENERAL,	SIZE_32,	8);
+	add_reg("r9",	REG_R9,	REG_GROUP_GENERAL,	SIZE_32,	9);
+	add_reg("r10",	REG_R10,	REG_GROUP_GENERAL,	SIZE_32,	10);
+	add_reg("r11",	REG_R11,	REG_GROUP_GENERAL,	SIZE_32,	11);
+	add_reg("r12",	REG_R12,	REG_GROUP_GENERAL,	SIZE_32,	12);
+	add_reg("r13",	REG_R13,	REG_GROUP_GENERAL,	SIZE_32,	13);
+	add_reg("r14",	REG_R14,	REG_GROUP_GENERAL,	SIZE_32,	14);
+	add_reg("r15",	REG_R15,	REG_GROUP_GENERAL,	SIZE_32,	15);
 
 	// create easy to access array
 	RegisterByID.clear();
@@ -1089,87 +1104,87 @@ void InitX86()
 	int set = InstructionSet.set;
 
 	Registers.clear();
-	add_reg("rax",	REG_RAX,	RegGroupGeneral,	SIZE_64,	0);
-	add_reg("eax",	REG_EAX,	RegGroupGeneral,	SIZE_32,	0);
-	add_reg("ax",	REG_AX,	RegGroupGeneral,	SIZE_16,	0);
-	add_reg("ah",	REG_AH,	RegGroupGeneral,	SIZE_8,	0); // RegResize[] will be overwritten by al
-	add_reg("al",	REG_AL,	RegGroupGeneral,	SIZE_8,	0);
-	add_reg("rcx",	REG_RCX,	RegGroupGeneral,	SIZE_64,	1);
-	add_reg("ecx",	REG_ECX,	RegGroupGeneral,	SIZE_32,	1);
-	add_reg("cx",	REG_CX,	RegGroupGeneral,	SIZE_16,	1);
-	add_reg("ch",	REG_CH,	RegGroupGeneral,	SIZE_8,	1);
-	add_reg("cl",	REG_CL,	RegGroupGeneral,	SIZE_8,	1);
-	add_reg("rdx",	REG_RDX,	RegGroupGeneral,	SIZE_64,	2);
-	add_reg("edx",	REG_EDX,	RegGroupGeneral,	SIZE_32,	2);
-	add_reg("dx",	REG_DX,	RegGroupGeneral,	SIZE_16,	2);
-	add_reg("dh",	REG_DH,	RegGroupGeneral,	SIZE_8,	2);
-	add_reg("dl",	REG_DL,	RegGroupGeneral,	SIZE_8,	2);
-	add_reg("rbx",	REG_RBX,	RegGroupGeneral,	SIZE_64,	3);
-	add_reg("ebx",	REG_EBX,	RegGroupGeneral,	SIZE_32,	3);
-	add_reg("bx",	REG_BX,	RegGroupGeneral,	SIZE_16,	3);
-	add_reg("bh",	REG_BH,	RegGroupGeneral,	SIZE_8,	3);
-	add_reg("bl",	REG_BL,	RegGroupGeneral,	SIZE_8,	3);
+	add_reg("rax",	REG_RAX,	REG_GROUP_GENERAL,	SIZE_64,	0);
+	add_reg("eax",	REG_EAX,	REG_GROUP_GENERAL,	SIZE_32,	0);
+	add_reg("ax",	REG_AX,	REG_GROUP_GENERAL,	SIZE_16,	0);
+	add_reg("ah",	REG_AH,	REG_GROUP_GENERAL,	SIZE_8,	0); // RegResize[] will be overwritten by al
+	add_reg("al",	REG_AL,	REG_GROUP_GENERAL,	SIZE_8,	0);
+	add_reg("rcx",	REG_RCX,	REG_GROUP_GENERAL,	SIZE_64,	1);
+	add_reg("ecx",	REG_ECX,	REG_GROUP_GENERAL,	SIZE_32,	1);
+	add_reg("cx",	REG_CX,	REG_GROUP_GENERAL,	SIZE_16,	1);
+	add_reg("ch",	REG_CH,	REG_GROUP_GENERAL,	SIZE_8,	1);
+	add_reg("cl",	REG_CL,	REG_GROUP_GENERAL,	SIZE_8,	1);
+	add_reg("rdx",	REG_RDX,	REG_GROUP_GENERAL,	SIZE_64,	2);
+	add_reg("edx",	REG_EDX,	REG_GROUP_GENERAL,	SIZE_32,	2);
+	add_reg("dx",	REG_DX,	REG_GROUP_GENERAL,	SIZE_16,	2);
+	add_reg("dh",	REG_DH,	REG_GROUP_GENERAL,	SIZE_8,	2);
+	add_reg("dl",	REG_DL,	REG_GROUP_GENERAL,	SIZE_8,	2);
+	add_reg("rbx",	REG_RBX,	REG_GROUP_GENERAL,	SIZE_64,	3);
+	add_reg("ebx",	REG_EBX,	REG_GROUP_GENERAL,	SIZE_32,	3);
+	add_reg("bx",	REG_BX,	REG_GROUP_GENERAL,	SIZE_16,	3);
+	add_reg("bh",	REG_BH,	REG_GROUP_GENERAL,	SIZE_8,	3);
+	add_reg("bl",	REG_BL,	REG_GROUP_GENERAL,	SIZE_8,	3);
 
-	add_reg("rsp",	REG_RSP,	RegGroupGeneral,	SIZE_64,	4);
-	add_reg("esp",	REG_ESP,	RegGroupGeneral,	SIZE_32,	4);
-	add_reg("sp",	REG_SP,	RegGroupGeneral,	SIZE_16,	4);
-	add_reg("rbp",	REG_RBP,	RegGroupGeneral,	SIZE_64,	5);
-	add_reg("ebp",	REG_EBP,	RegGroupGeneral,	SIZE_32,	5);
-	add_reg("bp",	REG_BP,	RegGroupGeneral,	SIZE_16,	5);
-	add_reg("rsi",	REG_RSI,	RegGroupGeneral,	SIZE_64,	6);
-	add_reg("esi",	REG_ESI,	RegGroupGeneral,	SIZE_32,	6);
-	add_reg("si",	REG_SI,	RegGroupGeneral,	SIZE_16,	6);
-	add_reg("rdi",	REG_RDI,	RegGroupGeneral,	SIZE_64,	7);
-	add_reg("edi",	REG_EDI,	RegGroupGeneral,	SIZE_32,	7);
-	add_reg("di",	REG_DI,	RegGroupGeneral,	SIZE_16,	7);
+	add_reg("rsp",	REG_RSP,	REG_GROUP_GENERAL,	SIZE_64,	4);
+	add_reg("esp",	REG_ESP,	REG_GROUP_GENERAL,	SIZE_32,	4);
+	add_reg("sp",	REG_SP,	REG_GROUP_GENERAL,	SIZE_16,	4);
+	add_reg("rbp",	REG_RBP,	REG_GROUP_GENERAL,	SIZE_64,	5);
+	add_reg("ebp",	REG_EBP,	REG_GROUP_GENERAL,	SIZE_32,	5);
+	add_reg("bp",	REG_BP,	REG_GROUP_GENERAL,	SIZE_16,	5);
+	add_reg("rsi",	REG_RSI,	REG_GROUP_GENERAL,	SIZE_64,	6);
+	add_reg("esi",	REG_ESI,	REG_GROUP_GENERAL,	SIZE_32,	6);
+	add_reg("si",	REG_SI,	REG_GROUP_GENERAL,	SIZE_16,	6);
+	add_reg("rdi",	REG_RDI,	REG_GROUP_GENERAL,	SIZE_64,	7);
+	add_reg("edi",	REG_EDI,	REG_GROUP_GENERAL,	SIZE_32,	7);
+	add_reg("di",	REG_DI,	REG_GROUP_GENERAL,	SIZE_16,	7);
 
-	add_reg("r8",	REG_R8,	RegGroupGeneral2,	SIZE_64,	8);
-	add_reg("r8d",	REG_R8D,	RegGroupGeneral2,	SIZE_32,	8);
-	add_reg("r9",	REG_R9,	RegGroupGeneral2,	SIZE_64,	9);
-	add_reg("r9d",	REG_R9D,	RegGroupGeneral2,	SIZE_32,	9);
-	add_reg("r10",	REG_R10,	RegGroupGeneral2,	SIZE_64,	10);
-	add_reg("r10d",	REG_R10D,RegGroupGeneral2,	SIZE_32,	10);
-	add_reg("r11",	REG_R11,	RegGroupGeneral2,	SIZE_64,	10);
-	add_reg("r11d",	REG_R11D,RegGroupGeneral2,	SIZE_32,	11);
-	add_reg("r12",	REG_R12,	RegGroupGeneral2,	SIZE_64,	12);
-	add_reg("r12d",	REG_R12D,RegGroupGeneral2,	SIZE_32,	12);
-	add_reg("r13",	REG_R13,	RegGroupGeneral2,	SIZE_64,	13);
-	add_reg("r13d",	REG_R13D,RegGroupGeneral2,	SIZE_32,	13);
-	add_reg("r14",	REG_R14,	RegGroupGeneral2,	SIZE_64,	14);
-	add_reg("r14d",	REG_R14D,RegGroupGeneral2,	SIZE_32,	14);
-	add_reg("r15",	REG_R15,	RegGroupGeneral2,	SIZE_64,	15);
-	add_reg("r15d",	REG_R15D,RegGroupGeneral2,	SIZE_32,	15);
+	add_reg("r8",	REG_R8,	REG_GROUP_GENERAL2,	SIZE_64,	8);
+	add_reg("r8d",	REG_R8D,	REG_GROUP_GENERAL2,	SIZE_32,	8);
+	add_reg("r9",	REG_R9,	REG_GROUP_GENERAL2,	SIZE_64,	9);
+	add_reg("r9d",	REG_R9D,	REG_GROUP_GENERAL2,	SIZE_32,	9);
+	add_reg("r10",	REG_R10,	REG_GROUP_GENERAL2,	SIZE_64,	10);
+	add_reg("r10d",	REG_R10D,REG_GROUP_GENERAL2,	SIZE_32,	10);
+	add_reg("r11",	REG_R11,	REG_GROUP_GENERAL2,	SIZE_64,	10);
+	add_reg("r11d",	REG_R11D,REG_GROUP_GENERAL2,	SIZE_32,	11);
+	add_reg("r12",	REG_R12,	REG_GROUP_GENERAL2,	SIZE_64,	12);
+	add_reg("r12d",	REG_R12D,REG_GROUP_GENERAL2,	SIZE_32,	12);
+	add_reg("r13",	REG_R13,	REG_GROUP_GENERAL2,	SIZE_64,	13);
+	add_reg("r13d",	REG_R13D,REG_GROUP_GENERAL2,	SIZE_32,	13);
+	add_reg("r14",	REG_R14,	REG_GROUP_GENERAL2,	SIZE_64,	14);
+	add_reg("r14d",	REG_R14D,REG_GROUP_GENERAL2,	SIZE_32,	14);
+	add_reg("r15",	REG_R15,	REG_GROUP_GENERAL2,	SIZE_64,	15);
+	add_reg("r15d",	REG_R15D,REG_GROUP_GENERAL2,	SIZE_32,	15);
 
-	add_reg("cs",	REG_CS,	RegGroupSegment,	SIZE_16);
-	add_reg("ss",	REG_SS,	RegGroupSegment,	SIZE_16);
-	add_reg("ds",	REG_DS,	RegGroupSegment,	SIZE_16);
-	add_reg("es",	REG_ES,	RegGroupSegment,	SIZE_16);
-	add_reg("fs",	REG_FS,	RegGroupSegment,	SIZE_16);
-	add_reg("gs",	REG_GS,	RegGroupSegment,	SIZE_16);
+	add_reg("cs",	REG_CS,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("ss",	REG_SS,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("ds",	REG_DS,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("es",	REG_ES,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("fs",	REG_FS,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("gs",	REG_GS,	REG_GROUP_SEGMENT,	SIZE_16);
 
-	add_reg("cr0",	REG_CR0,	RegGroupControl,	SIZE_32);
-	add_reg("cr1",	REG_CR1,	RegGroupControl,	SIZE_32);
-	add_reg("cr2",	REG_RC2,	RegGroupControl,	SIZE_32);
-	add_reg("cr3",	REG_CR3,	RegGroupControl,	SIZE_32);
-	add_reg("cr4",	REG_CR4,	RegGroupControl,	SIZE_32);
+	add_reg("cr0",	REG_CR0,	REG_GROUP_CONTROL,	SIZE_32);
+	add_reg("cr1",	REG_CR1,	REG_GROUP_CONTROL,	SIZE_32);
+	add_reg("cr2",	REG_RC2,	REG_GROUP_CONTROL,	SIZE_32);
+	add_reg("cr3",	REG_CR3,	REG_GROUP_CONTROL,	SIZE_32);
+	add_reg("cr4",	REG_CR4,	REG_GROUP_CONTROL,	SIZE_32);
 
-	add_reg("st0",	REG_ST0,	RegGroupX87,	SIZE_32,	16); // ??? 32
-	add_reg("st1",	REG_ST1,	RegGroupX87,	SIZE_32,	17);
-	add_reg("st2",	REG_ST2,	RegGroupX87,	SIZE_32,	18);
-	add_reg("st3",	REG_ST3,	RegGroupX87,	SIZE_32,	19);
-	add_reg("st4",	REG_ST4,	RegGroupX87,	SIZE_32,	20);
-	add_reg("st5",	REG_ST5,	RegGroupX87,	SIZE_32,	21);
-	add_reg("st6",	REG_ST6,	RegGroupX87,	SIZE_32,	22);
-	add_reg("st7",	REG_ST7,	RegGroupX87,	SIZE_32,	23);
+	add_reg("st0",	REG_ST0,	REG_GROUP_X87,	SIZE_32,	16); // ??? 32
+	add_reg("st1",	REG_ST1,	REG_GROUP_X87,	SIZE_32,	17);
+	add_reg("st2",	REG_ST2,	REG_GROUP_X87,	SIZE_32,	18);
+	add_reg("st3",	REG_ST3,	REG_GROUP_X87,	SIZE_32,	19);
+	add_reg("st4",	REG_ST4,	REG_GROUP_X87,	SIZE_32,	20);
+	add_reg("st5",	REG_ST5,	REG_GROUP_X87,	SIZE_32,	21);
+	add_reg("st6",	REG_ST6,	REG_GROUP_X87,	SIZE_32,	22);
+	add_reg("st7",	REG_ST7,	REG_GROUP_X87,	SIZE_32,	23);
 
-	add_reg("xmm0",	REG_XMM0,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm1",	REG_XMM1,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm2",	REG_XMM2,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm3",	REG_XMM3,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm4",	REG_XMM4,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm5",	REG_XMM5,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm6",	REG_XMM6,	RegGroupXmm,	SIZE_128);
-	add_reg("xmm7",	REG_XMM7,	RegGroupXmm,	SIZE_128);
+	add_reg("xmm0",	REG_XMM0,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm1",	REG_XMM1,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm2",	REG_XMM2,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm3",	REG_XMM3,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm4",	REG_XMM4,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm5",	REG_XMM5,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm6",	REG_XMM6,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm7",	REG_XMM7,	REG_GROUP_XMM,	SIZE_128);
 
 	// create easy to access array
 	RegisterByID.clear();
@@ -1766,11 +1781,11 @@ void InitX86()
 	add_inst(INST_PUSH, 0xff, 1, 6, Eq, -1, OPT_BIG_PARAM);
 
 	// sse
-	add_inst(INST_MOVSS,  0x100ff3, 3, -1, Xx, Ed);
-	add_inst(INST_MOVSS,  0x110ff3, 3, -1, Ed, Xx);
-	add_inst(INST_MOVSD,  0x100ff2, 3, -1, Xx, Eq);
-	add_inst(INST_MOVSD,  0x110ff2, 3, -1, Eq, Xx);
-	add_inst(INST_ADDSS,  0x580ff3, 3, -1, Xx, Ed);
+	add_inst(INST_MOVSS,  0x100ff3, 3, -1, Xx, XMd);
+	add_inst(INST_MOVSS,  0x110ff3, 3, -1, XMd, Xx);
+	add_inst(INST_MOVSD,  0x100ff2, 3, -1, Xx, XMq);
+	add_inst(INST_MOVSD,  0x110ff2, 3, -1, XMq, Xx);
+	add_inst(INST_ADDSS,  0x580ff3, 3, -1, Xx, XMd);
 	add_inst(INST_ADDSD,  0x580ff2, 3, -1, Xx, Eq);
 	add_inst(INST_SUBSS,  0x5c0ff3, 3, -1, Xx, Ed);
 	add_inst(INST_SUBSD,  0x5c0ff2, 3, -1, Xx, Eq);
@@ -1784,6 +1799,9 @@ void InitX86()
 	add_inst(INST_MINSD,  0x5d0ff2, 3, -1, Xx, Eq);
 	add_inst(INST_MAXSS,  0x5f0ff3, 3, -1, Xx, Ed);
 	add_inst(INST_MAXSD,  0x5f0ff2, 3, -1, Xx, Eq);
+
+	//add_inst(INST_CVTSS2SI,  0x2d0ff3, 3, -1, Rd, Ed);
+	//add_inst(INST_CVTSI2SS,  0x2d0ff3, 3, -1, Rd, Ed);
 }
 
 
@@ -1936,8 +1954,10 @@ inline void UnfuzzyParam(InstructionParam &p, InstructionParamFuzzy &pf)
 	}
 }
 
-int GetModRMRegister(int reg, int size)
+int GetModRMRegister(int reg, int size, int group)
 {
+	if (group == REG_GROUP_XMM)
+		return REG_XMM0 + reg;
 	if (size == SIZE_8){
 		if (reg == 0x00)	return REG_AL;
 		if (reg == 0x01)	return REG_CL;
@@ -2002,24 +2022,24 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 		unsigned char reg = modrm & 0x38; // bits 5, 4, 3
 		p.type = PARAMT_REGISTER;
 		p.deref = false;
-		if (pf.reg_group == RegGroupSegment){
+		if (pf.reg_group == REG_GROUP_SEGMENT){
 			if (reg == 0x00)	p.reg = RegisterByID[REG_ES];
 			if (reg == 0x08)	p.reg = RegisterByID[REG_CS];
 			if (reg == 0x10)	p.reg = RegisterByID[REG_SS];
 			if (reg == 0x18)	p.reg = RegisterByID[REG_DS];
 			if (reg == 0x20)	p.reg = RegisterByID[REG_FS];
 			if (reg == 0x28)	p.reg = RegisterByID[REG_GS];
-		}else if (pf.reg_group == RegGroupControl){
+		}else if (pf.reg_group == REG_GROUP_CONTROL){
 			if (reg == 0x00)	p.reg = RegisterByID[REG_CR0];
 			if (reg == 0x08)	p.reg = RegisterByID[REG_CR1];
 			if (reg == 0x10)	p.reg = RegisterByID[REG_RC2];
 			if (reg == 0x18)	p.reg = RegisterByID[REG_CR3];
 			if (reg == 0x20)	p.reg = RegisterByID[REG_CR4];
-		}else if (pf.reg_group == RegGroupXmm){
+		}else if (pf.reg_group == REG_GROUP_XMM){
 			p.reg = RegisterByID[REG_XMM0 + (reg >> 3)];
 		}else{
 			reg = (reg >> 3) | (state.ExtendModRMReg ? 0x08 : 0x00);
-			p.reg = RegisterByID[GetModRMRegister(reg, p.size)];
+			p.reg = RegisterByID[GetModRMRegister(reg, p.size, REG_GROUP_GENERAL)];
 		}
 	}else if (pf.mrm_mode == MRM_MOD_RM){
 		unsigned char mod = modrm & 0xc0; // bits 7, 6
@@ -2044,7 +2064,7 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_SIB;	} // eax = provisoric
 				else if (rm == 0x05){p.reg = NULL;	p.type = PARAMT_IMMEDIATE;	}
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32)];
+					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32, REG_GROUP_GENERAL)];
 			}
 		}else if ((mod == 0x40) || (mod == 0x80)){
 			if (state.AddrSize == SIZE_16){
@@ -2065,13 +2085,13 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 				//if (rm == 0x04){p.reg = NULL;	p.type = ParamTInvalid;	}
 				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_8_SIB;	} // eax = provisoric
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32)];
+					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32, REG_GROUP_GENERAL)];
 			}
 		}else if (mod == 0xc0){
 			p.type = PARAMT_REGISTER;
 			p.deref = false;
 			if (state.ExtendModRMBase)	rm |= 0x08;
-			p.reg = RegisterByID[GetModRMRegister(rm, p.size)];
+			p.reg = RegisterByID[GetModRMRegister(rm, p.size, pf.reg_group)];
 		}
 	}
 }
@@ -3158,6 +3178,9 @@ inline bool _size_match_(InstructionParamFuzzy &inst_p, InstructionParam &wanted
 {
 	if (inst_p.size == wanted_p.size)
 		return true;
+	if (wanted_p.reg)
+		if ((inst_p.reg_group == REG_GROUP_XMM) and (wanted_p.reg->group == REG_GROUP_XMM))
+			return true;
 	if ((inst_p.size == SIZE_UNKNOWN) || (wanted_p.size == SIZE_UNKNOWN))
 		return true;
 /*	if ((inst_p.size == SizeVariable) && ((wanted_p.size == Size16) || (wanted_p.size == Size32)))
@@ -3180,6 +3203,13 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 	if ((wanted_p.type == PARAMT_NONE) || (!used))
 		return (wanted_p.type == PARAMT_NONE) && (!used);
 
+	// xmm register...
+	if ((allow_register) and (wanted_p.type == PARAMT_REGISTER) and (wanted_p.reg)){
+		if ((reg_group == REG_GROUP_XMM) and (wanted_p.reg->group == REG_GROUP_XMM))
+			return true;
+	}
+
+	// size mismatch?
 	if ((size != SIZE_UNKNOWN) && (wanted_p.size != SIZE_UNKNOWN))
 		if (size != wanted_p.size)
 			return false;
@@ -3206,9 +3236,10 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 	if (wanted_p.type == PARAMT_REGISTER){
 		// direct match
 		if ((allow_register) && (reg)){
-			if (wanted_p.reg)
+			if (wanted_p.reg){
 				if ((reg->id >= REG_RAX) && (reg->id <= REG_RBP) && (wanted_p.reg->id == reg->id + REG_R8 - REG_RAX))
 					return true;
+			}
 			return ((reg == wanted_p.reg) && (_deref_match_(*this, wanted_p)));
 		}
 		// fuzzy match
@@ -3221,7 +3252,7 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p)
 		if ((allow_register) || (allow_memory_indirect)){
 			if (wanted_p.deref){
 				if (allow_memory_indirect)
-					return ((reg_group == wanted_p.reg->group) && (_deref_match_(*this, wanted_p)));
+					return ((REG_GROUP_GENERAL == wanted_p.reg->group) && (_deref_match_(*this, wanted_p)));
 			}else if (allow_register)
 				return ((reg_group == wanted_p.reg->group) && (_size_match_(*this, wanted_p))); // FIXME (correct?)
 		}
