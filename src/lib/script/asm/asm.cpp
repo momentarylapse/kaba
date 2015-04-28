@@ -354,7 +354,7 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_MINSD,  "minsd",  64+3, 64+1},
 	{INST_MAXSS,  "maxss",  64+3, 64+1},
 	{INST_MAXSD,  "maxsd",  64+3, 64+1},
-	{INST_CVTSS2SI,  "cvtss2si",  64+3, 64+1},
+	{INST_CVTTSS2SI,  "cvttss2si",  64+3, 64+1},
 	{INST_CVTSI2SS,  "cvtsi2ss",  64+3, 64+1},
 
 	{INST_B,		"b"},
@@ -1799,9 +1799,8 @@ void InitX86()
 	add_inst(INST_MINSD,  0x5d0ff2, 3, -1, Xx, Eq);
 	add_inst(INST_MAXSS,  0x5f0ff3, 3, -1, Xx, Ed);
 	add_inst(INST_MAXSD,  0x5f0ff2, 3, -1, Xx, Eq);
-
-	//add_inst(INST_CVTSS2SI,  0x2d0ff3, 3, -1, Rd, Ed);
-	//add_inst(INST_CVTSI2SS,  0x2d0ff3, 3, -1, Rd, Ed);
+	add_inst(INST_CVTTSS2SI,  0x2c0ff3, 3, -1, Rd, XMd);
+	add_inst(INST_CVTSI2SS,  0x2a0ff3, 3, -1, Xx, Ed);
 }
 
 

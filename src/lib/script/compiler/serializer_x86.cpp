@@ -946,27 +946,14 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 			add_cmd(inst_asm);
 			break;
 		case COMMAND_INLINE_INT_TO_FLOAT:
-			add_cmd(Asm::INST_FILD, param[0]);
-			add_cmd(Asm::INST_FSTP, ret);
+			add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			break;
 		case COMMAND_INLINE_FLOAT_TO_INT:
-			// round to nearest...
-			//add_cmd(Asm::inst_fld, param[0]);
-			//add_cmd(Asm::inst_fistp, ret);
-
-			// round to zero...
-			SerialCommandParam t1, t2;
-			add_temp(TypeReg16, t1);
-			add_temp(TypeInt, t2);
-			add_cmd(Asm::INST_FLD, param[0]);
-			add_cmd(Asm::INST_FNSTCW, t1);
-			add_cmd(Asm::INST_MOVZX, p_eax, t1);
-			add_cmd(Asm::INST_MOV, p_ah, param_const(TypeChar, 0x0c));
-			add_cmd(Asm::INST_MOV, t2, p_eax);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 3, cmd.num - 1);
-			add_cmd(Asm::INST_FLDCW, param_shift(t2, 0, TypeReg16));
-			add_cmd(Asm::INST_FISTP, ret);
-			add_cmd(Asm::INST_FLDCW, t1);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_CVTTSS2SI, p_eax_int, p_xmm0);
+			add_cmd(Asm::INST_MOV, ret, p_eax_int);
+			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
 			break;
 		case COMMAND_INLINE_INT_TO_CHAR:
 			add_cmd(Asm::INST_MOV, p_eax_int, param[0]);
