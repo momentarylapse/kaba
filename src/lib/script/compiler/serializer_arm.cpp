@@ -102,9 +102,9 @@ void SerializerARM::fc_end(int push_size)
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) && (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
-			add_cmd(Asm::inst_movss, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
 		else if (type == TypeFloat64)
-			add_cmd(Asm::inst_movsd, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
 		else if ((type->size == 1) or (type->size == 4)){
 			add_cmd(Asm::inst_mov, CompilerFunctionReturn, param_reg(TypeReg32, Asm::REG_R0));
 			add_reg_channel(Asm::REG_R0, cmd.num - 2, cmd.num - 1);

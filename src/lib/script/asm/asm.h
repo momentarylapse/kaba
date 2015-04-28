@@ -199,8 +199,24 @@ enum{
 	inst_cld,
 	inst_std,
 
-	inst_movss,
-	inst_movsd,
+	// sse
+	INST_MOVSS,
+	INST_MOVSD,
+	INST_ADDSS,
+	INST_ADDSD,
+	INST_SUBSS,
+	INST_SUBSD,
+	INST_MULSS,
+	INST_MULSD,
+	INST_DIVSS,
+	INST_DIVSD,
+	INST_SQRTSS,
+	INST_SQRTSD,
+	INST_MINSS,
+	INST_MINSD,
+	INST_MAXSS,
+	INST_MAXSD,
+
 	
 	// ARM
 	inst_b,

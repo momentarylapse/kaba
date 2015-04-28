@@ -177,6 +177,8 @@ struct InstructionName
 	int inst;
 	string name;
 	int rw1, rw2; // parameter is read(1), modified(2) or both (3)
+	// 32 -> don't allow gen reg
+	// 64 -> don't allow immediate
 };
 
 // rw1/2: 
@@ -195,8 +197,8 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{inst_dec,		"dec",		3},
 	{inst_mul,		"mul",		3, 1},
 	{inst_imul,		"imul",		3, 1},
-	{inst_div,		"div",		3, 1},
-	{inst_idiv,		"idiv",		3, 1},
+	{inst_div,		"div",		64+3, 64+1},
+	{inst_idiv,		"idiv",		64+3, 64+1},
 	{inst_mov,		"mov",		2, 1},
 	{inst_movzx,	"movzx",	2, 1},
 	{inst_movsx,	"movsx",	2, 1},
@@ -261,7 +263,7 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	
 	{inst_test,		"test",		1, 1},
 	{inst_xchg,		"xchg",		3, 3},
-	{inst_lea,		"lea", 		2, 1},
+	{inst_lea,		"lea", 		32+2, 32+1},
 	{inst_nop,		"nop"},
 	{inst_cbw_cwde,	"cbw/cwde"},
 	{inst_cgq_cwd,	"cgq/cwd"},
@@ -282,35 +284,36 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{inst_int,		"int",		1},
 	{inst_iret,		"iret",		1},
 	
-	{inst_fadd,		"fadd",		1},
-	{inst_fmul,		"fmul",		1},
-	{inst_fsub,		"fsub",		1},
-	{inst_fdiv,		"fdiv",		1},
-	{inst_fld,		"fld",		1},
-	{inst_fld1,		"fld1",		0},
-	{inst_fldz,		"fldz",		0},
-	{inst_fldpi,	"fldpi",	0},
-	{inst_fst,		"fst",		2},
-	{inst_fstp,		"fstp",		2},
-	{inst_fild,		"fild",		1},
-	{inst_faddp,	"faddp",	1},
-	{inst_fmulp,	"fmulp",	1},
-	{inst_fsubp,	"fsubp",	1},
-	{inst_fdivp,	"fdivp",	1},
-	{inst_fldcw,	"fldcw",	1},
-	{inst_fnstcw,	"fnstcw",	2},
-	{inst_fnstsw,	"fnstsw",	2},
-	{inst_fistp,	"fistp",	2},
-	{inst_fxch,		"fxch",		3, 3},
-	{inst_fsqrt,	"fsqrt",	3},
-	{inst_fsin,		"fsin",		3},
-	{inst_fcos,		"fcos",		3},
-	{inst_fptan,	"fptan",	3},
-	{inst_fpatan,	"fpatan",	3},
-	{inst_fyl2x,	"fyl2x",	3},
-	{inst_fchs,		"fchs",		3},
-	{inst_fabs,		"fabs",		3},
-	{inst_fucompp,	"fucompp",	1, 1},
+	// x87
+	{inst_fadd,		"fadd",		64+32+1},
+	{inst_fmul,		"fmul",		64+32+1},
+	{inst_fsub,		"fsub",		64+32+1},
+	{inst_fdiv,		"fdiv",		64+32+1},
+	{inst_fld,		"fld",		64+32+1},
+	{inst_fld1,		"fld1",		64+32+0},
+	{inst_fldz,		"fldz",		64+32+0},
+	{inst_fldpi,	"fldpi",	64+32+0},
+	{inst_fst,		"fst",		64+32+2},
+	{inst_fstp,		"fstp",		64+32+2},
+	{inst_fild,		"fild",		64+32+1},
+	{inst_faddp,	"faddp",	64+32+1},
+	{inst_fmulp,	"fmulp",	64+32+1},
+	{inst_fsubp,	"fsubp",	64+32+1},
+	{inst_fdivp,	"fdivp",	64+32+1},
+	{inst_fldcw,	"fldcw",	64+32+1},
+	{inst_fnstcw,	"fnstcw",	64+32+2},
+	{inst_fnstsw,	"fnstsw",	64+32+2},
+	{inst_fistp,	"fistp",	64+32+2},
+	{inst_fxch,		"fxch",		64+32+3, 64+32+3},
+	{inst_fsqrt,	"fsqrt",	64+32+3},
+	{inst_fsin,		"fsin",		64+32+3},
+	{inst_fcos,		"fcos",		64+32+3},
+	{inst_fptan,	"fptan",	64+32+3},
+	{inst_fpatan,	"fpatan",	64+32+3},
+	{inst_fyl2x,	"fyl2x",	64+32+3},
+	{inst_fchs,		"fchs",		64+32+3},
+	{inst_fabs,		"fabs",		64+32+3},
+	{inst_fucompp,	"fucompp",	64+32+1, 64+32+1},
 	
 	{inst_loop,		"loop"},
 	{inst_loope,	"loope"},
@@ -334,8 +337,23 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{inst_cld,		"cld"},
 	{inst_std,		"std"},
 
-	{inst_movss,		"movss"},
-	{inst_movsd,		"movsd"},
+	// sse
+	{INST_MOVSS,  "movss",  64+3, 64+1},
+	{INST_MOVSD,  "movsd",  64+3, 64+1},
+	{INST_ADDSS,  "addss",  64+3, 64+1},
+	{INST_ADDSD,  "addsd",  64+3, 64+1},
+	{INST_SUBSS,  "subss",  64+3, 64+1},
+	{INST_SUBSD,  "subsd",  64+3, 64+1},
+	{INST_MULSS,  "mulss",  64+3, 64+1},
+	{INST_MULSD,  "mulsd",  64+3, 64+1},
+	{INST_DIVSS,  "divss",  64+3, 64+1},
+	{INST_DIVSD,  "divsd",  64+3, 64+1},
+	{INST_SQRTSS, "sqrtss", 64+3, 64+1},
+	{INST_SQRTSD, "sqrtsd", 64+3, 64+1},
+	{INST_MINSS,  "minss",  64+3, 64+1},
+	{INST_MINSD,  "minsd",  64+3, 64+1},
+	{INST_MAXSS,  "maxss",  64+3, 64+1},
+	{INST_MAXSD,  "maxsd",  64+3, 64+1},
 
 	{inst_b,		"b"},
 	{inst_bl,		"bl"},
@@ -1001,22 +1019,18 @@ void GetInstructionParamFlags(int inst, bool &p1_read, bool &p1_write, bool &p2_
 
 bool GetInstructionAllowConst(int inst)
 {
-	if ((inst == inst_div) || (inst == inst_idiv) || (inst == inst_movss))
-		return false;
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
 		if (InstructionNames[i].inst == inst)
-			return (InstructionNames[i].name[0] != 'f');
-	return true;
+			return ((InstructionNames[i].rw1 & 64) == 0);
+	return false;
 }
 
 bool GetInstructionAllowGenReg(int inst)
 {
-	if (inst == inst_lea)
-		return false;
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
 		if (InstructionNames[i].inst == inst)
-			return (InstructionNames[i].name[0] != 'f');
-	return true;
+			return ((InstructionNames[i].rw1 & 32) == 0);
+	return false;
 }
 
 
@@ -1751,10 +1765,24 @@ void InitX86()
 	add_inst(inst_push, 0xff, 1, 6, Eq, -1, OPT_BIG_PARAM);
 
 	// sse
-	add_inst(inst_movss,	0x100ff3,	3,	-1,	Xx, Ed);
-	add_inst(inst_movss,	0x110ff3,	3,	-1,	Ed, Xx);
-	add_inst(inst_movsd,	0x100ff2,	3,	-1,	Xx, Eq);
-	add_inst(inst_movsd,	0x110ff2,	3,	-1,	Eq, Xx);
+	add_inst(INST_MOVSS,  0x100ff3, 3, -1, Xx, Ed);
+	add_inst(INST_MOVSS,  0x110ff3, 3, -1, Ed, Xx);
+	add_inst(INST_MOVSD,  0x100ff2, 3, -1, Xx, Eq);
+	add_inst(INST_MOVSD,  0x110ff2, 3, -1, Eq, Xx);
+	add_inst(INST_ADDSS,  0x580ff3, 3, -1, Xx, Ed);
+	add_inst(INST_ADDSD,  0x580ff2, 3, -1, Xx, Eq);
+	add_inst(INST_SUBSS,  0x5c0ff3, 3, -1, Xx, Ed);
+	add_inst(INST_SUBSD,  0x5c0ff2, 3, -1, Xx, Eq);
+	add_inst(INST_MULSS,  0x590ff3, 3, -1, Xx, Ed);
+	add_inst(INST_MULSD,  0x590ff2, 3, -1, Xx, Eq);
+	add_inst(INST_DIVSS,  0x5e0ff3, 3, -1, Xx, Ed);
+	add_inst(INST_DIVSD,  0x5e0ff2, 3, -1, Xx, Eq);
+	add_inst(INST_SQRTSS, 0x510ff3, 3, -1, Xx, Ed);
+	add_inst(INST_SQRTSD, 0x510ff2, 3, -1, Xx, Eq);
+	add_inst(INST_MINSS,  0x5d0ff3, 3, -1, Xx, Ed);
+	add_inst(INST_MINSD,  0x5d0ff2, 3, -1, Xx, Eq);
+	add_inst(INST_MAXSS,  0x5f0ff3, 3, -1, Xx, Ed);
+	add_inst(INST_MAXSD,  0x5f0ff2, 3, -1, Xx, Eq);
 }
 
 

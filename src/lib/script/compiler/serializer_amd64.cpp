@@ -71,9 +71,9 @@ int SerializerAMD64::fc_begin()
 	foreachib(SerialCommandParam &p, xmm_param, i){
 		int reg = Asm::REG_XMM0 + i;
 		if (p.type == TypeFloat64)
-			add_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
+			add_cmd(Asm::INST_MOVSD, param_reg(TypeReg128, reg), p);
 		else
-			add_cmd(Asm::inst_movss, param_reg(TypeReg128, reg), p);
+			add_cmd(Asm::INST_MOVSS, param_reg(TypeReg128, reg), p);
 	}
 	
 	// rdi, rsi,rdx, rcx, r8, r9 
@@ -109,9 +109,9 @@ void SerializerAMD64::fc_end(int push_size)
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) && (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
-			add_cmd(Asm::inst_movss, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
 		else if (type == TypeFloat64)
-			add_cmd(Asm::inst_movsd, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, param_reg(TypeReg128, Asm::REG_XMM0));
 		else if (type->size == 1){
 			add_cmd(Asm::inst_mov, CompilerFunctionReturn, p_al);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
@@ -206,7 +206,7 @@ void SerializerAMD64::AddFunctionIntro(Function *f)
 	// xmm0-7
 	foreachib(Variable &p, xmm_param, i){
 		int reg = Asm::REG_XMM0 + i;
-		add_cmd(Asm::inst_movss, param_local(p.type, p._offset), param_reg(p.type, reg));
+		add_cmd(Asm::INST_MOVSS, param_local(p.type, p._offset), param_reg(p.type, reg));
 	}
 
 	// rdi, rsi,rdx, rcx, r8, r9

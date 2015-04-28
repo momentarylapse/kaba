@@ -799,7 +799,7 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 					FillInDestructors(false);
 					if (cur_func->return_type == TypeFloat32){
 						if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)
-							add_cmd(Asm::inst_movss, param_reg(TypeReg128, Asm::REG_XMM0), t);
+							add_cmd(Asm::INST_MOVSS, param_reg(TypeReg128, Asm::REG_XMM0), t);
 						else
 							add_cmd(Asm::inst_fld, t);
 					}else if (cur_func->return_type->size == 1){
