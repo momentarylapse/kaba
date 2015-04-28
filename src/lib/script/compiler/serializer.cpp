@@ -1869,6 +1869,8 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) :
 	p_ah = param_reg(TypeReg8, Asm::REG_AH);
 	p_st0 = param_reg(TypeFloat32, Asm::REG_ST0);
 	p_st1 = param_reg(TypeFloat32, Asm::REG_ST1);
+	p_xmm0 = param_reg(TypeReg128, Asm::REG_XMM0);
+	p_xmm1 = param_reg(TypeReg128, Asm::REG_XMM1);
 
 	CompilerFunctionReturn = p_none;
 	CompilerFunctionInstance = p_none;

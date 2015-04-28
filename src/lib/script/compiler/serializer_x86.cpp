@@ -386,39 +386,45 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 		case OperatorFloatSubtractS:
 		case OperatorFloatMultiplyS:
 		case OperatorFloatDivideS:
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			if (com->link_no==OperatorFloatAddS)		add_cmd(Asm::INST_ADDSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatSubtractS)	add_cmd(Asm::INST_SUBSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatMultiplyS)	add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatDivideS)		add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSS, param[0], p_xmm0);
+			break;
 		case OperatorFloat64AddS:
 		case OperatorFloat64SubtractS:
 		case OperatorFloat64MultiplyS:
 		case OperatorFloat64DivideS:
-			add_cmd(Asm::INST_FLD, param[0]);
-			if (com->link_no==OperatorFloatAddS)			add_cmd(Asm::INST_FADD, param[1]);
-			if (com->link_no==OperatorFloatSubtractS)	add_cmd(Asm::INST_FSUB, param[1]);
-			if (com->link_no==OperatorFloatMultiplyS)	add_cmd(Asm::INST_FMUL, param[1]);
-			if (com->link_no==OperatorFloatDivideS)		add_cmd(Asm::INST_FDIV, param[1]);
-			if (com->link_no==OperatorFloat64AddS)			add_cmd(Asm::INST_FADD, param[1]);
-			if (com->link_no==OperatorFloat64SubtractS)	add_cmd(Asm::INST_FSUB, param[1]);
-			if (com->link_no==OperatorFloat64MultiplyS)	add_cmd(Asm::INST_FMUL, param[1]);
-			if (com->link_no==OperatorFloat64DivideS)		add_cmd(Asm::INST_FDIV, param[1]);
-			add_cmd(Asm::INST_FSTP, param[0]);
+			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
+			if (com->link_no==OperatorFloat64AddS)		add_cmd(Asm::INST_ADDSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64SubtractS)	add_cmd(Asm::INST_SUBSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64MultiplyS)	add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64DivideS)		add_cmd(Asm::INST_DIVSD, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSD, param[0], p_xmm0);
 			break;
 		case OperatorFloatAdd:
 		case OperatorFloatSubtract:
 		case OperatorFloatMultiply:
 		case OperatorFloatDivide:
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			if (com->link_no==OperatorFloatAdd)		add_cmd(Asm::INST_ADDSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatSubtract)	add_cmd(Asm::INST_SUBSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatMultiply)	add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloatDivide)		add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			break;
 		case OperatorFloat64Add:
 		case OperatorFloat64Subtract:
 		case OperatorFloat64Multiply:
 		case OperatorFloat64Divide:
-			add_cmd(Asm::INST_FLD, param[0]);
-			if (com->link_no==OperatorFloatAdd)			add_cmd(Asm::INST_FADD, param[1]);
-			if (com->link_no==OperatorFloatSubtract)		add_cmd(Asm::INST_FSUB, param[1]);
-			if (com->link_no==OperatorFloatMultiply)		add_cmd(Asm::INST_FMUL, param[1]);
-			if (com->link_no==OperatorFloatDivide)		add_cmd(Asm::INST_FDIV, param[1]);
-			if (com->link_no==OperatorFloat64Add)			add_cmd(Asm::INST_FADD, param[1]);
-			if (com->link_no==OperatorFloat64Subtract)		add_cmd(Asm::INST_FSUB, param[1]);
-			if (com->link_no==OperatorFloat64Multiply)		add_cmd(Asm::INST_FMUL, param[1]);
-			if (com->link_no==OperatorFloat64Divide)		add_cmd(Asm::INST_FDIV, param[1]);
-			add_cmd(Asm::INST_FSTP, ret);
+			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
+			if (com->link_no==OperatorFloat64Add)		add_cmd(Asm::INST_ADDSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64Subtract)	add_cmd(Asm::INST_SUBSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64Multiply)	add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
+			if (com->link_no==OperatorFloat64Divide)		add_cmd(Asm::INST_DIVSD, p_xmm0, param[1]);
+			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 			break;
 		case OperatorFloatMultiplyFI:
 		case OperatorFloat64MultiplyFI:
@@ -799,7 +805,7 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 					FillInDestructors(false);
 					if (cur_func->return_type == TypeFloat32){
 						if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)
-							add_cmd(Asm::INST_MOVSS, param_reg(TypeReg128, Asm::REG_XMM0), t);
+							add_cmd(Asm::INST_MOVSS, p_xmm0, t);
 						else
 							add_cmd(Asm::INST_FLD, t);
 					}else if (cur_func->return_type->size == 1){
