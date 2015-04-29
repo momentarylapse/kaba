@@ -544,11 +544,11 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexMultiplyCF:
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case OperatorComplexEqual:
