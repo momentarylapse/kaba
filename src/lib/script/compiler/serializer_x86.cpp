@@ -70,7 +70,10 @@ void SerializerX86::fc_end(int push_size)
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) && (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
-			add_cmd(Asm::INST_FSTP, CompilerFunctionReturn);
+			if (config.compile_os)
+				add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, p_xmm0);
+			else
+				add_cmd(Asm::INST_FSTP, CompilerFunctionReturn);
 		else if (type->size == 1){
 			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_al);
 			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
@@ -774,7 +777,7 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 					add_cmd(Asm::INST_MOV, t, param[0]);
 					FillInDestructors(false);
 					if (cur_func->return_type == TypeFloat32){
-						if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)
+						if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os))
 							add_cmd(Asm::INST_MOVSS, p_xmm0, t);
 						else
 							add_cmd(Asm::INST_FLD, t);
