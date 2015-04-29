@@ -1809,7 +1809,7 @@ void Serializer::Assemble()
 
 	list->add_label("_kaba_func_" + i2s(cur_func_index));
 
-	if (!syntax_tree->flag_no_function_frame){
+	if (!config.no_function_frame){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			add_cmd(Asm::INST_STMDB, param_reg(TypePointer, Asm::REG_R13), param_const(TypeInt, 0x4ff0));
 			move_last_cmd(0);

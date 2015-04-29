@@ -108,11 +108,11 @@ void Script::AllocateStack()
 {
 	// use your own stack if needed
 	//   wait() used -> needs to switch stacks ("tasks")
-	stack = NULL;
+	__stack = NULL;
 	foreach(Command *cmd, syntax->commands){
 		if (cmd->kind == KIND_COMPILER_FUNCTION)
 			if ((cmd->link_no == COMMAND_WAIT) or (cmd->link_no == COMMAND_WAIT_RT) or (cmd->link_no == COMMAND_WAIT_ONE_FRAME)){
-				stack = new char[config.stack_size];
+				__stack = new char[config.stack_size];
 				break;
 			}
 	}
@@ -121,34 +121,27 @@ void Script::AllocateStack()
 void Script::AllocateOpcode()
 {
 	int max_opcode = SCRIPT_MAX_OPCODE;
-	if (syntax->flag_compile_os)
+	if (config.compile_os)
 		max_opcode *= 10;
 	// allocate some memory for the opcode......    has to be executable!!!   (important on amd64)
 #ifdef OS_WINDOWS
 	opcode=(char*)VirtualAlloc(NULL,max_opcode,MEM_COMMIT | MEM_RESERVE,PAGE_EXECUTE_READWRITE);
-	thread_opcode=(char*)VirtualAlloc(NULL,SCRIPT_MAX_THREAD_OPCODE,MEM_COMMIT | MEM_RESERVE,PAGE_EXECUTE_READWRITE);
 #else
 	opcode = (char*)mmap(0, max_opcode, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS | MAP_EXECUTABLE | MAP_32BIT, -1, 0);
-	thread_opcode = (char*)mmap(0, SCRIPT_MAX_THREAD_OPCODE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS | MAP_EXECUTABLE | MAP_32BIT, -1, 0);
-	if (((long)opcode==-1) or ((long)thread_opcode==-1)){
-		opcode = new char[max_opcode];
-		thread_opcode = new char[SCRIPT_MAX_THREAD_OPCODE];
-	}
 #endif
-	if (((long)opcode==-1) or ((long)thread_opcode==-1))
+	if ((long)opcode == -1)
 		DoErrorInternal("Script:  could not allocate executable memory");
-	if (syntax->asm_meta_info->code_origin == 0)
+	if (config.overwrite_code_origin)
+		syntax->asm_meta_info->code_origin = config.code_origin;
+	else
 		syntax->asm_meta_info->code_origin = (long)opcode;
-	opcode_size=0;
-	thread_opcode_size=0;
+	opcode_size = 0;
 }
 
 void Script::MapConstantsToMemory()
 {
 	// constants -> Memory
 	cnst.resize(syntax->constants.num);
-	if (syntax->flag_compile_os)
-		return;
 	foreachi(Constant &c, syntax->constants, i){
 		cnst[i] = &memory[memory_size];
 		int s = c.type->size;
@@ -177,8 +170,8 @@ void Script::MapGlobalVariablesToMemory()
 			if (!g_var[i])
 				DoErrorLink("external variable " + v.name + " was not linked");
 		}else{
-			if (syntax->flag_overwrite_variables_offset)
-				g_var[i] = (char*)(long)(memory_size + syntax->variables_offset);
+			if (config.overwrite_variables_offset)
+				g_var[i] = (char*)(long)(memory_size + config.variables_offset);
 			else
 				g_var[i] = &memory[memory_size];
 			memory_size += mem_align(v.type->size, 4);
@@ -207,10 +200,15 @@ void Script::CompileOsEntryPoint()
 		Asm::AddInstruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset=opcode_size;
 	OCORA = Asm::OCParam;
+}
 
-	// put strings into Opcode!
+void Script::MapConstantsToOpcode()
+{
+	cnst.resize(syntax->constants.num);
+
+	// put all constants into Opcode!
 	foreachi(Constant &c, syntax->constants, i){
-		if (syntax->flag_compile_os){// && (c.type == TypeCString)){
+		if (config.compile_os){// && (c.type == TypeCString)){
 			cnst[i] = (char*)(opcode_size + syntax->asm_meta_info->code_origin);
 			int s = c.type->size;
 			if (c.type == TypeString){
@@ -264,9 +262,9 @@ void Script::CompileTaskEntryPoint()
 	// call
 	void *_main_ = MatchFunction("main", "void", 0);
 
-	if ((!stack) || (!_main_)){
-		first_execution = (t_func*)_main_;
-		continue_execution = NULL;
+	if ((!__stack) or (!_main_)){
+		__first_execution = (t_func*)_main_;
+		__continue_execution = NULL;
 		return;
 	}
 
@@ -274,16 +272,16 @@ void Script::CompileTaskEntryPoint()
 
 	int label_first = list->add_label("_first_execution");
 
-	first_execution = (t_func*)&thread_opcode[thread_opcode_size];
+	__first_execution = (t_func*)&__thread_opcode[__thread_opcode_size];
 	// intro
 	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the actual program
 	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size], 4)); // start of the script stack
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&__stack[config.stack_size], 4)); // start of the script stack
 	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // address of the old stack
 	AddEspAdd(list, -12); // space for wait() task data
 	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
 	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(WAITING_MODE_NONE, 4)); // "reset"
-	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&waiting_mode, 4), Asm::param_reg(Asm::REG_EAX));
+	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&__waiting_mode, 4), Asm::param_reg(Asm::REG_EAX));
 
 	// call main()
 	list->add2(Asm::INST_CALL, Asm::param_imm((long)_main_, 4));
@@ -301,8 +299,8 @@ void Script::CompileTaskEntryPoint()
 	// Intro
 	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the external program
 	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&stack[config.stack_size - 4], 4), Asm::param_reg(Asm::REG_EBP)); // save the external ebp
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&stack[config.stack_size - 16], 4)); // to the eIP of the script
+	list->add2(Asm::INST_MOV, Asm::param_deref_imm((long)&__stack[config.stack_size - 4], 4), Asm::param_reg(Asm::REG_EBP)); // save the external ebp
+	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((long)&__stack[config.stack_size - 16], 4)); // to the eIP of the script
 	list->add2(Asm::INST_POP, Asm::param_reg(Asm::REG_EAX));
 	list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(AfterWaitOCSize, 4));
 	list->add2(Asm::INST_JMP, Asm::param_reg(Asm::REG_EAX));
@@ -312,10 +310,10 @@ void Script::CompileTaskEntryPoint()
 	OCAddChar(0x90);
 	OCAddChar(0x90);*/
 
-	list->Compile(thread_opcode, thread_opcode_size);
+	list->Compile(__thread_opcode, __thread_opcode_size);
 
-	first_execution = (t_func*)(long)list->label[label_first].value;
-	continue_execution = (t_func*)(long)list->label[label_cont].value;
+	__first_execution = (t_func*)(long)list->label[label_first].value;
+	__continue_execution = (t_func*)(long)list->label[label_cont].value;
 
 	delete(list);
 }
@@ -433,7 +431,7 @@ void Script::Compiler()
 	msg_db_f("Compiler",2);
 	Asm::CurrentMetaInfo = syntax->asm_meta_info;
 
-	if (syntax->flag_compile_os)
+	if (config.compile_os)
 		import_includes(this);
 
 	syntax->MapLocalVariablesToStack();
@@ -454,7 +452,8 @@ void Script::Compiler()
 
 	memory_size = 0;
 	MapGlobalVariablesToMemory();
-	MapConstantsToMemory();
+	if (!config.compile_os)
+		MapConstantsToMemory();
 
 	AllocateOpcode();
 
@@ -462,8 +461,11 @@ void Script::Compiler()
 
 // compiling an operating system?
 //   -> create an entry point for execution... so we can just call Opcode like a function
-	if (syntax->flag_add_entry_point)
+	if (config.add_entry_point)
 		CompileOsEntryPoint();
+
+	if (config.compile_os)
+		MapConstantsToOpcode();
 
 
 
@@ -502,28 +504,28 @@ void Script::Compiler()
 
 
 // "task" for the first execution of main() -> ThreadOpcode
-	if (!syntax->flag_compile_os)
+	if (!config.compile_os)
 		CompileTaskEntryPoint();
 
 
 
 
-	if (syntax->flag_add_entry_point)
+	if (config.add_entry_point)
 		LinkOsEntryPoint();
 
 
 	// initialize global objects
-	if (!syntax->flag_compile_os)
+	if (!config.compile_os)
 		init_all_global_objects(syntax, g_var);
 
 	//msg_db_out(1,GetAsm(Opcode,OpcodeSize));
 
 	//_expand(Opcode,OpcodeSize);
 
-	if (first_execution)
-		waiting_mode = WAITING_MODE_FIRST;
+	if (__first_execution)
+		__waiting_mode = WAITING_MODE_FIRST;
 	else
-		waiting_mode = WAITING_MODE_NONE;
+		__waiting_mode = WAITING_MODE_NONE;
 
 	if (show_compiler_stats){
 		msg_write("--------------------------------");

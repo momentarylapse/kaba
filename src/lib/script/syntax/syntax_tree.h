@@ -289,12 +289,7 @@ public:
 
 	// compiler options
 	bool flag_immortal;
-	bool flag_compile_os;
 	bool flag_string_const_as_cstring;
-	bool flag_no_function_frame;
-	bool flag_add_entry_point;
-	bool flag_overwrite_variables_offset;
-	int variables_offset;
 
 	Array<Type*> types;
 	Array<Script*> includes;

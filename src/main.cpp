@@ -6,11 +6,15 @@
 #include "lib/script/script.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.14.1.0 alpha";
+string AppVersion = "0.14.2.0";
 
 
 typedef void main_arg_func(const Array<string>&);
 typedef void main_void_func();
+
+namespace Script{
+extern long long s2i2(const string &str);
+};
 
 void execute(Script::Script *s, Array<string> &arg)
 {
@@ -37,6 +41,8 @@ void execute(Script::Script *s, Array<string> &arg)
 void dump_to_file(Script::Script *s, const string &out_file)
 {
 	CFile *f = FileCreate(out_file);
+	if (!f)
+		exit(1);
 	f->SetBinaryMode(true);
 	f->WriteBuffer(s->opcode, s->opcode_size);
 	delete(f);
@@ -45,6 +51,8 @@ void dump_to_file(Script::Script *s, const string &out_file)
 void export_symbols(Script::Script *s, const string &symbols_out_file)
 {
 	CFile *f = FileCreate(symbols_out_file);
+	if (!f)
+		exit(1);
 	foreachi(Script::Function *fn, s->syntax->functions, i){
 		f->WriteStr(fn->name);
 		f->WriteInt((long)s->func[i]);
@@ -60,6 +68,8 @@ void export_symbols(Script::Script *s, const string &symbols_out_file)
 void import_symbols(const string &symbols_in_file)
 {
 	CFile *f = FileOpen(symbols_in_file);
+	if (!f)
+		exit(1);
 	while (!f->Eof){
 		string name = f->ReadStr();
 		if (name == "#")
@@ -93,15 +103,23 @@ int hui_main(const Array<string> &arg0)
 	int instruction_set = -1;
 	int abi = -1;
 	string out_file, symbols_out_file, symbols_in_file;
-	bool allow_std_lib = true;
-	bool disassemble = false;
-	bool verbose = false;
+	bool flag_allow_std_lib = true;
+	bool flag_disassemble = false;
+	bool flag_verbose = false;
+	bool flag_compile_os = false;
+	bool flag_overwrite_variable_offset = false;
+	long long variable_offset = 0;
+	bool flag_overwrite_code_origin = false;
+	long long code_origin = 0;
+	bool flag_no_function_frames = false;
+	bool flag_add_entry_point = false;
+
 	bool error = false;
 
 	// parameters
 	Array<string> arg = arg0;
 	for (int i=1;i<arg.num;i++){
-		if (arg[i] == "-v"){
+		if ((arg[i] == "--version") or (arg[i] == "-v")){
 			// tell versions
 			msg_right();
 			msg_write(AppName + " " + AppVersion);
@@ -123,38 +141,65 @@ int hui_main(const Array<string> &arg0)
 			instruction_set = Asm::INSTRUCTION_SET_X86;
 			arg.erase(i --);
 		}else if (arg[i] == "--no-std-lib"){
-			allow_std_lib = false;
+			flag_allow_std_lib = false;
+			arg.erase(i --);
+		}else if (arg[i] == "--os"){
+			flag_compile_os = true;
 			arg.erase(i --);
 		}else if (arg[i] == "--verbose"){
-			verbose = true;
-			disassemble = true;
+			flag_verbose = true;
+			flag_disassemble = true;
 			arg.erase(i --);
 		}else if (arg[i] == "--disasm"){
-			disassemble = true;
+			flag_disassemble = true;
+			arg.erase(i --);
+		}else if (arg[i] == "--no-function-frames"){
+			flag_no_function_frames = true;
+			arg.erase(i --);
+		}else if (arg[i] == "--add-entry-point"){
+			flag_add_entry_point = true;
+			arg.erase(i --);
+		}else if (arg[i] == "--code-origin"){
+			flag_overwrite_code_origin = true;
+			arg.erase(i);
+			if (i >= arg.num){
+				msg_error("offset nach --code-origin erwartet");
+				return -1;
+			}
+			code_origin = Script::s2i2(arg[i]);
+			arg.erase(i --);
+		}else if (arg[i] == "--variable-offset"){
+			flag_overwrite_variable_offset = true;
+			arg.erase(i);
+			if (i >= arg.num){
+				msg_error("offset nach --variable-offset erwartet");
+				return -1;
+			}
+			variable_offset = Script::s2i2(arg[i]);
 			arg.erase(i --);
 		}else if (arg[i] == "-o"){
-			if (arg.num < i + 1){
+			arg.erase(i);
+			if (i >= arg.num){
 				msg_error("Dateiname nach -o erwartet");
 				return -1;
 			}
-			out_file = arg[i + 1];
-			arg.erase(i);
+			out_file = arg[i];
 			arg.erase(i --);
 		}else if (arg[i] == "--export-symbols"){
-			if (arg.num < i + 1){
+			arg.erase(i);
+			if (i >= arg.num){
 				msg_error("Dateiname nach --export-symbols erwartet");
 				return -1;
 			}
-			symbols_out_file = arg[i + 1];
-			arg.erase(i);
+			symbols_out_file = arg[i];
 			arg.erase(i --);
 		}else if (arg[i] == "--import-symbols"){
-			if (arg.num < i + 1){
+			arg.erase(i);
+			if (i >= arg.num){
 				msg_error("Dateiname nach --import-symbols erwartet");
 				return -1;
 			}
-			symbols_in_file = arg[i + 1];
-			arg.erase(i);
+			symbols_in_file = arg[i];
 			arg.erase(i --);
 		}else if (arg[i][0] == '-'){
 			msg_error("unbekannte Option: " + arg[i]);
@@ -166,7 +211,7 @@ int hui_main(const Array<string> &arg0)
 	msg_db_r("main", 1);
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
-	Script::Init(instruction_set, abi, allow_std_lib);
+	Script::Init(instruction_set, abi, flag_allow_std_lib);
 	//Script::LinkDynamicExternalData();
 	Script::config.stack_size = 10485760; // 10 mb (mib)
 
@@ -191,8 +236,15 @@ int hui_main(const Array<string> &arg0)
 	}
 
 	// compile
-	Script::config.compile_silently = !verbose;
-	Script::config.verbose = verbose;
+	Script::config.compile_silently = !flag_verbose;
+	Script::config.verbose = flag_verbose;
+	Script::config.compile_os = flag_compile_os;
+	Script::config.add_entry_point = flag_add_entry_point;
+	Script::config.no_function_frame = flag_no_function_frames;
+	Script::config.overwrite_variables_offset = flag_overwrite_variable_offset;
+	Script::config.variables_offset = variable_offset;
+	Script::config.overwrite_code_origin = flag_overwrite_code_origin;
+	Script::config.code_origin = code_origin;
 	SilentFiles = true;
 
 	try{
@@ -201,8 +253,11 @@ int hui_main(const Array<string> &arg0)
 			export_symbols(s, symbols_out_file);
 		if (out_file.num > 0){
 			dump_to_file(s, out_file);
+
+			if (flag_disassemble)
+				msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
 		}else{
-			if (disassemble)
+			if (flag_disassemble)
 				msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
 
 			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet())

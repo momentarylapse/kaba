@@ -146,11 +146,7 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	GetExistenceLink(KIND_UNKNOWN, 0, NULL, TypeVoid),
 	root_of_all_evil(this, "RootOfAllEvil", TypeVoid)
 {
-	flag_compile_os = false;
 	flag_string_const_as_cstring = false;
-	flag_no_function_frame = false;
-	flag_add_entry_point = false;
-	flag_overwrite_variables_offset = false;
 	flag_immortal = false;
 	cur_func = NULL;
 	script = _script;

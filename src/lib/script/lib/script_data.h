@@ -325,6 +325,14 @@ struct CompilerConfiguration
 	bool show_compiler_stats;
 	bool use_const_as_global_var;
 
+	bool compile_os;
+	bool no_function_frame;
+	bool add_entry_point;
+	bool overwrite_variables_offset;
+	long long variables_offset;
+	bool overwrite_code_origin;
+	long long code_origin;
+
 	int stack_mem_align;
 	int function_align;
 	int stack_frame_align;

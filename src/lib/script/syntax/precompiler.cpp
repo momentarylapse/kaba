@@ -30,15 +30,7 @@ void SyntaxTree::AddIncludeData(Script *s)
 	if (flag_immortal)
 		SetImmortal(ps);
 
-	flag_compile_os |= ps->flag_compile_os;
-	flag_add_entry_point |= ps->flag_add_entry_point;
-	flag_no_function_frame |= ps->flag_no_function_frame;
-	flag_overwrite_variables_offset |= ps->flag_overwrite_variables_offset;
-	if (ps->flag_overwrite_variables_offset)
-		variables_offset = ps->variables_offset;
 	flag_string_const_as_cstring |= ps->flag_string_const_as_cstring;
-	if (ps->asm_meta_info->code_origin != (long)ps->script->opcode)
-		asm_meta_info->code_origin = ps->asm_meta_info->code_origin;
 
 	// defines
 	defines.append(ps->defines);
@@ -113,22 +105,17 @@ void SyntaxTree::HandleMacro(ExpressionBuffer::Line *l, int &line_no, int &NumIf
 			// special defines?
 			if ((d.Source.num > 4) && (d.Source.head(2) == "__") && (d.Source.tail(2) == "__")){
 				if (d.Source == "__OS__"){
-					flag_compile_os = true;
+					DoError("#define __OS__ deprecated");
 				}else if (d.Source == "__STRING_CONST_AS_CSTRING__"){
 					flag_string_const_as_cstring = true;
 				}else if (d.Source == "__NO_FUNCTION_FRAME__"){
-					flag_no_function_frame = true;
+					DoError("#define __NO_FUNCTION_FRAME__ deprecated");
 				}else if (d.Source == "__ADD_ENTRY_POINT__"){
-					flag_add_entry_point = true;
+					DoError("#define __ADD_ENTRY_POINT__ deprecated");
 				}else if (d.Source == "__VARIABLE_OFFSET__"){
-					flag_overwrite_variables_offset = true;
-					if (d.Dest.num != 1)
-						DoError("offset value expected after __VARIABLE_OFFSET__");
-					variables_offset = (int)s2i2(d.Dest[0]);
+					DoError("#define __VARIABLE_OFFSET__ deprecated");
 				}else if (d.Source == "__CODE_ORIGIN__"){
-					if (d.Dest.num != 1)
-						DoError("offset value expected after __CODE_ORIGIN__");
-					asm_meta_info->code_origin = (long)s2i2(d.Dest[0]);
+					DoError("#define __CODE_ORIGING__ deprecated");
 				}else
 					DoError("unknown compiler flag (define starting and ending with \"__\"): " + d.Source);
 			}else

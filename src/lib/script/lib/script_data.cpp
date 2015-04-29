@@ -1343,6 +1343,14 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	config.verbose = false;
 	config.show_compiler_stats = true;
 
+	config.compile_os = false;
+	config.overwrite_variables_offset = false;
+	config.variables_offset = 0;
+	config.overwrite_code_origin = false;
+	config.code_origin = 0;
+	config.add_entry_point = false;
+	config.no_function_frame = false;
+
 	SIAddPackageBase();
 	SIAddBasicCommands();
 

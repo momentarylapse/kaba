@@ -182,12 +182,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 		Compiler();
 	/*if (pre_script->FlagShow)
 		pre_script->Show();*/
-	if ((!just_analyse) && (config.verbose)){
-		if (thread_opcode_size > 0){
-			msg_write(format("ThreadOpcode: %d bytes", thread_opcode_size));
-			msg_write(Asm::Disassemble(thread_opcode, thread_opcode_size));
-			msg_write("\n\n");
-		}
+	if ((!just_analyse) and (config.verbose)){
 		msg_write(format("Opcode: %d bytes", opcode_size));
 		msg_write(Asm::Disassemble(opcode, opcode_size));
 	}
@@ -236,19 +231,17 @@ Script::Script()
 	reference_counter = 0;
 
 	cur_func = NULL;
-	first_execution = NULL;
-	waiting_mode = WAITING_MODE_FIRST;
-	time_to_wait = 0;
+	__first_execution = NULL;
+	__waiting_mode = WAITING_MODE_FIRST;
+	__time_to_wait = 0;
 	show_compiler_stats = !config.compile_silently;
 
 	opcode = NULL;
 	opcode_size = 0;
-	thread_opcode = NULL;
-	thread_opcode_size = 0;
 	memory = NULL;
 	memory_size = 0;
 	memory_used = 0;
-	stack = NULL;
+	__stack = NULL;
 
 	syntax = new SyntaxTree(this);
 }
@@ -271,15 +264,8 @@ Script::~Script()
 			int r = munmap(opcode, SCRIPT_MAX_OPCODE);
 		#endif
 	}
-	if (thread_opcode){
-		#ifdef OS_WINDOWS
-			VirtualFree(thread_opcode, 0, MEM_RELEASE);
-		#else
-			int r = munmap(thread_opcode, SCRIPT_MAX_THREAD_OPCODE);
-		#endif
-	}
-	if (stack)
-		delete[](stack);
+	if (__stack)
+		delete[](__stack);
 	//msg_write(string2("-----------            Memory:         %p",Memory));
 	delete(syntax);
 }
@@ -428,9 +414,11 @@ void Script::ShowVars(bool include_consts)
 			print_var((void*)g_var[i], c.name, c.type);*/
 }
 
-void Script::Execute()
+// REALLY DEPRECATED!
+void Script::__Execute()
 {
-	if (waiting_mode == WAITING_MODE_NONE)
+	return;
+	if (__waiting_mode == WAITING_MODE_NONE)
 		return;
 	shift_right=0;
 	//msg_db_f(string("Execute ",pre_script->Filename),1);
@@ -438,19 +426,19 @@ void Script::Execute()
 	msg_db_f(filename.c_str(),1);
 
 	// handle wait-commands
-	if (waiting_mode == WAITING_MODE_FIRST){
+	if (__waiting_mode == WAITING_MODE_FIRST){
 		GlobalWaitingMode = WAITING_MODE_NONE;
 		msg_db_f("->First",1);
 		//msg_right();
-		first_execution();
+		__first_execution();
 		//msg_left();
 	}else{
 #ifdef _X_ALLOW_X_
-		if (waiting_mode==WaitingModeRT)
-			time_to_wait -= Engine.ElapsedRT;
+		if (__waiting_mode==WaitingModeRT)
+			__time_to_wait -= Engine.ElapsedRT;
 		else
-			time_to_wait -= Engine.Elapsed;
-		if (time_to_wait>0){
+			__time_to_wait -= Engine.Elapsed;
+		if (__time_to_wait>0){
 			return;
 		}
 #endif
@@ -459,13 +447,13 @@ void Script::Execute()
 		msg_db_f("->Continue",1);
 		//msg_write(">---");
 		//msg_right();
-		continue_execution();
+		__continue_execution();
 		//msg_write("---<");
 		//msg_write("ok");
 		//msg_left();
 	}
-	waiting_mode=GlobalWaitingMode;
-	time_to_wait=GlobalTimeToWait;
+	__waiting_mode=GlobalWaitingMode;
+	__time_to_wait=GlobalTimeToWait;
 	}
 }
 

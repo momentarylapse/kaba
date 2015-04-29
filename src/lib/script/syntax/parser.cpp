@@ -1340,7 +1340,7 @@ void SyntaxTree::ParseImport()
 		msg_right();
 		Script *include;
 		try{
-			include = Load(filename, script->just_analyse || flag_compile_os);
+			include = Load(filename, script->just_analyse or config.compile_os);
 			// os-includes will be appended to syntax_tree... so don't compile yet
 		}catch(Exception &e){
 			string msg = "in imported file:\n\"" + e.message + "\"";
