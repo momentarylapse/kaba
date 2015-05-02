@@ -132,6 +132,7 @@ enum
 	REG_GROUP_CONTROL,
 	REG_GROUP_X87,
 	REG_GROUP_XMM,
+	REG_GROUP_VFP, // ARM-float
 };
 
 
@@ -175,14 +176,15 @@ string GetRegName(int reg)
 struct InstructionName
 {
 	int inst;
-	string name;
+	//const string name;
+	const char *name;
 	int rw1, rw2; // parameter is read(1), modified(2) or both (3)
 	// 32 -> don't allow gen reg
 	// 64 -> don't allow immediate
 };
 
 // rw1/2: 
-InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
+const InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_DB,		"db"},
 	{INST_DW,		"dw"},
 	{INST_DD,		"dd"},
@@ -293,6 +295,7 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_FLD1,		"fld1",		64+32+0},
 	{INST_FLDZ,		"fldz",		64+32+0},
 	{INST_FLDPI,	"fldpi",	64+32+0},
+	{INST_FXCH,		"fxch",		64+32+3, 64+32+3},
 	{INST_FST,		"fst",		64+32+2},
 	{INST_FSTP,		"fstp",		64+32+2},
 	{INST_FILD,		"fild",		64+32+1},
@@ -304,7 +307,6 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_FNSTCW,	"fnstcw",	64+32+2},
 	{INST_FNSTSW,	"fnstsw",	64+32+2},
 	{INST_FISTP,	"fistp",	64+32+2},
-	{INST_FXCH,		"fxch",		64+32+3, 64+32+3},
 	{INST_FSQRT,	"fsqrt",	64+32+3},
 	{INST_FSIN,		"fsin",		64+32+3},
 	{INST_FCOS,		"fcos",		64+32+3},
@@ -392,6 +394,31 @@ InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_CMN,	"cmn"},
 	{INST_BIC,	"bic"},
 	{INST_MVN,	"mvn"},
+
+
+	// ARM float
+	{INST_FMACS,	"fmacs"},
+	{INST_FNMACS,	"fnmacs"},
+	{INST_FMSCS,	"fmscs"},
+	{INST_FNMSCS,	"fnmscs"},
+	{INST_FMULS,	"fmuls"},
+	{INST_FADDS,	"fadds"},
+	{INST_FSUBS,	"fsubs"},
+	{INST_FDIVS,	"fdivs"},
+	{INST_FCPYS,	"fcpys"},
+	{INST_FABSS,	"fabss"},
+	{INST_FNEGS,	"fnegs"},
+	{INST_FSQRTS,	"fsqrts"},
+	{INST_FCMPS,	"fcmps"},
+	{INST_FCMPES,	"fcmpes"},
+	{INST_FCMPZS,	"fcmpzs"},
+	{INST_FCMPEZS,	"fcmpezs"},
+	{INST_CVTDS,	"cvtds"},
+	{INST_FTOUIS,	"ftouis"},
+	{INST_FUITOS,	"fuitos"},
+	{INST_FSITOS,	"fsitos"},
+	{INST_FMRS,	"fmrs"},
+	{INST_FMSR,	"fmsr"},
 	
 	{-1,			"???"}
 };
@@ -1023,11 +1050,10 @@ void add_inst_arm(int inst, int code, int param1, int param2 = AP_NONE, int para
 	CPUInstructions.add(i);
 }
 
-string GetInstructionName(int inst)
+const string GetInstructionName(int inst)
 {
-	for (int i=0;i<Asm::NUM_INSTRUCTION_NAMES;i++)
-		if (inst == InstructionNames[i].inst)
-			return Asm::InstructionNames[i].name;
+	if ((inst >= 0) and (inst < NUM_INSTRUCTION_NAMES))
+		return Asm::InstructionNames[inst].name;
 	return "???";
 }
 
@@ -1079,22 +1105,10 @@ int QueryLocalInstructionSet()
 void InitARM()
 {
 	Registers.clear();
-	add_reg("r0",	REG_R0,	REG_GROUP_GENERAL,	SIZE_32,	0);
-	add_reg("r1",	REG_R1,	REG_GROUP_GENERAL,	SIZE_32,	1);
-	add_reg("r2",	REG_R2,	REG_GROUP_GENERAL,	SIZE_32,	2);
-	add_reg("r3",	REG_R3,	REG_GROUP_GENERAL,	SIZE_32,	3);
-	add_reg("r4",	REG_R4,	REG_GROUP_GENERAL,	SIZE_32,	4);
-	add_reg("r5",	REG_R5,	REG_GROUP_GENERAL,	SIZE_32,	5);
-	add_reg("r6",	REG_R6,	REG_GROUP_GENERAL,	SIZE_32,	6);
-	add_reg("r7",	REG_R7,	REG_GROUP_GENERAL,	SIZE_32,	7);
-	add_reg("r8",	REG_R8,	REG_GROUP_GENERAL,	SIZE_32,	8);
-	add_reg("r9",	REG_R9,	REG_GROUP_GENERAL,	SIZE_32,	9);
-	add_reg("r10",	REG_R10,	REG_GROUP_GENERAL,	SIZE_32,	10);
-	add_reg("r11",	REG_R11,	REG_GROUP_GENERAL,	SIZE_32,	11);
-	add_reg("r12",	REG_R12,	REG_GROUP_GENERAL,	SIZE_32,	12);
-	add_reg("r13",	REG_R13,	REG_GROUP_GENERAL,	SIZE_32,	13);
-	add_reg("r14",	REG_R14,	REG_GROUP_GENERAL,	SIZE_32,	14);
-	add_reg("r15",	REG_R15,	REG_GROUP_GENERAL,	SIZE_32,	15);
+	for (int i=0; i<16; i++)
+		add_reg(format("r%d", i), REG_R0 + i, REG_GROUP_GENERAL, SIZE_32, i);
+	for (int i=0; i<32; i++)
+		add_reg(format("s%d", i), REG_S0 + i, REG_GROUP_VFP, SIZE_32, 128 + i);
 
 	// create easy to access array
 	RegisterByID.clear();
@@ -1839,6 +1853,11 @@ void Init(int set)
 	for (int i=0;i<NUM_REG_ROOTS;i++)
 		for (int j=0;j<=MAX_REG_SIZE;j++)
 			RegResize[i][j] = -1;
+
+
+	for (int i=0;i<Asm::NUM_INSTRUCTION_NAMES;i++)
+		if (InstructionNames[i].inst != i)
+			msg_error(string(InstructionNames[i].name) + "  " + i2s(InstructionNames[i].inst) + "  !=   " + i2s(i));
 
 	if (set == INSTRUCTION_SET_ARM)
 		InitARM();
@@ -3151,7 +3170,7 @@ void InstructionWithParamsList::AppendFromSource(const string &_code)
 		// command
 		int inst = -1;
 		for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-			if (InstructionNames[i].name == cmd)
+			if (string(InstructionNames[i].name) == cmd)
 				inst = InstructionNames[i].inst;
 		if (inst < 0)
 			SetError("unknown instruction:  " + cmd);
