@@ -1922,6 +1922,9 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
 
 	func.resize(syntax->functions.num);
+	msg_write(func.num);
+	for (int i=0; i<func.num; i++)
+		msg_write(p2s((void*)func[i]));
 
 	// link external functions
 	foreachi(Function *f, syntax->functions, i)

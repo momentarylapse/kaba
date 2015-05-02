@@ -429,6 +429,7 @@ int add_func(const string &name, Type *return_type, void *func, ScriptFlag flag)
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	cur_package_script->syntax->functions.add(f);
 	cur_package_script->func.add(config.allow_std_lib ? (void (*)())func : NULL);
+	msg_write("add " + p2s((void*)cur_package_script->func.back()));
 	cur_cmd = NULL;
 	cur_func = f;
 	cur_class_func = NULL;
@@ -526,6 +527,19 @@ void func_add_param(const string &name, Type *type)
 			func_add_param("index",		TypeInt);
 }*/
 
+void DebugClear(string *s)
+{
+	msg_write("debug clear");
+	msg_write(p2s(s));
+}
+
+void DebugInit(string *s)
+{
+	msg_write("debug init");
+	msg_write(p2s(s));
+	s->__init__();
+}
+
 void script_make_super_array(Type *t, SyntaxTree *ps)
 {
 	msg_db_f("make_super_array", 4);
@@ -570,7 +584,7 @@ void script_make_super_array(Type *t, SyntaxTree *ps)
 						func_add_param("x",		t->parent);
 						func_add_param("index",		TypeInt);
 				}else if (t->parent->size == 1){
-					class_add_func("__init__",	TypeVoid, mf(&Array<char>::__init__));
+					class_add_func("__init__",	TypeVoid, mf(&DebugInit));//&Array<char>::__init__));
 					class_add_func("add", TypeVoid, mf(&DynamicArray::append_1_single));
 						func_add_param("x",		t->parent);
 					class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_1_single));
@@ -585,7 +599,7 @@ void script_make_super_array(Type *t, SyntaxTree *ps)
 					func_add_param("x",		t->parent);
 					func_add_param("index",		TypeInt);
 			}
-			class_add_func("__delete__",	TypeVoid, mf(&DynamicArray::clear));
+			class_add_func("__delete__",	TypeVoid, mf(&DebugClear));//&DynamicArray::clear));
 			class_add_func("clear", TypeVoid, mf(&DynamicArray::clear));
 			class_add_func("__assign__", TypeVoid, mf(&DynamicArray::assign));
 				func_add_param("other",		t);
