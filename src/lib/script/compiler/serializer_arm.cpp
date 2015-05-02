@@ -123,7 +123,6 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
 		void *func = (void*)script->func[func_no];
-		msg_write(format("func call %d   %d", func_no, script->func.num));
 
 		if (!func)
 			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);

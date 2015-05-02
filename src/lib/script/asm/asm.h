@@ -410,6 +410,7 @@ enum
 	SIZE_64 = 8,
 	SIZE_128 = 16,
 	SIZE_8L4 = -13,
+	SIZE_12 = -14,
 	/*SIZE_VARIABLE = -5,
 	SIZE_32OR48 = -6,*/
 	SIZE_UNKNOWN = -7,

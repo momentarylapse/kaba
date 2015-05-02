@@ -2924,6 +2924,8 @@ inline void insert_val(char *oc, int &ocs, long long val, int size)
 	else if (size == SIZE_8L4){
 		val = arm_encode_8l4(val);
 		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
+	}else if (size == SIZE_12){
+			*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
 	}else if (size > 0)
 		memcpy(&oc[ocs], &val, size);
 }
@@ -2985,7 +2987,7 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 		long long value = l.value;
 		if (w.relative){
 			int size = w.size;
-			if (size == SIZE_8L4)
+			if ((size == SIZE_8L4) or (size == SIZE_12))
 				size = 2;
 
 			// TODO first byte after command
@@ -3584,7 +3586,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			code |= 0x04400000;
 
 		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)){
-			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_8L4);
+			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_12);
 			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
 		}
 
