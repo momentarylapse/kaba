@@ -15,15 +15,6 @@ int SerializerARM::fc_begin()
 {
 	Type *type = CompilerFunctionReturn.type;
 
-	// return data too big... push address
-	SerialCommandParam ret_ref;
-	if (type->UsesReturnByMemory()){
-		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
-		//add_ref();
-		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
-	}
-
 	// grow stack (down) for local variables of the calling function
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	long push_size = 0;
@@ -35,8 +26,7 @@ int SerializerARM::fc_begin()
 
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
-		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
+		SerialCommandParam ret_ref = AddReference(CompilerFunctionReturn, TypePointer);
 		CompilerFunctionParam.insert(ret_ref, 0);
 	}
 
@@ -662,7 +652,6 @@ void SerializerARM::AddFunctionIntro(Function *f)
 	// return, instance, params
 	Array<Variable> param;
 	if (f->return_type->UsesReturnByMemory()){
-		DoError("arm return by mem");
 		foreach(Variable &v, f->var)
 			if (v.name == "-return-"){
 				param.add(v);
@@ -670,7 +659,6 @@ void SerializerARM::AddFunctionIntro(Function *f)
 			}
 	}
 	if (f->_class){
-		DoError("arm self");
 		foreach(Variable &v, f->var)
 			if (v.name == "self"){
 				param.add(v);
