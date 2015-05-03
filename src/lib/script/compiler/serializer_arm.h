@@ -25,9 +25,9 @@ public:
 
 	virtual void DoMapping();
 	void ConvertGlobalLookups();
-	virtual void CorrectUnallowedParamCombisGlobal();
-	virtual void CorrectUnallowedParamCombis();
-	virtual void CorrectUnallowedParamCombis2(SerialCommand &c);
+	void CorrectUnallowedParamCombis();
+	void ConvertMemMovsToLdrStr(SerialCommand &c);
+	void ProcessDerefTemps();
 	virtual void CorrectReturn();
 
 	void transfer_by_reg_in(SerialCommand &c, int &i, int pno);

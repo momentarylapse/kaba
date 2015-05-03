@@ -8,16 +8,19 @@ namespace Script
 
 #define max_reg			8 // >= all RegXXX used...
 
-struct RegChannel
+// represents a register
+// (or rather the data inside, since many VirtualRegisters might be mapped to the same physical register)
+struct VirtualRegister
 {
+	int reg;
 	int reg_root;
 	int first, last;
 };
 
 // high level instructions
 enum{
-	inst_marker = 10000,
-	inst_asm,
+	INST_MARKER = 10000,
+	INST_ASM,
 };
 
 struct LoopData
@@ -31,6 +34,7 @@ struct SerialCommandParam
 {
 	int kind;
 	long long p;
+	int virt; // virtual register (if p represents a physical register)
 	Type *type;
 	int shift;
 	//int c_id, v_id;
@@ -86,7 +90,7 @@ public:
 	bool temp_var_ranges_defined;
 
 	Array<int> map_reg_root;
-	Array<RegChannel> reg_channel;
+	Array<VirtualRegister> virtual_reg;
 
 	bool reg_root_used[max_reg];
 	Array<LoopData> loop;
@@ -130,7 +134,10 @@ public:
 
 	void cmd_list_out();
 
-	void add_reg_channel(int reg, int first, int last);
+	//void add_reg_channel(int reg, int first, int last);
+	int add_virtual_reg(int reg);
+	void set_virtual_reg(int v, int first, int last);
+	void use_virtual_reg(int v, int first, int last);
 	void add_temp(Type *t, SerialCommandParam &param, bool add_constructor = true);
 	void add_cmd(int cond, int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
@@ -165,8 +172,6 @@ public:
 
 	int temp_in_cmd(int c, int v);
 	void ScanTempVarUsage();
-	virtual void CorrectUnallowedParamCombis() = 0;
-	virtual void CorrectUnallowedParamCombis2(SerialCommand &c) = 0;
 
 	int find_unused_reg(int first, int last, int size, int exclude = -1);
 	void solve_deref_temp_local(int c, int np, bool is_local);
@@ -201,7 +206,7 @@ public:
 
 	SerialCommandParam p_eax, p_eax_int, p_deref_eax;
 	SerialCommandParam p_rax;
-	SerialCommandParam p_ax, p_al, p_ah, p_al_bool, p_al_char;
+	SerialCommandParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialCommandParam p_st0, p_st1, p_xmm0, p_xmm1;
 	const SerialCommandParam p_none;
 
@@ -216,8 +221,10 @@ public:
 	static SerialCommandParam param_const(Type *type, long c);
 	static SerialCommandParam param_marker(int m);
 	static SerialCommandParam param_deref_marker(Type *type, int m);
-	static SerialCommandParam param_reg(Type *type, int reg);
-	static SerialCommandParam param_deref_reg(Type *type, int reg);
+	SerialCommandParam param_vreg(Type *type, int vreg, int preg = -1);
+	static SerialCommandParam param_preg(Type *type, int reg);
+	SerialCommandParam param_deref_vreg(Type *type, int vreg, int preg = -1);
+	static SerialCommandParam param_deref_preg(Type *type, int reg);
 	static SerialCommandParam param_lookup(Type *type, int ref);
 	static SerialCommandParam param_deref_lookup(Type *type, int ref);
 

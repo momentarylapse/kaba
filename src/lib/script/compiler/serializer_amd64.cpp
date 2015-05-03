@@ -60,9 +60,9 @@ int SerializerAMD64::fc_begin()
 	// push parameters onto stack
 	push_size = 8 * stack_param.num;
 	if (push_size > 127)
-		add_cmd(Asm::INST_ADD, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeInt, push_size));
+		add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_const(TypeInt, push_size));
 	else if (push_size > 0)
-		add_cmd(Asm::INST_ADD, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeChar, push_size));
+		add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_const(TypeChar, push_size));
 	foreachb(SerialCommandParam &p, stack_param)
 		add_cmd(Asm::INST_PUSH, p);
 	max_push_size = max(max_push_size, push_size);
@@ -71,31 +71,33 @@ int SerializerAMD64::fc_begin()
 	foreachib(SerialCommandParam &p, xmm_param, i){
 		int reg = Asm::REG_XMM0 + i;
 		if (p.type == TypeFloat64)
-			add_cmd(Asm::INST_MOVSD, param_reg(TypeReg128, reg), p);
+			add_cmd(Asm::INST_MOVSD, param_preg(TypeReg128, reg), p);
 		else
-			add_cmd(Asm::INST_MOVSS, param_reg(TypeReg128, reg), p);
+			add_cmd(Asm::INST_MOVSS, param_preg(TypeReg128, reg), p);
 	}
 	
 	// rdi, rsi,rdx, rcx, r8, r9 
 	int param_regs_root[6] = {7, 6, 2, 1, 8, 9};
 	foreachib(SerialCommandParam &p, reg_param, i){
 		int root = param_regs_root[i];
-		int reg = get_reg(root, p.type->size);
-		if (reg >= 0){
-			add_cmd(Asm::INST_MOV, param_reg(p.type, reg), p);
-			add_reg_channel(reg, cmd.num - 1, -100); // -> call
+		int preg = get_reg(root, p.type->size);
+		if (preg >= 0){
+			int v = add_virtual_reg(preg);
+			add_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
+			set_virtual_reg(v, cmd.num - 1, -100); // -> call
 		}else{
 			// some registers are not 8bit'able
-			add_cmd(Asm::INST_MOV, p_al, p);
-			reg = get_reg(root, 4);
-			add_cmd(Asm::INST_MOV, param_reg(TypeReg32, reg), p_eax);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
-			add_reg_channel(reg, cmd.num - 1, -100); // -> call
+			int v = add_virtual_reg(get_reg(root, 4));
+			int va = add_virtual_reg(Asm::REG_EAX);
+			add_cmd(Asm::INST_MOV, param_vreg(p.type, va, Asm::REG_AL), p);
+			add_cmd(Asm::INST_MOV, param_vreg(TypeReg32, v), param_vreg(p.type, va));
+			set_virtual_reg(va, cmd.num - 2, cmd.num - 1);
+			set_virtual_reg(v, cmd.num - 1, -100); // -> call
 		}
 	}
 
 	// extend reg channels to call
-	foreach(RegChannel &r, reg_channel)
+	foreach(VirtualRegister &r, virtual_reg)
 		if (r.last == -100)
 			r.last = cmd.num;
 
@@ -113,14 +115,17 @@ void SerializerAMD64::fc_end(int push_size)
 		else if (type == TypeFloat64)
 			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, p_xmm0);
 		else if (type->size == 1){
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_al);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
+			int r = add_virtual_reg(Asm::REG_AL);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}else if (type->size == 4){
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_eax);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
+			int r = add_virtual_reg(Asm::REG_EAX);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}else{
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, p_rax);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
+			int r = add_virtual_reg(Asm::REG_RAX);
+			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}
 	}
 }
@@ -206,23 +211,26 @@ void SerializerAMD64::AddFunctionIntro(Function *f)
 	// xmm0-7
 	foreachib(Variable &p, xmm_param, i){
 		int reg = Asm::REG_XMM0 + i;
-		add_cmd(Asm::INST_MOVSS, param_local(p.type, p._offset), param_reg(p.type, reg));
+		add_cmd(Asm::INST_MOVSS, param_local(p.type, p._offset), param_preg(p.type, reg));
 	}
 
 	// rdi, rsi,rdx, rcx, r8, r9
 	int param_regs_root[6] = {7, 6, 2, 1, 8, 9};
 	foreachib(Variable &p, reg_param, i){
 		int root = param_regs_root[i];
-		int reg = get_reg(root, p.type->size);
-		if (reg >= 0){
-			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_reg(p.type, reg));
-			add_reg_channel(reg, cmd.num - 1, cmd.num - 1);
+		int preg = get_reg(root, p.type->size);
+		if (preg >= 0){
+			int v = add_virtual_reg(preg);
+			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_vreg(p.type, v));
+			set_virtual_reg(v, cmd.num - 1, cmd.num - 1);
 		}else{
 			// some registers are not 8bit'able
-			add_cmd(Asm::INST_MOV, p_eax, param_reg(TypeReg32, get_reg(root, 4)));
-			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_reg(p.type, get_reg(0, p.type->size)));
-			add_reg_channel(reg, cmd.num - 2, cmd.num - 2);
-			add_reg_channel(Asm::REG_EAX, cmd.num - 2, cmd.num - 1);
+			int v = add_virtual_reg(get_reg(root, 4));
+			int va = add_virtual_reg(Asm::REG_EAX);
+			add_cmd(Asm::INST_MOV, param_vreg(TypeReg32, va), param_vreg(TypeReg32, v));
+			add_cmd(Asm::INST_MOV, param_local(p.type, p._offset), param_vreg(p.type, va, get_reg(0, p.type->size)));
+			set_virtual_reg(v, cmd.num - 2, cmd.num - 2);
+			set_virtual_reg(va, cmd.num - 2, cmd.num - 1);
 		}
 	}
 		
