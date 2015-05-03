@@ -513,14 +513,16 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 	if (param.kind == KIND_REF_TO_CONST){
 		ret.kind = KIND_CONSTANT;
 		ret.p = param.p;
-	}else if ((param.kind == KIND_CONSTANT) || (param.kind == KIND_VAR_GLOBAL)){
+	}else if ((param.kind == KIND_CONSTANT) or (param.kind == KIND_VAR_GLOBAL)){
 		ret.kind = KIND_CONSTANT;
 		ret.p = param.p;
 	}else if (param.kind == KIND_DEREF_VAR_TEMP){
 		ret = param;
 		param.kind = KIND_VAR_TEMP;
 	}else{
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		add_temp(type, ret);
+		add_cmd(Asm::INST_LEA, ret, param);
+		/*if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			if (param.kind == KIND_VAR_LOCAL){
 				int r = find_unused_reg(-1, -1, 4);
 				add_temp(type, ret);
@@ -540,7 +542,7 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 				add_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), param);
 				add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, r));
 			}
-		}
+		}*/
 	}
 	return ret;
 }
@@ -1497,27 +1499,6 @@ inline void try_map_param_to_stack(SerialCommandParam &p, int v, SerialCommandPa
 	}
 }
 
-void Serializer::MapReferencedTempVars()
-{
-	msg_db_f("MapReferencedTempVars", 3);
-	for (int i=0;i<cmd.num;i++)
-		if (cmd[i].inst == Asm::INST_LEA)
-			if (cmd[i].p[1].kind == KIND_VAR_TEMP){
-				temp_var[(long)cmd[i].p[1].p].force_stack = true;
-			}
-
-	for (int i=temp_var.num-1;i>=0;i--)
-		if (temp_var[i].force_stack){
-			SerialCommandParam stackvar;
-			add_stack_var(temp_var[i].type, temp_var[i].first, temp_var[i].last, stackvar);
-			for (int j=0;j<cmd.num;j++){
-				try_map_param_to_stack(cmd[j].p[0], i, stackvar);
-				try_map_param_to_stack(cmd[j].p[1], i, stackvar);
-			}
-			remove_temp_var(i);
-		}
-}
-
 void Serializer::DisentangleShiftedTempVars()
 {
 	msg_db_f("DisentangleShiftedTempVars", 3);
@@ -1739,7 +1720,7 @@ void Serializer::SimplifyFloatStore()
 }
 
 
-void Serializer::FindReferencedTempVars()
+void Serializer::MapReferencedTempVarsToStack()
 {
 	msg_db_f("MapRemainingTempVarsToStack", 3);
 	for (int i=0;i<cmd.num;i++)
@@ -1747,7 +1728,20 @@ void Serializer::FindReferencedTempVars()
 			if (cmd[i].p[1].kind == KIND_VAR_TEMP){
 				temp_var[(long)cmd[i].p[1].p].force_stack = true;
 			}
+
+	for (int i=temp_var.num-1;i>=0;i--){
+		if (!temp_var[i].force_stack)
+			continue;
+		SerialCommandParam stackvar;
+		add_stack_var(temp_var[i].type, temp_var[i].first, temp_var[i].last, stackvar);
+		for (int j=0;j<cmd.num;j++){
+			for (int k=0; k<SERIAL_COMMAND_NUM_PARAMS; k++)
+				try_map_param_to_stack(cmd[j].p[k], i, stackvar);
+		}
+		remove_temp_var(i);
+	}
 }
+
 void Serializer::TryMapTempVarsRegisters()
 {
 	msg_db_f("TryMapTempVarsRegisters", 3);
@@ -1756,6 +1750,7 @@ void Serializer::TryMapTempVarsRegisters()
 			continue;
 	}
 }
+
 void Serializer::MapRemainingTempVarsToStack()
 {
 	msg_db_f("MapRemainingTempVarsToStack", 3);

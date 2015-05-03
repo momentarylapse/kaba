@@ -23,6 +23,7 @@ public:
 	virtual void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret);
 
 	virtual void DoMapping();
+	void ProcessReferences();
 	virtual void CorrectUnallowedParamCombis();
 	virtual void CorrectUnallowedParamCombis2(SerialCommand &c);
 };

@@ -160,14 +160,13 @@ public:
 	void add_cmd_destructor(SerialCommandParam &param, bool ref = true);
 
 	virtual void DoMapping() = 0;
-	void FindReferencedTempVars();
+	void MapReferencedTempVarsToStack();
 	void TryMapTempVarsRegisters();
 	void MapRemainingTempVarsToStack();
 
 	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
 	void MapTempVar(int vi);
 	void MapTempVars();
-	void MapReferencedTempVars();
 	void DisentangleShiftedTempVars();
 	void ResolveDerefRegShift();
 

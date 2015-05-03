@@ -419,7 +419,6 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 	}else if ((link->kind==KIND_OPERATOR) || (link->kind==KIND_FUNCTION) || (link->kind==KIND_VIRTUAL_FUNCTION) || (link->kind==KIND_COMPILER_FUNCTION) || (link->kind==KIND_ARRAY_BUILDER)){
 		return SerializeCommand(link, level, index);
 	}else if (link->kind == KIND_REFERENCE){
-		msg_error("ref");
 		SerialCommandParam param = SerializeParameter(link->param[0], level, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return AddReference(param, link->type);
@@ -439,6 +438,28 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, int level, i
 		DoError("unexpected type of parameter: " + Kind2Str(link->kind));
 	}
 	return p;
+}
+
+
+void SerializerARM::ProcessReferences()
+{
+	msg_db_f("ProcessReferences", 3);
+	for (int i=0;i<cmd.num;i++)
+		if (cmd[i].inst == Asm::INST_LEA){
+			if (cmd[i].p[1].kind == KIND_VAR_LOCAL){
+				SerialCommandParam p0 = cmd[i].p[0];
+				SerialCommandParam p1 = cmd[i].p[1];
+				int r = find_unused_reg(i, i, 4);
+				remove_cmd(i);
+				add_cmd(Asm::INST_ADD, param_vreg(TypePointer, r), param_preg(TypePointer, Asm::REG_R13), param_const(TypeInt, p1.p));
+				move_last_cmd(i);
+				add_cmd(Asm::INST_MOV, p0, param_vreg(TypePointer, r));
+				move_last_cmd(i+1);
+				set_virtual_reg(r, i, i+1);
+			}else{
+				DoError("reference in ARM: " + cmd[i].p[1].str());
+			}
+		}
 }
 
 
@@ -722,9 +743,15 @@ void SerializerARM::AddFunctionOutro(Function *f)
 
 void SerializerARM::DoMapping()
 {
-	ProcessDerefTemps();
+	if (config.verbose)
+		cmd_list_out("aaa");
 
-	FindReferencedTempVars();
+	MapReferencedTempVarsToStack();
+
+	if (config.verbose)
+		cmd_list_out("post ref map");
+
+	ProcessReferences();
 
 	// --- remove unnecessary temp vars
 
@@ -752,10 +779,6 @@ void SerializerARM::DoMapping()
 
 	if (config.verbose)
 		cmd_list_out("end");
-}
-
-void SerializerARM::ProcessDerefTemps()
-{
 }
 
 void SerializerARM::ConvertMemMovsToLdrStr(SerialCommand &c)

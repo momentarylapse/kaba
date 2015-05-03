@@ -1058,9 +1058,45 @@ void SerializerX86::AddFunctionOutro(Function *f)
 		add_cmd(Asm::INST_RET);
 }
 
+
+
+void SerializerX86::ProcessReferences()
+{
+	msg_db_f("ProcessReferences", 3);
+	for (int i=0;i<cmd.num;i++)
+		if (cmd[i].inst == Asm::INST_LEA){
+			if (cmd[i].p[1].kind == KIND_VAR_LOCAL){
+				SerialCommandParam p0 = cmd[i].p[0];
+				SerialCommandParam p1 = cmd[i].p[1];
+				remove_cmd(i);
+
+				if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
+					int r = add_virtual_reg(Asm::REG_RAX);
+					add_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), p1);
+					move_last_cmd(i);
+					add_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg64, r));
+					move_last_cmd(i+1);
+					set_virtual_reg(r, i, i+1);
+				}else{
+					int r = add_virtual_reg(Asm::REG_EAX);
+					add_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), p1);
+					move_last_cmd(i);
+					add_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg32, r));
+					move_last_cmd(i+1);
+					set_virtual_reg(r, i, i+1);
+				}
+			}else{
+				DoError("reference in x86: " + cmd[i].p[1].str());
+			}
+		}
+}
+
 void SerializerX86::DoMapping()
 {
-	FindReferencedTempVars();
+	MapReferencedTempVarsToStack();
+
+
+	ProcessReferences();
 
 	TryMapTempVarsRegisters();
 
