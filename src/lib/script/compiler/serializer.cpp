@@ -557,24 +557,23 @@ SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Type *f
 	add_cmd(Asm::inst_mov, temp, param);
 	temp.kind = KindDerefVarTemp;
 	add_cmd(Asm::inst_mov, ret, temp);*/
+
 	if (param.kind == KIND_VAR_TEMP){
-		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			int r = find_unused_reg(-1, -1, 4);
-			add_cmd(Asm::INST_MOV, param_vreg(TypePointer, r), param);
-			ret = param_deref_vreg(force_type ? force_type : get_subtype(param.type), r);
-		}else{
-			deref_temp(param, ret);
-		}
+		deref_temp(param, ret);
 	}else if (param.kind == KIND_REGISTER){
+		msg_write("???  register???");
 		ret = param;
 		ret.kind = KIND_DEREF_REGISTER;
 		ret.type = force_type ? force_type : get_subtype(param.type);
 		ret.shift = 0;
 	}else{
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			int r = find_unused_reg(-1, -1, 4);
-			add_cmd(Asm::INST_MOV, param_vreg(TypePointer, r), param);
-			ret = param_deref_vreg(force_type ? force_type : get_subtype(param.type), r);
+			if (param.kind == KIND_VAR_LOCAL){
+				ret = param;
+				ret.kind = KIND_DEREF_VAR_LOCAL;
+			}else{
+				DoError("arm deref...");
+			}
 		}else{
 			//msg_error(string("unhandled deref ", Kind2Str(param.kind)));
 			SerialCommandParam temp;
@@ -1613,6 +1612,9 @@ void Serializer::SerializeFunction(Function *f)
 	SerializeBlock(f->block, 0);
 	ScanTempVarUsage();
 
+	if (config.verbose)
+		cmd_list_out("a000");
+
 
 
 	// outro (if last command != return)
@@ -1624,6 +1626,9 @@ void Serializer::SerializeFunction(Function *f)
 		FillInDestructors(false);
 		AddFunctionOutro(f);
 	}
+
+	if (config.verbose)
+		cmd_list_out("a0");
 
 	// map global ref labels
 	foreachi(GlobalRef &g, global_refs, i)

@@ -28,6 +28,7 @@ public:
 	void CorrectUnallowedParamCombis();
 	void ConvertMemMovsToLdrStr(SerialCommand &c);
 	void ProcessReferences();
+	void ProcessDereferences();
 	virtual void CorrectReturn();
 
 	void transfer_by_reg_in(SerialCommand &c, int &i, int pno);

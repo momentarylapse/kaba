@@ -462,6 +462,27 @@ void SerializerARM::ProcessReferences()
 		}
 }
 
+void SerializerARM::ProcessDereferences()
+{
+	msg_db_f("ProcessDereeferences", 3);
+	for (int i=0;i<cmd.num;i++)
+		for (int j=0;j<SERIAL_COMMAND_NUM_PARAMS;j++)
+			if ((cmd[i].p[j].kind == KIND_DEREF_VAR_LOCAL) or (cmd[i].p[j].kind == KIND_DEREF_VAR_TEMP)){
+				SerialCommandParam p = cmd[i].p[j];
+				SerialCommandParam rp = cmd[i].p[j];
+				if (cmd[i].p[j].kind == KIND_DEREF_VAR_LOCAL)
+					rp.kind = KIND_VAR_LOCAL;
+				else
+					rp.kind = KIND_VAR_TEMP;
+				rp.type = p.type->parent;
+				int r = find_unused_reg(i, i, 4);
+				add_cmd(Asm::INST_MOV, param_vreg(TypePointer, r), rp);
+				cmd[i].p[j] = param_deref_vreg(p.type, r);
+				move_last_cmd(i);
+				set_virtual_reg(r, i, i+1);
+			}
+}
+
 
 inline bool _____arm_param_combi_allowed(int inst, SerialCommandParam &p1, SerialCommandParam &p2, SerialCommandParam &p3)
 {
@@ -751,6 +772,7 @@ void SerializerARM::DoMapping()
 	if (config.verbose)
 		cmd_list_out("post ref map");
 
+	ProcessDereferences();
 	ProcessReferences();
 
 	// --- remove unnecessary temp vars
