@@ -19,25 +19,29 @@ namespace Script{
 
 
 
-int Serializer::add_virtual_reg(int reg)
+int Serializer::add_virtual_reg(int preg)
 {
-	VirtualRegister c = {reg, Asm::RegRoot[reg], -1, -1};
+	VirtualRegister c = {preg, Asm::RegRoot[preg], -1, -1};
 	virtual_reg.add(c);
 	return virtual_reg.num - 1;
 }
 
 void Serializer::set_virtual_reg(int v, int first, int last)
 {
+	//msg_write(format("set %d", v));
 	virtual_reg[v].first = first;
 	virtual_reg[v].last = last;
+	//vr_list_out();
 }
 
 void Serializer::use_virtual_reg(int v, int first, int last)
 {
+	//msg_write(format("use %d", v));
 	if ((first < virtual_reg[v].first) or (virtual_reg[v].first < 0))
 		virtual_reg[v].first = first;
 	if ((last > virtual_reg[v].last) or (virtual_reg[v].last < 0))
 		virtual_reg[v].last = last;
+	//vr_list_out();
 }
 
 
@@ -248,22 +252,28 @@ string SerialCommand::str() const
 	return t;
 }
 
-void Serializer::cmd_list_out()
+void Serializer::cmd_list_out(const string &message)
 {
 	msg_db_f("cmd_list_out", 4);
-	msg_write("--------------------------------");
+	msg_write("-------------------------------- " + message);
 	for (int i=0;i<cmd.num;i++)
 		msg_write(format("%3d: ", i) + cmd[i].str());
+	if (false)
+		vr_list_out();
 	if (false){
-		msg_write("-----------");
-		foreach(VirtualRegister &r, virtual_reg)
-			msg_write(format("  %d   %d -> %d", r.reg_root, r.first, r.last));
 		msg_write("-----------");
 		if (temp_var_ranges_defined)
 			for (int i=0;i<temp_var.num;i++)
 				msg_write(format("  %d   %d -> %d", i, temp_var[i].first, temp_var[i].last));
 		msg_write("--------------------------------");
 	}
+}
+
+void Serializer::vr_list_out()
+{
+	msg_write("---------- vr");
+	foreach(VirtualRegister &r, virtual_reg)
+		msg_write(Asm::GetRegName(r.reg) + format("  (%d)   %d -> %d", r.reg_root, r.first, r.last));
 }
 
 int Serializer::get_reg(int root, int size)
@@ -853,11 +863,13 @@ inline bool param_combi_allowed(int inst, SerialCommandParam &p1, SerialCommandP
 
 int Serializer::find_unused_reg(int first, int last, int size, int exclude)
 {
-	for (int r=0;r<map_reg_root.num;r++)
-		if (map_reg_root[r] != exclude)
-			if (!is_reg_root_used_in_interval(map_reg_root[r], first, last))
-				return add_virtual_reg(get_reg(map_reg_root[r], size));
-	cmd_list_out();
+	//vr_list_out();
+	foreach(int r, map_reg_root)
+		if (r != exclude)
+			if (!is_reg_root_used_in_interval(r, first, last)){
+				return add_virtual_reg(get_reg(r, size));
+			}
+	cmd_list_out("fur");
 	DoError(format("no free register of size %d   in %d:%d", size, first, last));
 	return -1;
 }
@@ -891,7 +903,9 @@ void Serializer::solve_deref_temp_local(int c, int np, bool is_local)
 		// solve_deref_temp_local
 		add_cmd(Asm::INST_ADD, p_reg, param_const(TypeInt, shift));
 		move_last_cmd(c + 1);
-	}
+		set_virtual_reg(reg, c, c+2);
+	}else
+		set_virtual_reg(reg, c, c+1);
 }
 
 #if 0
@@ -998,9 +1012,8 @@ void Serializer::ResolveDerefTempAndLocal()
 				DoError("deref local... both sides... .no registers available");
 			
 			SerialCommandParam p_reg = param_vreg(type_data, reg);
-			set_virtual_reg(reg, i, i); // temp
 			
-			int reg2 = find_unused_reg(i, i, config.pointer_size);
+			int reg2 = find_unused_reg(i, i, config.pointer_size, virtual_reg[reg].reg_root);
 			if (reg2 < 0)
 				DoError("deref temp/local... both sides... .no registers available");
 			SerialCommandParam p_reg2 = param_vreg(type_pointer, reg2);
@@ -1410,7 +1423,7 @@ bool Serializer::is_reg_root_used_in_interval(int reg_root, int first, int last)
 {
 	for (int i=0;i<virtual_reg.num;i++)
 		if (virtual_reg[i].reg_root == reg_root){
-			if ((virtual_reg[i].first <= last) && (virtual_reg[i].last >= first)){
+			if ((virtual_reg[i].first <= last) and (virtual_reg[i].last >= first)){
 				return true;
 			}
 		}
@@ -1634,7 +1647,7 @@ void Serializer::SerializeFunction(Function *f)
 	SimplifyFloatStore();
 
 	if (config.verbose)
-		cmd_list_out();
+		cmd_list_out("a");
 	
 
 

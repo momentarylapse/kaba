@@ -132,7 +132,8 @@ public:
 	void SimplifyFloatStore();
 	void TryMergeTempVars();
 
-	void cmd_list_out();
+	void cmd_list_out(const string &message);
+	void vr_list_out();
 
 	//void add_reg_channel(int reg, int first, int last);
 	int add_virtual_reg(int reg);

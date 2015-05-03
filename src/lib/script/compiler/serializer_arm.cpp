@@ -503,7 +503,7 @@ void SerializerARM::gr_transfer_by_reg_in(SerialCommand &c, int &i, int pno)
 		add_cmd(c.cond, Asm::INST_MOV, param_vreg(TypePointer, r2), param_deref_marker(TypePointer, global_refs[p.p].label), p_none);
 		move_last_cmd(i);
 
-		int r1 = find_unused_reg(i+1, i+1, 4/*p.type->size*/, r2);
+		int r1 = find_unused_reg(i+1, i+1, 4/*p.type->size*/, virtual_reg[r2].reg_root);
 		add_cmd(c.cond, Asm::INST_LDR, param_vreg(p.type, r1), param_deref_vreg(TypePointer, r2), p_none);
 		move_last_cmd(i+1);
 
@@ -548,7 +548,7 @@ void SerializerARM::gr_transfer_by_reg_out(SerialCommand &c, int &i, int pno)
 		add_cmd(c.cond, Asm::INST_MOV, param_vreg(TypePointer, r2), param_deref_marker(TypePointer, global_refs[p.p].label), p_none);
 		move_last_cmd(i+1);
 
-		int r1 = find_unused_reg(i, i+1, 4 /*p.type->size*/, r2);
+		int r1 = find_unused_reg(i, i+1, 4 /*p.type->size*/, virtual_reg[r2].reg_root);
 		add_cmd(c.cond, Asm::INST_STR, param_vreg(p.type, r1), param_deref_vreg(TypePointer, r2), p_none);
 		move_last_cmd(i+2);
 
@@ -746,30 +746,24 @@ void SerializerARM::DoMapping()
 
 	//ResolveDerefTempAndLocal();
 
-	if (config.verbose){
-		msg_write("pre global:");
-		cmd_list_out();
-	}
+	if (config.verbose)
+		cmd_list_out("pre global");
 
 	ConvertGlobalLookups();
 
-	if (config.verbose){
-		msg_write("post global:");
-		cmd_list_out();
-	}
+	if (config.verbose)
+		cmd_list_out("post global");
 
 	CorrectUnallowedParamCombis();
 
-	if (config.verbose){
-		msg_write("post unallowed:");
-		cmd_list_out();
-	}
+	if (config.verbose)
+		cmd_list_out("post unallowed");
 
 	for (int i=0; i<cmd.num; i++)
 		ConvertMemMovsToLdrStr(cmd[i]);
 
 	if (config.verbose)
-		cmd_list_out();
+		cmd_list_out("end");
 }
 
 void SerializerARM::ProcessDerefTemps()
