@@ -556,7 +556,13 @@ SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Type *f
 	temp.kind = KindDerefVarTemp;
 	add_cmd(Asm::inst_mov, ret, temp);*/
 	if (param.kind == KIND_VAR_TEMP){
-		deref_temp(param, ret);
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+			int r = find_unused_reg(-1, -1, 4);
+			add_cmd(Asm::INST_MOV, param_vreg(TypePointer, r), param);
+			ret = param_deref_vreg(force_type ? force_type : get_subtype(param.type), r);
+		}else{
+			deref_temp(param, ret);
+		}
 	}else if (param.kind == KIND_REGISTER){
 		ret = param;
 		ret.kind = KIND_DEREF_REGISTER;
