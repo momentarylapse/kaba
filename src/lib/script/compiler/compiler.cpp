@@ -129,8 +129,11 @@ void Script::AllocateOpcode()
 #else
 	opcode = (char*)mmap(0, max_opcode, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS | MAP_EXECUTABLE | MAP_32BIT, -1, 0);
 #endif
-	if ((long)opcode == -1)
-		DoErrorInternal("Script:  could not allocate executable memory");
+	if ((long)opcode == -1){
+		//DoErrorInternal(string("Script:  could not allocate executable memory: ") + strerror(errno));
+		msg_error(string("Script:  could not allocate executable memory: ") + strerror(errno));
+		opcode = new char[max_opcode];
+	}
 	if (config.overwrite_code_origin)
 		syntax->asm_meta_info->code_origin = config.code_origin;
 	else

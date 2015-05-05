@@ -3867,9 +3867,13 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		else
 			code |= 0x0d000a00;
 
-		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)){
-			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_8S2);
-			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref)){
+			if (iwp.p[1].is_label){
+				add_wanted_label(ocs + 3, iwp.p[1].value, n, true, true, SIZE_8S2);
+				iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+			}else{
+				iwp.p[1] = param_deref_reg_shift(REG_R15, iwp.p[1].value - (long)&oc[ocs] - 8, SIZE_32);
+			}
 		}
 
 		int fd = arm_freg_no(iwp.p[0].reg);
