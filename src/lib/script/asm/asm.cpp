@@ -402,6 +402,7 @@ const InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_FMSCS,	"fmscs"},
 	{INST_FNMSCS,	"fnmscs"},
 	{INST_FMULS,	"fmuls"},
+	{INST_FNMULS,	"fnmuls"},
 	{INST_FADDS,	"fadds"},
 	{INST_FSUBS,	"fsubs"},
 	{INST_FDIVS,	"fdivs"},
@@ -415,10 +416,15 @@ const InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_FCMPEZS,	"fcmpezs"},
 	{INST_CVTDS,	"cvtds"},
 	{INST_FTOUIS,	"ftouis"},
+	{INST_FTOUIZS,	"ftouizs"},
+	{INST_FTOSIS,	"ftosis"},
+	{INST_FTOSIZS,	"ftosizs"},
 	{INST_FUITOS,	"fuitos"},
 	{INST_FSITOS,	"fsitos"},
 	{INST_FMRS,	"fmrs"},
 	{INST_FMSR,	"fmsr"},
+	{INST_FLDS,	"flds"},
+	{INST_FSTS,	"fsts"},
 	
 	{-1,			"???"}
 };
@@ -2230,6 +2236,63 @@ int ARM_DATA_INSTRUCTIONS[16] =
 	INST_MVN
 };
 
+int ARM_VFP_PRIMARY_INSTRUCTIONS[16] =
+{
+	INST_FMACS,
+	INST_FNMACS,
+	INST_FMSCS,
+	INST_FNMSCS,
+	INST_FMULS,
+	INST_FNMULS,
+	INST_FADDS,
+	INST_FSUBS,
+	INST_FDIVS,
+	-1,
+	-1,
+	-1,
+	-1,
+	-1,
+	-1,
+	-1
+};
+
+int ARM_VFP_EXTENSION_INSTRUCTIONS[32] =
+{
+	INST_FCPYS,
+	INST_FABSS,
+	INST_FNEGS,
+	INST_FSQRTS,
+	-1,
+	-1,
+	-1,
+	-1,
+	INST_FCMPS,
+	INST_FCMPES,
+	INST_FCMPZS,
+	INST_FCMPEZS,
+	-1,
+	-1,
+	-1,
+	INST_CVTDS,
+
+	INST_FUITOS,
+	INST_FSITOS,
+	-1,
+	-1,
+	-1,
+	-1,
+	-1,
+	-1,
+	INST_FTOUIS,
+	INST_FTOUIZS,
+	INST_FTOSIS,
+	INST_FTOSIZS,
+	-1,
+	-1,
+	-1,
+	-1
+};
+
 int arm_decode_imm(int imm)
 {
 	int r = ((imm >> 8) & 0xf);
@@ -2364,6 +2427,55 @@ InstructionWithParams disarm_data_block_transfer(int code)
 	return i;
 }
 
+InstructionWithParams disarm_vfp(int code)
+{
+	InstructionWithParams i;
+
+	int nn = 0;
+	if ((code & (1<<6)) != 0)
+		nn += 1;
+	if ((code & (1<<20)) != 0)
+		nn += 2;
+	if ((code & (1<<21)) != 0)
+		nn += 4;
+	if ((code & (1<<23)) != 0)
+		nn += 8;
+
+	i.inst = ARM_VFP_PRIMARY_INSTRUCTIONS[nn];
+	int cp_num = (code & 0x00000f00) >> 8;
+
+	int fd = (code & 0x0000f000) >> 11;
+	if ((code & (1<<22)) != 0)
+		fd += 1;
+	int fn = (code & 0x000f0000) >> 15;
+	if ((code & (1<<7)) != 0)
+		fn += 1;
+	int fm = (code & 0x0000000f) << 1;
+	if ((code & (1<<5)) != 0)
+		fm += 1;
+
+	i.p[0] = param_reg(REG_S0 + fd);
+	i.p[1] = param_reg(REG_S0 + fn);
+	i.p[2] = param_reg(REG_S0 + fm);
+
+
+	/*if (((code >> 20) & 1) and (i.inst != INST_CMP) and (i.inst != INST_CMN) and (i.inst != INST_TEQ) and (i.inst != INST_TST))
+		msg_write(GetInstructionName(i.inst) + "[S]");
+	i.p[0] = param_reg(REG_R0 + ((code >> 12) & 15));
+	i.p[1] = param_reg(REG_R0 + ((code >> 16) & 15));
+	if ((code >> 25) & 1)
+		i.p[2] = param_imm(arm_decode_imm(code & 0xfff), SIZE_32);
+	else
+		i.p[2] = disarm_shift_reg(code & 0xfff);
+	if ((i.inst == INST_CMP) or (i.inst == INST_CMN) or (i.inst == INST_TST) or (i.inst == INST_TEQ) or (i.inst == INST_MOV)){
+		if ((i.inst == INST_CMP) or (i.inst == INST_CMN))
+			i.p[0] = i.p[1];
+		i.p[1] = i.p[2];
+		i.p[2] = param_none;
+	}*/
+	return i;
+}
+
 string DisassembleARM(void *_code_,int length,bool allow_comments)
 {
 	string buf;
@@ -2394,6 +2506,8 @@ string DisassembleARM(void *_code_,int length,bool allow_comments)
 			iwp = disarm_data_block_transfer(cur);
 		else if (x == 0b101)
 			iwp = disarm_branch(cur);
+		else if ((cur & 0x0f000010) == 0x0e000000)
+			iwp = disarm_vfp(cur);
 		iwp.condition = (cur >> 28) & 0xf;
 
 
@@ -2925,7 +3039,9 @@ inline void insert_val(char *oc, int &ocs, long long val, int size)
 		val = arm_encode_8l4(val);
 		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
 	}else if (size == SIZE_12){
-			*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
+		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
+	}else if (size == SIZE_8S2){
+		oc[ocs] = (char)(val >> 2);
 	}else if (size > 0)
 		memcpy(&oc[ocs], &val, size);
 }
@@ -2989,6 +3105,8 @@ void InstructionWithParamsList::LinkWantedLabels(void *oc)
 			int size = w.size;
 			if ((size == SIZE_8L4) or (size == SIZE_12))
 				size = 2;
+			if (size == SIZE_8S2)
+				size = 1;
 
 			// TODO first byte after command
 			if (InstructionSet.set == INSTRUCTION_SET_ARM){
@@ -3481,6 +3599,15 @@ int arm_reg_no(Register *r)
 	return -1;
 }
 
+int arm_freg_no(Register *r)
+{
+	if (r)
+		if ((r->id >= REG_S0) and (r->id <= REG_S31))
+			return r->id - REG_S0;
+	SetError("ARM: invalid vfp register: " + r->name);
+	return -1;
+}
+
 int arm_encode_8l4(unsigned int value)
 {
 	for (int ex=0; ex<=30; ex+=2){
@@ -3497,6 +3624,39 @@ int arm_encode_8l4(unsigned int value)
 bool inline arm_is_load_store_reg(int inst)
 {
 	return (inst == INST_LDR) or (inst == INST_LDRB) or (inst == INST_STR) or (inst == INST_STRB);
+}
+
+bool inline arm_is_data(int inst, int &nn)
+{
+	nn = -1;
+	for (int i=0; i<16; i++)
+		if (inst == ARM_DATA_INSTRUCTIONS[i]){
+			nn = i;
+			return true;
+		}
+	return false;
+}
+
+bool inline arm_is_vfp_primary(int inst, int &nn)
+{
+	nn = -1;
+	for (int i=0; i<16; i++)
+		if (inst == ARM_VFP_PRIMARY_INSTRUCTIONS[i]){
+			nn = i;
+			return true;
+		}
+	return false;
+}
+
+bool inline arm_is_vfp_extension(int inst, int &nn)
+{
+	nn = -1;
+	for (int i=0; i<32; i++)
+		if (inst == ARM_VFP_EXTENSION_INSTRUCTIONS[i]){
+			nn = i;
+			return true;
+		}
+	return false;
 }
 
 bool inline arm_is_load_store_multi(int inst)
@@ -3535,10 +3695,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 
 	code = iwp.condition << 28;
 	int nn = -1;
-	for (int i=0; i<16; i++)
-		if (iwp.inst == ARM_DATA_INSTRUCTIONS[i])
-			nn = i;
-	if (nn >= 0){
+	if (arm_is_data(iwp.inst, nn)){
 		if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ) or (iwp.inst == INST_MOV)){
 			iwp.p[2] = iwp.p[1];
 			if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN)){
@@ -3593,8 +3750,8 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 		if (iwp.p[0].reg == iwp.p[1].reg)
 			SetError("not allowed to use the same register for destination and addressing: " + iwp.str());
 
-		code |= arm_reg_no(iwp.p[0].reg) << 12;
-		code |= arm_reg_no(iwp.p[1].reg) << 16;
+		code |= arm_reg_no(iwp.p[0].reg) << 12; // Rd
+		code |= arm_reg_no(iwp.p[1].reg) << 16; // Rn
 
 		if ((iwp.p[1].disp == DISP_MODE_8) or (iwp.p[1].disp == DISP_MODE_32)){
 			if ((iwp.p[1].value > 0x0fff) or (iwp.p[1].value < - 0x0fff))
@@ -3653,6 +3810,71 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 	}else if (iwp.inst == INST_DD){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
 		code = iwp.p[0].value;
+	}else if (arm_is_vfp_primary(iwp.inst, nn)){
+		arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER, PARAMT_REGISTER);
+		code |= 0x0e000a00; // a=single, b=double
+		if ((nn & 0x01) > 0)
+			code |= 1 << 6;
+		if ((nn & 0x02) > 0)
+			code |= 1 << 20;
+		if ((nn & 0x04) > 0)
+			code |= 1 << 21;
+		if ((nn & 0x08) > 0)
+			code |= 1 << 23;
+		int fd = arm_freg_no(iwp.p[0].reg);
+		int fn = arm_freg_no(iwp.p[1].reg);
+		int fm = arm_freg_no(iwp.p[2].reg);
+		code |= fm >> 1;
+		code |= (fd >> 1) >> 12;
+		code |= (fn >> 1) >> 16;
+		if ((fm & 0x01) > 0)
+			code |= 1 << 5;
+		if ((fn & 0x01) > 0)
+			code |= 1 << 7;
+		if ((fd & 0x01) > 0)
+			code |= 1 << 22;
+	}else if (arm_is_vfp_extension(iwp.inst, nn)){
+		arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER, PARAMT_REGISTER);
+		code |= 0x0eb00a40; // a=single, b=double
+		int fd = arm_freg_no(iwp.p[0].reg);
+		int fn = nn;
+		int fm = arm_freg_no(iwp.p[1].reg);
+		code |= fm >> 1;
+		code |= (fd >> 1) >> 12;
+		code |= (fn >> 1) >> 16;
+		if ((fm & 0x01) > 0)
+			code |= 1 << 5;
+		if ((fn & 0x01) > 0)
+			code |= 1 << 7;
+		if ((fd & 0x01) > 0)
+			code |= 1 << 22;
+	}else if ((iwp.inst == INST_FLDS) or (iwp.inst == INST_FSTS)){
+		if (iwp.inst == INST_FLDS)
+			code |= 0x0d100a00;
+		else
+			code |= 0x0d000a00;
+
+		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)){
+			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_8S2);
+			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+		}
+
+		int fd = arm_freg_no(iwp.p[0].reg);
+		code |= (fd >> 1)<< 12;
+		if ((fd & 1) > 0)
+			code |= 1 << 22;
+
+		code |= arm_reg_no(iwp.p[1].reg) << 16; // Rn
+
+		if ((iwp.p[1].disp == DISP_MODE_8) or (iwp.p[1].disp == DISP_MODE_32)){
+			int v = (iwp.p[1].value >> 2);
+			if ((v > 0x00ff) or (v < - 0x00ff))
+				SetError("offset larger than 8 bit: " + iwp.str());
+			if (v >= 0)
+				code |= 0x00800000 | (v & 0x00ff);
+			else
+				code |= 0x00000000 | ((-v) & 0x00ff);
+		}
 	}else{
 		SetError("cannot assemble instruction: " + iwp.str());
 	}
