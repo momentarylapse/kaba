@@ -1117,7 +1117,8 @@ SyntaxTree::~SyntaxTree()
 
 	// delete all types created by this script
 	foreach(Type *t, types)
-		delete(t);
+		if (t->owner == this)
+			delete(t);
 
 	if (asm_meta_info)
 		delete(asm_meta_info);

@@ -410,6 +410,7 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 		*ff = *f;
 		// keep block pointing to include file...
 	}
+	a->types.append(b->types);
 
 	//int asm_off = a->AsmBlocks.num;
 	foreach(AsmBlock &ab, b->asm_blocks){
