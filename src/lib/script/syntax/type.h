@@ -48,6 +48,8 @@ public:
 	Type *parent;
 	SyntaxTree *owner; // to share and be able to delete...
 	Array<void*> vtable;
+	void *_vtable_location_compiler_; // may point to const/opcode
+	void *_vtable_location_target_; // (opcode offset adjusted)
 
 	bool force_call_by_value;
 	bool UsesCallByReference();

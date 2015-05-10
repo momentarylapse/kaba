@@ -244,7 +244,8 @@ void Type::LinkVirtualTable()
 			if (cf.nr >= 0){
 				//msg_write(i2s(cf.virtual_index) + ": " + cf.script->syntax->Functions[cf.nr]->name);
 				if (cf.virtual_index >= vtable.num)
-					vtable.resize(cf.virtual_index + 1);
+					owner->DoError("LinkVirtualTable");
+					//vtable.resize(cf.virtual_index + 1);
 				vtable[cf.virtual_index] = (void*)cf.script->func[cf.nr];
 			}
 		}
@@ -264,6 +265,8 @@ void Type::LinkExternalVirtualTable(void *p)
 				max_vindex = max(max_vindex, cf.virtual_index);
 		}
 	vtable.resize(max_vindex + 1);
+	_vtable_location_compiler_ = vtable.data;
+	_vtable_location_target_ = vtable.data;
 
 	for (int i=0;i<vtable.num;i++)
 		vtable[i] = t[i];
@@ -328,6 +331,8 @@ void Type::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overwri
 		cf.virtual_index = ProcessClassOffset(name, cf.name, max(vtable.num, 2));
 		if (vtable.num <= cf.virtual_index)
 			vtable.resize(cf.virtual_index + 1);
+		_vtable_location_compiler_ = vtable.data;
+		_vtable_location_target_ = vtable.data;
 	}
 
 	// overwrite?
@@ -368,6 +373,8 @@ bool Type::DeriveFrom(Type* root, bool increase_size)
 	if (increase_size)
 		size += parent->size;
 	vtable = parent->vtable;
+	_vtable_location_compiler_ = vtable.data;
+	_vtable_location_target_ = vtable.data;
 	return found;
 }
 

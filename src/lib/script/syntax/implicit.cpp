@@ -10,7 +10,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Type *
 	if (t->vtable.num > 0){
 		Command *p = shift_command(self, true, 0, TypePointer);
 		int nc = AddConstant(TypePointer);
-		(*(void**)constants[nc].value.data) = t->vtable.data;
+		(*(void**)constants[nc].value.data) = t->_vtable_location_target_;
 		Command *cmd_0 = add_command_const(nc);
 		Command *c = add_command_operator(p, cmd_0, OPERATOR_ASSIGN);
 		f->block->command.add(c);

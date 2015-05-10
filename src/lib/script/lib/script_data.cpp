@@ -284,6 +284,8 @@ void _class_add_func_virtual(const string &tname, const string &name, Type *retu
 	cur_class_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
+	cur_class->_vtable_location_compiler_ = cur_class->vtable.data;
+	cur_class->_vtable_location_target_ = cur_class->vtable.data;
 }
 
 void class_add_func(const string &name, Type *return_type, void *func, ScriptFlag flag)
