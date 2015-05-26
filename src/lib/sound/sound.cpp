@@ -109,7 +109,7 @@ sAudioFile load_wave_file(const string &filename)
 	sAudioFile r;
 	r.buffer = NULL;
 //	ProgressStatus(_("lade wave"), 0);
-	CFile *f = FileOpenSilent(filename);
+	File *f = FileOpenSilent(filename);
 	if (!f)
 		return r;
 	char *data = new char[f->GetSize()];
@@ -295,7 +295,7 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 	int bytes_per_sample = (bits / 8) * channels;
 	int samples = min(data_r.num, data_l.num);
 	
-	CFile *f = FileCreate(filename);
+	File *f = FileCreate(filename);
 	f->SetBinaryMode(true);
 	f->WriteBuffer("RIFF", 4);
 	f->WriteInt(44 + bytes_per_sample * samples); // file size (bytes)

@@ -40,7 +40,7 @@ void execute(Script::Script *s, Array<string> &arg)
 
 void dump_to_file(Script::Script *s, const string &out_file)
 {
-	CFile *f = FileCreate(out_file);
+	File *f = FileCreate(out_file);
 	if (!f)
 		exit(1);
 	f->SetBinaryMode(true);
@@ -50,7 +50,7 @@ void dump_to_file(Script::Script *s, const string &out_file)
 
 void export_symbols(Script::Script *s, const string &symbols_out_file)
 {
-	CFile *f = FileCreate(symbols_out_file);
+	File *f = FileCreate(symbols_out_file);
 	if (!f)
 		exit(1);
 	foreachi(Script::Function *fn, s->syntax->functions, i){
@@ -67,7 +67,7 @@ void export_symbols(Script::Script *s, const string &symbols_out_file)
 
 void import_symbols(const string &symbols_in_file)
 {
-	CFile *f = FileOpen(symbols_in_file);
+	File *f = FileOpen(symbols_in_file);
 	if (!f)
 		exit(1);
 	while (!f->Eof){
@@ -204,6 +204,8 @@ int hui_main(const Array<string> &arg0)
 		}else if (arg[i][0] == '-'){
 			msg_error("unbekannte Option: " + arg[i]);
 			return -1;
+		}else{
+			break;
 		}
 	}
 
