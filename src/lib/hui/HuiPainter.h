@@ -23,6 +23,7 @@ class HuiPainter
 	int cur_font_size;
 	string cur_font;
 	bool cur_font_bold, cur_font_italic;
+	bool mode_fill;
 	void _cdecl end();
 	color _cdecl getThemeColor(int i);
 	void _cdecl setColor(const color &c);
@@ -31,6 +32,7 @@ class HuiPainter
 	void _cdecl setAntialiasing(bool enabled);
 	void _cdecl setLineWidth(float w);
 	void _cdecl setLineDash(Array<float> &dash, float offset);
+	void _cdecl setFill(bool fill);
 	void _cdecl clip(const rect &r);
 	void _cdecl drawPoint(float x, float y);
 	void _cdecl drawLine(float x1, float y1, float x2, float y2);
@@ -42,6 +44,7 @@ class HuiPainter
 	void _cdecl drawStr(float x, float y, const string &str);
 	float _cdecl getStrWidth(const string &str);
 	void _cdecl drawImage(float x, float y, const Image &image);
+	void _cdecl drawMaskImage(float x, float y, const Image &image);
 	int width, height;
 };
 

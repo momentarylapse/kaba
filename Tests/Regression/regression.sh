@@ -1,13 +1,26 @@
+kaba="kaba"
+
+if [ -n "$1" ]
+then
+	kaba="$1"
+fi
+
+
+
+
 for f in *.reg
 do
 	k=${f%reg}kaba
-	echo $k
-	if grep -q vli "$k"
+	printf "%-32s" "$k"
+	"$kaba" "$k" > out
+	x=`diff "$f" out`
+	if [ -n "$x" ]
 	then
-		echo "---vli"
+		echo "Fehler"
+		echo "$x"
 	else
-		../../Release/Kaba.exe "$k" > out
-		diff "$f" out
+		echo "ok"
 	fi
-
 done
+
+rm -f out

@@ -69,8 +69,12 @@ void HuiControlTabControl::__removeString(int row)
 void HuiControlTabControl::addPage(const string &str)
 {
 	GtkWidget *inside;
-	if (panel->win->is_resizable){
-#if GTK_MAJOR_VERSION >= 3
+	bool resizable = true;
+	if (panel->win)
+		if (!panel->win->is_resizable)
+			resizable = false;
+	if (resizable){
+#if GTK_CHECK_VERSION(3,0,0)
 		inside = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 #else
 		inside = gtk_hbox_new(true, 0);

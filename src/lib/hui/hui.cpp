@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.5.12.0";
+string HuiVersion = "0.5.12.2";
 
 #include <stdio.h>
 #include <signal.h>
@@ -296,7 +296,11 @@ void _HuiMakeUsable_()
 		_hui_x_display_ = XOpenDisplay(0);
 	#endif
 
+#if GTK_CHECK_VERSION(3,16,0)
+	invisible_cursor = gdk_cursor_new_for_display(gdk_display_get_default(), GDK_BLANK_CURSOR);
+#else
 	invisible_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+#endif
 
 #endif
 	_HuiScreenOpened_ = true;
@@ -311,28 +315,15 @@ void HuiInit(const string &program, bool load_res, const string &def_lang)
 	#endif
 
 	#ifdef OS_LINUX
+		HuiAppDirectory = HuiInitialWorkingDirectory;
+		HuiAppDirectoryStatic = HuiAppDirectory;
 		if (HuiArgument.num > 0){
-			if (HuiArgument[0][0] == '/'){
-				if (HuiArgument[0][1] == 'u'){ // /usr/...
-					HuiAppFilename = HuiArgument[0];
-					HuiAppDirectory = format("%s/.%s/", getenv("HOME"), program.c_str());
-					HuiAppDirectoryStatic = "/usr/share/" + program + "/";
-				}else{
-					HuiAppFilename = HuiArgument[0];
-					HuiAppDirectory = HuiAppFilename.dirname();
-					HuiAppDirectoryStatic = HuiAppDirectory;
-				}
-			}else{
-				HuiAppDirectory.dir_ensure_ending();
-				if (HuiArgument[0][0] == '.'){
-					HuiAppFilename = HuiArgument[0].substr(2, -1);
-					HuiAppDirectory = HuiInitialWorkingDirectory;
-					HuiAppDirectoryStatic = HuiAppDirectory;
-				}else{
-					HuiAppFilename = HuiArgument[0];
-					HuiAppDirectory = format("%s/.%s/", getenv("HOME"), program.c_str());
-					HuiAppDirectoryStatic = "/usr/share/" + program + "/";
-				}
+			HuiAppFilename = HuiArgument[0];
+			if (HuiArgument[0].head(5) == "/usr/"){
+				// installed version?
+				HuiAppFilename = HuiArgument[0];
+				HuiAppDirectory = format("%s/.%s/", getenv("HOME"), program.c_str());
+				HuiAppDirectoryStatic = "/usr/share/" + program + "/";
 			}
 		}
 		dir_create(HuiAppDirectory);
@@ -541,7 +532,7 @@ void HuiEnd()
 		//	XCloseDisplay(hui_x_display);
 #endif
 
-#if GTK_MAJOR_VERSION == 3
+#if GTK_CHECK_VERSION(3,0,0)
 		g_object_unref(invisible_cursor);
 #endif
 #endif

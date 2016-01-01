@@ -25,6 +25,15 @@ HuiControlMultilineEdit::HuiControlMultilineEdit(const string &title, const stri
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_widget_show(scroll);
 	gtk_container_add(GTK_CONTAINER(scroll), widget);
+	if (OptionString.find("monospace") >= 0){
+#if GTK_CHECK_VERSION(3,16,0)
+		gtk_text_view_set_monospace(GTK_TEXT_VIEW(widget), true);
+#else
+		PangoFontDescription *font_desc = pango_font_description_from_string("Monospace 12");
+		gtk_widget_override_font(widget, font_desc);
+		pango_font_description_free(font_desc);
+#endif
+	}
 
 	// frame
 	frame = scroll;
