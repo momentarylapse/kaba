@@ -128,7 +128,7 @@ int hui_main(const Array<string> &arg0)
 			msg_write("Hui-Version: " + HuiVersion);
 			msg_left();
 			return 0;
-		}else if ((arg[i] == "--gui") || (arg[i] == "-g")){
+		}else if ((arg[i] == "--gui") or (arg[i] == "-g")){
 			use_gui = true;
 			arg.erase(i --);
 		}else if (arg[i] == "--arm"){

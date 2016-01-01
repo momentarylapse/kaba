@@ -27,6 +27,7 @@ public:
 	void ConvertGlobalLookups();
 	void CorrectUnallowedParamCombis();
 	void ConvertMemMovsToLdrStr(SerialCommand &c);
+	void ConvertGlobalRefs();
 	void ProcessReferences();
 	void ProcessDereferences();
 	virtual void CorrectReturn();

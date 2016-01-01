@@ -821,8 +821,38 @@ void SerializerARM::DoMapping()
 	for (int i=0; i<cmd.num; i++)
 		ConvertMemMovsToLdrStr(cmd[i]);
 
+	ConvertGlobalRefs();
+
 	if (config.verbose)
 		cmd_list_out("end");
+}
+
+void SerializerARM::ConvertGlobalRefs()
+{
+	for (int i=0; i<cmd.num; i++){
+		if ((cmd[i].inst == Asm::INST_LDR) and (cmd[i].p[0].kind == KIND_REGISTER) and (cmd[i].p[1].kind == KIND_DEREF_MARKER)){
+			bool found = false;
+			long data;
+			foreach(GlobalRef &r, global_refs){
+				if (r.label == cmd[i].p[1].p){
+					data = (long)r.p;
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				continue;
+			cmd[i].inst = Asm::INST_MOV;
+			cmd[i].p[1] = param_const(TypeInt, data & 0x000000ff);
+			add_cmd(Asm::INST_ADD, cmd[i].p[0], cmd[i].p[0], param_const(TypeInt, data & 0x0000ff00));
+			move_last_cmd(i + 1);
+			add_cmd(Asm::INST_ADD, cmd[i].p[0], cmd[i].p[0], param_const(TypeInt, data & 0x00ff0000));
+			move_last_cmd(i + 2);
+			add_cmd(Asm::INST_ADD, cmd[i].p[0], cmd[i].p[0], param_const(TypeInt, data & 0xff000000));
+			move_last_cmd(i + 3);
+			i += 3;
+		}
+	}
 }
 
 void SerializerARM::ConvertMemMovsToLdrStr(SerialCommand &c)
