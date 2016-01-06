@@ -47,7 +47,10 @@ void Serializer::use_virtual_reg(int v, int first, int last)
 void Serializer::add_temp(Type *t, SerialCommandParam &param, bool add_constructor)
 {
 	if (t != TypeVoid){
+		msg_write("add temp");
 		TempVar v;
+		v.mapped = false;
+		v.stack_offset = -1;
 		v.first = -1;
 		v.last = -1;
 		v.type = t;
@@ -805,6 +808,7 @@ int Serializer::temp_in_cmd(int c, int v)
 void Serializer::ScanTempVarUsage()
 {
 	msg_db_f("ScanTempVarUsage", 4);
+	msg_write("ScanTempVarUsage");
 	foreachi(TempVar &v, temp_var, i){
 		v.first = -1;
 		v.last = -1;
@@ -1298,22 +1302,133 @@ void Serializer::MapTempVarToReg(int vi, int reg)
 	set_virtual_reg(reg, v.first, v.last);
 }
 
-void Serializer::add_stack_var(Type *type, int first, int last, SerialCommandParam &p)
+struct StackOccupation
+{
+	Array<int> x;
+	int reserved;
+	bool down;
+
+	void create(Serializer *s, bool down, int reserved, int first, int last)
+	{
+		x.clear();
+		this->down = down;
+		this->reserved = reserved;
+		foreach(TempVar &v, s->temp_var) {
+			if (!v.mapped)
+				continue;
+			if ((v.first > first and v.last > last) or (v.first < first and v.last < last))
+				continue;
+			set(v.stack_offset, v.type->size);
+		}
+	}
+	void set(int start, int size)
+	{
+		if (down)
+			start = - start - size;
+
+		int a = start / 32;
+		int mask = 1 << (start % 23);
+		for (int i=0; i<size; i++){
+			if (mask == 1){
+				if (a >= x.num)
+					x.resize(a + 1);
+			}
+			x[a] |= mask;
+			mask *= 2;
+			if (mask == 0) {
+				mask = 1;
+				a ++;
+			}
+		}
+	}
+
+	bool is_free(int start, int size)
+	{
+		if (down)
+			start = - start - size;
+
+		int a = start / 32;
+		int mask = 1 << (start % 23);
+		msg_write("------");
+		msg_write(start);
+		msg_write(a);
+		msg_write(mask);
+		if (a >= x.num)
+			return true;
+		for (int i=0; i<size; i++){
+			if (mask == 1){
+				if (a >= x.num)
+					return true;
+			}
+			if (x[a] & mask)
+				return false;
+			mask *= 2;
+			if (mask == 0) {
+				mask = 1;
+				a ++;
+			}
+		}
+
+		return true;
+	}
+
+	int find_free(int size)
+	{
+		int pos = down ? -(reserved + size) : reserved;
+		while (true){
+			if (is_free(pos, size))
+				return pos;
+			if (down)
+				pos -= 4;
+			else
+				pos += 4;
+		}
+		return pos;
+	}
+};
+
+void Serializer::add_stack_var(TempVar &v, SerialCommandParam &p)
 {
 	// find free stack space for the life span of the variable....
 	// don't mind... use old algorithm: ALWAYS grow stack... remove ALL on each command in a block
 
-	int s = mem_align(type->size, 4);
-	stack_offset += s;
-	int offset = - stack_offset;
-	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM)
-		offset = stack_offset;
+	int s = mem_align(v.type->size, 4);
+	StackOccupation so;
+	msg_write(format("add stack var  %s %d   %d-%d       vs=%d", v.type->name.c_str(), v.type->size, v.first, v.last, cur_func->_var_size));
+	foreachi(TempVar &t, temp_var, i)
+		if (&t == &v)
+			msg_write("#" + i2s(i));
+	so.create(this, (config.instruction_set != Asm::INSTRUCTION_SET_ARM), cur_func->_var_size, v.first, v.last);
+
+	if (true){
+	// TODO super important!!!!!!
+	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		v.stack_offset = stack_offset;
+		stack_offset += s;
+
+	}else{
+		stack_offset += s;
+		v.stack_offset = - stack_offset;
+	}
+	}else{
+		v.stack_offset = so.find_free(v.type->size);
+		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+			stack_offset = v.stack_offset + s;
+		}else{
+			stack_offset = - v.stack_offset;
+		}
+	}
+	msg_write("=>");
+	msg_write(v.stack_offset);
+
 	if (stack_offset > stack_max_size)
 		stack_max_size = stack_offset;
 
+	v.mapped = true;
+
 	p.kind = KIND_VAR_LOCAL;
-	p.p = offset;
-	p.type = type;
+	p.p = v.stack_offset;
+	p.type = v.type;
 	p.shift = 0;
 }
 
@@ -1324,7 +1439,7 @@ void Serializer::MapTempVarToStack(int vi)
 //	msg_write(format("temp=stack: %d   (%d - %d)", vi, v.first, v.last));
 
 	SerialCommandParam p;
-	add_stack_var(v.type, v.first, v.last, p);
+	add_stack_var(v, p);
 	
 	// map
 	for (int i=v.first;i<=v.last;i++){
@@ -1737,7 +1852,7 @@ void Serializer::MapReferencedTempVarsToStack()
 		if (!temp_var[i].force_stack)
 			continue;
 		SerialCommandParam stackvar;
-		add_stack_var(temp_var[i].type, temp_var[i].first, temp_var[i].last, stackvar);
+		add_stack_var(temp_var[i], stackvar);
 		for (int j=0;j<cmd.num;j++){
 			for (int k=0; k<SERIAL_COMMAND_NUM_PARAMS; k++)
 				try_map_param_to_stack(cmd[j].p[k], i, stackvar);
@@ -1760,7 +1875,7 @@ void Serializer::MapRemainingTempVarsToStack()
 	msg_db_f("MapRemainingTempVarsToStack", 3);
 	for (int i=temp_var.num-1;i>=0;i--){
 		SerialCommandParam stackvar;
-		add_stack_var(temp_var[i].type, temp_var[i].first, temp_var[i].last, stackvar);
+		add_stack_var(temp_var[i], stackvar);
 		for (int j=0;j<cmd.num;j++){
 			for (int k=0; k<SERIAL_COMMAND_NUM_PARAMS; k++)
 				try_map_param_to_stack(cmd[j].p[k], i, stackvar);

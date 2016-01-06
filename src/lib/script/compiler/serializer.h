@@ -58,7 +58,9 @@ struct TempVar
 {
 	Type *type;
 	int first, last, count;
+	bool mapped;
 	bool force_stack;
+	int stack_offset;
 	int entangled;
 };
 
@@ -191,7 +193,7 @@ public:
 	SerialCommandParam AddDereference(SerialCommandParam &param, Type *force_type = NULL);
 
 	void MapTempVarToReg(int vi, int reg);
-	void add_stack_var(Type *type, int first, int last, SerialCommandParam &p);
+	void add_stack_var(TempVar &v, SerialCommandParam &p);
 	void MapTempVarToStack(int vi);
 
 
