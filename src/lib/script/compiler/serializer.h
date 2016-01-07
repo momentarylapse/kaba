@@ -50,18 +50,20 @@ struct SerialCommand
 	int inst;
 	int cond;
 	SerialCommandParam p[SERIAL_COMMAND_NUM_PARAMS];
-	int pos;
+	int index;
 	string str() const;
 };
 
 struct TempVar
 {
 	Type *type;
-	int first, last, count;
+	int first, last, usage_count;
 	bool mapped;
+	bool referenced;
 	bool force_stack;
 	int stack_offset;
 	int entangled;
+	void use(int first, int last);
 };
 
 struct AddLaterData
@@ -89,7 +91,7 @@ public:
 	int cur_func_index;
 	bool call_used;
 	Command *next_command;
-	bool temp_var_ranges_defined;
+	int next_cmd_index;
 
 	Array<int> map_reg_root;
 	Array<VirtualRegister> virtual_reg;
@@ -121,10 +123,10 @@ public:
 	Asm::InstructionParam get_param(int inst, SerialCommandParam &p);
 
 	void SerializeFunction(Function *f);
-	void SerializeBlock(Block *block, int level);
-	virtual SerialCommandParam SerializeParameter(Command *link, int level, int index) = 0;
-	SerialCommandParam SerializeCommand(Command *com, int level, int index);
-	virtual void SerializeCompilerFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, int level, int index, int marker_before_params) = 0;
+	void SerializeBlock(Block *block);
+	virtual SerialCommandParam SerializeParameter(Command *link, Block *block, int index) = 0;
+	SerialCommandParam SerializeCommand(Command *com, Block *block, int index);
+	virtual void SerializeCompilerFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params) = 0;
 	virtual void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret) = 0;
 	virtual void AddFunctionIntro(Function *f) = 0;
 	virtual void AddFunctionOutro(Function *f) = 0;
@@ -147,7 +149,8 @@ public:
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2);
 	void add_cmd(int inst, const SerialCommandParam &p);
 	void add_cmd(int inst);
-	void move_last_cmd(int index);
+	void set_cmd_param(SerialCommand &c, int param_index, const SerialCommandParam &p);
+	void next_cmd_target(int index);
 	void remove_cmd(int index);
 	void remove_temp_var(int v);
 	void move_param(SerialCommandParam &p, int from, int to);
@@ -197,8 +200,9 @@ public:
 	void MapTempVarToStack(int vi);
 
 
-	void FillInDestructors(bool from_temp);
-	void FillInConstructorsFunc();
+	void FillInDestructorsBlock(Block *b, bool recursive = false);
+	void FillInDestructorsTemp();
+	void FillInConstructorsBlock(Block *b);
 
 
 
