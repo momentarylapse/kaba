@@ -51,32 +51,34 @@ void Serializer::use_virtual_reg(int v, int first, int last)
 
 
 
-void Serializer::add_temp(Type *t, SerialCommandParam &param, bool add_constructor)
+// return of a function might need temp vars without destructor FIXME ?!?
+SerialCommandParam Serializer::add_temp(Type *t, bool add_constructor)
 {
-	if (t != TypeVoid){
-		msg_write("add temp");
-		TempVar v;
-		v.mapped = false;
-		v.stack_offset = -1;
-		v.first = -1;
-		v.last = -1;
-		v.type = t;
-		v.referenced = false;
-		v.force_stack = (t->size > config.pointer_size) or (t->is_super_array) or (t->is_array) or (t->element.num > 0);
-		v.entangled = 0;
-		temp_var.add(v);
-		param.kind = KIND_VAR_TEMP;
-		param.p = temp_var.num - 1;
-		param.type = t;
-		param.shift = 0;
+	if (t == TypeVoid)
+		return p_none;
 
-		if (add_constructor)
-			add_cmd_constructor(param, KIND_VAR_TEMP);
-		else
-			inserted_constructor_temp.add(param);
-	}else{
-		param = p_none;
-	}
+	msg_write("add temp " + t->name + " " + b2s(add_constructor));
+	TempVar v;
+	v.mapped = false;
+	v.stack_offset = -1;
+	v.first = -1;
+	v.last = -1;
+	v.type = t;
+	v.referenced = false;
+	v.force_stack = (t->size > config.pointer_size) or (t->is_super_array) or (t->is_array) or (t->element.num > 0);
+	v.entangled = 0;
+	temp_var.add(v);
+	SerialCommandParam param;
+	param.kind = KIND_VAR_TEMP;
+	param.p = temp_var.num - 1;
+	param.type = t;
+	param.shift = 0;
+
+	inserted_temp.add(param);
+
+	if (add_constructor)
+		add_cmd_constructor(param, KIND_VAR_TEMP);
+	return param;
 }
 
 inline Type *get_subtype(Type *t)
@@ -535,6 +537,8 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 {
 	msg_db_f("AddReference", 3);
 	SerialCommandParam ret;
+	if (!type)
+		type = param.type->GetPointer();
 	ret.type = type;
 	ret.shift = 0;
 	if (param.kind == KIND_REF_TO_CONST){
@@ -547,7 +551,7 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 		ret = param;
 		ret.kind = KIND_VAR_TEMP; // FIXME why was it param.kind ?!?!?
 	}else{
-		add_temp(type, ret);
+		ret = add_temp(type);
 		add_cmd(Asm::INST_LEA, ret, param);
 		/*if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			if (param.kind == KIND_VAR_LOCAL){
@@ -603,8 +607,7 @@ SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Type *f
 			}
 		}else{
 			//msg_error(string("unhandled deref ", Kind2Str(param.kind)));
-			SerialCommandParam temp;
-			add_temp(param.type, temp);
+			SerialCommandParam temp = add_temp(param.type);
 			add_cmd(Asm::INST_MOV, temp, param);
 			return deref_temp(temp);
 		}
@@ -636,9 +639,8 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 		marker_before_params = add_marker();
 
 	// return value
-	SerialCommandParam ret;
 	bool create_constructor_for_return = ((com->kind != KIND_COMPILER_FUNCTION) and (com->kind != KIND_FUNCTION) and (com->kind != KIND_VIRTUAL_FUNCTION));
-	add_temp(com->type, ret, create_constructor_for_return);
+	SerialCommandParam ret = add_temp(com->type, create_constructor_for_return);
 
 
 	Array<SerialCommandParam> param;
@@ -728,6 +730,8 @@ void Serializer::SerializeBlock(Block *block)
 	msg_db_f("SerializeBlock", 4);
 	FillInConstructorsBlock(block);
 
+	InsertAddedStuffIfNeeded(block, -1);
+
 	for (int i=0;i<block->commands.num;i++){
 		stack_offset = cur_func->_var_size;
 		next_command = NULL;
@@ -741,14 +745,7 @@ void Serializer::SerializeBlock(Block *block)
 		FillInDestructorsTemp();
 
 		// any markers / jumps to add?
-		for (int j=add_later.num-1;j>=0;j--)
-			if ((block->level == add_later[j].level) and (i == add_later[j].index)){
-				if (add_later[j].kind == STUFF_KIND_MARKER)
-					add_marker(add_later[j].label);
-				else if (add_later[j].kind == STUFF_KIND_JUMP)
-					add_cmd(Asm::INST_JMP, param_marker(add_later[j].label));
-				add_later.erase(j);
-			}
+		InsertAddedStuffIfNeeded(block, i);
 
 		// end of loop?
 		if (loop.num > 0)
@@ -759,7 +756,23 @@ void Serializer::SerializeBlock(Block *block)
 	FillInDestructorsBlock(block);
 }
 
-// modus: KindVarLocal/KindVarTemp
+void Serializer::InsertAddedStuffIfNeeded(Block *block, int index)
+{
+	msg_write(format("try add noew....  level=%d  index=%d", block->level, index));
+	for (int j=add_later.num-1; j>=0; j--){
+		msg_write(format("%d  %d", add_later[j].level, add_later[j].index));
+		if ((block->level == add_later[j].level) and (index == add_later[j].index)){
+			msg_write("del add_later...");
+			if (add_later[j].kind == STUFF_KIND_MARKER)
+				add_marker(add_later[j].label);
+			else if (add_later[j].kind == STUFF_KIND_JUMP)
+				add_cmd(Asm::INST_JMP, param_marker(add_later[j].label));
+			add_later.erase(j);
+		}
+	}
+}
+
+// modus: KIND_VAR_LOCAL / KIND_VAR_TEMP
 //    -1: -return-/new   -> don't destruct
 void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 {
@@ -769,27 +782,24 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 	ClassFunction *f = class_type->GetDefaultConstructor();
 	if (!f)
 		return;
+	msg_error("constructor " + param.type->name);
 	if (modus == -1){
 		AddFuncInstance(param);
 	}else{
-		SerialCommandParam inst = AddReference(param, TypePointer);
+		SerialCommandParam inst = AddReference(param);
 		AddFuncInstance(inst);
 	}
 
 	AddClassFunctionCall(f);
-	if (modus == KIND_VAR_TEMP)
-		inserted_constructor_temp.add(param);
-	else if (modus == KIND_VAR_LOCAL)
-		inserted_constructor_func.add(param);
 }
 
-void Serializer::add_cmd_destructor(SerialCommandParam &param, bool ref)
+void Serializer::add_cmd_destructor(SerialCommandParam &param, bool needs_ref)
 {
-	if (ref){
+	if (needs_ref){
 		ClassFunction *f = param.type->GetDestructor();
 		if (!f)
 			return;
-		SerialCommandParam inst = AddReference(param, TypePointer);
+		SerialCommandParam inst = AddReference(param);
 		AddFuncInstance(inst);
 		AddClassFunctionCall(f);
 	}else{
@@ -816,16 +826,18 @@ void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
 	msg_db_f("FillInDestructorsBlock", 4);
 	foreach(int i, b->vars){
 		Variable &v = cur_func->var[i];
-		for (int i=0;i<inserted_constructor_func.num;i++)
-			add_cmd_destructor(inserted_constructor_func[i]);
+		SerialCommandParam p = param_local(v.type, v._offset);
+		add_cmd_destructor(p);
 	}
 }
 
 void Serializer::FillInDestructorsTemp()
 {
-	for (int i=0;i<inserted_constructor_temp.num;i++)
-		add_cmd_destructor(inserted_constructor_temp[i]);
-	inserted_constructor_temp.clear();
+	foreach(SerialCommandParam &p, inserted_temp){
+		msg_error("destructor temp " + p.type->name);
+		add_cmd_destructor(p);
+	}
+	inserted_temp.clear();
 }
 
 int Serializer::temp_in_cmd(int c, int v)
@@ -1675,7 +1687,7 @@ void Serializer::DisentangleShiftedTempVars()
 					if (t->element[k].offset == j * 4)
 						if (t->element[k].type->size == 4)
 							tt = t->element[k].type;
-				add_temp(tt, p[j]);
+				p[j] = add_temp(tt);
 			}
 			
 			for (int j=0;j<cmd.num;j++){
@@ -1793,13 +1805,8 @@ void Serializer::SerializeFunction(Function *f)
 
 	if (add_later.num > 0){
 		msg_write(f->name);
-		msg_write(add_later.num);
-		for (int i=0;i<add_later.num;i++){
-			msg_write(add_later[i].kind);
-			msg_write(add_later[i].label);
-			msg_write(add_later[i].index);
-			msg_write(add_later[i].level);
-		}
+		for (int i=0;i<add_later.num;i++)
+			msg_write(format("kind=%d  label=%d  index=%d  level=%d", add_later[i].kind, add_later[i].label, add_later[i].index, add_later[i].level));
 		DoError("StuffToAdd");
 	}
 

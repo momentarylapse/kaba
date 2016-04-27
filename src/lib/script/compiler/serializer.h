@@ -143,7 +143,7 @@ public:
 	int add_virtual_reg(int reg);
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
-	void add_temp(Type *t, SerialCommandParam &param, bool add_constructor = true);
+	SerialCommandParam add_temp(Type *t, bool add_constructor = true);
 	void add_cmd(int cond, int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2);
@@ -159,10 +159,9 @@ public:
 	void add_jump_after_command(int level, int index, int marker);
 
 
-	Array<SerialCommandParam> inserted_constructor_func;
-	Array<SerialCommandParam> inserted_constructor_temp;
+	Array<SerialCommandParam> inserted_temp;
 	void add_cmd_constructor(SerialCommandParam &param, int modus);
-	void add_cmd_destructor(SerialCommandParam &param, bool ref = true);
+	void add_cmd_destructor(SerialCommandParam &param, bool needs_ref = true);
 
 	virtual void DoMapping() = 0;
 	void MapReferencedTempVarsToStack();
@@ -192,7 +191,7 @@ public:
 	virtual void add_virtual_function_call(int virtual_index) = 0;
 	virtual int fc_begin() = 0;
 	virtual void fc_end(int push_size) = 0;
-	SerialCommandParam AddReference(SerialCommandParam &param, Type *type);
+	SerialCommandParam AddReference(SerialCommandParam &param, Type *force_type = NULL);
 	SerialCommandParam AddDereference(SerialCommandParam &param, Type *force_type = NULL);
 
 	void MapTempVarToReg(int vi, int reg);
@@ -203,6 +202,8 @@ public:
 	void FillInDestructorsBlock(Block *b, bool recursive = false);
 	void FillInDestructorsTemp();
 	void FillInConstructorsBlock(Block *b);
+
+	void InsertAddedStuffIfNeeded(Block *b, int index);
 
 
 

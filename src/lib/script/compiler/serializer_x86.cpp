@@ -19,7 +19,7 @@ int SerializerX86::fc_begin()
 	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn, TypePointer);
+		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -726,6 +726,7 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 				// NextCommand is a block!
 				if (next_command->kind != KIND_BLOCK)
 					DoError("command block in \"for\" loop missing");
+				msg_write(format("-----for.... %d", next_command->as_block()->commands.num));
 				marker_continue = add_marker_after_command(block->level + 1, next_command->as_block()->commands.num - 2);
 			}
 			LoopData l = {marker_continue, marker_after_while, block->level, index};
@@ -774,8 +775,7 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 
 					AddFunctionOutro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
-					SerialCommandParam t;
-					add_temp(cur_func->return_type, t);
+					SerialCommandParam t = add_temp(cur_func->return_type);
 					add_cmd(Asm::INST_MOV, t, param[0]);
 					FillInDestructorsBlock(block, true);
 					if (cur_func->return_type == TypeFloat32){

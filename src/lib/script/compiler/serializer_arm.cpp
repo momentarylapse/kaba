@@ -26,7 +26,7 @@ int SerializerARM::fc_begin()
 
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
-		SerialCommandParam ret_ref = AddReference(CompilerFunctionReturn, TypePointer);
+		SerialCommandParam ret_ref = AddReference(CompilerFunctionReturn);
 		CompilerFunctionParam.insert(ret_ref, 0);
 	}
 
@@ -189,8 +189,7 @@ void SerializerARM::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 
 					AddFunctionOutro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
-					SerialCommandParam t;
-					add_temp(cur_func->return_type, t);
+					SerialCommandParam t = add_temp(cur_func->return_type);
 					FillInDestructorsBlock(block, true);
 					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)){
 						int v = add_virtual_reg(Asm::REG_R0);
