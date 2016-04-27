@@ -57,7 +57,7 @@ SerialCommandParam Serializer::add_temp(Type *t, bool add_constructor)
 	if (t == TypeVoid)
 		return p_none;
 
-	msg_write("add temp " + t->name + " " + b2s(add_constructor));
+	//msg_write("add temp " + t->name + " " + b2s(add_constructor));
 	TempVar v;
 	v.mapped = false;
 	v.stack_offset = -1;
@@ -74,7 +74,8 @@ SerialCommandParam Serializer::add_temp(Type *t, bool add_constructor)
 	param.type = t;
 	param.shift = 0;
 
-	inserted_temp.add(param);
+	if (param.type->GetDestructor())
+		inserted_temp.add(param);
 
 	if (add_constructor)
 		add_cmd_constructor(param, KIND_VAR_TEMP);
@@ -309,7 +310,7 @@ void Serializer::set_cmd_param(SerialCommand &c, int param_index, const SerialCo
 		int v = (long)p.p;
 		temp_var[v].use(c.index, c.index);
 		if ((c.inst == Asm::INST_LEA) and (param_index == 1)){
-			msg_error("ref a " + i2s(v));
+//			msg_error("ref a " + i2s(v));
 			temp_var[v].referenced = true;
 		}
 	}
@@ -758,11 +759,11 @@ void Serializer::SerializeBlock(Block *block)
 
 void Serializer::InsertAddedStuffIfNeeded(Block *block, int index)
 {
-	msg_write(format("try add noew....  level=%d  index=%d", block->level, index));
+	//msg_write(format("try add noew....  level=%d  index=%d", block->level, index));
 	for (int j=add_later.num-1; j>=0; j--){
-		msg_write(format("%d  %d", add_later[j].level, add_later[j].index));
+		//msg_write(format("%d  %d", add_later[j].level, add_later[j].index));
 		if ((block->level == add_later[j].level) and (index == add_later[j].index)){
-			msg_write("del add_later...");
+			//msg_write("del add_later...");
 			if (add_later[j].kind == STUFF_KIND_MARKER)
 				add_marker(add_later[j].label);
 			else if (add_later[j].kind == STUFF_KIND_JUMP)
@@ -782,7 +783,7 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 	ClassFunction *f = class_type->GetDefaultConstructor();
 	if (!f)
 		return;
-	msg_error("constructor " + param.type->name);
+
 	if (modus == -1){
 		AddFuncInstance(param);
 	}else{
@@ -813,7 +814,6 @@ void Serializer::add_cmd_destructor(SerialCommandParam &param, bool needs_ref)
 
 void Serializer::FillInConstructorsBlock(Block *b)
 {
-	msg_db_f("FillInConstructorsBlock", 4);
 	foreach(int i, b->vars){
 		Variable &v = cur_func->var[i];
 		SerialCommandParam param = param_local(v.type, v._offset);
@@ -823,7 +823,6 @@ void Serializer::FillInConstructorsBlock(Block *b)
 
 void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
 {
-	msg_db_f("FillInDestructorsBlock", 4);
 	foreach(int i, b->vars){
 		Variable &v = cur_func->var[i];
 		SerialCommandParam p = param_local(v.type, v._offset);
@@ -833,10 +832,8 @@ void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
 
 void Serializer::FillInDestructorsTemp()
 {
-	foreach(SerialCommandParam &p, inserted_temp){
-		msg_error("destructor temp " + p.type->name);
+	foreach(SerialCommandParam &p, inserted_temp)
 		add_cmd_destructor(p);
-	}
 	inserted_temp.clear();
 }
 
@@ -1440,10 +1437,10 @@ void Serializer::add_stack_var(TempVar &v, SerialCommandParam &p)
 
 	int s = mem_align(v.type->size, 4);
 	StackOccupation so;
-	msg_write(format("add stack var  %s %d   %d-%d       vs=%d", v.type->name.c_str(), v.type->size, v.first, v.last, cur_func->_var_size));
-	foreachi(TempVar &t, temp_var, i)
-		if (&t == &v)
-			msg_write("#" + i2s(i));
+//	msg_write(format("add stack var  %s %d   %d-%d       vs=%d", v.type->name.c_str(), v.type->size, v.first, v.last, cur_func->_var_size));
+//	foreachi(TempVar &t, temp_var, i)
+//		if (&t == &v)
+//			msg_write("#" + i2s(i));
 	so.create(this, (config.instruction_set != Asm::INSTRUCTION_SET_ARM), cur_func->_var_size, v.first, v.last);
 
 	if (true){
@@ -1464,8 +1461,8 @@ void Serializer::add_stack_var(TempVar &v, SerialCommandParam &p)
 			stack_offset = - v.stack_offset;
 		}
 	}
-	msg_write("=>");
-	msg_write(v.stack_offset);
+//	msg_write("=>");
+//	msg_write(v.stack_offset);
 
 	if (stack_offset > stack_max_size)
 		stack_max_size = stack_offset;
@@ -1886,7 +1883,7 @@ void Serializer::MapReferencedTempVarsToStack()
 		if (c.inst == Asm::INST_LEA)
 			if (c.p[1].kind == KIND_VAR_TEMP){
 				int v = (long)c.p[1].p;
-				msg_error("ref b " + i2s(v));
+//				msg_error("ref b " + i2s(v));
 				temp_var[v].referenced = true;
 				temp_var[v].force_stack = true;
 			}

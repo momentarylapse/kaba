@@ -726,7 +726,6 @@ void SerializerX86::SerializeCompilerFunction(Command *com, Array<SerialCommandP
 				// NextCommand is a block!
 				if (next_command->kind != KIND_BLOCK)
 					DoError("command block in \"for\" loop missing");
-				msg_write(format("-----for.... %d", next_command->as_block()->commands.num));
 				marker_continue = add_marker_after_command(block->level + 1, next_command->as_block()->commands.num - 2);
 			}
 			LoopData l = {marker_continue, marker_after_while, block->level, index};
