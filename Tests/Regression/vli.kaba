@@ -3,6 +3,6 @@ void main()
 	a = -31
 	b = 101
 	a = a.pow(b)
-	print a >= b
+	print(a >= b)
 	r = a + b
-	print r
+	print(r)

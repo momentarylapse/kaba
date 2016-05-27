@@ -2,7 +2,7 @@
 
 void main()
 	int i = 7
-	print i
+	print(i)
 	int[] a = range(0,10)
-	print a
+	print(a)
 	int *p = &i

@@ -7,7 +7,7 @@ class sOnlineChar
 void xx(sOnlineChar c)
 	//print c.var
 	for v in c.var
-		print v
+		print(v)
 
 
 void main()

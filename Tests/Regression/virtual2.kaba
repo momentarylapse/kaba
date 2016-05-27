@@ -3,11 +3,11 @@
 
 class Base
 	virtual void d()
-		print "Base.d"
+		print("Base.d")
 
 class Derived : Base
-	overwrite void d()
-		print "Derived.d"
+	override void d()
+		print("Derived.d")
 
 void f(Base b)
 	b.d()

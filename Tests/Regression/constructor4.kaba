@@ -5,10 +5,10 @@ class c
 	int x
 	void __init__()
 		self.x = -1
-		print "init"
+		print("init")
 	void __delete__()
-		print "delete"
-		print self.x
+		print("delete")
+		print(self.x)
 
 void main()
 	c[] a

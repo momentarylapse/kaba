@@ -4,12 +4,12 @@ void main()
 	color c = color(1,2,3,4)
 	color d = color(3,4,5,6)
 	color e = ColorInterpolate(c, d, 0.5)
-	print e
+	print(e)
 	
 	quaternion q1, q2, q3
 	QuaternionRotationV(q1, e_x)
 	QuaternionRotationV(q2, e_y)
-	print q1
-	print q2
+	print(q1)
+	print(q2)
 	q3 = q1 * q2
-	print q3
+	print(q3)

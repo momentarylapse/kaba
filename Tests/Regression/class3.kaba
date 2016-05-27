@@ -3,4 +3,4 @@
 
 void main()
 	string s = "hallo"
-	print s
+	print(s)

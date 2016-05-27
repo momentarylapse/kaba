@@ -410,51 +410,23 @@ void HuiPanel::addRevealer(const string &title,int x,int y,int width,int height,
 
 void HuiPanel::embedDialog(const string &id, int x, int y)
 {
-#if 0
-	HuiPanel *dlg = HuiCreateResourceDialog(id, NULL, NULL);
-	dlg->Update();
-
-	for (int i=0;i<dlg->control.num;i++)
-		control.add(dlg->control[i]);
-
-	gtk_widget_unparent(dlg->control[0]->widget);
-
-	//GtkWidget *b = gtk_button_new_with_label("test");
-
-	
-	_insert_control_(this, dlg->control[0]->widget, root, page, 10, 10, 86237, dlg->control[0]->type);
-	//_InsertControl_(this, b, root, page, 10, 10, 86237, dlg->control[0]->type);
-
-	/*GtkWidget *p = gtk_widget_get_parent(b);
-	gtk_widget_unparent(b);
-	gtk_widget_reparent(dlg->control[0]->widget, p);*/
-#endif
-
 	border_width = 8;
 
 	HuiResource *res = HuiGetResource(id);
-	if (res){
-		if (res->type != "SizableDialog")
-			return;
-		foreachi(HuiResource &cmd, res->children, i){
-			//msg_db_m(format("%d:  %d / %d",j,(cmd->type & 1023),(cmd->type >> 10)).c_str(),4);
-			//if ((cmd->type & 1023)==HuiCmdDialogAddControl){
+	if (!res)
+		return;
+	if (res->type != "SizableDialog")
+		return;
+	if (res->children.num == 0)
+		return;
+	HuiResource rr = res->children[0];
+	rr.x = x;
+	rr.y = y;
 
-			string target_id = cmd.s_param[0];
-			int target_page = cmd.i_param[4];
-			if (i > 0)
-				setTarget(target_id, target_page);
-			int _x = (i == 0) ? x : cmd.i_param[0];
-			int _y = (i == 0) ? y : cmd.i_param[1];
-			addControl( cmd.type, HuiGetLanguage(cmd.id),
-						_x, _y,
-						cmd.i_param[2], cmd.i_param[3],
-						cmd.id);
-			enable(cmd.id, cmd.enabled);
-			if (cmd.image.num > 0)
-				setImage(cmd.id, cmd.image);
-		}
-	}
+	string parent_id;
+	if (cur_control)
+		parent_id = cur_control->id;
+	_addControl(id, rr, parent_id);
 }
 
 void hui_rm_event(Array<HuiEventListener> &event, HuiControl *c)
@@ -472,9 +444,10 @@ void hui_rm_event(Array<HuiEventListener> &event, HuiControl *c)
 void HuiPanel::removeControl(const string &id)
 {
 	HuiControl *c = _get_control_(id);
-	hui_rm_event(events, c);
-	if (c)
+	if (c){
+		hui_rm_event(events, c);
 		delete(c);
+	}
 }
 
 
@@ -511,27 +484,6 @@ void HuiPanel::redrawRect(const string &_id, int x, int y, int w, int h)
 		r.height = h;
 		gdk_window_invalidate_rect(gtk_widget_get_window(c->widget), &r, false);
 	}
-}
-
-
-static HuiPainter hui_drawing_context;
-
-HuiPainter *HuiPanel::beginDraw(const string &_id)
-{
-	HuiControl *c = _get_control_(_id);
-	hui_drawing_context.win = win;
-	hui_drawing_context.id = _id;
-	hui_drawing_context.cr = NULL;
-	if (c){
-		hui_drawing_context.cr = gdk_cairo_create(gtk_widget_get_window(c->widget));
-		//gdk_drawable_get_size(gtk_widget_get_window(c->widget), &hui_drawing_context.width, &hui_drawing_context.height);
-		hui_drawing_context.width = gdk_window_get_width(gtk_widget_get_window(c->widget));
-		hui_drawing_context.height = gdk_window_get_height(gtk_widget_get_window(c->widget));
-		//hui_drawing_context.setFontSize(16);
-		hui_drawing_context.setFont("Sans", 16, false, false);
-		hui_drawing_context.mode_fill = true;
-	}
-	return &hui_drawing_context;
 }
 
 

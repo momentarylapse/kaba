@@ -6,4 +6,4 @@ void main()
 	j.add(2)
 	j.add(1)
 	k = i * j
-	print k
+	print(k)

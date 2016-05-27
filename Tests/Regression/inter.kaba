@@ -6,4 +6,4 @@ void main()
 	fi.add(-1.0, 1)
 	fi.normalize()
 	
-	print fi.getList(rangef(0, 1, 0.1))
+	print(fi.getList(rangef(0, 1, 0.1)))

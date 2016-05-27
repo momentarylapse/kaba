@@ -13,4 +13,4 @@ void main()
 	Test t
 	t.x = 2
 	t.y = 2
-	print t.project(complex(10, 20))
+	print(t.project(complex(10, 20)))

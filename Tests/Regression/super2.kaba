@@ -4,14 +4,14 @@
 class Parent
 	int a, b
 	void f()
-		print "parent"
-		print a
+		print("parent")
+		print(a)
 
 class Child : Parent
 	int c
-	overwrite void f()
-		print super.a
-		print "child"
+	override void f()
+		print(super.a)
+		print("child")
 		super.f()
 
 void main()

@@ -21,4 +21,4 @@ void main()
 	b.x = 1
 	//d = a.__add__(b)
 	d = b + a
-	print d.x
+	print(d.x)

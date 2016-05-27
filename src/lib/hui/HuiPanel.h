@@ -11,7 +11,7 @@
 #include "hui.h"
 
 class HuiMenu;
-class HuiResourceNew;
+class HuiResource;
 class HuiPainter;
 class HuiEvent;
 class HuiEventListener;
@@ -64,6 +64,7 @@ public:
 	// creating controls
 
 	void _cdecl addControl(const string &type, const string &title, int x, int y, int width, int height, const string &id);
+	void _cdecl _addControl(const string &ns, HuiResource &cmd, const string &parent_id);
 	void _cdecl addButton(const string &title,int x,int y,int width,int height,const string &id);
 	void _cdecl addDefButton(const string &title,int x,int y,int width,int height,const string &id);
 	void _cdecl addColorButton(const string &title,int x,int y,int width,int height,const string &id);
@@ -95,7 +96,8 @@ public:
 
 	void _cdecl embedDialog(const string &id, int x, int y);
 	void _cdecl embedSource(const string &source, const string &parent_id, int x, int y);
-	void embedResource(HuiResourceNew &c, const string &parent_id, int x, int y);
+	void embedResource(HuiResource &c, const string &parent_id, int x, int y);
+	void _embedResource(const string &ns, HuiResource &c, const string &parent_id, int x, int y);
 	void _cdecl embed(HuiPanel *panel, const string &parent_id, int x, int y);
 
 // using controls
@@ -143,7 +145,6 @@ public:
 	// drawing
 	void _cdecl redraw(const string &id);
 	void _cdecl redrawRect(const string &_id, int x, int y, int w, int h);
-	HuiPainter* _cdecl beginDraw(const string &id);
 	HuiControl *_get_control_(const string &id);
 #ifdef HUI_API_GTK
 	HuiControl *_get_control_by_widget_(GtkWidget *widget);

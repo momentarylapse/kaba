@@ -4,6 +4,6 @@ void main()
 	vli a
 	a = 12
 	//print a.str()
-	print a.str().find("2", 0)
-	print a.str().num
+	print(a.str().find("2", 0))
+	print(a.str().num)
 	//i.str().num

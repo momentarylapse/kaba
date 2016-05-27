@@ -5,23 +5,23 @@ class c
 	int x
 	void __init__()
 		self.x = -1
-		print "init"
+		print("init")
 	void __delete__()
-		print "delete"
-		print self.x
+		print("delete")
+		print(self.x)
 	void __assign__(c other)
-		print "assign"
+		print("assign")
 		self.x = other.x
 
 void main()
-	print "--------------"
+	print("--------------")
 	c[] a
 	a.resize(10)
-	print "--------------"
+	print("--------------")
 	c cc
 	cc.x = 13
 	a.add(cc)
-	print "--------------"
+	print("--------------")
 	
 	//print a.num
 	//print a[10].x

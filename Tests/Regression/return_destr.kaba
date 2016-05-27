@@ -4,15 +4,15 @@ class T
 	int i
 	void __init__()
 		self.i = 13
-		print "init"
-		print self.i
+		print("init")
+		print(self.i)
 	void __delete__()
-		print "delete"
-		print self.i
+		print("delete")
+		print(self.i)
 	void __assign__(T other)
-		print "assign"
-		print self.i
-		print other.i
+		print("assign")
+		print(self.i)
+		print(other.i)
 		self.i = other.i
 /*int f()
 	T t

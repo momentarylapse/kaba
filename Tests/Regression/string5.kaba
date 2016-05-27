@@ -2,10 +2,10 @@ void main()
 	string a, b
 	a = "hallo"
 	b = "a"
-	print a < b
-	print a > b
-	print a <= b
-	print a >= b
+	print(a < b)
+	print(a > b)
+	print(a <= b)
+	print(a >= b)
 	
 	a = b + 13
-	print a
+	print(a)

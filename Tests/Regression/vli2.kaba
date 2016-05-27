@@ -13,4 +13,4 @@ void main()
 	
 	vli r
 	v.idiv(w, r)
-	print v.str() + " mod " + r.str()
+	print(v.str() + " mod " + r.str())

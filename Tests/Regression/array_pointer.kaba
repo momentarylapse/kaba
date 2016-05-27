@@ -7,5 +7,5 @@ class Test
 Test*[] p
 
 void main()
-	print p.num
+	print(p.num)
 

@@ -2,7 +2,7 @@ void main()
 	int 4 = 5
 	//4 *= 4
 	4 += 4
-	print 4
+	print(4)
 	int = = 8
 	int + = = + 7
-	print + + = + + + = + +
+	print(+ + = + + + = + +)

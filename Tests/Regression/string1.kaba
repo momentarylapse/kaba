@@ -17,10 +17,9 @@ void main()
 	a += a
 	a += a
 	a.add('x')
-	print a
+	print(a)
 	
 	string[] s = a.explode(" - ")
 	
 	for ss in s
-		print ss
-		ss.clear()
+		print(ss)

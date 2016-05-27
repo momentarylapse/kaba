@@ -41,7 +41,7 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Type *t, bool allo
 	if (t->is_super_array){
 		int nc = AddConstant(TypeInt);
 		constants[nc].setInt(t->parent->size);
-		Command *c = add_command_classfunc(t->GetFunc("__mem_init__", TypeVoid, 1), self);
+		Command *c = add_command_classfunc(t->GetFunc("__mem_init__", TypeVoid, 1, TypeInt), self);
 		c->set_param(0, add_command_const(nc));
 		f->block->commands.add(c);
 	}else{
@@ -136,9 +136,9 @@ void SyntaxTree::AutoImplementAssign(Function *f, Type *t)
 
 	if (t->is_super_array){
 
-		ClassFunction *f_resize = t->GetFunc("resize", TypeVoid, 1);
+		ClassFunction *f_resize = t->GetFunc("resize", TypeVoid, 1, TypeInt);
 		if (!f_resize)
-			DoError(format("%s.__assign__(): no %s.resize() found", t->name.c_str(), t->name.c_str()));
+			DoError(format("%s.__assign__(): no %s.resize(int) found", t->name.c_str(), t->name.c_str()));
 
 		// self.resize(other.num)
 		Command *other_num = shift_command(other, false, config.pointer_size, TypeInt);
@@ -376,7 +376,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Type *t)
 	}
 
 	// resize
-	Command *c_resize = add_command_classfunc(t->GetFunc("__mem_resize__", TypeVoid, 1), self);
+	Command *c_resize = add_command_classfunc(t->GetFunc("__mem_resize__", TypeVoid, 1, TypeInt), self);
 	c_resize->set_param(0, num);
 	f->block->commands.add(c_resize);
 
@@ -437,7 +437,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, Type *t)
 	}
 
 	// resize
-	Command *c_remove = add_command_classfunc(t->GetFunc("__mem_remove__", TypeVoid, 1), self);
+	Command *c_remove = add_command_classfunc(t->GetFunc("__mem_remove__", TypeVoid, 1, TypeInt), self);
 	c_remove->set_param(0, index);
 	f->block->commands.add(c_remove);
 }
@@ -459,7 +459,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Type *t)
 	constants[nc].setInt(1);
 	Command *cmd_1 = add_command_const(nc);
 	Command *cmd_add = add_command_operator(self_num, cmd_1, OperatorIntAdd);
-	Command *cmd_resize = add_command_classfunc(t->GetFunc("resize", TypeVoid, 1), self);
+	Command *cmd_resize = add_command_classfunc(t->GetFunc("resize", TypeVoid, 1, TypeInt), self);
 	cmd_resize->set_param(0, cmd_add);
 	b->commands.add(cmd_resize);
 
@@ -477,7 +477,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Type *t)
 	b->commands.add(cmd_assign);
 }
 
-void add_func_header(SyntaxTree *s, Type *t, const string &name, Type *return_type, Type *param_type, const string &param_name)
+void add_func_header(SyntaxTree *s, Type *t, const string &name, Type *return_type, Type *param_type, const string &param_name, ClassFunction *cf = NULL)
 {
 	Function *f = s->AddFunction(name, return_type);
 	f->auto_implement = true;
@@ -486,7 +486,14 @@ void add_func_header(SyntaxTree *s, Type *t, const string &name, Type *return_ty
 		f->num_params ++;
 	}
 	f->Update(t);
-	t->AddFunction(s, s->functions.num - 1, false, false);
+	t->AddFunction(s, s->functions.num - 1, false, cf);
+}
+
+bool needs_new(ClassFunction *f)
+{
+	if (!f)
+		return true;
+	return f->needs_overriding;
 }
 
 void SyntaxTree::AddFunctionHeadersForClass(Type *t)
@@ -507,21 +514,21 @@ void SyntaxTree::AddFunctionHeadersForClass(Type *t)
 	}else if (t->is_array){
 		add_func_header(this, t, "__assign__", TypeVoid, t, "other");
 	}else if (!t->is_simple_class()){//needs_init){
-		if (!t->GetDefaultConstructor())
-			add_func_header(this, t, "__init__", TypeVoid, TypeVoid, "");
-		if (!t->GetDestructor())
-			add_func_header(this, t, "__delete__", TypeVoid, TypeVoid, "");
-		if (!t->GetAssign()){
+		if (needs_new(t->GetDefaultConstructor()))
+			add_func_header(this, t, "__init__", TypeVoid, TypeVoid, "", t->GetDefaultConstructor());
+		if (needs_new(t->GetDestructor()))
+			add_func_header(this, t, "__delete__", TypeVoid, TypeVoid, "", t->GetDestructor());
+		if (needs_new(t->GetAssign())){
 			//add_func_header(this, t, "__assign__", TypeVoid, t, "other");
 			// implement only if parent has also done so
 			if (t->parent){
 				if (t->parent->GetAssign())
-					add_func_header(this, t, "__assign__", TypeVoid, t, "other");
+					add_func_header(this, t, "__assign__", TypeVoid, t, "other", t->GetAssign());
 			}else{
-				add_func_header(this, t, "__assign__", TypeVoid, t, "other");
+				add_func_header(this, t, "__assign__", TypeVoid, t, "other", t->GetAssign());
 			}
 		}
-		if (!t->GetComplexConstructor())
+		if (needs_new(t->GetComplexConstructor()))
 			if (t->parent)
 				if (t->parent->GetComplexConstructor()){
 					Function *f = AddFunction("__init__", TypeVoid);
@@ -531,7 +538,7 @@ void SyntaxTree::AddFunctionHeadersForClass(Type *t)
 					f->num_params = b->num_params;
 					f->var = b->var;
 					f->Update(t);
-					t->AddFunction(this, functions.num - 1, false, false);
+					t->AddFunction(this, functions.num - 1, false, t->GetComplexConstructor());
 
 				}
 	}
@@ -541,9 +548,11 @@ Function* class_get_func(Type *t, const string &name, Type *return_type, int num
 {
 	ClassFunction *cf = t->GetFunc(name, return_type, num_params);
 	if (cf){
-		Function *f = cf->script->syntax->functions[cf->nr];
-		if (f->auto_implement)
+		Function *f = cf->GetFunc();
+		if (f->auto_implement){
+			cf->needs_overriding = false; // we're about to implement....
 			return f;
+		}
 		return NULL;
 	}
 	//t->owner->DoError("class_get_func... " + t->name + "." + name);

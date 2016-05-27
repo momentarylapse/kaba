@@ -5,7 +5,7 @@ class c
 	int x
 	vector v
 	void __assign__(c other)
-		print "sdkjfh"
+		print("sdkjfh")
 		v = other.v
 
 void main()
@@ -19,6 +19,6 @@ void main()
 	c[] b
 	b = a
 	a[0].v = v_0
-	print a[0].v
-	print b[0].v
+	print(a[0].v)
+	print(b[0].v)
 	

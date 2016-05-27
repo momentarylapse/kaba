@@ -3,7 +3,7 @@
 
 class f : File
 	void func()
-		print "hallo"
+		print("hallo")
 
 void main()
 	f *a

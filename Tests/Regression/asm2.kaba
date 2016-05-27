@@ -7,4 +7,4 @@ void main()
 		mov i, 0x00000020
 		_label:
 	}
-	print i
+	print(i)

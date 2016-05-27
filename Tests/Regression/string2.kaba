@@ -4,10 +4,9 @@ void main()
 	string a = "hallo"
 	string b = " michi"
 	string c
-	int i
-	for i, 0, 1000000
+	for i in 0:1000000
 		c = a + b
-	print c
+	print(c)
 	
 	/*cstring a = "hallo"
 	cstring b = " michi"

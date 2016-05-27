@@ -4,4 +4,4 @@ int f()
 	return e[3]
 
 void main()
-	print f()
+	print(f())

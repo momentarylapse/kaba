@@ -4,7 +4,7 @@
 class Test
 	int i
 	void p()
-		print i
+		print(i)
 	void f(int x)
 		p()
 		i = x

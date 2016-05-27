@@ -3,4 +3,4 @@
 
 void main()
 	Image i
-	print i.data.num
+	print(i.data.num)

@@ -15,12 +15,12 @@ void main()
 	//	a.add(i*2)
 	//print a
 	a = range(0,13)
-	print a
+	print(a)
 	fill(a)
-	print a
+	print(a)
 	
 	for j in a
 		j += 100
 	
 	for j in a
-		print j
+		print(j)

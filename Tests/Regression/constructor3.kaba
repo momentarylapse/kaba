@@ -5,12 +5,12 @@ class c
 	int x
 	void __init__()
 		x = -1
-		print "init"
+		print("init")
 	void __delete__()
-		print "delete"
-		print x
+		print("delete")
+		print(x)
 	void __assign__(c other)
-		print "assign"
+		print("assign")
 		x = other.x
 
 void main()
@@ -20,4 +20,4 @@ void main()
 	a.resize(14)
 	a[2] = cc
 	a.resize(10)
-	print "--------------"
+	print("--------------")

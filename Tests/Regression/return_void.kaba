@@ -1,8 +1,8 @@
 void f()
-	print "hallo"
+	print("hallo")
 	return
-	print "test"
+	print("test")
 
 void main()
 	f()
-	print "ok"
+	print("ok")

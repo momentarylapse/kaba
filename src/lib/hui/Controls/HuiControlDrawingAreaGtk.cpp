@@ -17,6 +17,7 @@ int GtkAreaMouseSetX, GtkAreaMouseSetY;
 
 gboolean OnGtkAreaDraw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
+	((HuiControlDrawingArea*)user_data)->cur_cairo = cr;
 	((HuiControl*)user_data)->notify("hui:draw");
 	return false;
 }
@@ -204,7 +205,7 @@ gboolean OnGtkAreaKeyUp(GtkWidget *widget, GdkEventKey *event, gpointer user_dat
 HuiControlDrawingArea::HuiControlDrawingArea(const string &title, const string &id) :
 	HuiControl(HUI_KIND_DRAWINGAREA, id)
 {
-	GetPartStrings(id, title);
+	GetPartStrings(title);
 	GtkWidget *da = gtk_drawing_area_new();
 	g_signal_connect(G_OBJECT(da), "draw", G_CALLBACK(OnGtkAreaDraw), this);
 	g_signal_connect(G_OBJECT(da), "key-press-event", G_CALLBACK(&OnGtkAreaKeyDown), this);
@@ -236,6 +237,8 @@ HuiControlDrawingArea::HuiControlDrawingArea(const string &title, const string &
 	gtk_widget_set_hexpand(widget, true);
 	gtk_widget_set_vexpand(widget, true);
 	setOptions(OptionString);
+
+	cur_cairo = NULL;
 }
 
 void HuiControlDrawingArea::hardReset()

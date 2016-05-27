@@ -3,10 +3,10 @@
 
 void main()
 	for a in 0:10
-		print a
+		print(a)
 		for b in 0:10
-			print b
+			print(b)
 		if a == 2
 			continue//break
-		print "---"
-	print "aaa"
+		print("---")
+	print("aaa")

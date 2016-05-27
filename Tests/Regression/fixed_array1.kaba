@@ -9,4 +9,4 @@ void main()
 	b[3] = 5
 	a = b
 	for i in 0:4
-		print a[i]
+		print(a[i])

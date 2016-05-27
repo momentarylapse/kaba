@@ -9,17 +9,17 @@ bool test(string filename)
 	for i in s.num:42
 		s.add(' ')
 	if r1 == r2
-		print s + "ok"
+		print(s + "ok")
 		return true
 
-	print s + "Fehler"
-	print "--------------------------------------------------"
-	print "erwartet:"
-	print r2
-	print "--------------------------------------------------"
-	print "Ausgabe:"
-	print r1
-	print "--------------------------------------------------"
+	print(s + "Fehler")
+	print("--------------------------------------------------")
+	print("erwartet:")
+	print(r2)
+	print("--------------------------------------------------")
+	print("Ausgabe:")
+	print(r1)
+	print("--------------------------------------------------")
 	return false
 
 void main()

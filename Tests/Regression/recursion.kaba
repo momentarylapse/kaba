@@ -19,9 +19,9 @@ void main()
 	b.j = 4
 	a.b.add(b)
 	for bb in a.b
-		print bb.j
-	print "main"
+		print(bb.j)
+	print("main")
 	f()
 	
 void f()
-	print "f"
+	print("f")

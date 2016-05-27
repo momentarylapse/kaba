@@ -3,5 +3,5 @@ int[N] x
 int[N*2] y
 
 void main()
-	print sizeof(x)
-	print sizeof(y)
+	print(sizeof(x))
+	print(sizeof(y))

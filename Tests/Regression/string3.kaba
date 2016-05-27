@@ -2,12 +2,12 @@ void main()
 	string a = "hallo Welt"
 	for i in 0:10
 		a += a
-	print a.substr(4,3)
+	print(a.substr(4,3))
 	string n = "ll"
 	//print a.find(n, 0)
 	a = a.replace("h", n)
-	print a
+	print(a)
 	
 	string[] s = a.explode("W")
-	print s
-	print "---"
+	print(s)
+	print("---")

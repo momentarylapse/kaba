@@ -3,5 +3,5 @@ void main()
 	print DirSearchName
 	print DirSearchIsDir*/
 	
-	print range(0,100)
-	print range(0,10000).sum()
+	print(range(0,100))
+	print(range(0,10000).sum())

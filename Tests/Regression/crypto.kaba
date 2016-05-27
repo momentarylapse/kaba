@@ -7,4 +7,4 @@ void main()
 	//print public_key
 	
 	c3.fromStr(public_key)
-	print c3.decrypt(cypher, true)
+	print(c3.decrypt(cypher, true))

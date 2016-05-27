@@ -110,7 +110,7 @@ void OnGtkListSelect(GtkTreeSelection *selection, gpointer data)
 HuiControlListView::HuiControlListView(const string &title, const string &id, HuiPanel *panel) :
 	HuiControl(HUI_KIND_LISTVIEW, id)
 {
-	GetPartStrings(id, title);
+	GetPartStrings(title);
 
 	GtkWidget *sw = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -126,6 +126,8 @@ HuiControlListView::HuiControlListView(const string &title, const string &id, Hu
 
 	GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
 	g_signal_connect(G_OBJECT(sel), "changed", G_CALLBACK(&OnGtkListSelect), this);
+
+	//gtk_tree_view_set_reorderable(GTK_TREE_VIEW(view), true);
 
 	// frame
 	frame = sw;
@@ -171,7 +173,7 @@ void set_list_cell(GtkListStore *store, GtkTreeIter &iter, int column, const str
 void HuiControlListView::__addString(const string& str)
 {
 	GtkTreeIter iter;
-	GetPartStrings("", str);
+	GetPartStrings(str);
 	GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(widget)));
 	gtk_list_store_append(store, &iter);
 	for (int j=0;j<PartString.num;j++)
@@ -204,7 +206,7 @@ void HuiControlListView::__changeString(int row, const string& str)
 {
 	if ((row < 0) or (row >= _item_.num))
 		return;
-	GetPartStrings("", str);
+	GetPartStrings(str);
 	GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(widget)));
 	if (gtk_list_store_iter_is_valid(store, &_item_[row]))
 		for (int j=0;j<PartString.num;j++)

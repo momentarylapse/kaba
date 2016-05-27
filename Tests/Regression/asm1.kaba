@@ -4,4 +4,4 @@ void main()
 	asm{
 		mov i, 0x00000011
 	}
-	print i
+	print(i)

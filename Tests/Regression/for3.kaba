@@ -18,6 +18,6 @@ void main()
 	a[1][4] = 15
 	
 	for l in a
-		print l
+		print(l)
 		for i in l
-			print i
+			print(i)

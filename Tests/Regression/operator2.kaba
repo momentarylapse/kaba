@@ -6,4 +6,4 @@ void main()
 	a = "hallo"
 	b = " test"
 	c = a + b
-	print c
+	print(c)

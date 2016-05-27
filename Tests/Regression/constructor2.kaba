@@ -5,7 +5,7 @@ class c
 	int x
 	int[] a
 	void __init__()
-		print "init!!!"
+		print("init!!!")
 		self.a.__init__()
 		self.x = -1
 	void f(int x)
@@ -17,8 +17,8 @@ void main()
 	a.a.add(13)
 	a.a.add(14)
 	a.a.add(15)
-	print a.a
-	print a.x
+	print(a.a)
+	print(a.x)
 	a.f(130)
-	print a.x
-	print a.a
+	print(a.x)
+	print(a.a)

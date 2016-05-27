@@ -2,14 +2,14 @@
 
 void f(int i)
 	i = 3
-	print i
+	print(i)
 
 
 void main()
 	int i = 2
 	f(i)
-	print i
-	print i.str()
-	print (13).str()
-	print "hallo".num
-	print pi.str()
+	print(i)
+	print(i.str())
+	print((13).str())
+	print("hallo".num)
+	print(pi.str())

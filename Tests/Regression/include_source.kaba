@@ -2,5 +2,5 @@
 int i
 
 void f()
-	print "test"
+	print("test")
 	i = 42

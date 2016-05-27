@@ -6,4 +6,4 @@ string f(string s)
 	return "a" + s + "hallo"
 
 void main()
-	print "--" + f("__") + ":" + f(",")
+	print("--" + f("__") + ":" + f(","))

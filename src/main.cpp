@@ -107,9 +107,9 @@ int hui_main(const Array<string> &arg0)
 	bool flag_disassemble = false;
 	bool flag_verbose = false;
 	bool flag_compile_os = false;
-	bool flag_overwrite_variable_offset = false;
+	bool flag_override_variable_offset = false;
 	long long variable_offset = 0;
-	bool flag_overwrite_code_origin = false;
+	bool flag_override_code_origin = false;
 	long long code_origin = 0;
 	bool flag_no_function_frames = false;
 	bool flag_add_entry_point = false;
@@ -160,7 +160,7 @@ int hui_main(const Array<string> &arg0)
 			flag_add_entry_point = true;
 			arg.erase(i --);
 		}else if (arg[i] == "--code-origin"){
-			flag_overwrite_code_origin = true;
+			flag_override_code_origin = true;
 			arg.erase(i);
 			if (i >= arg.num){
 				msg_error("offset nach --code-origin erwartet");
@@ -169,7 +169,7 @@ int hui_main(const Array<string> &arg0)
 			code_origin = Script::s2i2(arg[i]);
 			arg.erase(i --);
 		}else if (arg[i] == "--variable-offset"){
-			flag_overwrite_variable_offset = true;
+			flag_override_variable_offset = true;
 			arg.erase(i);
 			if (i >= arg.num){
 				msg_error("offset nach --variable-offset erwartet");
@@ -243,9 +243,9 @@ int hui_main(const Array<string> &arg0)
 	Script::config.compile_os = flag_compile_os;
 	Script::config.add_entry_point = flag_add_entry_point;
 	Script::config.no_function_frame = flag_no_function_frames;
-	Script::config.overwrite_variables_offset = flag_overwrite_variable_offset;
+	Script::config.override_variables_offset = flag_override_variable_offset;
 	Script::config.variables_offset = variable_offset;
-	Script::config.overwrite_code_origin = flag_overwrite_code_origin;
+	Script::config.override_code_origin = flag_override_code_origin;
 	Script::config.code_origin = code_origin;
 	SilentFiles = true;
 

@@ -10,4 +10,4 @@ void main()
 		mov eax, [_label]
 		mov i, eax
 	}
-	print i
+	print(i)

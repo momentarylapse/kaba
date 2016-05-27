@@ -5,12 +5,12 @@ class Test
 	int x
 	void __init__()
 		self.x = -1
-		print "init"
+		print("init")
 	void __delete__()
-		print "delete"
+		print("delete")
 
 
 void main()
 	Test *a = new Test
-	print a.x
+	print(a.x)
 	delete a

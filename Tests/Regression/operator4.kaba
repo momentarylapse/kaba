@@ -12,5 +12,5 @@ void main()
 	matrix mm = m
 	mm *= m * m
 	vector v = mm * e_x
-	print v
+	print(v)
 	

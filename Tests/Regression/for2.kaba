@@ -1,8 +1,8 @@
 
 void main()
 	for f in pi:10:1.5
-		print f
+		print(f)
 	for i in 0:10
-		print i
+		print(i)
 	for i in 0:100:7
-		print i
+		print(i)

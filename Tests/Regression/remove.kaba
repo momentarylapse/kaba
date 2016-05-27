@@ -1,7 +1,7 @@
 class Test
 	int a, b
 	void __delete__()
-		print "del " + a
+		print("del " + a)
 
 void main()
 	Test[] a
@@ -12,4 +12,4 @@ void main()
 	a.remove(3)
 	a.remove(6)
 	for tt in a
-		print tt.a
+		print(tt.a)

@@ -4,26 +4,26 @@ class Base
 	int x
 	void __init__(int _x)
 		x = _x
-		print "Base.init_ext"
+		print("Base.init_ext")
 	void __init__()
 		x = 13
-		print "Base.init"
+		print("Base.init")
 	virtual void f()
-		print "Base.f"
+		print("Base.f")
 
 class Test : Base
 	int y
 	void __init__(int _x, int _y)
 		super.__init__(_x)
-		print "Test.init"
+		print("Test.init")
 		y = _y
-	overwrite void f()
-		print "Test.f"
+	override void f()
+		print("Test.f")
 
 void main()
 	Test *t = new Test(1, 2)
-	print t.x
-	print t.y
+	print(t.x)
+	print(t.y)
 	t.f()
 	delete t
 	
