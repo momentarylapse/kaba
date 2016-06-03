@@ -24,7 +24,7 @@
 
 namespace Script{
 
-string Version = "0.14.6.0";
+string Version = "0.14.7.0";
 
 //#define ScriptDebug
 
@@ -206,7 +206,7 @@ void Script::DoErrorInternal(const string &str)
 
 void Script::DoErrorLink(const string &str)
 {
-	DoError(str);
+	DoError(str, 0);
 }
 
 void Script::SetVariable(const string &name, void *data)

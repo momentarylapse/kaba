@@ -11,7 +11,7 @@ class Base
 	virtual void f()
 		print("Base.f")
 
-class Test : Base
+class Test extends Base
 	int y
 	void __init__(int _x, int _y)
 		super.__init__(_x)

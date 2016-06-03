@@ -7,7 +7,7 @@ class Parent
 		print("parent")
 		print(a)
 
-class Child : Parent
+class Child extends Parent
 	int c
 	override void f()
 		print(super.a)

@@ -5,7 +5,7 @@ class Base
 	virtual void d()
 		print("Base.d")
 
-class Derived : Base
+class Derived extends Base
 	override void d()
 		print("Derived.d")
 

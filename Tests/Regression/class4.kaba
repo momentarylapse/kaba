@@ -1,7 +1,7 @@
 //#show
 //#disasm
 
-class f : File
+class f extends File
 	void func()
 		print("hallo")
 
