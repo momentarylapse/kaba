@@ -279,9 +279,11 @@ void SyntaxTree::DoError(const string &str, int override_exp_no, int override_li
 		exp_no = override_exp_no;
 
 	// logical -> physical
-	physical_line = Exp.line[logical_line].physical_line;
-	pos = Exp.line[logical_line].exp[exp_no].pos;
-	expr = Exp.line[logical_line].exp[exp_no].name;
+	if ((logical_line >= 0) and (logical_line < Exp.line.num)){
+		physical_line = Exp.line[logical_line].physical_line;
+		pos = Exp.line[logical_line].exp[exp_no].pos;
+		expr = Exp.line[logical_line].exp[exp_no].name;
+	}
 
 	throw Exception(str, expr, physical_line, pos, script);
 }

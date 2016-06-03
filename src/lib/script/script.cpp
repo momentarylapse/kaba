@@ -196,7 +196,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 
 void Script::DoError(const string &str, int override_line)
 {
-	syntax->DoError(str, override_line);
+	syntax->DoError(str, 0, override_line);
 }
 
 void Script::DoErrorInternal(const string &str)

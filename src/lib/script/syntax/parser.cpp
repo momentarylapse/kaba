@@ -198,7 +198,6 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 		Operand = ref_command(Operand);
 
 	string f_name = Exp.cur;
-	Exp.next();
 
 	// class function?
 	Array<Command> links;
@@ -207,8 +206,10 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 			Command *cmd = add_command_classfunc(&cf, Operand);
 			links.add(*cmd);
 		}
-	if (links.num > 0)
+	if (links.num > 0){
+		Exp.next();
 		return GetFunctionCall(f_name, links, block);
+	}
 
 	DoError("unknown element of " + type->name);
 	return NULL;
