@@ -4,8 +4,7 @@
 #include <new>
 #include <string.h>
 
-//--------------------------------------------------------------
-// michi-array
+// dynamic arrays
 
 
 
@@ -72,10 +71,10 @@ class Array : public DynamicArray
 		void _cdecl clear()
 		{
 			if (allocated > 0){
-				for (int i=0;i<num;i++)
+				for (int i=0; i<num; i++)
 					(*this)[i].~T();
 			}
-			((DynamicArray*)this)->clear();
+			DynamicArray::clear();
 		}
 		void _cdecl add(const T item)
 		{
@@ -86,8 +85,10 @@ class Array : public DynamicArray
 		{
 			T r;
 			if (num > 0){
-				memcpy(&r, &back(), element_size);
-				((DynamicArray*)this)->resize(num - 1);
+				//memcpy(&r, &back(), element_size);
+				//DynamicArray::resize(num - 1);
+				r = back();
+				resize(num - 1);
 			}
 			return r;
 		}
@@ -120,7 +121,7 @@ class Array : public DynamicArray
 				reserve(size);
 				// grow -> construct
 				memset((char*)data + num * element_size, 0, (size - num) * element_size);
-				for (int i=num;i<size;i++)
+				for (int i=num; i<size; i++)
 					new(&(*this)[i]) T;
 			}
 			num = size;
@@ -128,7 +129,7 @@ class Array : public DynamicArray
 		Array<T> _cdecl sub(int start, int num_elements) const
 		{
 			Array<T> s;
-			if ((num_elements < 0) || (num_elements > num - start))
+			if ((num_elements < 0) or (num_elements > num - start))
 				num_elements = num - start;
 			s.num = num_elements;
 			s.data = ((T*)this->data) + start;
@@ -137,18 +138,27 @@ class Array : public DynamicArray
 		void operator = (const Array<T> &a)
 		{
 			if (this != &a){
-				//clear();
-				//init(sizeof(T));
 				resize(a.num);
-				for (int i=0;i<num;i++)
+				for (int i=0; i<num; i++)
 					(*this)[i] = a[i];
 			}
 		}
-		void operator = (const T &item)
+		void operator += (const Array<T> &a)
+		{	append(a);	}
+		Array<T> operator + (const Array<T> &a) const
 		{
-			clear();
-			add(item);
+			Array<T> r = *this;
+			r.append(a);
+			return r;
 		}
+		T &operator[] (int index) const
+		{	return ((T*)data)[index];	}
+		T &back()
+		{	return ((T*)data)[num - 1];	}
+		const T &_cdecl back() const
+		{	return ((T*)data)[num - 1];	}
+
+		// reference arrays
 		void _cdecl set_ref(const Array<T> &a)
 		{
 			if (this != &a){
@@ -167,39 +177,15 @@ class Array : public DynamicArray
 		}
 		void _cdecl make_own()
 		{
-			if ((num == 0) || (allocated > 0))
+			if ((num == 0) or (allocated > 0))
 				return;
 			T *dd = (T*)data;
 			int n = num;
 			forget();
 			resize(n);
-			for (int i=0;i<num;i++)
+			for (int i=0; i<num; i++)
 				(*this)[i] = dd[i];
 		}
-		void operator += (const Array<T> &a)
-		{	append(a);	}
-		void operator += (const T &item)
-		{	add(item);	}
-		Array<T> operator + (const Array<T> &a) const
-		{
-			Array<T> r = *this;
-			r.append(a);
-			return r;
-		}
-		/*Array<T> &operator + (const T &item)
-		{
-			Array<T> a = *this;
-			a += item;
-			return a;
-		}*/
-		T operator[] (int index) const
-		{	return ((T*)data)[index];	}
-		T &operator[] (int index)
-		{	return ((T*)data)[index];	}
-		T &back()
-		{	return ((T*)data)[num - 1];	}
-		const T &_cdecl back() const
-		{	return ((T*)data)[num - 1];	}
 
 		// iterators
 		class Iterator
@@ -207,7 +193,7 @@ class Array : public DynamicArray
 		public:
 			void operator ++()
 			{	index ++;	p ++;	}
-			void operator ++(int)
+			void operator ++(int) // postfix
 			{	index ++;	p ++;	}
 			void operator --()
 			{	index --;	p --;	}
@@ -232,19 +218,22 @@ class Array : public DynamicArray
 			operator bool() const
 		    {	return false;	}
 		//private:
-			Iterator(Array<T> &a, int n) : array(a), num(a.num)
-			{	p = &a[n];	index = n;	}
+			Iterator(const Array<T> &a, int n) : array(a), num(a.num)
+			{
+				p = &array[n];
+				index = n;
+			}
 		private:
-			Array<T> &array;
+			const Array<T> &array;
 			T *p;
 			int index;
-			int &num;
+			const int &num;
 		};
-		Iterator begin()
+		Iterator begin() const
 		{	return Iterator(*this, 0);	}
-		Iterator end()
+		Iterator end() const
 		{	return Iterator(*this, num);	}
-		Iterator begin_down()
+		Iterator begin_down() const
 		{	return Iterator(*this, num - 1);	}
 		/*void erase(Iterator &it)
 		{	erase(it.get_index());	}*/
@@ -256,8 +245,6 @@ class Array : public DynamicArray
 inline bool _foreach_set_false_(bool &b)
 {	b = false;	return false;	}
 
-#if _MSC_VER >= 1600
-	// Visual C++ 2010 or later
 
 #define foreach(_var_, _array_) \
 	if (auto _foreach_it_ = (_array_).begin()) {} else \
@@ -294,59 +281,5 @@ inline bool _foreach_set_false_(bool &b)
 	if  (_foreach_set_false_(_foreach_continue)) {} else \
 	for (int _i_ = _foreach_it_.get_index(); _i_ >= 0; _i_ = -1) \
 	for (_var_ = *_foreach_it_; !_foreach_continue; _foreach_continue = true)
-#else
-	// g++
-
-#define foreach(_var_, _array_) \
-	if (typeof((_array_).begin()) _foreach_it_ = (_array_).begin()) {} else \
-	for (bool _foreach_continue = true; \
-		_foreach_continue && _foreach_it_.valid(); \
-		_foreach_continue ? (_foreach_it_ ++) : (void)0) \
-	if  (_foreach_set_false_(_foreach_continue)) {} else \
-	for (_var_ = *_foreach_it_; !_foreach_continue; _foreach_continue = true)
-
-#define foreachi(_var_, _array_, _i_) \
-	if (typeof((_array_).begin()) _foreach_it_ = (_array_).begin()) {} else \
-	for (bool _foreach_continue = true; \
-		_foreach_continue && _foreach_it_.valid(); \
-		_foreach_continue ? (_foreach_it_ ++) : (void)0) \
-	if  (_foreach_set_false_(_foreach_continue)) {} else \
-	for (int _i_ = _foreach_it_.get_index(); _i_ >= 0; _i_ = -1) \
-	for (_var_ = *_foreach_it_; !_foreach_continue; _foreach_continue = true)
-
-
-
-#define foreachb(_var_, _array_) \
-	if (typeof((_array_).begin()) _foreach_it_ = (_array_).begin_down()) {} else \
-	for (bool _foreach_continue = true; \
-		_foreach_continue && _foreach_it_.valid_down(); \
-		_foreach_continue ? (_foreach_it_ --) : (void)0) \
-	if  (_foreach_set_false_(_foreach_continue)) {} else \
-	for (_var_ = *_foreach_it_; !_foreach_continue; _foreach_continue = true)
-
-#define foreachib(_var_, _array_, _i_) \
-	if (typeof((_array_).begin()) _foreach_it_ = (_array_).begin_down()) {} else \
-	for (bool _foreach_continue = true; \
-		_foreach_continue && _foreach_it_.valid_down(); \
-		_foreach_continue ? (_foreach_it_ --) : (void)0) \
-	if  (_foreach_set_false_(_foreach_continue)) {} else \
-	for (int _i_ = _foreach_it_.get_index(); _i_ >= 0; _i_ = -1) \
-	for (_var_ = *_foreach_it_; !_foreach_continue; _foreach_continue = true)
-#endif
-
-
-/*#define foreach(_array_, _v_)           for (int _vi_ = 0; _vi_ < (_array_).num; _vi_++) \
-                                        	for (typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))
-#define foreachi(_array_, _v_, _vi_)    for (int _vi_ = 0; _vi_ < (_array_).num; _vi_++) \
-                                        	for (typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))
-#define foreachb(_array_, _v_)          for (int _vi_ = (_array_).num - 1; _vi_ >= 0; _vi_--) \
-                                        	for (typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))
-#define foreachbi(_array_, _v_, _vi_)   for (int _vi_ = (_array_).num - 1; _vi_ >= 0; _vi_--) \
-                                        	for (typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))
-#define foreachc(_array_, _v_)          for (int _vi_ = 0; _vi_ < (_array_).num; _vi_++) \
-                                        	for (const typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))
-#define foreachci(_array_, _v_, _vi_)   for (int _vi_ = 0; _vi_ < (_array_).num; _vi_++) \
-                                        	for (const typeof((_array_)[0]) &_v_ = (_array_)[_vi_]; ;__extension__({break;}))*/
-
 
 #endif

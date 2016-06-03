@@ -17,7 +17,7 @@ MODULES = \
  lib/base/base.a \
  lib/sound/sound.a
 OBJ = lib/base/strings.o lib/file/msg.o lib/script/script.o
-CPP  = g++
+CPP  = g++ -std=c++11
 #GLOBALFLAGS = -O3
 #GLOBALFLAGS = -g -O3
 GLOBALFLAGS = -g
