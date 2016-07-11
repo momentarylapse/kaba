@@ -1,5 +1,5 @@
-#include "mutex.h"
 #include "../file/file.h"
+#include "Mutex.h"
 
 #ifdef OS_WINDOWS
 	#include <windows.h>
@@ -28,12 +28,13 @@ Mutex::Mutex()
 	__init__();
 }
 
+#ifdef OS_WINDOWS
+
 Mutex::~Mutex()
 {
-	__delete__();
+	CloseHandle(&internal->mutex);
+	delete(internal);
 }
-
-#ifdef OS_WINDOWS
 
 void Mutex::__init__()
 {
@@ -41,24 +42,24 @@ void Mutex::__init__()
 	internal->mutex = CreateMutex(NULL, false, NULL);
 }
 
-void Mutex::Lock()
+void Mutex::lock()
 {
 	WaitForSingleObject(internal->mutex, INFINITE);
 }
 
-void Mutex::Unlock()
+void Mutex::unlock()
 {
 	ReleaseMutex(internal->mutex);
 }
 
-void Mutex::__delete__()
-{
-	CloseHandle(&internal->mutex);
-	delete(internal);
-}
-
 #endif
 #ifdef OS_LINUX
+
+Mutex::~Mutex()
+{
+	pthread_mutex_destroy(&internal->mutex);
+	delete(internal);
+}
 
 void Mutex::__init__()
 {
@@ -66,20 +67,20 @@ void Mutex::__init__()
 	pthread_mutex_init(&internal->mutex, NULL);
 }
 
-void Mutex::Lock()
+void Mutex::lock()
 {
 	pthread_mutex_lock(&internal->mutex);
 }
 
-void Mutex::Unlock()
+void Mutex::unlock()
 {
 	pthread_mutex_unlock(&internal->mutex);
 }
+#endif
+
 
 void Mutex::__delete__()
 {
-	pthread_mutex_destroy(&internal->mutex);
-	delete(internal);
+	this->Mutex::~Mutex();
 }
-#endif
 

@@ -129,7 +129,7 @@ string Any::str() const
 		return "\"" + *(string*)data + "\"";
 	else if (type == TYPE_ARRAY){
 		string s = "[";
-		foreach(Any &p, *(Array<Any>*)data){
+		for (Any &p : *(Array<Any>*)data){
 			if (s.num > 1)
 				s += ", ";
 			s += p.str();
@@ -137,7 +137,7 @@ string Any::str() const
 		return s + "]";
 	}else if (type == TYPE_HASH){
 		string s = "[";
-		foreach(AnyHashMap::Entry &p, *(AnyHashMap*)data){
+		for (AnyHashMap::Entry &p : *(AnyHashMap*)data){
 			if (s.num > 1)
 				s += ", ";
 			s += "\"" + p.key + "\" : " + p.value.str();

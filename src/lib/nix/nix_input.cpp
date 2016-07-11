@@ -230,7 +230,7 @@ void NixUpdateInput()
 {
 	NixInputDataLast = NixInputDataCurrent;
 	NixKeyRep = -2;
-	foreach(HuiEvent &e, NixInputEvent){
+	for (HuiEvent &e : NixInputEvent){
 		if (e.message == "hui:key-down")
 			NixKeyRep = e.key;
 	}
