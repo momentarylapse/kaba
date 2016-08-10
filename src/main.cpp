@@ -54,7 +54,7 @@ void export_symbols(Script::Script *s, const string &symbols_out_file)
 	if (!f)
 		exit(1);
 	foreachi(Script::Function *fn, s->syntax->functions, i){
-		f->WriteStr(fn->name);
+		f->WriteStr(fn->name + ":" + i2s(fn->num_params));
 		f->WriteInt((long)s->func[i]);
 	}
 	foreachi(Script::Variable &v, s->syntax->root_of_all_evil.var, i){
