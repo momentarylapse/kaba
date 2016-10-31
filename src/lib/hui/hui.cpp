@@ -15,7 +15,7 @@
 #include "../file/file.h"
 
 
-string HuiVersion = "0.5.16.0";
+string HuiVersion = "0.5.20.0";
 
 #include <stdio.h>
 #include <signal.h>
@@ -79,7 +79,6 @@ int HuiMainLevel = -1;
 Array<bool> HuiMainLevelRunning;
 
 Array<HuiWindow*> HuiWindows;
-Array<HuiClosedPanel> HuiClosedPanels;
 
 
 bool _HuiScreenOpened_ = false;
@@ -144,7 +143,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	a.add("-dummy-");
 	string s = lpCmdLine;
 	if (s.num > 0){
-		if ((s[0] == '\"') && (s.back() == '\"'))
+		if ((s[0] == '\"') and (s.back() == '\"'))
 			s = s.substr(1, -2);
 		a.add(s);
 	}
@@ -207,9 +206,9 @@ void _HuiSetIdleFunction(HuiCallback c)
 #ifdef HUI_API_GTK
 	bool old_idle = HuiIdleFunction.is_set();
 	bool new_idle = c.is_set();
-	if ((new_idle) && (!old_idle))
+	if (new_idle and !old_idle)
 		idle_id = g_idle_add_full(300, GtkIdleFunction, NULL, NULL);
-	if ((!new_idle) && (old_idle) && (idle_id >= 0)){
+	if (!new_idle and old_idle and (idle_id >= 0)){
 		g_source_remove(idle_id);
 		idle_id = -1;
 	}
@@ -344,8 +343,6 @@ void HuiInit(const string &program, bool load_res, const string &def_lang)
 		dir_create(HuiAppDirectory);
 		msg_init(HuiAppDirectory + "message.txt", true);
 	}
-	msg_db_f("Hui",1);
-	//msg_db_m(format("[%s]", HuiVersion),1);
 
 	//msg_write("HuiAppDirectory " + HuiAppDirectory);
 
@@ -400,7 +397,6 @@ void HuiInit(const string &program, bool load_res, const string &def_lang)
 
 int HuiRun()
 {
-	msg_db_f("HuiRun",1);
 	HuiRunning = true;
 	HuiMainLevelRunning[HuiMainLevel] = true;
 	//HuiPushMainLevel();
@@ -409,7 +405,7 @@ int HuiRun()
 	messages.message = 0;
 	HuiHaveToExit = false;
 	bool got_message;
-	while ((!HuiHaveToExit)&&(WM_QUIT!=messages.message)){
+	while ((!HuiHaveToExit) and (WM_QUIT!=messages.message)){
 		bool allow=true;
 		if (HuiIdleFunction.is_set())
 			got_message=(PeekMessage(&messages,NULL,0U,0U,PM_REMOVE)!=0);
@@ -425,7 +421,7 @@ int HuiRun()
 					break;
 				}
 		}
-		if ((HuiIdleFunction.is_set()) && (allow))
+		if (HuiIdleFunction.is_set() and allow)
 			HuiIdleFunction.call();
 	}
 #endif
@@ -437,7 +433,6 @@ int HuiRun()
 
 void HuiDoSingleMainLoop()
 {
-	msg_db_f("HuiDoSingleMainLoop",1);
 #ifdef HUI_API_WIN
 	MSG messages;
 	messages.message=0;
@@ -459,7 +454,7 @@ void HuiDoSingleMainLoop()
 				return;
 			}
 	}
-	/*if ((HuiIdleFunction)&&(allow))
+	/*if (HuiIdleFunction and allow)
 		HuiIdleFunction();*/
 #endif
 #ifdef HUI_API_GTK
@@ -478,14 +473,12 @@ void HuiDoSingleMainLoop()
 
 void HuiPushMainLevel()
 {
-	msg_db_f("HuiPushMainLevel",2);
 	HuiMainLevel ++;
 	HuiMainLevelRunning.add(false);
 }
 
 void HuiCleanUpMainLevel()
 {
-	msg_db_f("HuiCleanUpMainLevel",2);
 	foreachb(HuiWindow *w, HuiWindows)
 		if (w->_get_main_level_() >= HuiMainLevel){
 			delete(w);
@@ -495,7 +488,6 @@ void HuiCleanUpMainLevel()
 
 void HuiPopMainLevel()
 {
-	msg_db_f("HuiPopMainLevel",2);
 	HuiCleanUpMainLevel();
 	HuiMainLevel --;
 	
@@ -509,8 +501,6 @@ void HuiPopMainLevel()
 // ends the system loop of the HuiRun() command
 void HuiEnd()
 {
-	msg_db_r("HuiEnd", 1);
-
 	if (HuiMainLevel > 0)
 		HuiCleanUpMainLevel();
 
@@ -539,8 +529,7 @@ void HuiEnd()
 		if (HuiConfig.changed)
 			HuiConfig.save();
 	}
-	msg_db_l(1);
-	if ((msg_inited) && (!HuiEndKeepMsgAlive) && (HuiMainLevel == 0))
+	if ((msg_inited) and (!HuiEndKeepMsgAlive) and (HuiMainLevel == 0))
 		msg_end();
 }
 

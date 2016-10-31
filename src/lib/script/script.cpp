@@ -24,7 +24,7 @@
 
 namespace Script{
 
-string Version = "0.14.7.0";
+string Version = "0.14.7.1";
 
 //#define ScriptDebug
 
@@ -60,9 +60,9 @@ Script *Load(const string &filename, bool just_analyse)
 	Script *s = NULL;
 
 	// already loaded?
-	for (int i=0;i<PublicScript.num;i++)
-		if (PublicScript[i]->filename == filename.sys_filename())
-			return PublicScript[i];
+	for (Script *ps: PublicScript)
+		if (ps->filename == filename.sys_filename())
+			return ps;
 	
 	// load
 	s = new Script();
@@ -96,10 +96,9 @@ Script *CreateForSource(const string &buffer, bool just_analyse)
 
 void Remove(Script *s)
 {
-	msg_db_f("RemoveScript", 1);
 	// remove references
-	for (int i=0;i<s->syntax->includes.num;i++)
-		s->syntax->includes[i]->reference_counter --;
+	for (Script *i: s->syntax->includes)
+		i->reference_counter --;
 
 	// put on to-delete-list
 	DeadScript.add(s);
@@ -119,11 +118,9 @@ void Remove(Script *s)
 
 void DeleteAllScripts(bool even_immortal, bool force)
 {
-	msg_db_f("DeleteAllScripts", 1);
-
 	// try to erase them...
 	foreachb(Script *s, PublicScript)
-		if ((!s->syntax->flag_immortal) || (even_immortal))
+		if ((!s->syntax->flag_immortal) or even_immortal)
 			Remove(s);
 
 	// undead... really KILL!
@@ -149,8 +146,8 @@ extern Array<Script*> PublicScript;
 Type *GetDynamicType(void *p)
 {
 	VirtualTable *pp = *(VirtualTable**)p;
-	for (Script *s : PublicScript){
-		for (Type *t : s->syntax->types){
+	for (Script *s: PublicScript){
+		for (Type *t: s->syntax->types){
 			if (t->vtable.data == pp)
 				return t;
 		}
@@ -162,7 +159,6 @@ Array<Script*> loading_script_stack;
 
 void Script::Load(const string &_filename, bool _just_analyse)
 {
-	msg_db_f("loading script", 1);
 	loading_script_stack.add(this);
 	just_analyse = _just_analyse;
 	filename = _filename.sys_filename();
@@ -211,9 +207,8 @@ void Script::DoErrorLink(const string &str)
 
 void Script::SetVariable(const string &name, void *data)
 {
-	msg_db_f("SetVariable", 4);
 	//msg_write(name);
-	for (int i=0;i<syntax->root_of_all_evil.var.num;i++)
+	for (int i=0; i<syntax->root_of_all_evil.var.num; i++)
 		if (syntax->root_of_all_evil.var[i].name == name){
 			/*msg_write("var");
 			msg_write(pre_script->RootOfAllEvil.Var[i].Type->Size);
@@ -236,6 +231,12 @@ Script::Script()
 	__time_to_wait = 0;
 	show_compiler_stats = !config.compile_silently;
 
+	__thread_opcode = NULL;
+	__thread_opcode_size = 0;
+
+	__continue_execution = NULL;
+	just_analyse = false;
+
 	opcode = NULL;
 	opcode_size = 0;
 	memory = NULL;
@@ -248,8 +249,7 @@ Script::Script()
 
 Script::~Script()
 {
-	msg_db_f("~CScript", 4);
-	if ((memory) && (!just_analyse)){
+	if (memory and (!just_analyse)){
 		//delete[](Memory);
 		#ifdef OS_WINDOWS
 			VirtualFree(memory, 0, memory_size);
@@ -276,7 +276,6 @@ void ExecuteSingleScriptCommand(const string &cmd)
 {
 	if (cmd.num < 1)
 		return;
-	msg_db_f("ExecuteSingleScriptCmd", 2);
 	msg_write("script command: " + cmd);
 
 	// empty script
@@ -329,8 +328,6 @@ void ExecuteSingleScriptCommand(const string &cmd)
 
 void *Script::MatchFunction(const string &name, const string &return_type, int num_params, ...)
 {
-	msg_db_f("MatchFunction", 2);
-	
 	// process argument list
 	va_list marker;
 	va_start(marker, num_params);
@@ -361,8 +358,6 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 
 void *Script::MatchClassFunction(const string &_class, bool allow_derived, const string &name, const string &return_type, int num_params, ...)
 {
-	msg_db_f("MatchClassFunction", 2);
-
 	// process argument list
 	va_list marker;
 	va_start(marker, num_params);
@@ -381,7 +376,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 			continue;
 		if (!f->_class->IsDerivedFrom(root_type))
 			continue;
-		if ((f->name.match("*." + name)) && (f->literal_return_type->name == return_type) && (num_params == f->num_params)){
+		if ((f->name.match("*." + name)) and (f->literal_return_type->name == return_type) and (num_params == f->num_params)){
 
 			bool params_ok = true;
 			for (int j=0;j<num_params;j++)
@@ -421,14 +416,12 @@ void Script::__Execute()
 	if (__waiting_mode == WAITING_MODE_NONE)
 		return;
 	shift_right=0;
-	//msg_db_f(string("Execute ",pre_script->Filename),1);
-	msg_db_f("Execute", 1);{
-	msg_db_f(filename.c_str(),1);
+//	msg_db_f(filename.c_str(),1);
 
 	// handle wait-commands
 	if (__waiting_mode == WAITING_MODE_FIRST){
 		GlobalWaitingMode = WAITING_MODE_NONE;
-		msg_db_f("->First",1);
+
 		//msg_right();
 		__first_execution();
 		//msg_left();
@@ -444,7 +437,7 @@ void Script::__Execute()
 #endif
 		GlobalWaitingMode=WAITING_MODE_NONE;
 		//msg_write(ThisObject);
-		msg_db_f("->Continue",1);
+
 		//msg_write(">---");
 		//msg_right();
 		__continue_execution();
@@ -454,7 +447,6 @@ void Script::__Execute()
 	}
 	__waiting_mode=GlobalWaitingMode;
 	__time_to_wait=GlobalTimeToWait;
-	}
 }
 
 };

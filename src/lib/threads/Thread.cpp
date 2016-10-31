@@ -55,7 +55,14 @@ Thread::Thread()
 
 Thread::~Thread()
 {
-	__delete__();
+	kill();
+	for (int i=0;i<_Thread_List_.num;i++)
+		if (_Thread_List_[i] == this)
+			_Thread_List_.erase(i);
+	if (internal)
+		delete(internal);
+
+	//__delete__();
 }
 
 
@@ -68,12 +75,7 @@ void Thread::__init__()
 
 void Thread::__delete__()
 {
-	kill();
-	for (int i=0;i<_Thread_List_.num;i++)
-		if (_Thread_List_[i] == this)
-			_Thread_List_.erase(i);
-	if (internal)
-		delete(internal);
+	this->~Thread();
 }
 
 #ifdef OS_WINDOWS
@@ -134,12 +136,22 @@ Thread *Thread::getSelf()
 #endif
 #ifdef OS_LINUX
 
-
-static void *thread_start_func(void *p)
+static void __thread_cleanup_func(void *p)
 {
 	Thread *t = (Thread*)p;
+	t->onCancel();
+}
+
+static void *__thread_start_func(void *p)
+{
+	Thread *t = (Thread*)p;
+
+	pthread_cleanup_push(&__thread_cleanup_func, p);
+
 	t->onRun();
 	t->running = false;
+
+    pthread_cleanup_pop(0);
 	return NULL;
 }
 
@@ -150,7 +162,7 @@ void Thread::run()
 	if (!internal)
 		internal = new ThreadInternal;
 	running = true;
-	int ret = pthread_create(&internal->thread, NULL, &thread_start_func, (void*)this);
+	int ret = pthread_create(&internal->thread, NULL, &__thread_start_func, (void*)this);
 
 	if (ret != 0)
 		running = false;
@@ -162,6 +174,7 @@ void Thread::kill()
 	if (running){
 		pthread_cancel(internal->thread);
 		pthread_join(internal->thread, NULL);
+		//pthread_detach(internal->thread);
 	}
 	running = false;
 }
@@ -182,9 +195,15 @@ Thread *Thread::getSelf()
 {
 	pthread_t s = pthread_self();
 	for (Thread *t : _Thread_List_)
-		if (t->internal->thread == s)
-			return t;
+		if (t->internal)
+			if (t->internal->thread == s)
+				return t;
 	return NULL;
+}
+
+void Thread::cancelationPoint()
+{
+	pthread_testcancel();
 }
 
 
