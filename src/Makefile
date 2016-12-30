@@ -4,7 +4,7 @@ BIN  = ../kaba
 MAINSOURCE = main.cpp
 all : $(BIN)
 MODULES = \
- lib/script/script.a \
+ lib/kaba/kaba.a \
  lib/file/file.a \
  lib/math/math.a \
  lib/nix/nix.a \
@@ -16,7 +16,7 @@ MODULES = \
  lib/threads/threads.a \
  lib/base/base.a \
  lib/sound/sound.a
-OBJ = lib/base/strings.o lib/file/msg.o lib/script/script.o
+OBJ = lib/base/strings.o lib/file/msg.o lib/kaba/kaba.o
 CPP  = g++ -std=c++11
 #GLOBALFLAGS = -O3
 #GLOBALFLAGS = -g -O3
@@ -45,7 +45,7 @@ include lib/hui/hui.mk
 include lib/nix/nix.mk
 include lib/image/image.mk
 include lib/sound/sound.mk
-include lib/script/script.mk
+include lib/kaba/kaba.mk
 include lib/net/net.mk
 include lib/math/math.mk
 include lib/any/any.mk

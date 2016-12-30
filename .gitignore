@@ -3,7 +3,8 @@ Release
 Unoptimized
 ipch
 message.txt
-kaba
+./kaba
+*.kaba
 *.o
 *.a
 Kaba.sdf

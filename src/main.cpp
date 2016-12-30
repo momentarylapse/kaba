@@ -3,7 +3,7 @@
 #include "lib/hui/hui.h"
 #include "lib/nix/nix.h"
 #include "lib/net/net.h"
-#include "lib/script/script.h"
+#include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
 string AppVersion = "0.14.2.0";
@@ -12,11 +12,11 @@ string AppVersion = "0.14.2.0";
 typedef void main_arg_func(const Array<string>&);
 typedef void main_void_func();
 
-namespace Script{
+namespace Kaba{
 extern long long s2i2(const string &str);
 };
 
-void execute(Script::Script *s, Array<string> &arg)
+void execute(Kaba::Script *s, Array<string> &arg)
 {
 	// set working directory -> script file
 	//msg_write(HuiInitialWorkingDirectory);
@@ -35,10 +35,10 @@ void execute(Script::Script *s, Array<string> &arg)
 		msg_db_f("Execute main()", 1);
 		f_void();
 	}
-	Script::Remove(s);
+	Kaba::Remove(s);
 }
 
-void dump_to_file(Script::Script *s, const string &out_file)
+void dump_to_file(Kaba::Script *s, const string &out_file)
 {
 	File *f = FileCreate(out_file);
 	if (!f)
@@ -48,16 +48,16 @@ void dump_to_file(Script::Script *s, const string &out_file)
 	delete(f);
 }
 
-void export_symbols(Script::Script *s, const string &symbols_out_file)
+void export_symbols(Kaba::Script *s, const string &symbols_out_file)
 {
 	File *f = FileCreate(symbols_out_file);
 	if (!f)
 		exit(1);
-	foreachi(Script::Function *fn, s->syntax->functions, i){
+	foreachi(Kaba::Function *fn, s->syntax->functions, i){
 		f->WriteStr(fn->name + ":" + i2s(fn->num_params));
 		f->WriteInt((long)s->func[i]);
 	}
-	foreachi(Script::Variable &v, s->syntax->root_of_all_evil.var, i){
+	foreachi(Kaba::Variable &v, s->syntax->root_of_all_evil.var, i){
 		f->WriteStr(v.name);
 		f->WriteInt((long)s->g_var[i]);
 	}
@@ -75,7 +75,7 @@ void import_symbols(const string &symbols_in_file)
 		if (name == "#")
 			break;
 		int pos = f->ReadInt();
-		Script::LinkExternal(name, (void*)(long)pos);
+		Kaba::LinkExternal(name, (void*)(long)pos);
 	}
 	delete(f);
 }
@@ -123,8 +123,8 @@ int hui_main(const Array<string> &arg0)
 			// tell versions
 			msg_right();
 			msg_write(AppName + " " + AppVersion);
-			msg_write("Script-Version: " + Script::Version);
-			msg_write("Bibliothek-Version: " + Script::DataVersion);
+			msg_write("Script-Version: " + Kaba::Version);
+			msg_write("Bibliothek-Version: " + Kaba::DataVersion);
 			msg_write("Hui-Version: " + HuiVersion);
 			msg_left();
 			return 0;
@@ -166,7 +166,7 @@ int hui_main(const Array<string> &arg0)
 				msg_error("offset nach --code-origin erwartet");
 				return -1;
 			}
-			code_origin = Script::s2i2(arg[i]);
+			code_origin = Kaba::s2i2(arg[i]);
 			arg.erase(i --);
 		}else if (arg[i] == "--variable-offset"){
 			flag_override_variable_offset = true;
@@ -175,7 +175,7 @@ int hui_main(const Array<string> &arg0)
 				msg_error("offset nach --variable-offset erwartet");
 				return -1;
 			}
-			variable_offset = Script::s2i2(arg[i]);
+			variable_offset = Kaba::s2i2(arg[i]);
 			arg.erase(i --);
 		}else if (arg[i] == "-o"){
 			arg.erase(i);
@@ -213,13 +213,13 @@ int hui_main(const Array<string> &arg0)
 	msg_db_r("main", 1);
 	HuiRegisterFileType("kaba", "MichiSoft Script Datei", "", HuiAppFilename, "execute", false);
 	NetInit();
-	Script::Init(instruction_set, abi, flag_allow_std_lib);
-	//Script::LinkDynamicExternalData();
-	Script::config.stack_size = 10485760; // 10 mb (mib)
+	Kaba::Init(instruction_set, abi, flag_allow_std_lib);
+	//Kaba::LinkDynamicExternalData();
+	Kaba::config.stack_size = 10485760; // 10 mb (mib)
 
 
-	Script::LinkExternal("Test1", (void*)&Test1);
-	Script::LinkExternal("Test2", (void*)&Test2);
+	Kaba::LinkExternal("Test1", (void*)&Test1);
+	Kaba::LinkExternal("Test2", (void*)&Test2);
 
 	if (symbols_in_file.num > 0)
 		import_symbols(symbols_in_file);
@@ -238,19 +238,19 @@ int hui_main(const Array<string> &arg0)
 	}
 
 	// compile
-	Script::config.compile_silently = !flag_verbose;
-	Script::config.verbose = flag_verbose;
-	Script::config.compile_os = flag_compile_os;
-	Script::config.add_entry_point = flag_add_entry_point;
-	Script::config.no_function_frame = flag_no_function_frames;
-	Script::config.override_variables_offset = flag_override_variable_offset;
-	Script::config.variables_offset = variable_offset;
-	Script::config.override_code_origin = flag_override_code_origin;
-	Script::config.code_origin = code_origin;
+	Kaba::config.compile_silently = !flag_verbose;
+	Kaba::config.verbose = flag_verbose;
+	Kaba::config.compile_os = flag_compile_os;
+	Kaba::config.add_entry_point = flag_add_entry_point;
+	Kaba::config.no_function_frame = flag_no_function_frames;
+	Kaba::config.override_variables_offset = flag_override_variable_offset;
+	Kaba::config.variables_offset = variable_offset;
+	Kaba::config.override_code_origin = flag_override_code_origin;
+	Kaba::config.code_origin = code_origin;
 	SilentFiles = true;
 
 	try{
-		Script::Script *s = Script::Load(filename);
+		Kaba::Script *s = Kaba::Load(filename);
 		if (symbols_out_file.num > 0)
 			export_symbols(s, symbols_out_file);
 		if (out_file.num > 0){
@@ -262,10 +262,10 @@ int hui_main(const Array<string> &arg0)
 			if (flag_disassemble)
 				msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
 
-			if (Script::config.instruction_set == Asm::QueryLocalInstructionSet())
+			if (Kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
 				execute(s, arg);
 		}
-	}catch(Script::Exception &e){
+	}catch(Kaba::Exception &e){
 		if (use_gui)
 			HuiErrorBox(NULL, _("Fehler in Script"), e.message);
 		else
@@ -275,7 +275,7 @@ int hui_main(const Array<string> &arg0)
 
 	// end
 	msg_db_l(1);
-	Script::End();
+	Kaba::End();
 	msg_end();
 	return error ? -1 : 0;
 }
