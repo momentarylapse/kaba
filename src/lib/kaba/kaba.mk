@@ -4,7 +4,7 @@ KABA_DIR = $(LIB_DIR)/kaba
 KABA_BIN  = $(KABA_DIR)/kaba.a
 KABA_OBJ  = $(KABA_DIR)/kaba.o \
  $(KABA_DIR)/syntax/syntax_tree.o \
- $(KABA_DIR)/syntax/type.o \
+ $(KABA_DIR)/syntax/class.o \
  $(KABA_DIR)/syntax/lexical.o \
  $(KABA_DIR)/syntax/precompiler.o \
  $(KABA_DIR)/syntax/preprocessor.o \
@@ -30,7 +30,7 @@ KABA_CXXFLAGS =  `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
 KABA_DEP =  $(KABA_DIR)/kaba.h \
  $(KABA_DIR)/asm/asm.h \
   $(KABA_DIR)/syntax/syntax_tree.h \
-  $(KABA_DIR)/syntax/type.h \
+  $(KABA_DIR)/syntax/class.h \
   $(KABA_DIR)/syntax/lexical.h \
   $(KABA_DIR)/lib/lib.h
 
@@ -44,8 +44,8 @@ $(KABA_DIR)/kaba.o : $(KABA_DIR)/kaba.cpp $(KABA_DEP)
 $(KABA_DIR)/syntax/syntax_tree.o : $(KABA_DIR)/syntax/syntax_tree.cpp $(KABA_DEP)
 	$(CPP) -c $(KABA_DIR)/syntax/syntax_tree.cpp -o $@ $(KABA_CXXFLAGS)
 
-$(KABA_DIR)/syntax/type.o : $(KABA_DIR)/syntax/type.cpp $(KABA_DEP)
-	$(CPP) -c $(KABA_DIR)/syntax/type.cpp -o $@ $(KABA_CXXFLAGS)
+$(KABA_DIR)/syntax/class.o : $(KABA_DIR)/syntax/class.cpp $(KABA_DEP)
+	$(CPP) -c $(KABA_DIR)/syntax/class.cpp -o $@ $(KABA_CXXFLAGS)
 
 $(KABA_DIR)/syntax/lexical.o : $(KABA_DIR)/syntax/lexical.cpp $(KABA_DEP)
 	$(CPP) -c $(KABA_DIR)/syntax/lexical.cpp -o $@ $(KABA_CXXFLAGS)

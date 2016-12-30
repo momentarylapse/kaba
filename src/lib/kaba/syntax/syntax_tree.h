@@ -2,8 +2,8 @@
 #define SYNTAX_TREE_H__INCLUDED_
 
 
+#include "class.h"
 #include "lexical.h"
-#include "type.h"
 
 namespace Asm{
 	struct MetaInfo;
@@ -28,7 +28,7 @@ struct Constant
 {
 	string name;
 	string value;
-	Type *type;
+	Class *type;
 	void setInt(int i);
 	int getInt();
 };
@@ -93,12 +93,12 @@ struct Block
 	void set(int index, Command *c);
 
 	int get_var(const string &name);
-	int add_var(const string &name, Type *type);
+	int add_var(const string &name, Class *type);
 };
 
 struct Variable
 {
-	Type *type; // for creating instances
+	Class *type; // for creating instances
 	string name;
 	int _offset; // for compilation
 	bool is_extern;
@@ -116,10 +116,10 @@ struct Function
 	Block *block;
 	// local variables
 	Array<Variable> var;
-	Array<Type*> literal_param_type;
-	Type *_class;
-	Type *return_type;
-	Type *literal_return_type;
+	Array<Class*> literal_param_type;
+	Class *_class;
+	Class *return_type;
+	Class *literal_return_type;
 	bool is_extern, auto_implement;
 	bool is_pure;
 	int inline_no;
@@ -127,9 +127,9 @@ struct Function
 	int _var_size, _param_size;
 	int _logical_line_no;
 	int _exp_no;
-	Function(SyntaxTree *tree, const string &name, Type *return_type);
+	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	int __get_var(const string &name);
-	void Update(Type *class_type);
+	void Update(Class *class_type);
 };
 
 // single operand/command
@@ -144,9 +144,9 @@ struct Command
 	// linking of class function instances
 	Command *instance;
 	// return value
-	Type *type;
+	Class *type;
 	Command();
-	Command(int kind, long long link_no, Script *script, Type *type);
+	Command(int kind, long long link_no, Script *script, Class *type);
 	Block *as_block() const;
 	void set_num_params(int n);
 	void set_param(int index, Command *p);
@@ -184,14 +184,14 @@ public:
 	void ParseImport();
 	void ParseEnum();
 	void ParseClass();
-	Function *ParseFunctionHeader(Type *class_type, bool as_extern);
+	Function *ParseFunctionHeader(Class *class_type, bool as_extern);
 	void SkipParsingFunctionBody();
 	void ParseFunctionBody(Function *f);
-	void ParseClassFunctionHeader(Type *t, bool as_extern, bool as_virtual, bool override);
+	void ParseClassFunctionHeader(Class *t, bool as_extern, bool as_virtual, bool override);
 	bool ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line);
-	Type *ParseType();
+	Class *ParseType();
 	void ParseVariableDef(bool single, Block *block);
-	void ParseGlobalConst(const string &name, Type *type);
+	void ParseGlobalConst(const string &name, Class *type);
 	int WhichPrimitiveOperator(const string &name);
 	int WhichCompilerFunction(const string &name);
 	void CommandSetCompilerFunction(int CF,Command *Com);
@@ -201,26 +201,26 @@ public:
 	// pre compiler
 	void PreCompiler(bool just_analyse);
 	void HandleMacro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse);
-	void AutoImplementAddVirtualTable(Command *self, Function *f, Type *t);
-	void AutoImplementAddChildConstructors(Command *self, Function *f, Type *t);
-	void AutoImplementDefaultConstructor(Function *f, Type *t, bool allow_parent_constructor);
-	void AutoImplementComplexConstructor(Function *f, Type *t);
-	void AutoImplementDestructor(Function *f, Type *t);
-	void AutoImplementAssign(Function *f, Type *t);
-	void AutoImplementArrayClear(Function *f, Type *t);
-	void AutoImplementArrayResize(Function *f, Type *t);
-	void AutoImplementArrayAdd(Function *f, Type *t);
-	void AutoImplementArrayRemove(Function *f, Type *t);
-	void AutoImplementFunctions(Type *t);
-	void AddFunctionHeadersForClass(Type *t);
+	void AutoImplementAddVirtualTable(Command *self, Function *f, Class *t);
+	void AutoImplementAddChildConstructors(Command *self, Function *f, Class *t);
+	void AutoImplementDefaultConstructor(Function *f, Class *t, bool allow_parent_constructor);
+	void AutoImplementComplexConstructor(Function *f, Class *t);
+	void AutoImplementDestructor(Function *f, Class *t);
+	void AutoImplementAssign(Function *f, Class *t);
+	void AutoImplementArrayClear(Function *f, Class *t);
+	void AutoImplementArrayResize(Function *f, Class *t);
+	void AutoImplementArrayAdd(Function *f, Class *t);
+	void AutoImplementArrayRemove(Function *f, Class *t);
+	void AutoImplementFunctions(Class *t);
+	void AddFunctionHeadersForClass(Class *t);
 
 	// syntax analysis
-	Type *GetConstantType(const string &str);
+	Class *GetConstantType(const string &str);
 	string GetConstantValue(const string &str);
-	Type *FindType(const string &name);
-	Type *AddType(Type *type);
-	Type *CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Type *sub);
-	Type *CreateArrayType(Type *element_type, int num_elements, const string &name_pre = "", const string &suffix = "");
+	Class *FindType(const string &name);
+	Class *AddType(Class *type);
+	Class *CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Class *sub);
+	Class *CreateArrayType(Class *element_type, int num_elements, const string &name_pre = "", const string &suffix = "");
 	Array<Command> GetExistence(const string &name, Block *block);
 	Array<Command> GetExistenceShared(const string &name);
 	void LinkMostImportantOperator(Array<Command*> &operand, Array<Command*> &_operator, Array<int> &op_exp);
@@ -234,11 +234,11 @@ public:
 	Command *GetPrimitiveOperator(Block *block);
 	Array<Command*> FindFunctionParameters(Block *block);
 	//void FindFunctionSingleParameter(int p, Array<Type*> &wanted_type, Block *block, Command *cmd);
-	Array<Type*> GetFunctionWantedParams(Command &link);
+	Array<Class*> GetFunctionWantedParams(Command &link);
 	Command *GetFunctionCall(const string &f_name, Array<Command> &links, Block *block);
 	Command *DoClassFunction(Command *ob, Array<ClassFunction> &cfs, Block *block);
 	Command *GetSpecialFunctionCall(const string &f_name, Command &link, Block *block);
-	Command *CheckParamLink(Command *link, Type *type, const string &f_name = "", int param_no = -1);
+	Command *CheckParamLink(Command *link, Class *type, const string &f_name = "", int param_no = -1);
 	void ParseSpecialCommand(Block *block);
 	void ParseSpecialCommandFor(Block *block);
 	void ParseSpecialCommandForall(Block *block);
@@ -257,25 +257,25 @@ public:
 	void MapLocalVariablesToStack();
 
 	// data creation
-	int AddConstant(Type *type);
+	int AddConstant(Class *type);
 	Block *AddBlock(Function *f, Block *parent);
-	Function *AddFunction(const string &name, Type *type);
+	Function *AddFunction(const string &name, Class *type);
 
 	// command
-	Command *AddCommand(int kind, long long link_no, Type *type);
-	Command *AddCommand(int kind, long long link_no, Type *type, Script *s);
+	Command *AddCommand(int kind, long long link_no, Class *type);
+	Command *AddCommand(int kind, long long link_no, Class *type, Script *s);
 	Command *add_command_compilerfunc(int cf);
 	Command *add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual = false);
-	Command *add_command_func(Script *script, int no, Type *return_type);
+	Command *add_command_func(Script *script, int no, Class *return_type);
 	Command *add_command_const(int nc);
 	Command *add_command_operator(Command *p1, Command *p2, int op);
-	Command *add_command_local_var(int no, Type *type);
-	Command *add_command_parray(Command *p, Command *index, Type *type);
+	Command *add_command_local_var(int no, Class *type);
+	Command *add_command_parray(Command *p, Command *index, Class *type);
 	Command *add_command_block(Block *b);
 	Command *cp_command(Command *c);
-	Command *ref_command(Command *sub, Type *override_type = NULL);
-	Command *deref_command(Command *sub, Type *override_type = NULL);
-	Command *shift_command(Command *sub, bool deref, int shift, Type *type);
+	Command *ref_command(Command *sub, Class *override_type = NULL);
+	Command *deref_command(Command *sub, Class *override_type = NULL);
+	Command *shift_command(Command *sub, bool deref, int shift, Class *type);
 
 	// pre processor
 	Command *PreProcessCommand(Command *c);
@@ -298,7 +298,7 @@ public:
 	bool flag_immortal;
 	bool flag_string_const_as_cstring;
 
-	Array<Type*> types;
+	Array<Class*> classes;
 	Array<Script*> includes;
 	Array<Define> defines;
 	Asm::MetaInfo *asm_meta_info;

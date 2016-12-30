@@ -9,7 +9,7 @@ namespace Kaba{
 
 int SerializerAMD64::fc_begin()
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	// return data too big... push address
 	SerialCommandParam ret_ref;
@@ -106,7 +106,7 @@ int SerializerAMD64::fc_begin()
 
 void SerializerAMD64::fc_end(int push_size)
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){

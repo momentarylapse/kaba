@@ -5,7 +5,7 @@
 
 namespace Kaba{
 
-void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Type *t)
+void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Class *t)
 {
 	if (t->vtable.num > 0){
 		Command *p = shift_command(self, true, 0, TypePointer);
@@ -17,7 +17,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Type *
 	}
 }
 
-void SyntaxTree::AutoImplementAddChildConstructors(Command *self, Function *f, Type *t)
+void SyntaxTree::AutoImplementAddChildConstructors(Command *self, Function *f, Class *t)
 {
 	int i0 = t->parent ? t->parent->element.num : 0;
 	foreachi(ClassElement &e, t->element, i){
@@ -32,7 +32,7 @@ void SyntaxTree::AutoImplementAddChildConstructors(Command *self, Function *f, T
 	}
 }
 
-void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Type *t, bool allow_parent_constructor)
+void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Class *t, bool allow_parent_constructor)
 {
 	if (!f)
 		return;
@@ -64,7 +64,7 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Type *t, bool allo
 	}
 }
 
-void SyntaxTree::AutoImplementComplexConstructor(Function *f, Type *t)
+void SyntaxTree::AutoImplementComplexConstructor(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -89,7 +89,7 @@ void SyntaxTree::AutoImplementComplexConstructor(Function *f, Type *t)
 }
 
 
-void SyntaxTree::AutoImplementDestructor(Function *f, Type *t)
+void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -127,7 +127,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Type *t)
 	}
 }
 
-void SyntaxTree::AutoImplementAssign(Function *f, Type *t)
+void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -269,7 +269,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Type *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayClear(Function *f, Type *t)
+void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -322,7 +322,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Type *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayResize(Function *f, Type *t)
+void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -414,7 +414,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Type *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayRemove(Function *f, Type *t)
+void SyntaxTree::AutoImplementArrayRemove(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -442,7 +442,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, Type *t)
 	f->block->commands.add(c_remove);
 }
 
-void SyntaxTree::AutoImplementArrayAdd(Function *f, Type *t)
+void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 {
 	if (!f)
 		return;
@@ -477,7 +477,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Type *t)
 	b->commands.add(cmd_assign);
 }
 
-void add_func_header(SyntaxTree *s, Type *t, const string &name, Type *return_type, Type *param_type, const string &param_name, ClassFunction *cf = NULL)
+void add_func_header(SyntaxTree *s, Class *t, const string &name, Class *return_type, Class *param_type, const string &param_name, ClassFunction *cf = NULL)
 {
 	Function *f = s->AddFunction(name, return_type);
 	f->auto_implement = true;
@@ -496,7 +496,7 @@ bool needs_new(ClassFunction *f)
 	return f->needs_overriding;
 }
 
-void SyntaxTree::AddFunctionHeadersForClass(Type *t)
+void SyntaxTree::AddFunctionHeadersForClass(Class *t)
 {
 	if (t->owner != this)
 		return;
@@ -544,7 +544,7 @@ void SyntaxTree::AddFunctionHeadersForClass(Type *t)
 	}
 }
 
-Function* class_get_func(Type *t, const string &name, Type *return_type, int num_params)
+Function* class_get_func(Class *t, const string &name, Class *return_type, int num_params)
 {
 	ClassFunction *cf = t->GetFunc(name, return_type, num_params);
 	if (cf){
@@ -559,7 +559,7 @@ Function* class_get_func(Type *t, const string &name, Type *return_type, int num
 	return NULL;
 }
 
-void SyntaxTree::AutoImplementFunctions(Type *t)
+void SyntaxTree::AutoImplementFunctions(Class *t)
 {
 	if (t->owner != this)
 		return;

@@ -11,7 +11,7 @@ namespace Kaba{
 /*#define PRESCRIPT_DB_LEVEL	2
 #define db_f(msg,level)		msg_db_f(msg,level+PRESCRIPT_DB_LEVEL)*/
 
-extern Type *TypeDynamicArray;
+extern Class *TypeDynamicArray;
 
 
 bool next_extern = false;
@@ -41,16 +41,16 @@ Command *SyntaxTree::cp_command(Command *c)
 	return cmd;
 }
 
-Command *SyntaxTree::ref_command(Command *sub, Type *override_type)
+Command *SyntaxTree::ref_command(Command *sub, Class *override_type)
 {
-	Type *t = override_type ? override_type : sub->type->GetPointer();
+	Class *t = override_type ? override_type : sub->type->GetPointer();
 	Command *c = AddCommand(KIND_REFERENCE, 0, t);
 	c->set_num_params(1);
 	c->set_param(0, sub);
 	return c;
 }
 
-Command *SyntaxTree::deref_command(Command *sub, Type *override_type)
+Command *SyntaxTree::deref_command(Command *sub, Class *override_type)
 {
 	Command *c = AddCommand(KIND_UNKNOWN, 0, TypeVoid);
 	c->kind = KIND_DEREFERENCE;
@@ -63,7 +63,7 @@ Command *SyntaxTree::deref_command(Command *sub, Type *override_type)
 	return c;
 }
 
-Command *SyntaxTree::shift_command(Command *sub, bool deref, int shift, Type *type)
+Command *SyntaxTree::shift_command(Command *sub, bool deref, int shift, Class *type)
 {
 	Command *c= AddCommand(deref ? KIND_DEREF_ADDRESS_SHIFT : KIND_ADDRESS_SHIFT, shift, type);
 	c->set_num_params(1);
@@ -102,7 +102,7 @@ Command *SyntaxTree::add_command_classfunc(ClassFunction *f, Command *inst, bool
 	return c;
 }
 
-Command *SyntaxTree::add_command_func(Script *script, int no, Type *return_type)
+Command *SyntaxTree::add_command_func(Script *script, int no, Class *return_type)
 {
 	Command *c = AddCommand(KIND_FUNCTION, no, return_type);
 	c->script = script;
@@ -123,14 +123,14 @@ Command *SyntaxTree::add_command_operator(Command *p1, Command *p2, int op)
 }
 
 
-Command *SyntaxTree::add_command_local_var(int no, Type *type)
+Command *SyntaxTree::add_command_local_var(int no, Class *type)
 {
 	if (no < 0)
 		script->DoErrorInternal("negative local variable index");
 	return AddCommand(KIND_VAR_LOCAL, no, type);
 }
 
-Command *SyntaxTree::add_command_parray(Command *p, Command *index, Type *type)
+Command *SyntaxTree::add_command_parray(Command *p, Command *index, Class *type)
 {
 	Command *cmd_el = AddCommand(KIND_POINTER_AS_ARRAY, 0, type);
 	cmd_el->set_num_params(2);
@@ -249,7 +249,7 @@ string LinkNr2Str(SyntaxTree *s, int kind, long long nr)
 	if (kind == KIND_REFERENCE)			return "(no LinkNr)";
 	if (kind == KIND_DEREFERENCE)		return "(no LinkNr)";
 	if (kind == KIND_DEREF_ADDRESS_SHIFT)	return i2s(nr);
-	if (kind == KIND_TYPE)				return s->types[nr]->name;
+	if (kind == KIND_TYPE)				return s->classes[nr]->name;
 	if (kind == KIND_REGISTER)			return Asm::GetRegName(nr);
 	if (kind == KIND_ADDRESS)			return d2h(&nr, config.pointer_size);
 	if (kind == KIND_MEMORY)				return d2h(&nr, config.pointer_size);
@@ -302,7 +302,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 // constants
 
-int SyntaxTree::AddConstant(Type *type)
+int SyntaxTree::AddConstant(Class *type)
 {
 	Constant c;
 	c.name = "-none-";
@@ -353,7 +353,7 @@ void Block::set(int index, Command *c)
 	set_command(commands[index], c);
 }
 
-int Block::add_var(const string &name, Type *type)
+int Block::add_var(const string &name, Class *type)
 {
 	if (get_var(name) >= 0)
 		function->tree->DoError(format("variable '%s' already declared in this context", name.c_str()));
@@ -381,7 +381,7 @@ int Block::get_var(const string &name)
 // functions
 
 
-Function::Function(SyntaxTree *_tree, const string &_name, Type *_return_type)
+Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 {
 	tree = _tree;
 	name = _name;
@@ -405,7 +405,7 @@ int Function::__get_var(const string &name)
 	return block->get_var(name);
 }
 
-Function *SyntaxTree::AddFunction(const string &name, Type *type)
+Function *SyntaxTree::AddFunction(const string &name, Class *type)
 {
 	Function *f = new Function(this, name, type);
 	functions.add(f);
@@ -417,7 +417,7 @@ Command::Command()
 {
 }
 
-Command::Command(int _kind, long long _link_no, Script *_script, Type *_type)
+Command::Command(int _kind, long long _link_no, Script *_script, Class *_type)
 {
 	type = _type;
 	kind = _kind;
@@ -451,14 +451,14 @@ void Command::set_param(int index, Command *p)
 	set_command(param[index], p);
 }
 
-Command *SyntaxTree::AddCommand(int kind, long long link_no, Type *type)
+Command *SyntaxTree::AddCommand(int kind, long long link_no, Class *type)
 {
 	Command *c = new Command(kind, link_no, script, type);
 	commands.add(c);
 	return c;
 }
 
-Command *SyntaxTree::AddCommand(int kind, long long link_no, Type *type, Script *s)
+Command *SyntaxTree::AddCommand(int kind, long long link_no, Class *type, Script *s)
 {
 	Command *c = new Command(kind, link_no, s, type);
 	commands.add(c);
@@ -481,8 +481,8 @@ int SyntaxTree::WhichPrimitiveOperator(const string &name)
 
 int SyntaxTree::WhichType(const string &name)
 {
-	for (int i=0;i<types.num;i++)
-		if (name == types[i]->name)
+	for (int i=0;i<classes.num;i++)
+		if (name == classes[i]->name)
 			return i;
 
 	return -1;
@@ -502,7 +502,7 @@ int SyntaxTree::WhichCompilerFunction(const string &name)
 	return -1;
 }
 
-Command exlink_make_var_local(SyntaxTree *ps, Type *t, int var_no)
+Command exlink_make_var_local(SyntaxTree *ps, Class *t, int var_no)
 {
 	Command link;
 	link.type = t;
@@ -660,37 +660,37 @@ Array<Command> SyntaxTree::GetExistence(const string &name, Block *block)
 }
 
 // expression naming a type
-Type *SyntaxTree::FindType(const string &name)
+Class *SyntaxTree::FindType(const string &name)
 {
-	for (int i=0;i<types.num;i++)
-		if (name == types[i]->name)
-			return types[i];
+	for (int i=0;i<classes.num;i++)
+		if (name == classes[i]->name)
+			return classes[i];
 	for (Script *inc: includes)
-		for (int i=0;i<inc->syntax->types.num;i++)
-			if (name == inc->syntax->types[i]->name)
-				return inc->syntax->types[i];
+		for (int i=0;i<inc->syntax->classes.num;i++)
+			if (name == inc->syntax->classes[i]->name)
+				return inc->syntax->classes[i];
 	return NULL;
 }
 
 // create a new type?
-Type *SyntaxTree::AddType(Type *type)
+Class *SyntaxTree::AddType(Class *type)
 {
-	for (Type *t: types)
+	for (Class *t: classes)
 		if (type->name == t->name)
 			return t;
 	for (Script *inc: includes)
-		for (Type *t: inc->syntax->types)
+		for (Class *t: inc->syntax->classes)
 			if (type->name == t->name)
 				return t;
-	Type *t = new Type;
+	Class *t = new Class;
 	*t = *type;
 	t->owner = this;
 	t->name = type->name;
-	types.add(t);
+	classes.add(t);
 
 
 	if (t->is_super_array){
-		Type *parent = t->parent;
+		Class *parent = t->parent;
 		t->DeriveFrom(TypeDynamicArray, false);
 		t->parent = parent;
 		AddFunctionHeadersForClass(t);
@@ -700,9 +700,9 @@ Type *SyntaxTree::AddType(Type *type)
 	return t;
 }
 
-Type *SyntaxTree::CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Type *sub)
+Class *SyntaxTree::CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Class *sub)
 {
-	Type nt;
+	Class nt;
 	nt.is_array = is_array and (array_size >= 0);
 	nt.is_super_array = is_array and (array_size < 0);
 	nt.array_length = max(array_size, 0);
@@ -714,7 +714,7 @@ Type *SyntaxTree::CreateNewType(const string &name, int size, bool is_pointer, b
 	return AddType(&nt);
 }
 
-Type *SyntaxTree::CreateArrayType(Type *element_type, int num_elements, const string &_name_pre, const string &suffix)
+Class *SyntaxTree::CreateArrayType(Class *element_type, int num_elements, const string &_name_pre, const string &suffix)
 {
 	string name_pre = _name_pre;
 	if (name_pre.num == 0)
@@ -946,7 +946,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 
 	if (c->kind == KIND_ARRAY){
 
-		Type *el_type = c->type;
+		Class *el_type = c->type;
 
 // array el -> array
 //          -> index
@@ -972,7 +972,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		return deref_command(c_address);
 	}else if (c->kind == KIND_POINTER_AS_ARRAY){
 
-		Type *el_type = c->type;
+		Class *el_type = c->type;
 
 // array el -> array_pointer
 //          -> index
@@ -997,7 +997,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		return deref_command(c_address);
 	}else if (c->kind == KIND_ADDRESS_SHIFT){
 
-		Type *el_type = c->type;
+		Class *el_type = c->type;
 
 // struct el -> struct
 //           -> shift (LinkNr)
@@ -1018,7 +1018,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		return deref_command(c_address);
 	}else if (c->kind == KIND_DEREF_ADDRESS_SHIFT){
 
-		Type *el_type = c->type;
+		Class *el_type = c->type;
 
 // struct el -> struct_pointer
 //           -> shift (LinkNr)
@@ -1133,7 +1133,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 SyntaxTree::~SyntaxTree()
 {
 	// delete all types created by this script
-	for (Type *t: types)
+	for (Class *t: classes)
 		if (t->owner == this)
 			delete(t);
 

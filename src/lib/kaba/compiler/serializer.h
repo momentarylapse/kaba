@@ -35,7 +35,7 @@ struct SerialCommandParam
 	int kind;
 	long long p;
 	int virt; // virtual register (if p represents a physical register)
-	Type *type;
+	Class *type;
 	int shift;
 	//int c_id, v_id;
 	bool operator == (const SerialCommandParam &param) const
@@ -56,7 +56,7 @@ struct SerialCommand
 
 struct TempVar
 {
-	Type *type;
+	Class *type;
 	int first, last, usage_count;
 	bool mapped;
 	bool referenced;
@@ -143,7 +143,7 @@ public:
 	int add_virtual_reg(int reg);
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
-	SerialCommandParam add_temp(Type *t, bool add_constructor = true);
+	SerialCommandParam add_temp(Class *t, bool add_constructor = true);
 	void add_cmd(int cond, int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2, const SerialCommandParam &p3);
 	void add_cmd(int inst, const SerialCommandParam &p1, const SerialCommandParam &p2);
@@ -191,8 +191,8 @@ public:
 	virtual void add_virtual_function_call(int virtual_index) = 0;
 	virtual int fc_begin() = 0;
 	virtual void fc_end(int push_size) = 0;
-	SerialCommandParam AddReference(SerialCommandParam &param, Type *force_type = NULL);
-	SerialCommandParam AddDereference(SerialCommandParam &param, Type *force_type = NULL);
+	SerialCommandParam AddReference(SerialCommandParam &param, Class *force_type = NULL);
+	SerialCommandParam AddDereference(SerialCommandParam &param, Class *force_type = NULL);
 
 	void MapTempVarToReg(int vi, int reg);
 	void add_stack_var(TempVar &v, SerialCommandParam &p);
@@ -222,18 +222,18 @@ public:
 	void AddFuncInstance(const SerialCommandParam &inst);
 
 
-	static SerialCommandParam param_shift(const SerialCommandParam &param, int shift, Type *t);
-	static SerialCommandParam param_global(Type *type, void *v);
-	static SerialCommandParam param_local(Type *type, int offset);
-	static SerialCommandParam param_const(Type *type, long c);
+	static SerialCommandParam param_shift(const SerialCommandParam &param, int shift, Class *t);
+	static SerialCommandParam param_global(Class *type, void *v);
+	static SerialCommandParam param_local(Class *type, int offset);
+	static SerialCommandParam param_const(Class *type, long c);
 	static SerialCommandParam param_marker(int m);
-	static SerialCommandParam param_deref_marker(Type *type, int m);
-	SerialCommandParam param_vreg(Type *type, int vreg, int preg = -1);
-	static SerialCommandParam param_preg(Type *type, int reg);
-	SerialCommandParam param_deref_vreg(Type *type, int vreg, int preg = -1);
-	static SerialCommandParam param_deref_preg(Type *type, int reg);
-	static SerialCommandParam param_lookup(Type *type, int ref);
-	static SerialCommandParam param_deref_lookup(Type *type, int ref);
+	static SerialCommandParam param_deref_marker(Class *type, int m);
+	SerialCommandParam param_vreg(Class *type, int vreg, int preg = -1);
+	static SerialCommandParam param_preg(Class *type, int reg);
+	SerialCommandParam param_deref_vreg(Class *type, int vreg, int preg = -1);
+	static SerialCommandParam param_deref_preg(Class *type, int reg);
+	static SerialCommandParam param_lookup(Class *type, int ref);
+	static SerialCommandParam param_deref_lookup(Class *type, int ref);
 
 	static int reg_resize(int reg, int size);
 	void _resolve_deref_reg_shift_(SerialCommandParam &p, int i);

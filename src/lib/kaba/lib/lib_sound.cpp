@@ -19,16 +19,16 @@ namespace Kaba{
 	#define sound_p(p)		NULL
 #endif
 
-extern Type *TypeFloatList;
+extern Class *TypeFloatList;
 
 void SIAddPackageSound()
 {
 	add_package("sound", false);
 
-	Type *TypeSound = add_type("Sound",		sizeof(Sound));
-	Type *TypeSoundP = add_type_p("Sound*", TypeSound);
-	Type *TypeMusic = add_type("Music",		sizeof(Music));
-	Type *TypeMusicP = add_type_p("Music*", TypeMusic);
+	Class *TypeSound = add_type("Sound",		sizeof(Sound));
+	Class *TypeSoundP = add_type_p("Sound*", TypeSound);
+	Class *TypeMusic = add_type("Music",		sizeof(Music));
+	Class *TypeMusicP = add_type_p("Music*", TypeMusic);
 
 	add_class(TypeSound);
 		class_add_func("set",							TypeVoid,	sound_p(mf(&Sound::SetData)));

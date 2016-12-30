@@ -9,7 +9,7 @@
 
 namespace Kaba{
 
-extern Type *TypeImage;
+extern Class *TypeImage;
 
 #ifdef _X_USE_IMAGE_
 	static Image *_image;
@@ -25,7 +25,7 @@ extern Type *TypeImage;
 	#define image_p(p)		NULL
 #endif
 
-extern Type *TypeIntList;
+extern Class *TypeIntList;
 
 
 #ifdef _X_USE_IMAGE_
@@ -42,7 +42,7 @@ void SIAddPackageImage()
 	add_package("image", false);
 
 	TypeImage			= add_type  ("Image", sizeof(Image));
-	Type*
+	Class*
 	TypeImageP			= add_type_p("Image*", TypeImage);
 
 	

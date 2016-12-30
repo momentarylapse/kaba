@@ -90,55 +90,55 @@ Array<ClassSizeData> ClassSizes;
 //                                             types                                              //
 //------------------------------------------------------------------------------------------------//
 
-Type *TypeUnknown;
-Type *TypeReg128;
-Type *TypeReg64;
-Type *TypeReg32;
-Type *TypeReg16;
-Type *TypeReg8;
-Type *TypeVoid;
-Type *TypePointer;
-Type *TypeClass;
-Type *TypeBool;
-Type *TypeInt;
-Type *TypeInt64;
-Type *TypeFloat;
-Type *TypeFloat32;
-Type *TypeFloat64;
-Type *TypeChar;
-Type *TypeString;
-Type *TypeCString;
+Class *TypeUnknown;
+Class *TypeReg128;
+Class *TypeReg64;
+Class *TypeReg32;
+Class *TypeReg16;
+Class *TypeReg8;
+Class *TypeVoid;
+Class *TypePointer;
+Class *TypeClass;
+Class *TypeBool;
+Class *TypeInt;
+Class *TypeInt64;
+Class *TypeFloat;
+Class *TypeFloat32;
+Class *TypeFloat64;
+Class *TypeChar;
+Class *TypeString;
+Class *TypeCString;
 
-Type *TypeVector;
-Type *TypeRect;
-Type *TypeColor;
-Type *TypeQuaternion;
+Class *TypeVector;
+Class *TypeRect;
+Class *TypeColor;
+Class *TypeQuaternion;
  // internal:
-Type *TypeDynamicArray;
-Type *TypePointerPs;
-Type *TypePointerList;
-Type *TypeCharPs;
-Type *TypeBoolPs;
-Type *TypeBoolList;
-Type *TypeIntPs;
-Type *TypeIntList;
-Type *TypeIntArray;
-Type *TypeFloatPs;
-Type *TypeFloatList;
-Type *TypeFloatArray;
-Type *TypeFloatArrayP;
-Type *TypeComplex;
-Type *TypeComplexList;
-Type *TypeStringList;
-Type *TypeVectorArray;
-Type *TypeVectorArrayP;
-Type *TypeVectorList;
-Type *TypeMatrix;
-Type *TypePlane;
-Type *TypePlaneList;
-Type *TypeMatrix3;
-Type *TypeDate;
-Type *TypeImage;
+Class *TypeDynamicArray;
+Class *TypePointerPs;
+Class *TypePointerList;
+Class *TypeCharPs;
+Class *TypeBoolPs;
+Class *TypeBoolList;
+Class *TypeIntPs;
+Class *TypeIntList;
+Class *TypeIntArray;
+Class *TypeFloatPs;
+Class *TypeFloatList;
+Class *TypeFloatArray;
+Class *TypeFloatArrayP;
+Class *TypeComplex;
+Class *TypeComplexList;
+Class *TypeStringList;
+Class *TypeVectorArray;
+Class *TypeVectorArrayP;
+Class *TypeVectorList;
+Class *TypeMatrix;
+Class *TypePlane;
+Class *TypePlaneList;
+Class *TypeMatrix3;
+Class *TypeDate;
+Class *TypeImage;
 
 
 Array<Package> Packages;
@@ -158,20 +158,20 @@ void add_package(const string &name, bool used_by_default)
 	cur_package_index = Packages.num - 1;
 }
 
-Type *add_type(const string &name, int size, ScriptFlag flag)
+Class *add_type(const string &name, int size, ScriptFlag flag)
 {
-	Type *t = new Type;
+	Class *t = new Class;
 	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->size = size;
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
-	cur_package_script->syntax->types.add(t);
+	cur_package_script->syntax->classes.add(t);
 	return t;
 }
-Type *add_type_p(const string &name, Type *sub_type, ScriptFlag flag)
+Class *add_type_p(const string &name, Class *sub_type, ScriptFlag flag)
 {
-	Type *t = new Type;
+	Class *t = new Class;
 	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->size = config.pointer_size;
@@ -179,12 +179,12 @@ Type *add_type_p(const string &name, Type *sub_type, ScriptFlag flag)
 	if ((flag & FLAG_SILENT) > 0)
 		t->is_silent = true;
 	t->parent = sub_type;
-	cur_package_script->syntax->types.add(t);
+	cur_package_script->syntax->classes.add(t);
 	return t;
 }
-Type *add_type_a(const string &name, Type *sub_type, int array_length)
+Class *add_type_a(const string &name, Class *sub_type, int array_length)
 {
-	Type *t = new Type;
+	Class *t = new Class;
 	t->owner = cur_package_script->syntax;
 	t->name = name;
 	t->parent = sub_type;
@@ -199,7 +199,7 @@ Type *add_type_a(const string &name, Type *sub_type, int array_length)
 		t->is_array = true;
 		t->array_length = array_length;
 	}
-	cur_package_script->syntax->types.add(t);
+	cur_package_script->syntax->classes.add(t);
 	return t;
 }
 
@@ -243,7 +243,7 @@ PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
 //   with type information
 
 Array<PreOperator> PreOperators;
-int add_operator(int primitive_op, Type *return_type, Type *param_type1, Type *param_type2, void *func = NULL)
+int add_operator(int primitive_op, Class *return_type, Class *param_type1, Class *param_type2, void *func = NULL)
 {
 	PreOperator o;
 	o.primitive_id = primitive_op;
@@ -269,15 +269,15 @@ string PreOperator::str() const
 
 static PreCommand *cur_cmd = NULL;
 static Function *cur_func = NULL;
-static Type *cur_class;
+static Class *cur_class;
 static ClassFunction *cur_class_func = NULL;
 
-void add_class(Type *root_type)//, PreScript *ps = NULL)
+void add_class(Class *root_type)//, PreScript *ps = NULL)
 {
 	cur_class = root_type;
 }
 
-void class_add_element(const string &name, Type *type, int offset, ScriptFlag flag)
+void class_add_element(const string &name, Class *type, int offset, ScriptFlag flag)
 {
 	ClassElement e;
 	e.name = name;
@@ -287,7 +287,7 @@ void class_add_element(const string &name, Type *type, int offset, ScriptFlag fl
 	cur_class->element.add(e);
 }
 
-ClassFunction *_class_add_func(Type *c, const ClassFunction &f, ScriptFlag flag)
+ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag)
 {
 	if ((flag & FLAG_OVERRIDE) > 0){
 		foreachi(ClassFunction &ff, c->function, i)
@@ -301,7 +301,7 @@ ClassFunction *_class_add_func(Type *c, const ClassFunction &f, ScriptFlag flag)
 	return &c->function.back();
 }
 
-void _class_add_func_virtual(const string &tname, const string &name, Type *return_type, int index, ScriptFlag flag)
+void _class_add_func_virtual(const string &tname, const string &name, Class *return_type, int index, ScriptFlag flag)
 {
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
@@ -315,11 +315,11 @@ void _class_add_func_virtual(const string &tname, const string &name, Type *retu
 	cur_class->_vtable_location_target_ = cur_class->vtable.data;
 }
 
-void class_add_func(const string &name, Type *return_type, void *func, ScriptFlag flag)
+void class_add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (Type *t: cur_package_script->syntax->types)
+		for (Class *t: cur_package_script->syntax->classes)
 			if ((t->is_pointer) and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -373,11 +373,11 @@ int get_virtual_index(void *func, const string &tname, const string &name)
 	return -1;
 }
 
-void class_add_func_virtual(const string &name, Type *return_type, void *func, ScriptFlag flag)
+void class_add_func_virtual(const string &name, Class *return_type, void *func, ScriptFlag flag)
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (Type *t: cur_package_script->syntax->types)
+		for (Class *t: cur_package_script->syntax->classes)
 			if ((t->is_pointer) and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -395,7 +395,7 @@ void class_link_vtable(void *p)
 //                                           constants                                            //
 //------------------------------------------------------------------------------------------------//
 
-void add_const(const string &name, Type *type, void *value)
+void add_const(const string &name, Class *type, void *value)
 {
 	Constant c;
 	c.name = name;
@@ -414,7 +414,7 @@ void add_const(const string &name, Type *type, void *value)
 //------------------------------------------------------------------------------------------------//
 
 
-void add_ext_var(const string &name, Type *type, void *var)
+void add_ext_var(const string &name, Class *type, void *var)
 {
 	cur_package_script->syntax->root_of_all_evil.block->add_var(name, type);
 	cur_package_script->g_var.add(config.allow_std_lib ? (char*)var : NULL);
@@ -447,7 +447,7 @@ bool _cdecl _Pointer2Bool(void *p){	return (p != NULL);	}
 
 Array<PreCommand> PreCommands;
 
-int add_func(const string &name, Type *return_type, void *func, ScriptFlag flag)
+int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
 {
 	Function *f = new Function(cur_package_script->syntax, name, return_type);
 	f->literal_return_type = return_type;
@@ -462,7 +462,7 @@ int add_func(const string &name, Type *return_type, void *func, ScriptFlag flag)
 	return cur_package_script->syntax->functions.num - 1;
 }
 
-int add_compiler_func(const string &name, Type *return_type, int index, bool hide_docu)
+int add_compiler_func(const string &name, Class *return_type, int index, bool hide_docu)
 {
 	PreCommand c;
 	c.name = name;
@@ -484,7 +484,7 @@ void func_set_inline(int index)
 		cur_func->inline_no = index;
 }
 
-void func_add_param(const string &name, Type *type)
+void func_add_param(const string &name, Class *type)
 {
 	if (cur_cmd){
 		PreCommandParam p;
@@ -505,9 +505,9 @@ void func_add_param(const string &name, Type *type)
 	}
 }
 
-void script_make_super_array(Type *t, SyntaxTree *ps)
+void script_make_super_array(Class *t, SyntaxTree *ps)
 {
-	Type *parent = t->parent;
+	Class *parent = t->parent;
 	t->DeriveFrom(TypeDynamicArray, false);
 	t->parent = parent;
 	add_class(t);
@@ -648,7 +648,7 @@ string CastPointer2StringP(string &s)
 }
 
 Array<TypeCast> TypeCasts;
-void add_type_cast(int penalty, Type *source, Type *dest, const string &cmd, void *func)
+void add_type_cast(int penalty, Class *source, Class *dest, const string &cmd, void *func)
 {
 	TypeCast c;
 	c.penalty = penalty;

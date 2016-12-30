@@ -143,11 +143,11 @@ void DeleteAllScripts(bool even_immortal, bool force)
 
 extern Array<Script*> PublicScript;
 
-Type *GetDynamicType(void *p)
+Class *GetDynamicType(void *p)
 {
 	VirtualTable *pp = *(VirtualTable**)p;
 	for (Script *s: PublicScript){
-		for (Type *t: s->syntax->types){
+		for (Class *t: s->syntax->classes){
 			if (t->vtable.data == pp)
 				return t;
 		}
@@ -366,7 +366,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 		param_type.add(string(va_arg(marker, char*)));
 	va_end(marker);
 
-	Type *root_type = syntax->FindType(_class);
+	Class *root_type = syntax->FindType(_class);
 	if (!root_type)
 		return NULL;
 
@@ -395,7 +395,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 	return NULL;
 }
 
-void print_var(void *p, const string &name, Type *t)
+void print_var(void *p, const string &name, Class *t)
 {
 	msg_write(t->name + " " + name + " = " + t->var2str(p));
 }

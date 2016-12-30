@@ -7,11 +7,11 @@ namespace Kaba{
 
 class vector;
 
-extern Type *TypeIntPs;
-extern Type *TypeFloatPs;
-extern Type *TypeBoolPs;
-extern Type *TypeStringList;
-extern Type *TypeBoolList;
+extern Class *TypeIntPs;
+extern Class *TypeFloatPs;
+extern Class *TypeBoolPs;
+extern Class *TypeStringList;
+extern Class *TypeBoolList;
 
 static Date *_date;
 #define	GetDADate(x)			long(&_date->x)-long(_date)
@@ -69,15 +69,15 @@ void SIAddPackageFile()
 {
 	add_package("file", false);
 
-	Type*
+	Class*
 	TypeFile			= add_type  ("File", 0);
-	Type*
+	Class*
 	TypeFileP			= add_type_p("File*", TypeFile);
-	Type*
+	Class*
 	TypeDate			= add_type  ("Date", sizeof(Date));
-	Type*
+	Class*
 	TypeDirEntry		= add_type  ("DirEntry", sizeof(DirEntry));
-	Type*
+	Class*
 	TypeDirEntryList	= add_type_a("DirEntry[]", TypeDirEntry, -1);
 
 

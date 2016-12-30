@@ -13,7 +13,7 @@ extern float GlobalTimeToWait;
 
 int SerializerX86::fc_begin()
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	// return data too big... push address
 	SerialCommandParam ret_ref;
@@ -60,7 +60,7 @@ int SerializerX86::fc_begin()
 
 void SerializerX86::fc_end(int push_size)
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	if (push_size > 127)
 		add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_ESP), param_const(TypeInt, push_size));
@@ -125,7 +125,7 @@ SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block
 	p.type = link->type;
 	p.p = 0;
 	p.shift = 0;
-	//Type *rt=link->;
+	//Class *rt=link->;
 	if (link->kind == KIND_VAR_FUNCTION){
 		p.p = (long)link->script->func[link->link_no];
 		p.kind = KIND_VAR_GLOBAL;

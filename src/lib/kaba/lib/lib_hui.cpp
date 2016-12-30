@@ -31,42 +31,42 @@ namespace Kaba{
 #endif
 
 
-extern Type *TypeIntList;
-extern Type *TypeIntPs;
-extern Type *TypeComplexList;
-extern Type *TypeImage;
-Type *TypeHuiWindowP;
+extern Class *TypeIntList;
+extern Class *TypeIntPs;
+extern Class *TypeComplexList;
+extern Class *TypeImage;
+Class *TypeHuiWindowP;
 
 void SIAddPackageHui()
 {
 	add_package("hui", false);
 	
-	Type*
+	Class*
 	TypeHuiMenu		= add_type  ("Menu",  sizeof(HuiMenu));
-	Type*
+	Class*
 	TypeHuiMenuP	= add_type_p("Menu*", TypeHuiMenu);
-	Type*
+	Class*
 	TypeHuiPanel	= add_type  ("Panel", sizeof(HuiPanel));
-	Type*
+	Class*
 	TypeHuiWindow	= add_type  ("Window", sizeof(HuiWindow));
 	TypeHuiWindowP	= add_type_p("Window*",	TypeHuiWindow);
-	Type*
+	Class*
 	TypeHuiNixWindow= add_type  ("NixWindow", sizeof(HuiWindow));
-	Type*
+	Class*
 	TypeHuiDialog	= add_type  ("Dialog", sizeof(HuiWindow));
-	Type*
+	Class*
 	TypeHuiFixedDialog= add_type  ("FixedDialog", sizeof(HuiWindow));
-	Type*
+	Class*
 	TypeHuiEvent	= add_type  ("Event", sizeof(HuiEvent));
-	Type*
+	Class*
 	TypeHuiEventP	= add_type_p("Event*", TypeHuiEvent);
-	Type*
+	Class*
 	TypeHuiPainter	= add_type  ("Painter", sizeof(HuiPainter));
-	Type*
+	Class*
 	TypeHuiPainterP	= add_type_p("Painter*", TypeHuiPainter);
-	Type*
+	Class*
 	TypeHuiTimer	= add_type  ("Timer", sizeof(HuiTimer));
-	Type*
+	Class*
 	TypeHuiConfiguration = add_type  ("Configuration", sizeof(HuiConfiguration));
 
 	

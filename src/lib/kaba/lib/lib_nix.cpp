@@ -21,21 +21,21 @@ namespace Kaba{
 
 
 
-extern Type *TypeMatrix;
-extern Type *TypeImage;
-extern Type *TypeFloatArrayP;
-extern Type *TypeVectorArray;
-extern Type *TypeVectorArrayP;
-extern Type *TypeHuiWindowP; // -> script_data_hui.cpp
-Type *TypeVertexBuffer;
-Type *TypeVertexBufferP;
-Type *TypeTexture;
-Type *TypeTextureP;
-Type *TypeTexturePArray;
-Type *TypeDynamicTexture;
-Type *TypeCubeMap;
-Type *TypeShader;
-Type *TypeShaderP;
+extern Class *TypeMatrix;
+extern Class *TypeImage;
+extern Class *TypeFloatArrayP;
+extern Class *TypeVectorArray;
+extern Class *TypeVectorArrayP;
+extern Class *TypeHuiWindowP; // -> script_data_hui.cpp
+Class *TypeVertexBuffer;
+Class *TypeVertexBufferP;
+Class *TypeTexture;
+Class *TypeTextureP;
+Class *TypeTexturePArray;
+Class *TypeDynamicTexture;
+Class *TypeCubeMap;
+Class *TypeShader;
+Class *TypeShaderP;
 
 void SIAddPackageNix()
 {

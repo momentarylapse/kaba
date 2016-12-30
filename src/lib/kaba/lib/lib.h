@@ -23,10 +23,10 @@ namespace Kaba{
 extern string DataVersion;
 
 class SyntaxTree;
-class Type;
+class Class;
 
 
-void script_make_super_array(Type *t, SyntaxTree *ps = NULL);
+void script_make_super_array(Class *t, SyntaxTree *ps = NULL);
 
 
 extern const string IDENTIFIER_CLASS;
@@ -108,7 +108,7 @@ extern PrimitiveOperator PrimitiveOperators[];
 struct PreOperator
 {
 	int primitive_id;
-	Type *return_type, *param_type_1, *param_type_2;
+	Class *return_type, *param_type_1, *param_type_2;
 	void *func;
 	string str() const;
 };
@@ -262,12 +262,12 @@ enum
 struct PreCommandParam
 {
 	string name;
-	Type *type;
+	Class *type;
 };
 struct PreCommand
 {
 	string name;
-	Type *return_type;
+	Class *return_type;
 	Array<PreCommandParam> param;
 	int package;
 	bool hide_docu;
@@ -319,7 +319,7 @@ typedef string t_cast_func(string&);
 struct TypeCast
 {
 	int penalty;
-	Type *source, *dest;
+	Class *source, *dest;
 	int kind;
 	int func_no;
 	Script *script;

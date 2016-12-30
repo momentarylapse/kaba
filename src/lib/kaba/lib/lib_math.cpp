@@ -35,15 +35,15 @@ namespace Kaba{
 // we're always using math types
 #define type_p(p)			(void*)p
 
-extern Type *TypeComplexList;
-extern Type *TypeFloatList;
-extern Type *TypeVectorList;
-extern Type *TypeMatrix;
-extern Type *TypePlane;
-extern Type *TypePlaneList;
-extern Type *TypeMatrix3;
-extern Type *TypeIntList;
-extern Type *TypeFloatPs;
+extern Class *TypeComplexList;
+extern Class *TypeFloatList;
+extern Class *TypeVectorList;
+extern Class *TypeMatrix;
+extern Class *TypePlane;
+extern Class *TypePlaneList;
+extern Class *TypeMatrix3;
+extern Class *TypeIntList;
+extern Class *TypeFloatPs;
 
 
 float _cdecl f_sqr(float f){	return f*f;	}
@@ -389,29 +389,29 @@ void SIAddPackageMath()
 	TypePlaneList	= add_type_a("plane[]",		TypePlane, -1);
 	TypeColor		= add_type  ("color",		sizeof(color));
 	TypeMatrix3		= add_type  ("matrix3",		sizeof(matrix3));
-	Type*
+	Class*
 	TypeFloatArray3		= add_type_a("float[3]",	TypeFloat32, 3);
-	Type*
+	Class*
 	TypeFloatArray4		= add_type_a("float[4]",	TypeFloat32, 4);
-	Type*
+	Class*
 	TypeFloatArray4x4	= add_type_a("float[4][4]",	TypeFloatArray4, 4);
-	Type*
+	Class*
 	TypeFloatArray16	= add_type_a("float[16]",	TypeFloat32, 16);
-	Type*
+	Class*
 	TypeFloatArray3x3	= add_type_a("float[3][3]",	TypeFloatArray3, 3);
-	Type*
+	Class*
 	TypeFloatArray9		= add_type_a("float[9]",	TypeFloat32, 9);
-	Type*
+	Class*
 	TypeVli			= add_type  ("vli",		sizeof(vli));
-	Type*
+	Class*
 	TypeCrypto		= add_type  ("Crypto",	sizeof(Crypto));
-	Type*
+	Class*
 	TypeAny			= add_type  ("any",		sizeof(Any));
-	Type*
+	Class*
 	TypeFloatInterpolator	= add_type  ("FloatInterpolator",		sizeof(Interpolator<float>));
-	Type*
+	Class*
 	TypeVectorInterpolator	= add_type  ("VectorInterpolator",		sizeof(Interpolator<vector>));
-	Type*
+	Class*
 	TypeRandom		= add_type  ("Random",	sizeof(Random));
 	
 	

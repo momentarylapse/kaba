@@ -13,7 +13,7 @@ namespace Kaba{
 
 int SerializerARM::fc_begin()
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	// grow stack (down) for local variables of the calling function
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
@@ -87,7 +87,7 @@ int SerializerARM::fc_begin()
 
 void SerializerARM::fc_end(int push_size)
 {
-	Type *type = CompilerFunctionReturn.type;
+	Class *type = CompilerFunctionReturn.type;
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){
@@ -398,7 +398,7 @@ SerialCommandParam SerializerARM::SerializeParameter(Command *link, Block *block
 	p.type = link->type;
 	p.p = 0;
 	p.shift = 0;
-	//Type *rt=link->;
+	//Class *rt=link->;
 	if (link->kind == KIND_VAR_FUNCTION){
 		p.p = (long)link->script->func[link->link_no];
 		p.kind = KIND_VAR_GLOBAL;

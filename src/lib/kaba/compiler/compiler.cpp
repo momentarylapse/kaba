@@ -52,7 +52,7 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 	}
 }
 
-void try_init_global_var(Type *type, char* g_var)
+void try_init_global_var(Class *type, char* g_var)
 {
 	if (type->is_array){
 		for (int i=0;i<type->array_length;i++)
@@ -146,7 +146,7 @@ void Script::AllocateMemory()
 		}
 		memory_size += mem_align(s, 4);
 	}
-	for (Type *t: syntax->types)
+	for (Class *t: syntax->classes)
 		if (t->vtable.num > 0)
 			memory_size += config.pointer_size;
 
@@ -258,7 +258,7 @@ void Script::MapConstantsToOpcode()
 	cnst.resize(syntax->constants.num);
 
 	// vtables -> no data yet...
-	for (Type *t: syntax->types)
+	for (Class *t: syntax->classes)
 		if (t->vtable.num > 0){
 			t->_vtable_location_compiler_ = &opcode[opcode_size];
 			t->_vtable_location_target_ = (void*)(opcode_size + syntax->asm_meta_info->code_origin);
@@ -426,7 +426,7 @@ void relink_calls(Script *s, Script *a, IncludeTranslationData &d)
 	}
 
 	// we might need some constructors later on...
-	for (Type *t: s->syntax->types)
+	for (Class *t: s->syntax->classes)
 		for (ClassFunction &f: t->function)
 			if (f.script == d.source){
 				f.script = a;
@@ -451,7 +451,7 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 		*ff = *f;
 		// keep block pointing to include file...
 	}
-	a->types.append(b->types);
+	a->classes.append(b->classes);
 
 	//int asm_off = a->AsmBlocks.num;
 	for (AsmBlock &ab: b->asm_blocks){
@@ -561,7 +561,7 @@ void Script::Compiler()
 	}
 
 // link virtual functions into vtables
-	for (Type *t: syntax->types){
+	for (Class *t: syntax->classes){
 		t->LinkVirtualTable();
 
 		if (config.compile_os){

@@ -52,7 +52,7 @@ void Serializer::use_virtual_reg(int v, int first, int last)
 
 
 // return of a function might need temp vars without destructor FIXME ?!?
-SerialCommandParam Serializer::add_temp(Type *t, bool add_constructor)
+SerialCommandParam Serializer::add_temp(Class *t, bool add_constructor)
 {
 	if (t == TypeVoid)
 		return p_none;
@@ -82,7 +82,7 @@ SerialCommandParam Serializer::add_temp(Type *t, bool add_constructor)
 	return param;
 }
 
-inline Type *get_subtype(Type *t)
+inline Class *get_subtype(Class *t)
 {
 	if (t->parent)
 		return t->parent;
@@ -102,7 +102,7 @@ inline SerialCommandParam deref_temp(SerialCommandParam &param)
 	return deref;
 }
 
-SerialCommandParam Serializer::param_shift(const SerialCommandParam &param, int shift, Type *t)
+SerialCommandParam Serializer::param_shift(const SerialCommandParam &param, int shift, Class *t)
 {
 	SerialCommandParam p = param;
 	p.shift += shift;
@@ -110,7 +110,7 @@ SerialCommandParam Serializer::param_shift(const SerialCommandParam &param, int 
 	return p;
 }
 
-SerialCommandParam Serializer::param_global(Type *type, void *v)
+SerialCommandParam Serializer::param_global(Class *type, void *v)
 {
 	SerialCommandParam p;
 	p.type = type;
@@ -120,7 +120,7 @@ SerialCommandParam Serializer::param_global(Type *type, void *v)
 	return p;
 }
 
-SerialCommandParam Serializer::param_local(Type *type, int offset)
+SerialCommandParam Serializer::param_local(Class *type, int offset)
 {
 	SerialCommandParam p;
 	p.type = type;
@@ -130,7 +130,7 @@ SerialCommandParam Serializer::param_local(Type *type, int offset)
 	return p;
 }
 
-SerialCommandParam Serializer::param_const(Type *type, long c)
+SerialCommandParam Serializer::param_const(Class *type, long c)
 {
 	SerialCommandParam p;
 	p.type = type;
@@ -150,7 +150,7 @@ SerialCommandParam Serializer::param_marker(int m)
 	return p;
 }
 
-SerialCommandParam Serializer::param_deref_marker(Type *type, int m)
+SerialCommandParam Serializer::param_deref_marker(Class *type, int m)
 {
 	SerialCommandParam p;
 	p.type = type;
@@ -160,7 +160,7 @@ SerialCommandParam Serializer::param_deref_marker(Type *type, int m)
 	return p;
 }
 
-SerialCommandParam Serializer::param_vreg(Type *type, int vreg, int preg)
+SerialCommandParam Serializer::param_vreg(Class *type, int vreg, int preg)
 {
 	SerialCommandParam p;
 	p.kind = KIND_REGISTER;
@@ -174,7 +174,7 @@ SerialCommandParam Serializer::param_vreg(Type *type, int vreg, int preg)
 	return p;
 }
 
-SerialCommandParam Serializer::param_preg(Type *type, int reg)
+SerialCommandParam Serializer::param_preg(Class *type, int reg)
 {
 	SerialCommandParam p;
 	p.kind = KIND_REGISTER;
@@ -185,7 +185,7 @@ SerialCommandParam Serializer::param_preg(Type *type, int reg)
 	return p;
 }
 
-SerialCommandParam Serializer::param_deref_vreg(Type *type, int vreg, int preg)
+SerialCommandParam Serializer::param_deref_vreg(Class *type, int vreg, int preg)
 {
 	SerialCommandParam p;
 	p.kind = KIND_DEREF_REGISTER;
@@ -199,7 +199,7 @@ SerialCommandParam Serializer::param_deref_vreg(Type *type, int vreg, int preg)
 	return p;
 }
 
-SerialCommandParam Serializer::param_deref_preg(Type *type, int reg)
+SerialCommandParam Serializer::param_deref_preg(Class *type, int reg)
 {
 	SerialCommandParam p;
 	p.kind = KIND_DEREF_REGISTER;
@@ -210,7 +210,7 @@ SerialCommandParam Serializer::param_deref_preg(Type *type, int reg)
 	return p;
 }
 
-SerialCommandParam Serializer::param_lookup(Type *type, int ref)
+SerialCommandParam Serializer::param_lookup(Class *type, int ref)
 {
 	SerialCommandParam p;
 	p.type = TypePointer;
@@ -220,7 +220,7 @@ SerialCommandParam Serializer::param_lookup(Type *type, int ref)
 	return p;
 }
 
-SerialCommandParam Serializer::param_deref_lookup(Type *type, int ref)
+SerialCommandParam Serializer::param_deref_lookup(Class *type, int ref)
 {
 	SerialCommandParam p;
 	p.type = TypePointer;
@@ -533,7 +533,7 @@ void Serializer::AddClassFunctionCall(ClassFunction *cf)
 
 
 // creates res...
-SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *type)
+SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Class *type)
 {
 	SerialCommandParam ret;
 	if (!type)
@@ -577,7 +577,7 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Type *typ
 	return ret;
 }
 
-SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Type *force_type)
+SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Class *force_type)
 {
 	SerialCommandParam ret;
 	/*add_temp(TypePointer, ret);
@@ -771,7 +771,7 @@ void Serializer::InsertAddedStuffIfNeeded(Block *block, int index)
 //    -1: -return-/new   -> don't destruct
 void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 {
-	Type *class_type = param.type;
+	Class *class_type = param.type;
 	if (modus == -1)
 		class_type = class_type->parent;
 	ClassFunction *f = class_type->GetDefaultConstructor();
@@ -929,8 +929,8 @@ void Serializer::solve_deref_temp_local(int c, int np, bool is_local)
 	SerialCommandParam p = cmd[c].p[np];
 	int shift = p.shift;
 
-	Type *type_pointer = is_local ? TypePointer : temp_var[(long)p.p].type;
-	Type *type_data = p.type;
+	Class *type_pointer = is_local ? TypePointer : temp_var[(long)p.p].type;
+	Class *type_data = p.type;
 	
 	p.kind = is_local ? KIND_VAR_LOCAL : KIND_VAR_TEMP;
 	p.shift = 0;
@@ -1050,8 +1050,8 @@ void Serializer::ResolveDerefTempAndLocal()
 		}else{
 			// hopefully... p2 is read-only
 
-			Type *type_pointer = TypePointer;
-			Type *type_data = cmd[i].p[0].type;
+			Class *type_pointer = TypePointer;
+			Class *type_data = cmd[i].p[0].type;
 
 			int reg = find_unused_reg(i, i, type_data->size);
 			if (reg < 0)
@@ -1657,13 +1657,13 @@ void Serializer::DisentangleShiftedTempVars()
 			if (temp_var[i].referenced)
 				continue;
 			int n = temp_var[i].entangled / 4 + 1;
-			Type *t = temp_var[i].type;
+			Class *t = temp_var[i].type;
 			// entangled
 			SerialCommandParam *p = new SerialCommandParam[n];
 
 			// create small temp vars
 			for (int j=0;j<n;j++){
-				Type *tt = TypeReg32;
+				Class *tt = TypeReg32;
 				// corresponding to element in a class?
 				for (int k=0;k<t->element.num;k++)
 					if (t->element[k].offset == j * 4)
