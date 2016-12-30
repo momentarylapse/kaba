@@ -256,7 +256,7 @@ void SerializerAMD64::AddFunctionOutro(Function *f)
 	add_cmd(Asm::INST_RET);
 }
 
-#define debug_evil_corrections
+//#define debug_evil_corrections
 
 void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 {
