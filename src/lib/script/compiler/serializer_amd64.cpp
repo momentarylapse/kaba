@@ -256,6 +256,8 @@ void SerializerAMD64::AddFunctionOutro(Function *f)
 	add_cmd(Asm::INST_RET);
 }
 
+#define debug_evil_corrections
+
 void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 {
 	// push 8 bit -> push 32 bit
@@ -269,38 +271,39 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 	if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 		if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_MOV)){
 			if ((c.p[0].kind == KIND_REGISTER) and (c.p[1].kind == KIND_REF_TO_CONST)){
-				if (c.p[0].type->is_pointer){
+				// TODO: should become an optimization if value fits into 32 bit...
+				/*if (c.p[0].type->is_pointer){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize a");
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 					c.p[0].type = TypeReg32;
 					c.p[0].p = reg_resize(c.p[0].p, 4);
 #ifdef debug_evil_corrections
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
-				}
+				}*/
 			}
 			if ((c.p[0].type->size == 8) and (c.p[1].type->size == 4)){
 				/*if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize b");
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 					c.p[0].type = c.p[1].type;
 					c.p[0].p = (char*)(long)reg_resize((long)c.p[0].p, c.p[1].type->size);
 #ifdef debug_evil_corrections
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 				}else*/ if (c.p[1].kind == KIND_REGISTER){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize c");
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 					c.p[1].type = c.p[0].type;
 					c.p[1].p = reg_resize(c.p[1].p, c.p[0].type->size);
 #ifdef debug_evil_corrections
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 				}
 			}
@@ -308,12 +311,12 @@ void SerializerAMD64::CorrectUnallowedParamCombis2(SerialCommand &c)
 				if ((c.p[0].kind == KIND_REGISTER) and ((c.p[1].kind == KIND_REGISTER) or (c.p[1].kind == KIND_DEREF_REGISTER))){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize d");
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 					c.p[0].type = c.p[1].type;
 					c.p[0].p = reg_resize(c.p[0].p, c.p[1].type->size);
 #ifdef debug_evil_corrections
-					msg_write(cmd2str(c));
+					msg_write(c.str());
 #endif
 				}
 			}
