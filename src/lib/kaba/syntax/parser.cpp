@@ -42,7 +42,7 @@ long long s2i2(const string &str)
 
 // find the type of a (potential) constant
 //  "1.2" -> float
-Type *SyntaxTree::GetConstantType()
+Type *SyntaxTree::GetConstantType(const string &str)
 {
 	FoundConstantNr = -1;
 	FoundConstantScript = NULL;
@@ -59,26 +59,26 @@ Type *SyntaxTree::GetConstantType()
 	// included named constants
 	for (Script *inc: includes)
 		foreachi(Constant &c, inc->syntax->constants, i)
-			if (Exp.cur == c.name){
+			if (str == c.name){
 				FoundConstantNr = i;
 				FoundConstantScript = inc;
 				return c.type;
 			}
 
 	// character "..."
-	if ((Exp.cur[0] == '\'') and (Exp.cur.back() == '\''))
+	if ((str[0] == '\'') and (str.back() == '\''))
 		return TypeChar;
 
 	// string "..."
-	if ((Exp.cur[0] == '"') and (Exp.cur.back() == '"'))
+	if ((str[0] == '"') and (str.back() == '"'))
 		return flag_string_const_as_cstring ? TypeCString : TypeString;
 
 	// numerical (int/float)
 	Type *type = TypeInt;
-	bool hex = (Exp.cur.num > 1) and (Exp.cur[0] == '0') and (Exp.cur[1] == 'x');
+	bool hex = (str.num > 1) and (str[0] == '0') and (str[1] == 'x');
 	char last = 0;
-	for (int ic=0;ic<Exp.cur.num;ic++){
-		char c = Exp.cur[ic];
+	for (int ic=0;ic<str.num;ic++){
+		char c = str[ic];
 		if ((c < '0') or (c > '9')){
 			if (hex){
 				if ((ic >= 2) and (c < 'a') and (c > 'f'))
@@ -97,16 +97,16 @@ Type *SyntaxTree::GetConstantType()
 	}
 	if (type == TypeInt){
 		if (hex){
-			if ((s2i2(Exp.cur) >= 0x100000000) or (-s2i2(Exp.cur) > 0x00000000))
+			if ((s2i2(str) >= 0x100000000) or (-s2i2(str) > 0x00000000))
 				type = TypeInt64;
 		}else{
-			if ((s2i2(Exp.cur) >= 0x80000000) or (-s2i2(Exp.cur) > 0x80000000))
+			if ((s2i2(str) >= 0x80000000) or (-s2i2(str) > 0x80000000))
 				type = TypeInt64;
 		}
 	}
 
 	// super array [...]
-	if (Exp.cur == "["){
+	if (str == "["){
 		DoError("super array constant");
 	}
 	return type;
@@ -116,30 +116,30 @@ static int _some_int_;
 static long long _some_int64_;
 static float _some_float_;
 
-string SyntaxTree::GetConstantValue()
+string SyntaxTree::GetConstantValue(const string &str)
 {
-	Type *type = GetConstantType();
+	Type *type = GetConstantType(str);
 // named constants
 	if (FoundConstantNr >= 0)
 		return FoundConstantScript->syntax->constants[FoundConstantNr].value;
 // literal
 	if (type == TypeChar){
-		_some_int_ = Exp.cur[1];
+		_some_int_ = str[1];
 		return string((char*)&_some_int_, sizeof(int));
 	}
 	if ((type == TypeString) or (type == TypeCString)){
-		return Exp.cur.substr(1, -2);
+		return str.substr(1, -2);
 	}
 	if (type == TypeInt){
-		_some_int_ = (int)s2i2(Exp.cur);
+		_some_int_ = (int)s2i2(str);
 		return string((char*)&_some_int_, sizeof(int));
 	}
 	if (type == TypeInt64){
-		_some_int64_ = s2i2(Exp.cur);
+		_some_int64_ = s2i2(str);
 		return string((char*)&_some_int64_, sizeof(long long));
 	}
 	if (type == TypeFloat32){
-		_some_float_ = Exp.cur._float();
+		_some_float_ = str._float();
 		return string((char*)&_some_float_, sizeof(float));
 	}
 	return "";
@@ -325,7 +325,7 @@ Command *SyntaxTree::GetSpecialFunctionCall(const string &f_name, Command &link,
 	}else if ((links.num > 0) and ((links[0].kind == KIND_VAR_GLOBAL) or (links[0].kind == KIND_VAR_LOCAL))){
 		constants[nc].setInt(links[0].type->size);
 	}else{
-		type = GetConstantType();
+		type = GetConstantType(Exp.cur);
 		if (type)
 			constants[nc].setInt(type->size);
 		else
@@ -702,11 +702,11 @@ Command *SyntaxTree::GetOperand(Block *block)
 				operand = cp_command(&links[0]);
 			}
 		}else{
-			Type *t = GetConstantType();
+			Type *t = GetConstantType(Exp.cur);
 			if (t != TypeUnknown){
 				operand = AddCommand(KIND_CONSTANT, AddConstant(t), t);
 				// constant for parameter (via variable)
-				constants[operand->link_no].value = GetConstantValue();
+				constants[operand->link_no].value = GetConstantValue(Exp.cur);
 				Exp.next();
 			}else{
 				//Operand.Kind=0;
@@ -1411,9 +1411,9 @@ void SyntaxTree::ParseEnum()
 			if (Exp.cur == "="){
 				Exp.next();
 				ExpectNoNewline();
-				Type *type = GetConstantType();
+				Type *type = GetConstantType(Exp.cur);
 				if (type == TypeInt)
-					value = *(int*)GetConstantValue().data;
+					value = *(int*)GetConstantValue(Exp.cur).data;
 				else
 					DoError("integer constant expected after \"=\" for explicit value of enum");
 				Exp.next();

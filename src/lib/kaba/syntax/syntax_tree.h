@@ -215,8 +215,8 @@ public:
 	void AddFunctionHeadersForClass(Type *t);
 
 	// syntax analysis
-	Type *GetConstantType();
-	string GetConstantValue();
+	Type *GetConstantType(const string &str);
+	string GetConstantValue(const string &str);
 	Type *FindType(const string &name);
 	Type *AddType(Type *type);
 	Type *CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Type *sub);
