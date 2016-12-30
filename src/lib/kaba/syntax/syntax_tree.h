@@ -14,7 +14,7 @@ namespace Kaba{
 class Script;
 class SyntaxTree;
 
-#define SCRIPT_MAX_STRING_CONST_LENGTH	2048
+#define MAX_STRING_CONST_LENGTH	2048
 
 // macros
 struct Define

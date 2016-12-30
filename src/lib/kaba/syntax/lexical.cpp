@@ -8,7 +8,7 @@ namespace Kaba{
 
 //#define ScriptDebug
 
-static char Temp[SCRIPT_MAX_STRING_CONST_LENGTH];
+static char Temp[MAX_STRING_CONST_LENGTH];
 static int ExpKind;
 
 char str_eol[] = "-eol-";
