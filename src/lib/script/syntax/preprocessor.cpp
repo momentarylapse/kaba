@@ -287,7 +287,7 @@ Command *SyntaxTree::PreProcessCommand(Command *c)
 	return c;
 }
 
-string LinkNr2Str(SyntaxTree *s,int kind,int nr);
+string LinkNr2Str(SyntaxTree *s, int kind, long long nr);
 
 // may not use AddConstant()!!!
 Command *SyntaxTree::PreProcessCommandAddresses(Command *c)

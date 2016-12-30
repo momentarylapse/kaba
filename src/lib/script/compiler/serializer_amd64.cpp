@@ -164,10 +164,10 @@ void SerializerAMD64::add_virtual_function_call(int virtual_index)
 	int push_size = fc_begin();
 
 	add_cmd(Asm::INST_MOV, p_rax, CompilerFunctionInstance);
-	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
-	add_cmd(Asm::INST_ADD, p_eax, param_const(TypeInt, 8 * virtual_index));
-	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
-	add_cmd(Asm::INST_CALL, p_eax); // the actual call
+	add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
+	add_cmd(Asm::INST_ADD, p_rax, param_const(TypeInt, 8 * virtual_index));
+	add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
+	add_cmd(Asm::INST_CALL, p_rax); // the actual call
 
 	fc_end(push_size);
 }

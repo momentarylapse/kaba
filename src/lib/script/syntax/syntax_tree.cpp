@@ -231,7 +231,7 @@ string Kind2Str(int kind)
 	return format("UNKNOWN KIND: %d", kind);
 }
 
-string LinkNr2Str(SyntaxTree *s,int kind,int nr)
+string LinkNr2Str(SyntaxTree *s, int kind, long long nr)
 {
 	if (kind == KIND_VAR_LOCAL)			return i2s(nr);//s->cur_func->var[nr].name;
 	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr].name;
