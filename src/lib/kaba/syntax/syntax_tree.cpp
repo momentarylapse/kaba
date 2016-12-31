@@ -224,12 +224,12 @@ string Kind2Str(int kind)
 	return format("UNKNOWN KIND: %d", kind);
 }
 
-string LinkNr2Str(SyntaxTree *s, int kind, long long nr)
+string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 {
-	if (kind == KIND_VAR_LOCAL)			return i2s(nr);//s->cur_func->var[nr].name;
+	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr].name;
 	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr].name;
 	if (kind == KIND_VAR_FUNCTION)		return s->functions[nr]->name;
-	if (kind == KIND_CONSTANT)			return i2s(nr);//s->Constants[nr].type->var2str(s->Constants[nr].data);
+	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr].type->var2str(s->constants[nr].value.data);
 	if (kind == KIND_FUNCTION)			return s->functions[nr]->name;
 	if (kind == KIND_VIRTUAL_FUNCTION)	return i2s(nr);//s->Functions[nr]->name;
 	if (kind == KIND_STATEMENT)	return Statements[nr].name;
@@ -425,6 +425,11 @@ Block *Command::as_block() const
 	return script->syntax->blocks[link_no];
 }
 
+Function *Command::as_func() const
+{
+	return script->syntax->functions[link_no];
+}
+
 void Command::set_instance(Command *p)
 {
 	set_command(instance, p);
@@ -438,7 +443,7 @@ void Command::set_num_params(int n)
 void Command::set_param(int index, Command *p)
 {
 	if ((index < 0) or (index >= param.num)){
-		this->script->syntax->ShowCommand(this);
+		this->script->syntax->ShowCommand(this, this->script->cur_func);
 		script->DoErrorInternal(format("Command.set_param...  %d %d", index, param.num));
 	}
 	set_command(param[index], p);
@@ -753,7 +758,7 @@ void conv_return(SyntaxTree *ps, commands *c)
 	for (int i=0;i<c->num_params;i++)
 		conv_return(ps, c->param[i]);
 	
-	if ((c->kind == KIND_COMPILER_FUNCTION) and (c->link_no == COMMAND_RETURN)){
+	if ((c->kind == KIND_STATEMENT) and (c->link_no == COMMAND_RETURN)){
 		msg_write("conv ret");
 		ref_command_old(ps, c);
 	}
@@ -1106,7 +1111,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 			f->_var_size = 0;
 			
 			foreachi(Variable &v, f->var, i){
-				int s = mem_align(v.type->size, 4);
+				long long s = mem_align(v.type->size, 4);
 				v._offset = - f->_var_size - s;
 				f->_var_size += s;
 			}
@@ -1144,18 +1149,21 @@ SyntaxTree::~SyntaxTree()
 		delete(f);
 }
 
-void SyntaxTree::ShowCommand(Command *c)
+void SyntaxTree::ShowCommand(Command *c, Function *f)
 {
 	string orig;
 	if (c->script->syntax != this)
 		orig = " << " + c->script->filename;
-	msg_write("[" + Kind2Str(c->kind) + "] " + c->type->name + " " + LinkNr2Str(c->script->syntax,c->kind,c->link_no) + orig);
+	msg_write("[" + Kind2Str(c->kind) + "] " + c->type->name + " " + LinkNr2Str(c->script->syntax, f, c->kind, c->link_no) + orig);
 	msg_right();
 	if (c->instance)
-		ShowCommand(c->instance);
+		ShowCommand(c->instance, f);
+	//msg_write(c->param.num);
+	if (c->param.num > 10)
+		return;
 	for (Command *p: c->param)
 		if (p)
-			ShowCommand(p);
+			ShowCommand(p, f);
 		else
 			msg_write("<param nil>");
 	msg_left();
@@ -1169,7 +1177,7 @@ void SyntaxTree::ShowBlock(Block *b)
 		if (c->kind == KIND_BLOCK)
 			ShowBlock(c->as_block());
 		else
-			ShowCommand(c);
+			ShowCommand(c, b->function);
 	}
 	msg_left();
 	msg_write("/block");

@@ -399,7 +399,7 @@ void add_const(const string &name, Class *type, void *value)
 	Constant c;
 	c.name = name;
 	c.type = type;
-	c.value.resize(max(type->size, 8));//config.PointerSize));
+	c.value.resize(max((int)type->size, 8));//config.PointerSize));
 	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) or (type == TypeFloat32) or (type == TypeChar)  or (type == TypeBool) or (type->is_pointer))
 		*(void**)c.value.data = value;

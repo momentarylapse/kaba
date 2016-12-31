@@ -44,8 +44,8 @@ enum
 	// execution
 	KIND_FUNCTION,           // = real function call
 	KIND_VIRTUAL_FUNCTION,   // = virtual function call
-	KIND_INLINE_FUNCTION,   // = inline function call
-	KIND_STATEMENT,          // = special internal functions
+	KIND_INLINE_FUNCTION,    // = function defined inside the compiler...
+	KIND_STATEMENT,          // = if/while/break/...
 	KIND_BLOCK,              // = block of commands {...}
 	KIND_OPERATOR,
 	KIND_PRIMITIVE_OPERATOR, // tentative...
@@ -101,7 +101,7 @@ struct Variable
 {
 	Class *type; // for creating instances
 	string name;
-	int _offset; // for compilation
+	long long _offset; // for compilation
 	bool is_extern;
 };
 
@@ -125,7 +125,7 @@ struct Function
 	bool is_pure;
 	int inline_no;
 	// for compilation...
-	int _var_size, _param_size;
+	long long _var_size, _param_size;
 	int _logical_line_no;
 	int _exp_no;
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
@@ -149,6 +149,7 @@ struct Command
 	Command();
 	Command(int kind, long long link_no, Script *script, Class *type);
 	Block *as_block() const;
+	Function *as_func() const;
 	void set_num_params(int n);
 	void set_param(int index, Command *p);
 	void set_instance(Command *p);
@@ -285,7 +286,7 @@ public:
 	void Simplify();
 
 	// debug displaying
-	void ShowCommand(Command *c);
+	void ShowCommand(Command *c, Function *f);
 	void ShowFunction(Function *f);
 	void ShowBlock(Block *b);
 	void Show();
@@ -316,7 +317,7 @@ public:
 };
 
 string Kind2Str(int kind);
-string LinkNr2Str(SyntaxTree *s,int kind,int nr);
+string LinkNr2Str(SyntaxTree *s, int kind, long long nr);
 
 
 

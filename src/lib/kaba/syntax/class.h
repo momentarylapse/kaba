@@ -14,10 +14,12 @@ struct Function;
 struct ClassElement{
 	string name;
 	Class *type;
-	int offset;
+	long long offset;
 	bool hidden;
 	ClassElement();
 };
+
+// TODO: use Function instead!
 struct ClassFunction{
 	string name;
 	Script *script;
@@ -37,10 +39,10 @@ typedef void *VirtualTable;
 class Class{
 public:
 	Class();
-	//Type(const string &name, int size, SyntaxTree *owner);
+	//Class(const string &name, int size, SyntaxTree *owner);
 	~Class();
 	string name;
-	int size; // complete size of type
+	long long size; // complete size of type
 	int array_length;
 	bool is_array, is_super_array; // mutially exclusive!
 	bool is_pointer, is_silent; // pointer silent (&)

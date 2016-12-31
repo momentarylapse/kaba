@@ -341,8 +341,8 @@ struct CompilerConfiguration
 	int abi;
 	bool allow_std_lib;
 
-	int stack_size;
-	int pointer_size;
+	long long stack_size;
+	long long pointer_size;
 	int super_array_size;
 
 	bool allow_simplification;
