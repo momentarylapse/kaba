@@ -666,17 +666,9 @@ void add_type_cast(int penalty, Class *source, Class *dest, const string &cmd, v
 	TypeCast c;
 	c.penalty = penalty;
 	c.func_no = -1;
-	for (int i=0;i<PreCommands.num;i++)
-		if (PreCommands[i].name == cmd){
-			c.kind = KIND_COMPILER_FUNCTION;
-			c.func_no = i;
-			c.script = cur_package_script;
-			break;
-		}
 	if (c.func_no < 0)
 	for (int i=0;i<cur_package_script->syntax->functions.num;i++)
 		if (cur_package_script->syntax->functions[i]->name == cmd){
-			c.kind = KIND_FUNCTION;
 			c.func_no = i;
 			c.script = cur_package_script;
 			break;

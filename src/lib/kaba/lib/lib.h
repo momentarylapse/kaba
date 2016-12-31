@@ -320,7 +320,6 @@ struct TypeCast
 {
 	int penalty;
 	Class *source, *dest;
-	int kind;
 	int func_no;
 	Script *script;
 	t_cast_func *func;

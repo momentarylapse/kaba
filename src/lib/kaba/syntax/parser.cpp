@@ -801,15 +801,9 @@ Command *apply_type_cast(SyntaxTree *ps, int tc, Command *param)
 		param->type = TypeCasts[tc].dest;
 		return param;
 	}else{
-		if (TypeCasts[tc].kind == KIND_FUNCTION){
-			Command *c = ps->add_command_func(TypeCasts[tc].script, TypeCasts[tc].func_no, TypeCasts[tc].dest);
-			c->set_param(0, param);
-			return c;
-		}else if (TypeCasts[tc].kind == KIND_COMPILER_FUNCTION){
-			Command *c = ps->add_command_compilerfunc(TypeCasts[tc].func_no);
-			c->set_param(0, param);
-			return c;
-		}
+		Command *c = ps->add_command_func(TypeCasts[tc].script, TypeCasts[tc].func_no, TypeCasts[tc].dest);
+		c->set_param(0, param);
+		return c;
 	}
 	return param;
 }
