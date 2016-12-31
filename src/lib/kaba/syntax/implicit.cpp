@@ -166,7 +166,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// while(for_var < self.num)
 		Command *cmd_cmp = add_command_operator(for_var, cp_command(other_num), OperatorIntSmaller);
 
-		Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->commands.add(cmd_while);
 
@@ -215,7 +215,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// while(for_var < self.num)
 		Command *cmd_cmp = add_command_operator(for_var, c_num, OperatorIntSmaller);
 
-		Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->commands.add(cmd_while);
 
@@ -294,7 +294,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		// while(for_var < self.num)
 		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
 
-		Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->commands.add(cmd_while);
 
@@ -353,7 +353,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		// while(for_var < self.num)
 		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
 
-		Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->commands.add(cmd_while);
 
@@ -390,7 +390,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		// while(for_var < self.num)
 		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
 
-		Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->commands.add(cmd_while);
 

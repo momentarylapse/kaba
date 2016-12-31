@@ -310,7 +310,7 @@ Command *SyntaxTree::GetOperandExtension(Command *Operand, Block *block)
 Command *SyntaxTree::GetSpecialFunctionCall(const string &f_name, Command &link, Block *block)
 {
 	// sizeof
-	if ((link.kind != KIND_COMPILER_FUNCTION) or (link.link_no != COMMAND_SIZEOF))
+	if ((link.kind != KIND_STATEMENT) or (link.link_no != STATEMENT_SIZEOF))
 		DoError("evil special function");
 
 	Exp.next();
@@ -350,11 +350,6 @@ Array<Class*> SyntaxTree::GetFunctionWantedParams(Command &link)
 		if (!cf)
 			DoError("FindFunctionSingleParameter: can't find virtual function...?!?");
 		return cf->param_types;
-	}else if (link.kind == KIND_COMPILER_FUNCTION){
-		Array<Class*> wanted_types;
-		for (PreCommandParam &p: PreCommands[link.link_no].param)
-			wanted_types.add(p.type);
-		return wanted_types;
 	}else
 		DoError("evil function...");
 
@@ -451,8 +446,8 @@ Command *SyntaxTree::GetFunctionCall(const string &f_name, Array<Command> &links
 
 
 	// "special" functions
-    if (links[0].kind == KIND_COMPILER_FUNCTION)
-	    if (links[0].link_no == COMMAND_SIZEOF){
+    if (links[0].kind == KIND_STATEMENT)
+	    if (links[0].link_no == STATEMENT_SIZEOF){
 			return GetSpecialFunctionCall(f_name, links[0], block);
 	    }
 
@@ -620,7 +615,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 	}else if (Exp.cur == "new"){ // new operator
 		Exp.next();
 		Class *t = ParseType();
-		operand = add_command_compilerfunc(COMMAND_NEW);
+		operand = add_command_statement(STATEMENT_NEW);
 		operand->type = t->GetPointer();
 		if (Exp.cur == "("){
 			Array<ClassFunction> cfs;
@@ -634,7 +629,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 		}
 	}else if (Exp.cur == "delete"){ // delete operator
 		Exp.next();
-		operand = add_command_compilerfunc(COMMAND_DELETE);
+		operand = add_command_statement(STATEMENT_DELETE);
 		operand->set_param(0, GetOperand(block));
 		if (!operand->param[0]->type->is_pointer)
 			DoError("pointer expected after delete");
@@ -647,7 +642,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 			// variables get linked directly...
 
 			// operand is executable
-			if ((links[0].kind == KIND_FUNCTION) or (links[0].kind == KIND_VIRTUAL_FUNCTION) or (links[0].kind == KIND_COMPILER_FUNCTION)){
+			if ((links[0].kind == KIND_FUNCTION) or (links[0].kind == KIND_VIRTUAL_FUNCTION) or (links[0].kind == KIND_STATEMENT)){
 				operand = GetFunctionCall(f_name, links, block);
 
 			}else if (links[0].kind == KIND_PRIMITIVE_OPERATOR){
@@ -960,7 +955,7 @@ Command *SyntaxTree::GetCommand(Block *block)
 	return Operand[0];
 }
 
-void SyntaxTree::ParseSpecialCommandFor(Block *block)
+void SyntaxTree::ParseStatementFor(Block *block)
 {
 	// variable name
 	Exp.next();
@@ -1012,7 +1007,7 @@ void SyntaxTree::ParseSpecialCommandFor(Block *block)
 	// while(for_var < val1)
 	Command *cmd_cmp = add_command_operator(for_var, val1, OperatorIntSmaller);
 
-	Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
 	block->commands.add(cmd_while);
 	ExpectNewline();
@@ -1046,7 +1041,7 @@ void SyntaxTree::ParseSpecialCommandFor(Block *block)
 	// TODO  FIXME
 }
 
-void SyntaxTree::ParseSpecialCommandForall(Block *block)
+void SyntaxTree::ParseStatementForall(Block *block)
 {
 	// variable
 	Exp.next();
@@ -1105,7 +1100,7 @@ void SyntaxTree::ParseSpecialCommandForall(Block *block)
 	// while(for_index < val1)
 	Command *cmd_cmp = add_command_operator(for_index, val1, OperatorIntSmaller);
 
-	Command *cmd_while = add_command_compilerfunc(COMMAND_FOR);
+	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
 	block->commands.add(cmd_while);
 	ExpectNewline();
@@ -1149,13 +1144,13 @@ void SyntaxTree::ParseSpecialCommandForall(Block *block)
 	block->function->var[for_index->link_no].name = "-out-of-scope-";
 }
 
-void SyntaxTree::ParseSpecialCommandWhile(Block *block)
+void SyntaxTree::ParseStatementWhile(Block *block)
 {
 	Exp.next();
 	Command *cmd_cmp = CheckParamLink(GetCommand(block), TypeBool, "while", 0);
 	ExpectNewline();
 
-	Command *cmd_while = add_command_compilerfunc(COMMAND_WHILE);
+	Command *cmd_while = add_command_statement(STATEMENT_WHILE);
 	cmd_while->set_param(0, cmd_cmp);
 	block->commands.add(cmd_while);
 	// ...block
@@ -1164,24 +1159,24 @@ void SyntaxTree::ParseSpecialCommandWhile(Block *block)
 	ParseCompleteCommand(block);
 }
 
-void SyntaxTree::ParseSpecialCommandBreak(Block *block)
+void SyntaxTree::ParseStatementBreak(Block *block)
 {
 	Exp.next();
-	Command *cmd = add_command_compilerfunc(COMMAND_BREAK);
+	Command *cmd = add_command_statement(STATEMENT_BREAK);
 	block->commands.add(cmd);
 }
 
-void SyntaxTree::ParseSpecialCommandContinue(Block *block)
+void SyntaxTree::ParseStatementContinue(Block *block)
 {
 	Exp.next();
-	Command *cmd = add_command_compilerfunc(COMMAND_CONTINUE);
+	Command *cmd = add_command_statement(STATEMENT_CONTINUE);
 	block->commands.add(cmd);
 }
 
-void SyntaxTree::ParseSpecialCommandReturn(Block *block)
+void SyntaxTree::ParseStatementReturn(Block *block)
 {
 	Exp.next();
-	Command *cmd = add_command_compilerfunc(COMMAND_RETURN);
+	Command *cmd = add_command_statement(STATEMENT_RETURN);
 	block->commands.add(cmd);
 	if (block->function->return_type == TypeVoid){
 		cmd->set_num_params(0);
@@ -1193,14 +1188,14 @@ void SyntaxTree::ParseSpecialCommandReturn(Block *block)
 	ExpectNewline();
 }
 
-void SyntaxTree::ParseSpecialCommandIf(Block *block)
+void SyntaxTree::ParseStatementIf(Block *block)
 {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
 	Command *cmd_cmp = CheckParamLink(GetCommand(block), TypeBool, IDENTIFIER_IF, 0);
 	ExpectNewline();
 
-	Command *cmd_if = add_command_compilerfunc(COMMAND_IF);
+	Command *cmd_if = add_command_statement(STATEMENT_IF);
 	cmd_if->set_param(0, cmd_cmp);
 	block->commands.add(cmd_if);
 	// ...block
@@ -1211,7 +1206,7 @@ void SyntaxTree::ParseSpecialCommandIf(Block *block)
 
 	// else?
 	if ((!Exp.end_of_file()) and (Exp.cur == IDENTIFIER_ELSE) and (Exp.cur_line->indent >= ind)){
-		cmd_if->link_no = COMMAND_IF_ELSE;
+		cmd_if->link_no = STATEMENT_IF_ELSE;
 		Exp.next();
 		// iterative if
 		if (Exp.cur == IDENTIFIER_IF){
@@ -1237,7 +1232,7 @@ void SyntaxTree::ParseSpecialCommandIf(Block *block)
 	}
 }
 
-void SyntaxTree::ParseSpecialCommand(Block *block)
+void SyntaxTree::ParseStatement(Block *block)
 {
 	bool has_colon = false;
 	for (auto &e: Exp.cur_line->exp)
@@ -1246,19 +1241,19 @@ void SyntaxTree::ParseSpecialCommand(Block *block)
 
 	// special commands...
 	if (Exp.cur == IDENTIFIER_FOR and !has_colon){
-		ParseSpecialCommandForall(block);
+		ParseStatementForall(block);
 	}else if (Exp.cur == IDENTIFIER_FOR){
-		ParseSpecialCommandFor(block);
+		ParseStatementFor(block);
 	}else if (Exp.cur == IDENTIFIER_WHILE){
-		ParseSpecialCommandWhile(block);
+		ParseStatementWhile(block);
  	}else if (Exp.cur == IDENTIFIER_BREAK){
-		ParseSpecialCommandBreak(block);
+		ParseStatementBreak(block);
 	}else if (Exp.cur == IDENTIFIER_CONTINUE){
-		ParseSpecialCommandContinue(block);
+		ParseStatementContinue(block);
 	}else if (Exp.cur == IDENTIFIER_RETURN){
-		ParseSpecialCommandReturn(block);
+		ParseStatementReturn(block);
 	}else if (Exp.cur == IDENTIFIER_IF){
-		ParseSpecialCommandIf(block);
+		ParseStatementIf(block);
 	}
 }
 
@@ -1300,7 +1295,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 	// assembler block
 	}else if (Exp.cur == "-asm-"){
 		Exp.next();
-		Command *c = add_command_compilerfunc(COMMAND_ASM);
+		Command *c = add_command_statement(STATEMENT_ASM);
 		block->commands.add(c);
 
 	// local (variable) definitions...
@@ -1331,7 +1326,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 
 	// commands (the actual code!)
 		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or (Exp.cur == IDENTIFIER_IF)){
-			ParseSpecialCommand(block);
+			ParseStatement(block);
 
 		}else{
 

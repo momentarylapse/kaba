@@ -267,7 +267,6 @@ string PreOperator::str() const
 
 
 
-static PreCommand *cur_cmd = NULL;
 static Function *cur_func = NULL;
 static Class *cur_class;
 static ClassFunction *cur_class_func = NULL;
@@ -457,8 +456,7 @@ int _cdecl _Char2Int(char c)
 bool _cdecl _Pointer2Bool(void *p)
 {	return (p != NULL);	}
 
-
-Array<PreCommand> PreCommands;
+Array<Statement> Statements;
 
 int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
 {
@@ -469,25 +467,20 @@ int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	cur_package_script->syntax->functions.add(f);
 	cur_package_script->func.add(config.allow_std_lib ? (void (*)())func : NULL);
-	cur_cmd = NULL;
 	cur_func = f;
 	cur_class_func = NULL;
 	return cur_package_script->syntax->functions.num - 1;
 }
 
-int add_compiler_func(const string &name, Class *return_type, int index, bool hide_docu)
+
+int add_statement(const string &name, int index, int num_params = 0)
 {
-	PreCommand c;
-	c.name = name;
-	c.return_type = return_type;
-	c.package = cur_package_index;
-	c.hide_docu = hide_docu;
-	if (PreCommands.num < NUM_INTERN_PRE_COMMANDS)
-		PreCommands.resize(NUM_INTERN_PRE_COMMANDS);
-	PreCommands[index] = c;
-	cur_func = NULL;
-	cur_cmd = &PreCommands[index];
-	cur_class_func = NULL;
+	Statement s;
+	s.name = name;
+	s.num_params = num_params;
+	if (Statements.num < NUM_STATEMENTS)
+		Statements.resize(NUM_STATEMENTS);
+	Statements[index] = s;
 	return index;
 }
 
@@ -499,12 +492,7 @@ void func_set_inline(int index)
 
 void func_add_param(const string &name, Class *type)
 {
-	if (cur_cmd){
-		PreCommandParam p;
-		p.name = name;
-		p.type = type;
-		cur_cmd->param.add(p);
-	}else if (cur_func){
+	if (cur_func){
 		Variable v;
 		v.name = name;
 		v.type = type;
@@ -949,58 +937,18 @@ void SIAddPackageBase()
 
 void SIAddBasicCommands()
 {
-/*
-	CommandReturn,
-	CommandIf,
-	CommandIfElse,
-	CommandWhile,
-	CommandFor,
-	CommandBreak,
-	CommandContinue,
-	CommandNew,
-	CommandDelete,
-	CommandSizeof,
-	CommandWait,
-	CommandWaitRT,
-	CommandWaitOneFrame,
-	CommandFloatToInt,
-	CommandIntToFloat,
-	CommandIntToChar,
-	CommandCharToInt,
-	CommandPointerToBool,
-	CommandComplexSet,
-	CommandVectorSet,
-	CommandRectSet,
-	CommandColorSet,
-	CommandAsm,
-*/
-
-
-// "intern" functions
-	add_compiler_func(IDENTIFIER_RETURN,		TypeVoid,	COMMAND_RETURN);
-		func_add_param("return_value",	TypeVoid); // return: ParamType will be defined by the parser!
-	add_compiler_func(IDENTIFIER_IF,		TypeVoid,	COMMAND_IF);
-		func_add_param("b",	TypeBool);
-	add_compiler_func("-if/else-",	TypeVoid,	COMMAND_IF_ELSE);
-		func_add_param("b",	TypeBool);
-	add_compiler_func(IDENTIFIER_WHILE,		TypeVoid,	COMMAND_WHILE);
-		func_add_param("b",	TypeBool);
-	add_compiler_func(IDENTIFIER_FOR,		TypeVoid,	COMMAND_FOR);
-		func_add_param("b",	TypeBool); // internally like a while-loop... but a bit different...
-	add_compiler_func(IDENTIFIER_BREAK,		TypeVoid,	COMMAND_BREAK);
-	add_compiler_func(IDENTIFIER_CONTINUE,	TypeVoid,	COMMAND_CONTINUE);
-	add_compiler_func(IDENTIFIER_NEW,	TypePointer,	COMMAND_NEW);
-	add_compiler_func(IDENTIFIER_DELETE,	TypeVoid,	COMMAND_DELETE);
-		func_add_param("p",	TypePointer);
-	add_compiler_func("sizeof",		TypeInt,	COMMAND_SIZEOF, false);
-		func_add_param("type",	TypeVoid);
-	
-	add_compiler_func("wait",		TypeVoid,	COMMAND_WAIT, false);
-		func_add_param("time",	TypeFloat32);
-	add_compiler_func("wait_rt",		TypeVoid,	COMMAND_WAIT_RT, false);
-		func_add_param("time",	TypeFloat32);
-	add_compiler_func("wait_of",		TypeVoid,	COMMAND_WAIT_ONE_FRAME, false);
-	add_compiler_func(IDENTIFIER_ASM,		TypeVoid,	COMMAND_ASM);
+	// statements
+	add_statement(IDENTIFIER_RETURN, STATEMENT_RETURN); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_IF, STATEMENT_IF, 1);
+	add_statement("-if/else-",	STATEMENT_IF_ELSE, 1);
+	add_statement(IDENTIFIER_WHILE, STATEMENT_WHILE, 1);
+	add_statement(IDENTIFIER_FOR, STATEMENT_FOR, 1); // internally like a while-loop... but a bit different...
+	add_statement(IDENTIFIER_BREAK, STATEMENT_BREAK);
+	add_statement(IDENTIFIER_CONTINUE, STATEMENT_CONTINUE);
+	add_statement(IDENTIFIER_NEW, STATEMENT_NEW);
+	add_statement(IDENTIFIER_DELETE, STATEMENT_DELETE, 1);
+	add_statement("sizeof", STATEMENT_SIZEOF, 1);
+	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
 }
 
 

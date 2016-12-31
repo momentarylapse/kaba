@@ -44,7 +44,8 @@ enum
 	// execution
 	KIND_FUNCTION,           // = real function call
 	KIND_VIRTUAL_FUNCTION,   // = virtual function call
-	KIND_COMPILER_FUNCTION,  // = special internal functions
+	KIND_INLINE_FUNCTION,   // = inline function call
+	KIND_STATEMENT,          // = special internal functions
 	KIND_BLOCK,              // = block of commands {...}
 	KIND_OPERATOR,
 	KIND_PRIMITIVE_OPERATOR, // tentative...
@@ -193,8 +194,7 @@ public:
 	void ParseVariableDef(bool single, Block *block);
 	void ParseGlobalConst(const string &name, Class *type);
 	int WhichPrimitiveOperator(const string &name);
-	int WhichCompilerFunction(const string &name);
-	void CommandSetCompilerFunction(int CF,Command *Com);
+	int WhichStatement(const string &name);
 	int WhichType(const string &name);
 	void AddType();
 
@@ -239,14 +239,14 @@ public:
 	Command *DoClassFunction(Command *ob, Array<ClassFunction> &cfs, Block *block);
 	Command *GetSpecialFunctionCall(const string &f_name, Command &link, Block *block);
 	Command *CheckParamLink(Command *link, Class *type, const string &f_name = "", int param_no = -1);
-	void ParseSpecialCommand(Block *block);
-	void ParseSpecialCommandFor(Block *block);
-	void ParseSpecialCommandForall(Block *block);
-	void ParseSpecialCommandWhile(Block *block);
-	void ParseSpecialCommandBreak(Block *block);
-	void ParseSpecialCommandContinue(Block *block);
-	void ParseSpecialCommandReturn(Block *block);
-	void ParseSpecialCommandIf(Block *block);
+	void ParseStatement(Block *block);
+	void ParseStatementFor(Block *block);
+	void ParseStatementForall(Block *block);
+	void ParseStatementWhile(Block *block);
+	void ParseStatementBreak(Block *block);
+	void ParseStatementContinue(Block *block);
+	void ParseStatementReturn(Block *block);
+	void ParseStatementIf(Block *block);
 
 	void CreateAsmMetaInfo();
 
@@ -264,7 +264,7 @@ public:
 	// command
 	Command *AddCommand(int kind, long long link_no, Class *type);
 	Command *AddCommand(int kind, long long link_no, Class *type, Script *s);
-	Command *add_command_compilerfunc(int cf);
+	Command *add_command_statement(int index);
 	Command *add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual = false);
 	Command *add_command_func(Script *script, int no, Class *return_type);
 	Command *add_command_const(int nc);

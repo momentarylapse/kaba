@@ -163,13 +163,13 @@ void Script::AllocateStack()
 	// use your own stack if needed
 	//   wait() used -> needs to switch stacks ("tasks")
 	__stack = NULL;
-	for (Command *cmd: syntax->commands){
+	/*for (Command *cmd: syntax->commands){
 		if (cmd->kind == KIND_COMPILER_FUNCTION)
 			if ((cmd->link_no == COMMAND_WAIT) or (cmd->link_no == COMMAND_WAIT_RT) or (cmd->link_no == COMMAND_WAIT_ONE_FRAME)){
 				__stack = new char[config.stack_size];
 				break;
 			}
-	}
+	}*/
 }
 
 void Script::AllocateOpcode()

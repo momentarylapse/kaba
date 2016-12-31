@@ -20,7 +20,8 @@ public:
 	virtual void AddFunctionIntro(Function *f);
 	virtual void AddFunctionOutro(Function *f);
 	virtual SerialCommandParam SerializeParameter(Command *link, Block *block, int index);
-	virtual void SerializeCompilerFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params);
+	virtual void SerializeStatement(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params);
+	virtual void SerializeInlineFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret);
 	virtual void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret);
 
 	virtual void DoMapping();
