@@ -68,23 +68,23 @@ struct ExpressionBuffer
 
 inline bool isNumber(char c)
 {
-	if ((c>=48)&&(c<=57))
+	if ((c>=48) and (c<=57))
 		return true;
 	return false;
 }
 
 inline bool isLetter(char c)
 {
-	if ((c>='a')&&(c<='z'))
+	if ((c>='a') and (c<='z'))
 		return true;
-	if ((c>='A')&&(c<='Z'))
+	if ((c>='A') and (c<='Z'))
 		return true;
 	if ((c=='_'))
 		return true;
 	// Umlaute
 #ifdef OS_WINDOWS
 	// Windows-Zeichensatz
-	if ((c==-28)||(c==-10)||(c==-4)||(c==-33)||(c==-60)||(c==-42)||(c==-36))
+	if ((c==-28) or (c==-10) or (c==-4) or (c==-33) or (c==-60) or (c==-42) or (c==-36))
 		return true;
 #endif
 #ifdef OS_LINUX
@@ -95,16 +95,16 @@ inline bool isLetter(char c)
 
 inline bool isSpacing(char c)
 {
-	if ((c==' ')||(c=='\t')||(c=='\n'))
+	if ((c==' ') or (c=='\t') or (c=='\n'))
 		return true;
 	return false;
 }
 
 inline bool isSign(char c)
 {
-	if ((c=='.')||(c==':')||(c==',')||(c==';')||(c=='+')||(c=='-')||(c=='*')||(c=='%')||(c=='/')||(c=='=')||(c=='<')||(c=='>')||(c=='\''))
+	if ((c=='.') or (c==':') or (c==',') or (c==';') or (c=='+') or (c=='-') or (c=='*') or (c=='%') or (c=='/') or (c=='=') or (c=='<') or (c=='>') or (c=='\''))
 		return true;
-	if ((c=='(')||(c==')')||(c=='{')||(c=='}')||(c=='&')||(c=='|')||(c=='!')||(c=='[')||(c==']')||(c=='\"')||(c=='\\')||(c=='#')||(c=='?')||(c=='$'))
+	if ((c=='(') or (c==')') or (c=='{') or (c=='}') or (c=='&') or (c=='|') or (c=='!') or (c=='[') or (c==']') or (c=='\"') or (c=='\\') or (c=='#') or (c=='?') or (c=='$'))
 		return true;
 	return false;
 }

@@ -21,9 +21,9 @@ struct ClassElement{
 struct ClassFunction{
 	string name;
 	Script *script;
-	int nr; // index in Functions[]
+	int nr; // index in functions[]
 	// _func_(x)  ->  p.func(x)
-	Array<Class*> param_type;
+	Array<Class*> param_types;
 	Class *return_type;
 	int virtual_index;
 	bool needs_overriding;

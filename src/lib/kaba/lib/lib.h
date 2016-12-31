@@ -12,15 +12,15 @@
 namespace Kaba{
 
 
-#define SCRIPT_MAX_OPCODE				(2*65536)	// max. amount of opcode
-#define SCRIPT_MAX_THREAD_OPCODE		1024
-#define SCRIPT_DEFAULT_STACK_SIZE		32768	// max. amount of stack memory
+#define MAX_OPCODE				(2*65536)	// max. amount of opcode
+#define MAX_THREAD_OPCODE		1024
+#define DEFAULT_STACK_SIZE		32768	// max. amount of stack memory
 
 
 //#define mem_align(x)	((x) + (4 - (x) % 4) % 4)
 #define mem_align(x, n)		((((x) + (n) - 1) / (n) ) * (n))
 
-extern string DataVersion;
+extern string LibVersion;
 
 class SyntaxTree;
 class Class;

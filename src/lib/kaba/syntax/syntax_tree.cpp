@@ -98,7 +98,7 @@ Command *SyntaxTree::add_command_classfunc(ClassFunction *f, Command *inst, bool
 		c = AddCommand(KIND_FUNCTION, f->nr, f->return_type);
 	c->script = f->script;
 	c->set_instance(inst);
-	c->set_num_params(f->param_type.num);
+	c->set_num_params(f->param_types.num);
 	return c;
 }
 
@@ -541,7 +541,7 @@ Command exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 	}
 	link.script = cf.script;
 	link.type = cf.return_type;
-	link.set_num_params(cf.param_type.num);
+	link.set_num_params(cf.param_types.num);
 	link.instance = self;
 	return link;
 }

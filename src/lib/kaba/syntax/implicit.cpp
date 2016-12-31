@@ -76,8 +76,8 @@ void SyntaxTree::AutoImplementComplexConstructor(Function *f, Class *t)
 
 	// parent constructor
 	Command *c = add_command_classfunc(pcc, cp_command(self));
-	for (int i=0;i<pcc->param_type.num;i++)
-		c->set_param(i, add_command_local_var(i, pcc->param_type[i]));
+	for (int i=0;i<pcc->param_types.num;i++)
+		c->set_param(i, add_command_local_var(i, pcc->param_types[i]));
 	f->block->commands.add(c);
 
 	// add vtable reference

@@ -261,7 +261,7 @@ Script::~Script()
 		#ifdef OS_WINDOWS
 			VirtualFree(opcode, 0, MEM_RELEASE);
 		#else
-			int r = munmap(opcode, SCRIPT_MAX_OPCODE);
+			int r = munmap(opcode, MAX_OPCODE);
 		#endif
 	}
 	if (__stack)

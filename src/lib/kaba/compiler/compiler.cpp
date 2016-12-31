@@ -174,7 +174,7 @@ void Script::AllocateStack()
 
 void Script::AllocateOpcode()
 {
-	int max_opcode = SCRIPT_MAX_OPCODE;
+	int max_opcode = MAX_OPCODE;
 	if (config.compile_os)
 		max_opcode *= 10;
 

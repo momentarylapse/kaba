@@ -26,7 +26,7 @@
 
 namespace Kaba{
 
-string DataVersion = "0.14.7.0";
+string LibVersion = "0.14.7.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -211,31 +211,31 @@ Class *add_type_a(const string &name, Class *sub_type, int array_length)
 int NumPrimitiveOperators = NUM_PRIMITIVE_OPERATORS;
 
 PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
-	{"=",	OPERATOR_ASSIGN,			true,	1,	IDENTIFIER_FUNC_ASSIGN},
-	{"+",	OPERATOR_ADD,			false,	11,	"__add__"},
-	{"-",	OPERATOR_SUBTRACT,		false,	11,	"__sub__"},
-	{"*",	OPERATOR_MULTIPLY,		false,	12,	"__mul__"},
-	{"/",	OPERATOR_DIVIDE,			false,	12,	"__div__"},
-	{"+=",	OPERATOR_ADDS,			true,	1,	"__iadd__"},
-	{"-=",	OPERATOR_SUBTRACTS,		true,	1,	"__isub__"},
-	{"*=",	OPERATOR_MULTIPLYS,		true,	1,	"__imul__"},
-	{"/=",	OPERATOR_DIVIDES,		true,	1,	"__idiv__"},
-	{"==",	OPERATOR_EQUAL,			false,	8,	"__eq__"},
-	{"!=",	OPERATOR_NOTEQUAL,		false,	8,	"__ne__"},
-	{"!",	OPERATOR_NEGATE,			false,	2,	"__not__"},
-	{"<",	OPERATOR_SMALLER,		false,	9,	"__lt__"},
-	{">",	OPERATOR_GREATER,		false,	9,	"__gt__"},
-	{"<=",	OPERATOR_SMALLER_EQUAL,	false,	9,	"__le__"},
-	{">=",	OPERATOR_GREATER_EQUAL,	false,	9,	"__ge__"},
-	{IDENTIFIER_AND,	OPERATOR_AND,			false,	4,	"__and__"},
-	{IDENTIFIER_OR,	OPERATOR_OR,				false,	3,	"__or__"},
-	{"%",	OPERATOR_MODULO,			false,	12,	"__mod__"},
-	{"&",	OPERATOR_BIT_AND,			false,	7,	"__bitand__"},
-	{"|",	OPERATOR_BIT_OR,			false,	5,	"__bitor__"},
-	{"<<",	OPERATOR_SHIFT_LEFT,		false,	10,	"__lshift__"},
-	{">>",	OPERATOR_SHIFT_RIGHT,		false,	10,	"__rshift__"},
-	{"++",	OPERATOR_INCREASE,		true,	2,	"__inc__"},
-	{"--",	OPERATOR_DECREASE,		true,	2,	"__dec__"}
+	{"=",  OPERATOR_ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN},
+	{"+",  OPERATOR_ADD,           false, 11, "__add__"},
+	{"-",  OPERATOR_SUBTRACT,      false, 11, "__sub__"},
+	{"*",  OPERATOR_MULTIPLY,      false, 12, "__mul__"},
+	{"/",  OPERATOR_DIVIDE,        false, 12, "__div__"},
+	{"+=", OPERATOR_ADDS,          true,  1,  "__iadd__"},
+	{"-=", OPERATOR_SUBTRACTS,     true,  1,  "__isub__"},
+	{"*=", OPERATOR_MULTIPLYS,     true,  1,  "__imul__"},
+	{"/=", OPERATOR_DIVIDES,       true,  1,  "__idiv__"},
+	{"==", OPERATOR_EQUAL,         false, 8,  "__eq__"},
+	{"!=", OPERATOR_NOTEQUAL,      false, 8,  "__ne__"},
+	{"!",  OPERATOR_NEGATE,        false, 2,  "__not__"},
+	{"<",  OPERATOR_SMALLER,       false, 9,  "__lt__"},
+	{">",  OPERATOR_GREATER,       false, 9,  "__gt__"},
+	{"<=", OPERATOR_SMALLER_EQUAL, false, 9,  "__le__"},
+	{">=", OPERATOR_GREATER_EQUAL, false, 9,  "__ge__"},
+	{IDENTIFIER_AND, OPERATOR_AND, false, 4,  "__and__"},
+	{IDENTIFIER_OR,  OPERATOR_OR,  false, 3,  "__or__"},
+	{"%",  OPERATOR_MODULO,        false, 12, "__mod__"},
+	{"&",  OPERATOR_BIT_AND,       false, 7, "__bitand__"},
+	{"|",  OPERATOR_BIT_OR,        false, 5, "__bitor__"},
+	{"<<", OPERATOR_SHIFT_LEFT,    false, 10, "__lshift__"},
+	{">>", OPERATOR_SHIFT_RIGHT,   false, 10, "__rshift__"},
+	{"++", OPERATOR_INCREASE,      true,  2, "__inc__"},
+	{"--", OPERATOR_DECREASE,      true,  2, "__dec__"}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
@@ -431,18 +431,31 @@ void add_ext_var(const string &name, Class *type, void *var)
 	#include <stdlib.h>
 #endif
 
-//void _cdecl _stringout(char *str){	msg_write(string("StringOut: ",str));	}
-void _cdecl _cstringout(char *str){	msg_write(str);	}
-void _cdecl _stringout(string &str){	msg_write(str);	}
-int _cdecl _Float2Int(float f){	return (int)f;	}
-double _cdecl _Float2Float64(float f){	return (double)f;	}
-float _cdecl _Float642Float(double f){	return (float)f;	}
-float _cdecl _Int2Float(int i){	return (float)i;	}
-int _cdecl _Int642Int(long long i){	return (int)i;	}
-long long _cdecl _Int2Int64(int i){	return (long long)i;	}
-char _cdecl _Int2Char(int i){	return (char)i;	}
-int _cdecl _Char2Int(char c){	return (int)c;	}
-bool _cdecl _Pointer2Bool(void *p){	return (p != NULL);	}
+
+void _cdecl _cstringout(char *str)
+{	msg_write(str);	}
+void _cdecl _print(string &str)
+{	msg_write(str);	}
+void _cdecl _printi(int i)
+{	msg_write(i);	}
+int _cdecl _Float2Int(float f)
+{	return (int)f;	}
+double _cdecl _Float2Float64(float f)
+{	return (double)f;	}
+float _cdecl _Float642Float(double f)
+{	return (float)f;	}
+float _cdecl _Int2Float(int i)
+{	return (float)i;	}
+int _cdecl _Int642Int(long long i)
+{	return (int)i;	}
+long long _cdecl _Int2Int64(int i)
+{	return (long long)i;	}
+char _cdecl _Int2Char(int i)
+{	return (char)i;	}
+int _cdecl _Char2Int(char c)
+{	return (int)c;	}
+bool _cdecl _Pointer2Bool(void *p)
+{	return (p != NULL);	}
 
 
 Array<PreCommand> PreCommands;
@@ -501,7 +514,7 @@ void func_add_param(const string &name, Class *type)
 			cur_func->num_params ++;
 		}
 		if (cur_class_func)
-			cur_class_func->param_type.add(type);
+			cur_class_func->param_types.add(type);
 	}
 }
 
@@ -1221,7 +1234,7 @@ void SIAddCommands()
 	// debug output
 	/*add_func("cprint",			TypeVoid,		(void*)&_cstringout);
 		func_add_param("str",	TypeCString);*/
-	add_func("print",			TypeVoid,		(void*)&_stringout);
+	add_func("print",			TypeVoid,		(void*)&_print);
 		func_add_param("str",	TypeString);
 	// memory
 	add_func("@malloc",			TypePointer,		(void*)&malloc);
@@ -1273,7 +1286,7 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 		config.super_array_size = mem_align(config.pointer_size + 3 * sizeof(int), config.pointer_size);
 	else
 		config.super_array_size = sizeof(DynamicArray);
-	config.stack_size = SCRIPT_DEFAULT_STACK_SIZE;
+	config.stack_size = DEFAULT_STACK_SIZE;
 
 	config.allow_simplification = true;
 	config.allow_registers = true;

@@ -349,7 +349,7 @@ Array<Class*> SyntaxTree::GetFunctionWantedParams(Command &link)
 		ClassFunction *cf = link.instance->type->parent->GetVirtualFunction(link.link_no);
 		if (!cf)
 			DoError("FindFunctionSingleParameter: can't find virtual function...?!?");
-		return cf->param_type;
+		return cf->param_types;
 	}else if (link.kind == KIND_COMPILER_FUNCTION){
 		Array<Class*> wanted_types;
 		for (PreCommandParam &p: PreCommands[link.link_no].param)
@@ -625,7 +625,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 		if (Exp.cur == "("){
 			Array<ClassFunction> cfs;
 			for (ClassFunction &cf: t->function)
-				if (cf.name == IDENTIFIER_FUNC_INIT and cf.param_type.num > 0)
+				if (cf.name == IDENTIFIER_FUNC_INIT and cf.param_types.num > 0)
 					cfs.add(cf);
 			if (cfs.num == 0)
 				DoError(format("class \"%s\" does not have a constructor with parameters", t->name.c_str()));
@@ -836,8 +836,8 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 	for (ClassFunction &f: pp1->function)
 		if (f.name == op_func_name){
 			// exact match as class function but missing a "&"?
-			if (f.param_type[0]->is_pointer and f.param_type[0]->is_silent){
-				if (direct_type_match(p2, f.param_type[0]->parent)){
+			if (f.param_types[0]->is_pointer and f.param_types[0]->is_silent){
+				if (direct_type_match(p2, f.param_types[0]->parent)){
 					Command *inst = ref_command(param1);
 					if (p1 == pp1)
 						op = add_command_classfunc(&f, inst);
@@ -847,7 +847,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 					op->set_param(0, ref_command(param2));
 					return op;
 				}
-			}else if (type_match(p2, equal_classes, f.param_type[0])){
+			}else if (type_match(p2, equal_classes, f.param_types[0])){
 				Command *inst = ref_command(param1);
 				if (p1 == pp1)
 					op = add_command_classfunc(&f, inst);
@@ -884,7 +884,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 				}
 	foreachi(ClassFunction &f, p1->function, i)
 		if (f.name == op_func_name)
-			if (type_match_with_cast(p2, equal_classes, false, f.param_type[0], pen2, c2))
+			if (type_match_with_cast(p2, equal_classes, false, f.param_types[0], pen2, c2))
 				if (pen2 < pen_min){
 					op_found = i;
 					pen_min = pen2;

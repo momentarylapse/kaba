@@ -207,9 +207,9 @@ bool Class::IsDerivedFrom(const string &root) const
 ClassFunction *Class::GetFunc(const string &_name, const Class *return_type, int num_params, const Class *param0) const
 {
 	foreachi(ClassFunction &f, function, i)
-		if ((f.name == _name) and (f.return_type == return_type) and (f.param_type.num == num_params)){
+		if ((f.name == _name) and (f.return_type == return_type) and (f.param_types.num == num_params)){
 			if ((param0) and (num_params > 0)){
-				if (f.param_type[0] == param0)
+				if (f.param_types[0] == param0)
 					return &f;
 			}else
 				return &f;
@@ -225,7 +225,7 @@ ClassFunction *Class::GetDefaultConstructor() const
 ClassFunction *Class::GetComplexConstructor() const
 {
 	for (ClassFunction &f : function)
-		if ((f.name == IDENTIFIER_FUNC_INIT) and (f.return_type == TypeVoid) and (f.param_type.num > 0))
+		if ((f.name == IDENTIFIER_FUNC_INIT) and (f.return_type == TypeVoid) and (f.param_types.num > 0))
 			return &f;
 	return NULL;
 }
@@ -245,9 +245,9 @@ ClassFunction *Class::GetGet(const Class *index) const
 	for (ClassFunction &cf : function){
 		if (cf.name != "__get__")
 			continue;
-		if (cf.param_type.num != 1)
+		if (cf.param_types.num != 1)
 			continue;
-		if (cf.param_type[0] != index)
+		if (cf.param_types[0] != index)
 			continue;
 		return &cf;
 	}
@@ -327,10 +327,10 @@ bool class_func_match(ClassFunction &a, ClassFunction &b)
 		return false;
 	if (a.return_type != b.return_type)
 		return false;
-	if (a.param_type.num != b.param_type.num)
+	if (a.param_types.num != b.param_types.num)
 		return false;
-	for (int i=0; i<a.param_type.num; i++)
-		if (!direct_type_match(b.param_type[i], a.param_type[i]))
+	for (int i=0; i<a.param_types.num; i++)
+		if (!direct_type_match(b.param_types[i], a.param_types[i]))
 			return false;
 	return true;
 }
@@ -363,7 +363,7 @@ Class *Class::GetRoot() const
 void class_func_out(Class *c, ClassFunction *f)
 {
 	string ps;
-	for (Class *p : f->param_type)
+	for (Class *p : f->param_types)
 		ps += "  " + p->name;
 	msg_write(c->name + "." + f->name + ps);
 }
@@ -377,7 +377,7 @@ void Class::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overri
 	cf.script = s->script;
 	cf.return_type = f->return_type;
 	for (int i=0;i<f->num_params;i++)
-		cf.param_type.add(f->var[i].type);
+		cf.param_types.add(f->var[i].type);
 	if (as_virtual){
 		cf.virtual_index = ProcessClassOffset(name, cf.name, max(vtable.num, 2));
 		if (vtable.num <= cf.virtual_index)
@@ -399,7 +399,7 @@ void Class::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overri
 		orig->script = cf.script;
 		orig->nr = cf.nr;
 		orig->needs_overriding = false;
-		orig->param_type = cf.param_type;
+		orig->param_types = cf.param_types;
 	}else
 		function.add(cf);
 }

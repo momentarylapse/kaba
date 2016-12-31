@@ -124,7 +124,7 @@ int hui_main(const Array<string> &arg0)
 			msg_right();
 			msg_write(AppName + " " + AppVersion);
 			msg_write("Script-Version: " + Kaba::Version);
-			msg_write("Bibliothek-Version: " + Kaba::DataVersion);
+			msg_write("Bibliothek-Version: " + Kaba::LibVersion);
 			msg_write("Hui-Version: " + HuiVersion);
 			msg_left();
 			return 0;
