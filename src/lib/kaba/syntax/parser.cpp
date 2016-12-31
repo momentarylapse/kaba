@@ -49,7 +49,7 @@ Class *SyntaxTree::GetConstantType(const string &str)
 
 	// named constants
 	foreachi(Constant &c, constants, i)
-		if (Exp.cur == c.name){
+		if (str == c.name){
 			FoundConstantNr = i;
 			FoundConstantScript = script;
 			return c.type;
@@ -159,10 +159,10 @@ Command *SyntaxTree::DoClassFunction(Command *ob, Array<ClassFunction> &cfs, Blo
 	return GetFunctionCall(ff->name, links, block);
 }
 
-Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
+Command *SyntaxTree::GetOperandExtensionElement(Command *operand, Block *block)
 {
 	Exp.next();
-	Class *type = Operand->type;
+	Class *type = operand->type;
 
 	// pointer -> dereference
 	bool deref = false;
@@ -175,22 +175,22 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 	if ((type->parent) and (Exp.cur == IDENTIFIER_SUPER)){
 		Exp.next();
 		if (deref){
-			Operand->type = type->parent->GetPointer();
-			return Operand;
+			operand->type = type->parent->GetPointer();
+			return operand;
 		}
-		return ref_command(Operand, type->parent->GetPointer());
+		return ref_command(operand, type->parent->GetPointer());
 	}
 
 	// find element
 	for (ClassElement &e: type->elements)
 		if (Exp.cur == e.name){
 			Exp.next();
-			return shift_command(Operand, deref, e.offset, e.type);
+			return shift_command(operand, deref, e.offset, e.type);
 		}
 
 
 	if (!deref)
-		Operand = ref_command(Operand);
+		operand = ref_command(operand);
 
 	string f_name = Exp.cur;
 
@@ -198,7 +198,7 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 	Array<Command> links;
 	for (ClassFunction &cf: type->functions)
 		if (f_name == cf.name){
-			Command *cmd = add_command_classfunc(&cf, Operand);
+			Command *cmd = add_command_classfunc(&cf, operand);
 			links.add(*cmd);
 		}
 	if (links.num > 0){
@@ -539,6 +539,7 @@ Command *SyntaxTree::GetFunctionCall(const string &f_name, Array<Command> &links
 		available += ")";
 	}
 	DoError("invalid function parameters: " + found + ", valid:\n" + available);
+	return NULL;
 
 	/*if (links.num > 1){
 
@@ -741,16 +742,16 @@ Command *SyntaxTree::GetPrimitiveOperator(Block *block)
 	return 0;
 }*/
 
-bool type_match_with_cast(Class *type, bool same_chunk, bool is_modifiable, Class *wanted, int &penalty, int &cast)
+bool type_match_with_cast(Class *given, bool same_chunk, bool is_modifiable, Class *wanted, int &penalty, int &cast)
 {
 	penalty = 0;
 	cast = -1;
-	if (_type_match(type, same_chunk, wanted))
+	if (_type_match(given, same_chunk, wanted))
 	    return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (wanted == TypeString){
-		ClassFunction *cf = type->GetFunc("str", TypeString, 0);
+		ClassFunction *cf = given->GetFunc("str", TypeString, 0);
 		if (cf){
 			penalty = 50;
 			cast = TYPE_CAST_OWN_STRING;
@@ -758,7 +759,7 @@ bool type_match_with_cast(Class *type, bool same_chunk, bool is_modifiable, Clas
 		}
 	}
 	for (int i=0;i<TypeCasts.num;i++)
-		if ((type_match(type, TypeCasts[i].source)) and (type_match(TypeCasts[i].dest, wanted))){ // type_match()?
+		if ((type_match(given, TypeCasts[i].source)) and (type_match(TypeCasts[i].dest, wanted))){ // type_match()?
 			penalty = TypeCasts[i].penalty;
 			cast = i;
 			return true;

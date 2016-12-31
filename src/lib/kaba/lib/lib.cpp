@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| Script Data                                                                  |
+| Kaba Lib                                                                     |
 | -> "standart library" for the scripting system                               |
 |                                                                              |
 | vital properties:                                                            |
@@ -98,7 +98,7 @@ Class *TypeReg16;
 Class *TypeReg8;
 Class *TypeVoid;
 Class *TypePointer;
-Class *TypeClass;
+Class *TypeChunk;
 Class *TypeBool;
 Class *TypeInt;
 Class *TypeInt64;
@@ -115,7 +115,6 @@ Class *TypeColor;
 Class *TypeQuaternion;
  // internal:
 Class *TypeDynamicArray;
-Class *TypePointerPs;
 Class *TypePointerList;
 Class *TypeCharPs;
 Class *TypeBoolPs;
@@ -123,6 +122,7 @@ Class *TypeBoolList;
 Class *TypeIntPs;
 Class *TypeIntList;
 Class *TypeIntArray;
+Class *TypeFloatP;
 Class *TypeFloatPs;
 Class *TypeFloatList;
 Class *TypeFloatArray;
@@ -144,6 +144,11 @@ Class *TypeImage;
 Array<Package> Packages;
 Script *cur_package_script = NULL;
 int cur_package_index;
+
+
+static Function *cur_func = NULL;
+static Class *cur_class;
+static ClassFunction *cur_class_func = NULL;
 
 
 void add_package(const string &name, bool used_by_default)
@@ -261,11 +266,6 @@ void add_operator(int primitive_op, Class *return_type, Class *param_type1, Clas
 //------------------------------------------------------------------------------------------------//
 
 
-
-static Function *cur_func = NULL;
-static Class *cur_class;
-static ClassFunction *cur_class_func = NULL;
-
 void add_class(Class *root_type)//, PreScript *ps = NULL)
 {
 	cur_class = root_type;
@@ -314,7 +314,7 @@ void class_add_func(const string &name, Class *return_type, void *func, ScriptFl
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
 		for (Class *t: cur_package_script->syntax->classes)
-			if ((t->is_pointer) and (t->parent == cur_class))
+			if (t->is_pointer and (t->parent == cur_class))
 				tname = t->name;
 	}
 	int cmd = add_func(tname + "." + name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
@@ -425,7 +425,6 @@ void add_ext_var(const string &name, Class *type, void *var)
 	#include <stdlib.h>
 #endif
 
-
 void _cdecl _cstringout(char *str)
 {	msg_write(str);	}
 void _cdecl _print(string &str)
@@ -451,14 +450,12 @@ int _cdecl _Char2Int(char c)
 bool _cdecl _Pointer2Bool(void *p)
 {	return (p != NULL);	}
 
+
 Array<Statement> Statements;
 
 int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
 {
 	Function *f = new Function(cur_package_script->syntax, name, return_type);
-	f->literal_return_type = return_type;
-	f->num_params = 0;
-	f->_class = NULL;
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	cur_package_script->syntax->functions.add(f);
 	cur_package_script->func.add(config.allow_std_lib ? (void (*)())func : NULL);
@@ -466,7 +463,6 @@ int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag
 	cur_class_func = NULL;
 	return cur_package_script->syntax->functions.num - 1;
 }
-
 
 int add_statement(const string &name, int index, int num_params = 0)
 {
@@ -487,18 +483,16 @@ void func_set_inline(int index)
 
 void func_add_param(const string &name, Class *type)
 {
+	Variable v;
+	v.name = name;
+	v.type = type;
 	if (cur_func){
-		Variable v;
-		v.name = name;
-		v.type = type;
-		if (cur_func){
-			cur_func->var.add(v);
-			cur_func->literal_param_type.add(type);
-			cur_func->num_params ++;
-		}
-		if (cur_class_func)
-			cur_class_func->param_types.add(type);
+		cur_func->var.add(v);
+		cur_func->literal_param_type.add(type);
+		cur_func->num_params ++;
 	}
+	if (cur_class_func)
+		cur_class_func->param_types.add(type);
 }
 
 void script_make_super_array(Class *t, SyntaxTree *ps)
@@ -677,7 +671,7 @@ class StringList : public Array<string>
 public:
 	void _cdecl assign(StringList &s){	*this = s;	}
 	string _cdecl join(const string &glue)
-	{	return implode((Array<string>)*this, glue);	}
+	{ return implode(*this, glue); }
 };
 
 class IntClass
@@ -731,6 +725,13 @@ public:
 	string _cdecl str(){	return p2s(p);	}
 };
 
+
+
+int xop_int_add(int a, int b)
+{
+	return a + b;
+}
+
 void SIAddPackageBase()
 {
 	add_package("base", true);
@@ -742,7 +743,7 @@ void SIAddPackageBase()
 	TypeReg32			= add_type  ("-reg32-",		4, FLAG_CALL_BY_VALUE);
 	TypeReg16			= add_type  ("-reg16-",		2, FLAG_CALL_BY_VALUE);
 	TypeReg8			= add_type  ("-reg8-",		1, FLAG_CALL_BY_VALUE);
-	TypeClass			= add_type  ("-class-",	0); // substitute for all class types
+	TypeChunk			= add_type  ("-chunk-",	0); // substitute for all plane-old-data types
 
 	// "real"
 	TypeVoid			= add_type  ("void",		0, FLAG_CALL_BY_VALUE);
@@ -763,45 +764,45 @@ void SIAddPackageBase()
 
 
 	add_class(TypeDynamicArray);
-		class_add_element("num", TypeInt, config.pointer_size);
-		class_add_func("swap", TypeVoid, mf(&DynamicArray::swap));
-			func_add_param("i1", TypeInt);
-			func_add_param("i2", TypeInt);
-		/*class_add_func("iterate", TypeBool, mf(&DynamicArray::iterate));
-			func_add_param("pointer", TypePointerPs);
-		class_add_func("iterate_back", TypeBool, mf(&DynamicArray::iterate_back));
-			func_add_param("pointer", TypePointerPs);
-		class_add_func("index", TypeInt, mf(&DynamicArray::index));
-			func_add_param("pointer", TypePointer);*/
-		class_add_func("subarray", TypeDynamicArray, mf(&DynamicArray::ref_subarray));
-			func_add_param("start", TypeInt);
-			func_add_param("num", TypeInt);
-		// low level operations
-		class_add_func("__mem_init__", TypeVoid, mf(&DynamicArray::init));
-			func_add_param("element_size", TypeInt);
-		class_add_func("__mem_clear__", TypeVoid, mf(&DynamicArray::clear));
-		class_add_func("__mem_resize__", TypeVoid, mf(&DynamicArray::resize));
-			func_add_param("size", TypeInt);
-		class_add_func("__mem_remove__", TypeVoid, mf(&DynamicArray::delete_single));
-			func_add_param("index", TypeInt);
+	class_add_element("num", TypeInt, config.pointer_size);
+	class_add_func("swap", TypeVoid, mf(&DynamicArray::swap));
+		func_add_param("i1", TypeInt);
+		func_add_param("i2", TypeInt);
+	/*class_add_func("iterate", TypeBool, mf(&DynamicArray::iterate));
+		func_add_param("pointer", TypePointerPs);
+	class_add_func("iterate_back", TypeBool, mf(&DynamicArray::iterate_back));
+		func_add_param("pointer", TypePointerPs);
+	class_add_func("index", TypeInt, mf(&DynamicArray::index));
+		func_add_param("pointer", TypePointer);*/
+	class_add_func("subarray", TypeDynamicArray, mf(&DynamicArray::ref_subarray));
+		func_add_param("start", TypeInt);
+		func_add_param("num", TypeInt);
+	// low level operations
+	class_add_func("__mem_init__", TypeVoid, mf(&DynamicArray::init));
+		func_add_param("element_size", TypeInt);
+	class_add_func("__mem_clear__", TypeVoid, mf(&DynamicArray::clear));
+	class_add_func("__mem_resize__", TypeVoid, mf(&DynamicArray::resize));
+		func_add_param("size", TypeInt);
+	class_add_func("__mem_remove__", TypeVoid, mf(&DynamicArray::delete_single));
+		func_add_param("index", TypeInt);
 
 	// derived   (must be defined after the primitive types!)
-	TypePointer			= add_type_p("void*",		TypeVoid, FLAG_CALL_BY_VALUE); // substitute for all pointer types
-	TypePointerPs		= add_type_p("void*&",		TypePointer, FLAG_SILENT);
-	TypePointerList		= add_type_a("void*[]",		TypePointer, -1);
-	TypeBoolPs			= add_type_p("bool&",		TypeBool, FLAG_SILENT);
-	TypeBoolList		= add_type_a("bool[]",		TypeBool, -1);
-	TypeIntPs			= add_type_p("int&",		TypeInt, FLAG_SILENT);
-	TypeIntList			= add_type_a("int[]",		TypeInt, -1);
-	TypeIntArray		= add_type_a("int[?]",		TypeInt, 1);
-	TypeFloatPs			= add_type_p("float&",		TypeFloat, FLAG_SILENT);
-	TypeFloatArray		= add_type_a("float[?]",	TypeFloat, 1);
-	TypeFloatArrayP		= add_type_p("float[?]*",	TypeFloatArray);
-	TypeFloatList		= add_type_a("float[]",		TypeFloat, -1);
-	TypeCharPs			= add_type_p("char&",		TypeChar, FLAG_SILENT);
-	TypeCString			= add_type_a("cstring",		TypeChar, 256);	// cstring := char[256]
-	TypeString			= add_type_a("string",		TypeChar, -1);	// string := char[]
-	TypeStringList		= add_type_a("string[]",	TypeString, -1);
+	TypePointer     = add_type_p("void*",     TypeVoid, FLAG_CALL_BY_VALUE); // substitute for all pointer types
+	TypePointerList = add_type_a("void*[]",   TypePointer, -1);
+	TypeBoolPs      = add_type_p("bool&",     TypeBool, FLAG_SILENT);
+	TypeBoolList    = add_type_a("bool[]",    TypeBool, -1);
+	TypeIntPs       = add_type_p("int&",      TypeInt, FLAG_SILENT);
+	TypeIntList     = add_type_a("int[]",     TypeInt, -1);
+	TypeIntArray    = add_type_a("int[?]",    TypeInt, 1);
+	TypeFloatP      = add_type_p("float*",    TypeFloat);
+	TypeFloatPs     = add_type_p("float&",    TypeFloat, FLAG_SILENT);
+	TypeFloatArray  = add_type_a("float[?]",  TypeFloat, 1);
+	TypeFloatArrayP = add_type_p("float[?]*", TypeFloatArray);
+	TypeFloatList   = add_type_a("float[]",   TypeFloat, -1);
+	TypeCharPs      = add_type_p("char&",     TypeChar, FLAG_SILENT);
+	TypeCString     = add_type_a("cstring",   TypeChar, 256);	// cstring := char[256]
+	TypeString      = add_type_a("string",    TypeChar, -1);	// string := char[]
+	TypeStringList  = add_type_a("string[]",  TypeString, -1);
 
 
 	//	add_func_special("f2i",			TypeInt,	(void*)&_Float2Int);
@@ -833,100 +834,124 @@ void SIAddPackageBase()
 		func_set_inline(INLINE_POINTER_TO_BOOL);
 		func_add_param("p",		TypePointer);
 
-	add_class(TypeInt);
-		class_add_func("str", TypeString, mf(&IntClass::str), FLAG_PURE);
-	add_class(TypeInt64);
-		class_add_func("str", TypeString, mf(&Int64Class::str), FLAG_PURE);
-		add_class(TypeFloat32);
-			class_add_func("str", TypeString, mf(&FloatClass::str), FLAG_PURE);
-			class_add_func("str2", TypeString, mf(&FloatClass::str2), FLAG_PURE);
-				func_add_param("decimals",		TypeInt);
-	add_class(TypeFloat64);
-		class_add_func("str", TypeString, mf(&Float64Class::str), FLAG_PURE);
-		class_add_func("str2", TypeString, mf(&Float64Class::str2), FLAG_PURE);
-			func_add_param("decimals",		TypeInt);
-	add_class(TypeBool);
-		class_add_func("str", TypeString, mf(&BoolClass::str), FLAG_PURE);
-	add_class(TypeChar);
-		class_add_func("str", TypeString, mf(&CharClass::str), FLAG_PURE);
+
 	add_class(TypePointer);
-		class_add_func("str", TypeString, mf(&PointerClass::str), FLAG_PURE);
+	class_add_func("str", TypeString, mf(&PointerClass::str), FLAG_PURE);
+
+
+	add_class(TypeInt);
+	class_add_func("str", TypeString, mf(&IntClass::str), FLAG_PURE);
+	class_add_func("add", TypeInt, (void*)&xop_int_add, FLAG_PURE);
+		func_set_inline(INLINE_INT_ADD);
+		func_add_param("b", TypeInt);
+
+
+	add_class(TypeInt64);
+	class_add_func("str", TypeString, mf(&Int64Class::str), FLAG_PURE);
+
+
+	add_class(TypeFloat32);
+	class_add_func("str", TypeString, mf(&FloatClass::str), FLAG_PURE);
+	class_add_func("str2", TypeString, mf(&FloatClass::str2), FLAG_PURE);
+		func_add_param("decimals",		TypeInt);
+
+
+	add_class(TypeFloat64);
+	class_add_func("str", TypeString, mf(&Float64Class::str), FLAG_PURE);
+	class_add_func("str2", TypeString, mf(&Float64Class::str2), FLAG_PURE);
+		func_add_param("decimals",		TypeInt);
+
+
+	add_class(TypeBool);
+	class_add_func("str", TypeString, mf(&BoolClass::str), FLAG_PURE);
+
+
+	add_class(TypeChar);
+	class_add_func("str", TypeString, mf(&CharClass::str), FLAG_PURE);
+
 
 	add_class(TypeString);
-		class_add_func("__iadd__", TypeVoid, mf(&string::operator+=));
-			func_add_param("x",		TypeString);
-		class_add_func("__add__", TypeString, mf(&string::operator+), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__eq__", TypeBool, mf(&string::operator==), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__ne__", TypeBool, mf(&string::operator!=), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__lt__", TypeBool, mf(&string::operator<), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__gt__", TypeBool, mf(&string::operator>), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__le__", TypeBool, mf(&string::operator<=), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("__ge__", TypeBool, mf(&string::operator>=), FLAG_PURE);
-			func_add_param("x",		TypeString);
-		class_add_func("substr", TypeString, mf(&string::substr), FLAG_PURE);
-			func_add_param("start",		TypeInt);
-			func_add_param("length",	TypeInt);
-		class_add_func("head", TypeString, mf(&string::head), FLAG_PURE);
-			func_add_param("size",		TypeInt);
-		class_add_func("tail", TypeString, mf(&string::tail), FLAG_PURE);
-			func_add_param("size",		TypeInt);
-		class_add_func("find", TypeInt, mf(&string::find), FLAG_PURE);
-			func_add_param("str",		TypeString);
-			func_add_param("start",		TypeInt);
-		class_add_func("compare", TypeInt, mf(&string::compare), FLAG_PURE);
-			func_add_param("str",		TypeString);
-		class_add_func("icompare", TypeInt, mf(&string::icompare), FLAG_PURE);
-			func_add_param("str",		TypeString);
-		class_add_func("replace", TypeString, mf(&string::replace), FLAG_PURE);
-			func_add_param("sub",		TypeString);
-			func_add_param("by",		TypeString);
-		class_add_func("explode", TypeStringList, mf(&string::explode), FLAG_PURE);
-			func_add_param("str",		TypeString);
-		class_add_func("lower", TypeString, mf(&string::lower), FLAG_PURE);
-		class_add_func("upper", TypeString, mf(&string::upper), FLAG_PURE);
-		class_add_func("reverse", TypeString, mf(&string::reverse), FLAG_PURE);
-		class_add_func("hash", TypeInt, mf(&string::hash), FLAG_PURE);
-		class_add_func("md5", TypeString, mf(&string::md5), FLAG_PURE);
-		class_add_func("hex", TypeString, mf(&string::hex), FLAG_PURE);
-			func_add_param("inverted",		TypeBool);
-		class_add_func("unhex", TypeString, mf(&string::unhex), FLAG_PURE);
-		class_add_func("match", TypeBool, mf(&string::match), FLAG_PURE);
-			func_add_param("glob",		TypeString);
-		class_add_func("int", TypeInt, mf(&string::_int), FLAG_PURE);
-		class_add_func("int64", TypeInt64, mf(&string::i64), FLAG_PURE);
-		class_add_func("float", TypeFloat32, mf(&string::_float), FLAG_PURE);
-		class_add_func("float64", TypeFloat64, mf(&string::f64), FLAG_PURE);
-		class_add_func("trim", TypeString, mf(&string::trim), FLAG_PURE);
-		class_add_func("dirname", TypeString, mf(&string::dirname), FLAG_PURE);
-		class_add_func("basename", TypeString, mf(&string::basename), FLAG_PURE);
-		class_add_func("extension", TypeString, mf(&string::extension), FLAG_PURE);
+	class_add_func("__iadd__", TypeVoid, mf(&string::operator+=));
+		func_add_param("x",		TypeString);
+	class_add_func("__add__", TypeString, mf(&string::operator+), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__eq__", TypeBool, mf(&string::operator==), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__ne__", TypeBool, mf(&string::operator!=), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__lt__", TypeBool, mf(&string::operator<), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__gt__", TypeBool, mf(&string::operator>), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__le__", TypeBool, mf(&string::operator<=), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("__ge__", TypeBool, mf(&string::operator>=), FLAG_PURE);
+		func_add_param("x",		TypeString);
+	class_add_func("substr", TypeString, mf(&string::substr), FLAG_PURE);
+		func_add_param("start",		TypeInt);
+		func_add_param("length",	TypeInt);
+	class_add_func("head", TypeString, mf(&string::head), FLAG_PURE);
+		func_add_param("size",		TypeInt);
+	class_add_func("tail", TypeString, mf(&string::tail), FLAG_PURE);
+		func_add_param("size",		TypeInt);
+	class_add_func("find", TypeInt, mf(&string::find), FLAG_PURE);
+		func_add_param("str",		TypeString);
+		func_add_param("start",		TypeInt);
+	class_add_func("compare", TypeInt, mf(&string::compare), FLAG_PURE);
+		func_add_param("str",		TypeString);
+	class_add_func("icompare", TypeInt, mf(&string::icompare), FLAG_PURE);
+		func_add_param("str",		TypeString);
+	class_add_func("replace", TypeString, mf(&string::replace), FLAG_PURE);
+		func_add_param("sub",		TypeString);
+		func_add_param("by",		TypeString);
+	class_add_func("explode", TypeStringList, mf(&string::explode), FLAG_PURE);
+		func_add_param("str",		TypeString);
+	class_add_func("lower", TypeString, mf(&string::lower), FLAG_PURE);
+	class_add_func("upper", TypeString, mf(&string::upper), FLAG_PURE);
+	class_add_func("reverse", TypeString, mf(&string::reverse), FLAG_PURE);
+	class_add_func("hash", TypeInt, mf(&string::hash), FLAG_PURE);
+	class_add_func("md5", TypeString, mf(&string::md5), FLAG_PURE);
+	class_add_func("hex", TypeString, mf(&string::hex), FLAG_PURE);
+		func_add_param("inverted",		TypeBool);
+	class_add_func("unhex", TypeString, mf(&string::unhex), FLAG_PURE);
+	class_add_func("match", TypeBool, mf(&string::match), FLAG_PURE);
+		func_add_param("glob",		TypeString);
+	class_add_func("int", TypeInt, mf(&string::_int), FLAG_PURE);
+	class_add_func("int64", TypeInt64, mf(&string::i64), FLAG_PURE);
+	class_add_func("float", TypeFloat32, mf(&string::_float), FLAG_PURE);
+	class_add_func("float64", TypeFloat64, mf(&string::f64), FLAG_PURE);
+	class_add_func("trim", TypeString, mf(&string::trim), FLAG_PURE);
+	class_add_func("dirname", TypeString, mf(&string::dirname), FLAG_PURE);
+	class_add_func("basename", TypeString, mf(&string::basename), FLAG_PURE);
+	class_add_func("extension", TypeString, mf(&string::extension), FLAG_PURE);
+
 
 	add_class(TypeStringList);
-		class_add_func(IDENTIFIER_FUNC_INIT,	TypeVoid, mf(&StringList::__init__));
-		class_add_func(IDENTIFIER_FUNC_DELETE,	TypeVoid, mf(&StringList::clear));
-		class_add_func("add", TypeVoid, mf(&StringList::add));
-			func_add_param("x",		TypeString);
-		class_add_func("clear", TypeVoid, mf(&StringList::clear));
-		class_add_func("remove", TypeVoid, mf(&StringList::erase));
-			func_add_param("index",		TypeInt);
-		class_add_func("resize", TypeVoid, mf(&StringList::resize));
-			func_add_param("num",		TypeInt);
-		class_add_func(IDENTIFIER_FUNC_ASSIGN,	TypeVoid, mf(&StringList::assign));
-			func_add_param("other",		TypeStringList);
-		class_add_func("join", TypeString, mf(&StringList::join), FLAG_PURE);
-			func_add_param("glue",		TypeString);
+	class_add_func(IDENTIFIER_FUNC_INIT,	TypeVoid, mf(&StringList::__init__));
+	class_add_func(IDENTIFIER_FUNC_DELETE,	TypeVoid, mf(&StringList::clear));
+	class_add_func("add", TypeVoid, mf(&StringList::add));
+		func_add_param("x",		TypeString);
+	class_add_func("clear", TypeVoid, mf(&StringList::clear));
+	class_add_func("remove", TypeVoid, mf(&StringList::erase));
+		func_add_param("index",		TypeInt);
+	class_add_func("resize", TypeVoid, mf(&StringList::resize));
+		func_add_param("num",		TypeInt);
+	class_add_func(IDENTIFIER_FUNC_ASSIGN,	TypeVoid, mf(&StringList::assign));
+		func_add_param("other",		TypeStringList);
+	class_add_func("join", TypeString, mf(&StringList::join), FLAG_PURE);
+		func_add_param("glue",		TypeString);
 
 
+	// constants
 	add_const("nil", TypePointer, NULL);
-	// bool
 	add_const("false", TypeBool, (void*)false);
 	add_const("true",  TypeBool, (void*)true);
+
+
+	add_func("int_add", TypeInt, (void*)&xop_int_add, FLAG_PURE);
+		func_set_inline(INLINE_INT_ADD);
+		func_add_param("a", TypeInt);
+		func_add_param("b", TypeInt);
 }
 
 
@@ -1107,7 +1132,7 @@ void SIAddOperators()
 	add_operator(OPERATOR_SMALLER,		TypeBool,		TypeFloat64,	TypeFloat64, INLINE_FLOAT64_SMALLER);
 	add_operator(OPERATOR_SMALLER_EQUAL,	TypeBool,		TypeFloat64,	TypeFloat64, INLINE_FLOAT64_SMALLER_EQUAL);
 	add_operator(OPERATOR_SUBTRACT,		TypeFloat32,		TypeVoid,		TypeFloat64, INLINE_FLOAT64_NEGATE);
-//	add_operator(OperatorAssign,		TypeVoid,		TypeComplex,	TypeComplex, OperatorComplexAssign);
+//	add_operator(OPERATOR_ASSIGN,		TypeVoid,		TypeComplex,	TypeComplex, INLINE_COMPLEX_ASSIGN);
 	add_operator(OPERATOR_ADD,			TypeComplex,	TypeComplex,	TypeComplex, INLINE_COMPLEX_ADD);
 	add_operator(OPERATOR_SUBTRACT,		TypeComplex,	TypeComplex,	TypeComplex, INLINE_COMPLEX_SUBTRACT);
 	add_operator(OPERATOR_MULTIPLY,		TypeComplex,	TypeComplex,	TypeComplex, INLINE_COMPLEX_MULTIPLY);
@@ -1120,9 +1145,9 @@ void SIAddOperators()
 	add_operator(OPERATOR_DIVIDES,		TypeVoid,		TypeComplex,	TypeComplex, INLINE_COMPLEX_DIVIDE_ASSIGN);
 	add_operator(OPERATOR_EQUAL,			TypeBool,		TypeComplex,	TypeComplex, INLINE_COMPLEX_EQUAL);
 	add_operator(OPERATOR_SUBTRACT,		TypeComplex,	TypeVoid,		TypeComplex, INLINE_COMPLEX_NEGATE);
-	add_operator(OPERATOR_ASSIGN,		TypeVoid,		TypeClass,		TypeClass, INLINE_CHUNK_ASSIGN);
-	add_operator(OPERATOR_EQUAL,			TypeBool,		TypeClass,		TypeClass, INLINE_CHUNK_EQUAL);
-	add_operator(OPERATOR_NOTEQUAL,		TypeBool,		TypeClass,		TypeClass, INLINE_CHUNK_NOT_EQUAL);
+	add_operator(OPERATOR_ASSIGN,		TypeVoid,		TypeChunk,		TypeChunk, INLINE_CHUNK_ASSIGN);
+	add_operator(OPERATOR_EQUAL,			TypeBool,		TypeChunk,		TypeChunk, INLINE_CHUNK_EQUAL);
+	add_operator(OPERATOR_NOTEQUAL,		TypeBool,		TypeChunk,		TypeChunk, INLINE_CHUNK_NOT_EQUAL);
 	add_operator(OPERATOR_ADD,			TypeVector,		TypeVector,		TypeVector, INLINE_VECTOR_ADD);
 	add_operator(OPERATOR_SUBTRACT,		TypeVector,		TypeVector,		TypeVector, INLINE_VECTOR_SUBTRACT);
 	add_operator(OPERATOR_MULTIPLY,		TypeFloat32,	TypeVector,		TypeVector, INLINE_VECTOR_MULTIPLY_VV);

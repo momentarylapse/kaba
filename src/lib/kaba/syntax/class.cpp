@@ -62,7 +62,7 @@ bool type_match(Class *given, Class *wanted)
 // allow same classes... TODO deprecate...
 bool _type_match(Class *given, bool same_chunk, Class *wanted)
 {
-	if ((same_chunk) and (wanted == TypeClass))
+	if ((same_chunk) and (wanted == TypeChunk))
 		return true;
 
 	return type_match(given, wanted);

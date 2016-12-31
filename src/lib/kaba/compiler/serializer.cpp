@@ -605,7 +605,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 		marker_before_params = add_marker();
 
 	// return value
-	bool create_constructor_for_return = ((com->kind != KIND_FUNCTION) and (com->kind != KIND_VIRTUAL_FUNCTION));
+	bool create_constructor_for_return = ((com->kind != KIND_STATEMENT) and (com->kind != KIND_FUNCTION) and (com->kind != KIND_VIRTUAL_FUNCTION));
 	SerialCommandParam ret = add_temp(com->type, create_constructor_for_return);
 
 
