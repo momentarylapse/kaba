@@ -474,7 +474,7 @@ Command *SyntaxTree::GetFunctionCall(const string &f_name, Array<Command> &links
 			continue;
 		bool ok = true;
 		for (int p=0; p<params.num; p++){
-			if (!type_match(wanted_types[p], params[p]->type)){
+			if (!type_match(params[p]->type, wanted_types[p])){
 				ok = false;
 				break;
 			}
