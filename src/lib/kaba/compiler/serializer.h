@@ -192,8 +192,8 @@ public:
 	virtual void add_virtual_function_call(int virtual_index) = 0;
 	virtual int fc_begin() = 0;
 	virtual void fc_end(int push_size) = 0;
-	SerialCommandParam AddReference(SerialCommandParam &param, Class *force_type = NULL);
-	SerialCommandParam AddDereference(SerialCommandParam &param, Class *force_type = NULL);
+	SerialCommandParam AddReference(const SerialCommandParam &param, Class *force_type = NULL);
+	SerialCommandParam AddDereference(const SerialCommandParam &param, Class *force_type = NULL);
 
 	void MapTempVarToReg(int vi, int reg);
 	void add_stack_var(TempVar &v, SerialCommandParam &p);

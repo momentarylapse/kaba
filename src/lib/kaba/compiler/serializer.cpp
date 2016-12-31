@@ -91,7 +91,7 @@ inline Class *get_subtype(Class *t)
 	return TypeUnknown;
 }
 
-inline SerialCommandParam deref_temp(SerialCommandParam &param)
+inline SerialCommandParam deref_temp(const SerialCommandParam &param)
 {
 	SerialCommandParam deref;
 	//deref = param;
@@ -533,7 +533,7 @@ void Serializer::AddClassFunctionCall(ClassFunction *cf)
 
 
 // creates res...
-SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Class *type)
+SerialCommandParam Serializer::AddReference(const SerialCommandParam &param, Class *type)
 {
 	SerialCommandParam ret;
 	if (!type)
@@ -577,7 +577,7 @@ SerialCommandParam Serializer::AddReference(SerialCommandParam &param, Class *ty
 	return ret;
 }
 
-SerialCommandParam Serializer::AddDereference(SerialCommandParam &param, Class *force_type)
+SerialCommandParam Serializer::AddDereference(const SerialCommandParam &param, Class *force_type)
 {
 	SerialCommandParam ret;
 	/*add_temp(TypePointer, ret);
