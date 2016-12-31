@@ -12,7 +12,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Class 
 		int nc = AddConstant(TypePointer);
 		(*(void**)constants[nc].value.data) = t->_vtable_location_target_;
 		Command *cmd_0 = add_command_const(nc);
-		Command *c = add_command_operator(p, cmd_0, OPERATOR_ASSIGN);
+		Command *c = add_command_operator_by_inline(p, cmd_0, OperatorPointerAssign);
 		f->block->commands.add(c);
 	}
 }
@@ -160,11 +160,11 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		int nc = AddConstant(TypeInt);
 		constants[nc].setInt(0);
 		Command *cmd_0 = add_command_const(nc);
-		Command *cmd_assign0 = add_command_operator(for_var, cmd_0, OperatorIntAssign);
+		Command *cmd_assign0 = add_command_operator_by_inline(for_var, cmd_0, OperatorIntAssign);
 		f->block->commands.add(cmd_assign0);
 
 		// while(for_var < self.num)
-		Command *cmd_cmp = add_command_operator(for_var, cp_command(other_num), OperatorIntSmaller);
+		Command *cmd_cmp = add_command_operator_by_inline(for_var, cp_command(other_num), OperatorIntSmaller);
 
 		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
@@ -189,7 +189,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		b->commands.add(cmd_assign);
 
 		// ...for_var += 1
-		Command *cmd_inc = add_command_operator(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
+		Command *cmd_inc = add_command_operator_by_inline(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
 		b->commands.add(cmd_inc);
 		f->block->commands.add(cb);
 	}else if (t->is_array){
@@ -209,11 +209,11 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		int nc_0 = AddConstant(TypeInt);
 		constants[nc_0].setInt(0);
 		Command *cmd_0 = add_command_const(nc_0);
-		Command *cmd_assign0 = add_command_operator(for_var, cmd_0, OperatorIntAssign);
+		Command *cmd_assign0 = add_command_operator_by_inline(for_var, cmd_0, OperatorIntAssign);
 		f->block->commands.add(cmd_assign0);
 
 		// while(for_var < self.num)
-		Command *cmd_cmp = add_command_operator(for_var, c_num, OperatorIntSmaller);
+		Command *cmd_cmp = add_command_operator_by_inline(for_var, c_num, OperatorIntSmaller);
 
 		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
@@ -235,7 +235,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		b->commands.add(cmd_assign);
 
 		// ...for_var += 1
-		Command *cmd_inc = add_command_operator(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
+		Command *cmd_inc = add_command_operator_by_inline(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
 		b->commands.add(cmd_inc);
 		f->block->commands.add(cb);
 	}else{
@@ -288,11 +288,11 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		int nc = AddConstant(TypeInt);
 		constants[nc].setInt(0);
 		Command *cmd_0 = add_command_const(nc);
-		Command *cmd_assign = add_command_operator(for_var, cmd_0, OperatorIntAssign);
+		Command *cmd_assign = add_command_operator_by_inline(for_var, cmd_0, OperatorIntAssign);
 		f->block->commands.add(cmd_assign);
 
 		// while(for_var < self.num)
-		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
+		Command *cmd_cmp = add_command_operator_by_inline(for_var, self_num, OperatorIntSmaller);
 
 		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
@@ -311,7 +311,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		b->commands.add(cmd_delete);
 
 		// for_var ++
-		Command *cmd_inc = add_command_operator(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
+		Command *cmd_inc = add_command_operator_by_inline(for_var, cmd_0 /*dummy*/, OperatorIntIncrease);
 		b->commands.add(cmd_inc);
 		f->block->commands.add(cb);
 	}
@@ -340,18 +340,18 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 	Command *num_old = add_command_local_var(f->__get_var("num_old"), TypeInt);
 
 	// num_old = self.num
-	Command *cmd_copy_num = add_command_operator(num_old, self_num, OperatorIntAssign);
+	Command *cmd_copy_num = add_command_operator_by_inline(num_old, self_num, OperatorIntAssign);
 	f->block->commands.add(cmd_copy_num);
 
 // delete...
 	ClassFunction *f_del = t->parent->GetDestructor();
 	if (f_del){
 		// for_var = num
-		Command *cmd_assign = add_command_operator(for_var, num, OperatorIntAssign);
+		Command *cmd_assign = add_command_operator_by_inline(for_var, num, OperatorIntAssign);
 		f->block->commands.add(cmd_assign);
 
 		// while(for_var < self.num)
-		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
+		Command *cmd_cmp = add_command_operator_by_inline(for_var, self_num, OperatorIntSmaller);
 
 		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
@@ -370,7 +370,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		b->commands.add(cmd_delete);
 
 		// ...for_var += 1
-		Command *cmd_inc = add_command_operator(for_var, num /*dummy*/, OperatorIntIncrease);
+		Command *cmd_inc = add_command_operator_by_inline(for_var, num /*dummy*/, OperatorIntIncrease);
 		b->commands.add(cmd_inc);
 		f->block->commands.add(cb);
 	}
@@ -384,11 +384,11 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 	ClassFunction *f_init = t->parent->GetDefaultConstructor();
 	if (f_init){
 		// for_var = num_old
-		Command *cmd_assign = add_command_operator(for_var, num_old, OperatorIntAssign);
+		Command *cmd_assign = add_command_operator_by_inline(for_var, num_old, OperatorIntAssign);
 		f->block->commands.add(cmd_assign);
 
 		// while(for_var < self.num)
-		Command *cmd_cmp = add_command_operator(for_var, self_num, OperatorIntSmaller);
+		Command *cmd_cmp = add_command_operator_by_inline(for_var, self_num, OperatorIntSmaller);
 
 		Command *cmd_while = add_command_statement(STATEMENT_FOR);
 		cmd_while->set_param(0, cmd_cmp);
@@ -407,7 +407,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		b->commands.add(cmd_init);
 
 		// ...for_var += 1
-		Command *cmd_inc = add_command_operator(for_var, num /*dummy*/, OperatorIntIncrease);
+		Command *cmd_inc = add_command_operator_by_inline(for_var, num /*dummy*/, OperatorIntIncrease);
 		b->commands.add(cmd_inc);
 		f->block->commands.add(cb);
 	}
@@ -458,7 +458,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 	int nc = AddConstant(TypeInt);
 	constants[nc].setInt(1);
 	Command *cmd_1 = add_command_const(nc);
-	Command *cmd_add = add_command_operator(self_num, cmd_1, OperatorIntAdd);
+	Command *cmd_add = add_command_operator_by_inline(self_num, cmd_1, OperatorIntAdd);
 	Command *cmd_resize = add_command_classfunc(t->GetFunc("resize", TypeVoid, 1, TypeInt), self);
 	cmd_resize->set_param(0, cmd_add);
 	b->commands.add(cmd_resize);
@@ -466,7 +466,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 
 
 	// el := self.data[self.num - 1]
-	Command *cmd_sub = add_command_operator(cp_command(self_num), cmd_1, OperatorIntSubtract);
+	Command *cmd_sub = add_command_operator_by_inline(cp_command(self_num), cmd_1, OperatorIntSubtract);
 	Command *deref_self = deref_command(cp_command(self));
 	Command *self_data = shift_command(deref_self, false, 0, t->parent->GetPointer());
 	Command *cmd_el = add_command_parray(self_data, cmd_sub, t->parent);

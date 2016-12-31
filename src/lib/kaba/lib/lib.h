@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*\
-| Script Data                                                                  |
+| Kaba Lib                                                                     |
 | -> "standart library" for the scripting system                               |
 |                                                                              |
 | vital properties:                                                            |
@@ -105,19 +105,58 @@ struct PrimitiveOperator
 };
 extern int NumPrimitiveOperators;
 extern PrimitiveOperator PrimitiveOperators[];
-struct PreOperator
+
+
+
+
+
+//--------------------------------------------------------------------------------------------------
+// commands
+
+struct Statement
 {
-	int primitive_id;
-	Class *return_type, *param_type_1, *param_type_2;
-	void *func;
-	string str() const;
+	string name;
+	int num_params;
 };
-extern Array<PreOperator> PreOperators;
+extern Array<Statement> Statements;
 
 
-
+// statements
 enum
 {
+	STATEMENT_RETURN,
+	STATEMENT_IF,
+	STATEMENT_IF_ELSE,
+	STATEMENT_WHILE,
+	STATEMENT_FOR,
+	STATEMENT_BREAK,
+	STATEMENT_CONTINUE,
+	STATEMENT_NEW,
+	STATEMENT_DELETE,
+	STATEMENT_SIZEOF,
+	STATEMENT_ASM,
+	NUM_STATEMENTS
+};
+
+
+
+// inline commands
+enum
+{
+	COMMAND_INLINE_FLOAT_TO_INT,
+	COMMAND_INLINE_FLOAT_TO_FLOAT64,
+	COMMAND_INLINE_FLOAT64_TO_FLOAT,
+	COMMAND_INLINE_INT_TO_FLOAT,
+	COMMAND_INLINE_INT_TO_INT64,
+	COMMAND_INLINE_INT64_TO_INT,
+	COMMAND_INLINE_INT_TO_CHAR,
+	COMMAND_INLINE_CHAR_TO_INT,
+	COMMAND_INLINE_POINTER_TO_BOOL,
+	COMMAND_INLINE_COMPLEX_SET,
+	COMMAND_INLINE_VECTOR_SET,
+	COMMAND_INLINE_RECT_SET,
+	COMMAND_INLINE_COLOR_SET,
+
 	OperatorPointerAssign,
 	OperatorPointerEqual,
 	OperatorPointerNotEqual,
@@ -251,57 +290,6 @@ enum
 	OperatorVectorMultiplyS,
 	OperatorVectorDivideS,
 	OperatorVectorNegate,
-};
-
-
-
-
-//--------------------------------------------------------------------------------------------------
-// commands
-
-struct Statement
-{
-	string name;
-	int num_params;
-};
-extern Array<Statement> Statements;
-
-
-// statements
-enum
-{
-	STATEMENT_RETURN,
-	STATEMENT_IF,
-	STATEMENT_IF_ELSE,
-	STATEMENT_WHILE,
-	STATEMENT_FOR,
-	STATEMENT_BREAK,
-	STATEMENT_CONTINUE,
-	STATEMENT_NEW,
-	STATEMENT_DELETE,
-	STATEMENT_SIZEOF,
-	STATEMENT_ASM,
-	NUM_STATEMENTS
-};
-
-
-
-// inline commands
-enum
-{
-	COMMAND_INLINE_FLOAT_TO_INT,
-	COMMAND_INLINE_FLOAT_TO_FLOAT64,
-	COMMAND_INLINE_FLOAT64_TO_FLOAT,
-	COMMAND_INLINE_INT_TO_FLOAT,
-	COMMAND_INLINE_INT_TO_INT64,
-	COMMAND_INLINE_INT64_TO_INT,
-	COMMAND_INLINE_INT_TO_CHAR,
-	COMMAND_INLINE_CHAR_TO_INT,
-	COMMAND_INLINE_POINTER_TO_BOOL,
-	COMMAND_INLINE_COMPLEX_SET,
-	COMMAND_INLINE_VECTOR_SET,
-	COMMAND_INLINE_RECT_SET,
-	COMMAND_INLINE_COLOR_SET,
 };
 
 

@@ -82,6 +82,7 @@ Command *SyntaxTree::add_command_statement(int index)
 	return c;
 }
 
+// virtual call, if func is virtual
 Command *SyntaxTree::add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual)
 {
 	Command *c;
@@ -104,15 +105,25 @@ Command *SyntaxTree::add_command_func(Script *script, int no, Class *return_type
 }
 
 
-Command *SyntaxTree::add_command_operator(Command *p1, Command *p2, int op)
+Command *SyntaxTree::_add_command_operator(Command *p1, Command *p2, int op)
 {
-	Command *cmd = AddCommand(KIND_OPERATOR, op, PreOperators[op].return_type);
-	bool unitary = ((PreOperators[op].param_type_1 == TypeVoid) or (PreOperators[op].param_type_2 == TypeVoid));
+	Command *cmd = AddCommand(KIND_OPERATOR, op, operators[op].return_type);
+	bool unitary = ((operators[op].param_type_1 == TypeVoid) or (operators[op].param_type_2 == TypeVoid));
 	cmd->set_num_params( unitary ? 1 : 2); // unary / binary
 	cmd->set_param(0, p1);
 	if (!unitary)
 		cmd->set_param(1, p2);
 	return cmd;
+}
+
+Command *SyntaxTree::add_command_operator_by_inline(Command *p1, Command *p2, int inline_index)
+{
+	foreachi (Operator &o, operators, i)
+		if (o.inline_index == inline_index)
+			return _add_command_operator(p1, p2, i);
+
+	DoError("operator inline index not found: " + i2s(inline_index));
+	return NULL;
 }
 
 
@@ -191,6 +202,7 @@ string Kind2Str(int kind)
 	if (kind == KIND_CONSTANT)			return "constant";
 	if (kind == KIND_REF_TO_CONST)			return "reference to const";
 	if (kind == KIND_FUNCTION)			return "function";
+	if (kind == KIND_INLINE_FUNCTION)			return "inline";
 	if (kind == KIND_VIRTUAL_FUNCTION)	return "virtual function";
 	if (kind == KIND_STATEMENT)			return "statement";
 	if (kind == KIND_OPERATOR)			return "operator";
@@ -224,6 +236,12 @@ string Kind2Str(int kind)
 	return format("UNKNOWN KIND: %d", kind);
 }
 
+
+string op_to_str(const Operator &op)
+{
+	return "(" + op.param_type_1->name + ") " + PrimitiveOperators[op.primitive_id].name + " (" + op.param_type_2->name + ")";
+}
+
 string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 {
 	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr].name;
@@ -233,7 +251,7 @@ string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 	if (kind == KIND_FUNCTION)			return s->functions[nr]->name;
 	if (kind == KIND_VIRTUAL_FUNCTION)	return i2s(nr);//s->Functions[nr]->name;
 	if (kind == KIND_STATEMENT)	return Statements[nr].name;
-	if (kind == KIND_OPERATOR)			return PreOperators[nr].str();
+	if (kind == KIND_OPERATOR)			return op_to_str(s->operators[nr]);
 	if (kind == KIND_PRIMITIVE_OPERATOR)	return PrimitiveOperators[nr].name;
 	if (kind == KIND_BLOCK)				return i2s(nr);
 	if (kind == KIND_ADDRESS_SHIFT)		return i2s(nr);
@@ -962,10 +980,10 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
-		Command *c_offset = add_command_operator(c_index, c_size, OperatorIntMultiply);
+		Command *c_offset = add_command_operator_by_inline(c_index, c_size, OperatorIntMultiply);
 		c_offset->type = TypeInt;//TypePointer;
 		// address = &array + offset
-		Command *c_address = add_command_operator(c_ref_array, c_offset, __get_pointer_add_int());
+		Command *c_address = add_command_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
 		c_address->type = el_type->GetPointer();//TypePointer;
 		// * address
 		return deref_command(c_address);
@@ -987,10 +1005,10 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
-		Command *c_offset = add_command_operator(c_index, c_size, OperatorIntMultiply);
+		Command *c_offset = add_command_operator_by_inline(c_index, c_size, OperatorIntMultiply);
 		c_offset->type = TypeInt;
 		// address = &array + offset
-		Command *c_address = add_command_operator(c_ref_array, c_offset, __get_pointer_add_int());
+		Command *c_address = add_command_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
 		c_address->type = el_type->GetPointer();//TypePointer;
 		// * address
 		return deref_command(c_address);
@@ -1011,7 +1029,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(c->link_no);
 		Command *c_shift = add_command_const(nc);
 		// address = &struct + shift
-		Command *c_address = add_command_operator(c_ref_struct, c_shift, __get_pointer_add_int());
+		Command *c_address = add_command_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
 		c_address->type = el_type->GetPointer();//TypePointer;
 		// * address
 		return deref_command(c_address);
@@ -1031,7 +1049,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(c->link_no);
 		Command *c_shift = add_command_const(nc);
 		// address = &struct + shift
-		Command *c_address = add_command_operator(c_ref_struct, c_shift, __get_pointer_add_int());
+		Command *c_address = add_command_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
 		c_address->type = el_type->GetPointer();//TypePointer;
 		// * address
 		return deref_command(c_address);

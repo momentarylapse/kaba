@@ -146,7 +146,7 @@ Command *SyntaxTree::PreProcessCommand(Command *c)
 
 	// process...
 	if (c->kind == KIND_OPERATOR){
-		PreOperator *o = &PreOperators[c->link_no];
+		Operator *o = &operators[c->link_no];
 		/*if (c->link_nr == OperatorIntAdd){
 			if (c->param[1]->kind == KindConstant){
 				int v = *(int*)Constants[c->param[1]->link_nr].data;
@@ -311,7 +311,7 @@ Command *SyntaxTree::PreProcessCommandAddresses(Command *c)
 
 	// process...
 	if (c->kind == KIND_OPERATOR){
-		PreOperator *o = &PreOperators[c->link_no];
+		Operator *o = &operators[c->link_no];
 		if (o->func){
 			bool all_const = true;
 			bool is_address = false;

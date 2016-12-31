@@ -632,7 +632,10 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 
 
 	if (com->kind == KIND_OPERATOR){
-		SerializeOperator(com, params, ret);
+		Command c = *com;
+		c.kind = KIND_INLINE_FUNCTION;
+		c.link_no = com->script->syntax->operators[com->link_no].inline_index;
+		SerializeInlineFunction(&c, params, ret);
 
 	}else if (com->kind == KIND_FUNCTION){
 		// inline function?

@@ -294,11 +294,11 @@ Command *SyntaxTree::GetOperandExtension(Command *Operand, Block *block)
 	}else if (op >= 0){
 		// unary operator? (++,--)
 
-		for (int i=0;i<PreOperators.num;i++)
-			if (PreOperators[i].primitive_id == op)
-				if ((PreOperators[i].param_type_1 == Operand->type) and (PreOperators[i].param_type_2 == TypeVoid)){
+		for (int i=0;i<operators.num;i++)
+			if (operators[i].primitive_id == op)
+				if ((operators[i].param_type_1 == Operand->type) and (operators[i].param_type_2 == TypeVoid)){
 					Exp.next();
-					return add_command_operator(Operand, NULL, i);
+					return _add_command_operator(Operand, NULL, i);
 				}
 		return Operand;
 	}
@@ -655,11 +655,11 @@ Command *SyntaxTree::GetOperand(Block *block)
 
 				// exact match?
 				bool ok=false;
-				for (int i=0;i<PreOperators.num;i++)
-					if (po == PreOperators[i].primitive_id)
-						if ((PreOperators[i].param_type_1 == TypeVoid) and (type_match(p2, PreOperators[i].param_type_2))){
+				for (int i=0;i<operators.num;i++)
+					if (po == operators[i].primitive_id)
+						if ((operators[i].param_type_1 == TypeVoid) and (type_match(p2, operators[i].param_type_2))){
 							o = i;
-							r = PreOperators[i].return_type;
+							r = operators[i].return_type;
 							ok = true;
 							break;
 						}
@@ -670,12 +670,12 @@ Command *SyntaxTree::GetOperand(Block *block)
 					int pen2;
 					int c2, c2_best;
 					int pen_min = 100;
-					for (int i=0;i<PreOperators.num;i++)
-						if (po == PreOperators[i].primitive_id)
-							if ((PreOperators[i].param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, PreOperators[i].param_type_2, pen2, c2))){
+					for (int i=0;i<operators.num;i++)
+						if (po == operators[i].primitive_id)
+							if ((operators[i].param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, operators[i].param_type_2, pen2, c2))){
 								ok = true;
 								if (pen2 < pen_min){
-									r = PreOperators[i].return_type;
+									r = operators[i].return_type;
 									o = i;
 									pen_min = pen2;
 									c2_best = c2;
@@ -690,7 +690,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 
 				if (!ok)
 					DoError("unknown unitary operator " + PrimitiveOperators[po].name + " " + p2->name, _ie);
-				return add_command_operator(sub_command, NULL, o);
+				return _add_command_operator(sub_command, NULL, o);
 			}else{
 
 				// variables etc...
@@ -849,10 +849,10 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 		}
 
 	// exact (operator) match?
-	for (int i=0;i<PreOperators.num;i++)
-		if (op_no == PreOperators[i].primitive_id)
-			if (_type_match(p1, equal_classes, PreOperators[i].param_type_1) and _type_match(p2, equal_classes, PreOperators[i].param_type_2)){
-				return add_command_operator(param1, param2, i);
+	for (int i=0;i<operators.num;i++)
+		if (op_no == operators[i].primitive_id)
+			if (_type_match(p1, equal_classes, operators[i].param_type_1) and _type_match(p2, equal_classes, operators[i].param_type_2)){
+				return _add_command_operator(param1, param2, i);
 			}
 
 
@@ -862,9 +862,9 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 	int pen_min = 2000;
 	int op_found = -1;
 	bool op_is_class_func = false;
-	for (int i=0;i<PreOperators.num;i++)
-		if (op_no == PreOperators[i].primitive_id)
-			if (type_match_with_cast(p1, equal_classes, left_modifiable, PreOperators[i].param_type_1, pen1, c1) and type_match_with_cast(p2, equal_classes, false, PreOperators[i].param_type_2, pen2, c2))
+	for (int i=0;i<operators.num;i++)
+		if (op_no == operators[i].primitive_id)
+			if (type_match_with_cast(p1, equal_classes, left_modifiable, operators[i].param_type_1, pen1, c1) and type_match_with_cast(p2, equal_classes, false, operators[i].param_type_2, pen2, c2))
 				if (pen1 + pen2 < pen_min){
 					op_found = i;
 					pen_min = pen1 + pen2;
@@ -891,7 +891,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 			op->set_num_params(1);
 			op->set_param(0, param2);
 		}else{
-			return add_command_operator(param1, param2, op_found);
+			return _add_command_operator(param1, param2, op_found);
 		}
 		return op;
 	}
@@ -1001,11 +1001,11 @@ void SyntaxTree::ParseStatementFor(Block *block)
 
 	// implement
 	// for_var = val0
-	Command *cmd_assign = add_command_operator(for_var, val0, OperatorIntAssign);
+	Command *cmd_assign = add_command_operator_by_inline(for_var, val0, OperatorIntAssign);
 	block->commands.add(cmd_assign);
 
 	// while(for_var < val1)
-	Command *cmd_cmp = add_command_operator(for_var, val1, OperatorIntSmaller);
+	Command *cmd_cmp = add_command_operator_by_inline(for_var, val1, OperatorIntSmaller);
 
 	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
@@ -1021,16 +1021,16 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	Command *cmd_inc;
 	if (for_var->type == TypeInt){
 		if (val_step)
-			cmd_inc = add_command_operator(for_var, val_step, OperatorIntAddS);
+			cmd_inc = add_command_operator_by_inline(for_var, val_step, OperatorIntAddS);
 		else
-			cmd_inc = add_command_operator(for_var, val1 /*dummy*/, OperatorIntIncrease);
+			cmd_inc = add_command_operator_by_inline(for_var, val1 /*dummy*/, OperatorIntIncrease);
 	}else{
 		if (!val_step){
 			int nc = AddConstant(TypeFloat32);
 			*(float*)constants[nc].value.data = 1.0;
 			val_step = add_command_const(nc);
 		}
-		cmd_inc = add_command_operator(for_var, val_step, OperatorFloatAddS);
+		cmd_inc = add_command_operator_by_inline(for_var, val_step, OperatorFloatAddS);
 	}
 	Block *loop_block = blocks[loop_block_no];
 	loop_block->commands.add(cmd_inc); // add to loop-block
@@ -1081,7 +1081,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// implement
 	// for_index = 0
-	Command *cmd_assign = add_command_operator(for_index, val0, OperatorIntAssign);
+	Command *cmd_assign = add_command_operator_by_inline(for_index, val0, OperatorIntAssign);
 	block->commands.add(cmd_assign);
 
 	Command *val1;
@@ -1098,7 +1098,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	}
 
 	// while(for_index < val1)
-	Command *cmd_cmp = add_command_operator(for_index, val1, OperatorIntSmaller);
+	Command *cmd_cmp = add_command_operator_by_inline(for_index, val1, OperatorIntSmaller);
 
 	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
@@ -1111,7 +1111,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	ParseCompleteCommand(block);
 
 	// ...for_index += 1
-	Command *cmd_inc = add_command_operator(for_index, val1 /*dummy*/, OperatorIntIncrease);
+	Command *cmd_inc = add_command_operator_by_inline(for_index, val1 /*dummy*/, OperatorIntIncrease);
 	Block *loop_block = blocks[loop_block_no];
 	loop_block->commands.add(cmd_inc); // add to loop-block
 
@@ -1131,7 +1131,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	Command *array_el_ref = ref_command(array_el);
 
 	// &for_var = &array[for_index]
-	Command *cmd_var_assign = add_command_operator(for_var_ref, array_el_ref, OperatorPointerAssign);
+	Command *cmd_var_assign = add_command_operator_by_inline(for_var_ref, array_el_ref, OperatorPointerAssign);
 	loop_block->commands.insert(cmd_var_assign, 0);
 
 	// ref...

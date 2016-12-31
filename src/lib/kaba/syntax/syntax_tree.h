@@ -155,6 +155,23 @@ struct Command
 	void set_instance(Command *p);
 };
 
+
+struct Operator
+{
+	int primitive_id;
+	Class *return_type, *param_type_1, *param_type_2;
+
+	SyntaxTree *owner;
+	int func_index;
+	int class_func_index;
+	int inline_index;
+
+	void *func; // temporary...!
+
+	string str() const;
+};
+
+
 struct AsmBlock
 {
 	string block;
@@ -269,7 +286,8 @@ public:
 	Command *add_command_classfunc(ClassFunction *f, Command *inst, bool force_non_virtual = false);
 	Command *add_command_func(Script *script, int no, Class *return_type);
 	Command *add_command_const(int nc);
-	Command *add_command_operator(Command *p1, Command *p2, int op);
+	Command *_add_command_operator(Command *p1, Command *p2, int op);
+	Command *add_command_operator_by_inline(Command *p1, Command *p2, int inline_index);
 	Command *add_command_local_var(int no, Class *type);
 	Command *add_command_parray(Command *p, Command *index, Class *type);
 	Command *add_command_block(Block *b);
@@ -305,6 +323,7 @@ public:
 	Asm::MetaInfo *asm_meta_info;
 	Array<AsmBlock> asm_blocks;
 	Array<Constant> constants;
+	Array<Operator> operators;
 	Array<Block*> blocks;
 	Array<Function*> functions;
 	Array<Command*> commands;

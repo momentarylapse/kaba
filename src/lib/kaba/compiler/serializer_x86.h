@@ -21,7 +21,6 @@ public:
 	virtual SerialCommandParam SerializeParameter(Command *link, Block *block, int index);
 	virtual void SerializeStatement(Command *com, const Array<SerialCommandParam> &params, const SerialCommandParam &ret, Block *block, int index, int marker_before_params);
 	virtual void SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &params, const SerialCommandParam &ret);
-	virtual void SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret);
 
 	virtual void DoMapping();
 	void ProcessReferences();

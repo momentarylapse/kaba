@@ -130,7 +130,6 @@ public:
 	SerialCommandParam SerializeCommand(Command *com, Block *block, int index);
 	virtual void SerializeStatement(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret, Block *block, int index, int marker_before_params) = 0;
 	virtual void SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
-	virtual void SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
 	virtual void AddFunctionIntro(Function *f) = 0;
 	virtual void AddFunctionOutro(Function *f) = 0;
 	virtual void CorrectReturn(){};

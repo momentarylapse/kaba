@@ -238,9 +238,7 @@ void SerializerARM::SerializeStatement(Command *com, const Array<SerialCommandPa
 	}
 }
 
-void SerializerARM::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret){}
-
-void SerializerARM::SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
+void SerializerARM::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
 {
 	switch(com->link_no){
 		case OperatorIntAssign:
@@ -378,7 +376,7 @@ void SerializerARM::SerializeOperator(Command *com, const Array<SerialCommandPar
 			add_cmd(Asm::INST_SUB, ret, ret, param[0]);
 			break;
 		default:
-			DoError("unimplemented operator: " + PreOperators[com->link_no].str());
+			DoError("unimplemented inline function: #" + i2s(com->link_no));
 	}
 }
 
