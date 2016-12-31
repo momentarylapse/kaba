@@ -175,6 +175,8 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	PreCompiler(just_analyse);
 
 	Parser();
+
+	Exp.clear();
 	
 	if (config.verbose)
 		Show();
@@ -190,8 +192,6 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 
 	if (config.verbose)
 		Show();
-
-	Exp.clear();
 }
 
 string Kind2Str(int kind)

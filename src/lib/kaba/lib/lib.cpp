@@ -255,6 +255,15 @@ void add_operator(int primitive_op, Class *return_type, Class *param_type1, Clas
 	o.param_type_1 = param_type1;
 	o.param_type_2 = param_type2;
 	o.inline_index = inline_index;
+	/*o.func_index = -1;
+	foreachi(Function* f, cur_package_script->syntax->functions, i)
+		if (f->inline_no == inline_index)
+			o.func_index = i;
+	if (o.func_index >0)*/
+	o.func_index = add_func("op...", return_type, func);
+	func_set_inline(inline_index);
+	func_add_param("a", param_type1);
+	func_add_param("b", param_type2);
 	o.func = func;
 	o.owner = cur_package_script->syntax;
 	cur_package_script->syntax->operators.add(o);

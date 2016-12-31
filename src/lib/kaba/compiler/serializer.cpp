@@ -634,7 +634,9 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 	if (com->kind == KIND_OPERATOR){
 		Command c = *com;
 		c.kind = KIND_INLINE_FUNCTION;
-		c.link_no = com->script->syntax->operators[com->link_no].inline_index;
+		Operator &op = com->script->syntax->operators[com->link_no];
+		c.link_no = op.func_index;
+		c.script = op.owner->script;
 		SerializeInlineFunction(&c, params, ret);
 
 	}else if (com->kind == KIND_FUNCTION){
@@ -642,7 +644,6 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 		if (com->script->syntax->functions[com->link_no]->inline_no >= 0){
 			Command c = *com;
 			c.kind = KIND_INLINE_FUNCTION;
-			c.link_no = com->script->syntax->functions[com->link_no]->inline_no;
 
 			SerializeInlineFunction(&c, params, ret);
 			return ret;
