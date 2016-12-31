@@ -390,38 +390,37 @@ Command *apply_type_cast(SyntaxTree *ps, int tc, Command *param);
 
 // check, if the command <link> links to really has type <type>
 //   ...and try to cast, if not
-Command *SyntaxTree::CheckParamLink(Command *link, Class *type, const string &f_name, int param_no)
+Command *SyntaxTree::CheckParamLink(Command *link, Class *wanted, const string &f_name, int param_no)
 {
 	// type cast needed and possible?
-	Class *pt = link->type;
-	Class *wt = type;
+	Class *given = link->type;
 
-	// "silent" pointer (&)?
-	if ((wt->is_pointer) and (wt->is_silent)){
-		if (type_match(pt, wt->parent)){
+	if (type_match(given, wanted))
+		return link;
+
+	if (wanted->is_pointer and wanted->is_silent){
+		// "silent" pointer (&)?
+		if (type_match(given, wanted->parent)){
 
 			return ref_command(link);
-		}else if ((pt->is_pointer) and (type_match(pt->parent, wt->parent))){
-			// silent Ref & of *
+		}else if ((given->is_pointer) and (type_match(given->parent, wanted->parent))){
+			// silent reference & of *
 
-			// no need to do anything...
+			return link;
 		}else{
 			Exp.rewind();
-			DoError(format("(c) parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
+			DoError(format("(c) parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
 		}
 
-	// normal type cast
-	}else if (!type_match(pt, wt)){
+	}else{
+		// normal type cast
 		int pen, tc;
-		/*int tc = -1;
-		for (int i=0;i<TypeCasts.num;i++)
-			if ((direct_type_match(TypeCasts[i].source, pt)) and (direct_type_match(TypeCasts[i].dest, wt)))
-				tc = i;*/
 
-		if (type_match_with_cast(pt, false, false, wt, pen, tc))
+		if (type_match_with_cast(given, false, false, wanted, pen, tc))
 			return apply_type_cast(this, tc, link);
+
 		Exp.rewind();
-		DoError(format("parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), pt->name.c_str(), wt->name.c_str()));
+		DoError(format("parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
 	}
 	return link;
 }

@@ -47,6 +47,10 @@ bool type_match(Class *given, Class *wanted)
 	if ((given->is_pointer) and (wanted == TypePointer))
 		return true;
 
+	// FIXME... quick'n'dirty hack to allow nil as parameter
+	if ((given == TypePointer) and wanted->is_pointer and !wanted->is_silent)
+		return true;
+
 	// compatible pointers (of same or derived class)
 	if (given->is_pointer and wanted->is_pointer)
 		return given->parent->IsDerivedFrom(wanted->parent);
