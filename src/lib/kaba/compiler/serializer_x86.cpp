@@ -11,15 +11,15 @@ extern int GlobalWaitingMode;
 extern float GlobalTimeToWait;
 
 
-int SerializerX86::fc_begin()
+int SerializerX86::fc_begin(const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.get_type_save();
 
 	// return data too big... push address
 	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn);
+		ret_ref = AddReference(/*ret_temp*/ ret);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -29,11 +29,11 @@ int SerializerX86::fc_begin()
 	long push_size = 0;
 
 	// push parameters onto stack
-	for (int p=CompilerFunctionParam.num-1;p>=0;p--){
-		if (CompilerFunctionParam[p].type){
-			int s = mem_align(CompilerFunctionParam[p].type->size, 4);
+	for (int p=params.num-1;p>=0;p--){
+		if (params[p].type){
+			int s = mem_align(params[p].type->size, 4);
 			for (int j=0;j<s/4;j++)
-				add_cmd(Asm::INST_PUSH, param_shift(CompilerFunctionParam[p], s - 4 - j * 4, TypeInt));
+				add_cmd(Asm::INST_PUSH, param_shift(params[p], s - 4 - j * 4, TypeInt));
 			push_size += s;
 		}
 	}
@@ -45,8 +45,8 @@ int SerializerX86::fc_begin()
 	}
 
 	// _cdecl: push class instance as first parameter
-	if (CompilerFunctionInstance.type){
-		add_cmd(Asm::INST_PUSH, CompilerFunctionInstance);
+	if (instance.type){
+		add_cmd(Asm::INST_PUSH, instance);
 		push_size += config.pointer_size;
 	}
 	
@@ -58,9 +58,9 @@ int SerializerX86::fc_begin()
 	return push_size;
 }
 
-void SerializerX86::fc_end(int push_size)
+void SerializerX86::fc_end(int push_size, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.get_type_save();
 
 	if (push_size > 127)
 		add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_ESP), param_const(TypeInt, push_size));
@@ -71,24 +71,24 @@ void SerializerX86::fc_end(int push_size)
 	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
 			if (config.compile_os)
-				add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, p_xmm0);
+				add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			else
-				add_cmd(Asm::INST_FSTP, CompilerFunctionReturn);
+				add_cmd(Asm::INST_FSTP, ret);
 		else if (type->size == 1){
 			int v = add_virtual_reg(Asm::REG_AL);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, v));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(type, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
 		}else{
 			int v = add_virtual_reg(Asm::REG_EAX);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, v));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(type, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
 		}
 	}
 }
 
-void SerializerX86::add_function_call(Script *script, int func_no)
+void SerializerX86::add_function_call(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	int push_size = fc_begin();
+	int push_size = fc_begin(instance, params, ret);
 
 	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
@@ -100,20 +100,20 @@ void SerializerX86::add_function_call(Script *script, int func_no)
 		// function pointer will be shifted later...
 	}
 
-	fc_end(push_size);
+	fc_end(push_size, ret);
 }
 
-void SerializerX86::add_virtual_function_call(int virtual_index)
+void SerializerX86::add_virtual_function_call(int virtual_index, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	int push_size = fc_begin();
+	int push_size = fc_begin(instance, params, ret);
 
-	add_cmd(Asm::INST_MOV, p_eax, CompilerFunctionInstance);
+	add_cmd(Asm::INST_MOV, p_eax, instance);
 	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
 	add_cmd(Asm::INST_ADD, p_eax, param_const(TypeInt, 4 * virtual_index));
 	add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_EDX), p_deref_eax);
 	add_cmd(Asm::INST_CALL, param_preg(TypePointer, Asm::REG_EDX)); // the actual call
 
-	fc_end(push_size);
+	fc_end(push_size, ret);
 }
 
 // create data for a (function) parameter
@@ -187,7 +187,7 @@ SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block
 }
 
 
-void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret)
+void SerializerX86::SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
 {
 	switch(com->link_no){
 		case OperatorIntAssign:
@@ -318,20 +318,34 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 		case OperatorPointerEqual:
 		case OperatorPointerNotEqual:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
-			if (com->link_no==OperatorIntEqual)			add_cmd(Asm::INST_SETZ, ret);
-			if (com->link_no==OperatorIntNotEqual)		add_cmd(Asm::INST_SETNZ, ret);
-			if (com->link_no==OperatorIntGreater)		add_cmd(Asm::INST_SETNLE, ret);
-			if (com->link_no==OperatorIntGreaterEqual)	add_cmd(Asm::INST_SETNL, ret);
-			if (com->link_no==OperatorIntSmaller)		add_cmd(Asm::INST_SETL, ret);
-			if (com->link_no==OperatorIntSmallerEqual)	add_cmd(Asm::INST_SETLE, ret);
-			if (com->link_no==OperatorInt64Equal)		add_cmd(Asm::INST_SETZ, ret);
-			if (com->link_no==OperatorInt64NotEqual)	add_cmd(Asm::INST_SETNZ, ret);
-			if (com->link_no==OperatorInt64Greater)		add_cmd(Asm::INST_SETNLE, ret);
-			if (com->link_no==OperatorInt64GreaterEqual)add_cmd(Asm::INST_SETNL, ret);
-			if (com->link_no==OperatorInt64Smaller)		add_cmd(Asm::INST_SETL, ret);
-			if (com->link_no==OperatorInt64SmallerEqual)add_cmd(Asm::INST_SETLE, ret);
-			if (com->link_no==OperatorPointerEqual)		add_cmd(Asm::INST_SETZ, ret);
-			if (com->link_no==OperatorPointerNotEqual)	add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no == OperatorIntEqual)
+				add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no == OperatorIntNotEqual)
+				add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no == OperatorIntGreater)
+				add_cmd(Asm::INST_SETNLE, ret);
+			if (com->link_no == OperatorIntGreaterEqual)
+				add_cmd(Asm::INST_SETNL, ret);
+			if (com->link_no == OperatorIntSmaller)
+				add_cmd(Asm::INST_SETL, ret);
+			if (com->link_no == OperatorIntSmallerEqual)
+				add_cmd(Asm::INST_SETLE, ret);
+			if (com->link_no == OperatorInt64Equal)
+				add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no == OperatorInt64NotEqual)
+				add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no == OperatorInt64Greater)
+				add_cmd(Asm::INST_SETNLE, ret);
+			if (com->link_no == OperatorInt64GreaterEqual)
+				add_cmd(Asm::INST_SETNL, ret);
+			if (com->link_no == OperatorInt64Smaller)
+				add_cmd(Asm::INST_SETL, ret);
+			if (com->link_no == OperatorInt64SmallerEqual)
+				add_cmd(Asm::INST_SETLE, ret);
+			if (com->link_no == OperatorPointerEqual)
+				add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no == OperatorPointerNotEqual)
+				add_cmd(Asm::INST_SETNZ, ret);
 			break;
 		case OperatorIntBitAnd:
 		case OperatorInt64BitAnd:
@@ -475,12 +489,18 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 		case OperatorFloat64SmallerEqual:
 			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
 			add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
-			if (com->link_no==OperatorFloat64Equal)			add_cmd(Asm::INST_SETZ, ret);
-			if (com->link_no==OperatorFloat64NotEqual)		add_cmd(Asm::INST_SETNZ, ret);
-			if (com->link_no==OperatorFloat64Greater)		add_cmd(Asm::INST_SETNBE, ret);
-			if (com->link_no==OperatorFloat64GreaterEqual)	add_cmd(Asm::INST_SETNB, ret);
-			if (com->link_no==OperatorFloat64Smaller)		add_cmd(Asm::INST_SETB, ret);
-			if (com->link_no==OperatorFloat64SmallerEqual)	add_cmd(Asm::INST_SETBE, ret);
+			if (com->link_no == OperatorFloat64Equal)
+				add_cmd(Asm::INST_SETZ, ret);
+			if (com->link_no == OperatorFloat64NotEqual)
+				add_cmd(Asm::INST_SETNZ, ret);
+			if (com->link_no == OperatorFloat64Greater)
+				add_cmd(Asm::INST_SETNBE, ret);
+			if (com->link_no == OperatorFloat64GreaterEqual)
+				add_cmd(Asm::INST_SETNB, ret);
+			if (com->link_no == OperatorFloat64Smaller)
+				add_cmd(Asm::INST_SETB, ret);
+			if (com->link_no == OperatorFloat64SmallerEqual)
+				add_cmd(Asm::INST_SETBE, ret);
 			break;
 
 		case OperatorFloatNegate:
@@ -694,7 +714,7 @@ void SerializerX86::SerializeOperator(Command *com, Array<SerialCommandParam> &p
 	}
 }
 
-void SerializerX86::SerializeStatement(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params)
+void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret, Block *block, int index, int marker_before_params)
 {
 	switch(com->link_no){
 		case STATEMENT_IF:{
@@ -799,12 +819,10 @@ void SerializerX86::SerializeStatement(Command *com, Array<SerialCommandParam> &
 			}
 			break;
 		case STATEMENT_NEW:{
-			AddFuncParam(param_const(TypeInt, ret.type->parent->size));
-			AddFuncReturn(ret);
 			Array<Command> links = syntax_tree->GetExistence("@malloc", NULL);
 			if (links.num == 0)
 				DoError("@malloc not found????");
-			AddFunctionCall(links[0].script, links[0].link_no);
+			AddFunctionCall(links[0].script, links[0].link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
 			if (com->param.num > 0){
 				// copy + edit command
 				Command sub = *com->param[0];
@@ -816,11 +834,10 @@ void SerializerX86::SerializeStatement(Command *com, Array<SerialCommandParam> &
 			break;}
 		case STATEMENT_DELETE:{
 			add_cmd_destructor(param[0], false);
-			AddFuncParam(param[0]);
 			Array<Command> links = syntax_tree->GetExistence("@free", NULL);
 			if (links.num == 0)
 				DoError("@free not found????");
-			AddFunctionCall(links[0].script, links[0].link_no);
+			AddFunctionCall(links[0].script, links[0].link_no, p_none, param[0], p_none);
 			break;}
 		case STATEMENT_ASM:
 			add_cmd(INST_ASM);
@@ -836,7 +853,7 @@ enum{
 	COMMAND_WAIT_ONE_FRAME
 };
 
-void SerializerX86::SerializeInlineFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret)
+void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
 {
 	switch(com->link_no){
 		case COMMAND_WAIT:
@@ -991,9 +1008,9 @@ inline bool param_combi_allowed(int inst, SerialCommandParam &p1, SerialCommandP
 		return false;
 	bool r1, w1, r2, w2;
 	Asm::GetInstructionParamFlags(inst, r1, w1, r2, w2);
-	if ((w1) and (p1.kind == KIND_CONSTANT))
+	if (w1 and (p1.kind == KIND_CONSTANT))
 		return false;
-	if ((w2) and (p2.kind == KIND_CONSTANT))
+	if (w2 and (p2.kind == KIND_CONSTANT))
 		return false;
 	if ((p1.kind == KIND_CONSTANT) or (p2.kind == KIND_CONSTANT))
 		if (!Asm::GetInstructionAllowConst(inst))

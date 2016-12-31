@@ -483,52 +483,22 @@ int Serializer::reg_resize(int reg, int size)
 }
 
 
-void Serializer::AddFuncParam(const SerialCommandParam &p)
-{
-	CompilerFunctionParam.add(p);
-}
-
-void Serializer::AddFuncReturn(const SerialCommandParam &r)
-{
-	CompilerFunctionReturn = r;
-}
-
-void Serializer::AddFuncInstance(const SerialCommandParam &inst)
-{
-	CompilerFunctionInstance = inst;
-}
-
-
-void Serializer::AddFunctionCall(Script *script, int func_no)
+void Serializer::AddFunctionCall(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
 	call_used = true;
-	if (!CompilerFunctionReturn.type)
-		CompilerFunctionReturn.type = TypeVoid;
 
-	add_function_call(script, func_no);
-
-	// clean up for next call
-	CompilerFunctionParam.clear();
-	CompilerFunctionReturn.type = TypeVoid;
-	CompilerFunctionInstance.type = NULL;
+	add_function_call(script, func_no, instance, params, ret);
 }
 
-void Serializer::AddClassFunctionCall(ClassFunction *cf)
+void Serializer::AddClassFunctionCall(ClassFunction *cf, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
 	if (cf->virtual_index < 0){
-		AddFunctionCall(cf->script, cf->nr);
+		AddFunctionCall(cf->script, cf->nr, instance, params, ret);
 		return;
 	}
 	call_used = true;
-	if (!CompilerFunctionReturn.type)
-		CompilerFunctionReturn.type = TypeVoid;
 
-	add_virtual_function_call(cf->virtual_index);
-
-	// clean up for next call
-	CompilerFunctionParam.clear();
-	CompilerFunctionReturn.type = TypeVoid;
-	CompilerFunctionInstance.type = NULL;
+	add_virtual_function_call(cf->virtual_index, instance, params, ret);
 }
 
 
@@ -639,7 +609,7 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 	SerialCommandParam ret = add_temp(com->type, create_constructor_for_return);
 
 
-	Array<SerialCommandParam> param;
+	Array<SerialCommandParam> params;
 
 	// special new-operator work-around
 	if ((com->kind == KIND_STATEMENT) and (com->link_no == STATEMENT_NEW)){
@@ -648,28 +618,21 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 	}else{
 
 		// compile parameters
-		param.resize(com->param.num);
+		params.resize(com->param.num);
 		for (int p=0;p<com->param.num;p++)
-			param[p] = SerializeParameter(com->param[p], block, index);
+			params[p] = SerializeParameter(com->param[p], block, index);
 	}
 
 	// class function -> compile instance
-	bool is_class_function = false;
-	if (com->kind == KIND_FUNCTION){
-		if (com->script->syntax->functions[com->link_no]->_class)
-			is_class_function = true;
-	}else if (com->kind == KIND_VIRTUAL_FUNCTION){
-		is_class_function = true;
-	}
 	SerialCommandParam instance = p_none;
-	if (is_class_function){
+	if (com->instance){
 		instance = SerializeParameter(com->instance, block, index);
 		// super_array automatically referenced...
 	}
 
 
 	if (com->kind == KIND_OPERATOR){
-		SerializeOperator(com, param, ret);
+		SerializeOperator(com, params, ret);
 
 	}else if (com->kind == KIND_FUNCTION){
 		// inline function?
@@ -678,40 +641,26 @@ SerialCommandParam Serializer::SerializeCommand(Command *com, Block *block, int 
 			c.kind = KIND_INLINE_FUNCTION;
 			c.link_no = com->script->syntax->functions[com->link_no]->inline_no;
 
-			SerializeInlineFunction(&c, param, ret);
+			SerializeInlineFunction(&c, params, ret);
 			return ret;
 		}
 
-		for (int p=0;p<com->param.num;p++)
-			AddFuncParam(param[p]);
-
-		AddFuncReturn(ret);
-
-		if (is_class_function)
-			AddFuncInstance(instance);
-
-		AddFunctionCall(com->script, com->link_no);
+		
+		AddFunctionCall(com->script, com->link_no, instance, params, ret);
 
 	}else if (com->kind == KIND_VIRTUAL_FUNCTION){
 
-		for (int p=0;p<com->param.num;p++)
-			AddFuncParam(param[p]);
+		AddClassFunctionCall(instance.type->parent->GetVirtualFunction(com->link_no), instance, params, ret);
 
-		AddFuncReturn(ret);
-		AddFuncInstance(instance);
-
-		AddClassFunctionCall(instance.type->parent->GetVirtualFunction(com->link_no));
 	}else if (com->kind == KIND_STATEMENT){
-		SerializeStatement(com, param, ret, block, index, marker_before_params);
+		SerializeStatement(com, params, ret, block, index, marker_before_params);
 	}else if (com->kind == KIND_ARRAY_BUILDER){
 		ClassFunction *cf = com->type->GetFunc("add", TypeVoid, 1);
 		if (!cf)
 			DoError(format("[..]: can not find %s.add() function???", com->type->name.c_str()));
 		instance = AddReference(ret, com->type->GetPointer());
 		for (int i=0; i<com->param.num; i++){
-			AddFuncInstance(instance);
-			AddFuncParam(param[i]);
-			AddFunctionCall(cf->script, cf->nr);
+			AddFunctionCall(cf->script, cf->nr, instance, params[i], p_none);
 		}
 	}else if (com->kind == KIND_BLOCK){
 		SerializeBlock(com->as_block());
@@ -769,7 +718,7 @@ void Serializer::InsertAddedStuffIfNeeded(Block *block, int index)
 
 // modus: KIND_VAR_LOCAL / KIND_VAR_TEMP
 //    -1: -return-/new   -> don't destruct
-void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
+void Serializer::add_cmd_constructor(const SerialCommandParam &param, int modus)
 {
 	Class *class_type = param.type;
 	if (modus == -1)
@@ -778,31 +727,31 @@ void Serializer::add_cmd_constructor(SerialCommandParam &param, int modus)
 	if (!f)
 		return;
 
+	SerialCommandParam instance = param;
 	if (modus == -1){
-		AddFuncInstance(param);
 	}else{
-		SerialCommandParam inst = AddReference(param);
-		AddFuncInstance(inst);
+		instance = AddReference(param);
 	}
 
-	AddClassFunctionCall(f);
+	Array<SerialCommandParam> params;
+	AddClassFunctionCall(f, instance, params, p_none);
 }
 
-void Serializer::add_cmd_destructor(SerialCommandParam &param, bool needs_ref)
+void Serializer::add_cmd_destructor(const SerialCommandParam &param, bool needs_ref)
 {
+	Array<SerialCommandParam> params;
+
 	if (needs_ref){
 		ClassFunction *f = param.type->GetDestructor();
 		if (!f)
 			return;
 		SerialCommandParam inst = AddReference(param);
-		AddFuncInstance(inst);
-		AddClassFunctionCall(f);
+		AddClassFunctionCall(f, inst, params, p_none);
 	}else{
 		ClassFunction *f = param.type->parent->GetDestructor();
 		if (!f)
 			return;
-		AddFuncInstance(param);
-		AddClassFunctionCall(f);
+		AddClassFunctionCall(f, param, params, p_none);
 	}
 }
 
@@ -2069,9 +2018,6 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list)
 	p_st1 = param_preg(TypeFloat32, Asm::REG_ST1);
 	p_xmm0 = param_preg(TypeReg128, Asm::REG_XMM0);
 	p_xmm1 = param_preg(TypeReg128, Asm::REG_XMM1);
-
-	CompilerFunctionReturn = p_none;
-	CompilerFunctionInstance = p_none;
 }
 
 Serializer::~Serializer()

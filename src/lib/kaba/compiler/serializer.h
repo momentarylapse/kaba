@@ -41,6 +41,8 @@ struct SerialCommandParam
 	bool operator == (const SerialCommandParam &param) const
 	{	return (kind == param.kind) && (p == param.p) && (type == param.type) && (shift == param.shift);	}
 	string str() const;
+	Class* get_type_save() const
+	{	return type ? type : TypeVoid;	}
 };
 
 #define SERIAL_COMMAND_NUM_PARAMS	3
@@ -126,9 +128,9 @@ public:
 	void SerializeBlock(Block *block);
 	virtual SerialCommandParam SerializeParameter(Command *link, Block *block, int index) = 0;
 	SerialCommandParam SerializeCommand(Command *com, Block *block, int index);
-	virtual void SerializeStatement(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params) = 0;
-	virtual void SerializeInlineFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret) = 0;
-	virtual void SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret) = 0;
+	virtual void SerializeStatement(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret, Block *block, int index, int marker_before_params) = 0;
+	virtual void SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
+	virtual void SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
 	virtual void AddFunctionIntro(Function *f) = 0;
 	virtual void AddFunctionOutro(Function *f) = 0;
 	virtual void CorrectReturn(){};
@@ -161,8 +163,8 @@ public:
 
 
 	Array<SerialCommandParam> inserted_temp;
-	void add_cmd_constructor(SerialCommandParam &param, int modus);
-	void add_cmd_destructor(SerialCommandParam &param, bool needs_ref = true);
+	void add_cmd_constructor(const SerialCommandParam &param, int modus);
+	void add_cmd_destructor(const SerialCommandParam &param, bool needs_ref = true);
 
 	virtual void DoMapping() = 0;
 	void MapReferencedTempVarsToStack();
@@ -186,12 +188,12 @@ public:
 	void SimplifyMovs();
 	void RemoveUnusedTempVars();
 
-	void AddFunctionCall(Script *script, int func_no);
-	void AddClassFunctionCall(ClassFunction *cf);
-	virtual void add_function_call(Script *script, int func_no) = 0;
-	virtual void add_virtual_function_call(int virtual_index) = 0;
-	virtual int fc_begin() = 0;
-	virtual void fc_end(int push_size) = 0;
+	void AddFunctionCall(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret);
+	void AddClassFunctionCall(ClassFunction *cf, const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret);
+	virtual void add_function_call(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
+	virtual void add_virtual_function_call(int virtual_index, const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
+	virtual int fc_begin(const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret) = 0;
+	virtual void fc_end(int push_size, const SerialCommandParam &ret) = 0;
 	SerialCommandParam AddReference(const SerialCommandParam &param, Class *force_type = NULL);
 	SerialCommandParam AddDereference(const SerialCommandParam &param, Class *force_type = NULL);
 
@@ -208,19 +210,11 @@ public:
 
 
 
-	Array<SerialCommandParam> CompilerFunctionParam;
-	SerialCommandParam CompilerFunctionReturn;
-	SerialCommandParam CompilerFunctionInstance;
-
 	SerialCommandParam p_eax, p_eax_int, p_deref_eax;
 	SerialCommandParam p_rax;
 	SerialCommandParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialCommandParam p_st0, p_st1, p_xmm0, p_xmm1;
 	static const SerialCommandParam p_none;
-
-	void AddFuncParam(const SerialCommandParam &p);
-	void AddFuncReturn(const SerialCommandParam &r);
-	void AddFuncInstance(const SerialCommandParam &inst);
 
 
 	static SerialCommandParam param_shift(const SerialCommandParam &param, int shift, Class *t);

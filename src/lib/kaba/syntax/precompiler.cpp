@@ -4,7 +4,7 @@
 namespace Kaba{
 
 
-#define SCRIPT_MAX_DEFINE_RECURSIONS	128
+#define MAX_DEFINE_RECURSIONS	128
 
 //#define ScriptDebug
 
@@ -160,7 +160,7 @@ void SyntaxTree::PreCompiler(bool just_analyse)
 						}
 						Exp.set(Exp.cur_exp - d.dest.num);
 						num_defs_inserted ++;
-						if (num_defs_inserted > SCRIPT_MAX_DEFINE_RECURSIONS)
+						if (num_defs_inserted > MAX_DEFINE_RECURSIONS)
 							DoError("recursion in #define macros");
 						break;
 					}

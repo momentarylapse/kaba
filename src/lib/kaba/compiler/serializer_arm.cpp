@@ -11,30 +11,33 @@ namespace Kaba{
 
 
 
-int SerializerARM::fc_begin()
+int SerializerARM::fc_begin(const SerialCommandParam &instance, const Array<SerialCommandParam> &_params, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.type;
+	if (!type)
+		type = TypeVoid;
 
 	// grow stack (down) for local variables of the calling function
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	long push_size = 0;
 
+	Array<SerialCommandParam> params = _params;
 
 	// instance as first parameter
-	if (CompilerFunctionInstance.type)
-		CompilerFunctionParam.insert(CompilerFunctionInstance, 0);
+	if (instance.type)
+		params.insert(instance, 0);
 
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
-		SerialCommandParam ret_ref = AddReference(CompilerFunctionReturn);
-		CompilerFunctionParam.insert(ret_ref, 0);
+		SerialCommandParam ret_ref = AddReference(ret);
+		params.insert(ret_ref, 0);
 	}
 
 	// map params...
 	Array<SerialCommandParam> reg_param;
 	Array<SerialCommandParam> stack_param;
 	Array<SerialCommandParam> xmm_param;
-	for (SerialCommandParam &p: CompilerFunctionParam){
+	for (SerialCommandParam &p: params){
 		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or (p.type->is_pointer)){
 			if (reg_param.num < 4){
 				reg_param.add(p);
@@ -85,31 +88,33 @@ int SerializerARM::fc_begin()
 	return push_size;
 }
 
-void SerializerARM::fc_end(int push_size)
+void SerializerARM::fc_end(int push_size, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.type;
+	if (!type)
+		return;
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
-			add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, param_preg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSS, ret, param_preg(TypeReg128, Asm::REG_XMM0));
 		else if (type == TypeFloat64)
-			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, param_preg(TypeReg128, Asm::REG_XMM0));
+			add_cmd(Asm::INST_MOVSD, ret, param_preg(TypeReg128, Asm::REG_XMM0));
 		else if ((type->size == 1) or (type->size == 4)){
 			int v = add_virtual_reg(Asm::REG_R0);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(TypeReg32, v));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
 		}else{
 			int v = add_virtual_reg(Asm::REG_R0);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(TypeReg32, v));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
 		}
 	}
 }
 
-void SerializerARM::add_function_call(Script *script, int func_no)
+void SerializerARM::add_function_call(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	int push_size = fc_begin();
+	int push_size = fc_begin(instance, params, ret);
 
 	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
@@ -133,14 +138,13 @@ void SerializerARM::add_function_call(Script *script, int func_no)
 		}
 	}
 
-	fc_end(push_size);
+	fc_end(push_size, ret);
 }
 
-void SerializerARM::add_virtual_function_call(int virtual_index){}
+void SerializerARM::add_virtual_function_call(int virtual_index, const SerialCommandParam &instance, const Array<SerialCommandParam> &param, const SerialCommandParam &ret){}
 
-void SerializerARM::SerializeStatement(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret, Block *block, int index, int marker_before_params)
+void SerializerARM::SerializeStatement(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret, Block *block, int index, int marker_before_params)
 {
-
 	switch(com->link_no){
 		case STATEMENT_IF:{
 			// cmp;  jz m;  -block-  m;
@@ -206,12 +210,10 @@ void SerializerARM::SerializeStatement(Command *com, Array<SerialCommandParam> &
 			}
 			break;
 		case STATEMENT_NEW:{
-			AddFuncParam(param_const(TypeInt, ret.type->parent->size));
-			AddFuncReturn(ret);
 			Array<Command> links = syntax_tree->GetExistence("@malloc", NULL);
 			if (links.num == 0)
 				DoError("@malloc not found????");
-			AddFunctionCall(links[0].script, links[0].link_no);
+			AddFunctionCall(links[0].script, links[0].link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
 			if (com->param.num > 0){
 				// copy + edit command
 				Command sub = *com->param[0];
@@ -223,11 +225,10 @@ void SerializerARM::SerializeStatement(Command *com, Array<SerialCommandParam> &
 			break;}
 		case STATEMENT_DELETE:{
 			add_cmd_destructor(param[0], false);
-			AddFuncParam(param[0]);
 			Array<Command> links = syntax_tree->GetExistence("@free", NULL);
 			if (links.num == 0)
 				DoError("@free not found????");
-			AddFunctionCall(links[0].script, links[0].link_no);
+			AddFunctionCall(links[0].script, links[0].link_no, p_none, param[0], p_none);
 			break;}
 		case STATEMENT_ASM:
 			add_cmd(INST_ASM);
@@ -237,9 +238,9 @@ void SerializerARM::SerializeStatement(Command *com, Array<SerialCommandParam> &
 	}
 }
 
-void SerializerARM::SerializeInlineFunction(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret){}
+void SerializerARM::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret){}
 
-void SerializerARM::SerializeOperator(Command *com, Array<SerialCommandParam> &param, SerialCommandParam &ret)
+void SerializerARM::SerializeOperator(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
 {
 	switch(com->link_no){
 		case OperatorIntAssign:

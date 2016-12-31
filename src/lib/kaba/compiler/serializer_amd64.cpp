@@ -7,15 +7,15 @@
 namespace Kaba{
 
 
-int SerializerAMD64::fc_begin()
+int SerializerAMD64::fc_begin(const SerialCommandParam &instance, const Array<SerialCommandParam> &_params, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.get_type_save();
 
 	// return data too big... push address
 	SerialCommandParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn);
+		ret_ref = AddReference(/*ret_temp*/ ret);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}
@@ -24,23 +24,24 @@ int SerializerAMD64::fc_begin()
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	long push_size = 0;
 
+	Array<SerialCommandParam> params = _params;
 		
 	// instance as first parameter
-	if (CompilerFunctionInstance.type)
-		CompilerFunctionParam.insert(CompilerFunctionInstance, 0);
+	if (instance.type)
+		params.insert(instance, 0);
 
 	// return as _very_ first parameter
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ CompilerFunctionReturn);
-		CompilerFunctionParam.insert(ret_ref, 0);
+//		ret_ref = AddReference(/*ret_temp*/ ret);
+		params.insert(ret_ref, 0);
 	}
 
 	// map params...
 	Array<SerialCommandParam> reg_param;
 	Array<SerialCommandParam> stack_param;
 	Array<SerialCommandParam> xmm_param;
-	for (SerialCommandParam &p: CompilerFunctionParam){
+	for (SerialCommandParam &p: params){
 		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or (p.type->is_pointer)){
 			if (reg_param.num < 6){
 				reg_param.add(p);
@@ -104,35 +105,35 @@ int SerializerAMD64::fc_begin()
 	return push_size;
 }
 
-void SerializerAMD64::fc_end(int push_size)
+void SerializerAMD64::fc_end(int push_size, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	Class *type = CompilerFunctionReturn.type;
+	Class *type = ret.get_type_save();
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){
 		if (type == TypeFloat32)
-			add_cmd(Asm::INST_MOVSS, CompilerFunctionReturn, p_xmm0);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 		else if (type == TypeFloat64)
-			add_cmd(Asm::INST_MOVSD, CompilerFunctionReturn, p_xmm0);
+			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 		else if (type->size == 1){
 			int r = add_virtual_reg(Asm::REG_AL);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}else if (type->size == 4){
 			int r = add_virtual_reg(Asm::REG_EAX);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}else{
 			int r = add_virtual_reg(Asm::REG_RAX);
-			add_cmd(Asm::INST_MOV, CompilerFunctionReturn, param_vreg(type, r));
+			add_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
 		}
 	}
 }
 
-void SerializerAMD64::add_function_call(Script *script, int func_no)
+void SerializerAMD64::add_function_call(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
-	int push_size = fc_begin();
+	int push_size = fc_begin(instance, params, ret);
 
 	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
@@ -154,22 +155,22 @@ void SerializerAMD64::add_function_call(Script *script, int func_no)
 		}
 	}
 
-	fc_end(push_size);
+	fc_end(push_size, instance, params, ret);
 }
 
-void SerializerAMD64::add_virtual_function_call(int virtual_index)
+void SerializerAMD64::add_virtual_function_call(int virtual_index, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
 {
 	//DoError("virtual function call on amd64 not yet implemented!");
 
-	int push_size = fc_begin();
+	int push_size = fc_begin(instance, params, ret);
 
-	add_cmd(Asm::INST_MOV, p_rax, CompilerFunctionInstance);
+	add_cmd(Asm::INST_MOV, p_rax, instance);
 	add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
 	add_cmd(Asm::INST_ADD, p_rax, param_const(TypeInt, 8 * virtual_index));
 	add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
 	add_cmd(Asm::INST_CALL, p_rax); // the actual call
 
-	fc_end(push_size);
+	fc_end(push_size, instance, params, ret);
 }
 
 
