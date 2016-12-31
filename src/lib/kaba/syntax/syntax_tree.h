@@ -31,6 +31,7 @@ struct Constant
 	Class *type;
 	void setInt(int i);
 	int getInt();
+	string str() const;
 };
 
 enum

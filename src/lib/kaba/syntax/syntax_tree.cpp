@@ -29,6 +29,13 @@ int Constant::getInt()
 	return (*(int*)(value.data));
 }
 
+string Constant::str() const
+{
+	if (type == TypeString)
+		return "\"" + value + "\"";
+	return type->var2str(value.data);
+}
+
 Command *SyntaxTree::cp_command(Command *c)
 {
 	Command *cmd = AddCommand(c->kind, c->link_no, c->type, c->script);
@@ -248,7 +255,7 @@ string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr].name;
 	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr].name;
 	if (kind == KIND_VAR_FUNCTION)		return s->functions[nr]->name;
-	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr].type->var2str(s->constants[nr].value.data);
+	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr].str();
 	if (kind == KIND_FUNCTION)			return s->functions[nr]->name;
 	if (kind == KIND_VIRTUAL_FUNCTION)	return i2s(nr);//s->Functions[nr]->name;
 	if (kind == KIND_STATEMENT)	return Statements[nr].name;
