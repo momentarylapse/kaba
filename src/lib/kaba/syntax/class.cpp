@@ -8,6 +8,8 @@ namespace Kaba{
 ClassElement::ClassElement()
 {
 	hidden = false;
+	offset = 0;
+	type = NULL;
 }
 
 
@@ -16,6 +18,8 @@ ClassFunction::ClassFunction()
 	nr = -1;
 	virtual_index = -1;
 	needs_overriding = false;
+	return_type = NULL;
+	script = NULL;
 }
 
 ClassFunction::ClassFunction(const string &_name, Class *_return_type, Script *s, int no)
