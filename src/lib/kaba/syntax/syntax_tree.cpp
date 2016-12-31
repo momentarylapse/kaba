@@ -945,8 +945,8 @@ void SyntaxTree::Simplify()
 int __get_pointer_add_int()
 {
 	if (config.abi == Asm::INSTRUCTION_SET_AMD64)
-		return OperatorInt64AddInt;
-	return OperatorIntAdd;
+		return INLINE_INT64_ADD_INT;
+	return INLINE_INT_ADD;
 }
 
 Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
@@ -980,7 +980,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
-		Command *c_offset = add_command_operator_by_inline(c_index, c_size, OperatorIntMultiply);
+		Command *c_offset = add_command_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
 		c_offset->type = TypeInt;//TypePointer;
 		// address = &array + offset
 		Command *c_address = add_command_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
@@ -1005,7 +1005,7 @@ Command *SyntaxTree::BreakDownComplicatedCommand(Command *c)
 		constants[nc].setInt(el_type->size);
 		Command *c_size = add_command_const(nc);
 		// offset = size * index
-		Command *c_offset = add_command_operator_by_inline(c_index, c_size, OperatorIntMultiply);
+		Command *c_offset = add_command_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
 		c_offset->type = TypeInt;
 		// address = &array + offset
 		Command *c_address = add_command_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());

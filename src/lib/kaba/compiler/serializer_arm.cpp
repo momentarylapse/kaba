@@ -241,137 +241,137 @@ void SerializerARM::SerializeStatement(Command *com, const Array<SerialCommandPa
 void SerializerARM::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
 {
 	switch(com->link_no){
-		case OperatorIntAssign:
-		case OperatorInt64Assign:
-		case OperatorFloatAssign:
-		case OperatorFloat64Assign:
-		case OperatorPointerAssign:
+		case INLINE_INT_ASSIGN:
+		case INLINE_INT64_ASSIGN:
+		case INLINE_FLOAT_ASSIGN:
+		case INLINE_FLOAT64_ASSIGN:
+		case INLINE_POINTER_ASSIGN:
 			add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
-		case OperatorCharAssign:
-		case OperatorBoolAssign:
+		case INLINE_CHAR_ASSIGN:
+		case INLINE_BOOL_ASSIGN:
 			add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
-		case OperatorClassAssign:
+		case INLINE_CHUNK_ASSIGN:
 			for (int i=0;i<signed(com->param[0]->type->size)/4;i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
 			for (int i=4*signed(com->param[0]->type->size/4);i<signed(com->param[0]->type->size);i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
 			break;
 // int
-		case OperatorIntAddS:
+		case INLINE_INT_ADD_ASSIGN:
 			add_cmd(Asm::INST_ADD, param[0], param[0], param[1]);
 			break;
-		case OperatorIntSubtractS:
+		case INLINE_INT_SUBTRACT_ASSIGN:
 			add_cmd(Asm::INST_SUB, param[0], param[0], param[1]);
 			break;
-		case OperatorIntMultiplyS:
+		case INLINE_INT_MULTIPLY_ASSIGN:
 			add_cmd(Asm::INST_IMUL, param[0], param[0], param[1]);
 			break;
-		case OperatorIntAdd:
+		case INLINE_INT_ADD:
 			add_cmd(Asm::INST_ADD, ret, param[0], param[1]);
 			break;
-		case OperatorIntSubtract:
+		case INLINE_INT_SUBTRACT:
 			add_cmd(Asm::INST_SUB, ret, param[0], param[1]);
 			break;
-		case OperatorIntMultiply:
+		case INLINE_INT_MULTIPLY:
 			add_cmd(Asm::INST_MUL, ret, param[0], param[1]);
 			break;
-		case OperatorIntEqual:
-		case OperatorPointerEqual:
+		case INLINE_INT_EQUAL:
+		case INLINE_POINTER_EQUAL:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_EQUAL,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_NOT_EQUAL, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntNotEqual:
-		case OperatorPointerNotEqual:
+		case INLINE_INT_NOT_EQUAL:
+		case INLINE_POINTER_NOT_EQUAL:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_NOT_EQUAL,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_EQUAL, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntGreater:
+		case INLINE_INT_GREATER:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_GREATER_THAN,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_LESS_EQUAL, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntGreaterEqual:
+		case INLINE_INT_GREATER_EQUAL:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_GREATER_EQUAL,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_LESS_THAN, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntSmaller:
+		case INLINE_INT_SMALLER:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_LESS_THAN,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_GREATER_EQUAL, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntSmallerEqual:
+		case INLINE_INT_SMALLER_EQUAL:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			add_cmd(Asm::ARM_COND_LESS_EQUAL,     Asm::INST_MOV, ret, param_const(TypeBool, 1), p_none);
 			add_cmd(Asm::ARM_COND_GREATER_THAN, Asm::INST_MOV, ret, param_const(TypeBool, 0), p_none);
 			break;
-		case OperatorIntBitAnd:
+		case INLINE_INT_AND:
 			add_cmd(Asm::INST_AND, ret, param[0], param[1]);
 			break;
-		case OperatorIntBitOr:
+		case INLINE_INT_OR:
 			add_cmd(Asm::INST_OR, ret, param[0], param[1]);
 			break;
-		case OperatorIntNegate:
+		case INLINE_INT_NEGATE:
 			add_cmd(Asm::INST_MOV, ret, param_const(TypeInt, 0x0));
 			add_cmd(Asm::INST_SUB, ret, ret, param[0]);
 			break;
-		case OperatorIntIncrease:
+		case INLINE_INT_INCREASE:
 			add_cmd(Asm::INST_ADD, param[0], param[0], param_const(TypeInt, 0x1));
 			break;
-		case OperatorIntDecrease:
+		case INLINE_INT_DECREASE:
 			add_cmd(Asm::INST_SUB, param[0], param[0], param_const(TypeInt, 0x1));
 			break;
 	// bool/char
-		case OperatorCharEqual:
-		case OperatorCharNotEqual:
-		case OperatorBoolEqual:
-		case OperatorBoolNotEqual:
-		case OperatorBoolGreater:
-		case OperatorBoolGreaterEqual:
-		case OperatorBoolSmaller:
-		case OperatorBoolSmallerEqual:
+		case INLINE_CHAR_EQUAL:
+		case INLINE_CHAR_NOT_EQUAL:
+		case INLINE_BOOL_EQUAL:
+		case INLINE_BOOL_NOT_EQUAL:
+		case INLINE_CHAR_GREATER:
+		case INLINE_CHAR_GREATER_EQUAL:
+		case INLINE_CHAR_SMALLER:
+		case INLINE_CHAR_SMALLER_EQUAL:
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
-			if ((com->link_no == OperatorCharEqual) or (com->link_no == OperatorBoolEqual))
+			if ((com->link_no == INLINE_CHAR_EQUAL) or (com->link_no == INLINE_BOOL_EQUAL))
 				add_cmd(Asm::INST_SETZ, ret);
-			else if ((com->link_no ==OperatorCharNotEqual) or (com->link_no == OperatorBoolNotEqual))
+			else if ((com->link_no ==INLINE_CHAR_NOT_EQUAL) or (com->link_no == INLINE_BOOL_NOT_EQUAL))
 				add_cmd(Asm::INST_SETNZ, ret);
-			else if (com->link_no == OperatorBoolGreater)		add_cmd(Asm::INST_SETNLE, ret);
-			else if (com->link_no == OperatorBoolGreaterEqual)	add_cmd(Asm::INST_SETNL, ret);
-			else if (com->link_no == OperatorBoolSmaller)		add_cmd(Asm::INST_SETL, ret);
-			else if (com->link_no == OperatorBoolSmallerEqual)	add_cmd(Asm::INST_SETLE, ret);
+			else if (com->link_no == INLINE_CHAR_GREATER)		add_cmd(Asm::INST_SETNLE, ret);
+			else if (com->link_no == INLINE_CHAR_GREATER_EQUAL)	add_cmd(Asm::INST_SETNL, ret);
+			else if (com->link_no == INLINE_CHAR_SMALLER)		add_cmd(Asm::INST_SETL, ret);
+			else if (com->link_no == INLINE_CHAR_SMALLER_EQUAL)	add_cmd(Asm::INST_SETLE, ret);
 			break;
-		case OperatorBoolAnd:
+		case INLINE_BOOL_AND:
 			add_cmd(Asm::INST_AND, ret, param[0], param[1]);
 			break;
-		case OperatorBoolOr:
+		case INLINE_BOOL_OR:
 			add_cmd(Asm::INST_OR, ret, param[0], param[1]);
 			break;
-		case OperatorCharAddS:
+		case INLINE_CHAR_ADD_ASSIGN:
 			add_cmd(Asm::INST_ADD, param[0], param[0], param[1]);
 			break;
-		case OperatorCharSubtractS:
+		case INLINE_CHAR_SUBTRACT_ASSIGN:
 			add_cmd(Asm::INST_SUB, param[0], param[0], param[1]);
 			break;
-		case OperatorCharAdd:
+		case INLINE_CHAR_ADD:
 			add_cmd(Asm::INST_ADD, ret, param[0], param[1]);
 			break;
-		case OperatorCharSubtract:
+		case INLINE_CHAR_SUBTRACT:
 			add_cmd(Asm::INST_SUB, ret, param[0], param[1]);
 			break;
-		case OperatorCharBitAnd:
+		case INLINE_CHAR_AND:
 			add_cmd(Asm::INST_AND, ret, param[0], param[1]);
 			break;
-		case OperatorCharBitOr:
+		case INLINE_CHAR_OR:
 			add_cmd(Asm::INST_OR, ret, param[0], param[1]);
 			break;
-		case OperatorBoolNegate:
+		case INLINE_BOOL_NEGATE:
 			add_cmd(Asm::INST_XOR, ret, param[0], param_const(TypeBool, 0x1));
 			break;
-		case OperatorCharNegate:
+		case INLINE_CHAR_NEGATE:
 			add_cmd(Asm::INST_MOV, ret, param_const(TypeChar, 0x0));
 			add_cmd(Asm::INST_SUB, ret, ret, param[0]);
 			break;

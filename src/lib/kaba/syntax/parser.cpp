@@ -1001,11 +1001,11 @@ void SyntaxTree::ParseStatementFor(Block *block)
 
 	// implement
 	// for_var = val0
-	Command *cmd_assign = add_command_operator_by_inline(for_var, val0, OperatorIntAssign);
+	Command *cmd_assign = add_command_operator_by_inline(for_var, val0, INLINE_INT_ASSIGN);
 	block->commands.add(cmd_assign);
 
 	// while(for_var < val1)
-	Command *cmd_cmp = add_command_operator_by_inline(for_var, val1, OperatorIntSmaller);
+	Command *cmd_cmp = add_command_operator_by_inline(for_var, val1, INLINE_INT_SMALLER);
 
 	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
@@ -1021,16 +1021,16 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	Command *cmd_inc;
 	if (for_var->type == TypeInt){
 		if (val_step)
-			cmd_inc = add_command_operator_by_inline(for_var, val_step, OperatorIntAddS);
+			cmd_inc = add_command_operator_by_inline(for_var, val_step, INLINE_INT_ADD_ASSIGN);
 		else
-			cmd_inc = add_command_operator_by_inline(for_var, val1 /*dummy*/, OperatorIntIncrease);
+			cmd_inc = add_command_operator_by_inline(for_var, val1 /*dummy*/, INLINE_INT_INCREASE);
 	}else{
 		if (!val_step){
 			int nc = AddConstant(TypeFloat32);
 			*(float*)constants[nc].value.data = 1.0;
 			val_step = add_command_const(nc);
 		}
-		cmd_inc = add_command_operator_by_inline(for_var, val_step, OperatorFloatAddS);
+		cmd_inc = add_command_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
 	Block *loop_block = blocks[loop_block_no];
 	loop_block->commands.add(cmd_inc); // add to loop-block
@@ -1081,7 +1081,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// implement
 	// for_index = 0
-	Command *cmd_assign = add_command_operator_by_inline(for_index, val0, OperatorIntAssign);
+	Command *cmd_assign = add_command_operator_by_inline(for_index, val0, INLINE_INT_ASSIGN);
 	block->commands.add(cmd_assign);
 
 	Command *val1;
@@ -1098,7 +1098,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	}
 
 	// while(for_index < val1)
-	Command *cmd_cmp = add_command_operator_by_inline(for_index, val1, OperatorIntSmaller);
+	Command *cmd_cmp = add_command_operator_by_inline(for_index, val1, INLINE_INT_SMALLER);
 
 	Command *cmd_while = add_command_statement(STATEMENT_FOR);
 	cmd_while->set_param(0, cmd_cmp);
@@ -1111,7 +1111,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	ParseCompleteCommand(block);
 
 	// ...for_index += 1
-	Command *cmd_inc = add_command_operator_by_inline(for_index, val1 /*dummy*/, OperatorIntIncrease);
+	Command *cmd_inc = add_command_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
 	Block *loop_block = blocks[loop_block_no];
 	loop_block->commands.add(cmd_inc); // add to loop-block
 
@@ -1131,7 +1131,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	Command *array_el_ref = ref_command(array_el);
 
 	// &for_var = &array[for_index]
-	Command *cmd_var_assign = add_command_operator_by_inline(for_var_ref, array_el_ref, OperatorPointerAssign);
+	Command *cmd_var_assign = add_command_operator_by_inline(for_var_ref, array_el_ref, INLINE_POINTER_ASSIGN);
 	loop_block->commands.insert(cmd_var_assign, 0);
 
 	// ref...
