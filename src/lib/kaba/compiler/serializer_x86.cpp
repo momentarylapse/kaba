@@ -479,7 +479,7 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 		case INLINE_CHUNK_ASSIGN:
 			for (int i=0; i<com->param[0]->type->size/4; i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
-			for (int i=4*com->param[0]->type->size/4; i<com->param[0]->type->size; i++)
+			for (int i=4*(com->param[0]->type->size/4); i<com->param[0]->type->size; i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
 			break;
 // int
@@ -595,31 +595,31 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			if (index == INLINE_INT_EQUAL)
 				add_cmd(Asm::INST_SETZ, ret);
-			if (index == INLINE_INT_NOT_EQUAL)
+			else if (index == INLINE_INT_NOT_EQUAL)
 				add_cmd(Asm::INST_SETNZ, ret);
-			if (index == INLINE_INT_GREATER)
+			else if (index == INLINE_INT_GREATER)
 				add_cmd(Asm::INST_SETNLE, ret);
-			if (index == INLINE_INT_GREATER_EQUAL)
+			else if (index == INLINE_INT_GREATER_EQUAL)
 				add_cmd(Asm::INST_SETNL, ret);
-			if (index == INLINE_INT_SMALLER)
+			else if (index == INLINE_INT_SMALLER)
 				add_cmd(Asm::INST_SETL, ret);
-			if (index == INLINE_INT_SMALLER_EQUAL)
+			else if (index == INLINE_INT_SMALLER_EQUAL)
 				add_cmd(Asm::INST_SETLE, ret);
-			if (index == INLINE_INT64_EQUAL)
+			else if (index == INLINE_INT64_EQUAL)
 				add_cmd(Asm::INST_SETZ, ret);
-			if (index == INLINE_INT64_NOT_EQUAL)
+			else if (index == INLINE_INT64_NOT_EQUAL)
 				add_cmd(Asm::INST_SETNZ, ret);
-			if (index == INLINE_INT64_GREATER)
+			else if (index == INLINE_INT64_GREATER)
 				add_cmd(Asm::INST_SETNLE, ret);
-			if (index == INLINE_INT64_GREATER_EQUAL)
+			else if (index == INLINE_INT64_GREATER_EQUAL)
 				add_cmd(Asm::INST_SETNL, ret);
-			if (index == INLINE_INT64_SMALLER)
+			else if (index == INLINE_INT64_SMALLER)
 				add_cmd(Asm::INST_SETL, ret);
-			if (index == INLINE_INT64_SMALLER_EQUAL)
+			else if (index == INLINE_INT64_SMALLER_EQUAL)
 				add_cmd(Asm::INST_SETLE, ret);
-			if (index == INLINE_POINTER_EQUAL)
+			else if (index == INLINE_POINTER_EQUAL)
 				add_cmd(Asm::INST_SETZ, ret);
-			if (index == INLINE_POINTER_NOT_EQUAL)
+			else if (index == INLINE_POINTER_NOT_EQUAL)
 				add_cmd(Asm::INST_SETNZ, ret);
 			break;
 		case INLINE_INT_AND:
@@ -684,11 +684,11 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
 			if (index == INLINE_FLOAT_ADD_ASSIGN)
 				add_cmd(Asm::INST_ADDSS, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT_SUBTRACT_ASSIGN)
+			else if (index == INLINE_FLOAT_SUBTRACT_ASSIGN)
 				add_cmd(Asm::INST_SUBSS, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT_MULTIPLY_ASSIGN)
+			else if (index == INLINE_FLOAT_MULTIPLY_ASSIGN)
 				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT_DIVIDE_ASSIGN)
+			else if (index == INLINE_FLOAT_DIVIDE_ASSIGN)
 				add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSS, param[0], p_xmm0);
 			break;
@@ -699,11 +699,11 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
 			if (index == INLINE_FLOAT64_ADD_ASSIGN)
 				add_cmd(Asm::INST_ADDSD, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT64_SUBTRACT_ASSIGN)
+			else if (index == INLINE_FLOAT64_SUBTRACT_ASSIGN)
 				add_cmd(Asm::INST_SUBSD, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT64_MULTIPLY_ASSIGN)
+			else if (index == INLINE_FLOAT64_MULTIPLY_ASSIGN)
 				add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
-			if (index == INLINE_FLOAT64_DIVIDE_ASSIGN)
+			else if (index == INLINE_FLOAT64_DIVIDE_ASSIGN)
 				add_cmd(Asm::INST_DIVSD, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSD, param[0], p_xmm0);
 			break;
@@ -712,10 +712,14 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 		case INLINE_FLOAT_MULTIPLY:
 		case INLINE_FLOAT_DIVIDE:
 			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			if (index==INLINE_FLOAT_ADD)		add_cmd(Asm::INST_ADDSS, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT_SUBTARCT)	add_cmd(Asm::INST_SUBSS, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT_MULTIPLY)	add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT_DIVIDE)		add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
+			if (index == INLINE_FLOAT_ADD)
+				add_cmd(Asm::INST_ADDSS, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT_SUBTARCT)
+				add_cmd(Asm::INST_SUBSS, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT_MULTIPLY)
+				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT_DIVIDE)
+				add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			break;
 		case INLINE_FLOAT64_ADD:
@@ -723,10 +727,14 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 		case INLINE_FLOAT64_MULTIPLY:
 		case INLINE_FLOAT64_DIVIDE:
 			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
-			if (index==INLINE_FLOAT64_ADD)		add_cmd(Asm::INST_ADDSD, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT64_SUBTRACT)	add_cmd(Asm::INST_SUBSD, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT64_MULTIPLY)	add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT64_DIVIDE)		add_cmd(Asm::INST_DIVSD, p_xmm0, param[1]);
+			if (index == INLINE_FLOAT64_ADD)
+				add_cmd(Asm::INST_ADDSD, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT64_SUBTRACT)
+				add_cmd(Asm::INST_SUBSD, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT64_MULTIPLY)
+				add_cmd(Asm::INST_MULSD, p_xmm0, param[1]);
+			else if (index == INLINE_FLOAT64_DIVIDE)
+				add_cmd(Asm::INST_DIVSD, p_xmm0, param[1]);
 			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 			break;
 		case INLINE_FLOAT_MULTIPLY_FI:
@@ -757,12 +765,18 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 		case INLINE_FLOAT_SMALLER_EQUAL:
 			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
 			add_cmd(Asm::INST_UCOMISS, p_xmm0, param[1]);
-			if (index==INLINE_FLOAT_EQUAL)			add_cmd(Asm::INST_SETZ, ret);
-			if (index==INLINE_FLOAT_NOT_EQUAL)		add_cmd(Asm::INST_SETNZ, ret);
-			if (index==INLINE_FLOAT_GREATER)		add_cmd(Asm::INST_SETNBE, ret);
-			if (index==INLINE_FLOAT_GREATER_EQUAL)	add_cmd(Asm::INST_SETNB, ret);
-			if (index==INLINE_FLOAT_SMALLER)		add_cmd(Asm::INST_SETB, ret);
-			if (index==INLINE_FLOAT_SMALLER_EQUAL)	add_cmd(Asm::INST_SETBE, ret);
+			if (index == INLINE_FLOAT_EQUAL)
+				add_cmd(Asm::INST_SETZ, ret);
+			else if (index == INLINE_FLOAT_NOT_EQUAL)
+				add_cmd(Asm::INST_SETNZ, ret);
+			else if (index == INLINE_FLOAT_GREATER)
+				add_cmd(Asm::INST_SETNBE, ret);
+			else if (index == INLINE_FLOAT_GREATER_EQUAL)
+				add_cmd(Asm::INST_SETNB, ret);
+			else if (index == INLINE_FLOAT_SMALLER)
+				add_cmd(Asm::INST_SETB, ret);
+			else if (index == INLINE_FLOAT_SMALLER_EQUAL)
+				add_cmd(Asm::INST_SETBE, ret);
 			break;
 		case INLINE_FLOAT64_EQUAL:
 		case INLINE_FLOAT64_NOT_EQUAL:
@@ -774,15 +788,15 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
 			if (index == INLINE_FLOAT64_EQUAL)
 				add_cmd(Asm::INST_SETZ, ret);
-			if (index == INLINE_FLOAT64_NOT_EQUAL)
+			else if (index == INLINE_FLOAT64_NOT_EQUAL)
 				add_cmd(Asm::INST_SETNZ, ret);
-			if (index == INLINE_FLOAT64_GREATER)
+			else if (index == INLINE_FLOAT64_GREATER)
 				add_cmd(Asm::INST_SETNBE, ret);
-			if (index == INLINE_FLOAT64_GREATER_EQUAL)
+			else if (index == INLINE_FLOAT64_GREATER_EQUAL)
 				add_cmd(Asm::INST_SETNB, ret);
-			if (index == INLINE_FLOAT64_SMALLER)
+			else if (index == INLINE_FLOAT64_SMALLER)
 				add_cmd(Asm::INST_SETB, ret);
-			if (index == INLINE_FLOAT64_SMALLER_EQUAL)
+			else if (index == INLINE_FLOAT64_SMALLER_EQUAL)
 				add_cmd(Asm::INST_SETBE, ret);
 			break;
 
@@ -877,7 +891,7 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_CMP, param[0], param[1]);
 			if ((index == INLINE_CHAR_EQUAL) or (index == INLINE_BOOL_EQUAL))
 				add_cmd(Asm::INST_SETZ, ret);
-			else if ((index ==INLINE_CHAR_NOT_EQUAL) or (index == INLINE_BOOL_NOT_EQUAL))
+			else if ((index == INLINE_CHAR_NOT_EQUAL) or (index == INLINE_BOOL_NOT_EQUAL))
 				add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == INLINE_CHAR_GREATER)
 				add_cmd(Asm::INST_SETNLE, ret);

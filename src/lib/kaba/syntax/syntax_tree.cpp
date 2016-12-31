@@ -186,7 +186,8 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	/*if (FlagShow)
 		Show();*/
 
-	Simplify();
+	SimplifyShiftDeref();
+	SimplifyRefDeref();
 	
 	PreProcessor();
 
@@ -744,6 +745,25 @@ Class *SyntaxTree::CreateArrayType(Class *element_type, int num_elements, const 
 	}
 }
 
+void SyntaxTree::ConvertInline()
+{
+	for (auto com: commands)
+		if (com->kind == KIND_FUNCTION){
+			// inline function?
+			int index = com->script->syntax->functions[com->link_no]->inline_no;
+			if (index >= 0){
+				msg_write(" >>>>>>>>>>>>>>>>> inline ....");
+				com->kind = KIND_INLINE_FUNCTION;
+
+				/*if (com->instance){
+					msg_write("   INST");
+					// dirty quick move
+					com->param.insert(com->instance, 0);
+					com->instance = NULL;
+				}*/
+			}
+		}
+}
 
 
 #define TRANSFORM_COMMANDS_RECURSION(FUNC, PREPARAMS, POSTPARAMS, CMD) \
@@ -825,22 +845,17 @@ Command *conv_calls(SyntaxTree *ps, Command *c, int tt)
 }
 
 
-// remove &*x and (*x)[] and (*x).y
-Command *easyfy(SyntaxTree *ps, Command *c, int l)
+// remove &*x
+Command *easyfy_ref_deref(SyntaxTree *ps, Command *c, int l)
 {
-	//msg_write(l);
-	//msg_write("a");
-	
 	// recursion...
 	for (int i=0;i<c->param.num;i++)
-		c->set_param(i, easyfy(ps, c->param[i], l+1));
+		c->set_param(i, easyfy_ref_deref(ps, c->param[i], l+1));
 	if (c->kind == KIND_BLOCK)
 		for (int i=0;i<c->as_block()->commands.num;i++)
-			c->as_block()->set(i, easyfy(ps, c->as_block()->commands[i], l+1));
+			c->as_block()->set(i, easyfy_ref_deref(ps, c->as_block()->commands[i], l+1));
 	if (c->instance)
-		c->set_instance(easyfy(ps, c->instance, l+1));
-	
-	//msg_write("b");
+		c->set_instance(easyfy_ref_deref(ps, c->instance, l+1));
 
 
 	// convert
@@ -849,7 +864,26 @@ Command *easyfy(SyntaxTree *ps, Command *c, int l)
 			// remove 2 knots...
 			return c->param[0]->param[0];
 		}
-	}else if ((c->kind == KIND_ADDRESS_SHIFT) or (c->kind == KIND_ARRAY)){
+	}
+
+	return c;
+}
+
+// remove (*x)[] and (*x).y
+Command *easyfy_shift_deref(SyntaxTree *ps, Command *c, int l)
+{
+	// recursion...
+	for (int i=0;i<c->param.num;i++)
+		c->set_param(i, easyfy_shift_deref(ps, c->param[i], l+1));
+	if (c->kind == KIND_BLOCK)
+		for (int i=0;i<c->as_block()->commands.num;i++)
+			c->as_block()->set(i, easyfy_shift_deref(ps, c->as_block()->commands[i], l+1));
+	if (c->instance)
+		c->set_instance(easyfy_shift_deref(ps, c->instance, l+1));
+
+
+	// convert
+	if ((c->kind == KIND_ADDRESS_SHIFT) or (c->kind == KIND_ARRAY)){
 		if (c->param[0]->kind == KIND_DEREFERENCE){
 			// unify 2 knots (remove 1)
 			Command *t = c->param[0]->param[0];
@@ -858,7 +892,7 @@ Command *easyfy(SyntaxTree *ps, Command *c, int l)
 			return c;
 		}
 	}
-	//msg_write("ok");
+
 	return c;
 }
 
@@ -934,12 +968,20 @@ void SyntaxTree::ConvertCallByReference()
 }
 
 
-void SyntaxTree::Simplify()
+void SyntaxTree::SimplifyRefDeref()
 {
 	// remove &*
 	for (Function *f: functions)
 		foreachi(Command *c, f->block->commands, i)
-			f->block->commands[i] = easyfy(this, c, 0);
+			f->block->commands[i] = easyfy_ref_deref(this, c, 0);
+}
+
+void SyntaxTree::SimplifyShiftDeref()
+{
+	// remove &*
+	for (Function *f: functions)
+		foreachi(Command *c, f->block->commands, i)
+			f->block->commands[i] = easyfy_shift_deref(this, c, 0);
 }
 
 int __get_pointer_add_int()

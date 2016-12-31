@@ -270,6 +270,7 @@ public:
 
 	// neccessary conversions
 	void ConvertCallByReference();
+	void ConvertInline();
 	void BreakDownComplicatedCommands();
 	Command *BreakDownComplicatedCommand(Command *c);
 	void MapLocalVariablesToStack();
@@ -301,7 +302,8 @@ public:
 	void PreProcessor();
 	Command *PreProcessCommandAddresses(Command *c);
 	void PreProcessorAddresses();
-	void Simplify();
+	void SimplifyRefDeref();
+	void SimplifyShiftDeref();
 
 	// debug displaying
 	void ShowCommand(Command *c, Function *f);
