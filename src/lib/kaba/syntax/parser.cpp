@@ -17,9 +17,9 @@ extern bool next_const;
 
 const int TYPE_CAST_OWN_STRING = 4096;
 
-inline bool type_match(Class *type, bool is_class, Class *wanted);
-bool direct_type_match(Class *a, Class *b);
-bool type_match_with_cast(Class *type, bool is_class, bool is_modifiable, Class *wanted, int &penalty, int &cast);
+bool type_match(Class *given, Class *wanted);
+bool _type_match(Class *given, bool same_chunk, Class *wanted);
+bool type_match_with_cast(Class *type, bool same_chunk, bool is_modifiable, Class *wanted, int &penalty, int &cast);
 
 
 long long s2i2(const string &str)
@@ -182,7 +182,7 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 	}
 
 	// find element
-	for (ClassElement &e: type->element)
+	for (ClassElement &e: type->elements)
 		if (Exp.cur == e.name){
 			Exp.next();
 			return shift_command(Operand, deref, e.offset, e.type);
@@ -196,7 +196,7 @@ Command *SyntaxTree::GetOperandExtensionElement(Command *Operand, Block *block)
 
 	// class function?
 	Array<Command> links;
-	for (ClassFunction &cf: type->function)
+	for (ClassFunction &cf: type->functions)
 		if (f_name == cf.name){
 			Command *cmd = add_command_classfunc(&cf, Operand);
 			links.add(*cmd);
@@ -398,10 +398,10 @@ Command *SyntaxTree::CheckParamLink(Command *link, Class *type, const string &f_
 
 	// "silent" pointer (&)?
 	if ((wt->is_pointer) and (wt->is_silent)){
-		if (direct_type_match(pt, wt->parent)){
+		if (type_match(pt, wt->parent)){
 
 			return ref_command(link);
-		}else if ((pt->is_pointer) and (direct_type_match(pt->parent, wt->parent))){
+		}else if ((pt->is_pointer) and (type_match(pt->parent, wt->parent))){
 			// silent Ref & of *
 
 			// no need to do anything...
@@ -411,7 +411,7 @@ Command *SyntaxTree::CheckParamLink(Command *link, Class *type, const string &f_
 		}
 
 	// normal type cast
-	}else if (!direct_type_match(pt, wt)){
+	}else if (!type_match(pt, wt)){
 		int pen, tc;
 		/*int tc = -1;
 		for (int i=0;i<TypeCasts.num;i++)
@@ -474,7 +474,7 @@ Command *SyntaxTree::GetFunctionCall(const string &f_name, Array<Command> &links
 			continue;
 		bool ok = true;
 		for (int p=0; p<params.num; p++){
-			if (!direct_type_match(wanted_types[p], params[p]->type)){
+			if (!type_match(wanted_types[p], params[p]->type)){
 				ok = false;
 				break;
 			}
@@ -619,7 +619,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 		operand->type = t->GetPointer();
 		if (Exp.cur == "("){
 			Array<ClassFunction> cfs;
-			for (ClassFunction &cf: t->function)
+			for (ClassFunction &cf: t->functions)
 				if (cf.name == IDENTIFIER_FUNC_INIT and cf.param_types.num > 0)
 					cfs.add(cf);
 			if (cfs.num == 0)
@@ -657,7 +657,7 @@ Command *SyntaxTree::GetOperand(Block *block)
 				bool ok=false;
 				for (int i=0;i<PreOperators.num;i++)
 					if (po == PreOperators[i].primitive_id)
-						if ((PreOperators[i].param_type_1 == TypeVoid) and (type_match(p2, false, PreOperators[i].param_type_2))){
+						if ((PreOperators[i].param_type_1 == TypeVoid) and (type_match(p2, PreOperators[i].param_type_2))){
 							o = i;
 							r = PreOperators[i].return_type;
 							ok = true;
@@ -742,11 +742,11 @@ Command *SyntaxTree::GetPrimitiveOperator(Block *block)
 	return 0;
 }*/
 
-bool type_match_with_cast(Class *type, bool is_class, bool is_modifiable, Class *wanted, int &penalty, int &cast)
+bool type_match_with_cast(Class *type, bool same_chunk, bool is_modifiable, Class *wanted, int &penalty, int &cast)
 {
 	penalty = 0;
 	cast = -1;
-	if (type_match(type, is_class, wanted))
+	if (_type_match(type, same_chunk, wanted))
 	    return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
@@ -759,7 +759,7 @@ bool type_match_with_cast(Class *type, bool is_class, bool is_modifiable, Class 
 		}
 	}
 	for (int i=0;i<TypeCasts.num;i++)
-		if ((direct_type_match(TypeCasts[i].source, type)) and (direct_type_match(TypeCasts[i].dest, wanted))){ // type_match()?
+		if ((type_match(type, TypeCasts[i].source)) and (type_match(TypeCasts[i].dest, wanted))){ // type_match()?
 			penalty = TypeCasts[i].penalty;
 			cast = i;
 			return true;
@@ -814,7 +814,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 	bool equal_classes = false;
 	if (p1 == p2)
 		if (!p1->is_super_array)
-			if (p1->element.num > 0)
+			if (p1->elements.num > 0)
 				equal_classes = true;
 
 	Class *pp1 = p1;
@@ -822,11 +822,11 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 		pp1 = p1->parent;
 
 	// exact match as class function?
-	for (ClassFunction &f: pp1->function)
+	for (ClassFunction &f: pp1->functions)
 		if (f.name == op_func_name){
 			// exact match as class function but missing a "&"?
 			if (f.param_types[0]->is_pointer and f.param_types[0]->is_silent){
-				if (direct_type_match(p2, f.param_types[0]->parent)){
+				if (type_match(p2, f.param_types[0]->parent)){
 					Command *inst = ref_command(param1);
 					if (p1 == pp1)
 						op = add_command_classfunc(&f, inst);
@@ -836,7 +836,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 					op->set_param(0, ref_command(param2));
 					return op;
 				}
-			}else if (type_match(p2, equal_classes, f.param_types[0])){
+			}else if (_type_match(p2, equal_classes, f.param_types[0])){
 				Command *inst = ref_command(param1);
 				if (p1 == pp1)
 					op = add_command_classfunc(&f, inst);
@@ -851,7 +851,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 	// exact (operator) match?
 	for (int i=0;i<PreOperators.num;i++)
 		if (op_no == PreOperators[i].primitive_id)
-			if (type_match(p1, equal_classes, PreOperators[i].param_type_1) and type_match(p2, equal_classes, PreOperators[i].param_type_2)){
+			if (_type_match(p1, equal_classes, PreOperators[i].param_type_1) and _type_match(p2, equal_classes, PreOperators[i].param_type_2)){
 				return add_command_operator(param1, param2, i);
 			}
 
@@ -871,7 +871,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 					c1_best = c1;
 					c2_best = c2;
 				}
-	foreachi(ClassFunction &f, p1->function, i)
+	foreachi(ClassFunction &f, p1->functions, i)
 		if (f.name == op_func_name)
 			if (type_match_with_cast(p2, equal_classes, false, f.param_types[0], pen2, c2))
 				if (pen2 < pen_min){
@@ -887,7 +887,7 @@ Command *SyntaxTree::LinkOperator(int op_no, Command *param1, Command *param2)
 		param2 = apply_type_cast(this, c2_best, param2);
 		if (op_is_class_func){
 			Command *inst = ref_command(param1);
-			op = add_command_classfunc(&p1->function[op_found], inst);
+			op = add_command_classfunc(&p1->functions[op_found], inst);
 			op->set_num_params(1);
 			op->set_param(0, param2);
 		}else{
@@ -1530,7 +1530,7 @@ void SyntaxTree::ParseClass()
 
 			// override?
 			ClassElement *orig = NULL;
-			for (ClassElement &e: _class->element)
+			for (ClassElement &e: _class->elements)
 				if (e.name == el.name) //and e.type->is_pointer and el.type->is_pointer)
 					orig = &e;
 			if (override and ! orig)
@@ -1558,7 +1558,7 @@ void SyntaxTree::ParseClass()
 				DoError("\",\" or newline expected after class element");
 			el.offset = _offset;
 			_offset += type->size;
-			_class->element.add(el);
+			_class->elements.add(el);
 			if (Exp.end_of_line())
 				break;
 			Exp.next();
@@ -1577,7 +1577,7 @@ void SyntaxTree::ParseClass()
 				DoError("no virtual functions allowed when inheriting from class without virtual functions");
 			// element "-vtable-" being derived
 		}else{
-			for (ClassElement &e: _class->element)
+			for (ClassElement &e: _class->elements)
 				e.offset = ProcessClassOffset(_class->name, e.name, e.offset + config.pointer_size);
 
 			ClassElement el;
@@ -1585,12 +1585,12 @@ void SyntaxTree::ParseClass()
 			el.type = TypePointer;
 			el.offset = 0;
 			el.hidden = true;
-			_class->element.insert(el, 0);
+			_class->elements.insert(el, 0);
 			_offset += config.pointer_size;
 		}
 	}
 
-	for (ClassElement &e: _class->element)
+	for (ClassElement &e: _class->elements)
 		if (type_needs_alignment(e.type))
 			_offset = mem_align(_offset, 4);
 	_class->size = ProcessClassSize(_class->name, _offset);

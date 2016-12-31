@@ -65,7 +65,7 @@ SerialCommandParam Serializer::add_temp(Class *t, bool add_constructor)
 	v.last = -1;
 	v.type = t;
 	v.referenced = false;
-	v.force_stack = (t->size > config.pointer_size) or (t->is_super_array) or (t->is_array) or (t->element.num > 0);
+	v.force_stack = (t->size > config.pointer_size) or (t->is_super_array) or (t->is_array) or (t->elements.num > 0);
 	v.entangled = 0;
 	temp_var.add(v);
 	SerialCommandParam param;
@@ -1614,10 +1614,10 @@ void Serializer::DisentangleShiftedTempVars()
 			for (int j=0;j<n;j++){
 				Class *tt = TypeReg32;
 				// corresponding to element in a class?
-				for (int k=0;k<t->element.num;k++)
-					if (t->element[k].offset == j * 4)
-						if (t->element[k].type->size == 4)
-							tt = t->element[k].type;
+				for (int k=0;k<t->elements.num;k++)
+					if (t->elements[k].offset == j * 4)
+						if (t->elements[k].type->size == 4)
+							tt = t->elements[k].type;
 				p[j] = add_temp(tt);
 			}
 			

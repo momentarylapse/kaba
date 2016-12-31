@@ -612,12 +612,12 @@ Array<Command> SyntaxTree::GetExistence(const string &name, Block *block)
 				return links;
 			}
 			// class elements (within a class function)
-			for (ClassElement &e: f->_class->element)
+			for (ClassElement &e: f->_class->elements)
 				if (e.name == name){
 					links.add(exlink_make_var_element(this, f, e));
 					return links;
 				}
-			for (ClassFunction &cf: f->_class->function)
+			for (ClassFunction &cf: f->_class->functions)
 				if (cf.name == name){
 					links.add(exlink_make_func_class(this, f, cf));
 					return links;

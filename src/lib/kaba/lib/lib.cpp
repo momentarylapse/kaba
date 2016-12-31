@@ -283,21 +283,21 @@ void class_add_element(const string &name, Class *type, int offset, ScriptFlag f
 	e.type = type;
 	e.offset = offset;
 	e.hidden = ((flag & FLAG_HIDDEN) > 0);
-	cur_class->element.add(e);
+	cur_class->elements.add(e);
 }
 
 ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag)
 {
 	if ((flag & FLAG_OVERRIDE) > 0){
-		foreachi(ClassFunction &ff, c->function, i)
+		foreachi(ClassFunction &ff, c->functions, i)
 			if (ff.name == f.name){
 				ff = f;
 				return &ff;
 			}
 		msg_error("could not override " + c->name + "." + f.name);
 	}
-	c->function.add(f);
-	return &c->function.back();
+	c->functions.add(f);
+	return &c->functions.back();
 }
 
 void _class_add_func_virtual(const string &tname, const string &name, Class *return_type, int index, ScriptFlag flag)

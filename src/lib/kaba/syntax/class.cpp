@@ -37,25 +37,31 @@ Function* ClassFunction::GetFunc()
 	return script->syntax->functions[nr];
 }
 
-bool direct_type_match(Class *a, Class *b)
+bool type_match(Class *given, Class *wanted)
 {
-	return ( (a==b) or ( (a->is_pointer) and (b->is_pointer) ) or (a->IsDerivedFrom(b)) );
+	// exact match?
+	if (given == wanted)
+		return true;
+
+	// allow any pointer?
+	if ((given->is_pointer) and (wanted == TypePointer))
+		return true;
+
+	// compatible pointers (of same or derived class)
+	if ((given->is_pointer) and (wanted->is_pointer))
+		return given->parent->IsDerivedFrom(wanted->parent);
+
+	return given->IsDerivedFrom(wanted);
 }
 
-// both operand types have to match the operator's types
-//   (operator wants a pointer -> all pointers are allowed!!!)
-//   (same for classes of same type...)
-bool type_match(Class *type, bool is_class, Class *wanted)
+
+// allow same classes... TODO deprecate...
+bool _type_match(Class *given, bool same_chunk, Class *wanted)
 {
-	if (type == wanted)
+	if ((same_chunk) and (wanted == TypeClass))
 		return true;
-	if ((type->is_pointer) and (wanted == TypePointer))
-		return true;
-	if ((is_class) and (wanted == TypeClass))
-		return true;
-	if (type->IsDerivedFrom(wanted))
-		return true;
-	return false;
+
+	return type_match(given, wanted);
 }
 
 Class::Class()//const string &_name, int _size, SyntaxTree *_owner)
@@ -106,7 +112,7 @@ bool Class::is_simple_class() const
 		return false;
 	if (GetAssign())
 		return false;
-	for (ClassElement &e : element)
+	for (ClassElement &e : elements)
 		if (!e.type->is_simple_class())
 			return false;
 	return true;
@@ -147,7 +153,7 @@ bool Class::needs_constructor() const
 	if (parent)
 		if (parent->needs_constructor())
 			return true;
-	for (ClassElement &e : element)
+	for (ClassElement &e : elements)
 		if (e.type->needs_constructor())
 			return true;
 	return false;
@@ -159,7 +165,7 @@ bool Class::is_size_known() const
 		return false;
 	if ((is_super_array) or (is_pointer))
 		return true;
-	for (ClassElement &e : element)
+	for (ClassElement &e : elements)
 		if (!e.type->is_size_known())
 			return false;
 	return true;
@@ -177,7 +183,7 @@ bool Class::needs_destructor() const
 		if (parent->needs_destructor())
 			return true;
 	}
-	for (ClassElement &e : element){
+	for (ClassElement &e : elements){
 		if (e.type->GetDestructor())
 			return true;
 		if (e.type->needs_destructor())
@@ -210,7 +216,7 @@ bool Class::IsDerivedFrom(const string &root) const
 
 ClassFunction *Class::GetFunc(const string &_name, const Class *return_type, int num_params, const Class *param0) const
 {
-	foreachi(ClassFunction &f, function, i)
+	foreachi(ClassFunction &f, functions, i)
 		if ((f.name == _name) and (f.return_type == return_type) and (f.param_types.num == num_params)){
 			if ((param0) and (num_params > 0)){
 				if (f.param_types[0] == param0)
@@ -228,7 +234,7 @@ ClassFunction *Class::GetDefaultConstructor() const
 
 ClassFunction *Class::GetComplexConstructor() const
 {
-	for (ClassFunction &f : function)
+	for (ClassFunction &f : functions)
 		if ((f.name == IDENTIFIER_FUNC_INIT) and (f.return_type == TypeVoid) and (f.param_types.num > 0))
 			return &f;
 	return NULL;
@@ -246,7 +252,7 @@ ClassFunction *Class::GetAssign() const
 
 ClassFunction *Class::GetGet(const Class *index) const
 {
-	for (ClassFunction &cf : function){
+	for (ClassFunction &cf : functions){
 		if (cf.name != "__get__")
 			continue;
 		if (cf.param_types.num != 1)
@@ -260,7 +266,7 @@ ClassFunction *Class::GetGet(const Class *index) const
 
 ClassFunction *Class::GetVirtualFunction(int virtual_index) const
 {
-	for (ClassFunction &f : function)
+	for (ClassFunction &f : functions)
 		if (f.virtual_index == virtual_index)
 			return &f;
 	return NULL;
@@ -282,7 +288,7 @@ void Class::LinkVirtualTable()
 		vtable[1] = mf(&VirtualBase::__delete_external__);
 
 	// link virtual functions into vtable
-	for (ClassFunction &cf : function){
+	for (ClassFunction &cf : functions){
 		if (cf.virtual_index >= 0){
 			if (cf.nr >= 0){
 				//msg_write(i2s(cf.virtual_index) + ": " + cf.GetFunc()->name);
@@ -304,7 +310,7 @@ void Class::LinkExternalVirtualTable(void *p)
 	VirtualTable *t = (VirtualTable*)p;
 	vtable.clear();
 	int max_vindex = 1;
-	for (ClassFunction &cf : function)
+	for (ClassFunction &cf : functions)
 		if (cf.virtual_index >= 0){
 			if (cf.nr >= 0)
 				cf.script->func[cf.nr] = (t_func*)t[cf.virtual_index];
@@ -334,7 +340,7 @@ bool class_func_match(ClassFunction &a, ClassFunction &b)
 	if (a.param_types.num != b.param_types.num)
 		return false;
 	for (int i=0; i<a.param_types.num; i++)
-		if (!direct_type_match(b.param_types[i], a.param_types[i]))
+		if (!type_match(b.param_types[i], a.param_types[i]))
 			return false;
 	return true;
 }
@@ -392,7 +398,7 @@ void Class::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overri
 
 	// override?
 	ClassFunction *orig = NULL;
-	for (ClassFunction &ocf : function)
+	for (ClassFunction &ocf : functions)
 		if (class_func_match(ocf, cf))
 			orig = &ocf;
 	if (override and !orig)
@@ -405,26 +411,26 @@ void Class::AddFunction(SyntaxTree *s, int func_no, bool as_virtual, bool overri
 		orig->needs_overriding = false;
 		orig->param_types = cf.param_types;
 	}else
-		function.add(cf);
+		functions.add(cf);
 }
 
 bool Class::DeriveFrom(const Class* root, bool increase_size)
 {
 	parent = const_cast<Class*>(root);
 	bool found = false;
-	if (parent->element.num > 0){
+	if (parent->elements.num > 0){
 		// inheritance of elements
-		element = parent->element;
+		elements = parent->elements;
 		found = true;
 	}
-	if (parent->function.num > 0){
+	if (parent->functions.num > 0){
 		// inheritance of functions
-		for (ClassFunction &f : parent->function){
+		for (ClassFunction &f : parent->functions){
 			if (f.name == IDENTIFIER_FUNC_ASSIGN)
 				continue;
 			ClassFunction ff = f;
 			ff.needs_overriding = (f.name == IDENTIFIER_FUNC_INIT) or (f.name == IDENTIFIER_FUNC_DELETE) or (f.name == IDENTIFIER_FUNC_ASSIGN);
-			function.add(ff);
+			functions.add(ff);
 		}
 		found = true;
 	}
@@ -470,9 +476,9 @@ string Class::var2str(void *p) const
 			s += parent->var2str(((char*)da->data) + i * da->element_size);
 		}
 		return "[" + s + "]";
-	}else if (element.num > 0){
+	}else if (elements.num > 0){
 		string s;
-		foreachi(ClassElement &e, element, i){
+		foreachi(ClassElement &e, elements, i){
 			if (i > 0)
 				s += ", ";
 			s += e.type->var2str(((char*)p) + e.offset);

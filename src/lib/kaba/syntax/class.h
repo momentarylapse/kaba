@@ -47,8 +47,8 @@ public:
 	bool is_array, is_super_array; // mutially exclusive!
 	bool is_pointer, is_silent; // pointer silent (&)
 	bool fully_parsed;
-	Array<ClassElement> element;
-	Array<ClassFunction> function;
+	Array<ClassElement> elements;
+	Array<ClassFunction> functions;
 	Class *parent;
 	SyntaxTree *owner; // to share and be able to delete...
 	Array<void*> vtable;

@@ -19,8 +19,8 @@ void SyntaxTree::AutoImplementAddVirtualTable(Command *self, Function *f, Class 
 
 void SyntaxTree::AutoImplementAddChildConstructors(Command *self, Function *f, Class *t)
 {
-	int i0 = t->parent ? t->parent->element.num : 0;
-	foreachi(ClassElement &e, t->element, i){
+	int i0 = t->parent ? t->parent->elements.num : 0;
+	foreachi(ClassElement &e, t->elements, i){
 		if (i < i0)
 			continue;
 		ClassFunction *ff = e.type->GetDefaultConstructor();
@@ -104,8 +104,8 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 	}else{
 
 		// call child destructors
-		int i0 = t->parent ? t->parent->element.num : 0;
-		foreachi(ClassElement &e, t->element, i){
+		int i0 = t->parent ? t->parent->elements.num : 0;
+		foreachi(ClassElement &e, t->elements, i){
 			if (i < i0)
 				continue;
 			ClassFunction *ff = e.type->GetDestructor();
@@ -253,8 +253,8 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		}
 
 		// call child assignment
-		int i0 = t->parent ? t->parent->element.num : 0;
-		foreachi(ClassElement &e, t->element, i){
+		int i0 = t->parent ? t->parent->elements.num : 0;
+		foreachi(ClassElement &e, t->elements, i){
 			if (i < i0)
 				continue;
 			Command *p = shift_command(self, true, e.offset, e.type);

@@ -427,7 +427,7 @@ void relink_calls(Script *s, Script *a, IncludeTranslationData &d)
 
 	// we might need some constructors later on...
 	for (Class *t: s->syntax->classes)
-		for (ClassFunction &f: t->function)
+		for (ClassFunction &f: t->functions)
 			if (f.script == d.source){
 				f.script = a;
 				f.nr += d.func_off;
