@@ -191,7 +191,7 @@ void Script::MapConstantsToMemory()
 	cnst.resize(syntax->constants.num);
 	foreachi(Constant *c, syntax->constants, i){
 		cnst[i] = &memory[memory_size];
-		c->map_into(cnst[i]);
+		c->map_into(cnst[i], cnst[i]);
 		memory_size += mem_align(c->mapping_size(), 4);
 	}
 }
@@ -246,7 +246,7 @@ void Script::MapConstantsToOpcode()
 	for (Class *t: syntax->classes)
 		if (t->vtable.num > 0){
 			t->_vtable_location_compiler_ = &opcode[opcode_size];
-			t->_vtable_location_target_ = (void*)(opcode_size + syntax->asm_meta_info->code_origin);
+			t->_vtable_location_target_ = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
 			opcode_size += config.pointer_size * t->vtable.num;
 			for (Constant *c: syntax->constants)
 				if ((c->type == TypePointer) and (*(int*)c->value.data == (int)(long)t->vtable.data))
@@ -254,29 +254,9 @@ void Script::MapConstantsToOpcode()
 		}
 
 	foreachi(Constant *c, syntax->constants, i){
-		if (config.compile_os){// && (c.type == TypeCString)){
-			DoErrorInternal("implement... const to opcode");
-/*			cnst[i] = (char*)(opcode_size + syntax->asm_meta_info->code_origin);
-			int s = c.type->size;
-			if (c.type == TypeString){
-				// const string -> variable length
-				s = syntax->constants[i].value .num;
-
-				*(void**)&opcode[opcode_size] = (char*)(opcode_size + syntax->asm_meta_info->code_origin + config.super_array_size); // .data
-				*(int*)&opcode[opcode_size + config.pointer_size    ] = s; // .num
-				*(int*)&opcode[opcode_size + config.pointer_size + 4] = 0; // .reserved
-				*(int*)&opcode[opcode_size + config.pointer_size + 8] = 1; // .item_size
-				opcode_size += config.super_array_size;
-			}else if (c.type == TypeCString){
-				s = syntax->constants[i].value .num;
-			}
-			memcpy(&opcode[opcode_size], (void*)c.value.data, s);
-			opcode_size += s;
-
-			// cstring -> 0 terminated
-			if (c.type == TypeCString)
-				opcode[opcode_size ++] = 0;*/
-		}
+		cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
+		c->map_into(&opcode[opcode_size], cnst[i]);
+		opcode_size += mem_align(c->mapping_size(), 4);
 	}
 
 	AlignOpcode();
@@ -427,7 +407,12 @@ IncludeTranslationData import_deep(SyntaxTree *a, SyntaxTree *b)
 	d.func_off = a->functions.num;
 	d.source = b->script;
 
-	a->constants.append(b->constants);
+	for (Constant *c: b->constants){
+		Constant *cc = new Constant(c->type);
+		cc->name = c->name;
+		cc->set(*c);
+		a->constants.add(cc);
+	}
 
 	a->root_of_all_evil.var.append(b->root_of_all_evil.var);
 

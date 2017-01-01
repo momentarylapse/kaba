@@ -400,9 +400,9 @@ void class_link_vtable(void *p)
 
 void add_const(const string &name, Class *type, void *value)
 {
-	Constant *c = new Constant;
+	Constant *c = new Constant(type);
 	c->name = name;
-	c->init(type);
+
 	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) or (type == TypeFloat32) or (type == TypeChar)  or (type == TypeBool) or (type->is_pointer))
 		*(void**)c->p() = value;

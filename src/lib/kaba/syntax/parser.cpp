@@ -121,8 +121,10 @@ void SyntaxTree::GetConstantValue(const string &str, Value &value)
 // literal
 	}else if (value.type == TypeChar){
 		value.as_int() = str[1];
-	}else if ((value.type == TypeString) or (value.type == TypeCString)){
+	}else if (value.type == TypeString){
 		value.as_string() = str.substr(1, -2);
+	}else if (value.type == TypeCString){
+		strcpy((char*)value.p(), str.substr(1, -2).c_str());
 	}else if (value.type == TypeInt){
 		value.as_int() = (int)s2i2(str);
 	}else if (value.type == TypeInt64){

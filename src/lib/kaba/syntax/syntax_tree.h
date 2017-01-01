@@ -44,13 +44,14 @@ struct Value
 	DynamicArray& as_array() const;
 
 	int mapping_size() const;
-	void map_into(char *mem) const;
+	void map_into(char *mem, char *addr) const;
 	string str() const;
 };
 
 // for any type of constant used in the script
 struct Constant : Value
 {
+	Constant(Class *type);
 	string name;
 	string str() const;
 };

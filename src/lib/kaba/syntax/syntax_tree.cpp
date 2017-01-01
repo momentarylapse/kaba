@@ -33,10 +33,13 @@ void Value::init(Class *_type)
 {
 	clear();
 	type = _type;
-	value.resize(max(type->size, config.pointer_size));
 
-	if (type->is_super_array)
+	if (type->is_super_array){
+		value.resize(sizeof(DynamicArray));
 		as_array().init(type->parent->size);
+	}else{
+		value.resize(max(type->size, (long long)16));
+	}
 }
 
 void Value::clear()
@@ -100,23 +103,27 @@ int Value::mapping_size() const
 {
 	if (type->is_super_array)
 		return config.super_array_size + (as_array().num * type->parent->size);
+	if (type == TypeCString)
+		return strlen((char*)p()) + 1;
 
 	// plain old data
 	return type->size;
 }
 
-void Value::map_into(char *memory) const
+void Value::map_into(char *memory, char *addr) const
 {
 	if (type->is_super_array){
 		// const string -> variable length
 		int size = as_array().element_size * as_array().num;
 		int data_offset = config.super_array_size;
 
-		*(void**)&memory[0] = &memory[data_offset]; // .data
+		*(void**)&memory[0] = addr + data_offset; // .data
 		*(int*)&memory[config.pointer_size    ] = as_array().num;
 		*(int*)&memory[config.pointer_size + 4] = 0; // .reserved
 		*(int*)&memory[config.pointer_size + 8] = as_array().element_size;
 		memcpy(&memory[data_offset], as_array().data, size);
+	}else if (type == TypeCString){
+		strcpy(memory, (char*)p());
 	}else{
 		memcpy(memory, p(), type->size);
 	}
@@ -125,6 +132,12 @@ void Value::map_into(char *memory) const
 string Value::str() const
 {
 	return type->var2str(value.data);
+}
+
+Constant::Constant(Class *_type)
+{
+	init(_type);
+	name = "-none-";
 }
 
 string Constant::str() const
@@ -419,10 +432,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 int SyntaxTree::AddConstant(Class *type)
 {
-	Constant *c = new Constant;
-	c->name = "-none-";
-	c->init(type);
-	constants.add(c);
+	constants.add(new Constant(type));
 	return constants.num - 1;
 }
 

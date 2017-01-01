@@ -475,6 +475,8 @@ string Class::var2str(void *p) const
 		return p2s(*(void**)p);
 	else if (this == TypeString)
 		return "\"" + *(string*)p + "\"";
+	else if (this == TypeCString)
+		return "\"" + string((char*)p) + "\"";
 	else if (is_super_array){
 		string s;
 		DynamicArray *da = (DynamicArray*)p;
