@@ -408,7 +408,7 @@ struct IncludeTranslationData
 
 void relink_calls(Script *s, Script *a, IncludeTranslationData &d)
 {
-	for (Command *c: s->syntax->commands){
+	for (Node *c: s->syntax->nodes){
 		// keep commands... just redirect var/const/func
 		//msg_write(p2s(c->script));
 		if (c->script != d.source)

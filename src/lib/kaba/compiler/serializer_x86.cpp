@@ -12,12 +12,12 @@ extern int GlobalWaitingMode;
 extern float GlobalTimeToWait;
 
 
-int SerializerX86::fc_begin(const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
+int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	Class *type = ret.get_type_save();
 
 	// return data too big... push address
-	SerialCommandParam ret_ref;
+	SerialNodeParam ret_ref;
 	if (type->UsesReturnByMemory()){
 		//add_temp(type, ret_temp);
 		ret_ref = AddReference(/*ret_temp*/ ret);
@@ -59,7 +59,7 @@ int SerializerX86::fc_begin(const SerialCommandParam &instance, const Array<Seri
 	return push_size;
 }
 
-void SerializerX86::fc_end(int push_size, const SerialCommandParam &ret)
+void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 {
 	Class *type = ret.get_type_save();
 
@@ -87,7 +87,7 @@ void SerializerX86::fc_end(int push_size, const SerialCommandParam &ret)
 	}
 }
 
-void SerializerX86::add_function_call(Script *script, int func_no, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
+void SerializerX86::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
 
@@ -104,7 +104,7 @@ void SerializerX86::add_function_call(Script *script, int func_no, const SerialC
 	fc_end(push_size, ret);
 }
 
-void SerializerX86::add_virtual_function_call(int virtual_index, const SerialCommandParam &instance, const Array<SerialCommandParam> &params, const SerialCommandParam &ret)
+void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
 
@@ -119,9 +119,9 @@ void SerializerX86::add_virtual_function_call(int virtual_index, const SerialCom
 
 // create data for a (function) parameter
 //   and compile its command if the parameter is executable itself
-SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block, int index)
+SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int index)
 {
-	SerialCommandParam p;
+	SerialNodeParam p;
 	p.kind = link->kind;
 	p.type = link->type;
 	p.p = 0;
@@ -155,7 +155,7 @@ SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block
 		p.p = link->link_no;
 		p.kind = KIND_VAR_LOCAL;
 	}else if (link->kind == KIND_LOCAL_ADDRESS){
-		SerialCommandParam param = param_local(TypePointer, link->link_no);
+		SerialNodeParam param = param_local(TypePointer, link->link_no);
 		return AddReference(param, link->type);
 	}else if (link->kind == KIND_CONSTANT){
 		if ((config.use_const_as_global_var) or (config.compile_os))
@@ -164,13 +164,13 @@ SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block
 			p.kind = KIND_REF_TO_CONST;
 		p.p = (long)link->script->cnst[link->link_no];
 	}else if ((link->kind == KIND_OPERATOR) or (link->kind == KIND_FUNCTION) or (link->kind == KIND_INLINE_FUNCTION) or (link->kind == KIND_VIRTUAL_FUNCTION) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
-		p = SerializeCommand(link, block, index);
+		p = SerializeNode(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){
-		SerialCommandParam param = SerializeParameter(link->param[0], block, index);
+		SerialNodeParam param = SerializeParameter(link->params[0], block, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return AddReference(param, link->type);
 	}else if (link->kind == KIND_DEREFERENCE){
-		SerialCommandParam param = SerializeParameter(link->param[0], block, index);
+		SerialNodeParam param = SerializeParameter(link->params[0], block, index);
 		/*if ((param.kind == KindVarLocal) or (param.kind == KindVarGlobal)){
 			p.type = param.type->sub_type;
 			if (param.kind == KindVarLocal)		p.kind = KindRefToLocal;
@@ -187,7 +187,7 @@ SerialCommandParam SerializerX86::SerializeParameter(Command *link, Block *block
 	return p;
 }
 
-void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret, Block *block, int index, int marker_before_params)
+void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index, int marker_before_params)
 {
 	switch(com->link_no){
 		case STATEMENT_IF:{
@@ -216,9 +216,9 @@ void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandPa
 			int marker_continue = marker_before_params;
 			if (com->link_no == STATEMENT_FOR){
 				// NextCommand is a block!
-				if (next_command->kind != KIND_BLOCK)
+				if (next_node->kind != KIND_BLOCK)
 					DoError("command block in \"for\" loop missing");
-				marker_continue = add_marker_after_command(block->level + 1, next_command->as_block()->commands.num - 2);
+				marker_continue = add_marker_after_command(block->level + 1, next_node->as_block()->nodes.num - 2);
 			}
 			LoopData l = {marker_continue, marker_after_while, block->level, index};
 			loop.add(l);
@@ -230,7 +230,7 @@ void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandPa
 			add_cmd(Asm::INST_JMP, param_marker(loop.back().marker_continue));
 			break;
 		case STATEMENT_RETURN:
-			if (com->param.num > 0){
+			if (com->params.num > 0){
 				if (cur_func->return_type->UsesReturnByMemory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
 					FillInDestructorsBlock(block, true);
 					// internally handled...
@@ -250,8 +250,8 @@ void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandPa
 					}*/
 
 					// test
-					SerialCommandParam p_edx = param_reg(TypeReg32, Asm::REG_EDX), p_deref_edx;
-					SerialCommandParam p_ret_addr;
+					SerialNodeParam p_edx = param_reg(TypeReg32, Asm::REG_EDX), p_deref_edx;
+					SerialNodeParam p_ret_addr;
 					p_ret_addr.kind = KIND_VAR_LOCAL;
 					p_ret_addr.type = TypeReg32;
 					p_ret_addr.p = (char*)0x8;
@@ -260,13 +260,13 @@ void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandPa
 					add_cmd(Asm::INST_MOV, p_edx, p_ret_addr);
 					AddDereference(p_edx, p_deref_edx, TypeReg32);
 					for (int j=0;j<s/4;j++)
-						add_cmd(Asm::INST_MOV, param_shift(p_deref_edx, j * 4, TypeInt), param_shift(param[0], j * 4, TypeInt));
+						add_cmd(Asm::INST_MOV, param_shift(p_deref_edx, j * 4, TypeInt), param_shift(params[0], j * 4, TypeInt));
 					add_reg_channel(Asm::REG_EDX, c_0, cmd.num - 1);
 #endif
 
 					AddFunctionOutro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
-					SerialCommandParam t = add_temp(cur_func->return_type);
+					SerialNodeParam t = add_temp(cur_func->return_type);
 					add_cmd(Asm::INST_MOV, t, param[0]);
 					FillInDestructorsBlock(block, true);
 					if (cur_func->return_type == TypeFloat32){
@@ -292,22 +292,22 @@ void SerializerX86::SerializeStatement(Command *com, const Array<SerialCommandPa
 			}
 			break;
 		case STATEMENT_NEW:{
-			Array<Command> links = syntax_tree->GetExistence("@malloc", NULL);
+			Array<Node> links = syntax_tree->GetExistence("@malloc", NULL);
 			if (links.num == 0)
 				DoError("@malloc not found????");
 			AddFunctionCall(links[0].script, links[0].link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
-			if (com->param.num > 0){
+			if (com->params.num > 0){
 				// copy + edit command
-				Command sub = *com->param[0];
-				Command c_ret(KIND_VAR_TEMP, (long)ret.p, script, ret.type);
+				Node sub = *com->params[0];
+				Node c_ret(KIND_VAR_TEMP, (long)ret.p, script, ret.type);
 				sub.instance = &c_ret;
-				SerializeCommand(&sub, block, index);
+				SerializeNode(&sub, block, index);
 			}else
 				add_cmd_constructor(ret, -1);
 			break;}
 		case STATEMENT_DELETE:{
 			add_cmd_destructor(param[0], false);
-			Array<Command> links = syntax_tree->GetExistence("@free", NULL);
+			Array<Node> links = syntax_tree->GetExistence("@free", NULL);
 			if (links.num == 0)
 				DoError("@free not found????");
 			AddFunctionCall(links[0].script, links[0].link_no, p_none, param[0], p_none);
@@ -327,7 +327,7 @@ enum{
 	COMMAND_WAIT_ONE_FRAME
 };
 
-void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialCommandParam> &param, const SerialCommandParam &ret)
+void SerializerX86::SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
 {
 	int index = com->as_func()->inline_no;
 	switch(index){
@@ -338,8 +338,8 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			// set waiting state
 				// GlobalWaitingMode = mode
 				// GlobalWaitingTime = time
-				SerialCommandParam p_mode = param_global(TypeInt, &GlobalWaitingMode);
-				SerialCommandParam p_ttw = param_global(TypeFloat32, &GlobalTimeToWait);
+				SerialNodeParam p_mode = param_global(TypeInt, &GlobalWaitingMode);
+				SerialNodeParam p_ttw = param_global(TypeFloat32, &GlobalTimeToWait);
 				if (index == COMMAND_WAIT_ONE_FRAME){
 					add_cmd(Asm::INST_MOV, p_mode, param_const(TypeInt, WAITING_MODE_RT));
 					add_cmd(Asm::INST_MOV, p_ttw, param_const(TypeFloat32, 0));
@@ -351,7 +351,7 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 					add_cmd(Asm::INST_MOV, p_ttw, param[0]);
 				}
 				if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
-					SerialCommandParam p_deref_rax;
+					SerialNodeParam p_deref_rax;
 					p_deref_rax.kind = KIND_DEREF_REGISTER;
 					p_deref_rax.p = Asm::REG_RAX;
 					p_deref_rax.type = TypePointer;
@@ -477,9 +477,9 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 			add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
 		case INLINE_CHUNK_ASSIGN:
-			for (int i=0; i<com->param[0]->type->size/4; i++)
+			for (int i=0; i<com->params[0]->type->size/4; i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
-			for (int i=4*(com->param[0]->type->size/4); i<com->param[0]->type->size; i++)
+			for (int i=4*(com->params[0]->type->size/4); i<com->params[0]->type->size; i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
 			break;
 // int
@@ -1015,12 +1015,12 @@ void SerializerX86::SerializeInlineFunction(Command *com, const Array<SerialComm
 	}
 }
 
-inline bool param_is_simple(SerialCommandParam &p)
+inline bool param_is_simple(SerialNodeParam &p)
 {
 	return ((p.kind == KIND_REGISTER) or (p.kind == KIND_VAR_TEMP) or (p.kind < 0));
 }
 
-inline bool param_combi_allowed(int inst, SerialCommandParam &p1, SerialCommandParam &p2)
+inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &p2)
 {
 //	if (inst >= Asm::inst_marker)
 //		return true;
@@ -1075,8 +1075,8 @@ void SerializerX86::CorrectUnallowedParamCombis()
 //		msg_write(format("correcting param combi  cmd=%d", i));
 		bool mov_first_param = (cmd[i].p[1].kind < 0) or (cmd[i].p[0].kind == KIND_REF_TO_CONST) or (cmd[i].p[0].kind == KIND_CONSTANT);
 		int p_index = mov_first_param ? 0 : 1;
-		SerialCommandParam p = cmd[i].p[p_index];
-		SerialCommandParam p2 = p;
+		SerialNodeParam p = cmd[i].p[p_index];
+		SerialNodeParam p2 = p;
 
 		//msg_error("correct");
 		//msg_write(p.type->name);
@@ -1117,8 +1117,8 @@ void SerializerX86::ProcessReferences()
 	for (int i=0;i<cmd.num;i++)
 		if (cmd[i].inst == Asm::INST_LEA){
 			if (cmd[i].p[1].kind == KIND_VAR_LOCAL){
-				SerialCommandParam p0 = cmd[i].p[0];
-				SerialCommandParam p1 = cmd[i].p[1];
+				SerialNodeParam p0 = cmd[i].p[0];
+				SerialNodeParam p1 = cmd[i].p[1];
 				remove_cmd(i);
 
 				if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
@@ -1201,7 +1201,7 @@ void SerializerX86::DoMapping()
 		cmd_list_out("end");
 }
 
-void SerializerX86::CorrectUnallowedParamCombis2(SerialCommand &c)
+void SerializerX86::CorrectUnallowedParamCombis2(SerialNode &c)
 {
 	// push 8 bit -> push 32 bit
 	if (c.inst == Asm::INST_PUSH)
