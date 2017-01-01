@@ -4,7 +4,7 @@
 
 namespace Kaba{
 
-typedef void op_func(string &r, string &a, string &b);
+typedef void op_func(Value &r, Value &a, Value &b);
 
 //static Function *cur_func;
 
@@ -183,11 +183,12 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 				}else{
 					// pre process operator
 					int nc = AddConstant(o->return_type);
-					string d1 = constants[c->params[0]->link_no].value;
-					string d2;
-					if (c->params.num > 1)
-						d2 = constants[c->params[1]->link_no].value;
-					f(constants[nc].value, d1, d2);
+					if (c->params.num > 1){
+						f(constants[nc], constants[c->params[0]->link_no], constants[c->params[1]->link_no]);
+					}else{
+						Value dummy;
+						f(constants[nc], constants[c->params[0]->link_no], dummy);
+					}
 					return add_node_const(nc);
 				}
 			}
@@ -327,15 +328,19 @@ Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 				op_func *f = (op_func*)o->func;
 				if (is_address){
 					// pre process address
-					string d1 = string((char*)&c->params[0]->link_no, c->params[0]->type->size);
-					string d2 = string((char*)&c->params[1]->link_no, c->params[1]->type->size);
+					Value d1, d2;
+					d1.init(c->params[0]->type);
+					d2.init(c->params[1]->type);
+					*(void**)d1.p() = (void*)c->params[0]->link_no;
+					*(void**)d2.p() = (void*)c->params[1]->link_no;
 					if (c->params[0]->kind == KIND_CONSTANT)
-					    d1 = constants[c->params[0]->link_no].value;
+					    d1.set(constants[c->params[0]->link_no]);
 					if (c->params[1]->kind == KIND_CONSTANT)
-					    d2 = constants[c->params[1]->link_no].value;
-					string r = "--------";
+					    d2.set(constants[c->params[1]->link_no]);
+					Value r;
+					r.init(c->type);
 					f(r, d1, d2);
-					return AddNode(is_local ? KIND_LOCAL_ADDRESS : KIND_ADDRESS, *(long*)r.data, c->type);
+					return AddNode(is_local ? KIND_LOCAL_ADDRESS : KIND_ADDRESS, *(long*)r.p(), c->type);
 				}
 			}
 		}

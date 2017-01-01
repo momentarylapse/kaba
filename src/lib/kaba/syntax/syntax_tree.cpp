@@ -18,22 +18,103 @@ bool next_extern = false;
 bool next_const = false;
 
 Node *conv_cbr(SyntaxTree *ps, Node *c, int var);
- 
-void Constant::setInt(int i)
+
+Value::Value()
 {
-	(*(int*)(value.data)) = i;
+	type = TypeVoid;
 }
 
-int Constant::getInt()
+Value::~Value()
 {
-	return (*(int*)(value.data));
+	clear();
+}
+
+void Value::init(Class *_type)
+{
+	clear();
+	type = _type;
+	value.resize(max(type->size, config.pointer_size));
+
+	if (type->is_super_array)
+		as_array().init(type->parent->size);
+}
+
+void Value::clear()
+{
+	if (type->is_super_array)
+		as_array().clear();
+
+	value.clear();
+	type = TypeVoid;
+}
+
+void Value::set(const Value &v)
+{
+	init(v.type);
+	if (type->is_super_array){
+		as_array().resize(v.as_array().num);
+		memcpy(as_array().data, v.as_array().data, as_array().num * type->parent->size);
+
+	}else{
+		// plain old data
+		memcpy(p(), v.p(), type->size);
+	}
+}
+
+void* Value::p() const
+{
+	return value.data;
+}
+
+int& Value::as_int() const
+{
+	return *(int*)value.data;
+}
+
+string& Value::as_string() const
+{
+	return *(string*)value.data;
+}
+
+DynamicArray& Value::as_array() const
+{
+	return *(DynamicArray*)p();
+}
+
+int Value::mapping_size() const
+{
+	if (type->is_super_array)
+		return config.super_array_size + (as_array().num * type->parent->size);
+
+	// plain old data
+	return type->size;
+}
+
+void Value::map_into(char *memory) const
+{
+	if (type->is_super_array){
+		// const string -> variable length
+		int size = as_array().element_size * as_array().num;
+		int data_offset = config.super_array_size;
+
+		*(void**)&memory[0] = &memory[data_offset]; // .data
+		*(int*)&memory[config.pointer_size    ] = as_array().num;
+		*(int*)&memory[config.pointer_size + 4] = 0; // .reserved
+		*(int*)&memory[config.pointer_size + 8] = as_array().element_size;
+		memcpy(&memory[data_offset], as_array().data, size);
+	}else{
+		memcpy(memory, p(), type->size);
+	}
+}
+
+string Value::str() const
+{
+	return type->var2str(value.data);
 }
 
 string Constant::str() const
 {
-	if (type == TypeString)
-		return "\"" + value + "\"";
-	return type->var2str(value.data);
+	return Value::str();
 }
 
 Node *SyntaxTree::cp_node(Node *c)
@@ -325,8 +406,7 @@ int SyntaxTree::AddConstant(Class *type)
 {
 	Constant c;
 	c.name = "-none-";
-	c.type = type;
-	c.value.resize(max(type->size, config.pointer_size));
+	c.init(type);
 	constants.add(c);
 	return constants.num - 1;
 }
@@ -686,13 +766,13 @@ Array<Node> SyntaxTree::GetExistence(const string &name, Block *block)
 // expression naming a type
 Class *SyntaxTree::FindType(const string &name)
 {
-	for (int i=0;i<classes.num;i++)
-		if (name == classes[i]->name)
-			return classes[i];
+	for (Class *c: classes)
+		if (name == c->name)
+			return c;
 	for (Script *inc: includes)
-		for (int i=0;i<inc->syntax->classes.num;i++)
-			if (name == inc->syntax->classes[i]->name)
-				return inc->syntax->classes[i];
+		for (Class *c: inc->syntax->classes)
+			if (name == c->name)
+				return c;
 	return NULL;
 }
 
@@ -1026,7 +1106,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_array = ref_node(c->params[0]);
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].setInt(el_type->size);
+		constants[nc].as_int() = el_type->size;
 		Node *c_size = add_node_const(nc);
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -1051,7 +1131,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_array = c->params[0];
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].setInt(el_type->size);
+		constants[nc].as_int() = el_type->size;
 		Node *c_size = add_node_const(nc);
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -1075,7 +1155,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_struct = ref_node(c->params[0]);
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].setInt(c->link_no);
+		constants[nc].as_int() = c->link_no;
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
@@ -1095,7 +1175,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_struct = c->params[0];
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].setInt(c->link_no);
+		constants[nc].as_int() = c->link_no;
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());

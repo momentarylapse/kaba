@@ -23,14 +23,34 @@ struct Define
 	Array<string> dest;
 };
 
+struct Value
+{
+	string value;
+	Class *type;
+
+	Value();
+	~Value();
+
+	void init(Class *type);
+	void clear();
+	void set(const Value &v);
+
+	void* p() const;
+	int& as_int() const;
+	string& as_string() const;
+	DynamicArray& as_array() const;
+
+	int mapping_size() const;
+	void map_into(char *mem) const;
+	string str() const;
+};
+
 // for any type of constant used in the script
-struct Constant
+struct Constant : Value
 {
 	string name;
 	string value;
 	Class *type;
-	void setInt(int i);
-	int getInt();
 	string str() const;
 };
 
@@ -235,7 +255,7 @@ public:
 
 	// syntax analysis
 	Class *GetConstantType(const string &str);
-	string GetConstantValue(const string &str);
+	void GetConstantValue(const string &str, Value &value);
 	Class *FindType(const string &name);
 	Class *AddType(Class *type);
 	Class *CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Class *sub);

@@ -579,7 +579,7 @@ string CastFloat2Int(string &s)
 {
 	string r;
 	r.resize(8);
-	*(int*)r.data = (int)*(float*)s.data;
+	r.as_int() = (int)*(float*)s.data;
 	return r;
 }
 string CastFloat2Float64(string &s)
@@ -611,7 +611,7 @@ string CastChar2Int(string &s)
 {
 	string r;
 	r.resize(8);
-	*(int*)r.data = *(char*)s.data;
+	r.as_int() = *(char*)s.data;
 	return r;
 }
 string CastPointer2Bool(string &s)
@@ -982,20 +982,20 @@ void SIAddBasicCommands()
 
 
 
-void op_int_add(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data + *(int*)b.data;	}
+void op_int_add(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() + b.as_int();	}
 void op_int_sub(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data - *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data - *(int*)b.data;	}
 void op_int_mul(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data * *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data * *(int*)b.data;	}
 void op_int_div(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data / *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data / *(int*)b.data;	}
 void op_int_mod(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data % *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data % *(int*)b.data;	}
 void op_int_shr(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data >> *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data >> *(int*)b.data;	}
 void op_int_shl(string &r, string &a, string &b)
-{	*(int*)r.data = *(int*)a.data << *(int*)b.data;	}
+{	r.as_int() = *(int*)a.data << *(int*)b.data;	}
 void op_float_add(string &r, string &a, string &b)
 {	*(float*)r.data = *(float*)a.data + *(float*)b.data;	}
 void op_float_sub(string &r, string &a, string &b)

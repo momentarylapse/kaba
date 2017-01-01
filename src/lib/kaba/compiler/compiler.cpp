@@ -138,14 +138,10 @@ void Script::AllocateMemory()
 			memory_size += mem_align(syntax->root_of_all_evil.var[i].type->size, 4);
 
 	// constants
-	foreachi(Constant &c, syntax->constants, i){
-		int s = c.type->size;
-		if (c.type == TypeString){
-			// const string -> variable length   (+ super array frame)
-			s = c.value.num + config.super_array_size;
-		}
-		memory_size += mem_align(s, 4);
-	}
+	foreachi(Constant &c, syntax->constants, i)
+		memory_size += mem_align(c.mapping_size(), 4);
+
+	// vtables
 	for (Class *t: syntax->classes)
 		if (t->vtable.num > 0)
 			memory_size += config.pointer_size;
@@ -195,19 +191,8 @@ void Script::MapConstantsToMemory()
 	cnst.resize(syntax->constants.num);
 	foreachi(Constant &c, syntax->constants, i){
 		cnst[i] = &memory[memory_size];
-		int s = c.type->size;
-		if (c.type == TypeString){
-			// const string -> variable length
-			s = syntax->constants[i].value.num;
-
-			*(void**)&memory[memory_size] = &memory[memory_size + config.super_array_size]; // .data
-			*(int*)&memory[memory_size + config.pointer_size    ] = s; // .num
-			*(int*)&memory[memory_size + config.pointer_size + 4] = 0; // .reserved
-			*(int*)&memory[memory_size + config.pointer_size + 8] = 1; // .item_size
-			memory_size += config.super_array_size;
-		}
-		memcpy(&memory[memory_size], (void*)c.value.data, s);
-		memory_size += mem_align(s, 4);
+		c.map_into(cnst[i]);
+		memory_size += mem_align(c.mapping_size(), 4);
 	}
 }
 
@@ -268,9 +253,9 @@ void Script::MapConstantsToOpcode()
 					memcpy(c.value.data, &t->_vtable_location_target_, config.pointer_size);
 		}
 
-	// put all constants into Opcode!
 	foreachi(Constant &c, syntax->constants, i){
 		if (config.compile_os){// && (c.type == TypeCString)){
+			DoErrorInternal("implement... const to opcode");
 			cnst[i] = (char*)(opcode_size + syntax->asm_meta_info->code_origin);
 			int s = c.type->size;
 			if (c.type == TypeString){
