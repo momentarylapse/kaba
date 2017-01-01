@@ -184,10 +184,10 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 					// pre process operator
 					int nc = AddConstant(o->return_type);
 					if (c->params.num > 1){
-						f(constants[nc], constants[c->params[0]->link_no], constants[c->params[1]->link_no]);
+						f(*constants[nc], *constants[c->params[0]->link_no], *constants[c->params[1]->link_no]);
 					}else{
 						Value dummy;
-						f(constants[nc], constants[c->params[0]->link_no], dummy);
+						f(*constants[nc], *constants[c->params[0]->link_no], dummy);
 					}
 					return add_node_const(nc);
 				}
@@ -219,7 +219,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 			return c;
 			if (c->instance->kind != KIND_CONSTANT)
 				all_const = false;
-			inst = constants[c->instance->link_no].value.data;
+			inst = constants[c->instance->link_no]->value.data;
 		}
 		if (!all_const)
 			return c;
@@ -229,11 +229,12 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 		temp.resize(f->return_type->size);
 		Array<void*> p;
 		for (int i=0; i<c->params.num; i++)
-			p.add(constants[c->params[i]->link_no].value.data);
+			p.add(constants[c->params[i]->link_no]->value.data);
 		if (!call_function(f, ff, temp.data, inst, p))
 			return c;
 		int nc = AddConstant(f->return_type);
-		constants[nc].value = temp;
+		constants[nc]->value = temp;
+		DoError("...pure function evaluation?!?....TODO");
 		return add_node_const(nc);
 #endif
 	}else if (c->kind == KIND_ARRAY_BUILDER){
@@ -244,11 +245,11 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 		if (all_consts){
 			int nc = AddConstant(c->type);
 			int el_size = c->type->parent->size;
-			DynamicArray *da = (DynamicArray*)constants[nc].value.data;
+			DynamicArray *da = &constants[nc]->as_array();
 			da->init(el_size);
 			da->resize(c->params.num);
 			for (int i=0; i<c->params.num; i++)
-				memcpy((char*)da->data + el_size * i, constants[c->params[i]->link_no].value.data, el_size);
+				memcpy((char*)da->data + el_size * i, constants[c->params[i]->link_no]->p(), el_size);
 			return add_node_const(nc);
 		}
 	}/*else if (c->kind == KindReference){
@@ -334,9 +335,9 @@ Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 					*(void**)d1.p() = (void*)c->params[0]->link_no;
 					*(void**)d2.p() = (void*)c->params[1]->link_no;
 					if (c->params[0]->kind == KIND_CONSTANT)
-					    d1.set(constants[c->params[0]->link_no]);
+					    d1.set(*constants[c->params[0]->link_no]);
 					if (c->params[1]->kind == KIND_CONSTANT)
-					    d2.set(constants[c->params[1]->link_no]);
+					    d2.set(*constants[c->params[1]->link_no]);
 					Value r;
 					r.init(c->type);
 					f(r, d1, d2);

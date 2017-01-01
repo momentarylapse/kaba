@@ -24,6 +24,7 @@ extern string LibVersion;
 
 class SyntaxTree;
 class Class;
+struct Value;
 
 
 void script_make_super_array(Class *t, SyntaxTree *ps = NULL);
@@ -308,7 +309,7 @@ enum
 //--------------------------------------------------------------------------------------------------
 // type casting
 
-typedef string t_cast_func(string&);
+typedef void t_cast_func(Value&, Value&);
 struct TypeCast
 {
 	int penalty;

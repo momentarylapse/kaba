@@ -48,21 +48,21 @@ Class *SyntaxTree::GetConstantType(const string &str)
 	FoundConstantScript = NULL;
 
 	// named constants
-	foreachi(Constant &c, constants, i)
-		if (str == c.name){
+	foreachi(Constant *c, constants, i)
+		if (str == c->name){
 			FoundConstantNr = i;
 			FoundConstantScript = script;
-			return c.type;
+			return c->type;
 		}
 
 
 	// included named constants
 	for (Script *inc: includes)
-		foreachi(Constant &c, inc->syntax->constants, i)
-			if (str == c.name){
+		foreachi(Constant *c, inc->syntax->constants, i)
+			if (str == c->name){
 				FoundConstantNr = i;
 				FoundConstantScript = inc;
-				return c.type;
+				return c->type;
 			}
 
 	// character "..."
@@ -117,7 +117,7 @@ void SyntaxTree::GetConstantValue(const string &str, Value &value)
 	value.init(GetConstantType(str));
 // named constants
 	if (FoundConstantNr >= 0){
-		value.set(FoundConstantScript->syntax->constants[FoundConstantNr]);
+		value.set(*FoundConstantScript->syntax->constants[FoundConstantNr]);
 // literal
 	}else if (value.type == TypeChar){
 		value.as_int() = str[1];
@@ -126,11 +126,11 @@ void SyntaxTree::GetConstantValue(const string &str, Value &value)
 	}else if (value.type == TypeInt){
 		value.as_int() = (int)s2i2(str);
 	}else if (value.type == TypeInt64){
-		*(long long*)value.p() = s2i2(str);
+		value.as_int64() = s2i2(str);
 	}else if (value.type == TypeFloat32){
-		*(float*)value.p() = str._float();
+		value.as_float() = str._float();
 	}else if (value.type == TypeFloat64){
-		*(double*)value.p() = str._float();
+		value.as_float64() = str._float();
 	}
 }
 
@@ -310,13 +310,13 @@ Node *SyntaxTree::GetSpecialFunctionCall(const string &f_name, Node &link, Block
 	Class *type = FindType(Exp.cur);
 	Array<Node> links = GetExistence(Exp.cur, block);
 	if (type){
-		constants[nc].as_int() = type->size;
+		constants[nc]->as_int() = type->size;
 	}else if ((links.num > 0) and ((links[0].kind == KIND_VAR_GLOBAL) or (links[0].kind == KIND_VAR_LOCAL))){
-		constants[nc].as_int() = links[0].type->size;
+		constants[nc]->as_int() = links[0].type->size;
 	}else{
 		type = GetConstantType(Exp.cur);
 		if (type)
-			constants[nc].as_int() = type->size;
+			constants[nc]->as_int() = type->size;
 		else
 			DoError("type-name or variable name expected in sizeof(...)");
 	}
@@ -690,7 +690,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 			if (t != TypeUnknown){
 				operand = AddNode(KIND_CONSTANT, AddConstant(t), t);
 				// constant for parameter (via variable)
-				GetConstantValue(Exp.cur, constants[operand->link_no]);
+				GetConstantValue(Exp.cur, *constants[operand->link_no]);
 				Exp.next();
 			}else{
 				//Operand.Kind=0;
@@ -768,8 +768,8 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 		return param;
 	}
 	if (param->kind == KIND_CONSTANT){
-		string data_old = ps->constants[param->link_no].value;
-		string data_new = TypeCasts[tc].func(data_old);
+		Value data_new;
+		TypeCasts[tc].func(data_new, *ps->constants[param->link_no]);
 		/*if ((TypeCasts[tc].dest->is_array) or (TypeCasts[tc].dest->is_super_array)){
 			// arrays as return value -> reference!
 			int size = TypeCasts[tc].dest->size;
@@ -780,8 +780,8 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 			data_new = *(char**)data_new;
 			memcpy(ps->Constants[param->link_no].data, data_new, size);
 		}else*/
-		ps->constants[param->link_no].value = data_new;
-		ps->constants[param->link_no].type = TypeCasts[tc].dest;
+		ps->constants[param->link_no]->set(data_new);
+		ps->constants[param->link_no]->type = TypeCasts[tc].dest;
 		param->type = TypeCasts[tc].dest;
 		return param;
 	}else{
@@ -1015,9 +1015,8 @@ void SyntaxTree::ParseStatementFor(Block *block)
 			cmd_inc = add_node_operator_by_inline(for_var, val1 /*dummy*/, INLINE_INT_INCREASE);
 	}else{
 		if (!val_step){
-			int nc = AddConstant(TypeFloat32);
-			*(float*)constants[nc].value.data = 1.0;
-			val_step = add_node_const(nc);
+			val_step = add_node_const(AddConstant(TypeFloat32));
+			val_step->as_const()->as_float() = 1.0f;
 		}
 		cmd_inc = add_node_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
@@ -1065,7 +1064,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// 0
 	int nc = AddConstant(TypeInt);
-	constants[nc].as_int() = 0;
+	constants[nc]->as_int() = 0;
 	Node *val0 = add_node_const(nc);
 
 	// implement
@@ -1082,7 +1081,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	}else{
 		// array.size
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = for_array->type->array_length;
+		constants[nc]->as_int() = for_array->type->array_length;
 		val1 = add_node_const(nc);
 	}
 
@@ -1383,7 +1382,7 @@ void SyntaxTree::ParseEnum()
 	for (int i=0;!Exp.end_of_file();i++){
 		for (int j=0;!Exp.end_of_line();j++){
 			int nc = AddConstant(TypeInt);
-			Constant *c = &constants[nc];
+			Constant *c = constants[nc];
 			c->name = Exp.cur;
 			Exp.next();
 
@@ -1625,7 +1624,7 @@ void SyntaxTree::ParseGlobalConst(const string &name, Class *type)
 		DoError(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));
 
 	// give our const the name
-	Constant *c = &constants[cv->link_no];
+	Constant *c = constants[cv->link_no];
 	c->name = name;
 }
 
@@ -1752,7 +1751,7 @@ Class *SyntaxTree::ParseType()
 
 				if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
 					DoError("only constants of type \"int\" allowed for size of arrays");
-				array_size = constants[c->link_no].as_int();
+				array_size = constants[c->link_no]->as_int();
 				//Exp.next();
 				if (Exp.cur != "]")
 					DoError("\"]\" expected after array size");

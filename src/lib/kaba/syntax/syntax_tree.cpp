@@ -71,6 +71,21 @@ int& Value::as_int() const
 	return *(int*)value.data;
 }
 
+long long& Value::as_int64() const
+{
+	return *(long long*)value.data;
+}
+
+float& Value::as_float() const
+{
+	return *(float*)value.data;
+}
+
+double& Value::as_float64() const
+{
+	return *(double*)value.data;
+}
+
 string& Value::as_string() const
 {
 	return *(string*)value.data;
@@ -336,7 +351,7 @@ string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr].name;
 	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr].name;
 	if (kind == KIND_VAR_FUNCTION)		return s->functions[nr]->name;
-	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr].str();
+	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr]->str();
 	if (kind == KIND_FUNCTION)			return s->functions[nr]->name;
 	if (kind == KIND_VIRTUAL_FUNCTION)	return i2s(nr);//s->Functions[nr]->name;
 	if (kind == KIND_STATEMENT)	return Statements[nr].name;
@@ -404,9 +419,9 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 int SyntaxTree::AddConstant(Class *type)
 {
-	Constant c;
-	c.name = "-none-";
-	c.init(type);
+	Constant *c = new Constant;
+	c->name = "-none-";
+	c->init(type);
 	constants.add(c);
 	return constants.num - 1;
 }
@@ -536,6 +551,11 @@ Function *Node::as_func() const
 	return script->syntax->functions[link_no];
 }
 
+Constant *Node::as_const() const
+{
+	return script->syntax->constants[link_no];
+}
+
 void Node::set_instance(Node *p)
 {
 	set_command(instance, p);
@@ -572,7 +592,7 @@ Node *SyntaxTree::AddNode(int kind, long long link_no, Class *type, Script *s)
 
 Node *SyntaxTree::add_node_const(int nc)
 {
-	return AddNode(KIND_CONSTANT, nc, constants[nc].type);
+	return AddNode(KIND_CONSTANT, nc, constants[nc]->type);
 }
 
 int SyntaxTree::WhichPrimitiveOperator(const string &name)
@@ -1106,7 +1126,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_array = ref_node(c->params[0]);
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = el_type->size;
+		constants[nc]->as_int() = el_type->size;
 		Node *c_size = add_node_const(nc);
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -1131,7 +1151,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_array = c->params[0];
 		// create command for size constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = el_type->size;
+		constants[nc]->as_int() = el_type->size;
 		Node *c_size = add_node_const(nc);
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -1155,7 +1175,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_struct = ref_node(c->params[0]);
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = c->link_no;
+		constants[nc]->as_int() = c->link_no;
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
@@ -1175,7 +1195,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_ref_struct = c->params[0];
 		// create command for shift constant
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = c->link_no;
+		constants[nc]->as_int() = c->link_no;
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
@@ -1294,6 +1314,9 @@ SyntaxTree::~SyntaxTree()
 	
 	for (Function *f: functions)
 		delete(f);
+
+	for (Constant *c: constants)
+		delete(c);
 }
 
 void SyntaxTree::ShowNode(Node *c, Function *f)

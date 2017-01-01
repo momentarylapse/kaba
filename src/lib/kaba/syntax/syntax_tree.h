@@ -37,6 +37,9 @@ struct Value
 
 	void* p() const;
 	int& as_int() const;
+	long long& as_int64() const;
+	float& as_float() const;
+	double& as_float64() const;
 	string& as_string() const;
 	DynamicArray& as_array() const;
 
@@ -49,8 +52,6 @@ struct Value
 struct Constant : Value
 {
 	string name;
-	string value;
-	Class *type;
 	string str() const;
 };
 
@@ -171,6 +172,7 @@ struct Node
 	Node(int kind, long long link_no, Script *script, Class *type);
 	Block *as_block() const;
 	Function *as_func() const;
+	Constant *as_const() const;
 	void set_num_params(int n);
 	void set_param(int index, Node *p);
 	void set_instance(Node *p);
@@ -345,7 +347,7 @@ public:
 	Array<Define> defines;
 	Asm::MetaInfo *asm_meta_info;
 	Array<AsmBlock> asm_blocks;
-	Array<Constant> constants;
+	Array<Constant*> constants;
 	Array<Operator> operators;
 	Array<Block*> blocks;
 	Array<Function*> functions;

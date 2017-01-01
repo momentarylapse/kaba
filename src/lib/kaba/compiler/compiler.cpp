@@ -138,8 +138,8 @@ void Script::AllocateMemory()
 			memory_size += mem_align(syntax->root_of_all_evil.var[i].type->size, 4);
 
 	// constants
-	foreachi(Constant &c, syntax->constants, i)
-		memory_size += mem_align(c.mapping_size(), 4);
+	foreachi(Constant *c, syntax->constants, i)
+		memory_size += mem_align(c->mapping_size(), 4);
 
 	// vtables
 	for (Class *t: syntax->classes)
@@ -189,10 +189,10 @@ void Script::MapConstantsToMemory()
 {
 	// constants -> Memory
 	cnst.resize(syntax->constants.num);
-	foreachi(Constant &c, syntax->constants, i){
+	foreachi(Constant *c, syntax->constants, i){
 		cnst[i] = &memory[memory_size];
-		c.map_into(cnst[i]);
-		memory_size += mem_align(c.mapping_size(), 4);
+		c->map_into(cnst[i]);
+		memory_size += mem_align(c->mapping_size(), 4);
 	}
 }
 
@@ -248,15 +248,15 @@ void Script::MapConstantsToOpcode()
 			t->_vtable_location_compiler_ = &opcode[opcode_size];
 			t->_vtable_location_target_ = (void*)(opcode_size + syntax->asm_meta_info->code_origin);
 			opcode_size += config.pointer_size * t->vtable.num;
-			for (Constant &c: syntax->constants)
-				if ((c.type == TypePointer) and (*(int*)c.value.data == (int)(long)t->vtable.data))
-					memcpy(c.value.data, &t->_vtable_location_target_, config.pointer_size);
+			for (Constant *c: syntax->constants)
+				if ((c->type == TypePointer) and (*(int*)c->value.data == (int)(long)t->vtable.data))
+					memcpy(c->value.data, &t->_vtable_location_target_, config.pointer_size);
 		}
 
-	foreachi(Constant &c, syntax->constants, i){
+	foreachi(Constant *c, syntax->constants, i){
 		if (config.compile_os){// && (c.type == TypeCString)){
 			DoErrorInternal("implement... const to opcode");
-			cnst[i] = (char*)(opcode_size + syntax->asm_meta_info->code_origin);
+/*			cnst[i] = (char*)(opcode_size + syntax->asm_meta_info->code_origin);
 			int s = c.type->size;
 			if (c.type == TypeString){
 				// const string -> variable length
@@ -275,7 +275,7 @@ void Script::MapConstantsToOpcode()
 
 			// cstring -> 0 terminated
 			if (c.type == TypeCString)
-				opcode[opcode_size ++] = 0;
+				opcode[opcode_size ++] = 0;*/
 		}
 	}
 

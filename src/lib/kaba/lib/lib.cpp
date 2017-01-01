@@ -400,15 +400,14 @@ void class_link_vtable(void *p)
 
 void add_const(const string &name, Class *type, void *value)
 {
-	Constant c;
-	c.name = name;
-	c.type = type;
-	c.value.resize(max((int)type->size, 8));//config.PointerSize));
+	Constant *c = new Constant;
+	c->name = name;
+	c->init(type);
 	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) or (type == TypeFloat32) or (type == TypeChar)  or (type == TypeBool) or (type->is_pointer))
-		*(void**)c.value.data = value;
+		*(void**)c->p() = value;
 	else
-		memcpy(c.value.data, value, type->size);
+		memcpy(c->p(), value, type->size);
 	cur_package_script->syntax->constants.add(c);
 }
 
@@ -575,75 +574,70 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 
 // automatic type casting
 
-string CastFloat2Int(string &s)
+void CastFloat2Int(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	r.as_int() = (int)*(float*)s.data;
-	return r;
+	r.init(TypeInt);
+	r.as_int() = (int)s.as_float();
 }
-string CastFloat2Float64(string &s)
+void CastFloat2Float64(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	*(double*)r.data = *(float*)s.data;
-	return r;
+	r.init(TypeFloat64);
+	r.as_float64() = (double)s.as_float();
 }
-string CastInt2Float(string &s)
+void CastInt2Float(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	*(float*)r.data = (float)*(int*)s.data;
-	return r;
+	r.init(TypeFloat);
+	r.as_float() = (float)s.as_int();
 }
-string CastInt2Int64(string &s)
+void CastInt2Int64(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	*(long long*)r.data = *(int*)s.data;
-	return r;
+	r.init(TypeInt64);
+	r.as_int64() = (long long)s.as_int();
 }
-string CastInt2Char(string &s)
+void CastInt2Char(Value &r, Value &s)
 {
-	return s;
+	r.init(TypeChar);
+	r.as_int() = s.as_int();
 }
-string CastChar2Int(string &s)
+void CastChar2Int(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	r.as_int() = *(char*)s.data;
-	return r;
+	r.init(TypeInt);
+	r.as_int() = s.as_int();
 }
-string CastPointer2Bool(string &s)
+void CastPointer2Bool(Value &r, Value &s)
 {
-	string r;
-	r.resize(8);
-	*(bool*)r.data = (*(void**)s.data != NULL);
-	return r;
+	r.init(TypeBool);
+	r.as_int() = ((*(void**)s.p()) != NULL);
 }
-string CastInt2StringP(string &s)
+void CastInt2String(Value &r, Value &s)
 {
-	return i2s(*(int*)s.data);
+	r.init(TypeString);
+	r.as_string() = i2s(s.as_int());
 }
-string CastInt642StringP(string &s)
+void CastInt642String(Value &r, Value &s)
 {
-	return i642s(*(long long*)s.data);
+	r.init(TypeString);
+	r.as_string() = i642s(s.as_int64());
 }
-string CastFloat2StringP(string &s)
+void CastFloat2String(Value &r, Value &s)
 {
-	return f2s(*(float*)s.data, 6);
+	r.init(TypeString);
+	r.as_string() = f2s(s.as_float(), 6);
 }
-string CastFloat642StringP(string &s)
+void CastFloat642String(Value &r, Value &s)
 {
-	return f642s(*(double*)s.data, 6);
+	r.init(TypeString);
+	r.as_string() = f642s(s.as_float64(), 6);
 }
-string CastBool2StringP(string &s)
+void CastBool2String(Value &r, Value &s)
 {
-	return b2s(*(bool*)s.data);
+	r.init(TypeString);
+	r.as_string() = b2s((bool)s.as_int());
 }
-string CastPointer2StringP(string &s)
+void CastPointer2String(Value &r, Value &s)
 {
-	return p2s(*(void**)s.data);
+	r.init(TypeString);
+	r.as_string() = p2s(*(void**)s.p());
 }
 
 Array<TypeCast> TypeCasts;
@@ -984,53 +978,53 @@ void SIAddBasicCommands()
 
 void op_int_add(Value &r, Value &a, Value &b)
 {	r.as_int() = a.as_int() + b.as_int();	}
-void op_int_sub(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data - *(int*)b.data;	}
-void op_int_mul(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data * *(int*)b.data;	}
-void op_int_div(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data / *(int*)b.data;	}
-void op_int_mod(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data % *(int*)b.data;	}
-void op_int_shr(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data >> *(int*)b.data;	}
-void op_int_shl(string &r, string &a, string &b)
-{	r.as_int() = *(int*)a.data << *(int*)b.data;	}
-void op_float_add(string &r, string &a, string &b)
-{	*(float*)r.data = *(float*)a.data + *(float*)b.data;	}
-void op_float_sub(string &r, string &a, string &b)
-{	*(float*)r.data = *(float*)a.data - *(float*)b.data;	}
-void op_float_mul(string &r, string &a, string &b)
-{	*(float*)r.data = *(float*)a.data * *(float*)b.data;	}
-void op_float_div(string &r, string &a, string &b)
-{	*(float*)r.data = *(float*)a.data / *(float*)b.data;	}
+void op_int_sub(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() - b.as_int();	}
+void op_int_mul(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() * b.as_int();	}
+void op_int_div(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() / b.as_int();	}
+void op_int_mod(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() % b.as_int();	}
+void op_int_shr(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() >> b.as_int();	}
+void op_int_shl(Value &r, Value &a, Value &b)
+{	r.as_int() = a.as_int() << b.as_int();	}
+void op_float_add(Value &r, Value &a, Value &b)
+{	r.as_float() = a.as_float() + b.as_float();	}
+void op_float_sub(Value &r, Value &a, Value &b)
+{	r.as_float() = a.as_float() - b.as_float();	}
+void op_float_mul(Value &r, Value &a, Value &b)
+{	r.as_float() = a.as_float() * b.as_float();	}
+void op_float_div(Value &r, Value &a, Value &b)
+{	r.as_float() = a.as_float() / b.as_float();	}
 
-void op_int64_add(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data + *(long long*)b.data;	}
-void op_int64_add_int(string &r, string &a, string &b)
+void op_int64_add(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() + b.as_int64();	}
+void op_int64_add_int(Value &r, Value &a, Value &b)
 {
-	*(long long*)r.data = *(long long*)a.data + *(int*)b.data;
+	r.as_int64() = a.as_int64() + b.as_int();
 }
-void op_int64_sub(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data - *(long long*)b.data;	}
-void op_int64_mul(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data * *(long long*)b.data;	}
-void op_int64_div(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data / *(long long*)b.data;	}
-void op_int64_mod(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data % *(long long*)b.data;	}
-void op_int64_shr(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data >> *(long long*)b.data;	}
-void op_int64_shl(string &r, string &a, string &b)
-{	*(long long*)r.data = *(long long*)a.data << *(long long*)b.data;	}
-void op_float64_add(string &r, string &a, string &b)
-{	*(double*)r.data = *(double*)a.data + *(double*)b.data;	}
-void op_float64_sub(string &r, string &a, string &b)
-{	*(double*)r.data = *(double*)a.data - *(double*)b.data;	}
-void op_float64_mul(string &r, string &a, string &b)
-{	*(double*)r.data = *(double*)a.data * *(double*)b.data;	}
-void op_float64_div(string &r, string &a, string &b)
-{	*(double*)r.data = *(double*)a.data / *(double*)b.data;	}
+void op_int64_sub(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() - b.as_int64();	}
+void op_int64_mul(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() * b.as_int64();	}
+void op_int64_div(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() / b.as_int64();	}
+void op_int64_mod(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() % b.as_int64();	}
+void op_int64_shr(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() >> b.as_int64();	}
+void op_int64_shl(Value &r, Value &a, Value &b)
+{	r.as_int64() = a.as_int64() << b.as_int64();	}
+void op_float64_add(Value &r, Value &a, Value &b)
+{	r.as_float64() = a.as_float64() + b.as_float64();	}
+void op_float64_sub(Value &r, Value &a, Value &b)
+{	r.as_float64() = a.as_float64() - b.as_float64();	}
+void op_float64_mul(Value &r, Value &a, Value &b)
+{	r.as_float64() = a.as_float64() * b.as_float64();	}
+void op_float64_div(Value &r, Value &a, Value &b)
+{	r.as_float64() = a.as_float64() / b.as_float64();	}
 
 void SIAddOperators()
 {
@@ -1307,13 +1301,12 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	add_type_cast(10,	TypeInt,		TypeChar,	"i2c",	(void*)&CastInt2Char);
 	add_type_cast(20,	TypeChar,		TypeInt,	"c2i",	(void*)&CastChar2Int);
 	add_type_cast(50,	TypePointer,	TypeBool,	"p2b",	(void*)&CastPointer2Bool);
-	add_type_cast(50,	TypeInt,		TypeString,	"@i2s",	(void*)&CastInt2StringP);
-	add_type_cast(50,	TypeInt64,		TypeString,	"@i642s",	(void*)&CastInt642StringP);
-	add_type_cast(50,	TypeFloat32,		TypeString,	"@f2sf",	(void*)&CastFloat2StringP);
-	add_type_cast(50,	TypeFloat64,	TypeString,	"@f642sf",	(void*)&CastFloat642StringP);
-	add_type_cast(50,	TypeBool,		TypeString,	"@b2s",	(void*)&CastBool2StringP);
-	add_type_cast(50,	TypePointer,	TypeString,	"p2s",	(void*)&CastPointer2StringP);
-	//add_type_cast(50,	TypeClass,		TypeString,	"@f2s",	(void*)&CastFloat2StringP);
+	add_type_cast(50,	TypeInt,		TypeString,	"@i2s",	(void*)&CastInt2String);
+	add_type_cast(50,	TypeInt64,		TypeString,	"@i642s",	(void*)&CastInt642String);
+	add_type_cast(50,	TypeFloat32,		TypeString,	"@f2sf",	(void*)&CastFloat2String);
+	add_type_cast(50,	TypeFloat64,	TypeString,	"@f642sf",	(void*)&CastFloat642String);
+	add_type_cast(50,	TypeBool,		TypeString,	"@b2s",	(void*)&CastBool2String);
+	add_type_cast(50,	TypePointer,	TypeString,	"p2s",	(void*)&CastPointer2String);
 	add_type_cast(50,	TypeIntList,	TypeString,	"@ia2s",	NULL);
 	add_type_cast(50,	TypeFloatList,	TypeString,	"@fa2s",	NULL);
 	add_type_cast(50,	TypeBoolList,	TypeString,	"@ba2s",	NULL);

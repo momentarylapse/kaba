@@ -10,7 +10,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, Class *t)
 	if (t->vtable.num > 0){
 		Node *p = shift_node(self, true, 0, TypePointer);
 		int nc = AddConstant(TypePointer);
-		(*(void**)constants[nc].value.data) = t->_vtable_location_target_;
+		(*(void**)constants[nc]->value.data) = t->_vtable_location_target_;
 		Node *cmd_0 = add_node_const(nc);
 		Node *c = add_node_operator_by_inline(p, cmd_0, INLINE_POINTER_ASSIGN);
 		f->block->nodes.add(c);
@@ -40,7 +40,7 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Class *t, bool all
 
 	if (t->is_super_array){
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = t->parent->size;
+		constants[nc]->as_int() = t->parent->size;
 		Node *c = add_node_classfunc(t->GetFunc("__mem_init__", TypeVoid, 1, TypeInt), self);
 		c->set_param(0, add_node_const(nc));
 		f->block->nodes.add(c);
@@ -158,7 +158,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		// for_var = 0
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = 0;
+		constants[nc]->as_int() = 0;
 		Node *cmd_0 = add_node_const(nc);
 		Node *cmd_assign0 = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		f->block->nodes.add(cmd_assign0);
@@ -199,7 +199,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		f->block->add_var("i", TypeInt);
 		int nc_num = AddConstant(TypeInt);
-		constants[nc_num].as_int() = t->array_length;
+		constants[nc_num]->as_int() = t->array_length;
 
 		Node *for_var = add_node_local_var(f->__get_var("i"), TypeInt);
 		Node *c_num = add_node_const(nc_num);
@@ -207,7 +207,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		// for_var = 0
 		int nc_0 = AddConstant(TypeInt);
-		constants[nc_0].as_int() = 0;
+		constants[nc_0]->as_int() = 0;
 		Node *cmd_0 = add_node_const(nc_0);
 		Node *cmd_assign0 = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		f->block->nodes.add(cmd_assign0);
@@ -286,7 +286,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 	if (f_del){
 		// for_var = 0
 		int nc = AddConstant(TypeInt);
-		constants[nc].as_int() = 0;
+		constants[nc]->as_int() = 0;
 		Node *cmd_0 = add_node_const(nc);
 		Node *cmd_assign = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		f->block->nodes.add(cmd_assign);
@@ -456,7 +456,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 
 	// resize(self.num + 1)
 	int nc = AddConstant(TypeInt);
-	constants[nc].as_int() = 1;
+	constants[nc]->as_int() = 1;
 	Node *cmd_1 = add_node_const(nc);
 	Node *cmd_add = add_node_operator_by_inline(self_num, cmd_1, INLINE_INT_ADD);
 	Node *cmd_resize = add_node_classfunc(t->GetFunc("resize", TypeVoid, 1, TypeInt), self);
