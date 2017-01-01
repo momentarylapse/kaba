@@ -225,16 +225,16 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 			return c;
 		if (is_address)
 			return c;
-		string temp;
-		temp.resize(f->return_type->size);
+		Value temp;
+		temp.init(f->return_type);
 		Array<void*> p;
 		for (int i=0; i<c->params.num; i++)
-			p.add(constants[c->params[i]->link_no]->value.data);
-		if (!call_function(f, ff, temp.data, inst, p))
+			p.add(constants[c->params[i]->link_no]->p());
+		if (!call_function(f, ff, temp.p(), inst, p))
 			return c;
 		int nc = AddConstant(f->return_type);
-		constants[nc]->value = temp;
-		DoError("...pure function evaluation?!?....TODO");
+		constants[nc]->set(temp);
+		//DoError("...pure function evaluation?!?....TODO");
 		return add_node_const(nc);
 #endif
 	}else if (c->kind == KIND_ARRAY_BUILDER){
