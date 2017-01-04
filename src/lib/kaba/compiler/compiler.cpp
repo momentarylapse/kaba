@@ -458,6 +458,39 @@ void import_includes(Script *s)
 	}
 }
 
+void Script::LinkFunctions()
+{
+	for (Asm::WantedLabel &l: functions_to_link){
+		string name = l.name.substr(10, -1);
+		bool found = false;
+		foreachi(Function *f, syntax->functions, i)
+			if (f->name == name){
+				*(int*)&opcode[l.pos] = (long)func[i] - (syntax->asm_meta_info->code_origin + l.pos + 4);
+				found = true;
+				break;
+			}
+		if (!found)
+			DoErrorLink("could not link function: " + name);
+	}
+	for (int n: function_vars_to_link){
+		long p = (n + 0xefef0000);
+		long q = (long)func[n];
+		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
+			DoErrorLink("could not link function as variable: " + syntax->functions[n]->name);
+	}
+
+
+	// link virtual functions into vtables
+	for (Class *t: syntax->classes){
+		t->LinkVirtualTable();
+
+		if (config.compile_os){
+			for (int i=0; i<t->vtable.num; i++)
+				memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
+		}
+	}
+}
+
 // generate opcode
 void Script::Compiler()
 {
@@ -512,34 +545,7 @@ void Script::Compiler()
 	CompileFunctions(opcode, opcode_size);
 
 // link functions
-	for (Asm::WantedLabel &l: functions_to_link){
-		string name = l.name.substr(10, -1);
-		bool found = false;
-		foreachi(Function *f, syntax->functions, i)
-			if (f->name == name){
-				*(int*)&opcode[l.pos] = (long)func[i] - (syntax->asm_meta_info->code_origin + l.pos + 4);
-				found = true;
-				break;
-			}
-		if (!found)
-			DoErrorLink("could not link function: " + name);
-	}
-	for (int n: function_vars_to_link){
-		long p = (n + 0xefef0000);
-		long q = (long)func[n];
-		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
-			DoErrorLink("could not link function as variable: " + syntax->functions[n]->name);
-	}
-
-// link virtual functions into vtables
-	for (Class *t: syntax->classes){
-		t->LinkVirtualTable();
-
-		if (config.compile_os){
-			for (int i=0; i<t->vtable.num; i++)
-				memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
-		}
-	}
+	LinkFunctions();
 
 
 // "task" for the first execution of main() -> ThreadOpcode
