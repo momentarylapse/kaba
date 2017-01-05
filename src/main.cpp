@@ -54,6 +54,24 @@ void output_to_file_elf(Kaba::Script *s, const string &out_file)
 	if (!f)
 		exit(1);
 	f->SetBinaryMode(true);
+	f->WriteChar(0x7f);
+	f->WriteChar('E');
+	f->WriteChar('L');
+	f->WriteChar('F');
+	f->WriteChar(0x02); // 64 bit
+	f->WriteChar(0x01); // little-endian
+	f->WriteChar(0x01); // version
+	for (int i=0; i<9; i++)
+		f->WriteChar(0x00);
+	f->WriteWord(0x0003); // 3=shared... 2=exec
+	f->WriteWord(0x003e); // machine
+	f->WriteInt(1); // version
+
+	f->WriteInt(0);	f->WriteInt(0);// entry point
+	f->WriteInt(0x40);	f->WriteInt(0x00); // program header table offset
+	f->WriteInt(0x00);	f->WriteInt(0x00); // section header table
+	f->WriteInt(0); // flags
+	f->WriteWord(64); // header size
 	f->WriteBuffer(s->opcode, s->opcode_size);
 	delete(f);
 }
