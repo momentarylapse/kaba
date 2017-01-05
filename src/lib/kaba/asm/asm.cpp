@@ -1853,10 +1853,10 @@ void InitX86()
 	add_inst(INST_UCOMISD,   0x2e0f66, 3, -1, Xx, XMq);
 
 	if (set == INSTRUCTION_SET_AMD64){
-		add_inst(INST_SYSCALL,	0x050f, 2, 0, -1, -1, -1);
-		add_inst(INST_SYSRET,	0x070f, 2, 0, -1, -1, -1);
-		add_inst(INST_SYSENTER,	0x340f, 2, 0, -1, -1, -1);
-		add_inst(INST_SYSEXIT,	0x350f, 2, 0, -1, -1, -1);
+		add_inst(INST_SYSCALL,	0x050f, 2, -1, -1, -1);
+		add_inst(INST_SYSRET,	0x070f, 2, -1, -1, -1);
+		add_inst(INST_SYSENTER,	0x340f, 2, -1, -1, -1);
+		add_inst(INST_SYSEXIT,	0x350f, 2, -1, -1, -1);
 	}
 }
 

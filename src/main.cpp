@@ -38,7 +38,17 @@ void execute(Kaba::Script *s, Array<string> &arg)
 	Kaba::Remove(s);
 }
 
-void dump_to_file(Kaba::Script *s, const string &out_file)
+void output_to_file_raw(Kaba::Script *s, const string &out_file)
+{
+	File *f = FileCreate(out_file);
+	if (!f)
+		exit(1);
+	f->SetBinaryMode(true);
+	f->WriteBuffer(s->opcode, s->opcode_size);
+	delete(f);
+}
+
+void output_to_file_elf(Kaba::Script *s, const string &out_file)
 {
 	File *f = FileCreate(out_file);
 	if (!f)
@@ -113,6 +123,7 @@ int hui_main(const Array<string> &arg0)
 	long long code_origin = 0;
 	bool flag_no_function_frames = false;
 	bool flag_add_entry_point = false;
+	string output_format = "raw";
 
 	bool error = false;
 
@@ -185,6 +196,18 @@ int hui_main(const Array<string> &arg0)
 			}
 			out_file = arg[i];
 			arg.erase(i --);
+		}else if (arg[i] == "--output-format"){
+			arg.erase(i);
+			if (i >= arg.num){
+				msg_error("format 'raw' or 'elf' after --output-format expected");
+				return -1;
+			}
+			output_format = arg[i];
+			if ((output_format != "raw") and (output_format != "elf")){
+				msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
+				return -1;
+			}
+			arg.erase(i --);
 		}else if (arg[i] == "--export-symbols"){
 			arg.erase(i);
 			if (i >= arg.num){
@@ -201,8 +224,24 @@ int hui_main(const Array<string> &arg0)
 			}
 			symbols_in_file = arg[i];
 			arg.erase(i --);
+		}else if ((arg[i] == "--help") or (arg[i] == "-h")){
+			msg_write("options:");
+			msg_write("--version, -v");
+			msg_write("--verbose");
+			msg_write("--disasm");
+			msg_write("--os");
+			msg_write("--gui, -g");
+			msg_write("--no-std-lib");
+			msg_write("--no-function-frames");
+			msg_write("--add-entry-point");
+			msg_write("--code-origin <OFFSET>");
+			msg_write("--variable-offset <OFFSET>");
+			msg_write("--export-symbols <FILE>");
+			msg_write("--import-symbols <FILE>");
+			msg_write("-o <FILE>");
+			msg_write("--output-format {raw,elf}");
 		}else if (arg[i][0] == '-'){
-			msg_error("unbekannte Option: " + arg[i]);
+			msg_error("unknown option: " + arg[i]);
 			return -1;
 		}else{
 			break;
@@ -254,7 +293,10 @@ int hui_main(const Array<string> &arg0)
 		if (symbols_out_file.num > 0)
 			export_symbols(s, symbols_out_file);
 		if (out_file.num > 0){
-			dump_to_file(s, out_file);
+			if (output_format == "raw")
+				output_to_file_raw(s, out_file);
+			else if (output_format == "elf")
+				output_to_file_elf(s, out_file);
 
 			if (flag_disassemble)
 				msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
