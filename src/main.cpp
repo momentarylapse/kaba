@@ -53,7 +53,12 @@ void output_to_file_elf(Kaba::Script *s, const string &out_file)
 	File *f = FileCreate(out_file);
 	if (!f)
 		exit(1);
+
+	bool is64bit = (Kaba::config.pointer_size == 8);
+
 	f->SetBinaryMode(true);
+
+	// 16b header
 	f->WriteChar(0x7f);
 	f->WriteChar('E');
 	f->WriteChar('L');
@@ -63,17 +68,37 @@ void output_to_file_elf(Kaba::Script *s, const string &out_file)
 	f->WriteChar(0x01); // version
 	for (int i=0; i<9; i++)
 		f->WriteChar(0x00);
+
 	f->WriteWord(0x0003); // 3=shared... 2=exec
-	f->WriteWord(0x003e); // machine
+	if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
+		f->WriteWord(0x003e); // machine
+	}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_X86){
+		f->WriteWord(0x0003); // machine
+	}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		f->WriteWord(0x0028); // machine
+	}
 	f->WriteInt(1); // version
 
-	f->WriteInt(0);	f->WriteInt(0);// entry point
-	f->WriteInt(0x40);	f->WriteInt(0x00); // program header table offset
-	f->WriteInt(0x00);	f->WriteInt(0x00); // section header table
+	if (is64bit){
+		f->WriteInt(0);	f->WriteInt(0);// entry point
+		f->WriteInt(0x40);	f->WriteInt(0x00); // program header table offset
+		f->WriteInt(0x00);	f->WriteInt(0x00); // section header table
+	}else{
+		f->WriteInt(0);// entry point
+		f->WriteInt(0x00); // program header table offset
+		f->WriteInt(0x00); // section header table
+	}
 	f->WriteInt(0); // flags
-	f->WriteWord(64); // header size
-	f->WriteBuffer(s->opcode, s->opcode_size);
+	f->WriteWord(is64bit ? 64 : 52); // header size
+	f->WriteWord(0); // prog header size
+	f->WriteWord(0); // # prog header table entries
+	f->WriteWord(0); // size of section header entry table
+	f->WriteWord(0); // # section headers
+	f->WriteWord(0); // names entry section header index
+	//f->WriteBuffer(s->opcode, s->opcode_size);
 	delete(f);
+
+	system(("chmod a+x " + out_file).c_str());
 }
 
 void export_symbols(Kaba::Script *s, const string &symbols_out_file)
