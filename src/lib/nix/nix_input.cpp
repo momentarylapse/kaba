@@ -33,7 +33,7 @@ void NixOnEvent()
 {
 	HuiEvent *e = HuiGetEvent();
 	//msg_write(e->message);
-	_NixMouseDSum += vector(e->dx, e->dy, e->dz);
+	_NixMouseDSum += vector(e->dx, e->dy, e->scroll_y);
 	if (e->message == "hui:mouse-move"){
 		NixInputAccum.x = e->mx;
 		NixInputAccum.y = e->my;
@@ -140,7 +140,7 @@ void NixGetInputFromWindow()
 				}
 				break;
 			case WM_MOUSEWHEEL:
-				NixWindow->InputData.dz+=(short)HIWORD(wParam);
+				NixWindow->InputData.scroll_y+=(short)HIWORD(wParam);
 				break;
 			case WM_LBUTTONDOWN:
 				SetCapture(NixWindow->hWnd);
@@ -245,7 +245,7 @@ void NixUpdateInput()
 
 		NixInputDataCurrent.dx = _NixMouseDSum.x;
 		NixInputDataCurrent.dy = _NixMouseDSum.y;
-		NixInputDataCurrent.dz = _NixMouseDSum.z;
+		NixInputDataCurrent.scroll_y = _NixMouseDSum.z;
 		NixInputDataCurrent.x += _NixMouseDSum.x;
 		NixInputDataCurrent.y += _NixMouseDSum.y;
 		NixInputDataCurrent.x = clampf(NixInputDataCurrent.x, 0, (float)NixTargetWidth - 1);
@@ -261,8 +261,8 @@ void NixUpdateInput()
 	
 	NixMouse = vector(NixInputDataCurrent.x, NixInputDataCurrent.y, 0);
 	NixMouseRel = vector((float)NixInputDataCurrent.x / (float)NixTargetWidth, (float)NixInputDataCurrent.y / (float)NixTargetHeight, 0);
-	NixMouseD = vector(NixInputDataCurrent.dx, NixInputDataCurrent.dy, NixInputDataCurrent.dz);
-	NixMouseDRel = vector((float)NixInputDataCurrent.dx / (float)NixTargetWidth, (float)NixInputDataCurrent.dy / (float)NixTargetHeight, NixInputDataCurrent.dz);
+	NixMouseD = vector(NixInputDataCurrent.dx, NixInputDataCurrent.dy, NixInputDataCurrent.scroll_y);
+	NixMouseDRel = vector((float)NixInputDataCurrent.dx / (float)NixTargetWidth, (float)NixInputDataCurrent.dy / (float)NixTargetHeight, NixInputDataCurrent.scroll_y);
 
 	_NixMouseDSum = v_0;
 }
