@@ -71,7 +71,7 @@ public:
 				msg_write("Bibliothek-Version: " + Kaba::LibVersion);
 				msg_write("Hui-Version: " + hui::Version);
 				msg_left();
-				return true;
+				return false;
 			}else if ((arg[i] == "--gui") or (arg[i] == "-g")){
 				use_gui = true;
 				arg.erase(i --);
