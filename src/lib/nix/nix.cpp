@@ -11,9 +11,10 @@
 | last update: 2009.10.03 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
 #include "nix.h"
+
+#include "../hui/Controls/Control.h"
+#include "../hui/Controls/ControlDrawingArea.h"
 #include "nix_common.h"
-#include "../hui/Controls/HuiControl.h"
-#include "../hui/Controls/HuiControlDrawingArea.h"
 
 
 string NixVersion = "0.12.0.3";
@@ -94,14 +95,14 @@ int xerrorhandler(Display *dsp, XErrorEvent *error)
 	XGetErrorText(dsp, error->error_code, errorstring, 128);
 
 	msg_error(string("X error: ") + errorstring);
-	HuiRaiseError(string("X error: ") + errorstring);
+	hui::RaiseError(string("X error: ") + errorstring);
 	exit(-1);
 }
 #endif
 
 
 // environment
-HuiWindow *NixWindow;
+hui::Window *NixWindow;
 string NixControlID;
 bool NixUsable,NixDoingEvilThingsToTheDevice;
 
@@ -225,20 +226,20 @@ void CreateFontGlyphWidth()
 	HFONT hFont=CreateFont(	NixFontHeight,0,0,0,FW_EXTRALIGHT,FALSE,
 							FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
 							CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,
-							VARIABLE_PITCH,hui_tchar_str(NixFontName));
+							VARIABLE_PITCH,hui::hui_tchar_str(NixFontName));
 	SelectObject(hDC,hFont);
 	unsigned char str[5];
 	SIZE size;
 	for(int c=0;c<255;c++){
 		str[0]=c;
 		str[1]=0;
-		GetTextExtentPoint32(hDC,hui_tchar_str((char*)str),1,&size);
+		GetTextExtentPoint32(hDC,hui::hui_tchar_str((char*)str),1,&size);
 		NixFontGlyphWidth[c]=size.cx;
 	}
 	DeleteObject(hFont);
 #endif
 #ifdef OS_LINUX
-	//XQueryTextExtents(hui_x_display, );
+	//XQueryTextExtents(hui::x_display, );
 	memset(NixFontGlyphWidth, 0, sizeof(NixFontGlyphWidth));
 	for(int c=0;c<255;c++)
 		NixFontGlyphWidth[c] = XTextWidth(x_font, (char*)&c, 1);
@@ -309,10 +310,10 @@ int attrListDblAccum[]={
 XVisualInfo *choose_visual()
 {
 	msg_db_f("choose_visual", 1);
-	int screen = DefaultScreen(hui_x_display);
+	int screen = DefaultScreen(hui::x_display);
 
-	HuiControl *c = NixWindow->_get_control_(NixControlID);
-	HuiControlDrawingArea *da = dynamic_cast<HuiControlDrawingArea*>(c);
+	hui::Control *c = NixWindow->_get_control_(NixControlID);
+	hui::ControlDrawingArea *da = dynamic_cast<hui::ControlDrawingArea*>(c);
 	GtkWidget *gl_widget = c->widget;
 	if (gtk_widget_get_realized(gl_widget)){
 		msg_error("realized -> reset");
@@ -326,18 +327,18 @@ XVisualInfo *choose_visual()
 	msg_write(gdk_visualid);*/
 
 	// let glx select a visual
-	XVisualInfo *vi = glXChooseVisual(hui_x_display, screen, attrListDblAccum);
+	XVisualInfo *vi = glXChooseVisual(hui::x_display, screen, attrListDblAccum);
 	if (vi){
 		msg_db_m("-doublebuffered + accum", 1);
 		NixGLDoubleBuffered = true;
 	}else{
-		vi = glXChooseVisual(hui_x_display, screen, attrListDbl);
+		vi = glXChooseVisual(hui::x_display, screen, attrListDbl);
 		if (vi){
 			msg_db_m("-doublebuffered", 1);
 			NixGLDoubleBuffered = true;
 		}else{
 			msg_error("only singlebuffered visual!");
-			vi = glXChooseVisual(hui_x_display, screen, attrListSgl);
+			vi = glXChooseVisual(hui::x_display, screen, attrListSgl);
 			NixGLDoubleBuffered = false;
 		}
 	}
@@ -385,12 +386,12 @@ XVisualInfo *choose_visual()
 	int n_fb_conf;
 	GLXFBConfig *fb_conf;
 	if (NixGLDoubleBuffered)
-		fb_conf = glXChooseFBConfig(hui_x_display, screen, attrListDbl, &n_fb_conf);
+		fb_conf = glXChooseFBConfig(hui::x_display, screen, attrListDbl, &n_fb_conf);
 	else
-		fb_conf = glXChooseFBConfig(hui_x_display, screen, attrListSgl, &n_fb_conf);
+		fb_conf = glXChooseFBConfig(hui::x_display, screen, attrListSgl, &n_fb_conf);
 	for (int i=0;i<n_fb_conf;i++){
 		int value;
-		if (glXGetFBConfigAttrib(hui_x_display, fb_conf[i], GLX_VISUAL_ID, &value) == Success)
+		if (glXGetFBConfigAttrib(hui::x_display, fb_conf[i], GLX_VISUAL_ID, &value) == Success)
 			if (value == gdk_visualid){
 				msg_db_m("  -> match!", 1);
 				//msg_write("-----------hurraaaaaaaaaaaaaa");
@@ -404,7 +405,7 @@ XVisualInfo *choose_visual()
 #endif
 
 
-void NixInit(const string &api, HuiWindow *win, const string &id)
+void NixInit(const string &api, hui::Window *win, const string &id)
 {
 	NixUsable = false;
 	if (!msg_inited)
@@ -447,22 +448,22 @@ void NixInit(const string &api, HuiWindow *win, const string &id)
 	#ifdef NIX_ALLOW_FULLSCREEN
 		XF86VidModeModeInfo **modes;
 		int NumModes;
-		screen = DefaultScreen(hui_x_display);
-		XF86VidModeGetAllModeLines(hui_x_display, screen, &NumModes, &modes);
+		screen = DefaultScreen(hui::x_display);
+		XF86VidModeGetAllModeLines(hui::x_display, screen, &NumModes, &modes);
 		original_mode = modes[0];
 		NixDesktopWidth = modes[0]->hdisplay;
 		NixDesktopHeight = modes[0]->vdisplay;
 		NixDesktopDepth = modes[0]->hdisplay;
 	#else
-		NixDesktopWidth = XDisplayWidth(hui_x_display, 0);
-		NixDesktopHeight = XDisplayHeight(hui_x_display, 0);
+		NixDesktopWidth = XDisplayWidth(hui::x_display, 0);
+		NixDesktopHeight = XDisplayHeight(hui::x_display, 0);
 		NixDesktopDepth = 32;
 	#endif
 	/*if (NixWindow){
 		Window SomeWindow;
 		int x,y;
 		unsigned int w,h,borderDummy,x_depth;
-		XGetGeometry(hui_x_display,GDK_WINDOW_XWINDOW(NixWindow->window->window),&SomeWindow,&x,&y,&w,&h,&borderDummy,&x_depth);
+		XGetGeometry(hui::x_display,GDK_WINDOW_XWINDOW(NixWindow->window->window),&SomeWindow,&x,&y,&w,&h,&borderDummy,&x_depth);
 		NixDesktopDepth=x_depth;
 		//msg_write(format("Desktop: %dx%dx%d\n",NixDesktopWidth,NixDesktopHeight,NixDesktopDepth),0);
 	}*/
@@ -555,9 +556,9 @@ void NixKill()
 		#ifdef OS_LINUX
 			msg_write("Restore Video Mode");
 			int r = system(format("xrandr --size %dx%d", NixDesktopWidth, NixDesktopHeight).c_str());
-			/*bool b=XF86VidModeSwitchToMode(hui_x_display,screen,original_mode);
-			XFlush(hui_x_display);
-			XF86VidModeSetViewPort(hui_x_display,screen,0,0);*/
+			/*bool b=XF86VidModeSwitchToMode(hui::x_display,screen,original_mode);
+			XFlush(hui::x_display);
+			XF86VidModeSetViewPort(hui::x_display,screen,0,0);*/
 		#endif
 	}
 	if (NixWindow){
@@ -594,7 +595,7 @@ bool nixDevNeedsUpdate = true;
 void set_video_mode_gl(int xres, int yres)
 {
 	msg_db_f("set_video_mode_gl", 1);
-	HuiControl *c = NixWindow->_get_control_(NixControlID);
+	hui::Control *c = NixWindow->_get_control_(NixControlID);
 	gtk_widget_set_double_buffered(c->widget, false);
 
 
@@ -667,19 +668,19 @@ void set_video_mode_gl(int xres, int yres)
 	#endif
 #endif
 		if (!hDC){
-			HuiErrorBox(NixWindow, "Fehler", "GetDC..." + i2s(GetLastError()));
+			ErrorBox(NixWindow, "Fehler", "GetDC..." + i2s(GetLastError()));
 			exit(0);
 		}
 		OGLPixelFormat = ChoosePixelFormat(hDC, &pfd);
 		SetPixelFormat(hDC, OGLPixelFormat, &pfd);
 		hRC=wglCreateContext(hDC);
 		if (!hRC){
-			HuiErrorBox(NixWindow, "Fehler", "wglCreateContext...");
+			ErrorBox(NixWindow, "Fehler", "wglCreateContext...");
 			exit(0);
 		}
 		int rr=wglMakeCurrent(hDC, hRC);
 		if (rr != 1){
-			HuiErrorBox(NixWindow, "Fehler", "wglMakeCurrent...");
+			ErrorBox(NixWindow, "Fehler", "wglMakeCurrent...");
 			exit(0);
 		}
 
@@ -692,31 +693,31 @@ void set_video_mode_gl(int xres, int yres)
 		XVisualInfo *vi = choose_visual();
 #if 0
 	//Colormap cmap;
-		_hui_x_display_ = GDK_WINDOW_XDISPLAY(NixWindow->gl_widget->window);
-		printf("display %p\n", hui_x_display);
+		_hui::x_display_ = GDK_WINDOW_XDISPLAY(NixWindow->gl_widget->window);
+		printf("display %p\n", hui::x_display);
 			#ifdef NIX_ALLOW_FULLSCREEN
 				XF86VidModeModeInfo **modes;
 				int num_modes;
 				int best_mode = 0;
 	//XSetWindowAttributes attr;
 		msg_write("a2");
-				XF86VidModeGetAllModeLines(hui_x_display, screen, &num_modes, &modes);
+				XF86VidModeGetAllModeLines(hui::x_display, screen, &num_modes, &modes);
 				msg_write("b");
 				for (int i=0;i<num_modes;i++)
 					if ((modes[i]->hdisplay == xres) && (modes[i]->vdisplay == yres))
 						best_mode = i;
 			#endif
-			vi = glXChooseVisual(hui_x_display, screen, attrListDbl);
+			vi = glXChooseVisual(hui::x_display, screen, attrListDbl);
 		msg_write("c");
 			if (vi){
 				msg_db_m("-doublebuffered", 1);
 				NixGLDoubleBuffered = true;
 			}else{
 				msg_error("only singlebuffered visual!");
-				vi = glXChooseVisual(hui_x_display, screen, attrListSgl);
+				vi = glXChooseVisual(hui::x_display, screen, attrListSgl);
 				NixGLDoubleBuffered = false;
 			}
-			context = glXCreateContext(hui_x_display, vi, 0, GL_TRUE);
+			context = glXCreateContext(hui::x_display, vi, 0, GL_TRUE);
 		msg_write(p2s(context));
 		msg_write("d");
 	//cmap=XCreateColormap(display,RootWindow(display,vi->screen),vi->visual,AllocNone);
@@ -725,8 +726,8 @@ void set_video_mode_gl(int xres, int yres)
 	//Window win=GDK_WINDOW_XWINDOW(NixWindow->window->window);
 #endif
 		Window win = GDK_WINDOW_XID(gtk_widget_get_window(c->widget));
-		context = glXCreateContext(hui_x_display, vi, 0, GL_TRUE);
-		glXMakeCurrent(hui_x_display, win, context);
+		context = glXCreateContext(hui::x_display, vi, 0, GL_TRUE);
+		glXMakeCurrent(hui::x_display, win, context);
 		TestGLError("glXMakeCurrent");
 
 
@@ -734,9 +735,9 @@ void set_video_mode_gl(int xres, int yres)
 
 
     /* get a connection */
-    _hui_x_display_ = XOpenDisplay(0);
-    screen = DefaultScreen(hui_x_display);
-//    XF86VidModeQueryVersion(hui_x_display, &vidModeMajorVersion, &vidModeMinorVersion);
+    _hui::x_display_ = XOpenDisplay(0);
+    screen = DefaultScreen(hui::x_display);
+//    XF86VidModeQueryVersion(hui::x_display, &vidModeMajorVersion, &vidModeMinorVersion);
  //   printf("XF86VidModeExtension-Version %d.%d\n", vidModeMajorVersion,       vidModeMinorVersion);
 //    XF86VidModeGetAllModeLines(GLWin.dpy, GLWin.screen, &modeNum, &modes);
     /* save desktop-resolution before switching modes */
@@ -752,10 +753,10 @@ void set_video_mode_gl(int xres, int yres)
     }
 #endif
     /* get an appropriate visual */
-    vi = glXChooseVisual(hui_x_display, screen, attrListDbl);
+    vi = glXChooseVisual(hui::x_display, screen, attrListDbl);
     if (vi == NULL)
     {
-        vi = glXChooseVisual(hui_x_display, screen, attrListSgl);
+        vi = glXChooseVisual(hui::x_display, screen, attrListSgl);
         printf("Only Singlebuffered Visual!\n");
     }
     else
@@ -765,56 +766,56 @@ void set_video_mode_gl(int xres, int yres)
    // glXQueryVersion(GLWin.dpy, &glxMajorVersion, &glxMinorVersion);
    // printf("glX-Version %d.%d\n", glxMajorVersion, glxMinorVersion);
     /* create a GLX context */
-    context = glXCreateContext(hui_x_display, vi, 0, GL_TRUE);
+    context = glXCreateContext(hui::x_display, vi, 0, GL_TRUE);
     /* create a color map */
 		
 
 
-		printf("screen %d\n", DefaultScreen(hui_x_display));
+		printf("screen %d\n", DefaultScreen(hui::x_display));
     XSetWindowAttributes attr;
-		Window root = RootWindow(hui_x_display, 0);
-    attr.colormap = XCreateColormap(hui_x_display, root, vi->visual, AllocNone);
+		Window root = RootWindow(hui::x_display, 0);
+    attr.colormap = XCreateColormap(hui::x_display, root, vi->visual, AllocNone);
     attr.border_pixel = 0;
 
 int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
             StructureNotifyMask;
-        win = XCreateWindow(hui_x_display, RootWindow(hui_x_display, vi->screen),
+        win = XCreateWindow(hui::x_display, RootWindow(hui::x_display, vi->screen),
             0, 0, 800, 600, 0, vi->depth, InputOutput, vi->visual,
             CWBorderPixel | CWColormap | CWEventMask, &attr);
         /* only set window title and handle wm_delete_events if in windowed mode */
-        Atom wmDelete = XInternAtom(hui_x_display, "WM_DELETE_WINDOW", True);
-        XSetWMProtocols(hui_x_display, win, &wmDelete, 1);
-        XSetStandardProperties(hui_x_display, win, "test",
+        Atom wmDelete = XInternAtom(hui::x_display, "WM_DELETE_WINDOW", True);
+        XSetWMProtocols(hui::x_display, win, &wmDelete, 1);
+        XSetStandardProperties(hui::x_display, win, "test",
             "test", None, NULL, 0, NULL);
-        XMapRaised(hui_x_display, win);
+        XMapRaised(hui::x_display, win);
 
 
 		
 			if ((long)win < 1000)
 				msg_error("no GLX window found");
-			//XSelectInput(hui_x_display,win, ExposureMask | KeyPress | KeyReleaseMask | StructureNotifyMask);
+			//XSelectInput(hui::x_display,win, ExposureMask | KeyPress | KeyReleaseMask | StructureNotifyMask);
 
 			// set video mode
 			if (NixFullscreen){
-				/*XF86VidModeSwitchToMode(hui_x_display, screen, modes[best_mode]);
-				XFlush(hui_x_display);
+				/*XF86VidModeSwitchToMode(hui::x_display, screen, modes[best_mode]);
+				XFlush(hui::x_display);
 				int x, y;
-				XF86VidModeGetViewPort(hui_x_display, screen, &x, &y);
+				XF86VidModeGetViewPort(hui::x_display, screen, &x, &y);
 				printf("view port:    %d %d\n", x, y);
-				XF86VidModeSetViewPort(hui_x_display, screen, 0, 0);
-				XFlush(hui_x_display);
-				XF86VidModeGetViewPort(hui_x_display, screen, &x, &y);
+				XF86VidModeSetViewPort(hui::x_display, screen, 0, 0);
+				XFlush(hui::x_display);
+				XF86VidModeGetViewPort(hui::x_display, screen, &x, &y);
 				printf("view port:    %d %d\n", x, y);
-				//XF86VidModeSetViewPort(hui_x_display, screen, 0, NixDesktopHeight - yres);
+				//XF86VidModeSetViewPort(hui::x_display, screen, 0, NixDesktopHeight - yres);
 				printf("Resolution %d x %d\n", modes[best_mode]->hdisplay, modes[best_mode]->vdisplay);
 				XFree(modes);*/
 				int r = system(format("xrandr --size %dx%d", xres, yres));
-				XWarpPointer(hui_x_display, None, win, 0, 0, 0, 0, xres / 2, yres / 2);
+				XWarpPointer(hui::x_display, None, win, 0, 0, 0, 0, xres / 2, yres / 2);
 			}
 		msg_write("e");
-			glXMakeCurrent(hui_x_display, win, context);
+			glXMakeCurrent(hui::x_display, win, context);
 #endif
-		if (glXIsDirect(hui_x_display, context)){
+		if (glXIsDirect(hui::x_display, context)){
 			msg_db_m("-direct rendering",1);
 		}else
 			msg_error("-no direct rendering!");
@@ -849,11 +850,11 @@ int event_mask = ExposureMask | KeyPressMask | ButtonPressMask |
 	}
     font = fontInfo->fid;*/ 
 			//font=XLoadFont(display,"-adobe-new century schoolbook-medium-r-normal--14-140-75-75-p-82-iso8859-1");
-		x_font=XLoadQueryFont(hui_x_display,"*century*medium-r-normal*--14*");
+		x_font=XLoadQueryFont(hui::x_display,"*century*medium-r-normal*--14*");
 		if (!x_font)
-			x_font = XLoadQueryFont(hui_x_display,"*medium-r-normal*--14*");
+			x_font = XLoadQueryFont(hui::x_display,"*medium-r-normal*--14*");
 		if (!x_font)
-			x_font = XLoadQueryFont(hui_x_display,"*--14*");
+			x_font = XLoadQueryFont(hui::x_display,"*--14*");
 		if (x_font){
 			//msg_write(NixOGLFontDPList);
 			NixOGLFontDPList = 1000;
@@ -1074,9 +1075,9 @@ void NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen)
 void NixTellUsWhatsWrong()
 {
 	if (NixFatalError == FatalErrorNoDirectX9)
-		HuiErrorBox(NixWindow, "DirectX 9 nicht gefunden!","Es tut mir au&serordentlich leid, aber ich hatte Probleme, auf Ihrem\nSystem DirectX 9 zu starten und mich damit zu verbinden!");
+		hui::ErrorBox(NixWindow, "DirectX 9 nicht gefunden!","Es tut mir au&serordentlich leid, aber ich hatte Probleme, auf Ihrem\nSystem DirectX 9 zu starten und mich damit zu verbinden!");
 	if (NixFatalError == FatalErrorNoDevice)
-		HuiErrorBox(NixWindow,"DirectX 9: weder Hardware- noch Softwaremodus!!","Es tut mir au&serordentlich leid, aber ich hatte Probleme, auf Ihrem\nSystem DirectX 9 weder einen Hardware- noch einen Softwaremodus abzuringen!\n...Unerlaubte Afl&osung?");
+		hui::ErrorBox(NixWindow,"DirectX 9: weder Hardware- noch Softwaremodus!!","Es tut mir au&serordentlich leid, aber ich hatte Probleme, auf Ihrem\nSystem DirectX 9 weder einen Hardware- noch einen Softwaremodus abzuringen!\n...Unerlaubte Afl&osung?");
 }
 
 // shoot down windows

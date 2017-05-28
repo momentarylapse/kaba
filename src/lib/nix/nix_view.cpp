@@ -10,7 +10,7 @@
 #ifdef _X_USE_IMAGE_
 #include "../image/image.h"
 #endif
-#include "../hui/Controls/HuiControl.h"
+#include "../hui/Controls/Control.h"
 
 void TestGLError(const string &);
 
@@ -440,12 +440,12 @@ void NixEnd()
 		#ifdef OS_LINUX
 			#ifdef NIX_ALLOW_FULLSCREEN
 				if (NixFullscreen)
-					XF86VidModeSetViewPort(hui_x_display,screen,0,NixDesktopHeight-NixScreenHeight);
+					XF86VidModeSetViewPort(x_display,screen,0,NixDesktopHeight-NixScreenHeight);
 			#endif
 			//glutSwapBuffers();
 			if (NixGLDoubleBuffered){
-				HuiControl *c = NixWindow->_get_control_(NixControlID);
-				glXSwapBuffers(hui_x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
+				hui::Control *c = NixWindow->_get_control_(NixControlID);
+				glXSwapBuffers(hui::x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
 			}
 		#endif
 	}

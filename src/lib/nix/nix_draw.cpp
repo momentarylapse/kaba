@@ -140,8 +140,9 @@ void NixDrawLines(float *x, float *y, int num_lines, bool contiguous, float dept
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}else
+	}else{
 		glLineWidth(NixLineWidth);
+	}
 
 		if (contiguous){
 			glBegin(GL_LINE_STRIP);
