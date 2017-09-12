@@ -159,7 +159,7 @@ Node *SyntaxTree::cp_node(Node *c)
 
 Node *SyntaxTree::ref_node(Node *sub, Class *override_type)
 {
-	Class *t = override_type ? override_type : sub->type->GetPointer();
+	Class *t = override_type ? override_type : sub->type->get_pointer();
 	Node *c = AddNode(KIND_REFERENCE, 0, t);
 	c->set_num_params(1);
 	c->set_param(0, sub);
@@ -607,7 +607,7 @@ Node *SyntaxTree::add_node_const(int nc)
 
 int SyntaxTree::WhichPrimitiveOperator(const string &name)
 {
-	for (int i=0;i<NumPrimitiveOperators;i++)
+	for (int i=0;i<NUM_PRIMITIVE_OPERATORS;i++)
 		if (name == PrimitiveOperators[i].name)
 			return i;
 	return -1;
@@ -651,7 +651,7 @@ Node exlink_make_var_local(SyntaxTree *ps, Class *t, int var_no)
 Node exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 {
 	Node link;
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->GetPointer());
+	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
 	link.type = e.type;
 	link.link_no = e.offset;
 	link.kind = KIND_DEREF_ADDRESS_SHIFT;
@@ -665,7 +665,7 @@ Node exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 Node exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 {
 	Node link;
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->GetPointer());
+	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
 	if (cf.virtual_index >= 0){
 		link.kind = KIND_VIRTUAL_FUNCTION;
 		link.link_no = cf.virtual_index;
@@ -744,7 +744,7 @@ Array<Node> SyntaxTree::GetExistence(const string &name, Block *block)
 		}
 		if (f->_class){
 			if ((name == IDENTIFIER_SUPER) and (f->_class->parent)){
-				links.add(exlink_make_var_local(this, f->_class->parent->GetPointer(), f->__get_var(IDENTIFIER_SELF)));
+				links.add(exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF)));
 				return links;
 			}
 			// class elements (within a class function)
@@ -806,26 +806,31 @@ Class *SyntaxTree::FindType(const string &name)
 	return NULL;
 }
 
-// create a new type?
-Class *SyntaxTree::AddType(Class *type)
+Class *SyntaxTree::CreateNewClass(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Class *sub)
 {
+	// check if it already exists
 	for (Class *t: classes)
-		if (type->name == t->name)
+		if (name == t->name)
 			return t;
 	for (Script *inc: includes)
 		for (Class *t: inc->syntax->classes)
-			if (type->name == t->name)
+			if (name == t->name)
 				return t;
-	Class *t = new Class;
-	*t = *type;
-	t->owner = this;
-	t->name = type->name;
+
+	// add new class
+	Class *t = new Class(name, size, this);
+	t->is_array = is_array and (array_size >= 0);
+	t->is_super_array = is_array and (array_size < 0);
+	t->array_length = max(array_size, 0);
+	t->is_pointer = is_pointer;
+	t->is_silent = is_silent;
+	t->name = name;
+	t->size = size;
+	t->parent = sub;
 	classes.add(t);
-
-
 	if (t->is_super_array){
 		Class *parent = t->parent;
-		t->DeriveFrom(TypeDynamicArray, false);
+		t->derive_from(TypeDynamicArray, false);
 		t->parent = parent;
 		AddFunctionHeadersForClass(t);
 	}else if (t->is_array){
@@ -834,30 +839,16 @@ Class *SyntaxTree::AddType(Class *type)
 	return t;
 }
 
-Class *SyntaxTree::CreateNewType(const string &name, int size, bool is_pointer, bool is_silent, bool is_array, int array_size, Class *sub)
-{
-	Class nt;
-	nt.is_array = is_array and (array_size >= 0);
-	nt.is_super_array = is_array and (array_size < 0);
-	nt.array_length = max(array_size, 0);
-	nt.is_pointer = is_pointer;
-	nt.is_silent = is_silent;
-	nt.name = name;
-	nt.size = size;
-	nt.parent = sub;
-	return AddType(&nt);
-}
-
-Class *SyntaxTree::CreateArrayType(Class *element_type, int num_elements, const string &_name_pre, const string &suffix)
+Class *SyntaxTree::CreateArrayClass(Class *element_type, int num_elements, const string &_name_pre, const string &suffix)
 {
 	string name_pre = _name_pre;
 	if (name_pre.num == 0)
 		name_pre = element_type->name;
 	if (num_elements < 0){
-		return CreateNewType(name_pre + "[]" +  suffix,
+		return CreateNewClass(name_pre + "[]" +  suffix,
 			config.super_array_size, false, false, true, num_elements, element_type);
 	}else{
-		return CreateNewType(name_pre + format("[%d]", num_elements) + suffix,
+		return CreateNewClass(name_pre + format("[%d]", num_elements) + suffix,
 			element_type->size * num_elements, false, false, true, num_elements, element_type);
 	}
 }
@@ -900,7 +891,7 @@ Node *conv_cbr(SyntaxTree *ps, Node *c, int var)
 
 	// convert
 	if ((c->kind == KIND_VAR_LOCAL) and (c->link_no == var)){
-		c->type = c->type->GetPointer();
+		c->type = c->type->get_pointer();
 		return ps->deref_node(c);
 	}
 	return c;
@@ -938,13 +929,13 @@ Node *conv_calls(SyntaxTree *ps, Node *c, int tt)
 
 		// parameters: array/class as reference
 		for (int j=0;j<c->params.num;j++)
-			if (c->params[j]->type->UsesCallByReference()){
+			if (c->params[j]->type->uses_call_by_reference()){
 				c->set_param(j, ps->ref_node(c->params[j]));
 			}
 
 		// return: array reference (-> dereference)
 		if ((c->type->is_array) /*or (c->Type->IsSuperArray)*/){
-			c->type = c->type->GetPointer();
+			c->type = c->type->get_pointer();
 			return ps->deref_node(c);
 			//deref_command_old(this, c);
 		}
@@ -1054,8 +1045,8 @@ void SyntaxTree::ConvertCallByReference()
 		
 		// parameter: array/class as reference
 		for (int j=0;j<f->num_params;j++)
-			if (f->var[j].type->UsesCallByReference()){
-				f->var[j].type = f->var[j].type->GetPointer();
+			if (f->var[j].type->uses_call_by_reference()){
+				f->var[j].type = f->var[j].type->get_pointer();
 
 				// internal usage...
 				foreachi(Node *c, f->block->nodes, i)
@@ -1075,7 +1066,7 @@ void SyntaxTree::ConvertCallByReference()
 
 	// convert return...
 	for (Function *f: functions)
-		if (f->return_type->UsesReturnByMemory())
+		if (f->return_type->uses_return_by_memory())
 			convert_return_by_memory(this, f->block, f);
 
 	// convert function calls
@@ -1143,7 +1134,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		c_offset->type = TypeInt;//TypePointer;
 		// address = &array + offset
 		Node *c_address = add_node_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
-		c_address->type = el_type->GetPointer();//TypePointer;
+		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
 	}else if (c->kind == KIND_POINTER_AS_ARRAY){
@@ -1168,7 +1159,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		c_offset->type = TypeInt;
 		// address = &array + offset
 		Node *c_address = add_node_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
-		c_address->type = el_type->GetPointer();//TypePointer;
+		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
 	}else if (c->kind == KIND_ADDRESS_SHIFT){
@@ -1189,7 +1180,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
-		c_address->type = el_type->GetPointer();//TypePointer;
+		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
 	}else if (c->kind == KIND_DEREF_ADDRESS_SHIFT){
@@ -1209,7 +1200,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_shift = add_node_const(nc);
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
-		c_address->type = el_type->GetPointer();//TypePointer;
+		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
 	}
@@ -1227,7 +1218,7 @@ void SyntaxTree::BreakDownComplicatedCommands()
 
 void MapLVSX86Return(Function *f)
 {
-	if (f->return_type->UsesReturnByMemory()){
+	if (f->return_type->uses_return_by_memory()){
 		foreachi(Variable &v, f->var, i)
 			if (v.name == IDENTIFIER_RETURN_VAR){
 				v._offset = f->_param_size;

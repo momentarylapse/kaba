@@ -165,10 +165,7 @@ void add_package(const string &name, bool used_by_default)
 
 Class *add_type(const string &name, int size, ScriptFlag flag)
 {
-	Class *t = new Class;
-	t->owner = cur_package_script->syntax;
-	t->name = name;
-	t->size = size;
+	Class *t = new Class(name, size, cur_package_script->syntax);
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
 	cur_package_script->syntax->classes.add(t);
@@ -176,10 +173,7 @@ Class *add_type(const string &name, int size, ScriptFlag flag)
 }
 Class *add_type_p(const string &name, Class *sub_type, ScriptFlag flag)
 {
-	Class *t = new Class;
-	t->owner = cur_package_script->syntax;
-	t->name = name;
-	t->size = config.pointer_size;
+	Class *t = new Class(name, config.pointer_size, cur_package_script->syntax);
 	t->is_pointer = true;
 	if ((flag & FLAG_SILENT) > 0)
 		t->is_silent = true;
@@ -189,10 +183,7 @@ Class *add_type_p(const string &name, Class *sub_type, ScriptFlag flag)
 }
 Class *add_type_a(const string &name, Class *sub_type, int array_length)
 {
-	Class *t = new Class;
-	t->owner = cur_package_script->syntax;
-	t->name = name;
-	t->parent = sub_type;
+	Class *t = new Class(name, 0, cur_package_script->syntax, sub_type);
 	if (array_length < 0){
 		// super array
 		t->size = config.super_array_size;
@@ -213,7 +204,6 @@ Class *add_type_a(const string &name, Class *sub_type, int array_length)
 //------------------------------------------------------------------------------------------------//
 
 //   without type information ("primitive")
-int NumPrimitiveOperators = NUM_PRIMITIVE_OPERATORS;
 
 PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
 	{"=",  OPERATOR_ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN},
@@ -390,7 +380,7 @@ void class_add_func_virtual(const string &name, Class *return_type, void *func, 
 
 void class_link_vtable(void *p)
 {
-	cur_class->LinkExternalVirtualTable(p);
+	cur_class->link_external_virtual_table(p);
 }
 
 
@@ -506,16 +496,16 @@ void func_add_param(const string &name, Class *type)
 void script_make_super_array(Class *t, SyntaxTree *ps)
 {
 	Class *parent = t->parent;
-	t->DeriveFrom(TypeDynamicArray, false);
+	t->derive_from(TypeDynamicArray, false);
 	t->parent = parent;
 	add_class(t);
 
-	ClassFunction *sub = t->GetFunc("subarray", TypeDynamicArray, 2);
+	ClassFunction *sub = t->get_func("subarray", TypeDynamicArray, 2);
 	sub->return_type = t;
 
 		// FIXME  wrong for complicated classes
 		if (t->parent->is_simple_class()){
-			if (!t->parent->UsesCallByReference()){
+			if (!t->parent->uses_call_by_reference()){
 				if (t->parent->is_pointer){
 					class_add_func(IDENTIFIER_FUNC_INIT,	TypeVoid, mf(&Array<void*>::__init__));
 					class_add_func("add", TypeVoid, mf(&Array<void*>::add));

@@ -317,29 +317,31 @@ void SIAddPackageHui()
 				func_add_param("id",		TypeString);
 			class_add_func("redraw",								TypeVoid,		mf(&hui::Panel::redraw));
 				func_add_param("id",		TypeString);
-			class_add_func("event",						TypeVoid,		mf(&hui::Panel::_kaba_event));
+			class_add_func("event",						TypeInt,		mf(&hui::Panel::_kaba_event));
 				func_add_param("id",			TypeString);
 				func_add_param("func",			TypePointer);
-			class_add_func("eventO",						TypeVoid,		mf(&hui::Panel::_kaba_eventO));
+			class_add_func("eventO",						TypeInt,		mf(&hui::Panel::_kaba_eventO));
 				func_add_param("id",			TypeString);
 				func_add_param("handler",		TypePointer);
 				func_add_param("func",			TypePointer);
-			class_add_func("eventX",						TypeVoid,		mf(&hui::Panel::_kaba_eventX));
+			class_add_func("eventX",						TypeInt,		mf(&hui::Panel::_kaba_eventX));
 				func_add_param("id",			TypeString);
 				func_add_param("msg",			TypeString);
 				func_add_param("func",			TypePointer);
-			class_add_func("eventOX",						TypeVoid,		mf(&hui::Panel::_kaba_eventOX));
+			class_add_func("eventOX",						TypeInt,		mf(&hui::Panel::_kaba_eventOX));
 				func_add_param("id",			TypeString);
 				func_add_param("msg",			TypeString);
 				func_add_param("handler",		TypePointer);
 				func_add_param("func",			TypePointer);
+			class_add_func("removeEventHandler",		TypeVoid,		mf(&hui::Panel::removeEventHandler));
+				func_add_param("uid",			TypeInt);
 			//class_add_func("beginDraw",								TypeHuiPainterP,		mf(&hui::HuiPanel::beginDraw));
 			//	func_add_param("id",		TypeString);
 			class_set_vtable(hui::Panel);
 
 
 	add_class(TypeHuiWindow);
-		TypeHuiWindow->DeriveFrom(TypeHuiPanel, false);
+		TypeHuiWindow->derive_from(TypeHuiPanel, false);
 		TypeHuiWindow->vtable = TypeHuiPanel->vtable;
 		class_add_func(IDENTIFIER_FUNC_INIT,		TypeVoid,		mf(&hui::Window::__init_ext__), FLAG_OVERRIDE);
 			func_add_param("title",		TypeString);
@@ -401,7 +403,7 @@ void SIAddPackageHui()
 		class_set_vtable(hui::Window);
 
 	add_class(TypeHuiNixWindow);
-		TypeHuiNixWindow->DeriveFrom(TypeHuiWindow, false);
+		TypeHuiNixWindow->derive_from(TypeHuiWindow, false);
 		TypeHuiNixWindow->vtable = TypeHuiWindow->vtable;
 		class_add_func(IDENTIFIER_FUNC_INIT,		TypeVoid,		mf(&hui::NixWindow::__init_ext__), FLAG_OVERRIDE);
 			func_add_param("title",		TypeString);
@@ -413,7 +415,7 @@ void SIAddPackageHui()
 		class_set_vtable(hui::Window);
 
 	add_class(TypeHuiDialog);
-		TypeHuiDialog->DeriveFrom(TypeHuiWindow, false);
+		TypeHuiDialog->derive_from(TypeHuiWindow, false);
 		TypeHuiDialog->vtable = TypeHuiWindow->vtable;
 		class_add_func(IDENTIFIER_FUNC_INIT,		TypeVoid,		mf(&hui::Dialog::__init_ext__), FLAG_OVERRIDE);
 			func_add_param("title",		TypeString);
@@ -425,7 +427,7 @@ void SIAddPackageHui()
 		class_set_vtable(hui::Window);
 
 	add_class(TypeHuiFixedDialog);
-		TypeHuiFixedDialog->DeriveFrom(TypeHuiWindow, false);
+		TypeHuiFixedDialog->derive_from(TypeHuiWindow, false);
 		TypeHuiFixedDialog->vtable = TypeHuiWindow->vtable;
 		class_add_func(IDENTIFIER_FUNC_INIT,		TypeVoid,		mf(&hui::FixedDialog::__init_ext__), FLAG_OVERRIDE);
 			func_add_param("title",		TypeString);

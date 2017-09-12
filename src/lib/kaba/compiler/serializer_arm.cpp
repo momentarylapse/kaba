@@ -29,7 +29,7 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 		params.insert(instance, 0);
 
 	// return as _very_ first parameter
-	if (type->UsesReturnByMemory()){
+	if (type->uses_return_by_memory()){
 		SerialNodeParam ret_ref = AddReference(ret);
 		params.insert(ret_ref, 0);
 	}
@@ -96,7 +96,7 @@ void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
 		return;
 
 	// return > 4b already got copied to [ret] by the function!
-	if ((type != TypeVoid) and (!type->UsesReturnByMemory())){
+	if ((type != TypeVoid) and (!type->uses_return_by_memory())){
 		if (type == TypeFloat32)
 			add_cmd(Asm::INST_MOVSS, ret, param_preg(TypeReg128, Asm::REG_XMM0));
 		else if (type == TypeFloat64)
@@ -188,7 +188,7 @@ void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			break;
 		case STATEMENT_RETURN:
 			if (com->params.num > 0){
-				if (cur_func->return_type->UsesReturnByMemory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
+				if (cur_func->return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
 					FillInDestructorsBlock(block, true);
 					// internally handled...
 
@@ -500,7 +500,7 @@ void SerializerARM::ProcessDereferences()
 					rp.kind = KIND_VAR_LOCAL;
 				else
 					rp.kind = KIND_VAR_TEMP;
-				rp.type = p.type->GetPointer();
+				rp.type = p.type->get_pointer();
 				int r = find_unused_reg(i, i, 4);
 				next_cmd_target(i);
 				add_cmd(Asm::INST_MOV, param_vreg(TypePointer, r), rp);
@@ -716,7 +716,7 @@ void SerializerARM::AddFunctionIntro(Function *f)
 {
 	// return, instance, params
 	Array<Variable> param;
-	if (f->return_type->UsesReturnByMemory()){
+	if (f->return_type->uses_return_by_memory()){
 		for (Variable &v: f->var)
 			if (v.name == IDENTIFIER_RETURN_VAR){
 				param.add(v);

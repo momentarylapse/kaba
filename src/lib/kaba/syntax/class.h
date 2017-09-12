@@ -38,8 +38,8 @@ typedef void *VirtualTable;
 
 class Class{
 public:
-	Class();
-	//Class(const string &name, int size, SyntaxTree *owner);
+	//Class();
+	Class(const string &name, int size, SyntaxTree *owner, Class *parent = NULL);
 	~Class();
 	string name;
 	long long size; // complete size of type
@@ -56,30 +56,30 @@ public:
 	void *_vtable_location_target_; // (opcode offset adjusted)
 
 	bool force_call_by_value;
-	bool UsesCallByReference() const;
-	bool UsesReturnByMemory() const;
+	bool uses_call_by_reference() const;
+	bool uses_return_by_memory() const;
 	bool is_simple_class() const;
 	bool is_size_known() const;
-	Class *GetArrayElement() const;
+	Class *get_array_element() const;
 	bool usable_as_super_array() const;
 	bool needs_constructor() const;
 	bool needs_destructor() const;
-	bool IsDerivedFrom(const Class *root) const;
-	bool IsDerivedFrom(const string &root) const;
-	bool DeriveFrom(const Class *root, bool increase_size);
-	Class *GetPointer() const;
-	Class *GetRoot() const;
-	void AddFunction(SyntaxTree *s, int func_no, bool as_virtual = false, bool override = false);
-	ClassFunction *GetFunc(const string &name, const Class *return_type, int num_params, const Class *param0 = NULL) const;
-	ClassFunction *GetDefaultConstructor() const;
-	ClassFunction *GetComplexConstructor() const;
-	ClassFunction *GetDestructor() const;
-	ClassFunction *GetAssign() const;
-	ClassFunction *GetVirtualFunction(int virtual_index) const;
-	ClassFunction *GetGet(const Class *index) const;
-	void LinkVirtualTable();
-	void LinkExternalVirtualTable(void *p);
-	void *CreateInstance() const;
+	bool is_derived_from(const Class *root) const;
+	bool is_derived_from(const string &root) const;
+	bool derive_from(const Class *root, bool increase_size);
+	Class *get_pointer() const;
+	Class *get_root() const;
+	void add_function(SyntaxTree *s, int func_no, bool as_virtual = false, bool override = false);
+	ClassFunction *get_func(const string &name, const Class *return_type, int num_params, const Class *param0 = NULL) const;
+	ClassFunction *get_default_constructor() const;
+	ClassFunction *get_complex_constructor() const;
+	ClassFunction *get_destructor() const;
+	ClassFunction *get_assign() const;
+	ClassFunction *get_virtual_function(int virtual_index) const;
+	ClassFunction *get_get(const Class *index) const;
+	void link_virtual_table();
+	void link_external_virtual_table(void *p);
+	void *create_instance() const;
 	string var2str(void *p) const;
 };
 extern Class *TypeUnknown;

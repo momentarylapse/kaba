@@ -166,10 +166,10 @@ Node *SyntaxTree::GetOperandExtensionElement(Node *operand, Block *block)
 	if ((type->parent) and (Exp.cur == IDENTIFIER_SUPER)){
 		Exp.next();
 		if (deref){
-			operand->type = type->parent->GetPointer();
+			operand->type = type->parent->get_pointer();
 			return operand;
 		}
-		return ref_node(operand, type->parent->GetPointer());
+		return ref_node(operand, type->parent->get_pointer());
 	}
 
 	// find element
@@ -211,7 +211,7 @@ Node *SyntaxTree::GetOperandExtensionArray(Node *Operand, Block *block)
 	Exp.next();
 
 	// __get__() ?
-	ClassFunction *cf = Operand->type->GetGet(index->type);
+	ClassFunction *cf = Operand->type->get_get(index->type);
 	if (cf){
 		Node *f = add_node_classfunc(cf, ref_node(Operand));
 		f->set_param(0, index);
@@ -242,8 +242,8 @@ Node *SyntaxTree::GetOperandExtensionArray(Node *Operand, Block *block)
 		deref_command_old(this, Operand);
 		array = Operand->param[0];*/
 	}else if (Operand->type->usable_as_super_array()){
-		array = add_node_parray(shift_node(Operand, false, 0, Operand->type->GetPointer()),
-		                           index, Operand->type->GetArrayElement());
+		array = add_node_parray(shift_node(Operand, false, 0, Operand->type->get_pointer()),
+		                           index, Operand->type->get_array_element());
 	}else if (Operand->type->is_pointer){
 		array = add_node_parray(Operand, index, Operand->type->parent->parent);
 	}else{
@@ -337,7 +337,7 @@ Array<Class*> SyntaxTree::GetFunctionWantedParams(Node &link)
 		Function *ff = link.script->syntax->functions[link.link_no];
 		return ff->literal_param_type;
 	}else if (link.kind == KIND_VIRTUAL_FUNCTION){
-		ClassFunction *cf = link.instance->type->parent->GetVirtualFunction(link.link_no);
+		ClassFunction *cf = link.instance->type->parent->get_virtual_function(link.link_no);
 		if (!cf)
 			DoError("FindFunctionSingleParameter: can't find virtual function...?!?");
 		return cf->param_types;
@@ -557,7 +557,7 @@ Node *build_list(SyntaxTree *ps, Array<Node*> &el)
 		ps->DoError("empty arrays not supported yet");
 //	if (el.num > SCRIPT_MAX_PARAMS)
 //		ps->DoError(format("only %d elements in auto arrays supported yet", SCRIPT_MAX_PARAMS));
-	Class *t = ps->CreateArrayType(el[0]->type, -1);
+	Class *t = ps->CreateArrayClass(el[0]->type, -1);
 	Node *c = ps->AddNode(KIND_ARRAY_BUILDER, 0, t);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++){
@@ -607,7 +607,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 		Exp.next();
 		Class *t = ParseType();
 		operand = add_node_statement(STATEMENT_NEW);
-		operand->type = t->GetPointer();
+		operand->type = t->get_pointer();
 		if (Exp.cur == "("){
 			Array<ClassFunction> cfs;
 			for (ClassFunction &cf: t->functions)
@@ -641,7 +641,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 				int _ie=Exp.cur_exp-1;
 				int po = links[0].link_no, o=-1;
 				Node *sub_command = GetOperand(block);
-				Class *r = TypeVoid;
+				//Class *r = TypeVoid;
 				Class *p2 = sub_command->type;
 
 				// exact match?
@@ -650,7 +650,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 					if (po == operators[i].primitive_id)
 						if ((operators[i].param_type_1 == TypeVoid) and (type_match(p2, operators[i].param_type_2))){
 							o = i;
-							r = operators[i].return_type;
+							//r = operators[i].return_type;
 							ok = true;
 							break;
 						}
@@ -666,7 +666,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 							if ((operators[i].param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, operators[i].param_type_2, pen2, c2))){
 								ok = true;
 								if (pen2 < pen_min){
-									r = operators[i].return_type;
+									//r = operators[i].return_type;
 									o = i;
 									pen_min = pen2;
 									c2_best = c2;
@@ -742,7 +742,7 @@ bool type_match_with_cast(Class *given, bool same_chunk, bool is_modifiable, Cla
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (wanted == TypeString){
-		ClassFunction *cf = given->GetFunc("str", TypeString, 0);
+		ClassFunction *cf = given->get_func("str", TypeString, 0);
 		if (cf){
 			penalty = 50;
 			cast = TYPE_CAST_OWN_STRING;
@@ -763,7 +763,7 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 	if (tc < 0)
 		return param;
 	if (tc == TYPE_CAST_OWN_STRING){
-		ClassFunction *cf = param->type->GetFunc("str", TypeString, 0);
+		ClassFunction *cf = param->type->get_func("str", TypeString, 0);
 		if (cf)
 			return ps->add_node_classfunc(cf, ps->ref_node(param));
 		ps->DoError("automatic .str() not implemented yet");
@@ -1060,7 +1060,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	//Exp.next();
 
 	// variable...
-	Class *var_type = for_array->type->GetArrayElement();
+	Class *var_type = for_array->type->get_array_element();
 	int var_no = block->add_var(var_name, var_type);
 	Node *for_var = add_node_local_var(var_no, var_type);
 
@@ -1111,7 +1111,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	Node *array_el;
 	if (for_array->type->usable_as_super_array()){
 		// &array.data[for_index]
-		array_el = add_node_parray(shift_node(cp_node(for_array), false, 0, var_type->GetPointer()),
+		array_el = add_node_parray(shift_node(cp_node(for_array), false, 0, var_type->get_pointer()),
 	                                       	   for_index, var_type);
 	}else{
 		// &array[for_index]
@@ -1125,7 +1125,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	loop_block->nodes.insert(cmd_var_assign, 0);
 
 	// ref...
-	block->function->var[var_no].type = var_type->GetPointer();
+	block->function->var[var_no].type = var_type->get_pointer();
 	foreachi(Node *c, loop_block->nodes, i)
 		loop_block->nodes[i] = conv_cbr(this, c, var_no);
 
@@ -1424,7 +1424,7 @@ void SyntaxTree::ParseClassFunctionHeader(Class *t, bool as_extern, bool as_virt
 		if (f == g)
 			n = i;
 
-	t->AddFunction(this, n, as_virtual, override);
+	t->add_function(this, n, as_virtual, override);
 
 	SkipParsingFunctionBody();
 }
@@ -1462,13 +1462,13 @@ void SyntaxTree::ParseClass()
 	Exp.next();
 
 	// create class and type
-	Class *_class = CreateNewType(name, 0, false, false, false, 0, NULL);
+	Class *_class = CreateNewClass(name, 0, false, false, false, 0, NULL);
 
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS){
 		Exp.next();
 		Class *parent = ParseType(); // force
-		if (!_class->DeriveFrom(parent, true))
+		if (!_class->derive_from(parent, true))
 			DoError(format("parental type in class definition after \"%s\" has to be a class, but (%s) is not", IDENTIFIER_EXTENDS.c_str(), parent->name.c_str()));
 		_offset = parent->size;
 	}
@@ -1693,14 +1693,14 @@ void Function::Update(Class *class_type)
 		literal_param_type[i] = var[i].type;
 
 	// return by memory
-	if (return_type->UsesReturnByMemory())
-		block->add_var(IDENTIFIER_RETURN_VAR, return_type->GetPointer());
+	if (return_type->uses_return_by_memory())
+		block->add_var(IDENTIFIER_RETURN_VAR, return_type->get_pointer());
 
 	// class function
 	_class = class_type;
 	if (class_type){
 		if (__get_var(IDENTIFIER_SELF) < 0)
-			block->add_var(IDENTIFIER_SELF, class_type->GetPointer());
+			block->add_var(IDENTIFIER_SELF, class_type->get_pointer());
 
 		// convert name to Class.Function
 		name = class_type->name + "." +  name;
@@ -1712,7 +1712,7 @@ Class *_make_array_(SyntaxTree *s, Class *t, Array<int> dim)
 	string orig_name = t->name;
 	foreachb(int d, dim){
 		// create array       (complicated name necessary to get correct ordering   int a[2][4] = (int[4])[2])
-		t = s->CreateArrayType(t, d, orig_name, t->name.substr(orig_name.num, -1));
+		t = s->CreateArrayClass(t, d, orig_name, t->name.substr(orig_name.num, -1));
 	}
 	return t;
 }
@@ -1733,7 +1733,7 @@ Class *SyntaxTree::ParseType()
 		if (Exp.cur == "*"){
 			t = _make_array_(this, t, array_dim);
 			Exp.next();
-			t = t->GetPointer();
+			t = t->get_pointer();
 			array_dim.clear();
 			continue;
 		}
@@ -1865,7 +1865,7 @@ void SyntaxTree::ParseAllClassNames()
 			if (Exp.cur == IDENTIFIER_CLASS){
 				Exp.next();
 				int nt0 = classes.num;
-				Class *t = CreateNewType(Exp.cur, 0, false, false, false, 0, NULL);
+				Class *t = CreateNewClass(Exp.cur, 0, false, false, false, 0, NULL);
 				if (nt0 == classes.num)
 					DoError("class already exists");
 				t->fully_parsed = false;
