@@ -51,6 +51,7 @@
 
 
 typedef void callback_function();
+typedef void render_str_function(const string &text, Image &image);
 
 
 
@@ -66,87 +67,84 @@ enum{
 
 //#define ResX	NixScreenWidth
 //#define ResY	NixScreenHeight
-#define MaxX	NixTargetWidth
-#define MaxY	NixTargetHeight
+//#define MaxX	target_width
+//#define MaxY	target_height
 
 
 
-
-
-#define AlphaNone			0
-#define AlphaZero			0
-#define AlphaOne			1
-#define AlphaSourceColor	2
-#define AlphaSourceInvColor	3
-#define AlphaSourceAlpha	4
-#define AlphaSourceInvAlpha	5
-#define AlphaDestColor		6
-#define AlphaDestInvColor	7
-#define AlphaDestAlpha		8
-#define AlphaDestInvAlpha	9
-
-#define AlphaColorKey		10
-#define AlphaColorKeySmooth	10
-#define AlphaColorKeyHard	11
-#define AlphaAdd			12
-#define AlphaMaterial		13
-
+// alpha modes
 enum{
-	CullNone,
-	CullCCW,
-	CullCW
+	ALPHA_NONE,
+	ALPHA_COLOR_KEY = 10,
+	ALPHA_COLOR_KEY_SMOOTH,
+	ALPHA_COLOR_KEY_HARD,
+	ALPHA_ADD,
+	ALPHA_MATERIAL,
 };
-#define CullDefault		CullCCW
 
+// alpha parameters ("functions")
 enum{
-	StencilNone,
-	StencilIncrease,
-	StencilDecrease,
-	StencilDecreaseNotNegative,
-	StencilSet,
-	StencilMaskEqual,
-	StencilMaskNotEqual,
-	StencilMaskLess,
-	StencilMaskLessEqual,
-	StencilMaskGreater,
-	StencilMaskGreaterEqual,
-	StencilReset
+	ALPHA_ZERO,
+	ALPHA_ONE,
+	ALPHA_SOURCE_COLOR,
+	ALPHA_SOURCE_INV_COLOR,
+	ALPHA_SOURCE_ALPHA,
+	ALPHA_SOURCE_INV_ALPHA,
+	ALPHA_DEST_COLOR,
+	ALPHA_DEST_INV_COLOR,
+	ALPHA_DEST_ALPHA,
+	ALPHA_DEST_INV_ALPHA,
 };
 
 enum{
-	FogLinear,
-	FogExp,
-	FogExp2
+	CULL_NONE,
+	CULL_CCW,
+	CULL_CW,
+	CULL_DEFAULT = CULL_CCW
 };
 
-#define ShadingPlane			0
-#define ShadingRound			1
+enum{
+	STENCIL_NONE,
+	STENCIL_INCREASE,
+	STENCIL_DECREASE,
+	STENCIL_DECREASE_NOT_NEGATIVE,
+	STENCIL_SET,
+	STENCIL_MASK_EQUAL,
+	STENCIL_MASK_NOT_EQUAL,
+	STENCIL_MASK_LESS,
+	STENCIL_MASK_LESS_EQUAL,
+	STENCIL_MASK_GREATER,
+	STENCIL_MASK_GREATER_EQUAL,
+	STENCIL_RESET
+};
+
+enum{
+	FOG_LINEAR,
+	FOG_EXP,
+	FOG_EXP2
+};
 
 
+namespace nix{
 
-extern int NixFontHeight;
-extern string NixFontName;
+extern int Api;
+extern string ApiName;
+extern int device_width, device_height;						// render target size (window, won't change)
+extern int target_width, target_height;						// current render target size (window/texture)
+extern bool Fullscreen;
+extern callback_function *RefillAllVertexBuffers;			// animate the application to refill lost VertexBuffers
+extern render_str_function *render_str;
+extern bool LightingEnabled;
+extern bool CullingInverted;
 
-extern hui::Window *NixWindow;
+extern int FatalError;
+extern int NumTrias;
 
-extern int NixApi;
-extern string NixApiName;
-extern int NixScreenWidth, NixScreenHeight, NixScreenDepth;		// current screen resolution
-extern int NixDesktopWidth, NixDesktopHeight, NixDesktopDepth;	// pre-NIX-resolution
-extern int NixTargetWidth, NixTargetHeight;						// render target size (window/texture)
-extern bool NixFullscreen;
-extern callback_function *NixRefillAllVertexBuffers;			// animate the application to refill lost VertexBuffers
-extern bool NixLightingEnabled;
-extern bool NixCullingInverted;
+extern string texture_dir;
+extern int TextureMaxFramesToLive, MaxVideoTextureSize;
 
-extern float NixMouseMappingWidth, NixMouseMappingHeight;		// fullscreen mouse territory
-extern int NixFatalError;
-extern int NixNumTrias;
-
-extern string NixTextureDir;
-extern int NixTextureMaxFramesToLive, NixMaxVideoTextureSize;
-
-class NixVertexBuffer;
-extern NixVertexBuffer *VBTemp; // vertex buffer for 1-frame geometries
+class VertexBuffer;
+extern VertexBuffer *vb_temp; // vertex buffer for 1-frame geometries
+};
 
 #endif

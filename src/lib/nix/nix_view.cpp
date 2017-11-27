@@ -11,108 +11,87 @@
 #include "../image/image.h"
 #endif
 #include "../hui/Controls/Control.h"
+#include "../hui/Controls/ControlDrawingArea.h"
+
+namespace nix{
 
 void TestGLError(const string &);
 
-void NixUpdateLights();
-extern string NixControlID;
+void UpdateLights();
+
+void create_pixel_projection_matrix(matrix &m);
 
 
-matrix NixViewMatrix, NixProjectionMatrix;
-matrix NixProjectionMatrix2d;
-matrix NixWorldMatrix, NixWorldViewProjectionMatrix;
-vector _NixCamPos_;
-bool NixMode3d = false;
+matrix view_matrix, projection_matrix;
+matrix projection_matrix2d;
+matrix world_matrix, world_view_projection_matrix;
+matrix inverse_world_view_projection_matrix;
+bool inverse_world_view_projection_matrix_dirty = true;
+vector _CamPos_;
+//bool mode3d = false;
 
-float NixViewJitterX = 0, NixViewJitterY = 0;
+float view_jitter_x = 0, view_jitter_y = 0;
 
 static int OGLViewPort[4];
 
-NixTexture *RenderingToTexture = NULL;
+Texture *RenderingToTexture = NULL;
 
 #ifdef OS_WINDOWS
 	extern HDC hDC;
 	extern HGLRC hRC;
 #endif
 
-void _NixSetMode2d()
+void Resize(int width, int height)
 {
-	if (!NixMode3d)
-		return;
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf((float*)&NixProjectionMatrix2d);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	NixMode3d = false;
-	TestGLError("Set2d");
-}
-
-void _NixSetMode3d()
-{
-	if (NixMode3d)
-		return;
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf((float*)&NixProjectionMatrix);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf((float*)&NixViewMatrix);
-	glMultMatrixf((float*)&NixWorldMatrix);
-	NixMode3d = true;
-	TestGLError("Set3d");
-}
-
-void NixResize()
-{
-	if (!NixUsable)
-		return;
-
-	msg_db_f("NixResize",5);
-
-	if (NixTargetWidth<=0)
-		NixTargetWidth=1;
-	if (NixTargetHeight<=0)
-		NixTargetHeight=1;
-	NixTargetRect = rect(0, (float)NixTargetWidth, 0, (float)NixTargetHeight);
+	target_width = max(width, 1);
+	target_height = max(height, 1);
+	target_rect = rect(0, (float)target_width, 0, (float)target_height);
 
 	// screen
-	glViewport(0, 0, NixTargetWidth, NixTargetHeight);
+	glViewport(0, 0, target_width, target_height);
 	OGLViewPort[0] = 0;
 	OGLViewPort[1] = 0;
-	OGLViewPort[2] = NixTargetWidth;
-	OGLViewPort[3] = NixTargetHeight;
+	OGLViewPort[2] = target_width;
+	OGLViewPort[3] = target_height;
+	TestGLError("glViewport");
+
+	// projection 2d
+	create_pixel_projection_matrix(projection_matrix2d);
 
 	// camera
-	NixSetProjectionMatrix(NixProjectionMatrix);
-	NixSetView(NixViewMatrix);
-
-	TestGLError("Resize");
+	//NixSetProjectionMatrix(projection_matrix);
+	//NixSetViewMatrix(view_matrix);
 }
 
-void NixSetWorldMatrix(const matrix &mat)
+void SetWorldMatrix(const matrix &mat)
 {
-	NixWorldMatrix = mat;
-	NixWorldViewProjectionMatrix = NixProjectionMatrix * NixViewMatrix * NixWorldMatrix;
-	if (NixMode3d){
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf((float*)&NixViewMatrix);
-		glMultMatrixf((float*)&NixWorldMatrix);
-	}
-	TestGLError("SetWorldMatrix");
+	world_matrix = mat;
+	world_view_projection_matrix = projection_matrix * view_matrix * world_matrix;
+	inverse_world_view_projection_matrix_dirty = true;
 }
 
 static vector ViewPos,ViewDir;
 static vector Frustrum[8];
 static plane FrustrumPl[6];
 
-void NixSetView(const vector &view_pos,const vector &view_ang)
+void SetViewPosAngV(const vector &view_pos,const vector &view_ang)
+{
+	quaternion q;
+	QuaternionRotationV(q, view_ang);
+	SetViewPosAng(view_pos, q);
+}
+
+void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
 {
 	ViewPos = view_pos;
-	ViewDir = view_ang.ang2dir();
+	ViewDir = view_ang * e_z;
 
 	matrix t, r;
 	MatrixTranslation(t, -view_pos);
-	MatrixRotationView(r, view_ang);
-	NixViewMatrix = r * t;
-	NixSetView(NixViewMatrix);
+	MatrixRotationQ(r, view_ang);
+	MatrixTranspose(r, r);
+	view_matrix = r * t;
+	SetViewMatrix(view_matrix);
 
 	// die Eckpunkte des Sichtfeldes
 	/*NixGetVecUnproject(Frustrum[0],vector(                   0,                    0,0.0f));
@@ -137,8 +116,8 @@ void NixSetView(const vector &view_pos,const vector &view_ang)
 void create_pixel_projection_matrix(matrix &m)
 {
 	matrix s, t;
-	MatrixTranslation(t, vector(-float(NixTargetWidth)/2.0f,-float(NixTargetHeight)/2.0f,0));
-	MatrixScale(s, 2.0f / float(NixTargetWidth), -2.0f / float(NixTargetHeight), 1);
+	MatrixTranslation(t, vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
+	MatrixScale(s, 2.0f / float(target_width), -2.0f / float(target_height), 2);
 	m = s * t;
 }
 
@@ -147,40 +126,40 @@ void create_pixel_projection_matrix(matrix &m)
 //           false -> Pixel-Angaben~~~
 // beide Bilder sind um View3DCenterX,View3DCenterY (3D als Fluchtpunkt) verschoben
 
-void NixSetProjectionPerspective()
+void SetProjectionPerspective()
 {
-	NixSetProjectionPerspectiveExt((float)NixTargetWidth / 2, (float)NixTargetHeight / 2, (float)NixTargetHeight, (float)NixTargetHeight, 1, 10000);
+	SetProjectionPerspectiveExt((float)target_width / 2, (float)target_height / 2, (float)target_height, (float)target_height, 0.001f, 10000);
 }
 
 // center_x/y: pixel coordinates of perspective center
 // height_1/width_1: pixel sizes of 45° frustrum
-void NixSetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max)
+void SetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max)
 {
 	matrix trans, persp, scale;
 	// perspective projection
 	MatrixTranslation(trans,
-		vector((center_x + NixViewJitterX) / float(NixTargetWidth) * 2.0f - 1,
-			1 - (center_y + NixViewJitterY) / float(NixTargetHeight) * 2.0f,
+		vector((center_x + view_jitter_x) / float(target_width) * 2.0f - 1,
+			1 - (center_y + view_jitter_y) / float(target_height) * 2.0f,
 			0));
 	MatrixPerspective(persp, pi / 2, 1, z_min, z_max);
-	MatrixScale(scale, 2 * width_1 / NixTargetWidth,
-			2 * height_1 / NixTargetHeight,
+	MatrixScale(scale, 2 * width_1 / target_width,
+			2 * height_1 / target_height,
 			- 1); // z reflection: right/left handedness
 
-	NixSetProjectionMatrix(trans * persp * scale);
+	SetProjectionMatrix(trans * persp * scale);
 }
 
 // center_x/y: pixel coordinates of (0,0,0)
 // map_width/height: pixel sizes of projected base vectors
-void NixSetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max)
+void SetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max)
 {
 	matrix scale, trans;
-	MatrixScale(scale, 2.0f / float(NixTargetWidth) * map_width, -2.0f / float(NixTargetHeight) * map_height, 2 / (z_max - z_min));
-	MatrixTranslation(trans, vector(2 * center_x / NixTargetWidth - 1, 1 - 2 * center_y / NixTargetHeight, -(z_max + z_min) / (z_max - z_min)));
-	NixSetProjectionMatrix(trans * scale);
+	MatrixScale(scale, 2.0f / float(target_width) * map_width, -2.0f / float(target_height) * map_height, 2 / (z_max - z_min));
+	MatrixTranslation(trans, vector(2 * center_x / target_width - 1, 1 - 2 * center_y / target_height, -(z_max + z_min) / (z_max - z_min)));
+	SetProjectionMatrix(trans * scale);
 }
 
-void NixSetProjectionOrtho(bool relative)
+void SetProjectionOrtho(bool relative)
 {
 	matrix m;
 	if (relative){
@@ -195,54 +174,22 @@ void NixSetProjectionOrtho(bool relative)
 		create_pixel_projection_matrix(m);
 	}
 
-	NixSetProjectionMatrix(m);
+	SetProjectionMatrix(m);
 }
 
-void NixSetProjectionMatrix(const matrix &mat)
+void SetProjectionMatrix(const matrix &m)
 {
-	// projection 2d
-	create_pixel_projection_matrix(NixProjectionMatrix2d);
-
-	// projection 3d
-	NixProjectionMatrix = mat;
-
-
-	glMatrixMode(GL_PROJECTION);
-	if (NixMode3d)
-		glLoadMatrixf((float*)&NixProjectionMatrix);
-	else
-		glLoadMatrixf((float*)&NixProjectionMatrix2d);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	NixViewMatrix = m_id;
-	NixWorldMatrix = m_id;
-
-	TestGLError("SetProMat");
+	projection_matrix = m;
 }
 
-void NixSetView(const matrix &view_mat)
+void SetViewMatrix(const matrix &m)
 {
-	//SetCull(CullCCW); // ???
-	NixViewMatrix = view_mat;
-
-	NixSetWorldMatrix(m_id);
-
-	NixUpdateLights();
+	view_matrix = m;
 }
-
-void NixSetViewV(const vector &view_pos, const vector &view_ang)
-{	NixSetView(view_pos, view_ang);	}
-
-void NixSetViewM(const matrix &view_mat)
-{	NixSetView(view_mat);	}
-
-
 
 #define FrustrumAngleCos	0.83f
 
-bool NixIsInFrustrum(const vector &pos,float radius)
+bool IsInFrustrum(const vector &pos,float radius)
 {
 	// die absoluten Eckpunkte der BoundingBox
 	vector p[8];
@@ -282,14 +229,14 @@ bool Rendering=false;
 	extern bool nixDevNeedsUpdate;
 #endif
 
-bool NixStart()
+bool Start()
 {
-	return NixStartIntoTexture(NULL);
+	return StartIntoTexture(NULL);
 }
 
-bool NixStartIntoTexture(NixTexture *texture)
+bool StartIntoTexture(Texture *texture)
 {
-	if (NixDoingEvilThingsToTheDevice)
+	if (DoingEvilThingsToTheDevice)
 		return false;
 
 	msg_db_f("NixStart", 2);
@@ -337,7 +284,7 @@ bool NixStartIntoTexture(NixTexture *texture)
 	}
 #endif
 
-	NixNumTrias=0;
+	NumTrias=0;
 	RenderingToTexture=texture;
 	//msg_write("Start " + p2s(texture));
 	if (!texture){
@@ -351,51 +298,41 @@ bool NixStartIntoTexture(NixTexture *texture)
 			}*/
 		#endif
 
-		#ifdef OS_LINUX
-			//HuiControl *c = NixWindow->_GetControl_(NixControlID);
-			//glXSwapBuffers(hui_x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
-		#endif			
 	}else{
-		if (OGLDynamicTextureSupport){
 
-			glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, texture->glFrameBuffer );
-			//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
-			glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture->glTexture, 0 );
-			glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
-			GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-			if (status == GL_FRAMEBUFFER_COMPLETE_EXT){
-				//msg_write("hurra");
-			}else{
-				msg_write("we're screwed! (NixStart with dynamic texture target)");
-				return false;
-			}
-		}
+		glBindFramebuffer(GL_FRAMEBUFFER, texture->frame_buffer);
+		//glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
+		/*glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture->glTexture, 0 );
+		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, texture->glDepthRenderBuffer );
+		GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if (status == GL_FRAMEBUFFER_COMPLETE_EXT){
+			//msg_write("hurra");
+		}else{
+			msg_write("we're screwed! (NixStart with dynamic texture target)");
+			return false;
+		}*/
 	}
 	TestGLError("Start 1");
 	glClearColor(0.0f,0.0f,0.0f,0.0f);
 	glDisable(GL_SCISSOR_TEST);
 	//glClearStencil(0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
+	TestGLError("Start 2a");
+	glClear(GL_DEPTH_BUFFER_BIT);
+	TestGLError("Start 2b");
+	glClear(GL_STENCIL_BUFFER_BIT);
 	//glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	//glClear(GL_COLOR_BUFFER_BIT);
 	TestGLError("Start 2");
 
 	// adjust target size
 	if (!texture){
-		if (NixFullscreen){
-			// fullscreen mode
-			NixTargetWidth = NixScreenWidth;
-			NixTargetHeight = NixScreenHeight;
-		}else{
-			// window mode
-			NixWindow->_get_control_(NixControlID)->getSize(NixTargetWidth, NixTargetHeight);
-		}
+		Resize(device_width, device_height);
 	}else{
 		// texture
-		NixTargetWidth = texture->width;
-		NixTargetHeight = texture->height;
+		Resize(texture->width, texture->height);
 	}
-	NixResize();
 	Rendering = true;
 
 	/*if (texture < 0)
@@ -406,24 +343,24 @@ bool NixStartIntoTexture(NixTexture *texture)
 	return true;
 }
 
-void NixScissor(const rect &_r)
+void Scissor(const rect &_r)
 {
 	bool enable_scissors = true;
 	rect r = _r;
 	if (r.x1 < 0){
 		enable_scissors=false;
-		r = NixTargetRect;
+		r = target_rect;
 	}
 	if (enable_scissors)
 		glEnable(GL_SCISSOR_TEST);
 	else
 		glDisable(GL_SCISSOR_TEST);
-	glScissor((int)r.x1, NixTargetHeight - (int)r.y2, (int)r.width(), (int)r.height());
+	glScissor((int)r.x1, target_height - (int)r.y2, (int)r.width(), (int)r.height());
 	glClearDepth(1.0f);
 	TestGLError("StartPart");
 }
 
-void NixEnd()
+void End()
 {
 	if (!Rendering)
 		return;
@@ -443,20 +380,17 @@ void NixEnd()
 					XF86VidModeSetViewPort(x_display,screen,0,NixDesktopHeight-NixScreenHeight);
 			#endif
 			//glutSwapBuffers();
-			if (NixGLDoubleBuffered){
-				hui::Control *c = NixWindow->_get_control_(NixControlID);
-				glXSwapBuffers(hui::x_display,GDK_WINDOW_XID(gtk_widget_get_window(c->widget)));
-			}
+			/*if (GLDoubleBuffered){
+			}*/
 		#endif
 	}
-	if (OGLDynamicTextureSupport)
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	NixProgressTextureLifes();
+	ProgressTextureLifes();
 	TestGLError("End post");
 }
 
-void NixSetClipPlane(int index,const plane &pl)
+void SetClipPlane(int index,const plane &pl)
 {
 	GLdouble d[4];
 	d[0]=pl.n.x;
@@ -465,14 +399,14 @@ void NixSetClipPlane(int index,const plane &pl)
 	d[3]=pl.d;
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glLoadMatrixf((float*)&NixViewMatrix);
+	glLoadMatrixf((float*)&view_matrix);
 	glClipPlane(GL_CLIP_PLANE0+index,d);
 	glPopMatrix();
 	//msg_todo("SetClipPlane fuer OpenGL");
 	TestGLError("SetClip");
 }
 
-void NixEnableClipPlane(int index,bool enabled)
+void EnableClipPlane(int index,bool enabled)
 {
 	if (enabled)
 		glEnable(GL_CLIP_PLANE0+index);
@@ -481,19 +415,24 @@ void NixEnableClipPlane(int index,bool enabled)
 	TestGLError("EnableClip");
 }
 
-void NixScreenShot(const string &filename, int width, int height)
+void ScreenShot(const string &filename, int width, int height)
 {
 	Image image;
-	int dx = NixTargetWidth;
-	int dy = NixTargetHeight;
+	int dx = target_width;
+	int dy = target_height;
+	//image.create(dx, dy, White);
 	image.data.resize(dx * dy);
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glReadBuffer(GL_FRONT);
+	TestGLError("read buffer");
 	glReadPixels(	0,
 					0,
 					dx,
 					dy,
+					//GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, &image.data[0]);
 					GL_RGBA, GL_UNSIGNED_BYTE, &image.data[0]);
-	if ((width >= 0) && (height >= 0)){
+	TestGLError("read pixels");
+	/*if ((width >= 0) and (height >= 0)){
 		Array<unsigned int> data2;
 		image.width = width;
 		image.height = height;
@@ -525,84 +464,69 @@ void NixScreenShot(const string &filename, int width, int height)
 	}
 	// set alpha to 1
 	for (int i=0;i<image.data.num;i++)
-		image.data[i] |= 0xff000000;
+		image.data[i] |= 0xff000000;*/
 	// save
 	image.save(filename);
 	msg_write("screenshot saved: " + filename.sys_filename());
 }
 
-void NixScreenShotToImage(Image &image)
+void ScreenShotToImage(Image &image)
 {
-	image.create(NixTargetWidth, NixTargetHeight, Black);
+	image.create(target_width, target_height, Black);
 	glReadBuffer(GL_FRONT);
 	glReadPixels(	0,
 					0,
-					NixTargetWidth,
-					NixTargetHeight,
+					target_width,
+					target_height,
 					GL_RGBA, GL_UNSIGNED_BYTE, &image.data[0]);
 }
 
 
 
-// world -> screen (0...NixTargetWidth,0...NixTargetHeight,0...1)
-void NixGetVecProject(vector &vout,const vector &vin)
+// world -> screen (0...target_width,0...target_height,0...1)
+void GetVecProject(vector &vout, const vector &vin)
 {
-	/*matrix m;
-	MatrixIdentity(m);*/
-	double vm[16];
-	int i;
-	for (i=0;i<16;i++)
-		vm[i]=NixViewMatrix.e[i];
-		//vm[i]=m.e[i];
-	double pm[16];
-	for (i=0;i<16;i++)
-			pm[i]=NixProjectionMatrix.e[i];
-		//pm[i]=m.e[i];
-	double x,y,z;
-	gluProject(vin.x,vin.y,vin.z,vm,pm,OGLViewPort,&x,&y,&z);
-	vout.x=(float)x;
-	vout.y=float((OGLViewPort[1]*2+OGLViewPort[3])-y); // y-Spiegelung
-	vout.z=(float)z;//0.999999970197677613f;//(float)z;
-	/*VecTransform(vout,NixViewMatrix,vin);
-	VecTransform(vout,NixProjectionMatrix,vout);
-	vout.y=((ViewPort[1]*2+ViewPort[3])-vout.y*16)/2;
-	vout.x=((ViewPort[0]*2+ViewPort[2])+vout.x*16)/2;
-	vout.z=0.99999997f;*/
-	TestGLError("VecPro");
+	vout = world_view_projection_matrix.project(vin);
+	vout.x = nix::target_width * (vout.x + 1) / 2;
+	vout.y = nix::target_height * (-vout.y + 1) / 2;
+	vout.z = (vout.z + 1) / 2;
 }
 
 // world -> screen (0...1,0...1,0...1)
-void NixGetVecProjectRel(vector &vout,const vector &vin)
+void GetVecProjectRel(vector &vout, const vector &vin)
 {
-	NixGetVecProject(vout,vin);
-	vout.x/=(float)NixTargetWidth;
-	vout.y/=(float)NixTargetHeight;
+	vout = world_view_projection_matrix.project(vin);
+	vout.x = (vout.x + 1) / 2;
+	vout.y = (-vout.y + 1) / 2;
+	vout.z = (vout.z + 1) / 2;
 }
 
-// screen (0...NixTargetWidth,0...NixTargetHeight,0...1) -> world
-void NixGetVecUnproject(vector &vout,const vector &vin)
+// screen (0...target_width,0...target_height,0...1) -> world
+void GetVecUnproject(vector &vout, const vector &vin)
 {
-	double vin_y=OGLViewPort[1]*2+OGLViewPort[3]-(double)vin.y; // y-Spiegelung
-	double vm[16];
-	int i;
-	for (i=0;i<16;i++)
-		vm[i]=NixViewMatrix.e[i];
-	double pm[16];
-	for (i=0;i<16;i++)
-		pm[i]=NixProjectionMatrix.e[i];
-	double x,y,z;
-	gluUnProject(vin.x,vin_y,vin.z,vm,pm,OGLViewPort,&x,&y,&z);
-	vout.x=(float)x;
-	vout.y=(float)y;
-	vout.z=(float)z;
-	TestGLError("VecUnpro");
+	if (inverse_world_view_projection_matrix_dirty){
+		MatrixInverse(inverse_world_view_projection_matrix, world_view_projection_matrix);
+		inverse_world_view_projection_matrix_dirty = false;
+	}
+
+	vout.x = vin.x*2/nix::target_width - 1;
+	vout.y = - vin.y*2/nix::target_height + 1;
+	vout.z = vin.z*2 - 1;
+	vout = inverse_world_view_projection_matrix.project(vout);
 }
 
 // screen (0...1,0...1,0...1) -> world
-void NixGetVecUnprojectRel(vector &vout,const vector &vin)
+void GetVecUnprojectRel(vector &vout, const vector &vin)
 {
-	vector vi_r=vin;
-	vi_r.x*=(float)NixTargetWidth;
-	vi_r.y*=(float)NixTargetHeight;
-	NixGetVecUnproject(vout,vi_r);
+	if (inverse_world_view_projection_matrix_dirty){
+		MatrixInverse(inverse_world_view_projection_matrix, world_view_projection_matrix);
+		inverse_world_view_projection_matrix_dirty = false;
+	}
+
+	vout.x = vin.x*2 - 1;
+	vout.y = - vin.y*2 + 1;
+	vout.z = vin.z*2 - 1;
+	vout = inverse_world_view_projection_matrix.project(vout);
 }
+
+};

@@ -8,39 +8,41 @@
 #ifndef _NIX_VIEW_EXISTS_
 #define _NIX_VIEW_EXISTS_
 
-class NixTexture;
+namespace nix{
 
-// configuring the view
-void _NixSetMode2d();
-void _NixSetMode3d();
-void _cdecl NixSetProjectionPerspective();
-void _cdecl NixSetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max);
-void _cdecl NixSetProjectionOrtho(bool relative);
-void _cdecl NixSetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max);
-void _cdecl NixSetProjectionMatrix(const matrix &mat);
-void _cdecl NixSetWorldMatrix(const matrix &mat);
-void _cdecl NixSetView(const vector &view_pos, const vector &view_ang);
-void _cdecl NixSetView(const matrix &view_mat);
-void _cdecl NixSetViewV(const vector &view_pos, const vector &view_ang);
-void _cdecl NixSetViewM(const matrix &view_mat);
-void _cdecl NixGetVecProject(vector &vout, const vector &vin);
-void _cdecl NixGetVecUnproject(vector &vout, const vector &vin);
-void _cdecl NixGetVecProjectRel(vector &vout, const vector &vin);
-void _cdecl NixGetVecUnprojectRel(vector &vout, const vector &vin);
-bool _cdecl NixIsInFrustrum(const vector &pos, float radius);
-void _cdecl NixSetClipPlane(int index, const plane &pl);
-void _cdecl NixEnableClipPlane(int index, bool enabled);
-void NixResize();
+class Texture;
 
-bool _cdecl NixStart();
-bool _cdecl NixStartIntoTexture(NixTexture *t);
-void _cdecl NixScissor(const rect &r);
-void _cdecl NixEnd();
+void _cdecl SetProjectionPerspective();
+void _cdecl SetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max);
+void _cdecl SetProjectionOrtho(bool relative);
+void _cdecl SetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max);
+void _cdecl SetProjectionMatrix(const matrix &mat);
 
-void _cdecl NixScreenShot(const string &filename, int width = -1, int height = -1);
-void _cdecl NixScreenShotToImage(Image &image);
+void _cdecl SetWorldMatrix(const matrix &mat);
 
-extern float NixViewJitterX, NixViewJitterY;
+void _cdecl SetViewPosAng(const vector &view_pos, const quaternion &view_ang);
+void _cdecl SetViewPosAngV(const vector &view_pos, const vector &view_ang);
+void _cdecl SetViewMatrix(const matrix &view_mat);
 
+void _cdecl GetVecProject(vector &vout, const vector &vin);
+void _cdecl GetVecUnproject(vector &vout, const vector &vin);
+void _cdecl GetVecProjectRel(vector &vout, const vector &vin);
+void _cdecl GetVecUnprojectRel(vector &vout, const vector &vin);
+bool _cdecl IsInFrustrum(const vector &pos, float radius);
+void _cdecl SetClipPlane(int index, const plane &pl);
+void _cdecl EnableClipPlane(int index, bool enabled);
+void _cdecl Resize(int width, int height);
+
+bool _cdecl Start();
+bool _cdecl StartIntoTexture(Texture *t);
+void _cdecl Scissor(const rect &r);
+void _cdecl End();
+
+void _cdecl ScreenShot(const string &filename, int width = -1, int height = -1);
+void _cdecl ScreenShotToImage(Image &image);
+
+extern float view_jitter_x, view_jitter_y;
+
+};
 
 #endif

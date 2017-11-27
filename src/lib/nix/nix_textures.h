@@ -10,14 +10,16 @@
 #ifndef _NIX_TEXTURES_EXISTS_
 #define _NIX_TEXTURES_EXISTS_
 
+namespace nix{
+
 // textures
-void NixTexturesInit();
-void NixReleaseTextures();
-void NixReincarnateTextures();
-void NixProgressTextureLifes();
+void init_textures();
+void ReleaseTextures();
+void ReincarnateTextures();
+void ProgressTextureLifes();
 
 
-class NixTexture
+class Texture
 {
 public:
 	string filename;
@@ -25,48 +27,52 @@ public:
 	bool is_dynamic, valid, is_cube_map;
 	int life_time;
 	
-	unsigned int glTexture;
-	unsigned int glFrameBuffer;
-	unsigned int glDepthRenderBuffer;
+	unsigned int texture;
+	unsigned int frame_buffer;
+	unsigned int depth_render_buffer;
 
 	Image icon;
 
-	NixTexture();
-	~NixTexture();
+	Texture();
+	~Texture();
 	void _cdecl __init__();
 	void _cdecl __delete__();
 
 	void _cdecl overwrite(const Image &image);
 	void _cdecl reload();
 	void _cdecl unload();
-	void _cdecl set_video_frame(int frame);
-	void _cdecl video_move(float elapsed);
-	bool _cdecl start_render();
-	void _cdecl render_to_cube_map(vector &pos, callback_function *render_scene, int mask);
-	void _cdecl fill_cube_map(int side, NixTexture *source);
+	//void _cdecl set_video_frame(int frame);
+	//void _cdecl video_move(float elapsed);
 };
 
-class NixDynamicTexture : public NixTexture
+class DynamicTexture : public Texture
 {
 public:
-	NixDynamicTexture(int width, int height);
+	DynamicTexture(int width, int height);
 	void _cdecl __init__(int width, int height);
 };
 
-class NixCubeMap : public NixTexture
+class CubeMap : public Texture
 {
 public:
-	NixCubeMap(int size);
+	CubeMap(int size);
 	void _cdecl __init__(int size);
+
+	void _cdecl overwrite_side(int side, const Image &image);
+	void _cdecl fill_side(int side, Texture *source);
+	void _cdecl render_to_cube_map(vector &pos, callback_function *render_scene, int mask);
 };
 
 
-NixTexture* _cdecl NixLoadTexture(const string &filename);
-void _cdecl NixSetTexture(NixTexture *texture);
-void _cdecl NixSetTextures(NixTexture **texture, int num_textures);
+Texture* _cdecl LoadTexture(const string &filename);
+void _cdecl SetTexture(Texture *texture);
+void _cdecl SetTextures(Array<Texture*> &textures);
 
-extern Array<NixTexture*> NixTextures;
+extern Array<Texture*> textures;
+extern int tex_cube_level;
 
-extern int NixTextureIconSize;
+extern int texture_icon_size;
+
+};
 
 #endif

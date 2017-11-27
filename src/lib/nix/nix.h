@@ -24,11 +24,11 @@
 #include "nix_vertexbuffer.h"
 #include "nix_shader.h"
 #include "nix_view.h"
-#include "nix_input.h"
 #include "nix_textures.h"
 
+namespace nix{
 
-extern string NixVersion;
+extern string version;
 
 
 //--------------------------------------------------------------------//
@@ -36,31 +36,29 @@ extern string NixVersion;
 //--------------------------------------------------------------------//
 void avi_close(int texture);
 
-void _cdecl NixInit(const string &api, hui::Window *win, const string &id);
-void _cdecl NixSetVideoMode(const string &api, int xres, int yres, bool fullscreen);
-void NixTellUsWhatsWrong();
-void NixKillDeviceObjects();
-void NixReincarnateDeviceObjects();
-void NixKill();
-void NixKillWindows();
+void _cdecl Init(const string &api, int width, int height);
+void TellUsWhatsWrong();
+void KillDeviceObjects();
+void ReincarnateDeviceObjects();
+void Kill();
 
 // engine properties
-void _cdecl NixSetWire(bool enabled);
-void _cdecl NixSetCull(int mode);
-void _cdecl NixSetZ(bool write,bool test);
-void _cdecl NixSetAlpha(int mode);
-void _cdecl NixSetAlpha(int src,int dst);
-void _cdecl NixSetAlpha(float factor);
-void _cdecl NixSetAlphaM(int mode);
-void _cdecl NixSetAlphaSD(int src,int dst);
-void _cdecl NixSetFog(int mode,float start,float end,float density,const color &c);
-void _cdecl NixEnableFog(bool enabled);
-void _cdecl NixSetStencil(int mode,unsigned long param=0);
-void _cdecl NixSetShading(int mode);
-void _cdecl NixSetOffset(float offset);
+void _cdecl SetWire(bool enabled);
+void _cdecl SetCull(int mode);
+void _cdecl SetZ(bool write,bool test);
+void _cdecl SetAlpha(int mode);
+void _cdecl SetAlpha(int src,int dst);
+void _cdecl SetAlpha(float factor);
+void _cdecl SetAlphaM(int mode);
+void _cdecl SetAlphaSD(int src,int dst);
+void _cdecl SetFog(int mode, float start, float end, float density, const color &c);
+void _cdecl EnableFog(bool enabled);
+void _cdecl SetStencil(int mode,unsigned long param=0);
+void _cdecl SetOffset(float offset);
 
 
-extern rect NixTargetRect;
+extern rect target_rect;
 
+};
 
 #endif

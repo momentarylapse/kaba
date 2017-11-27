@@ -12,6 +12,7 @@
 
 
 class Painter;
+class rect;
 
 namespace hui
 {
@@ -21,6 +22,7 @@ class Resource;
 class Painter;
 class Event;
 class EventListener;
+class EventKeyCode;
 class Control;
 class ControlRadioButton;
 
@@ -55,7 +57,7 @@ public:
 	int _cdecl eventXP(const string &id, const string &msg, const CallbackP &function);
 	void _cdecl removeEventHandler(int event_handler_id);
 	void _cdecl setKeyCode(const string &id, int key_code, const string &image = "");
-	bool _send_event_(Event *e);
+	bool _send_event_(Event *e, bool force_if_not_allowed = false);
 
 	// kaba wrappers
 	int _cdecl _kaba_event(const string &id, kaba_member_callback *function);
@@ -146,7 +148,7 @@ public:
 
 	// drawing
 	void _cdecl redraw(const string &id);
-	void _cdecl redrawRect(const string &_id, int x, int y, int w, int h);
+	void _cdecl redrawRect(const string &_id, const rect &r);
 	Control *_get_control_(const string &id);
 #ifdef HUI_API_GTK
 	Control *_get_control_by_widget_(GtkWidget *widget);
@@ -178,6 +180,7 @@ protected:
 	Control *root_control;
 public:
 	Array<EventListener> event_listeners;
+	Array<EventKeyCode> event_key_codes;
 	int current_event_listener_uid;
 protected:
 
