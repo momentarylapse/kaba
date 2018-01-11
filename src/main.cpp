@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.14.2.0";
+string AppVersion = "0.14.3.0";
 
 
 typedef void main_arg_func(const Array<string>&);
