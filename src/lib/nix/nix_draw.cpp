@@ -317,8 +317,8 @@ void Draw2D(const rect &src, const rect &dest, float depth)
 	vector b = vector(dest.x2, dest.y1, depth);
 	vector c = vector(dest.x1, dest.y2, depth);
 	vector d = vector(dest.x2, dest.y2, depth);
-	vb_2d->addTria(a, v_0, src.x1, 1-src.y1, b, v_0, src.x2, 1-src.y1, c, v_0, src.x1, 1-src.y2);
-	vb_2d->addTria(c, v_0, src.x1, 1-src.y2, b, v_0, src.x2, 1-src.y1, d, v_0, src.x2, 1-src.y2);
+	vb_2d->addTria(a, v_0, src.x1, src.y1, b, v_0, src.x2, src.y1, c, v_0, src.x1, src.y2);
+	vb_2d->addTria(c, v_0, src.x1, src.y2, b, v_0, src.x2, src.y1, d, v_0, src.x2, src.y2);
 	Draw3D(vb_2d);
 }
 

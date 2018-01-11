@@ -419,10 +419,12 @@ void SetTexture(Texture *t)
 
 	tex_cube_level = -1;
 	glActiveTexture(GL_TEXTURE0);
+	TestGLError("SetTex .a");
 	if (t->is_cube_map){
 		glEnable(GL_TEXTURE_CUBE_MAP);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, t->texture);
 		tex_cube_level = 0;
+		TestGLError("SetTex b cm");
 	}else{
 		glBindTexture(GL_TEXTURE_2D, t->texture);
 		TestGLError("SetTex b");

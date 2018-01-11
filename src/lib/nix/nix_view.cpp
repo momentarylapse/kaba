@@ -15,7 +15,7 @@
 
 namespace nix{
 
-void TestGLError(const string &);
+void TestGLError(const char*);
 
 void UpdateLights();
 
@@ -239,7 +239,6 @@ bool StartIntoTexture(Texture *texture)
 	if (DoingEvilThingsToTheDevice)
 		return false;
 
-	msg_db_f("NixStart", 2);
 	TestGLError("Start prae");
 
 
@@ -357,14 +356,13 @@ void Scissor(const rect &_r)
 		glDisable(GL_SCISSOR_TEST);
 	glScissor((int)r.x1, target_height - (int)r.y2, (int)r.width(), (int)r.height());
 	glClearDepth(1.0f);
-	TestGLError("StartPart");
+	TestGLError("Scissor");
 }
 
 void End()
 {
 	if (!Rendering)
 		return;
-	msg_db_f("NixEnd", 2);
 	TestGLError("End prae");
 	Rendering = false;
 	glDisable(GL_SCISSOR_TEST);
@@ -392,6 +390,7 @@ void End()
 
 void SetClipPlane(int index,const plane &pl)
 {
+	return;
 	GLdouble d[4];
 	d[0]=pl.n.x;
 	d[1]=pl.n.y;
@@ -408,6 +407,7 @@ void SetClipPlane(int index,const plane &pl)
 
 void EnableClipPlane(int index,bool enabled)
 {
+	return;
 	if (enabled)
 		glEnable(GL_CLIP_PLANE0+index);
 	else
