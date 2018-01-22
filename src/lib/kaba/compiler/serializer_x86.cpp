@@ -312,6 +312,9 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 				DoError("@free not found????");
 			AddFunctionCall(links[0].script, links[0].link_no, p_none, param[0], p_none);
 			break;}
+		case STATEMENT_RAISE:
+			//AddFunctionCall();
+			break;
 		case STATEMENT_ASM:
 			add_cmd(INST_ASM);
 			break;

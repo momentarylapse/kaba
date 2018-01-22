@@ -342,7 +342,7 @@ Array<Class*> SyntaxTree::GetFunctionWantedParams(Node &link)
 			DoError("FindFunctionSingleParameter: can't find virtual function...?!?");
 		return cf->param_types;
 	}else
-		DoError("evil function...");
+		DoError("evil function...kind="+i2s(link.kind));
 
 	Array<Class*> dummy_types;
 	return dummy_types;
@@ -1178,6 +1178,36 @@ void SyntaxTree::ParseStatementReturn(Block *block)
 	ExpectNewline();
 }
 
+void SyntaxTree::ParseStatementRaise(Block *block)
+{
+	Exp.next();
+	Node *cmd = add_node_statement(STATEMENT_RAISE);
+	block->nodes.add(cmd);
+	/*if (block->function->return_type == TypeVoid){
+		cmd->set_num_params(0);
+	}else{
+		Node *cmd_value = CheckParamLink(GetCommand(block), block->function->return_type, IDENTIFIER_RETURN, 0);
+		cmd->set_num_params(1);
+		cmd->set_param(0, cmd_value);
+	}*/
+	ExpectNewline();
+}
+
+void SyntaxTree::ParseStatementTry(Block *block)
+{
+	Exp.next();
+	Node *cmd = add_node_statement(STATEMENT_TRY);
+	block->nodes.add(cmd);
+	/*if (block->function->return_type == TypeVoid){
+		cmd->set_num_params(0);
+	}else{
+		Node *cmd_value = CheckParamLink(GetCommand(block), block->function->return_type, IDENTIFIER_RETURN, 0);
+		cmd->set_num_params(1);
+		cmd->set_param(0, cmd_value);
+	}*/
+	ExpectNewline();
+}
+
 void SyntaxTree::ParseStatementIf(Block *block)
 {
 	int ind = Exp.cur_line->indent;
@@ -1242,6 +1272,10 @@ void SyntaxTree::ParseStatement(Block *block)
 		ParseStatementContinue(block);
 	}else if (Exp.cur == IDENTIFIER_RETURN){
 		ParseStatementReturn(block);
+	//}else if (Exp.cur == IDENTIFIER_RAISE){
+	//	ParseStatementRaise(block);
+	}else if (Exp.cur == IDENTIFIER_TRY){
+		ParseStatementTry(block);
 	}else if (Exp.cur == IDENTIFIER_IF){
 		ParseStatementIf(block);
 	}
@@ -1315,7 +1349,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 
 
 	// commands (the actual code!)
-		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or (Exp.cur == IDENTIFIER_IF)){
+		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or /*(Exp.cur == IDENTIFIER_RAISE) or*/ (Exp.cur == IDENTIFIER_TRY) or (Exp.cur == IDENTIFIER_IF)){
 			ParseStatement(block);
 
 		}else{

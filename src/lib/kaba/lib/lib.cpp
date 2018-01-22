@@ -48,6 +48,9 @@ const string IDENTIFIER_VIRTUAL = "virtual";
 const string IDENTIFIER_EXTERN = "extern";
 const string IDENTIFIER_USE = "use";
 const string IDENTIFIER_RETURN = "return";
+const string IDENTIFIER_RAISE = "raise";
+const string IDENTIFIER_TRY = "try";
+const string IDENTIFIER_EXCEPT = "except";
 const string IDENTIFIER_IF = "if";
 const string IDENTIFIER_ELSE = "else";
 const string IDENTIFIER_WHILE = "while";
@@ -725,6 +728,70 @@ int xop_int_add(int a, int b)
 	return a + b;
 }
 
+struct FunctionSearchResult
+{
+	Script *s;
+	Function *f;
+	long offset;
+};
+
+
+extern Array<Script*> PublicScript;
+
+FunctionSearchResult get_func_from_rip(void *rip)
+{
+	FunctionSearchResult r;
+	r.f = NULL;
+	r.offset = 8000000;
+	for (Script *s: PublicScript){
+		if ((rip < s->opcode) or (rip > &s->opcode[s->opcode_size]))
+			continue;
+		foreachi (Function *f, s->syntax->functions, i){
+			void *frip = (void*)s->func[i];
+			if (frip >= rip)
+				continue;
+			long offset = (long)rip - (long)frip;
+			if (offset >= r.offset)
+				continue;
+			r.s = s;
+			r.f = f;
+			r.offset = offset;
+		}
+	}
+	return r;
+}
+
+void _cdecl kaba_raise_exception(void*)
+{
+	void **rsp = NULL;
+	void **rbp = NULL;
+	asm volatile(	"mov %%rsp, %0\n\t"
+		"mov %%rbp, %1\n\t"
+		: "=r" (rsp), "=r" (rbp)
+		: "r" (rsp), "r" (rbp)
+		: "%rsp");
+	msg_error("raise...");
+	//printf("-- rsp: %p\n", rsp);
+	//printf("-- rbp: %p\n", rbp);
+	while (true){
+		//printf("----\n");
+		rsp = rbp;
+		rbp = (void**)*rsp;
+		rsp ++;
+	//	printf("-- rsp: %p\n", rsp);
+	//	printf("-- rbp: %p\n", rbp);
+		//msg_write(p2s((void*)&kaba_raise_exception));
+		void *rip = *rsp;
+	//	printf("-- rip: %p\n", rip);
+		rsp ++;
+		auto r = get_func_from_rip(rip);
+		if (r.f){
+			msg_write(">>  " + r.s->filename + " : " + r.f->name + format("  +%d", r.offset));
+		}else
+			break;
+	}
+}
+
 void SIAddPackageBase()
 {
 	add_package("base", true);
@@ -945,6 +1012,10 @@ void SIAddPackageBase()
 		func_set_inline(INLINE_INT_ADD);
 		func_add_param("a", TypeInt);
 		func_add_param("b", TypeInt);
+
+
+	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception);
+		func_add_param("e", TypePointer);
 }
 
 
@@ -962,6 +1033,7 @@ void SIAddBasicCommands()
 	add_statement(IDENTIFIER_DELETE, STATEMENT_DELETE, 1);
 	add_statement("sizeof", STATEMENT_SIZEOF, 1);
 	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
+	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
 }
 
 
