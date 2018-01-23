@@ -761,6 +761,18 @@ FunctionSearchResult get_func_from_rip(void *rip)
 	return r;
 }
 
+void get_blocks(Script *s, Function *f, void* rip)
+{
+	for (Block *b: s->syntax->blocks){
+		if ((b->_start <= rip) and (b->_end >= rip)){
+			msg_write("  block " + i2s(b->index));
+			for (int i: b->vars){
+				msg_write("   " + f->var[i].name);
+			}
+		}
+	}
+}
+
 void _cdecl kaba_raise_exception(void*)
 {
 	void **rsp = NULL;
@@ -787,6 +799,7 @@ void _cdecl kaba_raise_exception(void*)
 		auto r = get_func_from_rip(rip);
 		if (r.f){
 			msg_write(">>  " + r.s->filename + " : " + r.f->name + format("  +%d", r.offset));
+			get_blocks(r.s, r.f, rip);
 		}else
 			break;
 	}
