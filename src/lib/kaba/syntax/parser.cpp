@@ -1178,6 +1178,7 @@ void SyntaxTree::ParseStatementReturn(Block *block)
 	ExpectNewline();
 }
 
+// IGNORE!!! raise() is a function :P
 void SyntaxTree::ParseStatementRaise(Block *block)
 {
 	throw "jhhhh";
@@ -1216,17 +1217,60 @@ void SyntaxTree::ParseStatementTry(Block *block)
 		DoError("except after try expected");
 	if (Exp.cur_line->indent != ind)
 		DoError("wrong indentation for except");
+	Exp.next();
 
 	Node *cmd_ex = add_node_statement(STATEMENT_EXCEPT);
 	block->nodes.add(cmd_ex);
+
+	Block *new_block = AddBlock(block->function, block);
+
+	if (!Exp.end_of_line()){
+		Class *ex_type = FindType(Exp.cur);
+		if (!ex_type)
+			DoError("Exception class expected");
+		if (!ex_type->is_derived_from(TypeException))
+			DoError("Exception class expected");
+		cmd_ex->type = ex_type;
+		ex_type = ex_type->get_pointer();
+		Exp.next();
+		if (!Exp.end_of_line()){
+			if (Exp.cur != "as")
+				DoError("'as' expected");
+			Exp.next();
+			string ex_name = Exp.cur;
+			int v = new_block->add_var(ex_name, ex_type);
+			cmd_ex->params.add(AddNode(KIND_VAR_LOCAL, v, ex_type));
+		}
+	}
+
+	int last_indent = Exp.indent_0;
 
 	Exp.next();
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	ParseCompleteCommand(block);
+	//ParseCompleteCommand(block);
 	//Exp.next_line();
+
+	//auto n = block->nodes.back();
+	//n->as_block()->
+
+	Node *cmd_ex_block = add_node_block(new_block);
+	block->nodes.add(cmd_ex_block);
+
+	for (int i=0;true;i++){
+		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
+			break;
+
+		ParseCompleteCommand(new_block);
+		Exp.next_line();
+	}
+	Exp.cur_line --;
+	Exp.indent_0 = Exp.cur_line->indent;
+	Exp.indented = false;
+	Exp.cur_exp = Exp.cur_line->exp.num - 1;
+	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 }
 
 void SyntaxTree::ParseStatementIf(Block *block)

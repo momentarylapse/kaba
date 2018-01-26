@@ -791,12 +791,14 @@ FunctionSearchResult get_func_from_rip(void *rip)
 struct ExceptionBlockData
 {
 	Array<Block*> needs_killing;
-	Block *except;
+	Block *except_block;
+	Node *except;
 };
 
-ExceptionBlockData get_blocks(Script *s, Function *f, void* rip)
+ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 {
 	ExceptionBlockData ebd;
+	ebd.except_block = NULL;
 	ebd.except = NULL;
 
 	Array<Block*> blocks;
@@ -822,10 +824,14 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip)
 		}
 		if (index > 0)
 			if ((b->nodes[index - 1]->kind == KIND_STATEMENT) and (b->nodes[index - 1]->link_no == STATEMENT_TRY)){
+				auto ee = b->nodes[index + 1];
+				if (!ex_type->is_derived_from(ee->type))
+					continue;
 				//msg_write("try...");
 				ebd.needs_killing = blocks.sub(0, bi);
 				//msg_write(b->nodes[index + 2]->link_no);
-				ebd.except = s->syntax->blocks[b->nodes[index + 2]->link_no];
+				ebd.except = ee;
+				ebd.except_block = s->syntax->blocks[b->nodes[index + 2]->link_no];
 			}
 	}
 	//msg_write(ia2s(node_index));
@@ -884,6 +890,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 	//printf("-- rbp: %p\n", rbp);
 
 	Array<FunctionSearchResult> trace;
+	Class *ex_type = get_type(kaba_exception);
 
 	//msg_write(Asm::Disassemble((void*)&relink_return));
 
@@ -902,7 +909,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 			trace.add(r);
 			if (_verbose_exception_)
 				msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
-			auto ebd = get_blocks(r.s, r.f, rip);
+			auto ebd = get_blocks(r.s, r.f, rip, ex_type);
 
 			for (Block *b: ebd.needs_killing){
 				if (_verbose_exception_)
@@ -922,19 +929,28 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 					}
 				}
 			}
-			if (ebd.except){
+			if (ebd.except_block){
 				if (_verbose_exception_)
-					msg_write("except block: " + i2s(ebd.except->index));
+					msg_write("except_block block: " + i2s(ebd.except_block->index));
+
+				if (ebd.except->params.num > 0){
+					auto v = r.f->var[ebd.except_block->vars[0]];
+					void **p = (void**)((long)rbp + v._offset);
+					*p = kaba_exception;
+				}
 
 				// TODO special return
-				relink_return(ebd.except->_start, rbp, (void*)((long)rsp - 16));
+				relink_return(ebd.except_block->_start, rbp, (void*)((long)rsp - 16));
 				return;
 			}
 		}else{
 			break;
 		}
 	}
-	msg_error("uncaught exception (" + get_type(kaba_exception)->name + "):  " + kaba_exception->message());
+	if (ex_type == TypeUnknown)
+		msg_error("uncaught exception:  " + kaba_exception->message());
+	else
+		msg_error("uncaught " + get_type(kaba_exception)->name + ":  " + kaba_exception->message());
 	for (auto r: trace)
 		msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  + 0x%x", r.offset));
 	exit(1);

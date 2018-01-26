@@ -10,8 +10,6 @@ class vector;
 extern Class *TypeIntPs;
 extern Class *TypeFloatPs;
 extern Class *TypeBoolPs;
-extern Class *TypeStringList;
-extern Class *TypeBoolList;
 
 static Date *_date;
 #define	GetDADate(x)			long(&_date->x)-long(_date)
