@@ -805,6 +805,39 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip)
 	return ebd;
 }
 
+
+void* rbp2 = NULL;
+
+void relink_return(void *rip, void *rbp, void *rsp)
+{
+	printf("relink to rip=%p, rbp=%p  rsp=%p\n", rip, rbp, rsp);
+	// ARGH....
+	asm volatile(	"mov %1, %%rsp\n\t"
+			"pop %%rbp\n\t" // pop rbp
+			"pop %%rax\n\t" // pop rip
+			"push %2\n\t" // push rip
+			"ret"
+		: "=r" (rbp2)
+		: "r" (rsp), "r" (rip)
+		: "%rsp");
+
+	printf("rbp=%p\n", rbp2);
+
+	exit(0);
+
+	asm volatile(	"mov %2, %%rsp\n\t"
+			"pop %%rax\n\t" // pop rbp
+			"pop %%rax\n\t" // pop rip = ret
+			"push %0\n\t"
+			"push %1\n\t"
+			"leave\n\t"
+			"ret\n\t"
+		: "=r" (rip), "=r" (rbp), "=r" (rsp)
+		: "r" (rip), "r" (rbp), "r" (rsp)
+		: "%rsp", "%rax");
+
+}
+
 void _cdecl kaba_raise_exception(void*)
 {
 	void **rsp = NULL;
@@ -812,13 +845,15 @@ void _cdecl kaba_raise_exception(void*)
 	asm volatile(	"mov %%rsp, %0\n\t"
 		"mov %%rbp, %1\n\t"
 		: "=r" (rsp), "=r" (rbp)
-		: "r" (rsp), "r" (rbp)
+		:
 		: "%rsp");
 	msg_error("raise...");
 	//printf("-- rsp: %p\n", rsp);
 	//printf("-- rbp: %p\n", rbp);
 
 	Array<FunctionSearchResult> trace;
+
+	//msg_write(Asm::Disassemble((void*)&relink_return));
 
 	while (true){
 		//printf("----\n");
@@ -856,6 +891,7 @@ void _cdecl kaba_raise_exception(void*)
 				msg_write("except block: " + i2s(ebd.except->index));
 
 				// TODO special return
+				relink_return(ebd.except->_start, rbp, (void*)((long)rsp - 16));
 				return;
 			}
 		}else{
@@ -864,7 +900,7 @@ void _cdecl kaba_raise_exception(void*)
 	}
 	msg_error("uncaught exception");
 	for (auto r: trace)
-		msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
+		msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  + 0x%x", r.offset));
 	exit(1);
 }
 
