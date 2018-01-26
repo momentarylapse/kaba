@@ -1180,9 +1180,15 @@ void SyntaxTree::ParseStatementReturn(Block *block)
 
 void SyntaxTree::ParseStatementRaise(Block *block)
 {
+	throw "jhhhh";
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_RAISE);
 	block->nodes.add(cmd);
+
+	Node *cmd_ex = CheckParamLink(GetCommand(block), TypeExceptionP, IDENTIFIER_RAISE, 0);
+	cmd->set_num_params(1);
+	cmd->set_param(0, cmd_ex);
+
 	/*if (block->function->return_type == TypeVoid){
 		cmd->set_num_params(0);
 	}else{

@@ -26,7 +26,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.14.8.0";
+string LibVersion = "0.15.-1.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -142,6 +142,9 @@ Class *TypePlaneList;
 Class *TypeMatrix3;
 Class *TypeDate;
 Class *TypeImage;
+
+Class *TypeException;
+Class *TypeExceptionP;
 
 
 Array<Package> Packages;
@@ -728,6 +731,30 @@ int xop_int_add(int a, int b)
 	return a + b;
 }
 
+class KabaException
+{
+public:
+	string text;
+	KabaException(){}
+	KabaException(string &message)
+	{
+		text = message;
+	}
+	virtual ~KabaException(){}
+	void _cdecl __init__(string &message)
+	{
+		new(this) KabaException(message);
+	}
+	virtual _cdecl void __delete__()
+	{
+		this->~KabaException();
+	}
+	virtual _cdecl string message()
+	{
+		return text;
+	}
+};
+
 struct FunctionSearchResult
 {
 	Script *s;
@@ -807,10 +834,12 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip)
 
 
 void* rbp2 = NULL;
+bool _verbose_exception_ = false;
 
 void relink_return(void *rip, void *rbp, void *rsp)
 {
-	printf("relink to rip=%p, rbp=%p  rsp=%p\n", rip, rbp, rsp);
+	if (_verbose_exception_)
+		printf("relink to rip=%p, rbp=%p  rsp=%p\n", rip, rbp, rsp);
 	// ARGH....
 	asm volatile(	"mov %1, %%rsp\n\t"
 			"pop %%rbp\n\t" // pop rbp
@@ -824,21 +853,23 @@ void relink_return(void *rip, void *rbp, void *rsp)
 	printf("rbp=%p\n", rbp2);
 
 	exit(0);
-
-	asm volatile(	"mov %2, %%rsp\n\t"
-			"pop %%rax\n\t" // pop rbp
-			"pop %%rax\n\t" // pop rip = ret
-			"push %0\n\t"
-			"push %1\n\t"
-			"leave\n\t"
-			"ret\n\t"
-		: "=r" (rip), "=r" (rbp), "=r" (rsp)
-		: "r" (rip), "r" (rbp), "r" (rsp)
-		: "%rsp", "%rax");
-
 }
 
-void _cdecl kaba_raise_exception(void*)
+Class* get_type(void *p)
+{
+	void *vtable = *(void**)p;
+	Array<Script*> scripts = PublicScript;
+	for (auto p: Packages)
+		scripts.add(p.script);
+	for (Script* s: scripts)
+		for (Class *c: s->syntax->classes)
+			if (c->_vtable_location_compiler_)
+				if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
+					return c;
+	return TypeUnknown;
+}
+
+void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 {
 	void **rsp = NULL;
 	void **rbp = NULL;
@@ -847,7 +878,8 @@ void _cdecl kaba_raise_exception(void*)
 		: "=r" (rsp), "=r" (rbp)
 		:
 		: "%rsp");
-	msg_error("raise...");
+	if (_verbose_exception_)
+		msg_error("raise...");
 	//printf("-- rsp: %p\n", rsp);
 	//printf("-- rbp: %p\n", rbp);
 
@@ -868,15 +900,18 @@ void _cdecl kaba_raise_exception(void*)
 		auto r = get_func_from_rip(rip);
 		if (r.f){
 			trace.add(r);
-			msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
+			if (_verbose_exception_)
+				msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
 			auto ebd = get_blocks(r.s, r.f, rip);
 
 			for (Block *b: ebd.needs_killing){
-				msg_write("  block " + i2s(b->index));
+				if (_verbose_exception_)
+					msg_write("  block " + i2s(b->index));
 				for (int i: b->vars){
 					auto v = r.f->var[i];
 					char *p = (char*)rbp + v._offset;
-					msg_write("   " + v.type->name + " " + v.name + "  " + p2s(p));
+					if (_verbose_exception_)
+						msg_write("   " + v.type->name + " " + v.name + "  " + p2s(p));
 					auto cf = v.type->get_destructor();
 					if (cf){
 						typedef void con_func(void *);
@@ -888,7 +923,8 @@ void _cdecl kaba_raise_exception(void*)
 				}
 			}
 			if (ebd.except){
-				msg_write("except block: " + i2s(ebd.except->index));
+				if (_verbose_exception_)
+					msg_write("except block: " + i2s(ebd.except->index));
 
 				// TODO special return
 				relink_return(ebd.except->_start, rbp, (void*)((long)rsp - 16));
@@ -898,7 +934,7 @@ void _cdecl kaba_raise_exception(void*)
 			break;
 		}
 	}
-	msg_error("uncaught exception");
+	msg_error("uncaught exception (" + get_type(kaba_exception)->name + "):  " + kaba_exception->message());
 	for (auto r: trace)
 		msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  + 0x%x", r.offset));
 	exit(1);
@@ -927,6 +963,8 @@ void SIAddPackageBase()
 	TypeChar			= add_type  ("char",		sizeof(char), FLAG_CALL_BY_VALUE);
 	TypeDynamicArray	= add_type  ("@DynamicArray", config.super_array_size);
 
+	TypeException		= add_type  ("Exception",	sizeof(KabaException));
+	TypeExceptionP		= add_type_p("Exception*", TypeException);
 
 
 	// select default float type
@@ -1125,9 +1163,16 @@ void SIAddPackageBase()
 		func_add_param("a", TypeInt);
 		func_add_param("b", TypeInt);
 
+	add_class(TypeException);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&KabaException::__init__));
+			func_add_param("message", TypeString);
+			class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&KabaException::__delete__));
+			class_add_func_virtual("message", TypeString, mf(&KabaException::message));
+		class_add_element("text", TypeString, config.pointer_size);
+		class_set_vtable(KabaException);
 
 	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception);
-		func_add_param("e", TypePointer);
+		func_add_param("e", TypeExceptionP);
 }
 
 
