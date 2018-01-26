@@ -1195,17 +1195,32 @@ void SyntaxTree::ParseStatementRaise(Block *block)
 
 void SyntaxTree::ParseStatementTry(Block *block)
 {
+	int ind = Exp.cur_line->indent;
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_TRY);
 	block->nodes.add(cmd);
-	/*if (block->function->return_type == TypeVoid){
-		cmd->set_num_params(0);
-	}else{
-		Node *cmd_value = CheckParamLink(GetCommand(block), block->function->return_type, IDENTIFIER_RETURN, 0);
-		cmd->set_num_params(1);
-		cmd->set_param(0, cmd_value);
-	}*/
 	ExpectNewline();
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	ParseCompleteCommand(block);
+	Exp.next_line();
+
+	if (Exp.cur != IDENTIFIER_EXCEPT)
+		DoError("except after try expected");
+	if (Exp.cur_line->indent != ind)
+		DoError("wrong indentation for except");
+
+	Node *cmd_ex = add_node_statement(STATEMENT_EXCEPT);
+	block->nodes.add(cmd_ex);
+
+	Exp.next();
+	ExpectNewline();
+	// ...block
+	Exp.next_line();
+	ExpectIndent();
+	ParseCompleteCommand(block);
+	//Exp.next_line();
 }
 
 void SyntaxTree::ParseStatementIf(Block *block)

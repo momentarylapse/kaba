@@ -761,16 +761,48 @@ FunctionSearchResult get_func_from_rip(void *rip)
 	return r;
 }
 
-void get_blocks(Script *s, Function *f, void* rip)
+struct ExceptionBlockData
 {
-	for (Block *b: s->syntax->blocks){
-		if ((b->_start <= rip) and (b->_end >= rip)){
-			msg_write("  block " + i2s(b->index));
-			for (int i: b->vars){
-				msg_write("   " + f->var[i].name);
+	Array<Block*> needs_killing;
+	Block *except;
+};
+
+ExceptionBlockData get_blocks(Script *s, Function *f, void* rip)
+{
+	ExceptionBlockData ebd;
+	ebd.except = NULL;
+
+	Array<Block*> blocks;
+	foreachb (Block *b, s->syntax->blocks)
+		if ((b->_start <= rip) and (b->_end >= rip))
+			blocks.add(b);
+	ebd.needs_killing = blocks;
+
+	Array<int> node_index;
+	foreachi (Block *b, blocks, bi){
+		if (bi == 0)
+			continue;
+		int index = -1;
+		foreachi (Node *n, b->nodes, ni){
+			if (n->kind == KIND_BLOCK and n->link_no == blocks[bi-1]->index){
+				node_index.add(ni);
+				index = ni;
 			}
 		}
+		if (index < 0){
+			msg_error("block link error...");
+			return ebd;
+		}
+		if (index > 0)
+			if ((b->nodes[index - 1]->kind == KIND_STATEMENT) and (b->nodes[index - 1]->link_no == STATEMENT_TRY)){
+				//msg_write("try...");
+				ebd.needs_killing = blocks.sub(0, bi);
+				//msg_write(b->nodes[index + 2]->link_no);
+				ebd.except = s->syntax->blocks[b->nodes[index + 2]->link_no];
+			}
 	}
+	//msg_write(ia2s(node_index));
+	return ebd;
 }
 
 void _cdecl kaba_raise_exception(void*)
@@ -785,24 +817,55 @@ void _cdecl kaba_raise_exception(void*)
 	msg_error("raise...");
 	//printf("-- rsp: %p\n", rsp);
 	//printf("-- rbp: %p\n", rbp);
+
+	Array<FunctionSearchResult> trace;
+
 	while (true){
 		//printf("----\n");
 		rsp = rbp;
 		rbp = (void**)*rsp;
 		rsp ++;
-	//	printf("-- rsp: %p\n", rsp);
-	//	printf("-- rbp: %p\n", rbp);
-		//msg_write(p2s((void*)&kaba_raise_exception));
+		//printf("-- rsp: %p\n", rsp);
+		//printf("-- rbp: %p\n", rbp);
 		void *rip = *rsp;
-	//	printf("-- rip: %p\n", rip);
+		//printf("-- rip: %p\n", rip);
 		rsp ++;
 		auto r = get_func_from_rip(rip);
 		if (r.f){
-			msg_write(">>  " + r.s->filename + " : " + r.f->name + format("  +%d", r.offset));
-			get_blocks(r.s, r.f, rip);
-		}else
+			trace.add(r);
+			msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
+			auto ebd = get_blocks(r.s, r.f, rip);
+
+			for (Block *b: ebd.needs_killing){
+				msg_write("  block " + i2s(b->index));
+				for (int i: b->vars){
+					auto v = r.f->var[i];
+					char *p = (char*)rbp + v._offset;
+					msg_write("   " + v.type->name + " " + v.name + "  " + p2s(p));
+					auto cf = v.type->get_destructor();
+					if (cf){
+						typedef void con_func(void *);
+						con_func * f = (con_func*)cf->script->func[cf->nr];
+						if (f){
+							f(p);
+						}
+					}
+				}
+			}
+			if (ebd.except){
+				msg_write("except block: " + i2s(ebd.except->index));
+
+				// TODO special return
+				return;
+			}
+		}else{
 			break;
+		}
 	}
+	msg_error("uncaught exception");
+	for (auto r: trace)
+		msg_write(">>  " + r.s->filename + " : " + r.f->name + format("()  +%d", r.offset));
+	exit(1);
 }
 
 void SIAddPackageBase()
@@ -1047,6 +1110,7 @@ void SIAddBasicCommands()
 	add_statement("sizeof", STATEMENT_SIZEOF, 1);
 	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
 	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
 }
 
 

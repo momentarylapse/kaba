@@ -315,6 +315,12 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 		case STATEMENT_RAISE:
 			//AddFunctionCall();
 			break;
+		case STATEMENT_TRY:
+			break;
+		case STATEMENT_EXCEPT:{
+			int m_after_block = add_marker_after_command(block->level, index + 1);
+			add_cmd(Asm::INST_JMP, param_marker(m_after_block));
+			}break;
 		case STATEMENT_ASM:
 			add_cmd(INST_ASM);
 			break;
