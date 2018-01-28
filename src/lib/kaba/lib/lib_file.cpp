@@ -2,6 +2,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "common.h"
+#include "exception.h"
 
 namespace Kaba{
 
@@ -63,6 +64,82 @@ public:
 	{ WriteVector(&v); }
 };
 
+class KabaFileError : public KabaException
+{
+public: KabaFileError() : KabaException(){}
+public: KabaFileError(const string &t) : KabaException(t){}
+};
+
+/*class KabaFileNotFoundError : public KabaFileError
+{ public: KabaFileNotFoundError(const string &t) : KabaFileError(t){} };
+
+class KabaFileNotWritableError : public KabaFileError
+{ public: KabaFileNotWritableError(const string &t) : KabaFileError(t){} };*/
+
+File* kaba_file_open(const string &filename)
+{
+	File* f = FileOpen(filename);
+	if (!f)
+		kaba_raise_exception(new KabaFileError("can not open file '" + filename + "'"));
+	return f;
+}
+
+File* kaba_file_create(const string &filename)
+{
+	File* f = FileCreate(filename);
+	if (!f)
+		kaba_raise_exception(new KabaFileError("can not create file '" + filename + "'"));
+	return f;
+}
+
+string kaba_file_read(const string &filename)
+{
+	try{
+		return FileReadBinary(filename).replace("\\r", "");
+	}catch(...){
+		kaba_raise_exception(new KabaFileError("can not read file '" + filename + "'"));
+	}
+	return "";
+}
+
+string kaba_file_hash(const string &filename, const string &type)
+{
+	string hash = file_hash(filename, type);
+	if (hash.num == 0)
+		kaba_raise_exception(new KabaFileError("can not hash file '" + filename + "'"));
+	return hash;
+}
+
+void kaba_file_rename(const string &a, const string &b)
+{
+	if (!file_rename(a, b))
+		kaba_raise_exception(new KabaFileError("can not rename file '" + a + "' -> '" + b + "'"));
+}
+
+void kaba_file_copy(const string &a, const string &b)
+{
+	if (!file_copy(a, b))
+		kaba_raise_exception(new KabaFileError("can not copy file '" + a + "' -> '" + b + "'"));
+}
+
+void kaba_file_delete(const string &f)
+{
+	if (!file_delete(f))
+		kaba_raise_exception(new KabaFileError("can not delete file '" + f + "'"));
+}
+
+void kaba_dir_create(const string &f)
+{
+	if (!dir_create(f))
+		kaba_raise_exception(new KabaFileError("can not create directory '" + f + "'"));
+}
+
+void kaba_dir_delete(const string &f)
+{
+	if (!dir_delete(f))
+		kaba_raise_exception(new KabaFileError("can not delete directory '" + f + "'"));
+}
+
 void SIAddPackageFile()
 {
 	add_package("file", false);
@@ -77,6 +154,12 @@ void SIAddPackageFile()
 	TypeDirEntry		= add_type  ("DirEntry", sizeof(DirEntry));
 	Class*
 	TypeDirEntryList	= add_type_a("DirEntry[]", TypeDirEntry, -1);
+	Class*
+	TypeFileError		= add_type  ("FileError", sizeof(KabaFileError));
+	//Class*
+	//TypeFileNotFoundError= add_type  ("FileError", sizeof(KabaFileNotFoundError));
+	//Class*
+	//TypeFileNotWritableError= add_type  ("FileError", sizeof(KabaFileNotWritableError));
 
 
 	add_class(TypeDate);
@@ -148,36 +231,39 @@ void SIAddPackageFile()
 			func_add_param("other",		TypeDirEntryList);
 		class_add_func("str",		TypeString,			mf(&DirEntryList::str));
 
+	add_class(TypeFileError);
+		TypeFileError->derive_from(TypeException, false);
+		class_set_vtable(KabaFileError);
 
 	// file access
-	add_func("FileOpen",			TypeFileP,				(void*)&FileOpen);
+	add_func("FileOpen",			TypeFileP,				(void*)&kaba_file_open, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("filename",		TypeString);
-	add_func("FileCreate",			TypeFileP,				(void*)&FileCreate);
+	add_func("FileCreate",			TypeFileP,				(void*)&kaba_file_create, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("filename",		TypeString);
-	add_func("FileRead",			TypeString,				(void*)&FileRead);
+	add_func("FileRead",			TypeString,				(void*)&kaba_file_read, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("filename",		TypeString);
 	add_func("FileExists",			TypeBool,		(void*)&file_test_existence);
 		func_add_param("filename",		TypeString);
 	add_func("FileIsDirectory",			TypeBool,		(void*)&file_is_directory);
 		func_add_param("filename",		TypeString);
-	add_func("FileHash",			TypeString,		(void*)&file_hash);
+	add_func("FileHash",			TypeString,		(void*)&kaba_file_hash, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("filename",		TypeString);
 		func_add_param("type",		TypeString);
-	add_func("FileRename",			TypeBool,			(void*)&file_rename);
+	add_func("FileRename",			TypeVoid,			(void*)&kaba_file_rename, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("source",		TypeString);
 		func_add_param("dest",		TypeString);
-	add_func("FileCopy",			TypeBool,			(void*)&file_copy);
+	add_func("FileCopy",			TypeVoid,			(void*)&kaba_file_copy, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("source",		TypeString);
 		func_add_param("dest",		TypeString);
-	add_func("FileDelete",			TypeBool,			(void*)&file_delete);
+	add_func("FileDelete",			TypeVoid,			(void*)&kaba_file_delete, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("filename",		TypeString);
 	add_func("DirSearch",			TypeDirEntryList,			(void*)&dir_search);
 		func_add_param("dir",		TypeString);
 		func_add_param("filter",		TypeString);
 		func_add_param("show_dirs",		TypeBool);
-	add_func("DirCreate",			TypeBool,			(void*)&dir_create);
+	add_func("DirCreate",			TypeVoid,			(void*)&kaba_dir_create, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("dir",		TypeString);
-	add_func("DirDelete",			TypeBool,			(void*)&dir_delete);
+	add_func("DirDelete",			TypeVoid,			(void*)&kaba_dir_delete, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("dir",		TypeString);
 	add_func("GetCurDir",			TypeString,			(void*)&get_current_dir);
 	add_func("GetCurDate",			TypeDate,			(void*)&get_current_date);

@@ -522,6 +522,7 @@ Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 	_logical_line_no = -1;
 	_exp_no = -1;
 	inline_no = -1;
+	throws_exceptions = false;
 }
 
 int Function::__get_var(const string &name)
