@@ -109,13 +109,10 @@ sAudioFile load_wave_file(const string &filename)
 	sAudioFile r;
 	r.buffer = NULL;
 //	ProgressStatus(_("lade wave"), 0);
-	File *f = FileOpenSilent(filename);
-	if (!f)
-		return r;
-	char *data = new char[f->GetSize()];
-	f->SetBinaryMode(true);
+	File *f = FileOpen(filename);
+	char *data = new char[f->get_size()];
 	char header[44];
-	f->ReadBuffer(header, 44);
+	f->read_buffer(header, 44);
 	if ((header[0] != 'R') or (header[1] != 'I') or (header[2] != 'F') or (header[3] != 'F')){
 		msg_error("wave file does not start with \"RIFF\"");
 		return r;
@@ -141,9 +138,9 @@ sAudioFile load_wave_file(const string &filename)
 		return r;
 	}
 	int size = *(int*)&header[40];
-	if ((size > f->GetSize() - 44) or (size < 0)){
+	if ((size > f->get_size() - 44) or (size < 0)){
 		msg_write("wave file gives wrong data size");
-		size = f->GetSize() - 44;
+		size = f->get_size() - 44;
 	}
 	r.samples = size / byte_per_sample;
 //	ProgressStatus(_("lade wave"), 0.1f);
@@ -154,7 +151,7 @@ sAudioFile load_wave_file(const string &filename)
 		int toread = 65536;
 		if (toread > size - read)
 			toread = size - read;
-		int rr = f->ReadBuffer(&data[read], toread);
+		int rr = f->read_buffer(&data[read], toread);
 		nn ++;
 /*		if (nn > 16){
 			ProgressStatus(_("lade wave"), perc_read + dperc_read * (float)read / (float)size);
@@ -296,25 +293,24 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 	int samples = min(data_r.num, data_l.num);
 	
 	File *f = FileCreate(filename);
-	f->SetBinaryMode(true);
-	f->WriteBuffer("RIFF", 4);
-	f->WriteInt(44 + bytes_per_sample * samples); // file size (bytes)
-	f->WriteBuffer("WAVEfmt ", 8);
-	f->WriteInt(16); // fmt size (bytes)
-	f->WriteWord(1); // version
-	f->WriteWord(channels);
-	f->WriteInt(freq);
-	f->WriteInt(freq * bytes_per_sample); // bytes per second
-	f->WriteWord(bytes_per_sample); // byte align
-	f->WriteWord(bits);
-	f->WriteBuffer("data", 4);
-	f->WriteInt(samples * bytes_per_sample); // data size (bytes)
+	f->write_buffer("RIFF", 4);
+	f->write_int(44 + bytes_per_sample * samples); // file size (bytes)
+	f->write_buffer("WAVEfmt ", 8);
+	f->write_int(16); // fmt size (bytes)
+	f->write_word(1); // version
+	f->write_word(channels);
+	f->write_int(freq);
+	f->write_int(freq * bytes_per_sample); // bytes per second
+	f->write_word(bytes_per_sample); // byte align
+	f->write_word(bits);
+	f->write_buffer("data", 4);
+	f->write_int(samples * bytes_per_sample); // data size (bytes)
 	if (channels == 1){
 		for (int i=0;i<samples;i++){
 			float br = clampf(data_r[i], -1.0f, 1.0f);
 			short sr = (int)(br * 32767.0f);
 			int aa = sr;
-			f->WriteWord(aa);
+			f->write_word(aa);
 		}
 	}else if (channels == 2){
 		for (int i=0;i<samples;i++){
@@ -323,7 +319,7 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 			float bl = clampf(data_l[i], -1.0f, 1.0f);
 			short sl = (int)(bl * 32767.0f);
 			unsigned int aa = (unsigned int)sr + (((unsigned int)sl) << 16);
-			f->WriteInt(aa);
+			f->write_int(aa);
 		}
 	}else
 		msg_error("save_wave_file... channels != 1,2");

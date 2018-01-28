@@ -285,60 +285,53 @@ public:
 	void output_to_file_raw(Kaba::Script *s, const string &out_file)
 	{
 		File *f = FileCreate(out_file);
-		if (!f)
-			exit(1);
-		f->SetBinaryMode(true);
-		f->WriteBuffer(s->opcode, s->opcode_size);
+		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
 	void output_to_file_elf(Kaba::Script *s, const string &out_file)
 	{
 		File *f = FileCreate(out_file);
-		if (!f)
-			exit(1);
 
 		bool is64bit = (Kaba::config.pointer_size == 8);
 
-		f->SetBinaryMode(true);
-
 		// 16b header
-		f->WriteChar(0x7f);
-		f->WriteChar('E');
-		f->WriteChar('L');
-		f->WriteChar('F');
-		f->WriteChar(0x02); // 64 bit
-		f->WriteChar(0x01); // little-endian
-		f->WriteChar(0x01); // version
+		f->write_char(0x7f);
+		f->write_char('E');
+		f->write_char('L');
+		f->write_char('F');
+		f->write_char(0x02); // 64 bit
+		f->write_char(0x01); // little-endian
+		f->write_char(0x01); // version
 		for (int i=0; i<9; i++)
-			f->WriteChar(0x00);
+			f->write_char(0x00);
 
-		f->WriteWord(0x0003); // 3=shared... 2=exec
+		f->write_word(0x0003); // 3=shared... 2=exec
 		if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
-			f->WriteWord(0x003e); // machine
+			f->write_word(0x003e); // machine
 		}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_X86){
-			f->WriteWord(0x0003); // machine
+			f->write_word(0x0003); // machine
 		}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_ARM){
-			f->WriteWord(0x0028); // machine
+			f->write_word(0x0028); // machine
 		}
-		f->WriteInt(1); // version
+		f->write_int(1); // version
 
 		if (is64bit){
-			f->WriteInt(0);	f->WriteInt(0);// entry point
-			f->WriteInt(0x40);	f->WriteInt(0x00); // program header table offset
-			f->WriteInt(0x00);	f->WriteInt(0x00); // section header table
+			f->write_int(0);	f->write_int(0);// entry point
+			f->write_int(0x40);	f->write_int(0x00); // program header table offset
+			f->write_int(0x00);	f->write_int(0x00); // section header table
 		}else{
-			f->WriteInt(0);// entry point
-			f->WriteInt(0x00); // program header table offset
-			f->WriteInt(0x00); // section header table
+			f->write_int(0);// entry point
+			f->write_int(0x00); // program header table offset
+			f->write_int(0x00); // section header table
 		}
-		f->WriteInt(0); // flags
-		f->WriteWord(is64bit ? 64 : 52); // header size
-		f->WriteWord(0); // prog header size
-		f->WriteWord(0); // # prog header table entries
-		f->WriteWord(0); // size of section header entry table
-		f->WriteWord(0); // # section headers
-		f->WriteWord(0); // names entry section header index
+		f->write_int(0); // flags
+		f->write_word(is64bit ? 64 : 52); // header size
+		f->write_word(0); // prog header size
+		f->write_word(0); // # prog header table entries
+		f->write_word(0); // size of section header entry table
+		f->write_word(0); // # section headers
+		f->write_word(0); // names entry section header index
 		//f->WriteBuffer(s->opcode, s->opcode_size);
 		delete(f);
 
@@ -348,30 +341,26 @@ public:
 	void export_symbols(Kaba::Script *s, const string &symbols_out_file)
 	{
 		File *f = FileCreate(symbols_out_file);
-		if (!f)
-			exit(1);
 		foreachi(Kaba::Function *fn, s->syntax->functions, i){
-			f->WriteStr(fn->name + ":" + i2s(fn->num_params));
-			f->WriteInt((long)s->func[i]);
+			f->write_str(fn->name + ":" + i2s(fn->num_params));
+			f->write_int((long)s->func[i]);
 		}
 		foreachi(Kaba::Variable &v, s->syntax->root_of_all_evil.var, i){
-			f->WriteStr(v.name);
-			f->WriteInt((long)s->g_var[i]);
+			f->write_str(v.name);
+			f->write_int((long)s->g_var[i]);
 		}
-		f->WriteStr("#");
+		f->write_str("#");
 		delete(f);
 	}
 
 	void import_symbols(const string &symbols_in_file)
 	{
 		File *f = FileOpen(symbols_in_file);
-		if (!f)
-			exit(1);
-		while (!f->Eof){
-			string name = f->ReadStr();
+		while (!f->eof()){
+			string name = f->read_str();
 			if (name == "#")
 				break;
-			int pos = f->ReadInt();
+			int pos = f->read_int();
 			Kaba::LinkExternal(name, (void*)(long)pos);
 		}
 		delete(f);
