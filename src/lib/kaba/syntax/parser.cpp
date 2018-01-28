@@ -1167,7 +1167,7 @@ void SyntaxTree::ParseStatementBreak(Block *block)
 void SyntaxTree::ParseStatementContinue(Block *block)
 {
 	if (parser_loop_depth == 0)
-		DoError("'break' only allowed inside a loop");
+		DoError("'continue' only allowed inside a loop");
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_CONTINUE);
 	block->nodes.add(cmd);
@@ -1464,7 +1464,20 @@ void SyntaxTree::ParseImport()
 			include = Load(filename, script->just_analyse or config.compile_os);
 			// os-includes will be appended to syntax_tree... so don't compile yet
 		}catch(Exception &e){
-			string msg = "in imported file:\n\"" + e.message + "\"";
+
+			int logical_line = Exp.get_line_no();
+			int exp_no = Exp.cur_exp;
+			int physical_line = Exp.line[logical_line].physical_line;
+			int pos = Exp.line[logical_line].exp[exp_no].pos;
+			string expr = Exp.line[logical_line].exp[exp_no].name;
+			e.line = physical_line;
+			e.column = pos;
+			e.message += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
+			throw e;
+			//msg_write(e.message);
+			//msg_write("...");
+			string msg = e.message + "\nimported file:";
+			//string msg = "in imported file:\n\"" + e.message + "\"";
 			DoError(msg);
 		}
 
