@@ -363,6 +363,8 @@ public:
 	Script *script;
 	Function *cur_func;
 	int for_index_count;
+
+	int parser_loop_depth;
 };
 
 string Kind2Str(int kind);

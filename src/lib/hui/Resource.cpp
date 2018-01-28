@@ -60,7 +60,7 @@ void LoadResource(const string &filename)
 	_languages_.clear();
 
 	try{
-		File *f = FileOpen(filename);
+		File *f = FileOpenText(filename);
 		int ffv = f->ReadFileFormatVersion();
 		if (ffv != 5){
 			FileClose(f);

@@ -1005,8 +1005,10 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
+	parser_loop_depth ++;
 	int loop_block_no = blocks.num; // should get created...soon
 	ParseCompleteCommand(block);
+	parser_loop_depth --;
 
 	// ...for_var += 1
 	Node *cmd_inc;
@@ -1097,8 +1099,10 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
+	parser_loop_depth ++;
 	int loop_block_no = blocks.num; // should get created...soon
 	ParseCompleteCommand(block);
+	parser_loop_depth --;
 
 	// ...for_index += 1
 	Node *cmd_inc = add_node_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
@@ -1146,11 +1150,15 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
+	parser_loop_depth ++;
 	ParseCompleteCommand(block);
+	parser_loop_depth --;
 }
 
 void SyntaxTree::ParseStatementBreak(Block *block)
 {
+	if (parser_loop_depth == 0)
+		DoError("'break' only allowed inside a loop");
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_BREAK);
 	block->nodes.add(cmd);
@@ -1158,6 +1166,8 @@ void SyntaxTree::ParseStatementBreak(Block *block)
 
 void SyntaxTree::ParseStatementContinue(Block *block)
 {
+	if (parser_loop_depth == 0)
+		DoError("'break' only allowed inside a loop");
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_CONTINUE);
 	block->nodes.add(cmd);
@@ -1942,6 +1952,7 @@ void SyntaxTree::ParseFunctionBody(Function *f)
 			AutoImplementDefaultConstructor(f, f->_class, true);
 	}
 
+	parser_loop_depth = 0;
 
 // instructions
 	while(more_to_parse){

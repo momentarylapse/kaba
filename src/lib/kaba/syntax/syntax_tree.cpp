@@ -276,6 +276,7 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	asm_meta_info = new Asm::MetaInfo;
 	for_index_count = 0;
 	Exp.cur_line = NULL;
+	parser_loop_depth = 0;
 
 	// "include" default stuff
 	for (Package &p: Packages)
