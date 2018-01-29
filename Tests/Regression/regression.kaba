@@ -1,8 +1,7 @@
 bool test(string filename)
 	string s = filename.head(filename.num - 4)
 	s += ".kaba"
-	_exec_("kaba '" + s + "' > out")
-	string r1 = FileRead("out")
+	string r1 = shell_execute("kaba '" + s + "'")
 	string r2 = FileRead(filename)
 
 	
@@ -26,4 +25,3 @@ void main()
 	DirEntry[] list = DirSearch(".", "*.reg", false)
 	for e in list
 		test(e.name)
-	_exec_("rm out")
