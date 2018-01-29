@@ -60,8 +60,6 @@
 	#define _unlink	::unlink
 #endif
 
-bool SilentFiles = false;
-
 
 #ifdef OS_WINDOWS
 Date systime2date(_SYSTEMTIME t)
@@ -571,9 +569,9 @@ float TextFile::read_float()
 // read a boolean (1 byte in binary mode)
 bool File::read_bool()
 {
-	bool b;
-	read_buffer(&b, 1);
-	return b;
+	char bb = 0;
+	read_buffer(&bb, 1);
+	return (bb == '1') or (bb == 0x01); // sigh, old style booleans
 }
 bool TextFile::read_bool()
 {

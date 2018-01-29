@@ -219,7 +219,6 @@ public:
 		Kaba::config.variables_offset = variable_offset;
 		Kaba::config.override_code_origin = flag_override_code_origin;
 		Kaba::config.code_origin = code_origin;
-		SilentFiles = true;
 
 		try{
 			Kaba::Script *s = Kaba::Load(filename);

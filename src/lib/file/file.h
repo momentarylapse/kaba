@@ -67,7 +67,6 @@ public:
 
 typedef bool t_file_try_again_func(const string &filename);
 
-extern bool SilentFiles;
 extern t_file_try_again_func *FileTryAgainFunc;
 
 class File
