@@ -458,8 +458,8 @@ string _cdecl kaba_shell_execute(const string &cmd)
 {
 	try{
 		return shell_execute(cmd);
-	}catch(Exception &e){
-		kaba_raise_exception(new KabaException(e.message));
+	}catch(::Exception &e){
+		kaba_raise_exception(new KabaException(e.message()));
 	}
 	return "";
 }

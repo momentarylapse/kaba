@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.15.-1.0";
+string AppVersion = "0.15.-1.1";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -190,6 +190,13 @@ public:
 		Kaba::config.stack_size = 10485760; // 10 mb (mib)
 
 
+		// for huibui.kaba...
+		Kaba::LinkExternalClassFunc("Resource.str", Kaba::mf(&hui::Resource::to_string));
+		Kaba::LinkExternalClassFunc("Resource.show", Kaba::mf(&hui::Resource::show));
+		Kaba::LinkExternal("ParseResource", (void*)&hui::ParseResource);
+
+
+		// for experiments
 		Kaba::LinkExternal("Test1", (void*)&Test1);
 		Kaba::LinkExternal("Test2", (void*)&Test2);
 

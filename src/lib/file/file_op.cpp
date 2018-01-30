@@ -174,14 +174,14 @@ string shell_execute(const string &cmd)
 
 	int r = pclose(f);
 //	int r = system(cmd.c_str());
-	if (r < 0)
-		throw Exception("does not compute");
+	if (r != 0)
+		throw Exception("failed to run shell command");
 	return buffer;
 }
 
 
 
-// seach an directory for files matching a filter
+// search a directory for files matching a filter
 Array<DirEntry> dir_search(const string &dir, const string &filter, bool show_directories)
 {
 	Array<DirEntry> entry_list;

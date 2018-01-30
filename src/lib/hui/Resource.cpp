@@ -344,7 +344,7 @@ void res_add_option(Resource &c, const string &option)
 	c.options.add(option);
 }
 
-bool res_load_line(string &l, Resource &c)
+bool res_load_line(string &l, Resource &c, bool literally)
 {
 	// parse line
 	Array<string> tokens;
@@ -362,8 +362,10 @@ bool res_load_line(string &l, Resource &c)
 	string id;
 	if (tokens.num > 1)
 		id = tokens[1];
-	if (id == "?")
+	if ((id == "?") and !literally)
 		id = "rand_id_" + i2s(randi(1000000));
+	if (id.head(1) == "/" and !literally)
+		id = id.substr(1, -1);
 
 	// dummy
 	if (tokens[0] == ".")
@@ -392,10 +394,10 @@ bool res_load_line(string &l, Resource &c)
 	return true;
 }
 
-bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c)
+bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literally)
 {
 	int cur_indent = res_get_indent(lines[cur_line]);
-	bool r = res_load_line(lines[cur_line], c);
+	bool r = res_load_line(lines[cur_line], c, literally);
 	cur_line ++;
 
 	for (int n=0; n<100; n++){
@@ -405,7 +407,7 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c)
 		if (indent <= cur_indent)
 			break;
 		Resource child;
-		if (res_load_rec(lines, cur_line, child)){
+		if (res_load_rec(lines, cur_line, child, literally)){
 			if (c.type == "Grid"){
 				if (c.w > 0){
 					child.x = n % c.w;
@@ -432,8 +434,42 @@ void Resource::show(int indent)
 		child.show(indent + 1);
 }
 
-void Resource::load(const string &buffer)
+string Resource::to_string(int indent)
 {
+	string ind;
+	for (int i=0;i<indent;i++)
+		ind += "\t";
+	string nn = ind + type + " " + id + " \"" + str_escape(title) + "\"";
+	if (type == "Dialog" or type == "Grid")
+		nn += format(" %d %d", w, h);
+	for (string &o: options)
+		nn += " " + o;
+	if (image.num > 0)
+		nn += " image=" + image;
+	if (type == "Grid"){
+		for (int j=0; j<h; j++)
+			for (int i=0; i<w; i++){
+				bool found = false;
+				for (Resource &child: children)
+					if (child.x == i and child.y == j){
+						nn += "\n" + child.to_string(indent + 1);
+						found = true;
+						break;
+					}
+				if (!found)
+					nn += "\n" + ind + "\t.";
+			}
+
+	}else{
+		for (Resource &child: children)
+			nn += "\n" + child.to_string(indent + 1);
+	}
+	return nn;
+}
+
+Resource ParseResource(const string &buffer, bool literally)
+{
+	Resource r;
 	Array<string> lines = buffer.explode("\n");
 	for (int i=lines.num-1; i>=0; i--)
 		if (lines[i].num == 0)
@@ -441,7 +477,8 @@ void Resource::load(const string &buffer)
 	int cur_line = 0;
 
 	//HuiResourceNew c;
-	res_load_rec(lines, cur_line, *this);
+	res_load_rec(lines, cur_line, r, literally);
+	return r;
 }
 
 };
