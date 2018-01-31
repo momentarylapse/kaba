@@ -27,7 +27,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.15.-1.1";
+string LibVersion = "0.16.0.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -59,6 +59,7 @@ const string IDENTIFIER_FOR = "for";
 const string IDENTIFIER_IN = "in";
 const string IDENTIFIER_BREAK = "break";
 const string IDENTIFIER_CONTINUE = "continue";
+const string IDENTIFIER_PASS = "pass";
 const string IDENTIFIER_AND = "and";
 const string IDENTIFIER_OR = "or";
 const string IDENTIFIER_XOR = "xor";
@@ -997,6 +998,7 @@ void SIAddBasicCommands()
 	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
 	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_PASS, STATEMENT_PASS);
 }
 
 
