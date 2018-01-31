@@ -937,6 +937,9 @@ void SIAddPackageBase()
 	class_add_func("basename", TypeString, mf(&string::basename), FLAG_PURE);
 	class_add_func("extension", TypeString, mf(&string::extension), FLAG_PURE);
 
+	class_add_func("escape", TypeString, mf(&str_escape), FLAG_PURE);
+	class_add_func("unescape", TypeString, mf(&str_unescape), FLAG_PURE);
+
 
 	add_class(TypeStringList);
 	class_add_func(IDENTIFIER_FUNC_INIT,	TypeVoid, mf(&StringList::__init__));

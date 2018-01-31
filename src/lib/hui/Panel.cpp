@@ -253,7 +253,7 @@ void Panel::hide()
 
 void Panel::addControl(const string &type, const string &title, int x, int y, int width, int height, const string &id)
 {
-	//msg_db_m(format("HuiPanelAddControl %s  %s  %d  %d  %d  %d  %d", type.c_str(), title.c_str(), x, y, width, height, id.c_str()).c_str(),2);
+	//printf("HuiPanelAddControl %s  %s  %d  %d  %d  %d  %s\n", type.c_str(), title.c_str(), x, y, width, height, id.c_str());
 	if (type == "Button")
 		addButton(title, x, y, width, height, id);
 	else if (type == "ColorButton")
@@ -347,14 +347,6 @@ void Panel::fromResource(const string &id)
 		win->setSize(res->w, res->h);
 
 	this->id = id;
-
-
-	// dialog
-	/*CHuiPanel *dlg
-	if (res->type == "SizableDialog")
-		dlg = HuiCreateSizableDialog(HuiGetLanguage(res->id), res->i_param[0], res->i_param[1], root, res->b_param[0]);
-	else
-		dlg = HuiCreateDialog(HuiGetLanguage(res->id), res->i_param[0], res->i_param[1], root, res->b_param[0]);*/
 
 
 	// menu/toolbar?
