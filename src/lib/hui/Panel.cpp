@@ -313,16 +313,16 @@ void Panel::addControl(const string &type, const string &title, int x, int y, in
 void Panel::_addControl(const string &ns, Resource &cmd, const string &parent_id)
 {
 	//msg_db_m(format("%d:  %d / %d",j,(cmd->type & 1023),(cmd->type >> 10)).c_str(),4);
-	setTarget(parent_id, cmd.page);
+	setTarget(parent_id, cmd.x);
 	addControl(cmd.type, GetLanguageR(ns, cmd),
 				cmd.x, cmd.y,
-				cmd.w, cmd.h,
+				1, 1,
 				cmd.id);
 
-	enable(cmd.id, cmd.enabled);
+	enable(cmd.id, cmd.enabled());
 
-	if (cmd.image.num > 0)
-		setImage(cmd.id, cmd.image);
+	if (cmd.image().num > 0)
+		setImage(cmd.id, cmd.image());
 
 	string tooltip = GetLanguageT(ns, cmd.id);
 	if (tooltip.num > 0)
@@ -343,8 +343,12 @@ void Panel::fromResource(const string &id)
 		win->setTitle(GetLanguage(id, res->id));
 
 	// size
-	if (win)
-		win->setSize(res->w, res->h);
+	if (win){
+		int width = res->value("width", "0")._int();
+		int height = res->value("height", "0")._int();
+		if (width + height > 0)
+			win->setSize(width, height);
+	}
 
 	this->id = id;
 
@@ -371,7 +375,10 @@ void Panel::fromSource(const string &buffer)
 	Resource res = ParseResource(buffer);
 	if (res.type == "Dialog"){
 		if (win){
-			win->setSize(res.w, res.h);
+			int width = res.value("width", "0")._int();
+			int height = res.value("height", "0")._int();
+			if (width + height > 0)
+				win->setSize(width, height);
 			win->setTitle(res.title);
 		}
 
@@ -397,13 +404,13 @@ void Panel::_embedResource(const string &ns, Resource &c, const string &parent_i
 	string title = GetLanguageR(ns, c);
 	//if (c.options.num > 0)
 	//	title = "!" + implode(c.options, ",") + "\\" + title;
-	addControl(c.type, title, x, y, c.w, c.h, c.id);
+	addControl(c.type, title, x, y, 1, 1, c.id);
 	for (string &o: c.options)
 		setOptions(c.id, o);
 
-	enable(c.id, c.enabled);
-	if (c.image.num > 0)
-		setImage(c.id, c.image);
+	enable(c.id, c.enabled());
+	if (c.image().num > 0)
+		setImage(c.id, c.image());
 
 	string tooltip = GetLanguageT(ns, c.id);
 	if (tooltip.num > 0)

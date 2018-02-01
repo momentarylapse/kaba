@@ -9,16 +9,36 @@ namespace hui
 extern Array<Language> _languages_;
 Array<Resource> _resources_;
 
-void Resource::reset()
+Resource::Resource()
 {
-	type = "";
-	id = "";
-	options.clear();
-	image = "";
-	enabled = true;
-	page = 0;
-	children.clear();
-	x = y = w = h = 0;
+	x = y = 0;
+}
+
+bool Resource::has(const string &key)
+{
+	for (string &o: options)
+		if (o == key)
+			return true;
+	return false;
+}
+
+bool Resource::enabled()
+{
+	return !has("disabled");
+}
+
+string Resource::value(const string &key, const string &fallback)
+{
+	int n = key.num + 1;
+	for (string &o: options)
+		if (o.head(n) == key+"=")
+			return o.substr(n, -1);
+	return fallback;
+}
+
+string Resource::image()
+{
+	return value("image");
 }
 
 Resource *Resource::get_node(const string &id) const
@@ -33,24 +53,19 @@ Resource *Resource::get_node(const string &id) const
 	return NULL;
 }
 
-void LoadResourceCommand5(File *f, Resource *c)
+void LoadResourceCommand7(File *f, Resource *c)
 {
 	c->type = f->read_str();
 	c->id = f->read_str();
 	if (c->id == "?")
-		c->id = "rand_id:" + i2s(randi(1000000));
+		c->id = "id:" + i2s(randi(1000000));
 	c->options = f->read_str().explode(",");
-	c->image = f->read_str();
-	c->enabled = f->read_bool();
 	c->x = f->read_int();
 	c->y = f->read_int();
-	c->w = f->read_int();
-	c->h = f->read_int();
-	c->page = f->read_int();
 	int n = f->read_int();
 	for (int i=0; i<n; i++){
 		Resource child;
-		LoadResourceCommand5(f, &child);
+		LoadResourceCommand7(f, &child);
 		c->children.add(child);
 	}
 }
@@ -64,9 +79,9 @@ void LoadResource(const string &filename)
 	try{
 		File *f = FileOpenText(filename);
 		int ffv = f->ReadFileFormatVersion();
-		if (ffv != 5){
+		if (ffv != 7){
 			FileClose(f);
-			msg_error("hui resource version is " + i2s(ffv) + " (5 expected)");
+			msg_error("hui resource version is " + i2s(ffv) + " (7 expected)");
 			return;
 		}
 
@@ -76,7 +91,7 @@ void LoadResource(const string &filename)
 			Resource res;
 			res.children.clear();
 			f->read_comment();
-			LoadResourceCommand5(f, &res);
+			LoadResourceCommand7(f, &res);
 			_resources_.add(res);
 		}
 
@@ -149,17 +164,14 @@ Window *CreateResourceDialog(const string &id, Window *root)
 
 	string menu_id, toolbar_id;
 	bool allow_parent = false;
-	for (string &o: res->options){
-		if ((o == "allow-root") or (o == "allow-parent"))
-			allow_parent = true;
-		if (o.head(5) == "menu=")
-			menu_id = o.substr(5, -1);
-		if (o.head(8) == "toolbar=")
-			toolbar_id = o.substr(8, -1);
-	}
+	menu_id = res->value("menu");
+	toolbar_id = res->value("toolbar");
+	allow_parent = res->has("allow-root") or res->has("allow-parent");
 
 	// dialog
-	Window *dlg = new Dialog(GetLanguageR(res->id, *res), res->w, res->h, root, allow_parent);
+	int width = res->value("width", "300")._int();
+	int height = res->value("height", "250")._int();
+	Window *dlg = new Dialog(GetLanguageR(res->id, *res), width, height, root, allow_parent);
 
 	// menu?
 	if (menu_id.num > 0)
@@ -190,12 +202,12 @@ Menu *_create_res_menu_(const string &ns, Resource *res)
 		if (c.type == "Item"){
 			if (sa_contains(c.options, "checkable"))
 				menu->addItemCheckable(get_lang(ns, c.id, "", true), c.id);
-			else if (c.image.num > 0)
-				menu->addItemImage(get_lang(ns, c.id, "", true), c.image, c.id);
+			else if (c.image().num > 0)
+				menu->addItemImage(get_lang(ns, c.id, "", true), c.image(), c.id);
 			else
 				menu->addItem(get_lang(ns, c.id, "", true), c.id);
 		}else if (c.type == "ItemImage"){
-			menu->addItemImage(get_lang(ns, c.id, "", true), c.image, c.id);
+			menu->addItemImage(get_lang(ns, c.id, "", true), c.image(), c.id);
 		}else if (c.type == "ItemCheckable"){
 			menu->addItemCheckable(get_lang(ns, c.id, "", true), c.id);
 		}else if ((c.type == "ItemSeparator") or (c.type == "Separator")){
@@ -205,7 +217,7 @@ Menu *_create_res_menu_(const string &ns, Resource *res)
 			menu->addSubMenu(get_lang(ns, c.id, "", true), c.id, sub);
 		}
 		if (menu->items.num > 0)
-			menu->items.back()->enable(c.enabled);
+			menu->items.back()->enable(c.enabled());
 	}
 	return menu;
 }
@@ -336,16 +348,8 @@ void res_parse_new(const string &line, Array<string> &tokens)
 
 void res_add_option(Resource &c, const string &option)
 {
-	if (option.head(6) == "image="){
-		c.image = option.substr(6, -1);
-		return;
-	}
 	if (option.head(8) == "tooltip="){
 		c.tooltip = option.substr(8, -1);
-		return;
-	}
-	if (option == "disabled"){
-		c.enabled = false;
 		return;
 	}
 	c.options.add(option);
@@ -361,10 +365,6 @@ bool res_load_line(string &l, Resource &c, bool literally)
 
 	c.x = 0;
 	c.y = 0;
-	c.w = 1;
-	c.h = 1;
-	c.page = -1;
-	c.enabled = true;
 
 	// id
 	string id;
@@ -392,16 +392,6 @@ bool res_load_line(string &l, Resource &c, bool literally)
 	c.id = id;
 	c.title = tokens[2];
 	int n_used = 3;
-	if ((c.type == "Grid") or (c.type == "Dialog")){
-		if (tokens.num < 5){
-			msg_error("missing width/height for " + c.type);
-			tokens.add("1");
-			tokens.add("1");
-		}
-		c.w = tokens[3]._int();
-		c.h = tokens[4]._int();
-		n_used = 5;
-	}
 	for (int i=n_used; i<tokens.num; i++)
 		res_add_option(c, tokens[i]);
 	return true;
@@ -413,7 +403,41 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literal
 	bool r = res_load_line(lines[cur_line], c, literally);
 	cur_line ++;
 
-	for (int n=0; n<100; n++){
+	if (c.type == "Grid"){
+
+		string ind = lines[cur_line-1].head(cur_indent);
+
+		int x = 0, y = 0;
+
+		for (int n=0; n<1024; n++){
+			if (cur_line >= lines.num)
+				break;
+			int indent = res_get_indent(lines[cur_line]);
+			if (indent <= cur_indent)
+				break;
+
+			if (lines[cur_line] == ind + "\t---|"){
+				x = 0;
+				y ++;
+				cur_line ++;
+				continue;
+			}
+
+			Resource child;
+			if (res_load_rec(lines, cur_line, child, literally)){
+				child.x = x;
+				child.y = y;
+				c.children.add(child);
+			}
+
+			x ++;
+
+		}
+
+		return r;
+	}
+
+	for (int n=0; n<1024; n++){
 		if (cur_line >= lines.num)
 			break;
 		int indent = res_get_indent(lines[cur_line]);
@@ -421,15 +445,7 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literal
 			break;
 		Resource child;
 		if (res_load_rec(lines, cur_line, child, literally)){
-			if (c.type == "Grid"){
-				if (c.w > 0){
-					child.x = n % c.w;
-					child.y = n / c.w;
-					//msg_write(format("%d %d", c.x, c.y));
-				}
-			}else if (c.type == "TabControl"){
-				child.x = n;
-			}
+			child.x = n;
 			c.children.add(child);
 		}
 
@@ -442,7 +458,7 @@ void Resource::show(int indent)
 	string nn;
 	for (int i=0;i<indent;i++)
 		nn += "    ";
-	msg_write(nn + type + " - " + id + format(" - %d %d %d %d - ", x, y, w, h) + sa2s(options));
+	msg_write(nn + type + " - " + id + format(" - %d %d - ", x, y) + sa2s(options));
 	for (Resource &child: children)
 		child.show(indent + 1);
 }
@@ -455,19 +471,20 @@ string Resource::to_string(int indent)
 	string nn = ind + type;
 	if (type != "Separator")
 		nn += " " + id + " \"" + str_escape(title) + "\"";
-	if (type == "Dialog" or type == "Grid")
-		nn += format(" %d %d", w, h);
 	for (string &o: options)
 		nn += " " + o;
-	if (!enabled)
-		nn += " disabled";
-	if (image.num > 0)
-		nn += " image=" + image;
 	if (tooltip.num > 0)
 		nn += " \"tooltip=" + str_escape(tooltip) + "\"";
 	if (type == "Grid"){
-		for (int j=0; j<h; j++)
-			for (int i=0; i<w; i++){
+		int ymax = 0;
+		for (auto &c: children)
+			ymax = max(ymax, c.y);
+		for (int j=0; j<=ymax; j++){
+			int xmax = 0;
+			for (auto &c: children)
+				if (c.y == j)
+					xmax = max(xmax, c.x);
+			for (int i=0; i<=xmax; i++){
 				bool found = false;
 				for (Resource &child: children)
 					if (child.x == i and child.y == j){
@@ -478,6 +495,9 @@ string Resource::to_string(int indent)
 				if (!found)
 					nn += "\n" + ind + "\t.";
 			}
+			if (j < ymax)
+				nn += "\n" + ind + "\t---|";
+		}
 
 	}else{
 		for (Resource &child: children)
