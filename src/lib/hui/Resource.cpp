@@ -406,7 +406,6 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literal
 	if (c.type == "Grid"){
 
 		string ind = lines[cur_line-1].head(cur_indent);
-		bool vertical = c.has("vertical");
 
 		int x = 0, y = 0;
 
@@ -418,13 +417,8 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literal
 				break;
 
 			if (lines[cur_line] == ind + "\t---|"){
-				if (vertical){
-					y = 0;
-					x ++;
-				}else{
-					x = 0;
-					y ++;
-				}
+				x = 0;
+				y ++;
 				cur_line ++;
 				continue;
 			}
@@ -436,11 +430,7 @@ bool res_load_rec(Array<string> &lines, int &cur_line, Resource &c, bool literal
 				c.children.add(child);
 			}
 
-			if (vertical)
-				y ++;
-			else
-				x ++;
-
+			x ++;
 		}
 
 		return r;
@@ -485,19 +475,18 @@ string Resource::to_string(int indent)
 	if (tooltip.num > 0)
 		nn += " \"tooltip=" + str_escape(tooltip) + "\"";
 	if (type == "Grid"){
-		bool vertical = has("vertical");
 		int ymax = 0;
 		for (auto &c: children)
-			ymax = max(ymax, vertical ? c.x : c.y);
+			ymax = max(ymax, c.y);
 		for (int j=0; j<=ymax; j++){
 			int xmax = 0;
 			for (auto &c: children)
-				if ((vertical ? c.x : c.y) == j)
-					xmax = max(xmax, vertical ? c.y : c.x);
+				if (c.y == j)
+					xmax = max(xmax, c.x);
 			for (int i=0; i<=xmax; i++){
 				bool found = false;
 				for (Resource &child: children)
-					if ((vertical ? child.y : child.x) == i and (vertical ? child.x : child.y) == j){
+					if (child.x == i and child.y == j){
 						nn += "\n" + child.to_string(indent + 1);
 						found = true;
 						break;
