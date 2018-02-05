@@ -102,11 +102,11 @@ void VertexBuffer::addTria(const vector &p1,const vector &n1,float tu1,float tv1
 	normals.add(n2);
 	normals.add(n3);
 	tex_coords[0].add(tu1);
-	tex_coords[0].add(1 - tv1);
+	tex_coords[0].add(tv1);
 	tex_coords[0].add(tu2);
-	tex_coords[0].add(1 - tv2);
+	tex_coords[0].add(tv2);
 	tex_coords[0].add(tu3);
-	tex_coords[0].add(1 - tv3);
+	tex_coords[0].add(tv3);
 	indexed = false;
 	num_triangles ++;
 	dirty = true;
@@ -124,11 +124,11 @@ void VertexBuffer::addTriaM(const vector &p1,const vector &n1,const float *t1,
 	normals.add(n3);
 	for (int i=0;i<num_textures;i++){
 		tex_coords[i].add(t1[i*2  ]);
-		tex_coords[i].add(1 - t1[i*2+1]);
+		tex_coords[i].add(t1[i*2+1]);
 		tex_coords[i].add(t2[i*2  ]);
-		tex_coords[i].add(1 - t2[i*2+1]);
+		tex_coords[i].add(t2[i*2+1]);
 		tex_coords[i].add(t3[i*2  ]);
-		tex_coords[i].add(1 - t3[i*2+1]);
+		tex_coords[i].add(t3[i*2+1]);
 	}
 	indexed = false;
 	num_triangles ++;

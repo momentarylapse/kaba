@@ -279,13 +279,10 @@ void Texture::reload()
 	string _filename = texture_dir + filename;
 
 	// test the file's existence
-	int h=_open(sys_str_f(_filename), 0);
-	if (h<0){
+	if (!file_test_existence(_filename)){
 		msg_error("texture file does not exist!");
-		msg_db_l(1);
 		return;
 	}
-	_close(h);
 
 	#ifdef NIX_ALLOW_VIDEO_TEXTURE
 		avi_info[texture]=NULL;
@@ -317,7 +314,7 @@ void Texture::reload()
 		#endif
 	}else{
 		Image image;
-		image.loadFlipped(_filename);
+		image.load(_filename);
 		overwrite(image);
 	}
 	life_time = 0;
@@ -379,11 +376,12 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 		//gluBuild2DMipmaps(subtarget,4,NixImage.width,NixImage.height,GL_RGBA,GL_UNSIGNED_BYTE,NixImage.data);
 		//glTexImage2D(subtarget,0,GL_RGBA8,128,128,0,GL_RGBA,GL_UNSIGNED_BYTE,NixImage.data);
 		//glTexImage2D(subtarget,0,4,256,256,0,4,GL_UNSIGNED_BYTE,NixImage.data);
+
 		t->width = image.width;
 		t->height = image.height;
 		if (texture_icon_size > 0){
 			t->icon = *image.scale(texture_icon_size, texture_icon_size);
-			t->icon.flipV();
+			//t->icon.flipV();
 		}
 	}
 	t->life_time = 0;
