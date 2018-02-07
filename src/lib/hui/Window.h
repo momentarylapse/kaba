@@ -74,14 +74,13 @@ class Window : public Panel
 	friend class Menu;
 public:
 	Window();
-	Window(const string &title, int x, int y, int width, int height, Window *parent, bool allow_parent, int mode);
-	Window(const string &title, int x, int y, int width, int height);
+	Window(const string &title, int width, int height);
 	Window(const string &id, Window *parent);
-	void _cdecl __init_ext__(const string &title, int x, int y, int width, int height);
+	void _cdecl __init_ext__(const string &title, int width, int height);
 	virtual ~Window();
 	virtual void _cdecl __delete__();
 
-	void _init_(const string &title, int x, int y, int width, int height, Window *parent, bool allow_parent, int mode);
+	void _init_(const string &title, int width, int height, Window *parent, bool allow_parent, int mode);
 	void _init_generic_(Window *parent, bool allow_parent, int mode);
 	void _clean_up_();
 
@@ -148,6 +147,7 @@ public:
 	Control *main_input_control;
 
 	Toolbar *toolbar[4];
+	Toolbar *_cdecl getToolbar(int index){ return toolbar[index]; }
 
 private:
 
@@ -169,7 +169,7 @@ private:
 public:
 	GtkWidget *window;
 private:
-	GtkWidget *vbox, *hbox, *menubar, *statusbar, *__ttt__;
+	GtkWidget *vbox, *hbox, *menubar, *statusbar;
 	Array<GtkWidget*> gtk_menu;
 	int gtk_num_menus;
 	int desired_width, desired_height;
@@ -185,25 +185,25 @@ private:
 class NixWindow : public Window
 {
 public:
-	NixWindow(const string &title, int x, int y, int width, int height);
-	void _cdecl __init_ext__(const string &title, int x, int y, int width, int height);
+	NixWindow(const string &title, int width, int height);
+	void _cdecl __init_ext__(const string &title, int width, int height);
 };
 
 class Dialog : public Window
 {
 public:
-	Dialog(const string &title, int width, int height, Window *root, bool allow_root);
-	void _cdecl __init_ext__(const string &title, int width, int height, Window *root, bool allow_root);
+	Dialog(const string &title, int width, int height, Window *parent, bool allow_parent);
+	void _cdecl __init_ext__(const string &title, int width, int height, Window *parent, bool allow_parent);
 };
 
 extern Window *CurWindow;
 
 
-class SourceDialog : public Window
+class SourceWindow : public Window
 {
 public:
-	SourceDialog(const string &source, Window *root);
-	void _cdecl __init_ext__(const string &source, Window *root);
+	SourceWindow(const string &source, Window *parent);
+	void _cdecl __init_ext__(const string &source, Window *parent);
 };
 
 
