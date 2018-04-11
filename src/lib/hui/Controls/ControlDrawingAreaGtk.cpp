@@ -9,6 +9,7 @@
 #include "../hui.h"
 #include <math.h>
 #include "../internal.h"
+#include "../../math/rect.h"
 
 #include <GL/gl.h>
 
@@ -26,7 +27,10 @@ GdkGLContext *gtk_gl_context = NULL;
 gboolean OnGtkAreaDraw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
 	reinterpret_cast<ControlDrawingArea*>(user_data)->cur_cairo = cr;
+	//msg_write("draw " + reinterpret_cast<ControlDrawingArea*>(user_data)->id);
+	reinterpret_cast<ControlDrawingArea*>(user_data)->redraw_area.clear();
 	reinterpret_cast<Control*>(user_data)->notify("hui:draw");
+	//msg_write("/draw " + reinterpret_cast<ControlDrawingArea*>(user_data)->id);
 	return false;
 }
 
@@ -253,6 +257,7 @@ gboolean OnGtkAreaKeyUp(GtkWidget *widget, GdkEventKey *event, gpointer user_dat
 ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	Control(CONTROL_DRAWINGAREA, id)
 {
+	delay_timer = new Timer;
 	GetPartStrings(title);
 	// FIXME: this needs to be supplied as title... fromSource() won't work...
 	is_opengl = (OptionString.find("opengl") >= 0);
@@ -298,10 +303,61 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	cur_cairo = NULL;
 }
 
+ControlDrawingArea::~ControlDrawingArea()
+{
+	delete delay_timer;
+}
+
 void ControlDrawingArea::make_current()
 {
 	if (is_opengl)
 		gtk_gl_area_make_current(GTK_GL_AREA(widget));
+}
+
+static bool __drawing_area_queue_redraw(void *p)
+{
+	gtk_widget_queue_draw(GTK_WIDGET(p));
+	return false;
+}
+
+void ControlDrawingArea::redraw()
+{
+	//msg_write("redraw " + id);
+	rect r = rect(0,0,1000000,1000000);
+	if (delay_timer->peek() < 0.2f){
+		for (rect &rr: redraw_area)
+			if (rr.covers(r)){
+				//msg_write("    IGNORE " + f2s(delay_timer->peek(), 3));
+				return;
+			}
+	}else{
+		delay_timer->reset();
+		redraw_area.clear();
+	}
+	if (!widget)
+		return;
+	//printf("                    DRAW\n");
+	g_idle_add((GSourceFunc)__drawing_area_queue_redraw,(void*)widget);
+	//gtk_widget_queue_draw(widget);
+	redraw_area.add(r);
+}
+
+void ControlDrawingArea::redraw(const rect &r)
+{
+	if (delay_timer->peek() < 0.2f){
+		for (rect &rr: redraw_area)
+			if (rr.covers(r)){
+				//msg_write("    IGNORE " + f2s(delay_timer->peek(), 3));
+				return;
+			}
+	}else{
+		delay_timer->reset();
+		redraw_area.clear();
+	}
+	if (!widget)
+		return;
+	gtk_widget_queue_draw_area(widget, r.x1, r.y1, r.width(), r.height());
+	redraw_area.add(r);
 }
 
 };

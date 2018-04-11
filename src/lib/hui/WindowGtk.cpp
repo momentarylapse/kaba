@@ -9,7 +9,9 @@
 	#include <gdk/gdkwin32.h>
 #endif
 #ifdef OS_LINUX
+#if HAS_LIB_XLIB
 	#include <gdk/gdkx.h>
+#endif
 #endif
 
 namespace hui
@@ -115,7 +117,9 @@ void Window::_init_(const string &title, int width, int height, Window *root, bo
 	}else
 		window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-	gtk_window_set_title(GTK_WINDOW(window), sys_str(title));
+	GetPartStrings(title);
+
+	gtk_window_set_title(GTK_WINDOW(window), sys_str(PartString[0]));
 	gtk_window_set_resizable(GTK_WINDOW(window), true);
 	if (parent){
 		// dialog -> center on screen or root (if given)    ->  done by gtk....later
@@ -435,7 +439,7 @@ void Window::setCursorPos(int x, int y)
 		input.x = (float)x;
 		input.y = (float)y;
 		// TODO GTK3
-#ifdef OS_LINUX
+#if HAS_LIB_XLIB
 		XWarpPointer(x_display, None, GDK_WINDOW_XID(gtk_widget_get_window(main_input_control->widget)), 0, 0, 0, 0, x, y);
 		XFlush(x_display);
 #endif

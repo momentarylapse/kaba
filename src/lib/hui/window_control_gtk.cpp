@@ -24,7 +24,6 @@
 #include "hui.h"
 #include "internal.h"
 #ifdef HUI_API_GTK
-#include "../math/math.h"
 
 #ifndef OS_WINDOWS
 #include <pango/pangocairo.h>
@@ -187,7 +186,8 @@ void Panel::addDefButton(const string &title, int x, int y, const string &id)
 	addButton(title, x, y, id);
 	GtkWidget *b = controls.back()->widget;
 	gtk_widget_set_can_default(b, true);
-	gtk_widget_grab_default(b);
+	if (win) // otherwise gtk will complain
+		gtk_widget_grab_default(b);
 }
 
 
@@ -410,34 +410,16 @@ void Panel::removeControl(const string &id)
 
 void Panel::redraw(const string &_id)
 {
-	Control *c = _get_control_(_id);
-	if (c){
-		GdkWindow *w = gtk_widget_get_window(c->widget);
-		if (w)
-			gdk_window_invalidate_rect(w, NULL, false);
-	}
+	ControlDrawingArea *c = dynamic_cast<ControlDrawingArea*>(_get_control_(_id));
+	if (c)
+		c->redraw();
 }
 
 void Panel::redrawRect(const string &_id, const rect &r)
 {
-	Control *c = _get_control_(_id);
-	if (c){
-
-		/*if (w < 0){
-			x += w;
-			w = - w;
-		}
-		if (h < 0){
-			y += h;
-			h = - h;
-		}*/
-		GdkRectangle rr;
-		rr.x = r.x1;
-		rr.y = r.y1;
-		rr.width = r.width();
-		rr.height = r.height();
-		gdk_window_invalidate_rect(gtk_widget_get_window(c->widget), &rr, false);
-	}
+	ControlDrawingArea *c = dynamic_cast<ControlDrawingArea*>(_get_control_(_id));
+	if (c)
+		c->redraw(r);
 }
 
 }
