@@ -977,7 +977,7 @@ void SIAddPackageBase()
 		class_add_element("text", TypeString, config.pointer_size);
 		class_set_vtable(KabaException);
 
-	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception);
+	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("e", TypeExceptionP);
 }
 

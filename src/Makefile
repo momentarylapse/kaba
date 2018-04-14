@@ -1,6 +1,6 @@
 BIN = ../kaba
 CPP = g++
-GLOBALFLAGS = -O2 -g -std=c++11
+GLOBALFLAGS = -O2 -g -std=c++14
 CXXFLAGS =  `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
 CXXFLAGSLINKING =  `pkg-config --cflags --libs gtk+-3.0` -lX11 -lz -lGL $(GLOBALFLAGS)
 
