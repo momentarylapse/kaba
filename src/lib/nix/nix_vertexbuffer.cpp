@@ -20,7 +20,6 @@ VertexBuffer *vb_2d = NULL;
 VertexBuffer::VertexBuffer(int _num_textures)
 {
 	num_textures = _num_textures;
-	msg_db_f(format("creating vertex buffer (%d tex coords)", num_textures).c_str(), 1);
 	if (num_textures > NIX_MAX_TEXTURELEVELS)
 		num_textures = NIX_MAX_TEXTURELEVELS;
 	indexed = false;
@@ -45,7 +44,6 @@ VertexBuffer::VertexBuffer(int _num_textures)
 
 VertexBuffer::~VertexBuffer()
 {
-	msg_db_f("deleting vertex buffer", 1);
 	clear();
 }
 

@@ -184,7 +184,6 @@ public:
 		}
 
 		// init
-		msg_db_r("main", 1);
 		//hui::RegisterFileType("kaba", "MichiSoft Script Datei", "", hui::AppFilename, "execute", false);
 		NetInit();
 		Kaba::Init(instruction_set, abi, flag_allow_std_lib);
@@ -257,7 +256,6 @@ public:
 		}
 
 		// end
-		msg_db_l(1);
 		Kaba::End();
 		msg_end();
 		if (error)
@@ -279,11 +277,10 @@ public:
 
 		if (f_arg){
 			// special execution...
-			msg_db_f("Execute main(arg)", 1);
-			f_arg(arg.sub(2, -1));
+			Array<string> _arg = arg.sub(2, -1);
+			f_arg(_arg);
 		}else if (f_void){
 			// default execution
-			msg_db_f("Execute main()", 1);
 			f_void();
 		}
 		Kaba::Remove(s);

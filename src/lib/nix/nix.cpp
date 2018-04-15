@@ -228,7 +228,6 @@ void TellUsWhatsWrong()
 void KillWindows()
 {
 #ifdef OS_WINDOWS
-	msg_db_r("Killing Windows...",0);
 	HANDLE t;
 	OpenProcessToken(	GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,&t);
 	_TOKEN_PRIVILEGES tp;
@@ -238,7 +237,6 @@ void KillWindows()
 	AdjustTokenPrivileges(t,FALSE,&tp,0,NULL,0);
 	InitiateSystemShutdown(NULL,(win_str)hui_tchar_str("Resistance is futile!"),10,TRUE,FALSE);
 	//ExitWindowsEx(EWX_SHUTDOWN | EWX_FORCE,0);
-	msg_db_l(0);
 #endif
 }
 
