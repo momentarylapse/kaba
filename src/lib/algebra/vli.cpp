@@ -81,11 +81,10 @@ inline void _add_(unsigned int &a, unsigned int b, bool &carry)
 	else
 		asm volatile("clc");
 	asm volatile(
-		"mov %2, %%eax\n\t"
-		"adc %%eax, %3\n\t"
-		"setc %1"
-		: "=r" (a), "=r" (carry)
-		: "r" (a), "r" (b)
+		"adc %3, %0\n\t"
+		"setc %1\n\t"
+		: "+r" (a), "+r" (carry)
+		: "r" (a), "r" (b), "r" (carry)
 		: "%eax");
 #endif
 }
@@ -152,7 +151,7 @@ vli::vli(const string &str)
 	data.add(0);
 	sign = false;
 	int i0 = 0;
-	if ((str.num > 0) && (str[0] == '-')){
+	if ((str.num > 0) and (str[0] == '-')){
 		sign = true;
 		i0 = 1;
 	}
@@ -265,7 +264,7 @@ void vli::operator +=(const vli &v)
 		if (compare_abs(v) < 0){
 			vli r = v;
 			r.sub_abs(data);
-			r.sign = !sign && (r.data.back() != 0);
+			r.sign = !sign and (r.data.back() != 0);
 			*this = r;
 		}else{
 			sub_abs(v.data);
@@ -281,7 +280,7 @@ void vli::operator -=(const vli &v)
 		if (compare_abs(v) < 0){
 			vli r = v;
 			r.sub_abs(data);
-			r.sign = !sign && (r.data.back() != 0);
+			r.sign = !sign and (r.data.back() != 0);
 			*this = r;
 		}else{
 			sub_abs(v.data);
@@ -321,7 +320,7 @@ vli vli::operator *(const vli &v) const
 			t.shift_units(i);
 		r.add_abs(t.data);
 	}
-	r.sign = (sign != v.sign) && (r.data.back() != 0);
+	r.sign = (sign != v.sign) and (r.data.back() != 0);
 	return r;
 }
 
@@ -332,7 +331,7 @@ void vli::div(unsigned int divisor, unsigned int &remainder)
 		unsigned int rem;
 		_div_(data[i], last_rem, divisor, rem);
 		last_rem = rem;
-		if ((data[i] == 0) && (i == data.num - 1) && (data.num > 1))
+		if ((data[i] == 0) and (i == data.num - 1) and (data.num > 1))
 			data.resize(data.num - 1);
 	}
 	remainder = last_rem;
@@ -352,7 +351,7 @@ inline unsigned int get_fair_uint(unsigned int il, unsigned int ih, int shift)
 {
 	if (shift >= 32)
 		return (il << (shift - 32));
-	if ((shift < 0) && (shift < 32))
+	if ((shift < 0) and (shift < 32))
 		return (ih << shift) + (il >> (32 - shift));
 	else if (shift == 0)
 		return ih;
@@ -437,13 +436,13 @@ void vli::div(const vli &divisor, vli &remainder)
 		data[i - divisor.data.num + 1] = guess;
 		if (first_set)
 			data.resize(i - divisor.data.num + 2);
-		/*if ((guess == 0) && (i == data.num - 1) && (i > 0))
+		/*if ((guess == 0) and (i == data.num - 1) and (i > 0))
 			data.pop_back();*/
 		first_set = false;
 //		printf("div %d\n", divisor.data.num);
 		//exit(0);
 	}
-	if ((data.back() == 0) && (data.num > 1))
+	if ((data.back() == 0) and (data.num > 1))
 		data.pop();
 	sign = sign ^ divisor.sign;
 //	printf("----------\n");
@@ -502,10 +501,10 @@ string vli::to_string() const
 			div_t divresult = ::div(rr, 10);
 			s.add('0' + divresult.rem);
 			rr = divresult.quot;
-			if ((t.data.num == 1) && (t.data[0] == 0) && (rr == 0))
+			if ((t.data.num == 1) and (t.data[0] == 0) and (rr == 0))
 				break;
 		}
-		if ((t.data.num == 1) && (t.data[0] == 0))
+		if ((t.data.num == 1) and (t.data[0] == 0))
 			break;
 	}
 	if (sign)
@@ -542,11 +541,11 @@ vli vli::pow(const vli &e) const
 		for (int i=0;i<nmax;i++){
 			if ((e.data[u] & (1 << i)) > 0)
 				r *= t;
-			if ((i < nex - 1) || (u < e.data.num - 1))
+			if ((i < nex - 1) or (u < e.data.num - 1))
 				t *= t;
 		}
 	}
-	r.sign = (sign && ((e.data[0] & 1) > 0));
+	r.sign = (sign and ((e.data[0] & 1) > 0));
 	return r;
 }
 
@@ -573,7 +572,7 @@ vli vli::pow_mod(const vli &e, const vli &m) const
 				r.div(m, rr);
 				r = rr;
 			}
-			if ((i < nex - 1) || (u < e.data.num - 1)){
+			if ((i < nex - 1) or (u < e.data.num - 1)){
 				t *= t;
 				vli tt;
 				t.div(m, tt);
