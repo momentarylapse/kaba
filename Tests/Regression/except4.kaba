@@ -1,0 +1,6 @@
+void main()
+	try
+		FileOpen("-non-existent-")
+	except FileError as e
+		print(e.message())
+

@@ -455,6 +455,11 @@ int _cdecl _Char2Int(char c)
 {	return (int)c;	}
 bool _cdecl _Pointer2Bool(void *p)
 {	return (p != NULL);	}
+
+
+#pragma GCC push_options
+#pragma GCC optimize("no-omit-frame-pointer")
+
 string _cdecl kaba_shell_execute(const string &cmd)
 {
 	try{
@@ -464,6 +469,8 @@ string _cdecl kaba_shell_execute(const string &cmd)
 	}
 	return "";
 }
+
+#pragma GCC pop_options
 
 
 Array<Statement> Statements;
