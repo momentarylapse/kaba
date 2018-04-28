@@ -1,0 +1,16 @@
+class Test
+	string s
+	float i
+	void __init__(string _s, int _i)
+		s = _s
+		i = _i
+
+void main()
+	Test*[] tests
+	tests.add(new Test("a", 130000))
+	tests.add(new Test("c", 3))
+	tests.add(new Test("b", 23))
+	tests.add(new Test("d", 213))
+	sort_list(&tests, type(tests), "i")
+	for t in tests
+		print(t.s + " " + t.i)
