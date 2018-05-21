@@ -2,10 +2,11 @@
 
 #include "../file/file.h"
 
+
 #ifdef OS_WINDOWS
 	#include <windows.h>
 #endif
-#ifdef OS_LINUX
+#if defined(OS_LINUX) || defined(OS_MINGW)
 	#include <pthread.h>
 	#include <unistd.h>
 #endif
@@ -15,7 +16,7 @@ struct ThreadInternal
 #ifdef OS_WINDOWS
 	HANDLE thread;
 #endif
-#ifdef OS_LINUX
+#if defined(OS_LINUX) || defined(OS_MINGW)
 	pthread_t thread;
 #endif
 };
@@ -82,7 +83,8 @@ void Thread::__delete__()
 
 
 
-static DWORD WINAPI thread_start_func(__in LPVOID p)
+//static DWORD WINAPI thread_start_func(__in LPVOID p)
+static DWORD WINAPI thread_start_func(LPVOID p)
 {
 	Thread *t = (Thread*)p;
 	t->onRun();
@@ -123,6 +125,11 @@ void Thread::exit()
 	ExitThread(0);
 }
 
+void Thread::cancelationPoint()
+{
+	// ARGH
+}
+
 Thread *Thread::getSelf()
 {
 	HANDLE h = GetCurrentThread();
@@ -133,8 +140,7 @@ Thread *Thread::getSelf()
 }
 
 
-#endif
-#ifdef OS_LINUX
+#else //OS_LINUX/MINGW
 
 static void __thread_cleanup_func(void *p)
 {

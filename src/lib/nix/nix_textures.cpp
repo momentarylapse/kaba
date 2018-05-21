@@ -250,10 +250,11 @@ void Texture::__delete__()
 	this->~Texture();
 }
 
-Texture *LoadTexture(const string &filename)
+Texture *LoadTexture(const string &_filename)
 {
-	if (filename.num < 1)
+	if (_filename.num < 1)
 		return NULL;
+	string filename = _filename.sys_filename();
 	for (Texture *t: textures)
 		if (filename == t->filename)
 			return t->valid ? t : NULL;

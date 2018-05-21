@@ -16,7 +16,6 @@
 	#include <windows.h>
 #endif
 
-
 #if HAS_LIB_UNWIND
 #define UNW_LOCAL_ONLY
 #include <cxxabi.h>

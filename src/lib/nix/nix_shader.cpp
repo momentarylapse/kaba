@@ -225,6 +225,7 @@ Shader *LoadShader(const string &filename)
 		default_shader_3d->reference_count ++;
 		return default_shader_3d;
 	}
+
 	string fn = shader_dir + filename;
 	for (Shader *s: shaders)
 		if ((s->filename == fn) and (s->program >= 0)){
@@ -235,6 +236,7 @@ Shader *LoadShader(const string &filename)
 	msg_write("loading shader: " + fn);
 	msg_right();
 
+	try{
 	string source = FileRead(fn);
 	Shader *shader = CreateShader(source);
 	if (shader)
@@ -242,6 +244,11 @@ Shader *LoadShader(const string &filename)
 
 	msg_left();
 	return shader;
+	}catch(FileError &e){
+		msg_error(e.message());
+		default_shader_3d->reference_count ++;
+		return default_shader_3d;
+	}
 }
 
 Shader::Shader()

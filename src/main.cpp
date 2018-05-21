@@ -264,6 +264,8 @@ public:
 
 	}
 
+#pragma GCC push_options
+#pragma GCC optimize("no-omit-frame-pointer")
 
 	void execute(Kaba::Script *s, Array<string> &arg)
 	{
@@ -285,6 +287,7 @@ public:
 		}
 		Kaba::Remove(s);
 	}
+#pragma GCC pop_options
 
 	void output_to_file_raw(Kaba::Script *s, const string &out_file)
 	{
