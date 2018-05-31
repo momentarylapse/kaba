@@ -300,6 +300,13 @@ ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag
 				return &ff;
 			}
 		msg_error("could not override " + c->name + "." + f.name);
+	}else{
+		// name alone is not enough for matching...
+		/*foreachi(ClassFunction &ff, c->functions, i)
+			if (ff.name == f.name){
+				msg_error("missing override " + c->name + "." + f.name);
+				break;
+			}*/
 	}
 	c->functions.add(f);
 	return &c->functions.back();

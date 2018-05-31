@@ -338,8 +338,8 @@ void SIAddPackageX()
 			func_add_param("width",		TypeFloat32);
 			func_add_param("height",	TypeFloat32);
 			func_add_param("texture",	TypeTextureP);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Picture::__init__)));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Picture::__delete__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Picture::__init__)), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Picture::__delete__)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Draw", TypeVoid, x_p(mf(&Picture::Draw)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Update", TypeVoid, x_p(mf(&Picture::Update)), FLAG_OVERRIDE);
 		class_add_func_virtual("onIterate", TypeVoid, x_p(mf(&Picture::OnIterate)), FLAG_OVERRIDE);
@@ -363,8 +363,8 @@ void SIAddPackageX()
 			func_add_param("m",			TypeModelP);
 			func_add_param("mat",		TypeMatrix);
 			func_add_param("z",			TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Picture3d::__init__)));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Picture3d::__delete__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Picture3d::__init__)), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Picture3d::__delete__)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Draw", TypeVoid, x_p(mf(&Picture3d::Draw)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Update", TypeVoid, x_p(mf(&Picture3d::Update)), FLAG_OVERRIDE);
 		class_add_func_virtual("onIterate", TypeVoid, x_p(mf(&Picture3d::OnIterate)), FLAG_OVERRIDE);
@@ -391,8 +391,8 @@ void SIAddPackageX()
 			func_add_param("size",		TypeFloat32);
 			func_add_param("c",			TypeColor);
 			func_add_param("str",		TypeString);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Text::__init__)));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Text::__delete__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Text::__init__)), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Text::__delete__)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Draw", TypeVoid, x_p(mf(&Text::Draw)), FLAG_OVERRIDE);
 		class_add_func_virtual("__Update", TypeVoid, x_p(mf(&Text::Update)), FLAG_OVERRIDE);
 		class_add_func_virtual("onIterate", TypeVoid, x_p(mf(&Text::OnIterate)), FLAG_OVERRIDE);
@@ -437,8 +437,8 @@ void SIAddPackageX()
 			func_add_param("texture", TypeTextureP);
 			func_add_param("ttl", TypeFloat32);
 			func_add_param("radius", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&ParticleRot::__init__)));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&ParticleRot::__delete__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&ParticleRot::__init__)), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&ParticleRot::__delete__)), FLAG_OVERRIDE);
 		class_add_func_virtual("onIterate", TypeVoid, x_p(mf(&ParticleRot::OnIterate)), FLAG_OVERRIDE);
 			func_add_param("dt", TypeFloat32);
 		class_set_vtable_x(ParticleRot);
@@ -452,8 +452,8 @@ void SIAddPackageX()
 			func_add_param("texture", TypeTextureP);
 			func_add_param("ttl", TypeFloat32);
 			func_add_param("radius", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Beam::__init__)));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Beam::__delete__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, x_p(mf(&Beam::__init__)), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, x_p(mf(&Beam::__delete__)), FLAG_OVERRIDE);
 		class_add_func_virtual("onIterate", TypeVoid, x_p(mf(&Beam::OnIterate)), FLAG_OVERRIDE);
 			func_add_param("dt", TypeFloat32);
 		class_set_vtable_x(Beam);

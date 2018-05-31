@@ -433,7 +433,8 @@ void init_shaders()
 		"	color = material.emission;\n"
 		"	color += material.ambient * light.color * light.ambient;\n"
 		"	color += material.diffusive * light.color * d;\n"
-		"	color *= texture(tex0, fragmentTexCoord);\n"
+		"	vec4 tex_col = texture(tex0, fragmentTexCoord);\n"
+		"	color *= tex_col;\n"
 		"	if ((d > 0)&&(material.shininess > 1)){\n"
 		"		vec3 e = normalize(fragmentPos); // eye dir\n"
 		"		vec3 rl = reflect(l, n);\n"
@@ -442,7 +443,7 @@ void init_shaders()
 		"	}\n"
 		"	float t = exp(-fragmentPos.z * fog.density);\n"
 		"	color = (1 - t) * fog.color + t * color;\n"
-		"	color.a = material.diffusive.a;\n"
+		"	color.a = material.diffusive.a * tex_col.a;\n"
 		"}\n"
 		"</FragmentShader>");
 

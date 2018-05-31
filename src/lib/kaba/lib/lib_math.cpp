@@ -967,6 +967,9 @@ void SIAddPackageMath()
 		func_add_param("q_out",		TypeQuaternion);
 		func_add_param("axis",		TypeVector);
 		func_add_param("angle",		TypeFloat32);
+	add_func("QuaternionRotationM",	TypeVoid,	(void*)&QuaternionRotationM, FLAG_PURE);
+		func_add_param("q_out",		TypeQuaternion);
+		func_add_param("m_in",		TypeMatrix);
 	add_func("QuaternionInterpolate",		TypeVoid,	(void*)(void(*)(quaternion&, const quaternion&, const quaternion&, float))&QuaternionInterpolate, FLAG_PURE);
 		func_add_param("q_out",		TypeQuaternion);
 		func_add_param("q_0",		TypeQuaternion);

@@ -55,12 +55,13 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Class *t, bool all
 			}
 		}
 
-		// add vtable reference
-		if (t->vtable.num > 0)
-			AutoImplementAddVirtualTable(self, f, t);
-
 		// call child constructors
 		AutoImplementAddChildConstructors(self, f, t);
+
+		// add vtable reference
+		// after child constructor (otherwise would get overwritten)
+		if (t->vtable.num > 0)
+			AutoImplementAddVirtualTable(self, f, t);
 	}
 }
 
@@ -80,12 +81,13 @@ void SyntaxTree::AutoImplementComplexConstructor(Function *f, Class *t)
 		c->set_param(i, add_node_local_var(i, pcc->param_types[i]));
 	f->block->nodes.add(c);
 
-	// add vtable reference
-	if (t->vtable.num > 0)
-		AutoImplementAddVirtualTable(self, f, t);
-
 	// call child constructors
 	AutoImplementAddChildConstructors(self, f, t);
+
+	// add vtable reference
+	// after child constructor (otherwise would get overwritten)
+	if (t->vtable.num > 0)
+		AutoImplementAddVirtualTable(self, f, t);
 }
 
 
