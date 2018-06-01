@@ -140,7 +140,7 @@ void SyntaxTree::GetConstantValue(const string &str, Value &value)
 Node *SyntaxTree::DoClassFunction(Node *ob, Array<ClassFunction> &cfs, Block *block)
 {
 	// the function
-	Function *ff = cfs[0].GetFunc();
+	Function *ff = cfs[0].func();
 
 	Array<Node> links;
 	for (ClassFunction &cf: cfs){
@@ -1753,6 +1753,7 @@ void SyntaxTree::ParseClass()
 			_offset = mem_align(_offset, 4);
 	_class->size = ProcessClassSize(_class->name, _offset);
 
+
 	AddFunctionHeadersForClass(_class);
 
 	_class->fully_parsed = true;
@@ -1853,9 +1854,9 @@ bool SyntaxTree::ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_
 void Function::Update(Class *class_type)
 {
 	// save "original" param types (Var[].Type gets altered for call by reference)
-	literal_param_type.resize(num_params);
-	for (int i=0;i<num_params;i++)
-		literal_param_type[i] = var[i].type;
+	for (int i=literal_param_type.num;i<num_params;i++)
+		literal_param_type.add(var[i].type);
+	// but only, if not existing yet...
 
 	// return by memory
 	if (return_type->uses_return_by_memory())
@@ -1958,6 +1959,7 @@ Function *SyntaxTree::ParseFunctionHeader(Class *class_type, bool as_extern)
 			// type of parameter variable
 			Class *param_type = ParseType(); // force
 			f->block->add_var(Exp.cur, param_type);
+			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;
 

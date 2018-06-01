@@ -1,0 +1,17 @@
+class A
+	void __init__(void *p)
+		print("A " + p2s(p))
+	string xx
+
+class B extends A
+	void __init__(string a, int i)
+		super.__init__(nil)
+		print("B " + a + " " + i)
+
+class C extends B
+	override void __init__()
+		super.__init__("test", 13)
+		print("C")
+
+void main()
+	new C

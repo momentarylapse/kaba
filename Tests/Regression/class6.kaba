@@ -1,0 +1,27 @@
+class A
+	void __init__()
+		print("A.init")
+	void __init__(int a)
+		print("A.init " + a)
+	virtual void __delete__()
+		print("A.del")
+	virtual void x()
+		print("A.x")
+
+class B extends A
+	override void __init__()
+		print("B.init")
+	void __init__(string s)
+		print("B.init " + s)
+	override void x()
+		print("B.x")
+
+class C extends B
+	override void __init__(string s)
+		print("C.init " + s)
+	override void x()
+		print("C.x")
+
+void main()
+	A* a = new C("test")
+	a.x()

@@ -291,21 +291,27 @@ void class_add_element(const string &name, Class *type, int offset, ScriptFlag f
 	cur_class->elements.add(e);
 }
 
+int _class_override_num_params = -1;
+
 ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag)
 {
 	if ((flag & FLAG_OVERRIDE) > 0){
 		foreachi(ClassFunction &ff, c->functions, i)
 			if (ff.name == f.name){
-				ff = f;
-				return &ff;
+				if (_class_override_num_params < 0 or _class_override_num_params == ff.param_types.num){
+					ff = f;
+					return &ff;
+				}
 			}
 		msg_error("could not override " + c->name + "." + f.name);
 	}else{
 		// name alone is not enough for matching...
 		/*foreachi(ClassFunction &ff, c->functions, i)
 			if (ff.name == f.name){
-				msg_error("missing override " + c->name + "." + f.name);
-				break;
+				if (_class_override_num_params < 0 or _class_override_num_params == ff.param_types.num){
+					msg_error("missing override " + c->name + "." + f.name);
+					break;
+				}
 			}*/
 	}
 	c->functions.add(f);
