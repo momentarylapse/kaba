@@ -1,25 +1,29 @@
 bool test(string filename)
 	string s = filename.head(filename.num - 4)
 	s += ".kaba"
-	string r1 = shell_execute("kaba '" + s + "'")
-	string r2 = FileRead(filename)
+	try
+		string r1 = shell_execute("kaba '" + s + "'")
+		string r2 = FileRead(filename)
 
 	
-	for i in s.num:42
-		s.add(' ')
-	if r1 == r2
-		print(s + "ok")
-		return true
+		for i in s.num:42
+			s.add(' ')
+		if r1 == r2
+			print(s + "ok")
+			return true
 
-	print(s + "Fehler")
-	print("--------------------------------------------------")
-	print("erwartet:")
-	print(r2)
-	print("--------------------------------------------------")
-	print("Ausgabe:")
-	print(r1)
-	print("--------------------------------------------------")
-	return false
+		print(s + "Fehler")
+		print("--------------------------------------------------")
+		print("erwartet:")
+		print(r2)
+		print("--------------------------------------------------")
+		print("Ausgabe:")
+		print(r1)
+		print("--------------------------------------------------")
+		return false
+	except
+		print("failed running")
+		return false
 
 void main()
 	DirEntry[] list = DirSearch(".", "*.reg", false)

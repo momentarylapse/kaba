@@ -2,6 +2,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "common.h"
+#include "exception.h"
 
 
 #ifdef _X_ALLOW_X_
@@ -19,7 +20,7 @@
 	#include "../../../meta.h"
 	#include "../../../networking.h"
 	#include "../../../input.h"
-	#define x_p(p)		(void*)p
+
 	void _cdecl ExitProgram();
 	void _cdecl ScreenShot();
 	void _cdecl LoadWorldSoon(const string &filename);
@@ -29,11 +30,45 @@
 	void _cdecl DrawSplashScreen(const string &str, float per);
 	using namespace Gui;
 	using namespace Fx;
+#endif
+
+
+
+namespace Kaba{
+
+
+#ifdef _X_ALLOW_X_
+	#define x_p(p)		(void*)p
+
+#pragma GCC push_options
+#pragma GCC optimize("no-omit-frame-pointer")
+
+
+Gui::Font* __LoadFont(const string &filename)
+{
+	KABA_EXCEPTION_WRAPPER(return Gui::LoadFont(filename))
+	return NULL;
+}
+
+Model* __LoadModel(const string &filename)
+{
+	KABA_EXCEPTION_WRAPPER(return LoadModel(filename));
+	return NULL;
+}
+
+Model* __CreateObject(const string &filename, const vector &pos)
+{
+	KABA_EXCEPTION_WRAPPER(return GodCreateObject(filename, filename, pos, q_id));
+	return NULL;
+}
+
+#pragma GCC pop_options
+
+
+
 #else
 	#define x_p(p)		NULL
 #endif
-
-namespace Kaba{
 
 extern int _class_override_num_params;
 
@@ -889,9 +924,9 @@ void SIAddPackageX()
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, x_p(mf(&HostDataList::__assign__)));
 			func_add_param("other", TypeHostDataList);
 
-	add_func("LoadFont",			TypeFontP,	x_p(&LoadFont));
+	add_func("LoadFont",			TypeFontP,	x_p(&__LoadFont));
 		func_add_param("filename",		TypeString);
-	add_func("LoadModel",												TypeModelP,	x_p(&LoadModel));
+	add_func("LoadModel",												TypeModelP,	x_p(&__LoadModel));
 		func_add_param("filename",		TypeString);
 /*	add_func("GetModelOID",												TypeInt,	x_p(&MetaGetModelOID));
 		func_add_param("filename",		TypeString);*/
@@ -918,7 +953,7 @@ void SIAddPackageX()
 		func_add_param("o",			TypeModelPListPs);
 	add_func("NextObject",									TypeBool,	x_p(&NextObject));
 		func_add_param("o",		TypeModelPPs);
-	add_func("CreateObject",							TypeModelP,	x_p(&_CreateObject));
+	add_func("CreateObject",							TypeModelP,	x_p(&__CreateObject));
 		func_add_param("filename",		TypeString);
 		func_add_param("pos",		TypeVector);
 	add_func("SplashScreen",					TypeVoid,	x_p(DrawSplashScreen));

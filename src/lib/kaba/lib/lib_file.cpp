@@ -19,13 +19,6 @@ static DirEntry *_dir_entry;
 
 
 
-#define KABA_EXCEPTION_WRAPPER(CODE) \
-try{ \
-	CODE; \
-}catch(::FileError &e){ \
-	kaba_raise_exception(new KabaFileError(e.message())); \
-}
-
 
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")

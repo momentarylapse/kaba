@@ -2,6 +2,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "common.h"
+#include "exception.h"
 
 #ifdef _X_USE_NIX_
 	#include "../../nix/nix.h"
@@ -12,6 +13,21 @@ namespace Kaba{
 
 #ifdef _X_USE_NIX_
 	#define nix_p(p)		(void*)p
+
+
+#pragma GCC push_options
+#pragma GCC optimize("no-omit-frame-pointer")
+
+nix::Texture* __LoadTexture(const string &filename)
+{
+	KABA_EXCEPTION_WRAPPER(return nix::LoadTexture(filename));
+	return NULL;
+}
+
+#pragma GCC pop_options
+
+
+
 #else
 	namespace nix{
 		typedef int VertexBuffer;
@@ -107,7 +123,7 @@ void SIAddPackageNix()
 			func_add_param("data",		TypePointer);
 			func_add_param("size",		TypeInt);
 
-	add_func("LoadTexture",			TypeTextureP,	nix_p(&nix::LoadTexture));
+	add_func("LoadTexture",			TypeTextureP,	nix_p(&__LoadTexture));
 		func_add_param("filename",		TypeString);
 	
 		// drawing
