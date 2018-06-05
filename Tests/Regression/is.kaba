@@ -1,0 +1,14 @@
+class Base
+	virtual void x()
+
+class Derived extends Base
+	override void x()
+
+void main()
+	Base *a = new Base
+	Base *b = new Derived
+	if a is Derived
+		print("a is Derived")
+	if b is Derived
+		print("b is Derived")
+	print("done")

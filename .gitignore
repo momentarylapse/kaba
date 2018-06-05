@@ -1,10 +1,11 @@
-Debug
-Release
+/Debug
+/Release
 Unoptimized
 ipch
 message.txt
-./kaba
-*.kaba
+/kaba
+/*.kaba
+__test__
 *.o
 *.a
 Kaba.sdf

@@ -824,11 +824,41 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 	return param;
 }
 
+Node *LinkSpecialOperatorIs(SyntaxTree *tree, Node *param1, Node *param2)
+{
+	if (param2->kind != KIND_TYPE)
+		tree->DoError("class name expexted after 'is'");
+	Class *t2 = param2->script->syntax->classes[param2->link_no];
+	if (t2->vtable.num == 0)
+		tree->DoError("class after 'is' needs to have virtual functions: '" + t2->name + "'");
+
+	Class *t1 = param1->type;
+	if (t1->is_pointer){
+		param1 = tree->deref_node(param1);
+		t1 = t1->parent;
+	}
+	if (!t2->is_derived_from(t1))
+		tree->DoError("'is': class '" + t2->name + "' is not derived from '" + t1->name + "'");
+
+	// vtable2
+	int nc = tree->AddConstant(TypePointer);
+	tree->constants[nc]->as_int64() = (int_p)t2->_vtable_location_compiler_;
+	Node *vtable2 = tree->add_node_const(nc);
+
+	// vtable1
+	param1->type = TypePointer;
+
+	return tree->add_node_operator_by_inline(param1, vtable2, INLINE_POINTER_EQUAL);
+}
+
 Node *SyntaxTree::LinkOperator(int op_no, Node *param1, Node *param2)
 {
 	bool left_modifiable = PrimitiveOperators[op_no].left_modifiable;
 	string op_func_name = PrimitiveOperators[op_no].function_name;
 	Node *op = NULL;
+
+	if (PrimitiveOperators[op_no].id == OPERATOR_IS)
+		return LinkSpecialOperatorIs(this, param1, param2);
 
 	Class *p1 = param1->type;
 	Class *p2 = param2->type;

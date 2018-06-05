@@ -27,7 +27,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.16.1.0";
+string LibVersion = "0.16.3.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -64,6 +64,7 @@ const string IDENTIFIER_AND = "and";
 const string IDENTIFIER_OR = "or";
 const string IDENTIFIER_XOR = "xor";
 const string IDENTIFIER_NOT = "not";
+const string IDENTIFIER_IS = "is";
 const string IDENTIFIER_ASM = "asm";
 
 CompilerConfiguration config;
@@ -241,7 +242,9 @@ PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
 	{"<<", OPERATOR_SHIFT_LEFT,    false, 10, "__lshift__"},
 	{">>", OPERATOR_SHIFT_RIGHT,   false, 10, "__rshift__"},
 	{"++", OPERATOR_INCREASE,      true,  2, "__inc__"},
-	{"--", OPERATOR_DECREASE,      true,  2, "__dec__"}
+	{"--", OPERATOR_DECREASE,      true,  2, "__dec__"},
+	{IDENTIFIER_IS, OPERATOR_IS,   false, 2,  "-none-"},
+	{IDENTIFIER_EXTENDS, OPERATOR_EXTENDS, false, 2,  "-none-"}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
