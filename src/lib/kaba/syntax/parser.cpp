@@ -1545,11 +1545,11 @@ void SyntaxTree::ParseImport()
 			string expr = Exp.line[logical_line].exp[exp_no].name;
 			e.line = physical_line;
 			e.column = pos;
-			e.message += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
+			e.text += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
 			throw e;
 			//msg_write(e.message);
 			//msg_write("...");
-			string msg = e.message + "\nimported file:";
+			string msg = e.message() + "\nimported file:";
 			//string msg = "in imported file:\n\"" + e.message + "\"";
 			DoError(msg);
 		}

@@ -75,7 +75,7 @@ void SIAddPackageNix()
 			func_add_param("num_textures", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::VertexBuffer::__delete__)));
 		class_add_func("clear", TypeVoid, nix_p(mf(&nix::VertexBuffer::clear)));
-		class_add_func("addTria",							TypeVoid,	nix_p(mf(&nix::VertexBuffer::addTria)));
+		class_add_func("add_tria",							TypeVoid,	nix_p(mf(&nix::VertexBuffer::addTria)));
 			func_add_param("p1",		TypeVector);
 			func_add_param("n1",		TypeVector);
 			func_add_param("u1",		TypeFloat32);
@@ -88,7 +88,7 @@ void SIAddPackageNix()
 			func_add_param("n3",		TypeVector);
 			func_add_param("u3",		TypeFloat32);
 			func_add_param("v3",		TypeFloat32);
-		class_add_func("addTrias",							TypeVoid,	nix_p(mf(&nix::VertexBuffer::addTrias)));
+		class_add_func("add_trias",							TypeVoid,	nix_p(mf(&nix::VertexBuffer::addTrias)));
 			func_add_param("num_trias",		TypeInt);
 			func_add_param("p",		TypeVectorArrayP);
 			func_add_param("n",		TypeVectorArrayP);
@@ -114,11 +114,11 @@ void SIAddPackageNix()
 
 	add_class(TypeShader);
 		class_add_func("unref",										TypeVoid,	nix_p(mf(&nix::Shader::unref)));
-		class_add_func("setData",					TypeVoid,	nix_p(mf(&nix::Shader::set_data)));
+		class_add_func("set",					TypeVoid,	nix_p(mf(&nix::Shader::set_data)));
 			func_add_param("name",		TypeString);
 			func_add_param("data",		TypePointer);
 			func_add_param("size",		TypeInt);
-		class_add_func("getData",					TypeVoid,	nix_p(mf(&nix::Shader::get_data)));
+		class_add_func("get",					TypeVoid,	nix_p(mf(&nix::Shader::get_data)));
 			func_add_param("name",		TypeString);
 			func_add_param("data",		TypePointer);
 			func_add_param("size",		TypeInt);

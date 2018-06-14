@@ -249,9 +249,9 @@ public:
 			}
 		}catch(Kaba::Exception &e){
 			if (use_gui)
-				hui::ErrorBox(NULL, _("Fehler in Script"), e.message);
+				hui::ErrorBox(NULL, _("Fehler in Script"), e.message());
 			else
-				msg_error(e.message);
+				msg_error(e.message());
 			error = true;
 		}
 
