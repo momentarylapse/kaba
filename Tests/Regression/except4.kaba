@@ -3,4 +3,3 @@ void main()
 		FileOpen("-non-existent-")
 	except FileError as e
 		print(e.message())
-
