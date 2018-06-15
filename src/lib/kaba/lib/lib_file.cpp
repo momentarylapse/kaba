@@ -22,6 +22,8 @@ static DirEntry *_dir_entry;
 
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")
+#pragma GCC optimize("no-inline")
+#pragma GCC optimize("0")
 
 
 class DirEntryList : public Array<DirEntry>

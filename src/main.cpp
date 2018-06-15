@@ -266,6 +266,8 @@ public:
 
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")
+#pragma GCC optimize("no-inline")
+#pragma GCC optimize("0")
 
 	void execute(Kaba::Script *s, Array<string> &arg)
 	{
