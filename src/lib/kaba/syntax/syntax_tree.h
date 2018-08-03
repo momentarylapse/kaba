@@ -156,7 +156,7 @@ struct Function
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	int __get_var(const string &name) const;
 	void Update(Class *class_type);
-	string signature() const;
+	string signature(bool include_class = false) const;
 };
 
 // single operand/command
