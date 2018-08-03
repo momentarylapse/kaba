@@ -6,10 +6,6 @@
 namespace Kaba{
 
 
-static int FoundConstantNr;
-static Script *FoundConstantScript;
-
-
 Node *conv_cbr(SyntaxTree *ps, Node *c, int var);
 
 extern bool next_extern;
@@ -22,10 +18,10 @@ bool _type_match(Class *given, bool same_chunk, Class *wanted);
 bool type_match_with_cast(Class *type, bool same_chunk, bool is_modifiable, Class *wanted, int &penalty, int &cast);
 
 
-long long s2i2(const string &str)
+int64 s2i2(const string &str)
 {
 	if ((str.num > 1) and (str[0]=='0') and (str[1]=='x')){
-		long long r=0;
+		int64 r=0;
 		for (int i=2;i<str.num;i++){
 			r *= 16;
 			if ((str[i]>='0') and (str[i]<='9'))
@@ -44,27 +40,6 @@ long long s2i2(const string &str)
 //  "1.2" -> float
 Class *SyntaxTree::GetConstantType(const string &str)
 {
-	FoundConstantNr = -1;
-	FoundConstantScript = nullptr;
-
-	// named constants
-	foreachi(Constant *c, constants, i)
-		if (str == c->name){
-			FoundConstantNr = i;
-			FoundConstantScript = script;
-			return c->type;
-		}
-
-
-	// included named constants
-	for (Script *inc: includes)
-		foreachi(Constant *c, inc->syntax->constants, i)
-			if (str == c->name){
-				FoundConstantNr = i;
-				FoundConstantScript = inc;
-				return c->type;
-			}
-
 	// character "..."
 	if ((str[0] == '\'') and (str.back() == '\''))
 		return TypeChar;
@@ -115,11 +90,8 @@ Class *SyntaxTree::GetConstantType(const string &str)
 void SyntaxTree::GetConstantValue(const string &str, Value &value)
 {
 	value.init(GetConstantType(str));
-// named constants
-	if (FoundConstantNr >= 0){
-		value.set(*FoundConstantScript->syntax->constants[FoundConstantNr]);
 // literal
-	}else if (value.type == TypeChar){
+	if (value.type == TypeChar){
 		value.as_int() = str[1];
 	}else if (value.type == TypeString){
 		value.as_string() = str.substr(1, -2);

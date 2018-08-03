@@ -709,6 +709,16 @@ Array<Node> SyntaxTree::GetExistenceShared(const string &name)
 			return links;
 		}
 
+	// named constants
+	foreachi(Constant *c, constants, i)
+		if (name == c->name){
+			link.type = c->type;
+			link.link_no = i;
+			link.kind = KIND_CONSTANT;
+			links.add(link);
+			return links;
+		}
+
 	// then the (real) functions
 	foreachi(Function *f, functions, i)
 		if (f->name == name){

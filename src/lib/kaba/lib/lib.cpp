@@ -426,6 +426,7 @@ void add_const(const string &name, Class *type, void *value)
 	else
 		memcpy(c->p(), value, type->size);
 	cur_package_script->syntax->constants.add(c);
+	cur_package_script->cnst.add((char*)c->value.data);
 }
 
 //------------------------------------------------------------------------------------------------//
