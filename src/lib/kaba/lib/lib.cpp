@@ -27,7 +27,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.16.4.0";
+string LibVersion = "0.16.5.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -151,6 +151,8 @@ Class *TypeExceptionP;
 
 Class *TypeClass;
 Class *TypeClassP;
+Class *TypeFunction;
+Class *TypeFunctionP;
 
 
 Array<Package> Packages;
@@ -878,6 +880,9 @@ void SIAddPackageBase()
 
 	TypeClass 			= add_type  ("Class",	sizeof(Class));
 	TypeClassP			= add_type_p("Class*", TypeClass);
+
+	TypeFunction		= add_type  ("func", 0);
+	TypeFunctionP		= add_type_p("func*", TypeFunction);
 
 
 	// select default float type

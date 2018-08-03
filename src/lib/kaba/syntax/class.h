@@ -94,6 +94,8 @@ extern Class *TypeReg8; // dummy for compilation
 extern Class *TypeVoid;
 extern Class *TypePointer;
 extern Class *TypeChunk;
+extern Class *TypeFunction;
+extern Class *TypeFunctionP;
 extern Class *TypeBool;
 extern Class *TypeInt;
 extern Class *TypeInt64;

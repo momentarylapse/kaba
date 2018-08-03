@@ -227,7 +227,7 @@ Node *SyntaxTree::GetOperandExtensionArray(Node *Operand, Block *block)
 
 	if (index->type != TypeInt){
 		Exp.rewind();
-		DoError(format("type of index for an array needs to be (int), not (%s)", index->type->name.c_str()));
+		DoError(format("type of index for an array needs to be int, not %s", index->type->name.c_str()));
 	}
 	return array;
 }
@@ -402,7 +402,7 @@ Node *SyntaxTree::CheckParamLink(Node *link, Class *wanted, const string &f_name
 			return link;
 		}else{
 			Exp.rewind();
-			DoError(format("(c) parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
+			DoError(format("(c) parameter %d in command \"%s\" has type %s, %s expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
 		}
 
 	}else{
@@ -413,9 +413,23 @@ Node *SyntaxTree::CheckParamLink(Node *link, Class *wanted, const string &f_name
 			return apply_type_cast(this, tc, link);
 
 		Exp.rewind();
-		DoError(format("parameter %d in command \"%s\" has type (%s), (%s) expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
+		DoError(format("parameter %d in command \"%s\" has type %s, %s expected", param_no + 1, f_name.c_str(), given->name.c_str(), wanted->name.c_str()));
 	}
 	return link;
+}
+
+Class *get_func_type(SyntaxTree *syntax, Function *f)
+{
+	return TypeFunction;
+	string params;
+	for (int i=0; i<f->num_params; i++){
+		if (i > 0)
+			params += ",";
+		params += f->literal_param_type[i]->name;
+	}
+	return syntax->CreateNewClass("func(" + params + ")->" + f->return_type->name, config.pointer_size, true, false, false, 0, TypeVoid);
+
+	return TypePointer;
 }
 
 // creates <Operand> to be the function call
@@ -426,7 +440,7 @@ Node *SyntaxTree::GetFunctionCall(const string &f_name, Array<Node> &links, Bloc
 	if (Exp.cur_exp >= 2)
 	if ((Exp.get_name(Exp.cur_exp - 2) == "&") and (Exp.cur != "(")){
 		if (links[0].kind == KIND_FUNCTION){
-			Node *c = AddNode(KIND_VAR_FUNCTION, links[0].link_no, TypePointer);
+			Node *c = AddNode(KIND_VAR_FUNCTION, links[0].link_no, get_func_type(this, links[0].as_func()));
 			c->script = links[0].script;
 			return c;
 		}else{
@@ -937,7 +951,7 @@ void SyntaxTree::LinkMostImportantOperator(Array<Node*> &Operand, Array<Node*> &
 	int op_no = Operator[mio]->link_no;
 	Operator[mio] = LinkOperator(op_no, param1, param2);
 	if (!Operator[mio])
-		DoError(format("no operator found: (%s) %s (%s)", param1->type->name.c_str(), PrimitiveOperators[op_no].name.c_str(), param2->type->name.c_str()), op_exp[mio]);
+		DoError(format("no operator found: %s %s %s", param1->type->name.c_str(), PrimitiveOperators[op_no].name.c_str(), param2->type->name.c_str()), op_exp[mio]);
 
 // remove from list
 	Operand[mio] = Operator[mio];
@@ -1636,7 +1650,7 @@ void SyntaxTree::ParseClass()
 		Exp.next();
 		Class *parent = ParseType(); // force
 		if (!_class->derive_from(parent, true))
-			DoError(format("parental type in class definition after \"%s\" has to be a class, but (%s) is not", IDENTIFIER_EXTENDS.c_str(), parent->name.c_str()));
+			DoError(format("parental type in class definition after \"%s\" has to be a class, but %s is not", IDENTIFIER_EXTENDS.c_str(), parent->name.c_str()));
 		_offset = parent->size;
 	}
 	ExpectNewline();
