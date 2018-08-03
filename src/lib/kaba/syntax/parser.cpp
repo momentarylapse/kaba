@@ -786,22 +786,12 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 		return param;
 	}
 	if (param->kind == KIND_CONSTANT){
-		Value data_new;
-		TypeCasts[tc].func(data_new, *ps->constants[param->link_no]);
-		/*if ((TypeCasts[tc].dest->is_array) or (TypeCasts[tc].dest->is_super_array)){
-			// arrays as return value -> reference!
-			int size = TypeCasts[tc].dest->size;
-			if (TypeCasts[tc].dest == TypeString)
-				size = SCRIPT_MAX_STRING_CONST_LENGTH;
-			delete[] data_old;
-			ps->Constants[param->link_no].data = new char[size];
-			data_new = *(char**)data_new;
-			memcpy(ps->Constants[param->link_no].data, data_new, size);
-		}else*/
-		ps->constants[param->link_no]->set(data_new);
-		ps->constants[param->link_no]->type = TypeCasts[tc].dest;
-		param->type = TypeCasts[tc].dest;
-		return param;
+		int nc = ps->AddConstant(TypeCasts[tc].dest);
+		Constant *c_new = ps->constants[nc];
+		TypeCasts[tc].func(*c_new, *param->as_const());
+
+		// relink node
+		return ps->add_node_const(nc);
 	}else{
 		Node *c = ps->add_node_func(TypeCasts[tc].script, TypeCasts[tc].func_no, TypeCasts[tc].dest);
 		c->set_param(0, param);
@@ -1806,10 +1796,15 @@ void SyntaxTree::ParseGlobalConst(const string &name, Class *type)
 
 	if ((cv->kind != KIND_CONSTANT) or (cv->type != type))
 		DoError(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));
+	Constant *c_orig = cv->as_const();
+
+	int nc = AddConstant(type);
+	Constant *c = constants[nc];
+	c->set(*c_orig);
+	c->name = name;
 
 	// give our const the name
-	Constant *c = constants[cv->link_no];
-	c->name = name;
+	//c_orig->name = name;
 }
 
 void SyntaxTree::ParseVariableDef(bool single, Block *block)

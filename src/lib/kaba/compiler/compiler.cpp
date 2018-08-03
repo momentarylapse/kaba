@@ -239,6 +239,7 @@ void Script::CompileOsEntryPoint()
 		Asm::AddInstruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset=opcode_size;
 	OCORA = Asm::OCParam;
+	AlignOpcode();
 }
 
 void Script::MapConstantsToOpcode()
@@ -444,6 +445,7 @@ void find_all_includes_rec(Script *s, Set<Script*> &includes)
 	}
 }
 
+// only for "os"
 void import_includes(Script *s)
 {
 	Set<Script*> includes;
