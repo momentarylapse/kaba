@@ -18,6 +18,10 @@ namespace hui
 {
 
 
+void DBDEL(const string &type, const string &id, void *p);
+void DBDEL_DONE();
+
+
 #if !GTK_CHECK_VERSION(3,0,0)
 GtkWidget *gtk_box_new(GtkOrientation orientation, int spacing); // -> hui_window_control_gtk.cpp
 #endif
@@ -34,7 +38,7 @@ inline Window *win_from_widget(void *widget)
 	for (Window *win: _all_windows_)
 		if (win->window == widget)
 			return win;
-	return NULL;
+	return nullptr;
 }
 
 void WinTrySendByKeyCode(Window *win, int key_code)
@@ -89,7 +93,7 @@ static void on_gtk_window_resize(GtkWidget *widget, gpointer user_data)
 
 void Window::_init_(const string &title, int width, int height, Window *root, bool allow_root, int mode)
 {
-	window = NULL;
+	window = nullptr;
 	win = this;
 	if ((mode & WIN_MODE_DUMMY) > 0)
 		return;
@@ -147,7 +151,7 @@ void Window::_init_(const string &title, int width, int height, Window *root, bo
 	// icon
 	string logo = Application::getProperty("logo");
 	if (logo.num > 0)
-		gtk_window_set_icon_from_file(GTK_WINDOW(window), sys_str_f(logo), NULL);
+		gtk_window_set_icon_from_file(GTK_WINDOW(window), sys_str_f(logo), nullptr);
 
 	// catch signals
 	g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(&on_gtk_window_close), this);
@@ -183,8 +187,8 @@ void Window::_init_(const string &title, int width, int height, Window *root, bo
 
 	gtk_box_pack_start(GTK_BOX(hbox), toolbar[TOOLBAR_LEFT]->widget, FALSE, FALSE, 0);
 
-	plugable = NULL;
-	cur_control = NULL;
+	plugable = nullptr;
+	cur_control = nullptr;
 	// free to use...
 	//cur_control = hbox;
 	plugable = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -200,7 +204,7 @@ void Window::_init_(const string &title, int width, int height, Window *root, bo
 	gtk_box_pack_start(GTK_BOX(vbox), statusbar, FALSE, FALSE, 0);
 	
 #ifdef OS_WINDOWS
-	hWnd = NULL;
+	hWnd = nullptr;
 #endif
 }
 
@@ -219,21 +223,19 @@ void Window::__delete__()
 
 void Window::destroy()
 {
+	DBDEL("window", id, this);
 	onDestroy();
-
-	// quick'n'dirty fix (gtk destroys its widgets recursively)
-	for (Control *c: controls)
-		c->widget = NULL;
 
 	_clean_up_();
 
 	gtk_widget_destroy(window);
-	window = NULL;
+	window = nullptr;
+	DBDEL_DONE();
 }
 
 bool Window::gotDestroyed()
 {
-	return window == NULL;
+	return window == nullptr;
 }
 
 // should be called after creating (and filling) the window to actually show it
@@ -268,9 +270,9 @@ void Window::run()
 			break;
 		bool allow=true;
 		if (HuiIdleFunction)
-			got_message=(PeekMessage(&messages,NULL,0U,0U,PM_REMOVE)!=0);
+			got_message=(PeekMessage(&messages,nullptr,0U,0U,PM_REMOVE)!=0);
 		else
-			got_message=(GetMessage(&messages,NULL,0,0)!=0);
+			got_message=(GetMessage(&messages,nullptr,0,0)!=0);
 		if (got_message){
 			allow=false;
 			TranslateMessage(&messages);
@@ -309,10 +311,6 @@ void Window::setMenu(Menu *_menu)
 		}
 		gtk_menu.clear();
 		/*menu->set_win(NULL);
-		foreach(HuiControl *c, list){
-			for (int i=0;i<control.num;i++)
-				if (control[i] == c)
-					control.erase(i);
 		}*/
 		delete(menu);
 	}
@@ -334,8 +332,6 @@ void Window::setMenu(Menu *_menu)
 			gtk_menu_shell_append(GTK_MENU_SHELL(menubar), gtk_menu[i]);
 			g_object_unref(it->widget);
 		}
-		Array<Control*> list = menu->get_all_controls();
-		controls.append(list);
 	}else
 		gtk_widget_hide(menubar);
 }
@@ -419,7 +415,7 @@ void Window::showCursor(bool show)
 	}
 #else
 	if (show)
-		gdk_window_set_cursor(gtk_widget_get_window(vbox), NULL);
+		gdk_window_set_cursor(gtk_widget_get_window(vbox), nullptr);
 	else
 		gdk_window_set_cursor(gtk_widget_get_window(vbox), (GdkCursor*)invisible_cursor);
 #endif
@@ -502,18 +498,15 @@ void Panel::activate(const string &control_id)
 	gtk_widget_grab_focus(win->window);
 	gtk_window_present(GTK_WINDOW(win->window));
 	if (control_id.num > 0)
-		for (int i=0;i<controls.num;i++)
-			if (control_id == controls[i]->id)
-				controls[i]->focus();
+		apply_foreach(control_id, [&](Control *c){ c->focus(); });
 }
 
 bool Panel::isActive(const string &control_id)
 {
 	if (control_id.num > 0){
-		for (int i=0;i<controls.num;i++)
-			if (control_id == controls[i]->id)
-				return controls[i]->hasFocus();
-		return false;
+		bool r = false;
+		apply_foreach(control_id, [&](Control *c){ r = c->hasFocus(); });
+		return r;
 	}
 	return (bool)gtk_widget_has_focus(win->window);
 }

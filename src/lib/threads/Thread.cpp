@@ -28,7 +28,7 @@ static Array<Thread*> _Thread_List_;
 //------------------------------------------------------------------------------
 // auxiliary
 
-int Thread::getNumCores()
+int Thread::get_num_cores()
 {
 #ifdef OS_WINDOWS
 	SYSTEM_INFO siSysInfo;
@@ -49,8 +49,9 @@ int Thread::getNumCores()
 
 Thread::Thread()
 {
-	internal = NULL;
+	internal = nullptr;
 	running = false;
+	done = false;
 	_Thread_List_.add(this);
 }
 
@@ -99,7 +100,7 @@ void Thread::run()
 	if (!internal)
 		internal = new ThreadInternal;
 	running = true;
-	internal->thread = CreateThread(NULL, 0, &thread_start_func, (void*)this, 0, NULL);
+	internal->thread = CreateThread(nullptr, 0, &thread_start_func, (void*)this, 0, nullptr);
 
 	if (!internal->thread)
 		running = false;
@@ -136,7 +137,7 @@ Thread *Thread::getSelf()
 	for (Thread *t : _Thread_List_)
 		if (h == t->internal->thread)
 			return t;
-	return NULL;
+	return nullptr;
 }
 
 
@@ -145,7 +146,7 @@ Thread *Thread::getSelf()
 static void __thread_cleanup_func(void *p)
 {
 	Thread *t = (Thread*)p;
-	t->onCancel();
+	t->on_cancel();
 }
 
 static void *__thread_start_func(void *p)
@@ -154,21 +155,28 @@ static void *__thread_start_func(void *p)
 
 	pthread_cleanup_push(&__thread_cleanup_func, p);
 
-	t->onRun();
-	t->running = false;
+	t->done = false;
+	t->on_run();
+
+	std::lock_guard<std::mutex> lock(t->control_mutex);
+	t->done = true;
 
     pthread_cleanup_pop(0);
-	return NULL;
+	return nullptr;
 }
 
 
 // create and run a new thread
 void Thread::run()
 {
+	if (internal){
+		msg_error("multiple Thread.run()");
+	}
+
 	if (!internal)
 		internal = new ThreadInternal;
 	running = true;
-	int ret = pthread_create(&internal->thread, NULL, &__thread_start_func, (void*)this);
+	int ret = pthread_create(&internal->thread, nullptr, &__thread_start_func, (void*)this);
 
 	if (ret != 0)
 		running = false;
@@ -179,7 +187,7 @@ void Thread::kill()
 {
 	if (running){
 		pthread_cancel(internal->thread);
-		pthread_join(internal->thread, NULL);
+		pthread_join(internal->thread, nullptr);
 		//pthread_detach(internal->thread);
 	}
 	running = false;
@@ -188,26 +196,26 @@ void Thread::kill()
 void Thread::join()
 {
 	if (running)
-		pthread_join(internal->thread, NULL);
+		pthread_join(internal->thread, nullptr);
 	running = false;
 }
 
 void Thread::exit()
 {
-	pthread_exit(NULL);
+	pthread_exit(nullptr);
 }
 
-Thread *Thread::getSelf()
+Thread *Thread::get_self()
 {
 	pthread_t s = pthread_self();
 	for (Thread *t : _Thread_List_)
 		if (t->internal)
 			if (t->internal->thread == s)
 				return t;
-	return NULL;
+	return nullptr;
 }
 
-void Thread::cancelationPoint()
+void Thread::cancelation_point()
 {
 	pthread_testcancel();
 }
@@ -216,8 +224,9 @@ void Thread::cancelationPoint()
 #endif
 
 
-bool Thread::isDone()
+bool Thread::is_done()
 {
-	return !running;
+	std::lock_guard<std::mutex> lock(control_mutex);
+	return done;
 }
 

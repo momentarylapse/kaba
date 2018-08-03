@@ -18,11 +18,11 @@ namespace hui
 
 Painter::Painter()
 {
-	win = NULL;
-	cr = NULL;
-	layout = NULL;
-	target_surface = NULL;
-	font_desc = NULL;
+	win = nullptr;
+	cr = nullptr;
+	layout = nullptr;
+	target_surface = nullptr;
+	font_desc = nullptr;
 	width = 0;
 	height = 0;
 	mode_fill = true;
@@ -37,10 +37,10 @@ Painter::Painter(Panel *panel, const string &_id)
 {
 	win = panel->win;
 	id = _id;
-	cr = NULL;
-	layout = NULL;
-	target_surface = NULL;
-	font_desc = NULL;
+	cr = nullptr;
+	layout = nullptr;
+	target_surface = nullptr;
+	font_desc = nullptr;
 	width = 0;
 	height = 0;
 	mode_fill = true;
@@ -70,7 +70,7 @@ Painter::~Painter()
 	if (target_surface)
 		cairo_surface_destroy(target_surface);
 //	cairo_destroy(cr);
-	cr = NULL;
+	cr = nullptr;
 }
 
 void Painter::setColor(const color &c)
@@ -102,29 +102,6 @@ void Painter::setRoundness(float radius)
 	corner_radius = radius;
 }
 
-color gdk2color(GdkColor c)
-{
-	return color(1, (float)c.red / 65535.0f, (float)c.green / 65535.0f, (float)c.blue / 65535.0f);
-}
-
-color Painter::getThemeColor(int i)
-{
-	if (!win)
-		return Black;
-	GtkStyleContext *sc = gtk_widget_get_style_context(win->window);
-	int x = (i / 10);
-	int y = (i % 10);
-	GtkStateFlags state = (y == 1) ? GTK_STATE_FLAG_INSENSITIVE : GTK_STATE_FLAG_NORMAL;
-	GdkRGBA c;
-	if (x == 0)
-		gtk_style_context_get_color(sc, state, &c);
-	else if (x == 1)
-		gtk_style_context_get_background_color(sc, state, &c);
-	else if (x == 2)
-		gtk_style_context_get_border_color(sc, state, &c);
-	return color((float)c.alpha, (float)c.red, (float)c.green, (float)c.blue);
-}
-
 void Painter::clip(const rect &r)
 {
 	cairo_reset_clip(cr);
@@ -134,12 +111,14 @@ void Painter::clip(const rect &r)
 
 rect Painter::getClip()
 {
+	if (!cr)
+		return r_id;
 	double x1, x2, y1, y2;
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
 	return rect(x1, x2, y1, y2);
 }
 
-rect Painter::getArea()
+rect Painter::area()
 {
 	return rect(0, width, 0, height);
 }

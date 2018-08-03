@@ -50,7 +50,7 @@ Resource *Resource::get_node(const string &id) const
 		if (ret)
 			return ret;
 	}
-	return NULL;
+	return nullptr;
 }
 
 void LoadResourceCommand7(File *f, Resource *c)
@@ -144,7 +144,7 @@ Resource *GetResource(const string &id)
 			return &r;
 	if (id.num > 0)
 		msg_error("hui resource not found: " + id);
-	return NULL;
+	return nullptr;
 }
 
 Window *CreateResourceDialog(const string &id, Window *root)
@@ -153,13 +153,13 @@ Window *CreateResourceDialog(const string &id, Window *root)
 	Resource *res = GetResource(id);
 	if (!res){
 		msg_error(format("CreateResourceDialog  (id=%s)  m(-_-)m",id.c_str()));
-		return NULL;
+		return nullptr;
 	}
 	
 
 	if ((res->type != "Dialog") and (res->type != "Window")){
 		msg_error("resource type should be Dialog or Window, but is " + res->type);
-		return NULL;
+		return nullptr;
 	}
 
 	string menu_id = res->value("menu");
@@ -197,16 +197,16 @@ Menu *_create_res_menu_(const string &ns, Resource *res)
 	for (Resource &c: res->children){
 		if (c.type == "Item"){
 			if (sa_contains(c.options, "checkable"))
-				menu->addItemCheckable(get_lang(ns, c.id, c.title, true), c.id);
+				menu->add_checkable(get_lang(ns, c.id, c.title, true), c.id);
 			else if (c.image().num > 0)
-				menu->addItemImage(get_lang(ns, c.id, c.title, true), c.image(), c.id);
+				menu->add_with_image(get_lang(ns, c.id, c.title, true), c.image(), c.id);
 			else
-				menu->addItem(get_lang(ns, c.id, c.title, true), c.id);
+				menu->add(get_lang(ns, c.id, c.title, true), c.id);
 		}else if (c.type == "Separator"){
-			menu->addSeparator();
+			menu->add_separator();
 		}else if (c.type == "Menu"){
 			Menu *sub = _create_res_menu_(ns, &c);
-			menu->addSubMenu(get_lang(ns, c.id, c.title, true), c.id, sub);
+			menu->add_sub_menu(get_lang(ns, c.id, c.title, true), c.id, sub);
 		}
 		if (menu->items.num > 0)
 			menu->items.back()->enable(c.enabled());
@@ -219,7 +219,7 @@ Menu *CreateResourceMenu(const string &id)
 	Resource *res = GetResource(id);
 	if (!res){
 		msg_error(format("CreateResourceMenu  (id=%d)  m(-_-)m", id.c_str()).c_str());
-		return NULL;
+		return nullptr;
 	}
 
 	return _create_res_menu_(id, res);

@@ -3,6 +3,7 @@
 
 #include <new>
 #include <string.h>
+#include <initializer_list>
 
 // dynamic arrays
 
@@ -42,28 +43,50 @@ class DynamicArray
 	int num, allocated, element_size;
 };
 
-#include <stdio.h>
-
 template <class T>
 class Array : public DynamicArray
 {
 	public:
 		Array()
 		{	init(sizeof(T));	}
+
+		// copy constructor
 		Array(const Array &a)
 		{
 			init(sizeof(T));
 			(*this) = a;
 		}
+
+		// move constructor
+		Array(Array &&a)
+		{
+			init(sizeof(T));
+			exchange(a);
+		}
+
+		Array(std::initializer_list<T> il)
+		{
+			init(sizeof(T));
+			resize(il.size());
+			auto it = il.begin();
+			for (int i=0; i<num; i++)
+				(*this)[i] = *(it++);
+
+		}
+
+		// convenience
 		Array(const T &item)
 		{
 			init(sizeof(T));
 			add(item);
 		}
+
+		// kaba
 		void _cdecl __init__()
 		{
 			init(sizeof(T));
 		}
+
 		~Array()
 		{	clear();	}
 		void _cdecl clear()
@@ -140,12 +163,23 @@ class Array : public DynamicArray
 			s.data = ((T*)this->data) + start;
 			return s;
 		}
+
+		// copy assignment
 		void operator = (const Array<T> &a)
 		{
 			if (this != &a){
 				resize(a.num);
 				for (int i=0; i<num; i++)
 					(*this)[i] = a[i];
+			}
+		}
+
+		// move assignment
+		void operator = (Array<T> &&a)
+		{
+			if (this != &a){
+				clear();
+				exchange(a);
 			}
 		}
 		void operator += (const Array<T> &a)
@@ -176,13 +210,13 @@ class Array : public DynamicArray
 		}
 		void _cdecl forget()
 		{
-			data = NULL;
+			data = nullptr;
 			allocated = 0;
 			num = 0;
 		}
 		void _cdecl make_own()
 		{
-			if ((num == 0) or (allocated > 0))
+			if (!is_ref())
 				return;
 			T *dd = (T*)data;
 			int n = num;
@@ -190,6 +224,10 @@ class Array : public DynamicArray
 			resize(n);
 			for (int i=0; i<num; i++)
 				(*this)[i] = dd[i];
+		}
+		bool _cdecl is_ref() const
+		{
+			return (num > 0) and (allocated == 0);
 		}
 
 		// iterators

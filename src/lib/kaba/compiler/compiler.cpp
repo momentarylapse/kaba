@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "../../file/file.h"
 #include "../../base/set.h"
+#include <stdio.h>
 
 
 #if defined(OS_LINUX)// || defined(OS_MINGW)
@@ -90,13 +91,13 @@ void* get_nice_random_addr()
 
 void* get_nice_memory(long size, bool executable)
 {
-	void *mem = NULL;
+	void *mem = nullptr;
 	size = mem_align(size, 4096);
 	if (config.verbose)
 		msg_write("get nice...");
 
 #if defined(OS_WINDOWS) || defined(OS_MINGW)
-	mem = (char*)VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	mem = (char*)VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
 
 	// try in 32bit distance from current opcode
@@ -117,9 +118,9 @@ void* get_nice_memory(long size, bool executable)
 	}
 
 	// no?...ok, try anywhere
-	mem = (char*)mmap(NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_EXECUTABLE, -1, 0);
+	mem = (char*)mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_EXECUTABLE, -1, 0);
 	if ((int_p)mem == -1)
-		mem = NULL;
+		mem = nullptr;
 #endif
 
 	// failed...
@@ -160,7 +161,7 @@ void Script::AllocateStack()
 {
 	// use your own stack if needed
 	//   wait() used -> needs to switch stacks ("tasks")
-	__stack = NULL;
+	__stack = nullptr;
 	/*for (Command *cmd: syntax->commands){
 		if (cmd->kind == KIND_COMPILER_FUNCTION)
 			if ((cmd->link_no == COMMAND_WAIT) or (cmd->link_no == COMMAND_WAIT_RT) or (cmd->link_no == COMMAND_WAIT_ONE_FRAME)){
@@ -293,7 +294,7 @@ void Script::CompileTaskEntryPoint()
 
 	if ((!__stack) or (!_main_)){
 		__first_execution = (t_func*)_main_;
-		__continue_execution = NULL;
+		__continue_execution = nullptr;
 		return;
 	}
 

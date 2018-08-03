@@ -29,7 +29,7 @@ namespace hui
 {
 
 
-GtkAccelGroup *accel_group = NULL;
+GtkAccelGroup *accel_group = nullptr;
 
 void try_add_accel(GtkWidget *item, const string &id, Panel *panel)
 {
@@ -44,10 +44,10 @@ void try_add_accel(GtkWidget *item, const string &id, Panel *panel)
 Menu::Menu()
 {
 	_MakeUsable_();
-	panel = NULL;
+	panel = nullptr;
 	
 	widget = gtk_menu_new();
-	if (accel_group == NULL)
+	if (accel_group == nullptr)
 		accel_group = gtk_accel_group_new();
 }
 
@@ -61,26 +61,34 @@ void Menu::gtk_realize()
 	widget = gtk_menu_new();
 }
 
+
+void OnGtkMenuClose(GtkMenuShell *menushell, gpointer user_data)
+{
+	Menu *m = (Menu*)user_data;
+	m->set_panel(nullptr);
+}
+
+
 // window coordinate system!
-void Menu::openPopup(Panel *panel, int x, int y)
+void Menu::open_popup(Panel *panel)
 {
 	gtk_widget_show(widget);
 #if GTK_CHECK_VERSION(3,22,0)
-	gtk_menu_popup_at_pointer(GTK_MENU(widget), NULL);
+	gtk_menu_popup_at_pointer(GTK_MENU(widget), nullptr);
 #else
-	gtk_menu_popup(GTK_MENU(widget), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
+	gtk_menu_popup(GTK_MENU(widget), nullptr, nullptr, nullptr, nullptr, 0, gtk_get_current_event_time());
 #endif
+
+	//g_signal_connect(G_OBJECT(widget), "selection-done", G_CALLBACK(&OnGtkMenuClose), this);
 	set_panel(panel);
 }
 
-void Menu::add(Control *c)
+void Menu::_add(Control *c)
 {
 	items.add(c);
 	gtk_menu_shell_append(GTK_MENU_SHELL(widget), c->widget);
 	gtk_widget_show(c->widget);
 	c->panel = panel;
-	if (panel)
-		panel->controls.add(c);
 }
 
 
@@ -186,7 +194,7 @@ HuiImage *get_image(const string &filename)
 void *get_gtk_image(const string &image, bool large)
 {
 	if (image == "")
-		return NULL;
+		return nullptr;
 	if (image.head(4) == "hui:"){
 		// internal
 		return gtk_image_new_from_icon_name(get_gtk_icon_name(image), large ? GTK_ICON_SIZE_LARGE_TOOLBAR : GTK_ICON_SIZE_MENU);
@@ -207,7 +215,7 @@ void *get_gtk_image_pixbuf(const string &image)
 {
 	if (image.head(4) == "hui:"){
 		// internal
-		GdkPixbuf *pb = gtk_icon_theme_load_icon(gtk_icon_theme_get_default(), get_gtk_icon_name(image), 24, (GtkIconLookupFlags)0, NULL);
+		GdkPixbuf *pb = gtk_icon_theme_load_icon(gtk_icon_theme_get_default(), get_gtk_icon_name(image), 24, (GtkIconLookupFlags)0, nullptr);
 		if (pb){
 			GdkPixbuf *r = gdk_pixbuf_copy(pb);
 			g_object_unref(pb);
@@ -219,11 +227,11 @@ void *get_gtk_image_pixbuf(const string &image)
 		if (img->type == 0){
 		}else if (img->type == 1){
 #ifdef _X_USE_IMAGE_
-			return gdk_pixbuf_new_from_data((guchar*)img->image.data.data, GDK_COLORSPACE_RGB, true, 8, img->image.width, img->image.height, img->image.width * 4, NULL, NULL);
+			return gdk_pixbuf_new_from_data((guchar*)img->image.data.data, GDK_COLORSPACE_RGB, true, 8, img->image.width, img->image.height, img->image.width * 4, nullptr, nullptr);
 #endif
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*void HuiMenu::SetText(const string &id, const string &text)

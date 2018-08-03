@@ -6,6 +6,7 @@
  */
 
 #include "hui.h"
+#include <mutex>
 
 namespace hui
 {
@@ -14,6 +15,9 @@ namespace hui
 
 Callback _idle_function_;
 Callback _error_function_;
+
+// the Runner[] list needs protection!
+static std::mutex runner_mutex;
 
 #ifdef HUI_API_GTK
 	int idle_id = -1;
@@ -53,6 +57,8 @@ Callback _error_function_;
 		HuiGtkRunner *c = reinterpret_cast<HuiGtkRunner*>(data);
 		if (c->func)
 			c->func();
+
+		std::lock_guard<std::mutex> lock (runner_mutex);
 		_hui_runner_delete_(c->id);
 		return FALSE;
 	}
@@ -74,7 +80,7 @@ void SetIdleFunction(const Callback &c)
 	bool old_idle = (bool)_idle_function_;
 	bool new_idle = (bool)c;
 	if (new_idle and !old_idle)
-		idle_id = g_idle_add_full(300, GtkIdleFunction, NULL, NULL);
+		idle_id = g_idle_add_full(300, GtkIdleFunction, nullptr, nullptr);
 	if (!new_idle and old_idle and (idle_id >= 0)){
 		g_source_remove(idle_id);
 		idle_id = -1;
@@ -95,34 +101,37 @@ void _HuiSetIdleFunctionM(HuiEventHandler *object, void (HuiEventHandler::*funct
 
 int RunLater(float time, const Callback &c)
 {
+	std::lock_guard<std::mutex> lock(runner_mutex);
 	#ifdef HUI_API_WIN
 		msg_todo("HuiRunLater");
 		return 0;
 	#endif
 	#ifdef HUI_API_GTK
 		HuiGtkRunner *r = new HuiGtkRunner(c);
-		r->id = g_timeout_add_full(300, max((int)(time * 1000), 0), &GtkRunLaterFunction, (void*)r, NULL);
 		_hui_runners_.add(r);
+		r->id = g_timeout_add_full(300, max((int)(time * 1000), 1), &GtkRunLaterFunction, (void*)r, nullptr);
 		return r->id;
 	#endif
 }
 
 int RunRepeated(float time, const Callback &c)
 {
+	std::lock_guard<std::mutex> lock(runner_mutex);
 	#ifdef HUI_API_WIN
 		msg_todo("HuiRunRepeated");
 		return 0;
 	#endif
 	#ifdef HUI_API_GTK
 		HuiGtkRunner *r = new HuiGtkRunner(c);
-		r->id = g_timeout_add_full(300, max((int)(time * 1000), 0), &GtkRunRepeatedFunction, (void*)r, NULL);
 		_hui_runners_.add(r);
+		r->id = g_timeout_add_full(300, max((int)(time * 1000), 1), &GtkRunRepeatedFunction, (void*)r, nullptr);
 		return r->id;
 	#endif
 }
 
 void CancelRunner(int id)
 {
+	std::lock_guard<std::mutex> lock(runner_mutex);
 #ifdef HUI_API_GTK
 	g_source_remove(id);
 	_hui_runner_delete_(id);

@@ -11,6 +11,11 @@
 #include "../internal.h"
 #include "../../math/rect.h"
 
+#include <thread>
+static std::thread::id main_thread_id = std::this_thread::get_id();
+
+#define STUPID_HACK 0
+
 #include <GL/gl.h>
 
 #ifdef HUI_API_GTK
@@ -21,16 +26,26 @@ namespace hui
 int GtkAreaMouseSet = -1;
 int GtkAreaMouseSetX, GtkAreaMouseSetY;
 
-static ControlDrawingArea *NixGlArea = NULL;
-GdkGLContext *gtk_gl_context = NULL;
+static ControlDrawingArea *NixGlArea = nullptr;
+GdkGLContext *gtk_gl_context = nullptr;
+
+static Set<ControlDrawingArea*> _recently_deleted_areas;
+
+
 
 gboolean OnGtkAreaDraw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
-	reinterpret_cast<ControlDrawingArea*>(user_data)->cur_cairo = cr;
+	auto *da = reinterpret_cast<ControlDrawingArea*>(user_data);
+
+	//std::lock_guard<std::mutex> lock(da->mutex);
+
+	da->cur_cairo = cr;
 	//msg_write("draw " + reinterpret_cast<ControlDrawingArea*>(user_data)->id);
-	reinterpret_cast<ControlDrawingArea*>(user_data)->redraw_area.clear();
-	reinterpret_cast<Control*>(user_data)->notify("hui:draw");
-	//msg_write("/draw " + reinterpret_cast<ControlDrawingArea*>(user_data)->id);
+#if STUPID_HACK
+	da->redraw_area.clear();
+#endif
+	da->notify("hui:draw");
+	//msg_write("/draw " + da->id);
 	return false;
 }
 
@@ -55,7 +70,7 @@ void OnGtkGLAreaRealize(GtkGLArea *area)
 {
 	//printf("realize...\n");
 	gtk_gl_area_make_current(area);
-	if (gtk_gl_area_get_error(area) != NULL){
+	if (gtk_gl_area_get_error(area) != nullptr){
 		printf("realize: gl area make current error...\n");
 		return;
 	}
@@ -197,7 +212,8 @@ void _get_hui_key_id_(GdkEventKey *event, int &key, int &key_code)
 	kmk.keycode = event->hardware_keycode;
 	kmk.group = event->group;
 	kmk.level = 0;
-	int keyvalue = gdk_keymap_lookup_key(gdk_keymap_get_default(), &kmk);
+	auto *map = gdk_keymap_get_for_display(gdk_display_get_default());
+	int keyvalue = gdk_keymap_lookup_key(map, &kmk);
 	// TODO GTK3
 	//int keyvalue = event->keyval;
 	//msg_write(keyvalue);
@@ -257,7 +273,9 @@ gboolean OnGtkAreaKeyUp(GtkWidget *widget, GdkEventKey *event, gpointer user_dat
 ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	Control(CONTROL_DRAWINGAREA, id)
 {
+#if STUPID_HACK
 	delay_timer = new Timer;
+#endif
 	GetPartStrings(title);
 	// FIXME: this needs to be supplied as title... fromSource() won't work...
 	is_opengl = (OptionString.find("opengl") >= 0);
@@ -300,12 +318,19 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	gtk_widget_set_vexpand(widget, true);
 	setOptions(OptionString);
 
-	cur_cairo = NULL;
+	cur_cairo = nullptr;
 }
 
 ControlDrawingArea::~ControlDrawingArea()
 {
+	_recently_deleted_areas.add(this);
+
+#if STUPID_HACK
 	delete delay_timer;
+#endif
+
+	// clean-up list later
+	hui::RunLater(10, [&]{ _recently_deleted_areas.erase(this); });
 }
 
 void ControlDrawingArea::make_current()
@@ -322,6 +347,18 @@ static bool __drawing_area_queue_redraw(void *p)
 
 void ControlDrawingArea::redraw()
 {
+	// non
+	if (std::this_thread::get_id() != main_thread_id){
+		//printf("readraw from other thread...redirect\n");
+		hui::RunLater(0, std::bind(&ControlDrawingArea::redraw, this));
+		return;
+	}
+
+
+#if STUPID_HACK
+
+	//std::lock_guard<std::mutex> lock(mutex);
+
 	if (is_opengl){
 		gtk_widget_queue_draw(widget);
 		return;
@@ -342,12 +379,32 @@ void ControlDrawingArea::redraw()
 	if (!widget)
 		return;
 	//printf("                    DRAW\n");
+#if 1
+	gtk_widget_queue_draw(widget);
+#else
 	g_idle_add((GSourceFunc)__drawing_area_queue_redraw,(void*)widget);
+#endif
 	redraw_area.add(r);
+#else
+	if (_recently_deleted_areas.contains(this)){
+		//msg_error("saved by me!!!!");
+		return;
+	}
+
+	gtk_widget_queue_draw(widget);
+#endif
 }
 
-void ControlDrawingArea::redraw(const rect &r)
+void ControlDrawingArea::redraw_partial(const rect &r)
 {
+	if (std::this_thread::get_id() != main_thread_id){
+		//printf("readraw from other thread...redirect\n");
+		hui::RunLater(0, std::bind(&ControlDrawingArea::redraw_partial, this, r));
+		return;
+	}
+	//std::lock_guard<std::mutex> lock(mutex);
+
+#if STUPID_HACK
 	if (is_opengl){
 		gtk_widget_queue_draw_area(widget, r.x1, r.y1, r.width(), r.height());
 		return;
@@ -367,6 +424,14 @@ void ControlDrawingArea::redraw(const rect &r)
 		return;
 	gtk_widget_queue_draw_area(widget, r.x1, r.y1, r.width(), r.height());
 	redraw_area.add(r);
+#else
+	if (_recently_deleted_areas.contains(this)){
+		//msg_error("saved by me!!!!");
+		return;
+	}
+
+	gtk_widget_queue_draw_area(widget, r.x1, r.y1, r.width(), r.height());
+#endif
 }
 
 };

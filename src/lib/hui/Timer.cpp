@@ -6,6 +6,8 @@
  */
 
 #include "Timer.h"
+#include <thread>
+static std::thread::id main_thread_id = std::this_thread::get_id();
 
 
 #ifdef OS_WINDOWS
@@ -61,7 +63,7 @@ float Timer::peek()
 		elapsed = (float)(cur_time - last_time) * HuitTimerScal;
 	#endif
 	#ifdef OS_LINUX
-		gettimeofday(&cur_time, NULL);
+		gettimeofday(&cur_time, nullptr);
 		elapsed = float(cur_time.tv_sec - last_time.tv_sec) + float(cur_time.tv_usec - last_time.tv_usec) * 0.000001f;
 	#endif
 	return elapsed;
@@ -76,11 +78,14 @@ float Timer::get()
 
 
 
-
+// don't call in main thread!!!!!
 void Sleep(float duration)
 {
 	if (duration <= 0)
 		return;
+	if (main_thread_id == std::this_thread::get_id())
+		msg_error("don't call hui::Sleep() in main thread!!!");
+
 #ifdef OS_WINDOWS
 	Sleep((DWORD)(duration * 1000.0f));
 #endif

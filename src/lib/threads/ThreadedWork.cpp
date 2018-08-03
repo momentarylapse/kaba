@@ -48,9 +48,9 @@ ThreadedWork::ThreadedWork()
 	work_given = 0;
 	total_size = 0;
 
-	mx_list = NULL;
+	mx_list = nullptr;
 	// use max. number of cores?
-	int num_threads = Thread::getNumCores();
+	int num_threads = Thread::get_num_cores();
 	if (OverwriteThreadNum >= 0)
 		num_threads = OverwriteThreadNum;
 
@@ -95,7 +95,7 @@ bool ThreadedWork::run(int _total_size, int _partition_size)
 		thread_abort = !onStatus();
 		all_done = true;
 		for (int i=0;i<thread.num;i++)
-			all_done &= thread[i]->isDone();
+			all_done &= thread[i]->is_done();
 	}
 
 	if (thread_abort){

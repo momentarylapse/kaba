@@ -9,6 +9,7 @@
 #include "vli.h"
 #include "crypto.h"
 #include "../math/math.h"
+#include <stdio.h>
 
 int vli_count_bits(vli &v)
 {

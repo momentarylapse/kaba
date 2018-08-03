@@ -16,6 +16,7 @@ string shader_dir;
 Shader *default_shader_2d = NULL;
 Shader *default_shader_3d = NULL;
 Shader *current_shader = NULL;
+Shader *override_shader = NULL;
 
 static Array<Shader*> shaders;
 
@@ -294,6 +295,8 @@ void DeleteAllShaders()
 
 void SetShader(Shader *s)
 {
+	if (override_shader)
+		s = override_shader;
 	if (s == NULL)
 		s = default_shader_3d;
 	current_shader = s;
@@ -302,6 +305,11 @@ void SetShader(Shader *s)
 	TestGLError("SetProgram");
 
 	//s->set_default_data();
+}
+
+void SetOverrideShader(Shader *s)
+{
+	override_shader = s;
 }
 
 int Shader::get_location(const string &var_name)

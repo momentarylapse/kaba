@@ -15,6 +15,9 @@
 namespace hui
 {
 
+void DBDEL(const string &type, const string &id, void *p);
+void DBDEL_DONE();
+
 void Menu::__init__()
 {
 	new(this) Menu;
@@ -27,36 +30,38 @@ void Menu::__delete__()
 
 void Menu::clear()
 {
+	DBDEL("menu", "", this);
 	for (Control *c: items)
 		delete(c);
 	items.clear();
+	DBDEL_DONE();
 }
 
-void Menu::addItem(const string &name, const string &id)
+void Menu::add(const string &name, const string &id)
 {
-	add(new MenuItem(name, id));
+	_add(new MenuItem(name, id));
 }
 
-void Menu::addItemImage(const string &name, const string &image, const string &id)
+void Menu::add_with_image(const string &name, const string &image, const string &id)
 {
-	add(new MenuItem(name, id));
+	_add(new MenuItem(name, id));
 	items.back()->setImage(image);
 }
 
-void Menu::addItemCheckable(const string &name, const string &id)
+void Menu::add_checkable(const string &name, const string &id)
 {
-	add(new MenuItemToggle(name, id));
+	_add(new MenuItemToggle(name, id));
 }
 
-void Menu::addSeparator()
+void Menu::add_separator()
 {
-	add(new MenuItemSeparator());
+	_add(new MenuItemSeparator());
 }
 
-void Menu::addSubMenu(const string &name, const string &id, Menu *menu)
+void Menu::add_sub_menu(const string &name, const string &id, Menu *menu)
 {
 	if (menu)
-		add(new MenuItemSubmenu(name, menu, id));
+		_add(new MenuItemSubmenu(name, menu, id));
 }
 
 void try_add_accel(GtkWidget *item, const string &id, Panel *p);
@@ -66,7 +71,8 @@ void Menu::set_panel(Panel *_panel)
 	panel = _panel;
 	for (Control *c: items){
 		c->panel = panel;
-		try_add_accel(c->widget, c->id, panel);
+		if (panel)
+			try_add_accel(c->widget, c->id, panel);
 		MenuItemSubmenu *s = dynamic_cast<MenuItemSubmenu*>(c);
 		if (s)
 			s->sub_menu->set_panel(panel);
@@ -77,27 +83,27 @@ void Menu::set_panel(Panel *_panel)
 int allow_signal_level = 0;
 
 // stupid function for HuiBui....
-void Menu::setID(const string &id)
+void Menu::set_id(const string &id)
 {
 }
 
-Menu *Menu::getSubMenuByID(const string &id)
+Menu *Menu::get_sub_menu_by_id(const string &id)
 {
 	for (Control *c: items){
 		MenuItemSubmenu *s = dynamic_cast<MenuItemSubmenu*>(c);
 		if (s){
 			if (s->id == id)
 				return s->sub_menu;
-			Menu *m = s->sub_menu->getSubMenuByID(id);
+			Menu *m = s->sub_menu->get_sub_menu_by_id(id);
 			if (m)
 				return m;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
-void Menu::updateLanguage()
+void Menu::__update_language()
 {
 #if 0
 	foreach(MenuItem &it, items){
@@ -146,4 +152,26 @@ void Menu::enable(const string &id, bool enabled)
 	}
 }
 
-};
+void Menu::check(const string& id, bool checked)
+{
+	apply_foreach(id, [checked](Control *c){ c->check(checked); });
+}
+
+
+void Menu::apply_foreach(const string &_id, std::function<void(Control*)> f)
+{
+	/*for (Control *c: items)
+		c->apply_foreach(_id, f);*/
+
+	// FIXME: menu items don't really know their children.... inconsistent...argh
+	auto list = get_all_controls();
+	for (auto *c: list)
+		if (c->id == _id){
+			f(c);
+		}
+
+}
+
+}
+;
+

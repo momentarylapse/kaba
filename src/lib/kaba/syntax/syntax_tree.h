@@ -225,6 +225,7 @@ public:
 	
 	// syntax parsing
 	void Parser();
+	void ParseTopLevel();
 	void ParseAllClassNames();
 	void ParseAllFunctionBodies();
 	void ParseImport();
@@ -323,8 +324,8 @@ public:
 	Node *add_node_parray(Node *p, Node *index, Class *type);
 	Node *add_node_block(Block *b);
 	Node *cp_node(Node *c);
-	Node *ref_node(Node *sub, Class *override_type = NULL);
-	Node *deref_node(Node *sub, Class *override_type = NULL);
+	Node *ref_node(Node *sub, Class *override_type = nullptr);
+	Node *deref_node(Node *sub, Class *override_type = nullptr);
 	Node *shift_node(Node *sub, bool deref, int shift, Class *type);
 
 	// pre processor
@@ -370,7 +371,7 @@ public:
 };
 
 string Kind2Str(int kind);
-string LinkNr2Str(SyntaxTree *s, int kind, int64 nr);
+string LinkNr2Str(SyntaxTree *s, Function *f, int kind, int64 nr);
 
 
 

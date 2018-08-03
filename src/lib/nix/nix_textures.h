@@ -52,6 +52,13 @@ public:
 	void _cdecl __init__(int width, int height);
 };
 
+class DepthTexture : public Texture
+{
+public:
+	DepthTexture(int width, int height);
+	void _cdecl __init__(int width, int height);
+};
+
 class CubeMap : public Texture
 {
 public:

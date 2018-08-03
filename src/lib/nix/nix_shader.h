@@ -65,6 +65,7 @@ void _cdecl DeleteAllShaders();
 Shader* _cdecl LoadShader(const string &filename);
 Shader* _cdecl CreateShader(const string &source);
 void _cdecl SetShader(Shader *s);
+void _cdecl SetOverrideShader(Shader *s);
 
 extern Shader *default_shader_2d;
 extern Shader *default_shader_3d;

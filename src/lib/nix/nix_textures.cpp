@@ -490,34 +490,33 @@ DynamicTexture::DynamicTexture(int _width, int _height)
 	is_dynamic = true;
 	
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	TestGLError("aaaa");
+	TestGLError("DynamicTexture: aaaa");
 
 	glGenFramebuffers(1, &frame_buffer);
-	TestGLError("aaaa1");
+	TestGLError("DynamicTexture: glGenFramebuffers");
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-	TestGLError("aaaa2");
+	TestGLError("DynamicTexture: glBindFramebuffer");
 	glGenRenderbuffers(1, &depth_render_buffer);
-	TestGLError("aaaa3");
+	TestGLError("DynamicTexture: glGenRenderbuffers");
 	glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
-	TestGLError("aaaa3b");
+	TestGLError("DynamicTexture: glBindRenderbuffer");
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	TestGLError("aaaa4");
+	TestGLError("DynamicTexture: glRenderbufferStorage");
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_render_buffer);
-
-	TestGLError("aaaa5");
+	TestGLError("DynamicTexture: glFramebufferRenderbuffer");
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);
+	TestGLError("DynamicTexture: glFramebufferTexture");
 	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
 	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-	TestGLError("aaaa7");
+	TestGLError("DynamicTexture: glDrawBuffers");
 
 
-	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		msg_error("framebuffer != complete");
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		msg_error("DynamicTexture: framebuffer != complete");
 
 	// create the actual (dynamic) texture
 	/*Image image;
@@ -525,12 +524,56 @@ DynamicTexture::DynamicTexture(int _width, int _height)
 	overwrite(image);*/
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	TestGLError("DynamicTexture: glBindFramebuffer(0)");
 
 }
 
 void DynamicTexture::__init__(int width, int height)
 {
 	new(this) DynamicTexture(width, height);
+}
+
+DepthTexture::DepthTexture(int _width, int _height)
+{
+	msg_write(format("creating depth texture [%d x %d] ", _width, _height));
+	filename = "-depth-";
+	width = _width;
+	height = _height;
+	is_dynamic = true;
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	TestGLError("DepthTexture: aaaa");
+
+	glGenFramebuffers(1, &frame_buffer);
+	TestGLError("DepthTexture: glGenFramebuffers");
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	TestGLError("DepthTexture: glBindFramebuffer");
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+	TestGLError("DepthTexture: glFramebufferTexture2D");
+	glDrawBuffer(GL_NONE);
+	TestGLError("DepthTexture: glDrawBuffer");
+	glReadBuffer(GL_NONE);
+	TestGLError("DepthTexture: glReadBuffer");
+
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		msg_error("DepthTexture: framebuffer != complete");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	TestGLError("DepthTexture: glBindFramebuffer(0)");
+}
+
+void DepthTexture::__init__(int width, int height)
+{
+	new(this) DepthTexture(width, height);
 }
 
 static int NixCubeMapTarget[] = {
