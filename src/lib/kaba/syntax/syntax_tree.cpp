@@ -291,7 +291,7 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	Parser();
 
 	Exp.clear();
-	
+
 	if (config.verbose)
 		Show();
 
