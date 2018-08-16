@@ -1,4 +1,4 @@
 void main()
 	int[] a = range(0, 20)
-	a.subarray(5, 7) = -1
+	a.subarray(5, 12) = -1
 	print(a)
