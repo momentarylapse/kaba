@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.16.5.1";
+string AppVersion = "0.16.6.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -28,6 +28,7 @@ int Test2()
 {
 	return 2001;
 }
+
 
 class KabaApp : public hui::Application
 {

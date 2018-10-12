@@ -3,6 +3,7 @@
 #include "../../base/set.h"
 #include <stdio.h>
 #include <functional>
+#include <dlfcn.h>
 
 
 #if defined(OS_LINUX)// || defined(OS_MINGW)
@@ -563,6 +564,57 @@ void Script::LinkFunctions()
 	}
 }
 
+struct DynamicLibraryImport
+{
+	string filename;
+	void *handle;
+	void *get_symbol(const string &name, Script *s)
+	{
+		if (!handle)
+			return nullptr;
+		void *p = dlsym(handle, name.c_str());
+		if (!p)
+			s->DoErrorLink("can't load symbol '" + name + "' from library " + filename);
+		return p;
+	}
+};
+static Array<DynamicLibraryImport*> dynamic_libs;
+DynamicLibraryImport *get_dynami_lib(const string &filename, Script *s)
+{
+	for (auto &d: dynamic_libs)
+		if (d->filename == filename)
+			return d;
+	DynamicLibraryImport *d = new DynamicLibraryImport;
+	d->filename = filename;
+	d->handle = dlopen(filename.c_str(), RTLD_NOW);
+	if (!d->handle)
+		s->DoErrorLink("can't load external library " + filename);
+	dynamic_libs.add(d);
+	return d;
+}
+
+void parse_magic_linker_string(SyntaxTree *s)
+{
+	for (auto *c: s->constants)
+		if (c->name == "KABA_LINK" and c->type == TypeString){
+			DynamicLibraryImport *d = nullptr;
+			auto xx = c->as_string().explode("\n");
+			for (string &x: xx){
+				if (x.num == 0)
+					continue;
+				if (x[0] == '\t'){
+					if (d and x.find(":")){
+						auto y = x.substr(1, -1).explode(":");
+						LinkExternal(y[0], d->get_symbol(y[1], s->script));
+					}
+				}else{
+					d = get_dynami_lib(x, s->script);
+				}
+			}
+		}
+
+}
+
 // generate opcode
 void Script::Compiler()
 {
@@ -570,6 +622,8 @@ void Script::Compiler()
 
 	if (config.compile_os)
 		import_includes(this);
+
+	parse_magic_linker_string(syntax);
 
 	syntax->MapLocalVariablesToStack();
 
