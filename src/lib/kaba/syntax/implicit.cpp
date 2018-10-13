@@ -38,7 +38,7 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Class *t, bool all
 		return;
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
 
-	if (t->is_super_array){
+	if (t->is_super_array()){
 		Node *c_el_size = add_node_const(AddConstant(TypeInt));
 		c_el_size->as_const()->as_int() = t->parent->size;
 		Node *c = add_node_classfunc(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
@@ -102,7 +102,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 		return;
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
 
-	if (t->is_super_array){
+	if (t->is_super_array()){
 		ClassFunction *f_clear = t->get_func("clear", TypeVoid, 0);
 		if (f_clear){
 			Node *c = add_node_classfunc(f_clear, self);
@@ -141,7 +141,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 	Node *other = add_node_local_var(f->__get_var("other"), t);
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
 
-	if (t->is_super_array){
+	if (t->is_super_array()){
 
 		ClassFunction *f_resize = t->get_func("resize", TypeVoid, 1, TypeInt);
 		if (!f_resize)
@@ -198,7 +198,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		Node *cmd_inc = add_node_operator_by_inline(for_var, cmd_0 /*dummy*/, INLINE_INT_INCREASE);
 		b->nodes.add(cmd_inc);
 		f->block->nodes.add(cb);
-	}else if (t->is_array){
+	}else if (t->is_array()){
 
 		// for int i, 0, other.num
 		//    self[i].__assign__(other[i])
@@ -521,10 +521,10 @@ void SyntaxTree::AddFunctionHeadersForClass(Class *t)
 {
 	if (t->owner != this)
 		return;
-	if (t->is_pointer)
+	if (t->is_pointer())
 		return;
 
-	if (t->is_super_array){
+	if (t->is_super_array()){
 		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, TypeVoid, "");
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, TypeVoid, "");
 		add_func_header(this, t, "clear", TypeVoid, TypeVoid, "");
@@ -532,7 +532,7 @@ void SyntaxTree::AddFunctionHeadersForClass(Class *t)
 		add_func_header(this, t, "add", TypeVoid, t->parent, "x");
 		add_func_header(this, t, "remove", TypeVoid, TypeInt, "index");
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, t, "other");
-	}else if (t->is_array){
+	}else if (t->is_array()){
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, t, "other");
 	}else if (!t->is_simple_class()){//needs_init){
 		if (needs_new(t->get_default_constructor()))
@@ -594,10 +594,10 @@ void SyntaxTree::AutoImplementFunctions(Class *t)
 {
 	if (t->owner != this)
 		return;
-	if (t->is_pointer)
+	if (t->is_pointer())
 		return;
 
-	if (t->is_super_array){
+	if (t->is_super_array()){
 		AutoImplementDefaultConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
 		AutoImplementArrayClear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, 0)), t);
@@ -605,7 +605,7 @@ void SyntaxTree::AutoImplementFunctions(Class *t)
 		AutoImplementArrayRemove(prepare_auto_impl(t, t->get_func("remove", TypeVoid, 1, TypeInt)), t);
 		AutoImplementArrayAdd(class_get_func(t, "add", TypeVoid, 1), t);
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
-	}else if (t->is_array){
+	}else if (t->is_array()){
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
 	}else if (!t->is_simple_class()){
 		if (t->needs_constructor())

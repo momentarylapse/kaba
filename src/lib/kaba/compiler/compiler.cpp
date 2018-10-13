@@ -58,7 +58,7 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 
 void try_init_global_var(Class *type, char* g_var)
 {
-	if (type->is_array){
+	if (type->is_array()){
 		for (int i=0;i<type->array_length;i++)
 			try_init_global_var(type->parent, g_var + i * type->parent->size);
 		return;
