@@ -129,6 +129,7 @@ Class *TypeBoolList;
 Class *TypeIntPs;
 Class *TypeIntList;
 Class *TypeIntArray;
+Class *TypeIntDict;
 Class *TypeFloatP;
 Class *TypeFloatPs;
 Class *TypeFloatList;
@@ -137,6 +138,7 @@ Class *TypeFloatArrayP;
 Class *TypeComplex;
 Class *TypeComplexList;
 Class *TypeStringList;
+Class *TypeStringDict;
 Class *TypeVectorArray;
 Class *TypeVectorArrayP;
 Class *TypeVectorList;
@@ -210,6 +212,15 @@ Class *add_type_a(const string &name, Class *sub_type, int array_length)
 		t->type = t->Type::ARRAY;
 		t->array_length = array_length;
 	}
+	cur_package_script->syntax->classes.add(t);
+	return t;
+}
+
+Class *add_type_d(const string &name, Class *sub_type)
+{
+	Class *t = new Class(name, config.super_array_size, cur_package_script->syntax, sub_type);
+	t->type = t->Type::DICT;
+	script_make_dict(t);
 	cur_package_script->syntax->classes.add(t);
 	return t;
 }
@@ -689,6 +700,43 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 		}
 }
 
+class IntDict : public Map<string,int>
+{
+public:
+	void add_int(const string &k, int v)
+	{ add(k, v); }
+	string str()
+	{
+		string s;
+		for (string &k: keys()){
+			if (s != "")
+				s += ", ";
+			s += "\"" + k + "\": " + i2s((*this)[k]);
+		}
+		return "{" + s + "}";
+	}
+};
+
+void script_make_dict(Class *t, SyntaxTree *ps)
+{
+	Class *parent = t->parent;
+	t->derive_from(TypeDynamicArray, false);
+	t->parent = parent;
+	add_class(t);
+
+	if (t->parent == TypeInt){
+		class_add_func(IDENTIFIER_FUNC_INIT,	TypeVoid, mf(&Map<string,int>::__init__));
+		class_add_func("add", TypeVoid, mf(&IntDict::add_int));
+			func_add_param("key",		TypeString);
+			func_add_param("x",		t->parent);
+		class_add_func(IDENTIFIER_FUNC_DELETE,	TypeVoid, mf(&Map<string,int>::clear));
+		class_add_func("clear", TypeVoid, mf(&Map<string,int>::clear));
+		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&Map<string,int>::assign));
+			func_add_param("other",		t);
+		class_add_func("str", TypeString, mf(&IntDict::str));
+	}
+}
+
 
 // automatic type casting
 
@@ -950,6 +998,9 @@ void SIAddPackageBase()
 	TypeCString     = add_type_a("cstring",   TypeChar, 256);	// cstring := char[256]
 	TypeString      = add_type_a("string",    TypeChar, -1);	// string := char[]
 	TypeStringList  = add_type_a("string[]",  TypeString, -1);
+
+	TypeIntDict     = add_type_d("int{}",     TypeInt);
+	TypeStringDict  = add_type_d("string{}",  TypeString);
 
 
 	//	add_func_special("f2i",			TypeInt,	(void*)&_Float2Int);

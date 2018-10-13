@@ -854,7 +854,7 @@ Class *SyntaxTree::CreateNewClass(const string &name, Class::Type type, int size
 	t->size = size;
 	t->parent = sub;
 	classes.add(t);
-	if (t->is_super_array()){
+	if (t->is_super_array() or t->is_dict()){
 		Class *parent = t->parent;
 		t->derive_from(TypeDynamicArray, false);
 		t->parent = parent;

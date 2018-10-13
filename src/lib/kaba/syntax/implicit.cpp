@@ -44,6 +44,12 @@ void SyntaxTree::AutoImplementDefaultConstructor(Function *f, Class *t, bool all
 		Node *c = add_node_classfunc(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
 		c->set_param(0, c_el_size);
 		f->block->nodes.add(c);
+	}else if (t->is_dict()){
+		Node *c_el_size = add_node_const(AddConstant(TypeInt));
+		c_el_size->as_const()->as_int() = t->parent->size + TypeString->size;
+		Node *c = add_node_classfunc(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
+		c->set_param(0, c_el_size);
+		f->block->nodes.add(c);
 	}else{
 
 		// parent constructor
@@ -102,7 +108,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 		return;
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
 
-	if (t->is_super_array()){
+	if (t->is_super_array() or t->is_dict()){
 		ClassFunction *f_clear = t->get_func("clear", TypeVoid, 0);
 		if (f_clear){
 			Node *c = add_node_classfunc(f_clear, self);
@@ -534,6 +540,14 @@ void SyntaxTree::AddFunctionHeadersForClass(Class *t)
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, t, "other");
 	}else if (t->is_array()){
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, t, "other");
+	}else if (t->is_dict()){
+		msg_write("add dict...");
+		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, TypeVoid, "");
+		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, TypeVoid, "");
+		add_func_header(this, t, "clear", TypeVoid, TypeVoid, "");
+		add_func_headerx(this, t, "add", TypeVoid, {TypeString, t->parent}, {"key", "x"});
+		add_func_header(this, t, "__get__", t->parent, TypeString, "key");
+		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, t, "other");
 	}else if (!t->is_simple_class()){//needs_init){
 		if (needs_new(t->get_default_constructor()))
 			add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, TypeVoid, "", t->get_default_constructor());
@@ -607,6 +621,8 @@ void SyntaxTree::AutoImplementFunctions(Class *t)
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
 	}else if (t->is_array()){
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
+	}else if (t->is_dict()){
+		AutoImplementDefaultConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 	}else if (!t->is_simple_class()){
 		if (t->needs_constructor())
 			AutoImplementDefaultConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
