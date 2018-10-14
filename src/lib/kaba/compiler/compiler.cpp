@@ -3,7 +3,9 @@
 #include "../../base/set.h"
 #include <stdio.h>
 #include <functional>
+#if HAS_LIB_DL
 #include <dlfcn.h>
+#endif
 
 
 #if defined(OS_LINUX)// || defined(OS_MINGW)
@@ -570,17 +572,22 @@ struct DynamicLibraryImport
 	void *handle;
 	void *get_symbol(const string &name, Script *s)
 	{
+#if HAS_LIB_DL
 		if (!handle)
 			return nullptr;
 		void *p = dlsym(handle, name.c_str());
 		if (!p)
 			s->DoErrorLink("can't load symbol '" + name + "' from library " + filename);
 		return p;
+#else
+		return nullptr;
+#endif
 	}
 };
 static Array<DynamicLibraryImport*> dynamic_libs;
-DynamicLibraryImport *get_dynami_lib(const string &filename, Script *s)
+DynamicLibraryImport *get_dynamic_lib(const string &filename, Script *s)
 {
+#if HAS_LIB_DL
 	for (auto &d: dynamic_libs)
 		if (d->filename == filename)
 			return d;
@@ -588,9 +595,13 @@ DynamicLibraryImport *get_dynami_lib(const string &filename, Script *s)
 	d->filename = filename;
 	d->handle = dlopen(filename.c_str(), RTLD_NOW);
 	if (!d->handle)
-		s->DoErrorLink("can't load external library " + filename);
+		s->DoErrorLink("can't load external library " + filename + ": " + dlerror());
 	dynamic_libs.add(d);
 	return d;
+#else
+	s->DoErrorLink("can't load dynamic lib, program is compiled without support for dl library");
+#endif
+	return nullptr;
 }
 
 void parse_magic_linker_string(SyntaxTree *s)
@@ -608,7 +619,7 @@ void parse_magic_linker_string(SyntaxTree *s)
 						LinkExternal(y[0], d->get_symbol(y[1], s->script));
 					}
 				}else{
-					d = get_dynami_lib(x, s->script);
+					d = get_dynamic_lib(x, s->script);
 				}
 			}
 		}
