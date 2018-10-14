@@ -1,0 +1,22 @@
+void main()
+	int{} d, i
+	d.set("a", 9)
+	d.set("b", 19)
+	i = d
+	d.set("a", 29)
+	print(d.num)
+	print(d)
+	print(i)
+	print(d["a"])
+	//d["a"] = 9
+	//print(d.str())
+	
+	string{} dd
+	dd.set("a", "test")
+	print(dd["a"])
+	print(dd)
+	
+	float{} ff
+	ff.set("pi", pi)
+	print(ff)
+	print(ff["pi"])

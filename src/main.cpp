@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.16.6.0";
+string AppVersion = "0.16.7.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -36,13 +36,13 @@ public:
 	KabaApp() :
 		hui::Application("kaba", "", 0)//hui::FLAG_LOAD_RESOURCE)
 	{
-		setProperty("name", AppName);
-		setProperty("version", AppVersion);
+		set_property("name", AppName);
+		set_property("version", AppVersion);
 		//hui::EndKeepMsgAlive = true;
 
 	}
 
-	virtual bool onStartup(const Array<string> &arg0)
+	virtual bool on_startup(const Array<string> &arg0)
 	{
 
 		bool use_gui = false;
