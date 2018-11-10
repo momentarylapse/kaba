@@ -327,7 +327,7 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 		avi_info[texture]=NULL;
 	#endif
 
-	image.setMode(Image::ModeRGBA);
+	image.set_mode(Image::ModeRGBA);
 
 	if (t->is_cube_map)
 		target = GL_TEXTURE_CUBE_MAP;

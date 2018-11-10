@@ -19,7 +19,7 @@ struct MapEntry
 class MapKeyError : public Exception
 {
 public:
-	MapKeyError(const string &key): Exception("key not found: '" + key + "'"){}
+	MapKeyError(): Exception("key not found"){}
 };
 
 template<class T1, class T2>
@@ -54,7 +54,7 @@ public:
 		int n = find(key);
 		if (n >= 0)
 			return ((Entry*)data)[n].value;
-		throw MapKeyError(key);
+		throw MapKeyError();
 		//return T2();
 	}
 	T2 &operator[] (const T1 &key)
@@ -63,7 +63,7 @@ public:
 		if (n >= 0)
 			return ((Entry*)data)[n].value;
 
-		throw MapKeyError(key);
+		throw MapKeyError();
 		//return T2();
 	}
 	Array<T1> keys() const
@@ -106,7 +106,7 @@ public:
 		for (int i=0;i<num;i++)
 			if (((Entry*)data)[i].hash == hash)
 				return ((Entry*)data)[i].value;
-		throw MapKeyError(key);
+		throw MapKeyError();
 		//return T2();
 	}
 	T2 &operator[] (const T1 &key)
@@ -122,7 +122,7 @@ public:
 		for (int i=0;i<num;i++)
 			if (((Entry*)data)[i].hash == hash)
 				return ((Entry*)data)[i].value;
-		throw MapKeyError(key);
+		throw MapKeyError();
 		//return T2();
 	}
 };
