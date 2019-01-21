@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.16.7.0";
+string AppVersion = "0.16.8.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -209,6 +209,11 @@ public:
 		string filename;
 		if (arg.num > 1){
 			filename = arg[1];
+			if (installed and filename.tail(5) != ".kaba"){
+				string dd = directory_static + "apps/" + arg[1] + "/" + arg[1] + ".kaba";
+				if (file_test_existence(dd))
+					filename = dd;
+			}
 		}else{
 			if (!hui::FileDialogOpen(NULL, _("Script &offnen"), "", "*.kaba", "*.kaba")){
 				msg_end();
