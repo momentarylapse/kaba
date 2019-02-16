@@ -1580,6 +1580,8 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 	config.compile_silently = false;
 	config.verbose = false;
+	config.verbose_func_filter = "*";
+	config.verbose_stage_filter = "*";
 	config.show_compiler_stats = true;
 
 	config.compile_os = false;
@@ -1748,6 +1750,42 @@ void End()
 	Packages.clear();
 
 	ResetExternalLinkData();
+}
+
+
+bool CompilerConfiguration::allow_output_func(Function *f)
+{
+	if (!verbose)
+		return false;
+	if (!f)
+		return true;
+	Array<string> filters = verbose_func_filter.explode(",");
+	for (auto &fil: filters)
+		if (f->name.match(fil))
+			return true;
+	return false;
+}
+
+bool CompilerConfiguration::allow_output_stage(const string &stage)
+{
+	if (!verbose)
+		return false;
+	Array<string> filters = verbose_stage_filter.explode(",");
+	for (auto &fil: filters)
+		if (stage.match(fil))
+			return true;
+	return false;
+}
+
+bool CompilerConfiguration::allow_output(Function *f, const string &stage)
+{
+	if (!verbose)
+		return false;
+	if (!allow_output_func(f))
+		return false;
+	if (!allow_output_stage(stage))
+		return false;
+	return true;
 }
 
 };

@@ -789,12 +789,12 @@ void SerializerARM::AddFunctionOutro(Function *f)
 
 void SerializerARM::DoMapping()
 {
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("aaa");
 
 	MapReferencedTempVarsToStack();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post ref map");
 
 	ProcessDereferences();
@@ -808,17 +808,17 @@ void SerializerARM::DoMapping()
 
 	//ResolveDerefTempAndLocal();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:b"))
 		cmd_list_out("pre global");
 
 	ConvertGlobalLookups();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:c"))
 		cmd_list_out("post global");
 
 	CorrectUnallowedParamCombis();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:d"))
 		cmd_list_out("post unallowed");
 
 	for (int i=0; i<cmd.num; i++)
@@ -826,7 +826,7 @@ void SerializerARM::DoMapping()
 
 	ConvertGlobalRefs();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:e"))
 		cmd_list_out("end");
 }
 

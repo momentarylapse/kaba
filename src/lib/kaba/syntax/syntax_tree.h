@@ -354,9 +354,9 @@ public:
 
 	// debug displaying
 	void ShowNode(Node *c, Function *f);
-	void ShowFunction(Function *f);
+	void ShowFunction(Function *f, const string &stage = "");
 	void ShowBlock(Block *b);
-	void Show();
+	void Show(const string &stage);
 
 // data
 

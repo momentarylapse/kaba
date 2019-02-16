@@ -1163,22 +1163,22 @@ void SerializerX86::DoMapping()
 
 	TryMapTempVarsRegisters();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post temp -> reg");
 
 	MapRemainingTempVarsToStack();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:b"))
 		cmd_list_out("post temp -> stack");
 
 	ResolveDerefTempAndLocal();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:c"))
 		cmd_list_out("post deref t&l");
 
 	CorrectUnallowedParamCombis();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:d"))
 		cmd_list_out("unallowed");
 
 	/*MapReferencedTempVars();
@@ -1209,7 +1209,7 @@ void SerializerX86::DoMapping()
 	for (int i=0; i<cmd.num; i++)
 		CorrectUnallowedParamCombis2(cmd[i]);
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "map:z"))
 		cmd_list_out("end");
 }
 

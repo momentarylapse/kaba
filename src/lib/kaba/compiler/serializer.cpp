@@ -670,6 +670,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	}else{
 		//DoError(string("type of command is unimplemented (call Michi!): ",Kind2Str(com->Kind)));
 	}
+
 	return ret;
 }
 
@@ -1709,7 +1710,7 @@ void Serializer::SerializeFunction(Function *f)
 	SerializeBlock(f->block);
 	ScanTempVarUsage();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "ser:a"))
 		cmd_list_out("a000");
 
 
@@ -1722,7 +1723,7 @@ void Serializer::SerializeFunction(Function *f)
 	if (need_outro)
 		AddFunctionOutro(f);
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "ser:b"))
 		cmd_list_out("a0");
 
 	// map global ref labels
@@ -1733,7 +1734,7 @@ void Serializer::SerializeFunction(Function *f)
 	TryMergeTempVars();
 	SimplifyFloatStore();
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "ser:c"))
 		cmd_list_out("a");
 	
 
@@ -2045,8 +2046,9 @@ Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list)
 
 void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list)
 {
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "asm"))
 		msg_write("serializing " + f->name + " -------------------");
+	syntax->ShowFunction(f, "asm");
 
 	cur_func = f;
 	Serializer *d = CreateSerializer(this, list);
@@ -2089,7 +2091,7 @@ void Script::CompileFunctions(char *oc, int &ocs)
 		}
 
 
-	if (config.verbose)
+	if (config.verbose and config.allow_output(cur_func, "comp:x"))
 		list->show();
 
 	// assemble into opcode

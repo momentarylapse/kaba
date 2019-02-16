@@ -52,6 +52,8 @@ public:
 		bool flag_allow_std_lib = true;
 		bool flag_disassemble = false;
 		bool flag_verbose = false;
+		string debug_func_filter = "*";
+		string debug_stage_filter = "*";
 		bool flag_compile_os = false;
 		bool flag_override_variable_offset = false;
 		long long variable_offset = 0;
@@ -96,6 +98,14 @@ public:
 			}else if (arg[i] == "--verbose"){
 				flag_verbose = true;
 				flag_disassemble = true;
+				arg.erase(i --);
+			}else if (arg[i] == "--vfunc"){
+				arg.erase(i);
+				debug_func_filter = arg[i];
+				arg.erase(i --);
+			}else if (arg[i] == "--vstage"){
+				arg.erase(i);
+				debug_stage_filter = arg[i];
 				arg.erase(i --);
 			}else if (arg[i] == "--disasm"){
 				flag_disassemble = true;
@@ -222,6 +232,8 @@ public:
 		// compile
 		Kaba::config.compile_silently = !flag_verbose;
 		Kaba::config.verbose = flag_verbose;
+		Kaba::config.verbose_func_filter = debug_func_filter;
+		Kaba::config.verbose_stage_filter = debug_stage_filter;
 		Kaba::config.compile_os = flag_compile_os;
 		Kaba::config.add_entry_point = flag_add_entry_point;
 		Kaba::config.no_function_frame = flag_no_function_frames;

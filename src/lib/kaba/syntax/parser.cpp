@@ -690,11 +690,12 @@ Node *SyntaxTree::GetOperand(Block *block)
 			}else if (links[0]->kind == KIND_TYPE){
 				if (Exp.cur == "("){
 					Class *t = links[0]->as_class();
-					int nv = block->add_var("-temp-", t);
+					int nv = block->add_var("-cf-temp-", t);
+					block->function->var[nv]->dont_add_constructor = true;
 					Node *dummy = add_node_local_var(nv, t);
 					links = {};
 					for (auto *cf: t->get_constructors())
-						links.add(add_node_classfunc(cf, dummy));
+						links.add(add_node_classfunc(cf, ref_node(dummy)));
 						//links.add(exlink_make_func_class(this, block->function, *cf));
 
 					operand = GetFunctionCall(f_name, links, block);

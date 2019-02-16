@@ -650,7 +650,7 @@ void Script::Compiler()
 	syntax->PreProcessor();
 
 	if (config.verbose)
-		syntax->Show();
+		syntax->Show("comp:a");
 
 	AllocateMemory();
 	AllocateStack();
@@ -677,7 +677,7 @@ void Script::Compiler()
 	syntax->PreProcessorAddresses();
 
 	if (config.verbose)
-		syntax->Show();
+		syntax->Show("comp:b");
 
 
 // compile functions into Opcode

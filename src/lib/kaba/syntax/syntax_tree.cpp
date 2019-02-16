@@ -306,7 +306,7 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	Exp.clear();
 
 	if (config.verbose)
-		Show();
+		Show("par:a");
 
 	ConvertCallByReference();
 
@@ -319,7 +319,7 @@ void SyntaxTree::ParseBuffer(const string &buffer, bool just_analyse)
 	PreProcessor();
 
 	if (config.verbose)
-		Show();
+		Show("par:b");
 }
 
 string Kind2Str(int kind)
@@ -920,7 +920,7 @@ Node *conv_calls(SyntaxTree *ps, Node *c, int tt)
 			return c;
 		}
 
-	if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VIRTUAL_FUNCTION) or (c->kind == KIND_ARRAY_BUILDER)){
+	if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VIRTUAL_FUNCTION) or (c->kind == KIND_ARRAY_BUILDER) or (c->kind == KIND_CONSTRUCTOR_AS_FUNCTION)){
 
 		// parameters: array/class as reference
 		for (int j=0;j<c->params.num;j++)
@@ -1012,6 +1012,8 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 //    return by ref:       array
 void SyntaxTree::ConvertCallByReference()
 {
+	if (config.verbose)
+		msg_write("ConvertCallByReference");
 	// convert functions
 	for (Function *f: functions){
 		
@@ -1172,25 +1174,63 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
 	return F(n);
 }
 
+static Node* _transform_insert_before_ = nullptr;
+
 void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
 {
-	foreachi (Node *n, block->nodes, i)
-		block->nodes[i] = transform_node(n, F);
+	//foreachi (Node *n, block->nodes, i){
+	for (int i=0; i<block->nodes.num; i++){
+		block->nodes[i] = transform_node(block->nodes[i], F);
+		if (_transform_insert_before_){
+			if (config.verbose)
+				msg_error("INSERT BEFORE...");
+			block->nodes.insert(_transform_insert_before_, i);
+			_transform_insert_before_ = nullptr;
+			i ++;
+		}
+	}
 }
 
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::transform(std::function<Node*(Node*)> F)
 {
+	_transform_insert_before_ = nullptr;
 	for (Function *f: functions){
 		cur_func = f;
 		transform_block(f->block, F);
 	}
 }
 
+Node *conv_constr_func(SyntaxTree *ps, Node *n)
+{
+	if (n->kind == KIND_CONSTRUCTOR_AS_FUNCTION){
+		if (config.verbose){
+			msg_error("constr func....");
+			ps->ShowNode(n, ps->cur_func);
+		}
+		_transform_insert_before_ = ps->cp_node(n);
+		_transform_insert_before_->kind = KIND_FUNCTION;
+		_transform_insert_before_->type = TypeVoid;
+		if (config.verbose)
+			ps->ShowNode(_transform_insert_before_, ps->cur_func);
+
+		// n->instance should be a reference to local... FIXME
+		return ps->cp_node(n->instance->params[0]);
+	}
+	return n;
+}
+
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::BreakDownComplicatedCommands()
 {
+	if (config.verbose){
+		Show("break:a");
+		msg_write("BreakDownComplicatedCommands");
+	}
 	transform([&](Node* n){ return BreakDownComplicatedCommand(n); });
+	transform([&](Node* n){ return conv_constr_func(this, n); });
+	if (config.verbose)
+		Show("break:b");
 }
 
 void MapLVSX86Return(Function *f)
@@ -1328,20 +1368,24 @@ void SyntaxTree::ShowBlock(Block *b)
 	msg_write("/block");
 }
 
-void SyntaxTree::ShowFunction(Function *f)
+void SyntaxTree::ShowFunction(Function *f, const string &stage)
 {
+	if (!config.allow_output(f, stage))
+		return;
 	msg_write("[function] " + f->return_type->name + " " + f->name);
 	cur_func = f;
 	ShowBlock(f->block);
 }
 
-void SyntaxTree::Show()
+void SyntaxTree::Show(const string &stage)
 {
-	msg_write("--------- Syntax of " + script->filename + " ---------");
+	if (!config.allow_output_stage(stage))
+		return;
+	msg_write("--------- Syntax of " + script->filename + "  " + stage + " ---------");
 	msg_right();
 	for (Function *f: functions)
 		if (!f->is_extern)
-			ShowFunction(f);
+			ShowFunction(f, stage);
 	msg_left();
 	msg_write("\n\n");
 }

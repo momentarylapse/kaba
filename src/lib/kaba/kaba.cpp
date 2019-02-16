@@ -175,7 +175,8 @@ void Script::Load(const string &_filename, bool _just_analyse)
 			pre_script->Show();*/
 		if ((!just_analyse) and (config.verbose)){
 			msg_write(format("Opcode: %d bytes", opcode_size));
-			msg_write(Asm::Disassemble(opcode, opcode_size));
+			if (config.allow_output_stage("dasm"))
+				msg_write(Asm::Disassemble(opcode, opcode_size));
 		}
 
 	}catch(FileError &e){
