@@ -622,10 +622,8 @@ void func_set_inline(int index)
 
 void func_add_param(const string &name, Class *type)
 {
-	Variable v;
-	v.name = name;
-	v.type = type;
 	if (cur_func){
+		Variable *v = new Variable(name, type);
 		cur_func->var.add(v);
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;

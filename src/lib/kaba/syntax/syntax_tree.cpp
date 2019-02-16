@@ -344,6 +344,7 @@ string Kind2Str(int kind)
 	if (kind == KIND_DEREF_ADDRESS_SHIFT)	return "deref address shift";
 	if (kind == KIND_TYPE)				return "type";
 	if (kind == KIND_ARRAY_BUILDER)		return "array builder";
+	if (kind == KIND_CONSTRUCTOR_AS_FUNCTION)		return "constructor function";
 	if (kind == KIND_VAR_TEMP)			return "temp";
 	if (kind == KIND_DEREF_VAR_TEMP)		return "deref temp";
 	if (kind == KIND_REGISTER)			return "register";
@@ -372,8 +373,8 @@ string op_to_str(const Operator &op)
 
 string LinkNr2Str(SyntaxTree *s, Function *f, int kind, long long nr)
 {
-	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr].name;
-	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr].name;
+	if (kind == KIND_VAR_LOCAL)			return /*"#" + i2s(nr) + ": " +*/ f->var[nr]->name;
+	if (kind == KIND_VAR_GLOBAL)			return s->root_of_all_evil.var[nr]->name;
 	if (kind == KIND_VAR_FUNCTION)		return s->functions[nr]->name;
 	if (kind == KIND_CONSTANT)			return /*"#" + i2s(nr) + ": " +*/ s->constants[nr]->str();
 	if (kind == KIND_FUNCTION)			return s->functions[nr]->name;
@@ -430,8 +431,8 @@ void SyntaxTree::CreateAsmMetaInfo()
 	asm_meta_info->global_var.clear();
 	for (int i=0;i<root_of_all_evil.var.num;i++){
 		Asm::GlobalVar v;
-		v.name = root_of_all_evil.var[i].name;
-		v.size = root_of_all_evil.var[i].type->size;
+		v.name = root_of_all_evil.var[i]->name;
+		v.size = root_of_all_evil.var[i]->type->size;
 		v.pos = script->g_var[i];
 		asm_meta_info->global_var.add(v);
 	}
@@ -488,15 +489,22 @@ void Block::set(int index, Node *c)
 	set_command(nodes[index], c);
 }
 
+
+Variable::Variable(const string &_name, Class *_type)
+{
+	name = _name;
+	type = _type;
+	_offset = 0;
+	is_extern = false;
+	dont_add_constructor = false;
+}
+
 int Block::add_var(const string &name, Class *type)
 {
 	if (get_var(name) >= 0)
 		function->tree->DoError(format("variable '%s' already declared in this context", name.c_str()));
-	Variable v;
-	v.name = name;
-	v.type = type;
-	v._offset = 0;
-	v.is_extern = next_extern;
+	Variable *v = new Variable(name, type);
+	v->is_extern = next_extern;
 	function->var.add(v);
 	int n = function->var.num - 1;
 	vars.add(n);
@@ -506,7 +514,7 @@ int Block::add_var(const string &name, Class *type)
 int Block::get_var(const string &name)
 {
 	for (int i: vars)
-		if (function->var[i].name == name)
+		if (function->var[i]->name == name)
 			return i;
 	if (parent)
 		return parent->get_var(name);
@@ -534,6 +542,12 @@ Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 	_exp_no = -1;
 	inline_no = -1;
 	throws_exceptions = false;
+}
+
+Function::~Function()
+{
+	for (Variable* v: var)
+		delete v;
 }
 
 int Function::__get_var(const string &name) const
@@ -654,152 +668,96 @@ int SyntaxTree::WhichType(const string &name)
 	return -1;
 }
 
-Array<int> MultipleFunctionList;
-
 int SyntaxTree::WhichStatement(const string &name)
 {
-	MultipleFunctionList.clear();
 	for (int i=0;i<Statements.num;i++)
 		if (name == Statements[i].name)
-			MultipleFunctionList.add(i);
-			//return i;
-	if (MultipleFunctionList.num > 0)
-		return MultipleFunctionList[0];
+			return i;
 	return -1;
 }
 
-Node exlink_make_var_local(SyntaxTree *ps, Class *t, int var_no)
+Node *exlink_make_var_local(SyntaxTree *ps, Class *t, int var_no)
 {
-	Node link;
-	link.type = t;
-	link.link_no = var_no;
-	link.kind = KIND_VAR_LOCAL;
-	link.set_num_params(0);
-	link.script = ps->script;
-	link.instance = nullptr;
+	return new Node(KIND_VAR_LOCAL, var_no, ps->script, t);
+}
+
+Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
+{
+	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
+	Node *link = new Node(KIND_DEREF_ADDRESS_SHIFT, e.offset, ps->script, e.type);
+	link->set_num_params(1);
+	link->params[0] = self;
 	return link;
 }
 
-Node exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
+Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 {
-	Node link;
 	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
-	link.type = e.type;
-	link.link_no = e.offset;
-	link.kind = KIND_DEREF_ADDRESS_SHIFT;
-	link.set_num_params(1);
-	link.params[0] = self;
-	link.script = ps->script;
-	link.instance = nullptr;
-	return link;
-}
-
-Node exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
-{
-	Node link;
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
+	Node *link;
 	if (cf.virtual_index >= 0){
-		link.kind = KIND_VIRTUAL_FUNCTION;
-		link.link_no = cf.virtual_index;
+		link = new Node(KIND_VIRTUAL_FUNCTION, cf.virtual_index, cf.script, cf.return_type);
 	}else{
-		link.kind = KIND_FUNCTION;
-		link.link_no = cf.nr;
+		link = new Node(KIND_FUNCTION, cf.nr, cf.script, cf.return_type);
 	}
-	link.script = cf.script;
-	link.type = cf.return_type;
-	link.set_num_params(cf.param_types.num);
-	link.instance = self;
+	link->set_num_params(cf.param_types.num);
+	link->set_instance(self);
 	return link;
 }
 
-Array<Node> SyntaxTree::GetExistenceShared(const string &name)
+Array<Node*> SyntaxTree::GetExistenceShared(const string &name)
 {
-	Array<Node> links;
-	Node link;
-	link.type = TypeUnknown;
-	link.params.clear();
-	link.script = script;
-	link.instance = nullptr;
+	Array<Node*> links;
 
 	// global variables (=local variables in "RootOfAllEvil")
-	foreachi(Variable &v, root_of_all_evil.var, i)
-		if (v.name == name){
-			link.type = v.type;
-			link.link_no = i;
-			link.kind = KIND_VAR_GLOBAL;
-			links.add(link);
-			return links;
-		}
+	foreachi(Variable *v, root_of_all_evil.var, i)
+		if (v->name == name)
+			return new Node(KIND_VAR_GLOBAL, i, script, v->type);
 
 	// named constants
 	foreachi(Constant *c, constants, i)
-		if (name == c->name){
-			link.type = c->type;
-			link.link_no = i;
-			link.kind = KIND_CONSTANT;
-			links.add(link);
-			return links;
-		}
+		if (name == c->name)
+			return new Node(KIND_CONSTANT, i, script, c->type);
 
 	// then the (real) functions
 	foreachi(Function *f, functions, i)
 		if (f->name == name){
-			link.kind = KIND_FUNCTION;
-			link.link_no = i;
-			link.type = f->literal_return_type;
-			link.set_num_params(f->num_params);
-			links.add(link);
+			Node *n = new Node(KIND_FUNCTION, i, script, f->literal_return_type);
+			n->set_num_params(f->num_params);
+			links.add(n);
 		}
 	if (links.num > 0)
 		return links;
 
 	// types
 	int w = WhichType(name);
-	if (w >= 0){
-		link.kind = KIND_TYPE;
-		link.link_no = w;
-		links.add(link);
-		return links;
-	}
+	if (w >= 0)
+		return new Node(KIND_TYPE, w, script, TypeClass);
 
 	// ...unknown
-	return links;
+	return {};
 }
 
-Array<Node> SyntaxTree::GetExistence(const string &name, Block *block)
+Array<Node*> SyntaxTree::GetExistence(const string &name, Block *block)
 {
-	Array<Node> links;
-	Node link;
-	link.type = TypeUnknown;
-	link.params.clear();
-	link.script = script;
-	link.instance = nullptr;
+	Array<Node*> links;
 
 	if (block){
 		Function *f = block->function;
 
 		// first test local variables
 		int n = block->get_var(name);
-		if (n >= 0){
-			links.add(exlink_make_var_local(this, f->var[n].type, n));
-			return links;
-		}
+		if (n >= 0)
+			return exlink_make_var_local(this, f->var[n]->type, n);
 		if (f->_class){
-			if ((name == IDENTIFIER_SUPER) and (f->_class->parent)){
-				links.add(exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF)));
-				return links;
-			}
+			if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
+				return exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
 			// class elements (within a class function)
 			for (ClassElement &e: f->_class->elements)
-				if (e.name == name){
-					links.add(exlink_make_var_element(this, f, e));
-					return links;
-				}
+				if (e.name == name)
+					return exlink_make_var_element(this, f, e);
 			for (ClassFunction &cf: f->_class->functions)
-				if (cf.name == name){
-					links.add(exlink_make_func_class(this, f, cf));
-					return links;
-				}
+				if (cf.name == name)
+					return exlink_make_func_class(this, f, cf);
 		}
 	}
 
@@ -811,21 +769,15 @@ Array<Node> SyntaxTree::GetExistence(const string &name, Block *block)
 	// then the statements
 	int w = WhichStatement(name);
 	if (w >= 0){
-		link.kind = KIND_STATEMENT;
-		link.link_no = w;
-		link.type = TypeVoid;
-		link.set_num_params(Statements[w].num_params);
-		links.add(link);
-		return links;
+		Node *n = new Node(KIND_STATEMENT, w, script, TypeVoid);
+		n->set_num_params(Statements[w].num_params);
+		return n;
 	}
 
 	// operators
 	w = WhichPrimitiveOperator(name);
-	if (w >= 0){
-		link.kind = KIND_PRIMITIVE_OPERATOR;
-		link.link_no = w;
-		return link;
-	}
+	if (w >= 0)
+		return new Node(KIND_PRIMITIVE_OPERATOR, w, script, TypeUnknown);
 
 	// in include files (only global)...
 	for (Script *i: includes)
@@ -1060,9 +1012,9 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 
 		// convert into   *-return- = param
 		Node *p_ret = nullptr;
-		foreachi(Variable &v, f->var, i)
-			if (v.name == IDENTIFIER_RETURN_VAR){
-				p_ret = ps->AddNode(KIND_VAR_LOCAL, i, v.type);
+		foreachi(Variable *v, f->var, i)
+			if (v->name == IDENTIFIER_RETURN_VAR){
+				p_ret = ps->AddNode(KIND_VAR_LOCAL, i, v->type);
 			}
 		if (!p_ret)
 			ps->DoError("-return- not found...");
@@ -1088,8 +1040,8 @@ void SyntaxTree::ConvertCallByReference()
 		
 		// parameter: array/class as reference
 		for (int j=0;j<f->num_params;j++)
-			if (f->var[j].type->uses_call_by_reference()){
-				f->var[j].type = f->var[j].type->get_pointer();
+			if (f->var[j]->type->uses_call_by_reference()){
+				f->var[j]->type = f->var[j]->type->get_pointer();
 
 				// internal usage...
 				foreachi(Node *c, f->block->nodes, i)
@@ -1258,9 +1210,9 @@ void SyntaxTree::BreakDownComplicatedCommands()
 void MapLVSX86Return(Function *f)
 {
 	if (f->return_type->uses_return_by_memory()){
-		foreachi(Variable &v, f->var, i)
-			if (v.name == IDENTIFIER_RETURN_VAR){
-				v._offset = f->_param_size;
+		foreachi(Variable *v, f->var, i)
+			if (v->name == IDENTIFIER_RETURN_VAR){
+				v->_offset = f->_param_size;
 				f->_param_size += 4;
 			}
 	}
@@ -1269,9 +1221,9 @@ void MapLVSX86Return(Function *f)
 void MapLVSX86Self(Function *f)
 {
 	if (f->_class){
-		foreachi(Variable &v, f->var, i)
-			if (v.name == IDENTIFIER_SELF){
-				v._offset = f->_param_size;
+		foreachi(Variable *v, f->var, i)
+			if (v->name == IDENTIFIER_SELF){
+				v->_offset = f->_param_size;
 				f->_param_size += 4;
 			}
 	}
@@ -1298,36 +1250,36 @@ void SyntaxTree::MapLocalVariablesToStack()
 				MapLVSX86Self(f);
 			}
 
-			foreachi(Variable &v, f->var, i){
-				if ((f->_class) and (v.name == IDENTIFIER_SELF))
+			foreachi(Variable *v, f->var, i){
+				if ((f->_class) and (v->name == IDENTIFIER_SELF))
 					continue;
-				if (v.name == IDENTIFIER_RETURN_VAR)
+				if (v->name == IDENTIFIER_RETURN_VAR)
 					continue;
-				int s = mem_align(v.type->size, 4);
+				int s = mem_align(v->type->size, 4);
 				if (i < f->num_params){
 					// parameters
-					v._offset = f->_param_size;
+					v->_offset = f->_param_size;
 					f->_param_size += s;
 				}else{
 					// "real" local variables
-					v._offset = - f->_var_size - s;
+					v->_offset = - f->_var_size - s;
 					f->_var_size += s;
 				}				
 			}
 		}else if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
 			f->_var_size = 0;
 			
-			foreachi(Variable &v, f->var, i){
-				long long s = mem_align(v.type->size, 4);
-				v._offset = - f->_var_size - s;
+			foreachi(Variable *v, f->var, i){
+				long long s = mem_align(v->type->size, 4);
+				v->_offset = - f->_var_size - s;
 				f->_var_size += s;
 			}
 		}else if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
 			f->_var_size = 0;
 
-			foreachi(Variable &v, f->var, i){
-				int s = mem_align(v.type->size, 4);
-				v._offset = f->_var_size + s;
+			foreachi(Variable *v, f->var, i){
+				int s = mem_align(v->type->size, 4);
+				v->_offset = f->_var_size + s;
 				f->_var_size += s;
 			}
 		}

@@ -352,7 +352,7 @@ Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 				if (c->params[0]->kind == KIND_VAR_GLOBAL){
 					return AddNode(KIND_ADDRESS, (int_p)c->params[0]->script->g_var[c->params[0]->link_no], c->type, c->params[0]->script);
 				}else if (c->params[0]->kind == KIND_VAR_LOCAL){
-					return AddNode(KIND_LOCAL_ADDRESS, (int_p)cur_func->var[c->params[0]->link_no]._offset, c->type);
+					return AddNode(KIND_LOCAL_ADDRESS, (int_p)cur_func->var[c->params[0]->link_no]->_offset, c->type);
 				}else /*if (c->param[0]->kind == KindConstant)*/{
 					return AddNode(KIND_ADDRESS, (int_p)c->params[0]->script->cnst[c->params[0]->link_no], c->type, c->params[0]->script);
 				}

@@ -148,9 +148,9 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 	}else if (link->kind == KIND_VAR_GLOBAL){
 		p.p = (int_p)link->script->g_var[link->link_no];
 		if (!p.p)
-			script->DoErrorLink("variable is not linkable: " + link->script->syntax->root_of_all_evil.var[link->link_no].name);
+			script->DoErrorLink("variable is not linkable: " + link->script->syntax->root_of_all_evil.var[link->link_no]->name);
 	}else if (link->kind == KIND_VAR_LOCAL){
-		p.p = cur_func->var[link->link_no]._offset;
+		p.p = cur_func->var[link->link_no]->_offset;
 	}else if (link->kind == KIND_LOCAL_MEMORY){
 		p.p = link->link_no;
 		p.kind = KIND_VAR_LOCAL;
@@ -292,10 +292,10 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			}
 			break;
 		case STATEMENT_NEW:{
-			Array<Node> links = syntax_tree->GetExistence("@malloc", nullptr);
+			Array<Node*> links = syntax_tree->GetExistence("@malloc", nullptr);
 			if (links.num == 0)
 				DoError("@malloc not found????");
-			AddFunctionCall(links[0].script, links[0].link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
+			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
 			if (com->params.num > 0){
 				// copy + edit command
 				Node sub = *com->params[0];
@@ -304,13 +304,15 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 				SerializeNode(&sub, block, index);
 			}else
 				add_cmd_constructor(ret, -1);
+			clear_nodes(links);
 			break;}
 		case STATEMENT_DELETE:{
 			add_cmd_destructor(param[0], false);
-			Array<Node> links = syntax_tree->GetExistence("@free", nullptr);
+			Array<Node*> links = syntax_tree->GetExistence("@free", nullptr);
 			if (links.num == 0)
 				DoError("@free not found????");
-			AddFunctionCall(links[0].script, links[0].link_no, p_none, param[0], p_none);
+			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param[0], p_none);
+			clear_nodes(links);
 			break;}
 		case STATEMENT_RAISE:
 			//AddFunctionCall();

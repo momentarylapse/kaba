@@ -356,8 +356,8 @@ public:
 			f->write_str(fn->name + ":" + i2s(fn->num_params));
 			f->write_int((long)s->func[i]);
 		}
-		foreachi(Kaba::Variable &v, s->syntax->root_of_all_evil.var, i){
-			f->write_str(v.name);
+		foreachi(Kaba::Variable *v, s->syntax->root_of_all_evil.var, i){
+			f->write_str(v->name);
 			f->write_int((long)s->g_var[i]);
 		}
 		f->write_str("#");

@@ -207,11 +207,11 @@ void Script::SetVariable(const string &name, void *data)
 {
 	//msg_write(name);
 	for (int i=0; i<syntax->root_of_all_evil.var.num; i++)
-		if (syntax->root_of_all_evil.var[i].name == name){
+		if (syntax->root_of_all_evil.var[i]->name == name){
 			/*msg_write("var");
 			msg_write(pre_script->RootOfAllEvil.Var[i].Type->Size);
 			msg_write((int)g_var[i]);*/
-			memcpy(g_var[i], data, syntax->root_of_all_evil.var[i].type->size);
+			memcpy(g_var[i], data, syntax->root_of_all_evil.var[i]->type->size);
 			return;
 		}
 	msg_error("CScript.SetVariable: variable " + name + " not found");
@@ -400,8 +400,8 @@ void print_var(void *p, const string &name, Class *t)
 
 void Script::ShowVars(bool include_consts)
 {
-	foreachi(Variable &v, syntax->root_of_all_evil.var, i)
-		print_var((void*)g_var[i], v.name, v.type);
+	foreachi(Variable *v, syntax->root_of_all_evil.var, i)
+		print_var((void*)g_var[i], v->name, v->type);
 	/*if (include_consts)
 		foreachi(LocalVariable &c, pre_script->Constant, i)
 			print_var((void*)g_var[i], c.name, c.type);*/

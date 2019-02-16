@@ -277,11 +277,11 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 			if (_verbose_exception_)
 				msg_write("  block " + i2s(b->index));
 			for (int i: b->vars){
-				auto v = r.f->var[i];
-				char *p = (char*)r.rbp + v._offset;
+				auto *v = r.f->var[i];
+				char *p = (char*)r.rbp + v->_offset;
 				if (_verbose_exception_)
-					msg_write("   " + v.type->name + " " + v.name + "  " + p2s(p));
-				auto cf = v.type->get_destructor();
+					msg_write("   " + v->type->name + " " + v->name + "  " + p2s(p));
+				auto cf = v->type->get_destructor();
 				if (cf){
 					typedef void con_func(void *);
 					con_func * f = (con_func*)cf->script->func[cf->nr];
@@ -297,7 +297,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 
 			if (ebd.except->params.num > 0){
 				auto v = r.f->var[ebd.except_block->vars[0]];
-				void **p = (void**)((int_p)r.rbp + v._offset);
+				void **p = (void**)((int_p)r.rbp + v->_offset);
 				*p = kaba_exception;
 			}
 

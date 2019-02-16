@@ -767,17 +767,19 @@ void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref
 void Serializer::FillInConstructorsBlock(Block *b)
 {
 	for (int i: b->vars){
-		Variable &v = cur_func->var[i];
-		SerialNodeParam param = param_local(v.type, v._offset);
-		add_cmd_constructor(param, (v.name == IDENTIFIER_RETURN_VAR) ? -1 : KIND_VAR_LOCAL);
+		Variable *v = cur_func->var[i];
+		if (!v->dont_add_constructor){
+			SerialNodeParam param = param_local(v->type, v->_offset);
+			add_cmd_constructor(param, (v->name == IDENTIFIER_RETURN_VAR) ? -1 : KIND_VAR_LOCAL);
+		}
 	}
 }
 
 void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
 {
 	for (int i: b->vars){
-		Variable &v = cur_func->var[i];
-		SerialNodeParam p = param_local(v.type, v._offset);
+		Variable *v = cur_func->var[i];
+		SerialNodeParam p = param_local(v->type, v->_offset);
 		add_cmd_destructor(p);
 	}
 }

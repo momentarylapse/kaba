@@ -490,7 +490,7 @@ Array<string> class_func_param_names(ClassFunction *cf)
 	Array<string> names;
 	auto *f = cf->func();
 	for (int i=0; i<f->num_params; i++)
-		names.add(f->var[i].name);
+		names.add(f->var[i]->name);
 	return names;
 }
 
