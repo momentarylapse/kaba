@@ -158,6 +158,7 @@ struct Function
 	bool is_pure;
 	bool throws_exceptions; // for external
 	int inline_no;
+	int num_slightly_hidden_vars;
 	// for compilation...
 	int64 _var_size, _param_size;
 	int _logical_line_no;
@@ -165,6 +166,7 @@ struct Function
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	~Function();
 	int __get_var(const string &name) const;
+	string create_slightly_hidden_name();
 	void update(Class *class_type);
 	string signature(bool include_class = false) const;
 	Array<Block*> all_blocks();

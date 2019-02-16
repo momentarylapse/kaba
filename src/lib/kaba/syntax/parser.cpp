@@ -690,7 +690,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 			}else if (links[0]->kind == KIND_TYPE){
 				if (Exp.cur == "("){
 					Class *t = links[0]->as_class();
-					int nv = block->add_var("-cf-temp-", t);
+					int nv = block->add_var(block->function->create_slightly_hidden_name(), t);
 					block->function->var[nv]->dont_add_constructor = true;
 					Node *dummy = add_node_local_var(nv, t);
 					links = {};
@@ -1389,7 +1389,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 			// sub-if's in a new block
 			Block *new_block = new Block(block->function, block);
 			// parse the next if
-			ParseBlock(new_block);
+			ParseCompleteCommand(new_block);
 			// command for the found block
 			Node *cmd_block = add_node_block(new_block);
 			// ...
@@ -1462,6 +1462,7 @@ Block *SyntaxTree::ParseBlock(Block *block)
 	for (int i=0;true;i++){
 		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
 			break;
+
 
 		ParseCompleteCommand(new_block);
 		Exp.next_line();

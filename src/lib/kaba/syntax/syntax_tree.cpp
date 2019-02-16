@@ -545,6 +545,7 @@ Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 	_exp_no = -1;
 	inline_no = -1;
 	throws_exceptions = false;
+	num_slightly_hidden_vars = 0;
 }
 
 Function::~Function()
@@ -553,6 +554,11 @@ Function::~Function()
 		delete v;
 	if (block)
 		delete block;
+}
+
+string Function::create_slightly_hidden_name()
+{
+	return format("-temp-%d-", ++ num_slightly_hidden_vars);
 }
 
 int Function::__get_var(const string &name) const
