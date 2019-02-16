@@ -112,7 +112,8 @@ struct Node;
 // {...}-block
 struct Block
 {
-	int index;
+	Block(Function *f, Block *parent);
+	~Block();
 	Array<Node*> nodes;
 	Array<int> vars;
 	Function *function;

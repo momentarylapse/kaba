@@ -675,7 +675,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 
 void Serializer::SerializeBlock(Block *block)
 {
-	add_marker(list->add_label("_kaba_block_start_" + i2s(block->index)));
+	add_marker(list->add_label("_kaba_block_start_" + p2s(block)));
 	list->label.back().inst_no = -1;
 
 	FillInConstructorsBlock(block);
@@ -705,7 +705,7 @@ void Serializer::SerializeBlock(Block *block)
 
 	FillInDestructorsBlock(block);
 
-	add_marker(list->add_label("_kaba_block_end_" + i2s(block->index)));
+	add_marker(list->add_label("_kaba_block_end_" + p2s(block)));
 	list->label.back().inst_no = -1;
 }
 
@@ -2110,8 +2110,8 @@ void Script::CompileFunctions(char *oc, int &ocs)
 
 
 	for (Block *b: syntax->blocks){
-		b->_start = list->get_label_value("_kaba_block_start_" + i2s(b->index));
-		b->_end = list->get_label_value("_kaba_block_end_" + i2s(b->index));
+		b->_start = list->get_label_value("_kaba_block_start_" + p2s(b));
+		b->_end = list->get_label_value("_kaba_block_end_" + p2s(b));
 	}
 
 	delete(list);

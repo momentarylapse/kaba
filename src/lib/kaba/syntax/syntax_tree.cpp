@@ -271,7 +271,7 @@ Node *SyntaxTree::add_node_parray(Node *p, Node *index, Class *type)
 
 Node *SyntaxTree::add_node_block(Block *b)
 {
-	return AddNode(KIND_BLOCK, b->index, TypeVoid);
+	return AddNode(KIND_BLOCK, (long long)(int_p)b, TypeVoid);
 }
 
 SyntaxTree::SyntaxTree(Script *_script) :
@@ -448,15 +448,23 @@ int SyntaxTree::AddConstant(Class *type)
 	return constants.num - 1;
 }
 
+Block::Block(Function *f, Block *_parent)
+{
+	level = 0;
+	function = f;
+	parent = _parent;
+	if (parent)
+		level = parent->level + 1;
+	_start = _end = nullptr;
+}
+
+Block::~Block()
+{
+}
+
 Block *SyntaxTree::AddBlock(Function *f, Block *parent)
 {
-	Block *b = new Block;
-	b->level = 0;
-	b->index = blocks.num;
-	b->function = f;
-	b->parent = parent;
-	if (parent)
-		b->level = parent->level + 1;
+	Block *b = new Block(f, parent);
 	blocks.add(b);
 	return b;
 }
@@ -594,7 +602,7 @@ Node::Node(int _kind, long long _link_no, Script *_script, Class *_type)
 
 Block *Node::as_block() const
 {
-	return script->syntax->blocks[link_no];
+	return (Block*)(int_p)link_no;
 }
 
 Function *Node::as_func() const
