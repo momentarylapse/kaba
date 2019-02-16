@@ -215,12 +215,8 @@ public:
 					filename = dd;
 			}
 		}else{
-			if (!hui::FileDialogOpen(NULL, _("Script &offnen"), "", "*.kaba", "*.kaba")){
-				msg_end();
-				return false;
-			}
-			filename = hui::Filename;
-			//HuiInfoBox(NULL, "Fehler", "Als Parameter muss eine Script-Datei mitgegeben werden!");
+			msg_end();
+			return false;
 		}
 
 		// compile

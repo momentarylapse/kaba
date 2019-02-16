@@ -1,0 +1,4 @@
+A.init 1 2.000000
+B.init ..2
+A.init default
+B.init ..3
