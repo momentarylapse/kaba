@@ -4,6 +4,7 @@
 
 #include "class.h"
 #include "lexical.h"
+#include <functional>
 
 
 class complex;
@@ -182,7 +183,6 @@ struct Node
 	Node *instance;
 	// return value
 	Class *type;
-	Node();
 	Node(int kind, int64 link_no, Script *script, Class *type);
 	Block *as_block() const;
 	Function *as_func() const;
@@ -318,6 +318,10 @@ public:
 	void BreakDownComplicatedCommands();
 	Node *BreakDownComplicatedCommand(Node *c);
 	void MapLocalVariablesToStack();
+
+	void transform(std::function<Node*(Node*)> F);
+	static void transform_block(Block *block, std::function<Node*(Node*)> F);
+	static Node* transform_node(Node *n, std::function<Node*(Node*)> F);
 
 	// data creation
 	int AddConstant(Class *type);

@@ -758,15 +758,13 @@ Node *SyntaxTree::GetOperand(Block *block)
 			}
 		}else{
 			Class *t = GetConstantType(Exp.cur);
-			if (t != TypeUnknown){
-				operand = add_node_const(AddConstant(t));
-				// constant for parameter (via variable)
-				GetConstantValue(Exp.cur, *operand->as_const());
-				Exp.next();
-			}else{
-				//Operand.Kind=0;
+			if (t == TypeUnknown)
 				DoError("unknown operand");
-			}
+
+			operand = add_node_const(AddConstant(t));
+			// constant for parameter (via variable)
+			GetConstantValue(Exp.cur, *operand->as_const());
+			Exp.next();
 		}
 
 	}
@@ -1491,8 +1489,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 	// assembler block
 	}else if (Exp.cur == "-asm-"){
 		Exp.next();
-		Node *c = add_node_statement(STATEMENT_ASM);
-		block->nodes.add(c);
+		block->nodes.add(add_node_statement(STATEMENT_ASM));
 
 	// local (variable) definitions...
 	// type of variable
@@ -1507,8 +1504,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 			if (Exp.cur == "="){
 				Exp.rewind();
 				// parse assignment
-				Node *c = GetCommand(block);
-				block->nodes.add(c);
+				block->nodes.add(GetCommand(block));
 			}
 			if (Exp.end_of_line())
 				break;
@@ -1521,16 +1517,15 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 
 
 	// commands (the actual code!)
+		//if (WhichStatement(Exp.cur) >= 0){
 		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or /*(Exp.cur == IDENTIFIER_RAISE) or*/ (Exp.cur == IDENTIFIER_TRY) or (Exp.cur == IDENTIFIER_IF) or (Exp.cur == IDENTIFIER_PASS)){
 			ParseStatement(block);
+			// new/delete/sizeof/type... are operands...
 
 		}else{
 
 			// normal commands
-			Node *c = GetCommand(block);
-
-			// link
-			block->nodes.add(c);
+			block->nodes.add(GetCommand(block));
 		}
 	}
 

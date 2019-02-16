@@ -599,10 +599,6 @@ Function *SyntaxTree::AddFunction(const string &name, Class *type)
 	return f;
 }
 
-Node::Node()
-{
-}
-
 Node::Node(int _kind, long long _link_no, Script *_script, Class *_type)
 {
 	type = _type;
@@ -1118,14 +1114,14 @@ int __get_pointer_add_int()
 Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 {
 	// recursion...
-	for (int i=0;i<c->params.num;i++)
+	/*for (int i=0;i<c->params.num;i++)
 		c->set_param(i, BreakDownComplicatedCommand(c->params[i]));
 	if (c->kind == KIND_BLOCK){
 		for (int i=0;i<c->as_block()->nodes.num;i++)
 			c->as_block()->set(i, BreakDownComplicatedCommand(c->as_block()->nodes[i]));
 	}
 	if (c->instance)
-		c->set_instance(BreakDownComplicatedCommand(c->instance));
+		c->set_instance(BreakDownComplicatedCommand(c->instance));*/
 
 	if (c->kind == KIND_ARRAY){
 
@@ -1219,13 +1215,37 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 	return c;
 }
 
+Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
+{
+	for (int i=0; i<n->params.num; i++)
+		n->set_param(i, transform_node(n->params[i], F));
+
+	if (n->kind == KIND_BLOCK)
+		transform_block(n->as_block(), F);
+
+	if (n->instance)
+		n->set_instance(transform_node(n->instance, F));
+
+	return F(n);
+}
+
+void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
+{
+	foreachi (Node *n, block->nodes, i)
+		block->nodes[i] = transform_node(n, F);
+}
+
+// split arrays and address shifts into simpler commands...
+void SyntaxTree::transform(std::function<Node*(Node*)> F)
+{
+	for (Function *f: functions)
+		transform_block(f->block, F);
+}
+
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::BreakDownComplicatedCommands()
 {
-	for (Function *f: functions){
-		foreachi(Node *c, f->block->nodes, i)
-			f->block->nodes[i] = BreakDownComplicatedCommand(c);
-	}
+	transform([&](Node* n){ return BreakDownComplicatedCommand(n); });
 }
 
 void MapLVSX86Return(Function *f)
