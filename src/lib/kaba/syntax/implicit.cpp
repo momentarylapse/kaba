@@ -161,7 +161,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->nodes.add(cmd_while);
 
-		Block *b = AddBlock(f, f->block);
+		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
 
 		// el := self.data[for_var]
@@ -208,7 +208,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->nodes.add(cmd_while);
 
-		Block *b = AddBlock(f, f->block);
+		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
 
 		// el := self.data[for_var]
@@ -286,7 +286,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->nodes.add(cmd_while);
 
-		Block *b = AddBlock(f, f->block);
+		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
 
 		// el := self.data[for_var]
@@ -345,7 +345,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->nodes.add(cmd_while);
 
-		Block *b = AddBlock(f, f->block);
+		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
 
 		// el := self.data[for_var]
@@ -382,7 +382,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		cmd_while->set_param(0, cmd_cmp);
 		f->block->nodes.add(cmd_while);
 
-		Block *b = AddBlock(f, f->block);
+		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
 
 		// el := self.data[for_var]

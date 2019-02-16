@@ -1093,8 +1093,7 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	int loop_block_no = blocks.num; // should get created...soon
-	ParseCompleteCommand(block);
+	Block *loop_block = ParseBlock(block);
 	parser_loop_depth --;
 
 	// ...for_var += 1
@@ -1111,7 +1110,6 @@ void SyntaxTree::ParseStatementFor(Block *block)
 		}
 		cmd_inc = add_node_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
-	Block *loop_block = blocks[loop_block_no];
 	loop_block->nodes.add(cmd_inc); // add to loop-block
 
 	// <for_var> declared internally?
@@ -1185,13 +1183,11 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	int loop_block_no = blocks.num; // should get created...soon
-	ParseCompleteCommand(block);
+	Block *loop_block = ParseBlock(block);
 	parser_loop_depth --;
 
 	// ...for_index += 1
 	Node *cmd_inc = add_node_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
-	Block *loop_block = blocks[loop_block_no];
 	loop_block->nodes.add(cmd_inc); // add to loop-block
 
 	// &for_var
@@ -1236,7 +1232,7 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	ParseCompleteCommand(block);
+	ParseBlock(block);
 	parser_loop_depth --;
 }
 
@@ -1305,7 +1301,7 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	ParseCompleteCommand(block);
+	ParseBlock(block);
 	Exp.next_line();
 
 	if (Exp.cur != IDENTIFIER_EXCEPT)
@@ -1317,7 +1313,7 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	Node *cmd_ex = add_node_statement(STATEMENT_EXCEPT);
 	block->nodes.add(cmd_ex);
 
-	Block *new_block = AddBlock(block->function, block);
+	Block *new_block = new Block(block->function, block);
 
 	if (!Exp.end_of_line()){
 		Class *ex_type = FindType(Exp.cur);
@@ -1383,7 +1379,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	ParseCompleteCommand(block);
+	ParseBlock(block);
 	Exp.next_line();
 
 	// else?
@@ -1393,9 +1389,9 @@ void SyntaxTree::ParseStatementIf(Block *block)
 		// iterative if
 		if (Exp.cur == IDENTIFIER_IF){
 			// sub-if's in a new block
-			Block *new_block = AddBlock(block->function, block);
+			Block *new_block = new Block(block->function, block);
 			// parse the next if
-			ParseCompleteCommand(new_block);
+			ParseBlock(new_block);
 			// command for the found block
 			Node *cmd_block = add_node_block(new_block);
 			// ...
@@ -1406,7 +1402,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 		// ...block
 		Exp.next_line();
 		ExpectIndent();
-		ParseCompleteCommand(block);
+		ParseBlock(block);
 		//Exp.next_line();
 	}else{
 		int line = Exp.get_line_no() - 1;
@@ -1454,9 +1450,32 @@ void SyntaxTree::ParseStatement(Block *block)
 	}
 }
 
-/*void ParseBlock(sBlock *block, sFunction *f)
+Block *SyntaxTree::ParseBlock(Block *block)
 {
-}*/
+	int last_indent = Exp.indent_0;
+
+	Exp.indented = false;
+	Exp.set(0); // bad hack...
+	Block *new_block = new Block(block->function, block);
+
+	Node *c = add_node_block(new_block);
+	block->nodes.add(c);
+
+	for (int i=0;true;i++){
+		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
+			break;
+
+		ParseCompleteCommand(new_block);
+		Exp.next_line();
+	}
+	Exp.cur_line --;
+	Exp.indent_0 = Exp.cur_line->indent;
+	Exp.indented = false;
+	Exp.cur_exp = Exp.cur_line->exp.num - 1;
+	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+
+	return new_block;
+}
 
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
 void SyntaxTree::ParseCompleteCommand(Block *block)
@@ -1464,30 +1483,10 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 	// cur_exp = 0!
 
 	bool is_type = FindType(Exp.cur);
-	int last_indent = Exp.indent_0;
 
 	// block?  <- indent
 	if (Exp.indented){
-		Exp.indented = false;
-		Exp.set(0); // bad hack...
-
-		Block *new_block = AddBlock(block->function, block);
-
-		Node *c = add_node_block(new_block);
-		block->nodes.add(c);
-
-		for (int i=0;true;i++){
-			if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
-				break;
-
-			ParseCompleteCommand(new_block);
-			Exp.next_line();
-		}
-		Exp.cur_line --;
-		Exp.indent_0 = Exp.cur_line->indent;
-		Exp.indented = false;
-		Exp.cur_exp = Exp.cur_line->exp.num - 1;
-		Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+		ParseBlock(block);
 
 	// assembler block
 	}else if (Exp.cur == "-asm-"){

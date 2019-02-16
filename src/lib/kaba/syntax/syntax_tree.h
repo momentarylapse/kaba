@@ -166,6 +166,7 @@ struct Function
 	int __get_var(const string &name) const;
 	void update(Class *class_type);
 	string signature(bool include_class = false) const;
+	Array<Block*> all_blocks();
 };
 
 // single operand/command
@@ -287,6 +288,7 @@ public:
 	Node *GetOperandExtensionArray(Node *operand, Block *block);
 	Node *GetCommand(Block *block);
 	void ParseCompleteCommand(Block *block);
+	Block *ParseBlock(Block *block);
 	Node *GetOperand(Block *block);
 	Node *GetPrimitiveOperator(Block *block);
 	Array<Node*> FindFunctionParameters(Block *block);
@@ -319,7 +321,6 @@ public:
 
 	// data creation
 	int AddConstant(Class *type);
-	Block *AddBlock(Function *f, Block *parent);
 	Function *AddFunction(const string &name, Class *type);
 
 	// nodes
@@ -368,7 +369,6 @@ public:
 	Array<AsmBlock> asm_blocks;
 	Array<Constant*> constants;
 	Array<Operator> operators;
-	Array<Block*> blocks;
 	Array<Function*> functions;
 	Array<Node*> nodes;
 

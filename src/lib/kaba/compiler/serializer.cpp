@@ -2109,10 +2109,11 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	}
 
 
-	for (Block *b: syntax->blocks){
-		b->_start = list->get_label_value("_kaba_block_start_" + p2s(b));
-		b->_end = list->get_label_value("_kaba_block_end_" + p2s(b));
-	}
+	for (Function *f: syntax->functions)
+		for (Block *b: f->all_blocks()){
+			b->_start = list->get_label_value("_kaba_block_start_" + p2s(b));
+			b->_end = list->get_label_value("_kaba_block_end_" + p2s(b));
+		}
 
 	delete(list);
 }

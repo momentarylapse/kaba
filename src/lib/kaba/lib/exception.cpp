@@ -123,9 +123,12 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 	ebd.except_block = nullptr;
 	ebd.except = nullptr;
 
-	foreachb (Block *b, s->syntax->blocks)
-		if ((b->_start <= rip) and (b->_end >= rip))
-			ebd.blocks.add(b);
+	if (f){
+		auto blocks = f->all_blocks();
+		foreachb (Block *b, blocks)
+			if ((b->_start <= rip) and (b->_end >= rip))
+				ebd.blocks.add(b);
+	}
 	ebd.needs_killing = ebd.blocks;
 
 	Array<int> node_index;

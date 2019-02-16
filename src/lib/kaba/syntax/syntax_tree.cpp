@@ -277,7 +277,7 @@ Node *SyntaxTree::add_node_block(Block *b)
 SyntaxTree::SyntaxTree(Script *_script) :
 	root_of_all_evil(this, "RootOfAllEvil", TypeVoid)
 {
-	root_of_all_evil.block = AddBlock(&root_of_all_evil, nullptr);
+	root_of_all_evil.block = new Block(&root_of_all_evil, nullptr);
 
 	flag_string_const_as_cstring = false;
 	flag_immortal = false;
@@ -460,15 +460,10 @@ Block::Block(Function *f, Block *_parent)
 
 Block::~Block()
 {
+	for (Node *n: nodes)
+		if (n->kind == KIND_BLOCK)
+			delete (n->as_block());
 }
-
-Block *SyntaxTree::AddBlock(Function *f, Block *parent)
-{
-	Block *b = new Block(f, parent);
-	blocks.add(b);
-	return b;
-}
-
 
 
 inline void set_command(Node *&a, Node *b)
@@ -556,6 +551,8 @@ Function::~Function()
 {
 	for (Variable* v: var)
 		delete v;
+	if (block)
+		delete block;
 }
 
 int Function::__get_var(const string &name) const
@@ -578,11 +575,27 @@ string Function::signature(bool include_class) const
 	return r + ")";
 }
 
+void blocks_add_recursive(Array<Block*> &blocks, Block *block)
+{
+	blocks.add(block);
+	for (Node* n: block->nodes)
+		if (n->kind == KIND_BLOCK)
+			blocks_add_recursive(blocks, n->as_block());
+}
+
+Array<Block*> Function::all_blocks()
+{
+	Array<Block*> blocks;
+	if (block)
+		blocks_add_recursive(blocks, block);
+	return blocks;
+}
+
 Function *SyntaxTree::AddFunction(const string &name, Class *type)
 {
 	Function *f = new Function(this, name, type);
 	functions.add(f);
-	f->block = AddBlock(f, nullptr);
+	f->block = new Block(f, nullptr);
 	return f;
 }
 
@@ -1308,9 +1321,6 @@ SyntaxTree::~SyntaxTree()
 
 	for (Node *c: nodes)
 		delete(c);
-
-	for (Block *b: blocks)
-		delete(b);
 	
 	for (Function *f: functions)
 		delete(f);
