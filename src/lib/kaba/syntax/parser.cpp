@@ -1209,8 +1209,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// ref...
 	block->function->var[var_no]->type = var_type->get_pointer();
-	foreachi(Node *c, loop_block->nodes, i)
-		loop_block->nodes[i] = conv_cbr(this, c, var_no);
+	transform_block(loop_block, [&](Node *n){ return conv_cbr(this, n, var_no); });
 
 	// force for_var out of scope...
 	block->function->var[for_var->link_no]->name = "-out-of-scope-";
@@ -1835,7 +1834,7 @@ void SyntaxTree::ParseGlobalConst(const string &name, Class *type)
 	Exp.next();
 
 	// find const value
-	Node *cv = PreProcessNode(GetCommand(root_of_all_evil.block));
+	Node *cv = transform_node(GetCommand(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
 
 	if ((cv->kind != KIND_CONSTANT) or (cv->type != type))
 		DoError(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));
@@ -1954,7 +1953,7 @@ Class *SyntaxTree::ParseType()
 			}else{
 
 				// find array index
-				Node *c = PreProcessNode(GetCommand(root_of_all_evil.block));
+				Node *c = transform_node(GetCommand(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
 
 				if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
 					DoError("only constants of type \"int\" allowed for size of arrays");

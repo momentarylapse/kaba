@@ -885,22 +885,8 @@ void SyntaxTree::ConvertInline()
 		}
 }
 
-
-#define TRANSFORM_NODES_RECURSION(FUNC, PREPARAMS, POSTPARAMS, NODE) \
-	for (int i=0;i<(NODE)->params.num;i++) \
-		(NODE)->set_param(i, FUNC(PREPARAMS, (NODE)->params[i], POSTPARAMS)); \
-	if ((NODE)->kind == KIND_BLOCK){ \
-		foreachi(Node *cc, (NODE)->as_block()->nodes, i) \
-			(NODE)->as_block()->set(i, FUNC(PREPARAMS, cc, POSTPARAMS)); \
-	} \
-	if ((NODE)->instance) \
-		(NODE)->set_instance(FUNC(PREPARAMS, (NODE)->instance, POSTPARAMS));
-
 Node *conv_cbr(SyntaxTree *ps, Node *c, int var)
 {
-	// recursion...
-	TRANSFORM_NODES_RECURSION(conv_cbr, ps, var, c);
-
 	// convert
 	if ((c->kind == KIND_VAR_LOCAL) and (c->link_no == var)){
 		c->type = c->type->get_pointer();
@@ -926,9 +912,6 @@ void conv_return(SyntaxTree *ps, nodes *c)
 
 Node *conv_calls(SyntaxTree *ps, Node *c, int tt)
 {
-	// recursion...
-	TRANSFORM_NODES_RECURSION(conv_calls, ps, tt, c)
-
 	if ((c->kind == KIND_STATEMENT) and (c->link_no == STATEMENT_RETURN))
 		if (c->params.num > 0){
 			if ((c->params[0]->type->is_array()) /*or (c->Param[j]->Type->IsSuperArray)*/){
@@ -968,41 +951,18 @@ Node *conv_calls(SyntaxTree *ps, Node *c, int tt)
 // remove &*x
 Node *easyfy_ref_deref(SyntaxTree *ps, Node *c, int l)
 {
-	// recursion...
-	for (int i=0;i<c->params.num;i++)
-		c->set_param(i, easyfy_ref_deref(ps, c->params[i], l+1));
-	if (c->kind == KIND_BLOCK)
-		for (int i=0;i<c->as_block()->nodes.num;i++)
-			c->as_block()->set(i, easyfy_ref_deref(ps, c->as_block()->nodes[i], l+1));
-	if (c->instance)
-		c->set_instance(easyfy_ref_deref(ps, c->instance, l+1));
-
-
-	// convert
 	if (c->kind == KIND_REFERENCE){
 		if (c->params[0]->kind == KIND_DEREFERENCE){
 			// remove 2 knots...
 			return c->params[0]->params[0];
 		}
 	}
-
 	return c;
 }
 
 // remove (*x)[] and (*x).y
 Node *easyfy_shift_deref(SyntaxTree *ps, Node *c, int l)
 {
-	// recursion...
-	for (int i=0;i<c->params.num;i++)
-		c->set_param(i, easyfy_shift_deref(ps, c->params[i], l+1));
-	if (c->kind == KIND_BLOCK)
-		for (int i=0;i<c->as_block()->nodes.num;i++)
-			c->as_block()->set(i, easyfy_shift_deref(ps, c->as_block()->nodes[i], l+1));
-	if (c->instance)
-		c->set_instance(easyfy_shift_deref(ps, c->instance, l+1));
-
-
-	// convert
 	if ((c->kind == KIND_ADDRESS_SHIFT) or (c->kind == KIND_ARRAY)){
 		if (c->params[0]->kind == KIND_DEREFERENCE){
 			// unify 2 knots (remove 1)
@@ -1061,8 +1021,7 @@ void SyntaxTree::ConvertCallByReference()
 				f->var[j]->type = f->var[j]->type->get_pointer();
 
 				// internal usage...
-				foreachi(Node *c, f->block->nodes, i)
-					f->block->nodes[i] = conv_cbr(this, c, j);
+				transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, j); });
 			}
 
 		// return: array as reference
@@ -1082,26 +1041,20 @@ void SyntaxTree::ConvertCallByReference()
 			convert_return_by_memory(this, f->block, f);
 
 	// convert function calls
-	for (Function *f: functions)
-		foreachi(Node *c, f->block->nodes, i)
-			f->block->nodes[i] = conv_calls(this, c, 0);
+	transform([&](Node *n){ return conv_calls(this, n, 0); });
 }
 
 
 void SyntaxTree::SimplifyRefDeref()
 {
 	// remove &*
-	for (Function *f: functions)
-		foreachi(Node *c, f->block->nodes, i)
-			f->block->nodes[i] = easyfy_ref_deref(this, c, 0);
+	transform([&](Node *n){ return easyfy_ref_deref(this, n, 0); });
 }
 
 void SyntaxTree::SimplifyShiftDeref()
 {
 	// remove &*
-	for (Function *f: functions)
-		foreachi(Node *c, f->block->nodes, i)
-			f->block->nodes[i] = easyfy_shift_deref(this, c, 0);
+	transform([&](Node *n){ return easyfy_shift_deref(this, n, 0); });
 }
 
 int __get_pointer_add_int()
@@ -1113,16 +1066,6 @@ int __get_pointer_add_int()
 
 Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 {
-	// recursion...
-	/*for (int i=0;i<c->params.num;i++)
-		c->set_param(i, BreakDownComplicatedCommand(c->params[i]));
-	if (c->kind == KIND_BLOCK){
-		for (int i=0;i<c->as_block()->nodes.num;i++)
-			c->as_block()->set(i, BreakDownComplicatedCommand(c->as_block()->nodes[i]));
-	}
-	if (c->instance)
-		c->set_instance(BreakDownComplicatedCommand(c->instance));*/
-
 	if (c->kind == KIND_ARRAY){
 
 		Class *el_type = c->type;
@@ -1238,8 +1181,10 @@ void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::transform(std::function<Node*(Node*)> F)
 {
-	for (Function *f: functions)
+	for (Function *f: functions){
+		cur_func = f;
 		transform_block(f->block, F);
+	}
 }
 
 // split arrays and address shifts into simpler commands...
