@@ -630,30 +630,16 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	}
 
 
-	if (com->kind == KIND_OPERATOR){
-		Node c = *com;
-		c.kind = KIND_INLINE_FUNCTION;
-		Operator &op = com->script->syntax->operators[com->link_no];
-		c.link_no = op.func_index;
-		c.script = op.owner->script;
-		SerializeInlineFunction(&c, params, ret);
+	if (com->kind == KIND_FUNCTION){
 
-	}else if (com->kind == KIND_FUNCTION){
-		// inline function?
-		if (com->script->syntax->functions[com->link_no]->inline_no >= 0){
-			Node c = *com;
-			c.kind = KIND_INLINE_FUNCTION;
-
-			SerializeInlineFunction(&c, params, ret);
-			return ret;
-		}
-
-		
 		AddFunctionCall(com->script, com->link_no, instance, params, ret);
 
 	}else if (com->kind == KIND_VIRTUAL_FUNCTION){
 
 		AddClassFunctionCall(instance.type->parent->get_virtual_function(com->link_no), instance, params, ret);
+
+	}else if (com->kind == KIND_INLINE_FUNCTION){
+		SerializeInlineFunction(com, params, ret);
 
 	}else if (com->kind == KIND_STATEMENT){
 		SerializeStatement(com, params, ret, block, index, marker_before_params);
@@ -667,8 +653,10 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 		}
 	}else if (com->kind == KIND_BLOCK){
 		SerializeBlock(com->as_block());
+	}else if (com->kind == KIND_CONSTANT){
+		// sometimes "nil" is used as pass etc...
 	}else{
-		//DoError(string("type of command is unimplemented (call Michi!): ",Kind2Str(com->Kind)));
+		//DoError("type of command is unimplemented: " + Kind2Str(com->kind));
 	}
 
 	return ret;

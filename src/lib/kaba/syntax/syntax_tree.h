@@ -17,6 +17,7 @@ namespace Kaba{
 
 class Script;
 class SyntaxTree;
+class Operator;
 
 #define MAX_STRING_CONST_LENGTH	2048
 
@@ -186,15 +187,18 @@ struct Node
 	// return value
 	Class *type;
 	Node(int kind, int64 link_no, Script *script, Class *type);
+	~Node();
 	Block *as_block() const;
 	Function *as_func() const;
 	Class *as_class() const;
 	Constant *as_const() const;
+	Operator *as_op() const;
 	void set_num_params(int n);
 	void set_param(int index, Node *p);
 	void set_instance(Node *p);
 };
 void clear_nodes(Array<Node*> &nodes);
+void clear_nodes(Array<Node*> &nodes, Node *keep);
 
 
 struct Operator
@@ -319,6 +323,7 @@ public:
 	void ConvertInline();
 	void BreakDownComplicatedCommands();
 	Node *BreakDownComplicatedCommand(Node *c);
+	void MakeFunctionsInline();
 	void MapLocalVariablesToStack();
 
 	void transform(std::function<Node*(Node*)> F);

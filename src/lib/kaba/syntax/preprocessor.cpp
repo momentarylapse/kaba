@@ -134,7 +134,7 @@ void PreProcessFunction(SyntaxTree *ps, Node *c)
 Node *SyntaxTree::PreProcessNode(Node *c)
 {
 	if (c->kind == KIND_OPERATOR){
-		Operator *o = &operators[c->link_no];
+		Operator *o = c->as_op();
 		/*if (c->link_nr == OperatorIntAdd){
 			if (c->param[1]->kind == KindConstant){
 				int v = *(int*)Constants[c->param[1]->link_nr].data;
@@ -283,7 +283,7 @@ string LinkNr2Str(SyntaxTree *s, int kind, int64 nr);
 Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 {
 	if (c->kind == KIND_OPERATOR){
-		Operator *o = &operators[c->link_no];
+		Operator *o = c->as_op();
 		if (o->func){
 			bool all_const = true;
 			bool is_address = false;

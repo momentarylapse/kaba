@@ -639,15 +639,12 @@ void Script::Compiler()
 	syntax->MapLocalVariablesToStack();
 
 	syntax->BreakDownComplicatedCommands();
-#ifdef ScriptDebug
-	syntax->Show();
-#endif
-
 
 	syntax->SimplifyRefDeref();
 	syntax->SimplifyShiftDeref();
 
 	syntax->PreProcessor();
+	syntax->MakeFunctionsInline();
 
 	if (config.verbose)
 		syntax->Show("comp:a");

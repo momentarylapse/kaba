@@ -460,9 +460,11 @@ Block::Block(Function *f, Block *_parent)
 
 Block::~Block()
 {
-	for (Node *n: nodes)
+	for (Node *n: nodes){
 		if (n->kind == KIND_BLOCK)
 			delete (n->as_block());
+		//delete n;
+	}
 }
 
 
@@ -615,6 +617,16 @@ Node::Node(int _kind, long long _link_no, Script *_script, Class *_type)
 	ref_count = 0;
 }
 
+Node::~Node()
+{
+	/*if (instance)
+		delete instance;
+	for (auto &p: params)
+		if (p)
+			delete p;*/
+	// TODO later
+}
+
 Block *Node::as_block() const
 {
 	return (Block*)(int_p)link_no;
@@ -633,6 +645,11 @@ Class *Node::as_class() const
 Constant *Node::as_const() const
 {
 	return script->syntax->constants[link_no];
+}
+
+Operator *Node::as_op() const
+{
+	return &script->syntax->operators[link_no];
 }
 
 void Node::set_instance(Node *p)
@@ -1239,6 +1256,33 @@ void SyntaxTree::BreakDownComplicatedCommands()
 		Show("break:b");
 }
 
+Node* conv_func_inline(SyntaxTree *ps, Node *n)
+{
+	if (n->kind == KIND_FUNCTION){
+		if (n->as_func()->inline_no > 0){
+			n->kind = KIND_INLINE_FUNCTION;
+			return n;
+		}
+	}
+	if (n->kind == KIND_OPERATOR){
+		Operator *op = n->as_op();
+		n->kind = KIND_INLINE_FUNCTION;
+		n->link_no = op->func_index;
+		n->script = op->owner->script;
+		return n;
+	}
+	return n;
+}
+
+void SyntaxTree::MakeFunctionsInline()
+{
+	transform([&](Node* n){ return conv_func_inline(this, n); });
+	if (config.verbose)
+		Show("break:c");
+}
+
+
+
 void MapLVSX86Return(Function *f)
 {
 	if (f->return_type->uses_return_by_memory()){
@@ -1330,11 +1374,11 @@ SyntaxTree::~SyntaxTree()
 	if (asm_meta_info)
 		delete(asm_meta_info);
 
-	for (Node *c: nodes)
-		delete(c);
-	
 	for (Function *f: functions)
 		delete(f);
+
+	//for (Node *c: nodes)
+	//	delete(c);
 
 	for (Constant *c: constants)
 		delete(c);
