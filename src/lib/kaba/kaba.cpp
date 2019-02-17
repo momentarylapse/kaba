@@ -45,8 +45,6 @@ Exception::Exception(const Asm::Exception &e, Script *s) :
 }
 
 
-static int shift_right=0;
-
 Array<Script*> _public_scripts_;
 Array<Script*> _dead_scripts_;
 
@@ -222,15 +220,8 @@ Script::Script()
 	reference_counter = 0;
 
 	cur_func = nullptr;
-	__first_execution = nullptr;
-	__waiting_mode = WAITING_MODE_FIRST;
-	__time_to_wait = 0;
 	show_compiler_stats = !config.compile_silently;
 
-	__thread_opcode = nullptr;
-	__thread_opcode_size = 0;
-
-	__continue_execution = nullptr;
 	just_analyse = false;
 
 	opcode = nullptr;
@@ -238,7 +229,6 @@ Script::Script()
 	memory = nullptr;
 	memory_size = 0;
 	memory_used = 0;
-	__stack = nullptr;
 
 	syntax = new SyntaxTree(this);
 }
@@ -260,8 +250,6 @@ Script::~Script()
 			int r = munmap(opcode, MAX_OPCODE);
 		#endif
 	}
-	if (__stack)
-		delete[](__stack);
 	//msg_write(string2("-----------            Memory:         %p",Memory));
 	delete(syntax);
 }

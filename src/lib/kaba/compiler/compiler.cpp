@@ -161,19 +161,6 @@ void Script::AllocateMemory()
 	}
 }
 
-void Script::AllocateStack()
-{
-	// use your own stack if needed
-	//   wait() used -> needs to switch stacks ("tasks")
-	__stack = nullptr;
-	/*for (Command *cmd: syntax->commands){
-		if (cmd->kind == KIND_COMPILER_FUNCTION)
-			if ((cmd->link_no == COMMAND_WAIT) or (cmd->link_no == COMMAND_WAIT_RT) or (cmd->link_no == COMMAND_WAIT_ONE_FRAME)){
-				__stack = new char[config.stack_size];
-				break;
-			}
-	}*/
-}
 
 void Script::AllocateOpcode()
 {
@@ -332,74 +319,6 @@ void Script::LinkOsEntryPoint()
 		//msg_write(d2h(&lll,4,false));
 		*(int*)&opcode[OCORA] = lll;
 	}
-}
-
-void Script::CompileTaskEntryPoint()
-{
-	// "stack" usage for waiting:
-	//  -4| -8 - ebp (before execution)
-	//  -8|-16 - ebp (script continue)
-	// -12|-24 - esp (script continue)
-	// -16|-32 - eip (script continue)
-	// -20|-40 - script stack...
-
-	// call
-	void *_main_ = MatchFunction("main", "void", 0);
-
-	if ((!__stack) or (!_main_)){
-		__first_execution = (t_func*)_main_;
-		__continue_execution = nullptr;
-		return;
-	}
-
-	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
-
-	int label_first = list->add_label("_first_execution");
-
-	__first_execution = (t_func*)&__thread_opcode[__thread_opcode_size];
-	// intro
-	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the actual program
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((int_p)&__stack[config.stack_size], 4)); // start of the script stack
-	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // address of the old stack
-	AddEspAdd(list, -12); // space for wait() task data
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(WAITING_MODE_NONE, 4)); // "reset"
-	list->add2(Asm::INST_MOV, Asm::param_deref_imm((int_p)&__waiting_mode, 4), Asm::param_reg(Asm::REG_EAX));
-
-	// call main()
-	list->add2(Asm::INST_CALL, Asm::param_imm((int_p)_main_, 4));
-
-	// outro
-	AddEspAdd(list, 12); // make space for wait() task data
-	list->add2(Asm::INST_POP, Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_LEAVE);
-	list->add2(Asm::INST_RET);
-
-	// "task" for execution after some wait()
-	int label_cont = list->add_label("_continue_execution");
-
-	// Intro
-	list->add2(Asm::INST_PUSH, Asm::param_reg(Asm::REG_EBP)); // within the external program
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_EBP), Asm::param_reg(Asm::REG_ESP));
-	list->add2(Asm::INST_MOV, Asm::param_deref_imm((int_p)&__stack[config.stack_size - 4], 4), Asm::param_reg(Asm::REG_EBP)); // save the external ebp
-	list->add2(Asm::INST_MOV, Asm::param_reg(Asm::REG_ESP), Asm::param_deref_imm((int_p)&__stack[config.stack_size - 16], 4)); // to the eIP of the script
-	list->add2(Asm::INST_POP, Asm::param_reg(Asm::REG_EAX));
-	list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_EAX), Asm::param_imm(AfterWaitOCSize, 4));
-	list->add2(Asm::INST_JMP, Asm::param_reg(Asm::REG_EAX));
-	//list->add2(Asm::inst_leave);
-	//list->add2(Asm::inst_ret);
-	/*OCAddChar(0x90);
-	OCAddChar(0x90);
-	OCAddChar(0x90);*/
-
-	list->Compile(__thread_opcode, __thread_opcode_size);
-
-	__first_execution = (t_func*)(int_p)list->label[label_first].value;
-	__continue_execution = (t_func*)(int_p)list->label[label_cont].value;
-
-	delete(list);
 }
 
 bool find_and_replace(char *opcode, int opcode_size, char *pattern, int size, char *insert)
@@ -648,7 +567,6 @@ void Script::Compiler()
 		syntax->Show("comp:a");
 
 	AllocateMemory();
-	AllocateStack();
 
 	memory_size = 0;
 	MapGlobalVariablesToMemory();
@@ -682,10 +600,6 @@ void Script::Compiler()
 	LinkFunctions();
 
 
-// "task" for the first execution of main() -> ThreadOpcode
-	if (!config.compile_os)
-		CompileTaskEntryPoint();
-
 
 
 
@@ -698,11 +612,6 @@ void Script::Compiler()
 		init_all_global_objects(syntax);
 
 	//_expand(Opcode,OpcodeSize);
-
-	if (__first_execution)
-		__waiting_mode = WAITING_MODE_FIRST;
-	else
-		__waiting_mode = WAITING_MODE_NONE;
 
 	if (show_compiler_stats){
 		msg_write("--------------------------------");

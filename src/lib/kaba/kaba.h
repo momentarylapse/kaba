@@ -32,13 +32,7 @@ public:
 struct LinkerException : Exception{};
 struct LinkerException : Exception{};*/
 
-enum
-{
-	WAITING_MODE_NONE,
-	WAITING_MODE_FIRST,
-	WAITING_MODE_GT,
-	WAITING_MODE_RT
-};
+
 #define WaitingModeFinished		WaitingModeNone
 
 // executable (compiled) data
@@ -57,14 +51,12 @@ public:
 	void MapConstantsToOpcode();
 	void MapGlobalVariablesToMemory();
 	void AllocateMemory();
-	void AllocateStack();
 	void AllocateOpcode();
 	void AlignOpcode();
 	void AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list);
 	void CompileFunctions(char *oc, int &ocs);
 	void CompileOsEntryPoint();
 	void LinkOsEntryPoint();
-	void CompileTaskEntryPoint();
 	void LinkFunctions();
 
 	// error messages
@@ -89,21 +81,15 @@ public:
 
 	char *opcode; // executable code
 	int opcode_size;
-	char *__thread_opcode; // executable code DEPRECATED!!!
-	int __thread_opcode_size;
 	char *memory; // memory for global variables, constants etc
 	int memory_size;
-	char *__stack; // stack for local variables etc
 
 	Array<t_func*> func;
-	t_func *__first_execution, *__continue_execution;
 	Array<Asm::WantedLabel> functions_to_link;
 	Array<int> function_vars_to_link;
 
 	bool just_analyse, show_compiler_stats;
 	Function *cur_func;
-	int __waiting_mode;
-	float __time_to_wait;
 
 	Array<char*> cnst;
 
