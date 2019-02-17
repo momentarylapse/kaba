@@ -73,7 +73,6 @@ public:
 	void DoErrorInternal(const string &msg);
 
 	// execution
-	void __Execute();
 	void *MatchFunction(const string &name, const string &return_type, int num_params, ...);
 	void *MatchClassFunction(const string &_class, bool allow_derived, const string &name, const string &return_type, int num_params, ...);
 	void SetVariable(const string &name, void *data);
@@ -106,7 +105,7 @@ public:
 	int __waiting_mode;
 	float __time_to_wait;
 
-	Array<char*> g_var, cnst;
+	Array<char*> cnst;
 
 	int memory_used;
 };

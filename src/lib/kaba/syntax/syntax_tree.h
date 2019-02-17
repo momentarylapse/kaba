@@ -132,9 +132,12 @@ struct Block
 struct Variable
 {
 	Variable(const string &name, Class *type);
+	~Variable();
 	Class *type; // for creating instances
 	string name;
 	int64 _offset; // for compilation
+	void *memory;
+	bool memory_owner;
 	bool is_extern;
 	bool dont_add_constructor;
 };
@@ -193,6 +196,11 @@ struct Node
 	Class *as_class() const;
 	Constant *as_const() const;
 	Operator *as_op() const;
+	void *as_func_p() const;
+	void *as_const_p() const;
+	void *as_global_p() const;
+	Variable *as_global() const;
+	Variable *as_local(Function *f) const;
 	void set_num_params(int n);
 	void set_param(int index, Node *p);
 	void set_instance(Node *p);

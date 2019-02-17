@@ -128,14 +128,14 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 	p.shift = 0;
 
 	if (link->kind == KIND_VAR_FUNCTION){
-		p.p = (int_p)link->script->func[link->link_no];
+		p.p = (int_p)link->as_func_p();
 		p.kind = KIND_VAR_GLOBAL;
 		if (!p.p){
 			if (link->script == script){
 				p.p = link->link_no + 0xefef0000;
 				script->function_vars_to_link.add(link->link_no);
 			}else
-				DoErrorLink("could not link function as variable: " + link->script->syntax->functions[link->link_no]->name);
+				DoErrorLink("could not link function as variable: " + link->as_func()->name);
 			//p.kind = Asm::PKLabel;
 			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
@@ -146,11 +146,11 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 		p.p = (int_p)&link->link_no;
 		p.kind = KIND_REF_TO_CONST;
 	}else if (link->kind == KIND_VAR_GLOBAL){
-		p.p = (int_p)link->script->g_var[link->link_no];
+		p.p = (int_p)link->as_global_p();
 		if (!p.p)
-			script->DoErrorLink("variable is not linkable: " + link->script->syntax->root_of_all_evil.var[link->link_no]->name);
+			script->DoErrorLink("variable is not linkable: " + link->as_global()->name);
 	}else if (link->kind == KIND_VAR_LOCAL){
-		p.p = cur_func->var[link->link_no]->_offset;
+		p.p = link->as_local(cur_func)->_offset;
 	}else if (link->kind == KIND_LOCAL_MEMORY){
 		p.p = link->link_no;
 		p.kind = KIND_VAR_LOCAL;
@@ -162,7 +162,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 			p.kind = KIND_VAR_GLOBAL;
 		else
 			p.kind = KIND_REF_TO_CONST;
-		p.p = (int_p)link->script->cnst[link->link_no];
+		p.p = (int_p)link->as_const_p();
 	}else if ((link->kind == KIND_OPERATOR) or (link->kind == KIND_FUNCTION) or (link->kind == KIND_INLINE_FUNCTION) or (link->kind == KIND_VIRTUAL_FUNCTION) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
 		p = SerializeNode(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){

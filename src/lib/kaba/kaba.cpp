@@ -207,12 +207,9 @@ void Script::DoErrorLink(const string &str)
 void Script::SetVariable(const string &name, void *data)
 {
 	//msg_write(name);
-	for (int i=0; i<syntax->root_of_all_evil.var.num; i++)
-		if (syntax->root_of_all_evil.var[i]->name == name){
-			/*msg_write("var");
-			msg_write(pre_script->RootOfAllEvil.Var[i].Type->Size);
-			msg_write((int)g_var[i]);*/
-			memcpy(g_var[i], data, syntax->root_of_all_evil.var[i]->type->size);
+	for (auto *v: syntax->root_of_all_evil.var)
+		if (v->name == name){
+			memcpy(v->memory, data, v->type->size);
 			return;
 		}
 	msg_error("CScript.SetVariable: variable " + name + " not found");
@@ -401,50 +398,11 @@ void print_var(void *p, const string &name, Class *t)
 
 void Script::ShowVars(bool include_consts)
 {
-	foreachi(Variable *v, syntax->root_of_all_evil.var, i)
-		print_var((void*)g_var[i], v->name, v->type);
+	for (auto *v: syntax->root_of_all_evil.var)
+		print_var(v->memory, v->name, v->type);
 	/*if (include_consts)
 		foreachi(LocalVariable &c, pre_script->Constant, i)
 			print_var((void*)g_var[i], c.name, c.type);*/
-}
-
-// REALLY DEPRECATED!
-void Script::__Execute()
-{
-	return;
-	if (__waiting_mode == WAITING_MODE_NONE)
-		return;
-	shift_right=0;
-
-	// handle wait-commands
-	if (__waiting_mode == WAITING_MODE_FIRST){
-		GlobalWaitingMode = WAITING_MODE_NONE;
-
-		//msg_right();
-		__first_execution();
-		//msg_left();
-	}else{
-#ifdef _X_ALLOW_X_
-		if (__waiting_mode == WAITING_MODE_RT)
-			__time_to_wait -= Engine.ElapsedRT;
-		else
-			__time_to_wait -= Engine.Elapsed;
-		if (__time_to_wait>0){
-			return;
-		}
-#endif
-		GlobalWaitingMode = WAITING_MODE_NONE;
-		//msg_write(ThisObject);
-
-		//msg_write(">---");
-		//msg_right();
-		__continue_execution();
-		//msg_write("---<");
-		//msg_write("ok");
-		//msg_left();
-	}
-	__waiting_mode = GlobalWaitingMode;
-	__time_to_wait = GlobalTimeToWait;
 }
 
 };

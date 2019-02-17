@@ -880,7 +880,7 @@ Node *LinkSpecialOperatorIs(SyntaxTree *tree, Node *param1, Node *param2)
 {
 	if (param2->kind != KIND_TYPE)
 		tree->DoError("class name expexted after 'is'");
-	Class *t2 = param2->script->syntax->classes[param2->link_no];
+	Class *t2 = param2->as_class();
 	if (t2->vtable.num == 0)
 		tree->DoError("class after 'is' needs to have virtual functions: '" + t2->name + "'");
 
@@ -1138,7 +1138,7 @@ void SyntaxTree::ParseStatementFor(Block *block)
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
-	block->function->var[for_var->link_no]->name = "-out-of-scope-";
+	for_var->as_local(block->function)->name = "-out-of-scope-";
 	// TODO  FIXME
 }
 
@@ -1238,8 +1238,8 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	transform_block(loop_block, [&](Node *n){ return conv_cbr(this, n, var_no); });
 
 	// force for_var out of scope...
-	block->function->var[for_var->link_no]->name = "-out-of-scope-";
-	block->function->var[for_index->link_no]->name = "-out-of-scope-";
+	for_var->as_local(block->function)->name = "-out-of-scope-";
+	for_index->as_local(block->function)->name = "-out-of-scope-";
 }
 
 void SyntaxTree::ParseStatementWhile(Block *block)

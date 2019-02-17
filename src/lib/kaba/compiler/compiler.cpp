@@ -75,11 +75,11 @@ void try_init_global_var(Class *type, char* g_var)
 		ff(g_var);
 }
 
-void init_all_global_objects(SyntaxTree *ps, Array<char*> &g_var)
+void init_all_global_objects(SyntaxTree *ps)
 {
 	foreachi(Variable *v, ps->root_of_all_evil.var, i)
 		if (!v->is_extern)
-			try_init_global_var(v->type, g_var[i]);
+			try_init_global_var(v->type, (char*)v->memory);
 }
 
 static int64 _opcode_rand_state_ = 10000;
@@ -206,21 +206,24 @@ void Script::MapConstantsToMemory()
 void Script::MapGlobalVariablesToMemory()
 {
 	// global variables -> into Memory
-	g_var.resize(syntax->root_of_all_evil.var.num);
+	int override_offset = 0;
 	foreachi(Variable *v, syntax->root_of_all_evil.var, i){
 		if (v->is_extern){
-			g_var[i] = (char*)GetExternalLink(v->name);
-			if (!g_var[i])
+			v->memory = GetExternalLink(v->name);
+			if (!v->memory)
 				DoErrorLink("external variable " + v->name + " was not linked");
 		}else{
-			if (config.override_variables_offset)
-				g_var[i] = (char*)(int_p)(memory_size + config.variables_offset);
-			else
-				g_var[i] = &memory[memory_size];
-			memory_size += mem_align(v->type->size, 4);
+			int size_aligned = mem_align(v->type->size, 4);
+			if (config.override_variables_offset){
+				v->memory = (char*)(int_p)(config.variables_offset + override_offset);
+				override_offset += size_aligned;
+			}else{
+				v->memory = malloc(size_aligned);
+				v->memory_owner = true;
+			}
 		}
+		memset(v->memory, 0, v->type->size); // reset all global variables to 0
 	}
-	memset(memory, 0, memory_size); // reset all global variables to 0
 }
 
 void Script::AlignOpcode()
@@ -692,7 +695,7 @@ void Script::Compiler()
 
 	// initialize global objects
 	if (!config.compile_os)
-		init_all_global_objects(syntax, g_var);
+		init_all_global_objects(syntax);
 
 	//_expand(Opcode,OpcodeSize);
 

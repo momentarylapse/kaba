@@ -433,7 +433,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 		Asm::GlobalVar v;
 		v.name = root_of_all_evil.var[i]->name;
 		v.size = root_of_all_evil.var[i]->type->size;
-		v.pos = script->g_var[i];
+		v.pos = root_of_all_evil.var[i]->memory;
 		asm_meta_info->global_var.add(v);
 	}
 }
@@ -502,6 +502,14 @@ Variable::Variable(const string &_name, Class *_type)
 	_offset = 0;
 	is_extern = false;
 	dont_add_constructor = false;
+	memory = nullptr;
+	memory_owner = false;
+}
+
+Variable::~Variable()
+{
+	if (memory_owner)
+		free(memory);
 }
 
 int Block::add_var(const string &name, Class *type)
@@ -650,6 +658,30 @@ Constant *Node::as_const() const
 Operator *Node::as_op() const
 {
 	return &script->syntax->operators[link_no];
+}
+void *Node::as_func_p() const
+{
+	return (void*)script->func[link_no];
+}
+
+void *Node::as_const_p() const
+{
+	return script->cnst[link_no];
+}
+
+void *Node::as_global_p() const
+{
+	return script->syntax->root_of_all_evil.var[link_no]->memory;
+}
+
+Variable *Node::as_global() const
+{
+	return script->syntax->root_of_all_evil.var[link_no];
+}
+
+Variable *Node::as_local(Function *f) const
+{
+	return f->var[link_no];
 }
 
 void Node::set_instance(Node *p)
