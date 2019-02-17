@@ -47,10 +47,9 @@ public:
 
 	// building operational code
 	void Compiler();
-	void MapConstantsToMemory();
+	void UpdateConstantLocations();
 	void MapConstantsToOpcode();
 	void MapGlobalVariablesToMemory();
-	void AllocateMemory();
 	void AllocateOpcode();
 	void AlignOpcode();
 	void AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list);
@@ -81,8 +80,6 @@ public:
 
 	char *opcode; // executable code
 	int opcode_size;
-	char *memory; // memory for global variables, constants etc
-	int memory_size;
 
 	Array<t_func*> func;
 	Array<Asm::WantedLabel> functions_to_link;
@@ -90,10 +87,6 @@ public:
 
 	bool just_analyse, show_compiler_stats;
 	Function *cur_func;
-
-	Array<char*> cnst;
-
-	int memory_used;
 };
 
 Script *Load(const string &filename, bool just_analyse = false);

@@ -60,6 +60,8 @@ struct Constant : Value
 	Constant(Class *type);
 	string name;
 	string str() const;
+	void *address; // either p() or overriden for OS
+	bool used;
 };
 
 enum

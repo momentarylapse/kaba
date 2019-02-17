@@ -140,6 +140,8 @@ Constant::Constant(Class *_type)
 {
 	init(_type);
 	name = "-none-";
+	used = false;
+	address = nullptr;
 }
 
 string Constant::str() const
@@ -664,9 +666,11 @@ void *Node::as_func_p() const
 	return (void*)script->func[link_no];
 }
 
+// will be the address at runtime...(not the current location...)
 void *Node::as_const_p() const
 {
-	return script->cnst[link_no];
+	return as_const()->address;
+	//return script->cnst[link_no];
 }
 
 void *Node::as_global_p() const

@@ -226,23 +226,12 @@ Script::Script()
 
 	opcode = nullptr;
 	opcode_size = 0;
-	memory = nullptr;
-	memory_size = 0;
-	memory_used = 0;
 
 	syntax = new SyntaxTree(this);
 }
 
 Script::~Script()
 {
-	if (memory and (!just_analyse)){
-		//delete[](Memory);
-		#if defined(OS_WINDOWS) || defined(OS_MINGW)
-			VirtualFree(memory, 0, memory_size);
-		#else
-			int r = munmap(memory, memory_size);
-		#endif
-	}
 	if (opcode){
 		#if defined(OS_WINDOWS) || defined(OS_MINGW)
 			VirtualFree(opcode, 0, MEM_RELEASE);

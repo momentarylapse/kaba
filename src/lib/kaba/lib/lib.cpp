@@ -435,6 +435,7 @@ void add_const(const string &name, Class *type, void *value)
 {
 	Constant *c = new Constant(type);
 	c->name = name;
+	c->address = c->p();
 
 	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) or (type == TypeFloat32) or (type == TypeChar)  or (type == TypeBool) or (type->is_pointer()))
@@ -442,7 +443,6 @@ void add_const(const string &name, Class *type, void *value)
 	else
 		memcpy(c->p(), value, type->size);
 	cur_package_script->syntax->constants.add(c);
-	cur_package_script->cnst.add((char*)c->value.data);
 }
 
 //------------------------------------------------------------------------------------------------//

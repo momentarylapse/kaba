@@ -136,31 +136,6 @@ void* get_nice_memory(long size, bool executable)
 	return mem;
 }
 
-void Script::AllocateMemory()
-{
-	// get memory size needed
-	memory_size = 0;
-	for (int i=0;i<syntax->root_of_all_evil.var.num;i++)
-		if (!syntax->root_of_all_evil.var[i]->is_extern)
-			memory_size += mem_align(syntax->root_of_all_evil.var[i]->type->size, 4);
-
-	// constants
-	foreachi(Constant *c, syntax->constants, i)
-		memory_size += mem_align(c->mapping_size(), 4);
-
-	// vtables
-	for (Class *t: syntax->classes)
-		if (t->vtable.num > 0)
-			memory_size += config.pointer_size;
-
-	// allocate
-	if (memory_size > 0){
-		memory = (char*)get_nice_memory(memory_size, false);
-		if (config.verbose)
-			msg_write("memory:  " + p2s(memory));
-	}
-}
-
 
 void Script::AllocateOpcode()
 {
@@ -179,15 +154,10 @@ void Script::AllocateOpcode()
 	opcode_size = 0;
 }
 
-void Script::MapConstantsToMemory()
+void Script::UpdateConstantLocations()
 {
-	// constants -> Memory
-	cnst.resize(syntax->constants.num);
-	foreachi(Constant *c, syntax->constants, i){
-		cnst[i] = &memory[memory_size];
-		c->map_into(cnst[i], cnst[i]);
-		memory_size += mem_align(c->mapping_size(), 4);
-	}
+	for (Constant *c: syntax->constants)
+		c->address = c->p();
 }
 
 void Script::MapGlobalVariablesToMemory()
@@ -236,10 +206,10 @@ void Script::CompileOsEntryPoint()
 	AlignOpcode();
 }
 
-Node *map_const_check(Node *n, Array<bool> &used, Script *me)
+Node *check_const_used(Node *n, Script *me)
 {
 	if (n->kind == KIND_CONSTANT){
-		used[n->link_no] = true;
+		n->as_const()->used = true;
 		if (n->script != me)
 			msg_error("evil const " + n->as_const()->name);
 	}
@@ -248,8 +218,6 @@ Node *map_const_check(Node *n, Array<bool> &used, Script *me)
 
 void Script::MapConstantsToOpcode()
 {
-	cnst.resize(syntax->constants.num);
-
 	// vtables -> no data yet...
 	for (Class *t: syntax->classes)
 		if (t->vtable.num > 0){
@@ -261,9 +229,7 @@ void Script::MapConstantsToOpcode()
 					memcpy(c->value.data, &t->_vtable_location_target_, config.pointer_size);
 		}
 
-	Array<bool> used;
-	used.resize(syntax->constants.num);
-	syntax->transform([&](Node* n){ return map_const_check(n, used, this); });
+	syntax->transform([&](Node* n){ return check_const_used(n, this); });
 
 	/*int n = 0;
 	for (bool b: used)
@@ -282,9 +248,9 @@ void Script::MapConstantsToOpcode()
 
 
 	foreachi(Constant *c, syntax->constants, i)
-		if (used[i]){
-			cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
-			c->map_into(&opcode[opcode_size], cnst[i]);
+		if (c->used){
+			c->address = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
+			c->map_into(&opcode[opcode_size], (char*)c->address);
 			opcode_size += mem_align(c->mapping_size(), 4);
 		}
 
@@ -543,6 +509,16 @@ void parse_magic_linker_string(SyntaxTree *s)
 
 }
 
+int memory_size(Script *s)
+{
+	int size = 0;
+	for (auto *v: s->syntax->root_of_all_evil.var)
+		size += v->type->size;
+	for (auto *c: s->syntax->constants)
+		size += c->mapping_size();
+	return size;
+}
+
 // generate opcode
 void Script::Compiler()
 {
@@ -566,12 +542,9 @@ void Script::Compiler()
 	if (config.verbose)
 		syntax->Show("comp:a");
 
-	AllocateMemory();
-
-	memory_size = 0;
 	MapGlobalVariablesToMemory();
 	if (!config.compile_os)
-		MapConstantsToMemory();
+		UpdateConstantLocations();
 
 	AllocateOpcode();
 
@@ -615,7 +588,7 @@ void Script::Compiler()
 
 	if (show_compiler_stats){
 		msg_write("--------------------------------");
-		msg_write(format("Opcode: %db, Memory: %db",opcode_size,memory_size));
+		msg_write(format("Opcode: %db, Memory: %db", opcode_size, memory_size(this)));
 	}
 }
 
