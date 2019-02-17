@@ -320,7 +320,6 @@ public:
 
 	// neccessary conversions
 	void ConvertCallByReference();
-	void ConvertInline();
 	void BreakDownComplicatedCommands();
 	Node *BreakDownComplicatedCommand(Node *c);
 	void MakeFunctionsInline();

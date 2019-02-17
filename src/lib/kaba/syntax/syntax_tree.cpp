@@ -888,26 +888,6 @@ Class *SyntaxTree::CreateDictClass(Class *element_type)
 			Class::Type::DICT, config.super_array_size, 0, element_type);
 }
 
-void SyntaxTree::ConvertInline()
-{
-	for (auto com: nodes)
-		if (com->kind == KIND_FUNCTION){
-			// inline function?
-			int index = com->script->syntax->functions[com->link_no]->inline_no;
-			if (index >= 0){
-				msg_write(" >>>>>>>>>>>>>>>>> inline ....");
-				com->kind = KIND_INLINE_FUNCTION;
-
-				/*if (com->instance){
-					msg_write("   INST");
-					// dirty quick move
-					com->param.insert(com->instance, 0);
-					com->instance = NULL;
-				}*/
-			}
-		}
-}
-
 Node *conv_cbr(SyntaxTree *ps, Node *c, int var)
 {
 	// convert

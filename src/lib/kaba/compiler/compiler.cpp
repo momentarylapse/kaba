@@ -246,19 +246,14 @@ void Script::CompileOsEntryPoint()
 	AlignOpcode();
 }
 
-void apply_recursive(Node *n, std::function<void(Node*)> f)
+Node *map_const_check(Node *n, Array<bool> &used, Script *me)
 {
-	f(n);
-
-	for (Node *p: n->params)
-		apply_recursive(p, f);
-
-	if (n->instance)
-		apply_recursive(n->instance, f);
-
-	if (n->kind == KIND_BLOCK)
-		for (Node *child: n->as_block()->nodes)
-			apply_recursive(child, f);
+	if (n->kind == KIND_CONSTANT){
+		used[n->link_no] = true;
+		if (n->script != me)
+			msg_error("evil const " + n->as_const()->name);
+	}
+	return n;
 }
 
 void Script::MapConstantsToOpcode()
@@ -278,9 +273,7 @@ void Script::MapConstantsToOpcode()
 
 	Array<bool> used;
 	used.resize(syntax->constants.num);
-	for (Function *f: syntax->functions)
-		for (Node *n: f->block->nodes)
-			apply_recursive(n, [&](Node *n){ if (n->kind == KIND_CONSTANT){ used[n->link_no] = true; if (n->script != syntax->script) msg_error("evil const " + n->as_const()->name); } });
+	syntax->transform([&](Node* n){ return map_const_check(n, used, this); });
 
 	/*int n = 0;
 	for (bool b: used)
@@ -432,30 +425,35 @@ struct IncludeTranslationData
 	Script *source;
 };
 
+Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationData &d)
+{
+
+	// keep commands... just redirect var/const/func
+	if (c->script != d.source)
+		return c;
+
+	if (c->kind != KIND_CONSTANT)
+		if (c->script->filename.find(".kaba") < 0)
+			return c;
+
+	//msg_write(p2s(c->script));
+	if (c->kind == KIND_VAR_GLOBAL){
+		c->link_no += d.var_off;
+		c->script = target;
+	}else if (c->kind == KIND_CONSTANT){
+		c->link_no += d.const_off;
+		c->script = target;
+	}else if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VAR_FUNCTION)){
+		c->link_no += d.func_off;
+		c->script = target;
+	}
+	return c;
+}
+
 void relink_calls(Script *s, Script *target, IncludeTranslationData &d)
 {
 	//msg_write("relink ----" + s->filename + " : " + d.source->filename + " -> " + target->filename + "  ---------");
-	for (Node *c: s->syntax->nodes){
-		// keep commands... just redirect var/const/func
-		if (c->script != d.source)
-			continue;
-
-		if (c->kind != KIND_CONSTANT)
-			if (c->script->filename.find(".kaba") < 0)
-				continue;
-
-		//msg_write(p2s(c->script));
-		if (c->kind == KIND_VAR_GLOBAL){
-			c->link_no += d.var_off;
-			c->script = target;
-		}else if (c->kind == KIND_CONSTANT){
-			c->link_no += d.const_off;
-			c->script = target;
-		}else if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VAR_FUNCTION)){
-			c->link_no += d.func_off;
-			c->script = target;
-		}
-	}
+	s->syntax->transform([&](Node *n){ return conv_relink_calls(n, s, target, d); });
 
 	// we might need some constructors later on...
 	for (Class *t: s->syntax->classes)
@@ -476,12 +474,8 @@ IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
 	d.func_off = dest->functions.num;
 	d.source = source->script;
 
-	for (Constant *c: source->constants){
-		Constant *cc = new Constant(c->type);
-		cc->name = c->name;
-		cc->set(*c);
-		dest->constants.add(cc);
-	}
+	dest->constants.append(source->constants);
+	source->constants.clear();
 
 	// don't fully include internal libraries
 	if (source->script->filename.find(".kaba") < 0)
@@ -517,6 +511,7 @@ void find_all_includes_rec(Script *s, Set<Script*> &includes)
 // only for "os"
 void import_includes(Script *s)
 {
+	s->DoErrorInternal("deep import is currently not supported, can't compile OS... sorry. Complain to Michi");
 	Set<Script*> includes;
 	find_all_includes_rec(s, includes);
 	Array<IncludeTranslationData> da;
