@@ -621,12 +621,12 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 #if 1
 	if (node_is_assign_mem(com)){
 		if (com->params[1]->kind == KIND_FUNCTION or com->params[1]->kind == KIND_INLINE_FUNCTION){
-			//if (com->params[0]->kind == KIND_VAR_LOCAL or com->params[0]->kind == KIND_VAR_GLOBAL){
+			if (com->params[0]->kind == KIND_VAR_LOCAL or com->params[0]->kind == KIND_VAR_GLOBAL){
 				//msg_write("OPT...");
 				override_ret = com->params[0];
 				com = com->params[1];
 
-			//}
+			}
 		}
 	}
 #endif

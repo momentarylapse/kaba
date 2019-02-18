@@ -1,0 +1,9 @@
+
+rect get_plot_region()
+	return rect(0,0,0,0)
+
+class GridData
+	rect plot_rect
+
+	void draw_background()
+		plot_rect = get_plot_region()
