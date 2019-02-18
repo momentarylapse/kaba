@@ -611,6 +611,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 {
 	// for/while need a marker to this point
 	int marker_before_params = -1;
+	bool only_eval_first_param = ((com->kind == KIND_STATEMENT) and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
 	if ((com->kind == KIND_STATEMENT) and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR)))
 		marker_before_params = add_marker();
 
@@ -651,8 +652,9 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	}else{
 
 		// compile parameters
-		params.resize(com->params.num);
-		for (int p=0;p<com->params.num;p++)
+		int np = only_eval_first_param ? 1 : com->params.num;
+		params.resize(np);
+		for (int p=0;p<np;p++)
 			params[p] = SerializeParameter(com->params[p], block, index);
 	}
 
@@ -721,6 +723,7 @@ void Serializer::SerializeBlock(Block *block)
 		InsertAddedStuffIfNeeded(block, i);
 
 		// end of loop?
+		// DEPRECATING...
 		if (loop.num > 0)
 			if ((loop.back().level == block->level) and (loop.back().index == i - 1))
 				loop.pop();

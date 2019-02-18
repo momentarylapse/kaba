@@ -1057,6 +1057,10 @@ Node *SyntaxTree::GetCommand(Block *block)
 	return Operand[0];
 }
 
+// TODO later...
+//  * make Node=Block
+//  * for with p[0]=set init
+//  * for_var in for "Block"
 void SyntaxTree::ParseStatementFor(Block *block)
 {
 	// variable name
@@ -1109,16 +1113,16 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	// while(for_var < val1)
 	Node *cmd_cmp = add_node_operator_by_inline(for_var, val1, INLINE_INT_SMALLER);
 
-	Node *cmd_while = add_node_statement(STATEMENT_FOR);
-	cmd_while->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_while);
+	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+	cmd_for->params.resize(3);
+	cmd_for->set_param(0, cmd_cmp);
+	block->nodes.add(cmd_for);
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	Node *loop_block = ParseBlock(block);
-	block->nodes.add(loop_block);
+	cmd_for->set_param(1, ParseBlock(block));
 	parser_loop_depth --;
 
 	// ...for_var += 1
@@ -1135,7 +1139,7 @@ void SyntaxTree::ParseStatementFor(Block *block)
 		}
 		cmd_inc = add_node_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
-	loop_block->as_block()->nodes.add(cmd_inc); // add to loop-block
+	cmd_for->set_param(2, cmd_inc); // add to loop-block
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
@@ -1200,21 +1204,22 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	// while(for_index < val1)
 	Node *cmd_cmp = add_node_operator_by_inline(for_index, val1, INLINE_INT_SMALLER);
 
-	Node *cmd_while = add_node_statement(STATEMENT_FOR);
-	cmd_while->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_while);
+	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+	cmd_for->params.resize(3);
+	cmd_for->set_param(0, cmd_cmp);
+	block->nodes.add(cmd_for);
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
 	Node *loop_block = ParseBlock(block);
-	block->nodes.add(loop_block);
+	cmd_for->set_param(1, loop_block);
 	parser_loop_depth --;
 
 	// ...for_index += 1
 	Node *cmd_inc = add_node_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
-	loop_block->as_block()->nodes.add(cmd_inc); // add to loop-block
+	cmd_for->set_param(2, cmd_inc);
 
 	// &for_var
 	Node *for_var_ref = ref_node(for_var);
@@ -1257,7 +1262,8 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	block->nodes.add(ParseBlock(block));
+	cmd_while->params.resize(2);
+	cmd_while->set_param(1, ParseBlock(block));
 	parser_loop_depth --;
 }
 
@@ -1404,7 +1410,9 @@ void SyntaxTree::ParseStatementIf(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	block->nodes.add(ParseBlock(block));
+	//block->nodes.add(ParseBlock(block));
+	cmd_if->params.resize(2);
+	cmd_if->set_param(1, ParseBlock(block));
 	Exp.next_line();
 
 	// else?
@@ -1413,6 +1421,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 		Exp.next();
 		// iterative if
 		if (Exp.cur == IDENTIFIER_IF){
+			DoError("else if...");
 			// sub-if's in a new block
 			Block *new_block = new Block(block->function, block);
 			// parse the next if
@@ -1427,7 +1436,8 @@ void SyntaxTree::ParseStatementIf(Block *block)
 		// ...block
 		Exp.next_line();
 		ExpectIndent();
-		block->nodes.add(ParseBlock(block));
+		cmd_if->params.resize(3);
+		cmd_if->set_param(2, ParseBlock(block));
 		//Exp.next_line();
 	}else{
 		int line = Exp.get_line_no() - 1;

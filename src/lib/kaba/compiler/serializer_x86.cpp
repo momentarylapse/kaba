@@ -191,37 +191,51 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 {
 	switch(com->link_no){
 		case STATEMENT_IF:{
+			int m_after_true = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 			// cmp;  jz m;  -block-  m;
 			add_cmd(Asm::INST_CMP, param[0], param_const(TypeBool, 0x0));
-			int m_after_true = add_marker_after_command(block->level, index + 1);
 			add_cmd(Asm::INST_JZ, param_marker(m_after_true));
+			SerializeBlock(com->params[1]->as_block());
+			add_marker(m_after_true);
 			}break;
 		case STATEMENT_IF_ELSE:{
+			int m_after_true = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+			int m_after_false = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 			add_cmd(Asm::INST_CMP, param[0], param_const(TypeBool, 0x0));
-			int m_after_true = add_marker_after_command(block->level, index + 1);
-			int m_after_false = add_marker_after_command(block->level, index + 2);
 			add_cmd(Asm::INST_JZ, param_marker(m_after_true)); // jz ...
-			add_jump_after_command(block->level, index + 1, m_after_false); // insert before <m_after_true> is inserted!
+			SerializeBlock(com->params[1]->as_block());
+			add_cmd(Asm::INST_JMP, param_marker(m_after_false));
+			add_marker(m_after_true);
+			SerializeBlock(com->params[2]->as_block());
+			add_marker(m_after_false);
 			}break;
 		case STATEMENT_WHILE:
 		case STATEMENT_FOR:{
+			int marker_after_while = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
 			add_cmd(Asm::INST_CMP, param[0], param_const(TypeBool, 0x0));
-			int marker_after_while = add_marker_after_command(block->level, index + 1);
 			add_cmd(Asm::INST_JZ, param_marker(marker_after_while));
-			add_jump_after_command(block->level, index + 1, marker_before_params); // insert before <marker_after_while> is inserted!
 
 			int marker_continue = marker_before_params;
-			if (com->link_no == STATEMENT_FOR){
-				// NextCommand is a block!
-				if (next_node->kind != KIND_BLOCK)
-					DoError("command block in \"for\" loop missing");
-				marker_continue = add_marker_after_command(block->level + 1, next_node->as_block()->nodes.num - 2);
-			}
+			if (com->link_no == STATEMENT_FOR)
+				marker_continue = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+
+			// body of loop
 			LoopData l = {marker_continue, marker_after_while, block->level, index};
 			loop.add(l);
+			SerializeBlock(com->params[1]->as_block());
+			loop.pop();
+
+			if (com->link_no == STATEMENT_FOR){
+				// "i++"
+				add_marker(marker_continue);
+				SerializeNode(com->params[2], block, index);
+			}
+
+			add_cmd(Asm::INST_JMP, param_marker(marker_before_params));
+			add_marker(marker_after_while);
 			}break;
 		case STATEMENT_BREAK:
 			add_cmd(Asm::INST_JMP, param_marker(loop.back().marker_break));

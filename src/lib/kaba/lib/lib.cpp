@@ -1268,10 +1268,10 @@ void SIAddBasicCommands()
 {
 	// statements
 	add_statement(IDENTIFIER_RETURN, STATEMENT_RETURN); // return: ParamType will be defined by the parser!
-	add_statement(IDENTIFIER_IF, STATEMENT_IF, 1);
-	add_statement("-if/else-",	STATEMENT_IF_ELSE, 1);
-	add_statement(IDENTIFIER_WHILE, STATEMENT_WHILE, 1);
-	add_statement(IDENTIFIER_FOR, STATEMENT_FOR, 1); // internally like a while-loop... but a bit different...
+	add_statement(IDENTIFIER_IF, STATEMENT_IF, 2);
+	add_statement("-if/else-",	STATEMENT_IF_ELSE, 3);
+	add_statement(IDENTIFIER_WHILE, STATEMENT_WHILE, 2);
+	add_statement(IDENTIFIER_FOR, STATEMENT_FOR, 3); // internally like a while-loop... but a bit different...
 	add_statement(IDENTIFIER_BREAK, STATEMENT_BREAK);
 	add_statement(IDENTIFIER_CONTINUE, STATEMENT_CONTINUE);
 	add_statement(IDENTIFIER_NEW, STATEMENT_NEW);

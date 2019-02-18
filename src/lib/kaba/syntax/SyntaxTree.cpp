@@ -946,9 +946,13 @@ SyntaxTree::~SyntaxTree()
 
 void SyntaxTree::ShowNode(Node *c, Function *f)
 {
+	if (c->kind == KIND_BLOCK){
+		ShowBlock(c->as_block());
+		return;
+	}
 	string orig;
-	if (c->script->syntax != this)
-		orig = " << " + c->script->filename;
+//	if (c->script->syntax != this)
+//		orig = " << " + c->script->filename;
 	msg_write(node2str(this, f, c) + orig);
 	msg_right();
 	if (c->instance)
@@ -966,7 +970,7 @@ void SyntaxTree::ShowNode(Node *c, Function *f)
 
 void SyntaxTree::ShowBlock(Block *b)
 {
-	msg_write("block");
+	msg_write("[block]");
 	msg_right();
 	for (Node *c: b->nodes){
 		if (c->kind == KIND_BLOCK)
@@ -975,7 +979,7 @@ void SyntaxTree::ShowBlock(Block *b)
 			ShowNode(c, b->function);
 	}
 	msg_left();
-	msg_write("/block");
+	//msg_write("/block");
 }
 
 void SyntaxTree::ShowFunction(Function *f, const string &stage)

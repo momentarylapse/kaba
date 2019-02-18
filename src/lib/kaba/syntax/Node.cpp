@@ -26,7 +26,7 @@ string kind2str(int kind)
 	if (kind == KIND_STATEMENT)			return "statement";
 	if (kind == KIND_OPERATOR)			return "operator";
 	if (kind == KIND_PRIMITIVE_OPERATOR)	return "PRIMITIVE operator";
-	if (kind == KIND_BLOCK)				return "command block";
+	if (kind == KIND_BLOCK)				return "block";
 	if (kind == KIND_ADDRESS_SHIFT)		return "address shift";
 	if (kind == KIND_ARRAY)				return "array element";
 	if (kind == KIND_POINTER_AS_ARRAY)		return "pointer as array element";

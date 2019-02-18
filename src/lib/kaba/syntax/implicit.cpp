@@ -157,12 +157,13 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// while(for_var < self.num)
 		Node *cmd_cmp = add_node_operator_by_inline(for_var, cp_node(other_num), INLINE_INT_SMALLER);
 
-		Node *cmd_while = add_node_statement(STATEMENT_FOR);
-		cmd_while->set_param(0, cmd_cmp);
-		f->block->nodes.add(cmd_while);
+		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		cmd_for->set_param(0, cmd_cmp);
+		f->block->nodes.add(cmd_for);
 
 		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
+		cmd_for->set_param(1, cb);
 
 		// el := self.data[for_var]
 		Node *deref_self = deref_node(cp_node(self));
@@ -181,8 +182,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		// ...for_var += 1
 		Node *cmd_inc = add_node_operator_by_inline(for_var, cmd_0 /*dummy*/, INLINE_INT_INCREASE);
-		b->nodes.add(cmd_inc);
-		f->block->nodes.add(cb);
+		cmd_for->set_param(2, cmd_inc);
 	}else if (t->is_array()){
 
 		// for int i, 0, other.num
@@ -204,12 +204,13 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// while(for_var < self.num)
 		Node *cmd_cmp = add_node_operator_by_inline(for_var, c_num, INLINE_INT_SMALLER);
 
-		Node *cmd_while = add_node_statement(STATEMENT_FOR);
-		cmd_while->set_param(0, cmd_cmp);
-		f->block->nodes.add(cmd_while);
+		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		cmd_for->set_param(0, cmd_cmp);
+		f->block->nodes.add(cmd_for);
 
 		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
+		cmd_for->set_param(1, cb);
 
 		// el := self.data[for_var]
 		Node *cmd_el = add_node_parray(self, for_var, t->parent);
@@ -225,8 +226,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		// ...for_var += 1
 		Node *cmd_inc = add_node_operator_by_inline(for_var, cmd_0 /*dummy*/, INLINE_INT_INCREASE);
-		b->nodes.add(cmd_inc);
-		f->block->nodes.add(cb);
+		cmd_for->set_param(2, cmd_inc);
 	}else{
 
 		// parent assignment
@@ -282,12 +282,13 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		// while(for_var < self.num)
 		Node *cmd_cmp = add_node_operator_by_inline(for_var, self_num, INLINE_INT_SMALLER);
 
-		Node *cmd_while = add_node_statement(STATEMENT_FOR);
-		cmd_while->set_param(0, cmd_cmp);
-		f->block->nodes.add(cmd_while);
+		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		cmd_for->set_param(0, cmd_cmp);
+		f->block->nodes.add(cmd_for);
 
 		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
+		cmd_for->set_param(1, cb);
 
 		// el := self.data[for_var]
 		Node *deref_self = deref_node(cp_node(self));
@@ -300,8 +301,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 
 		// for_var ++
 		Node *cmd_inc = add_node_operator_by_inline(for_var, cmd_0 /*dummy*/, INLINE_INT_INCREASE);
-		b->nodes.add(cmd_inc);
-		f->block->nodes.add(cb);
+		cmd_for->set_param(2, cmd_inc);
 	}
 
 	// clear
@@ -341,12 +341,13 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		// while(for_var < self.num)
 		Node *cmd_cmp = add_node_operator_by_inline(for_var, self_num, INLINE_INT_SMALLER);
 
-		Node *cmd_while = add_node_statement(STATEMENT_FOR);
-		cmd_while->set_param(0, cmd_cmp);
-		f->block->nodes.add(cmd_while);
+		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		cmd_for->set_param(0, cmd_cmp);
+		f->block->nodes.add(cmd_for);
 
 		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
+		cmd_for->set_param(1, cb);
 
 		// el := self.data[for_var]
 		Node *deref_self = deref_node(cp_node(self));
@@ -359,8 +360,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 
 		// ...for_var += 1
 		Node *cmd_inc = add_node_operator_by_inline(for_var, num /*dummy*/, INLINE_INT_INCREASE);
-		b->nodes.add(cmd_inc);
-		f->block->nodes.add(cb);
+		cmd_for->set_param(2, cmd_inc);
 	}
 
 	// resize
@@ -378,12 +378,13 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		// while(for_var < self.num)
 		Node *cmd_cmp = add_node_operator_by_inline(for_var, self_num, INLINE_INT_SMALLER);
 
-		Node *cmd_while = add_node_statement(STATEMENT_FOR);
-		cmd_while->set_param(0, cmd_cmp);
-		f->block->nodes.add(cmd_while);
+		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		cmd_for->set_param(0, cmd_cmp);
+		f->block->nodes.add(cmd_for);
 
 		Block *b = new Block(f, f->block);
 		Node *cb = add_node_block(b);
+		cmd_for->set_param(1, cb);
 
 		// el := self.data[for_var]
 		Node *deref_self = deref_node(cp_node(self));
@@ -396,8 +397,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 
 		// ...for_var += 1
 		Node *cmd_inc = add_node_operator_by_inline(for_var, num /*dummy*/, INLINE_INT_INCREASE);
-		b->nodes.add(cmd_inc);
-		f->block->nodes.add(cb);
+		cmd_for->set_param(2, cmd_inc);
 	}
 }
 
