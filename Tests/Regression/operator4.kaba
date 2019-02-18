@@ -7,8 +7,7 @@ void _main()
 	v = m_id * e_x
 
 void main()
-	matrix m
-	MatrixRotation(m, vector(0,0,pi/4))
+	matrix m = MatrixRotation(vector(0,0,pi/4))
 	matrix mm = m
 	mm *= m * m
 	vector v = mm * e_x

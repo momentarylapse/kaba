@@ -7,8 +7,8 @@ void main()
 	print(e)
 	
 	quaternion q1, q2, q3
-	QuaternionRotationV(q1, e_x)
-	QuaternionRotationV(q2, e_y)
+	q1 = QuaternionRotationV(e_x)
+	q2 = QuaternionRotationV(e_y)
 	print(q1)
 	print(q2)
 	q3 = q1 * q2
