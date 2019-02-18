@@ -2,9 +2,12 @@
 #define SYNTAX_TREE_H__INCLUDED_
 
 
-#include "class.h"
 #include "lexical.h"
 #include <functional>
+#include "Class.h"
+#include "Constant.h"
+#include "Function.h"
+#include "Node.h"
 
 
 class complex;
@@ -18,6 +21,11 @@ namespace Kaba{
 class Script;
 class SyntaxTree;
 class Operator;
+class Function;
+class Variable;
+class Node;
+class Constant;
+class Block;
 
 #define MAX_STRING_CONST_LENGTH	2048
 
@@ -27,188 +35,6 @@ struct Define
 	string source;
 	Array<string> dest;
 };
-
-struct Value
-{
-	string value;
-	Class *type;
-
-	Value();
-	~Value();
-
-	void init(Class *type);
-	void clear();
-	void set(const Value &v);
-
-	void* p() const;
-	int& as_int() const;
-	int64& as_int64() const;
-	float& as_float() const;
-	double& as_float64() const;
-	complex& as_complex() const;
-	string& as_string() const;
-	DynamicArray& as_array() const;
-
-	int mapping_size() const;
-	void map_into(char *mem, char *addr) const;
-	string str() const;
-};
-
-// for any type of constant used in the script
-struct Constant : Value
-{
-	Constant(Class *type);
-	string name;
-	string str() const;
-	void *address; // either p() or overriden for OS
-	bool used;
-};
-
-enum
-{
-	KIND_UNKNOWN,
-	// data
-	KIND_VAR_LOCAL,
-	KIND_VAR_GLOBAL,
-	KIND_VAR_FUNCTION,
-	KIND_CONSTANT,
-	// execution
-	KIND_FUNCTION,           // = real function call
-	KIND_VIRTUAL_FUNCTION,   // = virtual function call
-	KIND_INLINE_FUNCTION,    // = function defined inside the compiler...
-	KIND_STATEMENT,          // = if/while/break/...
-	KIND_BLOCK,              // = block of commands {...}
-	KIND_OPERATOR,
-	KIND_PRIMITIVE_OPERATOR, // tentative...
-	// data altering
-	KIND_ADDRESS_SHIFT,      // = . "struct"
-	KIND_ARRAY,              // = []
-	KIND_POINTER_AS_ARRAY,   // = []
-	KIND_REFERENCE,          // = &
-	KIND_DEREFERENCE,        // = *
-	KIND_DEREF_ADDRESS_SHIFT,// = ->
-	KIND_REF_TO_LOCAL,
-	KIND_REF_TO_GLOBAL,
-	KIND_REF_TO_CONST,
-	KIND_ADDRESS,            // &global (for pre processing address shifts)
-	KIND_MEMORY,             // global (but LinkNr = address)
-	KIND_LOCAL_ADDRESS,      // &local (for pre processing address shifts)
-	KIND_LOCAL_MEMORY,       // local (but LinkNr = address)
-	// special
-	KIND_TYPE,
-	KIND_ARRAY_BUILDER,
-	KIND_CONSTRUCTOR_AS_FUNCTION,
-	// compilation
-	KIND_VAR_TEMP,
-	KIND_DEREF_VAR_TEMP,
-	KIND_DEREF_VAR_LOCAL,
-	KIND_REGISTER,
-	KIND_DEREF_REGISTER,
-	KIND_MARKER,
-	KIND_DEREF_MARKER,
-	KIND_IMMEDIATE,
-	KIND_GLOBAL_LOOKUP,       // ARM
-	KIND_DEREF_GLOBAL_LOOKUP, // ARM
-};
-
-struct Node;
-
-// {...}-block
-struct Block
-{
-	Block(Function *f, Block *parent);
-	~Block();
-	Array<Node*> nodes;
-	Array<int> vars;
-	Function *function;
-	Block *parent;
-	void *_start, *_end; // opcode range
-	int level;
-	void add(Node *c);
-	void set(int index, Node *c);
-
-	int get_var(const string &name);
-	int add_var(const string &name, Class *type);
-};
-
-struct Variable
-{
-	Variable(const string &name, Class *type);
-	~Variable();
-	Class *type; // for creating instances
-	string name;
-	int64 _offset; // for compilation
-	void *memory;
-	bool memory_owner;
-	bool is_extern;
-	bool dont_add_constructor;
-};
-
-// user defined functions
-struct Function
-{
-	SyntaxTree *tree;
-
-	string name;
-	// parameters (linked to intern variables)
-	int num_params;
-	// block of code
-	Block *block;
-	// local variables
-	Array<Variable*> var;
-	Array<Class*> literal_param_type;
-	Class *_class;
-	Class *return_type;
-	Class *literal_return_type;
-	bool is_extern, auto_declared;
-	bool is_pure;
-	bool throws_exceptions; // for external
-	int inline_no;
-	int num_slightly_hidden_vars;
-	// for compilation...
-	int64 _var_size, _param_size;
-	int _logical_line_no;
-	int _exp_no;
-	Function(SyntaxTree *tree, const string &name, Class *return_type);
-	~Function();
-	int __get_var(const string &name) const;
-	string create_slightly_hidden_name();
-	void update(Class *class_type);
-	string signature(bool include_class = false) const;
-	Array<Block*> all_blocks();
-};
-
-// single operand/command
-struct Node
-{
-	int kind;
-	int64 link_no;
-	Script *script;
-	int ref_count;
-	// parameters
-	Array<Node*> params;
-	// linking of class function instances
-	Node *instance;
-	// return value
-	Class *type;
-	Node(int kind, int64 link_no, Script *script, Class *type);
-	~Node();
-	Block *as_block() const;
-	Function *as_func() const;
-	Class *as_class() const;
-	Constant *as_const() const;
-	Operator *as_op() const;
-	void *as_func_p() const;
-	void *as_const_p() const;
-	void *as_global_p() const;
-	Variable *as_global() const;
-	Variable *as_local(Function *f) const;
-	void set_num_params(int n);
-	void set_param(int index, Node *p);
-	void set_instance(Node *p);
-};
-void clear_nodes(Array<Node*> &nodes);
-void clear_nodes(Array<Node*> &nodes, Node *keep);
 
 
 struct Operator
@@ -233,7 +59,6 @@ struct AsmBlock
 	int line;
 };
 
-class Script;
 
 
 // data structures (uncompiled)
@@ -304,6 +129,7 @@ public:
 	Node *GetOperandExtensionArray(Node *operand, Block *block);
 	Node *GetCommand(Block *block);
 	void ParseCompleteCommand(Block *block);
+	void ParseLocalDefinition(Block *block);
 	Block *ParseBlock(Block *block);
 	Node *GetOperand(Block *block);
 	Node *GetPrimitiveOperator(Block *block);

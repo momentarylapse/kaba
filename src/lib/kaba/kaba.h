@@ -16,7 +16,7 @@ class Script;
 #include "../base/base.h"
 #include "asm/asm.h"
 #include "lib/lib.h"
-#include "syntax/syntax_tree.h"
+#include "syntax/SyntaxTree.h"
 
 namespace Kaba{
 

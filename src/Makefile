@@ -108,13 +108,17 @@ OBJ = lib/algebra/crypto.o \
  lib/kaba/lib/lib_sound.o \
  lib/kaba/lib/lib_threads.o \
  lib/kaba/lib/lib_x.o \
- lib/kaba/syntax/class.o \
+ lib/kaba/syntax/Class.o \
+ lib/kaba/syntax/Constant.o \
+ lib/kaba/syntax/Function.o \
  lib/kaba/syntax/implicit.o \
  lib/kaba/syntax/lexical.o \
+ lib/kaba/syntax/Node.o \
  lib/kaba/syntax/parser.o \
+ lib/kaba/syntax/Parser.o \
  lib/kaba/syntax/precompiler.o \
  lib/kaba/syntax/preprocessor.o \
- lib/kaba/syntax/syntax_tree.o \
+ lib/kaba/syntax/SyntaxTree.o \
  lib/kaba/kaba.o \
  lib/math/complex.o \
  lib/math/interpolation.o \
@@ -135,6 +139,8 @@ OBJ = lib/algebra/crypto.o \
  lib/nix/nix_textures.o \
  lib/nix/nix_vertexbuffer.o \
  lib/nix/nix_view.o \
+ lib/sound/sound.o \
+ lib/sound/sound_al.o \
  lib/threads/Mutex.o \
  lib/threads/Thread.o \
  lib/threads/ThreadedWork.o
@@ -405,79 +411,91 @@ lib/image/ImagePainter.o : lib/image/ImagePainter.cpp lib/image/ImagePainter.h l
 lib/kaba/asm/asm.o : lib/kaba/asm/asm.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/asm/asm.h
 	$(CPP) -c lib/kaba/asm/asm.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/compiler.o : lib/kaba/compiler/compiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/base/set.h
+lib/kaba/compiler/compiler.o : lib/kaba/compiler/compiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/base/set.h
 	$(CPP) -c lib/kaba/compiler/compiler.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/mapper.o : lib/kaba/compiler/mapper.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/compiler/mapper.o : lib/kaba/compiler/mapper.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/mapper.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/serializer.o : lib/kaba/compiler/serializer.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/compiler/serializer.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_arm.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/compiler/serializer.o : lib/kaba/compiler/serializer.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/compiler/serializer.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_arm.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/serializer.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/serializer_amd64.o : lib/kaba/compiler/serializer_amd64.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/compiler/serializer_amd64.o : lib/kaba/compiler/serializer_amd64.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/serializer_amd64.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/serializer_arm.o : lib/kaba/compiler/serializer_arm.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/compiler/serializer_arm.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/compiler/serializer_arm.o : lib/kaba/compiler/serializer_arm.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/compiler/serializer_arm.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/serializer_arm.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/serializer_x86.o : lib/kaba/compiler/serializer_x86.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/compiler/serializer_x86.o : lib/kaba/compiler/serializer_x86.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/serializer_x86.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/exception.o : lib/kaba/lib/exception.cpp lib/kaba/lib/exception.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/msg.h
+lib/kaba/lib/exception.o : lib/kaba/lib/exception.cpp lib/kaba/lib/exception.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/msg.h
 	$(CPP) -c lib/kaba/lib/exception.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib.o : lib/kaba/lib/lib.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/config.h lib/math/complex.h lib/hui/hui.h lib/hui/common.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
+lib/kaba/lib/lib.o : lib/kaba/lib/lib.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/config.h lib/math/complex.h lib/hui/hui.h lib/hui/common.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
 	$(CPP) -c lib/kaba/lib/lib.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_file.o : lib/kaba/lib/lib_file.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h
+lib/kaba/lib/lib_file.o : lib/kaba/lib/lib_file.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h
 	$(CPP) -c lib/kaba/lib/lib_file.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_hui.o : lib/kaba/lib/lib_hui.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/hui/hui.h lib/hui/common.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
+lib/kaba/lib/lib_hui.o : lib/kaba/lib/lib_hui.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/hui/hui.h lib/hui/common.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
 	$(CPP) -c lib/kaba/lib/lib_hui.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_image.o : lib/kaba/lib/lib_image.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/image/image.h lib/image/color.h
+lib/kaba/lib/lib_image.o : lib/kaba/lib/lib_image.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/image/image.h lib/image/color.h
 	$(CPP) -c lib/kaba/lib/lib_image.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_math.o : lib/kaba/lib/lib_math.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/math/math.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/algebra/algebra.h lib/algebra/vli.h lib/algebra/crypto.h lib/any/any.h
+lib/kaba/lib/lib_math.o : lib/kaba/lib/lib_math.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/math/math.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/algebra/algebra.h lib/algebra/vli.h lib/algebra/crypto.h lib/any/any.h
 	$(CPP) -c lib/kaba/lib/lib_math.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_net.o : lib/kaba/lib/lib_net.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/net/net.h
+lib/kaba/lib/lib_net.o : lib/kaba/lib/lib_net.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/net/net.h
 	$(CPP) -c lib/kaba/lib/lib_net.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_nix.o : lib/kaba/lib/lib_nix.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/nix/nix.h lib/nix/nix_config.h lib/hui/hui.h lib/hui/common.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h
+lib/kaba/lib/lib_nix.o : lib/kaba/lib/lib_nix.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/nix/nix.h lib/nix/nix_config.h lib/hui/hui.h lib/hui/common.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h
 	$(CPP) -c lib/kaba/lib/lib_nix.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_sound.o : lib/kaba/lib/lib_sound.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h
+lib/kaba/lib/lib_sound.o : lib/kaba/lib/lib_sound.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/sound/sound.h lib/math/math.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h
 	$(CPP) -c lib/kaba/lib/lib_sound.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_threads.o : lib/kaba/lib/lib_threads.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/threads/Thread.h lib/threads/Mutex.h lib/threads/ThreadedWork.h
+lib/kaba/lib/lib_threads.o : lib/kaba/lib/lib_threads.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/threads/Thread.h lib/threads/Mutex.h lib/threads/ThreadedWork.h
 	$(CPP) -c lib/kaba/lib/lib_threads.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_x.o : lib/kaba/lib/lib_x.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h
+lib/kaba/lib/lib_x.o : lib/kaba/lib/lib_x.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h
 	$(CPP) -c lib/kaba/lib/lib_x.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/class.o : lib/kaba/syntax/class.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/syntax/class.cpp -o $@ $(CXXFLAGS)
+lib/kaba/syntax/Class.o : lib/kaba/syntax/Class.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+	$(CPP) -c lib/kaba/syntax/Class.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/implicit.o : lib/kaba/syntax/implicit.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/syntax/Constant.o : lib/kaba/syntax/Constant.cpp
+	$(CPP) -c lib/kaba/syntax/Constant.cpp -o $@ $(CXXFLAGS)
+
+lib/kaba/syntax/Function.o : lib/kaba/syntax/Function.cpp
+	$(CPP) -c lib/kaba/syntax/Function.cpp -o $@ $(CXXFLAGS)
+
+lib/kaba/syntax/implicit.o : lib/kaba/syntax/implicit.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/implicit.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/lexical.o : lib/kaba/syntax/lexical.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/syntax/lexical.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h
+lib/kaba/syntax/lexical.o : lib/kaba/syntax/lexical.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/syntax/lexical.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h
 	$(CPP) -c lib/kaba/syntax/lexical.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/syntax/Node.o : lib/kaba/syntax/Node.cpp
+	$(CPP) -c lib/kaba/syntax/Node.cpp -o $@ $(CXXFLAGS)
+
+lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/parser.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/precompiler.o : lib/kaba/syntax/precompiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/syntax/Parser.o : lib/kaba/syntax/Parser.cpp lib/kaba/syntax/Parser.h
+	$(CPP) -c lib/kaba/syntax/Parser.cpp -o $@ $(CXXFLAGS)
+
+lib/kaba/syntax/precompiler.o : lib/kaba/syntax/precompiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/precompiler.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/preprocessor.o : lib/kaba/syntax/preprocessor.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/syntax/preprocessor.o : lib/kaba/syntax/preprocessor.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/preprocessor.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/syntax_tree.o : lib/kaba/syntax/syntax_tree.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/syntax/syntax_tree.cpp -o $@ $(CXXFLAGS)
+lib/kaba/syntax/SyntaxTree.o : lib/kaba/syntax/SyntaxTree.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+	$(CPP) -c lib/kaba/syntax/SyntaxTree.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/kaba.o : lib/kaba/kaba.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h lib/config.h
+lib/kaba/kaba.o : lib/kaba/kaba.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h
 	$(CPP) -c lib/kaba/kaba.cpp -o $@ $(CXXFLAGS)
 
 lib/math/complex.o : lib/math/complex.cpp lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h
@@ -537,6 +555,12 @@ lib/nix/nix_vertexbuffer.o : lib/nix/nix_vertexbuffer.cpp lib/nix/nix.h lib/conf
 lib/nix/nix_view.o : lib/nix/nix_view.cpp lib/nix/nix.h lib/config.h lib/nix/nix_config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/hui/hui.h lib/hui/common.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/nix/nix_common.h lib/hui/Controls/Control.h lib/hui/Controls/ControlDrawingArea.h
 	$(CPP) -c lib/nix/nix_view.cpp -o $@ $(CXXFLAGS)
 
+lib/sound/sound.o : lib/sound/sound.cpp lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/sound/sound.h lib/config.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+	$(CPP) -c lib/sound/sound.cpp -o $@ $(CXXFLAGS)
+
+lib/sound/sound_al.o : lib/sound/sound_al.cpp lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/sound/sound.h lib/config.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+	$(CPP) -c lib/sound/sound_al.cpp -o $@ $(CXXFLAGS)
+
 lib/threads/Mutex.o : lib/threads/Mutex.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/threads/Mutex.h lib/threads/Thread.h
 	$(CPP) -c lib/threads/Mutex.cpp -o $@ $(CXXFLAGS)
 
@@ -546,7 +570,7 @@ lib/threads/Thread.o : lib/threads/Thread.cpp lib/threads/Thread.h lib/base/base
 lib/threads/ThreadedWork.o : lib/threads/ThreadedWork.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/threads/Mutex.h lib/threads/Thread.h lib/threads/ThreadedWork.h
 	$(CPP) -c lib/threads/ThreadedWork.cpp -o $@ $(CXXFLAGS)
 
-main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/hui/hui.h lib/hui/common.h lib/config.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/nix/nix.h lib/nix/nix_config.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/net/net.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/syntax_tree.h lib/kaba/syntax/class.h lib/kaba/syntax/lexical.h
+main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/hui/hui.h lib/hui/common.h lib/config.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/nix/nix.h lib/nix/nix_config.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/net/net.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h
 	$(CPP) -c main.cpp -o $@ $(CXXFLAGS)
 
 install :

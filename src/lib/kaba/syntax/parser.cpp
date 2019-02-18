@@ -1501,6 +1501,30 @@ Block *SyntaxTree::ParseBlock(Block *block)
 	return new_block;
 }
 
+// local (variable) definitions...
+void SyntaxTree::ParseLocalDefinition(Block *block)
+{
+	// type of variable
+	Class *type = ParseType();
+	for (int l=0;!Exp.end_of_line();l++){
+		// name
+		block->add_var(Exp.cur, type);
+		Exp.next();
+
+		// assignment?
+		if (Exp.cur == "="){
+			Exp.rewind();
+			// parse assignment
+			block->nodes.add(GetCommand(block));
+		}
+		if (Exp.end_of_line())
+			break;
+		if ((Exp.cur != ",") and (!Exp.end_of_line()))
+			DoError("\",\", \"=\" or newline expected after declaration of local variable");
+		Exp.next();
+	}
+}
+
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
 void SyntaxTree::ParseCompleteCommand(Block *block)
 {
@@ -1517,28 +1541,10 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 		Exp.next();
 		block->nodes.add(add_node_statement(STATEMENT_ASM));
 
-	// local (variable) definitions...
-	// type of variable
 	}else if (is_type){
-		Class *type = ParseType();
-		for (int l=0;!Exp.end_of_line();l++){
-			// name
-			block->add_var(Exp.cur, type);
-			Exp.next();
 
-			// assignment?
-			if (Exp.cur == "="){
-				Exp.rewind();
-				// parse assignment
-				block->nodes.add(GetCommand(block));
-			}
-			if (Exp.end_of_line())
-				break;
-			if ((Exp.cur != ",") and (!Exp.end_of_line()))
-				DoError("\",\", \"=\" or newline expected after declaration of local variable");
-			Exp.next();
-		}
-		return;
+		ParseLocalDefinition(block);
+
 	}else{
 
 

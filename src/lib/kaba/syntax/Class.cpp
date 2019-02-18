@@ -1,7 +1,7 @@
 #include "../../base/base.h"
 #include "../kaba.h"
 #include "../../file/file.h"
-#include "class.h"
+#include "Class.h"
 
 namespace Kaba{
 

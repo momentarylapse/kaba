@@ -1,8 +1,8 @@
 #include "../../base/base.h"
 #include "../../file/file.h"
 #include "lexical.h"
-#include "syntax_tree.h"
 #include <stdio.h>
+#include "SyntaxTree.h"
 
 namespace Kaba{
 
