@@ -465,7 +465,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 		// only used by <new> operator
 		p.p = link->link_no;
 	}else{
-		DoError("unexpected type of parameter: " + Kind2Str(link->kind));
+		DoError("unexpected type of parameter: " + kind2str(link->kind));
 	}
 	return p;
 }

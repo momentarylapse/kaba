@@ -280,7 +280,7 @@ void add_operator(int primitive_op, Class *return_type, Class *param_type1, Clas
 		if (f->inline_no == inline_index)
 			o.func_index = i;
 	if (o.func_index >0)*/
-	o.func_index = add_func("op...", return_type, func);
+	o.func_index = add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
 	func_set_inline(inline_index);
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);

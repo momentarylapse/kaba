@@ -401,8 +401,8 @@ public:
 	int parser_loop_depth;
 };
 
-string Kind2Str(int kind);
-string LinkNr2Str(SyntaxTree *s, Function *f, int kind, int64 nr);
+string kind2str(int kind);
+string node2str(SyntaxTree *s, Function *f, Node *n);
 
 
 
