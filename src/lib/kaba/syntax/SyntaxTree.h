@@ -130,7 +130,7 @@ public:
 	Node *GetCommand(Block *block);
 	void ParseCompleteCommand(Block *block);
 	void ParseLocalDefinition(Block *block);
-	Block *ParseBlock(Block *block);
+	Node *ParseBlock(Block *parent);
 	Node *GetOperand(Block *block);
 	Node *GetPrimitiveOperator(Block *block);
 	Array<Node*> FindFunctionParameters(Block *block);

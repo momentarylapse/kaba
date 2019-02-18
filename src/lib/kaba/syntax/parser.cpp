@@ -1117,7 +1117,8 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	Block *loop_block = ParseBlock(block);
+	Node *loop_block = ParseBlock(block);
+	block->nodes.add(loop_block);
 	parser_loop_depth --;
 
 	// ...for_var += 1
@@ -1134,7 +1135,7 @@ void SyntaxTree::ParseStatementFor(Block *block)
 		}
 		cmd_inc = add_node_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
-	loop_block->nodes.add(cmd_inc); // add to loop-block
+	loop_block->as_block()->nodes.add(cmd_inc); // add to loop-block
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
@@ -1207,12 +1208,13 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	Block *loop_block = ParseBlock(block);
+	Node *loop_block = ParseBlock(block);
+	block->nodes.add(loop_block);
 	parser_loop_depth --;
 
 	// ...for_index += 1
 	Node *cmd_inc = add_node_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
-	loop_block->nodes.add(cmd_inc); // add to loop-block
+	loop_block->as_block()->nodes.add(cmd_inc); // add to loop-block
 
 	// &for_var
 	Node *for_var_ref = ref_node(for_var);
@@ -1231,11 +1233,11 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// &for_var = &array[for_index]
 	Node *cmd_var_assign = add_node_operator_by_inline(for_var_ref, array_el_ref, INLINE_POINTER_ASSIGN);
-	loop_block->nodes.insert(cmd_var_assign, 0);
+	loop_block->as_block()->nodes.insert(cmd_var_assign, 0);
 
 	// ref...
 	block->function->var[var_no]->type = var_type->get_pointer();
-	transform_block(loop_block, [&](Node *n){ return conv_cbr(this, n, var_no); });
+	transform_node(loop_block, [&](Node *n){ return conv_cbr(this, n, var_no); });
 
 	// force for_var out of scope...
 	for_var->as_local(block->function)->name = "-out-of-scope-";
@@ -1255,7 +1257,7 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	ParseBlock(block);
+	block->nodes.add(ParseBlock(block));
 	parser_loop_depth --;
 }
 
@@ -1324,7 +1326,7 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	ParseBlock(block);
+	block->nodes.add(ParseBlock(block));
 	Exp.next_line();
 
 	if (Exp.cur != IDENTIFIER_EXCEPT)
@@ -1402,7 +1404,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	ParseBlock(block);
+	block->nodes.add(ParseBlock(block));
 	Exp.next_line();
 
 	// else?
@@ -1425,7 +1427,7 @@ void SyntaxTree::ParseStatementIf(Block *block)
 		// ...block
 		Exp.next_line();
 		ExpectIndent();
-		ParseBlock(block);
+		block->nodes.add(ParseBlock(block));
 		//Exp.next_line();
 	}else{
 		int line = Exp.get_line_no() - 1;
@@ -1473,16 +1475,13 @@ void SyntaxTree::ParseStatement(Block *block)
 	}
 }
 
-Block *SyntaxTree::ParseBlock(Block *block)
+Node *SyntaxTree::ParseBlock(Block *parent)
 {
 	int last_indent = Exp.indent_0;
 
 	Exp.indented = false;
 	Exp.set(0); // bad hack...
-	Block *new_block = new Block(block->function, block);
-
-	Node *c = add_node_block(new_block);
-	block->nodes.add(c);
+	Block *new_block = new Block(parent->function, parent);
 
 	for (int i=0;true;i++){
 		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
@@ -1498,7 +1497,7 @@ Block *SyntaxTree::ParseBlock(Block *block)
 	Exp.cur_exp = Exp.cur_line->exp.num - 1;
 	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 
-	return new_block;
+	return add_node_block(new_block);
 }
 
 // local (variable) definitions...
@@ -1534,7 +1533,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 
 	// block?  <- indent
 	if (Exp.indented){
-		ParseBlock(block);
+		block->nodes.add(ParseBlock(block));
 
 	// assembler block
 	}else if (Exp.cur == "-asm-"){
