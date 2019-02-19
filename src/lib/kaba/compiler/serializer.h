@@ -82,7 +82,6 @@ public:
 	Function *cur_func;
 	int cur_func_index;
 	bool call_used;
-	Node *next_node;
 	int next_cmd_index;
 
 	Array<int> map_reg_root;

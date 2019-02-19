@@ -139,10 +139,10 @@ Node *SyntaxTree::add_node_parray(Node *p, Node *index, Class *type)
 	return cmd_el;
 }
 
-Node *SyntaxTree::add_node_block(Block *b)
+/*Node *SyntaxTree::add_node_block(Block *b)
 {
 	return AddNode(KIND_BLOCK, (long long)(int_p)b, TypeVoid);
-}
+}*/
 
 SyntaxTree::SyntaxTree(Script *_script) :
 	root_of_all_evil(this, "RootOfAllEvil", TypeVoid)
@@ -563,7 +563,7 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 {
 	ps->script->cur_func = f;
 
-	foreachib(Node *c, b->nodes, i){
+	foreachib(Node *c, b->params, i){
 		// recursion...
 		if (c->kind == KIND_BLOCK)
 			convert_return_by_memory(ps, c->as_block(), f);
@@ -582,7 +582,7 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 		Node *op = ps->LinkOperator(OPERATOR_ASSIGN, ret, c->params[0]);
 		if (!op)
 			ps->DoError("no = operator for return from function found: " + f->name);
-		b->nodes.insert(op, i);
+		b->params.insert(op, i);
 
 		c->set_num_params(0);
 
@@ -745,14 +745,16 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 
 Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
 {
-	for (int i=0; i<n->params.num; i++)
-		n->set_param(i, transform_node(n->params[i], F));
-
-	if (n->kind == KIND_BLOCK)
+	if (n->kind == KIND_BLOCK){
 		transform_block(n->as_block(), F);
+	}else{
+		for (int i=0; i<n->params.num; i++)
+			n->set_param(i, transform_node(n->params[i], F));
 
-	if (n->instance)
-		n->set_instance(transform_node(n->instance, F));
+
+		if (n->instance)
+			n->set_instance(transform_node(n->instance, F));
+	}
 
 	return F(n);
 }
@@ -762,12 +764,12 @@ static Node* _transform_insert_before_ = nullptr;
 void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
 {
 	//foreachi (Node *n, block->nodes, i){
-	for (int i=0; i<block->nodes.num; i++){
-		block->nodes[i] = transform_node(block->nodes[i], F);
+	for (int i=0; i<block->params.num; i++){
+		block->params[i] = transform_node(block->params[i], F);
 		if (_transform_insert_before_){
 			if (config.verbose)
 				msg_error("INSERT BEFORE...");
-			block->nodes.insert(_transform_insert_before_, i);
+			block->params.insert(_transform_insert_before_, i);
 			_transform_insert_before_ = nullptr;
 			i ++;
 		}
@@ -946,10 +948,6 @@ SyntaxTree::~SyntaxTree()
 
 void SyntaxTree::ShowNode(Node *c, Function *f)
 {
-	if (c->kind == KIND_BLOCK){
-		ShowBlock(c->as_block());
-		return;
-	}
 	string orig;
 //	if (c->script->syntax != this)
 //		orig = " << " + c->script->filename;
@@ -968,11 +966,11 @@ void SyntaxTree::ShowNode(Node *c, Function *f)
 	msg_left();
 }
 
-void SyntaxTree::ShowBlock(Block *b)
+/*void SyntaxTree::ShowBlock(Block *b)
 {
 	msg_write("[block]");
 	msg_right();
-	for (Node *c: b->nodes){
+	for (Node *c: b->params){
 		if (c->kind == KIND_BLOCK)
 			ShowBlock(c->as_block());
 		else
@@ -980,7 +978,7 @@ void SyntaxTree::ShowBlock(Block *b)
 	}
 	msg_left();
 	//msg_write("/block");
-}
+}*/
 
 void SyntaxTree::ShowFunction(Function *f, const string &stage)
 {
@@ -988,7 +986,7 @@ void SyntaxTree::ShowFunction(Function *f, const string &stage)
 		return;
 	msg_write("[function] " + f->return_type->name + " " + f->name);
 	cur_func = f;
-	ShowBlock(f->block);
+	ShowNode(f->block, f);
 }
 
 void SyntaxTree::Show(const string &stage)

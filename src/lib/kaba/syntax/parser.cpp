@@ -1237,7 +1237,7 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 
 	// &for_var = &array[for_index]
 	Node *cmd_var_assign = add_node_operator_by_inline(for_var_ref, array_el_ref, INLINE_POINTER_ASSIGN);
-	loop_block->as_block()->nodes.insert(cmd_var_assign, 0);
+	loop_block->as_block()->params.insert(cmd_var_assign, 0);
 
 	// ref...
 	block->function->var[var_no]->type = var_type->get_pointer();
@@ -1246,6 +1246,7 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 	// force for_var out of scope...
 	for_var->as_local(block->function)->name = "-out-of-scope-";
 	for_index->as_local(block->function)->name = "-out-of-scope-";
+
 	return cmd_for;
 }
 
@@ -1424,12 +1425,10 @@ Node *SyntaxTree::ParseStatementIf(Block *block)
 		if (Exp.cur == IDENTIFIER_IF){
 			//DoError("else if...");
 			// sub-if's in a new block
-			Block *new_block = new Block(block->function, block);
-			// parse the next if
-			ParseCompleteCommand(new_block);
-			// command for the found block
-			Node *cmd_block = add_node_block(new_block);
+			Block *cmd_block = new Block(block->function, block);
 			cmd_if->set_param(2, cmd_block);
+			// parse the next if
+			ParseCompleteCommand(cmd_block);
 			return cmd_if;
 		}
 		ExpectNewline();
@@ -1508,7 +1507,7 @@ Node *SyntaxTree::ParseBlock(Block *parent, Block *block)
 	Exp.cur_exp = Exp.cur_line->exp.num - 1;
 	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 
-	return add_node_block(block);
+	return block;
 }
 
 // local (variable) definitions...
@@ -1525,7 +1524,7 @@ void SyntaxTree::ParseLocalDefinition(Block *block)
 		if (Exp.cur == "="){
 			Exp.rewind();
 			// parse assignment
-			block->nodes.add(GetCommand(block));
+			block->add(GetCommand(block));
 		}
 		if (Exp.end_of_line())
 			break;
@@ -1544,12 +1543,12 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 
 	// block?  <- indent
 	if (Exp.indented){
-		block->nodes.add(ParseBlock(block));
+		block->add(ParseBlock(block));
 
 	// assembler block
 	}else if (Exp.cur == "-asm-"){
 		Exp.next();
-		block->nodes.add(add_node_statement(STATEMENT_ASM));
+		block->add(add_node_statement(STATEMENT_ASM));
 
 	}else if (is_type){
 
@@ -1561,13 +1560,13 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 	// commands (the actual code!)
 		//if (WhichStatement(Exp.cur) >= 0){
 		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or /*(Exp.cur == IDENTIFIER_RAISE) or*/ (Exp.cur == IDENTIFIER_TRY) or (Exp.cur == IDENTIFIER_IF) or (Exp.cur == IDENTIFIER_PASS)){
-			block->nodes.add(ParseStatement(block));
+			block->add(ParseStatement(block));
 			// new/delete/sizeof/type... are operands...
 
 		}else{
 
 			// normal commands
-			block->nodes.add(GetCommand(block));
+			block->add(GetCommand(block));
 		}
 	}
 

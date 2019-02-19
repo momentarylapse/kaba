@@ -87,7 +87,7 @@ string Function::signature(bool include_class) const
 void blocks_add_recursive(Array<Block*> &blocks, Block *block)
 {
 	blocks.add(block);
-	for (Node* n: block->nodes){
+	for (Node* n: block->params){
 		if (n->kind == KIND_BLOCK)
 			blocks_add_recursive(blocks, n->as_block());
 		if (n->kind == KIND_STATEMENT){

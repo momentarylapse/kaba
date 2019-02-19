@@ -180,7 +180,7 @@ public:
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, int inline_index);
 	Node *add_node_local_var(int no, Class *type);
 	Node *add_node_parray(Node *p, Node *index, Class *type);
-	Node *add_node_block(Block *b);
+	//Node *add_node_block(Block *b);
 	Node *cp_node(Node *c);
 	Node *ref_node(Node *sub, Class *override_type = nullptr);
 	Node *deref_node(Node *sub, Class *override_type = nullptr);

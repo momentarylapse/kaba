@@ -15,8 +15,8 @@ extern bool next_extern;
 
 string kind2str(int kind)
 {
-	if (kind == KIND_VAR_LOCAL)			return "local variable";
-	if (kind == KIND_VAR_GLOBAL)			return "global variable";
+	if (kind == KIND_VAR_LOCAL)			return "local";
+	if (kind == KIND_VAR_GLOBAL)			return "global";
 	if (kind == KIND_VAR_FUNCTION)		return "function as variable";
 	if (kind == KIND_CONSTANT)			return "constant";
 	if (kind == KIND_REF_TO_CONST)			return "reference to const";
@@ -75,7 +75,7 @@ string node_sig(SyntaxTree *s, Function *f, Node *n)
 	if (n->kind == KIND_STATEMENT)	return t + Statements[n->link_no].name;
 	if (n->kind == KIND_OPERATOR)			return op_sig(n->as_op());
 	if (n->kind == KIND_PRIMITIVE_OPERATOR)	return PrimitiveOperators[n->link_no].name;
-	if (n->kind == KIND_BLOCK)				return p2s(n->as_block());
+	if (n->kind == KIND_BLOCK)				return "";//p2s(n->as_block());
 	if (n->kind == KIND_ADDRESS_SHIFT)		return t + i2s(n->link_no);
 	if (n->kind == KIND_ARRAY)				return t;
 	if (n->kind == KIND_POINTER_AS_ARRAY)		return t;
@@ -93,14 +93,15 @@ string node_sig(SyntaxTree *s, Function *f, Node *n)
 
 string node2str(SyntaxTree *s, Function *f, Node *n)
 {
-	return "[" + kind2str(n->kind) + "]  " + node_sig(s, f, n);
+	return "<" + kind2str(n->kind) + ">  " + node_sig(s, f, n);
 }
 
 
 
 
 
-Block::Block(Function *f, Block *_parent)
+Block::Block(Function *f, Block *_parent) :
+	Node(KIND_BLOCK, (int_p)this, f->tree->script, TypeVoid)
 {
 	level = 0;
 	function = f;
@@ -112,11 +113,11 @@ Block::Block(Function *f, Block *_parent)
 
 Block::~Block()
 {
-	for (Node *n: nodes){
+	/*for (Node *n: params){
 		if (n->kind == KIND_BLOCK)
 			delete (n->as_block());
 		//delete n;
-	}
+	}*/
 }
 
 
@@ -137,13 +138,13 @@ inline void set_command(Node *&a, Node *b)
 
 void Block::add(Node *c)
 {
-	nodes.add(c);
+	params.add(c);
 	c->ref_count ++;
 }
 
 void Block::set(int index, Node *c)
 {
-	set_command(nodes[index], c);
+	set_command(params[index], c);
 }
 
 int Block::add_var(const string &name, Class *type)
@@ -191,7 +192,7 @@ Node::~Node()
 
 Block *Node::as_block() const
 {
-	return (Block*)(int_p)link_no;
+	return (Block*)this;//(int_p)link_no;
 }
 
 Function *Node::as_func() const

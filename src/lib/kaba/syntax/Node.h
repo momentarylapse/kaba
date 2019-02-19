@@ -72,23 +72,6 @@ enum
 
 struct Node;
 
-// {...}-block
-struct Block
-{
-	Block(Function *f, Block *parent);
-	~Block();
-	Array<Node*> nodes;
-	Array<int> vars;
-	Function *function;
-	Block *parent;
-	void *_start, *_end; // opcode range
-	int level;
-	void add(Node *c);
-	void set(int index, Node *c);
-
-	int get_var(const string &name);
-	int add_var(const string &name, Class *type);
-};
 // single operand/command
 struct Node
 {
@@ -103,7 +86,7 @@ struct Node
 	// return value
 	Class *type;
 	Node(int kind, int64 link_no, Script *script, Class *type);
-	~Node();
+	virtual ~Node();
 	Block *as_block() const;
 	Function *as_func() const;
 	Class *as_class() const;
@@ -121,6 +104,23 @@ struct Node
 void clear_nodes(Array<Node*> &nodes);
 void clear_nodes(Array<Node*> &nodes, Node *keep);
 
+// {...}-block
+struct Block : Node
+{
+	Block(Function *f, Block *parent);
+	virtual ~Block();
+	//Array<Node*> nodes;
+	Array<int> vars;
+	Function *function;
+	Block *parent;
+	void *_start, *_end; // opcode range
+	int level;
+	void add(Node *c);
+	void set(int index, Node *c);
+
+	int get_var(const string &name);
+	int add_var(const string &name, Class *type);
+};
 
 }
 

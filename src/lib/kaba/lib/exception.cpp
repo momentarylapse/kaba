@@ -135,7 +135,6 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 			}
 		}
 	}
-	//ebd.needs_killing = ebd.blocks;
 
 
 	// walk through the blocks from inside to outside
@@ -147,7 +146,7 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 			continue;
 
 		// are we in a try block?
-		for (Node *n: b->parent->nodes){
+		for (Node *n: b->parent->params){
 			if (n->kind == KIND_STATEMENT and n->link_no == STATEMENT_TRY){
 				if (n->params[0]->as_block() == b){
 					if (_verbose_exception_)
@@ -165,34 +164,7 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 				}
 			}
 		}
-
-	/*	if (bi == 0)
-			continue;
-
-		int index = -1;
-		foreachi (Node *n, b->nodes, ni){
-			if (n->kind == KIND_BLOCK and n->as_block() == ebd.blocks[bi-1]){
-				node_index.add(ni);
-				index = ni;
-			}
-		}
-		if (index < 0){
-			msg_error("block link error...");
-			return ebd;
-		}
-		if (index > 0)
-			if ((b->nodes[index - 1]->kind == KIND_STATEMENT) and (b->nodes[index - 1]->link_no == STATEMENT_TRY)){
-				auto ee = b->nodes[index + 1];
-				if (!ex_type_match(ex_type, ee->type))
-					continue;
-				//msg_write("try...");
-				ebd.needs_killing = ebd.blocks.sub(0, bi);
-				//msg_write(b->nodes[index + 2]->link_no);
-				ebd.except = ee;
-				ebd.except_block = b->nodes[index + 2]->as_block();
-			}*/
 	}
-	//msg_write(ia2s(node_index));
 	return ebd;
 }
 

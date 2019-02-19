@@ -683,14 +683,11 @@ void Serializer::SerializeBlock(Block *block)
 
 	FillInConstructorsBlock(block);
 
-	for (int i=0;i<block->nodes.num;i++){
+	for (int i=0;i<block->params.num;i++){
 		stack_offset = cur_func->_var_size;
-		next_node = nullptr;
-		if (block->nodes.num > i + 1)
-			next_node = block->nodes[i + 1];
 
 		// serialize
-		SerializeNode(block->nodes[i], block, i);
+		SerializeNode(block->params[i], block, i);
 		
 		// destruct new temp vars
 		FillInDestructorsTemp();
@@ -1699,8 +1696,8 @@ void Serializer::SerializeFunction(Function *f)
 
 	// outro (if last command != return)
 	bool need_outro = true;
-	if (f->block->nodes.num > 0)
-		if ((f->block->nodes.back()->kind == KIND_STATEMENT) and (f->block->nodes.back()->link_no == STATEMENT_RETURN))
+	if (f->block->params.num > 0)
+		if ((f->block->params.back()->kind == KIND_STATEMENT) and (f->block->params.back()->link_no == STATEMENT_RETURN))
 			need_outro = false;
 	if (need_outro)
 		AddFunctionOutro(f);
