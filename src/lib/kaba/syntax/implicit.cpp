@@ -9,11 +9,11 @@ void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, Class *t)
 {
 	if (t->vtable.num > 0){
 		Node *p = shift_node(self, true, 0, TypePointer);
-		int nc = AddConstant(TypePointer);
-		(*(void**)constants[nc]->value.data) = t->_vtable_location_target_;
-		Node *cmd_0 = add_node_const(nc);
-		Node *c = add_node_operator_by_inline(p, cmd_0, INLINE_POINTER_ASSIGN);
-		f->block->add(c);
+		auto *c = AddConstant(TypePointer);
+		(*(void**)c->value.data) = t->_vtable_location_target_;
+		Node *cmd_0 = add_node_const(c);
+		Node *cmd_assign = add_node_operator_by_inline(p, cmd_0, INLINE_POINTER_ASSIGN);
+		f->block->add(cmd_assign);
 	}
 }
 

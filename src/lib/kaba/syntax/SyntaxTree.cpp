@@ -35,9 +35,9 @@ Node *SyntaxTree::ref_node(Node *sub, Class *override_type)
 
 	if (sub->kind == KIND_TYPE){
 		// Class pointer
-		int nc = AddConstant(TypeClassP);
-		constants[nc]->as_int64() = (long long)(long)sub->as_class();
-		return add_node_const(nc);
+		auto *c = AddConstant(TypeClassP);
+		c->as_int64() = (long long)(long)sub->as_class();
+		return add_node_const(c);
 	}
 
 	Node *c = AddNode(KIND_REFERENCE, 0, t);
@@ -235,10 +235,11 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 
 
-int SyntaxTree::AddConstant(Class *type)
+Constant *SyntaxTree::AddConstant(Class *type)
 {
-	constants.add(new Constant(type));
-	return constants.num - 1;
+	auto *c = new Constant(type);
+	constants.add(c);
+	return c;
 }
 
 
@@ -266,9 +267,9 @@ Node *SyntaxTree::AddNode(int kind, long long link_no, Class *type, Script *s)
 }
 
 
-Node *SyntaxTree::add_node_const(int nc)
+Node *SyntaxTree::add_node_const(Constant *c)
 {
-	return AddNode(KIND_CONSTANT, nc, constants[nc]->type);
+	return AddNode(KIND_CONSTANT, (int_p)c, c->type);
 }
 
 int SyntaxTree::WhichPrimitiveOperator(const string &name)
@@ -329,14 +330,14 @@ Array<Node*> SyntaxTree::GetExistenceShared(const string &name)
 	Array<Node*> links;
 
 	// global variables (=local variables in "RootOfAllEvil")
-	foreachi(Variable *v, root_of_all_evil.var, i)
+	for (Variable *v: root_of_all_evil.var)
 		if (v->name == name)
-			return new Node(KIND_VAR_GLOBAL, i, script, v->type);
+			return new Node(KIND_VAR_GLOBAL, (int_p)v, script, v->type);
 
 	// named constants
-	foreachi(Constant *c, constants, i)
+	for (Constant *c: constants)
 		if (name == c->name)
-			return new Node(KIND_CONSTANT, i, script, c->type);
+			return new Node(KIND_CONSTANT, (int_p)c, script, c->type);
 
 	// then the (real) functions
 	foreachi(Function *f, functions, i)

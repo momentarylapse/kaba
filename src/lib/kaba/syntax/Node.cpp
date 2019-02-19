@@ -206,7 +206,7 @@ Class *Node::as_class() const
 
 Constant *Node::as_const() const
 {
-	return script->syntax->constants[link_no];
+	return (Constant*)link_no;
 }
 
 Operator *Node::as_op() const
@@ -227,12 +227,12 @@ void *Node::as_const_p() const
 
 void *Node::as_global_p() const
 {
-	return script->syntax->root_of_all_evil.var[link_no]->memory;
+	return as_global()->memory;
 }
 
 Variable *Node::as_global() const
 {
-	return script->syntax->root_of_all_evil.var[link_no];
+	return (Variable*)link_no;
 }
 
 Variable *Node::as_local() const

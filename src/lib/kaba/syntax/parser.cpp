@@ -1638,8 +1638,7 @@ void SyntaxTree::ParseEnum()
 
 	for (int i=0;!Exp.end_of_file();i++){
 		for (int j=0;!Exp.end_of_line();j++){
-			int nc = AddConstant(TypeInt);
-			Constant *c = constants[nc];
+			auto *c = AddConstant(TypeInt);
 			c->name = Exp.cur;
 			Exp.next();
 
@@ -1882,8 +1881,7 @@ void SyntaxTree::ParseGlobalConst(const string &name, Class *type)
 		DoError(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));
 	Constant *c_orig = cv->as_const();
 
-	int nc = AddConstant(type);
-	Constant *c = constants[nc];
+	auto *c = AddConstant(type);
 	c->set(*c_orig);
 	c->name = name;
 

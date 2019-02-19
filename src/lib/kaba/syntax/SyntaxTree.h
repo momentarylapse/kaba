@@ -166,7 +166,7 @@ public:
 	static Node* transform_node(Node *n, std::function<Node*(Node*)> F);
 
 	// data creation
-	int AddConstant(Class *type);
+	Constant *AddConstant(Class *type);
 	Function *AddFunction(const string &name, Class *type);
 
 	// nodes
@@ -175,7 +175,7 @@ public:
 	Node *add_node_statement(int index);
 	Node *add_node_classfunc(ClassFunction *f, Node *inst, bool force_non_virtual = false);
 	Node *add_node_func(Script *script, int no, Class *return_type);
-	Node *add_node_const(int nc);
+	Node *add_node_const(Constant *c);
 	Node *add_node_operator_by_index(Node *p1, Node *p2, int op);
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, int inline_index);
 	Node *add_node_local_var(Variable *var, Class *type);
