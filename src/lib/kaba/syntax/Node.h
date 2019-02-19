@@ -96,21 +96,24 @@ struct Node
 	void *as_const_p() const;
 	void *as_global_p() const;
 	Variable *as_global() const;
-	Variable *as_local(Function *f) const;
+	Variable *as_local() const;
 	void set_num_params(int n);
 	void set_param(int index, Node *p);
 	void set_instance(Node *p);
 };
+
 void clear_nodes(Array<Node*> &nodes);
 void clear_nodes(Array<Node*> &nodes, Node *keep);
+
+string kind2str(int kind);
+string node2str(SyntaxTree *s, Node *n);
 
 // {...}-block
 struct Block : Node
 {
 	Block(Function *f, Block *parent);
 	virtual ~Block();
-	//Array<Node*> nodes;
-	Array<int> vars;
+	Array<Variable*> vars;
 	Function *function;
 	Block *parent;
 	void *_start, *_end; // opcode range
@@ -118,8 +121,8 @@ struct Block : Node
 	void add(Node *c);
 	void set(int index, Node *c);
 
-	int get_var(const string &name);
-	int add_var(const string &name, Class *type);
+	Variable *get_var(const string &name);
+	Variable *add_var(const string &name, Class *type);
 };
 
 }

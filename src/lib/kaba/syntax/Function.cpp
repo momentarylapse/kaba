@@ -64,7 +64,7 @@ string Function::create_slightly_hidden_name()
 	return format("-temp-%d-", ++ num_slightly_hidden_vars);
 }
 
-int Function::__get_var(const string &name) const
+Variable *Function::__get_var(const string &name) const
 {
 	return block->get_var(name);
 }

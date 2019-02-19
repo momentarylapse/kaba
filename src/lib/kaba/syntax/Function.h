@@ -57,7 +57,7 @@ struct Function
 	int _exp_no;
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	~Function();
-	int __get_var(const string &name) const;
+	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
 	void update(Class *class_type);
 	string signature(bool include_class = false) const;

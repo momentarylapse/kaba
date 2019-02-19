@@ -6,7 +6,7 @@
 namespace Kaba{
 
 
-Node *conv_cbr(SyntaxTree *ps, Node *c, int var);
+Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
 extern bool next_extern;
 extern bool next_const;
@@ -712,9 +712,9 @@ Node *SyntaxTree::GetOperand(Block *block)
 				if (Exp.cur == "("){
 					Class *t = links[0]->as_class();
 					clear_nodes(links);
-					int nv = block->add_var(block->function->create_slightly_hidden_name(), t);
-					block->function->var[nv]->dont_add_constructor = true;
-					Node *dummy = add_node_local_var(nv, t);
+					auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
+					vv->dont_add_constructor = true;
+					Node *dummy = add_node_local_var(vv, t);
 					links = {};
 					for (auto *cf: t->get_constructors())
 						links.add(add_node_classfunc(cf, ref_node(dummy)));
@@ -1104,7 +1104,7 @@ Node *SyntaxTree::ParseStatementFor(Block *block)
 
 	// variable
 	Node *for_var;
-	int var_no = block->add_var(var_name, t);
+	auto *var_no = block->add_var(var_name, t);
 	for_var = add_node_local_var(var_no, t);
 
 	// implement
@@ -1142,7 +1142,7 @@ Node *SyntaxTree::ParseStatementFor(Block *block)
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
-	for_var->as_local(block->function)->name = "-out-of-scope-";
+	for_var->as_local()->name = "-out-of-scope-";
 	// TODO  FIXME
 
 	return cmd_for;
@@ -1164,7 +1164,7 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 	}
 
 	// for index
-	int var_no_index = block->add_var(index_name, TypeInt);
+	auto *var_no_index = block->add_var(index_name, TypeInt);
 	Node *for_index = add_node_local_var(var_no_index, TypeInt);
 
 	// super array
@@ -1180,8 +1180,8 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 
 	// variable...
 	Class *var_type = for_array->type->get_array_element();
-	int var_no = block->add_var(var_name, var_type);
-	Node *for_var = add_node_local_var(var_no, var_type);
+	auto *var = block->add_var(var_name, var_type);
+	Node *for_var = add_node_local_var(var, var_type);
 
 	// 0
 	Node *val0 = add_node_const(AddConstant(TypeInt));
@@ -1240,12 +1240,12 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 	loop_block->as_block()->params.insert(cmd_var_assign, 0);
 
 	// ref...
-	block->function->var[var_no]->type = var_type->get_pointer();
-	transform_node(loop_block, [&](Node *n){ return conv_cbr(this, n, var_no); });
+	var->type = var_type->get_pointer();
+	transform_node(loop_block, [&](Node *n){ return conv_cbr(this, n, var); });
 
 	// force for_var out of scope...
-	for_var->as_local(block->function)->name = "-out-of-scope-";
-	for_index->as_local(block->function)->name = "-out-of-scope-";
+	for_var->as_local()->name = "-out-of-scope-";
+	for_index->as_local()->name = "-out-of-scope-";
 
 	return cmd_for;
 }
@@ -1360,8 +1360,8 @@ Node *SyntaxTree::ParseStatementTry(Block *block)
 				DoError("'as' expected");
 			Exp.next();
 			string ex_name = Exp.cur;
-			int v = except_block->add_var(ex_name, ex_type);
-			cmd_ex->params.add(AddNode(KIND_VAR_LOCAL, v, ex_type));
+			auto *v = except_block->add_var(ex_name, ex_type);
+			cmd_ex->params.add(add_node_local_var(v, ex_type));
 			Exp.next();
 		}
 	}
@@ -1963,7 +1963,7 @@ void Function::update(Class *class_type)
 	// class function
 	_class = class_type;
 	if (class_type){
-		if (__get_var(IDENTIFIER_SELF) < 0)
+		if (!__get_var(IDENTIFIER_SELF))
 			block->add_var(IDENTIFIER_SELF, class_type->get_pointer());
 
 		// convert name to Class.Function

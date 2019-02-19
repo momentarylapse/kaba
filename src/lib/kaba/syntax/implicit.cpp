@@ -60,7 +60,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 				// first, try same signature
 				Node *c = add_node_classfunc(pc_same, cp_node(self));
 				for (int i=0;i<pc_same->param_types.num;i++)
-					c->set_param(i, add_node_local_var(i, pc_same->param_types[i]));
+					c->set_param(i, add_node_local_var(f->var[i], pc_same->param_types[i]));
 				f->block->add(c);
 			}else if (pc_def){
 				// then, try default constructor
@@ -143,9 +143,8 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// for int i, 0, other.num
 		//    self[i].__assign__(other[i])
 
-		f->block->add_var("i", TypeInt);
-
-		Node *for_var = add_node_local_var(f->__get_var("i"), TypeInt);
+		auto *var_i = f->block->add_var("i", TypeInt);
+		Node *for_var = add_node_local_var(var_i, TypeInt);
 
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
 		f->block->add(cmd_for);
@@ -186,11 +185,11 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		// for int i, 0, other.num
 		//    self[i].__assign__(other[i])
 
-		f->block->add_var("i", TypeInt);
+		auto *var_i = f->block->add_var("i", TypeInt);
 		Node *c_num = add_node_const(AddConstant(TypeInt));
 		c_num->as_const()->as_int() = t->array_length;
 
-		Node *for_var = add_node_local_var(f->__get_var("i"), TypeInt);
+		Node *for_var = add_node_local_var(var_i, TypeInt);
 
 
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
@@ -260,13 +259,13 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 {
 	if (!f)
 		return;
-	f->block->add_var("for_var", TypeInt);
+	auto *var_i = f->block->add_var("for_var", TypeInt);
 
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
 
 	Node *self_num = shift_node(cp_node(self), true, config.pointer_size, TypeInt);
 
-	Node *for_var = add_node_local_var(f->__get_var("for_var"), TypeInt);
+	Node *for_var = add_node_local_var(var_i, TypeInt);
 
 // delete...
 	ClassFunction *f_del = t->parent->get_destructor();

@@ -178,7 +178,7 @@ public:
 	Node *add_node_const(int nc);
 	Node *add_node_operator_by_index(Node *p1, Node *p2, int op);
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, int inline_index);
-	Node *add_node_local_var(int no, Class *type);
+	Node *add_node_local_var(Variable *var, Class *type);
 	Node *add_node_parray(Node *p, Node *index, Class *type);
 	//Node *add_node_block(Block *b);
 	Node *cp_node(Node *c);
@@ -195,9 +195,8 @@ public:
 	void SimplifyShiftDeref();
 
 	// debug displaying
-	void ShowNode(Node *c, Function *f);
+	void ShowNode(Node *c);
 	void ShowFunction(Function *f, const string &stage = "");
-	void ShowBlock(Block *b);
 	void Show(const string &stage);
 
 // data
@@ -227,8 +226,6 @@ public:
 	int parser_loop_depth;
 };
 
-string kind2str(int kind);
-string node2str(SyntaxTree *s, Function *f, Node *n);
 
 
 

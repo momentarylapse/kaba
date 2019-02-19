@@ -150,7 +150,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 		if (!p.p)
 			script->DoErrorLink("variable is not linkable: " + link->as_global()->name);
 	}else if (link->kind == KIND_VAR_LOCAL){
-		p.p = link->as_local(cur_func)->_offset;
+		p.p = link->as_local()->_offset;
 	}else if (link->kind == KIND_LOCAL_MEMORY){
 		p.p = link->link_no;
 		p.kind = KIND_VAR_LOCAL;

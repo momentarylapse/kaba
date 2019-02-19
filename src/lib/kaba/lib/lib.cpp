@@ -452,9 +452,9 @@ void add_const(const string &name, Class *type, void *value)
 
 void add_ext_var(const string &name, Class *type, void *var)
 {
-	int no = cur_package_script->syntax->root_of_all_evil.block->add_var(name, type);
+	auto *v = cur_package_script->syntax->root_of_all_evil.block->add_var(name, type);
 	if (config.allow_std_lib)
-		cur_package_script->syntax->root_of_all_evil.var[no]->memory = var;
+		v->memory = var;
 };
 
 //------------------------------------------------------------------------------------------------//

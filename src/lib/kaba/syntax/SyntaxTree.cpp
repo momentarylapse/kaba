@@ -14,7 +14,7 @@ extern Class *TypeDynamicArray;
 bool next_extern = false;
 bool next_const = false;
 
-Node *conv_cbr(SyntaxTree *ps, Node *c, int var);
+Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
 
 Node *SyntaxTree::cp_node(Node *c)
@@ -123,11 +123,11 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, int inline_ind
 }
 
 
-Node *SyntaxTree::add_node_local_var(int no, Class *type)
+Node *SyntaxTree::add_node_local_var(Variable *v, Class *type)
 {
-	if (no < 0)
-		script->DoErrorInternal("negative local variable index");
-	return AddNode(KIND_VAR_LOCAL, no, type);
+	if (!v)
+		script->DoErrorInternal("var = nil");
+	return AddNode(KIND_VAR_LOCAL, (int_p)v, type);
 }
 
 Node *SyntaxTree::add_node_parray(Node *p, Node *index, Class *type)
@@ -296,9 +296,9 @@ int SyntaxTree::WhichStatement(const string &name)
 	return -1;
 }
 
-Node *exlink_make_var_local(SyntaxTree *ps, Class *t, int var_no)
+Node *exlink_make_var_local(SyntaxTree *ps, Class *t, Variable *v)
 {
-	return new Node(KIND_VAR_LOCAL, var_no, ps->script, t);
+	return new Node(KIND_VAR_LOCAL, (int_p)v, ps->script, t);
 }
 
 Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
@@ -365,9 +365,9 @@ Array<Node*> SyntaxTree::GetExistence(const string &name, Block *block)
 		Function *f = block->function;
 
 		// first test local variables
-		int n = block->get_var(name);
-		if (n >= 0)
-			return exlink_make_var_local(this, f->var[n]->type, n);
+		auto *v = block->get_var(name);
+		if (v)
+			return exlink_make_var_local(this, v->type, v);
 		if (f->_class){
 			if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
 				return exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
@@ -468,10 +468,10 @@ Class *SyntaxTree::CreateDictClass(Class *element_type)
 			Class::Type::DICT, config.super_array_size, 0, element_type);
 }
 
-Node *conv_cbr(SyntaxTree *ps, Node *c, int var)
+Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var)
 {
 	// convert
-	if ((c->kind == KIND_VAR_LOCAL) and (c->link_no == var)){
+	if ((c->kind == KIND_VAR_LOCAL) and (c->as_local() == var)){
 		c->type = c->type->get_pointer();
 		return ps->deref_node(c);
 	}
@@ -572,9 +572,9 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 
 		// convert into   *-return- = param
 		Node *p_ret = nullptr;
-		foreachi(Variable *v, f->var, i)
+		for (Variable *v: f->var)
 			if (v->name == IDENTIFIER_RETURN_VAR){
-				p_ret = ps->AddNode(KIND_VAR_LOCAL, i, v->type);
+				p_ret = ps->add_node_local_var(v, v->type);
 			}
 		if (!p_ret)
 			ps->DoError("-return- not found...");
@@ -606,7 +606,7 @@ void SyntaxTree::ConvertCallByReference()
 				f->var[j]->type = f->var[j]->type->get_pointer();
 
 				// internal usage...
-				transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, j); });
+				transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, f->var[j]); });
 			}
 
 		// return: array as reference
@@ -791,13 +791,13 @@ Node *conv_constr_func(SyntaxTree *ps, Node *n)
 	if (n->kind == KIND_CONSTRUCTOR_AS_FUNCTION){
 		if (config.verbose){
 			msg_error("constr func....");
-			ps->ShowNode(n, ps->cur_func);
+			ps->ShowNode(n);
 		}
 		_transform_insert_before_ = ps->cp_node(n);
 		_transform_insert_before_->kind = KIND_FUNCTION;
 		_transform_insert_before_->type = TypeVoid;
 		if (config.verbose)
-			ps->ShowNode(_transform_insert_before_, ps->cur_func);
+			ps->ShowNode(_transform_insert_before_);
 
 		// n->instance should be a reference to local... FIXME
 		return ps->cp_node(n->instance->params[0]);
@@ -946,39 +946,25 @@ SyntaxTree::~SyntaxTree()
 		delete(c);
 }
 
-void SyntaxTree::ShowNode(Node *c, Function *f)
+void SyntaxTree::ShowNode(Node *c)
 {
 	string orig;
 //	if (c->script->syntax != this)
 //		orig = " << " + c->script->filename;
-	msg_write(node2str(this, f, c) + orig);
+	msg_write(node2str(this, c) + orig);
 	msg_right();
 	if (c->instance)
-		ShowNode(c->instance, f);
+		ShowNode(c->instance);
 	//msg_write(c->param.num);
 	if (c->params.num > 10)
 		return;
 	for (Node *p: c->params)
 		if (p)
-			ShowNode(p, f);
+			ShowNode(p);
 		else
 			msg_write("<param nil>");
 	msg_left();
 }
-
-/*void SyntaxTree::ShowBlock(Block *b)
-{
-	msg_write("[block]");
-	msg_right();
-	for (Node *c: b->params){
-		if (c->kind == KIND_BLOCK)
-			ShowBlock(c->as_block());
-		else
-			ShowNode(c, b->function);
-	}
-	msg_left();
-	//msg_write("/block");
-}*/
 
 void SyntaxTree::ShowFunction(Function *f, const string &stage)
 {
@@ -986,7 +972,7 @@ void SyntaxTree::ShowFunction(Function *f, const string &stage)
 		return;
 	msg_write("[function] " + f->return_type->name + " " + f->name);
 	cur_func = f;
-	ShowNode(f->block, f);
+	ShowNode(f->block);
 }
 
 void SyntaxTree::Show(const string &stage)

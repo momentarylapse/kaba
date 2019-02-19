@@ -433,7 +433,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 			script->DoErrorLink("variable is not linkable: " + link->as_global()->name);
 		return param_deref_lookup(p.type, add_global_ref(link->as_global_p()));
 	}else if (link->kind == KIND_VAR_LOCAL){
-		p.p = link->as_local(cur_func)->_offset;
+		p.p = link->as_local()->_offset;
 	}else if (link->kind == KIND_LOCAL_MEMORY){
 		p.p = link->link_no;
 		p.kind = KIND_VAR_LOCAL;

@@ -62,10 +62,10 @@ string op_sig(const Operator *op)
 	return "(" + op->param_type_1->name + ") " + PrimitiveOperators[op->primitive_id].name + " (" + op->param_type_2->name + ")";
 }
 
-string node_sig(SyntaxTree *s, Function *f, Node *n)
+string node_sig(SyntaxTree *s, Node *n)
 {
 	string t = n->type->name + " ";
-	if (n->kind == KIND_VAR_LOCAL)			return t + n->as_local(f)->name;
+	if (n->kind == KIND_VAR_LOCAL)			return t + n->as_local()->name;
 	if (n->kind == KIND_VAR_GLOBAL)			return t + n->as_global()->name;
 	if (n->kind == KIND_VAR_FUNCTION)		return t + n->as_func()->name;
 	if (n->kind == KIND_CONSTANT)			return t + n->as_const()->str();
@@ -91,9 +91,9 @@ string node_sig(SyntaxTree *s, Function *f, Node *n)
 	return t + i2s(n->link_no);
 }
 
-string node2str(SyntaxTree *s, Function *f, Node *n)
+string node2str(SyntaxTree *s, Node *n)
 {
-	return "<" + kind2str(n->kind) + ">  " + node_sig(s, f, n);
+	return "<" + kind2str(n->kind) + ">  " + node_sig(s, n);
 }
 
 
@@ -147,26 +147,25 @@ void Block::set(int index, Node *c)
 	set_command(params[index], c);
 }
 
-int Block::add_var(const string &name, Class *type)
+Variable *Block::add_var(const string &name, Class *type)
 {
-	if (get_var(name) >= 0)
+	if (get_var(name))
 		function->tree->DoError(format("variable '%s' already declared in this context", name.c_str()));
 	Variable *v = new Variable(name, type);
 	v->is_extern = next_extern;
 	function->var.add(v);
-	int n = function->var.num - 1;
-	vars.add(n);
-	return n;
+	vars.add(v);
+	return v;
 }
 
-int Block::get_var(const string &name)
+Variable *Block::get_var(const string &name)
 {
-	for (int i: vars)
-		if (function->var[i]->name == name)
-			return i;
+	for (auto *v: vars)
+		if (v->name == name)
+			return v;
 	if (parent)
 		return parent->get_var(name);
-	return -1;
+	return nullptr;
 }
 
 
@@ -236,9 +235,9 @@ Variable *Node::as_global() const
 	return script->syntax->root_of_all_evil.var[link_no];
 }
 
-Variable *Node::as_local(Function *f) const
+Variable *Node::as_local() const
 {
-	return f->var[link_no];
+	return (Variable*)link_no;
 }
 
 void Node::set_instance(Node *p)
@@ -254,7 +253,7 @@ void Node::set_num_params(int n)
 void Node::set_param(int index, Node *p)
 {
 	if ((index < 0) or (index >= params.num)){
-		this->script->syntax->ShowNode(this, this->script->cur_func);
+		script->syntax->ShowNode(this);
 		script->DoErrorInternal(format("Command.set_param...  %d %d", index, params.num));
 	}
 	set_command(params[index], p);

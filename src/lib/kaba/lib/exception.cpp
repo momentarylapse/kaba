@@ -285,8 +285,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 		for (Block *b: ebd.needs_killing){
 			if (_verbose_exception_)
 				msg_write("  block " + p2s(b));
-			for (int i: b->vars){
-				auto *v = r.f->var[i];
+			for (Variable *v: b->vars){
 				char *p = (char*)r.rbp + v->_offset;
 				if (_verbose_exception_)
 					msg_write("   " + v->type->name + " " + v->name + "  " + p2s(p));
@@ -305,7 +304,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 				msg_write("except_block block: " + p2s(ebd.except_block));
 
 			if (ebd.except->params.num > 0){
-				auto v = r.f->var[ebd.except_block->vars[0]];
+				auto v = ebd.except_block->vars[0];
 				void **p = (void**)((int_p)r.rbp + v->_offset);
 				*p = kaba_exception;
 			}
