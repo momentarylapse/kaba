@@ -261,8 +261,8 @@ Node *SyntaxTree::GetOperandExtensionArray(Node *Operand, Block *block)
 Node *SyntaxTree::GetOperandExtension(Node *Operand, Block *block)
 {
 	// nothing?
-	int op = WhichPrimitiveOperator(Exp.cur);
-	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "->") and (op < 0))
+	int op_no = WhichPrimitiveOperator(Exp.cur);
+	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "->") and (op_no < 0))
 		return Operand;
 
 	if (Exp.cur == "->")
@@ -279,14 +279,14 @@ Node *SyntaxTree::GetOperandExtension(Node *Operand, Block *block)
 		Operand = GetOperandExtensionArray(Operand, block);
 
 
-	}else if (op >= 0){
+	}else if (op_no >= 0){
 		// unary operator? (++,--)
 
-		for (int i=0;i<operators.num;i++)
-			if (operators[i].primitive_id == op)
-				if ((operators[i].param_type_1 == Operand->type) and (operators[i].param_type_2 == TypeVoid)){
+		for (auto *op: operators)
+			if (op->primitive_id == op_no)
+				if ((op->param_type_1 == Operand->type) and (op->param_type_2 == TypeVoid)){
 					Exp.next();
-					return add_node_operator_by_index(Operand, nullptr, i);
+					return add_node_operator(Operand, nullptr, op);
 				}
 		return Operand;
 	}
@@ -731,8 +731,9 @@ Node *SyntaxTree::GetOperand(Block *block)
 				}
 			}else if (links[0]->kind == KIND_PRIMITIVE_OPERATOR){
 				// unary operator
-				int _ie=Exp.cur_exp-1;
-				int po = links[0]->link_no, o=-1;
+				int _ie = Exp.cur_exp - 1;
+				int po = links[0]->link_no;
+				Operator *op = nullptr;
 				clear_nodes(links);
 				Node *sub_command = GetOperand(block);
 				//Class *r = TypeVoid;
@@ -740,11 +741,10 @@ Node *SyntaxTree::GetOperand(Block *block)
 
 				// exact match?
 				bool ok=false;
-				for (int i=0;i<operators.num;i++)
-					if (po == operators[i].primitive_id)
-						if ((operators[i].param_type_1 == TypeVoid) and (type_match(p2, operators[i].param_type_2))){
-							o = i;
-							//r = operators[i].return_type;
+				for (auto *_op: operators)
+					if (po == _op->primitive_id)
+						if ((_op->param_type_1 == TypeVoid) and (type_match(p2, _op->param_type_2))){
+							op = _op;
 							ok = true;
 							break;
 						}
@@ -755,13 +755,12 @@ Node *SyntaxTree::GetOperand(Block *block)
 					int pen2;
 					int c2, c2_best;
 					int pen_min = 100;
-					for (int i=0;i<operators.num;i++)
-						if (po == operators[i].primitive_id)
-							if ((operators[i].param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, operators[i].param_type_2, pen2, c2))){
+					for (auto *_op: operators)
+						if (po == _op->primitive_id)
+							if ((_op->param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, _op->param_type_2, pen2, c2))){
 								ok = true;
 								if (pen2 < pen_min){
-									//r = operators[i].return_type;
-									o = i;
+									op = _op;
 									pen_min = pen2;
 									c2_best = c2;
 								}
@@ -775,7 +774,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 
 				if (!ok)
 					DoError("unknown unitary operator " + PrimitiveOperators[po].name + " " + p2->name, _ie);
-				return add_node_operator_by_index(sub_command, nullptr, o);
+				return add_node_operator(sub_command, nullptr, op);
 			}else{
 
 				// variables etc...
@@ -951,10 +950,10 @@ Node *SyntaxTree::LinkOperator(int op_no, Node *param1, Node *param2)
 		}
 
 	// exact (operator) match?
-	for (int i=0;i<operators.num;i++)
-		if (op_no == operators[i].primitive_id)
-			if (_type_match(p1, equal_classes, operators[i].param_type_1) and _type_match(p2, equal_classes, operators[i].param_type_2)){
-				return add_node_operator_by_index(param1, param2, i);
+	for (auto *op: operators)
+		if (op_no == op->primitive_id)
+			if (_type_match(p1, equal_classes, op->param_type_1) and _type_match(p2, equal_classes, op->param_type_2)){
+				return add_node_operator(param1, param2, op);
 			}
 
 
@@ -962,38 +961,37 @@ Node *SyntaxTree::LinkOperator(int op_no, Node *param1, Node *param2)
 	int pen1, pen2;
 	int c1, c2, c1_best, c2_best;
 	int pen_min = 2000;
-	int op_found = -1;
-	bool op_is_class_func = false;
-	for (int i=0;i<operators.num;i++)
-		if (op_no == operators[i].primitive_id)
-			if (type_match_with_cast(p1, equal_classes, left_modifiable, operators[i].param_type_1, pen1, c1) and type_match_with_cast(p2, equal_classes, false, operators[i].param_type_2, pen2, c2))
+	Operator *op_found = nullptr;
+	ClassFunction *op_cf_found = nullptr;
+	for (auto *op: operators)
+		if (op_no == op->primitive_id)
+			if (type_match_with_cast(p1, equal_classes, left_modifiable, op->param_type_1, pen1, c1) and type_match_with_cast(p2, equal_classes, false, op->param_type_2, pen2, c2))
 				if (pen1 + pen2 < pen_min){
-					op_found = i;
+					op_found = op;
 					pen_min = pen1 + pen2;
 					c1_best = c1;
 					c2_best = c2;
 				}
-	foreachi(ClassFunction &f, p1->functions, i)
-		if (f.name == op_func_name)
-			if (type_match_with_cast(p2, equal_classes, false, f.param_types[0], pen2, c2))
+	for (ClassFunction &cf: p1->functions)
+		if (cf.name == op_func_name)
+			if (type_match_with_cast(p2, equal_classes, false, cf.param_types[0], pen2, c2))
 				if (pen2 < pen_min){
-					op_found = i;
+					op_cf_found = &cf;
 					pen_min = pen2;
 					c1_best = -1;
 					c2_best = c2;
-					op_is_class_func = true;
 				}
 	// cast
-	if (op_found >= 0){
+	if (op_found or op_cf_found){
 		param1 = apply_type_cast(this, c1_best, param1);
 		param2 = apply_type_cast(this, c2_best, param2);
-		if (op_is_class_func){
+		if (op_cf_found){
 			Node *inst = ref_node(param1);
-			op = add_node_classfunc(&p1->functions[op_found], inst);
+			op = add_node_classfunc(op_cf_found, inst);
 			op->set_num_params(1);
 			op->set_param(0, param2);
 		}else{
-			return add_node_operator_by_index(param1, param2, op_found);
+			return add_node_operator(param1, param2, op_found);
 		}
 		return op;
 	}

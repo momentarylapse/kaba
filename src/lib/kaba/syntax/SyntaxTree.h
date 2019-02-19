@@ -176,7 +176,7 @@ public:
 	Node *add_node_classfunc(ClassFunction *f, Node *inst, bool force_non_virtual = false);
 	Node *add_node_func(Script *script, int no, Class *return_type);
 	Node *add_node_const(Constant *c);
-	Node *add_node_operator_by_index(Node *p1, Node *p2, int op);
+	Node *add_node_operator(Node *p1, Node *p2, Operator *op);
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, int inline_index);
 	Node *add_node_local_var(Variable *var, Class *type);
 	Node *add_node_parray(Node *p, Node *index, Class *type);
@@ -213,7 +213,7 @@ public:
 	Asm::MetaInfo *asm_meta_info;
 	Array<AsmBlock> asm_blocks;
 	Array<Constant*> constants;
-	Array<Operator> operators;
+	Array<Operator*> operators;
 	Array<Function*> functions;
 	Array<Node*> nodes;
 

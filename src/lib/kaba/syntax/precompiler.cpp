@@ -58,8 +58,8 @@ void SyntaxTree::AddIncludeData(Script *s)
 			Constants.add(c);*/
 	// TODO... ownership of "big" constants
 
-	for (Operator &op: ps->operators)
-		if (op.owner == ps)
+	for (Operator *op: ps->operators)
+		if (op->owner == ps)
 			operators.add(op);
 }
 

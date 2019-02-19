@@ -101,10 +101,10 @@ Node *SyntaxTree::add_node_func(Script *script, int no, Class *return_type)
 }
 
 
-Node *SyntaxTree::add_node_operator_by_index(Node *p1, Node *p2, int op)
+Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op)
 {
-	Node *cmd = AddNode(KIND_OPERATOR, op, operators[op].return_type);
-	bool unitary = ((operators[op].param_type_1 == TypeVoid) or (operators[op].param_type_2 == TypeVoid));
+	Node *cmd = AddNode(KIND_OPERATOR, (int_p)op, op->return_type);
+	bool unitary = ((op->param_type_1 == TypeVoid) or (op->param_type_2 == TypeVoid));
 	cmd->set_num_params( unitary ? 1 : 2); // unary / binary
 	cmd->set_param(0, p1);
 	if (!unitary)
@@ -114,9 +114,9 @@ Node *SyntaxTree::add_node_operator_by_index(Node *p1, Node *p2, int op)
 
 Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, int inline_index)
 {
-	foreachi (Operator &o, operators, i)
-		if (o.inline_index == inline_index)
-			return add_node_operator_by_index(p1, p2, i);
+	for (auto *op: operators)
+		if (op->inline_index == inline_index)
+			return add_node_operator(p1, p2, op);
 
 	DoError("operator inline index not found: " + i2s(inline_index));
 	return nullptr;

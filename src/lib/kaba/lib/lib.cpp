@@ -269,23 +269,23 @@ PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
 
 void add_operator(int primitive_op, Class *return_type, Class *param_type1, Class *param_type2, int inline_index, void *func = nullptr)
 {
-	Operator o;
-	o.primitive_id = primitive_op;
-	o.return_type = return_type;
-	o.param_type_1 = param_type1;
-	o.param_type_2 = param_type2;
-	o.inline_index = inline_index;
-	/*o.func_index = -1;
+	Operator *o = new Operator;
+	o->primitive_id = primitive_op;
+	o->return_type = return_type;
+	o->param_type_1 = param_type1;
+	o->param_type_2 = param_type2;
+	o->inline_index = inline_index;
+	/*o->func_index = -1;
 	foreachi(Function* f, cur_package_script->syntax->functions, i)
 		if (f->inline_no == inline_index)
-			o.func_index = i;
-	if (o.func_index >0)*/
-	o.func_index = add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
+			o->func_index = i;
+	if (o->func_index >0)*/
+	o->func_index = add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
 	func_set_inline(inline_index);
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);
-	o.func = func;
-	o.owner = cur_package_script->syntax;
+	o->func = func;
+	o->owner = cur_package_script->syntax;
 	cur_package_script->syntax->operators.add(o);
 }
 

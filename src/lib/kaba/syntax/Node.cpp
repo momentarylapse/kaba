@@ -191,7 +191,7 @@ Node::~Node()
 
 Block *Node::as_block() const
 {
-	return (Block*)this;//(int_p)link_no;
+	return (Block*)this;
 }
 
 Function *Node::as_func() const
@@ -211,7 +211,7 @@ Constant *Node::as_const() const
 
 Operator *Node::as_op() const
 {
-	return &script->syntax->operators[link_no];
+	return (Operator*)link_no;
 }
 void *Node::as_func_p() const
 {
@@ -222,7 +222,6 @@ void *Node::as_func_p() const
 void *Node::as_const_p() const
 {
 	return as_const()->address;
-	//return script->cnst[link_no];
 }
 
 void *Node::as_global_p() const
