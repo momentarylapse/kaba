@@ -55,6 +55,7 @@ struct Function
 	int64 _var_size, _param_size;
 	int _logical_line_no;
 	int _exp_no;
+	void *address;
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	~Function();
 	Variable *__get_var(const string &name) const;

@@ -2041,15 +2041,13 @@ void Script::CompileFunctions(char *oc, int &ocs)
 {
 	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
 
-	func.resize(syntax->functions.num);
-
 	// link external functions
-	foreachi(Function *f, syntax->functions, i)
+	for (Function *f: syntax->functions)
 		if (f->is_extern){
-			func[i] = (t_func*)GetExternalLink(f->name + ":" + i2s(f->num_params));
-			if (!func[i])
-				func[i] = (t_func*)GetExternalLink(f->name);
-			if (!func[i])
+			f->address = GetExternalLink(f->name + ":" + i2s(f->num_params));
+			if (!f->address)
+				f->address = GetExternalLink(f->name);
+			if (!f->address)
 				DoErrorLink("external function " + f->name + " not linkable");
 		}
 
@@ -2075,7 +2073,7 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	// get function addresses
 	foreachi(Function *f, syntax->functions, i){
 		if (!f->is_extern){
-			func[i] = (t_func*)list->get_label_value("_kaba_func_" + i2s(i));
+			f->address = list->get_label_value("_kaba_func_" + i2s(i));
 		}
 	}
 

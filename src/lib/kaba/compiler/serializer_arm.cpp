@@ -116,16 +116,15 @@ void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
 void SerializerARM::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
+	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
+	if ((script == this->script) and (!f->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
-		void *func = (void*)script->func[func_no];
-
-		if (!func)
+		if (!f->address)
 			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);
-		if (abs((int_p)func - (int_p)this->script->opcode) < 30000000){
-			add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)func)); // the actual call
+		if (abs((int_p)f->address - (int_p)this->script->opcode) < 30000000){
+			add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)f->address)); // the actual call
 			// function pointer will be shifted later...
 		}else{
 
@@ -133,7 +132,7 @@ void SerializerARM::add_function_call(Script *script, int func_no, const SerialN
 			// really find a usable register...
 
 			int v = add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
-			add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(func)));
+			add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
 			add_cmd(Asm::INST_CALL, param_vreg(TypePointer, v));
 			set_virtual_reg(v, cmd.num-2, cmd.num-1);
 		}

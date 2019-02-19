@@ -49,6 +49,7 @@ Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 	inline_no = -1;
 	throws_exceptions = false;
 	num_slightly_hidden_vars = 0;
+	address = nullptr;
 }
 
 Function::~Function()

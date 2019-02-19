@@ -346,7 +346,7 @@ void Class::link_virtual_table()
 				if (cf.virtual_index >= vtable.num)
 					owner->DoError("LinkVirtualTable");
 					//vtable.resize(cf.virtual_index + 1);
-				vtable[cf.virtual_index] = (void*)cf.script->func[cf.nr];
+				vtable[cf.virtual_index] = cf.func()->address;
 			}
 		}
 		if (cf.needs_overriding){
@@ -364,7 +364,7 @@ void Class::link_external_virtual_table(void *p)
 	for (ClassFunction &cf: functions)
 		if (cf.virtual_index >= 0){
 			if (cf.nr >= 0)
-				cf.script->func[cf.nr] = (t_func*)t[cf.virtual_index];
+				cf.func()->address = t[cf.virtual_index];
 			if (cf.virtual_index >= vtable.num)
 				max_vindex = max(max_vindex, cf.virtual_index);
 		}
@@ -492,7 +492,7 @@ void *Class::create_instance() const
 	ClassFunction *c = get_default_constructor();
 	if (c){
 		typedef void con_func(void *);
-		con_func * f = (con_func*)c->script->func[c->nr];
+		con_func * f = (con_func*)c->func()->address;
 		if (f)
 			f(p);
 	}

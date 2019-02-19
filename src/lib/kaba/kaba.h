@@ -81,7 +81,6 @@ public:
 	char *opcode; // executable code
 	int opcode_size;
 
-	Array<t_func*> func;
 	Array<Asm::WantedLabel> functions_to_link;
 	Array<int> function_vars_to_link;
 

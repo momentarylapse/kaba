@@ -70,7 +70,7 @@ void try_init_global_var(Class *type, char* g_var)
 		return;
 	typedef void init_func(void *);
 	//msg_write("global init: " + v.type->name);
-	init_func *ff = (init_func*)cf->script->func[cf->nr];
+	init_func *ff = (init_func*)cf->func()->address;
 	if (ff)
 		ff(g_var);
 }
@@ -274,12 +274,12 @@ void Script::MapConstantsToOpcode()
 
 void Script::LinkOsEntryPoint()
 {
-	int nf = -1;
-	foreachi(Function *ff, syntax->functions, index)
+	Function *f = nullptr;
+	for (Function *ff: syntax->functions)
 		if (ff->name == "main")
-			nf = index;
-	if (nf >= 0){
-		int lll = (int_p)func[nf] - syntax->asm_meta_info->code_origin - TaskReturnOffset;
+			f = ff;
+	if (f){
+		int lll = (int_p)f->address - syntax->asm_meta_info->code_origin - TaskReturnOffset;
 		//printf("insert   %d  an %d\n", lll, OCORA);
 		//msg_write(lll);
 		//msg_write(d2h(&lll,4,false));
@@ -421,9 +421,9 @@ void Script::LinkFunctions()
 	for (Asm::WantedLabel &l: functions_to_link){
 		string name = l.name.substr(10, -1);
 		bool found = false;
-		foreachi(Function *f, syntax->functions, i)
+		for (Function *f: syntax->functions)
 			if (f->name == name){
-				*(int*)&opcode[l.pos] = (int_p)func[i] - (syntax->asm_meta_info->code_origin + l.pos + 4);
+				*(int*)&opcode[l.pos] = (int_p)f->address - (syntax->asm_meta_info->code_origin + l.pos + 4);
 				found = true;
 				break;
 			}
@@ -432,7 +432,7 @@ void Script::LinkFunctions()
 	}
 	for (int n: function_vars_to_link){
 		int64 p = (n + 0xefef0000);
-		int64 q = (int_p)func[n];
+		int64 q = (int_p)syntax->functions[n]->address;
 		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
 			DoErrorLink("could not link function as variable: " + syntax->functions[n]->name);
 	}

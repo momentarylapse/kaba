@@ -136,23 +136,23 @@ void SerializerAMD64::fc_end(int push_size, const SerialNodeParam &instance, con
 void SerializerAMD64::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
+	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
+	if ((script == this->script) and (!f->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
-		void *func = (void*)script->func[func_no];
-		if (!func)
-			DoErrorLink("could not link function " + script->syntax->functions[func_no]->signature(true));
-		int_p d = (int_p)func - (int_p)this->script->opcode;
+		if (!f->address)
+			DoErrorLink("could not link function " + f->signature(true));
+		int_p d = (int_p)f->address - (int_p)this->script->opcode;
 		if (d < 0)
 			d = -d;
 		if (d < 0x70000000){
 			// 32bit call distance
-			add_cmd(Asm::INST_CALL, param_const(TypeReg32, (int_p)func)); // the actual call
+			add_cmd(Asm::INST_CALL, param_const(TypeReg32, (int_p)f->address)); // the actual call
 			// function pointer will be shifted later...(asm translates to RIP-relative)
 		}else{
 			// 64bit call distance
-			add_cmd(Asm::INST_MOV, p_rax, param_const(TypeReg64, (int_p)func));
+			add_cmd(Asm::INST_MOV, p_rax, param_const(TypeReg64, (int_p)f->address));
 			add_cmd(Asm::INST_CALL, p_rax);
 		}
 	}

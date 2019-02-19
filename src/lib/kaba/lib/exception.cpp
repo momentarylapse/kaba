@@ -61,7 +61,7 @@ inline void func_from_rip_test_script(StackFrameInfo &r, Script *s, void *rip, b
 	foreachi (Function *f, s->syntax->functions, i){
 		if (from_package and !f->throws_exceptions)
 			continue;
-		void *frip = (void*)s->func[i];
+		void *frip = f->address;
 		if (frip >= rip)
 			continue;
 		int_p offset = (int_p)rip - (int_p)frip;
@@ -292,7 +292,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 				auto cf = v->type->get_destructor();
 				if (cf){
 					typedef void con_func(void *);
-					con_func * f = (con_func*)cf->script->func[cf->nr];
+					con_func * f = (con_func*)cf->func()->address;
 					if (f){
 						f(p);
 					}

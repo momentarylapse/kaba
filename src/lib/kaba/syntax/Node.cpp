@@ -215,7 +215,7 @@ Operator *Node::as_op() const
 }
 void *Node::as_func_p() const
 {
-	return (void*)script->func[link_no];
+	return as_func()->address;
 }
 
 // will be the address at runtime...(not the current location...)

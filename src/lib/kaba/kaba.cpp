@@ -310,7 +310,7 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 	va_end(marker);
 
 	// match
-	foreachi(Function *f, syntax->functions, i)
+	for (Function *f: syntax->functions)
 		if (((f->name == name) or (name == "*")) and (f->literal_return_type->name == return_type) and (num_params == f->num_params)){
 
 			bool params_ok = true;
@@ -322,7 +322,7 @@ void *Script::MatchFunction(const string &name, const string &return_type, int n
 				if (just_analyse)
 					return (void*)0xdeadbeaf;
 				else
-					return (void*)func[i];
+					return f->address;
 			}
 		}
 
@@ -344,7 +344,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 		return nullptr;
 
 	// match
-	foreachi(Function *f, syntax->functions, i){
+	for (Function *f: syntax->functions){
 		if (!f->_class)
 			continue;
 		if (!f->_class->is_derived_from(root_type))
@@ -360,7 +360,7 @@ void *Script::MatchClassFunction(const string &_class, bool allow_derived, const
 				if (just_analyse)
 					return (void*)0xdeadbeaf;
 				else
-					return (void*)func[i];
+					return f->address;
 			}
 		}
 	}

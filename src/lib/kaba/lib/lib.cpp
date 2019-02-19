@@ -598,7 +598,8 @@ int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
 	cur_package_script->syntax->functions.add(f);
-	cur_package_script->func.add(config.allow_std_lib ? (void (*)())func : nullptr);
+	if (config.allow_std_lib)
+		f->address = func;
 	cur_func = f;
 	cur_class_func = nullptr;
 	return cur_package_script->syntax->functions.num - 1;
@@ -1676,7 +1677,7 @@ void LinkExternal(const string &name, void *pointer)
 					if (names.num > 0)
 						if (f->num_params != names[1]._int())
 							continue;
-					p.script->func[i] = (void(*)())pointer;
+					f->address = pointer;
 				}
 	}
 }

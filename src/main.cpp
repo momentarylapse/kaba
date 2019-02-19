@@ -364,9 +364,9 @@ public:
 	void export_symbols(Kaba::Script *s, const string &symbols_out_file)
 	{
 		File *f = FileCreate(symbols_out_file);
-		foreachi(Kaba::Function *fn, s->syntax->functions, i){
+		for (auto *fn: s->syntax->functions){
 			f->write_str(fn->name + ":" + i2s(fn->num_params));
-			f->write_int((long)s->func[i]);
+			f->write_int((long)fn->address);
 		}
 		for (auto *v: s->syntax->root_of_all_evil.var){
 			f->write_str(v->name);

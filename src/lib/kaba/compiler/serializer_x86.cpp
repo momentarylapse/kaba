@@ -90,14 +90,14 @@ void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 void SerializerX86::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
+	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!script->syntax->functions[func_no]->is_extern)){
+	if ((script == this->script) and (!f->is_extern)){
 		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
 	}else{
-		void *func = (void*)script->func[func_no];
-		if (!func)
-			DoErrorLink("could not link function " + script->syntax->functions[func_no]->signature(true));
-		add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)func)); // the actual call
+		if (!f->address)
+			DoErrorLink("could not link function " + f->signature(true));
+		add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)f->address)); // the actual call
 		// function pointer will be shifted later...
 	}
 
