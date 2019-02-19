@@ -87,13 +87,12 @@ void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 	}
 }
 
-void SerializerX86::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
+void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
-	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!f->is_extern)){
-		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
+	if ((f->tree->script == this->script) and (!f->is_extern)){
+		add_cmd(Asm::INST_CALL, param_marker(f->_label));
 	}else{
 		if (!f->address)
 			DoErrorLink("could not link function " + f->signature(true));
@@ -329,7 +328,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			Array<Node*> links = syntax_tree->GetExistence("@malloc", nullptr);
 			if (links.num == 0)
 				DoError("@malloc not found????");
-			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param_const(TypeInt, ret.type->parent->size), ret);
+			AddFunctionCall(links[0]->as_func(), p_none, param_const(TypeInt, ret.type->parent->size), ret);
 			if (com->params.num > 0){
 				// copy + edit command
 				Node sub = *com->params[0];
@@ -346,7 +345,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			Array<Node*> links = syntax_tree->GetExistence("@free", nullptr);
 			if (links.num == 0)
 				DoError("@free not found????");
-			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param[0], p_none);
+			AddFunctionCall(links[0]->as_func(), p_none, param[0], p_none);
 			clear_nodes(links);
 			break;}
 		case STATEMENT_RAISE:

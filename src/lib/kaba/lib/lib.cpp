@@ -275,16 +275,12 @@ void add_operator(int primitive_op, Class *return_type, Class *param_type1, Clas
 	o->param_type_1 = param_type1;
 	o->param_type_2 = param_type2;
 	o->inline_index = inline_index;
-	/*o->func_index = -1;
-	foreachi(Function* f, cur_package_script->syntax->functions, i)
-		if (f->inline_no == inline_index)
-			o->func_index = i;
-	if (o->func_index >0)*/
-	o->func_index = add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
+	add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
 	func_set_inline(inline_index);
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);
-	o->func = func;
+	o->f = cur_func;
+	o->func_p = func;
 	o->owner = cur_package_script->syntax;
 	cur_package_script->syntax->operators.add(o);
 }
@@ -341,9 +337,9 @@ void _class_add_func_virtual(const string &tname, const string &name, Class *ret
 {
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
-	int cmd = add_func(tname + "." + name + "[virtual]", return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
+	add_func(tname + "." + name + "[virtual]", return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
 	cur_func->_class = cur_class;
-	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cmd), flag);
+	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
 	cur_class_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
@@ -359,9 +355,9 @@ void class_add_func(const string &name, Class *return_type, void *func, ScriptFl
 			if (t->is_pointer() and (t->parent == cur_class))
 				tname = t->name;
 	}
-	int cmd = add_func(tname + "." + name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
+	add_func(tname + "." + name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
 	cur_func->_class = cur_class;
-	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cmd), flag);
+	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
 }
 
 int get_virtual_index(void *func, const string &tname, const string &name)

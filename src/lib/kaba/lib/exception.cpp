@@ -292,7 +292,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 				auto cf = v->type->get_destructor();
 				if (cf){
 					typedef void con_func(void *);
-					con_func * f = (con_func*)cf->func()->address;
+					con_func * f = (con_func*)cf->func->address;
 					if (f){
 						f(p);
 					}

@@ -56,6 +56,7 @@ struct Function
 	int _logical_line_no;
 	int _exp_no;
 	void *address;
+	int _label;
 	Function(SyntaxTree *tree, const string &name, Class *return_type);
 	~Function();
 	Variable *__get_var(const string &name) const;

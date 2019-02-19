@@ -24,15 +24,14 @@ struct ClassElement{
 struct ClassFunction{
 	string name;
 	Script *script;
-	int nr; // index in SyntaxTree.functions[]
+	Function *func;
 	// _func_(x)  ->  p.func(x)
 	Array<Class*> param_types; // literal!
 	Class *return_type; // literal!
 	int virtual_index;
 	bool needs_overriding;
 	ClassFunction();
-	ClassFunction(const string &name, Class *return_type, Script *s, int no);
-	Function *func() const;
+	ClassFunction(const string &name, Class *return_type, Script *s, Function *f);
 	string signature(bool include_class) const;
 };
 
@@ -86,7 +85,7 @@ public:
 	bool derive_from(const Class *root, bool increase_size);
 	Class *get_pointer() const;
 	Class *get_root() const;
-	void add_function(SyntaxTree *s, int func_no, bool as_virtual = false, bool override = false);
+	void add_function(SyntaxTree *s, Function *f, bool as_virtual = false, bool override = false);
 	ClassFunction *get_func(const string &name, const Class *return_type, int num_params, const Class *param0 = nullptr) const;
 	ClassFunction *get_same_func(const string &name, Function *f) const;
 	ClassFunction *get_default_constructor() const;

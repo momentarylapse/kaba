@@ -470,7 +470,7 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, Class *return_
 	}
 	f->update(t);
 	bool override = cf;
-	t->add_function(s, s->functions.num - 1, false, override);
+	t->add_function(s, f, false, override);
 }
 
 bool needs_new(ClassFunction *f)
@@ -483,7 +483,7 @@ bool needs_new(ClassFunction *f)
 Array<string> class_func_param_names(ClassFunction *cf)
 {
 	Array<string> names;
-	auto *f = cf->func();
+	auto *f = cf->func;
 	for (int i=0; i<f->num_params; i++)
 		names.add(f->var[i]->name);
 	return names;
@@ -518,7 +518,7 @@ void SyntaxTree::AddMissingFunctionHeadersForClass(Class *t)
 		if (t->parent){
 			// only auto-implement matching constructors
 			for (auto *pcc: t->parent->get_constructors()){
-				auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc->func());
+				auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc->func);
 				if (needs_new(c))
 					add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->param_types, class_func_param_names(pcc), c);
 			}
@@ -545,7 +545,7 @@ Function* class_get_func(Class *t, const string &name, Class *return_type, int n
 {
 	ClassFunction *cf = t->get_func(name, return_type, num_params);
 	if (cf){
-		Function *f = cf->func();
+		Function *f = cf->func;
 		if (f->auto_declared){
 			cf->needs_overriding = false; // we're about to implement....
 			return f;
@@ -560,7 +560,7 @@ Function* prepare_auto_impl(Class *t, ClassFunction *cf)
 {
 	if (!cf)
 		return nullptr;
-	Function *f = cf->func();
+	Function *f = cf->func;
 	if (f->auto_declared){
 		cf->needs_overriding = false; // we're about to implement....
 		return f;

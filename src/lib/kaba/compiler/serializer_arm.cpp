@@ -113,16 +113,15 @@ void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
 	}
 }
 
-void SerializerARM::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
+void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
-	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!f->is_extern)){
-		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
+	if ((f->tree->script == this->script) and (!f->is_extern)){
+		add_cmd(Asm::INST_CALL, param_marker(f->_label));
 	}else{
 		if (!f->address)
-			DoErrorLink("could not link function " + script->syntax->functions[func_no]->name);
+			DoErrorLink("could not link function " + f->name);
 		if (abs((int_p)f->address - (int_p)this->script->opcode) < 30000000){
 			add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)f->address)); // the actual call
 			// function pointer will be shifted later...

@@ -22,34 +22,28 @@ string ClassElement::signature(bool include_class) const
 
 ClassFunction::ClassFunction()
 {
-	nr = -1;
+	func = nullptr;
 	virtual_index = -1;
 	needs_overriding = false;
 	return_type = nullptr;
 	script = nullptr;
 }
 
-ClassFunction::ClassFunction(const string &_name, Class *_return_type, Script *s, int no)
+ClassFunction::ClassFunction(const string &_name, Class *_return_type, Script *s, Function *_f)
 {
 	name = _name;
 	return_type = _return_type;
 	script = s;
-	nr = no;
+	func = _f;
 	virtual_index = -1;
 	needs_overriding = false;
 }
 
-Function* ClassFunction::func() const
-{
-	return script->syntax->functions[nr];
-}
-
 string ClassFunction::signature(bool include_class) const
 {
-	Function* f = func();
 	if (needs_overriding)
-		return f->signature(include_class) + " [NEEDS OVERRIDING]";
-	return f->signature(include_class);
+		return func->signature(include_class) + " [NEEDS OVERRIDING]";
+	return func->signature(include_class);
 }
 
 bool type_match(Class *given, Class *wanted)
@@ -341,12 +335,12 @@ void Class::link_virtual_table()
 	// link virtual functions into vtable
 	for (ClassFunction &cf: functions){
 		if (cf.virtual_index >= 0){
-			if (cf.nr >= 0){
+			if (cf.func){
 				//msg_write(i2s(cf.virtual_index) + ": " + cf.GetFunc()->name);
 				if (cf.virtual_index >= vtable.num)
 					owner->DoError("LinkVirtualTable");
 					//vtable.resize(cf.virtual_index + 1);
-				vtable[cf.virtual_index] = cf.func()->address;
+				vtable[cf.virtual_index] = cf.func->address;
 			}
 		}
 		if (cf.needs_overriding){
@@ -363,8 +357,8 @@ void Class::link_external_virtual_table(void *p)
 	int max_vindex = 1;
 	for (ClassFunction &cf: functions)
 		if (cf.virtual_index >= 0){
-			if (cf.nr >= 0)
-				cf.func()->address = t[cf.virtual_index];
+			if (cf.func)
+				cf.func->address = t[cf.virtual_index];
 			if (cf.virtual_index >= vtable.num)
 				max_vindex = max(max_vindex, cf.virtual_index);
 		}
@@ -419,12 +413,11 @@ void class_func_out(Class *c, ClassFunction *f)
 	msg_write(c->name + "." + f->name + ps);
 }
 
-void Class::add_function(SyntaxTree *s, int func_no, bool as_virtual, bool override)
+void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool override)
 {
-	Function *f = s->functions[func_no];
 	ClassFunction cf;
 	cf.name = f->name.substr(name.num + 1, -1);
-	cf.nr = func_no;
+	cf.func = f;
 	cf.script = s->script;
 	cf.return_type = f->return_type;
 	for (int i=0; i<f->num_params; i++)
@@ -451,7 +444,7 @@ void Class::add_function(SyntaxTree *s, int func_no, bool as_virtual, bool overr
 	}
 	if (override){
 		orig->script = cf.script;
-		orig->nr = cf.nr;
+		orig->func = cf.func;
 		orig->needs_overriding = false;
 		orig->param_types = cf.param_types;
 	}else
@@ -492,7 +485,7 @@ void *Class::create_instance() const
 	ClassFunction *c = get_default_constructor();
 	if (c){
 		typedef void con_func(void *);
-		con_func * f = (con_func*)c->func()->address;
+		con_func * f = (con_func*)c->func->address;
 		if (f)
 			f(p);
 	}

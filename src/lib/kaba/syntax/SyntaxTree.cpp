@@ -82,21 +82,22 @@ Node *SyntaxTree::add_node_statement(int index)
 Node *SyntaxTree::add_node_classfunc(ClassFunction *f, Node *inst, bool force_non_virtual)
 {
 	Node *c;
-	if ((f->virtual_index >= 0) and (!force_non_virtual))
+	if ((f->virtual_index >= 0) and (!force_non_virtual)){
 		c = AddNode(KIND_VIRTUAL_FUNCTION, f->virtual_index, f->return_type);
-	else
-		c = AddNode(KIND_FUNCTION, f->nr, f->return_type);
-	c->script = f->script;
+		c->script = f->script;
+	}else{
+		c = add_node_func(f->func, f->return_type);
+	}
 	c->set_instance(inst);
 	c->set_num_params(f->param_types.num);
 	return c;
 }
 
-Node *SyntaxTree::add_node_func(Script *script, int no, Class *return_type)
+Node *SyntaxTree::add_node_func(Function *f, Class *return_type)
 {
-	Node *c = AddNode(KIND_FUNCTION, no, return_type);
-	c->script = script;
-	c->set_num_params(script->syntax->functions[no]->num_params);
+	Node *c = AddNode(KIND_FUNCTION, (int_p)f, return_type);
+	c->script = f->tree->script;
+	c->set_num_params(f->num_params);
 	return c;
 }
 
@@ -317,7 +318,7 @@ Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 	if (cf.virtual_index >= 0){
 		link = new Node(KIND_VIRTUAL_FUNCTION, cf.virtual_index, cf.script, cf.return_type);
 	}else{
-		link = new Node(KIND_FUNCTION, cf.nr, cf.script, cf.return_type);
+		link = new Node(KIND_FUNCTION, (int_p)cf.func, cf.script, cf.return_type);
 	}
 	link->set_num_params(cf.param_types.num);
 	link->set_instance(self);
@@ -341,7 +342,7 @@ Array<Node*> SyntaxTree::GetExistenceShared(const string &name)
 	// then the (real) functions
 	foreachi(Function *f, functions, i)
 		if (f->name == name){
-			Node *n = new Node(KIND_FUNCTION, i, script, f->literal_return_type);
+			Node *n = new Node(KIND_FUNCTION, (int_p)f, script, f->literal_return_type);
 			n->set_num_params(f->num_params);
 			links.add(n);
 		}
@@ -611,8 +612,8 @@ void SyntaxTree::ConvertCallByReference()
 
 		// return: array as reference
 #if 0
-		if ((f->return_type->is_array) /*or (f->Type->IsSuperArray)*/){
-			f->return_type = GetPointerType(f->return_type);
+		if ((func->return_type->is_array) /*or (f->Type->IsSuperArray)*/){
+			func->return_type = GetPointerType(func->return_type);
 			/*for (int k=0;k<f->Block->Command.num;k++)
 				conv_return(this, f->Block->Command[k]);*/
 			// no need... return gets converted automatically (all calls...)
@@ -828,8 +829,8 @@ Node* conv_func_inline(SyntaxTree *ps, Node *n)
 	}
 	if (n->kind == KIND_OPERATOR){
 		Operator *op = n->as_op();
-		n->kind = KIND_INLINE_FUNCTION;
-		n->link_no = op->func_index;
+		n->kind = KIND_INLINE_FUNCTION; // FIXME
+		n->link_no = (int_p)op->f;
 		n->script = op->owner->script;
 		return n;
 	}

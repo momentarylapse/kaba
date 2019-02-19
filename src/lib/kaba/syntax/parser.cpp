@@ -113,7 +113,7 @@ void SyntaxTree::GetConstantValue(const string &str, Value &value)
 Node *SyntaxTree::DoClassFunction(Node *ob, Array<ClassFunction> &cfs, Block *block)
 {
 	// the function
-	Function *ff = cfs[0].func();
+	Function *ff = cfs[0].func;
 
 	Array<Node*> links;
 	for (ClassFunction &cf: cfs)
@@ -868,7 +868,7 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 		// relink node
 		return c_new;
 	}else{
-		Node *c = ps->add_node_func(TypeCasts[tc].script, TypeCasts[tc].func_no, TypeCasts[tc].dest);
+		Node *c = ps->add_node_func(TypeCasts[tc].script->syntax->functions[TypeCasts[tc].func_no], TypeCasts[tc].dest);
 		c->set_param(0, param);
 		return c;
 	}
@@ -1671,12 +1671,8 @@ void SyntaxTree::ParseEnum()
 void SyntaxTree::ParseClassFunctionHeader(Class *t, bool as_extern, bool as_virtual, bool override)
 {
 	Function *f = ParseFunctionHeader(t, as_extern);
-	int n = -1;
-	foreachi(Function *g, functions, i)
-		if (f == g)
-			n = i;
 
-	t->add_function(this, n, as_virtual, override);
+	t->add_function(this, f, as_virtual, override);
 
 	SkipParsingFunctionBody();
 }

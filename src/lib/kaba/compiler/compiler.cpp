@@ -70,7 +70,7 @@ void try_init_global_var(Class *type, char* g_var)
 		return;
 	typedef void init_func(void *);
 	//msg_write("global init: " + v.type->name);
-	init_func *ff = (init_func*)cf->func()->address;
+	init_func *ff = (init_func*)cf->func->address;
 	if (ff)
 		ff(g_var);
 }
@@ -326,13 +326,10 @@ Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationDa
 
 	//msg_write(p2s(c->script));
 	if (c->kind == KIND_VAR_GLOBAL){
-		c->link_no += d.var_off;
 		c->script = target;
 	}else if (c->kind == KIND_CONSTANT){
-		c->link_no += d.const_off;
 		c->script = target;
 	}else if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VAR_FUNCTION)){
-		c->link_no += d.func_off;
 		c->script = target;
 	}
 	return c;
@@ -350,7 +347,6 @@ void relink_calls(Script *s, Script *target, IncludeTranslationData &d)
 				if (f.script->filename.find(".kaba") < 0)
 					continue;
 				f.script = target;
-				f.nr += d.func_off;
 			}
 }
 

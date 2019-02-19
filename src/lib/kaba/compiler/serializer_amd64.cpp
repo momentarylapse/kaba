@@ -133,13 +133,12 @@ void SerializerAMD64::fc_end(int push_size, const SerialNodeParam &instance, con
 	}
 }
 
-void SerializerAMD64::add_function_call(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
+void SerializerAMD64::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
-	Function *f = script->syntax->functions[func_no];
 
-	if ((script == this->script) and (!f->is_extern)){
-		add_cmd(Asm::INST_CALL, param_marker(list->get_label("_kaba_func_" + i2s(func_no))));
+	if ((f->tree->script == this->script) and (!f->is_extern)){
+		add_cmd(Asm::INST_CALL, param_marker(f->_label));
 	}else{
 		if (!f->address)
 			DoErrorLink("could not link function " + f->signature(true));

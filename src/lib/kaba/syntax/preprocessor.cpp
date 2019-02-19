@@ -143,7 +143,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 					*c = *c->param[0];
 				}
 			}
-		}else*/ if (o->func){
+		}else*/ if (o->func_p){
 			bool all_const = true;
 			bool is_address = false;
 			bool is_local = false;
@@ -155,7 +155,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 				else if (c->params[i]->kind != KIND_CONSTANT)
 					all_const = false;
 			if (all_const){
-				op_func *f = (op_func*)o->func;
+				op_func *f = (op_func*)o->func_p;
 				if (is_address){
 					// pre process address
 					/*void *d1 = (void*)&c->Param[0]->LinkNr;
@@ -277,14 +277,13 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 	return c;
 }
 
-string LinkNr2Str(SyntaxTree *s, int kind, int64 nr);
 
 // may not use AddConstant()!!!
 Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 {
 	if (c->kind == KIND_OPERATOR){
 		Operator *o = c->as_op();
-		if (o->func){
+		if (o->func_p){
 			bool all_const = true;
 			bool is_address = false;
 			bool is_local = false;
@@ -296,7 +295,7 @@ Node *SyntaxTree::PreProcessNodeAddresses(Node *c)
 				else if (c->params[i]->kind != KIND_CONSTANT)
 					all_const = false;
 			if (all_const){
-				op_func *f = (op_func*)o->func;
+				op_func *f = (op_func*)o->func_p;
 				if (is_address){
 					// pre process address
 					Value d1, d2;

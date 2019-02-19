@@ -468,17 +468,17 @@ int Serializer::reg_resize(int reg, int size)
 }
 
 
-void Serializer::AddFunctionCall(Script *script, int func_no, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
+void Serializer::AddFunctionCall(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	call_used = true;
 
-	add_function_call(script, func_no, instance, params, ret);
+	add_function_call(f, instance, params, ret);
 }
 
 void Serializer::AddClassFunctionCall(ClassFunction *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	if (cf->virtual_index < 0){
-		AddFunctionCall(cf->script, cf->nr, instance, params, ret);
+		AddFunctionCall(cf->func, instance, params, ret);
 		return;
 	}
 	call_used = true;
@@ -646,7 +646,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 
 	if (com->kind == KIND_FUNCTION){
 
-		AddFunctionCall(com->script, com->link_no, instance, params, ret);
+		AddFunctionCall(com->as_func(), instance, params, ret);
 
 	}else if (com->kind == KIND_VIRTUAL_FUNCTION){
 
@@ -663,7 +663,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 			DoError(format("[..]: can not find %s.add() function???", com->type->name.c_str()));
 		instance = AddReference(ret, com->type->get_pointer());
 		for (int i=0; i<com->params.num; i++){
-			AddFunctionCall(cf->script, cf->nr, instance, params[i], p_none);
+			AddFunctionCall(cf->func, instance, params[i], p_none);
 		}
 	}else if (com->kind == KIND_BLOCK){
 		SerializeBlock(com->as_block());
@@ -2042,6 +2042,7 @@ void Script::CompileFunctions(char *oc, int &ocs)
 	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
 
 	// link external functions
+	int func_no = 0;
 	for (Function *f: syntax->functions)
 		if (f->is_extern){
 			f->address = GetExternalLink(f->name + ":" + i2s(f->num_params));
@@ -2049,6 +2050,8 @@ void Script::CompileFunctions(char *oc, int &ocs)
 				f->address = GetExternalLink(f->name);
 			if (!f->address)
 				DoErrorLink("external function " + f->name + " not linkable");
+		}else{
+			f->_label = list->get_label("_kaba_func_" + i2s(func_no ++));
 		}
 
 	// create assembler

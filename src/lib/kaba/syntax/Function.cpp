@@ -50,6 +50,7 @@ Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
 	throws_exceptions = false;
 	num_slightly_hidden_vars = 0;
 	address = nullptr;
+	_label = -1;
 }
 
 Function::~Function()

@@ -196,7 +196,7 @@ Block *Node::as_block() const
 
 Function *Node::as_func() const
 {
-	return script->syntax->functions[link_no];
+	return (Function*)link_no;
 }
 
 Class *Node::as_class() const
