@@ -94,8 +94,7 @@ public:
 	void ParseGlobalConst(const string &name, Class *type);
 	int WhichPrimitiveOperator(const string &name);
 	int WhichStatement(const string &name);
-	int WhichType(const string &name);
-	void AddType();
+	Class *WhichType(const string &name);
 
 	// pre compiler
 	void PreCompiler(bool just_analyse);
@@ -178,7 +177,7 @@ public:
 	Node *add_node_const(Constant *c);
 	Node *add_node_operator(Node *p1, Node *p2, Operator *op);
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, int inline_index);
-	Node *add_node_local_var(Variable *var, Class *type);
+	Node *add_node_local_var(Variable *var);
 	Node *add_node_parray(Node *p, Node *index, Class *type);
 	//Node *add_node_block(Block *b);
 	Node *cp_node(Node *c);

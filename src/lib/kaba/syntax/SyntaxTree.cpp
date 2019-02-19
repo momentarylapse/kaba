@@ -123,11 +123,11 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, int inline_ind
 }
 
 
-Node *SyntaxTree::add_node_local_var(Variable *v, Class *type)
+Node *SyntaxTree::add_node_local_var(Variable *v)
 {
 	if (!v)
 		script->DoErrorInternal("var = nil");
-	return AddNode(KIND_VAR_LOCAL, (int_p)v, type);
+	return AddNode(KIND_VAR_LOCAL, (int_p)v, v->type);
 }
 
 Node *SyntaxTree::add_node_parray(Node *p, Node *index, Class *type)
@@ -280,13 +280,12 @@ int SyntaxTree::WhichPrimitiveOperator(const string &name)
 	return -1;
 }
 
-int SyntaxTree::WhichType(const string &name)
+Class *SyntaxTree::WhichType(const string &name)
 {
-	for (int i=0;i<classes.num;i++)
-		if (name == classes[i]->name)
-			return i;
-
-	return -1;
+	for (auto *c: classes)
+		if (name == c->name)
+			return c;
+	return nullptr;
 }
 
 int SyntaxTree::WhichStatement(const string &name)
@@ -304,7 +303,7 @@ Node *exlink_make_var_local(SyntaxTree *ps, Class *t, Variable *v)
 
 Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 {
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
+	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 	Node *link = new Node(KIND_DEREF_ADDRESS_SHIFT, e.offset, ps->script, e.type);
 	link->set_num_params(1);
 	link->params[0] = self;
@@ -313,7 +312,7 @@ Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 
 Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 {
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF), f->_class->get_pointer());
+	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 	Node *link;
 	if (cf.virtual_index >= 0){
 		link = new Node(KIND_VIRTUAL_FUNCTION, cf.virtual_index, cf.script, cf.return_type);
@@ -350,9 +349,9 @@ Array<Node*> SyntaxTree::GetExistenceShared(const string &name)
 		return links;
 
 	// types
-	int w = WhichType(name);
-	if (w >= 0)
-		return new Node(KIND_TYPE, w, script, TypeClass);
+	Class *c = WhichType(name);
+	if (c)
+		return new Node(KIND_TYPE, (int_p)c, script, TypeClass);
 
 	// ...unknown
 	return {};
@@ -575,7 +574,7 @@ void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
 		Node *p_ret = nullptr;
 		for (Variable *v: f->var)
 			if (v->name == IDENTIFIER_RETURN_VAR){
-				p_ret = ps->add_node_local_var(v, v->type);
+				p_ret = ps->add_node_local_var(v);
 			}
 		if (!p_ret)
 			ps->DoError("-return- not found...");

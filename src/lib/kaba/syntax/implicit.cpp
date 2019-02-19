@@ -36,7 +36,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 {
 	if (!f)
 		return;
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()){
 		Node *c_el_size = add_node_const(AddConstant(TypeInt));
@@ -60,7 +60,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 				// first, try same signature
 				Node *c = add_node_classfunc(pc_same, cp_node(self));
 				for (int i=0;i<pc_same->param_types.num;i++)
-					c->set_param(i, add_node_local_var(f->var[i], pc_same->param_types[i]));
+					c->set_param(i, add_node_local_var(f->var[i]));
 				f->block->add(c);
 			}else if (pc_def){
 				// then, try default constructor
@@ -85,7 +85,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 {
 	if (!f)
 		return;
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array() or t->is_dict()){
 		ClassFunction *f_clear = t->get_func("clear", TypeVoid, 0);
@@ -123,8 +123,8 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 {
 	if (!f)
 		return;
-	Node *other = add_node_local_var(f->__get_var("other"), t);
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *other = add_node_local_var(f->__get_var("other"));
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()){
 
@@ -144,7 +144,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		//    self[i].__assign__(other[i])
 
 		auto *var_i = f->block->add_var("i", TypeInt);
-		Node *for_var = add_node_local_var(var_i, TypeInt);
+		Node *for_var = add_node_local_var(var_i);
 
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
 		f->block->add(cmd_for);
@@ -189,7 +189,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		Node *c_num = add_node_const(AddConstant(TypeInt));
 		c_num->as_const()->as_int() = t->array_length;
 
-		Node *for_var = add_node_local_var(var_i, TypeInt);
+		Node *for_var = add_node_local_var(var_i);
 
 
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
@@ -261,11 +261,11 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		return;
 	auto *var_i = f->block->add_var("for_var", TypeInt);
 
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	Node *self_num = shift_node(cp_node(self), true, config.pointer_size, TypeInt);
 
-	Node *for_var = add_node_local_var(var_i, TypeInt);
+	Node *for_var = add_node_local_var(var_i);
 
 // delete...
 	ClassFunction *f_del = t->parent->get_destructor();
@@ -313,15 +313,15 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 	f->block->add_var("for_var", TypeInt);
 	f->block->add_var("num_old", TypeInt);
 
-	Node *num = add_node_local_var(f->__get_var("num"), TypeInt);
+	Node *num = add_node_local_var(f->__get_var("num"));
 
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	Node *self_num = shift_node(cp_node(self), true, config.pointer_size, TypeInt);
 
-	Node *for_var = add_node_local_var(f->__get_var("for_var"), TypeInt);
+	Node *for_var = add_node_local_var(f->__get_var("for_var"));
 
-	Node *num_old = add_node_local_var(f->__get_var("num_old"), TypeInt);
+	Node *num_old = add_node_local_var(f->__get_var("num_old"));
 
 	// num_old = self.num
 	Node *cmd_copy_num = add_node_operator_by_inline(num_old, self_num, INLINE_INT_ASSIGN);
@@ -402,8 +402,8 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, Class *t)
 	if (!f)
 		return;
 
-	Node *index = add_node_local_var(f->__get_var("index"), TypeInt);
-	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *index = add_node_local_var(f->__get_var("index"));
+	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	// delete...
 	ClassFunction *f_del = t->parent->get_destructor();
@@ -430,9 +430,9 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 	if (!f)
 		return;
 	Block *b = f->block;
-	Node *item = add_node_local_var(b->get_var("x"), t->parent);
+	Node *item = add_node_local_var(b->get_var("x"));
 
-	Node *self = add_node_local_var(b->get_var(IDENTIFIER_SELF), t->get_pointer());
+	Node *self = add_node_local_var(b->get_var(IDENTIFIER_SELF));
 
 	Node *self_num = shift_node(cp_node(self), true, config.pointer_size, TypeInt);
 

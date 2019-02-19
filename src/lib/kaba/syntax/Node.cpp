@@ -201,7 +201,7 @@ Function *Node::as_func() const
 
 Class *Node::as_class() const
 {
-	return script->syntax->classes[link_no];
+	return (Class*)link_no;
 }
 
 Constant *Node::as_const() const

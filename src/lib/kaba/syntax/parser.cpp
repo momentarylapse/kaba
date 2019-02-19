@@ -714,7 +714,7 @@ Node *SyntaxTree::GetOperand(Block *block)
 					clear_nodes(links);
 					auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
 					vv->dont_add_constructor = true;
-					Node *dummy = add_node_local_var(vv, t);
+					Node *dummy = add_node_local_var(vv);
 					links = {};
 					for (auto *cf: t->get_constructors())
 						links.add(add_node_classfunc(cf, ref_node(dummy)));
@@ -1103,7 +1103,7 @@ Node *SyntaxTree::ParseStatementFor(Block *block)
 	// variable
 	Node *for_var;
 	auto *var_no = block->add_var(var_name, t);
-	for_var = add_node_local_var(var_no, t);
+	for_var = add_node_local_var(var_no);
 
 	// implement
 	// for_var = val0
@@ -1163,7 +1163,7 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 
 	// for index
 	auto *var_no_index = block->add_var(index_name, TypeInt);
-	Node *for_index = add_node_local_var(var_no_index, TypeInt);
+	Node *for_index = add_node_local_var(var_no_index);
 
 	// super array
 	if (Exp.cur != "in")
@@ -1179,7 +1179,7 @@ Node *SyntaxTree::ParseStatementForall(Block *block)
 	// variable...
 	Class *var_type = for_array->type->get_array_element();
 	auto *var = block->add_var(var_name, var_type);
-	Node *for_var = add_node_local_var(var, var_type);
+	Node *for_var = add_node_local_var(var);
 
 	// 0
 	Node *val0 = add_node_const(AddConstant(TypeInt));
@@ -1359,7 +1359,7 @@ Node *SyntaxTree::ParseStatementTry(Block *block)
 			Exp.next();
 			string ex_name = Exp.cur;
 			auto *v = except_block->add_var(ex_name, ex_type);
-			cmd_ex->params.add(add_node_local_var(v, ex_type));
+			cmd_ex->params.add(add_node_local_var(v));
 			Exp.next();
 		}
 	}
