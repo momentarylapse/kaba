@@ -144,8 +144,9 @@ void SerializerARM::add_function_call(Script *script, int func_no, const SerialN
 
 void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret){}
 
-void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index, int marker_before_params)
+void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index)
 {
+#if 0
 	switch(com->link_no){
 		case STATEMENT_IF:{
 			// cmp;  jz m;  -block-  m;
@@ -239,6 +240,8 @@ void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 		default:
 			DoError("statement unimplemented: " + Statements[com->link_no].name);
 	}
+#endif
+	DoError("statement ksdjhksdjfhjksdhf");
 }
 
 void SerializerARM::SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)

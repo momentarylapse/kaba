@@ -130,7 +130,7 @@ public:
 	Node *GetCommand(Block *block);
 	void ParseCompleteCommand(Block *block);
 	void ParseLocalDefinition(Block *block);
-	Node *ParseBlock(Block *parent);
+	Node *ParseBlock(Block *parent, Block *block = nullptr);
 	Node *GetOperand(Block *block);
 	Node *GetPrimitiveOperator(Block *block);
 	Array<Node*> FindFunctionParameters(Block *block);
@@ -140,17 +140,17 @@ public:
 	Node *DoClassFunction(Node *ob, Array<ClassFunction> &cfs, Block *block);
 	Node *GetSpecialFunctionCall(const string &f_name, Node *link, Block *block);
 	Node *CheckParamLink(Node *link, Class *type, const string &f_name = "", int param_no = -1);
-	void ParseStatement(Block *block);
-	void ParseStatementFor(Block *block);
-	void ParseStatementForall(Block *block);
-	void ParseStatementWhile(Block *block);
-	void ParseStatementBreak(Block *block);
-	void ParseStatementContinue(Block *block);
-	void ParseStatementReturn(Block *block);
-	void ParseStatementRaise(Block *block);
-	void ParseStatementTry(Block *block);
-	void ParseStatementIf(Block *block);
-	void ParseStatementPass(Block *block);
+	Node *ParseStatement(Block *block);
+	Node *ParseStatementFor(Block *block);
+	Node *ParseStatementForall(Block *block);
+	Node *ParseStatementWhile(Block *block);
+	Node *ParseStatementBreak(Block *block);
+	Node *ParseStatementContinue(Block *block);
+	Node *ParseStatementReturn(Block *block);
+	Node *ParseStatementRaise(Block *block);
+	Node *ParseStatementTry(Block *block);
+	Node *ParseStatementIf(Block *block);
+	Node *ParseStatementPass(Block *block);
 
 	void CreateAsmMetaInfo();
 

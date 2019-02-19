@@ -456,20 +456,6 @@ int Serializer::add_marker(int l)
 	return l;
 }
 
-int Serializer::add_marker_after_command(int level, int index)
-{
-	int n = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
-	AddLaterData m = {STUFF_KIND_MARKER, n, level, index};
-	add_later.add(m);
-	return n;
-}
-
-void Serializer::add_jump_after_command(int level, int index, int marker)
-{
-	AddLaterData j = {STUFF_KIND_JUMP, marker, level, index};
-	add_later.add(j);
-}
-
 int Serializer::reg_resize(int reg, int size)
 {
 	if (size == 2){
@@ -610,10 +596,7 @@ bool node_is_assign_mem(Node *n)
 SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 {
 	// for/while need a marker to this point
-	int marker_before_params = -1;
-	bool only_eval_first_param = ((com->kind == KIND_STATEMENT) and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
-	if ((com->kind == KIND_STATEMENT) and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR)))
-		marker_before_params = add_marker();
+	bool ignore_params = ((com->kind == KIND_STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
 
 
 	// EXPERIMENTAL DIRTY HACK !!!!!!!!!!!
@@ -644,17 +627,12 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 
 
 	Array<SerialNodeParam> params;
+	params.resize(com->params.num);
 
-	// special new-operator work-around
-	if ((com->kind == KIND_STATEMENT) and (com->link_no == STATEMENT_NEW)){
-
-		// com->param[0] might be a function to call...
-	}else{
+	if (!ignore_params){
 
 		// compile parameters
-		int np = only_eval_first_param ? 1 : com->params.num;
-		params.resize(np);
-		for (int p=0;p<np;p++)
+		for (int p=0;p<com->params.num;p++)
 			params[p] = SerializeParameter(com->params[p], block, index);
 	}
 
@@ -678,7 +656,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 		SerializeInlineFunction(com, params, ret);
 
 	}else if (com->kind == KIND_STATEMENT){
-		SerializeStatement(com, params, ret, block, index, marker_before_params);
+		SerializeStatement(com, params, ret, block, index);
 	}else if (com->kind == KIND_ARRAY_BUILDER){
 		ClassFunction *cf = com->type->get_func("add", TypeVoid, 1);
 		if (!cf)
@@ -705,8 +683,6 @@ void Serializer::SerializeBlock(Block *block)
 
 	FillInConstructorsBlock(block);
 
-	InsertAddedStuffIfNeeded(block, -1);
-
 	for (int i=0;i<block->nodes.num;i++){
 		stack_offset = cur_func->_var_size;
 		next_node = nullptr;
@@ -719,9 +695,6 @@ void Serializer::SerializeBlock(Block *block)
 		// destruct new temp vars
 		FillInDestructorsTemp();
 
-		// any markers / jumps to add?
-		InsertAddedStuffIfNeeded(block, i);
-
 		// end of loop?
 		// DEPRECATING...
 		if (loop.num > 0)
@@ -733,22 +706,6 @@ void Serializer::SerializeBlock(Block *block)
 
 	add_marker(list->add_label("_kaba_block_end_" + p2s(block)));
 	list->label.back().inst_no = -1;
-}
-
-void Serializer::InsertAddedStuffIfNeeded(Block *block, int index)
-{
-	//msg_write(format("try add noew....  level=%d  index=%d", block->level, index));
-	for (int j=add_later.num-1; j>=0; j--){
-		//msg_write(format("%d  %d", add_later[j].level, add_later[j].index));
-		if ((block->level == add_later[j].level) and (index == add_later[j].index)){
-			//msg_write("del add_later...");
-			if (add_later[j].kind == STUFF_KIND_MARKER)
-				add_marker(add_later[j].label);
-			else if (add_later[j].kind == STUFF_KIND_JUMP)
-				add_cmd(Asm::INST_JMP, param_marker(add_later[j].label));
-			add_later.erase(j);
-		}
-	}
 }
 
 // modus: KIND_VAR_LOCAL / KIND_VAR_TEMP
@@ -1763,14 +1720,6 @@ void Serializer::SerializeFunction(Function *f)
 		cmd_list_out("a");
 	
 
-
-
-	if (add_later.num > 0){
-		msg_write(f->name);
-		for (int i=0;i<add_later.num;i++)
-			msg_write(format("kind=%d  label=%d  index=%d  level=%d", add_later[i].kind, add_later[i].label, add_later[i].index, add_later[i].level));
-		DoError("StuffToAdd");
-	}
 
 	//cmd_list_out();
 }

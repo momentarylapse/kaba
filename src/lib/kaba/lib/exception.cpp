@@ -124,17 +124,51 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 	ebd.except = nullptr;
 
 	if (f){
+		// which blocks are we in?
 		auto blocks = f->all_blocks();
-		foreachb (Block *b, blocks)
-			if ((b->_start <= rip) and (b->_end >= rip))
+		//printf("%d blocks\n", blocks.num);
+		foreachb (Block *b, blocks){
+			//printf("-block  %p    %p-%p\n", b, b->_start, b->_end);
+			if ((b->_start <= rip) and (b->_end >= rip)){
+//				printf("   inside\n");
 				ebd.blocks.add(b);
+			}
+		}
 	}
-	ebd.needs_killing = ebd.blocks;
+	//ebd.needs_killing = ebd.blocks;
 
+
+	// walk through the blocks from inside to outside
 	Array<int> node_index;
 	foreachi (Block *b, ebd.blocks, bi){
-		if (bi == 0)
+		ebd.needs_killing.add(b);
+
+		if (!b->parent)
 			continue;
+
+		// are we in a try block?
+		for (Node *n: b->parent->nodes){
+			if (n->kind == KIND_STATEMENT and n->link_no == STATEMENT_TRY){
+				if (n->params[0]->as_block() == b){
+					if (_verbose_exception_)
+						msg_write("found try block");
+					auto ee = n->params[1];
+					if (_verbose_exception_)
+						msg_write(ee->type->name);
+					if (!ex_type_match(ex_type, ee->type))
+						continue;
+					if (_verbose_exception_)
+						msg_write("match");
+					ebd.except = ee;
+					ebd.except_block = n->params[2]->as_block();
+					return ebd;
+				}
+			}
+		}
+
+	/*	if (bi == 0)
+			continue;
+
 		int index = -1;
 		foreachi (Node *n, b->nodes, ni){
 			if (n->kind == KIND_BLOCK and n->as_block() == ebd.blocks[bi-1]){
@@ -156,7 +190,7 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
 				//msg_write(b->nodes[index + 2]->link_no);
 				ebd.except = ee;
 				ebd.except_block = b->nodes[index + 2]->as_block();
-			}
+			}*/
 	}
 	//msg_write(ia2s(node_index));
 	return ebd;

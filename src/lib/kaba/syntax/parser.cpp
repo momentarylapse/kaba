@@ -1061,7 +1061,7 @@ Node *SyntaxTree::GetCommand(Block *block)
 //  * make Node=Block
 //  * for with p[0]=set init
 //  * for_var in for "Block"
-void SyntaxTree::ParseStatementFor(Block *block)
+Node *SyntaxTree::ParseStatementFor(Block *block)
 {
 	// variable name
 	Exp.next();
@@ -1100,6 +1100,8 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	if (val_step)
 		val_step = CheckParamLink(val_step, t, "for", 1);
 
+	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+
 	// variable
 	Node *for_var;
 	int var_no = block->add_var(var_name, t);
@@ -1108,21 +1110,18 @@ void SyntaxTree::ParseStatementFor(Block *block)
 	// implement
 	// for_var = val0
 	Node *cmd_assign = add_node_operator_by_inline(for_var, val0, INLINE_INT_ASSIGN);
-	block->nodes.add(cmd_assign);
+	cmd_for->set_param(0, cmd_assign);
 
 	// while(for_var < val1)
 	Node *cmd_cmp = add_node_operator_by_inline(for_var, val1, INLINE_INT_SMALLER);
+	cmd_for->set_param(1, cmd_cmp);
 
-	Node *cmd_for = add_node_statement(STATEMENT_FOR);
-	cmd_for->params.resize(3);
-	cmd_for->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_for);
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
-	cmd_for->set_param(1, ParseBlock(block));
+	cmd_for->set_param(2, ParseBlock(block));
 	parser_loop_depth --;
 
 	// ...for_var += 1
@@ -1139,15 +1138,17 @@ void SyntaxTree::ParseStatementFor(Block *block)
 		}
 		cmd_inc = add_node_operator_by_inline(for_var, val_step, INLINE_FLOAT_ADD_ASSIGN);
 	}
-	cmd_for->set_param(2, cmd_inc); // add to loop-block
+	cmd_for->set_param(3, cmd_inc); // add to loop-block
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
 	for_var->as_local(block->function)->name = "-out-of-scope-";
 	// TODO  FIXME
+
+	return cmd_for;
 }
 
-void SyntaxTree::ParseStatementForall(Block *block)
+Node *SyntaxTree::ParseStatementForall(Block *block)
 {
 	// variable
 	Exp.next();
@@ -1175,6 +1176,8 @@ void SyntaxTree::ParseStatementForall(Block *block)
 		DoError("array or list expected as second parameter in \"for . in .\"");
 	//Exp.next();
 
+	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+
 	// variable...
 	Class *var_type = for_array->type->get_array_element();
 	int var_no = block->add_var(var_name, var_type);
@@ -1187,7 +1190,7 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	// implement
 	// for_index = 0
 	Node *cmd_assign = add_node_operator_by_inline(for_index, val0, INLINE_INT_ASSIGN);
-	block->nodes.add(cmd_assign);
+	cmd_for->set_param(0, cmd_assign);
 
 	Node *val1;
 	if (for_array->type->usable_as_super_array()){
@@ -1203,23 +1206,19 @@ void SyntaxTree::ParseStatementForall(Block *block)
 
 	// while(for_index < val1)
 	Node *cmd_cmp = add_node_operator_by_inline(for_index, val1, INLINE_INT_SMALLER);
-
-	Node *cmd_for = add_node_statement(STATEMENT_FOR);
-	cmd_for->params.resize(3);
-	cmd_for->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_for);
+	cmd_for->set_param(1, cmd_cmp);
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
 	parser_loop_depth ++;
 	Node *loop_block = ParseBlock(block);
-	cmd_for->set_param(1, loop_block);
+	cmd_for->set_param(2, loop_block);
 	parser_loop_depth --;
 
 	// ...for_index += 1
 	Node *cmd_inc = add_node_operator_by_inline(for_index, val1 /*dummy*/, INLINE_INT_INCREASE);
-	cmd_for->set_param(2, cmd_inc);
+	cmd_for->set_param(3, cmd_inc);
 
 	// &for_var
 	Node *for_var_ref = ref_node(for_var);
@@ -1247,9 +1246,10 @@ void SyntaxTree::ParseStatementForall(Block *block)
 	// force for_var out of scope...
 	for_var->as_local(block->function)->name = "-out-of-scope-";
 	for_index->as_local(block->function)->name = "-out-of-scope-";
+	return cmd_for;
 }
 
-void SyntaxTree::ParseStatementWhile(Block *block)
+Node *SyntaxTree::ParseStatementWhile(Block *block)
 {
 	Exp.next();
 	Node *cmd_cmp = CheckParamLink(GetCommand(block), TypeBool, "while", 0);
@@ -1257,7 +1257,7 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 
 	Node *cmd_while = add_node_statement(STATEMENT_WHILE);
 	cmd_while->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_while);
+
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
@@ -1265,31 +1265,29 @@ void SyntaxTree::ParseStatementWhile(Block *block)
 	cmd_while->params.resize(2);
 	cmd_while->set_param(1, ParseBlock(block));
 	parser_loop_depth --;
+	return cmd_while;
 }
 
-void SyntaxTree::ParseStatementBreak(Block *block)
+Node *SyntaxTree::ParseStatementBreak(Block *block)
 {
 	if (parser_loop_depth == 0)
 		DoError("'break' only allowed inside a loop");
 	Exp.next();
-	Node *cmd = add_node_statement(STATEMENT_BREAK);
-	block->nodes.add(cmd);
+	return add_node_statement(STATEMENT_BREAK);
 }
 
-void SyntaxTree::ParseStatementContinue(Block *block)
+Node *SyntaxTree::ParseStatementContinue(Block *block)
 {
 	if (parser_loop_depth == 0)
 		DoError("'continue' only allowed inside a loop");
 	Exp.next();
-	Node *cmd = add_node_statement(STATEMENT_CONTINUE);
-	block->nodes.add(cmd);
+	return add_node_statement(STATEMENT_CONTINUE);
 }
 
-void SyntaxTree::ParseStatementReturn(Block *block)
+Node *SyntaxTree::ParseStatementReturn(Block *block)
 {
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_RETURN);
-	block->nodes.add(cmd);
 	if (block->function->return_type == TypeVoid){
 		cmd->set_num_params(0);
 	}else{
@@ -1298,15 +1296,15 @@ void SyntaxTree::ParseStatementReturn(Block *block)
 		cmd->set_param(0, cmd_value);
 	}
 	ExpectNewline();
+	return cmd;
 }
 
 // IGNORE!!! raise() is a function :P
-void SyntaxTree::ParseStatementRaise(Block *block)
+Node *SyntaxTree::ParseStatementRaise(Block *block)
 {
 	throw "jhhhh";
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_RAISE);
-	block->nodes.add(cmd);
 
 	Node *cmd_ex = CheckParamLink(GetCommand(block), TypeExceptionP, IDENTIFIER_RAISE, 0);
 	cmd->set_num_params(1);
@@ -1320,19 +1318,20 @@ void SyntaxTree::ParseStatementRaise(Block *block)
 		cmd->set_param(0, cmd_value);
 	}*/
 	ExpectNewline();
+	return cmd;
 }
 
-void SyntaxTree::ParseStatementTry(Block *block)
+Node *SyntaxTree::ParseStatementTry(Block *block)
 {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
-	Node *cmd = add_node_statement(STATEMENT_TRY);
-	block->nodes.add(cmd);
+	Node *cmd_try = add_node_statement(STATEMENT_TRY);
+	cmd_try->params.resize(3);
 	ExpectNewline();
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
-	block->nodes.add(ParseBlock(block));
+	cmd_try->set_param(0, ParseBlock(block));
 	Exp.next_line();
 
 	if (Exp.cur != IDENTIFIER_EXCEPT)
@@ -1342,9 +1341,9 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	Exp.next();
 
 	Node *cmd_ex = add_node_statement(STATEMENT_EXCEPT);
-	block->nodes.add(cmd_ex);
+	cmd_try->set_param(1, cmd_ex);
 
-	Block *new_block = new Block(block->function, block);
+	Block *except_block = new Block(block->function, block);
 
 	if (!Exp.end_of_line()){
 		Class *ex_type = FindType(Exp.cur);
@@ -1360,7 +1359,7 @@ void SyntaxTree::ParseStatementTry(Block *block)
 				DoError("'as' expected");
 			Exp.next();
 			string ex_name = Exp.cur;
-			int v = new_block->add_var(ex_name, ex_type);
+			int v = except_block->add_var(ex_name, ex_type);
 			cmd_ex->params.add(AddNode(KIND_VAR_LOCAL, v, ex_type));
 			Exp.next();
 		}
@@ -1378,8 +1377,10 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	//auto n = block->nodes.back();
 	//n->as_block()->
 
-	Node *cmd_ex_block = add_node_block(new_block);
-	block->nodes.add(cmd_ex_block);
+	cmd_try->set_param(2, ParseBlock(block, except_block));
+
+	//Node *cmd_ex_block = add_node_block(new_block);
+	/*block->nodes.add(cmd_ex_block);
 
 	Exp.indented = false;
 
@@ -1394,10 +1395,11 @@ void SyntaxTree::ParseStatementTry(Block *block)
 	Exp.indent_0 = Exp.cur_line->indent;
 	Exp.indented = false;
 	Exp.cur_exp = Exp.cur_line->exp.num - 1;
-	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;*/
+	return cmd_try;
 }
 
-void SyntaxTree::ParseStatementIf(Block *block)
+Node *SyntaxTree::ParseStatementIf(Block *block)
 {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
@@ -1406,55 +1408,52 @@ void SyntaxTree::ParseStatementIf(Block *block)
 
 	Node *cmd_if = add_node_statement(STATEMENT_IF);
 	cmd_if->set_param(0, cmd_cmp);
-	block->nodes.add(cmd_if);
 	// ...block
 	Exp.next_line();
 	ExpectIndent();
 	//block->nodes.add(ParseBlock(block));
-	cmd_if->params.resize(2);
 	cmd_if->set_param(1, ParseBlock(block));
 	Exp.next_line();
 
 	// else?
 	if ((!Exp.end_of_file()) and (Exp.cur == IDENTIFIER_ELSE) and (Exp.cur_line->indent >= ind)){
 		cmd_if->link_no = STATEMENT_IF_ELSE;
+		cmd_if->params.resize(3);
 		Exp.next();
 		// iterative if
 		if (Exp.cur == IDENTIFIER_IF){
-			DoError("else if...");
+			//DoError("else if...");
 			// sub-if's in a new block
 			Block *new_block = new Block(block->function, block);
 			// parse the next if
 			ParseCompleteCommand(new_block);
 			// command for the found block
 			Node *cmd_block = add_node_block(new_block);
-			// ...
-			block->nodes.add(cmd_block);
-			return;
+			cmd_if->set_param(2, cmd_block);
+			return cmd_if;
 		}
 		ExpectNewline();
 		// ...block
 		Exp.next_line();
 		ExpectIndent();
-		cmd_if->params.resize(3);
 		cmd_if->set_param(2, ParseBlock(block));
 		//Exp.next_line();
 	}else{
 		int line = Exp.get_line_no() - 1;
 		Exp.set(Exp.line[line].exp.num - 1, line);
 	}
+	return cmd_if;
 }
 
-void SyntaxTree::ParseStatementPass(Block *block)
+Node *SyntaxTree::ParseStatementPass(Block *block)
 {
 	Exp.next(); // pass
 	ExpectNewline();
 
-	//Node *cmd_pass = add_node_statement(STATEMENT_PASS);
-	//block->nodes.add(cmd_pass);
+	return add_node_statement(STATEMENT_PASS);
 }
 
-void SyntaxTree::ParseStatement(Block *block)
+Node *SyntaxTree::ParseStatement(Block *block)
 {
 	bool has_colon = false;
 	for (auto &e: Exp.cur_line->exp)
@@ -1463,42 +1462,44 @@ void SyntaxTree::ParseStatement(Block *block)
 
 	// special commands...
 	if (Exp.cur == IDENTIFIER_FOR and !has_colon){
-		ParseStatementForall(block);
+		return ParseStatementForall(block);
 	}else if (Exp.cur == IDENTIFIER_FOR){
-		ParseStatementFor(block);
+		return ParseStatementFor(block);
 	}else if (Exp.cur == IDENTIFIER_WHILE){
-		ParseStatementWhile(block);
+		return ParseStatementWhile(block);
  	}else if (Exp.cur == IDENTIFIER_BREAK){
-		ParseStatementBreak(block);
+ 		return ParseStatementBreak(block);
 	}else if (Exp.cur == IDENTIFIER_CONTINUE){
-		ParseStatementContinue(block);
+		return ParseStatementContinue(block);
 	}else if (Exp.cur == IDENTIFIER_RETURN){
-		ParseStatementReturn(block);
+		return ParseStatementReturn(block);
 	//}else if (Exp.cur == IDENTIFIER_RAISE){
 	//	ParseStatementRaise(block);
 	}else if (Exp.cur == IDENTIFIER_TRY){
-		ParseStatementTry(block);
+		return ParseStatementTry(block);
 	}else if (Exp.cur == IDENTIFIER_IF){
-		ParseStatementIf(block);
+		return ParseStatementIf(block);
 	}else if (Exp.cur == IDENTIFIER_PASS){
-		ParseStatementPass(block);
+		return ParseStatementPass(block);
 	}
+	return nullptr;
 }
 
-Node *SyntaxTree::ParseBlock(Block *parent)
+Node *SyntaxTree::ParseBlock(Block *parent, Block *block)
 {
 	int last_indent = Exp.indent_0;
 
 	Exp.indented = false;
 	Exp.set(0); // bad hack...
-	Block *new_block = new Block(parent->function, parent);
+	if (!block)
+		block = new Block(parent->function, parent);
 
 	for (int i=0;true;i++){
 		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
 			break;
 
 
-		ParseCompleteCommand(new_block);
+		ParseCompleteCommand(block);
 		Exp.next_line();
 	}
 	Exp.cur_line --;
@@ -1507,7 +1508,7 @@ Node *SyntaxTree::ParseBlock(Block *parent)
 	Exp.cur_exp = Exp.cur_line->exp.num - 1;
 	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 
-	return add_node_block(new_block);
+	return add_node_block(block);
 }
 
 // local (variable) definitions...
@@ -1560,7 +1561,7 @@ void SyntaxTree::ParseCompleteCommand(Block *block)
 	// commands (the actual code!)
 		//if (WhichStatement(Exp.cur) >= 0){
 		if ((Exp.cur == IDENTIFIER_FOR) or (Exp.cur == IDENTIFIER_WHILE) or (Exp.cur == IDENTIFIER_BREAK) or (Exp.cur == IDENTIFIER_CONTINUE) or (Exp.cur == IDENTIFIER_RETURN) or /*(Exp.cur == IDENTIFIER_RAISE) or*/ (Exp.cur == IDENTIFIER_TRY) or (Exp.cur == IDENTIFIER_IF) or (Exp.cur == IDENTIFIER_PASS)){
-			ParseStatement(block);
+			block->nodes.add(ParseStatement(block));
 			// new/delete/sizeof/type... are operands...
 
 		}else{

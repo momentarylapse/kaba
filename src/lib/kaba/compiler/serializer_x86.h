@@ -19,7 +19,7 @@ public:
 	virtual void AddFunctionIntro(Function *f);
 	virtual void AddFunctionOutro(Function *f);
 	virtual SerialNodeParam SerializeParameter(Node *link, Block *block, int index);
-	virtual void SerializeStatement(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret, Block *block, int index, int marker_before_params);
+	virtual void SerializeStatement(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret, Block *block, int index);
 	virtual void SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
 	virtual void DoMapping();

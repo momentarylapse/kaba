@@ -68,16 +68,6 @@ struct TempVar
 	void use(int first, int last);
 };
 
-struct AddLaterData
-{
-	int kind, label, level, index;
-};
-
-enum{
-	STUFF_KIND_MARKER,
-	STUFF_KIND_JUMP,
-};
-
 
 class Serializer
 {
@@ -104,8 +94,6 @@ public:
 	int stack_offset, stack_max_size, max_push_size;
 	Array<TempVar> temp_var;
 
-	Array<AddLaterData> add_later;
-
 	struct GlobalRef
 	{
 		int label;
@@ -128,7 +116,7 @@ public:
 	void SerializeBlock(Block *block);
 	virtual SerialNodeParam SerializeParameter(Node *link, Block *block, int index) = 0;
 	SerialNodeParam SerializeNode(Node *com, Block *block, int index);
-	virtual void SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index, int marker_before_params) = 0;
+	virtual void SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index) = 0;
 	virtual void SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
 	virtual void AddFunctionIntro(Function *f) = 0;
 	virtual void AddFunctionOutro(Function *f) = 0;
@@ -157,8 +145,6 @@ public:
 	void remove_temp_var(int v);
 	void move_param(SerialNodeParam &p, int from, int to);
 	int add_marker(int m = -1);
-	int add_marker_after_command(int level, int index);
-	void add_jump_after_command(int level, int index, int marker);
 
 
 	Array<SerialNodeParam> inserted_temp;
@@ -204,8 +190,6 @@ public:
 	void FillInDestructorsBlock(Block *b, bool recursive = false);
 	void FillInDestructorsTemp();
 	void FillInConstructorsBlock(Block *b);
-
-	void InsertAddedStuffIfNeeded(Block *b, int index);
 
 
 
