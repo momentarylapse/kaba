@@ -44,10 +44,6 @@ struct Operator
 
 	SyntaxTree *owner;
 	Function *f;
-	int class_func_index;
-	int inline_index;
-
-	void *func_p; // temporary...!
 
 	string sig() const;
 };

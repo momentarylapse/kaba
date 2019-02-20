@@ -43,7 +43,7 @@ int TaskReturnOffset;
 #define CallRel32OCSize			5
 #define AfterWaitOCSize			10
 
-void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
+void add_esp_add(Asm::InstructionWithParamsList *list,int d)
 {
 	if (d > 0){
 		if (d > 120)
@@ -137,7 +137,7 @@ void* get_nice_memory(long size, bool executable)
 }
 
 
-void Script::AllocateOpcode()
+void Script::allocate_opcode()
 {
 	int max_opcode = MAX_OPCODE;
 	if (config.compile_os)
@@ -154,21 +154,21 @@ void Script::AllocateOpcode()
 	opcode_size = 0;
 }
 
-void Script::UpdateConstantLocations()
+void Script::update_constant_locations()
 {
-	for (Constant *c: syntax->constants)
+	for (auto *c: syntax->constants)
 		c->address = c->p();
 }
 
-void Script::MapGlobalVariablesToMemory()
+void Script::map_global_variables_to_memory()
 {
 	// global variables -> into Memory
 	int override_offset = 0;
-	foreachi(Variable *v, syntax->root_of_all_evil.var, i){
+	for (Variable *v: syntax->root_of_all_evil.var){
 		if (v->is_extern){
 			v->memory = GetExternalLink(v->name);
 			if (!v->memory)
-				DoErrorLink("external variable " + v->name + " was not linked");
+				do_error_link("external variable " + v->name + " was not linked");
 		}else{
 			int size_aligned = mem_align(v->type->size, 4);
 			if (config.override_variables_offset){
@@ -183,7 +183,7 @@ void Script::MapGlobalVariablesToMemory()
 	}
 }
 
-void Script::AlignOpcode()
+void Script::align_opcode()
 {
 	int ocs_new = mem_align(opcode_size, config.function_align);
 	for (int i=opcode_size;i<ocs_new;i++)
@@ -203,7 +203,7 @@ void Script::CompileOsEntryPoint()
 		Asm::AddInstruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset=opcode_size;
 	OCORA = Asm::OCParam;
-	AlignOpcode();
+	align_opcode();
 }
 
 Node *check_const_used(Node *n, Script *me)
@@ -216,7 +216,7 @@ Node *check_const_used(Node *n, Script *me)
 	return n;
 }
 
-void Script::MapConstantsToOpcode()
+void Script::map_constants_to_opcode()
 {
 	// vtables -> no data yet...
 	for (auto *ct: syntax->classes)
@@ -270,7 +270,7 @@ void Script::MapConstantsToOpcode()
 
 	//msg_write(format("    compressed:  %d  ->  %d", uncompressed, opcode_size - size0));
 
-	AlignOpcode();
+	align_opcode();
 }
 
 void Script::LinkOsEntryPoint()
@@ -396,7 +396,7 @@ void find_all_includes_rec(Script *s, Set<Script*> &includes)
 // only for "os"
 void import_includes(Script *s)
 {
-	s->DoErrorInternal("deep import is currently not supported, can't compile OS... sorry. Complain to Michi");
+	s->do_error_internal("deep import is currently not supported, can't compile OS... sorry. Complain to Michi");
 	Set<Script*> includes;
 	find_all_includes_rec(s, includes);
 	Array<IncludeTranslationData> da;
@@ -413,7 +413,7 @@ void import_includes(Script *s)
 			relink_calls(i, s, d);
 }
 
-void Script::LinkFunctions()
+void Script::link_functions()
 {
 	for (Asm::WantedLabel &l: functions_to_link){
 		string name = l.name.substr(10, -1);
@@ -425,13 +425,13 @@ void Script::LinkFunctions()
 				break;
 			}
 		if (!found)
-			DoErrorLink("could not link function: " + name);
+			do_error_link("could not link function: " + name);
 	}
 	for (int n: function_vars_to_link){
 		int64 p = (n + 0xefef0000);
 		int64 q = (int_p)syntax->functions[n]->address;
 		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
-			DoErrorLink("could not link function as variable: " + syntax->functions[n]->name);
+			do_error_link("could not link function as variable: " + syntax->functions[n]->name);
 	}
 
 
@@ -458,7 +458,7 @@ struct DynamicLibraryImport
 			return nullptr;
 		void *p = dlsym(handle, name.c_str());
 		if (!p)
-			s->DoErrorLink("can't load symbol '" + name + "' from library " + filename);
+			s->do_error_link("can't load symbol '" + name + "' from library " + filename);
 		return p;
 #else
 		return nullptr;
@@ -476,11 +476,11 @@ DynamicLibraryImport *get_dynamic_lib(const string &filename, Script *s)
 	d->filename = filename;
 	d->handle = dlopen(filename.c_str(), RTLD_NOW);
 	if (!d->handle)
-		s->DoErrorLink("can't load external library " + filename + ": " + dlerror());
+		s->do_error_link("can't load external library " + filename + ": " + dlerror());
 	dynamic_libs.add(d);
 	return d;
 #else
-	s->DoErrorLink("can't load dynamic lib, program is compiled without support for dl library");
+	s->do_error_link("can't load dynamic lib, program is compiled without support for dl library");
 #endif
 	return nullptr;
 }
@@ -518,7 +518,7 @@ int memory_size(Script *s)
 }
 
 // generate opcode
-void Script::Compiler()
+void Script::compile()
 {
 	Asm::CurrentMetaInfo = syntax->asm_meta_info;
 
@@ -540,11 +540,11 @@ void Script::Compiler()
 	if (config.verbose)
 		syntax->Show("comp:a");
 
-	MapGlobalVariablesToMemory();
+	map_global_variables_to_memory();
 	if (!config.compile_os)
-		UpdateConstantLocations();
+		update_constant_locations();
 
-	AllocateOpcode();
+	allocate_opcode();
 
 
 
@@ -554,7 +554,7 @@ void Script::Compiler()
 		CompileOsEntryPoint();
 
 	if (config.compile_os)
-		MapConstantsToOpcode();
+		map_constants_to_opcode();
 
 
 
@@ -565,10 +565,10 @@ void Script::Compiler()
 
 
 // compile functions into Opcode
-	CompileFunctions(opcode, opcode_size);
+	compile_functions(opcode, opcode_size);
 
 // link functions
-	LinkFunctions();
+	link_functions();
 
 
 

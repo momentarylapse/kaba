@@ -35,9 +35,10 @@ enum
 	KIND_FUNCTION_POINTER,
 	KIND_CONSTANT,
 	// execution
-	KIND_FUNCTION_CALL,           // = real function call
-	KIND_VIRTUAL_CALL,   // = virtual function call
-	KIND_INLINE_CALL,    // = function defined inside the compiler...
+	KIND_FUNCTION_CALL,      // = real function call
+	KIND_VIRTUAL_CALL,       // = virtual function call
+	KIND_INLINE_CALL,        // = function defined inside the compiler...
+	KIND_POINTER_CALL,       // = function call via pointer
 	KIND_STATEMENT,          // = if/while/break/...
 	KIND_BLOCK,              // = block of commands {...}
 	KIND_OPERATOR,

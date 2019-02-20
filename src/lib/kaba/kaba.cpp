@@ -84,7 +84,7 @@ Script *CreateForSource(const string &buffer, bool just_analyse)
 		s->syntax->parse_buffer(buffer, just_analyse);
 
 		if (!just_analyse)
-			s->Compiler();
+			s->compile();
 	}catch(const Exception &e){
 		delete(s);
 		throw e;
@@ -168,7 +168,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 
 
 		if (!just_analyse)
-			Compiler();
+			compile();
 		/*if (pre_script->FlagShow)
 			pre_script->Show();*/
 		if ((!just_analyse) and (config.verbose)){
@@ -179,7 +179,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 
 	}catch(FileError &e){
 		loading_script_stack.pop();
-		DoError("script file not loadable: " + filename);
+		do_error("script file not loadable: " + filename);
 	}catch(Exception &e){
 		loading_script_stack.pop();
 		throw e;
@@ -187,19 +187,19 @@ void Script::Load(const string &_filename, bool _just_analyse)
 	loading_script_stack.pop();
 }
 
-void Script::DoError(const string &str, int override_line)
+void Script::do_error(const string &str, int override_line)
 {
 	syntax->do_error(str, 0, override_line);
 }
 
-void Script::DoErrorInternal(const string &str)
+void Script::do_error_internal(const string &str)
 {
-	DoError("internal compiler error: " + str, 0);
+	do_error("internal compiler error: " + str, 0);
 }
 
-void Script::DoErrorLink(const string &str)
+void Script::do_error_link(const string &str)
 {
-	DoError(str, 0);
+	do_error(str, 0);
 }
 
 void Script::SetVariable(const string &name, void *data)
@@ -279,7 +279,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 	ps->ConvertCallByReference();
 
 // compile
-	s->Compiler();
+	s->compile();
 
 	/*if (true){
 		printf("%s\n\n", Opcode2Asm(s->ThreadOpcode,s->ThreadOpcodeSize));

@@ -274,13 +274,11 @@ void add_operator(int primitive_op, const Class *return_type, const Class *param
 	o->return_type = return_type;
 	o->param_type_1 = param_type1;
 	o->param_type_2 = param_type2;
-	o->inline_index = inline_index;
 	add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
 	func_set_inline(inline_index);
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);
 	o->f = cur_func;
-	o->func_p = func;
 	o->owner = cur_package_script->syntax;
 	cur_package_script->syntax->operators.add(o);
 }

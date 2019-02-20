@@ -146,7 +146,7 @@ Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op)
 Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, int inline_index)
 {
 	for (auto *op: operators)
-		if (op->inline_index == inline_index)
+		if (op->f->inline_no == inline_index)
 			return add_node_operator(p1, p2, op);
 
 	do_error("operator inline index not found: " + i2s(inline_index));
@@ -157,7 +157,7 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, int inline_ind
 Node *SyntaxTree::add_node_local_var(Variable *v)
 {
 	if (!v)
-		script->DoErrorInternal("var = nil");
+		script->do_error_internal("var = nil");
 	return AddNode(KIND_VAR_LOCAL, (int_p)v, v->type);
 }
 

@@ -22,6 +22,7 @@ string kind2str(int kind)
 	if (kind == KIND_CONSTANT)			return "constant";
 	if (kind == KIND_REF_TO_CONST)			return "reference to const";
 	if (kind == KIND_FUNCTION_CALL)			return "call";
+	if (kind == KIND_POINTER_CALL)			return "pointer call";
 	if (kind == KIND_INLINE_CALL)			return "inline";
 	if (kind == KIND_VIRTUAL_CALL)	return "virtual call";
 	if (kind == KIND_STATEMENT)			return "statement";
@@ -67,6 +68,7 @@ string Node::sig() const
 	if (kind == KIND_FUNCTION_NAME)		return t + as_func()->name;
 	if (kind == KIND_CONSTANT)			return t + as_const()->str();
 	if (kind == KIND_FUNCTION_CALL)			return as_func()->signature();
+	if (kind == KIND_POINTER_CALL)			return "";
 	if (kind == KIND_INLINE_CALL)	return as_func()->signature();
 	if (kind == KIND_VIRTUAL_CALL)	return t + i2s(link_no);//s->Functions[nr]->name;
 	if (kind == KIND_STATEMENT)			return t + as_statement()->name;
@@ -279,7 +281,7 @@ void Node::set_param(int index, Node *p)
 {
 	if ((index < 0) or (index >= params.num)){
 		show();
-		script->DoErrorInternal(format("Command.set_param...  %d %d", index, params.num));
+		script->do_error_internal(format("Command.set_param...  %d %d", index, params.num));
 	}
 	set_command(params[index], p);
 }

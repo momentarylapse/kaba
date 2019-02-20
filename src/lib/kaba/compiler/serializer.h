@@ -103,15 +103,15 @@ public:
 
 	Asm::InstructionWithParamsList *list;
 
-	void DoError(const string &msg);
-	void DoErrorLink(const string &msg);
+	void do_error(const string &msg);
+	void do_error_link(const string &msg);
 
 	void Assemble();
 	void assemble_cmd(SerialNode &c);
 	void assemble_cmd_arm(SerialNode &c);
 	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
 
-	void SerializeFunction(Function *f);
+	void serialize_function(Function *f);
 	void SerializeBlock(Block *block);
 	virtual SerialNodeParam SerializeParameter(Node *link, Block *block, int index) = 0;
 	SerialNodeParam SerializeNode(Node *com, Block *block, int index);
@@ -159,24 +159,25 @@ public:
 	void MapTempVar(int vi);
 	void MapTempVars();
 	void DisentangleShiftedTempVars();
-	void ResolveDerefRegShift();
+	void resolve_deref_reg_shift();
 
 	int temp_in_cmd(int c, int v);
 	void ScanTempVarUsage();
 
 	int find_unused_reg(int first, int last, int size, int exclude = -1);
 	void solve_deref_temp_local(int c, int np, bool is_local);
-	void ResolveDerefTempAndLocal();
+	void resolve_deref_temp_and_local();
 	bool ParamUntouchedInInterval(SerialNodeParam &p, int first, int last);
 	void SimplifyFPUStack();
 	void SimplifyMovs();
 	void RemoveUnusedTempVars();
 
 	void AddFunctionCall(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret);
-	void AddClassFunctionCall(ClassFunction *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret);
-	virtual void add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
-	virtual void add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
-	virtual int fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
+	void AddClassFunctionCall(ClassFunction *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	virtual void add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
+	virtual void add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
+	virtual void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
+	virtual int fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
 	virtual void fc_end(int push_size, const SerialNodeParam &ret) = 0;
 	SerialNodeParam AddReference(const SerialNodeParam &param, const Class *force_type = nullptr);
 	SerialNodeParam AddDereference(const SerialNodeParam &param, const Class *force_type = nullptr);

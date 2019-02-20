@@ -274,6 +274,22 @@ void make_func_node_callable(Node *l)
 	}
 }
 
+Array<Node*> make_class_node_callable(SyntaxTree *ps, const Class *t, Block *block)
+{
+	auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
+	vv->dont_add_constructor = true;
+	Node *dummy = ps->add_node_local_var(vv);
+	Array<Node*> links;
+	for (auto *cf: t->get_constructors()){
+		Node *n = ps->add_node_member_call(cf, ps->ref_node(dummy));
+		//links.add(exlink_make_func_class(this, block->function, *cf));
+		n->kind = KIND_CONSTRUCTOR_AS_FUNCTION;
+		n->type = t;
+		links.add(n);
+	}
+	return links;
+}
+
 Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 {
 	// parse all parameters
@@ -287,19 +303,16 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 		}else if (l->kind == KIND_CLASS){
 			auto *t = links[0]->as_class();
 			clear_nodes(links);
-			auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
-			vv->dont_add_constructor = true;
-			Node *dummy = add_node_local_var(vv);
-			links = {};
-			for (auto *cf: t->get_constructors()){
-				Node *n = add_node_member_call(cf, ref_node(dummy));
-				//links.add(exlink_make_func_class(this, block->function, *cf));
-				n->kind = KIND_CONSTRUCTOR_AS_FUNCTION;
-				n->type = t;
-				links.add(n);
-			}
+			links = make_class_node_callable(this, t, block);
 			break;
-			//DoError("type as function");
+		}else if (l->type == TypeFunctionP){
+			Node *p = links[0];
+			clear_nodes(links, p);
+			Node *c = AddNode(KIND_POINTER_CALL, 0, TypeVoid);
+			c->set_num_params(1);
+			c->set_param(0, p);
+			links = c;
+			//do_error("calling pointer...");
 		}else{
 			do_error("can't call " + kind2str(l->kind));
 		}
@@ -434,8 +447,12 @@ Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link)
 		const Class *t = link->as_class();
 		for (auto *c: t->get_constructors())
 			return c->param_types;
-	}else
-		do_error("evil function...kind="+i2s(link->kind));
+	}else if (link->kind == KIND_POINTER_CALL){
+	//}else if (link->type == TypeFunctionP){
+		return {}; // so far only void() pointers...)
+	}else{
+		do_error("evil function...kind: "+kind2str(link->kind));
+	}
 
 	return {};
 }
@@ -644,17 +661,6 @@ Node *SyntaxTree::parse_operand(Block *block)
 		}
 		operands = build_list(this, el);
 		Exp.next();
-	}else if (Exp.cur == "new"){ // new operator
-
-		operands = parse_statement_new(block);
-
-	}else if (Exp.cur == "delete"){ // delete operator
-
-		operands = parse_statement_delete(block);
-	}else if (Exp.cur == "sizeof"){
-		operands = parse_statement_sizeof(block);
-	}else if (Exp.cur == "type"){
-		operands = parse_statement_type(block);
 	}else{
 		// direct operand
 		operands = get_existence(Exp.cur, block);
@@ -679,50 +685,6 @@ Node *SyntaxTree::parse_operand(Block *block)
 				// direct operand!
 
 			}
-
-#if 0
-			string f_name =  Exp.cur;
-			Exp.next();
-			// variables get linked directly...
-
-			// operand is executable
-			if ((links[0]->kind == KIND_FUNCTION_CALL) or (links[0]->kind == KIND_VIRTUAL_CALL) or (links[0]->kind == KIND_STATEMENT)){
-				operand = GetFunctionCall(f_name, links, block);
-
-			}else if (links[0]->kind == KIND_CLASS){
-				if (Exp.cur == "("){
-					Class *t = links[0]->as_class();
-					clear_nodes(links);
-					auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
-					vv->dont_add_constructor = true;
-					Node *dummy = add_node_local_var(vv);
-					links = {};
-					for (auto *cf: t->get_constructors())
-						links.add(add_node_member_call(cf, ref_node(dummy)));
-						//links.add(exlink_make_func_class(this, block->function, *cf));
-
-					operand = GetFunctionCall(f_name, links, block);
-					operand->kind = KIND_CONSTRUCTOR_AS_FUNCTION;
-					operand->type = t;
-					//DoError("type as function");
-				}else{
-					// just the type...
-					operand = links.pop();
-					clear_nodes(links);
-				}*/
-			}else if (links[0]->kind == KIND_PRIMITIVE_OPERATOR){
-				// unary operator
-				int po = links[0]->link_no;
-				clear_nodes(links);
-				Node *sub_command = parse_operand(block);
-				return link_unary_operator(po, sub_command, block);
-			}else{
-
-				// variables etc...
-				operand = links.pop();
-				clear_nodes(links);
-			}
-#endif
 		}else{
 			const Class *t = get_constant_type(Exp.cur);
 			if (t == TypeUnknown)
@@ -736,7 +698,7 @@ Node *SyntaxTree::parse_operand(Block *block)
 
 	}
 
-	// resolve arrays, and structures...
+	// resolve arrays, structures, calls...
 	return parse_operand_extension(operands, block);
 }
 

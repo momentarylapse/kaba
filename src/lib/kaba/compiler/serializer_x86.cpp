@@ -8,9 +8,6 @@
 namespace Kaba{
 
 
-extern int GlobalWaitingMode;
-extern float GlobalTimeToWait;
-
 
 int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
@@ -95,7 +92,7 @@ void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instan
 		add_cmd(Asm::INST_CALL, param_marker(f->_label));
 	}else{
 		if (!f->address)
-			DoErrorLink("could not link function " + f->signature(true));
+			do_error_link("could not link function " + f->signature(true));
 		add_cmd(Asm::INST_CALL, param_const(TypePointer, (int_p)f->address)); // the actual call
 		// function pointer will be shifted later...
 	}
@@ -114,6 +111,11 @@ void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNod
 	add_cmd(Asm::INST_CALL, param_preg(TypePointer, Asm::REG_EDX)); // the actual call
 
 	fc_end(push_size, ret);
+}
+
+void SerializerX86::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
+{
+	do_error("pointer call");
 }
 
 int func_index(Function *f)
@@ -136,14 +138,14 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 
 	if (link->kind == KIND_FUNCTION_POINTER){
 		p.p = (int_p)link->as_func_p();
-		p.kind = KIND_VAR_GLOBAL;
+		p.kind = KIND_IMMEDIATE;//KIND_VAR_GLOBAL;
 		if (!p.p){
 			if (link->script == script){
 				int index = func_index(link->as_func());
 				p.p = index + 0xefef0000;
 				script->function_vars_to_link.add(index);
 			}else
-				DoErrorLink("could not link function as variable: " + link->as_func()->name);
+				do_error_link("could not link function as variable: " + link->as_func()->name);
 			//p.kind = Asm::PKLabel;
 			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
 		}
@@ -156,7 +158,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 	}else if (link->kind == KIND_VAR_GLOBAL){
 		p.p = (int_p)link->as_global_p();
 		if (!p.p)
-			script->DoErrorLink("variable is not linkable: " + link->as_global()->name);
+			script->do_error_link("variable is not linkable: " + link->as_global()->name);
 	}else if (link->kind == KIND_VAR_LOCAL){
 		p.p = link->as_local()->_offset;
 	}else if (link->kind == KIND_LOCAL_MEMORY){
@@ -190,7 +192,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 		// only used by <new> operator
 		p.p = link->link_no;
 	}else{
-		DoError("unexpected type of parameter: " + kind2str(link->kind));
+		do_error("unexpected type of parameter: " + kind2str(link->kind));
 	}
 	return p;
 }
@@ -336,7 +338,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 		case STATEMENT_NEW:{
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr);
 			if (links.num == 0)
-				DoError("@malloc not found????");
+				do_error("@malloc not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, param_const(TypeInt, ret.type->parent->size), ret);
 			if (com->params.num > 0){
 				// copy + edit command
@@ -353,7 +355,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			add_cmd_destructor(param[0], false);
 			Array<Node*> links = syntax_tree->get_existence("@free", nullptr);
 			if (links.num == 0)
-				DoError("@free not found????");
+				do_error("@free not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, param[0], p_none);
 			clear_nodes(links);
 			break;}
@@ -373,7 +375,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 		case STATEMENT_PASS:
 			break;
 		default:
-			DoError("statement unimplemented: " + Statements[com->link_no].name);
+			do_error("statement unimplemented: " + Statements[com->link_no].name);
 	}
 }
 
@@ -967,7 +969,7 @@ void SerializerX86::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 			}
 			break;
 		default:
-			DoError("inline function unimplemented: #" + i2s(index));
+			do_error("inline function unimplemented: #" + i2s(index));
 	}
 }
 
@@ -1092,7 +1094,7 @@ void SerializerX86::ProcessReferences()
 					set_virtual_reg(r, i, i+1);
 				}
 			}else{
-				DoError("reference in x86: " + cmd[i].p[1].str());
+				do_error("reference in x86: " + cmd[i].p[1].str());
 			}
 		}
 }
@@ -1114,7 +1116,7 @@ void SerializerX86::DoMapping()
 	if (config.verbose and config.allow_output(cur_func, "map:b"))
 		cmd_list_out("post temp -> stack");
 
-	ResolveDerefTempAndLocal();
+	resolve_deref_temp_and_local();
 
 	if (config.verbose and config.allow_output(cur_func, "map:c"))
 		cmd_list_out("post deref t&l");

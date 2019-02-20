@@ -566,7 +566,7 @@ Function* prepare_auto_impl(const Class *t, ClassFunction *cf)
 		return f;
 	}
 	return nullptr;
-	t->owner->script->DoErrorInternal("prepare class func..." + cf->signature(true));
+	t->owner->script->do_error_internal("prepare class func..." + cf->signature(true));
 	return f;
 }
 
