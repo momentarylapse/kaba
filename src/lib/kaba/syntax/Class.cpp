@@ -338,7 +338,7 @@ void Class::link_virtual_table()
 			if (cf.func){
 				//msg_write(i2s(cf.virtual_index) + ": " + cf.GetFunc()->name);
 				if (cf.virtual_index >= vtable.num)
-					owner->DoError("LinkVirtualTable");
+					owner->do_error("LinkVirtualTable");
 					//vtable.resize(cf.virtual_index + 1);
 				vtable[cf.virtual_index] = cf.func->address;
 			}
@@ -436,11 +436,11 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 		if (class_func_match(cf, ocf))
 			orig = &ocf;
 	if (override and !orig)
-		s->DoError(format("can not override function %s, no previous definition", f->signature(true).c_str()), f->_exp_no, f->_logical_line_no);
+		s->do_error(format("can not override function %s, no previous definition", f->signature(true).c_str()), f->_exp_no, f->_logical_line_no);
 	if (!override and orig){
 		msg_write(f->signature(true));
 		msg_write(orig->signature(true));
-		s->DoError(format("function %s is already defined, use '%s'", f->signature(true).c_str(), IDENTIFIER_OVERRIDE.c_str()), f->_exp_no, f->_logical_line_no);
+		s->do_error(format("function %s is already defined, use '%s'", f->signature(true).c_str(), IDENTIFIER_OVERRIDE.c_str()), f->_exp_no, f->_logical_line_no);
 	}
 	if (override){
 		orig->script = cf.script;

@@ -81,7 +81,7 @@ Script *CreateForSource(const string &buffer, bool just_analyse)
 	Script *s = new Script;
 	s->just_analyse = just_analyse;
 	try{
-		s->syntax->ParseBuffer(buffer, just_analyse);
+		s->syntax->parse_buffer(buffer, just_analyse);
 
 		if (!just_analyse)
 			s->Compiler();
@@ -164,7 +164,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 
 	// read file
 		string buffer = FileReadText(config.directory + filename);
-		syntax->ParseBuffer(buffer, just_analyse);
+		syntax->parse_buffer(buffer, just_analyse);
 
 
 		if (!just_analyse)
@@ -189,7 +189,7 @@ void Script::Load(const string &_filename, bool _just_analyse)
 
 void Script::DoError(const string &str, int override_line)
 {
-	syntax->DoError(str, 0, override_line);
+	syntax->do_error(str, 0, override_line);
 }
 
 void Script::DoErrorInternal(const string &str)
@@ -268,12 +268,12 @@ void ExecuteSingleScriptCommand(const string &cmd)
 // analyse syntax
 
 	// create a main() function
-	Function *func = ps->AddFunction("--command-func--", TypeVoid);
+	Function *func = ps->add_function("--command-func--", TypeVoid);
 	func->_var_size = 0; // set to -1...
 
 	// parse
 	ps->Exp.reset_parser();
-	ps->ParseCompleteCommand(func->block);
+	ps->parse_complete_command(func->block);
 	//pre_script->GetCompleteCommand((pre_script->Exp->ExpNr,0,0,&func);
 
 	ps->ConvertCallByReference();

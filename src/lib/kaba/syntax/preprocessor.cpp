@@ -116,7 +116,7 @@ void PreProcessFunction(SyntaxTree *ps, Node *c)
 						c->NumParams = 0;*/
 					}else{
 						// pre process operator
-						int nc = ps->AddConstant(o->return_type);
+						int nc = ps->add_constant(o->return_type);
 						string d1 = ps->constants[c->params[0]->link_no].value;
 						string d2;
 						if (c->num_params > 1)
@@ -170,7 +170,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 					c->NumParams = 0;*/
 				}else{
 					// pre process operator
-					Node *r = add_node_const(AddConstant(o->return_type));
+					Node *r = add_node_const(add_constant(o->return_type));
 					if (c->params.num > 1){
 						f(*r->as_const(), *c->params[0]->as_const(), *c->params[1]->as_const());
 					}else{
@@ -182,7 +182,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 			}
 		}
 #if 1
-	}else if (c->kind == KIND_FUNCTION){
+	}else if (c->kind == KIND_FUNCTION_CALL){
 		Function *f = c->as_func();
 		if (!f->is_pure)
 			return c;
@@ -220,7 +220,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 			p.add(c->params[i]->as_const()->p());
 		if (!call_function(f, ff, temp.p(), inst, p))
 			return c;
-		Node *r = add_node_const(AddConstant(f->return_type));
+		Node *r = add_node_const(add_constant(f->return_type));
 		r->as_const()->set(temp);
 		//DoError("...pure function evaluation?!?....TODO");
 		return r;
@@ -231,7 +231,7 @@ Node *SyntaxTree::PreProcessNode(Node *c)
 			if (c->params[i]->kind != KIND_CONSTANT)
 				all_consts = false;
 		if (all_consts){
-			Node *c_array = add_node_const(AddConstant(c->type));
+			Node *c_array = add_node_const(add_constant(c->type));
 			int el_size = c->type->parent->size;
 			DynamicArray *da = &c_array->as_const()->as_array();
 			da->init(el_size);

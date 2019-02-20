@@ -64,6 +64,7 @@ struct Function
 	void update(Class *class_type);
 	string signature(bool include_class = false) const;
 	Array<Block*> all_blocks();
+	void show(const string &stage = "") const;
 };
 
 

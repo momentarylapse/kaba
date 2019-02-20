@@ -116,6 +116,14 @@ void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNod
 	fc_end(push_size, ret);
 }
 
+int func_index(Function *f)
+{
+	foreachi(Function *ff, f->tree->functions, i)
+		if (ff == f)
+			return i;
+	return -1;
+}
+
 // create data for a (function) parameter
 //   and compile its command if the parameter is executable itself
 SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int index)
@@ -126,13 +134,14 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 	p.p = 0;
 	p.shift = 0;
 
-	if (link->kind == KIND_VAR_FUNCTION){
+	if (link->kind == KIND_FUNCTION_POINTER){
 		p.p = (int_p)link->as_func_p();
 		p.kind = KIND_VAR_GLOBAL;
 		if (!p.p){
 			if (link->script == script){
-				p.p = link->link_no + 0xefef0000;
-				script->function_vars_to_link.add(link->link_no);
+				int index = func_index(link->as_func());
+				p.p = index + 0xefef0000;
+				script->function_vars_to_link.add(index);
 			}else
 				DoErrorLink("could not link function as variable: " + link->as_func()->name);
 			//p.kind = Asm::PKLabel;
@@ -162,7 +171,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 		else
 			p.kind = KIND_REF_TO_CONST;
 		p.p = (int_p)link->as_const_p();
-	}else if ((link->kind == KIND_OPERATOR) or (link->kind == KIND_FUNCTION) or (link->kind == KIND_INLINE_FUNCTION) or (link->kind == KIND_VIRTUAL_FUNCTION) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
+	}else if ((link->kind == KIND_OPERATOR) or (link->kind == KIND_FUNCTION_CALL) or (link->kind == KIND_INLINE_CALL) or (link->kind == KIND_VIRTUAL_CALL) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
 		p = SerializeNode(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){
 		SerialNodeParam param = SerializeParameter(link->params[0], block, index);
@@ -325,7 +334,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			}
 			break;
 		case STATEMENT_NEW:{
-			Array<Node*> links = syntax_tree->GetExistence("@malloc", nullptr);
+			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr);
 			if (links.num == 0)
 				DoError("@malloc not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, param_const(TypeInt, ret.type->parent->size), ret);
@@ -342,7 +351,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 		case STATEMENT_DELETE:{
 			param[0] = SerializeParameter(com->params[0], block, index); // operand
 			add_cmd_destructor(param[0], false);
-			Array<Node*> links = syntax_tree->GetExistence("@free", nullptr);
+			Array<Node*> links = syntax_tree->get_existence("@free", nullptr);
 			if (links.num == 0)
 				DoError("@free not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, param[0], p_none);

@@ -329,7 +329,7 @@ Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationDa
 		c->script = target;
 	}else if (c->kind == KIND_CONSTANT){
 		c->script = target;
-	}else if ((c->kind == KIND_FUNCTION) or (c->kind == KIND_VAR_FUNCTION)){
+	}else if ((c->kind == KIND_FUNCTION_CALL) or (c->kind == KIND_FUNCTION_POINTER)){
 		c->script = target;
 	}
 	return c;
@@ -368,7 +368,7 @@ IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
 	dest->root_of_all_evil.var.append(source->root_of_all_evil.var);
 
 	for (Function *f: source->functions){
-		Function *ff = dest->AddFunction(f->name, f->return_type);
+		Function *ff = dest->add_function(f->name, f->return_type);
 		*ff = *f;
 		// keep block pointing to include file...
 	}

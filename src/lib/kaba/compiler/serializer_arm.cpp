@@ -10,6 +10,7 @@ namespace Asm{
 
 namespace Kaba{
 
+int func_index(Function *f);
 
 
 int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret)
@@ -409,13 +410,14 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 	p.p = 0;
 	p.shift = 0;
 
-	if (link->kind == KIND_VAR_FUNCTION){
+	if (link->kind == KIND_FUNCTION_POINTER){
 		p.p = (int_p)link->as_func_p();
 		p.kind = KIND_VAR_GLOBAL;
 		if (!p.p){
 			if (link->script == script){
-				p.p = link->link_no + 0xefef0000;
-				script->function_vars_to_link.add(link->link_no);
+				int index = func_index(link->as_func());
+				p.p = index + 0xefef0000;
+				script->function_vars_to_link.add(index);
 			}else
 				DoErrorLink("could not link function as variable: " + link->as_func()->name);
 			//p.kind = Asm::PKLabel;
@@ -447,7 +449,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 		}else{
 			return param_lookup(p.type, add_global_ref(*(int**)pp));
 		}
-	}else if ((link->kind==KIND_OPERATOR) or (link->kind==KIND_FUNCTION) or (link->kind==KIND_VIRTUAL_FUNCTION) or (link->kind==KIND_INLINE_FUNCTION) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
+	}else if ((link->kind==KIND_OPERATOR) or (link->kind==KIND_FUNCTION_CALL) or (link->kind==KIND_VIRTUAL_CALL) or (link->kind==KIND_INLINE_CALL) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
 		return SerializeNode(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){
 		SerialNodeParam param = SerializeParameter(link->params[0], block, index);

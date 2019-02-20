@@ -9,7 +9,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, Class *t)
 {
 	if (t->vtable.num > 0){
 		Node *p = shift_node(self, true, 0, TypePointer);
-		auto *c = AddConstant(TypePointer);
+		auto *c = add_constant(TypePointer);
 		(*(void**)c->value.data) = t->_vtable_location_target_;
 		Node *cmd_0 = add_node_const(c);
 		Node *cmd_assign = add_node_operator_by_inline(p, cmd_0, INLINE_POINTER_ASSIGN);
@@ -27,7 +27,7 @@ void SyntaxTree::AutoImplementAddChildConstructors(Node *self, Function *f, Clas
 		if (!ff)
 			continue;
 		Node *p = shift_node(self, true, e.offset, e.type);
-		Node *c = add_node_classfunc(ff, ref_node(p));
+		Node *c = add_node_member_call(ff, ref_node(p));
 		f->block->add(c);
 	}
 }
@@ -39,15 +39,15 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()){
-		Node *c_el_size = add_node_const(AddConstant(TypeInt));
+		Node *c_el_size = add_node_const(add_constant(TypeInt));
 		c_el_size->as_const()->as_int() = t->parent->size;
-		Node *c = add_node_classfunc(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
+		Node *c = add_node_member_call(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
 		c->set_param(0, c_el_size);
 		f->block->add(c);
 	}else if (t->is_dict()){
-		Node *c_el_size = add_node_const(AddConstant(TypeInt));
+		Node *c_el_size = add_node_const(add_constant(TypeInt));
 		c_el_size->as_const()->as_int() = t->parent->size + TypeString->size;
-		Node *c = add_node_classfunc(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
+		Node *c = add_node_member_call(t->get_func("__mem_init__", TypeVoid, 1, TypeInt), self);
 		c->set_param(0, c_el_size);
 		f->block->add(c);
 	}else{
@@ -58,16 +58,16 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 			ClassFunction *pc_def = t->parent->get_default_constructor();
 			if (pc_same){
 				// first, try same signature
-				Node *c = add_node_classfunc(pc_same, cp_node(self));
+				Node *c = add_node_member_call(pc_same, cp_node(self));
 				for (int i=0;i<pc_same->param_types.num;i++)
 					c->set_param(i, add_node_local_var(f->var[i]));
 				f->block->add(c);
 			}else if (pc_def){
 				// then, try default constructor
-				Node *c = add_node_classfunc(pc_def, cp_node(self));
+				Node *c = add_node_member_call(pc_def, cp_node(self));
 				f->block->add(c);
 			}else if (t->parent->needs_constructor()){
-				DoError("can't find a constructor in the parent class with matching signature or a default constructor");
+				do_error("can't find a constructor in the parent class with matching signature or a default constructor");
 			}
 		}
 
@@ -90,7 +90,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 	if (t->is_super_array() or t->is_dict()){
 		ClassFunction *f_clear = t->get_func("clear", TypeVoid, 0);
 		if (f_clear){
-			Node *c = add_node_classfunc(f_clear, self);
+			Node *c = add_node_member_call(f_clear, self);
 			f->block->add(c);
 		}
 	}else{
@@ -104,7 +104,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 			if (!ff)
 				continue;
 			Node *p = shift_node(self, true, e.offset, e.type);
-			Node *c = add_node_classfunc(ff, ref_node(p));
+			Node *c = add_node_member_call(ff, ref_node(p));
 			f->block->add(c);
 		}
 
@@ -112,7 +112,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 		if (t->parent){
 			ClassFunction *ff = t->parent->get_destructor();
 			if (ff){
-				Node *c = add_node_classfunc(ff, cp_node(self), true);
+				Node *c = add_node_member_call(ff, cp_node(self), true);
 				f->block->add(c);
 			}
 		}
@@ -130,12 +130,12 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 		ClassFunction *f_resize = t->get_func("resize", TypeVoid, 1, TypeInt);
 		if (!f_resize)
-			DoError(format("%s.__assign__(): no %s.resize(int) found", t->name.c_str(), t->name.c_str()));
+			do_error(format("%s.__assign__(): no %s.resize(int) found", t->name.c_str(), t->name.c_str()));
 
 		// self.resize(other.num)
 		Node *other_num = shift_node(other, false, config.pointer_size, TypeInt);
 
-		Node *cmd_resize = add_node_classfunc(f_resize, cp_node(self));
+		Node *cmd_resize = add_node_member_call(f_resize, cp_node(self));
 		cmd_resize->set_num_params(1);
 		cmd_resize->set_param(0, other_num);
 		f->block->add(cmd_resize);
@@ -150,7 +150,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		f->block->add(cmd_for);
 
 		// for_var = 0
-		Node *cmd_0 = add_node_const(AddConstant(TypeInt));
+		Node *cmd_0 = add_node_const(add_constant(TypeInt));
 		cmd_0->as_const()->as_int() = 0;
 		Node *cmd_assign0 = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		cmd_for->set_param(0, cmd_assign0);
@@ -172,9 +172,9 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		Node *cmd_el2 = add_node_parray(other_data, for_var, t->parent);
 
 
-		Node *cmd_assign = LinkOperator(OPERATOR_ASSIGN, cmd_el, cmd_el2);
+		Node *cmd_assign = link_operator(OPERATOR_ASSIGN, cmd_el, cmd_el2);
 		if (!cmd_assign)
-			DoError(format("%s.__assign__(): no %s.__assign__() found", t->name.c_str(), t->parent->name.c_str()));
+			do_error(format("%s.__assign__(): no %s.__assign__() found", t->name.c_str(), t->parent->name.c_str()));
 		b->add(cmd_assign);
 
 		// ...for_var += 1
@@ -186,7 +186,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		//    self[i].__assign__(other[i])
 
 		auto *var_i = f->block->add_var("i", TypeInt);
-		Node *c_num = add_node_const(AddConstant(TypeInt));
+		Node *c_num = add_node_const(add_constant(TypeInt));
 		c_num->as_const()->as_int() = t->array_length;
 
 		Node *for_var = add_node_local_var(var_i);
@@ -197,7 +197,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 
 
 		// for_var = 0
-		Node *cmd_0 = add_node_const(AddConstant(TypeInt));
+		Node *cmd_0 = add_node_const(add_constant(TypeInt));
 		cmd_0->as_const()->as_int() = 0;
 		Node *cmd_assign0 = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		cmd_for->set_param(0, cmd_assign0);
@@ -216,9 +216,9 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 		Node *cmd_el2 = add_node_parray(ref_node(other), for_var, t->parent);
 
 
-		Node *cmd_assign = LinkOperator(OPERATOR_ASSIGN, cmd_el, cmd_el2);
+		Node *cmd_assign = link_operator(OPERATOR_ASSIGN, cmd_el, cmd_el2);
 		if (!cmd_assign)
-			DoError(format("%s.__assign__(): no %s.__assign__() found", t->name.c_str(), t->parent->name.c_str()));
+			do_error(format("%s.__assign__(): no %s.__assign__() found", t->name.c_str(), t->parent->name.c_str()));
 		b->add(cmd_assign);
 
 		// ...for_var += 1
@@ -232,9 +232,9 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 			Node *o = cp_node(other);
 			p->type = o->type = t->parent;
 
-			Node *cmd_assign = LinkOperator(OPERATOR_ASSIGN, p, o);
+			Node *cmd_assign = link_operator(OPERATOR_ASSIGN, p, o);
 			if (!cmd_assign)
-				DoError(format("%s.__assign__(): no parent %s.__assign__", t->name.c_str(), t->parent->name.c_str()));
+				do_error(format("%s.__assign__(): no parent %s.__assign__", t->name.c_str(), t->parent->name.c_str()));
 			f->block->add(cmd_assign);
 		}
 
@@ -246,9 +246,9 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 			Node *p = shift_node(self, true, e.offset, e.type);
 			Node *o = shift_node(cp_node(other), false, e.offset, e.type); // needed for call-by-ref conversion!
 
-			Node *cmd_assign = LinkOperator(OPERATOR_ASSIGN, p, o);
+			Node *cmd_assign = link_operator(OPERATOR_ASSIGN, p, o);
 			if (!cmd_assign)
-				DoError(format("%s.__assign__(): no %s.__assign__ for element \"%s\"", t->name.c_str(), e.type->name.c_str(), e.name.c_str()));
+				do_error(format("%s.__assign__(): no %s.__assign__ for element \"%s\"", t->name.c_str(), e.type->name.c_str(), e.name.c_str()));
 			f->block->add(cmd_assign);
 		}
 	}
@@ -274,7 +274,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		f->block->add(cmd_for);
 
 		// for_var = 0
-		Node *cmd_0 = add_node_const(AddConstant(TypeInt));
+		Node *cmd_0 = add_node_const(add_constant(TypeInt));
 		cmd_0->as_const()->as_int() = 0;
 		Node *cmd_assign = add_node_operator_by_inline(for_var, cmd_0, INLINE_INT_ASSIGN);
 		cmd_for->set_param(0, cmd_assign);
@@ -292,7 +292,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 		Node *cmd_el = add_node_parray(self_data, for_var, t->parent);
 
 		// __delete__
-		Node *cmd_delete = add_node_classfunc(f_del, ref_node(cmd_el));
+		Node *cmd_delete = add_node_member_call(f_del, ref_node(cmd_el));
 		b->add(cmd_delete);
 
 		// for_var ++
@@ -301,7 +301,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 	}
 
 	// clear
-	Node *cmd_clear = add_node_classfunc(t->get_func("__mem_clear__", TypeVoid, 0), self);
+	Node *cmd_clear = add_node_member_call(t->get_func("__mem_clear__", TypeVoid, 0), self);
 	f->block->add(cmd_clear);
 }
 
@@ -351,7 +351,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		Node *cmd_el = add_node_parray(self_data, for_var, t->parent);
 
 		// __delete__
-		Node *cmd_delete = add_node_classfunc(f_del, ref_node(cmd_el));
+		Node *cmd_delete = add_node_member_call(f_del, ref_node(cmd_el));
 		b->add(cmd_delete);
 
 		// ...for_var += 1
@@ -360,7 +360,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 	}
 
 	// resize
-	Node *c_resize = add_node_classfunc(t->get_func("__mem_resize__", TypeVoid, 1, TypeInt), self);
+	Node *c_resize = add_node_member_call(t->get_func("__mem_resize__", TypeVoid, 1, TypeInt), self);
 	c_resize->set_param(0, num);
 	f->block->add(c_resize);
 
@@ -387,7 +387,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 		Node *cmd_el = add_node_parray(self_data, for_var, t->parent);
 
 		// __init__
-		Node *cmd_init = add_node_classfunc(f_init, ref_node(cmd_el));
+		Node *cmd_init = add_node_member_call(f_init, ref_node(cmd_el));
 		b->add(cmd_init);
 
 		// ...for_var += 1
@@ -415,12 +415,12 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, Class *t)
 		Node *cmd_el = add_node_parray(self_data, index, t->parent);
 
 		// __delete__
-		Node *cmd_delete = add_node_classfunc(f_del, ref_node(cmd_el));
+		Node *cmd_delete = add_node_member_call(f_del, ref_node(cmd_el));
 		f->block->params.add(cmd_delete);
 	}
 
 	// resize
-	Node *c_remove = add_node_classfunc(t->get_func("__mem_remove__", TypeVoid, 1, TypeInt), self);
+	Node *c_remove = add_node_member_call(t->get_func("__mem_remove__", TypeVoid, 1, TypeInt), self);
 	c_remove->set_param(0, index);
 	f->block->params.add(c_remove);
 }
@@ -438,10 +438,10 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 
 
 	// resize(self.num + 1)
-	Node *cmd_1 = add_node_const(AddConstant(TypeInt));
+	Node *cmd_1 = add_node_const(add_constant(TypeInt));
 	cmd_1->as_const()->as_int() = 1;
 	Node *cmd_add = add_node_operator_by_inline(self_num, cmd_1, INLINE_INT_ADD);
-	Node *cmd_resize = add_node_classfunc(t->get_func("resize", TypeVoid, 1, TypeInt), self);
+	Node *cmd_resize = add_node_member_call(t->get_func("resize", TypeVoid, 1, TypeInt), self);
 	cmd_resize->set_param(0, cmd_add);
 	b->add(cmd_resize);
 
@@ -453,15 +453,15 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 	Node *self_data = shift_node(deref_self, false, 0, t->parent->get_pointer());
 	Node *cmd_el = add_node_parray(self_data, cmd_sub, t->parent);
 
-	Node *cmd_assign = LinkOperator(OPERATOR_ASSIGN, cmd_el, item);
+	Node *cmd_assign = link_operator(OPERATOR_ASSIGN, cmd_el, item);
 	if (!cmd_assign)
-		DoError(format("%s.add(): no %s.%s for elements", t->name.c_str(), t->parent->name.c_str(), IDENTIFIER_FUNC_ASSIGN.c_str()));
+		do_error(format("%s.add(): no %s.%s for elements", t->name.c_str(), t->parent->name.c_str(), IDENTIFIER_FUNC_ASSIGN.c_str()));
 	b->add(cmd_assign);
 }
 
 void add_func_header(SyntaxTree *s, Class *t, const string &name, Class *return_type, const Array<Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr)
 {
-	Function *f = s->AddFunction(name, return_type);
+	Function *f = s->add_function(name, return_type);
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i){
 		f->literal_param_type.add(p);

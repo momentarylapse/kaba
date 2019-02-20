@@ -363,8 +363,8 @@ struct CompilerConfiguration
 	bool verbose;
 	string verbose_func_filter;
 	string verbose_stage_filter;
-	bool allow_output(Function *f, const string &stage);
-	bool allow_output_func(Function *f);
+	bool allow_output(const Function *f, const string &stage);
+	bool allow_output_func(const Function *f);
 	bool allow_output_stage(const string &stage);
 	bool compile_silently;
 	bool show_compiler_stats;

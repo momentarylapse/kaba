@@ -61,6 +61,14 @@ Function::~Function()
 		delete block;
 }
 
+void Function::show(const string &stage) const
+{
+	if (!config.allow_output(this, stage))
+		return;
+	msg_write("[function] " + return_type->name + " " + name);
+	block->show();
+}
+
 string Function::create_slightly_hidden_name()
 {
 	return format("-temp-%d-", ++ num_slightly_hidden_vars);

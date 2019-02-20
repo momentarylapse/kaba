@@ -583,10 +583,10 @@ int Serializer::add_global_ref(void *p)
 
 bool node_is_assign_mem(Node *n)
 {
-	if (n->kind == KIND_INLINE_FUNCTION){
+	if (n->kind == KIND_INLINE_CALL){
 		return (n->as_func()->inline_no == INLINE_CHUNK_ASSIGN);
 	}
-	if (n->kind == KIND_FUNCTION){
+	if (n->kind == KIND_FUNCTION_CALL){
 		return n->as_func()->name == "__assign__";
 	}
 	return false;
@@ -604,7 +604,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	Node *override_ret = nullptr;
 #if 1
 	if (node_is_assign_mem(com)){
-		if (com->params[1]->kind == KIND_FUNCTION or com->params[1]->kind == KIND_INLINE_FUNCTION){
+		if (com->params[1]->kind == KIND_FUNCTION_CALL or com->params[1]->kind == KIND_INLINE_CALL){
 			if (com->params[0]->kind == KIND_VAR_LOCAL or com->params[0]->kind == KIND_VAR_GLOBAL){
 				//msg_write("OPT...");
 				override_ret = com->params[0];
@@ -621,7 +621,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	if (override_ret){
 		ret = SerializeParameter(override_ret, block, index);
 	}else{
-		bool create_constructor_for_return = ((com->kind != KIND_STATEMENT) and (com->kind != KIND_FUNCTION) and (com->kind != KIND_VIRTUAL_FUNCTION));
+		bool create_constructor_for_return = ((com->kind != KIND_STATEMENT) and (com->kind != KIND_FUNCTION_CALL) and (com->kind != KIND_VIRTUAL_CALL));
 		ret = add_temp(com->type, create_constructor_for_return);
 	}
 
@@ -644,15 +644,15 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	}
 
 
-	if (com->kind == KIND_FUNCTION){
+	if (com->kind == KIND_FUNCTION_CALL){
 
 		AddFunctionCall(com->as_func(), instance, params, ret);
 
-	}else if (com->kind == KIND_VIRTUAL_FUNCTION){
+	}else if (com->kind == KIND_VIRTUAL_CALL){
 
 		AddClassFunctionCall(instance.type->parent->get_virtual_function(com->link_no), instance, params, ret);
 
-	}else if (com->kind == KIND_INLINE_FUNCTION){
+	}else if (com->kind == KIND_INLINE_CALL){
 		SerializeInlineFunction(com, params, ret);
 
 	}else if (com->kind == KIND_STATEMENT){
@@ -2017,7 +2017,7 @@ void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParams
 {
 	if (config.verbose and config.allow_output(cur_func, "asm"))
 		msg_write("serializing " + f->name + " -------------------");
-	syntax->ShowFunction(f, "asm");
+	f->show("asm");
 
 	cur_func = f;
 	Serializer *d = CreateSerializer(this, list);

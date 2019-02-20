@@ -21,6 +21,8 @@ class Function;
 class Variable;
 class Constant;
 class Operator;
+class PrimitiveOperator;
+class Statement;
 
 
 enum
@@ -29,12 +31,13 @@ enum
 	// data
 	KIND_VAR_LOCAL,
 	KIND_VAR_GLOBAL,
-	KIND_VAR_FUNCTION,
+	KIND_FUNCTION_NAME,
+	KIND_FUNCTION_POINTER,
 	KIND_CONSTANT,
 	// execution
-	KIND_FUNCTION,           // = real function call
-	KIND_VIRTUAL_FUNCTION,   // = virtual function call
-	KIND_INLINE_FUNCTION,    // = function defined inside the compiler...
+	KIND_FUNCTION_CALL,           // = real function call
+	KIND_VIRTUAL_CALL,   // = virtual function call
+	KIND_INLINE_CALL,    // = function defined inside the compiler...
 	KIND_STATEMENT,          // = if/while/break/...
 	KIND_BLOCK,              // = block of commands {...}
 	KIND_OPERATOR,
@@ -54,7 +57,7 @@ enum
 	KIND_LOCAL_ADDRESS,      // &local (for pre processing address shifts)
 	KIND_LOCAL_MEMORY,       // local (but LinkNr = address)
 	// special
-	KIND_TYPE,
+	KIND_CLASS,
 	KIND_ARRAY_BUILDER,
 	KIND_CONSTRUCTOR_AS_FUNCTION,
 	// compilation
@@ -92,6 +95,8 @@ struct Node
 	Class *as_class() const;
 	Constant *as_const() const;
 	Operator *as_op() const;
+	PrimitiveOperator *as_prim_op() const;
+	Statement *as_statement() const;
 	void *as_func_p() const;
 	void *as_const_p() const;
 	void *as_global_p() const;
@@ -100,6 +105,9 @@ struct Node
 	void set_num_params(int n);
 	void set_param(int index, Node *p);
 	void set_instance(Node *p);
+	string sig() const;
+	string str() const;
+	void show() const;
 };
 
 void clear_nodes(Array<Node*> &nodes);

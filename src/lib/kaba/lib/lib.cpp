@@ -1022,7 +1022,7 @@ void SIAddPackageBase()
 	TypeClass 			= add_type  ("Class",	sizeof(Class));
 	TypeClassP			= add_type_p("Class*", TypeClass);
 
-	TypeFunction		= add_type  ("func", 0);
+	TypeFunction		= add_type  ("func", sizeof(Function));
 	TypeFunctionP		= add_type_p("func*", TypeFunction);
 
 
@@ -1095,6 +1095,9 @@ void SIAddPackageBase()
 		class_add_element("parent", TypeClassP, offsetof(Class, parent));
 		class_add_func("is_derived_from", TypeBool, mf(&Class::is_derived_from));
 			func_add_param("c", TypeClassP);
+
+	add_class(TypeFunction);
+		class_add_element("name", TypeString, offsetof(Function, name));
 
 
 	//	add_func_special("f2i",			TypeInt,	(void*)&_Float2Int);
@@ -1751,7 +1754,7 @@ void End()
 }
 
 
-bool CompilerConfiguration::allow_output_func(Function *f)
+bool CompilerConfiguration::allow_output_func(const Function *f)
 {
 	if (!verbose)
 		return false;
@@ -1775,7 +1778,7 @@ bool CompilerConfiguration::allow_output_stage(const string &stage)
 	return false;
 }
 
-bool CompilerConfiguration::allow_output(Function *f, const string &stage)
+bool CompilerConfiguration::allow_output(const Function *f, const string &stage)
 {
 	if (!verbose)
 		return false;

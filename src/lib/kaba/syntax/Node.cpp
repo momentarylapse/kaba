@@ -17,12 +17,13 @@ string kind2str(int kind)
 {
 	if (kind == KIND_VAR_LOCAL)			return "local";
 	if (kind == KIND_VAR_GLOBAL)			return "global";
-	if (kind == KIND_VAR_FUNCTION)		return "function as variable";
+	if (kind == KIND_FUNCTION_NAME)		return "function name";
+	if (kind == KIND_FUNCTION_POINTER)		return "function pointer";
 	if (kind == KIND_CONSTANT)			return "constant";
 	if (kind == KIND_REF_TO_CONST)			return "reference to const";
-	if (kind == KIND_FUNCTION)			return "function";
-	if (kind == KIND_INLINE_FUNCTION)			return "inline";
-	if (kind == KIND_VIRTUAL_FUNCTION)	return "virtual function";
+	if (kind == KIND_FUNCTION_CALL)			return "call";
+	if (kind == KIND_INLINE_CALL)			return "inline";
+	if (kind == KIND_VIRTUAL_CALL)	return "virtual call";
 	if (kind == KIND_STATEMENT)			return "statement";
 	if (kind == KIND_OPERATOR)			return "operator";
 	if (kind == KIND_PRIMITIVE_OPERATOR)	return "PRIMITIVE operator";
@@ -33,7 +34,7 @@ string kind2str(int kind)
 	if (kind == KIND_REFERENCE)			return "address operator";
 	if (kind == KIND_DEREFERENCE)		return "dereferencing";
 	if (kind == KIND_DEREF_ADDRESS_SHIFT)	return "deref address shift";
-	if (kind == KIND_TYPE)				return "type";
+	if (kind == KIND_CLASS)				return "class";
 	if (kind == KIND_ARRAY_BUILDER)		return "array builder";
 	if (kind == KIND_CONSTRUCTOR_AS_FUNCTION)		return "constructor function";
 	if (kind == KIND_VAR_TEMP)			return "temp";
@@ -57,45 +58,58 @@ string kind2str(int kind)
 }
 
 
-string op_sig(const Operator *op)
+string Node::sig() const
 {
-	return "(" + op->param_type_1->name + ") " + PrimitiveOperators[op->primitive_id].name + " (" + op->param_type_2->name + ")";
+	string t = type->name + " ";
+	if (kind == KIND_VAR_LOCAL)			return t + as_local()->name;
+	if (kind == KIND_VAR_GLOBAL)			return t + as_global()->name;
+	if (kind == KIND_FUNCTION_POINTER)		return t + as_func()->name;
+	if (kind == KIND_FUNCTION_NAME)		return t + as_func()->name;
+	if (kind == KIND_CONSTANT)			return t + as_const()->str();
+	if (kind == KIND_FUNCTION_CALL)			return as_func()->signature();
+	if (kind == KIND_INLINE_CALL)	return as_func()->signature();
+	if (kind == KIND_VIRTUAL_CALL)	return t + i2s(link_no);//s->Functions[nr]->name;
+	if (kind == KIND_STATEMENT)			return t + as_statement()->name;
+	if (kind == KIND_OPERATOR)			return as_op()->sig();
+	if (kind == KIND_PRIMITIVE_OPERATOR)	return as_prim_op()->name;
+	if (kind == KIND_BLOCK)				return "";//p2s(as_block());
+	if (kind == KIND_ADDRESS_SHIFT)		return t + i2s(link_no);
+	if (kind == KIND_ARRAY)				return t;
+	if (kind == KIND_POINTER_AS_ARRAY)		return t;
+	if (kind == KIND_REFERENCE)			return t;
+	if (kind == KIND_DEREFERENCE)		return t;
+	if (kind == KIND_DEREF_ADDRESS_SHIFT)	return t + i2s(link_no);
+	if (kind == KIND_CLASS)				return as_class()->name;
+	if (kind == KIND_REGISTER)			return t + Asm::GetRegName(link_no);
+	if (kind == KIND_ADDRESS)			return t + d2h(&link_no, config.pointer_size);
+	if (kind == KIND_MEMORY)				return t + d2h(&link_no, config.pointer_size);
+	if (kind == KIND_LOCAL_ADDRESS)		return t + d2h(&link_no, config.pointer_size);
+	if (kind == KIND_LOCAL_MEMORY)		return t + d2h(&link_no, config.pointer_size);
+	return t + i2s(link_no);
 }
 
-string node_sig(SyntaxTree *s, Node *n)
+string Node::str() const
 {
-	string t = n->type->name + " ";
-	if (n->kind == KIND_VAR_LOCAL)			return t + n->as_local()->name;
-	if (n->kind == KIND_VAR_GLOBAL)			return t + n->as_global()->name;
-	if (n->kind == KIND_VAR_FUNCTION)		return t + n->as_func()->name;
-	if (n->kind == KIND_CONSTANT)			return t + n->as_const()->str();
-	if (n->kind == KIND_FUNCTION)			return n->as_func()->signature();
-	if (n->kind == KIND_INLINE_FUNCTION)	return n->as_func()->signature();
-	if (n->kind == KIND_VIRTUAL_FUNCTION)	return t + i2s(n->link_no);//s->Functions[nr]->name;
-	if (n->kind == KIND_STATEMENT)	return t + Statements[n->link_no].name;
-	if (n->kind == KIND_OPERATOR)			return op_sig(n->as_op());
-	if (n->kind == KIND_PRIMITIVE_OPERATOR)	return PrimitiveOperators[n->link_no].name;
-	if (n->kind == KIND_BLOCK)				return "";//p2s(n->as_block());
-	if (n->kind == KIND_ADDRESS_SHIFT)		return t + i2s(n->link_no);
-	if (n->kind == KIND_ARRAY)				return t;
-	if (n->kind == KIND_POINTER_AS_ARRAY)		return t;
-	if (n->kind == KIND_REFERENCE)			return t;
-	if (n->kind == KIND_DEREFERENCE)		return t;
-	if (n->kind == KIND_DEREF_ADDRESS_SHIFT)	return t + i2s(n->link_no);
-	if (n->kind == KIND_TYPE)				return n->as_class()->name;
-	if (n->kind == KIND_REGISTER)			return t + Asm::GetRegName(n->link_no);
-	if (n->kind == KIND_ADDRESS)			return t + d2h(&n->link_no, config.pointer_size);
-	if (n->kind == KIND_MEMORY)				return t + d2h(&n->link_no, config.pointer_size);
-	if (n->kind == KIND_LOCAL_ADDRESS)		return t + d2h(&n->link_no, config.pointer_size);
-	if (n->kind == KIND_LOCAL_MEMORY)		return t + d2h(&n->link_no, config.pointer_size);
-	return t + i2s(n->link_no);
+	return "<" + kind2str(kind) + ">  " + sig();
 }
 
-string node2str(SyntaxTree *s, Node *n)
-{
-	return "<" + kind2str(n->kind) + ">  " + node_sig(s, n);
-}
 
+void Node::show() const
+{
+	string orig;
+	msg_write(str() + orig);
+	msg_right();
+	if (instance)
+		instance->show();
+	if (params.num > 10)
+		return;
+	for (Node *p: params)
+		if (p)
+			p->show();
+		else
+			msg_write("<param nil>");
+	msg_left();
+}
 
 
 
@@ -138,8 +152,10 @@ inline void set_command(Node *&a, Node *b)
 
 void Block::add(Node *c)
 {
-	params.add(c);
-	c->ref_count ++;
+	if (c){
+		params.add(c);
+		c->ref_count ++;
+	}
 }
 
 void Block::set(int index, Node *c)
@@ -150,7 +166,7 @@ void Block::set(int index, Node *c)
 Variable *Block::add_var(const string &name, Class *type)
 {
 	if (get_var(name))
-		function->tree->DoError(format("variable '%s' already declared in this context", name.c_str()));
+		function->tree->do_error(format("variable '%s' already declared in this context", name.c_str()));
 	Variable *v = new Variable(name, type);
 	v->is_extern = next_extern;
 	function->var.add(v);
@@ -239,6 +255,16 @@ Variable *Node::as_local() const
 	return (Variable*)link_no;
 }
 
+Statement *Node::as_statement() const
+{
+	return &Statements[link_no];
+}
+
+PrimitiveOperator *Node::as_prim_op() const
+{
+	return &PrimitiveOperators[link_no];
+}
+
 void Node::set_instance(Node *p)
 {
 	set_command(instance, p);
@@ -252,7 +278,7 @@ void Node::set_num_params(int n)
 void Node::set_param(int index, Node *p)
 {
 	if ((index < 0) or (index >= params.num)){
-		script->syntax->ShowNode(this);
+		show();
 		script->DoErrorInternal(format("Command.set_param...  %d %d", index, params.num));
 	}
 	set_command(params[index], p);
