@@ -97,67 +97,67 @@ Array<ClassSizeData> ClassSizes;
 //                                             types                                              //
 //------------------------------------------------------------------------------------------------//
 
-Class *TypeUnknown;
-Class *TypeReg128;
-Class *TypeReg64;
-Class *TypeReg32;
-Class *TypeReg16;
-Class *TypeReg8;
-Class *TypeVoid;
-Class *TypePointer;
-Class *TypeChunk;
-Class *TypeBool;
-Class *TypeInt;
-Class *TypeInt64;
-Class *TypeFloat;
-Class *TypeFloat32;
-Class *TypeFloat64;
-Class *TypeChar;
-Class *TypeString;
-Class *TypeCString;
+const Class *TypeUnknown;
+const Class *TypeReg128;
+const Class *TypeReg64;
+const Class *TypeReg32;
+const Class *TypeReg16;
+const Class *TypeReg8;
+const Class *TypeVoid;
+const Class *TypePointer;
+const Class *TypeChunk;
+const Class *TypeBool;
+const Class *TypeInt;
+const Class *TypeInt64;
+const Class *TypeFloat;
+const Class *TypeFloat32;
+const Class *TypeFloat64;
+const Class *TypeChar;
+const Class *TypeString;
+const Class *TypeCString;
 
-Class *TypeVector;
-Class *TypeRect;
-Class *TypeColor;
-Class *TypeQuaternion;
+const Class *TypeVector;
+const Class *TypeRect;
+const Class *TypeColor;
+const Class *TypeQuaternion;
  // internal:
-Class *TypeDynamicArray;
-Class *TypeDictBase;
-Class *TypePointerList;
-Class *TypeCharPs;
-Class *TypeBoolPs;
-Class *TypeBoolList;
-Class *TypeIntPs;
-Class *TypeIntList;
-Class *TypeIntArray;
-Class *TypeIntDict;
-Class *TypeFloatP;
-Class *TypeFloatPs;
-Class *TypeFloatList;
-Class *TypeFloatArray;
-Class *TypeFloatArrayP;
-Class *TypeFloatDict;
-Class *TypeComplex;
-Class *TypeComplexList;
-Class *TypeStringList;
-Class *TypeStringDict;
-Class *TypeVectorArray;
-Class *TypeVectorArrayP;
-Class *TypeVectorList;
-Class *TypeMatrix;
-Class *TypePlane;
-Class *TypePlaneList;
-Class *TypeMatrix3;
-Class *TypeDate;
-Class *TypeImage;
+const Class *TypeDynamicArray;
+const Class *TypeDictBase;
+const Class *TypePointerList;
+const Class *TypeCharPs;
+const Class *TypeBoolPs;
+const Class *TypeBoolList;
+const Class *TypeIntPs;
+const Class *TypeIntList;
+const Class *TypeIntArray;
+const Class *TypeIntDict;
+const Class *TypeFloatP;
+const Class *TypeFloatPs;
+const Class *TypeFloatList;
+const Class *TypeFloatArray;
+const Class *TypeFloatArrayP;
+const Class *TypeFloatDict;
+const Class *TypeComplex;
+const Class *TypeComplexList;
+const Class *TypeStringList;
+const Class *TypeStringDict;
+const Class *TypeVectorArray;
+const Class *TypeVectorArrayP;
+const Class *TypeVectorList;
+const Class *TypeMatrix;
+const Class *TypePlane;
+const Class *TypePlaneList;
+const Class *TypeMatrix3;
+const Class *TypeDate;
+const Class *TypeImage;
 
-Class *TypeException;
-Class *TypeExceptionP;
+const Class *TypeException;
+const Class *TypeExceptionP;
 
-Class *TypeClass;
-Class *TypeClassP;
-Class *TypeFunction;
-Class *TypeFunctionP;
+const Class *TypeClass;
+const Class *TypeClassP;
+const Class *TypeFunction;
+const Class *TypeFunctionP;
 
 
 Array<Package> Packages;
@@ -182,7 +182,7 @@ void add_package(const string &name, bool used_by_default)
 	cur_package_index = Packages.num - 1;
 }
 
-Class *add_type(const string &name, int size, ScriptFlag flag)
+const Class *add_type(const string &name, int size, ScriptFlag flag)
 {
 	Class *t = new Class(name, size, cur_package_script->syntax);
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
@@ -190,7 +190,7 @@ Class *add_type(const string &name, int size, ScriptFlag flag)
 	cur_package_script->syntax->classes.add(t);
 	return t;
 }
-Class *add_type_p(const string &name, Class *sub_type, ScriptFlag flag)
+const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag flag)
 {
 	Class *t = new Class(name, config.pointer_size, cur_package_script->syntax);
 	t->type = t->Type::POINTER;
@@ -200,7 +200,7 @@ Class *add_type_p(const string &name, Class *sub_type, ScriptFlag flag)
 	cur_package_script->syntax->classes.add(t);
 	return t;
 }
-Class *add_type_a(const string &name, Class *sub_type, int array_length)
+const Class *add_type_a(const string &name, const Class *sub_type, int array_length)
 {
 	Class *t = new Class(name, 0, cur_package_script->syntax, sub_type);
 	if (array_length < 0){
@@ -218,7 +218,7 @@ Class *add_type_a(const string &name, Class *sub_type, int array_length)
 	return t;
 }
 
-Class *add_type_d(const string &name, Class *sub_type)
+const Class *add_type_d(const string &name, const Class *sub_type)
 {
 	Class *t = new Class(name, config.super_array_size, cur_package_script->syntax, sub_type);
 	t->type = t->Type::DICT;
@@ -267,7 +267,7 @@ PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS]={
 
 //   with type information
 
-void add_operator(int primitive_op, Class *return_type, Class *param_type1, Class *param_type2, int inline_index, void *func = nullptr)
+void add_operator(int primitive_op, const Class *return_type, const Class *param_type1, const Class *param_type2, int inline_index, void *func = nullptr)
 {
 	Operator *o = new Operator;
 	o->primitive_id = primitive_op;
@@ -291,12 +291,12 @@ void add_operator(int primitive_op, Class *return_type, Class *param_type1, Clas
 //------------------------------------------------------------------------------------------------//
 
 
-void add_class(Class *root_type)//, PreScript *ps = NULL)
+void add_class(const Class *root_type)//, PreScript *ps = NULL)
 {
-	cur_class = root_type;
+	cur_class = const_cast<Class*>(root_type);
 }
 
-void class_add_element(const string &name, Class *type, int offset, ScriptFlag flag)
+void class_add_element(const string &name, const Class *type, int offset, ScriptFlag flag)
 {
 	ClassElement e;
 	e.name = name;
@@ -305,11 +305,18 @@ void class_add_element(const string &name, Class *type, int offset, ScriptFlag f
 	e.hidden = ((flag & FLAG_HIDDEN) > 0);
 	cur_class->elements.add(e);
 }
+void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable)
+{
+	cur_class->derive_from(parent, increase_size);
+	if (copy_vtable)
+		cur_class->vtable = parent->vtable;
+}
 
 int _class_override_num_params = -1;
 
-ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag)
+ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptFlag flag)
 {
+	Class *c = const_cast<Class*>(ccc);
 	if ((flag & FLAG_OVERRIDE) > 0){
 		foreachi(ClassFunction &ff, c->functions, i)
 			if (ff.name == f.name){
@@ -333,7 +340,7 @@ ClassFunction *_class_add_func(Class *c, const ClassFunction &f, ScriptFlag flag
 	return &c->functions.back();
 }
 
-void _class_add_func_virtual(const string &tname, const string &name, Class *return_type, int index, ScriptFlag flag)
+void _class_add_func_virtual(const string &tname, const string &name, const Class *return_type, int index, ScriptFlag flag)
 {
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
@@ -347,11 +354,11 @@ void _class_add_func_virtual(const string &tname, const string &name, Class *ret
 	cur_class->_vtable_location_target_ = cur_class->vtable.data;
 }
 
-void class_add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
+void class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag)
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (Class *t: cur_package_script->syntax->classes)
+		for (const Class *t: cur_package_script->syntax->classes)
 			if (t->is_pointer() and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -405,11 +412,11 @@ int get_virtual_index(void *func, const string &tname, const string &name)
 	return -1;
 }
 
-void class_add_func_virtual(const string &name, Class *return_type, void *func, ScriptFlag flag)
+void class_add_func_virtual(const string &name, const Class *return_type, void *func, ScriptFlag flag)
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (Class *t: cur_package_script->syntax->classes)
+		for (auto *t: cur_package_script->syntax->classes)
 			if ((t->is_pointer()) and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -427,7 +434,7 @@ void class_link_vtable(void *p)
 //                                           constants                                            //
 //------------------------------------------------------------------------------------------------//
 
-void add_const(const string &name, Class *type, void *value)
+void add_const(const string &name, const Class *type, void *value)
 {
 	Constant *c = new Constant(type);
 	c->name = name;
@@ -446,7 +453,7 @@ void add_const(const string &name, Class *type, void *value)
 //------------------------------------------------------------------------------------------------//
 
 
-void add_ext_var(const string &name, Class *type, void *var)
+void add_ext_var(const string &name, const Class *type, void *var)
 {
 	auto *v = cur_package_script->syntax->root_of_all_evil.block->add_var(name, type);
 	if (config.allow_std_lib)
@@ -529,15 +536,15 @@ void _ultra_sort_p(DynamicArray &array, int offset_by)
 	}
 }
 
-void _cdecl ultra_sort(DynamicArray &array, Class *type, const string &by)
+void _cdecl ultra_sort(DynamicArray &array, const Class *type, const string &by)
 {
 	if (!type->is_super_array())
 		kaba_raise_exception(new KabaException("type '" + type->name + "' is not an array"));
-	Class *el = type->parent;
+	const Class *el = type->parent;
 	if (array.element_size != el->size)
 		kaba_raise_exception(new KabaException("element type size mismatch..."));
 
-	Class *rel = el;
+	const Class *rel = el;
 
 	if (el->is_pointer()){
 		rel = el->parent;
@@ -588,7 +595,7 @@ string _cdecl kaba_shell_execute(const string &cmd)
 
 Array<Statement> Statements;
 
-int add_func(const string &name, Class *return_type, void *func, ScriptFlag flag)
+int add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag)
 {
 	Function *f = new Function(cur_package_script->syntax, name, return_type);
 	f->is_pure = ((flag & FLAG_PURE) > 0);
@@ -618,7 +625,7 @@ void func_set_inline(int index)
 		cur_func->inline_no = index;
 }
 
-void func_add_param(const string &name, Class *type)
+void func_add_param(const string &name, const Class *type)
 {
 	if (cur_func){
 		Variable *v = new Variable(name, type);
@@ -632,7 +639,7 @@ void func_add_param(const string &name, Class *type)
 
 void script_make_super_array(Class *t, SyntaxTree *ps)
 {
-	Class *parent = t->parent;
+	const Class *parent = t->parent;
 	t->derive_from(TypeDynamicArray, false);
 	t->parent = parent;
 	add_class(t);
@@ -766,7 +773,7 @@ public:
 
 void script_make_dict(Class *t, SyntaxTree *ps)
 {
-	Class *parent = t->parent;
+	const Class *parent = t->parent;
 	t->derive_from(TypeDictBase, false);
 	t->parent = parent;
 	add_class(t);
@@ -880,7 +887,7 @@ void CastPointer2String(Value &r, Value &s)
 }
 
 Array<TypeCast> TypeCasts;
-void add_type_cast(int penalty, Class *source, Class *dest, const string &cmd, void *func)
+void add_type_cast(int penalty, const Class *source, const Class *dest, const string &cmd, void *func)
 {
 	TypeCast c;
 	c.penalty = penalty;
@@ -1028,7 +1035,7 @@ void SIAddPackageBase()
 
 	// select default float type
 	TypeFloat = TypeFloat32;
-	TypeFloat->name = "float";
+	(const_cast<Class*>(TypeFloat))->name = "float";
 
 
 

@@ -95,7 +95,7 @@ void ExecutePublicScripts();
 void DeleteAllScripts(bool even_immortal = false, bool force = false);
 void ExecuteSingleScriptCommand(const string &cmd);
 
-Class *GetDynamicType(const void *p);
+const Class *GetDynamicType(const void *p);
 
 };
 

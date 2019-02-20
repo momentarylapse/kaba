@@ -326,7 +326,7 @@ typedef void t_cast_func(Value&, Value&);
 struct TypeCast
 {
 	int penalty;
-	Class *source, *dest;
+	const Class *source, *dest;
 	int func_no;
 	Script *script;
 	t_cast_func *func;

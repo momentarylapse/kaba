@@ -9,7 +9,7 @@ namespace Kaba{
 
 int SerializerAMD64::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret)
 {
-	Class *type = ret.get_type_save();
+	const Class *type = ret.get_type_save();
 
 	// return data too big... push address
 	SerialNodeParam ret_ref;
@@ -109,7 +109,7 @@ int SerializerAMD64::fc_begin(const SerialNodeParam &instance, const Array<Seria
 
 void SerializerAMD64::fc_end(int push_size, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
-	Class *type = ret.get_type_save();
+	const Class *type = ret.get_type_save();
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->uses_return_by_memory())){

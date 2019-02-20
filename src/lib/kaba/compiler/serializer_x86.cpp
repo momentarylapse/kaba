@@ -14,7 +14,7 @@ extern float GlobalTimeToWait;
 
 int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
-	Class *type = ret.get_type_save();
+	const Class *type = ret.get_type_save();
 
 	// return data too big... push address
 	SerialNodeParam ret_ref;
@@ -61,7 +61,7 @@ int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 
 void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 {
-	Class *type = ret.get_type_save();
+	const Class *type = ret.get_type_save();
 
 	if (push_size > 127)
 		add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_ESP), param_const(TypeInt, push_size));

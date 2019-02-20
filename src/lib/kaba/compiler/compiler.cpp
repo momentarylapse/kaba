@@ -58,7 +58,7 @@ void AddEspAdd(Asm::InstructionWithParamsList *list,int d)
 	}
 }
 
-void try_init_global_var(Class *type, char* g_var)
+void try_init_global_var(const Class *type, char* g_var)
 {
 	if (type->is_array()){
 		for (int i=0;i<type->array_length;i++)
@@ -77,7 +77,7 @@ void try_init_global_var(Class *type, char* g_var)
 
 void init_all_global_objects(SyntaxTree *ps)
 {
-	foreachi(Variable *v, ps->root_of_all_evil.var, i)
+	for (Variable *v: ps->root_of_all_evil.var)
 		if (!v->is_extern)
 			try_init_global_var(v->type, (char*)v->memory);
 }
@@ -219,8 +219,9 @@ Node *check_const_used(Node *n, Script *me)
 void Script::MapConstantsToOpcode()
 {
 	// vtables -> no data yet...
-	for (Class *t: syntax->classes)
-		if (t->vtable.num > 0){
+	for (auto *ct: syntax->classes)
+		if (ct->vtable.num > 0){
+			Class *t = const_cast<Class*>(ct);
 			t->_vtable_location_compiler_ = &opcode[opcode_size];
 			t->_vtable_location_target_ = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
 			opcode_size += config.pointer_size * t->vtable.num;
@@ -341,7 +342,7 @@ void relink_calls(Script *s, Script *target, IncludeTranslationData &d)
 	s->syntax->transform([&](Node *n){ return conv_relink_calls(n, s, target, d); });
 
 	// we might need some constructors later on...
-	for (Class *t: s->syntax->classes)
+	for (const Class *t: s->syntax->classes)
 		for (ClassFunction &f: t->functions)
 			if (f.script == d.source){
 				if (f.script->filename.find(".kaba") < 0)
@@ -435,7 +436,8 @@ void Script::LinkFunctions()
 
 
 	// link virtual functions into vtables
-	for (Class *t: syntax->classes){
+	for (const Class *ct: syntax->classes){
+		Class *t = const_cast<Class*>(ct);
 		t->link_virtual_table();
 
 		if (config.compile_os){

@@ -15,7 +15,7 @@ int func_index(Function *f);
 
 int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret)
 {
-	Class *type = ret.type;
+	const Class *type = ret.type;
 	if (!type)
 		type = TypeVoid;
 
@@ -92,7 +92,7 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 
 void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
 {
-	Class *type = ret.type;
+	const Class *type = ret.type;
 	if (!type)
 		return;
 

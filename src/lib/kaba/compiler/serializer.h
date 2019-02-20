@@ -35,13 +35,13 @@ struct SerialNodeParam
 	int kind;
 	int64 p;
 	int virt; // virtual register (if p represents a physical register)
-	Class *type;
+	const Class *type;
 	int shift;
 	//int c_id, v_id;
 	bool operator == (const SerialNodeParam &param) const
 	{	return (kind == param.kind) and (p == param.p) and (type == param.type) and (shift == param.shift);	}
 	string str() const;
-	Class* get_type_save() const
+	const Class* get_type_save() const
 	{	return type ? type : TypeVoid;	}
 };
 
@@ -58,7 +58,7 @@ struct SerialNode
 
 struct TempVar
 {
-	Class *type;
+	const Class *type;
 	int first, last, usage_count;
 	bool mapped;
 	bool referenced;
@@ -132,7 +132,7 @@ public:
 	int add_virtual_reg(int reg);
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
-	SerialNodeParam add_temp(Class *t, bool add_constructor = true);
+	SerialNodeParam add_temp(const Class *t, bool add_constructor = true);
 	void add_cmd(int cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
 	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
 	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
@@ -178,8 +178,8 @@ public:
 	virtual void add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
 	virtual int fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
 	virtual void fc_end(int push_size, const SerialNodeParam &ret) = 0;
-	SerialNodeParam AddReference(const SerialNodeParam &param, Class *force_type = nullptr);
-	SerialNodeParam AddDereference(const SerialNodeParam &param, Class *force_type = nullptr);
+	SerialNodeParam AddReference(const SerialNodeParam &param, const Class *force_type = nullptr);
+	SerialNodeParam AddDereference(const SerialNodeParam &param, const Class *force_type = nullptr);
 
 	void MapTempVarToReg(int vi, int reg);
 	void add_stack_var(TempVar &v, SerialNodeParam &p);
@@ -199,18 +199,18 @@ public:
 	static const SerialNodeParam p_none;
 
 
-	static SerialNodeParam param_shift(const SerialNodeParam &param, int shift, Class *t);
-	static SerialNodeParam param_global(Class *type, void *v);
-	static SerialNodeParam param_local(Class *type, int offset);
-	static SerialNodeParam param_const(Class *type, int64 c);
+	static SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t);
+	static SerialNodeParam param_global(const Class *type, void *v);
+	static SerialNodeParam param_local(const Class *type, int offset);
+	static SerialNodeParam param_const(const Class *type, int64 c);
 	static SerialNodeParam param_marker(int m);
-	static SerialNodeParam param_deref_marker(Class *type, int m);
-	SerialNodeParam param_vreg(Class *type, int vreg, int preg = -1);
-	static SerialNodeParam param_preg(Class *type, int reg);
-	SerialNodeParam param_deref_vreg(Class *type, int vreg, int preg = -1);
-	static SerialNodeParam param_deref_preg(Class *type, int reg);
-	static SerialNodeParam param_lookup(Class *type, int ref);
-	static SerialNodeParam param_deref_lookup(Class *type, int ref);
+	static SerialNodeParam param_deref_marker(const Class *type, int m);
+	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
+	static SerialNodeParam param_preg(const Class *type, int reg);
+	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
+	static SerialNodeParam param_deref_preg(const Class *type, int reg);
+	static SerialNodeParam param_lookup(const Class *type, int ref);
+	static SerialNodeParam param_deref_lookup(const Class *type, int ref);
 
 	static int reg_resize(int reg, int size);
 	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);

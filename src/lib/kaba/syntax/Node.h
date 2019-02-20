@@ -87,12 +87,12 @@ struct Node
 	// linking of class function instances
 	Node *instance;
 	// return value
-	Class *type;
-	Node(int kind, int64 link_no, Script *script, Class *type);
+	const Class *type;
+	Node(int kind, int64 link_no, Script *script, const Class *type);
 	virtual ~Node();
 	Block *as_block() const;
 	Function *as_func() const;
-	Class *as_class() const;
+	const Class *as_class() const;
 	Constant *as_const() const;
 	Operator *as_op() const;
 	PrimitiveOperator *as_prim_op() const;
@@ -130,7 +130,7 @@ struct Block : Node
 	void set(int index, Node *c);
 
 	Variable *get_var(const string &name);
-	Variable *add_var(const string &name, Class *type);
+	Variable *add_var(const string &name, const Class *type);
 };
 
 }

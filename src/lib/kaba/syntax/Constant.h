@@ -23,12 +23,12 @@ class SyntaxTree;
 struct Value
 {
 	string value;
-	Class *type;
+	const Class *type;
 
 	Value();
 	~Value();
 
-	void init(Class *type);
+	void init(const Class *type);
 	void clear();
 	void set(const Value &v);
 
@@ -49,7 +49,7 @@ struct Value
 // for any type of constant used in the script
 struct Constant : Value
 {
-	Constant(Class *type);
+	Constant(const Class *type);
 	string name;
 	string str() const;
 	void *address; // either p() or overriden for OS

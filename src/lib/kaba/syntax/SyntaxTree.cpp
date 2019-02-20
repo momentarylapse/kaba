@@ -34,7 +34,7 @@ Node *SyntaxTree::cp_node(Node *c)
 	return cmd;
 }
 
-Class *get_func_type(SyntaxTree *syntax, Function *f)
+const Class *SyntaxTree::make_class_func(Function *f)
 {
 	return TypeFunctionP;
 	string params;
@@ -43,14 +43,14 @@ Class *get_func_type(SyntaxTree *syntax, Function *f)
 			params += ",";
 		params += f->literal_param_type[i]->name;
 	}
-	return syntax->CreateNewClass("func(" + params + ")->" + f->return_type->name, Class::Type::POINTER, config.pointer_size, 0, TypeVoid);
+	return make_class("func(" + params + ")->" + f->return_type->name, Class::Type::POINTER, config.pointer_size, 0, TypeVoid);
 
 	return TypePointer;
 }
 
-Node *SyntaxTree::ref_node(Node *sub, Class *override_type)
+Node *SyntaxTree::ref_node(Node *sub, const Class *override_type)
 {
-	Class *t = override_type ? override_type : sub->type->get_pointer();
+	const Class *t = override_type ? override_type : sub->type->get_pointer();
 
 	if (sub->kind == KIND_CLASS){
 		// Class pointer
@@ -59,7 +59,7 @@ Node *SyntaxTree::ref_node(Node *sub, Class *override_type)
 		return add_node_const(c);
 	}else if (sub->kind == KIND_FUNCTION_NAME){
 		// can't be const because the function might not be compiled yet!
-		return new Node(KIND_FUNCTION_POINTER, sub->link_no, sub->script, get_func_type(this, sub->as_func()));
+		return new Node(KIND_FUNCTION_POINTER, sub->link_no, sub->script, make_class_func(sub->as_func()));
 		// could also happen later via transform()
 	}
 
@@ -69,7 +69,7 @@ Node *SyntaxTree::ref_node(Node *sub, Class *override_type)
 	return c;
 }
 
-Node *SyntaxTree::deref_node(Node *sub, Class *override_type)
+Node *SyntaxTree::deref_node(Node *sub, const Class *override_type)
 {
 	Node *c = AddNode(KIND_UNKNOWN, 0, TypeVoid);
 	c->kind = KIND_DEREFERENCE;
@@ -82,7 +82,7 @@ Node *SyntaxTree::deref_node(Node *sub, Class *override_type)
 	return c;
 }
 
-Node *SyntaxTree::shift_node(Node *sub, bool deref, int shift, Class *type)
+Node *SyntaxTree::shift_node(Node *sub, bool deref, int shift, const Class *type)
 {
 	Node *c= AddNode(deref ? KIND_DEREF_ADDRESS_SHIFT : KIND_ADDRESS_SHIFT, shift, type);
 	c->set_num_params(1);
@@ -116,7 +116,7 @@ Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_
 	return c;
 }
 
-Node *SyntaxTree::add_node_call(Function *f, Class *return_type)
+Node *SyntaxTree::add_node_call(Function *f, const Class *return_type)
 {
 	Node *c = AddNode(KIND_FUNCTION_CALL, (int_p)f, return_type);
 	c->script = f->tree->script;
@@ -161,7 +161,7 @@ Node *SyntaxTree::add_node_local_var(Variable *v)
 	return AddNode(KIND_VAR_LOCAL, (int_p)v, v->type);
 }
 
-Node *SyntaxTree::add_node_parray(Node *p, Node *index, Class *type)
+Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type)
 {
 	Node *cmd_el = AddNode(KIND_POINTER_AS_ARRAY, 0, type);
 	cmd_el->set_num_params(2);
@@ -266,7 +266,7 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 
 
-Constant *SyntaxTree::add_constant(Class *type)
+Constant *SyntaxTree::add_constant(const Class *type)
 {
 	auto *c = new Constant(type);
 	constants.add(c);
@@ -275,7 +275,7 @@ Constant *SyntaxTree::add_constant(Class *type)
 
 
 
-Function *SyntaxTree::add_function(const string &name, Class *type)
+Function *SyntaxTree::add_function(const string &name, const Class *type)
 {
 	Function *f = new Function(this, name, type);
 	functions.add(f);
@@ -283,14 +283,14 @@ Function *SyntaxTree::add_function(const string &name, Class *type)
 	return f;
 }
 
-Node *SyntaxTree::AddNode(int kind, long long link_no, Class *type)
+Node *SyntaxTree::AddNode(int kind, long long link_no, const Class *type)
 {
 	Node *c = new Node(kind, link_no, script, type);
 	nodes.add(c);
 	return c;
 }
 
-Node *SyntaxTree::AddNode(int kind, long long link_no, Class *type, Script *s)
+Node *SyntaxTree::AddNode(int kind, long long link_no, const Class *type, Script *s)
 {
 	Node *c = new Node(kind, link_no, s, type);
 	nodes.add(c);
@@ -311,7 +311,7 @@ int SyntaxTree::which_primitive_operator(const string &name)
 	return -1;
 }
 
-Class *SyntaxTree::which_class(const string &name)
+const Class *SyntaxTree::which_owned_class(const string &name)
 {
 	for (auto *c: classes)
 		if (name == c->name)
@@ -327,7 +327,9 @@ int SyntaxTree::which_statement(const string &name)
 	return -1;
 }
 
-Node *exlink_make_var_local(SyntaxTree *ps, Class *t, Variable *v)
+
+// xxxxx FIXME
+Node *exlink_make_var_local(SyntaxTree *ps, const Class *t, Variable *v)
 {
 	return new Node(KIND_VAR_LOCAL, (int_p)v, ps->script, t);
 }
@@ -377,7 +379,7 @@ Array<Node*> SyntaxTree::get_existence_shared(const string &name)
 		return links;
 
 	// types
-	Class *c = which_class(name);
+	auto *c = which_owned_class(name);
 	if (c)
 		return new Node(KIND_CLASS, (int_p)c, script, TypeClass);
 
@@ -436,30 +438,23 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 }
 
 // expression naming a type
-Class *SyntaxTree::FindType(const string &name)
+const Class *SyntaxTree::find_type_by_name(const string &name)
 {
-	for (Class *c: classes)
+	for (auto *c: classes)
 		if (name == c->name)
 			return c;
 	for (Script *inc: includes)
-		for (Class *c: inc->syntax->classes)
+		for (auto *c: inc->syntax->classes)
 			if (name == c->name)
 				return c;
 	return nullptr;
 }
 
-Class *SyntaxTree::CreateNewClass(const string &name, Class::Type type, int size, int array_size, Class *sub)
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub)
 {
-	// check if it already exists
-	for (Class *t: classes)
-		if (name == t->name)
-			return t;
-	for (Script *inc: includes)
-		for (Class *t: inc->syntax->classes)
-			if (name == t->name)
-				return t;
+	if (find_type_by_name(name))
+		do_error("class already exists");
 
-	// add new class
 	Class *t = new Class(name, size, this);
 	t->type = type;
 	t->array_length = max(array_size, 0);
@@ -468,9 +463,8 @@ Class *SyntaxTree::CreateNewClass(const string &name, Class::Type type, int size
 	t->parent = sub;
 	classes.add(t);
 	if (t->is_super_array() or t->is_dict()){
-		Class *parent = t->parent;
 		t->derive_from(TypeDynamicArray, false);
-		t->parent = parent;
+		t->parent = sub;
 		AddMissingFunctionHeadersForClass(t);
 	}else if (t->is_array()){
 		AddMissingFunctionHeadersForClass(t);
@@ -478,21 +472,34 @@ Class *SyntaxTree::CreateNewClass(const string &name, Class::Type type, int size
 	return t;
 }
 
-Class *SyntaxTree::CreateArrayClass(Class *element_type, int num_elements)
+const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub)
 {
-	string name_pre = element_type->name;
-	if (num_elements < 0){
-		return CreateNewClass(name_pre + "[]",
-				Class::Type::SUPER_ARRAY, config.super_array_size, num_elements, element_type);
-	}else{
-		return CreateNewClass(name_pre + format("[%d]", num_elements),
-				Class::Type::ARRAY, element_type->size * num_elements, num_elements, element_type);
-	}
+	// check if it already exists
+	auto *tt = find_type_by_name(name);
+	if (tt)
+		return tt;
+
+	// add new class
+	return create_new_class(name, type, size, array_size, sub);
 }
 
-Class *SyntaxTree::CreateDictClass(Class *element_type)
+const Class *SyntaxTree::make_class_super_array(const Class *element_type)
 {
-	return CreateNewClass(element_type->name + "{}",
+	string name_pre = element_type->name;
+	return make_class(name_pre + "[]",
+			Class::Type::SUPER_ARRAY, config.super_array_size, -1, element_type);
+}
+
+const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements)
+{
+	string name_pre = element_type->name;
+	return make_class(name_pre + format("[%d]", num_elements),
+			Class::Type::ARRAY, element_type->size * num_elements, num_elements, element_type);
+}
+
+const Class *SyntaxTree::make_class_dict(const Class *element_type)
+{
+	return make_class(element_type->name + "{}",
 			Class::Type::DICT, config.super_array_size, 0, element_type);
 }
 
@@ -681,7 +688,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 {
 	if (c->kind == KIND_ARRAY){
 
-		Class *el_type = c->type;
+		auto *el_type = c->type;
 
 // array el -> array
 //          -> index
@@ -706,7 +713,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		return deref_node(c_address);
 	}else if (c->kind == KIND_POINTER_AS_ARRAY){
 
-		Class *el_type = c->type;
+		auto *el_type = c->type;
 
 // array el -> array_pointer
 //          -> index
@@ -730,7 +737,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		return deref_node(c_address);
 	}else if (c->kind == KIND_ADDRESS_SHIFT){
 
-		Class *el_type = c->type;
+		auto *el_type = c->type;
 
 // struct el -> struct
 //           -> shift (LinkNr)
@@ -750,7 +757,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		return deref_node(c_address);
 	}else if (c->kind == KIND_DEREF_ADDRESS_SHIFT){
 
-		Class *el_type = c->type;
+		auto *el_type = c->type;
 
 // struct el -> struct_pointer
 //           -> shift (LinkNr)
@@ -957,7 +964,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 SyntaxTree::~SyntaxTree()
 {
 	// delete all types created by this script
-	for (Class *t: classes)
+	for (auto *t: classes)
 		if (t->owner == this)
 			delete(t);
 

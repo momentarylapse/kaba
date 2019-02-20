@@ -163,7 +163,7 @@ void Block::set(int index, Node *c)
 	set_command(params[index], c);
 }
 
-Variable *Block::add_var(const string &name, Class *type)
+Variable *Block::add_var(const string &name, const Class *type)
 {
 	if (get_var(name))
 		function->tree->do_error(format("variable '%s' already declared in this context", name.c_str()));
@@ -185,7 +185,7 @@ Variable *Block::get_var(const string &name)
 }
 
 
-Node::Node(int _kind, long long _link_no, Script *_script, Class *_type)
+Node::Node(int _kind, long long _link_no, Script *_script, const Class *_type)
 {
 	type = _type;
 	kind = _kind;
@@ -215,9 +215,9 @@ Function *Node::as_func() const
 	return (Function*)link_no;
 }
 
-Class *Node::as_class() const
+const Class *Node::as_class() const
 {
-	return (Class*)link_no;
+	return (const Class*)link_no;
 }
 
 Constant *Node::as_const() const

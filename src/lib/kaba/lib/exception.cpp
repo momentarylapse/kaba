@@ -108,7 +108,7 @@ struct ExceptionBlockData
 	Node *except;
 };
 
-inline bool ex_type_match(Class *ex_type, Class *catch_type)
+inline bool ex_type_match(const Class *ex_type, const Class *catch_type)
 {
 	if (ex_type == TypeUnknown)
 		return true;
@@ -117,7 +117,7 @@ inline bool ex_type_match(Class *ex_type, Class *catch_type)
 	return ex_type->is_derived_from(catch_type);
 }
 
-ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, Class *ex_type)
+ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, const Class *ex_type)
 {
 	ExceptionBlockData ebd;
 	ebd.except_block = nullptr;
@@ -190,7 +190,7 @@ void relink_return(void *rip, void *rbp, void *rsp)
 	exit(0);
 }
 
-Class* get_type(void *p)
+const Class* get_type(void *p)
 {
 	if (!p)
 		return TypeUnknown;
@@ -199,7 +199,7 @@ Class* get_type(void *p)
 	for (auto p: Packages)
 		scripts.add(p.script);
 	for (Script* s: scripts)
-		for (Class *c: s->syntax->classes)
+		for (auto *c: s->syntax->classes)
 			if (c->_vtable_location_compiler_)
 				if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
 					return c;
@@ -274,7 +274,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 
 	auto trace = get_stack_trace(rbp);
 
-	Class *ex_type = get_type(kaba_exception);
+	const Class *ex_type = get_type(kaba_exception);
 
 	for (auto r: trace){
 

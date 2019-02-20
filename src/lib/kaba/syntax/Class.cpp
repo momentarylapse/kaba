@@ -29,7 +29,7 @@ ClassFunction::ClassFunction()
 	script = nullptr;
 }
 
-ClassFunction::ClassFunction(const string &_name, Class *_return_type, Script *s, Function *_f)
+ClassFunction::ClassFunction(const string &_name, const Class *_return_type, Script *s, Function *_f)
 {
 	name = _name;
 	return_type = _return_type;
@@ -46,7 +46,7 @@ string ClassFunction::signature(bool include_class) const
 	return func->signature(include_class);
 }
 
-bool type_match(Class *given, Class *wanted)
+bool type_match(const Class *given, const Class *wanted)
 {
 	// exact match?
 	if (given == wanted)
@@ -69,7 +69,7 @@ bool type_match(Class *given, Class *wanted)
 
 
 // allow same classes... TODO deprecate...
-bool _type_match(Class *given, bool same_chunk, Class *wanted)
+bool _type_match(const Class *given, bool same_chunk, const Class *wanted)
 {
 	if ((same_chunk) and (wanted == TypeChunk))
 		return true;
@@ -77,7 +77,7 @@ bool _type_match(Class *given, bool same_chunk, Class *wanted)
 	return type_match(given, wanted);
 }
 
-Class::Class(const string &_name, int _size, SyntaxTree *_owner, Class *_parent)
+Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_parent)
 {
 	name = _name;
 	owner = _owner;
@@ -161,7 +161,7 @@ bool Class::usable_as_super_array() const
 	return false;
 }
 
-Class *Class::get_array_element() const
+const Class *Class::get_array_element() const
 {
 	if (is_array() or is_super_array() or is_dict())
 		return parent;
@@ -392,14 +392,14 @@ bool class_func_match(ClassFunction &a, ClassFunction &b)
 }
 
 
-Class *Class::get_pointer() const
+const Class *Class::get_pointer() const
 {
-	return owner->CreateNewClass(name + "*", Class::Type::POINTER, config.pointer_size, 0, const_cast<Class*>(this));
+	return owner->make_class(name + "*", Class::Type::POINTER, config.pointer_size, 0, this);
 }
 
-Class *Class::get_root() const
+const Class *Class::get_root() const
 {
-	Class *r = const_cast<Class*>(this);
+	const Class *r = this;
 	while (r->parent)
 		r = r->parent;
 	return r;
@@ -408,7 +408,7 @@ Class *Class::get_root() const
 void class_func_out(Class *c, ClassFunction *f)
 {
 	string ps;
-	for (Class *p: f->param_types)
+	for (auto *p: f->param_types)
 		ps += "  " + p->name;
 	msg_write(c->name + "." + f->name + ps);
 }

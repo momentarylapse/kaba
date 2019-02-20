@@ -23,7 +23,7 @@ Value::~Value()
 	clear();
 }
 
-void Value::init(Class *_type)
+void Value::init(const Class *_type)
 {
 	clear();
 	type = _type;
@@ -133,7 +133,7 @@ string Value::str() const
 	return type->var2str(value.data);
 }
 
-Constant::Constant(Class *_type)
+Constant::Constant(const Class *_type)
 {
 	init(_type);
 	name = "-none-";

@@ -19,9 +19,9 @@ class SyntaxTree;
 
 struct Variable
 {
-	Variable(const string &name, Class *type);
+	Variable(const string &name, const Class *type);
 	~Variable();
-	Class *type; // for creating instances
+	const Class *type; // for creating instances
 	string name;
 	int64 _offset; // for compilation
 	void *memory;
@@ -42,10 +42,10 @@ struct Function
 	Block *block;
 	// local variables
 	Array<Variable*> var;
-	Array<Class*> literal_param_type;
-	Class *_class;
-	Class *return_type;
-	Class *literal_return_type;
+	Array<const Class*> literal_param_type;
+	const Class *_class;
+	const Class *return_type;
+	const Class *literal_return_type;
 	bool is_extern, auto_declared;
 	bool is_pure;
 	bool throws_exceptions; // for external
@@ -57,11 +57,11 @@ struct Function
 	int _exp_no;
 	void *address;
 	int _label;
-	Function(SyntaxTree *tree, const string &name, Class *return_type);
+	Function(SyntaxTree *tree, const string &name, const Class *return_type);
 	~Function();
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
-	void update(Class *class_type);
+	void update(const Class *class_type);
 	string signature(bool include_class = false) const;
 	Array<Block*> all_blocks();
 	void show(const string &stage = "") const;

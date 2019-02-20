@@ -5,7 +5,7 @@
 
 namespace Kaba{
 
-void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, Class *t)
+void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, const Class *t)
 {
 	if (t->vtable.num > 0){
 		Node *p = shift_node(self, true, 0, TypePointer);
@@ -17,7 +17,7 @@ void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, Class *t)
 	}
 }
 
-void SyntaxTree::AutoImplementAddChildConstructors(Node *self, Function *f, Class *t)
+void SyntaxTree::AutoImplementAddChildConstructors(Node *self, Function *f, const Class *t)
 {
 	int i0 = t->parent ? t->parent->elements.num : 0;
 	foreachi(ClassElement &e, t->elements, i){
@@ -32,7 +32,7 @@ void SyntaxTree::AutoImplementAddChildConstructors(Node *self, Function *f, Clas
 	}
 }
 
-void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_parent_constructor)
+void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allow_parent_constructor)
 {
 	if (!f)
 		return;
@@ -81,7 +81,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, Class *t, bool allow_pare
 	}
 }
 
-void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
+void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -119,7 +119,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, Class *t)
 	}
 }
 
-void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
+void SyntaxTree::AutoImplementAssign(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -255,7 +255,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, Class *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
+void SyntaxTree::AutoImplementArrayClear(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -306,7 +306,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, Class *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
+void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -397,7 +397,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, Class *t)
 }
 
 
-void SyntaxTree::AutoImplementArrayRemove(Function *f, Class *t)
+void SyntaxTree::AutoImplementArrayRemove(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -425,7 +425,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, Class *t)
 	f->block->params.add(c_remove);
 }
 
-void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
+void SyntaxTree::AutoImplementArrayAdd(Function *f, const Class *t)
 {
 	if (!f)
 		return;
@@ -459,7 +459,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, Class *t)
 	b->add(cmd_assign);
 }
 
-void add_func_header(SyntaxTree *s, Class *t, const string &name, Class *return_type, const Array<Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr)
+void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr)
 {
 	Function *f = s->add_function(name, return_type);
 	f->auto_declared = true;
@@ -541,7 +541,7 @@ void SyntaxTree::AddMissingFunctionHeadersForClass(Class *t)
 	}
 }
 
-Function* class_get_func(Class *t, const string &name, Class *return_type, int num_params)
+Function* class_get_func(const Class *t, const string &name, const Class *return_type, int num_params)
 {
 	ClassFunction *cf = t->get_func(name, return_type, num_params);
 	if (cf){
@@ -556,7 +556,7 @@ Function* class_get_func(Class *t, const string &name, Class *return_type, int n
 	return nullptr;
 }
 
-Function* prepare_auto_impl(Class *t, ClassFunction *cf)
+Function* prepare_auto_impl(const Class *t, ClassFunction *cf)
 {
 	if (!cf)
 		return nullptr;
@@ -571,7 +571,7 @@ Function* prepare_auto_impl(Class *t, ClassFunction *cf)
 }
 
 // completely create and implement
-void SyntaxTree::AutoImplementFunctions(Class *t)
+void SyntaxTree::AutoImplementFunctions(const Class *t)
 {
 	if (t->owner != this)
 		return;

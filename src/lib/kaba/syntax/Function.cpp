@@ -12,7 +12,7 @@
 namespace Kaba{
 
 
-Variable::Variable(const string &_name, Class *_type)
+Variable::Variable(const string &_name, const Class *_type)
 {
 	name = _name;
 	type = _type;
@@ -30,7 +30,7 @@ Variable::~Variable()
 }
 
 
-Function::Function(SyntaxTree *_tree, const string &_name, Class *_return_type)
+Function::Function(SyntaxTree *_tree, const string &_name, const Class *_return_type)
 {
 	tree = _tree;
 	name = _name;
