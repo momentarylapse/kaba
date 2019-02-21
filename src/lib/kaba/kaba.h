@@ -52,7 +52,7 @@ public:
 	void map_global_variables_to_memory();
 	void allocate_opcode();
 	void align_opcode();
-	void AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list);
+	void assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list);
 	void compile_functions(char *oc, int &ocs);
 	void CompileOsEntryPoint();
 	void LinkOsEntryPoint();

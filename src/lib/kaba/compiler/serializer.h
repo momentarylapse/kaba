@@ -5,6 +5,8 @@
 namespace Kaba
 {
 
+class Serializer;
+
 
 #define max_reg			8 // >= all RegXXX used...
 
@@ -40,7 +42,7 @@ struct SerialNodeParam
 	//int c_id, v_id;
 	bool operator == (const SerialNodeParam &param) const
 	{	return (kind == param.kind) and (p == param.p) and (type == param.type) and (shift == param.shift);	}
-	string str() const;
+	string str(Serializer *ser) const;
 	const Class* get_type_save() const
 	{	return type ? type : TypeVoid;	}
 };
@@ -53,7 +55,7 @@ struct SerialNode
 	int cond;
 	SerialNodeParam p[SERIAL_NODE_NUM_PARAMS];
 	int index;
-	string str() const;
+	string str(Serializer *ser) const;
 };
 
 struct TempVar
@@ -106,15 +108,15 @@ public:
 	void do_error(const string &msg);
 	void do_error_link(const string &msg);
 
-	void Assemble();
+	void assemble();
 	void assemble_cmd(SerialNode &c);
 	void assemble_cmd_arm(SerialNode &c);
 	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
 
 	void serialize_function(Function *f);
-	void SerializeBlock(Block *block);
+	void serialize_block(Block *block);
 	virtual SerialNodeParam SerializeParameter(Node *link, Block *block, int index) = 0;
-	SerialNodeParam SerializeNode(Node *com, Block *block, int index);
+	SerialNodeParam serialize_node(Node *com, Block *block, int index);
 	virtual void SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index) = 0;
 	virtual void SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
 	virtual void AddFunctionIntro(Function *f) = 0;
@@ -125,7 +127,7 @@ public:
 	void SimplifyFloatStore();
 	void TryMergeTempVars();
 
-	void cmd_list_out(const string &message);
+	void cmd_list_out(const string &stage);
 	void vr_list_out();
 
 	//void add_reg_channel(int reg, int first, int last);

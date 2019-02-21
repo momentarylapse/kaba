@@ -125,6 +125,7 @@ Block::Block(Function *f, Block *_parent) :
 	if (parent)
 		level = parent->level + 1;
 	_start = _end = nullptr;
+	_label_start = _label_end = -1;
 }
 
 Block::~Block()

@@ -229,7 +229,7 @@ void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 				Node sub = *com->params[0];
 				Node c_ret(KIND_VAR_TEMP, ret.p, script, ret.type);
 				sub.instance = &c_ret;
-				SerializeNode(&sub, block, index);
+				serialize_node(&sub, block, index);
 			}else
 				add_cmd_constructor(ret, -1);
 			clear_nodes(links);
@@ -459,7 +459,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 			return param_lookup(p.type, add_global_ref(*(int**)pp));
 		}
 	}else if ((link->kind==KIND_OPERATOR) or (link->kind==KIND_FUNCTION_CALL) or (link->kind==KIND_VIRTUAL_CALL) or (link->kind==KIND_INLINE_CALL) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
-		return SerializeNode(link, block, index);
+		return serialize_node(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){
 		SerialNodeParam param = SerializeParameter(link->params[0], block, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
@@ -498,7 +498,7 @@ void SerializerARM::ProcessReferences()
 				add_cmd(Asm::INST_MOV, p0, param_vreg(TypePointer, r));
 				set_virtual_reg(r, i, i+1);
 			}else{
-				do_error("reference in ARM: " + cmd[i].p[1].str());
+				do_error("reference in ARM: " + cmd[i].p[1].str(this));
 			}
 		}
 }
@@ -562,7 +562,7 @@ void SerializerARM::gr_transfer_by_reg_in(SerialNode &c, int &i, int pno)
 {
 	SerialNodeParam p = c.p[pno];
 	if (config.verbose)
-		msg_write("in " + c.str());
+		msg_write("in " + c.str(this));
 	if (p.kind == KIND_DEREF_GLOBAL_LOOKUP){
 		// cmd ..., [global ref]
 
@@ -607,7 +607,7 @@ void SerializerARM::gr_transfer_by_reg_out(SerialNode &c, int &i, int pno)
 {
 	SerialNodeParam p = c.p[pno];
 	if (config.verbose)
-		msg_write("out " + c.str());
+		msg_write("out " + c.str(this));
 	if (p.kind == KIND_DEREF_GLOBAL_LOOKUP){
 		// cmd [global ref], ...
 

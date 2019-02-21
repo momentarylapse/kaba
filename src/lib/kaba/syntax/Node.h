@@ -126,6 +126,7 @@ struct Block : Node
 	Function *function;
 	Block *parent;
 	void *_start, *_end; // opcode range
+	int _label_start, _label_end;
 	int level;
 	void add(Node *c);
 	void set(int index, Node *c);

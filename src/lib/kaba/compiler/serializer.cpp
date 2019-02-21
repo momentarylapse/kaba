@@ -256,15 +256,17 @@ string guess_constant(int64 c)
 	return "C:"+p2s((void*)c);
 }
 
-string SerialNodeParam::str() const
+string SerialNodeParam::str(Serializer *ser) const
 {
 	string str;
 	if (kind >= 0){
 		string n = p2s((void*)p);
 		if ((kind == KIND_REGISTER) or (kind == KIND_DEREF_REGISTER))
 			n = Asm::GetRegName(p);
-		else if ((kind == KIND_VAR_TEMP) or (kind == KIND_DEREF_VAR_TEMP) or (kind == KIND_MARKER))
+		else if ((kind == KIND_VAR_TEMP) or (kind == KIND_DEREF_VAR_TEMP))
 			n = "#" + i2s(p);
+		else if (kind == KIND_MARKER)
+			return ser->list->label[p].name;
 		else if (kind == KIND_VAR_LOCAL)
 			n = signed_hex(p);
 		else if (kind == KIND_VAR_GLOBAL)
@@ -278,29 +280,31 @@ string SerialNodeParam::str() const
 	return str;
 }
 
-string SerialNode::str() const
+string SerialNode::str(Serializer *ser) const
 {
 	if (inst == INST_MARKER)
-		return format("-- Label %d --", p[0].p);
+		return "-- " + ser->list->label[p[0].p].name + " --";
 	if (inst == INST_ASM)
 		return format("-- Asm %d --", p[0].p);
 	string t;
 	if (cond != Asm::ARM_COND_ALWAYS)
 		t += "[cond]";
 	t += Asm::GetInstructionName(inst);
-	t += p[0].str();
+	t += p[0].str(ser);
 	if (p[1].kind >= 0)
-		t += "," + p[1].str();
+		t += "," + p[1].str(ser);
 	if (p[2].kind >= 0)
-		t += "," + p[2].str();
+		t += "," + p[2].str(ser);
 	return t;
 }
 
-void Serializer::cmd_list_out(const string &message)
+void Serializer::cmd_list_out(const string &stage)
 {
-	msg_write("-------------------------------- " + message);
+	if (!config.allow_output_stage(stage))
+		return;
+	msg_write("-------------------------------- " + stage);
 	for (int i=0;i<cmd.num;i++)
-		msg_write(format("%3d: ", i) + cmd[i].str());
+		msg_write(format("%3d: ", i) + cmd[i].str(this));
 	if (false)
 		vr_list_out();
 	if (true){
@@ -480,7 +484,7 @@ int Serializer::add_marker(int l)
 {
 	SerialNodeParam p = p_none;
 	if (l < 0)
-		l = list->get_label("_kaba_" + i2s(cur_func_index) + "_" + i2s(num_markers ++));
+		do_error("trying to add non existing label");
 	p.kind = KIND_MARKER;
 	p.p = l;
 	add_cmd(INST_MARKER, p);
@@ -624,7 +628,7 @@ bool node_is_assign_mem(Node *n)
 }
 
 
-SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
+SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 {
 	// for/while need a marker to this point
 	bool ignore_params = ((com->kind == KIND_STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
@@ -702,7 +706,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 			AddFunctionCall(cf->func, instance, params[i], p_none);
 		}
 	}else if (com->kind == KIND_BLOCK){
-		SerializeBlock(com->as_block());
+		serialize_block(com->as_block());
 	}else if (com->kind == KIND_CONSTANT){
 		// sometimes "nil" is used as pass etc...
 	}else{
@@ -712,10 +716,11 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	return ret;
 }
 
-void Serializer::SerializeBlock(Block *block)
+void Serializer::serialize_block(Block *block)
 {
-	add_marker(list->add_label("_kaba_block_start_" + p2s(block)));
-	list->label.back().inst_no = -1;
+	block->_label_start = list->create_label("_BLOCK_START_" + p2s(block));
+	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
+	add_marker(block->_label_start);
 
 	FillInConstructorsBlock(block);
 
@@ -723,7 +728,7 @@ void Serializer::SerializeBlock(Block *block)
 		stack_offset = cur_func->_var_size;
 
 		// serialize
-		SerializeNode(block->params[i], block, i);
+		serialize_node(block->params[i], block, i);
 		
 		// destruct new temp vars
 		FillInDestructorsTemp();
@@ -737,8 +742,7 @@ void Serializer::SerializeBlock(Block *block)
 
 	FillInDestructorsBlock(block);
 
-	add_marker(list->add_label("_kaba_block_end_" + p2s(block)));
-	list->label.back().inst_no = -1;
+	add_marker(block->_label_end);
 }
 
 // modus: KIND_VAR_LOCAL / KIND_VAR_TEMP
@@ -1720,7 +1724,7 @@ void Serializer::serialize_function(Function *f)
 	AddFunctionIntro(f);
 
 	// function
-	SerializeBlock(f->block);
+	serialize_block(f->block);
 	ScanTempVarUsage();
 
 	if (config.verbose and config.allow_output(cur_func, "ser:a"))
@@ -1740,8 +1744,11 @@ void Serializer::serialize_function(Function *f)
 		cmd_list_out("a0");
 
 	// map global ref labels
-	foreachi(GlobalRef &g, global_refs, i)
-		g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
+	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		// ???? might be nonsense
+		foreachi(GlobalRef &g, global_refs, i)
+			g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
+	}
 
 	SimplifyIfStatements();
 	TryMergeTempVars();
@@ -1955,7 +1962,7 @@ void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s)
 	ps->asm_blocks.erase(0);
 }
 
-void Serializer::Assemble()
+void Serializer::assemble()
 {
 	// intro + allocate stack memory
 	if (config.instruction_set != Asm::INSTRUCTION_SET_ARM)
@@ -1969,7 +1976,7 @@ void Serializer::Assemble()
 		}
 	}
 
-	list->add_label("_kaba_func_" + i2s(cur_func_index));
+	list->insert_label(cur_func->_label);
 
 	if (!config.no_function_frame){
 		if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
@@ -1988,7 +1995,7 @@ void Serializer::Assemble()
 	for (int i=0;i<cmd.num;i++){
 
 		if (cmd[i].inst == INST_MARKER){
-			list->add_label(list->label[cmd[i].p[0].p].name);
+			list->insert_label(cmd[i].p[0].p);
 		}else if (cmd[i].inst == INST_ASM){
 			AddAsmBlock(list, script);
 		}else{
@@ -2049,7 +2056,7 @@ Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list)
 	return nullptr;
 }
 
-void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParamsList *list)
+void Script::assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list)
 {
 	if (config.verbose and config.allow_output(cur_func, "asm"))
 		msg_write("serializing " + f->name + " -------------------");
@@ -2062,7 +2069,7 @@ void Script::AssembleFunction(int index, Function *f, Asm::InstructionWithParams
 		d->cur_func_index = index;
 		d->serialize_function(f);
 		d->DoMapping();
-		d->Assemble();
+		d->assemble();
 	}catch(Exception &e){
 		throw e;
 	}catch(Asm::Exception &e){
@@ -2087,13 +2094,13 @@ void Script::compile_functions(char *oc, int &ocs)
 			if (!f->address)
 				do_error_link("external function " + f->name + " not linkable");
 		}else{
-			f->_label = list->get_label("_kaba_func_" + i2s(func_no ++));
+			f->_label = list->create_label("_FUNC_" + i2s(func_no ++));
 		}
 
 	// create assembler
 	foreachi(Function *f, syntax->functions, i)
 		if (!f->is_extern){
-			AssembleFunction(i, f, list);
+			assemble_function(i, f, list);
 		}
 
 
@@ -2112,15 +2119,15 @@ void Script::compile_functions(char *oc, int &ocs)
 	// get function addresses
 	foreachi(Function *f, syntax->functions, i){
 		if (!f->is_extern){
-			f->address = list->get_label_value("_kaba_func_" + i2s(i));
+			f->address = (void*)list->_label_value(f->_label);
 		}
 	}
 
 
 	for (Function *f: syntax->functions)
 		for (Block *b: f->all_blocks()){
-			b->_start = list->get_label_value("_kaba_block_start_" + p2s(b));
-			b->_end = list->get_label_value("_kaba_block_end_" + p2s(b));
+			b->_start = (void*)list->_label_value(b->_label_start);
+			b->_end = (void*)list->_label_value(b->_label_end);
 		}
 
 	delete(list);
