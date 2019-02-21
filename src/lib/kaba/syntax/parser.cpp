@@ -120,10 +120,15 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 {
 	Exp.next();
 	const Class *type = operand->type;
-
-	// pointer -> dereference
 	bool deref = false;
-	if (type->is_pointer()){
+	bool only_static = false;
+
+	if (operand->kind == KIND_CLASS){
+		// referencing class functions
+		type = operand->as_class();
+		only_static = true;
+	}else if (type->is_pointer()){
+		// pointer -> dereference
 		type = type->parent;
 		deref = true;
 	}
@@ -138,15 +143,18 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 		return ref_node(operand, type->parent->get_pointer());
 	}
 
+
 	// find element
-	for (auto &e: type->elements)
-		if (Exp.cur == e.name){
-			Exp.next();
-			return shift_node(operand, deref, e.offset, e.type);
-		}
+	if (!only_static){
+		for (auto &e: type->elements)
+			if (Exp.cur == e.name){
+				Exp.next();
+				return shift_node(operand, deref, e.offset, e.type);
+			}
+	}
 
 
-	if (!deref)
+	if (!deref and !only_static)
 		operand = ref_node(operand);
 
 	string f_name = Exp.cur;
@@ -156,7 +164,8 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 	for (auto &cf: type->functions)
 		if (f_name == cf.name){
 			links.add(add_node_func_name(cf.func));
-			links.back()->set_instance(operand);
+			if (!only_static)
+				links.back()->set_instance(operand);
 		}
 	if (links.num > 0){
 		Exp.next();
