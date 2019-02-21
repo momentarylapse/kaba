@@ -14,6 +14,9 @@ extern Class *TypeDynamicArray;
 bool next_extern = false;
 bool next_const = false;
 
+
+static Node* _transform_insert_before_ = nullptr;
+
 Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
 string Operator::sig() const
@@ -594,36 +597,32 @@ Node *easyfy_shift_deref(SyntaxTree *ps, Node *c, int l)
 	return c;
 }
 
-void convert_return_by_memory(SyntaxTree *ps, Block *b, Function *f)
+
+Node *convert_return_by_memory(SyntaxTree *ps, Node *n, Function *f)
 {
 	ps->script->cur_func = f;
 
-	foreachib(Node *c, b->params, i){
-		// recursion...
-		if (c->kind == KIND_BLOCK)
-			convert_return_by_memory(ps, c->as_block(), f);
-		if ((c->kind != KIND_STATEMENT) or (c->link_no != STATEMENT_RETURN))
-			continue;
+	if ((n->kind != KIND_STATEMENT) or (n->link_no != STATEMENT_RETURN))
+		return n;
 
-		// convert into   *-return- = param
-		Node *p_ret = nullptr;
-		for (Variable *v: f->var)
-			if (v->name == IDENTIFIER_RETURN_VAR){
-				p_ret = ps->add_node_local_var(v);
-			}
-		if (!p_ret)
-			ps->do_error("-return- not found...");
-		Node *ret = ps->deref_node(p_ret);
-		Node *op = ps->link_operator(OPERATOR_ASSIGN, ret, c->params[0]);
-		if (!op)
-			ps->do_error("no = operator for return from function found: " + f->name);
-		b->params.insert(op, i);
+	// convert into   *-return- = param
+	Node *p_ret = nullptr;
+	for (Variable *v: f->var)
+		if (v->name == IDENTIFIER_RETURN_VAR){
+			p_ret = ps->add_node_local_var(v);
+		}
+	if (!p_ret)
+		ps->do_error("-return- not found...");
+	Node *ret = ps->deref_node(p_ret);
+	Node *cmd_assign = ps->link_operator(OPERATOR_ASSIGN, ret, n->params[0]);
+	if (!cmd_assign)
+		ps->do_error("no = operator for return from function found: " + f->name);
+	_transform_insert_before_ = cmd_assign;
 
-		c->set_num_params(0);
-
-		_foreach_it_.update();
-	}
+	n->set_num_params(0);
+	return n;
 }
+
 
 // convert "source code"...
 //    call by ref params:  array, super array, class
@@ -658,7 +657,8 @@ void SyntaxTree::ConvertCallByReference()
 	// convert return...
 	for (Function *f: functions)
 		if (f->return_type->uses_return_by_memory())
-			convert_return_by_memory(this, f->block, f);
+			//convert_return_by_memory(this, f->block, f);
+			transform_block(f->block, [&](Node *n){ return convert_return_by_memory(this, n, f); });
 
 	// convert function calls
 	transform([&](Node *n){ return conv_calls(this, n, 0); });
@@ -794,7 +794,6 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
 	return F(n);
 }
 
-static Node* _transform_insert_before_ = nullptr;
 
 void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
 {

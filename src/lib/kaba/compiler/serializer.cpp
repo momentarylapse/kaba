@@ -245,6 +245,17 @@ string signed_hex(int64 i)
 	return s + d2h(&i, 4);
 }
 
+
+string guess_constant(int64 c)
+{
+	for (auto &p: Packages)
+		for (auto *f: p.script->syntax->functions)
+			if (c == (int_p)f->address)
+				return "FUNC:" + f->name;
+
+	return "C:"+p2s((void*)c);
+}
+
 string SerialNodeParam::str() const
 {
 	string str;
@@ -253,11 +264,13 @@ string SerialNodeParam::str() const
 		if ((kind == KIND_REGISTER) or (kind == KIND_DEREF_REGISTER))
 			n = Asm::GetRegName(p);
 		else if ((kind == KIND_VAR_TEMP) or (kind == KIND_DEREF_VAR_TEMP) or (kind == KIND_MARKER))
-			n = i2s(p);
+			n = "#" + i2s(p);
 		else if (kind == KIND_VAR_LOCAL)
 			n = signed_hex(p);
 		else if (kind == KIND_VAR_GLOBAL)
 			n = d2h(&p, config.pointer_size);
+		else if ((kind == KIND_CONSTANT) or (kind == KIND_IMMEDIATE))
+			n = guess_constant(p);
 		str = "  (" + type->name + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
@@ -620,7 +633,7 @@ SerialNodeParam Serializer::SerializeNode(Node *com, Block *block, int index)
 	// EXPERIMENTAL DIRTY HACK !!!!!!!!!!!
 	//syntax_tree->ShowNode(com, cur_func);
 	Node *override_ret = nullptr;
-#if 1
+#if 0
 	if (node_is_assign_mem(com)){
 		if (com->params[1]->kind == KIND_FUNCTION_CALL or com->params[1]->kind == KIND_INLINE_CALL){
 			if (com->params[0]->kind == KIND_VAR_LOCAL or com->params[0]->kind == KIND_VAR_GLOBAL){
