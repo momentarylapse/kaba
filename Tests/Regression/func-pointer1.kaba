@@ -1,0 +1,8 @@
+void f()
+	print("hallo")
+
+
+void main()
+	func* p = &f
+	p()
+	(&f)()

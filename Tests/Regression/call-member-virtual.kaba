@@ -1,0 +1,7 @@
+class Test
+	virtual void f()
+		print("Test.f")
+
+void main()
+	Test t
+	t.f()

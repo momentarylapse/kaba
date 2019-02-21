@@ -1,0 +1,10 @@
+class Test
+	int x
+	void __init__()
+		print("new ---")
+
+void main()
+	Test *t = new Test
+	
+	
+	

@@ -1,0 +1,4 @@
+const int[] a = [2,3,4]
+void main()
+	for i in a
+		print(i)

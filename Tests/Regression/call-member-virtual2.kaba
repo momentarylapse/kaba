@@ -1,0 +1,13 @@
+class Base
+	virtual void f()
+		print("Base.f")
+
+class Derived extends Base
+	override  void f()
+		print("Derived.f")
+
+void main()
+	Base *t = new Base
+	t.f()
+	t = new Derived
+	t.f()

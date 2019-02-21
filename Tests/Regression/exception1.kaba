@@ -1,0 +1,5 @@
+void main()
+	try
+		raise(new Exception)
+	except
+		print("catch...")

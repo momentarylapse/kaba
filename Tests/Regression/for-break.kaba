@@ -1,0 +1,6 @@
+void main()
+	for i in 0:10
+		if i == 7
+			break
+		print(i)
+	print("after")

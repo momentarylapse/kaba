@@ -1,0 +1,13 @@
+class Test
+	int x
+	void __init__()
+		print("new ---")
+	void __init__(int a)
+		x = a
+		print("new " + a)
+
+void main()
+	Test *t = new Test(3)
+	
+	
+	

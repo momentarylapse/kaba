@@ -1,0 +1,4 @@
+void main()
+	string s
+	Class *t = type s
+	print(t.name)

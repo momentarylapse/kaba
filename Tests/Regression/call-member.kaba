@@ -1,0 +1,6 @@
+void main()
+	int[] a
+	a.add(8)
+	a.add(5)
+	print(a)
+

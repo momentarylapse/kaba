@@ -1,0 +1,3 @@
+void main()
+	matrix m = MatrixTranslation(vector(1,2,3))
+	print(m)

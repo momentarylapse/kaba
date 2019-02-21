@@ -1,0 +1,3 @@
+void main()
+	int s = sizeof matrix
+	print(s)
