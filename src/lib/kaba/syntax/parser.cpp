@@ -205,7 +205,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block)
 
 	// subarray() ?
 	if (index2){
-		auto *cf = operand->type->get_func("subarray", operand->type, {index->type, index->type});
+		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
 		if (cf){
 			Node *f = add_node_member_call(cf, ref_node(operand));
 			f->set_param(0, index);

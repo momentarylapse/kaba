@@ -34,6 +34,8 @@ const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
 const string IDENTIFIER_FUNC_DELETE = "__delete__";
 const string IDENTIFIER_FUNC_ASSIGN = "__assign__";
+const string IDENTIFIER_FUNC_GET = "__get__";
+const string IDENTIFIER_FUNC_SUBARRAY = "__subarray__";
 const string IDENTIFIER_SUPER = "super";
 const string IDENTIFIER_SELF = "self";
 const string IDENTIFIER_EXTENDS = "extends";
@@ -644,7 +646,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 	t->parent = parent;
 	add_class(t);
 
-	ClassFunction *sub = t->get_func("subarray", TypeDynamicArray, {nullptr,nullptr});
+	ClassFunction *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
 	sub->return_type = t;
 
 		// FIXME  wrong for complicated classes
@@ -982,22 +984,6 @@ int xop_int_add(int a, int b)
 }
 
 
-DynamicArray __ref_subarray__(DynamicArray *a, int start, int end)
-{
-	DynamicArray s;
-	s.init(a->element_size);
-	if (start < 0)
-		start += a->num;
-	if (start < 0)
-		start = 0;
-	if (end < 0)
-		end = a->num;
-	if (end > a->num)
-		end = a->num;
-	s.num = max(end - start, 0);
-	s.data = &((char*)a->data)[a->element_size * start];
-	return s;
-}
 
 void SIAddPackageBase()
 {
@@ -1044,13 +1030,7 @@ void SIAddPackageBase()
 		class_add_func("swap", TypeVoid, mf(&DynamicArray::swap));
 			func_add_param("i1", TypeInt);
 			func_add_param("i2", TypeInt);
-		/*class_add_func("iterate", TypeBool, mf(&DynamicArray::iterate));
-			func_add_param("pointer", TypePointerPs);
-		class_add_func("iterate_back", TypeBool, mf(&DynamicArray::iterate_back));
-			func_add_param("pointer", TypePointerPs);
-		class_add_func("index", TypeInt, mf(&DynamicArray::index));
-			func_add_param("pointer", TypePointer);*/
-		class_add_func("subarray", TypeDynamicArray, (void*)&__ref_subarray__);
+		class_add_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, mf(&DynamicArray::ref_subarray));
 			func_add_param("start", TypeInt);
 			func_add_param("end", TypeInt);
 		// low level operations

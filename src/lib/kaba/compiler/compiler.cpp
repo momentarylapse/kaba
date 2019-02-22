@@ -432,7 +432,7 @@ void Script::link_functions()
 		int64 p = (n + 0xefef0000);
 		int64 q = (int_p)syntax->functions[n]->address;
 		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
-			do_error_link("could not link function as variable: " + syntax->functions[n]->name);
+			do_error_link("could not link function as variable: " + syntax->functions[n]->signature());
 	}
 
 
