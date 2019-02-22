@@ -196,7 +196,7 @@ void Script::CompileOsEntryPoint()
 {
 	int nf=-1;
 	foreachi(Function *ff, syntax->functions, index)
-		if (ff->name == "main")
+		if (ff->long_name == "main")
 			nf = index;
 	// call
 	if (nf>=0)
@@ -277,7 +277,7 @@ void Script::LinkOsEntryPoint()
 {
 	Function *f = nullptr;
 	for (Function *ff: syntax->functions)
-		if (ff->name == "main")
+		if (ff->long_name == "main")
 			f = ff;
 	if (f){
 		int lll = (int_p)f->address - syntax->asm_meta_info->code_origin - TaskReturnOffset;
@@ -353,6 +353,7 @@ void relink_calls(Script *s, Script *target, IncludeTranslationData &d)
 
 IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
 {
+	// ksdjfhksjdhfkjsdhfj
 	IncludeTranslationData d;
 	d.const_off = dest->constants.num;
 	d.var_off = dest->root_of_all_evil.var.num;

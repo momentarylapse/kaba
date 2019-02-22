@@ -416,7 +416,7 @@ void class_func_out(Class *c, ClassFunction *f)
 void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool override)
 {
 	ClassFunction cf;
-	cf.name = f->name.substr(name.num + 1, -1);
+	cf.name = f->name;
 	cf.func = f;
 	cf.script = s->script;
 	cf.return_type = f->return_type;

@@ -342,7 +342,8 @@ void _class_add_func_virtual(const string &tname, const string &name, const Clas
 {
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
-	add_func(tname + "." + name + "[virtual]", return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
+	add_func(name, return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
+	cur_func->long_name = tname + "." + name + "[virtual]";
 	cur_func->_class = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
 	cur_class_func->virtual_index = index;
@@ -360,7 +361,8 @@ void class_add_func(const string &name, const Class *return_type, void *func, Sc
 			if (t->is_pointer() and (t->parent == cur_class))
 				tname = t->name;
 	}
-	add_func(tname + "." + name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
+	add_func(name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
+	cur_func->long_name = tname + "." + name;
 	cur_func->_class = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
 }
@@ -892,7 +894,7 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 	c.func_no = -1;
 	if (c.func_no < 0)
 	for (int i=0;i<cur_package_script->syntax->functions.num;i++)
-		if (cur_package_script->syntax->functions[i]->name == cmd){
+		if (cur_package_script->syntax->functions[i]->long_name == cmd){
 			c.func_no = i;
 			c.script = cur_package_script;
 			break;
@@ -1103,6 +1105,8 @@ void SIAddPackageBase()
 
 	add_class(TypeFunction);
 		class_add_element("name", TypeString, offsetof(Function, name));
+		class_add_element("long_name", TypeString, offsetof(Function, long_name));
+		class_add_element("class", TypeClassP, offsetof(Function, _class));
 
 
 	//	add_func_special("f2i",			TypeInt,	(void*)&_Float2Int);

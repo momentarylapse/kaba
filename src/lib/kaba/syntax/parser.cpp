@@ -1970,7 +1970,9 @@ void Function::update(const Class *class_type)
 			block->add_var(IDENTIFIER_SELF, class_type->get_pointer());
 
 		// convert name to Class.Function
-		name = class_type->name + "." +  name;
+		long_name = class_type->name + "." +  name;
+	}else{
+		long_name = name;
 	}
 }
 
@@ -2095,7 +2097,7 @@ void SyntaxTree::parse_function_body(Function *f)
 	bool more_to_parse = true;
 
 	// auto implement constructor?
-	if (f->name.tail(IDENTIFIER_FUNC_INIT.num + 1) == "." + IDENTIFIER_FUNC_INIT){
+	if (f->name == IDENTIFIER_FUNC_INIT){
 		if (peek_commands_super(Exp)){
 			more_to_parse = ParseFunctionCommand(f, this_line);
 
@@ -2112,7 +2114,7 @@ void SyntaxTree::parse_function_body(Function *f)
 	}
 
 	// auto implement destructor?
-	if (f->name.tail(IDENTIFIER_FUNC_DELETE.num + 1) == "." + IDENTIFIER_FUNC_DELETE)
+	if (f->name == IDENTIFIER_FUNC_DELETE)
 		AutoImplementDestructor(f, f->_class);
 	cur_func = nullptr;
 
@@ -2147,6 +2149,7 @@ void SyntaxTree::parse_all_function_bodies()
 void SyntaxTree::parse_top_level()
 {
 	root_of_all_evil.name = "RootOfAllEvil";
+	root_of_all_evil.long_name = root_of_all_evil.name;
 	cur_func = nullptr;
 
 	// syntax analysis
