@@ -205,7 +205,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block)
 
 	// subarray() ?
 	if (index2){
-		auto *cf = operand->type->get_func("subarray", operand->type, 2, index->type);
+		auto *cf = operand->type->get_func("subarray", operand->type, {index->type, index->type});
 		if (cf){
 			Node *f = add_node_member_call(cf, ref_node(operand));
 			f->set_param(0, index);
@@ -745,7 +745,7 @@ bool type_match_with_cast(const Class *given, bool same_chunk, bool is_modifiabl
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (wanted == TypeString){
-		ClassFunction *cf = given->get_func("str", TypeString, 0);
+		ClassFunction *cf = given->get_func("str", TypeString, {});
 		if (cf){
 			penalty = 50;
 			cast = TYPE_CAST_OWN_STRING;
@@ -766,7 +766,7 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 	if (tc < 0)
 		return param;
 	if (tc == TYPE_CAST_OWN_STRING){
-		ClassFunction *cf = param->type->get_func("str", TypeString, 0);
+		ClassFunction *cf = param->type->get_func("str", TypeString, {});
 		if (cf)
 			return ps->add_node_member_call(cf, ps->ref_node(param));
 		ps->do_error("automatic .str() not implemented yet");

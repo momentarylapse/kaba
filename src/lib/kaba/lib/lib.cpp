@@ -644,7 +644,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 	t->parent = parent;
 	add_class(t);
 
-	ClassFunction *sub = t->get_func("subarray", TypeDynamicArray, 2);
+	ClassFunction *sub = t->get_func("subarray", TypeDynamicArray, {nullptr,nullptr});
 	sub->return_type = t;
 
 		// FIXME  wrong for complicated classes

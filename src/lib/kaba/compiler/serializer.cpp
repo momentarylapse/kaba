@@ -710,9 +710,9 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 	}else if (com->kind == KIND_STATEMENT){
 		SerializeStatement(com, params, ret, block, index);
 	}else if (com->kind == KIND_ARRAY_BUILDER){
-		ClassFunction *cf = com->type->get_func("add", TypeVoid, 1);
+		ClassFunction *cf = com->type->get_func("add", TypeVoid, {com->type->parent});
 		if (!cf)
-			do_error(format("[..]: can not find %s.add() function???", com->type->name.c_str()));
+			do_error(format("[..]: can not find %s.add(%s) function???", com->type->name.c_str(), com->type->parent->name.c_str()));
 		instance = AddReference(ret, com->type->get_pointer());
 		for (int i=0; i<com->params.num; i++){
 			AddFunctionCall(cf->func, instance, params[i], p_none);
