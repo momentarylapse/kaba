@@ -1,0 +1,25 @@
+class Config
+	int a, b, c, d
+	string x
+	void __init__()
+		print("Config.init")
+		a = 0
+		b = 1
+		c = 2
+		d = 3
+
+class Base
+	string x
+	void __init__(int i)
+		print("Base.init " + i)
+		x = "hallo"
+
+class Complex extends Base
+	Config[6] conf
+	int a
+	override void __init__(int i)
+		print("Complex.init " + i)
+
+void main()
+	Complex *c = new Complex(5)
+	print(str(*c))

@@ -178,6 +178,8 @@ bool Class::needs_constructor() const
 		return false;
 	if (is_super_array() or is_dict())
 		return true;
+	if (is_array())
+		return parent->needs_constructor();
 	if (vtable.num > 0)
 		return true;
 	if (parent)
@@ -207,6 +209,8 @@ bool Class::needs_destructor() const
 		return false;
 	if (is_super_array() or is_dict())
 		return true;
+	if (is_array())
+		return parent->needs_destructor();
 	if (parent){
 		if (parent->get_destructor())
 			return true;
