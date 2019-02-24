@@ -523,13 +523,12 @@ void SyntaxTree::AddMissingFunctionHeadersForClass(Class *t)
 		add_func_header(this, t, "remove", TypeVoid, {TypeInt}, {"index"});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	}else if (t->is_array()){
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
-		if (t->parent->needs_constructor())
+		if (t->needs_constructor())
 			add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		if (t->parent->needs_destructor())
+		if (t->needs_destructor())
 			add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	}else if (t->is_dict()){
-		msg_write("add dict...");
 		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(this, t, "clear", TypeVoid, {}, {});
@@ -600,6 +599,8 @@ void SyntaxTree::AutoImplementFunctions(const Class *t)
 	if (t->is_pointer())
 		return;
 
+	// TODO: really check here?
+	// ...or just implement any function that's declared but not implemented?
 	if (t->is_super_array()){
 		AutoImplementConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
@@ -619,8 +620,6 @@ void SyntaxTree::AutoImplementFunctions(const Class *t)
 	}else if (!t->is_simple_class()){
 		for (auto *cf: t->get_constructors())
 			AutoImplementConstructor(prepare_auto_impl(t, cf), t, true);
-		//if (t->needs_constructor())
-		//	AutoImplementConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		if (t->needs_destructor())
 			AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
