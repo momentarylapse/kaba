@@ -487,7 +487,7 @@ void *Class::create_instance() const
 	return p;
 }
 
-string Class::var2str(void *p) const
+string Class::var2str(const void *p) const
 {
 	if (this == TypeInt){
 		return i2s(*(int*)p);
