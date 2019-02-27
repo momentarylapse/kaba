@@ -290,8 +290,8 @@ public:
 		//hui::setDirectory(initial_working_directory);
 		//setDirectory(s->filename.dirname());
 
-		main_arg_func *f_arg = (main_arg_func*)s->MatchFunction("main", "void", 1, "string[]");
-		main_void_func *f_void = (main_void_func*)s->MatchFunction("main", "void", 0);
+		main_arg_func *f_arg = (main_arg_func*)s->match_function("main", "void", {"string[]"});
+		main_void_func *f_void = (main_void_func*)s->match_function("main", "void", {});
 
 		if (f_arg){
 			// special execution...

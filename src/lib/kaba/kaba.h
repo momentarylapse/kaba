@@ -41,7 +41,7 @@ public:
 	Script();
 	~Script();
 
-	void Load(const string &filename, bool just_analyse = false);
+	void load(const string &filename, bool just_analyse = false);
 
 	// building operational code
 	void compile();
@@ -64,12 +64,12 @@ public:
 	void do_error_internal(const string &msg);
 
 	// execution
-	void *MatchFunction(const string &name, const string &return_type, int num_params, ...);
-	void *MatchClassFunction(const string &_class, bool allow_derived, const string &name, const string &return_type, int num_params, ...);
-	void SetVariable(const string &name, void *data);
+	void *match_function(const string &name, const string &return_type, const Array<string> &param_types);
+	void *match_class_function(const string &_class, bool allow_derived, const string &name, const string &return_type, const Array<string> &param_types);
+	void set_variable(const string &name, void *data);
 
 	//debug displaying
-	void ShowVars(bool include_consts=false);
+	void show_vars(bool include_consts=false);
 
 // data
 
@@ -98,7 +98,7 @@ void ExecutePublicScripts();
 void DeleteAllScripts(bool even_immortal = false, bool force = false);
 void ExecuteSingleScriptCommand(const string &cmd);
 
-const Class *GetDynamicType(const void *p);
+const Class *GetDynamicType(const VirtualBase *p);
 
 };
 
