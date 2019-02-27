@@ -33,8 +33,6 @@ struct LinkerException : Exception{};
 struct LinkerException : Exception{};*/
 
 
-#define WaitingModeFinished		WaitingModeNone
-
 // executable (compiled) data
 class Script
 {
@@ -50,8 +48,10 @@ public:
 	void update_constant_locations();
 	void map_constants_to_opcode();
 	void map_global_variables_to_memory();
+	void map_constants_to_memory(char *mem, int &offset);
 	void allocate_opcode();
 	void align_opcode();
+	void allocate_memory();
 	void assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list);
 	void compile_functions(char *oc, int &ocs);
 	void CompileOsEntryPoint();
@@ -80,6 +80,9 @@ public:
 
 	char *opcode; // executable code
 	int opcode_size;
+
+	char *memory;
+	int memory_size;
 
 	Array<Asm::WantedLabel> functions_to_link;
 	Array<int> function_vars_to_link;

@@ -246,10 +246,10 @@ string signed_hex(int64 i)
 }
 
 
-string guess_constant(int64 c)
+string guess_constant(int64 c, Serializer *ser)
 {
-	for (auto &p: Packages)
-		for (auto *f: p.script->syntax->functions)
+	for (auto *s: ser->syntax_tree->includes)
+		for (auto *f: s->syntax->functions)
 			if (c == (int_p)f->address)
 				return "FUNC:" + f->long_name;
 
@@ -272,7 +272,7 @@ string SerialNodeParam::str(Serializer *ser) const
 		else if (kind == KIND_VAR_GLOBAL)
 			n = d2h(&p, config.pointer_size);
 		else if ((kind == KIND_CONSTANT) or (kind == KIND_IMMEDIATE))
-			n = guess_constant(p);
+			n = guess_constant(p, ser);
 		str = "  (" + type->name + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
@@ -1738,8 +1738,8 @@ void Serializer::serialize_function(Function *f)
 	serialize_block(f->block);
 	ScanTempVarUsage();
 
-	if (config.verbose and config.allow_output(cur_func, "ser:a"))
-		cmd_list_out("a000");
+	if (config.verbose)
+		cmd_list_out("ser:a");
 
 
 
@@ -1751,8 +1751,8 @@ void Serializer::serialize_function(Function *f)
 	if (need_outro)
 		AddFunctionOutro(f);
 
-	if (config.verbose and config.allow_output(cur_func, "ser:b"))
-		cmd_list_out("a0");
+	if (config.verbose)
+		cmd_list_out("ser:b");
 
 	// map global ref labels
 	if (config.instruction_set == Asm::INSTRUCTION_SET_ARM){
@@ -1765,8 +1765,8 @@ void Serializer::serialize_function(Function *f)
 	TryMergeTempVars();
 	SimplifyFloatStore();
 
-	if (config.verbose and config.allow_output(cur_func, "ser:c"))
-		cmd_list_out("a");
+	if (config.verbose)
+		cmd_list_out("ser:c");
 	
 
 
@@ -2017,6 +2017,7 @@ void Serializer::assemble()
 				assemble_cmd(cmd[i]);
 		}
 	}
+	list->add2(Asm::INST_ALIGN_OPCODE);
 }
 
 void Serializer::do_error(const string &msg)
@@ -2087,7 +2088,6 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		throw Exception(e, this);
 	}
 	functions_to_link.append(d->list->wanted_label);
-	align_opcode();
 	delete(d);
 }
 
@@ -2128,17 +2128,13 @@ void Script::compile_functions(char *oc, int &ocs)
 
 
 	// get function addresses
-	foreachi(Function *f, syntax->functions, i){
+	for (Function *f: syntax->functions)
 		if (!f->is_extern){
 			f->address = (void*)list->_label_value(f->_label);
-		}
-	}
-
-
-	for (Function *f: syntax->functions)
-		for (Block *b: f->all_blocks()){
-			b->_start = (void*)list->_label_value(b->_label_start);
-			b->_end = (void*)list->_label_value(b->_label_end);
+			for (Block *b: f->all_blocks()){
+				b->_start = (void*)list->_label_value(b->_label_start);
+				b->_end = (void*)list->_label_value(b->_label_end);
+			}
 		}
 
 	delete(list);

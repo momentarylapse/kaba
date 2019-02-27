@@ -227,6 +227,9 @@ Script::Script()
 	opcode = nullptr;
 	opcode_size = 0;
 
+	memory = nullptr;
+	memory_size = 0;
+
 	syntax = new SyntaxTree(this);
 }
 
@@ -237,6 +240,13 @@ Script::~Script()
 			VirtualFree(opcode, 0, MEM_RELEASE);
 		#else
 			int r = munmap(opcode, MAX_OPCODE);
+		#endif
+	}
+	if (memory){
+		#if defined(OS_WINDOWS) || defined(OS_MINGW)
+			VirtualFree(memory, 0, MEM_RELEASE);
+		#else
+			int r = munmap(memory, MAX_OPCODE);
 		#endif
 	}
 	//msg_write(string2("-----------            Memory:         %p",Memory));
