@@ -235,7 +235,7 @@ Node *check_const_used(Node *n, Script *me)
 {
 	if (n->kind == KIND_CONSTANT){
 		n->as_const()->used = true;
-		if (n->script != me)
+		if (n->as_const()->owner != me->syntax)
 			msg_error("evil const " + n->as_const()->name);
 	}
 	return n;
@@ -357,6 +357,7 @@ struct IncludeTranslationData
 Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationData &d)
 {
 
+#if 0
 	// keep commands... just redirect var/const/func
 	if (c->script != d.source)
 		return c;
@@ -373,6 +374,7 @@ Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationDa
 	}else if ((c->kind == KIND_FUNCTION_CALL) or (c->kind == KIND_FUNCTION_POINTER)){
 		c->script = target;
 	}
+#endif
 	return c;
 }
 

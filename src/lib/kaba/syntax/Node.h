@@ -81,15 +81,13 @@ struct Node
 {
 	int kind;
 	int64 link_no;
-	Script *script;
-	int ref_count;
 	// parameters
 	Array<Node*> params;
 	// linking of class function instances
 	Node *instance;
 	// return value
 	const Class *type;
-	Node(int kind, int64 link_no, Script *script, const Class *type);
+	Node(int kind, int64 link_no, const Class *type);
 	virtual ~Node();
 	Block *as_block() const;
 	Function *as_func() const;

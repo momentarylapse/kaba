@@ -31,9 +31,9 @@ Variable::~Variable()
 }
 
 
-Function::Function(SyntaxTree *_tree, const string &_name, const Class *_return_type)
+Function::Function(const string &_name, const Class *_return_type, SyntaxTree *_owner)
 {
-	tree = _tree;
+	owner = _owner;
 	name = _name;
 	long_name = name;
 	block = nullptr;

@@ -251,7 +251,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block)
 	}else if (operand->type->is_pointer()){
 		array = add_node_parray(operand, index, operand->type->parent->parent);
 	}else{
-		array = AddNode(KIND_ARRAY, 0, operand->type->parent);
+		array = new Node(KIND_ARRAY, 0, operand->type->parent);
 		array->set_num_params(2);
 		array->set_param(0, operand);
 		array->set_param(1, index);
@@ -317,7 +317,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 		}else if (l->type == TypeFunctionP){
 			Node *p = links[0];
 			clear_nodes(links, p);
-			Node *c = AddNode(KIND_POINTER_CALL, 0, TypeVoid);
+			Node *c = new Node(KIND_POINTER_CALL, 0, TypeVoid);
 			c->set_num_params(1);
 			c->set_param(0, p);
 			links = c;
@@ -581,7 +581,7 @@ Node *build_list(SyntaxTree *ps, Array<Node*> &el)
 	if (el.num == 0)
 		ps->do_error("empty arrays not supported yet");
 	const Class *t = ps->make_class_super_array(el[0]->type);
-	Node *c = ps->AddNode(KIND_ARRAY_BUILDER, 0, t);
+	Node *c = new Node(KIND_ARRAY_BUILDER, 0, t);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++){
 		if (el[i]->type != el[0]->type)
@@ -688,7 +688,7 @@ Node *SyntaxTree::parse_operand(Block *block)
 			}else if (operands[0]->kind == KIND_CLASS){
 				clear_nodes(operands);
 				const Class *t = parse_type();
-				operands = AddNode(KIND_CLASS, (int_p)t, TypeClass, script);
+				operands = new Node(KIND_CLASS, (int_p)t, TypeClass);
 			}else{
 				Exp.next();
 				// direct operand!
@@ -719,7 +719,7 @@ Node *SyntaxTree::parse_primitive_operator(Block *block)
 		return nullptr;
 
 	// command from operator
-	Node *cmd = AddNode(KIND_PRIMITIVE_OPERATOR, op, TypeUnknown);
+	Node *cmd = new Node(KIND_PRIMITIVE_OPERATOR, op, TypeUnknown);
 	// only provisional (only operator sign, parameters and their types by GetCommand!!!)
 
 	Exp.next();
@@ -779,7 +779,8 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param)
 		// relink node
 		return c_new;
 	}else{
-		Node *c = ps->add_node_call(TypeCasts[tc].script->syntax->functions[TypeCasts[tc].func_no], TypeCasts[tc].dest);
+		Node *c = ps->add_node_call(TypeCasts[tc].f);
+		c->type = TypeCasts[tc].dest;
 		c->set_param(0, param);
 		return c;
 	}
@@ -1115,7 +1116,7 @@ Node *SyntaxTree::parse_statement_for_array(Block *block)
 	Node *val1;
 	if (for_array->type->usable_as_super_array()){
 		// array.num
-		val1 = AddNode(KIND_ADDRESS_SHIFT, config.pointer_size, TypeInt);
+		val1 = new Node(KIND_ADDRESS_SHIFT, config.pointer_size, TypeInt);
 		val1->set_num_params(1);
 		val1->set_param(0, for_array);
 	}else{
@@ -1493,7 +1494,7 @@ Node *SyntaxTree::parse_statement_str(Block *block)
 	Array<Node*> links = get_existence("var2str", nullptr);
 	Function *f = links[0]->as_func();
 
-	Node *cmd = add_node_call(f, TypeString);
+	Node *cmd = add_node_call(f);
 	cmd->set_param(0, ref_node(sub));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
