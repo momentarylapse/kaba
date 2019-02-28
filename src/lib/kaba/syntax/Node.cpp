@@ -51,8 +51,6 @@ string kind2str(int kind)
 	if (kind == KIND_GLOBAL_LOOKUP)		return "global lookup";
 	if (kind == KIND_DEREF_GLOBAL_LOOKUP)	return "deref global lookup";
 	if (kind == KIND_IMMEDIATE)			return "immediate";
-	if (kind == KIND_REF_TO_LOCAL)			return "ref to local";
-	if (kind == KIND_REF_TO_GLOBAL)		return "ref to global";
 	if (kind == KIND_REF_TO_CONST)			return "ref to const";
 	if (kind == KIND_DEREF_VAR_LOCAL)		return "deref local";
 	return format("UNKNOWN KIND: %d", kind);
@@ -128,11 +126,6 @@ Block::Block(Function *f, Block *_parent) :
 
 Block::~Block()
 {
-	/*for (Node *n: params){
-		if (n->kind == KIND_BLOCK)
-			delete (n->as_block());
-		//delete n;
-	}*/
 }
 
 
@@ -185,12 +178,11 @@ Node::Node(int _kind, int64 _link_no, const Class *_type)
 
 Node::~Node()
 {
-	/*if (instance)
+	if (instance)
 		delete instance;
 	for (auto &p: params)
 		if (p)
-			delete p;*/
-	// TODO later
+			delete p;
 }
 
 Block *Node::as_block() const

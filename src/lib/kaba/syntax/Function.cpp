@@ -55,12 +55,29 @@ Function::Function(const string &_name, const Class *_return_type, SyntaxTree *_
 	_label = -1;
 }
 
+#include "../../base/set.h"
+#include "SyntaxTree.h"
+
+void test_node_recursion(Node *root, const string &message)
+{
+	Set<Node*> nodes;
+	SyntaxTree::transform_node(root, [&](Node *n){
+		if (nodes.contains(n)){
+			msg_error("node double..." + message);
+			//msg_write(f->long_name);
+			msg_write(n->str());
+		}else
+			nodes.add(n);
+		return n; });
+}
+
 Function::~Function()
 {
-	for (Variable* v: var)
-		delete v;
+	test_node_recursion(block, long_name);
 	if (block)
 		delete block;
+	for (Variable* v: var)
+		delete v;
 }
 
 void Function::show(const string &stage) const

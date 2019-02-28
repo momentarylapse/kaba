@@ -50,8 +50,6 @@ enum
 	KIND_REFERENCE,          // = &
 	KIND_DEREFERENCE,        // = *
 	KIND_DEREF_ADDRESS_SHIFT,// = ->
-	KIND_REF_TO_LOCAL,
-	KIND_REF_TO_GLOBAL,
 	KIND_REF_TO_CONST,
 	KIND_ADDRESS,            // &global (for pre processing address shifts)
 	KIND_MEMORY,             // global (but LinkNr = address)

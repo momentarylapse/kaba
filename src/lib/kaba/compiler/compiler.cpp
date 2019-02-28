@@ -106,10 +106,12 @@ void* get_nice_memory(long size, bool executable)
 	mem = (char*)VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
 
-	int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+	int prot = PROT_READ | PROT_WRITE;
 	int flags = MAP_PRIVATE | MAP_ANONYMOUS;
-	if (executable)
+	if (executable){
+		prot |= PROT_EXEC;
 		flags |= MAP_EXECUTABLE;
+	}
 
 	// try in 32bit distance from current opcode
 	for (int i=0; i<100; i++){

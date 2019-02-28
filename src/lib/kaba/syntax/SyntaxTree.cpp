@@ -111,6 +111,8 @@ Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_
 		c = new Node(KIND_VIRTUAL_CALL, f->virtual_index, f->return_type);
 	}else{
 		c = add_node_call(f->func);
+
+		// some classes share a function (for example @DynamicArray.__subarray__)
 		c->type = f->return_type;
 	}
 	c->set_instance(inst);
