@@ -1575,7 +1575,6 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 	config.allow_simplification = true;
 	config.allow_registers = true;
-	config.use_const_as_global_var = false;
 	config.stack_mem_align = 8;
 	config.function_align = 2 * config.pointer_size;
 	config.stack_frame_align = 2 * config.pointer_size;

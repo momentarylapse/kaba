@@ -25,8 +25,8 @@ string kind2str(int kind)
 		return "function pointer";
 	if (kind == KIND_CONSTANT)
 		return "constant";
-	if (kind == KIND_REF_TO_CONST)
-		return "reference to const";
+	if (kind == KIND_CONSTANT_BY_ADDRESS)
+		return "constant by addr";
 	if (kind == KIND_FUNCTION_CALL)
 		return "call";
 	if (kind == KIND_POINTER_CALL)
@@ -87,9 +87,7 @@ string kind2str(int kind)
 		return "deref global lookup";
 	if (kind == KIND_IMMEDIATE)
 		return "immediate";
-	if (kind == KIND_REF_TO_CONST)
-		return "ref to const";
-	if (kind == KIND_DEREF_VAR_LOCAL)
+	if (kind == KIND_DEREF_LOCAL_MEMORY)
 		return "deref local";
 	return format("UNKNOWN KIND: %d", kind);
 }

@@ -205,7 +205,7 @@ public:
 	static SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t);
 	static SerialNodeParam param_global(const Class *type, void *v);
 	static SerialNodeParam param_local(const Class *type, int offset);
-	static SerialNodeParam param_const(const Class *type, int64 c);
+	static SerialNodeParam param_imm(const Class *type, int64 c);
 	static SerialNodeParam param_marker(const Class *type, int m);
 	static SerialNodeParam param_marker32(int m);
 	static SerialNodeParam param_deref_marker(const Class *type, int m);
