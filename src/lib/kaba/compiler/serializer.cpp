@@ -140,14 +140,19 @@ SerialNodeParam Serializer::param_const(const Class *type, int64 c)
 	return p;
 }
 
-SerialNodeParam Serializer::param_marker(int m)
+SerialNodeParam Serializer::param_marker(const Class *type, int m)
 {
 	SerialNodeParam p;
-	p.type = TypeInt;
+	p.type = type;
 	p.kind = KIND_MARKER;
 	p.p = m;
 	p.shift = 0;
 	return p;
+}
+
+SerialNodeParam Serializer::param_marker32(int m)
+{
+	return param_marker(TypeInt, m);
 }
 
 SerialNodeParam Serializer::param_deref_marker(const Class *type, int m)
@@ -1890,7 +1895,7 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialNodeParam &p)
 	if (p.kind < 0){
 		return Asm::param_none;
 	}else if (p.kind == KIND_MARKER){
-		return Asm::param_label(p.p, 4);
+		return Asm::param_label(p.p, p.type->size);
 	}else if (p.kind == KIND_DEREF_MARKER){
 		return Asm::param_deref_label(p.p, p.type->size);
 	}else if (p.kind == KIND_REGISTER){

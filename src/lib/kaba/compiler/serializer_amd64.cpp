@@ -133,19 +133,20 @@ void SerializerAMD64::fc_end(int push_size, const SerialNodeParam &instance, con
 	}
 }
 
+bool dist_fits_32bit(void *a, void *b)
+{
+	int_p d = (int_p)a - (int_p)b;
+	if (d < 0)
+		d = -d;
+	return (d < 0x70000000);
+}
+
 void SerializerAMD64::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
 	int push_size = fc_begin(instance, params, ret);
 
-	if ((f->owner->script == this->script) and (!f->is_extern)){
-		add_cmd(Asm::INST_CALL, param_marker(f->_label));
-	}else{
-		if (!f->address)
-			do_error_link("could not link function " + f->signature(true));
-		int_p d = (int_p)f->address - (int_p)this->script->opcode;
-		if (d < 0)
-			d = -d;
-		if (d < 0x70000000){
+	if (f->address){
+		if (dist_fits_32bit(f->address, script->opcode)){
 			// 32bit call distance
 			add_cmd(Asm::INST_CALL, param_const(TypeReg32, (int_p)f->address)); // the actual call
 			// function pointer will be shifted later...(asm translates to RIP-relative)
@@ -154,6 +155,12 @@ void SerializerAMD64::add_function_call(Function *f, const SerialNodeParam &inst
 			add_cmd(Asm::INST_MOV, p_rax, param_const(TypeReg64, (int_p)f->address));
 			add_cmd(Asm::INST_CALL, p_rax);
 		}
+	}else if (f->_label >= 0){
+		// 64bit call distance
+		add_cmd(Asm::INST_MOV, p_rax, param_marker(TypePointer, f->_label));
+		add_cmd(Asm::INST_CALL, p_rax);
+	}else{
+		do_error_link("could not link function " + f->signature(true));
 	}
 
 	fc_end(push_size, instance, params, ret);

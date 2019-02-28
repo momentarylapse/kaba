@@ -119,7 +119,7 @@ void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instan
 	int push_size = fc_begin(instance, params, ret);
 
 	if ((f->owner->script == this->script) and (!f->is_extern)){
-		add_cmd(Asm::INST_CALL, param_marker(f->_label));
+		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
 	}else{
 		if (!f->address)
 			do_error_link("could not link function " + f->long_name);

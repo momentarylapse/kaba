@@ -206,7 +206,8 @@ public:
 	static SerialNodeParam param_global(const Class *type, void *v);
 	static SerialNodeParam param_local(const Class *type, int offset);
 	static SerialNodeParam param_const(const Class *type, int64 c);
-	static SerialNodeParam param_marker(int m);
+	static SerialNodeParam param_marker(const Class *type, int m);
+	static SerialNodeParam param_marker32(int m);
 	static SerialNodeParam param_deref_marker(const Class *type, int m);
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
 	static SerialNodeParam param_preg(const Class *type, int reg);
