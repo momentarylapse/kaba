@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.17.-1.3";
+string AppVersion = "0.17.-1.4";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -221,6 +221,8 @@ public:
 			filename = arg[1];
 			if (installed and filename.tail(5) != ".kaba"){
 				string dd = directory_static + "apps/" + arg[1] + "/" + arg[1] + ".kaba";
+				if (arg[1].find("/") >= 0)
+					dd = directory_static + "apps/" + arg[1] + ".kaba";
 				if (file_test_existence(dd))
 					filename = dd;
 			}
