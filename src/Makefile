@@ -114,8 +114,8 @@ OBJ = lib/algebra/crypto.o \
  lib/kaba/syntax/implicit.o \
  lib/kaba/syntax/lexical.o \
  lib/kaba/syntax/Node.o \
- lib/kaba/syntax/parser.o \
  lib/kaba/syntax/Parser.o \
+ lib/kaba/syntax/parser.o \
  lib/kaba/syntax/precompiler.o \
  lib/kaba/syntax/preprocessor.o \
  lib/kaba/syntax/SyntaxTree.o \
@@ -465,10 +465,10 @@ lib/kaba/lib/lib_x.o : lib/kaba/lib/lib_x.cpp lib/file/file.h lib/base/base.h li
 lib/kaba/syntax/Class.o : lib/kaba/syntax/Class.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/Class.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/Constant.o : lib/kaba/syntax/Constant.cpp
+lib/kaba/syntax/Constant.o : lib/kaba/syntax/Constant.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/Constant.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/Function.o : lib/kaba/syntax/Function.cpp
+lib/kaba/syntax/Function.o : lib/kaba/syntax/Function.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/base/set.h
 	$(CPP) -c lib/kaba/syntax/Function.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/syntax/implicit.o : lib/kaba/syntax/implicit.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
@@ -477,14 +477,14 @@ lib/kaba/syntax/implicit.o : lib/kaba/syntax/implicit.cpp lib/kaba/kaba.h lib/ba
 lib/kaba/syntax/lexical.o : lib/kaba/syntax/lexical.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/syntax/lexical.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h
 	$(CPP) -c lib/kaba/syntax/lexical.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/Node.o : lib/kaba/syntax/Node.cpp
+lib/kaba/syntax/Node.o : lib/kaba/syntax/Node.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/Node.cpp -o $@ $(CXXFLAGS)
-
-lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/syntax/parser.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/syntax/Parser.o : lib/kaba/syntax/Parser.cpp lib/kaba/syntax/Parser.h
 	$(CPP) -c lib/kaba/syntax/Parser.cpp -o $@ $(CXXFLAGS)
+
+lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+	$(CPP) -c lib/kaba/syntax/parser.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/syntax/precompiler.o : lib/kaba/syntax/precompiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/syntax/precompiler.cpp -o $@ $(CXXFLAGS)
@@ -576,9 +576,10 @@ main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/st
 install :
 	mkdir -p /usr/share/kaba
 	cp -f ../static/icon.ico /usr/share/kaba
+	cp -f ../static/icon.png /usr/share/kaba
 	xdg-mime install ../static/michisoft-kaba.xml
 	xdg-desktop-menu install ../static/michisoft-kaba.desktop
-	xdg-icon-resource install --context mimetypes --size 64 ../static/kaba.png text-michisoft-kaba
+	xdg-icon-resource install --context mimetypes --size 64 ../static/icon.png text-michisoft-kaba
 	cp $(BIN) /usr/bin
 
 clean :
