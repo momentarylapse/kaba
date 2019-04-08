@@ -159,7 +159,7 @@ void DrawLine(float x1, float y1, float x2, float y2, float depth)
 	TestGLError("DrawLine");
 }
 
-void DrawLines(Array<vector> &p, bool contiguous)
+void DrawLines(const Array<vector> &p, bool contiguous)
 {
 	current_shader->set_default_data();
 
@@ -189,7 +189,7 @@ void DrawLines(Array<vector> &p, bool contiguous)
 	TestGLError("dls-f");
 }
 
-void DrawLinesColored(Array<vector> &p, Array<color> &c, bool contiguous)
+void DrawLinesColored(const Array<vector> &p, const Array<color> &c, bool contiguous)
 {
 	current_shader->set_default_data();
 

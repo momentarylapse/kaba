@@ -951,6 +951,16 @@ void SerializerX86::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
 			}
 			break;
+		case INLINE_VECTOR_MULTIPLY_VV:
+			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0 * 4, TypeFloat32));
+			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0 * 4, TypeFloat32));
+			for (int i=1;i<3;i++){
+				add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_ADDSS, p_xmm0, p_xmm1);
+			}
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			break;
 		case INLINE_VECTOR_DIVIDE_VF:
 			for (int i=0;i<3;i++){
 				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
