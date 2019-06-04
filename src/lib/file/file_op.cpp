@@ -163,6 +163,7 @@ string file_hash(const string &filename, const string &type)
 
 string shell_execute(const string &cmd)
 {
+#ifdef OS_LINUX
 	FILE *f = popen(cmd.c_str(), "r");
 	string buffer;
 
@@ -178,6 +179,9 @@ string shell_execute(const string &cmd)
 	if (r != 0)
 		throw Exception("failed to run shell command");
 	return buffer;
+#else
+	return "";
+#endif
 }
 
 
@@ -196,8 +200,8 @@ Array<DirEntry> dir_search(const string &dir, const string &filter, bool show_di
 
 #ifdef OS_WINDOWS
 	static _finddata_t t;
-	int handle=_findfirst((dir2 + "*").c_str(), &t);
-	int e=handle;
+	auto handle=_findfirst((dir2 + "*").c_str(), &t);
+	auto e=handle;
 	while(e>=0){
 		string name = t.name;
 		//if ((strcmp(t.name,".")!=0)and(strcmp(t.name,"..")!=0)and(strstr(t.name,"~")==NULL)){

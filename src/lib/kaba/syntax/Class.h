@@ -8,20 +8,25 @@ namespace Kaba{
 class Script;
 class SyntaxTree;
 class Class;
-struct Function;
+class Function;
 
 
-struct ClassElement{
+class ClassElement
+{
+public:
 	string name;
 	const Class *type;
 	long long offset;
 	bool hidden;
 	ClassElement();
+	ClassElement(const string &name, const Class *type, int offset);
 	string signature(bool include_class) const;
 };
 
 // TODO: use Function instead!
-struct ClassFunction{
+class ClassFunction
+{
+public:
 	string name;
 	Script *script;
 	Function *func;
@@ -37,7 +42,8 @@ struct ClassFunction{
 
 typedef void *VirtualTable;
 
-class Class{
+class Class
+{
 public:
 	//Class();
 	Class(const string &name, int size, SyntaxTree *owner, const Class *parent = nullptr);

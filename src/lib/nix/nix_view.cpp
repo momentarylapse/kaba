@@ -84,7 +84,7 @@ void SetViewPosAngV(const vector &view_pos,const vector &view_ang)
 void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
 {
 	ViewPos = view_pos;
-	ViewDir = view_ang * e_z;
+	ViewDir = view_ang * vector::EZ;
 
 	matrix t, r;
 	MatrixTranslation(t, -view_pos);

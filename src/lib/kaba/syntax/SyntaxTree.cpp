@@ -8,7 +8,7 @@ namespace Kaba{
 //#define ScriptDebug
 
 
-extern Class *TypeDynamicArray;
+extern const Class *TypeDynamicArray;
 
 
 bool next_extern = false;
@@ -58,7 +58,7 @@ Node *SyntaxTree::ref_node(Node *sub, const Class *override_type)
 	if (sub->kind == KIND_CLASS){
 		// Class pointer
 		auto *c = add_constant(TypeClassP);
-		c->as_int64() = (long long)(long)sub->as_class();
+		c->as_int64() = (long long)(int_p)sub->as_class();
 		return add_node_const(c);
 	}else if (sub->kind == KIND_FUNCTION_NAME){
 		// can't be const because the function might not be compiled yet!
@@ -443,12 +443,9 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	if (find_type_by_name(name))
 		do_error("class already exists");
 
-	Class *t = new Class(name, size, this);
+	Class *t = new Class(name, size, this, sub);
 	t->type = type;
 	t->array_length = max(array_size, 0);
-	t->name = name;
-	t->size = size;
-	t->parent = sub;
 	classes.add(t);
 	if (t->is_super_array() or t->is_dict()){
 		t->derive_from(TypeDynamicArray, false);

@@ -63,7 +63,7 @@ void DrawStr(float x, float y, const string &str)
 		if (im.width > 0){
 			tex_text->overwrite(im);
 			SetTexture(tex_text);
-			Draw2D(r_id, rect(x, x + im.width, y, y + im.height), 0);
+			Draw2D(rect::ID, rect(x, x + im.width, y, y + im.height), 0);
 		}
 	}else{
 		/*string str2 = str_utf8_to_ubyte(str);
@@ -238,7 +238,7 @@ void DrawLineV(float x, float y1, float y2, float depth)
 	/*if (y1>y2){
 		float y=y2;	y2=y1;	y1=y;
 	}
-	NixDraw2D(r_id, rect(x, x + 1, y1, y2), depth);*/
+	NixDraw2D(rect::ID, rect(x, x + 1, y1, y2), depth);*/
 }
 
 void DrawLineH(float x1, float x2, float y, float depth)
@@ -249,7 +249,7 @@ void DrawLineH(float x1, float x2, float y, float depth)
 		x2=x1;
 		x1=x;
 	}
-	NixDraw2D(r_id, rect(x1, x2, y, y + 1), depth);*/
+	NixDraw2D(rect::ID, rect(x1, x2, y, y + 1), depth);*/
 }
 
 void DrawLine3D(const vector &l1, const vector &l2)
@@ -307,7 +307,7 @@ void DrawRect(float x1, float x2, float y1, float y2, float depth)
 		}
 		return;
 	}*/
-	Draw2D(r_id, rect(x1, x2, y1, y2), depth);
+	Draw2D(rect::ID, rect(x1, x2, y1, y2), depth);
 }
 
 void Draw2D(const rect &src, const rect &dest, float depth)

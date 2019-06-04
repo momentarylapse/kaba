@@ -91,13 +91,13 @@ void win_set_input(Window *win, T *event)
 	}else if (event->type == GDK_LEAVE_NOTIFY){
 		win->input.inside = false;
 	}
-	win->input.dx = event->x - win->input.x;
-	win->input.dy = event->y - win->input.y;
+	win->input.dx = (float)event->x - win->input.x;
+	win->input.dy = (float)event->y - win->input.y;
 	//msg_write(format("%.1f\t%.1f\t->\t%.1f\t%.1f\t(%.1f\t%.1f)", win->input.x, win->input.y, event->x, event->y, win->input.dx, win->input.dy));
 	win->input.scroll_x = 0;
 	win->input.scroll_y = 0;
-	win->input.x = event->x;
-	win->input.y = event->y;
+	win->input.x = (float)event->x;
+	win->input.y = (float)event->y;
 	int mod = event->state;
 	win->input.lb = ((mod & GDK_BUTTON1_MASK) > 0);
 	win->input.mb = ((mod & GDK_BUTTON2_MASK) > 0);
@@ -107,6 +107,7 @@ void win_set_input(Window *win, T *event)
 	}else{
 		win->input.inside_smart = win->input.inside;
 	}
+	win->input.just_focused = false;
 }
 
 gboolean OnGtkAreaMouseMove(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
@@ -154,7 +155,6 @@ gboolean OnGtkAreaMouseLeave(GtkWidget *widget, GdkEventCrossing *event, gpointe
 {
 	Control *c = reinterpret_cast<Control*>(user_data);
 	win_set_input(c->panel->win, event);
-
 	c->notify("hui:mouse-leave", false);
 	return false;
 }
@@ -179,8 +179,19 @@ gboolean OnGtkAreaButton(GtkWidget *widget, GdkEventButton *event, gpointer user
 	else
 		msg += "-button-up";
 
-	gtk_widget_grab_focus(widget);
+	if (!gtk_widget_has_focus(widget)){
+		gtk_widget_grab_focus(widget);
+		c->panel->win->input.just_focused = true;
+	}
 	c->notify(msg, false);
+	return false;
+}
+
+gboolean OnGtkAreaFocusIn(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	Control *c = reinterpret_cast<Control*>(user_data);
+	win_set_input(c->panel->win, event);
+	c->notify("hui:focus-in", false);
 	return false;
 }
 
@@ -197,8 +208,8 @@ gboolean OnGtkAreaMouseWheel(GtkWidget *widget, GdkEventScroll *event, gpointer 
 		else if (event->direction == GDK_SCROLL_RIGHT)
 			c->panel->win->input.scroll_x = -1;
 		else if (event->direction == GDK_SCROLL_SMOOTH){
-			c->panel->win->input.scroll_x = event->delta_x;
-			c->panel->win->input.scroll_y = event->delta_y;
+			c->panel->win->input.scroll_x = (float)event->delta_x;
+			c->panel->win->input.scroll_y = (float)event->delta_y;
 		}
 		c->notify("hui:mouse-wheel", false);
 	}
@@ -301,12 +312,12 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&OnGtkAreaButton), this);
 	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&OnGtkAreaButton), this);
 	g_signal_connect(G_OBJECT(da), "scroll-event", G_CALLBACK(&OnGtkAreaMouseWheel), this);
-	//g_signal_connect(G_OBJECT(w), "focus-in-event", G_CALLBACK(&focus_in_event), this);
+//	g_signal_connect(G_OBJECT(da), "focus-in-event", G_CALLBACK(&OnGtkAreaFocusIn), this);
 	//int mask;
 	//g_object_get(G_OBJECT(da), "events", &mask, NULL);
 	gtk_widget_add_events(da, GDK_EXPOSURE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 	gtk_widget_add_events(da, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
-	gtk_widget_add_events(da, GDK_POINTER_MOTION_MASK);// | GDK_POINTER_MOTION_HINT_MASK); // GDK_POINTER_MOTION_HINT_MASK = "fewer motions"
+	gtk_widget_add_events(da, GDK_POINTER_MOTION_MASK);// | GDK_FOCUS_CHANGE_MASK);// | GDK_POINTER_MOTION_HINT_MASK); // GDK_POINTER_MOTION_HINT_MASK = "fewer motions"
 	gtk_widget_add_events(da, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
 	gtk_widget_add_events(da, GDK_VISIBILITY_NOTIFY_MASK | GDK_SCROLL_MASK);
 	gtk_widget_add_events(da, GDK_SMOOTH_SCROLL_MASK);// | GDK_TOUCHPAD_GESTURE_MASK;
@@ -430,7 +441,7 @@ void ControlDrawingArea::redraw_partial(const rect &r)
 		return;
 	}
 
-	gtk_widget_queue_draw_area(widget, r.x1, r.y1, r.width(), r.height());
+	gtk_widget_queue_draw_area(widget, (int)r.x1, (int)r.y1, (int)r.width(), (int)r.height());
 #endif
 }
 

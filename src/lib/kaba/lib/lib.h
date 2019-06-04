@@ -24,7 +24,7 @@ extern string LibVersion;
 
 class SyntaxTree;
 class Class;
-struct Value;
+class Value;
 class Function;
 
 
@@ -112,8 +112,9 @@ enum
 	NUM_PRIMITIVE_OPERATORS
 };
 
-struct PrimitiveOperator
+class PrimitiveOperator
 {
+public:
 	string name;
 	int id;
 	bool left_modifiable;
@@ -129,8 +130,9 @@ extern PrimitiveOperator PrimitiveOperators[];
 //--------------------------------------------------------------------------------------------------
 // commands
 
-struct Statement
+class Statement
 {
+public:
 	string name;
 	int num_params;
 };
@@ -333,8 +335,9 @@ enum
 // type casting
 
 typedef void t_cast_func(Value&, Value&);
-struct TypeCast
+class TypeCast
 {
+public:
 	int penalty;
 	const Class *source, *dest;
 	Function *f;
@@ -355,8 +358,9 @@ enum
 	ABI_GNU_ARM_64,
 };
 
-struct CompilerConfiguration
+class CompilerConfiguration
 {
+public:
 	int instruction_set;
 	int abi;
 	bool allow_std_lib;
@@ -443,8 +447,9 @@ int ProcessClassNumVirtuals(const string &class_name, int num_virtual);
 //--------------------------------------------------------------------------------------------------
 // packages
 
-struct Package
+class Package
 {
+public:
 	string name;
 	Script *script;
 	bool used_by_default;
