@@ -19,6 +19,7 @@ class Complex extends Base
 	int a
 	override void __init__(int i)
 		print("Complex.init " + i)
+		a = 13
 
 void main()
 	Complex *c = new Complex(5)
