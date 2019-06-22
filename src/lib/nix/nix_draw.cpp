@@ -302,7 +302,7 @@ void DrawRect(float x1, float x2, float y1, float y2, float depth)
 				float _y2=y2;
 				if (y2-y1-j*pa>pa)	_y2=y1+j*pa+pa;
 
-				Draw2D(rect::ID, rect(_x1, _x2, _y1, _y2), depth);
+				Draw2D(r_id, rect(_x1, _x2, _y1, _y2), depth);
 			}
 		}
 		return;

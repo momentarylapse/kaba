@@ -1,6 +1,6 @@
 BIN = ../kaba
 CPP = g++
-GLOBALFLAGS = -O2 -fno-omit-frame-pointer -g -std=c++14 -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_GL=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1
+GLOBALFLAGS = -O2 -fno-omit-frame-pointer -g -std=c++14 -std=c++14  -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_GL=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1
 CXXFLAGS =  `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
 CXXFLAGSLINKING =  `pkg-config --cflags --libs gtk+-3.0` -lz -lGL -lX11 -lunwind -ldl $(GLOBALFLAGS)
 

@@ -1,5 +1,3 @@
-# -O2 -fno-omit-frame-pointer -g -std=c++14 -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_GL=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1
-
 project('kaba', 'cpp', default_options : ['cpp_std=c++14', 'warning_level=1'])
 add_project_arguments('-O2', '-g', '-Wno-unused', '-Wstrict-aliasing=0', '-fno-omit-frame-pointer', language : ['cpp'])
 
@@ -7,42 +5,49 @@ add_project_arguments('-O2', '-g', '-Wno-unused', '-Wstrict-aliasing=0', '-fno-o
 #meson.add_install_script('')
 #install_subdir
 
-
 cc = meson.get_compiler('cpp')
 
 # mandatory dependencies
 mdep = cc.find_library('m', required : false)
-gtkdep = dependency('gtk+-3.0')
-add_project_arguments('-DHAS_LIB_GTK3=1', language : ['cpp'])
 threaddep = dependency('threads')
-zdep = dependency('zlib')
+gtk3dep = dependency('gtk+-3.0')
+add_project_arguments('-DHAS_LIB_GTK3=1', language : ['cpp'])
+zlibdep = dependency('zlib')
 add_project_arguments('-DHAS_LIB_ZLIB=1', language : ['cpp'])
-gldep = dependency('gl')
+gldep = dependency('GL')
 add_project_arguments('-DHAS_LIB_GL=1', language : ['cpp'])
+deps = [mdep, threaddep, gtk3dep, zlibdep, gldep]
 
-# optional dependencies
-dldep = cc.find_library('dl', required : false)
-if dldep.found()
-	add_project_arguments('-DHAS_LIB_DL=1', language : ['cpp'])
-else
-	add_project_arguments('-DHAS_LIB_DL=0', language : ['cpp'])
-endif
-xdep = cc.find_library('X11', required : false)
-if xdep.found()
+# optional dependency: xlib
+d = cc.find_library('X11', required : false)
+if d.found()
 	add_project_arguments('-DHAS_LIB_XLIB=1', language : ['cpp'])
+	deps += [d]
 else
 	add_project_arguments('-DHAS_LIB_XLIB=0', language : ['cpp'])
 endif
-unwinddep = cc.find_library('unwind', required : false)
-if unwinddep.found()
+
+# optional dependency: unwind
+d = cc.find_library('unwind', required : false)
+if d.found()
 	add_project_arguments('-DHAS_LIB_UNWIND=1', language : ['cpp'])
+	deps += [d]
 else
 	add_project_arguments('-DHAS_LIB_UNWIND=0', language : ['cpp'])
 endif
 
-deps = [mdep, gtkdep, threaddep, zdep, gldep, dldep, xdep, unwinddep]
+# optional dependency: dl
+d = cc.find_library('dl', required : false)
+if d.found()
+	add_project_arguments('-DHAS_LIB_DL=1', language : ['cpp'])
+	deps += [d]
+else
+	add_project_arguments('-DHAS_LIB_DL=0', language : ['cpp'])
+endif
 
-sources = ['src/lib/algebra/crypto.cpp',
+
+sources = [
+	'src/lib/algebra/crypto.cpp',
 	'src/lib/algebra/vli.cpp',
 	'src/lib/any/any.cpp',
 	'src/lib/base/array.cpp',
@@ -146,13 +151,17 @@ sources = ['src/lib/algebra/crypto.cpp',
 	'src/lib/kaba/lib/lib_sound.cpp',
 	'src/lib/kaba/lib/lib_threads.cpp',
 	'src/lib/kaba/lib/lib_x.cpp',
-	'src/lib/kaba/syntax/class.cpp',
+	'src/lib/kaba/syntax/Class.cpp',
+	'src/lib/kaba/syntax/Constant.cpp',
+	'src/lib/kaba/syntax/Function.cpp',
 	'src/lib/kaba/syntax/implicit.cpp',
 	'src/lib/kaba/syntax/lexical.cpp',
+	'src/lib/kaba/syntax/Node.cpp',
+	'src/lib/kaba/syntax/Parser.cpp',
 	'src/lib/kaba/syntax/parser.cpp',
 	'src/lib/kaba/syntax/precompiler.cpp',
 	'src/lib/kaba/syntax/preprocessor.cpp',
-	'src/lib/kaba/syntax/syntax_tree.cpp',
+	'src/lib/kaba/syntax/SyntaxTree.cpp',
 	'src/lib/kaba/kaba.cpp',
 	'src/lib/math/complex.cpp',
 	'src/lib/math/interpolation.cpp',
@@ -173,9 +182,13 @@ sources = ['src/lib/algebra/crypto.cpp',
 	'src/lib/nix/nix_textures.cpp',
 	'src/lib/nix/nix_vertexbuffer.cpp',
 	'src/lib/nix/nix_view.cpp',
+	'src/lib/sound/sound.cpp',
+	'src/lib/sound/sound_al.cpp',
 	'src/lib/threads/Mutex.cpp',
 	'src/lib/threads/Thread.cpp',
 	'src/lib/threads/ThreadedWork.cpp',
-	'src/main.cpp']
+	'src/main.cpp'
+]
+
 
 executable('kaba', sources, dependencies : deps, install : true)
