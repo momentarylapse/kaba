@@ -1,8 +1,9 @@
 BIN = ../kaba
 CPP = g++
-GLOBALFLAGS = -O2 -fno-omit-frame-pointer -g -std=c++14 -std=c++14  -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_GL=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1
+GLOBALFLAGS = -O2 -fno-omit-frame-pointer -g -std=c++14  -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_GL=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1
 CXXFLAGS =  `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
 CXXFLAGSLINKING =  `pkg-config --cflags --libs gtk+-3.0` -lz -lGL -lX11 -lunwind -ldl $(GLOBALFLAGS)
+prefix = /usr/local
 
 OBJ = lib/algebra/crypto.o \
  lib/algebra/vli.o \
@@ -483,7 +484,7 @@ lib/kaba/syntax/Node.o : lib/kaba/syntax/Node.cpp lib/kaba/kaba.h lib/base/base.
 lib/kaba/syntax/Parser.o : lib/kaba/syntax/Parser.cpp lib/kaba/syntax/Parser.h
 	$(CPP) -c lib/kaba/syntax/Parser.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
+lib/kaba/syntax/parser.o : lib/kaba/syntax/parser.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/common.h lib/config.h
 	$(CPP) -c lib/kaba/syntax/parser.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/syntax/precompiler.o : lib/kaba/syntax/precompiler.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
@@ -574,13 +575,13 @@ main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/st
 	$(CPP) -c main.cpp -o $@ $(CXXFLAGS)
 
 install :
-	mkdir -p /usr/share/kaba
-	cp -f ../static/icon.ico /usr/share/kaba
-	cp -f ../static/icon.png /usr/share/kaba
-	xdg-mime install ../static/michisoft-kaba.xml
+	mkdir -p $(prefix)/share/kaba
 	xdg-desktop-menu install ../static/michisoft-kaba.desktop
+	xdg-mime install ../static/michisoft-kaba.xml
 	xdg-icon-resource install --context mimetypes --size 64 ../static/icon.png text-michisoft-kaba
-	cp $(BIN) /usr/bin
+	cp -f ../static/icon.ico $(prefix)/share/kaba
+	cp -f ../static/icon.png $(prefix)/share/kaba
+	cp $(BIN) $(prefix)/bin
 
 clean :
 	rm -f $(BIN)

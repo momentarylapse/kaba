@@ -192,3 +192,7 @@ sources = [
 
 
 executable('kaba', sources, dependencies : deps, install : true)
+
+install_data('static/icon.ico', install_dir : join_paths(get_option('datadir'), 'kaba'))
+install_data('static/icon.png', install_dir : join_paths(get_option('datadir'), 'kaba'))
+install_data('static/michisoft-kaba.desktop', install_dir : join_paths(get_option('datadir'), 'applications'))
