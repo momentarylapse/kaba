@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.17.0.1";
+string AppVersion = "0.17.1.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -27,6 +27,13 @@ void Test1(int a)
 int Test2()
 {
 	return 2001;
+}
+
+void print_class(Kaba::Class *c)
+{
+	msg_write("==  " + c->name + "  ==");
+	for (auto &f: c->functions)
+		msg_write(f.signature(true));
 }
 
 
@@ -211,6 +218,7 @@ public:
 		// for experiments
 		Kaba::LinkExternal("Test1", (void*)&Test1);
 		Kaba::LinkExternal("Test2", (void*)&Test2);
+		Kaba::LinkExternal("print_class", (void*)&print_class);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);

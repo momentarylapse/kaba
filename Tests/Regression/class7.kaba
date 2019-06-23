@@ -9,7 +9,7 @@ class B extends A
 		print("B " + a + " " + i)
 
 class C extends B
-	override void __init__()
+	void __init__()
 		super.__init__("test", 13)
 		print("C")
 
