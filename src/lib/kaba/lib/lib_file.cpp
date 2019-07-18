@@ -175,7 +175,7 @@ void kaba_dir_delete(const string &f)
 
 void SIAddPackageFile()
 {
-	add_package("file", false);
+	add_package("file", true);
 
 	const Class *TypeFile = add_type("File", 0);
 	const Class *TypeFileP = add_type_p("File*", TypeFile);

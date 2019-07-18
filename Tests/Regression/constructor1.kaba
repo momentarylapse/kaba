@@ -1,5 +1,4 @@
-//#show
-//#disasm
+use image
 
 void main()
 	Image i

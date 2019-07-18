@@ -1,4 +1,6 @@
+use kaba
+
 void main()
 	string s
-	Class *t = type(s)
+	Class* t = type(s)
 	print(t.name)

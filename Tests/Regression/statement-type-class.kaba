@@ -1,3 +1,5 @@
+use kaba
+
 void main()
 	Class *t = type(matrix[])
 	print(t.name)

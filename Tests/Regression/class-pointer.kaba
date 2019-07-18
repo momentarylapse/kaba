@@ -1,3 +1,5 @@
+use kaba
+
 class A
 	int a
 

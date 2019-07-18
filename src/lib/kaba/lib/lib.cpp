@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.1.0";
+string LibVersion = "0.17.2.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -183,7 +183,7 @@ void add_package(const string &name, bool used_by_default)
 {
 	Package p;
 	p.name = name;
-	p.used_by_default = true;//used_by_default;
+	p.used_by_default = used_by_default;
 	p.script = new Script;
 	p.script->filename = name;
 	Packages.add(p);
@@ -1258,9 +1258,13 @@ void SIAddPackageBase()
 
 	add_funcx(IDENTIFIER_RAISE, TypeVoid, &kaba_raise_exception, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("e", TypeExceptionP);
+}
 
 
 
+void SIAddPackageKaba()
+{
+	add_package("kaba", false);
 
 
 	TypeClass 			= add_type  ("Class", sizeof(Class));
@@ -1333,6 +1337,7 @@ void SIAddPackageBase()
 
 	add_class(TypePackage);
 		class_add_elementx("name", TypeString, &Package::name);
+		class_add_elementx("used_by_default", TypeBool, &Package::used_by_default);
 		class_add_funcx("classes", TypeClassPList, &Package::classes);
 		class_add_funcx("functions", TypeFunctionPList, &Package::functions);
 		class_add_funcx("variables", TypeVariablePList, &Package::variables);
@@ -1678,6 +1683,8 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 	SIAddPackageBase();
 	SIAddBasicCommands();
+	
+	SIAddPackageKaba();
 
 
 

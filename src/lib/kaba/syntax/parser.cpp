@@ -1674,53 +1674,57 @@ void SyntaxTree::parse_import()
 	Exp.next(); // 'use' / 'import'
 
 	string name = Exp.cur;
-	if (name.find(".kaba") >= 0){
-
-		string base_name = name.substr(1, name.num - 2); // remove ""
-		string filename = script->filename.dirname() + base_name;
-		if (base_name.head(2) == "@/")
-			filename = hui::Application::directory_static + "lib/" + base_name.substr(2, -1); // TODO...
-		filename = filename.no_recursion();
-
-
-
-		for (Script *ss: loading_script_stack)
-			if (ss->filename == filename.sys_filename())
-				do_error("recursive include");
-
-		msg_right();
-		Script *include;
-		try{
-			include = Load(filename, script->just_analyse or config.compile_os);
-			// os-includes will be appended to syntax_tree... so don't compile yet
-		}catch(Exception &e){
-
-			int logical_line = Exp.get_line_no();
-			int exp_no = Exp.cur_exp;
-			int physical_line = Exp.line[logical_line].physical_line;
-			int pos = Exp.line[logical_line].exp[exp_no].pos;
-			string expr = Exp.line[logical_line].exp[exp_no].name;
-			e.line = physical_line;
-			e.column = pos;
-			e.text += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
-			throw e;
-			//msg_write(e.message);
-			//msg_write("...");
-			string msg = e.message() + "\nimported file:";
-			//string msg = "in imported file:\n\"" + e.message + "\"";
-			do_error(msg);
+	
+	if (name.match("\"*\""))
+		name = name.substr(1, name.num - 2); // remove ""
+		
+	
+	// internal packages?	
+	for (Package &p: Packages)
+		if (p.name == name){
+			AddIncludeData(p.script);
+			return;
 		}
+	
+	if (name.tail(5) != ".kaba")
+		name += ".kaba";
 
-		msg_left();
-		AddIncludeData(include);
-	}else{
-		for (Package &p: Packages)
-			if (p.name == name){
-				AddIncludeData(p.script);
-				return;
-			}
-		do_error("unknown package: " + name);
+	string filename = script->filename.dirname() + name;
+	if (name.head(2) == "@/")
+		filename = hui::Application::directory_static + "lib/" + name.substr(2, -1); // TODO...
+	filename = filename.no_recursion();
+
+
+
+	for (Script *ss: loading_script_stack)
+		if (ss->filename == filename.sys_filename())
+			do_error("recursive include");
+
+	msg_right();
+	Script *include;
+	try{
+		include = Load(filename, script->just_analyse or config.compile_os);
+		// os-includes will be appended to syntax_tree... so don't compile yet
+	}catch(Exception &e){
+
+		int logical_line = Exp.get_line_no();
+		int exp_no = Exp.cur_exp;
+		int physical_line = Exp.line[logical_line].physical_line;
+		int pos = Exp.line[logical_line].exp[exp_no].pos;
+		string expr = Exp.line[logical_line].exp[exp_no].name;
+		e.line = physical_line;
+		e.column = pos;
+		e.text += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
+		throw e;
+		//msg_write(e.message);
+		//msg_write("...");
+		string msg = e.message() + "\nimported file:";
+		//string msg = "in imported file:\n\"" + e.message + "\"";
+		do_error(msg);
 	}
+
+	msg_left();
+	AddIncludeData(include);
 }
 
 

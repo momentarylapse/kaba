@@ -1,3 +1,5 @@
+use kaba
+
 void f()
 	print("hallo")
 
