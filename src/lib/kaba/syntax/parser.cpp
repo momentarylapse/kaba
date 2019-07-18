@@ -315,7 +315,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 			clear_nodes(links);
 			links = make_class_node_callable(this, t, block);
 			break;
-		}else if (l->type == TypeFunctionP){
+		}else if (l->type == TypeFunctionCodeP){
 			Node *p = links[0];
 			clear_nodes(links, p);
 			Node *c = new Node(KIND_POINTER_CALL, 0, TypeVoid);
@@ -465,7 +465,7 @@ Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link)
 		for (auto *c: t->get_constructors())
 			return c->func->literal_param_type;
 	}else if (link->kind == KIND_POINTER_CALL){
-	//}else if (link->type == TypeFunctionP){
+	//}else if (link->type == TypeFunctionCodeP){
 		return {}; // so far only void() pointers...)
 	}else{
 		do_error("evil function...kind: "+kind2str(link->kind));

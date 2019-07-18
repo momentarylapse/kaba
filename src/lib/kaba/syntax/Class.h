@@ -111,8 +111,6 @@ extern const Class *TypeReg8; // dummy for compilation
 extern const Class *TypeVoid;
 extern const Class *TypePointer;
 extern const Class *TypeChunk;
-extern const Class *TypeFunction;
-extern const Class *TypeFunctionP;
 extern const Class *TypeBool;
 extern const Class *TypeInt;
 extern const Class *TypeInt64;
@@ -133,6 +131,10 @@ extern const Class *TypeExceptionP;
 
 extern const Class *TypeClass;
 extern const Class *TypeClassP;
+extern const Class *TypeFunction;
+extern const Class *TypeFunctionP;
+extern const Class *TypeFunctionCode;
+extern const Class *TypeFunctionCodeP;
 
 };
 

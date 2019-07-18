@@ -39,7 +39,7 @@ Node *SyntaxTree::cp_node(Node *c)
 
 const Class *SyntaxTree::make_class_func(Function *f)
 {
-	return TypeFunctionP;
+	return TypeFunctionCodeP;
 	string params;
 	for (int i=0; i<f->num_params; i++){
 		if (i > 0)
@@ -129,7 +129,7 @@ Node *SyntaxTree::add_node_call(Function *f)
 
 Node *SyntaxTree::add_node_func_name(Function *f)
 {
-	return new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunction);
+	return new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode);
 }
 
 
@@ -333,7 +333,7 @@ Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e)
 
 Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 {
-	Node *link = new Node(KIND_FUNCTION_NAME, (int_p)cf.func, TypeFunction);
+	Node *link = new Node(KIND_FUNCTION_NAME, (int_p)cf.func, TypeFunctionCode);
 	/*if (cf.virtual_index >= 0){
 		link = new Node(KIND_VIRTUAL_CALL, cf.virtual_index, cf.script, cf.return_type);
 	}else{
@@ -362,7 +362,7 @@ Array<Node*> SyntaxTree::get_existence_shared(const string &name)
 	// then the (real) functions
 	for (Function *f: functions)
 		if (f->name == name and !f->_class)
-			links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunction));//f->literal_return_type);
+			links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));//f->literal_return_type);
 	if (links.num > 0)
 		return links;
 

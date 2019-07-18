@@ -165,6 +165,8 @@ const Class *TypeClass;
 const Class *TypeClassP;
 const Class *TypeFunction;
 const Class *TypeFunctionP;
+const Class *TypeFunctionCode;
+const Class *TypeFunctionCodeP;
 
 
 Array<Package> Packages;
@@ -658,56 +660,56 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 		if (t->parent->is_simple_class()){
 			if (!t->parent->uses_call_by_reference()){
 				if (t->parent->is_pointer()){
-					class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<void*>::__init__));
-					class_add_func("add", TypeVoid, mf(&Array<void*>::add));
+					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<void*>::__init__);
+					class_add_funcx("add", TypeVoid, &Array<void*>::add);
 						func_add_param("x", t->parent);
-					class_add_func("insert", TypeVoid, mf(&Array<void*>::insert));
+					class_add_funcx("insert", TypeVoid, &Array<void*>::insert);
 						func_add_param("x", t->parent);
 						func_add_param("index", TypeInt);
 				}else if (t->parent == TypeFloat32){
-					class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<float>::__init__));
-					class_add_func("add", TypeVoid, mf(&DynamicArray::append_f_single));
+					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<float>::__init__);
+					class_add_funcx("add", TypeVoid, &DynamicArray::append_f_single);
 						func_add_param("x", t->parent);
-					class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_f_single));
+					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_f_single);
 						func_add_param("x", t->parent);
 						func_add_param("index", TypeInt);
 				}else if (t->parent == TypeFloat64){
-					class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<double>::__init__));
-					class_add_func("add", TypeVoid, mf(&DynamicArray::append_d_single));
+					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<double>::__init__);
+					class_add_funcx("add", TypeVoid, &DynamicArray::append_d_single);
 						func_add_param("x", t->parent);
-					class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_d_single));
+					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_d_single);
 						func_add_param("x", t->parent);
 						func_add_param("index", TypeInt);
 				}else if (t->parent->size == 4){
-					class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<int>::__init__));
-					class_add_func("add", TypeVoid, mf(&DynamicArray::append_4_single));
+					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<int>::__init__);
+					class_add_funcx("add", TypeVoid, &DynamicArray::append_4_single);
 						func_add_param("x", t->parent);
-					class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_4_single));
+					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_4_single);
 						func_add_param("x", t->parent);
 						func_add_param("index", TypeInt);
 				}else if (t->parent->size == 1){
-					class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<char>::__init__));
-					class_add_func("add", TypeVoid, mf(&DynamicArray::append_1_single));
+					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<char>::__init__);
+					class_add_funcx("add", TypeVoid, &DynamicArray::append_1_single);
 						func_add_param("x", t->parent);
-					class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_1_single));
+					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_1_single);
 						func_add_param("x", t->parent);
 						func_add_param("index", TypeInt);
 				}else
 					msg_error("evil class type..." + t->name);
 			}else{
-				class_add_func("add", TypeVoid, mf(&DynamicArray::append_single));
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_single);
 					func_add_param("x", t->parent);
-				class_add_func("insert", TypeVoid, mf(&DynamicArray::insert_single));
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_single);
 					func_add_param("x", t->parent);
 					func_add_param("index", TypeInt);
 			}
-			class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&DynamicArray::simple_clear));
-			class_add_func("clear", TypeVoid, mf(&DynamicArray::simple_clear));
-			class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&DynamicArray::simple_assign));
+			class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &DynamicArray::simple_clear);
+			class_add_funcx("clear", TypeVoid, &DynamicArray::simple_clear);
+			class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &DynamicArray::simple_assign);
 				func_add_param("other", t);
-			class_add_func("remove", TypeVoid, mf(&DynamicArray::delete_single));
+			class_add_funcx("remove", TypeVoid, &DynamicArray::delete_single);
 				func_add_param("index", TypeInt);
-			class_add_func("resize", TypeVoid, mf(&DynamicArray::simple_resize));
+			class_add_funcx("resize", TypeVoid, &DynamicArray::simple_resize);
 				func_add_param("num", TypeInt);
 		}
 }
@@ -787,40 +789,40 @@ void script_make_dict(Class *t, SyntaxTree *ps)
 
 	if (t->parent->is_simple_class()){
 		// elements don't need a destructor
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&Map<string,int>::clear));
-		class_add_func("clear", TypeVoid, mf(&Map<string,int>::clear));
-		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&IntDict::assign));
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Map<string,int>::clear);
+		class_add_funcx("clear", TypeVoid, &Map<string,int>::clear);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &IntDict::assign);
 			func_add_param("other", t);
 	}
 
 	if (t->parent == TypeInt){
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Map<string,int>::__init__));
-		class_add_func("set", TypeVoid, mf(&IntDict::set_int));
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,int>::__init__);
+		class_add_funcx("set", TypeVoid, &IntDict::set_int);
 			func_add_param("key", TypeString);
 			func_add_param("x", t->parent);
-		class_add_func("__get__", t->parent, mf(&IntDict::get_int), FLAG_RAISES_EXCEPTIONS);
+		class_add_funcx("__get__", t->parent, &IntDict::get_int, FLAG_RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
-		class_add_func("str", TypeString, mf(&IntDict::str));
+		class_add_funcx("str", TypeString, &IntDict::str);
 	}else if (t->parent == TypeFloat){
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Map<string,float>::__init__));
-		class_add_func("set", TypeVoid, mf(&FloatDict::set_float));
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,float>::__init__);
+		class_add_funcx("set", TypeVoid, &FloatDict::set_float);
 			func_add_param("key", TypeString);
 			func_add_param("x", t->parent);
-		class_add_func("__get__", t->parent, mf(&FloatDict::get_float), FLAG_RAISES_EXCEPTIONS);
+		class_add_funcx("__get__", t->parent, &FloatDict::get_float, FLAG_RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
-		class_add_func("str", TypeString, mf(&FloatDict::str));
+		class_add_funcx("str", TypeString, &FloatDict::str);
 	}else if (t->parent == TypeString){
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Map<string,string>::__init__));
-		class_add_func("set", TypeVoid, mf(&Map<string,string>::set));
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,string>::__init__);
+		class_add_funcx("set", TypeVoid, &Map<string,string>::set);
 			func_add_param("key", TypeString);
 			func_add_param("x", t->parent);
-		class_add_func("__get__", t->parent, mf(&StringDict::get_string), FLAG_RAISES_EXCEPTIONS);
+		class_add_funcx("__get__", t->parent, &StringDict::get_string, FLAG_RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&Map<string,string>::clear));
-		class_add_func("clear", TypeVoid, mf(&Map<string,string>::clear));
-		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&StringDict::assign));
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Map<string,string>::clear);
+		class_add_funcx("clear", TypeVoid, &Map<string,string>::clear);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &StringDict::assign);
 			func_add_param("other", t);
-		class_add_func("str", TypeString, mf(&StringDict::str));
+		class_add_funcx("str", TypeString, &StringDict::str);
 	}
 }
 
@@ -1045,30 +1047,30 @@ void SIAddPackageBase()
 
 	add_class(TypeDynamicArray);
 		class_add_element("num", TypeInt, config.pointer_size);
-		class_add_func("swap", TypeVoid, mf(&DynamicArray::simple_swap));
+		class_add_funcx("swap", TypeVoid, &DynamicArray::simple_swap);
 			func_add_param("i1", TypeInt);
 			func_add_param("i2", TypeInt);
-		class_add_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, mf(&DynamicArray::ref_subarray));
+		class_add_funcx(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, &DynamicArray::ref_subarray);
 			func_add_param("start", TypeInt);
 			func_add_param("end", TypeInt);
 		// low level operations
-		class_add_func("__mem_init__", TypeVoid, mf(&DynamicArray::init));
+		class_add_funcx("__mem_init__", TypeVoid, &DynamicArray::init);
 			func_add_param("element_size", TypeInt);
-		class_add_func("__mem_clear__", TypeVoid, mf(&DynamicArray::simple_clear));
-		class_add_func("__mem_resize__", TypeVoid, mf(&DynamicArray::simple_resize));
+		class_add_funcx("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
+		class_add_funcx("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("size", TypeInt);
-		class_add_func("__mem_remove__", TypeVoid, mf(&DynamicArray::delete_single));
+		class_add_funcx("__mem_remove__", TypeVoid, &DynamicArray::delete_single);
 			func_add_param("index", TypeInt);
 
 	add_class(TypeDictBase);
 		class_add_element("num", TypeInt, config.pointer_size);
 		// low level operations
-		class_add_func("__mem_init__", TypeVoid, mf(&DynamicArray::init));
+		class_add_funcx("__mem_init__", TypeVoid, &DynamicArray::init);
 			func_add_param("element_size", TypeInt);
-		class_add_func("__mem_clear__", TypeVoid, mf(&DynamicArray::simple_clear));
-		class_add_func("__mem_resize__", TypeVoid, mf(&DynamicArray::simple_resize));
+		class_add_funcx("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
+		class_add_funcx("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("size", TypeInt);
-		class_add_func("__mem_remove__", TypeVoid, mf(&DynamicArray::delete_single));
+		class_add_funcx("__mem_remove__", TypeVoid, &DynamicArray::delete_single);
 			func_add_param("index", TypeInt);
 
 	// derived   (must be defined after the primitive types!)
@@ -1096,142 +1098,142 @@ void SIAddPackageBase()
 
 
 	//	add_func_special("f2i", TypeInt, (void*)&_Float2Int);
-	add_func("f2i", TypeInt, (void*)&_Float2Int, FLAG_PURE);
+	add_funcx("f2i", TypeInt, &_Float2Int, FLAG_PURE);
 		func_set_inline(INLINE_FLOAT_TO_INT);    // sometimes causes floating point exceptions...
 		func_add_param("f", TypeFloat32);
-	add_func("i2f", TypeFloat32, (void*)&_Int2Float, FLAG_PURE);
+	add_funcx("i2f", TypeFloat32, &_Int2Float, FLAG_PURE);
 		func_set_inline(INLINE_INT_TO_FLOAT);
 		func_add_param("i", TypeInt);
-	add_func("f2f64", TypeFloat64, (void*)&_Float2Float64, FLAG_PURE);
+	add_funcx("f2f64", TypeFloat64, &_Float2Float64, FLAG_PURE);
 		func_set_inline(INLINE_FLOAT_TO_FLOAT64);
 		func_add_param("f", TypeFloat32);
-	add_func("f642f", TypeFloat32, (void*)&_Float642Float, FLAG_PURE);
+	add_funcx("f642f", TypeFloat32, &_Float642Float, FLAG_PURE);
 		func_set_inline(INLINE_FLOAT64_TO_FLOAT);
 		func_add_param("f", TypeFloat32);
-	add_func("i2i64", TypeInt64, (void*)&_Int2Int64, FLAG_PURE);
+	add_funcx("i2i64", TypeInt64, &_Int2Int64, FLAG_PURE);
 		func_set_inline(INLINE_INT_TO_INT64);
 		func_add_param("i", TypeInt);
-	add_func("i642i", TypeInt, (void*)&_Int642Int, FLAG_PURE);
+	add_funcx("i642i", TypeInt, &_Int642Int, FLAG_PURE);
 		func_set_inline(INLINE_INT64_TO_INT);
 		func_add_param("i", TypeInt64);
-	add_func("i2c", TypeChar, (void*)&_Int2Char, FLAG_PURE);
+	add_funcx("i2c", TypeChar, &_Int2Char, FLAG_PURE);
 		func_set_inline(INLINE_INT_TO_CHAR);
 		func_add_param("i", TypeInt);
-	add_func("c2i", TypeInt, (void*)&_Char2Int, FLAG_PURE);
+	add_funcx("c2i", TypeInt, &_Char2Int, FLAG_PURE);
 		func_set_inline(INLINE_CHAR_TO_INT);
 		func_add_param("c", TypeChar);
-	add_func("p2b", TypeBool, (void*)&_Pointer2Bool, FLAG_PURE);
+	add_funcx("p2b", TypeBool, &_Pointer2Bool, FLAG_PURE);
 		func_set_inline(INLINE_POINTER_TO_BOOL);
 		func_add_param("p", TypePointer);
 
 
 	add_class(TypePointer);
-		class_add_func("str", TypeString, mf(&PointerClass::str), FLAG_PURE);
+		class_add_funcx("str", TypeString, &PointerClass::str, FLAG_PURE);
 
 
 	add_class(TypeInt);
-		class_add_func("str", TypeString, mf(&IntClass::str), FLAG_PURE);
-		class_add_func("add", TypeInt, (void*)&xop_int_add, FLAG_PURE);
+		class_add_funcx("str", TypeString, &IntClass::str, FLAG_PURE);
+		class_add_funcx("add", TypeInt, &xop_int_add, FLAG_PURE);
 			func_set_inline(INLINE_INT_ADD);
 			func_add_param("b", TypeInt);
 
 
 	add_class(TypeInt64);
-		class_add_func("str", TypeString, mf(&Int64Class::str), FLAG_PURE);
+		class_add_funcx("str", TypeString, &Int64Class::str, FLAG_PURE);
 
 
 	add_class(TypeFloat32);
-		class_add_func("str", TypeString, mf(&FloatClass::str), FLAG_PURE);
-		class_add_func("str2", TypeString, mf(&FloatClass::str2), FLAG_PURE);
+		class_add_funcx("str", TypeString, &FloatClass::str, FLAG_PURE);
+		class_add_funcx("str2", TypeString, &FloatClass::str2, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
 
 
 	add_class(TypeFloat64);
-		class_add_func("str", TypeString, mf(&Float64Class::str), FLAG_PURE);
-		class_add_func("str2", TypeString, mf(&Float64Class::str2), FLAG_PURE);
+		class_add_funcx("str", TypeString, &Float64Class::str, FLAG_PURE);
+		class_add_funcx("str2", TypeString, &Float64Class::str2, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
 
 
 	add_class(TypeBool);
-		class_add_func("str", TypeString, mf(&BoolClass::str), FLAG_PURE);
+		class_add_funcx("str", TypeString, &BoolClass::str, FLAG_PURE);
 
 
 	add_class(TypeChar);
-		class_add_func("str", TypeString, mf(&CharClass::str), FLAG_PURE);
+		class_add_funcx("str", TypeString, &CharClass::str, FLAG_PURE);
 
 
 	add_class(TypeString);
-		class_add_func("__iadd__", TypeVoid, mf(&string::operator+=));
+		class_add_funcx("__iadd__", TypeVoid, &string::operator+=);
 			func_add_param("x", TypeString);
-		class_add_func("__add__", TypeString, mf(&string::operator+), FLAG_PURE);
+		class_add_funcx("__add__", TypeString, &string::operator+, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__eq__", TypeBool, mf(&string::operator==), FLAG_PURE);
+		class_add_funcx("__eq__", TypeBool, &string::operator==, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__ne__", TypeBool, mf(&string::operator!=), FLAG_PURE);
+		class_add_funcx("__ne__", TypeBool, &string::operator!=, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__lt__", TypeBool, mf(&string::operator<), FLAG_PURE);
+		class_add_funcx("__lt__", TypeBool, &string::operator<, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__gt__", TypeBool, mf(&string::operator>), FLAG_PURE);
+		class_add_funcx("__gt__", TypeBool, &string::operator>, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__le__", TypeBool, mf(&string::operator<=), FLAG_PURE);
+		class_add_funcx("__le__", TypeBool, &string::operator<=, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("__ge__", TypeBool, mf(&string::operator>=), FLAG_PURE);
+		class_add_funcx("__ge__", TypeBool, &string::operator>=, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_func("substr", TypeString, mf(&string::substr), FLAG_PURE);
+		class_add_funcx("substr", TypeString, &string::substr, FLAG_PURE);
 			func_add_param("start", TypeInt);
 			func_add_param("length", TypeInt);
-		class_add_func("head", TypeString, mf(&string::head), FLAG_PURE);
+		class_add_funcx("head", TypeString, &string::head, FLAG_PURE);
 			func_add_param("size", TypeInt);
-		class_add_func("tail", TypeString, mf(&string::tail), FLAG_PURE);
+		class_add_funcx("tail", TypeString, &string::tail, FLAG_PURE);
 			func_add_param("size", TypeInt);
-		class_add_func("find", TypeInt, mf(&string::find), FLAG_PURE);
+		class_add_funcx("find", TypeInt, &string::find, FLAG_PURE);
 			func_add_param("str", TypeString);
 			func_add_param("start", TypeInt);
-		class_add_func("compare", TypeInt, mf(&string::compare), FLAG_PURE);
+		class_add_funcx("compare", TypeInt, &string::compare, FLAG_PURE);
 			func_add_param("str", TypeString);
-		class_add_func("icompare", TypeInt, mf(&string::icompare), FLAG_PURE);
+		class_add_funcx("icompare", TypeInt, &string::icompare, FLAG_PURE);
 			func_add_param("str", TypeString);
-		class_add_func("replace", TypeString, mf(&string::replace), FLAG_PURE);
+		class_add_funcx("replace", TypeString, &string::replace, FLAG_PURE);
 			func_add_param("sub", TypeString);
 			func_add_param("by", TypeString);
-		class_add_func("explode", TypeStringList, mf(&string::explode), FLAG_PURE);
+		class_add_funcx("explode", TypeStringList, &string::explode, FLAG_PURE);
 			func_add_param("str", TypeString);
-		class_add_func("lower", TypeString, mf(&string::lower), FLAG_PURE);
-		class_add_func("upper", TypeString, mf(&string::upper), FLAG_PURE);
-		class_add_func("reverse", TypeString, mf(&string::reverse), FLAG_PURE);
-		class_add_func("hash", TypeInt, mf(&string::hash), FLAG_PURE);
-		class_add_func("md5", TypeString, mf(&string::md5), FLAG_PURE);
-		class_add_func("hex", TypeString, mf(&string::hex), FLAG_PURE);
+		class_add_funcx("lower", TypeString, &string::lower, FLAG_PURE);
+		class_add_funcx("upper", TypeString, &string::upper, FLAG_PURE);
+		class_add_funcx("reverse", TypeString, &string::reverse, FLAG_PURE);
+		class_add_funcx("hash", TypeInt, &string::hash, FLAG_PURE);
+		class_add_funcx("md5", TypeString, &string::md5, FLAG_PURE);
+		class_add_funcx("hex", TypeString, &string::hex, FLAG_PURE);
 			func_add_param("inverted", TypeBool);
-		class_add_func("unhex", TypeString, mf(&string::unhex), FLAG_PURE);
-		class_add_func("match", TypeBool, mf(&string::match), FLAG_PURE);
+		class_add_funcx("unhex", TypeString, &string::unhex, FLAG_PURE);
+		class_add_funcx("match", TypeBool, &string::match, FLAG_PURE);
 			func_add_param("glob", TypeString);
-		class_add_func("int", TypeInt, mf(&string::_int), FLAG_PURE);
-		class_add_func("int64", TypeInt64, mf(&string::i64), FLAG_PURE);
-		class_add_func("float", TypeFloat32, mf(&string::_float), FLAG_PURE);
-		class_add_func("float64", TypeFloat64, mf(&string::f64), FLAG_PURE);
-		class_add_func("trim", TypeString, mf(&string::trim), FLAG_PURE);
-		class_add_func("dirname", TypeString, mf(&string::dirname), FLAG_PURE);
-		class_add_func("basename", TypeString, mf(&string::basename), FLAG_PURE);
-		class_add_func("extension", TypeString, mf(&string::extension), FLAG_PURE);
+		class_add_funcx("int", TypeInt, &string::_int, FLAG_PURE);
+		class_add_funcx("int64", TypeInt64, &string::i64, FLAG_PURE);
+		class_add_funcx("float", TypeFloat32, &string::_float, FLAG_PURE);
+		class_add_funcx("float64", TypeFloat64, &string::f64, FLAG_PURE);
+		class_add_funcx("trim", TypeString, &string::trim, FLAG_PURE);
+		class_add_funcx("dirname", TypeString, &string::dirname, FLAG_PURE);
+		class_add_funcx("basename", TypeString, &string::basename, FLAG_PURE);
+		class_add_funcx("extension", TypeString, &string::extension, FLAG_PURE);
 
-		class_add_func("escape", TypeString, mf(&str_escape), FLAG_PURE);
-		class_add_func("unescape", TypeString, mf(&str_unescape), FLAG_PURE);
+		class_add_funcx("escape", TypeString, &str_escape, FLAG_PURE);
+		class_add_funcx("unescape", TypeString, &str_unescape, FLAG_PURE);
 
 
 	add_class(TypeStringList);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&StringList::__init__));
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&StringList::clear));
-		class_add_func("add", TypeVoid, mf(&StringList::add));
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &StringList::__init__);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &StringList::clear);
+		class_add_funcx("add", TypeVoid, &StringList::add);
 			func_add_param("x", TypeString);
-		class_add_func("clear", TypeVoid, mf(&StringList::clear));
-		class_add_func("remove", TypeVoid, mf(&StringList::erase));
+		class_add_funcx("clear", TypeVoid, &StringList::clear);
+		class_add_funcx("remove", TypeVoid, &StringList::erase);
 			func_add_param("index", TypeInt);
-		class_add_func("resize", TypeVoid, mf(&StringList::resize));
+		class_add_funcx("resize", TypeVoid, &StringList::resize);
 			func_add_param("num", TypeInt);
-		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&StringList::assign));
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &StringList::assign);
 			func_add_param("other", TypeStringList);
-		class_add_func("join", TypeString, mf(&StringList::join), FLAG_PURE);
+		class_add_funcx("join", TypeString, &StringList::join, FLAG_PURE);
 			func_add_param("glue", TypeString);
 
 
@@ -1241,20 +1243,20 @@ void SIAddPackageBase()
 	add_const("true",  TypeBool, (void*)true);
 
 
-	add_func("int_add", TypeInt, (void*)&xop_int_add, FLAG_PURE);
+	add_funcx("int_add", TypeInt, &xop_int_add, FLAG_PURE);
 		func_set_inline(INLINE_INT_ADD);
 		func_add_param("a", TypeInt);
 		func_add_param("b", TypeInt);
 
 	add_class(TypeException);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&KabaException::__init__));
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaException::__init__);
 			func_add_param("message", TypeString);
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&KabaException::__delete__));
-		class_add_func_virtual("message", TypeString, mf(&KabaException::message));
+		class_add_func_virtualx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaException::__delete__);
+		class_add_func_virtualx("message", TypeString, &KabaException::message);
 		class_add_element("text", TypeString, config.pointer_size);
 		class_set_vtable(KabaException);
 
-	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception, FLAG_RAISES_EXCEPTIONS);
+	add_funcx(IDENTIFIER_RAISE, TypeVoid, &kaba_raise_exception, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("e", TypeExceptionP);
 
 
@@ -1263,16 +1265,18 @@ void SIAddPackageBase()
 
 	TypeClass 			= add_type  ("Class", sizeof(Class));
 	TypeClassP			= add_type_p("Class*", TypeClass);
-
-	TypeFunction		= add_type  ("func", sizeof(Function));
-	TypeFunctionP		= add_type_p("func*", TypeFunction);
-		
-		
-	auto *TypeModule	= add_type  ("Module", sizeof(Package));
-	auto *TypeModuleList= add_type_a("Module[]", TypeModule, -1);
-
 	auto *TypeClassPList = add_type_a("Class*[]", TypeClassP, -1);
-	auto *TypeFunctionPList = add_type_a("func*[]", TypeFunctionP, -1);
+
+	TypeFunction		= add_type  ("Function", sizeof(Function));
+	TypeFunctionP		= add_type_p("Function*", TypeFunction);
+	auto *TypeFunctionPList = add_type_a("Function*[]", TypeFunctionP, -1);
+	TypeFunctionCode	= add_type  ("func", 32); // whatever
+	TypeFunctionCodeP	= add_type_p("func*", TypeFunctionCode);
+		
+		
+	auto *TypePackage = add_type  ("Package", sizeof(Package));
+	auto *TypePackageList = add_type_a("Package[]", TypePackage, -1);
+
 	
 	auto *TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
 	auto *TypeClassElementList = add_type_a("ClassElement[]", TypeClassElement, -1);
@@ -1287,53 +1291,54 @@ void SIAddPackageBase()
 	
 	
 	add_class(TypeClassElement);
-		class_add_element("name", TypeString, offsetof(ClassElement, name));
-		class_add_element("type", TypeClassP, offsetof(ClassElement, type));
-		class_add_element("hidden", TypeBool, offsetof(ClassElement, hidden));
-		class_add_element("offset", TypeInt, offsetof(ClassElement, offset));
+		class_add_elementx("name", TypeString, &ClassElement::name);
+		class_add_elementx("type", TypeClassP, &ClassElement::type);
+		class_add_elementx("hidden", TypeBool, &ClassElement::hidden);
+		class_add_elementx("offset", TypeInt, &ClassElement::offset);
 	
 	add_class(TypeClassFunction);
-		class_add_element("func", TypeFunctionP, offsetof(ClassFunction, func));
-		class_add_element("virtual_index", TypeInt, offsetof(ClassFunction, virtual_index));
+		class_add_elementx("func", TypeFunctionP, &ClassFunction::func);
+		class_add_elementx("virtual_index", TypeInt, &ClassFunction::virtual_index);
 
 
 	add_class(TypeClass);
-		class_add_element("name", TypeString, offsetof(Class, name));
-		class_add_element("size", TypeInt, offsetof(Class, size));
-		class_add_element("parent", TypeClassP, offsetof(Class, parent));
-		class_add_element("elements", TypeClassElementList, offsetof(Class, elements));
-		class_add_element("functions", TypeClassFunctionList, offsetof(Class, functions));
-		class_add_func("is_derived_from", TypeBool, mf(&Class::is_derived_from));
+		class_add_elementx("name", TypeString, &Class::name);
+		class_add_elementx("size", TypeInt, &Class::size);
+		class_add_elementx("parent", TypeClassP, &Class::parent);
+		class_add_elementx("elements", TypeClassElementList, &Class::elements);
+		class_add_elementx("functions", TypeClassFunctionList, &Class::functions);
+		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from);
 			func_add_param("c", TypeClassP);
-		class_add_func("var2str", TypeString, mf(&Class::var2str));
+		class_add_funcx("var2str", TypeString, &Class::var2str);
 			func_add_param("var", TypePointer);
 
 	add_class(TypeFunction);
-		class_add_element("name", TypeString, offsetof(Function, name));
-		class_add_element("long_name", TypeString, offsetof(Function, long_name));
-		class_add_element("class", TypeClassP, offsetof(Function, _class));
-		class_add_element("num_params", TypeInt, offsetof(Function, num_params));
-		class_add_element("var", TypeVariablePList, offsetof(Function, var));
-		class_add_element("param_type", TypeClassPList, offsetof(Function, literal_param_type));
-		class_add_element("return_type", TypeClassP, offsetof(Function, literal_return_type));
+		class_add_elementx("name", TypeString, &Function::name);
+		class_add_elementx("long_name", TypeString, &Function::long_name);
+		class_add_elementx("class", TypeClassP, &Function::_class);
+		class_add_elementx("num_params", TypeInt, &Function::num_params);
+		class_add_elementx("var", TypeVariablePList, &Function::var);
+		class_add_elementx("param_type", TypeClassPList, &Function::literal_param_type);
+		class_add_elementx("return_type", TypeClassP, &Function::literal_return_type);
+		class_add_elementx("code", TypeFunctionCodeP, &Function::address);
 
 
 	add_class(TypeVariable);
-		class_add_element("name", TypeString, offsetof(Variable, name));
-		class_add_element("type", TypeClassP, offsetof(Variable, type));
+		class_add_elementx("name", TypeString, &Variable::name);
+		class_add_elementx("type", TypeClassP, &Variable::type);
 		
 	add_class(TypeConstant);
-		class_add_element("name", TypeString, offsetof(Constant, name));
-		class_add_element("type", TypeClassP, offsetof(Constant, type));
+		class_add_elementx("name", TypeString, &Constant::name);
+		class_add_elementx("type", TypeClassP, &Constant::type);
 
-	add_class(TypeModule);
-		class_add_element("name", TypeString, offsetof(Package, name));
-		class_add_func("classes", TypeClassPList, mf(&Package::classes));
-		class_add_func("functions", TypeFunctionPList, mf(&Package::functions));
-		class_add_func("variables", TypeVariablePList, mf(&Package::variables));
-		class_add_func("constants", TypeConstantPList, mf(&Package::constants));
+	add_class(TypePackage);
+		class_add_elementx("name", TypeString, &Package::name);
+		class_add_funcx("classes", TypeClassPList, &Package::classes);
+		class_add_funcx("functions", TypeFunctionPList, &Package::functions);
+		class_add_funcx("variables", TypeVariablePList, &Package::variables);
+		class_add_funcx("constants", TypeConstantPList, &Package::constants);
 		
-	add_ext_var("modules", TypeModuleList, (void*)&Packages);
+	add_ext_var("packages", TypePackageList, (void*)&Packages);
 }
 
 
