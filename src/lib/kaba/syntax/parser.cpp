@@ -164,7 +164,7 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 	// class function?
 	Array<Node*> links;
 	for (auto &cf: type->functions)
-		if (f_name == cf.name){
+		if (f_name == cf.func->name){
 			links.add(add_node_func_name(cf.func));
 			if (!only_static)
 				links.back()->set_instance(operand);
@@ -458,12 +458,12 @@ Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link)
 		ClassFunction *cf = link->instance->type->parent->get_virtual_function(link->link_no);
 		if (!cf)
 			do_error("FindFunctionSingleParameter: can't find virtual function...?!?");
-		return cf->param_types;
+		return cf->func->literal_param_type;
 	}else if (link->kind == KIND_CLASS){
 		// should be caught earlier and turned to func...
 		const Class *t = link->as_class();
 		for (auto *c: t->get_constructors())
-			return c->param_types;
+			return c->func->literal_param_type;
 	}else if (link->kind == KIND_POINTER_CALL){
 	//}else if (link->type == TypeFunctionP){
 		return {}; // so far only void() pointers...)
@@ -844,10 +844,11 @@ Node *SyntaxTree::link_operator(int op_no, Node *param1, Node *param2)
 
 	// exact match as class function?
 	for (ClassFunction &f: pp1->functions)
-		if (f.name == op_func_name){
+		if (f.func->name == op_func_name){
 			// exact match as class function but missing a "&"?
-			if (f.param_types[0]->is_pointer() and f.param_types[0]->is_pointer_silent()){
-				if (type_match(p2, f.param_types[0]->parent)){
+			auto type1 = f.func->literal_param_type[0];
+			if (type1->is_pointer_silent()){
+				if (type_match(p2, type1->parent)){
 					Node *inst = ref_node(param1);
 					if (p1 == pp1)
 						op = add_node_member_call(&f, inst);
@@ -857,7 +858,7 @@ Node *SyntaxTree::link_operator(int op_no, Node *param1, Node *param2)
 					op->set_param(0, ref_node(param2));
 					return op;
 				}
-			}else if (_type_match(p2, equal_classes, f.param_types[0])){
+			}else if (_type_match(p2, equal_classes, type1)){
 				Node *inst = ref_node(param1);
 				if (p1 == pp1)
 					op = add_node_member_call(&f, inst);
@@ -893,8 +894,8 @@ Node *SyntaxTree::link_operator(int op_no, Node *param1, Node *param2)
 					c2_best = c2;
 				}
 	for (auto &cf: p1->functions)
-		if (cf.name == op_func_name)
-			if (type_match_with_cast(p2, equal_classes, false, cf.param_types[0], pen2, c2))
+		if (cf.func->name == op_func_name)
+			if (type_match_with_cast(p2, equal_classes, false, cf.func->literal_param_type[0], pen2, c2))
 				if (pen2 < pen_min){
 					op_cf_found = &cf;
 					pen_min = pen2;

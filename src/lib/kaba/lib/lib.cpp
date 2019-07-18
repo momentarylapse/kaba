@@ -323,13 +323,13 @@ ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptF
 	Class *c = const_cast<Class*>(ccc);
 	if ((flag & FLAG_OVERRIDE) > 0){
 		foreachi(ClassFunction &ff, c->functions, i)
-			if (ff.name == f.name){
-				if (_class_override_num_params < 0 or _class_override_num_params == ff.param_types.num){
+			if (ff.func->name == f.func->name){
+				if (_class_override_num_params < 0 or _class_override_num_params == ff.func->num_params){
 					ff = f;
 					return &ff;
 				}
 			}
-		msg_error("could not override " + c->name + "." + f.name);
+		msg_error("could not override " + c->name + "." + f.func->name);
 	}else{
 		// name alone is not enough for matching...
 		/*foreachi(ClassFunction &ff, c->functions, i)
@@ -351,7 +351,7 @@ void _class_add_func_virtual(const string &tname, const string &name, const Clas
 	add_func(name, return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
 	cur_func->long_name = tname + "." + name + "[virtual]";
 	cur_func->_class = cur_class;
-	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
+	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
 	cur_class_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
@@ -370,7 +370,7 @@ void class_add_func(const string &name, const Class *return_type, void *func, Sc
 	add_func(name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
 	cur_func->long_name = tname + "." + name;
 	cur_func->_class = cur_class;
-	cur_class_func = _class_add_func(cur_class, ClassFunction(name, return_type, cur_package_script, cur_func), flag);
+	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
 }
 
 int get_virtual_index(void *func, const string &tname, const string &name)
@@ -642,8 +642,6 @@ void func_add_param(const string &name, const Class *type)
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;
 	}
-	if (cur_class_func)
-		cur_class_func->param_types.add(type);
 }
 
 void script_make_super_array(Class *t, SyntaxTree *ps)
@@ -1295,7 +1293,6 @@ void SIAddPackageBase()
 		class_add_element("offset", TypeInt, offsetof(ClassElement, offset));
 	
 	add_class(TypeClassFunction);
-		class_add_element("name", TypeString, offsetof(ClassFunction, name));
 		class_add_element("func", TypeFunctionP, offsetof(ClassFunction, func));
 		class_add_element("virtual_index", TypeInt, offsetof(ClassFunction, virtual_index));
 

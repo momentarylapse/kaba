@@ -27,16 +27,13 @@ public:
 class ClassFunction
 {
 public:
-	string name;
-	Script *script;
 	Function *func;
 	// _func_(x)  ->  p.func(x)
-	Array<const Class*> param_types; // literal!
 	const Class *return_type; // literal!
 	int virtual_index;
 	bool needs_overriding;
 	ClassFunction();
-	ClassFunction(const string &name, const Class *return_type, Script *s, Function *f);
+	ClassFunction(const Class *return_type, Function *f);
 	string signature(bool include_class) const;
 };
 

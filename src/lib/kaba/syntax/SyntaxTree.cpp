@@ -116,7 +116,7 @@ Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_
 		c->type = f->return_type;
 	}
 	c->set_instance(inst);
-	c->set_num_params(f->param_types.num);
+	c->set_num_params(f->func->num_params);
 	return c;
 }
 
@@ -377,8 +377,6 @@ Array<Node*> SyntaxTree::get_existence_shared(const string &name)
 
 Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 {
-	Array<Node*> links;
-
 	if (block){
 		Function *f = block->function;
 
@@ -390,17 +388,17 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 			if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
 				return {exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF))};
 			// class elements (within a class function)
-			for (ClassElement &e: f->_class->elements)
+			for (auto &e: f->_class->elements)
 				if (e.name == name)
 					return {exlink_make_var_element(this, f, e)};
-			for (ClassFunction &cf: f->_class->functions)
-				if (cf.name == name)
+			for (auto &cf: f->_class->functions)
+				if (cf.func->name == name)
 					return {exlink_make_func_class(this, f, cf)};
 		}
 	}
 
 	// shared stuff (global variables, functions)
-	links = get_existence_shared(name);
+	auto links = get_existence_shared(name);
 	if (links.num > 0)
 		return links;
 
