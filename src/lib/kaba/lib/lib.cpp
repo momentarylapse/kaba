@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.0.1";
+string LibVersion = "0.17.1.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -994,6 +994,22 @@ int xop_int_add(int a, int b)
 }
 
 
+Array<const Class*> Package::classes() {
+	return script->syntax->classes;
+}
+
+Array<Function*> Package::functions() {
+	return script->syntax->functions;
+}
+
+Array<Variable*> Package::variables() {
+	return script->syntax->root_of_all_evil.var;
+}
+
+Array<Constant*> Package::constants() {
+	return script->syntax->constants;
+}
+
 
 void SIAddPackageBase()
 {
@@ -1021,12 +1037,6 @@ void SIAddPackageBase()
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));
 	TypeExceptionP		= add_type_p("Exception*", TypeException);
-
-	TypeClass 			= add_type  ("Class", sizeof(Class));
-	TypeClassP			= add_type_p("Class*", TypeClass);
-
-	TypeFunction		= add_type  ("func", sizeof(Function));
-	TypeFunctionP		= add_type_p("func*", TypeFunction);
 
 
 	// select default float type
@@ -1084,21 +1094,7 @@ void SIAddPackageBase()
 	TypeIntDict     = add_type_d("int{}",     TypeInt);
 	TypeFloatDict   = add_type_d("float{}",   TypeFloat);
 	TypeStringDict  = add_type_d("string{}",  TypeString);
-
-
-	add_class(TypeClass);
-		class_add_element("name", TypeString, offsetof(Class, name));
-		class_add_element("size", TypeInt, offsetof(Class, size));
-		class_add_element("parent", TypeClassP, offsetof(Class, parent));
-		class_add_func("is_derived_from", TypeBool, mf(&Class::is_derived_from));
-			func_add_param("c", TypeClassP);
-		class_add_func("var2str", TypeString, mf(&Class::var2str));
-			func_add_param("var", TypePointer);
-
-	add_class(TypeFunction);
-		class_add_element("name", TypeString, offsetof(Function, name));
-		class_add_element("long_name", TypeString, offsetof(Function, long_name));
-		class_add_element("class", TypeClassP, offsetof(Function, _class));
+	
 
 
 	//	add_func_special("f2i", TypeInt, (void*)&_Float2Int);
@@ -1262,6 +1258,85 @@ void SIAddPackageBase()
 
 	add_func(IDENTIFIER_RAISE, TypeVoid, (void*)&kaba_raise_exception, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("e", TypeExceptionP);
+
+
+
+
+
+	TypeClass 			= add_type  ("Class", sizeof(Class));
+	TypeClassP			= add_type_p("Class*", TypeClass);
+
+	TypeFunction		= add_type  ("func", sizeof(Function));
+	TypeFunctionP		= add_type_p("func*", TypeFunction);
+		
+		
+	auto *TypeModule	= add_type  ("Module", sizeof(Package));
+	auto *TypeModuleList= add_type_a("Module[]", TypeModule, -1);
+
+	auto *TypeClassPList = add_type_a("Class*[]", TypeClassP, -1);
+	auto *TypeFunctionPList = add_type_a("func*[]", TypeFunctionP, -1);
+	
+	auto *TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
+	auto *TypeClassElementList = add_type_a("ClassElement[]", TypeClassElement, -1);
+	auto *TypeClassFunction = add_type("ClassFunction", sizeof(ClassFunction));
+	auto *TypeClassFunctionList = add_type_a("ClassFunction[]", TypeClassFunction, -1);
+	auto *TypeVariable = add_type("Variable", sizeof(Variable));
+	auto *TypeVariableP = add_type_p("Variable*", TypeVariable);
+	auto *TypeVariablePList = add_type_a("Variable*[]", TypeVariableP, -1);
+	auto *TypeConstant = add_type("Constant", sizeof(Constant));
+	auto *TypeConstantP = add_type_p("Constant*", TypeConstant);
+	auto *TypeConstantPList = add_type_a("Constant*[]", TypeConstantP, -1);
+	
+	
+	add_class(TypeClassElement);
+		class_add_element("name", TypeString, offsetof(ClassElement, name));
+		class_add_element("type", TypeClassP, offsetof(ClassElement, type));
+		class_add_element("hidden", TypeBool, offsetof(ClassElement, hidden));
+		class_add_element("offset", TypeInt, offsetof(ClassElement, offset));
+	
+	add_class(TypeClassFunction);
+		class_add_element("name", TypeString, offsetof(ClassFunction, name));
+		class_add_element("func", TypeFunctionP, offsetof(ClassFunction, func));
+		class_add_element("virtual_index", TypeInt, offsetof(ClassFunction, virtual_index));
+
+
+	add_class(TypeClass);
+		class_add_element("name", TypeString, offsetof(Class, name));
+		class_add_element("size", TypeInt, offsetof(Class, size));
+		class_add_element("parent", TypeClassP, offsetof(Class, parent));
+		class_add_element("elements", TypeClassElementList, offsetof(Class, elements));
+		class_add_element("functions", TypeClassFunctionList, offsetof(Class, functions));
+		class_add_func("is_derived_from", TypeBool, mf(&Class::is_derived_from));
+			func_add_param("c", TypeClassP);
+		class_add_func("var2str", TypeString, mf(&Class::var2str));
+			func_add_param("var", TypePointer);
+
+	add_class(TypeFunction);
+		class_add_element("name", TypeString, offsetof(Function, name));
+		class_add_element("long_name", TypeString, offsetof(Function, long_name));
+		class_add_element("class", TypeClassP, offsetof(Function, _class));
+		class_add_element("num_params", TypeInt, offsetof(Function, num_params));
+		class_add_element("var", TypeVariablePList, offsetof(Function, var));
+		class_add_element("param_type", TypeClassPList, offsetof(Function, literal_param_type));
+		class_add_element("return_type", TypeClassP, offsetof(Function, literal_return_type));
+
+
+	add_class(TypeVariable);
+		class_add_element("name", TypeString, offsetof(Variable, name));
+		class_add_element("type", TypeClassP, offsetof(Variable, type));
+		
+	add_class(TypeConstant);
+		class_add_element("name", TypeString, offsetof(Constant, name));
+		class_add_element("type", TypeClassP, offsetof(Constant, type));
+
+	add_class(TypeModule);
+		class_add_element("name", TypeString, offsetof(Package, name));
+		class_add_func("classes", TypeClassPList, mf(&Package::classes));
+		class_add_func("functions", TypeFunctionPList, mf(&Package::functions));
+		class_add_func("variables", TypeVariablePList, mf(&Package::variables));
+		class_add_func("constants", TypeConstantPList, mf(&Package::constants));
+		
+	add_ext_var("modules", TypeModuleList, (void*)&Packages);
 }
 
 
