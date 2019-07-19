@@ -191,9 +191,9 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	parser_loop_depth = 0;
 
 	// "include" default stuff
-	for (Package &p: Packages)
-		if (p.used_by_default)
-			AddIncludeData(p.script);
+	for (Script *p: Packages)
+		if (p->used_by_default)
+			AddIncludeData(p);
 }
 
 

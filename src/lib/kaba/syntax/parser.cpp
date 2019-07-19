@@ -1236,6 +1236,7 @@ Node *SyntaxTree::parse_statement_return(Block *block)
 Node *SyntaxTree::parse_statement_raise(Block *block)
 {
 	throw "jhhhh";
+#if 0
 	Exp.next();
 	Node *cmd = add_node_statement(STATEMENT_RAISE);
 
@@ -1252,6 +1253,8 @@ Node *SyntaxTree::parse_statement_raise(Block *block)
 	}*/
 	expect_new_line();
 	return cmd;
+#endif
+	return nullptr;
 }
 
 // Node structure
@@ -1680,9 +1683,9 @@ void SyntaxTree::parse_import()
 		
 	
 	// internal packages?	
-	for (Package &p: Packages)
-		if (p.name == name){
-			AddIncludeData(p.script);
+	for (Script *p: Packages)
+		if (p->filename == name){
+			AddIncludeData(p);
 			return;
 		}
 	

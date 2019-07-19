@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.2.1";
+string LibVersion = "0.17.2.2";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -169,9 +169,8 @@ const Class *TypeFunctionCode;
 const Class *TypeFunctionCodeP;
 
 
-Array<Package> Packages;
-Script *cur_package_script = nullptr;
-int cur_package_index;
+Array<Script*> Packages;
+Script *cur_package = nullptr;
 
 
 static Function *cur_func = nullptr;
@@ -181,37 +180,34 @@ static ClassFunction *cur_class_func = nullptr;
 
 void add_package(const string &name, bool used_by_default)
 {
-	Package p;
-	p.name = name;
-	p.used_by_default = used_by_default;
-	p.script = new Script;
-	p.script->filename = name;
-	Packages.add(p);
-	cur_package_script = p.script;
-	cur_package_index = Packages.num - 1;
+	Script* s = new Script;
+	s->used_by_default = used_by_default;
+	s->filename = name;
+	Packages.add(s);
+	cur_package = s;
 }
 
 const Class *add_type(const string &name, int size, ScriptFlag flag)
 {
-	Class *t = new Class(name, size, cur_package_script->syntax);
+	Class *t = new Class(name, size, cur_package->syntax);
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
-	cur_package_script->syntax->classes.add(t);
+	cur_package->syntax->classes.add(t);
 	return t;
 }
 const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag flag)
 {
-	Class *t = new Class(name, config.pointer_size, cur_package_script->syntax);
+	Class *t = new Class(name, config.pointer_size, cur_package->syntax);
 	t->type = Class::Type::POINTER;
 	if ((flag & FLAG_SILENT) > 0)
 		t->type = Class::Type::POINTER_SILENT;
 	t->parent = sub_type;
-	cur_package_script->syntax->classes.add(t);
+	cur_package->syntax->classes.add(t);
 	return t;
 }
 const Class *add_type_a(const string &name, const Class *sub_type, int array_length)
 {
-	Class *t = new Class(name, 0, cur_package_script->syntax, sub_type);
+	Class *t = new Class(name, 0, cur_package->syntax, sub_type);
 	if (array_length < 0){
 		// super array
 		t->size = config.super_array_size;
@@ -223,16 +219,16 @@ const Class *add_type_a(const string &name, const Class *sub_type, int array_len
 		t->type = Class::Type::ARRAY;
 		t->array_length = array_length;
 	}
-	cur_package_script->syntax->classes.add(t);
+	cur_package->syntax->classes.add(t);
 	return t;
 }
 
 const Class *add_type_d(const string &name, const Class *sub_type)
 {
-	Class *t = new Class(name, config.super_array_size, cur_package_script->syntax, sub_type);
+	Class *t = new Class(name, config.super_array_size, cur_package->syntax, sub_type);
 	t->type = Class::Type::DICT;
 	script_make_dict(t);
-	cur_package_script->syntax->classes.add(t);
+	cur_package->syntax->classes.add(t);
 	return t;
 }
 
@@ -288,8 +284,8 @@ void add_operator(int primitive_op, const Class *return_type, const Class *param
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);
 	o->f = cur_func;
-	o->owner = cur_package_script->syntax;
-	cur_package_script->syntax->operators.add(o);
+	o->owner = cur_package->syntax;
+	cur_package->syntax->operators.add(o);
 }
 
 
@@ -365,7 +361,7 @@ void class_add_func(const string &name, const Class *return_type, void *func, Sc
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (const Class *t: cur_package_script->syntax->classes)
+		for (const Class *t: cur_package->syntax->classes)
 			if (t->is_pointer() and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -424,7 +420,7 @@ void class_add_func_virtual(const string &name, const Class *return_type, void *
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (auto *t: cur_package_script->syntax->classes)
+		for (auto *t: cur_package->syntax->classes)
 			if ((t->is_pointer()) and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -444,7 +440,7 @@ void class_link_vtable(void *p)
 
 void add_const(const string &name, const Class *type, void *value)
 {
-	Constant *c = new Constant(type, cur_package_script->syntax);
+	Constant *c = new Constant(type, cur_package->syntax);
 	c->name = name;
 	c->address = c->p();
 
@@ -453,7 +449,7 @@ void add_const(const string &name, const Class *type, void *value)
 		*(void**)c->p() = value;
 	else
 		memcpy(c->p(), value, type->size);
-	cur_package_script->syntax->constants.add(c);
+	cur_package->syntax->constants.add(c);
 }
 
 //------------------------------------------------------------------------------------------------//
@@ -463,7 +459,7 @@ void add_const(const string &name, const Class *type, void *value)
 
 void add_ext_var(const string &name, const Class *type, void *var)
 {
-	auto *v = cur_package_script->syntax->root_of_all_evil.block->add_var(name, type);
+	auto *v = cur_package->syntax->root_of_all_evil.block->add_var(name, type);
 	if (config.allow_std_lib)
 		v->memory = var;
 };
@@ -608,15 +604,15 @@ Array<Statement> Statements;
 
 int add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag)
 {
-	Function *f = new Function(name, return_type, cur_package_script->syntax);
+	Function *f = new Function(name, return_type, cur_package->syntax);
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
-	cur_package_script->syntax->functions.add(f);
+	cur_package->syntax->functions.add(f);
 	if (config.allow_std_lib)
 		f->address = func;
 	cur_func = f;
 	cur_class_func = nullptr;
-	return cur_package_script->syntax->functions.num - 1;
+	return cur_package->syntax->functions.num - 1;
 }
 
 int add_statement(const string &name, int index, int num_params = 0)
@@ -912,7 +908,7 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 	TypeCast c;
 	c.penalty = penalty;
 	c.f = nullptr;
-	for (auto *f: cur_package_script->syntax->functions)
+	for (auto *f: cur_package->syntax->functions)
 		if (f->long_name == cmd){
 			c.f = f;
 			break;
@@ -999,22 +995,6 @@ int xop_int_add(int a, int b)
 	return a + b;
 }
 
-
-Array<const Class*> Package::classes() {
-	return script->syntax->classes;
-}
-
-Array<Function*> Package::functions() {
-	return script->syntax->functions;
-}
-
-Array<Variable*> Package::variables() {
-	return script->syntax->root_of_all_evil.var;
-}
-
-Array<Constant*> Package::constants() {
-	return script->syntax->constants;
-}
 
 
 void SIAddPackageBase()
@@ -1285,9 +1265,10 @@ void SIAddPackageKaba()
 	auto *TypeStatement = add_type  ("Statement", sizeof(Statement));
 	auto *TypeStatementList = add_type_a("Statement[]", TypeStatement, -1);
 		
-		
-	auto *TypePackage = add_type  ("Package", sizeof(Package));
-	auto *TypePackageList = add_type_a("Package[]", TypePackage, -1);
+
+	auto *TypePackage = add_type  ("Package", sizeof(Script));
+	auto *TypePackageP = add_type_p("Package*", TypePackage);
+	auto *TypePackagePList = add_type_a("Package*[]", TypePackageP, -1);
 
 	
 	auto *TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
@@ -1342,27 +1323,38 @@ void SIAddPackageKaba()
 		class_add_elementx("type", TypeClassP, &Constant::type);
 
 	add_class(TypePackage);
-		class_add_elementx("name", TypeString, &Package::name);
-		class_add_elementx("used_by_default", TypeBool, &Package::used_by_default);
-		class_add_funcx("classes", TypeClassPList, &Package::classes);
-		class_add_funcx("functions", TypeFunctionPList, &Package::functions);
-		class_add_funcx("variables", TypeVariablePList, &Package::variables);
-		class_add_funcx("constants", TypeConstantPList, &Package::constants);
+		class_add_elementx("name", TypeString, &Script::filename);
+		class_add_elementx("used_by_default", TypeBool, &Script::used_by_default);
+		class_add_funcx("classes", TypeClassPList, &Script::classes);
+		class_add_funcx("functions", TypeFunctionPList, &Script::functions);
+		class_add_funcx("variables", TypeVariablePList, &Script::variables);
+		class_add_funcx("constants", TypeConstantPList, &Script::constants);
 	
 	add_class(TypeStatement);
 		class_add_elementx("name", TypeString, &Statement::name);
 		class_add_elementx("num_params", TypeInt, &Statement::num_params);
 		
-	add_class(TypePackageList);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Package>::__init__);
 	add_class(TypeClassElementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassElement>::__init__);
 	add_class(TypeClassFunctionList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassFunction>::__init__);
 	add_class(TypeStatementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Statement>::__init__);
-		
-	add_ext_var("packages", TypePackageList, (void*)&Packages);
+
+	add_funcx("load_script", TypePackageP, &Load);
+		func_add_param("filename", TypeString);
+		func_add_param("just_analize", TypeBool);
+	add_funcx("create_script", TypePackageP, &CreateForSource);
+		func_add_param("source", TypeString);
+		func_add_param("just_analize", TypeBool);
+	add_funcx("delete_script", TypeVoid, &Remove);
+		func_add_param("script", TypePackageP);
+	add_funcx("execute_single_command", TypeVoid, &ExecuteSingleScriptCommand);
+		func_add_param("cmd", TypeString);
+	add_funcx("get_dynamic_type", TypeClassP, &GetDynamicType);
+		func_add_param("p", TypePointer);
+
+	add_ext_var("packages", TypePackagePList, (void*)&Packages);
 	add_ext_var("statements", TypeStatementList, (void*)&Statements);
 }
 
@@ -1720,8 +1712,7 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	SIAddPackageThread();
 	SIAddPackageX();
 
-	cur_package_index = 0;
-	cur_package_script = Packages[0].script;
+	cur_package = Packages[0];
 	SIAddCommands();
 	SIAddOperators();
 
@@ -1749,8 +1740,8 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 
 	// consistency checks
-	for (auto &p: Packages)
-		for (auto *c: p.classes()) {
+	for (auto *p: Packages)
+		for (auto *c: p->classes()) {
 			if (c->is_super_array()) {
 				if (!c->get_default_constructor() or !c->get_assign() or !c->get_destructor())
 					msg_error("SUPER ARRAY INCONSISTENT: " + c->name);
@@ -1775,8 +1766,8 @@ void LinkExternal(const string &name, void *pointer)
 	if (name.head(5) == "lib__"){
 		Array<string> names = name.explode(":");
 		string sname = names[0].substr(5, -1).replace("@list", "[]").replace("@@", ".");
-		for (Package &p: Packages)
-			foreachi(Function *f, p.script->syntax->functions, i)
+		for (auto *p: Packages)
+			foreachi(Function *f, p->syntax->functions, i)
 				if (f->name == sname){
 					if (names.num > 0)
 						if (f->num_params != names[1]._int())
