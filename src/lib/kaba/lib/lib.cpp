@@ -1321,8 +1321,6 @@ void SIAddPackageKaba()
 		class_add_elementx("functions", TypeClassFunctionList, &Class::functions);
 		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from);
 			func_add_param("c", TypeClassP);
-		class_add_funcx("var2str", TypeString, &Class::var2str);
-			func_add_param("var", TypePointer);
 
 	add_class(TypeFunction);
 		class_add_elementx("name", TypeString, &Function::name);
@@ -1387,7 +1385,7 @@ void SIAddBasicCommands()
 	add_statement(IDENTIFIER_LEN, STATEMENT_LEN, 1);
 	add_statement(IDENTIFIER_LET, STATEMENT_LET);
 	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
-	add_statement(IDENTIFIER_RAISE, STATEMENT_RAISE);
+	//add_statement(IDENTIFIER_RAISE, STATEMENT_RAISE); NOPE, now it's a function!
 	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_PASS, STATEMENT_PASS);
@@ -1637,7 +1635,7 @@ void SIAddCommands()
 		func_add_param("list", TypePointer);
 		func_add_param("class", TypeClassP);
 		func_add_param("by", TypeString);
-	add_func("var2str", TypeString, (void*)var2str, FLAG_RAISES_EXCEPTIONS);
+	add_func("-var2str-", TypeString, (void*)var2str, FLAG_RAISES_EXCEPTIONS);
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
 

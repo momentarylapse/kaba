@@ -1515,7 +1515,7 @@ Node *SyntaxTree::parse_statement_str(Block *block)
 	auto *c = add_constant(TypeClassP);
 	c->as_int64() = (int64)sub->type;
 
-	Array<Node*> links = get_existence("var2str", nullptr);
+	Array<Node*> links = get_existence("-var2str-", nullptr);
 	Function *f = links[0]->as_func();
 
 	Node *cmd = add_node_call(f);
