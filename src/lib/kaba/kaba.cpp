@@ -224,6 +224,7 @@ void Script::set_variable(const string &name, void *data)
 Script::Script()
 {
 	filename = "-empty script-";
+	used_by_default = false;
 
 	reference_counter = 0;
 
