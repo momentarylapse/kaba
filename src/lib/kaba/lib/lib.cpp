@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.2.0";
+string LibVersion = "0.17.2.1";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -656,62 +656,68 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 	ClassFunction *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
 	sub->return_type = t;
 
-		// FIXME  wrong for complicated classes
-		if (t->parent->is_simple_class()){
-			if (!t->parent->uses_call_by_reference()){
-				if (t->parent->is_pointer()){
-					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<void*>::__init__);
-					class_add_funcx("add", TypeVoid, &Array<void*>::add);
-						func_add_param("x", t->parent);
-					class_add_funcx("insert", TypeVoid, &Array<void*>::insert);
-						func_add_param("x", t->parent);
-						func_add_param("index", TypeInt);
-				}else if (t->parent == TypeFloat32){
-					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<float>::__init__);
-					class_add_funcx("add", TypeVoid, &DynamicArray::append_f_single);
-						func_add_param("x", t->parent);
-					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_f_single);
-						func_add_param("x", t->parent);
-						func_add_param("index", TypeInt);
-				}else if (t->parent == TypeFloat64){
-					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<double>::__init__);
-					class_add_funcx("add", TypeVoid, &DynamicArray::append_d_single);
-						func_add_param("x", t->parent);
-					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_d_single);
-						func_add_param("x", t->parent);
-						func_add_param("index", TypeInt);
-				}else if (t->parent->size == 4){
-					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<int>::__init__);
-					class_add_funcx("add", TypeVoid, &DynamicArray::append_4_single);
-						func_add_param("x", t->parent);
-					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_4_single);
-						func_add_param("x", t->parent);
-						func_add_param("index", TypeInt);
-				}else if (t->parent->size == 1){
-					class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<char>::__init__);
-					class_add_funcx("add", TypeVoid, &DynamicArray::append_1_single);
-						func_add_param("x", t->parent);
-					class_add_funcx("insert", TypeVoid, &DynamicArray::insert_1_single);
-						func_add_param("x", t->parent);
-						func_add_param("index", TypeInt);
-				}else
-					msg_error("evil class type..." + t->name);
-			}else{
-				class_add_funcx("add", TypeVoid, &DynamicArray::append_single);
+	// FIXME  wrong for complicated classes
+	if (t->parent->is_simple_class()){
+		if (!t->parent->uses_call_by_reference()){
+			if (t->parent->is_pointer()){
+				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<void*>::__init__);
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_p_single);
 					func_add_param("x", t->parent);
-				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_single);
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_p_single);
 					func_add_param("x", t->parent);
 					func_add_param("index", TypeInt);
+			}else if (t->parent == TypeFloat32){
+				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<float>::__init__);
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_f_single);
+					func_add_param("x", t->parent);
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_f_single);
+					func_add_param("x", t->parent);
+					func_add_param("index", TypeInt);
+			}else if (t->parent == TypeFloat64){
+				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<double>::__init__);
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_d_single);
+					func_add_param("x", t->parent);
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_d_single);
+					func_add_param("x", t->parent);
+					func_add_param("index", TypeInt);
+			}else if (t->parent->size == 4){
+				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<int>::__init__);
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_4_single);
+					func_add_param("x", t->parent);
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_4_single);
+					func_add_param("x", t->parent);
+					func_add_param("index", TypeInt);
+			}else if (t->parent->size == 1){
+				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<char>::__init__);
+				class_add_funcx("add", TypeVoid, &DynamicArray::append_1_single);
+					func_add_param("x", t->parent);
+				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_1_single);
+					func_add_param("x", t->parent);
+					func_add_param("index", TypeInt);
+			}else{
+				msg_error("evil class:  " + t->name);
 			}
-			class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &DynamicArray::simple_clear);
-			class_add_funcx("clear", TypeVoid, &DynamicArray::simple_clear);
-			class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &DynamicArray::simple_assign);
-				func_add_param("other", t);
-			class_add_funcx("remove", TypeVoid, &DynamicArray::delete_single);
+		}else{
+			// __init__ must be defined manually...!
+			class_add_funcx("add", TypeVoid, &DynamicArray::append_single);
+				func_add_param("x", t->parent);
+			class_add_funcx("insert", TypeVoid, &DynamicArray::insert_single);
+				func_add_param("x", t->parent);
 				func_add_param("index", TypeInt);
-			class_add_funcx("resize", TypeVoid, &DynamicArray::simple_resize);
-				func_add_param("num", TypeInt);
 		}
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &DynamicArray::simple_clear);
+		class_add_funcx("clear", TypeVoid, &DynamicArray::simple_clear);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &DynamicArray::simple_assign);
+			func_add_param("other", t);
+		class_add_funcx("remove", TypeVoid, &DynamicArray::delete_single);
+			func_add_param("index", TypeInt);
+		class_add_funcx("resize", TypeVoid, &DynamicArray::simple_resize);
+			func_add_param("num", TypeInt);
+	}else if (t->parent == TypeString){
+		// handled manually later...
+	}else{
+		msg_error("evil class:  " + t->name);
+	}
 }
 
 
@@ -1276,6 +1282,8 @@ void SIAddPackageKaba()
 	auto *TypeFunctionPList = add_type_a("Function*[]", TypeFunctionP, -1);
 	TypeFunctionCode	= add_type  ("func", 32); // whatever
 	TypeFunctionCodeP	= add_type_p("func*", TypeFunctionCode);
+	auto *TypeStatement = add_type  ("Statement", sizeof(Statement));
+	auto *TypeStatementList = add_type_a("Statement[]", TypeStatement, -1);
 		
 		
 	auto *TypePackage = add_type  ("Package", sizeof(Package));
@@ -1342,8 +1350,22 @@ void SIAddPackageKaba()
 		class_add_funcx("functions", TypeFunctionPList, &Package::functions);
 		class_add_funcx("variables", TypeVariablePList, &Package::variables);
 		class_add_funcx("constants", TypeConstantPList, &Package::constants);
+	
+	add_class(TypeStatement);
+		class_add_elementx("name", TypeString, &Statement::name);
+		class_add_elementx("num_params", TypeInt, &Statement::num_params);
+		
+	add_class(TypePackageList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Package>::__init__);
+	add_class(TypeClassElementList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassElement>::__init__);
+	add_class(TypeClassFunctionList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassFunction>::__init__);
+	add_class(TypeStatementList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Statement>::__init__);
 		
 	add_ext_var("packages", TypePackageList, (void*)&Packages);
+	add_ext_var("statements", TypeStatementList, (void*)&Statements);
 }
 
 
@@ -1365,6 +1387,7 @@ void SIAddBasicCommands()
 	add_statement(IDENTIFIER_LEN, STATEMENT_LEN, 1);
 	add_statement(IDENTIFIER_LET, STATEMENT_LET);
 	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
+	add_statement(IDENTIFIER_RAISE, STATEMENT_RAISE);
 	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_PASS, STATEMENT_PASS);
@@ -1726,22 +1749,15 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 	add_type_cast(50, TypeBoolList, TypeString, "@ba2s", nullptr);
 	add_type_cast(50, TypeStringList, TypeString, "@sa2s", nullptr);
 
-	/*msg_write("------------------test");
-	foreach(PreType, t){
-		if (t->SubType)
-			msg_write(t->SubType->Name);
-	}
-	foreach(PreCommand, c){
-		msg_write("-----");
-		msg_write(c.Name);
-		msg_write(c.ReturnType->Name);
-		foreach(c.Param, p)
-			msg_write(p.Type->Name);
-	}
-	foreach(PreExternalVar, v){
-		msg_write(v.Name);
-		msg_write(v.Type->Name);
-	}*/
+
+	// consistency checks
+	for (auto &p: Packages)
+		for (auto *c: p.classes()) {
+			if (c->is_super_array()) {
+				if (!c->get_default_constructor() or !c->get_assign() or !c->get_destructor())
+					msg_error("SUPER ARRAY INCONSISTENT: " + c->name);
+			}
+		}
 }
 
 void ResetExternalLinkData()
