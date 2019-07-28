@@ -128,6 +128,8 @@ public:
 	int level;
 	void add(Node *c);
 	void set(int index, Node *c);
+	
+	const Class *name_space() const;
 
 	Variable *get_var(const string &name);
 	Variable *add_var(const string &name, const Class *type);

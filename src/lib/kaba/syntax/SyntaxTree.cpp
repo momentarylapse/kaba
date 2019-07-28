@@ -428,47 +428,48 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 }
 
 // expression naming a type
-const Class *SyntaxTree::find_type_by_name(const string &name, Class *_namespace)
-{
-	if (_namespace) {
-		for (auto *c: _namespace->classes)
-			if (name == c->name)
-				return c;
-	} else {
-		for (auto *c: base_class->classes)
-			if (name == c->name)
-				return c;
+// we are currently in <namespace>... (no explicit namespace for <name>)
+const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class *_namespace, bool allow_recursion) {
+	for (auto *c: _namespace->classes)
+		if (name == c->name)
+			return c;
+	if (_namespace == base_class) {
 		for (Script *inc: includes)
 			for (auto *c: inc->syntax->base_class->classes)
 				if (name == c->name)
 					return c;
+	} else if (_namespace->name_space and allow_recursion) {
+		// parent namespace
+		return find_root_type_by_name(name, _namespace->name_space, true);
 	}
 	return nullptr;
 }
 
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns)
-{
-	if (find_type_by_name(name, ns))
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns) {
+	if (find_root_type_by_name(name, ns, false))
 		do_error("class already exists");
 
 	Class *t = new Class(name, size, this, sub);
 	t->type = type;
-	t->array_length = max(array_size, 0);
+	
+	// link namespace
 	ns->classes.add(t);
-	if (t->is_super_array() or t->is_dict()){
+	t->name_space = ns;
+	
+	t->array_length = max(array_size, 0);
+	if (t->is_super_array() or t->is_dict()) {
 		t->derive_from(TypeDynamicArray, false);
 		t->parent = sub;
 		AddMissingFunctionHeadersForClass(t);
-	}else if (t->is_array()){
+	} else if (t->is_array()) {
 		AddMissingFunctionHeadersForClass(t);
 	}
 	return t;
 }
 
-const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub)
-{
+const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub) {
 	// check if it already exists
-	auto *tt = find_type_by_name(name);
+	auto *tt = find_root_type_by_name(name, base_class, false);
 	if (tt)
 		return tt;
 
@@ -476,24 +477,19 @@ const Class *SyntaxTree::make_class(const string &name, Class::Type type, int si
 	return create_new_class(name, type, size, array_size, sub, base_class);
 }
 
-const Class *SyntaxTree::make_class_super_array(const Class *element_type)
-{
-	string name_pre = element_type->name;
-	return make_class(name_pre + "[]",
-			Class::Type::SUPER_ARRAY, config.super_array_size, -1, element_type);
+const Class *SyntaxTree::make_class_super_array(const Class *element_type) {
+	string name = element_type->long_name() + "[]";
+	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, element_type);
 }
 
-const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements)
-{
-	string name_pre = element_type->name;
-	return make_class(name_pre + format("[%d]", num_elements),
-			Class::Type::ARRAY, element_type->size * num_elements, num_elements, element_type);
+const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements) {
+	string name = element_type->long_name() + format("[%d]", num_elements);
+	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, element_type);
 }
 
-const Class *SyntaxTree::make_class_dict(const Class *element_type)
-{
-	return make_class(element_type->name + "{}",
-			Class::Type::DICT, config.super_array_size, 0, element_type);
+const Class *SyntaxTree::make_class_dict(const Class *element_type) {
+	string name = element_type->long_name() + "{}";
+	return make_class(name, Class::Type::DICT, config.super_array_size, 0, element_type);
 }
 
 Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var)

@@ -89,6 +89,7 @@ Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_p
 	type = Type::OTHER;
 	array_length = 0;
 	parent = _parent;
+	name_space = nullptr;
 	force_call_by_value = false;
 	fully_parsed = true;
 	_vtable_location_target_ = nullptr;
@@ -101,6 +102,12 @@ Class::~Class() {
 		delete c;
 	for (auto *c: classes)
 		delete c;
+}
+
+string Class::long_name() const {
+	if (name_space)
+		return name_space->long_name() + "." + name;
+	return name;
 }
 
 bool Class::is_array() const

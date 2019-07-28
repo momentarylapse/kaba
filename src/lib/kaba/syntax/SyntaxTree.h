@@ -86,7 +86,7 @@ public:
 	void parse_function_body(Function *f);
 	void parse_class_function_header(Class *t, bool as_extern, bool as_virtual, bool override);
 	bool ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line);
-	const Class *parse_type();
+	const Class *parse_type(const Class *ns);
 	void ParseVariableDef(bool single, Block *block);
 	void parse_global_const(const string &name, const Class *type);
 	int which_primitive_operator(const string &name);
@@ -111,7 +111,7 @@ public:
 	// syntax analysis
 	const Class *get_constant_type(const string &str);
 	void get_constant_value(const string &str, Value &value);
-	const Class *find_type_by_name(const string &name, Class *_namespace = nullptr);
+	const Class *find_root_type_by_name(const string &name, const Class *_namespace, bool allow_recursion);
 	const Class *AddClass(const Class *type);
 	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns);
 	const Class *make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub);

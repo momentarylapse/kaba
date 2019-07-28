@@ -705,7 +705,7 @@ Node *SyntaxTree::parse_operand(Block *block)
 				return link_unary_operator(po, sub_command, block);
 			}else if (operands[0]->kind == KIND_CLASS){
 				clear_nodes(operands);
-				const Class *t = parse_type();
+				const Class *t = parse_type(block->name_space());
 				operands = {new Node(KIND_CLASS, (int_p)t, TypeClass)};
 			}else{
 				Exp.next();
@@ -1296,14 +1296,13 @@ Node *SyntaxTree::parse_statement_try(Block *block)
 	Block *except_block = new Block(block->function, block);
 
 	if (!Exp.end_of_line()){
-		const Class *ex_type = find_type_by_name(Exp.cur);
+		auto *ex_type = parse_type(block->name_space());
 		if (!ex_type)
 			do_error("Exception class expected");
 		if (!ex_type->is_derived_from(TypeException))
 			do_error("Exception class expected");
 		cmd_ex->type = ex_type;
 		ex_type = ex_type->get_pointer();
-		Exp.next();
 		if (!Exp.end_of_line()){
 			if (Exp.cur != "as")
 				do_error("'as' expected");
@@ -1411,13 +1410,12 @@ Node *SyntaxTree::parse_statement_pass(Block *block)
 // Node structure
 //  type: class
 //  p[0]: call to constructor (optional)
-Node *SyntaxTree::parse_statement_new(Block *block)
-{
+Node *SyntaxTree::parse_statement_new(Block *block) {
 	Exp.next(); // new
-	const Class *t = parse_type();
+	const Class *t = parse_type(block->name_space());
 	Node *cmd = add_node_statement(STATEMENT_NEW);
 	cmd->type = t->get_pointer();
-	if (Exp.cur == "("){
+	if (Exp.cur == "(") {
 		Array<ClassFunction*> cfs = t->get_constructors();
 		Array<Node*> funcs;
 		if (cfs.num == 0)
@@ -1628,7 +1626,7 @@ Node *SyntaxTree::parse_block(Block *parent, Block *block)
 // local (variable) definitions...
 void SyntaxTree::parse_local_definition(Block *block) {
 	// type of variable
-	const Class *type = parse_type();
+	const Class *type = parse_type(block->name_space());
 	if (type->needs_constructor() and !type->get_default_constructor())
 		do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->name.c_str()));
 
@@ -1656,7 +1654,7 @@ void SyntaxTree::parse_complete_command(Block *block)
 {
 	// cur_exp = 0!
 
-	bool is_type = find_type_by_name(Exp.cur);
+	bool is_type = find_root_type_by_name(Exp.cur, block->name_space(), true);
 
 	// block?  <- indent
 	if (Exp.indented){
@@ -1809,7 +1807,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 	Exp.next();
 
 	// create class
-	Class *_class = const_cast<Class*>(find_type_by_name(name, _namespace)); //create_new_class(name, Class::Type::OTHER, 0, 0, nullptr);
+	Class *_class = const_cast<Class*>(find_root_type_by_name(name, _namespace, false));
 	// already created...
 	if (!_class)
 		script->do_error_internal("class declaration ...not found " + name);
@@ -1817,7 +1815,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS){
 		Exp.next();
-		const Class *parent = parse_type(); // force
+		const Class *parent = parse_type(_namespace); // force
 		if (!_class->derive_from(parent, true))
 			do_error(format("parental type in class definition after \"%s\" has to be a class, but %s is not", IDENTIFIER_EXTENDS.c_str(), parent->name.c_str()));
 		_offset = parent->size;
@@ -1866,7 +1864,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 			continue;
 		}*/
 
-		const Class *type = parse_type(); // force
+		const Class *type = parse_type(_class); // force
 		while(!Exp.end_of_line()){
 			//int indent = Exp.cur_line->indent;
 
@@ -1997,7 +1995,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type)
 
 void SyntaxTree::ParseVariableDef(bool single, Block *block)
 {
-	const Class *type = parse_type(); // force
+	const Class *type = parse_type(block->name_space()); // force
 
 	for (int j=0;true;j++){
 		expect_no_new_line();
@@ -2080,10 +2078,10 @@ void Function::update(const Class *class_type)
 
 // complicated types like "int[]*[4]" etc
 // greedy
-const Class *SyntaxTree::parse_type()
+const Class *SyntaxTree::parse_type(const Class *ns)
 {
 	// base type
-	const Class *t = find_type_by_name(Exp.cur);
+	const Class *t = find_root_type_by_name(Exp.cur, ns, true);
 	if (!t)
 		do_error("unknown type");
 	Exp.next();
@@ -2145,8 +2143,10 @@ const Class *SyntaxTree::parse_type()
 
 Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_extern)
 {
+	auto *ns = class_type ? class_type : base_class;
+	
 // return type
-	const Class *return_type = parse_type(); // force...
+	const Class *return_type = parse_type(ns); // force...
 
 	Function *f = add_function(Exp.cur, return_type);
 	f->_logical_line_no = Exp.get_line_no();
@@ -2164,7 +2164,7 @@ Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_ext
 			// like variable definitions
 
 			// type of parameter variable
-			const Class *param_type = parse_type(); // force
+			const Class *param_type = parse_type(ns); // force
 			f->block->add_var(Exp.cur, param_type);
 			f->literal_param_type.add(param_type);
 			Exp.next();

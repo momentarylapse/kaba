@@ -341,9 +341,10 @@ void *Script::match_function(const string &name, const string &return_type, cons
 	return nullptr;
 }
 
+// DEPRECATED?
 void *Script::match_class_function(const string &_class, bool allow_derived, const string &name, const string &return_type, const Array<string> &param_types)
 {
-	const Class *root_type = syntax->find_type_by_name(_class);
+	const Class *root_type = syntax->find_root_type_by_name(_class, syntax->base_class, false);
 	if (!root_type)
 		return nullptr;
 

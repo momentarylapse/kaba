@@ -228,6 +228,12 @@ Variable *Block::get_var(const string &name)
 	return nullptr;
 }
 
+const Class *Block::name_space() const {
+	if (function->_class)
+		return function->_class;
+	return function->owner->base_class;
+}
+
 
 Node::Node(int _kind, int64 _link_no, const Class *_type)
 {
