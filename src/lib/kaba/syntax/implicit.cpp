@@ -637,6 +637,9 @@ void SyntaxTree::AutoImplementFunctions(const Class *t)
 			AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
 	}
+
+	for (auto *c: t->classes)
+		AutoImplementFunctions(c);
 }
 
 

@@ -192,7 +192,7 @@ const Class *add_type(const string &name, int size, ScriptFlag flag)
 	Class *t = new Class(name, size, cur_package->syntax);
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
-	cur_package->syntax->classes.add(t);
+	cur_package->syntax->base_class->classes.add(t);
 	return t;
 }
 const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag flag)
@@ -202,7 +202,7 @@ const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag fl
 	if ((flag & FLAG_SILENT) > 0)
 		t->type = Class::Type::POINTER_SILENT;
 	t->parent = sub_type;
-	cur_package->syntax->classes.add(t);
+	cur_package->syntax->base_class->classes.add(t);
 	return t;
 }
 const Class *add_type_a(const string &name, const Class *sub_type, int array_length)
@@ -219,7 +219,7 @@ const Class *add_type_a(const string &name, const Class *sub_type, int array_len
 		t->type = Class::Type::ARRAY;
 		t->array_length = array_length;
 	}
-	cur_package->syntax->classes.add(t);
+	cur_package->syntax->base_class->classes.add(t);
 	return t;
 }
 
@@ -228,7 +228,7 @@ const Class *add_type_d(const string &name, const Class *sub_type)
 	Class *t = new Class(name, config.super_array_size, cur_package->syntax, sub_type);
 	t->type = Class::Type::DICT;
 	script_make_dict(t);
-	cur_package->syntax->classes.add(t);
+	cur_package->syntax->base_class->classes.add(t);
 	return t;
 }
 
@@ -361,7 +361,7 @@ void class_add_func(const string &name, const Class *return_type, void *func, Sc
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (const Class *t: cur_package->syntax->classes)
+		for (const Class *t: cur_package->syntax->base_class->classes)
 			if (t->is_pointer() and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -420,7 +420,7 @@ void class_add_func_virtual(const string &name, const Class *return_type, void *
 {
 	string tname = cur_class->name;
 	if (tname[0] == '-'){
-		for (auto *t: cur_package->syntax->classes)
+		for (auto *t: cur_package->syntax->base_class->classes)
 			if ((t->is_pointer()) and (t->parent == cur_class))
 				tname = t->name;
 	}
@@ -440,7 +440,7 @@ void class_link_vtable(void *p)
 
 void add_const(const string &name, const Class *type, void *value)
 {
-	Constant *c = new Constant(type, cur_package->syntax);
+	Constant *c = cur_package->syntax->add_constant(type);
 	c->name = name;
 	c->address = c->p();
 
@@ -449,7 +449,6 @@ void add_const(const string &name, const Class *type, void *value)
 		*(void**)c->p() = value;
 	else
 		memcpy(c->p(), value, type->size);
-	cur_package->syntax->constants.add(c);
 }
 
 //------------------------------------------------------------------------------------------------//

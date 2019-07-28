@@ -165,16 +165,26 @@ void Script::allocate_opcode()
 	opcode_size = 0;
 }
 
+
+int mem_size_needed(const Class *c) {
+	int memory_size = 0;
+	if (c->vtable.num > 0)
+		memory_size += config.pointer_size * c->vtable.num;
+	for (auto *v: c->static_variables)
+		memory_size += mem_align(v->type->size, 4);
+	for (auto *cc: c->constants)
+		memory_size += mem_align(cc->mapping_size(), 4);
+
+	for (auto *t: c->classes)
+		memory_size += mem_size_needed(t);
+	return memory_size;
+}
+
 void Script::allocate_memory()
 {
-	memory_size = 0;
-	for (auto *t: syntax->classes)
-		if (t->vtable.num > 0)
-			memory_size += config.pointer_size * t->vtable.num;
+	memory_size = mem_size_needed(syntax->base_class);
 	for (auto *v: syntax->root_of_all_evil.var)
 		memory_size += mem_align(v->type->size, 4);
-	for (auto *c: syntax->constants)
-		memory_size += mem_align(c->mapping_size(), 4);
 
 	memory = (char*)get_nice_memory(memory_size, false);
 	if (config.verbose)
@@ -182,10 +192,17 @@ void Script::allocate_memory()
 	memory_size = 0;
 }
 
-void Script::update_constant_locations()
-{
-	for (auto *c: syntax->constants)
+void _update_const_locations(const Class *ns) {
+	for (auto *c: ns->constants) {
 		c->address = c->p();
+	}
+	for (auto *c: ns->classes)
+		_update_const_locations(c);
+}
+
+// DEPRECATED???
+void Script::update_constant_locations() {
+	_update_const_locations(syntax->base_class);
 }
 
 void Script::map_global_variables_to_memory()
@@ -245,20 +262,52 @@ Node *check_const_used(Node *n, Script *me)
 	return n;
 }
 
-void remap_virtual_tables(Script *s, char *mem, int &offset)
+void remap_virtual_tables(Script *s, char *mem, int &offset, const Class *ct)
 {
 	// vtables -> no data yet...
-	for (auto *ct: s->syntax->classes)
-		if (ct->vtable.num > 0){
-			Class *t = const_cast<Class*>(ct);
-			t->_vtable_location_compiler_ = &mem[offset];
-			t->_vtable_location_target_ = &mem[offset];//(void*)(s->syntax->asm_meta_info->code_origin + opcode_size);
-			offset += config.pointer_size * t->vtable.num;
-			for (Constant *c: s->syntax->constants)
-				if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data)){
-					c->as_int64() = (int_p)t->_vtable_location_target_;
-				}
+	if (ct->vtable.num > 0){
+		Class *t = const_cast<Class*>(ct);
+		t->_vtable_location_compiler_ = &mem[offset];
+		t->_vtable_location_target_ = &mem[offset];//(void*)(s->syntax->asm_meta_info->code_origin + opcode_size);
+		offset += config.pointer_size * t->vtable.num;
+		for (Constant *c: s->syntax->base_class->constants)
+			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data)){
+				c->as_int64() = (int_p)t->_vtable_location_target_;
+			}
+	}
+
+	for (auto *c: ct->classes)
+		remap_virtual_tables(s, mem, offset, c);
+}
+
+
+void _map_constants_to_memory(char *mem, int &offset, const Class *ns) {
+	//update_constant_locations();
+	//return;
+
+	for (Constant *c: ns->constants)
+		if (/*c->used*/ true){
+//			c->address = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
+			c->address = &mem[offset];
+			c->map_into(&mem[offset], (char*)c->address);
+			offset += mem_align(c->mapping_size(), 4);
 		}
+
+	/*foreachi(Constant *c, syntax->constants, i)
+		if ((c->mapping_size() > 1) and used[i]){
+			cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
+			c->map_into(&opcode[opcode_size], cnst[i]);
+			opcode_size += mem_align(c->mapping_size(), 4);
+		}
+	foreachi(Constant *c, syntax->constants, i)
+		if ((c->mapping_size() == 1) and used[i]){
+			cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
+			c->map_into(&opcode[opcode_size], cnst[i]);
+			opcode_size += 1;
+		}*/
+
+	for (auto *c: ns->classes)
+		_map_constants_to_memory(mem, offset, c);
 }
 
 void Script::map_constants_to_memory(char *mem, int &offset)
@@ -266,7 +315,7 @@ void Script::map_constants_to_memory(char *mem, int &offset)
 	//update_constant_locations();
 	//return;
 
-	remap_virtual_tables(this, mem, offset);
+	remap_virtual_tables(this, mem, offset, syntax->base_class);
 
 
 //	syntax->transform([&](Node* n){ return check_const_used(n, this); });
@@ -287,26 +336,7 @@ void Script::map_constants_to_memory(char *mem, int &offset)
 	opcode_size = size0;*/
 
 
-	for (Constant *c: syntax->constants)
-		if (/*c->used*/ true){
-//			c->address = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
-			c->address = &mem[offset];
-			c->map_into(&mem[offset], (char*)c->address);
-			offset += mem_align(c->mapping_size(), 4);
-		}
-
-	/*foreachi(Constant *c, syntax->constants, i)
-		if ((c->mapping_size() > 1) and used[i]){
-			cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
-			c->map_into(&opcode[opcode_size], cnst[i]);
-			opcode_size += mem_align(c->mapping_size(), 4);
-		}
-	foreachi(Constant *c, syntax->constants, i)
-		if ((c->mapping_size() == 1) and used[i]){
-			cnst[i] = (char*)(syntax->asm_meta_info->code_origin + opcode_size);
-			c->map_into(&opcode[opcode_size], cnst[i]);
-			opcode_size += 1;
-		}*/
+	_map_constants_to_memory(mem, offset, syntax->base_class);
 
 	//msg_write(format("    compressed:  %d  ->  %d", uncompressed, opcode_size - size0));
 }
@@ -403,13 +433,13 @@ IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
 {
 	// ksdjfhksjdhfkjsdhfj
 	IncludeTranslationData d;
-	d.const_off = dest->constants.num;
+	d.const_off = dest->base_class->constants.num;
 	d.var_off = dest->root_of_all_evil.var.num;
 	d.func_off = dest->functions.num;
 	d.source = source->script;
 
-	dest->constants.append(source->constants);
-	source->constants.clear();
+	dest->base_class->constants.append(source->base_class->constants);
+	source->base_class->constants.clear();
 
 	// don't fully include internal libraries
 	if (source->script->filename.find(".kaba") < 0)
@@ -422,7 +452,7 @@ IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
 		*ff = *f;
 		// keep block pointing to include file...
 	}
-	dest->classes.append(source->classes);
+	dest->base_class->classes.append(source->base_class->classes);
 
 	//int asm_off = a->AsmBlocks.num;
 	for (AsmBlock &ab: source->asm_blocks){
@@ -484,16 +514,19 @@ void Script::link_functions()
 	}
 
 
-	// link virtual functions into vtables
-	for (const Class *ct: syntax->classes){
-		Class *t = const_cast<Class*>(ct);
-		t->link_virtual_table();
+}
 
-		/*if (config.compile_os)*/{
-			for (int i=0; i<t->vtable.num; i++)
-				memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
-		}
+void Script::link_virtual_functions_into_vtable(const Class *c) {
+	Class *t = const_cast<Class*>(c);
+	t->link_virtual_table();
+
+	/*if (config.compile_os)*/{
+		for (int i=0; i<t->vtable.num; i++)
+			memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
 	}
+
+	for (const Class *cc: c->classes)
+		link_virtual_functions_into_vtable(cc);
 }
 
 struct DynamicLibraryImport
@@ -536,7 +569,7 @@ DynamicLibraryImport *get_dynamic_lib(const string &filename, Script *s)
 
 void parse_magic_linker_string(SyntaxTree *s)
 {
-	for (auto *c: s->constants)
+	for (auto *c: s->base_class->constants)
 		if (c->name == "KABA_LINK" and c->type == TypeString){
 			DynamicLibraryImport *d = nullptr;
 			auto xx = c->as_string().explode("\n");
@@ -609,6 +642,7 @@ void Script::compile()
 
 // link functions
 	link_functions();
+	link_virtual_functions_into_vtable(syntax->base_class);
 
 
 

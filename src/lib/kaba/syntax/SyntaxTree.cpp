@@ -57,8 +57,8 @@ Node *SyntaxTree::ref_node(Node *sub, const Class *override_type)
 
 	if (sub->kind == KIND_CLASS){
 		// Class pointer
-		auto *c = add_constant(TypeClassP);
-		c->as_int64() = (long long)(int_p)sub->as_class();
+		auto *c = add_constant(TypeClassP, base_class);
+		c->as_int64() = (int64)(int_p)sub->as_class();
 		return add_node_const(c);
 	}else if (sub->kind == KIND_FUNCTION_NAME){
 		// can't be const because the function might not be compiled yet!
@@ -180,6 +180,7 @@ SyntaxTree::SyntaxTree(Script *_script) :
 	root_of_all_evil("RootOfAllEvil", TypeVoid, this)
 {
 	root_of_all_evil.block = new Block(&root_of_all_evil, nullptr);
+	base_class = new Class("-base-", 0, this);
 
 	flag_string_const_as_cstring = false;
 	flag_immortal = false;
@@ -267,10 +268,13 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 
 
-Constant *SyntaxTree::add_constant(const Class *type)
+Constant *SyntaxTree::add_constant(const Class *type, Class *_namespace)
 {
 	auto *c = new Constant(type, this);
-	constants.add(c);
+	if (_namespace)
+		_namespace->constants.add(c);
+	else
+		base_class->constants.add(c);
 	return c;
 }
 
@@ -301,7 +305,7 @@ int SyntaxTree::which_primitive_operator(const string &name)
 
 const Class *SyntaxTree::which_owned_class(const string &name)
 {
-	for (auto *c: classes)
+	for (auto *c: base_class->classes)
 		if (name == c->name)
 			return c;
 	return nullptr;
@@ -355,7 +359,7 @@ Array<Node*> SyntaxTree::get_existence_shared(const string &name)
 			return {new Node(KIND_VAR_GLOBAL, (int_p)v, v->type)};
 
 	// named constants
-	for (Constant *c: constants)
+	for (Constant *c: base_class->constants)
 		if (name == c->name)
 			return {new Node(KIND_CONSTANT, (int_p)c, c->type)};
 
@@ -424,27 +428,33 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 }
 
 // expression naming a type
-const Class *SyntaxTree::find_type_by_name(const string &name)
+const Class *SyntaxTree::find_type_by_name(const string &name, Class *_namespace)
 {
-	for (auto *c: classes)
-		if (name == c->name)
-			return c;
-	for (Script *inc: includes)
-		for (auto *c: inc->syntax->classes)
+	if (_namespace) {
+		for (auto *c: _namespace->classes)
 			if (name == c->name)
 				return c;
+	} else {
+		for (auto *c: base_class->classes)
+			if (name == c->name)
+				return c;
+		for (Script *inc: includes)
+			for (auto *c: inc->syntax->base_class->classes)
+				if (name == c->name)
+					return c;
+	}
 	return nullptr;
 }
 
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub)
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns)
 {
-	if (find_type_by_name(name))
+	if (find_type_by_name(name, ns))
 		do_error("class already exists");
 
 	Class *t = new Class(name, size, this, sub);
 	t->type = type;
 	t->array_length = max(array_size, 0);
-	classes.add(t);
+	ns->classes.add(t);
 	if (t->is_super_array() or t->is_dict()){
 		t->derive_from(TypeDynamicArray, false);
 		t->parent = sub;
@@ -463,7 +473,7 @@ const Class *SyntaxTree::make_class(const string &name, Class::Type type, int si
 		return tt;
 
 	// add new class
-	return create_new_class(name, type, size, array_size, sub);
+	return create_new_class(name, type, size, array_size, sub, base_class);
 }
 
 const Class *SyntaxTree::make_class_super_array(const Class *element_type)
@@ -681,7 +691,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		// & array
 		Node *c_ref_array = ref_node(c->params[0]);
 		// create command for size constant
-		Node *c_size = add_node_const(add_constant(TypeInt));
+		Node *c_size = add_node_const(add_constant(TypeInt, base_class));
 		c_size->as_const()->as_int() = el_type->size;
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -705,7 +715,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		Node *c_index = c->params[1];
 		Node *c_ref_array = c->params[0];
 		// create command for size constant
-		Node *c_size = add_node_const(add_constant(TypeInt));
+		Node *c_size = add_node_const(add_constant(TypeInt, base_class));
 		c_size->as_const()->as_int() = el_type->size;
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, INLINE_INT_MULTIPLY);
@@ -728,7 +738,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 		// & struct
 		Node *c_ref_struct = ref_node(c->params[0]);
 		// create command for shift constant
-		Node *c_shift = add_node_const(add_constant(TypeInt));
+		Node *c_shift = add_node_const(add_constant(TypeInt, base_class));
 		c_shift->as_const()->as_int() = c->link_no;
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
@@ -747,7 +757,7 @@ Node *SyntaxTree::BreakDownComplicatedCommand(Node *c)
 
 		Node *c_ref_struct = c->params[0];
 		// create command for shift constant
-		Node *c_shift = add_node_const(add_constant(TypeInt));
+		Node *c_shift = add_node_const(add_constant(TypeInt, base_class));
 		c_shift->as_const()->as_int() = c->link_no;
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
@@ -942,18 +952,16 @@ void SyntaxTree::MapLocalVariablesToStack()
 SyntaxTree::~SyntaxTree()
 {
 	// delete all types created by this script
-	for (auto *t: classes)
+	/*for (auto *t: classes)
 		if (t->owner == this)
-			delete(t);
-
+			delete(t);*/
 	if (asm_meta_info)
-		delete(asm_meta_info);
+		delete asm_meta_info;
 
 	for (auto *f: functions)
-		delete(f);
+		delete f;
 
-	for (auto *c: constants)
-		delete(c);
+	delete base_class;
 }
 
 void SyntaxTree::Show(const string &stage)

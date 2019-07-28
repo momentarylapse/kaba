@@ -154,6 +154,16 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 				return {shift_node(operand, deref, e.offset, e.type)};
 			}
 	}
+	for (auto *c: type->constants)
+		if (Exp.cur == c->name){
+			Exp.next();
+			return {new Node(KIND_CONSTANT, (int_p)c, c->type)};
+		}
+	for (auto *c: type->classes)
+		if (Exp.cur == c->name){
+			Exp.next();
+			return {new Node(KIND_CLASS, (int_p)c, TypeClass)};
+		}
 
 
 	if (!deref and !only_static)
@@ -1731,7 +1741,7 @@ void SyntaxTree::parse_import()
 }
 
 
-void SyntaxTree::parse_enum()
+void SyntaxTree::parse_enum(Class *_namespace)
 {
 	Exp.next(); // 'enum'
 	expect_new_line();
@@ -1742,7 +1752,7 @@ void SyntaxTree::parse_enum()
 
 	for (int i=0;!Exp.end_of_file();i++){
 		for (int j=0;!Exp.end_of_line();j++){
-			auto *c = add_constant(TypeInt);
+			auto *c = add_constant(TypeInt, _namespace);
 			c->name = Exp.cur;
 			Exp.next();
 
@@ -1790,24 +1800,7 @@ inline bool type_needs_alignment(const Class *t)
 	return (t->size >= 4);
 }
 
-int class_count_virtual_functions(SyntaxTree *ps)
-{
-	ExpressionBuffer::Line *l = ps->Exp.cur_line;
-	int count = 0;
-	l ++;
-	while(l != &ps->Exp.line[ps->Exp.line.num - 1]){
-		if (l->indent == 0)
-			break;
-		if ((l->indent == 1) and (l->exp[0].name == IDENTIFIER_VIRTUAL))
-			count ++;
-		else if ((l->indent == 1) and (l->exp[0].name == IDENTIFIER_EXTERN) and (l->exp[1].name == IDENTIFIER_VIRTUAL))
-			count ++;
-		l ++;
-	}
-	return count;
-}
-
-void SyntaxTree::parse_class()
+void SyntaxTree::parse_class(Class *_namespace)
 {
 	int indent0 = Exp.cur_line->indent;
 	int _offset = 0;
@@ -1816,8 +1809,10 @@ void SyntaxTree::parse_class()
 	Exp.next();
 
 	// create class
-	Class *_class = const_cast<Class*>(find_type_by_name(name)); //create_new_class(name, Class::Type::OTHER, 0, 0, nullptr);
+	Class *_class = const_cast<Class*>(find_type_by_name(name, _namespace)); //create_new_class(name, Class::Type::OTHER, 0, 0, nullptr);
 	// already created...
+	if (!_class)
+		script->do_error_internal("class declaration ...not found " + name);
 
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS){
@@ -1855,6 +1850,21 @@ void SyntaxTree::parse_class()
 			Exp.next();
 		}
 		int ie = Exp.cur_exp;
+
+		if (Exp.cur == IDENTIFIER_ENUM) {
+			parse_enum(_class);
+			continue;
+		}
+
+		if (Exp.cur == IDENTIFIER_CLASS) {
+			parse_class(_class);
+			continue;
+		}
+
+		/*if (Exp.cur == IDENTIFIER_CONST) {
+			//parse_enum();
+			continue;
+		}*/
 
 		const Class *type = parse_type(); // force
 		while(!Exp.end_of_line()){
@@ -2078,7 +2088,7 @@ const Class *SyntaxTree::parse_type()
 		do_error("unknown type");
 	Exp.next();
 
-	// extensions *,[],{}
+	// extensions *,[],{},.
 	while (true){
 
 		// pointer?
@@ -2115,6 +2125,16 @@ const Class *SyntaxTree::parse_type()
 			Exp.next();
 
 			t = make_class_dict(t);
+		}else if (Exp.cur == "."){
+			Exp.next();
+			const Class *sub = nullptr;
+			for (auto *c: t->classes)
+				if (c->name == Exp.cur)
+					sub = c;
+			if (!sub)
+				do_error(format("class %s does not have a sub-class %s", t->name.c_str(), Exp.cur.c_str()));
+			t = sub;
+			Exp.next();
 		}else{
 			break;
 		}
@@ -2212,17 +2232,26 @@ void SyntaxTree::parse_function_body(Function *f)
 	Exp.cur_line --;
 }
 
-void SyntaxTree::parse_all_class_names()
+void SyntaxTree::parse_all_class_names(Class *ns, int indent0)
 {
-	Exp.reset_parser();
+	if (indent0 == 0)
+		Exp.reset_parser();
 	while (!Exp.end_of_file()){
-		if ((Exp.cur_line->indent == 0) and (Exp.cur_line->exp.num >= 2)){
+		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->exp.num >= 2)){
 			if (Exp.cur == IDENTIFIER_CLASS){
 				Exp.next();
-				Class *t = create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr);
+				Class *t = create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, ns);
 				t->fully_parsed = false;
+
+				Exp.next_line();
+				parse_all_class_names(t, indent0 + 1);
+				continue;
 			}
 		}
+		if (Exp.end_of_file())
+			break;
+		if (Exp.cur_line->indent < indent0)
+			break;
 		Exp.next_line();
 	}
 }
@@ -2245,7 +2274,7 @@ void SyntaxTree::parse_top_level()
 
 	// syntax analysis
 
-	parse_all_class_names();
+	parse_all_class_names(base_class, 0);
 
 	Exp.reset_parser();
 
@@ -2272,11 +2301,11 @@ void SyntaxTree::parse_top_level()
 
 		// enum
 		}else*/ if (Exp.cur == IDENTIFIER_ENUM){
-			parse_enum();
+			parse_enum(base_class);
 
 		// class
 		}else if (Exp.cur == IDENTIFIER_CLASS){
-			parse_class();
+			parse_class(base_class);
 
 		}else{
 
@@ -2311,8 +2340,7 @@ void SyntaxTree::parse()
 	for (auto *f: functions)
 		test_node_recursion(f->block, "a " + f->long_name);
 
-	for (int i=0; i<classes.num; i++)
-		AutoImplementFunctions(classes[i]);
+	AutoImplementFunctions(base_class);
 	for (auto *f: functions)
 		test_node_recursion(f->block, "b " + f->long_name);
 }

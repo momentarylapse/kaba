@@ -82,8 +82,7 @@ bool _type_match(const Class *given, bool same_chunk, const Class *wanted)
 	return type_match(given, wanted);
 }
 
-Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_parent)
-{
+Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_parent) {
 	name = _name;
 	owner = _owner;
 	size = _size;
@@ -97,8 +96,11 @@ Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_p
 	_vtable_location_external_ = nullptr;
 };
 
-Class::~Class()
-{
+Class::~Class() {
+	for (auto *c: constants)
+		delete c;
+	for (auto *c: classes)
+		delete c;
 }
 
 bool Class::is_array() const
@@ -396,21 +398,18 @@ bool class_func_match(ClassFunction &a, ClassFunction &b)
 }
 
 
-const Class *Class::get_pointer() const
-{
+const Class *Class::get_pointer() const {
 	return owner->make_class(name + "*", Class::Type::POINTER, config.pointer_size, 0, this);
 }
 
-const Class *Class::get_root() const
-{
+const Class *Class::get_root() const {
 	const Class *r = this;
 	while (r->parent)
 		r = r->parent;
 	return r;
 }
 
-void class_func_out(Class *c, ClassFunction *f)
-{
+void class_func_out(Class *c, ClassFunction *f) {
 	msg_write(f->signature(true));
 }
 

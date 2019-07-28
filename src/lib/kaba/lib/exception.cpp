@@ -192,6 +192,19 @@ void relink_return(void *rip, void *rbp, void *rsp)
 	exit(0);
 }
 
+const Class* _get_type(void *p, void *vtable, const Class *ns) {
+	for (auto *c: ns->classes) {
+		if (c->_vtable_location_compiler_)
+			if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
+				return c;
+		auto *r = _get_type(p, vtable, c);
+		if (r)
+			return r;
+
+	}
+	return nullptr;
+}
+
 const Class* get_type(void *p)
 {
 	if (!p)
@@ -200,11 +213,11 @@ const Class* get_type(void *p)
 	auto scripts = _public_scripts_;
 	for (auto p: Packages)
 		scripts.add(p);
-	for (Script* s: scripts)
-		for (auto *c: s->syntax->classes)
-			if (c->_vtable_location_compiler_)
-				if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
-					return c;
+	for (Script* s: scripts) {
+		auto *r = _get_type(p, vtable, s->syntax->base_class);
+		if (r)
+			return r;
+	}
 	return TypeUnknown;
 }
 

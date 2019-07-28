@@ -9,6 +9,8 @@ class Script;
 class SyntaxTree;
 class Class;
 class Function;
+class Constant;
+class Variable;
 
 
 class ClassElement
@@ -67,6 +69,10 @@ public:
 	bool fully_parsed;
 	Array<ClassElement> elements;
 	Array<ClassFunction> functions;
+	Array<Function*> static_functions;
+	Array<Variable*> static_variables;
+	Array<Constant*> constants;
+	Array<const Class*> classes;
 	const Class *parent;
 	SyntaxTree *owner; // to share and be able to delete...
 	Array<void*> vtable;

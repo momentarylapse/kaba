@@ -76,11 +76,11 @@ public:
 	// syntax parsing
 	void parse();
 	void parse_top_level();
-	void parse_all_class_names();
+	void parse_all_class_names(Class *ns, int indent0);
 	void parse_all_function_bodies();
 	void parse_import();
-	void parse_enum();
-	void parse_class();
+	void parse_enum(Class *_namespace);
+	void parse_class(Class *_namespace);
 	Function *parse_function_header(const Class *class_type, bool as_extern);
 	void SkipParsingFunctionBody();
 	void parse_function_body(Function *f);
@@ -111,9 +111,9 @@ public:
 	// syntax analysis
 	const Class *get_constant_type(const string &str);
 	void get_constant_value(const string &str, Value &value);
-	const Class *find_type_by_name(const string &name);
+	const Class *find_type_by_name(const string &name, Class *_namespace = nullptr);
 	const Class *AddClass(const Class *type);
-	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub);
+	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns);
 	const Class *make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub);
 	const Class *make_class_super_array(const Class *element_type);
 	const Class *make_class_array(const Class *element_type, int num_elements);
@@ -172,7 +172,7 @@ public:
 	static Node* transform_node(Node *n, std::function<Node*(Node*)> F);
 
 	// data creation
-	Constant *add_constant(const Class *type);
+	Constant *add_constant(const Class *type, Class *_namespace = nullptr);
 	Function *add_function(const string &name, const Class *type);
 
 	// nodes
@@ -209,12 +209,12 @@ public:
 	bool flag_immortal;
 	bool flag_string_const_as_cstring;
 
-	Array<const Class*> classes;
+	Class *base_class;
+	//Array<const Class*> classes;
 	Array<Script*> includes;
 	Array<Define> defines;
 	Asm::MetaInfo *asm_meta_info;
 	Array<AsmBlock> asm_blocks;
-	Array<Constant*> constants;
 	Array<Operator*> operators;
 	Array<Function*> functions;
 

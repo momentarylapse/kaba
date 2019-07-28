@@ -139,16 +139,15 @@ void DeleteAllScripts(bool even_immortal, bool force)
 	*/
 }
 
-VirtualTable* get_vtable(const VirtualBase *p)
-{
+VirtualTable* get_vtable(const VirtualBase *p) {
 	return *(VirtualTable**)p;
 }
 
-const Class *GetDynamicType(const VirtualBase *p)
-{
-	VirtualTable *pp = get_vtable(p);
+// TODO...namespace
+const Class *GetDynamicType(const VirtualBase *p) {
+	auto *pp = get_vtable(p);
 	for (Script *s: _public_scripts_)
-		for (auto *t: s->syntax->classes)
+		for (auto *t: s->syntax->base_class->classes)
 			if (t->_vtable_location_target_ == pp)
 				return t;
 	return nullptr;
@@ -388,7 +387,7 @@ void Script::show_vars(bool include_consts)
 }
 
 Array<const Class*> Script::classes() {
-	return syntax->classes;
+	return syntax->base_class->classes;
 }
 
 Array<Function*> Script::functions() {
@@ -400,7 +399,7 @@ Array<Variable*> Script::variables() {
 }
 
 Array<Constant*> Script::constants() {
-	return syntax->constants;
+	return syntax->base_class->constants;
 }
 
 };
