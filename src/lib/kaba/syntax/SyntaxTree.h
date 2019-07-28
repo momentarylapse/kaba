@@ -124,9 +124,12 @@ public:
 	void link_most_important_operator(Array<Node*> &operand, Array<Node*> &_operator, Array<int> &op_exp);
 	Node *link_operator(int op_no, Node *param1, Node *param2);
 	Node *parse_operand_extension(Array<Node*> operands, Block *block);
-	Array<Node*> parse_operand_extension_element(Node *operand, Block *block);
+	Array<Node*> parse_operand_extension_element(Node *operand);
 	Node *parse_operand_extension_array(Node *operand, Block *block);
 	Node *parse_operand_extension_call(Array<Node*> operands, Block *block);
+	Node *parse_type_extension_array(Node *node);
+	Node *parse_type_extension_dict(Node *node);
+	Node *parse_type_extension_pointer(Node *node);
 	Node *parse_command(Block *block);
 	Node *parse_single_func_param(Block *block);
 	void parse_complete_command(Block *block);

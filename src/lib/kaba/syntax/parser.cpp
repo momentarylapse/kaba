@@ -118,27 +118,26 @@ void SyntaxTree::get_constant_value(const string &str, Value &value)
 }
 
 
-Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *block)
-{
+Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 	Exp.next();
 	const Class *type = operand->type;
 	bool deref = false;
 	bool only_static = false;
 
-	if (operand->kind == KIND_CLASS){
+	if (operand->kind == KIND_CLASS) {
 		// referencing class functions
 		type = operand->as_class();
 		only_static = true;
-	}else if (type->is_pointer()){
+	} else if (type->is_pointer()) {
 		// pointer -> dereference
 		type = type->parent;
 		deref = true;
 	}
 
 	// super
-	if ((type->parent) and (Exp.cur == IDENTIFIER_SUPER)){
+	if ((type->parent) and (Exp.cur == IDENTIFIER_SUPER)) {
 		Exp.next();
-		if (deref){
+		if (deref) {
 			operand->type = type->parent->get_pointer();
 			return {operand};
 		}
@@ -147,20 +146,22 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 
 
 	// find element
-	if (!only_static){
+	if (!only_static) {
 		for (auto &e: type->elements)
-			if (Exp.cur == e.name){
+			if (Exp.cur == e.name) {
 				Exp.next();
 				return {shift_node(operand, deref, e.offset, e.type)};
 			}
 	}
 	for (auto *c: type->constants)
-		if (Exp.cur == c->name){
+		if (Exp.cur == c->name) {
 			Exp.next();
 			return {new Node(KIND_CONSTANT, (int_p)c, c->type)};
 		}
+		
+	// sub-class
 	for (auto *c: type->classes)
-		if (Exp.cur == c->name){
+		if (Exp.cur == c->name) {
 			Exp.next();
 			return {new Node(KIND_CLASS, (int_p)c, TypeClass)};
 		}
@@ -181,7 +182,6 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand, Block *b
 		}
 	if (links.num > 0){
 		Exp.next();
-		//return GetFunctionCall(f_name, links, block);
 		return links;
 	}
 
@@ -391,6 +391,58 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 	return nullptr;
 }
 
+Node *SyntaxTree::parse_type_extension_array(Node *node) {
+	auto *t = node->as_class();
+	
+	Exp.next(); // "["
+
+	// no index -> super array
+	if (Exp.cur == "]") {
+		t = make_class_super_array(t);
+	} else {
+
+		// find array index
+		Node *c = transform_node(parse_command(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
+
+		if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
+			do_error("only constants of type \"int\" allowed for size of arrays");
+		int array_size = c->as_const()->as_int();
+		//Exp.next();
+		if (Exp.cur != "]")
+			do_error("\"]\" expected after array size");
+		t = make_class_array(t, array_size);
+	}
+
+	Exp.next();
+	
+	return {new Node(KIND_CLASS, (int_p)t, TypeClass)};
+}
+
+Node *SyntaxTree::parse_type_extension_dict(Node *node) {
+	auto *t = node->as_class();
+	
+	Exp.next(); // "{"
+
+	if (Exp.cur != "}")
+		do_error("\"}\" expected after dict{");
+
+	Exp.next();
+
+	t = make_class_dict(t);	
+	return {new Node(KIND_CLASS, (int_p)t, TypeClass)};
+}
+
+
+Node *SyntaxTree::parse_type_extension_pointer(Node *node) {
+	auto *t = node->as_class();
+	
+	Exp.next(); // "*"
+
+	t = t->get_pointer();
+	return {new Node(KIND_CLASS, (int_p)t, TypeClass)};
+}
+
+
 // find any ".", "->", or "[...]"'s    or operators?
 Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block)
 {
@@ -407,17 +459,29 @@ Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block)
 			do_error("left side of '.' is ambiguous");
 		// class element?
 
-		operands = parse_operand_extension_element(operands[0], block);
+		operands = parse_operand_extension_element(operands[0]);
 
 	}else if (Exp.cur == "["){
 		if (operands.num > 1)
 			do_error("left side of '[' is ambiguous");
+			
 		// array?
-
-		operands = {parse_operand_extension_array(operands[0], block)};
+		if (operands[0]->kind == KIND_CLASS)
+			operands = {parse_type_extension_array(operands[0])};
+		else
+			operands = {parse_operand_extension_array(operands[0], block)};
+			
+	}else if (Exp.cur == "{"){
+		if (operands.num > 1)
+			do_error("left side of '{' is ambiguous");
+			
+		// array?
+		if (operands[0]->kind == KIND_CLASS)
+			operands = {parse_type_extension_dict(operands[0])};
+		else
+			do_error("'{' only allowed after a class name");
 
 	}else if (Exp.cur == "("){
-		// array?
 
 		operands = {parse_operand_extension_call(operands, block)};
 
@@ -704,9 +768,10 @@ Node *SyntaxTree::parse_operand(Block *block)
 				Node *sub_command = parse_operand(block);
 				return link_unary_operator(po, sub_command, block);
 			}else if (operands[0]->kind == KIND_CLASS){
-				clear_nodes(operands);
-				const Class *t = parse_type(block->name_space());
-				operands = {new Node(KIND_CLASS, (int_p)t, TypeClass)};
+				Exp.next();
+				//clear_nodes(operands);
+				//const Class *t = parse_type(block->name_space());
+				//operands = {new Node(KIND_CLASS, (int_p)operands[0]->as_class(), TypeClass)};
 			}else{
 				Exp.next();
 				// direct operand!
@@ -2067,11 +2132,6 @@ void Function::update(const Class *class_type)
 	if (class_type){
 		if (!__get_var(IDENTIFIER_SELF))
 			block->add_var(IDENTIFIER_SELF, class_type->get_pointer());
-
-		// convert name to Class.Function
-		long_name = class_type->name + "." +  name;
-	}else{
-		long_name = name;
 	}
 }
 
@@ -2269,7 +2329,6 @@ void SyntaxTree::parse_all_function_bodies()
 void SyntaxTree::parse_top_level()
 {
 	root_of_all_evil.name = "RootOfAllEvil";
-	root_of_all_evil.long_name = root_of_all_evil.name;
 	cur_func = nullptr;
 
 	// syntax analysis
@@ -2338,11 +2397,11 @@ void SyntaxTree::parse()
 	parse_all_function_bodies();
 
 	for (auto *f: functions)
-		test_node_recursion(f->block, "a " + f->long_name);
+		test_node_recursion(f->block, "a " + f->long_name());
 
 	AutoImplementFunctions(base_class);
 	for (auto *f: functions)
-		test_node_recursion(f->block, "b " + f->long_name);
+		test_node_recursion(f->block, "b " + f->long_name());
 }
 
 }

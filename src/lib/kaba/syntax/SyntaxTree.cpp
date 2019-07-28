@@ -602,7 +602,7 @@ Node *convert_return_by_memory(SyntaxTree *ps, Node *n, Function *f)
 	Node *ret = ps->deref_node(p_ret);
 	Node *cmd_assign = ps->link_operator(OPERATOR_ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
-		ps->do_error("no = operator for return from function found: " + f->long_name);
+		ps->do_error("no = operator for return from function found: " + f->long_name());
 	_transform_insert_before_ = cmd_assign;
 
 	n->set_num_params(0);

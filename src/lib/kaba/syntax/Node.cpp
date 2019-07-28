@@ -101,9 +101,9 @@ string Node::sig() const
 	if (kind == KIND_VAR_GLOBAL)
 		return t + as_global()->name;
 	if (kind == KIND_FUNCTION_POINTER)
-		return t + as_func()->long_name;
+		return t + as_func()->long_name();
 	if (kind == KIND_FUNCTION_NAME)
-		return t + as_func()->long_name;
+		return t + as_func()->long_name();
 	if (kind == KIND_CONSTANT)
 		return t + as_const()->str();
 	if (kind == KIND_FUNCTION_CALL)

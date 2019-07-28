@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.2.2";
+string LibVersion = "0.17.3.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -187,12 +187,17 @@ void add_package(const string &name, bool used_by_default)
 	cur_package = s;
 }
 
+void __add_class__(Class *t) {
+	cur_package->syntax->base_class->classes.add(t);
+	t->name_space = cur_package->syntax->base_class;
+}
+
 const Class *add_type(const string &name, int size, ScriptFlag flag)
 {
 	Class *t = new Class(name, size, cur_package->syntax);
 	if ((flag & FLAG_CALL_BY_VALUE) > 0)
 		t->force_call_by_value = true;
-	cur_package->syntax->base_class->classes.add(t);
+	__add_class__(t);
 	return t;
 }
 const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag flag)
@@ -202,7 +207,7 @@ const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag fl
 	if ((flag & FLAG_SILENT) > 0)
 		t->type = Class::Type::POINTER_SILENT;
 	t->parent = sub_type;
-	cur_package->syntax->base_class->classes.add(t);
+	__add_class__(t);
 	return t;
 }
 const Class *add_type_a(const string &name, const Class *sub_type, int array_length)
@@ -219,7 +224,7 @@ const Class *add_type_a(const string &name, const Class *sub_type, int array_len
 		t->type = Class::Type::ARRAY;
 		t->array_length = array_length;
 	}
-	cur_package->syntax->base_class->classes.add(t);
+	__add_class__(t);
 	return t;
 }
 
@@ -228,7 +233,7 @@ const Class *add_type_d(const string &name, const Class *sub_type)
 	Class *t = new Class(name, config.super_array_size, cur_package->syntax, sub_type);
 	t->type = Class::Type::DICT;
 	script_make_dict(t);
-	cur_package->syntax->base_class->classes.add(t);
+	__add_class__(t);
 	return t;
 }
 
@@ -342,12 +347,11 @@ ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptF
 	return &c->functions.back();
 }
 
-void _class_add_func_virtual(const string &tname, const string &name, const Class *return_type, int index, ScriptFlag flag)
+void _class_add_func_virtual(const string &name, const Class *return_type, int index, ScriptFlag flag)
 {
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
 	add_func(name, return_type, nullptr, ScriptFlag((flag | FLAG_CLASS) & ~FLAG_OVERRIDE));
-	cur_func->long_name = tname + "." + name + "[virtual]";
 	cur_func->_class = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
 	cur_class_func->virtual_index = index;
@@ -359,14 +363,7 @@ void _class_add_func_virtual(const string &tname, const string &name, const Clas
 
 void class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag)
 {
-	string tname = cur_class->name;
-	if (tname[0] == '-'){
-		for (const Class *t: cur_package->syntax->base_class->classes)
-			if (t->is_pointer() and (t->parent == cur_class))
-				tname = t->name;
-	}
 	add_func(name, return_type, func, ScriptFlag(flag | FLAG_CLASS));
-	cur_func->long_name = tname + "." + name;
 	cur_func->_class = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
 }
@@ -425,7 +422,7 @@ void class_add_func_virtual(const string &name, const Class *return_type, void *
 				tname = t->name;
 	}
 	int index = get_virtual_index(func, tname, name);
-	_class_add_func_virtual(tname, name, return_type, index, flag);
+	_class_add_func_virtual(name, return_type, index, flag);
 }
 
 void class_link_vtable(void *p)
@@ -908,7 +905,7 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 	c.penalty = penalty;
 	c.f = nullptr;
 	for (auto *f: cur_package->syntax->functions)
-		if (f->long_name == cmd){
+		if (f->long_name() == cmd){
 			c.f = f;
 			break;
 		}
@@ -1297,14 +1294,18 @@ void SIAddPackageKaba()
 		class_add_elementx("name", TypeString, &Class::name);
 		class_add_elementx("size", TypeInt, &Class::size);
 		class_add_elementx("parent", TypeClassP, &Class::parent);
+		class_add_elementx("namespace", TypeClassP, &Class::name_space);
 		class_add_elementx("elements", TypeClassElementList, &Class::elements);
 		class_add_elementx("functions", TypeClassFunctionList, &Class::functions);
+		class_add_elementx("classes", TypeClassPList, &Class::classes);
+		class_add_elementx("constants", TypeConstantPList, &Class::constants);
 		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from);
 			func_add_param("c", TypeClassP);
+		class_add_funcx("long_name", TypeString, &Class::long_name);
 
 	add_class(TypeFunction);
 		class_add_elementx("name", TypeString, &Function::name);
-		class_add_elementx("long_name", TypeString, &Function::long_name);
+		class_add_funcx("long_name", TypeString, &Function::long_name);
 		class_add_elementx("class", TypeClassP, &Function::_class);
 		class_add_elementx("num_params", TypeInt, &Function::num_params);
 		class_add_elementx("var", TypeVariablePList, &Function::var);
@@ -1860,7 +1861,7 @@ bool CompilerConfiguration::allow_output_func(const Function *f)
 		return true;
 	Array<string> filters = verbose_func_filter.explode(",");
 	for (auto &fil: filters)
-		if (f->long_name.match(fil))
+		if (f->long_name().match(fil))
 			return true;
 	return false;
 }

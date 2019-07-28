@@ -24,7 +24,7 @@
 
 namespace Kaba{
 
-string Version = "0.17.2.1";
+string Version = "0.17.2.9";
 
 //#define ScriptDebug
 
@@ -324,11 +324,11 @@ void *Script::match_function(const string &name, const string &return_type, cons
 {
 	// match
 	for (Function *f: syntax->functions)
-		if (f->long_name.match(name) and (f->literal_return_type->name == return_type) and (param_types.num == f->num_params)){
+		if (f->long_name().match(name) and (f->literal_return_type->long_name() == return_type) and (param_types.num == f->num_params)){
 
 			bool params_ok = true;
 			for (int j=0;j<param_types.num;j++)
-				if (f->literal_param_type[j]->name != param_types[j])
+				if (f->literal_param_type[j]->long_name() != param_types[j])
 					params_ok = false;
 			if (params_ok){
 				if (just_analyse)

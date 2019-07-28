@@ -106,7 +106,8 @@ Class::~Class() {
 
 string Class::long_name() const {
 	if (name_space)
-		return name_space->long_name() + "." + name;
+		if (name_space != name_space->owner->base_class)
+			return name_space->long_name() + "." + name;
 	return name;
 }
 

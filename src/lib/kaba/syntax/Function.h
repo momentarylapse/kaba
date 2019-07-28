@@ -17,8 +17,7 @@ class Block;
 class SyntaxTree;
 
 
-class Variable
-{
+class Variable {
 public:
 	Variable(const string &name, const Class *type);
 	~Variable();
@@ -33,13 +32,12 @@ public:
 };
 
 // user defined functions
-class Function
-{
+class Function {
 public:
 	SyntaxTree *owner;
 
 	string name;
-	string long_name; // "Class.Function"
+	string long_name() const; // "Class.Function"
 	// parameters (linked to intern variables)
 	int num_params;
 	// block of code

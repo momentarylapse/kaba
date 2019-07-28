@@ -242,7 +242,7 @@ void Script::CompileOsEntryPoint()
 {
 	int nf=-1;
 	foreachi(Function *ff, syntax->functions, index)
-		if (ff->long_name == "main")
+		if (ff->long_name() == "main")
 			nf = index;
 	// call
 	if (nf>=0)
@@ -351,7 +351,7 @@ void Script::LinkOsEntryPoint()
 {
 	Function *f = nullptr;
 	for (Function *ff: syntax->functions)
-		if (ff->long_name == "main")
+		if (ff->long_name() == "main")
 			f = ff;
 	if (f){
 		int lll = (int_p)f->address - syntax->asm_meta_info->code_origin - TaskReturnOffset;

@@ -246,7 +246,7 @@ Array<StackFrameInfo> get_stack_trace(void **rbp)
 			r.rbp = rbp;
 			trace.add(r);
 			if (_verbose_exception_)
-				msg_write(">>  " + r.s->filename + " : " + r.f->long_name + format("()  +%d", r.offset));
+				msg_write(">>  " + r.s->filename + " : " + r.f->long_name() + format("()  +%d", r.offset));
 
 		}else{
 			//if (_verbose_exception_)
@@ -295,7 +295,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 	for (auto r: trace){
 
 		if (_verbose_exception_)
-			msg_write(">>  " + r.s->filename + " : " + r.f->long_name + format("()  +%d", r.offset));
+			msg_write(">>  " + r.s->filename + " : " + r.f->long_name() + format("()  +%d", r.offset));
 		auto ebd = get_blocks(r.s, r.f, r.rip, ex_type);
 
 		for (Block *b: ebd.needs_killing){
@@ -340,7 +340,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception)
 	else
 		msg_error("uncaught " + get_type(kaba_exception)->name + ":  " + kaba_exception->message());
 	for (auto r: trace)
-		msg_write(">>  " + r.s->filename + " : " + r.f->long_name + format("()  + 0x%x", r.offset));
+		msg_write(">>  " + r.s->filename + " : " + r.f->long_name() + format("()  + 0x%x", r.offset));
 #endif
 	exit(1);
 }
