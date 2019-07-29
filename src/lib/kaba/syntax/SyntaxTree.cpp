@@ -349,37 +349,48 @@ Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 	return link;
 }
 
-Array<Node*> SyntaxTree::get_existence_shared(const string &name)
-{
+Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *ns, bool prefer_class) {
 	Array<Node*> links;
 
 	// global variables (=local variables in "RootOfAllEvil")
 	for (Variable *v: root_of_all_evil.var)
 		if (v->name == name)
 			return {new Node(KIND_VAR_GLOBAL, (int_p)v, v->type)};
+	// TODO.... namespace...
 
-	// named constants
-	for (Constant *c: base_class->constants)
-		if (name == c->name)
-			return {new Node(KIND_CONSTANT, (int_p)c, c->type)};
 
-	// then the (real) functions
-	for (Function *f: functions)
-		if (f->name == name and !f->_class)
-			links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));//f->literal_return_type);
-	if (links.num > 0)
-		return links;
+	// recursively up the namespaces
+	while (ns) {
 
-	// types
-	auto *c = which_owned_class(name);
-	if (c)
-		return {new Node(KIND_CLASS, (int_p)c, TypeClass)};
+		// named constants
+		for (Constant *c: ns->constants)
+			if (name == c->name)
+				return {new Node(c)};
+
+		// then the (real) functions
+		for (Function *f: functions)
+			if (f->name == name and f->is_static)
+				links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));
+		if (links.num > 0 and !prefer_class)
+			return links;
+
+		// types
+		for (const Class *c: ns->classes)
+			if (c->name == name)
+				return {new Node(c)};
+
+		// prefer class...
+		if (links.num > 0)
+			return links;
+
+		ns = ns->name_space;
+	}
 
 	// ...unknown
 	return {};
 }
 
-Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
+Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const Class *ns, bool prefer_class)
 {
 	if (block){
 		Function *f = block->function;
@@ -388,7 +399,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 		auto *v = block->get_var(name);
 		if (v)
 			return {exlink_make_var_local(this, v->type, v)};
-		if (f->_class){
+		if (!f->is_static){
 			if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
 				return {exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF))};
 			// class elements (within a class function)
@@ -402,7 +413,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 	}
 
 	// shared stuff (global variables, functions)
-	auto links = get_existence_shared(name);
+	auto links = get_existence_global(name, ns, prefer_class);
 	if (links.num > 0)
 		return links;
 
@@ -421,7 +432,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block)
 
 	// in include files (only global)...
 	for (Script *i: includes)
-		links.append(i->syntax->get_existence_shared(name));
+		links.append(i->syntax->get_existence_global(name, i->syntax->base_class, prefer_class));
 
 	// ...unknown
 	return links;

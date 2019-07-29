@@ -598,11 +598,11 @@ string _cdecl kaba_shell_execute(const string &cmd)
 
 Array<Statement> Statements;
 
-int add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag)
-{
+int add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
 	Function *f = new Function(name, return_type, cur_package->syntax);
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
+	f->is_static = ((flag & FLAG_CLASS) == 0);
 	cur_package->syntax->functions.add(f);
 	if (config.allow_std_lib)
 		f->address = func;
@@ -611,8 +611,7 @@ int add_func(const string &name, const Class *return_type, void *func, ScriptFla
 	return cur_package->syntax->functions.num - 1;
 }
 
-int add_statement(const string &name, int index, int num_params = 0)
-{
+int add_statement(const string &name, int index, int num_params = 0) {
 	Statement s;
 	s.name = name;
 	s.num_params = num_params;

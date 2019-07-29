@@ -117,6 +117,10 @@ public:
 			}else if (arg[i] == "--disasm"){
 				flag_disassemble = true;
 				arg.erase(i --);
+			}else if (arg[i] == "--show-tree"){
+				flag_verbose = true;
+				debug_stage_filter = "par:a";
+				arg.erase(i --);
 			}else if (arg[i] == "--no-function-frames"){
 				flag_no_function_frames = true;
 				arg.erase(i --);

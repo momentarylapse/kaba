@@ -38,6 +38,7 @@ Function::Function(const string &_name, const Class *_return_type, SyntaxTree *_
 	literal_return_type = _return_type;
 	_class = nullptr;
 	is_extern = false;
+	is_static = true;
 	auto_declared = false;
 	is_pure = false;
 	_param_size = 0;

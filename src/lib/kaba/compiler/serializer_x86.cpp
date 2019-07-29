@@ -327,7 +327,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			break;
 		case STATEMENT_NEW:{
 			// malloc()
-			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr);
+			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
@@ -349,7 +349,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			add_cmd_destructor(param[0], false);
 
 			// free()
-			Array<Node*> links = syntax_tree->get_existence("@free", nullptr);
+			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
 			AddFunctionCall(links[0]->as_func(), p_none, {param[0]}, p_none);
