@@ -352,27 +352,31 @@ Node *exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf)
 Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *ns, bool prefer_class) {
 	Array<Node*> links;
 
-	// global variables (=local variables in "RootOfAllEvil")
-	for (Variable *v: root_of_all_evil.var)
-		if (v->name == name)
-			return {new Node(KIND_VAR_GLOBAL, (int_p)v, v->type)};
-	// TODO.... namespace...
+	if (!prefer_class) {
+		// global variables (=local variables in "RootOfAllEvil")
+		for (Variable *v: root_of_all_evil.var)
+			if (v->name == name)
+				return {new Node(KIND_VAR_GLOBAL, (int_p)v, v->type)};
+		// TODO.... namespace...
+	}
 
 
 	// recursively up the namespaces
 	while (ns) {
 
-		// named constants
-		for (Constant *c: ns->constants)
-			if (name == c->name)
-				return {new Node(c)};
+		if (!prefer_class) {
+			// named constants
+			for (Constant *c: ns->constants)
+				if (name == c->name)
+					return {new Node(c)};
 
-		// then the (real) functions
-		for (Function *f: functions)
-			if (f->name == name and f->is_static)
-				links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));
-		if (links.num > 0 and !prefer_class)
-			return links;
+			// then the (real) functions
+			for (Function *f: functions)
+				if (f->name == name and f->is_static)
+					links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));
+			if (links.num > 0 and !prefer_class)
+				return links;
+		}
 
 		// types
 		for (const Class *c: ns->classes)
@@ -390,26 +394,33 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 	return {};
 }
 
+Node* block_get_existence(SyntaxTree *tree, const string &name, Block *block) {
+	Function *f = block->function;
+
+	// first test local variables
+	auto *v = block->get_var(name);
+	if (v)
+		return exlink_make_var_local(tree, v->type, v);
+	if (!f->is_static){
+		if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
+			return exlink_make_var_local(tree, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
+		// class elements (within a class function)
+		for (auto &e: f->_class->elements)
+			if (e.name == name)
+				return exlink_make_var_element(tree, f, e);
+		for (auto &cf: f->_class->functions)
+			if (cf.func->name == name)
+				return exlink_make_func_class(tree, f, cf);
+	}
+	return nullptr;
+}
+
 Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const Class *ns, bool prefer_class)
 {
-	if (block){
-		Function *f = block->function;
-
-		// first test local variables
-		auto *v = block->get_var(name);
-		if (v)
-			return {exlink_make_var_local(this, v->type, v)};
-		if (!f->is_static){
-			if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
-				return {exlink_make_var_local(this, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF))};
-			// class elements (within a class function)
-			for (auto &e: f->_class->elements)
-				if (e.name == name)
-					return {exlink_make_var_element(this, f, e)};
-			for (auto &cf: f->_class->functions)
-				if (cf.func->name == name)
-					return {exlink_make_func_class(this, f, cf)};
-		}
+	if (block and !prefer_class) {
+		Node *n = block_get_existence(this, name, block);
+		if (n)
+			return {n};
 	}
 
 	// shared stuff (global variables, functions)
@@ -417,22 +428,28 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 	if (links.num > 0)
 		return links;
 
-	// then the statements
-	int w = which_statement(name);
-	if (w >= 0){
-		Node *n = new Node(KIND_STATEMENT, w, TypeVoid);
-		n->set_num_params(Statements[w].num_params);
-		return {n};
-	}
+	if (!prefer_class) {
+		// then the statements
+		int w = which_statement(name);
+		if (w >= 0){
+			Node *n = new Node(KIND_STATEMENT, w, TypeVoid);
+			n->set_num_params(Statements[w].num_params);
+			return {n};
+		}
 
-	// operators
-	w = which_primitive_operator(name);
-	if (w >= 0)
-		return {new Node(KIND_PRIMITIVE_OPERATOR, w, TypeUnknown)};
+		// operators
+		w = which_primitive_operator(name);
+		if (w >= 0)
+			return {new Node(KIND_PRIMITIVE_OPERATOR, w, TypeUnknown)};
+	}
 
 	// in include files (only global)...
 	for (Script *i: includes)
 		links.append(i->syntax->get_existence_global(name, i->syntax->base_class, prefer_class));
+
+
+	if (links.num == 0 and prefer_class)
+		return get_existence(name, block, ns, false);
 
 	// ...unknown
 	return links;
@@ -852,7 +869,7 @@ void SyntaxTree::BreakDownComplicatedCommands()
 Node* conv_func_inline(SyntaxTree *ps, Node *n)
 {
 	if (n->kind == KIND_FUNCTION_CALL){
-		if (n->as_func()->inline_no > 0){
+		if (n->as_func()->inline_no >= 0){
 			n->kind = KIND_INLINE_CALL;
 			return n;
 		}

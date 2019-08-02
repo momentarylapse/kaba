@@ -24,7 +24,7 @@
 
 namespace Kaba{
 
-string Version = "0.17.2.9";
+string Version = "0.17.2.10";
 
 //#define ScriptDebug
 
@@ -251,7 +251,9 @@ Script::~Script()
 			r = munmap(opcode, MAX_OPCODE);
 		#endif
 	}
-	if (memory){
+	if (r != 0)
+		msg_error("munmap...op");
+	if (memory and memory_size > 0){
 		#if defined(OS_WINDOWS) || defined(OS_MINGW)
 			VirtualFree(memory, 0, MEM_RELEASE);
 		#else
@@ -259,7 +261,7 @@ Script::~Script()
 		#endif
 	}
 	if (r != 0)
-		msg_error("munmap...");
+		msg_error("munmap...mem");
 	//msg_write(string2("-----------            Memory:         %p",Memory));
 	delete(syntax);
 }

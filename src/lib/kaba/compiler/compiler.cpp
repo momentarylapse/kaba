@@ -229,8 +229,7 @@ void Script::map_global_variables_to_memory()
 	}
 }
 
-void Script::align_opcode()
-{
+void Script::align_opcode() {
 	int ocs_new = mem_align(opcode_size, config.function_align);
 	for (int i=opcode_size;i<ocs_new;i++)
 		opcode[i] = 0x90;
@@ -238,8 +237,7 @@ void Script::align_opcode()
 }
 
 static int OCORA;
-void Script::CompileOsEntryPoint()
-{
+void Script::CompileOsEntryPoint() {
 	int nf=-1;
 	foreachi(Function *ff, syntax->functions, index)
 		if (ff->long_name() == "main")
@@ -252,12 +250,11 @@ void Script::CompileOsEntryPoint()
 	align_opcode();
 }
 
-Node *check_const_used(Node *n, Script *me)
-{
-	if (n->kind == KIND_CONSTANT){
+Node *check_const_used(Node *n, Script *me) {
+	if (n->kind == KIND_CONSTANT) {
 		n->as_const()->used = true;
-		if (n->as_const()->owner != me->syntax)
-			msg_error("evil const " + n->as_const()->name);
+		/*if (n->as_const()->owner != me->syntax)
+			msg_error("evil const " + n->as_const()->name);*/
 	}
 	return n;
 }
@@ -286,7 +283,7 @@ void _map_constants_to_memory(char *mem, int &offset, const Class *ns) {
 	//return;
 
 	for (Constant *c: ns->constants)
-		if (/*c->used*/ true){
+		if (c->used){
 //			c->address = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
 			c->address = &mem[offset];
 			c->map_into(&mem[offset], (char*)c->address);
@@ -318,7 +315,7 @@ void Script::map_constants_to_memory(char *mem, int &offset)
 	remap_virtual_tables(this, mem, offset, syntax->base_class);
 
 
-//	syntax->transform([&](Node* n){ return check_const_used(n, this); });
+	syntax->transform([&](Node* n){ return check_const_used(n, this); });
 
 	/*int n = 0;
 	for (bool b: used)
@@ -388,78 +385,27 @@ struct IncludeTranslationData
 	Script *source;
 };
 
-Node *conv_relink_calls(Node *c, Script *s, Script *target, IncludeTranslationData &d)
+
+void import_deep(SyntaxTree *dest, SyntaxTree *source)
 {
-
-#if 0
-	// keep commands... just redirect var/const/func
-	if (c->script != d.source)
-		return c;
-
-	if (c->kind != KIND_CONSTANT)
-		if (c->script->filename.find(".kaba") < 0)
-			return c;
-
-	//msg_write(p2s(c->script));
-	if (c->kind == KIND_VAR_GLOBAL){
-		c->script = target;
-	}else if (c->kind == KIND_CONSTANT){
-		c->script = target;
-	}else if ((c->kind == KIND_FUNCTION_CALL) or (c->kind == KIND_FUNCTION_POINTER)){
-		c->script = target;
-	}
-#endif
-	return c;
-}
-
-void relink_calls(Script *s, Script *target, IncludeTranslationData &d)
-{
-	//msg_write("relink ----" + s->filename + " : " + d.source->filename + " -> " + target->filename + "  ---------");
-	s->syntax->transform([&](Node *n){ return conv_relink_calls(n, s, target, d); });
-
-#if 0
-	// we might need some constructors later on...
-	for (const Class *t: s->syntax->classes)
-		for (ClassFunction &f: t->functions)
-			if (f.func->owner == d.source->syntax){
-				if (f.script->filename.find(".kaba") < 0)
-					continue;
-				f.script = target; ARGH
-			}
-#endif
-}
-
-IncludeTranslationData import_deep(SyntaxTree *dest, SyntaxTree *source)
-{
-	// ksdjfhksjdhfkjsdhfj
-	IncludeTranslationData d;
-	d.const_off = dest->base_class->constants.num;
-	d.var_off = dest->root_of_all_evil.var.num;
-	d.func_off = dest->functions.num;
-	d.source = source->script;
-
 	dest->base_class->constants.append(source->base_class->constants);
 	source->base_class->constants.clear();
 
 	// don't fully include internal libraries
 	if (source->script->filename.find(".kaba") < 0)
-		return d;
+		return;
 
 	dest->root_of_all_evil.var.append(source->root_of_all_evil.var);
-
-	for (Function *f: source->functions){
-		Function *ff = dest->add_function(f->name, f->return_type);
-		*ff = *f;
-		// keep block pointing to include file...
-	}
+	source->root_of_all_evil.var.clear();
+	dest->functions.append(source->functions);
+	source->functions.clear();
 	dest->base_class->classes.append(source->base_class->classes);
+	source->base_class->classes.clear();
 
 	//int asm_off = a->AsmBlocks.num;
 	for (AsmBlock &ab: source->asm_blocks){
 		dest->asm_blocks.add(ab);
 	}
-
-	return d;
 }
 
 void find_all_includes_rec(Script *s, Set<Script*> &includes)
@@ -475,21 +421,11 @@ void find_all_includes_rec(Script *s, Set<Script*> &includes)
 // only for "os"
 void import_includes(Script *s)
 {
-	s->do_error_internal("deep import is currently not supported, can't compile OS... sorry. Complain to Michi");
 	Set<Script*> includes;
 	find_all_includes_rec(s, includes);
-	Array<IncludeTranslationData> da;
+
 	for (Script *i: includes)
-		da.add(import_deep(s->syntax, i->syntax));
-
-
-	for (IncludeTranslationData &d: da)
-		relink_calls(s, s, d);
-
-	// we need to also correct the includes, since we kept the blocks/commands there
-	for (Script *i: includes)
-		for (IncludeTranslationData &d: da)
-			relink_calls(i, s, d);
+		import_deep(s->syntax, i->syntax);
 }
 
 void Script::link_functions()

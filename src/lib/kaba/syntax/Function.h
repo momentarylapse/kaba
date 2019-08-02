@@ -58,6 +58,7 @@ public:
 	int _logical_line_no;
 	int _exp_no;
 	void *address;
+	void *address_preprocess;
 	int _label;
 	Function(const string &name, const Class *return_type, SyntaxTree *owner);
 	~Function();

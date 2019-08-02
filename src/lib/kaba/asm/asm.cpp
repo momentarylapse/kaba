@@ -651,6 +651,8 @@ int InstructionWithParamsList::_find_label(const string &name)
 	return -1;
 
 }
+
+// really declare an existing one now
 void InstructionWithParamsList::insert_label(int index)
 {
 	if (index < 0)
@@ -671,16 +673,16 @@ int64 InstructionWithParamsList::_label_value(int index)
 
 }
 
+// declare
 int InstructionWithParamsList::add_label(const string &name)
 {
 	so("add_label: " + name);
 	// label already in use? (used before declared)
 	int l = _find_label(name);
-	if (l >= 0){
-		insert_label(l);
-		return l;
-	}
-	return create_label(name);
+	if (l < 0)
+		l = create_label(name);
+	insert_label(l);
+	return l;
 }
 
 // good

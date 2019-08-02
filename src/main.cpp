@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.17.2.1";
+string AppVersion = "0.17.2.10";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -78,10 +78,10 @@ public:
 			if ((arg[i] == "--version") or (arg[i] == "-v")){
 				// tell versions
 				msg_right();
-				msg_write(AppName + " " + AppVersion);
-				msg_write("Script-Version: " + Kaba::Version);
-				msg_write("Bibliothek-Version: " + Kaba::LibVersion);
-				msg_write("Hui-Version: " + hui::Version);
+				msg_write("--- " + AppName + " " + AppVersion + " ---");
+				msg_write("kaba: " + Kaba::Version);
+				msg_write("kaba-lib: " + Kaba::LibVersion);
+				msg_write("hui: " + hui::Version);
 				msg_left();
 				return false;
 			}else if ((arg[i] == "--gui") or (arg[i] == "-g")){
@@ -375,25 +375,27 @@ public:
 		system(("chmod a+x " + out_file).c_str());
 	}
 
-	void export_symbols(Kaba::Script *s, const string &symbols_out_file)
-	{
+	string decode_symbol_name(const string &name) {
+		return name.replace("lib__", "").replace("@list", "[]");
+	}
+
+	void export_symbols(Kaba::Script *s, const string &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
-		for (auto *fn: s->syntax->functions){
-			f->write_str(fn->long_name() + ":" + i2s(fn->num_params));
+		for (auto *fn: s->syntax->functions) {
+			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(fn->num_params));
 			f->write_int((long)fn->address);
 		}
-		for (auto *v: s->syntax->root_of_all_evil.var){
-			f->write_str(v->name);
+		for (auto *v: s->syntax->root_of_all_evil.var) {
+			f->write_str(decode_symbol_name(v->name));
 			f->write_int((long)v->memory);
 		}
 		f->write_str("#");
 		delete(f);
 	}
 
-	void import_symbols(const string &symbols_in_file)
-	{
+	void import_symbols(const string &symbols_in_file) {
 		File *f = FileOpen(symbols_in_file);
-		while (!f->eof()){
+		while (!f->eof()) {
 			string name = f->read_str();
 			if (name == "#")
 				break;

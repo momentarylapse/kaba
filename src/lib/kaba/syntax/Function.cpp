@@ -48,7 +48,7 @@ Function::Function(const string &_name, const Class *_return_type, SyntaxTree *_
 	inline_no = -1;
 	throws_exceptions = false;
 	num_slightly_hidden_vars = 0;
-	address = nullptr;
+	address = address_preprocess = nullptr;
 	_label = -1;
 }
 
@@ -68,7 +68,7 @@ void test_node_recursion(Node *root, const string &message) {
 }
 
 Function::~Function() {
-	test_node_recursion(block, long_name());
+	//test_node_recursion(block, long_name());
 	if (block)
 		delete block;
 	for (Variable* v: var)

@@ -2099,7 +2099,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 
 void Script::compile_functions(char *oc, int &ocs)
 {
-	Asm::InstructionWithParamsList *list = new Asm::InstructionWithParamsList(0);
+	auto *list = new Asm::InstructionWithParamsList(0);
 
 	// link external functions
 	int func_no = 0;

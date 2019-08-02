@@ -404,7 +404,8 @@ const Class *SyntaxTree::parse_type_extension_array(const Class *t) {
 	} else {
 
 		// find array index
-		Node *c = transform_node(parse_command(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
+		Node *c = parse_command(root_of_all_evil.block);
+		c = transform_node(c, [&](Node *n){ return PreProcessNode(n); });
 
 		if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
 			do_error("only constants of type \"int\" allowed for size of arrays");
@@ -2050,7 +2051,8 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type)
 	Exp.next();
 
 	// find const value
-	Node *cv = transform_node(parse_command(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
+	Node *cv = parse_command(root_of_all_evil.block);
+	cv = transform_node(cv, [&](Node *n){ return PreProcessNode(n); });
 
 	if ((cv->kind != KIND_CONSTANT) or (cv->type != type))
 		do_error(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));

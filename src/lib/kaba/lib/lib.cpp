@@ -604,6 +604,7 @@ int add_func(const string &name, const Class *return_type, void *func, ScriptFla
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
 	f->is_static = ((flag & FLAG_CLASS) == 0);
 	cur_package->syntax->functions.add(f);
+	f->address_preprocess = func;
 	if (config.allow_std_lib)
 		f->address = func;
 	cur_func = f;
@@ -1762,18 +1763,17 @@ void LinkExternal(const string &name, void *pointer)
 	l.name = name;
 	l.pointer = pointer;
 	ExternalLinks.add(l);
-	if (name.head(5) == "lib__"){
-		Array<string> names = name.explode(":");
-		string sname = names[0].substr(5, -1).replace("@list", "[]").replace("@@", ".");
-		for (auto *p: Packages)
-			foreachi(Function *f, p->syntax->functions, i)
-				if (f->name == sname){
-					if (names.num > 0)
-						if (f->num_params != names[1]._int())
-							continue;
-					f->address = pointer;
-				}
-	}
+
+	Array<string> names = name.explode(":");
+	string sname = names[0].replace("@list", "[]").replace("@@", ".");
+	for (auto *p: Packages)
+		foreachi(Function *f, p->syntax->functions, i)
+			if (f->long_name() == sname){
+				if (names.num > 0)
+					if (f->num_params != names[1]._int())
+						continue;
+				f->address = pointer;
+			}
 }
 
 void *GetExternalLink(const string &name)
