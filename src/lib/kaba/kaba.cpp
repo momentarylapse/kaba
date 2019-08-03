@@ -212,7 +212,7 @@ void Script::do_error_link(const string &str)
 void Script::set_variable(const string &name, void *data)
 {
 	//msg_write(name);
-	for (auto *v: syntax->root_of_all_evil.var)
+	for (auto *v: syntax->root_of_all_evil->var)
 		if (v->name == name){
 			memcpy(v->memory, data, v->type->size);
 			return;
@@ -382,7 +382,7 @@ void print_var(void *p, const string &name, const Class *t)
 
 void Script::show_vars(bool include_consts)
 {
-	for (auto *v: syntax->root_of_all_evil.var)
+	for (auto *v: syntax->root_of_all_evil->var)
 		print_var(v->memory, v->name, v->type);
 	/*if (include_consts)
 		foreachi(LocalVariable &c, pre_script->Constant, i)
@@ -398,7 +398,7 @@ Array<Function*> Script::functions() {
 }
 
 Array<Variable*> Script::variables() {
-	return syntax->root_of_all_evil.var;
+	return syntax->root_of_all_evil->var;
 }
 
 Array<Constant*> Script::constants() {

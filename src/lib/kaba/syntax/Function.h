@@ -60,7 +60,7 @@ public:
 	void *address;
 	void *address_preprocess;
 	int _label;
-	Function(const string &name, const Class *return_type, SyntaxTree *owner);
+	Function(const string &name, const Class *return_type, const Class *name_space);
 	~Function();
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();

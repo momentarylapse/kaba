@@ -455,7 +455,7 @@ void add_const(const string &name, const Class *type, void *value)
 
 void add_ext_var(const string &name, const Class *type, void *var)
 {
-	auto *v = cur_package->syntax->root_of_all_evil.block->add_var(name, type);
+	auto *v = cur_package->syntax->root_of_all_evil->block->add_var(name, type);
 	if (config.allow_std_lib)
 		v->memory = var;
 };
@@ -599,7 +599,7 @@ string _cdecl kaba_shell_execute(const string &cmd)
 Array<Statement> Statements;
 
 int add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
-	Function *f = new Function(name, return_type, cur_package->syntax);
+	Function *f = new Function(name, return_type, cur_package->syntax->base_class);
 	f->is_pure = ((flag & FLAG_PURE) > 0);
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
 	f->is_static = ((flag & FLAG_CLASS) == 0);

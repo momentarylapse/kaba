@@ -12,6 +12,7 @@ extern const Class *TypeDynamicArray;
 
 
 bool next_extern = false;
+bool next_static = false;
 bool next_const = false;
 
 
@@ -176,11 +177,11 @@ Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type)
 	return new Node(KIND_BLOCK, (long long)(int_p)b, TypeVoid);
 }*/
 
-SyntaxTree::SyntaxTree(Script *_script) :
-	root_of_all_evil("RootOfAllEvil", TypeVoid, this)
+SyntaxTree::SyntaxTree(Script *_script)
 {
-	root_of_all_evil.block = new Block(&root_of_all_evil, nullptr);
 	base_class = new Class("-base-", 0, this);
+	root_of_all_evil = new Function("RootOfAllEvil", TypeVoid, base_class);
+	root_of_all_evil->block = new Block(root_of_all_evil, nullptr);
 
 	flag_string_const_as_cstring = false;
 	flag_immortal = false;
@@ -257,11 +258,11 @@ void SyntaxTree::do_error(const string &str, int override_exp_no, int override_l
 void SyntaxTree::CreateAsmMetaInfo()
 {
 	asm_meta_info->global_var.clear();
-	for (int i=0;i<root_of_all_evil.var.num;i++){
+	for (int i=0;i<root_of_all_evil->var.num;i++){
 		Asm::GlobalVar v;
-		v.name = root_of_all_evil.var[i]->name;
-		v.size = root_of_all_evil.var[i]->type->size;
-		v.pos = root_of_all_evil.var[i]->memory;
+		v.name = root_of_all_evil->var[i]->name;
+		v.size = root_of_all_evil->var[i]->type->size;
+		v.pos = root_of_all_evil->var[i]->memory;
 		asm_meta_info->global_var.add(v);
 	}
 }
@@ -282,7 +283,7 @@ Constant *SyntaxTree::add_constant(const Class *type, Class *_namespace)
 
 Function *SyntaxTree::add_function(const string &name, const Class *type)
 {
-	Function *f = new Function(name, type, this);
+	Function *f = new Function(name, type, base_class);
 	functions.add(f);
 	f->block = new Block(f, nullptr);
 	return f;
@@ -354,7 +355,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 
 	if (!prefer_class) {
 		// global variables (=local variables in "RootOfAllEvil")
-		for (Variable *v: root_of_all_evil.var)
+		for (Variable *v: root_of_all_evil->var)
 			if (v->name == name)
 				return {new Node(KIND_VAR_GLOBAL, (int_p)v, v->type)};
 		// TODO.... namespace...
@@ -985,6 +986,7 @@ SyntaxTree::~SyntaxTree()
 	for (auto *f: functions)
 		delete f;
 
+	delete root_of_all_evil;
 	delete base_class;
 }
 

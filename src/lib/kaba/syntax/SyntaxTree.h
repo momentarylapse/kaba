@@ -84,7 +84,7 @@ public:
 	Function *parse_function_header(const Class *class_type, bool as_extern);
 	void SkipParsingFunctionBody();
 	void parse_function_body(Function *f);
-	void parse_class_function_header(Class *t, bool as_extern, bool as_virtual, bool override);
+	void parse_class_function_header(Class *t, bool as_extern, bool as_static, bool as_virtual, bool override);
 	bool ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line);
 	const Class *parse_type(const Class *ns);
 	void ParseVariableDef(bool single, Block *block);
@@ -223,7 +223,7 @@ public:
 	Array<Operator*> operators;
 	Array<Function*> functions;
 
-	Function root_of_all_evil;
+	Function *root_of_all_evil;
 
 	Script *script;
 	Function *cur_func;

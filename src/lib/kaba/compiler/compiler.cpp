@@ -79,7 +79,7 @@ void try_init_global_var(const Class *type, char* g_var, SyntaxTree *ps) {
 
 void init_all_global_objects(SyntaxTree *ps)
 {
-	for (Variable *v: ps->root_of_all_evil.var)
+	for (Variable *v: ps->root_of_all_evil->var)
 		if (!v->is_extern)
 			try_init_global_var(v->type, (char*)v->memory, ps);
 }
@@ -183,7 +183,7 @@ int mem_size_needed(const Class *c) {
 void Script::allocate_memory()
 {
 	memory_size = mem_size_needed(syntax->base_class);
-	for (auto *v: syntax->root_of_all_evil.var)
+	for (auto *v: syntax->root_of_all_evil->var)
 		memory_size += mem_align(v->type->size, 4);
 
 	memory = (char*)get_nice_memory(memory_size, false);
@@ -209,7 +209,7 @@ void Script::map_global_variables_to_memory()
 {
 	// global variables -> into Memory
 	int override_offset = 0;
-	for (Variable *v: syntax->root_of_all_evil.var){
+	for (Variable *v: syntax->root_of_all_evil->var){
 		if (v->is_extern){
 			v->memory = GetExternalLink(v->name);
 			if (!v->memory)
@@ -395,8 +395,8 @@ void import_deep(SyntaxTree *dest, SyntaxTree *source)
 	if (source->script->filename.find(".kaba") < 0)
 		return;
 
-	dest->root_of_all_evil.var.append(source->root_of_all_evil.var);
-	source->root_of_all_evil.var.clear();
+	dest->root_of_all_evil->var.append(source->root_of_all_evil->var);
+	source->root_of_all_evil->var.clear();
 	dest->functions.append(source->functions);
 	source->functions.clear();
 	dest->base_class->classes.append(source->base_class->classes);

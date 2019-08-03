@@ -11,6 +11,7 @@ void test_node_recursion(Node *root, const string &message);
 Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
 extern bool next_extern;
+extern bool next_static;
 extern bool next_const;
 
 const int TYPE_CAST_OWN_STRING = 4096;
@@ -404,7 +405,7 @@ const Class *SyntaxTree::parse_type_extension_array(const Class *t) {
 	} else {
 
 		// find array index
-		Node *c = parse_command(root_of_all_evil.block);
+		Node *c = parse_command(root_of_all_evil->block);
 		c = transform_node(c, [&](Node *n){ return PreProcessNode(n); });
 
 		if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
@@ -1854,11 +1855,12 @@ void SyntaxTree::parse_enum(Class *_namespace)
 	Exp.cur_line --;
 }
 
-void SyntaxTree::parse_class_function_header(Class *t, bool as_extern, bool as_virtual, bool override)
+void SyntaxTree::parse_class_function_header(Class *t, bool as_extern, bool as_static, bool as_virtual, bool override)
 {
 	Function *f = parse_function_header(t, as_extern);
 
 	t->add_function(this, f, as_virtual, override);
+	f->is_static = as_static;
 
 	SkipParsingFunctionBody();
 }
@@ -1901,6 +1903,13 @@ void SyntaxTree::parse_class(Class *_namespace)
 			break;
 		if (Exp.end_of_file())
 			break;
+
+		// static?
+		next_static = false;
+		if (Exp.cur == IDENTIFIER_STATIC){
+			next_static = true;
+			Exp.next();
+		}
 
 		// extern?
 		next_extern = false;
@@ -1949,7 +1958,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 			    is_function = true;
 			if (is_function){
 				Exp.set(ie);
-				parse_class_function_header(_class, next_extern, next_virtual, override);
+				parse_class_function_header(_class, next_extern, next_static, next_virtual, override);
 
 				break;
 			}
@@ -2051,7 +2060,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type)
 	Exp.next();
 
 	// find const value
-	Node *cv = parse_command(root_of_all_evil.block);
+	Node *cv = parse_command(root_of_all_evil->block);
 	cv = transform_node(cv, [&](Node *n){ return PreProcessNode(n); });
 
 	if ((cv->kind != KIND_CONSTANT) or (cv->type != type))
@@ -2170,7 +2179,7 @@ const Class *SyntaxTree::parse_type(const Class *ns)
 			}else{
 
 				// find array index
-				Node *c = transform_node(parse_command(root_of_all_evil.block), [&](Node *n){ return PreProcessNode(n); });
+				Node *c = transform_node(parse_command(root_of_all_evil->block), [&](Node *n){ return PreProcessNode(n); });
 
 				if ((c->kind != KIND_CONSTANT) or (c->type != TypeInt))
 					do_error("only constants of type \"int\" allowed for size of arrays");
@@ -2337,7 +2346,7 @@ void SyntaxTree::parse_all_function_bodies()
 
 void SyntaxTree::parse_top_level()
 {
-	root_of_all_evil.name = "RootOfAllEvil";
+	root_of_all_evil->name = "RootOfAllEvil";
 	cur_func = nullptr;
 
 	// syntax analysis
@@ -2390,7 +2399,7 @@ void SyntaxTree::parse_top_level()
 
 			// global variables
 			}else{
-				ParseVariableDef(false, root_of_all_evil.block);
+				ParseVariableDef(false, root_of_all_evil->block);
 			}
 		}
 		if (!Exp.end_of_file())

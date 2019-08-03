@@ -29,14 +29,14 @@ Variable::~Variable() {
 }
 
 
-Function::Function(const string &_name, const Class *_return_type, SyntaxTree *_owner) {
-	owner = _owner;
+Function::Function(const string &_name, const Class *_return_type, const Class *_name_space) {
+	owner = _name_space->owner;
 	name = _name;
 	block = nullptr;
 	num_params = 0;
 	return_type = _return_type;
 	literal_return_type = _return_type;
-	_class = nullptr;
+	_class = _name_space;
 	is_extern = false;
 	is_static = true;
 	auto_declared = false;
@@ -77,7 +77,8 @@ Function::~Function() {
 
 string Function::long_name() const {
 	if (_class)
-		return _class->long_name() + "." + name;
+		if (_class->name_space)
+			return _class->long_name() + "." + name;
 	return name;
 }
 

@@ -738,7 +738,7 @@ void SerializerARM::AddFunctionIntro(Function *f)
 				break;
 			}
 	}
-	if (f->_class){
+	if (!f->is_static){
 		for (Variable *v: f->var)
 			if (v->name == IDENTIFIER_SELF){
 				param.add(v);
