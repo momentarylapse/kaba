@@ -382,7 +382,7 @@ void SIAddPackageHui()
 		class_add_func_virtual("on_mouse_wheel", TypeVoid, mf(&hui::Window::on_mouse_wheel));
 		class_add_func_virtual("on_left_button_down", TypeVoid, mf(&hui::Window::on_left_button_down));
 		class_add_func_virtual("on_middle_button_down", TypeVoid, mf(&hui::Window::on_middle_button_down));
-		class_add_func_virtual("on_right_button_ own", TypeVoid, mf(&hui::Window::on_right_button_down));
+		class_add_func_virtual("on_right_button_down", TypeVoid, mf(&hui::Window::on_right_button_down));
 		class_add_func_virtual("on_left_button_up", TypeVoid, mf(&hui::Window::on_left_button_up));
 		class_add_func_virtual("on_middle_button_up", TypeVoid, mf(&hui::Window::on_middle_button_up));
 		class_add_func_virtual("on_right_button_up", TypeVoid, mf(&hui::Window::on_right_button_up));
