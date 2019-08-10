@@ -308,6 +308,8 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 							add_cmd(Asm::INST_MOVSS, p_xmm0, t);
 						else
 							add_cmd(Asm::INST_FLD, t);
+					}else if (cur_func->return_type == TypeFloat64){
+						add_cmd(Asm::INST_MOVSD, p_xmm0, t);
 					}else if (cur_func->return_type->size == 1){
 						int v = add_virtual_reg(Asm::REG_AL);
 						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), t);
