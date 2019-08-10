@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.17.2.10";
+string AppVersion = "0.17.2.11";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -61,6 +61,7 @@ public:
 		bool flag_verbose = false;
 		string debug_func_filter = "*";
 		string debug_stage_filter = "*";
+		bool flag_show_consts = false;
 		bool flag_compile_os = false;
 		bool flag_override_variable_offset = false;
 		long long variable_offset = 0;
@@ -120,6 +121,9 @@ public:
 			}else if (arg[i] == "--show-tree"){
 				flag_verbose = true;
 				debug_stage_filter = "par:a";
+				arg.erase(i --);
+			}else if (arg[i] == "--show-consts"){
+				flag_show_consts = true;
 				arg.erase(i --);
 			}else if (arg[i] == "--no-function-frames"){
 				flag_no_function_frames = true;
@@ -260,6 +264,12 @@ public:
 			Kaba::Script *s = Kaba::Load(filename);
 			if (symbols_out_file.num > 0)
 				export_symbols(s, symbols_out_file);
+			if (flag_show_consts) {
+				msg_write("---- constants ----");
+				for (auto *c: s->syntax->base_class->constants) {
+					msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
+				}
+			}
 			if (out_file.num > 0){
 				if (output_format == "raw")
 					output_to_file_raw(s, out_file);

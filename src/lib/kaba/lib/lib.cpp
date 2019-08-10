@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.3.0";
+string LibVersion = "0.17.3.1";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -1091,7 +1091,7 @@ void SIAddPackageBase()
 		func_add_param("f", TypeFloat32);
 	add_funcx("f642f", TypeFloat32, &_Float642Float, FLAG_PURE);
 		func_set_inline(INLINE_FLOAT64_TO_FLOAT);
-		func_add_param("f", TypeFloat32);
+		func_add_param("f", TypeFloat64);
 	add_funcx("i2i64", TypeInt64, &_Int2Int64, FLAG_PURE);
 		func_set_inline(INLINE_INT_TO_INT64);
 		func_add_param("i", TypeInt);

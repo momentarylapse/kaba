@@ -501,6 +501,8 @@ string Class::var2str(const void *p) const
 		return i2s(*(int*)p);
 	}else if (this == TypeFloat32){
 		return f2s(*(float*)p, 3);
+	}else if (this == TypeFloat64){
+		return f2s((float)*(double*)p, 3);
 	}else if (this == TypeBool){
 		return b2s(*(bool*)p);
 	}else if (this == TypeClass){

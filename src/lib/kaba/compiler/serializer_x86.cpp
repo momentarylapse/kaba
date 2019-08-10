@@ -389,6 +389,14 @@ void SerializerX86::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 			add_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
 			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
 			}break;
+		case INLINE_FLOAT_TO_FLOAT64:
+			add_cmd(Asm::INST_CVTSS2SD, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
+			break;
+		case INLINE_FLOAT64_TO_FLOAT:
+			add_cmd(Asm::INST_CVTSD2SS, p_xmm0, param[0]);
+			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			break;
 		case INLINE_INT_TO_CHAR:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
 			add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
