@@ -522,8 +522,8 @@ void SIAddPackageHui()
 		func_add_param("func", TypeFunctionCodeP);*/
 	add_func("HuiGetEvent", TypeHuiEventP, (void*)&hui::GetEvent);
 	/*add_func("HuiRun", TypeVoid, (void*)&hui::Run);
-	add_func("HuiEnd", TypeVoid, (void*)&hui::End);
-	add_func("HuiDoSingleMainLoop", TypeVoid, (void*)&hui::doSingleMainLoop);*/
+	add_func("HuiEnd", TypeVoid, (void*)&hui::End);*/
+	add_func("HuiDoSingleMainLoop", TypeVoid, (void*)&hui::Application::do_single_main_loop);
 	add_func("HuiSleep", TypeVoid, (void*)&hui::Sleep);
 		func_add_param("duration", TypeFloat32);
 	add_func("HuiFileDialogOpen", TypeBool, (void*)&hui::FileDialogOpen);

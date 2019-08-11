@@ -530,6 +530,8 @@ string Class::var2str(const void *p) const
 	}else if (elements.num > 0){
 		string s;
 		for (auto &e: elements){
+			if (e.hidden)
+				continue;
 			if (s.num > 0)
 				s += ", ";
 			s += e.type->var2str(((char*)p) + e.offset);

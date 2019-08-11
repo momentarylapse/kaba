@@ -158,11 +158,11 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 		SerialNodeParam param = param_local(TypePointer, link->link_no);
 		return AddReference(param, link->type);
 	}else if (link->kind == KIND_CONSTANT){
+		p.p = (int_p)link->as_const_p();
 		if (config.compile_os)
 			p.kind = KIND_MEMORY;
 		else
 			p.kind = KIND_CONSTANT_BY_ADDRESS;
-		p.p = (int_p)link->as_const_p();
 	}else if ((link->kind == KIND_OPERATOR) or (link->kind == KIND_FUNCTION_CALL) or (link->kind == KIND_INLINE_CALL) or (link->kind == KIND_VIRTUAL_CALL) or (link->kind == KIND_STATEMENT) or (link->kind==KIND_ARRAY_BUILDER)){
 		p = serialize_node(link, block, index);
 	}else if (link->kind == KIND_REFERENCE){

@@ -282,8 +282,9 @@ void _map_constants_to_memory(char *mem, int &offset, const Class *ns) {
 	//update_constant_locations();
 	//return;
 
+	// also allow named constants... might be imported by other scripts!
 	for (Constant *c: ns->constants)
-		if (c->used){
+		if (c->used or c->name[0] != '-'){
 //			c->address = (void*)(syntax->asm_meta_info->code_origin + opcode_size);
 			c->address = &mem[offset];
 			c->map_into(&mem[offset], (char*)c->address);
