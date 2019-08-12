@@ -530,10 +530,10 @@ void SIAddPackageMath() {
 //			func_add_param("m", TypeMatrix);
 		class_add_func("ortho", TypeVector, amd64_wrap(mf(&vector::ortho), &amd64_vec_ortho), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&vector::str), FLAG_PURE);
-		add_func("dot", TypeFloat32, (void*)&vector::dot, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("dot", TypeFloat32, (void*)&vector::dot, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("v1", TypeVector);
 			func_add_param("v2", TypeVector);
-		add_func("cross", TypeVector, amd64_wrap(&vector::cross, &amd64_vec_cross_product), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("cross", TypeVector, amd64_wrap(&vector::cross, &amd64_vec_cross_product), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("v1", TypeVector);
 			func_add_param("v2", TypeVector);
 	

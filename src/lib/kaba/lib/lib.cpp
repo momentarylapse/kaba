@@ -556,6 +556,8 @@ void _cdecl ultra_sort(DynamicArray &array, const Class *type, const string &by)
 			_ultra_sort_p<int>(array, offset);
 		else if (ell->type == TypeFloat)
 			_ultra_sort_p<float>(array, offset);
+		else if (ell->type == TypeBool)
+			_ultra_sort_p<bool>(array, offset);
 		else
 			kaba_raise_exception(new KabaException("can't sort by '" + ell->name + " " + by + "'"));
 	}else{
@@ -565,6 +567,8 @@ void _cdecl ultra_sort(DynamicArray &array, const Class *type, const string &by)
 			_ultra_sort<int>(array, offset);
 		else if (ell->type == TypeFloat)
 			_ultra_sort<float>(array, offset);
+		else if (ell->type == TypeBool)
+			_ultra_sort<bool>(array, offset);
 		else
 			kaba_raise_exception(new KabaException("can't sort by '" + ell->name + " " + by + "'"));
 	}
@@ -1233,6 +1237,27 @@ void SIAddPackageBase() {
 
 
 
+#pragma GCC push_options
+#pragma GCC optimize("no-omit-frame-pointer")
+#pragma GCC optimize("no-inline")
+#pragma GCC optimize("0")
+
+Script *__load_script__(const string &filename, bool just_analyse) {
+	KABA_EXCEPTION_WRAPPER( return Load(filename, just_analyse); );
+	return nullptr;
+}
+
+Script *__create_from_source__(const string &source, bool just_analyse) {
+	KABA_EXCEPTION_WRAPPER( return CreateForSource(source, just_analyse); );
+	return nullptr;
+}
+
+void __execute_single_command__(const string &cmd) {
+	KABA_EXCEPTION_WRAPPER( ExecuteSingleScriptCommand(cmd); );
+}
+
+#pragma GCC pop_options
+
 void SIAddPackageKaba() {
 	add_package("kaba", false);
 
@@ -1285,6 +1310,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("namespace", TypeClassP, &Class::name_space);
 		class_add_elementx("elements", TypeClassElementList, &Class::elements);
 		class_add_elementx("functions", TypeClassFunctionList, &Class::functions);
+		class_add_elementx("static_functions", TypeFunctionPList, &Class::static_functions);
 		class_add_elementx("classes", TypeClassPList, &Class::classes);
 		class_add_elementx("constants", TypeConstantPList, &Class::constants);
 		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from);
@@ -1299,6 +1325,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("var", TypeVariablePList, &Function::var);
 		class_add_elementx("param_type", TypeClassPList, &Function::literal_param_type);
 		class_add_elementx("return_type", TypeClassP, &Function::literal_return_type);
+		class_add_elementx("is_static", TypeBool, &Function::is_static);
 		class_add_elementx("code", TypeFunctionCodeP, &Function::address);
 
 
@@ -1317,15 +1344,16 @@ void SIAddPackageKaba() {
 		class_add_funcx("functions", TypeFunctionPList, &Script::functions);
 		class_add_funcx("variables", TypeVariablePList, &Script::variables);
 		class_add_funcx("constants", TypeConstantPList, &Script::constants);
-		class_add_funcx("load", TypeScriptP, &Load, FLAG_STATIC);
+		class_add_funcx("base_class", TypeClassP, &Script::base_class);
+		class_add_funcx("load", TypeScriptP, &__load_script__, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 			func_add_param("filename", TypeString);
 			func_add_param("just_analize", TypeBool);
-		class_add_funcx("create", TypeScriptP, &CreateForSource, FLAG_STATIC);
+		class_add_funcx("create", TypeScriptP, &__create_from_source__, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 			func_add_param("source", TypeString);
 			func_add_param("just_analize", TypeBool);
 		class_add_funcx("delete", TypeVoid, &Remove, FLAG_STATIC);
 			func_add_param("script", TypeScriptP);
-		class_add_funcx("execute_single_command", TypeVoid, &ExecuteSingleScriptCommand, FLAG_STATIC);
+		class_add_funcx("execute_single_command", TypeVoid, &__execute_single_command__, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 			func_add_param("cmd", TypeString);
 	
 	add_class(TypeStatement);

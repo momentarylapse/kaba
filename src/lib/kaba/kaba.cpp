@@ -405,4 +405,8 @@ Array<Constant*> Script::constants() {
 	return syntax->base_class->constants;
 }
 
+const Class *Script::base_class() {
+	return syntax->base_class;
+}
+
 };
