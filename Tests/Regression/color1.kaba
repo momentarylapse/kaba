@@ -1,14 +1,13 @@
-//#disasm
 
 void main()
 	color c = color(1,2,3,4)
 	color d = color(3,4,5,6)
-	color e = ColorInterpolate(c, d, 0.5)
+	color e = color.interpolate(c, d, 0.5)
 	print(e)
 	
 	quaternion q1, q2, q3
-	q1 = QuaternionRotationV(e_x)
-	q2 = QuaternionRotationV(e_y)
+	q1 = quaternion.rotation_v(e_x)
+	q2 = quaternion.rotation_v(e_y)
 	print(q1)
 	print(q2)
 	q3 = q1 * q2

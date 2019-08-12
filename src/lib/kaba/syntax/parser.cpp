@@ -181,6 +181,9 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 			if (!only_static)
 				links.back()->set_instance(operand);
 		}
+	for (auto *f: type->static_functions)
+		if (f_name == f->name)
+			links.add(add_node_func_name(f));
 	if (links.num > 0){
 		Exp.next();
 		return links;

@@ -4,10 +4,10 @@
 vector v
 
 void _main()
-	v = m_id * e_x
+	v = matrix.ID * e_x
 
 void main()
-	matrix m = MatrixRotation(vector(0,0,pi/4))
+	matrix m = matrix.rotation(vector(0,0,pi/4))
 	matrix mm = m
 	mm *= m * m
 	vector v = mm * e_x

@@ -13,8 +13,7 @@ class Constant;
 class Variable;
 
 
-class ClassElement
-{
+class ClassElement {
 public:
 	string name;
 	const Class *type;
@@ -26,8 +25,7 @@ public:
 };
 
 // TODO: use Function instead!
-class ClassFunction
-{
+class ClassFunction {
 public:
 	Function *func;
 	// _func_(x)  ->  p.func(x)
@@ -41,8 +39,7 @@ public:
 
 typedef void *VirtualTable;
 
-class Class
-{
+class Class {
 public:
 	//Class();
 	Class(const string &name, int size, SyntaxTree *owner, const Class *parent = nullptr);
@@ -52,7 +49,7 @@ public:
 	long long size; // complete size of type
 	int array_length;
 
-	enum class Type{
+	enum class Type {
 		OTHER,
 		ARRAY,
 		SUPER_ARRAY,

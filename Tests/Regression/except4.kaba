@@ -1,5 +1,7 @@
+use file
+
 void main()
 	try
-		FileOpen("-non-existent-")
+		Filesystem.open("-non-existent-")
 	except FileError as e
 		print(e.message())

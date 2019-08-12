@@ -1,8 +1,7 @@
-//#show
-//#disasm
+use file
 
 void main()
-	File *f = FileCreate("__test__")
+	File *f = Filesystem.create("__test__")
 	f << 1
 	delete(f)
 

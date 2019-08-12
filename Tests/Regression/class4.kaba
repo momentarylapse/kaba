@@ -1,5 +1,4 @@
-//#show
-//#disasm
+use file
 
 class f extends File
 	void func()
@@ -7,7 +6,7 @@ class f extends File
 
 void main()
 	f *a
-	a = FileCreate("__test__")
+	a = Filesystem.create("__test__")
 	a << 2
 	a.func()
 	delete(a)

@@ -74,11 +74,8 @@ static vector ViewPos,ViewDir;
 static vector Frustrum[8];
 static plane FrustrumPl[6];
 
-void SetViewPosAngV(const vector &view_pos,const vector &view_ang)
-{
-	quaternion q;
-	QuaternionRotationV(q, view_ang);
-	SetViewPosAng(view_pos, q);
+void SetViewPosAngV(const vector &view_pos,const vector &view_ang) {
+	SetViewPosAng(view_pos, quaternion::rotation_v(view_ang));
 }
 
 void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
@@ -86,10 +83,8 @@ void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
 	ViewPos = view_pos;
 	ViewDir = view_ang * vector::EZ;
 
-	matrix t, r;
-	MatrixTranslation(t, -view_pos);
-	MatrixRotationQ(r, view_ang);
-	MatrixTranspose(r, r);
+	auto t = matrix::translation(-view_pos);
+	auto r = matrix::rotation_q(view_ang.bar());
 	view_matrix = r * t;
 	SetViewMatrix(view_matrix);
 
@@ -113,11 +108,9 @@ void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
 	TestGLError("SetView");
 }
 
-void create_pixel_projection_matrix(matrix &m)
-{
-	matrix s, t;
-	MatrixTranslation(t, vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
-	MatrixScale(s, 2.0f / float(target_width), -2.0f / float(target_height), 2);
+void create_pixel_projection_matrix(matrix &m) {
+	auto t = matrix::translation(vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
+	auto s = matrix::scale(2.0f / float(target_width), -2.0f / float(target_height), 2);
 	m = s * t;
 }
 
@@ -133,42 +126,36 @@ void SetProjectionPerspective()
 
 // center_x/y: pixel coordinates of perspective center
 // height_1/width_1: pixel sizes of 45° frustrum
-void SetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max)
-{
-	matrix trans, persp, scale;
+void SetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max) {
 	// perspective projection
-	MatrixTranslation(trans,
+	auto t = matrix::translation(
 		vector((center_x + view_jitter_x) / float(target_width) * 2.0f - 1,
 			1 - (center_y + view_jitter_y) / float(target_height) * 2.0f,
 			0));
-	MatrixPerspective(persp, pi / 2, 1, z_min, z_max);
-	MatrixScale(scale, 2 * width_1 / target_width,
+	auto p = matrix::perspective(pi / 2, 1, z_min, z_max);
+	auto s = matrix::scale(2 * width_1 / target_width,
 			2 * height_1 / target_height,
 			- 1); // z reflection: right/left handedness
 
-	SetProjectionMatrix(trans * persp * scale);
+	SetProjectionMatrix(t * p * s);
 }
 
 // center_x/y: pixel coordinates of (0,0,0)
 // map_width/height: pixel sizes of projected base vectors
-void SetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max)
-{
-	matrix scale, trans;
-	MatrixScale(scale, 2.0f / float(target_width) * map_width, -2.0f / float(target_height) * map_height, 2 / (z_max - z_min));
-	MatrixTranslation(trans, vector(2 * center_x / target_width - 1, 1 - 2 * center_y / target_height, -(z_max + z_min) / (z_max - z_min)));
+void SetProjectionOrthoExt(float center_x, float center_y, float map_width, float map_height, float z_min, float z_max) {
+	auto scale = matrix::scale(2.0f / float(target_width) * map_width, -2.0f / float(target_height) * map_height, 2 / (z_max - z_min));
+	auto trans = matrix::translation(vector(2 * center_x / target_width - 1, 1 - 2 * center_y / target_height, -(z_max + z_min) / (z_max - z_min)));
 	SetProjectionMatrix(trans * scale);
 }
 
-void SetProjectionOrtho(bool relative)
-{
+void SetProjectionOrtho(bool relative) {
 	matrix m;
-	if (relative){
+	if (relative) {
 		// orthogonal projection (relative [0,1]x[0x1] coordinates)
-		matrix s, t;
-		MatrixTranslation(t, vector(-0.5f, -0.5f, 0));
-		MatrixScale(s, 2.0f, -2.0f, 1);
+		auto t = matrix::translation(vector(-0.5f, -0.5f, 0));
+		auto s = matrix::scale(2.0f, -2.0f, 1);
 		m = s * t;
-	}else{
+	} else {
 		// orthogonal projection (pixel coordinates)
 		//NixSetProjectionOrthoExt(0, 0, 1, 1, )
 		create_pixel_projection_matrix(m);
@@ -177,20 +164,17 @@ void SetProjectionOrtho(bool relative)
 	SetProjectionMatrix(m);
 }
 
-void SetProjectionMatrix(const matrix &m)
-{
+void SetProjectionMatrix(const matrix &m) {
 	projection_matrix = m;
 }
 
-void SetViewMatrix(const matrix &m)
-{
+void SetViewMatrix(const matrix &m) {
 	view_matrix = m;
 }
 
 #define FrustrumAngleCos	0.83f
 
-bool IsInFrustrum(const vector &pos,float radius)
-{
+bool IsInFrustrum(const vector &pos,float radius) {
 	// die absoluten Eckpunkte der BoundingBox
 	vector p[8];
 	p[0]=pos+vector(-radius,-radius,-radius);
@@ -505,7 +489,7 @@ void GetVecProjectRel(vector &vout, const vector &vin)
 void GetVecUnproject(vector &vout, const vector &vin)
 {
 	if (inverse_world_view_projection_matrix_dirty){
-		MatrixInverse(inverse_world_view_projection_matrix, world_view_projection_matrix);
+		inverse_world_view_projection_matrix = world_view_projection_matrix.inverse();
 		inverse_world_view_projection_matrix_dirty = false;
 	}
 
@@ -519,7 +503,7 @@ void GetVecUnproject(vector &vout, const vector &vin)
 void GetVecUnprojectRel(vector &vout, const vector &vin)
 {
 	if (inverse_world_view_projection_matrix_dirty){
-		MatrixInverse(inverse_world_view_projection_matrix, world_view_projection_matrix);
+		inverse_world_view_projection_matrix = world_view_projection_matrix.inverse();
 		inverse_world_view_projection_matrix_dirty = false;
 	}
 
