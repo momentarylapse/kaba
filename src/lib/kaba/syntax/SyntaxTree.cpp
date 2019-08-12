@@ -488,9 +488,13 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	t->array_length = max(array_size, 0);
 	if (t->is_super_array() or t->is_dict()) {
 		t->derive_from(TypeDynamicArray, false);
+		if (sub->needs_constructor() and !sub->get_default_constructor())
+			do_error(format("can not create a dynamic array from type %s, missing default constructor", sub->name.c_str()));
 		t->parent = sub;
 		AddMissingFunctionHeadersForClass(t);
 	} else if (t->is_array()) {
+		if (sub->needs_constructor() and !sub->get_default_constructor())
+			do_error(format("can not create an array from type %s, missing default constructor", sub->name.c_str()));
 		AddMissingFunctionHeadersForClass(t);
 	}
 	return t;

@@ -194,7 +194,7 @@ bool Class::needs_constructor() const
 	if (is_super_array() or is_dict())
 		return true;
 	if (is_array())
-		return parent->get_default_constructor();
+		return parent->needs_constructor();
 	if (vtable.num > 0)
 		return true;
 	if (parent)
