@@ -34,7 +34,7 @@ public:
 	bool needs_overriding;
 	ClassFunction();
 	ClassFunction(const Class *return_type, Function *f);
-	string signature(bool include_class) const;
+	string signature() const;
 };
 
 typedef void *VirtualTable;

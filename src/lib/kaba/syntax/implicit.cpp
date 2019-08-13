@@ -23,7 +23,7 @@ void SyntaxTree::AutoImplementAddChildConstructors(Node *n_self, Function *f, co
 			continue;
 		ClassFunction *ff = e.type->get_default_constructor();
 		if (e.type->needs_constructor() and !ff)
-			do_error(f->signature(true) + format(": missing default constructor for element %s", e.name.c_str()));
+			do_error(f->signature() + format(": missing default constructor for element %s", e.name.c_str()));
 		if (!ff)
 			continue;
 		Node *p = shift_node(cp_node(n_self), true, e.offset, e.type);
@@ -52,7 +52,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allo
 	}else if (t->is_array()) {
 		auto *pc_el_init = t->parent->get_default_constructor();
 		if (t->parent->needs_constructor() and !pc_el_init)
-			do_error(f->signature(true) + format(": missing default constructor for %s", t->parent->long_name().c_str()));
+			do_error(f->signature() + format(": missing default constructor for %s", t->parent->long_name().c_str()));
 		if (pc_el_init) {
 			for (int i=0; i<t->array_length; i++) {
 				Node *n_el = shift_node(cp_node(n_self), true, t->parent->size * i, t->parent);
@@ -77,7 +77,7 @@ void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allo
 				// then, try default constructor
 				f->block->add(add_node_member_call(pc_def, cp_node(n_self)));
 			} else if (t->parent->needs_constructor()) {
-				do_error(f->signature(true) + ": can't find a constructor in the parent class with matching signature or a default constructor");
+				do_error(f->signature() + ": can't find a constructor in the parent class with matching signature or a default constructor");
 			}
 		}
 
@@ -100,7 +100,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 	if (t->is_super_array() or t->is_dict()) {
 		ClassFunction *f_clear = t->get_func("clear", TypeVoid, {});
 		if (!f_clear)
-			do_error(f->signature(true) + ": clear() missing");
+			do_error(f->signature() + ": clear() missing");
 		f->block->add(add_node_member_call(f_clear, n_self));
 	} else if (t->is_array()) {
 		auto *pc_el_init = t->parent->get_destructor();
@@ -111,7 +111,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 				f->block->add(c);
 			}
 		} else if (t->parent->needs_destructor()) {
-			do_error(f->signature(true) + ": parent desctructor missing");
+			do_error(f->signature() + ": parent desctructor missing");
 		}
 		delete n_self;
 	} else {
@@ -123,7 +123,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 				continue;
 			ClassFunction *ff = e.type->get_destructor();
 			if (!ff and e.type->needs_destructor())
-				do_error(f->signature(true) + format(": missing destructor for element %s", e.name.c_str()));
+				do_error(f->signature() + format(": missing destructor for element %s", e.name.c_str()));
 			if (!ff)
 				continue;
 			Node *p = shift_node(cp_node(n_self), true, e.offset, e.type);
@@ -136,7 +136,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 			if (ff)
 				f->block->add(add_node_member_call(ff, cp_node(n_self), true));
 			else if (t->parent->needs_destructor())
-				do_error(f->signature(true) + ": parent desctructor missing");
+				do_error(f->signature() + ": parent desctructor missing");
 		}
 		delete n_self;
 	}
@@ -152,7 +152,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 		ClassFunction *f_resize = t->get_func("resize", TypeVoid, {TypeInt});
 		if (!f_resize)
-			do_error(f->signature(true) + format(": no %s.resize(int) found", t->name.c_str()));
+			do_error(f->signature() + format(": no %s.resize(int) found", t->name.c_str()));
 
 		// self.resize(other.num)
 		Node *n_other_num = shift_node(n_other, false, config.pointer_size, TypeInt);
@@ -196,7 +196,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 		Node *n_assign = link_operator(OPERATOR_ASSIGN, n_self_el, n_other_el);
 		if (!n_assign)
-			do_error(f->signature(true) + format(": no %s.__assign__() found", t->parent->name.c_str()));
+			do_error(f->signature() + format(": no %s.__assign__() found", t->parent->name.c_str()));
 		b->add(n_assign);
 
 		// ...for_var += 1
@@ -240,7 +240,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 		Node *n_assign = link_operator(OPERATOR_ASSIGN, n_self_el, n_other_el);
 		if (!n_assign)
-			do_error(f->signature(true) + format(": no %s.__assign__() found", t->parent->name.c_str()));
+			do_error(f->signature() + format(": no %s.__assign__() found", t->parent->name.c_str()));
 		b->add(n_assign);
 
 		// ...for_var += 1
@@ -256,7 +256,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 			Node *cmd_assign = link_operator(OPERATOR_ASSIGN, p, o);
 			if (!cmd_assign)
-				do_error(f->signature(true) + ": missing parent default constructor");
+				do_error(f->signature() + ": missing parent default constructor");
 			f->block->add(cmd_assign);
 		}
 
@@ -270,7 +270,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 			Node *n_assign = link_operator(OPERATOR_ASSIGN, p, o);
 			if (!n_assign)
-				do_error(f->signature(true) + format(": no %s.__assign__ for element \"%s\"", e.type->name.c_str(), e.name.c_str()));
+				do_error(f->signature() + format(": no %s.__assign__ for element \"%s\"", e.type->name.c_str(), e.name.c_str()));
 			f->block->add(n_assign);
 		}
 
@@ -322,7 +322,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, const Class *t) {
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(for_var), cmd_0 /*dummy*/, INLINE_INT_INCREASE);
 		cmd_for->set_param(3, cmd_inc);
 	} else if (t->parent->needs_destructor()) {
-		do_error(f->signature(true) + ": element destructor missing");
+		do_error(f->signature() + ": element destructor missing");
 	}
 
 	// clear
@@ -380,7 +380,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(for_var), num /*dummy*/, INLINE_INT_INCREASE);
 		cmd_for->set_param(3, cmd_inc);
 	} else if (t->parent->needs_destructor()) {
-		do_error(f->signature(true) + ": element destructor missing");
+		do_error(f->signature() + ": element destructor missing");
 	}
 
 	// resize
@@ -419,7 +419,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(for_var), num /*dummy*/, INLINE_INT_INCREASE);
 		cmd_for->set_param(3, cmd_inc);
 	} else if (t->parent->needs_destructor()) {
-		do_error(f->signature(true) + ": element default constructor missing");
+		do_error(f->signature() + ": element default constructor missing");
 	}
 }
 
@@ -444,7 +444,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, const Class *t) {
 		Node *cmd_delete = add_node_member_call(f_del, ref_node(cmd_el));
 		f->block->params.add(cmd_delete);
 	} else if (t->parent->needs_destructor()) {
-		do_error(f->signature(true) + ": element destructor missing");
+		do_error(f->signature() + ": element destructor missing");
 	}
 
 	// resize
@@ -481,12 +481,12 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, const Class *t) {
 
 	Node *cmd_assign = link_operator(OPERATOR_ASSIGN, cmd_el, item);
 	if (!cmd_assign)
-		do_error(f->signature(true) + format(": no %s.%s for elements", t->parent->name.c_str(), IDENTIFIER_FUNC_ASSIGN.c_str()));
+		do_error(f->signature() + format(": no %s.%s for elements", t->parent->name.c_str(), IDENTIFIER_FUNC_ASSIGN.c_str()));
 	b->add(cmd_assign);
 }
 
 void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr) {
-	Function *f = s->add_function(name, return_type);
+	Function *f = s->add_function(name, return_type, t);
 	f->auto_declared = true;
 	f->is_static = false;
 	foreachi (auto &p, param_types, i) {
@@ -494,7 +494,7 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *r
 		f->block->add_var(param_names[i], p);
 		f->num_params ++;
 	}
-	f->update(t);
+	f->update();
 	bool override = cf;
 	t->add_function(s, f, false, override);
 }
@@ -603,7 +603,7 @@ Function* prepare_auto_impl(const Class *t, ClassFunction *cf) {
 		return f;
 	}
 	return nullptr;
-	t->owner->script->do_error_internal("prepare class func..." + cf->signature(true));
+	t->owner->script->do_error_internal("prepare class func..." + cf->signature());
 	return f;
 }
 

@@ -294,7 +294,7 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 
 	// virtual?
 	if (l->instance) {
-		for (auto &cf: f->_class->functions)
+		for (auto &cf: f->name_space->functions)
 			if (cf.func == f)
 				if (cf.virtual_index >= 0) {
 					//do_error("virtual call...");
@@ -2105,8 +2105,7 @@ void SyntaxTree::ParseVariableDef(bool single, Block *block)
 	}
 }
 
-bool peek_commands_super(ExpressionBuffer &Exp)
-{
+bool peek_commands_super(ExpressionBuffer &Exp) {
 	ExpressionBuffer::Line *l = Exp.cur_line + 1;
 	if (l->exp.num < 3)
 		return false;
@@ -2115,8 +2114,7 @@ bool peek_commands_super(ExpressionBuffer &Exp)
 	return false;
 }
 
-bool SyntaxTree::ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line)
-{
+bool SyntaxTree::ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line) {
 	if (Exp.end_of_file())
 		return false;
 
@@ -2136,8 +2134,7 @@ bool SyntaxTree::ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_
 	return true;
 }
 
-void Function::update(const Class *class_type)
-{
+void Function::update() {
 	// save "original" param types (Var[].Type gets altered for call by reference)
 	for (int i=literal_param_type.num;i<num_params;i++)
 		literal_param_type.add(var[i]->type);
@@ -2148,10 +2145,9 @@ void Function::update(const Class *class_type)
 		block->add_var(IDENTIFIER_RETURN_VAR, return_type->get_pointer());
 
 	// class function
-	_class = class_type;
-	if (class_type){
+	if (!is_static) {
 		if (!__get_var(IDENTIFIER_SELF))
-			block->add_var(IDENTIFIER_SELF, class_type->get_pointer());
+			block->add_var(IDENTIFIER_SELF, name_space->get_pointer());
 	}
 }
 
@@ -2228,7 +2224,7 @@ Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_ext
 // return type
 	const Class *return_type = parse_type(ns); // force...
 
-	Function *f = add_function(Exp.cur, return_type);
+	Function *f = add_function(Exp.cur, return_type, class_type);
 	f->_logical_line_no = Exp.get_line_no();
 	f->_exp_no = Exp.cur_exp;
 	f->is_static = !class_type;
@@ -2263,7 +2259,7 @@ Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_ext
 	if (!Exp.end_of_line())
 		do_error("newline expected after parameter list");
 
-	f->update(class_type);
+	f->update();
 
 	f->is_extern = as_extern;
 	cur_func = nullptr;
@@ -2293,9 +2289,9 @@ void SyntaxTree::parse_function_body(Function *f)
 		if (peek_commands_super(Exp)){
 			more_to_parse = ParseFunctionCommand(f, this_line);
 
-			AutoImplementConstructor(f, f->_class, false);
+			AutoImplementConstructor(f, f->name_space, false);
 		}else
-			AutoImplementConstructor(f, f->_class, true);
+			AutoImplementConstructor(f, f->name_space, true);
 	}
 
 	parser_loop_depth = 0;
@@ -2307,7 +2303,7 @@ void SyntaxTree::parse_function_body(Function *f)
 
 	// auto implement destructor?
 	if (f->name == IDENTIFIER_FUNC_DELETE)
-		AutoImplementDestructor(f, f->_class);
+		AutoImplementDestructor(f, f->name_space);
 	cur_func = nullptr;
 
 	Exp.cur_line --;

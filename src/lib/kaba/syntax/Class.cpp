@@ -44,11 +44,11 @@ ClassFunction::ClassFunction(const Class *_return_type, Function *_f)
 	needs_overriding = false;
 }
 
-string ClassFunction::signature(bool include_class) const
+string ClassFunction::signature() const
 {
 	if (needs_overriding)
-		return func->signature(include_class) + " [NEEDS OVERRIDING]";
-	return func->signature(include_class);
+		return func->signature() + " [NEEDS OVERRIDING]";
+	return func->signature();
 }
 
 bool type_match(const Class *given, const Class *wanted)
@@ -104,11 +104,17 @@ Class::~Class() {
 		delete c;
 }
 
-string Class::long_name() const {
+
+
+string namespacify(const string &name, const Class *name_space) {
 	if (name_space)
-		if (name_space != name_space->owner->base_class)
-			return name_space->long_name() + "." + name;
+		if (name_space->name[0] != '-')
+			return namespacify(name_space->name + "." + name, name_space->name_space);
 	return name;
+}
+
+string Class::long_name() const {
+	return namespacify(name, name_space);
 }
 
 bool Class::is_array() const
@@ -358,7 +364,7 @@ void Class::link_virtual_table()
 			}
 		}
 		if (cf.needs_overriding){
-			msg_error("needs overriding: " + cf.signature(true));
+			msg_error("needs overriding: " + cf.signature());
 		}
 	}
 }
@@ -418,11 +424,10 @@ const Class *Class::get_root() const {
 }
 
 void class_func_out(Class *c, ClassFunction *f) {
-	msg_write(f->signature(true));
+	msg_write(f->signature());
 }
 
-void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool override)
-{
+void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool override) {
 	ClassFunction cf;
 	cf.func = f;
 	cf.return_type = f->return_type;
@@ -440,16 +445,16 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 		if (class_func_match(cf, ocf))
 			orig = &ocf;
 	if (override and !orig)
-		s->do_error(format("can not override function %s, no previous definition", f->signature(true).c_str()), f->_exp_no, f->_logical_line_no);
-	if (!override and orig){
-		msg_write(f->signature(true));
-		msg_write(orig->signature(true));
-		s->do_error(format("function %s is already defined, use '%s'", f->signature(true).c_str(), IDENTIFIER_OVERRIDE.c_str()), f->_exp_no, f->_logical_line_no);
+		s->do_error(format("can not override function %s, no previous definition", f->signature().c_str()), f->_exp_no, f->_logical_line_no);
+	if (!override and orig) {
+		msg_write(f->signature());
+		msg_write(orig->signature());
+		s->do_error(format("function %s is already defined, use '%s'", f->signature().c_str(), IDENTIFIER_OVERRIDE.c_str()), f->_exp_no, f->_logical_line_no);
 	}
-	if (override){
+	if (override) {
 		orig->func = cf.func;
 		orig->needs_overriding = false;
-	}else{
+	} else {
 		functions.add(cf);
 	}
 }

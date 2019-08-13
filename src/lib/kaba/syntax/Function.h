@@ -45,7 +45,7 @@ public:
 	// local variables
 	Array<Variable*> var;
 	Array<const Class*> literal_param_type;
-	const Class *_class;
+	const Class *name_space;
 	const Class *return_type;
 	const Class *literal_return_type;
 	bool is_extern, auto_declared;
@@ -64,8 +64,8 @@ public:
 	~Function();
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
-	void update(const Class *class_type);
-	string signature(bool include_class = false) const;
+	void update();
+	string signature() const;
 	Array<Block*> all_blocks();
 	void show(const string &stage = "") const;
 };

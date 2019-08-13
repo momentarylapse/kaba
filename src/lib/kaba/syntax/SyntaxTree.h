@@ -177,8 +177,8 @@ public:
 	static Node* transform_node(Node *n, std::function<Node*(Node*)> F);
 
 	// data creation
-	Constant *add_constant(const Class *type, Class *_namespace = nullptr);
-	Function *add_function(const string &name, const Class *type);
+	Constant *add_constant(const Class *type, Class *name_space = nullptr);
+	Function *add_function(const string &name, const Class *type, const Class *name_space);
 
 	// nodes
 	Node *add_node_statement(int index);

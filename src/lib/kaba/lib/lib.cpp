@@ -340,7 +340,7 @@ void _class_add_func_virtual(const string &name, const Class *return_type, int i
 	//msg_write("virtual: " + tname + "." + name);
 	//msg_write(index);
 	add_func(name, return_type, nullptr, ScriptFlag(flag & ~FLAG_OVERRIDE));
-	cur_func->_class = cur_class;
+	cur_func->name_space = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
 	cur_class_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
@@ -351,7 +351,7 @@ void _class_add_func_virtual(const string &name, const Class *return_type, int i
 
 void class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
 	add_func(name, return_type, func, flag);
-	cur_func->_class = cur_class;
+	cur_func->name_space = cur_class;
 	if ((flag & FLAG_STATIC) > 0)
 		cur_class->static_functions.add(cur_func);
 	else
@@ -1320,7 +1320,7 @@ void SIAddPackageKaba() {
 	add_class(TypeFunction);
 		class_add_elementx("name", TypeString, &Function::name);
 		class_add_funcx("long_name", TypeString, &Function::long_name);
-		class_add_elementx("class", TypeClassP, &Function::_class);
+		class_add_elementx("class", TypeClassP, &Function::name_space);
 		class_add_elementx("num_params", TypeInt, &Function::num_params);
 		class_add_elementx("var", TypeVariablePList, &Function::var);
 		class_add_elementx("param_type", TypeClassPList, &Function::literal_param_type);

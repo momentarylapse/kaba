@@ -291,7 +291,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 // analyse syntax
 
 	// create a main() function
-	Function *func = ps->add_function("--command-func--", TypeVoid);
+	Function *func = ps->add_function("--command-func--", TypeVoid, ps->base_class);
 	func->_var_size = 0; // set to -1...
 
 	// parse
@@ -352,9 +352,9 @@ void *Script::match_class_function(const string &_class, bool allow_derived, con
 
 	// match
 	for (Function *f: syntax->functions){
-		if (!f->_class)
+		if (!f->name_space)
 			continue;
-		if (!f->_class->is_derived_from(root_type))
+		if (!f->name_space->is_derived_from(root_type))
 			continue;
 		if ((f->name == name) and (f->literal_return_type->name == return_type) and (param_types.num == f->num_params)){
 

@@ -33,7 +33,7 @@ void print_class(Kaba::Class *c)
 {
 	msg_write("==  " + c->name + "  ==");
 	for (auto &f: c->functions)
-		msg_write(f.signature(true));
+		msg_write(f.signature());
 }
 
 

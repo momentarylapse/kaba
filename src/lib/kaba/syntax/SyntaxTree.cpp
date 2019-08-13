@@ -269,21 +269,20 @@ void SyntaxTree::CreateAsmMetaInfo()
 
 
 
-Constant *SyntaxTree::add_constant(const Class *type, Class *_namespace)
-{
+Constant *SyntaxTree::add_constant(const Class *type, Class *name_space) {
+	if (!name_space)
+		name_space = base_class;
 	auto *c = new Constant(type, this);
-	if (_namespace)
-		_namespace->constants.add(c);
-	else
-		base_class->constants.add(c);
+	name_space->constants.add(c);
 	return c;
 }
 
 
 
-Function *SyntaxTree::add_function(const string &name, const Class *type)
-{
-	Function *f = new Function(name, type, base_class);
+Function *SyntaxTree::add_function(const string &name, const Class *return_type, const Class *name_space) {
+	if (!name_space)
+		name_space = base_class;
+	Function *f = new Function(name, return_type, name_space);
 	functions.add(f);
 	f->block = new Block(f, nullptr);
 	return f;
@@ -291,29 +290,25 @@ Function *SyntaxTree::add_function(const string &name, const Class *type)
 
 
 
-Node *SyntaxTree::add_node_const(Constant *c)
-{
+Node *SyntaxTree::add_node_const(Constant *c) {
 	return new Node(KIND_CONSTANT, (int_p)c, c->type);
 }
 
-int SyntaxTree::which_primitive_operator(const string &name)
-{
+int SyntaxTree::which_primitive_operator(const string &name) {
 	for (int i=0;i<NUM_PRIMITIVE_OPERATORS;i++)
 		if (name == PrimitiveOperators[i].name)
 			return i;
 	return -1;
 }
 
-const Class *SyntaxTree::which_owned_class(const string &name)
-{
+const Class *SyntaxTree::which_owned_class(const string &name) {
 	for (auto *c: base_class->classes)
 		if (name == c->name)
 			return c;
 	return nullptr;
 }
 
-int SyntaxTree::which_statement(const string &name)
-{
+int SyntaxTree::which_statement(const string &name) {
 	for (int i=0;i<Statements.num;i++)
 		if (name == Statements[i].name)
 			return i;
@@ -403,13 +398,13 @@ Node* block_get_existence(SyntaxTree *tree, const string &name, Block *block) {
 	if (v)
 		return exlink_make_var_local(tree, v->type, v);
 	if (!f->is_static){
-		if ((name == IDENTIFIER_SUPER) and (f->_class->parent))
-			return exlink_make_var_local(tree, f->_class->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
+		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
+			return exlink_make_var_local(tree, f->name_space->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
 		// class elements (within a class function)
-		for (auto &e: f->_class->elements)
+		for (auto &e: f->name_space->elements)
 			if (e.name == name)
 				return exlink_make_var_element(tree, f, e);
-		for (auto &cf: f->_class->functions)
+		for (auto &cf: f->name_space->functions)
 			if (cf.func->name == name)
 				return exlink_make_func_class(tree, f, cf);
 	}
@@ -897,22 +892,20 @@ void SyntaxTree::MakeFunctionsInline()
 
 
 
-void MapLVSX86Return(Function *f)
-{
-	if (f->return_type->uses_return_by_memory()){
+void MapLVSX86Return(Function *f) {
+	if (f->return_type->uses_return_by_memory()) {
 		foreachi(Variable *v, f->var, i)
-			if (v->name == IDENTIFIER_RETURN_VAR){
+			if (v->name == IDENTIFIER_RETURN_VAR) {
 				v->_offset = f->_param_size;
 				f->_param_size += 4;
 			}
 	}
 }
 
-void MapLVSX86Self(Function *f)
-{
-	if (f->_class){
+void MapLVSX86Self(Function *f) {
+	if (!f->is_static){
 		foreachi(Variable *v, f->var, i)
-			if (v->name == IDENTIFIER_SELF){
+			if (v->name == IDENTIFIER_SELF) {
 				v->_offset = f->_param_size;
 				f->_param_size += 4;
 			}
@@ -941,7 +934,7 @@ void SyntaxTree::MapLocalVariablesToStack()
 			}
 
 			foreachi(Variable *v, f->var, i){
-				if ((f->_class) and (v->name == IDENTIFIER_SELF))
+				if (!f->is_static and (v->name == IDENTIFIER_SELF))
 					continue;
 				if (v->name == IDENTIFIER_RETURN_VAR)
 					continue;

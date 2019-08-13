@@ -94,7 +94,7 @@ void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instan
 	}else if (f->_label >= 0){
 		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
 	}else{
-		do_error_link("could not link function " + f->signature(true));
+		do_error_link("could not link function " + f->signature());
 	}
 
 	fc_end(push_size, ret);

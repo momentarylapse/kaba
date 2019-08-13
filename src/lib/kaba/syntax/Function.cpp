@@ -36,7 +36,7 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	num_params = 0;
 	return_type = _return_type;
 	literal_return_type = _return_type;
-	_class = _name_space;
+	name_space = _name_space;
 	is_extern = false;
 	is_static = true;
 	auto_declared = false;
@@ -75,11 +75,10 @@ Function::~Function() {
 		delete v;
 }
 
+string namespacify(const string &name, const Class *name_space);
+
 string Function::long_name() const {
-	if (_class)
-		if (_class->name_space)
-			return _class->long_name() + "." + name;
-	return name;
+	return namespacify(name, name_space);
 }
 
 void Function::show(const string &stage) const {
@@ -97,12 +96,9 @@ Variable *Function::__get_var(const string &name) const {
 	return block->get_var(name);
 }
 
-string Function::signature(bool include_class) const {
+string Function::signature() const {
 	string r = literal_return_type->long_name() + " ";
-	if (include_class)
-		r += long_name() + "(";
-	else
-		r += name + "(";
+	r += long_name() + "(";
 	for (int i=0; i<num_params; i++) {
 		if (i > 0)
 			r += ", ";
