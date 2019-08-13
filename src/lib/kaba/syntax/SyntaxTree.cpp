@@ -105,12 +105,11 @@ Node *SyntaxTree::add_node_statement(int index)
 }
 
 // virtual call, if func is virtual
-Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_non_virtual)
-{
+Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_non_virtual) {
 	Node *c;
-	if ((f->virtual_index >= 0) and (!force_non_virtual)){
-		c = new Node(KIND_VIRTUAL_CALL, f->virtual_index, f->return_type);
-	}else{
+	if ((f->func->virtual_index >= 0) and (!force_non_virtual)) {
+		c = new Node(KIND_VIRTUAL_CALL, f->func->virtual_index, f->return_type);
+	} else {
 		c = add_node_call(f->func);
 
 		// some classes share a function (for example @DynamicArray.__subarray__)
@@ -121,21 +120,18 @@ Node *SyntaxTree::add_node_member_call(ClassFunction *f, Node *inst, bool force_
 	return c;
 }
 
-Node *SyntaxTree::add_node_call(Function *f)
-{
+Node *SyntaxTree::add_node_call(Function *f) {
 	Node *c = new Node(KIND_FUNCTION_CALL, (int_p)f, f->return_type);
 	c->set_num_params(f->num_params);
 	return c;
 }
 
-Node *SyntaxTree::add_node_func_name(Function *f)
-{
+Node *SyntaxTree::add_node_func_name(Function *f) {
 	return new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode);
 }
 
 
-Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op)
-{
+Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op) {
 	Node *cmd = new Node(KIND_OPERATOR, (int_p)op, op->return_type);
 	bool unitary = ((op->param_type_1 == TypeVoid) or (op->param_type_2 == TypeVoid));
 	cmd->set_num_params( unitary ? 1 : 2); // unary / binary
@@ -181,7 +177,6 @@ SyntaxTree::SyntaxTree(Script *_script)
 {
 	base_class = new Class("-base-", 0, this);
 	root_of_all_evil = new Function("RootOfAllEvil", TypeVoid, base_class);
-	root_of_all_evil->block = new Block(root_of_all_evil, nullptr);
 
 	flag_string_const_as_cstring = false;
 	flag_immortal = false;
@@ -279,12 +274,12 @@ Constant *SyntaxTree::add_constant(const Class *type, Class *name_space) {
 
 
 
-Function *SyntaxTree::add_function(const string &name, const Class *return_type, const Class *name_space) {
+Function *SyntaxTree::add_function(const string &name, const Class *return_type, const Class *name_space, bool is_static) {
 	if (!name_space)
 		name_space = base_class;
 	Function *f = new Function(name, return_type, name_space);
+	f->is_static = is_static;
 	functions.add(f);
-	f->block = new Block(f, nullptr);
 	return f;
 }
 
@@ -404,7 +399,7 @@ Node* block_get_existence(SyntaxTree *tree, const string &name, Block *block) {
 		for (auto &e: f->name_space->elements)
 			if (e.name == name)
 				return exlink_make_var_element(tree, f, e);
-		for (auto &cf: f->name_space->functions)
+		for (auto &cf: f->name_space->member_functions)
 			if (cf.func->name == name)
 				return exlink_make_func_class(tree, f, cf);
 	}
@@ -486,11 +481,11 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 		if (sub->needs_constructor() and !sub->get_default_constructor())
 			do_error(format("can not create a dynamic array from type %s, missing default constructor", sub->name.c_str()));
 		t->parent = sub;
-		AddMissingFunctionHeadersForClass(t);
+		add_missing_function_headers_for_class(t);
 	} else if (t->is_array()) {
 		if (sub->needs_constructor() and !sub->get_default_constructor())
 			do_error(format("can not create an array from type %s, missing default constructor", sub->name.c_str()));
-		AddMissingFunctionHeadersForClass(t);
+		add_missing_function_headers_for_class(t);
 	}
 	return t;
 }

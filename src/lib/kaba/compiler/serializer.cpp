@@ -517,13 +517,13 @@ void Serializer::AddFunctionCall(Function *f, const SerialNodeParam &instance, c
 
 void Serializer::AddClassFunctionCall(ClassFunction *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
 {
-	if (cf->virtual_index < 0){
+	if (cf->func->virtual_index < 0){
 		AddFunctionCall(cf->func, instance, params, ret);
 		return;
 	}
 	call_used = true;
 
-	add_virtual_function_call(cf->virtual_index, instance, params, ret);
+	add_virtual_function_call(cf->func->virtual_index, instance, params, ret);
 }
 
 

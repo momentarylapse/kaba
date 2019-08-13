@@ -77,17 +77,16 @@ public:
 	void parse();
 	void parse_top_level();
 	void parse_all_class_names(Class *ns, int indent0);
-	void parse_all_function_bodies();
+	void parse_all_function_bodies(const Class *name_space);
 	void parse_import();
 	void parse_enum(Class *_namespace);
 	void parse_class(Class *_namespace);
-	Function *parse_function_header(const Class *class_type, bool as_extern);
-	void SkipParsingFunctionBody();
+	Function *parse_function_header(Class *name_space, bool as_extern, bool as_static, bool as_virtual, bool override);
+	void skip_parsing_function_body();
 	void parse_function_body(Function *f);
-	void parse_class_function_header(Class *t, bool as_extern, bool as_static, bool as_virtual, bool override);
 	bool ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_line);
 	const Class *parse_type(const Class *ns);
-	void ParseVariableDef(bool single, Block *block);
+	void parse_variable_def(bool single, Block *block);
 	void parse_global_const(const string &name, const Class *type);
 	int which_primitive_operator(const string &name);
 	int which_statement(const string &name);
@@ -105,8 +104,8 @@ public:
 	void AutoImplementArrayResize(Function *f, const Class *t);
 	void AutoImplementArrayAdd(Function *f, const Class *t);
 	void AutoImplementArrayRemove(Function *f, const Class *t);
-	void AutoImplementFunctions(const Class *t);
-	void AddMissingFunctionHeadersForClass(Class *t);
+	void auto_implement_functions(const Class *t);
+	void add_missing_function_headers_for_class(Class *t);
 
 	// syntax analysis
 	const Class *get_constant_type(const string &str);
@@ -178,7 +177,7 @@ public:
 
 	// data creation
 	Constant *add_constant(const Class *type, Class *name_space = nullptr);
-	Function *add_function(const string &name, const Class *type, const Class *name_space);
+	Function *add_function(const string &name, const Class *type, const Class *name_space, bool is_static);
 
 	// nodes
 	Node *add_node_statement(int index);

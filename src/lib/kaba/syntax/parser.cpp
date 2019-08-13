@@ -175,7 +175,7 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 
 	// class function?
 	Array<Node*> links;
-	for (auto &cf: type->functions)
+	for (auto &cf: type->member_functions)
 		if (f_name == cf.func->name){
 			links.add(add_node_func_name(cf.func));
 			if (!only_static)
@@ -294,12 +294,12 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 
 	// virtual?
 	if (l->instance) {
-		for (auto &cf: f->name_space->functions)
+		for (auto &cf: f->name_space->member_functions)
 			if (cf.func == f)
-				if (cf.virtual_index >= 0) {
+				if (cf.func->virtual_index >= 0) {
 					//do_error("virtual call...");
 					l->kind = KIND_VIRTUAL_CALL;
-					l->link_no = cf.virtual_index;
+					l->link_no = cf.func->virtual_index;
 				}
 	}
 }
@@ -921,7 +921,7 @@ Node *SyntaxTree::link_operator(int op_no, Node *param1, Node *param2)
 		pp1 = p1->parent;
 
 	// exact match as class function?
-	for (ClassFunction &f: pp1->functions)
+	for (ClassFunction &f: pp1->member_functions)
 		if (f.func->name == op_func_name){
 			// exact match as class function but missing a "&"?
 			auto type1 = f.func->literal_param_type[0];
@@ -971,7 +971,7 @@ Node *SyntaxTree::link_operator(int op_no, Node *param1, Node *param2)
 					c1_best = c1;
 					c2_best = c2;
 				}
-	for (auto &cf: p1->functions)
+	for (auto &cf: p1->member_functions)
 		if (cf.func->name == op_func_name)
 			if (type_match_with_cast(p2, equal_classes, false, cf.func->literal_param_type[0], pen2, c2))
 				if (pen2 < pen_min){
@@ -1384,7 +1384,7 @@ Node *SyntaxTree::parse_statement_try(Block *block)
 		}
 	}
 
-	int last_indent = Exp.indent_0;
+	//int last_indent = Exp.indent_0;
 
 	expect_new_line();
 	// ...block
@@ -1815,8 +1815,7 @@ void SyntaxTree::parse_import()
 }
 
 
-void SyntaxTree::parse_enum(Class *_namespace)
-{
+void SyntaxTree::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
 	expect_new_line();
 	Exp.next_line();
@@ -1824,14 +1823,14 @@ void SyntaxTree::parse_enum(Class *_namespace)
 
 	int value = 0;
 
-	for (int i=0;!Exp.end_of_file();i++){
-		for (int j=0;!Exp.end_of_line();j++){
+	for (int i=0;!Exp.end_of_file();i++) {
+		for (int j=0;!Exp.end_of_line();j++) {
 			auto *c = add_constant(TypeInt, _namespace);
 			c->name = Exp.cur;
 			Exp.next();
 
 			// explicit value
-			if (Exp.cur == "="){
+			if (Exp.cur == "=") {
 				Exp.next();
 				expect_no_new_line();
 				Value v;
@@ -1858,18 +1857,7 @@ void SyntaxTree::parse_enum(Class *_namespace)
 	Exp.cur_line --;
 }
 
-void SyntaxTree::parse_class_function_header(Class *t, bool as_extern, bool as_static, bool as_virtual, bool override)
-{
-	Function *f = parse_function_header(t, as_extern);
-
-	t->add_function(this, f, as_virtual, override);
-	f->is_static = as_static;
-
-	SkipParsingFunctionBody();
-}
-
-inline bool type_needs_alignment(const Class *t)
-{
+inline bool type_needs_alignment(const Class *t) {
 	if (t->is_array())
 		return type_needs_alignment(t->parent);
 	return (t->size >= 4);
@@ -1961,8 +1949,8 @@ void SyntaxTree::parse_class(Class *_namespace)
 			    is_function = true;
 			if (is_function){
 				Exp.set(ie);
-				parse_class_function_header(_class, next_extern, next_static, next_virtual, override);
-
+				parse_function_header(_class, next_extern, next_static, next_virtual, override);
+				skip_parsing_function_body();
 				break;
 			}
 
@@ -1991,7 +1979,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 			// add element
 			if (type_needs_alignment(type))
 				_offset = mem_align(_offset, 4);
-			_offset = ProcessClassOffset(_class->name, el.name, _offset);
+			_offset = process_class_offset(_class->name, el.name, _offset);
 			if ((Exp.cur != ",") and (!Exp.end_of_line()))
 				do_error("\",\" or newline expected after class element");
 			el.offset = _offset;
@@ -2016,7 +2004,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 			// element "-vtable-" being derived
 		}else{
 			for (ClassElement &e: _class->elements)
-				e.offset = ProcessClassOffset(_class->name, e.name, e.offset + config.pointer_size);
+				e.offset = process_class_offset(_class->name, e.name, e.offset + config.pointer_size);
 
 			auto el = ClassElement(IDENTIFIER_VTABLE_VAR, TypePointer, 0);
 			el.hidden = true;
@@ -2031,7 +2019,7 @@ void SyntaxTree::parse_class(Class *_namespace)
 	_class->size = ProcessClassSize(_class->name, _offset);
 
 
-	AddMissingFunctionHeadersForClass(_class);
+	add_missing_function_headers_for_class(_class);
 
 	_class->fully_parsed = true;
 
@@ -2078,7 +2066,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type)
 	//c_orig->name = name;
 }
 
-void SyntaxTree::ParseVariableDef(bool single, Block *block)
+void SyntaxTree::parse_variable_def(bool single, Block *block)
 {
 	const Class *type = parse_type(block->name_space()); // force
 
@@ -2132,23 +2120,6 @@ bool SyntaxTree::ParseFunctionCommand(Function *f, ExpressionBuffer::Line *this_
 	// command or local definition
 	parse_complete_command(f->block);
 	return true;
-}
-
-void Function::update() {
-	// save "original" param types (Var[].Type gets altered for call by reference)
-	for (int i=literal_param_type.num;i<num_params;i++)
-		literal_param_type.add(var[i]->type);
-	// but only, if not existing yet...
-
-	// return by memory
-	if (return_type->uses_return_by_memory())
-		block->add_var(IDENTIFIER_RETURN_VAR, return_type->get_pointer());
-
-	// class function
-	if (!is_static) {
-		if (!__get_var(IDENTIFIER_SELF))
-			block->add_var(IDENTIFIER_SELF, name_space->get_pointer());
-	}
 }
 
 
@@ -2217,17 +2188,16 @@ const Class *SyntaxTree::parse_type(const Class *ns)
 	return t;
 }
 
-Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_extern)
-{
-	auto *ns = class_type ? class_type : base_class;
+Function *SyntaxTree::parse_function_header(Class *name_space, bool as_extern, bool as_static, bool as_virtual, bool override) {
 	
 // return type
-	const Class *return_type = parse_type(ns); // force...
+	const Class *return_type = parse_type(name_space); // force...
 
-	Function *f = add_function(Exp.cur, return_type, class_type);
+	Function *f = add_function(Exp.cur, return_type, name_space, as_static);
+	if (config.verbose)
+		msg_write("PARSE HEAD  " + f->signature());
 	f->_logical_line_no = Exp.get_line_no();
 	f->_exp_no = Exp.cur_exp;
-	f->is_static = !class_type;
 	cur_func = f;
 	next_extern = false;
 
@@ -2237,11 +2207,11 @@ Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_ext
 // parameter list
 
 	if (Exp.cur != ")")
-		for (int k=0;;k++){
+		for (int k=0;;k++) {
 			// like variable definitions
 
 			// type of parameter variable
-			const Class *param_type = parse_type(ns); // force
+			const Class *param_type = parse_type(name_space); // force
 			f->block->add_var(Exp.cur, param_type);
 			f->literal_param_type.add(param_type);
 			Exp.next();
@@ -2259,45 +2229,46 @@ Function *SyntaxTree::parse_function_header(const Class *class_type, bool as_ext
 	if (!Exp.end_of_line())
 		do_error("newline expected after parameter list");
 
-	f->update();
+	f->update_parameters_after_parsing();
 
 	f->is_extern = as_extern;
 	cur_func = nullptr;
 
+	name_space->add_function(this, f, as_virtual, override);
+
 	return f;
 }
 
-void SyntaxTree::SkipParsingFunctionBody()
-{
+void SyntaxTree::skip_parsing_function_body() {
 	int indent0 = Exp.cur_line->indent;
-	while (!Exp.end_of_file()){
+	while (!Exp.end_of_file()) {
 		if (Exp.cur_line[1].indent <= indent0)
 			break;
 		Exp.next_line();
 	}
 }
 
-void SyntaxTree::parse_function_body(Function *f)
-{
+void SyntaxTree::parse_function_body(Function *f) {
 	Exp.cur_line = &Exp.line[f->_logical_line_no];
 
 	ExpressionBuffer::Line *this_line = Exp.cur_line;
 	bool more_to_parse = true;
 
 	// auto implement constructor?
-	if (f->name == IDENTIFIER_FUNC_INIT){
-		if (peek_commands_super(Exp)){
+	if (f->name == IDENTIFIER_FUNC_INIT) {
+		if (peek_commands_super(Exp)) {
 			more_to_parse = ParseFunctionCommand(f, this_line);
 
 			AutoImplementConstructor(f, f->name_space, false);
-		}else
+		} else {
 			AutoImplementConstructor(f, f->name_space, true);
+		}
 	}
 
 	parser_loop_depth = 0;
 
 // instructions
-	while(more_to_parse){
+	while (more_to_parse) {
 		more_to_parse = ParseFunctionCommand(f, this_line);
 	}
 
@@ -2333,19 +2304,21 @@ void SyntaxTree::parse_all_class_names(Class *ns, int indent0)
 	}
 }
 
-void SyntaxTree::parse_all_function_bodies()
-{
-	//for (auto *f: functions)   NO... might encounter new classes creating new functions!
-	for (int i=0; i<functions.num; i++){
-		auto *f = functions[i];
+void SyntaxTree::parse_all_function_bodies(const Class *name_space) {
+	for (auto *f: name_space->static_functions)
 		if ((!f->is_extern) and (f->_logical_line_no >= 0))
 			parse_function_body(f);
-	}
+	for (auto &c: name_space->member_functions)
+		if ((!c.func->is_extern) and (c.func->_logical_line_no >= 0))
+			parse_function_body(c.func);
+
+	// recursion
+	//for (auto *c: name_space->classes)   NO... might encounter new classes creating new functions!
+	for (int i=0; i<name_space->classes.num; i++)
+		parse_all_function_bodies(name_space->classes[i]);
 }
 
-void SyntaxTree::parse_top_level()
-{
-	root_of_all_evil->name = "RootOfAllEvil";
+void SyntaxTree::parse_top_level() {
 	cur_func = nullptr;
 
 	// syntax analysis
@@ -2355,35 +2328,35 @@ void SyntaxTree::parse_top_level()
 	Exp.reset_parser();
 
 	// global definitions (enum, class, variables and functions)
-	while (!Exp.end_of_file()){
+	while (!Exp.end_of_file()) {
 		next_extern = false;
 		next_const = false;
 
 		// extern?
-		if (Exp.cur == IDENTIFIER_EXTERN){
+		if (Exp.cur == IDENTIFIER_EXTERN) {
 			next_extern = true;
 			Exp.next();
 		}
 
 		// const?
-		if (Exp.cur == IDENTIFIER_CONST){
+		if (Exp.cur == IDENTIFIER_CONST) {
 			next_const = true;
 			Exp.next();
 		}
 
 
-		/*if ((Exp.cur == "import") or (Exp.cur == "use")){
+		/*if ((Exp.cur == "import") or (Exp.cur == "use")) {
 			ParseImport();
 
 		// enum
-		}else*/ if (Exp.cur == IDENTIFIER_ENUM){
+		} else*/ if (Exp.cur == IDENTIFIER_ENUM) {
 			parse_enum(base_class);
 
 		// class
-		}else if (Exp.cur == IDENTIFIER_CLASS){
+		} else if (Exp.cur == IDENTIFIER_CLASS) {
 			parse_class(base_class);
 
-		}else{
+		} else {
 
 			// type of definition
 			bool is_function = false;
@@ -2392,13 +2365,13 @@ void SyntaxTree::parse_top_level()
 				    is_function = true;
 
 			// function?
-			if (is_function){
-				parse_function_header(nullptr, next_extern);
-				SkipParsingFunctionBody();
+			if (is_function) {
+				parse_function_header(base_class, next_extern, true, false, false);
+				skip_parsing_function_body();
 
 			// global variables
-			}else{
-				ParseVariableDef(false, root_of_all_evil->block);
+			} else {
+				parse_variable_def(false, root_of_all_evil->block);
 			}
 		}
 		if (!Exp.end_of_file())
@@ -2407,16 +2380,15 @@ void SyntaxTree::parse_top_level()
 }
 
 // convert text into script data
-void SyntaxTree::parse()
-{
+void SyntaxTree::parse() {
 	parse_top_level();
 
-	parse_all_function_bodies();
+	parse_all_function_bodies(base_class);
 
 	for (auto *f: functions)
 		test_node_recursion(f->block, "a " + f->long_name());
 
-	AutoImplementFunctions(base_class);
+	auto_implement_functions(base_class);
 	for (auto *f: functions)
 		test_node_recursion(f->block, "b " + f->long_name());
 }

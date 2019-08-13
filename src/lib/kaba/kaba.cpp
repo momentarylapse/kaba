@@ -291,7 +291,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 // analyse syntax
 
 	// create a main() function
-	Function *func = ps->add_function("--command-func--", TypeVoid, ps->base_class);
+	Function *func = ps->add_function("--command-func--", TypeVoid, ps->base_class, true);
 	func->_var_size = 0; // set to -1...
 
 	// parse

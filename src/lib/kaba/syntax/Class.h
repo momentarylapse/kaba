@@ -30,8 +30,6 @@ public:
 	Function *func;
 	// _func_(x)  ->  p.func(x)
 	const Class *return_type; // literal!
-	int virtual_index;
-	bool needs_overriding;
 	ClassFunction();
 	ClassFunction(const Class *return_type, Function *f);
 	string signature() const;
@@ -66,7 +64,7 @@ public:
 	bool is_pointer_silent() const;
 	bool fully_parsed;
 	Array<ClassElement> elements;
-	Array<ClassFunction> functions;
+	Array<ClassFunction> member_functions;
 	Array<Function*> static_functions;
 	Array<Variable*> static_variables;
 	Array<Constant*> constants;

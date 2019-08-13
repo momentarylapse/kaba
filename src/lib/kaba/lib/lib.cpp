@@ -314,7 +314,7 @@ int _class_override_num_params = -1;
 ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptFlag flag) {
 	Class *c = const_cast<Class*>(ccc);
 	if ((flag & FLAG_OVERRIDE) > 0) {
-		foreachi(ClassFunction &ff, c->functions, i)
+		foreachi(ClassFunction &ff, c->member_functions, i)
 			if (ff.func->name == f.func->name) {
 				if (_class_override_num_params < 0 or _class_override_num_params == ff.func->num_params) {
 					ff = f;
@@ -332,8 +332,8 @@ ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptF
 				}
 			}*/
 	}
-	c->functions.add(f);
-	return &c->functions.back();
+	c->member_functions.add(f);
+	return &c->member_functions.back();
 }
 
 void _class_add_func_virtual(const string &name, const Class *return_type, int index, ScriptFlag flag) {
@@ -342,7 +342,7 @@ void _class_add_func_virtual(const string &name, const Class *return_type, int i
 	add_func(name, return_type, nullptr, ScriptFlag(flag & ~FLAG_OVERRIDE));
 	cur_func->name_space = cur_class;
 	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
-	cur_class_func->virtual_index = index;
+	cur_class_func->func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
 	cur_class->_vtable_location_compiler_ = cur_class->vtable.data;
@@ -1300,7 +1300,6 @@ void SIAddPackageKaba() {
 	
 	add_class(TypeClassFunction);
 		class_add_elementx("func", TypeFunctionP, &ClassFunction::func);
-		class_add_elementx("virtual_index", TypeInt, &ClassFunction::virtual_index);
 
 
 	add_class(TypeClass);
@@ -1309,7 +1308,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("parent", TypeClassP, &Class::parent);
 		class_add_elementx("namespace", TypeClassP, &Class::name_space);
 		class_add_elementx("elements", TypeClassElementList, &Class::elements);
-		class_add_elementx("functions", TypeClassFunctionList, &Class::functions);
+		class_add_elementx("functions", TypeClassFunctionList, &Class::member_functions);
 		class_add_elementx("static_functions", TypeFunctionPList, &Class::static_functions);
 		class_add_elementx("classes", TypeClassPList, &Class::classes);
 		class_add_elementx("constants", TypeConstantPList, &Class::constants);
@@ -1320,12 +1319,15 @@ void SIAddPackageKaba() {
 	add_class(TypeFunction);
 		class_add_elementx("name", TypeString, &Function::name);
 		class_add_funcx("long_name", TypeString, &Function::long_name);
-		class_add_elementx("class", TypeClassP, &Function::name_space);
+		class_add_elementx("namespace", TypeClassP, &Function::name_space);
 		class_add_elementx("num_params", TypeInt, &Function::num_params);
 		class_add_elementx("var", TypeVariablePList, &Function::var);
 		class_add_elementx("param_type", TypeClassPList, &Function::literal_param_type);
 		class_add_elementx("return_type", TypeClassP, &Function::literal_return_type);
 		class_add_elementx("is_static", TypeBool, &Function::is_static);
+		class_add_elementx("is_pure", TypeBool, &Function::is_pure);
+		class_add_elementx("virtual_index", TypeInt, &Function::virtual_index);
+		class_add_elementx("inline_index", TypeInt, &Function::inline_no);
 		class_add_elementx("code", TypeFunctionCodeP, &Function::address);
 
 
@@ -1832,7 +1834,7 @@ void DeclareClassVirtualIndex(const string &class_name, const string &func, void
 	LinkExternal(class_name + "." + func, v[d.offset]);
 }
 
-int ProcessClassOffset(const string &class_name, const string &element, int offset)
+int process_class_offset(const string &class_name, const string &element, int offset)
 {
 	for (ClassOffsetData &d: ClassOffsets)
 		if ((d.class_name == class_name) and (d.element == element))

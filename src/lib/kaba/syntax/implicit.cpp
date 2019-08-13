@@ -486,15 +486,14 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, const Class *t) {
 }
 
 void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr) {
-	Function *f = s->add_function(name, return_type, t);
+	Function *f = s->add_function(name, return_type, t, false); // always member-function!
 	f->auto_declared = true;
-	f->is_static = false;
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
 		f->block->add_var(param_names[i], p);
 		f->num_params ++;
 	}
-	f->update();
+	f->update_parameters_after_parsing();
 	bool override = cf;
 	t->add_function(s, f, false, override);
 }
@@ -502,7 +501,7 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *r
 bool needs_new(ClassFunction *f) {
 	if (!f)
 		return true;
-	return f->needs_overriding;
+	return f->func->needs_overriding;
 }
 
 Array<string> class_func_param_names(ClassFunction *cf) {
@@ -513,7 +512,7 @@ Array<string> class_func_param_names(ClassFunction *cf) {
 	return names;
 }
 
-void SyntaxTree::AddMissingFunctionHeadersForClass(Class *t) {
+void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != this)
 		return;
 	if (t->is_pointer())
@@ -544,14 +543,14 @@ void SyntaxTree::AddMissingFunctionHeadersForClass(Class *t) {
 		if (t->parent) {
 			bool has_own_constructors = false;
 			for (auto *cc: t->get_constructors())
-				if (!cc->needs_overriding)
+				if (!cc->func->needs_overriding)
 					has_own_constructors = true;
 
 			if (has_own_constructors) {
 				// don't inherit constructors!
-				for (int i=t->functions.num-1; i>=0; i--)
-					if (t->functions[i].func->name == IDENTIFIER_FUNC_INIT and t->functions[i].needs_overriding)
-						t->functions.erase(i);
+				for (int i=t->member_functions.num-1; i>=0; i--)
+					if (t->member_functions[i].func->name == IDENTIFIER_FUNC_INIT and t->member_functions[i].func->needs_overriding)
+						t->member_functions.erase(i);
 			} else {
 				// only auto-implement matching constructors
 				for (auto *pcc: t->parent->get_constructors()) {
@@ -584,8 +583,8 @@ Function* class_get_func(const Class *t, const string &name, const Class *return
 	ClassFunction *cf = t->get_func(name, return_type, params);
 	if (cf) {
 		Function *f = cf->func;
+		f->needs_overriding = false; // we're about to implement....
 		if (f->auto_declared) {
-			cf->needs_overriding = false; // we're about to implement....
 			return f;
 		}
 		return nullptr;
@@ -598,8 +597,8 @@ Function* prepare_auto_impl(const Class *t, ClassFunction *cf) {
 	if (!cf)
 		return nullptr;
 	Function *f = cf->func;
+	f->needs_overriding = false; // we're about to implement....
 	if (f->auto_declared) {
-		cf->needs_overriding = false; // we're about to implement....
 		return f;
 	}
 	return nullptr;
@@ -608,7 +607,7 @@ Function* prepare_auto_impl(const Class *t, ClassFunction *cf) {
 }
 
 // completely create and implement
-void SyntaxTree::AutoImplementFunctions(const Class *t) {
+void SyntaxTree::auto_implement_functions(const Class *t) {
 	if (t->owner != this)
 		return;
 	if (t->is_pointer())
@@ -640,8 +639,9 @@ void SyntaxTree::AutoImplementFunctions(const Class *t) {
 		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
 	}
 
+	// recursion
 	for (auto *c: t->classes)
-		AutoImplementFunctions(c);
+		auto_implement_functions(c);
 }
 
 

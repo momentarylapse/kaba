@@ -52,6 +52,8 @@ public:
 	bool is_pure, is_static;
 	bool throws_exceptions; // for external
 	int inline_no;
+	int virtual_index;
+	bool needs_overriding;
 	int num_slightly_hidden_vars;
 	// for compilation...
 	int64 _var_size, _param_size;
@@ -64,10 +66,12 @@ public:
 	~Function();
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
-	void update();
+	void update_parameters_after_parsing();
 	string signature() const;
 	Array<Block*> all_blocks();
 	void show(const string &stage = "") const;
+
+	Function *create_dummy_clone(const Class *name_space) const;
 };
 
 

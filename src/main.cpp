@@ -32,7 +32,7 @@ int Test2()
 void print_class(Kaba::Class *c)
 {
 	msg_write("==  " + c->name + "  ==");
-	for (auto &f: c->functions)
+	for (auto &f: c->member_functions)
 		msg_write(f.signature());
 }
 
