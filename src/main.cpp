@@ -18,7 +18,6 @@ namespace Kaba{
 extern long long s2i2(const string &str);
 };
 
-
 void Test1(int a)
 {
 	msg_write("out: " + i2s(a));

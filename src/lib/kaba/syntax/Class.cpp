@@ -64,6 +64,7 @@ Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_p
 	name_space = nullptr;
 	force_call_by_value = false;
 	fully_parsed = true;
+	_amd64_allow_pass_in_xmm = false;
 	_logical_line_no = _exp_no = -1;
 	_vtable_location_target_ = nullptr;
 	_vtable_location_compiler_ = nullptr;
@@ -110,6 +111,8 @@ bool Class::uses_call_by_reference() const {
 }
 
 bool Class::uses_return_by_memory() const {
+	if (_amd64_allow_pass_in_xmm)
+		return false;
 	return (!force_call_by_value and !is_pointer()) or is_array();
 }
 

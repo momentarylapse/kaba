@@ -414,6 +414,18 @@ void SIAddPackageMath() {
 	const Class *TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vector>));
 	const Class *TypeRandom = add_type("Random", sizeof(Random));
 	
+	// dirty hack :P
+	if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64) {
+		((Class*)TypeFloat32)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeFloat64)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeComplex)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeQuaternion)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeVector)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeColor)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypePlane)->_amd64_allow_pass_in_xmm = true;
+		((Class*)TypeRect)->_amd64_allow_pass_in_xmm = true;
+	}
+	
 	
 	add_class(TypeIntList);
 		class_add_func("sort", TypeVoid, mf(&IntList::sort));
@@ -473,7 +485,7 @@ void SIAddPackageMath() {
 
 	add_class(TypeComplexList);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&ComplexList::__init__));
-		class_add_func("sum", TypeComplex, amd64_wrap(mf(&ComplexList::sum), &amd64_comlist_sum), FLAG_PURE);
+		class_add_func("sum", TypeComplex, mf(&ComplexList::sum), FLAG_PURE);
 		class_add_func("sum2", TypeFloat32, mf(&ComplexList::sum2), FLAG_PURE);
 		class_add_func("__iadd__", TypeVoid, mf(&ComplexList::iadd));
 			func_add_param("other", TypeComplexList);
@@ -517,7 +529,7 @@ void SIAddPackageMath() {
 		class_add_elementx("y", TypeFloat32, &complex::y);
 		class_add_func("abs", TypeFloat32, mf(&complex::abs), FLAG_PURE);
 		class_add_func("abs_sqr", TypeFloat32, mf(&complex::abs_sqr), FLAG_PURE);
-		class_add_func("bar", TypeComplex, 		amd64_wrap(mf(&complex::bar), &amd64_com_bar), FLAG_PURE);
+		class_add_func("bar", TypeComplex, 		mf(&complex::bar), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&complex::str), FLAG_PURE);
 		class_add_const("I", TypeComplex, &complex::I);
 		class_add_func("create", TypeComplex, (void*)__complex_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
@@ -536,21 +548,21 @@ void SIAddPackageMath() {
 		class_add_func("length", TypeFloat32, type_p(mf(&vector::length)), FLAG_PURE);
 		class_add_func("length_sqr", TypeFloat32, type_p(mf(&vector::length_sqr)), FLAG_PURE);
 		class_add_func("length_fuzzy", TypeFloat32, type_p(mf(&vector::length_fuzzy)), FLAG_PURE);
-		class_add_func("normalized", TypeVector, amd64_wrap(mf(&vector::normalized), &amd64_vec_normalized), FLAG_PURE);
-		class_add_func("dir2ang", TypeVector, amd64_wrap(mf(&vector::dir2ang), &amd64_vec_dir2ang), FLAG_PURE);
-		class_add_func("dir2ang2", TypeVector, amd64_wrap(mf(&vector::dir2ang2), &amd64_vec_dir2ang2), FLAG_PURE);
+		class_add_func("normalized", TypeVector, mf(&vector::normalized), FLAG_PURE);
+		class_add_func("dir2ang", TypeVector, mf(&vector::dir2ang), FLAG_PURE);
+		class_add_func("dir2ang2", TypeVector, mf(&vector::dir2ang2), FLAG_PURE);
 			func_add_param("up", TypeVector);
-		class_add_func("ang2dir", TypeVector, amd64_wrap(mf(&vector::ang2dir), &amd64_vec_ang2dir), FLAG_PURE);
-		class_add_func("rotate", TypeVector, amd64_wrap(mf(&vector::rotate), &amd64_vec_rotate), FLAG_PURE);
+		class_add_func("ang2dir", TypeVector, mf(&vector::ang2dir), FLAG_PURE);
+		class_add_func("rotate", TypeVector, mf(&vector::rotate), FLAG_PURE);
 			func_add_param("ang", TypeVector);
-//		class_add_func("__div__", TypeVector, amd64_wrap(mf(&vector::untransform), &amd64_vec_untransform), FLAG_PURE);
+//		class_add_func("__div__", TypeVector, mf(&vector::untransform), FLAG_PURE);
 //			func_add_param("m", TypeMatrix);
-		class_add_func("ortho", TypeVector, amd64_wrap(mf(&vector::ortho), &amd64_vec_ortho), FLAG_PURE);
+		class_add_func("ortho", TypeVector, mf(&vector::ortho), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&vector::str), FLAG_PURE);
 		class_add_func("dot", TypeFloat32, (void*)&vector::dot, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("v1", TypeVector);
 			func_add_param("v2", TypeVector);
-		class_add_func("cross", TypeVector, amd64_wrap(&vector::cross, &amd64_vec_cross_product), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_funcx("cross", TypeVector, &vector::cross, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("v1", TypeVector);
 			func_add_param("v2", TypeVector);
 		class_add_func("create", TypeVector, (void*)&__vector_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
@@ -568,28 +580,28 @@ void SIAddPackageMath() {
 		class_add_elementx("y", TypeFloat32, &quaternion::y);
 		class_add_elementx("z", TypeFloat32, &quaternion::z);
 		class_add_elementx("w", TypeFloat32, &quaternion::w);
-		class_add_func("__mul__", TypeQuaternion, amd64_wrap(mf(&quaternion::mul), &amd64_quat_mul), FLAG_PURE);
+		class_add_func("__mul__", TypeQuaternion, mf(&quaternion::mul), FLAG_PURE);
 			func_add_param("other", TypeQuaternion);
 		class_add_func("__mul__", TypeVector, (void*)&amd64_quat_vec_mul, FLAG_PURE);
 			func_add_param("other", TypeVector);
 		class_add_func("__imul__", TypeVoid, mf(&quaternion::imul));
 			func_add_param("other", TypeQuaternion);
-		class_add_func("bar", TypeQuaternion, amd64_wrap(mf(&quaternion::bar), &amd64_quat_bar), FLAG_PURE);
+		class_add_func("bar", TypeQuaternion, mf(&quaternion::bar), FLAG_PURE);
 		class_add_func("normalize", TypeVoid, mf(&quaternion::normalize));
-		class_add_func("angles", TypeVector, amd64_wrap(mf(&quaternion::get_angles), &amd64_quat_get_angles), FLAG_PURE);
+		class_add_func("angles", TypeVector, mf(&quaternion::get_angles), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&quaternion::str), FLAG_PURE);
-		class_add_func("rotation_v", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_v, &amd64_quat_rot_v), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_v", TypeQuaternion, (void*)&quaternion::rotation_v, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("ang", TypeVector);
-		class_add_func("rotation_a", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_a, &amd64_quat_rot_a), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_a", TypeQuaternion, (void*)&quaternion::rotation_a, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("axis", TypeVector);
 			func_add_param("angle", TypeFloat32);
-		class_add_func("rotation_m", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_m, &amd64_quat_rot_m), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_m", TypeQuaternion, (void*)&quaternion::rotation_m, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("m_in", TypeMatrix);
-		class_add_func("interpolate", TypeQuaternion, amd64_wrap((void*)(quaternion(*)(const quaternion&, const quaternion&, float))&quaternion::interpolate, &amd64_quat_inter), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("interpolate", TypeQuaternion, (void*)(quaternion(*)(const quaternion&, const quaternion&, float))&quaternion::interpolate, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("q_0", TypeQuaternion);
 			func_add_param("q_1", TypeQuaternion);
 			func_add_param("t", TypeFloat32);
-		class_add_func("drag", TypeQuaternion, amd64_wrap((void*)&quaternion::drag, &amd64_quat_drag), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("drag", TypeQuaternion, (void*)&quaternion::drag, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("up", TypeVector);
 			func_add_param("dang", TypeVector);
 			func_add_param("reset_z", TypeBool);
@@ -626,11 +638,11 @@ void SIAddPackageMath() {
 		class_add_element("g", TypeFloat32, 4);
 		class_add_element("b", TypeFloat32, 8);
 		class_add_func("str", TypeString, mf(&color::str), FLAG_PURE);
-		class_add_func("__add__", TypeColor, amd64_wrap(mf(&color::operator+), &amd64_col_add), FLAG_PURE);
+		class_add_func("__add__", TypeColor, mf(&color::operator+), FLAG_PURE);
 			func_add_param("o", TypeColor);
 		class_add_func("__adds__", TypeVoid, mf(&color::operator+=));
 			func_add_param("o", TypeColor);
-		class_add_func("__sub__", TypeColor, amd64_wrap(mf(&color::operator-), &amd64_col_sub), FLAG_PURE);
+		class_add_func("__sub__", TypeColor, mf(&color::operator-), FLAG_PURE);
 			func_add_param("o", TypeColor);
 		class_add_func("__subs__", TypeVoid, mf(&color::operator-=));
 			func_add_param("o", TypeColor);
@@ -638,12 +650,12 @@ void SIAddPackageMath() {
 			func_add_param("f", TypeFloat32);
 		class_add_func("__mul__", TypeColor, (void*)&amd64_col_mul_c, FLAG_PURE);
 			func_add_param("c", TypeColor);
-		class_add_func("hsb", TypeColor, amd64_wrap(&SetColorHSB, &amd64_col_hsb), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_funcx("hsb", TypeColor, &SetColorHSB, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("a", TypeFloat32);
 			func_add_param("h", TypeFloat32);
 			func_add_param("s", TypeFloat32);
 			func_add_param("b", TypeFloat32);
-		class_add_func("interpolate", TypeColor, amd64_wrap(&ColorInterpolate, &amd64_col_interpolate), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_funcx("interpolate", TypeColor, &ColorInterpolate, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("c1", TypeColor);
 			func_add_param("c2", TypeColor);
 			func_add_param("t", TypeFloat32);
@@ -706,18 +718,18 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeMatrix);
 		class_add_func("__mul__", TypeMatrix, mf(&matrix::mul), FLAG_PURE);
 			func_add_param("other", TypeMatrix);
-		class_add_func("__mul__", TypeVector, amd64_wrap(mf(&matrix::mul_v), &amd64_mat_vec_mul), FLAG_PURE);
+		class_add_func("__mul__", TypeVector, mf(&matrix::mul_v), FLAG_PURE);
 			func_add_param("other", TypeVector);
 		class_add_func("str", TypeString, mf(&matrix::str), FLAG_PURE);
-		class_add_func("transform", TypeVector, /*amd64_wrap(mf(&m::transform),*/ (void*)&amd64_mat_transform/*)*/, FLAG_PURE);
+		class_add_func("transform", TypeVector, mf(&matrix::transform), FLAG_PURE);
 			func_add_param("v", TypeVector);
-		class_add_func("transform_normal", TypeVector, /*amd64_wrap(mf(&vector::transform_normal),*/ (void*)&amd64_mat_transform_normal/*)*/, FLAG_PURE);
+		class_add_func("transform_normal", TypeVector, mf(&matrix::transform_normal), FLAG_PURE);
 			func_add_param("v", TypeVector);
-		class_add_func("untransform", TypeVector, /*amd64_wrap(mf(&vector::untransform),*/ (void*)&amd64_mat_untransform/*)*/, FLAG_PURE);
+		class_add_func("untransform", TypeVector, mf(&matrix::untransform), FLAG_PURE);
 			func_add_param("v", TypeVector);
-		class_add_func("project", TypeVector, amd64_wrap(mf(&matrix::project), &amd64_mat_project), FLAG_PURE);
+		class_add_func("project", TypeVector, mf(&matrix::project), FLAG_PURE);
 			func_add_param("v", TypeVector);
-		class_add_func("unproject", TypeVector, amd64_wrap(mf(&matrix::unproject), &amd64_mat_unproject), FLAG_PURE);
+		class_add_func("unproject", TypeVector, mf(&matrix::unproject), FLAG_PURE);
 			func_add_param("v", TypeVector);
 		class_add_func("inverse", TypeMatrix, mf(&matrix::inverse), FLAG_PURE);
 		class_add_func("translation", TypeMatrix, (void*)&matrix::translation, ScriptFlag(FLAG_PURE | FLAG_STATIC));
@@ -759,7 +771,7 @@ void SIAddPackageMath() {
 		class_add_element("_e", TypeFloatArray9, 0, FLAG_HIDDEN);
 		class_add_func("__mul__", TypeMatrix3, mf(&matrix3::mul), FLAG_PURE);
 			func_add_param("other", TypeMatrix3);
-		class_add_func("__mul__", TypeVector, amd64_wrap(mf(&matrix3::mul_v), &amd64_mat3_vec_mul), FLAG_PURE);
+		class_add_func("__mul__", TypeVector, mf(&matrix3::mul_v), FLAG_PURE);
 			func_add_param("other", TypeVector);
 		class_add_func("str", TypeString, mf(&matrix3::str), FLAG_PURE);
 		class_add_func("inverse", TypeMatrix3, mf(&matrix3::inverse), FLAG_PURE);
@@ -882,9 +894,9 @@ void SIAddPackageMath() {
 		class_add_func("normal", TypeFloat32, mf(&Random::normal));
 			func_add_param("mean", TypeFloat32);
 			func_add_param("stddev", TypeFloat32);
-		class_add_func("inBall", TypeVector, amd64_wrap(mf(&Random::in_ball), &amd64_vec_rand_in_ball));
+		class_add_func("inBall", TypeVector, mf(&Random::in_ball));
 			func_add_param("r", TypeFloat32);
-		class_add_func("dir", TypeVector, amd64_wrap(mf(&Random::dir), &amd64_vec_rand_dir));
+		class_add_func("dir", TypeVector, mf(&Random::dir));
 	
 	// hopefully soon constructors...
 
@@ -941,9 +953,9 @@ void SIAddPackageMath() {
 			func_add_param("p", TypeVector);
 			func_add_param("v", TypeVector);
 		class_add_func("normalize", TypeVoid, mf(&Interpolator<vector>::normalize));
-		class_add_func("get", TypeVector, amd64_wrap(mf(&Interpolator<vector>::get), &amd64_vec_inter_get));
+		class_add_func("get", TypeVector, mf(&Interpolator<vector>::get));
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_tang", TypeVector, amd64_wrap(mf(&Interpolator<vector>::getTang), &amd64_vec_inter_get_tang));
+		class_add_func("get_tang", TypeVector, mf(&Interpolator<vector>::getTang));
 			func_add_param("t", TypeFloat32);
 		class_add_func("get_list", TypeVectorList, mf(&Interpolator<vector>::getList));
 			func_add_param("t", TypeFloatList);
@@ -1009,10 +1021,10 @@ void SIAddPackageMath() {
 		func_add_param("end", TypeFloat32);
 		func_add_param("step", TypeFloat32);
 	// vectors
-	add_func("VecAngAdd", TypeVector, amd64_wrap(&VecAngAdd, &amd64_vec_ang_add), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+	add_func("VecAngAdd", TypeVector, mf(&VecAngAdd), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 		func_add_param("ang1", TypeVector);
 		func_add_param("ang2", TypeVector);
-	add_func("VecAngInterpolate", TypeVector, amd64_wrap(&VecAngInterpolate, &amd64_vec_ang_interpolate), ScriptFlag(FLAG_PURE | FLAG_STATIC));
+	add_func("VecAngInterpolate", TypeVector, mf(&VecAngInterpolate), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 		func_add_param("ang1", TypeVector);
 		func_add_param("ang2", TypeVector);
 		func_add_param("t", TypeFloat32);

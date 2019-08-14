@@ -72,6 +72,9 @@ matrix matrix::operator * (float f) const {
 	return r;
 }
 
+vector matrix::transform(const vector &v) const {
+	return *this * v;
+}
 vector matrix::transform_normal(const vector &v) const {
 	return vector(	v.x*_00 + v.y*_01 + v.z*_02,
 					v.x*_10 + v.y*_11 + v.z*_12,

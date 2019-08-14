@@ -36,6 +36,7 @@ public:
 	matrix _cdecl operator *= (const matrix &m);
 	vector _cdecl operator * (const vector &v) const;
 	float _cdecl determinant() const;
+	vector _cdecl transform(const vector &v) const;
 	vector _cdecl transform_normal(const vector &v) const;
 	vector _cdecl untransform(const vector &v) const;
 	vector _cdecl project(const vector &v) const;

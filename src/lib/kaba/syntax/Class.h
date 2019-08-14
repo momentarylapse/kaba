@@ -63,6 +63,7 @@ public:
 	SyntaxTree *owner; // to share and be able to delete...
 	int _logical_line_no;
 	int _exp_no;
+	bool _amd64_allow_pass_in_xmm;
 	Array<void*> vtable;
 	void *_vtable_location_compiler_; // may point to const/opcode
 	void *_vtable_location_target_; // (opcode offset adjusted)
