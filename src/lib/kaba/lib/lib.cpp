@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.3.9";
+string LibVersion = "0.17.4.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -172,7 +172,6 @@ Script *cur_package = nullptr;
 
 static Function *cur_func = nullptr;
 static Class *cur_class;
-static ClassFunction *cur_class_func = nullptr;
 
 
 void add_package(const string &name, bool used_by_default)
@@ -311,17 +310,17 @@ void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable
 
 int _class_override_num_params = -1;
 
-ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptFlag flag) {
+void _class_add_func(const Class *ccc, Function *f, ScriptFlag flag) {
 	Class *c = const_cast<Class*>(ccc);
 	if ((flag & FLAG_OVERRIDE) > 0) {
-		foreachi(ClassFunction &ff, c->member_functions, i)
-			if (ff.func->name == f.func->name) {
-				if (_class_override_num_params < 0 or _class_override_num_params == ff.func->num_params) {
-					ff = f;
-					return &ff;
+		foreachi(Function *ff, c->member_functions, i)
+			if (ff->name == f->name) {
+				if (_class_override_num_params < 0 or _class_override_num_params == ff->num_params) {
+					c->member_functions[i] = f;
+					return;
 				}
 			}
-		msg_error("could not override " + c->name + "." + f.func->name);
+		msg_error("could not override " + c->name + "." + f->name);
 	} else {
 		// name alone is not enough for matching...
 		/*foreachi(ClassFunction &ff, c->functions, i)
@@ -333,7 +332,6 @@ ClassFunction *_class_add_func(const Class *ccc, const ClassFunction &f, ScriptF
 			}*/
 	}
 	c->member_functions.add(f);
-	return &c->member_functions.back();
 }
 
 void _class_add_func_virtual(const string &name, const Class *return_type, int index, ScriptFlag flag) {
@@ -341,8 +339,8 @@ void _class_add_func_virtual(const string &name, const Class *return_type, int i
 	//msg_write(index);
 	add_func(name, return_type, nullptr, ScriptFlag(flag & ~FLAG_OVERRIDE));
 	cur_func->name_space = cur_class;
-	cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
-	cur_class_func->func->virtual_index = index;
+	_class_add_func(cur_class, cur_func, flag);
+	cur_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
 	cur_class->_vtable_location_compiler_ = cur_class->vtable.data;
@@ -355,7 +353,7 @@ void class_add_func(const string &name, const Class *return_type, void *func, Sc
 	if ((flag & FLAG_STATIC) > 0)
 		cur_class->static_functions.add(cur_func);
 	else
-		cur_class_func = _class_add_func(cur_class, ClassFunction(return_type, cur_func), flag);
+		_class_add_func(cur_class, cur_func, flag);
 }
 
 int get_virtual_index(void *func, const string &tname, const string &name) {
@@ -604,7 +602,6 @@ Function *add_func(const string &name, const Class *return_type, void *func, Scr
 	if (config.allow_std_lib)
 		f->address = func;
 	cur_func = f;
-	cur_class_func = nullptr;
 	return f;
 }
 
@@ -641,7 +638,8 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 	t->parent = parent;
 	add_class(t);
 
-	ClassFunction *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
+	Function *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
+	sub->literal_return_type = t;
 	sub->return_type = t;
 
 	// FIXME  wrong for complicated classes
@@ -1282,8 +1280,6 @@ void SIAddPackageKaba() {
 	
 	auto *TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
 	auto *TypeClassElementList = add_type_a("ClassElement[]", TypeClassElement, -1);
-	auto *TypeClassFunction = add_type("ClassFunction", sizeof(ClassFunction));
-	auto *TypeClassFunctionList = add_type_a("ClassFunction[]", TypeClassFunction, -1);
 	auto *TypeVariable = add_type("Variable", sizeof(Variable));
 	auto *TypeVariableP = add_type_p("Variable*", TypeVariable);
 	auto *TypeVariablePList = add_type_a("Variable*[]", TypeVariableP, -1);
@@ -1297,9 +1293,6 @@ void SIAddPackageKaba() {
 		class_add_elementx("type", TypeClassP, &ClassElement::type);
 		class_add_elementx("hidden", TypeBool, &ClassElement::hidden);
 		class_add_elementx("offset", TypeInt, &ClassElement::offset);
-	
-	add_class(TypeClassFunction);
-		class_add_elementx("func", TypeFunctionP, &ClassFunction::func);
 
 
 	add_class(TypeClass);
@@ -1308,7 +1301,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("parent", TypeClassP, &Class::parent);
 		class_add_elementx("namespace", TypeClassP, &Class::name_space);
 		class_add_elementx("elements", TypeClassElementList, &Class::elements);
-		class_add_elementx("functions", TypeClassFunctionList, &Class::member_functions);
+		class_add_elementx("functions", TypeFunctionPList, &Class::member_functions);
 		class_add_elementx("static_functions", TypeFunctionPList, &Class::static_functions);
 		class_add_elementx("classes", TypeClassPList, &Class::classes);
 		class_add_elementx("constants", TypeConstantPList, &Class::constants);
@@ -1364,8 +1357,6 @@ void SIAddPackageKaba() {
 		
 	add_class(TypeClassElementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassElement>::__init__);
-	add_class(TypeClassFunctionList);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassFunction>::__init__);
 	add_class(TypeStatementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Statement>::__init__);
 

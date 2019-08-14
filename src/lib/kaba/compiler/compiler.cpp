@@ -64,7 +64,7 @@ void try_init_global_var(const Class *type, char* g_var, SyntaxTree *ps) {
 			try_init_global_var(type->parent, g_var + i * type->parent->size, ps);
 		return;
 	}
-	ClassFunction *cf = type->get_default_constructor();
+	Function *cf = type->get_default_constructor();
 	if (!cf) {
 		if (type->needs_constructor())
 			ps->do_error("global variable without default constructor...");
@@ -72,7 +72,7 @@ void try_init_global_var(const Class *type, char* g_var, SyntaxTree *ps) {
 	}
 	typedef void init_func(void *);
 	//msg_write("global init: " + v.type->name);
-	init_func *ff = (init_func*)cf->func->address;
+	init_func *ff = (init_func*)cf->address;
 	if (ff)
 		ff(g_var);
 }
@@ -536,18 +536,18 @@ void Script::compile()
 
 	parse_magic_linker_string(syntax);
 
-	syntax->MapLocalVariablesToStack();
+	syntax->map_local_variables_to_stack();
 
-	syntax->BreakDownComplicatedCommands();
+	syntax->break_down_complicated_commands();
 
-	syntax->SimplifyRefDeref();
-	syntax->SimplifyShiftDeref();
+	syntax->simplify_ref_deref();
+	syntax->simplify_shift_deref();
 
-	syntax->PreProcessor();
-	syntax->MakeFunctionsInline();
+	syntax->pre_processor();
+	syntax->make_functions_inline();
 
 	if (config.verbose)
-		syntax->Show("comp:a");
+		syntax->show("comp:a");
 
 	allocate_memory();
 	map_global_variables_to_memory();
@@ -568,10 +568,10 @@ void Script::compile()
 
 
 
-	syntax->PreProcessorAddresses();
+	syntax->pre_processor_addresses();
 
 	if (config.verbose)
-		syntax->Show("comp:b");
+		syntax->show("comp:b");
 
 
 // compile functions into Opcode

@@ -24,7 +24,7 @@
 
 namespace Kaba{
 
-string Version = "0.17.3.0";
+string Version = "0.17.4.0";
 
 //#define ScriptDebug
 
@@ -299,7 +299,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 	ps->parse_complete_command(func->block);
 	//pre_script->GetCompleteCommand((pre_script->Exp->ExpNr,0,0,&func);
 
-	ps->ConvertCallByReference();
+	ps->convert_call_by_reference();
 
 // compile
 	s->compile();

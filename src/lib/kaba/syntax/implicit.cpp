@@ -5,7 +5,7 @@
 
 namespace Kaba{
 
-void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, const Class *t) {
+void SyntaxTree::auto_implement_add_virtual_table(Node *self, Function *f, const Class *t) {
 	if (t->vtable.num > 0) {
 		Node *p = shift_node(self, true, 0, TypePointer);
 		auto *c = add_constant(TypePointer);
@@ -16,12 +16,12 @@ void SyntaxTree::AutoImplementAddVirtualTable(Node *self, Function *f, const Cla
 	}
 }
 
-void SyntaxTree::AutoImplementAddChildConstructors(Node *n_self, Function *f, const Class *t) {
+void SyntaxTree::auto_implement_add_child_constructors(Node *n_self, Function *f, const Class *t) {
 	int i0 = t->parent ? t->parent->elements.num : 0;
 	foreachi(ClassElement &e, t->elements, i) {
 		if (i < i0)
 			continue;
-		ClassFunction *ff = e.type->get_default_constructor();
+		Function *ff = e.type->get_default_constructor();
 		if (e.type->needs_constructor() and !ff)
 			do_error(f->signature() + format(": missing default constructor for element %s", e.name.c_str()));
 		if (!ff)
@@ -32,7 +32,7 @@ void SyntaxTree::AutoImplementAddChildConstructors(Node *n_self, Function *f, co
 	}
 }
 
-void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allow_parent_constructor) {
+void SyntaxTree::auto_implement_constructor(Function *f, const Class *t, bool allow_parent_constructor) {
 	if (!f)
 		return;
 	Node *n_self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
@@ -65,12 +65,12 @@ void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allo
 
 		// parent constructor
 		if (t->parent and allow_parent_constructor) {
-			ClassFunction *pc_same = t->parent->get_same_func(IDENTIFIER_FUNC_INIT, f);
-			ClassFunction *pc_def = t->parent->get_default_constructor();
+			Function *pc_same = t->parent->get_same_func(IDENTIFIER_FUNC_INIT, f);
+			Function *pc_def = t->parent->get_default_constructor();
 			if (pc_same) {
 				// first, try same signature
 				Node *n_init_parent = add_node_member_call(pc_same, cp_node(n_self));
-				for (int i=0; i<pc_same->func->num_params; i++)
+				for (int i=0; i<pc_same->num_params; i++)
 					n_init_parent->set_param(i, add_node_local_var(f->var[i]));
 				f->block->add(n_init_parent);
 			} else if (pc_def) {
@@ -82,23 +82,23 @@ void SyntaxTree::AutoImplementConstructor(Function *f, const Class *t, bool allo
 		}
 
 		// call child constructors for elements
-		AutoImplementAddChildConstructors(n_self, f, t);
+		auto_implement_add_child_constructors(n_self, f, t);
 
 		// add vtable reference
 		// after child constructor (otherwise would get overwritten)
 		if (t->vtable.num > 0)
-			AutoImplementAddVirtualTable(cp_node(n_self), f, t);
+			auto_implement_add_virtual_table(cp_node(n_self), f, t);
 		delete n_self;
 	}
 }
 
-void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_destructor(Function *f, const Class *t) {
 	if (!f)
 		return;
 	Node *n_self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array() or t->is_dict()) {
-		ClassFunction *f_clear = t->get_func("clear", TypeVoid, {});
+		Function *f_clear = t->get_func("clear", TypeVoid, {});
 		if (!f_clear)
 			do_error(f->signature() + ": clear() missing");
 		f->block->add(add_node_member_call(f_clear, n_self));
@@ -121,7 +121,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 		foreachi(ClassElement &e, t->elements, i) {
 			if (i < i0)
 				continue;
-			ClassFunction *ff = e.type->get_destructor();
+			Function *ff = e.type->get_destructor();
 			if (!ff and e.type->needs_destructor())
 				do_error(f->signature() + format(": missing destructor for element %s", e.name.c_str()));
 			if (!ff)
@@ -132,7 +132,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 
 		// parent destructor
 		if (t->parent) {
-			ClassFunction *ff = t->parent->get_destructor();
+			Function *ff = t->parent->get_destructor();
 			if (ff)
 				f->block->add(add_node_member_call(ff, cp_node(n_self), true));
 			else if (t->parent->needs_destructor())
@@ -142,7 +142,7 @@ void SyntaxTree::AutoImplementDestructor(Function *f, const Class *t) {
 	}
 }
 
-void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_assign(Function *f, const Class *t) {
 	if (!f)
 		return;
 	Node *n_other = add_node_local_var(f->__get_var("other"));
@@ -150,7 +150,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 
 	if (t->is_super_array()){
 
-		ClassFunction *f_resize = t->get_func("resize", TypeVoid, {TypeInt});
+		Function *f_resize = t->get_func("resize", TypeVoid, {TypeInt});
 		if (!f_resize)
 			do_error(f->signature() + format(": no %s.resize(int) found", t->name.c_str()));
 
@@ -279,7 +279,7 @@ void SyntaxTree::AutoImplementAssign(Function *f, const Class *t) {
 }
 
 
-void SyntaxTree::AutoImplementArrayClear(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_array_clear(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto *var_i = f->block->add_var("for_var", TypeInt);
@@ -291,7 +291,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, const Class *t) {
 	Node *for_var = add_node_local_var(var_i);
 
 // delete...
-	ClassFunction *f_del = t->parent->get_destructor();
+	Function *f_del = t->parent->get_destructor();
 	if (f_del) {
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
 		f->block->add(cmd_for);
@@ -331,7 +331,7 @@ void SyntaxTree::AutoImplementArrayClear(Function *f, const Class *t) {
 }
 
 
-void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_array_resize(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto *var = f->block->add_var("for_var", TypeInt);
@@ -349,7 +349,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
 	f->block->add(add_node_operator_by_inline(num_old, self_num, INLINE_INT_ASSIGN));
 
 // delete...
-	ClassFunction *f_del = t->parent->get_destructor();
+	Function *f_del = t->parent->get_destructor();
 	if (f_del) {
 
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
@@ -389,7 +389,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
 	f->block->add(c_resize);
 
 	// new...
-	ClassFunction *f_init = t->parent->get_default_constructor();
+	Function *f_init = t->parent->get_default_constructor();
 	if (f_init) {
 		Node *cmd_for = add_node_statement(STATEMENT_FOR);
 		f->block->add(cmd_for);
@@ -424,7 +424,7 @@ void SyntaxTree::AutoImplementArrayResize(Function *f, const Class *t) {
 }
 
 
-void SyntaxTree::AutoImplementArrayRemove(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_array_remove(Function *f, const Class *t) {
 	if (!f)
 		return;
 
@@ -432,7 +432,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, const Class *t) {
 	Node *self = add_node_local_var(f->__get_var(IDENTIFIER_SELF));
 
 	// delete...
-	ClassFunction *f_del = t->parent->get_destructor();
+	Function *f_del = t->parent->get_destructor();
 	if (f_del) {
 
 		// el := self.data[index]
@@ -453,7 +453,7 @@ void SyntaxTree::AutoImplementArrayRemove(Function *f, const Class *t) {
 	f->block->params.add(c_remove);
 }
 
-void SyntaxTree::AutoImplementArrayAdd(Function *f, const Class *t) {
+void SyntaxTree::auto_implement_array_add(Function *f, const Class *t) {
 	if (!f)
 		return;
 	Block *b = f->block;
@@ -485,7 +485,7 @@ void SyntaxTree::AutoImplementArrayAdd(Function *f, const Class *t) {
 	b->add(cmd_assign);
 }
 
-void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, ClassFunction *cf = nullptr) {
+void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr) {
 	Function *f = s->add_function(name, return_type, t, false); // always member-function!
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i) {
@@ -498,15 +498,15 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *r
 	t->add_function(s, f, false, override);
 }
 
-bool needs_new(ClassFunction *f) {
+bool needs_new(Function *f) {
 	if (!f)
 		return true;
-	return f->func->needs_overriding;
+	return f->needs_overriding;
 }
 
-Array<string> class_func_param_names(ClassFunction *cf) {
+Array<string> class_func_param_names(Function *cf) {
 	Array<string> names;
-	auto *f = cf->func;
+	auto *f = cf;
 	for (int i=0; i<f->num_params; i++)
 		names.add(f->var[i]->name);
 	return names;
@@ -543,20 +543,20 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		if (t->parent) {
 			bool has_own_constructors = false;
 			for (auto *cc: t->get_constructors())
-				if (!cc->func->needs_overriding)
+				if (!cc->needs_overriding)
 					has_own_constructors = true;
 
 			if (has_own_constructors) {
 				// don't inherit constructors!
 				for (int i=t->member_functions.num-1; i>=0; i--)
-					if (t->member_functions[i].func->name == IDENTIFIER_FUNC_INIT and t->member_functions[i].func->needs_overriding)
+					if (t->member_functions[i]->name == IDENTIFIER_FUNC_INIT and t->member_functions[i]->needs_overriding)
 						t->member_functions.erase(i);
 			} else {
 				// only auto-implement matching constructors
 				for (auto *pcc: t->parent->get_constructors()) {
-					auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc->func);
+					auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc);
 					if (needs_new(c))
-						add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->func->literal_param_type, class_func_param_names(pcc), c);
+						add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c);
 				}
 			}
 		} else {
@@ -580,9 +580,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 }
 
 Function* class_get_func(const Class *t, const string &name, const Class *return_type, const Array<const Class*> &params) {
-	ClassFunction *cf = t->get_func(name, return_type, params);
+	Function *cf = t->get_func(name, return_type, params);
 	if (cf) {
-		Function *f = cf->func;
+		Function *f = cf;
 		f->needs_overriding = false; // we're about to implement....
 		if (f->auto_declared) {
 			return f;
@@ -593,10 +593,10 @@ Function* class_get_func(const Class *t, const string &name, const Class *return
 	return nullptr;
 }
 
-Function* prepare_auto_impl(const Class *t, ClassFunction *cf) {
+Function* prepare_auto_impl(const Class *t, Function *cf) {
 	if (!cf)
 		return nullptr;
-	Function *f = cf->func;
+	Function *f = cf;
 	f->needs_overriding = false; // we're about to implement....
 	if (f->auto_declared) {
 		return f;
@@ -616,27 +616,27 @@ void SyntaxTree::auto_implement_functions(const Class *t) {
 	// TODO: really check here?
 	// ...or just implement any function that's declared but not implemented?
 	if (t->is_super_array()) {
-		AutoImplementConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
-		AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
-		AutoImplementArrayClear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, {})), t);
-		AutoImplementArrayResize(prepare_auto_impl(t, t->get_func("resize", TypeVoid, {TypeInt})), t);
-		AutoImplementArrayRemove(prepare_auto_impl(t, t->get_func("remove", TypeVoid, {TypeInt})), t);
-		AutoImplementArrayAdd(class_get_func(t, "add", TypeVoid, {nullptr}), t);
-		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
+		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_array_clear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, {})), t);
+		auto_implement_array_resize(prepare_auto_impl(t, t->get_func("resize", TypeVoid, {TypeInt})), t);
+		auto_implement_array_remove(prepare_auto_impl(t, t->get_func("remove", TypeVoid, {TypeInt})), t);
+		auto_implement_array_add(class_get_func(t, "add", TypeVoid, {nullptr}), t);
+		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_array()) {
 		if (t->needs_constructor())
-			AutoImplementConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+			auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		if (t->needs_destructor())
-			AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
-		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
+			auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_dict()) {
-		AutoImplementConstructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 	} else if (!t->is_simple_class()) {
 		for (auto *cf: t->get_constructors())
-			AutoImplementConstructor(prepare_auto_impl(t, cf), t, true);
+			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);
 		if (t->needs_destructor())
-			AutoImplementDestructor(prepare_auto_impl(t, t->get_destructor()), t);
-		AutoImplementAssign(prepare_auto_impl(t, t->get_assign()), t);
+			auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	}
 
 	// recursion
