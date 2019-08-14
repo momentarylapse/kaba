@@ -303,10 +303,14 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 }
 
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) {
-	/*if ((t == TypeVector) or (t == TypeColor) or (t == TypeRect) or (t == TypeComplex)) {
-
-		return;
-	}*/
+	// shortcut??? (inlineable)
+	if ((t == TypeVector) or (t == TypeColor) or (t == TypeRect) or (t == TypeComplex)) {
+		for (auto *f: t->static_functions)
+			if (f->name == "create")
+				return {add_node_call(f)};
+	}
+	
+	// constructor
 	auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
 	vv->dont_add_constructor = true;
 	Node *dummy = add_node_local_var(vv);
@@ -324,7 +328,7 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) 
 Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block, bool check)
 {
 	// parse all parameters
-	Array<Node*> params = parse_call_parameters(block);
+	auto params = parse_call_parameters(block);
 
 	// make links callable
 	for (Node *l: links){

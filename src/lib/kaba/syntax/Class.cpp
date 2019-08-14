@@ -161,7 +161,7 @@ const Class *Class::get_array_element() const {
 }
 
 bool Class::needs_constructor() const {
-	if (!uses_call_by_reference())
+	if (!uses_call_by_reference()) // int/float/pointer etc
 		return false;
 	if (is_super_array() or is_dict())
 		return true;

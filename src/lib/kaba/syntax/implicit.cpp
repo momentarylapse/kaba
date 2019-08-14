@@ -418,7 +418,7 @@ void SyntaxTree::auto_implement_array_resize(Function *f, const Class *t) {
 		// ...for_var += 1
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(for_var), num /*dummy*/, INLINE_INT_INCREASE);
 		cmd_for->set_param(3, cmd_inc);
-	} else if (t->parent->needs_destructor()) {
+	} else if (t->parent->needs_constructor()) {
 		do_error(f->signature() + ": element default constructor missing");
 	}
 }
