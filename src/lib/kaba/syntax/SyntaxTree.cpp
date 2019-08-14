@@ -16,7 +16,7 @@ bool next_static = false;
 bool next_const = false;
 
 
-static Node* _transform_insert_before_ = nullptr;
+static Array<Node*> _transform_insert_before_;
 
 Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
@@ -352,7 +352,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 					return {new Node(c)};
 
 			// then the (real) functions
-			for (Function *f: functions)
+			for (Function *f: ns->static_functions)
 				if (f->name == name and f->is_static)
 					links.add(new Node(KIND_FUNCTION_NAME, (int_p)f, TypeFunctionCode));
 			if (links.num > 0 and !prefer_class)
@@ -616,7 +616,7 @@ Node *convert_return_by_memory(SyntaxTree *ps, Node *n, Function *f)
 	Node *cmd_assign = ps->link_operator(OPERATOR_ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
 		ps->do_error("no = operator for return from function found: " + f->long_name());
-	_transform_insert_before_ = cmd_assign;
+	_transform_insert_before_.add(cmd_assign);
 
 	n->set_num_params(0);
 	return n;
@@ -777,11 +777,10 @@ Node *SyntaxTree::break_down_complicated_command(Node *c)
 	return c;
 }
 
-Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
-{
-	if (n->kind == KIND_BLOCK){
+Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F) {
+	if (n->kind == KIND_BLOCK) {
 		transform_block(n->as_block(), F);
-	}else{
+	} else {
 		for (int i=0; i<n->params.num; i++)
 			n->set_param(i, transform_node(n->params[i], F));
 
@@ -794,26 +793,25 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F)
 }
 
 
-void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F)
-{
+void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F) {
 	//foreachi (Node *n, block->nodes, i){
-	for (int i=0; i<block->params.num; i++){
+	for (int i=0; i<block->params.num; i++) {
 		block->params[i] = transform_node(block->params[i], F);
-		if (_transform_insert_before_){
-			if (config.verbose)
-				msg_error("INSERT BEFORE...");
-			block->params.insert(_transform_insert_before_, i);
-			_transform_insert_before_ = nullptr;
-			i ++;
+		if (_transform_insert_before_.num > 0) {
+			for (auto *ib: _transform_insert_before_) {
+				if (config.verbose)
+					msg_error("INSERT BEFORE...");
+				block->params.insert(ib, i);
+				i ++;
+			}
+			_transform_insert_before_.clear();
 		}
 	}
 }
 
 // split arrays and address shifts into simpler commands...
-void SyntaxTree::transform(std::function<Node*(Node*)> F)
-{
-	_transform_insert_before_ = nullptr;
-	for (Function *f: functions){
+void SyntaxTree::transform(std::function<Node*(Node*)> F) {
+	for (Function *f: functions) {
 		cur_func = f;
 		transform_block(f->block, F);
 	}
@@ -826,11 +824,13 @@ Node *conv_constr_func(SyntaxTree *ps, Node *n)
 			msg_error("constr func....");
 			n->show();
 		}
-		_transform_insert_before_ = ps->cp_node(n);
-		_transform_insert_before_->kind = KIND_FUNCTION_CALL;
-		_transform_insert_before_->type = TypeVoid;
+		auto *ib = ps->cp_node(n);
+		ib->kind = KIND_FUNCTION_CALL;
+		ib->type = TypeVoid;
 		if (config.verbose)
-			_transform_insert_before_->show();
+			ib->show();
+
+		_transform_insert_before_.add(ib);
 
 		// n->instance should be a reference to local... FIXME
 		return ps->cp_node(n->instance->params[0]);

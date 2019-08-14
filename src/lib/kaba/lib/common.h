@@ -29,15 +29,15 @@ template<class T>
 void class_add_elementx(const string &name, const Class *type, T p, ScriptFlag flag = FLAG_NONE) {
 	class_add_element(name, type, *(int*)(void*)&p, flag);
 }
-void class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag = FLAG_NONE);
+Function* class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag = FLAG_NONE);
 template<class T>
-void class_add_funcx(const string &name, const Class *return_type, T func, ScriptFlag flag = FLAG_NONE) {
-	class_add_func(name, return_type, mf(func), flag);
+Function* class_add_funcx(const string &name, const Class *return_type, T func, ScriptFlag flag = FLAG_NONE) {
+	return class_add_func(name, return_type, mf(func), flag);
 }
-void class_add_func_virtual(const string &name, const Class *return_type, void *func, ScriptFlag = FLAG_NONE);
+Function* class_add_func_virtual(const string &name, const Class *return_type, void *func, ScriptFlag = FLAG_NONE);
 template<class T>
-void class_add_func_virtualx(const string &name, const Class *return_type, T func, ScriptFlag flag = FLAG_NONE) {
-	class_add_func_virtual(name, return_type, mf(func), flag);
+Function* class_add_func_virtualx(const string &name, const Class *return_type, T func, ScriptFlag flag = FLAG_NONE) {
+	return class_add_func_virtual(name, return_type, mf(func), flag);
 }
 void class_link_vtable(void *p);
 void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable);

@@ -1,0 +1,6 @@
+class Test
+	void __init__(complex z)
+		print(z)
+
+void main()
+	let x = Test(complex(1,2))
