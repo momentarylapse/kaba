@@ -321,6 +321,16 @@ void amd64_vec_ortho(vector &r, vector &v)
 {	r = v.ortho();	}
 void amd64_quat_get_angles(vector &r, quaternion &q)
 {	r = q.get_angles();	}
+void amd64_quat_rot_v(quaternion &r, vector &v)
+{	r = quaternion::rotation_v(v);	}
+void amd64_quat_rot_a(quaternion &r, vector &v, float w)
+{	r = quaternion::rotation_a(v, w);	}
+void amd64_quat_rot_m(quaternion &r, matrix &m)
+{	r = quaternion::rotation_m(m);	}
+void amd64_quat_inter(quaternion &r, quaternion &a, quaternion &b, float t)
+{	r = quaternion::interpolate(a, b, t);	}
+void amd64_quat_drag(quaternion &r, vector &up, vector &dang, bool reset_z)
+{	r = quaternion::drag(up, dang, reset_z);	}
 void amd64_vec_inter_get(vector &r, Interpolator<vector> &inter, float t)
 {	r = inter.get(t);	}
 void amd64_vec_inter_get_tang(vector &r, Interpolator<vector> &inter, float t)
@@ -510,6 +520,13 @@ void SIAddPackageMath() {
 		class_add_func("bar", TypeComplex, 		amd64_wrap(mf(&complex::bar), &amd64_com_bar), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&complex::str), FLAG_PURE);
 		class_add_const("I", TypeComplex, &complex::I);
+		class_add_func("create", TypeComplex, (void*)__complex_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+			func_set_inline(INLINE_COMPLEX_SET);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)__complex_set);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
 	
 	add_class(TypeVector);
 		class_add_elementx("x", TypeFloat32, &vector::x);
@@ -536,6 +553,15 @@ void SIAddPackageMath() {
 		class_add_func("cross", TypeVector, amd64_wrap(&vector::cross, &amd64_vec_cross_product), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("v1", TypeVector);
 			func_add_param("v2", TypeVector);
+		class_add_func("create", TypeVector, (void*)&__vector_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+			func_set_inline(INLINE_VECTOR_SET);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
+			func_add_param("z", TypeFloat32);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)&__vector_set);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
+			func_add_param("z", TypeFloat32);
 	
 	add_class(TypeQuaternion);
 		class_add_elementx("x", TypeFloat32, &quaternion::x);
@@ -552,18 +578,18 @@ void SIAddPackageMath() {
 		class_add_func("normalize", TypeVoid, mf(&quaternion::normalize));
 		class_add_func("angles", TypeVector, amd64_wrap(mf(&quaternion::get_angles), &amd64_quat_get_angles), FLAG_PURE);
 		class_add_func("str", TypeString, mf(&quaternion::str), FLAG_PURE);
-		class_add_func("rotation_v", TypeQuaternion, (void*)&quaternion::rotation_v, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_v", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_v, &amd64_quat_rot_v), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("ang", TypeVector);
-		class_add_func("rotation_a", TypeQuaternion, (void*)&quaternion::rotation_a, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_a", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_a, &amd64_quat_rot_a), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("axis", TypeVector);
 			func_add_param("angle", TypeFloat32);
-		class_add_func("rotation_m", TypeQuaternion, (void*)&quaternion::rotation_m, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("rotation_m", TypeQuaternion, amd64_wrap((void*)&quaternion::rotation_m, &amd64_quat_rot_m), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("m_in", TypeMatrix);
-		class_add_func("interpolate", TypeQuaternion, (void*)(quaternion(*)(const quaternion&, const quaternion&, float))&quaternion::interpolate, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("interpolate", TypeQuaternion, amd64_wrap((void*)(quaternion(*)(const quaternion&, const quaternion&, float))&quaternion::interpolate, &amd64_quat_inter), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("q_0", TypeQuaternion);
 			func_add_param("q_1", TypeQuaternion);
 			func_add_param("t", TypeFloat32);
-		class_add_func("drag", TypeQuaternion, (void*)&quaternion::drag, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+		class_add_func("drag", TypeQuaternion, amd64_wrap((void*)&quaternion::drag, &amd64_quat_drag), ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("up", TypeVector);
 			func_add_param("dang", TypeVector);
 			func_add_param("reset_z", TypeBool);
@@ -582,6 +608,17 @@ void SIAddPackageMath() {
 			func_add_param("y", TypeFloat32);
 		class_add_func("str", TypeString, mf(&rect::str), FLAG_PURE);
 		class_add_const("ID", TypeRect, (void*)&rect::ID);
+		class_add_func("create", TypeRect, (void*)__rect_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+			func_set_inline(INLINE_RECT_SET);
+			func_add_param("x1", TypeFloat32);
+			func_add_param("x2", TypeFloat32);
+			func_add_param("y1", TypeFloat32);
+			func_add_param("y2", TypeFloat32);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)__rect_set);
+			func_add_param("x1", TypeFloat32);
+			func_add_param("x2", TypeFloat32);
+			func_add_param("y1", TypeFloat32);
+			func_add_param("y2", TypeFloat32);
 	
 	add_class(TypeColor);
 		class_add_element("a", TypeFloat32, 12);
@@ -610,6 +647,17 @@ void SIAddPackageMath() {
 			func_add_param("c1", TypeColor);
 			func_add_param("c2", TypeColor);
 			func_add_param("t", TypeFloat32);
+		class_add_func("create", TypeColor, (void*)&__color_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+			func_set_inline(INLINE_COLOR_SET);
+			func_add_param("a", TypeFloat32);
+			func_add_param("r", TypeFloat32);
+			func_add_param("g", TypeFloat32);
+			func_add_param("b", TypeFloat32);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)&__color_set);
+			func_add_param("a", TypeFloat32);
+			func_add_param("r", TypeFloat32);
+			func_add_param("g", TypeFloat32);
+			func_add_param("b", TypeFloat32);
 	
 	add_class(TypePlane);
 		class_add_element("a", TypeFloat32, 0);
@@ -839,21 +887,6 @@ void SIAddPackageMath() {
 		class_add_func("dir", TypeVector, amd64_wrap(mf(&Random::dir), &amd64_vec_rand_dir));
 	
 	// hopefully soon constructors...
-	add_func("vector", TypeVector, (void*)&__vector_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
-		func_set_inline(INLINE_VECTOR_SET);
-		func_add_param("x", TypeFloat32);
-		func_add_param("y", TypeFloat32);
-		func_add_param("z", TypeFloat32);
-	add_func("complex", TypeComplex, (void*)__complex_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
-		func_set_inline(INLINE_COMPLEX_SET);
-		func_add_param("x", TypeFloat32);
-		func_add_param("y", TypeFloat32);
-	add_func("rect", TypeRect, (void*)__rect_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
-		func_set_inline(INLINE_RECT_SET);
-		func_add_param("x1", TypeFloat32);
-		func_add_param("x2", TypeFloat32);
-		func_add_param("y1", TypeFloat32);
-		func_add_param("y2", TypeFloat32);
 
 	
 	add_class(TypeFloatInterpolator);
@@ -880,9 +913,9 @@ void SIAddPackageMath() {
 		class_add_func("normalize", TypeVoid, mf(&Interpolator<float>::normalize));
 		class_add_func("get", TypeFloat32, mf(&Interpolator<float>::get));
 			func_add_param("t", TypeFloat32);
-		class_add_func("getTang", TypeFloat32, mf(&Interpolator<float>::getTang));
+		class_add_func("get_tang", TypeFloat32, mf(&Interpolator<float>::getTang));
 			func_add_param("t", TypeFloat32);
-		class_add_func("getList", TypeFloatList, mf(&Interpolator<float>::getList));
+		class_add_func("get_list", TypeFloatList, mf(&Interpolator<float>::getList));
 			func_add_param("t", TypeFloatList);
 
 	
@@ -991,12 +1024,6 @@ void SIAddPackageMath() {
 		func_add_param("c", TypeVector);
 		func_add_param("f", TypeFloatPs);
 		func_add_param("g", TypeFloatPs);
-	add_func("color", TypeColor, (void*)&__color_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
-		func_set_inline(INLINE_COLOR_SET);
-		func_add_param("a", TypeFloat32);
-		func_add_param("r", TypeFloat32);
-		func_add_param("g", TypeFloat32);
-		func_add_param("b", TypeFloat32);
 	add_func("CryptoCreateKeys", TypeVoid, algebra_p(&CryptoCreateKeys), FLAG_STATIC);
 		func_add_param("c1", TypeCrypto);
 		func_add_param("c2", TypeCrypto);

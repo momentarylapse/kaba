@@ -303,6 +303,10 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 }
 
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) {
+	/*if ((t == TypeVector) or (t == TypeColor) or (t == TypeRect) or (t == TypeComplex)) {
+
+		return;
+	}*/
 	auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
 	vv->dont_add_constructor = true;
 	Node *dummy = add_node_local_var(vv);
@@ -2303,11 +2307,11 @@ void SyntaxTree::parse_all_class_names(Class *ns, int indent0)
 
 void SyntaxTree::parse_all_function_bodies(const Class *name_space) {
 	for (auto *f: name_space->static_functions)
-		if ((!f->is_extern) and (f->_logical_line_no >= 0))
+		if ((!f->is_extern) and (f->_logical_line_no >= 0) and (f->name_space == name_space))
 			parse_function_body(f);
-	for (auto *c: name_space->member_functions)
-		if ((!c->is_extern) and (c->_logical_line_no >= 0))
-			parse_function_body(c);
+	for (auto *f: name_space->member_functions)
+		if ((!f->is_extern) and (f->_logical_line_no >= 0) and (f->name_space == name_space))
+			parse_function_body(f);
 
 	// recursion
 	//for (auto *c: name_space->classes)   NO... might encounter new classes creating new functions!
