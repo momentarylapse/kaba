@@ -64,6 +64,7 @@ Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_p
 	name_space = nullptr;
 	force_call_by_value = false;
 	fully_parsed = true;
+	_logical_line_no = _exp_no = -1;
 	_vtable_location_target_ = nullptr;
 	_vtable_location_compiler_ = nullptr;
 	_vtable_location_external_ = nullptr;

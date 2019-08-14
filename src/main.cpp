@@ -387,7 +387,7 @@ public:
 			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(fn->num_params));
 			f->write_int((long)fn->address);
 		}
-		for (auto *v: s->syntax->root_of_all_evil->var) {
+		for (auto *v: s->syntax->base_class->static_variables) {
 			f->write_str(decode_symbol_name(v->name));
 			f->write_int((long)v->memory);
 		}

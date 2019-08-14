@@ -69,6 +69,7 @@ public:
 	void add_include_data(Script *s);
 
 	void do_error(const string &msg, int override_exp_no = -1, int override_line = -1);
+	void do_error_implicit(Function *f, const string &msg);
 	void expect_no_new_line();
 	void expect_new_line();
 	void expect_indent();

@@ -2071,21 +2071,21 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type)
 	//c_orig->name = name;
 }
 
-void SyntaxTree::parse_variable_def(bool single, Block *block)
-{
+void SyntaxTree::parse_variable_def(bool single, Block *block) {
 	const Class *type = parse_type(block->name_space()); // force
 
-	for (int j=0;true;j++){
+	for (int j=0;true;j++) {
 		expect_no_new_line();
 
 		// name
 		string name = Exp.cur;
 		Exp.next();
 
-		if (next_const){
+		if (next_const) {
 			parse_global_const(name, type);
-		}else
-			block->add_var(name, type);
+		} else {
+			base_class->static_variables.add(new Variable(name, type));
+		}
 
 		if ((Exp.cur != ",") and (!Exp.end_of_line()))
 			do_error("\",\" or newline expected after definition of a global variable");
