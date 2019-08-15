@@ -290,91 +290,12 @@ string CastComplex2StringP(string &s) {
 	return ((complex*)s.data)->str();
 }
 
-// amd64 complex return wrappers
-void amd64_comlist_sum(complex &r, ComplexList &l)
-{	r = l.sum();	}
-void amd64_com_bar(complex &r, complex &c)
-{	r = c.bar();	}
-
-// amd64 vector return wrappers
-void amd64_vec_normalized(vector &r, vector &v)
-{	r = v.normalized();	}
-void amd64_vec_dir2ang(vector &r, vector &v)
-{	r = v.dir2ang();	}
-void amd64_vec_dir2ang2(vector &r, vector &v, vector &u)
-{	r = v.dir2ang2(u);	}
-void amd64_vec_ang2dir(vector &r, vector &v)
-{	r = v.ang2dir();	}
-void amd64_vec_rotate(vector &r, vector &v, vector &a)
-{	r = v.rotate(a);	}
-void amd64_mat_transform(vector &r, matrix &m, vector &v)
-{	r = v.transform(m);	}
-void amd64_mat_transform_normal(vector &r, matrix &m, vector &v)
-{	r = v.transform_normal(m);	}
-void amd64_mat_untransform(vector &r, matrix &m, vector &v)
-{	r = v.untransform(m);	}
-void amd64_mat_project(vector &r, matrix &m, vector &v)
-{	r = m.project(v);	}
-void amd64_mat_unproject(vector &r, matrix &m, vector &v)
-{	r = m.unproject(v);	}
-void amd64_vec_ortho(vector &r, vector &v)
-{	r = v.ortho();	}
-void amd64_quat_get_angles(vector &r, quaternion &q)
-{	r = q.get_angles();	}
-void amd64_quat_rot_v(quaternion &r, vector &v)
-{	r = quaternion::rotation_v(v);	}
-void amd64_quat_rot_a(quaternion &r, vector &v, float w)
-{	r = quaternion::rotation_a(v, w);	}
-void amd64_quat_rot_m(quaternion &r, matrix &m)
-{	r = quaternion::rotation_m(m);	}
-void amd64_quat_inter(quaternion &r, quaternion &a, quaternion &b, float t)
-{	r = quaternion::interpolate(a, b, t);	}
-void amd64_quat_drag(quaternion &r, vector &up, vector &dang, bool reset_z)
-{	r = quaternion::drag(up, dang, reset_z);	}
-void amd64_vec_inter_get(vector &r, Interpolator<vector> &inter, float t)
-{	r = inter.get(t);	}
-void amd64_vec_inter_get_tang(vector &r, Interpolator<vector> &inter, float t)
-{	r = inter.getTang(t);	}
-void amd64_mat_vec_mul(vector &r, matrix &m, vector &v)
-{	r = m * v;	}
-void amd64_mat3_vec_mul(vector &r, matrix3 &m, vector &v)
-{	r = m * v;	}
-void amd64_vec_ang_add(vector &r, vector &a, vector &b)
-{	r = VecAngAdd(a, b);	}
-void amd64_vec_ang_interpolate(vector &r, vector &a, vector &b, float t)
-{	r = VecAngInterpolate(a, b, t);	}
-void amd64_vec_cross_product(vector &r, vector &a, vector &b)
-{	r = vector::cross(a, b);	}
-
-void amd64_vec_rand_dir(vector &v, Random &r)
-{	v = r.dir();	}
-void amd64_vec_rand_in_ball(vector &v, Random &r, float rad)
-{	v = r.in_ball(rad);	}
-
-
-// amd64 quaternion return wrappers
-void amd64_quat_mul(quaternion &r, quaternion &a, quaternion&b)
-{	r = a * b;	}
-void amd64_quat_vec_mul(vector &r, quaternion &a, vector &b)
-{	r = a * b;	}
-void amd64_quat_bar(quaternion &r, quaternion &a)
-{	r = a.bar();	}
-
-// amd64 color return wrappers
-void amd64_col_hsb(color &r, float a, float h, float s, float b)
-{	r = SetColorHSB(a, h, s, b);	}
-void amd64_col_interpolate(color &r, color &a, color &b, float t)
-{	r = ColorInterpolate(a, b, t);	}
-void amd64_col_add(color &r, color &a, color &b)
-{	r = a + b;	}
-void amd64_col_sub(color &r, color &a, color &b)
-{	r = a - b;	}
-void amd64_col_mul_c(color &r, color &a, color &b)
-{	r = a * b;	}
-void amd64_col_mul_f(color &r, color &a, float b)
-{	r = a * b;	}
-
-#define amd64_wrap(orig, wrap)	((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) ? ((void*)(wrap)) : ((void*)(orig)))
+vector _quat_vec_mul(quaternion &a, vector &b)
+{	return a * b;	}
+color _col_mul_c(color &a, color &b)
+{	return a * b;	}
+color _col_mul_f(color &a, float b)
+{	return a * b;	}
 
 
 void __complex_set(complex &r, float x, float y)
@@ -582,7 +503,7 @@ void SIAddPackageMath() {
 		class_add_elementx("w", TypeFloat32, &quaternion::w);
 		class_add_func("__mul__", TypeQuaternion, mf(&quaternion::mul), FLAG_PURE);
 			func_add_param("other", TypeQuaternion);
-		class_add_func("__mul__", TypeVector, (void*)&amd64_quat_vec_mul, FLAG_PURE);
+		class_add_func("__mul__", TypeVector, (void*)&_quat_vec_mul, FLAG_PURE);
 			func_add_param("other", TypeVector);
 		class_add_func("__imul__", TypeVoid, mf(&quaternion::imul));
 			func_add_param("other", TypeQuaternion);
@@ -646,9 +567,9 @@ void SIAddPackageMath() {
 			func_add_param("o", TypeColor);
 		class_add_func("__subs__", TypeVoid, mf(&color::operator-=));
 			func_add_param("o", TypeColor);
-		class_add_func("__mul__", TypeColor, (void*)&amd64_col_mul_f, FLAG_PURE);
+		class_add_func("__mul__", TypeColor, (void*)&_col_mul_f, FLAG_PURE);
 			func_add_param("f", TypeFloat32);
-		class_add_func("__mul__", TypeColor, (void*)&amd64_col_mul_c, FLAG_PURE);
+		class_add_func("__mul__", TypeColor, (void*)&_col_mul_c, FLAG_PURE);
 			func_add_param("c", TypeColor);
 		class_add_funcx("hsb", TypeColor, &SetColorHSB, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("a", TypeFloat32);
@@ -898,8 +819,6 @@ void SIAddPackageMath() {
 			func_add_param("r", TypeFloat32);
 		class_add_func("dir", TypeVector, mf(&Random::dir));
 	
-	// hopefully soon constructors...
-
 	
 	add_class(TypeFloatInterpolator);
 		class_add_element("type", TypeInt, 0);

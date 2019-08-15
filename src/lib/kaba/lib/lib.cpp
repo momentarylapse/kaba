@@ -272,16 +272,15 @@ PrimitiveOperator PrimitiveOperators[NUM_PRIMITIVE_OPERATORS] = {
 
 void add_operator(int primitive_op, const Class *return_type, const Class *param_type1, const Class *param_type2, int inline_index, void *func = nullptr) {
 	Operator *o = new Operator;
+	o->owner = cur_package->syntax;
 	o->primitive_id = primitive_op;
 	o->return_type = return_type;
 	o->param_type_1 = param_type1;
 	o->param_type_2 = param_type2;
-	add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
+	o->f = add_func(PrimitiveOperators[primitive_op].function_name, return_type, func);
 	func_set_inline(inline_index);
 	func_add_param("a", param_type1);
 	func_add_param("b", param_type2);
-	o->f = cur_func;
-	o->owner = cur_package->syntax;
 	cur_package->syntax->operators.add(o);
 }
 
@@ -1449,7 +1448,6 @@ void op_complex_div(Value &r, Value &a, Value &b)
 {	r.as_complex() = a.as_complex() / b.as_complex(); }
 
 void SIAddOperators() {
-	// same order as in .h file...
 	add_operator(OPERATOR_ASSIGN, TypeVoid, TypePointer, TypePointer, INLINE_POINTER_ASSIGN);
 	add_operator(OPERATOR_EQUAL, 	TypeBool, TypePointer, TypePointer, INLINE_POINTER_EQUAL);
 	add_operator(OPERATOR_NOTEQUAL, TypeBool, TypePointer, TypePointer, INLINE_POINTER_NOT_EQUAL);
