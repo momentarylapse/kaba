@@ -1,0 +1,45 @@
+== Parsing ==
+
+* stage 1
+	* all class names are found (recursively)
+	* all function names are added
+		* implicitly used classes are added (X[] etc)
+* stage 2
+	* function bodies are parsed
+
+
+
+
+
+== Functions ==
+
+
+* parsing stage 1 creates "headers" (empty functions)
+* some headers are added implicitly if missing
+	(X.__init__(...), X.__assign__(), X[].clear() etc)
+* extending classes
+	* adds references to functions
+	* __init__/__delete__ are copied as empty headers (needing implementation)
+	* __assign__  is completely new
+	
+
+* stage 2, function bodies are parsed
+* unimplemented functions are auto-generated
+	(X.__init__(...) etc)
+
+
+
+
+
+
+== Namespaces ==
+
+class A
+	class B
+
+A.B[] will be created in ROOT namespace with (short-) name "A.B[]"
+importing a script will make it accessable
+
+can't be ambiguous, because A can't be overriden 
+
+

@@ -1,0 +1,11 @@
+* reactivate mov simplification
+* static variables in other classes (not just base_class)
+* explicit constructors in tree
+	* transformation step to insert after parsing
+	* skip if already explicit
+	* ...or merge first assignment  A a = A(...)
+* amd64: return (float,float) etc
+
+
+
+* ARM....
