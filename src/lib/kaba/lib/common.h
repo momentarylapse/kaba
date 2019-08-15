@@ -12,6 +12,8 @@ enum ScriptFlag {
 	FLAG_STATIC = 128
 };
 
+class Function;
+
 void add_package(const string &name, bool used_by_default);
 const Class *add_type(const string &name, int size, ScriptFlag = FLAG_NONE);
 const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag = FLAG_NONE);

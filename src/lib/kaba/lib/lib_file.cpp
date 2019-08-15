@@ -40,10 +40,13 @@ public:
 	}
 };
 
-class KabaFileError : public KabaException
-{
-public: KabaFileError() : KabaException(){}
-public: KabaFileError(const string &t) : KabaException(t){}
+class KabaFileError : public KabaException {
+public:
+	KabaFileError() : KabaException(){}
+	KabaFileError(const string &t) : KabaException(t){}
+	void __init__(const string &t) {
+		new(this) KabaFileError(t);
+	}
 };
 
 class KabaFile : public File
@@ -259,6 +262,8 @@ void SIAddPackageFile()
 
 	add_class(TypeFileError);
 		class_derive_from(TypeException, false, false);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaFileError::__init__, FLAG_OVERRIDE);
+		class_add_func_virtualx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFileError::__delete__, FLAG_OVERRIDE);
 		class_set_vtable(KabaFileError);
 
 	// file access

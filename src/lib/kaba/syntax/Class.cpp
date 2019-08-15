@@ -74,8 +74,17 @@ Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_p
 Class::~Class() {
 	for (auto *c: constants)
 		delete c;
+	for (auto *v: static_variables)
+		delete v;
+	for (auto *f: member_functions)
+		if (f->owner == owner)
+			delete f;
+	for (auto *f: static_functions)
+		if (f->owner == owner)
+			delete f;
 	for (auto *c: classes)
-		delete c;
+		if (c->owner == owner)
+			delete c;
 }
 
 

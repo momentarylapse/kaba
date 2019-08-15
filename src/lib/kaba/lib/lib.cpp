@@ -309,12 +309,13 @@ void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable
 
 int _class_override_num_params = -1;
 
-void _class_add_func(const Class *ccc, Function *f, ScriptFlag flag) {
+void _class_add_member_func(const Class *ccc, Function *f, ScriptFlag flag) {
 	Class *c = const_cast<Class*>(ccc);
 	if ((flag & FLAG_OVERRIDE) > 0) {
 		foreachi(Function *ff, c->member_functions, i)
 			if (ff->name == f->name) {
 				if (_class_override_num_params < 0 or _class_override_num_params == ff->num_params) {
+					//msg_write("OVERRIDE");
 					c->member_functions[i] = f;
 					return;
 				}
@@ -329,6 +330,7 @@ void _class_add_func(const Class *ccc, Function *f, ScriptFlag flag) {
 					break;
 				}
 			}*/
+		c->member_functions.add(f);
 	}
 }
 
@@ -339,18 +341,16 @@ Function* class_add_func(const string &name, const Class *return_type, void *fun
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
 	f->is_static = ((flag & FLAG_STATIC) > 0);
 	cur_package->syntax->functions.add(f);
-	if (f->is_static)
-		cur_class->static_functions.add(f);
-	else
-		cur_class->member_functions.add(f);
 	f->address_preprocess = func;
 	if (config.allow_std_lib)
 		f->address = func;
 	cur_func = f;
 
 
-	if (!f->is_static)
-		_class_add_func(cur_class, cur_func, flag);
+	if (f->is_static)
+		cur_class->static_functions.add(f);
+	else
+		_class_add_member_func(cur_class, f, flag);
 	return f;
 }
 
@@ -402,15 +402,10 @@ int get_virtual_index(void *func, const string &tname, const string &name) {
 
 Function* class_add_func_virtual(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
 	string tname = cur_class->name;
-	if (tname[0] == '-') {
-		for (auto *t: cur_package->syntax->base_class->classes)
-			if ((t->is_pointer()) and (t->parent == cur_class))
-				tname = t->name;
-	}
 	int index = get_virtual_index(func, tname, name);
 	//msg_write("virtual: " + tname + "." + name);
 		//msg_write(index);
-	Function *f = class_add_func(name, return_type, nullptr, ScriptFlag(flag & ~FLAG_OVERRIDE));
+	Function *f = class_add_func(name, return_type, func, flag);
 	cur_func->virtual_index = index;
 	if (index >= cur_class->vtable.num)
 		cur_class->vtable.resize(index + 1);
@@ -1744,13 +1739,19 @@ void Init(int instruction_set, int abi, bool allow_std_lib)
 
 
 	// consistency checks
+#ifndef NDEBUG
 	for (auto *p: Packages)
 		for (auto *c: p->classes()) {
 			if (c->is_super_array()) {
 				if (!c->get_default_constructor() or !c->get_assign() or !c->get_destructor())
 					msg_error("SUPER ARRAY INCONSISTENT: " + c->name);
 			}
+			// x package failing
+			/*for (auto *f: c->member_functions)
+				if (f->needs_overriding and (f->name != IDENTIFIER_FUNC_SUBARRAY))
+					msg_error(f->signature());*/
 		}
+#endif
 }
 
 void ResetExternalLinkData()

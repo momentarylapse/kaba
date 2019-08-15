@@ -952,9 +952,6 @@ SyntaxTree::~SyntaxTree() {
 	if (asm_meta_info)
 		delete asm_meta_info;
 
-	for (auto *f: functions)
-		delete f;
-
 	delete root_of_all_evil;
 	delete base_class;
 }

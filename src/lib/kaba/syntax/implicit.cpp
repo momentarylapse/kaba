@@ -593,16 +593,15 @@ Function* class_get_func(const Class *t, const string &name, const Class *return
 	return nullptr;
 }
 
-Function* prepare_auto_impl(const Class *t, Function *cf) {
-	if (!cf)
+Function* prepare_auto_impl(const Class *t, Function *f) {
+	if (!f)
 		return nullptr;
-	Function *f = cf;
-	f->needs_overriding = false; // we're about to implement....
 	if (f->auto_declared) {
+		f->needs_overriding = false; // we're about to implement....
 		return f;
 	}
 	return nullptr;
-	t->owner->script->do_error_internal("prepare class func..." + cf->signature());
+	t->owner->script->do_error_internal("prepare class func..." + f->signature());
 	return f;
 }
 
@@ -612,6 +611,8 @@ void SyntaxTree::auto_implement_functions(const Class *t) {
 		return;
 	if (t->is_pointer())
 		return;
+
+	auto sub_classes = t->classes; // might change
 
 	// TODO: really check here?
 	// ...or just implement any function that's declared but not implemented?
@@ -624,23 +625,20 @@ void SyntaxTree::auto_implement_functions(const Class *t) {
 		auto_implement_array_add(class_get_func(t, "add", TypeVoid, {nullptr}), t);
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_array()) {
-		if (t->needs_constructor())
-			auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
-		if (t->needs_destructor())
-			auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_dict()) {
 		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 	} else if (!t->is_simple_class()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);
-		if (t->needs_destructor())
-			auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	}
 
 	// recursion
-	for (auto *c: t->classes)
+	for (auto *c: sub_classes)
 		auto_implement_functions(c);
 }
 

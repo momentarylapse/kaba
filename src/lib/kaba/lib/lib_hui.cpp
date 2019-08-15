@@ -413,6 +413,7 @@ void SIAddPackageHui()
 			func_add_param("allow_parent",TypeBool);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&hui::Window::__delete__), FLAG_OVERRIDE);
 		class_set_vtable(hui::Window);
+
 	
 	add_class(TypeHuiPainter);
 		class_add_element("width", TypeInt, GetDAPainter(width));
