@@ -1,0 +1,5 @@
+extern int extern_variable1
+
+void main()
+	print(extern_variable1)
+

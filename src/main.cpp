@@ -14,19 +14,19 @@ typedef void main_void_func();
 
 
 
-namespace Kaba{
-extern long long s2i2(const string &str);
+namespace Kaba {
+	extern long long s2i2(const string &str);
 };
 
-void Test1(int a)
-{
+static void extern_function1(int a) {
 	msg_write("out: " + i2s(a));
 }
 
-int Test2()
-{
+int extern_function2() {
 	return 2001;
 }
+
+static int extern_variable1 = 13;
 
 
 class KabaApp : public hui::Application
@@ -216,8 +216,9 @@ public:
 
 
 		// for experiments
-		Kaba::LinkExternal("Test1", (void*)&Test1);
-		Kaba::LinkExternal("Test2", (void*)&Test2);
+		Kaba::LinkExternal("Test1", (void*)&extern_function1);
+		Kaba::LinkExternal("Test2", (void*)&extern_function2);
+		Kaba::LinkExternal("extern_variable1", (void*)&extern_variable1);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);
