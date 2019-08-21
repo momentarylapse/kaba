@@ -60,7 +60,7 @@ Model* __LoadModel(const string &filename)
 
 Model* __CreateObject(const string &filename, const vector &pos)
 {
-	KABA_EXCEPTION_WRAPPER(return GodCreateObject(filename, filename, pos, q_id));
+	KABA_EXCEPTION_WRAPPER(return GodCreateObject(filename, filename, pos, quaternion::ID));
 	return nullptr;
 }
 

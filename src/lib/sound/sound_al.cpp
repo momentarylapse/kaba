@@ -241,8 +241,8 @@ void SoundSetListener(const vector &pos, const vector &ang, const vector &vel, f
 	ListenerOri[2] = dir.z;
 	vector up;
 	matrix rot;
-	MatrixRotation(rot, ang);
-	up = rot.transform_normal(e_y);
+	rot = matrix::rotation(ang);
+	up = rot.transform_normal(vector::EY);
 	ListenerOri[3] = up.x;
 	ListenerOri[4] = up.y;
 	ListenerOri[5] = up.z;

@@ -259,13 +259,13 @@ Node *check_const_used(Node *n, Script *me) {
 	return n;
 }
 
-void remap_virtual_tables(Script *s, char *mem, int &offset, const Class *ct)
+void remap_virtual_tables(Script *s, char *mem, int &offset, char *address, const Class *ct)
 {
 	// vtables -> no data yet...
 	if (ct->vtable.num > 0){
 		Class *t = const_cast<Class*>(ct);
 		t->_vtable_location_compiler_ = &mem[offset];
-		t->_vtable_location_target_ = &mem[offset];//(void*)(s->syntax->asm_meta_info->code_origin + opcode_size);
+		t->_vtable_location_target_ = &address[offset];
 		offset += config.pointer_size * t->vtable.num;
 		for (Constant *c: s->syntax->base_class->constants)
 			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data)){
@@ -274,7 +274,7 @@ void remap_virtual_tables(Script *s, char *mem, int &offset, const Class *ct)
 	}
 
 	for (auto *c: ct->classes)
-		remap_virtual_tables(s, mem, offset, c);
+		remap_virtual_tables(s, mem, offset, address, c);
 }
 
 
@@ -282,7 +282,7 @@ void _map_constants_to_memory(char *mem, int &offset, char *address, const Class
 
 	// also allow named constants... might be imported by other scripts!
 	for (Constant *c: ns->constants)
-		if (c->used /*or c->name[0] != '-'*/){
+		if (c->used or ((c->name[0] != '-') and !config.compile_os)){
 			c->address = (void*)(address + offset);//ns->owner->asm_meta_info->code_origin + offset);
 		//	c->address = &mem[offset];
 			c->map_into(&mem[offset], (char*)c->address);
@@ -308,7 +308,7 @@ void _map_constants_to_memory(char *mem, int &offset, char *address, const Class
 
 void Script::map_constants_to_memory(char *mem, int &offset, char *address) {
 
-	remap_virtual_tables(this, mem, offset, syntax->base_class);
+	remap_virtual_tables(this, mem, offset, address, syntax->base_class);
 
 
 	syntax->transform([&](Node* n){ return check_const_used(n, this); });
@@ -372,17 +372,8 @@ bool find_and_replace(char *opcode, int opcode_size, char *pattern, int size, ch
 	return false;
 }
 
-struct IncludeTranslationData
-{
-	int const_off;
-	int func_off;
-	int var_off;
-	Script *source;
-};
 
-
-void import_deep(SyntaxTree *dest, SyntaxTree *source)
-{
+void import_deep(SyntaxTree *dest, SyntaxTree *source) {
 	dest->base_class->constants.append(source->base_class->constants);
 	source->base_class->constants.clear();
 
@@ -398,14 +389,13 @@ void import_deep(SyntaxTree *dest, SyntaxTree *source)
 	source->base_class->classes.clear();
 
 	//int asm_off = a->AsmBlocks.num;
-	for (AsmBlock &ab: source->asm_blocks){
+	for (AsmBlock &ab: source->asm_blocks) {
 		dest->asm_blocks.add(ab);
 	}
 }
 
-void find_all_includes_rec(Script *s, Set<Script*> &includes)
-{
-	for (Script *i: s->syntax->includes){
+void find_all_includes_rec(Script *s, Set<Script*> &includes) {
+	for (Script *i: s->syntax->includes) {
 		//if (i->filename.find(".kaba") < 0)
 		//	continue;
 		includes.add(i);
@@ -414,8 +404,7 @@ void find_all_includes_rec(Script *s, Set<Script*> &includes)
 }
 
 // only for "os"
-void import_includes(Script *s)
-{
+void import_includes(Script *s) {
 	Set<Script*> includes;
 	find_all_includes_rec(s, includes);
 
@@ -423,13 +412,12 @@ void import_includes(Script *s)
 		import_deep(s->syntax, i->syntax);
 }
 
-void Script::link_functions()
-{
-	for (Asm::WantedLabel &l: functions_to_link){
+void Script::link_functions() {
+	for (Asm::WantedLabel &l: functions_to_link) {
 		string name = l.name.substr(10, -1);
 		bool found = false;
 		for (Function *f: syntax->functions)
-			if (f->name == name){
+			if (f->name == name) {
 				*(int*)&opcode[l.pos] = (int_p)f->address - (syntax->asm_meta_info->code_origin + l.pos + 4);
 				found = true;
 				break;
@@ -437,7 +425,7 @@ void Script::link_functions()
 		if (!found)
 			do_error_link("could not link function: " + name);
 	}
-	for (int n: function_vars_to_link){
+	for (int n: function_vars_to_link) {
 		int64 p = (n + 0xefef0000);
 		int64 q = (int_p)syntax->functions[n]->address;
 		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
