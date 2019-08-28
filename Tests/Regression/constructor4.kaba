@@ -1,5 +1,3 @@
-//#show
-//#disasm
 
 class c
 	int x
@@ -13,6 +11,6 @@ class c
 void main()
 	c[] a
 	a.resize(14)
-//	a.add(cc)
-	//print a.num
-	//print a[0].x
+#	a.add(cc)
+	#print a.num
+	#print a[0].x

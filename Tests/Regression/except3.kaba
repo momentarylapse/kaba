@@ -5,8 +5,8 @@ void test(Exception *_e)
 		raise(_e)
 	except MyError as e
 		print("MyError " + e.message())
-//	except Exception as e
-//		print("Exception " + e.message())
+#	except Exception as e
+#		print("Exception " + e.message())
 
 void main()
 	try

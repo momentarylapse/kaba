@@ -1,6 +1,3 @@
-//#show
-//#disasm
-
 
 string f(string s)
 	return "a" + s + "hallo"

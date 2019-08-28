@@ -1,5 +1,3 @@
-//#show
-//#disasm
 
 void main()
 	int[4] a, b

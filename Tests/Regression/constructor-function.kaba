@@ -8,5 +8,5 @@ void f(Test t)
 	print(t.x)
 
 void main()
-	//f(Test(1))
+	#f(Test(1))
 	f(Test(88))

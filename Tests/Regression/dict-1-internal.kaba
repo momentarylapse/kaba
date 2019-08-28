@@ -8,8 +8,8 @@ void main()
 	print(d)
 	print(i)
 	print(d["a"])
-	//d["a"] = 9
-	//print(d.str())
+	#d["a"] = 9
+	#print(d.str())
 	
 	string{} dd
 	dd.set("a", "test")

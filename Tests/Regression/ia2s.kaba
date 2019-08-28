@@ -1,7 +1,7 @@
 void main()
-	/*DirSearch(".", "*", true)
-	print DirSearchName
-	print DirSearchIsDir*/
+	#DirSearch(".", "*", true)
+	#print DirSearchName
+	#print DirSearchIsDir
 	
 	print(range(0,100))
 	print(range(0,10000).sum())

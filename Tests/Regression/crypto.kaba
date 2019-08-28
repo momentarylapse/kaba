@@ -4,7 +4,7 @@ void main()
 	
 	string cypher = c1.encrypt("noch ein kleiner Test sdfhsdkfjhskdfjhlskdfjhlskdjfh")
 	string public_key = c2.str()
-	//print public_key
+	#print public_key
 	
 	c3.from_str(public_key)
 	print(c3.decrypt(cypher, true))

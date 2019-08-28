@@ -1,5 +1,3 @@
-//#show
-//#disasm
 
 class Test
 	int a, b

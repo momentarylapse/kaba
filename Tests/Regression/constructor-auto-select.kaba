@@ -7,7 +7,7 @@ class A
 
 class B extends A
 	override void __init__(int a, float f)
-		//super.__init__(a, f)
+		#super.__init__(a, f)
 		print("B.init ..2")
 	void __init__(int a, float f, float d)
 		print("B.init ..3")

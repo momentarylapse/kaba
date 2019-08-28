@@ -1,6 +1,3 @@
-//#show
-//#disasm
-
 void main()
 	string s = "hallo"
 	print(s)

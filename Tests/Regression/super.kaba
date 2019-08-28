@@ -1,5 +1,3 @@
-//#show
-
 class Base
 	int x
 	void __init__(int _x)

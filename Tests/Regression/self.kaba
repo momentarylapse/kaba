@@ -1,6 +1,3 @@
-//#show
-//#disasm
-
 class Test
 	int i
 	void p()

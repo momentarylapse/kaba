@@ -1,6 +1,3 @@
-//#show
-//#disasm
-
 class Parent
 	int a, b
 	void f()

@@ -1,11 +1,9 @@
-//#show
-
 class sOnlineChar
 	string name
 	float var[]
 
 void xx(sOnlineChar c)
-	//print c.var
+	#print c.var
 	for v in c.var
 		print(v)
 

@@ -1,5 +1,3 @@
-//#show
-
 class Sub
 	int i
 	void __init__()
@@ -8,7 +6,7 @@ class Sub
 	void __delete__()
 		print("Sub.delete")
 
-class Test //: Sub
+class Test # : Sub
 	int j
 	Sub s
 	void __init__()

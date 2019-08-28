@@ -1,4 +1,4 @@
-//#disasm
+##disasm
 
 
 void main()
@@ -7,6 +7,6 @@ void main()
 		for b in 0:10
 			print(b)
 		if a == 2
-			continue//break
+			continue #break
 		print("---")
 	print("aaa")
