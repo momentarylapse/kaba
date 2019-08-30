@@ -687,21 +687,27 @@ string _cdecl kaba_shell_execute(const string &cmd)
 #pragma GCC pop_options
 
 
-Array<Statement> Statements;
+Array<Statement*> Statements;
 
 Function *add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
 	add_class(cur_package->base_class());
 	return class_add_func(name, return_type, func, flag);
 }
 
-int add_statement(const string &name, int index, int num_params = 0) {
-	Statement s;
-	s.name = name;
-	s.num_params = num_params;
-	if (Statements.num < NUM_STATEMENTS)
-		Statements.resize(NUM_STATEMENTS);
-	Statements[index] = s;
-	return index;
+Statement *statement_from_id(StatementID id) {
+	for (auto *s: Statements)
+		if (s->id == id)
+			return s;
+	return nullptr;
+}
+
+int add_statement(const string &name, StatementID id, int num_params = 0) {
+	Statement *s = new Statement;
+	s->name = name;
+	s->id = id;
+	s->num_params = num_params;
+	Statements.add(s);
+	return 0;
 }
 
 void func_set_inline(int index)
@@ -1359,7 +1365,8 @@ void SIAddPackageKaba() {
 	TypeFunctionCode	= add_type  ("func", 32); // whatever
 	TypeFunctionCodeP	= add_type_p("func*", TypeFunctionCode);
 	auto *TypeStatement = add_type  ("Statement", sizeof(Statement));
-	auto *TypeStatementList = add_type_a("Statement[]", TypeStatement, -1);
+	auto *TypeStatementP= add_type_p("Statement*", TypeStatement);
+	auto *TypeStatementPList = add_type_a("Statement*[]", TypeStatementP, -1);
 		
 
 	auto *TypeScript = add_type  ("Script", sizeof(Script));
@@ -1445,46 +1452,45 @@ void SIAddPackageKaba() {
 	
 	add_class(TypeStatement);
 		class_add_elementx("name", TypeString, &Statement::name);
+		class_add_elementx("id", TypeInt, &Statement::id);
 		class_add_elementx("num_params", TypeInt, &Statement::num_params);
 		
 	add_class(TypeClassElementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassElement>::__init__);
-	add_class(TypeStatementList);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Statement>::__init__);
 
 	add_funcx("get_dynamic_type", TypeClassP, &GetDynamicType, FLAG_STATIC);
 		func_add_param("p", TypePointer);
 
 	add_ext_var("packages", TypeScriptPList, (void*)&Packages);
-	add_ext_var("statements", TypeStatementList, (void*)&Statements);
+	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
 }
 
 
 void SIAddBasicCommands() {
 	// statements
-	add_statement(IDENTIFIER_RETURN, STATEMENT_RETURN); // return: ParamType will be defined by the parser!
-	add_statement(IDENTIFIER_IF, STATEMENT_IF, 2);
-	add_statement("-if/else-", STATEMENT_IF_ELSE, 3);
-	add_statement(IDENTIFIER_WHILE, STATEMENT_WHILE, 2);
-	add_statement(IDENTIFIER_FOR, STATEMENT_FOR, 4); // internally like a while-loop... but a bit different...
-	add_statement(IDENTIFIER_BREAK, STATEMENT_BREAK);
-	add_statement(IDENTIFIER_CONTINUE, STATEMENT_CONTINUE);
-	add_statement(IDENTIFIER_NEW, STATEMENT_NEW);
-	add_statement(IDENTIFIER_DELETE, STATEMENT_DELETE, 1);
-	add_statement(IDENTIFIER_SIZEOF, STATEMENT_SIZEOF, 1);
-	add_statement(IDENTIFIER_TYPE, STATEMENT_TYPE, 1);
-	add_statement(IDENTIFIER_STR, STATEMENT_STR, 1);
-	add_statement(IDENTIFIER_LEN, STATEMENT_LEN, 1);
-	add_statement(IDENTIFIER_LET, STATEMENT_LET);
-	add_statement(IDENTIFIER_ASM, STATEMENT_ASM);
-	//add_statement(IDENTIFIER_RAISE, STATEMENT_RAISE); NOPE, now it's a function!
-	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
-	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
-	add_statement(IDENTIFIER_PASS, STATEMENT_PASS);
-	add_statement(IDENTIFIER_MAP, STATEMENT_MAP);
-	add_statement(IDENTIFIER_LAMBDA, STATEMENT_LAMBDA);
-	add_statement(IDENTIFIER_SORTED, STATEMENT_SORTED);
-	add_statement(IDENTIFIER_FILTER, STATEMENT_FILTER);
+	add_statement(IDENTIFIER_RETURN, StatementID::RETURN); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_IF, StatementID::IF, 2);
+	add_statement("-if/else-", StatementID::IF_ELSE, 3);
+	add_statement(IDENTIFIER_WHILE, StatementID::WHILE, 2);
+	add_statement(IDENTIFIER_FOR, StatementID::FOR, 4); // internally like a while-loop... but a bit different...
+	add_statement(IDENTIFIER_BREAK, StatementID::BREAK);
+	add_statement(IDENTIFIER_CONTINUE, StatementID::CONTINUE);
+	add_statement(IDENTIFIER_NEW, StatementID::NEW);
+	add_statement(IDENTIFIER_DELETE, StatementID::DELETE, 1);
+	add_statement(IDENTIFIER_SIZEOF, StatementID::SIZEOF, 1);
+	add_statement(IDENTIFIER_TYPE, StatementID::TYPE, 1);
+	add_statement(IDENTIFIER_STR, StatementID::STR, 1);
+	add_statement(IDENTIFIER_LEN, StatementID::LEN, 1);
+	add_statement(IDENTIFIER_LET, StatementID::LET);
+	add_statement(IDENTIFIER_ASM, StatementID::ASM);
+	//add_statement(IDENTIFIER_RAISE, StatementID::RAISE); NOPE, now it's a function!
+	add_statement(IDENTIFIER_TRY, StatementID::TRY); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_EXCEPT, StatementID::EXCEPT); // return: ParamType will be defined by the parser!
+	add_statement(IDENTIFIER_PASS, StatementID::PASS);
+	add_statement(IDENTIFIER_MAP, StatementID::MAP);
+	add_statement(IDENTIFIER_LAMBDA, StatementID::LAMBDA);
+	add_statement(IDENTIFIER_SORTED, StatementID::SORTED);
+	add_statement(IDENTIFIER_FILTER, StatementID::FILTER);
 }
 
 

@@ -282,7 +282,7 @@ Variable *Node::as_local() const {
 }
 
 Statement *Node::as_statement() const {
-	return &Statements[link_no];
+	return (Statement*)link_no;
 }
 
 PrimitiveOperator *Node::as_prim_op() const {

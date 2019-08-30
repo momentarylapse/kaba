@@ -181,8 +181,9 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 
 void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index)
 {
-	switch(com->link_no){
-		case STATEMENT_IF:{
+	auto statement = com->as_statement();
+	switch(statement->id){
+		case StatementID::IF:{
 			int m_after_true = list->create_label("_IF_AFTER_" + i2s(num_markers ++));
 			param[0] = SerializeParameter(com->params[0], block, index); // if
 			// cmp;  jz m;  -block-  m;
@@ -191,7 +192,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			serialize_block(com->params[1]->as_block());
 			add_marker(m_after_true);
 			}break;
-		case STATEMENT_IF_ELSE:{
+		case StatementID::IF_ELSE:{
 			int m_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_markers ++));
 			int m_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_markers ++));
 			param[0] = SerializeParameter(com->params[0], block, index); // if
@@ -204,7 +205,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			serialize_block(com->params[2]->as_block());
 			add_marker(m_after_false);
 			}break;
-		case STATEMENT_WHILE:{
+		case StatementID::WHILE:{
 			int marker_before_while = list->create_label("_WHILE_BEFORE_" + i2s(num_markers ++));
 			int marker_after_while = list->create_label("_WHILE_AFTER_" + i2s(num_markers ++));
 			add_marker(marker_before_while);
@@ -223,7 +224,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			add_cmd(Asm::INST_JMP, param_marker32(marker_before_while));
 			add_marker(marker_after_while);
 			}break;
-		case STATEMENT_FOR:{
+		case StatementID::FOR:{
 			int marker_before_for = list->create_label("_FOR_BEFORE_" + i2s(num_markers ++));
 			int marker_after_for = list->create_label("_FOR_AFTER_" + i2s(num_markers ++));
 			int marker_continue = list->create_label("_FOR_CONTINUE_" + i2s(num_markers ++));
@@ -248,13 +249,13 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			add_cmd(Asm::INST_JMP, param_marker32(marker_before_for));
 			add_marker(marker_after_for);
 			}break;
-		case STATEMENT_BREAK:
+		case StatementID::BREAK:
 			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_break));
 			break;
-		case STATEMENT_CONTINUE:
+		case StatementID::CONTINUE:
 			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_continue));
 			break;
-		case STATEMENT_RETURN:
+		case StatementID::RETURN:
 			if (com->params.num > 0){
 				param[0] = SerializeParameter(com->params[0], block, index); // operand
 					
@@ -336,7 +337,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 				AddFunctionOutro(cur_func);
 			}
 			break;
-		case STATEMENT_NEW:{
+		case StatementID::NEW:{
 			// malloc()
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
@@ -354,7 +355,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			}else
 				add_cmd_constructor(ret, -1);
 			break;}
-		case STATEMENT_DELETE:{
+		case StatementID::DELETE:{
 			// __delete__()
 			param[0] = SerializeParameter(com->params[0], block, index); // operand
 			add_cmd_destructor(param[0], false);
@@ -366,23 +367,23 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			AddFunctionCall(links[0]->as_func(), p_none, {param[0]}, p_none);
 			clear_nodes(links);
 			break;}
-		/*case STATEMENT_RAISE:
+		/*case StatementID::RAISE:
 			AddFunctionCall();
 			break;*/
-		case STATEMENT_TRY:{
+		case StatementID::TRY:{
 			int marker_finish = list->create_label("_TRY_AFTER_" + i2s(num_markers ++));
 			serialize_block(com->params[0]->as_block());
 			add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
 			serialize_block(com->params[2]->as_block());
 			add_marker(marker_finish);
 			}break;
-		case STATEMENT_ASM:
+		case StatementID::ASM:
 			add_cmd(INST_ASM);
 			break;
-		case STATEMENT_PASS:
+		case StatementID::PASS:
 			break;
 		default:
-			do_error("statement unimplemented: " + Statements[com->link_no].name);
+			do_error("statement unimplemented: " + com->as_statement()->name);
 	}
 }
 

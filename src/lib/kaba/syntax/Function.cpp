@@ -119,14 +119,15 @@ void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 		if (n->kind == KIND_BLOCK)
 			blocks_add_recursive(blocks, n->as_block());
 		if (n->kind == KIND_STATEMENT) {
-			if (n->link_no == STATEMENT_FOR) {
+			auto id = n->as_statement()->id;
+			if (id == StatementID::FOR) {
 				blocks_add_recursive(blocks, n->params[2]->as_block());
-			} else if (n->link_no == STATEMENT_TRY) {
+			} else if (id == StatementID::TRY) {
 				blocks_add_recursive(blocks, n->params[0]->as_block());
 				blocks_add_recursive(blocks, n->params[2]->as_block());
-			} else if (n->link_no == STATEMENT_IF) {
+			} else if (id == StatementID::IF) {
 				blocks_add_recursive(blocks, n->params[1]->as_block());
-			} else if (n->link_no == STATEMENT_IF_ELSE) {
+			} else if (id == StatementID::IF_ELSE) {
 				blocks_add_recursive(blocks, n->params[1]->as_block());
 				blocks_add_recursive(blocks, n->params[2]->as_block());
 			}

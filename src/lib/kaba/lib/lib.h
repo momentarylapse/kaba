@@ -134,42 +134,42 @@ extern PrimitiveOperator PrimitiveOperators[];
 //--------------------------------------------------------------------------------------------------
 // commands
 
+
+// statements
+enum class StatementID {
+	RETURN,
+	IF,
+	IF_ELSE,
+	WHILE,
+	FOR,
+	BREAK,
+	CONTINUE,
+	NEW,
+	DELETE,
+	SIZEOF,
+	TYPE,
+	ASM,
+	//RAISE,
+	TRY,
+	EXCEPT,
+	PASS,
+	STR,
+	LEN,
+	LET,
+	MAP,
+	LAMBDA,
+	SORTED,
+	FILTER
+};
+
 class Statement {
 public:
 	string name;
 	int num_params;
+	StatementID id;
 };
-extern Array<Statement> Statements;
-
-
-// statements
-enum {
-	STATEMENT_RETURN,
-	STATEMENT_IF,
-	STATEMENT_IF_ELSE,
-	STATEMENT_WHILE,
-	STATEMENT_FOR,
-	STATEMENT_BREAK,
-	STATEMENT_CONTINUE,
-	STATEMENT_NEW,
-	STATEMENT_DELETE,
-	STATEMENT_SIZEOF,
-	STATEMENT_TYPE,
-	STATEMENT_ASM,
-	//STATEMENT_RAISE,
-	STATEMENT_TRY,
-	STATEMENT_EXCEPT,
-	STATEMENT_PASS,
-	STATEMENT_STR,
-	STATEMENT_LEN,
-	STATEMENT_LET,
-	STATEMENT_MAP,
-	STATEMENT_LAMBDA,
-	STATEMENT_SORTED,
-	STATEMENT_FILTER,
-	NUM_STATEMENTS
-};
-
+extern Array<Statement*> Statements;
+Statement *statement_from_id(StatementID id);
 
 
 // inline commands

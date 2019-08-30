@@ -168,7 +168,7 @@ void SyntaxTree::auto_implement_assign(Function *f, const Class *t) {
 		auto *v_i = f->block->add_var("i", TypeInt);
 		Node *n_i = add_node_local_var(v_i);
 
-		Node *n_for = add_node_statement(STATEMENT_FOR);
+		Node *n_for = add_node_statement(StatementID::FOR);
 		f->block->add(n_for);
 
 		// for_var = 0
@@ -214,7 +214,7 @@ void SyntaxTree::auto_implement_assign(Function *f, const Class *t) {
 		Node *n_i = add_node_local_var(v_i);
 
 
-		Node *n_for = add_node_statement(STATEMENT_FOR);
+		Node *n_for = add_node_statement(StatementID::FOR);
 		f->block->add(n_for);
 
 
@@ -293,7 +293,7 @@ void SyntaxTree::auto_implement_array_clear(Function *f, const Class *t) {
 // delete...
 	Function *f_del = t->parent->get_destructor();
 	if (f_del) {
-		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		Node *cmd_for = add_node_statement(StatementID::FOR);
 		f->block->add(cmd_for);
 
 		// for_var = 0
@@ -352,7 +352,7 @@ void SyntaxTree::auto_implement_array_resize(Function *f, const Class *t) {
 	Function *f_del = t->parent->get_destructor();
 	if (f_del) {
 
-		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		Node *cmd_for = add_node_statement(StatementID::FOR);
 		f->block->add(cmd_for);
 
 		// for_var = num
@@ -391,7 +391,7 @@ void SyntaxTree::auto_implement_array_resize(Function *f, const Class *t) {
 	// new...
 	Function *f_init = t->parent->get_default_constructor();
 	if (f_init) {
-		Node *cmd_for = add_node_statement(STATEMENT_FOR);
+		Node *cmd_for = add_node_statement(StatementID::FOR);
 		f->block->add(cmd_for);
 
 		// for_var = num_old

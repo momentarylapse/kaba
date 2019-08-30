@@ -94,12 +94,12 @@ Node *SyntaxTree::shift_node(Node *sub, bool deref, int shift, const Class *type
 	return c;
 }
 
-Node *SyntaxTree::add_node_statement(int index)
-{
-	Node *c = new Node(KIND_STATEMENT, index, TypeVoid);
+Node *SyntaxTree::add_node_statement(StatementID id) {
+	auto *s = statement_from_id(id);
+	Node *c = new Node(KIND_STATEMENT, (int64)s, TypeVoid);
 
 	c->instance = nullptr;
-	c->set_num_params(Statements[index].num_params);
+	c->set_num_params(s->num_params);
 
 	return c;
 }
@@ -304,11 +304,11 @@ const Class *SyntaxTree::which_owned_class(const string &name) {
 	return nullptr;
 }
 
-int SyntaxTree::which_statement(const string &name) {
-	for (int i=0;i<Statements.num;i++)
-		if (name == Statements[i].name)
-			return i;
-	return -1;
+Statement *SyntaxTree::which_statement(const string &name) {
+	for (auto *s: Statements)
+		if (name == s->name)
+			return s;
+	return nullptr;
 }
 
 
@@ -415,15 +415,15 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 
 	if (!prefer_class) {
 		// then the statements
-		int w = which_statement(name);
-		if (w >= 0){
-			Node *n = new Node(KIND_STATEMENT, w, TypeVoid);
-			n->set_num_params(Statements[w].num_params);
+		auto s = which_statement(name);
+		if (s){
+			Node *n = new Node(KIND_STATEMENT, (int64)s, TypeVoid);
+			n->set_num_params(s->num_params);
 			return {n};
 		}
 
 		// operators
-		w = which_primitive_operator(name);
+		int w = which_primitive_operator(name);
 		if (w >= 0)
 			return {new Node(KIND_PRIMITIVE_OPERATOR, w, TypeUnknown)};
 	}
@@ -535,7 +535,7 @@ void conv_return(SyntaxTree *ps, nodes *c) {
 
 
 Node *conv_calls(SyntaxTree *ps, Node *c, int tt) {
-	if ((c->kind == KIND_STATEMENT) and (c->link_no == STATEMENT_RETURN))
+	if ((c->kind == KIND_STATEMENT) and (c->as_statement()->id == StatementID::RETURN))
 		if (c->params.num > 0) {
 			if ((c->params[0]->type->is_array()) /*or (c->Param[j]->Type->IsSuperArray)*/) {
 				c->set_param(0, ps->ref_node(c->params[0]));
@@ -601,7 +601,7 @@ Node *easyfy_shift_deref(SyntaxTree *ps, Node *c, int l) {
 Node *convert_return_by_memory(SyntaxTree *ps, Node *n, Function *f) {
 	ps->script->cur_func = f;
 
-	if ((n->kind != KIND_STATEMENT) or (n->link_no != STATEMENT_RETURN))
+	if ((n->kind != KIND_STATEMENT) or (n->as_statement()->id != StatementID::RETURN))
 		return n;
 
 	// convert into   *-return- = param

@@ -1112,7 +1112,7 @@ Node *SyntaxTree::parse_statement_for(Block *block)
 	if (val_step)
 		val_step = check_param_link(val_step, t, "for", 1);
 
-	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+	Node *cmd_for = add_node_statement(StatementID::FOR);
 
 	// variable
 	Node *for_var;
@@ -1193,7 +1193,7 @@ Node *SyntaxTree::parse_statement_for_array(Block *block)
 		do_error("array or list expected as second parameter in \"for . in .\"");
 	//Exp.next();
 
-	Node *cmd_for = add_node_statement(STATEMENT_FOR);
+	Node *cmd_for = add_node_statement(StatementID::FOR);
 
 	// variable...
 	const Class *var_type = for_array->type->get_array_element();
@@ -1273,7 +1273,7 @@ Node *SyntaxTree::parse_statement_while(Block *block)
 	Node *cmd_cmp = check_param_link(parse_command(block), TypeBool, "while", 0);
 	expect_new_line();
 
-	Node *cmd_while = add_node_statement(STATEMENT_WHILE);
+	Node *cmd_while = add_node_statement(StatementID::WHILE);
 	cmd_while->set_param(0, cmd_cmp);
 
 	// ...block
@@ -1291,7 +1291,7 @@ Node *SyntaxTree::parse_statement_break(Block *block)
 	if (parser_loop_depth == 0)
 		do_error("'break' only allowed inside a loop");
 	Exp.next();
-	return add_node_statement(STATEMENT_BREAK);
+	return add_node_statement(StatementID::BREAK);
 }
 
 Node *SyntaxTree::parse_statement_continue(Block *block)
@@ -1299,7 +1299,7 @@ Node *SyntaxTree::parse_statement_continue(Block *block)
 	if (parser_loop_depth == 0)
 		do_error("'continue' only allowed inside a loop");
 	Exp.next();
-	return add_node_statement(STATEMENT_CONTINUE);
+	return add_node_statement(StatementID::CONTINUE);
 }
 
 // Node structure
@@ -1307,7 +1307,7 @@ Node *SyntaxTree::parse_statement_continue(Block *block)
 Node *SyntaxTree::parse_statement_return(Block *block)
 {
 	Exp.next();
-	Node *cmd = add_node_statement(STATEMENT_RETURN);
+	Node *cmd = add_node_statement(StatementID::RETURN);
 	if (block->function->return_type == TypeVoid){
 		cmd->set_num_params(0);
 	}else{
@@ -1325,7 +1325,7 @@ Node *SyntaxTree::parse_statement_raise(Block *block)
 	throw "jhhhh";
 #if 0
 	Exp.next();
-	Node *cmd = add_node_statement(STATEMENT_RAISE);
+	Node *cmd = add_node_statement(StatementID::RAISE);
 
 	Node *cmd_ex = check_param_link(parse_command(block), TypeExceptionP, IDENTIFIER_RAISE, 0);
 	cmd->set_num_params(1);
@@ -1352,7 +1352,7 @@ Node *SyntaxTree::parse_statement_try(Block *block)
 {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
-	Node *cmd_try = add_node_statement(STATEMENT_TRY);
+	Node *cmd_try = add_node_statement(StatementID::TRY);
 	cmd_try->params.resize(3);
 	expect_new_line();
 	// ...block
@@ -1367,7 +1367,7 @@ Node *SyntaxTree::parse_statement_try(Block *block)
 		do_error("wrong indentation for except");
 	Exp.next();
 
-	Node *cmd_ex = add_node_statement(STATEMENT_EXCEPT);
+	Node *cmd_ex = add_node_statement(StatementID::EXCEPT);
 	cmd_try->set_param(1, cmd_ex);
 
 	Block *except_block = new Block(block->function, block);
@@ -1439,7 +1439,7 @@ Node *SyntaxTree::parse_statement_if(Block *block)
 	Node *cmd_cmp = check_param_link(parse_command(block), TypeBool, IDENTIFIER_IF, 0);
 	expect_new_line();
 
-	Node *cmd_if = add_node_statement(STATEMENT_IF);
+	Node *cmd_if = add_node_statement(StatementID::IF);
 	cmd_if->set_param(0, cmd_cmp);
 	// ...block
 	Exp.next_line();
@@ -1450,7 +1450,7 @@ Node *SyntaxTree::parse_statement_if(Block *block)
 
 	// else?
 	if ((!Exp.end_of_file()) and (Exp.cur == IDENTIFIER_ELSE) and (Exp.cur_line->indent >= ind)){
-		cmd_if->link_no = STATEMENT_IF_ELSE;
+		cmd_if->link_no = (int64)statement_from_id(StatementID::IF_ELSE);
 		cmd_if->params.resize(3);
 		Exp.next();
 		// iterative if
@@ -1481,7 +1481,7 @@ Node *SyntaxTree::parse_statement_pass(Block *block)
 	Exp.next(); // pass
 	expect_new_line();
 
-	return add_node_statement(STATEMENT_PASS);
+	return add_node_statement(StatementID::PASS);
 }
 
 // Node structure
@@ -1490,7 +1490,7 @@ Node *SyntaxTree::parse_statement_pass(Block *block)
 Node *SyntaxTree::parse_statement_new(Block *block) {
 	Exp.next(); // new
 	const Class *t = parse_type(block->name_space());
-	Node *cmd = add_node_statement(STATEMENT_NEW);
+	Node *cmd = add_node_statement(StatementID::NEW);
 	cmd->type = t->get_pointer();
 	if (Exp.cur == "(") {
 		Array<Function*> cfs = t->get_constructors();
@@ -1510,7 +1510,7 @@ Node *SyntaxTree::parse_statement_new(Block *block) {
 Node *SyntaxTree::parse_statement_delete(Block *block)
 {
 	Exp.next(); // delete
-	Node *cmd = add_node_statement(STATEMENT_DELETE);
+	Node *cmd = add_node_statement(StatementID::DELETE);
 	cmd->set_param(0, parse_operand(block));
 	if (!cmd->params[0]->type->is_pointer())
 		do_error("pointer expected after delete");
@@ -1701,7 +1701,7 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 
 	f->update_parameters_after_parsing();
 
-	auto *ret = add_node_statement(STATEMENT_RETURN);
+	auto *ret = add_node_statement(StatementID::RETURN);
 	ret->set_num_params(1);
 	ret->params[0] = cmd;
 	f->block->add(ret);
@@ -1887,7 +1887,7 @@ void SyntaxTree::parse_complete_command(Block *block)
 	// assembler block
 	}else if (Exp.cur == "-asm-"){
 		Exp.next();
-		block->add(add_node_statement(STATEMENT_ASM));
+		block->add(add_node_statement(StatementID::ASM));
 
 	}else{
 

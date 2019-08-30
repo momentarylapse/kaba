@@ -1754,7 +1754,7 @@ void Serializer::serialize_function(Function *f)
 	// outro (if last command != return)
 	bool need_outro = true;
 	if (f->block->params.num > 0)
-		if ((f->block->params.back()->kind == KIND_STATEMENT) and (f->block->params.back()->link_no == STATEMENT_RETURN))
+		if ((f->block->params.back()->kind == KIND_STATEMENT) and (f->block->params.back()->as_statement()->id == StatementID::RETURN))
 			need_outro = false;
 	if (need_outro)
 		AddFunctionOutro(f);
