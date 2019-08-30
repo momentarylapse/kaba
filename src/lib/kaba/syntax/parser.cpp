@@ -1660,6 +1660,59 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	return cmd;
 }
 
+Node *SyntaxTree::parse_statement_lambda(Block *block) {
+	Exp.next(); // "lambda"
+	auto *prev_func = cur_func;
+
+	Function *f = add_function("-lambda-", TypeUnknown, base_class, true);
+	f->_logical_line_no = Exp.get_line_no();
+	f->_exp_no = Exp.cur_exp;
+
+	cur_func = f;
+	next_extern = false;
+
+	Exp.next(); // '('
+
+	// parameter list
+
+	if (Exp.cur != ")")
+		for (int k=0;;k++) {
+			// like variable definitions
+
+			// type of parameter variable
+			const Class *param_type = parse_type(base_class); // force
+			f->block->add_var(Exp.cur, param_type);
+			f->literal_param_type.add(param_type);
+			Exp.next();
+			f->num_params ++;
+
+			if (Exp.cur == ")")
+				break;
+
+			if (Exp.cur != ",")
+				do_error("\",\" or \")\" expected after parameter");
+			Exp.next(); // ','
+		}
+	Exp.next(); // ')'
+
+	cur_func = prev_func;
+
+	auto *cmd = parse_command(f->block);
+	f->return_type = cmd->type;
+	f->literal_return_type = cmd->type;
+
+	f->update_parameters_after_parsing();
+
+	auto *ret = add_node_statement(STATEMENT_RETURN);
+	ret->set_num_params(1);
+	ret->params[0] = cmd;
+	f->block->add(ret);
+
+	base_class->add_function(this, f, false, false);
+
+	return add_node_func_name(f);
+}
+
 Node *SyntaxTree::parse_statement(Block *block)
 {
 	if (Exp.cur == IDENTIFIER_FOR){
@@ -1703,6 +1756,8 @@ Node *SyntaxTree::parse_statement(Block *block)
 		return parse_statement_let(block);
 	}else if (Exp.cur == IDENTIFIER_MAP){
 		return parse_statement_map(block);
+	}else if (Exp.cur == IDENTIFIER_LAMBDA){
+		return parse_statement_lambda(block);
 	}
 	return nullptr;
 }

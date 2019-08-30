@@ -1,0 +1,3 @@
+void main()
+	let a = map(lambda(string x) x.upper(), ["hallo", "welt"])
+	print(a)
