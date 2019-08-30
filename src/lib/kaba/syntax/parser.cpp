@@ -1646,8 +1646,7 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
 		do_error("map(): function parameter does not match list type");
 
-
-	Array<Node*> links = get_existence("-map-", nullptr, nullptr, false);
+	auto links = get_existence("-map-", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	auto *c = add_constant(TypeFunctionP);
@@ -1674,7 +1673,6 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 	Exp.next(); // '('
 
 	// parameter list
-
 	if (Exp.cur != ")")
 		for (int k=0;;k++) {
 			// like variable definitions
@@ -1711,6 +1709,29 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 	base_class->add_function(this, f, false, false);
 
 	return add_node_func_name(f);
+}
+
+Node *SyntaxTree::parse_statement_sorted(Block *block) {
+	Exp.next(); // "sorted"
+	string name = Exp.cur;
+
+	auto params = parse_call_parameters(block);
+	if (params.num != 2)
+		do_error("sorted() expects 2 parameters");
+	if (!params[0]->type->is_super_array())
+		do_error("sorted(): first parameter must be a list[]");
+	if (params[1]->type != TypeString)
+		do_error("sorted(): first parameter must be a string");
+
+	auto links = get_existence("-sorted-", nullptr, nullptr, false);
+	Function *f = links[0]->as_func();
+
+	Node *cmd = add_node_call(f);
+	cmd->set_param(0, params[0]);
+	cmd->set_param(1, ref_node(new Node(KIND_CLASS, (int_p)params[0]->type, TypeClass)));
+	cmd->set_param(2, params[1]);
+	cmd->type = params[0]->type;
+	return cmd;
 }
 
 Node *SyntaxTree::parse_statement(Block *block)
@@ -1758,6 +1779,8 @@ Node *SyntaxTree::parse_statement(Block *block)
 		return parse_statement_map(block);
 	}else if (Exp.cur == IDENTIFIER_LAMBDA){
 		return parse_statement_lambda(block);
+	}else if (Exp.cur == IDENTIFIER_SORTED){
+		return parse_statement_sorted(block);
 	}
 	return nullptr;
 }

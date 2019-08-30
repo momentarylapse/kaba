@@ -80,6 +80,8 @@ extern const string IDENTIFIER_IS;
 extern const string IDENTIFIER_ASM;
 extern const string IDENTIFIER_MAP;
 extern const string IDENTIFIER_LAMBDA;
+extern const string IDENTIFIER_SORTED;
+extern const string IDENTIFIER_FILTER;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -163,6 +165,8 @@ enum {
 	STATEMENT_LET,
 	STATEMENT_MAP,
 	STATEMENT_LAMBDA,
+	STATEMENT_SORTED,
+	STATEMENT_FILTER,
 	NUM_STATEMENTS
 };
 
