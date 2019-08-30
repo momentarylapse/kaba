@@ -1762,6 +1762,7 @@ Node *SyntaxTree::parse_statement_filter(Block *block) {
 	Node *cmd = add_node_call(f);
 	cmd->set_param(0, add_node_const(c));
 	cmd->set_param(1, params[1]);
+	cmd->set_param(2, ref_node(new Node(KIND_CLASS, (int_p)params[1]->type, TypeClass)));
 	cmd->type = params[1]->type;
 	return cmd;
 }
