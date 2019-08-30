@@ -8,7 +8,7 @@ typedef void op_func(Value &r, Value &a, Value &b);
 
 //static Function *cur_func;
 
-bool call_function(Function *f, void *ff, void *ret, void *inst, Array<void*> param)
+bool call_function(Function *f, void *ff, void *ret, void *__inst, Array<void*> param)
 {
 	if (f->num_params == 0){
 		if (f->return_type == TypeInt){

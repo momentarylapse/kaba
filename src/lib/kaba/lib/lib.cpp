@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.5.0";
+string LibVersion = "0.17.6.0";
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -74,6 +74,8 @@ const string IDENTIFIER_XOR = "xor";
 const string IDENTIFIER_NOT = "not";
 const string IDENTIFIER_IS = "is";
 const string IDENTIFIER_ASM = "asm";
+const string IDENTIFIER_MAP = "map";
+const string IDENTIFIER_LAMBDA = "lambda";
 
 CompilerConfiguration config;
 
@@ -577,6 +579,32 @@ void _cdecl ultra_sort(DynamicArray &array, const Class *type, const string &by)
 string _cdecl var2str(const void *var, const Class *type)
 {
 	return type->var2str(var);
+}
+
+bool call_function(Function *f, void *ff, void *ret, void *inst, Array<void*> param);
+
+DynamicArray kaba_map(Function *func, DynamicArray *a) {
+	DynamicArray r;
+	auto *ti = func->literal_param_type[0];
+	auto *to = func->literal_return_type;
+	r.init(to->size);
+	if (to->needs_constructor()) {
+		if (to == TypeString) {
+			((string*)&r)->resize(a->num);
+		} else  {
+			kaba_raise_exception(new KabaException("map(): output type not allowed: " + to->long_name()));
+		}
+	} else {
+		r.simple_resize(a->num);
+	}
+	for (int i=0; i<a->num; i++) {
+		void *po = (char*)r.data + to->size * i;
+		void *pi = (char*)a->data + ti->size * i;
+		bool ok = call_function(func, func->address, po, nullptr, {pi});
+		if (!ok)
+			kaba_raise_exception(new KabaException("map(): failed to dynamically call " + func->signature()));
+	}
+	return r;
 }
 
 string _cdecl kaba_shell_execute(const string &cmd)
@@ -1386,6 +1414,8 @@ void SIAddBasicCommands() {
 	add_statement(IDENTIFIER_TRY, STATEMENT_TRY); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_EXCEPT, STATEMENT_EXCEPT); // return: ParamType will be defined by the parser!
 	add_statement(IDENTIFIER_PASS, STATEMENT_PASS);
+	add_statement(IDENTIFIER_MAP, STATEMENT_MAP);
+	add_statement(IDENTIFIER_LAMBDA, STATEMENT_LAMBDA);
 }
 
 
@@ -1632,6 +1662,9 @@ void SIAddCommands() {
 	add_func("-var2str-", TypeString, (void*)var2str, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
+	add_func("-map-", TypeIntList/*TypeDynamicArray*/, (void*)kaba_map, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+		func_add_param("func", TypeFunctionP);
+		func_add_param("array", TypePointer);
 
 
 // add_func("ExecuteScript", TypeVoid);

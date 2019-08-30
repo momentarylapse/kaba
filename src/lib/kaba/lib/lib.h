@@ -78,6 +78,8 @@ extern const string IDENTIFIER_XOR;
 extern const string IDENTIFIER_NOT;
 extern const string IDENTIFIER_IS;
 extern const string IDENTIFIER_ASM;
+extern const string IDENTIFIER_MAP;
+extern const string IDENTIFIER_LAMBDA;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -159,6 +161,8 @@ enum {
 	STATEMENT_STR,
 	STATEMENT_LEN,
 	STATEMENT_LET,
+	STATEMENT_MAP,
+	STATEMENT_LAMBDA,
 	NUM_STATEMENTS
 };
 

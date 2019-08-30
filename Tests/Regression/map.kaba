@@ -1,0 +1,7 @@
+string upper(string s)
+	return s.upper()
+
+void main()
+	let b = map(upper, ["hallo", "welt"])
+	print(b)
+	

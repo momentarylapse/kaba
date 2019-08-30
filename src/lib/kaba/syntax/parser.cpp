@@ -797,6 +797,8 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class)
 		}
 
 	}
+	if (Exp.end_of_line())
+		return operands[0];
 
 	// resolve arrays, structures, calls...
 	return parse_operand_extension(operands, block);
@@ -1561,13 +1563,12 @@ Node *SyntaxTree::parse_statement_type(Block *block)
 	return c;
 }
 
-Node *SyntaxTree::parse_statement_len(Block *block)
-{
+Node *SyntaxTree::parse_statement_len(Block *block) {
 	Exp.next(); // len
 	Node *sub = parse_single_func_param(block);
 
 	// array?
-	if (sub->type->is_array()){
+	if (sub->type->is_array()) {
 		auto *c = add_constant(TypeInt);
 		c->as_int() = sub->type->array_length;
 		return add_node_const(c);
@@ -1575,7 +1576,7 @@ Node *SyntaxTree::parse_statement_len(Block *block)
 
 	// element "int num/length"?
 	for (auto &e: sub->type->elements)
-		if (e.type == TypeInt and (e.name == "length" or e.name == "num")){
+		if (e.type == TypeInt and (e.name == "length" or e.name == "num")) {
 			return shift_node(sub, false, e.offset, e.type);
 		}
 
@@ -1584,16 +1585,15 @@ Node *SyntaxTree::parse_statement_len(Block *block)
 	return nullptr;
 }
 
-Node *SyntaxTree::parse_statement_str(Block *block)
-{
+Node *SyntaxTree::parse_statement_str(Block *block) {
 	Exp.next(); // str
 	Node *sub = parse_single_func_param(block);
 
 	// direct/type cast?
 	int ie = Exp.cur_exp;
-	try{
+	try {
 		return check_param_link(sub, TypeString, "", 0);
-	}catch(...){
+	} catch(...) {
 	}
 	Exp.set(ie);
 
@@ -1611,8 +1611,7 @@ Node *SyntaxTree::parse_statement_str(Block *block)
 }
 
 // local (variable) definitions...
-Node *SyntaxTree::parse_statement_let(Block *block)
-{
+Node *SyntaxTree::parse_statement_let(Block *block) {
 	Exp.next(); // "let"
 	string name = Exp.cur;
 	Exp.next();
@@ -1624,7 +1623,41 @@ Node *SyntaxTree::parse_statement_let(Block *block)
 	auto* rhs = parse_command(block);
 	auto *var = block->add_var(name, rhs->type);
 	int op_no = which_primitive_operator("=");
-	return link_operator(op_no, add_node_local_var(var), rhs);
+	auto cmd = link_operator(op_no, add_node_local_var(var), rhs);
+	if (!cmd)
+		do_error("let: no assignment operator for type " + rhs->type->long_name());
+	return cmd;
+}
+
+Node *SyntaxTree::parse_statement_map(Block *block) {
+	Exp.next(); // "map"
+	string name = Exp.cur;
+
+	auto params = parse_call_parameters(block);
+	if (params.num != 2)
+		do_error("map() expects 2 parameters");
+	if (params[0]->kind != KIND_FUNCTION_NAME)
+		do_error("map(): first parameter must be a function name");
+	if (!params[1]->type->is_super_array())
+		do_error("map(): second parameter must be a list[]");
+
+	if (params[0]->as_func()->num_params != 1)
+		do_error("map(): function must have exactly one parameter");
+	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
+		do_error("map(): function parameter does not match list type");
+
+
+	Array<Node*> links = get_existence("-map-", nullptr, nullptr, false);
+	Function *f = links[0]->as_func();
+
+	auto *c = add_constant(TypeFunctionP);
+	c->as_int64() = (int64)params[0]->as_func();
+
+	Node *cmd = add_node_call(f);
+	cmd->set_param(0, add_node_const(c));
+	cmd->set_param(1, params[1]);
+	cmd->type = make_class_super_array(params[0]->as_func()->literal_return_type);
+	return cmd;
 }
 
 Node *SyntaxTree::parse_statement(Block *block)
@@ -1668,6 +1701,8 @@ Node *SyntaxTree::parse_statement(Block *block)
 		return parse_statement_len(block);
 	}else if (Exp.cur == IDENTIFIER_LET){
 		return parse_statement_let(block);
+	}else if (Exp.cur == IDENTIFIER_MAP){
+		return parse_statement_map(block);
 	}
 	return nullptr;
 }
