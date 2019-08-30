@@ -1721,7 +1721,7 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	if (!params[0]->type->is_super_array())
 		do_error("sorted(): first parameter must be a list[]");
 	if (params[1]->type != TypeString)
-		do_error("sorted(): first parameter must be a string");
+		do_error("sorted(): second parameter must be a string");
 
 	auto links = get_existence("-sorted-", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
@@ -1731,6 +1731,38 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	cmd->set_param(1, ref_node(new Node(KIND_CLASS, (int_p)params[0]->type, TypeClass)));
 	cmd->set_param(2, params[1]);
 	cmd->type = params[0]->type;
+	return cmd;
+}
+
+Node *SyntaxTree::parse_statement_filter(Block *block) {
+	Exp.next(); // "filter"
+	string name = Exp.cur;
+
+	auto params = parse_call_parameters(block);
+	if (params.num != 2)
+		do_error("filter() expects 2 parameters");
+	if (params[0]->kind != KIND_FUNCTION_NAME)
+		do_error("filter(): first parameter must be a function name");
+	if (!params[1]->type->is_super_array())
+		do_error("filter(): second parameter must be a list[]");
+
+	if (params[0]->as_func()->num_params != 1)
+		do_error("filter(): function must have exactly one parameter");
+	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
+		do_error("filter(): function parameter does not match list type");
+	if (params[0]->as_func()->literal_return_type != TypeBool)
+		do_error("filter(): function must return bool");
+
+	auto links = get_existence("-filter-", nullptr, nullptr, false);
+	Function *f = links[0]->as_func();
+
+	auto *c = add_constant(TypeFunctionP);
+	c->as_int64() = (int64)params[0]->as_func();
+
+	Node *cmd = add_node_call(f);
+	cmd->set_param(0, add_node_const(c));
+	cmd->set_param(1, params[1]);
+	cmd->type = params[1]->type;
 	return cmd;
 }
 
@@ -1781,6 +1813,8 @@ Node *SyntaxTree::parse_statement(Block *block)
 		return parse_statement_lambda(block);
 	}else if (Exp.cur == IDENTIFIER_SORTED){
 		return parse_statement_sorted(block);
+	}else if (Exp.cur == IDENTIFIER_FILTER){
+		return parse_statement_filter(block);
 	}
 	return nullptr;
 }

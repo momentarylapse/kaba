@@ -28,7 +28,10 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.6.1";
+string LibVersion = "0.17.6.2";
+
+
+bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";
@@ -549,8 +552,6 @@ void ultra_clone(DynamicArray &r, const DynamicArray &a, const Class *type) {
 		}*/
 		kaba_raise_exception(new KabaException("can't clone array of " + type->long_name()));
 	}
-
-
 }
 
 DynamicArray _cdecl ultra_sort(DynamicArray &array, const Class *type, const string &by)
@@ -612,12 +613,42 @@ DynamicArray _cdecl ultra_sort(DynamicArray &array, const Class *type, const str
 	return rr;
 }
 
-string _cdecl var2str(const void *var, const Class *type)
-{
-	return type->var2str(var);
+void kaba_array_add(DynamicArray &array, void *p, const Class *el) {
+	if ((el == TypeInt) or (el == TypeFloat32))
+		array.append_4_single(*(int*)p);
+	else if (el == TypeBool)
+		array.append_1_single(*(char*)p);
+	else if (el == TypeString)
+		((Array<string>*)&array)->add(*(string*)p);
+	else
+		kaba_raise_exception(new KabaException("can not add to array of type " + el->long_name() + " yet"));
 }
 
-bool call_function(Function *f, void *ff, void *ret, void *inst, Array<void*> param);
+DynamicArray _cdecl ultra_filter(Function *f, DynamicArray &array) {
+	const Class *el = f->literal_param_type[0];
+	if (array.element_size != el->size)
+		kaba_raise_exception(new KabaException("element type size mismatch..."));
+	//Function *f_init = el->get_default_constructor();
+	//Function *f_ass = el->get_assign();
+
+	DynamicArray rr;
+	rr.init(array.element_size);
+
+	for (int i=0; i<array.num; i++) {
+		bool filter_pass = false;
+		void *pa = (char*)array.data + i * array.element_size;
+		bool ok = call_function(f, f->address, &filter_pass, nullptr, {pa});
+		if (!ok)
+			kaba_raise_exception(new KabaException("can not call filter function " + f->signature()));
+		if (filter_pass)
+			kaba_array_add(rr, pa, el);
+	}
+	return rr;
+}
+
+string _cdecl var2str(const void *var, const Class *type) {
+	return type->var2str(var);
+}
 
 DynamicArray kaba_map(Function *func, DynamicArray *a) {
 	DynamicArray r;
@@ -1453,6 +1484,7 @@ void SIAddBasicCommands() {
 	add_statement(IDENTIFIER_MAP, STATEMENT_MAP);
 	add_statement(IDENTIFIER_LAMBDA, STATEMENT_LAMBDA);
 	add_statement(IDENTIFIER_SORTED, STATEMENT_SORTED);
+	add_statement(IDENTIFIER_FILTER, STATEMENT_FILTER);
 }
 
 
@@ -1696,6 +1728,9 @@ void SIAddCommands() {
 		func_add_param("list", TypePointer);
 		func_add_param("class", TypeClassP);
 		func_add_param("by", TypeString);
+	add_func("-filter-", TypeDynamicArray, (void*)&ultra_filter, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+		func_add_param("func", TypeFunctionP);
+		func_add_param("list", TypePointer);
 	add_func("-var2str-", TypeString, (void*)var2str, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
