@@ -224,7 +224,7 @@ void SerializerX86::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 			add_cmd(Asm::INST_JMP, param_marker32(marker_before_while));
 			add_marker(marker_after_while);
 			}break;
-		case StatementID::FOR:{
+		case StatementID::FOR_DIGEST:{
 			int marker_before_for = list->create_label("_FOR_BEFORE_" + i2s(num_markers ++));
 			int marker_after_for = list->create_label("_FOR_AFTER_" + i2s(num_markers ++));
 			int marker_continue = list->create_label("_FOR_CONTINUE_" + i2s(num_markers ++));

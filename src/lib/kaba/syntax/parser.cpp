@@ -1048,11 +1048,8 @@ Node *SyntaxTree::parse_command(Block *block, Node *first_operand) {
 //  * for_var in for "Block"
 
 // Node structure
-//  p[0]: i=0
-//  p[1]: test
-//  p[2]: loop block
-//  p[3]: i++
-Node *SyntaxTree::parse_statement_for(Block *block) {
+//  p = [VAR, START, STOP, STEP, BLOCK]
+Node *SyntaxTree::parse_statement_for_range(Block *block) {
 	// variable name
 	Exp.next();
 	string var_name = Exp.cur;
@@ -1090,50 +1087,40 @@ Node *SyntaxTree::parse_statement_for(Block *block) {
 	if (val_step)
 		val_step = check_param_link(val_step, t, "for", 1);
 
-	Node *cmd_for = add_node_statement(StatementID::FOR);
 
 	// variable
-	Node *for_var;
 	auto *var_no = block->add_var(var_name, t);
-	for_var = add_node_local_var(var_no);
-
-	// implement
-	// for_var = val0
-	Node *cmd_assign = add_node_operator_by_inline(for_var, val0, InlineID::INT_ASSIGN);
-	cmd_for->set_param(0, cmd_assign);
-
-	// while(for_var < val1)
-	Node *cmd_cmp = add_node_operator_by_inline(cp_node(for_var), val1, InlineID::INT_SMALLER);
-	cmd_for->set_param(1, cmd_cmp);
 
 	expect_new_line();
 	// ...block
 	Exp.next_line();
 	expect_indent();
 	parser_loop_depth ++;
-	cmd_for->set_param(2, parse_block(block));
+	auto *loop_block = parse_block(block);
 	parser_loop_depth --;
 
-	// ...for_var += 1
-	Node *cmd_inc;
-	if (for_var->type == TypeInt) {
-		if (val_step)
-			cmd_inc = add_node_operator_by_inline(cp_node(for_var), val_step, InlineID::INT_ADD_ASSIGN);
-		else
-			cmd_inc = add_node_operator_by_inline(cp_node(for_var), val1 /*dummy*/, InlineID::INT_INCREASE);
-	} else {
-		if (!val_step) {
+	if (!val_step) {
+		if (val0->type == TypeInt) {
+			val_step = add_node_const(add_constant(TypeInt));
+			val_step->as_const()->as_int() = 1;
+		} else {
 			val_step = add_node_const(add_constant(TypeFloat32));
 			val_step->as_const()->as_float() = 1.0f;
 		}
-		cmd_inc = add_node_operator_by_inline(cp_node(for_var), val_step, InlineID::FLOAT_ADD_ASSIGN);
 	}
-	cmd_for->set_param(3, cmd_inc); // add to loop-block
 
 	// <for_var> declared internally?
 	// -> force it out of scope...
 	var_no->name = ":" + var_no->name;
 	// TODO  FIXME
+
+
+	Node *cmd_for = add_node_statement(StatementID::FOR_RANGE);
+	cmd_for->set_param(0, add_node_local_var(var_no));
+	cmd_for->set_param(1, val0);
+	cmd_for->set_param(2, val1);
+	cmd_for->set_param(3, val_step);
+	cmd_for->set_param(4, loop_block);
 
 	return cmd_for;
 }
@@ -1157,10 +1144,6 @@ Node *SyntaxTree::parse_statement_for_array(Block *block) {
 		Exp.next();
 	}
 
-	// for index
-	auto *var_no_index = block->add_var(index_name, TypeInt);
-	Node *for_index = add_node_local_var(var_no_index);
-
 	// super array
 	if (Exp.cur != "in")
 		do_error("\"in\" expected after variable in \"for . in .\"");
@@ -1170,65 +1153,23 @@ Node *SyntaxTree::parse_statement_for_array(Block *block) {
 		do_error("array or list expected as second parameter in \"for . in .\"");
 	//Exp.next();
 
-	Node *cmd_for = add_node_statement(StatementID::FOR);
 
 	// variable...
 	const Class *var_type = for_array->type->get_array_element();
 	auto *var = block->add_var(var_name, var_type);
-	Node *for_var = add_node_local_var(var);
 
-	// 0
-	Node *val0 = add_node_const(add_constant(TypeInt));
-	val0->as_const()->as_int() = 0;
+	// for index
+	auto *var_no_index = block->add_var(index_name, TypeInt);
 
-	// implement
-	// for_index = 0
-	Node *cmd_assign = add_node_operator_by_inline(for_index, val0, InlineID::INT_ASSIGN);
-	cmd_for->set_param(0, cmd_assign);
 
-	Node *val1;
-	if (for_array->type->usable_as_super_array()) {
-		// array.num
-		val1 = new Node(NodeKind::ADDRESS_SHIFT, config.pointer_size, TypeInt);
-		val1->set_num_params(1);
-		val1->set_param(0, for_array);
-	} else {
-		// array.size
-		val1 = add_node_const(add_constant(TypeInt));
-		val1->as_const()->as_int() = for_array->type->array_length;
-	}
-
-	// while(for_index < val1)
-	Node *cmd_cmp = add_node_operator_by_inline(cp_node(for_index), val1, InlineID::INT_SMALLER);
-	cmd_for->set_param(1, cmd_cmp);
 	expect_new_line();
 	// ...block
 	Exp.next_line();
 	expect_indent();
 	parser_loop_depth ++;
 	Node *loop_block = parse_block(block);
-	cmd_for->set_param(2, loop_block);
 	parser_loop_depth --;
 
-	// ...for_index += 1
-	Node *cmd_inc = add_node_operator_by_inline(cp_node(for_index), val1 /*dummy*/, InlineID::INT_INCREASE);
-	cmd_for->set_param(3, cmd_inc);
-
-	// &for_var
-	Node *for_var_ref = ref_node(for_var);
-
-	Node *array_el;
-	if (for_array->type->usable_as_super_array()) {
-		// &array.data[for_index]
-		array_el = add_node_parray(shift_node(cp_node(for_array), false, 0, var_type->get_pointer()), cp_node(for_index), var_type);
-	} else {
-		// &array[for_index]
-		array_el = add_node_parray(ref_node(for_array), cp_node(for_index), var_type);
-	}
-
-	// &for_var = &array[for_index]
-	Node *cmd_var_assign = add_node_operator_by_inline(for_var_ref, ref_node(array_el), InlineID::POINTER_ASSIGN);
-	loop_block->params.insert(cmd_var_assign, 0);
 
 	// ref...
 	var->type = var_type->get_pointer();
@@ -1237,6 +1178,15 @@ Node *SyntaxTree::parse_statement_for_array(Block *block) {
 	// force for_var out of scope...
 	var->name = ":" + var->name;
 	var_no_index->name = ":" + var_no_index->name;
+
+
+	Node *cmd_for = add_node_statement(StatementID::FOR_ARRAY);
+	// [VAR, INDEX, ARRAY, BLOCK]
+
+	cmd_for->set_param(0, add_node_local_var(var));
+	cmd_for->set_param(1, add_node_local_var(var_no_index));
+	cmd_for->set_param(2, for_array);
+	cmd_for->set_param(3, loop_block);
 
 	return cmd_for;
 }
@@ -1738,7 +1688,7 @@ Node *SyntaxTree::parse_statement(Block *block) {
 			if (e.name == ":")
 				has_colon = true;
 		if (has_colon)
-			return parse_statement_for(block);
+			return parse_statement_for_range(block);
 		else
 			return parse_statement_for_array(block);
 	} else if (Exp.cur == IDENTIFIER_WHILE) {

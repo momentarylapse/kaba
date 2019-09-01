@@ -120,7 +120,7 @@ void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 			blocks_add_recursive(blocks, n->as_block());
 		if (n->kind == NodeKind::STATEMENT) {
 			auto id = n->as_statement()->id;
-			if (id == StatementID::FOR) {
+			if (id == StatementID::FOR_DIGEST) {
 				blocks_add_recursive(blocks, n->params[2]->as_block());
 			} else if (id == StatementID::TRY) {
 				blocks_add_recursive(blocks, n->params[0]->as_block());

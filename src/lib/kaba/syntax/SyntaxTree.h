@@ -144,7 +144,7 @@ public:
 	Array<const Class*> get_wanted_param_types(Node *link);
 	Node *check_param_link(Node *link, const Class *type, const string &f_name = "", int param_no = -1);
 	Node *parse_statement(Block *block);
-	Node *parse_statement_for(Block *block);
+	Node *parse_statement_for_range(Block *block);
 	Node *parse_statement_for_array(Block *block);
 	Node *parse_statement_while(Block *block);
 	Node *parse_statement_break(Block *block);
@@ -171,6 +171,7 @@ public:
 	// neccessary conversions
 	void convert_call_by_reference();
 	void break_down_complicated_commands();
+	Node *break_down_for_loops(Node *c);
 	Node *break_down_complicated_command(Node *c);
 	void make_functions_inline();
 	void map_local_variables_to_stack();
