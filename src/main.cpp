@@ -45,8 +45,8 @@ public:
 	{
 
 		bool use_gui = false;
-		int instruction_set = -1;
-		int abi = -1;
+		Asm::InstructionSet instruction_set = Asm::InstructionSet::NATIVE;
+		Kaba::Abi abi = Kaba::Abi::NATIVE;
 		string out_file, symbols_out_file, symbols_in_file;
 		bool flag_allow_std_lib = true;
 		bool flag_disassemble = false;
@@ -81,13 +81,13 @@ public:
 				use_gui = true;
 				arg.erase(i --);
 			}else if (arg[i] == "--arm"){
-				instruction_set = Asm::INSTRUCTION_SET_ARM;
+				instruction_set = Asm::InstructionSet::ARM;
 				arg.erase(i --);
 			}else if (arg[i] == "--amd64"){
-				instruction_set = Asm::INSTRUCTION_SET_AMD64;
+				instruction_set = Asm::InstructionSet::AMD64;
 				arg.erase(i --);
 			}else if (arg[i] == "--x86"){
-				instruction_set = Asm::INSTRUCTION_SET_X86;
+				instruction_set = Asm::InstructionSet::X86;
 				arg.erase(i --);
 			}else if (arg[i] == "--no-std-lib"){
 				flag_allow_std_lib = false;
@@ -346,11 +346,11 @@ public:
 			f->write_char(0x00);
 
 		f->write_word(0x0003); // 3=shared... 2=exec
-		if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_AMD64){
+		if (Kaba::config.instruction_set == Asm::InstructionSet::AMD64){
 			f->write_word(0x003e); // machine
-		}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_X86){
+		}else if (Kaba::config.instruction_set == Asm::InstructionSet::X86){
 			f->write_word(0x0003); // machine
-		}else if (Kaba::config.instruction_set == Asm::INSTRUCTION_SET_ARM){
+		}else if (Kaba::config.instruction_set == Asm::InstructionSet::ARM){
 			f->write_word(0x0028); // machine
 		}
 		f->write_int(1); // version

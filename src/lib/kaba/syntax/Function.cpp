@@ -44,7 +44,7 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	_var_size = 0;
 	_logical_line_no = -1;
 	_exp_no = -1;
-	inline_no = -1;
+	inline_no = InlineID::NONE;
 	virtual_index = -1;
 	throws_exceptions = false;
 	num_slightly_hidden_vars = 0;
@@ -116,9 +116,9 @@ string Function::signature() const {
 void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 	blocks.add(block);
 	for (Node* n: block->params) {
-		if (n->kind == KIND_BLOCK)
+		if (n->kind == NodeKind::BLOCK)
 			blocks_add_recursive(blocks, n->as_block());
-		if (n->kind == KIND_STATEMENT) {
+		if (n->kind == NodeKind::STATEMENT) {
 			auto id = n->as_statement()->id;
 			if (id == StatementID::FOR) {
 				blocks_add_recursive(blocks, n->params[2]->as_block());
