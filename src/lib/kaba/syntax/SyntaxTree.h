@@ -182,6 +182,8 @@ public:
 
 	// data creation
 	Constant *add_constant(const Class *type, Class *name_space = nullptr);
+	Constant *add_constant_int(int value);
+	Constant *add_constant_pointer(const Class *type, const void *value);
 	Function *add_function(const string &name, const Class *type, const Class *name_space, bool is_static);
 
 	// nodes
@@ -194,6 +196,8 @@ public:
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, InlineID inline_index);
 	Node *add_node_local_var(Variable *var);
 	Node *add_node_parray(Node *p, Node *index, const Class *type);
+	Node *add_node_dyn_array(Node *array, Node *index);
+	Node *add_node_array(Node *array, Node *index);
 	//Node *add_node_block(Block *b);
 	Node *cp_node(Node *c);
 	Node *ref_node(Node *sub, const Class *override_type = nullptr);

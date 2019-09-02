@@ -156,6 +156,19 @@ Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type) {
 	return cmd_el;
 }
 
+Node *SyntaxTree::add_node_dyn_array(Node *array, Node *index) {
+	auto *t = array->type;
+	return add_node_parray(shift_node(array, false, 0, t->get_pointer()), index, t->get_array_element());
+}
+
+Node *SyntaxTree::add_node_array(Node *array, Node *index) {
+	auto *el = new Node(NodeKind::ARRAY, 0, array->type->parent);
+	el->set_num_params(2);
+	el->set_param(0, array);
+	el->set_param(1, index);
+	return el;
+}
+
 /*Node *SyntaxTree::add_node_block(Block *b)
 {
 	return new Node(NodeKind::BLOCK, (long long)(int_p)b, TypeVoid);
@@ -259,6 +272,18 @@ Constant *SyntaxTree::add_constant(const Class *type, Class *name_space) {
 		name_space = base_class;
 	auto *c = new Constant(type, this);
 	name_space->constants.add(c);
+	return c;
+}
+
+Constant *SyntaxTree::add_constant_int(int value) {
+	auto *c = add_constant(TypeInt);
+	c->as_int() = value;
+	return c;
+}
+
+Constant *SyntaxTree::add_constant_pointer(const Class *type, const void *value) {
+	auto *c = add_constant(type);
+	c->as_int64() = (int_p)value;
 	return c;
 }
 
@@ -682,8 +707,7 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 		// & array
 		Node *c_ref_array = ref_node(c->params[0]);
 		// create command for size constant
-		Node *c_size = add_node_const(add_constant(TypeInt, base_class));
-		c_size->as_const()->as_int() = el_type->size;
+		Node *c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, InlineID::INT_MULTIPLY);
 		c_offset->type = TypeInt;//TypePointer;
@@ -706,8 +730,7 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 		Node *c_index = c->params[1];
 		Node *c_ref_array = c->params[0];
 		// create command for size constant
-		Node *c_size = add_node_const(add_constant(TypeInt, base_class));
-		c_size->as_const()->as_int() = el_type->size;
+		Node *c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
 		Node *c_offset = add_node_operator_by_inline(c_index, c_size, InlineID::INT_MULTIPLY);
 		c_offset->type = TypeInt;
@@ -729,8 +752,7 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 		// & struct
 		Node *c_ref_struct = ref_node(c->params[0]);
 		// create command for shift constant
-		Node *c_shift = add_node_const(add_constant(TypeInt, base_class));
-		c_shift->as_const()->as_int() = c->link_no;
+		Node *c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
 		c_address->type = el_type->get_pointer();//TypePointer;
@@ -748,8 +770,7 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 
 		Node *c_ref_struct = c->params[0];
 		// create command for shift constant
-		Node *c_shift = add_node_const(add_constant(TypeInt, base_class));
-		c_shift->as_const()->as_int() = c->link_no;
+		Node *c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
 		Node *c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
 		c_address->type = el_type->get_pointer();//TypePointer;
@@ -808,12 +829,9 @@ Node *SyntaxTree::break_down_for_loops(Node *c) {
 		c->set_num_params(4);
 		// [INIT, CMP, BLOCK, INC]
 
-		const Class *var_type = array->type->get_array_element();
-
 
 		// 0
-		Node *val0 = add_node_const(add_constant(TypeInt));
-		val0->as_const()->as_int() = 0;
+		Node *val0 = add_node_const(add_constant_int(0));
 
 		// implement
 		// for_index = 0
@@ -825,11 +843,10 @@ Node *SyntaxTree::break_down_for_loops(Node *c) {
 			// array.num
 			val1 = new Node(NodeKind::ADDRESS_SHIFT, config.pointer_size, TypeInt);
 			val1->set_num_params(1);
-			val1->set_param(0, array);
+			val1->set_param(0, cp_node(array));
 		} else {
 			// array.size
-			val1 = add_node_const(add_constant(TypeInt));
-			val1->as_const()->as_int() = array->type->array_length;
+			val1 = add_node_const(add_constant_int(array->type->array_length));
 		}
 
 		// while(for_index < val1)
@@ -843,17 +860,16 @@ Node *SyntaxTree::break_down_for_loops(Node *c) {
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(index), val1 /*dummy*/, InlineID::INT_INCREASE);
 		c->set_param(3, cmd_inc);
 
-		Node *array_el;
+		// array[index]
+		Node *el;
 		if (array->type->usable_as_super_array()) {
-			// &array.data[for_index]
-			array_el = add_node_parray(shift_node(cp_node(array), false, 0, var_type->get_pointer()), cp_node(index), var_type);
+			el = add_node_dyn_array(array, cp_node(index));
 		} else {
-			// &array[for_index]
-			array_el = add_node_parray(ref_node(array), cp_node(index), var_type);
+			el = add_node_array(array, cp_node(index));
 		}
 
-		// &for_var = &array[for_index]
-		Node *cmd_var_assign = add_node_operator_by_inline(var, ref_node(array_el), InlineID::POINTER_ASSIGN);
+		// &for_var = &array[index]
+		Node *cmd_var_assign = add_node_operator_by_inline(var, ref_node(el), InlineID::POINTER_ASSIGN);
 		block->params.insert(cmd_var_assign, 0);
 
 	}

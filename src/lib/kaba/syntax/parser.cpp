@@ -196,16 +196,14 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	Node *index = nullptr;
 	Node *index2 = nullptr;
 	if (Exp.cur == ":") {
-		index = add_node_const(add_constant(TypeInt));
-		index->as_const()->as_int() = 0;
+		index = add_node_const(add_constant_int(0));
 	} else {
 		index = parse_command(block);
 	}
 	if (Exp.cur == ":") {
 		Exp.next();
 		if (Exp.cur == "]") {
-			index2 = add_node_const(add_constant(TypeInt));
-			index2->as_const()->as_int() = 0x81234567;
+			index2 = add_node_const(add_constant_int(0x81234567));
 			// magic value (-_-)'
 		} else {
 			index2 = parse_command(block);
@@ -247,6 +245,12 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	if (!allowed)
 		do_error(format("type \"%s\" is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->name.c_str(), index->type->name.c_str()));
 
+
+	if (index->type != TypeInt) {
+		Exp.rewind();
+		do_error(format("type of index for an array needs to be int, not %s", index->type->name.c_str()));
+	}
+
 	Node *array = nullptr;
 
 	// pointer?
@@ -258,20 +262,11 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 		deref_command_old(this, Operand);
 		array = Operand->param[0];*/
 	} else if (operand->type->usable_as_super_array()) {
-		array = add_node_parray(shift_node(operand, false, 0, operand->type->get_pointer()),
-		                           index, operand->type->get_array_element());
+		array = add_node_dyn_array(operand, index);
 	} else if (operand->type->is_pointer()) {
 		array = add_node_parray(operand, index, operand->type->parent->parent);
 	} else {
-		array = new Node(NodeKind::ARRAY, 0, operand->type->parent);
-		array->set_num_params(2);
-		array->set_param(0, operand);
-		array->set_param(1, index);
-	}
-
-	if (index->type != TypeInt) {
-		Exp.rewind();
-		do_error(format("type of index for an array needs to be int, not %s", index->type->name.c_str()));
+		array = add_node_array(operand, index);
 	}
 	return array;
 }
@@ -875,8 +870,7 @@ Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2) {
 		tree->do_error("'is': class '" + t2->name + "' is not derived from '" + t1->name + "'");
 
 	// vtable2
-	Node *vtable2 = tree->add_node_const(tree->add_constant(TypePointer));
-	vtable2->as_const()->as_int64() = (int_p)t2->_vtable_location_compiler_;
+	Node *vtable2 = tree->add_node_const(tree->add_constant_pointer(TypePointer, t2->_vtable_location_compiler_));
 
 	// vtable1
 	param1->type = TypePointer;
@@ -1101,8 +1095,7 @@ Node *SyntaxTree::parse_statement_for_range(Block *block) {
 
 	if (!val_step) {
 		if (val0->type == TypeInt) {
-			val_step = add_node_const(add_constant(TypeInt));
-			val_step->as_const()->as_int() = 1;
+			val_step = add_node_const(add_constant_int(1));
 		} else {
 			val_step = add_node_const(add_constant(TypeFloat32));
 			val_step->as_const()->as_float() = 1.0f;
@@ -1450,13 +1443,12 @@ Node *SyntaxTree::parse_single_func_param(Block *block) {
 Node *SyntaxTree::parse_statement_sizeof(Block *block) {
 	Exp.next(); // sizeof
 	Node* sub = parse_single_func_param(block);
-
-	Node *c = add_node_const(add_constant(TypeInt));
+	Node *c;
 
 	if (sub->kind == NodeKind::CLASS) {
-		c->as_const()->as_int() = sub->as_class()->size;
+		c = add_node_const(add_constant_int(sub->as_class()->size));
 	} else {
-		c->as_const()->as_int() = sub->type->size;
+		c = add_node_const(add_constant_int(sub->type->size));
 	}
 	delete sub;
 	return c;
@@ -1484,9 +1476,7 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 
 	// array?
 	if (sub->type->is_array()) {
-		auto *c = add_constant(TypeInt);
-		c->as_int() = sub->type->array_length;
-		return add_node_const(c);
+		return add_node_const(add_constant_int(sub->type->array_length));
 	}
 
 	// element "int num/length"?
@@ -1513,8 +1503,7 @@ Node *SyntaxTree::parse_statement_str(Block *block) {
 	Exp.set(ie);
 
 	// "universal" var2str
-	auto *c = add_constant(TypeClassP);
-	c->as_int64() = (int64)sub->type;
+	auto *c = add_constant_pointer(TypeClassP, sub->type);
 
 	Array<Node*> links = get_existence("-var2str-", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
@@ -1563,8 +1552,7 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	auto links = get_existence("-map-", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
-	auto *c = add_constant(TypeFunctionP);
-	c->as_int64() = (int64)params[0]->as_func();
+	auto *c = add_constant_pointer(TypeFunctionP, params[0]->as_func());
 
 	Node *cmd = add_node_call(f);
 	cmd->set_param(0, add_node_const(c));
@@ -1670,8 +1658,7 @@ Node *SyntaxTree::parse_statement_filter(Block *block) {
 	auto links = get_existence("-filter-", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
-	auto *c = add_constant(TypeFunctionP);
-	c->as_int64() = (int64)params[0]->as_func();
+	auto *c = add_constant_pointer(TypeFunctionP, params[0]->as_func());
 
 	Node *cmd = add_node_call(f);
 	cmd->set_param(0, add_node_const(c));
