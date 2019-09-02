@@ -7,4 +7,4 @@ void f()
 void main()
 	code* p = f.code
 	p()
-	#(&f)()
+	f.code()

@@ -424,21 +424,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 	p.p = 0;
 	p.shift = 0;
 
-	if (link->kind == NodeKind::FUNCTION_POINTER){
-		p.p = (int_p)link->as_func_p();
-		p.kind = NodeKind::MEMORY;
-		if (!p.p){
-			if (link->as_func()->owner() == syntax_tree){
-				int index = func_index(link->as_func());
-				p.p = index + 0xefef0000;
-				script->function_vars_to_link.add(index);
-			}else
-				do_error_link("could not link function as variable: " + link->as_func()->long_name());
-			//p.kind = Asm::PKLabel;
-			//p.p = (char*)(long)list->add_label("_kaba_func_" + link->script->syntax->Functions[link->link_no]->name, false);
-		}
-		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
-	}else if (link->kind == NodeKind::MEMORY){
+	if (link->kind == NodeKind::MEMORY){
 		return param_deref_lookup(p.type, add_global_ref((void*)p.p));
 	}else if (link->kind == NodeKind::ADDRESS){
 		return param_lookup(p.type, add_global_ref((void*)link->link_no));
@@ -477,7 +463,7 @@ SerialNodeParam SerializerARM::SerializeParameter(Node *link, Block *block, int 
 			if (param.kind == KindVarGlobal)	p.kind = KindRefToGlobal;
 			p.p = param.p;
 		}*/
-		return AddDereference(param);
+		return AddDereference(param, link->type);
 	}else if (link->kind == NodeKind::VAR_TEMP){
 		// only used by <new> operator
 		p.p = link->link_no;

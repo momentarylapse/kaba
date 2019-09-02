@@ -154,14 +154,14 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 	for (auto *c: type->constants)
 		if (Exp.cur == c->name) {
 			Exp.next();
-			return {new Node(NodeKind::CONSTANT, (int_p)c, c->type)};
+			return {add_node_const(c)};
 		}
 		
 	// sub-class
 	for (auto *c: type->classes)
 		if (Exp.cur == c->name) {
 			Exp.next();
-			return {new Node(NodeKind::CLASS, (int_p)c, TypeClassP)};
+			return {add_node_class(c)};
 		}
 
 
@@ -304,7 +304,7 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) 
 	// constructor
 	//auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
 	//vv->explicitly_constructed = true;
-	//Node *dummy = add_node_local_var(vv);
+	//Node *dummy = add_node_local(vv);
 	Array<Node*> links;
 	for (auto *cf: t->get_constructors()) {
 		Node *n = add_node_member_call(cf, nullptr /*ref_node(dummy)*/); // temp var added later...
@@ -321,7 +321,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block,
 
 	// make links callable
 	for (Node *l: links) {
-		if (l->kind == NodeKind::FUNCTION_NAME) {
+		if (l->kind == NodeKind::FUNCTION) {
 			make_func_node_callable(l, check);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = links[0]->as_class();
@@ -454,7 +454,7 @@ Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block) {
 			t = parse_type_extension_dict(t);
 		}
 
-		return parse_operand_extension({new Node(t)}, block);
+		return parse_operand_extension({add_node_class(t)}, block);
 	}
 
 	// nothing?
@@ -521,7 +521,7 @@ void clear_nodes(Array<Node*> &nodes, Node *keep) {
 
 // when calling ...(...)
 Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link) {
-	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION_NAME) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 		return link->as_func()->literal_param_type;
 	} else if (link->kind == NodeKind::VIRTUAL_CALL) {
 		Function *cf = link->instance->type->parent->get_virtual_function(link->link_no);
@@ -730,7 +730,7 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 	auto *f_add = type->get_func("add", TypeVoid, {el_type});
 	if (!f_add)
 		do_error("...add() ???");
-	auto *n_add = add_node_member_call(f_add, ref_node(add_node_local_var(var)));
+	auto *n_add = add_node_member_call(f_add, ref_node(add_node_local(var)));
 	n_add->set_param(0, n_exp);
 
 	Block *b;
@@ -757,7 +757,7 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 	Node *n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type);
 	n->set_num_params(2);
 	n->set_param(0, n_for);
-	n->set_param(1, add_node_local_var(var));
+	n->set_param(1, add_node_local(var));
 	return n;
 
 }
@@ -815,11 +815,6 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 				clear_nodes(operands);
 				Node *sub_command = parse_operand(block);
 				return link_unary_operator(po, sub_command, block);
-			} else if (operands[0]->kind == NodeKind::CLASS) {
-				Exp.next();
-				//clear_nodes(operands);
-				//const Class *t = parse_type(block->name_space());
-				//operands = {new Node(NodeKind::CLASS, (int_p)operands[0]->as_class(), TypeClass)};
 			} else {
 				Exp.next();
 				// direct operand!
@@ -1166,7 +1161,7 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 		auto *var_no = block->add_var(var_name, t);
 
 		Node *cmd_for = add_node_statement(StatementID::FOR_RANGE);
-		cmd_for->set_param(0, add_node_local_var(var_no));
+		cmd_for->set_param(0, add_node_local(var_no));
 		cmd_for->set_param(1, val0);
 		cmd_for->set_param(2, val1);
 		cmd_for->set_param(3, val_step);
@@ -1194,8 +1189,8 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 		Node *cmd_for = add_node_statement(StatementID::FOR_ARRAY);
 		// [VAR, INDEX, ARRAY, BLOCK]
 
-		cmd_for->set_param(0, add_node_local_var(var));
-		cmd_for->set_param(1, add_node_local_var(index));
+		cmd_for->set_param(0, add_node_local(var));
+		cmd_for->set_param(1, add_node_local(index));
 		cmd_for->set_param(2, for_array);
 		//cmd_for->set_param(3, loop_block);
 
@@ -1362,7 +1357,7 @@ Node *SyntaxTree::parse_statement_try(Block *block) {
 			Exp.next();
 			string ex_name = Exp.cur;
 			auto *v = except_block->add_var(ex_name, ex_type);
-			cmd_ex->params.add(add_node_local_var(v));
+			cmd_ex->params.add(add_node_local(v));
 			Exp.next();
 		}
 	}
@@ -1588,7 +1583,7 @@ Node *SyntaxTree::parse_statement_let(Block *block) {
 
 	auto* rhs = parse_command(block);
 	auto *var = block->add_var(name, rhs->type);
-	auto cmd = link_operator_id(OperatorID::ASSIGN, add_node_local_var(var), rhs);
+	auto cmd = link_operator_id(OperatorID::ASSIGN, add_node_local(var), rhs);
 	if (!cmd)
 		do_error("let: no assignment operator for type " + rhs->type->long_name());
 	return cmd;
@@ -1601,7 +1596,7 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	auto params = parse_call_parameters(block);
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
-	if (params[0]->kind != NodeKind::FUNCTION_NAME)
+	if (params[0]->kind != NodeKind::FUNCTION)
 		do_error("map(): first parameter must be a function name");
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
@@ -1665,10 +1660,14 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 
 	f->update_parameters_after_parsing();
 
-	auto *ret = add_node_statement(StatementID::RETURN);
-	ret->set_num_params(1);
-	ret->params[0] = cmd;
-	f->block->add(ret);
+	if (cmd->type == TypeVoid) {
+		f->block->add(cmd);
+	} else {
+		auto *ret = add_node_statement(StatementID::RETURN);
+		ret->set_num_params(1);
+		ret->params[0] = cmd;
+		f->block->add(ret);
+	}
 
 	base_class->add_function(this, f, false, false);
 

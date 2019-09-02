@@ -52,19 +52,6 @@ const Class *SyntaxTree::make_class_func(Function *f) {
 Node *SyntaxTree::ref_node(Node *sub, const Class *override_type) {
 	const Class *t = override_type ? override_type : sub->type->get_pointer();
 
-	if (sub->kind == NodeKind::CLASS) {
-		msg_error("ref class...");
-		// Class pointer
-//		auto *c = add_constant(TypeClassP, base_class);
-//		c->as_int64() = (int64)(int_p)sub->as_class();
-//		return add_node_const(c);
-	} else if (sub->kind == NodeKind::FUNCTION_NAME) {
-		msg_error("ref func...");
-		// can't be const because the function might not be compiled yet!
-//		return new Node(NodeKind::FUNCTION_POINTER, sub->link_no, make_class_func(sub->as_func()));
-		// could also happen later via transform()
-	}
-
 	Node *c = new Node(NodeKind::REFERENCE, 0, t);
 	c->set_num_params(1);
 	c->set_param(0, sub);
@@ -120,7 +107,7 @@ Node *SyntaxTree::add_node_call(Function *f) {
 }
 
 Node *SyntaxTree::add_node_func_name(Function *f) {
-	return new Node(NodeKind::FUNCTION_NAME, (int_p)f, TypeFunctionP);
+	return new Node(NodeKind::FUNCTION, (int_p)f, TypeFunctionP);
 }
 
 Node *SyntaxTree::add_node_class(const Class *c) {
@@ -148,10 +135,16 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, InlineID inlin
 }
 
 
-Node *SyntaxTree::add_node_local_var(Variable *v) {
-	if (!v)
-		script->do_error_internal("var = nil");
+Node *SyntaxTree::add_node_local(Variable *v, const Class *type) {
+	return new Node(NodeKind::VAR_LOCAL, (int_p)v, type);
+}
+
+Node *SyntaxTree::add_node_local(Variable *v) {
 	return new Node(NodeKind::VAR_LOCAL, (int_p)v, v->type);
+}
+
+Node *SyntaxTree::add_node_global(Variable *v) {
+	return new Node(NodeKind::VAR_GLOBAL, (int_p)v, v->type);
 }
 
 Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type) {
@@ -310,6 +303,10 @@ Node *SyntaxTree::add_node_const(Constant *c) {
 	return new Node(NodeKind::CONSTANT, (int_p)c, c->type);
 }
 
+Node *SyntaxTree::add_node_block(Block *b) {
+	return new Node(NodeKind::BLOCK, (int_p)b, TypeVoid);
+}
+
 PrimitiveOperator *SyntaxTree::which_primitive_operator(const string &name) {
 	for (int i=0;i<(int)OperatorID::_COUNT_;i++)
 		if (name == PrimitiveOperators[i].name)
@@ -338,21 +335,18 @@ Statement *SyntaxTree::which_statement(const string &name) {
 
 
 // xxxxx FIXME
-Node *exlink_make_var_local(SyntaxTree *ps, const Class *t, Variable *v) {
-	return new Node(NodeKind::VAR_LOCAL, (int_p)v, t);
-}
 
-Node *exlink_make_var_element(SyntaxTree *ps, Function *f, ClassElement &e) {
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF));
+Node *SyntaxTree::exlink_add_element(Function *f, ClassElement &e) {
+	Node *self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 	Node *link = new Node(NodeKind::DEREF_ADDRESS_SHIFT, e.offset, e.type);
 	link->set_num_params(1);
 	link->params[0] = self;
 	return link;
 }
 
-Node *exlink_make_class_func(SyntaxTree *ps, Function *f, Function *cf) {
-	Node *link = new Node(NodeKind::FUNCTION_NAME, (int_p)cf, TypeFunctionP);
-	Node *self = ps->add_node_local_var(f->__get_var(IDENTIFIER_SELF));
+Node *SyntaxTree::exlink_add_class_func(Function *f, Function *cf) {
+	Node *link = add_node_func_name(cf);
+	Node *self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 	link->set_instance(self);
 	return link;
 }
@@ -364,7 +358,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 		// global variables (=local variables in "RootOfAllEvil")
 		for (Variable *v: base_class->static_variables)
 			if (v->name == name)
-				return {new Node(NodeKind::VAR_GLOBAL, (int_p)v, v->type)};
+				return {add_node_global(v)};
 		// TODO.... namespace...
 	}
 
@@ -376,7 +370,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 			// named constants
 			for (Constant *c: ns->constants)
 				if (name == c->name)
-					return {new Node(c)};
+					return {add_node_const(c)};
 
 			// then the (real) functions
 			for (Function *f: ns->static_functions)
@@ -389,7 +383,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 		// types
 		for (const Class *c: ns->classes)
 			if (c->name == name)
-				return {new Node(c)};
+				return {add_node_class(c)};
 
 		// prefer class...
 		if (links.num > 0)
@@ -402,23 +396,23 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 	return {};
 }
 
-Node* block_get_existence(SyntaxTree *tree, const string &name, Block *block) {
+Node* SyntaxTree::get_existence_block(const string &name, Block *block) {
 	Function *f = block->function;
 
 	// first test local variables
 	auto *v = block->get_var(name);
 	if (v)
-		return exlink_make_var_local(tree, v->type, v);
+		return add_node_local(v);
 	if (!f->is_static){
 		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
-			return exlink_make_var_local(tree, f->name_space->parent->get_pointer(), f->__get_var(IDENTIFIER_SELF));
+			return add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent->get_pointer());
 		// class elements (within a class function)
 		for (auto &e: f->name_space->elements)
 			if (e.name == name)
-				return exlink_make_var_element(tree, f, e);
+				return exlink_add_element(f, e);
 		for (auto *cf: f->name_space->member_functions)
 			if (cf->name == name)
-				return exlink_make_class_func(tree, f, cf);
+				return exlink_add_class_func(f, cf);
 	}
 	return nullptr;
 }
@@ -426,7 +420,7 @@ Node* block_get_existence(SyntaxTree *tree, const string &name, Block *block) {
 Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const Class *ns, bool prefer_class)
 {
 	if (block and !prefer_class) {
-		Node *n = block_get_existence(this, name, block);
+		Node *n = get_existence_block(name, block);
 		if (n)
 			return {n};
 	}
@@ -631,7 +625,7 @@ Node *convert_return_by_memory(SyntaxTree *ps, Node *n, Function *f) {
 	Node *p_ret = nullptr;
 	for (Variable *v: f->var)
 		if (v->name == IDENTIFIER_RETURN_VAR) {
-			p_ret = ps->add_node_local_var(v);
+			p_ret = ps->add_node_local(v);
 		}
 	if (!p_ret)
 		ps->do_error("-return- not found...");
@@ -787,7 +781,7 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
-	} else if (c->kind == NodeKind::FUNCTION_NAME) {
+	} else if (c->kind == NodeKind::FUNCTION) {
 		return add_node_const(add_constant_pointer(TypeFunctionP, c->as_func()));
 	} else if (c->kind == NodeKind::CLASS) {
 		return add_node_const(add_constant_pointer(TypeClassP, c->as_class()));
@@ -946,7 +940,7 @@ Node *conv_constr_func(SyntaxTree *ps, Node *n) {
 		// temp var
 		auto *vv = f->block->add_var(f->create_slightly_hidden_name(), n->type);
 		vv->explicitly_constructed = true;
-		Node *dummy = ps->add_node_local_var(vv);
+		Node *dummy = ps->add_node_local(vv);
 		
 		auto *ib = ps->cp_node(n);
 		ib->kind = NodeKind::FUNCTION_CALL;

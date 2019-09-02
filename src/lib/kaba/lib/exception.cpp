@@ -19,23 +19,19 @@ namespace Kaba{
 bool _verbose_exception_ = false;
 
 
-KabaException::KabaException(const string &message)
-{
+KabaException::KabaException(const string &message) {
 	text = message;
 }
 
-void KabaException::__init__(const string &message)
-{
+void KabaException::__init__(const string &message) {
 	new(this) KabaException(message);
 }
 
-void KabaException::__delete__()
-{
+void KabaException::__delete__() {
 	this->~KabaException();
 }
 
-string KabaException::message()
-{
+string KabaException::message() {
 	return text;
 }
 
@@ -43,8 +39,7 @@ string KabaException::message()
 
 
 
-struct StackFrameInfo
-{
+struct StackFrameInfo {
 	void *rip;
 	void *rsp;
 	void *rbp;
@@ -184,7 +179,7 @@ void relink_return(void *rip, void *rbp, void *rsp)
 			"ret"
 		: "=r" (rbp2)
 		: "r" (rsp), "r" (rip)
-		: "%rsp");
+		: );
 
 //	printf("rbp=%p\n", rbp2);
 #endif
