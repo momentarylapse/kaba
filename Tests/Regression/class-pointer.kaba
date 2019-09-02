@@ -6,8 +6,8 @@ class A
 class B extends A
 
 void main()
-	Class* ca = &A
-	Class* cb = &B
+	Class* ca = A
+	Class* cb = B
 	print(ca.name)
 	print(cb.name)
 	print(ca.is_derived_from(cb))

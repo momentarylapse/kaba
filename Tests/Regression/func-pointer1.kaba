@@ -5,6 +5,6 @@ void f()
 
 
 void main()
-	func* p = &f
+	func* p = f.code
 	p()
-	(&f)()
+	#(&f)()
