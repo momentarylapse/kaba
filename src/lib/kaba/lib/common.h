@@ -1,5 +1,7 @@
 namespace Kaba{
 
+enum class InlineID;
+
 enum ScriptFlag {
 	FLAG_NONE = 0,
 	FLAG_CALL_BY_VALUE = 1,

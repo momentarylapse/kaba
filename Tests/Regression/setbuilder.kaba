@@ -1,0 +1,3 @@
+void main()
+	print([for i in 2:10 str(i*i)+"-"])
+
