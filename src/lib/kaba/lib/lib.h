@@ -81,7 +81,6 @@ extern const string IDENTIFIER_ASM;
 extern const string IDENTIFIER_MAP;
 extern const string IDENTIFIER_LAMBDA;
 extern const string IDENTIFIER_SORTED;
-extern const string IDENTIFIER_FILTER;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -161,8 +160,7 @@ enum class StatementID {
 	LET,
 	MAP,
 	LAMBDA,
-	SORTED,
-	FILTER
+	SORTED
 };
 
 class Statement {

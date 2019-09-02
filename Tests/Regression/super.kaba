@@ -23,5 +23,5 @@ void main()
 	print(t.x)
 	print(t.y)
 	t.f()
-	delete t
+	del t
 	

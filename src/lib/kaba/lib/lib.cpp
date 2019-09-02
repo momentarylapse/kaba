@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.6.2";
+string LibVersion = "0.17.7.1";
 
 
 bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
@@ -44,7 +44,7 @@ const string IDENTIFIER_SELF = "self";
 const string IDENTIFIER_EXTENDS = "extends";
 const string IDENTIFIER_STATIC = "static";
 const string IDENTIFIER_NEW = "new";
-const string IDENTIFIER_DELETE = "delete";
+const string IDENTIFIER_DELETE = "del";
 const string IDENTIFIER_SIZEOF = "sizeof";
 const string IDENTIFIER_TYPE = "type";
 const string IDENTIFIER_STR = "str";
@@ -80,7 +80,6 @@ const string IDENTIFIER_ASM = "asm";
 const string IDENTIFIER_MAP = "map";
 const string IDENTIFIER_LAMBDA = "lambda";
 const string IDENTIFIER_SORTED = "sorted";
-const string IDENTIFIER_FILTER = "filter";
 
 CompilerConfiguration config;
 
@@ -631,22 +630,6 @@ DynamicArray _cdecl kaba_array_sort(DynamicArray &array, const Class *type, cons
 			_kaba_array_sort<bool>(rr, offset);
 		else
 			kaba_raise_exception(new KabaException("can't sort by type '" + by_type->long_name() + "' yet"));
-	}
-	return rr;
-}
-
-DynamicArray _cdecl kaba_array_filter(Function *f, DynamicArray &array, const Class *type) {
-	DynamicArray rr;
-	kaba_var_init(&rr, type);
-
-	for (int i=0; i<array.num; i++) {
-		bool filter_pass = false;
-		void *pa = (char*)array.data + i * array.element_size;
-		bool ok = call_function(f, f->address, &filter_pass, nullptr, {pa});
-		if (!ok)
-			kaba_raise_exception(new KabaException("can not call filter function " + f->signature()));
-		if (filter_pass)
-			kaba_array_add(rr, pa, type);
 	}
 	return rr;
 }
@@ -1495,7 +1478,6 @@ void SIAddBasicCommands() {
 	add_statement(IDENTIFIER_MAP, StatementID::MAP);
 	add_statement(IDENTIFIER_LAMBDA, StatementID::LAMBDA);
 	add_statement(IDENTIFIER_SORTED, StatementID::SORTED);
-	add_statement(IDENTIFIER_FILTER, StatementID::FILTER);
 }
 
 
@@ -1739,10 +1721,6 @@ void SIAddCommands() {
 		func_add_param("list", TypePointer);
 		func_add_param("class", TypeClassP);
 		func_add_param("by", TypeString);
-	add_func("-filter-", TypeDynamicArray, (void*)&kaba_array_filter, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
-		func_add_param("func", TypeFunctionP);
-		func_add_param("list", TypePointer);
-		func_add_param("class", TypeClassP);
 	add_func("-var2str-", TypeString, (void*)var2str, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);

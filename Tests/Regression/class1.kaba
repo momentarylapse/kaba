@@ -3,5 +3,5 @@ use file
 void main()
 	File *f = Filesystem.create("__test__")
 	f << 1
-	delete(f)
+	del f
 

@@ -10,4 +10,4 @@ class Test
 
 void main()
 	Test *t = new Test(3)
-	delete t
+	del t

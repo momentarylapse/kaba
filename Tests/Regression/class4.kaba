@@ -9,4 +9,4 @@ void main()
 	a = Filesystem.create("__test__")
 	a << 2
 	a.func()
-	delete(a)
+	del a

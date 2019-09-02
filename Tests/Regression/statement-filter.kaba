@@ -1,3 +1,0 @@
-void main()
-	let a = filter(lambda(int x) x < 10, [2,20,12,8,10,9])
-	print(a)

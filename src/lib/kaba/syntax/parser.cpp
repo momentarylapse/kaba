@@ -1482,7 +1482,7 @@ Node *SyntaxTree::parse_statement_new(Block *block) {
 // Node structure
 //  p[0]: operand
 Node *SyntaxTree::parse_statement_delete(Block *block) {
-	Exp.next(); // delete
+	Exp.next(); // del
 	Node *cmd = add_node_statement(StatementID::DELETE);
 	cmd->set_param(0, parse_operand(block));
 	if (!cmd->params[0]->type->is_pointer())
@@ -1698,38 +1698,6 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	return cmd;
 }
 
-Node *SyntaxTree::parse_statement_filter(Block *block) {
-	Exp.next(); // "filter"
-	string name = Exp.cur;
-
-	auto params = parse_call_parameters(block);
-	if (params.num != 2)
-		do_error("filter() expects 2 parameters");
-	if (params[0]->kind != NodeKind::FUNCTION_NAME)
-		do_error("filter(): first parameter must be a function name");
-	if (!params[1]->type->is_super_array())
-		do_error("filter(): second parameter must be a list[]");
-
-	if (params[0]->as_func()->num_params != 1)
-		do_error("filter(): function must have exactly one parameter");
-	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
-		do_error("filter(): function parameter does not match list type");
-	if (params[0]->as_func()->literal_return_type != TypeBool)
-		do_error("filter(): function must return bool");
-
-	auto links = get_existence("-filter-", nullptr, nullptr, false);
-	Function *f = links[0]->as_func();
-
-	auto *c = add_constant_pointer(TypeFunctionP, params[0]->as_func());
-
-	Node *cmd = add_node_call(f);
-	cmd->set_param(0, add_node_const(c));
-	cmd->set_param(1, params[1]);
-	cmd->set_param(2, add_node_class(params[1]->type));
-	cmd->type = params[1]->type;
-	return cmd;
-}
-
 Node *SyntaxTree::parse_statement(Block *block) {
 	if (Exp.cur == IDENTIFIER_FOR) {
 		return parse_statement_for(block);
@@ -1751,7 +1719,7 @@ Node *SyntaxTree::parse_statement(Block *block) {
 		return parse_statement_pass(block);
 	} else if (Exp.cur == IDENTIFIER_NEW) {
 		return parse_statement_new(block);
-	} else if (Exp.cur == IDENTIFIER_DELETE) {
+	} else if (Exp.cur == IDENTIFIER_DELETE or Exp.cur == "delete") {
 		return parse_statement_delete(block);
 	} else if (Exp.cur == IDENTIFIER_SIZEOF) {
 		return parse_statement_sizeof(block);
@@ -1769,8 +1737,6 @@ Node *SyntaxTree::parse_statement(Block *block) {
 		return parse_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
 		return parse_statement_sorted(block);
-	} else if (Exp.cur == IDENTIFIER_FILTER) {
-		return parse_statement_filter(block);
 	}
 	return nullptr;
 }

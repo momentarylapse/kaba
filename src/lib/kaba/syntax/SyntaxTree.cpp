@@ -328,6 +328,11 @@ Statement *SyntaxTree::which_statement(const string &name) {
 	for (auto *s: Statements)
 		if (name == s->name)
 			return s;
+
+	// transitional hack
+	if (name == "delete")
+		return which_statement(IDENTIFIER_DELETE);
+
 	return nullptr;
 }
 

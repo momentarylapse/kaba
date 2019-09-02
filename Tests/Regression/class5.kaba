@@ -10,4 +10,4 @@ class Test
 void main()
 	Test *a = new Test
 	print(a.x)
-	delete a
+	del a

@@ -166,7 +166,6 @@ public:
 	Node *parse_statement_map(Block *block);
 	Node *parse_statement_lambda(Block *block);
 	Node *parse_statement_sorted(Block *block);
-	Node *parse_statement_filter(Block *block);
 
 	void create_asm_meta_info();
 
