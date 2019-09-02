@@ -137,6 +137,7 @@ public:
 	void parse_local_definition(Block *block, const Class *type);
 	Node *parse_block(Block *parent, Block *block = nullptr);
 	Node *parse_operand(Block *block, bool prefer_class = false);
+	Node *parse_set_builder(Block *block);
 	Node *link_unary_operator(PrimitiveOperator *op, Node *operand, Block *block);
 	Node *parse_primitive_operator(Block *block);
 	Array<Node*> parse_call_parameters(Block *block);
@@ -144,8 +145,9 @@ public:
 	Array<const Class*> get_wanted_param_types(Node *link);
 	Node *check_param_link(Node *link, const Class *type, const string &f_name = "", int param_no = -1);
 	Node *parse_statement(Block *block);
-	Node *parse_statement_for_range(Block *block);
-	Node *parse_statement_for_array(Block *block);
+	Node *parse_for_header(Block *block);
+	void post_process_for(Node *n);
+	Node *parse_statement_for(Block *block);
 	Node *parse_statement_while(Block *block);
 	Node *parse_statement_break(Block *block);
 	Node *parse_statement_continue(Block *block);

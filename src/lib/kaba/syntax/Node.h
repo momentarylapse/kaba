@@ -58,6 +58,8 @@ enum class NodeKind {
 	// special
 	CLASS,
 	ARRAY_BUILDER,
+	ARRAY_BUILDER_FOR,
+	ARRAY_BUILDER_FOR_IF,
 	CONSTRUCTOR_AS_FUNCTION,
 	// compilation
 	VAR_TEMP,

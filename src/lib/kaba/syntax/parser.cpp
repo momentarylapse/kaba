@@ -704,6 +704,43 @@ Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Bloc
 	return add_node_operator(operand, nullptr, op);
 }
 
+Node *SyntaxTree::parse_set_builder(Block *block) {
+	//Exp.next(); // [
+	Node *n_for = parse_for_header(block);
+
+	Node *n_exp = parse_command(block);
+
+
+	if (Exp.cur != "]")
+		do_error("] expected");
+	Exp.next();
+
+
+	const Class *el_type = n_exp->type;
+	const Class *type = make_class_super_array(el_type);
+	auto *f_add = type->get_func("add", TypeVoid, {el_type});
+	if (!f_add)
+		do_error("...add() ???");
+
+	auto *var = block->add_var("set-builder", type);
+	auto *n_add = add_node_member_call(f_add, ref_node(add_node_local_var(var)));
+	n_add->set_param(0, n_exp);
+
+	Block *b = new Block(block->function, block);
+	b->add(n_add);
+
+	n_for->set_param(n_for->params.num - 1, b);
+
+	post_process_for(n_for);
+
+	Node *n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type);
+	n->set_num_params(2);
+	n->set_param(0, n_for);
+	n->set_param(1, add_node_local_var(var));
+	return n;
+
+}
+
 Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 	Array<Node*> operands;
 
@@ -727,17 +764,21 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 		operands = {deref_node(sub)};
 	} else if (Exp.cur == "[") {
 		Exp.next();
-		Array<Node*> el;
-		while(true) {
-			el.add(parse_command(block));
-			if ((Exp.cur != ",") and (Exp.cur != "]"))
-				do_error("\",\" or \"]\" expected");
-			if (Exp.cur == "]")
-				break;
+		if (Exp.cur == "for") {
+			operands = {parse_set_builder(block)};
+		} else {
+			Array<Node*> el;
+			while(true) {
+				el.add(parse_command(block));
+				if ((Exp.cur != ",") and (Exp.cur != "]"))
+					do_error("\",\" or \"]\" expected");
+				if (Exp.cur == "]")
+					break;
+				Exp.next();
+			}
+			operands = {build_list(this, el)};
 			Exp.next();
 		}
-		operands = {build_list(this, el)};
-		Exp.next();
 	} else {
 		// direct operand
 		operands = get_existence(Exp.cur, block, block->name_space(), prefer_class);
@@ -1043,89 +1084,9 @@ Node *SyntaxTree::parse_command(Block *block, Node *first_operand) {
 
 // Node structure
 //  p = [VAR, START, STOP, STEP, BLOCK]
-Node *SyntaxTree::parse_statement_for_range(Block *block) {
+Node *SyntaxTree::parse_for_header(Block *block) {
 	// variable name
-	Exp.next();
-	string var_name = Exp.cur;
-	Exp.next();
-
-	if (Exp.cur != "in")
-		do_error("\"in\" expected after variable in for");
-	Exp.next();
-
-	// first value
-	Node *val0 = parse_command(block);
-
-
-	// last value
-	if (Exp.cur != ":")
-		do_error("\":\" expected after first value in for");
-	Exp.next();
-	Node *val1 = parse_command(block);
-
-	Node *val_step = nullptr;
-	if (Exp.cur == ":") {
-		Exp.next();
-		val_step = parse_command(block);
-	}
-
-	// type?
-	const Class *t = val0->type;
-	if (val1->type == TypeFloat32)
-		t = val1->type;
-	if (val_step)
-		if (val_step->type == TypeFloat32)
-			t = val_step->type;
-	val0 = check_param_link(val0, t, "for", 1);
-	val1 = check_param_link(val1, t, "for", 1);
-	if (val_step)
-		val_step = check_param_link(val_step, t, "for", 1);
-
-
-	// variable
-	auto *var_no = block->add_var(var_name, t);
-
-	expect_new_line();
-	// ...block
-	Exp.next_line();
-	expect_indent();
-	parser_loop_depth ++;
-	auto *loop_block = parse_block(block);
-	parser_loop_depth --;
-
-	if (!val_step) {
-		if (val0->type == TypeInt) {
-			val_step = add_node_const(add_constant_int(1));
-		} else {
-			val_step = add_node_const(add_constant(TypeFloat32));
-			val_step->as_const()->as_float() = 1.0f;
-		}
-	}
-
-	// <for_var> declared internally?
-	// -> force it out of scope...
-	var_no->name = ":" + var_no->name;
-	// TODO  FIXME
-
-
-	Node *cmd_for = add_node_statement(StatementID::FOR_RANGE);
-	cmd_for->set_param(0, add_node_local_var(var_no));
-	cmd_for->set_param(1, val0);
-	cmd_for->set_param(2, val1);
-	cmd_for->set_param(3, val_step);
-	cmd_for->set_param(4, loop_block);
-
-	return cmd_for;
-}
-
-// Node structure
-//  p[0]: i=0
-//  p[1]: test
-//  p[2]: loop block (hidden first var=&array[i])
-//  p[3]: i++
-Node *SyntaxTree::parse_statement_for_array(Block *block) {
-	// variable
-	Exp.next();
+	Exp.next(); // for
 	string var_name = Exp.cur;
 	Exp.next();
 
@@ -1137,49 +1098,129 @@ Node *SyntaxTree::parse_statement_for_array(Block *block) {
 		Exp.next();
 	}
 
-	// super array
+
 	if (Exp.cur != "in")
-		do_error("\"in\" expected after variable in \"for . in .\"");
+		do_error("\"in\" expected after variable in for");
 	Exp.next();
-	Node *for_array = parse_operand(block);
-	if ((!for_array->type->usable_as_super_array()) and (!for_array->type->is_array()))
-		do_error("array or list expected as second parameter in \"for . in .\"");
-	//Exp.next();
+
+	// first value
+	Node *val0 = parse_command(block);
 
 
-	// variable...
-	const Class *var_type = for_array->type->get_array_element();
-	auto *var = block->add_var(var_name, var_type);
+	if (Exp.cur == ":") {
+		// range
 
-	// for index
-	auto *var_no_index = block->add_var(index_name, TypeInt);
+		Exp.next(); // :
+		Node *val1 = parse_command(block);
 
+		Node *val_step = nullptr;
+		if (Exp.cur == ":") {
+			Exp.next();
+			val_step = parse_command(block);
+		}
+
+		// type?
+		const Class *t = val0->type;
+		if (val1->type == TypeFloat32)
+			t = val1->type;
+		if (val_step)
+			if (val_step->type == TypeFloat32)
+				t = val_step->type;
+		val0 = check_param_link(val0, t, "for", 1);
+		val1 = check_param_link(val1, t, "for", 1);
+		if (val_step)
+			val_step = check_param_link(val_step, t, "for", 1);
+
+
+		if (!val_step) {
+			if (val0->type == TypeInt) {
+				val_step = add_node_const(add_constant_int(1));
+			} else {
+				val_step = add_node_const(add_constant(TypeFloat32));
+				val_step->as_const()->as_float() = 1.0f;
+			}
+		}
+
+		// variable
+		auto *var_no = block->add_var(var_name, t);
+
+		Node *cmd_for = add_node_statement(StatementID::FOR_RANGE);
+		cmd_for->set_param(0, add_node_local_var(var_no));
+		cmd_for->set_param(1, val0);
+		cmd_for->set_param(2, val1);
+		cmd_for->set_param(3, val_step);
+		//cmd_for->set_param(4, loop_block);
+
+		return cmd_for;
+
+	} else {
+		// array
+
+		Node *for_array = val0;//parse_operand(block);
+		if ((!for_array->type->usable_as_super_array()) and (!for_array->type->is_array()))
+			do_error("array or list expected as second parameter in \"for . in .\"");
+		//Exp.next();
+
+
+		// variable...
+		const Class *var_type = for_array->type->get_array_element();
+		auto *var = block->add_var(var_name, var_type);
+
+		// for index
+		auto *index = block->add_var(index_name, TypeInt);
+
+
+		Node *cmd_for = add_node_statement(StatementID::FOR_ARRAY);
+		// [VAR, INDEX, ARRAY, BLOCK]
+
+		cmd_for->set_param(0, add_node_local_var(var));
+		cmd_for->set_param(1, add_node_local_var(index));
+		cmd_for->set_param(2, for_array);
+		//cmd_for->set_param(3, loop_block);
+
+		return cmd_for;
+	}
+}
+
+void SyntaxTree::post_process_for(Node *cmd_for) {
+	auto *n_var = cmd_for->params[0];
+	auto *var = n_var->as_local();
+
+	if (cmd_for->as_statement()->id == StatementID::FOR_ARRAY) {
+		auto *loop_block = cmd_for->params[3];
+
+	// ref.
+		var->type = var->type->get_pointer();
+		n_var->type = var->type;
+		transform_node(loop_block, [&](Node *n) { return conv_cbr(this, n, var); });
+	}
+
+	// force for_var out of scope...
+	var->name = ":" + var->name;
+	if (cmd_for->as_statement()->id == StatementID::FOR_ARRAY) {
+		auto *index = cmd_for->params[1]->as_local();
+		index->name = ":" + index->name;
+	}
+}
+
+
+
+// Node structure
+Node *SyntaxTree::parse_statement_for(Block *block) {
+
+	auto *cmd_for = parse_for_header(block);
 
 	expect_new_line();
 	// ...block
 	Exp.next_line();
 	expect_indent();
 	parser_loop_depth ++;
-	Node *loop_block = parse_block(block);
+	auto *loop_block = parse_block(block);
 	parser_loop_depth --;
 
+	cmd_for->set_param(cmd_for->params.num - 1, loop_block);
 
-	// ref...
-	var->type = var_type->get_pointer();
-	transform_node(loop_block, [&](Node *n) { return conv_cbr(this, n, var); });
-
-	// force for_var out of scope...
-	var->name = ":" + var->name;
-	var_no_index->name = ":" + var_no_index->name;
-
-
-	Node *cmd_for = add_node_statement(StatementID::FOR_ARRAY);
-	// [VAR, INDEX, ARRAY, BLOCK]
-
-	cmd_for->set_param(0, add_node_local_var(var));
-	cmd_for->set_param(1, add_node_local_var(var_no_index));
-	cmd_for->set_param(2, for_array);
-	cmd_for->set_param(3, loop_block);
+	post_process_for(cmd_for);
 
 	return cmd_for;
 }
@@ -1670,14 +1711,7 @@ Node *SyntaxTree::parse_statement_filter(Block *block) {
 
 Node *SyntaxTree::parse_statement(Block *block) {
 	if (Exp.cur == IDENTIFIER_FOR) {
-		bool has_colon = false;
-		for (auto &e: Exp.cur_line->exp)
-			if (e.name == ":")
-				has_colon = true;
-		if (has_colon)
-			return parse_statement_for_range(block);
-		else
-			return parse_statement_for_array(block);
+		return parse_statement_for(block);
 	} else if (Exp.cur == IDENTIFIER_WHILE) {
 		return parse_statement_while(block);
  	} else if (Exp.cur == IDENTIFIER_BREAK) {

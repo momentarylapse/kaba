@@ -56,6 +56,10 @@ string kind2str(NodeKind kind) {
 		return "class";
 	if (kind == NodeKind::ARRAY_BUILDER)
 		return "array builder";
+	if (kind == NodeKind::ARRAY_BUILDER_FOR)
+		return "array builder for";
+	if (kind == NodeKind::ARRAY_BUILDER_FOR_IF)
+		return "array builder for if";
 	if (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)
 		return "constructor function";
 	if (kind == NodeKind::VAR_TEMP)

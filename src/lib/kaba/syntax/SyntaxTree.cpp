@@ -776,6 +776,10 @@ Node *SyntaxTree::break_down_complicated_command(Node *c) {
 		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
+	} else if (c->kind == NodeKind::ARRAY_BUILDER_FOR) {
+
+		_transform_insert_before_.add(c->params[0]);
+		return c->params[1];
 	}
 	return c;
 }
