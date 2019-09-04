@@ -1703,6 +1703,21 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	return cmd;
 }
 
+Node *SyntaxTree::parse_statement_dyn(Block *block) {
+	Exp.next(); // dyn
+	Node *sub = parse_single_func_param(block);
+
+	auto *c = add_constant_pointer(TypeClassP, sub->type);
+
+	Array<Node*> links = get_existence("-dyn-", nullptr, nullptr, false);
+	Function *f = links[0]->as_func();
+
+	Node *cmd = add_node_call(f);
+	cmd->set_param(0, ref_node(sub));
+	cmd->set_param(1, add_node_const(c));
+	return cmd;
+}
+
 Node *SyntaxTree::parse_statement(Block *block) {
 	if (Exp.cur == IDENTIFIER_FOR) {
 		return parse_statement_for(block);
@@ -1742,7 +1757,10 @@ Node *SyntaxTree::parse_statement(Block *block) {
 		return parse_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
 		return parse_statement_sorted(block);
+	} else if (Exp.cur == IDENTIFIER_DYN) {
+		return parse_statement_dyn(block);
 	}
+	do_error("unhandled statement..." + Exp.cur);
 	return nullptr;
 }
 

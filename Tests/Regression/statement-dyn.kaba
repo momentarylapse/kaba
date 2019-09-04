@@ -1,0 +1,26 @@
+class Test
+	vector v
+	int[3] i
+	complex[] z
+	void *p
+	string s
+	void __init__()
+		v = vector(1,2,3)
+		z.add(complex.I)
+		z.add(complex.I)
+		i[0] = 1
+		i[1] = 2
+		i[2] = 3
+		s = "a\\b\nc"
+		p = nil
+
+void main()
+	print(dyn(1))
+	print(dyn(1.1))
+	print(dyn("hallo\ta"))
+	print(dyn([1,2,3]))
+	print(dyn(v_0))
+	#print(dyn(main))
+	Test t
+	print(dyn(t))
+

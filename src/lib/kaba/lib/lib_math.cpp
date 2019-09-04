@@ -352,6 +352,9 @@ Any kaba_bool2any(bool b) {
 Any kaba_str2any(const string &str) {
 	return Any(str);
 }
+Any kaba_pointer2any(const void *p) {
+	return Any(p);
+}
 
 #pragma GCC pop_options
 
@@ -848,6 +851,8 @@ void SIAddPackageMath() {
 		func_add_param("i", TypeBool);
 	add_funcx("@str2any", TypeAny, &kaba_str2any, FLAG_STATIC);
 		func_add_param("s", TypeString);
+	add_funcx("@pointer2any", TypeAny, &kaba_pointer2any, FLAG_STATIC);
+		func_add_param("p", TypePointer);
 
 
 	add_class(TypeCrypto);

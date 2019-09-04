@@ -1,0 +1,13 @@
+void main()
+	any a
+	any b = "hallo"
+	a.set("a", "hallo")
+	a.set("c", 13)
+	a.set("r", a)
+	print(a)
+	print(a["a"])
+	try
+		print(a["b"])
+	except
+		print("nope")
+

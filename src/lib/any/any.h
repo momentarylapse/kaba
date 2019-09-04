@@ -10,7 +10,8 @@ enum {
 	TYPE_BOOL,
 	TYPE_STRING,
 	TYPE_ARRAY,
-	TYPE_HASH
+	TYPE_HASH,
+	TYPE_POINTER
 };
 
 class AnyMap;
@@ -23,11 +24,12 @@ public:
 	Any(float f);
 	Any(bool b);
 	Any(const string &s);
-	Any(const char *s);
 	Any(const Array<Any> &a);
 	Any(const AnyMap &m);
+	Any(const void *p);
 	~Any();
 	void _cdecl clear();
+	void create_type(int type);
 	string _cdecl str() const;
 	string _cdecl _str_rec() const;
 	int _cdecl _int() const;
@@ -52,6 +54,7 @@ public:
 	string* as_string() const;
 	Array<Any>* as_array() const;
 	AnyMap* as_map() const;
+	const void** as_pointer() const;
 
 	// hash map
 	const Any &operator[] (const string &key) const;

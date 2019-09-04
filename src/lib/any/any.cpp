@@ -11,79 +11,91 @@ Any EmptyVar;
 Any EmptyArray = *(Array<Any>*)&_empty_dummy_array_;
 
 
-static string type_name(int t)
-{
-	if (t == TYPE_NONE)	return "-none-";
-	if (t == TYPE_INT)	return "int";
-	if (t == TYPE_FLOAT)	return "float";
-	if (t == TYPE_BOOL)	return "bool";
-	if (t == TYPE_STRING)	return "string";
-	if (t == TYPE_ARRAY)	return "array";
-	if (t == TYPE_HASH)	return "hash map";
+static string type_name(int t) {
+	if (t == TYPE_NONE)
+		return "-none-";
+	if (t == TYPE_INT)
+		return "int";
+	if (t == TYPE_FLOAT)
+		return "float";
+	if (t == TYPE_BOOL)
+		return "bool";
+	if (t == TYPE_STRING)
+		return "string";
+	if (t == TYPE_ARRAY)
+		return "array";
+	if (t == TYPE_HASH)
+		return "hash map";
+	if (t == TYPE_POINTER)
+		return "pointer";
 	return "-unknown type-";
 }
 
-Any::Any()
-{
-	//msg_write(format("any  %p", this));
+Any::Any() {
 	type = TYPE_NONE;
 	data = NULL;
 }
 
-void Any::__init__()
-{
+void Any::__init__() {
 	new(this) Any;
 }
 
-Any::Any(const Any &a)
-{
-	//msg_write(format("any any  %p", this));
-	type = TYPE_NONE;
-	data = NULL;
+Any::Any(const Any &a) : Any() {
 	*this = a;
 }
 
-Any::Any(int i)
-{
-	//msg_write(format("any int  %p", this));
-	type = TYPE_INT;
-	data = new int;
-	*(int*)data = i;
+Any::Any(int i) : Any() {
+	create_type(TYPE_INT);
+	*as_int() = i;
 }
 
-Any::Any(float f)
-{
-	type = TYPE_FLOAT;
-	data = new float;
-	*(float*)data = f;
+Any::Any(float f) : Any() {
+	create_type(TYPE_FLOAT);
+	*as_float() = f;
 }
 
-Any::Any(bool b)
-{
-	type = TYPE_BOOL;
-	data = new bool;
-	*(bool*)data = b;
+Any::Any(bool b) : Any() {
+	create_type(TYPE_BOOL);
+	*as_bool() = b;
 }
 
-Any::Any(const string &s)
-{
-	type = TYPE_STRING;
-	data = new string;
-	*(string*)data = s;
+Any::Any(const string &s) : Any() {
+	create_type(TYPE_STRING);
+	*as_string() = s;
 }
 
-Any::Any(const char *s)
-{
-	type = TYPE_STRING;
-	data = new string;
-	*(string*)data = string(s);
+Any::Any(const void *p) : Any() {
+	create_type(TYPE_POINTER);
+	*as_pointer() = p;
 }
 
-Any::Any(const Array<Any> &a)
-{
-	type = TYPE_ARRAY;
-	data = new Array<Any>;
-	*((Array<Any>*)data) = a;
+Any::Any(const Array<Any> &a) : Any() {
+	create_type(TYPE_ARRAY);
+	*as_array() = a;
+}
+
+
+void Any::create_type(int _type) {
+	clear();
+	type = _type;
+	if (type == TYPE_INT) {
+		data = new int;
+	} else if (type == TYPE_FLOAT) {
+		data = new float;
+	} else if (type == TYPE_BOOL) {
+		data = new bool;
+	} else if (type == TYPE_POINTER) {
+		data = new (void*);
+	} else if (type == TYPE_STRING) {
+		data = new string;
+	} else if (type == TYPE_ARRAY) {
+		data = new Array<Any>;
+	} else if (type == TYPE_HASH) {
+		data = new AnyMap;
+	} else if (type == TYPE_NONE) {
+	} else {
+		msg_error("can not create " + type_name(type));
+	}
 }
 
 /*Any::Any(const AnyHashMap &a)
@@ -99,32 +111,40 @@ Any::~Any()
 void Any::clear() {
 	//msg_write(format("clear %s  %p", type->Name, this));
 	if (type == TYPE_INT)
-		delete((int*)data);
+		delete as_int();
 	else if (type == TYPE_FLOAT)
-		delete((float*)data);
+		delete as_float();
 	else if (type == TYPE_BOOL)
-		delete((bool*)data);
+		delete as_bool();
 	else if (type == TYPE_STRING)
-		delete((string*)data);
+		delete as_string();
 	else if (type == TYPE_ARRAY)
 		delete as_array();
 	else if (type == TYPE_HASH)
 		delete as_map();
+	else if (type == TYPE_POINTER)
+		delete as_pointer();
 	else if (type != TYPE_NONE)
 		msg_error("Any.clear(): " + type_name(type));
 	type = TYPE_NONE;
 	data = NULL;
 }
 
+static string encode_string(const string &s) {
+	return s.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\"", "\\\"");
+}
+
 string Any::_str_rec() const {
 	if (type == TYPE_INT) {
-		return i2s(*(int*)data);
+		return i2s(*as_int());
 	} else if (type == TYPE_FLOAT) {
-		return f2s(*(float*)data, 6);
+		return f2s(*as_float(), 6);
 	} else if (type == TYPE_BOOL) {
-		return b2s(*(bool*)data);
+		return b2s(*as_bool());
 	} else if (type == TYPE_STRING) {
-		return "\"" + *(string*)data + "\"";
+		return "\"" + encode_string(*as_string()) + "\"";
+	} else if (type == TYPE_POINTER) {
+		return p2s(*as_pointer());
 	} else if (type == TYPE_ARRAY) {
 		string s = "[";
 		for (Any &p: *as_array()) {
@@ -150,69 +170,59 @@ string Any::_str_rec() const {
 
 string Any::str() const {
 	if (type == TYPE_STRING)
-		return *(string*)data;
+		return *as_string();
 	return _str_rec();
 }
 
 bool Any::_bool() const {
 	if (type == TYPE_BOOL)
-		return *(bool*)data;
+		return *as_bool();
 	if (type == TYPE_INT)
-		return *(int*)data != 0;
+		return *as_int() != 0;
 	throw Exception("not bool: " + type_name(type));
 }
 
 int Any::_int() const {
 	if (type == TYPE_INT)
-		return *(int*)data;
+		return *as_int();
 	if (type == TYPE_BOOL)
-		return (int)*(bool*)data;
+		return (int)*as_bool();
 	if (type == TYPE_FLOAT)
-		return (int)*(float*)data;
+		return (int)*as_float();
 	if (type == TYPE_STRING)
-		return ((string*)data)->_int();
+		return as_string()->_int();
 	throw Exception("not int: " + type_name(type));
 }
 
 float Any::_float() const {
 	if (type == TYPE_INT)
-		return (float)*(int*)data;
+		return (float)*as_int();
 	if (type == TYPE_FLOAT)
-		return *(float*)data;
+		return *as_float();
 	if (type == TYPE_STRING)
-		return ((string*)data)->_float();
+		return as_string()->_float();
 	throw Exception("not float: " + type_name(type));
 }
 
-void print(const Any &a)
-{	msg_write(a.str());	}
-
-Any &Any::operator = (const Any &a)
-{
-	//msg_write(format("%s = %s  %p = %p", type_name(type).c_str(), type_name(a.type).c_str(), this, &a));
-	if (&a != this){
-		clear();
-		type = a.type;
-		if (a.type == TYPE_INT){
-			data = new int;
-			*(int*)data = *(int*)a.data;
-		}else if (a.type == TYPE_FLOAT){
-			data = new float;
-			*(float*)data = *(float*)a.data;
-		}else if (a.type == TYPE_BOOL){
-			data = new bool;
-			*(bool*)data = *(bool*)a.data;
-		}else if (a.type == TYPE_STRING){
-			data = new string;
-			*(string*)data = *(string*)a.data;
-		}else if (a.type == TYPE_ARRAY){
-			data = new Array<Any>;
-			*(Array<Any>*)data = *(Array<Any>*)a.data;
-		}else if (a.type == TYPE_HASH){
-			data = new AnyMap;
-			*(AnyMap*)data = *(AnyMap*)a.data;
-		}else if (a.type != TYPE_NONE){
-			type = TYPE_NONE;
+Any &Any::operator = (const Any &a) {
+	if (&a != this) {
+		create_type(a.type);
+		if (a.type == TYPE_INT) {
+			*as_int() = *a.as_int();
+		} else if (a.type == TYPE_FLOAT) {
+			*as_float() = *a.as_float();
+		} else if (a.type == TYPE_BOOL) {
+			*as_bool() = *a.as_bool();
+		} else if (a.type == TYPE_POINTER) {
+			*as_pointer() = *a.as_pointer();
+		} else if (a.type == TYPE_STRING) {
+			*as_string() = *a.as_string();
+		} else if (a.type == TYPE_ARRAY) {
+			*as_array() = *a.as_array();
+		} else if (a.type == TYPE_HASH) {
+			*as_map() = *a.as_map();
+		} else if (a.type != TYPE_NONE) {
+			clear();
 			msg_error("Any = Any: " + type_name(a.type));
 		}
 	}
@@ -375,6 +385,10 @@ float* Any::as_float() const {
 
 bool* Any::as_bool() const {
 	return (bool*)data;
+}
+
+const void** Any::as_pointer() const {
+	return (const void**)data;
 }
 
 string* Any::as_string() const {
