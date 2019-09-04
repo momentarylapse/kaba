@@ -36,6 +36,7 @@ namespace Kaba{
 // we're always using math types
 #define type_p(p)			(void*)p
 
+extern const Class *TypeStringList;
 extern const Class *TypeComplexList;
 extern const Class *TypeFloatList;
 extern const Class *TypeVectorList;
@@ -825,6 +826,7 @@ void SIAddPackageMath() {
 			func_add_param("value", TypeAny);
 		class_add_func("add", TypeVoid, any_p(mf(&KabaAny::_array_add)), FLAG_RAISES_EXCEPTIONS);
 			func_add_param("a", TypeAny);
+		class_add_func("keys", TypeStringList, any_p(mf(&Any::keys)));//, FLAG_RAISES_EXCEPTIONS);
 		class_add_func("bool", TypeBool, any_p(mf(&Any::_bool)));
 		class_add_func("int", TypeInt, any_p(mf(&Any::_int)));
 		class_add_func("float", TypeFloat32, any_p(mf(&Any::_float)));

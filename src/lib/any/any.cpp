@@ -96,8 +96,7 @@ Any::Any(const Array<Any> &a)
 Any::~Any()
 {	clear();	}
 
-void Any::clear()
-{
+void Any::clear() {
 	//msg_write(format("clear %s  %p", type->Name, this));
 	if (type == TYPE_INT)
 		delete((int*)data);
@@ -108,45 +107,51 @@ void Any::clear()
 	else if (type == TYPE_STRING)
 		delete((string*)data);
 	else if (type == TYPE_ARRAY)
-		delete((Array<Any>*)data);
+		delete as_array();
 	else if (type == TYPE_HASH)
-		delete((AnyMap*)data);
+		delete as_map();
 	else if (type != TYPE_NONE)
 		msg_error("Any.clear(): " + type_name(type));
 	type = TYPE_NONE;
 	data = NULL;
 }
 
-string Any::str() const
-{
-	if (type == TYPE_INT)
+string Any::_str_rec() const {
+	if (type == TYPE_INT) {
 		return i2s(*(int*)data);
-	else if (type == TYPE_FLOAT)
+	} else if (type == TYPE_FLOAT) {
 		return f2s(*(float*)data, 6);
-	else if (type == TYPE_BOOL)
+	} else if (type == TYPE_BOOL) {
 		return b2s(*(bool*)data);
-	else if (type == TYPE_STRING)
+	} else if (type == TYPE_STRING) {
 		return "\"" + *(string*)data + "\"";
-	else if (type == TYPE_ARRAY){
+	} else if (type == TYPE_ARRAY) {
 		string s = "[";
-		for (Any &p: *as_array()){
+		for (Any &p: *as_array()) {
 			if (s.num > 1)
 				s += ", ";
-			s += p.str();
+			s += p._str_rec();
 		}
 		return s + "]";
-	}else if (type == TYPE_HASH){
+	} else if (type == TYPE_HASH) {
 		string s = "{";
-		for (AnyMap::Entry &p: *as_map()){
+		for (AnyMap::Entry &p: *as_map()) {
 			if (s.num > 1)
 				s += ", ";
-			s += "\"" + p.key + "\": " + p.value.str();
+			s += "\"" + p.key + "\": " + p.value._str_rec();
 		}
 		return s + "}";
-	}else if (type == TYPE_NONE)
+	} else if (type == TYPE_NONE) {
 		return "<empty>";
-	else
+	} else {
 		return "unhandled Any.str(): " + type_name(type);
+	}
+}
+
+string Any::str() const {
+	if (type == TYPE_STRING)
+		return *(string*)data;
+	return _str_rec();
 }
 
 bool Any::_bool() const {
@@ -301,6 +306,10 @@ void Any::append(const Any &a) {
 int Any::length() {
 	if (type == TYPE_ARRAY)
 		return as_array()->num;
+	if (type == TYPE_HASH)
+		return as_map()->num;
+	if (type == TYPE_STRING)
+		return as_string()->num;
 	return 0;
 }
 
@@ -350,6 +359,12 @@ Any &Any::operator[] (const string &key)
 	return EmptyVar;
 }
 
+Array<string> Any::keys() const {
+	if (type != TYPE_HASH)
+		return {}; //throw Exception("not a hash map: " + type_name(type));
+	return as_map()->keys();
+}
+
 int* Any::as_int() const {
 	return (int*)data;
 }
@@ -393,6 +408,8 @@ void Any::array_set(int i, const Any &value) {
 Any Any::map_get(const string &key) const {
 	if (type != TYPE_HASH)
 		throw Exception("not a hash map: " + type_name(type));
+	if (!as_map()->contains(key))
+		throw Exception("key not found: " + key);
 	return (*as_map())[key];
 }
 

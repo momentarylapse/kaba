@@ -29,6 +29,7 @@ public:
 	~Any();
 	void _cdecl clear();
 	string _cdecl str() const;
+	string _cdecl _str_rec() const;
 	int _cdecl _int() const;
 	float _cdecl _float() const;
 	bool _cdecl _bool() const;
@@ -52,9 +53,10 @@ public:
 	Array<Any>* as_array() const;
 	AnyMap* as_map() const;
 
-	// hash
+	// hash map
 	const Any &operator[] (const string &key) const;
 	Any &operator[] (const string &key);
+	Array<string> keys() const;
 
 	// data
 	int type;
@@ -63,12 +65,12 @@ public:
 	// kaba
 	void _cdecl __init__();
 	void _cdecl set(const Any &a){	*this = a;	}
-	void _cdecl set_int(int i){	*this = i;	}
+	/*void _cdecl set_int(int i){	*this = i;	}
 	void _cdecl set_float(float f){	*this = f;	}
 	void _cdecl set_bool(bool b){	*this = b;	}
 	void _cdecl set_str(const string &s){	*this = s;	}
 	void _cdecl set_array(const Array<Any> &a){	*this = a;	}
-	void _cdecl set_map(const AnyMap &m){	*this = m;	}
+	void _cdecl set_map(const AnyMap &m){	*this = m;	}*/
 	void _cdecl _add(const Any &a){	Any b = *this + a;	*this = b;	}
 	void _cdecl _sub(const Any &a){	Any b = *this - a;	*this = b;	}
 	Any _cdecl array_get(int i) const;
