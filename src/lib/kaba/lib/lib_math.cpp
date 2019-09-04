@@ -320,6 +320,10 @@ void __rect_set(rect &r, float x1, float x2, float y1, float y2)
 #pragma GCC optimize("0")
 
 
+void kaba_array_clear(void *p, const Class *type);
+void kaba_array_resize(void *p, const Class *type, int num);
+void kaba_array_add(DynamicArray &array, void *p, const Class *type);
+
 
 class KabaAny : public Any {
 public:
@@ -333,6 +337,43 @@ public:
 	{ KABA_EXCEPTION_WRAPPER(array_set(i, a)); }
 	void _cdecl _array_add(Any &a)
 	{ KABA_EXCEPTION_WRAPPER(add(a)); }
+	
+	static void unwrap(Any &aa, void *var, const Class *type) {
+		if (type == TypeInt) {
+			*(int*)var = aa._int();
+		} else if (type == TypeFloat32) {
+			*(float*)var = aa._float();
+		} else if (type == TypeBool) {
+			*(bool*)var = aa._bool();
+		} else if (type == TypeString) {
+			*(string*)var = aa.str();
+		} else if (type->is_pointer()) {
+			*(const void**)var = *aa.as_pointer();
+		} else if (type->is_super_array() and (aa.type == TYPE_ARRAY)) {
+			auto *t_el = type->get_array_element();
+			auto *a = (DynamicArray*)var;
+			auto *b = aa.as_array();
+			int n = b->num;
+			kaba_array_resize(var, type, n);
+			for (int i=0; i<n; i++)
+				unwrap(aa[i], (char*)a->data + i * t_el->size, t_el);
+		} else if (type->is_array() and (aa.type == TYPE_ARRAY)) {
+			auto *t_el = type->get_array_element();
+			auto *b = aa.as_array();
+			int n = min(type->array_length, b->num);
+			for (int i=0; i<n; i++)
+				unwrap((*b)[i], (char*)var + i*t_el->size, t_el);
+		} else if (aa.type == TYPE_HASH) {
+			auto *map = aa.as_map();
+			auto keys = aa.keys();
+			for (auto &e: type->elements)
+				for (string &k: keys)
+					if (e.name == k)
+						unwrap(aa[k], (char*)var + e.offset, e.type);
+		} else {
+			msg_error("unwrap... "  + aa.str() + " -> " + type->long_name());
+		}
+	}
 };
 
 class AnyList : public Array<Any> {
@@ -834,6 +875,9 @@ void SIAddPackageMath() {
 		class_add_func("int", TypeInt, any_p(mf(&Any::_int)));
 		class_add_func("float", TypeFloat32, any_p(mf(&Any::_float)));
 		class_add_func("str", TypeString, any_p(mf(&Any::str)));
+		class_add_func("unwrap", TypeVoid, (void*)&KabaAny::unwrap, FLAG_RAISES_EXCEPTIONS);
+			func_add_param("var", TypePointer);
+			func_add_param("type", TypeClassP);
 
 
 	add_class(TypeAnyList);

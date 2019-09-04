@@ -1,0 +1,22 @@
+class Test
+	string s
+	int[3] i
+	vector v
+	string[] xx
+
+void main()
+	Test t
+	t.i[0] = 13
+	t.i[1] = 14
+	t.i[2] = 15
+	t.xx = ["hallo", "welt", "test"]
+	t.s = "hallo"
+	t.v = e_z
+
+	let a = dyn(t)
+	print(a)
+
+	Test tt
+	#print(str(tt))
+	a.unwrap(&tt, Test)
+	print(str(tt))

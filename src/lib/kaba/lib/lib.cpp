@@ -29,7 +29,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.7.3";
+string LibVersion = "0.17.7.4";
 
 
 bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
@@ -563,6 +563,24 @@ void kaba_var_init(void *p, const Class *type) {
 	typedef void func_t(void*);
 	auto *ff = (func_t*)f->address;
 	ff(p);
+}
+
+void kaba_array_clear(void *p, const Class *type) {
+	auto *f = type->get_func("clear", TypeVoid, {});
+	if (!f)
+		kaba_raise_exception(new KabaException("can not clear an array of type " + type->long_name()));
+	typedef void func_t(void*);
+	auto *ff = (func_t*)f->address;
+	ff(p);
+}
+
+void kaba_array_resize(void *p, const Class *type, int num) {
+	auto *f = type->get_func("resize", TypeVoid, {TypeInt});
+	if (!f)
+		kaba_raise_exception(new KabaException("can not resize an array of type " + type->long_name()));
+	typedef void func_t(void*, int);
+	auto *ff = (func_t*)f->address;
+	ff(p, num);
 }
 
 void kaba_array_add(DynamicArray &array, void *p, const Class *type) {

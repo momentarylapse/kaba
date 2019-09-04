@@ -1,0 +1,4 @@
+void main()
+	for i in 0:100000000
+		vector v = vector(1,2,3)
+	
