@@ -28,7 +28,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.7.1";
+string LibVersion = "0.17.7.2";
 
 
 bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
@@ -130,6 +130,9 @@ const Class *TypeVector;
 const Class *TypeRect;
 const Class *TypeColor;
 const Class *TypeQuaternion;
+const Class *TypeAny;
+const Class *TypeAnyList;
+const Class *TypeAnyDict;
  // internal:
 const Class *TypeDynamicArray;
 const Class *TypeDictBase;
@@ -1833,6 +1836,11 @@ void Init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	add_type_cast(50, TypeFloatList, TypeString, "@fa2s", nullptr);
 	add_type_cast(50, TypeBoolList, TypeString, "@ba2s", nullptr);
 	add_type_cast(50, TypeStringList, TypeString, "@sa2s", nullptr);
+	cur_package = Packages[2];
+	add_type_cast(50, TypeInt, TypeAny, "@int2any", nullptr);
+	add_type_cast(50, TypeFloat32, TypeAny, "@float2any", nullptr);
+	add_type_cast(50, TypeBool, TypeAny, "@bool2any", nullptr);
+	add_type_cast(50, TypeString, TypeAny, "@str2any", nullptr);
 
 
 	// consistency checks

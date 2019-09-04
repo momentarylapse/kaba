@@ -896,7 +896,7 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param) {
 		ps->do_error("automatic .str() not implemented yet");
 		return param;
 	}
-	if (param->kind == NodeKind::CONSTANT) {
+	if (param->kind == NodeKind::CONSTANT and TypeCasts[tc].func) {
 		Node *c_new = ps->add_node_const(ps->add_constant(TypeCasts[tc].dest));
 		TypeCasts[tc].func(*c_new->as_const(), *param->as_const());
 
@@ -1541,6 +1541,12 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 		if (e.type == TypeInt and (e.name == "length" or e.name == "num")) {
 			return shift_node(sub, false, e.offset, e.type);
 		}
+		
+	// length() function?
+	auto *f = sub->type->get_func("length", TypeInt, {});
+	if (f) {
+		return add_node_member_call(f, ref_node(sub));
+	}
 
 
 	do_error("don't know how to get the length of class " + sub->type->name);

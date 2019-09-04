@@ -3,8 +3,7 @@
 #ifndef __ANY_INCLUDED__
 #define __ANY_INCLUDED__
 
-enum
-{
+enum {
 	TYPE_NONE,
 	TYPE_INT,
 	TYPE_FLOAT,
@@ -14,8 +13,9 @@ enum
 	TYPE_HASH
 };
 
-class Any
-{
+class AnyMap;
+
+class Any {
 public:
 	Any();
 	Any(const Any &a);
@@ -25,7 +25,7 @@ public:
 	Any(const string &s);
 	Any(const char *s);
 	Any(const Array<Any> &a);
-	//Any(const HashMap &a);
+	Any(const AnyMap &m);
 	~Any();
 	void _cdecl clear();
 	string _cdecl str() const;
@@ -43,6 +43,14 @@ public:
 	const Any &operator[] (int index) const;
 	Any &operator[] (int index);
 	Any &_cdecl back();
+	int length();
+	
+	int* as_int() const;
+	float* as_float() const;
+	bool* as_bool() const;
+	string* as_string() const;
+	Array<Any>* as_array() const;
+	AnyMap* as_map() const;
 
 	// hash
 	const Any &operator[] (const string &key) const;
@@ -60,12 +68,13 @@ public:
 	void _cdecl set_bool(bool b){	*this = b;	}
 	void _cdecl set_str(const string &s){	*this = s;	}
 	void _cdecl set_array(const Array<Any> &a){	*this = a;	}
+	void _cdecl set_map(const AnyMap &m){	*this = m;	}
 	void _cdecl _add(const Any &a){	Any b = *this + a;	*this = b;	}
 	void _cdecl _sub(const Any &a){	Any b = *this - a;	*this = b;	}
-	Any _cdecl at(int i) const;
-	void _cdecl aset(int i, const Any &value);
-	Any _cdecl get(const string &key) const;
-	void _cdecl hset(const string &key, const Any &value);
+	Any _cdecl array_get(int i) const;
+	void _cdecl array_set(int i, const Any &value);
+	Any _cdecl map_get(const string &key) const;
+	void _cdecl map_set(const string &key, const Any &value);
 };
 
 
