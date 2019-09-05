@@ -895,20 +895,44 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F) {
 	} else {
 		for (int i=0; i<n->params.num; i++)
 			n->set_param(i, transform_node(n->params[i], F));
-
-
 		if (n->instance)
 			n->set_instance(transform_node(n->instance, F));
 	}
-
 	return F(n);
 }
 
+Node* SyntaxTree::transformb_node(Node *n, Block *b, std::function<Node*(Node*, Block*)> F) {
+	if (n->kind == NodeKind::BLOCK) {
+		transformb_block(n->as_block(), F);
+	} else {
+		for (int i=0; i<n->params.num; i++)
+			n->set_param(i, transformb_node(n->params[i], b, F));
+		if (n->instance)
+			n->set_instance(transformb_node(n->instance, b, F));
+	}
+	return F(n, b);
+}
 
 void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F) {
 	//foreachi (Node *n, block->nodes, i){
 	for (int i=0; i<block->params.num; i++) {
 		block->params[i] = transform_node(block->params[i], F);
+		if (_transform_insert_before_.num > 0) {
+			for (auto *ib: _transform_insert_before_) {
+				if (config.verbose)
+					msg_error("INSERT BEFORE...");
+				block->params.insert(ib, i);
+				i ++;
+			}
+			_transform_insert_before_.clear();
+		}
+	}
+}
+
+void SyntaxTree::transformb_block(Block *block, std::function<Node*(Node*, Block*)> F) {
+	//foreachi (Node *n, block->nodes, i){
+	for (int i=0; i<block->params.num; i++) {
+		block->params[i] = transformb_node(block->params[i], block, F);
 		if (_transform_insert_before_.num > 0) {
 			for (auto *ib: _transform_insert_before_) {
 				if (config.verbose)
@@ -928,8 +952,14 @@ void SyntaxTree::transform(std::function<Node*(Node*)> F) {
 		transform_block(f->block, F);
 	}
 }
+void SyntaxTree::transformb(std::function<Node*(Node*, Block*)> F) {
+	for (Function *f: functions) {
+		cur_func = f;
+		transformb_block(f->block, F);
+	}
+}
 
-Node *conv_constr_func(SyntaxTree *ps, Node *n) {
+Node *conv_constr_func(SyntaxTree *ps, Node *n, Block *b) {
 	if (n->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION) {
 		if (config.verbose) {
 			msg_error("constr func....");
@@ -938,7 +968,7 @@ Node *conv_constr_func(SyntaxTree *ps, Node *n) {
 		auto *f = ps->cur_func;
 		
 		// temp var
-		auto *vv = f->block->add_var(f->create_slightly_hidden_name(), n->type);
+		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		vv->explicitly_constructed = true;
 		Node *dummy = ps->add_node_local(vv);
 		
@@ -965,7 +995,7 @@ void SyntaxTree::break_down_complicated_commands() {
 	}
 	transform([&](Node* n){ return break_down_for_loops(n); });
 	transform([&](Node* n){ return break_down_complicated_command(n); });
-	transform([&](Node* n){ return conv_constr_func(this, n); });
+	transformb([&](Node* n, Block* b){ return conv_constr_func(this, n, b); });
 	if (config.verbose)
 		show("break:b");
 }

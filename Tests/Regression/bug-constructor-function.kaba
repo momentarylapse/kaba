@@ -1,0 +1,12 @@
+
+class Tag
+	string key
+	void __init__()
+		print("init")
+	void __delete__()
+		print("del")
+
+void main()
+	Tag()
+	if false
+		Tag()

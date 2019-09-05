@@ -183,6 +183,10 @@ public:
 	static void transform_block(Block *block, std::function<Node*(Node*)> F);
 	static Node* transform_node(Node *n, std::function<Node*(Node*)> F);
 
+	void transformb(std::function<Node*(Node*, Block*)> F);
+	static void transformb_block(Block *block, std::function<Node*(Node*, Block*)> F);
+	static Node* transformb_node(Node *n, Block *b, std::function<Node*(Node*, Block*)> F);
+
 	// data creation
 	Constant *add_constant(const Class *type, Class *name_space = nullptr);
 	Constant *add_constant_int(int value);
