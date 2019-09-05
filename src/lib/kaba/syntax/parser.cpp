@@ -935,17 +935,32 @@ Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2) {
 	return tree->add_node_operator_by_inline(param1, vtable2, InlineID::POINTER_EQUAL);
 }
 
+Node *link_special_operator_in(SyntaxTree *tree, Node *param1, Node *param2) {
+
+	for (Function *f: param2->type->member_functions)
+		if ((f->name == "__contains__") and (f->literal_param_type[0] == param1->type)) {
+			Node *n = tree->add_node_member_call(f, tree->ref_node(param2));
+			n->set_param(0, param1);
+			return n;
+		}
+	tree->do_error("no __contains__() for " + param2->type->long_name());
+	return nullptr;
+}
+
 Node *SyntaxTree::link_operator_id(OperatorID op_no, Node *param1, Node *param2) {
 	return link_operator(&PrimitiveOperators[(int)op_no], param1, param2);
 }
 
 Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *param2) {
 	bool left_modifiable = primop->left_modifiable;
+	bool order_inverted = primop->order_inverted;
 	string op_func_name = primop->function_name;
 	Node *op = nullptr;
 
 	if (primop->id == OperatorID::IS)
 		return link_special_operator_is(this, param1, param2);
+	if (primop->id == OperatorID::IN)
+		return link_special_operator_in(this, param1, param2);
 
 	auto *p1 = param1->type;
 	auto *p2 = param2->type;

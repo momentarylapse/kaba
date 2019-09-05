@@ -29,7 +29,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.7.4";
+string LibVersion = "0.17.7.5";
 
 
 bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
@@ -248,33 +248,34 @@ const Class *add_type_d(const string &name, const Class *sub_type) {
 //   without type information ("primitive")
 
 PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
-	{"=",  OperatorID::ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN},
-	{"+",  OperatorID::ADD,           false, 11, "__add__"},
-	{"-",  OperatorID::SUBTRACT,      false, 11, "__sub__"},
-	{"*",  OperatorID::MULTIPLY,      false, 12, "__mul__"},
-	{"/",  OperatorID::DIVIDE,        false, 12, "__div__"},
-	{"+=", OperatorID::ADDS,          true,  1,  "__iadd__"},
-	{"-=", OperatorID::SUBTRACTS,     true,  1,  "__isub__"},
-	{"*=", OperatorID::MULTIPLYS,     true,  1,  "__imul__"},
-	{"/=", OperatorID::DIVIDES,       true,  1,  "__idiv__"},
-	{"==", OperatorID::EQUAL,         false, 8,  "__eq__"},
-	{"!=", OperatorID::NOTEQUAL,      false, 8,  "__ne__"},
-	{"!",  OperatorID::NEGATE,        false, 2,  "__not__"},
-	{"<",  OperatorID::SMALLER,       false, 9,  "__lt__"},
-	{">",  OperatorID::GREATER,       false, 9,  "__gt__"},
-	{"<=", OperatorID::SMALLER_EQUAL, false, 9,  "__le__"},
-	{">=", OperatorID::GREATER_EQUAL, false, 9,  "__ge__"},
-	{IDENTIFIER_AND, OperatorID::AND, false, 4,  "__and__"},
-	{IDENTIFIER_OR,  OperatorID::OR,  false, 3,  "__or__"},
-	{"%",  OperatorID::MODULO,        false, 12, "__mod__"},
-	{"&",  OperatorID::BIT_AND,       false, 7, "__bitand__"},
-	{"|",  OperatorID::BIT_OR,        false, 5, "__bitor__"},
-	{"<<", OperatorID::SHIFT_LEFT,    false, 10, "__lshift__"},
-	{">>", OperatorID::SHIFT_RIGHT,   false, 10, "__rshift__"},
-	{"++", OperatorID::INCREASE,      true,  2, "__inc__"},
-	{"--", OperatorID::DECREASE,      true,  2, "__dec__"},
-	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-"},
-	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-"}
+	{"=",  OperatorID::ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN, false},
+	{"+",  OperatorID::ADD,           false, 11, "__add__", false},
+	{"-",  OperatorID::SUBTRACT,      false, 11, "__sub__", false},
+	{"*",  OperatorID::MULTIPLY,      false, 12, "__mul__", false},
+	{"/",  OperatorID::DIVIDE,        false, 12, "__div__", false},
+	{"+=", OperatorID::ADDS,          true,  1,  "__iadd__", false},
+	{"-=", OperatorID::SUBTRACTS,     true,  1,  "__isub__", false},
+	{"*=", OperatorID::MULTIPLYS,     true,  1,  "__imul__", false},
+	{"/=", OperatorID::DIVIDES,       true,  1,  "__idiv__", false},
+	{"==", OperatorID::EQUAL,         false, 8,  "__eq__", false},
+	{"!=", OperatorID::NOTEQUAL,      false, 8,  "__ne__", false},
+	{"!",  OperatorID::NEGATE,        false, 2,  "__not__", false},
+	{"<",  OperatorID::SMALLER,       false, 9,  "__lt__", false},
+	{">",  OperatorID::GREATER,       false, 9,  "__gt__", false},
+	{"<=", OperatorID::SMALLER_EQUAL, false, 9,  "__le__", false},
+	{">=", OperatorID::GREATER_EQUAL, false, 9,  "__ge__", false},
+	{IDENTIFIER_AND, OperatorID::AND, false, 4,  "__and__", false},
+	{IDENTIFIER_OR,  OperatorID::OR,  false, 3,  "__or__", false},
+	{"%",  OperatorID::MODULO,        false, 12, "__mod__", false},
+	{"&",  OperatorID::BIT_AND,       false, 7, "__bitand__", false},
+	{"|",  OperatorID::BIT_OR,        false, 5, "__bitor__", false},
+	{"<<", OperatorID::SHIFT_LEFT,    false, 10, "__lshift__", false},
+	{">>", OperatorID::SHIFT_RIGHT,   false, 10, "__rshift__", false},
+	{"++", OperatorID::INCREASE,      true,  2, "__inc__", false},
+	{"--", OperatorID::DECREASE,      true,  2, "__dec__", false},
+	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-", false},
+	{IDENTIFIER_IN, OperatorID::IN,   false, 12, "__contains__", true}, // INVERTED
+	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", false}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
@@ -1062,9 +1063,15 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 class StringList : public Array<string>
 {
 public:
-	void _cdecl assign(StringList &s){	*this = s;	}
-	string _cdecl join(const string &glue)
-	{ return implode(*this, glue); }
+	void _cdecl assign(StringList &s) {
+		*this = s;
+	}
+	string _cdecl join(const string &glue) {
+		return implode(*this, glue);
+	}
+	bool __contains__(const string &s) {
+		return this->find(s) >= 0;
+	}
 };
 
 class IntClass
@@ -1348,6 +1355,8 @@ void SIAddPackageBase() {
 			func_add_param("other", TypeStringList);
 		class_add_funcx("join", TypeString, &StringList::join, FLAG_PURE);
 			func_add_param("glue", TypeString);
+		class_add_funcx("__contains__", TypeBool, &StringList::__contains__, FLAG_PURE);
+			func_add_param("s", TypeString);
 
 
 	// constants
@@ -1508,6 +1517,8 @@ void SIAddPackageKaba() {
 
 	add_ext_var("packages", TypeScriptPList, (void*)&Packages);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
+	add_ext_var("lib_version", TypeString, (void*)&LibVersion);
+	add_ext_var("kaba_version", TypeString, (void*)&Version);
 }
 
 
