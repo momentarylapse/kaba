@@ -261,6 +261,12 @@ string guess_constant(int64 c, Serializer *ser)
 	return "C:"+p2s((void*)c);
 }
 
+string type_name_safe(const Class *t) {
+	if (!t)
+		return "(NO TYPE)";
+	return t->long_name();
+}
+
 string SerialNodeParam::str(Serializer *ser) const
 {
 	string str;
@@ -278,7 +284,7 @@ string SerialNodeParam::str(Serializer *ser) const
 			n = d2h(&p, config.pointer_size);
 		else if (kind == NodeKind::IMMEDIATE)
 			n = guess_constant(p, ser);
-		str = "  (" + type->name + ") " + kind2str(kind) + " " + n;
+		str = "  (" + type_name_safe(type) + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
 	}
