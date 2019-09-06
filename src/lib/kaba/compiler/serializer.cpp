@@ -706,7 +706,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 
 	}else if (com->kind == NodeKind::VIRTUAL_CALL){
 
-		AddClassFunctionCall(instance.type->parent->get_virtual_function(com->link_no), instance, params, ret);
+		AddClassFunctionCall(com->as_func(), instance, params, ret);
 
 	}else if (com->kind == NodeKind::INLINE_CALL){
 

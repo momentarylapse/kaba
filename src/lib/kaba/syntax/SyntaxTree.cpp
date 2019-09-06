@@ -88,7 +88,7 @@ Node *SyntaxTree::add_node_statement(StatementID id) {
 Node *SyntaxTree::add_node_member_call(Function *f, Node *inst, bool force_non_virtual) {
 	Node *c;
 	if ((f->virtual_index >= 0) and (!force_non_virtual)) {
-		c = new Node(NodeKind::VIRTUAL_CALL, f->virtual_index, f->literal_return_type);
+		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type);
 	} else {
 		c = add_node_call(f);
 	}

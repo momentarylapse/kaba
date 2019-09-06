@@ -109,7 +109,7 @@ string Node::sig() const {
 	if (kind == NodeKind::INLINE_CALL)
 		return as_func()->signature();
 	if (kind == NodeKind::VIRTUAL_CALL)
-		return t + i2s(link_no);//s->Functions[nr]->name;
+		return as_func()->signature();
 	if (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)
 		return as_func()->signature();
 	if (kind == NodeKind::STATEMENT)

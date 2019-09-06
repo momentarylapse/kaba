@@ -284,13 +284,8 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 	}
 
 	// virtual?
-	if (l->instance) {
-		if (f->virtual_index >= 0) {
-			//do_error("virtual call...");
-			l->kind = NodeKind::VIRTUAL_CALL;
-			l->link_no = f->virtual_index;
-		}
-	}
+	if (l->instance and f->virtual_index >= 0)
+		l->kind = NodeKind::VIRTUAL_CALL;
 }
 
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) {
@@ -521,13 +516,8 @@ void clear_nodes(Array<Node*> &nodes, Node *keep) {
 
 // when calling ...(...)
 Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link) {
-	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 		return link->as_func()->literal_param_type;
-	} else if (link->kind == NodeKind::VIRTUAL_CALL) {
-		Function *cf = link->instance->type->get_virtual_function(link->link_no);
-		if (!cf)
-			do_error("FindFunctionSingleParameter: can't find virtual function...?!?");
-		return cf->literal_param_type;
 	} else if (link->kind == NodeKind::CLASS) {
 		// should be caught earlier and turned to func...
 		const Class *t = link->as_class();
