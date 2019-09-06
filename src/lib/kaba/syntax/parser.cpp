@@ -432,7 +432,7 @@ const Class *SyntaxTree::parse_type_extension_pointer(const Class *c) {
 }
 
 
-// find any ".", "->", or "[...]"'s    or operators?
+// find any ".", or "[...]"'s    or operators?
 Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block) {
 
 	// special
@@ -454,11 +454,8 @@ Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block) {
 
 	// nothing?
 	auto primop = which_primitive_operator(Exp.cur);
-	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "(") and (Exp.cur != "->") and (!primop))
+	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "(") and (!primop))
 		return operands[0];
-
-	if (Exp.cur == "->")
-		do_error("\"->\" deprecated,  use \".\" instead");
 
 	if (Exp.cur == ".") {
 		if (operands.num > 1)
@@ -1572,7 +1569,7 @@ Node *SyntaxTree::parse_statement_str(Block *block) {
 	// "universal" var2str
 	auto *c = add_constant_pointer(TypeClassP, sub->type);
 
-	Array<Node*> links = get_existence("-var2str-", nullptr, nullptr, false);
+	Array<Node*> links = get_existence("@var2str", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	Node *cmd = add_node_call(f);
@@ -1616,7 +1613,7 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
 		do_error("map(): function parameter does not match list type");
 
-	auto links = get_existence("-map-", nullptr, nullptr, false);
+	auto links = get_existence("@map", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	auto *c = add_constant_pointer(TypeFunctionP, params[0]->as_func());
@@ -1696,7 +1693,7 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	if (params[1]->type != TypeString)
 		do_error("sorted(): second parameter must be a string");
 
-	auto links = get_existence("-sorted-", nullptr, nullptr, false);
+	auto links = get_existence("@sorted", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	Node *cmd = add_node_call(f);
@@ -1713,7 +1710,7 @@ Node *SyntaxTree::parse_statement_dyn(Block *block) {
 
 	auto *c = add_constant_pointer(TypeClassP, sub->type);
 
-	Array<Node*> links = get_existence("-dyn-", nullptr, nullptr, false);
+	Array<Node*> links = get_existence("@dyn", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	Node *cmd = add_node_call(f);

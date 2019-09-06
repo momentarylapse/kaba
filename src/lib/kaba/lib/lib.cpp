@@ -1704,17 +1704,10 @@ void SIAddOperators() {
 
 void SIAddCommands() {
 	// type casting
-	add_func("@s2i", TypeInt, (void*)&s2i, FLAG_STATIC);
-		func_add_param("s", TypeString);
-	add_func("@s2f", TypeFloat32, (void*)&s2f, FLAG_STATIC);
-		func_add_param("s", TypeString);
 	add_func("@i2s", TypeString, (void*)&i2s, FLAG_STATIC);
 		func_add_param("i", TypeInt);
 	add_func("@i642s", TypeString, (void*)&i642s, FLAG_STATIC);
 		func_add_param("i", TypeInt64);
-	add_func("@f2s", TypeString, (void*)&f2s, FLAG_STATIC);
-		func_add_param("f", TypeFloat32);
-		func_add_param("decimals", TypeInt);
 	add_func("@f2sf", TypeString, (void*)&f2sf, FLAG_STATIC);
 		func_add_param("f", TypeFloat32);
 	add_func("@f642sf", TypeString, (void*)&f642sf, FLAG_STATIC);
@@ -1746,17 +1739,17 @@ void SIAddCommands() {
 		func_add_param("cmd", TypeString);
 
 
-	add_func("-sorted-", TypeDynamicArray, (void*)&kaba_array_sort, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+	add_func("@sorted", TypeDynamicArray, (void*)&kaba_array_sort, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("list", TypePointer);
 		func_add_param("class", TypeClassP);
 		func_add_param("by", TypeString);
-	add_func("-var2str-", TypeString, (void*)var2str, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+	add_func("@var2str", TypeString, (void*)var2str, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
-	add_func("-map-", TypeDynamicArray, (void*)kaba_map, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+	add_func("@map", TypeDynamicArray, (void*)kaba_map, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("func", TypeFunctionP);
 		func_add_param("array", TypePointer);
-	add_func("-dyn-", TypeAny, (void*)kaba_dyn, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
+	add_func("@dyn", TypeAny, (void*)kaba_dyn, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
 

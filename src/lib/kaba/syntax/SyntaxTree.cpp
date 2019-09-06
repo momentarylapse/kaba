@@ -52,6 +52,12 @@ const Class *SyntaxTree::make_class_func(Function *f) {
 Node *SyntaxTree::ref_node(Node *sub, const Class *override_type) {
 	const Class *t = override_type ? override_type : sub->type->get_pointer();
 
+	/*if (sub->kind == NodeKind::DEREF_ADDRESS_SHIFT) {
+		sub->kind = NodeKind::ADDRESS_SHIFT;
+		sub->type = t;
+		return sub;
+	}*/
+
 	Node *c = new Node(NodeKind::REFERENCE, 0, t);
 	c->set_num_params(1);
 	c->set_param(0, sub);
@@ -338,7 +344,7 @@ Statement *SyntaxTree::which_statement(const string &name) {
 
 Node *SyntaxTree::exlink_add_element(Function *f, ClassElement &e) {
 	Node *self = add_node_local(f->__get_var(IDENTIFIER_SELF));
-	Node *link = new Node(NodeKind::DEREF_ADDRESS_SHIFT, e.offset, e.type);
+	Node *link = new Node(NodeKind::ADDRESS_SHIFT, e.offset, e.type);
 	link->set_num_params(1);
 	link->params[0] = self;
 	return link;
@@ -405,7 +411,7 @@ Node* SyntaxTree::get_existence_block(const string &name, Block *block) {
 		return add_node_local(v);
 	if (!f->is_static){
 		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
-			return add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent->get_pointer());
+			return add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent);
 		// class elements (within a class function)
 		for (auto &e: f->name_space->elements)
 			if (e.name == name)
@@ -656,12 +662,16 @@ void SyntaxTree::convert_call_by_reference() {
 	for (Function *f: functions) {
 		
 		// TODO: convert self...
-		/*if (!f->is_static and f->name_space->uses_call_by_reference()) {
-			f->var[...]->type = f->var[j]->type->get_pointer();
+		if (!f->is_static and f->name_space->uses_call_by_reference()) {
+			for (auto *v: f->var)
+				if (v->name == IDENTIFIER_SELF) {
+					//msg_write("CONV SELF....");
+					v->type = v->type->get_pointer();
 
-			// internal usage...
-			transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, f->var[j]); });
-		}*/
+					// internal usage...
+					transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, v); });
+				}
+		}
 
 		// parameter: array/class as reference
 		for (int j=0;j<f->num_params;j++)
