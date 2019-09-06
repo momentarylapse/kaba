@@ -196,6 +196,9 @@ void Script::load(const string &_filename, bool _just_analyse)
 
 void Script::do_error(const string &str, int override_line)
 {
+#ifdef CPU_ARM
+	msg_error(str);
+#endif
 	syntax->do_error(str, 0, override_line);
 }
 

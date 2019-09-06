@@ -1299,9 +1299,6 @@ void SIAddPackageBase() {
 			func_add_param("x", TypeString);
 		class_add_funcx("__ge__", TypeBool, &string::operator>=, FLAG_PURE);
 			func_add_param("x", TypeString);
-		class_add_funcx("substr", TypeString, &string::substr, FLAG_PURE);
-			func_add_param("start", TypeInt);
-			func_add_param("length", TypeInt);
 		class_add_funcx("head", TypeString, &string::head, FLAG_PURE);
 			func_add_param("size", TypeInt);
 		class_add_funcx("tail", TypeString, &string::tail, FLAG_PURE);

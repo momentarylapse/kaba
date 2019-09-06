@@ -510,8 +510,8 @@ void SerializerARM::ProcessReferences()
 {
 	for (int i=0;i<cmd.num;i++)
 		if (cmd[i].inst == Asm::INST_LEA){
-			if (cmd[i].p[1].kind == NodeKind::LOCAL_ADDRESS){
-				do_error("var local/local mem");
+			if (cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY){
+				//do_error("var local/local mem");
 				SerialNodeParam p0 = cmd[i].p[0];
 				SerialNodeParam p1 = cmd[i].p[1];
 				int r = find_unused_reg(i, i, 4);

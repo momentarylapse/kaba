@@ -244,6 +244,9 @@ void SyntaxTree::do_error(const string &str, int override_exp_no, int override_l
 		expr = Exp.line[logical_line].exp[exp_no].name;
 	}
 
+#ifdef CPU_ARM
+	msg_error(str);
+#endif
 	throw Exception(str, expr, physical_line, pos, script);
 }
 
@@ -1078,11 +1081,11 @@ void SyntaxTree::map_local_variables_to_stack() {
 					// "real" local variables
 					v->_offset = - f->_var_size - s;
 					f->_var_size += s;
-				}				
+				}
 			}
 		} else if (config.instruction_set == Asm::InstructionSet::AMD64) {
 			f->_var_size = 0;
-			
+
 			foreachi(Variable *v, f->var, i) {
 				long long s = mem_align(v->type->size, 4);
 				v->_offset = - f->_var_size - s;
@@ -1093,7 +1096,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 
 			foreachi(Variable *v, f->var, i) {
 				int s = mem_align(v->type->size, 4);
-				v->_offset = f->_var_size + s;
+				v->_offset = f->_var_size;// + s;
 				f->_var_size += s;
 			}
 		}
@@ -1104,7 +1107,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 // no included scripts may be deleted before us!!!
 SyntaxTree::~SyntaxTree() {
 	// delete all classes, functions etc created by this script
-	
+
 	if (asm_meta_info)
 		delete asm_meta_info;
 
