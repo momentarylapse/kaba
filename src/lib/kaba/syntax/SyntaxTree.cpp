@@ -80,10 +80,7 @@ Node *SyntaxTree::shift_node(Node *sub, bool deref, int shift, const Class *type
 Node *SyntaxTree::add_node_statement(StatementID id) {
 	auto *s = statement_from_id(id);
 	Node *c = new Node(NodeKind::STATEMENT, (int64)s, TypeVoid);
-
-	c->instance = nullptr;
 	c->set_num_params(s->num_params);
-
 	return c;
 }
 
@@ -554,7 +551,7 @@ void conv_return(SyntaxTree *ps, nodes *c) {
 #endif
 
 
-Node *conv_calls(SyntaxTree *ps, Node *c, int tt) {
+Node *conv_calls(SyntaxTree *ps, Node *c) {
 	if ((c->kind == NodeKind::STATEMENT) and (c->as_statement()->id == StatementID::RETURN))
 		if (c->params.num > 0) {
 			if ((c->params[0]->type->is_array()) /*or (c->Param[j]->Type->IsSuperArray)*/) {
@@ -570,6 +567,12 @@ Node *conv_calls(SyntaxTree *ps, Node *c, int tt) {
 			if (c->params[j]->type->uses_call_by_reference()) {
 				c->set_param(j, ps->ref_node(c->params[j]));
 			}
+		// instance...
+		if (c->instance){
+			if (c->instance->type->uses_call_by_reference()) {
+				c->set_instance(ps->ref_node(c->instance));
+			}
+		}
 
 		// return: array reference (-> dereference)
 		if ((c->type->is_array()) /*or (c->Type->IsSuperArray)*/) {
@@ -652,6 +655,14 @@ void SyntaxTree::convert_call_by_reference() {
 	// convert functions
 	for (Function *f: functions) {
 		
+		// TODO: convert self...
+		/*if (!f->is_static and f->name_space->uses_call_by_reference()) {
+			f->var[...]->type = f->var[j]->type->get_pointer();
+
+			// internal usage...
+			transform_block(f->block, [&](Node *n){ return conv_cbr(this, n, f->var[j]); });
+		}*/
+
 		// parameter: array/class as reference
 		for (int j=0;j<f->num_params;j++)
 			if (f->var[j]->type->uses_call_by_reference()) {
@@ -679,7 +690,7 @@ void SyntaxTree::convert_call_by_reference() {
 			transform_block(f->block, [&](Node *n){ return convert_return_by_memory(this, n, f); });
 
 	// convert function calls
-	transform([&](Node *n){ return conv_calls(this, n, 0); });
+	transform([&](Node *n){ return conv_calls(this, n); });
 }
 
 

@@ -1074,56 +1074,17 @@ public:
 	}
 };
 
-class IntClass
-{
-	int i;
-public:
-	string _cdecl str(){	return i2s(i);	}
-};
+string kaba_float2str(float f) {
+	return f2s(f, 6);
+}
 
-class Int64Class
-{
-	int64 i;
-public:
-	string _cdecl str(){	return i642s(i);	}
-};
+string kaba_float642str(float f) {
+	return f642s(f, 6);
+}
 
-class FloatClass
-{
-	float f;
-public:
-	string _cdecl str(){	return f2s(f, 6);	}
-	string _cdecl str2(int decimals){	return f2s(f, decimals);	}
-};
-
-class Float64Class
-{
-	double f;
-public:
-	string _cdecl str(){	return f642s(f, 6);	}
-	string _cdecl str2(int decimals){	return f642s(f, decimals);	}
-};
-
-class BoolClass
-{
-	bool b;
-public:
-	string _cdecl str(){	return b2s(b);	}
-};
-
-class CharClass
-{
-	char c;
-public:
-	string _cdecl str(){	string r;	r.add(c);	return r;	}
-};
-
-class PointerClass {
-	void *p;
-public:
-	string _cdecl str(){	return p2s(p);	}
-};
-
+string kaba_char2str(char c) {
+	return string(&c, 1);
+}
 
 
 int xop_int_add(int a, int b) {
@@ -1248,38 +1209,38 @@ void SIAddPackageBase() {
 
 
 	add_class(TypePointer);
-		class_add_funcx("str", TypeString, &PointerClass::str, FLAG_PURE);
+		class_add_funcx("str", TypeString, &p2s, FLAG_PURE);
 
 
 	add_class(TypeInt);
-		class_add_funcx("str", TypeString, &IntClass::str, FLAG_PURE);
+		class_add_funcx("str", TypeString, &i2s, FLAG_PURE);
 		class_add_funcx("add", TypeInt, &xop_int_add, FLAG_PURE);
 			func_set_inline(InlineID::INT_ADD);
 			func_add_param("b", TypeInt);
 
 
 	add_class(TypeInt64);
-		class_add_funcx("str", TypeString, &Int64Class::str, FLAG_PURE);
+		class_add_funcx("str", TypeString, &i642s, FLAG_PURE);
 
 
 	add_class(TypeFloat32);
-		class_add_funcx("str", TypeString, &FloatClass::str, FLAG_PURE);
-		class_add_funcx("str2", TypeString, &FloatClass::str2, FLAG_PURE);
+		class_add_funcx("str", TypeString, &kaba_float2str, FLAG_PURE);
+		class_add_funcx("str2", TypeString, &f2s, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
 
 
 	add_class(TypeFloat64);
-		class_add_funcx("str", TypeString, &Float64Class::str, FLAG_PURE);
-		class_add_funcx("str2", TypeString, &Float64Class::str2, FLAG_PURE);
+		class_add_funcx("str", TypeString, &kaba_float642str, FLAG_PURE);
+		class_add_funcx("str2", TypeString, &f642s, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
 
 
 	add_class(TypeBool);
-		class_add_funcx("str", TypeString, &BoolClass::str, FLAG_PURE);
+		class_add_funcx("str", TypeString, &b2s, FLAG_PURE);
 
 
 	add_class(TypeChar);
-		class_add_funcx("str", TypeString, &CharClass::str, FLAG_PURE);
+		class_add_funcx("str", TypeString, &kaba_char2str, FLAG_PURE);
 
 
 	add_class(TypeString);

@@ -165,8 +165,8 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 		}
 
 
-	if (!deref and !only_static)
-		operand = ref_node(operand);
+	if (deref and !only_static)
+		operand = deref_node(operand);
 
 	string f_name = Exp.cur;
 
@@ -217,7 +217,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	if (index2) {
 		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
 		if (cf) {
-			Node *f = add_node_member_call(cf, ref_node(operand));
+			Node *f = add_node_member_call(cf, operand);
 			f->set_param(0, index);
 			f->set_param(1, index2);
 			return f;
@@ -227,7 +227,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	// __get__() ?
 	auto *cf = operand->type->get_get(index->type);
 	if (cf) {
-		Node *f = add_node_member_call(cf, ref_node(operand));
+		Node *f = add_node_member_call(cf, operand);
 		f->set_param(0, index);
 		return f;
 	}
@@ -524,7 +524,7 @@ Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link) {
 	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 		return link->as_func()->literal_param_type;
 	} else if (link->kind == NodeKind::VIRTUAL_CALL) {
-		Function *cf = link->instance->type->parent->get_virtual_function(link->link_no);
+		Function *cf = link->instance->type->get_virtual_function(link->link_no);
 		if (!cf)
 			do_error("FindFunctionSingleParameter: can't find virtual function...?!?");
 		return cf->literal_param_type;
@@ -730,7 +730,7 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 	auto *f_add = type->get_func("add", TypeVoid, {el_type});
 	if (!f_add)
 		do_error("...add() ???");
-	auto *n_add = add_node_member_call(f_add, ref_node(add_node_local(var)));
+	auto *n_add = add_node_member_call(f_add, add_node_local(var));
 	n_add->set_param(0, n_exp);
 
 	Block *b;
@@ -892,7 +892,7 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param) {
 	if (tc == TYPE_CAST_OWN_STRING) {
 		Function *cf = param->type->get_func("str", TypeString, {});
 		if (cf)
-			return ps->add_node_member_call(cf, ps->ref_node(param));
+			return ps->add_node_member_call(cf, param);
 		ps->do_error("automatic .str() not implemented yet");
 		return param;
 	}
@@ -939,7 +939,7 @@ Node *link_special_operator_in(SyntaxTree *tree, Node *param1, Node *param2) {
 
 	for (Function *f: param2->type->member_functions)
 		if ((f->name == "__contains__") and (f->literal_param_type[0] == param1->type)) {
-			Node *n = tree->add_node_member_call(f, tree->ref_node(param2));
+			Node *n = tree->add_node_member_call(f, param2);
 			n->set_param(0, param1);
 			return n;
 		}
@@ -981,7 +981,7 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 			auto type1 = f->literal_param_type[0];
 			if (type1->is_pointer_silent()) {
 				if (type_match(p2, type1->parent)) {
-					Node *inst = ref_node(param1);
+					Node *inst = param1;
 					if (p1 == pp1)
 						op = add_node_member_call(f, inst);
 					else
@@ -1039,8 +1039,7 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 		param1 = apply_type_cast(this, c1_best, param1);
 		param2 = apply_type_cast(this, c2_best, param2);
 		if (op_cf_found) {
-			Node *inst = ref_node(param1);
-			op = add_node_member_call(op_cf_found, inst);
+			op = add_node_member_call(op_cf_found, param1);
 			op->set_num_params(1);
 			op->set_param(0, param2);
 		} else {
@@ -1560,7 +1559,7 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	// length() function?
 	auto *f = sub->type->get_func("length", TypeInt, {});
 	if (f) {
-		return add_node_member_call(f, ref_node(sub));
+		return add_node_member_call(f, sub);
 	}
 
 
