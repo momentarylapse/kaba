@@ -856,6 +856,14 @@ struct CPUInstruction
 
 Array<CPUInstruction> CPUInstructions;
 
+struct CPUInstructionARM {
+	int inst;
+	int code, filter;
+	int p1, p2, p3;
+};
+Array<CPUInstructionARM> cpu_instructions_arm;
+
+
 bool CPUInstruction::match(InstructionWithParams &iwp)
 {
 	if (inst != iwp.inst)
@@ -1070,29 +1078,32 @@ void add_inst(int inst, int code, int code_size, int cap, int param1, int param2
 	CPUInstructions.add(i);
 }
 
-enum
-{
+enum {
 	AP_NONE,
+	AP_REG_0,
+	AP_FREG_0_5,
 	AP_REG_12,
+	AP_FREG_12_22,
 	AP_REG_16,
+	AP_FREG_16_7,
 	AP_OFFSET24_0,
 	AP_IMM12_0,
 	AP_SHIFTED12_0,
+	AP_DEREF_REG_16_OFFSET,
 };
 
 
-void add_inst_arm(int inst, int code, int param1, int param2 = AP_NONE, int param3 = AP_NONE)
-{
-	CPUInstruction i;
-	memset(&i.param1, 0, sizeof(i.param1));
-	memset(&i.param2, 0, sizeof(i.param2));
+void add_inst_arm(int inst, int code, int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
+	CPUInstructionARM i;
 	i.inst = inst;
 	i.code = code;
-	i.code_size = 4;
-	i.cap = 0;
+	i.filter = filter;
+	i.p1 = param1;
+	i.p2 = param2;
+	i.p3 = param3;
 
-	i.name = GetInstructionName(inst);
-	CPUInstructions.add(i);
+	//i.name = GetInstructionName(inst);
+	cpu_instructions_arm.add(i);
 }
 
 const string GetInstructionName(int inst)
@@ -1161,9 +1172,46 @@ void InitARM() {
 		RegisterByID[Registers[i].id] = &Registers[i];
 	}
 
-	CPUInstructions.clear();
-	add_inst_arm(INST_B,    0x0a000000 ,0);
-	add_inst_arm(INST_BL,   0x0b000000 ,0);
+	cpu_instructions_arm.clear();
+	add_inst_arm(INST_BLX, 0x01200030, 0x0ff000f0, AP_REG_0);
+
+	//add_inst_arm(INST_B,    0x0a000000 ,0);
+	//add_inst_arm(INST_BL,   0x0b000000 ,0);
+	add_inst_arm(INST_FMSR,  0x0e000a10, 0x0ff00f7f, AP_FREG_16_7, AP_REG_12);
+	add_inst_arm(INST_FMRS,  0x0e100a10, 0x0ff00f7f, AP_REG_12, AP_FREG_16_7);
+
+	add_inst_arm(INST_FLDS,   0x0d100a00, 0x0f300f00, AP_FREG_12_22, AP_DEREF_REG_16_OFFSET);
+	add_inst_arm(INST_FSTS,   0x0d000a00, 0x0f300f00, AP_DEREF_REG_16_OFFSET, AP_FREG_12_22);
+
+	add_inst_arm(INST_FMACS,  0x0e000a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FNMACS, 0x0e000a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FMSCS,  0x0e100a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FNMSCS, 0x0e100a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FMULS,  0x0e200a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FNMULS, 0x0e200a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FADDS,  0x0e300a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FSUBS,  0x0e300a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(INST_FDIVS,  0x0e400a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+
+	add_inst_arm(INST_FCPYS,  0x0eb00a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FABSS,  0x0eb00ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FNEGS,  0x0eb10a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FSQRTS, 0x0eb10ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FCMPS,   0x0eb40a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FCMPES,  0x0eb40ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FCMPZS,  0x0eb50a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FCMPEZS, 0x0eb50ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+
+	add_inst_arm(INST_CVTDS, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	//add_inst_arm(INST_CVTSD, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
+
+	add_inst_arm(INST_FUITOS, 0x0eb80a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FSITOS, 0x0eb80ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+
+	add_inst_arm(INST_FTOUIS,  0x0ebc0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FTOUIZS, 0x0ebc0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FTOSIS,  0x0ebd0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(INST_FTOSIZS, 0x0ebd0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
 }
 
 void InitX86()
@@ -2282,63 +2330,6 @@ int ARM_DATA_INSTRUCTIONS[16] =
 	INST_MVN
 };
 
-int ARM_VFP_PRIMARY_INSTRUCTIONS[16] =
-{
-	INST_FMACS,
-	INST_FNMACS,
-	INST_FMSCS,
-	INST_FNMSCS,
-	INST_FMULS,
-	INST_FNMULS,
-	INST_FADDS,
-	INST_FSUBS,
-	INST_FDIVS,
-	-1,
-	-1,
-	-1,
-	-1,
-	-1,
-	-1,
-	-1
-};
-
-int ARM_VFP_EXTENSION_INSTRUCTIONS[32] =
-{
-	INST_FCPYS,
-	INST_FABSS,
-	INST_FNEGS,
-	INST_FSQRTS,
-	-1,
-	-1,
-	-1,
-	-1,
-	INST_FCMPS,
-	INST_FCMPES,
-	INST_FCMPZS,
-	INST_FCMPEZS,
-	-1,
-	-1,
-	-1,
-	INST_CVTDS,
-
-	INST_FUITOS,
-	INST_FSITOS,
-	-1,
-	-1,
-	-1,
-	-1,
-	-1,
-	-1,
-	INST_FTOUIS,
-	INST_FTOUIZS,
-	INST_FTOSIS,
-	INST_FTOSIZS,
-	-1,
-	-1,
-	-1,
-	-1
-};
-
 int arm_decode_imm(int imm)
 {
 	int r = ((imm >> 8) & 0xf);
@@ -2411,7 +2402,7 @@ InstructionWithParams disarm_branch(int code)
 	return i;
 }
 
-InstructionWithParams disarm_blx(int code)
+InstructionWithParams __disarm_blx(int code)
 {
 	InstructionWithParams i;
 	i.inst = INST_BLX;
@@ -2473,63 +2464,53 @@ InstructionWithParams disarm_data_block_transfer(int code)
 	return i;
 }
 
-InstructionWithParams disarm_vfp(int code)
-{
-	InstructionWithParams i;
-
-	int nn = 0;
-	if ((code & (1<<6)) != 0)
-		nn += 1;
-	if ((code & (1<<20)) != 0)
-		nn += 2;
-	if ((code & (1<<21)) != 0)
-		nn += 4;
-	if ((code & (1<<23)) != 0)
-		nn += 8;
-
-	i.inst = ARM_VFP_PRIMARY_INSTRUCTIONS[nn];
-	int cp_num = (code & 0x00000f00) >> 8;
-
-	int fd = (code & 0x0000f000) >> 11;
-	if ((code & (1<<22)) != 0)
-		fd += 1;
-	int fn = (code & 0x000f0000) >> 15;
-	if ((code & (1<<7)) != 0)
-		fn += 1;
-	int fm = (code & 0x0000000f) << 1;
-	if ((code & (1<<5)) != 0)
-		fm += 1;
-
-	if (nn == 15){
-		i.inst = ARM_VFP_EXTENSION_INSTRUCTIONS[fn];
-		i.p[0] = param_reg(REG_S0 + fd);
-		i.p[1] = param_reg(REG_S0 + fm);
-	}else{
-		i.p[0] = param_reg(REG_S0 + fd);
-		i.p[1] = param_reg(REG_S0 + fn);
-		i.p[2] = param_reg(REG_S0 + fm);
+InstructionParam disarm_param(int code, int p) {
+	if (p == AP_FREG_0_5) {
+		int fm = (code & 0x0000000f) << 1;
+		if ((code & (1<<5)) != 0)
+			fm += 1;
+		return param_reg(REG_S0 + fm);
+	} else if (p == AP_FREG_12_22) {
+		int fd = (code & 0x0000f000) >> 11;
+		if ((code & (1<<22)) != 0)
+			fd += 1;
+		return param_reg(REG_S0 + fd);
+	} else if (p == AP_FREG_16_7) {
+		int fn = (code & 0x000f0000) >> 15;
+		if ((code & (1<<7)) != 0)
+			fn += 1;
+		return param_reg(REG_S0 + fn);
+	} else if (p == AP_REG_0) {
+		int fm = (code & 0x0000000f);
+		return param_reg(REG_R0 + fm);
+	} else if (p == AP_REG_12) {
+		int fd = (code & 0x0000f000) >> 12;
+		return param_reg(REG_R0 + fd);
+	} else if (p == AP_REG_16) {
+		int fn = (code & 0x000f0000) >> 16;
+		return param_reg(REG_R0 + fn);
+	} else if (p == AP_DEREF_REG_16_OFFSET) {
+		int Rn = (code >> 16) & 0xf;
+		bool up = ((code >> 23) & 1);
+		int offset = (code & 0xff) * 4;
+		return param_deref_reg_shift(REG_R0 + Rn, up ? offset : -offset, SIZE_32);
+	} else if (p != AP_NONE) {
+		msg_error("disasm_param... unhandled " + i2s(p));
 	}
-	return i;
+	return InstructionParam();
 }
 
-InstructionWithParams disarm_vfp_transfer(int code)
-{
+InstructionWithParams disarm_general(int code) {
 	InstructionWithParams i;
-	bool ll = ((code >> 20) & 1);
-	if (ll)
-		i.inst = INST_FLDS;
-	else
-		i.inst = INST_FSTS;
-	int Rn = (code >> 16) & 0xf;
-	int Fd = ((code >> 12) & 0xf) * 2;
-	if ((code & (1<<22)) != 0)
-		Fd += 1;
-
-	i.p[0] = param_reg(REG_S0 + Fd);
-	bool up = ((code >> 23) & 1);
-	int offset = (code & 0xff) * 4;
-	i.p[1] = param_deref_reg_shift(REG_R0 + Rn, up ? offset : -offset, SIZE_32);
-	i.p[2] = param_none;
+	for (auto &ii: cpu_instructions_arm) {
+		if ((code & ii.filter) == ii.code) {
+			i.inst = ii.inst;
+			i.p[0] = disarm_param(code, ii.p1);
+			i.p[1] = disarm_param(code, ii.p2);
+			i.p[2] = disarm_param(code, ii.p3);
+			return i;
+		}
+	}
 	return i;
 }
 
@@ -2550,23 +2531,22 @@ string DisassembleARM(void *_code_,int length,bool allow_comments)
 		iwp.p[0] = param_none;
 		iwp.p[1] = param_none;
 		iwp.p[2] = param_none;
-		if ((cur & 0x0ff000f0) == 0x01200030){
+		/*if ((cur & 0x0ff000f0) == 0x01200030){
 			iwp = disarm_blx(cur);
-		}else if (((cur >> 26) & 3) == 0){
+		}else*/ if (((cur >> 26) & 3) == 0){
 			if ((cur & 0x0fe000f0) == 0x00000090)
 				iwp = disarm_data_opcode_mul(cur);
 			else
 				iwp = disarm_data_opcode(cur);
-		}else if (((cur >> 26) & 0x3) == 0b01)
+		}else if (((cur >> 26) & 0x3) == 0b01){
 			iwp = disarm_data_transfer(cur);
-		else if (x == 0b100)
+		}else if (x == 0b100){
 			iwp = disarm_data_block_transfer(cur);
-		else if (x == 0b101)
+		}else if (x == 0b101){
 			iwp = disarm_branch(cur);
-		else if ((cur & 0x0f000010) == 0x0e000000)
-			iwp = disarm_vfp(cur);
-		else if ((cur & 0x0f200000) == 0x0d000000)
-			iwp = disarm_vfp_transfer(cur);
+		}else{
+			iwp = disarm_general(cur);
+		}
 		iwp.condition = (cur >> 28) & 0xf;
 
 
@@ -3719,28 +3699,6 @@ bool inline arm_is_data(int inst, int &nn)
 	return false;
 }
 
-bool inline arm_is_vfp_primary(int inst, int &nn)
-{
-	nn = -1;
-	for (int i=0; i<16; i++)
-		if (inst == ARM_VFP_PRIMARY_INSTRUCTIONS[i]){
-			nn = i;
-			return true;
-		}
-	return false;
-}
-
-bool inline arm_is_vfp_extension(int inst, int &nn)
-{
-	nn = -1;
-	for (int i=0; i<32; i++)
-		if (inst == ARM_VFP_EXTENSION_INSTRUCTIONS[i]){
-			nn = i;
-			return true;
-		}
-	return false;
-}
-
 bool inline arm_is_load_store_multi(int inst)
 {
 	if ((inst == INST_LDMIA) or (inst == INST_LDMIB) or (inst == INST_LDMDA) or (inst == INST_LDMDB))
@@ -3763,6 +3721,46 @@ inline bool label_after_now(InstructionWithParamsList *list, int label_no, int n
 	if (list->label[label_no].inst_no < 0)
 		return true;
 	return list->label[label_no].inst_no > now;
+}
+
+void arm_ass_param(InstructionParam &pp, int p, int &code) {
+	if (p == AP_FREG_0_5) {
+		int fn = arm_freg_no(pp.reg);
+		code |= (fn >> 1);
+		if ((fn & 0x01) > 0)
+			code |= 1 << 5;
+	} else if (p == AP_FREG_12_22) {
+		int fn = arm_freg_no(pp.reg);
+		code |= (fn >> 1) << 12;
+		if ((fn & 0x01) > 0)
+			code |= 1 << 22;
+	} else if (p == AP_FREG_16_7) {
+		int fn = arm_freg_no(pp.reg);
+		code |= (fn >> 1) << 16;
+		if ((fn & 0x01) > 0)
+			code |= 1 << 7;
+	} else if (p == AP_REG_0) {
+		int fn = arm_reg_no(pp.reg);
+		code |= (fn) << 16;
+	} else if (p == AP_REG_12) {
+		int fn = arm_reg_no(pp.reg);
+		code |= (fn) << 12;
+	} else if (p == AP_REG_16) {
+		int fn = arm_reg_no(pp.reg);
+		code |= (fn) << 16;
+	}
+}
+
+bool arm_ass_gen(InstructionWithParams &iwp, int &code) {
+	for (auto &i: cpu_instructions_arm)
+		if (i.inst == iwp.inst) {
+			code |= i.code;
+			arm_ass_param(iwp.p[0], i.p1, code);
+			arm_ass_param(iwp.p[1], i.p2, code);
+			arm_ass_param(iwp.p[2], i.p3, code);
+			return true;
+		}
+	return false;
 }
 
 void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
@@ -3893,44 +3891,6 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 	}else if (iwp.inst == INST_DD){
 		arm_expect(iwp, PARAMT_IMMEDIATE);
 		code = iwp.p[0].value;
-	}else if (arm_is_vfp_primary(iwp.inst, nn)){
-		arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER, PARAMT_REGISTER);
-		code |= 0x0e000a00; // a=single, b=double
-		if ((nn & 0x01) > 0)
-			code |= 1 << 6;
-		if ((nn & 0x02) > 0)
-			code |= 1 << 20;
-		if ((nn & 0x04) > 0)
-			code |= 1 << 21;
-		if ((nn & 0x08) > 0)
-			code |= 1 << 23;
-		int fd = arm_freg_no(iwp.p[0].reg);
-		int fn = arm_freg_no(iwp.p[1].reg);
-		int fm = arm_freg_no(iwp.p[2].reg);
-		code |= fm >> 1;
-		code |= (fd >> 1) << 12;
-		code |= (fn >> 1) << 16;
-		if ((fm & 0x01) > 0)
-			code |= 1 << 5;
-		if ((fn & 0x01) > 0)
-			code |= 1 << 7;
-		if ((fd & 0x01) > 0)
-			code |= 1 << 22;
-	}else if (arm_is_vfp_extension(iwp.inst, nn)){
-		arm_expect(iwp, PARAMT_REGISTER, PARAMT_REGISTER);
-		code |= 0x0eb00a40; // a=single, b=double
-		int fd = arm_freg_no(iwp.p[0].reg);
-		int fn = nn;
-		int fm = arm_freg_no(iwp.p[1].reg);
-		code |= fm >> 1;
-		code |= (fd >> 1) << 12;
-		code |= (fn >> 1) << 16;
-		if ((fm & 0x01) > 0)
-			code |= 1 << 5;
-		if ((fn & 0x01) > 0)
-			code |= 1 << 7;
-		if ((fd & 0x01) > 0)
-			code |= 1 << 22;
 	}else if ((iwp.inst == INST_FLDS) or (iwp.inst == INST_FSTS)){
 		if (iwp.inst == INST_FLDS)
 			code |= 0x0d100a00;
@@ -3962,6 +3922,7 @@ void InstructionWithParamsList::AddInstructionARM(char *oc, int &ocs, int n)
 			else
 				code |= 0x00000000 | ((-v) & 0x00ff);
 		}
+	} else if (arm_ass_gen(iwp, code)) {
 	}else{
 		SetError("cannot assemble instruction: " + iwp.str());
 	}

@@ -10,6 +10,9 @@ namespace Asm{
 
 namespace Kaba{
 
+#define reg_s0 param_preg(TypeFloat32, Asm::REG_S0)
+#define reg_s1 param_preg(TypeFloat32, Asm::REG_S1)
+
 int func_index(Function *f);
 
 
@@ -289,9 +292,7 @@ void SerializerARM::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 	auto index = com->as_func()->inline_no;
 	switch(index){
 		case InlineID::INT_ASSIGN:
-		case InlineID::INT64_ASSIGN:
 		case InlineID::FLOAT_ASSIGN:
-		case InlineID::FLOAT64_ASSIGN:
 		case InlineID::POINTER_ASSIGN:
 			add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
@@ -300,6 +301,8 @@ void SerializerARM::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 			add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
 		case InlineID::CHUNK_ASSIGN:
+		case InlineID::INT64_ASSIGN:
+		case InlineID::FLOAT64_ASSIGN:
 			for (int i=0; i<(com->params[0]->type->size/4); i++)
 				add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
 			for (int i=4*(com->params[0]->type->size/4); i<com->params[0]->type->size;i++)
@@ -425,6 +428,38 @@ void SerializerARM::SerializeInlineFunction(Node *com, const Array<SerialNodePar
 		case InlineID::CHAR_NEGATE:
 			add_cmd(Asm::INST_MOV, ret, param_imm(TypeChar, 0x0));
 			add_cmd(Asm::INST_SUB, ret, ret, param[0]);
+			break;
+		case InlineID::FLOAT_ADD_ASSIGN:
+		case InlineID::FLOAT_SUBTRACT_ASSIGN:
+		case InlineID::FLOAT_MULTIPLY_ASSIGN:
+		case InlineID::FLOAT_DIVIDE_ASSIGN:
+			add_cmd(Asm::INST_FLDS, reg_s0, param[0]);
+			add_cmd(Asm::INST_FLDS, reg_s1, param[1]);
+			if (index == InlineID::FLOAT_ADD_ASSIGN)
+				add_cmd(Asm::INST_FADDS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_SUBTRACT_ASSIGN)
+				add_cmd(Asm::INST_FSUBS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_MULTIPLY_ASSIGN)
+				add_cmd(Asm::INST_FMULS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_DIVIDE_ASSIGN)
+				add_cmd(Asm::INST_FDIVS, reg_s0, reg_s0, reg_s1);
+			add_cmd(Asm::INST_FSTS, reg_s0, param[0]);
+			break;
+		case InlineID::FLOAT_ADD:
+		case InlineID::FLOAT_SUBTARCT:
+		case InlineID::FLOAT_MULTIPLY:
+		case InlineID::FLOAT_DIVIDE:
+			add_cmd(Asm::INST_FLDS, reg_s0, param[0]);
+			add_cmd(Asm::INST_FLDS, reg_s1, param[1]);
+			if (index == InlineID::FLOAT_ADD)
+				add_cmd(Asm::INST_FADDS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_SUBTARCT)
+				add_cmd(Asm::INST_FSUBS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_MULTIPLY)
+				add_cmd(Asm::INST_FMULS, reg_s0, reg_s0, reg_s1);
+			if (index == InlineID::FLOAT_DIVIDE)
+				add_cmd(Asm::INST_FDIVS, reg_s0, reg_s0, reg_s1);
+			add_cmd(Asm::INST_FSTS, reg_s0, ret);
 			break;
 		default:
 			do_error("unimplemented inline function: #" + i2s((int)index));
@@ -721,6 +756,9 @@ void SerializerARM::ConvertGlobalLookups()
 				gr_transfer_by_reg_in(cmd[i], i, 2);
 			if (is_global_lookup(cmd[i].p[0]))
 				gr_transfer_by_reg_out(cmd[i], i, 0);
+		}else if (cmd[i].inst == Asm::INST_FLDS){
+			if (is_global_lookup(cmd[i].p[1]))
+				gr_transfer_by_reg_in(cmd[i], i, 1);
 		}
 	}
 	ScanTempVarUsage();
@@ -745,6 +783,25 @@ void SerializerARM::CorrectUnallowedParamCombis()
 				transfer_by_reg_in(cmd[i], i, 2);
 			if (cmd[i].p[0].kind != NodeKind::REGISTER)
 				transfer_by_reg_out(cmd[i], i, 0);
+		}else if (cmd[i].inst == Asm::INST_FLDS){
+			if (cmd[i].p[1].kind == NodeKind::IMMEDIATE)
+				transfer_by_reg_in(cmd[i], i, 1);
+		}
+	}
+
+	if (config.verbose and config.allow_output(cur_func, "map:d"))
+		cmd_list_out("mid unallowed");
+
+	for (int i=cmd.num-1;i>=0;i--) {
+		if (cmd[i].inst == Asm::INST_FLDS) {
+			if (cmd[i].p[1].kind == NodeKind::REGISTER) {
+				cmd[i].inst = Asm::INST_FMRS;
+				std::swap(cmd[i].p[0], cmd[i].p[1]);
+			}
+		} else if (cmd[i].inst == Asm::INST_FSTS) {
+			if (cmd[i].p[1].kind == NodeKind::REGISTER) {
+				cmd[i].inst = Asm::INST_FMSR;
+			}
 		}
 	}
 	ScanTempVarUsage();
