@@ -29,7 +29,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.7.5";
+string LibVersion = "0.17.7.6";
 
 
 bool call_function(Function *f, void *ff, void *ret, void *inst, const Array<void*> &param);
