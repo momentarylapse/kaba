@@ -509,27 +509,15 @@ void parse_magic_linker_string(SyntaxTree *s)
 }
 
 // generate opcode
-void Script::compile()
-{
+void Script::compile() {
 	Asm::CurrentMetaInfo = syntax->asm_meta_info;
 
 	if (config.compile_os)
 		import_includes(this);
 
 	parse_magic_linker_string(syntax);
-
-	syntax->break_down_complicated_commands();
-
-	syntax->map_local_variables_to_stack();
 	
-	syntax->simplify_ref_deref();
-	syntax->simplify_shift_deref();
-
-	syntax->pre_processor();
-	syntax->make_functions_inline();
-
-	if (config.verbose)
-		syntax->show("comp:a");
+	syntax->digest();
 
 	allocate_memory();
 	map_global_variables_to_memory();
@@ -553,7 +541,7 @@ void Script::compile()
 	syntax->pre_processor_addresses();
 
 	if (config.verbose)
-		syntax->show("comp:b");
+		syntax->show("compile:b");
 
 
 // compile functions into Opcode

@@ -644,7 +644,7 @@ bool node_is_assign_mem(Node *n) {
 SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 {
 	// for/while need a marker to this point
-	bool ignore_params = ((com->kind == NodeKind::STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
+	bool ignore_params = ((com->kind == NodeKind::BLOCK) or (com->kind == NodeKind::STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
 
 
 	// EXPERIMENTAL DIRTY HACK !!!!!!!!!!!

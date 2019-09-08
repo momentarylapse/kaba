@@ -1209,7 +1209,7 @@ void SyntaxTree::post_process_for(Node *cmd_for) {
 	// ref.
 		var->type = var->type->get_pointer();
 		n_var->type = var->type;
-		transform_node(loop_block, [&](Node *n) { return conv_cbr(this, n, var); });
+		transform_node(loop_block, [&](Node *n) { return conv_cbr(n, var); });
 	}
 
 	// force for_var out of scope...

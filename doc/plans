@@ -9,3 +9,22 @@
 
 
 * ARM....
+
+
+
+
+
+
+== digesting ==
+
+* eval const/operators (all)
+
+* break-down hi/lo
+* simplify deref
+
+* map?
+
+* eval const/operators (int/addr)
+
+* func/op -> inline/call-by-ref
+* simplify deref

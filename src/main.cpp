@@ -112,7 +112,7 @@ public:
 				arg.erase(i --);
 			}else if (arg[i] == "--show-tree"){
 				flag_verbose = true;
-				debug_stage_filter = "par:a";
+				debug_stage_filter = "parse:a";
 				arg.erase(i --);
 			}else if (arg[i] == "--show-consts"){
 				flag_show_consts = true;

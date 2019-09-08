@@ -172,12 +172,17 @@ public:
 	void create_asm_meta_info();
 
 	// neccessary conversions
+	void digest();
 	void convert_call_by_reference();
-	void break_down_complicated_commands();
-	Node *break_down_for_loops(Node *c);
-	Node *break_down_complicated_command(Node *c);
-	void make_functions_inline();
 	void map_local_variables_to_stack();
+	Node *conv_break_down_high_level(Node *n, Block *b);
+	Node *conv_break_down_low_level(Node *c);
+	Node *conv_cbr(Node *c, Variable *var);
+	Node *conv_calls(Node *c);
+	Node *conv_easyfy_ref_deref(Node *c, int l);
+	Node *conv_easyfy_shift_deref(Node *c, int l);
+	Node *conv_return_by_memory(Node *n, Function *f);
+	Node* conv_func_inline(Node *n);
 
 	void transform(std::function<Node*(Node*)> F);
 	static void transform_block(Block *block, std::function<Node*(Node*)> F);
@@ -200,7 +205,7 @@ public:
 	Node *add_node_class(const Class *c);
 	Node *add_node_call(Function *f);
 	Node *add_node_const(Constant *c);
-	Node *add_node_block(Block *b);
+	//Node *add_node_block(Block *b);
 	Node *add_node_operator(Node *p1, Node *p2, Operator *op);
 	Node *add_node_operator_by_inline(Node *p1, Node *p2, InlineID inline_index);
 	Node *add_node_global(Variable *var);
@@ -222,8 +227,8 @@ public:
 	void pre_processor();
 	Node *pre_process_node_addresses(Node *c);
 	void pre_processor_addresses();
-	void simplify_ref_deref();
 	void simplify_shift_deref();
+	void simplify_ref_deref();
 
 	void show(const string &stage);
 
