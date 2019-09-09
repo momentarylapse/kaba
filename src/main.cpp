@@ -18,8 +18,12 @@ namespace Kaba {
 	extern long long s2i2(const string &str);
 };
 
-static void extern_function1(int a) {
+static void extern_func_int_out(int a) {
 	msg_write("out: " + i2s(a));
+}
+
+static void extern_func_float_out(float a) {
+	msg_write("out: " + f2s(a, 6));
 }
 
 int extern_function2() {
@@ -216,7 +220,8 @@ public:
 
 
 		// for experiments
-		Kaba::LinkExternal("Test1", (void*)&extern_function1);
+		Kaba::LinkExternal("__int_out", (void*)&extern_func_int_out);
+		Kaba::LinkExternal("__float_out", (void*)&extern_func_float_out);
 		Kaba::LinkExternal("Test2", (void*)&extern_function2);
 		Kaba::LinkExternal("extern_variable1", (void*)&extern_variable1);
 

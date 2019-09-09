@@ -41,17 +41,17 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 	// map params...
 	Array<SerialNodeParam> reg_param;
 	Array<SerialNodeParam> stack_param;
-	Array<SerialNodeParam> xmm_param;
+	Array<SerialNodeParam> float_param;
 	for (SerialNodeParam &p: params){
-		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_pointer()){
+		if ((p.type == TypeInt) /*or (p.type == TypeInt64)*/ or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_pointer()){
 			if (reg_param.num < 4){
 				reg_param.add(p);
 			}else{
 				stack_param.add(p);
 			}
-		}else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)){
-			if (xmm_param.num < 8){
-				xmm_param.add(p);
+		}else if ((p.type == TypeFloat32) /*or (p.type == TypeFloat64)*/){
+			if (float_param.num < 8){
+				float_param.add(p);
 			}else{
 				stack_param.add(p);
 			}
@@ -67,19 +67,19 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 		add_cmd(Asm::inst_add, param_reg(TypePointer, Asm::REG_RSP), param_const(TypeChar, (void*)push_size));
 	foreachb(SerialCommandParam &p, stack_param)
 		add_cmd(Asm::inst_push, p);
-	max_push_size = max(max_push_size, push_size);
+	max_push_size = max(max_push_size, push_size);*/
 
-	// xmm0-7
-	foreachib(SerialCommandParam &p, xmm_param, i){
-		int reg = Asm::REG_XMM0 + i;
-		if (p.type == TypeFloat64)
+	// s0-7
+	foreachib(auto &p, float_param, i){
+		int reg = Asm::REG_S0 + i;
+		/*if (p.type == TypeFloat64)
 			add_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
-		else
-			add_cmd(Asm::inst_movss, param_reg(TypeReg128, reg), p);
-	}*/
+		else*/
+			add_cmd(Asm::INST_FLDS, param_preg(TypeFloat32, reg), p);
+	}
 
 	// r0, r1, r2, r3
-	foreachib(SerialNodeParam &p, reg_param, i){
+	foreachib(auto &p, reg_param, i){
 		int v = add_virtual_reg(Asm::REG_R0 + i);
 		add_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
 		set_virtual_reg(v, cmd.num - 1, -100); // -> call
@@ -146,7 +146,20 @@ void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instan
 
 void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
 {
-	do_error("virtual call");
+	int push_size = fc_begin(instance, param, ret);
+
+	int v1 = add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
+	int v2 = add_virtual_reg(Asm::REG_R5);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), instance);
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v2), param_deref_vreg(TypePointer, v1));
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), param_imm(TypeInt, 4*virtual_index));
+	add_cmd(Asm::INST_ADD, param_vreg(TypePointer, v1), param_vreg(TypePointer, v2), param_vreg(TypePointer, v1));
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v2), param_deref_vreg(TypePointer, v1));
+	add_cmd(Asm::INST_CALL, param_vreg(TypePointer, v2));
+	set_virtual_reg(v1, cmd.num-5, cmd.num-1);
+	set_virtual_reg(v2, cmd.num-5, cmd.num-1);
+
+	fc_end(push_size, ret);
 }
 
 
@@ -252,31 +265,37 @@ void SerializerARM::SerializeStatement(Node *com, const Array<SerialNodeParam> &
 				AddFunctionOutro(cur_func);
 			}
 			break;
-#if 0
 		case StatementID::NEW:{
-			Array<Node*> links = syntax_tree->GetExistence("@malloc", nullptr);
+			// malloc()
+			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
-			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param_imm(TypeInt, ret.type->parent->size), ret);
-			if (com->params.num > 0){
-				// copy + edit command
-				Node sub = *com->params[0];
-				Node c_ret(NodeKind::VAR_TEMP, ret.p, script, ret.type);
-				sub.instance = &c_ret;
-				serialize_node(&sub, block, index);
-			}else
-				add_cmd_constructor(ret, -1);
+			AddFunctionCall(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
 			clear_nodes(links);
+
+			// __init__()
+			if (com->params.num > 0) {
+				Node *sub = com->params[0];
+				Node *c_ret = new Node(NodeKind::VAR_TEMP, ret.p, ret.type);
+				sub->instance = c_ret;
+				serialize_node(sub, block, index);
+				//delete sub;
+			} else {
+				add_cmd_constructor(ret, NodeKind::NONE);
+			}
 			break;}
 		case StatementID::DELETE:{
+			// __delete__()
+			param[0] = SerializeParameter(com->params[0], block, index); // operand
 			add_cmd_destructor(param[0], false);
-			Array<Node*> links = syntax_tree->GetExistence("@free", nullptr);
+
+			// free()
+			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
-			AddFunctionCall(links[0]->script, links[0]->link_no, p_none, param[0], p_none);
+			AddFunctionCall(links[0]->as_func(), p_none, {param[0]}, p_none);
 			clear_nodes(links);
 			break;}
-#endif
 		case StatementID::ASM:
 			add_cmd(INST_ASM);
 			break;
@@ -831,7 +850,7 @@ void SerializerARM::AddFunctionIntro(Function *f)
 	// map params...
 	Array<Variable*> reg_param;
 	Array<Variable*> stack_param;
-	Array<Variable*> xmm_param;
+	Array<Variable*> float_param;
 	for (Variable *p: param){
 		if ((p->type == TypeInt) or (p->type == TypeChar) or (p->type == TypeBool) or p->type->is_pointer()){
 			if (reg_param.num < 4){
@@ -840,9 +859,8 @@ void SerializerARM::AddFunctionIntro(Function *f)
 				stack_param.add(p);
 			}
 		}else if (p->type == TypeFloat32){
-			do_error("arm float param");
-			if (xmm_param.num < 8){
-				xmm_param.add(p);
+			if (float_param.num < 8){
+				float_param.add(p);
 			}else{
 				stack_param.add(p);
 			}
@@ -850,11 +868,11 @@ void SerializerARM::AddFunctionIntro(Function *f)
 			do_error("parameter type currently not supported: " + p->type->name);
 	}
 
-	// xmm0-7
-	/*foreachib(Variable &p, xmm_param, i){
-		int reg = Asm::REG_XMM0 + i;
-		add_cmd(Asm::inst_movss, param_local(p->type, p->_offset), param_reg(p->type, reg));
-	}*/
+	// s0-7
+	foreachib(Variable *p, float_param, i){
+		int reg = Asm::REG_S0+ i;
+		add_cmd(Asm::INST_FSTS, param_preg(p->type, reg), param_local(p->type, p->_offset));
+	}
 
 	// rdi, rsi,rdx, rcx, r8, r9
 	int param_regs[4] = {Asm::REG_R0, Asm::REG_R1, Asm::REG_R2, Asm::REG_R3};
