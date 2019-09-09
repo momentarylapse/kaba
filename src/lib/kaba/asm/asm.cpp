@@ -82,6 +82,7 @@ void Exception::print() const
 
 void SetError(const string &str)
 {
+	msg_error(str);
 	//msg_error(str + format("\nline %d", LineNo + 1));
 	throw Exception(str, "", state.line_no, state.column_no);
 }
@@ -379,6 +380,20 @@ const InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_B,		"b"},
 	{INST_BL,		"bl"},
 	{INST_BLX,		"blx"},
+
+	{INST_MULS, "muls"},
+	{INST_ADDS, "adds"},
+	{INST_SUBS, "subs"},
+	{INST_RSBS, "rsbs"},
+	{INST_ADCS, "adcs"},
+	{INST_SBCS, "sbcs"},
+	{INST_RSCS, "rscs"},
+	{INST_ANDS, "ands"},
+	{INST_BICS, "bics"},
+	{INST_XORS, "xors"},
+	{INST_ORS, "ors"},
+	{INST_MOVS, "movs"},
+	{INST_MVNS, "movns"},
 
 	{INST_LDR,		"ldr"},
 	{INST_LDRB,		"ldrb"},
@@ -1082,14 +1097,20 @@ enum {
 	AP_NONE,
 	AP_REG_0,
 	AP_FREG_0_5,
+	AP_REG_8,
 	AP_REG_12,
 	AP_FREG_12_22,
 	AP_REG_16,
+	AP_REG_16_W21,
 	AP_FREG_16_7,
+	AP_REG_SET,
 	AP_OFFSET24_0,
 	AP_IMM12_0,
 	AP_SHIFTED12_0,
 	AP_DEREF_REG_16_OFFSET,
+	AP_SHIFTER_0X12_I25,
+	AP_XX_R12_W21_UPI23,
+	AP_XX_R12_W21_UPI23_BYTE,
 };
 
 
@@ -1173,10 +1194,64 @@ void InitARM() {
 	}
 
 	cpu_instructions_arm.clear();
-	add_inst_arm(INST_BLX, 0x01200030, 0x0ff000f0, AP_REG_0);
 
-	//add_inst_arm(INST_B,    0x0a000000 ,0);
-	//add_inst_arm(INST_BL,   0x0b000000 ,0);
+	add_inst_arm(INST_MUL,  0x00000090, 0x0ff00ff0, AP_REG_16, AP_REG_0, AP_REG_8);
+	add_inst_arm(INST_MULS, 0x00100090, 0x0ff00ff0, AP_REG_16, AP_REG_0, AP_REG_8);
+
+	// data
+	add_inst_arm(INST_AND,  0x00000000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ANDS, 0x00100000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_XOR,  0x00200000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_XORS, 0x00300000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_SUB,  0x00400000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_SUBS, 0x00500000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_RSB,  0x00600000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_RSBS, 0x00700000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ADD,  0x00800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ADDS, 0x00900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ADC,  0x00a00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ADCS, 0x00b00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_SBC,  0x00c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_SBCS, 0x00d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_RSC,  0x00e00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_RSCS, 0x00f00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_TST,  0x01100000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_TEQ,  0x01300000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_CMP,  0x01500000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_CMN,  0x01700000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_OR,   0x01800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_ORS,  0x01900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_MOV,  0x01a00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_MOVS, 0x01b00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_BIC,  0x01c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_BICS, 0x01d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_MVN,  0x01e00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(INST_MVNS, 0x01f00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+
+	// transfer
+	add_inst_arm(INST_LDR,  0x04100000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
+	add_inst_arm(INST_LDRB, 0x04500000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
+	add_inst_arm(INST_STR,  0x04000000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
+	add_inst_arm(INST_STRB, 0x04400000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
+
+	// transfer multiple
+	add_inst_arm(INST_LDMIA,  0x08900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_STMIA,  0x08800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_LDMIB,  0x09900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_STMIB,  0x09800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_LDMDA,  0x08100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_STMDA,  0x08000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_LDMDB,  0x09100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(INST_STMDB,  0x09000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+
+	// branch
+	add_inst_arm(INST_BLX, 0x01200030, 0x0ff000f0, AP_REG_0);
+	add_inst_arm(INST_B,   0x0a000000 ,0x0f000000, AP_OFFSET24_0);
+	add_inst_arm(INST_BL,  0x0b000000 ,0x0f000000, AP_OFFSET24_0);
+
+
+	// -- float --
+
 	add_inst_arm(INST_FMSR,  0x0e000a10, 0x0ff00f7f, AP_FREG_16_7, AP_REG_12);
 	add_inst_arm(INST_FMRS,  0x0e100a10, 0x0ff00f7f, AP_REG_12, AP_FREG_16_7);
 
@@ -2356,74 +2431,11 @@ InstructionParam disarm_shift_reg(int code)
 	return p;
 }
 
-InstructionWithParams disarm_data_opcode(int code)
-{
-	InstructionWithParams i;
-	i.inst = ARM_DATA_INSTRUCTIONS[(code >> 21) & 15];
-	if (((code >> 20) & 1) and (i.inst != INST_CMP) and (i.inst != INST_CMN) and (i.inst != INST_TEQ) and (i.inst != INST_TST))
-		msg_write(GetInstructionName(i.inst) + "[S]");
-	i.p[0] = param_reg(REG_R0 + ((code >> 12) & 15));
-	i.p[1] = param_reg(REG_R0 + ((code >> 16) & 15));
-	if ((code >> 25) & 1)
-		i.p[2] = param_imm(arm_decode_imm(code & 0xfff), SIZE_32);
-	else
-		i.p[2] = disarm_shift_reg(code & 0xfff);
-	if ((i.inst == INST_CMP) or (i.inst == INST_CMN) or (i.inst == INST_TST) or (i.inst == INST_TEQ) or (i.inst == INST_MOV)){
-		if ((i.inst == INST_CMP) or (i.inst == INST_CMN))
-			i.p[0] = i.p[1];
-		i.p[1] = i.p[2];
-		i.p[2] = param_none;
-	}
-	return i;
-}
 
-InstructionWithParams disarm_data_opcode_mul(int code)
-{
-	InstructionWithParams i;
-	i.inst = INST_MUL;
-	if ((code >> 20) & 1)
-		msg_write(" [S]");
-	i.p[0] = param_reg(REG_R0 + ((code >> 16) & 15));
-	i.p[1] = param_reg(REG_R0 + ((code >> 0) & 15));
-	i.p[2] = param_reg(REG_R0 + ((code >> 8) & 15));
-	return i;
-}
+InstructionParam param_xxx(int code, bool bb) {
+	InstructionParam p;
 
-InstructionWithParams disarm_branch(int code)
-{
-	InstructionWithParams i;
-	if ((code >> 24) & 1)
-		i.inst = INST_BL;
-	else
-		i.inst = INST_B;
-	i.p[0] = param_imm(code & 0x00ffffff, SIZE_32);
-	i.p[1] = param_none;
-	i.p[2] = param_none;
-	return i;
-}
-
-InstructionWithParams __disarm_blx(int code)
-{
-	InstructionWithParams i;
-	i.inst = INST_BLX;
-	i.p[0] = param_reg(REG_R0 + ((code >> 0) & 15));
-	i.p[1] = param_none;
-	i.p[2] = param_none;
-	return i;
-}
-
-InstructionWithParams disarm_data_transfer(int code)
-{
-	InstructionWithParams i;
-	bool bb = ((code >> 22) & 1);
-	bool ll = ((code >> 20) & 1);
-	if (ll)
-		i.inst = bb ? INST_LDRB : INST_LDR;
-	else
-		i.inst = bb ? INST_STRB : INST_STR;
 	int Rn = (code >> 16) & 0xf;
-	int Rd = (code >> 12) & 0xf;
-	i.p[0] = param_reg(REG_R0 + Rd);
 	bool imm = ((code >> 25) & 1);
 	bool pre = ((code >> 24) & 1);
 	bool up = ((code >> 23) & 1);
@@ -2432,36 +2444,12 @@ InstructionWithParams disarm_data_transfer(int code)
 		msg_write( " --shifted reg--");
 	}else{
 		if (code & 0xfff)
-			i.p[1] = param_deref_reg_shift(REG_R0 + Rn, up ? (code & 0xfff) : (-(code & 0xfff)), bb ? SIZE_8 : SIZE_32);
+			p = param_deref_reg_shift(REG_R0 + Rn, up ? (code & 0xfff) : (-(code & 0xfff)), bb ? SIZE_8 : SIZE_32);
 		else
-			i.p[1] = param_deref_reg(REG_R0 + Rn, bb ? SIZE_8 : SIZE_32);
+			p = param_deref_reg(REG_R0 + Rn, bb ? SIZE_8 : SIZE_32);
 	}
-	i.p[1].write_back = ww;
-	i.p[2] = param_none;
-	return i;
-}
-
-InstructionWithParams disarm_data_block_transfer(int code)
-{
-	InstructionWithParams i;
-	bool ll = ((code >> 20) & 1);
-	bool pp = ((code >> 24) & 1);
-	bool uu = ((code >> 23) & 1);
-	bool ww = ((code >> 21) & 1);
-	if (!pp and uu)
-		i.inst = ll ? INST_LDMIA : INST_STMIA;
-	else if (pp and uu)
-		i.inst = ll ? INST_LDMIB : INST_STMIB;
-	else if (!pp and !uu)
-		i.inst = ll ? INST_LDMDA : INST_STMDA;
-	else if (pp and !uu)
-		i.inst = ll ? INST_LDMDB : INST_STMDB;
-	int Rn = (code >> 16) & 0xf;
-	i.p[0] = param_reg(REG_R0 + Rn);
-	i.p[1] = param_reg_set(code & 0xffff);
-	i.p[0].write_back = ww;
-	i.p[2] = param_none;
-	return i;
+	p.write_back = ww;
+	return p;
 }
 
 InstructionParam disarm_param(int code, int p) {
@@ -2483,17 +2471,37 @@ InstructionParam disarm_param(int code, int p) {
 	} else if (p == AP_REG_0) {
 		int fm = (code & 0x0000000f);
 		return param_reg(REG_R0 + fm);
+	} else if (p == AP_REG_8) {
+		int fm = (code & 0x00000f00) >> 8;
+		return param_reg(REG_R0 + fm);
 	} else if (p == AP_REG_12) {
 		int fd = (code & 0x0000f000) >> 12;
 		return param_reg(REG_R0 + fd);
 	} else if (p == AP_REG_16) {
 		int fn = (code & 0x000f0000) >> 16;
 		return param_reg(REG_R0 + fn);
+	} else if (p == AP_REG_16_W21) {
+		int fm = (code & 0x000f0000) >> 16;
+		auto p = param_reg(REG_R0 + fm);
+		p.write_back = ((code >> 21) & 1);
+		return p;
 	} else if (p == AP_DEREF_REG_16_OFFSET) {
 		int Rn = (code >> 16) & 0xf;
 		bool up = ((code >> 23) & 1);
 		int offset = (code & 0xff) * 4;
 		return param_deref_reg_shift(REG_R0 + Rn, up ? offset : -offset, SIZE_32);
+	} else if (p == AP_SHIFTER_0X12_I25) {
+		if ((code >> 25) & 1)
+			return param_imm(arm_decode_imm(code & 0xfff), SIZE_32);
+		return disarm_shift_reg(code & 0xfff);
+	} else if (p == AP_OFFSET24_0) {
+		return param_imm((code & 0x00ffffff) * 4, SIZE_32);
+	} else if (p == AP_XX_R12_W21_UPI23) {
+		return param_xxx(code, false);
+	} else if (p == AP_XX_R12_W21_UPI23_BYTE) {
+		return param_xxx(code, true);
+	} else if (p == AP_REG_SET) {
+		return param_reg_set(code & 0xffff);
 	} else if (p != AP_NONE) {
 		msg_error("disasm_param... unhandled " + i2s(p));
 	}
@@ -2502,6 +2510,10 @@ InstructionParam disarm_param(int code, int p) {
 
 InstructionWithParams disarm_general(int code) {
 	InstructionWithParams i;
+	i.inst = INST_NOP;
+	i.p[0] = param_none;
+	i.p[1] = param_none;
+	i.p[2] = param_none;
 	for (auto &ii: cpu_instructions_arm) {
 		if ((code & ii.filter) == ii.code) {
 			i.inst = ii.inst;
@@ -2527,26 +2539,7 @@ string DisassembleARM(void *_code_,int length,bool allow_comments)
 		buf += "    ";
 
 		InstructionWithParams iwp;
-		iwp.inst = INST_NOP;
-		iwp.p[0] = param_none;
-		iwp.p[1] = param_none;
-		iwp.p[2] = param_none;
-		/*if ((cur & 0x0ff000f0) == 0x01200030){
-			iwp = disarm_blx(cur);
-		}else*/ if (((cur >> 26) & 3) == 0){
-			if ((cur & 0x0fe000f0) == 0x00000090)
-				iwp = disarm_data_opcode_mul(cur);
-			else
-				iwp = disarm_data_opcode(cur);
-		}else if (((cur >> 26) & 0x3) == 0b01){
-			iwp = disarm_data_transfer(cur);
-		}else if (x == 0b100){
-			iwp = disarm_data_block_transfer(cur);
-		}else if (x == 0b101){
-			iwp = disarm_branch(cur);
-		}else{
-			iwp = disarm_general(cur);
-		}
+		iwp = disarm_general(cur);
 		iwp.condition = (cur >> 28) & 0xf;
 
 
@@ -3741,13 +3734,16 @@ void arm_ass_param(InstructionParam &pp, int p, int &code) {
 			code |= 1 << 7;
 	} else if (p == AP_REG_0) {
 		int fn = arm_reg_no(pp.reg);
-		code |= (fn) << 16;
+		code |= (fn & 0xf);
+	} else if (p == AP_REG_8) {
+		int fn = arm_reg_no(pp.reg);
+		code |= (fn & 0xf) << 8;
 	} else if (p == AP_REG_12) {
 		int fn = arm_reg_no(pp.reg);
-		code |= (fn) << 12;
+		code |= (fn & 0xf) << 12;
 	} else if (p == AP_REG_16) {
 		int fn = arm_reg_no(pp.reg);
-		code |= (fn) << 16;
+		code |= (fn & 0xf) << 16;
 	}
 }
 
