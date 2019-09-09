@@ -273,7 +273,7 @@ string SerialNodeParam::str(Serializer *ser) const
 	if (kind != NodeKind::NONE){
 		string n = p2s((void*)p);
 		if ((kind == NodeKind::REGISTER) or (kind == NodeKind::DEREF_REGISTER))
-			n = Asm::GetRegName(p);
+			n = Asm::get_reg_name(p);
 		else if ((kind == NodeKind::VAR_TEMP) or (kind == NodeKind::DEREF_VAR_TEMP))
 			n = "#" + i2s(p);
 		else if (kind == NodeKind::MARKER)
@@ -330,7 +330,7 @@ void Serializer::vr_list_out()
 {
 	msg_write("---------- vr");
 	for (auto &r: virtual_reg)
-		msg_write(Asm::GetRegName(r.reg) + format("  (%d)   %d -> %d", r.reg_root, r.first, r.last));
+		msg_write(Asm::get_reg_name(r.reg) + format("  (%d)   %d -> %d", r.reg_root, r.first, r.last));
 }
 
 int Serializer::get_reg(int root, int size)
@@ -875,13 +875,13 @@ inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &
 	if ((!param_is_simple(p1)) and (!param_is_simple(p2)))
 		return false;
 	bool r1, w1, r2, w2;
-	Asm::GetInstructionParamFlags(inst, r1, w1, r2, w2);
+	Asm::get_instruction_param_flags(inst, r1, w1, r2, w2);
 	if ((w1) and (p1.kind == NodeKind::IMMEDIATE))
 		return false;
 	if ((w2) and (p2.kind == NodeKind::IMMEDIATE))
 		return false;
 	if ((p1.kind == NodeKind::IMMEDIATE) or (p2.kind == NodeKind::IMMEDIATE))
-		if (!Asm::GetInstructionAllowConst(inst))
+		if (!Asm::get_instruction_allow_const(inst))
 			return false;
 	return true;
 }
@@ -1591,7 +1591,7 @@ void Serializer::MapTempVar(int vi)
 	bool reg_allowed = true;
 	for (int i=first;i<=last;i++)
 		if (temp_in_cmd(i, vi))
-			if (!Asm::GetInstructionAllowGenReg(cmd[i].inst)){
+			if (!Asm::get_instruction_allow_gen_reg(cmd[i].inst)){
 				reg_allowed = false;
 				break;
 			}
@@ -1931,7 +1931,7 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialNodeParam &p)
 		//	param_size = -1; // lea doesn't need size...
 			//s->DoErrorInternal("get_param: evil local of type " + p.type->name);
 	}else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS){
-		bool imm_allowed = Asm::GetInstructionAllowConst(inst);
+		bool imm_allowed = Asm::get_instruction_allow_const(inst);
 		if ((imm_allowed) and (p.type->is_pointer())){
 			return Asm::param_imm(*(int_p*)(p.p + p.shift), p.type->size);
 		}else if ((p.type->size <= 4) and (imm_allowed)){
@@ -1979,7 +1979,7 @@ void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s)
 	if (ps->asm_blocks.num == 0)
 		s->do_error("asm block mismatch");
 	ps->asm_meta_info->line_offset = ps->asm_blocks[0].line;
-	list->AppendFromSource(ps->asm_blocks[0].block);
+	list->append_from_source(ps->asm_blocks[0].block);
 	ps->asm_blocks.erase(0);
 }
 
@@ -2130,8 +2130,8 @@ void Script::compile_functions(char *oc, int &ocs)
 
 	// assemble into opcode
 	try{
-		list->Optimize(oc, ocs);
-		list->Compile(oc, ocs);
+		list->optimize(oc, ocs);
+		list->compile(oc, ocs);
 	}catch(Asm::Exception &e){
 		throw Exception(e, this);
 	}

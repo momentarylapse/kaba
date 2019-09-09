@@ -274,10 +274,10 @@ public:
 					output_to_file_elf(s, out_file);
 
 				if (flag_disassemble)
-					msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
+					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 			}else{
 				if (flag_disassemble)
-					msg_write(Asm::Disassemble(s->opcode, s->opcode_size, true));
+					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 
 				if (Kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
 					execute(s, arg);

@@ -1020,13 +1020,13 @@ inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &
 	if ((!param_is_simple(p1)) and (!param_is_simple(p2)))
 		return false;
 	bool r1, w1, r2, w2;
-	Asm::GetInstructionParamFlags(inst, r1, w1, r2, w2);
+	Asm::get_instruction_param_flags(inst, r1, w1, r2, w2);
 	if (w1 and (p1.kind == NodeKind::IMMEDIATE))
 		return false;
 	if (w2 and (p2.kind == NodeKind::IMMEDIATE))
 		return false;
 	if ((p1.kind == NodeKind::IMMEDIATE) or (p2.kind == NodeKind::IMMEDIATE))
-		if (!Asm::GetInstructionAllowConst(inst))
+		if (!Asm::get_instruction_allow_const(inst))
 			return false;
 	return true;
 }

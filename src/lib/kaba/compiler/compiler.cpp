@@ -244,7 +244,7 @@ void Script::CompileOsEntryPoint() {
 			nf = index;
 	// call
 	if (nf>=0)
-		Asm::AddInstruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
+		Asm::add_instruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset=opcode_size;
 	OCORA = Asm::OCParam;
 	align_opcode();

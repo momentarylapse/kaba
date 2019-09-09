@@ -135,7 +135,7 @@ string Node::sig() const {
 	if (kind == NodeKind::CLASS)
 		return as_class()->name;
 	if (kind == NodeKind::REGISTER)
-		return t + Asm::GetRegName(link_no);
+		return t + Asm::get_reg_name(link_no);
 	if (kind == NodeKind::ADDRESS)
 		return t + d2h(&link_no, config.pointer_size);
 	if (kind == NodeKind::MEMORY)

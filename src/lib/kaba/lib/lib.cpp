@@ -395,7 +395,7 @@ int get_virtual_index(void *func, const string &tname, const string &name) {
 		} catch (...) {
 			msg_error("Script class_add_func_virtual(" + tname + "." + name + "):  can't read virtual index");
 			msg_write(string((char*)pp, 4).hex());
-			msg_write(Asm::Disassemble(func, 16));
+			msg_write(Asm::disassemble(func, 16));
 		}
 	} else {
 
@@ -1769,7 +1769,7 @@ void SIAddPackageSound();
 void SIAddPackageX();
 
 void Init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
-	Asm::Init(instruction_set);
+	Asm::init(instruction_set);
 	config.instruction_set = Asm::instruction_set.set;
 	if (abi == Abi::NATIVE){
 		if (config.instruction_set == Asm::InstructionSet::AMD64){
