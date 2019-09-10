@@ -399,7 +399,7 @@ const Class *SyntaxTree::parse_type_extension_array(const Class *t) {
 
 		// find array index
 		Node *c = parse_command(root_of_all_evil->block);
-		c = transform_node(c, [&](Node *n) { return pre_process_node(n); });
+		c = transform_node(c, [&](Node *n) { return conv_eval_const_func(n); });
 
 		if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
 			do_error("only constants of type \"int\" allowed for size of arrays");
@@ -978,7 +978,7 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 					return op;
 				}
 			} else if (_type_match(p2, equal_classes, type1)) {
-				Node *inst = ref_node(param1);
+				Node *inst = param1;
 				if (p1 == pp1)
 					op = add_node_member_call(f, inst);
 				else
@@ -2141,7 +2141,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type) {
 
 	// find const value
 	Node *cv = parse_command(root_of_all_evil->block);
-	cv = transform_node(cv, [&](Node *n) { return pre_process_node(n); });
+	cv = transform_node(cv, [&](Node *n) { return conv_eval_const_func(n); });
 
 	if ((cv->kind != NodeKind::CONSTANT) or (cv->type != type))
 		do_error(format("only constants of type \"%s\" allowed as value for this constant", type->name.c_str()));
@@ -2239,7 +2239,7 @@ const Class *SyntaxTree::parse_type(const Class *ns) {
 			} else {
 
 				// find array index
-				Node *c = transform_node(parse_command(root_of_all_evil->block), [&](Node *n) { return pre_process_node(n); });
+				Node *c = transform_node(parse_command(root_of_all_evil->block), [&](Node *n) { return conv_eval_const_func(n); });
 
 				if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
 					do_error("only constants of type \"int\" allowed for size of arrays");

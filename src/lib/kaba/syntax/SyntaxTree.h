@@ -223,8 +223,8 @@ public:
 	Node *shift_node(Node *sub, bool deref, int shift, const Class *type);
 
 	// pre processor
-	Node *pre_process_node(Node *c);
-	void pre_processor();
+	Node *conv_eval_const_func(Node *c);
+	void eval_const_expressions();
 	Node *pre_process_node_addresses(Node *c);
 	void pre_processor_addresses();
 	void simplify_shift_deref();

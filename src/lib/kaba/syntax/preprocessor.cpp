@@ -1,36 +1,93 @@
 #include "../kaba.h"
 #include "../asm/asm.h"
 #include "../../file/file.h"
+#include <type_traits>
 
-namespace Kaba{
+namespace Kaba {
 
-typedef void op_func(Value &r, Value &a, Value &b);
+typedef void op_func(Value&, Value&, Value&);
 
-//static Function *cur_func;
+
+void db_out(const string &s) {
+	//msg_write(s);
+}
+
+// call-by-reference dummy
+class CBR {};
 
 template<class R>
 void call0(void *ff, void *ret, const Array<void*> &param) {
-	*(R*)ret = ((R(*)())ff)();
-}
-template<class R, class A>
-void call1(void *ff, void *ret, const Array<void*> &param) {
-	*(R*)ret = ((R(*)(A))ff)(*(A*)param[0]);
-}
-template<class R, class A, class B>
-void call2(void *ff, void *ret, const Array<void*> &param) {
-	*(R*)ret = ((R(*)(A, B))ff)(*(A*)param[0], *(B*)param[1]);
-}
-template<class R, class A, class B, class C>
-void call3(void *ff, void *ret, const Array<void*> &param) {
-	*(R*)ret = ((R(*)(A, B, C))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2]);
-}
-template<class R, class A, class B, class C, class D>
-void call4(void *ff, void *ret, const Array<void*> &param) {
-	*(R*)ret = ((R(*)(A, B, C, D))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2], *(D*)param[3]);
+	if (std::is_same<CBR,R>::value) {
+		//msg_write("CBR return (1p)!!!");
+		((void(*)(void*))ff)(ret);
+	} else {
+		*(R*)ret = ((R(*)())ff)();
+	}
 }
 
-bool call_function(Function *f, void *ff, void *ret, void *__inst, const Array<void*> &param) {
-	if (f->num_params == 0) {
+template<class R, class A>
+void call1(void *ff, void *ret, const Array<void*> &param) {
+	if (std::is_same<CBR,R>::value) {
+		if (std::is_same<CBR,A>::value) {
+			db_out("CBR -> CBR");
+			((void(*)(void*, void*))ff)(ret, param[0]);
+		} else {
+			db_out("x -> CBR");
+			((void(*)(void*, A))ff)(ret, *(A*)param[0]);
+		}
+	} else {
+		if (std::is_same<CBR,A>::value) {
+			db_out("CBR -> x");
+			*(R*)ret = ((R(*)(void*))ff)(param[0]);
+		} else {
+			db_out("x -> x");
+			*(R*)ret = ((R(*)(A))ff)(*(A*)param[0]);
+		}
+	}
+}
+
+template<class R, class A, class B>
+void call2(void *ff, void *ret, const Array<void*> &param) {
+	if (std::is_same<CBR,R>::value) {
+		if (std::is_same<CBR,A>::value and std::is_same<CBR,B>::value) {
+			//msg_write("CBR CBR -> CBR");
+			((void(*)(void*, void*, void*))ff)(ret, param[0], param[1]);
+		} else {
+			//msg_write("x x -> CBR");
+			((void(*)(void*, A, B))ff)(ret, *(A*)param[0], *(B*)param[1]);
+		}
+
+	} else {
+		*(R*)ret = ((R(*)(A, B))ff)(*(A*)param[0], *(B*)param[1]);
+	}
+}
+
+template<class R, class A, class B, class C>
+void call3(void *ff, void *ret, const Array<void*> &param) {
+	if (std::is_same<CBR,R>::value) {
+		((void(*)(void*, A, B, C))ff)(ret, *(A*)param[0], *(B*)param[1], *(C*)param[2]);
+	} else {
+		*(R*)ret = ((R(*)(A, B, C))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2]);
+	}
+}
+
+template<class R, class A, class B, class C, class D>
+void call4(void *ff, void *ret, const Array<void*> &param) {
+	if (std::is_same<CBR,R>::value) {
+		((void(*)(void*, A, B, C, D))ff)(ret, *(A*)param[0], *(B*)param[1], *(C*)param[2], *(D*)param[3]);
+	} else {
+		*(R*)ret = ((R(*)(A, B, C, D))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2], *(D*)param[3]);
+	}
+}
+
+bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) {
+	db_out("eval: " + f->signature());
+	Array<const Class*> ptype = f->literal_param_type;
+	if (!f->is_static)
+		ptype.insert(f->name_space, 0);
+
+
+	if (ptype.num == 0) {
 		if (f->return_type == TypeInt) {
 			call0<int>(ff, ret, param);
 			return true;
@@ -38,231 +95,147 @@ bool call_function(Function *f, void *ff, void *ret, void *__inst, const Array<v
 			call0<float>(ff, ret, param);
 			return true;
 		} else if (f->return_type->uses_return_by_memory()) {
-			//call1<void,void*>(ff, ret, param);
-			((void(*)(void*))ff)(ret);
+			call0<CBR>(ff, ret, param);
 			return true;
 		}
-	}else if (f->num_params == 1) {
+	} else if (ptype.num == 1) {
 		if (f->return_type == TypeInt) {
-			if (f->literal_param_type[0] == TypeInt) {
+			if (ptype[0] == TypeInt) {
 				call1<int,int>(ff, ret, param);
 				return true;
-			} else if (f->literal_param_type[0] == TypeFloat32) {
+			} else if (ptype[0] == TypeFloat32) {
 				call1<int,float>(ff, ret, param);
+				return true;
+			} else if (ptype[0]->uses_call_by_reference()) {
+				call1<int,CBR>(ff, ret, param);
 				return true;
 			}
 		} else if (f->return_type == TypeBool) {
-			if (f->literal_param_type[0] == TypeInt) {
+			if (ptype[0] == TypeInt) {
 				call1<bool,int>(ff, ret, param);
 				return true;
-			} else if (f->literal_param_type[0] == TypeFloat32) {
+			} else if (ptype[0] == TypeFloat32) {
 				call1<bool,float>(ff, ret, param);
 				return true;
 			}
 		} else if (f->return_type == TypeFloat32) {
-			if (f->literal_param_type[0] == TypeFloat32) {
+			if (ptype[0] == TypeFloat32) {
 				call1<float,float>(ff, ret, param);
+				return true;
+			} else if (ptype[0]->uses_call_by_reference()) {
+				call1<float,CBR>(ff, ret, param);
 				return true;
 			}
 		} else if (f->return_type->uses_return_by_memory()) {
-			if (f->literal_param_type[0] == TypeInt) {
-				((void(*)(void*, int))ff)(ret, *(int*)param[0]);
+			if (ptype[0] == TypeInt) {
+				call1<CBR,int>(ff, ret, param);
 				return true;
-			} else if (f->literal_param_type[0] == TypeFloat32) {
-				((void(*)(void*, float))ff)(ret, *(float*)param[0]);
+			} else if (ptype[0] == TypeFloat32) {
+				call1<CBR,float>(ff, ret, param);
 				return true;
-			} else if (f->literal_param_type[0]->uses_call_by_reference()) {
-				((void(*)(void*, void*))ff)(ret, param[0]);
+			} else if (ptype[0]->uses_call_by_reference()) {
+				call1<CBR,CBR>(ff, ret, param);
 				return true;
 			}
 		}
-	}else if (f->num_params == 2){
-		if (f->return_type == TypeInt){
-			if ((f->literal_param_type[0] == TypeInt) and(f->literal_param_type[1] == TypeInt)){
+	} else if (ptype.num == 2) {
+		if (f->return_type == TypeInt) {
+			if ((ptype[0] == TypeInt) and(ptype[1] == TypeInt)) {
 				call2<int,int,int>(ff, ret, param);
 				return true;
 			}
-		}else if (f->return_type == TypeFloat32){
-			if ((f->literal_param_type[0] == TypeFloat32) and(f->literal_param_type[1] == TypeFloat32)){
+		} else if (f->return_type == TypeFloat32) {
+			if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32)) {
 				call2<float,float,float>(ff, ret, param);
 				return true;
 			}
-		}else if (f->return_type->uses_return_by_memory()){
-			if ((f->literal_param_type[0] == TypeInt) and(f->literal_param_type[1] == TypeInt)){
-				((void(*)(void*, int, int))ff)(ret, *(int*)param[0], *(int*)param[1]);
+		} else if (f->return_type->uses_return_by_memory()) {
+			if ((ptype[0] == TypeInt) and(ptype[1] == TypeInt)) {
+				call2<CBR,int,int>(ff, ret, param);
 				return true;
-			}else if ((f->literal_param_type[0] == TypeFloat32) and(f->literal_param_type[1] == TypeFloat32)){
-				((void(*)(void*, float, float))ff)(ret, *(float*)param[0], *(float*)param[1]);
+			} else if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32)) {
+				call2<CBR,float,float>(ff, ret, param);
 				return true;
-			}else if ((f->literal_param_type[0]->uses_call_by_reference()) and(f->literal_param_type[1]->uses_call_by_reference())){
-				((void(*)(void*, void*, void*))ff)(ret, param[0], param[1]);
+			} else if ((ptype[0]->uses_call_by_reference()) and (ptype[1]->uses_call_by_reference())) {
+				call2<CBR,CBR,CBR>(ff, ret, param);
 				return true;
 			}
 		}
-	}else if (f->num_params == 3){
-		if (f->return_type->uses_return_by_memory()){
-			if ((f->literal_param_type[0] == TypeFloat32) and(f->literal_param_type[1] == TypeFloat32) and(f->literal_param_type[2] == TypeFloat32)){
+	} else if (ptype.num == 3) {
+		if (f->return_type->uses_return_by_memory()) {
+			if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32) and(ptype[2] == TypeFloat32)) {
 				((void(*)(void*, float, float, float))ff)(ret, *(float*)param[0], *(float*)param[1], *(float*)param[2]);
 				return true;
 			}
 		}
-	}else if (f->num_params == 4){
-		if (f->return_type->uses_return_by_memory()){
-			if ((f->literal_param_type[0] == TypeFloat32) and(f->literal_param_type[1] == TypeFloat32) and(f->literal_param_type[2] == TypeFloat32) and(f->literal_param_type[3] == TypeFloat32)){
+	} else if (ptype.num == 4) {
+		if (f->return_type->uses_return_by_memory()) {
+			if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32) and(ptype[2] == TypeFloat32) and(ptype[3] == TypeFloat32)) {
 				((void(*)(void*, float, float, float, float))ff)(ret, *(float*)param[0], *(float*)param[1], *(float*)param[2], *(float*)param[3]);
 				return true;
 			}
 		}
 	}
+	db_out(".... NOPE");
 	return false;
 }
 
 
-#if 0
-void PreProcessFunction(SyntaxTree *ps, Node *c)
-{
-	bool all_const = true;
-	bool is_address = false;
-	bool is_local = false;
-	for (int i=0;i<c->num_params;i++)
-		if (c->params[i]->kind == NodeKind::ADDRESS)
-			is_address = true;
-		else if (c->params[i]->kind == NodeKind::LOCAL_ADDRESS)
-			is_address = is_local = true;
-		else if (c->params[i]->kind != NodeKind::CONSTANT)
-			all_const = false;
-	if (!all_const)
-		return;
-					op_func *f = (op_func*)o->func;
-					if (is_address){
-						// pre process address
-						/*void *d1 = (void*)&c->Param[0]->LinkNr;
-						void *d2 = (void*)&c->Param[1]->LinkNr;
-						if (c->Param[0]->Kind == KindConstant)
-						    d1 = Constant[c->Param[0]->LinkNr].data;
-						if (c->Param[1]->Kind == KindConstant)
-						    d2 = Constant[c->Param[1]->LinkNr].data;
-						void *r = (void*)&c->LinkNr;
-						f(r, d1, d2);
-						c->Kind = is_local ? KindLocalAddress : KindAddress;
-						c->NumParams = 0;*/
-					}else{
-						// pre process operator
-						int nc = ps->add_constant(o->return_type);
-						string d1 = ps->constants[c->params[0]->link_no].value;
-						string d2;
-						if (c->num_params > 1)
-							d2 = ps->constants[c->params[1]->link_no].value;
-						f(ps->constants[nc].value, d1, d2);
-						c->script = ps->script;
-						c->kind = NodeKind::CONSTANT;
-						c->link_no = nc;
-						c->num_params = 0;
-					}
+Node *eval_function_call(SyntaxTree *tree, Node *c, Function *f) {
+	db_out("??? " + f->signature());
+
+	if (!f->is_pure)
+		return c;
+	db_out("-pure");
+
+	if (!Value::can_init(f->return_type))
+		return c;
+	db_out("-constr");
+
+	void *ff = f->address_preprocess;
+	if (!ff)
+		return c;
+	db_out("-addr");
+
+	// parameters
+	Array<void*> p;
+	if (c->instance) {
+		if (c->instance->kind != NodeKind::CONSTANT)
+			return c;
+		db_out("i: " + c->instance->str());
+		p.add(c->instance->as_const()->p());
+	}
+	for (int i=0;i<c->params.num;i++) {
+		if (c->params[i]->kind != NodeKind::CONSTANT)
+			return c;
+		db_out("p: " + c->params[i]->str());
+		p.add(c->params[i]->as_const()->p());
+	}
+	db_out("-param const");
+
+	Value temp;
+	temp.init(f->return_type);
+	if (!call_function(f, ff, temp.p(), p))
+		return c;
+	Node *r = tree->add_node_const(tree->add_constant(f->return_type));
+	r->as_const()->set(temp);
+	db_out(">>>  " + r->str());
+	return r;
 }
-#endif
 
 
-Node *SyntaxTree::pre_process_node(Node *c)
-{
-	if (c->kind == NodeKind::OPERATOR){
-		Operator *o = c->as_op();
-		/*if (c->link_nr == OperatorIntAdd){
-			if (c->param[1]->kind == KindConstant){
-				int v = *(int*)Constants[c->param[1]->link_nr].data;
-				if (v == 0){
-					msg_error("addr + 0");
-					*c = *c->param[0];
-				}
-			}
-		}else*/ if (o->f->address_preprocess){
-			bool all_const = true;
-			bool is_address = false;
-			bool is_local = false;
-			for (int i=0;i<c->params.num;i++)
-				if (c->params[i]->kind == NodeKind::ADDRESS)
-					is_address = true;
-				else if (c->params[i]->kind == NodeKind::LOCAL_ADDRESS)
-					is_address = is_local = true;
-				else if (c->params[i]->kind != NodeKind::CONSTANT)
-					all_const = false;
-			if (all_const){
-				op_func *f = (op_func*)o->f->address_preprocess;
-				if (is_address){
-					// pre process address
-					/*void *d1 = (void*)&c->Param[0]->LinkNr;
-					void *d2 = (void*)&c->Param[1]->LinkNr;
-					if (c->Param[0]->Kind == KindConstant)
-					    d1 = Constant[c->Param[0]->LinkNr].data;
-					if (c->Param[1]->Kind == KindConstant)
-					    d2 = Constant[c->Param[1]->LinkNr].data;
-					void *r = (void*)&c->LinkNr;
-					f(r, d1, d2);
-					c->Kind = is_local ? KindLocalAddress : KindAddress;
-					c->NumParams = 0;*/
-				}else{
-					// pre process operator
-					Node *r = add_node_const(add_constant(o->return_type));
-					if (c->params.num > 1){
-						f(*r->as_const(), *c->params[0]->as_const(), *c->params[1]->as_const());
-					}else{
-						Value dummy;
-						f(*r->as_const(), *c->params[0]->as_const(), dummy);
-					}
-					return r;
-				}
-			}
-		}
-#if 1
-	}else if (c->kind == NodeKind::FUNCTION_CALL){
-		Function *f = c->as_func();
-		if (!f->is_pure)
-			return c;
-		if (f->return_type->get_default_constructor()) // TODO
-			return c;
-		void *ff = f->address_preprocess;
-		if (!ff)
-			return c;
-		bool all_const = true;
-		bool is_address = false;
-		bool is_local = false;
-		for (int i=0;i<c->params.num;i++){
-			if (c->params[i]->kind == NodeKind::ADDRESS)
-				is_address = true;
-			else if (c->params[i]->kind == NodeKind::LOCAL_ADDRESS)
-				is_address = is_local = true;
-			else if (c->params[i]->kind != NodeKind::CONSTANT)
-				all_const = false;
-		}
-		void *inst = nullptr;
-		if (c->instance){
-			return c;
-			if (c->instance->kind != NodeKind::CONSTANT)
-				all_const = false;
-			inst = c->instance->as_const()->p();
-		}
-		if (!all_const)
-			return c;
-		if (is_address)
-			return c;
-		Value temp;
-		temp.init(f->return_type);
-		Array<void*> p;
-		for (int i=0; i<c->params.num; i++)
-			p.add(c->params[i]->as_const()->p());
-		if (!call_function(f, ff, temp.p(), inst, p))
-			return c;
-		Node *r = add_node_const(add_constant(f->return_type));
-		r->as_const()->set(temp);
-		//DoError("...pure function evaluation?!?....TODO");
-		return r;
-#endif
-	}else if (c->kind == NodeKind::ARRAY_BUILDER){
+// BEFORE transforming to call-by-reference!
+Node *SyntaxTree::conv_eval_const_func(Node *c) {
+	if (c->kind == NodeKind::OPERATOR) {
+		return eval_function_call(this, c, c->as_op()->f);
+	} else if (c->kind == NodeKind::FUNCTION_CALL) {
+		return eval_function_call(this, c, c->as_func());
+	} else if (c->kind == NodeKind::ARRAY_BUILDER) {
 		bool all_consts = true;
 		for (int i=0; i<c->params.num; i++)
 			if (c->params[i]->kind != NodeKind::CONSTANT)
 				all_consts = false;
-		if (all_consts){
+		if (all_consts) {
 			Node *c_array = add_node_const(add_constant(c->type));
 			int el_size = c->type->parent->size;
 			DynamicArray *da = &c_array->as_const()->as_array();
@@ -270,52 +243,22 @@ Node *SyntaxTree::pre_process_node(Node *c)
 			da->simple_resize(c->params.num);
 			for (int i=0; i<c->params.num; i++)
 				memcpy((char*)da->data + el_size * i, c->params[i]->as_const()->p(), el_size);
+			// TODO  use kaba_var_assign() instead... prevent double free?!?
 			return c_array;
 		}
-	}/*else if (c->kind == KindReference){
+	}
+
+	//else if (c->kind == KindReference) {
 	// no... we don't know the addresses of globals/constants yet...
-		if (s){
-			if ((c->Param[0]->Kind == KindVarGlobal) or (c->Param[0]->Kind == KindVarLocal) or (c->Param[0]->Kind == KindVarExternal) or (c->Param[0]->Kind == KindConstant)){
-				// pre process ref var
-				c->Kind = KindAddress;
-				c->NumParams = 0;
-				if (c->Param[0]->Kind == KindVarGlobal){
-					if (c->Param[0]->script)
-						c->LinkNr = (long)c->Param[0]->script->g_var[c->Param[0]->LinkNr];
-					else
-						c->LinkNr = (long)s->g_var[c->Param[0]->LinkNr];
-				}else if (c->Param[0]->Kind == KindVarExternal){
-					c->LinkNr = (long)PreExternalVar[c->Param[0]->LinkNr].Pointer;
-				}else if (c->Param[0]->Kind == KindVarLocal){
-					c->LinkNr = (long)cur_func->Var[c->Param[0]->LinkNr]._Offset;
-					c->Kind = KindLocalAddress;
-				}else if (c->Param[0]->Kind == KindConstant)
-					c->LinkNr = (long)s->cnst[c->Param[0]->LinkNr];
-			}
-		}
-	}else if (c->kind == KindDereference){
-		if (c->Param[0]->Kind == KindAddress){
-			// pre process deref address
-			c->Kind = KindMemory;
-			c->LinkNr = c->Param[0]->LinkNr;
-			c->NumParams = 0;
-		}else if (c->Param[0]->Kind == KindLocalAddress){
-			// pre process deref local address
-			c->Kind = KindLocalMemory;
-			c->LinkNr = c->Param[0]->LinkNr;
-			c->NumParams = 0;
-		}
-	}*/
 	return c;
 }
 
 
 // may not use AddConstant()!!!
-Node *SyntaxTree::pre_process_node_addresses(Node *c)
-{
-	if (c->kind == NodeKind::OPERATOR){
+Node *SyntaxTree::pre_process_node_addresses(Node *c) {
+	if (c->kind == NodeKind::OPERATOR) {
 		Operator *o = c->as_op();
-		if (o->f->address){
+		if (o->f->address) {
 			bool all_const = true;
 			bool is_address = false;
 			bool is_local = false;
@@ -326,9 +269,9 @@ Node *SyntaxTree::pre_process_node_addresses(Node *c)
 					is_address = is_local = true;
 				else if (c->params[i]->kind != NodeKind::CONSTANT)
 					all_const = false;
-			if (all_const){
+			if (all_const) {
 				op_func *f = (op_func*)o->f->address;
-				if (is_address){
+				if (is_address) {
 					// pre process address
 					Value d1, d2;
 					d1.init(c->params[0]->type);
@@ -346,36 +289,32 @@ Node *SyntaxTree::pre_process_node_addresses(Node *c)
 				}
 			}
 		}
-	}else if (c->kind == NodeKind::REFERENCE){
+	} else if (c->kind == NodeKind::REFERENCE) {
 		Node *p0 = c->params[0];
-		if (p0->kind == NodeKind::VAR_GLOBAL){
+		if (p0->kind == NodeKind::VAR_GLOBAL) {
 			return new Node(NodeKind::ADDRESS, (int_p)p0->as_global_p(), c->type);
-		}else if (p0->kind == NodeKind::VAR_LOCAL){
+		} else if (p0->kind == NodeKind::VAR_LOCAL) {
 			return new Node(NodeKind::LOCAL_ADDRESS, (int_p)p0->as_local()->_offset, c->type);
-		}else if (p0->kind == NodeKind::CONSTANT){
+		} else if (p0->kind == NodeKind::CONSTANT) {
 			return new Node(NodeKind::ADDRESS, (int_p)p0->as_const_p(), c->type);
 		}
-	}else if (c->kind == NodeKind::DEREFERENCE){
+	} else if (c->kind == NodeKind::DEREFERENCE) {
 		Node *p0 = c->params[0];
-		if (p0->kind == NodeKind::ADDRESS){
+		if (p0->kind == NodeKind::ADDRESS) {
 			return new Node(NodeKind::MEMORY, p0->link_no, c->type);
-		}else if (p0->kind == NodeKind::LOCAL_ADDRESS){
+		} else if (p0->kind == NodeKind::LOCAL_ADDRESS) {
 			return new Node(NodeKind::LOCAL_MEMORY, p0->link_no, c->type);
 		}
 	}
 	return c;
 }
 
-void SyntaxTree::pre_processor()
-{
-	transform([&](Node *n){ return pre_process_node(n); });
-	//Show();
+void SyntaxTree::eval_const_expressions() {
+	transform([&](Node *n){ return conv_eval_const_func(n); });
 }
 
-void SyntaxTree::pre_processor_addresses()
-{
+void SyntaxTree::pre_processor_addresses() {
 	transform([&](Node *n){ return pre_process_node_addresses(n); });
-	//Show();
 }
 
 };

@@ -21,6 +21,14 @@ Value::~Value() {
 	clear();
 }
 
+bool Value::can_init(const Class *t) {
+	if (!t->needs_constructor())
+		return true;
+	if (t->is_super_array())
+		return !t->get_array_element()->needs_constructor();
+	return false;
+}
+
 void Value::init(const Class *_type) {
 	clear();
 	type = _type;

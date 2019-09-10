@@ -223,7 +223,7 @@ void SyntaxTree::digest() {
 	simplify_shift_deref();
 	simplify_ref_deref();
 	
-	pre_processor();
+	eval_const_expressions();
 
 	if (config.verbose)
 		show("digest:pre-proc");
@@ -245,7 +245,7 @@ void SyntaxTree::digest() {
 	if (config.verbose)
 		show("digest:deref");
 
-	pre_processor();
+	eval_const_expressions();
 	if (config.verbose)
 		show("digest:map");
 
