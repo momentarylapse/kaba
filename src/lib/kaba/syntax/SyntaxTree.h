@@ -87,7 +87,7 @@ public:
 	const Class *parse_type(const Class *ns);
 	void parse_variable_def(bool single, Block *block);
 	void parse_global_const(const string &name, const Class *type);
-	PrimitiveOperator *which_primitive_operator(const string &name);
+	PrimitiveOperator *which_primitive_operator(const string &name, int param_flags = 3);
 	Statement *which_statement(const string &name);
 	const Class *which_owned_class(const string &name);
 

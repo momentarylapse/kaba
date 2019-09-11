@@ -453,7 +453,7 @@ Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block) {
 	}
 
 	// nothing?
-	auto primop = which_primitive_operator(Exp.cur);
+	auto primop = which_primitive_operator(Exp.cur, 1); // ++,--
 	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "(") and (!primop))
 		return operands[0];
 
@@ -483,7 +483,7 @@ Node *SyntaxTree::parse_operand_extension(Array<Node*> operands, Block *block) {
 
 		for (auto *op: operators)
 			if (op->primitive == primop)
-				if ((op->param_type_1 == operands[0]->type) and (op->param_type_2 == TypeVoid)) {
+				if ((op->param_type_1 == operands[0]->type) and (!op->param_type_2)) {
 					Exp.next();
 					return add_node_operator(operands[0], nullptr, op);
 				}
@@ -657,7 +657,7 @@ Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Bloc
 	bool ok=false;
 	for (auto *_op: operators)
 		if (po == _op->primitive)
-			if ((_op->param_type_1 == TypeVoid) and (type_match(p2, _op->param_type_2))) {
+			if ((!_op->param_type_1) and (type_match(p2, _op->param_type_2))) {
 				op = _op;
 				ok = true;
 				break;
@@ -671,7 +671,7 @@ Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Bloc
 		int pen_min = 100;
 		for (auto *_op: operators)
 			if (po == _op->primitive)
-				if ((_op->param_type_1 == TypeVoid) and (type_match_with_cast(p2, false, false, _op->param_type_2, pen2, c2))) {
+				if ((!_op->param_type_1) and (type_match_with_cast(p2, false, false, _op->param_type_2, pen2, c2))) {
 					ok = true;
 					if (pen2 < pen_min) {
 						op = _op;
@@ -828,7 +828,7 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 
 // only "primitive" operator -> no type information
 Node *SyntaxTree::parse_primitive_operator(Block *block) {
-	auto op = which_primitive_operator(Exp.cur);
+	auto op = which_primitive_operator(Exp.cur, 3);
 	if (!op)
 		return nullptr;
 

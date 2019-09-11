@@ -248,34 +248,35 @@ const Class *add_type_d(const string &name, const Class *sub_type) {
 //   without type information ("primitive")
 
 PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
-	{"=",  OperatorID::ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN, false},
-	{"+",  OperatorID::ADD,           false, 11, "__add__", false},
-	{"-",  OperatorID::SUBTRACT,      false, 11, "__sub__", false},
-	{"*",  OperatorID::MULTIPLY,      false, 12, "__mul__", false},
-	{"/",  OperatorID::DIVIDE,        false, 12, "__div__", false},
-	{"+=", OperatorID::ADDS,          true,  1,  "__iadd__", false},
-	{"-=", OperatorID::SUBTRACTS,     true,  1,  "__isub__", false},
-	{"*=", OperatorID::MULTIPLYS,     true,  1,  "__imul__", false},
-	{"/=", OperatorID::DIVIDES,       true,  1,  "__idiv__", false},
-	{"==", OperatorID::EQUAL,         false, 8,  "__eq__", false},
-	{"!=", OperatorID::NOTEQUAL,      false, 8,  "__ne__", false},
-	{"!",  OperatorID::NEGATE,        false, 2,  "__not__", false},
-	{"<",  OperatorID::SMALLER,       false, 9,  "__lt__", false},
-	{">",  OperatorID::GREATER,       false, 9,  "__gt__", false},
-	{"<=", OperatorID::SMALLER_EQUAL, false, 9,  "__le__", false},
-	{">=", OperatorID::GREATER_EQUAL, false, 9,  "__ge__", false},
-	{IDENTIFIER_AND, OperatorID::AND, false, 4,  "__and__", false},
-	{IDENTIFIER_OR,  OperatorID::OR,  false, 3,  "__or__", false},
-	{"%",  OperatorID::MODULO,        false, 12, "__mod__", false},
-	{"&",  OperatorID::BIT_AND,       false, 7, "__bitand__", false},
-	{"|",  OperatorID::BIT_OR,        false, 5, "__bitor__", false},
-	{"<<", OperatorID::SHIFT_LEFT,    false, 10, "__lshift__", false},
-	{">>", OperatorID::SHIFT_RIGHT,   false, 10, "__rshift__", false},
-	{"++", OperatorID::INCREASE,      true,  2, "__inc__", false},
-	{"--", OperatorID::DECREASE,      true,  2, "__dec__", false},
-	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-", false},
-	{IDENTIFIER_IN, OperatorID::IN,   false, 12, "__contains__", true}, // INVERTED
-	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", false}
+	{"=",  OperatorID::ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN, 3, false},
+	{"+",  OperatorID::ADD,           false, 11, "__add__", 3, false},
+	{"-",  OperatorID::SUBTRACT,      false, 11, "__sub__", 3, false},
+	{"*",  OperatorID::MULTIPLY,      false, 12, "__mul__", 3, false},
+	{"/",  OperatorID::DIVIDE,        false, 12, "__div__", 3, false},
+	{"-",  OperatorID::NEGATIVE,      false, 13, "__neg__", 2, false}, // -1 etc
+	{"+=", OperatorID::ADDS,          true,  1,  "__iadd__", 3, false},
+	{"-=", OperatorID::SUBTRACTS,     true,  1,  "__isub__", 3, false},
+	{"*=", OperatorID::MULTIPLYS,     true,  1,  "__imul__", 3, false},
+	{"/=", OperatorID::DIVIDES,       true,  1,  "__idiv__", 3, false},
+	{"==", OperatorID::EQUAL,         false, 8,  "__eq__", 3, false},
+	{"!=", OperatorID::NOTEQUAL,      false, 8,  "__ne__", 3, false},
+	{"!",  OperatorID::NEGATE,        false, 2,  "__not__", 2, false},
+	{"<",  OperatorID::SMALLER,       false, 9,  "__lt__", 3, false},
+	{">",  OperatorID::GREATER,       false, 9,  "__gt__", 3, false},
+	{"<=", OperatorID::SMALLER_EQUAL, false, 9,  "__le__", 3, false},
+	{">=", OperatorID::GREATER_EQUAL, false, 9,  "__ge__", 3, false},
+	{IDENTIFIER_AND, OperatorID::AND, false, 4,  "__and__", 3, false},
+	{IDENTIFIER_OR,  OperatorID::OR,  false, 3,  "__or__", 3, false},
+	{"%",  OperatorID::MODULO,        false, 12, "__mod__", 3, false},
+	{"&",  OperatorID::BIT_AND,       false, 7, "__bitand__", 3, false},
+	{"|",  OperatorID::BIT_OR,        false, 5, "__bitor__", 3, false},
+	{"<<", OperatorID::SHIFT_LEFT,    false, 10, "__lshift__", 3, false},
+	{">>", OperatorID::SHIFT_RIGHT,   false, 10, "__rshift__", 3, false},
+	{"++", OperatorID::INCREASE,      true,  2, "__inc__", 1, false},
+	{"--", OperatorID::DECREASE,      true,  2, "__dec__", 1, false},
+	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-", 3, false},
+	{IDENTIFIER_IN, OperatorID::IN,   false, 12, "__contains__", 3, true}, // INVERTED
+	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", 3, false}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
@@ -293,8 +294,10 @@ void add_operator(OperatorID primitive_op, const Class *return_type, const Class
 	o->f->is_static = true;
 	o->f->is_pure = !o->primitive->left_modifiable;
 	func_set_inline(inline_index);
-	func_add_param("a", param_type1);
-	func_add_param("b", param_type2);
+	if (param_type1)
+		func_add_param("a", param_type1);
+	if (param_type2)
+		func_add_param("b", param_type2);
 	cur_package->syntax->operators.add(o);
 }
 
@@ -1511,9 +1514,10 @@ void SIAddBasicCommands() {
 
 #define MAKE_OP_FOR(T) \
 	T op_##T##_add(T a, T b) { return a + b; } \
-	T op_##T##_sub(T a, T b) { return a * b; } \
+	T op_##T##_sub(T a, T b) { return a - b; } \
 	T op_##T##_mul(T a, T b) { return a * b; } \
 	T op_##T##_div(T a, T b) { return a / b; } \
+	T op_##T##_neg(T a) { return - a; } \
 	bool op_##T##_eq(T a, T b) { return a == b; } \
 	bool op_##T##_neq(T a, T b) { return a != b; } \
 	bool op_##T##_l(T a, T b) { return a < b; } \
@@ -1558,13 +1562,13 @@ void SIAddOperators() {
 	add_operator(OperatorID::SUBTRACT, TypeChar, TypeChar, TypeChar, InlineID::CHAR_SUBTRACT);
 	add_operator(OperatorID::BIT_AND, TypeChar, TypeChar, TypeChar, InlineID::CHAR_AND);
 	add_operator(OperatorID::BIT_OR, 	TypeChar, TypeChar, TypeChar, InlineID::CHAR_OR);
-	add_operator(OperatorID::SUBTRACT, TypeChar, TypeVoid, TypeChar, InlineID::CHAR_NEGATE);
+	add_operator(OperatorID::SUBTRACT, TypeChar, nullptr, TypeChar, InlineID::CHAR_NEGATE);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeBool, TypeBool, InlineID::BOOL_ASSIGN);
 	add_operator(OperatorID::EQUAL, 	TypeBool, TypeBool, TypeBool, InlineID::BOOL_EQUAL);
 	add_operator(OperatorID::NOTEQUAL, TypeBool, TypeBool, TypeBool, InlineID::BOOL_NOT_EQUAL);
 	add_operator(OperatorID::AND, 	TypeBool, TypeBool, TypeBool, InlineID::BOOL_AND);
 	add_operator(OperatorID::OR, 	TypeBool, TypeBool, TypeBool, InlineID::BOOL_OR);
-	add_operator(OperatorID::NEGATE, TypeBool, TypeVoid, TypeBool, InlineID::BOOL_NEGATE);
+	add_operator(OperatorID::NEGATE, TypeBool, nullptr, TypeBool, InlineID::BOOL_NEGATE);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt, TypeInt, InlineID::INT_ASSIGN);
 	add_operator(OperatorID::ADD, 	TypeInt, TypeInt, TypeInt, InlineID::INT_ADD, (void*)op_int_add);
 	add_operator(OperatorID::SUBTRACT, TypeInt, TypeInt, TypeInt, InlineID::INT_SUBTRACT, (void*)op_int_sub);
@@ -1585,9 +1589,9 @@ void SIAddOperators() {
 	add_operator(OperatorID::BIT_OR, 	TypeInt, TypeInt, TypeInt, InlineID::INT_OR);
 	add_operator(OperatorID::SHIFT_RIGHT, TypeInt, TypeInt, TypeInt, InlineID::INT_SHIFT_RIGHT, (void*)op_int_shr);
 	add_operator(OperatorID::SHIFT_LEFT, TypeInt, TypeInt, TypeInt, InlineID::INT_SHIFT_LEFT, (void*)op_int_shl);
-	add_operator(OperatorID::SUBTRACT, TypeInt, TypeVoid, TypeInt, InlineID::INT_NEGATE);
-	add_operator(OperatorID::INCREASE, TypeVoid, TypeInt, TypeVoid, InlineID::INT_INCREASE);
-	add_operator(OperatorID::DECREASE, TypeVoid, TypeInt, TypeVoid, InlineID::INT_DECREASE);
+	add_operator(OperatorID::NEGATIVE, TypeInt, nullptr, TypeInt, InlineID::INT_NEGATE, (void*)op_int_neg);
+	add_operator(OperatorID::INCREASE, TypeVoid, TypeInt, nullptr, InlineID::INT_INCREASE);
+	add_operator(OperatorID::DECREASE, TypeVoid, TypeInt, nullptr, InlineID::INT_DECREASE);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt64, TypeInt64, InlineID::INT64_ASSIGN);
 	add_operator(OperatorID::ADD, 	TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_ADD, (void*)op_int64_add);
 	add_operator(OperatorID::ADD, 	TypeInt64, TypeInt64, TypeInt, InlineID::INT64_ADD_INT, (void*)op_int64_add_int);
@@ -1609,9 +1613,9 @@ void SIAddOperators() {
 	add_operator(OperatorID::BIT_OR, 	TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_OR);
 	add_operator(OperatorID::SHIFT_RIGHT, TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_SHIFT_RIGHT, (void*)op_int64_shr);
 	add_operator(OperatorID::SHIFT_LEFT, TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_SHIFT_LEFT, (void*)op_int64_shl);
-	add_operator(OperatorID::SUBTRACT, TypeInt64, TypeVoid, TypeInt64, InlineID::INT64_NEGATE);
-	add_operator(OperatorID::INCREASE, TypeVoid, TypeInt64, TypeVoid, InlineID::INT64_INCREASE);
-	add_operator(OperatorID::DECREASE, TypeVoid, TypeInt64, TypeVoid, InlineID::INT64_DECREASE);
+	add_operator(OperatorID::NEGATIVE, TypeInt64, nullptr, TypeInt64, InlineID::INT64_NEGATE, (void*)op_int64_neg);
+	add_operator(OperatorID::INCREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_INCREASE);
+	add_operator(OperatorID::DECREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_DECREASE);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat32, TypeFloat32, InlineID::FLOAT_ASSIGN);
 	add_operator(OperatorID::ADD, 	TypeFloat32, TypeFloat32, TypeFloat32, InlineID::FLOAT_ADD, (void*)op_float_add);
 	add_operator(OperatorID::SUBTRACT, TypeFloat32, TypeFloat32, TypeFloat32, InlineID::FLOAT_SUBTARCT, (void*)op_float_sub);
@@ -1629,7 +1633,7 @@ void SIAddOperators() {
 	add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeFloat32, TypeFloat32, InlineID::FLOAT_GREATER_EQUAL, (void*)op_float_ge);
 	add_operator(OperatorID::SMALLER, TypeBool, TypeFloat32, TypeFloat32, InlineID::FLOAT_SMALLER, (void*)op_float_l);
 	add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeFloat32, TypeFloat32, InlineID::FLOAT_SMALLER_EQUAL, (void*)op_float_le);
-	add_operator(OperatorID::SUBTRACT, TypeFloat32, TypeVoid, TypeFloat32, InlineID::FLOAT_NEGATE);
+	add_operator(OperatorID::NEGATIVE, TypeFloat32, nullptr, TypeFloat32, InlineID::FLOAT_NEGATE, (void*)op_float_neg);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ASSIGN);
 	add_operator(OperatorID::ADD, 	TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ADD, (void*)op_double_add);
 	add_operator(OperatorID::SUBTRACT, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SUBTRACT, (void*)op_double_sub);
@@ -1647,7 +1651,7 @@ void SIAddOperators() {
 	add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeFloat64, TypeFloat64, InlineID::FLOAT64_GREATER_EQUAL, (void*)op_double_ge);
 	add_operator(OperatorID::SMALLER, TypeBool, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SMALLER, (void*)op_double_l);
 	add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SMALLER_EQUAL, (void*)op_double_le);
-	add_operator(OperatorID::SUBTRACT, TypeFloat32, TypeVoid, TypeFloat64, InlineID::FLOAT64_NEGATE);
+	add_operator(OperatorID::NEGATIVE, TypeFloat32, nullptr, TypeFloat64, InlineID::FLOAT64_NEGATE, (void*)op_double_neg);
 //	add_operator(OperatorID::ASSIGN, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_ASSIGN);
 	add_operator(OperatorID::ADD, 	TypeComplex, TypeComplex, TypeComplex, InlineID::COMPLEX_ADD, (void*)op_complex_add);
 	add_operator(OperatorID::SUBTRACT, TypeComplex, TypeComplex, TypeComplex, InlineID::COMPLEX_SUBTRACT, (void*)op_complex_sub);
@@ -1660,7 +1664,7 @@ void SIAddOperators() {
 	add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_MULTIPLY_ASSIGN);
 	add_operator(OperatorID::DIVIDES, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_DIVIDE_ASSIGN);
 	add_operator(OperatorID::EQUAL, 	TypeBool, TypeComplex, TypeComplex, InlineID::COMPLEX_EQUAL);
-	add_operator(OperatorID::SUBTRACT, TypeComplex, TypeVoid, TypeComplex, InlineID::COMPLEX_NEGATE);
+	add_operator(OperatorID::NEGATIVE, TypeComplex, nullptr, TypeComplex, InlineID::COMPLEX_NEGATE);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeChunk, TypeChunk, InlineID::CHUNK_ASSIGN);
 	add_operator(OperatorID::EQUAL, 	TypeBool, TypeChunk, TypeChunk, InlineID::CHUNK_EQUAL);
 	add_operator(OperatorID::NOTEQUAL, TypeBool, TypeChunk, TypeChunk, InlineID::CHUNK_NOT_EQUAL);
@@ -1674,7 +1678,7 @@ void SIAddOperators() {
 	add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_SUBTARCT_ASSIGN);
 	add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_ASSIGN);
 	add_operator(OperatorID::DIVIDES, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_ASSIGN);
-	add_operator(OperatorID::SUBTRACT, TypeVector, TypeVoid, TypeVector, InlineID::VECTOR_NEGATE);
+	add_operator(OperatorID::NEGATIVE, TypeVector, nullptr, TypeVector, InlineID::VECTOR_NEGATE);
 }
 
 void SIAddCommands() {

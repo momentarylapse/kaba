@@ -21,7 +21,11 @@ Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
 
 
 string Operator::sig() const {
-	return "(" + param_type_1->name + ") " + primitive->name + " (" + param_type_2->name + ")";
+	if (param_type_1 and param_type_2)
+		return "(" + param_type_1->name + ") " + primitive->name + " (" + param_type_2->name + ")";
+	if (param_type_1)
+		return "(" + param_type_1->name + ") " + primitive->name;
+	return primitive->name + " (" + param_type_2->name + ")";
 }
 
 
@@ -120,11 +124,14 @@ Node *SyntaxTree::add_node_class(const Class *c) {
 
 Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op) {
 	Node *cmd = new Node(NodeKind::OPERATOR, (int_p)op, op->return_type);
-	bool unitary = ((op->param_type_1 == TypeVoid) or (op->param_type_2 == TypeVoid));
-	cmd->set_num_params( unitary ? 1 : 2); // unary / binary
-	cmd->set_param(0, p1);
-	if (!unitary)
+	if (op->primitive->param_flags == 3) {
+		cmd->set_num_params(2); // binary
+		cmd->set_param(0, p1);
 		cmd->set_param(1, p2);
+	} else {
+		cmd->set_num_params(1); // unary
+		cmd->set_param(0, p1);
+	}
 	return cmd;
 }
 
@@ -353,9 +360,9 @@ Node *SyntaxTree::add_node_const(Constant *c) {
 	return new Node(NodeKind::BLOCK, (int_p)b, TypeVoid);
 }*/
 
-PrimitiveOperator *SyntaxTree::which_primitive_operator(const string &name) {
-	for (int i=0;i<(int)OperatorID::_COUNT_;i++)
-		if (name == PrimitiveOperators[i].name)
+PrimitiveOperator *SyntaxTree::which_primitive_operator(const string &name, int param_flags) {
+	for (int i=0; i<(int)OperatorID::_COUNT_; i++)
+		if (name == PrimitiveOperators[i].name and param_flags == PrimitiveOperators[i].param_flags)
 			return &PrimitiveOperators[i];
 	return nullptr;
 }
@@ -486,7 +493,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 		}
 
 		// operators
-		auto w = which_primitive_operator(name);
+		auto w = which_primitive_operator(name, 2); // negate/not...
 		if (w)
 			return {new Node(NodeKind::PRIMITIVE_OPERATOR, (int_p)w, TypeUnknown)};
 	}
@@ -998,7 +1005,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		Node *cmd_inc;
 		if (var->type == TypeInt) {
 			if (step->as_const()->as_int() == 1)
-				cmd_inc = add_node_operator_by_inline(cp_node(var), step /*dummy*/, InlineID::INT_INCREASE);
+				cmd_inc = add_node_operator_by_inline(cp_node(var), nullptr, InlineID::INT_INCREASE);
 			else
 				cmd_inc = add_node_operator_by_inline(cp_node(var), step, InlineID::INT_ADD_ASSIGN);
 		} else {
@@ -1046,7 +1053,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		n->set_param(2, block);
 
 		// ...for_index += 1
-		Node *cmd_inc = add_node_operator_by_inline(cp_node(index), val1 /*dummy*/, InlineID::INT_INCREASE);
+		Node *cmd_inc = add_node_operator_by_inline(cp_node(index), nullptr, InlineID::INT_INCREASE);
 		n->set_param(3, cmd_inc);
 
 		// array[index]
