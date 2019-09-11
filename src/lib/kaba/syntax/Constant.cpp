@@ -114,16 +114,20 @@ int Value::mapping_size() const {
 	return map_size_complex(p(), type);
 }
 
-int map_into_complex(char *memory, char *addr, void *p, const Class *type) {
+// map directly into <memory>
+// additional data (array ...) into free parts after <locked>
+char *map_into_complex(char *memory, char *locked, long addr_off, char *p, const Class *type) {
 	if (type->is_super_array()) {
 		DynamicArray *ar = (DynamicArray*)p;
 
-		int size = ar->element_size * ar->num;
-		int data_offset = config.super_array_size;
+		int direct_size = config.super_array_size;
+		int indirect_size = ar->element_size * ar->num;
+		if (locked == memory)
+			locked = memory + direct_size;
+		char *ar_target = locked;
+		locked += indirect_size;
 
-		AAAAAAAAAAA needs to "allocate" range.... param!
-
-		*(void**)&memory[0] = addr + data_offset; // .data
+		*(void**)&memory[0] = ar_target + addr_off; // .data
 		*(int*)&memory[config.pointer_size    ] = ar->num;
 		*(int*)&memory[config.pointer_size + 4] = 0; // .reserved
 		*(int*)&memory[config.pointer_size + 8] = ar->element_size;
@@ -131,24 +135,30 @@ int map_into_complex(char *memory, char *addr, void *p, const Class *type) {
 		if (type->parent->is_super_array()) {
 			for (int i=0; i<ar->num; i++) {
 				int el_offset = i * ar->element_size;
-				map_into_complex(memory + data_offset + el_offset, addr + data_offset + el_offset, (char*)ar->data + el_offset, type->parent);
+				locked = map_into_complex(ar_target + el_offset, locked, addr_off, (char*)ar->data + el_offset, type->parent);
 			}
 
 		} else {
-			memcpy(&memory[data_offset], ar->data, size);
+			memcpy(ar_target, ar->data, indirect_size);
 		}
-		return config.super_array_size;
+		return locked;
 	} else if (type == TypeCString) {
 		strcpy(memory, (char*)p);
-		return strlen((char*)p) + 1;
-	} else {
+		return memory + strlen((char*)p) + 1; // NO RECURSION!!!
+	} else if (type->is_simple_class()) {
 		memcpy(memory, p, type->size);
+	} else {
+		// TEST ME....
+		for (auto &el: type->elements) {
+			if (!el.hidden)
+				locked = map_into_complex(memory + el.offset, locked, addr_off, p + el.offset, el.type);
+		}
 	}
-	return type->size;
+	return locked;
 }
 
 void Value::map_into(char *memory, char *addr) const {
-	map_into_complex(memory, addr, p(), type);
+	map_into_complex(memory, memory, addr - memory, (char*)p(), type);
 }
 
 string Value::str() const {
@@ -160,7 +170,7 @@ Constant::Constant(const Class *_type, SyntaxTree *_owner) {
 	name = "-none-";
 	owner = _owner;
 	used = false;
-	address = nullptr;
+	address = p();
 }
 
 string Constant::str() const {

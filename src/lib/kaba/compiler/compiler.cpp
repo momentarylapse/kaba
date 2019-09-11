@@ -521,8 +521,8 @@ void Script::compile() {
 
 	allocate_memory();
 	map_global_variables_to_memory();
-	if (!config.compile_os)
-		map_constants_to_memory(memory, memory_size, memory);
+//	if (!config.compile_os)
+//		map_constants_to_memory(memory, memory_size, memory);
 
 	allocate_opcode();
 
@@ -538,10 +538,13 @@ void Script::compile() {
 
 
 
+	if (config.verbose)
+		syntax->show("compile:b");
+
 	syntax->pre_processor_addresses();
 
 	if (config.verbose)
-		syntax->show("compile:b");
+		syntax->show("compile:eval-addr");
 
 
 // compile functions into Opcode

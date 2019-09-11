@@ -440,7 +440,6 @@ void class_link_vtable(void *p) {
 void class_add_const(const string &name, const Class *type, const void *value) {
 	Constant *c = cur_package->syntax->add_constant(type, cur_class);
 	c->name = name;
-	c->address = c->p();
 
 	// config.PointerSize might be smaller than needed for the following assignment
 	if ((type == TypeInt) or (type == TypeFloat32) or (type == TypeChar)  or (type == TypeBool) or (type->is_pointer()))
@@ -539,7 +538,6 @@ void _kaba_array_sort_p(DynamicArray &array, int offset_by) {
 }
 
 void kaba_var_assign(void *pa, const void *pb, const Class *type) {
-	msg_write("ASSIGN " + type->long_name());
 	if ((type == TypeInt) or (type == TypeFloat32)) {
 		*(int*)pa = *(int*)pb;
 	} else if ((type == TypeBool) or (type == TypeChar)) {
@@ -578,7 +576,6 @@ void kaba_array_clear(void *p, const Class *type) {
 }
 
 void kaba_array_resize(void *p, const Class *type, int num) {
-	msg_write("RESIZE " + type->long_name());
 	auto *f = type->get_func("resize", TypeVoid, {TypeInt});
 	if (!f)
 		kaba_raise_exception(new KabaException("can not resize an array of type " + type->long_name()));

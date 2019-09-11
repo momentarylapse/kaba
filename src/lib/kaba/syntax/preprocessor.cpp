@@ -50,14 +50,15 @@ template<class R, class A, class B>
 void call2(void *ff, void *ret, const Array<void*> &param) {
 	if (std::is_same<CBR,R>::value) {
 		if (std::is_same<CBR,A>::value and std::is_same<CBR,B>::value) {
-			//msg_write("CBR CBR -> CBR");
+			db_out("CBR CBR -> CBR");
 			((void(*)(void*, void*, void*))ff)(ret, param[0], param[1]);
 		} else {
-			//msg_write("x x -> CBR");
+			db_out("x x -> CBR");
 			((void(*)(void*, A, B))ff)(ret, *(A*)param[0], *(B*)param[1]);
 		}
 
 	} else {
+		db_out("x x -> x");
 		*(R*)ret = ((R(*)(A, B))ff)(*(A*)param[0], *(B*)param[1]);
 	}
 }
@@ -149,6 +150,14 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 				call2<float,float,float>(ff, ret, param);
 				return true;
 			}
+		} else if (f->return_type == TypeInt64) {
+			if ((ptype[0] == TypeInt64) and(ptype[1] == TypeInt64)) {
+				call2<int64,int64,int64>(ff, ret, param);
+				return true;
+			} else if ((ptype[0] == TypeInt64) and(ptype[1] == TypeInt)) {
+				call2<int64,int64,int>(ff, ret, param);
+				return true;
+			}
 		} else if (f->return_type->uses_return_by_memory()) {
 			if ((ptype[0] == TypeInt) and(ptype[1] == TypeInt)) {
 				call2<CBR,int,int>(ff, ret, param);
@@ -233,9 +242,6 @@ bool all_params_are_const(Node *n) {
 	return true;
 }
 
-//void kaba_var_assign(void *pa, const void *pb, const Class *type);
-//void kaba_array_resize(void *p, const Class *type, int num);
-
 void rec_resize(DynamicArray *ar, int num, const Class *type);
 
 void *ar_el(DynamicArray *ar, int i) {
@@ -243,8 +249,12 @@ void *ar_el(DynamicArray *ar, int i) {
 }
 
 void rec_init(void *p, const Class *type) {
-	if (type->is_super_array())
+	if (type->is_super_array()) {
 		((DynamicArray*)p)->init(type->get_array_element()->size);
+	} else {
+		for (auto &el: type->elements)
+			rec_init((char*)p + el.offset, el.type);
+	}
 }
 
 void rec_delete(void *p, const Class *type) {
@@ -252,6 +262,9 @@ void rec_delete(void *p, const Class *type) {
 		auto ar = (DynamicArray*)p;
 		rec_resize(ar, 0, type->parent);
 		ar->simple_clear();
+	} else {
+		for (auto &el: type->elements)
+			rec_delete((char*)p + el.offset, el.type);
 	}
 }
 
@@ -276,8 +289,11 @@ void rec_assign(void *a, void *b, const Class *type) {
 		for (int i=0; i<bb->num; i++)
 			rec_assign(ar_el(aa, i), ar_el(bb, i), type->parent);
 
-	} else {
+	} else if (type->is_simple_class()){
 		memcpy(a, b, type->size);
+	} else {
+		for (auto &el: type->elements)
+			rec_assign((char*)a + el.offset, (char*)b + el.offset, el.type);
 	}
 }
 
@@ -310,15 +326,9 @@ Node *SyntaxTree::conv_eval_const_func(Node *c) {
 			int el_size = c->type->parent->size;
 			DynamicArray *da = &c_array->as_const()->as_array();
 			da->init(el_size);
-
 			rec_resize(da, c->params.num, c->type);
-			//kaba_array_resize(da, c->type, c->params.num);
-			//da->simple_resize(c->params.num);
 			for (int i=0; i<c->params.num; i++)
 				rec_assign(ar_el(da, i), c->params[i]->as_const()->p(), c->type->parent);
-				//memcpy((char*)da->data + el_size * i, c->params[i]->as_const()->p(), el_size);
-			// TODO  use kaba_var_assign() instead... prevent double free?!?
-			// ARGH... nope, not compiled yet....
 			return c_array;
 		}
 	}
@@ -331,39 +341,29 @@ Node *SyntaxTree::conv_eval_const_func(Node *c) {
 
 // may not use AddConstant()!!!
 Node *SyntaxTree::pre_process_node_addresses(Node *c) {
-	if (c->kind == NodeKind::OPERATOR) {
-		Operator *o = c->as_op();
-		if (o->f->address) {
-			bool all_const = true;
-			bool is_address = false;
-			bool is_local = false;
-			for (int i=0;i<c->params.num;i++)
-				if (c->params[i]->kind == NodeKind::ADDRESS)
-					is_address = true;
-				else if (c->params[i]->kind == NodeKind::LOCAL_ADDRESS)
-					is_address = is_local = true;
-				else if (c->params[i]->kind != NodeKind::CONSTANT)
-					all_const = false;
-			if (all_const) {
-				op_func *f = (op_func*)o->f->address;
-				if (is_address) {
-					// pre process address
-					Value d1, d2;
-					d1.init(c->params[0]->type);
-					d2.init(c->params[1]->type);
-					*(void**)d1.p() = (void*)c->params[0]->link_no;
-					*(void**)d2.p() = (void*)c->params[1]->link_no;
-					if (c->params[0]->kind == NodeKind::CONSTANT)
-					    d1.set(*c->params[0]->as_const());
-					if (c->params[1]->kind == NodeKind::CONSTANT)
-					    d2.set(*c->params[1]->as_const());
-					Value r;
-					r.init(c->type);
-					f(r, d1, d2);
-					return new Node(is_local ? NodeKind::LOCAL_ADDRESS : NodeKind::ADDRESS, *(int_p*)r.p(), c->type);
-				}
-			}
+	if (c->kind == NodeKind::INLINE_CALL) {
+		auto *f = c->as_func();
+		//if (!f->is_pure or !f->address_preprocess)
+		//	return c;
+		if (f->inline_no != InlineID::INT64_ADD_INT)
+			return c;
+		if (c->params[1]->kind != NodeKind::CONSTANT)
+			return c;
+		Array<void*> p;
+		if ((c->params[0]->kind == NodeKind::ADDRESS) or (c->params[0]->kind == NodeKind::LOCAL_ADDRESS)) {
+			p.add((void*)&c->params[0]->link_no);
+		} else {
+			return c;
 		}
+		p.add(c->params[1]->as_const()->p());
+
+		int64 new_addr;
+		if (!call_function(f, f->address_preprocess, &new_addr, p))
+			return c;
+
+		c->params[0]->link_no = new_addr;
+		return c->params[0];
+
 	} else if (c->kind == NodeKind::REFERENCE) {
 		Node *p0 = c->params[0];
 		if (p0->kind == NodeKind::VAR_GLOBAL) {
