@@ -347,13 +347,11 @@ enum class InlineID {
 //--------------------------------------------------------------------------------------------------
 // type casting
 
-typedef void t_cast_func(Value&, Value&);
 class TypeCast {
 public:
 	int penalty;
 	const Class *source, *dest;
 	Function *f;
-	t_cast_func *func;
 };
 extern Array<TypeCast> TypeCasts;
 

@@ -166,10 +166,20 @@ string Value::str() const {
 }
 
 Constant::Constant(const Class *_type, SyntaxTree *_owner) {
-	init(_type);
+	Value::init(_type);
 	name = "-none-";
 	owner = _owner;
 	used = false;
+	address = p();
+}
+
+void Constant::init(const Class *_type) {
+	Value::init(_type);
+	address = p();
+}
+
+void Constant::set(const Value &v) {
+	Value::set(v);
 	address = p();
 }
 

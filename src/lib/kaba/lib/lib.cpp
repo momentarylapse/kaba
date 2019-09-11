@@ -963,81 +963,9 @@ void script_make_dict(Class *t, SyntaxTree *ps)
 }
 
 
-// automatic type casting
-
-void CastFloat2Int(Value &r, Value &s)
-{
-	r.init(TypeInt);
-	r.as_int() = (int)s.as_float();
-}
-void CastFloat2Float64(Value &r, Value &s)
-{
-	r.init(TypeFloat64);
-	r.as_float64() = (double)s.as_float();
-}
-void CastInt2Float(Value &r, Value &s)
-{
-	r.init(TypeFloat);
-	r.as_float() = (float)s.as_int();
-}
-void CastInt2Int64(Value &r, Value &s)
-{
-	r.init(TypeInt64);
-	r.as_int64() = (int64)s.as_int();
-}
-void CastInt642Int(Value &r, Value &s)
-{
-	r.init(TypeInt);
-	r.as_int() = s.as_int();
-}
-void CastInt2Char(Value &r, Value &s)
-{
-	r.init(TypeChar);
-	r.as_int() = s.as_int();
-}
-void CastChar2Int(Value &r, Value &s)
-{
-	r.init(TypeInt);
-	r.as_int() = s.as_int();
-}
-void CastPointer2Bool(Value &r, Value &s)
-{
-	r.init(TypeBool);
-	r.as_int() = ((*(void**)s.p()) != nullptr);
-}
-void CastInt2String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = i2s(s.as_int());
-}
-void CastInt642String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = i642s(s.as_int64());
-}
-void CastFloat2String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = f2s(s.as_float(), 6);
-}
-void CastFloat642String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = f642s(s.as_float64(), 6);
-}
-void CastBool2String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = b2s((bool)s.as_int());
-}
-void CastPointer2String(Value &r, Value &s)
-{
-	r.init(TypeString);
-	r.as_string() = p2s(*(void**)s.p());
-}
 
 Array<TypeCast> TypeCasts;
-void add_type_cast(int penalty, const Class *source, const Class *dest, const string &cmd, void *func)
+void add_type_cast(int penalty, const Class *source, const Class *dest, const string &cmd)
 {
 	TypeCast c;
 	c.penalty = penalty;
@@ -1058,7 +986,6 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 	}
 	c.source = source;
 	c.dest = dest;
-	c.func = (t_cast_func*) func;
 	TypeCasts.add(c);
 }
 
@@ -1819,30 +1746,30 @@ void Init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 
 
 
-	add_type_cast(10, TypeInt, TypeFloat32, "i2f", (void*)&CastInt2Float);
-	add_type_cast(10, TypeInt, TypeInt64, "i2i64", (void*)&CastInt2Int64);
-	add_type_cast(15, TypeInt64, TypeInt, "i642i", (void*)&CastInt642Int);
-	add_type_cast(10, TypeFloat32, TypeFloat64,"f2f64", (void*)&CastFloat2Float64);
-	add_type_cast(20, TypeFloat32, TypeInt, "f2i", (void*)&CastFloat2Int);
-	add_type_cast(10, TypeInt, TypeChar, "i2c", (void*)&CastInt2Char);
-	add_type_cast(20, TypeChar, TypeInt, "c2i", (void*)&CastChar2Int);
-	add_type_cast(50, TypePointer, TypeBool, "p2b", (void*)&CastPointer2Bool);
-	add_type_cast(50, TypeInt, TypeString, "@i2s", (void*)&CastInt2String);
-	add_type_cast(50, TypeInt64, TypeString, "@i642s", (void*)&CastInt642String);
-	add_type_cast(50, TypeFloat32, TypeString, "@f2sf", (void*)&CastFloat2String);
-	add_type_cast(50, TypeFloat64, TypeString, "@f642sf", (void*)&CastFloat642String);
-	add_type_cast(50, TypeBool, TypeString, "@b2s", (void*)&CastBool2String);
-	add_type_cast(50, TypePointer, TypeString, "p2s", (void*)&CastPointer2String);
-	add_type_cast(50, TypeIntList, TypeString, "@ia2s", nullptr);
-	add_type_cast(50, TypeFloatList, TypeString, "@fa2s", nullptr);
-	add_type_cast(50, TypeBoolList, TypeString, "@ba2s", nullptr);
-	add_type_cast(50, TypeStringList, TypeString, "@sa2s", nullptr);
+	add_type_cast(10, TypeInt, TypeFloat32, "i2f");
+	add_type_cast(10, TypeInt, TypeInt64, "i2i64");
+	add_type_cast(15, TypeInt64, TypeInt, "i642i");
+	add_type_cast(10, TypeFloat32, TypeFloat64,"f2f64");
+	add_type_cast(20, TypeFloat32, TypeInt, "f2i");
+	add_type_cast(10, TypeInt, TypeChar, "i2c");
+	add_type_cast(20, TypeChar, TypeInt, "c2i");
+	add_type_cast(50, TypePointer, TypeBool, "p2b");
+	add_type_cast(50, TypeInt, TypeString, "@i2s");
+	add_type_cast(50, TypeInt64, TypeString, "@i642s");
+	add_type_cast(50, TypeFloat32, TypeString, "@f2sf");
+	add_type_cast(50, TypeFloat64, TypeString, "@f642sf");
+	add_type_cast(50, TypeBool, TypeString, "@b2s");
+	add_type_cast(50, TypePointer, TypeString, "p2s");
+	add_type_cast(50, TypeIntList, TypeString, "@ia2s");
+	add_type_cast(50, TypeFloatList, TypeString, "@fa2s");
+	add_type_cast(50, TypeBoolList, TypeString, "@ba2s");
+	add_type_cast(50, TypeStringList, TypeString, "@sa2s");
 	cur_package = Packages[2];
-	add_type_cast(50, TypeInt, TypeAny, "@int2any", nullptr);
-	add_type_cast(50, TypeFloat32, TypeAny, "@float2any", nullptr);
-	add_type_cast(50, TypeBool, TypeAny, "@bool2any", nullptr);
-	add_type_cast(50, TypeString, TypeAny, "@str2any", nullptr);
-	add_type_cast(50, TypePointer, TypeAny, "@pointer2any", nullptr);
+	add_type_cast(50, TypeInt, TypeAny, "@int2any");
+	add_type_cast(50, TypeFloat32, TypeAny, "@float2any");
+	add_type_cast(50, TypeBool, TypeAny, "@bool2any");
+	add_type_cast(50, TypeString, TypeAny, "@str2any");
+	add_type_cast(50, TypePointer, TypeAny, "@pointer2any");
 
 
 	// consistency checks

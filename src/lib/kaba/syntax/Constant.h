@@ -56,6 +56,9 @@ public:
 	void *address; // either p() or overriden for OS
 	bool used;
 	SyntaxTree *owner;
+	
+	void init(const Class *type);
+	void set(const Value &v);
 };
 
 

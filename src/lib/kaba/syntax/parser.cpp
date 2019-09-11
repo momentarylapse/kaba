@@ -812,10 +812,12 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 			if (t == TypeUnknown)
 				do_error("unknown operand");
 
-			operands = {add_node_const(add_constant(t))};
-			// constant for parameter (via variable)
-			get_constant_value(Exp.cur, *operands[0]->as_const());
+			Value v;
+			get_constant_value(Exp.cur, v);
+			auto *c = add_constant(t);
+			c->set(v);
 			Exp.next();
+			operands = {add_node_const(c)};
 		}
 
 	}
@@ -883,19 +885,11 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param) {
 		ps->do_error("automatic .str() not implemented yet");
 		return param;
 	}
-	if (param->kind == NodeKind::CONSTANT and TypeCasts[tc].func) {
-		Node *c_new = ps->add_node_const(ps->add_constant(TypeCasts[tc].dest));
-		TypeCasts[tc].func(*c_new->as_const(), *param->as_const());
-
-		// relink node
-		return c_new;
-	} else {
-		Node *c = ps->add_node_call(TypeCasts[tc].f);
-		c->type = TypeCasts[tc].dest;
-		c->set_param(0, param);
-		return c;
-	}
-	return param;
+	
+	Node *c = ps->add_node_call(TypeCasts[tc].f);
+	c->type = TypeCasts[tc].dest;
+	c->set_param(0, param);
+	return c;
 }
 
 Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2) {
