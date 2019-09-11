@@ -152,7 +152,7 @@ SerialNodeParam SerializerX86::SerializeParameter(Node *link, Block *block, int 
 			p.kind = NodeKind::MEMORY;
 		else
 			p.kind = NodeKind::CONSTANT_BY_ADDRESS;
-	}else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::INLINE_CALL) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::STATEMENT) or (link->kind==NodeKind::ARRAY_BUILDER)){
+	}else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::INLINE_CALL) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::STATEMENT)){
 		p = serialize_node(link, block, index);
 	}else if (link->kind == NodeKind::REFERENCE){
 		SerialNodeParam param = SerializeParameter(link->params[0], block, index);

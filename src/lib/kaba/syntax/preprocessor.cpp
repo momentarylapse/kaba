@@ -223,6 +223,64 @@ Node *eval_function_call(SyntaxTree *tree, Node *c, Function *f) {
 	return r;
 }
 
+bool all_params_are_const(Node *n) {
+	if (n->instance)
+		if (n->instance->kind != NodeKind::CONSTANT)
+			return false;
+	for (int i=0; i<n->params.num; i++)
+		if (n->params[i]->kind != NodeKind::CONSTANT)
+			return false;
+	return true;
+}
+
+//void kaba_var_assign(void *pa, const void *pb, const Class *type);
+//void kaba_array_resize(void *p, const Class *type, int num);
+
+void rec_resize(DynamicArray *ar, int num, const Class *type);
+
+void *ar_el(DynamicArray *ar, int i) {
+	return (char*)ar->data + i * ar->element_size;
+}
+
+void rec_init(void *p, const Class *type) {
+	if (type->is_super_array())
+		((DynamicArray*)p)->init(type->get_array_element()->size);
+}
+
+void rec_delete(void *p, const Class *type) {
+	if (type->is_super_array()) {
+		auto ar = (DynamicArray*)p;
+		rec_resize(ar, 0, type->parent);
+		ar->simple_clear();
+	}
+}
+
+void rec_resize(DynamicArray *ar, int num, const Class *type) {
+	auto *t_el = type->parent;
+	int num_old = ar->num;
+
+	for (int i=num; i<num_old; i++)
+		rec_delete(ar_el(ar, i), t_el);
+
+	ar->simple_resize(num);
+
+	for (int i=num_old; i<num; i++)
+		rec_init(ar_el(ar, i), t_el);
+}
+
+void rec_assign(void *a, void *b, const Class *type) {
+	if (type->is_super_array()) {
+		auto aa = (DynamicArray*)a;
+		auto bb = (DynamicArray*)b;
+		rec_resize(aa, bb->num, type);
+		for (int i=0; i<bb->num; i++)
+			rec_assign(ar_el(aa, i), ar_el(bb, i), type->parent);
+
+	} else {
+		memcpy(a, b, type->size);
+	}
+}
+
 
 // BEFORE transforming to call-by-reference!
 Node *SyntaxTree::conv_eval_const_func(Node *c) {
@@ -230,20 +288,37 @@ Node *SyntaxTree::conv_eval_const_func(Node *c) {
 		return eval_function_call(this, c, c->as_op()->f);
 	} else if (c->kind == NodeKind::FUNCTION_CALL) {
 		return eval_function_call(this, c, c->as_func());
+	} else if (c->kind == NodeKind::DYNAMIC_ARRAY) {
+		if (all_params_are_const(c)) {
+			Node *cr = add_node_const(add_constant(c->type));
+			DynamicArray *da = &c->params[0]->as_const()->as_array();
+			int index = c->params[1]->as_const()->as_int();
+			rec_assign(cr->as_const()->p(), (char*)da->data + index * da->element_size, c->type);
+			return cr;
+		}
+	} else if (c->kind == NodeKind::ARRAY) {
+		// hmmm, not existing, I guess....
+		if (all_params_are_const(c)) {
+			Node *cr = add_node_const(add_constant(c->type));
+			int index = c->params[1]->as_const()->as_int();
+			rec_assign(cr->as_const()->p(), (char*)c->params[0]->as_const()->p() + index * c->type->size, c->type);
+			return cr;
+		}
 	} else if (c->kind == NodeKind::ARRAY_BUILDER) {
-		bool all_consts = true;
-		for (int i=0; i<c->params.num; i++)
-			if (c->params[i]->kind != NodeKind::CONSTANT)
-				all_consts = false;
-		if (all_consts) {
+		if (all_params_are_const(c)) {
 			Node *c_array = add_node_const(add_constant(c->type));
 			int el_size = c->type->parent->size;
 			DynamicArray *da = &c_array->as_const()->as_array();
 			da->init(el_size);
-			da->simple_resize(c->params.num);
+
+			rec_resize(da, c->params.num, c->type);
+			//kaba_array_resize(da, c->type, c->params.num);
+			//da->simple_resize(c->params.num);
 			for (int i=0; i<c->params.num; i++)
-				memcpy((char*)da->data + el_size * i, c->params[i]->as_const()->p(), el_size);
+				rec_assign(ar_el(da, i), c->params[i]->as_const()->p(), c->type->parent);
+				//memcpy((char*)da->data + el_size * i, c->params[i]->as_const()->p(), el_size);
 			// TODO  use kaba_var_assign() instead... prevent double free?!?
+			// ARGH... nope, not compiled yet....
 			return c_array;
 		}
 	}

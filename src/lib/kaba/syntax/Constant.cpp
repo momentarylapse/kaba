@@ -25,7 +25,7 @@ bool Value::can_init(const Class *t) {
 	if (!t->needs_constructor())
 		return true;
 	if (t->is_super_array())
-		return !t->get_array_element()->needs_constructor();
+		return true;
 	return false;
 }
 
@@ -93,37 +93,62 @@ DynamicArray& Value::as_array() const {
 	return *(DynamicArray*)p();
 }
 
-int Value::mapping_size() const {
-	if (type->is_super_array()) {
-		if (type->parent->is_super_array())
-			throw Exception("mapping const[][]... TODO", "", 0, 0, nullptr);
-		return config.super_array_size + (as_array().num * type->parent->size);
-	}
+int map_size_complex(void *p, const Class *type) {
 	if (type == TypeCString)
-		return strlen((char*)p()) + 1;
+		return strlen((char*)p) + 1;
+	if (type->is_super_array()) {
+		int size = config.super_array_size;
+		DynamicArray *ar = (DynamicArray*)p;
+		if (type->parent->is_super_array()) {
+			for (int i=0; i<ar->num; i++)
+				size += map_size_complex((char*)ar->data + i * ar->element_size, type->parent);
+			return size;
+		}
 
-	// plain old data
+		return config.super_array_size + (ar->num * type->parent->size);
+	}
+	return type->size;
+}
+
+int Value::mapping_size() const {
+	return map_size_complex(p(), type);
+}
+
+int map_into_complex(char *memory, char *addr, void *p, const Class *type) {
+	if (type->is_super_array()) {
+		DynamicArray *ar = (DynamicArray*)p;
+
+		int size = ar->element_size * ar->num;
+		int data_offset = config.super_array_size;
+
+		AAAAAAAAAAA needs to "allocate" range.... param!
+
+		*(void**)&memory[0] = addr + data_offset; // .data
+		*(int*)&memory[config.pointer_size    ] = ar->num;
+		*(int*)&memory[config.pointer_size + 4] = 0; // .reserved
+		*(int*)&memory[config.pointer_size + 8] = ar->element_size;
+
+		if (type->parent->is_super_array()) {
+			for (int i=0; i<ar->num; i++) {
+				int el_offset = i * ar->element_size;
+				map_into_complex(memory + data_offset + el_offset, addr + data_offset + el_offset, (char*)ar->data + el_offset, type->parent);
+			}
+
+		} else {
+			memcpy(&memory[data_offset], ar->data, size);
+		}
+		return config.super_array_size;
+	} else if (type == TypeCString) {
+		strcpy(memory, (char*)p);
+		return strlen((char*)p) + 1;
+	} else {
+		memcpy(memory, p, type->size);
+	}
 	return type->size;
 }
 
 void Value::map_into(char *memory, char *addr) const {
-	if (type->is_super_array()) {
-		if (type->parent->is_super_array())
-			throw Exception("mapping const[][]... TODO", "", 0, 0, nullptr);
-		// const string -> variable length
-		int size = as_array().element_size * as_array().num;
-		int data_offset = config.super_array_size;
-
-		*(void**)&memory[0] = addr + data_offset; // .data
-		*(int*)&memory[config.pointer_size    ] = as_array().num;
-		*(int*)&memory[config.pointer_size + 4] = 0; // .reserved
-		*(int*)&memory[config.pointer_size + 8] = as_array().element_size;
-		memcpy(&memory[data_offset], as_array().data, size);
-	} else if (type == TypeCString) {
-		strcpy(memory, (char*)p());
-	} else {
-		memcpy(memory, p(), type->size);
-	}
+	map_into_complex(memory, addr, p(), type);
 }
 
 string Value::str() const {

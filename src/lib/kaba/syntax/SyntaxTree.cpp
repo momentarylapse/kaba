@@ -17,6 +17,7 @@ bool next_const = false;
 
 
 static Array<Node*> _transform_insert_before_;
+Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
 
 
 string Operator::sig() const {
@@ -158,8 +159,13 @@ Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type) {
 }
 
 Node *SyntaxTree::add_node_dyn_array(Node *array, Node *index) {
-	auto *t = array->type;
-	return add_node_parray(shift_node(array, false, 0, t->get_pointer()), index, t->get_array_element());
+	Node *cmd_el = new Node(NodeKind::DYNAMIC_ARRAY, 0, array->type->get_array_element());
+	cmd_el->set_num_params(2);
+	cmd_el->set_param(0, array);
+	cmd_el->set_param(1, index);
+	return cmd_el;
+	//auto *t = array->type;
+	//return add_node_parray(shift_node(array, false, 0, t->get_pointer()), index, t->get_array_element());
 }
 
 Node *SyntaxTree::add_node_array(Node *array, Node *index) {
@@ -211,18 +217,21 @@ void SyntaxTree::parse_buffer(const string &buffer, bool just_analyse) {
 
 void SyntaxTree::digest() {
 
+	eval_const_expressions();
+
 	transformb([&](Node* n, Block* b){ return conv_break_down_high_level(n, b); });
 	if (config.verbose)
 		show("digest:break-high");
 
 
+	transform([&](Node* n){ return conv_break_down_med_level(this, n); });
 	transform([&](Node* n){ return conv_break_down_low_level(n); });
 	if (config.verbose)
 		show("digest:break-low");
 
 	simplify_shift_deref();
 	simplify_ref_deref();
-	
+
 	eval_const_expressions();
 
 	if (config.verbose)
@@ -597,7 +606,7 @@ Node *SyntaxTree::conv_calls(Node *c) {
 			return c;
 		}
 
-	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::ARRAY_BUILDER) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 
 		// parameters: array/class as reference
 		for (int j=0;j<c->params.num;j++)
@@ -751,7 +760,16 @@ InlineID __get_pointer_add_int() {
 	return InlineID::INT_ADD;
 }
 
+
+Node *conv_break_down_med_level(SyntaxTree *tree, Node *c) {
+	if (c->kind == NodeKind::DYNAMIC_ARRAY) {
+		return tree->conv_break_down_low_level(tree->add_node_parray(tree->shift_node(c->params[0], false, 0, c->type->get_pointer()), c->params[1], c->type));
+	}
+	return c;
+}
+
 Node *SyntaxTree::conv_break_down_low_level(Node *c) {
+
 	if (c->kind == NodeKind::ARRAY) {
 
 		auto *el_type = c->type;

@@ -539,7 +539,7 @@ void _kaba_array_sort_p(DynamicArray &array, int offset_by) {
 }
 
 void kaba_var_assign(void *pa, const void *pb, const Class *type) {
-	//msg_write("assign " + type->long_name());
+	msg_write("ASSIGN " + type->long_name());
 	if ((type == TypeInt) or (type == TypeFloat32)) {
 		*(int*)pa = *(int*)pb;
 	} else if ((type == TypeBool) or (type == TypeChar)) {
@@ -578,6 +578,7 @@ void kaba_array_clear(void *p, const Class *type) {
 }
 
 void kaba_array_resize(void *p, const Class *type, int num) {
+	msg_write("RESIZE " + type->long_name());
 	auto *f = type->get_func("resize", TypeVoid, {TypeInt});
 	if (!f)
 		kaba_raise_exception(new KabaException("can not resize an array of type " + type->long_name()));

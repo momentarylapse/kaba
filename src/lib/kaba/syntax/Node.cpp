@@ -42,6 +42,8 @@ string kind2str(NodeKind kind) {
 		return "address shift";
 	if (kind == NodeKind::ARRAY)
 		return "array element";
+	if (kind == NodeKind::DYNAMIC_ARRAY)
+		return "dynamic array element";
 	if (kind == NodeKind::POINTER_AS_ARRAY)
 		return "pointer as array element";
 	if (kind == NodeKind::REFERENCE)
@@ -123,6 +125,8 @@ string Node::sig() const {
 	if (kind == NodeKind::ADDRESS_SHIFT)
 		return t + i2s(link_no);
 	if (kind == NodeKind::ARRAY)
+		return t;
+	if (kind == NodeKind::DYNAMIC_ARRAY)
 		return t;
 	if (kind == NodeKind::POINTER_AS_ARRAY)
 		return t;
