@@ -81,6 +81,8 @@ void call4(void *ff, void *ret, const Array<void*> &param) {
 	}
 }
 
+// void*,int,int64,float,float64,char,bool,string,vector,complex
+
 bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) {
 	db_out("eval: " + f->signature());
 	Array<const Class*> ptype = f->literal_param_type;
@@ -120,7 +122,10 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 				return true;
 			}
 		} else if (f->return_type == TypeFloat32) {
-			if (ptype[0] == TypeFloat32) {
+			if (ptype[0] == TypeInt) {
+				call1<float,int>(ff, ret, param);
+				return true;
+			} else if (ptype[0] == TypeFloat32) {
 				call1<float,float>(ff, ret, param);
 				return true;
 			} else if (ptype[0]->uses_call_by_reference()) {

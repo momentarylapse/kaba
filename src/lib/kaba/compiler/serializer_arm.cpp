@@ -568,6 +568,7 @@ void SerializerARM::ProcessReferences()
 				//do_error("var local/local mem");
 				SerialNodeParam p0 = cmd[i].p[0];
 				SerialNodeParam p1 = cmd[i].p[1];
+				printf(" AAAAAAA   %p\n", p1.p);
 				int r = find_unused_reg(i, i, 4);
 				remove_cmd(i);
 				next_cmd_target(i);
@@ -909,11 +910,20 @@ void SerializerARM::DoMapping()
 		cmd_list_out("post ref map");
 
 	ProcessDereferences();
+
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
+		cmd_list_out("post deref");
 	ProcessReferences();
+
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
+		cmd_list_out("post ref");
 
 	// --- remove unnecessary temp vars
 
 	TryMapTempVarsRegisters();
+
+	if (config.verbose and config.allow_output(cur_func, "map:a"))
+		cmd_list_out("post var reg");
 
 	MapRemainingTempVarsToStack();
 
