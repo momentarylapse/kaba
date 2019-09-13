@@ -23,8 +23,21 @@ static void extern_func_int_out(int a) {
 }
 
 static void extern_func_float_out(float a) {
+	msg_write("float out...");
+	msg_write(string(&a, 4).hex());
+	extern_func_int_out((int)a);
+	printf("out... %f\n", a);
 	msg_write("out: " + f2s(a, 6));
 }
+
+static float extern_func_float_ret() {
+	return 13.0f;
+}
+
+static void _x_call_float() {
+	extern_func_float_out(13);
+}
+
 
 int extern_function2() {
 	return 2001;
@@ -222,6 +235,8 @@ public:
 		// for experiments
 		Kaba::LinkExternal("__int_out", (void*)&extern_func_int_out);
 		Kaba::LinkExternal("__float_out", (void*)&extern_func_float_out);
+		Kaba::LinkExternal("__float_ret", (void*)&extern_func_float_ret);
+		Kaba::LinkExternal("__xxx", (void*)&_x_call_float);
 		Kaba::LinkExternal("Test2", (void*)&extern_function2);
 		Kaba::LinkExternal("extern_variable1", (void*)&extern_variable1);
 

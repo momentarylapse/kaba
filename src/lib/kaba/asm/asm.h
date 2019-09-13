@@ -469,9 +469,6 @@ struct InstructionWithParamsList : public Array<InstructionWithParams> {
 
 	void add_wanted_label(int pos, int label_no, int inst_no, bool rel, bool abs, int size);
 
-	void add_func_intro(int stack_alloc_size);
-	void add_func_return(int return_size);
-
 	void append_from_source(const string &code);
 	void shrink_jumps(void *oc, int ocs);
 	void optimize(void *oc, int ocs);

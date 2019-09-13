@@ -112,13 +112,14 @@ public:
 	SerialNodeParam serialize_node(Node *com, Block *block, int index);
 	virtual void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) = 0;
 	virtual void serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
-	virtual void AddFunctionIntro(Function *f) = 0;
-	virtual void AddFunctionOutro(Function *f) = 0;
-	virtual void CorrectReturn(){};
+	virtual void add_function_intro_params(Function *f) = 0;
+	virtual void add_function_intro_frame(int stack_alloc_size) = 0;
+	virtual void add_function_outro(Function *f) = 0;
+	virtual void correct_return(){};
 
-	void SimplifyIfStatements();
-	void SimplifyFloatStore();
-	void TryMergeTempVars();
+	void simplify_if_statements();
+	void simplify_float_store();
+	void try_merge_temp_vars();
 
 	void cmd_list_out(const string &stage);
 	void vr_list_out();
@@ -146,9 +147,9 @@ public:
 	void add_cmd_destructor(const SerialNodeParam &param, bool needs_ref = true);
 
 	virtual void do_mapping() = 0;
-	void MapReferencedTempVarsToStack();
-	void TryMapTempVarsRegisters();
-	void MapRemainingTempVarsToStack();
+	void map_referenced_temp_vars_to_stack();
+	void try_map_temp_vars_to_registers();
+	void map_remaining_temp_vars_to_stack();
 
 	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
 	void map_temp_var(int vi);
@@ -162,13 +163,12 @@ public:
 	int find_unused_reg(int first, int last, int size, int exclude = -1);
 	void solve_deref_temp_local(int c, int np, bool is_local);
 	void resolve_deref_temp_and_local();
-	bool ParamUntouchedInInterval(SerialNodeParam &p, int first, int last);
-	void SimplifyFPUStack();
-	void SimplifyMovs();
-	void RemoveUnusedTempVars();
+	bool param_untouched_in_interval(SerialNodeParam &p, int first, int last);
+	void simplify_fpu_stack();
+	void simplify_movs();
+	void remove_unused_temp_vars();
 
-	void AddFunctionCall(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret);
-	void AddClassFunctionCall(Function *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_member_function_call(Function *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	virtual void add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
 	virtual void add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
 	virtual void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
@@ -177,14 +177,15 @@ public:
 	SerialNodeParam add_reference(const SerialNodeParam &param, const Class *force_type = nullptr);
 	SerialNodeParam add_dereference(const SerialNodeParam &param, const Class *type);
 
+
 	void map_temp_var_to_reg(int vi, int reg);
 	void add_stack_var(TempVar &v, SerialNodeParam &p);
 	void map_temp_var_to_stack(int vi);
 
 
-	void FillInDestructorsBlock(Block *b, bool recursive = false);
-	void FillInDestructorsTemp();
-	void FillInConstructorsBlock(Block *b);
+	void insert_destructors_block(Block *b, bool recursive = false);
+	void insert_destructors_temp();
+	void insert_constructors_block(Block *b);
 
 
 

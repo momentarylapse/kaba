@@ -648,31 +648,6 @@ void InstructionWithParamsList::add_wanted_label(int pos, int label_no, int inst
 	so("add wanted label");
 }
 
-void InstructionWithParamsList::add_func_intro(int stack_alloc_size)
-{
-	if (instruction_set.set == InstructionSet::ARM)
-		return;
-	int_p reg_bp = (instruction_set.set == InstructionSet::AMD64) ? REG_RBP : REG_EBP;
-	int_p reg_sp = (instruction_set.set == InstructionSet::AMD64) ? REG_RSP : REG_ESP;
-	int s = instruction_set.pointer_size;
-	add2(INST_PUSH, param_reg(reg_bp));
-	add2(INST_MOV, param_reg(reg_bp), param_reg(reg_sp));
-	if (stack_alloc_size > 127){
-		add2(INST_SUB, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_32));
-	}else if (stack_alloc_size > 0){
-		add2(INST_SUB, param_reg(reg_sp), param_imm(stack_alloc_size, SIZE_8));
-	}
-}
-
-void InstructionWithParamsList::add_func_return(int return_size)
-{
-	add2(INST_LEAVE);
-	if (return_size > 4)
-		add2(INST_RET, param_imm(4, SIZE_16));
-	else
-		add2(INST_RET);
-}
-
 string SizeOut(int size)
 {
 	if (size == SIZE_8)
@@ -861,7 +836,7 @@ string InstructionParam::str(bool hide_size)
 				s += format("%s+0x%02x", reg2->name.c_str(), value);
 			else if (disp == DISP_MODE_REG2)
 				s += "+" + reg2->name;
-			return ss + "[" + s + "]";
+			return ss + "[" + s + "]" + post;
 		}else
 			return reg->name + post;
 	}else if (type == PARAMT_REGISTER_SET){

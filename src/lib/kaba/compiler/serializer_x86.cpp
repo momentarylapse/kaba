@@ -7,6 +7,8 @@
 
 namespace Kaba{
 
+void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s);
+
 
 
 int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
@@ -84,24 +86,24 @@ void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 	}
 }
 
-void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
+void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	call_used = true;
 	int push_size = fc_begin(instance, params, ret);
 
-	if (f->address){
+	if (f->address) {
 		add_cmd(Asm::INST_CALL, param_imm(TypePointer, (int_p)f->address)); // the actual call
 		// function pointer will be shifted later...
-	}else if (f->_label >= 0){
+	} else if (f->_label >= 0) {
 		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
-	}else{
+	} else {
 		do_error_link("could not link function " + f->signature());
 	}
 
 	fc_end(push_size, ret);
 }
 
-void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
+void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	call_used = true;
 	int push_size = fc_begin(instance, params, ret);
 
 	add_cmd(Asm::INST_MOV, p_eax, instance);
@@ -113,8 +115,8 @@ void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNod
 	fc_end(push_size, ret);
 }
 
-void SerializerX86::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
-{
+void SerializerX86::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
+	call_used = true;
 	do_error("pointer call");
 }
 
@@ -257,7 +259,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 				auto operand = serialize_parameter(com->params[0], block, index);
 					
 				if (cur_func->return_type->_amd64_allow_pass_in_xmm) {
-					FillInDestructorsBlock(block, true);
+					insert_destructors_block(block, true);
 					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 					//		add_cmd(Asm::INST_FLD, t); 
 					if (cur_func->return_type == TypeFloat32){
@@ -275,9 +277,9 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 					} else {
 						do_error("...ret xmm " + cur_func->return_type->long_name());
 					}
-					AddFunctionOutro(cur_func);
+					add_function_outro(cur_func);
 				} else if (cur_func->return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
-					FillInDestructorsBlock(block, true);
+					insert_destructors_block(block, true);
 					// internally handled...
 #if 0
 					int s = mem_align(cur_func->return_type->size);
@@ -309,11 +311,11 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 					add_reg_channel(Asm::REG_EDX, c_0, cmd.num - 1);
 #endif
 
-					AddFunctionOutro(cur_func);
+					add_function_outro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
 					SerialNodeParam t = add_temp(cur_func->return_type);
 					add_cmd(Asm::INST_MOV, t, operand); //?????
-					FillInDestructorsBlock(block, true);
+					insert_destructors_block(block, true);
 					
 					if (cur_func->return_type->size == 1){
 						int v = add_virtual_reg(Asm::REG_AL);
@@ -325,11 +327,11 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 						int v = add_virtual_reg(Asm::REG_EAX);
 						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), t);
 					}
-					AddFunctionOutro(cur_func);
+					add_function_outro(cur_func);
 				}
 			}else{
-				FillInDestructorsBlock(block, true);
-				AddFunctionOutro(cur_func);
+				insert_destructors_block(block, true);
+				add_function_outro(cur_func);
 			}
 			break;
 		case StatementID::NEW:{
@@ -337,7 +339,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
-			AddFunctionCall(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
+			add_function_call(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
 			clear_nodes(links);
 
 			// __init__()
@@ -360,7 +362,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
-			AddFunctionCall(links[0]->as_func(), p_none, {operand}, p_none);
+			add_function_call(links[0]->as_func(), p_none, {operand}, p_none);
 			clear_nodes(links);
 			break;}
 		/*case StatementID::RAISE:
@@ -374,6 +376,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			add_marker(marker_finish);
 			}break;
 		case StatementID::ASM:
+			//AddAsmBlock(list, script);
 			add_cmd(INST_ASM);
 			break;
 		case StatementID::PASS:
@@ -1051,7 +1054,7 @@ inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &
 }*/
 
 // mov [0x..] [0x...]  ->  mov eax, [0x..]   mov [0x..] eax    (etc)
-void SerializerX86::CorrectUnallowedParamCombis()
+void SerializerX86::correct_unallowed_param_combis()
 {
 	for (int i=cmd.num-1;i>=0;i--){
 		if (cmd[i].inst >= INST_MARKER)
@@ -1080,7 +1083,7 @@ void SerializerX86::CorrectUnallowedParamCombis()
 	scan_temp_var_usage();
 }
 
-void SerializerX86::AddFunctionIntro(Function *f)
+void SerializerX86::add_function_intro_params(Function *f)
 {
 	/*add_cmd(Asm::inst_push, param_reg(TypeReg32, Asm::REG_EBP));
 	add_cmd(Asm::inst_mov, param_reg(TypeReg32, Asm::REG_EBP), param_reg(TypeReg32, Asm::REG_ESP));
@@ -1091,7 +1094,7 @@ void SerializerX86::AddFunctionIntro(Function *f)
 	}*/
 }
 
-void SerializerX86::AddFunctionOutro(Function *f)
+void SerializerX86::add_function_outro(Function *f)
 {
 	add_cmd(Asm::INST_LEAVE);
 	if (f->return_type->uses_return_by_memory())
@@ -1102,7 +1105,7 @@ void SerializerX86::AddFunctionOutro(Function *f)
 
 
 
-void SerializerX86::ProcessReferences()
+void SerializerX86::process_references()
 {
 	for (int i=0;i<cmd.num;i++)
 		if (cmd[i].inst == Asm::INST_LEA){
@@ -1134,17 +1137,17 @@ void SerializerX86::ProcessReferences()
 
 void SerializerX86::do_mapping()
 {
-	MapReferencedTempVarsToStack();
+	map_referenced_temp_vars_to_stack();
 
 
-	ProcessReferences();
+	process_references();
 
-	TryMapTempVarsRegisters();
+	try_map_temp_vars_to_registers();
 
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post temp -> reg");
 
-	MapRemainingTempVarsToStack();
+	map_remaining_temp_vars_to_stack();
 
 	if (config.verbose and config.allow_output(cur_func, "map:b"))
 		cmd_list_out("post temp -> stack");
@@ -1154,7 +1157,7 @@ void SerializerX86::do_mapping()
 	if (config.verbose and config.allow_output(cur_func, "map:c"))
 		cmd_list_out("post deref t&l");
 
-	CorrectUnallowedParamCombis();
+	correct_unallowed_param_combis();
 
 	if (config.verbose and config.allow_output(cur_func, "map:d"))
 		cmd_list_out("unallowed");
@@ -1185,18 +1188,33 @@ void SerializerX86::do_mapping()
 
 
 	for (int i=0; i<cmd.num; i++)
-		CorrectUnallowedParamCombis2(cmd[i]);
+		correct_unallowed_param_combis2(cmd[i]);
 
 	if (config.verbose and config.allow_output(cur_func, "map:z"))
 		cmd_list_out("end");
 }
 
-void SerializerX86::CorrectUnallowedParamCombis2(SerialNode &c)
+void SerializerX86::correct_unallowed_param_combis2(SerialNode &c)
 {
 	// push 8 bit -> push 32 bit
 	if (c.inst == Asm::INST_PUSH)
 		if (c.p[0].kind == NodeKind::REGISTER)
 			c.p[0].p = reg_resize(c.p[0].p, config.pointer_size);
 }
+
+void SerializerX86::add_function_intro_frame(int stack_alloc_size) {
+	int_p reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
+	int_p reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
+	//int s = config.pointer_size;
+	list->add2(Asm::INST_PUSH, Asm::param_reg(reg_bp));
+	list->add2(Asm::INST_MOV, Asm::param_reg(reg_bp), Asm::param_reg(reg_sp));
+	if (stack_alloc_size > 127){
+		list->add2(Asm::INST_SUB, Asm::param_reg(reg_sp), Asm::param_imm(stack_alloc_size, Asm::SIZE_32));
+	}else if (stack_alloc_size > 0){
+		list->add2(Asm::INST_SUB, Asm::param_reg(reg_sp), Asm::param_imm(stack_alloc_size, Asm::SIZE_8));
+	}
+}
+
+
 
 };

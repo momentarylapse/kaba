@@ -515,23 +515,12 @@ int Serializer::reg_resize(int reg, int size)
 	return get_reg(Asm::RegRoot[reg], size);
 }
 
-
-void Serializer::AddFunctionCall(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
-	call_used = true;
-
-	add_function_call(f, instance, params, ret);
-}
-
-void Serializer::AddClassFunctionCall(Function *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
-	if (cf->virtual_index < 0){
-		AddFunctionCall(cf, instance, params, ret);
-		return;
+void Serializer::add_member_function_call(Function *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	if (cf->virtual_index < 0) {
+		add_function_call(cf, instance, params, ret);
+	} else {
+		add_virtual_function_call(cf->virtual_index, instance, params, ret);
 	}
-	call_used = true;
-
-	add_virtual_function_call(cf->virtual_index, instance, params, ret);
 }
 
 
@@ -707,11 +696,11 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 
 	if (com->kind == NodeKind::FUNCTION_CALL){
 
-		AddFunctionCall(com->as_func(), instance, params, ret);
+		add_function_call(com->as_func(), instance, params, ret);
 
 	}else if (com->kind == NodeKind::VIRTUAL_CALL){
 
-		AddClassFunctionCall(com->as_func(), instance, params, ret);
+		add_member_function_call(com->as_func(), instance, params, ret);
 
 	}else if (com->kind == NodeKind::INLINE_CALL){
 
@@ -740,7 +729,7 @@ void Serializer::serialize_block(Block *block)
 	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
 	add_marker(block->_label_start);
 
-	FillInConstructorsBlock(block);
+	insert_constructors_block(block);
 
 	for (int i=0;i<block->params.num;i++){
 		stack_offset = cur_func->_var_size;
@@ -749,7 +738,7 @@ void Serializer::serialize_block(Block *block)
 		serialize_node(block->params[i], block, i);
 		
 		// destruct new temp vars
-		FillInDestructorsTemp();
+		insert_destructors_temp();
 
 		// end of loop?
 		// DEPRECATING...
@@ -758,7 +747,7 @@ void Serializer::serialize_block(Block *block)
 				loop.pop();
 	}
 
-	FillInDestructorsBlock(block);
+	insert_destructors_block(block);
 
 	add_marker(block->_label_end);
 }
@@ -783,7 +772,7 @@ void Serializer::add_cmd_constructor(const SerialNodeParam &param, NodeKind modu
 		instance = add_reference(param);
 	}
 
-	AddClassFunctionCall(f, instance, {}, p_none);
+	add_member_function_call(f, instance, {}, p_none);
 }
 
 void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref)
@@ -795,16 +784,16 @@ void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref
 		if (!f)
 			return;
 		SerialNodeParam inst = add_reference(param);
-		AddClassFunctionCall(f, inst, params, p_none);
+		add_member_function_call(f, inst, params, p_none);
 	}else{
 		Function *f = param.type->parent->get_destructor();
 		if (!f)
 			return;
-		AddClassFunctionCall(f, param, params, p_none);
+		add_member_function_call(f, param, params, p_none);
 	}
 }
 
-void Serializer::FillInConstructorsBlock(Block *b)
+void Serializer::insert_constructors_block(Block *b)
 {
 	for (auto *v: b->vars){
 		if (!v->explicitly_constructed){
@@ -814,7 +803,7 @@ void Serializer::FillInConstructorsBlock(Block *b)
 	}
 }
 
-void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
+void Serializer::insert_destructors_block(Block *b, bool recursive)
 {
 	for (auto *v: b->vars){
 		SerialNodeParam p = param_local(v->type, v->_offset);
@@ -822,7 +811,7 @@ void Serializer::FillInDestructorsBlock(Block *b, bool recursive)
 	}
 }
 
-void Serializer::FillInDestructorsTemp()
+void Serializer::insert_destructors_temp()
 {
 	for (SerialNodeParam &p: inserted_temp)
 		add_cmd_destructor(p);
@@ -1113,7 +1102,7 @@ void Serializer::resolve_deref_temp_and_local()
 	}
 }
 
-bool Serializer::ParamUntouchedInInterval(SerialNodeParam &p, int first, int last)
+bool Serializer::param_untouched_in_interval(SerialNodeParam &p, int first, int last)
 {
 	// direct usage?
 	for (int i=first;i<=last;i++)
@@ -1145,7 +1134,7 @@ bool Serializer::ParamUntouchedInInterval(SerialNodeParam &p, int first, int las
 	return true;
 }
 
-void Serializer::SimplifyFPUStack()
+void Serializer::simplify_fpu_stack()
 {
 // fstp temp
 // fld temp
@@ -1205,7 +1194,7 @@ void Serializer::SimplifyFPUStack()
 
 		// check, if mov target is used in between
 		SerialNodeParam target = cmd[v.last].p[0];
-		if (!ParamUntouchedInInterval(target, v.first + 1 ,v.last - 1))
+		if (!param_untouched_in_interval(target, v.first + 1 ,v.last - 1))
 			continue;
 		// ...we are lazy...
 		//if (v.last - v.first != 1)
@@ -1222,7 +1211,7 @@ void Serializer::SimplifyFPUStack()
 
 // remove  mov x,...    mov ...,x   (and similar)
 //    (does not affect reg channels)
-void Serializer::SimplifyMovs()
+void Serializer::simplify_movs()
 {
 	// TODO: count > 2 .... first == input and all_other == output?  (only if first == mov (!=eax?)... else count == 2)
 	// should take care of fpu simplification (b)...
@@ -1260,9 +1249,9 @@ void Serializer::SimplifyMovs()
 		}
 
 		// check, if mov source or target are used in between
-		if (!ParamUntouchedInInterval(target, v.first + 1 ,v.last - 1))
+		if (!param_untouched_in_interval(target, v.first + 1 ,v.last - 1))
 			continue;
-		if (!ParamUntouchedInInterval(source, v.first + 1 ,v.last - 1))
+		if (!param_untouched_in_interval(source, v.first + 1 ,v.last - 1))
 			continue;
 		
 //		msg_write(format("mov simplification allowed  v=%d first=%d last=%d", vi, v.first, v.last));
@@ -1280,7 +1269,7 @@ void Serializer::SimplifyMovs()
 	//cmd_list_out();
 }
 
-void Serializer::RemoveUnusedTempVars()
+void Serializer::remove_unused_temp_vars()
 {
 	// unused temp vars...
 	for (int v=temp_var.num-1;v>=0;v--)
@@ -1741,7 +1730,7 @@ void Serializer::serialize_function(Function *f)
 
 // serialize
 
-	AddFunctionIntro(f);
+	add_function_intro_params(f);
 
 	// function
 	serialize_block(f->block);
@@ -1758,7 +1747,7 @@ void Serializer::serialize_function(Function *f)
 		if ((f->block->params.back()->kind == NodeKind::STATEMENT) and (f->block->params.back()->as_statement()->id == StatementID::RETURN))
 			need_outro = false;
 	if (need_outro)
-		AddFunctionOutro(f);
+		add_function_outro(f);
 
 	if (config.verbose)
 		cmd_list_out("ser:b");
@@ -1770,9 +1759,9 @@ void Serializer::serialize_function(Function *f)
 			g.label = list->get_label(format("_kaba_ref_%d_%d", cur_func_index, i));
 	}
 
-	SimplifyIfStatements();
-	TryMergeTempVars();
-	SimplifyFloatStore();
+	simplify_if_statements();
+	try_merge_temp_vars();
+	simplify_float_store();
 
 	if (config.verbose)
 		cmd_list_out("ser:c");
@@ -1783,7 +1772,7 @@ void Serializer::serialize_function(Function *f)
 }
 
 
-void Serializer::SimplifyIfStatements()
+void Serializer::simplify_if_statements()
 {
 	for (int i=0;i<cmd.num - 4;i++){
 		if ((cmd[i].inst == Asm::INST_CMP) and (cmd[i+2].inst == Asm::INST_CMP) and (cmd[i+3].inst == Asm::INST_JZ)){
@@ -1808,7 +1797,7 @@ void Serializer::SimplifyIfStatements()
 	}
 }
 
-void Serializer::TryMergeTempVars()
+void Serializer::try_merge_temp_vars()
 {
 	return;
 	for (int i=0;i<cmd.num;i++)
@@ -1831,7 +1820,7 @@ void Serializer::TryMergeTempVars()
 			}
 }
 
-void Serializer::SimplifyFloatStore()
+void Serializer::simplify_float_store()
 {
 	for (int i=0;i<cmd.num - 1;i++){
 		if ((cmd[i].inst == Asm::INST_FSTP) and (cmd[i+1].inst == Asm::INST_MOV)){
@@ -1848,7 +1837,7 @@ void Serializer::SimplifyFloatStore()
 }
 
 
-void Serializer::MapReferencedTempVarsToStack()
+void Serializer::map_referenced_temp_vars_to_stack()
 {
 	for (SerialNode &c: cmd)
 		if (c.inst == Asm::INST_LEA)
@@ -1872,7 +1861,7 @@ void Serializer::MapReferencedTempVarsToStack()
 	}
 }
 
-void Serializer::TryMapTempVarsRegisters()
+void Serializer::try_map_temp_vars_to_registers()
 {
 	for (int i=temp_var.num-1;i>=0;i--){
 		if (temp_var[i].force_stack)
@@ -1880,7 +1869,7 @@ void Serializer::TryMapTempVarsRegisters()
 	}
 }
 
-void Serializer::MapRemainingTempVarsToStack()
+void Serializer::map_remaining_temp_vars_to_stack()
 {
 	for (int i=temp_var.num-1;i>=0;i--){
 		SerialNodeParam stackvar;
@@ -1980,6 +1969,7 @@ void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s)
 	ps->asm_blocks.erase(0);
 }
 
+// convert    SerialNode[] cmd   into    Asm::Instruction..List list
 void Serializer::assemble()
 {
 	// intro + allocate stack memory
@@ -1996,19 +1986,9 @@ void Serializer::assemble()
 
 	list->insert_label(cur_func->_label);
 
-	if (!config.no_function_frame){
-		if (config.instruction_set == Asm::InstructionSet::ARM){
-			next_cmd_target(0);
-			add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x4ff0));
-			if (stack_max_size > 0){
-				next_cmd_target(1);
-				add_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::REG_R13), param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, stack_max_size));
-			}
-		}else{
-			list->add_func_intro(stack_max_size);
-		}
-	}
-	CorrectReturn();
+	if (!config.no_function_frame)
+		add_function_intro_frame(stack_max_size); // param intro later...
+	correct_return();
 
 	for (int i=0;i<cmd.num;i++){
 

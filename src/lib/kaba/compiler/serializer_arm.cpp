@@ -117,19 +117,19 @@ void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
 	}
 }
 
-void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
+void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	call_used = true;
 	int push_size = fc_begin(instance, params, ret);
 
-	if ((f->owner() == syntax_tree) and (!f->is_extern)){
+	if ((f->owner() == syntax_tree) and (!f->is_extern)) {
 		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
-	}else{
+	} else {
 		if (!f->address)
 			do_error_link("could not link function " + f->long_name());
-		if (abs((int_p)f->address - (int_p)this->script->opcode) < 30000000){
+		if (abs((int_p)f->address - (int_p)this->script->opcode) < 30000000) {
 			add_cmd(Asm::INST_CALL, param_imm(TypePointer, (int_p)f->address)); // the actual call
 			// function pointer will be shifted later...
-		}else{
+		} else {
 
 			// TODO FIXME
 			// really find a usable register...
@@ -144,8 +144,8 @@ void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instan
 	fc_end(push_size, ret);
 }
 
-void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
-{
+void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
+	call_used = true;
 	int push_size = fc_begin(instance, param, ret);
 
 	int v1 = add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
@@ -163,8 +163,8 @@ void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNod
 }
 
 
-void SerializerARM::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
-{
+void SerializerARM::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
+	call_used = true;
 	do_error("pointer call");
 }
 
@@ -246,13 +246,13 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 				auto operand = serialize_parameter(com->params[0], block, index);
 
 				if (cur_func->return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
-					FillInDestructorsBlock(block, true);
+					insert_destructors_block(block, true);
 					// internally handled...
 
-					AddFunctionOutro(cur_func);
+					add_function_outro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
 //					SerialNodeParam t = add_temp(cur_func->return_type);
-					FillInDestructorsBlock(block, true);
+					insert_destructors_block(block, true);
 					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)){
 						int v = add_virtual_reg(Asm::REG_R0);
 						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), operand);
@@ -260,11 +260,11 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 					}else{
 						do_error("return != int");
 					}
-					AddFunctionOutro(cur_func);
+					add_function_outro(cur_func);
 				}
 			}else{
-				FillInDestructorsBlock(block, true);
-				AddFunctionOutro(cur_func);
+				insert_destructors_block(block, true);
+				add_function_outro(cur_func);
 			}
 			break;
 		case StatementID::NEW:{
@@ -272,7 +272,7 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
-			AddFunctionCall(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
+			add_function_call(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
 			clear_nodes(links);
 
 			// __init__()
@@ -295,11 +295,12 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
-			AddFunctionCall(links[0]->as_func(), p_none, {operand}, p_none);
+			add_function_call(links[0]->as_func(), p_none, {operand}, p_none);
 			clear_nodes(links);
 			break;}
 		case StatementID::ASM:
 			add_cmd(INST_ASM);
+			//AddAsmBlock(list, script);
 			break;
 		case StatementID::PASS:
 			break;
@@ -562,7 +563,7 @@ SerialNodeParam SerializerARM::serialize_parameter(Node *link, Block *block, int
 }
 
 
-void SerializerARM::ProcessReferences()
+void SerializerARM::process_references()
 {
 	for (int i=0;i<cmd.num;i++)
 		if (cmd[i].inst == Asm::INST_LEA){
@@ -570,7 +571,6 @@ void SerializerARM::ProcessReferences()
 				//do_error("var local/local mem");
 				SerialNodeParam p0 = cmd[i].p[0];
 				SerialNodeParam p1 = cmd[i].p[1];
-				printf(" AAAAAAA   %p\n", p1.p);
 				int r = find_unused_reg(i, i, 4);
 				remove_cmd(i);
 				next_cmd_target(i);
@@ -584,7 +584,7 @@ void SerializerARM::ProcessReferences()
 		}
 }
 
-void SerializerARM::ProcessDereferences()
+void SerializerARM::process_dereferences()
 {
 	for (int i=0;i<cmd.num;i++)
 		for (int j=0;j<SERIAL_NODE_NUM_PARAMS;j++)
@@ -758,7 +758,7 @@ inline bool is_global_lookup(SerialNodeParam &p)
 }
 
 // create global lookup accesses
-void SerializerARM::ConvertGlobalLookups()
+void SerializerARM::convert_global_lookups()
 {
 	for (int i=cmd.num-1;i>=0;i--){
 		if (cmd[i].inst == Asm::INST_MOV){
@@ -787,7 +787,7 @@ void SerializerARM::ConvertGlobalLookups()
 }
 
 // create local variable accesses
-void SerializerARM::CorrectUnallowedParamCombis()
+void SerializerARM::correct_unallowed_param_combis()
 {
 	for (int i=cmd.num-1;i>=0;i--){
 		if (cmd[i].inst == Asm::INST_MOV){
@@ -829,7 +829,7 @@ void SerializerARM::CorrectUnallowedParamCombis()
 	scan_temp_var_usage();
 }
 
-void SerializerARM::AddFunctionIntro(Function *f)
+void SerializerARM::add_function_intro_params(Function *f)
 {
 	// return, instance, params
 	Array<Variable*> param;
@@ -894,7 +894,18 @@ void SerializerARM::AddFunctionIntro(Function *f)
 	}
 }
 
-void SerializerARM::AddFunctionOutro(Function *f)
+void SerializerARM::add_function_intro_frame(int stack_alloc_size) {
+	next_cmd_target(0);
+	add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x4ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r14}
+	if (stack_max_size > 0){
+		next_cmd_target(1);
+		add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_R11), param_preg(TypePointer, Asm::REG_R13));
+		next_cmd_target(2);
+		add_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::REG_R13), param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, stack_max_size));
+	}
+}
+
+void SerializerARM::add_function_outro(Function *f)
 {
 	// will be translated into a "real" outro later...
 	add_cmd(Asm::INST_RET);
@@ -906,54 +917,54 @@ void SerializerARM::do_mapping()
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("aaa");
 
-	MapReferencedTempVarsToStack();
+	map_referenced_temp_vars_to_stack();
 
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post ref map");
 
-	ProcessDereferences();
+	process_dereferences();
 
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post deref");
-	ProcessReferences();
+	process_references();
 
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post ref");
 
 	// --- remove unnecessary temp vars
 
-	TryMapTempVarsRegisters();
+	try_map_temp_vars_to_registers();
 
 	if (config.verbose and config.allow_output(cur_func, "map:a"))
 		cmd_list_out("post var reg");
 
-	MapRemainingTempVarsToStack();
+	map_remaining_temp_vars_to_stack();
 
 	//ResolveDerefTempAndLocal();
 
 	if (config.verbose and config.allow_output(cur_func, "map:b"))
 		cmd_list_out("pre global");
 
-	ConvertGlobalLookups();
+	convert_global_lookups();
 
 	if (config.verbose and config.allow_output(cur_func, "map:c"))
 		cmd_list_out("post global");
 
-	CorrectUnallowedParamCombis();
+	correct_unallowed_param_combis();
 
 	if (config.verbose and config.allow_output(cur_func, "map:d"))
 		cmd_list_out("post unallowed");
 
 	for (int i=0; i<cmd.num; i++)
-		ConvertMemMovsToLdrStr(cmd[i]);
+		convert_mem_movs_to_ldr_str(cmd[i]);
 
-	ConvertGlobalRefs();
+	convert_global_refs();
 
 	if (config.verbose and config.allow_output(cur_func, "map:e"))
 		cmd_list_out("end");
 }
 
-void SerializerARM::ConvertGlobalRefs()
+void SerializerARM::convert_global_refs()
 {
 	for (int i=0; i<cmd.num; i++){
 		if ((cmd[i].inst == Asm::INST_LDR) and (cmd[i].p[0].kind == NodeKind::REGISTER) and (cmd[i].p[1].kind == NodeKind::DEREF_MARKER)){
@@ -981,7 +992,7 @@ void SerializerARM::ConvertGlobalRefs()
 	}
 }
 
-void SerializerARM::ConvertMemMovsToLdrStr(SerialNode &c)
+void SerializerARM::convert_mem_movs_to_ldr_str(SerialNode &c)
 {
 	if (c.inst == Asm::INST_MOV){
 		if ((c.p[0].kind == NodeKind::LOCAL_MEMORY) or (c.p[0].kind == NodeKind::DEREF_REGISTER)){
@@ -1003,7 +1014,7 @@ void SerializerARM::ConvertMemMovsToLdrStr(SerialNode &c)
 	}
 }
 
-void SerializerARM::CorrectReturn()
+void SerializerARM::correct_return()
 {
 	for (int i=0;i<cmd.num;i++)
 		if (cmd[i].inst == Asm::INST_RET){
@@ -1013,7 +1024,7 @@ void SerializerARM::CorrectReturn()
 				add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_R13), param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, stack_max_size));
 			}
 			next_cmd_target(i);
-			add_cmd(Asm::INST_LDMIA, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x8ff0));
+			add_cmd(Asm::INST_LDMIA, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x8ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r15}
 		}
 }
 

@@ -1402,6 +1402,10 @@ void SIAddPackageKaba() {
 
 	add_funcx("get_dynamic_type", TypeClassP, &GetDynamicType, FLAG_STATIC);
 		func_add_param("p", TypePointer);
+	add_funcx("disassemble", TypeString, &Asm::disassemble, FLAG_STATIC);
+		func_add_param("p", TypePointer);
+		func_add_param("length", TypeInt);
+		func_add_param("comments", TypeBool);
 
 	add_ext_var("packages", TypeScriptPList, (void*)&Packages);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
