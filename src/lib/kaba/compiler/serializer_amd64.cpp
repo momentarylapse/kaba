@@ -15,7 +15,7 @@ int SerializerAMD64::fc_begin(const SerialNodeParam &instance, const Array<Seria
 	SerialNodeParam ret_ref;
 	if (type->uses_return_by_memory()){
 		//add_temp(type, ret_temp);
-		ret_ref = AddReference(/*ret_temp*/ ret);
+		ret_ref = add_reference(/*ret_temp*/ ret);
 		//add_ref();
 		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
 	}

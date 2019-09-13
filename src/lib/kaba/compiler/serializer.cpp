@@ -536,7 +536,7 @@ void Serializer::AddClassFunctionCall(Function *cf, const SerialNodeParam &insta
 
 
 // creates res...
-SerialNodeParam Serializer::AddReference(const SerialNodeParam &param, const Class *type)
+SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Class *type)
 {
 	SerialNodeParam ret;
 	if (!type)
@@ -580,7 +580,7 @@ SerialNodeParam Serializer::AddReference(const SerialNodeParam &param, const Cla
 	return ret;
 }
 
-SerialNodeParam Serializer::AddDereference(const SerialNodeParam &param, const Class *type) {
+SerialNodeParam Serializer::add_dereference(const SerialNodeParam &param, const Class *type) {
 	SerialNodeParam ret;
 	/*add_temp(TypePointer, ret);
 	SerialCommandParam temp;
@@ -603,7 +603,10 @@ SerialNodeParam Serializer::AddDereference(const SerialNodeParam &param, const C
 				ret = param;
 				ret.kind = NodeKind::DEREF_LOCAL_MEMORY;
 			} else {
-				do_error("arm deref...");
+//				do_error("arm deref...");
+				SerialNodeParam temp = add_temp(param.type);
+				add_cmd(Asm::INST_MOV, temp, param);
+				return deref_temp(temp, type);
 			}
 		} else {
 			//msg_error(string("unhandled deref ", Kind2Str(param.kind)));
@@ -677,7 +680,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 	// return value
 	SerialNodeParam ret;
 	if (override_ret){
-		ret = SerializeParameter(override_ret, block, index);
+		ret = serialize_parameter(override_ret, block, index);
 	}else{
 		bool create_constructor_for_return = ((com->kind != NodeKind::STATEMENT) and (com->kind != NodeKind::FUNCTION_CALL) and (com->kind != NodeKind::VIRTUAL_CALL));
 		ret = add_temp(com->type, create_constructor_for_return);
@@ -691,13 +694,13 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 
 		// compile parameters
 		for (int p=0;p<com->params.num;p++)
-			params[p] = SerializeParameter(com->params[p], block, index);
+			params[p] = serialize_parameter(com->params[p], block, index);
 	}
 
 	// class function -> compile instance
 	SerialNodeParam instance = p_none;
 	if (com->instance){
-		instance = SerializeParameter(com->instance, block, index);
+		instance = serialize_parameter(com->instance, block, index);
 		// super_array automatically referenced...
 	}
 
@@ -712,14 +715,14 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 
 	}else if (com->kind == NodeKind::INLINE_CALL){
 
-		SerializeInlineFunction(com, params, ret);
+		serialize_inline_function(com, params, ret);
 
 	}else if (com->kind == NodeKind::POINTER_CALL){
 
 		add_pointer_call(params[0], params.sub(1, -1), ret);
 
 	}else if (com->kind == NodeKind::STATEMENT){
-		SerializeStatement(com, params, ret, block, index);
+		serialize_statement(com, ret, block, index);
 	}else if (com->kind == NodeKind::BLOCK){
 		serialize_block(com->as_block());
 	}else if (com->kind == NodeKind::CONSTANT){
@@ -777,7 +780,7 @@ void Serializer::add_cmd_constructor(const SerialNodeParam &param, NodeKind modu
 	SerialNodeParam instance = param;
 	if (modus == NodeKind::NONE){
 	}else{
-		instance = AddReference(param);
+		instance = add_reference(param);
 	}
 
 	AddClassFunctionCall(f, instance, {}, p_none);
@@ -791,7 +794,7 @@ void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref
 		Function *f = param.type->get_destructor();
 		if (!f)
 			return;
-		SerialNodeParam inst = AddReference(param);
+		SerialNodeParam inst = add_reference(param);
 		AddClassFunctionCall(f, inst, params, p_none);
 	}else{
 		Function *f = param.type->parent->get_destructor();
@@ -838,7 +841,7 @@ int Serializer::temp_in_cmd(int c, int v)
 	return r;
 }
 
-void Serializer::ScanTempVarUsage()
+void Serializer::scan_temp_var_usage()
 {
 	/*msg_write("ScanTempVarUsage");
 	foreachi(TempVar &v, temp_var, i){
@@ -1300,7 +1303,7 @@ void Serializer::RemoveUnusedTempVars()
 		set_reg_used((long)cmd[c].p[1].p);
 }*/
 
-void Serializer::MapTempVarToReg(int vi, int reg)
+void Serializer::map_temp_var_to_reg(int vi, int reg)
 {
 	TempVar &v = temp_var[vi];
 //	msg_write(format("temp=reg:  %d - %d:   tv %d := reg %d", v.first, v.last, vi, reg));
@@ -1456,7 +1459,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p)
 	p.shift = 0;
 }
 
-void Serializer::MapTempVarToStack(int vi)
+void Serializer::map_temp_var_to_stack(int vi)
 {
 	TempVar &v = temp_var[vi];
 //	msg_write(format("temp=stack: %d   (%d - %d)", vi, v.first, v.last));
@@ -1574,7 +1577,7 @@ bool Serializer::is_reg_root_used_in_interval(int reg_root, int first, int last)
 	return false;
 }
 
-void Serializer::MapTempVar(int vi)
+void Serializer::map_temp_var(int vi)
 {
 	TempVar &v = temp_var[vi];
 	int first = v.first;
@@ -1608,15 +1611,15 @@ void Serializer::MapTempVar(int vi)
 	}
 
 	if (reg >= 0)
-		MapTempVarToReg(vi, reg);
+		map_temp_var_to_reg(vi, reg);
 	else
-		MapTempVarToStack(vi);
+		map_temp_var_to_stack(vi);
 }
 
-void Serializer::MapTempVars()
+void Serializer::map_temp_vars()
 {
 	for (int i=0;i<temp_var.num;i++)
-		MapTempVar(i);
+		map_temp_var(i);
 	
 	//cmd_list_out();
 }
@@ -1633,7 +1636,7 @@ inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &s
 }
 
 // break large (unreferenced) temp vars into small (register sized) temp vars
-void Serializer::DisentangleShiftedTempVars()
+void Serializer::disentangle_shifted_temp_vars()
 {
 	for (int i=0;i<cmd.num;i++){
 		if ((cmd[i].p[0].kind == NodeKind::VAR_TEMP) and (cmd[i].p[0].shift > 0)){
@@ -1674,7 +1677,7 @@ void Serializer::DisentangleShiftedTempVars()
 			remove_temp_var(i);
 		}
 
-	ScanTempVarUsage();
+	scan_temp_var_usage();
 }
 
 void Serializer::_resolve_deref_reg_shift_(SerialNodeParam &p, int i)
@@ -1742,7 +1745,7 @@ void Serializer::serialize_function(Function *f)
 
 	// function
 	serialize_block(f->block);
-	ScanTempVarUsage();
+	scan_temp_var_usage();
 
 	if (config.verbose)
 		cmd_list_out("ser:a");
@@ -2084,7 +2087,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	try{
 		d->cur_func_index = index;
 		d->serialize_function(f);
-		d->DoMapping();
+		d->do_mapping();
 		d->assemble();
 	}catch(Exception &e){
 		throw e;

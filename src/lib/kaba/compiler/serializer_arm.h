@@ -20,11 +20,11 @@ public:
 	void fc_end(int push_size, const SerialNodeParam &ret) override;
 	void AddFunctionIntro(Function *f) override;
 	void AddFunctionOutro(Function *f) override;
-	SerialNodeParam SerializeParameter(Node *link, Block *block, int index) override;
-	void SerializeStatement(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret, Block *block, int index) override;
-	void SerializeInlineFunction(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) override;
+	SerialNodeParam serialize_parameter(Node *link, Block *block, int index) override;
+	void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) override;
+	void serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) override;
 
-	void DoMapping() override;
+	void do_mapping() override;
 	void ConvertGlobalLookups();
 	void CorrectUnallowedParamCombis();
 	void ConvertMemMovsToLdrStr(SerialNode &c);
