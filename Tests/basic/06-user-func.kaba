@@ -1,0 +1,9 @@
+extern void __int_out(int i)
+
+void f(int i, int j)
+	__int_out(i*j + i)
+
+void main()
+	f(13, 2)
+	f(14, 3)
+

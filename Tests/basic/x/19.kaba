@@ -1,0 +1,13 @@
+extern void Test1(int i)
+
+class Test
+	int i
+	void f()
+		i += 1
+
+void main()
+	Test t
+	t.i = 2
+	
+	Test1(t.i)
+

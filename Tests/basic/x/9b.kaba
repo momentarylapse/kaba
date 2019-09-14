@@ -1,0 +1,15 @@
+
+void dummy()
+	asm{
+	_data:
+		dd 0x00000201
+	}
+
+
+void main()
+	int a, b
+	asm{
+		//str r13, [_data]
+		mov eax, [_data]
+		mov [ebp+0xf8], eax
+	}

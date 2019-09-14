@@ -817,12 +817,12 @@ void SerializerARM::correct_unallowed_param_combis()
 	for (int i=cmd.num-1;i>=0;i--) {
 		if (cmd[i].inst == Asm::INST_FLDS) {
 			if (cmd[i].p[1].kind == NodeKind::REGISTER) {
-				cmd[i].inst = Asm::INST_FMRS;
-				std::swap(cmd[i].p[0], cmd[i].p[1]);
+				cmd[i].inst = Asm::INST_FMSR;
+				//std::swap(cmd[i].p[0], cmd[i].p[1]);
 			}
 		} else if (cmd[i].inst == Asm::INST_FSTS) {
 			if (cmd[i].p[1].kind == NodeKind::REGISTER) {
-				cmd[i].inst = Asm::INST_FMSR;
+				cmd[i].inst = Asm::INST_FMRS;
 			}
 		}
 	}
@@ -896,7 +896,7 @@ void SerializerARM::add_function_intro_params(Function *f)
 
 void SerializerARM::add_function_intro_frame(int stack_alloc_size) {
 	next_cmd_target(0);
-	add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x4ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r14}
+	add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x6ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r14}
 	if (stack_max_size > 0){
 		next_cmd_target(1);
 		add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_R11), param_preg(TypePointer, Asm::REG_R13));
@@ -1024,7 +1024,7 @@ void SerializerARM::correct_return()
 				add_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_R13), param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, stack_max_size));
 			}
 			next_cmd_target(i);
-			add_cmd(Asm::INST_LDMIA, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x8ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r15}
+			add_cmd(Asm::INST_LDMIA, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0xaff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r15}
 		}
 }
 

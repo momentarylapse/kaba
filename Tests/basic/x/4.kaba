@@ -1,0 +1,9 @@
+
+int f(int a)
+	return a+a
+
+int g(int a, int b)
+	int c = a + b
+	int d = f(c)
+	return d
+

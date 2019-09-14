@@ -1,0 +1,8 @@
+
+int i
+int j
+
+int f(int a, int b)
+	i = a + b
+	j = i + a
+	return i

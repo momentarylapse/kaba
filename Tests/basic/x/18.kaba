@@ -1,0 +1,5 @@
+void main()
+	int i,j
+	int* p
+	p = &i
+	*p += 13 *j

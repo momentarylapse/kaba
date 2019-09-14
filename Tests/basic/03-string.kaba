@@ -1,0 +1,6 @@
+void main()
+	string s
+	s = "hallo"
+	s += "welt"
+	print(s)
+

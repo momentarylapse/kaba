@@ -1,0 +1,6 @@
+
+extern void Test1(int a)
+#extern int Test2()
+
+void main()
+	Test1(13)

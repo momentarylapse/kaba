@@ -1,0 +1,7 @@
+extern void __int_out(int i)
+
+void main()
+	int a = 13
+	int x = a
+	__int_out(a)
+

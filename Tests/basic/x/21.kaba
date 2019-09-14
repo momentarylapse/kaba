@@ -1,0 +1,6 @@
+void main()
+	int[] i
+	i = [1,2]
+	i.add(13)
+	i.add(14)
+	print i

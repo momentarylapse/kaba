@@ -1,0 +1,19 @@
+J lokale Variablen
+J +=
+J *
+* /,%
+J inline assembler
+J Bedingungen
+J jump/label
+J label2
+J deref label
+~ globale Variablen
+~ Pointer ref/deref
+J bool/char
+* float
+J if/while
+~ func()
+
+
+* class
+

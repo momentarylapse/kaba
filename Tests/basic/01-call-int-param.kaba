@@ -1,0 +1,5 @@
+
+extern void __int_out(int a)
+
+void main()
+	__int_out(13)

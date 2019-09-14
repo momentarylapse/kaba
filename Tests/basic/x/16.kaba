@@ -1,0 +1,6 @@
+void main()
+	string s, t
+	s = "hallo"
+	t = " michi"
+	s += t
+	print s

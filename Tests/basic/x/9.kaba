@@ -1,0 +1,11 @@
+
+int g(int a)
+	if a > a
+		a += a
+	return a*a
+
+int f(int a, int b)
+	if a == a
+		a += a
+	b += g(a)
+	return b

@@ -1,0 +1,5 @@
+void main()
+	float f #= 1.0
+	float g
+	f += 2.01943875
+	#f += g

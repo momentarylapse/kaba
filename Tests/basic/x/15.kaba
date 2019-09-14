@@ -1,0 +1,12 @@
+
+extern void Test1(int a)
+extern int Test2()
+
+void main()
+	bool b
+	b = true
+	b = b and b
+	int i = 0
+	if b
+		i = 1
+	Test1(i)

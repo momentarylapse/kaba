@@ -1,0 +1,13 @@
+extern void __float_out(float a)
+extern void __xxx()
+
+void f(float a)
+	print(a)
+
+void main()
+	float a = 12
+	print(a)
+	f(a)
+#	__float_out(a)
+#	__xxx()
+	

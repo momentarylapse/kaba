@@ -1,0 +1,7 @@
+
+extern void Test1(int a)
+extern int Test2()
+
+void main()
+	for i in 0:13
+		Test1(i)

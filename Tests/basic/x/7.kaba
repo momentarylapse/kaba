@@ -1,0 +1,4 @@
+
+int f(int a, int b)
+	bool c = (a == b)
+	return a

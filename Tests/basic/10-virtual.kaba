@@ -1,0 +1,13 @@
+class T
+	void __init__()
+		print("init")
+	void __delete__()
+		print("del")
+	virtual void f()
+		print("T.f")
+
+void main()
+	T* t = new T
+	t.f()
+	del t
+
