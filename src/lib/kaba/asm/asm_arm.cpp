@@ -110,7 +110,7 @@ void arm_init() {
 	// transfer
 	add_inst_arm(INST_LDR,  0x04100000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
 	add_inst_arm(INST_LDRB, 0x04500000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
-	add_inst_arm(INST_STR,  0x04000000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
+	add_inst_arm(INST_STR,  0x04000000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23); // TODO swap parameters...
 	add_inst_arm(INST_STRB, 0x04400000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
 
 	// transfer multiple
@@ -580,6 +580,8 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n)
 			code |= 0x0d100a00;
 		else
 			code |= 0x0d000a00;
+		if (iwp.inst == INST_FSTS)
+			std::swap(iwp.p[0], iwp.p[1]);
 
 		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref)){
 			if (iwp.p[1].is_label){

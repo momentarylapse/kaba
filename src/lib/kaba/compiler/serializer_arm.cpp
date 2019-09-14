@@ -93,23 +93,23 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 	return push_size;
 }
 
-void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret)
-{
+void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret) {
 	const Class *type = ret.type;
 	if (!type)
 		return;
 
 	// return > 4b already got copied to [ret] by the function!
-	if ((type != TypeVoid) and (!type->uses_return_by_memory())){
-		if (type == TypeFloat32)
-			add_cmd(Asm::INST_MOVSS, ret, param_preg(TypeReg128, Asm::REG_XMM0));
-		else if (type == TypeFloat64)
-			add_cmd(Asm::INST_MOVSD, ret, param_preg(TypeReg128, Asm::REG_XMM0));
-		else if ((type->size == 1) or (type->size == 4)){
+	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
+		if (type == TypeFloat32) {
+			add_cmd(Asm::INST_FSTS, ret, reg_s0);
+		//else if (type == TypeFloat64)
+			//add_cmd(Asm::INST_MOVSD, ret, param_preg(TypeReg128, Asm::REG_XMM0));
+		} else if ((type->size == 1) or (type->size == 4)) {
 			int v = add_virtual_reg(Asm::REG_R0);
 			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
-		}else{
+		} else {
+			do_error("unhandled function value receiving... " + type->long_name());
 			int v = add_virtual_reg(Asm::REG_R0);
 			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, v));
 			set_virtual_reg(v, cmd.num - 2, cmd.num - 1);
@@ -253,11 +253,16 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 				}else{ // store return directly in eax / fpu stack (4 byte)
 //					SerialNodeParam t = add_temp(cur_func->return_type);
 					insert_destructors_block(block, true);
-					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)){
+					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)) {
 						int v = add_virtual_reg(Asm::REG_R0);
 						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), operand);
 						set_virtual_reg(v, cmd.num-1, cmd.num);
-					}else{
+					} else if (cur_func->return_type == TypeFloat32) {
+						//int v = add_virtual_reg(Asm::REG_S0);
+						//add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), operand);
+						add_cmd(Asm::INST_FLDS, reg_s0, operand);
+						//set_virtual_reg(v, cmd.num-1, cmd.num);
+					} else {
 						do_error("return != int");
 					}
 					add_function_outro(cur_func);
@@ -465,7 +470,7 @@ void SerializerARM::serialize_inline_function(Node *com, const Array<SerialNodeP
 				add_cmd(Asm::INST_FMULS, reg_s0, reg_s0, reg_s1);
 			if (index == InlineID::FLOAT_DIVIDE_ASSIGN)
 				add_cmd(Asm::INST_FDIVS, reg_s0, reg_s0, reg_s1);
-			add_cmd(Asm::INST_FSTS, reg_s0, param[0]);
+			add_cmd(Asm::INST_FSTS, param[0], reg_s0);
 			break;
 		case InlineID::FLOAT_ADD:
 		case InlineID::FLOAT_SUBTARCT:
@@ -481,7 +486,7 @@ void SerializerARM::serialize_inline_function(Node *com, const Array<SerialNodeP
 				add_cmd(Asm::INST_FMULS, reg_s0, reg_s0, reg_s1);
 			if (index == InlineID::FLOAT_DIVIDE)
 				add_cmd(Asm::INST_FDIVS, reg_s0, reg_s0, reg_s1);
-			add_cmd(Asm::INST_FSTS, reg_s0, ret);
+			add_cmd(Asm::INST_FSTS, ret, reg_s0);
 			break;
 		default:
 			do_error("unimplemented inline function: #" + i2s((int)index));
@@ -821,7 +826,7 @@ void SerializerARM::correct_unallowed_param_combis()
 				//std::swap(cmd[i].p[0], cmd[i].p[1]);
 			}
 		} else if (cmd[i].inst == Asm::INST_FSTS) {
-			if (cmd[i].p[1].kind == NodeKind::REGISTER) {
+			if (cmd[i].p[0].kind == NodeKind::REGISTER) {
 				cmd[i].inst = Asm::INST_FMRS;
 			}
 		}
@@ -874,7 +879,7 @@ void SerializerARM::add_function_intro_params(Function *f)
 	// s0-7
 	foreachib(Variable *p, float_param, i){
 		int reg = Asm::REG_S0+ i;
-		add_cmd(Asm::INST_FSTS, param_preg(p->type, reg), param_local(p->type, p->_offset));
+		add_cmd(Asm::INST_FSTS, param_local(p->type, p->_offset), param_preg(p->type, reg));
 	}
 
 	// rdi, rsi,rdx, rcx, r8, r9

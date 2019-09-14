@@ -23,10 +23,7 @@ static void extern_func_int_out(int a) {
 }
 
 static void extern_func_float_out(float a) {
-	msg_write("float out...");
-	msg_write(string(&a, 4).hex());
-	extern_func_int_out((int)a);
-	printf("out... %f\n", a);
+	msg_write("float out..." + string(&a, 4).hex());
 	msg_write("out: " + f2s(a, 6));
 }
 
