@@ -38,6 +38,7 @@ public:
 	void transfer_by_reg_out(SerialNode &c, int &i, int pno);
 	void gr_transfer_by_reg_in(SerialNode &c, int &i, int pno);
 	void gr_transfer_by_reg_out(SerialNode &c, int &i, int pno);
+	void split_mov_reg_immediate(SerialNode &c, int &i);
 };
 
 };

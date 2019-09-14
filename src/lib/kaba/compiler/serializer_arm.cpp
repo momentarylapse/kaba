@@ -537,12 +537,12 @@ SerialNodeParam SerializerARM::serialize_parameter(Node *link, Block *block, int
 	}else if (link->kind == NodeKind::CONSTANT){
 		void *pp = link->as_const_p();
 		int c = *(int*)pp;
-		if (const_is_arm_representable(c)){
+		//if (const_is_arm_representable(c)){
 			p.p = c;
 			p.kind = NodeKind::IMMEDIATE;
-		}else{
+		/*}else{
 			return param_lookup(p.type, add_global_ref(*(int**)pp));
-		}
+		}*/
 	}else if ((link->kind==NodeKind::OPERATOR) or (link->kind==NodeKind::FUNCTION_CALL) or (link->kind==NodeKind::VIRTUAL_CALL) or (link->kind==NodeKind::INLINE_CALL) or (link->kind == NodeKind::STATEMENT)){
 		return serialize_node(link, block, index);
 	}else if (link->kind == NodeKind::REFERENCE){
@@ -791,6 +791,21 @@ void SerializerARM::convert_global_lookups()
 	scan_temp_var_usage();
 }
 
+void SerializerARM::split_mov_reg_immediate(SerialNode &c, int &i) {
+	int64 v = c.p[1].p;
+	auto reg = cmd[i].p[0];
+
+	//cmd[i].inst = Asm::INST_MOV;
+	set_cmd_param(cmd[i], 1, param_imm(TypeInt, v & 0x000000ff));
+	next_cmd_target(i + 1);
+	add_cmd(Asm::INST_ADD, reg, reg, param_imm(TypeInt, v & 0x0000ff00));
+	next_cmd_target(i + 2);
+	add_cmd(Asm::INST_ADD, reg, reg, param_imm(TypeInt, v & 0x00ff0000));
+	next_cmd_target(i + 3);
+	add_cmd(Asm::INST_ADD, reg, reg, param_imm(TypeInt, v & 0xff000000));
+	i += 3;
+}
+
 // create local variable accesses
 void SerializerARM::correct_unallowed_param_combis()
 {
@@ -818,6 +833,15 @@ void SerializerARM::correct_unallowed_param_combis()
 
 	if (config.verbose and config.allow_output(cur_func, "map:d"))
 		cmd_list_out("mid unallowed");
+
+
+	for (int i=cmd.num-1;i>=0;i--) {
+		if (cmd[i].inst == Asm::INST_MOV) {
+			if ((cmd[i].p[0].kind == NodeKind::REGISTER) and (cmd[i].p[1].kind == NodeKind::IMMEDIATE))
+				if (!const_is_arm_representable(cmd[i].p[1].p))
+					split_mov_reg_immediate(cmd[i], i);
+		}
+	}
 
 	for (int i=cmd.num-1;i>=0;i--) {
 		if (cmd[i].inst == Asm::INST_FLDS) {

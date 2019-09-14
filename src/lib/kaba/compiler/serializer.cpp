@@ -1714,7 +1714,7 @@ void Serializer::serialize_function(Function *f)
 	
 
 	if (config.instruction_set == Asm::InstructionSet::ARM){
-		for (int i=0; i<12; i++)
+		for (int i=0; i<10; i++)
 			map_reg_root.add(i);//Asm::REG_R0+i);
 
 	}else{
