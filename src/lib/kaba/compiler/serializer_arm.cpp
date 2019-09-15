@@ -488,6 +488,21 @@ void SerializerARM::serialize_inline_function(Node *com, const Array<SerialNodeP
 				add_cmd(Asm::INST_FDIVS, reg_s0, reg_s0, reg_s1);
 			add_cmd(Asm::INST_FSTS, ret, reg_s0);
 			break;
+		case InlineID::RECT_SET:
+			add_cmd(Asm::INST_MOV, param_shift(ret, 12, TypeFloat32), param[3]);
+			/* fall through */
+		case InlineID::VECTOR_SET:
+			add_cmd(Asm::INST_MOV, param_shift(ret, 8, TypeFloat32), param[2]);
+		case InlineID::COMPLEX_SET:
+			add_cmd(Asm::INST_MOV, param_shift(ret, 4, TypeFloat32), param[1]);
+			add_cmd(Asm::INST_MOV, param_shift(ret, 0, TypeFloat32), param[0]);
+			break;
+		case InlineID::COLOR_SET:
+			add_cmd(Asm::INST_MOV, param_shift(ret, 12, TypeFloat32), param[0]);
+			add_cmd(Asm::INST_MOV, param_shift(ret, 0, TypeFloat32), param[1]);
+			add_cmd(Asm::INST_MOV, param_shift(ret, 4, TypeFloat32), param[2]);
+			add_cmd(Asm::INST_MOV, param_shift(ret, 8, TypeFloat32), param[3]);
+			break;
 		default:
 			do_error("unimplemented inline function: #" + i2s((int)index));
 	}
@@ -535,6 +550,9 @@ SerialNodeParam SerializerARM::serialize_parameter(Node *link, Block *block, int
 		SerialNodeParam param = param_local(TypePointer, link->link_no);
 		return add_reference(param, link->type);
 	}else if (link->kind == NodeKind::CONSTANT){
+		p.p = link->link_no;
+		p.kind = NodeKind::CONSTANT;
+		return p;
 		void *pp = link->as_const_p();
 		int c = *(int*)pp;
 		//if (const_is_arm_representable(c)){
@@ -806,10 +824,24 @@ void SerializerARM::split_mov_reg_immediate(SerialNode &c, int &i) {
 	i += 3;
 }
 
+void unshift_immediate(SerialNodeParam &p) {
+	if (p.kind == NodeKind::CONSTANT) {
+		auto *c = (Constant*)(int_p)p.p;
+		p.kind = NodeKind::IMMEDIATE;
+		p.p = *(int*)((char*)c->p() + p.shift);
+		p.shift = 0;
+		//msg_write(p.p);
+	}
+}
+
 // create local variable accesses
 void SerializerARM::correct_unallowed_param_combis()
 {
 	for (int i=cmd.num-1;i>=0;i--){
+		unshift_immediate(cmd[i].p[0]);
+		unshift_immediate(cmd[i].p[1]);
+		unshift_immediate(cmd[i].p[2]);
+
 		if (cmd[i].inst == Asm::INST_MOV){
 			if ((cmd[i].p[0].kind != NodeKind::REGISTER) and (cmd[i].p[1].kind != NodeKind::REGISTER))
 				transfer_by_reg_in(cmd[i], i, 1);
