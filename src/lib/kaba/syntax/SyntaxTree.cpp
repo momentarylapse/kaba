@@ -936,6 +936,14 @@ void SyntaxTree::transformb(std::function<Node*(Node*, Block*)> F) {
 	}
 }
 
+bool node_is_executable(Node *n) {
+	if ((n->kind == NodeKind::CONSTANT) or (n->kind == NodeKind::VAR_LOCAL) or (n->kind == NodeKind::VAR_GLOBAL))
+		return false;
+	if ((n->kind == NodeKind::ADDRESS_SHIFT) or (n->kind == NodeKind::ARRAY) or (n->kind == NodeKind::DYNAMIC_ARRAY) or (n->kind == NodeKind::REFERENCE) or (n->kind == NodeKind::DEREFERENCE) or (n->kind == NodeKind::DEREF_ADDRESS_SHIFT))
+		return node_is_executable(n->params[0]);
+	return true;
+}
+
 Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 	if (n->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION) {
 		if (config.verbose) {
@@ -1020,6 +1028,11 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		auto index = n->params[1];
 		auto array = n->params[2];
 		auto block = n->params[3];
+		
+		
+		if (node_is_executable(array)) {
+			do_error("for loop over an executable...");
+		}
 
 		n->link_no = (int_p)statement_from_id(StatementID::FOR_DIGEST);
 		n->set_num_params(4);

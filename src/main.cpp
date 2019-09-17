@@ -76,6 +76,7 @@ public:
 		bool flag_no_function_frames = false;
 		bool flag_add_entry_point = false;
 		string output_format = "raw";
+		string command;
 
 		bool error = false;
 
@@ -141,7 +142,7 @@ public:
 				flag_override_code_origin = true;
 				arg.erase(i);
 				if (i >= arg.num){
-					msg_error("offset nach --code-origin erwartet");
+					msg_error("offset expected after --code-origin");
 					exit(1);
 				}
 				code_origin = Kaba::s2i2(arg[i]);
@@ -150,7 +151,7 @@ public:
 				flag_override_variable_offset = true;
 				arg.erase(i);
 				if (i >= arg.num){
-					msg_error("offset nach --variable-offset erwartet");
+					msg_error("offset expected after --variable-offset");
 					exit(1);
 				}
 				variable_offset = Kaba::s2i2(arg[i]);
@@ -158,7 +159,7 @@ public:
 			}else if (arg[i] == "-o"){
 				arg.erase(i);
 				if (i >= arg.num){
-					msg_error("Dateiname nach -o erwartet");
+					msg_error("filename expected after -o");
 					exit(1);
 				}
 				out_file = arg[i];
@@ -178,7 +179,7 @@ public:
 			}else if (arg[i] == "--export-symbols"){
 				arg.erase(i);
 				if (i >= arg.num){
-					msg_error("Dateiname nach --export-symbols erwartet");
+					msg_error("filename expected after --export-symbols");
 					exit(1);
 				}
 				symbols_out_file = arg[i];
@@ -186,10 +187,18 @@ public:
 			}else if (arg[i] == "--import-symbols"){
 				arg.erase(i);
 				if (i >= arg.num){
-					msg_error("Dateiname nach --import-symbols erwartet");
+					msg_error("filename expected after --import-symbols");
 					exit(1);
 				}
 				symbols_in_file = arg[i];
+				arg.erase(i --);
+			}else if ((arg[i] == "--command") or (arg[i] == "-c")){
+				arg.erase(i);
+				if (i >= arg.num){
+					msg_error("command expexted after --command/-c");
+					exit(1);
+				}
+				command = arg[i];
 				arg.erase(i --);
 			}else if ((arg[i] == "--help") or (arg[i] == "-h")){
 				msg_write("options:");
@@ -239,24 +248,8 @@ public:
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);
-
-		// script file as parameter?
-		string filename;
-		if (arg.num > 1){
-			filename = arg[1];
-			if (installed and filename.tail(5) != ".kaba"){
-				string dd = directory_static + "apps/" + arg[1] + "/" + arg[1] + ".kaba";
-				if (arg[1].find("/") >= 0)
-					dd = directory_static + "apps/" + arg[1] + ".kaba";
-				if (file_test_existence(dd))
-					filename = dd;
-			}
-		}else{
-			msg_end();
-			return false;
-		}
-
-		// compile
+			
+			
 		Kaba::config.compile_silently = !flag_verbose;
 		Kaba::config.verbose = flag_verbose;
 		Kaba::config.verbose_func_filter = debug_func_filter;
@@ -268,6 +261,28 @@ public:
 		Kaba::config.variables_offset = variable_offset;
 		Kaba::config.override_code_origin = flag_override_code_origin;
 		Kaba::config.code_origin = code_origin;
+
+		// script file as parameter?
+		string filename;
+		if (arg.num > 1) {
+			filename = arg[1];
+			if (installed and filename.tail(5) != ".kaba") {
+				string dd = directory_static + "apps/" + arg[1] + "/" + arg[1] + ".kaba";
+				if (arg[1].find("/") >= 0)
+					dd = directory_static + "apps/" + arg[1] + ".kaba";
+				if (file_test_existence(dd))
+					filename = dd;
+			}
+		} else if (command.num > 0) {
+			Kaba::ExecuteSingleScriptCommand(command);
+			msg_end();
+			return false;
+		} else {
+			msg_end();
+			return false;
+		}
+
+		// compile
 
 		try{
 			Kaba::Script *s = Kaba::Load(filename);

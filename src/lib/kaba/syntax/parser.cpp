@@ -1618,10 +1618,8 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	return nullptr;
 }
 
-Node *SyntaxTree::parse_statement_str(Block *block) {
-	Exp.next(); // str
-	Node *sub = parse_single_func_param(block);
-
+Node *SyntaxTree::add_converter_str(Node *sub) {
+	
 	// direct/type cast?
 	int ie = Exp.cur_exp;
 	try {
@@ -1640,6 +1638,13 @@ Node *SyntaxTree::parse_statement_str(Block *block) {
 	cmd->set_param(0, ref_node(sub));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
+}
+
+Node *SyntaxTree::parse_statement_str(Block *block) {
+	Exp.next(); // str
+	Node *sub = parse_single_func_param(block);
+	
+	return add_converter_str(sub);
 }
 
 // local (variable) definitions...
