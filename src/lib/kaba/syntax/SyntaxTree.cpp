@@ -209,7 +209,7 @@ SyntaxTree::SyntaxTree(Script *_script) {
 
 
 void SyntaxTree::parse_buffer(const string &buffer, bool just_analyse) {
-	Exp.analyse(this, buffer + string("\0", 1)); // compatibility... expected by lexical
+	Exp.analyse(this, buffer);
 	
 	pre_compiler(just_analyse);
 

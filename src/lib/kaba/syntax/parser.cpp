@@ -749,6 +749,71 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 
 }
 
+Node *try_parse_format_string(SyntaxTree *tree, Block *block, Value &v) {
+	string s = v.as_string();
+	
+	Array<Node*> parts;
+	int pos = 0;
+	
+	while (pos < s.num) {
+	
+		int p0 = s.find("{{", pos);
+		
+		// constant part before the next {{insert}}
+		int pe = (p0 < 0) ? s.num : p0;
+		if (pe > pos) {
+			auto *c = tree->add_constant(TypeString);
+			c->as_string() = s.substr(pos, pe-pos);
+			parts.add(tree->add_node_const(c));
+		}
+		if (p0 < 0)
+			break;
+			
+		int p1 = s.find("}}", p0);
+		if (p1 < 0)
+			tree->do_error("string interpolation {{ not ending with }}");
+			
+		string xx = s.substr(p0+2, p1 - p0 - 2);
+		//msg_write("format:  " + xx);
+		ExpressionBuffer ee;
+		ee.analyse(tree, xx);
+		ee.cur_line->physical_line = tree->Exp.cur_line->physical_line;
+		//ee.show();
+		
+		int cl = tree->Exp.get_line_no();
+		int ce = tree->Exp.cur_exp;
+		tree->Exp.line.add(ee.line[0]);
+		tree->Exp.set(0, tree->Exp.line.num-1);
+		
+		Node *n = tree->parse_command(block);
+		n = tree->check_param_link(n, TypeString, "", 0);
+		//n->show();
+		parts.add(n);
+		
+		tree->Exp.line.pop();
+		tree->Exp.set(ce, cl);
+		
+		pos = p1 + 2;
+	
+	}
+	
+	// empty???
+	if (parts.num == 0) {
+		auto *c = tree->add_constant(TypeString);
+		return tree->add_node_const(c);
+	}
+	
+	// glue
+	while (parts.num > 1) {
+		auto *b = parts.pop();
+		auto *a = parts.pop();
+		auto *n = tree->link_operator_id(OperatorID::ADD, a, b);
+		parts.add(n);
+	}
+	//parts[0]->show();
+	return parts[0];
+}
+
 Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 	Array<Node*> operands;
 
@@ -814,10 +879,15 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 
 			Value v;
 			get_constant_value(Exp.cur, v);
-			auto *c = add_constant(t);
-			c->set(v);
 			Exp.next();
-			operands = {add_node_const(c)};
+			
+			if (t == TypeString) {
+				operands = {try_parse_format_string(this, block, v)};
+			} else {
+				auto *c = add_constant(t);
+				c->set(v);
+				operands = {add_node_const(c)};
+			}
 		}
 
 	}

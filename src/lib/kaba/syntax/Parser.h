@@ -8,13 +8,19 @@
 #ifndef SRC_LIB_KABA_SYNTAX_PARSER_H_
 #define SRC_LIB_KABA_SYNTAX_PARSER_H_
 
-namespace Kaba {
+//#include "lexical.h"
 
-class Parser
-{
+namespace Kaba {
+	
+class SyntaxTree;
+
+class Parser {
 public:
-	Parser();
-	virtual ~Parser();
+	Parser(SyntaxTree *syntax);
+	~Parser();
+	
+	SyntaxTree *syntax;
+	//ExpressionBuffer Exp;
 };
 
 } /* namespace Kaba */

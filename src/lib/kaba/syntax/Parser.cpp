@@ -9,15 +9,11 @@
 
 namespace Kaba {
 
-Parser::Parser()
-{
-	// TODO Auto-generated constructor stub
-
+Parser::Parser(SyntaxTree *_syntax) {
+	syntax = _syntax;
 }
 
-Parser::~Parser()
-{
-	// TODO Auto-generated destructor stub
+Parser::~Parser() {
 }
 
 } /* namespace Kaba */
