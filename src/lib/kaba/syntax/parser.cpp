@@ -711,8 +711,8 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 
 	const Class *el_type = n_exp->type;
 	const Class *type = make_class_super_array(el_type);
-	auto *var = block->add_var("set-builder", type);
-	
+	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type);
+
 	// array.add(exp)
 	auto *f_add = type->get_func("add", TypeVoid, {el_type});
 	if (!f_add)

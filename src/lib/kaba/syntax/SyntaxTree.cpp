@@ -1030,8 +1030,15 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		auto block = n->params[3];
 		
 		
+		// array needs execution?
 		if (node_is_executable(array)) {
-			do_error("for loop over an executable...");
+			// -> assign into variable before the loop
+			auto *v = b->add_var(b->function->create_slightly_hidden_name(), array->type);
+
+			auto *assign = link_operator_id(OperatorID::ASSIGN, add_node_local(v), array);
+			_transform_insert_before_.add(assign);
+
+			array = add_node_local(v);
 		}
 
 		n->link_no = (int_p)statement_from_id(StatementID::FOR_DIGEST);
