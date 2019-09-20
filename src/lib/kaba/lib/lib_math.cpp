@@ -47,8 +47,6 @@ extern const Class *TypeMatrix3;
 extern const Class *TypeIntList;
 extern const Class *TypeFloatPs;
 extern const Class *TypeAny;
-extern const Class *TypeAnyList;
-extern const Class *TypeAnyDict;
 
 
 float _cdecl f_sqr(float f){	return f*f;	}
@@ -360,11 +358,6 @@ public:
 	}
 };
 
-class AnyList : public Array<Any> {
-public:
-	void __assign__(AnyList &o) { *this = o; }
-};
-
 Any kaba_int2any(int i) {
 	return Any(i);
 }
@@ -409,7 +402,6 @@ void SIAddPackageMath() {
 	const Class *TypeVli = add_type("vli", sizeof(vli));
 	const Class *TypeCrypto = add_type("Crypto", sizeof(Crypto));
 	TypeAny = add_type("any", sizeof(Any));
-	TypeAnyList = add_type_a("any[]", TypeAny, -1);
 	const Class *TypeFloatInterpolator = add_type("FloatInterpolator", sizeof(Interpolator<float>));
 	const Class *TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vector>));
 	const Class *TypeRandom = add_type("Random", sizeof(Random));
@@ -859,18 +851,12 @@ void SIAddPackageMath() {
 		class_add_func("int", TypeInt, any_p(mf(&Any::_int)));
 		class_add_func("float", TypeFloat32, any_p(mf(&Any::_float)));
 		class_add_func("str", TypeString, any_p(mf(&Any::str)));
+		class_add_func("repr", TypeString, any_p(mf(&Any::repr)));
 		class_add_func("unwrap", TypeVoid, (void*)&KabaAny::unwrap, FLAG_RAISES_EXCEPTIONS);
 			func_add_param("var", TypePointer);
 			func_add_param("type", TypeClassP);
 
 
-	add_class(TypeAnyList);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Any>::__init__);
-		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &AnyList::__assign__);
-			func_add_param("o", TypeAnyList);
-		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Array<Any>::clear);
-
-	
 	add_funcx("@int2any", TypeAny, &kaba_int2any, FLAG_STATIC);
 		func_add_param("i", TypeInt);
 	add_funcx("@float2any", TypeAny, &kaba_float2any, FLAG_STATIC);

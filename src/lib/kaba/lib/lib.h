@@ -49,6 +49,7 @@ extern const string IDENTIFIER_DELETE;
 extern const string IDENTIFIER_SIZEOF;
 extern const string IDENTIFIER_TYPE;
 extern const string IDENTIFIER_STR;
+extern const string IDENTIFIER_REPR;
 extern const string IDENTIFIER_LEN;
 extern const string IDENTIFIER_LET;
 extern const string IDENTIFIER_NAMESPACE;
@@ -161,6 +162,7 @@ enum class StatementID {
 	EXCEPT,
 	PASS,
 	STR,
+	REPR,
 	LEN,
 	LET,
 	MAP,

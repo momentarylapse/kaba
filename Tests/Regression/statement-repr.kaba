@@ -1,0 +1,10 @@
+void main()
+	string a = "hallo"
+	print(str(a))
+	print(repr(a))
+
+	print(str(dyn("hallo")))
+	print(repr(dyn("hallo")))
+
+	print(str(int[]))
+	print(repr(int[]))
