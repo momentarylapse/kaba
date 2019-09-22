@@ -18,6 +18,7 @@
 #include "../../config.h"
 #include "../../math/complex.h"
 #include "../../any/any.h"
+#include <math.h>
 
 
 
@@ -29,7 +30,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.8.1";
+string LibVersion = "0.17.8.2";
 
 
 bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param);
@@ -277,7 +278,8 @@ PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
 	{"--", OperatorID::DECREASE,      true,  2, "__dec__", 1, false},
 	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-", 3, false},
 	{IDENTIFIER_IN, OperatorID::IN,   false, 12, "__contains__", 3, true}, // INVERTED
-	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", 3, false}
+	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", 3, false},
+	{"^",  OperatorID::EXPONENT,      false, 14,  "__exp__", 3, false}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
@@ -1098,6 +1100,14 @@ int xop_int_add(int a, int b) {
 }
 
 
+int xop_int_exp(int a, int b) {
+	return (int)pow((double)a, (double)b);
+}
+float xop_float_exp(float a, float b) {
+	return pow(a, b);
+}
+
+
 
 void SIAddPackageBase() {
 	add_package("base", true);
@@ -1223,6 +1233,8 @@ void SIAddPackageBase() {
 		class_add_funcx("add", TypeInt, &xop_int_add, FLAG_PURE);
 			func_set_inline(InlineID::INT_ADD);
 			func_add_param("b", TypeInt);
+		class_add_funcx("__exp__", TypeInt, &xop_int_exp, FLAG_PURE);
+			func_add_param("b", TypeInt);
 
 	add_class(TypeIntList);
 		class_add_funcx("str", TypeString, &ia2s, FLAG_PURE);
@@ -1236,6 +1248,8 @@ void SIAddPackageBase() {
 		class_add_funcx("str", TypeString, &kaba_float2str, FLAG_PURE);
 		class_add_funcx("str2", TypeString, &f2s, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
+		class_add_funcx("__exp__", TypeFloat32, &xop_float_exp, FLAG_PURE);
+			func_add_param("b", TypeFloat32);
 
 	add_class(TypeFloatList);
 		class_add_funcx("str", TypeString, &fa2s, FLAG_PURE);

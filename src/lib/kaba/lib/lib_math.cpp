@@ -51,6 +51,8 @@ extern const Class *TypeAny;
 
 
 float _cdecl f_sqr(float f){	return f*f;	}
+int xop_int_exp(int a, int b);
+float xop_float_exp(float a, float b);
 
 // T[] += T[]
 #define IMPLEMENT_IOP(OP, TYPE) \
@@ -82,6 +84,31 @@ float _cdecl f_sqr(float f){	return f*f;	}
 	RETURN *pr = (RETURN*)r.data; \
 	for (int i=0;i<n;i++) \
 		*(pr ++) = *(pa ++) OP *(pb ++); \
+	return r; \
+}
+// R[] = F(T[], T[])
+#define IMPLEMENT_OPF(F, TYPE, RETURN) \
+{ \
+	int n = min(num, b.num); \
+	Array<RETURN> r; \
+	r.resize(n); \
+	TYPE *pa = (TYPE*)data; \
+	TYPE *pb = (TYPE*)b.data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<n;i++) \
+		*(pr ++) = F(*(pa ++), *(pb ++)); \
+	return r; \
+}
+
+// R[] = F(T[], x)
+#define IMPLEMENT_OPF2(F, TYPE, RETURN) \
+{ \
+	Array<RETURN> r; \
+	r.resize(num); \
+	TYPE *pa = (TYPE*)data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<num;i++) \
+		*(pr ++) = F(*(pa ++), x); \
 	return r; \
 }
 
@@ -124,13 +151,16 @@ public:
 	Array<int> _cdecl sub(IntList &b)	IMPLEMENT_OP(-, int, int)
 	Array<int> _cdecl mul(IntList &b)	IMPLEMENT_OP(*, int, int)
 	Array<int> _cdecl div(IntList &b)	IMPLEMENT_OP(/, int, int)
+	Array<int> _cdecl exp(IntList &b)	IMPLEMENT_OPF(xop_int_exp, int, int)
 
 	// a += x
-	void _cdecl add2(int x)	IMPLEMENT_IOP2(+=, int)
-	void _cdecl sub2(int x)	IMPLEMENT_IOP2(-=, int)
-	void _cdecl mul2(int x)	IMPLEMENT_IOP2(*=, int)
-	void _cdecl div2(int x)	IMPLEMENT_IOP2(/=, int)
+	void _cdecl iadd2(int x)	IMPLEMENT_IOP2(+=, int)
+	void _cdecl isub2(int x)	IMPLEMENT_IOP2(-=, int)
+	void _cdecl imul2(int x)	IMPLEMENT_IOP2(*=, int)
+	void _cdecl idiv2(int x)	IMPLEMENT_IOP2(/=, int)
 	void _cdecl assign_int(int x)	IMPLEMENT_IOP2(=, int)
+	
+	Array<int> _cdecl exp2(int x)	IMPLEMENT_OPF2(xop_int_exp, int, int)
 	
 	// a <= b
 	Array<bool> _cdecl lt(IntList &b) IMPLEMENT_OP(<, int, bool)
@@ -211,6 +241,7 @@ public:
 	Array<float> _cdecl sub(FloatList &b)	IMPLEMENT_OP(-, float, float)
 	Array<float> _cdecl mul(FloatList &b)	IMPLEMENT_OP(*, float, float)
 	Array<float> _cdecl div(FloatList &b)	IMPLEMENT_OP(/, float, float)
+	Array<float> _cdecl exp(FloatList &b)	IMPLEMENT_OPF(xop_float_exp, float, float)
 
 	// a += x
 	void _cdecl iadd2(float x)	IMPLEMENT_IOP2(+=, float)
@@ -218,6 +249,8 @@ public:
 	void _cdecl imul2(float x)	IMPLEMENT_IOP2(*=, float)
 	void _cdecl idiv2(float x)	IMPLEMENT_IOP2(/=, float)
 	void _cdecl assign_float(float x)	IMPLEMENT_IOP2(=, float)
+	
+	Array<float> _cdecl exp2(float x)	IMPLEMENT_OPF2(xop_float_exp, float, float)
 	
 	// a <= b
 	Array<bool> _cdecl lt(FloatList &b) IMPLEMENT_OP(<, float, bool)
@@ -448,6 +481,10 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeIntList);
 		class_add_func("__div__", TypeIntList, mf(&IntList::div), FLAG_PURE);
 			func_add_param("other", TypeIntList);
+		class_add_func("__exp__", TypeIntList, mf(&IntList::exp), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__exp__", TypeIntList, mf(&IntList::exp2), FLAG_PURE);
+			func_add_param("other", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&IntList::assign_int));
 			func_add_param("other", TypeInt);
 		class_add_func("__lt__", TypeBoolList, mf(&IntList::lt), FLAG_PURE);
@@ -485,6 +522,10 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeFloatList);
 		class_add_func("__div__", TypeFloatList, mf(&FloatList::div), FLAG_PURE);
 			func_add_param("other", TypeFloatList);
+		class_add_func("__exp__", TypeFloatList, mf(&FloatList::exp), FLAG_PURE);
+			func_add_param("other", TypeFloatList);
+		class_add_func("__exp__", TypeFloatList, mf(&FloatList::exp2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
 		class_add_func("__iadd__", TypeVoid, mf(&FloatList::iadd2));
 			func_add_param("other", TypeFloat32);
 		class_add_func("__isub__", TypeVoid, mf(&FloatList::isub2));

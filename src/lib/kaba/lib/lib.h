@@ -118,6 +118,7 @@ enum class OperatorID {
 	IS,            // is
 	IN,            // in
 	EXTENDS,       // extends
+	EXPONENT,      // ^
 	_COUNT_
 };
 
