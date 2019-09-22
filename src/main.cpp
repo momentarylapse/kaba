@@ -226,6 +226,7 @@ public:
 
 		// init
 		//hui::RegisterFileType("kaba", "MichiSoft Script Datei", "", hui::AppFilename, "execute", false);
+		srand(get_current_date().time*73 + get_current_date().milli_second);
 		NetInit();
 		Kaba::Init(instruction_set, abi, flag_allow_std_lib);
 		//Kaba::LinkDynamicExternalData();

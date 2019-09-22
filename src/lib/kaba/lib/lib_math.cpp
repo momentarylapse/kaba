@@ -45,13 +45,14 @@ extern const Class *TypePlane;
 extern const Class *TypePlaneList;
 extern const Class *TypeMatrix3;
 extern const Class *TypeIntList;
+extern const Class *TypeBoolList;
 extern const Class *TypeFloatPs;
 extern const Class *TypeAny;
 
 
 float _cdecl f_sqr(float f){	return f*f;	}
 
-
+// T[] += T[]
 #define IMPLEMENT_IOP(OP, TYPE) \
 { \
 	int n = min(num, b.num); \
@@ -61,6 +62,7 @@ float _cdecl f_sqr(float f){	return f*f;	}
 		*(pa ++) OP *(pb ++); \
 }
 
+// T[] += x
 #define IMPLEMENT_IOP2(OP, TYPE) \
 { \
 	TYPE *pa = (TYPE*)data; \
@@ -68,24 +70,28 @@ float _cdecl f_sqr(float f){	return f*f;	}
 		*(pa ++) OP x; \
 }
 
-#define IMPLEMENT_OP(OP, TYPE, LISTTYPE) \
+
+// R[] = T[] + T[]
+#define IMPLEMENT_OP(OP, TYPE, RETURN) \
 { \
 	int n = min(num, b.num); \
-	LISTTYPE r; \
+	Array<RETURN> r; \
 	r.resize(n); \
 	TYPE *pa = (TYPE*)data; \
 	TYPE *pb = (TYPE*)b.data; \
-	TYPE *pr = (TYPE*)r.data; \
+	RETURN *pr = (RETURN*)r.data; \
 	for (int i=0;i<n;i++) \
 		*(pr ++) = *(pa ++) OP *(pb ++); \
 	return r; \
 }
 
-class IntList : public Array<int>
-{
+class BoolList : public Array<bool> {
+	
+};
+
+class IntList : public Array<int> {
 public:
-	int _cdecl sum()
-	{
+	int _cdecl sum() {
 		int r = 0;
 		for (int i=0;i<num;i++)
 			r += (*this)[i];
@@ -93,13 +99,12 @@ public:
 	}
 	void _cdecl sort()
 	{	std::sort((int*)data, (int*)data + num);	}
-	void _cdecl unique()
-	{
+	void _cdecl unique() {
 		int ndiff = 0;
 		int i0 = 1;
 		while(((int*)data)[i0] != ((int*)data)[i0-1])
 			i0 ++;
-		for (int i=i0;i<num;i++){
+		for (int i=i0;i<num;i++) {
 			if (((int*)data)[i] == ((int*)data)[i-1])
 				ndiff ++;
 			else
@@ -115,10 +120,10 @@ public:
 	void _cdecl idiv(IntList &b)	IMPLEMENT_IOP(/=, int)
 
 	// a = b + c
-	IntList _cdecl add(IntList &b)	IMPLEMENT_OP(+, int, IntList)
-	IntList _cdecl sub(IntList &b)	IMPLEMENT_OP(-, int, IntList)
-	IntList _cdecl mul(IntList &b)	IMPLEMENT_OP(*, int, IntList)
-	IntList _cdecl div(IntList &b)	IMPLEMENT_OP(/, int, IntList)
+	Array<int> _cdecl add(IntList &b)	IMPLEMENT_OP(+, int, int)
+	Array<int> _cdecl sub(IntList &b)	IMPLEMENT_OP(-, int, int)
+	Array<int> _cdecl mul(IntList &b)	IMPLEMENT_OP(*, int, int)
+	Array<int> _cdecl div(IntList &b)	IMPLEMENT_OP(/, int, int)
 
 	// a += x
 	void _cdecl add2(int x)	IMPLEMENT_IOP2(+=, int)
@@ -126,6 +131,14 @@ public:
 	void _cdecl mul2(int x)	IMPLEMENT_IOP2(*=, int)
 	void _cdecl div2(int x)	IMPLEMENT_IOP2(/=, int)
 	void _cdecl assign_int(int x)	IMPLEMENT_IOP2(=, int)
+	
+	// a <= b
+	Array<bool> _cdecl lt(IntList &b) IMPLEMENT_OP(<, int, bool)
+	Array<bool> _cdecl le(IntList &b) IMPLEMENT_OP(<=, int, bool)
+	Array<bool> _cdecl gt(IntList &b) IMPLEMENT_OP(>, int, bool)
+	Array<bool> _cdecl ge(IntList &b) IMPLEMENT_OP(>=, int, bool)
+	Array<bool> _cdecl eq(IntList &b) IMPLEMENT_OP(==, int, bool)
+	Array<bool> _cdecl ne(IntList &b) IMPLEMENT_OP(!=, int, bool)
 };
 
 
@@ -151,11 +164,9 @@ void _cdecl super_array_div_s_com_com(DynamicArray *a, complex x)
 void _cdecl super_array_mul_s_com_float(DynamicArray *a, float x)
 {	complex *pa = (complex*)a->data;	for (int i=0;i<a->num;i++)	*(pa ++) *= x;	}
 
-class FloatList : public Array<float>
-{
+class FloatList : public Array<float> {
 public:
-	float _cdecl _max()
-	{
+	float _cdecl _max() {
 		float max = 0;
 		if (num > 0)
 			max = (*this)[0];
@@ -164,8 +175,7 @@ public:
 				max = (*this)[i];
 		return max;
 	}
-	float _cdecl _min()
-	{
+	float _cdecl _min() {
 		float min = 0;
 		if (num > 0)
 			min = (*this)[0];
@@ -174,15 +184,13 @@ public:
 				min = (*this)[i];
 		return min;
 	}
-	float _cdecl sum()
-	{
+	float _cdecl sum() {
 		float r = 0;
 		for (int i=0;i<num;i++)
 			r += (*this)[i];
 		return r;
 	}
-	float _cdecl sum2()
-	{
+	float _cdecl sum2() {
 		float r = 0;
 		for (int i=0;i<num;i++)
 			r += (*this)[i] * (*this)[i];
@@ -199,10 +207,10 @@ public:
 	void _cdecl idiv(FloatList &b)	IMPLEMENT_IOP(/=, float)
 
 	// a = b + c
-	FloatList _cdecl add(FloatList &b)	IMPLEMENT_OP(+, float, FloatList)
-	FloatList _cdecl sub(FloatList &b)	IMPLEMENT_OP(-, float, FloatList)
-	FloatList _cdecl mul(FloatList &b)	IMPLEMENT_OP(*, float, FloatList)
-	FloatList _cdecl div(FloatList &b)	IMPLEMENT_OP(/, float, FloatList)
+	Array<float> _cdecl add(FloatList &b)	IMPLEMENT_OP(+, float, float)
+	Array<float> _cdecl sub(FloatList &b)	IMPLEMENT_OP(-, float, float)
+	Array<float> _cdecl mul(FloatList &b)	IMPLEMENT_OP(*, float, float)
+	Array<float> _cdecl div(FloatList &b)	IMPLEMENT_OP(/, float, float)
 
 	// a += x
 	void _cdecl iadd2(float x)	IMPLEMENT_IOP2(+=, float)
@@ -210,20 +218,25 @@ public:
 	void _cdecl imul2(float x)	IMPLEMENT_IOP2(*=, float)
 	void _cdecl idiv2(float x)	IMPLEMENT_IOP2(/=, float)
 	void _cdecl assign_float(float x)	IMPLEMENT_IOP2(=, float)
+	
+	// a <= b
+	Array<bool> _cdecl lt(FloatList &b) IMPLEMENT_OP(<, float, bool)
+	Array<bool> _cdecl le(FloatList &b) IMPLEMENT_OP(<=, float, bool)
+	Array<bool> _cdecl gt(FloatList &b) IMPLEMENT_OP(>, float, bool)
+	Array<bool> _cdecl ge(FloatList &b) IMPLEMENT_OP(>=, float, bool)
+	Array<bool> _cdecl eq(FloatList &b) IMPLEMENT_OP(==, float, bool)
+	Array<bool> _cdecl ne(FloatList &b) IMPLEMENT_OP(!=, float, bool)
 };
 
-class ComplexList : public Array<complex>
-{
+class ComplexList : public Array<complex> {
 public:
-	complex _cdecl sum()
-	{
+	complex _cdecl sum() {
 		complex r = complex(0, 0);
 		for (int i=0;i<num;i++)
 			r += (*this)[i];
 		return r;
 	}
-	float _cdecl sum2()
-	{
+	float _cdecl sum2() {
 		float r = 0;
 		for (int i=0;i<num;i++)
 			r += (*this)[i].abs_sqr();
@@ -237,10 +250,10 @@ public:
 	void _cdecl idiv(ComplexList &b)	IMPLEMENT_IOP(/=, complex)
 
 	// a = b + c
-	ComplexList _cdecl add(ComplexList &b)	IMPLEMENT_OP(+, complex, ComplexList)
-	ComplexList _cdecl sub(ComplexList &b)	IMPLEMENT_OP(-, complex, ComplexList)
-	ComplexList _cdecl mul(ComplexList &b)	IMPLEMENT_OP(*, complex, ComplexList)
-	ComplexList _cdecl div(ComplexList &b)	IMPLEMENT_OP(/, complex, ComplexList)
+	Array<complex> _cdecl add(ComplexList &b)	IMPLEMENT_OP(+, complex, complex)
+	Array<complex> _cdecl sub(ComplexList &b)	IMPLEMENT_OP(-, complex, complex)
+	Array<complex> _cdecl mul(ComplexList &b)	IMPLEMENT_OP(*, complex, complex)
+	Array<complex> _cdecl div(ComplexList &b)	IMPLEMENT_OP(/, complex, complex)
 
 	// a += x
 	void _cdecl iadd2(complex x)	IMPLEMENT_IOP2(+=, complex)
@@ -252,21 +265,17 @@ public:
 	void _cdecl assign_complex(complex x)	IMPLEMENT_IOP2(=, complex)
 };
 
-Array<int> _cdecl int_range(int start, int end)
-{
+Array<int> _cdecl int_range(int start, int end) {
 	Array<int> a;
 	//a.__init__(); // done by kaba-constructors for temp variables
-	for (int i=start;i<end;i++)
+	for (int i=start; i<end; i++)
 		a.add(i);
 	return a;
 }
 
-Array<float> _cdecl float_range(float start, float end, float step)
-{
+Array<float> _cdecl float_range(float start, float end, float step) {
 	Array<float> a;
-	//a.__init__(); // done by kaba-constructors for temp variables
-	//msg_write(a.element_size);
-	for (float f=start;f<end;f+=step)
+	for (float f=start; f<end; f+=step)
 		a.add(f);
 	return a;
 }
@@ -441,6 +450,18 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeIntList);
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&IntList::assign_int));
 			func_add_param("other", TypeInt);
+		class_add_func("__lt__", TypeBoolList, mf(&IntList::lt), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__le__", TypeBoolList, mf(&IntList::le), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__gt__", TypeBoolList, mf(&IntList::gt), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__ge__", TypeBoolList, mf(&IntList::ge), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__eq__", TypeBoolList, mf(&IntList::eq), FLAG_PURE);
+			func_add_param("other", TypeIntList);
+		class_add_func("__ne__", TypeBoolList, mf(&IntList::ne), FLAG_PURE);
+			func_add_param("other", TypeIntList);
 
 	add_class(TypeFloatList);
 		class_add_func("sort", TypeVoid, mf(&FloatList::sort));
@@ -474,6 +495,14 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeFloat32);
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&FloatList::assign_float));
 			func_add_param("other", TypeFloat32);
+		class_add_func("__lt__", TypeBoolList, mf(&FloatList::lt), FLAG_PURE);
+			func_add_param("other", TypeFloatList);
+		class_add_func("__le__", TypeBoolList, mf(&FloatList::le), FLAG_PURE);
+			func_add_param("other", TypeFloatList);
+		class_add_func("__gt__", TypeBoolList, mf(&FloatList::gt), FLAG_PURE);
+			func_add_param("other", TypeFloatList);
+		class_add_func("__ge__", TypeBoolList, mf(&FloatList::ge), FLAG_PURE);
+			func_add_param("other", TypeFloatList);
 
 	add_class(TypeComplexList);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&ComplexList::__init__));

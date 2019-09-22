@@ -29,7 +29,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.8.0";
+string LibVersion = "0.17.8.1";
 
 
 bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param);
@@ -480,10 +480,10 @@ void add_ext_var(const string &name, const Class *type, void *var) {
 	#include <stdlib.h>
 #endif
 
+void _cdecl _print(const string &str)
+{	printf("%s\n", str.c_str());	}
 void _cdecl _cstringout(char *str)
-{	msg_write(str);	}
-void _cdecl _print(string &str)
-{	msg_write(str);	}
+{	_print(str);	}
 int _cdecl _Float2Int(float f)
 {	return (int)f;	}
 double _cdecl _Float2Float64(float f)
@@ -1224,6 +1224,9 @@ void SIAddPackageBase() {
 			func_set_inline(InlineID::INT_ADD);
 			func_add_param("b", TypeInt);
 
+	add_class(TypeIntList);
+		class_add_funcx("str", TypeString, &ia2s, FLAG_PURE);
+		// more in lib_math.cpp ...
 
 	add_class(TypeInt64);
 		class_add_funcx("str", TypeString, &i642s, FLAG_PURE);
@@ -1233,6 +1236,10 @@ void SIAddPackageBase() {
 		class_add_funcx("str", TypeString, &kaba_float2str, FLAG_PURE);
 		class_add_funcx("str2", TypeString, &f2s, FLAG_PURE);
 			func_add_param("decimals", TypeInt);
+
+	add_class(TypeFloatList);
+		class_add_funcx("str", TypeString, &fa2s, FLAG_PURE);
+		// more in lib_math.cpp ...
 
 
 	add_class(TypeFloat64);
@@ -1244,6 +1251,9 @@ void SIAddPackageBase() {
 	add_class(TypeBool);
 		class_add_funcx("str", TypeString, &b2s, FLAG_PURE);
 
+	add_class(TypeBoolList);
+		class_add_funcx("str", TypeString, &ba2s, FLAG_PURE);
+		// more in lib_math.cpp ...
 
 	add_class(TypeChar);
 		class_add_funcx("str", TypeString, &kaba_char2str, FLAG_PURE);
@@ -1321,6 +1331,7 @@ void SIAddPackageBase() {
 			func_add_param("glue", TypeString);
 		class_add_funcx("__contains__", TypeBool, &StringList::__contains__, FLAG_PURE);
 			func_add_param("s", TypeString);
+		class_add_funcx("str", TypeString, &sa2s, FLAG_PURE);
 
 
 	// constants
@@ -1693,7 +1704,7 @@ void SIAddOperators() {
 
 void SIAddCommands() {
 	// type casting
-	add_func("@i2s", TypeString, (void*)&i2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
+	/*add_func("@i2s", TypeString, (void*)&i2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("i", TypeInt);
 	add_func("@i642s", TypeString, (void*)&i642s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("i", TypeInt64);
@@ -1702,17 +1713,17 @@ void SIAddCommands() {
 	add_func("@f642sf", TypeString, (void*)&f642sf, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("f", TypeFloat64);
 	add_func("@b2s", TypeString, (void*)&b2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
-		func_add_param("b", TypeBool);
+		func_add_param("b", TypeBool);*/
 	add_func("p2s", TypeString, (void*)&p2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("p", TypePointer);
-	add_func("@ia2s", TypeString, (void*)&ia2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
+	/*add_func("@ia2s", TypeString, (void*)&ia2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("a", TypeIntList);
 	add_func("@fa2s", TypeString, (void*)&fa2s, ScriptFlag(FLAG_STATIC | FLAG_PURE)); // TODO...
 		func_add_param("a", TypeFloatList);
 	add_func("@ba2s", TypeString, (void*)&ba2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("a", TypeBoolList);
 	add_func("@sa2s", TypeString, (void*)&sa2s, ScriptFlag(FLAG_STATIC | FLAG_PURE));
-		func_add_param("a", TypeStringList);
+		func_add_param("a", TypeStringList);*/
 	// debug output
 	/*add_func("cprint", TypeVoid, (void*)&_cstringout, FLAG_STATIC);
 		func_add_param("str", TypeCString);*/
@@ -1840,16 +1851,16 @@ void Init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	add_type_cast(10, TypeInt, TypeChar, "i2c");
 	add_type_cast(20, TypeChar, TypeInt, "c2i");
 	add_type_cast(50, TypePointer, TypeBool, "p2b");
-	add_type_cast(50, TypeInt, TypeString, "@i2s");
-	add_type_cast(50, TypeInt64, TypeString, "@i642s");
-	add_type_cast(50, TypeFloat32, TypeString, "@f2sf");
-	add_type_cast(50, TypeFloat64, TypeString, "@f642sf");
-	add_type_cast(50, TypeBool, TypeString, "@b2s");
+	//add_type_cast(50, TypeInt, TypeString, "@i2s");
+	//add_type_cast(50, TypeInt64, TypeString, "@i642s");
+	//add_type_cast(50, TypeFloat32, TypeString, "@f2sf");
+	//add_type_cast(50, TypeFloat64, TypeString, "@f642sf");
+	//add_type_cast(50, TypeBool, TypeString, "@b2s");
 	add_type_cast(50, TypePointer, TypeString, "p2s");
-	add_type_cast(50, TypeIntList, TypeString, "@ia2s");
-	add_type_cast(50, TypeFloatList, TypeString, "@fa2s");
-	add_type_cast(50, TypeBoolList, TypeString, "@ba2s");
-	add_type_cast(50, TypeStringList, TypeString, "@sa2s");
+	//add_type_cast(50, TypeIntList, TypeString, "@ia2s");
+	//add_type_cast(50, TypeFloatList, TypeString, "@fa2s");
+	//add_type_cast(50, TypeBoolList, TypeString, "@ba2s");
+	//add_type_cast(50, TypeStringList, TypeString, "@sa2s");
 	cur_package = Packages[2];
 	add_type_cast(50, TypeInt, TypeAny, "@int2any");
 	add_type_cast(50, TypeFloat32, TypeAny, "@float2any");
