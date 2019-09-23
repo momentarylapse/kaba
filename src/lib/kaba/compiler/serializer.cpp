@@ -515,11 +515,11 @@ int Serializer::reg_resize(int reg, int size)
 	return get_reg(Asm::RegRoot[reg], size);
 }
 
-void Serializer::add_member_function_call(Function *cf, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void Serializer::add_member_function_call(Function *cf, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	if (cf->virtual_index < 0) {
-		add_function_call(cf, instance, params, ret);
+		add_function_call(cf, params, ret);
 	} else {
-		add_virtual_function_call(cf->virtual_index, instance, params, ret);
+		add_virtual_function_call(cf, params, ret);
 	}
 }
 
@@ -691,16 +691,17 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 	if (com->instance){
 		instance = serialize_parameter(com->instance, block, index);
 		// super_array automatically referenced...
+		params.insert(instance, 0);
 	}
 
 
 	if (com->kind == NodeKind::FUNCTION_CALL){
 
-		add_function_call(com->as_func(), instance, params, ret);
+		add_function_call(com->as_func(), params, ret);
 
 	}else if (com->kind == NodeKind::VIRTUAL_CALL){
 
-		add_member_function_call(com->as_func(), instance, params, ret);
+		add_member_function_call(com->as_func(), params, ret);
 
 	}else if (com->kind == NodeKind::INLINE_CALL){
 
@@ -772,54 +773,47 @@ void Serializer::add_cmd_constructor(const SerialNodeParam &param, NodeKind modu
 		instance = add_reference(param);
 	}
 
-	add_member_function_call(f, instance, {}, p_none);
+	add_member_function_call(f, {instance}, p_none);
 }
 
-void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref)
-{
-	Array<SerialNodeParam> params;
-
-	if (needs_ref){
+void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref) {
+	if (needs_ref) {
 		Function *f = param.type->get_destructor();
 		if (!f)
 			return;
 		SerialNodeParam inst = add_reference(param);
-		add_member_function_call(f, inst, params, p_none);
-	}else{
+		add_member_function_call(f, {inst}, p_none);
+	} else {
 		Function *f = param.type->parent->get_destructor();
 		if (!f)
 			return;
-		add_member_function_call(f, param, params, p_none);
+		add_member_function_call(f, {param}, p_none);
 	}
 }
 
-void Serializer::insert_constructors_block(Block *b)
-{
-	for (auto *v: b->vars){
-		if (!v->explicitly_constructed){
+void Serializer::insert_constructors_block(Block *b) {
+	for (auto *v: b->vars) {
+		if (!v->explicitly_constructed) {
 			SerialNodeParam param = param_local(v->type, v->_offset);
 			add_cmd_constructor(param, (v->name == IDENTIFIER_RETURN_VAR) ? NodeKind::NONE : NodeKind::VAR_LOCAL);
 		}
 	}
 }
 
-void Serializer::insert_destructors_block(Block *b, bool recursive)
-{
-	for (auto *v: b->vars){
+void Serializer::insert_destructors_block(Block *b, bool recursive) {
+	for (auto *v: b->vars) {
 		SerialNodeParam p = param_local(v->type, v->_offset);
 		add_cmd_destructor(p);
 	}
 }
 
-void Serializer::insert_destructors_temp()
-{
+void Serializer::insert_destructors_temp() {
 	for (SerialNodeParam &p: inserted_temp)
 		add_cmd_destructor(p);
 	inserted_temp.clear();
 }
 
-int Serializer::temp_in_cmd(int c, int v)
-{
+int Serializer::temp_in_cmd(int c, int v) {
 	if (cmd[c].inst >= INST_MARKER)
 		return 0;
 	int r = 0;
@@ -849,8 +843,7 @@ void Serializer::scan_temp_var_usage()
 	temp_var_ranges_defined = true;*/
 }
 
-inline bool param_is_simple(SerialNodeParam &p)
-{
+inline bool param_is_simple(SerialNodeParam &p) {
 	return ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::NONE));
 }
 
@@ -909,8 +902,7 @@ int Serializer::find_unused_reg(int first, int last, int size, int exclude)
 
 // inst ... [local] ...
 // ->      mov reg, local     inst ...[reg]...
-void Serializer::solve_deref_temp_local(int c, int np, bool is_local)
-{
+void Serializer::solve_deref_temp_local(int c, int np, bool is_local) {
 	SerialNodeParam p = cmd[c].p[np];
 	int shift = p.shift;
 
@@ -931,13 +923,14 @@ void Serializer::solve_deref_temp_local(int c, int np, bool is_local)
 
 	next_cmd_target(c);
 	add_cmd(Asm::INST_MOV, p_reg, p);
-	if (shift > 0){
+	if (shift > 0) {
 		// solve_deref_temp_local
 		next_cmd_target(c + 1);
 		add_cmd(Asm::INST_ADD, p_reg, param_imm(TypeInt, shift));
 		set_virtual_reg(reg, c, c+2);
-	}else
+	} else {
 		set_virtual_reg(reg, c, c+1);
+	}
 }
 
 #if 0

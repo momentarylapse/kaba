@@ -16,7 +16,7 @@ namespace Kaba{
 int func_index(Function *f);
 
 
-int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret)
+int SerializerARM::fc_begin(Function *f, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret)
 {
 	const Class *type = ret.type;
 	if (!type)
@@ -29,8 +29,8 @@ int SerializerARM::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 	Array<SerialNodeParam> params = _params;
 
 	// instance as first parameter
-	if (instance.type)
-		params.insert(instance, 0);
+	//if (instance.type)
+	//	params.insert(instance, 0);
 
 	// return as _very_ first parameter
 	if (type->uses_return_by_memory()){
@@ -117,9 +117,9 @@ void SerializerARM::fc_end(int push_size, const SerialNodeParam &ret) {
 	}
 }
 
-void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void SerializerARM::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(instance, params, ret);
+	int push_size = fc_begin(f, params, ret);
 
 	if ((f->owner() == syntax_tree) and (!f->is_extern)) {
 		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
@@ -144,15 +144,15 @@ void SerializerARM::add_function_call(Function *f, const SerialNodeParam &instan
 	fc_end(push_size, ret);
 }
 
-void SerializerARM::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
+void SerializerARM::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(instance, param, ret);
+	int push_size = fc_begin(f, param, ret);
 
 	int v1 = add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
 	int v2 = add_virtual_reg(Asm::REG_R5);//find_unused_reg(cmd.num-1, cmd.num-1, 4);
-	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), instance);
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), param[0]);
 	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v2), param_deref_vreg(TypePointer, v1));
-	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), param_imm(TypeInt, 4*virtual_index));
+	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v1), param_imm(TypeInt, 4*f->virtual_index));
 	add_cmd(Asm::INST_ADD, param_vreg(TypePointer, v1), param_vreg(TypePointer, v2), param_vreg(TypePointer, v1));
 	add_cmd(Asm::INST_MOV, param_vreg(TypePointer, v2), param_deref_vreg(TypePointer, v1));
 	add_cmd(Asm::INST_CALL, param_vreg(TypePointer, v2));
@@ -277,7 +277,7 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
-			add_function_call(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
+			add_function_call(links[0]->as_func(), {param_imm(TypeInt, ret.type->parent->size)}, ret);
 			clear_nodes(links);
 
 			// __init__()
@@ -300,7 +300,7 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
-			add_function_call(links[0]->as_func(), p_none, {operand}, p_none);
+			add_function_call(links[0]->as_func(), {operand}, p_none);
 			clear_nodes(links);
 			break;}
 		case StatementID::ASM:

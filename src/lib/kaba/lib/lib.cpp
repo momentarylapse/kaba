@@ -292,10 +292,12 @@ void add_operator(OperatorID primitive_op, const Class *return_type, const Class
 	o->param_type_2 = param_type2;
 	
 	bool allow_member = true;
-	if (!param_type1 or ! param_type2)
+	if (!param_type1)// or ! param_type2)
 		allow_member = false;
-	if (o->primitive->left_modifiable and !param_type1->uses_call_by_reference())
-		allow_member = false;
+	if (param_type1)
+		//if (!param_type1->uses_call_by_reference())
+		if (o->primitive->left_modifiable and !param_type1->uses_call_by_reference())
+			allow_member = false;
 	allow_member = false;
 	if (allow_member) {
 		add_class(param_type1);
@@ -312,8 +314,13 @@ void add_operator(OperatorID primitive_op, const Class *return_type, const Class
 	}
 	o->f->is_pure = !o->primitive->left_modifiable;
 	func_set_inline(inline_index);
+	if (param_type1 == TypeInt) {
 	//msg_write(o->sig());
-	//msg_write("          " + o->f->signature());
+	//msg_write("                          " + o->f->signature());
+	}
+	//if (param_type1)
+	//if (!o->primitive->left_modifiable and !param_type1->uses_call_by_reference())
+	//	msg_write(o->sig());
 	cur_package->syntax->operators.add(o);
 }
 

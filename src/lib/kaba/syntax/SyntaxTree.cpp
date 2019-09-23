@@ -643,6 +643,7 @@ Node *SyntaxTree::conv_calls(Node *c) {
 		for (int j=0;j<c->params.num;j++)
 			if ((c->params[j]->type->is_array()) or (c->params[j]->type->is_super_array())) {
 				c->set_param(j, ref_node(c->params[j]));
+				// REALLY ?!?!?!?  FIXME?!?!?
 			}
   	}
 	return c;

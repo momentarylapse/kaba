@@ -11,8 +11,7 @@ void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s);
 
 
 
-int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret)
-{
+int SerializerX86::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
 
 	// return data too big... push address
@@ -27,9 +26,13 @@ int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 	// grow stack (down) for local variables of the calling function
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	int64 push_size = 0;
+	
+	int p0 = 0;
+	if (f->is_static)
+		p0 = 1;
 
 	// push parameters onto stack
-	for (int p=params.num-1;p>=0;p--){
+	for (int p=params.num-1;p>=p0;p--){
 		if (params[p].type){
 			int s = mem_align(params[p].type->size, 4);
 			for (int j=0;j<s/4;j++)
@@ -45,8 +48,8 @@ int SerializerX86::fc_begin(const SerialNodeParam &instance, const Array<SerialN
 	}
 
 	// _cdecl: push class instance as first parameter
-	if (instance.type){
-		add_cmd(Asm::INST_PUSH, instance);
+	if (!f->is_static){
+		add_cmd(Asm::INST_PUSH, params[0]);
 		push_size += config.pointer_size;
 	}
 	
@@ -86,9 +89,9 @@ void SerializerX86::fc_end(int push_size, const SerialNodeParam &ret)
 	}
 }
 
-void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void SerializerX86::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(instance, params, ret);
+	int push_size = fc_begin(f, params, ret);
 
 	if (f->address) {
 		add_cmd(Asm::INST_CALL, param_imm(TypePointer, (int_p)f->address)); // the actual call
@@ -102,13 +105,13 @@ void SerializerX86::add_function_call(Function *f, const SerialNodeParam &instan
 	fc_end(push_size, ret);
 }
 
-void SerializerX86::add_virtual_function_call(int virtual_index, const SerialNodeParam &instance, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void SerializerX86::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(instance, params, ret);
+	int push_size = fc_begin(f, params, ret);
 
-	add_cmd(Asm::INST_MOV, p_eax, instance);
+	add_cmd(Asm::INST_MOV, p_eax, params[0]);
 	add_cmd(Asm::INST_MOV, p_eax, p_deref_eax);
-	add_cmd(Asm::INST_ADD, p_eax, param_imm(TypeInt, 4 * virtual_index));
+	add_cmd(Asm::INST_ADD, p_eax, param_imm(TypeInt, 4 * f->virtual_index));
 	add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_EDX), p_deref_eax);
 	add_cmd(Asm::INST_CALL, param_preg(TypePointer, Asm::REG_EDX)); // the actual call
 
@@ -339,7 +342,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@malloc not found????");
-			add_function_call(links[0]->as_func(), p_none, {param_imm(TypeInt, ret.type->parent->size)}, ret);
+			add_function_call(links[0]->as_func(), {param_imm(TypeInt, ret.type->parent->size)}, ret);
 			clear_nodes(links);
 
 			// __init__()
@@ -362,7 +365,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
 			if (links.num == 0)
 				do_error("@free not found????");
-			add_function_call(links[0]->as_func(), p_none, {operand}, p_none);
+			add_function_call(links[0]->as_func(), {operand}, p_none);
 			clear_nodes(links);
 			break;}
 		/*case StatementID::RAISE:
