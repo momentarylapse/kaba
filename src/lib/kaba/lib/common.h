@@ -20,6 +20,7 @@ void add_package(const string &name, bool used_by_default);
 const Class *add_type(const string &name, int size, ScriptFlag = FLAG_NONE);
 const Class *add_type_p(const string &name, const Class *sub_type, ScriptFlag = FLAG_NONE);
 const Class *add_type_a(const string &name, const Class *sub_type, int array_length);
+const Class *add_type_d(const string &name, const Class *sub_type);
 Function *add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag = FLAG_NONE);
 template<class T>
 Function *add_funcx(const string &name, const Class *return_type, T func, ScriptFlag flag = FLAG_NONE) {
@@ -53,6 +54,77 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 #define class_set_vtable(TYPE) \
 	{TYPE my_instance; \
 	class_link_vtable(*(void***)&my_instance);}
+
+
+
+// T[] += T[]
+#define IMPLEMENT_IOP(OP, TYPE) \
+{ \
+	int n = min(num, b.num); \
+	TYPE *pa = (TYPE*)data; \
+	TYPE *pb = (TYPE*)b.data; \
+	for (int i=0;i<n;i++) \
+		*(pa ++) OP *(pb ++); \
+}
+
+// T[] += x
+#define IMPLEMENT_IOP2(OP, TYPE) \
+{ \
+	TYPE *pa = (TYPE*)data; \
+	for (int i=0;i<num;i++) \
+		*(pa ++) OP x; \
+}
+
+
+// R[] = T[] + T[]
+#define IMPLEMENT_OP(OP, TYPE, RETURN) \
+{ \
+	int n = min(num, b.num); \
+	Array<RETURN> r; \
+	r.resize(n); \
+	TYPE *pa = (TYPE*)data; \
+	TYPE *pb = (TYPE*)b.data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<n;i++) \
+		*(pr ++) = *(pa ++) OP *(pb ++); \
+	return r; \
+}
+// R[] = T[] + x
+#define IMPLEMENT_OP2(OP, TYPE, RETURN) \
+{ \
+	Array<RETURN> r; \
+	r.resize(num); \
+	TYPE *pa = (TYPE*)data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<num;i++) \
+		*(pr ++) = *(pa ++) OP x; \
+	return r; \
+}
+// R[] = F(T[], T[])
+#define IMPLEMENT_OPF(F, TYPE, RETURN) \
+{ \
+	int n = min(num, b.num); \
+	Array<RETURN> r; \
+	r.resize(n); \
+	TYPE *pa = (TYPE*)data; \
+	TYPE *pb = (TYPE*)b.data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<n;i++) \
+		*(pr ++) = F(*(pa ++), *(pb ++)); \
+	return r; \
+}
+
+// R[] = F(T[], x)
+#define IMPLEMENT_OPF2(F, TYPE, RETURN) \
+{ \
+	Array<RETURN> r; \
+	r.resize(num); \
+	TYPE *pa = (TYPE*)data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<num;i++) \
+		*(pr ++) = F(*(pa ++), x); \
+	return r; \
+}
 
 
 };
