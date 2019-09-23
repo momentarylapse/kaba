@@ -86,6 +86,17 @@ float xop_float_exp(float a, float b);
 		*(pr ++) = *(pa ++) OP *(pb ++); \
 	return r; \
 }
+// R[] = T[] + x
+#define IMPLEMENT_OP2(OP, TYPE, RETURN) \
+{ \
+	Array<RETURN> r; \
+	r.resize(num); \
+	TYPE *pa = (TYPE*)data; \
+	RETURN *pr = (RETURN*)r.data; \
+	for (int i=0;i<num;i++) \
+		*(pr ++) = *(pa ++) OP x; \
+	return r; \
+}
 // R[] = F(T[], T[])
 #define IMPLEMENT_OPF(F, TYPE, RETURN) \
 { \
@@ -113,7 +124,19 @@ float xop_float_exp(float a, float b);
 }
 
 class BoolList : public Array<bool> {
-	
+public:
+	// a = b + c
+	Array<bool> _cdecl _and(BoolList &b)	IMPLEMENT_OP(and, bool, bool)
+	Array<bool> _cdecl _or(BoolList &b)	IMPLEMENT_OP(or, bool, bool)
+	Array<bool> _cdecl eq(BoolList &b)	IMPLEMENT_OP(==, bool, bool)
+	Array<bool> _cdecl ne(BoolList &b)	IMPLEMENT_OP(!=, bool, bool)
+	// a = b + x
+	Array<bool> _cdecl _and2(bool x)	IMPLEMENT_OP2(and, bool, bool)
+	Array<bool> _cdecl _or2(bool x)	IMPLEMENT_OP2(or, bool, bool)
+	Array<bool> _cdecl eq2(bool x)	IMPLEMENT_OP2(==, bool, bool)
+	Array<bool> _cdecl ne2(bool x)	IMPLEMENT_OP2(!=, bool, bool)
+
+	//Array<bool> _cdecl _not(BoolList &b)	IMPLEMENT_OP(!, bool, bool)
 };
 
 class IntList : public Array<int> {
@@ -160,6 +183,11 @@ public:
 	void _cdecl idiv2(int x)	IMPLEMENT_IOP2(/=, int)
 	void _cdecl assign_int(int x)	IMPLEMENT_IOP2(=, int)
 	
+	// a = b + x
+	Array<int> _cdecl add2(int x)	IMPLEMENT_OP2(+, int, int)
+	Array<int> _cdecl sub2(int x)	IMPLEMENT_OP2(-, int, int)
+	Array<int> _cdecl mul2(int x)	IMPLEMENT_OP2(*, int, int)
+	Array<int> _cdecl div2(int x)	IMPLEMENT_OP2(/, int, int)
 	Array<int> _cdecl exp2(int x)	IMPLEMENT_OPF2(xop_int_exp, int, int)
 	
 	// a <= b
@@ -169,6 +197,14 @@ public:
 	Array<bool> _cdecl ge(IntList &b) IMPLEMENT_OP(>=, int, bool)
 	Array<bool> _cdecl eq(IntList &b) IMPLEMENT_OP(==, int, bool)
 	Array<bool> _cdecl ne(IntList &b) IMPLEMENT_OP(!=, int, bool)
+
+	// a <= x
+	Array<bool> _cdecl lt2(int x) IMPLEMENT_OP2(<, int, bool)
+	Array<bool> _cdecl le2(int x) IMPLEMENT_OP2(<=, int, bool)
+	Array<bool> _cdecl gt2(int x) IMPLEMENT_OP2(>, int, bool)
+	Array<bool> _cdecl ge2(int x) IMPLEMENT_OP2(>=, int, bool)
+	Array<bool> _cdecl eq2(int x) IMPLEMENT_OP2(==, int, bool)
+	Array<bool> _cdecl ne2(int x) IMPLEMENT_OP2(!=, int, bool)
 };
 
 
@@ -250,6 +286,11 @@ public:
 	void _cdecl idiv2(float x)	IMPLEMENT_IOP2(/=, float)
 	void _cdecl assign_float(float x)	IMPLEMENT_IOP2(=, float)
 	
+	// a = b + x
+	Array<float> _cdecl add2(float x)	IMPLEMENT_OP2(+, float, float)
+	Array<float> _cdecl sub2(float x)	IMPLEMENT_OP2(-, float, float)
+	Array<float> _cdecl mul2(float x)	IMPLEMENT_OP2(*, float, float)
+	Array<float> _cdecl div2(float x)	IMPLEMENT_OP2(/, float, float)
 	Array<float> _cdecl exp2(float x)	IMPLEMENT_OPF2(xop_float_exp, float, float)
 	
 	// a <= b
@@ -259,6 +300,14 @@ public:
 	Array<bool> _cdecl ge(FloatList &b) IMPLEMENT_OP(>=, float, bool)
 	Array<bool> _cdecl eq(FloatList &b) IMPLEMENT_OP(==, float, bool)
 	Array<bool> _cdecl ne(FloatList &b) IMPLEMENT_OP(!=, float, bool)
+
+	// a <= x
+	Array<bool> _cdecl lt2(float x) IMPLEMENT_OP2(<, float, bool)
+	Array<bool> _cdecl le2(float x) IMPLEMENT_OP2(<=, float, bool)
+	Array<bool> _cdecl gt2(float x) IMPLEMENT_OP2(>, float, bool)
+	Array<bool> _cdecl ge2(float x) IMPLEMENT_OP2(>=, float, bool)
+	Array<bool> _cdecl eq2(float x) IMPLEMENT_OP2(==, float, bool)
+	Array<bool> _cdecl ne2(float x) IMPLEMENT_OP2(!=, float, bool)
 };
 
 class ComplexList : public Array<complex> {
@@ -344,9 +393,7 @@ void __rect_set(rect &r, float x1, float x2, float y1, float y2)
 #pragma GCC optimize("0")
 
 
-void kaba_array_clear(void *p, const Class *type);
 void kaba_array_resize(void *p, const Class *type, int num);
-void kaba_array_add(DynamicArray &array, void *p, const Class *type);
 
 
 class KabaAny : public Any {
@@ -459,6 +506,26 @@ void SIAddPackageMath() {
 		((Class*)TypePlane)->_amd64_allow_pass_in_xmm = true;
 		((Class*)TypeRect)->_amd64_allow_pass_in_xmm = true;
 	}
+
+
+	add_class(TypeBoolList);
+		class_add_func("__and__", TypeBoolList, mf(&BoolList::_and), FLAG_PURE);
+			func_add_param("other", TypeBoolList);
+		class_add_func("__or__", TypeBoolList, mf(&BoolList::_or), FLAG_PURE);
+			func_add_param("other", TypeBoolList);
+		class_add_func("__eq__", TypeBoolList, mf(&BoolList::eq), FLAG_PURE);
+			func_add_param("other", TypeBoolList);
+		class_add_func("__ne__", TypeBoolList, mf(&BoolList::ne), FLAG_PURE);
+			func_add_param("other", TypeBoolList);
+		class_add_func("__and__", TypeBoolList, mf(&BoolList::_and2), FLAG_PURE);
+			func_add_param("other", TypeBool);
+		class_add_func("__or__", TypeBoolList, mf(&BoolList::_or2), FLAG_PURE);
+			func_add_param("other", TypeBool);
+		class_add_func("__eq__", TypeBoolList, mf(&BoolList::eq2), FLAG_PURE);
+			func_add_param("other", TypeBool);
+		class_add_func("__ne__", TypeBoolList, mf(&BoolList::ne2), FLAG_PURE);
+			func_add_param("other", TypeBool);
+
 	
 	
 	add_class(TypeIntList);
@@ -483,6 +550,14 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeIntList);
 		class_add_func("__exp__", TypeIntList, mf(&IntList::exp), FLAG_PURE);
 			func_add_param("other", TypeIntList);
+		class_add_func("__add__", TypeIntList, mf(&IntList::add2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__sub__", TypeIntList, mf(&IntList::sub2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__mul__", TypeIntList, mf(&IntList::mul2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__div__", TypeIntList, mf(&IntList::div2), FLAG_PURE);
+			func_add_param("other", TypeInt);
 		class_add_func("__exp__", TypeIntList, mf(&IntList::exp2), FLAG_PURE);
 			func_add_param("other", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&IntList::assign_int));
@@ -499,6 +574,18 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeIntList);
 		class_add_func("__ne__", TypeBoolList, mf(&IntList::ne), FLAG_PURE);
 			func_add_param("other", TypeIntList);
+		class_add_func("__lt__", TypeBoolList, mf(&IntList::lt2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__le__", TypeBoolList, mf(&IntList::le2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__gt__", TypeBoolList, mf(&IntList::gt2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__ge__", TypeBoolList, mf(&IntList::ge2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__eq__", TypeBoolList, mf(&IntList::eq2), FLAG_PURE);
+			func_add_param("other", TypeInt);
+		class_add_func("__ne__", TypeBoolList, mf(&IntList::ne2), FLAG_PURE);
+			func_add_param("other", TypeInt);
 
 	add_class(TypeFloatList);
 		class_add_func("sort", TypeVoid, mf(&FloatList::sort));
@@ -524,6 +611,14 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeFloatList);
 		class_add_func("__exp__", TypeFloatList, mf(&FloatList::exp), FLAG_PURE);
 			func_add_param("other", TypeFloatList);
+		class_add_func("__add__", TypeFloatList, mf(&FloatList::add2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__sub__", TypeFloatList, mf(&FloatList::sub2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__mul__", TypeFloatList, mf(&FloatList::mul2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__div__", TypeFloatList, mf(&FloatList::div2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
 		class_add_func("__exp__", TypeFloatList, mf(&FloatList::exp2), FLAG_PURE);
 			func_add_param("other", TypeFloat32);
 		class_add_func("__iadd__", TypeVoid, mf(&FloatList::iadd2));
@@ -544,6 +639,14 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeFloatList);
 		class_add_func("__ge__", TypeBoolList, mf(&FloatList::ge), FLAG_PURE);
 			func_add_param("other", TypeFloatList);
+		class_add_func("__lt__", TypeBoolList, mf(&FloatList::lt2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__le__", TypeBoolList, mf(&FloatList::le2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__gt__", TypeBoolList, mf(&FloatList::gt2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
+		class_add_func("__ge__", TypeBoolList, mf(&FloatList::ge2), FLAG_PURE);
+			func_add_param("other", TypeFloat32);
 
 	add_class(TypeComplexList);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&ComplexList::__init__));
