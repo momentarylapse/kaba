@@ -647,14 +647,8 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 #if 1
 	if (node_is_assign_mem(com)){
 		Node *dst, *src;
-		if (com->instance){
-			// nope---
-			dst = com->instance;
-			src = com->params[0];
-		}else{
-			dst = com->params[0];
-			src = com->params[1];
-		}
+			dst = com->uparams[0];
+			src = com->uparams[1];
 		if (src->kind == NodeKind::FUNCTION_CALL or src->kind == NodeKind::INLINE_CALL){
 			if (dst->kind == NodeKind::VAR_LOCAL or dst->kind == NodeKind::VAR_GLOBAL or dst->kind == NodeKind::LOCAL_ADDRESS){
 				override_ret = dst;
@@ -677,21 +671,17 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index)
 
 
 	Array<SerialNodeParam> params;
-	params.resize(com->params.num);
+	params.resize(com->uparams.num);
 
 	if (!ignore_params){
 
 		// compile parameters
-		for (int p=0;p<com->params.num;p++)
-			params[p] = serialize_parameter(com->params[p], block, index);
-	}
+		for (int p=0;p<com->uparams.num;p++)
+			params[p] = serialize_parameter(com->uparams[p], block, index);
 
-	// class function -> compile instance
-	SerialNodeParam instance = p_none;
-	if (com->instance){
-		instance = serialize_parameter(com->instance, block, index);
-		// super_array automatically referenced...
-		params.insert(instance, 0);
+		// class function -> compile instance
+		//if (com->instance)
+		//	params.insert(serialize_parameter(com->instance, block, index), 0);
 	}
 
 
@@ -732,11 +722,11 @@ void Serializer::serialize_block(Block *block)
 
 	insert_constructors_block(block);
 
-	for (int i=0;i<block->params.num;i++){
+	for (int i=0;i<block->uparams.num;i++){
 		stack_offset = cur_func->_var_size;
 
 		// serialize
-		serialize_node(block->params[i], block, i);
+		serialize_node(block->uparams[i], block, i);
 		
 		// destruct new temp vars
 		insert_destructors_temp();
@@ -1736,8 +1726,8 @@ void Serializer::serialize_function(Function *f)
 
 	// outro (if last command != return)
 	bool need_outro = true;
-	if (f->block->params.num > 0)
-		if ((f->block->params.back()->kind == NodeKind::STATEMENT) and (f->block->params.back()->as_statement()->id == StatementID::RETURN))
+	if (f->block->uparams.num > 0)
+		if ((f->block->uparams.back()->kind == NodeKind::STATEMENT) and (f->block->uparams.back()->as_statement()->id == StatementID::RETURN))
 			need_outro = false;
 	if (need_outro)
 		add_function_outro(f);

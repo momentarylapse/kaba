@@ -82,9 +82,9 @@ public:
 	NodeKind kind;
 	int64 link_no;
 	// parameters
-	Array<Node*> params;
+	Array<Node*> uparams;
 	// linking of class function instances
-	Node *instance;
+	//Node *instance;
 	// return value
 	const Class *type;
 	Node(NodeKind kind, int64 link_no, const Class *type);
@@ -104,9 +104,10 @@ public:
 	void *as_global_p() const;
 	Variable *as_global() const;
 	Variable *as_local() const;
-	void set_num_params(int n);
-	void set_param(int index, Node *p);
+	void set_num_uparams(int n);
+	void set_uparam(int index, Node *p);
 	void set_instance(Node *p);
+	//Array<Node*> uparams() const;
 	string sig() const;
 	string str() const;
 	void show() const;
