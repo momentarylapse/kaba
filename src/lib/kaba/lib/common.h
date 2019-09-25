@@ -50,11 +50,27 @@ void add_const(const string &name, const Class *type, const void *value);
 void class_add_const(const string &name, const Class *type, const void *value);
 void add_ext_var(const string &name, const Class *type, void *var);
 void add_type_cast(int penalty, const Class *source, const Class *dest, const string &cmd);
+void add_operator(OperatorID primitive_op, const Class *return_type, const Class *param_type1, const Class *param_type2, InlineID inline_index, void *func = nullptr);
 
 #define class_set_vtable(TYPE) \
 	{TYPE my_instance; \
 	class_link_vtable(*(void***)&my_instance);}
 
+
+
+
+#define MAKE_OP_FOR(T) \
+	T op_##T##_add(T a, T b) { return a + b; } \
+	T op_##T##_sub(T a, T b) { return a - b; } \
+	T op_##T##_mul(T a, T b) { return a * b; } \
+	T op_##T##_div(T a, T b) { return a / b; } \
+	T op_##T##_neg(T a) { return - a; } \
+	bool op_##T##_eq(T a, T b) { return a == b; } \
+	bool op_##T##_neq(T a, T b) { return a != b; } \
+	bool op_##T##_l(T a, T b) { return a < b; } \
+	bool op_##T##_le(T a, T b) { return a <= b; } \
+	bool op_##T##_g(T a, T b) { return a > b; } \
+	bool op_##T##_ge(T a, T b) { return a >= b; }
 
 
 // T[] += T[]
@@ -125,6 +141,8 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 		*(pr ++) = F(*(pa ++), x); \
 	return r; \
 }
+
+
 
 
 };

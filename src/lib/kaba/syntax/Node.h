@@ -28,6 +28,7 @@ class Statement;
 enum class NodeKind {
 	NONE = -1,
 	UNKNOWN,
+	PLACEHOLDER,
 	// data
 	VAR_LOCAL,
 	VAR_GLOBAL,

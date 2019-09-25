@@ -12,6 +12,8 @@
 namespace Kaba{
 
 string kind2str(NodeKind kind) {
+	if (kind == NodeKind::PLACEHOLDER)
+		return "placeholder";
 	if (kind == NodeKind::VAR_LOCAL)
 		return "local";
 	if (kind == NodeKind::VAR_GLOBAL)
@@ -96,6 +98,8 @@ string kind2str(NodeKind kind) {
 
 string Node::sig() const {
 	string t = type->name + " ";
+	if (kind == NodeKind::PLACEHOLDER)
+		return "";
 	if (kind == NodeKind::VAR_LOCAL)
 		return t + as_local()->name;
 	if (kind == NodeKind::VAR_GLOBAL)
@@ -107,7 +111,7 @@ string Node::sig() const {
 	if (kind == NodeKind::FUNCTION_CALL)
 		return as_func()->signature();
 	if (kind == NodeKind::POINTER_CALL)
-		return "";
+		return t + "(...)";
 	if (kind == NodeKind::INLINE_CALL)
 		return as_func()->signature();
 	if (kind == NodeKind::VIRTUAL_CALL)
@@ -164,7 +168,7 @@ void Node::show() const {
 		if (p)
 			p->show();
 		else
-			msg_write("<param nil>");
+			msg_write("<-NULL->");
 	msg_left();
 }
 

@@ -305,7 +305,8 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) 
 	//Node *dummy = add_node_local(vv);
 	Array<Node*> links;
 	for (auto *cf: t->get_constructors()) {
-		Node *n = add_node_member_call(cf, nullptr /*ref_node(dummy)*/); // temp var added later...
+		auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
+		Node *n = add_node_member_call(cf, dummy /*ref_node(dummy)*/); // temp var added later...
 		n->kind = NodeKind::CONSTRUCTOR_AS_FUNCTION;
 		n->type = t;
 		links.add(n);
@@ -1548,6 +1549,7 @@ Node *SyntaxTree::parse_statement_new(Block *block) {
 			funcs.add(add_node_func_name(cf));
 		cmd->set_num_uparams(1);
 		cmd->set_uparam(0, parse_operand_extension_call(funcs, block, false));
+		cmd->uparams[0]->set_instance(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
 	}
 	return cmd;
 }

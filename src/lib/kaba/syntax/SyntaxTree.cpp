@@ -30,7 +30,11 @@ string Operator::sig() const {
 
 
 Node *SyntaxTree::cp_node(Node *c) {
-	Node *cmd = new Node(c->kind, c->link_no, c->type);
+	Node *cmd;
+	if (c->kind == NodeKind::BLOCK)
+		cmd = new Block(c->as_block()->function, c->as_block()->parent);
+	else
+		cmd = new Node(c->kind, c->link_no, c->type);
 	cmd->set_num_uparams(c->uparams.num);
 	for (int i=0;i<c->uparams.num;i++)
 		if (c->uparams[i])
@@ -873,8 +877,7 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F) {
 		transform_block(n->as_block(), F);
 	} else {
 		for (int i=0; i<n->uparams.num; i++)
-			if (n->uparams[i])
-				n->set_uparam(i, transform_node(n->uparams[i], F));
+			n->set_uparam(i, transform_node(n->uparams[i], F));
 	}
 	return F(n);
 }
@@ -884,8 +887,7 @@ Node* SyntaxTree::transformb_node(Node *n, Block *b, std::function<Node*(Node*, 
 		transformb_block(n->as_block(), F);
 	} else {
 		for (int i=0; i<n->uparams.num; i++)
-			if (n->uparams[i])
-				n->set_uparam(i, transformb_node(n->uparams[i], b, F));
+			n->set_uparam(i, transformb_node(n->uparams[i], b, F));
 	}
 	return F(n, b);
 }

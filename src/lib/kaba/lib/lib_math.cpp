@@ -128,6 +128,13 @@ void __rect_set(rect &r, float x1, float x2, float y1, float y2)
 
 
 
+complex op_complex_add(complex &a, complex &b) { return a + b; }
+complex op_complex_sub(complex &a, complex &b) { return a - b; }
+complex op_complex_mul(complex &a, complex &b) { return a * b; }
+complex op_complex_div(complex &a, complex &b) { return a / b; }
+
+
+
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")
 #pragma GCC optimize("no-inline")
@@ -212,7 +219,7 @@ void SIAddPackageMath() {
 	add_package("math", true);
 
 	// types
-	TypeComplex = add_type("complex", sizeof(float) * 2);
+	TypeComplex = add_type("complex", sizeof(complex));
 	TypeComplexList = add_type_a("complex[]", TypeComplex, -1);
 	TypeVector = add_type("vector", sizeof(vector));
 	TypeVectorList = add_type_a("vector[]", TypeVector, -1);
@@ -249,6 +256,35 @@ void SIAddPackageMath() {
 	}
 
 
+	add_class(TypeComplex);
+		class_add_elementx("x", TypeFloat32, &complex::x);
+		class_add_elementx("y", TypeFloat32, &complex::y);
+		class_add_func("abs", TypeFloat32, mf(&complex::abs), FLAG_PURE);
+		class_add_func("abs_sqr", TypeFloat32, mf(&complex::abs_sqr), FLAG_PURE);
+		class_add_func("bar", TypeComplex, 		mf(&complex::bar), FLAG_PURE);
+		class_add_func("str", TypeString, mf(&complex::str), FLAG_PURE);
+		class_add_const("I", TypeComplex, &complex::I);
+		class_add_func("create", TypeComplex, (void*)__complex_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
+			func_set_inline(InlineID::COMPLEX_SET);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)__complex_set);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);	
+	//	add_operator(OperatorID::ASSIGN, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_ASSIGN);
+		add_operator(OperatorID::ADD, TypeComplex, TypeComplex, TypeComplex, InlineID::COMPLEX_ADD, (void*)op_complex_add);
+		add_operator(OperatorID::SUBTRACT, TypeComplex, TypeComplex, TypeComplex, InlineID::COMPLEX_SUBTRACT, (void*)op_complex_sub);
+		add_operator(OperatorID::MULTIPLY, TypeComplex, TypeComplex, TypeComplex, InlineID::COMPLEX_MULTIPLY, (void*)op_complex_mul);
+		add_operator(OperatorID::MULTIPLY, TypeComplex, TypeFloat32, TypeComplex, InlineID::COMPLEX_MULTIPLY_FC);
+		add_operator(OperatorID::MULTIPLY, TypeComplex, TypeComplex, TypeFloat32, InlineID::COMPLEX_MULTIPLY_CF);
+		add_operator(OperatorID::DIVIDE, TypeComplex, TypeComplex, TypeComplex, InlineID::NONE /*InlineID::COMPLEX_DIVIDE*/, (void*)op_complex_div);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_ADD_ASSIGN);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_SUBTARCT_ASSIGN);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_MULTIPLY_ASSIGN);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeComplex, TypeComplex, InlineID::COMPLEX_DIVIDE_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeComplex, TypeComplex, InlineID::COMPLEX_EQUAL);
+		add_operator(OperatorID::NEGATIVE, TypeComplex, nullptr, TypeComplex, InlineID::COMPLEX_NEGATE);
+
 	add_class(TypeComplexList);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&ComplexList::__init__));
 		class_add_func("sum", TypeComplex, mf(&ComplexList::sum), FLAG_PURE);
@@ -283,28 +319,7 @@ void SIAddPackageMath() {
 			func_add_param("other", TypeFloat32);
 		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, mf(&ComplexList::assign_complex));
 			func_add_param("other", TypeComplex);
-	
-	add_class(TypeVectorList);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<vector>::__init__));
-	add_class(TypePlaneList);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<plane>::__init__));
 
-	
-	add_class(TypeComplex);
-		class_add_elementx("x", TypeFloat32, &complex::x);
-		class_add_elementx("y", TypeFloat32, &complex::y);
-		class_add_func("abs", TypeFloat32, mf(&complex::abs), FLAG_PURE);
-		class_add_func("abs_sqr", TypeFloat32, mf(&complex::abs_sqr), FLAG_PURE);
-		class_add_func("bar", TypeComplex, 		mf(&complex::bar), FLAG_PURE);
-		class_add_func("str", TypeString, mf(&complex::str), FLAG_PURE);
-		class_add_const("I", TypeComplex, &complex::I);
-		class_add_func("create", TypeComplex, (void*)__complex_set, ScriptFlag(FLAG_PURE | FLAG_STATIC));
-			func_set_inline(InlineID::COMPLEX_SET);
-			func_add_param("x", TypeFloat32);
-			func_add_param("y", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, (void*)__complex_set);
-			func_add_param("x", TypeFloat32);
-			func_add_param("y", TypeFloat32);
 	
 	add_class(TypeVector);
 		class_add_elementx("x", TypeFloat32, &vector::x);
@@ -340,6 +355,21 @@ void SIAddPackageMath() {
 			func_add_param("x", TypeFloat32);
 			func_add_param("y", TypeFloat32);
 			func_add_param("z", TypeFloat32);
+		add_operator(OperatorID::ADD, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_ADD);
+		add_operator(OperatorID::SUBTRACT, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_SUBTRACT);
+		add_operator(OperatorID::MULTIPLY, TypeFloat32, TypeVector, TypeVector, InlineID::VECTOR_MULTIPLY_VV);
+		add_operator(OperatorID::MULTIPLY, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_VF);
+		add_operator(OperatorID::MULTIPLY, TypeVector, TypeFloat32, TypeVector, InlineID::VECTOR_MULTIPLY_FV);
+		add_operator(OperatorID::DIVIDE, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_VF);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_ADD_ASSIGN);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_SUBTARCT_ASSIGN);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_ASSIGN);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_ASSIGN);
+		add_operator(OperatorID::NEGATIVE, TypeVector, nullptr, TypeVector, InlineID::VECTOR_NEGATE);
+	
+	add_class(TypeVectorList);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<vector>::__init__));
+
 	
 	add_class(TypeQuaternion);
 		class_add_elementx("x", TypeFloat32, &quaternion::x);
@@ -460,6 +490,9 @@ void SIAddPackageMath() {
 		class_add_func("from_point_normal", TypePlane, (void*)&plane::from_point_normal, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("p", TypeVector);
 			func_add_param("n", TypeVector);
+	
+	add_class(TypePlaneList);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&Array<plane>::__init__));
 	
 	add_class(TypeMatrix);
 		class_add_element("_00", TypeFloat32, 0);

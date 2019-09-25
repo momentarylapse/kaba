@@ -1,0 +1,2 @@
+void main()
+	print([for i in 0:2 "a"].join(":"))
