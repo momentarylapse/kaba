@@ -3,11 +3,11 @@ class Base
 		print("Base.f")
 
 class Derived extends Base
-	override  void f()
+	override void f()
 		print("Derived.f")
 
 void main()
-	Base *t = new Base
+	Base *t = new Base()
 	t.f()
-	t = new Derived
+	t = new Derived()
 	t.f()

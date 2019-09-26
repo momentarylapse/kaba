@@ -117,14 +117,14 @@ color _col_mul_f(color &a, float b)
 {	return a * b;	}
 
 
-void __complex_set(complex &r, float x, float y)
-{	r = complex(x, y);	}
-void __color_set(color &_r, float a, float r, float g, float b)
-{	_r = color(a, r, g, b);	}
-void __vector_set(vector &r, float x, float y, float z)
-{	r = vector(x, y, z);	}
-void __rect_set(rect &r, float x1, float x2, float y1, float y2)
-{	r = rect(x1, x2, y1, y2);	}
+complex __complex_set(float x, float y)
+{ return complex(x, y); }
+color __color_set(float a, float r, float g, float b)
+{ return color(a, r, g, b); }
+vector __vector_set(float x, float y, float z)
+{ return vector(x, y, z); }
+rect __rect_set(float x1, float x2, float y1, float y2)
+{ return rect(x1, x2, y1, y2); }
 
 
 

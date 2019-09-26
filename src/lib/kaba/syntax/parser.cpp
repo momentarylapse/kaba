@@ -271,7 +271,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	return array;
 }
 
-void SyntaxTree::make_func_node_callable(Node *l, bool check) {
+void SyntaxTree::make_func_node_callable(Node *l) {
 	Function *f = l->as_func();
 	l->kind = NodeKind::FUNCTION_CALL;
 	l->type = f->literal_return_type;
@@ -279,12 +279,6 @@ void SyntaxTree::make_func_node_callable(Node *l, bool check) {
 		l->set_num_uparams(f->num_params);
 	else
 		l->set_num_uparams(f->num_params + 1);
-	if (check) {
-		//if (f->is_static and l->uparams[0])
-		//	f->owner()->do_error("calling static function with object???");
-		if (!f->is_static and !l->uparams[0])
-			f->owner()->do_error("calling member function without object: " + f->long_name());
-	}
 
 	// virtual?
 	if (f->virtual_index >= 0)
@@ -306,7 +300,7 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) 
 	Array<Node*> links;
 	for (auto *cf: t->get_constructors()) {
 		auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
-		Node *n = add_node_member_call(cf, dummy /*ref_node(dummy)*/); // temp var added later...
+		Node *n = add_node_member_call(cf, dummy); // temp var added later...
 		n->kind = NodeKind::CONSTRUCTOR_AS_FUNCTION;
 		n->type = t;
 		links.add(n);
@@ -314,14 +308,31 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block) 
 	return links;
 }
 
-Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block, bool check) {
+Array<const Class*> type_list_from_nodes(const Array<Node*> &nn) {
+	Array<const Class*> t;
+	for (auto *n: nn)
+		t.add(n->type);
+	return t;
+}
+
+string type_list_to_str(const Array<const Class*> &tt) {
+	string s;
+	for (auto *t: tt) {
+		if (s.num > 0)
+			s += ", ";
+		s += t->long_name();
+	}
+	return "(" + s + ")";
+}
+
+Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block) {
 	// parse all parameters
 	auto params = parse_call_parameters(block);
 
 	// make links callable
 	for (Node *l: links) {
 		if (l->kind == NodeKind::FUNCTION) {
-			make_func_node_callable(l, check);
+			make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = links[0]->as_class();
 			clear_nodes(links);
@@ -375,20 +386,13 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block,
 
 	// error message
 
-	string found = "(";
-	foreachi(Node *p, params, i) {
-		if (i > 0)
-			found += ", ";
-		found += p->type->name;
-	}
-	found += ")";
+	string found = type_list_to_str(type_list_from_nodes(params));
 	string available;
 	for (Node *link: links) {
-		if (available.num > 0)
-			available += "\n";
-		available += link->sig();
+		auto p = get_wanted_param_types(link);
+		available += "\n" + link->sig() + ": " + type_list_to_str(p);
 	}
-	do_error("invalid function parameters: " + found + ", valid:\n" + available);
+	do_error("invalid function parameters: " + found + ", valid:" + available);
 	return nullptr;
 }
 
@@ -519,7 +523,12 @@ void clear_nodes(Array<Node*> &nodes, Node *keep) {
 // when calling ...(...)
 Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link) {
 	if ((link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
-		return link->as_func()->literal_param_type;
+		auto f = link->as_func();
+		auto p = f->literal_param_type;
+		if (!f->is_static and (link->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION))
+			if (link->uparams.num == 0 or !link->uparams[0])
+				p.insert(f->name_space, 0);
+		return p;
 	} else if (link->kind == NodeKind::CLASS) {
 		// should be caught earlier and turned to func...
 		const Class *t = link->as_class();
@@ -627,11 +636,19 @@ bool node_is_function(Node *n) {
 	return n->kind == NodeKind::FUNCTION_CALL or n->kind == NodeKind::VIRTUAL_CALL or n->kind == NodeKind::INLINE_CALL or n->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION;
 }
 
+bool node_is_member_function_with_instance(Node *n) {
+	if (!node_is_function(n))
+		return false;
+	auto *f = n->as_func();
+	if (f->is_static)
+		return false;
+	return n->uparams.num == 0 or n->uparams[0];
+}
+
 Node *apply_params_direct(SyntaxTree *ps, Node *operand, Array<Node*> &params) {
 	int offset = 0;
-	if (node_is_function(operand))
-		if (!operand->as_func()->is_static)
-			offset = 1;
+	if (node_is_member_function_with_instance(operand))
+		offset = 1;
 	for (int p=0; p<params.num; p++)
 		operand->set_uparam(p + offset, params[p]);
 	return operand;
@@ -639,9 +656,8 @@ Node *apply_params_direct(SyntaxTree *ps, Node *operand, Array<Node*> &params) {
 
 Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts) {
 	int offset = 0;
-	if (node_is_function(operand))
-		if (!operand->as_func()->is_static)
-			offset = 1;
+	if (node_is_member_function_with_instance(operand))
+		offset = 1;
 	for (int p=0; p<params.num; p++) {
 		if (casts[p] >= 0)
 			params[p] = apply_type_cast(ps, casts[p], params[p]);
@@ -1540,17 +1556,22 @@ Node *SyntaxTree::parse_statement_new(Block *block) {
 	const Class *t = parse_type(block->name_space());
 	Node *cmd = add_node_statement(StatementID::NEW);
 	cmd->type = t->get_pointer();
-	if (Exp.cur == "(") {
-		Array<Function*> cfs = t->get_constructors();
-		Array<Node*> funcs;
-		if (cfs.num == 0)
-			do_error(format("class \"%s\" does not have a constructor", t->name.c_str()));
-		for (auto *cf: cfs)
-			funcs.add(add_node_func_name(cf));
-		cmd->set_num_uparams(1);
-		cmd->set_uparam(0, parse_operand_extension_call(funcs, block, false));
-		cmd->uparams[0]->set_instance(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
+	if (Exp.cur != "(")
+		do_error("'(' expected after 'new Type'");
+	/*cmd->set_num_uparams(1);
+	cmd->set_uparam(0, parse_operand_extension_call(, block, false));
+	cmd->uparams[0]->set_instance(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));*/
+
+	Array<Function*> cfs = t->get_constructors();
+	Array<Node*> funcs;
+	if (cfs.num == 0)
+		do_error(format("class \"%s\" does not have a constructor", t->name.c_str()));
+	for (auto *cf: cfs) {
+		funcs.add(add_node_func_name(cf));
+		funcs.back()->uparams.add(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
 	}
+	cmd->set_num_uparams(1);
+	cmd->set_uparam(0, parse_operand_extension_call(funcs, block));
 	return cmd;
 }
 

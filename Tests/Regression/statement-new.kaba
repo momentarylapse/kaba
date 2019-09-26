@@ -4,7 +4,7 @@ class Test
 		print("new ---")
 
 void main()
-	Test *t = new Test
+	Test *t = new Test()
 	
 	
 	

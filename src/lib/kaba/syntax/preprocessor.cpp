@@ -15,6 +15,10 @@ void db_out(const string &s) {
 // call-by-reference dummy
 class CBR {};
 
+class vec2 { float a; float b; };
+class vec3 { float a; float b; float c; };
+class vec4 { float a; float b; float c; float d; };
+
 template<class R>
 void call0(void *ff, void *ret, const Array<void*> &param) {
 	if (std::is_same<CBR,R>::value) {
@@ -163,6 +167,11 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 				call2<int64,int64,int>(ff, ret, param);
 				return true;
 			}
+		} else if (f->return_type == TypeComplex) {
+			if ((ptype[0] == TypeFloat32) and (ptype[1] == TypeFloat32)) {
+				call2<vec2,float,float>(ff, ret, param);
+				return true;
+			}
 		} else if (f->return_type->uses_return_by_memory()) {
 			if ((ptype[0] == TypeInt) and(ptype[1] == TypeInt)) {
 				call2<CBR,int,int>(ff, ret, param);
@@ -176,19 +185,31 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 			}
 		}
 	} else if (ptype.num == 3) {
-		if (f->return_type->uses_return_by_memory()) {
+		if (f->return_type == TypeVector) {
+			if ((ptype[0] == TypeFloat32) and (ptype[1] == TypeFloat32) and (ptype[2] == TypeFloat32)) {
+				call3<vec3,float,float,float>(ff, ret, param);
+				return true;
+			}
+		}
+		/*if (f->return_type->uses_return_by_memory()) {
 			if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32) and(ptype[2] == TypeFloat32)) {
 				((void(*)(void*, float, float, float))ff)(ret, *(float*)param[0], *(float*)param[1], *(float*)param[2]);
 				return true;
 			}
-		}
+		}*/
 	} else if (ptype.num == 4) {
-		if (f->return_type->uses_return_by_memory()) {
+		if (f->return_type->_amd64_allow_pass_in_xmm and (f->return_type->size == 16)) { // rect, color, plane, quaternion
+			if ((ptype[0] == TypeFloat32) and (ptype[1] == TypeFloat32) and (ptype[2] == TypeFloat32) and (ptype[3] == TypeFloat32)) {
+				call4<vec4,float,float,float,float>(ff, ret, param);
+				return true;
+			}
+		}
+		/*if (f->return_type->uses_return_by_memory()) {
 			if ((ptype[0] == TypeFloat32) and(ptype[1] == TypeFloat32) and(ptype[2] == TypeFloat32) and(ptype[3] == TypeFloat32)) {
 				((void(*)(void*, float, float, float, float))ff)(ret, *(float*)param[0], *(float*)param[1], *(float*)param[2], *(float*)param[3]);
 				return true;
 			}
-		}
+		}*/
 	}
 	db_out(".... NOPE");
 	return false;

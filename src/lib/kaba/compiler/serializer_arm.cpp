@@ -281,15 +281,11 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			clear_nodes(links);
 
 			// __init__()
-			if (com->uparams.num > 0) {
-				Node *sub = com->uparams[0];
-				Node *c_ret = new Node(NodeKind::VAR_TEMP, ret.p, ret.type);
-				sub->set_instance(c_ret);
-				serialize_node(sub, block, index);
-				//delete sub;
-			} else {
-				add_cmd_constructor(ret, NodeKind::NONE);
-			}
+			Node *sub = com->uparams[0];
+			Node *c_ret = new Node(NodeKind::VAR_TEMP, ret.p, ret.type);
+			sub->set_instance(c_ret);
+			serialize_node(sub, block, index);
+			//delete sub;
 			break;}
 		case StatementID::DELETE:{
 			// __delete__()
