@@ -1689,6 +1689,13 @@ Node *SyntaxTree::parse_statement_let(Block *block) {
 	return cmd;
 }
 
+Array<const Class*> func_effective_params(const Function *f) {
+	auto p = f->literal_param_type;
+	if (!f->is_static)
+		p.insert(f->name_space, 0);
+	return p;
+}
+
 Node *SyntaxTree::parse_statement_map(Block *block) {
 	Exp.next(); // "map"
 	string name = Exp.cur;
@@ -1701,9 +1708,10 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
 
-	if (params[0]->as_func()->num_params != 1)
+	auto p = func_effective_params(params[0]->as_func());
+	if (p.num != 1)
 		do_error("map(): function must have exactly one parameter");
-	if (params[0]->as_func()->literal_param_type[0] != params[1]->type->parent)
+	if (p[0] != params[1]->type->parent)
 		do_error("map(): function parameter does not match list type");
 
 	auto links = get_existence("@map", nullptr, nullptr, false);

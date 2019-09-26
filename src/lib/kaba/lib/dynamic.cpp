@@ -300,9 +300,14 @@ Any _cdecl kaba_dyn(const void *var, const Class *type) {
 	return a;
 }
 
+Array<const Class*> func_effective_params(const Function *f);
+
 DynamicArray kaba_map(Function *func, DynamicArray *a) {
 	DynamicArray r;
-	auto *ti = func->literal_param_type[0];
+	auto p = func_effective_params(func);
+	if (p.num != 1)
+		kaba_raise_exception(new KabaException("map(): only functions with exactly 1 parameter allowed"));
+	auto *ti = p[0];
 	auto *to = func->literal_return_type;
 	r.init(to->size);
 	if (to->needs_constructor()) {
