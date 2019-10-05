@@ -225,27 +225,25 @@ public:
 		}
 
 		// init
-		//hui::RegisterFileType("kaba", "MichiSoft Script Datei", "", hui::AppFilename, "execute", false);
 		srand(get_current_date().time*73 + get_current_date().milli_second);
 		NetInit();
-		Kaba::Init(instruction_set, abi, flag_allow_std_lib);
-		//Kaba::LinkDynamicExternalData();
+		Kaba::init(instruction_set, abi, flag_allow_std_lib);
 		Kaba::config.stack_size = 10485760; // 10 mb (mib)
 
 
 		// for huibui.kaba...
-		Kaba::LinkExternalClassFunc("Resource.str", Kaba::mf(&hui::Resource::to_string));
-		Kaba::LinkExternalClassFunc("Resource.show", Kaba::mf(&hui::Resource::show));
-		Kaba::LinkExternal("ParseResource", (void*)&hui::ParseResource);
+		Kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
+		Kaba::link_external_class_func("Resource.show", &hui::Resource::show);
+		Kaba::link_external("ParseResource", (void*)&hui::ParseResource);
 
 
 		// for experiments
-		Kaba::LinkExternal("__int_out", (void*)&extern_func_int_out);
-		Kaba::LinkExternal("__float_out", (void*)&extern_func_float_out);
-		Kaba::LinkExternal("__float_ret", (void*)&extern_func_float_ret);
-		Kaba::LinkExternal("__xxx", (void*)&_x_call_float);
-		Kaba::LinkExternal("Test2", (void*)&extern_function2);
-		Kaba::LinkExternal("extern_variable1", (void*)&extern_variable1);
+		Kaba::link_external("__int_out", (void*)&extern_func_int_out);
+		Kaba::link_external("__float_out", (void*)&extern_func_float_out);
+		Kaba::link_external("__float_ret", (void*)&extern_func_float_ret);
+		Kaba::link_external("__xxx", (void*)&_x_call_float);
+		Kaba::link_external("Test2", (void*)&extern_function2);
+		Kaba::link_external("extern_variable1", (void*)&extern_variable1);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);
@@ -319,7 +317,7 @@ public:
 		}
 
 		// end
-		Kaba::End();
+		Kaba::clean_up();
 		msg_end();
 		if (error)
 			exit(1);
@@ -435,7 +433,7 @@ public:
 			if (name == "#")
 				break;
 			int pos = f->read_int();
-			Kaba::LinkExternal(name, (void*)(long)pos);
+			Kaba::link_external(name, (void*)(long)pos);
 		}
 		delete(f);
 	}

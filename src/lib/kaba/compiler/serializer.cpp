@@ -82,10 +82,11 @@ SerialNodeParam Serializer::add_temp(const Class *t, bool add_constructor)
 	return param;
 }
 
+// unpointer...?
 inline const Class *get_subtype(const Class *t)
 {
-	if (t->parent)
-		return t->parent;
+	if (t->param)
+		return t->param;
 	msg_error("subtype wanted of... " + t->name);
 	//msg_write(cur_func->Name);
 	return TypeUnknown;
@@ -749,7 +750,7 @@ void Serializer::add_cmd_constructor(const SerialNodeParam &param, NodeKind modu
 {
 	const Class *class_type = param.type;
 	if (modus == NodeKind::NONE)
-		class_type = class_type->parent;
+		class_type = class_type->param;
 	Function *f = class_type->get_default_constructor();
 	if (!f) {
 		if (class_type->needs_constructor())
@@ -774,7 +775,7 @@ void Serializer::add_cmd_destructor(const SerialNodeParam &param, bool needs_ref
 		SerialNodeParam inst = add_reference(param);
 		add_member_function_call(f, {inst}, p_none);
 	} else {
-		Function *f = param.type->parent->get_destructor();
+		Function *f = param.type->param->get_destructor();
 		if (!f)
 			return;
 		add_member_function_call(f, {param}, p_none);
@@ -2069,9 +2070,9 @@ void Script::compile_functions(char *oc, int &ocs)
 	int func_no = 0;
 	for (Function *f: syntax->functions)
 		if (f->is_extern){
-			f->address = GetExternalLink(f->long_name() + ":" + i2s(f->num_params));
+			f->address = get_external_link(f->long_name() + ":" + i2s(f->num_params));
 			if (!f->address)
-				f->address = GetExternalLink(f->long_name());
+				f->address = get_external_link(f->long_name());
 			if (!f->address)
 				do_error_link("external function " + f->long_name() + " not linkable");
 		}else{

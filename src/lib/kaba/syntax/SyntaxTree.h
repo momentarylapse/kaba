@@ -111,8 +111,8 @@ public:
 	void get_constant_value(const string &str, Value &value);
 	const Class *find_root_type_by_name(const string &name, const Class *_namespace, bool allow_recursion);
 	const Class *add_class(const Class *type);
-	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *sub, Class *ns);
-	const Class *make_class(const string &name, Class::Type type, int size, int array_size, const Class *sub);
+	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, Class *ns);
+	const Class *make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, Class *ns);
 	const Class *make_class_super_array(const Class *element_type);
 	const Class *make_class_array(const Class *element_type, int num_elements);
 	const Class *make_class_dict(const Class *element_type);
