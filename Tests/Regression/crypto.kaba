@@ -1,6 +1,6 @@
 void main()
 	Crypto c1, c2 ,c3
-	CryptoCreateKeys(c1, c2, "rsa", 64)
+	Crypto.create_keys(c1, c2, "rsa", 64)
 	
 	string cypher = c1.encrypt("noch ein kleiner Test sdfhsdkfjhskdfjhlskdfjhlskdjfh")
 	string public_key = c2.str()

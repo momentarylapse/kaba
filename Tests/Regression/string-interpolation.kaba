@@ -1,5 +1,5 @@
 void main()
 	int i = 13
 	print("hallo {{i+2}} bla bla")
-	print("test {{e_x}} {{1.0}}")
+	print("test {{vector.EX}} {{1.0}}")
 

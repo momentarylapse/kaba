@@ -1,12 +1,12 @@
 vector v
 
 void _main()
-	v = matrix.ID * e_x
+	v = matrix.ID * vector.EX
 
 void main()
 	matrix m = matrix.rotation(vector(0,0,pi/4))
 	matrix mm = m
 	mm *= m * m
-	vector v = mm * e_x
+	vector v = mm * vector.EX
 	print(v)
 	

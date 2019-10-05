@@ -377,7 +377,7 @@ bool class_func_match(Function *a, Function *b) {
 
 
 const Class *Class::get_pointer() const {
-	return owner->make_class(name + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, this, owner->base_class);
+	return owner->make_class(name + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, this, name_space);
 }
 
 const Class *Class::get_root() const {

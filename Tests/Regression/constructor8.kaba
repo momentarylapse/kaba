@@ -10,13 +10,13 @@ void main()
 	c[] a
 	c i
 	i.x = -1
-	i.v = e_x
+	i.v = vector.EX
 	a.add(i)
 	
 	
 	c[] b
 	b = a
-	a[0].v = v_0
+	a[0].v = vector.0
 	print(a[0].v)
 	print(b[0].v)
 	

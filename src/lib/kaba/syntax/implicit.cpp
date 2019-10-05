@@ -543,8 +543,8 @@ void SyntaxTree::auto_implement_functions(const Class *t) {
 	}
 
 	// recursion
-	for (auto *c: sub_classes)
-		auto_implement_functions(c);
+	//for (auto *c: sub_classes)
+	//	auto_implement_functions(c);
 }
 
 

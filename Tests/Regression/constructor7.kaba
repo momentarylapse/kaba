@@ -6,6 +6,6 @@ void main()
 	vector v = vector(2,3,4)
 	i.add(v)
 	i.add(vector(1,2,3))
-	i.add(e_x)
+	i.add(vector.EX)
 	for ii in i
 		print(ii)

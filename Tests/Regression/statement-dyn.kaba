@@ -19,7 +19,7 @@ void main()
 	print(dyn(1.1))
 	print(dyn("hallo\ta"))
 	print(dyn([1,2,3]))
-	print(dyn(v_0))
+	print(dyn(vector.0))
 	#print(dyn(main))
 	Test t
 	print(dyn(t))

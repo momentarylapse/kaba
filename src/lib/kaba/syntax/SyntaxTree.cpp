@@ -539,7 +539,7 @@ const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class 
 	return nullptr;
 }
 
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, Class *ns) {
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, const Class *ns) {
 	if (find_root_type_by_name(name, ns, false))
 		do_error("class already exists");
 
@@ -547,9 +547,10 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	t->type = type;
 	t->_logical_line_no = Exp.get_line_no();
 	t->_exp_no = Exp.cur_exp;
+	owned_classes.add(t);
 	
 	// link namespace
-	ns->classes.add(t);
+	(const_cast<Class*>(ns))->classes.add(t);
 	t->name_space = ns;
 	
 	t->array_length = max(array_size, 0);
@@ -567,7 +568,9 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	return t;
 }
 
-const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, Class *ns) {
+const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Class *param, const Class *ns) {
+	//msg_write("make class " + name + " ns=" + ns->long_name() + " param=" + param->long_name());
+	
 	// check if it already exists
 	auto *tt = find_root_type_by_name(name, ns, false);
 	if (tt)
@@ -578,18 +581,18 @@ const Class *SyntaxTree::make_class(const string &name, Class::Type type, int si
 }
 
 const Class *SyntaxTree::make_class_super_array(const Class *element_type) {
-	string name = element_type->long_name() + "[]"; // FIXME ARGH might be bad!!!!
-	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, element_type, base_class);
+	string name = element_type->name + "[]";
+	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, element_type, element_type->name_space);
 }
 
 const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements) {
-	string name = element_type->long_name() + format("[%d]", num_elements);
-	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, element_type, base_class);
+	string name = element_type->name + format("[%d]", num_elements);
+	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, element_type, element_type->name_space);
 }
 
 const Class *SyntaxTree::make_class_dict(const Class *element_type) {
-	string name = element_type->long_name() + "{}";
-	return make_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, element_type, base_class);
+	string name = element_type->name + "{}";
+	return make_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, element_type, element_type->name_space);
 }
 
 Node *SyntaxTree::conv_cbr(Node *c, Variable *var) {
