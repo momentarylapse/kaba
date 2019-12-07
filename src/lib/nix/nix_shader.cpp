@@ -398,6 +398,13 @@ void Shader::set_default_data()
 	set_data(location[LOCATION_FOG_DENSITY], &fog.density, 4);
 }
 
+void Shader::dispatch(int nx, int ny, int nz) {
+	glUseProgram(program);
+	glDispatchCompute(nx, ny, nz);
+	
+	TestGLError("Shader.dispatch");
+}
+
 
 void init_shaders()
 {

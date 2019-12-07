@@ -146,6 +146,10 @@ void SIAddPackageNix()
 			func_add_param("loc", TypeInt);
 			func_add_param("data", TypePointer);
 			func_add_param("size", TypeInt);*/
+		class_add_func("dispatch", TypeVoid, nix_p(mf(&nix::Shader::dispatch)));
+			func_add_param("nx", TypeInt);
+			func_add_param("ny", TypeInt);
+			func_add_param("nz", TypeInt);
 
 	add_func("LoadTexture", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
 		func_add_param("filename", TypeString);
@@ -153,8 +157,8 @@ void SIAddPackageNix()
 		// drawing
 	add_func("NixInit", TypeVoid, nix_p(&nix::Init), FLAG_STATIC);
 		func_add_param("api", TypeString);
-		func_add_param("w", TypeFloat32);
-		func_add_param("h", TypeFloat32);
+		func_add_param("w", TypeInt);
+		func_add_param("h", TypeInt);
 	/*add_func("NixSetVideoMode", TypeVoid, nix_p(&NixSetVideoMode), FLAG_STATIC);
 		func_add_param("api", TypeString);
 		func_add_param("xres", TypeInt);
@@ -341,7 +345,10 @@ void SIAddPackageNix()
 	add_const("FOG_EXP",    TypeInt, nix_p(FOG_EXP));
 	add_const("FOG_EXP2",   TypeInt, nix_p(FOG_EXP2));
 
-	add_ext_var("vb_temp",     TypeVertexBufferP, nix_p(nix::vb_temp));
+
+	add_ext_var("vb_temp", TypeVertexBufferP, nix_p(&nix::vb_temp));
+	add_ext_var("default_shader_3d", TypeShaderP, nix_p(&nix::default_shader_3d));
+	add_ext_var("default_shader_2d", TypeShaderP, nix_p(&nix::default_shader_2d));
 }
 
 };

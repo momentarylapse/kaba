@@ -27,6 +27,8 @@ public:
 	void _cdecl set_color(int location, const color &c);
 	void _cdecl get_data(const string &var_name, void *data, int size);
 	int _cdecl get_location(const string &var_name);
+	
+	void _cdecl dispatch(int nx, int ny, int nz);
 
 	void find_locations();
 	void set_default_data();
