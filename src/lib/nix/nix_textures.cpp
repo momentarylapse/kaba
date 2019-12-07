@@ -220,8 +220,8 @@ void ProgressTextureLifes()
 Texture::Texture()
 {
 	filename = "-empty-";
-	is_dynamic = false;
-	is_cube_map = false;
+	type = Type::DEFAULT;
+	internal_format = 0;
 	valid = true;
 	life_time = 0;
 #ifdef NIX_ALLOW_VIDEO_TEXTURE
@@ -329,7 +329,7 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 
 	image.set_mode(Image::ModeRGBA);
 
-	if (t->is_cube_map)
+	if (t->type == t->Type::CUBE)
 		target = GL_TEXTURE_CUBE_MAP;
 
 	if (!image.error){
@@ -339,13 +339,13 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		TestGLError("OverwriteTexture b");
-		if (t->is_cube_map){
-		    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		}else if (t->is_dynamic){
+		if (t->type == t->Type::CUBE){
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		}else if (t->type == t->Type::DYNAMIC){
 			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}else{
@@ -355,12 +355,15 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 		}
 		TestGLError("OverwriteTexture c");
 #ifdef GL_GENERATE_MIPMAP
-		if (image.alpha_used)
+		//if (image.alpha_used) {
+			t->internal_format = GL_RGBA8;
 			glTexImage2D(subtarget, 0, GL_RGBA8, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data);
-		else
-			glTexImage2D(subtarget, 0, GL_RGB8, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data);
+		//} else {
+		//	t->internal_format = GL_RGB8;
+		//	glTexImage2D(subtarget, 0, GL_RGB8, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data);
+		//}
 		TestGLError("OverwriteTexture d");
-		if (!t->is_dynamic and !t->is_cube_map)
+		if (t->type == t->Type::DEFAULT)
 			glGenerateMipmap(GL_TEXTURE_2D);
 		TestGLError("OverwriteTexture e");
 #else
@@ -416,12 +419,16 @@ void SetTexture(Texture *t)
 	tex_cube_level = -1;
 	glActiveTexture(GL_TEXTURE0);
 	TestGLError("SetTex .a");
-	if (t->is_cube_map){
+	if (t->type == Texture::Type::CUBE){
 		glEnable(GL_TEXTURE_CUBE_MAP);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, t->texture);
 		tex_cube_level = 0;
 		TestGLError("SetTex b cm");
-	}else{
+	} else if (t->type == Texture::Type::IMAGE){
+		glBindTexture(GL_TEXTURE_2D, t->texture);
+		glBindImageTexture(0, t->texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, t->internal_format);
+		TestGLError("SetTex b");
+	} else {
 		glBindTexture(GL_TEXTURE_2D, t->texture);
 		TestGLError("SetTex b");
 	}
@@ -439,7 +446,7 @@ void SetTextures(Array<Texture*> &textures)
 		if (!t)
 			t = default_texture;
 		glActiveTexture(GL_TEXTURE0+i);
-		if (t->is_cube_map){
+		if (t->type == t->Type::CUBE){
 			glBindTexture(GL_TEXTURE_CUBE_MAP, t->texture);
 			tex_cube_level = i;
 		}else{
@@ -487,9 +494,10 @@ DynamicTexture::DynamicTexture(int _width, int _height)
 	filename = "-dynamic-";
 	width = _width;
 	height = _height;
-	is_dynamic = true;
+	type = Type::DYNAMIC;
 	
 	glBindTexture(GL_TEXTURE_2D, texture);
+	internal_format = GL_RGB8;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -533,13 +541,49 @@ void DynamicTexture::__init__(int width, int height)
 	new(this) DynamicTexture(width, height);
 }
 
+ImageTexture::ImageTexture(int _width, int _height, const string &_format)
+{
+	msg_write(format("creating image texture [%d x %d] ", _width, _height));
+	filename = "-image-";
+	width = _width;
+	height = _height;
+	type = Type::IMAGE;
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	if (_format == "r:i8") {
+		internal_format = GL_R8;
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+	} else if (_format == "rgba:i8") {
+		internal_format = GL_RGBA8;
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	} else if (_format == "r:f32") {
+		internal_format = GL_R32F;
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RED, GL_FLOAT, 0);
+	} else if (_format == "rgba:f32") {
+		internal_format = GL_RGBA32F;
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+	} else {
+		msg_error("unknown format: " + _format);
+	}
+	TestGLError("ImageTexture: glTexImage2D");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	TestGLError("ImageTexture: aaaa");
+}
+
+void ImageTexture::__init__(int width, int height, const string &format)
+{
+	new(this) ImageTexture(width, height, format);
+}
+
 DepthTexture::DepthTexture(int _width, int _height)
 {
 	msg_write(format("creating depth texture [%d x %d] ", _width, _height));
 	filename = "-depth-";
 	width = _width;
 	height = _height;
-	is_dynamic = true;
+	type = Type::DEPTH;
+	internal_format = GL_DEPTH_COMPONENT;
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -590,7 +634,7 @@ CubeMap::CubeMap(int size)
 	msg_write(format("creating cube map [ %d x %d x 6 ]", size, size));
 	width = size;
 	height = size;
-	is_cube_map = true;
+	type = Type::CUBE;
 	filename = "-cubemap-";
 }
 
@@ -603,7 +647,7 @@ void CubeMap::fill_side(int side, Texture *source)
 {
 	if (!source)
 		return;
-	if (source->is_cube_map)
+	if (source->type == Type::CUBE)
 		return;
 	Image image;
 	image.load(texture_dir + source->filename);

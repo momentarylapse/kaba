@@ -52,6 +52,7 @@ const Class *TypeTexture;
 const Class *TypeTextureP;
 const Class *TypeTexturePList;
 const Class *TypeDynamicTexture;
+const Class *TypeImageTexture;
 const Class *TypeDepthTexture;
 const Class *TypeCubeMap;
 const Class *TypeShader;
@@ -69,6 +70,7 @@ void SIAddPackageNix()
 	TypeTextureP		= add_type_p("Texture*", TypeTexture);
 	TypeTexturePList	= add_type_a("Texture*[]", TypeTextureP, -1);
 	TypeDynamicTexture	= add_type  ("DynamicTexture", sizeof(nix::Texture));
+	TypeImageTexture	= add_type  ("ImageTexture", sizeof(nix::Texture));
 	TypeDepthTexture	= add_type  ("DepthTexture", sizeof(nix::Texture));
 	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
 	TypeShader			= add_type  ("Shader", sizeof(nix::Shader));
@@ -111,6 +113,13 @@ void SIAddPackageNix()
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 
+	add_class(TypeImageTexture);
+		class_derive_from(TypeTexture, false, false);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::ImageTexture::__init__)));
+			func_add_param("width", TypeInt);
+			func_add_param("height", TypeInt);
+			func_add_param("format", TypeString);
+
 	add_class(TypeDepthTexture);
 		class_derive_from(TypeTexture, false, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::DepthTexture::__init__)));
@@ -150,6 +159,8 @@ void SIAddPackageNix()
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
+		class_add_const("DEFAULT_3D", TypeShaderP, nix_p(&nix::default_shader_3d));
+		class_add_const("DEFAULT_2D", TypeShaderP, nix_p(&nix::default_shader_2d));
 
 	add_func("LoadTexture", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
 		func_add_param("filename", TypeString);
@@ -347,8 +358,6 @@ void SIAddPackageNix()
 
 
 	add_ext_var("vb_temp", TypeVertexBufferP, nix_p(&nix::vb_temp));
-	add_ext_var("default_shader_3d", TypeShaderP, nix_p(&nix::default_shader_3d));
-	add_ext_var("default_shader_2d", TypeShaderP, nix_p(&nix::default_shader_2d));
 }
 
 };
