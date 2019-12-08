@@ -388,9 +388,25 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 	t->life_time = 0;
 }
 
-void Texture::overwrite(const Image &image)
-{
+void Texture::overwrite(const Image &image) {
 	OverwriteTexture__(this, GL_TEXTURE_2D, GL_TEXTURE_2D, image);
+}
+
+void Texture::read(Image &image) {
+	SetTexture(this);
+	image.create(width, height, Black);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data);
+}
+
+void Texture::read_float(Array<float> &data) {
+	SetTexture(this);
+	if ((internal_format == GL_R8) or (internal_format == GL_R32F)) {
+		data.resize(width * height);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, data.data); // 1 channel
+	} else {
+		data.resize(width * height * 4);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, data.data); // 4 channels
+	}
 }
 
 void Texture::unload()

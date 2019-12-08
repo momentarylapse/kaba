@@ -43,6 +43,7 @@ nix::Texture* __LoadTexture(const string &filename)
 
 extern const Class *TypeMatrix;
 extern const Class *TypeImage;
+extern const Class *TypeFloatList;
 extern const Class *TypeFloatArrayP;
 extern const Class *TypeVectorArray;
 extern const Class *TypeVectorArrayP;
@@ -106,6 +107,10 @@ void SIAddPackageNix()
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::Texture::__delete__)));
 		class_add_func("overwrite", TypeVoid, nix_p(mf(&nix::Texture::overwrite)));
 			func_add_param("image", TypeImage);
+			class_add_func("read", TypeVoid, nix_p(mf(&nix::Texture::read)));
+				func_add_param("image", TypeImage);
+			class_add_func("read_float", TypeVoid, nix_p(mf(&nix::Texture::read_float)));
+				func_add_param("data", TypeFloatList);
 
 	add_class(TypeDynamicTexture);
 		class_derive_from(TypeTexture, false, false);

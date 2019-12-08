@@ -49,6 +49,8 @@ public:
 	void _cdecl __delete__();
 
 	void _cdecl overwrite(const Image &image);
+	void _cdecl read(Image &image);
+	void _cdecl read_float(Array<float> &data);
 	void _cdecl reload();
 	void _cdecl unload();
 	//void _cdecl set_video_frame(int frame);
