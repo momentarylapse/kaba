@@ -311,7 +311,8 @@ bool StartIntoTexture(Texture *texture)
 
 	// adjust target size
 	if (!texture){
-		Resize(device_width, device_height);
+		auto *e = hui::GetEvent();
+		Resize(e->column, e->row);
 	}else{
 		// texture
 		Resize(texture->width, texture->height);
