@@ -90,7 +90,7 @@ void SIAddPackageHui()
 	const Class *TypeHuiToolbar = add_type("Toolbar",  sizeof(hui::Toolbar));
 	const Class *TypeHuiToolbarP = add_type_p("Toolbar*", TypeHuiToolbar);
 	const Class *TypeHuiPanel = add_type("Panel", sizeof(hui::Panel));
-	const Class *TypeHuiPanelP = add_type_p("Panel*", TypeHuiPanel);
+	//const Class *TypeHuiPanelP = add_type_p("Panel*", TypeHuiPanel);
 	const Class *TypeHuiWindow = add_type("Window", sizeof(hui::Window));
 	TypeHuiWindowP = add_type_p("Window*", TypeHuiWindow);
 	const Class *TypeHuiNixWindow = add_type("NixWindow", sizeof(hui::Window));
@@ -106,10 +106,9 @@ void SIAddPackageHui()
 		func_add_param("id", TypeInt);
 
 	add_class(TypeHuiMenu);
-		class_derive_from(TypeObject, false, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&hui::Menu::__init__));
 		class_add_func("popup", TypeVoid, mf(&hui::Menu::open_popup));
-			func_add_param("p", TypeHuiPanelP);
+			func_add_param("p", TypeHuiPanel);
 		class_add_func("add", TypeVoid, mf(&hui::Menu::add));
 			func_add_param("name", TypeString);
 			func_add_param("id", TypeString);
@@ -124,7 +123,7 @@ void SIAddPackageHui()
 		class_add_func("add_sub_menu", TypeVoid, mf(&hui::Menu::add_sub_menu));
 			func_add_param("name", TypeString);
 			func_add_param("id", TypeString);
-			func_add_param("sub_menu", TypeHuiMenuP);
+			func_add_param("sub_menu", TypeHuiMenu);
 		class_add_func("enable", TypeVoid, mf(&hui::Menu::enable));
 			func_add_param("id", TypeString);
 			func_add_param("enabled", TypeBool);
@@ -133,17 +132,17 @@ void SIAddPackageHui()
 			func_add_param("checked", TypeBool);
 
 	add_class(TypeHuiToolbar);
-		class_derive_from(TypeObject, false, false);
+		class_derive_from(TypeObject, false, true);
 		class_add_func("set_by_id", TypeVoid, mf(&hui::Toolbar::set_by_id));
 			func_add_param("id", TypeString);
 		class_add_func("from_source", TypeVoid, mf(&hui::Toolbar::from_source));
 			func_add_param("source", TypeString);
 
 	add_class(TypeHuiPanel);
-		class_derive_from(TypeObject, false, false);
+		class_derive_from(TypeObject, false, true);
 		class_add_element("win", TypeHuiWindowP, GetDAPanel(win));
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&hui::Panel::__init__));
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&hui::Panel::__delete__));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&hui::Panel::__init__), FLAG_OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&hui::Panel::__delete__), FLAG_OVERRIDE);
 		class_add_func("set_border_width", TypeVoid, mf(&hui::Panel::set_border_width));
 			func_add_param("width", TypeInt);
 		class_add_func("set_decimals", TypeVoid, mf(&hui::Panel::set_decimals));
@@ -272,7 +271,7 @@ void SIAddPackageHui()
 			func_add_param("y", TypeInt);
 			func_add_param("id", TypeString);
 		class_add_func("embed", TypeVoid, mf(&hui::Panel::embed));
-			func_add_param("panel", TypeHuiPanelP);
+			func_add_param("panel", TypeHuiPanel);
 			func_add_param("id", TypeString);
 			func_add_param("x", TypeInt);
 			func_add_param("y", TypeInt);
@@ -337,20 +336,20 @@ void SIAddPackageHui()
 			func_add_param("id", TypeString);
 		class_add_func("event", TypeInt, mf(&KabaPanelWrapper::_kaba_event));
 			func_add_param("id", TypeString);
-			func_add_param("func", TypeFunctionP);
+			func_add_param("func", TypeFunction);
 		class_add_func("event_o", TypeInt, mf(&KabaPanelWrapper::_kaba_event_o));
 			func_add_param("id", TypeString);
 			func_add_param("handler", TypeObject);
-			func_add_param("func", TypeFunctionP);
+			func_add_param("func", TypeFunction);
 		class_add_func("event_x", TypeInt, mf(&KabaPanelWrapper::_kaba_event_x));
 			func_add_param("id", TypeString);
 			func_add_param("msg", TypeString);
-			func_add_param("func", TypeFunctionP);
+			func_add_param("func", TypeFunction);
 		class_add_func("event_ox", TypeInt, mf(&KabaPanelWrapper::_kaba_event_ox));
 			func_add_param("id", TypeString);
 			func_add_param("msg", TypeString);
 			func_add_param("handler", TypeObject);
-			func_add_param("func", TypeFunctionP);
+			func_add_param("func", TypeFunction);
 		class_add_func("remove_event_handler", TypeVoid, mf(&hui::Panel::remove_event_handler));
 			func_add_param("uid", TypeInt);
 		class_set_vtable(hui::Panel);
@@ -369,7 +368,7 @@ void SIAddPackageHui()
 		class_add_func("hide", TypeVoid, mf(&hui::Window::hide));
 
 		class_add_func("set_menu", TypeVoid, mf(&hui::Window::set_menu));
-			func_add_param("menu", TypeHuiMenuP);
+			func_add_param("menu", TypeHuiMenu);
 		class_add_func("toolbar", TypeHuiToolbarP, mf(&hui::Window::get_toolbar));
 			func_add_param("index", TypeInt);
 		class_add_func("set_maximized", TypeVoid, mf(&hui::Window::set_maximized));
@@ -432,14 +431,14 @@ void SIAddPackageHui()
 			func_add_param("title", TypeString);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
-			func_add_param("parent", TypeHuiWindowP);
+			func_add_param("parent", TypeHuiWindow);
 			func_add_param("allow_parent",TypeBool);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&hui::Window::__delete__), FLAG_OVERRIDE);
 		class_set_vtable(hui::Window);
 
 	
 	add_class(TypeHuiPainter);
-		class_derive_from(TypeObject, false, false);
+		class_derive_from(TypeObject, false, true);
 		class_add_element("width", TypeInt, GetDAPainter(width));
 		class_add_element("height", TypeInt, GetDAPainter(height));
 		//class_add_func_virtual("end", TypeVoid, mf(&hui::HuiPainter::end));
@@ -492,7 +491,6 @@ void SIAddPackageHui()
 
 
 	add_class(TypeHuiTimer);
-		class_derive_from(TypeObject, false, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&hui::Timer::reset));
 		class_add_func("get", TypeFloat32, mf(&hui::Timer::get));
 		class_add_func("reset", TypeVoid, mf(&hui::Timer::reset));
@@ -527,15 +525,15 @@ void SIAddPackageHui()
 	
 	// user interface
 	add_func("SetIdleFunction", TypeVoid, (void*)&HuiSetIdleFunctionKaba, FLAG_STATIC);
-		func_add_param("idle_func", TypeFunctionP);
+		func_add_param("idle_func", TypeFunction);
 	add_func("RunLater", TypeInt, (void*)&HuiRunLaterKaba, FLAG_STATIC);
 		func_add_param("dt", TypeFloat32);
 		func_add_param("handler", TypeObject);
-		func_add_param("f", TypeFunctionP);
+		func_add_param("f", TypeFunction);
 	add_func("RunRepeated", TypeInt, (void*)&HuiRunRepeatedKaba, FLAG_STATIC);
 		func_add_param("dt", TypeFloat32);
 		func_add_param("handler", TypeObject);
-		func_add_param("f", TypeFunctionP);
+		func_add_param("f", TypeFunction);
 	add_func("CancelRunner", TypeVoid, (void*)&hui::CancelRunner, FLAG_STATIC);
 		func_add_param("id", TypeInt);
 	/*add_func("HuiAddKeyCode", TypeVoid, (void*)&hui::AddKeyCode, FLAG_STATIC);
@@ -553,32 +551,32 @@ void SIAddPackageHui()
 	add_func("Sleep", TypeVoid, (void*)&hui::Sleep, FLAG_STATIC);
 		func_add_param("duration", TypeFloat32);
 	add_func("FileDialogOpen", TypeBool, (void*)&hui::FileDialogOpen, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypeString);
 		func_add_param("show_filter", TypeString);
 		func_add_param("filter", TypeString);
 	add_func("FileDialogSave", TypeBool, (void*)&hui::FileDialogSave, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypeString);
 		func_add_param("show_filter", TypeString);
 		func_add_param("filter", TypeString);
 	add_func("FileDialogDir", TypeBool, (void*)&hui::FileDialogDir, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypeString);
 	add_func("QuestionBox", TypeString, (void*)&hui::QuestionBox, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
 		func_add_param("allow_cancel", TypeBool);
 	add_func("InfoBox", TypeVoid, (void*)&hui::InfoBox, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
 	add_func("ErrorBox", TypeVoid, (void*)&hui::ErrorBox, FLAG_STATIC);
-		func_add_param("root", TypeHuiWindowP);
+		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
 	add_func("CreateMenuFromSource", TypeHuiMenuP, (void*)&hui::CreateMenuFromSource, FLAG_STATIC);
