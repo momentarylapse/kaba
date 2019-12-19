@@ -7,6 +7,7 @@
 class matrix;
 class vector;
 class quaternion;
+class plane;
 matrix MatrixMultiply2(const matrix &m2, const matrix &m1);
 
 
@@ -51,7 +52,7 @@ public:
 	vector _cdecl mul_v(const vector &v) const;
 
 	static const matrix ID;
-	
+
 	// creation
 	static matrix _cdecl translation(const vector &v);
 	static matrix _cdecl rotation_x(float w);

@@ -1,4 +1,4 @@
-project('kaba', 'cpp', default_options : ['cpp_std=c++14', 'warning_level=1'])
+project('kaba', 'cpp', default_options : ['cpp_std=c++17', 'warning_level=1'])
 add_project_arguments('-O2', '-g', '-Wno-unused', '-Wstrict-aliasing=0', '-fno-omit-frame-pointer', language : ['cpp'])
 
 #install_data
@@ -43,6 +43,24 @@ if d.found()
 	deps += [d]
 else
 	add_project_arguments('-DHAS_LIB_DL=0', language : ['cpp'])
+endif
+
+# optional dependency: vulkan
+d = cc.find_library('vulkan', required : false)
+if d.found()
+	add_project_arguments('-DHAS_LIB_VULKAN=1', language : ['cpp'])
+	deps += [d]
+else
+	add_project_arguments('-DHAS_LIB_VULKAN=0', language : ['cpp'])
+endif
+
+# optional dependency: glfw
+d = cc.find_library('glfw', required : false)
+if d.found()
+	add_project_arguments('-DHAS_LIB_GLFW=1', language : ['cpp'])
+	deps += [d]
+else
+	add_project_arguments('-DHAS_LIB_GLFW=0', language : ['cpp'])
 endif
 
 
@@ -156,6 +174,7 @@ sources = [
 	'src/lib/kaba/lib/lib_nix.cpp',
 	'src/lib/kaba/lib/lib_sound.cpp',
 	'src/lib/kaba/lib/lib_threads.cpp',
+	'src/lib/kaba/lib/lib_vulkan.cpp',
 	'src/lib/kaba/lib/lib_x.cpp',
 	'src/lib/kaba/syntax/Class.cpp',
 	'src/lib/kaba/syntax/Constant.cpp',
@@ -193,6 +212,14 @@ sources = [
 	'src/lib/threads/Mutex.cpp',
 	'src/lib/threads/Thread.cpp',
 	'src/lib/threads/ThreadedWork.cpp',
+	'src/lib/vulkan/CommandBuffer.cpp',
+	'src/lib/vulkan/helper.cpp',
+	'src/lib/vulkan/Pipeline.cpp',
+	'src/lib/vulkan/RenderPass.cpp',
+	'src/lib/vulkan/Shader.cpp',
+	'src/lib/vulkan/Texture.cpp',
+	'src/lib/vulkan/VertexBuffer.cpp',
+	'src/lib/vulkan/vulkan.cpp',
 	'src/main.cpp'
 ]
 

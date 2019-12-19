@@ -543,6 +543,7 @@ void SIAddPackageMath() {
 		class_add_func("unproject", TypeVector, mf(&matrix::unproject), FLAG_PURE);
 			func_add_param("v", TypeVector);
 		class_add_func("inverse", TypeMatrix, mf(&matrix::inverse), FLAG_PURE);
+		class_add_func("transpose", TypeMatrix, mf(&matrix::transpose), FLAG_PURE);
 		class_add_func("translation", TypeMatrix, (void*)&matrix::translation, ScriptFlag(FLAG_PURE | FLAG_STATIC));
 			func_add_param("trans", TypeVector);
 		class_add_func("rotation", TypeMatrix, (void*)&matrix::rotation, ScriptFlag(FLAG_PURE | FLAG_STATIC));

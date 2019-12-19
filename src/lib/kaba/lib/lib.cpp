@@ -681,6 +681,7 @@ void SIAddPackageNet();
 void SIAddPackageImage();
 void SIAddPackageSound();
 void SIAddPackageX();
+void SIAddPackageVulkan();
 
 void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	Asm::init(instruction_set);
@@ -742,6 +743,7 @@ void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	SIAddPackageNet();
 	SIAddPackageSound();
 	SIAddPackageThread();
+	SIAddPackageVulkan();
 	SIAddPackageX();
 
 	cur_package = Packages[0];

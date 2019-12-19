@@ -12,6 +12,7 @@
 #define _X_USE_THREADS_
 #define _X_USE_ALGEBRA_
 #define _X_USE_ANY_
+#define _X_USE_VULKAN_
 
 //#####################################################################
 // Hui-API

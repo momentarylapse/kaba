@@ -52,7 +52,6 @@ public:
 		set_property("name", AppName);
 		set_property("version", AppVersion);
 		//hui::EndKeepMsgAlive = true;
-
 	}
 
 	virtual bool on_startup(const Array<string> &arg0)
