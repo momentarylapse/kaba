@@ -1,7 +1,7 @@
 #ifndef _NIX_HELPER_H
 #define _NIX_HELPER_H
 
-#ifdef HAS_LIB_VULKAN
+#if HAS_LIB_VULKAN
 
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
