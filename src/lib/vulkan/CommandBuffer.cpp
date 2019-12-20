@@ -6,6 +6,9 @@
 //
 //
 
+#if HAS_LIB_VULKAN
+
+
 #include "CommandBuffer.h"
 #include "helper.h"
 #include "VertexBuffer.h"
@@ -187,3 +190,5 @@ void CommandBuffer::end() {
 
 
 };
+
+#endif

@@ -6,6 +6,9 @@
 //
 //
 
+#if HAS_LIB_VULKAN
+
+
 #include "Pipeline.h"
 #include "Shader.h"
 #include "helper.h"
@@ -249,3 +252,6 @@ void Pipeline::destroy() {
 }
 
 };
+
+#endif
+

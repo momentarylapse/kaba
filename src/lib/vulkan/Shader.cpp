@@ -1,3 +1,6 @@
+#if HAS_LIB_VULKAN
+
+
 #include "Shader.h"
 #include "Texture.h"
 #include <vulkan/vulkan.h>
@@ -304,3 +307,5 @@ namespace vulkan{
 	}
 
 };
+
+#endif

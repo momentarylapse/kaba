@@ -1,6 +1,10 @@
 #ifndef _NIX_SHADER_H
 #define _NIX_SHADER_H
 
+#if HAS_LIB_VULKAN
+
+
+
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
 #include "../math/matrix.h"
@@ -68,5 +72,7 @@ namespace vulkan{
 		static void destroy_layout(VkDescriptorSetLayout layout);
 	};
 };
+
+#endif
 
 #endif

@@ -1,3 +1,5 @@
+#if HAS_LIB_VULKAN
+
 #include <vulkan/vulkan.h>
 #include "helper.h"
 #include "CommandBuffer.h"
@@ -269,5 +271,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 	return indices;
 }
 
-
 };
+
+#endif
+

@@ -11,6 +11,10 @@
 
 #include <array>
 
+#if HAS_LIB_VULKAN
+
+
+
 namespace vulkan {
 	extern VkFormat swapChainImageFormat;
 	extern VkExtent2D swapChainExtent;
@@ -98,3 +102,5 @@ namespace vulkan {
 	}
 
 };
+
+#endif

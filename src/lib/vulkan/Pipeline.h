@@ -9,6 +9,8 @@
 #ifndef Pipeline_hpp
 #define Pipeline_hpp
 
+#if HAS_LIB_VULKAN
+
 
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
@@ -69,5 +71,6 @@ namespace vulkan{
 
 };
 
+#endif
 
 #endif /* Pipeline_hpp */

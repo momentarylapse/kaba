@@ -1,3 +1,5 @@
+#if HAS_LIB_VULKAN
+
 #include "Texture.h"
 #include <vulkan/vulkan.h>
 
@@ -201,3 +203,5 @@ void Texture::_create_sampler() {
 
 
 };
+
+#endif

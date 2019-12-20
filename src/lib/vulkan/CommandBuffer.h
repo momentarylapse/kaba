@@ -9,6 +9,8 @@
 #ifndef CommandBuffer_hpp
 #define CommandBuffer_hpp
 
+#if LIB_HAS_VULKAN
+
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -59,5 +61,7 @@ namespace vulkan{
 
 
 };
+
+#endif
 
 #endif /* CommandBuffer_hpp */

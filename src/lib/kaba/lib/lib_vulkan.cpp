@@ -7,17 +7,19 @@
 #ifdef _X_USE_VULKAN_
 	#include "../../vulkan/vulkan.h"
 
+#if HAS_LIB_VULKAN
 namespace vulkan {
 	extern RenderPass *render_pass;
 	extern VkDescriptorPool descriptor_pool;
 };
+#endif
 #endif
 
 namespace Kaba{
 
 
 
-#ifdef _X_USE_VULKAN_
+#if defined(_X_USE_VULKAN_) && HAS_LIB_VULKAN
 	#define vul_p(p)		p
 
 
@@ -41,6 +43,25 @@ vulkan::Shader* __VulkanLoadShader(const string &filename) {
 
 void __create_default_descriptor_pool() {
 	vulkan::descriptor_pool = vulkan::create_descriptor_pool();
+}
+
+class VulkanVertexList : public Array<vulkan::Vertex1> {
+public:
+	void __init__() {
+		new(this) VulkanVertexList;
+	}
+};
+
+class VulkanVertex : public vulkan::Vertex1 {
+public:
+	void __assign__(const VulkanVertex &o) { *this = o; }
+};
+
+static vulkan::VertexBuffer* _vulkan_vertex_buffer_build(const VulkanVertexList &vertices, const Array<int> &indices) {
+	Array<uint16_t> indices16;
+	for (auto i: indices)
+		indices16.add(i);
+	return vulkan::VertexBuffer::build1i(vertices, indices16);
 }
 
 
@@ -67,26 +88,6 @@ extern const Class *TypePointerList;
 extern const Class *TypeImage;
 extern const Class *TypeMatrix;
 
-#ifdef _X_USE_VULKAN_
-class VulkanVertexList : public Array<vulkan::Vertex1> {
-public:
-	void __init__() {
-		new(this) VulkanVertexList;
-	}
-};
-
-class VulkanVertex : public vulkan::Vertex1 {
-public:
-	void __assign__(const VulkanVertex &o) { *this = o; }
-};
-
-static vulkan::VertexBuffer* _vulkan_vertex_buffer_build(const VulkanVertexList &vertices, const Array<int> &indices) {
-	Array<uint16_t> indices16;
-	for (auto i: indices)
-		indices16.add(i);
-	return vulkan::VertexBuffer::build1i(vertices, indices16);
-}
-#endif
 
 
 void SIAddPackageVulkan() {
@@ -172,7 +173,7 @@ void SIAddPackageVulkan() {
 			func_add_param("w", TypeBool);
 		class_add_funcx("set_line_width", TypeVoid, vul_p(&vulkan::Pipeline::set_line_width));
 			func_add_param("w", TypeFloat32);
-#ifdef _X_USE_VULKAN_
+#if defined(_X_USE_VULKAN_) && HAS_LIB_VULKAN
 		void (vulkan::Pipeline::*mpf)(float) = &vulkan::Pipeline::set_blend;
 		class_add_funcx("set_blend", TypeVoid, vul_p(mpf));
 #else

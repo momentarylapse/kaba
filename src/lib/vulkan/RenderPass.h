@@ -9,6 +9,8 @@
 #ifndef RenderPass_hpp
 #define RenderPass_hpp
 
+#if HAS_LIB_VULKAN
+
 
 
 #include "../base/base.h"
@@ -40,5 +42,6 @@ namespace vulkan{
 	};
 };
 
+#endif
 
 #endif /* RenderPass_hpp */

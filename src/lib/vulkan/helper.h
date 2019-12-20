@@ -1,6 +1,8 @@
 #ifndef _NIX_HELPER_H
 #define _NIX_HELPER_H
 
+#ifdef LIB_HAS_VULKAN
+
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -41,5 +43,7 @@ namespace vulkan{
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
 };
+
+#endif
 
 #endif

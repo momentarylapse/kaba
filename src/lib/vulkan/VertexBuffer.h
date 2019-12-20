@@ -1,6 +1,8 @@
 #ifndef _VULKAN_VERTEXBUFFER_H
 #define _VULKAN_VERTEXBUFFER_H
 
+#if HAS_LIB_VULKAN
+
 #include "../base/base.h"
 #include "../math/vector.h"
 #include <vector>
@@ -39,5 +41,7 @@ namespace vulkan {
 		static VertexBuffer* build1i(const Array<Vertex1> &vertices, const Array<uint16_t> &indices);
 	};
 };
+
+#endif
 
 #endif

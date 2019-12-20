@@ -1,6 +1,9 @@
 #ifndef _NIX_TEXTURE_H
 #define _NIX_TEXTURE_H
 
+#if HAS_LIB_VULKAN
+
+
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
 
@@ -36,5 +39,7 @@ namespace vulkan {
 		static Texture* load(const string &filename);
 	};
 };
+
+#endif
 
 #endif

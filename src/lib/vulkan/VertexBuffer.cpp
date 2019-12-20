@@ -1,3 +1,5 @@
+#if HAS_LIB_VULKAN
+
 #include "VertexBuffer.h"
 #include <vulkan/vulkan.h>
 
@@ -122,3 +124,5 @@ void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
 }
 
 };
+
+#endif
