@@ -9,7 +9,7 @@
 #ifndef CommandBuffer_hpp
 #define CommandBuffer_hpp
 
-#if LIB_HAS_VULKAN
+#if HAS_LIB_VULKAN
 
 #include <vulkan/vulkan.h>
 #include <vector>
