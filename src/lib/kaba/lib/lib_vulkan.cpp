@@ -57,13 +57,6 @@ public:
 	void __assign__(const VulkanVertex &o) { *this = o; }
 };
 
-static vulkan::VertexBuffer* _vulkan_vertex_buffer_build(const VulkanVertexList &vertices, const Array<int> &indices) {
-	Array<uint16_t> indices16;
-	for (auto i: indices)
-		indices16.add(i);
-	return vulkan::VertexBuffer::build1i(vertices, indices16);
-}
-
 
 #else
 	namespace vulkan{
@@ -129,11 +122,15 @@ void SIAddPackageVulkan() {
 	add_class(TypeVertexBuffer);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::VertexBuffer::__init__));
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::VertexBuffer::__delete__));
-		class_add_funcx("build", TypeVertexBufferP, vul_p(&vulkan::VertexBuffer::build1), FLAG_STATIC);
+		class_add_funcx("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build1));
 			func_add_param("vertices", TypeVertexList);
-		class_add_funcx("build", TypeVertexBufferP, vul_p(&_vulkan_vertex_buffer_build), FLAG_STATIC);
+		class_add_funcx("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build1i));
 			func_add_param("vertices", TypeVertexList);
 			func_add_param("indices", TypeIntList);
+		class_add_funcx("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build));
+			func_add_param("vertices", TypePointer);
+			func_add_param("size", TypeInt);
+			func_add_param("count", TypeInt);
 
 
 
@@ -142,6 +139,11 @@ void SIAddPackageVulkan() {
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Texture::__delete__));
 		class_add_funcx("override", TypeVoid, vul_p(&vulkan::Texture::override));
 			func_add_param("image", TypeImage);
+		class_add_funcx("override", TypeVoid, vul_p(&vulkan::Texture::overridex));
+			func_add_param("data", TypePointer);
+			func_add_param("nx", TypeInt);
+			func_add_param("ny", TypeInt);
+			func_add_param("nz", TypeInt);
 		class_add_funcx("load", TypeTextureP, vul_p(&__VulkanLoadTexture), FLAG_STATIC);
 			func_add_param("filename", TypeString);
 
@@ -189,6 +191,7 @@ void SIAddPackageVulkan() {
 		class_add_funcx("build", TypePipelineP, vul_p(&vulkan::Pipeline::build), FLAG_STATIC);
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
+			func_add_param("num_textures", TypeInt);
 			func_add_param("create", TypeBool);
 
 	add_class(TypeRenderPass);

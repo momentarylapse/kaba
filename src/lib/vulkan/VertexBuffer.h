@@ -27,18 +27,21 @@ namespace vulkan {
 		void __init__();
 		void __delete__();
 
-		void _create_vertex_buffer(void *vdata, int size);
+		void _create_vertex_buffer(const void *vdata, int size);
 		void _create_index_buffer(const Array<uint16_t> &indices);
 
 		unsigned int output_count;
 
 		VkBuffer vertex_buffer;
 		VkDeviceMemory vertex_memory;
+		VkDeviceSize vertex_buffer_size;
 		VkBuffer index_buffer;
 		VkDeviceMemory index_memory;
+		VkDeviceSize index_buffer_size;
 
-		static VertexBuffer* build1(const Array<Vertex1> &vertices);
-		static VertexBuffer* build1i(const Array<Vertex1> &vertices, const Array<uint16_t> &indices);
+		void build(const void *vertices, int size, int count);
+		void build1(const Array<Vertex1> &vertices);
+		void build1i(const Array<Vertex1> &vertices, const Array<int> &indices);
 	};
 };
 

@@ -2,6 +2,7 @@
 
 #include "VertexBuffer.h"
 #include <vulkan/vulkan.h>
+#include <iostream>
 
 #include "helper.h"
 
@@ -45,8 +46,10 @@ std::vector<VkVertexInputAttributeDescription> Vertex1::attribute_descriptions()
 VertexBuffer::VertexBuffer() {
 	vertex_buffer = nullptr;
 	vertex_memory = nullptr;
+	vertex_buffer_size = 0;
 	index_buffer = nullptr;
 	index_memory = nullptr;
+	index_buffer_size = 0;
 	output_count = 0;
 }
 
@@ -69,35 +72,52 @@ void VertexBuffer::__delete__() {
 	this->~VertexBuffer();
 }
 
-VertexBuffer* VertexBuffer::build1(const Array<Vertex1> &vertices) {
-	VertexBuffer *vb = new VertexBuffer();
-	vb->_create_vertex_buffer(vertices.data, sizeof(vertices[0]) * vertices.num);
-	vb->output_count = vertices.num;
-	return vb;
+void VertexBuffer::build(const void *vertices, int size, int count) {
+	_create_vertex_buffer(vertices, size * count);
+	output_count = count;
 }
 
-VertexBuffer* VertexBuffer::build1i(const Array<Vertex1> &vertices, const Array<uint16_t> &indices) {
-	VertexBuffer *vb = build1(vertices);
-	vb->_create_index_buffer(indices);
-	vb->output_count = indices.num;
-	return vb;
+void VertexBuffer::build1(const Array<Vertex1> &vertices) {
+	build(vertices.data, sizeof(vertices[0]), vertices.num);
 }
 
-void VertexBuffer::_create_vertex_buffer(void *vdata, int size) {
+void VertexBuffer::build1i(const Array<Vertex1> &vertices, const Array<int> &indices) {
+	build1(vertices);
+
+	Array<uint16_t> indices16;
+	indices16.resize(indices.num);
+	for (int i=0; i<indices.num; i++)
+		indices16[i] = indices[i];
+	_create_index_buffer(indices16);
+	output_count = indices.num;
+}
+
+void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
 	VkDeviceSize buffer_size = size;
 
+	// -> staging
 	VkBuffer staging_buffer;
 	VkDeviceMemory staging_memory;
-	createBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+	create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
 
 	void* data;
 	vkMapMemory(device, staging_memory, 0, buffer_size, 0, &data);
 		memcpy(data, vdata, (size_t) buffer_size);
 	vkUnmapMemory(device, staging_memory);
 
-	createBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_memory);
 
-	copyBuffer(staging_buffer, vertex_buffer, buffer_size);
+	// gpu
+	if (buffer_size > vertex_buffer_size) {
+		if (vertex_buffer)
+			vkDestroyBuffer(device, vertex_buffer, nullptr);
+		if (vertex_memory)
+			vkFreeMemory(device, vertex_memory, nullptr);
+
+		create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_memory);
+		vertex_buffer_size = buffer_size;
+	}
+
+	copy_buffer(staging_buffer, vertex_buffer, buffer_size);
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_memory, nullptr);
@@ -108,16 +128,24 @@ void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
 
 	VkBuffer staging_buffer;
 	VkDeviceMemory staging_memory;
-	createBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+	create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
 
 	void* data;
 	vkMapMemory(device, staging_memory, 0, buffer_size, 0, &data);
 		memcpy(data, indices.data, (size_t) buffer_size);
 	vkUnmapMemory(device, staging_memory);
 
-	createBuffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_memory);
+	if (buffer_size > index_buffer_size) {
+		if (index_buffer)
+			vkDestroyBuffer(device, index_buffer, nullptr);
+		if (index_memory)
+			vkFreeMemory(device, index_memory, nullptr);
 
-	copyBuffer(staging_buffer, index_buffer, buffer_size);
+		create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_memory);
+		index_buffer_size = buffer_size;
+	}
+
+	copy_buffer(staging_buffer, index_buffer, buffer_size);
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_memory, nullptr);

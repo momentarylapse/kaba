@@ -19,8 +19,8 @@
 extern const int MAX_FRAMES_IN_FLIGHT;
 
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 
 
@@ -37,21 +37,21 @@ namespace vulkan {
 
 
 	extern VkInstance instance;
-	extern VkDebugUtilsMessengerEXT debugMessenger;
+	extern VkDebugUtilsMessengerEXT debug_messenger;
 	extern VkSurfaceKHR surface;
 
-	extern VkPhysicalDevice physicalDevice;
+	extern VkPhysicalDevice physical_device;
 	extern VkDevice device;
 
-	extern VkQueue graphicsQueue;
-	extern VkQueue presentQueue;
+	extern VkQueue graphics_queue;
+	extern VkQueue present_queue;
 
-	extern bool enableValidationLayers;
+	extern bool enable_validation_layers;
 
 
 
-	extern size_t currentFrame;
-	extern bool framebufferResized;
+	extern size_t current_frame;
+	extern bool framebuffer_resized;
 
 	extern GLFWwindow* vulkan_window;
 	extern int target_width, target_height;
@@ -74,33 +74,33 @@ namespace vulkan {
 
 
 
-	void setupDebugMessenger();
+	void setup_debug_messenger();
 
-	void cleanupSwapChain();
-	void createInstance();
-	bool checkValidationLayerSupport();
-	std::vector<const char*> getRequiredExtensions();
-	void createSurface();
-	void pickPhysicalDevice();
-	bool isDeviceSuitable(VkPhysicalDevice device);
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-	void createLogicalDevice();
-	void createSwapChain();
+	void cleanup_swap_chain();
+	void create_instance();
+	bool check_validation_layer_support();
+	std::vector<const char*> get_required_extensions();
+	void create_surface();
+	void pick_physical_device();
+	bool is_device_suitable(VkPhysicalDevice device);
+	bool check_device_extension_support(VkPhysicalDevice device);
+	SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
+	void create_logical_device();
+	void create_swap_chain();
 
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-
-	void createFramebuffers(RenderPass *rp);
-	void createImageViews();
-
-	void createDepthResources();
-	bool hasStencilComponent(VkFormat format);
+	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> availablePresentModes);
+	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
 
 
-	void createSyncObjects();
+	void create_framebuffers(RenderPass *rp);
+	void create_image_views();
+
+	void create_depth_resources();
+	bool has_stencil_component(VkFormat format);
+
+
+	void create_sync_objects();
 	void recreateSwapChain(GLFWwindow* window);
 
 }

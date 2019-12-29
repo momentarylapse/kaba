@@ -22,46 +22,84 @@ namespace vulkan {
 	std::vector<Pipeline*> pipelines;
 
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass) {
+
+	VkVertexInputBindingDescription create_binding_description(int num_textures) {
+		VkVertexInputBindingDescription bd = {};
+		bd.binding = 0;
+		bd.stride = 2 * sizeof(vector) + num_textures * 2 * sizeof(float);
+		bd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		return bd;
+	}
+
+	Array<VkVertexInputAttributeDescription> create_attribute_descriptions(int num_textures) {
+		Array<VkVertexInputAttributeDescription> ad;
+		ad.resize(2 + num_textures);
+
+		// position
+		ad[0].binding = 0;
+		ad[0].location = 0;
+		ad[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		ad[0].offset = 0;
+
+		// normal
+		ad[1].binding = 0;
+		ad[1].location = 1;
+		ad[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		ad[1].offset = sizeof(vector);
+
+		for (int i=0; i<num_textures; i++) {
+			ad[i+2].binding = 0;
+			ad[i+2].location = 2;
+			ad[i+2].format = VK_FORMAT_R32G32_SFLOAT;
+			ad[i+2].offset = 2 * sizeof(vector) + i * 2 * sizeof(float);
+		}
+
+		return ad;
+	}
+
+
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int num_textures) {
 	shader = _shader;
 	render_pass = _render_pass;
 	descr_layouts = shader->descr_layouts;
+	pipeline = nullptr;
+	layout = nullptr;
 
 
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = shader->vert_module;
-	vertShaderStageInfo.pName = "main";
+	VkPipelineShaderStageCreateInfo vert_shader_stage_info = {};
+	vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_shader_stage_info.module = shader->vert_module;
+	vert_shader_stage_info.pName = "main";
 
-	VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
-	geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-	geomShaderStageInfo.module = shader->geom_module;
-	geomShaderStageInfo.pName = "main";
+	VkPipelineShaderStageCreateInfo geom_shader_stage_info = {};
+	geom_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	geom_shader_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+	geom_shader_stage_info.module = shader->geom_module;
+	geom_shader_stage_info.pName = "main";
 
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = shader->frag_module;
-	fragShaderStageInfo.pName = "main";
+	VkPipelineShaderStageCreateInfo frag_shader_stage_info = {};
+	frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_shader_stage_info.module = shader->frag_module;
+	frag_shader_stage_info.pName = "main";
 
-	shader_stages = {vertShaderStageInfo, fragShaderStageInfo};
+	shader_stages = {vert_shader_stage_info, frag_shader_stage_info};
 	if (shader->geom_module) {
-		shader_stages.push_back(geomShaderStageInfo);
+		shader_stages.add(geom_shader_stage_info);
 		//shader_stages = {vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo};
 	} else {
 		//shader_stages = {vertShaderStageInfo, fragShaderStageInfo};
 	}
 
-	binding_description = Vertex1::binding_description();
-	attribute_descriptions = Vertex1::attribute_descriptions();
+	binding_description = create_binding_description(num_textures);
+	attribute_descriptions = create_attribute_descriptions(num_textures);
 	vertex_input_info = {};
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
 	vertex_input_info.pVertexBindingDescriptions = &binding_description;
-	vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
-	vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
+	vertex_input_info.vertexAttributeDescriptionCount = attribute_descriptions.num;
+	vertex_input_info.pVertexAttributeDescriptions = &attribute_descriptions[0];
 
 	input_assembly = {};
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -114,8 +152,8 @@ Pipeline::~Pipeline() {
 
 
 
-void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass) {
-	new(this) Pipeline(_shader, _render_pass);
+void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int num_textures) {
+	new(this) Pipeline(_shader, _render_pass, num_textures);
 }
 
 void Pipeline::__delete__() {
@@ -171,8 +209,8 @@ void Pipeline::set_dynamic(const Array<VkDynamicState> &_dynamic_states) {
 	dynamic_states = _dynamic_states;
 }
 
-Pipeline* Pipeline::build(Shader *shader, RenderPass *render_pass, bool _create) {
-	Pipeline *p = new Pipeline(shader, render_pass);
+Pipeline* Pipeline::build(Shader *shader, RenderPass *render_pass, int num_textures, bool _create) {
+	Pipeline *p = new Pipeline(shader, render_pass, num_textures);
 	pipelines.push_back(p);
 	if (_create)
 		p->create();
@@ -183,14 +221,14 @@ void Pipeline::create() {
 	VkViewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float) swapChainExtent.width;
-	viewport.height = (float) swapChainExtent.height;
+	viewport.width = (float)swap_chain_extent.width;
+	viewport.height = (float)swap_chain_extent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
 	scissor.offset = {0, 0};
-	scissor.extent = swapChainExtent;
+	scissor.extent = swap_chain_extent;
 
 	VkPipelineViewportStateCreateInfo viewport_state = {};
 	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -226,8 +264,8 @@ void Pipeline::create() {
 
 	VkGraphicsPipelineCreateInfo pipeline_info = {};
 	pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipeline_info.stageCount = shader_stages.size();
-	pipeline_info.pStages = shader_stages.data();
+	pipeline_info.stageCount = shader_stages.num;
+	pipeline_info.pStages = &shader_stages[0];
 	pipeline_info.pVertexInputState = &vertex_input_info;
 	pipeline_info.pInputAssemblyState = &input_assembly;
 	pipeline_info.pViewportState = &viewport_state;

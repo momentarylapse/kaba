@@ -19,24 +19,26 @@
 #include "../math/rect.h"
 #include <array>
 
+#include <iostream>
+
 namespace vulkan{
 
 	VkCommandPool command_pool;
-	extern std::vector<VkFramebuffer> swapChainFramebuffers;
-	extern VkQueue graphicsQueue;
-	extern VkQueue presentQueue;
-	uint32_t imageIndex;
+	extern Array<VkFramebuffer> swap_chain_framebuffers;
+	extern VkQueue graphics_queue;
+	extern VkQueue present_queue;
+	uint32_t image_index;
 	extern int target_width, target_height;
 
 
 void create_command_pool() {
-	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+	QueueFamilyIndices queue_family_indices = find_queue_families(physical_device);
 
-	VkCommandPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+	VkCommandPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-	if (vkCreateCommandPool(device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS) {
+	if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create command pool!");
 	}
 }
@@ -73,8 +75,8 @@ void end_single_time_commands(VkCommandBuffer command_buffer) {
 	si.commandBufferCount = 1;
 	si.pCommandBuffers = &command_buffer;
 
-	vkQueueSubmit(graphicsQueue, 1, &si, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphicsQueue);
+	vkQueueSubmit(graphics_queue, 1, &si, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphics_queue);
 
 	vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
@@ -96,21 +98,21 @@ void CommandBuffer::__delete__() {
 }
 
 void CommandBuffer::_create() {
-	buffers.resize(swapChainFramebuffers.size());
+	buffers.resize(swap_chain_framebuffers.num);
 
 	VkCommandBufferAllocateInfo ai = {};
 	ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	ai.commandPool = command_pool;
 	ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	ai.commandBufferCount = (uint32_t) buffers.size();
+	ai.commandBufferCount = (uint32_t)buffers.num;
 
-	if (vkAllocateCommandBuffers(device, &ai, buffers.data()) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &ai, &buffers[0]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 }
 
 void CommandBuffer::_destroy() {
-	vkFreeCommandBuffers(device, command_pool, static_cast<uint32_t>(buffers.size()), buffers.data());
+	vkFreeCommandBuffers(device, command_pool, buffers.num, &buffers[0]);
 }
 
 
@@ -121,7 +123,7 @@ void CommandBuffer::set_pipeline(Pipeline *pl) {
 	current_pipeline = pl;
 }
 void CommandBuffer::bind_descriptor_set(int index, DescriptorSet *dset) {
-	vkCmdBindDescriptorSets(current, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_sets[imageIndex], 0, nullptr);
+	vkCmdBindDescriptorSets(current, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_sets[image_index], 0, nullptr);
 }
 void CommandBuffer::push_constant(int offset, int size, void *data) {
 	auto stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -146,7 +148,7 @@ void CommandBuffer::begin() {
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	current = buffers[imageIndex];
+	current = buffers[image_index];
 	if (vkBeginCommandBuffer(current, &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
@@ -160,9 +162,9 @@ void CommandBuffer::begin_render_pass(RenderPass *rp, const color &clear_color) 
 	VkRenderPassBeginInfo rpi = {};
 	rpi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpi.renderPass = rp->render_pass;
-	rpi.framebuffer = swapChainFramebuffers[imageIndex];
+	rpi.framebuffer = swap_chain_framebuffers[image_index];
 	rpi.renderArea.offset = {0, 0};
-	rpi.renderArea.extent = swapChainExtent;
+	rpi.renderArea.extent = swap_chain_extent;
 	rpi.clearValueCount = static_cast<uint32_t>(cv.size());
 	rpi.pClearValues = cv.data();
 

@@ -17,6 +17,8 @@ Texture::Texture() {
 	memory = nullptr;
 	sampler = nullptr;
 	view = nullptr;
+	width = height = depth = 0;
+	mip_levels = 0;
 }
 
 Texture::~Texture() {
@@ -52,31 +54,36 @@ void Texture::_load(const string &filename) {
 }
 
 void Texture::override(const Image *im) {
-	_create_image(im);
+	overridex(im->data.data, im->width, im->height, 1);
+}
+
+void Texture::overridex(const void *data, int nx, int ny, int nz) {
+	_create_image(data, nx, ny, nz);
 	_create_view();
 	_create_sampler();
 }
 
-void Texture::_create_image(const Image *im) {
-	width = im->width;
-	height = im->height;
+void Texture::_create_image(const void *image_data, int nx, int ny, int nz) {
+	width = nx;
+	height = ny;
+	depth = nz;
 	VkDeviceSize image_size = width * height  * 4;
 	mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
 
 	VkBuffer staging_buffer;
 	VkDeviceMemory staging_memory;
-	createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+	create_buffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
 
 	void* data;
 	vkMapMemory(device, staging_memory, 0, image_size, 0, &data);
-		memcpy(data, im->data.data, static_cast<size_t>(image_size));
+		memcpy(data, image_data, static_cast<size_t>(image_size));
 	vkUnmapMemory(device, staging_memory);
 
-	createImage(width, height, mip_levels, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
+	create_image(width, height, 1, mip_levels, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
-	transitionImageLayout(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mip_levels);
-	copyBufferToImage(staging_buffer, image, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+	transition_image_layout(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mip_levels);
+	copy_buffer_to_image(staging_buffer, image, width, height, depth);
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_memory, nullptr);
@@ -87,7 +94,7 @@ void Texture::_create_image(const Image *im) {
 void Texture::_generate_mipmaps(VkFormat image_format) {
 	// Check if image format supports linear blitting
 	VkFormatProperties fp;
-	vkGetPhysicalDeviceFormatProperties(physicalDevice, image_format, &fp);
+	vkGetPhysicalDeviceFormatProperties(physical_device, image_format, &fp);
 
 	if (!(fp.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
 		throw std::runtime_error("texture image format does not support linear blitting!");
@@ -108,7 +115,7 @@ void Texture::_generate_mipmaps(VkFormat image_format) {
 	int32_t mipWidth = width;
 	int32_t mipHeight = height;
 
-	for (uint32_t i = 1; i < mip_levels; i++) {
+	for (uint32_t i=1; i<mip_levels; i++) {
 		barrier.subresourceRange.baseMipLevel = i - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -174,7 +181,7 @@ void Texture::_generate_mipmaps(VkFormat image_format) {
 
 
 void Texture::_create_view() {
-	view = createImageView(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mip_levels);
+	view = create_image_view(image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mip_levels);
 }
 
 void Texture::_create_sampler() {

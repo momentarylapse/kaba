@@ -16,14 +16,14 @@
 
 
 namespace vulkan {
-	extern VkFormat swapChainImageFormat;
-	extern VkExtent2D swapChainExtent;
-	extern std::vector<VkImageView> swapChainImageViews;
-	extern std::vector<VkFramebuffer> swapChainFramebuffers;
+	extern VkFormat swap_chain_image_format;
+	extern VkExtent2D swap_chain_extent;
+	extern std::vector<VkImageView> swap_chain_image_views;
+	extern std::vector<VkFramebuffer> swap_chain_framebuffers;
 
 	RenderPass::RenderPass(VkAttachmentLoadOp color_load_op, VkAttachmentLoadOp depth_load_op) {
 		color_attachment = {};
-		color_attachment.format = swapChainImageFormat;
+		color_attachment.format = swap_chain_image_format;
 		color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		color_attachment.loadOp = color_load_op;//VK_ATTACHMENT_LOAD_OP_CLEAR;
 		color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -33,7 +33,7 @@ namespace vulkan {
 		color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		depth_attachment = {};
-		depth_attachment.format = findDepthFormat();
+		depth_attachment.format = find_depth_format();
 		depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depth_attachment.loadOp = depth_load_op;//VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

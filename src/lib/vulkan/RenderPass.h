@@ -1,6 +1,6 @@
 //
 //  RenderPass.hpp
-//  3
+//   * load/store color/depth buffers
 //
 //  Created by <author> on 06/02/2019.
 //
@@ -21,8 +21,8 @@ namespace vulkan{
 
 	class RenderPass {
 	public:
-	    RenderPass(VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR);
-	    ~RenderPass();
+		RenderPass(VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR);
+		~RenderPass();
 
 		void __init__();
 		void __delete__();

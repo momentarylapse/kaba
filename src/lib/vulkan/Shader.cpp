@@ -23,16 +23,16 @@ namespace vulkan{
 		size = _size;
 		VkDeviceSize buffer_size = size;
 
-		buffers.resize(swapChainImages.size());
-		memory.resize(swapChainImages.size());
+		buffers.resize(swap_chain_images.num);
+		memory.resize(swap_chain_images.num);
 
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
+		for (size_t i=0; i<swap_chain_images.num; i++) {
+			create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
 		}
 	}
 
 	UBOWrapper::~UBOWrapper() {
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
+		for (size_t i=0; i<swap_chain_images.num; i++) {
 			vkDestroyBuffer(device, buffers[i], nullptr);
 			vkFreeMemory(device, memory[i], nullptr);
 		}
@@ -44,27 +44,27 @@ namespace vulkan{
 		this->~UBOWrapper();
 	}
 
-	extern uint32_t imageIndex;
+	extern uint32_t image_index;
 	void UBOWrapper::update(void *source) {
 		void* data;
-		vkMapMemory(device, memory[imageIndex], 0, size, 0, &data);
+		vkMapMemory(device, memory[image_index], 0, size, 0, &data);
 			memcpy(data, source, size);
-		vkUnmapMemory(device, memory[imageIndex]);
+		vkUnmapMemory(device, memory[image_index]);
 	}
 
 
 	VkDescriptorPool create_descriptor_pool() {
 		std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
 		pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size()) * 64;
+		pool_sizes[0].descriptorCount = static_cast<uint32_t>(swap_chain_images.num) * 64;
 		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_sizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size()) * 64;
+		pool_sizes[1].descriptorCount = static_cast<uint32_t>(swap_chain_images.num) * 64;
 
 		VkDescriptorPoolCreateInfo pci = {};
 		pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		pci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
 		pci.pPoolSizes = pool_sizes.data();
-		pci.maxSets = static_cast<uint32_t>(swapChainImages.size()) * 64;
+		pci.maxSets = static_cast<uint32_t>(swap_chain_images.num) * 64;
 
 		VkDescriptorPool pool;
 		if (vkCreateDescriptorPool(device, &pci, nullptr, &pool) != VK_SUCCESS) {
@@ -78,14 +78,14 @@ namespace vulkan{
 	}
 
 	DescriptorSet::DescriptorSet(VkDescriptorSetLayout layout, const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
-		std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), layout);
+		std::vector<VkDescriptorSetLayout> layouts(swap_chain_images.num, layout);
 		VkDescriptorSetAllocateInfo ai = {};
 		ai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		ai.descriptorPool = descriptor_pool;
-		ai.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+		ai.descriptorSetCount = static_cast<uint32_t>(swap_chain_images.num);
 		ai.pSetLayouts = layouts.data();
 
-		descriptor_sets.resize(swapChainImages.size());
+		descriptor_sets.resize(swap_chain_images.num);
 		if (vkAllocateDescriptorSets(device, &ai, descriptor_sets.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
@@ -104,7 +104,7 @@ namespace vulkan{
 
 	void DescriptorSet::set(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
 		std::cout << "create dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
+		for (size_t i=0; i<swap_chain_images.num; i++) {
 			std::vector<VkDescriptorBufferInfo> buffer_info;
 			for (int j=0; j<ubos.num; j++) {
 				VkDescriptorBufferInfo bi = {};

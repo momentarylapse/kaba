@@ -12,7 +12,7 @@
 #if HAS_LIB_VULKAN
 
 #include <vulkan/vulkan.h>
-#include <vector>
+#include "../base/base.h"
 
 class color;
 class rect;
@@ -31,15 +31,15 @@ namespace vulkan{
 
 	class CommandBuffer {
 	public:
-	    CommandBuffer();
-	    ~CommandBuffer();
+		CommandBuffer();
+		~CommandBuffer();
 
 		void __init__();
 		void __delete__();
 
 		void _create();
 		void _destroy();
-		std::vector<VkCommandBuffer> buffers;
+		Array<VkCommandBuffer> buffers;
 		VkCommandBuffer current;
 
 		Pipeline *current_pipeline;

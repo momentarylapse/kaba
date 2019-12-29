@@ -1,6 +1,15 @@
 //
 //  Pipeline.hpp
-//  3
+//   * vertex layout
+//       (num texture coords)
+//   * shader
+//   * rendering parameters
+//      - z
+//      - stencil op
+//      - blending
+//      - viewport
+//      - rasterizer (fill / wire)
+//      - which color component to write
 //
 //  Created by <author> on 06/02/2019.
 //
@@ -23,16 +32,16 @@ namespace vulkan{
 
 	class Pipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass);
+		Pipeline(Shader *shader, RenderPass *render_pass, int num_textures);
 		~Pipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass);
+		void __init__(Shader *shader, RenderPass *render_pass, int num_textures);
 		void __delete__();
 
 		void create();
 		void destroy();
 
-		static Pipeline* build(Shader *shader, RenderPass *render_pass, bool create = true);
+		static Pipeline* build(Shader *shader, RenderPass *render_pass, int num_textures, bool create = true);
 
 		// configuration
 		void disable_blend();
@@ -56,8 +65,8 @@ namespace vulkan{
 		Array<VkDynamicState> dynamic_states;
 
 		VkVertexInputBindingDescription binding_description;
-		std::vector<VkVertexInputAttributeDescription> attribute_descriptions;
-		std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+		Array<VkVertexInputAttributeDescription> attribute_descriptions;
+		Array<VkPipelineShaderStageCreateInfo> shader_stages;
 		VkPipelineVertexInputStateCreateInfo vertex_input_info;
 		VkPipelineColorBlendAttachmentState color_blend_attachment;
 		VkPipelineColorBlendStateCreateInfo color_blending;
