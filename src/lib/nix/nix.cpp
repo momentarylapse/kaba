@@ -157,8 +157,8 @@ void Init(const string &api, int width, int height)
 
 
 	// default values of the engine
-	MatrixIdentity(view_matrix);
-	MatrixIdentity(projection_matrix);
+	view_matrix = matrix::ID;
+	projection_matrix = matrix::ID;
 	TextureMaxFramesToLive = 4096 * 8;
 	ClipPlaneMask = 0;
 	CullingInverted = false;

@@ -13,13 +13,14 @@
 #include "Shader.h"
 #include "helper.h"
 #include "RenderPass.h"
-
 #include "VertexBuffer.h"
 #include <iostream>
 
+#include "../math/rect.h"
+
 namespace vulkan {
 
-	std::vector<Pipeline*> pipelines;
+	Array<Pipeline*> pipelines;
 
 
 
@@ -106,16 +107,19 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int num_textures) 
 	input_assembly.topology = shader->topology;
 	input_assembly.primitiveRestartEnable = VK_FALSE;
 
-	color_blend_attachment = {};
-	color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	color_blend_attachment.blendEnable = VK_FALSE;
+	for (int i=0; i<render_pass->num_color_attachments(); i++) {
+		VkPipelineColorBlendAttachmentState a = {};
+		a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		a.blendEnable = VK_FALSE;
+		color_blend_attachments.add(a);
+	}
 
 	color_blending = {};
 	color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	color_blending.logicOpEnable = VK_FALSE;
 	color_blending.logicOp = VK_LOGIC_OP_COPY;
-	color_blending.attachmentCount = 1;
-	color_blending.pAttachments = &color_blend_attachment;
+	color_blending.attachmentCount = color_blend_attachments.num;
+	color_blending.pAttachments = &color_blend_attachments[0];
 	color_blending.blendConstants[0] = 0.0f;
 	color_blending.blendConstants[1] = 0.0f;
 	color_blending.blendConstants[2] = 0.0f;
@@ -144,10 +148,21 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int num_textures) 
 	depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depth_stencil.depthBoundsTestEnable = VK_FALSE;
 	depth_stencil.stencilTestEnable = VK_FALSE;
+
+	dynamic_states.add(VK_DYNAMIC_STATE_VIEWPORT);
+	set_viewport(rect(0, 400, 0, 400)); // always override dynamically!
+
+	rebuild();
+
+	pipelines.add(this);
 }
 
 Pipeline::~Pipeline() {
 	destroy();
+
+	for (int i=0; i<pipelines.num; i++)
+		if (pipelines[i] == this)
+			pipelines.erase(i);
 }
 
 
@@ -161,31 +176,31 @@ void Pipeline::__delete__() {
 }
 
 void Pipeline::disable_blend() {
-	color_blend_attachment.blendEnable = VK_FALSE;
+	color_blend_attachments[0].blendEnable = VK_FALSE;
 }
 
 void Pipeline::set_blend(VkBlendFactor src, VkBlendFactor dst) {
-	color_blend_attachment.blendEnable = VK_TRUE;
-	color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-	color_blend_attachment.srcColorBlendFactor = src;
-	color_blend_attachment.dstColorBlendFactor = dst;
-	color_blend_attachment.alphaBlendOp = VK_BLEND_OP_MAX;
-	color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	color_blend_attachments[0].blendEnable = VK_TRUE;
+	color_blend_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
+	color_blend_attachments[0].srcColorBlendFactor = src;
+	color_blend_attachments[0].dstColorBlendFactor = dst;
+	color_blend_attachments[0].alphaBlendOp = VK_BLEND_OP_MAX;
+	color_blend_attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 }
 
 void Pipeline::set_blend(float alpha) {
-	color_blend_attachment.blendEnable = VK_TRUE;
-	color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-	color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-	color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+	color_blend_attachments[0].blendEnable = VK_TRUE;
+	color_blend_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
+	color_blend_attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+	color_blend_attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
 	color_blending.blendConstants[0] = alpha;
 	color_blending.blendConstants[1] = alpha;
 	color_blending.blendConstants[2] = alpha;
 	color_blending.blendConstants[3] = alpha;
-	color_blend_attachment.alphaBlendOp = VK_BLEND_OP_MAX;
-	color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	color_blend_attachments[0].alphaBlendOp = VK_BLEND_OP_MAX;
+	color_blend_attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 }
 
 void Pipeline::set_line_width(float line_width) {
@@ -205,30 +220,51 @@ void Pipeline::set_z(bool test, bool write) {
 	depth_stencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
 }
 
-void Pipeline::set_dynamic(const Array<VkDynamicState> &_dynamic_states) {
-	dynamic_states = _dynamic_states;
-}
-
-Pipeline* Pipeline::build(Shader *shader, RenderPass *render_pass, int num_textures, bool _create) {
-	Pipeline *p = new Pipeline(shader, render_pass, num_textures);
-	pipelines.push_back(p);
-	if (_create)
-		p->create();
-	return p;
-}
-
-void Pipeline::create() {
-	VkViewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)swap_chain_extent.width;
-	viewport.height = (float)swap_chain_extent.height;
+void Pipeline::set_viewport(const rect &r) {
+	viewport = {};
+	viewport.x = r.x1;
+	viewport.y = r.y1;
+	viewport.width = r.width();
+	viewport.height = r.height();
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
+}
 
+void Pipeline::set_culling(int mode) {
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	if (mode == 0)
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+	if (mode == -1)
+		rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+}
+
+VkDynamicState parse_dynamic_state(const string &d) {
+	if (d == "viewport")
+		return VK_DYNAMIC_STATE_VIEWPORT;
+	if (d == "scissor")
+		return VK_DYNAMIC_STATE_SCISSOR;
+	if (d == "linewidth")
+		return VK_DYNAMIC_STATE_LINE_WIDTH;
+	std::cerr << "unknown dynamic state: " << d.c_str() << "\n";
+	return VK_DYNAMIC_STATE_MAX_ENUM;
+}
+
+void Pipeline::set_dynamic(const Array<string> &_dynamic_states) {
+	for (string &d: _dynamic_states) {
+		auto ds = parse_dynamic_state(d);
+		if (ds != VK_DYNAMIC_STATE_VIEWPORT)
+			dynamic_states.add(ds);
+	}
+}
+
+void Pipeline::rebuild() {
+	destroy();
+
+	// sometimes a dummy scissor is required!
 	VkRect2D scissor = {};
 	scissor.offset = {0, 0};
-	scissor.extent = swap_chain_extent;
+	scissor.extent = {(unsigned)1000000, (unsigned)1000000};
+	//scissor.extent = {(unsigned)width, (unsigned)height};
 
 	VkPipelineViewportStateCreateInfo viewport_state = {};
 	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -237,11 +273,12 @@ void Pipeline::create() {
 	viewport_state.scissorCount = 1;
 	viewport_state.pScissors = &scissor;
 
+
 	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+	VkPushConstantRange pci = {0};
 	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	if (shader->push_size > 0) {
-		VkPushConstantRange pci = {0};
-		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
 		pci.offset = 0;
 		pci.size = shader->push_size;
 		pipeline_layout_info.pushConstantRangeCount = 1;
@@ -257,10 +294,10 @@ void Pipeline::create() {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
-	VkPipelineDynamicStateCreateInfo dynami_state = {};
-	dynami_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynami_state.dynamicStateCount = dynamic_states.num;
-	dynami_state.pDynamicStates = &dynamic_states[0];
+	VkPipelineDynamicStateCreateInfo dynamic_state = {};
+	dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamic_state.dynamicStateCount = dynamic_states.num;
+	dynamic_state.pDynamicStates = &dynamic_states[0];
 
 	VkGraphicsPipelineCreateInfo pipeline_info = {};
 	pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -277,7 +314,7 @@ void Pipeline::create() {
 	pipeline_info.renderPass = render_pass->render_pass;
 	pipeline_info.subpass = 0;
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-	pipeline_info.pDynamicState = &dynami_state;
+	pipeline_info.pDynamicState = &dynamic_state;
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
@@ -285,8 +322,12 @@ void Pipeline::create() {
 }
 
 void Pipeline::destroy() {
-	vkDestroyPipeline(device, pipeline, nullptr);
-	vkDestroyPipelineLayout(device, layout, nullptr);
+	if (pipeline)
+		vkDestroyPipeline(device, pipeline, nullptr);
+	if (layout)
+		vkDestroyPipelineLayout(device, layout, nullptr);
+	pipeline = nullptr;
+	layout = nullptr;
 }
 
 };

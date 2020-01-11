@@ -17,25 +17,22 @@ namespace vulkan{
 
 	VkDescriptorPool descriptor_pool;
 
+	Array<DescriptorSet*> descriptor_sets;
+	Array<Shader*> shaders;
+	Array<UBOWrapper*> ubo_wrappers;
+
 
 
 	UBOWrapper::UBOWrapper(int _size) {
 		size = _size;
 		VkDeviceSize buffer_size = size;
 
-		buffers.resize(swap_chain_images.num);
-		memory.resize(swap_chain_images.num);
-
-		for (size_t i=0; i<swap_chain_images.num; i++) {
-			create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
-		}
+		create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, memory);
 	}
 
 	UBOWrapper::~UBOWrapper() {
-		for (size_t i=0; i<swap_chain_images.num; i++) {
-			vkDestroyBuffer(device, buffers[i], nullptr);
-			vkFreeMemory(device, memory[i], nullptr);
-		}
+		vkDestroyBuffer(device, buffer, nullptr);
+		vkFreeMemory(device, memory, nullptr);
 	}
 	void UBOWrapper::__init__(int size) {
 		new(this) UBOWrapper(size);
@@ -44,30 +41,29 @@ namespace vulkan{
 		this->~UBOWrapper();
 	}
 
-	extern uint32_t image_index;
 	void UBOWrapper::update(void *source) {
 		void* data;
-		vkMapMemory(device, memory[image_index], 0, size, 0, &data);
+		vkMapMemory(device, memory, 0, size, 0, &data);
 			memcpy(data, source, size);
-		vkUnmapMemory(device, memory[image_index]);
+		vkUnmapMemory(device, memory);
 	}
 
 
 	VkDescriptorPool create_descriptor_pool() {
 		std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
 		pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		pool_sizes[0].descriptorCount = static_cast<uint32_t>(swap_chain_images.num) * 64;
+		pool_sizes[0].descriptorCount = 1024;
 		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_sizes[1].descriptorCount = static_cast<uint32_t>(swap_chain_images.num) * 64;
+		pool_sizes[1].descriptorCount = 1024;
 
-		VkDescriptorPoolCreateInfo pci = {};
-		pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		pci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-		pci.pPoolSizes = pool_sizes.data();
-		pci.maxSets = static_cast<uint32_t>(swap_chain_images.num) * 64;
+		VkDescriptorPoolCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+		info.pPoolSizes = pool_sizes.data();
+		info.maxSets = 1024;
 
 		VkDescriptorPool pool;
-		if (vkCreateDescriptorPool(device, &pci, nullptr, &pool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(device, &info, nullptr, &pool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 		return pool;
@@ -77,85 +73,88 @@ namespace vulkan{
 		vkDestroyDescriptorPool(device, pool, nullptr);
 	}
 
-	DescriptorSet::DescriptorSet(VkDescriptorSetLayout layout, const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
-		std::vector<VkDescriptorSetLayout> layouts(swap_chain_images.num, layout);
-		VkDescriptorSetAllocateInfo ai = {};
-		ai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		ai.descriptorPool = descriptor_pool;
-		ai.descriptorSetCount = static_cast<uint32_t>(swap_chain_images.num);
-		ai.pSetLayouts = layouts.data();
+	DescriptorSet::DescriptorSet(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
 
-		descriptor_sets.resize(swap_chain_images.num);
-		if (vkAllocateDescriptorSets(device, &ai, descriptor_sets.data()) != VK_SUCCESS) {
+		layout = create_layout(ubos.num, tex.num);
+
+		VkDescriptorSetAllocateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		info.descriptorPool = descriptor_pool;
+		info.descriptorSetCount = 1;
+		info.pSetLayouts = &layout;
+
+		if (vkAllocateDescriptorSets(device, &info, &descriptor_set) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
 		set(ubos, tex);
 	}
-	
-	
-
-	void DescriptorSet::__init__(VkDescriptorSetLayout layout, const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
-		new(this) DescriptorSet(layout, ubos, tex);
+	DescriptorSet::~DescriptorSet() {
+		// no VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT...
+		//vkFreeDescriptorSets(device, descriptor_pool, 1, &descriptor_set);
+		destroy_layout(layout);
 	}
-	/*void DescriptorSet::__delete__() {
+
+	void DescriptorSet::__init__(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
+		new(this) DescriptorSet(ubos, tex);
+	}
+	void DescriptorSet::__delete__() {
 		this->~DescriptorSet();
-	}*/
+	}
 
 	void DescriptorSet::set(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
-		std::cout << "create dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
-		for (size_t i=0; i<swap_chain_images.num; i++) {
-			std::vector<VkDescriptorBufferInfo> buffer_info;
-			for (int j=0; j<ubos.num; j++) {
-				VkDescriptorBufferInfo bi = {};
-				bi.buffer = ubos[j]->buffers[i];
-				bi.offset = 0;
-				bi.range = ubos[j]->size;
-				buffer_info.push_back(bi);
-			}
 
-
-			std::vector<VkDescriptorImageInfo> image_info;
-			for (int j=0; j<tex.num; j++) {
-				VkDescriptorImageInfo ii = {};
-				ii.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				ii.imageView = tex[j]->view;
-				ii.sampler = tex[j]->sampler;
-				image_info.push_back(ii);
-			}
-
-			std::vector<VkWriteDescriptorSet> wds;
-			for (int j=0; j<ubos.num; j++) {
-				VkWriteDescriptorSet w;
-				w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				w.dstSet = descriptor_sets[i];
-				w.dstBinding = j;
-				w.dstArrayElement = 0;
-				w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				w.descriptorCount = 1;
-				w.pBufferInfo = &buffer_info[j];
-				wds.push_back(w);
-			}
-
-			for (int j=0; j<tex.num; j++) {
-				VkWriteDescriptorSet w;
-				w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				w.dstSet = descriptor_sets[i];
-				w.dstBinding = 1 + j;
-				w.dstArrayElement = 0;
-				w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				w.descriptorCount = 1;
-				w.pImageInfo = &image_info[j];
-				wds.push_back(w);
-			}
-
-			vkUpdateDescriptorSets(device, static_cast<uint32_t>(wds.size()), wds.data(), 0, nullptr);
+		//std::cout << "update dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
+		Array<VkDescriptorBufferInfo> buffer_info;
+		for (int j=0; j<ubos.num; j++) {
+			VkDescriptorBufferInfo bi = {};
+			bi.buffer = ubos[j]->buffer;
+			bi.offset = 0;
+			bi.range = ubos[j]->size;
+			buffer_info.add(bi);
 		}
+
+
+		Array<VkDescriptorImageInfo> image_info;
+		for (int j=0; j<tex.num; j++) {
+			VkDescriptorImageInfo ii = {};
+			ii.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			ii.imageView = tex[j]->view;
+			ii.sampler = tex[j]->sampler;
+			image_info.add(ii);
+		}
+
+		Array<VkWriteDescriptorSet> wds;
+		for (int j=0; j<ubos.num; j++) {
+			VkWriteDescriptorSet w;
+			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			w.dstSet = descriptor_set;
+			w.dstBinding = j;
+			w.dstArrayElement = 0;
+			w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			w.descriptorCount = 1;
+			w.pBufferInfo = &buffer_info[j];
+			wds.add(w);
+		}
+
+		for (int j=0; j<tex.num; j++) {
+			VkWriteDescriptorSet w;
+			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			w.dstSet = descriptor_set;
+			w.dstBinding = ubos.num + j;
+			w.dstArrayElement = 0;
+			w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			w.descriptorCount = 1;
+			w.pImageInfo = &image_info[j];
+			wds.add(w);
+		}
+
+		vkUpdateDescriptorSets(device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
 	}
 
 	VkDescriptorSetLayout DescriptorSet::create_layout(int num_ubos, int num_samplers) {
-		std::cout << "create dset layout, " << num_ubos << " ubos, " << num_samplers << " samplers\n";
-		std::vector<VkDescriptorSetLayoutBinding> bindings;
+		//std::cout << "create dset layout, " << num_ubos << " ubos, " << num_samplers << " samplers\n";
+		Array<VkDescriptorSetLayoutBinding> bindings;
 		for (int i=0; i<num_ubos;i++) {
 			VkDescriptorSetLayoutBinding lb = {};
 			lb.binding = i;
@@ -163,7 +162,7 @@ namespace vulkan{
 			lb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			lb.pImmutableSamplers = nullptr;
 			lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-			bindings.push_back(lb);
+			bindings.add(lb);
 		}
 
 		for (int i=0; i<num_samplers;i++) {
@@ -173,17 +172,17 @@ namespace vulkan{
 			lb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			lb.pImmutableSamplers = nullptr;
 			lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			bindings.push_back(lb);
+			bindings.add(lb);
 		}
 
 
-		VkDescriptorSetLayoutCreateInfo lci = {};
-		lci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		lci.bindingCount = static_cast<uint32_t>(bindings.size());
-		lci.pBindings = bindings.data();
+		VkDescriptorSetLayoutCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		info.bindingCount = bindings.num;
+		info.pBindings = &bindings[0];
 
 		VkDescriptorSetLayout layout;
-		if (vkCreateDescriptorSetLayout(device, &lci, nullptr, &layout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(device, &info, nullptr, &layout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 		return layout;
@@ -198,18 +197,20 @@ namespace vulkan{
 	VkShaderModule create_shader_module(const string &code) {
 		if (code == "")
 			return nullptr;
-		VkShaderModuleCreateInfo ci = {};
-		ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		ci.codeSize = code.num;
-		ci.pCode = reinterpret_cast<const uint32_t*>(code.data);
+		VkShaderModuleCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		info.codeSize = code.num;
+		info.pCode = reinterpret_cast<const uint32_t*>(code.data);
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &ci, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(device, &info, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 
 		return shaderModule;
 	}
+
+	string Shader::directory;
 
 	Shader::Shader() {
 		vert_module = nullptr;
@@ -217,6 +218,8 @@ namespace vulkan{
 		frag_module = nullptr;
 		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		push_size = 0;
+
+		shaders.add(this);
 	}
 
 	Shader::~Shader() {
@@ -230,6 +233,10 @@ namespace vulkan{
 		for (auto &l: descr_layouts) {
 			DescriptorSet::destroy_layout(l);
 		}
+
+		for (int i=0; i<shaders.num; i++)
+			if (shaders[i] == this)
+				shaders.erase(i);
 	}
 
 
@@ -268,8 +275,11 @@ namespace vulkan{
 		return rr;
 	}
 
-	Shader* Shader::load(const string &filename) {
+	Shader* Shader::load(const string &_filename) {
+		if (_filename == "")
+			return nullptr;
 		Shader *s = new Shader();
+		string filename = directory + _filename;
 		std::cout << "load shader " << filename.c_str() << "\n";
 
 		File *f = FileOpen(filename + ".compiled");

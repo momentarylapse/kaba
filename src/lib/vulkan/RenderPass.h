@@ -14,31 +14,36 @@
 
 
 #include "../base/base.h"
+#include "../image/color.h"
 #include <vulkan/vulkan.h>
-#include <vector>
 
 namespace vulkan{
 
 	class RenderPass {
 	public:
-		RenderPass(VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR);
+		RenderPass(const Array<VkFormat> &format, bool clear, bool presentable);
 		~RenderPass();
 
-		void __init__();
+		void __init__(const Array<VkFormat> &format, bool clear, bool representable);
 		void __delete__();
 
 		void create();
 		void destroy();
+		void rebuild();
 
 		VkRenderPass render_pass;
+		Array<color> clear_color;
+		float clear_z;
+		unsigned int clear_stencil;
+
+		int num_color_attachments() { return color_attachment_refs.num; }
 
 	private:
-		VkAttachmentDescription color_attachment;
-		VkAttachmentDescription depth_attachment;
-		VkAttachmentReference color_attachment_ref;
+		Array<VkAttachmentDescription> attachments;
+		Array<VkAttachmentReference> color_attachment_refs;
 		VkAttachmentReference depth_attachment_ref;
 		VkSubpassDescription subpass;
-		VkSubpassDependency dependency;
+		Array<VkSubpassDependency> dependencies;
 	};
 };
 

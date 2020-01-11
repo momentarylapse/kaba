@@ -23,7 +23,8 @@
 
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
-#include <vector>
+
+class rect;
 
 namespace vulkan{
 
@@ -38,10 +39,8 @@ namespace vulkan{
 		void __init__(Shader *shader, RenderPass *render_pass, int num_textures);
 		void __delete__();
 
-		void create();
+		void rebuild();
 		void destroy();
-
-		static Pipeline* build(Shader *shader, RenderPass *render_pass, int num_textures, bool create = true);
 
 		// configuration
 		void disable_blend();
@@ -50,8 +49,10 @@ namespace vulkan{
 		void set_wireframe(bool wireframe);
 		void set_line_width(float line_width);
 		void set_z(bool test, bool write);
+		void set_viewport(const rect &r);
+		void set_culling(int mode);
 
-		void set_dynamic(const Array<VkDynamicState> &dynamic_states);
+		void set_dynamic(const Array<string> &dynamic_states);
 
 		Shader *shader;
 		RenderPass *render_pass;
@@ -59,6 +60,7 @@ namespace vulkan{
 
 		VkPipelineLayout layout;
 		VkPipeline pipeline;
+		VkViewport viewport;
 
 	private:
 
@@ -68,7 +70,7 @@ namespace vulkan{
 		Array<VkVertexInputAttributeDescription> attribute_descriptions;
 		Array<VkPipelineShaderStageCreateInfo> shader_stages;
 		VkPipelineVertexInputStateCreateInfo vertex_input_info;
-		VkPipelineColorBlendAttachmentState color_blend_attachment;
+		Array<VkPipelineColorBlendAttachmentState> color_blend_attachments; // per FrameBuffer color attachment
 		VkPipelineColorBlendStateCreateInfo color_blending;
 		VkPipelineRasterizationStateCreateInfo rasterizer;
 		VkPipelineMultisampleStateCreateInfo multisampling;
@@ -76,7 +78,7 @@ namespace vulkan{
 		VkPipelineInputAssemblyStateCreateInfo input_assembly;
 	};
 
-	extern std::vector<Pipeline*> pipelines;
+	extern Array<Pipeline*> pipelines;
 
 };
 

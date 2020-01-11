@@ -153,10 +153,13 @@ OBJ = lib/algebra/crypto.o \
  lib/threads/Thread.o \
  lib/threads/ThreadedWork.o \
  lib/vulkan/CommandBuffer.o \
+ lib/vulkan/FrameBuffer.o \
  lib/vulkan/helper.o \
  lib/vulkan/Pipeline.o \
  lib/vulkan/RenderPass.o \
+ lib/vulkan/Semaphore.o \
  lib/vulkan/Shader.o \
+ lib/vulkan/SwapChain.o \
  lib/vulkan/Texture.o \
  lib/vulkan/VertexBuffer.o \
  lib/vulkan/vulkan.o
@@ -493,7 +496,7 @@ lib/kaba/lib/lib_sound.o : lib/kaba/lib/lib_sound.cpp lib/file/file.h lib/base/b
 lib/kaba/lib/lib_threads.o : lib/kaba/lib/lib_threads.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/threads/Thread.h lib/threads/Mutex.h lib/threads/ThreadedWork.h
 	$(CPP) -c lib/kaba/lib/lib_threads.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_vulkan.o : lib/kaba/lib/lib_vulkan.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h
+lib/kaba/lib/lib_vulkan.o : lib/kaba/lib/lib_vulkan.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/FrameBuffer.h lib/vulkan/SwapChain.h lib/vulkan/Semaphore.h
 	$(CPP) -c lib/kaba/lib/lib_vulkan.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/lib/lib_x.o : lib/kaba/lib/lib_x.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/config.h lib/kaba/lib/common.h lib/kaba/lib/exception.h
@@ -607,20 +610,29 @@ lib/threads/Thread.o : lib/threads/Thread.cpp lib/threads/Thread.h lib/base/base
 lib/threads/ThreadedWork.o : lib/threads/ThreadedWork.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/threads/Mutex.h lib/threads/Thread.h lib/threads/ThreadedWork.h
 	$(CPP) -c lib/threads/ThreadedWork.cpp -o $@ $(CXXFLAGS)
 
-lib/vulkan/CommandBuffer.o : lib/vulkan/CommandBuffer.cpp lib/vulkan/CommandBuffer.h lib/vulkan/helper.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Pipeline.h lib/vulkan/RenderPass.h lib/vulkan/Shader.h lib/math/matrix.h lib/image/color.h lib/math/rect.h
+lib/vulkan/CommandBuffer.o : lib/vulkan/CommandBuffer.cpp lib/vulkan/CommandBuffer.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/helper.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Pipeline.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/FrameBuffer.h lib/vulkan/Texture.h lib/math/rect.h
 	$(CPP) -c lib/vulkan/CommandBuffer.cpp -o $@ $(CXXFLAGS)
+
+lib/vulkan/FrameBuffer.o : lib/vulkan/FrameBuffer.cpp lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/FrameBuffer.h lib/vulkan/SwapChain.h lib/vulkan/Semaphore.h lib/vulkan/helper.h
+	$(CPP) -c lib/vulkan/FrameBuffer.cpp -o $@ $(CXXFLAGS)
 
 lib/vulkan/helper.o : lib/vulkan/helper.cpp lib/vulkan/helper.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/CommandBuffer.h
 	$(CPP) -c lib/vulkan/helper.cpp -o $@ $(CXXFLAGS)
 
-lib/vulkan/Pipeline.o : lib/vulkan/Pipeline.cpp lib/vulkan/Pipeline.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/helper.h lib/vulkan/RenderPass.h lib/vulkan/VertexBuffer.h lib/math/vector.h
+lib/vulkan/Pipeline.o : lib/vulkan/Pipeline.cpp lib/vulkan/Pipeline.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/helper.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/math/rect.h
 	$(CPP) -c lib/vulkan/Pipeline.cpp -o $@ $(CXXFLAGS)
 
-lib/vulkan/RenderPass.o : lib/vulkan/RenderPass.cpp lib/vulkan/RenderPass.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/helper.h
+lib/vulkan/RenderPass.o : lib/vulkan/RenderPass.cpp lib/vulkan/RenderPass.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/vulkan/helper.h
 	$(CPP) -c lib/vulkan/RenderPass.cpp -o $@ $(CXXFLAGS)
+
+lib/vulkan/Semaphore.o : lib/vulkan/Semaphore.cpp lib/vulkan/Semaphore.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/FrameBuffer.h lib/vulkan/SwapChain.h
+	$(CPP) -c lib/vulkan/Semaphore.cpp -o $@ $(CXXFLAGS)
 
 lib/vulkan/Shader.o : lib/vulkan/Shader.cpp lib/vulkan/Shader.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/matrix.h lib/vulkan/Texture.h lib/vulkan/helper.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/image/image.h lib/config.h lib/image/color.h
 	$(CPP) -c lib/vulkan/Shader.cpp -o $@ $(CXXFLAGS)
+
+lib/vulkan/SwapChain.o : lib/vulkan/SwapChain.cpp lib/vulkan/SwapChain.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/vulkan/FrameBuffer.h lib/vulkan/Texture.h lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/Semaphore.h lib/vulkan/helper.h
+	$(CPP) -c lib/vulkan/SwapChain.cpp -o $@ $(CXXFLAGS)
 
 lib/vulkan/Texture.o : lib/vulkan/Texture.cpp lib/vulkan/Texture.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/helper.h lib/vulkan/CommandBuffer.h lib/image/image.h lib/config.h lib/image/color.h
 	$(CPP) -c lib/vulkan/Texture.cpp -o $@ $(CXXFLAGS)
@@ -628,7 +640,7 @@ lib/vulkan/Texture.o : lib/vulkan/Texture.cpp lib/vulkan/Texture.h lib/base/base
 lib/vulkan/VertexBuffer.o : lib/vulkan/VertexBuffer.cpp lib/vulkan/VertexBuffer.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vector.h lib/vulkan/helper.h
 	$(CPP) -c lib/vulkan/VertexBuffer.cpp -o $@ $(CXXFLAGS)
 
-lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/helper.h
+lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/VertexBuffer.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vector.h lib/vulkan/Texture.h lib/vulkan/Shader.h lib/math/matrix.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/FrameBuffer.h lib/vulkan/SwapChain.h lib/vulkan/Semaphore.h lib/vulkan/helper.h
 	$(CPP) -c lib/vulkan/vulkan.cpp -o $@ $(CXXFLAGS)
 
 main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/hui/hui.h lib/hui/common.h lib/config.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/nix/nix.h lib/nix/nix_config.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/net/net.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h

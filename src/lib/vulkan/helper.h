@@ -9,12 +9,14 @@
 
 namespace vulkan{
 
-	void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-	void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	void copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	class FrameBuffer;
+
+	void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
+	void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
+	void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
+	VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, VkImageViewType type, uint32_t mip_levels);
 	void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
-	void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+	void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels);
 
 	uint32_t find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	bool has_stencil_component(VkFormat format);
@@ -27,9 +29,6 @@ namespace vulkan{
 	extern VkPhysicalDevice physical_device;
 
 	extern VkSurfaceKHR surface;
-
-	extern Array<VkImage> swap_chain_images;
-	extern VkExtent2D swap_chain_extent;
 
 
 	struct QueueFamilyIndices {

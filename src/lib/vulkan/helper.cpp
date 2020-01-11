@@ -7,10 +7,6 @@
 
 namespace vulkan{
 
-	extern VkQueue graphics_queue;
-	extern VkQueue present_queue;
-
-
 
 bool has_stencil_component(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
@@ -42,14 +38,14 @@ void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryProperty
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory) {
 	VkImageCreateInfo image_info = {};
 	image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	image_info.imageType = VK_IMAGE_TYPE_2D;
 	image_info.extent.width = width;
 	image_info.extent.height = height;
 	image_info.extent.depth = depth;
-	image_info.mipLevels = mipLevels;
+	image_info.mipLevels = mip_levels;
 	image_info.arrayLayers = 1;
 	image_info.format = format;
 	image_info.tiling = tiling;
@@ -70,32 +66,32 @@ void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mipL
 	alloc_info.allocationSize = mem_requirements.size;
 	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(device, &alloc_info, nullptr, &imageMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate image memory!");
 	}
 
-	vkBindImageMemory(device, image, imageMemory, 0);
+	vkBindImageMemory(device, image, image_memory, 0);
 }
 
-void copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
 	VkCommandBuffer command_buffer = begin_single_time_commands();
 
-	VkBufferCopy copyRegion = {};
-	copyRegion.size = size;
-	vkCmdCopyBuffer(command_buffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	VkBufferCopy copy_region = {};
+	copy_region.size = size;
+	vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
 	end_single_time_commands(command_buffer);
 }
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageViewType type, uint32_t mip_levels) {
 	VkImageViewCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	info.image = image;
-	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.viewType = type;
 	info.format = format;
-	info.subresourceRange.aspectMask = aspectFlags;
+	info.subresourceRange.aspectMask = aspect;
 	info.subresourceRange.baseMipLevel = 0;
-	info.subresourceRange.levelCount = mipLevels;
+	info.subresourceRange.levelCount = mip_levels;
 	info.subresourceRange.baseArrayLayer = 0;
 	info.subresourceRange.layerCount = 1;
 

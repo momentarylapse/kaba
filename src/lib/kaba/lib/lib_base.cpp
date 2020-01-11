@@ -18,6 +18,7 @@ extern const Class *TypeObjectP;
 extern const Class *TypeBoolPs;
 extern const Class *TypeBoolList;
 extern const Class *TypeIntPs;
+extern const Class *TypeIntP;
 extern const Class *TypeIntList;
 extern const Class *TypeIntArray;
 extern const Class *TypeFloatP;
@@ -408,6 +409,7 @@ void SIAddPackageBase() {
 	TypeBoolPs      = add_type_p("bool&",     TypeBool, FLAG_SILENT);
 	TypeBoolList    = add_type_a("bool[]",    TypeBool, -1);
 	TypeIntPs       = add_type_p("int&",      TypeInt, FLAG_SILENT);
+	TypeIntP        = add_type_p("int*",      TypeInt);
 	TypeIntList     = add_type_a("int[]",     TypeInt, -1);
 	TypeIntArray    = add_type_a("int[?]",    TypeInt, 1);
 	TypeFloatP      = add_type_p("float*",    TypeFloat);

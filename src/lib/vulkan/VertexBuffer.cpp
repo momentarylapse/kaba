@@ -8,7 +8,14 @@
 
 namespace vulkan{
 
+Array<VertexBuffer*> vertex_buffers;
 
+Vertex1::Vertex1(const vector &p, const vector &n, float _u, float _v) {
+	pos = p;
+	normal = n;
+	u = _u;
+	v = _v;
+}
 
 VkVertexInputBindingDescription Vertex1::binding_description() {
 	VkVertexInputBindingDescription bd = {};
@@ -51,17 +58,16 @@ VertexBuffer::VertexBuffer() {
 	index_memory = nullptr;
 	index_buffer_size = 0;
 	output_count = 0;
+
+	vertex_buffers.add(this);
 }
 
 VertexBuffer::~VertexBuffer() {
-	if (index_buffer) {
-		vkDestroyBuffer(device, index_buffer, nullptr);
-		vkFreeMemory(device, index_memory, nullptr);
-	}
-	if (vertex_buffer) {
-		vkDestroyBuffer(device, vertex_buffer, nullptr);
-		vkFreeMemory(device, vertex_memory, nullptr);
-	}
+	_destroy();
+
+	for (int i=0; i<vertex_buffers.num; i++)
+		if (vertex_buffers[i] == this)
+			vertex_buffers.erase(i);
 }
 
 void VertexBuffer::__init__() {
@@ -70,6 +76,23 @@ void VertexBuffer::__init__() {
 
 void VertexBuffer::__delete__() {
 	this->~VertexBuffer();
+}
+
+void VertexBuffer::_destroy() {
+	if (index_buffer) {
+		vkDestroyBuffer(device, index_buffer, nullptr);
+		vkFreeMemory(device, index_memory, nullptr);
+	}
+	index_buffer = nullptr;
+	if (vertex_buffer) {
+		vkDestroyBuffer(device, vertex_buffer, nullptr);
+		vkFreeMemory(device, vertex_memory, nullptr);
+	}
+	vertex_buffer = nullptr;
+
+	vertex_buffer_size = 0;
+	index_buffer_size = 0;
+	output_count = 0;
 }
 
 void VertexBuffer::build(const void *vertices, int size, int count) {
@@ -93,6 +116,9 @@ void VertexBuffer::build1i(const Array<Vertex1> &vertices, const Array<int> &ind
 }
 
 void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
+	if (size == 0)
+		return;
+
 	VkDeviceSize buffer_size = size;
 
 	// -> staging
@@ -124,6 +150,9 @@ void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
 }
 
 void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
+	if (indices.num == 0)
+		return;
+
 	VkDeviceSize buffer_size = sizeof(indices[0]) * indices.num;
 
 	VkBuffer staging_buffer;

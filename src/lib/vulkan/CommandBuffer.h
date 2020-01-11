@@ -14,7 +14,6 @@
 #include <vulkan/vulkan.h>
 #include "../base/base.h"
 
-class color;
 class rect;
 
 namespace vulkan{
@@ -23,6 +22,8 @@ namespace vulkan{
 	class VertexBuffer;
 	class RenderPass;
 	class DescriptorSet;
+	class FrameBuffer;
+	class Texture;
 
 	extern VkCommandPool command_pool;
 
@@ -39,21 +40,29 @@ namespace vulkan{
 
 		void _create();
 		void _destroy();
-		Array<VkCommandBuffer> buffers;
-		VkCommandBuffer current;
+		VkCommandBuffer buffer;
 
 		Pipeline *current_pipeline;
 
 		void begin();
 		void end();
 		void submit();
+
 		void set_pipeline(Pipeline *p);
 		void bind_descriptor_set(int index, DescriptorSet *dset);
 		void push_constant(int offset, int size, void *data);
-		void begin_render_pass(RenderPass *rp, const color &clear_color);
+
+		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
+		void next_subpass();
 		void end_render_pass();
 		void draw(VertexBuffer *vb);
-		void scissor(const rect &r);
+
+		void set_scissor(const rect &r);
+		void set_viewport(const rect &r);
+
+		void dispatch(int nx, int ny, int nz);
+
+		void barrier(const Array<Texture*> &t, int mode);
 	};
 
 	VkCommandBuffer begin_single_time_commands();

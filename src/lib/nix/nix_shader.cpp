@@ -361,7 +361,7 @@ void Shader::set_matrix(int location, const matrix &m)
 {
 	if (location < 0)
 		return;
-	glUniformMatrix4fv(location, 1, GL_TRUE, (float*)&m);
+	glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&m);
 	TestGLError("SetShaderData");
 }
 
