@@ -5,6 +5,9 @@
  *      Author: michi
  */
 
+#if HAS_LIB_VULKAN
+
+
 #include "SwapChain.h"
 #include "vulkan.h"
 #include "helper.h"
@@ -262,3 +265,6 @@ bool SwapChain::aquire_image(unsigned int *image_index, Semaphore *signal_sem) {
 }
 
 } /* namespace vulkan */
+
+#endif
+

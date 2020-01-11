@@ -8,6 +8,9 @@
 #ifndef SRC_LIB_VULKAN_SEMAPHORE_H_
 #define SRC_LIB_VULKAN_SEMAPHORE_H_
 
+#if HAS_LIB_VULKAN
+
+
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
 
@@ -44,5 +47,7 @@ Array<VkSemaphore> extract_semaphores(const Array<Semaphore*> &sem);
 
 
 } /* namespace vulkan */
+
+#endif
 
 #endif /* SRC_LIB_VULKAN_SEMAPHORE_H_ */

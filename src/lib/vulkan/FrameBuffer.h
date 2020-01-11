@@ -8,6 +8,7 @@
 #ifndef SRC_LIB_VULKAN_FRAMEBUFFER_H_
 #define SRC_LIB_VULKAN_FRAMEBUFFER_H_
 
+#if HAS_LIB_VULKAN
 
 #include <vulkan/vulkan.h>
 #include "../base/base.h"
@@ -44,5 +45,7 @@ public:
 };
 
 }
+
+#endif
 
 #endif /* SRC_LIB_VULKAN_FRAMEBUFFER_H_ */

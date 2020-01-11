@@ -5,6 +5,9 @@
  *      Author: michi
  */
 
+#if HAS_LIB_VULKAN
+
+
 #include "vulkan.h"
 #include "FrameBuffer.h"
 #include "helper.h"
@@ -95,3 +98,6 @@ void FrameBuffer::destroy() {
 
 
 } /* namespace vulkan */
+
+#endif
+

@@ -5,6 +5,9 @@
  *      Author: michi
  */
 
+#if HAS_LIB_VULKAN
+
+
 #include "Semaphore.h"
 #include "vulkan.h"
 
@@ -80,3 +83,6 @@ Array<VkSemaphore> extract_semaphores(const Array<Semaphore*> &sem) {
 
 
 } /* namespace vulkan */
+
+#endif
+

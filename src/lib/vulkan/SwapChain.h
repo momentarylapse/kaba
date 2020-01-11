@@ -8,6 +8,8 @@
 #ifndef SRC_LIB_VULKAN_SWAPCHAIN_H_
 #define SRC_LIB_VULKAN_SWAPCHAIN_H_
 
+#if HAS_LIB_VULKAN
+
 
 #include "../base/base.h"
 #include "../image/color.h"
@@ -78,5 +80,8 @@ bool has_stencil_component(VkFormat format);
 
 
 } /* namespace vulkan */
+
+
+#endif
 
 #endif /* SRC_LIB_VULKAN_SWAPCHAIN_H_ */
