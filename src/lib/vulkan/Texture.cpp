@@ -137,7 +137,7 @@ Texture* Texture::load(const string &filename) {
 
 
 void Texture::_load(const string &filename) {
-	Image *im = LoadImage(filename);
+	Image *im = Image::load(filename);
 	if (!im) {
 		throw std::runtime_error("failed to load texture image!");
 	}

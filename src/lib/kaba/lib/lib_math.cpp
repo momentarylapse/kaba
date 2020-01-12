@@ -221,23 +221,23 @@ void SIAddPackageMath() {
 
 	// types
 	TypeComplex = add_type("complex", sizeof(complex));
-	TypeComplexList = add_type_a("complex[]", TypeComplex, -1);
+	TypeComplexList = add_type_l(TypeComplex);
 	TypeVector = add_type("vector", sizeof(vector));
-	TypeVectorList = add_type_a("vector[]", TypeVector, -1);
+	TypeVectorList = add_type_l(TypeVector);
 	TypeRect = add_type("rect", sizeof(rect));
 	TypeMatrix = add_type("matrix", sizeof(matrix));
 	TypeQuaternion = add_type("quaternion", sizeof(quaternion));
 	TypePlane = add_type("plane", sizeof(plane));
-	TypePlaneList = add_type_a("plane[]", TypePlane, -1);
+	TypePlaneList = add_type_l(TypePlane);
 	TypeColor = add_type("color", sizeof(color));
-	TypeColorList = add_type_a("color[]", TypeColor, -1);
+	TypeColorList = add_type_l(TypeColor);
 	TypeMatrix3 = add_type("matrix3", sizeof(matrix3));
-	const Class *TypeFloatArray3 = add_type_a("float[3]", TypeFloat32, 3);
-	const Class *TypeFloatArray4 = add_type_a("float[4]", TypeFloat32, 4);
-	const Class *TypeFloatArray4x4 = add_type_a("float[4][4]", TypeFloatArray4, 4);
-	const Class *TypeFloatArray16 = add_type_a("float[16]", TypeFloat32, 16);
-	const Class *TypeFloatArray3x3 = add_type_a("float[3][3]", TypeFloatArray3, 3);
-	const Class *TypeFloatArray9 = add_type_a("float[9]", TypeFloat32, 9);
+	const Class *TypeFloatArray3 = add_type_a(TypeFloat32, 3);
+	const Class *TypeFloatArray4 = add_type_a(TypeFloat32, 4);
+	const Class *TypeFloatArray4x4 = add_type_a(TypeFloatArray4, 4);
+	const Class *TypeFloatArray16 = add_type_a(TypeFloat32, 16);
+	const Class *TypeFloatArray3x3 = add_type_a(TypeFloatArray3, 3);
+	const Class *TypeFloatArray9 = add_type_a(TypeFloat32, 9);
 	const Class *TypeVli = add_type("vli", sizeof(vli));
 	const Class *TypeCrypto = add_type("Crypto", sizeof(Crypto));
 	TypeAny = add_type("any", sizeof(Any));
