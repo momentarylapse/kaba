@@ -187,6 +187,7 @@ void SIAddPackageVulkan() {
 			func_add_param("h", TypeInt);
 			func_add_param("format", TypeString);
 			func_add_param("with_sampler", TypeBool);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DepthBuffer::__delete__), FLAG_OVERRIDE);
 
 
 	add_class(TypeFrameBuffer);
@@ -229,6 +230,7 @@ void SIAddPackageVulkan() {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Pipeline::__init__));
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
+			func_add_param("subpass", TypeInt);
 			func_add_param("num_textures", TypeInt);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Pipeline::__delete__));
 		class_add_funcx("set_wireframe", TypeVoid, vul_p(&vulkan::Pipeline::set_wireframe));
@@ -255,10 +257,17 @@ void SIAddPackageVulkan() {
 		class_add_elementx("clear_z", TypeFloat32, vul_p(&vulkan::RenderPass::clear_z));
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::RenderPass::__init__));
 			func_add_param("formats", TypeIntList);
-			func_add_param("clear", TypeBool);
-			func_add_param("presentable", TypeBool);
+			func_add_param("options", TypeString);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::RenderPass::__delete__));
 		class_add_funcx("rebuild", TypeVoid, vul_p(&vulkan::RenderPass::rebuild));
+		class_add_funcx("add_subpass", TypeVoid, vul_p(&vulkan::RenderPass::add_subpass));
+			func_add_param("color_att", TypeIntList);
+			func_add_param("depth_att", TypeInt);
+		class_add_funcx("add_dependency", TypeVoid, vul_p(&vulkan::RenderPass::add_dependency));
+			func_add_param("src", TypeInt);
+			func_add_param("src_opt", TypeString);
+			func_add_param("dst", TypeInt);
+			func_add_param("dst_opt", TypeString);
 
 
 	add_class(TypeSwapChain);
@@ -336,20 +345,12 @@ void SIAddPackageVulkan() {
 	add_funcx("vulkan_init", TypeVoid, vul_p(&vulkan::init), FLAG_STATIC);
 		func_add_param("win", TypePointer);
 	add_funcx("vulkan_destroy", TypeVoid, vul_p(&vulkan::destroy), FLAG_STATIC);
-
 	add_funcx("queue_submit_command_buffer", TypeVoid, vul_p(&vulkan::queue_submit_command_buffer), FLAG_STATIC);
 		func_add_param("cb", TypeCommandBuffer);
 		func_add_param("wait_sem", TypeSemaphorePList);
 		func_add_param("signal_sem", TypeSemaphorePList);
 		func_add_param("fence", TypeFence);
-
-//	add_funcx("start_frame", TypeBool, vul_p(&vulkan::start_frame), FLAG_STATIC);
-//	add_funcx("end_frame", TypeVoid, vul_p(&vulkan::end_frame), FLAG_STATIC);
-//	add_funcx("submit_command_buffer", TypeVoid, vul_p(&vulkan::submit_command_buffer), FLAG_STATIC);
-//		func_add_param("cb", TypeCommandBuffer);
-
 	add_funcx("wait_device_idle", TypeVoid, vul_p(&vulkan::wait_device_idle), FLAG_STATIC);
-
 
 }
 

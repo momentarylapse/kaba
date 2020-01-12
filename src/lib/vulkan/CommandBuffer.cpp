@@ -191,14 +191,14 @@ void CommandBuffer::dispatch(int nx, int ny, int nz) {
 	vkCmdDispatch(buffer, nx, ny, nz);
 }
 
-bool tex_is_depth_buffer(Texture *t) {
-	return (t->format == VK_FORMAT_D32_SFLOAT) or (t->format == VK_FORMAT_D32_SFLOAT_S8_UINT) or (t->format == VK_FORMAT_D24_UNORM_S8_UINT) or (t->format == VK_FORMAT_D16_UNORM);
+bool image_is_depth_buffer(VkFormat f) {
+	return (f == VK_FORMAT_D32_SFLOAT) or (f == VK_FORMAT_D32_SFLOAT_S8_UINT) or (f == VK_FORMAT_D24_UNORM_S8_UINT) or (f == VK_FORMAT_D16_UNORM);
 }
 
 void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 	Array<VkImageMemoryBarrier> barriers;
 	for (auto *t: textures) {
-		bool is_depth = tex_is_depth_buffer(t);
+		bool is_depth = image_is_depth_buffer(t->format);
 		VkImageSubresourceRange sr = {};
 		sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 		sr.baseArrayLayer = 0;

@@ -59,9 +59,10 @@ namespace vulkan {
 	}
 
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int num_textures) {
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) {
 	shader = _shader;
 	render_pass = _render_pass;
+	subpass = _subpass;
 	descr_layouts = shader->descr_layouts;
 	pipeline = nullptr;
 	layout = nullptr;
@@ -107,7 +108,7 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int num_textures) 
 	input_assembly.topology = shader->topology;
 	input_assembly.primitiveRestartEnable = VK_FALSE;
 
-	for (int i=0; i<render_pass->num_color_attachments(); i++) {
+	for (int i=0; i<render_pass->num_color_attachments(subpass); i++) {
 		VkPipelineColorBlendAttachmentState a = {};
 		a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		a.blendEnable = VK_FALSE;
@@ -167,8 +168,8 @@ Pipeline::~Pipeline() {
 
 
 
-void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int num_textures) {
-	new(this) Pipeline(_shader, _render_pass, num_textures);
+void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) {
+	new(this) Pipeline(_shader, _render_pass, _subpass, num_textures);
 }
 
 void Pipeline::__delete__() {
@@ -312,7 +313,7 @@ void Pipeline::rebuild() {
 	pipeline_info.pColorBlendState = &color_blending;
 	pipeline_info.layout = layout;
 	pipeline_info.renderPass = render_pass->render_pass;
-	pipeline_info.subpass = 0;
+	pipeline_info.subpass = subpass;
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 	pipeline_info.pDynamicState = &dynamic_state;
 

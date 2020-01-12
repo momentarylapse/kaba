@@ -33,10 +33,10 @@ namespace vulkan{
 
 	class Pipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass, int num_textures);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, int num_textures);
 		~Pipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass, int num_textures);
+		void __init__(Shader *shader, RenderPass *render_pass, int subpass, int num_textures);
 		void __delete__();
 
 		void rebuild();
@@ -56,6 +56,7 @@ namespace vulkan{
 
 		Shader *shader;
 		RenderPass *render_pass;
+		int subpass;
 		Array<VkDescriptorSetLayout> descr_layouts;
 
 		VkPipelineLayout layout;

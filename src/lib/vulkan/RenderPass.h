@@ -21,28 +21,40 @@ namespace vulkan{
 
 	class RenderPass {
 	public:
-		RenderPass(const Array<VkFormat> &format, bool clear, bool presentable);
+		RenderPass(const Array<VkFormat> &format, const string &options);
 		~RenderPass();
 
-		void __init__(const Array<VkFormat> &format, bool clear, bool representable);
+		void __init__(const Array<VkFormat> &format, const string &options);
 		void __delete__();
 
 		void create();
 		void destroy();
 		void rebuild();
 
+		void add_subpass(const Array<int> &color__att, int depth_att);
+		void _add_dependency(int src, VkPipelineStageFlagBits src_stage, VkAccessFlags src_access, int dst, VkPipelineStageFlagBits dst_stage, VkAccessFlags dst_access);
+		void add_dependency(int src, const string &src_opt, int dst, const string &dst_opt);
+
 		VkRenderPass render_pass;
 		Array<color> clear_color;
 		float clear_z;
 		unsigned int clear_stencil;
 
-		int num_color_attachments() { return color_attachment_refs.num; }
+		int num_subpasses() { return subpass_data.num; }
+		int num_color_attachments(int sub) { return subpass_data[sub].color_attachment_refs.num; }
 
 	private:
+
+		// common
 		Array<VkAttachmentDescription> attachments;
-		Array<VkAttachmentReference> color_attachment_refs;
-		VkAttachmentReference depth_attachment_ref;
-		VkSubpassDescription subpass;
+
+		bool auto_subpasses, auto_dependencies;
+		struct SubpassData {
+			Array<VkAttachmentReference> color_attachment_refs;
+			VkAttachmentReference depth_attachment_ref;
+		};
+		Array<SubpassData> subpass_data;
+		Array<VkSubpassDescription> subpasses;
 		Array<VkSubpassDependency> dependencies;
 	};
 };
