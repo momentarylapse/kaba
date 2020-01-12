@@ -244,6 +244,14 @@ void SIAddPackageVulkan() {
 		class_add_funcx("set_blend", TypeVoid, nullptr);
 #endif
 			func_add_param("alpha", TypeFloat32);
+#if defined(_X_USE_VULKAN_) && HAS_LIB_VULKAN
+		void (vulkan::Pipeline::*mpf2)(VkBlendFactor, VkBlendFactor) = &vulkan::Pipeline::set_blend;
+		class_add_funcx("set_blend", TypeVoid, vul_p(mpf2));
+#else
+		class_add_funcx("set_blend", TypeVoid, nullptr);
+#endif
+			func_add_param("src", TypeInt);
+			func_add_param("dst", TypeInt);
 		class_add_funcx("set_z", TypeVoid, vul_p(&vulkan::Pipeline::set_z));
 			func_add_param("test", TypeBool);
 			func_add_param("write", TypeBool);

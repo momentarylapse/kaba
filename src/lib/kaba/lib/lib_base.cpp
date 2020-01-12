@@ -8,8 +8,9 @@
 
 
 namespace Kaba {
-	
+
 extern const Class *TypeDynamicArray;
+const Class *TypeEmptyList;
 extern const Class *TypeDictBase;
 extern const Class *TypeFloat;
 extern const Class *TypePointerList;
@@ -359,6 +360,7 @@ void SIAddPackageBase() {
 	TypeFloat64			= add_type  ("float64", sizeof(double), FLAG_CALL_BY_VALUE);
 	TypeChar			= add_type  ("char", sizeof(char), FLAG_CALL_BY_VALUE);
 	TypeDynamicArray	= add_type  ("@DynamicArray", config.super_array_size);
+	TypeEmptyList		= add_type  ("-empty-list-", config.super_array_size);
 	TypeDictBase		= add_type  ("@DictBase",   config.super_array_size);
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));

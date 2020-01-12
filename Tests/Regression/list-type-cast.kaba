@@ -1,0 +1,14 @@
+class A
+	int i
+	void __init__(int _i)
+		i = _i
+
+class B extends A
+
+
+void f(A[] a)
+	print(str(a))
+
+void main()
+	f([B(1), B(2)])
+
