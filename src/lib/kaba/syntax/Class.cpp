@@ -60,14 +60,6 @@ bool type_match(const Class *given, const Class *wanted) {
 }
 
 
-// allow same classes... TODO deprecate...
-bool _type_match(const Class *given, bool same_chunk, const Class *wanted) {
-	if ((same_chunk) and (wanted == TypeChunk))
-		return true;
-
-	return type_match(given, wanted);
-}
-
 Class::Class(const string &_name, int _size, SyntaxTree *_owner, const Class *_parent, const Class *_param) {
 	name = _name;
 	owner = _owner;
