@@ -216,7 +216,7 @@ float ImagePainter::get_str_width(const string& str) {
 	return 0;
 }
 
-void ImagePainter::draw_image(float dx, float dy, Image *im) {
+void ImagePainter::draw_image(float dx, float dy, const Image *im) {
 	int _x0 = (int)max(dx, _clip.x1);
 	int _x1 = (int)min(dx + im->width, _clip.x2);
 	int _y0 = (int)max(dy, _clip.y1);
@@ -227,7 +227,7 @@ void ImagePainter::draw_image(float dx, float dy, Image *im) {
 			image->draw_pixel(x, y, im->get_pixel(x - (int)dx, y - (int)dy));
 }
 
-void ImagePainter::draw_mask_image(float x, float y, Image *image) {
+void ImagePainter::draw_mask_image(float x, float y, const Image *image) {
 }
 
 

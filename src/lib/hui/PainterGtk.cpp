@@ -234,7 +234,7 @@ void Painter::draw_circle(float x, float y, float radius)
 		cairo_stroke(cr);
 }
 
-void Painter::draw_image(float x, float y, Image *image) {
+void Painter::draw_image(float x, float y, const Image *image) {
 #ifdef _X_USE_IMAGE_
 	if (!cr)
 		return;
@@ -255,7 +255,7 @@ void Painter::draw_image(float x, float y, Image *image) {
 #endif
 }
 
-void Painter::draw_mask_image(float x, float y, Image *image)
+void Painter::draw_mask_image(float x, float y, const Image *image)
 {
 #ifdef _X_USE_IMAGE_
 	if (!cr)

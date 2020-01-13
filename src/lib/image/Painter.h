@@ -38,8 +38,8 @@ public:
 	virtual void _cdecl draw_circle(float x, float y, float radius) = 0;
 	virtual void _cdecl draw_str(float x, float y, const string &str) = 0;
 	virtual float _cdecl get_str_width(const string &str) = 0;
-	virtual void _cdecl draw_image(float x, float y, Image *image) = 0;
-	virtual void _cdecl draw_mask_image(float x, float y, Image *image) = 0;
+	virtual void _cdecl draw_image(float x, float y, const Image *image) = 0;
+	virtual void _cdecl draw_mask_image(float x, float y, const Image *image) = 0;
 	int width = 0;
 	int height = 0;
 	float font_size = 12;

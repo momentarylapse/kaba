@@ -215,6 +215,16 @@ Any kaba_pointer2any(const void *p) {
 #pragma GCC pop_options
 
 
+template<int N>
+class FloatN {
+public:
+	float a[N];
+	void __assign__(FloatN<N> &o) {
+		for (int i=0; i<N; i++)
+			a[i] = o.a[i];
+	}
+};
+
 
 void SIAddPackageMath() {
 	add_package("math", true);
@@ -256,6 +266,26 @@ void SIAddPackageMath() {
 		((Class*)TypePlane)->_amd64_allow_pass_in_xmm = true;
 		((Class*)TypeRect)->_amd64_allow_pass_in_xmm = true;
 	}
+
+
+	add_class(TypeFloatArray3);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<3>::__assign__);
+			func_add_param("o", TypeFloatArray3);
+	add_class(TypeFloatArray4);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<4>::__assign__);
+			func_add_param("o", TypeFloatArray4);
+	add_class(TypeFloatArray9);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<9>::__assign__);
+			func_add_param("o", TypeFloatArray9);
+	add_class(TypeFloatArray3x3);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<9>::__assign__);
+			func_add_param("o", TypeFloatArray3x3);
+	add_class(TypeFloatArray16);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<16>::__assign__);
+			func_add_param("o", TypeFloatArray16);
+	add_class(TypeFloatArray4x4);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &FloatN<16>::__assign__);
+			func_add_param("o", TypeFloatArray4x4);
 
 
 	add_class(TypeComplex);

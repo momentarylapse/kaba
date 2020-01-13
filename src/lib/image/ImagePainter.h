@@ -42,8 +42,8 @@ public:
 	void _cdecl draw_circle(float x, float y, float radius) override;
 	void _cdecl draw_str(float x, float y, const string &str) override;
 	float _cdecl get_str_width(const string &str) override;
-	void _cdecl draw_image(float x, float y, Image *image) override;
-	void _cdecl draw_mask_image(float x, float y, Image *image) override;
+	void _cdecl draw_image(float x, float y, const Image *image) override;
+	void _cdecl draw_mask_image(float x, float y, const Image *image) override;
 
 	rect clip() const override;
 

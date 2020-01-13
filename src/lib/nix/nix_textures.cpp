@@ -311,9 +311,9 @@ void Texture::reload()
 			return;
 		#endif
 	}else{
-		Image image;
-		image.load(_filename);
-		overwrite(image);
+		auto image = Image::load(_filename);
+		overwrite(*image);
+		delete image;
 	}
 	life_time = 0;
 }
