@@ -1,0 +1,11 @@
+class Test
+
+bool f2(Test*[] a)
+	print("f2   {{str(a)}}")
+	return true
+
+
+void main()
+	Test* a = nil
+	if f2([a])
+		pass
