@@ -23,6 +23,8 @@ VkFormat parse_format(const string &s) {
 		return VK_FORMAT_R8G8B8_UNORM;
 	if (s == "r:i8")
 		return VK_FORMAT_R8_UNORM;
+	if (s == "argb:i10")
+		return VK_FORMAT_A2R10G10B10_SNORM_PACK32;
 	if (s == "rgba:f32")
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
 	if (s == "rgb:f32")
@@ -46,6 +48,8 @@ int pixel_size(VkFormat f) {
 		return 3;
 	if (f == VK_FORMAT_R8_UNORM)
 		return 1;
+	if (f == VK_FORMAT_A2R10G10B10_SNORM_PACK32)
+		return 4;
 	if (f == VK_FORMAT_R32G32B32A32_SFLOAT)
 		return 16;
 	if (f == VK_FORMAT_R32G32B32_SFLOAT)
@@ -180,7 +184,8 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 	}
 
 	auto usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	create_image(width, height, depth, mip_levels, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
+	auto tiling = VK_IMAGE_TILING_OPTIMAL;
+	create_image(width, height, depth, mip_levels, format, tiling, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
 	transition_image_layout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mip_levels);
 

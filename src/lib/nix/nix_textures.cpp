@@ -20,7 +20,6 @@ Texture *default_texture = NULL;
 Texture *tex_text = NULL;
 int tex_cube_level = -1;
 
-int texture_icon_size = 0;
 bool GLDoubleBuffered = true;
 
 
@@ -380,10 +379,6 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 
 		t->width = image.width;
 		t->height = image.height;
-		if (texture_icon_size > 0){
-			t->icon = *image.scale(texture_icon_size, texture_icon_size);
-			//t->icon.flipV();
-		}
 	}
 	t->life_time = 0;
 }

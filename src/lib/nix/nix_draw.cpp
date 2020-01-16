@@ -162,6 +162,12 @@ void DrawLine(float x1, float y1, float x2, float y2, float depth)
 void DrawLines(const Array<vector> &p, bool contiguous)
 {
 	current_shader->set_default_data();
+	Array<color> c;
+	c.resize(p.num);
+	for (int i=0; i<c.num; i++)
+		c[i] = material.emission;
+	DrawLinesColored(p, c, contiguous);
+	return;
 
 	if (line_buffer == 0)
 		glGenBuffers(1, &line_buffer);
@@ -255,16 +261,21 @@ void DrawLineH(float x1, float x2, float y, float depth)
 void DrawLine3D(const vector &l1, const vector &l2)
 {
 	vector v[2] = {l1, l2};
+	color c[2] = {material.emission, material.emission};
 
 	current_shader->set_default_data();
 
 	if (line_buffer == 0)
 		glGenBuffers(1, &line_buffer);
+	if (color_buffer == 0)
+		glGenBuffers(1, &color_buffer);
 
 	TestGLError("dl-opt0");
 	glBindBuffer(GL_ARRAY_BUFFER, line_buffer);
 	glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(v[0]), &v[0], GL_STATIC_DRAW);
 	TestGLError("dl-opt1");
+	glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+	glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(c[0]), &c[0], GL_STATIC_DRAW);
 
 	TestGLError("dl-a");
 	glEnableVertexAttribArray(0);
@@ -273,6 +284,14 @@ void DrawLine3D(const vector &l1, const vector &l2)
 	TestGLError("dl-c1");
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	TestGLError("dl-d1");
+
+	TestGLError("dlc-2a");
+	glEnableVertexAttribArray(1);
+	TestGLError("dlc-b2");
+	glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+	TestGLError("dlc-c2");
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	TestGLError("dlc-d2");
 
 	glDrawArrays(GL_LINES, 0, 2);
 	TestGLError("dl-e");

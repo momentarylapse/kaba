@@ -41,8 +41,6 @@ public:
 	unsigned int depth_render_buffer;
 	unsigned int internal_format;
 
-	Image icon;
-
 	Texture();
 	~Texture();
 	void _cdecl __init__();
@@ -96,8 +94,6 @@ void _cdecl SetTextures(Array<Texture*> &textures);
 
 extern Array<Texture*> textures;
 extern int tex_cube_level;
-
-extern int texture_icon_size;
 
 };
 
