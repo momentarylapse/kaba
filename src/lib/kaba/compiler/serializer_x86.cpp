@@ -7,9 +7,6 @@
 
 namespace Kaba{
 
-void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s);
-
-
 
 int SerializerX86::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
@@ -27,8 +24,9 @@ int SerializerX86::fc_begin(Function *f, const Array<SerialNodeParam> &params, c
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	int64 push_size = 0;
 	
+	// skip the class instance for now...
 	int p0 = 0;
-	if (f->is_static)
+	if (!f->is_static)
 		p0 = 1;
 
 	// push parameters onto stack

@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.17.12.0";
+string AppVersion = "0.17.12.2";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -199,6 +199,26 @@ public:
 				}
 				command = arg[i];
 				arg.erase(i --);
+			}else if (arg[i] == "--just-disasm"){
+				arg.erase(i);
+				if (i >= arg.num){
+					msg_error("command expexted after --just-disasm");
+					exit(1);
+				}
+				string s = FileRead(arg[i]);
+				Kaba::init(instruction_set, abi, flag_allow_std_lib);
+				int data_size = 0;
+				if (flag_compile_os) {
+					for (int i=0; i<s.num-1; i++)
+						if (s[i] == 0x55 and s[i+1] == 0x89) {
+							data_size = i;
+							break;
+						}
+				}
+				for (int i=0; i<data_size; i+= 4)
+					msg_write(format("   data %03x:  ", i) + s.substr(i, 4).hex());
+				msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
+				exit(0);
 			}else if ((arg[i] == "--help") or (arg[i] == "-h")){
 				msg_write("options:");
 				msg_write("--version, -v");
@@ -213,6 +233,7 @@ public:
 				msg_write("--variable-offset <OFFSET>");
 				msg_write("--export-symbols <FILE>");
 				msg_write("--import-symbols <FILE>");
+				msg_write("--just-disasm <FILE>");
 				msg_write("-o <FILE>");
 				msg_write("--output-format {raw,elf}");
 			}else if (arg[i][0] == '-'){
