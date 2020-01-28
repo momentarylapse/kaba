@@ -383,7 +383,10 @@ public:
 	void export_symbols(Kaba::Script *s, const string &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
-			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(fn->num_params));
+			int n = fn->num_params;
+			if (!fn->is_static)
+				n ++;
+			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(n));
 			f->write_int((long)fn->address);
 		}
 		for (auto *v: s->syntax->base_class->static_variables) {
