@@ -155,6 +155,11 @@ SerialNodeParam SerializerX86::serialize_parameter(Node *link, Block *block, int
 			p.kind = NodeKind::MEMORY;
 		else
 			p.kind = NodeKind::CONSTANT_BY_ADDRESS;
+		if (syntax_tree->flag_function_pointer_as_code and (link->type == TypeFunctionP)) {
+			auto *fp = (Function*)(int_p)link->as_const()->as_int64();
+			p.kind = NodeKind::MARKER;
+			p.p = fp->_label;
+		}
 	}else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::INLINE_CALL) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::STATEMENT)){
 		p = serialize_node(link, block, index);
 	}else if (link->kind == NodeKind::REFERENCE){

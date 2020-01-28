@@ -174,7 +174,7 @@ public:
 			}
 		});
 		p.option("--export-symbols", "FILE", [&](const string &a){ symbols_out_file = a; });
-		p.option("--import-symbols", "FILE", [&](const string &a){ symbols_out_file = a; });
+		p.option("--import-symbols", "FILE", [&](const string &a){ symbols_in_file = a; });
 		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
 		p.option("--just-disasm", "FILE", [&](const string &a){
 			string s = FileRead(a);
