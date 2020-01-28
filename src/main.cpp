@@ -43,8 +43,71 @@ int extern_function2() {
 static int extern_variable1 = 13;
 
 
-class KabaApp : public hui::Application
-{
+class CLIParser {
+public:
+	struct Option {
+		string name;
+		string parameter;
+		hui::Callback callback;
+		std::function<void(const string&)> callback_param;
+	};
+	Array<Option> options;
+	void option(const string &name, const hui::Callback &cb) {
+		options.add({name, "", cb, nullptr});
+	}
+	void option(const string &name, const string &p, const std::function<void(const string&)> &cb) {
+		options.add({name, p, nullptr, cb});
+	}
+	string _info;
+	void info(const string &i) {
+		_info = i;
+	}
+	void show() {
+		msg_write(_info);
+		msg_write("");
+		msg_write("options:");
+		for (auto &o: options)
+			if (o.parameter.num > 0)
+				msg_write("  " + o.name + " " + o.parameter);
+			else
+				msg_write("  " + o.name);
+	}
+	Array<string> arg;
+	void parse(const Array<string> &_arg) {
+		for (int i=1; i<_arg.num; i++) {
+			if (_arg[i].head(1) == "-") {
+				bool found = false;
+				for (auto &o: options) {
+					if (sa_contains(o.name.explode("/"), _arg[i])) {
+						if (o.parameter.num > 0) {
+							if (_arg.num <= i + 1) {
+								msg_error("parameter '" + o.parameter + "' expected after " + o.name);
+								exit(1);
+							}
+							o.callback_param(_arg[i+1]);
+							i ++;
+						} else {
+							o.callback();
+						}
+						found = true;
+					}
+				}
+				if (!found) {
+					msg_error("unknown option " + _arg[i]);
+					exit(1);
+				}
+			} else {
+				// rest
+				arg = _arg.sub(i, -1);
+				break;
+			}
+		}
+
+	}
+};
+
+
+class KabaApp : public hui::Application {
 public:
 	KabaApp() :
 		hui::Application("kaba", "", 0)//hui::FLAG_LOAD_RESOURCE)
@@ -54,8 +117,7 @@ public:
 		//hui::EndKeepMsgAlive = true;
 	}
 
-	virtual bool on_startup(const Array<string> &arg0)
-	{
+	virtual bool on_startup(const Array<string> &arg0) {
 
 		bool use_gui = false;
 		Asm::InstructionSet instruction_set = Asm::InstructionSet::NATIVE;
@@ -79,170 +141,60 @@ public:
 
 		bool error = false;
 
-		// parameters
-		Array<string> arg = arg0;
-		for (int i=1;i<arg.num;i++){
-			if ((arg[i] == "--version") or (arg[i] == "-v")){
-				// tell versions
-				msg_right();
-				msg_write("--- " + AppName + " " + AppVersion + " ---");
-				msg_write("kaba: " + Kaba::Version);
-				msg_write("kaba-lib: " + Kaba::LibVersion);
-				msg_write("hui: " + hui::Version);
-				msg_left();
-				return false;
-			}else if ((arg[i] == "--gui") or (arg[i] == "-g")){
-				use_gui = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--arm"){
-				instruction_set = Asm::InstructionSet::ARM;
-				arg.erase(i --);
-			}else if (arg[i] == "--amd64"){
-				instruction_set = Asm::InstructionSet::AMD64;
-				arg.erase(i --);
-			}else if (arg[i] == "--x86"){
-				instruction_set = Asm::InstructionSet::X86;
-				arg.erase(i --);
-			}else if (arg[i] == "--no-std-lib"){
-				flag_allow_std_lib = false;
-				arg.erase(i --);
-			}else if (arg[i] == "--os"){
-				flag_compile_os = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--verbose"){
-				flag_verbose = true;
-				flag_disassemble = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--vfunc"){
-				arg.erase(i);
-				debug_func_filter = arg[i];
-				arg.erase(i --);
-			}else if (arg[i] == "--vstage"){
-				arg.erase(i);
-				debug_stage_filter = arg[i];
-				arg.erase(i --);
-			}else if (arg[i] == "--disasm"){
-				flag_disassemble = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--show-tree"){
-				flag_verbose = true;
-				debug_stage_filter = "parse:a";
-				arg.erase(i --);
-			}else if (arg[i] == "--show-consts"){
-				flag_show_consts = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--no-function-frames"){
-				flag_no_function_frames = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--add-entry-point"){
-				flag_add_entry_point = true;
-				arg.erase(i --);
-			}else if (arg[i] == "--code-origin"){
-				flag_override_code_origin = true;
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("offset expected after --code-origin");
-					exit(1);
-				}
-				code_origin = Kaba::s2i2(arg[i]);
-				arg.erase(i --);
-			}else if (arg[i] == "--variable-offset"){
-				flag_override_variable_offset = true;
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("offset expected after --variable-offset");
-					exit(1);
-				}
-				variable_offset = Kaba::s2i2(arg[i]);
-				arg.erase(i --);
-			}else if (arg[i] == "-o"){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("filename expected after -o");
-					exit(1);
-				}
-				out_file = arg[i];
-				arg.erase(i --);
-			}else if (arg[i] == "--output-format"){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("format 'raw' or 'elf' after --output-format expected");
-					exit(1);
-				}
-				output_format = arg[i];
-				if ((output_format != "raw") and (output_format != "elf")){
-					msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
-					exit(1);
-				}
-				arg.erase(i --);
-			}else if (arg[i] == "--export-symbols"){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("filename expected after --export-symbols");
-					exit(1);
-				}
-				symbols_out_file = arg[i];
-				arg.erase(i --);
-			}else if (arg[i] == "--import-symbols"){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("filename expected after --import-symbols");
-					exit(1);
-				}
-				symbols_in_file = arg[i];
-				arg.erase(i --);
-			}else if ((arg[i] == "--command") or (arg[i] == "-c")){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("command expexted after --command/-c");
-					exit(1);
-				}
-				command = arg[i];
-				arg.erase(i --);
-			}else if (arg[i] == "--just-disasm"){
-				arg.erase(i);
-				if (i >= arg.num){
-					msg_error("command expexted after --just-disasm");
-					exit(1);
-				}
-				string s = FileRead(arg[i]);
-				Kaba::init(instruction_set, abi, flag_allow_std_lib);
-				int data_size = 0;
-				if (flag_compile_os) {
-					for (int i=0; i<s.num-1; i++)
-						if (s[i] == 0x55 and s[i+1] == 0x89) {
-							data_size = i;
-							break;
-						}
-				}
-				for (int i=0; i<data_size; i+= 4)
-					msg_write(format("   data %03x:  ", i) + s.substr(i, 4).hex());
-				msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
-				exit(0);
-			}else if ((arg[i] == "--help") or (arg[i] == "-h")){
-				msg_write("options:");
-				msg_write("--version, -v");
-				msg_write("--verbose");
-				msg_write("--disasm");
-				msg_write("--os");
-				msg_write("--gui, -g");
-				msg_write("--no-std-lib");
-				msg_write("--no-function-frames");
-				msg_write("--add-entry-point");
-				msg_write("--code-origin <OFFSET>");
-				msg_write("--variable-offset <OFFSET>");
-				msg_write("--export-symbols <FILE>");
-				msg_write("--import-symbols <FILE>");
-				msg_write("--just-disasm <FILE>");
-				msg_write("-o <FILE>");
-				msg_write("--output-format {raw,elf}");
-			}else if (arg[i][0] == '-'){
-				msg_error("unknown option: " + arg[i]);
+		CLIParser p;
+		p.info(AppName + " " + AppVersion);
+		p.option("--version/-v", [=]{
+			msg_write("--- " + AppName + " " + AppVersion + " ---");
+			msg_write("kaba: " + Kaba::Version);
+			msg_write("kaba-lib: " + Kaba::LibVersion);
+			msg_write("hui: " + hui::Version);
+		});
+		p.option("--gui/-g", [&]{ use_gui = true; });
+		p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
+		p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });
+		p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
+		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
+		p.option("--os", [&]{ flag_compile_os = true; });
+		p.option("--verbose", [&]{ flag_verbose = true; flag_disassemble = true; });
+		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
+		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });
+		p.option("--disasm", [&]{ flag_disassemble = true; });
+		p.option("--show-tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
+		p.option("--show-consts", [&]{ flag_show_consts = true; });
+		p.option("--no-function-frames", [&]{ flag_no_function_frames = true; });
+		p.option("--add-entry-point", [&]{ flag_add_entry_point = true; });
+		p.option("--code-origin", "ORIGIN", [&](const string &a){ flag_override_code_origin = true; code_origin = Kaba::s2i2(a); });
+		p.option("--variable-offset", "OFFSET", [&](const string &a){ flag_override_variable_offset = true; variable_offset = Kaba::s2i2(a); });
+		p.option("--output/-o", "OUTFILE", [&](const string &a){ out_file = a; });
+		p.option("--output-format", "raw/elf", [&](const string &a){
+			output_format = a;
+			if ((output_format != "raw") and (output_format != "elf")){
+				msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
 				exit(1);
-			}else{
-				break;
 			}
-		}
+		});
+		p.option("--export-symbols", "FILE", [&](const string &a){ symbols_out_file = a; });
+		p.option("--import-symbols", "FILE", [&](const string &a){ symbols_out_file = a; });
+		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
+		p.option("--just-disasm", "FILE", [&](const string &a){
+			string s = FileRead(a);
+			Kaba::init(instruction_set, abi, flag_allow_std_lib);
+			int data_size = 0;
+			if (flag_compile_os) {
+				for (int i=0; i<s.num-1; i++)
+					if (s[i] == 0x55 and s[i+1] == 0x89) {
+						data_size = i;
+						break;
+					}
+			}
+			for (int i=0; i<data_size; i+= 4)
+				msg_write(format("   data %03x:  ", i) + s.substr(i, 4).hex());
+			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
+			exit(0);
+		});
+		p.option("--help/-h", [&p]{ p.show(); });
+		p.parse(arg0);
+
 
 		// init
 		srand(get_current_date().time*73 + get_current_date().milli_second);
@@ -283,12 +235,12 @@ public:
 
 		// script file as parameter?
 		string filename;
-		if (arg.num > 1) {
-			filename = arg[1];
+		if (p.arg.num > 0) {
+			filename = p.arg[0];
 			if (installed and filename.tail(5) != ".kaba") {
-				string dd = directory_static + "apps/" + arg[1] + "/" + arg[1] + ".kaba";
-				if (arg[1].find("/") >= 0)
-					dd = directory_static + "apps/" + arg[1] + ".kaba";
+				string dd = directory_static + "apps/" + filename + "/" + filename + ".kaba";
+				if (filename.find("/") >= 0)
+					dd = directory_static + "apps/" + filename + ".kaba";
 				if (file_test_existence(dd))
 					filename = dd;
 			}
@@ -303,7 +255,7 @@ public:
 
 		// compile
 
-		try{
+		try {
 			Kaba::Script *s = Kaba::Load(filename);
 			if (symbols_out_file.num > 0)
 				export_symbols(s, symbols_out_file);
@@ -313,7 +265,7 @@ public:
 					msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
 				}
 			}
-			if (out_file.num > 0){
+			if (out_file.num > 0) {
 				if (output_format == "raw")
 					output_to_file_raw(s, out_file);
 				else if (output_format == "elf")
@@ -321,14 +273,14 @@ public:
 
 				if (flag_disassemble)
 					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
-			}else{
+			} else {
 				if (flag_disassemble)
 					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 
 				if (Kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
-					execute(s, arg);
+					execute(s, p.arg.sub(1, -1));
 			}
-		}catch(Kaba::Exception &e){
+		} catch(Kaba::Exception &e) {
 			if (use_gui)
 				hui::ErrorBox(NULL, _("Fehler in Script"), e.message());
 			else
@@ -350,8 +302,7 @@ public:
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-	void execute(Kaba::Script *s, Array<string> &arg)
-	{
+	void execute(Kaba::Script *s, const Array<string> &arg) {
 		// set working directory -> script file
 		//msg_write(initial_working_directory);
 		//hui::setDirectory(initial_working_directory);
@@ -360,11 +311,10 @@ public:
 		main_arg_func *f_arg = (main_arg_func*)s->match_function("main", "void", {"string[]"});
 		main_void_func *f_void = (main_void_func*)s->match_function("main", "void", {});
 
-		if (f_arg){
+		if (f_arg) {
 			// special execution...
-			Array<string> _arg = arg.sub(2, -1);
-			f_arg(_arg);
-		}else if (f_void){
+			f_arg(arg);
+		} else if (f_void) {
 			// default execution
 			f_void();
 		}
@@ -372,15 +322,13 @@ public:
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(Kaba::Script *s, const string &out_file)
-	{
+	void output_to_file_raw(Kaba::Script *s, const string &out_file) {
 		File *f = FileCreate(out_file);
 		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
-	void output_to_file_elf(Kaba::Script *s, const string &out_file)
-	{
+	void output_to_file_elf(Kaba::Script *s, const string &out_file) {
 		File *f = FileCreate(out_file);
 
 		bool is64bit = (Kaba::config.pointer_size == 8);
@@ -397,11 +345,11 @@ public:
 			f->write_char(0x00);
 
 		f->write_word(0x0003); // 3=shared... 2=exec
-		if (Kaba::config.instruction_set == Asm::InstructionSet::AMD64){
+		if (Kaba::config.instruction_set == Asm::InstructionSet::AMD64) {
 			f->write_word(0x003e); // machine
-		}else if (Kaba::config.instruction_set == Asm::InstructionSet::X86){
+		} else if (Kaba::config.instruction_set == Asm::InstructionSet::X86) {
 			f->write_word(0x0003); // machine
-		}else if (Kaba::config.instruction_set == Asm::InstructionSet::ARM){
+		} else if (Kaba::config.instruction_set == Asm::InstructionSet::ARM) {
 			f->write_word(0x0028); // machine
 		}
 		f->write_int(1); // version
@@ -410,7 +358,7 @@ public:
 			f->write_int(0);	f->write_int(0);// entry point
 			f->write_int(0x40);	f->write_int(0x00); // program header table offset
 			f->write_int(0x00);	f->write_int(0x00); // section header table
-		}else{
+		} else {
 			f->write_int(0);// entry point
 			f->write_int(0x00); // program header table offset
 			f->write_int(0x00); // section header table
