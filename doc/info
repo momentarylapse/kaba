@@ -1,0 +1,49 @@
+== functions and deriving ==
+
+class functions exist as normal functions. Classes keep "links" to these
+
+class B extends A     (or internally)
+
+* first (before parsing B), all functions links get copied from A to B
+	* __init__, __delete__ and __assign__ get marked as "needs overriding"
+* naively parsing the body of B..."override"...
+* afterwards, look for missing/non-overridden functions
+	* add "headers"
+* check constructors/destructors and add calls to parents
+
+
+
+
+== Nodes ==
+
+=== Parse ===
+
+=== Prep... ==
+
+deref KIND_ADDRESS  >>  KIND_MEMORY
+deref KIND_LOCAL_ADDRESS >> KIND_LOCAL_MEMORY
+ref KIND_VAR_GLOBAL >> KIND_ADDRESS
+ref KIND_VAR_LOCAL >> KIND_LOCAL_ADDRESS
+ref KIND_CONSTANT >> KIND_ADDRESS
+
+=== Serialize ====
+
+KIND_VAR_GLOBAL >> KIND_MEMORY
+KIND_MEMORY
+KIND_ADDRESS >> KIND_CONSTANT_BY_ADDRESS
+KIND_LOCAL_MEMORY
+KIND_VAR_LOCAL >> KIND_LOCAL_MEMORY
+KIND_LOCAL_ADDRESS >> ref KIND_LOCAL_MEMORY
+KIND_CONSTANT >> KIND_CONSTANT_BY_ADDRESS
+
+
+=== Assemble ===
+
+KIND_IMMEDIATE
+  * both produce immediate
+KIND_CONSTANT_BY_ADDRESS
+  * tries to produce immediate, but can produce [addr]
+KIND_MEMORY
+  * [addr+shift]
+KIND_LOCAL_MEMORY
+  * [ebp+offset]
