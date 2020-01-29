@@ -2328,7 +2328,8 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type) {
 	c->name = name;
 
 	// give our const the name
-	//c_orig->name = name;
+	//auto *c = cv->as_const();
+	//c->name = name;
 }
 
 void SyntaxTree::parse_variable_def(bool single, Block *block) {
