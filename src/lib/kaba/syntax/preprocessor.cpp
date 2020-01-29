@@ -265,9 +265,11 @@ void *ar_el(DynamicArray *ar, int i) {
 	return (char*)ar->data + i * ar->element_size;
 }
 
+int host_size(const Class *_type);
+
 void rec_init(void *p, const Class *type) {
 	if (type->is_super_array()) {
-		((DynamicArray*)p)->init(type->get_array_element()->size);
+		((DynamicArray*)p)->init(host_size(type->get_array_element()));
 	} else {
 		for (auto &el: type->elements)
 			rec_init((char*)p + el.offset, el.type);
@@ -340,12 +342,10 @@ Node *SyntaxTree::conv_eval_const_func(Node *c) {
 	} else if (c->kind == NodeKind::ARRAY_BUILDER) {
 		if (all_params_are_const(c)) {
 			Node *c_array = add_node_const(add_constant(c->type));
-			int el_size = c->type->param->size;
-			DynamicArray *da = &c_array->as_const()->as_array();
-			da->init(el_size);
-			rec_resize(da, c->params.num, c->type);
+			DynamicArray &da = c_array->as_const()->as_array();
+			rec_resize(&da, c->params.num, c->type);
 			for (int i=0; i<c->params.num; i++)
-				rec_assign(ar_el(da, i), c->params[i]->as_const()->p(), c->type->param);
+				rec_assign(ar_el(&da, i), c->params[i]->as_const()->p(), c->type->param);
 			return c_array;
 		}
 	}

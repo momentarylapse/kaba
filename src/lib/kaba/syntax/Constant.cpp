@@ -30,13 +30,19 @@ bool Value::can_init(const Class *t) {
 	return false;
 }
 
+int host_size(const Class *_type) {
+	if (_type->is_super_array())
+		return sizeof(DynamicArray);
+	return _type->size;
+}
+
 void Value::init(const Class *_type) {
 	clear();
 	type = _type;
 
 	if (type->is_super_array()) {
 		value.resize(sizeof(DynamicArray));
-		as_array().init(type->param->size);
+		as_array().init(host_size(type->get_array_element()));
 	} else {
 		value.resize(max(type->size, (long long)16));
 	}
