@@ -10,6 +10,9 @@
 |                                                                              |
 | last update: 2009.10.03 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
+
+#if HAS_LIB_GL
+
 #include "nix.h"
 
 #include "nix_common.h"
@@ -19,7 +22,7 @@ extern unsigned int VertexArrayID;
 
 namespace nix{
 
-string version = "0.13.1.0";
+string version = "0.13.2.0";
 
 
 // libraries (in case Visual C++ is used)
@@ -84,7 +87,7 @@ void TestGLError(const char *pos)
 
 
 // environment
-bool Usable, DoingEvilThingsToTheDevice;
+bool Usable = false, DoingEvilThingsToTheDevice;
 
 // things'n'stuff
 static bool WireFrame;
@@ -136,7 +139,8 @@ void mout(matrix &m)
 
 void Init(const string &api, int width, int height)
 {
-	Usable = false;
+	//if (Usable)
+	//	return;
 
 	msg_write("Nix");
 	msg_right();
@@ -191,8 +195,10 @@ void Init(const string &api, int width, int height)
 
 void Kill()
 {
+	msg_write("nix.kill");
 	KillDeviceObjects();
 	glDeleteVertexArrays(1, &VertexArrayID);
+	Usable = false;
 }
 
 // erlaubt dem Device einen Neustart
@@ -432,3 +438,5 @@ void EnableFog(bool Enabled)
 
 
 };
+
+#endif
