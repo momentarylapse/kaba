@@ -28,9 +28,34 @@ extern matrix projection_matrix2d;
 string shader_error;
 
 
+UniformBuffer::UniformBuffer() {
+	glGenBuffers(1, &buffer);
+}
 
-int create_empty_shader_program()
-{
+UniformBuffer::~UniformBuffer() {
+	glDeleteBuffers(1, &buffer);
+}
+
+void UniformBuffer::__init__() {
+	new(this) UniformBuffer();
+}
+
+void UniformBuffer::__delete__() {
+	this->~UniformBuffer();
+}
+
+void UniformBuffer::update(void *data, int size) {
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+	glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
+}
+
+void NixBindUniform(UniformBuffer *ub, int index) {
+	//glUniformBlockBinding(program, index, 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, index, ub->buffer);
+}
+
+
+int create_empty_shader_program() {
 	int gl_p = glCreateProgram();
 	TestGLError("CreateProgram");
 	if (gl_p <= 0){
@@ -40,17 +65,15 @@ int create_empty_shader_program()
 	return gl_p;
 }
 
-struct ShaderSourcePart
-{
+struct ShaderSourcePart {
 	int type;
 	string source;
 };
 
-Array<ShaderSourcePart> get_shader_parts(const string &source)
-{
+Array<ShaderSourcePart> get_shader_parts(const string &source) {
 	Array<ShaderSourcePart> parts;
 	int pos = 0;
-	while (pos < source.num - 5){
+	while (pos < source.num - 5) {
 		int pos0 = source.find("<", pos);
 		if (pos0 < 0)
 			break;
@@ -81,7 +104,7 @@ Array<ShaderSourcePart> get_shader_parts(const string &source)
 			p.type = GL_TESS_EVALUATION_SHADER;
 		else if (tag == "GeometryShader")
 			p.type = GL_GEOMETRY_SHADER;
-		else{
+		else {
 			msg_error("unknown shader tag: '" + tag + "'");
 			continue;
 		}
@@ -90,8 +113,7 @@ Array<ShaderSourcePart> get_shader_parts(const string &source)
 	return parts;
 }
 
-string get_inside_of_tag(const string &source, const string &tag)
-{
+string get_inside_of_tag(const string &source, const string &tag) {
 	string r;
 	int pos0 = source.find("<" + tag + ">");
 	if (pos0 < 0)
@@ -103,13 +125,12 @@ string get_inside_of_tag(const string &source, const string &tag)
 	return source.substr(pos0, pos1 - pos0);
 }
 
-int create_gl_shader(const string &source, int type)
-{
+int create_gl_shader(const string &source, int type) {
 	if (source.num == 0)
 		return -1;
 	int gl_shader = glCreateShader(type);
 	TestGLError("CreateShader create");
-	if (gl_shader <= 0){
+	if (gl_shader <= 0) {
 		shader_error = "could not create gl shader object";
 		msg_error(shader_error);
 		return -1;
@@ -128,7 +149,7 @@ int create_gl_shader(const string &source, int type)
 	glGetShaderiv(gl_shader, GL_COMPILE_STATUS, &status);
 	TestGLError("CreateShader status");
 	//msg_write(status);
-	if (status != GL_TRUE){
+	if (status != GL_TRUE) {
 		shader_error.resize(16384);
 		int size;
 		glGetShaderInfoLog(gl_shader, shader_error.num, &size, (char*)shader_error.data);
@@ -139,11 +160,10 @@ int create_gl_shader(const string &source, int type)
 	return gl_shader;
 }
 
-Shader *CreateShader(const string &source)
-{
+Shader *Shader::create(const string &source) {
 	auto parts = get_shader_parts(source);
 
-	if (parts.num == 0){
+	if (parts.num == 0) {
 		shader_error = "no shader tags found (<VertexShader>...</VertexShader> or <FragmentShader>...</FragmentShader>)";
 		msg_error(shader_error);
 		return NULL;
@@ -154,7 +174,7 @@ Shader *CreateShader(const string &source)
 		return NULL;
 
 	Array<int> shaders;
-	for (auto p: parts){
+	for (auto p: parts) {
 		int shader = create_gl_shader(p.source, p.type);
 		if ((shader < 0) and (p.source.num > 0))
 			return NULL;
@@ -169,7 +189,7 @@ Shader *CreateShader(const string &source)
 	TestGLError("AddShader link");
 	glGetProgramiv(prog, GL_LINK_STATUS, &status);
 	TestGLError("AddShader status");
-	if (status != GL_TRUE){
+	if (status != GL_TRUE) {
 		shader_error.resize(16384);
 		int size;
 		glGetProgramInfoLog(prog, shader_error.num, &size, (char*)shader_error.data);
@@ -193,8 +213,7 @@ Shader *CreateShader(const string &source)
 	return s;
 }
 
-void Shader::find_locations()
-{
+void Shader::find_locations() {
 	location[LOCATION_MATRIX_MVP] = get_location("mat_mvp");
 	location[LOCATION_MATRIX_M] = get_location("mat_m");
 	location[LOCATION_MATRIX_V] = get_location("mat_v");
@@ -213,8 +232,7 @@ void Shader::find_locations()
 	location[LOCATION_MATERIAL_EMISSION] = get_location("material.emission");
 
 	location[LOCATION_LIGHT_COLOR] = get_location("light.color");
-	location[LOCATION_LIGHT_AMBIENT] = get_location("light.ambient");
-	location[LOCATION_LIGHT_SPECULAR] = get_location("light.specular");
+	location[LOCATION_LIGHT_HARSHNESS] = get_location("light.harshness");
 	location[LOCATION_LIGHT_POS] = get_location("light.pos");
 	location[LOCATION_LIGHT_RADIUS] = get_location("light.radius");
 
@@ -222,8 +240,7 @@ void Shader::find_locations()
 	location[LOCATION_FOG_DENSITY] = get_location("fog.density");
 }
 
-Shader *LoadShader(const string &filename)
-{
+Shader *Shader::load(const string &filename) {
 	if (filename.num == 0){
 		default_shader_3d->reference_count ++;
 		return default_shader_3d;
@@ -231,7 +248,7 @@ Shader *LoadShader(const string &filename)
 
 	string fn = shader_dir + filename;
 	for (Shader *s: shaders)
-		if ((s->filename == fn) and (s->program >= 0)){
+		if ((s->filename == fn) and (s->program >= 0)) {
 			s->reference_count ++;
 			return s;
 		}
@@ -239,23 +256,22 @@ Shader *LoadShader(const string &filename)
 	msg_write("loading shader: " + fn);
 	msg_right();
 
-	try{
-	string source = FileRead(fn);
-	Shader *shader = CreateShader(source);
-	if (shader)
-		shader->filename = fn;
+	try {
+		string source = FileRead(fn);
+		Shader *shader = Shader::create(source);
+		if (shader)
+			shader->filename = fn;
 
-	msg_left();
-	return shader;
-	}catch(FileError &e){
+		msg_left();
+		return shader;
+	} catch(FileError &e) {
 		msg_error(e.message());
 		default_shader_3d->reference_count ++;
 		return default_shader_3d;
 	}
 }
 
-Shader::Shader()
-{
+Shader::Shader() {
 	shaders.add(this);
 	reference_count = 1;
 	filename = "-no file-";
@@ -264,8 +280,7 @@ Shader::Shader()
 		location[i] = -1;
 }
 
-Shader::~Shader()
-{
+Shader::~Shader() {
 	msg_write("delete shader: " + filename);
 	glDeleteProgram(program);
 	TestGLError("NixUnrefShader");
@@ -273,10 +288,9 @@ Shader::~Shader()
 	filename = "";
 }
 
-void Shader::unref()
-{
+void Shader::unref() {
 	reference_count --;
-	if ((reference_count <= 0) and (program >= 0)){
+	if ((reference_count <= 0) and (program >= 0)) {
 		if ((this == default_shader_3d) or (this == default_shader_2d))
 			return;
 		glDeleteProgram(program);
@@ -286,8 +300,7 @@ void Shader::unref()
 	}
 }
 
-void DeleteAllShaders()
-{
+void DeleteAllShaders() {
 	return;
 	for (Shader *s: shaders)
 		delete(s);
@@ -295,8 +308,7 @@ void DeleteAllShaders()
 	init_shaders();
 }
 
-void SetShader(Shader *s)
-{
+void SetShader(Shader *s) {
 	if (override_shader)
 		s = override_shader;
 	if (s == NULL)
@@ -309,71 +321,65 @@ void SetShader(Shader *s)
 	//s->set_default_data();
 }
 
-void SetOverrideShader(Shader *s)
-{
+void SetOverrideShader(Shader *s) {
 	override_shader = s;
 }
 
-int Shader::get_location(const string &var_name)
-{
-	int loc = glGetUniformLocation(program, var_name.c_str());
-	return loc;
+int Shader::get_location(const string &name) {
+	return glGetUniformLocation(program, name.c_str());
 }
 
-void Shader::set_data(int location, const float *data, int size)
-{
+int Shader::get_uniform(const string &name) {
+	return glGetUniformBlockIndex(program, name.c_str());
+}
+
+void Shader::set_data(int location, const float *data, int size) {
 	if (location < 0)
 		return;
 	//NixSetShader(this);
-	if (size == sizeof(float)){
+	if (size == sizeof(float)) {
 		glUniform1f(location, *data);
-	}else if (size == sizeof(float)*3){
+	} else if (size == sizeof(float)*3) {
 		glUniform3fv(location, 1, data);
-	}else if (size == sizeof(float)*4){
+	} else if (size == sizeof(float)*4) {
 		glUniform4fv(location, 1, data);
 	}
 	TestGLError("SetShaderData");
 }
 
-void Shader::set_int(int location, int i)
-{
+void Shader::set_int(int location, int i) {
 	if (location < 0)
 		return;
 	glUniform1i(location, i);
 	TestGLError("SetShaderInt");
 }
 
-void Shader::set_float(int location, float f)
-{
+void Shader::set_float(int location, float f) {
 	if (location < 0)
 		return;
 	glUniform1f(location, f);
 	TestGLError("SetShaderFloat");
 }
 
-void Shader::set_color(int location, const color &c)
-{
+void Shader::set_color(int location, const color &c) {
 	if (location < 0)
 		return;
 	glUniform4fv(location, 1, (float*)&c);
 	TestGLError("SetShaderData");
 }
 
-void Shader::set_matrix(int location, const matrix &m)
-{
+void Shader::set_matrix(int location, const matrix &m) {
 	if (location < 0)
 		return;
 	glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&m);
 	TestGLError("SetShaderData");
 }
 
-void Shader::get_data(const string &var_name, void *data, int size)
-{
+void Shader::get_data(int location, void *data, int size) {
 	msg_todo("NixGetShaderData for OpenGL");
 }
 
-void Shader::set_default_data()
-{
+void Shader::set_default_data() {
 	set_matrix(location[LOCATION_MATRIX_MVP], world_view_projection_matrix);
 	set_matrix(location[LOCATION_MATRIX_M], world_matrix);
 	set_matrix(location[LOCATION_MATRIX_V], view_matrix);
@@ -389,9 +395,8 @@ void Shader::set_default_data()
 	set_data(location[LOCATION_MATERIAL_SHININESS], &material.shininess, 4);
 	set_color(location[LOCATION_MATERIAL_EMISSION], material.emission);
 
-	set_data(location[LOCATION_LIGHT_AMBIENT], &lights[0].ambient, 4);
-	set_color(location[LOCATION_LIGHT_COLOR], lights[0].diffusive);
-	set_data(location[LOCATION_LIGHT_SPECULAR], &lights[0].specular, 4);
+	set_color(location[LOCATION_LIGHT_COLOR], lights[0].col);
+	set_data(location[LOCATION_LIGHT_HARSHNESS], &lights[0].harshness, 4);
 	vector dir = view_matrix.transform_normal(lights[0].pos);
 	set_data(location[LOCATION_LIGHT_POS], &dir.x, 3*4);
 	set_data(location[LOCATION_LIGHT_RADIUS], &lights[0].radius, 4);
@@ -408,10 +413,9 @@ void Shader::dispatch(int nx, int ny, int nz) {
 }
 
 
-void init_shaders()
-{
+void init_shaders() {
 
-	default_shader_3d = nix::CreateShader(
+	default_shader_3d = nix::Shader::create(
 		"<VertexShader>\n"
 		"#version 330 core\n"
 		"uniform mat4 mat_mvp;\n"
@@ -423,7 +427,7 @@ void init_shaders()
 		"out vec3 fragmentNormal;\n"
 		"out vec2 fragmentTexCoord;\n"
 		"out vec3 fragmentPos; // camera space\n"
-		"void main(){\n"
+		"void main() {\n"
 		"	gl_Position = mat_mvp * vec4(inPosition,1);\n"
 		"	fragmentNormal = (mat_v * mat_m * vec4(inNormal,0)).xyz;\n"
 		"	fragmentTexCoord = inTexCoord;\n"
@@ -432,9 +436,9 @@ void init_shaders()
 		"</VertexShader>\n"
 		"<FragmentShader>\n"
 		"#version 330 core\n"
-		"struct Fog{ vec4 color; float density; };\n"
-		"struct Material{ vec4 ambient, diffusive, specular, emission; float shininess; };\n"
-		"struct Light{ vec4 color; vec3 pos; float radius, ambient, specular; };\n"
+		"struct Fog { vec4 color; float density; };\n"
+		"struct Material { vec4 ambient, diffusive, specular, emission; float shininess; };\n"
+		"struct Light { vec4 color; vec3 pos; float radius, harshness; };\n"
 		"uniform Material material;\n"
 		"uniform Light light;\n"
 		"uniform Fog fog;\n"
@@ -443,20 +447,20 @@ void init_shaders()
 		"in vec3 fragmentPos;\n"
 		"uniform sampler2D tex0;\n"
 		"out vec4 color;\n"
-		"void main(){\n"
+		"void main() {\n"
 		"	vec3 n = normalize(fragmentNormal);\n"
 		"	vec3 l = light.pos;\n"
 		"	float d = max(-dot(n, l), 0);\n"
 		"	color = material.emission;\n"
-		"	color += material.ambient * light.color * light.ambient;\n"
-		"	color += material.diffusive * light.color * d;\n"
+		"	color += material.ambient * light.color * (1 - light.harshness) / 2;\n"
+		"	color += material.diffusive * light.color * light.harshness * d;\n"
 		"	vec4 tex_col = texture(tex0, fragmentTexCoord);\n"
 		"	color *= tex_col;\n"
-		"	if ((d > 0)&&(material.shininess > 1)){\n"
+		"	if ((d > 0) && (material.shininess > 1)) {\n"
 		"		vec3 e = normalize(fragmentPos); // eye dir\n"
 		"		vec3 rl = reflect(l, n);\n"
 		"		float ee = max(-dot(e, rl), 0);\n"
-		"		color += material.specular * light.color * light.specular * pow(ee, material.shininess);\n"
+		"		color += material.specular * light.color * light.harshness * pow(ee, material.shininess);\n"
 		"	}\n"
 		"	float t = exp(-fragmentPos.z * fog.density);\n"
 		"	color = (1 - t) * fog.color + t * color;\n"
@@ -466,7 +470,7 @@ void init_shaders()
 
 
 
-	default_shader_2d = nix::CreateShader(
+	default_shader_2d = nix::Shader::create(
 		"<VertexShader>\n"
 		"#version 330 core\n"
 		"\n"
@@ -477,7 +481,7 @@ void init_shaders()
 		"\n"
 		"out vec2 fragmentTexCoord;\n"
 		"\n"
-		"void main(){\n"
+		"void main() {\n"
 		"	gl_Position = mat_p2d * vec4(inPosition,1);\n"
 		"	fragmentTexCoord = inTexCoord;\n"
 		"}\n"
@@ -485,12 +489,12 @@ void init_shaders()
 		"</VertexShader>\n"
 		"<FragmentShader>\n"
 		"#version 330 core\n"
-		"struct Material{ vec4 ambient, diffusive, specular, emission; float shininess; };\n"
+		"struct Material { vec4 ambient, diffusive, specular, emission; float shininess; };\n"
 		"uniform Material material;\n"
 		"in vec2 fragmentTexCoord;\n"
 		"uniform sampler2D tex0;\n"
 		"out vec4 color;\n"
-		"void main(){\n"
+		"void main() {\n"
 		"	color = texture(tex0, fragmentTexCoord);\n"
 		"	color *= material.emission;\n"
 		"}\n"

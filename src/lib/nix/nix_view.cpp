@@ -19,8 +19,6 @@ namespace nix{
 
 void TestGLError(const char*);
 
-void UpdateLights();
-
 void create_pixel_projection_matrix(matrix &m);
 
 

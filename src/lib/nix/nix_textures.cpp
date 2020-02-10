@@ -405,8 +405,19 @@ void Texture::read_float(Array<float> &data) {
 	}
 }
 
-void Texture::unload()
-{
+void Texture::write_float(Array<float> &data, int nx, int ny, int nz) {
+	msg_todo("Texture.write_float");
+	SetTexture(this);
+	if ((internal_format == GL_R8) or (internal_format == GL_R32F)) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, nx, ny, nz, GL_RGBA, GL_FLOAT, &data[0]);
+		//glSetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, data.data); // 1 channel
+	} else {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, nx, ny, nz, GL_RGBA, GL_FLOAT, &data[0]);
+		//glSetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, data.data); // 4 channels
+	}
+}
+
+void Texture::unload() {
 	msg_write("unloading Texture: " + filename);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glDeleteTextures(1, (unsigned int*)&texture);

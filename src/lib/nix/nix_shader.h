@@ -13,8 +13,20 @@
 
 namespace nix{
 
-class Shader
-{
+class UniformBuffer {
+public:
+	unsigned int buffer;
+	UniformBuffer();
+	~UniformBuffer();
+
+	void __init__();
+	void __delete__();
+	void update(void *data, int size);
+};
+
+void NixBindUniform(UniformBuffer *ub, int index);
+
+class Shader {
 public:
 	string filename;
 	int program;
@@ -27,15 +39,16 @@ public:
 	void _cdecl set_data(int location, const float *data, int size);
 	void _cdecl set_matrix(int location, const matrix &m);
 	void _cdecl set_color(int location, const color &c);
-	void _cdecl get_data(const string &var_name, void *data, int size);
-	int _cdecl get_location(const string &var_name);
+	void _cdecl get_data(int location, void *data, int size);
+	int _cdecl get_location(const string &name);
+	int _cdecl get_uniform(const string &name);
 	
 	void _cdecl dispatch(int nx, int ny, int nz);
 
 	void find_locations();
 	void set_default_data();
 
-	enum{
+	enum {
 		LOCATION_MATRIX_MVP,
 		LOCATION_MATRIX_M,
 		LOCATION_MATRIX_V,
@@ -51,8 +64,7 @@ public:
 		LOCATION_MATERIAL_SHININESS,
 		LOCATION_MATERIAL_EMISSION,
 		LOCATION_LIGHT_COLOR,
-		LOCATION_LIGHT_AMBIENT,
-		LOCATION_LIGHT_SPECULAR,
+		LOCATION_LIGHT_HARSHNESS,
 		LOCATION_LIGHT_POS,
 		LOCATION_LIGHT_RADIUS,
 		LOCATION_FOG_COLOR,
@@ -61,13 +73,15 @@ public:
 	};
 
 	int location[NUM_LOCATIONS];
+
+
+	static Shader* _cdecl load(const string &filename);
+	static Shader* _cdecl create(const string &source);
 };
 
 
 void init_shaders();
 void _cdecl DeleteAllShaders();
-Shader* _cdecl LoadShader(const string &filename);
-Shader* _cdecl CreateShader(const string &source);
 void _cdecl SetShader(Shader *s);
 void _cdecl SetOverrideShader(Shader *s);
 

@@ -35,6 +35,7 @@ nix::Texture* __LoadTexture(const string &filename)
 		typedef int VertexBuffer;
 		typedef int Texture;
 		typedef int Shader;
+		typedef int UniformBuffer;
 	};
 	#define nix_p(p)		nullptr
 #endif
@@ -76,6 +77,7 @@ void SIAddPackageNix()
 	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
 	TypeShader			= add_type  ("Shader", sizeof(nix::Shader));
 	TypeShaderP			= add_type_p(TypeShader);
+	auto TypeUniformBuffer = add_type  ("UniformBuffer", sizeof(nix::UniformBuffer));
 	
 	add_class(TypeVertexBuffer);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::VertexBuffer::__init__)));
@@ -111,6 +113,10 @@ void SIAddPackageNix()
 				func_add_param("image", TypeImage);
 			class_add_func("read_float", TypeVoid, nix_p(mf(&nix::Texture::read_float)));
 				func_add_param("data", TypeFloatList);
+			class_add_func("write_float", TypeVoid, nix_p(mf(&nix::Texture::write_float)));
+				func_add_param("data", TypeFloatList);
+			class_add_func("load", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
+				func_add_param("filename", TypeString);
 
 	add_class(TypeDynamicTexture);
 		class_derive_from(TypeTexture, false, false);
@@ -140,6 +146,8 @@ void SIAddPackageNix()
 		class_add_func("unref", TypeVoid, nix_p(mf(&nix::Shader::unref)));
 		class_add_func("location", TypeInt, nix_p(mf(&nix::Shader::get_location)));
 			func_add_param("name", TypeString);
+		class_add_func("uniform", TypeInt, nix_p(mf(&nix::Shader::get_uniform)));
+			func_add_param("name", TypeString);
 		class_add_func("set_float", TypeVoid, nix_p(mf(&nix::Shader::set_float)));
 			func_add_param("loc", TypeInt);
 			func_add_param("f", TypeFloat32);
@@ -164,11 +172,20 @@ void SIAddPackageNix()
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
+		class_add_func("load", TypeShaderP, nix_p(&nix::Shader::load), FLAG_STATIC);
+			func_add_param("filename", TypeString);
+		class_add_func("create", TypeShaderP, nix_p(&nix::Shader::create), FLAG_STATIC);
+			func_add_param("source", TypeString);
 		class_add_const("DEFAULT_3D", TypeShaderP, nix_p(&nix::default_shader_3d));
 		class_add_const("DEFAULT_2D", TypeShaderP, nix_p(&nix::default_shader_2d));
 
-	add_func("LoadTexture", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
-		func_add_param("filename", TypeString);
+
+		add_class(TypeUniformBuffer);
+			class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::UniformBuffer::__init__)));
+			class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::UniformBuffer::__delete__)));
+			class_add_func("update", TypeVoid, nix_p(mf(&nix::UniformBuffer::update)));
+				func_add_param("data", TypePointer);
+				func_add_param("size", TypeInt);
 	
 		// drawing
 	add_func("NixInit", TypeVoid, nix_p(&nix::Init), FLAG_STATIC);
@@ -260,27 +277,20 @@ void SIAddPackageNix()
 	add_func("NixSetZ", TypeVoid, nix_p(&nix::SetZ), FLAG_STATIC);
 		func_add_param("write", TypeBool);
 		func_add_param("test", TypeBool);
-	add_func("NixEnableLighting", TypeVoid, nix_p(&nix::EnableLighting), FLAG_STATIC);
-		func_add_param("enabled", TypeBool);
-
 	add_func("NixSetLightRadial", TypeVoid, nix_p(&nix::SetLightRadial), FLAG_STATIC);
 		func_add_param("light", TypeInt);
 		func_add_param("pos", TypeVector);
 		func_add_param("radius", TypeFloat32);
-		func_add_param("diffuse", TypeColor);
-		func_add_param("ambient", TypeFloat32);
-		func_add_param("specular", TypeFloat32);
+		func_add_param("col", TypeColor);
+		func_add_param("harshness", TypeFloat32);
 	add_func("NixSetLightDirectional", TypeVoid, nix_p(&nix::SetLightDirectional), FLAG_STATIC);
 		func_add_param("light", TypeInt);
 		func_add_param("dir", TypeVector);
-		func_add_param("diffuse", TypeColor);
-		func_add_param("ambient", TypeFloat32);
-		func_add_param("specular", TypeFloat32);
+		func_add_param("col", TypeColor);
+		func_add_param("harshness", TypeFloat32);
 	add_func("NixEnableLight", TypeVoid, nix_p(&nix::EnableLight), FLAG_STATIC);
 		func_add_param("light", TypeInt);
 		func_add_param("enabled", TypeBool);
-	add_func("NixSetAmbientLight", TypeVoid, nix_p(&nix::SetAmbientLight), FLAG_STATIC);
-		func_add_param("ambient", TypeColor);
 	add_func("NixSetCull", TypeVoid, nix_p(&nix::SetCull), FLAG_STATIC);
 		func_add_param("mode", TypeInt);
 	add_func("NixSetWire", TypeVoid, nix_p(&nix::SetWire), FLAG_STATIC);
@@ -297,26 +307,9 @@ void SIAddPackageNix()
 		func_add_param("t", TypeTexture);
 	add_func("NixSetShader", TypeVoid, nix_p(&nix::SetShader), FLAG_STATIC);
 		func_add_param("s", TypeShader);
-	add_func("VecProject", TypeVoid, nix_p(&nix::GetVecProject), FLAG_STATIC);
-		func_add_param("v_out", TypeVector);
-		func_add_param("v_in", TypeVector);
-	add_func("VecUnproject", TypeVoid, nix_p(&nix::GetVecUnproject), FLAG_STATIC);
-		func_add_param("v_out", TypeVector);
-		func_add_param("v_in", TypeVector);
-	add_func("VecProjectRel", TypeVoid, nix_p(&nix::GetVecProjectRel), FLAG_STATIC);
-		func_add_param("v_out", TypeVector);
-		func_add_param("v_in", TypeVector);
-	add_func("VecUnprojectRel", TypeVoid, nix_p(&nix::GetVecUnprojectRel), FLAG_STATIC);
-		func_add_param("v_out", TypeVector);
-		func_add_param("v_in", TypeVector);
-	add_func("NixLoadShader", TypeShaderP, nix_p(&nix::LoadShader), FLAG_STATIC);
-		func_add_param("filename", TypeString);
-	add_func("NixCreateShader", TypeShaderP, nix_p(&nix::CreateShader), FLAG_STATIC);
-		func_add_param("source", TypeString);
-	add_func("ScreenShotExt", TypeVoid, nix_p(&nix::ScreenShot), FLAG_STATIC);
-		func_add_param("filename", TypeString);
-		func_add_param("width", TypeInt);
-		func_add_param("height", TypeInt);
+	add_func("NixBindUniform", TypeVoid, nix_p(mf(&nix::NixBindUniform)), FLAG_STATIC);
+		func_add_param("buf", TypeUniformBuffer);
+		func_add_param("index", TypeInt);
 	add_func("NixScreenShotToImage", TypeVoid, nix_p(&nix::ScreenShotToImage), FLAG_STATIC);
 		func_add_param("im", TypeImage);
 
