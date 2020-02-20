@@ -10,12 +10,14 @@
 #ifndef _NIX_VERTEXBUFFER_EXISTS_
 #define _NIX_VERTEXBUFFER_EXISTS_
 
+#define MAX_VB_ATTRIBUTES 8
+#define MAX_VB_BUFFERS 8
+
 
 namespace nix
 {
 
-class VertexBuffer
-{
+class OldVertexBuffer {
 public:
 	int num_textures;
 	int num_triangles;
@@ -25,9 +27,9 @@ public:
 	Array<float> tex_coords[NIX_MAX_TEXTURELEVELS];
 	unsigned int buf_v, buf_n, buf_t[NIX_MAX_TEXTURELEVELS];
 
-	VertexBuffer(int num_textures);
+	OldVertexBuffer(int num_textures);
 	void _cdecl __init__(int num_textures);
-	~VertexBuffer();
+	~OldVertexBuffer();
 	void _cdecl __delete__();
 
 	void _cdecl clear();
@@ -43,7 +45,35 @@ public:
 	void _cdecl update();
 };
 
+class VertexBuffer {
+public:
+	struct Buffer {
+		unsigned int buffer;
+		int count;
+	} buf[MAX_VB_BUFFERS];
+	struct Attribute {
+		unsigned int buffer;
+		int num_components;
+		unsigned int type;
+		bool normalized;
+		int stride;
+	} attr[MAX_VB_ATTRIBUTES];
+	int num_attributes;
+	int num_buffers;
+
+	VertexBuffer(const string &f);
+	~VertexBuffer();
+
+	void _cdecl __init__(const string &f);
+	void _cdecl __delete__();
+
+	void _cdecl update(int index, const DynamicArray &a);
+	int count() const;
+};
+
 void init_vertex_buffers();
+
+void SetVertexBuffer(VertexBuffer *vb);
 
 };
 

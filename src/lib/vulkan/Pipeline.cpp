@@ -219,6 +219,9 @@ void Pipeline::set_wireframe(bool wireframe) {
 void Pipeline::set_z(bool test, bool write) {
 	depth_stencil.depthTestEnable = test ? VK_TRUE : VK_FALSE;
 	depth_stencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
+
+	if (test and !write)
+		depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 }
 
 void Pipeline::set_viewport(const rect &r) {

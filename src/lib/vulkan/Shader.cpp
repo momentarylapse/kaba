@@ -19,48 +19,83 @@ namespace vulkan{
 
 	Array<DescriptorSet*> descriptor_sets;
 	Array<Shader*> shaders;
-	Array<UBOWrapper*> ubo_wrappers;
+	Array<UniformBuffer*> ubo_wrappers;
+
+	extern VkPhysicalDeviceProperties device_properties;
+	int make_aligned(int size) {
+		if (device_properties.limits.minUniformBufferOffsetAlignment == 0)
+			return 0;
+		return (size + device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
+	}
 
 
-
-	UBOWrapper::UBOWrapper(int _size) {
+	UniformBuffer::UniformBuffer(int _size) {
+		count = 0;
 		size = _size;
+		size_single = size;
+		size_single_aligned = size;
 		VkDeviceSize buffer_size = size;
 
 		create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, memory);
 	}
 
-	UBOWrapper::~UBOWrapper() {
+	UniformBuffer::UniformBuffer(int _size, int _count) {
+		// "dynamic"
+		count = _count;
+		size_single = _size;
+		size_single_aligned = make_aligned(size_single);
+		size = size_single_aligned * count;
+		VkDeviceSize buffer_size = size;
+
+		create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, memory);
+	}
+
+	UniformBuffer::~UniformBuffer() {
 		vkDestroyBuffer(device, buffer, nullptr);
 		vkFreeMemory(device, memory, nullptr);
 	}
-	void UBOWrapper::__init__(int size) {
-		new(this) UBOWrapper(size);
+	void UniformBuffer::__init__(int size) {
+		new(this) UniformBuffer(size);
 	}
-	void UBOWrapper::__delete__() {
-		this->~UBOWrapper();
+	void UniformBuffer::__delete__() {
+		this->~UniformBuffer();
 	}
 
-	void UBOWrapper::update(void *source) {
+	bool UniformBuffer::is_dynamic() {
+		return count > 0;
+	}
+
+	void UniformBuffer::update_part(void *source, int offset, int update_size) {
 		void* data;
-		vkMapMemory(device, memory, 0, size, 0, &data);
-			memcpy(data, source, size);
+		vkMapMemory(device, memory, offset, update_size, 0, &data);
+			memcpy(data, source, update_size);
 		vkUnmapMemory(device, memory);
+	}
+
+	void UniformBuffer::update(void *source) {
+		update_part(source, 0, size);
+	}
+
+	void UniformBuffer::update_single(void *source, int index) {
+		update_part(source, size_single_aligned * index, size_single);
 	}
 
 
 	VkDescriptorPool create_descriptor_pool() {
-		std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
+		std::array<VkDescriptorPoolSize, 3> pool_sizes = {};
 		pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		pool_sizes[0].descriptorCount = 1024;
-		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_sizes[1].descriptorCount = 1024;
+		pool_sizes[0].descriptorCount = 1024*64;
+		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		pool_sizes[1].descriptorCount = 128*64;
+		pool_sizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		pool_sizes[2].descriptorCount = 1024*32;
+
 
 		VkDescriptorPoolCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
 		info.pPoolSizes = pool_sizes.data();
-		info.maxSets = 1024;
+		info.maxSets = 1024*64;
 
 		VkDescriptorPool pool;
 		if (vkCreateDescriptorPool(device, &info, nullptr, &pool) != VK_SUCCESS) {
@@ -73,9 +108,21 @@ namespace vulkan{
 		vkDestroyDescriptorPool(device, pool, nullptr);
 	}
 
-	DescriptorSet::DescriptorSet(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
+	DescriptorSet::DescriptorSet(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex) {
+		Array<VkDescriptorType> types;
+		num_dynamic_ubos = 0;
 
-		layout = create_layout(ubos.num, tex.num);
+		for (auto *u: ubos)
+			if (u->is_dynamic()) {
+				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+				num_dynamic_ubos ++;
+			} else {
+				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+			}
+		for (auto *t: tex)
+			types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+		layout = create_layout(types);
 
 		VkDescriptorSetAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -95,22 +142,30 @@ namespace vulkan{
 		destroy_layout(layout);
 	}
 
-	void DescriptorSet::__init__(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
+	void DescriptorSet::__init__(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex) {
 		new(this) DescriptorSet(ubos, tex);
 	}
 	void DescriptorSet::__delete__() {
 		this->~DescriptorSet();
 	}
 
-	void DescriptorSet::set(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex) {
+	void DescriptorSet::set(const Array<UniformBuffer*> &_ubos, const Array<Texture*> &tex) {
+		Array<int> offsets;
+		for (auto *u: _ubos)
+			offsets.add(0);
+		set_with_offset(_ubos, offsets, tex);
+	}
+
+	void DescriptorSet::set_with_offset(const Array<UniformBuffer*> &_ubos, const Array<int> &offsets, const Array<Texture*> &tex) {
+		ubos = _ubos;
 
 		//std::cout << "update dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
 		Array<VkDescriptorBufferInfo> buffer_info;
 		for (int j=0; j<ubos.num; j++) {
 			VkDescriptorBufferInfo bi = {};
 			bi.buffer = ubos[j]->buffer;
-			bi.offset = 0;
-			bi.range = ubos[j]->size;
+			bi.offset = offsets[j];
+			bi.range = ubos[j]->size_single;
 			buffer_info.add(bi);
 		}
 
@@ -132,6 +187,8 @@ namespace vulkan{
 			w.dstBinding = j;
 			w.dstArrayElement = 0;
 			w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			if (ubos[j]->is_dynamic())
+				w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			w.descriptorCount = 1;
 			w.pBufferInfo = &buffer_info[j];
 			wds.add(w);
@@ -152,26 +209,20 @@ namespace vulkan{
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
 	}
 
-	VkDescriptorSetLayout DescriptorSet::create_layout(int num_ubos, int num_samplers) {
+	VkDescriptorSetLayout DescriptorSet::create_layout(const Array<VkDescriptorType> &types) {
 		//std::cout << "create dset layout, " << num_ubos << " ubos, " << num_samplers << " samplers\n";
 		Array<VkDescriptorSetLayoutBinding> bindings;
-		for (int i=0; i<num_ubos;i++) {
+		for (int i=0; i<types.num;i++) {
 			VkDescriptorSetLayoutBinding lb = {};
+			lb.descriptorType = types[i];
+			lb.descriptorCount = 1;
 			lb.binding = i;
-			lb.descriptorCount = 1;
-			lb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			lb.pImmutableSamplers = nullptr;
-			lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-			bindings.add(lb);
-		}
-
-		for (int i=0; i<num_samplers;i++) {
-			VkDescriptorSetLayoutBinding lb = {};
-			lb.binding = num_ubos + i;
-			lb.descriptorCount = 1;
-			lb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			lb.pImmutableSamplers = nullptr;
-			lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			} else {
+				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+			}
 			bindings.add(lb);
 		}
 
@@ -260,15 +311,17 @@ namespace vulkan{
 				break;
 			string bb = bindings.substr(i1+1, i2-i1-1);
 			auto x = bb.explode(",");
-			int num_ubos = 0;
+			Array<VkDescriptorType> types;
 			int num_samplers = 0;
 			for (auto &y: x) {
 				if (y == "buffer")
-					num_ubos ++;
+					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+				if (y == "dbuffer")
+					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
 				if (y == "sampler")
-					num_samplers ++;
-				}
-			rr.add(DescriptorSet::create_layout(num_ubos, num_samplers));
+					types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			}
+			rr.add(DescriptorSet::create_layout(types));
 
 			i0 = i2 + 1;
 		}

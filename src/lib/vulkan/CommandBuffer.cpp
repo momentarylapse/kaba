@@ -119,9 +119,27 @@ void CommandBuffer::set_pipeline(Pipeline *pl) {
 	vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeline);
 	current_pipeline = pl;
 }
+
 void CommandBuffer::bind_descriptor_set(int index, DescriptorSet *dset) {
+	if (dset->num_dynamic_ubos > 0)
+		throw std::runtime_error("descriptor set requires dynamic indices");
 	vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_set, 0, nullptr);
 }
+
+void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices) {
+	if (dset->num_dynamic_ubos != indices.num)
+		throw std::runtime_error("number of indices does not match descriptor set");
+	Array<unsigned int> offsets;
+	int i=0;
+	for (auto *u: dset->ubos) {
+		if (u->is_dynamic()) {
+			offsets.add(u->size_single_aligned * indices[i]);
+			i ++;
+		}
+	}
+	vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_set, offsets.num, (unsigned*)&offsets[0]);
+}
+
 void CommandBuffer::push_constant(int offset, int size, void *data) {
 	auto stage_flags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
 	vkCmdPushConstants(buffer, current_pipeline->layout, stage_flags, offset, size, data);

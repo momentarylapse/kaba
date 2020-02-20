@@ -13,13 +13,13 @@
 
 unsigned int VertexArrayID = 0;
 
-namespace nix{
+namespace nix {
 
 VertexBuffer *vb_temp = NULL;
-VertexBuffer *vb_2d = NULL;
+OldVertexBuffer *vb_2d = NULL;
 
 
-VertexBuffer::VertexBuffer(int _num_textures)
+OldVertexBuffer::OldVertexBuffer(int _num_textures)
 {
 	num_textures = _num_textures;
 	if (num_textures > NIX_MAX_TEXTURELEVELS)
@@ -44,22 +44,22 @@ VertexBuffer::VertexBuffer(int _num_textures)
 		buf_t[i] = 0;
 }
 
-VertexBuffer::~VertexBuffer()
+OldVertexBuffer::~OldVertexBuffer()
 {
 	clear();
 }
 
-void VertexBuffer::__init__(int _num_textures)
+void OldVertexBuffer::__init__(int _num_textures)
 {
-	new(this) VertexBuffer(_num_textures);
+	new(this) OldVertexBuffer(_num_textures);
 }
 
-void VertexBuffer::__delete__()
+void OldVertexBuffer::__delete__()
 {
-	this->~VertexBuffer();
+	this->~OldVertexBuffer();
 }
 
-void VertexBuffer::clear()
+void OldVertexBuffer::clear()
 {
 	vertices.clear();
 	normals.clear();
@@ -69,7 +69,7 @@ void VertexBuffer::clear()
 	dirty = true;
 }
 
-void VertexBuffer::update()
+void OldVertexBuffer::update()
 {
 	if (!buffers_created){
 		glGenBuffers(1, &buf_v);
@@ -91,7 +91,7 @@ void VertexBuffer::update()
 	TestGLError("opt2");
 }
 
-void VertexBuffer::addTria(const vector &p1,const vector &n1,float tu1,float tv1,
+void OldVertexBuffer::addTria(const vector &p1,const vector &n1,float tu1,float tv1,
 							const vector &p2,const vector &n2,float tu2,float tv2,
 							const vector &p3,const vector &n3,float tu3,float tv3)
 {
@@ -112,7 +112,7 @@ void VertexBuffer::addTria(const vector &p1,const vector &n1,float tu1,float tv1
 	dirty = true;
 }
 
-void VertexBuffer::addTriaM(const vector &p1,const vector &n1,const float *t1,
+void OldVertexBuffer::addTriaM(const vector &p1,const vector &n1,const float *t1,
 								const vector &p2,const vector &n2,const float *t2,
 								const vector &p3,const vector &n3,const float *t3)
 {
@@ -136,7 +136,7 @@ void VertexBuffer::addTriaM(const vector &p1,const vector &n1,const float *t1,
 }
 
 // for each triangle there have to be 3 vertices (p[i],n[i],t[i*2],t[i*2+1])
-void VertexBuffer::addTrias(int num_trias, const vector *p, const vector *n, const float *t)
+void OldVertexBuffer::addTrias(int num_trias, const vector *p, const vector *n, const float *t)
 {
 	int nv0 = vertices.num;
 	vertices.resize(vertices.num + num_trias * 3);
@@ -160,13 +160,99 @@ void VBAddTriasIndexed(int buffer,int num_points,int num_trias,const vector *p,c
 	#endif
 }
 
-void init_vertex_buffers()
-{
+
+// so far, map each attribute to another buffer
+VertexBuffer::VertexBuffer(const string &f) {
+	msg_write("new VertexBuffer " + f);
+	auto xx = f.explode(",");
+	num_buffers = num_attributes = xx.num;
+	if (num_attributes > MAX_VB_ATTRIBUTES) {
+		throw Exception("VertexBuffer: too many attributes: " + f);
+		num_buffers = num_attributes = 0;
+	}
+	for (int i=0; i<xx.num; i++) {
+		string &x = xx[i];
+		auto &b = buf[i];
+		b.count = 0;
+
+		auto &a = attr[i];
+		glGenBuffers(1, &b.buffer);
+		a.buffer = b.buffer;
+		a.normalized = false;
+		a.stride = 0;
+		if (x == "1f") {
+			a.type = GL_FLOAT;
+			a.num_components = 1;
+		} else if (x == "2f") {
+			a.type = GL_FLOAT;
+			a.num_components = 2;
+		} else if (x == "3f") {
+			a.type = GL_FLOAT;
+			a.num_components = 3;
+		} else if (x == "3fn") {
+			a.type = GL_FLOAT;
+			a.num_components = 3;
+			a.normalized = true;
+		} else if (x == "4f") {
+			a.type = GL_FLOAT;
+			a.num_components = 4;
+		} else {
+			throw Exception("VertexBuffer: unhandled format: " + x);
+		}
+	}
+}
+
+
+VertexBuffer::~VertexBuffer() {
+	for (int i=0; i<num_buffers; i++)
+		glDeleteBuffers(1, &buf[i].buffer);
+}
+
+void VertexBuffer::__init__(const string &f) {
+	new(this) VertexBuffer(f);
+}
+
+void VertexBuffer::__delete__() {
+	this->~VertexBuffer();
+}
+
+void VertexBuffer::update(int index, const DynamicArray &a) {
+	if (index < 0 or index >= MAX_VB_BUFFERS)
+		throw Exception("VertexBuffer: invalid index " + i2s(index));
+	buf[index].count = a.num;
+	glBindBuffer(GL_ARRAY_BUFFER, buf[index].buffer);
+	glBufferData(GL_ARRAY_BUFFER, a.num * a.element_size, a.data, GL_STATIC_DRAW);
+}
+
+int VertexBuffer::count() const {
+	return buf[0].count;
+}
+
+int _current_vb_attr_ = 0;
+
+void SetVertexBuffer(VertexBuffer *vb) {
+	for (int i=0; i<vb->num_attributes; i++) {
+		auto &a = vb->attr[i];
+		glEnableVertexAttribArray(i);
+		TestGLError("set vb 1");
+		glBindBuffer(GL_ARRAY_BUFFER, a.buffer);
+		TestGLError("set vb 2");
+		glVertexAttribPointer(i, a.num_components, a.type, a.normalized, 0, (void*)0);//a.stride, (void*)a.offset);
+		TestGLError("set vb 3");
+	}
+
+	for (int i=vb->num_attributes; i<_current_vb_attr_; i++)
+		glDisableVertexAttribArray(i);
+
+	_current_vb_attr_ = vb->num_attributes;
+}
+
+void init_vertex_buffers() {
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
-	vb_temp = new VertexBuffer(1);
-	vb_2d = new VertexBuffer(1);
+	vb_temp = new VertexBuffer("3f,3fn,2f");
+	vb_2d = new OldVertexBuffer(1);
 }
 
 };

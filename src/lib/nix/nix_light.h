@@ -20,8 +20,7 @@ void _cdecl SetMaterial(const color &ambient, const color &diffuse, const color 
 
 
 
-struct Material
-{
+struct Material {
 	color ambient;
 	color diffusive;
 	color specular;
@@ -30,8 +29,7 @@ struct Material
 };
 extern Material material;
 
-struct Light
-{
+struct Light {
 	bool enabled;
 	color col;
 	float harshness;

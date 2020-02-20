@@ -32,7 +32,7 @@ nix::Texture* __LoadTexture(const string &filename)
 
 #else
 	namespace nix{
-		typedef int VertexBuffer;
+		typedef int OldVertexBuffer;
 		typedef int Texture;
 		typedef int Shader;
 		typedef int UniformBuffer;
@@ -48,6 +48,7 @@ extern const Class *TypeFloatList;
 extern const Class *TypeFloatArrayP;
 extern const Class *TypeVectorArray;
 extern const Class *TypeVectorArrayP;
+extern const Class *TypeDynamicArray;
 const Class *TypeVertexBuffer;
 const Class *TypeVertexBufferP;
 const Class *TypeTexture;
@@ -81,27 +82,12 @@ void SIAddPackageNix()
 	
 	add_class(TypeVertexBuffer);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::VertexBuffer::__init__)));
-			func_add_param("num_textures", TypeInt);
+			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::VertexBuffer::__delete__)));
-		class_add_func("clear", TypeVoid, nix_p(mf(&nix::VertexBuffer::clear)));
-		class_add_func("add_tria", TypeVoid, nix_p(mf(&nix::VertexBuffer::addTria)));
-			func_add_param("p1", TypeVector);
-			func_add_param("n1", TypeVector);
-			func_add_param("u1", TypeFloat32);
-			func_add_param("v1", TypeFloat32);
-			func_add_param("p2", TypeVector);
-			func_add_param("n2", TypeVector);
-			func_add_param("u2", TypeFloat32);
-			func_add_param("v2", TypeFloat32);
-			func_add_param("p3", TypeVector);
-			func_add_param("n3", TypeVector);
-			func_add_param("u3", TypeFloat32);
-			func_add_param("v3", TypeFloat32);
-		class_add_func("add_trias", TypeVoid, nix_p(mf(&nix::VertexBuffer::addTrias)));
-			func_add_param("num_trias", TypeInt);
-			func_add_param("p", TypeVectorArrayP);
-			func_add_param("n", TypeVectorArrayP);
-			func_add_param("t", TypeFloatArrayP);
+		class_add_func("void", TypeVoid, nix_p(mf(&nix::VertexBuffer::update)));
+			func_add_param("index", TypeInt);
+			func_add_param("data", TypeDynamicArray);
+		class_add_func("count", TypeInt, nix_p(mf(&nix::VertexBuffer::count)));
 
 
 	add_class(TypeTexture);
@@ -189,57 +175,24 @@ void SIAddPackageNix()
 	
 		// drawing
 	add_func("NixInit", TypeVoid, nix_p(&nix::Init), FLAG_STATIC);
-		func_add_param("api", TypeString);
-		func_add_param("w", TypeInt);
-		func_add_param("h", TypeInt);
 	/*add_func("NixSetVideoMode", TypeVoid, nix_p(&NixSetVideoMode), FLAG_STATIC);
 		func_add_param("api", TypeString);
 		func_add_param("xres", TypeInt);
 		func_add_param("yres", TypeInt);
 		func_add_param("fullscreen",TypeBool);*/
-	add_func("NixStart", TypeBool, nix_p(&nix::Start), FLAG_STATIC);
-	add_func("NixEnd", TypeVoid, nix_p(&nix::End), FLAG_STATIC);
+	add_func("NixStartFrame", TypeBool, nix_p(&nix::StartFrame), FLAG_STATIC);
+	add_func("NixEndFrame", TypeVoid, nix_p(&nix::EndFrame), FLAG_STATIC);
 	//add_func("NixKillWindows", TypeVoid, nix_p(&nix::KillWindows), FLAG_STATIC);
 	add_func("NixKill", TypeVoid, nix_p(&nix::Kill), FLAG_STATIC);
 	add_func("NixResetToColor", TypeVoid, nix_p(&nix::ResetToColor), FLAG_STATIC);
 		func_add_param("c", TypeColor);
 	add_func("NixSetWorldMatrix", TypeVoid, nix_p(&nix::SetWorldMatrix), FLAG_STATIC);
 		func_add_param("m", TypeMatrix);
-	add_func("NixDraw3D", TypeVoid, nix_p(&nix::Draw3D), FLAG_STATIC);
+	add_func("NixDrawTriangles", TypeVoid, nix_p(&nix::DrawTriangles), FLAG_STATIC);
 		func_add_param("vb", TypeVertexBufferP);
-	add_func("NixDraw2D", TypeVoid, nix_p(&nix::Draw2D), FLAG_STATIC);
-		func_add_param("source", TypeRect);
-		func_add_param("dest", TypeRect);
-		func_add_param("z", TypeFloat32);
-	add_func("NixDrawStr", TypeVoid, nix_p(&nix::DrawStr), FLAG_STATIC);
-		func_add_param("x", TypeFloat32);
-		func_add_param("y", TypeFloat32);
-		func_add_param("str", TypeString);
-	add_func("NixDrawLineH", TypeVoid, nix_p(&nix::DrawLineH), FLAG_STATIC);
-		func_add_param("x", TypeFloat32);
-		func_add_param("y1", TypeFloat32);
-		func_add_param("y2", TypeFloat32);
-		func_add_param("z", TypeFloat32);
-	add_func("NixDrawLineV", TypeVoid, nix_p(&nix::DrawLineV), FLAG_STATIC);
-		func_add_param("x1", TypeFloat32);
-		func_add_param("x2", TypeFloat32);
-		func_add_param("y", TypeFloat32);
-		func_add_param("z", TypeFloat32);
-	add_func("NixDrawLine", TypeVoid, nix_p(&nix::DrawLine), FLAG_STATIC);
-		func_add_param("x1", TypeFloat32);
-		func_add_param("y1", TypeFloat32);
-		func_add_param("x2", TypeFloat32);
-		func_add_param("y2", TypeFloat32);
-		func_add_param("z", TypeFloat32);
-	add_func("NixDrawLine3D", TypeVoid, nix_p(&nix::DrawLine3D), FLAG_STATIC);
-		func_add_param("l1", TypeVector);
-		func_add_param("l2", TypeVector);
-	add_func("NixDrawSprite", TypeVoid, nix_p(&nix::DrawSprite), FLAG_STATIC);
-		func_add_param("source", TypeRect);
-		func_add_param("pos", TypeVector);
-		func_add_param("radius", TypeFloat32);
-	//add_func("NixDrawModel2D", TypeVoid, FLAG_STATIC);
-	//	func_add_param("???", TypeFloat); // ???
+	add_func("NixDrawLines", TypeVoid, nix_p(&nix::DrawLines), FLAG_STATIC);
+		func_add_param("vb", TypeVertexBufferP);
+		func_add_param("contiguous", TypeBool);
 	add_func("NixSetAlphaM", TypeVoid, nix_p(&nix::SetAlphaM), FLAG_STATIC);
 		func_add_param("mode", TypeInt);
 	add_func("NixSetAlphaSD", TypeVoid, nix_p(&nix::SetAlphaSD), FLAG_STATIC);
@@ -269,10 +222,7 @@ void SIAddPackageNix()
 		func_add_param("m", TypeMatrix);
 	add_func("NixSetViewMatrix", TypeVoid, nix_p(&nix::SetViewMatrix), FLAG_STATIC);
 		func_add_param("view_mat", TypeMatrix);
-	add_func("NixSetViewPosAng", TypeVoid, nix_p(&nix::SetViewPosAng), FLAG_STATIC);
-		func_add_param("pos", TypeVector);
-		func_add_param("ang", TypeQuaternion);
-	add_func("NixScissor", TypeVoid, nix_p(&nix::Scissor), FLAG_STATIC);
+	add_func("NixSetScissor", TypeVoid, nix_p(&nix::SetScissor), FLAG_STATIC);
 		func_add_param("r", TypeRect);
 	add_func("NixSetZ", TypeVoid, nix_p(&nix::SetZ), FLAG_STATIC);
 		func_add_param("write", TypeBool);
@@ -301,8 +251,6 @@ void SIAddPackageNix()
 		func_add_param("specular", TypeColor);
 		func_add_param("shininess", TypeFloat32);
 		func_add_param("emission", TypeColor);
-	add_func("NixSetColor", TypeVoid, nix_p(&nix::SetColor), FLAG_STATIC);
-		func_add_param("c", TypeColor);
 	add_func("NixSetTexture", TypeVoid, nix_p(&nix::SetTexture), FLAG_STATIC);
 		func_add_param("t", TypeTexture);
 	add_func("NixSetShader", TypeVoid, nix_p(&nix::SetShader), FLAG_STATIC);
@@ -317,10 +265,6 @@ void SIAddPackageNix()
 	add_ext_var("target_height", TypeInt, nix_p(&nix::target_height));
 	add_ext_var("target", TypeRect, nix_p(&nix::target_rect));
 	add_ext_var("fullscreen", TypeBool, nix_p(&nix::Fullscreen));
-	add_ext_var("Api", TypeString, nix_p(&nix::ApiName));
-	//add_ext_var("TextureLifeTime", TypeInt, nix_p(&nix::TextureMaxFramesToLive));
-	//add_ext_var("LineWidth", TypeFloat32, nix_p(&nix::line_width));
-	//add_ext_var("SmoothLines", TypeBool, nix_p(&nix::smooth_lines));
 
 	// alpha operations
 	add_const("ALPHA_NONE",             TypeInt, nix_p(ALPHA_NONE));

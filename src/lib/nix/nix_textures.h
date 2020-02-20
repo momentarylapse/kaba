@@ -18,12 +18,10 @@ namespace nix{
 void init_textures();
 void ReleaseTextures();
 void ReincarnateTextures();
-void ProgressTextureLifes();
 
 
 
-class Texture
-{
+class Texture {
 public:
 	enum class Type {
 		DEFAULT,
@@ -36,7 +34,6 @@ public:
 	string filename;
 	int width, height;
 	bool valid;
-	int life_time;
 	
 	unsigned int texture;
 	unsigned int frame_buffer;
@@ -58,29 +55,25 @@ public:
 	//void _cdecl video_move(float elapsed);
 };
 
-class DynamicTexture : public Texture
-{
+class DynamicTexture : public Texture {
 public:
 	DynamicTexture(int width, int height);
 	void _cdecl __init__(int width, int height);
 };
 
-class ImageTexture : public Texture
-{
+class ImageTexture : public Texture {
 public:
 	ImageTexture(int width, int height, const string &format);
 	void _cdecl __init__(int width, int height, const string &format);
 };
 
-class DepthTexture : public Texture
-{
+class DepthTexture : public Texture {
 public:
 	DepthTexture(int width, int height);
 	void _cdecl __init__(int width, int height);
 };
 
-class CubeMap : public Texture
-{
+class CubeMap : public Texture {
 public:
 	CubeMap(int size);
 	void _cdecl __init__(int size);

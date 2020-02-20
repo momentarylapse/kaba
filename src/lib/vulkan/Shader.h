@@ -14,17 +14,24 @@ namespace vulkan{
 
 	class Texture;
 
-	class UBOWrapper {
+	class UniformBuffer {
 	public:
-		UBOWrapper(int size);
-		~UBOWrapper();
-		
-		void __init__(int size);
-		void __delete__();
-		
-		void update(void *source);
+		UniformBuffer(int size);
+		UniformBuffer(int size, int count);
+		~UniformBuffer();
 
-		int size;
+		void __init__(int size);
+		void __init_multi__(int size, int count);
+		void __delete__();
+
+		void update(void *source);
+		void update_part(void *source, int offset, int size);
+		void update_single(void *source, int index);
+
+		bool is_dynamic();
+
+		int size, size_single;
+		int count, size_single_aligned;
 		VkBuffer buffer;
 		VkDeviceMemory memory;
 	};
@@ -58,19 +65,21 @@ namespace vulkan{
 
 	class DescriptorSet {
 	public:
-		DescriptorSet(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex);
+		DescriptorSet(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
 		~DescriptorSet();
 
-		void __init__(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex);
+		void __init__(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
 		void __delete__();
 
-		void set(const Array<UBOWrapper*> &ubos, const Array<Texture*> &tex);
+		void set(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
+		void set_with_offset(const Array<UniformBuffer*> &ubos, const Array<int> &offsets, const Array<Texture*> &tex);
 
 		VkDescriptorSetLayout layout;
 		VkDescriptorSet descriptor_set;
+		Array<UniformBuffer*> ubos;
+		int num_dynamic_ubos;
 
-
-		static VkDescriptorSetLayout create_layout(int num_ubos, int num_samplers);
+		static VkDescriptorSetLayout create_layout(const Array<VkDescriptorType> &types);
 		static void destroy_layout(VkDescriptorSetLayout layout);
 	};
 };

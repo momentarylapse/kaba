@@ -19,20 +19,11 @@ namespace nix{
 
 void TestGLError(const char*);
 
-void create_pixel_projection_matrix(matrix &m);
-
 
 matrix view_matrix, projection_matrix;
-matrix projection_matrix2d;
 matrix world_matrix, world_view_projection_matrix;
-matrix inverse_world_view_projection_matrix;
-bool inverse_world_view_projection_matrix_dirty = true;
-vector _CamPos_;
-//bool mode3d = false;
 
 float view_jitter_x = 0, view_jitter_y = 0;
-
-static int OGLViewPort[4];
 
 Texture *RenderingToTexture = NULL;
 
@@ -41,86 +32,36 @@ Texture *RenderingToTexture = NULL;
 	extern HGLRC hRC;
 #endif
 
-void Resize(int width, int height)
-{
+
+
+matrix create_pixel_projection_matrix() {
+	auto t = matrix::translation(vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
+	auto s = matrix::scale(2.0f / float(target_width), -2.0f / float(target_height), 2);
+	return s * t;
+}
+
+void SetViewport(int width, int height) {
 	target_width = max(width, 1);
 	target_height = max(height, 1);
 	target_rect = rect(0, (float)target_width, 0, (float)target_height);
 
 	// screen
 	glViewport(0, 0, target_width, target_height);
-	OGLViewPort[0] = 0;
-	OGLViewPort[1] = 0;
-	OGLViewPort[2] = target_width;
-	OGLViewPort[3] = target_height;
 	TestGLError("glViewport");
-
-	// projection 2d
-	create_pixel_projection_matrix(projection_matrix2d);
-
-	// camera
-	//NixSetProjectionMatrix(projection_matrix);
-	//NixSetViewMatrix(view_matrix);
 }
 
-void SetWorldMatrix(const matrix &mat)
-{
+void SetWorldMatrix(const matrix &mat) {
 	world_matrix = mat;
 	world_view_projection_matrix = projection_matrix * view_matrix * world_matrix;
-	inverse_world_view_projection_matrix_dirty = true;
 }
 
-static vector ViewPos,ViewDir;
-static vector Frustrum[8];
-static plane FrustrumPl[6];
-
-void SetViewPosAngV(const vector &view_pos,const vector &view_ang) {
-	SetViewPosAng(view_pos, quaternion::rotation_v(view_ang));
-}
-
-void SetViewPosAng(const vector &view_pos,const quaternion &view_ang)
-{
-	ViewPos = view_pos;
-	ViewDir = view_ang * vector::EZ;
-
-	auto t = matrix::translation(-view_pos);
-	auto r = matrix::rotation_q(view_ang.bar());
-	view_matrix = r * t;
-	SetViewMatrix(view_matrix);
-
-	// die Eckpunkte des Sichtfeldes
-	/*NixGetVecUnproject(Frustrum[0],vector(                   0,                    0,0.0f));
-	NixGetVecUnproject(Frustrum[1],vector(float(NixScreenWidth-1),                    0,0.0f));
-	NixGetVecUnproject(Frustrum[2],vector(                   0,float(NixScreenHeight-1),0.0f));
-	NixGetVecUnproject(Frustrum[3],vector(float(NixScreenWidth-1),float(NixScreenHeight-1),0.0f));
-	NixGetVecUnproject(Frustrum[4],vector(                   0,                    0,0.9f));
-	NixGetVecUnproject(Frustrum[5],vector(float(NixScreenWidth-1),                    0,0.9f));
-	NixGetVecUnproject(Frustrum[6],vector(                   0,float(NixScreenHeight-1),0.9f));
-	NixGetVecUnproject(Frustrum[7],vector(float(NixScreenWidth-1),float(NixScreenHeight-1),0.9f));
-
-	// Ebenen des Sichtfeldes (gegen UZS nach innen!?)
-	PlaneFromPoints(FrustrumPl[0],Frustrum[0],Frustrum[1],Frustrum[2]); // nahe Ebene
-	//PlaneFromPoints(FrustrumPl[1],Frustrum[4],Frustrum[6],Frustrum[7]); // ferne Ebene
-	//PlaneFromPoints(FrustrumPl[2],Frustrum[0],Frustrum[2],Frustrum[3]); // linke Ebene
-	//PlaneFromPoints(FrustrumPl[3],Frustrum[1],Frustrum[5],Frustrum[7]); // rechte Ebene
-	//PlaneFromPoints(FrustrumPl[4],Frustrum[0],Frustrum[4],Frustrum[5]); // untere Ebene
-	//PlaneFromPoints(FrustrumPl[5],Frustrum[2],Frustrum[3],Frustrum[7]); // obere Ebene*/
-	TestGLError("SetView");
-}
-
-void create_pixel_projection_matrix(matrix &m) {
-	auto t = matrix::translation(vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
-	auto s = matrix::scale(2.0f / float(target_width), -2.0f / float(target_height), 2);
-	m = s * t;
-}
 
 // 3D-Matrizen erstellen (Einstellungen ueber SetPerspectiveMode vor NixStart() zu treffen)
 // enable3d: true  -> 3D-Ansicht auf (View3DWidth,View3DHeight) gemapt
 //           false -> Pixel-Angaben~~~
 // beide Bilder sind um View3DCenterX,View3DCenterY (3D als Fluchtpunkt) verschoben
 
-void SetProjectionPerspective()
-{
+void SetProjectionPerspective() {
 	SetProjectionPerspectiveExt((float)target_width / 2, (float)target_height / 2, (float)target_height, (float)target_height, 0.001f, 10000);
 }
 
@@ -158,7 +99,7 @@ void SetProjectionOrtho(bool relative) {
 	} else {
 		// orthogonal projection (pixel coordinates)
 		//NixSetProjectionOrthoExt(0, 0, 1, 1, )
-		create_pixel_projection_matrix(m);
+		m = create_pixel_projection_matrix();
 	}
 
 	SetProjectionMatrix(m);
@@ -166,43 +107,12 @@ void SetProjectionOrtho(bool relative) {
 
 void SetProjectionMatrix(const matrix &m) {
 	projection_matrix = m;
+	world_view_projection_matrix = projection_matrix * view_matrix * world_matrix;
 }
 
 void SetViewMatrix(const matrix &m) {
 	view_matrix = m;
 }
-
-#define FrustrumAngleCos	0.83f
-
-bool IsInFrustrum(const vector &pos,float radius) {
-	// die absoluten Eckpunkte der BoundingBox
-	vector p[8];
-	p[0]=pos+vector(-radius,-radius,-radius);
-	p[1]=pos+vector( radius,-radius,-radius);
-	p[2]=pos+vector(-radius, radius,-radius);
-	p[3]=pos+vector( radius, radius,-radius);
-	p[4]=pos+vector(-radius,-radius, radius);
-	p[5]=pos+vector( radius,-radius, radius);
-	p[6]=pos+vector(-radius, radius, radius);
-	p[7]=pos+vector( radius, radius, radius);
-
-	bool in=false;
-	for (int i=0;i<8;i++)
-		//for (int j=0;j<6;j++)
-			if (FrustrumPl[0].distance(p[i])<0)
-				in=true;
-	/*vector d;
-	VecNormalize(d,pos-ViewPos); // zu einer Berechnung zusammenfassen!!!!!!
-	float fdp=VecLengthFuzzy(pos-ViewPos);
-	if (fdp<radius)
-		return true;
-	if (VecDotProduct(d,ViewDir)>FrustrumAngleCos-radius/fdp*0.04f)
-		return true;
-	return false;*/
-	return in;
-}
-
-bool Rendering=false;
 
 
 #ifdef OS_WINDOWS
@@ -213,16 +123,11 @@ bool Rendering=false;
 	extern bool nixDevNeedsUpdate;
 #endif
 
-bool Start()
-{
-	return StartIntoTexture(NULL);
+bool StartFrame() {
+	return StartFrameIntoTexture(NULL);
 }
 
-bool StartIntoTexture(Texture *texture)
-{
-	if (DoingEvilThingsToTheDevice)
-		return false;
-
+bool StartFrameIntoTexture(Texture *texture) {
 	TestGLError("Start prae");
 
 
@@ -267,7 +172,6 @@ bool StartIntoTexture(Texture *texture)
 	}
 #endif
 
-	NumTrias=0;
 	RenderingToTexture=texture;
 	//msg_write("Start " + p2s(texture));
 	if (!texture){
@@ -312,12 +216,11 @@ bool StartIntoTexture(Texture *texture)
 	// adjust target size
 	if (!texture){
 		auto *e = hui::GetEvent();
-		Resize(e->column, e->row);
+		SetViewport(e->column, e->row);
 	}else{
 		// texture
-		Resize(texture->width, texture->height);
+		SetViewport(texture->width, texture->height);
 	}
-	Rendering = true;
 
 	/*if (texture < 0)
 		NixUpdateInput();*/
@@ -327,7 +230,7 @@ bool StartIntoTexture(Texture *texture)
 	return true;
 }
 
-void Scissor(const rect &_r)
+void SetScissor(const rect &_r)
 {
 	bool enable_scissors = true;
 	rect r = _r;
@@ -344,12 +247,8 @@ void Scissor(const rect &_r)
 	TestGLError("Scissor");
 }
 
-void End()
-{
-	if (!Rendering)
-		return;
+void EndFrame() {
 	TestGLError("End prae");
-	Rendering = false;
 	glDisable(GL_SCISSOR_TEST);
 	if (!RenderingToTexture){
 		// auf den Bildschirm
@@ -369,94 +268,12 @@ void End()
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	ProgressTextureLifes();
 	TestGLError("End post");
 }
 
-void SetClipPlane(int index,const plane &pl)
-{
-	return;
-	GLdouble d[4];
-	d[0]=pl.n.x;
-	d[1]=pl.n.y;
-	d[2]=pl.n.z;
-	d[3]=pl.d;
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadMatrixf((float*)&view_matrix);
-	glClipPlane(GL_CLIP_PLANE0+index,d);
-	glPopMatrix();
-	//msg_todo("SetClipPlane fuer OpenGL");
-	TestGLError("SetClip");
-}
 
-void EnableClipPlane(int index,bool enabled)
-{
-	return;
-	if (enabled)
-		glEnable(GL_CLIP_PLANE0+index);
-	else
-		glDisable(GL_CLIP_PLANE0+index);
-	TestGLError("EnableClip");
-}
 
-void ScreenShot(const string &filename, int width, int height)
-{
-	Image image;
-	int dx = target_width;
-	int dy = target_height;
-	//image.create(dx, dy, White);
-	image.data.resize(dx * dy);
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-	glReadBuffer(GL_FRONT);
-	TestGLError("read buffer");
-	glReadPixels(	0,
-					0,
-					dx,
-					dy,
-					//GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, &image.data[0]);
-					GL_RGBA, GL_UNSIGNED_BYTE, &image.data[0]);
-	TestGLError("read pixels");
-	/*if ((width >= 0) and (height >= 0)){
-		Array<unsigned int> data2;
-		image.width = width;
-		image.height = height;
-		data2.resize(width * height);
-		// flip image...
-		for (int x=0;x<width;x++)
-			for (int y=0;y<height;y++){
-				int x1 = (x * dx) / width;
-				int y1 = dy - (y * dy) / height - 1;
-				int n1 = (x1 + dx * y1);
-				int n2 = (x + width * y );
-				data2[n2] = image.data[n1];
-			}
-		image.data.exchange((DynamicArray&)data2);
-		data2.clear();
-	}else{
-		image.width = dx;
-		image.height = dy;
-		// flip image...
-		for (int x=0;x<dx;x++)
-			for (int y=0;y<(dy+1)/2;y++){
-				int y2 = dy - y - 1;
-				int n1 = (x + dx * y );
-				int n2 = (x + dx * y2);
-				int c = image.data[n1];
-				image.data[n1] = image.data[n2];
-				image.data[n2] = c;
-			}
-	}
-	// set alpha to 1
-	for (int i=0;i<image.data.num;i++)
-		image.data[i] |= 0xff000000;*/
-	// save
-	image.save(filename);
-	msg_write("screenshot saved: " + filename.sys_filename());
-}
-
-void ScreenShotToImage(Image &image)
-{
+void ScreenShotToImage(Image &image) {
 	image.create(target_width, target_height, Black);
 	glReadBuffer(GL_FRONT);
 	glReadPixels(	0,
@@ -467,52 +284,6 @@ void ScreenShotToImage(Image &image)
 }
 
 
-
-// world -> screen (0...target_width,0...target_height,0...1)
-void GetVecProject(vector &vout, const vector &vin)
-{
-	vout = world_view_projection_matrix.project(vin);
-	vout.x = nix::target_width * (vout.x + 1) / 2;
-	vout.y = nix::target_height * (-vout.y + 1) / 2;
-	vout.z = (vout.z + 1) / 2;
-}
-
-// world -> screen (0...1,0...1,0...1)
-void GetVecProjectRel(vector &vout, const vector &vin)
-{
-	vout = world_view_projection_matrix.project(vin);
-	vout.x = (vout.x + 1) / 2;
-	vout.y = (-vout.y + 1) / 2;
-	vout.z = (vout.z + 1) / 2;
-}
-
-// screen (0...target_width,0...target_height,0...1) -> world
-void GetVecUnproject(vector &vout, const vector &vin)
-{
-	if (inverse_world_view_projection_matrix_dirty){
-		inverse_world_view_projection_matrix = world_view_projection_matrix.inverse();
-		inverse_world_view_projection_matrix_dirty = false;
-	}
-
-	vout.x = vin.x*2/nix::target_width - 1;
-	vout.y = - vin.y*2/nix::target_height + 1;
-	vout.z = vin.z*2 - 1;
-	vout = inverse_world_view_projection_matrix.project(vout);
-}
-
-// screen (0...1,0...1,0...1) -> world
-void GetVecUnprojectRel(vector &vout, const vector &vin)
-{
-	if (inverse_world_view_projection_matrix_dirty){
-		inverse_world_view_projection_matrix = world_view_projection_matrix.inverse();
-		inverse_world_view_projection_matrix_dirty = false;
-	}
-
-	vout.x = vin.x*2 - 1;
-	vout.y = - vin.y*2 + 1;
-	vout.z = vin.z*2 - 1;
-	vout = inverse_world_view_projection_matrix.project(vout);
-}
 
 };
 

@@ -21,8 +21,6 @@ Texture *default_texture = NULL;
 Texture *tex_text = NULL;
 int tex_cube_level = -1;
 
-bool GLDoubleBuffered = true;
-
 
 //void SetDefaultShaderData(int num_textures, const vector &cam_pos);
 
@@ -175,8 +173,7 @@ void avi_close(int texture)
 // common stuff
 //--------------------------------------------------------------------------------------------------
 
-void init_textures()
-{
+void init_textures() {
 	#ifdef NIX_ALLOW_VIDEO_TEXTURE
 		// allow AVI textures
 		AVIFileInit();
@@ -191,39 +188,25 @@ void init_textures()
 	tex_text = new Texture;
 }
 
-void ReleaseTextures()
-{
-	for (Texture *t: textures){
+void ReleaseTextures() {
+	for (Texture *t: textures) {
 		glBindTexture(GL_TEXTURE_2D, t->texture);
 		glDeleteTextures(1, &t->texture);
 	}
 }
 
-void ReincarnateTextures()
-{
-	for (Texture *t: textures){
+void ReincarnateTextures() {
+	for (Texture *t: textures) {
 		glGenTextures(1, &t->texture);
 		t->reload();
 	}
 }
 
-void ProgressTextureLifes()
-{
-	for (Texture *t: textures)
-		if (t->life_time >= 0){
-			t->life_time ++;
-			if (t->life_time >= TextureMaxFramesToLive)
-				t->unload();
-		}
-}
-
-Texture::Texture()
-{
+Texture::Texture() {
 	filename = "-empty-";
 	type = Type::DEFAULT;
 	internal_format = 0;
 	valid = true;
-	life_time = 0;
 #ifdef NIX_ALLOW_VIDEO_TEXTURE
 	avi_info = NULL;
 #endif
@@ -235,23 +218,19 @@ Texture::Texture()
 	textures.add(this);
 }
 
-Texture::~Texture()
-{
+Texture::~Texture() {
 	unload();
 }
 
-void Texture::__init__()
-{
+void Texture::__init__() {
 	new(this) Texture;
 }
 
-void Texture::__delete__()
-{
+void Texture::__delete__() {
 	this->~Texture();
 }
 
-Texture *LoadTexture(const string &_filename)
-{
+Texture *LoadTexture(const string &_filename) {
 	if (_filename.num < 1)
 		return NULL;
 	string filename = _filename.sys_filename();
@@ -260,7 +239,7 @@ Texture *LoadTexture(const string &_filename)
 			return t->valid ? t : NULL;
 
 	// test existence
-	if (!file_test_existence(texture_dir + filename)){
+	if (!file_test_existence(texture_dir + filename)) {
 		msg_error("texture file does not exist: " + filename);
 		return NULL;
 	}
@@ -271,14 +250,13 @@ Texture *LoadTexture(const string &_filename)
 	return t;
 }
 
-void Texture::reload()
-{
+void Texture::reload() {
 	msg_write("loading texture: " + filename);
 
 	string _filename = texture_dir + filename;
 
 	// test the file's existence
-	if (!file_test_existence(_filename)){
+	if (!file_test_existence(_filename)) {
 		msg_error("texture file does not exist!");
 		return;
 	}
@@ -315,11 +293,9 @@ void Texture::reload()
 		overwrite(*image);
 		delete image;
 	}
-	life_time = 0;
 }
 
-void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &image)
-{
+void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &image) {
 	if (!t)
 		return;
 
@@ -381,7 +357,6 @@ void OverwriteTexture__(Texture *t, int target, int subtarget, const Image &imag
 		t->width = image.width;
 		t->height = image.height;
 	}
-	t->life_time = 0;
 }
 
 void Texture::overwrite(const Image &image) {
@@ -421,16 +396,6 @@ void Texture::unload() {
 	msg_write("unloading Texture: " + filename);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glDeleteTextures(1, (unsigned int*)&texture);
-	life_time = -1;
-}
-
-inline void refresh_texture(Texture *t)
-{
-	if (t){
-		if (t->life_time < 0)
-			t->reload();
-		t->life_time = 0;
-	}
 }
 
 void SetTexture(Texture *t)
