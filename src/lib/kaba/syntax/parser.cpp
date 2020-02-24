@@ -2653,8 +2653,9 @@ void SyntaxTree::parse() {
 	for (auto *f: functions)
 		test_node_recursion(f->block, "a " + f->long_name());
 
-	for (auto *c: owned_classes)
-		auto_implement_functions(c);
+	for (int i=0; i<owned_classes.num; i++) // array might change...
+		auto_implement_functions(owned_classes[i]);
+
 	for (auto *f: functions)
 		test_node_recursion(f->block, "b " + f->long_name());
 }
