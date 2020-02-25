@@ -189,9 +189,9 @@ void SIAddPackageNix()
 	add_func("NixSetWorldMatrix", TypeVoid, nix_p(&nix::SetWorldMatrix), FLAG_STATIC);
 		func_add_param("m", TypeMatrix);
 	add_func("NixDrawTriangles", TypeVoid, nix_p(&nix::DrawTriangles), FLAG_STATIC);
-		func_add_param("vb", TypeVertexBufferP);
+		func_add_param("vb", TypeVertexBuffer);
 	add_func("NixDrawLines", TypeVoid, nix_p(&nix::DrawLines), FLAG_STATIC);
-		func_add_param("vb", TypeVertexBufferP);
+		func_add_param("vb", TypeVertexBuffer);
 		func_add_param("contiguous", TypeBool);
 	add_func("NixSetAlphaM", TypeVoid, nix_p(&nix::SetAlphaM), FLAG_STATIC);
 		func_add_param("mode", TypeInt);
