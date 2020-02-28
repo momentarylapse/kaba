@@ -20,8 +20,7 @@ namespace Kaba{
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-nix::Texture* __LoadTexture(const string &filename)
-{
+nix::Texture* __LoadTexture(const string &filename) {
 	KABA_EXCEPTION_WRAPPER(return nix::LoadTexture(filename));
 	return nullptr;
 }
@@ -31,9 +30,14 @@ nix::Texture* __LoadTexture(const string &filename)
 
 
 #else
+struct FakeTexture {
+	int width, height;
+}
+};
 	namespace nix{
-		typedef int OldVertexBuffer;
-		typedef int Texture;
+		typedef int VertexBuffer;
+		typedef FakeTexture Texture;
+		typedef FakeTexture FrameBuffer;
 		typedef int Shader;
 		typedef int UniformBuffer;
 	};
@@ -45,40 +49,38 @@ nix::Texture* __LoadTexture(const string &filename)
 extern const Class *TypeMatrix;
 extern const Class *TypeImage;
 extern const Class *TypeFloatList;
-extern const Class *TypeFloatArrayP;
-extern const Class *TypeVectorArray;
-extern const Class *TypeVectorArrayP;
 extern const Class *TypeDynamicArray;
 const Class *TypeVertexBuffer;
 const Class *TypeVertexBufferP;
 const Class *TypeTexture;
 const Class *TypeTextureP;
 const Class *TypeTexturePList;
-const Class *TypeDynamicTexture;
 const Class *TypeImageTexture;
-const Class *TypeDepthTexture;
+const Class *TypeDepthBuffer;
+const Class *TypeFrameBuffer;
+const Class *TypeFrameBufferP;
 const Class *TypeCubeMap;
 const Class *TypeShader;
 const Class *TypeShaderP;
+const Class *TypeUniformBuffer;
 
 void SIAddPackageNix()
 {
 	add_package("nix", false);
 	
-	TypeVectorArray		= add_type_a(TypeVector, 1, "vector[?]");
-	TypeVectorArrayP	= add_type_p(TypeVectorArray);
 	TypeVertexBuffer	= add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
 	TypeVertexBufferP	= add_type_p(TypeVertexBuffer);
 	TypeTexture			= add_type  ("Texture", sizeof(nix::Texture));
 	TypeTextureP		= add_type_p(TypeTexture);
 	TypeTexturePList	= add_type_l(TypeTextureP);
-	TypeDynamicTexture	= add_type  ("DynamicTexture", sizeof(nix::Texture));
 	TypeImageTexture	= add_type  ("ImageTexture", sizeof(nix::Texture));
-	TypeDepthTexture	= add_type  ("DepthTexture", sizeof(nix::Texture));
+	TypeDepthBuffer		= add_type  ("DepthBuffer", sizeof(nix::Texture));
+	TypeFrameBuffer		= add_type  ("FrameBuffer", sizeof(nix::FrameBuffer));
+	TypeFrameBufferP	= add_type_p(TypeFrameBuffer);
 	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
 	TypeShader			= add_type  ("Shader", sizeof(nix::Shader));
 	TypeShaderP			= add_type_p(TypeShader);
-	auto TypeUniformBuffer = add_type  ("UniformBuffer", sizeof(nix::UniformBuffer));
+	TypeUniformBuffer	= add_type  ("UniformBuffer", sizeof(nix::UniformBuffer));
 	
 	add_class(TypeVertexBuffer);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::VertexBuffer::__init__)));
@@ -92,34 +94,33 @@ void SIAddPackageNix()
 
 	add_class(TypeTexture);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::Texture::__init__)));
+			func_add_param("width", TypeInt);
+			func_add_param("height", TypeInt);
+			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::Texture::__delete__)));
 		class_add_func("overwrite", TypeVoid, nix_p(mf(&nix::Texture::overwrite)));
 			func_add_param("image", TypeImage);
-			class_add_func("read", TypeVoid, nix_p(mf(&nix::Texture::read)));
-				func_add_param("image", TypeImage);
-			class_add_func("read_float", TypeVoid, nix_p(mf(&nix::Texture::read_float)));
-				func_add_param("data", TypeFloatList);
-			class_add_func("write_float", TypeVoid, nix_p(mf(&nix::Texture::write_float)));
-				func_add_param("data", TypeFloatList);
-			class_add_func("load", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
-				func_add_param("filename", TypeString);
-
-	add_class(TypeDynamicTexture);
-		class_derive_from(TypeTexture, false, false);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::DynamicTexture::__init__)));
-			func_add_param("width", TypeInt);
-			func_add_param("height", TypeInt);
+		class_add_func("read", TypeVoid, nix_p(mf(&nix::Texture::read)));
+			func_add_param("image", TypeImage);
+		class_add_func("read_float", TypeVoid, nix_p(mf(&nix::Texture::read_float)));
+			func_add_param("data", TypeFloatList);
+		class_add_func("write_float", TypeVoid, nix_p(mf(&nix::Texture::write_float)));
+			func_add_param("data", TypeFloatList);
+		class_add_func("load", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
+			func_add_param("filename", TypeString);
+		class_add_elementx("width", TypeInt, &nix::Texture::width);
+		class_add_elementx("height", TypeInt, &nix::Texture::height);
 
 	add_class(TypeImageTexture);
 		class_derive_from(TypeTexture, false, false);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::ImageTexture::__init__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::ImageTexture::__init__)), FLAG_OVERRIDE);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 			func_add_param("format", TypeString);
 
-	add_class(TypeDepthTexture);
+	add_class(TypeDepthBuffer);
 		class_derive_from(TypeTexture, false, false);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::DepthTexture::__init__)));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::DepthBuffer::__init__)));
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 
@@ -127,6 +128,14 @@ void SIAddPackageNix()
 		class_derive_from(TypeTexture, false, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::CubeMap::__init__)));
 			func_add_param("size", TypeInt);
+
+	add_class(TypeFrameBuffer);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, nix_p(mf(&nix::FrameBuffer::__init__)));
+			func_add_param("attachments", TypeTexturePList);
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(mf(&nix::FrameBuffer::__delete__)));
+		class_add_const("DEFAULT", TypeFrameBufferP, nix_p(&nix::FrameBuffer::DEFAULT));
+		class_add_elementx("width", TypeInt, &nix::FrameBuffer::width);
+		class_add_elementx("height", TypeInt, &nix::FrameBuffer::height);
 
 	add_class(TypeShader);
 		class_add_func("unref", TypeVoid, nix_p(mf(&nix::Shader::unref)));
@@ -180,8 +189,10 @@ void SIAddPackageNix()
 		func_add_param("xres", TypeInt);
 		func_add_param("yres", TypeInt);
 		func_add_param("fullscreen",TypeBool);*/
-	add_func("NixStartFrame", TypeBool, nix_p(&nix::StartFrame), FLAG_STATIC);
-	add_func("NixEndFrame", TypeVoid, nix_p(&nix::EndFrame), FLAG_STATIC);
+	add_func("NixBindFrameBuffer", TypeVoid, nix_p(&nix::BindFrameBuffer), FLAG_STATIC);
+		func_add_param("fb", TypeFrameBuffer);
+//	add_func("NixStartFrame", TypeBool, nix_p(&nix::StartFrame), FLAG_STATIC);
+//	add_func("NixEndFrame", TypeVoid, nix_p(&nix::EndFrame), FLAG_STATIC);
 	//add_func("NixKillWindows", TypeVoid, nix_p(&nix::KillWindows), FLAG_STATIC);
 	add_func("NixKill", TypeVoid, nix_p(&nix::Kill), FLAG_STATIC);
 	add_func("NixResetToColor", TypeVoid, nix_p(&nix::ResetToColor), FLAG_STATIC);
@@ -261,8 +272,6 @@ void SIAddPackageNix()
 	add_func("NixScreenShotToImage", TypeVoid, nix_p(&nix::ScreenShotToImage), FLAG_STATIC);
 		func_add_param("im", TypeImage);
 
-	add_ext_var("target_width", TypeInt, nix_p(&nix::target_height));
-	add_ext_var("target_height", TypeInt, nix_p(&nix::target_height));
 	add_ext_var("target", TypeRect, nix_p(&nix::target_rect));
 	add_ext_var("fullscreen", TypeBool, nix_p(&nix::Fullscreen));
 

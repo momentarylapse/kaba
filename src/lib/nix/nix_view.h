@@ -13,16 +13,8 @@
 namespace nix{
 
 class Texture;
+class DepthBuffer;
 
-class FrameBuffer {
-public:
-	FrameBuffer();
-	~FrameBuffer();
-
-	unsigned int frame_buffer;
-	unsigned int depth_render_buffer;
-	unsigned int internal_format;
-};
 
 void _cdecl SetProjectionPerspective();
 void _cdecl SetProjectionPerspectiveExt(float center_x, float center_y, float width_1, float height_1, float z_min, float z_max);
@@ -33,16 +25,34 @@ void _cdecl SetProjectionMatrix(const matrix &mat);
 void _cdecl SetWorldMatrix(const matrix &mat);
 void _cdecl SetViewMatrix(const matrix &view_mat);
 
-void _cdecl SetViewport(int width, int height);
+void _cdecl SetViewport(const rect &area);
 
-bool _cdecl StartFrame();
-bool _cdecl StartFrameIntoTexture(Texture *t);
+//bool _cdecl StartFrame();
+//bool _cdecl StartFrameIntoTexture(Texture *t);
 void _cdecl SetScissor(const rect &r);
-void _cdecl EndFrame();
+//void _cdecl EndFrame();
 
 void _cdecl ScreenShotToImage(Image &image);
 
 extern float view_jitter_x, view_jitter_y;
+
+class FrameBuffer {
+public:
+	FrameBuffer();
+	FrameBuffer(const Array<Texture*> &attachments);
+	~FrameBuffer();
+	void __init__(const Array<Texture*> &attachments);
+	void __delete__();
+	Array<Texture*> color_attachments;
+	DepthBuffer *depth_buffer;
+	unsigned int frame_buffer;
+	int width, height;
+
+	static FrameBuffer *DEFAULT;
+};
+
+void BindFrameBuffer(FrameBuffer *fb);
+
 
 };
 

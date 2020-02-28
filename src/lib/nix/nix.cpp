@@ -22,7 +22,7 @@ extern unsigned int VertexArrayID;
 
 namespace nix{
 
-string version = "0.13.3.0";
+string version = "0.13.4.0";
 
 
 // libraries (in case Visual C++ is used)
@@ -129,6 +129,10 @@ void Init() {
 	msg_write("Nix");
 	msg_right();
 	msg_write("[" + version + "]");
+
+	msg_write(string("OpenGL: ") + (char*)glGetString(GL_VERSION));
+	msg_write(string("Renderer: ") + (char*)glGetString(GL_RENDERER));
+	msg_write(string("GLSL: ") + (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 	
 
 	Fullscreen = false; // before nix is started, we're hopefully not in fullscreen mode
@@ -156,6 +160,11 @@ void Init() {
 	SetProjectionPerspective();
 	SetZ(true, true);
 	SetShader(default_shader_3d);
+
+	int vp[4];
+	glGetIntegerv(GL_VIEWPORT, vp);
+	FrameBuffer::DEFAULT->width = vp[2];
+	FrameBuffer::DEFAULT->height = vp[3];
 
 
 	msg_ok();

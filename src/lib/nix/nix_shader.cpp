@@ -5,6 +5,7 @@
 | last update: 2010.03.11 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
 
+#define HAS_LIB_GL 1
 #if HAS_LIB_GL
 
 #include "nix.h"
@@ -89,19 +90,21 @@ Array<ShaderSourcePart> get_shader_parts(const string &source) {
 		ShaderSourcePart p;
 		p.source = source.substr(pos1 + 1, pos2 - pos1 - 1);
 		pos = pos2 + tag.num + 3;
-		if (tag == "VertexShader")
+		if (tag == "VertexShader") {
 			p.type = GL_VERTEX_SHADER;
-		else if (tag == "FragmentShader")
+		} else if (tag == "FragmentShader") {
 			p.type = GL_FRAGMENT_SHADER;
-		else if (tag == "ComputeShader")
+		} else if (tag == "ComputeShader") {
 			p.type = GL_COMPUTE_SHADER;
-		else if (tag == "TessComputeShader")
+		} else if (tag == "TessControlShader") {
 			p.type = GL_TESS_CONTROL_SHADER;
-		else if (tag == "TessEvaluationShader")
+		} else if (tag == "TessEvaluationShader") {
 			p.type = GL_TESS_EVALUATION_SHADER;
-		else if (tag == "GeometryShader")
+		} else if (tag == "GeometryShader") {
 			p.type = GL_GEOMETRY_SHADER;
-		else {
+		} else if (tag == "Layout") {
+			continue;
+		} else {
 			msg_error("unknown shader tag: '" + tag + "'");
 			continue;
 		}

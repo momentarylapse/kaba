@@ -6,7 +6,6 @@
 |                                                                              |
 | last update: 2008.11.02 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
-
 #if HAS_LIB_GL
 
 #ifndef _NIX_TEXTURES_EXISTS_
@@ -36,13 +35,12 @@ public:
 	bool valid;
 	
 	unsigned int texture;
-	unsigned int frame_buffer;
-	unsigned int depth_render_buffer;
 	unsigned int internal_format;
 
 	Texture();
+	Texture(int width, int height, const string &format);
 	~Texture();
-	void _cdecl __init__();
+	void _cdecl __init__(int width, int height, const string &format);
 	void _cdecl __delete__();
 
 	void _cdecl overwrite(const Image &image);
@@ -51,14 +49,6 @@ public:
 	void _cdecl write_float(Array<float> &data, int nx, int ny, int nz);
 	void _cdecl reload();
 	void _cdecl unload();
-	//void _cdecl set_video_frame(int frame);
-	//void _cdecl video_move(float elapsed);
-};
-
-class DynamicTexture : public Texture {
-public:
-	DynamicTexture(int width, int height);
-	void _cdecl __init__(int width, int height);
 };
 
 class ImageTexture : public Texture {
@@ -67,9 +57,9 @@ public:
 	void _cdecl __init__(int width, int height, const string &format);
 };
 
-class DepthTexture : public Texture {
+class DepthBuffer : public Texture {
 public:
-	DepthTexture(int width, int height);
+	DepthBuffer(int width, int height);
 	void _cdecl __init__(int width, int height);
 };
 
@@ -90,6 +80,7 @@ void _cdecl SetTextures(Array<Texture*> &textures);
 
 extern Array<Texture*> textures;
 extern int tex_cube_level;
+
 
 };
 

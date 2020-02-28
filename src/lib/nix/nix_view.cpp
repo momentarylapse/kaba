@@ -33,6 +33,79 @@ Texture *RenderingToTexture = NULL;
 #endif
 
 
+FrameBuffer *FrameBuffer::DEFAULT = new FrameBuffer();
+
+FrameBuffer::FrameBuffer() {
+	depth_buffer = nullptr;
+	width = height = 0;
+
+	frame_buffer = 0;
+}
+
+FrameBuffer::FrameBuffer(const Array<Texture*> &attachments) {
+
+	for (auto *a: attachments) {
+		if (a->type == a->Type::DEPTH)
+			depth_buffer = (DepthBuffer*)a;
+		else
+			color_attachments.add(a);
+		width = a->width;
+		height = a->height;
+	}
+
+	glGenFramebuffers(1, &frame_buffer);
+	TestGLError("FrameBuffer: glGenFramebuffers");
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	TestGLError("FrameBuffer: glBindFramebuffer");
+
+
+
+	if (depth_buffer) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_buffer->texture, 0);
+		TestGLError("FrameBuffer: glFramebufferTexture2D");
+		glDrawBuffer(GL_NONE);
+		TestGLError("DepthTexture: glDrawBuffer");
+		glReadBuffer(GL_NONE);
+		TestGLError("DepthTexture: glReadBuffer");
+	}
+
+	foreachi (Texture *t, color_attachments, i) {
+
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, t->texture, 0);
+		TestGLError("FrameBuffer: glFramebufferTexture");
+		GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0 + (unsigned)i};
+		glDrawBuffers(1, draw_buffers);
+		TestGLError("FrameBuffer: glDrawBuffers");
+	}
+
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		msg_error("FrameBuffer: framebuffer != complete");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	TestGLError("FrameBuffer: glBindFramebuffer(0)");
+}
+
+FrameBuffer::~FrameBuffer() {
+	glDeleteFramebuffers(1, &frame_buffer);
+}
+
+void FrameBuffer::__init__(const Array<Texture*> &attachments) {
+	new(this) FrameBuffer(attachments);
+}
+
+void FrameBuffer::__delete__() {
+	this->~FrameBuffer();
+}
+
+void BindFrameBuffer(FrameBuffer *fb) {
+	glBindFramebuffer(GL_FRAMEBUFFER, fb->frame_buffer);
+	TestGLError("BindFrameBuffer: glBindFramebuffer()");
+
+	SetViewport(rect(0, fb->width, 0, fb->height));
+}
+
+
 
 matrix create_pixel_projection_matrix() {
 	auto t = matrix::translation(vector(-float(target_width)/2.0f,-float(target_height)/2.0f,-0.5f));
@@ -40,13 +113,13 @@ matrix create_pixel_projection_matrix() {
 	return s * t;
 }
 
-void SetViewport(int width, int height) {
-	target_width = max(width, 1);
-	target_height = max(height, 1);
-	target_rect = rect(0, (float)target_width, 0, (float)target_height);
+void SetViewport(const rect &area) {
+	target_rect = area;
+	target_width = max((int)area.width(), 1);
+	target_height = max((int)area.height(), 1);
 
 	// screen
-	glViewport(0, 0, target_width, target_height);
+	glViewport(area.x1, area.y1, area.width(), area.height());
 	TestGLError("glViewport");
 }
 
@@ -123,9 +196,11 @@ void SetViewMatrix(const matrix &m) {
 	extern bool nixDevNeedsUpdate;
 #endif
 
-bool StartFrame() {
-	return StartFrameIntoTexture(NULL);
-}
+
+#if 0
+//bool StartFrame() {
+//	return StartFrameIntoTexture(NULL);
+//}
 
 bool StartFrameIntoTexture(Texture *texture) {
 	TestGLError("Start prae");
@@ -229,6 +304,7 @@ bool StartFrameIntoTexture(Texture *texture) {
 	TestGLError("Start post");
 	return true;
 }
+#endif
 
 void SetScissor(const rect &_r)
 {
