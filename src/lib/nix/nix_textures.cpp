@@ -462,7 +462,7 @@ void SetTexture(Texture *t)
 	}
 }
 
-void SetTextures(Array<Texture*> &textures)
+void SetTextures(const Array<Texture*> &textures)
 {
 	/*for (int i=0;i<num_textures;i++)
 		if (texture[i] >= 0)

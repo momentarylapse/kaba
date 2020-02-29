@@ -76,7 +76,7 @@ public:
 
 Texture* _cdecl LoadTexture(const string &filename);
 void _cdecl SetTexture(Texture *texture);
-void _cdecl SetTextures(Array<Texture*> &textures);
+void _cdecl SetTextures(const Array<Texture*> &textures);
 
 extern Array<Texture*> textures;
 extern int tex_cube_level;

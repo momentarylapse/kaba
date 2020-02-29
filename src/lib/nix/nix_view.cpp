@@ -43,6 +43,7 @@ FrameBuffer::FrameBuffer() {
 }
 
 FrameBuffer::FrameBuffer(const Array<Texture*> &attachments) {
+	depth_buffer = nullptr;
 
 	for (auto *a: attachments) {
 		if (a->type == a->Type::DEPTH)

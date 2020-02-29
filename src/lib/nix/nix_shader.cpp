@@ -49,7 +49,12 @@ void UniformBuffer::update(void *data, int size) {
 	glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
 }
 
-void NixBindUniform(UniformBuffer *ub, int index) {
+void UniformBuffer::update_array(const DynamicArray &a) {
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+	glBufferData(GL_UNIFORM_BUFFER, a.num * a.element_size, a.data, GL_DYNAMIC_DRAW);
+}
+
+void BindUniform(UniformBuffer *ub, int index) {
 	//glUniformBlockBinding(program, index, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, index, ub->buffer);
 }
@@ -209,22 +214,12 @@ void Shader::find_locations() {
 	for (int i=0; i<NIX_MAX_TEXTURELEVELS; i++)
 		location[LOCATION_TEX + i] = get_location("tex" + i2s(i));
 	location[LOCATION_TEX_CUBE] = get_location("tex_cube");
-	location[LOCATION_CAM_POS] = get_location("CameraPosition");
-	location[LOCATION_CAM_DIR] = get_location("CameraDirection");
 
 	location[LOCATION_MATERIAL_AMBIENT] = get_location("material.ambient");
 	location[LOCATION_MATERIAL_DIFFUSIVE] = get_location("material.diffusive");
 	location[LOCATION_MATERIAL_SPECULAR] = get_location("material.specular");
 	location[LOCATION_MATERIAL_SHININESS] = get_location("material.shininess");
 	location[LOCATION_MATERIAL_EMISSION] = get_location("material.emission");
-
-	location[LOCATION_LIGHT_COLOR] = get_location("light.color");
-	location[LOCATION_LIGHT_HARSHNESS] = get_location("light.harshness");
-	location[LOCATION_LIGHT_POS] = get_location("light.pos");
-	location[LOCATION_LIGHT_RADIUS] = get_location("light.radius");
-
-	location[LOCATION_FOG_COLOR] = get_location("fog.color");
-	location[LOCATION_FOG_DENSITY] = get_location("fog.density");
 }
 
 Shader *Shader::load(const string &filename) {
@@ -251,7 +246,7 @@ Shader *Shader::load(const string &filename) {
 
 		msg_left();
 		return shader;
-	} catch(FileError &e) {
+	} catch(Exception &e) {
 		msg_error(e.message());
 		default_shader_3d->reference_count ++;
 		return default_shader_3d;
@@ -316,8 +311,12 @@ int Shader::get_location(const string &name) {
 	return glGetUniformLocation(program, name.c_str());
 }
 
-int Shader::get_uniform(const string &name) {
-	return glGetUniformBlockIndex(program, name.c_str());
+void Shader::link_uniform_block(const string &name, int binding) {
+	int index = glGetUniformBlockIndex(program, name.c_str());
+	if (index >= 0)
+		glUniformBlockBinding(program, index, binding);
+	else
+		msg_error("shader block not found: " + name);
 }
 
 void Shader::set_data(int location, const float *data, int size) {
@@ -326,10 +325,14 @@ void Shader::set_data(int location, const float *data, int size) {
 	//NixSetShader(this);
 	if (size == sizeof(float)) {
 		glUniform1f(location, *data);
+	} else if (size == sizeof(float)*2) {
+		glUniform2fv(location, 1, data);
 	} else if (size == sizeof(float)*3) {
 		glUniform3fv(location, 1, data);
 	} else if (size == sizeof(float)*4) {
 		glUniform4fv(location, 1, data);
+	} else if (size == sizeof(float)*16) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, (float*)data);
 	}
 	TestGLError("SetShaderData");
 }
@@ -380,15 +383,6 @@ void Shader::set_default_data() {
 	set_color(location[LOCATION_MATERIAL_SPECULAR], material.specular);
 	set_data(location[LOCATION_MATERIAL_SHININESS], &material.shininess, 4);
 	set_color(location[LOCATION_MATERIAL_EMISSION], material.emission);
-
-	set_color(location[LOCATION_LIGHT_COLOR], lights[0].col);
-	set_data(location[LOCATION_LIGHT_HARSHNESS], &lights[0].harshness, 4);
-	vector dir = view_matrix.transform_normal(lights[0].pos);
-	set_data(location[LOCATION_LIGHT_POS], &dir.x, 3*4);
-	set_data(location[LOCATION_LIGHT_RADIUS], &lights[0].radius, 4);
-
-	set_color(location[LOCATION_FOG_COLOR], fog._color);
-	set_data(location[LOCATION_FOG_DENSITY], &fog.density, 4);
 }
 
 void Shader::dispatch(int nx, int ny, int nz) {
@@ -400,6 +394,7 @@ void Shader::dispatch(int nx, int ny, int nz) {
 
 
 void init_shaders() {
+	try{
 
 	default_shader_3d = nix::Shader::create(
 		"<VertexShader>\n"
@@ -422,12 +417,11 @@ void init_shaders() {
 		"</VertexShader>\n"
 		"<FragmentShader>\n"
 		"#version 330 core\n"
-		"struct Fog { vec4 color; float density; };\n"
+		"uniform mat4 mat_v;\n"
 		"struct Material { vec4 ambient, diffusive, specular, emission; float shininess; };\n"
-		"struct Light { vec4 color; vec3 pos; float radius, harshness; };\n"
+		"struct Light { vec4 color; vec4 dir; float radius, harshness; };\n"
 		"uniform Material material;\n"
-		"uniform Light light;\n"
-		"uniform Fog fog;\n"
+		"uniform LightBlock { Light light; };\n"
 		"in vec3 fragmentNormal;\n"
 		"in vec2 fragmentTexCoord;\n"
 		"in vec3 fragmentPos;\n"
@@ -435,7 +429,7 @@ void init_shaders() {
 		"out vec4 color;\n"
 		"void main() {\n"
 		"	vec3 n = normalize(fragmentNormal);\n"
-		"	vec3 l = light.pos;\n"
+		"	vec3 l = (mat_v * vec4(light.dir.xyz, 0)).xyz;\n"
 		"	float d = max(-dot(n, l), 0);\n"
 		"	color = material.emission;\n"
 		"	color += material.ambient * light.color * (1 - light.harshness) / 2;\n"
@@ -448,8 +442,6 @@ void init_shaders() {
 		"		float ee = max(-dot(e, rl), 0);\n"
 		"		color += material.specular * light.color * light.harshness * pow(ee, material.shininess);\n"
 		"	}\n"
-		"	float t = exp(-fragmentPos.z * fog.density);\n"
-		"	color = (1 - t) * fog.color + t * color;\n"
 		"	color.a = material.diffusive.a * tex_col.a;\n"
 		"}\n"
 		"</FragmentShader>");
@@ -490,6 +482,12 @@ void init_shaders() {
 
 	default_shader_3d->reference_count ++;
 	default_shader_2d->reference_count ++;
+	} catch(Exception &e) {
+		msg_error(e.message());
+		throw e;
+	}
+
+	default_shader_3d->link_uniform_block("LightBlock", 0);
 }
 
 };
