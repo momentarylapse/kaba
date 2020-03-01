@@ -1,0 +1,19 @@
+use kaba
+
+void test_super_array(Script p, Class c)
+	if !c.get_func("__init__", void, [])
+		print("MISSING DEFAULT CONSTRUCTOR for {{p.name}}.{{c.long_name()}}")
+	if !c.get_func("__delete__", void, [])
+		print("MISSING DESTRUCTOR for {{p.name}}.{{c.long_name()}}")
+	if !c.get_func("__assign__", void, [&c])
+		print("MISSING ASSIGN for {{p.name}}.{{c.long_name()}}")
+
+void test_class(Script p, Class c)
+	if c.is_super_array()
+		test_super_array(p, c)
+	for cc in c.classes
+		test_class(p, cc)
+void main()
+	for p in packages
+		for c in p.classes()
+			test_class(p, c)

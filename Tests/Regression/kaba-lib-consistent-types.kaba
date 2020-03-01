@@ -1,0 +1,23 @@
+use kaba
+
+void test_class(Script p, Class c)
+	for e in c.elements
+		if e.type == nil
+			print("MISSING: type of element {{p.name}}.{{c.name}}.{{e.name}}")
+	for f in c.functions
+		if !f.return_type
+			print("MISSING: return of {{p.name}}.{{c.name}}.{{f.name}}()")
+		for t,i in f.param_type
+			if !t
+				print("MISSING: param #{{i}} of {{p.name}}.{{c.name}}.{{f.name}}()")
+	for cc in c.classes
+		test_class(p, cc)
+
+
+void main()
+	for p in packages
+		for c,i in p.classes()
+			if !c
+				print("MISSING: class #{{i}} in {{p.name}}")
+				continue
+			test_class(p, c)
