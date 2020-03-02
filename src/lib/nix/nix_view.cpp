@@ -12,8 +12,6 @@
 #ifdef _X_USE_IMAGE_
 #include "../image/image.h"
 #endif
-#include "../hui/Controls/Control.h"
-#include "../hui/Controls/ControlDrawingArea.h"
 
 namespace nix{
 

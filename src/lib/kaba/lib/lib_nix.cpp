@@ -25,6 +25,16 @@ nix::Texture* __LoadTexture(const string &filename) {
 	return nullptr;
 }
 
+nix::Shader* __LoadShader(const string &filename) {
+	KABA_EXCEPTION_WRAPPER(return nix::Shader::load(filename));
+	return nullptr;
+}
+
+nix::Shader* __CreateShader(const string &source) {
+	KABA_EXCEPTION_WRAPPER(return nix::Shader::create(source));
+	return nullptr;
+}
+
 #pragma GCC pop_options
 
 
@@ -57,6 +67,7 @@ const Class *TypeTextureP;
 const Class *TypeTexturePList;
 const Class *TypeImageTexture;
 const Class *TypeDepthBuffer;
+const Class *TypeDepthBufferP;
 const Class *TypeFrameBuffer;
 const Class *TypeFrameBufferP;
 const Class *TypeCubeMap;
@@ -75,6 +86,7 @@ void SIAddPackageNix()
 	TypeTexturePList	= add_type_l(TypeTextureP);
 	TypeImageTexture	= add_type  ("ImageTexture", sizeof(nix::Texture));
 	TypeDepthBuffer		= add_type  ("DepthBuffer", sizeof(nix::Texture));
+	TypeDepthBufferP	= add_type_p(TypeDepthBuffer);
 	TypeFrameBuffer		= add_type  ("FrameBuffer", sizeof(nix::FrameBuffer));
 	TypeFrameBufferP	= add_type_p(TypeFrameBuffer);
 	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
@@ -106,7 +118,7 @@ void SIAddPackageNix()
 			func_add_param("data", TypeFloatList);
 		class_add_func("write_float", TypeVoid, nix_p(mf(&nix::Texture::write_float)));
 			func_add_param("data", TypeFloatList);
-		class_add_func("load", TypeTextureP, nix_p(&__LoadTexture), FLAG_STATIC);
+		class_add_func("load", TypeTextureP, nix_p(&__LoadTexture), ScriptFlag(FLAG_STATIC|FLAG_RAISES_EXCEPTIONS));
 			func_add_param("filename", TypeString);
 		class_add_elementx("width", TypeInt, &nix::Texture::width);
 		class_add_elementx("height", TypeInt, &nix::Texture::height);
@@ -136,6 +148,8 @@ void SIAddPackageNix()
 		class_add_const("DEFAULT", TypeFrameBufferP, nix_p(&nix::FrameBuffer::DEFAULT));
 		class_add_elementx("width", TypeInt, &nix::FrameBuffer::width);
 		class_add_elementx("height", TypeInt, &nix::FrameBuffer::height);
+		class_add_elementx("color_attachments", TypeTexturePList, &nix::FrameBuffer::color_attachments);
+		class_add_elementx("depth_buffer", TypeDepthBufferP, &nix::FrameBuffer::depth_buffer);
 
 	add_class(TypeShader);
 		class_add_func("unref", TypeVoid, nix_p(mf(&nix::Shader::unref)));
@@ -168,9 +182,9 @@ void SIAddPackageNix()
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
-		class_add_func("load", TypeShaderP, nix_p(&nix::Shader::load), FLAG_STATIC);
+		class_add_func("load", TypeShaderP, nix_p(&__LoadShader), ScriptFlag(FLAG_STATIC|FLAG_RAISES_EXCEPTIONS));
 			func_add_param("filename", TypeString);
-		class_add_func("create", TypeShaderP, nix_p(&nix::Shader::create), FLAG_STATIC);
+		class_add_func("create", TypeShaderP, nix_p(&__CreateShader), ScriptFlag(FLAG_STATIC|FLAG_RAISES_EXCEPTIONS));
 			func_add_param("source", TypeString);
 		class_add_const("DEFAULT_3D", TypeShaderP, nix_p(&nix::default_shader_3d));
 		class_add_const("DEFAULT_2D", TypeShaderP, nix_p(&nix::default_shader_2d));
@@ -194,6 +208,8 @@ void SIAddPackageNix()
 		func_add_param("fullscreen",TypeBool);*/
 	add_func("NixBindFrameBuffer", TypeVoid, nix_p(&nix::BindFrameBuffer), FLAG_STATIC);
 		func_add_param("fb", TypeFrameBuffer);
+	add_func("NixSetViewport", TypeVoid, nix_p(&nix::SetViewport), FLAG_STATIC);
+		func_add_param("r", TypeRect);
 //	add_func("NixStartFrame", TypeBool, nix_p(&nix::StartFrame), FLAG_STATIC);
 //	add_func("NixEndFrame", TypeVoid, nix_p(&nix::EndFrame), FLAG_STATIC);
 	//add_func("NixKillWindows", TypeVoid, nix_p(&nix::KillWindows), FLAG_STATIC);
@@ -253,6 +269,8 @@ void SIAddPackageNix()
 		func_add_param("emission", TypeColor);
 	add_func("NixSetTexture", TypeVoid, nix_p(&nix::SetTexture), FLAG_STATIC);
 		func_add_param("t", TypeTexture);
+	add_func("NixSetTextures", TypeVoid, nix_p(&nix::SetTextures), FLAG_STATIC);
+		func_add_param("t", TypeTexturePList);
 	add_func("NixSetShader", TypeVoid, nix_p(&nix::SetShader), FLAG_STATIC);
 		func_add_param("s", TypeShader);
 	add_func("NixBindUniform", TypeVoid, nix_p(mf(&nix::BindUniform)), FLAG_STATIC);
