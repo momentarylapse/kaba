@@ -1,4 +1,4 @@
-use file
+use os
 
 class f extends File
 	void func()
