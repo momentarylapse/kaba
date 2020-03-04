@@ -8,7 +8,6 @@ namespace Kaba{
 
 void test_node_recursion(Node *root, const string &message);
 
-Node *conv_cbr(SyntaxTree *ps, Node *c, Variable *var);
 
 extern bool next_extern;
 extern bool next_static;
@@ -300,13 +299,6 @@ Node *make_fake_constructor(SyntaxTree *tree, const Class *t, Block *block, cons
 }
 
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block, Array<Node*> &params) {
-	// shortcut??? (inlineable)
-	if ((t == TypeVector) or (t == TypeColor) or (t == TypeRect) or (t == TypeComplex)) {
-		for (auto *f: t->functions)
-			if (f->name == "create")
-				return {add_node_call(f)};
-	}
-	
 	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeBool)) and (params.num == 1))
 		return {make_fake_constructor(this, t, block, params[0]->type)};
 	

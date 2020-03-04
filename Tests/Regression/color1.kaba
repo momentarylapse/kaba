@@ -6,8 +6,8 @@ void main()
 	print(e)
 	
 	quaternion q1, q2, q3
-	q1 = quaternion.rotation(vector.EX)
-	q2 = quaternion.rotation(vector.EY)
+	q1 = quaternion(vector.EX)
+	q2 = quaternion(vector.EY)
 	print(q1)
 	print(q2)
 	q3 = q1 * q2
