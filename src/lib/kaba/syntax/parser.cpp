@@ -834,9 +834,9 @@ Node *try_parse_format_string(SyntaxTree *tree, Block *block, Value &v) {
 			
 		string xx = s.substr(p0+2, p1 - p0 - 2);
 
-		// "...:format" ?
+		// "expr|format" ?
 		string fmt;
-		int pp = xx.find(":");
+		int pp = xx.find("|");
 		if (pp >= 0) {
 			fmt = xx.substr(pp + 1, -1);
 			xx = xx.head(pp);
