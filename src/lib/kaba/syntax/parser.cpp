@@ -13,8 +13,10 @@ extern bool next_extern;
 extern bool next_static;
 extern bool next_const;
 
-extern const Class *TypeEmptyList;
+extern const Class *TypeAbstractList;
+extern const Class *TypeIntList;
 extern const Class *TypeAnyList;
+extern const Class *TypeDynamicArray;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -686,25 +688,8 @@ Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, const Array<Node*> &
 	return operand;
 }
 
-Node *build_list(SyntaxTree *ps, Array<Node*> &el) {
-	if (el.num == 0) {
-		//ps->do_error("empty arrays not supported yet");
-		auto c = ps->add_constant(TypeEmptyList);
-		return ps->add_node_const(c);
-	}
-	const Class *t = ps->make_class_super_array(el[0]->type);
-	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, t);
-	c->set_num_params(el.num);
-	for (int i=0; i<el.num; i++) {
-		if (el[i]->type != el[0]->type)
-			ps->do_error(format("inhomogenous array types %s/%s", el[i]->type->long_name().c_str(), el[0]->type->long_name().c_str()));
-		c->set_param(i, el[i]);
-	}
-	return c;
-}
-
 Node *build_abstract_list(SyntaxTree *ps, Array<Node*> &el) {
-	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeUnknown);
+	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeAbstractList);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -1050,13 +1035,17 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 			return true;
 		}
 	}
-	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
+	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeAbstractList) {
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
 			int pen, c;
 			for (auto *e: node->params)
 				if (!type_match_with_cast(e, false, t, pen, c))
 					return false;
+			cast = TYPE_CAST_ABSTRACT_LIST;
+			return true;
+		}
+		if (wanted == TypeDynamicArray) {
 			cast = TYPE_CAST_ABSTRACT_LIST;
 			return true;
 		}
@@ -1104,6 +1093,8 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *node, const Class *wanted) {
 		return node;
 	}
 	if (tc == TYPE_CAST_ABSTRACT_LIST) {
+		if (wanted == TypeDynamicArray)
+			return force_concrete_type(ps, node);
 		int pen, c;
 		foreachi (auto *e, node->params, i) {
 			if (!type_match_with_cast(e, false, wanted->get_array_element(), pen, c)) {
@@ -1748,6 +1739,7 @@ Node *SyntaxTree::parse_single_func_param(Block *block) {
 Node *SyntaxTree::parse_statement_sizeof(Block *block) {
 	Exp.next(); // sizeof
 	Node* sub = parse_single_func_param(block);
+	sub = force_concrete_type(this, sub);
 	Node *c;
 
 	if (sub->kind == NodeKind::CLASS) {
@@ -1763,6 +1755,7 @@ Node *SyntaxTree::parse_statement_sizeof(Block *block) {
 Node *SyntaxTree::parse_statement_type(Block *block) {
 	Exp.next(); // type
 	Node* sub = parse_single_func_param(block);
+	sub = force_concrete_type(this, sub);
 
 	Node *c = add_node_const(add_constant(TypeClassP));
 
@@ -1818,12 +1811,12 @@ void force_concrete_types(SyntaxTree *tree, Array<Node*> &nodes) {
 }
 
 Node *force_concrete_type(SyntaxTree *tree, Node *node) {
-	if (node->type != TypeUnknown)
+	if (node->type != TypeAbstractList)
 		return node;
 
 	if (node->kind == NodeKind::ARRAY_BUILDER) {
 		if (node->params.num == 0) {
-			node->type = TypeEmptyList;
+			node->type = TypeIntList;
 			return node;
 		}
 
@@ -2030,7 +2023,7 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 }
 
 Node *make_dynamical(SyntaxTree *tree, Node *node) {
-	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeUnknown) {
+	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeAbstractList) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = make_dynamical(tree, node->params[i]);
 		// TODO create...
