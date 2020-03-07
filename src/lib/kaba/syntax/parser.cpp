@@ -2561,7 +2561,7 @@ bool peek_commands_super(ExpressionBuffer &Exp) {
 	return false;
 }
 
-bool SyntaxTree::parse_function_command(Function *f, ExpressionBuffer::Line *this_line) {
+bool SyntaxTree::parse_function_command(Function *f, int indent0) {
 	if (Exp.end_of_file())
 		return false;
 
@@ -2573,7 +2573,7 @@ bool SyntaxTree::parse_function_command(Function *f, ExpressionBuffer::Line *thi
 		return false;
 
 	// end of function
-	if (Exp.cur_line->indent <= this_line->indent)
+	if (Exp.cur_line->indent <= indent0)
 		return false;
 
 	// command or local definition
@@ -2709,13 +2709,13 @@ void SyntaxTree::skip_parsing_function_body() {
 void SyntaxTree::parse_function_body(Function *f) {
 	Exp.cur_line = &Exp.line[f->_logical_line_no];
 
-	ExpressionBuffer::Line *this_line = Exp.cur_line;
+	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
 
 	// auto implement constructor?
 	if (f->name == IDENTIFIER_FUNC_INIT) {
 		if (peek_commands_super(Exp)) {
-			more_to_parse = parse_function_command(f, this_line);
+			more_to_parse = parse_function_command(f, indent0);
 
 			auto_implement_constructor(f, f->name_space, false);
 		} else {
@@ -2727,7 +2727,7 @@ void SyntaxTree::parse_function_body(Function *f) {
 
 // instructions
 	while (more_to_parse) {
-		more_to_parse = parse_function_command(f, this_line);
+		more_to_parse = parse_function_command(f, indent0);
 	}
 
 	// auto implement destructor?

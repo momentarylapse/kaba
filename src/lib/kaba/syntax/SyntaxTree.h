@@ -83,7 +83,7 @@ public:
 	Function *parse_function_header(Class *name_space, bool as_extern, bool as_static, bool as_virtual, bool override);
 	void skip_parsing_function_body();
 	void parse_function_body(Function *f);
-	bool parse_function_command(Function *f, ExpressionBuffer::Line *this_line);
+	bool parse_function_command(Function *f, int indent0);
 	const Class *parse_type(const Class *ns);
 	void parse_variable_def(bool single, Block *block);
 	void parse_global_const(const string &name, const Class *type);
