@@ -14,21 +14,29 @@ extern bool next_static;
 extern bool next_const;
 
 extern const Class *TypeEmptyList;
+extern const Class *TypeAnyList;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
 const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
+const int TYPE_CAST_ABSTRACT_LIST = -20;
 
 bool type_match(const Class *given, const Class *wanted);
-bool type_match_with_cast(const Class *type, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
+bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
 //Node exlink_make_func_class(SyntaxTree *ps, Function *f, ClassFunction &cf);
 
-Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param);
-Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts);
+Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param, const Class *wanted);
+Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, const Array<Node*> &params, const Array<int> &casts, const Array<const Class*> &wanted);
 bool direct_param_match(SyntaxTree *ps, Node *operand, Array<Node*> &params);
-bool param_match_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts);
+bool param_match_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts, Array<const Class*> &wanted);
 Node *apply_params_direct(SyntaxTree *ps, Node *operand, Array<Node*> &params);
+Node *force_concrete_type(SyntaxTree *tree, Node *node);
+void force_concrete_types(SyntaxTree *tree, Array<Node*> &nodes);
+
+Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2);
+Node *link_special_operator_in(SyntaxTree *tree, Node *param1, Node *param2);
+Node *make_dynamical(SyntaxTree *tree, Node *node);
 
 
 int64 s2i2(const string &str) {
@@ -89,11 +97,6 @@ const Class *SyntaxTree::get_constant_type(const string &str) {
 			if ((s2i2(str) >= 0x80000000) or (-s2i2(str) > 0x80000000))
 				type = TypeInt64;
 		}
-	}
-
-	// super array [...]
-	if (str == "[") {
-		do_error("super array constant");
 	}
 	return type;
 }
@@ -385,11 +388,12 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 	// advanced match...
 	for (Node *operand: links) {
 		Array<int> casts;
-		if (!param_match_with_cast(this, operand, params, casts))
+		Array<const Class*> wanted;
+		if (!param_match_with_cast(this, operand, params, casts, wanted))
 			continue;
 
 		clear_nodes(links, operand);
-		return apply_params_with_cast(this, operand, params, casts);
+		return apply_params_with_cast(this, operand, params, casts, wanted);
 	}
 
 
@@ -612,8 +616,8 @@ Node *SyntaxTree::check_param_link(Node *link, const Class *wanted, const string
 		// normal type cast
 		int pen, tc;
 
-		if (type_match_with_cast(given, false, wanted, pen, tc))
-			return apply_type_cast(this, tc, link);
+		if (type_match_with_cast(link, false, wanted, pen, tc))
+			return apply_type_cast(this, tc, link, wanted);
 
 		Exp.rewind();
 		do_error(format("parameter %d in command \"%s\" has type %s, %s expected", param_no + 1, f_name.c_str(), given->long_name().c_str(), wanted->long_name().c_str()));
@@ -631,14 +635,14 @@ bool direct_param_match(SyntaxTree *ps, Node *operand, Array<Node*> &params) {
 	return true;
 }
 
-bool param_match_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts) {
-	auto wanted_types = ps->get_wanted_param_types(operand);
-	if (wanted_types.num != params.num)
+bool param_match_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts, Array<const Class*> &wanted) {
+	wanted = ps->get_wanted_param_types(operand);
+	if (wanted.num != params.num)
 		return false;
 	casts.resize(params.num);
 	for (int p=0; p<params.num; p++) {
 		int penalty;
-		if (!type_match_with_cast(params[p]->type, false, wanted_types[p], penalty, casts[p]))
+		if (!type_match_with_cast(params[p], false, wanted[p], penalty, casts[p]))
 			return false;
 	}
 	return true;
@@ -666,13 +670,13 @@ Node *apply_params_direct(SyntaxTree *ps, Node *operand, Array<Node*> &params) {
 	return operand;
 }
 
-Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, Array<Node*> &params, Array<int> &casts) {
+Node *apply_params_with_cast(SyntaxTree *ps, Node *operand, const Array<Node*> &params, const Array<int> &casts, const Array<const Class*> &wanted) {
 	int offset = 0;
 	if (node_is_member_function_with_instance(operand))
 		offset = 1;
 	for (int p=0; p<params.num; p++) {
-		params[p] = apply_type_cast(ps, casts[p], params[p]);
-		operand->set_param(p + offset, params[p]);
+		auto pp = apply_type_cast(ps, casts[p], params[p], wanted[p]);
+		operand->set_param(p + offset, pp);
 	}
 	return operand;
 }
@@ -691,6 +695,14 @@ Node *build_list(SyntaxTree *ps, Array<Node*> &el) {
 			ps->do_error(format("inhomogenous array types %s/%s", el[i]->type->long_name().c_str(), el[0]->type->long_name().c_str()));
 		c->set_param(i, el[i]);
 	}
+	return c;
+}
+
+Node *build_abstract_list(SyntaxTree *ps, Array<Node*> &el) {
+	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeUnknown);
+	c->set_num_params(el.num);
+	for (int i=0; i<el.num; i++)
+		c->set_param(i, el[i]);
 	return c;
 }
 
@@ -715,19 +727,21 @@ Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Bloc
 		int pen2 = 0;
 		int c2 = -1, c2_best = -1;
 		int pen_min = 100;
+		const Class *t_best = nullptr;
 		for (auto *_op: operators)
 			if (po == _op->primitive)
-				if ((!_op->param_type_1) and (type_match_with_cast(p2, false, _op->param_type_2, pen2, c2))) {
+				if ((!_op->param_type_1) and (type_match_with_cast(operand, false, _op->param_type_2, pen2, c2))) {
 					ok = true;
 					if (pen2 < pen_min) {
 						op = _op;
 						pen_min = pen2;
 						c2_best = c2;
+						t_best = _op->param_type_2;
 					}
 			}
 		// cast
 		if (ok) {
-			operand = apply_type_cast(this, c2_best, operand);
+			operand = apply_type_cast(this, c2_best, operand, t_best);
 		}
 	}
 
@@ -933,7 +947,7 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 					break;
 				Exp.next();
 			}
-			operands = {build_list(this, el)};
+			operands = {build_abstract_list(this, el)};
 			Exp.next();
 		}
 	} else {
@@ -1006,8 +1020,9 @@ Node *SyntaxTree::parse_primitive_operator(Block *block) {
 }*/
 
 
-bool type_match_with_cast(const Class *given, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
+bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
 	penalty = 0;
+	auto given = node->type;
 	cast = TYPE_CAST_NONE;
 	if (type_match(given, wanted))
 		return true;
@@ -1030,6 +1045,15 @@ bool type_match_with_cast(const Class *given, bool is_modifiable, const Class *w
 			return true;
 		}
 	}
+	if (wanted->is_super_array() and given == TypeUnknown) {
+		auto t = wanted->get_array_element();
+		int pen, c;
+		for (auto *e: node->params)
+			if (!type_match_with_cast(e, false, t, pen, c))
+				return false;
+		cast = TYPE_CAST_ABSTRACT_LIST;
+		return true;
+	}
 	if (wanted == TypeString) {
 		Function *cf = given->get_func("str", TypeString, {});
 		if (cf) {
@@ -1038,33 +1062,44 @@ bool type_match_with_cast(const Class *given, bool is_modifiable, const Class *w
 			return true;
 		}
 	}
-	for (int i=0;i<TypeCasts.num;i++)
-		if ((type_match(given, TypeCasts[i].source)) and (type_match(TypeCasts[i].dest, wanted))) { // type_match()?
-			penalty = TypeCasts[i].penalty;
+	foreachi(auto &c, TypeCasts, i)
+		if ((type_match(given, c.source)) and (type_match(c.dest, wanted))) {
+			penalty = c.penalty;
 			cast = i;
 			return true;
 		}
 	return false;
 }
 
-Node *apply_type_cast(SyntaxTree *ps, int tc, Node *param) {
+Node *apply_type_cast(SyntaxTree *ps, int tc, Node *node, const Class *wanted) {
 	if (tc == TYPE_CAST_NONE)
-		return param;
+		return node;
 	if (tc == TYPE_CAST_DEREFERENCE)
-		return ps->deref_node(param);
+		return ps->deref_node(node);
 	if (tc == TYPE_CAST_REFERENCE)
-		return ps->ref_node(param);
+		return ps->ref_node(node);
 	if (tc == TYPE_CAST_OWN_STRING) {
-		Function *cf = param->type->get_func("str", TypeString, {});
+		Function *cf = node->type->get_func("str", TypeString, {});
 		if (cf)
-			return ps->add_node_member_call(cf, param);
+			return ps->add_node_member_call(cf, node);
 		ps->do_error("automatic .str() not implemented yet");
-		return param;
+		return node;
+	}
+	if (tc == TYPE_CAST_ABSTRACT_LIST) {
+		int pen, c;
+		foreachi (auto *e, node->params, i) {
+			if (!type_match_with_cast(e, false, wanted->get_array_element(), pen, c)) {
+				ps->do_error("nope????");
+			}
+			node->params[i] = apply_type_cast(ps, c, e, wanted->get_array_element());
+		}
+		node->type = wanted;
+		return node;
 	}
 	
 	Node *c = ps->add_node_call(TypeCasts[tc].f);
 	c->type = TypeCasts[tc].dest;
-	c->set_param(0, param);
+	c->set_param(0, node);
 	return c;
 }
 
@@ -1093,6 +1128,7 @@ Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2) {
 }
 
 Node *link_special_operator_in(SyntaxTree *tree, Node *param1, Node *param2) {
+	param2 = force_concrete_type(tree, param2);
 	auto *f = param2->type->get_func("__contains__", TypeBool, {param1->type});
 	if (!f)
 		tree->do_error("no __contains__() for " + param2->type->long_name());
@@ -1162,31 +1198,35 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 	int pen1 = 0, pen2 = 0;
 	int c1 = TYPE_CAST_NONE, c2 = TYPE_CAST_NONE;
 	int c1_best = TYPE_CAST_NONE, c2_best = TYPE_CAST_NONE;
+	const Class *t1_best = nullptr, *t2_best = nullptr;
 	int pen_min = 2000;
 	Operator *op_found = nullptr;
 	Function *op_cf_found = nullptr;
 	for (auto *op: operators)
 		if (primop == op->primitive)
-			if (type_match_with_cast(p1, left_modifiable, op->param_type_1, pen1, c1) and type_match_with_cast(p2, false, op->param_type_2, pen2, c2))
+			if (type_match_with_cast(param1, left_modifiable, op->param_type_1, pen1, c1) and type_match_with_cast(param2, false, op->param_type_2, pen2, c2))
 				if (pen1 + pen2 < pen_min) {
 					op_found = op;
 					pen_min = pen1 + pen2;
 					c1_best = c1;
 					c2_best = c2;
+					t1_best = op->param_type_1;
+					t2_best = op->param_type_2;
 				}
 	for (auto *cf: p1->functions)
 		if (cf->name == op_func_name)
-			if (type_match_with_cast(p2, false, cf->literal_param_type[0], pen2, c2))
+			if (type_match_with_cast(param2, false, cf->literal_param_type[0], pen2, c2))
 				if (pen2 < pen_min) {
 					op_cf_found = cf;
 					pen_min = pen2;
 					c1_best = -1;
 					c2_best = c2;
+					t2_best = cf->literal_param_type[0];
 				}
 	// cast
 	if (op_found or op_cf_found) {
-		param1 = apply_type_cast(this, c1_best, param1);
-		param2 = apply_type_cast(this, c2_best, param2);
+		param1 = apply_type_cast(this, c1_best, param1, t1_best);
+		param2 = apply_type_cast(this, c2_best, param2, t2_best);
 		if (op_cf_found) {
 			op = add_node_member_call(op_cf_found, param1);
 			op->set_param(1, param2);
@@ -1200,6 +1240,8 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 }
 
 void SyntaxTree::link_most_important_operator(Array<Node*> &operands, Array<Node*> &_operators, Array<int> &op_exp) {
+	//force_concrete_types(this, operands);
+
 // find the most important operator (mio)
 	int mio = 0;
 	for (int i=0;i<_operators.num;i++) {
@@ -1248,7 +1290,7 @@ Node *SyntaxTree::parse_command(Block *block, Node *first_operand) {
 
 
 	// in each step remove/link the most important operator
-	while(operators.num > 0)
+	while (operators.num > 0)
 		link_most_important_operator(operands, operators, op_exp);
 
 	// complete command is now collected in operand[0]
@@ -1281,8 +1323,9 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 		do_error("\"in\" expected after variable in for");
 	Exp.next();
 
-	// first value
+	// first value/array
 	Node *val0 = parse_command(block);
+	val0 = force_concrete_type(this, val0);
 
 
 	if (Exp.cur == ":") {
@@ -1698,6 +1741,7 @@ Node *SyntaxTree::parse_statement_type(Block *block) {
 Node *SyntaxTree::parse_statement_len(Block *block) {
 	Exp.next(); // len
 	Node *sub = parse_single_func_param(block);
+	sub = force_concrete_type(this, sub);
 
 	// array?
 	if (sub->type->is_array()) {
@@ -1721,7 +1765,55 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	return nullptr;
 }
 
+const Class *type_more_abstract(const Class *a, const Class *b) {
+	if (a == b)
+		return a;
+	if (a == TypeInt and b == TypeFloat32)
+		return TypeFloat32;
+	if (a == TypeFloat32 and b == TypeInt)
+		return TypeFloat32;
+	return nullptr;
+}
+
+void force_concrete_types(SyntaxTree *tree, Array<Node*> &nodes) {
+	for (int i=0; i<nodes.num; i++)
+		nodes[i] = force_concrete_type(tree, nodes[i]);
+}
+
+Node *force_concrete_type(SyntaxTree *tree, Node *node) {
+	if (node->type != TypeUnknown)
+		return node;
+
+	if (node->kind == NodeKind::ARRAY_BUILDER) {
+		if (node->params.num == 0) {
+			node->type = TypeEmptyList;
+			return node;
+		}
+
+		force_concrete_types(tree, node->params);
+
+		auto t = node->params[0]->type;
+		for (int i=1; i<node->params.num; i++)
+			t = type_more_abstract(t, node->params[i]->type);
+		if (!t)
+			tree->do_error("inhomogeneous abstract array");
+
+		for (int i=0; i<node->params.num; i++) {
+			int pen, tc;
+			type_match_with_cast(node->params[i], false, t, pen, tc);
+			node->params[i] = apply_type_cast(tree, tc, node->params[i], t);
+		}
+
+		node->type = tree->make_class_super_array(t);
+		return node;
+	}
+	tree->do_error("unhandled abstract type...");
+	return node;
+}
+
+
 Node *SyntaxTree::add_converter_str(Node *sub, bool repr) {
+	sub = force_concrete_type(this, sub);
 	
 	auto *t = sub->type;
 
@@ -1774,6 +1866,7 @@ Node *SyntaxTree::parse_statement_let(Block *block) {
 	Exp.next();
 
 	auto* rhs = parse_command(block);
+	rhs = force_concrete_type(this, rhs);
 	auto *var = block->add_var(name, rhs->type);
 	auto cmd = link_operator_id(OperatorID::ASSIGN, add_node_local(var), rhs);
 	if (!cmd)
@@ -1797,6 +1890,7 @@ Node *SyntaxTree::parse_statement_map(Block *block) {
 		do_error("map() expects 2 parameters");
 	if (params[0]->kind != NodeKind::FUNCTION)
 		do_error("map(): first parameter must be a function name");
+	params[1] = force_concrete_type(this, params[1]);
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
 
@@ -1881,6 +1975,7 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	auto params = parse_call_parameters(block);
 	if (params.num != 2)
 		do_error("sorted() expects 2 parameters");
+	params[0] = force_concrete_type(this, params[0]);
 	if (!params[0]->type->is_super_array())
 		do_error("sorted(): first parameter must be a list[]");
 	if (params[1]->type != TypeString)
@@ -1897,19 +1992,33 @@ Node *SyntaxTree::parse_statement_sorted(Block *block) {
 	return cmd;
 }
 
+Node *make_dynamical(SyntaxTree *tree, Node *node) {
+	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeUnknown) {
+		for (int i=0; i<node->params.num; i++)
+			node->params[i] = make_dynamical(tree, node->params[i]);
+		// TODO create...
+		node->type = TypeAnyList;
+		//return node;
+	}
+	//node = force_concrete_type(tree, node);
+
+	auto *c = tree->add_constant_pointer(TypeClassP, node->type);
+
+	Array<Node*> links = tree->get_existence("@dyn", nullptr, nullptr, false);
+	Function *f = links[0]->as_func();
+
+	Node *cmd = tree->add_node_call(f);
+	cmd->set_param(0, tree->ref_node(node));
+	cmd->set_param(1, tree->add_node_const(c));
+	return cmd;
+}
+
 Node *SyntaxTree::parse_statement_dyn(Block *block) {
 	Exp.next(); // dyn
 	Node *sub = parse_single_func_param(block);
+	//sub = force_concrete_type(this, sub); // TODO
 
-	auto *c = add_constant_pointer(TypeClassP, sub->type);
-
-	Array<Node*> links = get_existence("@dyn", nullptr, nullptr, false);
-	Function *f = links[0]->as_func();
-
-	Node *cmd = add_node_call(f);
-	cmd->set_param(0, ref_node(sub));
-	cmd->set_param(1, add_node_const(c));
-	return cmd;
+	return make_dynamical(this, sub);
 }
 
 Node *SyntaxTree::parse_statement(Block *block) {
@@ -2336,6 +2445,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type) {
 
 	// find const value
 	Node *cv = parse_command(root_of_all_evil->block);
+	cv = force_concrete_type(this, cv);
 	cv = transform_node(cv, [&](Node *n) { return conv_eval_const_func(n); });
 
 	if ((cv->kind != NodeKind::CONSTANT) or (cv->type != type))

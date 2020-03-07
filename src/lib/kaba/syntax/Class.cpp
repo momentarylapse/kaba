@@ -7,6 +7,7 @@ namespace Kaba{
 
 extern const Class* TypeObject;
 extern const Class* TypeEmptyList;
+extern const Class* TypeAbstractList;
 
 ClassElement::ClassElement() {
 	offset = 0;

@@ -30,7 +30,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.14.1";
+string LibVersion = "0.17.15.0";
 
 
 const string IDENTIFIER_CLASS = "class";
@@ -126,14 +126,14 @@ const Class *TypeFloat;
 const Class *TypeFloat32;
 const Class *TypeFloat64;
 const Class *TypeChar;
-const Class *TypeString;
+const Class *TypeString = nullptr;
 const Class *TypeCString;
 
 const Class *TypeVector;
 const Class *TypeRect;
 const Class *TypeColor;
 const Class *TypeQuaternion;
-const Class *TypeAny;
+const Class *TypeAny = nullptr;
 const Class *TypeAnyList;
 const Class *TypeAnyDict;
  // internal:
@@ -570,7 +570,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 	sub->return_type = t;
 
 	// FIXME  wrong for complicated classes
-	if (p->is_simple_class()){
+	if (p->is_simple_class()) {
 		if (!p->uses_call_by_reference()){
 			if (p->is_pointer()){
 				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<void*>::__init__);
@@ -626,7 +626,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 			func_add_param("index", TypeInt);
 		class_add_funcx("resize", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("num", TypeInt);
-	}else if (p == TypeString){
+	}else if (p == TypeString or p == TypeAny){
 		// handled manually later...
 	}else{
 		msg_error("evil class:  " + t->name);
