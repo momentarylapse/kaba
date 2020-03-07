@@ -30,7 +30,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.17.15.0";
+string LibVersion = "0.18.0.0";
 
 
 const string IDENTIFIER_CLASS = "class";

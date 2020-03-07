@@ -21,6 +21,7 @@ const int TYPE_CAST_DEREFERENCE = -2;
 const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
+const int TYPE_CAST_CLASSIFY = -30;
 
 bool type_match(const Class *given, const Class *wanted);
 bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
@@ -37,6 +38,7 @@ void force_concrete_types(SyntaxTree *tree, Array<Node*> &nodes);
 Node *link_special_operator_is(SyntaxTree *tree, Node *param1, Node *param2);
 Node *link_special_operator_in(SyntaxTree *tree, Node *param1, Node *param2);
 Node *make_dynamical(SyntaxTree *tree, Node *node);
+Array<const Class*> type_list_from_nodes(SyntaxTree *tree, const Array<Node*> &nn);
 
 
 int64 s2i2(const string &str) {
@@ -301,6 +303,14 @@ Node *make_fake_constructor(SyntaxTree *tree, const Class *t, Block *block, cons
 	return tree->add_node_member_call(cf, dummy); // temp var added later...
 }
 
+Node *add_node_constructor(SyntaxTree *tree, Function *f) {
+	auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
+	Node *n = tree->add_node_member_call(f, dummy); // temp var added later...
+	n->kind = NodeKind::CONSTRUCTOR_AS_FUNCTION;
+	n->type = f->name_space;
+	return n;
+}
+
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block, Array<Node*> &params) {
 	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeBool)) and (params.num == 1))
 		return {make_fake_constructor(this, t, block, params[0]->type)};
@@ -310,20 +320,15 @@ Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block, 
 	//vv->explicitly_constructed = true;
 	//Node *dummy = add_node_local(vv);
 	Array<Node*> links;
-	for (auto *cf: t->get_constructors()) {
-		auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
-		Node *n = add_node_member_call(cf, dummy); // temp var added later...
-		n->kind = NodeKind::CONSTRUCTOR_AS_FUNCTION;
-		n->type = t;
-		links.add(n);
-	}
+	for (auto *cf: t->get_constructors())
+		links.add(add_node_constructor(this, cf));
 	return links;
 }
 
-Array<const Class*> type_list_from_nodes(const Array<Node*> &nn) {
+Array<const Class*> type_list_from_nodes(SyntaxTree *tree, const Array<Node*> &nn) {
 	Array<const Class*> t;
 	for (auto *n: nn)
-		t.add(n->type);
+		t.add(force_concrete_type(tree, n)->type);
 	return t;
 }
 
@@ -402,7 +407,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 	if (links.num == 0)
 		do_error("can not call ...");
 
-	string found = type_list_to_str(type_list_from_nodes(params));
+	string found = type_list_to_str(type_list_from_nodes(this, params));
 	string available;
 	for (Node *link: links) {
 		auto p = get_wanted_param_types(link);
@@ -1045,14 +1050,27 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 			return true;
 		}
 	}
-	if (wanted->is_super_array() and given == TypeUnknown) {
-		auto t = wanted->get_array_element();
-		int pen, c;
-		for (auto *e: node->params)
-			if (!type_match_with_cast(e, false, t, pen, c))
-				return false;
-		cast = TYPE_CAST_ABSTRACT_LIST;
-		return true;
+	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
+		if (wanted->is_super_array()) {
+			auto t = wanted->get_array_element();
+			int pen, c;
+			for (auto *e: node->params)
+				if (!type_match_with_cast(e, false, t, pen, c))
+					return false;
+			cast = TYPE_CAST_ABSTRACT_LIST;
+			return true;
+		}
+		for (auto *f: wanted->get_constructors()) {
+			if (f->literal_param_type.num != node->params.num)
+				continue;
+
+			int pen, c;
+			foreachi (auto *e, node->params, i)
+				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c))
+					return false;
+			cast = TYPE_CAST_CLASSIFY;
+			return true;
+		}
 	}
 	if (wanted == TypeString) {
 		Function *cf = given->get_func("str", TypeString, {});
@@ -1095,6 +1113,25 @@ Node *apply_type_cast(SyntaxTree *ps, int tc, Node *node, const Class *wanted) {
 		}
 		node->type = wanted;
 		return node;
+	}
+
+	if (tc == TYPE_CAST_CLASSIFY) {
+		Array<int> c;
+		c.resize(node->params.num);
+		for (auto *f: wanted->get_constructors()) {
+			if (f->literal_param_type.num != node->params.num)
+				continue;
+			int pen;
+			bool ok = true;
+			foreachi (auto *e, node->params, i)
+				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c[i]))
+					ok = false;
+			if (!ok)
+				continue;
+			auto cmd = add_node_constructor(ps, f);
+			return apply_params_with_cast(ps, cmd, node->params, c, f->literal_param_type);
+		}
+		ps->do_error("classify...");
 	}
 	
 	Node *c = ps->add_node_call(TypeCasts[tc].f);
