@@ -30,7 +30,7 @@
 
 namespace Kaba{
 
-string LibVersion = "0.18.0.0";
+string LibVersion = "0.18.1.0";
 
 
 const string IDENTIFIER_CLASS = "class";
@@ -274,19 +274,19 @@ const Class *add_type_d(const Class *sub_type, const string &_name) {
 //   without type information ("primitive")
 
 PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
-	{"=",  OperatorID::ASSIGN,        true,  1, IDENTIFIER_FUNC_ASSIGN, 3, false},
+	{"=",  OperatorID::ASSIGN,        true,  0, IDENTIFIER_FUNC_ASSIGN, 3, false},
 	{"+",  OperatorID::ADD,           false, 11, "__add__", 3, false},
 	{"-",  OperatorID::SUBTRACT,      false, 11, "__sub__", 3, false},
 	{"*",  OperatorID::MULTIPLY,      false, 12, "__mul__", 3, false},
 	{"/",  OperatorID::DIVIDE,        false, 12, "__div__", 3, false},
 	{"-",  OperatorID::NEGATIVE,      false, 13, "__neg__", 2, false}, // -1 etc
-	{"+=", OperatorID::ADDS,          true,  1,  "__iadd__", 3, false},
-	{"-=", OperatorID::SUBTRACTS,     true,  1,  "__isub__", 3, false},
-	{"*=", OperatorID::MULTIPLYS,     true,  1,  "__imul__", 3, false},
-	{"/=", OperatorID::DIVIDES,       true,  1,  "__idiv__", 3, false},
+	{"+=", OperatorID::ADDS,          true,  0,  "__iadd__", 3, false},
+	{"-=", OperatorID::SUBTRACTS,     true,  0,  "__isub__", 3, false},
+	{"*=", OperatorID::MULTIPLYS,     true,  0,  "__imul__", 3, false},
+	{"/=", OperatorID::DIVIDES,       true,  0,  "__idiv__", 3, false},
 	{"==", OperatorID::EQUAL,         false, 8,  "__eq__", 3, false},
 	{"!=", OperatorID::NOTEQUAL,      false, 8,  "__ne__", 3, false},
-	{"!",  OperatorID::NEGATE,        false, 2,  "__not__", 2, false},
+	{IDENTIFIER_NOT,OperatorID::NEGATE,        false, 2,  "__not__", 2, false},
 	{"<",  OperatorID::SMALLER,       false, 9,  "__lt__", 3, false},
 	{">",  OperatorID::GREATER,       false, 9,  "__gt__", 3, false},
 	{"<=", OperatorID::SMALLER_EQUAL, false, 9,  "__le__", 3, false},
@@ -303,7 +303,11 @@ PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
 	{IDENTIFIER_IS, OperatorID::IS,   false, 2,  "-none-", 3, false},
 	{IDENTIFIER_IN, OperatorID::IN,   false, 12, "__contains__", 3, true}, // INVERTED
 	{IDENTIFIER_EXTENDS, OperatorID::EXTENDS, false, 2,  "-none-", 3, false},
-	{"^",  OperatorID::EXPONENT,      false, 14,  "__exp__", 3, false}
+	{"^",  OperatorID::EXPONENT,      false, 14,  "__exp__", 3, false},
+	{",",  OperatorID::COMMA,      false, 1,  "-none-", 3, false},
+	{"*",  OperatorID::DEREFERENCE,      false, 15,  "__get__", 2, false},
+	{"&",  OperatorID::REFERENCE,      false, 15,  "-none-", 2, false},
+	{"[...]",  OperatorID::ARRAY,      false, 16,  "-none-", 3, false}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
