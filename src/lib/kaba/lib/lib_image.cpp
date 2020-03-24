@@ -63,6 +63,9 @@ void SIAddPackageImage() {
 		class_add_funcx("get_pixel", TypeColor, &Image::get_pixel);
 			func_add_param("x", TypeInt);
 			func_add_param("y", TypeInt);
+		class_add_funcx("get_pixel_smooth", TypeColor, &Image::get_pixel_interpolated);
+			func_add_param("x", TypeFloat32);
+			func_add_param("y", TypeFloat32);
 		class_add_funcx("clear", TypeVoid, &Image::clear);
 		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &Image::__assign__);
 			func_add_param("other", TypeImage);
