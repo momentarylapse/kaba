@@ -94,6 +94,19 @@ public:
 	}
 };
 
+string i2s_zero_padded(int i, int n) {
+	string s = i2s(i);
+	while (s.num < n)
+		s = "0" + s;
+	return s;
+}
+
+string kaba_int_format(int i, const string &fmt) {
+	if (fmt.head(1) == "0" and fmt.num >= 2)
+		return i2s_zero_padded(i, fmt[1] - 48);
+	return i2s(i);
+}
+
 string kaba_float2str(float f) {
 	return f2s(f, 6);
 }
@@ -450,6 +463,8 @@ void SIAddPackageBase() {
 
 	add_class(TypeInt);
 		class_add_funcx("str", TypeString, &i2s, FLAG_PURE);
+		class_add_funcx("format", TypeString, &kaba_int_format, FLAG_PURE);
+			func_add_param("fmt", TypeString);
 		class_add_funcx("float", TypeFloat32, &_Int2Float, FLAG_PURE);
 			func_set_inline(InlineID::INT_TO_FLOAT);
 		class_add_funcx("char", TypeChar, &_Int2Char, FLAG_PURE);
