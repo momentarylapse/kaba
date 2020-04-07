@@ -499,7 +499,7 @@ void SIAddPackageBase() {
 
 	add_class(TypeInt64);
 		class_add_funcx("str", TypeString, &i642s, FLAG_PURE);
-		class_add_funcx("int", TypeString, &_Int642Int, FLAG_PURE);
+		class_add_funcx("int", TypeInt, &_Int642Int, FLAG_PURE);
 			func_set_inline(InlineID::INT64_TO_INT);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt64, TypeInt64, InlineID::INT64_ASSIGN);
 		add_operator(OperatorID::ADD, TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_ADD, (void*)op_int64_add);

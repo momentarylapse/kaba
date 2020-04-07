@@ -301,7 +301,7 @@ Node *SyntaxTree::add_node_constructor(Function *f) {
 }
 
 Array<Node*> SyntaxTree::make_class_node_callable(const Class *t, Block *block, Array<Node*> &params) {
-	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeBool)) and (params.num == 1))
+	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool)) and (params.num == 1))
 		return {make_fake_constructor(t, block, params[0]->type)};
 	
 	// constructor
