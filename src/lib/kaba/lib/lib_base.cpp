@@ -92,6 +92,12 @@ public:
 	bool __contains__(const string &s) {
 		return this->find(s) >= 0;
 	}
+	Array<string> __add__(const Array<string> &o) {
+		return *this + o;
+	}
+	void __adds__(const Array<string> &o) {
+		append(o);
+	}
 };
 
 string i2s_zero_padded(int i, int n) {
@@ -830,6 +836,10 @@ void SIAddPackageBase() {
 			func_add_param("glue", TypeString);
 		class_add_funcx("__contains__", TypeBool, &StringList::__contains__, FLAG_PURE);
 			func_add_param("s", TypeString);
+		class_add_funcx("__add__", TypeStringList, &StringList::__add__, FLAG_PURE);
+			func_add_param("o", TypeStringList);
+		class_add_funcx("__adds__", TypeVoid, &StringList::__adds__);
+			func_add_param("o", TypeStringList);
 		class_add_funcx("str", TypeString, &sa2s, FLAG_PURE);
 
 
