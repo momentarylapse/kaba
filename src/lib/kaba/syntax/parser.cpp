@@ -14,9 +14,12 @@ extern bool next_static;
 extern bool next_const;
 
 extern const Class *TypeAbstractList;
+extern const Class *TypeAbstractDict;
 extern const Class *TypeIntList;
 extern const Class *TypeAnyList;
+extern const Class *TypeAnyDict;
 extern const Class *TypeDynamicArray;
+extern const Class *TypeIntDict;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -683,6 +686,14 @@ Node *SyntaxTree::build_abstract_list(const Array<Node*> &el) {
 	return c;
 }
 
+Node *SyntaxTree::build_abstract_dict(const Array<Node*> &el) {
+	Node *c = new Node(NodeKind::DICT_BUILDER, 0, TypeAbstractDict);
+	c->set_num_params(el.num);
+	for (int i=0; i<el.num; i++)
+		c->set_param(i, el[i]);
+	return c;
+}
+
 Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Block *block) {
 	int _ie = Exp.cur_exp - 1;
 	Operator *op = nullptr;
@@ -903,6 +914,30 @@ Node *SyntaxTree::parse_list(Block *block) {
 	return build_abstract_list(el);
 }
 
+Node *SyntaxTree::parse_dict(Block *block) {
+	Array<Node*> el;
+	while(true) {
+		if (Exp.cur == "}")
+			break;
+		auto key = parse_operand_greedy(block);
+		if (key->type != TypeString or key->kind != NodeKind::CONSTANT)
+			do_error("key needs to be a constant string");
+		el.add(key);
+		if (Exp.cur != ":")
+			do_error("\":\" after key expected");
+		Exp.next();
+		auto value = parse_operand_greedy(block);
+		if ((Exp.cur != ",") and (Exp.cur != "}"))
+			do_error("\",\" or \"}\" expected");
+		el.add(value);
+		if (Exp.cur == "}")
+			break;
+		Exp.next();
+	}
+	Exp.next();
+	return build_abstract_dict(el);
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
@@ -933,6 +968,9 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 		} else {
 			operands = {parse_list(block)};
 		}
+	} else if (Exp.cur == "{") {
+		Exp.next();
+		operands = {parse_dict(block)};
 	} else {
 		// direct operand
 		operands = get_existence(Exp.cur, block, block->name_space(), prefer_class);
@@ -1843,7 +1881,7 @@ void SyntaxTree::force_concrete_types(Array<Node*> &nodes) {
 }
 
 Node *SyntaxTree::force_concrete_type(Node *node) {
-	if (node->type != TypeAbstractList)
+	if (node->type != TypeAbstractList and node->type != TypeAbstractDict)
 		return node;
 
 	if (node->kind == NodeKind::ARRAY_BUILDER) {
@@ -1867,6 +1905,29 @@ Node *SyntaxTree::force_concrete_type(Node *node) {
 		}
 
 		node->type = make_class_super_array(t);
+		return node;
+	}
+	if (node->kind == NodeKind::DICT_BUILDER) {
+		if (node->params.num == 0) {
+			node->type = TypeIntDict;
+			return node;
+		}
+
+		force_concrete_types(node->params);
+
+		auto t = node->params[1]->type;
+		for (int i=3; i<node->params.num; i+=2)
+			t = type_more_abstract(t, node->params[i]->type);
+		if (!t)
+			do_error("inhomogeneous abstract dict");
+
+		for (int i=1; i<node->params.num; i+=2) {
+			int pen, tc;
+			type_match_with_cast(node->params[i], false, t, pen, tc);
+			node->params[i] = apply_type_cast(tc, node->params[i], t);
+		}
+
+		node->type = make_class_dict(t);
 		return node;
 	}
 	do_error("unhandled abstract type...");
@@ -2061,12 +2122,18 @@ Node *SyntaxTree::make_dynamical(Node *node) {
 		// TODO create...
 		node->type = TypeAnyList;
 		//return node;
+	} else  if (node->kind == NodeKind::DICT_BUILDER and node->type == TypeAbstractDict) {
+		for (int i=1; i<node->params.num; i+=2)
+			node->params[i] = make_dynamical(node->params[i]);
+		// TODO create...
+		node->type = TypeAnyDict;
+		//return node;
 	}
 	//node = force_concrete_type(tree, node);
 
 	auto *c = add_constant_pointer(TypeClassP, node->type);
 
-	Array<Node*> links = get_existence("@dyn", nullptr, nullptr, false);
+	auto links = get_existence("@dyn", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
 
 	Node *cmd = add_node_call(f);

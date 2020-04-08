@@ -1047,6 +1047,26 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		}
 		_transform_insert_before_.add(bb);
 		return array;
+	} else if (n->kind == NodeKind::DICT_BUILDER) {
+		auto *t_el = n->type->get_array_element();
+		Function *cf = n->type->get_func("set", TypeVoid, {TypeString, t_el});
+		if (!cf)
+			do_error(format("[..]: can not find %s.set(string,%s) function???", n->type->long_name().c_str(), t_el->long_name().c_str()));
+
+		// temp var
+		auto *f = cur_func;
+		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
+		Node *array = add_node_local(vv);
+
+		Block *bb = new Block(f, b);
+		for (int i=0; i<n->params.num/2; i++){
+			auto *cc = add_node_member_call(cf, cp_node(array));
+			cc->set_param(1, n->params[i*2]);
+			cc->set_param(2, n->params[i*2+1]);
+			bb->add(cc);
+		}
+		_transform_insert_before_.add(bb);
+		return array;
 	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::FOR_RANGE)) {
 
 		// [VAR, START, STOP, STEP, BLOCK]

@@ -188,6 +188,8 @@ public:
 
 	Node *build_abstract_list(const Array<Node*> &el);
 	Node *parse_list(Block *block);
+	Node *build_abstract_dict(const Array<Node*> &el);
+	Node *parse_dict(Block *block);
 
 	void create_asm_meta_info();
 

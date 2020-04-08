@@ -1,5 +1,6 @@
 #include "../../file/file.h"
 #include "../../math/math.h"
+#include "../../base/map.h"
 #include "../kaba.h"
 #include "../../config.h"
 #include "common.h"
@@ -49,6 +50,7 @@ extern const Class *TypeBoolList;
 extern const Class *TypeFloatPs;
 extern const Class *TypeAny;
 extern const Class *TypeAnyList;
+extern const Class *TypeAnyDict;
 
 
 float _cdecl f_sqr(float f){	return f*f;	}
@@ -98,6 +100,20 @@ public:
 	void assign(AnyList &o) {
 		*this = o;
 	}
+};
+
+class AnyDict : public Map<string,Any> {
+public:
+	void __delete__() {
+		this->~AnyDict();
+	}
+	void assign(AnyDict &o) {
+		*this = o;
+	}
+	Any get_item(const string &k)
+	{ KABA_EXCEPTION_WRAPPER(return (*this)[k]); return Any(); }
+	string str()
+	{ return var2str(this, TypeAnyDict); }
 };
 
 Array<int> _cdecl int_range(int start, int end) {
@@ -939,6 +955,20 @@ void SIAddPackageMath() {
 			func_add_param("a", TypeAny);
 		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &AnyList::assign);
 			func_add_param("other", TypeAnyList);
+
+	TypeAnyDict = add_type_d(TypeAny);
+	add_class(TypeAnyDict);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&AnyDict::__init__));
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&AnyDict::__delete__));
+		class_add_funcx("set", TypeVoid, &AnyDict::set);
+			func_add_param("key", TypeString);
+			func_add_param("x", TypeAny);
+		class_add_funcx("__get__", TypeAny, &AnyDict::get_item, FLAG_RAISES_EXCEPTIONS);
+			func_add_param("key", TypeString);
+		class_add_funcx("clear", TypeVoid, &AnyDict::clear);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &AnyDict::assign);
+			func_add_param("other", TypeAny);
+		class_add_funcx("str", TypeString, &AnyDict::str);
 }
 
 };
