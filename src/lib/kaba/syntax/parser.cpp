@@ -188,6 +188,8 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 }
 
 Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
+	operand = force_concrete_type(operand);
+
 	// array index...
 	Exp.next();
 	Node *index = nullptr;
