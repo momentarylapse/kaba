@@ -1,7 +1,8 @@
 
 void f(int i)
-	i = 3
-	print(i)
+	int j = i
+	j = 3
+	print(j)
 
 
 void main()

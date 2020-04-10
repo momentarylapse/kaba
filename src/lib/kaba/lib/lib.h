@@ -57,6 +57,7 @@ extern const string IDENTIFIER_RETURN_VAR;
 extern const string IDENTIFIER_VTABLE_VAR;
 extern const string IDENTIFIER_ENUM;
 extern const string IDENTIFIER_CONST;
+extern const string IDENTIFIER_OUT;
 extern const string IDENTIFIER_OVERRIDE;
 extern const string IDENTIFIER_VIRTUAL;
 extern const string IDENTIFIER_EXTERN;

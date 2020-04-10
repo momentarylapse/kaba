@@ -2061,9 +2061,16 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 		for (int k=0;;k++) {
 			// like variable definitions
 
+			bool rw = false;
+			if (Exp.cur == IDENTIFIER_OUT) {
+				rw = true;
+				Exp.next();
+			}
+
 			// type of parameter variable
 			const Class *param_type = parse_type(base_class); // force
-			f->block->add_var(Exp.cur, param_type);
+			auto v = f->block->add_var(Exp.cur, param_type);
+			v->is_const = !rw;
 			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;
@@ -2743,9 +2750,16 @@ Function *SyntaxTree::parse_function_header(Class *name_space, bool as_extern, b
 		for (int k=0;;k++) {
 			// like variable definitions
 
+			bool rw = false;
+			if (Exp.cur == IDENTIFIER_OUT) {
+				rw = true;
+				Exp.next();
+			}
+
 			// type of parameter variable
 			const Class *param_type = parse_type(name_space); // force
-			f->block->add_var(Exp.cur, param_type);
+			auto v = f->block->add_var(Exp.cur, param_type);
+			v->is_const = !rw;
 			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;

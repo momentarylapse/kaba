@@ -56,6 +56,7 @@ const string IDENTIFIER_RETURN_VAR = "-return-";
 const string IDENTIFIER_VTABLE_VAR = "-vtable-";
 const string IDENTIFIER_ENUM = "enum";
 const string IDENTIFIER_CONST = "const";
+const string IDENTIFIER_OUT = "out";
 const string IDENTIFIER_OVERRIDE = "override";
 const string IDENTIFIER_VIRTUAL = "virtual";
 const string IDENTIFIER_EXTERN = "extern";

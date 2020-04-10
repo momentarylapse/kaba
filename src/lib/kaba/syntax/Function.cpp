@@ -168,8 +168,10 @@ Function *Function::create_dummy_clone(const Class *_name_space) const {
 
 	f->num_params = num_params;
 	f->literal_param_type = literal_param_type;
-	for (int i=0; i<num_params; i++)
+	for (int i=0; i<num_params; i++) {
 		f->block->add_var(var[i]->name, var[i]->type);
+		f->var[i]->is_const = var[i]->is_const;
+	}
 
 	f->is_static = is_static;
 	f->virtual_index = virtual_index;
