@@ -242,6 +242,16 @@ Node::~Node() {
 			delete p;
 }
 
+Node *Node::modifiable() {
+	is_const = false;
+	return this;
+}
+
+Node *Node::make_const() {
+	is_const = true;
+	return this;
+}
+
 Block *Node::as_block() const {
 	return (Block*)this;
 }

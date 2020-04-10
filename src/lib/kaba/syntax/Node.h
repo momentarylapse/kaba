@@ -95,6 +95,8 @@ public:
 	Node(const Block *b);
 	Node(const Constant *c);*/
 	virtual ~Node();
+	Node *modifiable();
+	Node *make_const();
 	Block *as_block() const;
 	Function *as_func() const;
 	const Class *as_class() const;

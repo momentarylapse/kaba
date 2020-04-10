@@ -217,6 +217,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
 		if (cf) {
 			Node *f = add_node_member_call(cf, operand);
+			f->is_const = operand->is_const;
 			f->set_param(1, index);
 			f->set_param(2, index2);
 			return f;
@@ -227,6 +228,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	auto *cf = operand->type->get_get(index->type);
 	if (cf) {
 		Node *f = add_node_member_call(cf, operand);
+		f->is_const = operand->is_const;
 		f->set_param(1, index);
 		return f;
 	}
@@ -267,6 +269,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	} else {
 		array = add_node_array(operand, index);
 	}
+	array->is_const = operand->is_const;
 	return array;
 }
 
@@ -681,7 +684,7 @@ Node *SyntaxTree::apply_params_with_cast(Node *operand, const Array<Node*> &para
 }
 
 Node *SyntaxTree::build_abstract_list(const Array<Node*> &el) {
-	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeAbstractList);
+	Node *c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeAbstractList, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -689,7 +692,7 @@ Node *SyntaxTree::build_abstract_list(const Array<Node*> &el) {
 }
 
 Node *SyntaxTree::build_abstract_dict(const Array<Node*> &el) {
-	Node *c = new Node(NodeKind::DICT_BUILDER, 0, TypeAbstractDict);
+	Node *c = new Node(NodeKind::DICT_BUILDER, 0, TypeAbstractDict, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);

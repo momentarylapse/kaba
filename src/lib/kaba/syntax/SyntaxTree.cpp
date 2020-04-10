@@ -103,9 +103,9 @@ Node *SyntaxTree::add_node_statement(StatementID id) {
 Node *SyntaxTree::add_node_member_call(Function *f, Node *inst, bool force_non_virtual) {
 	Node *c;
 	if ((f->virtual_index >= 0) and (!force_non_virtual)) {
-		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type);
+		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type, true);
 	} else {
-		c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type);
+		c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type, true);
 	}
 	c->set_num_params(f->num_params + 1);
 	c->set_instance(inst);
@@ -115,7 +115,7 @@ Node *SyntaxTree::add_node_member_call(Function *f, Node *inst, bool force_non_v
 // non-member!
 Node *SyntaxTree::add_node_call(Function *f) {
 	// FIXME: literal_return_type???
-	Node *c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->return_type);
+	Node *c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->return_type, true);
 	if (f->is_static)
 		c->set_num_params(f->num_params);
 	else
@@ -124,16 +124,16 @@ Node *SyntaxTree::add_node_call(Function *f) {
 }
 
 Node *SyntaxTree::add_node_func_name(Function *f) {
-	return new Node(NodeKind::FUNCTION, (int_p)f, TypeFunctionP);
+	return new Node(NodeKind::FUNCTION, (int_p)f, TypeFunctionP, true);
 }
 
 Node *SyntaxTree::add_node_class(const Class *c) {
-	return new Node(NodeKind::CLASS, (int_p)c, TypeClassP);
+	return new Node(NodeKind::CLASS, (int_p)c, TypeClassP, true);
 }
 
 
 Node *SyntaxTree::add_node_operator(Node *p1, Node *p2, Operator *op) {
-	Node *cmd = new Node(NodeKind::OPERATOR, (int_p)op, op->return_type);
+	Node *cmd = new Node(NodeKind::OPERATOR, (int_p)op, op->return_type, true);
 	if (op->primitive->param_flags == 3) {
 		cmd->set_num_params(2); // binary
 		cmd->set_param(0, p1);
