@@ -234,6 +234,7 @@ public:
 	Node *add_node_global(Variable *var);
 	Node *add_node_local(Variable *var);
 	Node *add_node_local(Variable *var, const Class *type);
+	Node *make_constructor_static(Node *n, const string &name);
 	Node *exlink_add_element(Function *f, ClassElement &e);
 	Node *exlink_add_class_func(Function *f, Function *cf);
 	Node *add_node_parray(Node *p, Node *index, const Class *type);

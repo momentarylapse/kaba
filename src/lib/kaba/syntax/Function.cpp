@@ -17,6 +17,7 @@ Variable::Variable(const string &_name, const Class *_type) {
 	type = _type;
 	_offset = 0;
 	is_extern = false;
+	is_const = false;
 	explicitly_constructed = false;
 	memory = nullptr;
 	memory_owner = false;

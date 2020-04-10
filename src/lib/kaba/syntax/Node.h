@@ -88,7 +88,9 @@ public:
 	// linking of class function instances
 	// return value
 	const Class *type;
-	Node(NodeKind kind, int64 link_no, const Class *type);
+	bool is_const;
+
+	Node(NodeKind kind, int64 link_no, const Class *type, bool is_const = false);
 	/*Node(const Class *c);
 	Node(const Block *b);
 	Node(const Constant *c);*/

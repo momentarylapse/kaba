@@ -28,6 +28,7 @@ public:
 	void *memory;
 	bool memory_owner;
 	bool is_extern;
+	bool is_const;
 	bool explicitly_constructed;
 	int _label;
 };

@@ -229,10 +229,11 @@ const Class *Block::name_space() const {
 }
 
 
-Node::Node(NodeKind _kind, int64 _link_no, const Class *_type) {
+Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
 	type = _type;
 	kind = _kind;
 	link_no = _link_no;
+	is_const = _const;
 }
 
 Node::~Node() {

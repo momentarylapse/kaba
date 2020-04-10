@@ -37,6 +37,7 @@ Node *SyntaxTree::cp_node(Node *c) {
 		cmd = new Block(c->as_block()->function, c->as_block()->parent);
 	else
 		cmd = new Node(c->kind, c->link_no, c->type);
+	cmd->is_const = c->is_const;
 	cmd->set_num_params(c->params.num);
 	for (int i=0;i<c->params.num;i++)
 		if (c->params[i])
@@ -73,7 +74,7 @@ Node *SyntaxTree::ref_node(Node *sub, const Class *override_type) {
 }
 
 Node *SyntaxTree::deref_node(Node *sub, const Class *override_type) {
-	Node *c = new Node(NodeKind::UNKNOWN, 0, TypeVoid);
+	Node *c = new Node(NodeKind::UNKNOWN, 0, TypeVoid, sub->is_const);
 	c->kind = NodeKind::DEREFERENCE;
 	c->set_num_params(1);
 	c->set_param(0, sub);
@@ -85,7 +86,7 @@ Node *SyntaxTree::deref_node(Node *sub, const Class *override_type) {
 }
 
 Node *SyntaxTree::shift_node(Node *sub, bool deref, int shift, const Class *type) {
-	Node *c = new Node(deref ? NodeKind::DEREF_ADDRESS_SHIFT : NodeKind::ADDRESS_SHIFT, shift, type);
+	Node *c = new Node(deref ? NodeKind::DEREF_ADDRESS_SHIFT : NodeKind::ADDRESS_SHIFT, shift, type, sub->is_const);
 	c->set_num_params(1);
 	c->set_param(0, sub);
 	return c;
@@ -155,15 +156,15 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, InlineID inlin
 
 
 Node *SyntaxTree::add_node_local(Variable *v, const Class *type) {
-	return new Node(NodeKind::VAR_LOCAL, (int_p)v, type);
+	return new Node(NodeKind::VAR_LOCAL, (int_p)v, type, v->is_const);
 }
 
 Node *SyntaxTree::add_node_local(Variable *v) {
-	return new Node(NodeKind::VAR_LOCAL, (int_p)v, v->type);
+	return new Node(NodeKind::VAR_LOCAL, (int_p)v, v->type, v->is_const);
 }
 
 Node *SyntaxTree::add_node_global(Variable *v) {
-	return new Node(NodeKind::VAR_GLOBAL, (int_p)v, v->type);
+	return new Node(NodeKind::VAR_GLOBAL, (int_p)v, v->type, v->is_const);
 }
 
 Node *SyntaxTree::add_node_parray(Node *p, Node *index, const Class *type) {
@@ -232,10 +233,10 @@ void SyntaxTree::parse_buffer(const string &buffer, bool just_analyse) {
 
 }
 
-Node *make_constructor_static(SyntaxTree *tree, Node *n, const string &name) {
+Node *SyntaxTree::make_constructor_static(Node *n, const string &name) {
 	for (auto *f: n->type->functions)
 		if (f->name == name) {
-			auto nn = tree->add_node_call(f);
+			auto nn = add_node_call(f);
 			nn->params = n->params.sub(1,-1);
 			return nn;
 		}
@@ -251,15 +252,15 @@ void SyntaxTree::digest() {
 		if (n->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION)
 			return n;
 		if ((n->type == TypeVector) or (n->type == TypeColor) or (n->type == TypeRect) or (n->type == TypeComplex)) {
-			return make_constructor_static(this, n, "_create");
+			return make_constructor_static(n, "_create");
 		}
 		if (n->type == TypeQuaternion) {
 			if (n->params.num == 2 and n->params[1]->type == TypeVector)
-				return make_constructor_static(this, n, "_rotation_v");
+				return make_constructor_static(n, "_rotation_v");
 			if (n->params.num == 3 and n->params[1]->type == TypeVector)
-				return make_constructor_static(this, n, "_rotation_a");
+				return make_constructor_static(n, "_rotation_a");
 			if (n->params.num == 2 and n->params[1]->type == TypeMatrix)
-				return make_constructor_static(this, n, "_rotation_m");
+				return make_constructor_static(n, "_rotation_m");
 		}
 		return n;
 	});
@@ -395,7 +396,7 @@ Function *SyntaxTree::add_function(const string &name, const Class *return_type,
 
 
 Node *SyntaxTree::add_node_const(Constant *c) {
-	return new Node(NodeKind::CONSTANT, (int_p)c, c->type);
+	return new Node(NodeKind::CONSTANT, (int_p)c, c->type, true);
 }
 
 /*Node *SyntaxTree::add_node_block(Block *b) {

@@ -1209,6 +1209,9 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 	string op_func_name = primop->function_name;
 	Node *op = nullptr;
 
+	if (primop->left_modifiable and param1->is_const)
+		do_error("trying to modify a constant expression");
+
 	if (primop->id == OperatorID::IS)
 		return link_special_operator_is(param1, param2);
 	if (primop->id == OperatorID::IN)
