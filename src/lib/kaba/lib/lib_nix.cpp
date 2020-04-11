@@ -176,10 +176,6 @@ void SIAddPackageNix()
 			func_add_param("loc", TypeInt);
 			func_add_param("data", TypePointer);
 			func_add_param("size", TypeInt);
-		/*class_add_func("get", TypeVoid, nix_p(mf(&nix::Shader::get_data)));
-			func_add_param("loc", TypeInt);
-			func_add_param("data", TypePointer);
-			func_add_param("size", TypeInt);*/
 		class_add_func("dispatch", TypeVoid, nix_p(mf(&nix::Shader::dispatch)));
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);

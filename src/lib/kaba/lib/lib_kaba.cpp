@@ -79,25 +79,25 @@ void SIAddPackageKaba() {
 		class_add_elementx("functions", TypeFunctionPList, &Class::functions);
 		class_add_elementx("classes", TypeClassPList, &Class::classes);
 		class_add_elementx("constants", TypeConstantPList, &Class::constants);
-		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from);
+		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from, ScriptFlag::FLAG_PURE);
 			func_add_param("c", TypeClass);
-		class_add_funcx("is_pointer", TypeBool, &Class::is_pointer);
-		class_add_funcx("is_super_array", TypeBool, &Class::is_super_array);
-		class_add_funcx("is_array", TypeBool, &Class::is_array);
-		class_add_funcx("is_dict", TypeBool, &Class::is_dict);
-		class_add_funcx("get_func", TypeFunctionP, &Class::get_func);
+		class_add_funcx("is_pointer", TypeBool, &Class::is_pointer, ScriptFlag::FLAG_PURE);
+		class_add_funcx("is_super_array", TypeBool, &Class::is_super_array, ScriptFlag::FLAG_PURE);
+		class_add_funcx("is_array", TypeBool, &Class::is_array, ScriptFlag::FLAG_PURE);
+		class_add_funcx("is_dict", TypeBool, &Class::is_dict, ScriptFlag::FLAG_PURE);
+		class_add_funcx("get_func", TypeFunctionP, &Class::get_func, ScriptFlag::FLAG_PURE);
 			func_add_param("name", TypeString);
 			func_add_param("return_type", TypeClass);
 			func_add_param("params", TypeClassPList);
-		class_add_funcx("long_name", TypeString, &Class::long_name);
+		class_add_funcx("long_name", TypeString, &Class::long_name, ScriptFlag::FLAG_PURE);
 
 	add_class(TypeClassP);
-		class_add_funcx("str", TypeString, &class_repr);
+		class_add_funcx("str", TypeString, &class_repr, ScriptFlag::FLAG_PURE);
 
 	add_class(TypeFunction);
 		class_add_elementx("name", TypeString, &Function::name);
-		class_add_funcx("long_name", TypeString, &Function::long_name);
-		class_add_funcx("signature", TypeString, &Function::signature);
+		class_add_funcx("long_name", TypeString, &Function::long_name, ScriptFlag::FLAG_PURE);
+		class_add_funcx("signature", TypeString, &Function::signature, ScriptFlag::FLAG_PURE);
 		class_add_elementx("namespace", TypeClassP, &Function::name_space);
 		class_add_elementx("num_params", TypeInt, &Function::num_params);
 		class_add_elementx("var", TypeVariablePList, &Function::var);
@@ -113,7 +113,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("code", TypeFunctionCodeP, &Function::address);
 
 		add_class(TypeFunctionP);
-			class_add_funcx("str", TypeString, &func_repr);
+			class_add_funcx("str", TypeString, &func_repr, FLAG_PURE);
 
 	add_class(TypeVariable);
 		class_add_elementx("name", TypeString, &Variable::name);
@@ -126,11 +126,11 @@ void SIAddPackageKaba() {
 	add_class(TypeScript);
 		class_add_elementx("name", TypeString, &Script::filename);
 		class_add_elementx("used_by_default", TypeBool, &Script::used_by_default);
-		class_add_funcx("classes", TypeClassPList, &Script::classes);
-		class_add_funcx("functions", TypeFunctionPList, &Script::functions);
-		class_add_funcx("variables", TypeVariablePList, &Script::variables);
-		class_add_funcx("constants", TypeConstantPList, &Script::constants);
-		class_add_funcx("base_class", TypeClassP, &Script::base_class);
+		class_add_funcx("classes", TypeClassPList, &Script::classes, FLAG_PURE);
+		class_add_funcx("functions", TypeFunctionPList, &Script::functions, FLAG_PURE);
+		class_add_funcx("variables", TypeVariablePList, &Script::variables, FLAG_PURE);
+		class_add_funcx("constants", TypeConstantPList, &Script::constants, FLAG_PURE);
+		class_add_funcx("base_class", TypeClassP, &Script::base_class, FLAG_PURE);
 		class_add_funcx("load", TypeScriptP, &__load_script__, ScriptFlag(FLAG_RAISES_EXCEPTIONS | FLAG_STATIC));
 			func_add_param("filename", TypeString);
 			func_add_param("just_analize", TypeBool);
@@ -150,9 +150,9 @@ void SIAddPackageKaba() {
 	add_class(TypeClassElementList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<ClassElement>::__init__);
 
-	add_funcx("get_dynamic_type", TypeClassP, &GetDynamicType, FLAG_STATIC);
+	add_funcx("get_dynamic_type", TypeClassP, &GetDynamicType, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("p", TypePointer);
-	add_funcx("disassemble", TypeString, &Asm::disassemble, FLAG_STATIC);
+	add_funcx("disassemble", TypeString, &Asm::disassemble, ScriptFlag(FLAG_STATIC | FLAG_PURE));
 		func_add_param("p", TypePointer);
 		func_add_param("length", TypeInt);
 		func_add_param("comments", TypeBool);
