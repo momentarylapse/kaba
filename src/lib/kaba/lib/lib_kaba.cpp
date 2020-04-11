@@ -105,6 +105,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("return_type", TypeClassP, &Function::literal_return_type);
 		class_add_elementx("is_static", TypeBool, &Function::is_static);
 		class_add_elementx("is_pure", TypeBool, &Function::is_pure);
+		class_add_elementx("is_const", TypeBool, &Function::is_const);
 		class_add_elementx("is_extern", TypeBool, &Function::is_extern);
 		class_add_elementx("needs_overriding", TypeBool, &Function::needs_overriding);
 		class_add_elementx("virtual_index", TypeInt, &Function::virtual_index);

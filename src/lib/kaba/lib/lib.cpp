@@ -351,6 +351,7 @@ void add_operator(OperatorID primitive_op, const Class *return_type, const Class
 			func_add_param("b", p);
 	}
 	o->f->is_pure = !o->primitive->left_modifiable;
+	o->f->is_const = o->f->is_pure;
 	func_set_inline(inline_index);
 	cur_package->syntax->operators.add(o);
 }
@@ -407,6 +408,7 @@ void _class_add_member_func(const Class *ccc, Function *f, ScriptFlag flag) {
 Function* class_add_func(const string &name, const Class *return_type, void *func, ScriptFlag flag) {
 	Function *f = new Function(name, return_type, cur_class);
 	f->is_pure = ((flag & FLAG_PURE) > 0);
+	f->is_const = f->is_pure or ((flag & FLAG_CONST) > 0);
 	f->throws_exceptions = ((flag & FLAG_RAISES_EXCEPTIONS) > 0);
 	f->is_static = ((flag & FLAG_STATIC) > 0);
 	cur_package->syntax->functions.add(f);
@@ -557,6 +559,7 @@ void func_set_inline(InlineID index) {
 void func_add_param(const string &name, const Class *type) {
 	if (cur_func) {
 		Variable *v = new Variable(name, type);
+		v->is_const = true;
 		cur_func->var.add(v);
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;

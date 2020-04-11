@@ -41,6 +41,7 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	is_static = true;
 	auto_declared = false;
 	is_pure = false;
+	is_const = false;
 	_param_size = 0;
 	_var_size = 0;
 	_logical_line_no = -1;

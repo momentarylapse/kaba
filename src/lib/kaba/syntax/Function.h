@@ -51,7 +51,7 @@ public:
 	const Class *return_type;
 	const Class *literal_return_type;
 	bool is_extern, auto_declared;
-	bool is_pure, is_static;
+	bool is_pure, is_static, is_const;
 	bool throws_exceptions; // for external
 	InlineID inline_no;
 	int virtual_index;

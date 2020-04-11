@@ -339,6 +339,22 @@ string type_list_to_str(const Array<const Class*> &tt) {
 	return "(" + s + ")";
 }
 
+Node *check_const_params(SyntaxTree *tree, Node *n) {
+	if (n->kind == NodeKind::FUNCTION_CALL) {
+		auto f = n->as_func();
+		int offset = 0;
+		if (!f->is_static) {
+			offset = 1;
+			if (n->params[0]->is_const and !f->is_const)
+				tree->do_error(f->long_name() + ": member function instance is not \"const\" and does not accept a constant value");
+		}
+		for (int i=0; i<f->num_params; i++)
+			if (n->params[i+offset]->is_const and !f->var[i]->is_const)
+				tree->do_error(f->long_name() + ": function parameter " + f->var[i]->name + " is \"out\" and does not accept a constant value");
+	}
+	return n;
+}
+
 Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block) {
 	// parse all parameters
 	auto params = parse_call_parameters(block);
@@ -383,7 +399,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 			continue;
 
 		clear_nodes(links, operand);
-		return apply_params_direct(operand, params);
+		return check_const_params(this, apply_params_direct(operand, params));
 	}
 
 
@@ -395,7 +411,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 			continue;
 
 		clear_nodes(links, operand);
-		return apply_params_with_cast(operand, params, casts, wanted);
+		return check_const_params(this, apply_params_with_cast(operand, params, casts, wanted));
 	}
 
 

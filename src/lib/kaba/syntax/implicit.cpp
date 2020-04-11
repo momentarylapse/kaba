@@ -395,7 +395,8 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *r
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
-		f->block->add_var(param_names[i], p);
+		auto v = f->block->add_var(param_names[i], p);
+		v->is_const = true;
 		f->num_params ++;
 	}
 	f->update_parameters_after_parsing();
