@@ -28,7 +28,7 @@ void SIAddPackageImage() {
 
 	TypeImage = add_type("Image", sizeof(Image));
 	auto TypeImageP = add_type_p(TypeImage);
-	TypeBasePainter = add_type("Painter", sizeof(Painter), (ScriptFlag)0, TypeImage);
+	TypeBasePainter = add_type("Painter", sizeof(Painter), Flags::NONE, TypeImage);
 	TypeBasePainterP = add_type_p(TypeBasePainter);
 
 	
@@ -49,7 +49,7 @@ void SIAddPackageImage() {
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 			func_add_param("c", TypeColor);
-		class_add_funcx("load", TypeImageP, &Image::load, FLAG_STATIC);
+		class_add_funcx("load", TypeImageP, &Image::load, Flags::STATIC);
 			func_add_param("filename", TypeString);
 		class_add_funcx("save", TypeVoid, &Image::save);
 			func_add_param("filename", TypeString);

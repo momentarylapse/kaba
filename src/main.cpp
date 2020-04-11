@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.18.3.0";
+string AppVersion = "0.18.4.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -384,7 +384,7 @@ public:
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
 			int n = fn->num_params;
-			if (!fn->is_static)
+			if (!fn->is_static())
 				n ++;
 			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(n));
 			f->write_int((long)fn->address);

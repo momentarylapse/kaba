@@ -13,10 +13,6 @@ extern const Class *TypeDictBase;
 extern const Class *TypeMatrix;
 
 
-bool next_extern = false;
-bool next_static = false;
-bool next_const = false;
-
 
 static Array<Node*> _transform_insert_before_;
 Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
@@ -116,7 +112,7 @@ Node *SyntaxTree::add_node_member_call(Function *f, Node *inst, bool force_non_v
 Node *SyntaxTree::add_node_call(Function *f) {
 	// FIXME: literal_return_type???
 	Node *c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->return_type, true);
-	if (f->is_static)
+	if (f->is_static())
 		c->set_num_params(f->num_params);
 	else
 		c->set_num_params(f->num_params + 1);
@@ -384,11 +380,10 @@ Constant *SyntaxTree::add_constant_pointer(const Class *type, const void *value)
 
 
 
-Function *SyntaxTree::add_function(const string &name, const Class *return_type, const Class *name_space, bool is_static) {
+Function *SyntaxTree::add_function(const string &name, const Class *return_type, const Class *name_space, Flags flags) {
 	if (!name_space)
 		name_space = base_class;
-	Function *f = new Function(name, return_type, name_space);
-	f->is_static = is_static;
+	Function *f = new Function(name, return_type, name_space, flags);
 	functions.add(f);
 	return f;
 }
@@ -445,7 +440,7 @@ Node *SyntaxTree::exlink_add_element(Function *f, ClassElement &e) {
 Node *SyntaxTree::exlink_add_class_func(Function *f, Function *cf) {
 	Node *link = add_node_func_name(cf);
 	Node *self = add_node_local(f->__get_var(IDENTIFIER_SELF));
-	if (!f->is_static) {
+	if (!f->is_static()) {
 		link->set_num_params(1);
 		link->set_instance(self);
 	}
@@ -457,7 +452,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 
 	if (!prefer_class) {
 		// global variables (=local variables in "RootOfAllEvil")
-		for (Variable *v: base_class->static_variables)
+		for (auto *v: base_class->static_variables)
 			if (v->name == name)
 				return {add_node_global(v)};
 		// TODO.... namespace...
@@ -469,13 +464,13 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 
 		if (!prefer_class) {
 			// named constants
-			for (Constant *c: ns->constants)
+			for (auto *c: ns->constants)
 				if (name == c->name)
 					return {add_node_const(c)};
 
 			// then the (real) functions
-			for (Function *f: ns->functions)
-				if (f->name == name and f->is_static)
+			for (auto *f: ns->functions)
+				if (f->name == name and f->is_static())
 					links.add(add_node_func_name(f));
 			if (links.num > 0 and !prefer_class)
 				return links;
@@ -504,7 +499,7 @@ Node* SyntaxTree::get_existence_block(const string &name, Block *block) {
 	auto *v = block->get_var(name);
 	if (v)
 		return add_node_local(v);
-	if (!f->is_static){
+	if (!f->is_static()){
 		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
 			return add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent);
 		// class elements (within a class function)
@@ -757,7 +752,7 @@ void SyntaxTree::convert_call_by_reference() {
 	for (Function *f: functions) {
 		
 		// TODO: convert self...
-		if (!f->is_static and f->name_space->uses_call_by_reference()) {
+		if (!f->is_static() and f->name_space->uses_call_by_reference()) {
 			for (auto *v: f->var)
 				if (v->name == IDENTIFIER_SELF) {
 					//msg_write("CONV SELF....");
@@ -1206,7 +1201,7 @@ void MapLVSX86Return(Function *f) {
 }
 
 void MapLVSX86Self(Function *f) {
-	if (!f->is_static){
+	if (!f->is_static()){
 		foreachi(Variable *v, f->var, i)
 			if (v->name == IDENTIFIER_SELF) {
 				v->_offset = f->_param_size;
@@ -1236,7 +1231,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 			}
 
 			foreachi(Variable *v, f->var, i) {
-				if (!f->is_static and (v->name == IDENTIFIER_SELF))
+				if (!f->is_static() and (v->name == IDENTIFIER_SELF))
 					continue;
 				if (v->name == IDENTIFIER_RETURN_VAR)
 					continue;
@@ -1289,7 +1284,7 @@ void SyntaxTree::show(const string &stage) {
 	msg_write("--------- Syntax of " + script->filename + "  " + stage + " ---------");
 	msg_right();
 	for (auto *f: functions)
-		if (!f->is_extern)
+		if (!f->is_extern())
 			f->show(stage);
 	msg_left();
 	msg_write("\n\n");

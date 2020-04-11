@@ -1,7 +1,7 @@
 
 int[] a
 
-void fill(int[] x)
+void fill(out int[] x)
 	for y in x
 		if y == 5
 			continue
