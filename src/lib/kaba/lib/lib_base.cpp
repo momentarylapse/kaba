@@ -408,7 +408,7 @@ void SIAddPackageBase() {
 		class_add_funcx("swap", TypeVoid, &DynamicArray::simple_swap);
 			func_add_param("i1", TypeInt);
 			func_add_param("i2", TypeInt);
-		class_add_funcx(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, &DynamicArray::ref_subarray);
+		class_add_funcx(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, &DynamicArray::ref_subarray, Flags::SELFREF);
 			func_add_param("start", TypeInt);
 			func_add_param("end", TypeInt);
 		// low level operations

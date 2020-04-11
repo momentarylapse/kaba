@@ -370,7 +370,7 @@ void SIAddPackageHui()
 
 		class_add_func("set_menu", TypeVoid, mf(&hui::Window::set_menu));
 			func_add_param("menu", TypeHuiMenu);
-		class_add_func("toolbar", TypeHuiToolbarP, mf(&hui::Window::get_toolbar));
+		class_add_func("toolbar", TypeHuiToolbarP, mf(&hui::Window::get_toolbar), Flags::SELFREF);
 			func_add_param("index", TypeInt);
 		class_add_func("set_maximized", TypeVoid, mf(&hui::Window::set_maximized));
 			func_add_param("max", TypeBool);

@@ -85,7 +85,7 @@ void SIAddPackageKaba() {
 		class_add_funcx("is_super_array", TypeBool, &Class::is_super_array, Flags::PURE);
 		class_add_funcx("is_array", TypeBool, &Class::is_array, Flags::PURE);
 		class_add_funcx("is_dict", TypeBool, &Class::is_dict, Flags::PURE);
-		class_add_funcx("get_func", TypeFunctionP, &Class::get_func, Flags::PURE);
+		class_add_funcx("get_func", TypeFunctionP, &Class::get_func, Flags::PURE); // selfref
 			func_add_param("name", TypeString);
 			func_add_param("return_type", TypeClass);
 			func_add_param("params", TypeClassPList);

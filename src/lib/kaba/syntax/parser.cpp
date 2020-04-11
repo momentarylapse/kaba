@@ -342,12 +342,17 @@ Node *check_const_params(SyntaxTree *tree, Node *n) {
 		int offset = 0;
 		if (!f->is_static()) {
 			offset = 1;
-			if (n->params[0]->is_const and !f->is_const())
-				tree->do_error(f->long_name() + ": member function instance is not \"const\" and does not accept a constant value");
+			if (f->is_selfref()) {
+				// const(return) = const(instance)
+				n->is_const = n->params[0]->is_const;
+			} else if (n->params[0]->is_const and !f->is_const()){
+				n->show();
+				tree->do_error(f->long_name() + ": member function is declared without \"const\" and expects a mutable instance");
+			}
 		}
 		for (int i=0; i<f->num_params; i++)
 			if (n->params[i+offset]->is_const and !f->var[i]->is_const)
-				tree->do_error(f->long_name() + ": function parameter " + f->var[i]->name + " is \"out\" and does not accept a constant value");
+				tree->do_error(f->long_name() + ": function parameter " + i2s(i+1) + " (" + f->var[i]->name + ") is \"out\" and does not accept a constant value");
 	}
 	return n;
 }
@@ -2451,34 +2456,7 @@ void SyntaxTree::parse_class(Class *_namespace) {
 		if (Exp.end_of_file())
 			break;
 
-		Flags flags = Flags::NONE;
-
-		// static?
-		if (Exp.cur == IDENTIFIER_STATIC) {
-			flags = flags_mix({flags, Flags::STATIC});
-			Exp.next();
-		}
-
-		// extern?
-		if (Exp.cur == IDENTIFIER_EXTERN) {
-			flags = flags_mix({flags, Flags::EXTERN});
-			Exp.next();
-		}
-
-		// virtual?
-		if (Exp.cur == IDENTIFIER_VIRTUAL) {
-			flags = flags_mix({flags, Flags::VIRTUAL});
-			Exp.next();
-		} else if (Exp.cur == IDENTIFIER_OVERRIDE) {
-			flags = flags_mix({flags, Flags::OVERRIDE});
-			Exp.next();
-		}
-
-		// const?
-		if (Exp.cur == IDENTIFIER_CONST) {
-			flags = flags_mix({flags, Flags::CONST});
-			Exp.next();
-		}
+		Flags flags = parse_flags(Flags::NONE);
 
 		int ie = Exp.cur_exp;
 
@@ -2879,6 +2857,36 @@ void SyntaxTree::parse_all_function_bodies(const Class *name_space) {
 		parse_all_function_bodies(name_space->classes[i]);
 }
 
+Flags SyntaxTree::parse_flags(Flags initial) {
+	Flags flags = initial;
+
+	while (true) {
+		if (Exp.cur == IDENTIFIER_STATIC) {
+			flags = flags_mix({flags, Flags::STATIC});
+		} else if (Exp.cur == IDENTIFIER_EXTERN) {
+			flags = flags_mix({flags, Flags::EXTERN});
+		} else if (Exp.cur == IDENTIFIER_CONST) {
+			flags = flags_mix({flags, Flags::CONST});
+		} else if (Exp.cur == IDENTIFIER_VIRTUAL) {
+			flags = flags_mix({flags, Flags::VIRTUAL});
+		} else if (Exp.cur == IDENTIFIER_OVERRIDE) {
+			flags = flags_mix({flags, Flags::OVERRIDE});
+		} else if (Exp.cur == IDENTIFIER_SELFREF) {
+			flags = flags_mix({flags, Flags::SELFREF});
+		} else if (Exp.cur == IDENTIFIER_OUT) {
+			flags = flags_mix({flags, Flags::OUT});
+		} else if (Exp.cur == "throws") {
+			flags = flags_mix({flags, Flags::RAISES_EXCEPTIONS});
+		} else if (Exp.cur == "pure") {
+			flags = flags_mix({flags, Flags::PURE});
+		} else {
+			break;
+		}
+		Exp.next();
+	}
+	return flags;
+}
+
 void SyntaxTree::parse_top_level() {
 	cur_func = nullptr;
 
@@ -2890,19 +2898,7 @@ void SyntaxTree::parse_top_level() {
 
 	// global definitions (enum, class, variables and functions)
 	while (!Exp.end_of_file()) {
-		Flags flags = Flags::STATIC;
-
-		// extern?
-		if (Exp.cur == IDENTIFIER_EXTERN) {
-			flags = flags_mix({flags, Flags::EXTERN});
-			Exp.next();
-		}
-
-		// const?
-		if (Exp.cur == IDENTIFIER_CONST) {
-			flags = flags_mix({flags, Flags::CONST});
-			Exp.next();
-		}
+		Flags flags = parse_flags(Flags::STATIC);
 
 
 		/*if ((Exp.cur == "import") or (Exp.cur == "use")) {

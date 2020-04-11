@@ -61,6 +61,7 @@ extern const string IDENTIFIER_OUT;
 extern const string IDENTIFIER_OVERRIDE;
 extern const string IDENTIFIER_VIRTUAL;
 extern const string IDENTIFIER_EXTERN;
+extern const string IDENTIFIER_SELFREF;
 extern const string IDENTIFIER_USE;
 extern const string IDENTIFIER_RETURN;
 extern const string IDENTIFIER_RAISE;

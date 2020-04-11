@@ -57,6 +57,7 @@ public:
 	bool is_pure() const;
 	bool is_static() const;
 	bool is_const() const;
+	bool is_selfref() const;
 	bool throws_exceptions() const; // for external
 	InlineID inline_no;
 	int virtual_index;

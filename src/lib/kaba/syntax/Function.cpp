@@ -195,6 +195,10 @@ bool Function::is_const() const {
 	return flags_has(flags, Flags::CONST);
 }
 
+bool Function::is_selfref() const {
+	return flags_has(flags, Flags::SELFREF);
+}
+
 bool Function::throws_exceptions() const {
 	return flags_has(flags, Flags::RAISES_EXCEPTIONS);
 }

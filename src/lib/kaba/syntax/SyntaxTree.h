@@ -77,6 +77,7 @@ public:
 	void parse_top_level();
 	void parse_all_class_names(Class *ns, int indent0);
 	void parse_all_function_bodies(const Class *name_space);
+	Flags parse_flags(Flags initial);
 	void parse_import();
 	void parse_enum(Class *_namespace);
 	void parse_class(Class *_namespace);
