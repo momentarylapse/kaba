@@ -2873,9 +2873,12 @@ void SyntaxTree::parse_all_class_names(Class *ns, int indent0) {
 }
 
 void SyntaxTree::parse_all_function_bodies(const Class *name_space) {
-	for (auto *f: name_space->functions)
+	//for (auto *f: name_space->functions)   might add lambda functions...
+	for (int i=0; i<name_space->functions.num; i++) {
+		auto f = name_space->functions[i];
 		if ((!f->is_extern()) and (f->_logical_line_no >= 0) and (f->name_space == name_space))
 			parse_function_body(f);
+	}
 
 	// recursion
 	//for (auto *c: name_space->classes)   NO... might encounter new classes creating new functions!

@@ -19,6 +19,10 @@ class vec2 { float a; float b; };
 class vec3 { float a; float b; float c; };
 class vec4 { float a; float b; float c; float d; };
 
+void call0_void(void *ff, void *ret, const Array<void*> &param) {
+	((void(*)())ff)();
+}
+
 template<class R>
 void call0(void *ff, void *ret, const Array<void*> &param) {
 	if (std::is_same<CBR,R>::value) {
@@ -114,7 +118,10 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 
 
 	if (ptype.num == 0) {
-		if (f->return_type == TypeInt) {
+		if (f->return_type == TypeVoid) {
+			call0_void(ff, ret, param);
+			return true;
+		} else if (f->return_type == TypeInt) {
 			call0<int>(ff, ret, param);
 			return true;
 		} else if (f->return_type == TypeFloat32) {
