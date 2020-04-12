@@ -29,6 +29,17 @@ void call0(void *ff, void *ret, const Array<void*> &param) {
 	}
 }
 
+template<class A>
+void call1_void_x(void *ff, void *ret, const Array<void*> &param) {
+	if (std::is_same<CBR,A>::value) {
+		db_out("CBR -> void");
+		((void(*)(void*))ff)(param[0]);
+	} else {
+		db_out("x -> void");
+		((void(*)(A))ff)(*(A*)param[0]);
+	}
+}
+
 template<class R, class A>
 void call1(void *ff, void *ret, const Array<void*> &param) {
 	if (std::is_same<CBR,R>::value) {
@@ -114,7 +125,18 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 			return true;
 		}
 	} else if (ptype.num == 1) {
-		if (f->return_type == TypeInt) {
+		if (f->return_type == TypeVoid) {
+			if (ptype[0] == TypeInt) {
+				call1_void_x<int>(ff, ret, param);
+				return true;
+			} else if (ptype[0] == TypeFloat32) {
+				call1_void_x<float>(ff, ret, param);
+				return true;
+			} else if (ptype[0]->uses_call_by_reference()) {
+				call1_void_x<CBR>(ff, ret, param);
+				return true;
+			}
+		} else if (f->return_type == TypeInt) {
 			if (ptype[0] == TypeInt) {
 				call1<int,int>(ff, ret, param);
 				return true;
