@@ -12,6 +12,8 @@ void db_out(const string &s) {
 	//msg_write(s);
 }
 
+#define CALL_DEBUG_X		0
+
 // call-by-reference dummy
 class CBR {};
 
@@ -140,7 +142,24 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 				call1_void_x<float>(ff, ret, param);
 				return true;
 			} else if (ptype[0]->uses_call_by_reference()) {
+#if CALL_DEBUG_X
+				void *ppp, *qqq;
+				asm volatile ("movq %%rsp, %%rax;"
+				              "movq %%rax, %0;"
+							"movq %%rbp, %%rax;"
+		  "movq %%rax, %1;"
+				                  :  "=r" (ppp), "=r"(qqq) : : );
+				printf("stack before  sp=%p  bp=%p\n", ppp, qqq);
+#endif
 				call1_void_x<CBR>(ff, ret, param);
+#if CALL_DEBUG_X
+				asm volatile ("movq %%rsp, %%rax;"
+				              "movq %%rax, %0;"
+							"movq %%rbp, %%rax;"
+		  "movq %%rax, %1;"
+				                  :  "=r" (ppp), "=r"(qqq) : : );
+				printf("stack after  sp=%p  bp=%p\n", ppp, qqq);
+#endif
 				return true;
 			}
 		} else if (f->return_type == TypeInt) {
