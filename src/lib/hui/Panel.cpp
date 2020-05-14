@@ -314,8 +314,11 @@ void Panel::set_from_resource(Resource *res) {
 
 	// directly change window?
 	if (panel_is_window and res_is_window) {
+		for (auto &o: res->options)
+			win->__set_options(o);
+
 		// title
-		win->set_title(GetLanguage(id, res->id));
+		win->set_title(GetLanguage(res->id, res->id));
 
 		// size
 		int width = res->value("width", "0")._int();
@@ -625,7 +628,11 @@ void Panel::delete_control(const string &_id) {
 }
 
 void Panel::set_options(const string &_id, const string &options) {
-	apply_foreach(_id, [=](Control *c) { c->set_options(options); });
+	if (_id != "") {
+		apply_foreach(_id, [=](Control *c) { c->set_options(options); });
+	} else if (win == this) {
+		win->__set_options(options);
+	}
 }
 
 };
