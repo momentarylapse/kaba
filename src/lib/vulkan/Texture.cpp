@@ -226,7 +226,7 @@ void Texture::_generate_mipmaps(VkFormat image_format) {
 	int32_t mip_width = width;
 	int32_t mip_height = height;
 
-	for (uint32_t i=1; i<mip_levels; i++) {
+	for (int i=1; i<mip_levels; i++) {
 		barrier.subresourceRange.baseMipLevel = i - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;

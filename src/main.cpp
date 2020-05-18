@@ -197,7 +197,7 @@ public:
 
 
 		// init
-		srand(get_current_date().time*73 + get_current_date().milli_second);
+		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
 		Kaba::init(instruction_set, abi, flag_allow_std_lib);
 		Kaba::config.stack_size = 10485760; // 10 mb (mib)
