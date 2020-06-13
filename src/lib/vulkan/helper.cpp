@@ -20,7 +20,7 @@ void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryProperty
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create buffer!");
+		throw Exception("failed to create buffer!");
 	}
 
 	VkMemoryRequirements memRequirements;
@@ -32,7 +32,7 @@ void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryProperty
 	allocInfo.memoryTypeIndex = find_memory_type(memRequirements.memoryTypeBits, properties);
 
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate buffer memory!");
+		throw Exception("failed to allocate buffer memory!");
 	}
 
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
@@ -55,7 +55,7 @@ void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_
 	image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateImage(device, &image_info, nullptr, &image) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create image!");
+		throw Exception("failed to create image!");
 	}
 
 	VkMemoryRequirements mem_requirements;
@@ -67,7 +67,7 @@ void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_
 	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, properties);
 
 	if (vkAllocateMemory(device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate image memory!");
+		throw Exception("failed to allocate image memory!");
 	}
 
 	vkBindImageMemory(device, image, image_memory, 0);
@@ -97,7 +97,7 @@ VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags
 
 	VkImageView image_view;
 	if (vkCreateImageView(device, &info, nullptr, &image_view) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create texture image view!");
+		throw Exception("failed to create texture image view!");
 	}
 
 	return image_view;
@@ -170,7 +170,7 @@ void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLa
 		source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	} else {
-		throw std::invalid_argument("unsupported layout transition!");
+		throw Exception("unsupported layout transition!");
 	}
 
 	vkCmdPipelineBarrier(
@@ -200,7 +200,7 @@ uint32_t find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 		}
 	}
 
-	throw std::runtime_error("failed to find suitable memory type!");
+	throw Exception("failed to find suitable memory type!");
 }
 
 
@@ -216,7 +216,7 @@ VkFormat find_supported_format(const Array<VkFormat> &candidates, VkImageTiling 
 		}
 	}
 
-	throw std::runtime_error("failed to find supported format!");
+	throw Exception("failed to find supported format!");
 }
 
 VkFormat find_depth_format() {

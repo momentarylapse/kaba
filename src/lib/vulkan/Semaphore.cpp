@@ -20,7 +20,7 @@ Fence::Fence() {
 	info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	if (vkCreateFence(device, &info, nullptr, &fence) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create fence");
+		throw Exception("failed to create fence");
 	}
 }
 
@@ -51,7 +51,7 @@ Semaphore::Semaphore() {
 	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 	if (vkCreateSemaphore(device, &info, nullptr, &semaphore) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create semaphore");
+		throw Exception("failed to create semaphore");
 	}
 }
 
