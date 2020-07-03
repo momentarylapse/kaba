@@ -15,7 +15,7 @@ typedef void main_void_func();
 
 
 namespace Kaba {
-	extern long long s2i2(const string &str);
+	extern int64 s2i2(const string &str);
 };
 
 static void extern_func_int_out(int a) {
@@ -131,9 +131,9 @@ public:
 		bool flag_show_consts = false;
 		bool flag_compile_os = false;
 		bool flag_override_variable_offset = false;
-		long long variable_offset = 0;
+		int64 variable_offset = 0;
 		bool flag_override_code_origin = false;
-		long long code_origin = 0;
+		int64 code_origin = 0;
 		bool flag_no_function_frames = false;
 		bool flag_add_entry_point = false;
 		string output_format = "raw";
@@ -387,11 +387,11 @@ public:
 			if (!fn->is_static())
 				n ++;
 			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(n));
-			f->write_int((long)fn->address);
+			f->write_int((int_p)fn->address);
 		}
 		for (auto *v: s->syntax->base_class->static_variables) {
 			f->write_str(decode_symbol_name(v->name));
-			f->write_int((long)v->memory);
+			f->write_int((int_p)v->memory);
 		}
 		f->write_str("#");
 		delete(f);
@@ -404,7 +404,7 @@ public:
 			if (name == "#")
 				break;
 			int pos = f->read_int();
-			Kaba::link_external(name, (void*)(long)pos);
+			Kaba::link_external(name, (void*)(int_p)pos);
 		}
 		delete(f);
 	}

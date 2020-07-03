@@ -6,13 +6,17 @@
 
 #define _X_USE_HUI_
 #define _X_USE_NET_
-#define _X_USE_NIX_
+#if HAS_LIB_GL
+	#define _X_USE_NIX_
+#endif
 #define _X_USE_IMAGE_
 #define _X_USE_KABA_
 #define _X_USE_THREADS_
 #define _X_USE_ALGEBRA_
 #define _X_USE_ANY_
-#define _X_USE_VULKAN_
+#if HAS_LIB_VULKAN
+	#define _X_USE_VULKAN_
+#endif
 
 //#####################################################################
 // Hui-API

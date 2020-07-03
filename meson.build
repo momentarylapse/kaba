@@ -14,9 +14,7 @@ gtk3dep = dependency('gtk+-3.0')
 add_project_arguments('-DHAS_LIB_GTK3=1', language : ['cpp'])
 zlibdep = dependency('zlib')
 add_project_arguments('-DHAS_LIB_ZLIB=1', language : ['cpp'])
-gldep = dependency('GL')
-add_project_arguments('-DHAS_LIB_GL=1', language : ['cpp'])
-deps = [mdep, threaddep, gtk3dep, zlibdep, gldep]
+deps = [mdep, threaddep, gtk3dep, zlibdep]
 
 # optional dependency: xlib
 d = cc.find_library('X11', required : false)
@@ -52,6 +50,15 @@ if d.found()
 	deps += [d]
 else
 	add_project_arguments('-DHAS_LIB_VULKAN=0', language : ['cpp'])
+endif
+
+# optional dependency: gl
+d = cc.find_library('GL', required : false)
+if d.found()
+	add_project_arguments('-DHAS_LIB_GL=1', language : ['cpp'])
+	deps += [d]
+else
+	add_project_arguments('-DHAS_LIB_GL=0', language : ['cpp'])
 endif
 
 # optional dependency: glfw
@@ -184,7 +191,6 @@ sources = [
 	'src/lib/kaba/syntax/lexical.cpp',
 	'src/lib/kaba/syntax/Node.cpp',
 	'src/lib/kaba/syntax/Parser.cpp',
-	'src/lib/kaba/syntax/parser.cpp',
 	'src/lib/kaba/syntax/precompiler.cpp',
 	'src/lib/kaba/syntax/preprocessor.cpp',
 	'src/lib/kaba/syntax/SyntaxTree.cpp',
