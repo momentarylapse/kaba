@@ -244,9 +244,9 @@ void Crypto::from_str(const string &s)
 	Array<string> ss = s.explode(":");
 	if (ss.num != 2)
 		return;
-	string h1 = ("0x" + ss[0]).unhex();
+	string h1 = ss[0].unhex();
 	n = str2vli(h1, 0, h1.num);
-	string h2 = ("0x" + ss[1]).unhex();
+	string h2 = ss[1].unhex();
 	k = str2vli(h2, 0, h2.num);
 }
 
@@ -254,7 +254,7 @@ string Crypto::str()
 {
 	int bytes_n = (vli_count_bits(n) + 7) / 8;
 	int bytes_k = (vli_count_bits(k) + 7) / 8;
-	return vli2str(n, bytes_n).hex(true).substr(2, -1) + ":" + vli2str(k, bytes_k).hex(true).substr(2, -1);
+	return vli2str(n, bytes_n).hex() + ":" + vli2str(k, bytes_k).hex();
 	//return n.dump() + " " + k.dump();
 }
 
