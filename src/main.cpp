@@ -6,7 +6,7 @@
 #include "lib/kaba/kaba.h"
 
 string AppName = "Kaba";
-string AppVersion = "0.18.5.2";
+string AppVersion = "0.18.6.0";
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -146,7 +146,6 @@ public:
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			msg_write("kaba: " + Kaba::Version);
-			msg_write("kaba-lib: " + Kaba::LibVersion);
 			msg_write("hui: " + hui::Version);
 		});
 		p.option("--gui/-g", [&]{ use_gui = true; });

@@ -30,8 +30,6 @@
 
 namespace Kaba{
 
-string LibVersion = "0.18.5.2";
-
 
 const string IDENTIFIER_CLASS = "class";
 const string IDENTIFIER_FUNC_INIT = "__init__";

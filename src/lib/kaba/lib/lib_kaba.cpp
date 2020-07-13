@@ -79,6 +79,7 @@ void SIAddPackageKaba() {
 		class_add_elementx("functions", TypeFunctionPList, &Class::functions);
 		class_add_elementx("classes", TypeClassPList, &Class::classes);
 		class_add_elementx("constants", TypeConstantPList, &Class::constants);
+		class_add_elementx("static_variables", TypeVariablePList, &Class::static_variables);
 		class_add_funcx("is_derived_from", TypeBool, &Class::is_derived_from, Flags::PURE);
 			func_add_param("c", TypeClass);
 		class_add_funcx("is_pointer", TypeBool, &Class::is_pointer, Flags::PURE);
@@ -162,7 +163,6 @@ void SIAddPackageKaba() {
 
 	add_ext_var("packages", TypeScriptPList, (void*)&Packages);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
-	add_ext_var("lib_version", TypeString, (void*)&LibVersion);
 	add_ext_var("kaba_version", TypeString, (void*)&Version);
 }
 

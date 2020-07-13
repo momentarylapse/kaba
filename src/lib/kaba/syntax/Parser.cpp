@@ -153,6 +153,11 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 			Exp.next();
 			return {add_node_const(c)};
 		}
+	for (auto *v: type->static_variables)
+		if (Exp.cur == v->name) {
+			Exp.next();
+			return {add_node_global(v)};
+		}
 		
 	// sub-class
 	for (auto *c: type->classes)
@@ -2390,7 +2395,7 @@ void SyntaxTree::parse_import() {
 		string expr = Exp.line[logical_line].exp[exp_no].name;
 		e.line = physical_line;
 		e.column = pos;
-		e.text += "\n...imported from:\nline " + i2s(physical_line) + ", " + script->filename;
+		e.text += format("\n...imported from:\nline %d, %s", physical_line, script->filename);
 		throw e;
 		//msg_write(e.message);
 		//msg_write("...");
@@ -2543,14 +2548,19 @@ void SyntaxTree::parse_class(Class *_namespace) {
 
 
 			// add element
-			if (type_needs_alignment(type))
-				_offset = mem_align(_offset, 4);
-			_offset = process_class_offset(_class->long_name(), el.name, _offset);
+			if (flags_has(flags, Flags::STATIC)) {
+				auto v = new Variable(el.name, type);
+				_class->static_variables.add(v);
+			} else {
+				if (type_needs_alignment(type))
+					_offset = mem_align(_offset, 4);
+				_offset = process_class_offset(_class->long_name(), el.name, _offset);
+				el.offset = _offset;
+				_offset += type->size;
+				_class->elements.add(el);
+			}
 			if ((Exp.cur != ",") and (!Exp.end_of_line()))
 				do_error("\",\" or newline expected after class element");
-			el.offset = _offset;
-			_offset += type->size;
-			_class->elements.add(el);
 			if (Exp.end_of_line())
 				break;
 			Exp.next();

@@ -20,8 +20,6 @@ namespace Kaba{
 //#define mem_align(x)	((x) + (4 - (x) % 4) % 4)
 #define mem_align(x, n)		((((x) + (n) - 1) / (n) ) * (n))
 
-extern string LibVersion;
-
 class SyntaxTree;
 class Class;
 class Value;

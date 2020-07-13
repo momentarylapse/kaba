@@ -510,6 +510,9 @@ Node* SyntaxTree::get_existence_block(const string &name, Block *block) {
 			if (cf->name == name)
 				return exlink_add_class_func(f, cf);
 	}
+	for (auto *v: f->name_space->static_variables)
+		if (v->name == name)
+			return {add_node_global(v)};
 	return nullptr;
 }
 
