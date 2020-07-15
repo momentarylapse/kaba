@@ -570,6 +570,13 @@ void func_add_param(const string &name, const Class *type) {
 	}
 }
 
+class PointerList : public Array<void*> {
+public:
+	bool __contains__(void *x) {
+		return find(x) >= 0;
+	}
+};
+
 void script_make_super_array(Class *t, SyntaxTree *ps)
 {
 	const Class *p = t->param;
@@ -591,6 +598,8 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 				class_add_funcx("insert", TypeVoid, &DynamicArray::insert_p_single);
 					func_add_param("x", p);
 					func_add_param("index", TypeInt);
+				class_add_funcx("__contains__", TypeBool, &PointerList::__contains__);
+					func_add_param("x", p);
 			}else if (p == TypeFloat32){
 				class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<float>::__init__);
 				class_add_funcx("add", TypeVoid, &DynamicArray::append_f_single);
