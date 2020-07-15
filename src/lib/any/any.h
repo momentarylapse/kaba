@@ -3,21 +3,23 @@
 #ifndef __ANY_INCLUDED__
 #define __ANY_INCLUDED__
 
-enum {
-	TYPE_NONE,
-	TYPE_INT,
-	TYPE_FLOAT,
-	TYPE_BOOL,
-	TYPE_STRING,
-	TYPE_ARRAY,
-	TYPE_HASH,
-	TYPE_POINTER
-};
 
 class AnyMap;
 
 class Any {
 public:
+
+	enum {
+		TYPE_NONE,
+		TYPE_INT,
+		TYPE_FLOAT,
+		TYPE_BOOL,
+		TYPE_STRING,
+		TYPE_ARRAY,
+		TYPE_MAP,
+		TYPE_POINTER
+	};
+
 	Any();
 	Any(const Any &a);
 	Any(int i);
@@ -25,7 +27,7 @@ public:
 	Any(bool b);
 	Any(const string &s);
 	Any(const Array<Any> &a);
-	Any(const AnyMap &m);
+	Any(const AnyMap&m);
 	Any(const void *p);
 	~Any();
 	void _cdecl clear();
@@ -56,7 +58,7 @@ public:
 	AnyMap* as_map() const;
 	const void** as_pointer() const;
 
-	// hash map
+	// map/dict
 	const Any &operator[] (const string &key) const;
 	Any &operator[] (const string &key);
 	Array<string> keys() const;
@@ -64,6 +66,7 @@ public:
 	// data
 	int type;
 	void *data;
+	const void *_class;
 
 	// kaba
 	void _cdecl __init__();
@@ -80,14 +83,12 @@ public:
 	void _cdecl array_set(int i, const Any &value);
 	Any _cdecl map_get(const string &key) const;
 	void _cdecl map_set(const string &key, const Any &value);
+
+
+	static Any EmptyMap;
+	static Any EmptyArray;
 };
 
-
-extern Any EmptyVar;
-extern Any EmptyHash;
-extern Any EmptyArray;
-
-void print(const Any &a);
 
 
 

@@ -185,7 +185,7 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 		return links;
 	}
 
-	do_error("unknown element of " + type->long_name());
+	do_error(format("unknown element of '%s'", type->long_name()));
 	return {};
 }
 
@@ -211,7 +211,7 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 		}
 	}
 	if (Exp.cur != "]")
-		do_error("\"]\" expected after array index");
+		do_error("']' expected after array index");
 	Exp.next();
 
 	// subarray() ?
@@ -241,17 +241,17 @@ Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	if (!allowed)
 		if (operand->type->is_pointer()) {
 			if ((!operand->type->param->is_array()) and (!operand->type->param->usable_as_super_array()))
-				do_error(format("using pointer type \"%s\" as an array (like in C) is not allowed any more", operand->type->long_name()));
+				do_error(format("using pointer type '%s' as an array (like in C) is not allowed any more", operand->type->long_name()));
 			allowed = true;
 			pparray = (operand->type->param->usable_as_super_array());
 		}
 	if (!allowed)
-		do_error(format("type \"%s\" is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->long_name(), index->type->long_name()));
+		do_error(format("type '%s' is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->long_name(), index->type->long_name()));
 
 
 	if (index->type != TypeInt) {
 		Exp.rewind();
-		do_error(format("type of index for an array needs to be int, not %s", index->type->long_name()));
+		do_error(format("type of index for an array needs to be 'int', not '%s'", index->type->long_name()));
 	}
 
 	Node *array = nullptr;
@@ -295,7 +295,7 @@ Node *SyntaxTree::make_fake_constructor(const Class *t, Block *block, const Clas
 		
 	auto *cf = param_type->get_func(t->name, t, {});
 	if (!cf)
-		do_error("illegal fake constructor... requires " + param_type->long_name() + "." + t->long_name() + "()");
+		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), t->long_name()));
 	return add_node_member_call(cf, nullptr); // temp var added later...
 		
 	auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
@@ -351,13 +351,13 @@ Node *check_const_params(SyntaxTree *tree, Node *n) {
 				// const(return) = const(instance)
 				n->is_const = n->params[0]->is_const;
 			} else if (n->params[0]->is_const and !f->is_const()){
-				n->show();
-				tree->do_error(f->long_name() + ": member function is declared without \"const\" and expects a mutable instance");
+				//n->show();
+				tree->do_error(f->long_name() + ": member function expects a mutable instance, because it is declared without 'const'");
 			}
 		}
 		for (int i=0; i<f->num_params; i++)
 			if (n->params[i+offset]->is_const and !f->var[i]->is_const)
-				tree->do_error(f->long_name() + ": function parameter " + i2s(i+1) + " (" + f->var[i]->name + ") is \"out\" and does not accept a constant value");
+				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1, f->var[i]->name));
 	}
 	return n;
 }
@@ -431,9 +431,9 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 	string available;
 	for (Node *link: links) {
 		auto p = get_wanted_param_types(link);
-		available += "\n" + link->sig() + ": " + type_list_to_str(p);
+		available += format("\n%s: %s", link->sig(), type_list_to_str(p));
 	}
-	do_error("invalid function parameters: " + found + ", valid:" + available);
+	do_error(format("invalid function parameters: %s, expected: %s", found, available));
 	return nullptr;
 }
 
@@ -450,11 +450,11 @@ const Class *SyntaxTree::parse_type_extension_array(const Class *t) {
 		c = transform_node(c, [&](Node *n) { return conv_eval_const_func(n); });
 
 		if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
-			do_error("only constants of type \"int\" allowed for size of arrays");
+			do_error("only constants of type 'int' allowed for size of arrays");
 		int array_size = c->as_const()->as_int();
 		//Exp.next();
 		if (Exp.cur != "]")
-			do_error("\"]\" expected after array size");
+			do_error("']' expected after array size");
 		t = make_class_array(t, array_size);
 	}
 
@@ -466,7 +466,7 @@ const Class *SyntaxTree::parse_type_extension_dict(const Class *c) {
 	Exp.next(); // "{"
 
 	if (Exp.cur != "}")
-		do_error("\"}\" expected after dict{");
+		do_error("'}' expected after dict 'class{'");
 
 	Exp.next();
 
@@ -587,7 +587,7 @@ Array<const Class*> SyntaxTree::get_wanted_param_types(Node *link) {
 
 Array<Node*> SyntaxTree::parse_call_parameters(Block *block) {
 	if (Exp.cur != "(")
-		do_error("\"(\" expected in front of function parameter list");
+		do_error("'(' expected in front of function parameter list");
 
 	Exp.next();
 
@@ -604,7 +604,7 @@ Array<Node*> SyntaxTree::parse_call_parameters(Block *block) {
 		if (Exp.cur != ",") {
 			if (Exp.cur == ")")
 				break;
-			do_error("\",\" or \")\" expected after parameter for function");
+			do_error("',' or ')' expected after parameter for function");
 		}
 		Exp.next();
 	}
@@ -634,7 +634,7 @@ Node *SyntaxTree::check_param_link(Node *link, const Class *wanted, const string
 			return link;
 		} else {
 			Exp.rewind();
-			do_error(format("(c) parameter %d in command \"%s\" has type %s, %s expected", param_no + 1, f_name, given->long_name(), wanted->long_name()));
+			do_error(format("(c) parameter %d in command '%s' has type '%s', '%s' expected", param_no + 1, f_name, given->long_name(), wanted->long_name()));
 		}
 
 	} else {
@@ -645,7 +645,7 @@ Node *SyntaxTree::check_param_link(Node *link, const Class *wanted, const string
 			return apply_type_cast(tc, link, wanted);
 
 		Exp.rewind();
-		do_error(format("parameter %d in command \"%s\" has type %s, %s expected", param_no + 1, f_name, given->long_name(), wanted->long_name()));
+		do_error(format("parameter %d in command '%s' has type '%s', '%s' expected", param_no + 1, f_name, given->long_name(), wanted->long_name()));
 	}
 	return link;
 }
@@ -763,7 +763,7 @@ Node *SyntaxTree::link_unary_operator(PrimitiveOperator *po, Node *operand, Bloc
 
 
 	if (!ok)
-		do_error("unknown unitary operator " + po->name + " " + p2->long_name(), _ie);
+		do_error(format("unknown unitary operator '%s %s'", po->name, p2->long_name()), _ie);
 	return add_node_operator(operand, nullptr, op);
 }
 
@@ -829,7 +829,7 @@ Node *SyntaxTree::parse_set_builder(Block *block) {
 Node *SyntaxTree::apply_format(Node *n, const string &fmt) {
 	auto f = n->type->get_func("format", TypeString, {TypeString});
 	if (!f)
-		do_error("format string: no .format() function for type " + n->type->long_name());
+		do_error(format("format string: no '%s.format(string)' function found", n->type->long_name()));
 	auto *c = add_constant(TypeString);
 	c->as_string() = fmt;
 	auto nf = add_node_call(f);
@@ -860,7 +860,7 @@ Node *SyntaxTree::try_parse_format_string(Block *block, Value &v) {
 			
 		int p1 = s.find("}}", p0);
 		if (p1 < 0)
-			do_error("string interpolation {{ not ending with }}");
+			do_error("string interpolation '{{' not ending with '}}'");
 			
 		string xx = s.substr(p0+2, p1 - p0 - 2);
 
@@ -933,7 +933,7 @@ Node *SyntaxTree::parse_list(Block *block) {
 			break;
 		el.add(parse_operand_greedy(block));
 		if ((Exp.cur != ",") and (Exp.cur != "]"))
-			do_error("\",\" or \"]\" expected");
+			do_error("',' or ']' expected");
 		if (Exp.cur == "]")
 			break;
 		Exp.next();
@@ -952,11 +952,11 @@ Node *SyntaxTree::parse_dict(Block *block) {
 			do_error("key needs to be a constant string");
 		el.add(key);
 		if (Exp.cur != ":")
-			do_error("\":\" after key expected");
+			do_error("':' after key expected");
 		Exp.next();
 		auto value = parse_operand_greedy(block);
 		if ((Exp.cur != ",") and (Exp.cur != "}"))
-			do_error("\",\" or \"}\" expected");
+			do_error("',' or '}' expected");
 		el.add(value);
 		if (Exp.cur == "}")
 			break;
@@ -976,7 +976,7 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 		Exp.next();
 		operands = {parse_operand_super_greedy(block)};
 		if (Exp.cur != ")")
-			do_error("\")\" expected");
+			do_error("')' expected");
 		Exp.next();
 	} else if (Exp.cur == "&") { // & -> address operator
 		Exp.next();
@@ -986,7 +986,7 @@ Node *SyntaxTree::parse_operand(Block *block, bool prefer_class) {
 		Node *sub = parse_operand(block);
 		if (!sub->type->is_pointer()) {
 			Exp.rewind();
-			do_error("only pointers can be dereferenced using \"*\"");
+			do_error("only pointers can be dereferenced using '*'");
 		}
 		operands = {deref_node(sub)};
 	} else if (Exp.cur == "[") {
@@ -1195,7 +1195,7 @@ Node *SyntaxTree::link_special_operator_is(Node *param1, Node *param2) {
 		do_error("class name expected after 'is'");
 	const Class *t2 = param2->as_class();
 	if (t2->vtable.num == 0)
-		do_error("class after 'is' needs to have virtual functions: '" + t2->long_name() + "'");
+		do_error(format("class after 'is' needs to have virtual functions: '%s'", t2->long_name()));
 
 	const Class *t1 = param1->type;
 	if (t1->is_pointer()) {
@@ -1203,7 +1203,7 @@ Node *SyntaxTree::link_special_operator_is(Node *param1, Node *param2) {
 		t1 = t1->param;
 	}
 	if (!t2->is_derived_from(t1))
-		do_error("'is': class '" + t2->long_name() + "' is not derived from '" + t1->long_name() + "'");
+		do_error(format("'is': class '%s' is not derived from '%s'", t2->long_name(), t1->long_name()));
 
 	// vtable2
 	Node *vtable2 = add_node_const(add_constant_pointer(TypePointer, t2->_vtable_location_compiler_));
@@ -1218,7 +1218,7 @@ Node *SyntaxTree::link_special_operator_in(Node *param1, Node *param2) {
 	param2 = force_concrete_type(param2);
 	auto *f = param2->type->get_func("__contains__", TypeBool, {param1->type});
 	if (!f)
-		do_error("no __contains__() for " + param2->type->long_name());
+		do_error(format("no 'bool %s.__contains__(%s)' found", param2->type->long_name(), param1->type->long_name()));
 
 	Node *n = add_node_member_call(f, param2);
 	n->set_param(1, param1);
@@ -1376,7 +1376,7 @@ void SyntaxTree::link_most_important_operator(Array<Node*> &operands, Array<Node
 
 	_operators[mio] = link_operator(op_no, param1, param2);
 	if (!_operators[mio])
-		do_error(format("no operator found: %s %s %s", param1->type->long_name(), op_no->name, param2->type->long_name()), op_exp[mio]);
+		do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, param2->type->long_name()), op_exp[mio]);
 
 // remove from list
 	operands[mio] = _operators[mio];
@@ -1450,7 +1450,7 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 
 
 	if (Exp.cur != "in")
-		do_error("\"in\" expected after variable in for");
+		do_error("'in' expected after variable in 'for ...'");
 	Exp.next();
 
 	// first value/array
@@ -1509,7 +1509,7 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 
 		Node *for_array = val0;//parse_operand(block);
 		if ((!for_array->type->usable_as_super_array()) and (!for_array->type->is_array()))
-			do_error("array or list expected as second parameter in \"for . in .\"");
+			do_error("array or list expected as second parameter in 'for . in .'");
 		//Exp.next();
 
 
@@ -1806,7 +1806,7 @@ Node *SyntaxTree::parse_statement_new(Block *block) {
 	Array<Function*> cfs = t->get_constructors();
 	Array<Node*> funcs;
 	if (cfs.num == 0)
-		do_error(format("class \"%s\" does not have a constructor", t->long_name()));
+		do_error(format("class '%s' does not have a constructor", t->long_name()));
 	for (auto *cf: cfs) {
 		funcs.add(add_node_func_name(cf));
 		funcs.back()->params.add(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
@@ -1894,7 +1894,7 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	}
 
 
-	do_error("don't know how to get the length of an object of class " + sub->type->long_name());
+	do_error(format("don't know how to get the length of an object of class '%s'", sub->type->long_name()));
 	return nullptr;
 }
 
@@ -2103,7 +2103,7 @@ Node *SyntaxTree::parse_statement_lambda(Block *block) {
 				break;
 
 			if (Exp.cur != ",")
-				do_error("\",\" or \")\" expected after parameter");
+				do_error("',' or ')' expected after parameter");
 			Exp.next(); // ','
 		}
 	Exp.next(); // ')'
@@ -2311,7 +2311,7 @@ void SyntaxTree::parse_local_definition(Block *block, const Class *type) {
 		if (Exp.end_of_line())
 			break;
 		if ((Exp.cur != ",") and (!Exp.end_of_line()))
-			do_error("\",\", \"=\" or newline expected after declaration of local variable");
+			do_error("',', '=' or newline expected after declaration of local variable");
 		Exp.next();
 	}
 }
@@ -2432,7 +2432,7 @@ void SyntaxTree::parse_enum(Class *_namespace) {
 				if (v.type == TypeInt)
 					value = v.as_int();
 				else
-					do_error("integer constant expected after \"=\" for explicit value of enum");
+					do_error("integer constant expected after '=' for explicit value of enum");
 				Exp.next();
 			}
 			c->as_int() = (value ++);
@@ -2440,7 +2440,7 @@ void SyntaxTree::parse_enum(Class *_namespace) {
 			if (Exp.end_of_line())
 				break;
 			if ((Exp.cur != ","))
-				do_error("\",\" or newline expected after enum definition");
+				do_error("',' or newline expected after enum definition");
 			Exp.next();
 			expect_no_new_line();
 		}
@@ -2544,7 +2544,7 @@ void SyntaxTree::parse_class(Class *_namespace) {
 
 			// check parsing dependencies
 			if (!type->is_size_known())
-				do_error("size of type " + type->long_name() + " is not known at this point");
+				do_error(format("size of type '%s' is not known at this point", type->long_name()));
 
 
 			// add element
@@ -2560,7 +2560,7 @@ void SyntaxTree::parse_class(Class *_namespace) {
 				_class->elements.add(el);
 			}
 			if ((Exp.cur != ",") and (!Exp.end_of_line()))
-				do_error("\",\" or newline expected after class element");
+				do_error("',' or newline expected after class element");
 			if (Exp.end_of_line())
 				break;
 			Exp.next();
@@ -2618,7 +2618,7 @@ void SyntaxTree::expect_indent() {
 
 void SyntaxTree::parse_global_const(const string &name, const Class *type) {
 	if (Exp.cur != "=")
-		do_error("\"=\" expected after const name");
+		do_error("'=' expected after const name");
 	Exp.next();
 
 	// find const value
@@ -2627,7 +2627,7 @@ void SyntaxTree::parse_global_const(const string &name, const Class *type) {
 	cv = transform_node(cv, [&](Node *n) { return conv_eval_const_func(n); });
 
 	if ((cv->kind != NodeKind::CONSTANT) or (cv->type != type))
-		do_error(format("only constants of type \"%s\" allowed as value for this constant", type->long_name()));
+		do_error(format("only constants of type '%s' allowed as value for this constant", type->long_name()));
 	Constant *c_orig = cv->as_const();
 
 	auto *c = add_constant(type);
@@ -2658,7 +2658,7 @@ void SyntaxTree::parse_variable_def(bool single, Block *block, Flags flags) {
 		}
 
 		if ((Exp.cur != ",") and (!Exp.end_of_line()))
-			do_error("\",\" or newline expected after definition of a global variable");
+			do_error("',' or newline expected after definition of a global variable");
 
 		// last one?
 		if (Exp.end_of_line())
@@ -2726,11 +2726,11 @@ const Class *SyntaxTree::parse_type(const Class *ns) {
 				Node *c = transform_node(parse_operand_greedy(root_of_all_evil->block), [&](Node *n) { return conv_eval_const_func(n); });
 
 				if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
-					do_error("only constants of type \"int\" allowed for size of arrays");
+					do_error("only constants of type 'int' allowed for size of arrays");
 				int array_size = c->as_const()->as_int();
 				//Exp.next();
 				if (Exp.cur != "]")
-					do_error("\"]\" expected after array size");
+					do_error("']' expected after array size");
 				t = make_class_array(t, array_size);
 			}
 
@@ -2739,7 +2739,7 @@ const Class *SyntaxTree::parse_type(const Class *ns) {
 			Exp.next();
 
 			if (Exp.cur != "}")
-				do_error("\"}\" expected after dict{");
+				do_error("'}' expected after dict{");
 
 			Exp.next();
 
@@ -2751,7 +2751,7 @@ const Class *SyntaxTree::parse_type(const Class *ns) {
 				if (c->name == Exp.cur)
 					sub = c;
 			if (!sub)
-				do_error(format("class %s does not have a sub-class %s", t->long_name(), Exp.cur));
+				do_error(format("class '%s' does not have a sub-class '%s'", t->long_name(), Exp.cur));
 			t = sub;
 			Exp.next();
 		} else {
@@ -2801,7 +2801,7 @@ Function *SyntaxTree::parse_function_header(Class *name_space, Flags flags) {
 				break;
 
 			if (Exp.cur != ",")
-				do_error("\",\" or \")\" expected after parameter");
+				do_error("',' or ')' expected after parameter");
 			Exp.next(); // ','
 		}
 	Exp.next(); // ')'

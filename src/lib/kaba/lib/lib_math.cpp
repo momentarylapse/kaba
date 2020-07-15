@@ -210,7 +210,7 @@ public:
 			int n = min(type->array_length, b->num);
 			for (int i=0; i<n; i++)
 				unwrap((*b)[i], (char*)var + i*t_el->size, t_el);
-		} else if (aa.type == TYPE_HASH) {
+		} else if (aa.type == TYPE_MAP) {
 			auto *map = aa.as_map();
 			auto keys = aa.keys();
 			for (auto &e: type->elements)
@@ -712,36 +712,36 @@ void SIAddPackageMath() {
 			func_add_param("v", TypeVli);
 	
 	add_class(TypeAny);
-		class_add_element("type", TypeInt, 0);
-		class_add_element("data", TypePointer, 4);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, any_p(mf(&Any::__init__)));
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, any_p(mf(&Any::clear)));
-		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, any_p(mf(&Any::set)));
+		class_add_elementx("type", TypeClassP, &Any::_class);
+		class_add_elementx("data", TypePointer, &Any::data);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Any::__init__);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Any::clear);
+		class_add_funcx(IDENTIFIER_FUNC_ASSIGN, TypeVoid, &Any::set);
 			func_add_param("a", TypeAny);
-		class_add_func("__iadd__", TypeVoid, any_p(mf(&Any::_add)));
+		class_add_funcx("__iadd__", TypeVoid, &Any::_add);
 			func_add_param("a", TypeAny);
-		class_add_func("__isub__", TypeVoid, any_p(mf(&Any::_sub)));
+		class_add_funcx("__isub__", TypeVoid, &Any::_sub);
 			func_add_param("a", TypeAny);
-		class_add_func("clear", TypeVoid, any_p(mf(&Any::clear)));
-		class_add_func("length", TypeInt, any_p(mf(&Any::length)), Flags::PURE);
-		class_add_func("__get__", TypeAny, any_p(mf(&KabaAny::_map_get)), Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("clear", TypeVoid, &Any::clear);
+		class_add_funcx("length", TypeInt, &Any::length, Flags::PURE);
+		class_add_funcx("__get__", TypeAny, &KabaAny::_map_get, Flags::RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
-		class_add_func("set", TypeVoid, any_p(mf(&KabaAny::_map_set)), Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("set", TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_func("__get__", TypeAny, any_p(mf(&KabaAny::_array_get)), Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("__get__", TypeAny, &KabaAny::_array_get, Flags::RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
-		class_add_func("set", TypeVoid, any_p(mf(&KabaAny::_array_set)), Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("set", TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
 			func_add_param("value", TypeAny);
-		class_add_func("add", TypeVoid, any_p(mf(&KabaAny::_array_add)), Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("add", TypeVoid, &KabaAny::_array_add, Flags::RAISES_EXCEPTIONS);
 			func_add_param("a", TypeAny);
-		class_add_func("keys", TypeStringList, any_p(mf(&Any::keys)), Flags::PURE);//, Flags::RAISES_EXCEPTIONS);
-		class_add_func("bool", TypeBool, any_p(mf(&Any::_bool)), Flags::PURE);
-		class_add_func("int", TypeInt, any_p(mf(&Any::_int)), Flags::PURE);
-		class_add_func("float", TypeFloat32, any_p(mf(&Any::_float)), Flags::PURE);
-		class_add_func("str", TypeString, any_p(mf(&Any::str)), Flags::PURE);
-		class_add_func("repr", TypeString, any_p(mf(&Any::repr)), Flags::PURE);
+		class_add_funcx("keys", TypeStringList, &Any::keys, Flags::PURE);//, Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("bool", TypeBool, &Any::_bool, Flags::PURE);
+		class_add_funcx("int", TypeInt, &Any::_int, Flags::PURE);
+		class_add_funcx("float", TypeFloat32, &Any::_float, Flags::PURE);
+		class_add_funcx("str", TypeString, &Any::str, Flags::PURE);
+		class_add_funcx("repr", TypeString, &Any::repr, Flags::PURE);
 		class_add_func("unwrap", TypeVoid, (void*)&KabaAny::unwrap, Flags::RAISES_EXCEPTIONS);
 			func_add_param("var", TypePointer);
 			func_add_param("type", TypeClassP);

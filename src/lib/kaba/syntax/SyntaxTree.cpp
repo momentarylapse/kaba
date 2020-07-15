@@ -146,7 +146,7 @@ Node *SyntaxTree::add_node_operator_by_inline(Node *p1, Node *p2, InlineID inlin
 		if (op->f->inline_no == inline_index)
 			return add_node_operator(p1, p2, op);
 
-	do_error("operator inline index not found: " + i2s((int)inline_index));
+	do_error(format("operator inline index not found: %d", (int)inline_index));
 	return nullptr;
 }
 
@@ -342,7 +342,7 @@ void SyntaxTree::do_error(const string &str, int override_exp_no, int override_l
 void SyntaxTree::do_error_implicit(Function *f, const string &str) {
 	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
 	int ex = max(f->_exp_no, f->name_space->_exp_no);
-	do_error("[auto generating " + f->signature() + "] : " + str, ex, line);
+	do_error(format("[auto generating %s] : %s", f->signature(), str), ex, line);
 }
 
 void SyntaxTree::create_asm_meta_info() {
@@ -593,12 +593,12 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	if (t->is_super_array() or t->is_dict()) {
 		t->derive_from(TypeDynamicArray, false); // we already set its size!
 		if (param->needs_constructor() and !param->get_default_constructor())
-			do_error(format("can not create a dynamic array from type %s, missing default constructor", param->long_name()));
+			do_error(format("can not create a dynamic array from type '%s', missing default constructor", param->long_name()));
 		t->param = param;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_array()) {
 		if (param->needs_constructor() and !param->get_default_constructor())
-			do_error(format("can not create an array from type %s, missing default constructor", param->long_name()));
+			do_error(format("can not create an array from type '%s', missing default constructor", param->long_name()));
 		add_missing_function_headers_for_class(t);
 	}
 	return t;
@@ -737,7 +737,7 @@ Node *SyntaxTree::conv_return_by_memory(Node *n, Function *f) {
 	Node *ret = deref_node(p_ret);
 	Node *cmd_assign = link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
-		do_error("no = operator for return from function found: " + f->long_name());
+		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
 
 	n->set_num_params(0);
@@ -1031,7 +1031,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		auto *t_el = n->type->get_array_element();
 		Function *cf = n->type->get_func("add", TypeVoid, {t_el});
 		if (!cf)
-			do_error(format("[..]: can not find %s.add(%s) function???", n->type->long_name(), t_el->long_name()));
+			do_error(format("[..]: can not find '%s.add(%s)' function???", n->type->long_name(), t_el->long_name()));
 
 		// temp var
 		auto *f = cur_func;
@@ -1050,7 +1050,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		auto *t_el = n->type->get_array_element();
 		Function *cf = n->type->get_func("set", TypeVoid, {TypeString, t_el});
 		if (!cf)
-			do_error(format("[..]: can not find %s.set(string,%s) function???", n->type->long_name(), t_el->long_name()));
+			do_error(format("[..]: can not find '%s.set(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 
 		// temp var
 		auto *f = cur_func;
