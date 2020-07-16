@@ -127,6 +127,10 @@ string kaba_char2str(char c) {
 	return string(&c, 1);
 }
 
+string kaba_char_repr(char c) {
+	return "'" + string(&c, 1).escape() + "'";
+}
+
 
 string kaba_string_format(const string &s, const string &fmt) {
 	try {
@@ -619,6 +623,7 @@ void SIAddPackageBase() {
 
 	add_class(TypeChar);
 		class_add_funcx("str", TypeString, &kaba_char2str, Flags::PURE);
+		class_add_funcx("repr", TypeString, &kaba_char_repr, Flags::PURE);
 		class_add_funcx("int", TypeInt, &_Char2Int, Flags::PURE);
 			func_set_inline(InlineID::CHAR_TO_INT);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeChar, TypeChar, InlineID::CHAR_ASSIGN);

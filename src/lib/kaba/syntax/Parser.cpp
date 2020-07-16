@@ -50,7 +50,7 @@ int64 s2i2(const string &str) {
 // find the type of a (potential) constant
 //  "1.2" -> float
 const Class *SyntaxTree::get_constant_type(const string &str) {
-	// character "..."
+	// character '...'
 	if ((str[0] == '\'') and (str.back() == '\''))
 		return TypeChar;
 
@@ -96,9 +96,9 @@ void SyntaxTree::get_constant_value(const string &str, Value &value) {
 	value.init(get_constant_type(str));
 // literal
 	if (value.type == TypeChar) {
-		value.as_int() = str[1];
+		value.as_int() = str.unescape()[1];
 	} else if (value.type == TypeString) {
-		value.as_string() = str.substr(1, -2);
+		value.as_string() = str.substr(1, -2).unescape();
 	} else if (value.type == TypeCString) {
 		strcpy((char*)value.p(), str.substr(1, -2).c_str());
 	} else if (value.type == TypeInt) {
