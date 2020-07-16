@@ -39,6 +39,9 @@ Any EmptyVar;
 Any Any::EmptyArray = *(Array<Any>*)&_empty_dummy_array_;
 Any Any::EmptyMap = Any(_empty_dummy_map_);
 
+//#define any_db(m)	msg_write(m)
+#define any_db(m)
+
 
 static string type_name(int t) {
 	if (t == Any::TYPE_NONE)
@@ -63,6 +66,7 @@ static string type_name(int t) {
 Any::Any() {
 	type = TYPE_NONE;
 	data = NULL;
+	parent = nullptr;
 #ifdef _X_USE_KABA_
 	_class = Kaba::TypeVoid;
 #else
@@ -72,6 +76,10 @@ Any::Any() {
 
 void Any::__init__() {
 	new(this) Any;
+}
+
+void Any::__delete__() {
+	this->~Any();
 }
 
 Any::Any(const Any &a) : Any() {
@@ -113,8 +121,23 @@ Any::Any(const AnyMap &m) : Any() {
 	*as_map() = m;
 }
 
+Any Any::ref() {
+	Any r;
+	r.parent = this;
+	r.type = type;
+	r.data = data;
+	r._class = _class;
+	any_db(format("ref  %s -> %s:   %s", p2s(this), p2s(parent), str()));
+	return r;
+}
 
 void Any::create_type(int _type) {
+	if (parent) {
+		any_db(format("parent create  %s -> %s:   %s", p2s(this), p2s(parent), str()));
+		parent->create_type(_type);
+		sync_from_parent();
+		return;
+	}
 	clear();
 	type = _type;
 	_class = _get_class(type);
@@ -138,6 +161,26 @@ void Any::create_type(int _type) {
 	}
 }
 
+void Any::sync_to_parent() {
+	if (parent) {
+		any_db(format("sync  %s -> %s:   %s", p2s(this), p2s(parent), str()));
+		parent->data = data;
+		parent->type = type;
+		parent->_class = _class;
+		parent->sync_to_parent();
+	}
+}
+
+void Any::sync_from_parent() {
+	if (parent) {
+		any_db(format("sync  %s << %s:   %s", p2s(this), p2s(parent), parent->str()));
+		parent->sync_from_parent();
+		data = parent->data;
+		type = parent->type;
+		_class = parent->_class;
+	}
+}
+
 /*Any::Any(const AnyHashMap &a)
 {
 	type = TYPE_DICT;
@@ -145,30 +188,38 @@ void Any::create_type(int _type) {
 	*((AnyHashMap*)data) = a;
 }*/
 
-Any::~Any()
-{	clear();	}
+Any::~Any() {
+	if (!parent)
+		clear();
+}
 
 void Any::clear() {
-	//msg_write(format("clear %s  %p", type->Name, this));
-	if (type == TYPE_INT)
-		delete as_int();
-	else if (type == TYPE_FLOAT)
-		delete as_float();
-	else if (type == TYPE_BOOL)
-		delete as_bool();
-	else if (type == TYPE_STRING)
-		delete as_string();
-	else if (type == TYPE_ARRAY)
-		delete as_array();
-	else if (type == TYPE_MAP)
-		delete as_map();
-	else if (type == TYPE_POINTER)
-		delete as_pointer();
-	else if (type != TYPE_NONE)
-		msg_error("any.clear(): " + type_name(type));
-	type = TYPE_NONE;
-	_class = _get_class(type);
-	data = NULL;
+	//any_db(format("clear  %s", p2s(this)));
+	if (parent) {
+		any_db(format("parent clear  %s -> %s:   %s", p2s(this), p2s(parent), str()));
+		parent->clear();
+		sync_from_parent();
+	} else {
+		if (type == TYPE_INT)
+			delete as_int();
+		else if (type == TYPE_FLOAT)
+			delete as_float();
+		else if (type == TYPE_BOOL)
+			delete as_bool();
+		else if (type == TYPE_STRING)
+			delete as_string();
+		else if (type == TYPE_ARRAY)
+			delete as_array();
+		else if (type == TYPE_MAP)
+			delete as_map();
+		else if (type == TYPE_POINTER)
+			delete as_pointer();
+		else if (type != TYPE_NONE)
+			msg_error("any.clear(): " + type_name(type));
+		type = TYPE_NONE;
+		_class = _get_class(type);
+		data = NULL;
+	}
 }
 
 string Any::repr() const {
@@ -241,8 +292,11 @@ float Any::_float() const {
 	throw Exception("can not interpret as float: " + type_name(type));
 }
 
-Any &Any::operator = (const Any &a) {
+void Any::operator = (const Any &a) {
 	if (&a != this) {
+		bool b = parent;
+		if (parent)
+			any_db("=   IS REF " + str());
 		create_type(a.type);
 		if (a.type == TYPE_INT) {
 			*as_int() = *a.as_int();
@@ -262,8 +316,9 @@ Any &Any::operator = (const Any &a) {
 			clear();
 			msg_error("any = any: " + type_name(a.type));
 		}
+		if (b)
+			any_db(str());
 	}
-	return *this;
 }
 
 Any Any::operator + (const Any &a) const {
@@ -302,6 +357,12 @@ void Any::operator += (const Any &a) {
 }
 
 void Any::add(const Any &a) {
+	if (parent) {
+		parent->add(a);
+		sync_from_parent();
+		any_db(format("parent add  %s -> %s:   %s", p2s(this), p2s(parent), str()));
+		return;
+	}
 	if (type == TYPE_NONE)
 		create_type(TYPE_ARRAY);
 	if (type == TYPE_ARRAY) {
@@ -318,6 +379,11 @@ void Any::add(const Any &a) {
 
 // TODO: map.append(map)
 void Any::append(const Any &a) {
+	if (parent) {
+		parent->append(a);
+		sync_from_parent();
+		return;
+	}
 	if (a.type != TYPE_ARRAY)
 		throw Exception("parameter not an array: " + type_name(a.type));
 	if (type == TYPE_NONE)
@@ -410,13 +476,18 @@ Array<Any>* Any::as_array() const {
 	return (Array<Any>*)data;
 }
 
-Any Any::array_get(int i) const {
+Any Any::array_get(int i) {
 	if (type != TYPE_ARRAY)
 		throw Exception("not an array: " + type_name(type));
-	return (*this)[i];
+	return (*this)[i].ref();
 }
 
 void Any::array_set(int i, const Any &value) {
+	if (parent) {
+		parent->array_set(i, value);
+		sync_from_parent();
+		return;
+	}
 	if (type == TYPE_NONE)
 		create_type(TYPE_ARRAY);
 	if (type != TYPE_ARRAY)
@@ -424,18 +495,34 @@ void Any::array_set(int i, const Any &value) {
 	(*this)[i] = value;
 }
 
-Any Any::map_get(const string &key) const {
+Any Any::map_get(const string &key) {
 	if (type != TYPE_MAP)
 		throw Exception("not a map: " + type_name(type));
 	if (!as_map()->contains(key))
 		throw Exception("key not found: " + key);
-	return (*as_map())[key];
+	return (*as_map())[key].ref();
 }
 
 void Any::map_set(const string &key, const Any &value) {
+	if (parent) {
+		parent->map_set(key, value);
+		sync_from_parent();
+		return;
+	}
 	if (type == TYPE_NONE)
 		create_type(TYPE_MAP);
 	if (type != TYPE_MAP)
 		throw Exception("not a map: " + type_name(type));
 	as_map()->set(key, value);
+}
+
+void Any::map_drop(const string &key) {
+	if (parent) {
+		parent->map_drop(key);
+		sync_from_parent();
+		return;
+	}
+	if (type != TYPE_MAP)
+		throw Exception("not a map: " + type_name(type));
+	throw Exception("TODO");
 }

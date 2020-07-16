@@ -191,6 +191,7 @@ Array<Node*> SyntaxTree::parse_operand_extension_element(Node *operand) {
 
 Node *SyntaxTree::parse_operand_extension_array(Node *operand, Block *block) {
 	operand = force_concrete_type(operand);
+	operand = deref_if_pointer(operand);
 
 	// array index...
 	Exp.next();
@@ -1456,6 +1457,7 @@ Node *SyntaxTree::parse_for_header(Block *block) {
 	// first value/array
 	Node *val0 = parse_operand_super_greedy(block);
 	val0 = force_concrete_type(val0);
+	val0 = deref_if_pointer(val0);
 
 
 	if (Exp.cur == ":") {
@@ -1875,6 +1877,7 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	Exp.next(); // len
 	Node *sub = parse_single_func_param(block);
 	sub = force_concrete_type(sub);
+	sub = deref_if_pointer(sub);
 
 	// array?
 	if (sub->type->is_array()) {
@@ -1964,6 +1967,12 @@ Node *SyntaxTree::force_concrete_type(Node *node) {
 		return node;
 	}
 	do_error("unhandled abstract type...");
+	return node;
+}
+
+Node *SyntaxTree::deref_if_pointer(Node *node) {
+	if (node->type->is_pointer())
+		return deref_node(node);
 	return node;
 }
 
