@@ -524,5 +524,5 @@ void Any::map_drop(const string &key) {
 	}
 	if (type != TYPE_MAP)
 		throw Exception("not a map: " + type_name(type));
-	throw Exception("TODO");
+	as_map()->drop(key);
 }

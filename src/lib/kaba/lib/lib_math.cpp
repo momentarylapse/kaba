@@ -751,6 +751,8 @@ void SIAddPackageMath() {
 			func_add_param("value", TypeAny);
 		class_add_funcx("add", TypeVoid, &KabaAny::_array_add, Flags::RAISES_EXCEPTIONS);
 			func_add_param("a", TypeAny);
+		class_add_funcx("drop", TypeVoid, &Any::map_drop, Flags::RAISES_EXCEPTIONS);
+			func_add_param("key", TypeString);
 		class_add_funcx("keys", TypeStringList, &Any::keys, Flags::PURE);//, Flags::RAISES_EXCEPTIONS);
 		class_add_funcx("bool", TypeBool, &Any::_bool, Flags::PURE);
 		class_add_funcx("int", TypeInt, &Any::_int, Flags::PURE);

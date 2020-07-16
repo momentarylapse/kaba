@@ -1,9 +1,11 @@
+use os
+
 bool test(string filename)
 	string s = filename.head(filename.num - 4)
 	s += ".kaba"
 	try
-		string r1 = shell_execute("kaba '" + s + "'")
-		string r2 = FileRead(filename)
+		string r1 = shell_execute("kaba '{{s}}'")
+		string r2 = Filesystem.read(filename)
 
 	
 		for i in s.num:42
@@ -26,6 +28,6 @@ bool test(string filename)
 		return false
 
 void main()
-	DirEntry[] list = DirSearch(".", "*.reg", false)
+	let list = Filesystem.search(".", "*.reg", false)
 	for e in list
-		test(e.name)
+		test(e)
