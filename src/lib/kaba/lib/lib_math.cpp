@@ -739,14 +739,14 @@ void SIAddPackageMath() {
 			func_add_param("a", TypeAny);
 		class_add_funcx("clear", TypeVoid, &Any::clear);
 		class_add_funcx("length", TypeInt, &Any::length, Flags::PURE);
-		class_add_funcx("__get__", TypeAny, &KabaAny::_map_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
+		class_add_funcx(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_map_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 		class_add_funcx("set", TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_funcx("__get__", TypeAny, &KabaAny::_array_get, Flags::RAISES_EXCEPTIONS);
+		class_add_funcx(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_array_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
-		class_add_funcx("set", TypeVoid, &KabaAny::_array_set, Flags::_SELFREF__RAISES_EXCEPTIONS);
+		class_add_funcx("set", TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
 			func_add_param("value", TypeAny);
 		class_add_funcx("add", TypeVoid, &KabaAny::_array_add, Flags::RAISES_EXCEPTIONS);
