@@ -1,9 +1,9 @@
 void main()
 	int{} d, i
-	d.set("a", 9)
-	d.set("b", 19)
+	d.__set__("a", 9)
+	d["b"] = 19
 	i = d
-	d.set("a", 29)
+	d["a"] = 29
 	print(d.num)
 	print(d)
 	print(i)
@@ -12,11 +12,11 @@ void main()
 	#print(d.str())
 	
 	string{} dd
-	dd.set("a", "test")
+	dd["a"] = "test"
 	print(dd["a"])
 	print(dd)
 	
 	float{} ff
-	ff.set("pi", pi)
+	ff["pi"] = pi
 	print(ff)
 	print(ff["pi"])

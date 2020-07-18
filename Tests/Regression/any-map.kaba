@@ -1,9 +1,9 @@
 void main()
 	any a
 	any b = "hallo"
-	a.set("a", "hallo")
-	a.set("c", 13)
-	a.set("r", a)
+	a.__set__("a", "hallo")
+	a["c"] = 13
+	a["r"] = a
 	print(a)
 	print(a["a"])
 	try

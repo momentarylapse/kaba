@@ -66,7 +66,7 @@ void script_make_dict(Class *t, SyntaxTree *ps) {
 
 	if (p == TypeInt) {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,int>::__init__);
-		class_add_funcx("set", TypeVoid, &IntDict::set_int);
+		class_add_funcx("__set__", TypeVoid, &IntDict::set_int);
 			func_add_param("key", TypeString);
 			func_add_param("x", p);
 		class_add_funcx("__get__", p, &IntDict::get_int, Flags::RAISES_EXCEPTIONS);
@@ -74,7 +74,7 @@ void script_make_dict(Class *t, SyntaxTree *ps) {
 		class_add_funcx("str", TypeString, &IntDict::str, Flags::PURE);
 	} else if (p == TypeFloat32) {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,float>::__init__);
-		class_add_funcx("set", TypeVoid, &FloatDict::set_float);
+		class_add_funcx("__set__", TypeVoid, &FloatDict::set_float);
 			func_add_param("key", TypeString);
 			func_add_param("x", p);
 		class_add_funcx("__get__", p, &FloatDict::get_float, Flags::RAISES_EXCEPTIONS);
@@ -82,7 +82,7 @@ void script_make_dict(Class *t, SyntaxTree *ps) {
 		class_add_funcx("str", TypeString, &FloatDict::str, Flags::PURE);
 	} else if (p == TypeString) {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Map<string,string>::__init__);
-		class_add_funcx("set", TypeVoid, &Map<string,string>::set);
+		class_add_funcx("__set__", TypeVoid, &Map<string,string>::set);
 			func_add_param("key", TypeString);
 			func_add_param("x", p);
 		class_add_funcx("__get__", p, &StringDict::get_string, Flags::RAISES_EXCEPTIONS);

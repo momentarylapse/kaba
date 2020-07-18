@@ -741,12 +741,12 @@ void SIAddPackageMath() {
 		class_add_funcx("length", TypeInt, &Any::length, Flags::PURE);
 		class_add_funcx(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_map_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
-		class_add_funcx("set", TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("__set__", TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
 		class_add_funcx(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_array_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
-		class_add_funcx("set", TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS);
+		class_add_funcx("__set__", TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
 			func_add_param("value", TypeAny);
 		class_add_funcx("add", TypeVoid, &KabaAny::_array_add, Flags::RAISES_EXCEPTIONS);
@@ -977,7 +977,7 @@ void SIAddPackageMath() {
 	add_class(TypeAnyDict);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, mf(&AnyDict::__init__));
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, mf(&AnyDict::__delete__));
-		class_add_funcx("set", TypeVoid, &AnyDict::set);
+		class_add_funcx("__set__", TypeVoid, &AnyDict::set);
 			func_add_param("key", TypeString);
 			func_add_param("x", TypeAny);
 		class_add_funcx("__get__", TypeAny, &AnyDict::get_item, Flags::RAISES_EXCEPTIONS);

@@ -1251,6 +1251,31 @@ Node *SyntaxTree::link_operator(PrimitiveOperator *primop, Node *param1, Node *p
 	if (pp1->is_pointer())
 		pp1 = p1->param;
 
+	if (primop->id == OperatorID::ASSIGN) {
+		//param1->show();
+		if (param1->kind == NodeKind::FUNCTION_CALL) {
+			auto f = param1->as_func();
+			if (f->name == "__get__") {
+				auto inst = param1->params[0];
+				auto index = param1->params[1];
+				//msg_write(format("[]=...    void %s.__set__(%s, %s)?", inst->type->long_name(), index->type->long_name(), p2->long_name()));
+				for (auto *ff: inst->type->functions)
+					if (ff->name == "__set__" and ff->return_type == TypeVoid and ff->num_params == 2) {
+						if (ff->literal_param_type[0] != index->type)
+							continue;
+						int pen, cast;
+						if (!type_match_with_cast(param2, false, ff->literal_param_type[1], pen, cast))
+							continue;
+						//msg_write(ff->signature());
+						auto nn = add_node_member_call(ff, inst);
+						nn->set_param(1, index);
+						nn->set_param(2, apply_type_cast(cast, param2, ff->literal_param_type[1]));
+						return nn;
+					}
+			}
+		}
+	}
+
 	// exact match as class function?
 	for (Function *f: pp1->functions)
 		if ((f->name == op_func_name) and !f->is_static()) {

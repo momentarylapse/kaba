@@ -1048,9 +1048,9 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		return array;
 	} else if (n->kind == NodeKind::DICT_BUILDER) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_func("set", TypeVoid, {TypeString, t_el});
+		Function *cf = n->type->get_func("__set__", TypeVoid, {TypeString, t_el});
 		if (!cf)
-			do_error(format("[..]: can not find '%s.set(string,%s)' function???", n->type->long_name(), t_el->long_name()));
+			do_error(format("[..]: can not find '%s.__set__(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 
 		// temp var
 		auto *f = cur_func;
