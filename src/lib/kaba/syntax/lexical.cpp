@@ -330,21 +330,6 @@ bool ExpressionBuffer::analyse_expression(const char *source, int &pos, Expressi
 				// escape sequence
 				if (c == '\\') {
 					Temp[TempLength ++] = source[pos ++];
-					/*if (source[pos] == '\\')
-						Temp[TempLength - 1] = '\\';
-					else if (source[pos] == '\"')
-						Temp[TempLength - 1] = '\"';
-					else if (source[pos] == 'n')
-						Temp[TempLength - 1] = '\n';
-					else if (source[pos] == 'r')
-						Temp[TempLength - 1] = '\r';
-					else if (source[pos] == 't')
-						Temp[TempLength - 1] = '\t';
-					else if (source[pos] == '0')
-						Temp[TempLength - 1] = '\0';
-					else
-						syntax->do_error("unknown escape in string");
-					pos ++;*/
 				}
 				continue;
 			}

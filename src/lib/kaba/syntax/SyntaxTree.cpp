@@ -20,10 +20,10 @@ Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
 
 string Operator::sig() const {
 	if (param_type_1 and param_type_2)
-		return "(" + param_type_1->name + ") " + primitive->name + " (" + param_type_2->name + ")";
+		return format("(%s) %s (%s)", param_type_1->name, primitive->name, param_type_2->name);
 	if (param_type_1)
-		return "(" + param_type_1->name + ") " + primitive->name;
-	return primitive->name + " (" + param_type_2->name + ")";
+		return format("(%s) %s", param_type_1->name, primitive->name);
+	return format("%s (%s)", primitive->name, param_type_2->name);
 }
 
 

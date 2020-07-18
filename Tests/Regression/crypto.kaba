@@ -3,7 +3,7 @@ void main()
 	Crypto.create_keys(c1, c2, "rsa", 64)
 	
 	string cypher = c1.encrypt("noch ein kleiner Test sdfhsdkfjhskdfjhlskdfjhlskdjfh")
-	string public_key = c2.str()
+	string public_key = str(c2)
 	#print public_key
 	
 	c3.from_str(public_key)

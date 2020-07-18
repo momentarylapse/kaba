@@ -294,7 +294,7 @@ Node *SyntaxTree::make_fake_constructor(const Class *t, Block *block, const Clas
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
 		
-	auto *cf = param_type->get_func(t->name, t, {});
+	auto *cf = param_type->get_func("__" + t->name + "__", t, {});
 	if (!cf)
 		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), t->long_name()));
 	return add_node_member_call(cf, nullptr); // temp var added later...
@@ -1122,7 +1122,7 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 		}
 	}
 	if (wanted == TypeString) {
-		Function *cf = given->get_func("str", TypeString, {});
+		Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		if (cf) {
 			penalty = 50;
 			cast = TYPE_CAST_OWN_STRING;
@@ -1146,7 +1146,7 @@ Node *SyntaxTree::apply_type_cast(int tc, Node *node, const Class *wanted) {
 	if (tc == TYPE_CAST_REFERENCE)
 		return ref_node(node);
 	if (tc == TYPE_CAST_OWN_STRING) {
-		Function *cf = node->type->get_func("str", TypeString, {});
+		Function *cf = node->type->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		if (cf)
 			return add_node_member_call(cf, node);
 		do_error("automatic .str() not implemented yet");
@@ -1905,9 +1905,8 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 	sub = deref_if_pointer(sub);
 
 	// array?
-	if (sub->type->is_array()) {
+	if (sub->type->is_array())
 		return add_node_const(add_constant_int(sub->type->array_length));
-	}
 
 	// element "int num/length"?
 	for (auto &e: sub->type->elements)
@@ -1915,11 +1914,10 @@ Node *SyntaxTree::parse_statement_len(Block *block) {
 			return shift_node(sub, false, e.offset, e.type);
 		}
 		
-	// length() function?
-	auto *f = sub->type->get_func("length", TypeInt, {});
-	if (f) {
+	// __length__() function?
+	auto *f = sub->type->get_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {});
+	if (f)
 		return add_node_member_call(f, sub);
-	}
 
 
 	do_error(format("don't know how to get the length of an object of class '%s'", sub->type->long_name()));
@@ -2013,9 +2011,9 @@ Node *SyntaxTree::add_converter_str(Node *sub, bool repr) {
 
 	Function *cf = nullptr;	
 	if (repr)
-		cf = t->get_func("repr", TypeString, {});
+		cf = t->get_func(IDENTIFIER_FUNC_REPR, TypeString, {});
 	if (!cf)
-		cf = t->get_func("str", TypeString, {});
+		cf = t->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 	if (cf)
 		return add_node_member_call(cf, sub);
 

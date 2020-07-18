@@ -6,8 +6,8 @@ void main()
 	
 	vli r
 	v.idiv(w, r)
-	print(v.str() + " mod " + r.str())
+	print(str(v) + " mod " + str(r))
 	
 	v = "100000000000"
 	v.idiv(w, r)
-	print(v.str() + " mod " + r.str())
+	print(str(v) + " mod " + str(r))
