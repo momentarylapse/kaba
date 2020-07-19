@@ -2,5 +2,5 @@ void main()
 	try
 		raise(new Exception("test"))
 	except Exception as e
-		print(e.message())
+		print(str(e))
 

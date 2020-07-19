@@ -263,7 +263,7 @@ void SyntaxTree::digest() {
 
 	transform([&](Node* n){ return conv_class_and_func_to_const(n); });
 
-	eval_const_expressions();
+	eval_const_expressions(true);
 
 	transformb([&](Node* n, Block* b){ return conv_break_down_high_level(n, b); });
 	if (config.verbose)
@@ -278,7 +278,7 @@ void SyntaxTree::digest() {
 	simplify_shift_deref();
 	simplify_ref_deref();
 
-	eval_const_expressions();
+	eval_const_expressions(true);
 
 	if (config.verbose)
 		show("digest:pre-proc");
@@ -300,7 +300,7 @@ void SyntaxTree::digest() {
 	if (config.verbose)
 		show("digest:deref");
 
-	eval_const_expressions();
+	eval_const_expressions(false);
 	if (config.verbose)
 		show("digest:map");
 

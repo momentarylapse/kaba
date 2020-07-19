@@ -293,6 +293,8 @@ void SyntaxTree::make_func_node_callable(Node *l) {
 Node *SyntaxTree::make_fake_constructor(const Class *t, Block *block, const Class *param_type) {
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
+	if (param_type->is_pointer())
+		param_type = param_type->param;
 		
 	auto *cf = param_type->get_func("__" + t->name + "__", t, {});
 	if (!cf)
@@ -886,6 +888,7 @@ Node *SyntaxTree::try_parse_format_string(Block *block, Value &v) {
 		
 		try {
 			Node *n = parse_operand_super_greedy(block);
+			n = deref_if_pointer(n);
 
 			if (fmt != "") {
 				n = apply_format(n, fmt);
@@ -2002,12 +2005,11 @@ Node *SyntaxTree::deref_if_pointer(Node *node) {
 
 Node *SyntaxTree::add_converter_str(Node *sub, bool repr) {
 	sub = force_concrete_type(sub);
+	// evil shortcut for pointers (carefull with nil!!)
+	if (!repr)
+		sub = deref_if_pointer(sub);
 	
 	auto *t = sub->type;
-
-	// evil shortcut for pointers (carefull with nil!!)
-	if (!repr and t->is_pointer())
-		return add_converter_str(deref_node(sub), repr);
 
 	Function *cf = nullptr;	
 	if (repr)
@@ -2037,7 +2039,7 @@ Node *SyntaxTree::parse_statement_str(Block *block) {
 }
 
 Node *SyntaxTree::parse_statement_repr(Block *block) {
-	Exp.next(); // str
+	Exp.next(); // repr
 	Node *sub = parse_single_func_param(block);
 
 	return add_converter_str(sub, true);

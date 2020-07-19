@@ -4,13 +4,13 @@ void test(Exception *_e)
 	try
 		raise(_e)
 	except MyError as e
-		print("MyError " + e.message())
+		print("MyError " + str(e))
 #	except Exception as e
-#		print("Exception " + e.message())
+#		print("Exception " + str(e))
 
 void main()
 	try
 		test(new MyError("aaa"))
 		test(new Exception("bbb"))
 	except Exception as e
-		print("end: " + e.message())
+		print("end: " + str(e))

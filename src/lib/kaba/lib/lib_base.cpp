@@ -879,8 +879,8 @@ void SIAddPackageBase() {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaException::__init__);
 			func_add_param("message", TypeString);
 		class_add_func_virtualx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaException::__delete__);
-		class_add_func_virtualx("message", TypeString, &KabaException::message);
-		class_add_element("text", TypeString, config.pointer_size);
+		class_add_func_virtualx(IDENTIFIER_FUNC_STR, TypeString, &KabaException::message);
+		class_add_element("_text", TypeString, config.pointer_size);
 		class_set_vtable(KabaException);
 
 	add_funcx(IDENTIFIER_RAISE, TypeVoid, &kaba_raise_exception, Flags::_STATIC__RAISES_EXCEPTIONS);

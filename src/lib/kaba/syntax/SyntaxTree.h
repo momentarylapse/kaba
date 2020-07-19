@@ -254,7 +254,8 @@ public:
 
 	// pre processor
 	Node *conv_eval_const_func(Node *c);
-	void eval_const_expressions();
+	Node *conv_eval_const_func_nofunc(Node *c);
+	void eval_const_expressions(bool allow_func_eval);
 	Node *pre_process_node_addresses(Node *c);
 	void pre_processor_addresses();
 	void simplify_shift_deref();
