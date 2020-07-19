@@ -560,6 +560,8 @@ void SIAddPackageBase() {
 
 	add_class(TypeFloat32);
 		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &kaba_float2str, Flags::PURE);
+		class_add_funcx("str2", TypeString, &f2s, Flags::PURE);
+			func_add_param("decimals", TypeInt);
 		class_add_funcx("format", TypeString, &kaba_float_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
 		class_add_funcx("__int__", TypeInt, &_Float2Int, Flags::PURE);
