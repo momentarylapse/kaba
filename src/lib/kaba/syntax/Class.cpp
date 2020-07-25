@@ -33,7 +33,7 @@ bool type_match(const Class *given, const Class *wanted) {
 		return true;
 
 	// allow any pointer?
-	if ((given->is_pointer()) and (wanted == TypePointer))
+	if (given->is_pointer() and (wanted == TypePointer))
 		return true;
 
 	// FIXME... quick'n'dirty hack to allow nil as parameter

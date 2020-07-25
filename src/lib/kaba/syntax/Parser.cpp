@@ -2473,7 +2473,7 @@ void SyntaxTree::parse_enum(Class *_namespace) {
 
 			if (Exp.end_of_line())
 				break;
-			if ((Exp.cur != ","))
+			if (Exp.cur != ",")
 				do_error("',' or newline expected after enum definition");
 			Exp.next();
 			expect_no_new_line();
@@ -2535,16 +2535,11 @@ void SyntaxTree::parse_class(Class *_namespace) {
 			continue;
 		}
 
-		/*if (Exp.cur == IDENTIFIER_CONST) {
-			//parse_enum();
-			continue;
-		}*/
-
 		const Class *type = parse_type(_class); // force
 		while(!Exp.end_of_line()) {
 			//int indent = Exp.cur_line->indent;
-
-			auto el = ClassElement(Exp.cur, type, 0);
+			
+			string name = Exp.cur;
 			Exp.next();
 
 			// is a function?
@@ -2558,19 +2553,24 @@ void SyntaxTree::parse_class(Class *_namespace) {
 				break;
 			}
 
+			if (flags_has(flags, Flags::CONST)) {
+				parse_named_const(name, type, _class, root_of_all_evil->block);
+				break;
+			}
+
 			// override?
 			ClassElement *orig = nullptr;
 			for (auto &e: _class->elements)
-				if (e.name == el.name) //and e.type->is_pointer and el.type->is_pointer)
+				if (e.name == name) //and e.type->is_pointer and el.type->is_pointer)
 					orig = &e;
 			bool override = flags_has(flags, Flags::OVERRIDE);
 			if (override and ! orig)
-				do_error(format("can not override element '%s', no previous definition", el.name));
+				do_error(format("can not override element '%s', no previous definition", name));
 			if (!override and orig)
-				do_error(format("element '%s' is already defined, use '%s' to override", el.name, IDENTIFIER_OVERRIDE));
+				do_error(format("element '%s' is already defined, use '%s' to override", name, IDENTIFIER_OVERRIDE));
 			if (override) {
-				if (orig->type->is_pointer() and el.type->is_pointer())
-					orig->type = el.type;
+				if (orig->type->is_pointer() and type->is_pointer())
+					orig->type = type;
 				else
 					do_error("can only override pointer elements with other pointer type");
 				continue;
@@ -2583,17 +2583,17 @@ void SyntaxTree::parse_class(Class *_namespace) {
 
 			// add element
 			if (flags_has(flags, Flags::STATIC)) {
-				auto v = new Variable(el.name, type);
+				auto v = new Variable(name, type);
 				_class->static_variables.add(v);
 			} else {
 				if (type_needs_alignment(type))
 					_offset = mem_align(_offset, 4);
-				_offset = process_class_offset(_class->long_name(), el.name, _offset);
-				el.offset = _offset;
+				_offset = process_class_offset(_class->long_name(), name, _offset);
+				auto el = ClassElement(name, type, _offset);
 				_offset += type->size;
 				_class->elements.add(el);
 			}
-			if ((Exp.cur != ",") and (!Exp.end_of_line()))
+			if ((Exp.cur != ",") and !Exp.end_of_line())
 				do_error("',' or newline expected after class element");
 			if (Exp.end_of_line())
 				break;
@@ -2650,27 +2650,23 @@ void SyntaxTree::expect_indent() {
 		do_error("additional indent expected");
 }
 
-void SyntaxTree::parse_global_const(const string &name, const Class *type) {
+void SyntaxTree::parse_named_const(const string &name, const Class *type, Class *name_space, Block *block) {
 	if (Exp.cur != "=")
 		do_error("'=' expected after const name");
 	Exp.next();
 
 	// find const value
-	Node *cv = parse_operand_super_greedy(root_of_all_evil->block);
+	Node *cv = parse_operand_super_greedy(block);
 	cv = force_concrete_type(cv);
 	cv = transform_node(cv, [&](Node *n) { return conv_eval_const_func(n); });
 
 	if ((cv->kind != NodeKind::CONSTANT) or (cv->type != type))
 		do_error(format("only constants of type '%s' allowed as value for this constant", type->long_name()));
-	Constant *c_orig = cv->as_const();
+	Constant *c_value = cv->as_const();
 
-	auto *c = add_constant(type);
-	c->set(*c_orig);
+	auto *c = add_constant(type, name_space);
+	c->set(*c_value);
 	c->name = name;
-
-	// give our const the name
-	//auto *c = cv->as_const();
-	//c->name = name;
 }
 
 void SyntaxTree::parse_variable_def(bool single, Block *block, Flags flags) {
@@ -2684,14 +2680,14 @@ void SyntaxTree::parse_variable_def(bool single, Block *block, Flags flags) {
 		Exp.next();
 
 		if (flags_has(flags, Flags::CONST)) {
-			parse_global_const(name, type);
+			parse_named_const(name, type, base_class, root_of_all_evil->block);
 		} else {
 			auto *v = new Variable(name, type);
 			v->is_extern = flags_has(flags, Flags::EXTERN);
 			base_class->static_variables.add(v);
 		}
 
-		if ((Exp.cur != ",") and (!Exp.end_of_line()))
+		if ((Exp.cur != ",") and !Exp.end_of_line())
 			do_error("',' or newline expected after definition of a global variable");
 
 		// last one?
@@ -2998,7 +2994,7 @@ void SyntaxTree::parse_top_level() {
 				parse_function_header(base_class, flags);
 				skip_parsing_function_body();
 
-			// global variables
+			// global variables/consts
 			} else {
 				parse_variable_def(false, root_of_all_evil->block, flags);
 			}
