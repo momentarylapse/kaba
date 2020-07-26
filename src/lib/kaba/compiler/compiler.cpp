@@ -460,7 +460,8 @@ void Script::link_virtual_functions_into_vtable(const Class *c) {
 	}
 
 	for (const Class *cc: c->classes)
-		link_virtual_functions_into_vtable(cc);
+		if (cc->name_space == c)
+			link_virtual_functions_into_vtable(cc);
 }
 
 struct DynamicLibraryImport

@@ -46,7 +46,7 @@ public:
 	SyntaxTree *owner;
 	Function *f;
 
-	string sig() const;
+	string sig(const Class *ns) const;
 };
 
 
@@ -64,7 +64,7 @@ public:
 	~SyntaxTree();
 
 	void parse_buffer(const string &buffer, bool just_analyse);
-	void add_include_data(Script *s);
+	void add_include_data(Script *s, bool indirect);
 
 	void do_error(const string &msg, int override_exp_no = -1, int override_line = -1);
 	void do_error_implicit(Function *f, const string &msg);

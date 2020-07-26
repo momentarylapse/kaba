@@ -83,9 +83,8 @@ extern const Class *TypeBasePainter;
 //extern const Class *TypeTimer;
 const Class *TypeHuiWindowP;
 
-void SIAddPackageHui()
-{
-	add_package("hui", false);
+void SIAddPackageHui() {
+	add_package("hui");
 	
 	const Class *TypeHuiMenu = add_type("Menu",  sizeof(hui::Menu));
 	const Class *TypeHuiMenuP = add_type_p(TypeHuiMenu);
@@ -657,9 +656,9 @@ void SIAddPackageHui()
 	add_ext_var("AppFilename", TypeString, hui_p(&hui::Application::filename));
 	add_ext_var("AppDirectory", TypeString, hui_p(&hui::Application::directory));
 	add_ext_var("AppDirectoryStatic",TypeString, hui_p(&hui::Application::directory_static));
-	add_ext_var("HuiFilename", TypeString, hui_p(&hui::Filename));
+	add_ext_var("filename", TypeString, hui_p(&hui::Filename));
 	//add_ext_var("HuiRunning", TypeBool, hui_p(&hui::HuiRunning));
-	add_ext_var("HuiConfig", TypeHuiConfiguration, hui_p(&hui::Config));
+	add_ext_var("config", TypeHuiConfiguration, hui_p(&hui::Config));
 }
 
 };

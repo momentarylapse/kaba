@@ -17,8 +17,7 @@ void SetImmortal(SyntaxTree *ps)
 }
 
 // import data from an included script file
-void SyntaxTree::add_include_data(Script *s)
-{
+void SyntaxTree::add_include_data(Script *s, bool indirect) {
 	for (Script *i: includes)
 		if (i == s)
 			return;
@@ -36,8 +35,12 @@ void SyntaxTree::add_include_data(Script *s)
 	/*if (FlagCompileOS){
 		import_deep(this, ps);
 	}else{*/
+	if (indirect) {
+		base_class->classes.add(ps->base_class);
+	} else {
 		includes.add(s);
-		s->reference_counter ++;
+	}
+	s->reference_counter ++;
 	//}
 
 	/*ExpressionBuffer::Line *cur_line = Exp.cur_line;
@@ -146,7 +149,7 @@ void SyntaxTree::pre_compiler(bool just_analyse)
 		Exp.set(0, i);
 		if (Exp.cur[0] == '#'){
 			handle_macro(i, NumIfDefs, IfDefed, just_analyse);
-		}else if (Exp.line[i].exp[0].name == IDENTIFIER_USE){
+		}else if ((Exp.line[i].exp[0].name == IDENTIFIER_USE) or (Exp.line[i].exp[0].name == IDENTIFIER_IMPORT)) {
 			parse_import();
 			Exp.line.erase(i);
 			i --;

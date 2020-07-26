@@ -7,7 +7,7 @@
 
 namespace Kaba{
 
-void test_node_recursion(Node *root, const string &message);
+void test_node_recursion(Node *root, const Class *ns, const string &message);
 
 
 extern const Class *TypeAbstractList;
@@ -434,7 +434,7 @@ Node *SyntaxTree::parse_operand_extension_call(Array<Node*> links, Block *block)
 	string available;
 	for (Node *link: links) {
 		auto p = get_wanted_param_types(link);
-		available += format("\n%s: %s", link->sig(), type_list_to_str(p));
+		available += format("\n%s: %s", link->sig(base_class), type_list_to_str(p));
 	}
 	do_error(format("invalid function parameters: %s, expected: %s", found, available));
 	return nullptr;
@@ -2385,7 +2385,9 @@ void SyntaxTree::parse_complete_command(Block *block) {
 extern Array<Script*> loading_script_stack;
 
 void SyntaxTree::parse_import() {
-	Exp.next(); // 'use' / 'import'
+	string command = Exp.cur; // 'use' / 'import'
+	bool indirect = (command == IDENTIFIER_IMPORT);
+	Exp.next();
 
 	string name = Exp.cur;
 	
@@ -2394,9 +2396,9 @@ void SyntaxTree::parse_import() {
 		
 	
 	// internal packages?	
-	for (Script *p: Packages)
+	for (Script *p: packages)
 		if (p->filename == name) {
-			add_include_data(p);
+			add_include_data(p, indirect);
 			return;
 		}
 	
@@ -2439,7 +2441,7 @@ void SyntaxTree::parse_import() {
 	}
 
 	msg_left();
-	add_include_data(include);
+	add_include_data(include, indirect);
 }
 
 
@@ -2923,7 +2925,8 @@ void SyntaxTree::parse_all_function_bodies(const Class *name_space) {
 	// recursion
 	//for (auto *c: name_space->classes)   NO... might encounter new classes creating new functions!
 	for (int i=0; i<name_space->classes.num; i++)
-		parse_all_function_bodies(name_space->classes[i]);
+		if (name_space->classes[i]->name_space == name_space)
+			parse_all_function_bodies(name_space->classes[i]);
 }
 
 Flags SyntaxTree::parse_flags(Flags initial) {
@@ -3013,13 +3016,13 @@ void SyntaxTree::parse() {
 	show("aaa");
 
 	for (auto *f: functions)
-		test_node_recursion(f->block, "a " + f->long_name());
+		test_node_recursion(f->block, base_class, "a " + f->long_name());
 
 	for (int i=0; i<owned_classes.num; i++) // array might change...
 		auto_implement_functions(owned_classes[i]);
 
 	for (auto *f: functions)
-		test_node_recursion(f->block, "b " + f->long_name());
+		test_node_recursion(f->block, base_class, "b " + f->long_name());
 }
 
 }

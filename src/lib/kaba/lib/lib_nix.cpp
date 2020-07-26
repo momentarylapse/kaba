@@ -75,9 +75,8 @@ const Class *TypeShader;
 const Class *TypeShaderP;
 const Class *TypeUniformBuffer;
 
-void SIAddPackageNix()
-{
-	add_package("nix", false);
+void SIAddPackageNix() {
+	add_package("nix");
 	
 	TypeVertexBuffer	= add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
 	TypeVertexBufferP	= add_type_p(TypeVertexBuffer);
@@ -198,8 +197,8 @@ void SIAddPackageNix()
 				func_add_param("data", TypeDynamicArray);
 	
 		// drawing
-	add_func("NixInit", TypeVoid, nix_p(&nix::Init), Flags::STATIC);
-	add_func("NixKill", TypeVoid, nix_p(&nix::Kill), Flags::STATIC);
+	add_func("Init", TypeVoid, nix_p(&nix::Init), Flags::STATIC);
+	add_func("Kill", TypeVoid, nix_p(&nix::Kill), Flags::STATIC);
 	/*add_func("SetVideoMode", TypeVoid, nix_p(&NixSetVideoMode), Flags::STATIC);
 		func_add_param("api", TypeString);
 		func_add_param("xres", TypeInt);

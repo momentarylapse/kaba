@@ -7,3 +7,5 @@ class GridData
 
 	void draw_background()
 		plot_rect = get_plot_region()
+
+void main()

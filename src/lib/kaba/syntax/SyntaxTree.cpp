@@ -18,12 +18,12 @@ static Array<Node*> _transform_insert_before_;
 Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
 
 
-string Operator::sig() const {
+string Operator::sig(const Class *ns) const {
 	if (param_type_1 and param_type_2)
-		return format("(%s) %s (%s)", param_type_1->name, primitive->name, param_type_2->name);
+		return format("(%s) %s (%s)", param_type_1->cname(ns), primitive->name, param_type_2->cname(ns));
 	if (param_type_1)
-		return format("(%s) %s", param_type_1->name, primitive->name);
-	return format("%s (%s)", primitive->name, param_type_2->name);
+		return format("(%s) %s", param_type_1->cname(ns), primitive->name);
+	return format("%s (%s)", primitive->name, param_type_2->cname(ns));
 }
 
 
@@ -43,6 +43,8 @@ Node *SyntaxTree::cp_node(Node *c) {
 
 const Class *SyntaxTree::make_class_func(Function *f) {
 	return TypeFunctionCodeP;
+
+	// maybe some day...
 	string params;
 	for (int i=0; i<f->num_params; i++) {
 		if (i > 0)
@@ -209,9 +211,9 @@ SyntaxTree::SyntaxTree(Script *_script) {
 	parser_loop_depth = 0;
 
 	// "include" default stuff
-	for (Script *p: Packages)
+	for (Script *p: packages)
 		if (p->used_by_default)
-			add_include_data(p);
+			add_include_data(p, false);
 }
 
 
@@ -345,23 +347,23 @@ void SyntaxTree::do_error_implicit(Function *f, const string &str) {
 	do_error(format("[auto generating %s] : %s", f->signature(), str), ex, line);
 }
 
-void _asm_add_static_vars(Asm::MetaInfo *meta, const Class *c) {
+void _asm_add_static_vars(Asm::MetaInfo *meta, const Class *c, const Class *base_ns) {
 	for (auto *v: c->static_variables) {
 		Asm::GlobalVar vv;
 		vv.name = v->name;
-		if (c->name.head(1) != "-")
-			vv.name = c->long_name() + "." + v->name;
+		if (c->name.head(1) != "-" and c != base_ns)
+			vv.name = c->cname(base_ns) + "." + v->name;
 		vv.size = v->type->size;
 		vv.pos = v->memory;
 		meta->global_var.add(vv);
 	}
 	for (auto *cc: c->classes)
-		_asm_add_static_vars(meta, cc);
+		_asm_add_static_vars(meta, cc, base_ns);
 }
 
 void SyntaxTree::create_asm_meta_info() {
 	asm_meta_info->global_var.clear();
-	_asm_add_static_vars(asm_meta_info, base_class);
+	_asm_add_static_vars(asm_meta_info, base_class, base_class);
 }
 
 
@@ -554,8 +556,9 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 	}
 
 	// in include files (only global)...
-	for (Script *i: includes)
+	for (Script *i: includes) {
 		links.append(i->syntax->get_existence_global(name, i->syntax->base_class, prefer_class));
+	}
 
 
 	if (links.num == 0 and prefer_class)
@@ -1016,7 +1019,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 	if (n->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION) {
 		if (config.verbose) {
 			msg_error("constr func....");
-			n->show();
+			n->show(base_class);
 		}
 		
 		// temp var
@@ -1030,7 +1033,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		ib->type = TypeVoid;
 		ib->set_instance(dummy);
 		if (config.verbose)
-			ib->show();
+			ib->show(base_class);
 
 		_transform_insert_before_.add(ib);
 

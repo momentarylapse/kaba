@@ -25,7 +25,7 @@
 
 namespace Kaba{
 
-string Version = "0.18.6.5";
+string Version = "0.19.-2.0";
 
 //#define ScriptDebug
 
@@ -65,6 +65,7 @@ Script *Load(const string &filename, bool just_analyse)
 	
 	// load
 	s = new Script();
+	s->syntax->base_class->name = filename.basename().replace(".kaba", "");
 	try{
 		s->load(filename, just_analyse);
 	}catch(const Exception &e){
@@ -233,11 +234,10 @@ void Script::set_variable(const string &name, void *data)
 			memcpy(v->memory, data, v->type->size);
 			return;
 		}
-	msg_error("CScript.SetVariable: variable " + name + " not found");
+	msg_error("Script.set_variable: variable " + name + " not found");
 }
 
-Script::Script()
-{
+Script::Script() {
 	filename = "-empty script-";
 	used_by_default = false;
 
@@ -305,9 +305,9 @@ void ExecuteSingleScriptCommand(const string &cmd)
 		return;
 	}
 	
-	for (auto *p: Packages)
-		if ((p->filename == "file") or (p->filename == "image") or (p->filename == "kaba"))
-			ps->add_include_data(p);
+	for (auto *p: packages)
+		if (!p->used_by_default and (p->filename != "x"))
+			ps->add_include_data(p, true);
 
 // analyse syntax
 
@@ -355,17 +355,17 @@ void ExecuteSingleScriptCommand(const string &cmd)
 	delete(s);
 }
 
-void *Script::match_function(const string &name, const string &return_type, const Array<string> &param_types)
-{
+void *Script::match_function(const string &name, const string &return_type, const Array<string> &param_types) {
+	auto ns = base_class();
 	// match
 	for (Function *f: syntax->functions)
-		if (f->long_name().match(name) and (f->literal_return_type->long_name() == return_type) and (param_types.num == f->num_params)){
+		if (f->cname(ns).match(name) and (f->literal_return_type->cname(ns) == return_type) and (param_types.num == f->num_params)) {
 
 			bool params_ok = true;
 			for (int j=0;j<param_types.num;j++)
-				if (f->literal_param_type[j]->long_name() != param_types[j])
+				if (f->literal_param_type[j]->cname(ns) != param_types[j])
 					params_ok = false;
-			if (params_ok){
+			if (params_ok) {
 				if (just_analyse)
 					return (void*)(int_p)0xdeadbeaf;
 				else

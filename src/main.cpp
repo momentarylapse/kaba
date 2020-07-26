@@ -316,6 +316,8 @@ public:
 		} else if (f_void) {
 			// default execution
 			f_void();
+		} else {
+			msg_error("no 'void main()' found");
 		}
 		Kaba::Remove(s);
 	}
