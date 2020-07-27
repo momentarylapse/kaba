@@ -1,4 +1,5 @@
 #include "../kaba.h"
+#include "Parser.h"
 #include "../../file/file.h"
 
 namespace Kaba{
@@ -68,18 +69,17 @@ string MacroName[NumMacroNames] =
 	"#immortal",
 };
 
-void SyntaxTree::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse)
-{
+void Parser::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse) {
 	string filename;
 	Define d;
 
 
-	int macro_no=-1;
-	for (int i=0;i<NumMacroNames;i++)
+	int macro_no = -1;
+	for (int i=0; i<NumMacroNames; i++)
 		if (Exp.cur == MacroName[i])
 			macro_no = i;
 	
-	switch(macro_no){
+	switch(macro_no) {
 		case MacroDefine:
 			// source
 			Exp.next();
@@ -93,13 +93,13 @@ void SyntaxTree::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool 
 			}
 
 			// special defines?
-			if ((d.source.num > 4) and (d.source.head(2) == "__") and (d.source.tail(2) == "__")){
+			if ((d.source.num > 4) and (d.source.head(2) == "__") and (d.source.tail(2) == "__")) {
 				if (d.source == "__OS__"){
 					do_error("#define __OS__ deprecated");
 				}else if (d.source == "__STRING_CONST_AS_CSTRING__"){
-					flag_string_const_as_cstring = true;
+					tree->flag_string_const_as_cstring = true;
 				}else if (d.source == "__FUNCTION_POINTER_AS_CODE__"){
-					flag_function_pointer_as_code = true;
+					tree->flag_function_pointer_as_code = true;
 				}else if (d.source == "__NO_FUNCTION_FRAME__"){
 					do_error("#define __NO_FUNCTION_FRAME__ deprecated");
 				}else if (d.source == "__ADD_ENTRY_POINT__"){
@@ -110,12 +110,13 @@ void SyntaxTree::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool 
 					do_error("#define __CODE_ORIGING__ deprecated");
 				}else
 					do_error("unknown compiler flag (define starting and ending with \"__\"): " + d.source);
-			}else
+			} else {
 				// normal define
-				defines.add(d);
+				tree->defines.add(d);
+			}
 			break;
 		case MacroImmortal:
-			SetImmortal(this);
+			SetImmortal(tree);
 			//FlagImmortal=true;
 			break;
 		default:
@@ -130,7 +131,7 @@ void SyntaxTree::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool 
 }
 
 // ... maybe some time later
-void SyntaxTree::pre_compiler(bool just_analyse)
+void Parser::pre_compiler(bool just_analyse)
 {
 	int NumIfDefs = 0;
 	bool IfDefed[1024];
@@ -149,7 +150,7 @@ void SyntaxTree::pre_compiler(bool just_analyse)
 			// replace by definition?
 			int num_defs_inserted = 0;
 			while(!Exp.end_of_line()){
-				foreachi(Define &d, defines, j){
+				foreachi(Define &d, tree->defines, j){
 					if (Exp.cur == d.source){
 						int pos = Exp.cur_line->exp[Exp.cur_exp].pos;
 						Exp.remove(Exp.cur_exp);

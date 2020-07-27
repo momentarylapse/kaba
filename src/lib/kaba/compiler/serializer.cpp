@@ -1962,11 +1962,10 @@ Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list) {
 }
 
 void Script::assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list) {
-	if (config.verbose and config.allow_output(cur_func, "asm"))
+	if (config.verbose and config.allow_output(f, "asm"))
 		msg_write("serializing " + f->long_name() + " -------------------");
 	f->show("asm");
 
-	cur_func = f;
 	Serializer *d = CreateSerializer(this, list);
 
 	try{
@@ -2011,8 +2010,8 @@ void Script::compile_functions(char *oc, int &ocs) {
 	func_offset.add(list->num);
 
 
-	if (config.verbose and config.allow_output(cur_func, "comp:x"))
-		list->show();
+	//if (config.verbose and config.allow_output(cur_func, "comp:x"))
+	//	list->show();
 
 	// assemble into opcode
 	try{

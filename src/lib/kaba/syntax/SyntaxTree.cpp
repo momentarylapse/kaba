@@ -1,4 +1,5 @@
 #include "../kaba.h"
+#include "Parser.h"
 #include "../asm/asm.h"
 #include "../../file/file.h"
 #include <stdio.h>
@@ -11,6 +12,8 @@ namespace Kaba{
 extern const Class *TypeDynamicArray;
 extern const Class *TypeDictBase;
 extern const Class *TypeMatrix;
+
+extern ExpressionBuffer *cur_exp_buf;
 
 
 
@@ -204,12 +207,9 @@ SyntaxTree::SyntaxTree(Script *_script) {
 	flag_string_const_as_cstring = false;
 	flag_function_pointer_as_code = false;
 	flag_immortal = false;
-	cur_func = nullptr;
 	script = _script;
 	asm_meta_info = new Asm::MetaInfo;
-	for_index_count = 0;
-	Exp.cur_line = nullptr;
-	parser_loop_depth = 0;
+	parser = nullptr;
 
 	// "include" default stuff
 	for (Script *p: packages)
@@ -217,20 +217,6 @@ SyntaxTree::SyntaxTree(Script *_script) {
 			add_include_data(p, false);
 }
 
-
-void SyntaxTree::parse_buffer(const string &buffer, bool just_analyse) {
-	Exp.analyse(this, buffer);
-	
-	pre_compiler(just_analyse);
-
-	parse();
-
-	Exp.clear();
-
-	if (config.verbose)
-		show("parse:a");
-
-}
 
 Node *SyntaxTree::make_constructor_static(Node *n, const string &name) {
 	for (auto *f: n->type->functions)
@@ -312,41 +298,10 @@ void SyntaxTree::digest() {
 }
 
 
-// override_line is logical! not physical
 void SyntaxTree::do_error(const string &str, int override_exp_no, int override_line) {
-	// what data do we have?
-	int logical_line = Exp.get_line_no();
-	int exp_no = Exp.cur_exp;
-	int physical_line = 0;
-	int pos = 0;
-	string expr;
-
-	// override?
-	if (override_line >= 0) {
-		logical_line = override_line;
-		exp_no = 0;
-	}
-	if (override_exp_no >= 0)
-		exp_no = override_exp_no;
-
-	// logical -> physical
-	if ((logical_line >= 0) and (logical_line < Exp.line.num)) {
-		physical_line = Exp.line[logical_line].physical_line;
-		pos = Exp.line[logical_line].exp[exp_no].pos;
-		expr = Exp.line[logical_line].exp[exp_no].name;
-	}
-
-#ifdef CPU_ARM
-	msg_error(str);
-#endif
-	throw Exception(str, expr, physical_line, pos, script);
+	parser->do_error(str, override_exp_no, override_line);
 }
 
-void SyntaxTree::do_error_implicit(Function *f, const string &str) {
-	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
-	int ex = max(f->_exp_no, f->name_space->_exp_no);
-	do_error(format("[auto generating %s] : %s", f->signature(), str), ex, line);
-}
 
 void _asm_add_static_vars(Asm::MetaInfo *meta, const Class *c, const Class *base_ns) {
 	for (auto *v: c->static_variables) {
@@ -409,7 +364,7 @@ Node *SyntaxTree::add_node_const(Constant *c) {
 	return new Node(NodeKind::BLOCK, (int_p)b, TypeVoid);
 }*/
 
-PrimitiveOperator *SyntaxTree::which_primitive_operator(const string &name, int param_flags) {
+PrimitiveOperator *Parser::which_primitive_operator(const string &name, int param_flags) {
 	for (int i=0; i<(int)OperatorID::_COUNT_; i++)
 		if (name == PrimitiveOperators[i].name and param_flags == PrimitiveOperators[i].param_flags)
 			return &PrimitiveOperators[i];
@@ -428,11 +383,10 @@ const Class *SyntaxTree::which_owned_class(const string &name) {
 	return nullptr;
 }
 
-Statement *SyntaxTree::which_statement(const string &name) {
+Statement *Parser::which_statement(const string &name) {
 	for (auto *s: Statements)
 		if (name == s->name)
 			return s;
-
 	return nullptr;
 }
 
@@ -538,7 +492,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 
 	if (!prefer_class) {
 		// then the statements
-		auto s = which_statement(name);
+		auto s = Parser::which_statement(name);
 		if (s){
 			//return {add_node_statement(s->id)};
 			Node *n = new Node(NodeKind::STATEMENT, (int64)s, TypeVoid);
@@ -547,7 +501,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 		}
 
 		// operators
-		auto w = which_primitive_operator(name, 2); // negate/not...
+		auto w = parser->which_primitive_operator(name, 2); // negate/not...
 		if (w)
 			return {new Node(NodeKind::PRIMITIVE_OPERATOR, (int_p)w, TypeUnknown)};
 	}
@@ -586,8 +540,10 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 
 	Class *t = new Class(name, size, this, parent, param);
 	t->type = type;
-	t->_logical_line_no = Exp.get_line_no();
-	t->_exp_no = Exp.cur_exp;
+	if (cur_exp_buf) {
+		t->_logical_line_no = cur_exp_buf->get_line_no();
+		t->_exp_no = cur_exp_buf->cur_exp;
+	}
 	owned_classes.add(t);
 	
 	// link namespace
@@ -726,7 +682,7 @@ Node *SyntaxTree::conv_easyfy_shift_deref(Node *c, int l) {
 
 
 Node *SyntaxTree::conv_return_by_memory(Node *n, Function *f) {
-	script->cur_func = f;
+	parser->cur_func = f;
 
 	if ((n->kind != NodeKind::STATEMENT) or (n->as_statement()->id != StatementID::RETURN))
 		return n;
@@ -740,7 +696,7 @@ Node *SyntaxTree::conv_return_by_memory(Node *n, Function *f) {
 	if (!p_ret)
 		do_error("-return- not found...");
 	Node *ret = deref_node(p_ret);
-	Node *cmd_assign = link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
+	Node *cmd_assign = parser->link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
 		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
@@ -980,13 +936,13 @@ void SyntaxTree::transformb_block(Block *block, std::function<Node*(Node*, Block
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::transform(std::function<Node*(Node*)> F) {
 	for (Function *f: functions) {
-		cur_func = f;
+		parser->cur_func = f;
 		transform_block(f->block, F);
 	}
 }
 void SyntaxTree::transformb(std::function<Node*(Node*, Block*)> F) {
 	for (Function *f: functions) {
-		cur_func = f;
+		parser->cur_func = f;
 		transformb_block(f->block, F);
 	}
 }
@@ -1017,7 +973,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		}
 		
 		// temp var
-		auto *f = cur_func;
+		auto *f = b->function;
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		vv->explicitly_constructed = true;
 		Node *dummy = add_node_local(vv);
@@ -1039,7 +995,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 			do_error(format("[..]: can not find '%s.add(%s)' function???", n->type->long_name(), t_el->long_name()));
 
 		// temp var
-		auto *f = cur_func;
+		auto *f = b->function;
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		Node *array = add_node_local(vv);
 
@@ -1058,7 +1014,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 			do_error(format("[..]: can not find '%s.__set__(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 
 		// temp var
-		auto *f = cur_func;
+		auto *f = b->function;
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		Node *array = add_node_local(vv);
 
@@ -1120,7 +1076,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 			// -> assign into variable before the loop
 			auto *v = b->add_var(b->function->create_slightly_hidden_name(), array->type);
 
-			auto *assign = link_operator_id(OperatorID::ASSIGN, add_node_local(v), array);
+			auto *assign = parser->link_operator_id(OperatorID::ASSIGN, add_node_local(v), array);
 			_transform_insert_before_.add(assign);
 
 			array = add_node_local(v);

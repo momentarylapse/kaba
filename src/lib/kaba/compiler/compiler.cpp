@@ -67,7 +67,7 @@ void try_init_global_var(const Class *type, char* g_var, SyntaxTree *ps) {
 	Function *cf = type->get_default_constructor();
 	if (!cf) {
 		if (type->needs_constructor())
-			ps->do_error("global variable without default constructor...");
+			ps->do_error("static variable without default constructor...");
 		return;
 	}
 	typedef void init_func(void *);
