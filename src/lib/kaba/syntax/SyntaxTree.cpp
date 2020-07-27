@@ -198,6 +198,7 @@ Node *SyntaxTree::add_node_array(Node *array, Node *index) {
 
 SyntaxTree::SyntaxTree(Script *_script) {
 	base_class = new Class("-base-", 0, this);
+	imported_symbols = new Class("-imported-", 0, this);
 	root_of_all_evil = new Function("RootOfAllEvil", TypeVoid, base_class);
 
 	flag_string_const_as_cstring = false;
@@ -460,14 +461,6 @@ Node *SyntaxTree::exlink_add_class_func(Function *f, Function *cf) {
 Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *ns, bool prefer_class) {
 	Array<Node*> links;
 
-	if (!prefer_class) {
-		// global variables (=local variables in "RootOfAllEvil")
-		for (auto *v: base_class->static_variables)
-			if (v->name == name)
-				return {add_node_global(v)};
-		// TODO.... namespace...
-	}
-
 
 	// recursively up the namespaces
 	while (ns) {
@@ -477,6 +470,10 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 			for (auto *c: ns->constants)
 				if (name == c->name)
 					return {add_node_const(c)};
+
+			for (auto *v: ns->static_variables)
+				if (v->name == name)
+					return {add_node_global(v)};
 
 			// then the (real) functions
 			for (auto *f: ns->functions)
@@ -556,9 +553,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 	}
 
 	// in include files (only global)...
-	for (Script *i: includes) {
-		links.append(i->syntax->get_existence_global(name, i->syntax->base_class, prefer_class));
-	}
+	links.append(get_existence_global(name, imported_symbols, prefer_class));
 
 
 	if (links.num == 0 and prefer_class)
@@ -575,10 +570,9 @@ const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class 
 		if (name == c->name)
 			return c;
 	if (_namespace == base_class) {
-		for (Script *inc: includes)
-			for (auto *c: inc->syntax->base_class->classes)
-				if (name == c->name)
-					return c;
+		for (auto *c: imported_symbols->classes)
+			if (name == c->name)
+				return c;
 	} else if (_namespace->name_space and allow_recursion) {
 		// parent namespace
 		return find_root_type_by_name(name, _namespace->name_space, true);

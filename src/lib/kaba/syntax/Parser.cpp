@@ -2671,7 +2671,7 @@ void SyntaxTree::parse_named_const(const string &name, const Class *type, Class 
 	c->name = name;
 }
 
-void SyntaxTree::parse_variable_def(bool single, Block *block, Flags flags) {
+void SyntaxTree::parse_global_variable_def(bool single, Block *block, Flags flags) {
 	const Class *type = parse_type(block->name_space()); // force
 
 	for (int j=0;true;j++) {
@@ -2682,7 +2682,7 @@ void SyntaxTree::parse_variable_def(bool single, Block *block, Flags flags) {
 		Exp.next();
 
 		if (flags_has(flags, Flags::CONST)) {
-			parse_named_const(name, type, base_class, root_of_all_evil->block);
+			parse_named_const(name, type, base_class, block);
 		} else {
 			auto *v = new Variable(name, type);
 			v->is_extern = flags_has(flags, Flags::EXTERN);
@@ -2999,7 +2999,7 @@ void SyntaxTree::parse_top_level() {
 
 			// global variables/consts
 			} else {
-				parse_variable_def(false, root_of_all_evil->block, flags);
+				parse_global_variable_def(false, root_of_all_evil->block, flags);
 			}
 		}
 		if (!Exp.end_of_file())

@@ -36,30 +36,20 @@ void SyntaxTree::add_include_data(Script *s, bool indirect) {
 		import_deep(this, ps);
 	}else{*/
 	if (indirect) {
-		base_class->classes.add(ps->base_class);
+		imported_symbols->classes.add(ps->base_class);
 	} else {
-		includes.add(s);
+		for (auto *c: ps->base_class->classes)
+			imported_symbols->classes.add(c);
+		for (auto *f: ps->base_class->functions)
+			imported_symbols->functions.add(f);
+		for (auto *v: ps->base_class->static_variables)
+			imported_symbols->static_variables.add(v);
+		for (auto *c: ps->base_class->constants)
+			imported_symbols->constants.add(c);
 	}
+	includes.add(s);
 	s->reference_counter ++;
 	//}
-
-	/*ExpressionBuffer::Line *cur_line = Exp.cur_line;
-	PreCompiler(script->JustAnalyse);
-	Exp.cur_line = cur_line;
-	Exp.cur_exp = 0;*/
-
-
-	// types
-//	Type.insert(Type.begin(), ps->Type.begin(), ps->Type.end()); // make sure foreign types precede the "own" types!
-/*	for (int i=0;i<ps->Types.num;i++)
-		Types.insert(ps->Types[i], i);
-		//Type.insert(ps->Type[i + PreType.num], i);
-
-	// constants
-	foreach(Constant &c, ps->Constants)
-		if (c.name[0] != '-')
-			Constants.add(c);*/
-	// TODO... ownership of "big" constants
 
 	for (Operator *op: ps->operators)
 		if (op->owner == ps)
