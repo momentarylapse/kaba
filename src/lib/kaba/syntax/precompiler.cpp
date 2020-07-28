@@ -17,6 +17,19 @@ void SetImmortal(SyntaxTree *ps)
 		SetImmortal(i->syntax);
 }
 
+static bool _class_contains(const Class *c, const string &name) {
+	for (auto *cc: c->classes)
+		if (cc->name == name)
+			return true;
+	for (auto *f: c->functions)
+		if (f->name == name)
+			return true;
+	for (auto *cc: c->constants)
+		if (cc->name == name)
+			return true;
+	return false;
+}
+
 // import data from an included script file
 void SyntaxTree::add_include_data(Script *s, bool indirect) {
 	for (Script *i: includes)
@@ -47,6 +60,9 @@ void SyntaxTree::add_include_data(Script *s, bool indirect) {
 			imported_symbols->static_variables.add(v);
 		for (auto *c: ps->base_class->constants)
 			imported_symbols->constants.add(c);
+		if (s->filename.find(".kaba") < 0)
+			if (!_class_contains(imported_symbols, ps->base_class->name))
+				imported_symbols->classes.add(ps->base_class);
 	}
 	includes.add(s);
 	s->reference_counter ++;
