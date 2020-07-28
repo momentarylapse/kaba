@@ -252,14 +252,13 @@ void Script::align_opcode() {
 
 static int OCORA;
 void Script::CompileOsEntryPoint() {
-	int nf=-1;
-	foreachi(Function *ff, syntax->functions, index)
-		if (ff->long_name() == "main")
-			nf = index;
+	if (!base_class()->get_func("main", TypeVoid, {}))
+		if (!syntax->imported_symbols->get_func("main", TypeVoid, {}))
+			do_error("os entry point: no 'void main()' found");
+
 	// call
-	if (nf>=0)
-		Asm::add_instruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
-	TaskReturnOffset=opcode_size;
+	Asm::add_instruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
+	TaskReturnOffset = opcode_size;
 	OCORA = Asm::OCParam;
 	align_opcode();
 }
@@ -353,19 +352,18 @@ void Script::map_constants_to_opcode() {
 	align_opcode();
 }
 
-void Script::LinkOsEntryPoint()
-{
-	Function *f = nullptr;
-	for (Function *ff: syntax->functions)
-		if (ff->long_name() == "main")
-			f = ff;
-	if (f){
-		int lll = (int_p)f->address - syntax->asm_meta_info->code_origin - TaskReturnOffset;
-		//printf("insert   %d  an %d\n", lll, OCORA);
-		//msg_write(lll);
-		//msg_write(i2h(lll,4));
-		*(int*)&opcode[OCORA] = lll;
-	}
+void Script::LinkOsEntryPoint() {
+	auto *f = base_class()->get_func("main", TypeVoid, {});
+	if (!f)
+		f = syntax->imported_symbols->get_func("main", TypeVoid, {});
+	if (!f)
+		do_error_internal("os entry point missing...");
+
+	int lll = (int_p)f->address - syntax->asm_meta_info->code_origin - TaskReturnOffset;
+	//printf("insert   %d  an %d\n", lll, OCORA);
+	//msg_write(lll);
+	//msg_write(i2h(lll,4));
+	*(int*)&opcode[OCORA] = lll;
 }
 
 bool find_and_replace(char *opcode, int opcode_size, char *pattern, int size, char *insert)
@@ -460,8 +458,7 @@ void Script::link_virtual_functions_into_vtable(const Class *c) {
 	}
 
 	for (const Class *cc: c->classes)
-		if (cc->name_space == c)
-			link_virtual_functions_into_vtable(cc);
+		link_virtual_functions_into_vtable(cc);
 }
 
 struct DynamicLibraryImport
@@ -571,6 +568,8 @@ void Script::compile() {
 // link functions
 	link_functions();
 	link_virtual_functions_into_vtable(syntax->base_class);
+	if (config.compile_os)
+		link_virtual_functions_into_vtable(syntax->imported_symbols);
 
 
 
