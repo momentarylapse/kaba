@@ -387,7 +387,7 @@ public:
 			int n = fn->num_params;
 			if (!fn->is_static())
 				n ++;
-			f->write_str(decode_symbol_name(fn->long_name()) + ":" + i2s(n));
+			f->write_str(decode_symbol_name(fn->cname(fn->owner()->base_class)) + ":" + i2s(n));
 			f->write_int((int_p)fn->address);
 		}
 		for (auto *v: s->syntax->base_class->static_variables) {

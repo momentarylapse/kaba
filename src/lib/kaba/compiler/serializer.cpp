@@ -1990,11 +1990,12 @@ void Script::compile_functions(char *oc, int &ocs) {
 	int func_no = 0;
 	for (Function *f: syntax->functions) {
 		if (f->is_extern()) {
-			f->address = get_external_link(f->long_name() + ":" + i2s(f->num_params));
+			string name = f->cname(f->owner()->base_class);
+			f->address = get_external_link(format("%s:%d", name, f->num_params));
 			if (!f->address)
-				f->address = get_external_link(f->long_name());
+				f->address = get_external_link(name);
 			if (!f->address)
-				do_error_link("external function " + f->long_name() + " not linkable");
+				do_error_link(format("external function '%s' not linkable", format("%s:%d", name, f->num_params)));//name));
 		} else {
 			f->_label = list->create_label("_FUNC_" + i2s(func_no ++));
 		}

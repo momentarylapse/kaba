@@ -846,7 +846,7 @@ void link_external(const string &name, void *pointer) {
 	string sname = names[0].replace("@list", "[]").replace("@@", ".");
 	for (auto *p: packages)
 		foreachi(Function *f, p->syntax->functions, i)
-			if (f->long_name() == sname) {
+			if (f->cname(p->base_class()) == sname) {
 				int n = f->num_params;
 				if (!f->is_static())
 					n ++;
