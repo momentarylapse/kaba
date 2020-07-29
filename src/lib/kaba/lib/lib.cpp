@@ -902,21 +902,21 @@ void _link_external_virtual(const string &name, void *p, void *instance) {
 }
 
 int process_class_offset(const string &class_name, const string &element, int offset) {
-	for (ClassOffsetData &d: ClassOffsets)
+	for (auto &d: ClassOffsets)
 		if ((d.class_name == class_name) and (d.element == element))
 			return d.offset;
 	return offset;
 }
 
 int process_class_size(const string &class_name, int size) {
-	for (ClassSizeData &d: ClassSizes)
+	for (auto &d: ClassSizes)
 		if (d.class_name == class_name)
 			return d.size;
 	return size;
 }
 
 int process_class_num_virtuals(const string &class_name, int num_virtual) {
-	for (ClassOffsetData &d: ClassOffsets)
+	for (auto &d: ClassOffsets)
 		if ((d.class_name == class_name) and (d.is_virtual))
 			num_virtual = max(num_virtual, d.offset + 1);
 	return num_virtual;

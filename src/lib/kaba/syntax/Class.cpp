@@ -414,7 +414,7 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 		if (as_virtual and (f->virtual_index < 0)) {
 			if (config.verbose)
 				msg_write("VVVVV +");
-			f->virtual_index = process_class_offset(name, f->name, max(vtable.num, 2));
+			f->virtual_index = process_class_offset(cname(owner->base_class), f->name, max(vtable.num, 2));
 		}
 
 		// override?

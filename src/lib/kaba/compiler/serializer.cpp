@@ -1995,7 +1995,7 @@ void Script::compile_functions(char *oc, int &ocs) {
 			if (!f->address)
 				f->address = get_external_link(name);
 			if (!f->address)
-				do_error_link(format("external function '%s' not linkable", format("%s:%d", name, f->num_params)));//name));
+				do_error_link(format("external function '%s:%d' not linkable", name, f->num_params));
 		} else {
 			f->_label = list->create_label("_FUNC_" + i2s(func_no ++));
 		}

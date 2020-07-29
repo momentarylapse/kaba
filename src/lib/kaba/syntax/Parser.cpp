@@ -2573,7 +2573,7 @@ void Parser::parse_class(Class *_namespace) {
 	expect_new_line();
 
 	// elements
-	while(!Exp.end_of_file()) {
+	while (!Exp.end_of_file()) {
 		Exp.next_line();
 		if (Exp.cur_line->indent <= indent0) //(unindented)
 			break;
@@ -2595,7 +2595,7 @@ void Parser::parse_class(Class *_namespace) {
 		}
 
 		const Class *type = parse_type(_class); // force
-		while(!Exp.end_of_line()) {
+		while (!Exp.end_of_line()) {
 			//int indent = Exp.cur_line->indent;
 			
 			string name = Exp.cur;
@@ -2647,7 +2647,7 @@ void Parser::parse_class(Class *_namespace) {
 			} else {
 				if (type_needs_alignment(type))
 					_offset = mem_align(_offset, 4);
-				_offset = process_class_offset(_class->long_name(), name, _offset);
+				_offset = process_class_offset(_class->cname(tree->base_class), name, _offset);
 				auto el = ClassElement(name, type, _offset);
 				_offset += type->size;
 				_class->elements.add(el);
@@ -2673,7 +2673,7 @@ void Parser::parse_class(Class *_namespace) {
 			// element "-vtable-" being derived
 		} else {
 			for (ClassElement &e: _class->elements)
-				e.offset = process_class_offset(_class->long_name(), e.name, e.offset + config.pointer_size);
+				e.offset = process_class_offset(_class->cname(tree->base_class), e.name, e.offset + config.pointer_size);
 
 			auto el = ClassElement(IDENTIFIER_VTABLE_VAR, TypePointer, 0);
 			_class->elements.insert(el, 0);
@@ -2684,7 +2684,7 @@ void Parser::parse_class(Class *_namespace) {
 	for (auto &e: _class->elements)
 		if (type_needs_alignment(e.type))
 			_offset = mem_align(_offset, 4);
-	_class->size = process_class_size(_class->long_name(), _offset);
+	_class->size = process_class_size(_class->cname(tree->base_class), _offset);
 
 
 	tree->add_missing_function_headers_for_class(_class);
