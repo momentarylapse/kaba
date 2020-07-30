@@ -64,7 +64,7 @@ enum
 sAudioFile load_sound_file(const string &filename)
 {
 	msg_write("loading sound: " + filename);
-	string ext = filename.extension();
+	string ext = path_extension(filename);
 	if (ext == "wav")
 		return load_wave_file(filename);
 #ifdef SOUND_ALLOW_OGG
@@ -76,7 +76,7 @@ sAudioFile load_sound_file(const string &filename)
 
 sAudioStream load_sound_start(const string &filename)
 {
-	string ext = filename.extension();
+	string ext = path_extension(filename);
 	/*if (ext == "wav")
 		return load_wave_start(filename);
 	else*/ if (ext == "ogg")
@@ -324,7 +324,7 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 
 void SoundSaveFile(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
 {
-	string ext = filename.extension();
+	string ext = path_extension(filename);
 	if (ext == "wav")
 		save_wave_file(filename, data_r, data_l, freq, channels, bits);
 	else

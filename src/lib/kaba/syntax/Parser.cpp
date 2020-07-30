@@ -7,8 +7,6 @@
 #include <stdio.h>
 
 
-string str_rep(const string &s, int n);
-
 namespace Kaba{
 
 void test_node_recursion(Node *root, const Class *ns, const string &message);
@@ -2460,7 +2458,7 @@ string import_dir_match(const string &dir0, const string &name) {
 	string filename = dir0;
 
 	for (int i=0; i<xx.num; i++) {
-		filename.dir_ensure_ending();
+		filename = dir_canonical(filename);
 		string e = dir_has(filename, canonical_import_name(xx[i]));
 		if (e == "")
 			return "";
@@ -2478,10 +2476,10 @@ string find_import(Script *s, const string &_name) {
 	name = name.replace(".", "/") + ".kaba";
 
 	if (name.head(2) == "@/")
-		return (hui::Application::directory_static + "lib/" + name.substr(2, -1)).no_recursion(); // TODO...
+		return path_canonical(hui::Application::directory_static + "lib/" + name.substr(2, -1)); // TODO...
 
 	for (int i=0; i<5; i++) {
-		string filename = import_dir_match((s->filename.dirname() + str_rep("../", i)).no_recursion(), name);
+		string filename = import_dir_match(path_canonical(path_dirname(s->filename) + str_repeat("../", i)), name);
 		if (filename != "")
 			return filename;
 	}
@@ -2523,7 +2521,7 @@ void Parser::parse_import() {
 		do_error(format("can not find import '%s'", name));
 
 	for (Script *ss: loading_script_stack)
-		if (ss->filename == filename.sys_filename())
+		if (ss->filename == sys_filename(filename))
 			do_error("recursive include");
 
 	msg_right();

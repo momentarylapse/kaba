@@ -1,4 +1,4 @@
-use "include_source.kaba"
+use include_source
 
 void main()
 	f()
