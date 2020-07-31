@@ -65,7 +65,7 @@ int pixel_size(VkFormat f) {
 	return 4;
 }
 
-string Texture::directory;
+Path Texture::directory;
 
 Texture::Texture() {
 	image = nullptr;
@@ -130,17 +130,17 @@ void Texture::_destroy() {
 	mip_levels = 0;
 }
 
-Texture* Texture::load(const string &filename) {
-	std::cout << " load texture " << filename.c_str() << "\n";
-	if (filename == "")
+Texture* Texture::load(const Path &filename) {
+	std::cout << " load texture " << filename.str().c_str() << "\n";
+	if (filename.is_empty())
 		return new Texture(16, 16);
 	Texture *t = new Texture();
-	t->_load(directory + filename);
+	t->_load(directory << filename);
 	return t;
 }
 
 
-void Texture::_load(const string &filename) {
+void Texture::_load(const Path &filename) {
 	Image *im = Image::load(filename);
 	if (!im) {
 		throw std::runtime_error("failed to load texture image!");

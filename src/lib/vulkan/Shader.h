@@ -6,6 +6,7 @@
 
 
 #include "../base/base.h"
+#include "../file/path.h"
 #include <vulkan/vulkan.h>
 #include "../math/matrix.h"
 #include <vector>
@@ -52,8 +53,8 @@ namespace vulkan{
 		int push_size;
 		VkPrimitiveTopology topology;
 
-		static string directory;
-		static Shader* load(const string &filename);
+		static Path directory;
+		static Shader* load(const Path &filename);
 	};
 
 

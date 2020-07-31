@@ -77,66 +77,66 @@ class KabaFileNotWritableError : public KabaFileError
 
 
 
-File* kaba_file_open(const string &filename) {
+File* kaba_file_open(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileOpen(filename), KabaFileError);
 	return nullptr;
 }
 
-File* kaba_file_open_text(const string &filename) {
+File* kaba_file_open_text(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileOpenText(filename), KabaFileError);
 	return nullptr;
 }
 
-File* kaba_file_create(const string &filename) {
+File* kaba_file_create(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileCreate(filename), KabaFileError);
 	return nullptr;
 }
 
-File* kaba_file_create_text(const string &filename) {
+File* kaba_file_create_text(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileCreateText(filename), KabaFileError);
 	return nullptr;
 }
 
-string kaba_file_read(const string &filename) {
+string kaba_file_read(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileRead(filename), KabaFileError);
 	return "";
 }
 
-string kaba_file_read_text(const string &filename) {
+string kaba_file_read_text(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER2(return FileReadText(filename), KabaFileError);
 	return "";
 }
 
-void kaba_file_write(const string &filename, const string &buffer) {
+void kaba_file_write(const Path &filename, const string &buffer) {
 	KABA_EXCEPTION_WRAPPER2(FileWrite(filename, buffer), KabaFileError);
 }
 
-void kaba_file_write_text(const string &filename, const string &buffer) {
+void kaba_file_write_text(const Path &filename, const string &buffer) {
 	KABA_EXCEPTION_WRAPPER2(FileWriteText(filename, buffer), KabaFileError);
 }
 
-string kaba_file_hash(const string &filename, const string &type) {
+string kaba_file_hash(const Path &filename, const string &type) {
 	KABA_EXCEPTION_WRAPPER2(return file_hash(filename, type), KabaFileError);
 	return "";
 }
 
-void kaba_file_rename(const string &a, const string &b) {
+void kaba_file_rename(const Path &a, const Path &b) {
 	KABA_EXCEPTION_WRAPPER2(file_rename(a, b), KabaFileError);
 }
 
-void kaba_file_copy(const string &a, const string &b) {
+void kaba_file_copy(const Path &a, const Path &b) {
 	KABA_EXCEPTION_WRAPPER2(file_copy(a, b), KabaFileError);
 }
 
-void kaba_file_delete(const string &f) {
+void kaba_file_delete(const Path &f) {
 	KABA_EXCEPTION_WRAPPER2(file_delete(f), KabaFileError);
 }
 
-void kaba_dir_create(const string &f) {
+void kaba_dir_create(const Path &f) {
 	KABA_EXCEPTION_WRAPPER2(dir_create(f), KabaFileError);
 }
 
-void kaba_dir_delete(const string &f) {
+void kaba_dir_delete(const Path &f) {
 	KABA_EXCEPTION_WRAPPER2(dir_delete(f), KabaFileError);
 }
 
@@ -198,7 +198,7 @@ void SIAddPackageOS() {
 			func_add_param("v", TypeVector);
 		class_add_funcx("__rshift__", TypeVoid, &KabaFile::_read_str, Flags::RAISES_EXCEPTIONS);
 			func_add_param("s", TypeString);
-		class_add_funcx("eof", TypeBool, &KabaFile::eof);
+		class_add_funcx("eof", TypeBool, &KabaFile::end);
 
 	add_class(TypeFileError);
 		class_derive_from(TypeException, false, false);
@@ -254,17 +254,17 @@ void SIAddPackageOS() {
 		class_add_funcx("delete_directory", TypeVoid, &kaba_dir_delete, Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("dir", TypeString);
 		class_add_funcx("current_directory", TypeString, &get_current_dir, Flags::STATIC);
-		class_add_funcx("absolute", TypeString, &path_absolute, Flags::STATIC);
+		class_add_funcx("absolute", TypeString, &Path::absolute, Flags::STATIC);
 			func_add_param("path", TypeString);
-		class_add_funcx("dirname", TypeString, &path_dirname, Flags::_STATIC__PURE);
+		class_add_funcx("dirname", TypeString, &Path::dirname, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
-		class_add_funcx("basename", TypeString, &path_basename, Flags::_STATIC__PURE);
+		class_add_funcx("basename", TypeString, &Path::basename, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
-		class_add_funcx("extension", TypeString, &path_extension, Flags::_STATIC__PURE);
+		class_add_funcx("extension", TypeString, &Path::extension, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
-		class_add_funcx("canonical", TypeString, &path_canonical, Flags::_STATIC__PURE);
+		class_add_funcx("canonical", TypeString, &Path::canonical, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
-		class_add_funcx("dir_canonical", TypeString, &dir_canonical, Flags::_STATIC__PURE);
+		class_add_funcx("dir_canonical", TypeString, &Path::dir_canonical, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
 		
 		_kaba_stdin = new File();

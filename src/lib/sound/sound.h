@@ -15,7 +15,7 @@
 #include "../math/math.h"
 
 
-extern string SoundDir;
+extern Path SoundDir;
 
 struct Sound
 {
@@ -91,13 +91,13 @@ void SoundReset();
 void SoundClearSmallCache();
 
 // sound
-Sound *_cdecl SoundLoad(const string &filename);
-Sound *_cdecl SoundEmit(const string &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop);
+Sound *_cdecl SoundLoad(const Path &filename);
+Sound *_cdecl SoundEmit(const Path &filename, const vector &pos, float min_dist, float max_dist, float speed, float volume, bool loop);
 
 // music
-Music* _cdecl MusicLoad(const string &filename);
+Music* _cdecl MusicLoad(const Path &filename);
 
 // writing
-void _cdecl SoundSaveFile(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits);
+void _cdecl SoundSaveFile(const Path &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits);
 
 #endif

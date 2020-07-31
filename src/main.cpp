@@ -233,13 +233,13 @@ public:
 		Kaba::config.code_origin = code_origin;
 
 		// script file as parameter?
-		string filename;
+		Path filename;
 		if (p.arg.num > 0) {
 			filename = p.arg[0];
-			if (installed and filename.tail(5) != ".kaba") {
-				string dd = directory_static + "apps/" + filename + "/" + filename + ".kaba";
-				if (filename.find("/") >= 0)
-					dd = directory_static + "apps/" + filename + ".kaba";
+			if (installed and filename.extension() != "kaba") {
+				Path dd = directory_static << "apps" << filename.str() << (filename.str() + ".kaba");
+				if (filename.str().find("/") >= 0)
+					dd = directory_static << "apps" << (filename.str() + ".kaba");
 				if (file_exists(dd))
 					filename = dd;
 			}
@@ -400,7 +400,7 @@ public:
 
 	void import_symbols(const string &symbols_in_file) {
 		File *f = FileOpen(symbols_in_file);
-		while (!f->eof()) {
+		while (!f->end()) {
 			string name = f->read_str();
 			if (name == "#")
 				break;

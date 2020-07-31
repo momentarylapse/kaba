@@ -5,6 +5,7 @@
 
 
 #include "../base/base.h"
+#include "../file/path.h"
 #include <vulkan/vulkan.h>
 
 class Image;
@@ -20,7 +21,7 @@ namespace vulkan {
 		void __init__();
 		void __delete__();
 
-		void _load(const string &filename);
+		void _load(const Path &filename);
 		void override(const Image *image);
 		void overridex(const void *image, int nx, int ny, int nz, const string &format);
 
@@ -41,8 +42,8 @@ namespace vulkan {
 		VkSampler sampler;
 		VkCompareOp compare_op;
 
-		static string directory;
-		static Texture* load(const string &filename);
+		static Path directory;
+		static Texture* load(const Path &filename);
 	};
 
 	class DynamicTexture : public Texture {

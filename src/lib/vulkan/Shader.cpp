@@ -261,7 +261,7 @@ namespace vulkan{
 		return shaderModule;
 	}
 
-	string Shader::directory;
+	Path Shader::directory;
 
 	Shader::Shader() {
 		vert_module = nullptr;
@@ -328,14 +328,14 @@ namespace vulkan{
 		return rr;
 	}
 
-	Shader* Shader::load(const string &_filename) {
-		if (_filename == "")
+	Shader* Shader::load(const Path &_filename) {
+		if (_filename.is_empty())
 			return nullptr;
 		Shader *s = new Shader();
-		string filename = directory + _filename;
-		std::cout << "load shader " << filename.c_str() << "\n";
+		Path filename = directory << _filename;
+		std::cout << "load shader " << filename.str().c_str() << "\n";
 
-		File *f = FileOpen(filename + ".compiled");
+		File *f = FileOpen(Path(filename.str() + ".compiled"));
 		try {
 			while(true) {
 				string tag = f->read_str();

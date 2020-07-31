@@ -17,7 +17,7 @@
 	#include <vorbis/vorbisenc.h>
 #endif
 
-string SoundDir;
+Path SoundDir;
 
 Array<Sound*> Sounds;
 Array<Music*> Musics;
@@ -48,9 +48,9 @@ void SoundReset()
 sAudioFile EmptyAudioFile = {0, 0, 0, 0, NULL};
 sAudioStream EmptyAudioStream = {0, 0, 0, 0, NULL, 0, NULL, 0, 0};
 
-sAudioFile load_wave_file(const string &filename);
-sAudioFile load_ogg_file(const string &filename);
-sAudioStream load_ogg_start(const string &filename);
+sAudioFile load_wave_file(const Path &filename);
+sAudioFile load_ogg_file(const Path &filename);
+sAudioStream load_ogg_start(const Path &filename);
 void load_ogg_step(sAudioStream *as);
 void load_ogg_end(sAudioStream *as);
 
@@ -61,10 +61,10 @@ enum
 	AudioStreamFlac,
 };
 
-sAudioFile load_sound_file(const string &filename)
+sAudioFile load_sound_file(const Path &filename)
 {
-	msg_write("loading sound: " + filename);
-	string ext = path_extension(filename);
+	msg_write("loading sound: " + filename.str());
+	string ext = filename.extension();
 	if (ext == "wav")
 		return load_wave_file(filename);
 #ifdef SOUND_ALLOW_OGG
@@ -74,9 +74,9 @@ sAudioFile load_sound_file(const string &filename)
 	return EmptyAudioFile;
 }
 
-sAudioStream load_sound_start(const string &filename)
+sAudioStream load_sound_start(const Path &filename)
 {
-	string ext = path_extension(filename);
+	string ext = filename.extension();
 	/*if (ext == "wav")
 		return load_wave_start(filename);
 	else*/ if (ext == "ogg")
@@ -101,7 +101,7 @@ void load_sound_end(sAudioStream *as)
 }
 
 
-sAudioFile load_wave_file(const string &filename)
+sAudioFile load_wave_file(const Path &filename)
 {
 	sAudioFile r;
 	r.buffer = NULL;
@@ -273,14 +273,14 @@ void load_ogg_end(sAudioStream *as)
 
 #else
 
-sAudioFile load_ogg_file(const string &filename){ sAudioFile r; return r; }
-sAudioStream load_ogg_start(const string &filename){ sAudioStream r; return r; }
+sAudioFile load_ogg_file(const Path &filename){ sAudioFile r; return r; }
+sAudioStream load_ogg_start(const Path &filename){ sAudioStream r; return r; }
 void load_ogg_step(sAudioStream *as){}
 void load_ogg_end(sAudioStream *as){}
 
 #endif
 
-void save_wave_file(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
+void save_wave_file(const Path &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
 {
 //	channels = 1;
 	bits = 16;
@@ -322,9 +322,9 @@ void save_wave_file(const string &filename, const Array<float> &data_r, const Ar
 	FileClose(f);
 }
 
-void SoundSaveFile(const string &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
+void SoundSaveFile(const Path &filename, const Array<float> &data_r, const Array<float> &data_l, int freq, int channels, int bits)
 {
-	string ext = path_extension(filename);
+	string ext = filename.extension();
 	if (ext == "wav")
 		save_wave_file(filename, data_r, data_l, freq, channels, bits);
 	else
