@@ -15,6 +15,7 @@ extern const Class *TypeFloatPs;
 extern const Class *TypeBoolPs;
 extern const Class *TypeDate;
 extern const Class *TypeStringList;
+const Class *TypePath;
 
 
 static File *_kaba_stdin = nullptr;
@@ -153,6 +154,19 @@ string _cdecl kaba_shell_execute(const string &cmd) {
 
 #pragma GCC pop_options
 
+class KabaPath : public Path {
+public:
+	Path lshift_p(const Path &p) const {
+		return *this << p;
+	}
+	Path lshift_s(const string &p) const {
+		return *this << p;
+	}
+	bool __contains__(const Path &p) const {
+		return p.is_in(*this);
+	}
+};
+
 void SIAddPackageOS() {
 	add_package("os");
 
@@ -162,6 +176,8 @@ void SIAddPackageOS() {
 	const Class *TypeFileError = add_type("FileError", sizeof(KabaFileError));
 	//Class *TypeFileNotFoundError= add_type  ("FileError", sizeof(KabaFileNotFoundError));
 	//Class *TypeFileNotWritableError= add_type  ("FileError", sizeof(KabaFileNotWritableError));
+	TypePath = add_type("Path", sizeof(Path));
+	const Class *TypePathList = add_type_l(TypePath);
 
 	add_class(TypeFile);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFile::__delete__);
@@ -205,6 +221,37 @@ void SIAddPackageOS() {
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaFileError::__init__, Flags::OVERRIDE);
 		class_add_func_virtualx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFileError::__delete__, Flags::OVERRIDE);
 		class_set_vtable(KabaFileError);
+
+	add_class(TypePath);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init__);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init_ext__);
+			func_add_param("p", TypeString);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Path::__delete__);
+		class_add_funcx("absolute", TypeString, &Path::absolute, Flags::CONST);
+		class_add_funcx("dirname", TypeString, &Path::dirname, Flags::_CONST__PURE);
+		class_add_funcx("basename", TypeString, &Path::basename, Flags::_CONST__PURE);
+		class_add_funcx("extension", TypeString, &Path::extension, Flags::_CONST__PURE);
+		class_add_funcx("canonical", TypePath, &Path::canonical, Flags::_CONST__PURE);
+		class_add_funcx("as_dir", TypePath, &Path::as_dir, Flags::_CONST__PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &Path::str, Flags::_CONST__PURE);
+		class_add_funcx("is_empty", TypeBool, &Path::is_empty, Flags::_CONST__PURE);
+		class_add_funcx("is_relative", TypeBool, &Path::is_relative, Flags::_CONST__PURE);
+		class_add_funcx("is_absolute", TypeBool, &Path::is_absolute, Flags::_CONST__PURE);
+		class_add_funcx("has_dir_ending", TypeBool, &Path::has_dir_ending, Flags::_CONST__PURE);
+		class_add_funcx("parent", TypePath, &Path::parent, Flags::_CONST__PURE);
+		class_add_funcx("all_parents", TypePathList, &Path::all_parents, Flags::_CONST__PURE);
+		class_add_const("EMPTY", TypePath, &Path::EMPTY);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypePath, TypePath, InlineID::NONE, mf(&Path::operator =));
+		add_operator(OperatorID::EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator ==));
+		add_operator(OperatorID::NOTEQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator !=));
+		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::lshift_p));
+		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypeString, InlineID::NONE, mf(&KabaPath::lshift_s));
+		add_operator(OperatorID::IN, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::__contains__));
+
+
+	add_class(TypePathList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Path>::__init__);
+
 
 	// file access
 	add_class(TypeFilesystem);
@@ -264,7 +311,7 @@ void SIAddPackageOS() {
 			func_add_param("path", TypeString);
 		class_add_funcx("canonical", TypeString, &Path::canonical, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
-		class_add_funcx("dir_canonical", TypeString, &Path::dir_canonical, Flags::_STATIC__PURE);
+		class_add_funcx("dir_canonical", TypeString, &Path::as_dir, Flags::_STATIC__PURE);
 			func_add_param("path", TypeString);
 		
 		_kaba_stdin = new File();

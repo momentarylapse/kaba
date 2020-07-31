@@ -91,7 +91,13 @@ string Path::str() const {
 bool Path::is_relative() const {
 	if (is_empty())
 		return true;
-	return (s.head(1) != SEPARATOR);
+	return (s.head(1) != SEPARATOR) and (s.substr(1,2) != ":/");
+}
+
+bool Path::is_absolute() const {
+	if (is_empty())
+		return false;
+	return (s.head(1) == SEPARATOR) or (s.substr(1,2) == ":/");
 }
 
 bool Path::is_in(const Path &p) const {
@@ -135,21 +141,18 @@ Path Path::absolute() const {
 	return *this;
 }
 
-// cancel "/x/../"
-// TODO deal with "./"
+// either '/' or 'c:/'
+Path Path::root() const {
+	if (is_relative())
+		return EMPTY;
+	return Path(s.explode(SEPARATOR)[0]).as_dir();
+}
+
+// cancel '/x/../'
+// deal with '/./'
+// leave './x'
 Path Path::canonical() const {
-//	return _canonical_remove(0, true);
-	auto p = s.explode(SEPARATOR);
-
-	for (int i=1; i<p.num; i++) {
-		if ((p[i] == "..") and (p[i-1] != "..")) {
-			p.erase(i);
-			p.erase(i - 1);
-			i -= 2;
-		}
-	}
-
-	return Path(implode(p, SEPARATOR));
+	return _canonical_remove(0, true, has_dir_ending());
 }
 
 // make sure the name ends with a slash
@@ -160,28 +163,40 @@ Path Path::as_dir() const {
 }
 
 
-Path Path::_canonical_remove(int n_remove, bool keep_going) const {
+Path Path::_canonical_remove(int n_remove, bool keep_going, bool make_dir) const {
 	auto xx = s.explode(SEPARATOR);
-	while (xx.num > 0 and ((n_remove > 0) or keep_going)) {
-		if (xx.back() == "") {
-			n_remove ++;
-		} else if (xx.back() == ".") {
-			n_remove ++;
-		} else if (xx.back() == "..") {
+	for (int i=xx.num-1; i>=0 and ((n_remove > 0) or keep_going); i--) {
+		if (i == 0 and n_remove > 0) {
+			if (is_absolute() or xx[i] == ".")
+				return EMPTY; // ERROR
+		}
+
+		if (xx[i] == "") {
+			if (i > 0 or is_relative())
+				n_remove ++;
+		} else if (xx[i] == ".") {
+			if (i > 0)
+				n_remove ++;
+		} else if (xx[i] == "..") {
 			n_remove += 2;
 		}
 		if (n_remove > 0) {
-			xx.pop();
+			xx.erase(i);
 			n_remove --;
 		}
 	}
-	if (xx.num == 0)
-		return EMPTY;
-	return Path(implode(xx, SEPARATOR)).as_dir();
+	if (n_remove != 0)
+		return EMPTY; // ERROR
+	if (xx.num == 0 and is_relative())
+		return EMPTY; // ERROR
+	auto pp = Path(implode(xx, SEPARATOR));
+	if (make_dir)
+		return pp.as_dir();
+	return pp;
 }
 
 Path Path::parent() const {
-	return _canonical_remove(1, false);
+	return _canonical_remove(1, false, true);//.as_dir();
 }
 
 // starts from root
@@ -192,13 +207,6 @@ Array<Path> Path::all_parents() const {
 	while (!p.is_empty()) {
 		parents.add(p);
 		p = p.parent();
-	}
-	return parents;
-	string temp;
-	for (int i=0; i<s.num-1; i++) {
-		temp.add(s[i]);
-		if (s[i] == '/')
-			parents.add(Path(temp));
 	}
 	return parents;
 }

@@ -10,6 +10,7 @@ extern const Class *TypeIntList;
 extern const Class *TypeFloatList;
 extern const Class *TypeBoolList;
 extern const Class *TypeAny;
+extern const Class *TypePath;
 	
 bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param);
 
@@ -257,6 +258,8 @@ string _cdecl var_repr(const void *p, const Class *type) {
 		return ((string*)p)->repr();
 	} else if (type == TypeCString) {
 		return string((char*)p).repr();
+	} else if (type == TypePath) {
+		return ((Path*)p)->str().repr();
 	} else if (type->is_super_array()) {
 		string s;
 		auto *da = reinterpret_cast<const DynamicArray*>(p);
@@ -305,6 +308,8 @@ string _cdecl var2str(const void *p, const Class *type) {
 		return *(string*)p;
 	if (type == TypeCString)
 		return string((char*)p);
+	if (type == TypePath)
+		return ((Path*)p)->str();
 	if (type == TypeAny)
 		return reinterpret_cast<const Any*>(p)->str();
 	return var_repr(p, type);

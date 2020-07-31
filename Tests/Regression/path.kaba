@@ -1,0 +1,42 @@
+use os
+
+void main()
+	let p = Path("a/b/c")
+	print(p) # a/b/c
+	print(p.is_relative()) # true
+	print(p.as_dir()) # a/b/c/
+	print(p.parent()) # a/b/
+	print(p.parent().parent()) # a/
+	print(p.parent().parent().parent()) #
+	print(p << "x" << "y") # a/b/c/x/y
+
+	print(p == p.as_dir()) # true
+	
+	let p2 = Path("/a/b/c/../d")
+	print(p2) # /a/b/c/../d
+	print(p2.is_relative()) # false
+	print(p2.canonical()) # /a/b/d
+	print(p2.parent()) # /a/b/c/../
+	print(p2.parent().parent()) # /a/
+	print(p2.parent().parent().parent()) # /
+	print(p2.parent().parent().parent().parent()) # ERROR
+	
+	let p3 = Path("./a/.//c")
+	print(p3) # ./a/./c
+	print(p3.canonical()) # ./a/c
+	print(str(p3.all_parents()))
+
+	print("--in--")
+	print(Path("a/b") in Path("a")) # true
+	print(Path("a") in Path("a")) # false
+	print(Path("a") in Path("a/b")) # false
+	
+	print("--canonical--")
+	print(Path("a").canonical()) # a
+	print(Path("/a").canonical()) # /a
+	print(Path("a/").canonical()) # a/
+	print(Path("/a/b/").canonical()) # /a/b/
+	print(Path("./a").canonical()) # ./a
+	print(Path("../a").canonical()) # ERROR
+	print(Path("/../a").canonical()) # ERROR
+	print(Path("a/b/../c").canonical()) # a/c

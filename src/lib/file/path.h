@@ -31,6 +31,7 @@ public:
 
 	string str() const;
 	bool is_relative() const;
+	bool is_absolute() const;
 	bool is_in(const Path &p) const;
 	bool is_empty() const;
 	bool has_dir_ending() const;
@@ -41,13 +42,14 @@ public:
 	Path canonical() const;
 	Path as_dir() const;
 	Array<Path> all_parents() const;
+	Path root() const;
 
 	static const Path EMPTY;
 
 	Path absolute() const;
 
 private:
-	Path _canonical_remove(int n_remove, bool keep_going) const;
+	Path _canonical_remove(int n_remove, bool keep_going, bool as_dir) const;
 };
 
 

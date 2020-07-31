@@ -25,7 +25,7 @@ bool FileDialogDir(Window *win, const string &title, const Path &dir/*, const st
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dlg), dir.str().c_str());
 	int r = gtk_dialog_run(GTK_DIALOG(dlg));
 	if (r == GTK_RESPONSE_ACCEPT) {
-		Filename = Path(gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dlg))).dir_canonical();
+		Filename = Path(gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dlg))).as_dir();
 	}
 	gtk_widget_destroy(dlg);
 	return (r == GTK_RESPONSE_ACCEPT);

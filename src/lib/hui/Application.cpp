@@ -81,8 +81,9 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 		directory_static = directory << "static";
 	#endif
 
-		directory = directory.dir_canonical();
-		directory_static = directory_static.dir_canonical();
+		// just in case...
+		directory = directory.as_dir();
+		directory_static = directory_static.as_dir();
 
 	if (!msg_inited) {
 		dir_create(directory);

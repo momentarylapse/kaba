@@ -2458,17 +2458,16 @@ Path import_dir_match(const Path &dir0, const string &name) {
 	Path filename = dir0;
 
 	for (int i=0; i<xx.num; i++) {
-		filename = filename.dir_canonical();
 		string e = dir_has(filename, canonical_import_name(xx[i]));
 		if (e == "")
-			return Path();
+			return Path::EMPTY;
 		filename <<= e;
 	}
 	return filename;
 
 	if (file_exists(dir0 << name))
 		return dir0 << name;
-	return Path();
+	return Path::EMPTY;
 }
 
 
@@ -2485,7 +2484,7 @@ Path find_import(Script *s, const string &_name) {
 			return filename;
 	}
 
-	return Path();
+	return Path::EMPTY;
 }
 
 void Parser::parse_import() {

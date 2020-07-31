@@ -207,11 +207,10 @@ Array<string> dir_search(const Path &dir, const string &filter, bool show_direct
 	Array<string> dir_list, file_list;
 
 	string filter2 = filter.substr(1, filter.num - 1);
-	string dir2 = dir.dir_canonical().str();
 
 #ifdef OS_WINDOWS
 	static _finddata_t t;
-	auto handle = _findfirst((dir2 + "*").c_str(), &t);
+	auto handle = _findfirst((dir.as_dir().str() + "*").c_str(), &t);
 	auto e = handle;
 	while (e >= 0) {
 		string name = t.name;
@@ -228,7 +227,7 @@ Array<string> dir_search(const Path &dir, const string &filter, bool show_direct
 	}
 #else // defined(OS_LINUX) || defined(OS_MINGW)
 	DIR *_dir;
-	_dir = opendir(dir2.c_str());
+	_dir = opendir(dir.str().c_str());
 	if (!_dir)
 		return {};
 	struct dirent *dn;
@@ -238,10 +237,10 @@ Array<string> dir_search(const Path &dir, const string &filter, bool show_direct
 		//if ((strcmp(dn->d_name,".")!=0)and(strcmp(dn->d_name,"..")!=0)and(!strstr(dn->d_name,"~"))){
 		string name = dn->d_name;
 		if ((name != ".") and (name != "..") and (name.back() != '~')) {
-			string ffn = dir2 + name;
-			stat(ffn.c_str(), &s);
-			bool is_reg = (s.st_mode & S_IFREG)>0;
-			bool is_dir = (s.st_mode & S_IFDIR)>0;
+			Path ffn = dir << name;
+			stat(ffn.str().c_str(), &s);
+			bool is_reg = (s.st_mode & S_IFREG) > 0;
+			bool is_dir = (s.st_mode & S_IFDIR) > 0;
 			if ((is_reg and name.match(filter)) or (show_directories and is_dir)) {
 				if (is_dir)
 					dir_list.add(name);
