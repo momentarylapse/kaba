@@ -6,7 +6,7 @@ class f extends File
 
 void main()
 	f *a
-	a = Filesystem.create(Path("__test__"))
+	a = Filesystem.create("__test__")
 	a << 2
 	a.func()
 	del a

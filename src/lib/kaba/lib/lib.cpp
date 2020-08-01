@@ -831,6 +831,8 @@ void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	add_type_cast(50, TypeBool, TypeAny, "@bool2any");
 	add_type_cast(50, TypeString, TypeAny, "@str2any");
 	add_type_cast(50, TypePointer, TypeAny, "@pointer2any");
+	add_package("os");
+	add_type_cast(50, TypeString, TypePath, "os.Path.@from_str");
 
 
 	// consistency checks

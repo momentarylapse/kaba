@@ -165,6 +165,9 @@ public:
 	bool __contains__(const Path &p) const {
 		return p.is_in(*this);
 	}
+	static Path from_str(const string &s) {
+		return Path(s);
+	}
 };
 
 class PathList : public Array<Path> {
@@ -212,6 +215,8 @@ void SIAddPackageOSPath() {
 		class_add_funcx("relative_to", TypePath, &Path::relative_to, Flags::_CONST__PURE);
 			func_add_param("p", TypePath);
 		class_add_const("EMPTY", TypePath, &Path::EMPTY);
+		class_add_funcx("@from_str", TypePath, &KabaPath::from_str, Flags::_STATIC__PURE);
+			func_add_param("p", TypeString);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypePath, TypePath, InlineID::NONE, mf(&Path::operator =));
 		add_operator(OperatorID::EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator ==));
 		add_operator(OperatorID::NOTEQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator !=));
@@ -284,7 +289,7 @@ void SIAddPackageOS() {
 			func_add_param("v", TypeVector);
 		class_add_funcx("__rshift__", TypeVoid, &KabaFile::_read_str, Flags::RAISES_EXCEPTIONS);
 			func_add_param("s", TypeString);
-		class_add_funcx("eof", TypeBool, &KabaFile::end);
+		class_add_funcx("end", TypeBool, &KabaFile::end);
 
 	add_class(TypeFileError);
 		class_derive_from(TypeException, false, false);

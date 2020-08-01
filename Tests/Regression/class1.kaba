@@ -1,7 +1,7 @@
 use os
 
 void main()
-	File *f = Filesystem.create(Path("__test__"))
+	File *f = Filesystem.create("__test__")
 	f << 1
 	del f
 

@@ -2,6 +2,6 @@ use os
 
 void main()
 	try
-		Filesystem.open(Path("-non-existent-"))
+		Filesystem.open("-non-existent-")
 	except FileError as e
 		print(str(e))
