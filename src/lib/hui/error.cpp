@@ -137,7 +137,7 @@ public:
 
 	void onShowLog()
 	{
-		OpenDocument("message.txt");
+		OpenDocument(Path("message.txt"));
 	}
 
 	void onSendBugReport()

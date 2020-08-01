@@ -28,6 +28,9 @@ public:
 	Path operator<<(const string &p) const;
 	bool operator==(const Path &p) const;
 	bool operator!=(const Path &p) const;
+	bool operator<(const Path &p) const;
+	bool operator>(const Path &p) const;
+	int compare(const Path &p) const;
 
 	string str() const;
 	bool is_relative() const;
@@ -36,6 +39,7 @@ public:
 	bool is_empty() const;
 	bool has_dir_ending() const;
 	string basename() const;
+	string basename_no_ext() const;
 	string extension() const;
 	string dirname() const;
 	Path parent() const;
@@ -43,6 +47,7 @@ public:
 	Path as_dir() const;
 	Array<Path> all_parents() const;
 	Path root() const;
+	Path relative_to(const Path &p) const;
 
 	static const Path EMPTY;
 

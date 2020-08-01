@@ -167,6 +167,51 @@ public:
 	}
 };
 
+void SIAddPackageOSPath() {
+	add_package("os");
+
+	TypePath = add_type("Path", sizeof(Path));
+	const Class *TypePathList = add_type_l(TypePath);
+
+	add_class(TypePath);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init__);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init_ext__);
+			func_add_param("p", TypeString);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Path::__delete__);
+		class_add_funcx("absolute", TypePath, &Path::absolute, Flags::CONST);
+		class_add_funcx("dirname", TypeString, &Path::dirname, Flags::_CONST__PURE);
+		class_add_funcx("basename", TypeString, &Path::basename, Flags::_CONST__PURE);
+		class_add_funcx("basename_no_ext", TypeString, &Path::basename_no_ext, Flags::_CONST__PURE);
+		class_add_funcx("extension", TypeString, &Path::extension, Flags::_CONST__PURE);
+		class_add_funcx("canonical", TypePath, &Path::canonical, Flags::_CONST__PURE);
+		class_add_funcx("as_dir", TypePath, &Path::as_dir, Flags::_CONST__PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &Path::str, Flags::_CONST__PURE);
+		class_add_funcx("is_empty", TypeBool, &Path::is_empty, Flags::_CONST__PURE);
+		class_add_funcx("is_relative", TypeBool, &Path::is_relative, Flags::_CONST__PURE);
+		class_add_funcx("is_absolute", TypeBool, &Path::is_absolute, Flags::_CONST__PURE);
+		class_add_funcx("has_dir_ending", TypeBool, &Path::has_dir_ending, Flags::_CONST__PURE);
+		class_add_funcx("parent", TypePath, &Path::parent, Flags::_CONST__PURE);
+		class_add_funcx("all_parents", TypePathList, &Path::all_parents, Flags::_CONST__PURE);
+		class_add_funcx("compare", TypeInt, &Path::compare, Flags::_CONST__PURE);
+			func_add_param("p", TypePath);
+		class_add_funcx("relative_to", TypePath, &Path::relative_to, Flags::_CONST__PURE);
+			func_add_param("p", TypePath);
+		class_add_const("EMPTY", TypePath, &Path::EMPTY);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypePath, TypePath, InlineID::NONE, mf(&Path::operator =));
+		add_operator(OperatorID::EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator ==));
+		add_operator(OperatorID::NOTEQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator !=));
+		add_operator(OperatorID::SMALLER, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator <));
+		add_operator(OperatorID::GREATER, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator >));
+		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::lshift_p));
+		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypeString, InlineID::NONE, mf(&KabaPath::lshift_s));
+		add_operator(OperatorID::IN, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::__contains__));
+
+
+	add_class(TypePathList);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Path>::__init__);
+
+}
+
 void SIAddPackageOS() {
 	add_package("os");
 
@@ -176,8 +221,6 @@ void SIAddPackageOS() {
 	const Class *TypeFileError = add_type("FileError", sizeof(KabaFileError));
 	//Class *TypeFileNotFoundError= add_type  ("FileError", sizeof(KabaFileNotFoundError));
 	//Class *TypeFileNotWritableError= add_type  ("FileError", sizeof(KabaFileNotWritableError));
-	TypePath = add_type("Path", sizeof(Path));
-	const Class *TypePathList = add_type_l(TypePath);
 
 	add_class(TypeFile);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFile::__delete__);
@@ -222,97 +265,55 @@ void SIAddPackageOS() {
 		class_add_func_virtualx(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFileError::__delete__, Flags::OVERRIDE);
 		class_set_vtable(KabaFileError);
 
-	add_class(TypePath);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init__);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init_ext__);
-			func_add_param("p", TypeString);
-		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Path::__delete__);
-		class_add_funcx("absolute", TypeString, &Path::absolute, Flags::CONST);
-		class_add_funcx("dirname", TypeString, &Path::dirname, Flags::_CONST__PURE);
-		class_add_funcx("basename", TypeString, &Path::basename, Flags::_CONST__PURE);
-		class_add_funcx("extension", TypeString, &Path::extension, Flags::_CONST__PURE);
-		class_add_funcx("canonical", TypePath, &Path::canonical, Flags::_CONST__PURE);
-		class_add_funcx("as_dir", TypePath, &Path::as_dir, Flags::_CONST__PURE);
-		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &Path::str, Flags::_CONST__PURE);
-		class_add_funcx("is_empty", TypeBool, &Path::is_empty, Flags::_CONST__PURE);
-		class_add_funcx("is_relative", TypeBool, &Path::is_relative, Flags::_CONST__PURE);
-		class_add_funcx("is_absolute", TypeBool, &Path::is_absolute, Flags::_CONST__PURE);
-		class_add_funcx("has_dir_ending", TypeBool, &Path::has_dir_ending, Flags::_CONST__PURE);
-		class_add_funcx("parent", TypePath, &Path::parent, Flags::_CONST__PURE);
-		class_add_funcx("all_parents", TypePathList, &Path::all_parents, Flags::_CONST__PURE);
-		class_add_const("EMPTY", TypePath, &Path::EMPTY);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypePath, TypePath, InlineID::NONE, mf(&Path::operator =));
-		add_operator(OperatorID::EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator ==));
-		add_operator(OperatorID::NOTEQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&Path::operator !=));
-		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::lshift_p));
-		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypeString, InlineID::NONE, mf(&KabaPath::lshift_s));
-		add_operator(OperatorID::IN, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::__contains__));
-
-
-	add_class(TypePathList);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Path>::__init__);
-
 
 	// file access
 	add_class(TypeFilesystem);
 		class_add_funcx("open", TypeFileP, &kaba_file_open, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("open_text", TypeFileP, &kaba_file_open_text, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("create", TypeFileP, &kaba_file_create, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("create_text", TypeFileP, &kaba_file_create_text, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("read", TypeString, &kaba_file_read, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("read_text", TypeString, &kaba_file_read_text, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("write", TypeVoid, &kaba_file_write, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 			func_add_param("buffer", TypeString);
 		class_add_funcx("write_text", TypeVoid, &kaba_file_write_text, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 			func_add_param("buffer", TypeString);
 		class_add_funcx("exists", TypeBool, &file_exists, Flags::STATIC);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("size", TypeInt64, &file_size, Flags::STATIC);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("mtime", TypeDate, &file_mtime, Flags::STATIC);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("is_directory", TypeBool, &file_is_directory, Flags::STATIC);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("hash", TypeString, &kaba_file_hash, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 			func_add_param("type", TypeString);
 		class_add_funcx("rename", TypeVoid, &kaba_file_rename, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("source", TypeString);
-			func_add_param("dest", TypeString);
+			func_add_param("source", TypePath);
+			func_add_param("dest", TypePath);
 		class_add_funcx("copy", TypeVoid, &kaba_file_copy, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("source", TypeString);
-			func_add_param("dest", TypeString);
+			func_add_param("source", TypePath);
+			func_add_param("dest", TypePath);
 		class_add_funcx("delete", TypeVoid, &kaba_file_delete, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("filename", TypeString);
+			func_add_param("filename", TypePath);
 		class_add_funcx("search", TypeStringList, &dir_search, Flags::STATIC);
-			func_add_param("dir", TypeString);
+			func_add_param("dir", TypePath);
 			func_add_param("filter", TypeString);
 			func_add_param("show_dirs", TypeBool);
 		class_add_funcx("create_directory", TypeVoid, &kaba_dir_create, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("dir", TypeString);
+			func_add_param("dir", TypePath);
 		class_add_funcx("delete_directory", TypeVoid, &kaba_dir_delete, Flags::_STATIC__RAISES_EXCEPTIONS);
-			func_add_param("dir", TypeString);
-		class_add_funcx("current_directory", TypeString, &get_current_dir, Flags::STATIC);
-		class_add_funcx("absolute", TypeString, &Path::absolute, Flags::STATIC);
-			func_add_param("path", TypeString);
-		class_add_funcx("dirname", TypeString, &Path::dirname, Flags::_STATIC__PURE);
-			func_add_param("path", TypeString);
-		class_add_funcx("basename", TypeString, &Path::basename, Flags::_STATIC__PURE);
-			func_add_param("path", TypeString);
-		class_add_funcx("extension", TypeString, &Path::extension, Flags::_STATIC__PURE);
-			func_add_param("path", TypeString);
-		class_add_funcx("canonical", TypeString, &Path::canonical, Flags::_STATIC__PURE);
-			func_add_param("path", TypeString);
-		class_add_funcx("dir_canonical", TypeString, &Path::as_dir, Flags::_STATIC__PURE);
-			func_add_param("path", TypeString);
+			func_add_param("dir", TypePath);
+		class_add_funcx("current_directory", TypePath, &get_current_dir, Flags::STATIC);
 		
 		_kaba_stdin = new File();
 		_kaba_stdin->handle = 0;
