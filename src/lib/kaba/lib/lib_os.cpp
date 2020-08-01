@@ -167,13 +167,29 @@ public:
 	}
 };
 
+class PathList : public Array<Path> {
+public:
+	void _cdecl assign(PathList &s) {
+		*this = s;
+	}
+	bool __contains__(const Path &s) {
+		return this->find(s) >= 0;
+	}
+	Array<Path> __add__(const Array<Path> &o) {
+		return *this + o;
+	}
+	void __adds__(const Array<Path> &o) {
+		append(o);
+	}
+};
+
 void SIAddPackageOSPath() {
 	add_package("os");
 
 	TypePath = add_type("Path", sizeof(Path));
-	const Class *TypePathList = add_type_l(TypePath);
 
 	add_class(TypePath);
+		class_add_element("_s", TypeString, 0);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init__);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Path::__init_ext__);
 			func_add_param("p", TypeString);
@@ -191,7 +207,6 @@ void SIAddPackageOSPath() {
 		class_add_funcx("is_absolute", TypeBool, &Path::is_absolute, Flags::_CONST__PURE);
 		class_add_funcx("has_dir_ending", TypeBool, &Path::has_dir_ending, Flags::_CONST__PURE);
 		class_add_funcx("parent", TypePath, &Path::parent, Flags::_CONST__PURE);
-		class_add_funcx("all_parents", TypePathList, &Path::all_parents, Flags::_CONST__PURE);
 		class_add_funcx("compare", TypeInt, &Path::compare, Flags::_CONST__PURE);
 			func_add_param("p", TypePath);
 		class_add_funcx("relative_to", TypePath, &Path::relative_to, Flags::_CONST__PURE);
@@ -207,8 +222,20 @@ void SIAddPackageOSPath() {
 		add_operator(OperatorID::IN, TypeBool, TypePath, TypePath, InlineID::NONE, mf(&KabaPath::__contains__));
 
 
+	const Class *TypePathList = add_type_l(TypePath);
+
+	add_class(TypePath);
+		class_add_funcx("all_parents", TypePathList, &Path::all_parents, Flags::_CONST__PURE);
+
 	add_class(TypePathList);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Path>::__init__);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, &Array<Path>::clear);
+		class_add_funcx("clear", TypeVoid, &Array<Path>::clear);
+		class_add_funcx("add", TypeVoid, &PathList::add);
+			func_add_param("p", TypePath);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypePathList, TypePathList, InlineID::NONE, mf(&PathList::assign));
+		add_operator(OperatorID::IN, TypeBool, TypePathList, TypePath, InlineID::NONE, mf(&PathList::__contains__));
+
 
 }
 

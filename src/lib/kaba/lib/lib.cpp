@@ -186,6 +186,8 @@ const Class *TypeFunctionP;
 const Class *TypeFunctionCode;
 const Class *TypeFunctionCodeP;
 
+extern const Class *TypePath;
+
 
 Array<Script*> packages;
 Script *cur_package = nullptr;
@@ -658,7 +660,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 			func_add_param("index", TypeInt);
 		class_add_funcx("resize", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("num", TypeInt);
-	}else if (p == TypeString or p == TypeAny){
+	}else if (p == TypeString or p == TypeAny or p == TypePath){
 		// handled manually later...
 	}else{
 		msg_error("evil class:  " + t->name);
