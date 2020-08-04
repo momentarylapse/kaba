@@ -130,12 +130,6 @@ public:
 		string debug_stage_filter = "*";
 		bool flag_show_consts = false;
 		bool flag_compile_os = false;
-		bool flag_override_variable_offset = false;
-		int64 variable_offset = 0;
-		bool flag_override_code_origin = false;
-		int64 code_origin = 0;
-		bool flag_no_function_frames = false;
-		bool flag_add_entry_point = false;
 		string output_format = "raw";
 		string command;
 
@@ -154,20 +148,25 @@ public:
 		p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
 		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
 		p.option("--os", [&]{ flag_compile_os = true; });
+		p.option("--remove-unused", [&]{ Kaba::config.remove_unused = true; });
 		p.option("--verbose", [&]{ flag_verbose = true; flag_disassemble = true; });
 		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
 		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });
 		p.option("--disasm", [&]{ flag_disassemble = true; });
 		p.option("--show-tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
 		p.option("--show-consts", [&]{ flag_show_consts = true; });
-		p.option("--no-function-frames", [&]{ flag_no_function_frames = true; });
-		p.option("--add-entry-point", [&]{ flag_add_entry_point = true; });
-		p.option("--code-origin", "ORIGIN", [&](const string &a){ flag_override_code_origin = true; code_origin = Kaba::s2i2(a); });
-		p.option("--variable-offset", "OFFSET", [&](const string &a){ flag_override_variable_offset = true; variable_offset = Kaba::s2i2(a); });
+		p.option("--no-function-frames", [&]{ Kaba::config.no_function_frame = true; });
+		p.option("--add-entry-point", [&]{ Kaba::config.add_entry_point = true; });
+		p.option("--code-origin", "ORIGIN", [&](const string &a) {
+			Kaba::config.override_code_origin = true;
+			Kaba::config.code_origin = Kaba::s2i2(a); });
+		p.option("--variable-offset", "OFFSET", [&](const string &a) {
+			Kaba::config.override_variables_offset = true;
+			Kaba::config.variables_offset = Kaba::s2i2(a); });
 		p.option("--output/-o", "OUTFILE", [&](const string &a){ out_file = a; });
 		p.option("--output-format", "raw/elf", [&](const string &a){
 			output_format = a;
-			if ((output_format != "raw") and (output_format != "elf")){
+			if ((output_format != "raw") and (output_format != "elf")) {
 				msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
 				exit(1);
 			}
@@ -225,12 +224,6 @@ public:
 		Kaba::config.verbose_func_filter = debug_func_filter;
 		Kaba::config.verbose_stage_filter = debug_stage_filter;
 		Kaba::config.compile_os = flag_compile_os;
-		Kaba::config.add_entry_point = flag_add_entry_point;
-		Kaba::config.no_function_frame = flag_no_function_frames;
-		Kaba::config.override_variables_offset = flag_override_variable_offset;
-		Kaba::config.variables_offset = variable_offset;
-		Kaba::config.override_code_origin = flag_override_code_origin;
-		Kaba::config.code_origin = code_origin;
 
 		// script file as parameter?
 		Path filename;
