@@ -42,7 +42,7 @@ static Array<string> TodoStr;
 bool msg_inited = false;
 
 static File *file = nullptr;
-static Path msg_file_name = Path("message.txt");
+static Path msg_file_name = "message.txt";
 static int Shift;
 
 static bool Verbose=false;
@@ -69,7 +69,7 @@ void msg_init(const Path &force_filename, bool verbose) {
 }
 
 void msg_init(bool verbose) {
-	msg_init(Path(""), verbose);
+	msg_init("", verbose);
 }
 
 void msg_set_verbose(bool verbose) {

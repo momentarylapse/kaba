@@ -229,7 +229,7 @@ FormatData parse_format(const string &_format) {
 }
 
 Texture::Texture() {
-	filename = Path("-empty-");
+	filename = "-empty-";
 	type = Type::DEFAULT;
 	internal_format = 0;
 	valid = true;
@@ -517,7 +517,7 @@ void TextureVideoMove(int texture,float elapsed)
 
 ImageTexture::ImageTexture(int _width, int _height, const string &_format) {
 	msg_write(format("creating image texture [%d x %d] ", _width, _height) + _format);
-	filename = Path("-image-");
+	filename = "-image-";
 	width = _width;
 	height = _height;
 	type = Type::IMAGE;
@@ -538,7 +538,7 @@ void ImageTexture::__init__(int width, int height, const string &format) {
 
 DepthBuffer::DepthBuffer(int _width, int _height) {
 	msg_write(format("creating depth texture [%d x %d] ", _width, _height));
-	filename = Path("-depth-");
+	filename = "-depth-";
 	width = _width;
 	height = _height;
 	type = Type::DEPTH;
@@ -585,7 +585,7 @@ CubeMap::CubeMap(int size) {
 	width = size;
 	height = size;
 	type = Type::CUBE;
-	filename = Path("-cubemap-");
+	filename = "-cubemap-";
 }
 
 void CubeMap::__init__(int size) {

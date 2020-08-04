@@ -16,6 +16,7 @@ class Path {
 public:
 	Path();
 	Path(const string &s);
+	Path(const char *s);
 
 	void __init__();
 	void __init_ext__(const string &s);
@@ -23,9 +24,7 @@ public:
 
 	void operator=(const Path &p);
 	void operator<<=(const Path &p);
-	void operator<<=(const string &p);
 	Path operator<<(const Path &p) const;
-	Path operator<<(const string &p) const;
 	bool operator==(const Path &p) const;
 	bool operator!=(const Path &p) const;
 	bool operator<(const Path &p) const;
@@ -33,6 +32,7 @@ public:
 	int compare(const Path &p) const;
 
 	string str() const;
+	const char *c_str() const;
 	bool is_relative() const;
 	bool is_absolute() const;
 	bool is_in(const Path &p) const;
@@ -40,7 +40,9 @@ public:
 	bool has_dir_ending() const;
 	string basename() const;
 	string basename_no_ext() const;
+	Path no_ext() const;
 	string extension() const;
+	Path with(const string &s) const;
 	string dirname() const;
 	Path parent() const;
 	Path canonical() const;

@@ -255,7 +255,7 @@ Shader *Shader::load(const Path &filename) {
 Shader::Shader() {
 	shaders.add(this);
 	reference_count = 1;
-	filename = Path("-no file-");
+	filename = "-no file-";
 	program = -1;
 	for (int i=0; i<NUM_LOCATIONS; i++)
 		location[i] = -1;

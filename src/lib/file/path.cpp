@@ -28,6 +28,8 @@ Path::Path(const string &_s) {
 	s = _s.replace(SEPARATOR_OTHER, SEPARATOR).replace("//", "/");
 }
 
+Path::Path(const char *_s) : Path(string(_s)) {}
+
 void Path::__init__() {
 	new(this) Path();
 }
@@ -53,18 +55,10 @@ void Path::operator <<=(const Path &p) {
 		s += SEPARATOR + p.s;
 }
 
-void Path::operator <<=(const string &p) {
-	*this <<= Path(p);
-}
-
 Path Path::operator <<(const Path &p) const {
 	Path temp = *this;
 	temp <<= p;
 	return temp;
-}
-
-Path Path::operator <<(const string &p) const {
-	return *this << Path(p);
 }
 
 int icomparex(const string &a, const string &b) {
@@ -107,6 +101,10 @@ string Path::str() const {
 #endif
 }
 
+const char *Path::c_str() const {
+	return str().c_str();
+}
+
 bool Path::is_relative() const {
 	if (is_empty())
 		return true;
@@ -147,12 +145,23 @@ string Path::basename_no_ext() const {
 	return "";
 }
 
+Path Path::no_ext() const {
+	int pos = s.rfind(".");
+	if (pos >= 0)
+		return s.head(pos);
+	return *this;
+}
+
 string Path::extension() const {
 	string b = basename();
 	int pos = b.rfind(".");
 	if (pos >= 0)
 		return b.tail(b.num - pos - 1).lower();
 	return "";
+}
+
+Path Path::with(const string &_s) const {
+	return s + _s;
 }
 
 // ends with '/' or '\'

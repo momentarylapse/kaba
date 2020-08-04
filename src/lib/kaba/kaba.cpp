@@ -178,7 +178,10 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 	just_analyse = _just_analyse;
 
 
-	filename = (config.directory << _filename).absolute().canonical();
+	if (_filename.is_relative())
+		filename = (config.directory << _filename).absolute().canonical();
+	else
+		filename = _filename.absolute().canonical();
 	auto parser = syntax->parser = new Parser(syntax);
 
 	try {
@@ -235,7 +238,7 @@ void Script::set_variable(const string &name, void *data) {
 }
 
 Script::Script() {
-	filename = Path("-empty script-");
+	filename = "-empty script-";
 	used_by_default = false;
 
 	reference_counter = 0;
@@ -288,7 +291,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 
 	// empty script
 	Script *s = new Script();
-	s->filename = Path("-command line-");
+	s->filename = "-command line-";
 	SyntaxTree *ps = s->syntax;
 	auto parser = ps->parser = new Parser(ps);
 
@@ -303,7 +306,7 @@ void ExecuteSingleScriptCommand(const string &cmd)
 	}
 	
 	for (auto *p: packages)
-		if (!p->used_by_default and (p->filename != Path("x")))
+		if (!p->used_by_default and (p->filename != "x"))
 			ps->add_include_data(p, true);
 
 // analyse syntax

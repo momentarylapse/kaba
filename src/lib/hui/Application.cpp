@@ -48,17 +48,17 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 		if (_args.num > 0) {
 			// assume a local/non-installed version
 			filename = _args[0].replace("\\", "/");
-			directory = Path("./");
+			directory = "./";
 
 
 			// installed version?
-			if (filename.is_in(Path("/usr/local/")) or (filename.str().find("/") < 0)) {
+			if (filename.is_in("/usr/local/") or (filename.str().find("/") < 0)) {
 				installed = true;
 				directory_static = Path("/usr/local/share/") << app_name;
-			} else if (filename.is_in(Path("/usr/"))) {
+			} else if (filename.is_in("/usr/")) {
 				installed = true;
 				directory_static = Path("/usr/share/") << app_name;
-			} else if (filename.is_in(Path("/opt/"))) {
+			} else if (filename.is_in("/opt/")) {
 				installed = true;
 				directory_static = Path("/opt/") << app_name;
 			}
@@ -87,7 +87,7 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 
 	if (!msg_inited) {
 		dir_create(directory);
-		msg_init(directory << Path("message.txt"), !(flags & FLAG_SILENT));
+		msg_init(directory << "message.txt", !(flags & FLAG_SILENT));
 	}
 
 	//msg_write("HuiAppDirectory " + HuiAppDirectory);
