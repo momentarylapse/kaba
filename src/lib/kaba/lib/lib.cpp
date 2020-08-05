@@ -838,11 +838,11 @@ void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	add_type_cast(50, TypePointer, TypeBool, "p2b");
 	add_type_cast(50, TypePointer, TypeString, "p2s");
 	add_package("math");
-	add_type_cast(50, TypeInt, TypeAny, "@int2any");
-	add_type_cast(50, TypeFloat32, TypeAny, "@float2any");
-	add_type_cast(50, TypeBool, TypeAny, "@bool2any");
-	add_type_cast(50, TypeString, TypeAny, "@str2any");
-	add_type_cast(50, TypePointer, TypeAny, "@pointer2any");
+	add_type_cast(50, TypeInt, TypeAny, "math.@int2any");
+	add_type_cast(50, TypeFloat32, TypeAny, "math.@float2any");
+	add_type_cast(50, TypeBool, TypeAny, "math.@bool2any");
+	add_type_cast(50, TypeString, TypeAny, "math.@str2any");
+	add_type_cast(50, TypePointer, TypeAny, "math.@pointer2any");
 	add_package("os");
 	add_type_cast(50, TypeString, TypePath, "os.Path.@from_str");
 

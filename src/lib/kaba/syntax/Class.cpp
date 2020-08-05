@@ -86,14 +86,22 @@ Class::~Class() {
 			delete c;
 }
 
+bool reachable_from(const Class *ns, const Class *observer_ns) {
+	if (ns == observer_ns)
+		return true;
+	if (observer_ns->name_space)
+		return reachable_from(ns, observer_ns->name_space);
+	return false;
+}
+
 bool ns_needed(const Class *ns, const Class *observer_ns) {
 	if (!ns)
 		return false;
-	if (ns == observer_ns)
-		return false;
 	if (ns->name[0] == '-')
 		return false;
-	if (ns->owner->script->used_by_default)
+	if (observer_ns and reachable_from(ns, observer_ns))
+		return false;
+	if (ns == packages[0]->base_class()) // always ignore "base"
 		if (ns == ns->owner->base_class)
 			return false;
 	return true;
