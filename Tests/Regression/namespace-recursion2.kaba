@@ -1,0 +1,12 @@
+class A
+	class B
+		int x
+		void __init__()
+			x = 13
+	B b
+#	void __init__()  # BUG???
+#		b.x = 14
+
+void main()
+	A a
+	print(str(a))

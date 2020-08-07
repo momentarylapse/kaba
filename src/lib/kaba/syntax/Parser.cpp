@@ -2602,7 +2602,7 @@ inline bool type_needs_alignment(const Class *t) {
 	return (t->size >= 4);
 }
 
-void Parser::parse_class(Class *_namespace) {
+bool Parser::parse_class(Class *_namespace) {
 	int indent0 = Exp.cur_line->indent;
 	int _offset = 0;
 	Exp.next(); // 'class'
@@ -2620,11 +2620,16 @@ void Parser::parse_class(Class *_namespace) {
 		Exp.next();
 		const Class *parent = parse_type(_namespace); // force
 		if (!parent->fully_parsed)
-			do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
+			return false;
+			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 		_class->derive_from(parent, true);
 		_offset = parent->size;
 	}
 	expect_new_line();
+
+	//msg_write("parse " + _class->long_name());
+
+	Array<int> sub_class_line_offsets;
 
 	// elements
 	while (!Exp.end_of_file()) {
@@ -2644,7 +2649,13 @@ void Parser::parse_class(Class *_namespace) {
 		}
 
 		if (Exp.cur == IDENTIFIER_CLASS) {
-			parse_class(_class);
+			//msg_write("sub....");
+			int cur_line = Exp.get_line_no();
+			if (!parse_class(_class)) {
+				sub_class_line_offsets.add(cur_line);
+				skip_parse_class();
+			}
+			//msg_write(">>");
 			continue;
 		}
 
@@ -2745,6 +2756,33 @@ void Parser::parse_class(Class *_namespace) {
 
 	_class->fully_parsed = true;
 
+
+	int cur_line = Exp.get_line_no();
+
+	//msg_write(ia2s(sub_class_line_offsets));
+	for (int l: sub_class_line_offsets) {
+		//msg_write("SUB...");
+		Exp.set(0, l);
+		//.add(Exp.get_line_no());
+		if (!parse_class(_class))
+			do_error(format("parent class not fully parsed yet"));
+			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
+	}
+
+	Exp.set(0, cur_line);
+	Exp.cur_line --;
+	return true;
+}
+
+void Parser::skip_parse_class() {
+	int indent0 = Exp.cur_line->indent;
+
+	// elements
+	while (!Exp.end_of_file()) {
+		Exp.next_line();
+		if (Exp.cur_line->indent <= indent0) //(unindented)
+			break;
+	}
 	Exp.cur_line --;
 }
 

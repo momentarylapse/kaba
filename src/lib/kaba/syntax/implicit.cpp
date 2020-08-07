@@ -487,10 +487,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 					// only auto-implement matching constructors
 					redefine_inherited_constructors(t, this);
 				}
-			} else {
-				if (t->needs_constructor() and t->get_constructors().num == 0)
-					add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
 			}
+			if (t->needs_constructor() and t->get_constructors().num == 0)
+				add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
 			if (needs_new(t->get_destructor()))
 				add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
 		}

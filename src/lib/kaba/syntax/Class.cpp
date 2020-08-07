@@ -195,6 +195,7 @@ const Class *Class::get_array_element() const {
 	return nullptr;
 }
 
+// hmmm, very vague concept...
 bool Class::needs_constructor() const {
 	if (!uses_call_by_reference()) // int/float/pointer etc
 		return false;
@@ -208,7 +209,7 @@ bool Class::needs_constructor() const {
 		if (parent->needs_constructor())
 			return true;
 	for (ClassElement &e: elements)
-		if (e.type->needs_constructor())
+		if (e.type->needs_constructor() or e.type->get_default_constructor())
 			return true;
 	return false;
 }

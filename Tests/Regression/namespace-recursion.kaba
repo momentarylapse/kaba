@@ -1,0 +1,11 @@
+class A
+	int x
+	class B extends A
+		void __init__()
+			x = 12
+			y = 14
+		int y
+
+void main()
+	A.B b
+	print(str(b))
