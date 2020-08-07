@@ -1,9 +1,9 @@
-use x
+#use x
 
 class TraceData2
 	vector pos
-	Model *o
-	Terrain *t
+	Model2 *o
+	Model2 *t
 
 class Model2
 	vector pos

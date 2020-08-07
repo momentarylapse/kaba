@@ -4,7 +4,7 @@
 #include "common.h"
 #include "exception.h"
 
-#if 1
+#if 0
 
 
 #ifdef _X_ALLOW_X_

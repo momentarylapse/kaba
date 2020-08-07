@@ -2619,6 +2619,8 @@ void Parser::parse_class(Class *_namespace) {
 	if (Exp.cur == IDENTIFIER_EXTENDS) {
 		Exp.next();
 		const Class *parent = parse_type(_namespace); // force
+		if (!parent->fully_parsed)
+			do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 		_class->derive_from(parent, true);
 		_offset = parent->size;
 	}
