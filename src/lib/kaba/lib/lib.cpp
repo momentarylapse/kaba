@@ -741,8 +741,6 @@ void SIAddPackageHui();
 void SIAddPackageNix();
 void SIAddPackageNet();
 void SIAddPackageImage();
-void SIAddPackageSound();
-void SIAddPackageX();
 void SIAddPackageVulkan();
 
 CompilerConfiguration::CompilerConfiguration() {
@@ -817,10 +815,8 @@ void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 	SIAddPackageHui();
 	SIAddPackageNix();
 	SIAddPackageNet();
-	SIAddPackageSound();
 	SIAddPackageThread();
 	SIAddPackageVulkan();
-	SIAddPackageX();
 
 	add_package("base");
 	SIAddXCommands();

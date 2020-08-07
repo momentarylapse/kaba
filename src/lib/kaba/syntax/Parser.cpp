@@ -2708,6 +2708,7 @@ bool Parser::parse_class(Class *_namespace) {
 			// add element
 			if (flags_has(flags, Flags::STATIC)) {
 				auto v = new Variable(name, type);
+				v->is_extern = flags_has(flags, Flags::EXTERN);
 				_class->static_variables.add(v);
 			} else {
 				if (type_needs_alignment(type))
