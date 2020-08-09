@@ -37,6 +37,6 @@ void main()
 	print(Path("a/").canonical()) # a/
 	print(Path("/a/b/").canonical()) # /a/b/
 	print(Path("./a").canonical()) # ./a
-	print(Path("../a").canonical()) # ERROR
+	print(Path("../a").canonical()) # ../a
 	print(Path("/../a").canonical()) # ERROR
 	print(Path("a/b/../c").canonical()) # a/c

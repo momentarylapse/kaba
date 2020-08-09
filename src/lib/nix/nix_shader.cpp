@@ -226,12 +226,13 @@ Shader *Shader::load(const Path &filename) {
 		return default_shader_3d->ref();
 
 	Path fn = shader_dir << filename;
+	if (filename.is_absolute())
+		fn = filename;
 	for (Shader *s: shaders)
 		if ((s->filename == fn) and (s->program >= 0))
 			return s->ref();
 
 	msg_write("loading shader: " + fn.str());
-	msg_right();
 
 	try {
 		string source = FileRead(fn);
@@ -239,7 +240,6 @@ Shader *Shader::load(const Path &filename) {
 		if (shader)
 			shader->filename = fn;
 
-		msg_left();
 		return shader;
 	} catch (Exception &e) {
 		msg_error(e.message());

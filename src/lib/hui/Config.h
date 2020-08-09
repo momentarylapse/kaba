@@ -34,6 +34,8 @@ public:
 	void _cdecl load();
 	void _cdecl save();
 
+	Array<string> keys() const;
+
 	bool loaded, changed;
 	Path filename;
 	Map<string, string> map;

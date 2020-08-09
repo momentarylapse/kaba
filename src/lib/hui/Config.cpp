@@ -66,15 +66,15 @@ void Configuration::set_str(const string& name, const string& str) {
 }
 
 int Configuration::get_int(const string& name, int default_val) {
-	return s2i(get_str(name, i2s(default_val)));
+	return get_str(name, i2s(default_val))._int();
 }
 
 float Configuration::get_float(const string& name, float default_val) {
-	return s2f(get_str(name, f2s(default_val, 6)));
+	return get_str(name, f2s(default_val, 6))._float();
 }
 
 bool Configuration::get_bool(const string& name, bool default_val) {
-	return (get_str(name, b2s(default_val)) == "true");
+	return get_str(name, b2s(default_val))._bool();
 }
 
 string Configuration::get_str(const string& name, const string& default_str) {
@@ -87,22 +87,74 @@ string Configuration::get_str(const string& name, const string& default_str) {
 	}
 }
 
+static string strip(const string &s) {
+	int first = 0;
+	int last = s.num;
+	for (int i=0; i<s.num; i++)
+		if (s[i] != ' ') {
+			first = i;
+			break;
+		}
+	for (int i=s.num-1; i>=first; i--)
+		if (s[i] != ' ') {
+			last = i;
+			break;
+		}
+	return s.substr(first, last + 1 - first);
+}
+
+static string _parse_value(const string &s) {
+	return strip(s);
+}
+
 void Configuration::load() {
 	try {
 		File *f = FileOpenText(filename);
 		map.clear();
-		f->read_comment();
-		int num = f->read_int();
-		for (int i=0;i<num;i++) {
-			string temp = f->read_str();
-			string key = temp.substr(3, temp.num - 3);
-			string value = f->read_str();
-			map.set(key, value);
+
+		string t = f->read_str();
+		if (t == "// NumConfigs") {
+			// old format
+			int num = f->read_int();
+			for (int i=0;i<num;i++) {
+				string temp = f->read_str();
+				string key = temp.substr(3, temp.num - 3);
+				string value = f->read_str();
+				map.set(key, value);
+			}
+		} else if (t.head(3) == "// ") {
+			// semi old format
+			f->set_pos(0);
+			while (!f->end()) {
+				string temp = f->read_str();
+				if (temp == "#")
+					break;
+				string key = temp.substr(3, temp.num - 3).lower().replace(" ", "-");
+				string value = f->read_str();
+				map.set(key, value);
+			}
+		} else {
+			// new format
+			f->set_pos(0);
+			while (!f->end()) {
+				string s = f->read_str();
+				if (s.num == 0)
+					continue;
+				if (s[0] == '#')
+					continue;
+				int p = s.find("=");
+				if (p >= 0) {
+					map.set(s.head(p).replace(" ", ""), _parse_value(s.substr(p+1, -1)));
+				}
+			}
 		}
+//		for (auto &k: map.keys())
+//			msg_write("config:  " + k + " := " + map[k]);
 		FileClose(f);
 		loaded = true;
 		changed = false;
-	} catch(...) {
+	} catch(Exception &e) {
+		msg_error(e.message());
 	}
 }
 
@@ -110,21 +162,20 @@ void Configuration::save() {
 	dir_create(filename.dirname());
 	try {
 		File *f = FileCreateText(filename);
-		f->write_str("// NumConfigs");
-		f->write_int(map.num);
-		for (auto &e: map) {
-			f->write_str("// " + e.key);
-			f->write_str(e.value);
-		}
-		f->write_str("#");
+		for (auto &e: map)
+			f->write_str(format("%s = %s ", e.key, e.value));
 		FileClose(f);
 		loaded = true;
 		changed = false;
-	} catch(...) {
+	} catch(Exception &e) {
+		msg_error(e.message());
 	}
 }
 
 
+Array<string> Configuration::keys() const {
+	return map.keys();
+}
 
 
 

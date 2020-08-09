@@ -415,9 +415,11 @@ string GetKeyCodeName(int key_code)
 		return "";
 	string n;
 	if ((key_code & KEY_CONTROL) == KEY_CONTROL)
-		n += "Ctrl+";
+		n += "Ctrl + ";
 	if ((key_code & KEY_SHIFT) == KEY_SHIFT)
-		n += "Shift+";
+		n += "Shift + ";
+	if ((key_code & KEY_ALT) == KEY_ALT)
+		n += "Alt + ";
 	n += GetKeyName(key_code % 256);
 	return n;
 }

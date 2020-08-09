@@ -131,9 +131,9 @@ bool Path::has_dir_ending() const {
 }
 
 string Path::basename() const {
-	int i = s.rfind(SEPARATOR);
+	int i = s.substr(0, s.num-1).rfind(SEPARATOR);
 	if (i >= 0)
-		return s.tail(s.num - i - 1);
+		return s.tail(s.num - i - 1).replace(SEPARATOR, "");
 	return s;
 }
 
@@ -206,6 +206,8 @@ Path Path::as_dir() const {
 
 
 Path Path::_canonical_remove(int n_remove, bool keep_going, bool make_dir) const {
+	if (s.head(2) == ".." and keep_going)
+		return *this;
 	auto xx = s.explode(SEPARATOR);
 	for (int i=xx.num-1; i>=0 and ((n_remove > 0) or keep_going); i--) {
 		if (i == 0 and n_remove > 0) {
