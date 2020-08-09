@@ -258,7 +258,7 @@ bool Class::is_derived_from(const Class *root) const {
 }
 
 bool Class::is_derived_from_s(const string &root) const {
-	if (long_name() == root) // match...?
+	if (long_name().match(root))
 		return true;
 	/*if (is_super_array() or is_array() or is_dict() or is_pointer())
 		return false;*/

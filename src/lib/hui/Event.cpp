@@ -424,6 +424,24 @@ string GetKeyCodeName(int key_code)
 	return n;
 }
 
+int ParseKeyCode(const string &s) {
+	int key = 0;
+	auto xx = s.explode(" + ");
+	for (auto x: xx) {
+		for (int k=0; k<NUM_KEYS; k++)
+			if (x == GetKeyName(k))
+				key |= k;
+		if (x == "Ctrl")
+			key |= KEY_CONTROL;
+		if (x == "Shift")
+			key |= KEY_SHIFT;
+		if (x == "Alt")
+			key |= KEY_ALT;
+	}
+	return key;
+}
+
+
 string GetKeyChar(int key_code)
 {
 	// TODO ... using German key table

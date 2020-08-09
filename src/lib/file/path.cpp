@@ -206,8 +206,6 @@ Path Path::as_dir() const {
 
 
 Path Path::_canonical_remove(int n_remove, bool keep_going, bool make_dir) const {
-	if (s.head(2) == ".." and keep_going)
-		return *this;
 	auto xx = s.explode(SEPARATOR);
 	for (int i=xx.num-1; i>=0 and ((n_remove > 0) or keep_going); i--) {
 		if (i == 0 and n_remove > 0) {
@@ -229,11 +227,11 @@ Path Path::_canonical_remove(int n_remove, bool keep_going, bool make_dir) const
 			n_remove --;
 		}
 	}
-	if (n_remove != 0)
+	if (n_remove > 0 and is_absolute())
 		return EMPTY; // ERROR
 	if (xx.num == 0 and is_relative())
 		return EMPTY; // ERROR
-	auto pp = Path(implode(xx, SEPARATOR));
+	auto pp = Path(str_repeat("../", n_remove) + implode(xx, SEPARATOR));
 	if (make_dir)
 		return pp.as_dir();
 	return pp;

@@ -49,7 +49,8 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 	_using_language_ = false;
 	SetDefaultErrorHandler(nullptr);
 
-	Config.filename = directory << "config.txt";
+	if (file_exists(directory << "config.txt"))
+		Config.load(directory << "config.txt");
 
 
 	if (flags & FLAG_LOAD_RESOURCE)
@@ -69,7 +70,7 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 
 Application::~Application() {
 	if (Config.changed)
-		Config.save();
+		Config.save(directory << "config.txt");
 	if ((msg_inited) /*&& (HuiMainLevel == 0)*/)
 		msg_end();
 }
@@ -215,7 +216,7 @@ void Application::hard_end() {
 #endif
 #endif
 	if (Config.changed)
-		Config.save();
+		Config.save(directory << "config.txt");
 	if (msg_inited)
 		msg_end();
 }

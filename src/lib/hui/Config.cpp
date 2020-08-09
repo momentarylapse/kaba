@@ -27,21 +27,11 @@ Configuration::Configuration() {
 	changed = false;
 }
 
-Configuration::Configuration(const Path &_filename) {
-	filename = _filename;
-	loaded = false;
-	changed = false;
-}
-
 Configuration::~Configuration() {
 }
 
 void Configuration::__init__() {
 	new(this) Configuration;
-}
-
-void Configuration::__init_ext__(const Path &_filename) {
-	new(this) Configuration(_filename);
 }
 
 void Configuration::__del__() {
@@ -65,21 +55,19 @@ void Configuration::set_str(const string& name, const string& str) {
 	changed = true;
 }
 
-int Configuration::get_int(const string& name, int default_val) {
+int Configuration::get_int(const string& name, int default_val) const {
 	return get_str(name, i2s(default_val))._int();
 }
 
-float Configuration::get_float(const string& name, float default_val) {
+float Configuration::get_float(const string& name, float default_val) const {
 	return get_str(name, f2s(default_val, 6))._float();
 }
 
-bool Configuration::get_bool(const string& name, bool default_val) {
+bool Configuration::get_bool(const string& name, bool default_val) const {
 	return get_str(name, b2s(default_val))._bool();
 }
 
-string Configuration::get_str(const string& name, const string& default_str) {
-	if (!loaded)
-		load();
+string Configuration::get_str(const string& name, const string& default_str) const {
 	try {
 		return map[name];
 	} catch(...) {
@@ -107,7 +95,7 @@ static string _parse_value(const string &s) {
 	return strip(s);
 }
 
-void Configuration::load() {
+void Configuration::load(const Path &filename) {
 	try {
 		File *f = FileOpenText(filename);
 		map.clear();
@@ -140,8 +128,10 @@ void Configuration::load() {
 				string s = f->read_str();
 				if (s.num == 0)
 					continue;
-				if (s[0] == '#')
+				if (s[0] == '#') {
+					comments.add(s);
 					continue;
+				}
 				int p = s.find("=");
 				if (p >= 0) {
 					map.set(s.head(p).replace(" ", ""), _parse_value(s.substr(p+1, -1)));
@@ -158,12 +148,17 @@ void Configuration::load() {
 	}
 }
 
-void Configuration::save() {
-	dir_create(filename.dirname());
+void Configuration::save(const Path &filename) {
+	dir_create(filename.parent());
 	try {
 		File *f = FileCreateText(filename);
 		for (auto &e: map)
 			f->write_str(format("%s = %s ", e.key, e.value));
+
+		if (comments.num > 0)
+			f->write_str("");
+		for (auto &s: comments)
+			f->write_str(s);
 		FileClose(f);
 		loaded = true;
 		changed = false;
