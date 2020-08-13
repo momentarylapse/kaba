@@ -1,11 +1,9 @@
 a/b/c
 true
-a/b/c/
 a/b/
 a/
 
 a/b/c/x/y
-true
 /a/b/c/../d
 false
 /a/b/d
