@@ -4,7 +4,7 @@ void f(vector v)
 void main()
 	f([1,2,3])
 
-	color c = [2,3,4,1]
+	color c = [3,4,1,2]
 	print(c)
 
 	print(quaternion([0.1,0,0]))
