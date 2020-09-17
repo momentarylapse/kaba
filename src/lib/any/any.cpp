@@ -262,6 +262,71 @@ string Any::str() const {
 	return repr();
 }
 
+bool str_is_number(const string &s) {
+	for (int i=0; i<s.num; i++) {
+		if (s[i] >= '0' and s[i] <= '9')
+			continue;
+		if (s[i] == '-')
+			continue;
+		if (s[i] == '.')
+			continue;
+		return false;
+	}
+	return true;
+}
+
+
+void any_parse_part(Any &a, const Array<string> &tokens, int &pos) {
+	if (pos >= tokens.num)
+		throw Exception("string ended unexpectedly");
+	auto &cur = tokens[pos];
+	if (cur == "[") {
+		a.create_type(Any::TYPE_ARRAY);
+		pos ++;
+		while (tokens[pos] != "]") {
+			a.as_array()->resize(a.as_array()->num + 1);
+			any_parse_part(a.as_array()->back(), tokens, pos);
+			if (tokens[pos] == "]")
+				break;
+			if (tokens[pos] != ",")
+				throw Exception("',' expected");
+			pos ++;
+		}
+		pos ++;
+
+	} else if (cur == "{") {
+		a.create_type(Any::TYPE_MAP);
+
+	} else if (str_is_number(cur)) {
+		if (cur.has_char('.')) {
+			a.create_type(Any::TYPE_FLOAT);
+			*a.as_float() = cur._float();
+		} else {
+			a.create_type(Any::TYPE_INT);
+			*a.as_int() = cur._int();
+		}
+		pos ++;
+	} else if (cur == "true" or cur == "false") {
+		a.create_type(Any::TYPE_BOOL);
+		*a.as_bool() = cur._bool();
+		pos ++;
+	} else {
+		a.create_type(Any::TYPE_STRING);
+		*a.as_string() = cur;
+		pos ++;
+	}
+};
+
+Any Any::parse(const string &s) {
+	auto tokens = s.parse_tokens(",:[](){}");
+	int pos = 0;
+
+	Any r;
+	any_parse_part(r, tokens, pos);
+
+	return r;
+}
+
 bool Any::_bool() const {
 	if (type == TYPE_BOOL)
 		return *as_bool();

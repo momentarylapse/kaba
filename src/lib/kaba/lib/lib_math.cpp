@@ -236,6 +236,8 @@ public:
 			msg_error("unwrap... "  + aa.str() + " -> " + type->long_name());
 		}
 	}
+	static Any _cdecl parse(const string &s)
+	{ KABA_EXCEPTION_WRAPPER(return Any::parse(s)); return Any(); }
 };
 
 Any kaba_int2any(int i) {
@@ -773,6 +775,8 @@ void SIAddPackageMath() {
 		class_add_func("unwrap", TypeVoid, (void*)&KabaAny::unwrap, Flags::RAISES_EXCEPTIONS);
 			func_add_param("var", TypePointer);
 			func_add_param("type", TypeClassP);
+		class_add_func("parse", TypeAny, (void*)&KabaAny::parse, Flags::_STATIC__RAISES_EXCEPTIONS);
+			func_add_param("s", TypeString);
 
 	add_funcx("@int2any", TypeAny, &kaba_int2any, Flags::STATIC);
 		func_add_param("i", TypeInt);
