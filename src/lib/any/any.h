@@ -58,13 +58,13 @@ public:
 	Any &_cdecl back();
 	int length();
 	
-	int* as_int() const;
-	float* as_float() const;
-	bool* as_bool() const;
-	string* as_string() const;
-	Array<Any>* as_array() const;
-	AnyMap* as_map() const;
-	const void** as_pointer() const;
+	int& as_int() const;
+	float& as_float() const;
+	bool& as_bool() const;
+	string& as_string() const;
+	Array<Any>& as_array() const;
+	AnyMap& as_map() const;
+	const void*& as_pointer() const;
 
 	// map/dict
 	const Any &operator[] (const string &key) const;

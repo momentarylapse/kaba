@@ -522,23 +522,12 @@ string NAME(const Array<T> &a) { \
 	return s; \
 }
 
-string str_quote(const string &s) { return "\"" + s + "\""; }
+string str_quote(const string &s) { return s.repr(); }
 
 MAKE_ARRAY_STR(ia2s, int, i2s);
 MAKE_ARRAY_STR(fa2s, float, f2sf);
 MAKE_ARRAY_STR(ba2s, bool, b2s);
 MAKE_ARRAY_STR(sa2s, string, str_quote);
-
-string _fa2s(const Array<float> &a) {
-	string s = "[";
-	for (int i=0; i<a.num; i++) {
-		if (i > 0)
-			s += ", ";
-		s += f2s(a[i], 6);
-	}
-	s += "]";
-	return s;
-}
 
 
 struct xf_format_data {
@@ -1182,6 +1171,7 @@ Array<string> string::split_any(const string &splitters) const {
 Array<string> str_parse_tokens(const string &line, const string &splitters) {
 	Array<string> tokens;
 	string temp;
+	bool keep_quotes = splitters.has_char('\"');
 
 	auto end_token = [&tokens, &temp] {
 		if (temp.num > 0)
@@ -1194,30 +1184,29 @@ Array<string> str_parse_tokens(const string &line, const string &splitters) {
 			// whitespace
 			end_token();
 		} else if ((line[i] == '\"') or (line[i] == '\'')) {
+			// string
 			end_token();
 
-			// string
-			string ss;
+			int start = i;
 			for (int j=i+1; j<line.num; j++) {
 				if (line[j] == '\\') {
-					ss.add(line[j ++]);
-					ss.add(line[j]);
+					j ++;
 				} else if ((line[j] == '\"') or (line[j] == '\'')) {
 					i = j;
-					tokens.add(ss.unescape());
+					if (keep_quotes)
+						tokens.add(line.substr(start, i-start+1));
+					else
+						tokens.add(line.substr(start+1, i-start-1));
 					break;
-				} else {
-					ss.add(line[j]);
 				}
 			}
+		} else 	if (splitters.has_char(line[i])) {
+			// splitter character
+			end_token();
+			tokens.add(line.substr(i, 1));
 		} else {
 			// regular token
-			if (splitters.has_char(line[i])) {
-				end_token();
-				tokens.add(line.substr(i, 1));
-			} else {
-				temp.add(line[i]);
-			}
+			temp.add(line[i]);
 		}
 	}
 	end_token();
