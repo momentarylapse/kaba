@@ -28,6 +28,7 @@ const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_CLASSIFY = -30;
+const int TYPE_CAST_MAKE_SHARED = -40;
 
 bool type_match(const Class *given, const Class *wanted);
 bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
@@ -1145,6 +1146,13 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 			return true;
 		}
 	}
+	if (wanted->is_pointer_shared() and given->is_pointer()) {
+		if (type_match(given->param, wanted->param)) {
+			penalty = 10;
+			cast = TYPE_CAST_MAKE_SHARED;
+			return true;
+		}
+	}
 	if (wanted->is_pointer_silent()) {
 		// "silent" pointer (&)?
 		if (type_match(given, wanted->param)) {
@@ -1243,6 +1251,14 @@ Node *Parser::apply_type_cast(int tc, Node *node, const Class *wanted) {
 			return apply_params_with_cast(cmd, node->params, c, f->literal_param_type);
 		}
 		do_error("classify...");
+	}
+	if (tc == TYPE_CAST_MAKE_SHARED) {
+		auto f = wanted->get_func(IDENTIFIER_FUNC_SHARED_CREATE, wanted, {node->type});
+		if (!f)
+			do_error("make shared... create missing...");
+		auto nn = tree->add_node_call(f);
+		nn->set_param(0, node);
+		return nn;
 	}
 	
 	Node *c = tree->add_node_call(TypeCasts[tc].f);

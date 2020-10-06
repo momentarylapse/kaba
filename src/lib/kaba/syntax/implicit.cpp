@@ -6,12 +6,7 @@
 #include <stdio.h>
 #include "../../file/file.h"
 
-namespace Kaba{
-
-
-const string IDENTIFIER_FUNC_SHARED_REF = "_ref";
-const string IDENTIFIER_FUNC_SHARED_UNREF = "_unref";
-const string IDENTIFIER_FUNC_SHARED_CLEAR = "_clear";
+namespace Kaba {
 
 
 void Parser::do_error_implicit(Function *f, const string &str) {
@@ -73,7 +68,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 			}
 		}
 		delete n_self;
-	} else if (t->type == Class::Type::POINTER_SHARED) {
+	} else if (t->is_pointer_shared()) {
 		Node *n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
 		Node *n_op = tree->add_node_operator_by_inline(tree->shift_node(n_self, false, 0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
 		f->block->add(n_op);
@@ -130,7 +125,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 			do_error_implicit(f, "element desctructor missing");
 		}
 		delete n_self;
-	} else if (t->type == Class::Type::POINTER_SHARED) {
+	} else if (t->is_pointer_shared()) {
 		// call clear()
 		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
 		if (!f_clear)
@@ -499,8 +494,31 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 }
 
 
-void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr) {
-	Function *f = s->add_function(name, return_type, t, Flags::NONE); // always member-function!
+void Parser::auto_implement_shared_create(Function *f, const Class *t) {
+	if (!f)
+		return;
+	Node *p = tree->add_node_local(f->__get_var("p"));
+	Node *r = tree->add_node_local(f->__get_var(IDENTIFIER_RETURN_VAR));
+
+
+	// r = p
+	auto f_assign = t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {p->type});
+	if (!f_assign)
+		do_error_implicit(f, "= missing...");
+	auto call_assign = tree->add_node_member_call(f_assign, tree->cp_node(r));
+	call_assign->set_param(1, p);
+	f->block->add(call_assign);
+
+	// return r
+	Node *ret = tree->add_node_statement(StatementID::RETURN);
+	ret->set_num_params(1);
+	ret->set_param(0, r);
+	f->block->add(ret);
+}
+
+
+void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr, Flags flags = Flags::NONE) {
+	Function *f = s->add_function(name, return_type, t, flags); // always member-function??? no...?
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
@@ -573,14 +591,15 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(this, t, "clear", TypeVoid, {}, {});
 		add_func_header(this, t, "add", TypeVoid, {TypeString, t->param}, {"key", "x"});
-		add_func_header(this, t, "__get__", t->param, {TypeString}, {"key"});
+		add_func_header(this, t, IDENTIFIER_FUNC_GET, t->param, {TypeString}, {"key"});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
-	} else if (t->type == Class::Type::POINTER_SHARED) {
+	} else if (t->is_pointer_shared()) {
 		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
+		add_func_header(this, t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
 	} else { // regular classes
 		if (!t->is_simple_class()) {
 			if (t->parent) {
@@ -662,12 +681,13 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_dict()) {
 		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
-	} else if (t->type == Class::Type::POINTER_SHARED) {
+	} else if (t->is_pointer_shared()) {
 		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
+		auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param->get_pointer()})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);

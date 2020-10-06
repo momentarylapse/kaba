@@ -555,7 +555,7 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 		if (param->needs_constructor() and !param->get_default_constructor())
 			do_error(format("can not create an array from type '%s', missing default constructor", param->long_name()));
 		add_missing_function_headers_for_class(t);
-	} else if (t->type == Class::Type::POINTER_SHARED) {
+	} else if (t->is_pointer_shared()) {
 		//t->derive_from(TypeSharedPointer, true);
 		t->param = param;
 		add_missing_function_headers_for_class(t);

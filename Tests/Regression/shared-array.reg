@@ -1,0 +1,20 @@
+X.init
+ref!!!  1
+ref!!!  2
+ref!!!  3
+iii
+unref!!!  2
+--->
+test 2
+--->
+test 2
+zzz
+ref!!!  3
+ref!!!  4
+zzz2
+unref!!!  3
+unref!!!  2
+zzz3
+unref!!!  1
+unref!!!  0
+X.del

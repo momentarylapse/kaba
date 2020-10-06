@@ -154,6 +154,7 @@ public:
 	void auto_implement_array_remove(Function *f, const Class *t);
 	void auto_implement_shared_assign(Function *f, const Class *t);
 	void auto_implement_shared_clear(Function *f, const Class *t);
+	void auto_implement_shared_create(Function *f, const Class *t);
 	void auto_implement_functions(const Class *t);
 	
 	SyntaxTree *tree;

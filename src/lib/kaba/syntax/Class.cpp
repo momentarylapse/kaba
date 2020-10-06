@@ -133,6 +133,9 @@ bool Class::is_pointer() const
 bool Class::is_usable_as_pointer() const
 { return type == Type::POINTER or type == Type::POINTER_SILENT  or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE; }
 
+bool Class::is_pointer_shared() const
+{ return type == Type::POINTER_SHARED; }
+
 bool Class::is_pointer_silent() const
 { return type == Type::POINTER_SILENT; }
 

@@ -1,0 +1,36 @@
+class X
+	int ref_count
+	void __init__()
+		ref_count = 0
+		print("X.init")
+	void __delete__()
+		print("X.del")
+	void _ref()
+		ref_count ++
+		print("ref!!!  {{ref_count}}")
+	bool _unref()
+		ref_count --
+		print("unref!!!  {{ref_count}}")
+		return ref_count == 0
+	const void f()
+		print("test {{ref_count}}")
+
+
+
+void main()
+	shared X[] a
+	if true
+		shared X x = new X()
+		a.add(x)
+		a.add(x)
+		print("iii")
+	for p in a
+		print("--->")
+		p.f()
+	print("zzz")
+	
+	if true
+		let b = a
+		print("zzz2")
+	print("zzz3")
+	

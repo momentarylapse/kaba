@@ -1,0 +1,35 @@
+class X
+	int ref_count
+	void __init__()
+		ref_count = 0
+		print("X.init")
+	void __delete__()
+		print("X.del")
+	void _ref()
+		ref_count ++
+		print("ref!!!  {{ref_count}}")
+	bool _unref()
+		ref_count --
+		print("unref!!!  {{ref_count}}")
+		return ref_count == 0
+	const void f()
+		print("test {{ref_count}}")
+
+
+void ff(shared X x)
+	let z = x
+	z.f()
+
+
+void main()
+	shared X x
+	shared X y
+	#print(binary(&x, 8).hex())
+	x = new X()
+	#print(binary(&x, 8).hex())
+	y = x
+	x.f()
+	ff(x)
+	#print(binary(&x, 8).hex())
+	#print(binary(&y, 8).hex())
+	

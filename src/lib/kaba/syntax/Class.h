@@ -55,6 +55,7 @@ public:
 	bool is_dict() const;
 	bool is_pointer() const;
 	bool is_usable_as_pointer() const;
+	bool is_pointer_shared() const;
 	bool is_pointer_silent() const;
 	bool fully_parsed;
 	Array<ClassElement> elements;
