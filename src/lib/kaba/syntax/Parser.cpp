@@ -180,7 +180,7 @@ Array<Node*> Parser::parse_operand_extension_element(Node *operand) {
 		// referencing class functions
 		type = operand->as_class();
 		only_static = true;
-	} else if (type->is_pointer()) {
+	} else if (type->is_usable_as_pointer()) {
 		// pointer -> dereference
 		type = type->param;
 		deref = true;

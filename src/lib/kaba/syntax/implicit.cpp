@@ -9,6 +9,10 @@
 namespace Kaba{
 
 
+const string IDENTIFIER_FUNC_SHARED_REF = "_ref";
+const string IDENTIFIER_FUNC_SHARED_UNREF = "_unref";
+const string IDENTIFIER_FUNC_SHARED_CLEAR = "_clear";
+
 
 void Parser::do_error_implicit(Function *f, const string &str) {
 	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
@@ -128,7 +132,9 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 		delete n_self;
 	} else if (t->type == Class::Type::POINTER_SHARED) {
 		// call clear()
-		auto f_clear = t->get_func("clear", TypeVoid, {});
+		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
+		if (!f_clear)
+			do_error_implicit(f, IDENTIFIER_FUNC_SHARED_REF + "() missing");
 		auto call_clear = tree->add_node_member_call(f_clear, n_self);
 		f->block->add(call_clear);
 	} else {
@@ -421,7 +427,9 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	Node *self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
 
 	// call clear()
-	auto f_clear = t->get_func("clear", TypeVoid, {});
+	auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
+	if (!f_clear)
+		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_REF + "() missing");
 	auto call_clear = tree->add_node_member_call(f_clear, self);
 	f->block->add(call_clear);
 
@@ -430,9 +438,9 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	f->block->add(op);
 
 	// p.ref()
-	auto f_ref = t->param->get_func("ref", TypeVoid, {});
+	auto f_ref = t->param->get_func(IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {});
 	if (!f_ref)
-		do_error_implicit(f, format("class '%s' requires a function 'void ref()'"));
+		do_error_implicit(f, format("class '%s' requires a function 'void %s()'", t->param->name, IDENTIFIER_FUNC_SHARED_REF));
 	auto call_ref = tree->add_node_member_call(f_ref, tree->deref_node(p));
 	f->block->add(call_ref);
 }
@@ -467,9 +475,9 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	b->add(cmd_if_del);
 
 	// self.p.unref()
-	auto f_unref = t->param->get_func("unref", TypeBool, {});
+	auto f_unref = t->param->get_func(IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {});
 	if (!f_unref)
-		do_error_implicit(f, format("class '%s' requires a function 'void unref()'"));
+		do_error_implicit(f, format("class '%s' requires a function 'void %s()'", t->param->name, IDENTIFIER_FUNC_SHARED_REF));
 	auto call_unref = tree->add_node_member_call(f_unref, tree->deref_node(tree->cp_node(self_p)));
 
 	cmd_if_del->set_param(0, call_unref);
@@ -570,7 +578,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	} else if (t->type == Class::Type::POINTER_SHARED) {
 		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(this, t, "clear", TypeVoid, {}, {});
+		add_func_header(this, t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
 	} else { // regular classes
@@ -657,7 +665,7 @@ void Parser::auto_implement_functions(const Class *t) {
 	} else if (t->type == Class::Type::POINTER_SHARED) {
 		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
 		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, {})), t);
+		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 	} else {
