@@ -2433,6 +2433,9 @@ void Parser::parse_complete_command(Block *block) {
 		Exp.next();
 		block->add(tree->add_node_statement(StatementID::ASM));
 
+	} else if (Exp.cur == "shared" or Exp.cur == "owned") {
+		parse_local_definition(block, nullptr);
+
 	} else {
 
 		Node *first = parse_operand(block, true);
@@ -2901,14 +2904,36 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 }
 
 
+const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
+	return tree->make_class(parent->name + " shared", Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, parent, parent->name_space);
+}
+
+
 // complicated types like "int[]*[4]" etc
 // greedy
 const Class *Parser::parse_type(const Class *ns) {
+	Flags flags = Flags::NONE;
+	if (Exp.cur == "shared") {
+		flags = Flags::SHARED;
+		Exp.next();
+	} else if (Exp.cur == "owned") {
+		flags = Flags::OWNED;
+		Exp.next();
+	}
+
 	// base type
 	const Class *t = tree->find_root_type_by_name(Exp.cur, ns, true);
 	if (!t)
 		do_error("unknown type");
 	Exp.next();
+
+	if (flags_has(flags, Flags::SHARED)) {
+		t = make_pointer_shared(tree, t);
+	} else if (flags_has(flags, Flags::OWNED)) {
+		//t = t->get_pointer();
+		//make_pointer_shared(tree, const_cast<Class*>(t));
+		//t->type = Class::Type::POINTER_UNIQUE;
+	}
 
 	// extensions *,[],{},.
 	while (true) {

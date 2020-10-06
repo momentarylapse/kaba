@@ -69,6 +69,10 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 			}
 		}
 		delete n_self;
+	} else if (t->type == Class::Type::POINTER_SHARED) {
+		Node *n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
+		Node *n_op = tree->add_node_operator_by_inline(tree->shift_node(n_self, false, 0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
+		f->block->add(n_op);
 	} else {
 
 		// parent constructor
@@ -122,6 +126,11 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 			do_error_implicit(f, "element desctructor missing");
 		}
 		delete n_self;
+	} else if (t->type == Class::Type::POINTER_SHARED) {
+		// call clear()
+		auto f_clear = t->get_func("clear", TypeVoid, {});
+		auto call_clear = tree->add_node_member_call(f_clear, n_self);
+		f->block->add(call_clear);
 	} else {
 
 		// call child destructors
@@ -401,6 +410,87 @@ void Parser::auto_implement_array_add(Function *f, const Class *t) {
 	b->add(cmd_assign);
 }
 
+
+
+void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
+	if (!f)
+		return;
+	Node *p = tree->add_node_local(f->__get_var("p"));
+	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+
+	Node *self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
+
+	// call clear()
+	auto f_clear = t->get_func("clear", TypeVoid, {});
+	auto call_clear = tree->add_node_member_call(f_clear, self);
+	f->block->add(call_clear);
+
+
+	auto op = tree->add_node_operator_by_inline(self_p, tree->cp_node(p), InlineID::POINTER_ASSIGN);
+	f->block->add(op);
+
+	// p.ref()
+	auto f_ref = t->param->get_func("ref", TypeVoid, {});
+	if (!f_ref)
+		do_error_implicit(f, format("class '%s' requires a function 'void ref()'"));
+	auto call_ref = tree->add_node_member_call(f_ref, tree->deref_node(p));
+	f->block->add(call_ref);
+}
+
+void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
+	if (!f)
+		return;
+	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	Node *self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
+
+
+	// if self.p
+	//     if self.p.unref()
+	//         del self.p
+	//     self.p = nil
+
+
+	Node *cmd_if = tree->add_node_statement(StatementID::IF);
+	f->block->add(cmd_if);
+
+	// if self.p
+	Array<Node*> links = tree->get_existence("p2b", nullptr, tree->base_class, false);
+	auto cmd_cmp = tree->add_node_call(links[0]->as_func());
+	cmd_cmp->set_param(0, tree->cp_node(self_p));
+	cmd_if->set_param(0, cmd_cmp);
+
+	auto b = new Block(f, f->block);
+	cmd_if->set_param(1, b);
+
+
+	Node *cmd_if_del = tree->add_node_statement(StatementID::IF);
+	b->add(cmd_if_del);
+
+	// self.p.unref()
+	auto f_unref = t->param->get_func("unref", TypeBool, {});
+	if (!f_unref)
+		do_error_implicit(f, format("class '%s' requires a function 'void unref()'"));
+	auto call_unref = tree->add_node_member_call(f_unref, tree->deref_node(tree->cp_node(self_p)));
+
+	cmd_if_del->set_param(0, call_unref);
+
+	auto b2 = new Block(f, b);
+
+
+	// del self
+	Node *cmd_del = tree->add_node_statement(StatementID::DELETE);
+	cmd_del->set_param(0, tree->cp_node(self_p));
+	b2->add(cmd_del);
+	cmd_if_del->set_param(1, b2);
+
+
+	// self = nil
+	Node *n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
+	Node *n_op = tree->add_node_operator_by_inline(self_p, n_null, InlineID::POINTER_ASSIGN);
+	b->add(n_op);
+}
+
+
 void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr) {
 	Function *f = s->add_function(name, return_type, t, Flags::NONE); // always member-function!
 	f->auto_declared = true;
@@ -477,6 +567,11 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(this, t, "add", TypeVoid, {TypeString, t->param}, {"key", "x"});
 		add_func_header(this, t, "__get__", t->param, {TypeString}, {"key"});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+	} else if (t->type == Class::Type::POINTER_SHARED) {
+		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(this, t, "clear", TypeVoid, {}, {});
+		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
 	} else { // regular classes
 		if (!t->is_simple_class()) {
 			if (t->parent) {
@@ -558,6 +653,11 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_dict()) {
 		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+	} else if (t->type == Class::Type::POINTER_SHARED) {
+		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, {})), t);
+		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);

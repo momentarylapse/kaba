@@ -146,6 +146,7 @@ const Class *TypeAnyDict;
  // internal:
 const Class *TypeDynamicArray;
 const Class *TypeDictBase;
+const Class *TypeSharedPointer;
 const Class *TypePointerList;
 const Class *TypeCharPs;
 const Class *TypeBoolPs;
