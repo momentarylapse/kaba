@@ -572,6 +572,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(this, t, "clear", TypeVoid, {}, {});
 		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
+		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
 	} else { // regular classes
 		if (!t->is_simple_class()) {
 			if (t->parent) {
@@ -658,6 +659,7 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func("clear", TypeVoid, {})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()})), t);
+		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);
