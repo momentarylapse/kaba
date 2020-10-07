@@ -9,6 +9,7 @@
 namespace Kaba {
 
 
+
 void Parser::do_error_implicit(Function *f, const string &str) {
 	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
 	int ex = max(f->_exp_no, f->name_space->_exp_no);
@@ -38,6 +39,16 @@ void Parser::auto_implement_add_child_constructors(Node *n_self, Function *f, co
 		Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
 		Node *c = tree->add_node_member_call(ff, p);
 		f->block->add(c);
+	}
+
+	if (flags_has(t->flags, Flags::SHARED)) {
+		for (auto &e: t->elements)
+			if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+				Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
+				Node *zero = tree->add_node_const(tree->add_constant_int(0));
+				Node *c = tree->add_node_operator_by_inline(p, zero, InlineID::INT_ASSIGN);
+				f->block->add(c);
+			}
 	}
 }
 
@@ -516,9 +527,45 @@ void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 	f->block->add(ret);
 }
 
+void Parser::auto_implement_shared_ref(Function *f, const Class *t) {
+	if (!f)
+		return;
 
-void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr, Flags flags = Flags::NONE) {
-	Function *f = s->add_function(name, return_type, t, flags); // always member-function??? no...?
+	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	for (auto &e: t->elements)
+		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+			// count ++
+			Node *count = tree->shift_node(self, false, e.offset, e.type);
+			Node *inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
+			f->block->add(inc);
+		}
+}
+
+void Parser::auto_implement_shared_unref(Function *f, const Class *t) {
+	if (!f)
+		return;
+
+	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	for (auto &e: t->elements)
+		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+			// count --
+			Node *count = tree->shift_node(self, false, e.offset, e.type);
+			Node *dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
+			f->block->add(dec);
+
+			// return (count == 0)
+			Node *ret = tree->add_node_statement(StatementID::RETURN);
+			Node *zero = tree->add_node_const(tree->add_constant_int(0));
+			Node *cmp = tree->add_node_operator_by_inline(tree->cp_node(count), zero, InlineID::INT_EQUAL);
+			ret->set_num_params(1);
+			ret->set_param(0, cmp);
+			f->block->add(ret);
+		}
+}
+
+
+void SyntaxTree::add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf, Flags flags) {
+	Function *f = add_function(name, return_type, t, flags); // always member-function??? no...?
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
@@ -528,7 +575,7 @@ void add_func_header(SyntaxTree *s, Class *t, const string &name, const Class *r
 	}
 	f->update_parameters_after_parsing();
 	bool override = cf;
-	t->add_function(s, f, false, override);
+	t->add_function(this, f, false, override);
 }
 
 bool needs_new(Function *f) {
@@ -562,7 +609,7 @@ void redefine_inherited_constructors(Class *t, SyntaxTree *tree) {
 	for (auto *pcc: t->parent->get_constructors()) {
 		auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc);
 		if (needs_new(c))
-			add_func_header(tree, t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c);
+			tree->add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c);
 	}
 }
 
@@ -573,33 +620,33 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		return;
 
 	if (t->is_super_array()) {
-		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(this, t, "clear", TypeVoid, {}, {});
-		add_func_header(this, t, "resize", TypeVoid, {TypeInt}, {"num"});
-		add_func_header(this, t, "add", TypeVoid, {t->param}, {"x"});
-		add_func_header(this, t, "remove", TypeVoid, {TypeInt}, {"index"});
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, "clear", TypeVoid, {}, {});
+		add_func_header(t, "resize", TypeVoid, {TypeInt}, {"num"});
+		add_func_header(t, "add", TypeVoid, {t->param}, {"x"});
+		add_func_header(t, "remove", TypeVoid, {TypeInt}, {"index"});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_array()) {
 		if (t->needs_constructor())
-			add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		if (t->needs_destructor())
-			add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_dict()) {
-		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(this, t, "clear", TypeVoid, {}, {});
-		add_func_header(this, t, "add", TypeVoid, {TypeString, t->param}, {"key", "x"});
-		add_func_header(this, t, IDENTIFIER_FUNC_GET, t->param, {TypeString}, {"key"});
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, "clear", TypeVoid, {}, {});
+		add_func_header(t, "add", TypeVoid, {TypeString, t->param}, {"key", "x"});
+		add_func_header(t, IDENTIFIER_FUNC_GET, t->param, {TypeString}, {"key"});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_pointer_shared()) {
-		add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
-		add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
-		add_func_header(this, t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param->get_pointer()}, {"p"});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
+		add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
 	} else { // regular classes
 		if (!t->is_simple_class()) {
 			if (t->parent) {
@@ -612,18 +659,18 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 				}
 			}
 			if (t->needs_constructor() and t->get_constructors().num == 0)
-				add_func_header(this, t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
+				add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
 			if (needs_new(t->get_destructor()))
-				add_func_header(this, t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
+				add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
 		}
 		if (needs_new(t->get_assign())) {
-			//add_func_header(this, t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
+			//add_func_header(t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
 			// implement only if parent has also done so
 			if (t->parent) {
 				if (t->parent->get_assign())
-					add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+					add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			} else {
-				add_func_header(this, t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+				add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			}
 		}
 		if (t->get_assign() and t->is_simple_class()) {
@@ -693,6 +740,12 @@ void Parser::auto_implement_functions(const Class *t) {
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);
 		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
+
+
+		if (flags_has(t->flags, Flags::SHARED)) {
+			auto_implement_shared_ref(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {})), t);
+			auto_implement_shared_unref(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {})), t);
+		}
 	}
 
 	// recursion

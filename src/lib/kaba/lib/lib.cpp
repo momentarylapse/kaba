@@ -60,6 +60,7 @@ const string IDENTIFIER_LET = "let";
 const string IDENTIFIER_NAMESPACE = "namespace";
 const string IDENTIFIER_RETURN_VAR = "-return-";
 const string IDENTIFIER_VTABLE_VAR = "-vtable-";
+const string IDENTIFIER_SHARED_COUNT = "_shared_ref_count";
 const string IDENTIFIER_ENUM = "enum";
 const string IDENTIFIER_CONST = "const";
 const string IDENTIFIER_OUT = "out";

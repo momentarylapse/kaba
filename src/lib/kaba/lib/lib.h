@@ -61,6 +61,7 @@ extern const string IDENTIFIER_LET;
 extern const string IDENTIFIER_NAMESPACE;
 extern const string IDENTIFIER_RETURN_VAR;
 extern const string IDENTIFIER_VTABLE_VAR;
+extern const string IDENTIFIER_SHARED_COUNT;
 extern const string IDENTIFIER_ENUM;
 extern const string IDENTIFIER_CONST;
 extern const string IDENTIFIER_OUT;

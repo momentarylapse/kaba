@@ -2694,9 +2694,11 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	}
 	expect_new_line();
 
+	flags_set(_class->flags, flags);
 	if (flags_has(flags, Flags::SHARED)) {
-		msg_write("SHARED!!!");
-		parser_class_add_element(this, _class, "_ref_count", TypeInt, flags, _offset);
+		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, _offset);
+		tree->add_func_header(_class, IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {}, {});
+		tree->add_func_header(_class, IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {}, {});
 	}
 
 	//msg_write("parse " + _class->long_name());
