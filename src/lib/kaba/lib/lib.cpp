@@ -209,6 +209,14 @@ bool flags_has(Flags flags, Flags t) {
 	return ((int(flags) & int(t)) == int(t));
 }
 
+void flags_set(Flags &flags, Flags t) {
+	flags = Flags(int(flags) | int(t));
+}
+
+void flags_clear(Flags &flags, Flags t) {
+	flags = Flags(int(flags) & (~int(t)));
+}
+
 Flags flags_mix(const Array<Flags> &f) {
 	Flags r = Flags::NONE;
 	for (Flags ff: f)
@@ -243,7 +251,7 @@ void __add_class__(Class *t, const Class *name_space) {
 const Class *add_type(const string &name, int size, Flags flag, const Class *name_space) {
 	Class *t = new Class(name, size, cur_package->syntax);
 	if (flags_has(flag, Flags::CALL_BY_VALUE))
-		t->force_call_by_value = true;
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, name_space);
 	return t;
 }

@@ -1,5 +1,6 @@
 #include "../../base/base.h"
 #include "../kaba.h"
+#include "../lib/common.h"
 #include "../../file/file.h"
 #include "Class.h"
 
@@ -56,6 +57,7 @@ bool type_match(const Class *given, const Class *wanted) {
 
 
 Class::Class(const string &_name, int64 _size, SyntaxTree *_owner, const Class *_parent, const Class *_param) {
+	flags = Flags::FULLY_PARSED;
 	name = _name;
 	owner = _owner;
 	size = _size;
@@ -64,9 +66,9 @@ Class::Class(const string &_name, int64 _size, SyntaxTree *_owner, const Class *
 	parent = _parent;
 	param = _param;
 	name_space = nullptr;
-	force_call_by_value = false;
-	fully_parsed = true;
-	_amd64_allow_pass_in_xmm = false;
+	// force_call_by_value = false;
+	// fully_parsed = true;
+	// _amd64_allow_pass_in_xmm = false;
 	_logical_line_no = _exp_no = -1;
 	_vtable_location_target_ = nullptr;
 	_vtable_location_compiler_ = nullptr;
@@ -84,6 +86,18 @@ Class::~Class() {
 	for (auto *c: classes)
 		if (c->owner == owner)
 			delete c;
+}
+
+bool Class::force_call_by_value() const {
+	return flags_has(flags, Flags::FORCE_CALL_BY_VALUE);
+}
+
+bool Class::fully_parsed() const {
+	return flags_has(flags, Flags::FULLY_PARSED);
+}
+
+bool Class::_amd64_allow_pass_in_xmm() const {
+	return flags_has(flags, Flags::AMD64_ALLOW_PASS_IN_XMM);
 }
 
 bool reachable_from(const Class *ns, const Class *observer_ns) {
@@ -143,13 +157,13 @@ bool Class::is_dict() const
 { return type == Type::DICT; }
 
 bool Class::uses_call_by_reference() const {
-	return (!force_call_by_value and !is_pointer()) or is_array();
+	return (!force_call_by_value() and !is_pointer()) or is_array();
 }
 
 bool Class::uses_return_by_memory() const {
-	if (_amd64_allow_pass_in_xmm)
+	if (_amd64_allow_pass_in_xmm())
 		return false;
-	return (!force_call_by_value and !is_pointer()) or is_array();
+	return (!force_call_by_value() and !is_pointer()) or is_array();
 }
 
 
@@ -221,7 +235,7 @@ bool Class::needs_constructor() const {
 }
 
 bool Class::is_size_known() const {
-	if (!fully_parsed)
+	if (!fully_parsed())
 		return false;
 	if (is_super_array() or is_dict() or is_pointer())
 		return true;

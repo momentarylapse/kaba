@@ -111,7 +111,7 @@ void SerializerAMD64::fc_end(int push_size, const Array<SerialNodeParam> &params
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
-		if (type->_amd64_allow_pass_in_xmm) {
+		if (type->_amd64_allow_pass_in_xmm()) {
 			if (type == TypeFloat32) {
 				add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			} else if (type == TypeFloat64) {

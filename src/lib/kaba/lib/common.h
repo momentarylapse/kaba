@@ -26,6 +26,9 @@ enum class Flags {
 	OWNED = 0x2000,
 
 	AUTO_IMPORT = 1<<24,
+	FULLY_PARSED = 1<<25,
+	FORCE_CALL_BY_VALUE = 1<<26,
+	AMD64_ALLOW_PASS_IN_XMM = 1<<27,
 
 	_CONST__PURE = CONST | PURE,
 	_STATIC__RAISES_EXCEPTIONS = STATIC | RAISES_EXCEPTIONS,
@@ -33,6 +36,8 @@ enum class Flags {
 	_SELFREF__RAISES_EXCEPTIONS = SELFREF | RAISES_EXCEPTIONS
 };
 bool flags_has(Flags flags, Flags t);
+void flags_set(Flags &flags, Flags t);
+void flags_clear(Flags &flags, Flags t);
 Flags flags_mix(const Array<Flags> &f);
 
 class Function;

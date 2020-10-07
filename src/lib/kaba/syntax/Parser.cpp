@@ -2629,6 +2629,46 @@ inline bool type_needs_alignment(const Class *t) {
 	return (t->size >= 4);
 }
 
+void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int &_offset) {
+
+	// override?
+	ClassElement *orig = nullptr;
+	for (auto &e: _class->elements)
+		if (e.name == name) //and e.type->is_pointer and el.type->is_pointer)
+			orig = &e;
+	bool override = flags_has(flags, Flags::OVERRIDE);
+	if (override and ! orig)
+		p->do_error(format("can not override element '%s', no previous definition", name));
+	if (!override and orig)
+		p->do_error(format("element '%s' is already defined, use '%s' to override", name, IDENTIFIER_OVERRIDE));
+	if (override) {
+		if (orig->type->is_pointer() and type->is_pointer())
+			orig->type = type;
+		else
+			p->do_error("can only override pointer elements with other pointer type");
+		return;
+	}
+
+	// check parsing dependencies
+	if (!type->is_size_known())
+		p->do_error(format("size of type '%s' is not known at this point", type->long_name()));
+
+
+	// add element
+	if (flags_has(flags, Flags::STATIC)) {
+		auto v = new Variable(name, type);
+		v->is_extern = flags_has(flags, Flags::EXTERN);
+		_class->static_variables.add(v);
+	} else {
+		if (type_needs_alignment(type))
+			_offset = mem_align(_offset, 4);
+		_offset = process_class_offset(_class->cname(p->tree->base_class), name, _offset);
+		auto el = ClassElement(name, type, _offset);
+		_offset += type->size;
+		_class->elements.add(el);
+	}
+}
+
 bool Parser::parse_class(Class *_namespace, Flags flags) {
 	int indent0 = Exp.cur_line->indent;
 	int _offset = 0;
@@ -2646,13 +2686,18 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	if (Exp.cur == IDENTIFIER_EXTENDS) {
 		Exp.next();
 		const Class *parent = parse_type(_namespace); // force
-		if (!parent->fully_parsed)
+		if (!parent->fully_parsed())
 			return false;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 		_class->derive_from(parent, true);
 		_offset = parent->size;
 	}
 	expect_new_line();
+
+	if (flags_has(flags, Flags::SHARED)) {
+		msg_write("SHARED!!!");
+		parser_class_add_element(this, _class, "_ref_count", TypeInt, flags, _offset);
+	}
 
 	//msg_write("parse " + _class->long_name());
 
@@ -2709,42 +2754,8 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 				break;
 			}
 
-			// override?
-			ClassElement *orig = nullptr;
-			for (auto &e: _class->elements)
-				if (e.name == name) //and e.type->is_pointer and el.type->is_pointer)
-					orig = &e;
-			bool override = flags_has(flags, Flags::OVERRIDE);
-			if (override and ! orig)
-				do_error(format("can not override element '%s', no previous definition", name));
-			if (!override and orig)
-				do_error(format("element '%s' is already defined, use '%s' to override", name, IDENTIFIER_OVERRIDE));
-			if (override) {
-				if (orig->type->is_pointer() and type->is_pointer())
-					orig->type = type;
-				else
-					do_error("can only override pointer elements with other pointer type");
-				continue;
-			}
+			parser_class_add_element(this, _class, name, type, flags, _offset);
 
-			// check parsing dependencies
-			if (!type->is_size_known())
-				do_error(format("size of type '%s' is not known at this point", type->long_name()));
-
-
-			// add element
-			if (flags_has(flags, Flags::STATIC)) {
-				auto v = new Variable(name, type);
-				v->is_extern = flags_has(flags, Flags::EXTERN);
-				_class->static_variables.add(v);
-			} else {
-				if (type_needs_alignment(type))
-					_offset = mem_align(_offset, 4);
-				_offset = process_class_offset(_class->cname(tree->base_class), name, _offset);
-				auto el = ClassElement(name, type, _offset);
-				_offset += type->size;
-				_class->elements.add(el);
-			}
 			if ((Exp.cur != ",") and !Exp.end_of_line())
 				do_error("',' or newline expected after class element");
 			if (Exp.end_of_line())
@@ -2782,7 +2793,7 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 
 	tree->add_missing_function_headers_for_class(_class);
 
-	_class->fully_parsed = true;
+	flags_set(_class->flags, Flags::FULLY_PARSED);
 
 
 	int cur_line = Exp.get_line_no();
@@ -3103,7 +3114,7 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 			if (Exp.cur == IDENTIFIER_CLASS) {
 				Exp.next();
 				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, nullptr, ns);
-				t->fully_parsed = false;
+				flags_clear(t->flags, Flags::FULLY_PARSED);
 
 				Exp.next_line();
 				parse_all_class_names(t, indent0 + 1);

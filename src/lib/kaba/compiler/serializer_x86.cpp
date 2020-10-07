@@ -264,7 +264,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			if (com->params.num > 0){
 				auto operand = serialize_parameter(com->params[0], block, index);
 					
-				if (cur_func->return_type->_amd64_allow_pass_in_xmm) {
+				if (cur_func->return_type->_amd64_allow_pass_in_xmm()) {
 					insert_destructors_block(block, true);
 					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 					//		add_cmd(Asm::INST_FLD, t); 

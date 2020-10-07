@@ -274,7 +274,7 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 			}
 		}*/
 	} else if (ptype.num == 4) {
-		if (f->return_type->_amd64_allow_pass_in_xmm and (f->return_type->size == 16)) { // rect, color, plane, quaternion
+		if (f->return_type->_amd64_allow_pass_in_xmm() and (f->return_type->size == 16)) { // rect, color, plane, quaternion
 			if ((ptype[0] == TypeFloat32) and (ptype[1] == TypeFloat32) and (ptype[2] == TypeFloat32) and (ptype[3] == TypeFloat32)) {
 				call4<vec4,float,float,float,float>(ff, ret, param);
 				return true;
