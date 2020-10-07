@@ -1,4 +1,4 @@
-class X
+shared class X
 	int ref_count
 	void __init__()
 		ref_count = 0

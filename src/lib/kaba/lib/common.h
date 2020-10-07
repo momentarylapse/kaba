@@ -1,3 +1,7 @@
+
+#ifndef SRC_LIB_KABA_LIB_COMMON_H_
+#define SRC_LIB_KABA_LIB_COMMON_H_
+
 namespace Kaba{
 
 enum class InlineID;
@@ -164,3 +168,5 @@ void add_operator(OperatorID primitive_op, const Class *return_type, const Class
 
 
 };
+
+#endif
