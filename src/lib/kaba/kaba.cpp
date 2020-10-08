@@ -283,7 +283,7 @@ void execute_single_script_command(const string &cmd) {
 		return;
 	}
 	
-	for (auto *p: packages)
+	for (auto p: packages)
 		if (!p->used_by_default)
 			tree->add_include_data(p, true);
 

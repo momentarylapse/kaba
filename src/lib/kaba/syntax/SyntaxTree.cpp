@@ -217,7 +217,7 @@ SyntaxTree::SyntaxTree(Script *_script) {
 }
 
 void SyntaxTree::default_import() {
-	for (Script *p: packages)
+	for (auto p: packages)
 		if (p->used_by_default)
 			add_include_data(p, false);
 }
@@ -700,7 +700,7 @@ shared<Node> SyntaxTree::conv_return_by_memory(shared<Node> n, Function *f) {
 
 	// convert into   *-return- = param
 	shared<Node> p_ret;
-	for (Variable *v: f->var)
+	for (Variable *v: weak(f->var))
 		if (v->name == IDENTIFIER_RETURN_VAR) {
 			p_ret = add_node_local(v);
 		}
@@ -728,7 +728,7 @@ void SyntaxTree::convert_call_by_reference() {
 		
 		// TODO: convert self...
 		if (!f->is_static() and f->name_space->uses_call_by_reference()) {
-			for (auto *v: f->var)
+			for (auto v: weak(f->var))
 				if (v->name == IDENTIFIER_SELF) {
 					//msg_write("CONV SELF....");
 					v->type = v->type->get_pointer();
@@ -744,7 +744,7 @@ void SyntaxTree::convert_call_by_reference() {
 				f->var[j]->type = f->var[j]->type->get_pointer();
 
 				// internal usage...
-				transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, f->var[j]); });
+				transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, f->var[j].get()); });
 			}
 
 		// return: array as reference
@@ -1170,7 +1170,7 @@ shared<Node> SyntaxTree::conv_func_inline(shared<Node> n) {
 
 void MapLVSX86Return(Function *f) {
 	if (f->return_type->uses_return_by_memory()) {
-		foreachi(Variable *v, f->var, i)
+		foreachi(auto v, f->var, i)
 			if (v->name == IDENTIFIER_RETURN_VAR) {
 				v->_offset = f->_param_size;
 				f->_param_size += 4;
@@ -1179,8 +1179,8 @@ void MapLVSX86Return(Function *f) {
 }
 
 void MapLVSX86Self(Function *f) {
-	if (!f->is_static()){
-		foreachi(Variable *v, f->var, i)
+	if (!f->is_static()) {
+		foreachi(auto v, f->var, i)
 			if (v->name == IDENTIFIER_SELF) {
 				v->_offset = f->_param_size;
 				f->_param_size += 4;
@@ -1208,7 +1208,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 				MapLVSX86Self(f);
 			}
 
-			foreachi(Variable *v, f->var, i) {
+			foreachi(auto v, f->var, i) {
 				if (!f->is_static() and (v->name == IDENTIFIER_SELF))
 					continue;
 				if (v->name == IDENTIFIER_RETURN_VAR)
@@ -1227,7 +1227,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 		} else if (config.instruction_set == Asm::InstructionSet::AMD64) {
 			f->_var_size = 0;
 
-			foreachi(Variable *v, f->var, i) {
+			foreachi(auto v, f->var, i) {
 				long long s = mem_align(v->type->size, 4);
 				v->_offset = - f->_var_size - s;
 				f->_var_size += s;
@@ -1235,7 +1235,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 		} else if (config.instruction_set == Asm::InstructionSet::ARM) {
 			f->_var_size = 0;
 
-			foreachi(Variable *v, f->var, i) {
+			foreachi(auto v, f->var, i) {
 				int s = mem_align(v->type->size, 4);
 				v->_offset = f->_var_size;// + s;
 				f->_var_size += s;

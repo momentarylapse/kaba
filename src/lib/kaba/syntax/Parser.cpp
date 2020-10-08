@@ -2521,7 +2521,7 @@ void Parser::parse_import() {
 		
 	
 	// internal packages?
-	for (Script *p: packages)
+	for (auto p: packages)
 		if (p->filename.str() == name) {
 			tree->add_include_data(p, indirect);
 			return;
@@ -2531,7 +2531,7 @@ void Parser::parse_import() {
 	if (filename.is_empty())
 		do_error(format("can not find import '%s'", name));
 
-	for (Script *ss: loading_script_stack)
+	for (auto ss: loading_script_stack)
 		if (ss->filename == filename)
 			do_error("recursive include");
 
@@ -2540,7 +2540,7 @@ void Parser::parse_import() {
 	try {
 		include = load(filename, tree->script->just_analyse or config.compile_os);
 		// os-includes will be appended to syntax_tree... so don't compile yet
-	} catch(Exception &e) {
+	} catch (Exception &e) {
 		msg_left();
 
 		int logical_line = Exp.get_line_no();

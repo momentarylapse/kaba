@@ -43,7 +43,7 @@ struct StackFrameInfo {
 	void *rip;
 	void *rsp;
 	void *rbp;
-	Script *s;
+	shared<Script> s;
 	Function *f;
 	int64 offset;
 	string str() const {
@@ -54,9 +54,9 @@ struct StackFrameInfo {
 };
 
 
-extern Array<Script*> _public_scripts_;
+extern shared_array<Script> _public_scripts_;
 
-inline void func_from_rip_test_script(StackFrameInfo &r, Script *s, void *rip, bool from_package) {
+inline void func_from_rip_test_script(StackFrameInfo &r, shared<Script> s, void *rip, bool from_package) {
 	foreachi (Function *f, s->syntax->functions, i) {
 		if (from_package and !f->throws_exceptions())
 			continue;
@@ -81,7 +81,7 @@ StackFrameInfo get_func_from_rip(void *rip) {
 	r.offset = 1000000;
 
 	// compiled functions
-	for (Script* s: _public_scripts_) {
+	for (auto s: _public_scripts_) {
 		if ((rip < s->opcode) or (rip > &s->opcode[s->opcode_size]))
 			continue;
 		func_from_rip_test_script(r, s, rip, false);
@@ -113,7 +113,7 @@ inline bool ex_type_match(const Class *ex_type, const Class *catch_type) {
 	return ex_type->is_derived_from(catch_type);
 }
 
-ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, const Class *ex_type) {
+ExceptionBlockData get_blocks(shared<Script> s, Function *f, void* rip, const Class *ex_type) {
 	ExceptionBlockData ebd;
 	ebd.except_block = nullptr;
 	ebd.except = nullptr;
@@ -209,7 +209,7 @@ const Class* get_type(void *p) {
 	auto scripts = _public_scripts_;
 	for (auto p: packages)
 		scripts.add(p);
-	for (Script* s: scripts) {
+	for (auto s: scripts) {
 		auto *r = _get_type(p, vtable, s->syntax->base_class);
 		if (r)
 			return r;

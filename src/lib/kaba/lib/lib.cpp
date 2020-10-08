@@ -199,7 +199,7 @@ const Class *TypeFunctionCodeP;
 extern const Class *TypePath;
 
 
-Array<Script*> packages;
+shared_array<Script> packages;
 Script *cur_package = nullptr;
 
 
@@ -228,15 +228,15 @@ Flags flags_mix(const Array<Flags> &f) {
 void add_package(const string &name, Flags flags) {
 	for (auto &p: packages)
 		if (p->filename.str() == name) {
-			cur_package = p;
+			cur_package = p.get();
 			return;
 		}
-	Script* s = new Script;
+	shared<Script> s = new Script;
 	s->used_by_default = flags_has(flags, Flags::AUTO_IMPORT);
 	s->syntax->base_class->name = name;
 	s->filename = name;
 	packages.add(s);
-	cur_package = s;
+	cur_package = s.get();
 }
 
 void __add_class__(Class *t, const Class *name_space) {
@@ -882,7 +882,7 @@ void link_external(const string &name, void *pointer) {
 
 	Array<string> names = name.explode(":");
 	string sname = names[0].replace("@list", "[]").replace("@@", ".");
-	for (auto *p: packages)
+	for (auto p: packages)
 		foreachi(Function *f, p->syntax->functions, i)
 			if (f->cname(p->base_class()) == sname) {
 				int n = f->num_params;

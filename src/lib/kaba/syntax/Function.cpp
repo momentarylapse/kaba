@@ -79,8 +79,6 @@ void test_node_recursion(shared<Node> root, const Class *ns, const string &messa
 
 Function::~Function() {
 	//test_node_recursion(block, long_name());
-	for (Variable* v: var)
-		delete v;
 }
 
 SyntaxTree *Function::owner() const {

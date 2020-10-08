@@ -53,7 +53,7 @@ public:
 	// block of code
 	shared<Block> block;
 	// local variables
-	Array<Variable*> var;
+	shared_array<Variable> var;
 	Array<const Class*> literal_param_type;
 	const Class *name_space;
 	const Class *return_type;

@@ -484,7 +484,7 @@ int process_class_num_virtuals(const string &class_name, int num_virtual);
 //--------------------------------------------------------------------------------------------------
 // packages
 
-extern Array<Script*> packages;
+extern shared_array<Script> packages;
 
 
 };

@@ -92,7 +92,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 				// first, try same signature
 				auto n_init_parent = tree->add_node_member_call(pc_same, tree->cp_node(n_self));
 				for (int i=0; i<pc_same->num_params; i++)
-					n_init_parent->set_param(i+1, tree->add_node_local(f->var[i]));
+					n_init_parent->set_param(i+1, tree->add_node_local(f->var[i].get()));
 				f->block->add(n_init_parent);
 			} else if (pc_def) {
 				// then, try default constructor
