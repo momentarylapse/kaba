@@ -961,7 +961,7 @@ int process_class_num_virtuals(const string &class_name, int num_virtual) {
 }
 
 void clean_up() {
-	DeleteAllScripts(true, true);
+	delete_all_scripts(true, true);
 
 	packages.clear();
 

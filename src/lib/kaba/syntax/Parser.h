@@ -26,7 +26,6 @@ enum class Flags;
 class Parser {
 public:
 	Parser(SyntaxTree *syntax);
-	~Parser();
 
 	void parse_buffer(const string &buffer, bool just_analyse);
 

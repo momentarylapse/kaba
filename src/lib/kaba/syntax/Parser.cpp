@@ -2536,9 +2536,9 @@ void Parser::parse_import() {
 			do_error("recursive include");
 
 	msg_right();
-	Script *include;
+	shared<Script> include;
 	try {
-		include = Load(filename, tree->script->just_analyse or config.compile_os);
+		include = load(filename, tree->script->just_analyse or config.compile_os);
 		// os-includes will be appended to syntax_tree... so don't compile yet
 	} catch(Exception &e) {
 		msg_left();

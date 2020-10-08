@@ -45,77 +45,53 @@ Exception::Exception(const Asm::Exception &e, Script *s, Function *f) :
 }
 
 
-Array<Script*> _public_scripts_;
-Array<Script*> _dead_scripts_;
+shared_array<Script> _public_scripts_;
 
 
 
 
 
-Script *Load(const Path &filename, bool just_analyse) {
+shared<Script> load(const Path &filename, bool just_analyse) {
 	//msg_write(string("Lade ",filename));
-	Script *s = nullptr;
 
 	// already loaded?
-	for (Script *ps: _public_scripts_)
+	for (auto ps: _public_scripts_)
 		if (ps->filename == filename)
 			return ps;
 	
 	// load
-	s = new Script();
-	try {
-		s->load(filename, just_analyse);
-	} catch(const Exception &e) {
-		delete(s);
-		throw e;
-	}
+	shared<Script> s = new Script();
+	s->load(filename, just_analyse);
 
 	// store script in database
 	_public_scripts_.add(s);
 	return s;
 }
 
-Script *CreateForSource(const string &buffer, bool just_analyse) {
-	Script *s = new Script;
+shared<Script> create_for_source(const string &buffer, bool just_analyse) {
+	shared<Script> s = new Script;
 	s->just_analyse = just_analyse;
-	auto parser = s->syntax->parser = new Parser(s->syntax);
-	try {
-		s->syntax->default_import();
-		parser->parse_buffer(buffer, just_analyse);
+	s->syntax->parser = new Parser(s->syntax);
+	s->syntax->default_import();
+	s->syntax->parser->parse_buffer(buffer, just_analyse);
 
-		if (!just_analyse)
-			s->compile();
-	} catch(const Exception &e) {
-		delete(s);
-		throw e;
-	}
+	if (!just_analyse)
+		s->compile();
 	return s;
 }
 
-void Remove(Script *s)
-{
-	// remove references
-	for (Script *i: s->syntax->includes)
-		i->reference_counter --;
-
-	// put on to-delete-list
-	_dead_scripts_.add(s);
+void remove_script(Script *s) {
 
 	// remove from normal list
 	for (int i=0;i<_public_scripts_.num;i++)
 		if (_public_scripts_[i] == s)
 			_public_scripts_.erase(i);
-
-	// delete all deletables
-	for (int i=_dead_scripts_.num-1;i>=0;i--)
-		if (_dead_scripts_[i]->reference_counter <= 0){
-			delete(_dead_scripts_[i]);
-			_dead_scripts_.erase(i);
-		}
 }
 
-void DeleteAllScripts(bool even_immortal, bool force)
-{
+void delete_all_scripts(bool even_immortal, bool force) {
+	_public_scripts_.clear();
+
+#if 0
 	// try to erase them...
 	auto to_del = _public_scripts_;
 	foreachb(Script *s, to_del)
@@ -137,6 +113,7 @@ void DeleteAllScripts(bool even_immortal, bool force)
 	for (int i=0;i<num_ps;i++)
 		msg_write(string2("  fehlt:   %s  %p  (%d)",ppn[i],ppp[i],pps[i]));
 	*/
+#endif
 }
 
 VirtualTable* get_vtable(const VirtualBase *p) {
@@ -155,9 +132,9 @@ const Class *_dyn_type_in_namespace(const VirtualTable *p, const Class *ns) {
 }
 
 // TODO...namespace
-const Class *GetDynamicType(const VirtualBase *p) {
+const Class *get_dynamic_type(const VirtualBase *p) {
 	auto *pp = get_vtable(p);
-	for (Script *s: _public_scripts_) {
+	for (auto s: _public_scripts_) {
 		auto t = _dyn_type_in_namespace(pp, s->syntax->base_class);
 		if (t)
 			return t;
@@ -185,7 +162,8 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 		filename = _filename.absolute().canonical();
 	syntax->base_class->name = filename.basename().replace(".kaba", "");
 
-	auto parser = syntax->parser = new Parser(syntax);
+	auto parser = new Parser(syntax);
+	syntax->parser = parser;
 
 	try {
 		syntax->default_import();
@@ -244,8 +222,6 @@ Script::Script() {
 	filename = "-empty script-";
 	used_by_default = false;
 
-	reference_counter = 0;
-
 	show_compiler_stats = !config.compile_silently;
 
 	just_analyse = false;
@@ -280,12 +256,12 @@ Script::~Script() {
 	if (r != 0)
 		msg_error("munmap...mem");
 	//msg_write(string2("-----------            Memory:         %p",Memory));
-	delete(syntax);
+	delete syntax;
 }
 
 
 // bad:  should clean up in case of errors!
-void ExecuteSingleScriptCommand(const string &cmd) {
+void execute_single_script_command(const string &cmd) {
 	if (cmd.num < 1)
 		return;
 	//msg_write("script command: " + cmd);
@@ -295,7 +271,8 @@ void ExecuteSingleScriptCommand(const string &cmd) {
 	s->filename = "-command line-";
 	auto tree = s->syntax;
 	tree->default_import();
-	auto parser = tree->parser = new Parser(tree);
+	auto parser = new Parser(tree);
+	tree->parser = parser;
 
 	try {
 

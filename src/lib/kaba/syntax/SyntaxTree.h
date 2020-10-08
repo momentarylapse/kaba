@@ -66,7 +66,7 @@ public:
 	~SyntaxTree();
 
 	void default_import();
-	void add_include_data(Script *s, bool indirect);
+	void add_include_data(shared<Script> s, bool indirect);
 
 	void do_error(const string &msg, int override_exp_no = -1, int override_line = -1);
 	
@@ -170,7 +170,7 @@ public:
 	shared<Class> _base_class;
 	shared<Class> imported_symbols;
 	Array<const Class*> owned_classes;
-	Array<Script*> includes;
+	shared_array<Script> includes;
 	Array<Define> defines;
 	owned<Asm::MetaInfo> asm_meta_info;
 	Array<AsmBlock> asm_blocks;
@@ -180,7 +180,7 @@ public:
 	shared<Function> root_of_all_evil;
 
 	Script *script;
-	Parser *parser;
+	owned<Parser> parser;
 };
 
 

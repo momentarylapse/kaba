@@ -403,7 +403,7 @@ void import_deep(SyntaxTree *dest, SyntaxTree *source) {
 }
 
 void find_all_includes_rec(Script *s, Set<Script*> &includes) {
-	for (Script *i: s->syntax->includes) {
+	for (Script *i: weak(s->syntax->includes)) {
 		//if (i->filename.find(".kaba") < 0)
 		//	continue;
 		includes.add(i);

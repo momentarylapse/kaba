@@ -13,7 +13,7 @@ namespace Kaba{
 
 void SetImmortal(SyntaxTree *ps) {
 	ps->flag_immortal = true;
-	for (Script *i: ps->includes)
+	for (auto i: ps->includes)
 		SetImmortal(i->syntax);
 }
 
@@ -31,8 +31,8 @@ static bool _class_contains(const Class *c, const string &name) {
 }
 
 // import data from an included script file
-void SyntaxTree::add_include_data(Script *s, bool indirect) {
-	for (Script *i: includes)
+void SyntaxTree::add_include_data(shared<Script> s, bool indirect) {
+	for (auto i: weak(includes))
 		if (i == s)
 			return;
 
@@ -66,7 +66,6 @@ void SyntaxTree::add_include_data(Script *s, bool indirect) {
 			}
 	}
 	includes.add(s);
-	s->reference_counter ++;
 	//}
 
 	for (Operator *op: ps->operators)

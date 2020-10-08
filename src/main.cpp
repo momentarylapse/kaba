@@ -237,7 +237,7 @@ public:
 					filename = dd;
 			}
 		} else if (command.num > 0) {
-			Kaba::ExecuteSingleScriptCommand(command);
+			Kaba::execute_single_script_command(command);
 			msg_end();
 			return false;
 		} else {
@@ -248,7 +248,7 @@ public:
 		// compile
 
 		try {
-			Kaba::Script *s = Kaba::Load(filename);
+			auto s = Kaba::load(filename);
 			if (symbols_out_file.num > 0)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts) {
@@ -294,7 +294,7 @@ public:
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-	void execute(Kaba::Script *s, const Array<string> &arg) {
+	void execute(shared<Kaba::Script> s, const Array<string> &arg) {
 		// set working directory -> script file
 		//msg_write(initial_working_directory);
 		//hui::setDirectory(initial_working_directory);
@@ -312,17 +312,16 @@ public:
 		} else {
 			msg_error("no 'void main()' found");
 		}
-		Kaba::Remove(s);
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(Kaba::Script *s, const string &out_file) {
+	void output_to_file_raw(shared<Kaba::Script> s, const string &out_file) {
 		File *f = FileCreate(out_file);
 		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
-	void output_to_file_elf(Kaba::Script *s, const string &out_file) {
+	void output_to_file_elf(shared<Kaba::Script> s, const string &out_file) {
 		File *f = FileCreate(out_file);
 
 		bool is64bit = (Kaba::config.pointer_size == 8);
@@ -374,7 +373,7 @@ public:
 		return name.replace("lib__", "").replace("@list", "[]");
 	}
 
-	void export_symbols(Kaba::Script *s, const string &symbols_out_file) {
+	void export_symbols(shared<Kaba::Script> s, const string &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
 			int n = fn->num_params;
