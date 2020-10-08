@@ -19,7 +19,7 @@ extern ExpressionBuffer *cur_exp_buf;
 
 
 
-static Array<Node*> _transform_insert_before_;
+static shared_array<Node> _transform_insert_before_;
 Node *conv_break_down_med_level(SyntaxTree *tree, Node *c);
 
 
@@ -32,6 +32,7 @@ string Operator::sig(const Class *ns) const {
 }
 
 
+// recursive
 Node *SyntaxTree::cp_node(Node *c) {
 	Node *cmd;
 	if (c->kind == NodeKind::BLOCK)
@@ -42,7 +43,7 @@ Node *SyntaxTree::cp_node(Node *c) {
 	cmd->set_num_params(c->params.num);
 	for (int i=0;i<c->params.num;i++)
 		if (c->params[i])
-			cmd->set_param(i, cp_node(c->params[i]));
+			cmd->set_param(i, cp_node(c->params[i].get()));
 	return cmd;
 }
 
@@ -226,7 +227,9 @@ Node *SyntaxTree::make_constructor_static(Node *n, const string &name) {
 	for (auto *f: n->type->functions.weak())
 		if (f->name == name) {
 			auto nn = add_node_call(f);
-			nn->params = n->params.sub(1,-1);
+			for (int i=0; i<n->params.num-1; i++)
+				nn->set_param(i, n->params[i+1].get());
+			//nn->params = n->params.sub(1,-1);
 			return nn;
 		}
 	return n;
@@ -620,7 +623,7 @@ Node *SyntaxTree::conv_calls(Node *c) {
 	if ((c->kind == NodeKind::STATEMENT) and (c->as_statement()->id == StatementID::RETURN))
 		if (c->params.num > 0) {
 			if ((c->params[0]->type->is_array()) /*or (c->Param[j]->Type->IsSuperArray)*/) {
-				c->set_param(0, ref_node(c->params[0]));
+				c->set_param(0, ref_node(c->params[0].get()));
 			}
 			return c;
 		}
@@ -630,7 +633,7 @@ Node *SyntaxTree::conv_calls(Node *c) {
 		// parameters, instance: class as reference
 		for (int j=0;j<c->params.num;j++)
 			if (c->params[j] and c->params[j]->type->uses_call_by_reference()) {
-				c->set_param(j, ref_node(c->params[j]));
+				c->set_param(j, ref_node(c->params[j].get()));
 			}
 
 		// return: array reference (-> dereference)
@@ -646,7 +649,7 @@ Node *SyntaxTree::conv_calls(Node *c) {
 		// parameters: super array as reference
 		for (int j=0;j<c->params.num;j++)
 			if ((c->params[j]->type->is_array()) or (c->params[j]->type->is_super_array())) {
-				c->set_param(j, ref_node(c->params[j]));
+				c->set_param(j, ref_node(c->params[j].get()));
 				// REALLY ?!?!?!?  FIXME?!?!?
 				msg_write("this might be bad");
 			}
@@ -660,7 +663,7 @@ Node *SyntaxTree::conv_easyfy_ref_deref(Node *c, int l) {
 	if (c->kind == NodeKind::REFERENCE) {
 		if (c->params[0]->kind == NodeKind::DEREFERENCE) {
 			// remove 2 knots...
-			return c->params[0]->params[0];
+			return c->params[0]->params[0].get();
 		}
 	}
 	return c;
@@ -671,7 +674,7 @@ Node *SyntaxTree::conv_easyfy_shift_deref(Node *c, int l) {
 	if ((c->kind == NodeKind::ADDRESS_SHIFT) or (c->kind == NodeKind::ARRAY)) {
 		if (c->params[0]->kind == NodeKind::DEREFERENCE) {
 			// unify 2 knots (remove 1)
-			Node *t = c->params[0]->params[0];
+			Node *t = c->params[0]->params[0].get();
 			c->kind = (c->kind == NodeKind::ADDRESS_SHIFT) ? NodeKind::DEREF_ADDRESS_SHIFT : NodeKind::POINTER_AS_ARRAY;
 			c->set_param(0, t);
 			return c;
@@ -697,7 +700,7 @@ Node *SyntaxTree::conv_return_by_memory(Node *n, Function *f) {
 	if (!p_ret)
 		do_error("-return- not found...");
 	Node *ret = deref_node(p_ret);
-	Node *cmd_assign = parser->link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
+	Node *cmd_assign = parser->link_operator_id(OperatorID::ASSIGN, ret, n->params[0].get());
 	if (!cmd_assign)
 		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
@@ -724,7 +727,7 @@ void SyntaxTree::convert_call_by_reference() {
 					v->type = v->type->get_pointer();
 
 					// internal usage...
-					transform_block(f->block, [&](Node *n){ return conv_cbr(n, v); });
+					transform_block(f->block.get(), [&](Node *n){ return conv_cbr(n, v); });
 				}
 		}
 
@@ -734,7 +737,7 @@ void SyntaxTree::convert_call_by_reference() {
 				f->var[j]->type = f->var[j]->type->get_pointer();
 
 				// internal usage...
-				transform_block(f->block, [&](Node *n){ return conv_cbr(n, f->var[j]); });
+				transform_block(f->block.get(), [&](Node *n){ return conv_cbr(n, f->var[j]); });
 			}
 
 		// return: array as reference
@@ -752,7 +755,7 @@ void SyntaxTree::convert_call_by_reference() {
 	for (Function *f: functions)
 		if (f->return_type->uses_return_by_memory())
 			//convert_return_by_memory(this, f->block, f);
-			transform_block(f->block, [&](Node *n){ return conv_return_by_memory(n, f); });
+			transform_block(f->block.get(), [&](Node *n){ return conv_return_by_memory(n, f); });
 
 	// convert function calls
 	transform([&](Node *n){ return conv_calls(n); });
@@ -778,7 +781,7 @@ InlineID __get_pointer_add_int() {
 
 Node *conv_break_down_med_level(SyntaxTree *tree, Node *c) {
 	if (c->kind == NodeKind::DYNAMIC_ARRAY) {
-		return tree->conv_break_down_low_level(tree->add_node_parray(tree->shift_node(c->params[0], false, 0, c->type->get_pointer()), c->params[1], c->type));
+		return tree->conv_break_down_low_level(tree->add_node_parray(tree->shift_node(c->params[0].get(), false, 0, c->type->get_pointer()), c->params[1].get(), c->type));
 	}
 	return c;
 }
@@ -796,9 +799,9 @@ Node *SyntaxTree::conv_break_down_low_level(Node *c) {
 //        -> * -> size
 //             -> index
 
-		Node *c_index = c->params[1];
+		Node *c_index = c->params[1].get();
 		// & array
-		Node *c_ref_array = ref_node(c->params[0]);
+		Node *c_ref_array = ref_node(c->params[0].get());
 		// create command for size constant
 		Node *c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
@@ -820,15 +823,15 @@ Node *SyntaxTree::conv_break_down_low_level(Node *c) {
 //        -> * -> size
 //             -> index
 
-		Node *c_index = c->params[1];
-		Node *c_ref_array = c->params[0];
+		auto &c_index = c->params[1];
+		auto &c_ref_array = c->params[0];
 		// create command for size constant
 		Node *c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
-		Node *c_offset = add_node_operator_by_inline(c_index, c_size, InlineID::INT_MULTIPLY);
+		Node *c_offset = add_node_operator_by_inline(c_index.get(), c_size, InlineID::INT_MULTIPLY);
 		c_offset->type = TypeInt;
 		// address = &array + offset
-		Node *c_address = add_node_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
+		Node *c_address = add_node_operator_by_inline(c_ref_array.get(), c_offset, __get_pointer_add_int());
 		c_address->type = el_type->get_pointer();//TypePointer;
 		// * address
 		return deref_node(c_address);
@@ -843,7 +846,7 @@ Node *SyntaxTree::conv_break_down_low_level(Node *c) {
 //        -> shift
 
 		// & struct
-		Node *c_ref_struct = ref_node(c->params[0]);
+		Node *c_ref_struct = ref_node(c->params[0].get());
 		// create command for shift constant
 		Node *c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
@@ -861,7 +864,7 @@ Node *SyntaxTree::conv_break_down_low_level(Node *c) {
 // * -> + -> struct_pointer
 //        -> shift
 
-		Node *c_ref_struct = c->params[0];
+		Node *c_ref_struct = c->params[0].get();
 		// create command for shift constant
 		Node *c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
@@ -879,7 +882,7 @@ Node* SyntaxTree::transform_node(Node *n, std::function<Node*(Node*)> F) {
 		transform_block(n->as_block(), F);
 	} else {
 		for (int i=0; i<n->params.num; i++)
-			n->set_param(i, transform_node(n->params[i], F));
+			n->set_param(i, transform_node(n->params[i].get(), F));
 	}
 	return F(n);
 }
@@ -889,7 +892,7 @@ Node* SyntaxTree::transformb_node(Node *n, Block *b, std::function<Node*(Node*, 
 		transformb_block(n->as_block(), F);
 	} else {
 		for (int i=0; i<n->params.num; i++)
-			n->set_param(i, transformb_node(n->params[i], b, F));
+			n->set_param(i, transformb_node(n->params[i].get(), b, F));
 	}
 	return F(n, b);
 }
@@ -903,7 +906,7 @@ Node* SyntaxTree::transformb_node(Node *n, Block *b, std::function<Node*(Node*, 
 
 void handle_insert_before(Block *block, int &i) {
 	if (_transform_insert_before_.num > 0) {
-		for (auto *ib: _transform_insert_before_) {
+		for (auto *ib: _transform_insert_before_.weak()) {
 			if (config.verbose)
 				msg_error("INSERT BEFORE...2");
 			block->params.insert(ib, i);
@@ -918,7 +921,7 @@ void SyntaxTree::transform_block(Block *block, std::function<Node*(Node*)> F) {
 	PUSH_BLOCK_INSERT;
 	//foreachi (Node *n, block->nodes, i){
 	for (int i=0; i<block->params.num; i++) {
-		block->params[i] = transform_node(block->params[i], F);
+		block->params[i] = transform_node(block->params[i].get(), F);
 		handle_insert_before(block, i);
 	}
 	POP_BLOCK_INSERT;
@@ -928,7 +931,7 @@ void SyntaxTree::transformb_block(Block *block, std::function<Node*(Node*, Block
 	PUSH_BLOCK_INSERT;
 	//foreachi (Node *n, block->nodes, i){
 	for (int i=0; i<block->params.num; i++) {
-		block->params[i] = transformb_node(block->params[i], block, F);
+		block->params[i] = transformb_node(block->params[i].get(), block, F);
 		handle_insert_before(block, i);
 	}
 	POP_BLOCK_INSERT;
@@ -938,13 +941,13 @@ void SyntaxTree::transformb_block(Block *block, std::function<Node*(Node*, Block
 void SyntaxTree::transform(std::function<Node*(Node*)> F) {
 	for (Function *f: functions) {
 		parser->cur_func = f;
-		transform_block(f->block, F);
+		transform_block(f->block.get(), F);
 	}
 }
 void SyntaxTree::transformb(std::function<Node*(Node*, Block*)> F) {
 	for (Function *f: functions) {
 		parser->cur_func = f;
-		transformb_block(f->block, F);
+		transformb_block(f->block.get(), F);
 	}
 }
 
@@ -952,7 +955,7 @@ bool node_is_executable(Node *n) {
 	if ((n->kind == NodeKind::CONSTANT) or (n->kind == NodeKind::VAR_LOCAL) or (n->kind == NodeKind::VAR_GLOBAL))
 		return false;
 	if ((n->kind == NodeKind::ADDRESS_SHIFT) or (n->kind == NodeKind::ARRAY) or (n->kind == NodeKind::DYNAMIC_ARRAY) or (n->kind == NodeKind::REFERENCE) or (n->kind == NodeKind::DEREFERENCE) or (n->kind == NodeKind::DEREF_ADDRESS_SHIFT))
-		return node_is_executable(n->params[0]);
+		return node_is_executable(n->params[0].get());
 	return true;
 }
 
@@ -1003,7 +1006,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		Block *bb = new Block(f, b);
 		for (int i=0; i<n->params.num; i++){
 			auto *cc = add_node_member_call(cf, cp_node(array));
-			cc->set_param(1, n->params[i]);
+			cc->set_param(1, n->params[i].get());
 			bb->add(cc);
 		}
 		_transform_insert_before_.add(bb);
@@ -1022,8 +1025,8 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		Block *bb = new Block(f, b);
 		for (int i=0; i<n->params.num/2; i++){
 			auto *cc = add_node_member_call(cf, cp_node(array));
-			cc->set_param(1, n->params[i*2]);
-			cc->set_param(2, n->params[i*2+1]);
+			cc->set_param(1, n->params[i*2].get());
+			cc->set_param(2, n->params[i*2+1].get());
 			bb->add(cc);
 		}
 		_transform_insert_before_.add(bb);
@@ -1031,24 +1034,25 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::FOR_RANGE)) {
 
 		// [VAR, START, STOP, STEP, BLOCK]
-		auto var = n->params[0];
-		auto val0 = n->params[1];
-		auto val1 = n->params[2];
-		auto step = n->params[3];
-		auto block = n->params[4];
+		auto var = n->params[0].get();
+		auto val0 = n->params[1].get();
+		auto val1 = n->params[2].get();
+		auto step = n->params[3].get();
+		auto block = n->params[4].get();
 
-		n->link_no = (int_p)statement_from_id(StatementID::FOR_DIGEST);
-		n->set_num_params(4);
+
+		auto nn = add_node_statement(StatementID::FOR_DIGEST);
+		nn->set_num_params(4);
 		// [INIT, CMP, BLOCK, INC]
 
 		Node *cmd_assign = add_node_operator_by_inline(var, val0, InlineID::INT_ASSIGN);
-		n->set_param(0, cmd_assign);
+		nn->set_param(0, cmd_assign);
 
 		// while(for_var < val1)
 		Node *cmd_cmp = add_node_operator_by_inline(cp_node(var), val1, InlineID::INT_SMALLER);
-		n->set_param(1, cmd_cmp);
+		nn->set_param(1, cmd_cmp);
 
-		n->set_param(2, block);
+		nn->set_param(2, block);
 
 
 		// ...for_var += 1
@@ -1061,15 +1065,16 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		} else {
 			cmd_inc = add_node_operator_by_inline(cp_node(var), step, InlineID::FLOAT_ADD_ASSIGN);
 		}
-		n->set_param(3, cmd_inc); // add to loop-block
+		nn->set_param(3, cmd_inc); // add to loop-block
 
+		return nn;
 	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::FOR_ARRAY)) {
 
 		// [VAR, INDEX, ARRAY, BLOCK]
-		auto var = n->params[0];
-		auto index = n->params[1];
-		auto array = n->params[2];
-		auto block = n->params[3];
+		auto var = n->params[0].get();
+		auto index = n->params[1].get();
+		auto array = n->params[2].get();
+		auto block = n->params[3].get();
 		
 		
 		// array needs execution?
@@ -1083,8 +1088,8 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 			array = add_node_local(v);
 		}
 
-		n->link_no = (int_p)statement_from_id(StatementID::FOR_DIGEST);
-		n->set_num_params(4);
+		auto nn = add_node_statement(StatementID::FOR_DIGEST);
+		nn->set_num_params(4);
 		// [INIT, CMP, BLOCK, INC]
 
 
@@ -1094,7 +1099,7 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		// implement
 		// for_index = 0
 		Node *cmd_assign = add_node_operator_by_inline(index, val0, InlineID::INT_ASSIGN);
-		n->set_param(0, cmd_assign);
+		nn->set_param(0, cmd_assign);
 
 		Node *val1;
 		if (array->type->usable_as_super_array()) {
@@ -1109,14 +1114,14 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 
 		// while(for_index < val1)
 		Node *cmd_cmp = add_node_operator_by_inline(cp_node(index), val1, InlineID::INT_SMALLER);
-		n->set_param(1, cmd_cmp);
+		nn->set_param(1, cmd_cmp);
 
 		// ...block
-		n->set_param(2, block);
+		nn->set_param(2, block);
 
 		// ...for_index += 1
 		Node *cmd_inc = add_node_operator_by_inline(cp_node(index), nullptr, InlineID::INT_INCREASE);
-		n->set_param(3, cmd_inc);
+		nn->set_param(3, cmd_inc);
 
 		// array[index]
 		Node *el;
@@ -1130,10 +1135,11 @@ Node *SyntaxTree::conv_break_down_high_level(Node *n, Block *b) {
 		Node *cmd_var_assign = add_node_operator_by_inline(var, ref_node(el), InlineID::POINTER_ASSIGN);
 		block->params.insert(cmd_var_assign, 0);
 
+		return nn;
 	} else if (n->kind == NodeKind::ARRAY_BUILDER_FOR) {
 
-		_transform_insert_before_.add(n->params[0]);
-		return n->params[1];
+		_transform_insert_before_.add(n->params[0].get());
+		return n->params[1].get();
 	}
 	return n;
 }

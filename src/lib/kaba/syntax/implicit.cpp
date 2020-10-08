@@ -199,7 +199,7 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 		auto *v_el = f->block->add_var("el", t->get_array_element()->get_pointer());
 		auto *v_i = f->block->add_var("i", TypeInt);
 
-		Block *b = new Block(f, f->block);
+		Block *b = new Block(f, f->block.get());
 
 		// other[i]
 		Node *n_other_el;
@@ -267,7 +267,7 @@ void Parser::auto_implement_array_clear(Function *f, const Class *t) {
 		auto *var_i = f->block->add_var("i", TypeInt);
 		auto *var_el = f->block->add_var("el", t->get_array_element()->get_pointer());
 
-		Block *b = new Block(f, f->block);
+		Block *b = new Block(f, f->block.get());
 
 		// __delete__
 		Node *cmd_delete = tree->add_node_member_call(f_del, tree->deref_node(tree->add_node_local(var_el)));
@@ -311,7 +311,7 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 	Function *f_del = t->param->get_destructor();
 	if (f_del) {
 
-		Block *b = new Block(f, f->block);
+		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
 		Node *el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
@@ -342,7 +342,7 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 	Function *f_init = t->param->get_default_constructor();
 	if (f_init) {
 
-		Block *b = new Block(f, f->block);
+		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
 		Node *el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
@@ -396,7 +396,7 @@ void Parser::auto_implement_array_remove(Function *f, const Class *t) {
 void Parser::auto_implement_array_add(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Block *b = f->block;
+	Block *b = f->block.get();
 	Node *item = tree->add_node_local(b->get_var("x"));
 
 	Node *self = tree->add_node_local(b->get_var(IDENTIFIER_SELF));
@@ -473,7 +473,7 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	cmd_cmp->set_param(0, tree->cp_node(self_p));
 	cmd_if->set_param(0, cmd_cmp);
 
-	auto b = new Block(f, f->block);
+	auto b = new Block(f, f->block.get());
 	cmd_if->set_param(1, b);
 
 

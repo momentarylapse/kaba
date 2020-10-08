@@ -464,10 +464,10 @@ Node *SyntaxTree::pre_process_node_addresses(Node *c) {
 			return c;
 
 		c->params[0]->link_no = new_addr;
-		return c->params[0];
+		return c->params[0].get();
 
 	} else if (c->kind == NodeKind::REFERENCE) {
-		Node *p0 = c->params[0];
+		auto &p0 = c->params[0];
 		if (p0->kind == NodeKind::VAR_GLOBAL) {
 			return new Node(NodeKind::ADDRESS, (int_p)p0->as_global_p(), c->type);
 		} else if (p0->kind == NodeKind::VAR_LOCAL) {
@@ -476,7 +476,7 @@ Node *SyntaxTree::pre_process_node_addresses(Node *c) {
 			return new Node(NodeKind::ADDRESS, (int_p)p0->as_const_p(), c->type);
 		}
 	} else if (c->kind == NodeKind::DEREFERENCE) {
-		Node *p0 = c->params[0];
+		auto &p0 = c->params[0];
 		if (p0->kind == NodeKind::ADDRESS) {
 			return new Node(NodeKind::MEMORY, p0->link_no, c->type);
 		} else if (p0->kind == NodeKind::LOCAL_ADDRESS) {

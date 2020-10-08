@@ -507,7 +507,7 @@ const Class *Parser::parse_type_extension_array(const Class *t) {
 	} else {
 
 		// find array index
-		Node *c = parse_operand_super_greedy(tree->root_of_all_evil->block);
+		Node *c = parse_operand_super_greedy(tree->root_of_all_evil->block.get());
 		c = tree->transform_node(c, [&](Node *n) { return tree->conv_eval_const_func(n); });
 
 		if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
@@ -1167,7 +1167,7 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
 			int pen, c;
-			for (auto *e: node->params)
+			for (auto *e: node->params.weak())
 				if (!type_match_with_cast(e, false, t, pen, c))
 					return false;
 			cast = TYPE_CAST_ABSTRACT_LIST;
@@ -1182,7 +1182,7 @@ bool type_match_with_cast(Node *node, bool is_modifiable, const Class *wanted, i
 				continue;
 
 			int pen, c;
-			foreachi (auto *e, node->params, i)
+			foreachi (auto *e, node->params.weak(), i)
 				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c))
 					return false;
 			cast = TYPE_CAST_CLASSIFY;
@@ -1224,7 +1224,7 @@ Node *Parser::apply_type_cast(int tc, Node *node, const Class *wanted) {
 		if (wanted == TypeDynamicArray)
 			return force_concrete_type(node);
 		int pen, c;
-		foreachi (auto *e, node->params, i) {
+		foreachi (auto *e, node->params.weak(), i) {
 			if (!type_match_with_cast(e, false, wanted->get_array_element(), pen, c)) {
 				do_error("nope????");
 			}
@@ -1242,13 +1242,13 @@ Node *Parser::apply_type_cast(int tc, Node *node, const Class *wanted) {
 				continue;
 			int pen;
 			bool ok = true;
-			foreachi (auto *e, node->params, i)
+			foreachi (auto *e, node->params.weak(), i)
 				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c[i]))
 					ok = false;
 			if (!ok)
 				continue;
 			auto cmd = tree->add_node_constructor(f);
-			return apply_params_with_cast(cmd, node->params, c, f->literal_param_type);
+			return apply_params_with_cast(cmd, node->params.weak(), c, f->literal_param_type);
 		}
 		do_error("classify...");
 	}
@@ -1332,8 +1332,8 @@ Node *Parser::link_operator(PrimitiveOperator *primop, Node *param1, Node *param
 		if (param1->kind == NodeKind::FUNCTION_CALL) {
 			auto f = param1->as_func();
 			if (f->name == "__get__") {
-				auto inst = param1->params[0];
-				auto index = param1->params[1];
+				auto inst = param1->params[0].get();
+				auto index = param1->params[1].get();
 				//msg_write(format("[]=...    void %s.__set__(%s, %s)?", inst->type->long_name(), index->type->long_name(), p2->long_name()));
 				for (auto *ff: inst->type->functions.weak())
 					if (ff->name == "__set__" and ff->return_type == TypeVoid and ff->num_params == 2) {
@@ -1638,11 +1638,11 @@ Node *Parser::parse_for_header(Block *block) {
 }
 
 void Parser::post_process_for(Node *cmd_for) {
-	auto *n_var = cmd_for->params[0];
+	auto *n_var = cmd_for->params[0].get();
 	auto *var = n_var->as_local();
 
 	if (cmd_for->as_statement()->id == StatementID::FOR_ARRAY) {
-		auto *loop_block = cmd_for->params[3];
+		auto *loop_block = cmd_for->params[3].get();
 
 	// ref.
 		var->type = var->type->get_pointer();
@@ -2021,9 +2021,9 @@ const Class *type_more_abstract(const Class *a, const Class *b) {
 	return nullptr;
 }
 
-void Parser::force_concrete_types(Array<Node*> &nodes) {
+void Parser::force_concrete_types(shared_array<Node> &nodes) {
 	for (int i=0; i<nodes.num; i++)
-		nodes[i] = force_concrete_type(nodes[i]);
+		nodes[i] = force_concrete_type(nodes[i].get());
 }
 
 Node *Parser::force_concrete_type(Node *node) {
@@ -2046,8 +2046,8 @@ Node *Parser::force_concrete_type(Node *node) {
 
 		for (int i=0; i<node->params.num; i++) {
 			int pen, tc;
-			type_match_with_cast(node->params[i], false, t, pen, tc);
-			node->params[i] = apply_type_cast(tc, node->params[i], t);
+			type_match_with_cast(node->params[i].get(), false, t, pen, tc);
+			node->params[i] = apply_type_cast(tc, node->params[i].get(), t);
 		}
 
 		node->type = tree->make_class_super_array(t);
@@ -2069,8 +2069,8 @@ Node *Parser::force_concrete_type(Node *node) {
 
 		for (int i=1; i<node->params.num; i+=2) {
 			int pen, tc;
-			type_match_with_cast(node->params[i], false, t, pen, tc);
-			node->params[i] = apply_type_cast(tc, node->params[i], t);
+			type_match_with_cast(node->params[i].get(), false, t, pen, tc);
+			node->params[i] = apply_type_cast(tc, node->params[i].get(), t);
 		}
 
 		node->type = tree->make_class_dict(t);
@@ -2228,7 +2228,7 @@ Node *Parser::parse_statement_lambda(Block *block) {
 
 	cur_func = prev_func;
 
-	auto *cmd = parse_operand_greedy(f->block);
+	auto *cmd = parse_operand_greedy(f->block.get());
 	f->return_type = cmd->type;
 	f->literal_return_type = cmd->type;
 
@@ -2275,13 +2275,13 @@ Node *Parser::parse_statement_sorted(Block *block) {
 Node *Parser::make_dynamical(Node *node) {
 	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeAbstractList) {
 		for (int i=0; i<node->params.num; i++)
-			node->params[i] = make_dynamical(node->params[i]);
+			node->params[i] = make_dynamical(node->params[i].get());
 		// TODO create...
 		node->type = TypeAnyList;
 		//return node;
 	} else  if (node->kind == NodeKind::DICT_BUILDER and node->type == TypeAbstractDict) {
 		for (int i=1; i<node->params.num; i+=2)
-			node->params[i] = make_dynamical(node->params[i]);
+			node->params[i] = make_dynamical(node->params[i].get());
 		// TODO create...
 		node->type = TypeAnyDict;
 		//return node;
@@ -2604,7 +2604,7 @@ void Parser::parse_enum(Class *_namespace) {
 				Exp.next();
 				expect_no_new_line();
 
-				Node *cv = parse_and_eval_const(tree->root_of_all_evil->block, TypeInt);
+				Node *cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeInt);
 				value = cv->as_const()->as_int();
 			}
 			c->as_int() = (value ++);
@@ -2752,7 +2752,7 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 			}
 
 			if (flags_has(flags, Flags::CONST)) {
-				parse_named_const(name, type, _class, tree->root_of_all_evil->block);
+				parse_named_const(name, type, _class, tree->root_of_all_evil->block.get());
 				break;
 			}
 
@@ -2930,7 +2930,7 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 		return false;
 
 	// command or local definition
-	parse_complete_command(f->block);
+	parse_complete_command(f->block.get());
 	return true;
 }
 
@@ -2974,7 +2974,7 @@ const Class *Parser::parse_type(const Class *ns, Flags flags) {
 			} else {
 
 				// find array index
-				Node *c = tree->transform_node(parse_operand_greedy(tree->root_of_all_evil->block), [&](Node *n) { return tree->conv_eval_const_func(n); });
+				Node *c = tree->transform_node(parse_operand_greedy(tree->root_of_all_evil->block.get()), [&](Node *n) { return tree->conv_eval_const_func(n); });
 
 				if ((c->kind != NodeKind::CONSTANT) or (c->type != TypeInt))
 					do_error("only constants of type 'int' allowed for size of arrays");
@@ -3220,7 +3220,7 @@ void Parser::parse_top_level() {
 
 			// global variables/consts
 			} else {
-				parse_global_variable_def(false, tree->root_of_all_evil->block, flags);
+				parse_global_variable_def(false, tree->root_of_all_evil->block.get(), flags);
 			}
 		}
 		if (!Exp.end_of_file())
@@ -3240,13 +3240,13 @@ void Parser::parse() {
 	tree->show("aaa");
 
 	for (auto *f: tree->functions)
-		test_node_recursion(f->block, tree->base_class, "a " + f->long_name());
+		test_node_recursion(f->block.get(), tree->base_class, "a " + f->long_name());
 
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
 		auto_implement_functions(tree->owned_classes[i]);
 
 	for (auto *f: tree->functions)
-		test_node_recursion(f->block, tree->base_class, "b " + f->long_name());
+		test_node_recursion(f->block.get(), tree->base_class, "b " + f->long_name());
 }
 
 }

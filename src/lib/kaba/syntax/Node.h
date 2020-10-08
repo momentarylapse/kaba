@@ -84,7 +84,7 @@ public:
 	NodeKind kind;
 	int64 link_no;
 	// parameters
-	Array<Node*> params;
+	shared_array<Node> params;
 	// linking of class function instances
 	// return value
 	const Class *type;
@@ -138,7 +138,7 @@ public:
 	
 	const Class *name_space() const;
 
-	Variable *get_var(const string &name);
+	Variable *get_var(const string &name) const;
 	Variable *add_var(const string &name, const Class *type, bool is_const = false);
 };
 

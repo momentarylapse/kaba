@@ -200,9 +200,14 @@ public:
 		pdb(format("shared  set %s", p2s(p)));
 		if (p == _p)
 			return;
-		release();
-		if (p)
-			_p = (T*)p->_pointer_ref();
+		if (p) {
+			// keep p, even if we are a parent to p!
+			auto p_next = (T*)p->_pointer_ref();
+			release();
+			_p = p_next;
+		} else {
+			release();
+		}
 	}
 	void release() {
 		if (_p) {
@@ -219,7 +224,13 @@ public:
 	T &operator *() {
 		return *_p;
 	}
+	const T &operator *() const {
+		return *_p;
+	}
 	T *operator ->() {
+		return _p;
+	}
+	const T *operator ->() const {
 		return _p;
 	}
 	void operator=(const shared<T> o) {

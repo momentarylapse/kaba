@@ -307,7 +307,7 @@ void ExecuteSingleScriptCommand(const string &cmd) {
 	}
 	
 	for (auto *p: packages)
-		if (!p->used_by_default and (p->filename != "x"))
+		if (!p->used_by_default)
 			ps->add_include_data(p, true);
 
 // analyse syntax
@@ -319,11 +319,11 @@ void ExecuteSingleScriptCommand(const string &cmd) {
 	parser->Exp.reset_parser();
 
 	// parse
-	parser->parse_complete_command(func->block);
+	parser->parse_complete_command(func->block.get());
 	
 	// implicit print(...)?
 	if (func->block->params.num > 0 and func->block->params[0]->type != TypeVoid) {
-		auto *n = parser->add_converter_str(func->block->params[0], true);
+		auto *n = parser->add_converter_str(func->block->params[0].get(), true);
 		
 		auto links = ps->get_existence("print", nullptr, nullptr, false);
 		Function *f = links[0]->as_func();

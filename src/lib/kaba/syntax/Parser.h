@@ -51,7 +51,7 @@ public:
 	bool param_match_with_cast(Node *operand, Array<Node*> &params, Array<int> &casts, Array<const Class*> &wanted);
 	Node *apply_params_direct(Node *operand, Array<Node*> &params);
 	Node *force_concrete_type(Node *node);
-	void force_concrete_types(Array<Node*> &nodes);
+	void force_concrete_types(shared_array<Node> &nodes);
 	Node *deref_if_pointer(Node *node);
 	Node *add_converter_str(Node *sub, bool repr);
 

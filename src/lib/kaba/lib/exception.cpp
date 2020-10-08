@@ -141,12 +141,12 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, const Class *ex
 			continue;
 
 		// are we in a try block?
-		for (Node *n: b->parent->params) {
+		for (Node *n: b->parent->params.weak()) {
 			if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::TRY)) {
 				if (n->params[0]->as_block() == b) {
 					if (_verbose_exception_)
 						msg_write("found try block");
-					auto ee = n->params[1];
+					auto ee = n->params[1].get();
 					if (_verbose_exception_)
 						msg_write(ee->type->name);
 					if (!ex_type_match(ex_type, ee->type))

@@ -78,8 +78,6 @@ void test_node_recursion(Node *root, const Class *ns, const string &message) {
 
 Function::~Function() {
 	//test_node_recursion(block, long_name());
-	if (block)
-		delete block;
 	for (Variable* v: var)
 		delete v;
 }
@@ -130,7 +128,7 @@ string Function::signature(const Class *ns) const {
 
 void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 	blocks.add(block);
-	for (Node* n: block->params) {
+	for (Node* n: block->params.weak()) {
 		if (n->kind == NodeKind::BLOCK)
 			blocks_add_recursive(blocks, n->as_block());
 		if (n->kind == NodeKind::STATEMENT) {
@@ -155,7 +153,7 @@ void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 Array<Block*> Function::all_blocks() {
 	Array<Block*> blocks;
 	if (block)
-		blocks_add_recursive(blocks, block);
+		blocks_add_recursive(blocks, block.get());
 	return blocks;
 }
 

@@ -166,7 +166,7 @@ void Node::show(const Class *ns) const {
 	string orig;
 	msg_write(str(ns) + orig);
 	msg_right();
-	for (Node *p: params)
+	for (Node *p: params.weak())
 		if (p)
 			p->show(ns);
 		else
@@ -190,10 +190,6 @@ Block::Block(Function *f, Block *_parent) :
 }
 
 
-inline void set_command(Node *&a, Node *b) {
-	a = b;
-}
-
 void Block::add(Node *c) {
 	if (c)
 		params.add(c);
@@ -213,7 +209,7 @@ Variable *Block::add_var(const string &name, const Class *type, bool is_const) {
 	return v;
 }
 
-Variable *Block::get_var(const string &name) {
+Variable *Block::get_var(const string &name) const {
 	for (auto *v: vars)
 		if (v->name == name)
 			return v;
@@ -226,8 +222,11 @@ const Class *Block::name_space() const {
 	return function->name_space;
 }
 
+static int _node_count = 0;
 
 Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
+	_node_count ++;
+//	msg_write("+Node");
 	type = _type;
 	kind = _kind;
 	link_no = _link_no;
@@ -235,9 +234,8 @@ Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
 }
 
 Node::~Node() {
-	for (auto &p: params)
-		if (p)
-			delete p;
+	_node_count --;
+//	msg_write("-Node");
 }
 
 Node *Node::modifiable() {
@@ -303,7 +301,7 @@ void Node::set_instance(Node *p) {
 	if (params.num == 0)
 		msg_write("no inst...dfljgkldfjg");
 #endif
-	set_command(params[0], p);
+	params[0] = p;
 }
 
 void Node::set_num_params(int n) {
@@ -317,7 +315,7 @@ void Node::set_param(int index, Node *p) {
 		throw Exception(format("internal: Node.set_param...  %d %d", index, params.num), "", 0);
 	}*/
 #endif
-	set_command(params[index], p);
+	params[index] = p;
 }
 
 

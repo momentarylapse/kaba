@@ -609,9 +609,8 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	Node *override_ret = nullptr;
 #if 1
 	if (node_is_assign_mem(com)) {
-		Node *dst, *src;
-			dst = com->params[0];
-			src = com->params[1];
+		auto dst = com->params[0].get();
+		auto src = com->params[1].get();
 		if (src->kind == NodeKind::FUNCTION_CALL or src->kind == NodeKind::INLINE_CALL) {
 			if (dst->kind == NodeKind::VAR_LOCAL or dst->kind == NodeKind::VAR_GLOBAL or dst->kind == NodeKind::LOCAL_ADDRESS) {
 				override_ret = dst;
@@ -640,7 +639,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 
 		// compile parameters
 		for (int p=0;p<com->params.num;p++)
-			params[p] = serialize_parameter(com->params[p], block, index);
+			params[p] = serialize_parameter(com->params[p].get(), block, index);
 
 		// class function -> compile instance
 		//if (com->instance)
@@ -688,7 +687,7 @@ void Serializer::serialize_block(Block *block) {
 		stack_offset = cur_func->_var_size;
 
 		// serialize
-		serialize_node(block->params[i], block, i);
+		serialize_node(block->params[i].get(), block, i);
 		
 		// destruct new temp vars
 		insert_destructors_temp();
@@ -1655,7 +1654,7 @@ void Serializer::serialize_function(Function *f) {
 	add_function_intro_params(f);
 
 	// function
-	serialize_block(f->block);
+	serialize_block(f->block.get());
 	scan_temp_var_usage();
 
 	if (config.verbose)
@@ -1974,7 +1973,7 @@ int check_needed(SyntaxTree *tree, Function *f) {
 	if (f->virtual_index >= 0)
 		ref_count ++;
 	// well, for now, only allow these functions:
-	if (f->name != "__assign__" and f->name != "__delete__" and f->name != "__init__")
+	if (f->name != IDENTIFIER_FUNC_ASSIGN and f->name != IDENTIFIER_FUNC_DELETE and f->name != IDENTIFIER_FUNC_INIT)
 		ref_count ++;
 
 	return ref_count;
