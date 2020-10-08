@@ -11,21 +11,20 @@ namespace Kaba{
 //#define ScriptDebug
 
 
-void SetImmortal(SyntaxTree *ps)
-{
+void SetImmortal(SyntaxTree *ps) {
 	ps->flag_immortal = true;
 	for (Script *i: ps->includes)
 		SetImmortal(i->syntax);
 }
 
 static bool _class_contains(const Class *c, const string &name) {
-	for (auto *cc: c->classes)
+	for (auto *cc: c->classes.weak())
 		if (cc->name == name)
 			return true;
-	for (auto *f: c->functions)
+	for (auto *f: c->functions.weak())
 		if (f->name == name)
 			return true;
-	for (auto *cc: c->constants)
+	for (auto *cc: c->constants.weak())
 		if (cc->name == name)
 			return true;
 	return false;
@@ -53,17 +52,18 @@ void SyntaxTree::add_include_data(Script *s, bool indirect) {
 	if (indirect) {
 		imported_symbols->classes.add(ps->base_class);
 	} else {
-		for (auto *c: ps->base_class->classes)
+		for (auto *c: ps->base_class->classes.weak())
 			imported_symbols->classes.add(c);
-		for (auto *f: ps->base_class->functions)
+		for (auto *f: ps->base_class->functions.weak())
 			imported_symbols->functions.add(f);
-		for (auto *v: ps->base_class->static_variables)
+		for (auto *v: ps->base_class->static_variables.weak())
 			imported_symbols->static_variables.add(v);
-		for (auto *c: ps->base_class->constants)
+		for (auto *c: ps->base_class->constants.weak())
 			imported_symbols->constants.add(c);
 		if (s->filename.basename().find(".kaba") < 0)
-			if (!_class_contains(imported_symbols, ps->base_class->name))
+			if (!_class_contains(imported_symbols.get(), ps->base_class->name)) {
 				imported_symbols->classes.add(ps->base_class);
+			}
 	}
 	includes.add(s);
 	s->reference_counter ++;

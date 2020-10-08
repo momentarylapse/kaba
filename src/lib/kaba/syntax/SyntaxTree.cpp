@@ -203,6 +203,7 @@ Node *SyntaxTree::add_node_array(Node *array, Node *index) {
 
 SyntaxTree::SyntaxTree(Script *_script) {
 	base_class = new Class("-base-", 0, this);
+	_base_class = base_class;
 	imported_symbols = new Class("-imported-", 0, this);
 	root_of_all_evil = new Function("RootOfAllEvil", TypeVoid, base_class);
 
@@ -212,8 +213,9 @@ SyntaxTree::SyntaxTree(Script *_script) {
 	script = _script;
 	asm_meta_info = new Asm::MetaInfo;
 	parser = nullptr;
+}
 
-	// "include" default stuff
+void SyntaxTree::default_import() {
 	for (Script *p: packages)
 		if (p->used_by_default)
 			add_include_data(p, false);
@@ -221,7 +223,7 @@ SyntaxTree::SyntaxTree(Script *_script) {
 
 
 Node *SyntaxTree::make_constructor_static(Node *n, const string &name) {
-	for (auto *f: n->type->functions)
+	for (auto *f: n->type->functions.weak())
 		if (f->name == name) {
 			auto nn = add_node_call(f);
 			nn->params = n->params.sub(1,-1);
@@ -306,7 +308,7 @@ void SyntaxTree::do_error(const string &str, int override_exp_no, int override_l
 
 
 void _asm_add_static_vars(Asm::MetaInfo *meta, const Class *c, const Class *base_ns) {
-	for (auto *v: c->static_variables) {
+	for (auto *v: c->static_variables.weak()) {
 		Asm::GlobalVar vv;
 		vv.name = v->name;
 		if (c->name.head(1) != "-" and c != base_ns)
@@ -315,13 +317,13 @@ void _asm_add_static_vars(Asm::MetaInfo *meta, const Class *c, const Class *base
 		vv.pos = v->memory;
 		meta->global_var.add(vv);
 	}
-	for (auto *cc: c->classes)
+	for (auto *cc: c->classes.weak())
 		_asm_add_static_vars(meta, cc, base_ns);
 }
 
 void SyntaxTree::create_asm_meta_info() {
 	asm_meta_info->global_var.clear();
-	_asm_add_static_vars(asm_meta_info, base_class, base_class);
+	_asm_add_static_vars(asm_meta_info.get(), base_class, base_class);
 }
 
 
@@ -379,7 +381,7 @@ PrimitiveOperator *Parser::which_primitive_operator(const string &name, int para
 }
 
 const Class *SyntaxTree::which_owned_class(const string &name) {
-	for (auto *c: base_class->classes)
+	for (auto *c: base_class->classes.weak())
 		if (name == c->name)
 			return c;
 	return nullptr;
@@ -417,16 +419,16 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 
 		if (!prefer_class) {
 			// named constants
-			for (auto *c: ns->constants)
+			for (auto *c: ns->constants.weak())
 				if (name == c->name)
 					return {add_node_const(c)};
 
-			for (auto *v: ns->static_variables)
+			for (auto *v: ns->static_variables.weak())
 				if (v->name == name)
 					return {add_node_global(v)};
 
 			// then the (real) functions
-			for (auto *f: ns->functions)
+			for (auto *f: ns->functions.weak())
 				if (f->name == name and f->is_static())
 					links.add(add_node_func_name(f));
 			if (links.num > 0 and !prefer_class)
@@ -434,7 +436,7 @@ Array<Node*> SyntaxTree::get_existence_global(const string &name, const Class *n
 		}
 
 		// types
-		for (auto *c: ns->classes)
+		for (auto *c: ns->classes.weak())
 			if (c->name == name)
 				return {add_node_class(c)};
 
@@ -463,11 +465,11 @@ Node* SyntaxTree::get_existence_block(const string &name, Block *block) {
 		for (auto &e: f->name_space->elements)
 			if (e.name == name)
 				return exlink_add_element(f, e);
-		for (auto *cf: f->name_space->functions)
+		for (auto *cf: f->name_space->functions.weak())
 			if (cf->name == name)
 				return exlink_add_class_func(f, cf);
 	}
-	for (auto *v: f->name_space->static_variables)
+	for (auto *v: f->name_space->static_variables.weak())
 		if (v->name == name)
 			return {add_node_global(v)};
 	return nullptr;
@@ -502,7 +504,7 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 	}
 
 	// in include files (only global)...
-	links.append(get_existence_global(name, imported_symbols, prefer_class));
+	links.append(get_existence_global(name, imported_symbols.get(), prefer_class));
 
 
 	if (links.num == 0 and prefer_class)
@@ -515,11 +517,11 @@ Array<Node*> SyntaxTree::get_existence(const string &name, Block *block, const C
 // expression naming a type
 // we are currently in <namespace>... (no explicit namespace for <name>)
 const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class *_namespace, bool allow_recursion) {
-	for (auto *c: _namespace->classes)
+	for (auto *c: _namespace->classes.weak())
 		if (name == c->name)
 			return c;
 	if (_namespace == base_class) {
-		for (auto *c: imported_symbols->classes)
+		for (auto *c: imported_symbols->classes.weak())
 			if (name == c->name)
 				return c;
 	} else if (_namespace->name_space and allow_recursion) {
@@ -1233,12 +1235,6 @@ void SyntaxTree::map_local_variables_to_stack() {
 // no included scripts may be deleted before us!!!
 SyntaxTree::~SyntaxTree() {
 	// delete all classes, functions etc created by this script
-
-	if (asm_meta_info)
-		delete asm_meta_info;
-
-	delete root_of_all_evil;
-	delete base_class;
 }
 
 void SyntaxTree::show(const string &stage) {

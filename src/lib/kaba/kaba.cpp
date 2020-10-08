@@ -63,7 +63,6 @@ Script *Load(const Path &filename, bool just_analyse) {
 	
 	// load
 	s = new Script();
-	s->syntax->base_class->name = filename.basename().replace(".kaba", "");
 	try {
 		s->load(filename, just_analyse);
 	} catch(const Exception &e) {
@@ -81,6 +80,7 @@ Script *CreateForSource(const string &buffer, bool just_analyse) {
 	s->just_analyse = just_analyse;
 	auto parser = s->syntax->parser = new Parser(s->syntax);
 	try {
+		s->syntax->default_import();
 		parser->parse_buffer(buffer, just_analyse);
 
 		if (!just_analyse)
@@ -144,7 +144,7 @@ VirtualTable* get_vtable(const VirtualBase *p) {
 }
 
 const Class *_dyn_type_in_namespace(const VirtualTable *p, const Class *ns) {
-	for (auto *c: ns->classes) {
+	for (auto *c: ns->classes.weak()) {
 		if (c->_vtable_location_target_ == p)
 			return c;
 		auto t = _dyn_type_in_namespace(p, c);
@@ -183,9 +183,12 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 		filename = (config.directory << _filename).absolute().canonical();
 	else
 		filename = _filename.absolute().canonical();
+	syntax->base_class->name = filename.basename().replace(".kaba", "");
+
 	auto parser = syntax->parser = new Parser(syntax);
 
 	try {
+		syntax->default_import();
 
 	// read file
 		string buffer = FileReadText(filename);
@@ -196,7 +199,7 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 			compile();
 		/*if (pre_script->FlagShow)
 			pre_script->Show();*/
-		if ((!just_analyse) and (config.verbose)){
+		if (!just_analyse and config.verbose){
 			msg_write(format("Opcode: %d bytes", opcode_size));
 			if (config.allow_output_stage("dasm"))
 				msg_write(Asm::disassemble(opcode, opcode_size));
@@ -212,8 +215,7 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 	loading_script_stack.pop();
 }
 
-void Script::do_error(const string &str, int override_line)
-{
+void Script::do_error(const string &str, int override_line) {
 #ifdef CPU_ARM
 	msg_error(str);
 #endif
@@ -230,7 +232,7 @@ void Script::do_error_link(const string &str) {
 
 void Script::set_variable(const string &name, void *data) {
 	//msg_write(name);
-	for (auto *v: syntax->base_class->static_variables)
+	for (auto *v: syntax->base_class->static_variables.weak())
 		if (v->name == name) {
 			memcpy(v->memory, data, v->type->size);
 			return;
@@ -257,10 +259,9 @@ Script::Script() {
 	syntax = new SyntaxTree(this);
 }
 
-Script::~Script()
-{
+Script::~Script() {
 	int r = 0;
-	if (opcode){
+	if (opcode) {
 		#if defined(OS_WINDOWS) || defined(OS_MINGW)
 			VirtualFree(opcode, 0, MEM_RELEASE);
 		#else
@@ -269,7 +270,7 @@ Script::~Script()
 	}
 	if (r != 0)
 		msg_error("munmap...op");
-	if (memory and memory_size > 0){
+	if (memory and memory_size > 0) {
 		#if defined(OS_WINDOWS) || defined(OS_MINGW)
 			VirtualFree(memory, 0, MEM_RELEASE);
 		#else
@@ -284,8 +285,7 @@ Script::~Script()
 
 
 // bad:  should clean up in case of errors!
-void ExecuteSingleScriptCommand(const string &cmd)
-{
+void ExecuteSingleScriptCommand(const string &cmd) {
 	if (cmd.num < 1)
 		return;
 	//msg_write("script command: " + cmd);
@@ -381,7 +381,7 @@ void *Script::match_class_function(const string &_class, bool allow_derived, con
 		return nullptr;
 
 	// match
-	for (Function *f: syntax->functions){
+	for (auto *f: syntax->functions){
 		if (!f->name_space)
 			continue;
 		if (!f->name_space->is_derived_from(root_type))
@@ -410,7 +410,7 @@ void print_var(void *p, const string &name, const Class *t) {
 }
 
 void Script::show_vars(bool include_consts) {
-	for (auto *v: syntax->base_class->static_variables)
+	for (auto *v: syntax->base_class->static_variables.weak())
 		print_var(v->memory, v->name, v->type);
 	/*if (include_consts)
 		foreachi(LocalVariable &c, pre_script->Constant, i)
@@ -418,7 +418,7 @@ void Script::show_vars(bool include_consts) {
 }
 
 Array<const Class*> Script::classes() {
-	return syntax->base_class->classes;
+	return syntax->base_class->classes.weak();
 }
 
 Array<Function*> Script::functions() {
@@ -426,11 +426,11 @@ Array<Function*> Script::functions() {
 }
 
 Array<Variable*> Script::variables() {
-	return syntax->base_class->static_variables;
+	return syntax->base_class->static_variables.weak();
 }
 
 Array<Constant*> Script::constants() {
-	return syntax->base_class->constants;
+	return syntax->base_class->constants.weak();
 }
 
 const Class *Script::base_class() {

@@ -206,19 +206,19 @@ Array<Node*> Parser::parse_operand_extension_element(Node *operand) {
 				return {tree->shift_node(operand, deref, e.offset, e.type)};
 			}
 	}
-	for (auto *c: type->constants)
+	for (auto *c: type->constants.weak())
 		if (Exp.cur == c->name) {
 			Exp.next();
 			return {tree->add_node_const(c)};
 		}
-	for (auto *v: type->static_variables)
+	for (auto *v: type->static_variables.weak())
 		if (Exp.cur == v->name) {
 			Exp.next();
 			return {tree->add_node_global(v)};
 		}
 		
 	// sub-class
-	for (auto *c: type->classes)
+	for (auto *c: type->classes.weak())
 		if (Exp.cur == c->name) {
 			Exp.next();
 			return {tree->add_node_class(c)};
@@ -232,7 +232,7 @@ Array<Node*> Parser::parse_operand_extension_element(Node *operand) {
 
 	// class function?
 	Array<Node*> links;
-	for (auto *cf: type->functions)
+	for (auto *cf: type->functions.weak())
 		if (f_name == cf->name) {
 			links.add(tree->add_node_func_name(cf));
 			if (!cf->is_static() and !only_static)
@@ -1335,7 +1335,7 @@ Node *Parser::link_operator(PrimitiveOperator *primop, Node *param1, Node *param
 				auto inst = param1->params[0];
 				auto index = param1->params[1];
 				//msg_write(format("[]=...    void %s.__set__(%s, %s)?", inst->type->long_name(), index->type->long_name(), p2->long_name()));
-				for (auto *ff: inst->type->functions)
+				for (auto *ff: inst->type->functions.weak())
 					if (ff->name == "__set__" and ff->return_type == TypeVoid and ff->num_params == 2) {
 						if (ff->literal_param_type[0] != index->type)
 							continue;
@@ -1353,7 +1353,7 @@ Node *Parser::link_operator(PrimitiveOperator *primop, Node *param1, Node *param
 	}
 
 	// exact match as class function?
-	for (Function *f: pp1->functions)
+	for (auto *f: pp1->functions.weak())
 		if ((f->name == op_func_name) and !f->is_static()) {
 			// exact match as class function but missing a "&"?
 			auto type1 = f->literal_param_type[0];
@@ -1405,7 +1405,7 @@ Node *Parser::link_operator(PrimitiveOperator *primop, Node *param1, Node *param
 					t1_best = op->param_type_1;
 					t2_best = op->param_type_2;
 				}
-	for (auto *cf: p1->functions)
+	for (auto *cf: p1->functions.weak())
 		if (cf->name == op_func_name)
 			if (type_match_with_cast(param2, false, cf->literal_param_type[0], pen2, c2))
 				if (pen2 < pen_min) {
@@ -2998,7 +2998,7 @@ const Class *Parser::parse_type(const Class *ns, Flags flags) {
 		} else if (Exp.cur == ".") {
 			Exp.next();
 			const Class *sub = nullptr;
-			for (auto *c: t->classes)
+			for (auto *c: t->classes.weak())
 				if (c->name == Exp.cur)
 					sub = c;
 			if (!sub)
@@ -3134,7 +3134,7 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 void Parser::parse_all_function_bodies(const Class *name_space) {
 	//for (auto *f: name_space->functions)   might add lambda functions...
 	for (int i=0; i<name_space->functions.num; i++) {
-		auto f = name_space->functions[i];
+		auto f = name_space->functions[i].get();
 		if ((!f->is_extern()) and (f->_logical_line_no >= 0) and (f->name_space == name_space))
 			parse_function_body(f);
 	}
@@ -3143,7 +3143,7 @@ void Parser::parse_all_function_bodies(const Class *name_space) {
 	//for (auto *c: name_space->classes)   NO... might encounter new classes creating new functions!
 	for (int i=0; i<name_space->classes.num; i++)
 		if (name_space->classes[i]->name_space == name_space)
-			parse_all_function_bodies(name_space->classes[i]);
+			parse_all_function_bodies(name_space->classes[i].get());
 }
 
 Flags Parser::parse_flags(Flags initial) {

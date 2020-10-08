@@ -190,7 +190,7 @@ void relink_return(void *rip, void *rbp, void *rsp) {
 #endif
 
 const Class* _get_type(void *p, void *vtable, const Class *ns) {
-	for (auto *c: ns->classes) {
+	for (auto *c: ns->classes.weak()) {
 		if (c->_vtable_location_compiler_)
 			if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
 				return c;

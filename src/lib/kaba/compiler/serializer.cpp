@@ -1624,7 +1624,7 @@ void Serializer::resolve_deref_reg_shift() {
 void Serializer::serialize_function(Function *f) {
 	syntax_tree->create_asm_meta_info();
 	syntax_tree->asm_meta_info->line_offset = 0;
-	Asm::CurrentMetaInfo = syntax_tree->asm_meta_info;
+	Asm::CurrentMetaInfo = syntax_tree->asm_meta_info.get();
 
 	cur_func = f;
 	num_markers = 0;
@@ -1640,14 +1640,14 @@ void Serializer::serialize_function(Function *f) {
 			map_reg_root.add(i);//Asm::REG_R0+i);
 
 	} else {
-	if (config.allow_registers) {
-		map_reg_root.add(0); // eax
-		map_reg_root.add(1); // ecx
-		map_reg_root.add(2); // edx
-	//	MapRegRoot.add(3); // ebx
-	//	MapRegRoot.add(6); // esi
-	//	MapRegRoot.add(7); // edi
-	}
+		if (config.allow_registers) {
+			map_reg_root.add(0); // eax
+			map_reg_root.add(1); // ecx
+			map_reg_root.add(2); // edx
+		//	MapRegRoot.add(3); // ebx
+		//	MapRegRoot.add(6); // esi
+		//	MapRegRoot.add(7); // edi
+		}
 	}
 
 // serialize

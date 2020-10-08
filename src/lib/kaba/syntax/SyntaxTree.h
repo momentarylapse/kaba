@@ -65,6 +65,7 @@ public:
 	SyntaxTree(Script *_script);
 	~SyntaxTree();
 
+	void default_import();
 	void add_include_data(Script *s, bool indirect);
 
 	void do_error(const string &msg, int override_exp_no = -1, int override_line = -1);
@@ -164,16 +165,17 @@ public:
 	bool flag_function_pointer_as_code;
 
 	Class *base_class;
-	Class *imported_symbols;
+	shared<Class> _base_class;
+	shared<Class> imported_symbols;
 	Array<const Class*> owned_classes;
 	Array<Script*> includes;
 	Array<Define> defines;
-	Asm::MetaInfo *asm_meta_info;
+	owned<Asm::MetaInfo> asm_meta_info;
 	Array<AsmBlock> asm_blocks;
 	Array<Operator*> operators;
 	Array<Function*> functions;
 
-	Function *root_of_all_evil;
+	shared<Function> root_of_all_evil;
 
 	Script *script;
 	Parser *parser;

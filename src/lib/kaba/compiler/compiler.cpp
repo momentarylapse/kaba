@@ -75,10 +75,10 @@ void try_init_global_var(const Class *type, char* g_var, SyntaxTree *ps) {
 }
 
 void init_all_global_objects(SyntaxTree *ps, const Class *c) {
-	for (Variable *v: c->static_variables)
+	for (auto *v: c->static_variables.weak())
 		if (!v->is_extern)
 			try_init_global_var(v->type, (char*)v->memory, ps);
-	for (auto *cc: c->classes)
+	for (auto *cc: c->classes.weak())
 		init_all_global_objects(ps, cc);
 }
 
@@ -174,21 +174,21 @@ int mem_size_needed(const Class *c) {
 	int memory_size = 0;
 	if (c->vtable.num > 0)
 		memory_size += config.pointer_size * c->vtable.num;
-	for (auto *v: c->static_variables)
+	for (auto *v: c->static_variables.weak())
 		memory_size += mem_align(v->type->size, 4);
-	for (auto *cc: c->constants)
+	for (auto *cc: c->constants.weak())
 		memory_size += mem_align(cc->mapping_size(), 4);
 
-	for (auto *t: c->classes)
+	for (auto *t: c->classes.weak())
 		memory_size += mem_size_needed(t);
 	return memory_size;
 }
 
 int mem_size_needed_total(const Class *c) {
 	int size = mem_size_needed(c);
-	for (auto *v: c->static_variables)
+	for (auto *v: c->static_variables.weak())
 		size += mem_align(v->type->size, 4);
-	for (auto *cc: c->classes)
+	for (auto *cc: c->classes.weak())
 		size += mem_size_needed_total(cc);
 	return size;
 }
@@ -203,10 +203,10 @@ void Script::allocate_memory() {
 }
 
 void _update_const_locations(const Class *ns) {
-	for (auto *c: ns->constants) {
+	for (auto *c: ns->constants.weak()) {
 		c->address = c->p();
 	}
-	for (auto *c: ns->classes)
+	for (auto *c: ns->classes.weak())
 		_update_const_locations(c);
 }
 
@@ -216,7 +216,7 @@ void Script::update_constant_locations() {
 }
 
 void Script::_map_global_variables_to_memory(char *mem, int &offset, char *address, const Class *name_space) {
-	for (Variable *v: name_space->static_variables) {
+	for (auto *v: name_space->static_variables.weak()) {
 		if (v->is_extern) {
 			v->memory = get_external_link(v->cname(name_space, name_space->owner->base_class));
 			if (!v->memory)
@@ -228,7 +228,7 @@ void Script::_map_global_variables_to_memory(char *mem, int &offset, char *addre
 			//memset(v->memory, 0, v->type->size); // reset all global variables to 0
 		}
 	}
-	for (auto *cc: name_space->classes)
+	for (auto *cc: name_space->classes.weak())
 		_map_global_variables_to_memory(mem, offset, address, cc);
 }
 
@@ -277,13 +277,13 @@ void remap_virtual_tables(Script *s, char *mem, int &offset, char *address, cons
 		t->_vtable_location_compiler_ = &mem[offset];
 		t->_vtable_location_target_ = &address[offset];
 		offset += config.pointer_size * t->vtable.num;
-		for (Constant *c: s->syntax->base_class->constants)
+		for (Constant *c: s->syntax->base_class->constants.weak())
 			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data)) {
 				c->as_int64() = (int_p)t->_vtable_location_target_;
 			}
 	}
 
-	for (auto *c: ct->classes)
+	for (auto *c: ct->classes.weak())
 		remap_virtual_tables(s, mem, offset, address, c);
 }
 
@@ -291,7 +291,7 @@ void remap_virtual_tables(Script *s, char *mem, int &offset, char *address, cons
 void _map_constants_to_memory(char *mem, int &offset, char *address, const Class *ns) {
 
 	// also allow named constants... might be imported by other scripts!
-	for (Constant *c: ns->constants)
+	for (Constant *c: ns->constants.weak())
 		if (c->used or ((c->name[0] != '-') and !config.compile_os)) {
 			c->address = (void*)(address + offset);//ns->owner->asm_meta_info->code_origin + offset);
 		//	c->address = &mem[offset];
@@ -312,7 +312,7 @@ void _map_constants_to_memory(char *mem, int &offset, char *address, const Class
 			opcode_size += 1;
 		}*/
 
-	for (auto *c: ns->classes)
+	for (auto *c: ns->classes.weak())
 		_map_constants_to_memory(mem, offset, address, c);
 }
 
@@ -453,7 +453,7 @@ void Script::link_virtual_functions_into_vtable(const Class *c) {
 		}
 	}
 
-	for (const Class *cc: c->classes)
+	for (auto *cc: c->classes.weak())
 		link_virtual_functions_into_vtable(cc);
 }
 
@@ -493,7 +493,7 @@ DynamicLibraryImport *get_dynamic_lib(const string &filename, Script *s) {
 }
 
 void parse_magic_linker_string(SyntaxTree *s) {
-	for (auto *c: s->base_class->constants)
+	for (auto *c: s->base_class->constants.weak())
 		if (c->name == "KABA_LINK" and c->type == TypeString) {
 			DynamicLibraryImport *d = nullptr;
 			auto xx = c->as_string().explode("\n");
@@ -515,7 +515,7 @@ void parse_magic_linker_string(SyntaxTree *s) {
 
 // generate opcode
 void Script::compile() {
-	Asm::CurrentMetaInfo = syntax->asm_meta_info;
+	Asm::CurrentMetaInfo = syntax->asm_meta_info.get();
 
 	if (config.compile_os)
 		import_includes(this);
@@ -561,7 +561,7 @@ void Script::compile() {
 	link_functions();
 	link_virtual_functions_into_vtable(syntax->base_class);
 	if (config.compile_os)
-		link_virtual_functions_into_vtable(syntax->imported_symbols);
+		link_virtual_functions_into_vtable(syntax->imported_symbols.get());
 
 
 

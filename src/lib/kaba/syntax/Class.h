@@ -61,10 +61,10 @@ public:
 	bool is_pointer_silent() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;
-	Array<Function*> functions;
-	Array<Variable*> static_variables;
-	Array<Constant*> constants;
-	Array<const Class*> classes;
+	shared_array<Function> functions;
+	shared_array<Variable> static_variables;
+	shared_array<Constant> constants;
+	shared_array<const Class> classes;
 	const Class *parent; // derived from
 	const Class *param; // for pointers/arrays etc
 	const Class *name_space;
