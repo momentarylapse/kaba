@@ -274,11 +274,8 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			break;
 		case StatementID::NEW:{
 			// malloc()
-			Array<Node*> links = syntax_tree->get_existence("@malloc", nullptr, syntax_tree->base_class, false);
-			if (links.num == 0)
-				do_error("@malloc not found????");
-			add_function_call(links[0]->as_func(), {param_imm(TypeInt, ret.type->parent->size)}, ret);
-			clear_nodes(links);
+			auto f = syntax_tree->required_func_global("@malloc");
+			add_function_call(f, {param_imm(TypeInt, ret.type->parent->size)}, ret);
 
 			// __init__()
 			auto sub = com->params[0];
@@ -293,11 +290,8 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			add_cmd_destructor(operand, false);
 
 			// free()
-			Array<Node*> links = syntax_tree->get_existence("@free", nullptr, syntax_tree->base_class, false);
-			if (links.num == 0)
-				do_error("@free not found????");
-			add_function_call(links[0]->as_func(), {operand}, p_none);
-			clear_nodes(links);
+			auto f = syntax_tree->required_func_global("@free");
+			add_function_call(f, {operand}, p_none);
 			break;}
 		case StatementID::ASM:
 			add_cmd(INST_ASM);
@@ -310,8 +304,7 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 	}
 }
 
-void SerializerARM::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret)
-{
+void SerializerARM::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
 	auto index = com->as_func()->inline_no;
 	switch(index){
 		case InlineID::INT_ASSIGN:

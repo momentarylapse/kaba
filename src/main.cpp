@@ -253,7 +253,7 @@ public:
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts) {
 				msg_write("---- constants ----");
-				for (auto *c: s->syntax->base_class->constants.weak()) {
+				for (auto *c: weak(s->syntax->base_class->constants)) {
 					msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
 				}
 			}
@@ -383,7 +383,7 @@ public:
 			f->write_str(decode_symbol_name(fn->cname(fn->owner()->base_class)) + ":" + i2s(n));
 			f->write_int((int_p)fn->address);
 		}
-		for (auto *v: s->syntax->base_class->static_variables.weak()) {
+		for (auto *v: weak(s->syntax->base_class->static_variables)) {
 			f->write_str(decode_symbol_name(v->name));
 			f->write_int((int_p)v->memory);
 		}

@@ -141,7 +141,7 @@ ExceptionBlockData get_blocks(Script *s, Function *f, void* rip, const Class *ex
 			continue;
 
 		// are we in a try block?
-		for (Node *n: b->parent->params.weak()) {
+		for (auto n: weak(b->parent->params)) {
 			if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::TRY)) {
 				if (n->params[0]->as_block() == b) {
 					if (_verbose_exception_)
@@ -190,7 +190,7 @@ void relink_return(void *rip, void *rbp, void *rsp) {
 #endif
 
 const Class* _get_type(void *p, void *vtable, const Class *ns) {
-	for (auto *c: ns->classes.weak()) {
+	for (auto *c: weak(ns->classes)) {
 		if (c->_vtable_location_compiler_)
 			if ((c->_vtable_location_target_ == vtable) or (c->_vtable_location_external_ == vtable))
 				return c;

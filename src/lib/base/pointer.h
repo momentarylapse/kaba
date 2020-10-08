@@ -271,8 +271,21 @@ public:
 
 
 template <class T>
-class shared_array : public Array<shared<T>> {
+using shared_array = Array<shared<T>>;
+
+template <class T>
+class shared_arraywwww : public Array<shared<T>> {
 public:
+	/*shared_array() : Array<shared<T>>::Array() {}
+	shared_array(const shared_array &a) : Array<shared<T>>::Array(a) {}
+	shared_array(shared_array &&a) : Array<shared<T>>::Array(a) {}
+	shared_array(std::initializer_list<shared<T>> il) : shared_array() {
+		this->resize(il.size());
+		auto it = il.begin();
+		for (int i=0; i<this->num; i++)
+			(*this)[i] = *(it++);
+
+	}*/
 	const Array<T*> &weak() const {
 		return *(Array<T*>*)this;
 	}
@@ -280,6 +293,11 @@ public:
 		return *(Array<T*>*)this;
 	}
 };
+
+template <class T>
+const Array<T*> &weak(const shared_array<T> &a) {
+	return *(const Array<T*>*)&a;
+}
 
 #if 0
 template <class T>

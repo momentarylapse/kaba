@@ -1960,13 +1960,13 @@ Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list) {
 	return nullptr;
 }
 
-bool is_func(Node *n) {
+bool is_func(shared<Node> n) {
 	return (n->kind == NodeKind::FUNCTION_CALL or n->kind == NodeKind::VIRTUAL_CALL or n->kind == NodeKind::FUNCTION);
 }
 
 int check_needed(SyntaxTree *tree, Function *f) {
 	int ref_count = 0;
-	tree->transform([&](Node* n){ if (is_func(n) and n->as_func() == f) ref_count ++; return n; });
+	tree->transform([&](shared<Node> n){ if (is_func(n) and n->as_func() == f) ref_count ++; return n; });
 
 	if (f->is_static() and f->name == "main")
 		ref_count ++;

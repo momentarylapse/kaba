@@ -166,14 +166,13 @@ void Node::show(const Class *ns) const {
 	string orig;
 	msg_write(str(ns) + orig);
 	msg_right();
-	for (Node *p: params.weak())
+	for (auto p: params)
 		if (p)
 			p->show(ns);
 		else
 			msg_write("<-NULL->");
 	msg_left();
 }
-
 
 
 
@@ -190,12 +189,12 @@ Block::Block(Function *f, Block *_parent) :
 }
 
 
-void Block::add(Node *c) {
+void Block::add(shared<Node> c) {
 	if (c)
 		params.add(c);
 }
 
-void Block::set(int index, Node *c) {
+void Block::set(int index, shared<Node> c) {
 	params[index] = c;
 }
 
@@ -222,11 +221,7 @@ const Class *Block::name_space() const {
 	return function->name_space;
 }
 
-static int _node_count = 0;
-
 Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
-	_node_count ++;
-//	msg_write("+Node");
 	type = _type;
 	kind = _kind;
 	link_no = _link_no;
@@ -234,8 +229,6 @@ Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
 }
 
 Node::~Node() {
-	_node_count --;
-//	msg_write("-Node");
 }
 
 Node *Node::modifiable() {
@@ -296,7 +289,7 @@ PrimitiveOperator *Node::as_prim_op() const {
 	return (PrimitiveOperator*)link_no;
 }
 
-void Node::set_instance(Node *p) {
+void Node::set_instance(shared<Node> p) {
 #ifndef NDEBUG
 	if (params.num == 0)
 		msg_write("no inst...dfljgkldfjg");
@@ -308,7 +301,7 @@ void Node::set_num_params(int n) {
 	params.resize(n);
 }
 
-void Node::set_param(int index, Node *p) {
+void Node::set_param(int index, shared<Node> p) {
 #ifndef NDEBUG
 	/*if ((index < 0) or (index >= uparams.num)){
 		show();

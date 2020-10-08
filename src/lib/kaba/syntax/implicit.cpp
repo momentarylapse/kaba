@@ -16,17 +16,17 @@ void Parser::do_error_implicit(Function *f, const string &str) {
 	do_error(format("[auto generating %s] : %s", f->signature(), str), ex, line);
 }
 
-void Parser::auto_implement_add_virtual_table(Node *self, Function *f, const Class *t) {
+void Parser::auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t) {
 	if (t->vtable.num > 0) {
-		Node *p = tree->shift_node(self, false, 0, TypePointer);
+		auto p = tree->shift_node(self, false, 0, TypePointer);
 		auto *c = tree->add_constant_pointer(TypePointer, t->_vtable_location_target_);
-		Node *n_0 = tree->add_node_const(c);
-		Node *n_assign = tree->add_node_operator_by_inline(p, n_0, InlineID::POINTER_ASSIGN);
+		auto n_0 = tree->add_node_const(c);
+		auto n_assign = tree->add_node_operator_by_inline(p, n_0, InlineID::POINTER_ASSIGN);
 		f->block->add(n_assign);
 	}
 }
 
-void Parser::auto_implement_add_child_constructors(Node *n_self, Function *f, const Class *t) {
+void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function *f, const Class *t) {
 	int i0 = t->parent ? t->parent->elements.num : 0;
 	foreachi(ClassElement &e, t->elements, i) {
 		if (i < i0)
@@ -36,17 +36,17 @@ void Parser::auto_implement_add_child_constructors(Node *n_self, Function *f, co
 			do_error_implicit(f, format("missing default constructor for element %s", e.name));
 		if (!ff)
 			continue;
-		Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
-		Node *c = tree->add_node_member_call(ff, p);
+		auto p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
+		auto c = tree->add_node_member_call(ff, p);
 		f->block->add(c);
 	}
 
 	if (flags_has(t->flags, Flags::SHARED)) {
 		for (auto &e: t->elements)
 			if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
-				Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
-				Node *zero = tree->add_node_const(tree->add_constant_int(0));
-				Node *c = tree->add_node_operator_by_inline(p, zero, InlineID::INT_ASSIGN);
+				auto p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
+				auto zero = tree->add_node_const(tree->add_constant_int(0));
+				auto c = tree->add_node_operator_by_inline(p, zero, InlineID::INT_ASSIGN);
 				f->block->add(c);
 			}
 	}
@@ -55,16 +55,16 @@ void Parser::auto_implement_add_child_constructors(Node *n_self, Function *f, co
 void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_parent_constructor) {
 	if (!f)
 		return;
-	Node *n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()) {
-		Node *n_el_size = tree->add_node_const(tree->add_constant_int(t->param->size));
-		Node *n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
+		auto n_el_size = tree->add_node_const(tree->add_constant_int(t->param->size));
+		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
 		n_mem_init->set_param(1, n_el_size);
 		f->block->add(n_mem_init);
 	}else if (t->is_dict()) {
-		Node *n_el_size = tree->add_node_const(tree->add_constant_int(t->param->size + TypeString->size));
-		Node *n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
+		auto n_el_size = tree->add_node_const(tree->add_constant_int(t->param->size + TypeString->size));
+		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
 		n_mem_init->set_param(1, n_el_size);
 		f->block->add(n_mem_init);
 	}else if (t->is_array()) {
@@ -73,15 +73,14 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 			do_error_implicit(f, format("missing default constructor for %s", t->param->long_name()));
 		if (pc_el_init) {
 			for (int i=0; i<t->array_length; i++) {
-				Node *n_el = tree->shift_node(tree->cp_node(n_self), false, t->param->size * i, t->param);
-				Node *n_init_el = tree->add_node_member_call(pc_el_init, n_el);
+				auto n_el = tree->shift_node(tree->cp_node(n_self), false, t->param->size * i, t->param);
+				auto n_init_el = tree->add_node_member_call(pc_el_init, n_el);
 				f->block->add(n_init_el);
 			}
 		}
-		delete n_self;
 	} else if (t->is_pointer_shared()) {
-		Node *n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
-		Node *n_op = tree->add_node_operator_by_inline(tree->shift_node(n_self, false, 0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
+		auto n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
+		auto n_op = tree->add_node_operator_by_inline(tree->shift_node(n_self, false, 0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
 		f->block->add(n_op);
 	} else {
 
@@ -91,7 +90,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 			Function *pc_def = t->parent->get_default_constructor();
 			if (pc_same) {
 				// first, try same signature
-				Node *n_init_parent = tree->add_node_member_call(pc_same, tree->cp_node(n_self));
+				auto n_init_parent = tree->add_node_member_call(pc_same, tree->cp_node(n_self));
 				for (int i=0; i<pc_same->num_params; i++)
 					n_init_parent->set_param(i+1, tree->add_node_local(f->var[i]));
 				f->block->add(n_init_parent);
@@ -110,14 +109,13 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 		// after child constructor (otherwise would get overwritten)
 		if (t->vtable.num > 0)
 			auto_implement_add_virtual_table(tree->cp_node(n_self), f, t);
-		delete n_self;
 	}
 }
 
 void Parser::auto_implement_destructor(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Node *n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array() or t->is_dict()) {
 		Function *f_clear = t->get_func("clear", TypeVoid, {});
@@ -128,14 +126,13 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 		auto *pc_el_init = t->param->get_destructor();
 		if (pc_el_init) {
 			for (int i=0; i<t->array_length; i++){
-				Node *p = tree->shift_node(tree->cp_node(n_self), false, t->param->size * i, t->param);
-				Node *c = tree->add_node_member_call(pc_el_init, p);
+				auto p = tree->shift_node(tree->cp_node(n_self), false, t->param->size * i, t->param);
+				auto c = tree->add_node_member_call(pc_el_init, p);
 				f->block->add(c);
 			}
 		} else if (t->param->needs_destructor()) {
 			do_error_implicit(f, "element desctructor missing");
 		}
-		delete n_self;
 	} else if (t->is_pointer_shared()) {
 		// call clear()
 		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
@@ -155,7 +152,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 				do_error_implicit(f, format("missing destructor for element %s", e.name));
 			if (!ff)
 				continue;
-			Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
+			auto p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
 			f->block->add(tree->add_node_member_call(ff, p));
 		}
 
@@ -167,15 +164,14 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 			else if (t->parent->needs_destructor())
 				do_error_implicit(f, "parent desctructor missing");
 		}
-		delete n_self;
 	}
 }
 
 void Parser::auto_implement_assign(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Node *n_other = tree->add_node_local(f->__get_var("other"));
-	Node *n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_other = tree->add_node_local(f->__get_var("other"));
+	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array() or t->is_array()){
 
@@ -185,9 +181,9 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 				do_error_implicit(f, format("no %s.resize(int) found", t->long_name()));
 
 			// self.resize(other.num)
-			Node *n_other_num = tree->shift_node(n_other, false, config.pointer_size, TypeInt);
+			auto n_other_num = tree->shift_node(n_other, false, config.pointer_size, TypeInt);
 
-			Node *n_resize = tree->add_node_member_call(f_resize, n_self);
+			auto n_resize = tree->add_node_member_call(f_resize, n_self);
 			n_resize->set_num_params(2);
 			n_resize->set_param(1, n_other_num);
 			f->block->add(n_resize);
@@ -202,18 +198,18 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 		Block *b = new Block(f, f->block.get());
 
 		// other[i]
-		Node *n_other_el;
+		shared<Node> n_other_el;
 		if (t->is_array())
 			n_other_el = tree->add_node_array(tree->cp_node(n_other), tree->add_node_local(v_i));
 		else
 			n_other_el = tree->add_node_dyn_array(tree->cp_node(n_other), tree->add_node_local(v_i));
 
-		Node *n_assign = link_operator_id(OperatorID::ASSIGN, tree->deref_node(tree->add_node_local(v_el)), n_other_el);
+		auto n_assign = link_operator_id(OperatorID::ASSIGN, tree->deref_node(tree->add_node_local(v_el)), n_other_el);
 		if (!n_assign)
 			do_error_implicit(f, format("no %s.__assign__() found", t->param->long_name()));
 		b->add(n_assign);
 
-		Node *n_for = tree->add_node_statement(StatementID::FOR_ARRAY);
+		auto n_for = tree->add_node_statement(StatementID::FOR_ARRAY);
 		// [VAR, INDEX, ARRAY, BLOCK]
 		n_for->set_param(0, tree->add_node_local(v_el));
 		n_for->set_param(1, tree->add_node_local(v_i));
@@ -225,11 +221,11 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 
 		// parent assignment
 		if (t->parent) {
-			Node *p = tree->cp_node(n_self);
-			Node *o = tree->cp_node(n_other);
+			auto p = tree->cp_node(n_self);
+			auto o = tree->cp_node(n_other);
 			p->type = o->type = t->parent;
 
-			Node *cmd_assign = link_operator_id(OperatorID::ASSIGN, p, o);
+			auto cmd_assign = link_operator_id(OperatorID::ASSIGN, p, o);
 			if (!cmd_assign)
 				do_error_implicit(f, "missing parent default constructor");
 			f->block->add(cmd_assign);
@@ -240,16 +236,14 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 		foreachi(ClassElement &e, t->elements, i) {
 			if (i < i0)
 				continue;
-			Node *p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
-			Node *o = tree->shift_node(tree->cp_node(n_other), false, e.offset, e.type); // needed for call-by-ref conversion!
+			auto p = tree->shift_node(tree->cp_node(n_self), false, e.offset, e.type);
+			auto o = tree->shift_node(tree->cp_node(n_other), false, e.offset, e.type); // needed for call-by-ref conversion!
 
-			Node *n_assign = link_operator_id(OperatorID::ASSIGN, p, o);
+			auto n_assign = link_operator_id(OperatorID::ASSIGN, p, o);
 			if (!n_assign)
 				do_error_implicit(f, format("no %s.__assign__ for element \"%s\"", e.type->long_name(), e.name));
 			f->block->add(n_assign);
 		}
-
-		delete n_self;
 	}
 }
 
@@ -258,7 +252,7 @@ void Parser::auto_implement_array_clear(Function *f, const Class *t) {
 	if (!f)
 		return;
 
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 // delete...
 	Function *f_del = t->param->get_destructor();
@@ -270,10 +264,10 @@ void Parser::auto_implement_array_clear(Function *f, const Class *t) {
 		Block *b = new Block(f, f->block.get());
 
 		// __delete__
-		Node *cmd_delete = tree->add_node_member_call(f_del, tree->deref_node(tree->add_node_local(var_el)));
+		auto cmd_delete = tree->add_node_member_call(f_del, tree->deref_node(tree->add_node_local(var_el)));
 		b->add(cmd_delete);
 
-		Node *cmd_for = tree->add_node_statement(StatementID::FOR_ARRAY);
+		auto cmd_for = tree->add_node_statement(StatementID::FOR_ARRAY);
 		cmd_for->set_param(0, tree->add_node_local(var_el));
 		cmd_for->set_param(1, tree->add_node_local(var_i));
 		cmd_for->set_param(2, tree->cp_node(self));
@@ -285,7 +279,7 @@ void Parser::auto_implement_array_clear(Function *f, const Class *t) {
 	}
 
 	// clear
-	Node *cmd_clear = tree->add_node_member_call(t->get_func("__mem_clear__", TypeVoid, {}), self);
+	auto cmd_clear = tree->add_node_member_call(t->get_func("__mem_clear__", TypeVoid, {}), self);
 	f->block->add(cmd_clear);
 }
 
@@ -296,13 +290,13 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 	auto *var = f->block->add_var("i", TypeInt);
 	f->block->add_var("num_old", TypeInt);
 
-	Node *num = tree->add_node_local(f->__get_var("num"));
+	auto num = tree->add_node_local(f->__get_var("num"));
 
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	Node *self_num = tree->shift_node(self, false, config.pointer_size, TypeInt);
+	auto self_num = tree->shift_node(self, false, config.pointer_size, TypeInt);
 
-	Node *num_old = tree->add_node_local(f->__get_var("num_old"));
+	auto num_old = tree->add_node_local(f->__get_var("num_old"));
 
 	// num_old = self.num
 	f->block->add(tree->add_node_operator_by_inline(num_old, self_num, InlineID::INT_ASSIGN));
@@ -314,14 +308,14 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
-		Node *el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
+		auto el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
 
 		// __delete__
-		Node *cmd_delete = tree->add_node_member_call(f_del, el);
+		auto cmd_delete = tree->add_node_member_call(f_del, el);
 		b->add(cmd_delete);
 
 		//  [VAR, START, STOP, STEP, BLOCK]
-		Node *cmd_for = tree->add_node_statement(StatementID::FOR_RANGE);
+		auto cmd_for = tree->add_node_statement(StatementID::FOR_RANGE);
 		cmd_for->set_param(0, tree->add_node_local(var));
 		cmd_for->set_param(1, tree->cp_node(num));
 		cmd_for->set_param(2, tree->cp_node(self_num));
@@ -334,7 +328,7 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 	}
 
 	// resize
-	Node *c_resize = tree->add_node_member_call(t->get_func("__mem_resize__", TypeVoid, {TypeInt}), tree->cp_node(self));
+	auto c_resize = tree->add_node_member_call(t->get_func("__mem_resize__", TypeVoid, {TypeInt}), tree->cp_node(self));
 	c_resize->set_param(1, num);
 	f->block->add(c_resize);
 
@@ -345,14 +339,14 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
-		Node *el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
+		auto el = tree->add_node_dyn_array(tree->cp_node(self), tree->add_node_local(var));
 
 		// __init__
-		Node *cmd_init = tree->add_node_member_call(f_init, el);
+		auto cmd_init = tree->add_node_member_call(f_init, el);
 		b->add(cmd_init);
 
 		//  [VAR, START, STOP, STEP, BLOCK]
-		Node *cmd_for = tree->add_node_statement(StatementID::FOR_RANGE);
+		auto cmd_for = tree->add_node_statement(StatementID::FOR_RANGE);
 		cmd_for->set_param(0, tree->add_node_local(var));
 		cmd_for->set_param(1, tree->cp_node(num_old));
 		cmd_for->set_param(2, tree->cp_node(self_num));
@@ -370,25 +364,25 @@ void Parser::auto_implement_array_remove(Function *f, const Class *t) {
 	if (!f)
 		return;
 
-	Node *index = tree->add_node_local(f->__get_var("index"));
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto index = tree->add_node_local(f->__get_var("index"));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	// delete...
 	Function *f_del = t->param->get_destructor();
 	if (f_del) {
 
 		// el := self[index]
-		Node *cmd_el = tree->add_node_dyn_array(tree->cp_node(self), tree->cp_node(index));
+		auto cmd_el = tree->add_node_dyn_array(tree->cp_node(self), tree->cp_node(index));
 
 		// __delete__
-		Node *cmd_delete = tree->add_node_member_call(f_del, cmd_el);
+		auto cmd_delete = tree->add_node_member_call(f_del, cmd_el);
 		f->block->params.add(cmd_delete);
 	} else if (t->param->needs_destructor()) {
 		do_error_implicit(f, "element destructor missing");
 	}
 
 	// resize
-	Node *c_remove = tree->add_node_member_call(t->get_func("__mem_remove__", TypeVoid, {TypeInt}), self);
+	auto c_remove = tree->add_node_member_call(t->get_func("__mem_remove__", TypeVoid, {TypeInt}), self);
 	c_remove->set_param(1, index);
 	f->block->params.add(c_remove);
 }
@@ -397,26 +391,26 @@ void Parser::auto_implement_array_add(Function *f, const Class *t) {
 	if (!f)
 		return;
 	Block *b = f->block.get();
-	Node *item = tree->add_node_local(b->get_var("x"));
+	auto item = tree->add_node_local(b->get_var("x"));
 
-	Node *self = tree->add_node_local(b->get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(b->get_var(IDENTIFIER_SELF));
 
-	Node *self_num = tree->shift_node(tree->cp_node(self), false, config.pointer_size, TypeInt);
+	auto self_num = tree->shift_node(tree->cp_node(self), false, config.pointer_size, TypeInt);
 
 
 	// resize(self.num + 1)
-	Node *cmd_1 = tree->add_node_const(tree->add_constant_int(1));
-	Node *cmd_add = tree->add_node_operator_by_inline(self_num, cmd_1, InlineID::INT_ADD);
-	Node *cmd_resize = tree->add_node_member_call(t->get_func("resize", TypeVoid, {TypeInt}), self);
+	auto cmd_1 = tree->add_node_const(tree->add_constant_int(1));
+	auto cmd_add = tree->add_node_operator_by_inline(self_num, cmd_1, InlineID::INT_ADD);
+	auto cmd_resize = tree->add_node_member_call(t->get_func("resize", TypeVoid, {TypeInt}), self);
 	cmd_resize->set_param(1, cmd_add);
 	b->add(cmd_resize);
 
 
 	// el := self.data[self.num - 1]
-	Node *cmd_sub = tree->add_node_operator_by_inline(tree->cp_node(self_num), tree->cp_node(cmd_1), InlineID::INT_SUBTRACT);
-	Node *cmd_el = tree->add_node_dyn_array(tree->cp_node(self), cmd_sub);
+	auto cmd_sub = tree->add_node_operator_by_inline(tree->cp_node(self_num), tree->cp_node(cmd_1), InlineID::INT_SUBTRACT);
+	auto cmd_el = tree->add_node_dyn_array(tree->cp_node(self), cmd_sub);
 
-	Node *cmd_assign = link_operator_id(OperatorID::ASSIGN, cmd_el, item);
+	auto cmd_assign = link_operator_id(OperatorID::ASSIGN, cmd_el, item);
 	if (!cmd_assign)
 		do_error_implicit(f, format("no %s.%s for elements", t->param->long_name(), IDENTIFIER_FUNC_ASSIGN));
 	b->add(cmd_assign);
@@ -427,10 +421,10 @@ void Parser::auto_implement_array_add(Function *f, const Class *t) {
 void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Node *p = tree->add_node_local(f->__get_var("p"));
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto p = tree->add_node_local(f->__get_var("p"));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	Node *self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
+	auto self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
 
 	// call clear()
 	auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
@@ -454,8 +448,8 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
-	Node *self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
 
 
 	// if self.p
@@ -464,12 +458,12 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	//     self.p = nil
 
 
-	Node *cmd_if = tree->add_node_statement(StatementID::IF);
+	auto cmd_if = tree->add_node_statement(StatementID::IF);
 	f->block->add(cmd_if);
 
 	// if self.p
-	Array<Node*> links = tree->get_existence("p2b", nullptr, tree->base_class, false);
-	auto cmd_cmp = tree->add_node_call(links[0]->as_func());
+	auto ff = tree->required_func_global("p2b");
+	auto cmd_cmp = tree->add_node_call(ff);
 	cmd_cmp->set_param(0, tree->cp_node(self_p));
 	cmd_if->set_param(0, cmd_cmp);
 
@@ -477,7 +471,7 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	cmd_if->set_param(1, b);
 
 
-	Node *cmd_if_del = tree->add_node_statement(StatementID::IF);
+	auto cmd_if_del = tree->add_node_statement(StatementID::IF);
 	b->add(cmd_if_del);
 
 	// self.p.unref()
@@ -492,15 +486,15 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 
 
 	// del self
-	Node *cmd_del = tree->add_node_statement(StatementID::DELETE);
+	auto cmd_del = tree->add_node_statement(StatementID::DELETE);
 	cmd_del->set_param(0, tree->cp_node(self_p));
 	b2->add(cmd_del);
 	cmd_if_del->set_param(1, b2);
 
 
 	// self = nil
-	Node *n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
-	Node *n_op = tree->add_node_operator_by_inline(self_p, n_null, InlineID::POINTER_ASSIGN);
+	auto n_null = tree->add_node_const(tree->add_constant_pointer(t->param->get_pointer(), nullptr));
+	auto n_op = tree->add_node_operator_by_inline(self_p, n_null, InlineID::POINTER_ASSIGN);
 	b->add(n_op);
 }
 
@@ -508,8 +502,8 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 	if (!f)
 		return;
-	Node *p = tree->add_node_local(f->__get_var("p"));
-	Node *r = tree->add_node_local(f->__get_var(IDENTIFIER_RETURN_VAR));
+	auto p = tree->add_node_local(f->__get_var("p"));
+	auto r = tree->add_node_local(f->__get_var(IDENTIFIER_RETURN_VAR));
 
 
 	// r = p
@@ -521,7 +515,7 @@ void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 	f->block->add(call_assign);
 
 	// return r
-	Node *ret = tree->add_node_statement(StatementID::RETURN);
+	auto ret = tree->add_node_statement(StatementID::RETURN);
 	ret->set_num_params(1);
 	ret->set_param(0, r);
 	f->block->add(ret);
@@ -531,12 +525,12 @@ void Parser::auto_implement_shared_ref(Function *f, const Class *t) {
 	if (!f)
 		return;
 
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 	for (auto &e: t->elements)
 		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
 			// count ++
-			Node *count = tree->shift_node(self, false, e.offset, e.type);
-			Node *inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
+			auto count = tree->shift_node(self, false, e.offset, e.type);
+			auto inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
 			f->block->add(inc);
 		}
 }
@@ -545,18 +539,18 @@ void Parser::auto_implement_shared_unref(Function *f, const Class *t) {
 	if (!f)
 		return;
 
-	Node *self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 	for (auto &e: t->elements)
 		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
 			// count --
-			Node *count = tree->shift_node(self, false, e.offset, e.type);
-			Node *dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
+			auto count = tree->shift_node(self, false, e.offset, e.type);
+			auto dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
 			f->block->add(dec);
 
 			// return (count == 0)
-			Node *ret = tree->add_node_statement(StatementID::RETURN);
-			Node *zero = tree->add_node_const(tree->add_constant_int(0));
-			Node *cmp = tree->add_node_operator_by_inline(tree->cp_node(count), zero, InlineID::INT_EQUAL);
+			auto ret = tree->add_node_statement(StatementID::RETURN);
+			auto zero = tree->add_node_const(tree->add_constant_int(0));
+			auto cmp = tree->add_node_operator_by_inline(tree->cp_node(count), zero, InlineID::INT_EQUAL);
 			ret->set_num_params(1);
 			ret->set_param(0, cmp);
 			f->block->add(ret);

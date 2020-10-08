@@ -18,13 +18,13 @@ void SetImmortal(SyntaxTree *ps) {
 }
 
 static bool _class_contains(const Class *c, const string &name) {
-	for (auto *cc: c->classes.weak())
+	for (auto *cc: weak(c->classes))
 		if (cc->name == name)
 			return true;
-	for (auto *f: c->functions.weak())
+	for (auto *f: weak(c->functions))
 		if (f->name == name)
 			return true;
-	for (auto *cc: c->constants.weak())
+	for (auto *cc: weak(c->constants))
 		if (cc->name == name)
 			return true;
 	return false;
@@ -52,13 +52,13 @@ void SyntaxTree::add_include_data(Script *s, bool indirect) {
 	if (indirect) {
 		imported_symbols->classes.add(ps->base_class);
 	} else {
-		for (auto *c: ps->base_class->classes.weak())
+		for (auto *c: weak(ps->base_class->classes))
 			imported_symbols->classes.add(c);
-		for (auto *f: ps->base_class->functions.weak())
+		for (auto *f: weak(ps->base_class->functions))
 			imported_symbols->functions.add(f);
-		for (auto *v: ps->base_class->static_variables.weak())
+		for (auto *v: weak(ps->base_class->static_variables))
 			imported_symbols->static_variables.add(v);
-		for (auto *c: ps->base_class->constants.weak())
+		for (auto *c: weak(ps->base_class->constants))
 			imported_symbols->constants.add(c);
 		if (s->filename.basename().find(".kaba") < 0)
 			if (!_class_contains(imported_symbols.get(), ps->base_class->name)) {

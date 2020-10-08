@@ -279,7 +279,7 @@ bool Class::is_derived_from_s(const string &root) const {
 
 // don't care if static
 Function *Class::get_func(const string &_name, const Class *return_type, const Array<const Class*> &params) const {
-	for (auto *f: functions.weak())
+	for (auto *f: weak(functions))
 		if ((f->name == _name) and (f->literal_return_type == return_type) and (f->num_params == params.num)) {
 			bool match = true;
 			for (int i=0; i<params.num; i++) {
@@ -304,7 +304,7 @@ Function *Class::get_default_constructor() const {
 
 Array<Function*> Class::get_constructors() const {
 	Array<Function*> c;
-	for (auto *f: functions.weak())
+	for (auto *f: weak(functions))
 		if ((f->name == IDENTIFIER_FUNC_INIT) and (f->literal_return_type == TypeVoid))
 			c.add(f);
 	return c;
@@ -319,7 +319,7 @@ Function *Class::get_assign() const {
 }
 
 Function *Class::get_get(const Class *index) const {
-	for (auto *cf: functions.weak()) {
+	for (auto *cf: weak(functions)) {
 		if (cf->name != IDENTIFIER_FUNC_GET)
 			continue;
 		if (cf->num_params != 1)
@@ -332,7 +332,7 @@ Function *Class::get_get(const Class *index) const {
 }
 
 Function *Class::get_virtual_function(int virtual_index) const {
-	for (auto *f: functions.weak())
+	for (auto *f: weak(functions))
 		if (f->virtual_index == virtual_index)
 			return f;
 	return nullptr;
@@ -353,7 +353,7 @@ void Class::link_virtual_table() {
 		vtable[1] = mf(&VirtualBase::__delete_external__);
 
 	// link virtual functions into vtable
-	for (auto *cf: functions.weak()) {
+	for (auto *cf: weak(functions)) {
 		if (cf->virtual_index >= 0) {
 			//msg_write(i2s(cf->virtual_index) + ": " + cf->signature());
 			if (cf->virtual_index >= vtable.num)
@@ -374,7 +374,7 @@ void Class::link_external_virtual_table(void *p) {
 	VirtualTable *t = (VirtualTable*)p;
 	vtable.clear();
 	int max_vindex = 1;
-	for (auto *cf: functions.weak())
+	for (auto *cf: weak(functions))
 		if (cf->virtual_index >= 0) {
 			cf->address = t[cf->virtual_index];
 			if (cf->virtual_index >= vtable.num)
@@ -439,7 +439,7 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 		// override?
 		Function *orig = nullptr;
 		int orig_index = -1;
-		foreachi (auto *ocf, functions.weak(), i)
+		foreachi (auto *ocf, weak(functions), i)
 			if (class_func_match(f, ocf)) {
 				orig = ocf;
 				orig_index = i;
@@ -483,7 +483,7 @@ void Class::derive_from(const Class* root, bool increase_size) {
 	elements = parent->elements;
 
 	// inheritance of functions
-	for (auto *f: parent->functions.weak()) {
+	for (auto *f: weak(parent->functions)) {
 		if (f->name == IDENTIFIER_FUNC_ASSIGN)
 			continue;
 		Function *ff = f;

@@ -421,7 +421,7 @@ int _class_override_num_params = -1;
 void _class_add_member_func(const Class *ccc, Function *f, Flags flag) {
 	Class *c = const_cast<Class*>(ccc);
 	if (flags_has(flag, Flags::OVERRIDE)) {
-		foreachi(Function *ff, c->functions.weak(), i)
+		foreachi(Function *ff, weak(c->functions), i)
 			if (ff->name == f->name) {
 				if (_class_override_num_params < 0 or _class_override_num_params == ff->num_params) {
 					//msg_write("OVERRIDE");
