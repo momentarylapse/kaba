@@ -5,6 +5,10 @@
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 
+
+//#include <vulkan/vulkan.h>
+#include "lib/vulkan/vulkan.h"
+
 string AppName = "Kaba";
 string AppVersion = Kaba::Version;
 
@@ -38,6 +42,17 @@ static void _x_call_float() {
 
 int extern_function2() {
 	return 2001;
+}
+
+void rtx_init() {
+	auto shader = vulkan::Shader::load("rtx.shader");
+
+	auto rp = new vulkan::RayPipeline(shader);
+}
+
+
+void rtx_step() {
+
 }
 
 static int extern_variable1 = 13;
@@ -214,6 +229,9 @@ public:
 		Kaba::link_external("__xxx", (void*)&_x_call_float);
 		Kaba::link_external("Test2", (void*)&extern_function2);
 		Kaba::link_external("extern_variable1", (void*)&extern_variable1);
+
+		Kaba::link_external("rtx_init", (void*)&rtx_init);
+		Kaba::link_external("rtx_step", (void*)&rtx_step);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);

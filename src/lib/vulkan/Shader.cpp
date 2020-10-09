@@ -264,9 +264,6 @@ namespace vulkan{
 	Path Shader::directory;
 
 	Shader::Shader() {
-		vert_module = nullptr;
-		geom_module = nullptr;
-		frag_module = nullptr;
 		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		push_size = 0;
 
@@ -275,12 +272,8 @@ namespace vulkan{
 
 	Shader::~Shader() {
 		std::cout << "delete shader" << "\n";
-		if (vert_module)
-			vkDestroyShaderModule(device, vert_module, nullptr);
-		if (geom_module)
-			vkDestroyShaderModule(device, geom_module, nullptr);
-		if (frag_module)
-			vkDestroyShaderModule(device, frag_module, nullptr);
+		for (auto &m: modules)
+			vkDestroyShaderModule(device, m.module, nullptr);
 		for (auto &l: descr_layouts) {
 			DescriptorSet::destroy_layout(l);
 		}
@@ -353,11 +346,21 @@ namespace vulkan{
 				} else if (tag == "Input") {
 				} else if (tag == "Info") {
 				} else if (tag == "VertexShader") {
-					s->vert_module = create_shader_module(value);
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_VERTEX_BIT});
 				} else if (tag == "GeometryShader") {
-					s->geom_module = create_shader_module(value);
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_GEOMETRY_BIT});
 				} else if (tag == "FragmentShader") {
-					s->frag_module = create_shader_module(value);
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_FRAGMENT_BIT});
+				} else if (tag == "ComputeShader") {
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_COMPUTE_BIT});
+				} else if (tag == "RayGenShader") {
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_RAYGEN_BIT_NV});
+				} else if (tag == "RayMissShader") {
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_MISS_BIT_NV});
+				} else if (tag == "RayClosestHitShader") {
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV});
+				} else if (tag == "RayAnyHitShader") {
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_ANY_HIT_BIT_NV});
 				} else {
 					std::cerr << "WARNING: " << value.c_str() << "\n";
 				}

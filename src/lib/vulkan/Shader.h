@@ -45,9 +45,11 @@ namespace vulkan{
 		void __init__();
 		void __delete__();
 
-		VkShaderModule vert_module;
-		VkShaderModule geom_module;
-		VkShaderModule frag_module;
+		struct Module {
+			VkShaderModule module;
+			VkShaderStageFlagBits stage;
+		};
+		Array<Module> modules;
 
 		Array<VkDescriptorSetLayout> descr_layouts;
 		int push_size;

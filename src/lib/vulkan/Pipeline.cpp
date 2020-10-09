@@ -59,40 +59,65 @@ namespace vulkan {
 	}
 
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) {
-	shader = _shader;
-	render_pass = _render_pass;
-	subpass = _subpass;
+
+Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
+	Array<VkPipelineShaderStageCreateInfo> shader_stages;
+	for (auto &m: shader->modules) {
+		VkPipelineShaderStageCreateInfo shader_stage_info = {};
+		shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shader_stage_info.stage = m.stage;
+		shader_stage_info.module = m.module;
+		shader_stage_info.pName = "main";
+		shader_stages.add(shader_stage_info);
+	}
+	// TODO sort?
+	return shader_stages;
+}
+
+BasePipeline::BasePipeline(Shader *s) {
+	shader = s;
 	descr_layouts = shader->descr_layouts;
 	pipeline = nullptr;
 	layout = nullptr;
 
+	shader_stages = create_shader_stages(shader);
 
-	VkPipelineShaderStageCreateInfo vert_shader_stage_info = {};
-	vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_shader_stage_info.module = shader->vert_module;
-	vert_shader_stage_info.pName = "main";
-
-	VkPipelineShaderStageCreateInfo geom_shader_stage_info = {};
-	geom_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	geom_shader_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-	geom_shader_stage_info.module = shader->geom_module;
-	geom_shader_stage_info.pName = "main";
-
-	VkPipelineShaderStageCreateInfo frag_shader_stage_info = {};
-	frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_shader_stage_info.module = shader->frag_module;
-	frag_shader_stage_info.pName = "main";
-
-	shader_stages = {vert_shader_stage_info, frag_shader_stage_info};
-	if (shader->geom_module) {
-		shader_stages.add(geom_shader_stage_info);
-		//shader_stages = {vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo};
+	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+	VkPushConstantRange pci = {0};
+	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	if (shader->push_size > 0) {
+		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
+		pci.offset = 0;
+		pci.size = shader->push_size;
+		pipeline_layout_info.pushConstantRangeCount = 1;
+		pipeline_layout_info.pPushConstantRanges = &pci;
 	} else {
-		//shader_stages = {vertShaderStageInfo, fragShaderStageInfo};
+		pipeline_layout_info.pushConstantRangeCount = 0;
 	}
+	pipeline_layout_info.setLayoutCount = descr_layouts.num;
+	pipeline_layout_info.pSetLayouts = &descr_layouts[0];
+	std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
+
+	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+}
+
+BasePipeline::~BasePipeline() {
+	destroy();
+	if (layout)
+		vkDestroyPipelineLayout(device, layout, nullptr);
+}
+
+void BasePipeline::destroy() {
+	if (pipeline)
+		vkDestroyPipeline(device, pipeline, nullptr);
+	pipeline = nullptr;
+}
+
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) : BasePipeline(_shader) {
+	render_pass = _render_pass;
+	subpass = _subpass;
 
 	binding_description = create_binding_description(num_textures);
 	attribute_descriptions = create_attribute_descriptions(num_textures);
@@ -278,25 +303,6 @@ void Pipeline::rebuild() {
 	viewport_state.pScissors = &scissor;
 
 
-	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-	VkPushConstantRange pci = {0};
-	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	if (shader->push_size > 0) {
-		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
-		pci.offset = 0;
-		pci.size = shader->push_size;
-		pipeline_layout_info.pushConstantRangeCount = 1;
-		pipeline_layout_info.pPushConstantRanges = &pci;
-	} else {
-		pipeline_layout_info.pushConstantRangeCount = 0;
-	}
-	pipeline_layout_info.setLayoutCount = descr_layouts.num;
-	pipeline_layout_info.pSetLayouts = &descr_layouts[0];
-	std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
-
-	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
-	}
 
 	VkPipelineDynamicStateCreateInfo dynamic_state = {};
 	dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -321,17 +327,37 @@ void Pipeline::rebuild() {
 	pipeline_info.pDynamicState = &dynamic_state;
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create graphics pipeline!");
+		throw Exception("failed to create graphics pipeline!");
 	}
 }
 
-void Pipeline::destroy() {
-	if (pipeline)
-		vkDestroyPipeline(device, pipeline, nullptr);
-	if (layout)
-		vkDestroyPipelineLayout(device, layout, nullptr);
-	pipeline = nullptr;
-	layout = nullptr;
+RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
+
+	VkRayTracingShaderGroupCreateInfoNV gi = {};
+	gi.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+	gi.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+	gi.generalShader = VK_SHADER_UNUSED_KHR;
+	gi.intersectionShader = VK_SHADER_UNUSED_KHR;
+	gi.anyHitShader = VK_SHADER_UNUSED_KHR;
+	gi.closestHitShader = 0;
+
+	VkRayTracingPipelineCreateInfoNV i = {};
+	i.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+	i.flags = 0;
+	i.stageCount = shader_stages.num;
+	i.pStages = &shader_stages[0];
+	i.groupCount = 1;
+	i.pGroups = &gi;
+	i.maxRecursionDepth = 1;
+	i.layout = layout;
+	//i.basePipelineHandle;
+	i.basePipelineIndex = -1;
+
+	//std::cout << p2s((void*)vkCreateRayTracingPipelinesNV).c_str() << "\n";
+
+	if (vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
+		throw Exception("failed to create graphics pipeline!");
+	}
 }
 
 };

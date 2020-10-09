@@ -31,7 +31,22 @@ namespace vulkan{
 	class Shader;
 	class RenderPass;
 
-	class Pipeline {
+	class BasePipeline {
+	public:
+		BasePipeline(Shader *shader);
+		~BasePipeline();
+
+		void destroy();
+
+		Shader *shader;
+		Array<VkDescriptorSetLayout> descr_layouts;
+		VkPipelineLayout layout;
+		Array<VkPipelineShaderStageCreateInfo> shader_stages;
+
+		VkPipeline pipeline;
+	};
+
+	class Pipeline : public BasePipeline {
 	public:
 		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, int num_textures);
 		~Pipeline();
@@ -40,7 +55,6 @@ namespace vulkan{
 		void __delete__();
 
 		void rebuild();
-		void destroy();
 
 		// configuration
 		void disable_blend();
@@ -54,13 +68,8 @@ namespace vulkan{
 
 		void set_dynamic(const Array<string> &dynamic_states);
 
-		Shader *shader;
 		RenderPass *render_pass;
 		int subpass;
-		Array<VkDescriptorSetLayout> descr_layouts;
-
-		VkPipelineLayout layout;
-		VkPipeline pipeline;
 		VkViewport viewport;
 
 	private:
@@ -69,7 +78,6 @@ namespace vulkan{
 
 		VkVertexInputBindingDescription binding_description;
 		Array<VkVertexInputAttributeDescription> attribute_descriptions;
-		Array<VkPipelineShaderStageCreateInfo> shader_stages;
 		VkPipelineVertexInputStateCreateInfo vertex_input_info;
 		Array<VkPipelineColorBlendAttachmentState> color_blend_attachments; // per FrameBuffer color attachment
 		VkPipelineColorBlendStateCreateInfo color_blending;
@@ -77,6 +85,13 @@ namespace vulkan{
 		VkPipelineMultisampleStateCreateInfo multisampling;
 		VkPipelineDepthStencilStateCreateInfo depth_stencil;
 		VkPipelineInputAssemblyStateCreateInfo input_assembly;
+	};
+
+
+
+	class RayPipeline : public BasePipeline {
+	public:
+		RayPipeline(Shader *shader);
 	};
 
 	extern Array<Pipeline*> pipelines;
