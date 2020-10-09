@@ -2677,8 +2677,6 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	flags_set(_class->flags, flags);
 	if (flags_has(flags, Flags::SHARED)) {
 		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, _offset);
-		tree->add_func_header(_class, IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {}, {});
-		tree->add_func_header(_class, IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {}, {});
 	}
 
 	//msg_write("parse " + _class->long_name());

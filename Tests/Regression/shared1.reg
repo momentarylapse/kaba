@@ -1,10 +1,4 @@
 X.init
-ref!!!  1
-ref!!!  2
 test 2
-ref!!!  3
 test 3
-unref!!!  2
-unref!!!  1
-unref!!!  0
 X.del

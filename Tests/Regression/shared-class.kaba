@@ -3,13 +3,6 @@ shared class X
 		print("X.init")
 	void __delete__()
 		print("X.del")
-#	void _ref()
-#		_ref_count ++
-#		print("ref!!!  {{_ref_count}}")
-#	override bool _unref()
-#		_shared_ref_count --
-#		print("unref!!!  {{_shared_ref_count}}")
-#		return _shared_ref_count == 0
 	const void f()
 		print("test {{_shared_ref_count}}")
 

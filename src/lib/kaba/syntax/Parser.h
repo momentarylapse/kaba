@@ -154,8 +154,6 @@ public:
 	void auto_implement_shared_assign(Function *f, const Class *t);
 	void auto_implement_shared_clear(Function *f, const Class *t);
 	void auto_implement_shared_create(Function *f, const Class *t);
-	void auto_implement_shared_ref(Function *f, const Class *t);
-	void auto_implement_shared_unref(Function *f, const Class *t);
 	void auto_implement_functions(const Class *t);
 	
 	SyntaxTree *tree;

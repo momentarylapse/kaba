@@ -1,19 +1,10 @@
-class X
-	int ref_count
+shared class X
 	void __init__()
-		ref_count = 0
 		print("X.init")
 	void __delete__()
 		print("X.del")
-	void _ref()
-		ref_count ++
-		print("ref!!!  {{ref_count}}")
-	bool _unref()
-		ref_count --
-		print("unref!!!  {{ref_count}}")
-		return ref_count == 0
 	const void f()
-		print("test {{ref_count}}")
+		print("test {{_shared_ref_count}}")
 
 
 

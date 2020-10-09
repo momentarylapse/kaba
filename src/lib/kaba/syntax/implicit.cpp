@@ -137,7 +137,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 		// call clear()
 		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
 		if (!f_clear)
-			do_error_implicit(f, IDENTIFIER_FUNC_SHARED_REF + "() missing");
+			do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
 		auto call_clear = tree->add_node_member_call(f_clear, n_self);
 		f->block->add(call_clear);
 	} else {
@@ -429,7 +429,7 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	// call clear()
 	auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
 	if (!f_clear)
-		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_REF + "() missing");
+		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
 	auto call_clear = tree->add_node_member_call(f_clear, self);
 	f->block->add(call_clear);
 
@@ -437,12 +437,20 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	auto op = tree->add_node_operator_by_inline(self_p, tree->cp_node(p), InlineID::POINTER_ASSIGN);
 	f->block->add(op);
 
-	// p.ref()
-	auto f_ref = t->param->get_func(IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {});
-	if (!f_ref)
-		do_error_implicit(f, format("class '%s' requires a function 'void %s()'", t->param->name, IDENTIFIER_FUNC_SHARED_REF));
-	auto call_ref = tree->add_node_member_call(f_ref, tree->deref_node(p));
-	f->block->add(call_ref);
+
+	// p.count ++
+	auto tt = self->type->param;
+	bool found = false;
+	for (auto &e: tt->elements)
+		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+			// count ++
+			auto count = tree->shift_node(tree->deref_node(tree->cp_node(self_p)), false, e.offset, e.type);
+			auto inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
+			f->block->add(inc);
+			found = true;
+		}
+	if (!found)
+		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), IDENTIFIER_SHARED, IDENTIFIER_SHARED_COUNT));
 }
 
 void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
@@ -451,12 +459,13 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 	auto self_p = tree->shift_node(tree->cp_node(self), false, 0, t->param->get_pointer());
 
+	auto tt = t->param;
 
 	// if self.p
-	//     if self.p.unref()
+	//     self.p.count --
+	//     if self.p.count == 0
 	//         del self.p
 	//     self.p = nil
-
 
 	auto cmd_if = tree->add_node_statement(StatementID::IF);
 	f->block->add(cmd_if);
@@ -471,16 +480,25 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	cmd_if->set_param(1, b);
 
 
+	shared<Node> count;
+	for (auto &e: tt->elements)
+		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt)
+			count = tree->shift_node(tree->cp_node(self_p), true, e.offset, e.type);
+	if (!count)
+		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), IDENTIFIER_SHARED, IDENTIFIER_SHARED_COUNT));
+
+	// count --
+	auto dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
+	b->add(dec);
+
+
 	auto cmd_if_del = tree->add_node_statement(StatementID::IF);
 	b->add(cmd_if_del);
 
-	// self.p.unref()
-	auto f_unref = t->param->get_func(IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {});
-	if (!f_unref)
-		do_error_implicit(f, format("class '%s' requires a function 'void %s()'", t->param->name, IDENTIFIER_FUNC_SHARED_REF));
-	auto call_unref = tree->add_node_member_call(f_unref, tree->deref_node(tree->cp_node(self_p)));
-
-	cmd_if_del->set_param(0, call_unref);
+	// if count == 0
+	auto zero = tree->add_node_const(tree->add_constant_int(0));
+	auto cmp = tree->add_node_operator_by_inline(tree->cp_node(count), zero, InlineID::INT_EQUAL);
+	cmd_if_del->set_param(0, cmp);
 
 	auto b2 = new Block(f, b);
 
@@ -519,42 +537,6 @@ void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 	ret->set_num_params(1);
 	ret->set_param(0, r);
 	f->block->add(ret);
-}
-
-void Parser::auto_implement_shared_ref(Function *f, const Class *t) {
-	if (!f)
-		return;
-
-	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
-	for (auto &e: t->elements)
-		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
-			// count ++
-			auto count = tree->shift_node(self, false, e.offset, e.type);
-			auto inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
-			f->block->add(inc);
-		}
-}
-
-void Parser::auto_implement_shared_unref(Function *f, const Class *t) {
-	if (!f)
-		return;
-
-	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
-	for (auto &e: t->elements)
-		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
-			// count --
-			auto count = tree->shift_node(self, false, e.offset, e.type);
-			auto dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
-			f->block->add(dec);
-
-			// return (count == 0)
-			auto ret = tree->add_node_statement(StatementID::RETURN);
-			auto zero = tree->add_node_const(tree->add_constant_int(0));
-			auto cmp = tree->add_node_operator_by_inline(tree->cp_node(count), zero, InlineID::INT_EQUAL);
-			ret->set_num_params(1);
-			ret->set_param(0, cmp);
-			f->block->add(ret);
-		}
 }
 
 
@@ -735,11 +717,6 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
 		auto_implement_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
 
-
-		if (flags_has(t->flags, Flags::SHARED)) {
-			auto_implement_shared_ref(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_REF, TypeVoid, {})), t);
-			auto_implement_shared_unref(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_UNREF, TypeBool, {})), t);
-		}
 	}
 
 	// recursion
