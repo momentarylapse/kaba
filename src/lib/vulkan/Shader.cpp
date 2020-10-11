@@ -99,7 +99,7 @@ namespace vulkan{
 
 		VkDescriptorPool pool;
 		if (vkCreateDescriptorPool(device, &info, nullptr, &pool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create descriptor pool!");
+			throw Exception("failed to create descriptor pool!");
 		}
 		return pool;
 	}
@@ -131,7 +131,7 @@ namespace vulkan{
 		info.pSetLayouts = &layout;
 
 		if (vkAllocateDescriptorSets(device, &info, &descriptor_set) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate descriptor sets!");
+			throw Exception("failed to allocate descriptor sets!");
 		}
 
 		set(ubos, tex);
@@ -234,7 +234,7 @@ namespace vulkan{
 
 		VkDescriptorSetLayout layout;
 		if (vkCreateDescriptorSetLayout(device, &info, nullptr, &layout) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create descriptor set layout!");
+			throw Exception("failed to create descriptor set layout!");
 		}
 		return layout;
 	}
@@ -255,7 +255,7 @@ namespace vulkan{
 
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(device, &info, nullptr, &shaderModule) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create shader module!");
+			throw Exception("failed to create shader module!");
 		}
 
 		return shaderModule;

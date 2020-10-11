@@ -37,7 +37,7 @@ void create_command_pool() {
 	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	if (vkCreateCommandPool(device, &info, nullptr, &command_pool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
+		throw Exception("failed to create command pool!");
 	}
 }
 
@@ -104,7 +104,7 @@ void CommandBuffer::_create() {
 	ai.commandBufferCount = 1;
 
 	if (vkAllocateCommandBuffers(device, &ai, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers!");
+		throw Exception("failed to allocate command buffers!");
 	}
 }
 
@@ -122,13 +122,13 @@ void CommandBuffer::set_pipeline(Pipeline *pl) {
 
 void CommandBuffer::bind_descriptor_set(int index, DescriptorSet *dset) {
 	if (dset->num_dynamic_ubos > 0)
-		throw std::runtime_error("descriptor set requires dynamic indices");
+		throw Exception("descriptor set requires dynamic indices");
 	vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_set, 0, nullptr);
 }
 
 void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices) {
 	if (dset->num_dynamic_ubos != indices.num)
-		throw std::runtime_error("number of indices does not match descriptor set");
+		throw Exception("number of indices does not match descriptor set");
 	Array<unsigned int> offsets;
 	int i=0;
 	for (auto *u: dset->ubos) {
@@ -165,7 +165,7 @@ void CommandBuffer::begin() {
 	info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 	if (vkBeginCommandBuffer(buffer, &info) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
+		throw Exception("failed to begin recording command buffer!");
 	}
 }
 
@@ -255,7 +255,7 @@ void CommandBuffer::end_render_pass() {
 
 void CommandBuffer::end() {
 	if (vkEndCommandBuffer(buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
+		throw Exception("failed to record command buffer!");
 	}
 }
 

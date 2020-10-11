@@ -143,7 +143,7 @@ Texture* Texture::load(const Path &filename) {
 void Texture::_load(const Path &filename) {
 	Image *im = Image::load(filename);
 	if (!im) {
-		throw std::runtime_error("failed to load texture image!");
+		throw Exception("failed to load texture image!");
 	}
 	override(im);
 	delete im;
@@ -208,7 +208,7 @@ void Texture::_generate_mipmaps(VkFormat image_format) {
 	vkGetPhysicalDeviceFormatProperties(physical_device, image_format, &fp);
 
 	if (!(fp.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-		throw std::runtime_error("texture image format does not support linear blitting!");
+		throw Exception("texture image format does not support linear blitting!");
 	}
 
 	VkCommandBuffer command_buffer = begin_single_time_commands();
@@ -318,7 +318,7 @@ void Texture::_create_sampler() {
 	si.mipLodBias = 0;
 
 	if (vkCreateSampler(device, &si, nullptr, &sampler) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create texture sampler!");
+		throw Exception("failed to create texture sampler!");
 	}
 }
 

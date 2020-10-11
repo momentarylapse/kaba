@@ -211,7 +211,7 @@ bool image_is_depth_buffer(VkFormat f);
 		info.pDependencies = &dependencies[0];
 
 		if (vkCreateRenderPass(device, &info, nullptr, &render_pass) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create render pass!");
+			throw Exception("failed to create render pass!");
 		}
 	}
 
@@ -260,7 +260,7 @@ bool image_is_depth_buffer(VkFormat f);
 	void _parse_dep_opt(const string &o, VkPipelineStageFlagBits &stage, VkAccessFlags &access) {
 		auto oo = o.replace(" ", "").replace("\n", "").replace("\t", "").replace("-", "_").upper().explode(":");
 		if (oo.num != 2)
-			throw std::runtime_error("opt-string needs one ':'");
+			throw Exception("opt-string needs one ':'");
 
 		auto ss = oo[0].explode("|");
 		stage = (VkPipelineStageFlagBits)0;

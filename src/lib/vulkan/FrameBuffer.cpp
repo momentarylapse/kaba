@@ -86,7 +86,7 @@ void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<VkImageView> 
 	info.layers = 1;
 
 	if (vkCreateFramebuffer(device, &info, nullptr, &frame_buffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create framebuffer!");
+		throw Exception("failed to create framebuffer!");
 	}
 }
 

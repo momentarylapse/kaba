@@ -89,7 +89,7 @@ namespace vulkan {
 		create_info.pfnUserCallback = debug_callback;
 
 		if (create_debug_utils_messenger_ext(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
-			throw std::runtime_error("failed to set up debug messenger!");
+			throw Exception("failed to set up debug messenger!");
 		}
 	}
 
@@ -110,10 +110,28 @@ VkQueue graphics_queue;
 VkQueue present_queue;
 
 
-void init(GLFWwindow* window) {
-	std::cout << "vulkan init" << "\n";
-	vulkan_window = window;
+PFN_vkCreateRayTracingPipelinesNV pvkCreateRayTracingPipelinesNV = nullptr;
+static bool rtx_loaded = false;
 
+
+void ensure_rtx() {
+	if (rtx_loaded)
+		return;
+
+	std::cout << "loading rtx extensions...\n";
+	pvkCreateRayTracingPipelinesNV = (PFN_vkCreateRayTracingPipelinesNV)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesNV");
+
+	if (!pvkCreateRayTracingPipelinesNV)
+		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
+	std::cout << " create pipeline: " << p2s((void*)pvkCreateRayTracingPipelinesNV).c_str() << "\n";
+
+	rtx_loaded = true;
+}
+
+
+void init(GLFWwindow* window) {
+	std::cout << "vulkan init\n";
+	vulkan_window = window;
 
 	create_instance();
 	setup_debug_messenger();
@@ -129,7 +147,7 @@ extern Array<VertexBuffer*> vertex_buffers;
 extern Array<Shader*> shaders;
 
 void destroy() {
-	std::cout << "vulkan destroy" << "\n";
+	std::cout << "vulkan destroy\n";
 
 	auto _vertex_buffers = vertex_buffers;
 	vertex_buffers.clear();
@@ -208,7 +226,7 @@ std::vector<const char*> get_required_extensions() {
 
 void create_instance() {
 	if (enable_validation_layers and !check_validation_layer_support()) {
-		//throw std::runtime_error("validation layers requested, but not available!");
+		//throw Exception("validation layers requested, but not available!");
 		std::cout << "validation layers requested, but not available!" << '\n';
 		enable_validation_layers = false;
 	}
@@ -237,13 +255,13 @@ void create_instance() {
 	}
 
 	if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create instance!");
+		throw Exception("failed to create instance!");
 	}
 }
 
 void create_surface() {
 	if (glfwCreateWindowSurface(instance, vulkan_window, nullptr, &surface) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create window surface!");
+		throw Exception("failed to create window surface!");
 	}
 }
 
@@ -252,7 +270,7 @@ void pick_physical_device() {
 	vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
 	if (device_count == 0) {
-		throw std::runtime_error("failed to find GPUs with Vulkan support!");
+		throw Exception("failed to find GPUs with Vulkan support!");
 	}
 
 	std::vector<VkPhysicalDevice> devices(device_count);
@@ -266,7 +284,7 @@ void pick_physical_device() {
 	}
 
 	if (physical_device == VK_NULL_HANDLE) {
-		throw std::runtime_error("failed to find a suitable GPU!");
+		throw Exception("failed to find a suitable GPU!");
 	}
 
 	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
@@ -355,7 +373,7 @@ void create_logical_device() {
 	}
 
 	if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create logical device!");
+		throw Exception("failed to create logical device!");
 	}
 
 	vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
@@ -397,7 +415,7 @@ void queue_submit_command_buffer(CommandBuffer *cb, const Array<Semaphore*> &wai
 	VkResult result = vkQueueSubmit(graphics_queue, 1, &submit_info, fence_handle(fence));
 	if (result != VK_SUCCESS) {
 		std::cerr << " SUBMIT ERROR " << result << "\n";
-		throw std::runtime_error("failed to submit draw command buffer!");
+		throw Exception("failed to submit draw command buffer!");
 	}
 }
 

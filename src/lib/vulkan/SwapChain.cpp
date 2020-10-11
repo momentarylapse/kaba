@@ -159,7 +159,7 @@ void SwapChain::create_swap_chain() {
 	info.clipped = VK_TRUE;
 
 	if (vkCreateSwapchainKHR(device, &info, nullptr, &swap_chain) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create swap chain!");
+		throw Exception("failed to create swap chain!");
 	}
 	image_format = surface_format.format;
 }
@@ -247,7 +247,7 @@ bool SwapChain::present(unsigned int image_index, const Array<Semaphore*> &wait_
 	if (result == VK_ERROR_OUT_OF_DATE_KHR or result == VK_SUBOPTIMAL_KHR) {
 		return false;
 	} else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
+		throw Exception("failed to present swap chain image!");
 	}
 	return true;
 }
@@ -259,7 +259,7 @@ bool SwapChain::aquire_image(unsigned int *image_index, Semaphore *signal_sem) {
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return false;
 	} else if (result != VK_SUCCESS and result != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error("failed to acquire swap chain image!");
+		throw Exception("failed to acquire swap chain image!");
 	}
 	return true;
 }

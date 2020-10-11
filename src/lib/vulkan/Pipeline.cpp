@@ -20,8 +20,11 @@
 
 namespace vulkan {
 
+	void ensure_rtx();
+
 	Array<Pipeline*> pipelines;
 
+	extern PFN_vkCreateRayTracingPipelinesNV pvkCreateRayTracingPipelinesNV;
 
 
 	VkVertexInputBindingDescription create_binding_description(int num_textures) {
@@ -99,7 +102,7 @@ BasePipeline::BasePipeline(Shader *s) {
 	std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
 
 	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw Exception("failed to create pipeline layout!");
 	}
 }
 
@@ -332,6 +335,7 @@ void Pipeline::rebuild() {
 }
 
 RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
+	ensure_rtx();
 
 	VkRayTracingShaderGroupCreateInfoNV gi = {};
 	gi.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
@@ -353,9 +357,9 @@ RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
 	//i.basePipelineHandle;
 	i.basePipelineIndex = -1;
 
-	//std::cout << p2s((void*)vkCreateRayTracingPipelinesNV).c_str() << "\n";
+	std::cout << "creating RTX pipeline...\n";
 
-	if (vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
+	if (pvkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
 }
