@@ -2320,15 +2320,20 @@ shared<Node> Parser::parse_statement_weak(Block *block) {
 		do_error("weak() expects 1 parameter");
 
 	auto t = params[0]->type;
-	if (t->is_pointer_shared()) {
-		auto tt = t->param->get_pointer();
-		return tree->shift_node(params[0], false, 0, tt);
-	} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
-		auto tt = tree->make_class_super_array(t->param->param);
-		return tree->shift_node(params[0], false, 0, tt);
-	} else {
-		do_error("weak() expects either a shared pointer, or a shared pointer array");
+	while (true) {
+		if (t->is_pointer_shared()) {
+			auto tt = t->param->get_pointer();
+			return tree->shift_node(params[0], false, 0, tt);
+		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
+			auto tt = tree->make_class_super_array(t->param->param->get_pointer());
+			return tree->shift_node(params[0], false, 0, tt);
+		}
+		if (t->parent)
+			t = t->parent;
+		else
+			break;
 	}
+	do_error("weak() expects either a shared pointer, or a shared pointer array");
 	return nullptr;
 }
 

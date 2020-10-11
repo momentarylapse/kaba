@@ -1,0 +1,30 @@
+shared class X
+	void __init__()
+		print("init")
+	void __delete__()
+		print("del")
+	const void f()
+		print("f")
+
+void ff(X x)
+	x.f()
+
+void main()
+#	shared X x = new X()
+
+	shared X[] a
+	print("a")
+	shared X xx = new X()
+	ff(weak(xx))
+	print("a2")
+	a.add(xx)
+	print("a3")
+	a.add(xx)
+	print("a4")
+	xx = new X()
+	a.add(xx)
+	print("a5")
+
+	for x in weak(a)
+		ff(x)
+

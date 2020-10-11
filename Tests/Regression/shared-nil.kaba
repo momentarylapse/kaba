@@ -1,0 +1,15 @@
+shared class X
+	void __init__()
+		print("init")
+	void __delete__()
+		print("del")
+	const void f()
+		print("f")
+
+
+void main()
+	shared X x = new X()
+	print("a")
+	x = nil
+	print("b")
+
