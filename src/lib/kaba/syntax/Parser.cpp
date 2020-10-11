@@ -2665,7 +2665,8 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS) {
 		Exp.next();
-		const Class *parent = parse_type(_namespace); // force
+		auto eflags = parse_flags();
+		const Class *parent = parse_type(_namespace, eflags); // force
 		if (!parent->fully_parsed())
 			return false;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));

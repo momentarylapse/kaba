@@ -144,8 +144,8 @@ class Empty {};
 
 template <class T>
 class Sharable : public T {
-	mutable int _pointer_ref_counter = 0;
 public:
+	mutable int _pointer_ref_counter = 0;
 	Sharable() {}
 
 	// prevent copying
@@ -297,6 +297,11 @@ public:
 template <class T>
 const Array<T*> &weak(const shared_array<T> &a) {
 	return *(const Array<T*>*)&a;
+}
+
+template <class T>
+Array<T*> &weak(shared_array<T> &a) {
+	return *(Array<T*>*)&a;
 }
 
 #if 0

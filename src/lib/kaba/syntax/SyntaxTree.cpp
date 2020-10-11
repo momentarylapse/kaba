@@ -364,7 +364,7 @@ Function *SyntaxTree::add_function(const string &name, const Class *return_type,
 
 
 shared<Node> SyntaxTree::add_node_const(Constant *c) {
-	return new Node(NodeKind::CONSTANT, (int_p)c, c->type, true);
+	return new Node(NodeKind::CONSTANT, (int_p)c, c->type.get(), true);
 }
 
 /*shared<Node> SyntaxTree::add_node_block(Block *b) {

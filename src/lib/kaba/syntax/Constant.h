@@ -23,7 +23,7 @@ class SyntaxTree;
 class Value {
 public:
 	string value;
-	const Class *type;
+	shared<const Class> type;
 
 	Value();
 	~Value();
