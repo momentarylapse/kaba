@@ -17,6 +17,7 @@
 
 #include "helper.h"
 #include "../base/base.h"
+#include "../file/msg.h"
 #include "../math/vector.h"
 #include "../math/matrix.h"
 
@@ -67,7 +68,8 @@ namespace vulkan {
 	};
 
 	const std::vector<const char*> device_extensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_NV_RAY_TRACING_EXTENSION_NAME
 	};
 
 	#ifdef NDEBUG
@@ -110,7 +112,17 @@ VkQueue graphics_queue;
 VkQueue present_queue;
 
 
-PFN_vkCreateRayTracingPipelinesNV pvkCreateRayTracingPipelinesNV = nullptr;
+#define DECLARE_EXT(NAME) PFN_##NAME p##NAME = nullptr;
+#define LOAD_EXT(NAME) \
+		p##NAME = (PFN_##NAME)vkGetInstanceProcAddr(instance, #NAME); \
+		msg_write(format(" %s: %s", #NAME, p2s((void*)p##NAME))); \
+		if (!p##NAME) \
+			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
+
+DECLARE_EXT(vkCmdTraceRaysNV);
+DECLARE_EXT(vkCmdBuildAccelerationStructureNV);
+DECLARE_EXT(vkCreateRayTracingPipelinesNV);
+DECLARE_EXT(vkBindAccelerationStructureMemoryNV);
 static bool rtx_loaded = false;
 
 
@@ -118,8 +130,25 @@ void ensure_rtx() {
 	if (rtx_loaded)
 		return;
 
+/*	VkPhysicalDeviceRaytracingPropertiesNV mRTProps;
+	mRTProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAYTRACING_PROPERTIES_NV;
+	mRTProps.pNext = nullptr;
+	mRTProps.maxRecursionDepth = 0;
+	mRTProps.shaderHeaderSize = 0;
+
+	VkPhysicalDeviceProperties2 devProps;
+	devProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	devProps.pNext = &mRTProps;
+	devProps.properties = { };
+
+	vkGetPhysicalDeviceProperties2(device, &devProps);*/
+
+
 	std::cout << "loading rtx extensions...\n";
-	pvkCreateRayTracingPipelinesNV = (PFN_vkCreateRayTracingPipelinesNV)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesNV");
+	LOAD_EXT(vkCmdTraceRaysNV);
+	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
+	LOAD_EXT(vkCreateRayTracingPipelinesNV);
+	LOAD_EXT(vkBindAccelerationStructureMemoryNV);
 
 	if (!pvkCreateRayTracingPipelinesNV)
 		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
@@ -299,6 +328,12 @@ void pick_physical_device() {
 	std::cout << "  maxDescriptorSetUniformBuffersDynamic  " << device_properties.limits.maxDescriptorSetUniformBuffersDynamic << "\n";
 	//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
 	//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
+
+	/*VkPhysicalDeviceRayTracingFeaturesKHR rtf = {};
+
+	VkPhysicalDeviceFeatures2 dp2 = {};
+	dp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	vkGetPhysicalDeviceFeatures2(physical_device, &dp2);*/
 }
 
 

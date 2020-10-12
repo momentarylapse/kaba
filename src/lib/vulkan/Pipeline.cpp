@@ -15,6 +15,7 @@
 #include "RenderPass.h"
 #include "VertexBuffer.h"
 #include <iostream>
+#include "../file/msg.h"
 
 #include "../math/rect.h"
 
@@ -357,7 +358,7 @@ RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
 	//i.basePipelineHandle;
 	i.basePipelineIndex = -1;
 
-	std::cout << "creating RTX pipeline...\n";
+	msg_write("creating RTX pipeline...");
 
 	if (pvkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
