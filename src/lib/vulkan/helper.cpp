@@ -29,7 +29,7 @@ void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryProperty
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = find_memory_type(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = find_memory_type(memRequirements, properties);
 
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw Exception("failed to allocate buffer memory!");
@@ -64,7 +64,7 @@ void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_
 	VkMemoryAllocateInfo alloc_info = {};
 	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	alloc_info.allocationSize = mem_requirements.size;
-	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, properties);
+	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements, properties);
 
 	if (vkAllocateMemory(device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
 		throw Exception("failed to allocate image memory!");
@@ -190,12 +190,12 @@ void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLa
 
 
 
-uint32_t find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+uint32_t find_memory_type(const VkMemoryRequirements &requirements, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
 
 	for (uint32_t i=0; i<memProperties.memoryTypeCount; i++) {
-		if ((typeFilter & (1 << i)) and (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+		if ((requirements.memoryTypeBits & (1 << i)) and (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
 			return i;
 		}
 	}

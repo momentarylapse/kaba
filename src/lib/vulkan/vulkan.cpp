@@ -64,12 +64,17 @@ namespace vulkan {
 
 
 	const std::vector<const char*> validation_layers = {
-		"VK_LAYER_LUNARG_standard_validation"
+		//"VK_LAYER_LUNARG_standard_validation",
+		"VK_LAYER_KHRONOS_validation",
 	};
 
 	const std::vector<const char*> device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_NV_RAY_TRACING_EXTENSION_NAME
+		VK_NV_RAY_TRACING_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+	//	VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+		//"VK_KHR_get_physical_device_properties2",
+		"VK_KHR_get_memory_requirements2",
 	};
 
 	#ifdef NDEBUG
@@ -120,9 +125,12 @@ VkQueue present_queue;
 			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
 
 DECLARE_EXT(vkCmdTraceRaysNV);
-DECLARE_EXT(vkCmdBuildAccelerationStructureNV);
 DECLARE_EXT(vkCreateRayTracingPipelinesNV);
+DECLARE_EXT(vkCmdBuildAccelerationStructureNV);
+DECLARE_EXT(vkCreateAccelerationStructureNV);
 DECLARE_EXT(vkBindAccelerationStructureMemoryNV);
+DECLARE_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
+DECLARE_EXT(vkGetAccelerationStructureHandleNV);
 static bool rtx_loaded = false;
 
 
@@ -146,9 +154,12 @@ void ensure_rtx() {
 
 	std::cout << "loading rtx extensions...\n";
 	LOAD_EXT(vkCmdTraceRaysNV);
-	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
 	LOAD_EXT(vkCreateRayTracingPipelinesNV);
+	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
+	LOAD_EXT(vkCreateAccelerationStructureNV);
 	LOAD_EXT(vkBindAccelerationStructureMemoryNV);
+	LOAD_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
+	LOAD_EXT(vkGetAccelerationStructureHandleNV);
 
 	if (!pvkCreateRayTracingPipelinesNV)
 		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
@@ -161,6 +172,7 @@ void ensure_rtx() {
 void init(GLFWwindow* window) {
 	std::cout << "vulkan init\n";
 	vulkan_window = window;
+	try {
 
 	create_instance();
 	setup_debug_messenger();
@@ -170,6 +182,11 @@ void init(GLFWwindow* window) {
 	create_command_pool();
 
 	descriptor_pool = create_descriptor_pool();
+
+	ensure_rtx();
+	} catch (Exception &e) {
+		std::cerr << "ERROR: " << e.message().c_str() << "\n";
+	}
 }
 
 extern Array<VertexBuffer*> vertex_buffers;
@@ -362,7 +379,9 @@ bool check_device_extension_support(VkPhysicalDevice device) {
 
 	std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
 
+	std::cout << "---- GPU-----\n";
 	for (const auto& extension : available_extensions) {
+		std::cout << "   " << extension.extensionName << "\n";
 		required_extensions.erase(extension.extensionName);
 	}
 

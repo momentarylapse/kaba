@@ -3,6 +3,7 @@
 
 #if HAS_LIB_VULKAN
 
+#define VK_ENABLE_BETA_EXTENSIONS
 #include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -18,6 +19,7 @@
 #include "FrameBuffer.h"
 #include "SwapChain.h"
 #include "Semaphore.h"
+#include "AccelerationStructure.h"
 
 
 VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
@@ -76,6 +78,16 @@ namespace vulkan {
 
 	bool has_stencil_component(VkFormat format);
 
+
+#define DECLARE_EXT_H(NAME) extern PFN_##NAME p##NAME;
+
+	DECLARE_EXT_H(vkCmdTraceRaysNV);
+	DECLARE_EXT_H(vkCmdBuildAccelerationStructureNV);
+	DECLARE_EXT_H(vkCreateAccelerationStructureNV);
+	DECLARE_EXT_H(vkBindAccelerationStructureMemoryNV);
+	DECLARE_EXT_H(vkCreateRayTracingPipelinesNV);
+	DECLARE_EXT_H(vkGetAccelerationStructureMemoryRequirementsNV);
+	DECLARE_EXT_H(vkGetAccelerationStructureHandleNV);
 }
 
 #endif

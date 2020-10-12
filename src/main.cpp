@@ -44,13 +44,53 @@ int extern_function2() {
 	return 2001;
 }
 
-void rtx_init() {
-/*
-	msg_write("loading shader...");
-	auto shader = vulkan::Shader::load("rtx.shader");
+Array<VkGeometryNV> geometries;
+//Array<VkGeometryInstance> instances;
 
-	msg_write("creating pipeline...");
-	auto rp = new vulkan::RayPipeline(shader);*/
+void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
+	msg_write("creating bottom layer acceleration structure...");
+
+
+    Array<VkGeometryNV> geometries;
+    //Array<VkGeometryInstance> instances;
+
+    VkGeometryNV geometry = {};
+	geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+	geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+	geometry.geometry.triangles.vertexData = vb->vertex_buffer;
+	geometry.geometry.triangles.vertexOffset = 0;
+	geometry.geometry.triangles.vertexCount = vb->output_count;
+	geometry.geometry.triangles.vertexStride = sizeof(vulkan::Vertex1);
+	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+	geometry.geometry.triangles.indexData = vb->index_buffer;
+	geometry.geometry.triangles.indexOffset = 0;
+	geometry.geometry.triangles.indexCount = 3;
+	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+	geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
+	geometry.geometry.triangles.transformOffset = 0;
+	geometry.geometry.aabbs = {};
+	geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+
+	auto blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
+}
+
+void rtx_init() {
+	try {
+		msg_write("loading shader...");
+		auto shader = vulkan::Shader::load("rtx.shader");
+
+		auto vb = new vulkan::VertexBuffer();
+		vb->build1i({{vector(-1,0,0), vector::ZERO, 0,0}, {vector(0,1,0), vector::ZERO, 0,0}, {vector(1,0,0), vector::ZERO, 0,0}}, {0,1,2});
+
+		create_acc_struct_bl(vb);
+
+		msg_write("creating pipeline...");
+		auto rp = new vulkan::RayPipeline(shader);
+	} catch (Exception &e) {
+		msg_error(e.message());
+	}
 }
 
 

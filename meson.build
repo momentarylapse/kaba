@@ -219,6 +219,7 @@ sources = [
 	'src/lib/threads/Mutex.cpp',
 	'src/lib/threads/Thread.cpp',
 	'src/lib/threads/ThreadedWork.cpp',
+	'src/lib/vulkan/AccelerationStructure.cpp',
 	'src/lib/vulkan/CommandBuffer.cpp',
 	'src/lib/vulkan/FrameBuffer.cpp',
 	'src/lib/vulkan/helper.cpp',

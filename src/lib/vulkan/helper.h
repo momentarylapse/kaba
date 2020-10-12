@@ -18,7 +18,7 @@ namespace vulkan{
 	void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
 	void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels);
 
-	uint32_t find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t find_memory_type(const VkMemoryRequirements &requirements, VkMemoryPropertyFlags properties);
 	bool has_stencil_component(VkFormat format);
 
 
