@@ -259,7 +259,9 @@ const Class *add_type(const string &name, int size, Flags flag, const Class *nam
 const Class *add_type_p(const Class *sub_type, Flags flag, const string &_name) {
 	string name = _name;
 	if (name == "") {
-		if (flags_has(flag, Flags::SILENT))
+		if (flags_has(flag, Flags::SHARED))
+			name = "shared " + sub_type->name;
+		else if (flags_has(flag, Flags::SILENT))
 			name = sub_type->name + "&";
 		else
 			name = sub_type->name + "*";
@@ -268,6 +270,8 @@ const Class *add_type_p(const Class *sub_type, Flags flag, const string &_name) 
 	t->type = Class::Type::POINTER;
 	if (flags_has(flag, Flags::SILENT))
 		t->type = Class::Type::POINTER_SILENT;
+	else if (flags_has(flag, Flags::SHARED))
+		t->type = Class::Type::POINTER_SHARED;
 	__add_class__(t, sub_type->name_space);
 	return t;
 }

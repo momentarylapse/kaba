@@ -15,7 +15,7 @@ void test_class(Script p, Class c)
 
 
 void main()
-	for p in packages
+	for p in weak(packages)
 		for c,i in p.classes()
 			if !c
 				print("MISSING: class #{{i}} in {{p.name}}")

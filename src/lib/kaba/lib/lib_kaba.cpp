@@ -55,7 +55,7 @@ void SIAddPackageKaba() {
 		
 
 	auto *TypeScript = add_type  ("Script", sizeof(Script));
-	auto *TypeScriptP = add_type_p(TypeScript);
+	auto *TypeScriptP = add_type_p(TypeScript, Flags::SHARED);
 	auto *TypeScriptPList = add_type_l(TypeScriptP);
 
 	
