@@ -2600,6 +2600,13 @@ void Parser::parse_import() {
 
 void Parser::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
+
+	// class name?
+	if (!Exp.end_of_line()) {
+		_namespace = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, nullptr, _namespace);
+		Exp.next();
+	}
+
 	expect_new_line();
 	Exp.next_line();
 	expect_indent();
