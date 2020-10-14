@@ -58,6 +58,7 @@ Parser::Parser(SyntaxTree *t) {
 	for_index_count = 0;
 	Exp.cur_line = nullptr;
 	parser_loop_depth = 0;
+	found_dynamic_param = false;
 }
 
 
@@ -430,6 +431,7 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 
 
 	auto xxx = [&](const shared_array<Node> &links) {
+		//force_concrete_types(params);
 
 
 	// find (and provisional link) the parameters in the source
@@ -701,6 +703,9 @@ bool Parser::direct_param_match(shared<Node> operand, shared_array<Node> &params
 	auto wanted_types = get_wanted_param_types(operand);
 	if (wanted_types.num != params.num)
 		return false;
+	for (auto c: wanted_types)
+		if (c == TypeDynamic)
+			found_dynamic_param = true;
 	for (int p=0; p<params.num; p++)
 		if (!type_match(params[p]->type, wanted_types[p]))
 			return false;

@@ -152,6 +152,7 @@ const Class *TypeAny = nullptr;
 const Class *TypeAnyList;
 const Class *TypeAnyDict;
  // internal:
+const Class *TypeDynamic;
 const Class *TypeDynamicArray;
 const Class *TypeDictBase;
 const Class *TypeSharedPointer;
