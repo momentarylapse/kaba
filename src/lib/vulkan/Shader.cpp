@@ -221,7 +221,7 @@ namespace vulkan{
 			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 			} else {
-				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
 			}
 			bindings.add(lb);
 		}
@@ -309,10 +309,16 @@ namespace vulkan{
 			for (auto &y: x) {
 				if (y == "buffer")
 					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-				if (y == "dbuffer")
+				else if (y == "dbuffer")
 					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-				if (y == "sampler")
+				else if (y == "sampler")
 					types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				else if (y == "image")
+					types.add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+				else if (y == "acceleration-structure")
+					types.add(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+				else
+					std::cerr << "UNKNOWN BINDING TYPE: " << y.c_str() << "\n";
 			}
 			rr.add(DescriptorSet::create_layout(types));
 

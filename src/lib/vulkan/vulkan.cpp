@@ -68,13 +68,14 @@ namespace vulkan {
 		"VK_LAYER_KHRONOS_validation",
 	};
 
+	const std::vector<const char*> instance_extensions = {
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+	};
+
 	const std::vector<const char*> device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_NV_RAY_TRACING_EXTENSION_NAME,
 		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-	//	VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-		//"VK_KHR_get_physical_device_properties2",
-		"VK_KHR_get_memory_requirements2",
 	};
 
 	#ifdef NDEBUG
@@ -254,16 +255,18 @@ bool check_validation_layer_support() {
 
 	return true;
 }
-std::vector<const char*> get_required_extensions() {
+std::vector<const char*> get_required_instance_extensions() {
 	uint32_t glfw_extension_count = 0;
 	const char** glfw_extensions;
 	glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
 	std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
-	if (enable_validation_layers) {
+	for (auto s: instance_extensions)
+		extensions.push_back(s);
+
+	if (enable_validation_layers)
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
 
 	return extensions;
 }
@@ -289,7 +292,7 @@ void create_instance() {
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
 
-	auto extensions = get_required_extensions();
+	auto extensions = get_required_instance_extensions();
 	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	create_info.ppEnabledExtensionNames = extensions.data();
 

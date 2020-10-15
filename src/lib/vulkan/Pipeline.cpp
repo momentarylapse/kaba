@@ -344,7 +344,7 @@ RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
 	gi.generalShader = VK_SHADER_UNUSED_KHR;
 	gi.intersectionShader = VK_SHADER_UNUSED_KHR;
 	gi.anyHitShader = VK_SHADER_UNUSED_KHR;
-	gi.closestHitShader = 0;
+	gi.closestHitShader = 2; // index in shader...
 
 	VkRayTracingPipelineCreateInfoNV i = {};
 	i.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
@@ -363,6 +363,7 @@ RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
 	if (pvkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
+	msg_write("...done");
 }
 
 };

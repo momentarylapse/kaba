@@ -72,6 +72,7 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	geometry.geometry.aabbs = {};
 	geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+	geometries.add(geometry);
 
 	auto blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
 }

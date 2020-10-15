@@ -68,7 +68,7 @@ namespace vulkan {
 
 	void create_instance();
 	bool check_validation_layer_support();
-	std::vector<const char*> get_required_extensions();
+	std::vector<const char*> get_required_instance_extensions();
 	void create_surface();
 	void pick_physical_device();
 	bool is_device_suitable(VkPhysicalDevice device);
