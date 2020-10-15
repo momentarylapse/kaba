@@ -14,6 +14,7 @@ namespace vulkan {
 
 class AccelerationStructure {
 public:
+	VkAccelerationStructureInfoNV info;
 	VkAccelerationStructureKHR structure;
 	VkDeviceMemory memory;
 	uint64_t handle;

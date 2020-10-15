@@ -7,6 +7,7 @@
 #include "../math/vector.h"
 #include <vector>
 #include <vulkan/vulkan.h>
+#include "helper.h"
 
 namespace vulkan {
 
@@ -36,12 +37,8 @@ namespace vulkan {
 
 		unsigned int output_count;
 
-		VkBuffer vertex_buffer;
-		VkDeviceMemory vertex_memory;
-		VkDeviceSize vertex_buffer_size;
-		VkBuffer index_buffer;
-		VkDeviceMemory index_memory;
-		VkDeviceSize index_buffer_size;
+		Buffer vertex_buffer;
+		Buffer index_buffer;
 
 		void build(const void *vertices, int size, int count);
 		void build1(const Array<Vertex1> &vertices);

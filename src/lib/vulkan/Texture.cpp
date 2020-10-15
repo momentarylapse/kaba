@@ -172,15 +172,10 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 		mip_levels = 1;
 
 
-	VkBuffer staging_buffer;
-	VkDeviceMemory staging_memory;
+	Buffer staging;
 	if (image_data) {
-		create_buffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
-
-		void* data;
-		vkMapMemory(device, staging_memory, 0, image_size, 0, &data);
-			memcpy(data, image_data, static_cast<size_t>(image_size));
-		vkUnmapMemory(device, staging_memory);
+		staging.create(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		staging.update_part(image_data, 0, image_size);
 	}
 
 	auto usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -190,10 +185,7 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 	transition_image_layout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mip_levels);
 
 	if (image_data) {
-		copy_buffer_to_image(staging_buffer, image, width, height, depth);
-
-		vkDestroyBuffer(device, staging_buffer, nullptr);
-		vkFreeMemory(device, staging_memory, nullptr);
+		copy_buffer_to_image(staging.buffer, image, width, height, depth);
 	}
 
 	if (allow_mip)

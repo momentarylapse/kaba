@@ -7,7 +7,8 @@
 
 
 //#include <vulkan/vulkan.h>
-//#include "lib/vulkan/vulkan.h"
+#include "lib/vulkan/vulkan.h"
+#include "lib/vulkan/helper.h"
 
 string AppName = "Kaba";
 string AppVersion = Kaba::Version;
@@ -58,12 +59,12 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
 	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
 	geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-	geometry.geometry.triangles.vertexData = vb->vertex_buffer;
+	geometry.geometry.triangles.vertexData = vb->vertex_buffer.buffer;
 	geometry.geometry.triangles.vertexOffset = 0;
 	geometry.geometry.triangles.vertexCount = vb->output_count;
 	geometry.geometry.triangles.vertexStride = sizeof(vulkan::Vertex1);
 	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	geometry.geometry.triangles.indexData = vb->index_buffer;
+	geometry.geometry.triangles.indexData = vb->index_buffer.buffer;
 	geometry.geometry.triangles.indexOffset = 0;
 	geometry.geometry.triangles.indexCount = 3;
 	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
@@ -74,7 +75,73 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 	geometries.add(geometry);
 
+	//Array<VkGeometryInstance> instances;
+
 	auto blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
+	auto tlas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, {}, 1);
+
+
+
+
+
+
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
+    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+
+    VkDeviceSize maximumBlasSize = 0;
+    /*for (const RTMesh& mesh : mScene.meshes) {*/
+        memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+        memoryRequirementsInfo.accelerationStructure = blas->structure;
+
+        VkMemoryRequirements2 memReqBLAS = {};
+        memReqBLAS.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+        vulkan::pvkGetAccelerationStructureMemoryRequirementsNV(vulkan::device, &memoryRequirementsInfo, &memReqBLAS);
+
+        maximumBlasSize = max(maximumBlasSize, memReqBLAS.memoryRequirements.size);
+    //}
+        msg_write("mem req: " + i2s(maximumBlasSize));
+
+    VkMemoryRequirements2 memReqTLAS = {};
+    memReqTLAS.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+    memoryRequirementsInfo.accelerationStructure = tlas->structure;
+    vulkan::pvkGetAccelerationStructureMemoryRequirementsNV(vulkan::device, &memoryRequirementsInfo, &memReqTLAS);
+
+    const VkDeviceSize scratchBufferSize = max(maximumBlasSize, memReqTLAS.memoryRequirements.size);
+    msg_write("scratch: " + i2s(scratchBufferSize));
+
+    vulkan::Buffer scratch;
+    scratch.create(scratchBufferSize, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkCommandBuffer commandBuffer = vulkan::begin_single_time_commands();
+
+    VkMemoryBarrier memoryBarrier = {};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+    memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+
+    // build bottom-level AS
+  /*  for (size_t i = 0; i < numMeshes; ++i) {
+        blas->info.instanceCount = 0;
+        blas->info.geometryCount = 1;
+        blas->info.pGeometries = &geometries[0];*/
+    vulkan::pvkCmdBuildAccelerationStructureNV( commandBuffer, &blas->info,
+                                           VK_NULL_HANDLE, 0, VK_FALSE,
+                                           blas->structure, VK_NULL_HANDLE,
+										   scratch.buffer, 0);
+
+        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+   // }
+
+    // build top-level AS
+ //   vulkan::pvkCmdBuildAccelerationStructureNV(commandBuffer, &tlas->info,
+  //                                     instancesBuffer.GetBuffer(), 0, VK_FALSE,
+    //                                   tlas->structure, VK_NULL_HANDLE,
+		//							   scratch.buffer, 0);
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+
+    vulkan::end_single_time_commands(commandBuffer);
 }
 
 void rtx_init() {

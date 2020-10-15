@@ -51,12 +51,6 @@ std::vector<VkVertexInputAttributeDescription> Vertex1::attribute_descriptions()
 
 
 VertexBuffer::VertexBuffer() {
-	vertex_buffer = nullptr;
-	vertex_memory = nullptr;
-	vertex_buffer_size = 0;
-	index_buffer = nullptr;
-	index_memory = nullptr;
-	index_buffer_size = 0;
 	output_count = 0;
 
 	vertex_buffers.add(this);
@@ -79,19 +73,8 @@ void VertexBuffer::__delete__() {
 }
 
 void VertexBuffer::_destroy() {
-	if (index_buffer) {
-		vkDestroyBuffer(device, index_buffer, nullptr);
-		vkFreeMemory(device, index_memory, nullptr);
-	}
-	index_buffer = nullptr;
-	if (vertex_buffer) {
-		vkDestroyBuffer(device, vertex_buffer, nullptr);
-		vkFreeMemory(device, vertex_memory, nullptr);
-	}
-	vertex_buffer = nullptr;
-
-	vertex_buffer_size = 0;
-	index_buffer_size = 0;
+	index_buffer.destroy();
+	vertex_buffer.destroy();
 	output_count = 0;
 }
 
@@ -122,31 +105,18 @@ void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
 	VkDeviceSize buffer_size = size;
 
 	// -> staging
-	VkBuffer staging_buffer;
-	VkDeviceMemory staging_memory;
-	create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
-
-	void* data;
-	vkMapMemory(device, staging_memory, 0, buffer_size, 0, &data);
-		memcpy(data, vdata, (size_t) buffer_size);
-	vkUnmapMemory(device, staging_memory);
+	Buffer staging;
+	staging.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	staging.update_part(vdata, 0, buffer_size);
 
 
 	// gpu
-	if (buffer_size > vertex_buffer_size) {
-		if (vertex_buffer)
-			vkDestroyBuffer(device, vertex_buffer, nullptr);
-		if (vertex_memory)
-			vkFreeMemory(device, vertex_memory, nullptr);
-
-		create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_memory);
-		vertex_buffer_size = buffer_size;
+	if (buffer_size > vertex_buffer.size) {
+		vertex_buffer.destroy();
+		vertex_buffer.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
-	copy_buffer(staging_buffer, vertex_buffer, buffer_size);
-
-	vkDestroyBuffer(device, staging_buffer, nullptr);
-	vkFreeMemory(device, staging_memory, nullptr);
+	copy_buffer(staging.buffer, vertex_buffer.buffer, buffer_size);
 }
 
 void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
@@ -155,29 +125,16 @@ void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
 
 	VkDeviceSize buffer_size = sizeof(indices[0]) * indices.num;
 
-	VkBuffer staging_buffer;
-	VkDeviceMemory staging_memory;
-	create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+	Buffer staging;
+	staging.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	staging.update_part(indices.data, 0, buffer_size);
 
-	void* data;
-	vkMapMemory(device, staging_memory, 0, buffer_size, 0, &data);
-		memcpy(data, indices.data, (size_t) buffer_size);
-	vkUnmapMemory(device, staging_memory);
-
-	if (buffer_size > index_buffer_size) {
-		if (index_buffer)
-			vkDestroyBuffer(device, index_buffer, nullptr);
-		if (index_memory)
-			vkFreeMemory(device, index_memory, nullptr);
-
-		create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_memory);
-		index_buffer_size = buffer_size;
+	if (buffer_size > index_buffer.size) {
+		index_buffer.destroy();
+		index_buffer.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
-	copy_buffer(staging_buffer, index_buffer, buffer_size);
-
-	vkDestroyBuffer(device, staging_buffer, nullptr);
-	vkFreeMemory(device, staging_memory, nullptr);
+	copy_buffer(staging.buffer, index_buffer.buffer, buffer_size);
 }
 
 };

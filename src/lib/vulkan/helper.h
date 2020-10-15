@@ -11,7 +11,21 @@ namespace vulkan{
 
 	class FrameBuffer;
 
-	void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
+	class Buffer {
+	public:
+		Buffer();
+		~Buffer();
+		void create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+		void destroy();
+		void map(VkDeviceSize offset, VkDeviceSize size, void **p);
+		void unmap();
+		void update_part(const void *source, int offset, int update_size);
+		VkBuffer buffer;
+		VkDeviceMemory memory;
+		VkDeviceSize size;
+	};
+
+	//void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
 	void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
 	void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 	VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, VkImageViewType type, uint32_t mip_levels);

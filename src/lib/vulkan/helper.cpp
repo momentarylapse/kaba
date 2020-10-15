@@ -12,30 +12,66 @@ bool has_stencil_component(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+Buffer::Buffer() {
+	buffer = nullptr;
+	memory = nullptr;
+	size = 0;
+}
 
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+Buffer::~Buffer() {
+	destroy();
+}
+
+void Buffer::create(VkDeviceSize _size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+	size = _size;
+	VkBufferCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	info.size = size;
+	info.usage = usage;
+	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(device, &info, nullptr, &buffer) != VK_SUCCESS) {
 		throw Exception("failed to create buffer!");
 	}
 
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+	VkMemoryRequirements mem_requirements;
+	vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
 
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = find_memory_type(memRequirements, properties);
+	VkMemoryAllocateInfo alloc_info = {};
+	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	alloc_info.allocationSize = mem_requirements.size;
+	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements, properties);
 
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
 		throw Exception("failed to allocate buffer memory!");
 	}
 
-	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+	vkBindBufferMemory(device, buffer, memory, 0);
+}
+
+void Buffer::destroy() {
+	if (buffer)
+		vkDestroyBuffer(device, buffer, nullptr);
+	buffer = nullptr;
+	if (memory)
+		vkFreeMemory(device, memory, nullptr);
+	memory = nullptr;
+	size = 0;
+}
+
+void Buffer::map(VkDeviceSize _offset, VkDeviceSize _size, void **p) {
+	vkMapMemory(device, memory, _offset, _size, 0, p);
+}
+
+void Buffer::unmap() {
+	vkUnmapMemory(device, memory);
+}
+
+void Buffer::update_part(const void *source, int offset, int update_size) {
+	void* data;
+	map(offset, update_size, &data);
+	memcpy(data, source, update_size);
+	unmap();
 }
 
 void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory) {
@@ -243,14 +279,14 @@ QueueFamilyIndices find_queue_families(VkPhysicalDevice device) {
 
 	int i = 0;
 	for (const auto& queueFamily: queue_families) {
-		if (queueFamily.queueCount > 0 and queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		if ((queueFamily.queueCount > 0) and (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 			indices.graphics_family = i;
 		}
 
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
-		if (queueFamily.queueCount > 0 and presentSupport) {
+		if ((queueFamily.queueCount > 0) and presentSupport) {
 			indices.present_family = i;
 		}
 

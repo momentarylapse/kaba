@@ -13,17 +13,18 @@ namespace vulkan {
 
 AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV type, const Array<VkGeometryNV> &geo, const uint32_t instanceCount) {
 	std::cout << format(" + AccStruc  inst=%d  geo=%d\n", instanceCount, geo.num).c_str();
-	VkAccelerationStructureCreateInfoNV accelerationStructureInfo = {};
-	accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-	accelerationStructureInfo.compactedSize = 0;
-	accelerationStructureInfo.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-	accelerationStructureInfo.info.type = type;
-	accelerationStructureInfo.info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-	accelerationStructureInfo.info.instanceCount = instanceCount;
-	accelerationStructureInfo.info.geometryCount = geo.num;
-	accelerationStructureInfo.info.pGeometries = &geo[0];
+	info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+	info.type = type;
+	info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
+	info.instanceCount = instanceCount;
+	info.geometryCount = geo.num;
+	info.pGeometries = &geo[0];
+	VkAccelerationStructureCreateInfoNV ci = {};
+	ci.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+	ci.compactedSize = 0;
+	ci.info = info;
 
-	VkResult error = pvkCreateAccelerationStructureNV(device, &accelerationStructureInfo, nullptr, &structure);
+	VkResult error = pvkCreateAccelerationStructureNV(device, &ci, nullptr, &structure);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to create acceleration structure");
 
@@ -58,6 +59,7 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 	error = pvkGetAccelerationStructureHandleNV(device, structure, sizeof(uint64_t), &handle);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to get acceleration structure handle");
+	std::cout << "handle: " << handle << "\n";
 
 }
 

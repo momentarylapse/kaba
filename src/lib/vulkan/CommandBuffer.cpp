@@ -149,10 +149,10 @@ void CommandBuffer::draw(VertexBuffer *vb) {
 	if (vb->output_count == 0)
 		return;
 	VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(buffer, 0, 1, &vb->vertex_buffer, offsets);
+	vkCmdBindVertexBuffers(buffer, 0, 1, &vb->vertex_buffer.buffer, offsets);
 
-	if (vb->index_buffer) {
-		vkCmdBindIndexBuffer(buffer, vb->index_buffer, 0, VK_INDEX_TYPE_UINT16);
+	if (vb->index_buffer.buffer) {
+		vkCmdBindIndexBuffer(buffer, vb->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(buffer, vb->output_count, 1, 0, 0, 0);
 	} else {
 		vkCmdDraw(buffer, vb->output_count, 1, 0, 0);

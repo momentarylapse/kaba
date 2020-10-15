@@ -36,7 +36,7 @@ namespace vulkan{
 		size_single_aligned = size;
 		VkDeviceSize buffer_size = size;
 
-		create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, memory);
+		create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
 
 	UniformBuffer::UniformBuffer(int _size, int _count) {
@@ -47,12 +47,10 @@ namespace vulkan{
 		size = size_single_aligned * count;
 		VkDeviceSize buffer_size = size;
 
-		create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, memory);
+		create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
 
 	UniformBuffer::~UniformBuffer() {
-		vkDestroyBuffer(device, buffer, nullptr);
-		vkFreeMemory(device, memory, nullptr);
 	}
 	void UniformBuffer::__init__(int size) {
 		new(this) UniformBuffer(size);
@@ -67,9 +65,9 @@ namespace vulkan{
 
 	void UniformBuffer::update_part(void *source, int offset, int update_size) {
 		void* data;
-		vkMapMemory(device, memory, offset, update_size, 0, &data);
-			memcpy(data, source, update_size);
-		vkUnmapMemory(device, memory);
+		map(offset, update_size, &data);
+		memcpy(data, source, update_size);
+		unmap();
 	}
 
 	void UniformBuffer::update(void *source) {

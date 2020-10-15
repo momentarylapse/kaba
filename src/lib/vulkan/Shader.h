@@ -10,12 +10,13 @@
 #include <vulkan/vulkan.h>
 #include "../math/matrix.h"
 #include <vector>
+#include "helper.h"
 
 namespace vulkan{
 
 	class Texture;
 
-	class UniformBuffer {
+	class UniformBuffer : public Buffer {
 	public:
 		UniformBuffer(int size);
 		UniformBuffer(int size, int count);
@@ -31,10 +32,8 @@ namespace vulkan{
 
 		bool is_dynamic();
 
-		int size, size_single;
+		int size_single;
 		int count, size_single_aligned;
-		VkBuffer buffer;
-		VkDeviceMemory memory;
 	};
 
 	class Shader {
