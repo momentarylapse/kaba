@@ -45,8 +45,17 @@ int extern_function2() {
 	return 2001;
 }
 
+struct VkGeometryInstance {
+    float transform[12];
+    uint32_t instanceId : 24;
+    uint32_t mask : 8;
+    uint32_t instanceOffset : 24;
+    uint32_t flags : 8;
+    uint64_t accelerationStructureHandle;
+};
+
 Array<VkGeometryNV> geometries;
-//Array<VkGeometryInstance> instances;
+Array<VkGeometryInstance> instances;
 
 void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	msg_write("creating bottom layer acceleration structure...");
@@ -75,11 +84,23 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 	geometries.add(geometry);
 
-	//Array<VkGeometryInstance> instances;
-
 	auto blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
 	auto tlas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, {}, 1);
 
+
+    VkGeometryInstance instance;
+    //std::memcpy(instance.transform, transform, sizeof(transform));
+    instance.instanceId = static_cast<uint32_t>(0);
+    instance.mask = 0xff;
+    instance.instanceOffset = 0;
+    instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV;
+    instance.accelerationStructureHandle = blas->handle;
+    instances.add(instance);
+
+
+    vulkan::Buffer instancesBuffer;
+    instancesBuffer.create(instances.num * sizeof(VkGeometryInstance), VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    instancesBuffer.update_part(instances.data, 0, instancesBuffer.size);
 
 
 
@@ -112,13 +133,16 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 
     vulkan::Buffer scratch;
     scratch.create(scratchBufferSize, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    msg_write("aaaaaa0");
 
     VkCommandBuffer commandBuffer = vulkan::begin_single_time_commands();
+    msg_write("aaaaaa01");
 
     VkMemoryBarrier memoryBarrier = {};
     memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
     memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+    msg_write("aaaaaa02");
 
     // build bottom-level AS
   /*  for (size_t i = 0; i < numMeshes; ++i) {
@@ -129,19 +153,24 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
                                            VK_NULL_HANDLE, 0, VK_FALSE,
                                            blas->structure, VK_NULL_HANDLE,
 										   scratch.buffer, 0);
+    msg_write("aaaaaa03");
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV|VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV|VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
    // }
+        msg_write("aaaaaa04");
 
     // build top-level AS
- //   vulkan::pvkCmdBuildAccelerationStructureNV(commandBuffer, &tlas->info,
-  //                                     instancesBuffer.GetBuffer(), 0, VK_FALSE,
-    //                                   tlas->structure, VK_NULL_HANDLE,
-		//							   scratch.buffer, 0);
+    vulkan::pvkCmdBuildAccelerationStructureNV(commandBuffer, &tlas->info,
+                                       instancesBuffer.buffer, 0, VK_FALSE,
+                                       tlas->structure, VK_NULL_HANDLE,
+									   scratch.buffer, 0);
+    msg_write("aaaaaa05");
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV|VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV|VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
 
+    msg_write("aaaaaa06");
     vulkan::end_single_time_commands(commandBuffer);
+    msg_write("aaaaaa07");
 }
 
 void rtx_init() {
