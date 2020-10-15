@@ -132,6 +132,8 @@ DECLARE_EXT(vkCreateAccelerationStructureNV);
 DECLARE_EXT(vkBindAccelerationStructureMemoryNV);
 DECLARE_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
 DECLARE_EXT(vkGetAccelerationStructureHandleNV);
+DECLARE_EXT(vkGetRayTracingShaderGroupHandlesNV);
+DECLARE_EXT(vkGetPhysicalDeviceProperties2);
 static bool rtx_loaded = false;
 
 
@@ -161,6 +163,8 @@ void ensure_rtx() {
 	LOAD_EXT(vkBindAccelerationStructureMemoryNV);
 	LOAD_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
 	LOAD_EXT(vkGetAccelerationStructureHandleNV);
+	LOAD_EXT(vkGetRayTracingShaderGroupHandlesNV);
+	LOAD_EXT(vkGetPhysicalDeviceProperties2);
 
 	if (!pvkCreateRayTracingPipelinesNV)
 		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";

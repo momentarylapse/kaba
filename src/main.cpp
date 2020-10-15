@@ -53,9 +53,12 @@ struct VkGeometryInstance {
     uint32_t flags : 8;
     uint64_t accelerationStructureHandle;
 };
+VkPhysicalDeviceRayTracingPropertiesNV mRTProps = {};
 
 Array<VkGeometryNV> geometries;
 Array<VkGeometryInstance> instances;
+vulkan::AccelerationStructure *blas;
+vulkan::AccelerationStructure *tlas;
 
 void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	msg_write("creating bottom layer acceleration structure...");
@@ -84,8 +87,8 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 	geometries.add(geometry);
 
-	auto blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
-	auto tlas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, {}, 1);
+	blas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometries, 0);
+	tlas = new vulkan::AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, {}, 1);
 
 
     VkGeometryInstance instance;
@@ -173,8 +176,38 @@ void create_acc_struct_bl(vulkan::VertexBuffer *vb) {
     msg_write("aaaaaa07");
 }
 
+vulkan::Buffer *create_sbt(vulkan::RayPipeline *pipeline) {
+	msg_write("create sbt");
+    int sbt_size = 1024;
+    vulkan::Buffer *sbt = new vulkan::Buffer();
+    sbt->create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    void *p;
+    sbt->map(0, sbt_size, &p);
+    if (vulkan::pvkGetRayTracingShaderGroupHandlesNV(vulkan::device, pipeline->pipeline, 0, 1, sbt_size, p) != VK_SUCCESS) // num groups = 1
+    	throw Exception("can not get rt shader group handles");
+    sbt->unmap();
+    return sbt;
+}
+
+void get_dev_props() {
+
+    mRTProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+
+    VkPhysicalDeviceProperties2 devProps;
+    devProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    devProps.pNext = &mRTProps;
+    devProps.properties = { };
+
+    vulkan::pvkGetPhysicalDeviceProperties2(vulkan::physical_device, &devProps);
+    msg_write("PROPS");
+    msg_write(mRTProps.shaderGroupBaseAlignment);
+    msg_write(mRTProps.shaderGroupHandleSize);
+}
+
 void rtx_init() {
 	try {
+		get_dev_props();
+
 		msg_write("loading shader...");
 		auto shader = vulkan::Shader::load("rtx.shader");
 
@@ -185,6 +218,19 @@ void rtx_init() {
 
 		msg_write("creating pipeline...");
 		auto rp = new vulkan::RayPipeline(shader);
+		auto sbt = create_sbt(rp);
+
+		auto cb = vulkan::begin_single_time_commands();
+		int stride = mRTProps.shaderGroupHandleSize;
+
+		vkCmdBindPipeline(cb,
+		                      VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+		                      rp->pipeline);
+
+		vulkan::pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
+                VK_NULL_HANDLE, 0, 0,
+				16, 16, 1);
+		vulkan::end_single_time_commands(cb);
 	} catch (Exception &e) {
 		msg_error(e.message());
 	}

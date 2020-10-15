@@ -88,6 +88,8 @@ namespace vulkan {
 	DECLARE_EXT_H(vkCreateRayTracingPipelinesNV);
 	DECLARE_EXT_H(vkGetAccelerationStructureMemoryRequirementsNV);
 	DECLARE_EXT_H(vkGetAccelerationStructureHandleNV);
+	DECLARE_EXT_H(vkGetRayTracingShaderGroupHandlesNV);
+	DECLARE_EXT_H(vkGetPhysicalDeviceProperties2);
 }
 
 #endif
