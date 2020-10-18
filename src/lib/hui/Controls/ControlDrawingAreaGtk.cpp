@@ -16,11 +16,6 @@ static std::thread::id main_thread_id = std::this_thread::get_id();
 
 #define STUPID_HACK 0
 
-#ifdef OS_WINDOWS
-//#include <windows.h>
-#endif
-//#include <GL/gl.h>
-
 #ifdef HUI_API_GTK
 
 namespace hui

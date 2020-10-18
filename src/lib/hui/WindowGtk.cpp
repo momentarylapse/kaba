@@ -184,10 +184,6 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 		statusbar = gtk_statusbar_new();
 		gtk_box_pack_start(GTK_BOX(vbox), statusbar, FALSE, FALSE, 0);
 	}
-	
-#ifdef OS_WINDOWS
-	//hWnd = nullptr;
-#endif
 }
 
 Window::~Window() {
@@ -220,9 +216,6 @@ bool Window::got_destroyed() {
 void Window::show() {
 	allow_input = true;
 	gtk_widget_show(window);
-#ifdef OS_WINDOWS
-	//hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(window));
-#endif
 }
 
 void Window::run() {
@@ -561,6 +554,8 @@ void Window::__set_options(const string &options) {
 			show_cursor(val_is_positive(val, true));
 		} else if (op == "borderwidth") {
 			set_border_width(val._int());
+		} else if (op == "spacing") {
+			spacing = val._int();
 		}
 	}
 }

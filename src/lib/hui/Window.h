@@ -152,11 +152,6 @@ public:
 private:
 
 
-#ifdef OS_WINDOWS
-public:
-	//void *hWnd;
-private:
-#endif
 #ifdef HUI_API_WIN
 	bool ready;
 	//hui_callback *NixGetInputFromWindow;
