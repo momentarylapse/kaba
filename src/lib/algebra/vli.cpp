@@ -6,6 +6,8 @@
 //#define vlidb(m)	msg_write((m));
 #define vlidb(m)
 
+#define ALLOW_ON_WINDOWS 0
+
 #ifdef CPU_ARM
 
 // TODO
@@ -18,15 +20,16 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry){}
 
 
 
-inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh)
-{
+inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh) {
 #ifdef OS_WINDOWS
+#if ALLOW_ON_WINDOWS
 	__asm{
 		mov eax, b
 		mul a
 		mov a, eax
 		mov oh, edx
 	}
+#endif
 #else
 	asm volatile(	"mov %2, %%eax\n\t"
 		"mul %3\n\t"
@@ -39,9 +42,9 @@ inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh)
 }
 
 
-inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned int &orem)
-{
+inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned int &orem) {
 #ifdef OS_WINDOWS
+#if ALLOW_ON_WINDOWS
 	__asm{
 		mov eax, a_l
 		mov edx, a_h
@@ -49,6 +52,7 @@ inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned 
 		mov a_l, eax
 		mov orem, edx
 	}
+#endif
 #else
 	asm volatile(	"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
@@ -61,9 +65,9 @@ inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned 
 #endif
 }
 
-inline void _add_(unsigned int &a, unsigned int b, bool &carry)
-{
+inline void _add_(unsigned int &a, unsigned int b, bool &carry) {
 #ifdef OS_WINDOWS
+#if ALLOW_ON_WINDOWS
 	if (carry)
 		__asm stc
 	else
@@ -75,6 +79,7 @@ inline void _add_(unsigned int &a, unsigned int b, bool &carry)
 		setc _carry
 	}
 	carry = _carry;
+#endif
 #else
 	if (carry)
 		asm volatile("stc");
@@ -89,9 +94,9 @@ inline void _add_(unsigned int &a, unsigned int b, bool &carry)
 #endif
 }
 
-inline void _sub_(unsigned int &a, unsigned int b, bool &carry)
-{
+inline void _sub_(unsigned int &a, unsigned int b, bool &carry) {
 #ifdef OS_WINDOWS
+#if ALLOW_ON_WINDOWS
 	if (carry)
 		__asm stc
 	else
@@ -104,6 +109,7 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry)
 		setc _carry
 	}
 	carry = _carry;
+#endif
 #else
 	if (carry)
 		asm volatile("stc");
@@ -123,41 +129,37 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry)
 #endif
 
 
-vli::vli()
-{
+vli::vli() {
 	data.add(0);
 	sign = false;
 }
 
-vli::vli(const vli &v)
-{
+vli::vli(const vli &v) {
 	sign = v.sign;
 	data = v.data;
 }
 
-vli::vli(int v)
-{
-	if (v >= 0){
+vli::vli(int v) {
+	if (v >= 0) {
 		sign = false;
 		data.add(v);
-	}else{
+	} else {
 		sign = true;
 		data.add(-v);
 	}
 }
 
-vli::vli(const string &str)
-{
+vli::vli(const string &str) {
 	data.add(0);
 	sign = false;
 	int i0 = 0;
-	if ((str.num > 0) and (str[0] == '-')){
+	if ((str.num > 0) and (str[0] == '-')) {
 		sign = true;
 		i0 = 1;
 	}
 	Array<unsigned int> ui;
 	ui.resize(1);
-	for (int i=i0;i<str.num;i++){
+	for (int i=i0;i<str.num;i++) {
 		if (i > i0)
 			*this *= 10;
 		ui[0] = (str[i] - '0');

@@ -186,7 +186,7 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 	}
 	
 #ifdef OS_WINDOWS
-	hWnd = nullptr;
+	//hWnd = nullptr;
 #endif
 }
 
@@ -221,7 +221,7 @@ void Window::show() {
 	allow_input = true;
 	gtk_widget_show(window);
 #ifdef OS_WINDOWS
-	hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(window));
+	//hWnd = (HWND)GDK_WINDOW_HWND(gtk_widget_get_window(window));
 #endif
 }
 

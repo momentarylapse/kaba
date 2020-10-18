@@ -4,6 +4,7 @@
 	#include <direct.h>
 	#include <tchar.h>
 	#include <signal.h>
+	#include <windows.h>
 #endif
 #ifdef OS_LINUX
 	#include <sys/time.h>
@@ -38,10 +39,13 @@ int GetCpuCount() {
 }
 
 
+#ifdef OS_WINDOWS
+const TCHAR* hui_tchar_str(const string& str);
+#endif
 
 void OpenDocument(const Path &filename) {
 #ifdef OS_WINDOWS
-	ShellExecute(NULL, _T(""), hui_tchar_str(filename.str()), _T(""), _T(""), SW_SHOW);
+	//ShellExecute(NULL, _T(""), hui_tchar_str(filename.str()), _T(""), _T(""), SW_SHOW);
 #endif
 #ifdef OS_LINUX
 	int r = system(format("gnome-open '%s'", filename).c_str());

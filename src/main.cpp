@@ -7,7 +7,7 @@
 
 
 //#include <vulkan/vulkan.h>
-#include "lib/vulkan/vulkan.h"
+//#include "lib/vulkan/vulkan.h"
 
 string AppName = "Kaba";
 string AppVersion = Kaba::Version;
@@ -45,11 +45,12 @@ int extern_function2() {
 }
 
 void rtx_init() {
+/*
 	msg_write("loading shader...");
 	auto shader = vulkan::Shader::load("rtx.shader");
 
 	msg_write("creating pipeline...");
-	auto rp = new vulkan::RayPipeline(shader);
+	auto rp = new vulkan::RayPipeline(shader);*/
 }
 
 

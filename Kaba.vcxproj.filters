@@ -7,726 +7,888 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
-    <Filter Include="lib">
-      <UniqueIdentifier>{a227153d-b417-46d6-8f24-fdde5dcad832}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\base">
-      <UniqueIdentifier>{3f4b0289-d714-41b5-8d5a-fbd47964110c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\hui">
-      <UniqueIdentifier>{f3a6edf2-d610-401e-ae48-a37ce9657c87}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\nix">
-      <UniqueIdentifier>{e4a8007f-1921-4874-88be-0223453b7a6f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\math">
-      <UniqueIdentifier>{8e5a2704-6774-4374-a192-9fb0d0e7233d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\image">
-      <UniqueIdentifier>{733a3c44-5c92-4ee0-9dee-03bad3c0ad38}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\hui\Controls">
-      <UniqueIdentifier>{0b7d405f-16d1-408e-be0c-d287657a12b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\script">
-      <UniqueIdentifier>{5203855a-04f4-452e-b577-41755dce19df}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\file">
-      <UniqueIdentifier>{fdd770d7-a799-4657-8c0f-40f070deb2b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\script\asm">
-      <UniqueIdentifier>{9e3d24d9-3ab6-451d-8acd-37b3d3071038}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\script\syntax">
-      <UniqueIdentifier>{1d7756f0-fa8a-454a-83e7-fb1b528b9697}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\script\lib">
-      <UniqueIdentifier>{2f5c0fce-6ef2-4047-88b0-f16a79ced0d7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\script\compiler">
-      <UniqueIdentifier>{47c51c7d-4ee7-4474-89a5-1e7d08d1debd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\net">
-      <UniqueIdentifier>{187dea9a-c6cf-4ad4-a6e8-ecb2931d72da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\sound">
-      <UniqueIdentifier>{5424fe6c-378e-4521-ae09-eb19769ec165}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\thread">
-      <UniqueIdentifier>{bf8f9983-fcbd-4ece-b7c7-c676f6b95c23}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\algebra">
-      <UniqueIdentifier>{781cdada-595c-4356-b268-e5a5f88b7b88}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="lib\any">
-      <UniqueIdentifier>{d77e3fd9-2c62-4be6-a91e-96b189dfcc08}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\hui\hui.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_clipboard.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_common_dlg.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_common_dlg_gtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_common_dlg_win.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_config.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_error.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_input.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_language.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_main_gtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_main_win.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_resource.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_utility.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_window_control.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_window_control_gtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\hui_window_control_win.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiMenu.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiMenuGtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiMenuWin.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiPainterGtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiTimer.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiToolbar.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiToolbarGtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiToolbarWin.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiWindow.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiWindowGtk.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\HuiWindowWin.cpp">
-      <Filter>lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControl.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlCheckBoxGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlColorButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlComboBoxGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlDrawingAreaGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlEditGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlGridGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlGroupGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlLabelGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlListViewGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlMultilineEditGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlProgressBarGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlRadioButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlSliderGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlSpinButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlTabControlGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlToggleButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiControlTreeViewGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemButtonWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemMenuButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemMenuButtonWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemSeparatorGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemSeparatorWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemToggleButtonGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiToolItemToggleButtonWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemSeparatorGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemSeparatorWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemSubmenuGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemSubmenuWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemToggleGtk.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemToggleWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\controls\HuiMenuItemWin.cpp">
-      <Filter>lib\hui\Controls</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\image\image.cpp">
-      <Filter>lib\image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\image\image_bmp.cpp">
-      <Filter>lib\image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\image\image_jpg.cpp">
-      <Filter>lib\image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\image\image_tga.cpp">
-      <Filter>lib\image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\file\file.cpp">
-      <Filter>lib\file</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\file\file_op.cpp">
-      <Filter>lib\file</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\file\msg.cpp">
-      <Filter>lib\file</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_draw.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_input.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_light.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_shader.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_textures.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_vertexbuffer.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\nix\nix_view.cpp">
-      <Filter>lib\nix</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\script.cpp">
-      <Filter>lib\script</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\math.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\matrix.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\matrix3.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\plane.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\quaternion.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\random.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\ray.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\rect.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\vector.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\complex.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\math\interpolation.cpp">
-      <Filter>lib\math</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\asm\asm.cpp">
-      <Filter>lib\script\asm</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\compiler\compiler.cpp">
-      <Filter>lib\script\compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\compiler\mapper.cpp">
-      <Filter>lib\script\compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\compiler\serializer.cpp">
-      <Filter>lib\script\compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_file.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_hui.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_image.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_math.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_net.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_nix.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_sound.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_threads.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\lib\script_data_x.cpp">
-      <Filter>lib\script\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\syntax_tree.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\implicit.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\lexical.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\parser.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\precompiler.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\preprocessor.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\script\syntax\type.cpp">
-      <Filter>lib\script\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\base\strings.cpp">
-      <Filter>lib\base</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\base\array.cpp">
-      <Filter>lib\base</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\threads\work.cpp">
-      <Filter>lib\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\threads\threads.cpp">
-      <Filter>lib\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\threads\mutex.cpp">
-      <Filter>lib\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\any\any.cpp">
-      <Filter>lib\any</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\image\color.cpp">
-      <Filter>lib\image</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\net\net.cpp">
-      <Filter>lib\net</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\sound\sound_al.cpp">
-      <Filter>lib\sound</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\sound\sound.cpp">
-      <Filter>lib\sound</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\algebra\crypto.cpp">
-      <Filter>lib\algebra</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\algebra\vli.cpp">
-      <Filter>lib\algebra</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\any\any.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\base\array.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\base\pointer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\base\strings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\file\file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\file\file_op.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\file\msg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\file\path.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Callback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Clipboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\common_dlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\common_dlg_gtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\common_dlg_win.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\error.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\hui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\language.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\main_gtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\main_win.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\MenuGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\MenuWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\PainterGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Panel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Resource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Toolbar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\ToolbarGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\ToolbarWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\Window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\WindowGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\WindowWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\window_control.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\window_control_gtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\window_control_win.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\Control.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlCheckBoxGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlColorButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlComboBoxGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlDrawingAreaGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlEditGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlExpanderGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlGridGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlGroupGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlLabelGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlListViewGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlMenuButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlMultilineEditGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlPanedGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlProgressBarGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlRadioButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlRevealerGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlScrollerGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlSeparatorGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlSliderGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlSpinButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlTabControlGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlToggleButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ControlTreeViewGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemSeparatorGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemSeparatorWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemSubmenuGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemSubmenuWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemToggleGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemToggleWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\MenuItemWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemButtonWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemMenuButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemMenuButtonWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemSeparatorGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemSeparatorWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemToggleButtonGtk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\hui\controls\ToolItemToggleButtonWin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\ImagePainter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\image_bmp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\image_jpg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\image_png.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\image\image_tga.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\kaba.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\asm\asm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\asm\asm_arm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\asm\asm_x86.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\compiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\mapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\serializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\serializer_amd64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\serializer_arm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\serializer_x86.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\dict.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\dynamic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_hui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_kaba.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_net.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_nix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_os.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_threads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\Class.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\Constant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\Function.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\implicit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\lexical.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\Node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\precompiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\preprocessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\SyntaxTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\complex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\interpolation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\matrix3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\plane.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\quaternion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\ray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\rect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\net\net.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_textures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_vertexbuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_view.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\sound\sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\sound\sound_al.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\threads\Mutex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\threads\Thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\threads\ThreadedWork.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\CommandBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\FrameBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\RenderPass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Semaphore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\SwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\VertexBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\vulkan.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\lib\hui\hui.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_clipboard.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_common.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_common_dlg.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_config.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_error.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_input.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_internal.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_language.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_main.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_resource.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\hui_utility.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\image\image.h">
-      <Filter>lib\image</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\image\image_bmp.h">
-      <Filter>lib\image</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\image\image_jpg.h">
-      <Filter>lib\image</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\image\image_tga.h">
-      <Filter>lib\image</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_common.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_config.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_draw.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_input.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_light.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_shader.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_textures.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_vertexbuffer.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\nix\nix_view.h">
-      <Filter>lib\nix</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControl.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlCheckBox.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlColorButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlComboBox.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlDrawingArea.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlEdit.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlGrid.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlGroup.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlLabel.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlListView.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlMultilineEdit.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlProgressBar.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlRadioButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlSlider.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlSpinButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlTabControl.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlToggleButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiControlTreeView.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiMenuItem.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiMenuItemSeparator.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiMenuItemSubmenu.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiMenuItemToggle.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiToolItemButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiToolItemMenuButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiToolItemSeparator.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\controls\HuiToolItemToggleButton.h">
-      <Filter>lib\hui\Controls</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\base\strings.h">
-      <Filter>lib\base</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\net\net.h">
-      <Filter>lib\net</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\base\set.h">
-      <Filter>lib\base</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\algebra\vli.h">
-      <Filter>lib\algebra</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\script\lib\script_data.h">
-      <Filter>lib\script\lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\script\lib\script_data_common.h">
-      <Filter>lib\script\lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\script\compiler\serializer.h">
-      <Filter>lib\script\compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\sound\sound.h">
-      <Filter>lib\sound</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\threads\threads.h">
-      <Filter>lib\thread</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\threads\work.h">
-      <Filter>lib\thread</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\threads\mutex.h">
-      <Filter>lib\thread</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\plane.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\quaternion.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\random.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\ray.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\rect.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\vector.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\matrix3.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\matrix.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\math.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\complex.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\math\interpolation.h">
-      <Filter>lib\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\base\map.h">
-      <Filter>lib\base</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\HuiWindow.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\HuiToolbar.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\HuiTimer.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\HuiPainter.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\HuiMenu.h">
-      <Filter>lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\base\array.h">
-      <Filter>lib\base</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\base\base.h">
-      <Filter>lib\base</Filter>
+    <ClInclude Include="src\lib\config.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\algebra\algebra.h">
-      <Filter>lib\algebra</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\algebra\crypto.h">
-      <Filter>lib\algebra</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\script\asm\asm.h">
-      <Filter>lib\script\asm</Filter>
+    <ClInclude Include="src\lib\algebra\vli.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\any\any.h">
-      <Filter>lib\any</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\image\color.h">
-      <Filter>lib\image</Filter>
+    <ClInclude Include="src\lib\base\array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\pointer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\set.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\strings.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\file\file.h">
-      <Filter>lib\file</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\file\file_op.h">
-      <Filter>lib\file</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\file\msg.h">
-      <Filter>lib\file</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\script\script.h">
-      <Filter>lib\script</Filter>
+    <ClInclude Include="src\lib\file\path.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\script\syntax\lexical.h">
-      <Filter>lib\script\syntax</Filter>
+    <ClInclude Include="src\lib\hui\Application.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\script\syntax\syntax_tree.h">
-      <Filter>lib\script\syntax</Filter>
+    <ClInclude Include="src\lib\hui\Callback.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\script\syntax\type.h">
-      <Filter>lib\script\syntax</Filter>
+    <ClInclude Include="src\lib\hui\Clipboard.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\config.h">
-      <Filter>lib</Filter>
+    <ClInclude Include="src\lib\hui\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\common_dlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\error.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\hui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\language.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Painter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Panel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Toolbar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\Window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\Control.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlCheckBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlColorButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlComboBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlDrawingArea.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlEdit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlExpander.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlGrid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlGroup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlLabel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlListView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlMenuButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlMultilineEdit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlPaned.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlProgressBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlRadioButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlRevealer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlScroller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlSeparator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlSlider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlSpinButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlTabControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlToggleButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ControlTreeView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\MenuItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\MenuItemSeparator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\MenuItemSubmenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\MenuItemToggle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ToolItemButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ToolItemMenuButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ToolItemSeparator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\hui\controls\ToolItemToggleButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\ImagePainter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\image_bmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\image_jpg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\image_png.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\image_tga.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\image\Painter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\kaba.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\asm\asm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\asm\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\serializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\serializer_amd64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\serializer_arm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\serializer_x86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\dict.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\dynamic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\exception.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\Class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\Constant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\Function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\lexical.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\Node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\Parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\SyntaxTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\complex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\interpolation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\matrix3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\plane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\quaternion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\ray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\rect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\net\net.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_draw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_textures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_vertexbuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_view.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\sound\sound.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\threads\Mutex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\threads\Thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\threads\ThreadedWork.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\CommandBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\FrameBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\RenderPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Semaphore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\SwapChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\VertexBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\vulkan.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

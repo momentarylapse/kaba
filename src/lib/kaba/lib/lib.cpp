@@ -808,7 +808,7 @@ void init(Asm::InstructionSet instruction_set, Abi abi, bool allow_std_lib) {
 		}else if (config.instruction_set == Asm::InstructionSet::X86){
 			abi = Abi::GNU_32;
 #ifdef OS_WINDOWS
-			abi = ABI_WINDOWS_32;
+			abi = Abi::WINDOWS_32;
 #endif
 		}else if (config.instruction_set == Asm::InstructionSet::ARM){
 			abi = Abi::GNU_ARM_32;

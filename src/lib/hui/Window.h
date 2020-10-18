@@ -154,7 +154,7 @@ private:
 
 #ifdef OS_WINDOWS
 public:
-	HWND hWnd;
+	//void *hWnd;
 private:
 #endif
 #ifdef HUI_API_WIN

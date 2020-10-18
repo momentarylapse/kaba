@@ -40,7 +40,7 @@ string Version = "0.6.12.0";
 
 
 #ifdef OS_WINDOWS
-	HINSTANCE hui_win_instance;
+	void *hui_win_instance;
 #endif
 #ifdef HUI_API_WIN
 	HFONT hui_win_default_font;
