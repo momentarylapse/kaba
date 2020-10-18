@@ -94,9 +94,8 @@ int hui_main(const Array<string> &);
 
 #ifdef _CONSOLE
 
-int _tmain(int NumArgs, _TCHAR *Args[])
-{
-	return hui_main(MakeArgs(NumArgs, Args));
+int _tmain(int NumArgs, _TCHAR *Args[]) {
+	return hui_main(hui::make_args(NumArgs, Args));
 }
 
 #else
