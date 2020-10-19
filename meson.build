@@ -220,6 +220,7 @@ sources = [
 	'src/lib/threads/Thread.cpp',
 	'src/lib/threads/ThreadedWork.cpp',
 	'src/lib/vulkan/AccelerationStructure.cpp',
+	'src/lib/vulkan/Buffer.cpp',
 	'src/lib/vulkan/CommandBuffer.cpp',
 	'src/lib/vulkan/DescriptorSet.cpp',
 	'src/lib/vulkan/FrameBuffer.cpp',

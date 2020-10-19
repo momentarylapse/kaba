@@ -12,68 +12,6 @@ bool has_stencil_component(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-Buffer::Buffer() {
-	buffer = nullptr;
-	memory = nullptr;
-	size = 0;
-}
-
-Buffer::~Buffer() {
-	destroy();
-}
-
-void Buffer::create(VkDeviceSize _size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
-	size = _size;
-	VkBufferCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	info.size = size;
-	info.usage = usage;
-	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(device, &info, nullptr, &buffer) != VK_SUCCESS) {
-		throw Exception("failed to create buffer!");
-	}
-
-	VkMemoryRequirements mem_requirements;
-	vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
-
-	VkMemoryAllocateInfo alloc_info = {};
-	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	alloc_info.allocationSize = mem_requirements.size;
-	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements, properties);
-
-	if (vkAllocateMemory(device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
-		throw Exception("failed to allocate buffer memory!");
-	}
-
-	vkBindBufferMemory(device, buffer, memory, 0);
-}
-
-void Buffer::destroy() {
-	if (buffer)
-		vkDestroyBuffer(device, buffer, nullptr);
-	buffer = nullptr;
-	if (memory)
-		vkFreeMemory(device, memory, nullptr);
-	memory = nullptr;
-	size = 0;
-}
-
-void Buffer::map(VkDeviceSize _offset, VkDeviceSize _size, void **p) {
-	vkMapMemory(device, memory, _offset, _size, 0, p);
-}
-
-void Buffer::unmap() {
-	vkUnmapMemory(device, memory);
-}
-
-void Buffer::update_part(const void *source, int offset, int update_size) {
-	void* data;
-	map(offset, update_size, &data);
-	memcpy(data, source, update_size);
-	unmap();
-}
-
 void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory) {
 	VkImageCreateInfo image_info = {};
 	image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

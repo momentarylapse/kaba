@@ -7,7 +7,7 @@
 #include "../math/vector.h"
 #include <vector>
 #include <vulkan/vulkan.h>
-#include "helper.h"
+#include "Buffer.h"
 
 namespace vulkan {
 

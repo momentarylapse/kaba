@@ -8,6 +8,7 @@
 
 #include "helper.h"
 #include "CommandBuffer.h"
+#include "Buffer.h"
 #include "../image/image.h"
 
 namespace vulkan {

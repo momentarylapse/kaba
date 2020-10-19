@@ -11,28 +11,6 @@
 
 namespace vulkan{
 
-	class Texture;
-
-	class UniformBuffer : public Buffer {
-	public:
-		UniformBuffer(int size);
-		UniformBuffer(int size, int count);
-		~UniformBuffer();
-
-		void __init__(int size);
-		void __init_multi__(int size, int count);
-		void __delete__();
-
-		void update(void *source);
-		void update_part(void *source, int offset, int size);
-		void update_single(void *source, int index);
-
-		bool is_dynamic();
-
-		int size_single;
-		int count, size_single_aligned;
-	};
-
 	class Shader {
 	public:
 		Shader();

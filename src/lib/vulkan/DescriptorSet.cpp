@@ -10,6 +10,7 @@
 
 
 #include "DescriptorSet.h"
+#include "Buffer.h"
 #include "Shader.h"
 #include "Texture.h"
 #include <vulkan/vulkan.h>

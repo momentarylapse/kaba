@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "DescriptorSet.h"
+#include "Buffer.h"
 #include "VertexBuffer.h"
 #include "Texture.h"
 #include "Shader.h"

@@ -16,66 +16,6 @@
 
 namespace vulkan{
 	Array<Shader*> shaders;
-	Array<UniformBuffer*> ubo_wrappers;
-
-	extern VkPhysicalDeviceProperties device_properties;
-	int make_aligned(int size) {
-		if (device_properties.limits.minUniformBufferOffsetAlignment == 0)
-			return 0;
-		return (size + device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
-	}
-
-
-	UniformBuffer::UniformBuffer(int _size) {
-		count = 0;
-		size = _size;
-		size_single = size;
-		size_single_aligned = size;
-		VkDeviceSize buffer_size = size;
-
-		create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	}
-
-	UniformBuffer::UniformBuffer(int _size, int _count) {
-		// "dynamic"
-		count = _count;
-		size_single = _size;
-		size_single_aligned = make_aligned(size_single);
-		size = size_single_aligned * count;
-		VkDeviceSize buffer_size = size;
-
-		create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	}
-
-	UniformBuffer::~UniformBuffer() {
-	}
-	void UniformBuffer::__init__(int size) {
-		new(this) UniformBuffer(size);
-	}
-	void UniformBuffer::__delete__() {
-		this->~UniformBuffer();
-	}
-
-	bool UniformBuffer::is_dynamic() {
-		return count > 0;
-	}
-
-	void UniformBuffer::update_part(void *source, int offset, int update_size) {
-		void* data;
-		map(offset, update_size, &data);
-		memcpy(data, source, update_size);
-		unmap();
-	}
-
-	void UniformBuffer::update(void *source) {
-		update_part(source, 0, size);
-	}
-
-	void UniformBuffer::update_single(void *source, int index) {
-		update_part(source, size_single_aligned * index, size_single);
-	}
-
-
 
 
 

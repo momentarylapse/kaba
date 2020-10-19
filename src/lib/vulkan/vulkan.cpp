@@ -664,8 +664,7 @@ Buffer *create_sbt(RayPipeline *pipeline) {
 	int sbt_size = 1024;
 	Buffer *sbt = new Buffer();
 	sbt->create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	void *p;
-	sbt->map(0, sbt_size, &p);
+	void *p = sbt->map(0, sbt_size);
 	if (pvkGetRayTracingShaderGroupHandlesNV(device, pipeline->pipeline, 0, 1, sbt_size, p) != VK_SUCCESS) // num groups = 1
 		throw Exception("can not get rt shader group handles");
 	sbt->unmap();
