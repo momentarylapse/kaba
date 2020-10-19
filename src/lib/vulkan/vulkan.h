@@ -56,7 +56,7 @@ namespace vulkan {
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
 
-	void init(GLFWwindow* window);
+	void init(GLFWwindow* window, const string &op);
 	void destroy();
 
 
@@ -77,6 +77,10 @@ namespace vulkan {
 
 
 	bool has_stencil_component(VkFormat format);
+
+
+	void rtx_init();
+	void rtx_step();
 
 
 #define DECLARE_EXT_H(NAME) extern PFN_##NAME p##NAME;

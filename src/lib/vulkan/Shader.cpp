@@ -80,13 +80,17 @@ namespace vulkan{
 
 
 	VkDescriptorPool create_descriptor_pool() {
-		std::array<VkDescriptorPoolSize, 3> pool_sizes = {};
+		std::array<VkDescriptorPoolSize, 5> pool_sizes = {};
 		pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		pool_sizes[0].descriptorCount = 1024*64;
 		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		pool_sizes[1].descriptorCount = 128*64;
 		pool_sizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		pool_sizes[2].descriptorCount = 1024*32;
+		pool_sizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		pool_sizes[3].descriptorCount = 64;
+		pool_sizes[4].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+		pool_sizes[4].descriptorCount = 64;
 
 
 		VkDescriptorPoolCreateInfo info = {};
@@ -113,7 +117,6 @@ namespace vulkan{
 
 		num_dynamic_ubos = 0;
 
-		msg_write(ia2s(binding_no));
 		layout = create_layout(types, binding_no);
 
 		VkDescriptorSetAllocateInfo info = {};
@@ -186,7 +189,6 @@ namespace vulkan{
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
 			w.dstBinding = u.binding;
-			msg_write(format("ubo -> %d", u.binding));
 			w.dstArrayElement = 0;
 			w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			if (u.ubo->is_dynamic())
@@ -201,7 +203,6 @@ namespace vulkan{
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
 			w.dstBinding = t.binding;
-			msg_write(format("tex -> %d", t.binding));
 			w.dstArrayElement = 0;
 			w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			w.descriptorCount = 1;
@@ -220,7 +221,6 @@ namespace vulkan{
 			lb.descriptorType = types[i];
 			lb.descriptorCount = 1;
 			lb.binding = binding_no[i];
-			msg_write(format("layout... -> %d", lb.binding));
 			lb.pImmutableSamplers = nullptr;
 			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -322,7 +322,6 @@ namespace vulkan{
 		//int num_samplers = 0;
 		int cur_binding = 0;
 		for (auto &y: x) {
-			msg_write(y);
 			if (y == "" or y == ".") {
 				cur_binding ++;
 			} else if (y == "buffer") {

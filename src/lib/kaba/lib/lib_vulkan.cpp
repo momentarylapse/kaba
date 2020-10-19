@@ -25,14 +25,18 @@ namespace Kaba{
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-vulkan::Texture* __VulkanLoadTexture(const Path &filename) {
+vulkan::Texture* __vulkan_load_texture(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER(return vulkan::Texture::load(filename));
 	return nullptr;
 }
 
-vulkan::Shader* __VulkanLoadShader(const Path &filename) {
+vulkan::Shader* __vulkan_load_shader(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER(return vulkan::Shader::load(filename));
 	return nullptr;
+}
+
+void __vulkan_init(GLFWwindow* window, const string &op) {
+	KABA_EXCEPTION_WRAPPER(vulkan::init(window, op));
 }
 
 #pragma GCC pop_options
@@ -168,7 +172,7 @@ void SIAddPackageVulkan() {
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
 			func_add_param("format", TypeString);
-		class_add_funcx("load", TypeTextureP, vul_p(&__VulkanLoadTexture), Flags::STATIC);
+		class_add_funcx("load", TypeTextureP, vul_p(&__vulkan_load_texture), Flags::STATIC);
 			func_add_param("filename", TypePath);
 
 
@@ -205,7 +209,7 @@ void SIAddPackageVulkan() {
 		//class_add_elementx("descr_layout", TypePointerList, vul_p(&vulkan::Shader::descr_layouts));
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Shader::__init__));
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Shader::__delete__));
-		class_add_funcx("load", TypeShaderP, vul_p(&__VulkanLoadShader), Flags::STATIC);
+		class_add_funcx("load", TypeShaderP, vul_p(&__vulkan_load_shader), Flags::STATIC);
 			func_add_param("filename", TypePath);
 
 
@@ -354,8 +358,9 @@ void SIAddPackageVulkan() {
 	add_funcx("window_close", TypeVoid, vul_p(&vulkan::window_close), Flags::STATIC);
 		func_add_param("w", TypePointer);
 
-	add_funcx("init", TypeVoid, vul_p(&vulkan::init), Flags::STATIC);
+	add_funcx("init", TypeVoid, vul_p(&__vulkan_init), Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("win", TypePointer);
+		func_add_param("op", TypeString);
 	add_funcx("destroy", TypeVoid, vul_p(&vulkan::destroy), Flags::STATIC);
 	add_funcx("queue_submit_command_buffer", TypeVoid, vul_p(&vulkan::queue_submit_command_buffer), Flags::STATIC);
 		func_add_param("cb", TypeCommandBuffer);
@@ -363,6 +368,8 @@ void SIAddPackageVulkan() {
 		func_add_param("signal_sem", TypeSemaphorePList);
 		func_add_param("fence", TypeFence);
 	add_funcx("wait_device_idle", TypeVoid, vul_p(&vulkan::wait_device_idle), Flags::STATIC);
+	add_funcx("_rtx_init", TypeVoid, vul_p(&vulkan::rtx_init), Flags::STATIC);
+	add_funcx("_rtx_step", TypeVoid, vul_p(&vulkan::rtx_step), Flags::STATIC);
 
 }
 
