@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 
+#include "DescriptorSet.h"
 #include "VertexBuffer.h"
 #include "Texture.h"
 #include "Shader.h"

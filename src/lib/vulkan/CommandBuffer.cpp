@@ -11,6 +11,7 @@
 
 #include "CommandBuffer.h"
 #include "helper.h"
+#include "DescriptorSet.h"
 #include "VertexBuffer.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
