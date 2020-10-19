@@ -222,10 +222,9 @@ void rtx_init() {
 
 		auto cb = vulkan::begin_single_time_commands();
 		int stride = mRTProps.shaderGroupHandleSize;
+		msg_write(stride);
 
-		vkCmdBindPipeline(cb,
-		                      VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
-		                      rp->pipeline);
+		vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rp->pipeline);
 
 		vulkan::pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
                 VK_NULL_HANDLE, 0, 0,

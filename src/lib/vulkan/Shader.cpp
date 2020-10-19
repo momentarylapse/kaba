@@ -106,21 +106,15 @@ namespace vulkan{
 		vkDestroyDescriptorPool(device, pool, nullptr);
 	}
 
-	DescriptorSet::DescriptorSet(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex) {
+	DescriptorSet::DescriptorSet(const string &bindings) {
 		Array<VkDescriptorType> types;
+		Array<int> binding_no;
+		digest_bindings(bindings, types, binding_no);
+
 		num_dynamic_ubos = 0;
 
-		for (auto *u: ubos)
-			if (u->is_dynamic()) {
-				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-				num_dynamic_ubos ++;
-			} else {
-				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-			}
-		for (auto *t: tex)
-			types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-		layout = create_layout(types);
+		msg_write(ia2s(binding_no));
+		layout = create_layout(types, binding_no);
 
 		VkDescriptorSetAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -131,8 +125,6 @@ namespace vulkan{
 		if (vkAllocateDescriptorSets(device, &info, &descriptor_set) != VK_SUCCESS) {
 			throw Exception("failed to allocate descriptor sets!");
 		}
-
-		set(ubos, tex);
 	}
 	DescriptorSet::~DescriptorSet() {
 		// no VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT...
@@ -140,81 +132,95 @@ namespace vulkan{
 		destroy_layout(layout);
 	}
 
-	void DescriptorSet::__init__(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex) {
-		new(this) DescriptorSet(ubos, tex);
+	void DescriptorSet::__init__(const string &bindings) {
+		new(this) DescriptorSet(bindings);
 	}
 	void DescriptorSet::__delete__() {
 		this->~DescriptorSet();
 	}
 
-	void DescriptorSet::set(const Array<UniformBuffer*> &_ubos, const Array<Texture*> &tex) {
+	/*void DescriptorSet::set(const Array<UniformBuffer*> &_ubos, const Array<Texture*> &tex) {
 		Array<int> offsets;
 		for (auto *u: _ubos)
 			offsets.add(0);
 		set_with_offset(_ubos, offsets, tex);
+	}*/
+
+	void DescriptorSet::set_texture(int binding, Texture *t) {
+		textures.add({t, binding});
 	}
 
-	void DescriptorSet::set_with_offset(const Array<UniformBuffer*> &_ubos, const Array<int> &offsets, const Array<Texture*> &tex) {
-		ubos = _ubos;
+	void DescriptorSet::set_ubo_with_offset(int binding, UniformBuffer *u, int offset) {
+		ubos.add({u, binding, offset});
+	}
+
+	void DescriptorSet::set_ubo(int binding, UniformBuffer *u) {
+		set_ubo_with_offset(binding, u, 0);
+	}
+
+	void DescriptorSet::update() {
 
 		//std::cout << "update dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
 		Array<VkDescriptorBufferInfo> buffer_info;
-		for (int j=0; j<ubos.num; j++) {
+		for (auto &u: ubos) {
 			VkDescriptorBufferInfo bi = {};
-			bi.buffer = ubos[j]->buffer;
-			bi.offset = offsets[j];
-			bi.range = ubos[j]->size_single;
+			bi.buffer = u.ubo->buffer;
+			bi.offset = u.offset;
+			bi.range = u.ubo->size_single;
 			buffer_info.add(bi);
 		}
 
 
 		Array<VkDescriptorImageInfo> image_info;
-		for (int j=0; j<tex.num; j++) {
+		for (auto &t: textures) {
 			VkDescriptorImageInfo ii = {};
 			ii.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			ii.imageView = tex[j]->view;
-			ii.sampler = tex[j]->sampler;
+			ii.imageView = t.texture->view;
+			ii.sampler = t.texture->sampler;
 			image_info.add(ii);
 		}
 
 		Array<VkWriteDescriptorSet> wds;
-		for (int j=0; j<ubos.num; j++) {
+		foreachi (auto &u, ubos, i) {
 			VkWriteDescriptorSet w;
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
-			w.dstBinding = j;
+			w.dstBinding = u.binding;
+			msg_write(format("ubo -> %d", u.binding));
 			w.dstArrayElement = 0;
 			w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			if (ubos[j]->is_dynamic())
+			if (u.ubo->is_dynamic())
 				w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			w.descriptorCount = 1;
-			w.pBufferInfo = &buffer_info[j];
+			w.pBufferInfo = &buffer_info[i];
 			wds.add(w);
 		}
 
-		for (int j=0; j<tex.num; j++) {
+		foreachi (auto &t, textures, i) {
 			VkWriteDescriptorSet w;
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
-			w.dstBinding = ubos.num + j;
+			w.dstBinding = t.binding;
+			msg_write(format("tex -> %d", t.binding));
 			w.dstArrayElement = 0;
 			w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			w.descriptorCount = 1;
-			w.pImageInfo = &image_info[j];
+			w.pImageInfo = &image_info[i];
 			wds.add(w);
 		}
 
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
 	}
 
-	VkDescriptorSetLayout DescriptorSet::create_layout(const Array<VkDescriptorType> &types) {
+	VkDescriptorSetLayout DescriptorSet::create_layout(const Array<VkDescriptorType> &types, const Array<int> &binding_no) {
 		//std::cout << "create dset layout, " << num_ubos << " ubos, " << num_samplers << " samplers\n";
 		Array<VkDescriptorSetLayoutBinding> bindings;
 		for (int i=0; i<types.num;i++) {
 			VkDescriptorSetLayoutBinding lb = {};
 			lb.descriptorType = types[i];
 			lb.descriptorCount = 1;
-			lb.binding = i;
+			lb.binding = binding_no[i];
+			msg_write(format("layout... -> %d", lb.binding));
 			lb.pImmutableSamplers = nullptr;
 			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -290,7 +296,7 @@ namespace vulkan{
 		this->~Shader();
 	}
 
-	Array<VkDescriptorSetLayout> parse_bindings(const string &bindings) {
+	Array<VkDescriptorSetLayout> DescriptorSet::parse_bindings(const string &bindings) {
 		Array<VkDescriptorSetLayout> rr;
 		int i0 = 1;
 		while (i0 < bindings.num) {
@@ -301,28 +307,43 @@ namespace vulkan{
 			if (i2 < 0)
 				break;
 			string bb = bindings.substr(i1+1, i2-i1-1);
-			auto x = bb.explode(",");
 			Array<VkDescriptorType> types;
-			int num_samplers = 0;
-			for (auto &y: x) {
-				if (y == "buffer")
-					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-				else if (y == "dbuffer")
-					types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-				else if (y == "sampler")
-					types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				else if (y == "image")
-					types.add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-				else if (y == "acceleration-structure")
-					types.add(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-				else
-					std::cerr << "UNKNOWN BINDING TYPE: " << y.c_str() << "\n";
-			}
-			rr.add(DescriptorSet::create_layout(types));
+			Array<int> binding_no;
+			digest_bindings(bb, types, binding_no);
+			rr.add(DescriptorSet::create_layout(types, binding_no));
 
 			i0 = i2 + 1;
 		}
 		return rr;
+	}
+
+	void DescriptorSet::digest_bindings(const string &bindings, Array<VkDescriptorType> &types, Array<int> &binding_no) {
+		auto x = bindings.explode(",");
+		//int num_samplers = 0;
+		int cur_binding = 0;
+		for (auto &y: x) {
+			msg_write(y);
+			if (y == "" or y == ".") {
+				cur_binding ++;
+			} else if (y == "buffer") {
+				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+				binding_no.add(cur_binding ++);
+			} else if (y == "dbuffer") {
+				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+				binding_no.add(cur_binding ++);
+			} else if (y == "sampler") {
+				types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				binding_no.add(cur_binding ++);
+			} else if (y == "image") {
+				types.add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+				binding_no.add(cur_binding ++);
+			} else if (y == "acceleration-structure") {
+				types.add(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+				binding_no.add(cur_binding ++);
+			} else {
+				std::cerr << "UNKNOWN BINDING TYPE: " << y.c_str() << "\n";
+			}
+		}
 	}
 
 	Shader* Shader::load(const Path &_filename) {
@@ -344,7 +365,7 @@ namespace vulkan{
 					if (value == "lines")
 						s->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 				} else if (tag == "Bindings") {
-					s->descr_layouts = parse_bindings(value);
+					s->descr_layouts = DescriptorSet::parse_bindings(value);
 				} else if (tag == "PushSize") {
 					s->push_size = value._int();
 				} else if (tag == "Input") {

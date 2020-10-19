@@ -67,21 +67,39 @@ namespace vulkan{
 
 	class DescriptorSet {
 	public:
-		DescriptorSet(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
+		DescriptorSet(const string &s);//const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
 		~DescriptorSet();
 
-		void __init__(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
+		void __init__(const string &s);//const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
 		void __delete__();
 
-		void set(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
-		void set_with_offset(const Array<UniformBuffer*> &ubos, const Array<int> &offsets, const Array<Texture*> &tex);
+		void set_ubo(int binding, UniformBuffer *ubo);
+		void set_ubo_with_offset(int binding, UniformBuffer *ubo, int offset);
+		void set_texture(int binding, Texture *t);
+
+		void update();
+
+		//void set(const Array<UniformBuffer*> &ubos, const Array<Texture*> &tex);
+		//void set_with_offset(const Array<UniformBuffer*> &ubos, const Array<int> &offsets, const Array<Texture*> &tex);
 
 		VkDescriptorSetLayout layout;
 		VkDescriptorSet descriptor_set;
-		Array<UniformBuffer*> ubos;
+		struct UboData {
+			UniformBuffer* ubo;
+			int binding;
+			int offset;
+		};
+		struct TextureData {
+			Texture* texture;
+			int binding;
+		};
+		Array<UboData> ubos;
+		Array<TextureData> textures;
 		int num_dynamic_ubos;
 
-		static VkDescriptorSetLayout create_layout(const Array<VkDescriptorType> &types);
+		static Array<VkDescriptorSetLayout> parse_bindings(const string &bindings);
+		static void digest_bindings(const string &bindings, Array<VkDescriptorType> &types, Array<int> &binding_no);
+		static VkDescriptorSetLayout create_layout(const Array<VkDescriptorType> &types, const Array<int> &bindings);
 		static void destroy_layout(VkDescriptorSetLayout layout);
 	};
 };

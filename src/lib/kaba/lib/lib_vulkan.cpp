@@ -219,12 +219,15 @@ void SIAddPackageVulkan() {
 
 	add_class(TypeDescriptorSet);
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::DescriptorSet::__init__));
-			func_add_param("ubos", TypeUBOWrapperPList);
-			func_add_param("tex", TypeTexturePList);
+			func_add_param("bindings", TypeString);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DescriptorSet::__delete__));
-		class_add_funcx("set", TypeVoid, vul_p(&vulkan::DescriptorSet::set));
-			func_add_param("ubos", TypeUBOWrapperPList);
-			func_add_param("tex", TypeTexturePList);
+		class_add_funcx("update", TypeVoid, vul_p(&vulkan::DescriptorSet::update));
+		class_add_funcx("set_texture", TypeVoid, vul_p(&vulkan::DescriptorSet::set_texture));
+			func_add_param("binding", TypeInt);
+			func_add_param("tex", TypeTexture);
+		class_add_funcx("set_buffer", TypeVoid, vul_p(&vulkan::DescriptorSet::set_ubo));
+			func_add_param("binding", TypeInt);
+			func_add_param("ubo", TypeUBOWrapper);
 
 
 	add_class(TypePipeline);

@@ -130,10 +130,10 @@ void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, 
 	if (dset->num_dynamic_ubos != indices.num)
 		throw Exception("number of indices does not match descriptor set");
 	Array<unsigned int> offsets;
-	int i=0;
-	for (auto *u: dset->ubos) {
-		if (u->is_dynamic()) {
-			offsets.add(u->size_single_aligned * indices[i]);
+	int i = 0;
+	for (auto &u: dset->ubos) {
+		if (u.ubo->is_dynamic()) {
+			offsets.add(u.ubo->size_single_aligned * indices[i]);
 			i ++;
 		}
 	}
