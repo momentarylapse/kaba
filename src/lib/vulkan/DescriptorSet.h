@@ -18,18 +18,26 @@ namespace vulkan{
 
 	class Texture;
 	class UniformBuffer;
+	class DescriptorSet;
 
-	extern VkDescriptorPool descriptor_pool;
+	class DescriptorPool {
+	public:
+		DescriptorPool(const string &s, int max_sets);
+		~DescriptorPool();
 
-	VkDescriptorPool create_descriptor_pool();
-	void destroy_descriptor_pool(VkDescriptorPool pool);
+		void __init__(const string &s, int max_sets);
+		void __delete__();
+
+		DescriptorSet *create_set(const string &s);
+
+		VkDescriptorPool pool;
+	};
 
 	class DescriptorSet {
+		friend class DescriptorPool;
+		DescriptorSet(DescriptorPool *pool, const string &s);
 	public:
-		DescriptorSet(const string &s);
 		~DescriptorSet();
-
-		void __init__(const string &s);
 		void __delete__();
 
 		void set_ubo(int binding, UniformBuffer *ubo);

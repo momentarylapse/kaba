@@ -21,45 +21,66 @@
 #include "helper.h"
 #include "../file/file.h"
 
+namespace vulkan {
 
-namespace vulkan{
+const string DESCRIPTOR_NAME_UNIFORM_BUFFER = "buffer";
+const string DESCRIPTOR_NAME_UNIFORM_BUFFER_DYNAMIC = "dbuffer";
+const string DESCRIPTOR_NAME_SAMPLER = "sampler";
+const string DESCRIPTOR_NAME_STORAGE_IMAGE = "image";
+const string DESCRIPTOR_NAME_ACCELERATION_STRUCTURE = "acceleration-structure";
 
-	VkDescriptorPool descriptor_pool;
+VkDescriptorType descriptor_type(const string &s) {
+	if (s == DESCRIPTOR_NAME_UNIFORM_BUFFER)
+		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	if (s == DESCRIPTOR_NAME_UNIFORM_BUFFER_DYNAMIC)
+		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	if (s == DESCRIPTOR_NAME_SAMPLER)
+		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	if (s == DESCRIPTOR_NAME_STORAGE_IMAGE)
+		return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	if (s == DESCRIPTOR_NAME_ACCELERATION_STRUCTURE)
+		return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+	throw Exception("unknown type: " + s);
+	return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
 
-	Array<DescriptorSet*> descriptor_sets;
-
-	VkDescriptorPool create_descriptor_pool() {
-		std::array<VkDescriptorPoolSize, 5> pool_sizes = {};
-		pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		pool_sizes[0].descriptorCount = 1024*64;
-		pool_sizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-		pool_sizes[1].descriptorCount = 128*64;
-		pool_sizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_sizes[2].descriptorCount = 1024*32;
-		pool_sizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		pool_sizes[3].descriptorCount = 64;
-		pool_sizes[4].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-		pool_sizes[4].descriptorCount = 64;
+	DescriptorPool::DescriptorPool(const string &s, int max_sets) {
+		Array<VkDescriptorPoolSize> pool_sizes;
+		for (auto &xx: s.explode(",")) {
+			auto y = xx.explode(":");
+			pool_sizes.add({descriptor_type(y[0]), (unsigned)y[1]._int()});
+		}
 
 
 		VkDescriptorPoolCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-		info.pPoolSizes = pool_sizes.data();
-		info.maxSets = 1024*64;
+		info.poolSizeCount = static_cast<uint32_t>(pool_sizes.num);
+		info.pPoolSizes = &pool_sizes[0];
+		info.maxSets = max_sets;
 
-		VkDescriptorPool pool;
 		if (vkCreateDescriptorPool(device, &info, nullptr, &pool) != VK_SUCCESS) {
 			throw Exception("failed to create descriptor pool!");
 		}
-		return pool;
 	}
 
-	void destroy_descriptor_pool(VkDescriptorPool pool) {
+	DescriptorPool::~DescriptorPool() {
 		vkDestroyDescriptorPool(device, pool, nullptr);
 	}
 
-	DescriptorSet::DescriptorSet(const string &bindings) {
+	void DescriptorPool::__init__(const string &s, int max_sets) {
+		new(this) DescriptorPool(s, max_sets);
+	}
+	void DescriptorPool::__delete__() {
+		this->~DescriptorPool();
+	}
+
+	DescriptorSet *DescriptorPool::create_set(const string &s) {
+		return new DescriptorSet(this, s);
+	}
+
+	Array<DescriptorSet*> descriptor_sets;
+
+	DescriptorSet::DescriptorSet(DescriptorPool *pool, const string &bindings) {
 		Array<VkDescriptorType> types;
 		Array<int> binding_no;
 		digest_bindings(bindings, types, binding_no);
@@ -70,7 +91,7 @@ namespace vulkan{
 
 		VkDescriptorSetAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		info.descriptorPool = descriptor_pool;
+		info.descriptorPool = pool->pool;
 		info.descriptorSetCount = 1;
 		info.pSetLayouts = &layout;
 
@@ -84,9 +105,6 @@ namespace vulkan{
 		destroy_layout(layout);
 	}
 
-	void DescriptorSet::__init__(const string &bindings) {
-		new(this) DescriptorSet(bindings);
-	}
 	void DescriptorSet::__delete__() {
 		this->~DescriptorSet();
 	}
@@ -226,23 +244,9 @@ namespace vulkan{
 		for (auto &y: x) {
 			if (y == "" or y == ".") {
 				cur_binding ++;
-			} else if (y == "buffer") {
-				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-				binding_no.add(cur_binding ++);
-			} else if (y == "dbuffer") {
-				types.add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-				binding_no.add(cur_binding ++);
-			} else if (y == "sampler") {
-				types.add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				binding_no.add(cur_binding ++);
-			} else if (y == "image") {
-				types.add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-				binding_no.add(cur_binding ++);
-			} else if (y == "acceleration-structure") {
-				types.add(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-				binding_no.add(cur_binding ++);
 			} else {
-				std::cerr << "UNKNOWN BINDING TYPE: " << y.c_str() << "\n";
+				types.add(descriptor_type(y));
+				binding_no.add(cur_binding ++);
 			}
 		}
 	}

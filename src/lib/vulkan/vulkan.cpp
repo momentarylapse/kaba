@@ -190,8 +190,6 @@ void init(GLFWwindow* window, const string &op) {
 	create_logical_device();
 	create_command_pool();
 
-	descriptor_pool = create_descriptor_pool();
-
 	if (want_rtx)
 		ensure_rtx();
 }
@@ -221,8 +219,6 @@ void destroy() {
 	shaders.clear();
 	for (auto *s: _shaders)
 		delete s;
-
-	destroy_descriptor_pool(descriptor_pool);
 
 	destroy_command_pool();
 

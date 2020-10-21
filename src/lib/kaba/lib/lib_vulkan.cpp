@@ -77,6 +77,7 @@ public:
 		typedef int Vertex1;
 		typedef int RenderPass;
 		typedef int UniformBuffer;
+		typedef int DescriptorPool;
 		typedef int DescriptorSet;
 		typedef int CommandBuffer;
 		typedef int SwapChain;
@@ -124,7 +125,9 @@ void SIAddPackageVulkan() {
 	auto TypeUBOWrapper		= add_type  ("UBOWrapper", sizeof(vulkan::UniformBuffer));
 	auto TypeUBOWrapperP	= add_type_p(TypeUBOWrapper);
 	auto TypeUBOWrapperPList= add_type_l(TypeUBOWrapperP);
+	auto TypeDescriptorPool	= add_type  ("DescriptorPool", sizeof(vulkan::DescriptorPool));
 	auto TypeDescriptorSet	= add_type  ("DescriptorSet", sizeof(vulkan::DescriptorSet));
+	auto TypeDescriptorSetP	= add_type_p(TypeDescriptorSet);
 	auto TypeSwapChain		= add_type  ("SwapChain", sizeof(vulkan::SwapChain));
 	auto TypeFence			= add_type  ("Fence", sizeof(vulkan::Fence));
 	auto TypeSemaphore		= add_type  ("Semaphore", sizeof(vulkan::Semaphore));
@@ -220,16 +223,21 @@ void SIAddPackageVulkan() {
 		class_add_funcx("update", TypeVoid, vul_p(&vulkan::UniformBuffer::update));
 			func_add_param("source", TypePointer);
 
+	add_class(TypeDescriptorPool);
+		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::DescriptorPool::__init__));
+			func_add_param("s", TypeString);
+			func_add_param("max_sets", TypeInt);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DescriptorPool::__delete__));
+		class_add_funcx("create_set", TypeDescriptorSetP, vul_p(&vulkan::DescriptorPool::create_set), Flags::CONST);
+			func_add_param("bindings", TypeString);
 
 	add_class(TypeDescriptorSet);
-		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::DescriptorSet::__init__));
-			func_add_param("bindings", TypeString);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DescriptorSet::__delete__));
 		class_add_funcx("update", TypeVoid, vul_p(&vulkan::DescriptorSet::update));
-		class_add_funcx("set_texture", TypeVoid, vul_p(&vulkan::DescriptorSet::set_texture));
+		class_add_funcx("set", TypeVoid, vul_p(&vulkan::DescriptorSet::set_texture));
 			func_add_param("binding", TypeInt);
 			func_add_param("tex", TypeTexture);
-		class_add_funcx("set_buffer", TypeVoid, vul_p(&vulkan::DescriptorSet::set_ubo));
+		class_add_funcx("set", TypeVoid, vul_p(&vulkan::DescriptorSet::set_ubo));
 			func_add_param("binding", TypeInt);
 			func_add_param("ubo", TypeUBOWrapper);
 
