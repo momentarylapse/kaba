@@ -15,6 +15,8 @@
 #include <set>
 #include <array>
 
+#include <unistd.h>
+
 #include "helper.h"
 #include "../base/base.h"
 #include "../file/msg.h"
@@ -690,6 +692,33 @@ void get_dev_props() {
 }
 
 
+void ImageBarrier(VkCommandBuffer commandBuffer,
+                  VkImage image,
+                  VkImageSubresourceRange& subresourceRange,
+                  VkAccessFlags srcAccessMask,
+                  VkAccessFlags dstAccessMask,
+                  VkImageLayout oldLayout,
+                  VkImageLayout newLayout) {
+
+    VkImageMemoryBarrier imageMemoryBarrier;
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.pNext = nullptr;
+    imageMemoryBarrier.srcAccessMask = srcAccessMask;
+    imageMemoryBarrier.dstAccessMask = dstAccessMask;
+    imageMemoryBarrier.oldLayout = oldLayout;
+    imageMemoryBarrier.newLayout = newLayout;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.image = image;
+    imageMemoryBarrier.subresourceRange = subresourceRange;
+
+    vkCmdPipelineBarrier(commandBuffer,
+                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                         0, 0, nullptr, 0, nullptr, 1,
+                         &imageMemoryBarrier);
+}
+
 void init() {
 	try {
 		get_dev_props();
@@ -702,27 +731,46 @@ void init() {
 
 		tex_out = new DynamicTexture(16, 16, 1, "rgba:i8");
 
-		descriptor_set->set_acceleration_structure(0, tlas);
-		descriptor_set->set_texture(1, tex_out);
-
 		auto vb = new VertexBuffer();
 		vb->build1i({{vector(-1,0,0), vector::ZERO, 0,0}, {vector(0,1,0), vector::ZERO, 0,0}, {vector(1,0,0), vector::ZERO, 0,0}}, {0,1,2});
 
 		create_acc_struct_bl(vb);
 
+		descriptor_set->set_acceleration_structure(0, tlas);
+		descriptor_set->set_storage_image(1, tex_out);
+		descriptor_set->update();
+
 		msg_write("creating pipeline...");
 		auto rp = new RayPipeline(rtx::shader);
 		auto sbt = create_sbt(rp);
 
-		auto cb = begin_single_time_commands();
 		int stride = mRTProps.shaderGroupHandleSize;
 		msg_write(stride);
+		msg_error("trying to shoot rays...");
+		usleep(100000);
+
+		auto cb = begin_single_time_commands();
+
+		VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			    ImageBarrier(cb,
+		                tex_out->image,
+		                subresourceRange,
+		                0,
+		                VK_ACCESS_SHADER_WRITE_BIT,
+						//VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+						VK_IMAGE_LAYOUT_UNDEFINED,
+		                VK_IMAGE_LAYOUT_GENERAL);
 
 		vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rp->pipeline);
 
-	//	pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
-	//			VK_NULL_HANDLE, 0, 0,
-	//			16, 16, 1);
+		vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                rp->layout, 0,
+                1, &descriptor_set->descriptor_set,
+                0, 0);
+
+		pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
+				VK_NULL_HANDLE, 0, 0,
+				16, 16, 1);
 		end_single_time_commands(cb);
 	} catch (Exception &e) {
 		msg_error(e.message());
