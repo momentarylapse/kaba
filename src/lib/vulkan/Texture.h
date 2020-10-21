@@ -27,7 +27,7 @@ namespace vulkan {
 
 		void _destroy();
 		void _generate_mipmaps(VkFormat image_format);
-		void _create_image(const void *data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip);
+		void _create_image(const void *data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip, bool as_storage);
 		void _create_view();
 		void _create_sampler();
 
@@ -49,6 +49,12 @@ namespace vulkan {
 	class DynamicTexture : public Texture {
 	public:
 		DynamicTexture(int nx, int ny, int nz, const string &format);
+		void __init__(int nx, int ny, int nz, const string &format);
+	};
+
+	class StorageTexture : public Texture {
+	public:
+		StorageTexture(int nx, int ny, int nz, const string &format);
 		void __init__(int nx, int ny, int nz, const string &format);
 	};
 

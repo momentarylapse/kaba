@@ -10,6 +10,7 @@
 
 
 #include "DescriptorSet.h"
+#include "AccelerationStructure.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -109,19 +110,43 @@ VkDescriptorType descriptor_type(const string &s) {
 		this->~DescriptorSet();
 	}
 
-	/*void DescriptorSet::set(const Array<UniformBuffer*> &_ubos, const Array<Texture*> &tex) {
-		Array<int> offsets;
-		for (auto *u: _ubos)
-			offsets.add(0);
-		set_with_offset(_ubos, offsets, tex);
-	}*/
+	template<class T>
+	T &get_for_binding(Array<T> &array, int binding, VkDescriptorType type) {
+		for (auto &x: array)
+			if (x.binding == binding)
+				return x;
+		array.add({{}, binding, type});
+		return array.back();
+	}
 
 	void DescriptorSet::set_texture(int binding, Texture *t) {
-		textures.add({t, binding});
+		auto &i = get_for_binding(images, binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		i.info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		i.info.imageView = t->view;
+		i.info.sampler = t->sampler;
+	}
+
+	void DescriptorSet::set_storage_image(int binding, Texture *t) {
+		msg_error("storage image");
+		auto &i = get_for_binding(images, binding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+		i.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		i.info.imageView = t->view;
+		i.info.sampler = VK_NULL_HANDLE; //t->sampler;
 	}
 
 	void DescriptorSet::set_ubo_with_offset(int binding, UniformBuffer *u, int offset) {
-		ubos.add({u, binding, offset});
+		auto type = u->is_dynamic() ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		auto &i = get_for_binding(buffers, binding, type);
+		i.info.buffer = u->buffer;
+		i.info.offset = offset;
+		i.info.range = u->size_single;
+	}
+
+	void DescriptorSet::set_acceleration_structure(int binding, AccelerationStructure *a) {
+		auto &i = get_for_binding(accelerations, binding, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+	    i.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+	    i.info.accelerationStructureCount = 1;
+	    i.info.pAccelerationStructures = &a->structure;
 	}
 
 	void DescriptorSet::set_ubo(int binding, UniformBuffer *u) {
@@ -130,50 +155,41 @@ VkDescriptorType descriptor_type(const string &s) {
 
 	void DescriptorSet::update() {
 
-		//std::cout << "update dset with " << ubos.num << " ubos, " << tex.num << " samplers\n";
-		Array<VkDescriptorBufferInfo> buffer_info;
-		for (auto &u: ubos) {
-			VkDescriptorBufferInfo bi = {};
-			bi.buffer = u.ubo->buffer;
-			bi.offset = u.offset;
-			bi.range = u.ubo->size_single;
-			buffer_info.add(bi);
-		}
-
-
-		Array<VkDescriptorImageInfo> image_info;
-		for (auto &t: textures) {
-			VkDescriptorImageInfo ii = {};
-			ii.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			ii.imageView = t.texture->view;
-			ii.sampler = t.texture->sampler;
-			image_info.add(ii);
-		}
+		//std::cout << "update dset with " << buffers.num << " buffers, " << images.num << " images\n";
 
 		Array<VkWriteDescriptorSet> wds;
-		foreachi (auto &u, ubos, i) {
+		for (auto &b: buffers) {
 			VkWriteDescriptorSet w;
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
-			w.dstBinding = u.binding;
+			w.dstBinding = b.binding;
 			w.dstArrayElement = 0;
-			w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			if (u.ubo->is_dynamic())
-				w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			w.descriptorType = b.type;
 			w.descriptorCount = 1;
-			w.pBufferInfo = &buffer_info[i];
+			w.pBufferInfo = &b.info;
 			wds.add(w);
 		}
 
-		foreachi (auto &t, textures, i) {
+		for (auto &i: images) {
 			VkWriteDescriptorSet w;
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
-			w.dstBinding = t.binding;
+			w.dstBinding = i.binding;
 			w.dstArrayElement = 0;
-			w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			w.descriptorType = i.type;
 			w.descriptorCount = 1;
-			w.pImageInfo = &image_info[i];
+			w.pImageInfo = &i.info;
+			wds.add(w);
+		}
+		for (auto &a: accelerations) {
+			VkWriteDescriptorSet w;
+			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			w.dstSet = descriptor_set;
+			w.dstBinding = a.binding;
+			w.dstArrayElement = 0;
+			w.descriptorType = a.type;
+			w.descriptorCount = 1;
+			w.pNext = &a.info;
 			wds.add(w);
 		}
 

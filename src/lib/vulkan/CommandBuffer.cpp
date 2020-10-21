@@ -132,9 +132,9 @@ void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, 
 		throw Exception("number of indices does not match descriptor set");
 	Array<unsigned int> offsets;
 	int i = 0;
-	for (auto &u: dset->ubos) {
-		if (u.ubo->is_dynamic()) {
-			offsets.add(u.ubo->size_single_aligned * indices[i]);
+	for (auto &b: dset->buffers) {
+		if (b.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+			offsets.add(b.info.range * indices[i]);
 			i ++;
 		}
 	}

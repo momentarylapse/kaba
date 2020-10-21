@@ -524,6 +524,13 @@ void window_close(GLFWwindow *window) {
 // some rtx experiments
 
 
+
+namespace rtx {
+DescriptorPool *descriptor_pool;
+DescriptorSet *descriptor_set;
+vulkan::Shader *shader;
+vulkan::Texture *tex_out;
+
 struct VkGeometryInstance {
 	float transform[12];
 	uint32_t instanceId : 24;
@@ -682,12 +689,21 @@ void get_dev_props() {
 	msg_write(mRTProps.shaderGroupHandleSize);
 }
 
-void rtx_init() {
+
+void init() {
 	try {
 		get_dev_props();
 
 		msg_write("loading shader...");
-		auto shader = Shader::load("rtx.shader");
+		shader = Shader::load("rtx.shader");
+
+		descriptor_pool = new DescriptorPool("acceleration-structure:16,image:16", 16);
+		descriptor_set = descriptor_pool->create_set("acceleration-structure,image");
+
+		tex_out = new DynamicTexture(16, 16, 1, "rgba:i8");
+
+		descriptor_set->set_acceleration_structure(0, tlas);
+		descriptor_set->set_texture(1, tex_out);
 
 		auto vb = new VertexBuffer();
 		vb->build1i({{vector(-1,0,0), vector::ZERO, 0,0}, {vector(0,1,0), vector::ZERO, 0,0}, {vector(1,0,0), vector::ZERO, 0,0}}, {0,1,2});
@@ -695,7 +711,7 @@ void rtx_init() {
 		create_acc_struct_bl(vb);
 
 		msg_write("creating pipeline...");
-		auto rp = new RayPipeline(shader);
+		auto rp = new RayPipeline(rtx::shader);
 		auto sbt = create_sbt(rp);
 
 		auto cb = begin_single_time_commands();
@@ -704,9 +720,9 @@ void rtx_init() {
 
 		vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rp->pipeline);
 
-		pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
-				VK_NULL_HANDLE, 0, 0,
-				16, 16, 1);
+	//	pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
+	//			VK_NULL_HANDLE, 0, 0,
+	//			16, 16, 1);
 		end_single_time_commands(cb);
 	} catch (Exception &e) {
 		msg_error(e.message());
@@ -714,10 +730,16 @@ void rtx_init() {
 }
 
 
-void rtx_step() {
 
 }
 
+void rtx_init() {
+	rtx::init();
+}
+
+void rtx_step() {
+
+}
 
 
 

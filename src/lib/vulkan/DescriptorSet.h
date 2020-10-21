@@ -19,6 +19,7 @@ namespace vulkan{
 	class Texture;
 	class UniformBuffer;
 	class DescriptorSet;
+	class AccelerationStructure;
 
 	class DescriptorPool {
 	public:
@@ -43,22 +44,31 @@ namespace vulkan{
 		void set_ubo(int binding, UniformBuffer *ubo);
 		void set_ubo_with_offset(int binding, UniformBuffer *ubo, int offset);
 		void set_texture(int binding, Texture *t);
+		void set_storage_image(int binding, Texture *t);
+		void set_acceleration_structure(int binding, AccelerationStructure *a);
 
 		void update();
 
 		VkDescriptorSetLayout layout;
 		VkDescriptorSet descriptor_set;
-		struct UboData {
-			UniformBuffer* ubo;
+		struct BufferData {
+			VkDescriptorBufferInfo info;
 			int binding;
-			int offset;
+			VkDescriptorType type;
 		};
-		struct TextureData {
-			Texture* texture;
+		struct ImageData {
+			VkDescriptorImageInfo info;
 			int binding;
+			VkDescriptorType type;
 		};
-		Array<UboData> ubos;
-		Array<TextureData> textures;
+		struct AccelerationData {
+			VkWriteDescriptorSetAccelerationStructureNV info;
+			int binding;
+			VkDescriptorType type;
+		};
+		Array<BufferData> buffers;
+		Array<ImageData> images;
+		Array<AccelerationData> accelerations;
 		int num_dynamic_ubos;
 
 		static Array<VkDescriptorSetLayout> parse_bindings(const string &bindings);

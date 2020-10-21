@@ -105,13 +105,71 @@ void Texture::__delete__() {
 }
 
 DynamicTexture::DynamicTexture(int nx, int ny, int nz, const string &format) {
-	_create_image(nullptr, nx, ny, nz, parse_format(format), false);
+	_create_image(nullptr, nx, ny, nz, parse_format(format), false, true);
 	_create_view();
 	_create_sampler();
 }
 
 void DynamicTexture::__init__(int nx, int ny, int nz, const string &format) {
 	new(this) DynamicTexture(nx, ny, nz, format);
+}
+
+StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
+	width = nx;
+	height = ny;
+	depth = nz;
+	format = parse_format(_format);
+	int ps = pixel_size(format);
+	VkDeviceSize image_size = width * height * depth * ps;
+	mip_levels = 1;
+
+    VkExtent3D extent = {(unsigned)nx, (unsigned)ny, (unsigned)nz};
+
+
+
+    VkImageCreateInfo imageCreateInfo;
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.pNext = nullptr;
+    imageCreateInfo.flags = 0;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = format;
+    imageCreateInfo.extent = extent;
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.queueFamilyIndexCount = 0;
+    imageCreateInfo.pQueueFamilyIndices = nullptr;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    auto result = vkCreateImage(device, &imageCreateInfo, nullptr, &image);
+    if (VK_SUCCESS != result)
+    	throw Exception("aaa");
+	VkMemoryRequirements memoryRequirements;
+	vkGetImageMemoryRequirements(device, image, &memoryRequirements);
+
+	VkMemoryAllocateInfo memoryAllocateInfo;
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.pNext = nullptr;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	memoryAllocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &memory);
+	if (VK_SUCCESS != result)
+		throw Exception("aaa2");
+	result = vkBindImageMemory(device, image, memory, 0);
+	if (VK_SUCCESS != result)
+		throw Exception("aaa3");
+	std::cout << "  storage image ok\n";
+
+	_create_view();
+	//_create_sampler();
+}
+
+void StorageTexture::__init__(int nx, int ny, int nz, const string &format) {
+	new(this) StorageTexture(nx, ny, nz, format);
 }
 
 void Texture::_destroy() {
@@ -156,12 +214,12 @@ void Texture::override(const Image *im) {
 
 void Texture::overridex(const void *data, int nx, int ny, int nz, const string &format) {
 	_destroy();
-	_create_image(data, nx, ny, nz, parse_format(format), depth == 1);
+	_create_image(data, nx, ny, nz, parse_format(format), depth == 1, false);
 	_create_view();
 	_create_sampler();
 }
 
-void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip) {
+void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip, bool allow_storage) {
 	width = nx;
 	height = ny;
 	depth = nz;
@@ -180,6 +238,8 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 	}
 
 	auto usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	if (allow_storage)
+		usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 	auto tiling = VK_IMAGE_TILING_OPTIMAL;
 	create_image(width, height, depth, mip_levels, format, tiling, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
@@ -189,10 +249,14 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 		copy_buffer_to_image(staging.buffer, image, width, height, depth);
 	}
 
+	auto layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//if (allow_storage)
+	//	layout = VK_IMAGE_LAYOUT_GENERAL;
+
 	if (allow_mip)
 		_generate_mipmaps(format);
 	else
-		transition_image_layout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mip_levels);
+		transition_image_layout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, mip_levels);
 }
 
 void Texture::_generate_mipmaps(VkFormat image_format) {
