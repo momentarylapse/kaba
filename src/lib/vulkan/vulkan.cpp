@@ -65,13 +65,9 @@ namespace vulkan {
 
 
 
-	const std::vector<const char*> validation_layers = {
+	const Array<const char*> validation_layers = {
 		//"VK_LAYER_LUNARG_standard_validation",
 		"VK_LAYER_KHRONOS_validation",
-	};
-
-	const std::vector<const char*> instance_extensions = {
-		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 	};
 
 	static std::vector<const char*> device_extensions = {
@@ -207,8 +203,9 @@ bool check_validation_layer_support() {
 	uint32_t layer_count;
 	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-	std::vector<VkLayerProperties> available_layers(layer_count);
-	vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+	Array<VkLayerProperties> available_layers;
+	available_layers.resize(layer_count);
+	vkEnumerateInstanceLayerProperties(&layer_count, &available_layers[0]);
 
 	for (const char* layer_name : validation_layers) {
 		bool layer_found = false;
@@ -227,16 +224,19 @@ bool check_validation_layer_support() {
 
 	return true;
 }
-Array<const char*> get_required_instance_extensions(bool validation) {
+Array<const char*> get_required_instance_extensions(bool glfw, bool validation) {
 	Array<const char*> extensions;
-	uint32_t glfw_extension_count = 0;
-	const char** glfw_extensions;
-	glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-	for (int i=0; i<glfw_extension_count; i++)
-		extensions.add(glfw_extensions[i]);
 
-	for (auto s: instance_extensions)
-		extensions.add(s);
+	// default
+	extensions.add(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+	if (glfw) {
+		uint32_t glfw_extension_count = 0;
+		const char** glfw_extensions;
+		glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+		for (int i=0; i<glfw_extension_count; i++)
+			extensions.add(glfw_extensions[i]);
+	}
 
 	if (validation)
 		extensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -288,13 +288,15 @@ Instance *Instance::create(const Array<string> &op) {
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
 
-	auto extensions = get_required_instance_extensions(instance->using_validation_layers);
+	auto extensions = get_required_instance_extensions(sa_contains(op, "glfw"), instance->using_validation_layers);
 	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.num);
 	create_info.ppEnabledExtensionNames = &extensions[0];
 
+	Array<const char*> validation_layers;
+
 	if (instance->using_validation_layers) {
-		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-		create_info.ppEnabledLayerNames = validation_layers.data();
+		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.num);
+		create_info.ppEnabledLayerNames = &validation_layers[0];
 	} else {
 		create_info.enabledLayerCount = 0;
 	}
@@ -427,8 +429,8 @@ void create_logical_device(bool validation) {
 	create_info.ppEnabledExtensionNames = device_extensions.data();
 
 	if (validation) {
-		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-		create_info.ppEnabledLayerNames = validation_layers.data();
+		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.num);
+		create_info.ppEnabledLayerNames = &validation_layers[0];
 	} else {
 		create_info.enabledLayerCount = 0;
 	}
