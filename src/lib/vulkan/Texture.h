@@ -5,6 +5,7 @@
 
 
 #include "../base/base.h"
+#include "../base/pointer.h"
 #include "../file/path.h"
 #include <vulkan/vulkan.h>
 
@@ -12,7 +13,7 @@ class Image;
 
 namespace vulkan {
 
-	class Texture {
+	class Texture : public Sharable<Empty> {
 	public:
 		Texture();
 		Texture(int w, int h);

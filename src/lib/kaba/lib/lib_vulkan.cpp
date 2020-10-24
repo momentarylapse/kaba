@@ -35,7 +35,7 @@ vulkan::Shader* __vulkan_load_shader(const Path &filename) {
 	return nullptr;
 }
 
-void __vulkan_init(GLFWwindow* window, const string &op) {
+void __vulkan_init(GLFWwindow* window, const Array<string> &op) {
 	KABA_EXCEPTION_WRAPPER(vulkan::init(window, op));
 }
 
@@ -94,6 +94,7 @@ public:
 extern const Class *TypeIntList;
 extern const Class *TypeIntP;
 extern const Class *TypePointerList;
+extern const Class *TypeStringList;
 extern const Class *TypeImage;
 extern const Class *TypeColorList;
 extern const Class *TypePath;
@@ -301,6 +302,7 @@ void SIAddPackageVulkan() {
 		class_add_elementx("height", TypeInt, vul_p(&vulkan::SwapChain::height));
 		class_add_elementx("format", TypeInt, vul_p(&vulkan::SwapChain::image_format));
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::SwapChain::__init__));
+			func_add_param("win", TypePointer);
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::SwapChain::__delete__));
 		class_add_funcx("create_depth_buffer", TypeDepthBufferP, vul_p(&vulkan::SwapChain::create_depth_buffer));
 		class_add_funcx("create_render_pass", TypeRenderPassP, vul_p(&vulkan::SwapChain::create_render_pass));
@@ -373,7 +375,7 @@ void SIAddPackageVulkan() {
 
 	add_funcx("init", TypeVoid, vul_p(&__vulkan_init), Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("win", TypePointer);
-		func_add_param("op", TypeString);
+		func_add_param("op", TypeStringList);
 	add_funcx("destroy", TypeVoid, vul_p(&vulkan::destroy), Flags::STATIC);
 	add_funcx("queue_submit_command_buffer", TypeVoid, vul_p(&vulkan::queue_submit_command_buffer), Flags::STATIC);
 		func_add_param("cb", TypeCommandBuffer);

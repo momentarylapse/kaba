@@ -78,16 +78,11 @@ namespace vulkan {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	};
 
-	#ifdef NDEBUG
-	bool enable_validation_layers = false;
-	#else
-	bool enable_validation_layers = true;
-	#endif
 
 
+	VkDebugUtilsMessengerEXT debug_messenger;
 
-	void setup_debug_messenger() {
-		if (!enable_validation_layers) return;
+	void Instance::setup_debug_messenger() {
 		std::cout << " VALIDATION LAYER!\n";
 
 		VkDebugUtilsMessengerCreateInfoEXT create_info = {};
@@ -103,11 +98,7 @@ namespace vulkan {
 
 
 
-
-GLFWwindow* vulkan_window;
-
-VkInstance instance;
-VkDebugUtilsMessengerEXT debug_messenger;
+//VkInstance instance;
 VkSurfaceKHR surface;
 
 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -137,7 +128,7 @@ DECLARE_EXT(vkGetPhysicalDeviceProperties2);
 static bool rtx_loaded = false;
 
 
-void ensure_rtx() {
+void Instance::_ensure_rtx() {
 	if (rtx_loaded)
 		return;
 
@@ -173,65 +164,42 @@ void ensure_rtx() {
 	rtx_loaded = true;
 }
 
+Instance *default_instance = nullptr;
 
-void init(GLFWwindow* window, const string &op) {
+void init(GLFWwindow* window, const Array<string> &op) {
 	std::cout << "vulkan init\n";
-	vulkan_window = window;
 
-	bool want_rtx = (op.find("rtx") >= 0);
+	bool want_rtx = sa_contains(op, "rtx");
 
-	if (want_rtx) {
-		device_extensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
-		device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-	}
-
-	create_instance();
-	setup_debug_messenger();
-	create_surface();
-	pick_physical_device();
-	create_logical_device();
+	default_instance = Instance::create(op);
+	default_instance->create_surface(window);
+	default_instance->pick_physical_device();
+	create_logical_device(default_instance->using_validation_layers);
 	create_command_pool();
-
-	if (want_rtx)
-		ensure_rtx();
 }
 
-extern Array<VertexBuffer*> vertex_buffers;
-extern Array<Shader*> shaders;
+Instance::Instance() {
+	instance = nullptr;
+	using_validation_layers = false;
+}
 
-void destroy() {
+Instance::~Instance() {
 	std::cout << "vulkan destroy\n";
-
-	auto _vertex_buffers = vertex_buffers;
-	vertex_buffers.clear();
-	for (auto *vb: _vertex_buffers)
-		delete vb;
-
-	auto _textures = textures;
-	textures.clear();
-	for (auto *t: _textures)
-		delete t;
-
-	auto _pipelines = pipelines;
-	pipelines.clear();
-	for (auto *p: _pipelines)
-		delete p;
-
-	auto _shaders = shaders;
-	shaders.clear();
-	for (auto *s: _shaders)
-		delete s;
 
 	destroy_command_pool();
 
 	vkDestroyDevice(device, nullptr);
 
-	if (enable_validation_layers) {
+	if (using_validation_layers) {
 		destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
 	}
 
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
+}
+
+void destroy() {
+	delete default_instance;
 }
 
 
@@ -259,66 +227,98 @@ bool check_validation_layer_support() {
 
 	return true;
 }
-std::vector<const char*> get_required_instance_extensions() {
+Array<const char*> get_required_instance_extensions(bool validation) {
+	Array<const char*> extensions;
 	uint32_t glfw_extension_count = 0;
 	const char** glfw_extensions;
 	glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-
-	std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+	for (int i=0; i<glfw_extension_count; i++)
+		extensions.add(glfw_extensions[i]);
 
 	for (auto s: instance_extensions)
-		extensions.push_back(s);
+		extensions.add(s);
 
-	if (enable_validation_layers)
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	if (validation)
+		extensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 	return extensions;
 }
 
 
+int parse_version(const string &v) {
+	auto vv = v.explode(".");
+	if (vv.num >= 2)
+		return VK_MAKE_VERSION(vv[0]._int(), vv[1]._int(), 0);
+	return VK_MAKE_VERSION(vv[0]._int(), 0, 0);
+}
 
-void create_instance() {
-	if (enable_validation_layers and !check_validation_layer_support()) {
+Instance *Instance::create(const Array<string> &op) {
+	Instance *instance = new Instance();
+
+	instance->using_validation_layers = sa_contains(op, "validation");
+	if (instance->using_validation_layers and !check_validation_layer_support()) {
 		//throw Exception("validation layers requested, but not available!");
 		std::cout << "validation layers requested, but not available!" << '\n';
-		enable_validation_layers = false;
+		instance->using_validation_layers = false;
+	}
+
+	string name = "no name";
+	int api = VK_API_VERSION_1_0;
+	for (auto &o: op) {
+		if (o.head(5) == "name=")
+			name = o.substr(5, -1);
+		if (o.head(4) == "api=")
+			api = parse_version(o.substr(4, -1));
+	}
+
+	if (sa_contains(op, "rtx")) {
+		device_extensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
+		device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 	}
 
 	VkApplicationInfo app_info = {};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.pApplicationName = "Y-Engine";
+	app_info.pApplicationName = name.c_str();
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	app_info.pEngineName = "Y-Engine";
+	app_info.pEngineName = name.c_str();
 	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	app_info.apiVersion = VK_API_VERSION_1_0;
+	app_info.apiVersion = api;
 
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
 
-	auto extensions = get_required_instance_extensions();
-	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-	create_info.ppEnabledExtensionNames = extensions.data();
+	auto extensions = get_required_instance_extensions(instance->using_validation_layers);
+	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.num);
+	create_info.ppEnabledExtensionNames = &extensions[0];
 
-	if (enable_validation_layers) {
+	if (instance->using_validation_layers) {
 		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
 		create_info.ppEnabledLayerNames = validation_layers.data();
 	} else {
 		create_info.enabledLayerCount = 0;
 	}
 
-	if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
+	if (vkCreateInstance(&create_info, nullptr, &instance->instance) != VK_SUCCESS) {
 		throw Exception("failed to create instance!");
 	}
+
+
+	if (instance->using_validation_layers)
+		instance->setup_debug_messenger();
+
+	if (sa_contains(op, "rtx"))
+		instance->_ensure_rtx();
+	return instance;
 }
 
-void create_surface() {
-	if (glfwCreateWindowSurface(instance, vulkan_window, nullptr, &surface) != VK_SUCCESS) {
+void Instance::create_surface(GLFWwindow* window) {
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
 		throw Exception("failed to create window surface!");
 	}
 }
 
-void pick_physical_device() {
+void Instance::pick_physical_device() {
 	uint32_t device_count = 0;
 	vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
@@ -396,7 +396,7 @@ bool check_device_extension_support(VkPhysicalDevice device) {
 }
 
 
-void create_logical_device() {
+void create_logical_device(bool validation) {
 	QueueFamilyIndices indices = find_queue_families(physical_device);
 
 	Array<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -426,7 +426,7 @@ void create_logical_device() {
 	create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
 	create_info.ppEnabledExtensionNames = device_extensions.data();
 
-	if (enable_validation_layers) {
+	if (validation) {
 		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
 		create_info.ppEnabledLayerNames = validation_layers.data();
 	} else {

@@ -94,8 +94,6 @@ namespace vulkan{
 		RayPipeline(Shader *shader);
 	};
 
-	extern Array<Pipeline*> pipelines;
-
 };
 
 #endif

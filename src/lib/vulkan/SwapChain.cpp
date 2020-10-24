@@ -48,7 +48,7 @@ VkPresentModeKHR choose_swap_present_mode(const Array<VkPresentModeKHR> availabl
 	return best_mode;
 }
 
-VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
 	} else {
@@ -57,7 +57,7 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
 		int win_width = 0;
 		int win_height = 0;
 		while (win_width == 0 or win_height == 0) {
-			glfwGetFramebufferSize(vulkan_window, &win_width, &win_height);
+			glfwGetFramebufferSize(window, &win_width, &win_height);
 			glfwWaitEvents();
 		}
 
@@ -124,7 +124,7 @@ void SwapChain::create() {
 
 	VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
 	VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
-	auto extent = choose_swap_extent(swap_chain_support.capabilities);
+	auto extent = choose_swap_extent(swap_chain_support.capabilities, window);
 	width = extent.width;
 	height = extent.height;
 
@@ -189,7 +189,8 @@ Array<VkImageView> SwapChain::create_image_views(Array<VkImage> &images) {
 
 
 
-SwapChain::SwapChain() {
+SwapChain::SwapChain(GLFWwindow* w) {
+	window = w;
 	create();
 }
 
@@ -198,8 +199,8 @@ SwapChain::~SwapChain() {
 }
 
 
-void SwapChain::__init__() {
-	new(this) SwapChain;
+void SwapChain::__init__(GLFWwindow* window) {
+	new(this) SwapChain(window);
 }
 
 void SwapChain::__delete__() {

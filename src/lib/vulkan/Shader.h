@@ -5,13 +5,14 @@
 
 
 #include "../base/base.h"
+#include "../base/pointer.h"
 #include "../file/path.h"
 #include <vulkan/vulkan.h>
 #include "helper.h"
 
 namespace vulkan{
 
-	class Shader {
+	class Shader : public Sharable<Empty> {
 	public:
 		Shader();
 		~Shader();

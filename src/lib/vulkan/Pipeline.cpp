@@ -21,10 +21,6 @@
 
 namespace vulkan {
 
-	void ensure_rtx();
-
-	Array<Pipeline*> pipelines;
-
 	extern PFN_vkCreateRayTracingPipelinesNV pvkCreateRayTracingPipelinesNV;
 
 
@@ -183,16 +179,10 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int 
 	set_viewport(rect(0, 400, 0, 400)); // always override dynamically!
 
 	rebuild();
-
-	pipelines.add(this);
 }
 
 Pipeline::~Pipeline() {
 	destroy();
-
-	for (int i=0; i<pipelines.num; i++)
-		if (pipelines[i] == this)
-			pipelines.erase(i);
 }
 
 
@@ -336,8 +326,6 @@ void Pipeline::rebuild() {
 }
 
 RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
-	ensure_rtx();
-
 	VkRayTracingShaderGroupCreateInfoNV gi = {};
 	gi.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
 	gi.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;

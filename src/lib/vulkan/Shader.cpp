@@ -14,10 +14,7 @@
 #include "../image/image.h"
 
 
-namespace vulkan{
-	Array<Shader*> shaders;
-
-
+namespace vulkan {
 
 	VkShaderModule create_shader_module(const string &code) {
 		if (code == "")
@@ -40,8 +37,6 @@ namespace vulkan{
 	Shader::Shader() {
 		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		push_size = 0;
-
-		shaders.add(this);
 	}
 
 	Shader::~Shader() {
@@ -51,10 +46,6 @@ namespace vulkan{
 		for (auto &l: descr_layouts) {
 			DescriptorSet::destroy_layout(l);
 		}
-
-		for (int i=0; i<shaders.num; i++)
-			if (shaders[i] == this)
-				shaders.erase(i);
 	}
 
 

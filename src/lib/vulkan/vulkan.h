@@ -32,9 +32,25 @@ void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessenge
 
 namespace vulkan {
 
+	class Instance {
+	public:
+		VkInstance instance;
+		bool using_validation_layers;
 
-	extern VkInstance instance;
-	extern VkDebugUtilsMessengerEXT debug_messenger;
+		Instance();
+		~Instance();
+		void pick_physical_device();
+		void create_surface(GLFWwindow* vulkan_window);
+
+		void setup_debug_messenger();
+		void _ensure_rtx();
+
+		static Instance *create(const Array<string> &op);
+	};
+
+
+	//extern VkInstance instance;
+	//extern VkDebugUtilsMessengerEXT debug_messenger;
 	extern VkSurfaceKHR surface;
 
 	extern VkPhysicalDevice physical_device;
@@ -42,11 +58,6 @@ namespace vulkan {
 
 	extern VkQueue graphics_queue;
 	extern VkQueue present_queue;
-
-	extern bool enable_validation_layers;
-
-
-	extern GLFWwindow* vulkan_window;
 
 
 	VkFormat find_depth_format();
@@ -58,24 +69,17 @@ namespace vulkan {
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
 
-	void init(GLFWwindow* window, const string &op);
+	void init(GLFWwindow* window, const Array<string> &op);
 	void destroy();
 
 
 	void wait_device_idle();
 
 
-
-	void setup_debug_messenger();
-
-	void create_instance();
 	bool check_validation_layer_support();
-	std::vector<const char*> get_required_instance_extensions();
-	void create_surface();
-	void pick_physical_device();
 	bool is_device_suitable(VkPhysicalDevice device);
 	bool check_device_extension_support(VkPhysicalDevice device);
-	void create_logical_device();
+	void create_logical_device(bool validation);
 
 
 	bool has_stencil_component(VkFormat format);

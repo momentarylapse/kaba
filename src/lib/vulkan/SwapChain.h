@@ -46,11 +46,12 @@ public:
 	//Array<FrameBuffer*> frame_buffers;
 	//DepthBuffer *depth_buffer;
 	//RenderPass *default_render_pass;
+	GLFWwindow* window;
 
-	SwapChain();
+	SwapChain(GLFWwindow* window);
 	~SwapChain();
 
-	void __init__();
+	void __init__(GLFWwindow* window);
 	void __delete__();
 
 	void cleanup();
