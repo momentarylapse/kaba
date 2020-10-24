@@ -37,15 +37,15 @@ SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
 
 class SwapChain {
 public:
-	Array<VkImage> images;
+	//Array<VkImage> images;
 	int width, height;
 	VkSwapchainKHR swap_chain;
 	VkFormat image_format;
 	uint32_t image_count;
-	Array<VkImageView> image_views;
-	Array<FrameBuffer*> frame_buffers;
-	DepthBuffer *depth_buffer;
-	RenderPass *default_render_pass;
+	Array<VkImageView> _image_views;
+	//Array<FrameBuffer*> frame_buffers;
+	//DepthBuffer *depth_buffer;
+	//RenderPass *default_render_pass;
 
 	SwapChain();
 	~SwapChain();
@@ -56,13 +56,14 @@ public:
 	void cleanup();
 	void create();
 
-	void create_swap_chain();
-	void get_images();
-	void create_image_views();
+	Array<VkImage> get_images();
+	Array<VkImageView> create_image_views(Array<VkImage> &images);
+
+	DepthBuffer *create_depth_buffer();
+	RenderPass *create_render_pass(DepthBuffer *depth_buffer);
+	Array<FrameBuffer*> create_frame_buffers(RenderPass *rp, DepthBuffer *db);
 
 	void rebuild();
-
-	void create_frame_buffers(RenderPass *rp, DepthBuffer *db);
 
 	bool present(unsigned int image_index, const Array<Semaphore*> &wait_sem);
 	bool aquire_image(unsigned int *image_index, Semaphore *signal_sem);

@@ -444,15 +444,6 @@ void create_logical_device() {
 
 
 
-
-
-
-void rebuild_pipelines() {
-	for (auto *p: pipelines)
-		p->rebuild();
-}
-
-
 void queue_submit_command_buffer(CommandBuffer *cb, const Array<Semaphore*> &wait_sem, const Array<Semaphore*> &signal_sem, Fence *fence) {
 
 	VkSubmitInfo submit_info = {};

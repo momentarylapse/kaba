@@ -71,12 +71,15 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
 }
 
 
-void SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
-	frame_buffers.resize(image_count);
+Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
+	Array<FrameBuffer*> frame_buffers;
+	auto images = get_images();
+	auto image_views = create_image_views(images);
 
 	for (size_t i=0; i<image_count; i++) {
-		frame_buffers[i] = new FrameBuffer(width, height, render_pass, {image_views[i], depth_buffer->view});
+		frame_buffers.add(new FrameBuffer(width, height, render_pass, {image_views[i], depth_buffer->view}));
 	}
+	return frame_buffers;
 }
 
 
@@ -104,20 +107,19 @@ SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device) {
 	return details;
 }
 
+DepthBuffer *SwapChain::create_depth_buffer() {
+	return new DepthBuffer(width, height, find_depth_format(), false);
+}
 
-void SwapChain::create() {
-	create_swap_chain();
-	get_images();
-	create_image_views();
-
-	depth_buffer = new DepthBuffer(width, height, find_depth_format(), false);
-
-	default_render_pass = new RenderPass({image_format, depth_buffer->format}, "clear,present");
-	create_frame_buffers(default_render_pass, depth_buffer);
+RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
+	return new RenderPass({image_format, depth_buffer->format}, "clear,present");
 }
 
 
-void SwapChain::create_swap_chain() {
+//	create_frame_buffers(default_render_pass, depth_buffer);
+
+
+void SwapChain::create() {
 	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(physical_device);
 
 	VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
@@ -164,22 +166,24 @@ void SwapChain::create_swap_chain() {
 	image_format = surface_format.format;
 }
 
-void SwapChain::get_images() {
+Array<VkImage> SwapChain::get_images() {
 	vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+	Array<VkImage> images;
 	images.resize(image_count);
 	vkGetSwapchainImagesKHR(device, swap_chain, &image_count, &images[0]);
+	return images;
 }
 
 
 
 
 
-void SwapChain::create_image_views() {
-	image_views.resize(image_count);
-
-	for (uint32_t i=0; i<image_count; i++) {
-		image_views[i] = create_image_view(images[i], image_format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1);
-	}
+Array<VkImageView> SwapChain::create_image_views(Array<VkImage> &images) {
+	Array<VkImageView> views;
+	for (uint32_t i=0; i<image_count; i++)
+		views.add(create_image_view(images[i], image_format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1));
+	_image_views = views;
+	return views;
 }
 
 
@@ -203,7 +207,7 @@ void SwapChain::__delete__() {
 }
 
 void SwapChain::cleanup() {
-	if (default_render_pass)
+/*	if (default_render_pass)
 		delete default_render_pass;
 	default_render_pass = nullptr;
 
@@ -214,10 +218,11 @@ void SwapChain::cleanup() {
 
 	if (depth_buffer)
 		delete depth_buffer;
-	depth_buffer = nullptr;
+	depth_buffer = nullptr;*/
 
-	for (auto image_view: image_views)
-		vkDestroyImageView(device, image_view, nullptr);
+	for (auto v: _image_views)
+		vkDestroyImageView(device, v, nullptr);
+	_image_views.clear();
 
 	vkDestroySwapchainKHR(device, swap_chain, nullptr);
 }

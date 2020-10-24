@@ -110,6 +110,7 @@ void SIAddPackageVulkan() {
 	auto TypeTexturePList	= add_type_l(TypeTextureP);
 	auto TypeDynamicTexture	= add_type  ("DynamicTexture", sizeof(vulkan::DynamicTexture));
 	auto TypeDepthBuffer	= add_type  ("DepthBuffer", sizeof(vulkan::DepthBuffer));
+	auto TypeDepthBufferP	= add_type_p(TypeDepthBuffer);
 	auto TypeFrameBuffer	= add_type  ("FrameBuffer", sizeof(vulkan::FrameBuffer));
 	auto TypeFrameBufferP	= add_type_p(TypeFrameBuffer);
 	auto TypeFrameBufferPList= add_type_l(TypeFrameBufferP);
@@ -206,6 +207,7 @@ void SIAddPackageVulkan() {
 			func_add_param("h", TypeInt);
 			func_add_param("rp", TypeRenderPass);
 			func_add_param("attachments", TypePointerList);
+		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::FrameBuffer::__delete__));
 
 
 	add_class(TypeShader);
@@ -295,14 +297,17 @@ void SIAddPackageVulkan() {
 
 
 	add_class(TypeSwapChain);
-		class_add_elementx("default_render_pass", TypeRenderPassP, vul_p(&vulkan::SwapChain::default_render_pass));
 		class_add_elementx("width", TypeInt, vul_p(&vulkan::SwapChain::width));
 		class_add_elementx("height", TypeInt, vul_p(&vulkan::SwapChain::height));
-		class_add_elementx("depth_buffer", TypeTextureP, vul_p(&vulkan::SwapChain::depth_buffer));
 		class_add_elementx("format", TypeInt, vul_p(&vulkan::SwapChain::image_format));
-		class_add_elementx("frame_buffers", TypeFrameBufferPList, vul_p(&vulkan::SwapChain::frame_buffers));
 		class_add_funcx(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::SwapChain::__init__));
 		class_add_funcx(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::SwapChain::__delete__));
+		class_add_funcx("create_depth_buffer", TypeDepthBufferP, vul_p(&vulkan::SwapChain::create_depth_buffer));
+		class_add_funcx("create_render_pass", TypeRenderPassP, vul_p(&vulkan::SwapChain::create_render_pass));
+			func_add_param("depth_buffer", TypeDepthBufferP);
+		class_add_funcx("create_frame_buffers", TypeFrameBufferPList, vul_p(&vulkan::SwapChain::create_frame_buffers));
+			func_add_param("render_pass", TypeRenderPassP);
+			func_add_param("depth_buffer", TypeDepthBufferP);
 		class_add_funcx("rebuild", TypeVoid, vul_p(&vulkan::SwapChain::rebuild));
 		class_add_funcx("present", TypeBool, vul_p(&vulkan::SwapChain::present));
 			func_add_param("image_index", TypeInt);
