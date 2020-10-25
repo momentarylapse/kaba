@@ -2066,7 +2066,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 }
 
 shared<Node> Parser::deref_if_pointer(shared<Node> node) {
-	if (node->type->is_pointer())
+	if (node->type->is_some_pointer())
 		return tree->deref_node(node);
 	return node;
 }
