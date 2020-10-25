@@ -1,0 +1,13 @@
+class Error1 extends Exception
+class Error2 extends Exception
+
+void main()
+	try
+		raise(new Error2("a"))
+	except Error1 as e
+		print("Error1: {{e}}")
+	except Error2 as e
+		print("Error2: {{e}}")
+	except Exception as e
+		print("Exception: {{e}}")
+	print("after")

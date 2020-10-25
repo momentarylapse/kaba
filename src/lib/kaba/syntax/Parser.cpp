@@ -1761,14 +1761,20 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	cmd_try->set_param(0, parse_block(block));
 	Exp.next_line();
 
-	if (Exp.cur != IDENTIFIER_EXCEPT)
-		do_error("except after try expected");
-	if (Exp.cur_line->indent != ind)
-		do_error("wrong indentation for except");
-	Exp.next();
+
+	int num_excepts = 0;
+
+	// else?
+	while (!Exp.end_of_file() and (Exp.cur == IDENTIFIER_EXCEPT) and (Exp.cur_line->indent == ind)) {
+
+
+//	if (Exp.cur != IDENTIFIER_EXCEPT)
+//		do_error("except after try expected");
+//	if (Exp.cur_line->indent != ind)
+//		do_error("wrong indentation for except");
+	Exp.next(); // except
 
 	auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT);
-	cmd_try->set_param(1, cmd_ex);
 
 	Block *except_block = new Block(block->function, block);
 
@@ -1803,7 +1809,20 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	//auto n = block->nodes.back();
 	//n->as_block()->
 
-	cmd_try->set_param(2, parse_block(block, except_block));
+	auto cmd_ex_block = parse_block(block, except_block);
+
+	num_excepts ++;
+	cmd_try->set_num_params(1 + num_excepts * 2);
+	cmd_try->set_param(num_excepts*2 - 1, cmd_ex);
+	cmd_try->set_param(num_excepts*2, cmd_ex_block);
+
+	Exp.next_line();
+	}
+
+	int line = Exp.get_line_no() - 1;
+	Exp.set(Exp.line[line].exp.num - 1, line);
+
+
 
 	//shared<Node> cmd_ex_block = add_node_block(new_block);
 	/*block->nodes.add(cmd_ex_block);

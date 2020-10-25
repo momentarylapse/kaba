@@ -261,7 +261,7 @@ string _cdecl var_repr(const void *p, const Class *type) {
 		return func_repr((Function*)p);
 	} else if (type == TypeAny) {
 		return ((Any*)p)->repr();
-	} else if (type->is_pointer()) {
+	} else if (type->is_some_pointer()) {
 		auto *pp = *(void**)p;
 		// auto deref?
 		if (pp and (type->param != TypeVoid))
