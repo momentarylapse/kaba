@@ -1,0 +1,15 @@
+shared class X
+	void __init__()
+		print("X.init")
+	void __delete__()
+		print("X.del")
+	const void f()
+		print("test {{_shared_ref_count}}")
+
+shared X f()
+	let x = new X()
+	return x
+
+void main()
+	shared X x = f()
+	x.f()

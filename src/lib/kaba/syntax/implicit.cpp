@@ -535,7 +535,7 @@ void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto p = tree->add_node_local(f->__get_var("p"));
-	auto r = tree->add_node_local(f->__get_var(IDENTIFIER_RETURN_VAR));
+	auto r = tree->add_node_local(f->block->add_var("r", t));
 
 
 	// r = p

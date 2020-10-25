@@ -137,7 +137,7 @@ bool Class::is_super_array() const
 bool Class::is_pointer() const
 { return type == Type::POINTER or type == Type::POINTER_SILENT /* or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE */; }
 
-bool Class::is_usable_as_pointer() const
+bool Class::is_some_pointer() const
 { return type == Type::POINTER or type == Type::POINTER_SILENT  or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE; }
 
 bool Class::is_pointer_shared() const
@@ -230,7 +230,7 @@ bool Class::needs_constructor() const {
 bool Class::is_size_known() const {
 	if (!fully_parsed())
 		return false;
-	if (is_super_array() or is_dict() or is_pointer())
+	if (is_super_array() or is_dict() or is_some_pointer())
 		return true;
 	for (ClassElement &e: elements)
 		if (!e.type->is_size_known())

@@ -182,7 +182,7 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 		// referencing class functions
 		type = operand->as_class();
 		only_static = true;
-	} else if (type->is_usable_as_pointer()) {
+	} else if (type->is_some_pointer()) {
 		// pointer -> dereference
 		type = type->param;
 		deref = true;
