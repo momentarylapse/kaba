@@ -20,8 +20,8 @@
 #include "helper.h"
 #include "../base/base.h"
 #include "../file/msg.h"
-#include "../math/vector.h"
-#include "../math/matrix.h"
+//#include "../math/vector.h"
+//#include "../math/matrix.h"
 
 //#define NDEBUG
 
@@ -105,17 +105,18 @@ VkQueue graphics_queue;
 VkQueue present_queue;
 
 
-#define DECLARE_EXT(NAME) PFN_##NAME p##NAME = nullptr;
+#define DECLARE_EXT(NAME) PFN_##NAME _##NAME = nullptr;
 #define LOAD_EXT(NAME) \
-		p##NAME = (PFN_##NAME)vkGetInstanceProcAddr(instance, #NAME); \
-		msg_write(format(" %s: %s", #NAME, p2s((void*)p##NAME))); \
-		if (!p##NAME) \
+		_##NAME = (PFN_##NAME)vkGetInstanceProcAddr(instance, #NAME); \
+		msg_write(format(" %s: %s", #NAME, p2s((void*)_##NAME))); \
+		if (!_##NAME) \
 			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
 
 DECLARE_EXT(vkCmdTraceRaysNV);
 DECLARE_EXT(vkCreateRayTracingPipelinesNV);
 DECLARE_EXT(vkCmdBuildAccelerationStructureNV);
 DECLARE_EXT(vkCreateAccelerationStructureNV);
+DECLARE_EXT(vkDestroyAccelerationStructureNV);
 DECLARE_EXT(vkBindAccelerationStructureMemoryNV);
 DECLARE_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
 DECLARE_EXT(vkGetAccelerationStructureHandleNV);
@@ -147,15 +148,16 @@ void Instance::_ensure_rtx() {
 	LOAD_EXT(vkCreateRayTracingPipelinesNV);
 	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
 	LOAD_EXT(vkCreateAccelerationStructureNV);
+	LOAD_EXT(vkDestroyAccelerationStructureNV);
 	LOAD_EXT(vkBindAccelerationStructureMemoryNV);
 	LOAD_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
 	LOAD_EXT(vkGetAccelerationStructureHandleNV);
 	LOAD_EXT(vkGetRayTracingShaderGroupHandlesNV);
 	LOAD_EXT(vkGetPhysicalDeviceProperties2);
 
-	if (!pvkCreateRayTracingPipelinesNV)
+	if (!_vkCreateRayTracingPipelinesNV)
 		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
-	std::cout << " create pipeline: " << p2s((void*)pvkCreateRayTracingPipelinesNV).c_str() << "\n";
+	std::cout << " create pipeline: " << p2s((void*)_vkCreateRayTracingPipelinesNV).c_str() << "\n";
 
 	rtx_loaded = true;
 }
@@ -330,9 +332,11 @@ void Instance::pick_physical_device() {
 
 	std::vector<VkPhysicalDevice> devices(device_count);
 	vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+	std::cout << " a\n";
 
 	for (const auto& device: devices) {
 		if (is_device_suitable(device)) {
+			std::cout << " ok\n";
 			physical_device = device;
 			break;
 		}
@@ -342,6 +346,7 @@ void Instance::pick_physical_device() {
 		throw Exception("failed to find a suitable GPU!");
 	}
 
+	std::cout << " props\n";
 	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
 	std::cout << "  minUniformBufferOffsetAlignment  " << device_properties.limits.minUniformBufferOffsetAlignment << "\n";
 	std::cout << "  maxPushConstantsSize  " << device_properties.limits.maxPushConstantsSize << "\n";
@@ -360,6 +365,7 @@ void Instance::pick_physical_device() {
 	VkPhysicalDeviceFeatures2 dp2 = {};
 	dp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vkGetPhysicalDeviceFeatures2(physical_device, &dp2);*/
+	std::cout << " done\n";
 }
 
 
@@ -534,7 +540,7 @@ struct VkGeometryInstance {
 	uint32_t flags : 8;
 	uint64_t accelerationStructureHandle;
 };
-VkPhysicalDeviceRayTracingPropertiesNV mRTProps = {};
+VkPhysicalDeviceRayTracingPropertiesNV properties = {};
 
 Array<VkGeometryNV> geometries;
 Array<VkGeometryInstance> instances;
@@ -600,7 +606,7 @@ void create_acc_struct_bl(VertexBuffer *vb) {
 
 	VkMemoryRequirements2 memReqBLAS = {};
 	memReqBLAS.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-	pvkGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo, &memReqBLAS);
+	_vkGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo, &memReqBLAS);
 
 	maximumBlasSize = max(maximumBlasSize, memReqBLAS.memoryRequirements.size);
 	//}
@@ -610,7 +616,7 @@ void create_acc_struct_bl(VertexBuffer *vb) {
 	memReqTLAS.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 	memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
 	memoryRequirementsInfo.accelerationStructure = tlas->structure;
-	pvkGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo, &memReqTLAS);
+	_vkGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo, &memReqTLAS);
 
 	const VkDeviceSize scratchBufferSize = max(maximumBlasSize, memReqTLAS.memoryRequirements.size);
 	msg_write("scratch: " + i2s(scratchBufferSize));
@@ -633,7 +639,7 @@ void create_acc_struct_bl(VertexBuffer *vb) {
         blas->info.instanceCount = 0;
         blas->info.geometryCount = 1;
         blas->info.pGeometries = &geometries[0];*/
-	pvkCmdBuildAccelerationStructureNV(commandBuffer, &blas->info,
+	_vkCmdBuildAccelerationStructureNV(commandBuffer, &blas->info,
 			VK_NULL_HANDLE, 0, VK_FALSE,
 			blas->structure, VK_NULL_HANDLE,
 			scratch.buffer, 0);
@@ -644,7 +650,7 @@ void create_acc_struct_bl(VertexBuffer *vb) {
 	msg_write("aaaaaa04");
 
 	// build top-level AS
-	pvkCmdBuildAccelerationStructureNV(commandBuffer, &tlas->info,
+	_vkCmdBuildAccelerationStructureNV(commandBuffer, &tlas->info,
 			instancesBuffer.buffer, 0, VK_FALSE,
 			tlas->structure, VK_NULL_HANDLE,
 			scratch.buffer, 0);
@@ -662,26 +668,28 @@ Buffer *create_sbt(RayPipeline *pipeline) {
 	int sbt_size = 1024;
 	Buffer *sbt = new Buffer();
 	sbt->create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	void *p = sbt->map(0, sbt_size);
-	if (pvkGetRayTracingShaderGroupHandlesNV(device, pipeline->pipeline, 0, 1, sbt_size, p) != VK_SUCCESS) // num groups = 1
+	void *p = sbt->map();
+	if (_vkGetRayTracingShaderGroupHandlesNV(device, pipeline->pipeline, 0, 1, sbt_size, p) != VK_SUCCESS) // num groups = 1
 		throw Exception("can not get rt shader group handles");
 	sbt->unmap();
 	return sbt;
 }
 
-void get_dev_props() {
+void get_properties() {
 
-	mRTProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+	properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
 
 	VkPhysicalDeviceProperties2 devProps;
 	devProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	devProps.pNext = &mRTProps;
+	devProps.pNext = &properties;
 	devProps.properties = { };
 
-	pvkGetPhysicalDeviceProperties2(physical_device, &devProps);
+	//pvkGetPhysicalDeviceProperties2() FIXME
+	vkGetPhysicalDeviceProperties2(physical_device, &devProps);
 	msg_write("PROPS");
-	msg_write(mRTProps.shaderGroupBaseAlignment);
-	msg_write(mRTProps.shaderGroupHandleSize);
+	msg_write(properties.maxShaderGroupStride);
+	msg_write(properties.shaderGroupBaseAlignment);
+	msg_write(properties.shaderGroupHandleSize);
 }
 
 
@@ -714,7 +722,7 @@ void ImageBarrier(VkCommandBuffer commandBuffer,
 
 void init() {
 	try {
-		get_dev_props();
+		get_properties();
 
 		msg_write("loading shader...");
 		shader = Shader::load("rtx.shader");
@@ -737,7 +745,7 @@ void init() {
 		auto rp = new RayPipeline(rtx::shader);
 		auto sbt = create_sbt(rp);
 
-		int stride = mRTProps.shaderGroupHandleSize;
+		int stride = properties.shaderGroupHandleSize;
 		msg_write(stride);
 		msg_error("trying to shoot rays...");
 		usleep(100000);
@@ -761,10 +769,22 @@ void init() {
                 1, &descriptor_set->descriptor_set,
                 0, 0);
 
-		pvkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
+		_vkCmdTraceRaysNV(cb, sbt->buffer, 0, sbt->buffer, 2*stride, stride, sbt->buffer, 4*stride, stride,
 				VK_NULL_HANDLE, 0, 0,
 				16, 16, 1);
-		end_single_time_commands(cb);
+		//end_single_time_commands(cb);
+
+		vkEndCommandBuffer(cb);
+
+		VkSubmitInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		info.commandBufferCount = 1;
+		info.pCommandBuffers = &cb;
+
+		vkQueueSubmit(graphics_queue, 1, &info, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphics_queue);
+		wait_device_idle();
+		sleep(2000000);
 	} catch (Exception &e) {
 		msg_error(e.message());
 	}

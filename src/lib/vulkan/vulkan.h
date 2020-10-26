@@ -88,12 +88,18 @@ namespace vulkan {
 	void rtx_init();
 	void rtx_step();
 
+	namespace rtx {
+		extern VkPhysicalDeviceRayTracingPropertiesNV properties;
+		void get_properties();
+	}
 
-#define DECLARE_EXT_H(NAME) extern PFN_##NAME p##NAME;
+
+#define DECLARE_EXT_H(NAME) extern PFN_##NAME _##NAME;
 
 	DECLARE_EXT_H(vkCmdTraceRaysNV);
 	DECLARE_EXT_H(vkCmdBuildAccelerationStructureNV);
 	DECLARE_EXT_H(vkCreateAccelerationStructureNV);
+	DECLARE_EXT_H(vkDestroyAccelerationStructureNV);
 	DECLARE_EXT_H(vkBindAccelerationStructureMemoryNV);
 	DECLARE_EXT_H(vkCreateRayTracingPipelinesNV);
 	DECLARE_EXT_H(vkGetAccelerationStructureMemoryRequirementsNV);

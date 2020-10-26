@@ -30,6 +30,8 @@ namespace vulkan{
 		int push_size;
 		VkPrimitiveTopology topology;
 
+		VkShaderModule get_module(VkShaderStageFlagBits stage) const;
+
 		static Path directory;
 		static Shader* load(const Path &filename);
 	};

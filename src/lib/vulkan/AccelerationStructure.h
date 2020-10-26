@@ -21,6 +21,8 @@ public:
 
 	AccelerationStructure(const VkAccelerationStructureTypeNV type, const Array<VkGeometryNV> &geo, const uint32_t instance_count);
 	~AccelerationStructure();
+
+	void build(const Array<VkGeometryNV> &geo, const DynamicArray &instances);
 };
 
 } /* namespace vulkan */

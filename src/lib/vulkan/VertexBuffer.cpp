@@ -113,7 +113,9 @@ void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
 	// gpu
 	if (buffer_size > vertex_buffer.size) {
 		vertex_buffer.destroy();
-		vertex_buffer.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		//auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+		vertex_buffer.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
 	copy_buffer(staging.buffer, vertex_buffer.buffer, buffer_size);
@@ -131,7 +133,9 @@ void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
 
 	if (buffer_size > index_buffer.size) {
 		index_buffer.destroy();
-		index_buffer.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		//auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+		index_buffer.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
 	copy_buffer(staging.buffer, index_buffer.buffer, buffer_size);

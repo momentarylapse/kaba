@@ -19,7 +19,8 @@ namespace vulkan {
 		~Buffer();
 		void create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void destroy();
-		void *map(VkDeviceSize offset, VkDeviceSize size);
+		void *map();
+		void *map_part(VkDeviceSize offset, VkDeviceSize size);
 		void unmap();
 		void update(void *source);
 		void update_part(const void *source, int offset, int update_size);

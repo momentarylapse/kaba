@@ -17,7 +17,9 @@
 namespace vulkan{
 
 	class Texture;
+	class Buffer;
 	class UniformBuffer;
+	class VertexBuffer;
 	class DescriptorSet;
 	class AccelerationStructure;
 
@@ -30,19 +32,21 @@ namespace vulkan{
 		void __delete__();
 
 		DescriptorSet *create_set(const string &s);
+		DescriptorSet *create_set_from_layout(VkDescriptorSetLayout layout);
 
 		VkDescriptorPool pool;
 	};
 
 	class DescriptorSet {
 		friend class DescriptorPool;
-		DescriptorSet(DescriptorPool *pool, const string &s);
+		DescriptorSet(DescriptorPool *pool, VkDescriptorSetLayout layout);
 	public:
 		~DescriptorSet();
 		void __delete__();
 
-		void set_ubo(int binding, UniformBuffer *ubo);
-		void set_ubo_with_offset(int binding, UniformBuffer *ubo, int offset);
+		void set_buffer(int binding, Buffer *b);
+		void set_buffer_with_offset(int binding, Buffer *b, int offset);
+		void set_storage_buffer(int binding, Buffer *b);
 		void set_texture(int binding, Texture *t);
 		void set_storage_image(int binding, Texture *t);
 		void set_acceleration_structure(int binding, AccelerationStructure *a);

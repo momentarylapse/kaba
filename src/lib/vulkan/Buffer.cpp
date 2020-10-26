@@ -31,8 +31,8 @@ int make_aligned(int size) {
 
 
 Buffer::Buffer() {
-	buffer = nullptr;
-	memory = nullptr;
+	buffer = VK_NULL_HANDLE;
+	memory = VK_NULL_HANDLE;
 	size = 0;
 }
 
@@ -77,7 +77,11 @@ void Buffer::destroy() {
 	size = 0;
 }
 
-void *Buffer::map(VkDeviceSize _offset, VkDeviceSize _size) {
+void *Buffer::map() {
+	return map_part(0, size);
+}
+
+void *Buffer::map_part(VkDeviceSize _offset, VkDeviceSize _size) {
 	void *p;
 	vkMapMemory(device, memory, _offset, _size, 0, &p);
 	return p;
@@ -88,7 +92,7 @@ void Buffer::unmap() {
 }
 
 void Buffer::update_part(const void *source, int offset, int update_size) {
-	void* data = map(offset, update_size);
+	void* data = map_part(offset, update_size);
 	memcpy(data, source, update_size);
 	unmap();
 }
@@ -106,7 +110,8 @@ UniformBuffer::UniformBuffer(int _size) {
 	size_single_aligned = size;
 	VkDeviceSize buffer_size = size;
 
-	create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
 UniformBuffer::UniformBuffer(int _size, int _count) {
@@ -117,7 +122,8 @@ UniformBuffer::UniformBuffer(int _size, int _count) {
 	size = size_single_aligned * count;
 	VkDeviceSize buffer_size = size;
 
-	create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
 UniformBuffer::~UniformBuffer() {

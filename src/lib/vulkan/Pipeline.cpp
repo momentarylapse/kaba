@@ -21,7 +21,7 @@
 
 namespace vulkan {
 
-	extern PFN_vkCreateRayTracingPipelinesNV pvkCreateRayTracingPipelinesNV;
+	extern PFN_vkCreateRayTracingPipelinesNV _vkCreateRayTracingPipelinesNV;
 
 
 	VkVertexInputBindingDescription create_binding_description(int num_textures) {
@@ -348,7 +348,7 @@ RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
 
 	msg_write("creating RTX pipeline...");
 
-	if (pvkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
+	if (_vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
 	msg_write("...done");

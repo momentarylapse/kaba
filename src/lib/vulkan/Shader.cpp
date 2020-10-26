@@ -108,6 +108,13 @@ namespace vulkan {
 		return s;
 	}
 
+	VkShaderModule Shader::get_module(VkShaderStageFlagBits stage) const {
+		for (auto &m: modules)
+			if (m.stage == stage)
+				return m.module;
+		return VK_NULL_HANDLE;
+	}
+
 };
 
 #endif

@@ -20,6 +20,8 @@ VkCompareOp next_compare_op = VK_COMPARE_OP_ALWAYS;
 VkFormat parse_format(const string &s) {
 	if (s == "rgba:i8")
 		return VK_FORMAT_R8G8B8A8_UNORM;
+	if (s == "bgra:i8")
+		return VK_FORMAT_B8G8R8A8_UNORM;
 	if (s == "rgb:i8")
 		return VK_FORMAT_R8G8B8_UNORM;
 	if (s == "r:i8")

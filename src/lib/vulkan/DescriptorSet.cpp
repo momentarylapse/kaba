@@ -35,6 +35,8 @@ VkDescriptorType descriptor_type(const string &s) {
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	if (s == DESCRIPTOR_NAME_UNIFORM_BUFFER_DYNAMIC)
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	if (s == "storage-buffer")
+		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	if (s == DESCRIPTOR_NAME_SAMPLER)
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	if (s == DESCRIPTOR_NAME_STORAGE_IMAGE)
@@ -76,20 +78,24 @@ VkDescriptorType descriptor_type(const string &s) {
 	}
 
 	DescriptorSet *DescriptorPool::create_set(const string &s) {
-		return new DescriptorSet(this, s);
+		Array<VkDescriptorType> types;
+		Array<int> binding_no;
+		DescriptorSet::digest_bindings(s, types, binding_no);
+
+		auto layout = DescriptorSet::create_layout(types, binding_no);
+		return create_set_from_layout(layout);
+	}
+
+	DescriptorSet *DescriptorPool::create_set_from_layout(VkDescriptorSetLayout layout) {
+		return new DescriptorSet(this, layout);
 	}
 
 	Array<DescriptorSet*> descriptor_sets;
 
-	DescriptorSet::DescriptorSet(DescriptorPool *pool, const string &bindings) {
-		Array<VkDescriptorType> types;
-		Array<int> binding_no;
-		digest_bindings(bindings, types, binding_no);
+	DescriptorSet::DescriptorSet(DescriptorPool *pool, VkDescriptorSetLayout _layout) {
+		layout = _layout;
 
 		num_dynamic_ubos = 0;
-
-		layout = create_layout(types, binding_no);
-
 		VkDescriptorSetAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		info.descriptorPool = pool->pool;
@@ -127,19 +133,27 @@ VkDescriptorType descriptor_type(const string &s) {
 	}
 
 	void DescriptorSet::set_storage_image(int binding, Texture *t) {
-		msg_error("storage image");
+		//msg_error("storage image");
 		auto &i = get_for_binding(images, binding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 		i.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		i.info.imageView = t->view;
 		i.info.sampler = VK_NULL_HANDLE; //t->sampler;
 	}
 
-	void DescriptorSet::set_ubo_with_offset(int binding, UniformBuffer *u, int offset) {
-		auto type = u->is_dynamic() ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	void DescriptorSet::set_buffer_with_offset(int binding, Buffer *u, int offset) {
+		auto type = /*u->is_dynamic() ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC :*/ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		auto &i = get_for_binding(buffers, binding, type);
 		i.info.buffer = u->buffer;
 		i.info.offset = offset;
-		i.info.range = u->size_single;
+		i.info.range = u->size;
+	}
+
+	void DescriptorSet::set_storage_buffer(int binding, Buffer *u) {
+		auto type = /*u->is_dynamic() ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC :*/ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		auto &i = get_for_binding(buffers, binding, type);
+		i.info.buffer = u->buffer;
+		i.info.offset = 0;
+		i.info.range = u->size;
 	}
 
 	void DescriptorSet::set_acceleration_structure(int binding, AccelerationStructure *a) {
@@ -149,8 +163,8 @@ VkDescriptorType descriptor_type(const string &s) {
 	    i.info.pAccelerationStructures = &a->structure;
 	}
 
-	void DescriptorSet::set_ubo(int binding, UniformBuffer *u) {
-		set_ubo_with_offset(binding, u, 0);
+	void DescriptorSet::set_buffer(int binding, Buffer *u) {
+		set_buffer_with_offset(binding, u, 0);
 	}
 
 	void DescriptorSet::update() {
@@ -206,7 +220,7 @@ VkDescriptorType descriptor_type(const string &s) {
 			lb.binding = binding_no[i];
 			lb.pImmutableSamplers = nullptr;
 			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
 			} else {
 				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
 			}
