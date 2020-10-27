@@ -50,18 +50,28 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 }
 
 const Class *SyntaxTree::make_class_func(Function *f) {
-	return TypeFunctionCodeP;
+	if (f->num_params == 0)
+		return make_class_func({TypeVoid}, f->literal_return_type);
+	if (f->num_params >= 1)
+		return make_class_func(f->literal_param_type, f->literal_return_type);
+	return TypeFunctionP;
+}
+
+const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const Class *ret) {
 
 	// maybe some day...
-	string params;
-	for (int i=0; i<f->num_params; i++) {
+	string params;// = param->name;
+	for (int i=0; i<param.num; i++) {
 		if (i > 0)
 			params += ",";
-		params += f->literal_param_type[i]->name;
+		params += param[i]->name;
 	}
-	return make_class("func(" + params + ")->" + f->return_type->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, TypeVoid, base_class);
-
-	return TypePointer;
+	auto ff = make_class("<func (" + params + ")->" + ret->name + ">", Class::Type::OTHER, 0, 0, nullptr, nullptr, base_class);
+	if (!ff->parent) {
+		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
+	}
+	//auto p = ff->get_pointer();
+	return make_class("(" + params + ")->" + ret->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, ff, base_class);
 }
 
 shared<Node> SyntaxTree::ref_node(shared<Node> sub, const Class *override_type) {
@@ -130,7 +140,7 @@ shared<Node> SyntaxTree::add_node_call(Function *f) {
 }
 
 shared<Node> SyntaxTree::add_node_func_name(Function *f) {
-	return new Node(NodeKind::FUNCTION, (int_p)f, TypeFunctionP, true);
+	return new Node(NodeKind::FUNCTION, (int_p)f, make_class_func(f), true);
 }
 
 shared<Node> SyntaxTree::add_node_class(const Class *c) {
