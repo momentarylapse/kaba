@@ -50,11 +50,13 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 }
 
 const Class *SyntaxTree::make_class_func(Function *f) {
-	if (f->num_params == 0)
+	auto params = f->literal_param_type;
+	if (!f->is_static())
+		params.insert(f->name_space, 0);
+	if (params.num == 0)
 		return make_class_func({TypeVoid}, f->literal_return_type);
-	if (f->num_params >= 1)
-		return make_class_func(f->literal_param_type, f->literal_return_type);
-	return TypeFunctionP;
+	return make_class_func(params, f->literal_return_type);
+	//return TypeFunctionP;
 }
 
 const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const Class *ret) {
@@ -66,14 +68,16 @@ const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const
 			params += ",";
 		params += param[i]->name;
 	}
+	if (param.num > 1)
+		params = "(" + params + ")";
 	auto params_ret = param;
 	params_ret.add(ret);
-	auto ff = make_class("<func (" + params + ")->" + ret->name + ">", Class::Type::OTHER, 0, 0, nullptr, params_ret, base_class);
+	auto ff = make_class("<func " + params + "->" + ret->name + ">", Class::Type::FUNCTION, 0, 0, nullptr, params_ret, base_class);
 	if (!ff->parent) {
 		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
 	}
 	//auto p = ff->get_pointer();
-	return make_class("(" + params + ")->" + ret->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
+	return make_class(params + "->" + ret->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
 }
 
 shared<Node> SyntaxTree::ref_node(shared<Node> sub, const Class *override_type) {
