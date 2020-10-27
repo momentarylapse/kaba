@@ -267,7 +267,7 @@ const Class *add_type_p(const Class *sub_type, Flags flag, const string &_name) 
 		else
 			name = sub_type->name + "*";
 	}
-	Class *t = new Class(name, config.pointer_size, cur_package->syntax, nullptr, sub_type);
+	Class *t = new Class(name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	t->type = Class::Type::POINTER;
 	if (flags_has(flag, Flags::SILENT))
 		t->type = Class::Type::POINTER_SILENT;
@@ -282,7 +282,7 @@ const Class *add_type_a(const Class *sub_type, int array_length, const string &_
 	string name = _name;
 	if (name == "")
 		name = sub_type->name + "[" + i2s(array_length) + "]";
-	Class *t = new Class(name, 0, cur_package->syntax, nullptr, sub_type);
+	Class *t = new Class(name, 0, cur_package->syntax, nullptr, {sub_type});
 	t->size = sub_type->size * array_length;
 	t->type = Class::Type::ARRAY;
 	t->array_length = array_length;
@@ -295,7 +295,7 @@ const Class *add_type_l(const Class *sub_type, const string &_name) {
 	string name = _name;
 	if (name == "")
 		name = sub_type->name + "[]";
-	Class *t = new Class(name, 0, cur_package->syntax, nullptr, sub_type);
+	Class *t = new Class(name, 0, cur_package->syntax, nullptr, {sub_type});
 	t->size = config.super_array_size;
 	t->type = Class::Type::SUPER_ARRAY;
 	script_make_super_array(t);
@@ -307,7 +307,7 @@ const Class *add_type_d(const Class *sub_type, const string &_name) {
 	string name = _name;
 	if (name == "")
 		name = sub_type->name + "{}";
-	Class *t = new Class(name, config.super_array_size, cur_package->syntax, nullptr, sub_type);
+	Class *t = new Class(name, config.super_array_size, cur_package->syntax, nullptr, {sub_type});
 	t->type = Class::Type::DICT;
 	script_make_dict(t);
 	__add_class__(t, sub_type->name_space);
@@ -631,9 +631,9 @@ public:
 
 void script_make_super_array(Class *t, SyntaxTree *ps)
 {
-	const Class *p = t->param;
+	const Class *p = t->param[0];
 	t->derive_from(TypeDynamicArray, false);
-	t->param = p;
+	t->param[0] = p;
 	add_class(t);
 
 	Function *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});

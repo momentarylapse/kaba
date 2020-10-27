@@ -343,7 +343,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 		case StatementID::NEW:{
 			// malloc()
 			auto f = syntax_tree->required_func_global("@malloc");
-			add_function_call(f, {param_imm(TypeInt, ret.type->param->size)}, ret);
+			add_function_call(f, {param_imm(TypeInt, ret.type->param[0]->size)}, ret);
 
 			// __init__()
 			auto sub = com->params[0];
