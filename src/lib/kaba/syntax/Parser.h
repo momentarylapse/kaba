@@ -94,7 +94,7 @@ public:
 	static PrimitiveOperator *which_primitive_operator(const string &name, int param_flags = 3);
 	static Statement *which_statement(const string &name);
 
-	shared<Node> parse_operand_extension(const shared_array<Node> &operands, Block *block);
+	shared<Node> parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type);
 	shared_array<Node> parse_operand_extension_element(shared<Node> operand);
 	shared<Node> parse_operand_extension_array(shared<Node> operand, Block *block);
 	shared<Node> parse_operand_extension_call(const shared_array<Node> &operands, Block *block);

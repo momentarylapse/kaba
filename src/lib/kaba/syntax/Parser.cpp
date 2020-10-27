@@ -7,6 +7,9 @@
 #include <stdio.h>
 
 
+#define NEW_TYPE_PARSING 0
+#define NEW_NEW_PARSING 0
+
 namespace Kaba{
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
@@ -566,7 +569,7 @@ const Class *Parser::parse_type_extension_child(const Class *c) {
 
 
 // find any ".", or "[...]"'s    or operators?
-shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands, Block *block) {
+shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type) {
 
 	// special
 	if ((operands[0]->kind == NodeKind::CLASS) and ((Exp.cur == "*") or (Exp.cur == "[") or (Exp.cur == "{") or (Exp.cur == "->"))) {
@@ -586,7 +589,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 			t = parse_type_extension_child(t);
 		}
 
-		return parse_operand_extension({tree->add_node_class(t)}, block);
+		return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
 	}
 
 	// nothing?
@@ -599,18 +602,20 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 			do_error("left side of '.' is ambiguous");
 		// class element?
 
-		return parse_operand_extension(parse_operand_extension_element(operands[0]), block);
+		return parse_operand_extension(parse_operand_extension_element(operands[0]), block, prefer_type);
 
 	} else if (Exp.cur == "[") {
 		if (operands.num > 1)
 			do_error("left side of '[' is ambiguous");
 			
 		// array?
-		return parse_operand_extension({parse_operand_extension_array(operands[0], block)}, block);
+		return parse_operand_extension({parse_operand_extension_array(operands[0], block)}, block, prefer_type);
 
 	} else if (Exp.cur == "(") {
+		if (prefer_type and operands[0]->kind == NodeKind::CLASS)
+			return operands[0];
 
-		return parse_operand_extension({parse_operand_extension_call(operands, block)}, block);
+		return parse_operand_extension({parse_operand_extension_call(operands, block)}, block, prefer_type);
 
 
 	} else if (primop) {
@@ -628,7 +633,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 	}
 
 	// recursion
-	return parse_operand_extension(operands, block);
+	return parse_operand_extension(operands, block, prefer_type);
 }
 
 
@@ -1116,7 +1121,7 @@ shared<Node> Parser::parse_operand(Block *block, bool prefer_class) {
 		return operands[0];
 
 	// resolve arrays, structures, calls...
-	return parse_operand_extension(operands, block);
+	return parse_operand_extension(operands, block, prefer_class);
 }
 
 // only "primitive" operator -> no type information
@@ -1928,11 +1933,31 @@ shared<Node> Parser::parse_statement_pass(Block *block) {
 //  p[0]: call to constructor (optional)
 shared<Node> Parser::parse_statement_new(Block *block) {
 	Exp.next(); // new
-	auto t = parse_type(block->name_space());
+
 	auto cmd = tree->add_node_statement(StatementID::NEW);
-	cmd->type = t->get_pointer();
+
+	if (NEW_NEW_PARSING) {
+		auto constr = parse_operand(block, false);
+		if (constr->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION)
+			do_error("constructor call expected after 'new'");
+		constr->kind = NodeKind::FUNCTION_CALL;
+
+		auto ff = constr->as_func();
+		auto tt = ff->name_space;
+		//do_error("NEW " + tt->long_name());
+
+
+		cmd->type = tt->get_pointer();
+		cmd->set_param(0, constr);
+		//cmd->show(TypeVoid);
+		return cmd;
+	}
+
+
+	auto t = parse_type(block->name_space());
 	if (Exp.cur != "(")
 		do_error("'(' expected after 'new Type'");
+	cmd->type = t->get_pointer();
 	/*cmd->set_num_uparams(1);
 	cmd->set_uparam(0, parse_operand_extension_call(, block, false));
 	cmd->uparams[0]->set_instance(new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));*/
@@ -1947,6 +1972,8 @@ shared<Node> Parser::parse_statement_new(Block *block) {
 	}
 	cmd->set_num_params(1);
 	cmd->set_param(0, parse_operand_extension_call(funcs, block));
+	//cmd->show(TypeVoid);
+	//msg_write("...........ok");
 	return cmd;
 }
 
@@ -2200,8 +2227,7 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	if (p[0] != params[1]->type->param)
 		do_error("map(): function parameter does not match list type");
 
-	auto links = tree->get_existence("@map", nullptr, nullptr, false);
-	Function *f = links[0]->as_func();
+	auto *f = tree->required_func_global("@map");
 
 	auto *c = tree->add_constant_pointer(TypeFunctionP, params[0]->as_func());
 
@@ -2512,11 +2538,12 @@ void Parser::parse_complete_command(Block *block) {
 		block->add(tree->add_node_statement(StatementID::ASM));
 
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
+		//auto t = parse_type(block->name_space());
 		parse_local_definition(block, nullptr);
 
 	} else {
 
-		auto first = parse_operand(block, true);
+		auto first = parse_operand(block);
 
 		if ((first->kind == NodeKind::CLASS) and !Exp.end_of_line()) {
 			parse_local_definition(block, first->as_class());
@@ -3010,6 +3037,16 @@ const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
 // complicated types like "int[]*[4]" etc
 // greedy
 const Class *Parser::parse_type(const Class *ns, Flags flags) {
+#if NEW_TYPE_PARSING
+	auto cc = parse_operand(tree->root_of_all_evil->block.get(), true);
+	if (cc->kind != NodeKind::CLASS) {
+		//cc->show(TypeVoid);
+		do_error("type expected");
+	}
+	return cc->as_class();
+#endif
+
+
 
 	// base type
 	const Class *t = tree->find_root_type_by_name(Exp.cur, ns, true);

@@ -745,7 +745,7 @@ void SIAddStatements() {
 	add_statement(IDENTIFIER_FOR, StatementID::FOR_DIGEST, 4); // [INIT, CMP, BLOCK, INC] internally like a while-loop... but a bit different...
 	add_statement(IDENTIFIER_BREAK, StatementID::BREAK);
 	add_statement(IDENTIFIER_CONTINUE, StatementID::CONTINUE);
-	add_statement(IDENTIFIER_NEW, StatementID::NEW);
+	add_statement(IDENTIFIER_NEW, StatementID::NEW, 1);
 	add_statement(IDENTIFIER_DELETE, StatementID::DELETE, 1);
 	add_statement(IDENTIFIER_SIZEOF, StatementID::SIZEOF, 1);
 	add_statement(IDENTIFIER_TYPE, StatementID::TYPE, 1);
