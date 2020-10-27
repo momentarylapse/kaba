@@ -1072,7 +1072,7 @@ shared<Node> Parser::parse_dict(Block *block) {
 
 // minimal operand
 // but with A[...], A(...) etc
-shared<Node> Parser::parse_operand(Block *block, bool prefer_class) {
+shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
 	shared_array<Node> operands;
 
 	// ( -> one level down and combine commands
@@ -1084,10 +1084,10 @@ shared<Node> Parser::parse_operand(Block *block, bool prefer_class) {
 		Exp.next();
 	} else if (Exp.cur == "&") { // & -> address operator
 		Exp.next();
-		operands = {tree->ref_node(parse_operand(block))};
+		operands = {tree->ref_node(parse_operand(block, ns))};
 	} else if (Exp.cur == "*") { // * -> dereference
 		Exp.next();
-		auto sub = parse_operand(block);
+		auto sub = parse_operand(block, ns);
 		if (!sub->type->is_pointer()) {
 			Exp.rewind();
 			do_error("only pointers can be dereferenced using '*'");
@@ -1105,7 +1105,7 @@ shared<Node> Parser::parse_operand(Block *block, bool prefer_class) {
 		operands = {parse_dict(block)};
 	} else {
 		// direct operand
-		operands = tree->get_existence(Exp.cur, block, block->name_space(), prefer_class);
+		operands = tree->get_existence(Exp.cur, block, ns, prefer_class);
 		if (operands.num > 0) {
 
 			if (operands[0]->kind == NodeKind::STATEMENT) {
@@ -1115,7 +1115,7 @@ shared<Node> Parser::parse_operand(Block *block, bool prefer_class) {
 				// unary operator
 				Exp.next();
 				auto po = operands[0]->as_prim_op();
-				auto sub_command = parse_operand(block);
+				auto sub_command = parse_operand(block, ns);
 				return link_unary_operator(po, sub_command, block);
 			} else {
 				Exp.next();
@@ -1536,7 +1536,7 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 
 	// find the first operand
 	if (!first_operand)
-		first_operand = parse_operand(block);
+		first_operand = parse_operand(block, block->name_space());
 	operands.add(first_operand);
 
 	// find pairs of operators and operands
@@ -1552,7 +1552,7 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 			//Exp.rewind();
 			do_error("unexpected end of line after operator");
 		}
-		operands.add(parse_operand(block));
+		operands.add(parse_operand(block, block->name_space()));
 	}
 
 
@@ -1961,7 +1961,7 @@ shared<Node> Parser::parse_statement_new(Block *block) {
 	auto cmd = tree->add_node_statement(StatementID::NEW);
 
 	if (NEW_NEW_PARSING) {
-		auto constr = parse_operand(block, false);
+		auto constr = parse_operand(block, block->name_space(), false);
 		if (constr->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION)
 			do_error("constructor call expected after 'new'");
 		constr->kind = NodeKind::FUNCTION_CALL;
@@ -2005,7 +2005,7 @@ shared<Node> Parser::parse_statement_new(Block *block) {
 //  p[0]: operand
 shared<Node> Parser::parse_statement_delete(Block *block) {
 	Exp.next(); // del
-	auto p = parse_operand(block);
+	auto p = parse_operand(block, block->name_space());
 	if (!p->type->is_pointer())
 		do_error("pointer expected after 'del'");
 
@@ -2567,7 +2567,7 @@ void Parser::parse_complete_command(Block *block) {
 
 	} else {
 
-		auto first = parse_operand(block);
+		auto first = parse_operand(block, block->name_space());
 
 		if ((first->kind == NodeKind::CLASS) and !Exp.end_of_line()) {
 			parse_local_definition(block, first->as_class());
@@ -3087,7 +3087,7 @@ const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
 // greedy
 const Class *Parser::parse_type(const Class *ns, Flags flags) {
 #if NEW_TYPE_PARSING
-	auto cc = parse_operand(tree->root_of_all_evil->block.get(), true);
+	auto cc = parse_operand(tree->root_of_all_evil->block.get(), ns, true);
 	if (cc->kind != NodeKind::CLASS) {
 		//cc->show(TypeVoid);
 		do_error("type expected");
