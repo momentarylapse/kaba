@@ -55,20 +55,22 @@ void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function
 void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_parent_constructor) {
 	if (!f)
 		return;
-	auto te = t->get_array_element();
 	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()) {
+		auto te = t->get_array_element();
 		auto n_el_size = tree->add_node_const(tree->add_constant_int(te->size));
 		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
 		n_mem_init->set_param(1, n_el_size);
 		f->block->add(n_mem_init);
-	}else if (t->is_dict()) {
+	} else if (t->is_dict()) {
+		auto te = t->get_array_element();
 		auto n_el_size = tree->add_node_const(tree->add_constant_int(te->size + TypeString->size));
 		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
 		n_mem_init->set_param(1, n_el_size);
 		f->block->add(n_mem_init);
-	}else if (t->is_array()) {
+	} else if (t->is_array()) {
+		auto te = t->get_array_element();
 		auto *pc_el_init = te->get_default_constructor();
 		if (te->needs_constructor() and !pc_el_init)
 			do_error_implicit(f, format("missing default constructor for %s", te->long_name()));
@@ -80,6 +82,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 			}
 		}
 	} else if (t->is_pointer_shared()) {
+		auto te = t->param[0];
 		auto n_null = tree->add_node_const(tree->add_constant_pointer(te->get_pointer(), nullptr));
 		auto n_op = tree->add_node_operator_by_inline(tree->shift_node(n_self, false, 0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
 		f->block->add(n_op);

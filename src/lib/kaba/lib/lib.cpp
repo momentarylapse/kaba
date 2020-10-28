@@ -83,6 +83,7 @@ const string IDENTIFIER_ELSE = "else";
 const string IDENTIFIER_WHILE = "while";
 const string IDENTIFIER_FOR = "for";
 const string IDENTIFIER_IN = "in";
+const string IDENTIFIER_AS = "as";
 const string IDENTIFIER_BREAK = "break";
 const string IDENTIFIER_CONTINUE = "continue";
 const string IDENTIFIER_PASS = "pass";

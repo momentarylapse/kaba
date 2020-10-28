@@ -224,7 +224,8 @@ SyntaxTree::SyntaxTree(Script *_script) {
 	base_class = new Class("-base-", 0, this);
 	_base_class = base_class;
 	imported_symbols = new Class("-imported-", 0, this);
-	root_of_all_evil = new Function("RootOfAllEvil", TypeVoid, base_class);
+	root_of_all_evil = new Function("-root-", TypeVoid, base_class);
+
 
 	flag_string_const_as_cstring = false;
 	flag_function_pointer_as_code = false;

@@ -1,4 +1,5 @@
-shared class X
+class X as shared
+#shared class X
 	void __init__()
 		print("X.init")
 	void __delete__()

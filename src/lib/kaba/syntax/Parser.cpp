@@ -1047,6 +1047,7 @@ shared<Node> Parser::parse_list(Block *block) {
 }
 
 shared<Node> Parser::parse_dict(Block *block) {
+	Exp.next(); // {
 	shared_array<Node> el;
 	while(true) {
 		if (Exp.cur == "}")
@@ -1068,6 +1069,10 @@ shared<Node> Parser::parse_dict(Block *block) {
 	}
 	Exp.next();
 	return build_abstract_dict(el);
+}
+
+const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
+	return tree->make_class(IDENTIFIER_SHARED + " " + parent->name, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
 // minimal operand
@@ -1101,8 +1106,15 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 			operands = {parse_list(block)};
 		}
 	} else if (Exp.cur == "{") {
-		Exp.next();
 		operands = {parse_dict(block)};
+	} else if (Exp.cur == IDENTIFIER_SHARED) {
+		Exp.next();
+		auto t = tree->find_root_type_by_name(Exp.cur, ns, true);
+		if (!t)
+			do_error("type expected after 'shared'");
+		Exp.next();
+		t = make_pointer_shared(tree, t);
+		operands = {tree->add_node_class(t)};
 	} else {
 		// direct operand
 		operands = tree->get_existence(Exp.cur, block, ns, prefer_class);
@@ -1123,7 +1135,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 
 			}
 		} else {
-			const Class *t = get_constant_type(Exp.cur);
+			auto t = get_constant_type(Exp.cur);
 			if (t == TypeUnknown)
 				do_error("unknown operand");
 
@@ -1838,7 +1850,7 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 		cmd_ex->type = ex_type;
 		ex_type = ex_type->get_pointer();
 		if (!Exp.end_of_line()) {
-			if (Exp.cur != "as")
+			if (Exp.cur != IDENTIFIER_AS)
 				do_error("'as' expected");
 			Exp.next();
 			string ex_name = Exp.cur;
@@ -2801,6 +2813,15 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	if (!_class)
 		tree->script->do_error_internal("class declaration ...not found " + name);
 
+	if (Exp.cur == IDENTIFIER_AS) {
+		Exp.next();
+		if (Exp.cur == IDENTIFIER_SHARED)
+			flags_set(flags, Flags::SHARED);
+		else
+			do_error("'shared' extected after 'as'");
+		Exp.next();
+	}
+
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS) {
 		Exp.next();
@@ -2831,19 +2852,15 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 		if (Exp.end_of_file())
 			break;
 
-		Flags flags = parse_flags();
-
 		int ie = Exp.cur_exp;
 
 		if (Exp.cur == IDENTIFIER_ENUM) {
 			parse_enum(_class);
 			continue;
-		}
-
-		if (Exp.cur == IDENTIFIER_CLASS) {
+		} else if (Exp.cur == IDENTIFIER_CLASS) {
 			//msg_write("sub....");
 			int cur_line = Exp.get_line_no();
-			if (!parse_class(_class, flags)) {
+			if (!parse_class(_class, Flags::NONE)) {
 				sub_class_line_offsets.add(cur_line);
 				skip_parse_class();
 			}
@@ -2851,7 +2868,9 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 			continue;
 		}
 
-		const Class *type = parse_type(_class, flags); // force
+		Flags flags = parse_flags();
+
+		auto type = parse_type(_class, Flags::NONE); // force
 		while (!Exp.end_of_line()) {
 			//int indent = Exp.cur_line->indent;
 			
@@ -3053,10 +3072,6 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 }
 
 
-const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
-	return tree->make_class(IDENTIFIER_SHARED + " " + parent->name, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
-}
-
 
 /*const Class *Parser::parse_product_type(const Class *ns) {
 	Exp.next(); // (
@@ -3135,6 +3150,7 @@ const Class *Parser::parse_type(const Class *ns, Flags flags) {
 
 Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	// TODO better to split/mask flags into return- and function-flags...
+	flags = parse_flags(flags);
 	
 // return type
 	const Class *return_type = parse_type(name_space, flags); // force...
@@ -3232,7 +3248,6 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 		Exp.reset_parser();
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->exp.num >= 2)) {
-			auto flags = parse_flags();
 			if (Exp.cur == IDENTIFIER_CLASS) {
 				Exp.next();
 				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns);
@@ -3282,10 +3297,10 @@ Flags Parser::parse_flags(Flags initial) {
 			flags = flags_mix({flags, Flags::OVERRIDE});
 		} else if (Exp.cur == IDENTIFIER_SELFREF) {
 			flags = flags_mix({flags, Flags::SELFREF});
-		} else if (Exp.cur == IDENTIFIER_SHARED) {
-			flags = flags_mix({flags, Flags::SHARED});
-		} else if (Exp.cur == IDENTIFIER_OWNED) {
-			flags = flags_mix({flags, Flags::OWNED});
+		//} else if (Exp.cur == IDENTIFIER_SHARED) {
+		//	flags = flags_mix({flags, Flags::SHARED});
+		//} else if (Exp.cur == IDENTIFIER_OWNED) {
+		//	flags = flags_mix({flags, Flags::OWNED});
 		} else if (Exp.cur == IDENTIFIER_OUT) {
 			flags = flags_mix({flags, Flags::OUT});
 		} else if (Exp.cur == IDENTIFIER_THROWS) {
@@ -3311,7 +3326,6 @@ void Parser::parse_top_level() {
 
 	// global definitions (enum, class, variables and functions)
 	while (!Exp.end_of_file()) {
-		Flags flags = parse_flags(Flags::STATIC);
 
 
 		/*if ((Exp.cur == "import") or (Exp.cur == "use")) {
@@ -3323,9 +3337,11 @@ void Parser::parse_top_level() {
 
 		// class
 		} else if (Exp.cur == IDENTIFIER_CLASS) {
-			parse_class(tree->base_class, flags);
+			parse_class(tree->base_class, Flags::NONE);
 
 		} else {
+
+			Flags flags = parse_flags(Flags::STATIC);
 
 			// type of definition
 			bool is_function = false;
