@@ -2534,7 +2534,7 @@ void Parser::parse_local_definition(Block *block, const Class *type) {
 	auto flags = parse_flags();
 	// type of variable
 	if (!type)
-		type = parse_type(block->name_space(), flags);
+		type = parse_type(block->name_space());
 
 	if (type->needs_constructor() and !type->get_default_constructor())
 		do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()));
@@ -2800,9 +2800,8 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	}
 }
 
-bool Parser::parse_class(Class *_namespace, Flags flags) {
-	int indent0 = Exp.cur_line->indent;
-	int _offset = 0;
+Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
+	offset0 = 0;
 	Exp.next(); // 'class'
 	string name = Exp.cur;
 	Exp.next();
@@ -2816,7 +2815,7 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	if (Exp.cur == IDENTIFIER_AS) {
 		Exp.next();
 		if (Exp.cur == IDENTIFIER_SHARED)
-			flags_set(flags, Flags::SHARED);
+			flags_set(_class->flags, Flags::SHARED);
 		else
 			do_error("'shared' extected after 'as'");
 		Exp.next();
@@ -2825,26 +2824,34 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 	// parent class
 	if (Exp.cur == IDENTIFIER_EXTENDS) {
 		Exp.next();
-		auto eflags = parse_flags();
-		const Class *parent = parse_type(_namespace, eflags); // force
+		const Class *parent = parse_type(_namespace); // force
 		if (!parent->fully_parsed())
-			return false;
+			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 		_class->derive_from(parent, true);
-		_offset = parent->size;
+		offset0 = parent->size;
 	}
 	expect_new_line();
 
-	flags_set(_class->flags, flags);
-	if (flags_has(flags, Flags::SHARED)) {
-		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, _offset);
+	if (flags_has(_class->flags, Flags::SHARED)) {
+		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, offset0);
 	}
 
 	//msg_write("parse " + _class->long_name());
+	return _class;
+}
+
+bool Parser::parse_class(Class *_namespace) {
+	int indent0 = Exp.cur_line->indent;
+	int _offset = 0;
+
+	auto _class = parse_class_header(_namespace, _offset);
+	if (!_class)
+		return false;
 
 	Array<int> sub_class_line_offsets;
 
-	// elements
+	// body
 	while (!Exp.end_of_file()) {
 		Exp.next_line();
 		if (Exp.cur_line->indent <= indent0) //(unindented)
@@ -2860,7 +2867,7 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 		} else if (Exp.cur == IDENTIFIER_CLASS) {
 			//msg_write("sub....");
 			int cur_line = Exp.get_line_no();
-			if (!parse_class(_class, Flags::NONE)) {
+			if (!parse_class(_class)) {
 				sub_class_line_offsets.add(cur_line);
 				skip_parse_class();
 			}
@@ -2870,7 +2877,7 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 
 		Flags flags = parse_flags();
 
-		auto type = parse_type(_class, Flags::NONE); // force
+		auto type = parse_type(_class); // force
 		while (!Exp.end_of_line()) {
 			//int indent = Exp.cur_line->indent;
 			
@@ -2903,7 +2910,27 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 		}
 	}
 
+	post_process_newly_parsed_class(_class, _offset);
 
+
+	int cur_line = Exp.get_line_no();
+
+	//msg_write(ia2s(sub_class_line_offsets));
+	for (int l: sub_class_line_offsets) {
+		//msg_write("SUB...");
+		Exp.set(0, l);
+		//.add(Exp.get_line_no());
+		if (!parse_class(_class))
+			do_error(format("parent class not fully parsed yet"));
+			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
+	}
+
+	Exp.set(0, cur_line);
+	Exp.cur_line --;
+	return true;
+}
+
+void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 
 	// virtual functions?     (derived -> _class->num_virtual)
 //	_class->vtable = cur_virtual_index;
@@ -2920,37 +2947,19 @@ bool Parser::parse_class(Class *_namespace, Flags flags) {
 
 			auto el = ClassElement(IDENTIFIER_VTABLE_VAR, TypePointer, 0);
 			_class->elements.insert(el, 0);
-			_offset += config.pointer_size;
+			size += config.pointer_size;
 		}
 	}
 
 	for (auto &e: _class->elements)
 		if (type_needs_alignment(e.type))
-			_offset = mem_align(_offset, 4);
-	_class->size = process_class_size(_class->cname(tree->base_class), _offset);
+			size = mem_align(size, 4);
+	_class->size = process_class_size(_class->cname(tree->base_class), size);
 
 
 	tree->add_missing_function_headers_for_class(_class);
 
 	flags_set(_class->flags, Flags::FULLY_PARSED);
-
-
-	int cur_line = Exp.get_line_no();
-
-	//msg_write(ia2s(sub_class_line_offsets));
-	for (int l: sub_class_line_offsets) {
-		//msg_write("SUB...");
-		Exp.set(0, l);
-		auto cflags = parse_flags();
-		//.add(Exp.get_line_no());
-		if (!parse_class(_class, cflags))
-			do_error(format("parent class not fully parsed yet"));
-			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
-	}
-
-	Exp.set(0, cur_line);
-	Exp.cur_line --;
-	return true;
 }
 
 void Parser::skip_parse_class() {
@@ -3013,8 +3022,10 @@ void Parser::parse_named_const(const string &name, const Class *type, Class *nam
 	c->name = name;
 }
 
-void Parser::parse_global_variable_def(bool single, Block *block, Flags flags) {
-	const Class *type = parse_type(block->name_space(), flags); // force
+void Parser::parse_global_variable_def(bool single, Block *block, Flags flags0) {
+	Flags flags = parse_flags(flags0);
+
+	const Class *type = parse_type(block->name_space()); // force
 
 	for (int j=0;true;j++) {
 		expect_no_new_line();
@@ -3100,52 +3111,13 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 
 // complicated types like "int[]*[4]" etc
 // greedy
-const Class *Parser::parse_type(const Class *ns, Flags flags) {
-#if NEW_TYPE_PARSING
+const Class *Parser::parse_type(const Class *ns) {
 	auto cc = parse_operand(tree->root_of_all_evil->block.get(), ns, true);
 	if (cc->kind != NodeKind::CLASS) {
 		//cc->show(TypeVoid);
 		do_error("type expected");
 	}
 	return cc->as_class();
-#endif
-
-
-
-	// base type
-	const Class *t = tree->find_root_type_by_name(Exp.cur, ns, true);
-	if (!t)
-		do_error("unknown type");
-	Exp.next();
-
-	if (flags_has(flags, Flags::SHARED)) {
-		t = make_pointer_shared(tree, t);
-	} else if (flags_has(flags, Flags::OWNED)) {
-		//t = t->get_pointer();
-		//make_pointer_shared(tree, const_cast<Class*>(t));
-		//t->type = Class::Type::POINTER_UNIQUE;
-	}
-
-	// extensions *,[],{},.,->
-	while (true) {
-
-		// pointer?
-		if (Exp.cur == "*") {
-			t = parse_type_extension_pointer(t);
-		} else if (Exp.cur == "[") {
-			t = parse_type_extension_array(t);
-		} else if (Exp.cur == "{") {
-			t = parse_type_extension_dict(t);
-		} else if (Exp.cur == "->") {
-			t = parse_type_extension_func(t);
-		} else if (Exp.cur == ".") {
-			t = parse_type_extension_child(t);
-		} else {
-			break;
-		}
-	}
-
-	return t;
 }
 
 Function *Parser::parse_function_header(Class *name_space, Flags flags) {
@@ -3153,7 +3125,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	flags = parse_flags(flags);
 	
 // return type
-	const Class *return_type = parse_type(name_space, flags); // force...
+	const Class *return_type = parse_type(name_space); // force...
 
 	Function *f = tree->add_function(Exp.cur, return_type, name_space, flags);
 	if (config.verbose)
@@ -3174,7 +3146,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			auto pflags = parse_flags();
 
 			// type of parameter variable
-			const Class *param_type = parse_type(name_space, pflags); // force
+			const Class *param_type = parse_type(name_space); // force
 			auto v = f->block->add_var(Exp.cur, param_type);
 			v->is_const = !flags_has(pflags, Flags::OUT);
 			f->literal_param_type.add(param_type);
@@ -3337,11 +3309,9 @@ void Parser::parse_top_level() {
 
 		// class
 		} else if (Exp.cur == IDENTIFIER_CLASS) {
-			parse_class(tree->base_class, Flags::NONE);
+			parse_class(tree->base_class);
 
 		} else {
-
-			Flags flags = parse_flags(Flags::STATIC);
 
 			// type of definition
 			bool is_function = false;
@@ -3351,12 +3321,12 @@ void Parser::parse_top_level() {
 
 			// function?
 			if (is_function) {
-				parse_function_header(tree->base_class, flags);
+				parse_function_header(tree->base_class, Flags::STATIC);
 				skip_parsing_function_body();
 
 			// global variables/consts
 			} else {
-				parse_global_variable_def(false, tree->root_of_all_evil->block.get(), flags);
+				parse_global_variable_def(false, tree->root_of_all_evil->block.get(), Flags::STATIC);
 			}
 		}
 		if (!Exp.end_of_file())
