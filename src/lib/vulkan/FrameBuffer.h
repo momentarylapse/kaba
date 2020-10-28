@@ -32,15 +32,15 @@ public:
 
 class FrameBuffer {
 public:
-	FrameBuffer(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments);
+	FrameBuffer(int w, int h, RenderPass *rp, const Array<Texture*> &attachments);
 	~FrameBuffer();
 
-	void __init__(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments);
+	void __init__(int w, int h, RenderPass *rp, const Array<Texture*> &attachments);
 	void __delete__();
 
 	VkFramebuffer frame_buffer;
 	int width, height;
-	void create(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments);
+	void create(int w, int h, RenderPass *rp, const Array<Texture*> &attachments);
 	void destroy();
 };
 

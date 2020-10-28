@@ -17,6 +17,7 @@
 #include "RenderPass.h"
 #include "Shader.h"
 #include "FrameBuffer.h"
+#include "vulkan.h"
 #include "../image/color.h"
 #include "../math/rect.h"
 #include <array>
@@ -81,6 +82,7 @@ void end_single_time_commands(VkCommandBuffer command_buffer) {
 }
 
 CommandBuffer::CommandBuffer() {
+	cur_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	_create();
 }
 
@@ -116,15 +118,26 @@ void CommandBuffer::_destroy() {
 
 //VkDescriptorSet current_set;
 
-void CommandBuffer::set_pipeline(Pipeline *pl) {
-	vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeline);
+void CommandBuffer::set_bind_point(const string &s) {
+	if (s == "graphics")
+		cur_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	else if (s == "raytracing")
+		cur_bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
+	else if (s == "compute")
+		cur_bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+	else
+		throw Exception("unknown bind point: " + s);
+}
+
+void CommandBuffer::bind_pipeline(BasePipeline *pl) {
+	vkCmdBindPipeline(buffer, cur_bind_point, pl->pipeline);
 	current_pipeline = pl;
 }
 
 void CommandBuffer::bind_descriptor_set(int index, DescriptorSet *dset) {
 	if (dset->num_dynamic_ubos > 0)
 		throw Exception("descriptor set requires dynamic indices");
-	vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_set, 0, nullptr);
+	vkCmdBindDescriptorSets(buffer, cur_bind_point, current_pipeline->layout, index, 1, &dset->descriptor_set, 0, nullptr);
 }
 
 void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices) {
@@ -138,7 +151,7 @@ void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, 
 			i ++;
 		}
 	}
-	vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, current_pipeline->layout, index, 1, &dset->descriptor_set, offsets.num, (unsigned*)&offsets[0]);
+	vkCmdBindDescriptorSets(buffer, cur_bind_point, current_pipeline->layout, index, 1, &dset->descriptor_set, offsets.num, (unsigned*)&offsets[0]);
 }
 
 void CommandBuffer::push_constant(int offset, int size, void *data) {
@@ -210,6 +223,17 @@ void CommandBuffer::dispatch(int nx, int ny, int nz) {
 	vkCmdDispatch(buffer, nx, ny, nz);
 }
 
+void CommandBuffer::trace_rays(int nx, int ny, int nz) {
+	auto rtp = static_cast<RayPipeline*>(current_pipeline);
+	int hs = rtx::properties.shaderGroupHandleSize;
+	_vkCmdTraceRaysNV(buffer,
+			rtp->sbt.buffer, 0,
+			rtp->sbt.buffer, rtp->miss_group_offset*hs, hs,
+			rtp->sbt.buffer, hs, hs,
+			VK_NULL_HANDLE, 0, 0,
+			nx, ny, nz);
+}
+
 bool image_is_depth_buffer(VkFormat f) {
 	return (f == VK_FORMAT_D32_SFLOAT) or (f == VK_FORMAT_D32_SFLOAT_S8_UINT) or (f == VK_FORMAT_D24_UNORM_S8_UINT) or (f == VK_FORMAT_D16_UNORM);
 }
@@ -247,6 +271,56 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 		0, nullptr,
 		barriers.num, &barriers[0]
 	);
+}
+
+
+void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
+
+	bool is_depth = image_is_depth_buffer(t->format);
+	VkImageSubresourceRange sr = {};
+	sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	sr.baseArrayLayer = 0;
+	sr.baseMipLevel = 0;
+	sr.layerCount = 1;
+	sr.levelCount = 1;
+
+	VkImageMemoryBarrier barrier;
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.pNext = nullptr;
+	barrier.srcAccessMask = (VkAccessFlags)flags[0];
+	barrier.dstAccessMask = (VkAccessFlags)flags[1];
+	barrier.oldLayout = (VkImageLayout)flags[0];
+	barrier.newLayout = (VkImageLayout)flags[0];
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = t->image;
+	barrier.subresourceRange = sr;
+
+	vkCmdPipelineBarrier(buffer,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			0, 0, nullptr, 0, nullptr, 1,
+			&barrier);
+}
+
+void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const Array<int> &extend) {
+
+	bool src_is_depth = image_is_depth_buffer(source->format);
+	bool dst_is_depth = image_is_depth_buffer(dest->format);
+
+	VkImageCopy region;
+	region.srcSubresource = {src_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+	region.srcOffset = {extend[0], extend[1], 0};
+	region.dstSubresource = {dst_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+	region.dstOffset = {extend[4], extend[5], 0};
+	region.extent = {(unsigned)extend[2], (unsigned)extend[3], 1};
+	vkCmdCopyImage(buffer,
+			source->image,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			dest->image,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&region);
 }
 
 

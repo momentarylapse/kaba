@@ -23,6 +23,9 @@ public:
 	~AccelerationStructure();
 
 	void build(const Array<VkGeometryNV> &geo, const DynamicArray &instances);
+
+	static AccelerationStructure *create_bottom(VertexBuffer *vb, VertexBuffer *ib);
+	static AccelerationStructure *create_top(const DynamicArray &instances);
 };
 
 } /* namespace vulkan */

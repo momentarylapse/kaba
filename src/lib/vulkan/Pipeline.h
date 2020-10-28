@@ -23,6 +23,7 @@
 
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
+#include "Buffer.h"
 
 class rect;
 
@@ -34,6 +35,7 @@ namespace vulkan{
 	class BasePipeline {
 	public:
 		BasePipeline(Shader *shader);
+		BasePipeline(const Array<VkDescriptorSetLayout> &dset_layouts);
 		~BasePipeline();
 
 		void destroy();
@@ -44,6 +46,9 @@ namespace vulkan{
 		Array<VkPipelineShaderStageCreateInfo> shader_stages;
 
 		VkPipeline pipeline;
+
+
+	    static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
 	};
 
 	class Pipeline : public BasePipeline {
@@ -91,7 +96,16 @@ namespace vulkan{
 
 	class RayPipeline : public BasePipeline {
 	public:
-		RayPipeline(Shader *shader);
+		RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders);
+
+		void __init__(const string &dset_layouts, const Array<Shader*> &shaders);
+
+		void create_groups(const Array<Shader*> &shaders);
+		void create_sbt();
+
+		int miss_group_offset;
+	    Array<VkRayTracingShaderGroupCreateInfoNV> groups;
+	    Buffer sbt;
 	};
 
 };

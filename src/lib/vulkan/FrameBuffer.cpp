@@ -52,7 +52,7 @@ void DepthBuffer::create(int w, int h, VkFormat _format) {
 
 
 
-FrameBuffer::FrameBuffer(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments) {
+FrameBuffer::FrameBuffer(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
 	frame_buffer = nullptr;
 	create(w, h, rp, attachments);
 }
@@ -63,7 +63,7 @@ FrameBuffer::~FrameBuffer() {
 
 
 
-void FrameBuffer::__init__(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments) {
+void FrameBuffer::__init__(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
 	new(this) FrameBuffer(w, h, rp, attachments);
 }
 
@@ -72,15 +72,19 @@ void FrameBuffer::__delete__() {
 }
 
 
-void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<VkImageView> &attachments) {
+void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
 	width = w;
 	height = h;
+
+	Array<VkImageView> views;
+	for (auto a: attachments)
+		views.add(a->view);
 
 	VkFramebufferCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	info.renderPass = rp->render_pass;
-	info.attachmentCount = attachments.num;
-	info.pAttachments = &attachments[0];
+	info.attachmentCount = views.num;
+	info.pAttachments = &views[0];
 	info.width = w;
 	info.height = h;
 	info.layers = 1;

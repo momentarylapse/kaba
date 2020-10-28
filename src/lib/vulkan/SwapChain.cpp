@@ -71,13 +71,26 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFW
 }
 
 
-Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
-	Array<FrameBuffer*> frame_buffers;
+Array<Texture*> SwapChain::create_textures() {
+	Array<Texture*> textures;
 	auto images = get_images();
 	auto image_views = create_image_views(images);
+	for (int i=0; i<images.num; i++) {
+		auto t = new Texture();
+		t->image = images[i];
+		t->view = image_views[i];
+		textures.add(t);
+	}
+	return textures;
+}
+
+
+Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
+	Array<FrameBuffer*> frame_buffers;
+	auto textures = create_textures();
 
 	for (size_t i=0; i<image_count; i++) {
-		frame_buffers.add(new FrameBuffer(width, height, render_pass, {image_views[i], depth_buffer->view}));
+		frame_buffers.add(new FrameBuffer(width, height, render_pass, {textures[i], depth_buffer}));
 	}
 	return frame_buffers;
 }
@@ -219,11 +232,11 @@ void SwapChain::cleanup() {
 
 	if (depth_buffer)
 		delete depth_buffer;
-	depth_buffer = nullptr;*/
+	depth_buffer = nullptr;
 
 	for (auto v: _image_views)
 		vkDestroyImageView(device, v, nullptr);
-	_image_views.clear();
+	_image_views.clear();*/
 
 	vkDestroySwapchainKHR(device, swap_chain, nullptr);
 }

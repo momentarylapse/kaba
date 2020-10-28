@@ -65,10 +65,10 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 }
 
 AccelerationStructure::~AccelerationStructure() {
-    _vkDestroyAccelerationStructureNV(device, structure, nullptr);
-    structure = VK_NULL_HANDLE;
-    vkFreeMemory(device, memory, nullptr);
-    memory = VK_NULL_HANDLE;
+	_vkDestroyAccelerationStructureNV(device, structure, nullptr);
+	structure = VK_NULL_HANDLE;
+	vkFreeMemory(device, memory, nullptr);
+	memory = VK_NULL_HANDLE;
 }
 
 void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicArray &instances) {
@@ -117,6 +117,42 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 	vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
 	end_single_time_commands(cb);
 
+}
+
+AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb, VertexBuffer *ib) {
+	Array<VkGeometryNV> geo;
+
+	//for (int i=0; i<vb.num; i++) {
+		VkGeometryNV geometry = {};
+
+		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+		geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+		geometry.geometry.triangles.vertexData = vb->vertex_buffer.buffer;
+		geometry.geometry.triangles.vertexOffset = 0;
+		geometry.geometry.triangles.vertexCount = vb->output_count;
+		geometry.geometry.triangles.vertexStride = sizeof(float)*3;
+		geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+		geometry.geometry.triangles.indexData = ib->vertex_buffer.buffer;
+		geometry.geometry.triangles.indexOffset = 0;
+		geometry.geometry.triangles.indexCount = ib->output_count;
+		geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+		geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
+		geometry.geometry.triangles.transformOffset = 0;
+		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+		geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+		geo.add(geometry);
+	//}
+
+	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geo, 0);
+	as->build(geo, {});
+	return as;
+}
+
+AccelerationStructure *AccelerationStructure::create_top(const DynamicArray &instances) {
+	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
+	as->build({}, instances);
+	return as;
 }
 
 } /* namespace vulkan */

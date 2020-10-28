@@ -18,7 +18,7 @@ class rect;
 
 namespace vulkan{
 
-	class Pipeline;
+	class BasePipeline;
 	class VertexBuffer;
 	class RenderPass;
 	class DescriptorSet;
@@ -42,13 +42,14 @@ namespace vulkan{
 		void _destroy();
 		VkCommandBuffer buffer;
 
-		Pipeline *current_pipeline;
+		VkPipelineBindPoint cur_bind_point;
+		BasePipeline *current_pipeline;
 
 		void begin();
 		void end();
 		void submit();
 
-		void set_pipeline(Pipeline *p);
+		void bind_pipeline(BasePipeline *p);
 		void bind_descriptor_set(int index, DescriptorSet *dset);
 		void bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices);
 		void push_constant(int offset, int size, void *data);
@@ -58,12 +59,17 @@ namespace vulkan{
 		void end_render_pass();
 		void draw(VertexBuffer *vb);
 
+		void set_bind_point(const string &s);
+
 		void set_scissor(const rect &r);
 		void set_viewport(const rect &r);
 
 		void dispatch(int nx, int ny, int nz);
+		void trace_rays(int nx, int ny, int nz);
 
 		void barrier(const Array<Texture*> &t, int mode);
+		void image_barrier(const Texture *t, const Array<int> &flags);
+		void copy_image(const Texture *source, const Texture *dest, const Array<int> &extend);
 	};
 
 	VkCommandBuffer begin_single_time_commands();

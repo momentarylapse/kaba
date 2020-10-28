@@ -20,8 +20,6 @@
 #include "helper.h"
 #include "../base/base.h"
 #include "../file/msg.h"
-//#include "../math/vector.h"
-//#include "../math/matrix.h"
 
 //#define NDEBUG
 
@@ -174,6 +172,9 @@ void init(GLFWwindow* window, const Array<string> &op) {
 	default_instance->pick_physical_device();
 	create_logical_device(default_instance->using_validation_layers);
 	create_command_pool();
+
+	if (want_rtx)
+		vulkan::rtx::get_properties();
 }
 
 Instance::Instance() {
@@ -721,6 +722,7 @@ void ImageBarrier(VkCommandBuffer commandBuffer,
 }
 
 void init() {
+#if 0
 	try {
 		get_properties();
 
@@ -788,6 +790,7 @@ void init() {
 	} catch (Exception &e) {
 		msg_error(e.message());
 	}
+#endif
 }
 
 

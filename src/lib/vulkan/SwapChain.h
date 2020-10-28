@@ -62,6 +62,7 @@ public:
 
 	DepthBuffer *create_depth_buffer();
 	RenderPass *create_render_pass(DepthBuffer *depth_buffer);
+	Array<Texture*> create_textures();
 	Array<FrameBuffer*> create_frame_buffers(RenderPass *rp, DepthBuffer *db);
 
 	void rebuild();

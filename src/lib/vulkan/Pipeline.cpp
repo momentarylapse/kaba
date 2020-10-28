@@ -10,6 +10,7 @@
 
 
 #include "Pipeline.h"
+#include "vulkan.h"
 #include "Shader.h"
 #include "helper.h"
 #include "RenderPass.h"
@@ -20,8 +21,6 @@
 #include "../math/rect.h"
 
 namespace vulkan {
-
-	extern PFN_vkCreateRayTracingPipelinesNV _vkCreateRayTracingPipelinesNV;
 
 
 	VkVertexInputBindingDescription create_binding_description(int num_textures) {
@@ -101,6 +100,30 @@ BasePipeline::BasePipeline(Shader *s) {
 	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
 		throw Exception("failed to create pipeline layout!");
 	}
+}
+
+BasePipeline::BasePipeline(const Array<VkDescriptorSetLayout> &dset_layouts) {
+	descr_layouts = dset_layouts;
+	shader = nullptr;
+	pipeline = nullptr;
+	layout = create_layout(dset_layouts);
+}
+
+VkPipelineLayout BasePipeline::create_layout(const Array<VkDescriptorSetLayout> &dset_layouts) {
+
+	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipeline_layout_info.setLayoutCount = dset_layouts.num;
+	pipeline_layout_info.pSetLayouts = &dset_layouts[0];
+	pipeline_layout_info.pushConstantRangeCount = 0;
+	pipeline_layout_info.pPushConstantRanges = nullptr;
+
+	VkPipelineLayout layout;
+	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
+		throw Exception("failed to create pipeline layout!");
+	}
+	return layout;
+
 }
 
 BasePipeline::~BasePipeline() {
@@ -325,33 +348,107 @@ void Pipeline::rebuild() {
 	}
 }
 
-RayPipeline::RayPipeline(Shader *s) : BasePipeline(s) {
-	VkRayTracingShaderGroupCreateInfoNV gi = {};
-	gi.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-	gi.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-	gi.generalShader = VK_SHADER_UNUSED_KHR;
-	gi.intersectionShader = VK_SHADER_UNUSED_KHR;
-	gi.anyHitShader = VK_SHADER_UNUSED_KHR;
-	gi.closestHitShader = 2; // index in shader...
-
-	VkRayTracingPipelineCreateInfoNV i = {};
-	i.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
-	i.flags = 0;
-	i.stageCount = shader_stages.num;
-	i.pStages = &shader_stages[0];
-	i.groupCount = 1;
-	i.pGroups = &gi;
-	i.maxRecursionDepth = 1;
-	i.layout = layout;
-	//i.basePipelineHandle;
-	i.basePipelineIndex = -1;
+RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders) : BasePipeline(DescriptorSet::parse_bindings(dset_layouts)) {
 
 	msg_write("creating RTX pipeline...");
 
-	if (_vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &i, nullptr, &pipeline) != VK_SUCCESS) {
+	create_groups(shaders);
+
+
+	VkRayTracingPipelineCreateInfoNV info = {};
+	info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+	info.groupCount = groups.num;
+	info.pGroups = &groups[0];
+	info.stageCount = shader_stages.num;
+	info.pStages = &shader_stages[0];
+	info.maxRecursionDepth = 1;
+	info.layout = layout;
+	info.basePipelineHandle = VK_NULL_HANDLE;
+	info.basePipelineIndex = 0;
+
+	if (_vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
 	msg_write("...done");
+}
+
+void RayPipeline::__init__(const string &dset_layouts, const Array<Shader*> &shaders) {
+	new(this) RayPipeline(dset_layouts, shaders);
+}
+
+void RayPipeline::create_groups(const Array<Shader*> &shaders) {
+
+	VkPipelineShaderStageCreateInfo stage = {};
+	stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stage.pName = "main";
+
+	// ray gen
+	stage.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+	stage.module = shaders[0]->get_module(VK_SHADER_STAGE_RAYGEN_BIT_NV);
+	shader_stages.add(stage);
+
+	VkRayTracingShaderGroupCreateInfoNV groupInfo = {};
+	groupInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+	groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+	groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
+	groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
+	groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+	groups.add(groupInfo);
+
+    // hit groups
+    for (auto *s: shaders.sub(1, -1)) {
+        groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        groupInfo.generalShader = VK_SHADER_UNUSED_NV;
+        groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
+        groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
+        groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+
+    	Array<VkPipelineShaderStageCreateInfo> stages;
+    	if (s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
+    		groupInfo.closestHitShader = shader_stages.num + stages.num;
+    		stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+    		stage.module = s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    		stages.add(stage);
+    	}
+    	if (s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
+    		groupInfo.anyHitShader = shader_stages.num + stages.num;
+    		stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+    		stage.module = s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    		stages.add(stage);
+    	}
+    	//VK_SHADER_STAGE_INTERSECTION_BIT_NV
+    	shader_stages.append(stages);
+    	groups.add(groupInfo);
+    }
+    miss_group_offset = groups.num;
+
+    // miss groups
+    for (auto *s: shaders.sub(1, -1))
+    	if (s->get_module(VK_SHADER_STAGE_MISS_BIT_NV)) {
+			groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+			groupInfo.generalShader = shader_stages.num;
+			groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
+			groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
+			groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+
+    		stage.stage = VK_SHADER_STAGE_MISS_BIT_NV;
+    		stage.module = s->get_module(VK_SHADER_STAGE_MISS_BIT_NV);
+    		shader_stages.add(stage);
+    		groups.add(groupInfo);
+    	}
+}
+
+void RayPipeline::create_sbt() {
+	std::cout << "SBT\n";
+	const size_t sbt_size = groups.num * rtx::properties.shaderGroupHandleSize;
+
+	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+	void* mem = sbt.map();
+	if (_vkGetRayTracingShaderGroupHandlesNV(device, pipeline, 0, groups.num, sbt_size, mem))
+		throw Exception("vkGetRayTracingShaderGroupHandlesNV");
+	sbt.unmap();
+	std::cout << "   ok\n";
 }
 
 };
