@@ -71,6 +71,10 @@ const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const
 	if (param.num > 1)
 		params = "(" + params + ")";
 	auto params_ret = param;
+	if (param.num == 0 or (param.num == 1 and param[0] == TypeVoid)) {
+		params = "void";
+		params_ret = {};
+	}
 	params_ret.add(ret);
 	auto ff = make_class("<func " + params + "->" + ret->name + ">", Class::Type::FUNCTION, 0, 0, nullptr, params_ret, base_class);
 	if (!ff->parent) {
