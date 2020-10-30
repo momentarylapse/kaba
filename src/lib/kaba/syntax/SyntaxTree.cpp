@@ -477,35 +477,38 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 	return {};
 }
 
-shared<Node> SyntaxTree::get_existence_block(const string &name, Block *block) {
+shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *block) {
 	Function *f = block->function;
 
 	// first test local variables
 	auto *v = block->get_var(name);
 	if (v)
-		return add_node_local(v);
+		return {add_node_local(v)};
 	if (!f->is_static()) {
 		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
-			return add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent);
+			return {add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent)};
 		// class elements (within a class function)
 		for (auto &e: f->name_space->elements)
 			if (e.name == name)
-				return exlink_add_element(f, e);
+				return {exlink_add_element(f, e)};
+		shared_array<Node> op;
 		for (auto *cf: weak(f->name_space->functions))
 			if (cf->name == name)
-				return exlink_add_class_func(f, cf);
+				op.add(exlink_add_class_func(f, cf));
+		if (op.num > 0)
+			return op;
 	}
 	for (auto *v: weak(f->name_space->static_variables))
 		if (v->name == name)
 			return {add_node_global(v)};
-	return nullptr;
+	return {};
 }
 
 shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, const Class *ns, bool prefer_class) {
 	if (block and !prefer_class) {
 		auto n = get_existence_block(name, block);
-		if (n)
-			return {n};
+		if (n.num > 0)
+			return n;
 	}
 
 	// shared stuff (global variables, functions)
