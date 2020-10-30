@@ -657,7 +657,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 			return c;
 		}
 
-	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::POINTER_CALL) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 
 		// parameters, instance: class as reference
 		for (int j=0;j<c->params.num;j++)
