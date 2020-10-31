@@ -40,7 +40,15 @@ class Ray;
 
 
 template<class T>
-T clamp(T x, T min, T max);
+T clamp(T x, T min, T max) {
+	if (min >= max)
+		return min;
+	if (x < min)
+		return min;
+	if (x >= max)
+		return max;
+	return x;
+}
 template<class T>
 T loop(T x, T min, T max);
 template<class T>
@@ -56,12 +64,8 @@ T sqr(T x) {
 
 
 template<>
-int clamp<int>(int x, int min, int max);
-template<>
 int loop<int>(int x, int min, int max);
 
-template<>
-float clamp<float>(float x, float min, float max);
 template<>
 float loop<float>(float x, float min, float max);
 

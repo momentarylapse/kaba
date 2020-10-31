@@ -7,18 +7,6 @@
 //------------------------------------------------------------------------------------------------//
 
 
-// force <i> within a boundary by cutting it off
-template<>
-int clamp<int>(int x, int min, int max) {
-	if (max <= min)
-		return min;
-	if (x > max)
-		return max;
-	if (x < min)
-		return min;
-	return x;
-}
-
 // force <i> within a boundary by modulo-ing
 template<>
 int loop<int>(int i, int min, int max) {
@@ -47,20 +35,6 @@ int randi(int m) {
 //------------------------------------------------------------------------------------------------//
 
 
-
-// force <f> within a boundary by cutting it off
-template<>
-float clamp<float>(float f, float min, float max) {
-	if (max >= min) {
-		if (f > max)
-			return max;
-		if (f < min)
-			return min;
-		return f;
-	} else {
-		return min;
-	}
-}
 
 // force <f> within a boundary by modulo-ing
 template<>
