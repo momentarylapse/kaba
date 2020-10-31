@@ -176,6 +176,7 @@ void Parser::do_error(const string &str, int override_exp_no, int override_line)
 
 shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand) {
 	Exp.next();
+	operand = force_concrete_type(operand);
 	const Class *type = operand->type;
 	bool deref = false;
 	bool only_static = false;
@@ -435,18 +436,6 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 	auto xxx = [&](const shared_array<Node> &links) {
 		//force_concrete_types(params);
 
-
-	// find (and provisional link) the parameters in the source
-
-	/*bool needs_brackets = ((Operand->type != TypeVoid) or (Operand->param.num != 1));
-	if (needs_brackets) {
-		FindFunctionParameters(wanted_type, block, Operand);
-
-	} else {
-		wanted_type.add(TypeUnknown);
-		FindFunctionSingleParameter(0, wanted_type, block, Operand);
-	}*/
-
 	// direct match...
 	for (shared<Node> operand: links) {
 		if (!direct_param_match(operand, params))
@@ -457,14 +446,26 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 
 
 	// advanced match...
-	for (shared<Node> operand: links) {
-		Array<int> casts;
-		Array<const Class*> wanted;
-		if (!param_match_with_cast(operand, params, casts, wanted))
+	Array<int> casts;
+	Array<const Class*> wanted;
+	int min_penalty = 1000000;
+	shared<Node> chosen;
+	for (auto operand: links) {
+		Array<int> cur_casts;
+		Array<const Class*> cur_wanted;
+		int cur_penalty;
+		if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
 			continue;
-
-		return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
+		if (cur_penalty < min_penalty){
+			casts = cur_casts;
+			wanted = cur_wanted;
+			chosen = operand;
+			min_penalty = cur_penalty;
+			//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
+		}
 	}
+	if (chosen)
+		return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
 
 
 	// error message
@@ -762,15 +763,17 @@ bool Parser::direct_param_match(shared<Node> operand, shared_array<Node> &params
 	return true;
 }
 
-bool Parser::param_match_with_cast(shared<Node> operand, shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted) {
+bool Parser::param_match_with_cast(shared<Node> operand, shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty) {
 	wanted = get_wanted_param_types(operand);
 	if (wanted.num != params.num)
 		return false;
 	casts.resize(params.num);
+	*max_penalty = 0;
 	for (int p=0; p<params.num; p++) {
 		int penalty;
 		if (!type_match_with_cast(params[p], false, wanted[p], penalty, casts[p]))
 			return false;
+		*max_penalty = max(*max_penalty, penalty);
 	}
 	return true;
 }

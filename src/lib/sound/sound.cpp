@@ -303,16 +303,16 @@ void save_wave_file(const Path &filename, const Array<float> &data_r, const Arra
 	f->write_int(samples * bytes_per_sample); // data size (bytes)
 	if (channels == 1){
 		for (int i=0;i<samples;i++){
-			float br = clampf(data_r[i], -1.0f, 1.0f);
+			float br = clamp(data_r[i], -1.0f, 1.0f);
 			short sr = (int)(br * 32767.0f);
 			int aa = sr;
 			f->write_word(aa);
 		}
 	}else if (channels == 2){
 		for (int i=0;i<samples;i++){
-			float br = clampf(data_r[i], -1.0f, 1.0f);
+			float br = clamp(data_r[i], -1.0f, 1.0f);
 			short sr = (int)(br * 32767.0f);
-			float bl = clampf(data_l[i], -1.0f, 1.0f);
+			float bl = clamp(data_l[i], -1.0f, 1.0f);
 			short sl = (int)(bl * 32767.0f);
 			unsigned int aa = (unsigned int)sr + (((unsigned int)sl) << 16);
 			f->write_int(aa);
