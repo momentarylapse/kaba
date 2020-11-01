@@ -5,6 +5,8 @@
  *      Author: michi
  */
 
+#if HAS_LIB_VULKAN
+
 #include "AccelerationStructure.h"
 #include "helper.h"
 #include <iostream>
@@ -156,3 +158,6 @@ AccelerationStructure *AccelerationStructure::create_top(const DynamicArray &ins
 }
 
 } /* namespace vulkan */
+
+#endif
+

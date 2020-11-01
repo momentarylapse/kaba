@@ -5,8 +5,9 @@
  *      Author: michi
  */
 
-#ifndef SRC_LIB_VULKAN_ACCELERATIONSTRUCTURE_H_
-#define SRC_LIB_VULKAN_ACCELERATIONSTRUCTURE_H_
+#pragma once
+
+#if HAS_LIB_VULKAN
 
 #include "vulkan.h"
 
@@ -30,4 +31,5 @@ public:
 
 } /* namespace vulkan */
 
-#endif /* SRC_LIB_VULKAN_ACCELERATIONSTRUCTURE_H_ */
+#endif
+
