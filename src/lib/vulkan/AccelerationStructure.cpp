@@ -9,6 +9,7 @@
 
 #include "AccelerationStructure.h"
 #include "helper.h"
+#include "../math/matrix.h"
 #include <iostream>
 
 namespace vulkan {
@@ -78,7 +79,8 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 
 	Buffer instancesBuffer;
 	if (instances.num > 0) {
-		std::cout << "instance buffer " << instances.num * instances.element_size <<"\n";
+		std::cout << p2s(&instances).c_str() << "\n";
+		std::cout << "instance buffer " << instances.num <<"*"<< instances.element_size <<"\n";
 		instancesBuffer.create(instances.num * instances.element_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		instancesBuffer.update(instances.data);
 
@@ -121,7 +123,7 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 
 }
 
-AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb, VertexBuffer *ib) {
+AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb) {
 	Array<VkGeometryNV> geo;
 
 	//for (int i=0; i<vb.num; i++) {
@@ -132,18 +134,20 @@ AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb, Ve
 		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 		geometry.geometry.triangles.vertexData = vb->vertex_buffer.buffer;
 		geometry.geometry.triangles.vertexOffset = 0;
-		geometry.geometry.triangles.vertexCount = vb->output_count;
+		geometry.geometry.triangles.vertexCount = vb->vertex_count;
 		geometry.geometry.triangles.vertexStride = sizeof(float)*3;
 		geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		geometry.geometry.triangles.indexData = ib->vertex_buffer.buffer;
+		geometry.geometry.triangles.indexData = VK_NULL_HANDLE;
+		//geometry.geometry.triangles.indexData = vb->index_buffer.buffer;
 		geometry.geometry.triangles.indexOffset = 0;
-		geometry.geometry.triangles.indexCount = ib->output_count;
-		geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+		geometry.geometry.triangles.indexCount = vb->output_count;
+		geometry.geometry.triangles.indexType = vb->index_type;
 		geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
 		geometry.geometry.triangles.transformOffset = 0;
 		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 		geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 		geo.add(geometry);
+		std::cout << vb->output_count << "\n";
 	//}
 
 	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geo, 0);
@@ -152,9 +156,40 @@ AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb, Ve
 }
 
 AccelerationStructure *AccelerationStructure::create_top(const DynamicArray &instances) {
+	std::cout << p2s(&instances).c_str() << "  ct\n";
 	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
 	as->build({}, instances);
 	return as;
+}
+
+
+AccelerationStructure *AccelerationStructure::create_top_simple(const Array<AccelerationStructure*> &blas) {
+
+	struct VkGeometryInstance {
+	    float transform[12];
+	    uint32_t instanceId : 24;
+	    uint32_t mask : 8;
+	    uint32_t instanceOffset : 24;
+	    uint32_t flags : 8;
+	    uint64_t accelerationStructureHandle;
+	};
+
+    Array<VkGeometryInstance> instances;
+    instances.resize(blas.num);
+
+    for (size_t i = 0; i < blas.num; ++i) {
+
+        VkGeometryInstance& instance = instances[i];
+        memcpy(instance.transform, &matrix::ID, 12*4);
+        instance.instanceId = static_cast<uint32_t>(i);
+        instance.mask = 0xff;
+        instance.instanceOffset = 0;
+        instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV;
+        instance.accelerationStructureHandle = blas[i]->handle;
+    }
+
+
+    return create_top(instances);
 }
 
 } /* namespace vulkan */

@@ -51,7 +51,9 @@ std::vector<VkVertexInputAttributeDescription> Vertex1::attribute_descriptions()
 
 
 VertexBuffer::VertexBuffer() {
+	vertex_count = 0;
 	output_count = 0;
+	index_type = VK_INDEX_TYPE_UINT16;
 
 	vertex_buffers.add(this);
 }
@@ -78,67 +80,81 @@ void VertexBuffer::_destroy() {
 	output_count = 0;
 }
 
-void VertexBuffer::build(const void *vertices, int size, int count) {
-	_create_vertex_buffer(vertices, size * count);
-	output_count = count;
+void VertexBuffer::build(const DynamicArray &array) {
+	_create_buffer(vertex_buffer, array);
+	vertex_count = array.num;
+	output_count = array.num; // might be overwritten by creat_index_buffer()
 }
 
-void VertexBuffer::build1(const Array<Vertex1> &vertices) {
-	build(vertices.data, sizeof(vertices[0]), vertices.num);
+void VertexBuffer::build_v3_v3_v2(const Array<Vertex1> &vertices) {
+	build(vertices);
 }
 
-void VertexBuffer::build1i(const Array<Vertex1> &vertices, const Array<int> &indices) {
-	build1(vertices);
+void VertexBuffer::build_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices) {
+	build_v3_v3_v2(vertices);
+	_create_index_buffer_i32(indices);
+}
 
+void VertexBuffer::build_v3(const Array<vector> &vertices) {
+	build(vertices);
+}
+
+void VertexBuffer::build_v3_i(const Array<vector> &vertices, const Array<int> &indices) {
+	build_v3(vertices);
+	_create_index_buffer_i32(indices);
+}
+
+/*void VertexBuffer::_create_index_buffer_i32(const Array<int> &indices) {
 	Array<uint16_t> indices16;
 	indices16.resize(indices.num);
 	for (int i=0; i<indices.num; i++)
-		indices16[i] = indices[i];
-	_create_index_buffer(indices16);
-	output_count = indices.num;
-}
+		indices16[i] = (unsigned)indices[i];
+	for (auto i: indices16)
+		std::cout << i << "  ";
+	_create_index_buffer_i16(indices16);
+}*/
 
-void VertexBuffer::_create_vertex_buffer(const void *vdata, int size) {
-	if (size == 0)
+void VertexBuffer::_create_buffer(Buffer &buf, const DynamicArray &array) {
+	if (array.num == 0)
 		return;
 
-	VkDeviceSize buffer_size = size;
+	VkDeviceSize buffer_size = array.num * array.element_size;
 
 	// -> staging
 	Buffer staging;
 	staging.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	staging.update_part(vdata, 0, buffer_size);
+	staging.update_part(array.data, 0, buffer_size);
 
 
 	// gpu
-	if (buffer_size > vertex_buffer.size) {
-		vertex_buffer.destroy();
+	if (buffer_size > buf.size) {
+		buf.destroy();
 		//auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-		vertex_buffer.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		buf.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
-	copy_buffer(staging.buffer, vertex_buffer.buffer, buffer_size);
+	copy_buffer(staging.buffer, buf.buffer, buffer_size);
 }
 
-void VertexBuffer::_create_index_buffer(const Array<uint16_t> &indices) {
-	if (indices.num == 0)
-		return;
+void VertexBuffer::_create_index_buffer_i16(const Array<uint16_t> &indices) {
+	_create_buffer(index_buffer, indices);
+	output_count = indices.num;
+	index_type = VK_INDEX_TYPE_UINT16;
+}
 
-	VkDeviceSize buffer_size = sizeof(indices[0]) * indices.num;
-
-	Buffer staging;
-	staging.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	staging.update_part(indices.data, 0, buffer_size);
-
-	if (buffer_size > index_buffer.size) {
-		index_buffer.destroy();
-		//auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-		index_buffer.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+void VertexBuffer::_create_index_buffer_i32(const Array<int> &indices) {
+	if (indices.num < (1<<16) and false) {
+		Array<uint16_t> indices16;
+		indices16.resize(indices.num);
+		for (int i=0; i<indices.num; i++)
+			indices16[i] = (unsigned)indices[i];
+		_create_index_buffer_i16(indices16);
+	} else {
+		_create_buffer(index_buffer, indices);
+		output_count = indices.num;
+		index_type = VK_INDEX_TYPE_UINT32;
 	}
-
-	copy_buffer(staging.buffer, index_buffer.buffer, buffer_size);
 }
 
 };

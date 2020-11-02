@@ -30,19 +30,24 @@ namespace vulkan {
 		void __init__();
 		void __delete__();
 
-		void _create_vertex_buffer(const void *vdata, int size);
-		void _create_index_buffer(const Array<uint16_t> &indices);
+		void _create_buffer(Buffer &buf, const DynamicArray &array);
+		void _create_index_buffer_i16(const Array<uint16_t> &indices);
+		void _create_index_buffer_i32(const Array<int> &indices);
 
 		void _destroy();
 
 		unsigned int output_count;
+		unsigned int vertex_count;
+		VkIndexType index_type;
 
 		Buffer vertex_buffer;
 		Buffer index_buffer;
 
-		void build(const void *vertices, int size, int count);
-		void build1(const Array<Vertex1> &vertices);
-		void build1i(const Array<Vertex1> &vertices, const Array<int> &indices);
+		void build(const DynamicArray &array);
+		void build_v3_v3_v2(const Array<Vertex1> &vertices);
+		void build_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices);
+		void build_v3(const Array<vector> &vertices);
+		void build_v3_i(const Array<vector> &vertices, const Array<int> &indices);
 	};
 };
 
