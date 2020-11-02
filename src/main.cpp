@@ -7,7 +7,7 @@
 
 
 string AppName = "Kaba";
-string AppVersion = Kaba::Version;
+string AppVersion = kaba::Version;
 
 
 typedef void main_arg_func(const Array<string>&);
@@ -15,7 +15,7 @@ typedef void main_void_func();
 
 
 
-namespace Kaba {
+namespace kaba {
 	extern int64 s2i2(const string &str);
 };
 
@@ -122,7 +122,7 @@ public:
 
 		bool use_gui = false;
 		Asm::InstructionSet instruction_set = Asm::InstructionSet::NATIVE;
-		Kaba::Abi abi = Kaba::Abi::NATIVE;
+		kaba::Abi abi = kaba::Abi::NATIVE;
 		string out_file, symbols_out_file, symbols_in_file;
 		bool flag_allow_std_lib = true;
 		bool flag_disassemble = false;
@@ -140,7 +140,7 @@ public:
 		p.info(AppName + " " + AppVersion);
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
-			msg_write("kaba: " + Kaba::Version);
+			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
 		p.option("--gui/-g", [&]{ use_gui = true; });
@@ -149,21 +149,21 @@ public:
 		p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
 		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
 		p.option("--os", [&]{ flag_compile_os = true; });
-		p.option("--remove-unused", [&]{ Kaba::config.remove_unused = true; });
+		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
 		p.option("--verbose", [&]{ flag_verbose = true; flag_disassemble = true; });
 		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
 		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });
 		p.option("--disasm", [&]{ flag_disassemble = true; });
 		p.option("--show-tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
 		p.option("--show-consts", [&]{ flag_show_consts = true; });
-		p.option("--no-function-frames", [&]{ Kaba::config.no_function_frame = true; });
-		p.option("--add-entry-point", [&]{ Kaba::config.add_entry_point = true; });
+		p.option("--no-function-frames", [&]{ kaba::config.no_function_frame = true; });
+		p.option("--add-entry-point", [&]{ kaba::config.add_entry_point = true; });
 		p.option("--code-origin", "ORIGIN", [&](const string &a) {
-			Kaba::config.override_code_origin = true;
-			Kaba::config.code_origin = Kaba::s2i2(a); });
+			kaba::config.override_code_origin = true;
+			kaba::config.code_origin = kaba::s2i2(a); });
 		p.option("--variable-offset", "OFFSET", [&](const string &a) {
-			Kaba::config.override_variables_offset = true;
-			Kaba::config.variables_offset = Kaba::s2i2(a); });
+			kaba::config.override_variables_offset = true;
+			kaba::config.variables_offset = kaba::s2i2(a); });
 		p.option("--output/-o", "OUTFILE", [&](const string &a){ out_file = a; });
 		p.option("--output-format", "raw/elf", [&](const string &a){
 			output_format = a;
@@ -177,7 +177,7 @@ public:
 		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
 		p.option("--just-disasm", "FILE", [&](const string &a){
 			string s = FileRead(a);
-			Kaba::init(instruction_set, abi, flag_allow_std_lib);
+			kaba::init(instruction_set, abi, flag_allow_std_lib);
 			int data_size = 0;
 			if (flag_compile_os) {
 				for (int i=0; i<s.num-1; i++)
@@ -198,33 +198,33 @@ public:
 		// init
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
-		Kaba::init(instruction_set, abi, flag_allow_std_lib);
-		Kaba::config.stack_size = 10485760; // 10 mb (mib)
+		kaba::init(instruction_set, abi, flag_allow_std_lib);
+		kaba::config.stack_size = 10485760; // 10 mb (mib)
 
 
 		// for huibui.kaba...
-		Kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
-		Kaba::link_external_class_func("Resource.show", &hui::Resource::show);
-		Kaba::link_external("ParseResource", (void*)&hui::ParseResource);
+		kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
+		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
+		kaba::link_external("ParseResource", (void*)&hui::ParseResource);
 
 
 		// for experiments
-		Kaba::link_external("__int_out", (void*)&extern_func_int_out);
-		Kaba::link_external("__float_out", (void*)&extern_func_float_out);
-		Kaba::link_external("__float_ret", (void*)&extern_func_float_ret);
-		Kaba::link_external("__xxx", (void*)&_x_call_float);
-		Kaba::link_external("Test2", (void*)&extern_function2);
-		Kaba::link_external("extern_variable1", (void*)&extern_variable1);
+		kaba::link_external("__int_out", (void*)&extern_func_int_out);
+		kaba::link_external("__float_out", (void*)&extern_func_float_out);
+		kaba::link_external("__float_ret", (void*)&extern_func_float_ret);
+		kaba::link_external("__xxx", (void*)&_x_call_float);
+		kaba::link_external("Test2", (void*)&extern_function2);
+		kaba::link_external("extern_variable1", (void*)&extern_variable1);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);
 			
 			
-		Kaba::config.compile_silently = !flag_verbose;
-		Kaba::config.verbose = flag_verbose;
-		Kaba::config.verbose_func_filter = debug_func_filter;
-		Kaba::config.verbose_stage_filter = debug_stage_filter;
-		Kaba::config.compile_os = flag_compile_os;
+		kaba::config.compile_silently = !flag_verbose;
+		kaba::config.verbose = flag_verbose;
+		kaba::config.verbose_func_filter = debug_func_filter;
+		kaba::config.verbose_stage_filter = debug_stage_filter;
+		kaba::config.compile_os = flag_compile_os;
 
 		// script file as parameter?
 		Path filename;
@@ -238,7 +238,7 @@ public:
 					filename = dd;
 			}
 		} else if (command.num > 0) {
-			Kaba::execute_single_script_command(command);
+			kaba::execute_single_script_command(command);
 			msg_end();
 			return false;
 		} else {
@@ -249,7 +249,7 @@ public:
 		// compile
 
 		try {
-			auto s = Kaba::load(filename);
+			auto s = kaba::load(filename);
 			if (symbols_out_file.num > 0)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts) {
@@ -270,10 +270,10 @@ public:
 				if (flag_disassemble)
 					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 
-				if (Kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
+				if (kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
 					execute(s, p.arg.sub(1, -1));
 			}
-		} catch(Kaba::Exception &e) {
+		} catch(kaba::Exception &e) {
 			if (use_gui)
 				hui::ErrorBox(NULL, _("Fehler in Script"), e.message());
 			else
@@ -282,7 +282,7 @@ public:
 		}
 
 		// end
-		Kaba::clean_up();
+		kaba::clean_up();
 		msg_end();
 		if (error)
 			exit(1);
@@ -295,7 +295,7 @@ public:
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-	void execute(shared<Kaba::Script> s, const Array<string> &arg) {
+	void execute(shared<kaba::Script> s, const Array<string> &arg) {
 		// set working directory -> script file
 		//msg_write(initial_working_directory);
 		//hui::setDirectory(initial_working_directory);
@@ -316,16 +316,16 @@ public:
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(shared<Kaba::Script> s, const string &out_file) {
+	void output_to_file_raw(shared<kaba::Script> s, const string &out_file) {
 		File *f = FileCreate(out_file);
 		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
-	void output_to_file_elf(shared<Kaba::Script> s, const string &out_file) {
+	void output_to_file_elf(shared<kaba::Script> s, const string &out_file) {
 		File *f = FileCreate(out_file);
 
-		bool is64bit = (Kaba::config.pointer_size == 8);
+		bool is64bit = (kaba::config.pointer_size == 8);
 
 		// 16b header
 		f->write_char(0x7f);
@@ -339,11 +339,11 @@ public:
 			f->write_char(0x00);
 
 		f->write_word(0x0003); // 3=shared... 2=exec
-		if (Kaba::config.instruction_set == Asm::InstructionSet::AMD64) {
+		if (kaba::config.instruction_set == Asm::InstructionSet::AMD64) {
 			f->write_word(0x003e); // machine
-		} else if (Kaba::config.instruction_set == Asm::InstructionSet::X86) {
+		} else if (kaba::config.instruction_set == Asm::InstructionSet::X86) {
 			f->write_word(0x0003); // machine
-		} else if (Kaba::config.instruction_set == Asm::InstructionSet::ARM) {
+		} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM) {
 			f->write_word(0x0028); // machine
 		}
 		f->write_int(1); // version
@@ -374,7 +374,7 @@ public:
 		return name.replace("lib__", "").replace("@list", "[]");
 	}
 
-	void export_symbols(shared<Kaba::Script> s, const string &symbols_out_file) {
+	void export_symbols(shared<kaba::Script> s, const string &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
 			int n = fn->num_params;
@@ -398,7 +398,7 @@ public:
 			if (name == "#")
 				break;
 			int pos = f->read_int();
-			Kaba::link_external(name, (void*)(int_p)pos);
+			kaba::link_external(name, (void*)(int_p)pos);
 		}
 		delete(f);
 	}
