@@ -100,14 +100,11 @@ shared<Node> SyntaxTree::ref_node(shared<Node> sub, const Class *override_type) 
 }
 
 shared<Node> SyntaxTree::deref_node(shared<Node> sub, const Class *override_type) {
-	shared<Node> c = new Node(NodeKind::UNKNOWN, 0, TypeVoid, sub->is_const);
-	c->kind = NodeKind::DEREFERENCE;
+	if (!override_type)
+		override_type = sub->type->param[0];
+	shared<Node> c = new Node(NodeKind::DEREFERENCE, 0, override_type, sub->is_const);
 	c->set_num_params(1);
 	c->set_param(0, sub);
-	if (override_type)
-		c->type = override_type;
-	else
-		c->type = sub->type->param[0];
 	return c;
 }
 
@@ -635,8 +632,9 @@ const Class *SyntaxTree::make_class_dict(const Class *element_type) {
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {
 	// convert
 	if ((c->kind == NodeKind::VAR_LOCAL) and (c->as_local() == var)) {
-		c->type = c->type->get_pointer();
-		return deref_node(c);
+		auto r = add_node_local(var);
+		r->set_type(c->type->get_pointer());
+		return deref_node(r);
 	}
 	return c;
 }
@@ -665,19 +663,23 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 		}
 
 	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::POINTER_CALL) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+		auto r = c->shallow_copy();
+		bool changed = false;
 
 		// parameters, instance: class as reference
 		for (int j=0;j<c->params.num;j++)
 			if (c->params[j] and c->params[j]->type->uses_call_by_reference()) {
-				c->set_param(j, ref_node(c->params[j]));
+				r->set_param(j, ref_node(c->params[j]));
+				changed = true;
 			}
 
 		// return: array reference (-> dereference)
 		if ((c->type->is_array()) /*or (c->Type->IsSuperArray)*/) {
-			c->type = c->type->get_pointer();
-			return deref_node(c);
-			//deref_command_old(this, c);
+			r->set_type(c->type->get_pointer());
+			return deref_node(r);
 		}
+		if (changed)
+			return r;
 	}
 
 	// special string / list operators
@@ -687,7 +689,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 			if ((c->params[j]->type->is_array()) or (c->params[j]->type->is_super_array())) {
 				c->set_param(j, ref_node(c->params[j]));
 				// REALLY ?!?!?!?  FIXME?!?!?
-				msg_write("this might be bad");
+				msg_error("this might be bad");
 			}
   	}
 	return c;
@@ -710,10 +712,18 @@ shared<Node> SyntaxTree::conv_easyfy_shift_deref(shared<Node> c, int l) {
 	if ((c->kind == NodeKind::ADDRESS_SHIFT) or (c->kind == NodeKind::ARRAY)) {
 		if (c->params[0]->kind == NodeKind::DEREFERENCE) {
 			// unify 2 knots (remove 1)
-			auto t = c->params[0]->params[0];
+			c->show(TypeVoid);
+			auto kind = (c->kind == NodeKind::ADDRESS_SHIFT) ? NodeKind::DEREF_ADDRESS_SHIFT : NodeKind::POINTER_AS_ARRAY;
+			auto r = new Node(kind, 0, c->type, c->is_const);
+			r->set_param(0, c->params[0]->params[0]);
+			r->set_param(1, c->params[1]);
+			r->show(TypeVoid);
+			return r;
+
+			/*auto t = c->params[0]->params[0];
 			c->kind = (c->kind == NodeKind::ADDRESS_SHIFT) ? NodeKind::DEREF_ADDRESS_SHIFT : NodeKind::POINTER_AS_ARRAY;
 			c->set_param(0, t);
-			return c;
+			return c;*/
 		}
 	}
 
@@ -741,8 +751,7 @@ shared<Node> SyntaxTree::conv_return_by_memory(shared<Node> n, Function *f) {
 		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
 
-	n->set_num_params(0);
-	return n;
+	return add_node_statement(StatementID::RETURN);
 }
 
 
@@ -842,10 +851,9 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 		auto c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
 		auto c_offset = add_node_operator_by_inline(c_index, c_size, InlineID::INT_MULTIPLY);
-		c_offset->type = TypeInt;//TypePointer;
 		// address = &array + offset
 		auto c_address = add_node_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
-		c_address->type = el_type->get_pointer();//TypePointer;
+		c_address->set_type(el_type->get_pointer());
 		// * address
 		return deref_node(c_address);
 	} else if (c->kind == NodeKind::POINTER_AS_ARRAY) {
@@ -865,10 +873,9 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 		auto c_size = add_node_const(add_constant_int(el_type->size));
 		// offset = size * index
 		auto c_offset = add_node_operator_by_inline(c_index, c_size, InlineID::INT_MULTIPLY);
-		c_offset->type = TypeInt;
 		// address = &array + offset
 		auto c_address = add_node_operator_by_inline(c_ref_array, c_offset, __get_pointer_add_int());
-		c_address->type = el_type->get_pointer();//TypePointer;
+		c_address->set_type(el_type->get_pointer());
 		// * address
 		return deref_node(c_address);
 	} else if (c->kind == NodeKind::ADDRESS_SHIFT) {
@@ -887,7 +894,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 		auto c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
 		auto c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
-		c_address->type = el_type->get_pointer();//TypePointer;
+		c_address->set_type(el_type->get_pointer());
 		// * address
 		return deref_node(c_address);
 	} else if (c->kind == NodeKind::DEREF_ADDRESS_SHIFT) {
@@ -905,7 +912,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 		auto c_shift = add_node_const(add_constant_int(c->link_no));
 		// address = &struct + shift
 		auto c_address = add_node_operator_by_inline(c_ref_struct, c_shift, __get_pointer_add_int());
-		c_address->type = el_type->get_pointer();//TypePointer;
+		c_address->set_type(el_type->get_pointer());
 		// * address
 		return deref_node(c_address);
 	}
@@ -916,11 +923,19 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 shared<Node> SyntaxTree::transform_node(shared<Node> n, std::function<shared<Node>(shared<Node>)> F) {
 	if (n->kind == NodeKind::BLOCK) {
 		transform_block(n->as_block(), F);
+		return n;
 	} else {
-		for (int i=0; i<n->params.num; i++)
-			n->set_param(i, transform_node(n->params[i], F));
+		shared<Node> r = n;
+		for (int i=0; i<n->params.num; i++) {
+			auto rr = transform_node(n->params[i], F);
+			if (rr != n->params[i].get()) {
+				if (r.get() == n.get())
+					r = n->shallow_copy();
+				r->set_param(i, rr);
+			}
+		}
+		return F(r);
 	}
-	return F(n);
 }
 
 shared<Node> SyntaxTree::transformb_node(shared<Node> n, Block *b, std::function<shared<Node>(shared<Node>, Block*)> F) {
@@ -965,7 +980,6 @@ void SyntaxTree::transform_block(Block *block, std::function<shared<Node>(shared
 
 void SyntaxTree::transformb_block(Block *block, std::function<shared<Node>(shared<Node>, Block*)> F) {
 	PUSH_BLOCK_INSERT;
-	//foreachi (shared<Node> n, block->nodes, i){
 	for (int i=0; i<block->params.num; i++) {
 		block->params[i] = transformb_node(block->params[i], block, F);
 		handle_insert_before(block, i);
@@ -1012,15 +1026,19 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 			n->show(base_class);
 		}
 		
+		// TODO later in serializer!
+
 		// temp var
 		auto *f = b->function;
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		vv->explicitly_constructed = true;
 		auto dummy = add_node_local(vv);
 		
-		auto ib = cp_node(n);
-		ib->kind = NodeKind::FUNCTION_CALL;
-		ib->type = TypeVoid;
+		//auto ib = cp_node(n);
+		auto ib = add_node_call(n->as_func());
+		//ib->kind = NodeKind::FUNCTION_CALL;
+		//ib->type = TypeVoid;
+		ib->params = n->params;
 		ib->set_instance(dummy);
 		if (config.verbose)
 			ib->show(base_class);
@@ -1196,15 +1214,16 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 shared<Node> SyntaxTree::conv_func_inline(shared<Node> n) {
 	if (n->kind == NodeKind::FUNCTION_CALL) {
 		if (n->as_func()->inline_no != InlineID::NONE) {
-			n->kind = NodeKind::INLINE_CALL;
-			return n;
+			auto r = new Node(NodeKind::INLINE_CALL, n->link_no, n->type, n->is_const);
+			r->params = n->params;
+			return r;
 		}
 	}
 	if (n->kind == NodeKind::OPERATOR) {
 		Operator *op = n->as_op();
-		n->kind = NodeKind::INLINE_CALL; // FIXME
-		n->link_no = (int_p)op->f;
-		return n;
+		auto r = new Node(NodeKind::INLINE_CALL, (int_p)op->f, n->type, n->is_const);
+		r->params = n->params;
+		return r;
 	}
 	return n;
 }

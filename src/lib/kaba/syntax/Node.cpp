@@ -221,6 +221,12 @@ const Class *Block::name_space() const {
 	return function->name_space;
 }
 
+
+// policy:
+//  don't change after creation...
+//  edit the tree by shallow copy, relink to old parameters
+//  relinked params count as "new" Node!
+// ...(although, Block are allowed to be edited)
 Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const) {
 	type = _type;
 	kind = _kind;
@@ -295,10 +301,26 @@ void Node::set_instance(shared<Node> p) {
 		msg_write("no inst...dfljgkldfjg");
 #endif
 	params[0] = p;
+	if (this->_pointer_ref_counter > 1) {
+		msg_write("iii");
+		msg_write(msg_get_trace());
+	}
+}
+
+void Node::set_type(const Class *t) {
+	type = t;
+	if (this->_pointer_ref_counter > 1) {
+		msg_write("ttt");
+		msg_write(msg_get_trace());
+	}
 }
 
 void Node::set_num_params(int n) {
 	params.resize(n);
+	/*if (this->_pointer_ref_counter > 1) {
+		msg_write("nnn");
+		msg_write(msg_get_trace());
+	}*/
 }
 
 void Node::set_param(int index, shared<Node> p) {
@@ -309,6 +331,16 @@ void Node::set_param(int index, shared<Node> p) {
 	}*/
 #endif
 	params[index] = p;
+/*	if (this->_pointer_ref_counter > 1) {
+		msg_write("ppp");
+		msg_write(msg_get_trace());
+	}*/
+}
+
+shared<Node> Node::shallow_copy() const {
+	auto r = new Node(kind, link_no, type, is_const);
+	r->params = params;
+	return r;
 }
 
 

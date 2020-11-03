@@ -112,9 +112,12 @@ public:
 	void set_num_params(int n);
 	void set_param(int index, shared<Node> p);
 	void set_instance(shared<Node> p);
+	void set_type(const Class *type);
 	string sig(const Class *ns) const;
 	string str(const Class *ns) const;
 	void show(const Class *ns) const;
+
+	shared<Node> shallow_copy() const;
 };
 
 void clear_nodes(Array<Node*> &nodes);

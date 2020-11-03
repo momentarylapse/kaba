@@ -338,18 +338,21 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 	return array;
 }
 
-void Parser::make_func_node_callable(shared<Node> l) {
+shared<Node> Parser::make_func_node_callable(const shared<Node> l) {
 	Function *f = l->as_func();
-	l->kind = NodeKind::FUNCTION_CALL;
-	l->type = f->literal_return_type;
+	//auto r = tree->add_node_call(f);
+	auto r = l->shallow_copy();
+	r->kind = NodeKind::FUNCTION_CALL;
+	r->type = f->literal_return_type;
 	if (f->is_static())
-		l->set_num_params(f->num_params);
+		r->set_num_params(f->num_params);
 	else
-		l->set_num_params(f->num_params + 1);
+		r->set_num_params(f->num_params + 1);
 
 	// virtual?
 	if (f->virtual_index >= 0)
-		l->kind = NodeKind::VIRTUAL_CALL;
+		r->kind = NodeKind::VIRTUAL_CALL;
+	return r;
 }
 
 shared<Node> SyntaxTree::make_fake_constructor(const Class *t, Block *block, const Class *param_type) {
@@ -486,18 +489,17 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 
 
 	// make links callable
-	for (auto l: links) {
+	foreachi (auto l, links, i) {
 		if (l->kind == NodeKind::FUNCTION) {
-			make_func_node_callable(l);
+			links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
-			auto *t = links[0]->as_class();
+			auto *t = l->as_class();
 			return xxx(make_class_node_callable(t, block, params));
 			break;
 		} else if (l->type == TypeFunctionCodeP) {
-			auto p = links[0];
 			auto c = new Node(NodeKind::POINTER_CALL, 0, TypeVoid);
 			c->set_num_params(1);
-			c->set_param(0, p);
+			c->set_param(0, l);
 			return xxx({c});
 			//do_error("calling pointer...");
 		} else {

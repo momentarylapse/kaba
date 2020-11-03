@@ -227,9 +227,8 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 
 		// parent assignment
 		if (t->parent) {
-			auto p = tree->cp_node(n_self);
-			auto o = tree->cp_node(n_other);
-			p->type = o->type = t->parent;
+			auto p = tree->shift_node(tree->cp_node(n_self), false, 0, t->parent);
+			auto o = tree->shift_node(tree->cp_node(n_other), false, 0, t->parent);
 
 			auto cmd_assign = link_operator_id(OperatorID::ASSIGN, p, o);
 			if (!cmd_assign)

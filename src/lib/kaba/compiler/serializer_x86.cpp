@@ -346,7 +346,7 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			add_function_call(f, {param_imm(TypeInt, ret.type->param[0]->size)}, ret);
 
 			// __init__()
-			auto sub = com->params[0];
+			auto sub = com->params[0]->shallow_copy();
 			Node *c_ret = new Node(NodeKind::VAR_TEMP, ret.p, ret.type);
 			sub->set_instance(c_ret);
 			serialize_node(sub.get(), block, index);
