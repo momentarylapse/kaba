@@ -652,9 +652,9 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 
 		for (auto *op: tree->operators)
 			if (op->primitive == primop)
-				if ((op->param_type_1 == operands[0]->type) and (!op->param_type_2)) {
+				if ((op->param_type_1 == operands[0]->type) and !op->param_type_2) {
 					Exp.next();
-					return tree->add_node_operator(operands[0], nullptr, op);
+					return tree->add_node_operator(op, operands[0], nullptr);
 				}
 		return operands[0];
 	}
@@ -874,7 +874,7 @@ shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> ope
 
 	if (!ok)
 		do_error(format("unknown unitary operator '%s %s'", po->name, p2->long_name()), _ie);
-	return tree->add_node_operator(operand, nullptr, op);
+	return tree->add_node_operator(op, operand, nullptr);
 }
 
 shared<Node> Parser::parse_set_builder(Block *block) {
@@ -1348,7 +1348,7 @@ shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> 
 	// vtable1
 	param1->type = TypePointer;
 
-	return tree->add_node_operator_by_inline(param1, vtable2, InlineID::POINTER_EQUAL);
+	return tree->add_node_operator_by_inline(InlineID::POINTER_EQUAL, param1, vtable2);
 }
 
 shared<Node> Parser::link_special_operator_in(shared<Node> param1, shared<Node> param2) {
@@ -1442,7 +1442,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 	for (auto *op: tree->operators)
 		if (primop == op->primitive)
 			if (type_match(p1, op->param_type_1) and type_match(p2, op->param_type_2)) {
-				return tree->add_node_operator(param1, param2, op);
+				return tree->add_node_operator(op, param1, param2);
 			}
 
 
@@ -1483,7 +1483,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 			op = tree->add_node_member_call(op_cf_found, param1);
 			op->set_param(1, param2);
 		} else {
-			return tree->add_node_operator(param1, param2, op_found);
+			return tree->add_node_operator(op_found, param1, param2);
 		}
 		return op;
 	}

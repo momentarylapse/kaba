@@ -21,7 +21,7 @@ void Parser::auto_implement_add_virtual_table(shared<Node> self, Function *f, co
 		auto p = self->shift(0, TypePointer);
 		auto *c = tree->add_constant_pointer(TypePointer, t->_vtable_location_target_);
 		auto n_0 = tree->add_node_const(c);
-		auto n_assign = tree->add_node_operator_by_inline(p, n_0, InlineID::POINTER_ASSIGN);
+		auto n_assign = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, p, n_0);
 		f->block->add(n_assign);
 	}
 }
@@ -46,7 +46,7 @@ void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function
 			if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
 				auto p = n_self->shift(e.offset, e.type);
 				auto zero = tree->add_node_const(tree->add_constant_int(0));
-				auto c = tree->add_node_operator_by_inline(p, zero, InlineID::INT_ASSIGN);
+				auto c = tree->add_node_operator_by_inline(InlineID::INT_ASSIGN, p, zero);
 				f->block->add(c);
 			}
 	}
@@ -84,7 +84,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 	} else if (t->is_pointer_shared()) {
 		auto te = t->param[0];
 		auto n_null = tree->add_node_const(tree->add_constant_pointer(te->get_pointer(), nullptr));
-		auto n_op = tree->add_node_operator_by_inline(n_self->shift(0, TypePointer), n_null, InlineID::POINTER_ASSIGN);
+		auto n_op = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, n_self->shift(0, TypePointer), n_null);
 		f->block->add(n_op);
 	} else {
 
@@ -306,7 +306,7 @@ void Parser::auto_implement_array_resize(Function *f, const Class *t) {
 	auto num_old = tree->add_node_local(f->__get_var("num_old"));
 
 	// num_old = self.num
-	f->block->add(tree->add_node_operator_by_inline(num_old, self_num, InlineID::INT_ASSIGN));
+	f->block->add(tree->add_node_operator_by_inline(InlineID::INT_ASSIGN, num_old, self_num));
 
 // delete...
 	Function *f_del = te->get_destructor();
@@ -409,14 +409,14 @@ void Parser::auto_implement_array_add(Function *f, const Class *t) {
 
 	// resize(self.num + 1)
 	auto cmd_1 = tree->add_node_const(tree->add_constant_int(1));
-	auto cmd_add = tree->add_node_operator_by_inline(self_num, cmd_1, InlineID::INT_ADD);
+	auto cmd_add = tree->add_node_operator_by_inline(InlineID::INT_ADD, self_num, cmd_1);
 	auto cmd_resize = tree->add_node_member_call(t->get_func("resize", TypeVoid, {TypeInt}), self);
 	cmd_resize->set_param(1, cmd_add);
 	b->add(cmd_resize);
 
 
 	// el := self.data[self.num - 1]
-	auto cmd_sub = tree->add_node_operator_by_inline(self_num, cmd_1, InlineID::INT_SUBTRACT);
+	auto cmd_sub = tree->add_node_operator_by_inline(InlineID::INT_SUBTRACT, self_num, cmd_1);
 	auto cmd_el = tree->add_node_dyn_array(self, cmd_sub);
 
 	auto cmd_assign = link_operator_id(OperatorID::ASSIGN, cmd_el, item);
@@ -443,7 +443,7 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	f->block->add(call_clear);
 
 
-	auto op = tree->add_node_operator_by_inline(self_p, p, InlineID::POINTER_ASSIGN);
+	auto op = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, self_p, p);
 	f->block->add(op);
 
 
@@ -469,7 +469,7 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
 			// count ++
 			auto count = self_p->deref()->shift(e.offset, e.type);
-			auto inc = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_INCREASE);
+			auto inc = tree->add_node_operator_by_inline(InlineID::INT_INCREASE, count, nullptr);
 			b->add(inc);
 			found = true;
 		}
@@ -510,7 +510,7 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), IDENTIFIER_SHARED, IDENTIFIER_SHARED_COUNT));
 
 	// count --
-	auto dec = tree->add_node_operator_by_inline(count, nullptr, InlineID::INT_DECREASE);
+	auto dec = tree->add_node_operator_by_inline(InlineID::INT_DECREASE, count, nullptr);
 	b->add(dec);
 
 
@@ -518,7 +518,7 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 
 	// if count == 0
 	auto zero = tree->add_node_const(tree->add_constant_int(0));
-	auto cmp = tree->add_node_operator_by_inline(count, zero, InlineID::INT_EQUAL);
+	auto cmp = tree->add_node_operator_by_inline(InlineID::INT_EQUAL, count, zero);
 	cmd_if_del->set_param(0, cmp);
 
 	auto b2 = new Block(f, b);
@@ -534,7 +534,7 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 
 	// self = nil
 	auto n_null = tree->add_node_const(tree->add_constant_pointer(t->param[0]->get_pointer(), nullptr));
-	auto n_op = tree->add_node_operator_by_inline(self_p, n_null, InlineID::POINTER_ASSIGN);
+	auto n_op = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, self_p, n_null);
 	b->add(n_op);
 
 	cmd_if->set_param(1, b);

@@ -126,8 +126,8 @@ public:
 	shared<Node> add_node_call(Function *f);
 	shared<Node> add_node_const(Constant *c);
 	//shared<Node> add_node_block(Block *b);
-	shared<Node> add_node_operator(shared<Node> p1, shared<Node> p2, Operator *op);
-	shared<Node> add_node_operator_by_inline(shared<Node> p1, shared<Node> p2, InlineID inline_index);
+	shared<Node> add_node_operator(Operator *op, const shared<Node> p1, const shared<Node> p2, const Class *override_type = nullptr);
+	shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, const Class *override_type = nullptr);
 	shared<Node> add_node_global(Variable *var);
 	shared<Node> add_node_local(Variable *var);
 	shared<Node> add_node_local(Variable *var, const Class *type);
