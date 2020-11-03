@@ -941,11 +941,19 @@ shared<Node> SyntaxTree::transform_node(shared<Node> n, std::function<shared<Nod
 shared<Node> SyntaxTree::transformb_node(shared<Node> n, Block *b, std::function<shared<Node>(shared<Node>, Block*)> F) {
 	if (n->kind == NodeKind::BLOCK) {
 		transformb_block(n->as_block(), F);
+		return F(n, b);
 	} else {
-		for (int i=0; i<n->params.num; i++)
-			n->set_param(i, transformb_node(n->params[i], b, F));
+		shared<Node> r = n;
+		for (int i=0; i<n->params.num; i++) {
+			auto rr = transformb_node(n->params[i], b, F);
+			if (rr != n->params[i].get()) {
+				if (r.get() == n.get())
+					r = n->shallow_copy();
+				r->set_param(i, rr);
+			}
+		}
+		return F(r, b);
 	}
-	return F(n, b);
 }
 
 // preventing a sub-block to handle insertions of an outer block

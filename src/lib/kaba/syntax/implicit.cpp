@@ -450,7 +450,6 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	// if p
 	//     p.count ++
 	auto cmd_if = tree->add_node_statement(StatementID::IF);
-	f->block->add(cmd_if);
 
 	// if p
 	auto ff = tree->required_func_global("p2b");
@@ -461,6 +460,8 @@ void Parser::auto_implement_shared_assign(Function *f, const Class *t) {
 	auto b = new Block(f, f->block.get());
 	cmd_if->set_param(1, b);
 
+
+	f->block->add(cmd_if);
 
 	auto tt = self->type->param[0];
 	bool found = false;
@@ -491,7 +492,6 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	//     self.p = nil
 
 	auto cmd_if = tree->add_node_statement(StatementID::IF);
-	f->block->add(cmd_if);
 
 	// if self.p
 	auto ff = tree->required_func_global("p2b");
@@ -500,7 +500,6 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	cmd_if->set_param(0, cmd_cmp);
 
 	auto b = new Block(f, f->block.get());
-	cmd_if->set_param(1, b);
 
 
 	shared<Node> count;
@@ -516,7 +515,6 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 
 
 	auto cmd_if_del = tree->add_node_statement(StatementID::IF);
-	b->add(cmd_if_del);
 
 	// if count == 0
 	auto zero = tree->add_node_const(tree->add_constant_int(0));
@@ -531,12 +529,16 @@ void Parser::auto_implement_shared_clear(Function *f, const Class *t) {
 	cmd_del->set_param(0, tree->cp_node(self_p));
 	b2->add(cmd_del);
 	cmd_if_del->set_param(1, b2);
+	b->add(cmd_if_del);
 
 
 	// self = nil
 	auto n_null = tree->add_node_const(tree->add_constant_pointer(t->param[0]->get_pointer(), nullptr));
 	auto n_op = tree->add_node_operator_by_inline(self_p, n_null, InlineID::POINTER_ASSIGN);
 	b->add(n_op);
+
+	cmd_if->set_param(1, b);
+	f->block->add(cmd_if);
 }
 
 

@@ -439,51 +439,51 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 	auto xxx = [&](const shared_array<Node> &links) {
 		//force_concrete_types(params);
 
-	// direct match...
-	for (shared<Node> operand: links) {
-		if (!direct_param_match(operand, params))
-			continue;
+		// direct match...
+		for (shared<Node> operand: links) {
+			if (!direct_param_match(operand, params))
+				continue;
 
-		return check_const_params(tree, apply_params_direct(operand, params));
-	}
-
-
-	// advanced match...
-	Array<int> casts;
-	Array<const Class*> wanted;
-	int min_penalty = 1000000;
-	shared<Node> chosen;
-	for (auto operand: links) {
-		Array<int> cur_casts;
-		Array<const Class*> cur_wanted;
-		int cur_penalty;
-		if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
-			continue;
-		if (cur_penalty < min_penalty){
-			casts = cur_casts;
-			wanted = cur_wanted;
-			chosen = operand;
-			min_penalty = cur_penalty;
-			//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
+			return check_const_params(tree, apply_params_direct(operand, params));
 		}
-	}
-	if (chosen)
-		return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
 
 
-	// error message
+		// advanced match...
+		Array<int> casts;
+		Array<const Class*> wanted;
+		int min_penalty = 1000000;
+		shared<Node> chosen;
+		for (auto operand: links) {
+			Array<int> cur_casts;
+			Array<const Class*> cur_wanted;
+			int cur_penalty;
+			if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
+				continue;
+			if (cur_penalty < min_penalty){
+				casts = cur_casts;
+				wanted = cur_wanted;
+				chosen = operand;
+				min_penalty = cur_penalty;
+				//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
+			}
+		}
+		if (chosen)
+			return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
+
+
+		// error message
+
+		if (links.num == 0)
+			do_error("can not call ...");
 	
-	if (links.num == 0)
-		do_error("can not call ...");
-
-	string found = type_list_to_str(type_list_from_nodes(params));
-	string available;
-	for (auto link: links) {
-		auto p = get_wanted_param_types(link);
-		available += format("\n%s: %s", link->sig(tree->base_class), type_list_to_str(p));
-	}
-	do_error(format("invalid function parameters: %s, expected: %s", found, available));
-	return shared<Node>();
+		string found = type_list_to_str(type_list_from_nodes(params));
+		string available;
+		for (auto link: links) {
+			auto p = get_wanted_param_types(link);
+			available += format("\n%s: %s", link->sig(tree->base_class), type_list_to_str(p));
+		}
+		do_error(format("invalid function parameters: %s, expected: %s", found, available));
+		return shared<Node>();
 	};
 
 
@@ -495,13 +495,11 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
 			return xxx(make_class_node_callable(t, block, params));
-			break;
 		} else if (l->type == TypeFunctionCodeP) {
 			auto c = new Node(NodeKind::POINTER_CALL, 0, TypeVoid);
 			c->set_num_params(1);
 			c->set_param(0, l);
 			return xxx({c});
-			//do_error("calling pointer...");
 		} else {
 			do_error("can't call " + kind2str(l->kind));
 		}
@@ -797,20 +795,22 @@ shared<Node> Parser::apply_params_direct(shared<Node> operand, shared_array<Node
 	int offset = 0;
 	if (node_is_member_function_with_instance(operand))
 		offset = 1;
+	auto r = operand->shallow_copy();
 	for (int p=0; p<params.num; p++)
-		operand->set_param(p + offset, params[p]);
-	return operand;
+		r->set_param(p + offset, params[p]);
+	return r;
 }
 
 shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<int> &casts, const Array<const Class*> &wanted) {
 	int offset = 0;
 	if (node_is_member_function_with_instance(operand))
 		offset = 1;
+	auto r = operand->shallow_copy();
 	for (int p=0; p<params.num; p++) {
 		auto pp = apply_type_cast(casts[p], params[p], wanted[p]);
-		operand->set_param(p + offset, pp);
+		r->set_param(p + offset, pp);
 	}
-	return operand;
+	return r;
 }
 
 shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {

@@ -317,10 +317,10 @@ void Node::set_type(const Class *t) {
 
 void Node::set_num_params(int n) {
 	params.resize(n);
-	/*if (this->_pointer_ref_counter > 1) {
+	if (this->_pointer_ref_counter > 1) {
 		msg_write("nnn");
 		msg_write(msg_get_trace());
-	}*/
+	}
 }
 
 void Node::set_param(int index, shared<Node> p) {
@@ -331,10 +331,10 @@ void Node::set_param(int index, shared<Node> p) {
 	}*/
 #endif
 	params[index] = p;
-/*	if (this->_pointer_ref_counter > 1) {
+	if (this->_pointer_ref_counter > 1) {
 		msg_write("ppp");
 		msg_write(msg_get_trace());
-	}*/
+	}
 }
 
 shared<Node> Node::shallow_copy() const {
