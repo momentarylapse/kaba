@@ -198,7 +198,7 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 			operand->type = type->parent->get_pointer();
 			return {operand};
 		}
-		return {tree->ref_node(operand, type->parent->get_pointer())};
+		return {operand->ref(type->parent->get_pointer())};
 	}
 
 
@@ -207,7 +207,10 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 		for (auto &e: type->elements)
 			if (Exp.cur == e.name) {
 				Exp.next();
-				return {tree->shift_node(operand, deref, e.offset, e.type)};
+				if (deref)
+					return {operand->deref_shift(e.offset, e.type)};
+				else
+					return {operand->shift(e.offset, e.type)};
 			}
 	}
 	for (auto *c: weak(type->constants))
@@ -230,7 +233,7 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 
 
 	if (deref and !only_static)
-		operand = tree->deref_node(operand);
+		operand = operand->deref();
 
 	string f_name = Exp.cur;
 
@@ -727,7 +730,7 @@ shared<Node> Parser::check_param_link(shared<Node> link, const Class *wanted, co
 		// "silent" pointer (&)?
 		if (type_match(given, wanted->param[0])) {
 
-			return tree->ref_node(link);
+			return link->ref();
 		} else if ((given->is_pointer()) and (type_match(given->param[0], wanted->param[0]))) {
 			// silent reference & of *
 
@@ -1093,7 +1096,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		Exp.next();
 	} else if (Exp.cur == "&") { // & -> address operator
 		Exp.next();
-		operands = {tree->ref_node(parse_operand(block, ns))};
+		operands = {parse_operand(block, ns)->ref()};
 	} else if (Exp.cur == "*") { // * -> dereference
 		Exp.next();
 		auto sub = parse_operand(block, ns);
@@ -1101,7 +1104,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 			Exp.rewind();
 			do_error("only pointers can be dereferenced using '*'");
 		}
-		operands = {tree->deref_node(sub)};
+		operands = {sub->deref()};
 	} else if (Exp.cur == "[") {
 		Exp.next();
 		if (Exp.cur == "for") {
@@ -1267,9 +1270,9 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 	if (tc == TYPE_CAST_NONE)
 		return node;
 	if (tc == TYPE_CAST_DEREFERENCE)
-		return tree->deref_node(node);
+		return node->deref();
 	if (tc == TYPE_CAST_REFERENCE)
-		return tree->ref_node(node);
+		return node->ref();
 	if (tc == TYPE_CAST_OWN_STRING) {
 		Function *cf = node->type->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		if (cf)
@@ -1333,7 +1336,7 @@ shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> 
 
 	const Class *t1 = param1->type;
 	if (t1->is_pointer()) {
-		param1 = tree->deref_node(param1);
+		param1 = param1->deref();
 		t1 = t1->param[0];
 	}
 	if (!t2->is_derived_from(t1))
@@ -1420,8 +1423,8 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 					if (p1 == pp1)
 						op = tree->add_node_member_call(f, inst);
 					else
-						op = tree->add_node_member_call(f, tree->deref_node(inst));
-					op->set_param(1, tree->ref_node(param2));
+						op = tree->add_node_member_call(f, inst->deref());
+					op->set_param(1, param2->ref());
 					return op;
 				}
 			} else if (type_match(p2, type1)) {
@@ -1429,7 +1432,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 				if (p1 == pp1)
 					op = tree->add_node_member_call(f, inst);
 				else
-					op = tree->add_node_member_call(f, tree->deref_node(inst));
+					op = tree->add_node_member_call(f, inst->deref());
 				op->set_param(1, param2);
 				return op;
 			}
@@ -2029,7 +2032,7 @@ shared<Node> Parser::parse_statement_delete(Block *block) {
 	auto f = p->type->param[0]->get_func("__del_override__", TypeVoid, {});
 	if (f) {
 		auto cmd = tree->add_node_call(f);
-		cmd->set_instance(tree->deref_node(p));
+		cmd->set_instance(p->deref());
 		return cmd;
 	}
 
@@ -2091,7 +2094,7 @@ shared<Node> Parser::parse_statement_len(Block *block) {
 	// element "int num/length"?
 	for (auto &e: sub->type->elements)
 		if (e.type == TypeInt and (e.name == "length" or e.name == "num")) {
-			return tree->shift_node(sub, false, e.offset, e.type);
+			return sub->shift(e.offset, e.type);
 		}
 		
 	// __length__() function?
@@ -2175,7 +2178,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 
 shared<Node> Parser::deref_if_pointer(shared<Node> node) {
 	if (node->type->is_some_pointer())
-		return tree->deref_node(node);
+		return node->deref();
 	return node;
 }
 
@@ -2203,7 +2206,7 @@ shared<Node> Parser::add_converter_str(shared<Node> sub, bool repr) {
 	Function *f = links[0]->as_func();
 
 	auto cmd = tree->add_node_call(f);
-	cmd->set_param(0, tree->ref_node(sub));
+	cmd->set_param(0, sub->ref());
 	cmd->set_param(1, tree->add_node_const(c));
 	return cmd;
 }
@@ -2386,7 +2389,7 @@ shared<Node> Parser::make_dynamical(shared<Node> node) {
 	Function *f = links[0]->as_func();
 
 	auto cmd = tree->add_node_call(f);
-	cmd->set_param(0, tree->ref_node(node));
+	cmd->set_param(0, node->ref());
 	cmd->set_param(1, tree->add_node_const(c));
 	return cmd;
 }
@@ -2429,7 +2432,7 @@ shared<Node> Parser::parse_statement_call(Block *block) {
 		auto cmd = tree->add_node_call(f);
 		cmd->set_param(0, params[0]);
 		for (int i=0; i<np; i++)
-			cmd->set_param(i+1, tree->ref_node(params[i+1]));
+			cmd->set_param(i+1, params[i+1]->ref());
 		return cmd;
 	} else {
 		auto pp = ft->param[0]->param;
@@ -2461,10 +2464,10 @@ shared<Node> Parser::parse_statement_weak(Block *block) {
 	while (true) {
 		if (t->is_pointer_shared()) {
 			auto tt = t->param[0]->get_pointer();
-			return tree->shift_node(params[0], false, 0, tt);
+			return params[0]->shift(0, tt);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
 			auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer());
-			return tree->shift_node(params[0], false, 0, tt);
+			return params[0]->shift(0, tt);
 		}
 		if (t->parent)
 			t = t->parent;

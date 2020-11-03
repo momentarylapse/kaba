@@ -343,6 +343,38 @@ shared<Node> Node::shallow_copy() const {
 	return r;
 }
 
+shared<Node> Node::ref(const Class *override_type) const {
+	const Class *t = override_type ? override_type : type->get_pointer();
+
+	shared<Node> c = new Node(NodeKind::REFERENCE, 0, t);
+	c->set_num_params(1);
+	c->set_param(0, const_cast<Node*>(this));
+	return c;
+}
+
+shared<Node> Node::deref(const Class *override_type) const {
+	if (!override_type)
+		override_type = type->param[0];
+	shared<Node> c = new Node(NodeKind::DEREFERENCE, 0, override_type, is_const);
+	c->set_num_params(1);
+	c->set_param(0, const_cast<Node*>(this));
+	return c;
+}
+
+shared<Node> Node::shift(int64 shift, const Class *type) const {
+	shared<Node> c = new Node(NodeKind::ADDRESS_SHIFT, shift, type, is_const);
+	c->set_num_params(1);
+	c->set_param(0, const_cast<Node*>(this));
+	return c;
+}
+
+shared<Node> Node::deref_shift(int64 shift, const Class *type) const {
+	shared<Node> c = new Node(NodeKind::DEREF_ADDRESS_SHIFT, shift, type, is_const);
+	c->set_num_params(1);
+	c->set_param(0, const_cast<Node*>(this));
+	return c;
+}
+
 
 }
 

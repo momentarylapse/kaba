@@ -119,7 +119,7 @@ public:
 	Function *add_function(const string &name, const Class *type, const Class *name_space, Flags flags);
 
 	// nodes
-	shared<Node> add_node_statement(StatementID id);
+	shared<Node> add_node_statement(StatementID id);//, const shared_array<Node> &params);
 	shared<Node> add_node_member_call(Function *f, shared<Node> inst, bool force_non_virtual = false);
 	shared<Node> add_node_func_name(Function *f);
 	shared<Node> add_node_class(const Class *c);
@@ -141,9 +141,6 @@ public:
 	shared<Node> make_fake_constructor(const Class *t, Block *block, const Class *param_type);
 	//shared<Node> add_node_block(Block *b);
 	shared<Node> cp_node(shared<Node> c);
-	shared<Node> ref_node(shared<Node> sub, const Class *override_type = nullptr);
-	shared<Node> deref_node(shared<Node> sub, const Class *override_type = nullptr);
-	shared<Node> shift_node(shared<Node> sub, bool deref, int64 shift, const Class *type);
 
 	// pre processor
 	shared<Node> conv_eval_const_func(shared<Node> c);

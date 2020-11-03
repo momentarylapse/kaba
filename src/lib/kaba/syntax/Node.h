@@ -118,6 +118,10 @@ public:
 	void show(const Class *ns) const;
 
 	shared<Node> shallow_copy() const;
+	shared<Node> ref(const Class *override_type = nullptr) const;
+	shared<Node> deref(const Class *override_type = nullptr) const;
+	shared<Node> shift(int64 shift, const Class *type) const;
+	shared<Node> deref_shift(int64 shift, const Class *type) const;
 };
 
 void clear_nodes(Array<Node*> &nodes);
