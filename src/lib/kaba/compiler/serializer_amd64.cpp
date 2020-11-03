@@ -219,7 +219,7 @@ void SerializerAMD64::add_function_intro_params(Function *f)
 {
 	// return, instance, params
 	Array<Variable*> param;
-	if (f->return_type->uses_return_by_memory()){
+	if (f->effective_return_type->uses_return_by_memory()){
 		for (Variable *v: weak(f->var))
 			if (v->name == IDENTIFIER_RETURN_VAR){
 				param.add(v);

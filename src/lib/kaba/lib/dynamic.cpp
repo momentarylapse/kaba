@@ -420,8 +420,9 @@ void assert_num_params(Function *f, int n) {
 }
 
 void assert_return_type(Function *f, const Class *ret) {
-	if (f->return_type != ret)
-		kaba_raise_exception(new KabaException("call(): function returns " + f->return_type->long_name() + ", " + ret->long_name() + " required"));
+	msg_write("TODO check type");
+	if (f->literal_return_type != ret)
+		kaba_raise_exception(new KabaException("call(): function returns " + f->literal_return_type->long_name() + ", " + ret->long_name() + " required"));
 }
 
 void kaba_call0(Function *func) {

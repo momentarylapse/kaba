@@ -18,11 +18,10 @@ void Parser::do_error_implicit(Function *f, const string &str) {
 
 void Parser::auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t) {
 	if (t->vtable.num > 0) {
-		auto p = self->shift(0, TypePointer);
 		auto *c = tree->add_constant_pointer(TypePointer, t->_vtable_location_target_);
-		auto n_0 = tree->add_node_const(c);
-		auto n_assign = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, p, n_0);
-		f->block->add(n_assign);
+		f->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
+				self->shift(0, TypePointer),
+				tree->add_node_const(c)));
 	}
 }
 
@@ -36,18 +35,16 @@ void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function
 			do_error_implicit(f, format("missing default constructor for element %s", e.name));
 		if (!ff)
 			continue;
-		auto p = n_self->shift(e.offset, e.type);
-		auto c = tree->add_node_member_call(ff, p);
-		f->block->add(c);
+		f->block->add(tree->add_node_member_call(ff,
+				n_self->shift(e.offset, e.type)));
 	}
 
 	if (flags_has(t->flags, Flags::SHARED)) {
 		for (auto &e: t->elements)
 			if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
-				auto p = n_self->shift(e.offset, e.type);
-				auto zero = tree->add_node_const(tree->add_constant_int(0));
-				auto c = tree->add_node_operator_by_inline(InlineID::INT_ASSIGN, p, zero);
-				f->block->add(c);
+				f->block->add(tree->add_node_operator_by_inline(InlineID::INT_ASSIGN,
+						n_self->shift(e.offset, e.type),
+						tree->add_node_const(tree->add_constant_int(0))));
 			}
 	}
 }
@@ -55,64 +52,65 @@ void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function
 void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_parent_constructor) {
 	if (!f)
 		return;
-	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array()) {
 		auto te = t->get_array_element();
-		auto n_el_size = tree->add_node_const(tree->add_constant_int(te->size));
-		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
-		n_mem_init->set_param(1, n_el_size);
-		f->block->add(n_mem_init);
+		auto ff = t->get_func("__mem_init__", TypeVoid, {TypeInt});
+		f->block->add(tree->add_node_member_call(ff,
+				self,
+				{tree->add_node_const(tree->add_constant_int(te->size))}));
 	} else if (t->is_dict()) {
 		auto te = t->get_array_element();
-		auto n_el_size = tree->add_node_const(tree->add_constant_int(te->size + TypeString->size));
-		auto n_mem_init = tree->add_node_member_call(t->get_func("__mem_init__", TypeVoid, {TypeInt}), n_self);
-		n_mem_init->set_param(1, n_el_size);
-		f->block->add(n_mem_init);
+		auto ff = t->get_func("__mem_init__", TypeVoid, {TypeInt});
+		f->block->add(tree->add_node_member_call(ff,
+				self,
+				{tree->add_node_const(tree->add_constant_int(te->size + TypeString->size))}));
 	} else if (t->is_array()) {
 		auto te = t->get_array_element();
-		auto *pc_el_init = te->get_default_constructor();
-		if (te->needs_constructor() and !pc_el_init)
+		auto *f_el_init = te->get_default_constructor();
+		if (te->needs_constructor() and !f_el_init)
 			do_error_implicit(f, format("missing default constructor for %s", te->long_name()));
-		if (pc_el_init) {
+		if (f_el_init) {
 			for (int i=0; i<t->array_length; i++) {
-				auto n_el = n_self->shift(te->size * i, te);
-				auto n_init_el = tree->add_node_member_call(pc_el_init, n_el);
-				f->block->add(n_init_el);
+				// self[i].__init__()
+				f->block->add(tree->add_node_member_call(f_el_init,
+						self->shift(te->size * i, te)));
 			}
 		}
 	} else if (t->is_pointer_shared()) {
 		auto te = t->param[0];
-		auto n_null = tree->add_node_const(tree->add_constant_pointer(te->get_pointer(), nullptr));
-		auto n_op = tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, n_self->shift(0, TypePointer), n_null);
-		f->block->add(n_op);
+		// self.p = nil
+		f->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
+				self->shift(0, TypePointer),
+				tree->add_node_const(tree->add_constant_pointer(te->get_pointer(), nullptr))));
 	} else {
 
 		// parent constructor
 		if (t->parent and allow_parent_constructor) {
-			Function *pc_same = t->parent->get_same_func(IDENTIFIER_FUNC_INIT, f);
-			Function *pc_def = t->parent->get_default_constructor();
-			if (pc_same) {
+			Function *f_same = t->parent->get_same_func(IDENTIFIER_FUNC_INIT, f);
+			Function *f_def = t->parent->get_default_constructor();
+			if (f_same) {
 				// first, try same signature
-				auto n_init_parent = tree->add_node_member_call(pc_same, n_self);
-				for (int i=0; i<pc_same->num_params; i++)
+				auto n_init_parent = tree->add_node_member_call(f_same, self);
+				for (int i=0; i<f_same->num_params; i++)
 					n_init_parent->set_param(i+1, tree->add_node_local(f->var[i].get()));
 				f->block->add(n_init_parent);
-			} else if (pc_def) {
+			} else if (f_def) {
 				// then, try default constructor
-				f->block->add(tree->add_node_member_call(pc_def, n_self));
+				f->block->add(tree->add_node_member_call(f_def, self));
 			} else if (t->parent->needs_constructor()) {
 				do_error_implicit(f, "parent class does not have a default constructor or one with matching signature. Use super.__init__(...)");
 			}
 		}
 
 		// call child constructors for elements
-		auto_implement_add_child_constructors(n_self, f, t);
+		auto_implement_add_child_constructors(self, f, t);
 
 		// add vtable reference
 		// after child constructor (otherwise would get overwritten)
 		if (t->vtable.num > 0)
-			auto_implement_add_virtual_table(n_self, f, t);
+			auto_implement_add_virtual_table(self, f, t);
 	}
 }
 
@@ -120,20 +118,20 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto n_self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
 	if (t->is_super_array() or t->is_dict()) {
 		Function *f_clear = t->get_func("clear", TypeVoid, {});
 		if (!f_clear)
 			do_error_implicit(f, "clear() missing");
-		f->block->add(tree->add_node_member_call(f_clear, n_self));
+		f->block->add(tree->add_node_member_call(f_clear, self));
 	} else if (t->is_array()) {
-		auto *pc_el_init = te->get_destructor();
-		if (pc_el_init) {
-			for (int i=0; i<t->array_length; i++){
-				auto p = n_self->shift(te->size * i, te);
-				auto c = tree->add_node_member_call(pc_el_init, p);
-				f->block->add(c);
+		auto *f_el_del = te->get_destructor();
+		if (f_el_del) {
+			for (int i=0; i<t->array_length; i++) {
+				// self[i].__delete__()
+				f->block->add(tree->add_node_member_call(f_el_del,
+						self->shift(te->size * i, te)));
 			}
 		} else if (te->needs_destructor()) {
 			do_error_implicit(f, "element desctructor missing");
@@ -143,8 +141,8 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
 		if (!f_clear)
 			do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
-		auto call_clear = tree->add_node_member_call(f_clear, n_self);
-		f->block->add(call_clear);
+		f->block->add(tree->add_node_member_call(f_clear,
+				self));
 	} else {
 
 		// call child destructors
@@ -157,15 +155,16 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 				do_error_implicit(f, format("missing destructor for element %s", e.name));
 			if (!ff)
 				continue;
-			auto p = n_self->shift(e.offset, e.type);
-			f->block->add(tree->add_node_member_call(ff, p));
+			// self.el.__delete__()
+			f->block->add(tree->add_node_member_call(ff,
+					self->shift(e.offset, e.type)));
 		}
 
 		// parent destructor
 		if (t->parent) {
 			Function *ff = t->parent->get_destructor();
 			if (ff)
-				f->block->add(tree->add_node_member_call(ff, n_self, true));
+				f->block->add(tree->add_node_member_call(ff, self, {}, true));
 			else if (t->parent->needs_destructor())
 				do_error_implicit(f, "parent desctructor missing");
 		}

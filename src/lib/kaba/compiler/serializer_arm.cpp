@@ -245,7 +245,7 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			if (com->params.num > 0){
 				auto operand = serialize_parameter(com->params[0].get(), block, index);
 
-				if (cur_func->return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
+				if (cur_func->effective_return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
 					insert_destructors_block(block, true);
 					// internally handled...
 
@@ -253,13 +253,13 @@ void SerializerARM::serialize_statement(Node *com, const SerialNodeParam &ret, B
 				}else{ // store return directly in eax / fpu stack (4 byte)
 //					SerialNodeParam t = add_temp(cur_func->return_type);
 					insert_destructors_block(block, true);
-					if ((cur_func->return_type == TypeInt) or (cur_func->return_type->size == 1)) {
+					if ((cur_func->effective_return_type == TypeInt) or (cur_func->effective_return_type->size == 1)) {
 						int v = add_virtual_reg(Asm::REG_R0);
-						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), operand);
+						add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), operand);
 						set_virtual_reg(v, cmd.num-1, cmd.num);
-					} else if (cur_func->return_type == TypeFloat32) {
+					} else if (cur_func->effective_return_type == TypeFloat32) {
 						//int v = add_virtual_reg(Asm::REG_S0);
-						//add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), operand);
+						//add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), operand);
 						add_cmd(Asm::INST_FLDS, reg_s0, operand);
 						//set_virtual_reg(v, cmd.num-1, cmd.num);
 					} else {
@@ -877,7 +877,7 @@ void SerializerARM::add_function_intro_params(Function *f)
 {
 	// return, instance, params
 	Array<Variable*> param;
-	if (f->return_type->uses_return_by_memory()){
+	if (f->effective_return_type->uses_return_by_memory()){
 		for (Variable *v: weak(f->var))
 			if (v->name == IDENTIFIER_RETURN_VAR){
 				param.add(v);

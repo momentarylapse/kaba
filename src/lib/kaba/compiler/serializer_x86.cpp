@@ -264,31 +264,31 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 			if (com->params.num > 0){
 				auto operand = serialize_parameter(com->params[0].get(), block, index);
 					
-				if (cur_func->return_type->_amd64_allow_pass_in_xmm()) {
+				if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
 					insert_destructors_block(block, true);
 					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 					//		add_cmd(Asm::INST_FLD, t); 
-					if (cur_func->return_type == TypeFloat32){
+					if (cur_func->effective_return_type == TypeFloat32){
 						add_cmd(Asm::INST_MOVSS, p_xmm0, operand);
-					}else if (cur_func->return_type == TypeFloat64){
+					}else if (cur_func->effective_return_type == TypeFloat64){
 						add_cmd(Asm::INST_MOVSD, p_xmm0, operand);
-					}else if (cur_func->return_type->size == 8){ // float[2]
+					}else if (cur_func->effective_return_type->size == 8){ // float[2]
 						add_cmd(Asm::INST_MOVLPS, p_xmm0, operand);
-					}else if (cur_func->return_type->size == 12){ // float[3]
+					}else if (cur_func->effective_return_type->size == 12){ // float[3]
 						add_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(operand, 0, TypeReg64));
 						add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(operand, 8, TypeFloat32));
-					}else if (cur_func->return_type->size == 16){ // float[4]
+					}else if (cur_func->effective_return_type->size == 16){ // float[4]
 						add_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(operand, 0, TypeReg64));
 						add_cmd(Asm::INST_MOVLPS, p_xmm1, param_shift(operand, 8, TypeReg64));
 					} else {
-						do_error("...ret xmm " + cur_func->return_type->long_name());
+						do_error("...ret xmm " + cur_func->effective_return_type->long_name());
 					}
 					add_function_outro(cur_func);
-				} else if (cur_func->return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
+				} else if (cur_func->effective_return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
 					insert_destructors_block(block, true);
 					// internally handled...
 #if 0
-					int s = mem_align(cur_func->return_type->size);
+					int s = mem_align(cur_func->effective_return_type->size);
 
 					// slow
 					/*SerialCommandParam p, p_deref;
@@ -319,19 +319,19 @@ void SerializerX86::serialize_statement(Node *com, const SerialNodeParam &ret, B
 
 					add_function_outro(cur_func);
 				}else{ // store return directly in eax / fpu stack (4 byte)
-					SerialNodeParam t = add_temp(cur_func->return_type);
+					SerialNodeParam t = add_temp(cur_func->effective_return_type);
 					add_cmd(Asm::INST_MOV, t, operand); //?????
 					insert_destructors_block(block, true);
 					
-					if (cur_func->return_type->size == 1){
+					if (cur_func->effective_return_type->size == 1){
 						int v = add_virtual_reg(Asm::REG_AL);
-						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), t);
-					}else if (cur_func->return_type->size == 8){
+						add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
+					}else if (cur_func->effective_return_type->size == 8){
 						int v = add_virtual_reg(Asm::REG_RAX);
-						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), t);
+						add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
 					}else{
 						int v = add_virtual_reg(Asm::REG_EAX);
-						add_cmd(Asm::INST_MOV, param_vreg(cur_func->return_type, v), t);
+						add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
 					}
 					add_function_outro(cur_func);
 				}
@@ -1080,7 +1080,7 @@ void SerializerX86::add_function_intro_params(Function *f)
 void SerializerX86::add_function_outro(Function *f)
 {
 	add_cmd(Asm::INST_LEAVE);
-	if (f->return_type->uses_return_by_memory())
+	if (f->effective_return_type->uses_return_by_memory())
 		add_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
 	else
 		add_cmd(Asm::INST_RET);

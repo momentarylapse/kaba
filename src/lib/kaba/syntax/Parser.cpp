@@ -1396,7 +1396,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 				auto index = param1->params[1];
 				//msg_write(format("[]=...    void %s.__set__(%s, %s)?", inst->type->long_name(), index->type->long_name(), p2->long_name()));
 				for (auto *ff: weak(inst->type->functions))
-					if (ff->name == IDENTIFIER_FUNC_SET and ff->return_type == TypeVoid and ff->num_params == 2) {
+					if (ff->name == IDENTIFIER_FUNC_SET and ff->literal_return_type == TypeVoid and ff->num_params == 2) {
 						if (ff->literal_param_type[0] != index->type)
 							continue;
 						int pen, cast;
@@ -1780,10 +1780,10 @@ shared<Node> Parser::parse_statement_continue(Block *block) {
 shared<Node> Parser::parse_statement_return(Block *block) {
 	Exp.next();
 	auto cmd = tree->add_node_statement(StatementID::RETURN);
-	if (block->function->return_type == TypeVoid) {
+	if (block->function->literal_return_type == TypeVoid) {
 		cmd->set_num_params(0);
 	} else {
-		auto cmd_value = check_param_link(parse_operand_super_greedy(block), block->function->return_type, IDENTIFIER_RETURN, 0);
+		auto cmd_value = check_param_link(parse_operand_super_greedy(block), block->function->literal_return_type, IDENTIFIER_RETURN, 0);
 		cmd->set_num_params(1);
 		cmd->set_param(0, cmd_value);
 	}
@@ -2324,8 +2324,8 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 	cur_func = prev_func;
 
 	auto cmd = parse_operand_greedy(f->block.get());
-	f->return_type = cmd->type;
 	f->literal_return_type = cmd->type;
+	f->effective_return_type = cmd->type;
 
 	f->update_parameters_after_parsing();
 

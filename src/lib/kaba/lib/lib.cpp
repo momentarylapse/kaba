@@ -643,7 +643,7 @@ void script_make_super_array(Class *t, SyntaxTree *ps)
 
 	Function *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
 	sub->literal_return_type = t;
-	sub->return_type = t;
+	sub->effective_return_type= t;
 
 	// FIXME  wrong for complicated classes
 	if (p->is_simple_class()) {
