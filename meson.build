@@ -169,6 +169,7 @@ sources = [
 	'src/lib/kaba/compiler/serializer_amd64.cpp',
 	'src/lib/kaba/compiler/serializer_arm.cpp',
 	'src/lib/kaba/compiler/serializer_x86.cpp',
+	'src/lib/kaba/compiler/SerializerX.cpp',
 	'src/lib/kaba/lib/dict.cpp',
 	'src/lib/kaba/lib/dynamic.cpp',
 	'src/lib/kaba/lib/exception.cpp',

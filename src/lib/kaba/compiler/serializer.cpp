@@ -5,6 +5,8 @@
 #include "serializer_arm.h"
 #include "../../file/file.h"
 
+#include "SerializerX.h"
+
 
 namespace kaba {
 
@@ -265,6 +267,13 @@ string SerialNodeParam::str(Serializer *ser) const
 			n = "0x" + i2h(p, config.pointer_size);
 		else if (kind == NodeKind::IMMEDIATE)
 			n = guess_constant(p, ser);
+
+		else if (kind == NodeKind::VAR_LOCAL)
+			n = ((Variable*)p)->name;
+		else if (kind == NodeKind::VAR_GLOBAL)
+			n = ((Variable*)p)->name;
+		else if (kind == NodeKind::CONSTANT)
+			n = ((Constant*)p)->str();
 		str = "  (" + type_name_safe(type) + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
@@ -1982,6 +1991,12 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	if (config.remove_unused)
 		if (check_needed(syntax, f) == 0)
 			return;
+
+	msg_write("=============================");
+	f->block->show(TypeVoid);
+	auto x = new SerializerX(this, list);
+	x->serialize_function(f);
+	delete x;
 
 	Serializer *d = CreateSerializer(this, list);
 
