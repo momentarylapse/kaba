@@ -163,6 +163,7 @@ sources = [
 	'src/lib/kaba/asm/asm.cpp',
 	'src/lib/kaba/asm/asm_arm.cpp',
 	'src/lib/kaba/asm/asm_x86.cpp',
+	'src/lib/kaba/compiler/BackendAmd64.cpp',
 	'src/lib/kaba/compiler/compiler.cpp',
 	'src/lib/kaba/compiler/mapper.cpp',
 	'src/lib/kaba/compiler/serializer.cpp',

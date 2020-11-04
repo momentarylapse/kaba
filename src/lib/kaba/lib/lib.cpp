@@ -1011,7 +1011,7 @@ bool CompilerConfiguration::allow_output_func(const Function *f) {
 bool CompilerConfiguration::allow_output_stage(const string &stage) {
 	if (!verbose)
 		return false;
-	Array<string> filters = verbose_stage_filter.explode(",");
+	auto filters = verbose_stage_filter.explode(",");
 	for (auto &fil: filters)
 		if (stage.match(fil))
 			return true;

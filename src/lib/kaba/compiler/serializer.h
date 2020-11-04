@@ -121,7 +121,7 @@ public:
 	void simplify_float_store();
 	void try_merge_temp_vars();
 
-	void cmd_list_out(const string &stage);
+	void cmd_list_out(const string &stage, const string &comment, bool force=false);
 	void vr_list_out();
 
 	//void add_reg_channel(int reg, int first, int last);

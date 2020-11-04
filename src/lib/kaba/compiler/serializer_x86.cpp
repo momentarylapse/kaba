@@ -1127,23 +1127,19 @@ void SerializerX86::do_mapping()
 
 	try_map_temp_vars_to_registers();
 
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("post temp -> reg");
+	cmd_list_out("map:a", "post temp -> reg");
 
 	map_remaining_temp_vars_to_stack();
 
-	if (config.verbose and config.allow_output(cur_func, "map:b"))
-		cmd_list_out("post temp -> stack");
+	cmd_list_out("map:b", "post temp -> stack");
 
 	resolve_deref_temp_and_local();
 
-	if (config.verbose and config.allow_output(cur_func, "map:c"))
-		cmd_list_out("post deref t&l");
+	cmd_list_out("map:c", "post deref t&l");
 
 	correct_unallowed_param_combis();
 
-	if (config.verbose and config.allow_output(cur_func, "map:d"))
-		cmd_list_out("unallowed");
+	cmd_list_out("map:d", "unallowed");
 
 	/*MapReferencedTempVars();
 
@@ -1173,8 +1169,7 @@ void SerializerX86::do_mapping()
 	for (int i=0; i<cmd.num; i++)
 		correct_unallowed_param_combis2(cmd[i]);
 
-	if (config.verbose and config.allow_output(cur_func, "map:z"))
-		cmd_list_out("end");
+	cmd_list_out("map:z", "end");
 }
 
 void SerializerX86::correct_unallowed_param_combis2(SerialNode &c)

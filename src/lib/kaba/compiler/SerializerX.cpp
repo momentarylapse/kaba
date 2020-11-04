@@ -16,9 +16,13 @@ SerializerX::SerializerX(Script *s, Asm::InstructionWithParamsList *l) : Seriali
 }
 
 SerializerX::~SerializerX() {
+	/*msg_write("aa");
 	list->show();
+	msg_write("aa2");
 	for (int i=0;i<cmd.num;i++)
 		msg_write(format("%3d: ", i) + cmd[i].str(this));
+	list->clear();
+	msg_write("aa3");*/
 }
 
 void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
@@ -62,7 +66,6 @@ void SerializerX::add_function_outro(Function *f) {
 }
 
 SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int index) {
-	msg_write("p");
 	SerialNodeParam p;
 	p.kind = link->kind;
 	p.type = link->type;
@@ -127,11 +130,143 @@ SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int i
 }
 
 void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) {
-	msg_write("s");
+	auto statement = com->as_statement();
+	switch(statement->id){
+		case StatementID::IF:{
+			int m_after_true = list->create_label("_IF_AFTER_" + i2s(num_markers ++));
+			auto cond = serialize_parameter(com->params[0].get(), block, index);
+			// cmp;  jz m;  -block-  m;
+			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			add_cmd(Asm::INST_JZ, param_marker32(m_after_true));
+			serialize_block(com->params[1]->as_block());
+			add_marker(m_after_true);
+			}break;
+		case StatementID::IF_ELSE:{
+			int m_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_markers ++));
+			int m_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_markers ++));
+			auto cond = serialize_parameter(com->params[0].get(), block, index);
+			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
+			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			add_cmd(Asm::INST_JZ, param_marker32(m_after_true)); // jz ...
+			serialize_block(com->params[1]->as_block());
+			add_cmd(Asm::INST_JMP, param_marker32(m_after_false));
+			add_marker(m_after_true);
+			serialize_block(com->params[2]->as_block());
+			add_marker(m_after_false);
+			}break;
+		case StatementID::WHILE:{
+			int marker_before_while = list->create_label("_WHILE_BEFORE_" + i2s(num_markers ++));
+			int marker_after_while = list->create_label("_WHILE_AFTER_" + i2s(num_markers ++));
+			add_marker(marker_before_while);
+			auto cond = serialize_parameter(com->params[0].get(), block, index);
+			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
+			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
+			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			add_cmd(Asm::INST_JZ, param_marker32(marker_after_while));
+
+			// body of loop
+			LoopData l = {marker_before_while, marker_after_while, block->level, index};
+			loop.add(l);
+			serialize_block(com->params[1]->as_block());
+			loop.pop();
+
+			add_cmd(Asm::INST_JMP, param_marker32(marker_before_while));
+			add_marker(marker_after_while);
+			}break;
+		case StatementID::FOR_DIGEST:{
+			int marker_before_for = list->create_label("_FOR_BEFORE_" + i2s(num_markers ++));
+			int marker_after_for = list->create_label("_FOR_AFTER_" + i2s(num_markers ++));
+			int marker_continue = list->create_label("_FOR_CONTINUE_" + i2s(num_markers ++));
+			serialize_node(com->params[0].get(), block, index); // i=0
+			add_marker(marker_before_for);
+			auto cond = serialize_parameter(com->params[1].get(), block, index);
+			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
+			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
+			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			add_cmd(Asm::INST_JZ, param_marker32(marker_after_for));
+
+			// body of loop
+			LoopData l = {marker_continue, marker_after_for, block->level, index};
+			loop.add(l);
+			serialize_block(com->params[2]->as_block());
+			loop.pop();
+
+			// "i++"
+			add_marker(marker_continue);
+			serialize_node(com->params[3].get(), block, index);
+
+			add_cmd(Asm::INST_JMP, param_marker32(marker_before_for));
+			add_marker(marker_after_for);
+			}break;
+		case StatementID::BREAK:
+			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_break));
+			break;
+		case StatementID::CONTINUE:
+			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_continue));
+			break;
+		case StatementID::RETURN:
+			if (com->params.num > 0) {
+				auto p = serialize_parameter(com->params[0].get(), block, index);
+				insert_destructors_block(block, true);
+				add_cmd(Asm::INST_RET, p);
+			} else {
+				insert_destructors_block(block, true);
+				add_cmd(Asm::INST_RET);
+			}
+
+			break;
+		case StatementID::NEW:{
+			// malloc()
+			auto f = syntax_tree->required_func_global("@malloc");
+			add_function_call(f, {param_imm(TypeInt, ret.type->param[0]->size)}, ret);
+
+			// __init__()
+			auto sub = com->params[0]->shallow_copy();
+			Node *c_ret = new Node(NodeKind::VAR_TEMP, ret.p, ret.type);
+			sub->set_instance(c_ret);
+			serialize_node(sub.get(), block, index);
+			//delete sub;
+			break;}
+		case StatementID::DELETE:{
+			// __delete__()
+			auto operand = serialize_parameter(com->params[0].get(), block, index);
+			add_cmd_destructor(operand, false);
+
+			// free()
+			auto f = syntax_tree->required_func_global("@free");
+			add_function_call(f, {operand}, p_none);
+			break;}
+		/*case StatementID::RAISE:
+			AddFunctionCall();
+			break;*/
+		case StatementID::TRY:{
+			int marker_finish = list->create_label("_TRY_AFTER_" + i2s(num_markers ++));
+
+			// try
+			serialize_block(com->params[0]->as_block());
+			add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
+
+			// except
+			for (int i=2; i<com->params.num; i+=2) {
+				serialize_block(com->params[i]->as_block());
+				if (i < com->params.num-1)
+					add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
+			}
+
+			add_marker(marker_finish);
+			}break;
+		case StatementID::ASM:
+			//AddAsmBlock(list, script);
+			add_cmd(INST_ASM);
+			break;
+		case StatementID::PASS:
+			break;
+		default:
+			do_error("statement unimplemented: " + com->as_statement()->name);
+	}
 }
 
 void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
-	msg_write("i");
 	auto index = com->as_func()->inline_no;
 	switch(index){
 		case InlineID::INT_TO_FLOAT:
@@ -609,73 +744,48 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			break;
 // vector
 		case InlineID::VECTOR_ADD_ASSIGN:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_ASSIGN:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_DIVIDE_ASSIGN:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_DIVSS, p_xmm0, param[1]);
-				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_SUBTARCT_ASSIGN:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MOVSS, param_shift(param[0], i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_ADD:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_ADDSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_SUBTRACT:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_SUBSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_VF:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32), param[1]);
 			break;
 		case InlineID::VECTOR_MULTIPLY_FV:
-			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-				add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MOVSS, param_shift(ret, i * 4, TypeFloat32), p_xmm0);
-			}
+			for (int i=0;i<3;i++)
+				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param[0], param_shift(param[1], i * 4, TypeFloat32));
 			break;
-		case InlineID::VECTOR_MULTIPLY_VV:
-			add_cmd(Asm::INST_MULSS, ret, param_shift(param[0], 0 * 4, TypeFloat32), param_shift(param[1], 0 * 4, TypeFloat32));
-			for (int i=1;i<3;i++){
-				add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_ADDSS, p_xmm0, p_xmm1);
+		case InlineID::VECTOR_MULTIPLY_VV:{
+			add_cmd(Asm::INST_FMUL, ret, param_shift(param[0], 0 * 4, TypeFloat32), param_shift(param[1], 0 * 4, TypeFloat32));
+			auto t = add_temp(TypeFloat32, false);
+			for (int i=1;i<3;i++) {
+				add_cmd(Asm::INST_FMUL, t, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				add_cmd(Asm::INST_FADD, ret, t);
 			}
-			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
-			break;
+			}break;
 		case InlineID::VECTOR_DIVIDE_VF:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_DIVSS, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param[1]);
+				add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param[1]);
 			}
 			break;
 		case InlineID::VECTOR_NEGATE:

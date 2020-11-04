@@ -6,6 +6,7 @@
 #include "../../file/file.h"
 
 #include "SerializerX.h"
+#include "BackendAmd64.h"
 
 
 namespace kaba {
@@ -299,10 +300,10 @@ string SerialNode::str(Serializer *ser) const
 	return t;
 }
 
-void Serializer::cmd_list_out(const string &stage) {
-	if (!config.allow_output_stage(stage))
+void Serializer::cmd_list_out(const string &stage, const string &comment, bool force) {
+	if (!config.allow_output_stage(stage) and !force)
 		return;
-	msg_write("-------------------------------- " + stage);
+	msg_write(format("-------------------------------- %s  (%s)", stage, comment));
 	for (int i=0;i<cmd.num;i++)
 		msg_write(format("%3d: ", i) + cmd[i].str(this));
 	if (false)
@@ -843,7 +844,7 @@ int Serializer::find_unused_reg(int first, int last, int size, int exclude) {
 			if (!is_reg_root_used_in_interval(r, first, last)) {
 				return add_virtual_reg(get_reg(r, size));
 			}
-	cmd_list_out("fur");
+	cmd_list_out("fur", "find unused reg");
 	do_error(format("no free register of size %d   in %d:%d", size, first, last));
 	return -1;
 }
@@ -1659,8 +1660,7 @@ void Serializer::serialize_function(Function *f) {
 	serialize_block(f->block.get());
 	scan_temp_var_usage();
 
-	if (config.verbose)
-		cmd_list_out("ser:a");
+	cmd_list_out("ser:a", "start");
 
 
 
@@ -1672,8 +1672,7 @@ void Serializer::serialize_function(Function *f) {
 	if (need_outro)
 		add_function_outro(f);
 
-	if (config.verbose)
-		cmd_list_out("ser:b");
+	cmd_list_out("ser:b", "outro");
 
 	// map global ref labels
 	if (config.instruction_set == Asm::InstructionSet::ARM) {
@@ -1683,11 +1682,12 @@ void Serializer::serialize_function(Function *f) {
 	}
 
 	simplify_if_statements();
+	cmd_list_out("ser:c", "simple if");
 	try_merge_temp_vars();
+	cmd_list_out("ser:d", "merge");
 	simplify_float_store();
 
-	if (config.verbose)
-		cmd_list_out("ser:c");
+	cmd_list_out("ser:z", "float/end");
 	
 
 
@@ -1995,7 +1995,11 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	msg_write("=============================");
 	f->block->show(TypeVoid);
 	auto x = new SerializerX(this, list);
+	x->cur_func_index = index;
 	x->serialize_function(f);
+	auto be = new BackendAmd64(x);
+	be->correct();
+	delete be;
 	delete x;
 
 	Serializer *d = CreateSerializer(this, list);

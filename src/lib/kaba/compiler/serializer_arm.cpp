@@ -846,8 +846,7 @@ void SerializerARM::correct_unallowed_param_combis()
 		}
 	}
 
-	if (config.verbose and config.allow_output(cur_func, "map:d"))
-		cmd_list_out("mid unallowed");
+	cmd_list_out("map:d", "mid unallowed");
 
 
 	for (int i=cmd.num-1;i>=0;i--) {
@@ -956,56 +955,46 @@ void SerializerARM::add_function_outro(Function *f)
 }
 
 
-void SerializerARM::do_mapping()
-{
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("aaa");
+void SerializerARM::do_mapping() {
+	cmd_list_out("map:a", "aaa");
 
 	map_referenced_temp_vars_to_stack();
 
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("post ref map");
+	cmd_list_out("map:b", "post ref map");
 
 	process_dereferences();
 
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("post deref");
+	cmd_list_out("map:c", "post deref");
 	process_references();
 
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("post ref");
+	cmd_list_out("map:d", "post ref");
 
 	// --- remove unnecessary temp vars
 
 	try_map_temp_vars_to_registers();
 
-	if (config.verbose and config.allow_output(cur_func, "map:a"))
-		cmd_list_out("post var reg");
+	cmd_list_out("map:e", "post var reg");
 
 	map_remaining_temp_vars_to_stack();
 
 	//ResolveDerefTempAndLocal();
 
-	if (config.verbose and config.allow_output(cur_func, "map:b"))
-		cmd_list_out("pre global");
+	cmd_list_out("map:f", "pre global");
 
 	convert_global_lookups();
 
-	if (config.verbose and config.allow_output(cur_func, "map:c"))
-		cmd_list_out("post global");
+	cmd_list_out("map:g", "post global");
 
 	correct_unallowed_param_combis();
 
-	if (config.verbose and config.allow_output(cur_func, "map:d"))
-		cmd_list_out("post unallowed");
+	cmd_list_out("map:h", "post unallowed");
 
 	for (int i=0; i<cmd.num; i++)
 		convert_mem_movs_to_ldr_str(cmd[i]);
 
 	convert_global_refs();
 
-	if (config.verbose and config.allow_output(cur_func, "map:e"))
-		cmd_list_out("end");
+	cmd_list_out("map:z", "end");
 }
 
 void SerializerARM::convert_global_refs()
