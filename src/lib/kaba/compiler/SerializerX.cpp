@@ -30,10 +30,10 @@ void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &p
 	int push_size = fc_begin(f, params, ret);
 
 	if (f->address) {
-		add_cmd(Asm::INST_CALL, param_imm(TypePointer, (int_p)f->address)); // the actual call
+		add_cmd(Asm::INST_CALL, ret, param_imm(TypePointer, (int_p)f->address)); // the actual call
 		// function pointer will be shifted later...
 	} else if (f->_label >= 0) {
-		add_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
+		add_cmd(Asm::INST_CALL, ret, param_marker(TypePointer, f->_label));
 	} else {
 		do_error_link("could not link function " + f->signature());
 	}
@@ -370,12 +370,11 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			}break;
 		case InlineID::INT_SUBTRACT:
 		case InlineID::INT64_SUBTRACT:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_SUB, ret, param[1]);
+			add_cmd(Asm::INST_SUB, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_MULTIPLY:
 		case InlineID::INT64_MULTIPLY:
-			add_cmd(Asm::INST_MUL, ret, param[0], param[1]);
+			add_cmd(Asm::INST_IMUL, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_DIVIDE:
 		case InlineID::INT64_DIVIDE:

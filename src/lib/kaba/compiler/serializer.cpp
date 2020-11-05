@@ -275,7 +275,7 @@ string SerialNodeParam::str(Serializer *ser) const
 			n = ((Variable*)p)->name;
 		else if (kind == NodeKind::CONSTANT)
 			n = ((Constant*)p)->str();
-		str = "  (" + type_name_safe(type) + ") " + kind2str(kind) + " " + n;
+		str = "(" + type_name_safe(type) + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
 	}
@@ -291,12 +291,11 @@ string SerialNode::str(Serializer *ser) const
 	string t;
 	if (cond != Asm::ARM_COND_ALWAYS)
 		t += "[cond]";
-	t += Asm::GetInstructionName(inst);
-	t += p[0].str(ser);
+	t += format("%-6s %s", Asm::GetInstructionName(inst), p[0].str(ser));
 	if (p[1].kind != NodeKind::NONE)
-		t += "," + p[1].str(ser);
+		t += ",  " + p[1].str(ser);
 	if (p[2].kind != NodeKind::NONE)
-		t += "," + p[2].str(ser);
+		t += ",  " + p[2].str(ser);
 	return t;
 }
 
