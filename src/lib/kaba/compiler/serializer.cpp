@@ -81,7 +81,7 @@ SerialNodeParam Serializer::add_temp(const Class *t, bool add_constructor) {
 }
 
 // unpointer...?
-inline const Class *get_subtype(const Class *t) {
+const Class *get_subtype(const Class *t) {
 	if (t->param.num > 0)
 		return t->param[0];
 	msg_error("subtype wanted of... " + t->name);
@@ -89,7 +89,7 @@ inline const Class *get_subtype(const Class *t) {
 	return TypeUnknown;
 }
 
-inline SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *type) {
+SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *type) {
 	SerialNodeParam deref;
 	//deref = param;
 	deref.kind = NodeKind::DEREF_VAR_TEMP;
@@ -99,14 +99,14 @@ inline SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *typ
 	return deref;
 }
 
-SerialNodeParam Serializer::param_shift(const SerialNodeParam &param, int shift, const Class *t) {
+SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t) {
 	SerialNodeParam p = param;
 	p.shift += shift;
 	p.type = t;
 	return p;
 }
 
-SerialNodeParam Serializer::param_global(const Class *type, void *v) {
+SerialNodeParam param_global(const Class *type, void *v) {
 	SerialNodeParam p;
 	p.type = type;
 	p.kind = NodeKind::MEMORY;
@@ -115,7 +115,7 @@ SerialNodeParam Serializer::param_global(const Class *type, void *v) {
 	return p;
 }
 
-SerialNodeParam Serializer::param_local(const Class *type, int offset) {
+SerialNodeParam param_local(const Class *type, int offset) {
 	SerialNodeParam p;
 	p.type = type;
 	p.kind = NodeKind::LOCAL_MEMORY;
@@ -124,7 +124,7 @@ SerialNodeParam Serializer::param_local(const Class *type, int offset) {
 	return p;
 }
 
-SerialNodeParam Serializer::param_imm(const Class *type, int64 c) {
+SerialNodeParam param_imm(const Class *type, int64 c) {
 	SerialNodeParam p;
 	p.type = type;
 	p.kind = NodeKind::IMMEDIATE;
@@ -133,91 +133,44 @@ SerialNodeParam Serializer::param_imm(const Class *type, int64 c) {
 	return p;
 }
 
-SerialNodeParam Serializer::param_marker(const Class *type, int m) {
-	SerialNodeParam p;
-	p.type = type;
-	p.kind = NodeKind::MARKER;
-	p.p = m;
-	p.shift = 0;
-	return p;
+SerialNodeParam param_marker(const Class *type, int m) {
+	return {NodeKind::MARKER, m, -1, type, 0};
 }
 
-SerialNodeParam Serializer::param_marker32(int m) {
+SerialNodeParam param_marker32(int m) {
 	return param_marker(TypeInt, m);
 }
 
-SerialNodeParam Serializer::param_deref_marker(const Class *type, int m) {
-	SerialNodeParam p;
-	p.type = type;
-	p.kind = NodeKind::DEREF_MARKER;
-	p.p = m;
-	p.shift = 0;
-	return p;
+SerialNodeParam param_deref_marker(const Class *type, int m) {
+	return {NodeKind::DEREF_MARKER, m, -1, type, 0};
 }
 
 SerialNodeParam Serializer::param_vreg(const Class *type, int vreg, int preg) {
-	SerialNodeParam p;
-	p.kind = NodeKind::REGISTER;
-	if (preg >= 0)
-		p.p = preg;
-	else
-		p.p = virtual_reg[vreg].reg;
-	p.virt = vreg;
-	p.type = type;
-	p.shift = 0;
-	return p;
+	if (preg < 0)
+		preg = virtual_reg[vreg].reg;
+	return {NodeKind::REGISTER, preg, vreg, type, 0};
 }
 
-SerialNodeParam Serializer::param_preg(const Class *type, int reg) {
-	SerialNodeParam p;
-	p.kind = NodeKind::REGISTER;
-	p.p = reg;
-	p.virt = -1;
-	p.type = type;
-	p.shift = 0;
-	return p;
+SerialNodeParam param_preg(const Class *type, int reg) {
+	return {NodeKind::REGISTER, reg, -1, type, 0};
 }
 
 SerialNodeParam Serializer::param_deref_vreg(const Class *type, int vreg, int preg) {
-	SerialNodeParam p;
-	p.kind = NodeKind::DEREF_REGISTER;
-	if (preg >= 0)
-		p.p = preg;
-	else
-		p.p = virtual_reg[vreg].reg;
-	p.virt = vreg;
-	p.type = type;
-	p.shift = 0;
-	return p;
+	if (preg < 0)
+		preg = virtual_reg[vreg].reg;
+	return {NodeKind::DEREF_REGISTER, preg, vreg, type, 0};
 }
 
-SerialNodeParam Serializer::param_deref_preg(const Class *type, int reg) {
-	SerialNodeParam p;
-	p.kind = NodeKind::DEREF_REGISTER;
-	p.p = reg;
-	p.virt = -1;
-	p.type = type;
-	p.shift = 0;
-	return p;
+SerialNodeParam param_deref_preg(const Class *type, int reg) {
+	return {NodeKind::DEREF_REGISTER, reg, -1, type, 0};
 }
 
-SerialNodeParam Serializer::param_lookup(const Class *type, int ref) {
-	SerialNodeParam p;
-	p.type = TypePointer;
-	p.p = ref;
-	p.kind = NodeKind::GLOBAL_LOOKUP;
-	p.shift = 0;
-	return p;
+SerialNodeParam param_lookup(const Class *type, int ref) {
+	return {NodeKind::GLOBAL_LOOKUP, ref, -1, /*type*/TypePointer, 0};
 }
 
-SerialNodeParam Serializer::param_deref_lookup(const Class *type, int ref) {
-	SerialNodeParam p;
-	p.type = TypePointer;
-	p.p = ref;
-	p.kind = NodeKind::DEREF_GLOBAL_LOOKUP;
-	p.shift = 0;
-
-	return p;
+SerialNodeParam param_deref_lookup(const Class *type, int ref) {
+	return {NodeKind::DEREF_GLOBAL_LOOKUP, ref, -1, /*type*/TypePointer, 0};
 }
 
 string signed_hex(int64 i) {
@@ -275,6 +228,8 @@ string SerialNodeParam::str(Serializer *ser) const
 			n = ((Variable*)p)->name;
 		else if (kind == NodeKind::CONSTANT)
 			n = ((Constant*)p)->str();
+		else if (kind == NodeKind::FUNCTION)
+			n = ((Function*)p)->signature(TypeVoid);
 		str = "(" + type_name_safe(type) + ") " + kind2str(kind) + " " + n;
 		if (shift > 0)
 			str += format(" + shift %d", shift);
@@ -1931,6 +1886,13 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) {
 	syntax_tree = s->syntax;
 	list = _list;
 	max_push_size = 0;
+	stack_max_size = 0;
+	stack_offset = 0;
+	next_cmd_index = 0;
+	call_used = false;
+	cur_func_index = -1;
+	cur_func = nullptr;
+	num_markers = 0;
 
 	p_eax = param_preg(TypeReg32, Asm::REG_EAX);
 	p_eax_int = param_preg(TypeInt, Asm::REG_EAX);

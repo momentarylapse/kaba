@@ -29,14 +29,8 @@ void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &p
 	call_used = true;
 	int push_size = fc_begin(f, params, ret);
 
-	if (f->address) {
-		add_cmd(Asm::INST_CALL, ret, param_imm(TypePointer, (int_p)f->address)); // the actual call
-		// function pointer will be shifted later...
-	} else if (f->_label >= 0) {
-		add_cmd(Asm::INST_CALL, ret, param_marker(TypePointer, f->_label));
-	} else {
-		do_error_link("could not link function " + f->signature());
-	}
+	SerialNodeParam fp = {NodeKind::FUNCTION, (int_p)f, -1, TypeFunctionP, 0};
+	add_cmd(Asm::INST_CALL, ret, fp); // the actual call
 
 	fc_end(push_size, ret);
 }

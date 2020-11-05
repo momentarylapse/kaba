@@ -196,25 +196,26 @@ public:
 	static const SerialNodeParam p_none;
 
 
-	static SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t);
-	static SerialNodeParam param_global(const Class *type, void *v);
-	static SerialNodeParam param_local(const Class *type, int offset);
-	static SerialNodeParam param_imm(const Class *type, int64 c);
-	static SerialNodeParam param_marker(const Class *type, int m);
-	static SerialNodeParam param_marker32(int m);
-	static SerialNodeParam param_deref_marker(const Class *type, int m);
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
-	static SerialNodeParam param_preg(const Class *type, int reg);
 	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
-	static SerialNodeParam param_deref_preg(const Class *type, int reg);
-	static SerialNodeParam param_lookup(const Class *type, int ref);
-	static SerialNodeParam param_deref_lookup(const Class *type, int ref);
 
 	static int reg_resize(int reg, int size);
 	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);
 
 	static int get_reg(int root, int size);
 };
+
+SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t);
+SerialNodeParam param_global(const Class *type, void *v);
+SerialNodeParam param_local(const Class *type, int offset);
+SerialNodeParam param_imm(const Class *type, int64 c);
+SerialNodeParam param_marker(const Class *type, int m);
+SerialNodeParam param_marker32(int m);
+SerialNodeParam param_deref_marker(const Class *type, int m);
+SerialNodeParam param_preg(const Class *type, int reg);
+SerialNodeParam param_deref_preg(const Class *type, int reg);
+SerialNodeParam param_lookup(const Class *type, int ref);
+SerialNodeParam param_deref_lookup(const Class *type, int ref);
 
 
 };
