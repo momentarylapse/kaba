@@ -150,6 +150,7 @@ public:
 		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
 		p.option("--os", [&]{ flag_compile_os = true; });
 		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
+		p.option("--serx", [&]{ kaba::config.use_new_serializer = true; });
 		p.option("--verbose", [&]{ flag_verbose = true; });
 		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
 		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });

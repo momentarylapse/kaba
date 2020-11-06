@@ -422,6 +422,7 @@ public:
 
 	bool compile_os;
 	bool remove_unused;
+	bool use_new_serializer;
 	bool no_function_frame;
 	bool add_entry_point;
 	bool override_variables_offset;

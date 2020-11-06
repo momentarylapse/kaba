@@ -28,3 +28,10 @@
 
 * func/op -> inline/call-by-ref
 * simplify deref
+
+
+
+== new serializer ==
+
+TODO
+ * 

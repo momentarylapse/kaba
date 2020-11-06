@@ -81,8 +81,21 @@ void BackendAmd64::correct() {
 	for (int i=0; i<cmd.num; i++) {
 		auto &c = cmd[i];
 		if (c.inst == Asm::INST_MOV) {
+		} else if (c.inst == Asm::INST_MOVSX) {
+			msg_write("movsx");
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			int reg = serializer->find_unused_reg(i, i, p2.type->size);
+			msg_write(reg);
+			msg_write(serializer->virtual_reg[reg].reg);
+			serializer->remove_cmd(i);
+			next_cmd_target(i);
+			insert_cmd(Asm::INST_MOV, param_vreg(p1.type, reg), p2);
+			int preg_x = serializer->reg_resize(serializer->virtual_reg[reg].reg, p1.type->size);
+			insert_cmd(Asm::INST_MOV, p1, param_vreg(p1.type, reg, preg_x));
+			i ++;
 
-		} else if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
+		} else if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_IDIV) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
 			auto inst = c.inst;
 			auto r = c.p[0];
 			auto p1 = c.p[1];
