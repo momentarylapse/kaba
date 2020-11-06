@@ -50,6 +50,10 @@ BackendAmd64::~BackendAmd64() {
 }
 
 void BackendAmd64::correct() {
+	next_cmd_target(0);
+	add_function_intro_params(serializer->cur_func);
+
+
 	for (auto &c: cmd) {
 		for (auto &p: c.p) {
 			if (p.kind == NodeKind::VAR_LOCAL) {
@@ -78,8 +82,7 @@ void BackendAmd64::correct() {
 		auto &c = cmd[i];
 		if (c.inst == Asm::INST_MOV) {
 
-		}
-		if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
+		} else if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
 			auto inst = c.inst;
 			auto r = c.p[0];
 			auto p1 = c.p[1];
@@ -102,17 +105,24 @@ void BackendAmd64::correct() {
 			i --;
 		} else if (c.inst == Asm::INST_CALL) {
 			//func_params.add(c.p[0]);
-			msg_write("CALL");
-			msg_write(c.str(serializer));
 			auto *f = ((Function*)c.p[1].p);
-			msg_write(p2s(f));
-			msg_write(f->signature(TypeVoid));
 			auto ret = c.p[0];
 			serializer->remove_cmd(i);
 			next_cmd_target(i);
 			add_function_call(f, func_params, ret);
 			func_params.clear();
 			i = serializer->next_cmd_index - 1;
+		} else if (c.inst == Asm::INST_RET) {
+			auto p = c.p[0];
+			serializer->remove_cmd(i);
+			next_cmd_target(i);
+
+			insert_cmd(Asm::INST_LEAVE);
+			if (serializer->cur_func->effective_return_type->uses_return_by_memory())
+				insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
+			else
+				insert_cmd(Asm::INST_RET);
+			i ++;
 		}
 	}
 	serializer->cmd_list_out("x:b", "post paramtrafo");
@@ -146,15 +156,15 @@ void BackendAmd64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 		} else if (type->size == 1) {
 			int r = add_virtual_reg(Asm::REG_AL);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
-			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
+			set_virtual_reg(r, serializer->next_cmd_index - 2, serializer->next_cmd_index - 1);
 		} else if (type->size == 4) {
 			int r = add_virtual_reg(Asm::REG_EAX);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
-			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
+			set_virtual_reg(r, serializer->next_cmd_index - 2, serializer->next_cmd_index - 1);
 		} else {
 			int r = add_virtual_reg(Asm::REG_RAX);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
-			set_virtual_reg(r, cmd.num - 2, cmd.num - 1);
+			set_virtual_reg(r, serializer->next_cmd_index - 2, serializer->next_cmd_index - 1);
 		}
 	}
 }
@@ -199,50 +209,40 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 int BackendAmd64::fc_begin(Function *__f, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
 
-	// return data too big... push address
-	SerialNodeParam ret_ref;
-	if (type->uses_return_by_memory()){
-		//add_temp(type, ret_temp);
-		ret_ref = serializer->add_reference(/*ret_temp*/ ret);
-		//add_ref();
-		//add_cmd(Asm::inst_lea, KindRegister, (char*)RegEaxCompilerFunctionReturn.kind, CompilerFunctionReturn.param);
-	}
 
 	// grow stack (down) for local variables of the calling function
 //	add_cmd(- cur_func->_VarSize - LocalOffset - 8);
 	int64 push_size = 0;
 
-	Array<SerialNodeParam> params = _params;
+	auto params = _params;
 
 	// instance as first parameter
 /*	if (instance.type)
 		params.insert(instance, 0);*/
 
 	// return as _very_ first parameter
-	if (type->uses_return_by_memory()){
-		//add_temp(type, ret_temp);
-//		ret_ref = AddReference(/*ret_temp*/ ret);
-		params.insert(ret_ref, 0);
+	if (type->uses_return_by_memory()) {
+		params.insert(insert_reference(ret), 0);
 	}
 
 	// map params...
 	Array<SerialNodeParam> reg_param;
 	Array<SerialNodeParam> stack_param;
 	Array<SerialNodeParam> xmm_param;
-	for (SerialNodeParam &p: params){
-		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()){
-			if (reg_param.num < 6){
+	for (auto &p: params) {
+		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()) {
+			if (reg_param.num < 6) {
 				reg_param.add(p);
-			}else{
+			} else {
 				stack_param.add(p);
 			}
-		}else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)){
-			if (xmm_param.num < 8){
+		} else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)) {
+			if (xmm_param.num < 8) {
 				xmm_param.add(p);
-			}else{
+			} else {
 				stack_param.add(p);
 			}
-		}else{
+		} else {
 			serializer->do_error("parameter type currently not supported: " + p.type->name);
 		}
 	}
@@ -253,14 +253,14 @@ int BackendAmd64::fc_begin(Function *__f, const Array<SerialNodeParam> &_params,
 		insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeInt, push_size));
 	else if (push_size > 0)
 		insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
-	foreachb(SerialNodeParam &p, stack_param){
+	foreachb(SerialNodeParam &p, stack_param) {
 		insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
 		insert_cmd(Asm::INST_PUSH, p_rax);
 	}
 	serializer->max_push_size = max(serializer->max_push_size, (int)push_size);
 
 	// xmm0-7
-	foreachib(SerialNodeParam &p, xmm_param, i){
+	foreachib(auto &p, xmm_param, i) {
 		int reg = Asm::REG_XMM0 + i;
 		if (p.type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_preg(TypeReg128, reg), p);
@@ -272,14 +272,14 @@ int BackendAmd64::fc_begin(Function *__f, const Array<SerialNodeParam> &_params,
 
 	// rdi, rsi, rdx, rcx, r8, r9
 	int param_regs_root[6] = {7, 6, 2, 1, 8, 9};
-	foreachib(SerialNodeParam &p, reg_param, i){
+	foreachib(auto &p, reg_param, i) {
 		int root = param_regs_root[i];
 		int preg = get_reg(root, p.type->size);
-		if (preg >= 0){
+		if (preg >= 0) {
 			int v = add_virtual_reg(preg);
 			virts.add(v);
 			insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
-		}else{
+		} else {
 			// some registers are not 8bit'able
 			int v = add_virtual_reg(get_reg(root, 4));
 			virts.add(v);
@@ -291,7 +291,7 @@ int BackendAmd64::fc_begin(Function *__f, const Array<SerialNodeParam> &_params,
 
 	// extend reg channels to call
 	for (int v: virts)
-		use_virtual_reg(v, cmd.num, cmd.num);
+		use_virtual_reg(v, serializer->next_cmd_index-1, serializer->next_cmd_index);
 
 	return push_size;
 }
@@ -335,6 +335,137 @@ void BackendAmd64::insert_cmd(int inst, const SerialNodeParam &p1, const SerialN
 
 void BackendAmd64::remove_cmd(int index) {
 	serializer->remove_cmd(index);
+}
+
+SerialNodeParam BackendAmd64::insert_reference(const SerialNodeParam &param, const Class *type) {
+	SerialNodeParam ret;
+	if (!type)
+		type = param.type->get_pointer();
+	ret.type = type;
+	ret.shift = 0;
+	if (param.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		ret.kind = NodeKind::IMMEDIATE;
+		ret.p = (int_p)((char*)param.p + param.shift);
+	} else if ((param.kind == NodeKind::IMMEDIATE) or (param.kind == NodeKind::MEMORY)) {
+		ret.kind = NodeKind::IMMEDIATE;
+		if (param.shift > 0)
+			msg_error("Serializer: immediade/mem + shift?!?!?");
+		ret.p = param.p;
+	} else if (param.kind == NodeKind::DEREF_VAR_TEMP) {
+		ret = param;
+		ret.kind = NodeKind::VAR_TEMP; // FIXME why was it param.kind ?!?!?
+	} else {
+		ret = serializer->add_temp(type);
+		insert_cmd(Asm::INST_LEA, ret, param);
+	}
+	return ret;
+}
+
+
+bool BackendAmd64::is_reg_root_used_in_interval(int reg_root, int first, int last) {
+	return serializer->is_reg_root_used_in_interval(reg_root, first, last);
+}
+
+int BackendAmd64::find_unused_reg(int first, int last, int size, int exclude) {
+	//vr_list_out();
+	for (int r: map_reg_root)
+		if (r != exclude)
+			if (!is_reg_root_used_in_interval(r, first, last)) {
+				return add_virtual_reg(get_reg(r, size));
+			}
+	serializer->cmd_list_out("fur", "find unused reg");
+	serializer->do_error(format("no free register of size %d   in %d:%d", size, first, last));
+	return -1;
+}
+
+void BackendAmd64::add_function_outro(Function *f) {
+	insert_cmd(Asm::INST_LEAVE, p_none);
+	if (f->effective_return_type->uses_return_by_memory())
+		insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
+	else
+		insert_cmd(Asm::INST_RET, p_none);
+}
+
+void BackendAmd64::add_function_intro_params(Function *f) {
+	// return, instance, params
+	Array<Variable*> param;
+	if (f->effective_return_type->uses_return_by_memory()) {
+		for (Variable *v: weak(f->var))
+			if (v->name == IDENTIFIER_RETURN_VAR) {
+				param.add(v);
+				break;
+			}
+	}
+	if (!f->is_static()) {
+		for (Variable *v: weak(f->var))
+			if (v->name == IDENTIFIER_SELF) {
+				param.add(v);
+				break;
+			}
+	}
+	for (int i=0;i<f->num_params;i++)
+		param.add(f->var[i].get());
+
+	// map params...
+	Array<Variable*> reg_param;
+	Array<Variable*> stack_param;
+	Array<Variable*> xmm_param;
+	for (Variable *p: param) {
+		if ((p->type == TypeInt) or (p->type == TypeChar) or (p->type == TypeBool) or p->type->is_some_pointer()) {
+			if (reg_param.num < 6) {
+				reg_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else if ((p->type == TypeFloat32) or (p->type == TypeFloat64)) {
+			if (xmm_param.num < 8) {
+				xmm_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else {
+			serializer->do_error("parameter type currently not supported: " + p->type->name);
+		}
+	}
+
+	// xmm0-7
+	foreachib(Variable *p, xmm_param, i){
+		int reg = Asm::REG_XMM0 + i;
+		if (p->type == TypeFloat64)
+			insert_cmd(Asm::INST_MOVSD, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
+		else
+			insert_cmd(Asm::INST_MOVSS, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
+
+
+	}
+
+	// rdi, rsi,rdx, rcx, r8, r9
+	int param_regs_root[6] = {7, 6, 2, 1, 8, 9};
+	foreachib(Variable *p, reg_param, i) {
+		int root = param_regs_root[i];
+		int preg = get_reg(root, p->type->size);
+		if (preg >= 0) {
+			int v = add_virtual_reg(preg);
+			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, v));
+			set_virtual_reg(v, 0, serializer->next_cmd_index-1);
+		} else {
+			// some registers are not 8bit'able
+			int v = add_virtual_reg(get_reg(root, 4));
+			int va = add_virtual_reg(Asm::REG_EAX);
+			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, va), param_vreg(TypeReg32, v));
+			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, va, get_reg(0, p->type->size)));
+			set_virtual_reg(v, 0, serializer->next_cmd_index-2);
+			set_virtual_reg(va, serializer->next_cmd_index-2, serializer->next_cmd_index-1);
+		}
+	}
+
+	// get parameters from stack
+	foreachb(Variable *p, stack_param) {
+		serializer->do_error("func with stack...");
+		/*int s = 8;
+		add_cmd(Asm::inst_push, p);
+		push_size += s;*/
+	}
 }
 
 }

@@ -52,6 +52,8 @@ public:
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
 
+	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
+	int find_unused_reg(int first, int last, int size, int exclude);
 
 	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
 	SerialNodeParam p_rax;
@@ -69,8 +71,13 @@ public:
 	//static int get_reg(int root, int size);
 
 	void next_cmd_target(int index);
-	void insert_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
+	void insert_cmd(int inst, const SerialNodeParam &p1 = p_none, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
 	void remove_cmd(int index);
+	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
+
+
+	void add_function_outro(Function *f);
+	void add_function_intro_params(Function *f);
 };
 
 }

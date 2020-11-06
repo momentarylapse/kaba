@@ -268,6 +268,7 @@ void Serializer::cmd_list_out(const string &stage, const string &comment, bool f
 			msg_write(format("  %d   %d -> %d    %s   %s", i, v.first, v.last, v.type->name, v.referenced ? "-referenced-" : ""));
 		msg_write("--------------------------------");
 	}
+	vr_list_out();
 }
 
 void Serializer::vr_list_out() {
@@ -310,9 +311,9 @@ void Serializer::add_cmd(int cond, int inst, const SerialNodeParam &p1, const Se
 	if (next_cmd_index == cmd.num) {
 		cmd.add(c);
 	} else {
-		for (int i=next_cmd_index; i<cmd.num; i++)
-			cmd[i].index ++;
 		cmd.insert(c, next_cmd_index);
+		for (int i=next_cmd_index; i<cmd.num; i++)
+			cmd[i].index = i;
 
 		// adjust temp vars
 		for (TempVar &v: temp_var) {
@@ -366,7 +367,15 @@ void Serializer::next_cmd_target(int index) {
 }
 
 void Serializer::remove_cmd(int index) {
+	if (cmd[index].inst == Asm::INST_CALL) {
+		for (auto &r: virtual_reg)
+			if (r.first == index and r.last == index)
+				r.first = r.last = -1;
+	}
+
 	cmd.erase(index);
+	for (int i=index; i<cmd.num; i++)
+		cmd[i].index = i;
 
 	// adjust temp vars
 	for (TempVar &v: temp_var) {
@@ -795,10 +804,10 @@ int Serializer::find_unused_reg(int first, int last, int size, int exclude) {
 	//vr_list_out();
 	for (int r: map_reg_root)
 		if (r != exclude)
-			if (!is_reg_root_used_in_interval(r, first, last)) {
+			if (!is_reg_root_used_in_interval(r, first, last))
 				return add_virtual_reg(get_reg(r, size));
-			}
-	cmd_list_out("fur", "find unused reg");
+	cmd_list_out("fur", "find unused reg", true);
+//	vr_list_out();
 	do_error(format("no free register of size %d   in %d:%d", size, first, last));
 	return -1;
 }
@@ -1443,11 +1452,9 @@ void Serializer::map_temp_var_to_stack(int vi) {
 
 bool Serializer::is_reg_root_used_in_interval(int reg_root, int first, int last) {
 	for (int i=0;i<virtual_reg.num;i++)
-		if (virtual_reg[i].reg_root == reg_root) {
-			if ((virtual_reg[i].first <= last) and (virtual_reg[i].last >= first)) {
+		if (virtual_reg[i].reg_root == reg_root)
+			if ((virtual_reg[i].first <= last) and (virtual_reg[i].last >= first))
 				return true;
-			}
-		}
 	return false;
 }
 
@@ -1960,23 +1967,35 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	x->serialize_function(f);
 	auto be = new BackendAmd64(x);
 	be->correct();
-	delete be;
-	delete x;
 
 	Serializer *d = CreateSerializer(this, list);
 
-	try{
+	try {
 		d->cur_func_index = index;
-		d->serialize_function(f);
+		//d->serialize_function(f);
+		d->cur_func = f;
+		d->cmd = x->cmd;
+		d->temp_var = x->temp_var;
+		d->virtual_reg = x->virtual_reg;
+		d->inserted_temp = x->inserted_temp;
+		d->loop = x->loop;
+		d->map_reg_root = x->map_reg_root;
+
+		d->stack_offset = x->stack_offset;
+		d->stack_max_size = x->stack_max_size;
+		d->max_push_size = x->max_push_size;
+		d->call_used = x->call_used;
 		d->do_mapping();
 		d->assemble();
-	}catch(Exception &e) {
+	} catch(Exception &e) {
 		throw e;
-	}catch(Asm::Exception &e) {
+	} catch(Asm::Exception &e) {
 		throw Exception(e, this, f);
 	}
 	functions_to_link.append(d->list->wanted_label);
-	delete(d);
+	delete d;
+	delete be;
+	delete x;
 }
 
 void Script::compile_functions(char *oc, int &ocs) {

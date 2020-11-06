@@ -9,10 +9,22 @@
 #include "../kaba.h"
 #include "../../file/msg.h"
 
+
+// hmmm, do we want to insert "pop local" to read function parameters?
+//  but what about the return reference?
+//  (we would have calling convention dependency already here)
+//  -> only params... insert return ref. in backend?
+
 namespace kaba {
 
 SerializerX::SerializerX(Script *s, Asm::InstructionWithParamsList *l) : Serializer(s, l) {
 	list->clear();
+	map_reg_root.add(0); // eax
+	map_reg_root.add(1); // ecx
+	map_reg_root.add(2); // edx
+//	MapRegRoot.add(3); // ebx
+//	MapRegRoot.add(6); // esi
+//	MapRegRoot.add(7); // edi
 }
 
 SerializerX::~SerializerX() {
@@ -57,6 +69,8 @@ void SerializerX::add_function_intro_frame(int stack_alloc_size) {
 }
 
 void SerializerX::add_function_outro(Function *f) {
+	if (f->literal_return_type == TypeVoid)
+		add_cmd(Asm::INST_RET);
 }
 
 SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int index) {
