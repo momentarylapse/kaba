@@ -1,10 +1,15 @@
-kaba="kaba"
+KABA="kaba"
+OPT=""
 
 if [ -n "$1" ]
 then
-	kaba="$1"
+	KABA="$1"
 fi
 
+if [ -n "$2" ]
+then
+	OPT="$2"
+fi
 
 
 
@@ -12,7 +17,7 @@ for f in *.reg
 do
 	k=${f%reg}kaba
 	printf "%-32s" "$k"
-	"$kaba" "$k" > out
+	"$KABA" $OPT "$k" > out
 	x=`diff "$f" out`
 	if [ -n "$x" ]
 	then

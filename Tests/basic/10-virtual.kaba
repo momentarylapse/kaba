@@ -7,7 +7,7 @@ class T
 		print("T.f")
 
 void main()
-	T* t = new T
+	T* t = new T()
 	t.f()
 	del t
 

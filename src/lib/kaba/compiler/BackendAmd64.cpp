@@ -59,6 +59,11 @@ void BackendAmd64::correct() {
 			if (p.kind == NodeKind::VAR_LOCAL) {
 				p.p = ((Variable*)p.p)->_offset;
 				p.kind = NodeKind::LOCAL_MEMORY;
+			} else if (p.kind == NodeKind::VAR_GLOBAL) {
+				p.p = (int_p)((Variable*)p.p)->memory;
+				if (!p.p)
+					script->do_error_link("variable is not linkable: " + ((Variable*)p.p)->name);
+				p.kind = NodeKind::MEMORY;
 			} else if (p.kind == NodeKind::CONSTANT) {
 				p.p = (int_p)((Constant*)p.p)->address; // FIXME ....need a cleaner approach for compiling os...
 				if (config.compile_os)
@@ -112,6 +117,8 @@ void BackendAmd64::correct() {
 			set_virtual_reg(reg, i, i + 2);
 
 			i += 2;
+		} else if ((c.inst == Asm::INST_FMUL) or (c.inst == Asm::INST_FDIV) or (c.inst == Asm::INST_FADD) or (c.inst == Asm::INST_FSUB)) {
+			serializer->do_error("float...");
 		} else if (c.inst == Asm::INST_PUSH) {
 			func_params.add(c.p[0]);
 			serializer->remove_cmd(i);

@@ -18,7 +18,7 @@
 namespace kaba {
 
 SerializerX::SerializerX(Script *s, Asm::InstructionWithParamsList *l) : Serializer(s, l) {
-	list->clear();
+	//list->clear();
 	map_reg_root.add(0); // eax
 	map_reg_root.add(1); // ecx
 	map_reg_root.add(2); // edx

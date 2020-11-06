@@ -1960,8 +1960,8 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		if (check_needed(syntax, f) == 0)
 			return;
 
-	msg_write("=============================");
-	f->block->show(TypeVoid);
+	if (config.verbose and config.allow_output(f, "ser:0"))
+		f->block->show(TypeVoid);
 
 
 	if (config.use_new_serializer) {
@@ -1991,9 +1991,9 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 			d->call_used = x->call_used;
 			d->do_mapping();
 			d->assemble();
-		} catch(Exception &e) {
+		} catch (Exception &e) {
 			throw e;
-		} catch(Asm::Exception &e) {
+		} catch (Asm::Exception &e) {
 			throw Exception(e, this, f);
 		}
 		functions_to_link.append(d->list->wanted_label);
@@ -2010,9 +2010,9 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 			d->serialize_function(f);
 			d->do_mapping();
 			d->assemble();
-		} catch(Exception &e) {
+		} catch (Exception &e) {
 			throw e;
-		} catch(Asm::Exception &e) {
+		} catch (Asm::Exception &e) {
 			throw Exception(e, this, f);
 		}
 		functions_to_link.append(d->list->wanted_label);
