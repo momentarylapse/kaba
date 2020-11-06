@@ -49,6 +49,29 @@ BackendAmd64::BackendAmd64(Serializer *s) : cmd(s->cmd) {
 BackendAmd64::~BackendAmd64() {
 }
 
+int trafo_inst_float(int inst, const Class *t) {
+	if (t == TypeFloat64) {
+		if (inst == Asm::INST_FADD)
+			return Asm::INST_ADDSD;
+		if (inst == Asm::INST_FSUB)
+			return Asm::INST_SUBSD;
+		if (inst == Asm::INST_FMUL)
+			return Asm::INST_MULSD;
+		if (inst == Asm::INST_FDIV)
+			return Asm::INST_DIVSD;
+	} else {
+		if (inst == Asm::INST_FADD)
+			return Asm::INST_ADDSS;
+		if (inst == Asm::INST_FSUB)
+			return Asm::INST_SUBSS;
+		if (inst == Asm::INST_FMUL)
+			return Asm::INST_MULSS;
+		if (inst == Asm::INST_FDIV)
+			return Asm::INST_DIVSS;
+	}
+	return -1;
+}
+
 void BackendAmd64::correct() {
 	next_cmd_target(0);
 	add_function_intro_params(serializer->cur_func);
@@ -118,7 +141,25 @@ void BackendAmd64::correct() {
 
 			i += 2;
 		} else if ((c.inst == Asm::INST_FMUL) or (c.inst == Asm::INST_FDIV) or (c.inst == Asm::INST_FADD) or (c.inst == Asm::INST_FSUB)) {
-			serializer->do_error("float...");
+			auto inst = c.inst;
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			auto p3 = c.p[2];
+			serializer->remove_cmd(i);
+			next_cmd_target(i);
+
+			inst = trafo_inst_float(inst, p1.type);
+			int inst_mov = (p1.type == TypeFloat64) ? Asm::INST_MOVSD : Asm::INST_MOVSS;
+
+			if (p3.kind == NodeKind::NONE) {
+				insert_cmd(inst_mov, p_xmm0, p1);
+				insert_cmd(inst, p_xmm0, p2);
+				insert_cmd(inst_mov, p1, p_xmm0);
+			} else {
+				insert_cmd(inst_mov, p_xmm0, p2);
+				insert_cmd(inst, p_xmm0, p3);
+				insert_cmd(inst_mov, p1, p_xmm0);
+			}
 		} else if (c.inst == Asm::INST_PUSH) {
 			func_params.add(c.p[0]);
 			serializer->remove_cmd(i);
