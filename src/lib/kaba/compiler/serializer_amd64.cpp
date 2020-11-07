@@ -305,7 +305,7 @@ void SerializerAMD64::add_function_outro(Function *f)
 
 //#define debug_evil_corrections
 
-void _test_param_mem(SerialNodeParam &p) {
+static void _test_param_mem(SerialNodeParam &p) {
 	//if (p.kind == NodeKind::ADDRESS)
 }
 

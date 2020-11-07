@@ -66,7 +66,7 @@ public:
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
 	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
 
-	static int reg_resize(int reg, int size);
+	//static int reg_resize(int reg, int size);
 	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);
 
 	//static int get_reg(int root, int size);
@@ -79,6 +79,21 @@ public:
 
 	void add_function_outro(Function *f);
 	void add_function_intro_params(Function *f);
+
+	void do_mapping();
+
+
+	void map_referenced_temp_vars_to_stack();
+	void process_references();
+	void try_map_temp_vars_to_registers();
+	void map_remaining_temp_vars_to_stack();
+	void resolve_deref_temp_and_local();
+	void correct_unallowed_param_combis();
+	void correct_unallowed_param_combis2(SerialNode &node);
+
+	void add_stack_var(TempVar &v, SerialNodeParam &p);
+	void scan_temp_var_usage();
+	void solve_deref_temp_local(int c, int np, bool is_local);
 };
 
 }

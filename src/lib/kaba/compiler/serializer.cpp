@@ -1969,6 +1969,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		Serializer *d = CreateSerializer(this, list);
 
 		try {
+			be->do_mapping();
 			d->cur_func_index = index;
 			//d->serialize_function(f);
 			d->cur_func = f;
@@ -1983,7 +1984,6 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 			d->stack_max_size = x->stack_max_size;
 			d->max_push_size = x->max_push_size;
 			d->call_used = x->call_used;
-			d->do_mapping();
 			d->assemble();
 		} catch (Exception &e) {
 			throw e;

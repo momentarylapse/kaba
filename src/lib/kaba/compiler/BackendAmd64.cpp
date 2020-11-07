@@ -549,4 +549,542 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 }
 
+
+void BackendAmd64::do_mapping() {
+	map_referenced_temp_vars_to_stack();
+
+
+	process_references();
+
+	try_map_temp_vars_to_registers();
+
+	serializer->cmd_list_out("map:a", "post temp -> reg");
+
+	map_remaining_temp_vars_to_stack();
+
+	serializer->cmd_list_out("map:b", "post temp -> stack");
+
+	resolve_deref_temp_and_local();
+
+	serializer->cmd_list_out("map:c", "post deref t&l");
+
+	correct_unallowed_param_combis();
+
+	serializer->cmd_list_out("map:d", "unallowed");
+
+	/*MapReferencedTempVars();
+
+	//HandleDerefTemp();
+
+	DisentangleShiftedTempVars();
+
+	ResolveDerefTempAndLocal();
+
+	RemoveUnusedTempVars();
+
+	if (config.allow_simplification){
+	SimplifyMovs();
+
+	SimplifyFPUStack();
+	}
+
+	MapTempVars();
+
+	ResolveDerefRegShift();
+
+	//ResolveDerefLocal();
+
+	CorrectUnallowedParamCombis();*/
+
+
+	for (int i=0; i<cmd.num; i++)
+		correct_unallowed_param_combis2(cmd[i]);
+
+	serializer->cmd_list_out("map:z", "end");
+}
+
+//#define debug_evil_corrections
+
+static void _test_param_mem(SerialNodeParam &p) {
+	//if (p.kind == NodeKind::ADDRESS)
+}
+
+void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
+	// push 8 bit -> push 32 bit
+	if (c.inst == Asm::INST_PUSH)
+		if (c.p[0].kind == NodeKind::REGISTER)
+			c.p[0].p = serializer->reg_resize(c.p[0].p, config.pointer_size);
+
+	_test_param_mem(c.p[0]);
+	_test_param_mem(c.p[1]);
+
+
+
+	// FIXME
+	// evil hack to allow inconsistent param types (in address shifts)
+	if (config.instruction_set == Asm::InstructionSet::AMD64){
+		if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_MOV)){
+			if ((c.p[0].kind == NodeKind::REGISTER) and (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS)){
+				// TODO: should become an optimization if value fits into 32 bit...
+				/*if (c.p[0].type->is_pointer){
+#ifdef debug_evil_corrections
+					msg_write("----evil resize a");
+					msg_write(c.str());
+#endif
+					c.p[0].type = TypeReg32;
+					c.p[0].p = reg_resize(c.p[0].p, 4);
+#ifdef debug_evil_corrections
+					msg_write(c.str());
+#endif
+				}*/
+			}
+			if ((c.p[0].type->size == 8) and (c.p[1].type->size == 4)){
+				/*if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
+#ifdef debug_evil_corrections
+					msg_write("----evil resize b");
+					msg_write(c.str());
+#endif
+					c.p[0].type = c.p[1].type;
+					c.p[0].p = (char*)(long)reg_resize((long)c.p[0].p, c.p[1].type->size);
+#ifdef debug_evil_corrections
+					msg_write(c.str());
+#endif
+				}else*/ if (c.p[1].kind == NodeKind::REGISTER){
+#ifdef debug_evil_corrections
+					msg_write("----evil resize c");
+					msg_write(c.str());
+#endif
+					c.p[1].type = c.p[0].type;
+					c.p[1].p = serializer->reg_resize(c.p[1].p, c.p[0].type->size);
+#ifdef debug_evil_corrections
+					msg_write(c.str());
+#endif
+				}
+			}
+			if ((c.p[0].type->size < 8) and (c.p[1].type->size == 8)){
+				if ((c.p[0].kind == NodeKind::REGISTER) and ((c.p[1].kind == NodeKind::REGISTER) or (c.p[1].kind == NodeKind::DEREF_REGISTER))){
+#ifdef debug_evil_corrections
+					msg_write("----evil resize d");
+					msg_write(c.str());
+#endif
+					c.p[0].type = c.p[1].type;
+					c.p[0].p = serializer->reg_resize(c.p[0].p, c.p[1].type->size);
+#ifdef debug_evil_corrections
+					msg_write(c.str());
+#endif
+				}
+			}
+			/*if (c.p[0].type->size > c.p[1].type->size){
+				msg_write("size ok");
+				if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
+					msg_error("----evil resize");
+					c.p[0].type = c.p[1].type;
+					c.p[0].p = (char*)(long)Asm::RegResize[Asm::RegRoot[(long)c.p[0].p]][c.p[1].type->size];
+				}
+			}*/
+		}
+	}
+}
+
+void BackendAmd64::process_references() {
+	for (int i=0;i<cmd.num;i++)
+		if (cmd[i].inst == Asm::INST_LEA){
+			if (cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY){
+				SerialNodeParam p0 = cmd[i].p[0];
+				SerialNodeParam p1 = cmd[i].p[1];
+				remove_cmd(i);
+
+				if (config.instruction_set == Asm::InstructionSet::AMD64){
+					int r = add_virtual_reg(Asm::REG_RAX);
+					next_cmd_target(i);
+					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), p1);
+					next_cmd_target(i+1);
+					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg64, r));
+					set_virtual_reg(r, i, i+1);
+				}else{
+					int r = add_virtual_reg(Asm::REG_EAX);
+					next_cmd_target(i);
+					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), p1);
+					next_cmd_target(i+1);
+					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg32, r));
+					set_virtual_reg(r, i, i+1);
+				}
+			}else{
+				serializer->do_error("reference in x86: " + cmd[i].p[1].str(serializer));
+			}
+		}
+}
+
+inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &stackvar) {
+	if ((p.kind == NodeKind::VAR_TEMP) and (p.p == v)) {
+		p.kind = NodeKind::LOCAL_MEMORY;//stackvar.kind;
+		p.p = stackvar.p;
+	} else if ((p.kind == NodeKind::DEREF_VAR_TEMP) and (p.p == v)) {
+		p.kind = NodeKind::DEREF_LOCAL_MEMORY;
+		p.p = stackvar.p;
+	}
+}
+
+
+void BackendAmd64::map_referenced_temp_vars_to_stack() {
+	for (SerialNode &c: cmd)
+		if (c.inst == Asm::INST_LEA)
+			if (c.p[1].kind == NodeKind::VAR_TEMP) {
+				int v = c.p[1].p;
+//				msg_error("ref b " + i2s(v));
+				serializer->temp_var[v].referenced = true;
+				serializer->temp_var[v].force_stack = true;
+			}
+
+	for (int i=serializer->temp_var.num-1;i>=0;i--) {
+		if (!serializer->temp_var[i].force_stack)
+			continue;
+		SerialNodeParam stackvar;
+		serializer->add_stack_var(serializer->temp_var[i], stackvar);
+		for (int j=0;j<cmd.num;j++) {
+			for (int k=0; k<SERIAL_NODE_NUM_PARAMS; k++)
+				try_map_param_to_stack(cmd[j].p[k], i, stackvar);
+		}
+		serializer->remove_temp_var(i);
+	}
+}
+
+void BackendAmd64::try_map_temp_vars_to_registers() {
+	for (int i=serializer->temp_var.num-1;i>=0;i--) {
+		if (serializer->temp_var[i].force_stack)
+			continue;
+	}
+}
+
+void BackendAmd64::map_remaining_temp_vars_to_stack() {
+	for (int i=serializer->temp_var.num-1;i>=0;i--) {
+		SerialNodeParam stackvar;
+		add_stack_var(serializer->temp_var[i], stackvar);
+		for (int j=0;j<cmd.num;j++) {
+			for (int k=0; k<SERIAL_NODE_NUM_PARAMS; k++)
+				try_map_param_to_stack(cmd[j].p[k], i, stackvar);
+		}
+		serializer->remove_temp_var(i);
+	}
+}
+
+
+
+struct StackOccupationX {
+	Array<int> x;
+	int reserved;
+	bool down;
+
+	void create(Serializer *s, bool down, int reserved, int first, int last) {
+		x.clear();
+		this->down = down;
+		this->reserved = reserved;
+		for (TempVar &v: s->temp_var) {
+			if (!v.mapped)
+				continue;
+			if ((v.first > first and v.last > last) or (v.first < first and v.last < last))
+				continue;
+			set(v.stack_offset, v.type->size);
+		}
+	}
+	void set(int start, int size) {
+		if (down)
+			start = - start - size;
+
+		int a = start / 32;
+		int mask = 1 << (start % 23);
+		for (int i=0; i<size; i++) {
+			if (mask == 1) {
+				if (a >= x.num)
+					x.resize(a + 1);
+			}
+			x[a] |= mask;
+			mask *= 2;
+			if (mask == 0) {
+				mask = 1;
+				a ++;
+			}
+		}
+	}
+
+	bool is_free(int start, int size) {
+		if (down)
+			start = - start - size;
+
+		int a = start / 32;
+		int mask = 1 << (start % 23);
+		msg_write("------");
+		msg_write(start);
+		msg_write(a);
+		msg_write(mask);
+		if (a >= x.num)
+			return true;
+		for (int i=0; i<size; i++) {
+			if (mask == 1) {
+				if (a >= x.num)
+					return true;
+			}
+			if (x[a] & mask)
+				return false;
+			mask *= 2;
+			if (mask == 0) {
+				mask = 1;
+				a ++;
+			}
+		}
+
+		return true;
+	}
+
+	int find_free(int size) {
+		int pos = down ? -(reserved + size) : reserved;
+		while (true) {
+			if (is_free(pos, size))
+				return pos;
+			if (down)
+				pos -= 4;
+			else
+				pos += 4;
+		}
+		return pos;
+	}
+};
+
+void BackendAmd64::add_stack_var(TempVar &v, SerialNodeParam &p) {
+	// find free stack space for the life span of the variable....
+	// don't mind... use old algorithm: ALWAYS grow stack... remove ALL on each command in a block
+
+	int s = mem_align(v.type->size, 4);
+	StackOccupationX so;
+//	msg_write(format("add stack var  %s %d   %d-%d       vs=%d", v.type->name.c_str(), v.type->size, v.first, v.last, cur_func->_var_size));
+//	foreachi(TempVar &t, temp_var, i)
+//		if (&t == &v)
+//			msg_write("#" + i2s(i));
+	so.create(serializer, (config.instruction_set != Asm::InstructionSet::ARM), serializer->cur_func->_var_size, v.first, v.last);
+
+	if (true) {
+		// TODO super important!!!!!!
+		if (config.instruction_set == Asm::InstructionSet::ARM) {
+			v.stack_offset = serializer->stack_offset;
+			serializer->stack_offset += s;
+
+		} else {
+			serializer->stack_offset += s;
+			v.stack_offset = - serializer->stack_offset;
+		}
+	} else {
+		v.stack_offset = so.find_free(v.type->size);
+		if (config.instruction_set == Asm::InstructionSet::ARM) {
+			serializer->stack_offset = v.stack_offset + s;
+		} else {
+			serializer->stack_offset = - v.stack_offset;
+		}
+	}
+//	msg_write("=>");
+//	msg_write(v.stack_offset);
+
+	if (serializer->stack_offset > serializer->stack_max_size)
+		serializer->stack_max_size = serializer->stack_offset;
+
+	v.mapped = true;
+
+	p.kind = NodeKind::LOCAL_MEMORY;
+	p.p = v.stack_offset;
+	p.type = v.type;
+	p.shift = 0;
+}
+
+inline bool param_is_simple(SerialNodeParam &p) {
+	return ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::NONE));
+}
+
+inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &p2) {
+//	if (inst >= Asm::inst_marker)
+//		return true;
+	if ((!param_is_simple(p1)) and (!param_is_simple(p2)))
+		return false;
+	bool r1, w1, r2, w2;
+	Asm::get_instruction_param_flags(inst, r1, w1, r2, w2);
+	if (w1 and (p1.kind == NodeKind::IMMEDIATE))
+		return false;
+	if (w2 and (p2.kind == NodeKind::IMMEDIATE))
+		return false;
+	if ((p1.kind == NodeKind::IMMEDIATE) or (p2.kind == NodeKind::IMMEDIATE))
+		if (!Asm::get_instruction_allow_const(inst))
+			return false;
+	return true;
+}
+
+// mov [0x..] [0x...]  ->  mov eax, [0x..]   mov [0x..] eax    (etc)
+void BackendAmd64::correct_unallowed_param_combis() {
+	for (int i=cmd.num-1;i>=0;i--){
+		if (cmd[i].inst >= INST_MARKER)
+			continue;
+
+		// bad?
+		if (param_combi_allowed(cmd[i].inst, cmd[i].p[0], cmd[i].p[1]))
+			continue;
+
+		// correct
+//		msg_write(format("correcting param combi  cmd=%d", i));
+		bool mov_first_param = (cmd[i].p[1].kind == NodeKind::NONE) or (cmd[i].p[0].kind == NodeKind::CONSTANT_BY_ADDRESS) or (cmd[i].p[0].kind == NodeKind::IMMEDIATE);
+		int p_index = mov_first_param ? 0 : 1;
+		SerialNodeParam p = cmd[i].p[p_index];
+		SerialNodeParam p2 = p;
+
+		//msg_error("correct");
+		//msg_write(p.type->name);
+		int reg = serializer->find_unused_reg(i, i, p.type->size);
+		p2 = param_vreg(p.type, reg);
+		next_cmd_target(i);
+		insert_cmd(Asm::INST_MOV, p2, p);
+		serializer->set_cmd_param(cmd[i+1], p_index, p2);
+		set_virtual_reg(reg, i, i + 1);
+	}
+	scan_temp_var_usage();
+}
+
+// inst ... [local] ...
+// ->      mov reg, local     inst ...[reg]...
+void BackendAmd64::solve_deref_temp_local(int c, int np, bool is_local) {
+	SerialNodeParam p = cmd[c].p[np];
+	int shift = p.shift;
+
+	const Class *type_pointer = is_local ? TypePointer : serializer->temp_var[p.p].type;
+	const Class *type_data = p.type;
+
+	p.kind = is_local ? NodeKind::LOCAL_MEMORY : NodeKind::VAR_TEMP;
+	p.shift = 0;
+	p.type = type_pointer;
+
+	int reg = serializer->find_unused_reg(c, c, config.pointer_size);
+	if (reg < 0)
+		script->do_error_internal("solve_deref_temp_local... no registers available");
+	SerialNodeParam p_reg = param_vreg(type_pointer, reg);
+	SerialNodeParam p_deref_reg = param_deref_vreg(type_data, reg);
+
+	serializer->set_cmd_param(cmd[c], np, p_deref_reg);
+
+	next_cmd_target(c);
+	insert_cmd(Asm::INST_MOV, p_reg, p);
+	if (shift > 0) {
+		// solve_deref_temp_local
+		next_cmd_target(c + 1);
+		insert_cmd(Asm::INST_ADD, p_reg, param_imm(TypeInt, shift));
+		set_virtual_reg(reg, c, c+2);
+	} else {
+		set_virtual_reg(reg, c, c+1);
+	}
+}
+
+
+void BackendAmd64::resolve_deref_temp_and_local() {
+	for (int i=cmd.num-1;i>=0;i--) {
+		if (cmd[i].inst >= INST_MARKER)
+			continue;
+		bool dl1 = ((cmd[i].p[0].kind == NodeKind::DEREF_LOCAL_MEMORY) or (cmd[i].p[0].kind == NodeKind::DEREF_VAR_TEMP));
+		bool dl2 = ((cmd[i].p[1].kind == NodeKind::DEREF_LOCAL_MEMORY) or (cmd[i].p[1].kind == NodeKind::DEREF_VAR_TEMP));
+		if (!(dl1 or dl2))
+			continue;
+
+		bool is_local1 = (cmd[i].p[0].kind == NodeKind::DEREF_LOCAL_MEMORY);
+		bool is_local2 = (cmd[i].p[1].kind == NodeKind::DEREF_LOCAL_MEMORY);
+
+		//msg_write(format("deref temp/local... cmd=%d", i));
+		if (!dl2) {
+			solve_deref_temp_local(i, 0, is_local1);
+			i ++;
+		} else if (!dl1) {
+			solve_deref_temp_local(i, 1, is_local2);
+			i ++;
+		} else {
+			// hopefully... p2 is read-only
+
+			const Class *type_pointer = TypePointer;
+			const Class *type_data = cmd[i].p[0].type;
+
+			int reg = serializer->find_unused_reg(i, i, type_data->size);
+			if (reg < 0)
+				serializer->do_error("deref local... both sides... .no registers available");
+
+			SerialNodeParam p_reg = param_vreg(type_data, reg);
+
+			int reg2 = serializer->find_unused_reg(i, i, config.pointer_size, serializer->virtual_reg[reg].reg_root);
+			if (reg2 < 0)
+				serializer->do_error("deref temp/local... both sides... .no registers available");
+			SerialNodeParam p_reg2 = param_vreg(type_pointer, reg2);
+			SerialNodeParam p_deref_reg2 = param_deref_vreg(type_data, reg2);
+
+			// inst [l1] [l2]
+			// ->
+			// mov reg2, l2
+			//   (add reg2, shift2)
+			// mov reg, [reg2]
+			// mov reg2, l1
+			//   (add reg2, shift1)
+			// inst [reg2], reg
+			SerialNodeParam p1 = cmd[i].p[0];
+			SerialNodeParam p2 = cmd[i].p[1];
+			int shift1 = p1.shift;
+			int shift2 = p2.shift;
+			p1.shift = p2.shift = 0;
+
+			p1.kind = is_local1 ? NodeKind::LOCAL_MEMORY : NodeKind::VAR_TEMP;
+			p2.kind = is_local2 ? NodeKind::LOCAL_MEMORY : NodeKind::VAR_TEMP;
+			p1.type = type_pointer;
+			p2.type = type_pointer;
+			serializer->set_cmd_param(cmd[i], 0, p_deref_reg2);
+			serializer->set_cmd_param(cmd[i], 1, p_reg);
+			int cmd_pos = i;
+
+			int r2_first = cmd_pos;
+			next_cmd_target(cmd_pos ++);
+			insert_cmd(Asm::INST_MOV, p_reg2, p2);
+
+			if (shift2 > 0) {
+				// resolve deref temp&loc 2
+				next_cmd_target(cmd_pos ++);
+				insert_cmd(Asm::INST_ADD, p_reg2, param_imm(TypeInt, shift2));
+			}
+
+			int r1_first = cmd_pos;
+			next_cmd_target(cmd_pos ++);
+			insert_cmd(Asm::INST_MOV, p_reg, p_deref_reg2);
+
+			next_cmd_target(cmd_pos ++);
+			insert_cmd(Asm::INST_MOV, p_reg2, p1);
+
+			if (shift1 > 0) {
+				// resolve deref temp&loc 1
+				next_cmd_target(cmd_pos ++);
+				insert_cmd(Asm::INST_ADD, p_reg2, param_imm(TypeInt, shift1));
+			}
+
+			set_virtual_reg(reg, r1_first, cmd_pos);
+			set_virtual_reg(reg2, r2_first, cmd_pos);
+
+			i = cmd_pos;
+		}
+	}
+}
+
+void BackendAmd64::scan_temp_var_usage() {
+	/*msg_write("ScanTempVarUsage");
+	foreachi(TempVar &v, temp_var, i) {
+		v.first = -1;
+		v.last = -1;
+		v.usage_count = 0;
+		for (int c=0;c<cmd.num;c++) {
+			if (temp_in_cmd(c, i) > 0) {
+				v.usage_count ++;
+				if (v.first < 0)
+					v.first = c;
+				v.last = c;
+			}
+		}
+	}
+	temp_var_ranges_defined = true;*/
+}
+
+
 }
