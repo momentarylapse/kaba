@@ -140,6 +140,8 @@ void BackendAmd64::correct() {
 			i ++;
 
 		} else if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_IDIV) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
+			if (c.p[2].kind == NodeKind::NONE)
+				continue;
 			auto inst = c.inst;
 			auto r = c.p[0];
 			auto p1 = c.p[1];
@@ -630,11 +632,10 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 	_test_param_mem(c.p[1]);
 
 
-
 	// FIXME
 	// evil hack to allow inconsistent param types (in address shifts)
-	if (config.instruction_set == Asm::InstructionSet::AMD64){
-		if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_MOV)){
+	if (config.instruction_set == Asm::InstructionSet::AMD64) {
+		if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_MOV)) {
 			if ((c.p[0].kind == NodeKind::REGISTER) and (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS)){
 				// TODO: should become an optimization if value fits into 32 bit...
 				/*if (c.p[0].type->is_pointer){
@@ -649,7 +650,7 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 #endif
 				}*/
 			}
-			if ((c.p[0].type->size == 8) and (c.p[1].type->size == 4)){
+			if ((c.p[0].type->size == 8) and (c.p[1].type->size == 4)) {
 				/*if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
 #ifdef debug_evil_corrections
 					msg_write("----evil resize b");
@@ -660,7 +661,7 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 #ifdef debug_evil_corrections
 					msg_write(c.str());
 #endif
-				}else*/ if (c.p[1].kind == NodeKind::REGISTER){
+				}else*/ if (c.p[1].kind == NodeKind::REGISTER) {
 #ifdef debug_evil_corrections
 					msg_write("----evil resize c");
 					msg_write(c.str());
@@ -672,8 +673,8 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 #endif
 				}
 			}
-			if ((c.p[0].type->size < 8) and (c.p[1].type->size == 8)){
-				if ((c.p[0].kind == NodeKind::REGISTER) and ((c.p[1].kind == NodeKind::REGISTER) or (c.p[1].kind == NodeKind::DEREF_REGISTER))){
+			if ((c.p[0].type->size < 8) and (c.p[1].type->size == 8)) {
+				if ((c.p[0].kind == NodeKind::REGISTER) and ((c.p[1].kind == NodeKind::REGISTER) or (c.p[1].kind == NodeKind::DEREF_REGISTER))) {
 #ifdef debug_evil_corrections
 					msg_write("----evil resize d");
 					msg_write(c.str());
@@ -699,20 +700,20 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 
 void BackendAmd64::process_references() {
 	for (int i=0;i<cmd.cmd.num;i++)
-		if (cmd.cmd[i].inst == Asm::INST_LEA){
-			if (cmd.cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY){
+		if (cmd.cmd[i].inst == Asm::INST_LEA) {
+			if (cmd.cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY) {
 				SerialNodeParam p0 = cmd.cmd[i].p[0];
 				SerialNodeParam p1 = cmd.cmd[i].p[1];
 				cmd.remove_cmd(i);
 
-				if (config.instruction_set == Asm::InstructionSet::AMD64){
+				if (config.instruction_set == Asm::InstructionSet::AMD64) {
 					int r = cmd.add_virtual_reg(Asm::REG_RAX);
 					cmd.next_cmd_target(i);
 					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), p1);
 					cmd.next_cmd_target(i+1);
 					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg64, r));
 					cmd.set_virtual_reg(r, i, i+1);
-				}else{
+				} else {
 					int r = cmd.add_virtual_reg(Asm::REG_EAX);
 					cmd.next_cmd_target(i);
 					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), p1);
@@ -720,7 +721,7 @@ void BackendAmd64::process_references() {
 					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg32, r));
 					cmd.set_virtual_reg(r, i, i+1);
 				}
-			}else{
+			} else {
 				serializer->do_error("reference in x86: " + cmd.cmd[i].p[1].str(serializer));
 			}
 		}
