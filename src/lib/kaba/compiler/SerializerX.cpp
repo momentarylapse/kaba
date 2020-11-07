@@ -53,11 +53,12 @@ void SerializerX::add_virtual_function_call(Function *f, const Array<SerialNodeP
 
 	auto t1 = add_temp(TypePointer);
 	auto t2 = add_temp(TypePointer);
+	auto t3 = add_temp(TypeFunctionCodeP);
+	SerialNodeParam fp = {NodeKind::FUNCTION, (int_p)f, -1, TypeFunctionP, 0}; // to tell the layout later...
 	add_cmd(Asm::INST_MOV, t1, params[0]); // self
-	add_cmd(Asm::INST_MOV, t2, deref_temp(t1, TypePointer)); // vtable
-	add_cmd(Asm::INST_ADD, t2, param_imm(TypeInt, 8 * f->virtual_index)); // vtable + n
-	add_cmd(Asm::INST_MOV, t1, deref_temp(t2, TypeVoid)); // vtable[n]
-	add_cmd(Asm::INST_CALL, ret, t1); // the actual call
+	add_cmd(Asm::INST_ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, 8 * f->virtual_index)); // vtable + n
+	add_cmd(Asm::INST_MOV, t3, deref_temp(t2, TypeFunctionCodeP)); // vtable[n]
+	add_cmd(Asm::INST_CALL, ret, t3, fp); // the actual call
 
 	fc_end(push_size, ret);
 }

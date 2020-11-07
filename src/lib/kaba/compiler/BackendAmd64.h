@@ -32,6 +32,7 @@ public:
 	int fc_begin(Function *__f, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
 	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_pointer_call(const SerialNodeParam &fp, Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
 	/*void map();
 	void assemble();

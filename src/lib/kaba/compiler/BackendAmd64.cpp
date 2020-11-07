@@ -114,8 +114,6 @@ void BackendAmd64::correct() {
 			auto p1 = c.p[0];
 			auto p2 = c.p[1];
 			int reg = serializer->find_unused_reg(i, i, p2.type->size);
-			msg_write(reg);
-			msg_write(serializer->virtual_reg[reg].reg);
 			serializer->remove_cmd(i);
 			next_cmd_target(i);
 			insert_cmd(Asm::INST_MOV, param_vreg(p1.type, reg), p2);
@@ -152,10 +150,12 @@ void BackendAmd64::correct() {
 			int inst_mov = (p1.type == TypeFloat64) ? Asm::INST_MOVSD : Asm::INST_MOVSS;
 
 			if (p3.kind == NodeKind::NONE) {
+				// a += b
 				insert_cmd(inst_mov, p_xmm0, p1);
 				insert_cmd(inst, p_xmm0, p2);
 				insert_cmd(inst_mov, p1, p_xmm0);
 			} else {
+				// a = b + c
 				insert_cmd(inst_mov, p_xmm0, p2);
 				insert_cmd(inst, p_xmm0, p3);
 				insert_cmd(inst_mov, p1, p_xmm0);
@@ -165,14 +165,22 @@ void BackendAmd64::correct() {
 			serializer->remove_cmd(i);
 			i --;
 		} else if (c.inst == Asm::INST_CALL) {
-			if (c.p[1].kind == NodeKind::VAR_TEMP)
-				serializer->do_error("indirect call...");
-			//func_params.add(c.p[0]);
-			auto *f = ((Function*)c.p[1].p);
-			auto ret = c.p[0];
-			serializer->remove_cmd(i);
-			next_cmd_target(i);
-			add_function_call(f, func_params, ret);
+			if (c.p[1].type == TypeFunctionCodeP) {
+				//serializer->do_error("indirect call...");
+				auto fp = c.p[1];
+				auto *f = ((Function*)c.p[2].p);
+				auto ret = c.p[0];
+				serializer->remove_cmd(i);
+				next_cmd_target(i);
+				add_pointer_call(fp, f, func_params, ret);
+			} else {
+				//func_params.add(c.p[0]);
+				auto *f = ((Function*)c.p[1].p);
+				auto ret = c.p[0];
+				serializer->remove_cmd(i);
+				next_cmd_target(i);
+				add_function_call(f, func_params, ret);
+			}
 			func_params.clear();
 			i = serializer->next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_RET) {
@@ -265,6 +273,16 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	} else {
 		serializer->do_error_link("could not link function " + f->signature());
 	}
+
+	fc_end(push_size, params, ret);
+}
+
+void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	serializer->call_used = true;
+	int push_size = fc_begin(f, params, ret);
+
+	insert_cmd(Asm::INST_MOV, p_rax, fp);
+	insert_cmd(Asm::INST_CALL, p_rax);
 
 	fc_end(push_size, params, ret);
 }
