@@ -631,6 +631,13 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 	_test_param_mem(c.p[0]);
 	_test_param_mem(c.p[1]);
 
+	if (c.inst == Asm::INST_CMP)
+		if ((c.p[1].kind == NodeKind::IMMEDIATE) and (c.p[1].type->size == 8)) {
+			if (c.p[1].p & 0xffffffff00000000 != 0)
+				serializer->do_error("cmp immediate > 32bit");
+			c.p[1].type = TypeInt;
+		}
+
 
 	// FIXME
 	// evil hack to allow inconsistent param types (in address shifts)

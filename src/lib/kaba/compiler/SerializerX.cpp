@@ -298,7 +298,7 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 
 void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
 	auto index = com->as_func()->inline_no;
-	switch(index){
+	switch (index) {
 /*		case InlineID::INT_TO_FLOAT:
 			cmd.add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
 			cmd.add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
@@ -316,22 +316,15 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::FLOAT64_TO_FLOAT:
 			cmd.add_cmd(Asm::INST_CVTSD2SS, p_xmm0, param[0]);
 			cmd.add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
-			break;
-		case InlineID::INT_TO_CHAR:{
-			int veax = add_virtual_reg(Asm::REG_EAX);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
-			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeChar, veax, Asm::REG_AL));
-			}break;
-		case InlineID::CHAR_TO_INT:{
-			int veax = add_virtual_reg(Asm::REG_EAX);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param_imm(TypeInt, 0x0));
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeChar, veax, Asm::REG_AL), param[0]);
-			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
-			}break;
+			break;*/
 		case InlineID::POINTER_TO_BOOL:
 			cmd.add_cmd(Asm::INST_CMP, param[0], param_imm(TypePointer, 0));
 			cmd.add_cmd(Asm::INST_SETNZ, ret);
-			break;*/
+			break;
+		case InlineID::INT_TO_CHAR:
+		case InlineID::CHAR_TO_INT:
+			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
+			break;
 		case InlineID::RECT_SET:
 		case InlineID::VECTOR_SET:
 		case InlineID::COMPLEX_SET:
@@ -502,11 +495,9 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::INT64_DECREASE:
 			cmd.add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt64, 0x1));
 			break;
-/*		case InlineID::INT64_TO_INT:{
-			int vrax = add_virtual_reg(Asm::REG_RAX);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
-			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vrax, Asm::REG_EAX));
-			}break;*/
+		case InlineID::INT64_TO_INT:
+			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
+			break;
 		case InlineID::INT_TO_INT64:
 			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
 			break;

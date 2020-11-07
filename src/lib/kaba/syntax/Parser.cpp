@@ -382,7 +382,7 @@ shared<Node> SyntaxTree::add_node_constructor(Function *f) {
 }
 
 shared_array<Node> Parser::make_class_node_callable(const Class *t, Block *block, shared_array<Node> &params) {
-	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool)) and (params.num == 1))
+	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool) or (t == TypeChar)) and (params.num == 1))
 		return {tree->make_fake_constructor(t, block, params[0]->type)};
 	
 	// constructor
