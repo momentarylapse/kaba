@@ -110,7 +110,7 @@ void BackendAmd64::correct() {
 		auto &c = cmd[i];
 		if (c.inst == Asm::INST_MOV) {
 		} else if (c.inst == Asm::INST_MOVSX) {
-			msg_write("movsx");
+//			msg_write("movsx");
 			auto p1 = c.p[0];
 			auto p2 = c.p[1];
 			int reg = serializer->find_unused_reg(i, i, p2.type->size);
@@ -165,6 +165,8 @@ void BackendAmd64::correct() {
 			serializer->remove_cmd(i);
 			i --;
 		} else if (c.inst == Asm::INST_CALL) {
+			if (c.p[1].kind == NodeKind::VAR_TEMP)
+				serializer->do_error("indirect call...");
 			//func_params.add(c.p[0]);
 			auto *f = ((Function*)c.p[1].p);
 			auto ret = c.p[0];

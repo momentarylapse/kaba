@@ -216,6 +216,7 @@ SerialNodeParam param_preg(const Class *type, int reg);
 SerialNodeParam param_deref_preg(const Class *type, int reg);
 SerialNodeParam param_lookup(const Class *type, int ref);
 SerialNodeParam param_deref_lookup(const Class *type, int ref);
+SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *type);
 
 
 };

@@ -48,6 +48,18 @@ void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &p
 }
 
 void SerializerX::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	call_used = true;
+	int push_size = fc_begin(f, params, ret);
+
+	auto t1 = add_temp(TypePointer);
+	auto t2 = add_temp(TypePointer);
+	add_cmd(Asm::INST_MOV, t1, params[0]); // self
+	add_cmd(Asm::INST_MOV, t2, deref_temp(t1, TypePointer)); // vtable
+	add_cmd(Asm::INST_ADD, t2, param_imm(TypeInt, 8 * f->virtual_index)); // vtable + n
+	add_cmd(Asm::INST_MOV, t1, deref_temp(t2, TypeVoid)); // vtable[n]
+	add_cmd(Asm::INST_CALL, ret, t1); // the actual call
+
+	fc_end(push_size, ret);
 }
 
 int SerializerX::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
@@ -60,6 +72,21 @@ void SerializerX::fc_end(int push_size, const SerialNodeParam &ret) {
 }
 
 void SerializerX::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	do_error("pointer call not working...");
+	/*call_used = true;
+	int push_size = fc_begin(nullptr, params, ret);
+
+	if (pointer.type == TypeFunctionCodeP) {
+		add_cmd(Asm::INST_MOV, p_rax, pointer);
+	} else {
+		//TypeFunctionP
+		add_cmd(Asm::INST_MOV, p_rax, pointer);
+		add_cmd(Asm::INST_ADD, p_rax, param_imm(TypeInt, offsetof(Function, address)));
+		add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
+	}
+	add_cmd(Asm::INST_CALL, p_rax); // the actual call
+
+	fc_end(push_size, params, ret);*/
 }
 
 void SerializerX::add_function_intro_params(Function *f) {

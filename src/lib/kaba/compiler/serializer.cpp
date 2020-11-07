@@ -90,13 +90,7 @@ const Class *get_subtype(const Class *t) {
 }
 
 SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *type) {
-	SerialNodeParam deref;
-	//deref = param;
-	deref.kind = NodeKind::DEREF_VAR_TEMP;
-	deref.p = param.p;
-	deref.type = type;
-	deref.shift = 0;
-	return deref;
+	return {NodeKind::DEREF_VAR_TEMP, param.p, -1, type, 0};
 }
 
 SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class *t) {
