@@ -90,6 +90,14 @@ int trafo_inst_float(int inst, const Class *t) {
 	return -1;
 }
 
+bool inst_is_arithmetic(int i) {
+	if ((i == Asm::INST_IMUL) or (i == Asm::INST_IDIV) or (i == Asm::INST_ADD) or (i == Asm::INST_SUB))
+		return true;
+	if ((i == Asm::INST_AND) or (i == Asm::INST_OR) or (i == Asm::INST_XOR))
+		return true;
+	return false;
+}
+
 void BackendAmd64::correct() {
 	cmd.next_cmd_target(0);
 	add_function_intro_params(cur_func);
@@ -139,7 +147,7 @@ void BackendAmd64::correct() {
 			insert_cmd(Asm::INST_MOV, p1, param_vreg(p1.type, reg, preg_x));
 			i ++;
 
-		} else if ((c.inst == Asm::INST_IMUL) or (c.inst == Asm::INST_IDIV) or (c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB)) {
+		} else if (inst_is_arithmetic(c.inst)) {
 			if (c.p[2].kind == NodeKind::NONE)
 				continue;
 			auto inst = c.inst;
