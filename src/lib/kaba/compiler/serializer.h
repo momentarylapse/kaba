@@ -43,6 +43,7 @@ struct SerialNodeParam {
 	const Class* get_type_save() const
 	{	return type ? type : TypeVoid;	}
 };
+extern const SerialNodeParam p_none;
 
 #define SERIAL_NODE_NUM_PARAMS	3
 
@@ -65,29 +66,51 @@ struct TempVar {
 	void use(int first, int last);
 };
 
+struct CommandList {
+	Array<SerialNode> cmd;
+	Array<VirtualRegister> virtual_reg;
+	Array<TempVar> temp_var;
+	int next_cmd_index = 0;
+	Serializer *ser = nullptr;
+
+	//void add_reg_channel(int reg, int first, int last);
+	int add_virtual_reg(int reg);
+	void set_virtual_reg(int v, int first, int last);
+	void use_virtual_reg(int v, int first, int last);
+	SerialNodeParam _add_temp(const Class *t);
+	void add_cmd(int cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
+	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
+	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
+	void add_cmd(int inst, const SerialNodeParam &p);
+	void add_cmd(int inst);
+	void set_cmd_param(SerialNode &c, int param_index, const SerialNodeParam &p);
+	void next_cmd_target(int index);
+	void remove_cmd(int index);
+	void remove_temp_var(int v);
+	void move_param(SerialNodeParam &p, int from, int to);
+	int add_marker(int m = -1);
+};
+
 
 class Serializer {
 public:
 	Serializer(Script *script, Asm::InstructionWithParamsList *list);
 	virtual ~Serializer();
 
-	Array<SerialNode> cmd;
+	CommandList cmd;
 	int num_markers;
 	Script *script;
 	SyntaxTree *syntax_tree;
 	Function *cur_func;
 	int cur_func_index;
 	bool call_used;
-	int next_cmd_index;
 
 	Array<int> map_reg_root;
-	Array<VirtualRegister> virtual_reg;
 
 	bool reg_root_used[max_reg];
 	Array<LoopData> loop;
 
 	int stack_offset, stack_max_size, max_push_size;
-	Array<TempVar> temp_var;
 
 	struct GlobalRef {
 		int label;
@@ -97,6 +120,8 @@ public:
 	int add_global_ref(void *p);
 
 	Asm::InstructionWithParamsList *list;
+
+	SerialNodeParam add_temp(const Class *t, bool add_constructor = true);
 
 	void do_error(const string &msg);
 	void do_error_link(const string &msg);
@@ -124,22 +149,6 @@ public:
 	void cmd_list_out(const string &stage, const string &comment, bool force=false);
 	void vr_list_out();
 
-	//void add_reg_channel(int reg, int first, int last);
-	int add_virtual_reg(int reg);
-	void set_virtual_reg(int v, int first, int last);
-	void use_virtual_reg(int v, int first, int last);
-	SerialNodeParam add_temp(const Class *t, bool add_constructor = true);
-	void add_cmd(int cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
-	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
-	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
-	void add_cmd(int inst, const SerialNodeParam &p);
-	void add_cmd(int inst);
-	void set_cmd_param(SerialNode &c, int param_index, const SerialNodeParam &p);
-	void next_cmd_target(int index);
-	void remove_cmd(int index);
-	void remove_temp_var(int v);
-	void move_param(SerialNodeParam &p, int from, int to);
-	int add_marker(int m = -1);
 
 
 	Array<SerialNodeParam> inserted_temp;
@@ -193,7 +202,6 @@ public:
 	SerialNodeParam p_rax;
 	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialNodeParam p_st0, p_st1, p_xmm0, p_xmm1;
-	static const SerialNodeParam p_none;
 
 
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);

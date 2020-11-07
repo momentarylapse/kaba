@@ -27,6 +27,8 @@ public:
 	BackendAmd64(Serializer *serializer);
 	virtual ~BackendAmd64();
 
+	void process(Function *f, int index);
+
 	void correct();
 
 	int fc_begin(Function *__f, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
@@ -40,27 +42,24 @@ public:
 	void map_referenced_temp_vars_to_stack();*/
 
 	Script *script;
-	Array<SerialNode> &cmd;
+	CommandList &cmd;
+	Function *cur_func;
+	int cur_func_index;
 	Asm::InstructionWithParamsList *list;
 	Serializer *serializer;
 
 
 	Array<int> map_reg_root;
-	//Array<VirtualRegister> virtual_reg;
 
-
-	int add_virtual_reg(int preg);
-	void set_virtual_reg(int v, int first, int last);
-	void use_virtual_reg(int v, int first, int last);
 
 	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
-	int find_unused_reg(int first, int last, int size, int exclude);
+	int find_unused_reg(int first, int last, int size, int exclude = -1);
+	int reg_resize(int reg, int size);
 
 	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
 	SerialNodeParam p_rax;
 	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialNodeParam p_st0, p_st1, p_xmm0, p_xmm1;
-	static const SerialNodeParam p_none;
 
 
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
@@ -71,9 +70,7 @@ public:
 
 	//static int get_reg(int root, int size);
 
-	void next_cmd_target(int index);
 	void insert_cmd(int inst, const SerialNodeParam &p1 = p_none, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
-	void remove_cmd(int index);
 	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
 
 
@@ -96,6 +93,10 @@ public:
 	void solve_deref_temp_local(int c, int np, bool is_local);
 
 	void assemble();
+
+	int stack_max_size;
+	int max_push_size;
+	int stack_offset;
 
 	void correct_return() {}
 	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);

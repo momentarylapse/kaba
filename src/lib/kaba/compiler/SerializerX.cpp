@@ -19,12 +19,6 @@ namespace kaba {
 
 SerializerX::SerializerX(Script *s, Asm::InstructionWithParamsList *l) : Serializer(s, l) {
 	//list->clear();
-	map_reg_root.add(0); // eax
-	map_reg_root.add(1); // ecx
-	map_reg_root.add(2); // edx
-//	MapRegRoot.add(3); // ebx
-//	MapRegRoot.add(6); // esi
-//	MapRegRoot.add(7); // edi
 }
 
 SerializerX::~SerializerX() {
@@ -42,7 +36,7 @@ void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &p
 	int push_size = fc_begin(f, params, ret);
 
 	SerialNodeParam fp = {NodeKind::FUNCTION, (int_p)f, -1, TypeFunctionP, 0};
-	add_cmd(Asm::INST_CALL, ret, fp); // the actual call
+	cmd.add_cmd(Asm::INST_CALL, ret, fp); // the actual call
 
 	fc_end(push_size, ret);
 }
@@ -55,17 +49,17 @@ void SerializerX::add_virtual_function_call(Function *f, const Array<SerialNodeP
 	auto t2 = add_temp(TypePointer);
 	auto t3 = add_temp(TypeFunctionCodeP);
 	SerialNodeParam fp = {NodeKind::FUNCTION, (int_p)f, -1, TypeFunctionP, 0}; // to tell the layout later...
-	add_cmd(Asm::INST_MOV, t1, params[0]); // self
-	add_cmd(Asm::INST_ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, 8 * f->virtual_index)); // vtable + n
-	add_cmd(Asm::INST_MOV, t3, deref_temp(t2, TypeFunctionCodeP)); // vtable[n]
-	add_cmd(Asm::INST_CALL, ret, t3, fp); // the actual call
+	cmd.add_cmd(Asm::INST_MOV, t1, params[0]); // self
+	cmd.add_cmd(Asm::INST_ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, 8 * f->virtual_index)); // vtable + n
+	cmd.add_cmd(Asm::INST_MOV, t3, deref_temp(t2, TypeFunctionCodeP)); // vtable[n]
+	cmd.add_cmd(Asm::INST_CALL, ret, t3, fp); // the actual call
 
 	fc_end(push_size, ret);
 }
 
 int SerializerX::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	for (SerialNodeParam &p: params)
-		add_cmd(Asm::INST_PUSH, p);
+		cmd.add_cmd(Asm::INST_PUSH, p);
 	return 0;
 }
 
@@ -78,14 +72,14 @@ void SerializerX::add_pointer_call(const SerialNodeParam &pointer, const Array<S
 	int push_size = fc_begin(nullptr, params, ret);
 
 	if (pointer.type == TypeFunctionCodeP) {
-		add_cmd(Asm::INST_MOV, p_rax, pointer);
+		cmd.add_cmd(Asm::INST_MOV, p_rax, pointer);
 	} else {
 		//TypeFunctionP
-		add_cmd(Asm::INST_MOV, p_rax, pointer);
-		add_cmd(Asm::INST_ADD, p_rax, param_imm(TypeInt, offsetof(Function, address)));
-		add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
+		cmd.add_cmd(Asm::INST_MOV, p_rax, pointer);
+		cmd.add_cmd(Asm::INST_ADD, p_rax, param_imm(TypeInt, offsetof(Function, address)));
+		cmd.add_cmd(Asm::INST_MOV, p_rax, p_deref_eax);
 	}
-	add_cmd(Asm::INST_CALL, p_rax); // the actual call
+	cmd.add_cmd(Asm::INST_CALL, p_rax); // the actual call
 
 	fc_end(push_size, params, ret);*/
 }
@@ -98,7 +92,7 @@ void SerializerX::add_function_intro_frame(int stack_alloc_size) {
 
 void SerializerX::add_function_outro(Function *f) {
 	if (f->literal_return_type == TypeVoid)
-		add_cmd(Asm::INST_RET);
+		cmd.add_cmd(Asm::INST_RET);
 }
 
 SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int index) {
@@ -172,33 +166,33 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 			int m_after_true = list->create_label("_IF_AFTER_" + i2s(num_markers ++));
 			auto cond = serialize_parameter(com->params[0].get(), block, index);
 			// cmp;  jz m;  -block-  m;
-			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
-			add_cmd(Asm::INST_JZ, param_marker32(m_after_true));
+			cmd.add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			cmd.add_cmd(Asm::INST_JZ, param_marker32(m_after_true));
 			serialize_block(com->params[1]->as_block());
-			add_marker(m_after_true);
+			cmd.add_marker(m_after_true);
 			}break;
 		case StatementID::IF_ELSE:{
 			int m_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_markers ++));
 			int m_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_markers ++));
 			auto cond = serialize_parameter(com->params[0].get(), block, index);
 			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
-			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
-			add_cmd(Asm::INST_JZ, param_marker32(m_after_true)); // jz ...
+			cmd.add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			cmd.add_cmd(Asm::INST_JZ, param_marker32(m_after_true)); // jz ...
 			serialize_block(com->params[1]->as_block());
-			add_cmd(Asm::INST_JMP, param_marker32(m_after_false));
-			add_marker(m_after_true);
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(m_after_false));
+			cmd.add_marker(m_after_true);
 			serialize_block(com->params[2]->as_block());
-			add_marker(m_after_false);
+			cmd.add_marker(m_after_false);
 			}break;
 		case StatementID::WHILE:{
 			int marker_before_while = list->create_label("_WHILE_BEFORE_" + i2s(num_markers ++));
 			int marker_after_while = list->create_label("_WHILE_AFTER_" + i2s(num_markers ++));
-			add_marker(marker_before_while);
+			cmd.add_marker(marker_before_while);
 			auto cond = serialize_parameter(com->params[0].get(), block, index);
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
-			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
-			add_cmd(Asm::INST_JZ, param_marker32(marker_after_while));
+			cmd.add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			cmd.add_cmd(Asm::INST_JZ, param_marker32(marker_after_while));
 
 			// body of loop
 			LoopData l = {marker_before_while, marker_after_while, block->level, index};
@@ -206,20 +200,20 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 			serialize_block(com->params[1]->as_block());
 			loop.pop();
 
-			add_cmd(Asm::INST_JMP, param_marker32(marker_before_while));
-			add_marker(marker_after_while);
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(marker_before_while));
+			cmd.add_marker(marker_after_while);
 			}break;
 		case StatementID::FOR_DIGEST:{
 			int marker_before_for = list->create_label("_FOR_BEFORE_" + i2s(num_markers ++));
 			int marker_after_for = list->create_label("_FOR_AFTER_" + i2s(num_markers ++));
 			int marker_continue = list->create_label("_FOR_CONTINUE_" + i2s(num_markers ++));
 			serialize_node(com->params[0].get(), block, index); // i=0
-			add_marker(marker_before_for);
+			cmd.add_marker(marker_before_for);
 			auto cond = serialize_parameter(com->params[1].get(), block, index);
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
-			add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
-			add_cmd(Asm::INST_JZ, param_marker32(marker_after_for));
+			cmd.add_cmd(Asm::INST_CMP, cond, param_imm(TypeBool, 0x0));
+			cmd.add_cmd(Asm::INST_JZ, param_marker32(marker_after_for));
 
 			// body of loop
 			LoopData l = {marker_continue, marker_after_for, block->level, index};
@@ -228,26 +222,26 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 			loop.pop();
 
 			// "i++"
-			add_marker(marker_continue);
+			cmd.add_marker(marker_continue);
 			serialize_node(com->params[3].get(), block, index);
 
-			add_cmd(Asm::INST_JMP, param_marker32(marker_before_for));
-			add_marker(marker_after_for);
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(marker_before_for));
+			cmd.add_marker(marker_after_for);
 			}break;
 		case StatementID::BREAK:
-			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_break));
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_break));
 			break;
 		case StatementID::CONTINUE:
-			add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_continue));
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(loop.back().marker_continue));
 			break;
 		case StatementID::RETURN:
 			if (com->params.num > 0) {
 				auto p = serialize_parameter(com->params[0].get(), block, index);
 				insert_destructors_block(block, true);
-				add_cmd(Asm::INST_RET, p);
+				cmd.add_cmd(Asm::INST_RET, p);
 			} else {
 				insert_destructors_block(block, true);
-				add_cmd(Asm::INST_RET);
+				cmd.add_cmd(Asm::INST_RET);
 			}
 
 			break;
@@ -280,20 +274,20 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 
 			// try
 			serialize_block(com->params[0]->as_block());
-			add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
+			cmd.add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
 
 			// except
 			for (int i=2; i<com->params.num; i+=2) {
 				serialize_block(com->params[i]->as_block());
 				if (i < com->params.num-1)
-					add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
+					cmd.add_cmd(Asm::INST_JMP, param_marker32(marker_finish));
 			}
 
-			add_marker(marker_finish);
+			cmd.add_marker(marker_finish);
 			}break;
 		case StatementID::ASM:
 			//AddAsmBlock(list, script);
-			add_cmd(INST_ASM);
+			cmd.add_cmd(INST_ASM);
 			break;
 		case StatementID::PASS:
 			break;
@@ -306,131 +300,131 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 	auto index = com->as_func()->inline_no;
 	switch(index){
 /*		case InlineID::INT_TO_FLOAT:
-			add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			cmd.add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			break;
 		case InlineID::FLOAT_TO_INT:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
 			}break;
 		case InlineID::FLOAT_TO_FLOAT64:
-			add_cmd(Asm::INST_CVTSS2SD, p_xmm0, param[0]);
-			add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
+			cmd.add_cmd(Asm::INST_CVTSS2SD, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_MOVSD, ret, p_xmm0);
 			break;
 		case InlineID::FLOAT64_TO_FLOAT:
-			add_cmd(Asm::INST_CVTSD2SS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+			cmd.add_cmd(Asm::INST_CVTSD2SS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
 			break;
 		case InlineID::INT_TO_CHAR:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeChar, veax, Asm::REG_AL));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeChar, veax, Asm::REG_AL));
 			}break;
 		case InlineID::CHAR_TO_INT:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param_imm(TypeInt, 0x0));
-			add_cmd(Asm::INST_MOV, param_vreg(TypeChar, veax, Asm::REG_AL), param[0]);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param_imm(TypeInt, 0x0));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeChar, veax, Asm::REG_AL), param[0]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, veax));
 			}break;
 		case InlineID::POINTER_TO_BOOL:
-			add_cmd(Asm::INST_CMP, param[0], param_imm(TypePointer, 0));
-			add_cmd(Asm::INST_SETNZ, ret);
+			cmd.add_cmd(Asm::INST_CMP, param[0], param_imm(TypePointer, 0));
+			cmd.add_cmd(Asm::INST_SETNZ, ret);
 			break;*/
 		case InlineID::RECT_SET:
 		case InlineID::VECTOR_SET:
 		case InlineID::COMPLEX_SET:
 		case InlineID::COLOR_SET:
 			for (int i=0; i<ret.type->size/4; i++)
-				add_cmd(Asm::INST_MOV, param_shift(ret, i*4, TypeFloat32), param[i]);
+				cmd.add_cmd(Asm::INST_MOV, param_shift(ret, i*4, TypeFloat32), param[i]);
 			break;
 		case InlineID::INT_ASSIGN:
 		case InlineID::INT64_ASSIGN:
 		case InlineID::FLOAT_ASSIGN:
 		case InlineID::FLOAT64_ASSIGN:
 		case InlineID::POINTER_ASSIGN:
-			add_cmd(Asm::INST_MOV, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
 		case InlineID::SHARED_POINTER_INIT:
-			add_cmd(Asm::INST_MOV, param[0], param_imm(TypeInt, 0));
+			cmd.add_cmd(Asm::INST_MOV, param[0], param_imm(TypeInt, 0));
 			break;
 		case InlineID::CHAR_ASSIGN:
 		case InlineID::BOOL_ASSIGN:
-			add_cmd(Asm::INST_MOV, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
 // chunk...
 		case InlineID::CHUNK_ASSIGN:
 			for (int i=0; i<com->params[0]->type->size/4; i++)
-				add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
+				cmd.add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
 			for (int i=4*(com->params[0]->type->size/4); i<com->params[0]->type->size; i++)
-				add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
+				cmd.add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
 			break;
 /*		case InlineID::CHUNK_EQUAL:{
 			int val = add_virtual_reg(Asm::REG_AL);
-			add_cmd(Asm::INST_CMP, param_shift(param[0], 0, TypeInt), param_shift(param[1], 0, TypeInt));
-			add_cmd(Asm::INST_SETZ, ret);
+			cmd.add_cmd(Asm::INST_CMP, param_shift(param[0], 0, TypeInt), param_shift(param[1], 0, TypeInt));
+			cmd.add_cmd(Asm::INST_SETZ, ret);
 			for (int i=1; i<com->params[0]->type->size/4; i++) {
-				add_cmd(Asm::INST_CMP, param_shift(param[0], i*4, TypeInt), param_shift(param[1], i*4, TypeInt));
-				add_cmd(Asm::INST_SETZ, param_vreg(TypeBool, val));
-				add_cmd(Asm::INST_AND, param_vreg(TypeBool, val));
+				cmd.add_cmd(Asm::INST_CMP, param_shift(param[0], i*4, TypeInt), param_shift(param[1], i*4, TypeInt));
+				cmd.add_cmd(Asm::INST_SETZ, param_vreg(TypeBool, val));
+				cmd.add_cmd(Asm::INST_AND, param_vreg(TypeBool, val));
 			}
 			}break;*/
 // int
 		case InlineID::INT_ADD_ASSIGN:
 		case InlineID::INT64_ADD_ASSIGN:
-			add_cmd(Asm::INST_ADD, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_ADD, param[0], param[1]);
 			break;
 		case InlineID::INT_SUBTRACT_ASSIGN:
 		case InlineID::INT64_SUBTRACT_ASSIGN:
-			add_cmd(Asm::INST_SUB, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SUB, param[0], param[1]);
 			break;
 		case InlineID::INT_MULTIPLY_ASSIGN:
 		case InlineID::INT64_MULTIPLY_ASSIGN:
-			add_cmd(Asm::INST_IMUL, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_IMUL, param[0], param[1]);
 			break;
 		case InlineID::INT_DIVIDE_ASSIGN:
 		case InlineID::INT64_DIVIDE_ASSIGN:
-			add_cmd(Asm::INST_IDIV, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_IDIV, param[0], param[1]);
 			break;
 		case InlineID::INT_ADD:
 		case InlineID::INT64_ADD:
-			add_cmd(Asm::INST_ADD, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_ADD, ret, param[0], param[1]);
 			break;
 		case InlineID::INT64_ADD_INT:{
 			auto t = add_temp(TypeInt64, false);
-			add_cmd(Asm::INST_MOVSX, t, param[1]);
-			add_cmd(Asm::INST_ADD, ret, param[0], t);
+			cmd.add_cmd(Asm::INST_MOVSX, t, param[1]);
+			cmd.add_cmd(Asm::INST_ADD, ret, param[0], t);
 			}break;
 		case InlineID::INT_SUBTRACT:
 		case InlineID::INT64_SUBTRACT:
-			add_cmd(Asm::INST_SUB, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SUB, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_MULTIPLY:
 		case InlineID::INT64_MULTIPLY:
-			add_cmd(Asm::INST_IMUL, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_IMUL, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_DIVIDE:
 		case InlineID::INT64_DIVIDE:
-			add_cmd(Asm::INST_IDIV, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_IDIV, ret, param[0], param[1]);
 			break;
 /*		case InlineID::INT_MODULO:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
 			int vedx = add_virtual_reg(Asm::REG_EDX);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt, vedx), param_vreg(TypeInt, veax));
-			add_cmd(Asm::INST_SAR, param_vreg(TypeInt, vedx), param_imm(TypeChar, 0x1f));
-			add_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), param[1]);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vedx));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, vedx), param_vreg(TypeInt, veax));
+			cmd.add_cmd(Asm::INST_SAR, param_vreg(TypeInt, vedx), param_imm(TypeChar, 0x1f));
+			cmd.add_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vedx));
 			}break;
 		case InlineID::INT64_MODULO:{
 			int vrax = add_virtual_reg(Asm::REG_RAX);
 			int vrdx = add_virtual_reg(Asm::REG_RDX);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrdx), param_vreg(TypeInt64, vrax));
-			add_cmd(Asm::INST_SAR, param_vreg(TypeInt64, vrdx), param_imm(TypeChar, 0x1f));
-			add_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), param[1]);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt64, vrdx));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrdx), param_vreg(TypeInt64, vrax));
+			cmd.add_cmd(Asm::INST_SAR, param_vreg(TypeInt64, vrdx), param_imm(TypeChar, 0x1f));
+			cmd.add_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt64, vrdx));
 			}break;*/
 		case InlineID::INT_EQUAL:
 		case InlineID::INT_NOT_EQUAL:
@@ -446,108 +440,108 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::INT64_SMALLER_EQUAL:
 		case InlineID::POINTER_EQUAL:
 		case InlineID::POINTER_NOT_EQUAL:
-			add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
 			if (index == InlineID::INT_EQUAL)
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if (index == InlineID::INT_NOT_EQUAL)
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == InlineID::INT_GREATER)
-				add_cmd(Asm::INST_SETNLE, ret);
+				cmd.add_cmd(Asm::INST_SETNLE, ret);
 			else if (index == InlineID::INT_GREATER_EQUAL)
-				add_cmd(Asm::INST_SETNL, ret);
+				cmd.add_cmd(Asm::INST_SETNL, ret);
 			else if (index == InlineID::INT_SMALLER)
-				add_cmd(Asm::INST_SETL, ret);
+				cmd.add_cmd(Asm::INST_SETL, ret);
 			else if (index == InlineID::INT_SMALLER_EQUAL)
-				add_cmd(Asm::INST_SETLE, ret);
+				cmd.add_cmd(Asm::INST_SETLE, ret);
 			else if (index == InlineID::INT64_EQUAL)
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if (index == InlineID::INT64_NOT_EQUAL)
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == InlineID::INT64_GREATER)
-				add_cmd(Asm::INST_SETNLE, ret);
+				cmd.add_cmd(Asm::INST_SETNLE, ret);
 			else if (index == InlineID::INT64_GREATER_EQUAL)
-				add_cmd(Asm::INST_SETNL, ret);
+				cmd.add_cmd(Asm::INST_SETNL, ret);
 			else if (index == InlineID::INT64_SMALLER)
-				add_cmd(Asm::INST_SETL, ret);
+				cmd.add_cmd(Asm::INST_SETL, ret);
 			else if (index == InlineID::INT64_SMALLER_EQUAL)
-				add_cmd(Asm::INST_SETLE, ret);
+				cmd.add_cmd(Asm::INST_SETLE, ret);
 			else if (index == InlineID::POINTER_EQUAL)
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if (index == InlineID::POINTER_NOT_EQUAL)
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			break;
 		case InlineID::INT_AND:
 		case InlineID::INT64_AND:
-			add_cmd(Asm::INST_AND, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_AND, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_OR:
 		case InlineID::INT64_OR:
-			add_cmd(Asm::INST_OR, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_OR, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_SHIFT_RIGHT:
 		case InlineID::INT64_SHIFT_RIGHT:
-			add_cmd(Asm::INST_SHR, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SHR, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_SHIFT_LEFT:
 		case InlineID::INT64_SHIFT_LEFT:
-			add_cmd(Asm::INST_SHL, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SHL, ret, param[0], param[1]);
 			break;
 		case InlineID::INT_NEGATE:
 		case InlineID::INT64_NEGATE:
-			add_cmd(Asm::INST_SUB, ret, param_imm(TypeInt, 0x0), param[0]);
+			cmd.add_cmd(Asm::INST_SUB, ret, param_imm(TypeInt, 0x0), param[0]);
 			break;
 		case InlineID::INT_INCREASE:
-			add_cmd(Asm::INST_ADD, param[0], param_imm(TypeInt, 0x1));
+			cmd.add_cmd(Asm::INST_ADD, param[0], param_imm(TypeInt, 0x1));
 			break;
 		case InlineID::INT64_INCREASE:
-			add_cmd(Asm::INST_ADD, param[0], param_imm(TypeInt64, 0x1));
+			cmd.add_cmd(Asm::INST_ADD, param[0], param_imm(TypeInt64, 0x1));
 			break;
 		case InlineID::INT_DECREASE:
-			add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt, 0x1));
+			cmd.add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt, 0x1));
 			break;
 		case InlineID::INT64_DECREASE:
-			add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt64, 0x1));
+			cmd.add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt64, 0x1));
 			break;
 /*		case InlineID::INT64_TO_INT:{
 			int vrax = add_virtual_reg(Asm::REG_RAX);
-			add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
-			add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vrax, Asm::REG_EAX));
+			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vrax, Asm::REG_EAX));
 			}break;*/
 		case InlineID::INT_TO_INT64:
-			add_cmd(Asm::INST_MOVSX, ret, param[0]);
+			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
 			break;
 // float
 		case InlineID::FLOAT_ADD_ASSIGN:
 		case InlineID::FLOAT64_ADD_ASSIGN:
-			add_cmd(Asm::INST_FADD, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FADD, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_SUBTRACT_ASSIGN:
 		case InlineID::FLOAT64_SUBTRACT_ASSIGN:
-			add_cmd(Asm::INST_FSUB, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FSUB, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_MULTIPLY_ASSIGN:
 		case InlineID::FLOAT64_MULTIPLY_ASSIGN:
-			add_cmd(Asm::INST_FMUL, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FMUL, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_DIVIDE_ASSIGN:
 		case InlineID::FLOAT64_DIVIDE_ASSIGN:
-			add_cmd(Asm::INST_FDIV, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FDIV, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_ADD:
 		case InlineID::FLOAT64_ADD:
-			add_cmd(Asm::INST_FADD, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FADD, ret, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_SUBTARCT:
 		case InlineID::FLOAT64_SUBTRACT:
-			add_cmd(Asm::INST_FSUB, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FSUB, ret, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_MULTIPLY:
 		case InlineID::FLOAT64_MULTIPLY:
-			add_cmd(Asm::INST_FMUL, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FMUL, ret, param[0], param[1]);
 			break;
 		case InlineID::FLOAT_DIVIDE:
 		case InlineID::FLOAT64_DIVIDE:
-			add_cmd(Asm::INST_FDIV, ret, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_FDIV, ret, param[0], param[1]);
 			break;
 /*		case InlineID::FLOAT_EQUAL:
 		case InlineID::FLOAT_NOT_EQUAL:
@@ -555,20 +549,20 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::FLOAT_GREATER_EQUAL:
 		case InlineID::FLOAT_SMALLER:
 		case InlineID::FLOAT_SMALLER_EQUAL:
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_UCOMISS, p_xmm0, param[1]);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_UCOMISS, p_xmm0, param[1]);
 			if (index == InlineID::FLOAT_EQUAL)
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if (index == InlineID::FLOAT_NOT_EQUAL)
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == InlineID::FLOAT_GREATER)
-				add_cmd(Asm::INST_SETNBE, ret);
+				cmd.add_cmd(Asm::INST_SETNBE, ret);
 			else if (index == InlineID::FLOAT_GREATER_EQUAL)
-				add_cmd(Asm::INST_SETNB, ret);
+				cmd.add_cmd(Asm::INST_SETNB, ret);
 			else if (index == InlineID::FLOAT_SMALLER)
-				add_cmd(Asm::INST_SETB, ret);
+				cmd.add_cmd(Asm::INST_SETB, ret);
 			else if (index == InlineID::FLOAT_SMALLER_EQUAL)
-				add_cmd(Asm::INST_SETBE, ret);
+				cmd.add_cmd(Asm::INST_SETBE, ret);
 			break;
 		case InlineID::FLOAT64_EQUAL:
 		case InlineID::FLOAT64_NOT_EQUAL:
@@ -576,75 +570,75 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::FLOAT64_GREATER_EQUAL:
 		case InlineID::FLOAT64_SMALLER:
 		case InlineID::FLOAT64_SMALLER_EQUAL:
-			add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
-			add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
+			cmd.add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
 			if (index == InlineID::FLOAT64_EQUAL)
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if (index == InlineID::FLOAT64_NOT_EQUAL)
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == InlineID::FLOAT64_GREATER)
-				add_cmd(Asm::INST_SETNBE, ret);
+				cmd.add_cmd(Asm::INST_SETNBE, ret);
 			else if (index == InlineID::FLOAT64_GREATER_EQUAL)
-				add_cmd(Asm::INST_SETNB, ret);
+				cmd.add_cmd(Asm::INST_SETNB, ret);
 			else if (index == InlineID::FLOAT64_SMALLER)
-				add_cmd(Asm::INST_SETB, ret);
+				cmd.add_cmd(Asm::INST_SETB, ret);
 			else if (index == InlineID::FLOAT64_SMALLER_EQUAL)
-				add_cmd(Asm::INST_SETBE, ret);
+				cmd.add_cmd(Asm::INST_SETBE, ret);
 			break;*/
 
 		case InlineID::FLOAT_NEGATE:
-			add_cmd(Asm::INST_XOR, ret, param[0], param_imm(TypeInt, 0x80000000));
+			cmd.add_cmd(Asm::INST_XOR, ret, param[0], param_imm(TypeInt, 0x80000000));
 			break;
 // complex
 		case InlineID::COMPLEX_ADD_ASSIGN:
-			add_cmd(Asm::INST_FADD, param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FADD, param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FADD, param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FADD, param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
 			break;
 		case InlineID::COMPLEX_SUBTARCT_ASSIGN:
-			add_cmd(Asm::INST_FSUB, param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSUB, param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FSUB, param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FSUB, param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
 			break;
 		case InlineID::COMPLEX_ADD:
-			add_cmd(Asm::INST_FADD, param_shift(ret, 0, TypeFloat32), param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FADD, param_shift(ret, 4, TypeFloat32), param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FADD, param_shift(ret, 0, TypeFloat32), param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FADD, param_shift(ret, 4, TypeFloat32), param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
 			break;
 		case InlineID::COMPLEX_SUBTRACT:
-			add_cmd(Asm::INST_FSUB, param_shift(ret, 0, TypeFloat32), param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_FSUB, param_shift(ret, 4, TypeFloat32), param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FSUB, param_shift(ret, 0, TypeFloat32), param_shift(param[0], 0, TypeFloat32), param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FSUB, param_shift(ret, 4, TypeFloat32), param_shift(param[0], 4, TypeFloat32), param_shift(param[1], 4, TypeFloat32));
 			break;
 /*		case InlineID::COMPLEX_MULTIPLY:
 			// xmm1 = a.y * b.y
-			add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 4, TypeFloat32));
 			// r.x = a.x * b.x - xmm1
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_SUBSS, p_xmm0, p_xmm1);
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_SUBSS, p_xmm0, p_xmm1);
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
 			// xmm1 = a.y * b.x
-			add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(param[0], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm1, param_shift(param[1], 0, TypeFloat32));
 			// r.y = a.x * b.y + xmm1
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_ADDSS, p_xmm0, p_xmm1);
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_ADDSS, p_xmm0, p_xmm1);
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case InlineID::COMPLEX_MULTIPLY_FC:
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param_shift(param[1], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 		case InlineID::COMPLEX_MULTIPLY_CF:
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
-			add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
-			add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
-			add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 0, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 0, TypeFloat32), p_xmm0);
+			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param_shift(param[0], 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_MULSS, p_xmm0, param[1]);
+			cmd.add_cmd(Asm::INST_MOVSS, param_shift(ret, 4, TypeFloat32), p_xmm0);
 			break;
 // bool/char
 		case InlineID::CHAR_EQUAL:
@@ -655,107 +649,107 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::CHAR_GREATER_EQUAL:
 		case InlineID::CHAR_SMALLER:
 		case InlineID::CHAR_SMALLER_EQUAL:
-			add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
 			if ((index == InlineID::CHAR_EQUAL) or (index == InlineID::BOOL_EQUAL))
-				add_cmd(Asm::INST_SETZ, ret);
+				cmd.add_cmd(Asm::INST_SETZ, ret);
 			else if ((index == InlineID::CHAR_NOT_EQUAL) or (index == InlineID::BOOL_NOT_EQUAL))
-				add_cmd(Asm::INST_SETNZ, ret);
+				cmd.add_cmd(Asm::INST_SETNZ, ret);
 			else if (index == InlineID::CHAR_GREATER)
-				add_cmd(Asm::INST_SETNLE, ret);
+				cmd.add_cmd(Asm::INST_SETNLE, ret);
 			else if (index == InlineID::CHAR_GREATER_EQUAL)
-				add_cmd(Asm::INST_SETNL, ret);
+				cmd.add_cmd(Asm::INST_SETNL, ret);
 			else if (index == InlineID::CHAR_SMALLER)
-				add_cmd(Asm::INST_SETL, ret);
+				cmd.add_cmd(Asm::INST_SETL, ret);
 			else if (index == InlineID::CHAR_SMALLER_EQUAL)
-				add_cmd(Asm::INST_SETLE, ret);
+				cmd.add_cmd(Asm::INST_SETLE, ret);
 			break;
 		case InlineID::BOOL_AND:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_AND, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_AND, ret, param[1]);
 			break;
 		case InlineID::BOOL_OR:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_OR, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_OR, ret, param[1]);
 			break;
 		case InlineID::CHAR_ADD_ASSIGN:
-			add_cmd(Asm::INST_ADD, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_ADD, param[0], param[1]);
 			break;
 		case InlineID::CHAR_SUBTRACT_ASSIGN:
-			add_cmd(Asm::INST_SUB, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SUB, param[0], param[1]);
 			break;
 		case InlineID::CHAR_ADD:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_ADD, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_ADD, ret, param[1]);
 			break;
 		case InlineID::CHAR_SUBTRACT:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_SUB, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_SUB, ret, param[1]);
 			break;
 		case InlineID::CHAR_AND:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_AND, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_AND, ret, param[1]);
 			break;
 		case InlineID::CHAR_OR:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_OR, ret, param[1]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_OR, ret, param[1]);
 			break;
 		case InlineID::BOOL_NEGATE:
-			add_cmd(Asm::INST_MOV, ret, param[0]);
-			add_cmd(Asm::INST_XOR, ret, param_imm(TypeBool, 0x1));
+			cmd.add_cmd(Asm::INST_MOV, ret, param[0]);
+			cmd.add_cmd(Asm::INST_XOR, ret, param_imm(TypeBool, 0x1));
 			break;
 		case InlineID::CHAR_NEGATE:
-			add_cmd(Asm::INST_MOV, ret, param_imm(TypeChar, 0x0));
-			add_cmd(Asm::INST_SUB, ret, param[0]);
+			cmd.add_cmd(Asm::INST_MOV, ret, param_imm(TypeChar, 0x0));
+			cmd.add_cmd(Asm::INST_SUB, ret, param[0]);
 			break;*/
 // vector
 		case InlineID::VECTOR_ADD_ASSIGN:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_ASSIGN:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_DIVIDE_ASSIGN:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_SUBTARCT_ASSIGN:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_ADD:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_SUBTRACT:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_VF:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32), param[1]);
+				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32), param[1]);
 			break;
 		case InlineID::VECTOR_MULTIPLY_FV:
 			for (int i=0;i<3;i++)
-				add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param[0], param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param[0], param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_VV:{
-			add_cmd(Asm::INST_FMUL, ret, param_shift(param[0], 0 * 4, TypeFloat32), param_shift(param[1], 0 * 4, TypeFloat32));
+			cmd.add_cmd(Asm::INST_FMUL, ret, param_shift(param[0], 0 * 4, TypeFloat32), param_shift(param[1], 0 * 4, TypeFloat32));
 			auto t = add_temp(TypeFloat32, false);
 			for (int i=1;i<3;i++) {
-				add_cmd(Asm::INST_FMUL, t, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
-				add_cmd(Asm::INST_FADD, ret, t);
+				cmd.add_cmd(Asm::INST_FMUL, t, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FADD, ret, t);
 			}
 			}break;
 		case InlineID::VECTOR_DIVIDE_VF:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param[1]);
+				cmd.add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param[1]);
 			}
 			break;
 		case InlineID::VECTOR_NEGATE:
 			for (int i=0;i<3;i++){
-				add_cmd(Asm::INST_XOR, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_imm(TypeInt, 0x80000000));
+				cmd.add_cmd(Asm::INST_XOR, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param_imm(TypeInt, 0x80000000));
 			}
 			break;
 		default:
