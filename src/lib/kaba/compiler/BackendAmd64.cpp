@@ -1087,4 +1087,141 @@ void BackendAmd64::scan_temp_var_usage() {
 }
 
 
+
+
+
+Asm::InstructionParam BackendAmd64::get_param(int inst, SerialNodeParam &p) {
+	if (p.kind == NodeKind::NONE) {
+		return Asm::param_none;
+	} else if (p.kind == NodeKind::MARKER) {
+		return Asm::param_label(p.p, p.type->size);
+	} else if (p.kind == NodeKind::DEREF_MARKER) {
+		return Asm::param_deref_label(p.p, p.type->size);
+	} else if (p.kind == NodeKind::REGISTER) {
+		if (p.shift > 0)
+			script->do_error_internal("get_param: reg + shift");
+		return Asm::param_reg(p.p);
+		//param_size = p.type->size;
+	} else if (p.kind == NodeKind::DEREF_REGISTER) {
+		if (p.shift != 0)
+			return Asm::param_deref_reg_shift(p.p, p.shift, p.type->size);
+		else
+			return Asm::param_deref_reg(p.p, p.type->size);
+	} else if (p.kind == NodeKind::MEMORY) {
+		int size = p.type->size;
+		// compiler self-test
+		if ((size != 1) and (size != 2) and (size != 4) and (size != 8))
+			script->do_error_internal("get_param: evil global of type " + p.type->name);
+		return Asm::param_deref_imm(p.p + p.shift, size);
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		if (config.instruction_set == Asm::InstructionSet::ARM) {
+			return Asm::param_deref_reg_shift(Asm::REG_R13, p.p + p.shift, p.type->size);
+		} else {
+			return Asm::param_deref_reg_shift(Asm::REG_EBP, p.p + p.shift, p.type->size);
+		}
+		//if ((param_size != 1) and (param_size != 2) and (param_size != 4) and (param_size != 8))
+		//	param_size = -1; // lea doesn't need size...
+			//s->DoErrorInternal("get_param: evil local of type " + p.type->name);
+	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		bool imm_allowed = Asm::get_instruction_allow_const(inst);
+		if ((imm_allowed) and (p.type->is_pointer())) {
+			return Asm::param_imm(*(int_p*)(p.p + p.shift), p.type->size);
+		} else if ((p.type->size <= 4) and (imm_allowed)) {
+			return Asm::param_imm(*(int*)(p.p + p.shift), p.type->size);
+		} else {
+			return Asm::param_deref_imm(p.p + p.shift, p.type->size);
+		}
+	} else if (p.kind == NodeKind::IMMEDIATE) {
+		if (p.shift > 0)
+			script->do_error_internal("get_param: immediate + shift");
+		return Asm::param_imm(p.p, p.type->size);
+	} else
+		script->do_error_internal("get_param: unexpected param..." + kind2str(p.kind));
+	return Asm::param_none;
+}
+
+
+void BackendAmd64::assemble_cmd(SerialNode &c) {
+	// translate parameters
+	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
+	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
+
+	// assemble instruction
+	//list->current_line = c.
+	list->add2(c.inst, p1, p2);
+}
+
+void BackendAmd64::assemble_cmd_arm(SerialNode &c) {
+	// translate parameters
+	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
+	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
+	Asm::InstructionParam p3 = get_param(c.inst, c.p[2]);
+
+	// assemble instruction
+	//list->current_line = c.
+	list->add_arm(c.cond, c.inst, p1, p2, p3);
+}
+
+static void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s) {
+	//msg_write(".------------------------------- asm");
+	SyntaxTree *ps = s->syntax;
+	if (ps->asm_blocks.num == 0)
+		s->do_error("asm block mismatch");
+	ps->asm_meta_info->line_offset = ps->asm_blocks[0].line;
+	list->append_from_source(ps->asm_blocks[0].block);
+	ps->asm_blocks.erase(0);
+}
+
+
+
+void BackendAmd64::add_function_intro_frame(int stack_alloc_size) {
+	int_p reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
+	int_p reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
+	//int s = config.pointer_size;
+	list->add2(Asm::INST_PUSH, Asm::param_reg(reg_bp));
+	list->add2(Asm::INST_MOV, Asm::param_reg(reg_bp), Asm::param_reg(reg_sp));
+	if (stack_alloc_size > 127){
+		list->add2(Asm::INST_SUB, Asm::param_reg(reg_sp), Asm::param_imm(stack_alloc_size, Asm::SIZE_32));
+	}else if (stack_alloc_size > 0){
+		list->add2(Asm::INST_SUB, Asm::param_reg(reg_sp), Asm::param_imm(stack_alloc_size, Asm::SIZE_8));
+	}
+}
+// convert    SerialNode[] cmd   into    Asm::Instruction..List list
+void BackendAmd64::assemble() {
+	// intro + allocate stack memory
+	if (config.instruction_set != Asm::InstructionSet::ARM)
+		serializer->stack_max_size += serializer->max_push_size;
+	serializer->stack_max_size = mem_align(serializer->stack_max_size, config.stack_frame_align);
+
+	if (config.instruction_set == Asm::InstructionSet::ARM) {
+		foreachi(GlobalRef &g, global_refs, i) {
+			g.label = list->add_label(format("_kaba_ref_%d_%d", serializer->cur_func_index, i));
+			list->add2(Asm::INST_DD, Asm::param_imm((int_p)g.p, 4));
+		}
+	}
+
+	list->insert_label(serializer->cur_func->_label);
+
+	if (!config.no_function_frame)
+		add_function_intro_frame(serializer->stack_max_size); // param intro later...
+	correct_return();
+
+	for (int i=0;i<cmd.num;i++) {
+
+		if (cmd[i].inst == INST_MARKER) {
+			list->insert_label(cmd[i].p[0].p);
+		} else if (cmd[i].inst == INST_ASM) {
+			AddAsmBlock(list, script);
+		} else {
+
+			if (config.instruction_set == Asm::InstructionSet::ARM)
+				assemble_cmd_arm(cmd[i]);
+			else
+				assemble_cmd(cmd[i]);
+		}
+	}
+	list->add2(Asm::INST_ALIGN_OPCODE);
+}
+
+
 }

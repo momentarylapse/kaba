@@ -1966,32 +1966,15 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		auto be = new BackendAmd64(x);
 		be->correct();
 
-		Serializer *d = CreateSerializer(this, list);
-
 		try {
 			be->do_mapping();
-			d->cur_func_index = index;
-			//d->serialize_function(f);
-			d->cur_func = f;
-			d->cmd = x->cmd;
-			d->temp_var = x->temp_var;
-			d->virtual_reg = x->virtual_reg;
-			d->inserted_temp = x->inserted_temp;
-			d->loop = x->loop;
-			d->map_reg_root = x->map_reg_root;
-
-			d->stack_offset = x->stack_offset;
-			d->stack_max_size = x->stack_max_size;
-			d->max_push_size = x->max_push_size;
-			d->call_used = x->call_used;
-			d->assemble();
+			be->assemble();
 		} catch (Exception &e) {
 			throw e;
 		} catch (Asm::Exception &e) {
 			throw Exception(e, this, f);
 		}
-		functions_to_link.append(d->list->wanted_label);
-		delete d;
+		functions_to_link.append(be->list->wanted_label);
 		delete be;
 		delete x;
 
