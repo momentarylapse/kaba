@@ -798,6 +798,7 @@ CompilerConfiguration::CompilerConfiguration() {
 
 	allow_simplification = true;
 	allow_registers = true;
+	allow_simplify_consts = true;
 	stack_mem_align = 8;
 	function_align = 2 * pointer_size;
 	stack_frame_align = 2 * pointer_size;

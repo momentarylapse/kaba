@@ -409,6 +409,7 @@ public:
 
 	bool allow_simplification;
 	bool allow_registers;
+	bool allow_simplify_consts;
 
 	Path directory;
 	bool verbose;

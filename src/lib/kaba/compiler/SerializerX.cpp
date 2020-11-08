@@ -299,11 +299,13 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
 	auto index = com->as_func()->inline_no;
 	switch (index) {
-/*		case InlineID::INT_TO_FLOAT:
-			cmd.add_cmd(Asm::INST_CVTSI2SS, p_xmm0, param[0]);
-			cmd.add_cmd(Asm::INST_MOVSS, ret, p_xmm0);
+		case InlineID::INT_TO_FLOAT:
+			cmd.add_cmd(Asm::INST_CVTSI2SS, ret, param[0]);
 			break;
-		case InlineID::FLOAT_TO_INT:{
+		case InlineID::FLOAT_TO_INT:
+			cmd.add_cmd(Asm::INST_CVTTSS2SI, ret, param[0]);
+			break;
+/*		case InlineID::FLOAT_TO_INT:{
 			int veax = add_virtual_reg(Asm::REG_EAX);
 			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
 			cmd.add_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
@@ -420,48 +422,36 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt64, vrdx));
 			}break;*/
 		case InlineID::INT_EQUAL:
-		case InlineID::INT_NOT_EQUAL:
-		case InlineID::INT_GREATER:
-		case InlineID::INT_GREATER_EQUAL:
-		case InlineID::INT_SMALLER:
-		case InlineID::INT_SMALLER_EQUAL:
 		case InlineID::INT64_EQUAL:
-		case InlineID::INT64_NOT_EQUAL:
-		case InlineID::INT64_GREATER:
-		case InlineID::INT64_GREATER_EQUAL:
-		case InlineID::INT64_SMALLER:
-		case InlineID::INT64_SMALLER_EQUAL:
 		case InlineID::POINTER_EQUAL:
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETZ, ret);
+			break;
+		case InlineID::INT_NOT_EQUAL:
+		case InlineID::INT64_NOT_EQUAL:
 		case InlineID::POINTER_NOT_EQUAL:
 			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
-			if (index == InlineID::INT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETZ, ret);
-			else if (index == InlineID::INT_NOT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNZ, ret);
-			else if (index == InlineID::INT_GREATER)
-				cmd.add_cmd(Asm::INST_SETNLE, ret);
-			else if (index == InlineID::INT_GREATER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNL, ret);
-			else if (index == InlineID::INT_SMALLER)
-				cmd.add_cmd(Asm::INST_SETL, ret);
-			else if (index == InlineID::INT_SMALLER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETLE, ret);
-			else if (index == InlineID::INT64_EQUAL)
-				cmd.add_cmd(Asm::INST_SETZ, ret);
-			else if (index == InlineID::INT64_NOT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNZ, ret);
-			else if (index == InlineID::INT64_GREATER)
-				cmd.add_cmd(Asm::INST_SETNLE, ret);
-			else if (index == InlineID::INT64_GREATER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNL, ret);
-			else if (index == InlineID::INT64_SMALLER)
-				cmd.add_cmd(Asm::INST_SETL, ret);
-			else if (index == InlineID::INT64_SMALLER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETLE, ret);
-			else if (index == InlineID::POINTER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETZ, ret);
-			else if (index == InlineID::POINTER_NOT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNZ, ret);
+			cmd.add_cmd(Asm::INST_SETNZ, ret);
+			break;
+		case InlineID::INT_GREATER:
+		case InlineID::INT64_GREATER:
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETNLE, ret);
+			break;
+		case InlineID::INT_GREATER_EQUAL:
+		case InlineID::INT64_GREATER_EQUAL:
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETNL, ret);
+			break;
+		case InlineID::INT_SMALLER:
+		case InlineID::INT64_SMALLER:
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETL, ret);
+			break;
+		case InlineID::INT_SMALLER_EQUAL:
+		case InlineID::INT64_SMALLER_EQUAL:
+			cmd.add_cmd(Asm::INST_CMP, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETLE, ret);
 			break;
 		case InlineID::INT_AND:
 		case InlineID::INT64_AND:
@@ -496,8 +486,6 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			cmd.add_cmd(Asm::INST_SUB, param[0], param_imm(TypeInt64, 0x1));
 			break;
 		case InlineID::INT64_TO_INT:
-			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
-			break;
 		case InlineID::INT_TO_INT64:
 			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
 			break;
@@ -534,48 +522,36 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::FLOAT64_DIVIDE:
 			cmd.add_cmd(Asm::INST_FDIV, ret, param[0], param[1]);
 			break;
-/*		case InlineID::FLOAT_EQUAL:
-		case InlineID::FLOAT_NOT_EQUAL:
-		case InlineID::FLOAT_GREATER:
-		case InlineID::FLOAT_GREATER_EQUAL:
-		case InlineID::FLOAT_SMALLER:
-		case InlineID::FLOAT_SMALLER_EQUAL:
-			cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, param[0]);
-			cmd.add_cmd(Asm::INST_UCOMISS, p_xmm0, param[1]);
-			if (index == InlineID::FLOAT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETZ, ret);
-			else if (index == InlineID::FLOAT_NOT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNZ, ret);
-			else if (index == InlineID::FLOAT_GREATER)
-				cmd.add_cmd(Asm::INST_SETNBE, ret);
-			else if (index == InlineID::FLOAT_GREATER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNB, ret);
-			else if (index == InlineID::FLOAT_SMALLER)
-				cmd.add_cmd(Asm::INST_SETB, ret);
-			else if (index == InlineID::FLOAT_SMALLER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETBE, ret);
-			break;
+		case InlineID::FLOAT_EQUAL:
 		case InlineID::FLOAT64_EQUAL:
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETZ, ret);
+			break;
+		case InlineID::FLOAT_NOT_EQUAL:
 		case InlineID::FLOAT64_NOT_EQUAL:
-		case InlineID::FLOAT64_GREATER:
-		case InlineID::FLOAT64_GREATER_EQUAL:
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETNZ, ret);
+			break;
+		case InlineID::FLOAT_SMALLER:
 		case InlineID::FLOAT64_SMALLER:
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETB, ret);
+			break;
+		case InlineID::FLOAT_SMALLER_EQUAL:
 		case InlineID::FLOAT64_SMALLER_EQUAL:
-			cmd.add_cmd(Asm::INST_MOVSD, p_xmm0, param[0]);
-			cmd.add_cmd(Asm::INST_UCOMISD, p_xmm0, param[1]);
-			if (index == InlineID::FLOAT64_EQUAL)
-				cmd.add_cmd(Asm::INST_SETZ, ret);
-			else if (index == InlineID::FLOAT64_NOT_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNZ, ret);
-			else if (index == InlineID::FLOAT64_GREATER)
-				cmd.add_cmd(Asm::INST_SETNBE, ret);
-			else if (index == InlineID::FLOAT64_GREATER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETNB, ret);
-			else if (index == InlineID::FLOAT64_SMALLER)
-				cmd.add_cmd(Asm::INST_SETB, ret);
-			else if (index == InlineID::FLOAT64_SMALLER_EQUAL)
-				cmd.add_cmd(Asm::INST_SETBE, ret);
-			break;*/
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETBE, ret);
+			break;
+		case InlineID::FLOAT_GREATER:
+		case InlineID::FLOAT64_GREATER:
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETNBE, ret);
+			break;
+		case InlineID::FLOAT_GREATER_EQUAL:
+		case InlineID::FLOAT64_GREATER_EQUAL:
+			cmd.add_cmd(Asm::INST_UCOMISS, param[0], param[1]);
+			cmd.add_cmd(Asm::INST_SETNB, ret);
+			break;
 
 		case InlineID::FLOAT_NEGATE:
 			cmd.add_cmd(Asm::INST_XOR, ret, param[0], param_imm(TypeInt, 0x80000000));
@@ -701,7 +677,7 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			break;
 		case InlineID::VECTOR_MULTIPLY_VF:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32), param[1]);
+				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32), param[1]);
 			break;
 		case InlineID::VECTOR_MULTIPLY_FV:
 			for (int i=0;i<3;i++)

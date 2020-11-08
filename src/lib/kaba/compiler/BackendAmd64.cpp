@@ -188,6 +188,32 @@ void BackendAmd64::correct() {
 				insert_cmd(inst, p_xmm0, p3);
 				insert_cmd(inst_mov, p1, p_xmm0);
 			}
+		} else if (c.inst == Asm::INST_UCOMISS) {
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			insert_cmd(Asm::INST_MOVSS, p_xmm0, p1);
+			insert_cmd(Asm::INST_UCOMISS, p_xmm0, p2);
+			i ++;
+		} else if (c.inst == Asm::INST_CVTSI2SS) {
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			insert_cmd(Asm::INST_CVTSI2SS, p_xmm0, p2);
+			insert_cmd(Asm::INST_MOVSS, p1, p_xmm0);
+			i ++;
+		} else if (c.inst == Asm::INST_CVTTSS2SI) {
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			int veax = cmd.add_virtual_reg(Asm::REG_EAX);
+			insert_cmd(Asm::INST_MOVSS, p_xmm0, p2);
+			insert_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
+			insert_cmd(Asm::INST_MOV, p1, param_vreg(TypeInt, veax));
+			i += 2;
 		} else if (c.inst == Asm::INST_PUSH) {
 			func_params.add(c.p[0]);
 			cmd.remove_cmd(i);

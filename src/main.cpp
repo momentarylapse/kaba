@@ -151,6 +151,7 @@ public:
 		p.option("--os", [&]{ flag_compile_os = true; });
 		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
 		p.option("--serx", [&]{ kaba::config.use_new_serializer = true; });
+		p.option("--no-simplify-consts", [&]{ kaba::config.allow_simplify_consts = false; });
 		p.option("--verbose", [&]{ flag_verbose = true; });
 		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
 		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });
