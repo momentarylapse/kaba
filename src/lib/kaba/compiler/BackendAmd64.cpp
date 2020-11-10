@@ -12,6 +12,7 @@
 namespace kaba {
 
 
+bool is_typed_function_pointer(const Class *c);
 
 static int get_reg(int root, int size) {
 #if 1
@@ -222,11 +223,12 @@ void BackendAmd64::correct() {
 			if (c.p[1].type == TypeFunctionCodeP) {
 				//serializer->do_error("indirect call...");
 				auto fp = c.p[1];
-				auto *f = ((Function*)c.p[2].p);
 				auto ret = c.p[0];
 				cmd.remove_cmd(i);
 				cmd.next_cmd_target(i);
-				add_pointer_call(fp, f, func_params, ret);
+				add_pointer_call(fp, func_params, ret);
+			} else if (is_typed_function_pointer(c.p[1].type)) {
+				serializer->do_error("BACKEND: POINTER CALL");
 			} else {
 				//func_params.add(c.p[0]);
 				auto *f = ((Function*)c.p[1].p);
@@ -303,7 +305,7 @@ static bool dist_fits_32bit(void *a, void *b) {
 
 void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(f, params, ret);
+	int push_size = fc_begin(params, ret);
 
 	if (f->address) {
 		if (dist_fits_32bit(f->address, script->opcode)) {
@@ -336,9 +338,9 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	fc_end(push_size, params, ret);
 }
 
-void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(f, params, ret);
+	int push_size = fc_begin(params, ret);
 
 	insert_cmd(Asm::INST_MOV, p_rax, fp);
 	insert_cmd(Asm::INST_CALL, p_rax);
@@ -346,7 +348,7 @@ void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, Function *f, cons
 	fc_end(push_size, params, ret);
 }
 
-int BackendAmd64::fc_begin(Function *__f, const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
+int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
 
 

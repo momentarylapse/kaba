@@ -2402,12 +2402,16 @@ shared<Node> Parser::parse_statement_dyn(Block *block) {
 	return make_dynamical(sub);
 }
 
-bool is_function_pointer(const Class *c) {
-	if (c ==  TypeFunctionP)
-		return true;
+bool is_typed_function_pointer(const Class *c) {
 	if (c->is_pointer() and c->param[0]->parent == TypeFunction)
 		return true;
 	return false;
+}
+
+bool is_function_pointer(const Class *c) {
+	if (c ==  TypeFunctionP)
+		return true;
+	return is_typed_function_pointer(c);
 }
 
 shared<Node> Parser::parse_statement_call(Block *block) {
