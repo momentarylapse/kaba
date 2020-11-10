@@ -42,6 +42,7 @@ public:
 
 
 	void do_mapping() override;
+	void fix_return_by_ref();
 };
 
 }

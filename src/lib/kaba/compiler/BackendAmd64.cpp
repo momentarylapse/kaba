@@ -244,12 +244,51 @@ void BackendAmd64::correct() {
 			cmd.remove_cmd(i);
 			cmd.next_cmd_target(i);
 
+
+
+
+			if (p.kind != NodeKind::NONE){
+
+				if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
+					//		cmd.add_cmd(Asm::INST_FLD, t);
+					if (cur_func->effective_return_type == TypeFloat32){
+						cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, p);
+					}else if (cur_func->effective_return_type == TypeFloat64){
+						insert_cmd(Asm::INST_MOVSD, p_xmm0, p);
+					}else if (cur_func->effective_return_type->size == 8){ // float[2]
+						insert_cmd(Asm::INST_MOVLPS, p_xmm0, p);
+					}else if (cur_func->effective_return_type->size == 12){ // float[3]
+						insert_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
+						insert_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(p, 8, TypeFloat32));
+					}else if (cur_func->effective_return_type->size == 16){ // float[4]
+						insert_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
+						insert_cmd(Asm::INST_MOVLPS, p_xmm1, param_shift(p, 8, TypeReg64));
+					} else {
+						serializer->do_error("...ret xmm " + cur_func->effective_return_type->long_name());
+					}
+				}else{ // store return directly in eax / fpu stack (4 byte)
+
+					if (cur_func->effective_return_type->size == 1){
+						int v = cmd.add_virtual_reg(Asm::REG_AL);
+						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
+					}else if (cur_func->effective_return_type->size == 8){
+						int v = cmd.add_virtual_reg(Asm::REG_RAX);
+						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
+					}else{
+						int v = cmd.add_virtual_reg(Asm::REG_EAX);
+						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
+					}
+				}
+			}
+
+
 			insert_cmd(Asm::INST_LEAVE);
 			if (cur_func->effective_return_type->uses_return_by_memory())
 				insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
 			else
 				insert_cmd(Asm::INST_RET);
-			i ++;
+			i = cmd.next_cmd_index - 1;
 		}
 	}
 	serializer->cmd_list_out("x:b", "post paramtrafo");

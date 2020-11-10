@@ -1966,6 +1966,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		auto x = new SerializerX(this, list);
 		x->cur_func_index = index;
 		x->serialize_function(f);
+		x->fix_return_by_ref();
 		auto be = new BackendAmd64(x);
 		be->process(f, index);
 

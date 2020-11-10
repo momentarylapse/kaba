@@ -703,4 +703,93 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 void SerializerX::do_mapping() {
 }
 
+void SerializerX::fix_return_by_ref() {
+
+
+
+#if 0
+	for (int i=0; i<cmd.cmd.num; i++) {
+		if (cmd.cmd[i].inst == Asm::INST_RET) {
+
+	if (com->params.num > 0){
+		auto operand = serialize_parameter(com->params[0].get(), block, index);
+
+		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+			insert_destructors_block(block, true);
+			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
+			//		cmd.add_cmd(Asm::INST_FLD, t);
+			if (cur_func->effective_return_type == TypeFloat32){
+				cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, operand);
+			}else if (cur_func->effective_return_type == TypeFloat64){
+				cmd.add_cmd(Asm::INST_MOVSD, p_xmm0, operand);
+			}else if (cur_func->effective_return_type->size == 8){ // float[2]
+				cmd.add_cmd(Asm::INST_MOVLPS, p_xmm0, operand);
+			}else if (cur_func->effective_return_type->size == 12){ // float[3]
+				cmd.add_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(operand, 0, TypeReg64));
+				cmd.add_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(operand, 8, TypeFloat32));
+			}else if (cur_func->effective_return_type->size == 16){ // float[4]
+				cmd.add_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(operand, 0, TypeReg64));
+				cmd.add_cmd(Asm::INST_MOVLPS, p_xmm1, param_shift(operand, 8, TypeReg64));
+			} else {
+				do_error("...ret xmm " + cur_func->effective_return_type->long_name());
+			}
+			add_function_outro(cur_func);
+		} else if (cur_func->effective_return_type->uses_return_by_memory()){ // we already got a return address in [ebp+0x08] (> 4 byte)
+			insert_destructors_block(block, true);
+			// internally handled...
+#if 0
+			int s = mem_align(cur_func->effective_return_type->size);
+
+			// slow
+			/*SerialCommandParam p, p_deref;
+			p.kind = KindVarLocal;
+			p.type = TypeReg32;
+			p.p = (char*) 0x8;
+			p.shift = 0;
+			for (int j=0;j<s/4;j++){
+				AddDereference(p, p_deref);
+				cmd.add_cmd(Asm::inst_mov, p_deref, param_shift(param[0], j * 4, TypeInt));
+				cmd.add_cmd(Asm::inst_add, p, param_const(TypeInt, (void*)0x4));
+			}*/
+
+			// test
+			SerialNodeParam p_edx = param_reg(TypeReg32, Asm::REG_EDX), p_deref_edx;
+			SerialNodeParam p_ret_addr;
+			p_ret_addr.kind = NodeKind::VAR_LOCAL;
+			p_ret_addr.type = TypeReg32;
+			p_ret_addr.p = (char*)0x8;
+			p_ret_addr.shift = 0;
+			int c_0 = cmd.cmd.num;
+			cmd.add_cmd(Asm::INST_MOV, p_edx, p_ret_addr);
+			add_dereference(p_edx, p_deref_edx, TypeReg32);
+			for (int j=0;j<s/4;j++)
+				cmd.add_cmd(Asm::INST_MOV, param_shift(p_deref_edx, j * 4, TypeInt), param_shift(params[0], j * 4, TypeInt));
+			add_reg_channel(Asm::REG_EDX, c_0, cmd.cmd.num - 1);
+#endif
+
+			add_function_outro(cur_func);
+		}else{ // store return directly in eax / fpu stack (4 byte)
+			SerialNodeParam t = add_temp(cur_func->effective_return_type);
+			cmd.add_cmd(Asm::INST_MOV, t, operand); //?????
+			insert_destructors_block(block, true);
+
+			if (cur_func->effective_return_type->size == 1){
+				int v = cmd.add_virtual_reg(Asm::REG_AL);
+				cmd.add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
+			}else if (cur_func->effective_return_type->size == 8){
+				int v = cmd.add_virtual_reg(Asm::REG_RAX);
+				cmd.add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
+			}else{
+				int v = cmd.add_virtual_reg(Asm::REG_EAX);
+				cmd.add_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), t);
+			}
+			add_function_outro(cur_func);
+		}
+	}else{
+		insert_destructors_block(block, true);
+		add_function_outro(cur_func);
+	}
+#endif
+}
+
 }
