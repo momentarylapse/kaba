@@ -2,6 +2,8 @@ string upper(string s)
 	return s.upper()
 
 void main()
-	let b = map(upper, ["hallo", "welt"])
+	#let f = string.upper
+	let b = map(string.upper, ["hallo", "welt"])
+	#let b = map(sqr, [2.0,4.0])
 	print(b)
 	

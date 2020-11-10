@@ -2281,6 +2281,18 @@ Array<const Class*> func_effective_params(const Function *f) {
 	return p;
 }
 
+Array<const Class*> node_call_effective_params(shared<Node> node) {
+	if (node->kind == NodeKind::FUNCTION)
+		return func_effective_params(node->as_func());
+	return get_function_pointer_param_types(node->type);
+}
+
+const Class *node_call_return_type(shared<Node> node) {
+	if (node->kind == NodeKind::FUNCTION)
+		return node->as_func()->literal_return_type;
+	return get_function_pointer_return_type(node->type);
+}
+
 shared<Node> Parser::parse_statement_map(Block *block) {
 	Exp.next(); // "map"
 	string name = Exp.cur;
@@ -2288,13 +2300,14 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	auto params = parse_call_parameters(block);
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
-	if (params[0]->kind != NodeKind::FUNCTION)
-		do_error("map(): first parameter must be a function name");
+	if (!is_typed_function_pointer(params[0]->type) and (params[0]->kind != NodeKind::FUNCTION))
+		do_error("map(): first parameter must be a function or function pointer");
 	params[1] = force_concrete_type(params[1]);
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
 
-	auto p = func_effective_params(params[0]->as_func());
+	auto p = node_call_effective_params(params[0]);
+	auto rt = node_call_return_type(params[0]);
 	if (p.num != 1)
 		do_error("map(): function must have exactly one parameter");
 	if (p[0] != params[1]->type->param[0])
@@ -2302,12 +2315,14 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 
 	auto *f = tree->required_func_global("@map");
 
-	auto *c = tree->add_constant_pointer(TypeFunctionP, params[0]->as_func());
-
 	auto cmd = tree->add_node_call(f);
-	cmd->set_param(0, tree->add_node_const(c));
+	if (params[0]->kind == NodeKind::FUNCTION) {
+		cmd->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypeFunctionP, params[0]->as_func())));
+	} else {
+		cmd->set_param(0, params[0]);
+	}
 	cmd->set_param(1, params[1]);
-	cmd->type = tree->make_class_super_array(params[0]->as_func()->literal_return_type);
+	cmd->type = tree->make_class_super_array(rt);
 	return cmd;
 }
 
