@@ -284,9 +284,9 @@ void BackendAmd64::correct() {
 
 
 			insert_cmd(Asm::INST_LEAVE);
-			if (cur_func->effective_return_type->uses_return_by_memory())
-				insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
-			else
+			//if (cur_func->effective_return_type->uses_return_by_memory())
+			//	insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
+			//else
 				insert_cmd(Asm::INST_RET);
 			i = cmd.next_cmd_index - 1;
 		}

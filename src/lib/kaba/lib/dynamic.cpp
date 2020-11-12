@@ -396,7 +396,7 @@ DynamicArray kaba_map(Function *func, DynamicArray *a) {
 	r.init(to->size);
 	if (to->needs_constructor()) {
 		if (to == TypeString) {
-			((string*)&r)->resize(a->num);
+			((Array<string>*)&r)->resize(a->num);
 		} else  {
 			kaba_raise_exception(new KabaException("map(): output type not allowed: " + to->long_name()));
 		}
@@ -404,8 +404,8 @@ DynamicArray kaba_map(Function *func, DynamicArray *a) {
 		r.simple_resize(a->num);
 	}
 	for (int i=0; i<a->num; i++) {
-		void *po = r.simple_element(i);//(char*)r.data + to->size * i;
-		void *pi = a->simple_element(i);//(char*)a->data + ti->size * i;
+		void *po = r.simple_element(i);
+		void *pi = a->simple_element(i);
 		bool ok = call_function(func, func->address, po, {pi});
 		if (!ok)
 			kaba_raise_exception(new KabaException("map(): failed to dynamically call " + func->signature()));
