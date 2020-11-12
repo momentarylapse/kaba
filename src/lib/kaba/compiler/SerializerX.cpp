@@ -233,6 +233,11 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 		case StatementID::RETURN:
 			if (com->params.num > 0) {
 				auto p = serialize_parameter(com->params[0].get(), block, index);
+				if (p.kind == NodeKind::DEREF_VAR_TEMP and !cur_func->literal_return_type->uses_return_by_memory()) {
+					auto t = add_temp(p.type);
+					cmd.add_cmd(Asm::INST_MOV, t, p);
+					p = t;
+				}
 				insert_destructors_block(block, true);
 				cmd.add_cmd(Asm::INST_RET, p);
 			} else {
