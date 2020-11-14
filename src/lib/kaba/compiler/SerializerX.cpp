@@ -351,10 +351,7 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			break;
 // chunk...
 		case InlineID::CHUNK_ASSIGN:
-			for (int i=0; i<com->params[0]->type->size/4; i++)
-				cmd.add_cmd(Asm::INST_MOV, param_shift(param[0], i * 4, TypeInt), param_shift(param[1], i * 4, TypeInt));
-			for (int i=4*(com->params[0]->type->size/4); i<com->params[0]->type->size; i++)
-				cmd.add_cmd(Asm::INST_MOV, param_shift(param[0], i, TypeChar), param_shift(param[1], i, TypeChar));
+			cmd.add_cmd(Asm::INST_MOV, param[0], param[1]);
 			break;
 /*		case InlineID::CHUNK_EQUAL:{
 			int val = add_virtual_reg(Asm::REG_AL);

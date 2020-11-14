@@ -378,6 +378,7 @@ void CommandList::next_cmd_target(int index) {
 }
 
 void CommandList::remove_cmd(int index) {
+	next_cmd_index = index;
 	if (cmd[index].inst == Asm::INST_CALL) {
 		for (auto &r: virtual_reg)
 			if (r.first == index and r.last == index)

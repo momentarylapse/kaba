@@ -145,14 +145,28 @@ void BackendAmd64::correct_implement_commands() {
 	for (int i=0; i<cmd.cmd.num; i++) {
 		auto &c = cmd.cmd[i];
 		if (c.inst == Asm::INST_MOV) {
+			int size = c.p[0].type->size;
+			if (size > 8) {
+				auto p1 = c.p[0];
+				auto p2 = c.p[1];
+				cmd.remove_cmd(i);
+				cmd.next_cmd_target(i);
+				//msg_error("CORRECT MOV " + p1.type->name);
+
+				for (int j=0; j<size/8; j++)
+					insert_cmd(Asm::INST_MOV, param_shift(p1, j * 8, TypeInt64), param_shift(p2, j * 8, TypeInt64));
+				for (int j=8*(size/8); j<size; j++)
+					insert_cmd(Asm::INST_MOV, param_shift(p1, j, TypeChar), param_shift(p2, j, TypeChar));
+				i = cmd.next_cmd_index - 1;
+			}
 		} else if (c.inst == Asm::INST_MOVSX) {
-//			msg_write("movsx");
 			auto p1 = c.p[0];
 			auto p2 = c.p[1];
-			int reg = find_unused_reg(i, i, p2.type->size);
+//			msg_write("MOVSX " + p1.type->name + " << "+ p2.type->name);
 			cmd.remove_cmd(i);
 			cmd.next_cmd_target(i);
-			insert_cmd(Asm::INST_MOV, param_vreg(p1.type, reg), p2);
+			int reg = find_unused_reg(i, i, p2.type->size);
+			insert_cmd(Asm::INST_MOV, param_vreg(p2.type, reg), p2);
 			int preg_x = reg_resize(cmd.virtual_reg[reg].reg, p1.type->size);
 			insert_cmd(Asm::INST_MOV, p1, param_vreg(p1.type, reg, preg_x));
 			i ++;
@@ -162,7 +176,7 @@ void BackendAmd64::correct_implement_commands() {
 			auto p2 = c.p[2];
 			cmd.remove_cmd(i);
 			cmd.next_cmd_target(i);
-			if (c.p[0].type == TypeInt) {
+			if (p1.type == TypeInt) {
 				int veax = cmd.add_virtual_reg(Asm::REG_EAX);
 				int vedx = cmd.add_virtual_reg(Asm::REG_EDX);
 				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), p1);
@@ -179,6 +193,7 @@ void BackendAmd64::correct_implement_commands() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt64, vrdx));
 			}
+			i += 4;
 		} else if ((c.inst == Asm::INST_SHL) or (c.inst == Asm::INST_SHR)) {
 			auto inst = c.inst;
 			auto r = c.p[0];
@@ -188,9 +203,10 @@ void BackendAmd64::correct_implement_commands() {
 			cmd.remove_cmd(i);
 			cmd.next_cmd_target(i);
 			int vecx;
-			if (type == TypeInt64)
+			if (type == TypeInt64) {
+				msg_error("shl int64");
 				vecx = cmd.add_virtual_reg(Asm::REG_RCX);
-			else
+			} else
 				vecx = cmd.add_virtual_reg(Asm::REG_ECX);
 			insert_cmd(Asm::INST_MOV, param_vreg(type, vecx), p2);
 			insert_cmd(Asm::INST_MOV, r, p1);
@@ -237,6 +253,7 @@ void BackendAmd64::correct_implement_commands() {
 				insert_cmd(inst, p_xmm0, p3);
 				insert_cmd(inst_mov, p1, p_xmm0);
 			}
+			i += 2;
 		} else if (c.inst == Asm::INST_UCOMISS) {
 			auto p1 = c.p[0];
 			auto p2 = c.p[1];
@@ -301,7 +318,7 @@ void BackendAmd64::correct_implement_commands() {
 					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 					//		cmd.add_cmd(Asm::INST_FLD, t);
 					if (cur_func->effective_return_type == TypeFloat32){
-						cmd.add_cmd(Asm::INST_MOVSS, p_xmm0, p);
+						insert_cmd(Asm::INST_MOVSS, p_xmm0, p);
 					}else if (cur_func->effective_return_type == TypeFloat64){
 						insert_cmd(Asm::INST_MOVSD, p_xmm0, p);
 					}else if (cur_func->effective_return_type->size == 8){ // float[2]
@@ -513,7 +530,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 			virts.add(v);
 			int va = cmd.add_virtual_reg(Asm::REG_EAX);
 			insert_cmd(Asm::INST_MOV, param_vreg(p.type, va, Asm::REG_AL), p);
-			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, v), param_vreg(p.type, va));
+			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, v), param_vreg(TypeReg32, va));
 		}
 	}
 
@@ -1075,6 +1092,8 @@ void BackendAmd64::correct_unallowed_param_combis() {
 
 		//msg_error("correct");
 		//msg_write(p.type->name);
+		if (p.type->name == "color")
+			serializer->do_error("color in assembler..." + serializer->cur_func->long_name());
 		int reg = find_unused_reg(i, i, p.type->size);
 		p2 = param_vreg(p.type, reg);
 		cmd.next_cmd_target(i);
