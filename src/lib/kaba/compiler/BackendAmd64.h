@@ -30,6 +30,8 @@ public:
 	void process(Function *f, int index);
 
 	void correct();
+	void correct_parameters();
+	void correct_implement_commands();
 
 	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
 	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);

@@ -103,7 +103,15 @@ void BackendAmd64::correct() {
 	cmd.next_cmd_target(0);
 	add_function_intro_params(cur_func);
 
+	correct_parameters();
 
+	serializer->cmd_list_out("x:a", "paramtrafo");
+
+	correct_implement_commands();
+	serializer->cmd_list_out("x:b", "post paramtrafo");
+}
+
+void BackendAmd64::correct_parameters() {
 	for (auto &c: cmd.cmd) {
 		for (auto &p: c.p) {
 			if (p.kind == NodeKind::VAR_LOCAL) {
@@ -128,8 +136,9 @@ void BackendAmd64::correct() {
 			}
 		}
 	}
+}
 
-	serializer->cmd_list_out("x:a", "paramtrafo");
+void BackendAmd64::correct_implement_commands() {
 
 	Array<SerialNodeParam> func_params;
 
@@ -170,6 +179,23 @@ void BackendAmd64::correct() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt64, vrdx));
 			}
+		} else if ((c.inst == Asm::INST_SHL) or (c.inst == Asm::INST_SHR)) {
+			auto inst = c.inst;
+			auto r = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+			auto type = p1.type;
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			int vecx;
+			if (type == TypeInt64)
+				vecx = cmd.add_virtual_reg(Asm::REG_RCX);
+			else
+				vecx = cmd.add_virtual_reg(Asm::REG_ECX);
+			insert_cmd(Asm::INST_MOV, param_vreg(type, vecx), p2);
+			insert_cmd(Asm::INST_MOV, r, p1);
+			insert_cmd(inst, r, param_vreg(TypeChar, vecx, Asm::REG_CL));
+			i += 2;
 		} else if (inst_is_arithmetic(c.inst)) {
 			if (c.p[2].kind == NodeKind::NONE)
 				continue;
@@ -313,7 +339,6 @@ void BackendAmd64::correct() {
 			i = cmd.next_cmd_index - 1;
 		}
 	}
-	serializer->cmd_list_out("x:b", "post paramtrafo");
 }
 
 
