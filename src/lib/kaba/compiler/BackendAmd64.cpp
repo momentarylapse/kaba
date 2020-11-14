@@ -147,7 +147,29 @@ void BackendAmd64::correct() {
 			int preg_x = reg_resize(cmd.virtual_reg[reg].reg, p1.type->size);
 			insert_cmd(Asm::INST_MOV, p1, param_vreg(p1.type, reg, preg_x));
 			i ++;
-
+		} else if (c.inst == Asm::INST_MODULO) {
+			auto r = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			if (c.p[0].type == TypeInt) {
+				int veax = cmd.add_virtual_reg(Asm::REG_EAX);
+				int vedx = cmd.add_virtual_reg(Asm::REG_EDX);
+				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), p1);
+				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, vedx), param_vreg(TypeInt, veax));
+				insert_cmd(Asm::INST_SAR, param_vreg(TypeInt, vedx), param_imm(TypeChar, 0x1f));
+				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), p2);
+				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt, vedx));
+			} else { // int64
+				int vrax = cmd.add_virtual_reg(Asm::REG_RAX);
+				int vrdx = cmd.add_virtual_reg(Asm::REG_RDX);
+				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), p1);
+				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrdx), param_vreg(TypeInt64, vrax));
+				insert_cmd(Asm::INST_SAR, param_vreg(TypeInt64, vrdx), param_imm(TypeChar, 0x1f));
+				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), p2);
+				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt64, vrdx));
+			}
 		} else if (inst_is_arithmetic(c.inst)) {
 			if (c.p[2].kind == NodeKind::NONE)
 				continue;

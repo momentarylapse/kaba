@@ -207,14 +207,19 @@ string type_name_safe(const Class *t) {
 
 string _cdecl var_repr(const void *p, const Class *type);
 
-string guess_local_mem(int offset, Function *f) {
-	for (auto &v: f->var) {
+string guess_local_mem(int offset, Serializer *ser) {
+	for (auto &v: ser->cur_func->var) {
 		if (offset == v->_offset)
-			return format("%s (%s)", signed_hex(offset), v->name);
+			return format("%s @%s", v->name, signed_hex(offset));
 		if (offset >= v->_offset and offset < v->_offset + v->type->size)
-			return format("%s (%s+%d)", signed_hex(offset), v->name, offset - v->_offset);
+			return format("%s+%d @%s", v->name, offset - v->_offset, signed_hex(offset));
 	}
-	return signed_hex(offset);
+	// hmmm...not working...
+	for (auto &v: ser->cmd.temp_var) {
+		if (offset == v.stack_offset)
+			return format("(tmp) @%s", signed_hex(offset));
+	}
+	return "? @" + signed_hex(offset);
 }
 
 string SerialNodeParam::str(Serializer *ser) const {
@@ -228,7 +233,7 @@ string SerialNodeParam::str(Serializer *ser) const {
 		else if (kind == NodeKind::MARKER)
 			return ser->list->label[p].name;
 		else if (kind == NodeKind::LOCAL_MEMORY)
-			n = guess_local_mem(p, ser->cur_func);
+			n = guess_local_mem(p, ser);
 		else if (kind == NodeKind::MEMORY)
 			n = "0x" + i2h(p, config.pointer_size);
 		else if (kind == NodeKind::IMMEDIATE)
@@ -251,8 +256,7 @@ string SerialNodeParam::str(Serializer *ser) const {
 	return str;
 }
 
-string SerialNode::str(Serializer *ser) const
-{
+string SerialNode::str(Serializer *ser) const {
 	if (inst == INST_MARKER)
 		return "-- " + ser->list->label[p[0].p].name + " --";
 	if (inst == INST_ASM)

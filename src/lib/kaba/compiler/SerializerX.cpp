@@ -404,24 +404,10 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 		case InlineID::INT64_DIVIDE:
 			cmd.add_cmd(Asm::INST_IDIV, ret, param[0], param[1]);
 			break;
-/*		case InlineID::INT_MODULO:{
-			int veax = add_virtual_reg(Asm::REG_EAX);
-			int vedx = add_virtual_reg(Asm::REG_EDX);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, veax), param[0]);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt, vedx), param_vreg(TypeInt, veax));
-			cmd.add_cmd(Asm::INST_SAR, param_vreg(TypeInt, vedx), param_imm(TypeChar, 0x1f));
-			cmd.add_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), param[1]);
-			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt, vedx));
-			}break;
-		case InlineID::INT64_MODULO:{
-			int vrax = add_virtual_reg(Asm::REG_RAX);
-			int vrdx = add_virtual_reg(Asm::REG_RDX);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), param[0]);
-			cmd.add_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrdx), param_vreg(TypeInt64, vrax));
-			cmd.add_cmd(Asm::INST_SAR, param_vreg(TypeInt64, vrdx), param_imm(TypeChar, 0x1f));
-			cmd.add_cmd(Asm::INST_IDIV, param_vreg(TypeInt64, vrax), param[1]);
-			cmd.add_cmd(Asm::INST_MOV, ret, param_vreg(TypeInt64, vrdx));
-			}break;*/
+		case InlineID::INT_MODULO:
+		case InlineID::INT64_MODULO:
+			cmd.add_cmd(Asm::INST_MODULO, ret, param[0], param[1]);
+			break;
 		case InlineID::INT_EQUAL:
 		case InlineID::INT64_EQUAL:
 		case InlineID::POINTER_EQUAL:
