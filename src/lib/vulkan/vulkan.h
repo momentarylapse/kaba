@@ -85,9 +85,6 @@ namespace vulkan {
 	bool has_stencil_component(VkFormat format);
 
 
-	void rtx_init();
-	void rtx_step();
-
 	namespace rtx {
 		extern VkPhysicalDeviceRayTracingPropertiesNV properties;
 		void get_properties();

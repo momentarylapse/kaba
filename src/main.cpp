@@ -141,7 +141,7 @@ public:
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			if (kaba::config.use_new_serializer)
-				msg_write("  new serializer!");
+				msg_write("(new serializer)");
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
