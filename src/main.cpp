@@ -140,6 +140,8 @@ public:
 		p.info(AppName + " " + AppVersion);
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
+			if (kaba::config.use_new_serializer)
+				msg_write("  new serializer!");
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
@@ -151,6 +153,7 @@ public:
 		p.option("--os", [&]{ flag_compile_os = true; });
 		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
 		p.option("--serx", [&]{ kaba::config.use_new_serializer = true; });
+		p.option("--ser0", [&]{ kaba::config.use_new_serializer = false; });
 		p.option("--no-simplify-consts", [&]{ kaba::config.allow_simplify_consts = false; });
 		p.option("--verbose", [&]{ flag_verbose = true; });
 		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
