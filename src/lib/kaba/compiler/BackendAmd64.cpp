@@ -7,6 +7,8 @@
 
 #include "BackendAmd64.h"
 #include "serializer.h"
+#include "CommandList.h"
+#include "SerialNode.h"
 #include "../../file/msg.h"
 
 namespace kaba {
