@@ -391,7 +391,7 @@ void CommandList::remove_cmd(int index) {
 
 	// adjust temp vars
 	for (TempVar &v: temp_var) {
-		if (v.first >= index)
+		if (v.first > index)
 			v.first --;
 		if (v.last >= index)
 			v.last --;
@@ -399,7 +399,7 @@ void CommandList::remove_cmd(int index) {
 
 	// adjust reg channels
 	for (VirtualRegister &r: virtual_reg) {
-		if (r.first >= index)
+		if (r.first > index)
 			r.first --;
 		if (r.last >= index)
 			r.last --;
