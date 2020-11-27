@@ -282,6 +282,27 @@ void BackendAmd64::correct_implement_commands() {
 			insert_cmd(Asm::INST_CVTTSS2SI, param_vreg(TypeInt, veax), p_xmm0);
 			insert_cmd(Asm::INST_MOV, p1, param_vreg(TypeInt, veax));
 			i += 2;
+
+		} else if (c.inst == Asm::INST_CVTSS2SD) {
+			// f32 -> f64
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			int veax = cmd.add_virtual_reg(Asm::REG_XMM0);
+			insert_cmd(Asm::INST_CVTSS2SD, p_xmm0, p2);
+			insert_cmd(Asm::INST_MOVSD, p1, p_xmm0);
+			i += 1;
+		} else if (c.inst == Asm::INST_CVTSD2SS) {
+			// f64 -> f32
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			cmd.remove_cmd(i);
+			cmd.next_cmd_target(i);
+			int veax = cmd.add_virtual_reg(Asm::REG_XMM0);
+			insert_cmd(Asm::INST_CVTSD2SS, p_xmm0, p2);
+			insert_cmd(Asm::INST_MOVSS, p1, p_xmm0);
+			i += 1;
 		} else if (c.inst == Asm::INST_PUSH) {
 			func_params.add(c.p[0]);
 			cmd.remove_cmd(i);
