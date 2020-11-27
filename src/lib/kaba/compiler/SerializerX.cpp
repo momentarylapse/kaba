@@ -637,19 +637,19 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 // vector
 		case InlineID::VECTOR_ADD_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::INST_FADD, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FADD, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_MULTIPLY_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::INST_FMUL, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FMUL, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_DIVIDE_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::INST_FDIV, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FDIV, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_SUBTARCT_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::INST_FSUB, param_shift(ret, i * 4, TypeFloat32), param_shift(param[0], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::INST_FSUB, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
 			break;
 		case InlineID::VECTOR_ADD:
 			for (int i=0;i<3;i++)

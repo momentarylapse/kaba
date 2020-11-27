@@ -1936,16 +1936,18 @@ void Script::compile_functions(char *oc, int &ocs) {
 	//	list->show();
 
 	// assemble into opcode
-	try{
+	try {
 		list->optimize(oc, ocs);
 		list->compile(oc, ocs);
-	}catch(Asm::Exception &e) {
+	} catch(Asm::Exception &e) {
+		list->show();
 		Function *f = nullptr;
 		for (int i=0; i<func_offset.num; i++)
 			if (e.line >= func_offset[i] and e.line < func_offset[i+1]) {
 				f = syntax->functions[i];
 				break;
 			}
+		msg_write(f->long_name());
 		throw Exception(e, this, f);
 	}
 
