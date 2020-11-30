@@ -1,11 +1,11 @@
 /*
- * BackendAmd64.cpp
+ * BackendX86.cpp
  *
  *  Created on: Nov 4, 2020
  *      Author: michi
  */
 
-#include "BackendAmd64.h"
+#include "BackendX86.h"
 #include "serializer.h"
 #include "CommandList.h"
 #include "SerialNode.h"
@@ -14,9 +14,10 @@
 namespace kaba {
 
 
+
 bool is_typed_function_pointer(const Class *c);
 
-BackendAmd64::BackendAmd64(Serializer *s) : Backend(s) {
+BackendX86::BackendX86(Serializer *s) : Backend(s) {
 
 	map_reg_root.add(0); // eax
 	map_reg_root.add(1); // ecx
@@ -24,7 +25,6 @@ BackendAmd64::BackendAmd64(Serializer *s) : Backend(s) {
 
 	p_eax = param_preg(TypeReg32, Asm::REG_EAX);
 	p_eax_int = param_preg(TypeInt, Asm::REG_EAX);
-	p_rax = param_preg(TypeReg64, Asm::REG_RAX);
 
 	p_deref_eax = param_deref_preg(TypePointer, Asm::REG_EAX);
 
@@ -36,10 +36,10 @@ BackendAmd64::BackendAmd64(Serializer *s) : Backend(s) {
 	p_xmm1 = param_preg(TypeReg128, Asm::REG_XMM1);
 }
 
-BackendAmd64::~BackendAmd64() {
+BackendX86::~BackendX86() {
 }
 
-void BackendAmd64::process(Function *f, int index) {
+void BackendX86::process(Function *f, int index) {
 	cur_func = f;
 	cur_func_index = index;
 	//call_used = false;
@@ -80,7 +80,7 @@ static bool inst_is_arithmetic(int i) {
 	return false;
 }
 
-void BackendAmd64::correct() {
+void BackendX86::correct() {
 	cmd.next_cmd_target(0);
 	add_function_intro_params(cur_func);
 
@@ -92,7 +92,7 @@ void BackendAmd64::correct() {
 	serializer->cmd_list_out("x:b", "post paramtrafo");
 }
 
-void BackendAmd64::correct_parameters() {
+void BackendX86::correct_parameters() {
 	for (auto &c: cmd.cmd) {
 		for (auto &p: c.p) {
 			if (p.kind == NodeKind::VAR_LOCAL) {
@@ -119,7 +119,7 @@ void BackendAmd64::correct_parameters() {
 	}
 }
 
-void BackendAmd64::correct_implement_commands() {
+void BackendX86::correct_implement_commands() {
 
 	Array<SerialNodeParam> func_params;
 
@@ -134,9 +134,9 @@ void BackendAmd64::correct_implement_commands() {
 				cmd.next_cmd_target(i);
 				//msg_error("CORRECT MOV " + p1.type->name);
 
-				for (int j=0; j<size/8; j++)
-					insert_cmd(Asm::INST_MOV, param_shift(p1, j * 8, TypeInt64), param_shift(p2, j * 8, TypeInt64));
-				for (int j=8*(size/8); j<size; j++)
+				for (int j=0; j<size/4; j++)
+					insert_cmd(Asm::INST_MOV, param_shift(p1, j * 4, TypeInt), param_shift(p2, j * 4, TypeInt));
+				for (int j=4*(size/4); j<size; j++)
 					insert_cmd(Asm::INST_MOV, param_shift(p1, j, TypeChar), param_shift(p2, j, TypeChar));
 				i = cmd.next_cmd_index - 1;
 			}
@@ -171,6 +171,7 @@ void BackendAmd64::correct_implement_commands() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt, vedx));
 			} else { // int64
+				do_error("int64");
 				int vrax = cmd.add_virtual_reg(Asm::REG_RAX);
 				int vrdx = cmd.add_virtual_reg(Asm::REG_RDX);
 				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), p1);
@@ -199,6 +200,7 @@ void BackendAmd64::correct_implement_commands() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt, veax));
 			} else { // int64
+				do_error("int64");
 				int vrax = cmd.add_virtual_reg(Asm::REG_RAX);
 				int vrdx = cmd.add_virtual_reg(Asm::REG_RDX);
 				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), p1);
@@ -218,7 +220,7 @@ void BackendAmd64::correct_implement_commands() {
 			cmd.next_cmd_target(i);
 			int vecx;
 			if (type == TypeInt64) {
-				msg_error("shl int64");
+				do_error("shl int64");
 				vecx = cmd.add_virtual_reg(Asm::REG_RCX);
 			} else
 				vecx = cmd.add_virtual_reg(Asm::REG_ECX);
@@ -322,7 +324,7 @@ void BackendAmd64::correct_implement_commands() {
 		} else if (c.inst == Asm::INST_CALL) {
 
 			if (c.p[1].type == TypeFunctionCodeP) {
-				//do_error("indirect call...");
+				//serializer->do_error("indirect call...");
 				auto fp = c.p[1];
 				auto ret = c.p[0];
 				cmd.remove_cmd(i);
@@ -345,6 +347,7 @@ void BackendAmd64::correct_implement_commands() {
 			cmd.remove_cmd(i);
 			cmd.next_cmd_target(i);
 
+			do_error("FIXME: return...");
 
 
 
@@ -395,7 +398,8 @@ void BackendAmd64::correct_implement_commands() {
 }
 
 
-void BackendAmd64::fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendX86::fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	do_error("FIXME: fc_end()");
 	const Class *type = ret.get_type_save();
 
 	// return > 4b already got copied to [ret] by the function!
@@ -435,36 +439,15 @@ void BackendAmd64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 	}
 }
 
-static bool dist_fits_32bit(void *a, void *b) {
-	int_p d = (int_p)a - (int_p)b;
-	if (d < 0)
-		d = -d;
-	return (d < 0x70000000);
-}
-
-void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendX86::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
 	int push_size = fc_begin(params, ret);
 
 	if (f->address) {
-		if (dist_fits_32bit(f->address, script->opcode)) {
-			// 32bit call distance
-			insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, (int_p)f->address)); // the actual call
-			// function pointer will be shifted later...(asm translates to RIP-relative)
-		} else {
-			// 64bit call distance
-			insert_cmd(Asm::INST_MOV, p_rax, param_imm(TypeReg64, (int_p)f->address));
-			insert_cmd(Asm::INST_CALL, p_rax);
-		}
+		insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, (int_p)f->address)); // the actual call
+		// function pointer will be shifted later...(asm translates to RIP-relative)
 	} else if (f->_label >= 0) {
-		if (f->owner() == script->syntax) {
-			// 32bit call distance
-			insert_cmd(Asm::INST_CALL, param_marker(TypeInt, f->_label));
-		} else {
-			// 64bit call distance
-			insert_cmd(Asm::INST_MOV, p_rax, param_marker(TypePointer, f->_label));
-			insert_cmd(Asm::INST_CALL, p_rax);
-		}
+		insert_cmd(Asm::INST_CALL, param_marker(TypeInt, f->_label));
 	} else {
 		serializer->do_error_link("could not link function " + f->signature());
 	}
@@ -474,19 +457,20 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	fc_end(push_size, params, ret);
 }
 
-void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendX86::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
 	int push_size = fc_begin(params, ret);
 
-	insert_cmd(Asm::INST_MOV, p_rax, fp);
-	insert_cmd(Asm::INST_CALL, p_rax);
+	insert_cmd(Asm::INST_MOV, p_eax, fp);
+	insert_cmd(Asm::INST_CALL, p_eax);
 	extend_reg_usage_to_call(cmd.next_cmd_index - 1);
 	mark_regs_busy_at_call(cmd.next_cmd_index - 1);
 
 	fc_end(push_size, params, ret);
 }
 
-int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
+int BackendX86::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
+	do_error("FIXME: fc_begin()");
 	const Class *type = ret.get_type_save();
 
 
@@ -535,7 +519,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 		insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
 	foreachb(SerialNodeParam &p, stack_param) {
 		insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
-		insert_cmd(Asm::INST_PUSH, p_rax);
+		insert_cmd(Asm::INST_PUSH, p_eax);
 	}
 	max_push_size = max(max_push_size, (int)push_size);
 
@@ -572,7 +556,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 	return push_size;
 }
 
-void BackendAmd64::mark_regs_busy_at_call(int index) {
+void BackendX86::mark_regs_busy_at_call(int index) {
 	// call violates all used registers...
 	for (int i=0;i<map_reg_root.num;i++) {
 		int v = cmd.add_virtual_reg(get_reg(i, 4));
@@ -580,12 +564,12 @@ void BackendAmd64::mark_regs_busy_at_call(int index) {
 	}
 }
 
-void BackendAmd64::extend_reg_usage_to_call(int index) {
+void BackendX86::extend_reg_usage_to_call(int index) {
 	for (int v: func_param_virts)
 		cmd.use_virtual_reg(v, index, index);
 }
 
-SerialNodeParam BackendAmd64::insert_reference(const SerialNodeParam &param, const Class *type) {
+SerialNodeParam BackendX86::insert_reference(const SerialNodeParam &param, const Class *type) {
 	SerialNodeParam ret;
 	if (!type)
 		type = param.type->get_pointer();
@@ -610,7 +594,7 @@ SerialNodeParam BackendAmd64::insert_reference(const SerialNodeParam &param, con
 }
 
 
-void BackendAmd64::add_function_outro(Function *f) {
+void BackendX86::add_function_outro(Function *f) {
 	insert_cmd(Asm::INST_LEAVE, p_none);
 	if (f->effective_return_type->uses_return_by_memory())
 		insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
@@ -618,7 +602,8 @@ void BackendAmd64::add_function_outro(Function *f) {
 		insert_cmd(Asm::INST_RET, p_none);
 }
 
-void BackendAmd64::add_function_intro_params(Function *f) {
+void BackendX86::add_function_intro_params(Function *f) {
+	do_error("FIXME: add_function_intro_params()");
 	// return, instance, params
 	Array<Variable*> param;
 	if (f->effective_return_type->uses_return_by_memory()) {
@@ -701,7 +686,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 }
 
 
-void BackendAmd64::do_mapping() {
+void BackendX86::do_mapping() {
 	map_referenced_temp_vars_to_stack();
 
 
@@ -760,7 +745,7 @@ static void _test_param_mem(SerialNodeParam &p) {
 	//if (p.kind == NodeKind::ADDRESS)
 }
 
-void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
+void BackendX86::correct_unallowed_param_combis2(SerialNode &c) {
 	// push 8 bit -> push 32 bit
 	if (c.inst == Asm::INST_PUSH)
 		if (c.p[0].kind == NodeKind::REGISTER)
@@ -843,7 +828,7 @@ void BackendAmd64::correct_unallowed_param_combis2(SerialNode &c) {
 	}
 }
 
-void BackendAmd64::process_references() {
+void BackendX86::process_references() {
 	for (int i=0;i<cmd.cmd.num;i++)
 		if (cmd.cmd[i].inst == Asm::INST_LEA) {
 			if (cmd.cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY) {
@@ -883,7 +868,7 @@ inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &s
 }
 
 
-void BackendAmd64::map_referenced_temp_vars_to_stack() {
+void BackendX86::map_referenced_temp_vars_to_stack() {
 	for (SerialNode &c: cmd.cmd)
 		if (c.inst == Asm::INST_LEA)
 			if (c.p[1].kind == NodeKind::VAR_TEMP) {
@@ -906,14 +891,14 @@ void BackendAmd64::map_referenced_temp_vars_to_stack() {
 	}
 }
 
-void BackendAmd64::try_map_temp_vars_to_registers() {
+void BackendX86::try_map_temp_vars_to_registers() {
 	for (int i=cmd.temp_var.num-1;i>=0;i--) {
 		if (cmd.temp_var[i].force_stack)
 			continue;
 	}
 }
 
-void BackendAmd64::map_remaining_temp_vars_to_stack() {
+void BackendX86::map_remaining_temp_vars_to_stack() {
 	for (int i=cmd.temp_var.num-1;i>=0;i--) {
 		SerialNodeParam stackvar;
 		add_stack_var(cmd.temp_var[i], stackvar);
@@ -927,7 +912,7 @@ void BackendAmd64::map_remaining_temp_vars_to_stack() {
 
 
 
-void BackendAmd64::add_stack_var(TempVar &v, SerialNodeParam &p) {
+void BackendX86::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	// find free stack space for the life span of the variable....
 	// don't mind... use old algorithm: ALWAYS grow stack... remove ALL on each command in a block
 
@@ -993,7 +978,7 @@ inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &
 }
 
 // mov [0x..] [0x...]  ->  mov eax, [0x..]   mov [0x..] eax    (etc)
-void BackendAmd64::correct_unallowed_param_combis() {
+void BackendX86::correct_unallowed_param_combis() {
 	for (int i=cmd.cmd.num-1;i>=0;i--){
 		if (cmd.cmd[i].inst >= INST_MARKER)
 			continue;
@@ -1025,7 +1010,7 @@ void BackendAmd64::correct_unallowed_param_combis() {
 
 // inst ... [local] ...
 // ->      mov reg, local     inst ...[reg]...
-void BackendAmd64::solve_deref_temp_local(int c, int np, bool is_local) {
+void BackendX86::solve_deref_temp_local(int c, int np, bool is_local) {
 	SerialNodeParam p = cmd.cmd[c].p[np];
 	int shift = p.shift;
 
@@ -1057,7 +1042,7 @@ void BackendAmd64::solve_deref_temp_local(int c, int np, bool is_local) {
 }
 
 
-void BackendAmd64::resolve_deref_temp_and_local() {
+void BackendX86::resolve_deref_temp_and_local() {
 	for (int i=cmd.cmd.num-1;i>=0;i--) {
 		if (cmd.cmd[i].inst >= INST_MARKER)
 			continue;
@@ -1147,7 +1132,7 @@ void BackendAmd64::resolve_deref_temp_and_local() {
 	}
 }
 
-void BackendAmd64::scan_temp_var_usage() {
+void BackendX86::scan_temp_var_usage() {
 	/*msg_write("ScanTempVarUsage");
 	foreachi(TempVar &v, temp_var, i) {
 		v.first = -1;
@@ -1169,7 +1154,7 @@ void BackendAmd64::scan_temp_var_usage() {
 
 
 
-Asm::InstructionParam BackendAmd64::get_param(int inst, SerialNodeParam &p) {
+Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
 	if (p.kind == NodeKind::NONE) {
 		return Asm::param_none;
 	} else if (p.kind == NodeKind::MARKER) {
@@ -1214,13 +1199,14 @@ Asm::InstructionParam BackendAmd64::get_param(int inst, SerialNodeParam &p) {
 		if (p.shift > 0)
 			script->do_error_internal("get_param: immediate + shift");
 		return Asm::param_imm(p.p, p.type->size);
-	} else
+	} else {
 		script->do_error_internal("get_param: unexpected param..." + kind2str(p.kind));
+	}
 	return Asm::param_none;
 }
 
 
-void BackendAmd64::assemble_cmd(SerialNode &c) {
+void BackendX86::assemble_cmd(SerialNode &c) {
 	// translate parameters
 	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
 	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
@@ -1230,7 +1216,7 @@ void BackendAmd64::assemble_cmd(SerialNode &c) {
 	list->add2(c.inst, p1, p2);
 }
 
-void BackendAmd64::assemble_cmd_arm(SerialNode &c) {
+void BackendX86::assemble_cmd_arm(SerialNode &c) {
 	// translate parameters
 	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
 	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
@@ -1253,7 +1239,7 @@ static void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s) {
 
 
 
-void BackendAmd64::add_function_intro_frame(int stack_alloc_size) {
+void BackendX86::add_function_intro_frame(int stack_alloc_size) {
 	int_p reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
 	int_p reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
 	//int s = config.pointer_size;
@@ -1266,7 +1252,7 @@ void BackendAmd64::add_function_intro_frame(int stack_alloc_size) {
 	}
 }
 // convert    SerialNode[] cmd   into    Asm::Instruction..List list
-void BackendAmd64::assemble() {
+void BackendX86::assemble() {
 	// intro + allocate stack memory
 	if (config.instruction_set != Asm::InstructionSet::ARM)
 		stack_max_size += max_push_size;
@@ -1301,6 +1287,5 @@ void BackendAmd64::assemble() {
 	}
 	list->add2(Asm::INST_ALIGN_OPCODE);
 }
-
 
 }

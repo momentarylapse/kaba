@@ -8,16 +8,15 @@
 #pragma once
 
 #include "../kaba.h"
-#include "serializer.h"
 #include "Backend.h"
 
 namespace kaba {
 
 
-class BackendAmd64 : public Backend {
+class BackendX86 : public Backend {
 public:
-	BackendAmd64(Serializer *serializer);
-	~BackendAmd64() override;
+	BackendX86(Serializer *serializer);
+	~BackendX86() override;
 
 	void process(Function *f, int index) override;
 
@@ -36,7 +35,6 @@ public:
 	void map_referenced_temp_vars_to_stack();*/
 
 	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
-	SerialNodeParam p_rax;
 	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialNodeParam p_xmm0, p_xmm1;
 
