@@ -177,7 +177,7 @@ static bool dist_fits_32bit(void *a, void *b) {
 
 void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret);
+	int push_size = fc_begin(params, ret, f->is_static());
 
 	if (f->address) {
 		if (dist_fits_32bit(f->address, script->opcode)) {
@@ -209,7 +209,7 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 
 void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret);
+	int push_size = fc_begin(params, ret, true);
 
 	insert_cmd(Asm::INST_MOV, p_rax, fp);
 	insert_cmd(Asm::INST_CALL, p_rax);
@@ -219,7 +219,7 @@ void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<Seria
 	fc_end(push_size, params, ret);
 }
 
-int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) {
+int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
 	const Class *type = ret.get_type_save();
 
 

@@ -24,7 +24,7 @@ public:
 	void implement_return(kaba::SerialNode &c, int i) override;
 	void implement_mov_chunk(kaba::SerialNode &c, int i, int size) override;
 
-	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) override;
+	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) override;
 	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
 	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
 	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
