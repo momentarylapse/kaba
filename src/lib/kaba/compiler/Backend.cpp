@@ -92,6 +92,18 @@ void Backend::do_error(const string &e) {
 }
 
 
+void Backend::add_asm_block() {
+	//msg_write(".------------------------------- asm");
+	SyntaxTree *ps = script->syntax;
+	if (ps->asm_blocks.num == 0)
+		do_error("asm block mismatch");
+	ps->asm_meta_info->line_offset = ps->asm_blocks[0].line;
+	list->append_from_source(ps->asm_blocks[0].block);
+	ps->asm_blocks.erase(0);
+}
+
+
+
 
 void StackOccupationX::create(Serializer *s, bool down, int reserved, int first, int last) {
 	x.clear();

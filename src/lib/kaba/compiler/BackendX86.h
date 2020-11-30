@@ -22,12 +22,15 @@ public:
 
 	void correct() override;
 	void correct_parameters();
-	void correct_implement_commands();
 
-	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
-	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	virtual void correct_implement_commands();
+	virtual void implement_return(kaba::SerialNode &c, int i);
+	virtual void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
+
+	virtual int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
+	virtual void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	virtual void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	virtual void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
 	/*void map();
 	void assemble();
@@ -35,6 +38,7 @@ public:
 	void map_referenced_temp_vars_to_stack();*/
 
 	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
+	SerialNodeParam p_rax;
 	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialNodeParam p_xmm0, p_xmm1;
 
@@ -47,14 +51,14 @@ public:
 	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
 
 
-	void add_function_outro(Function *f);
-	void add_function_intro_params(Function *f);
+	virtual void add_function_outro(Function *f);
+	virtual void add_function_intro_params(Function *f);
 
 	void do_mapping() override;
 
 
 	void map_referenced_temp_vars_to_stack();
-	void process_references();
+	virtual void process_references();
 	void try_map_temp_vars_to_registers();
 	void map_remaining_temp_vars_to_stack();
 	void resolve_deref_temp_and_local();

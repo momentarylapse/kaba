@@ -19,12 +19,12 @@ bool is_typed_function_pointer(const Class *c);
 
 BackendX86::BackendX86(Serializer *s) : Backend(s) {
 
-	map_reg_root.add(0); // eax
-	map_reg_root.add(1); // ecx
-	map_reg_root.add(2); // edx
+	// eax, ecx, edx
+	map_reg_root = {0,1,2};
 
 	p_eax = param_preg(TypeReg32, Asm::REG_EAX);
 	p_eax_int = param_preg(TypeInt, Asm::REG_EAX);
+	p_rax = param_preg(TypeReg64, Asm::REG_RAX);
 
 	p_deref_eax = param_deref_preg(TypePointer, Asm::REG_EAX);
 
@@ -119,6 +119,76 @@ void BackendX86::correct_parameters() {
 	}
 }
 
+void BackendX86::implement_return(kaba::SerialNode &c, int i) {
+	auto p = c.p[0];
+	cmd.remove_cmd(i);
+	cmd.next_cmd_target(i);
+	do_error("FIXME: return...");
+	if (p.kind != NodeKind::NONE) {
+		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
+			//		cmd.add_cmd(Asm::INST_FLD, t);
+			if (cur_func->effective_return_type == TypeFloat32) {
+				insert_cmd(Asm::INST_MOVSS, p_xmm0, p);
+			} else if (cur_func->effective_return_type == TypeFloat64) {
+				insert_cmd(Asm::INST_MOVSD, p_xmm0, p);
+			} else if (cur_func->effective_return_type->size == 8) {
+				// float[2]
+				insert_cmd(Asm::INST_MOVLPS, p_xmm0, p);
+			} else if (cur_func->effective_return_type->size == 12) {
+				// float[3]
+				insert_cmd(Asm::INST_MOVLPS, p_xmm0,
+						param_shift(p, 0, TypeReg64));
+				insert_cmd(Asm::INST_MOVSS, p_xmm1,
+						param_shift(p, 8, TypeFloat32));
+			} else if (cur_func->effective_return_type->size == 16) {
+				// float[4]
+				insert_cmd(Asm::INST_MOVLPS, p_xmm0,
+						param_shift(p, 0, TypeReg64));
+				insert_cmd(Asm::INST_MOVLPS, p_xmm1,
+						param_shift(p, 8, TypeReg64));
+			} else {
+				do_error(
+						"...ret xmm "
+								+ cur_func->effective_return_type->long_name());
+			}
+		} else {
+			// store return directly in eax / fpu stack (4 byte)
+			if (cur_func->effective_return_type->size == 1) {
+				int v = cmd.add_virtual_reg(Asm::REG_AL);
+				insert_cmd(Asm::INST_MOV,
+						param_vreg(cur_func->effective_return_type, v), p);
+			} else if (cur_func->effective_return_type->size == 8) {
+				int v = cmd.add_virtual_reg(Asm::REG_RAX);
+				insert_cmd(Asm::INST_MOV,
+						param_vreg(cur_func->effective_return_type, v), p);
+			} else {
+				int v = cmd.add_virtual_reg(Asm::REG_EAX);
+				insert_cmd(Asm::INST_MOV,
+						param_vreg(cur_func->effective_return_type, v), p);
+			}
+		}
+	}
+	insert_cmd(Asm::INST_LEAVE);
+	//if (cur_func->effective_return_type->uses_return_by_memory())
+	//	insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
+	//else
+	insert_cmd(Asm::INST_RET);
+}
+
+void BackendX86::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
+	auto p1 = c.p[0];
+	auto p2 = c.p[1];
+	cmd.remove_cmd(i);
+	cmd.next_cmd_target(i);
+	//msg_error("CORRECT MOV " + p1.type->name);
+
+	for (int j=0; j<size/4; j++)
+		insert_cmd(Asm::INST_MOV, param_shift(p1, j * 4, TypeInt), param_shift(p2, j * 4, TypeInt));
+	for (int j=4*(size/4); j<size; j++)
+		insert_cmd(Asm::INST_MOV, param_shift(p1, j, TypeChar), param_shift(p2, j, TypeChar));
+}
+
 void BackendX86::correct_implement_commands() {
 
 	Array<SerialNodeParam> func_params;
@@ -127,17 +197,8 @@ void BackendX86::correct_implement_commands() {
 		auto &c = cmd.cmd[i];
 		if (c.inst == Asm::INST_MOV) {
 			int size = c.p[0].type->size;
-			if (size > 8) {
-				auto p1 = c.p[0];
-				auto p2 = c.p[1];
-				cmd.remove_cmd(i);
-				cmd.next_cmd_target(i);
-				//msg_error("CORRECT MOV " + p1.type->name);
-
-				for (int j=0; j<size/4; j++)
-					insert_cmd(Asm::INST_MOV, param_shift(p1, j * 4, TypeInt), param_shift(p2, j * 4, TypeInt));
-				for (int j=4*(size/4); j<size; j++)
-					insert_cmd(Asm::INST_MOV, param_shift(p1, j, TypeChar), param_shift(p2, j, TypeChar));
+			if (size > config.pointer_size) {
+				implement_mov_chunk(c, i, size);
 				i = cmd.next_cmd_index - 1;
 			}
 		} else if (c.inst == Asm::INST_MOVSX) {
@@ -171,7 +232,6 @@ void BackendX86::correct_implement_commands() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt, vedx));
 			} else { // int64
-				do_error("int64");
 				int vrax = cmd.add_virtual_reg(Asm::REG_RAX);
 				int vrdx = cmd.add_virtual_reg(Asm::REG_RDX);
 				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), p1);
@@ -200,7 +260,6 @@ void BackendX86::correct_implement_commands() {
 				insert_cmd(Asm::INST_IDIV, param_vreg(TypeInt, veax), p2);
 				insert_cmd(Asm::INST_MOV, r, param_vreg(TypeInt, veax));
 			} else { // int64
-				do_error("int64");
 				int vrax = cmd.add_virtual_reg(Asm::REG_RAX);
 				int vrdx = cmd.add_virtual_reg(Asm::REG_RDX);
 				insert_cmd(Asm::INST_MOV, param_vreg(TypeInt64, vrax), p1);
@@ -220,7 +279,7 @@ void BackendX86::correct_implement_commands() {
 			cmd.next_cmd_target(i);
 			int vecx;
 			if (type == TypeInt64) {
-				do_error("shl int64");
+				msg_error("shl int64");
 				vecx = cmd.add_virtual_reg(Asm::REG_RCX);
 			} else
 				vecx = cmd.add_virtual_reg(Asm::REG_ECX);
@@ -324,7 +383,7 @@ void BackendX86::correct_implement_commands() {
 		} else if (c.inst == Asm::INST_CALL) {
 
 			if (c.p[1].type == TypeFunctionCodeP) {
-				//serializer->do_error("indirect call...");
+				//do_error("indirect call...");
 				auto fp = c.p[1];
 				auto ret = c.p[0];
 				cmd.remove_cmd(i);
@@ -343,55 +402,7 @@ void BackendX86::correct_implement_commands() {
 			func_params.clear();
 			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_RET) {
-			auto p = c.p[0];
-			cmd.remove_cmd(i);
-			cmd.next_cmd_target(i);
-
-			do_error("FIXME: return...");
-
-
-
-			if (p.kind != NodeKind::NONE){
-
-				if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
-					// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
-					//		cmd.add_cmd(Asm::INST_FLD, t);
-					if (cur_func->effective_return_type == TypeFloat32){
-						insert_cmd(Asm::INST_MOVSS, p_xmm0, p);
-					}else if (cur_func->effective_return_type == TypeFloat64){
-						insert_cmd(Asm::INST_MOVSD, p_xmm0, p);
-					}else if (cur_func->effective_return_type->size == 8){ // float[2]
-						insert_cmd(Asm::INST_MOVLPS, p_xmm0, p);
-					}else if (cur_func->effective_return_type->size == 12){ // float[3]
-						insert_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
-						insert_cmd(Asm::INST_MOVSS, p_xmm1, param_shift(p, 8, TypeFloat32));
-					}else if (cur_func->effective_return_type->size == 16){ // float[4]
-						insert_cmd(Asm::INST_MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
-						insert_cmd(Asm::INST_MOVLPS, p_xmm1, param_shift(p, 8, TypeReg64));
-					} else {
-						do_error("...ret xmm " + cur_func->effective_return_type->long_name());
-					}
-				}else{ // store return directly in eax / fpu stack (4 byte)
-
-					if (cur_func->effective_return_type->size == 1){
-						int v = cmd.add_virtual_reg(Asm::REG_AL);
-						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
-					}else if (cur_func->effective_return_type->size == 8){
-						int v = cmd.add_virtual_reg(Asm::REG_RAX);
-						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
-					}else{
-						int v = cmd.add_virtual_reg(Asm::REG_EAX);
-						insert_cmd(Asm::INST_MOV, param_vreg(cur_func->effective_return_type, v), p);
-					}
-				}
-			}
-
-
-			insert_cmd(Asm::INST_LEAVE);
-			//if (cur_func->effective_return_type->uses_return_by_memory())
-			//	insert_cmd(Asm::INST_RET, param_imm(TypeReg16, 4));
-			//else
-				insert_cmd(Asm::INST_RET);
+			implement_return(c, i);
 			i = cmd.next_cmd_index - 1;
 		}
 	}
@@ -832,25 +843,14 @@ void BackendX86::process_references() {
 	for (int i=0;i<cmd.cmd.num;i++)
 		if (cmd.cmd[i].inst == Asm::INST_LEA) {
 			if (cmd.cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY) {
-				SerialNodeParam p0 = cmd.cmd[i].p[0];
-				SerialNodeParam p1 = cmd.cmd[i].p[1];
+				auto p0 = cmd.cmd[i].p[0];
+				auto p1 = cmd.cmd[i].p[1];
 				cmd.remove_cmd(i);
 
-				if (config.instruction_set == Asm::InstructionSet::AMD64) {
-					int r = cmd.add_virtual_reg(Asm::REG_RAX);
-					cmd.next_cmd_target(i);
-					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), p1);
-					cmd.next_cmd_target(i+1);
-					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg64, r));
-					cmd.set_virtual_reg(r, i, i+1);
-				} else {
-					int r = cmd.add_virtual_reg(Asm::REG_EAX);
-					cmd.next_cmd_target(i);
-					insert_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), p1);
-					cmd.next_cmd_target(i+1);
-					insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg32, r));
-					cmd.set_virtual_reg(r, i, i+1);
-				}
+				int r = cmd.add_virtual_reg(Asm::REG_EAX);
+				insert_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), p1);
+				insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg32, r));
+				cmd.set_virtual_reg(r, i, i+1);
 			} else {
 				do_error("reference in x86: " + cmd.cmd[i].p[1].str(serializer));
 			}
@@ -1227,17 +1227,6 @@ void BackendX86::assemble_cmd_arm(SerialNode &c) {
 	list->add_arm(c.cond, c.inst, p1, p2, p3);
 }
 
-static void AddAsmBlock(Asm::InstructionWithParamsList *list, Script *s) {
-	//msg_write(".------------------------------- asm");
-	SyntaxTree *ps = s->syntax;
-	if (ps->asm_blocks.num == 0)
-		s->do_error("asm block mismatch");
-	ps->asm_meta_info->line_offset = ps->asm_blocks[0].line;
-	list->append_from_source(ps->asm_blocks[0].block);
-	ps->asm_blocks.erase(0);
-}
-
-
 
 void BackendX86::add_function_intro_frame(int stack_alloc_size) {
 	int_p reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
@@ -1276,7 +1265,7 @@ void BackendX86::assemble() {
 		if (cmd.cmd[i].inst == INST_MARKER) {
 			list->insert_label(cmd.cmd[i].p[0].p);
 		} else if (cmd.cmd[i].inst == INST_ASM) {
-			AddAsmBlock(list, script);
+			add_asm_block();
 		} else {
 
 			if (config.instruction_set == Asm::InstructionSet::ARM)

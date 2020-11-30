@@ -74,6 +74,9 @@ public:
 	static int get_reg(int root, int size);
 
 	void do_error(const string &e);
+
+
+	void add_asm_block();
 };
 
 

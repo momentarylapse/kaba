@@ -9,74 +9,33 @@
 
 #include "../kaba.h"
 #include "serializer.h"
-#include "Backend.h"
+#include "BackendX86.h"
 
 namespace kaba {
 
 
-class BackendAmd64 : public Backend {
+class BackendAmd64 : public BackendX86 {
 public:
 	BackendAmd64(Serializer *serializer);
 	~BackendAmd64() override;
 
-	void process(Function *f, int index) override;
+	void process_references() override;
 
-	void correct() override;
-	void correct_parameters();
-	void correct_implement_commands();
+	void implement_return(kaba::SerialNode &c, int i) override;
+	void implement_mov_chunk(kaba::SerialNode &c, int i, int size) override;
 
-	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret);
-	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-
-	/*void map();
-	void assemble();
-
-	void map_referenced_temp_vars_to_stack();*/
-
-	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
-	SerialNodeParam p_rax;
-	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
-	SerialNodeParam p_xmm0, p_xmm1;
+	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret) override;
+	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
+	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
+	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) override;
 
 
-	//static int reg_resize(int reg, int size);
-	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);
-
-	//static int get_reg(int root, int size);
-
-	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
-
-
-	void add_function_outro(Function *f);
-	void add_function_intro_params(Function *f);
-
-	void do_mapping() override;
-
-
-	void map_referenced_temp_vars_to_stack();
-	void process_references();
-	void try_map_temp_vars_to_registers();
-	void map_remaining_temp_vars_to_stack();
-	void resolve_deref_temp_and_local();
-	void correct_unallowed_param_combis();
-	void correct_unallowed_param_combis2(SerialNode &node);
-
-	void add_stack_var(TempVar &v, SerialNodeParam &p);
-	void scan_temp_var_usage();
-	void solve_deref_temp_local(int c, int np, bool is_local);
-
-	void assemble() override;
+	void add_function_outro(Function *f) override;
+	void add_function_intro_params(Function *f) override;
 
 	void correct_return() {}
-	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
-	void assemble_cmd(SerialNode &c);
-	void assemble_cmd_arm(SerialNode &c);
-	void add_function_intro_frame(int stack_alloc_size);
 
-	void mark_regs_busy_at_call(int index);
-	void extend_reg_usage_to_call(int index);
+	void add_function_intro_frame(int stack_alloc_size);
 };
 
 }
