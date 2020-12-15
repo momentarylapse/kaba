@@ -71,8 +71,7 @@ public:
 
 	void assemble() override;
 
-	void correct_return() {}
-	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
+	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
 	void assemble_cmd(SerialNode &c);
 	void assemble_cmd_arm(SerialNode &c);
 	void add_function_intro_frame(int stack_alloc_size);

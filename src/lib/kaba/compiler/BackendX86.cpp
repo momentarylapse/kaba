@@ -96,21 +96,24 @@ void BackendX86::correct_parameters() {
 	for (auto &c: cmd.cmd) {
 		for (auto &p: c.p) {
 			if (p.kind == NodeKind::VAR_LOCAL) {
-				p.p = ((Variable*)p.p)->_offset;
+				auto v = (Variable*)p.p;
+				p.p = v->_offset;
 				p.kind = NodeKind::LOCAL_MEMORY;
 			} else if (p.kind == NodeKind::VAR_GLOBAL) {
-				p.p = (int_p)((Variable*)p.p)->memory;
+				auto v = (Variable*)p.p;
+				p.p = (int_p)v->memory;
 				if (!p.p)
 					script->do_error_link("variable is not linkable: " + ((Variable*)p.p)->name);
 				p.kind = NodeKind::MEMORY;
 			} else if (p.kind == NodeKind::CONSTANT) {
-				p.p = (int_p)((Constant*)p.p)->address; // FIXME ....need a cleaner approach for compiling os...
+				auto cc = (Constant*)p.p;
+				p.p = (int_p)cc->address; // FIXME ....need a cleaner approach for compiling os...
 				if (config.compile_os)
 					p.kind = NodeKind::MEMORY;
 				else
 					p.kind = NodeKind::CONSTANT_BY_ADDRESS;
 				if (script->syntax->flag_function_pointer_as_code and (p.type == TypeFunctionP)) {
-					auto *fp = (Function*)(int_p)((Constant*)p.p)->as_int64();
+					auto *fp = (Function*)(int_p)cc->as_int64();
 					p.kind = NodeKind::MARKER;
 					p.p = fp->_label;
 				}
@@ -371,7 +374,6 @@ void BackendX86::correct_implement_commands() {
 			cmd.remove_cmd(i);
 			i --;
 		} else if (c.inst == Asm::INST_CALL) {
-			msg_write("BACKEND: " + c.str(serializer));
 
 			if (c.p[1].type == TypeFunctionCodeP) {
 				//do_error("indirect call...");
@@ -1014,7 +1016,7 @@ void BackendX86::scan_temp_var_usage() {
 
 
 
-Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
+Asm::InstructionParam BackendX86::prepare_param(int inst, SerialNodeParam &p) {
 	if (p.kind == NodeKind::NONE) {
 		return Asm::param_none;
 	} else if (p.kind == NodeKind::MARKER) {
@@ -1023,7 +1025,7 @@ Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
 		return Asm::param_deref_label(p.p, p.type->size);
 	} else if (p.kind == NodeKind::REGISTER) {
 		if (p.shift > 0)
-			script->do_error_internal("get_param: reg + shift");
+			do_error("prepare_param: reg + shift");
 		return Asm::param_reg(p.p);
 		//param_size = p.type->size;
 	} else if (p.kind == NodeKind::DEREF_REGISTER) {
@@ -1035,7 +1037,7 @@ Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
 		int size = p.type->size;
 		// compiler self-test
 		if ((size != 1) and (size != 2) and (size != 4) and (size != 8))
-			script->do_error_internal("get_param: evil global of type " + p.type->name);
+			do_error("prepare_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		if (config.instruction_set == Asm::InstructionSet::ARM) {
@@ -1057,12 +1059,10 @@ Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
 		}
 	} else if (p.kind == NodeKind::IMMEDIATE) {
 		if (p.shift > 0)
-			script->do_error_internal("get_param: immediate + shift");
+			do_error("get_param: immediate + shift");
 		return Asm::param_imm(p.p, p.type->size);
-	} else if (p.kind == NodeKind::FUNCTION) {
-		script->do_error_internal("unexp func name..." + ((Function*)p.p)->long_name());
 	} else {
-		script->do_error_internal("get_param: unexpected param..." + kind2str(p.kind));
+		do_error("prepare_param: unexpected param..." + p.str(serializer));
 	}
 	return Asm::param_none;
 }
@@ -1070,8 +1070,8 @@ Asm::InstructionParam BackendX86::get_param(int inst, SerialNodeParam &p) {
 
 void BackendX86::assemble_cmd(SerialNode &c) {
 	// translate parameters
-	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
-	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
+	auto p1 = prepare_param(c.inst, c.p[0]);
+	auto p2 = prepare_param(c.inst, c.p[1]);
 
 	// assemble instruction
 	//list->current_line = c.
@@ -1080,9 +1080,9 @@ void BackendX86::assemble_cmd(SerialNode &c) {
 
 void BackendX86::assemble_cmd_arm(SerialNode &c) {
 	// translate parameters
-	Asm::InstructionParam p1 = get_param(c.inst, c.p[0]);
-	Asm::InstructionParam p2 = get_param(c.inst, c.p[1]);
-	Asm::InstructionParam p3 = get_param(c.inst, c.p[2]);
+	auto p1 = prepare_param(c.inst, c.p[0]);
+	auto p2 = prepare_param(c.inst, c.p[1]);
+	auto p3 = prepare_param(c.inst, c.p[2]);
 
 	// assemble instruction
 	//list->current_line = c.
@@ -1091,8 +1091,8 @@ void BackendX86::assemble_cmd_arm(SerialNode &c) {
 
 
 void BackendX86::add_function_intro_frame(int stack_alloc_size) {
-	int_p reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
-	int_p reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
+	int reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
+	int reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
 	//int s = config.pointer_size;
 	list->add2(Asm::INST_PUSH, Asm::param_reg(reg_bp));
 	list->add2(Asm::INST_MOV, Asm::param_reg(reg_bp), Asm::param_reg(reg_sp));
@@ -1120,7 +1120,6 @@ void BackendX86::assemble() {
 
 	if (!config.no_function_frame)
 		add_function_intro_frame(stack_max_size); // param intro later...
-	correct_return();
 
 	for (int i=0;i<cmd.cmd.num;i++) {
 

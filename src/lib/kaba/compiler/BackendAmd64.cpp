@@ -14,8 +14,6 @@
 namespace kaba {
 
 
-bool is_typed_function_pointer(const Class *c);
-
 BackendAmd64::BackendAmd64(Serializer *s) : BackendX86(s) {
 
 	// eax, ecx, edx
