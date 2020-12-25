@@ -113,6 +113,9 @@ void SIAddPackageNet() {
 		class_add_func("clear_buffer", TypeVoid, net_p(mf(&Socket::clear_buffer)));
 		class_add_func("start_block", TypeVoid, net_p(mf(&Socket::start_block)));
 		class_add_func("end_block", TypeVoid, net_p(mf(&Socket::end_block)));
+		class_add_func("set_buffer_pos", TypeVoid, net_p(mf(&Socket::set_buffer_pos)));
+			func_add_param("pos", TypeInt);
+		class_add_func("get_buffer_pos", TypeInt, net_p(mf(&Socket::get_buffer_pos)));
 		class_add_func("__lshift__", TypeVoid, net_p(mf((void(Socket::*)(int))&Socket::operator<<)));
 			func_add_param("i", TypeInt);
 		class_add_func("__lshift__", TypeVoid, net_p(mf((void(Socket::*)(float))&Socket::operator<<)));
