@@ -18,6 +18,7 @@ public:
 	BackendARM(Serializer *serializer);
 	~BackendARM() override;
 
+#if 0
 	void process(Function *f, int index) override;
 
 	void correct() override;
@@ -72,6 +73,7 @@ public:
 
 	void mark_regs_busy_at_call(int index);
 	void extend_reg_usage_to_call(int index);
+#endif
 };
 
 }

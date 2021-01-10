@@ -10,6 +10,9 @@
 
 #include "nix.h"
 #include "nix_common.h"
+#ifdef _X_USE_HUI_
+#include "../hui/hui.h"
+#endif
 #ifdef _X_USE_IMAGE_
 #include "../image/image.h"
 #endif
@@ -94,7 +97,7 @@ void FrameBuffer::update_x(const Array<Texture*> &attachments, int cube_face) {
 		target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + cube_face;
 	foreachi (Texture *t, color_attachments, i) {
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, target, t->texture, 0);
-		TestGLError("FrameBuffer: glFramebufferTexture");
+		TestGLError("FrameBuffer: glFramebufferTexture2D");
 		draw_buffers.add(GL_COLOR_ATTACHMENT0 + (unsigned)i);
 	}
 	glDrawBuffers(draw_buffers.num, &draw_buffers[0]);
@@ -384,6 +387,8 @@ void ScreenShotToImage(Image &image) {
 					GL_RGBA, GL_UNSIGNED_BYTE, &image.data[0]);
 }
 
+#ifdef _X_USE_HUI_
+
 void StartFrameHui() {
 	int fb;
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fb);
@@ -392,9 +397,12 @@ void StartFrameHui() {
 	FrameBuffer::DEFAULT->height = hui::GetEvent()->row;
 	SetViewport(FrameBuffer::DEFAULT->area());
 }
+
 void EndFrameHui() {
 	FrameBuffer::DEFAULT->frame_buffer = 0;
 }
+
+#endif
 
 
 #if HAS_LIB_GLFW

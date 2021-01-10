@@ -19,7 +19,9 @@ namespace kaba {
 bool is_typed_function_pointer(const Class *c);
 
 BackendARM::BackendARM(Serializer *s) : Backend(s) {
+}
 
+BackendARM::~BackendARM() {
 }
 
 }
