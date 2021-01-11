@@ -190,7 +190,8 @@ void BackendX86::correct_implement_commands() {
 		auto &c = cmd.cmd[i];
 		if (c.inst == Asm::INST_MOV) {
 			int size = c.p[0].type->size;
-			if (size > config.pointer_size) {
+			// mov can only copy these sizes (ignore 2...)
+			if (size != 1 and size != 4 and size != config.pointer_size) {
 				implement_mov_chunk(c, i, size);
 				i = cmd.next_cmd_index - 1;
 			}
