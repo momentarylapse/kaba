@@ -327,7 +327,7 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 			break;
 		case InlineID::INT_TO_CHAR:
 		case InlineID::CHAR_TO_INT:
-			cmd.add_cmd(Asm::INST_MOVSX, ret, param[0]);
+			cmd.add_cmd(Asm::INST_MOVZX, ret, param[0]);
 			break;
 		case InlineID::RECT_SET:
 		case InlineID::VECTOR_SET:
