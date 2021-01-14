@@ -498,6 +498,21 @@
     <ClCompile Include="src\lib\kaba\compiler\SerialNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\net\BinaryBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\net\Socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\Backend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\BackendARM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\compiler\BackendX86.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\config.h">
@@ -904,6 +919,21 @@
     </ClInclude>
     <ClInclude Include="src\lib\kaba\compiler\SerialNode.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\net\BinaryBuffer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\net\Socket.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\Backend.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\BackendARM.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\BackendX86.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

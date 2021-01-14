@@ -203,7 +203,10 @@
     <ClCompile Include="src\lib\kaba\asm\asm.cpp" />
     <ClCompile Include="src\lib\kaba\asm\asm_arm.cpp" />
     <ClCompile Include="src\lib\kaba\asm\asm_x86.cpp" />
+    <ClCompile Include="src\lib\kaba\compiler\Backend.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\BackendAmd64.cpp" />
+    <ClCompile Include="src\lib\kaba\compiler\BackendARM.cpp" />
+    <ClCompile Include="src\lib\kaba\compiler\BackendX86.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\CommandList.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\compiler.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\mapper.cpp" />
@@ -250,7 +253,9 @@
     <ClCompile Include="src\lib\math\ray.cpp" />
     <ClCompile Include="src\lib\math\rect.cpp" />
     <ClCompile Include="src\lib\math\vector.cpp" />
+    <ClCompile Include="src\lib\net\BinaryBuffer.cpp" />
     <ClCompile Include="src\lib\net\net.cpp" />
+    <ClCompile Include="src\lib\net\Socket.cpp" />
     <ClCompile Include="src\lib\nix\nix.cpp" />
     <ClCompile Include="src\lib\nix\nix_draw.cpp" />
     <ClCompile Include="src\lib\nix\nix_light.cpp" />
@@ -354,7 +359,10 @@
     <ClInclude Include="src\lib\image\Painter.h" />
     <ClInclude Include="src\lib\kaba\asm\asm.h" />
     <ClInclude Include="src\lib\kaba\asm\internal.h" />
+    <ClInclude Include="src\lib\kaba\compiler\Backend.h" />
     <ClInclude Include="src\lib\kaba\compiler\BackendAmd64.h" />
+    <ClInclude Include="src\lib\kaba\compiler\BackendARM.h" />
+    <ClInclude Include="src\lib\kaba\compiler\BackendX86.h" />
     <ClInclude Include="src\lib\kaba\compiler\CommandList.h" />
     <ClInclude Include="src\lib\kaba\compiler\serializer.h" />
     <ClInclude Include="src\lib\kaba\compiler\SerializerX.h" />
@@ -386,7 +394,9 @@
     <ClInclude Include="src\lib\math\ray.h" />
     <ClInclude Include="src\lib\math\rect.h" />
     <ClInclude Include="src\lib\math\vector.h" />
+    <ClInclude Include="src\lib\net\BinaryBuffer.h" />
     <ClInclude Include="src\lib\net\net.h" />
+    <ClInclude Include="src\lib\net\Socket.h" />
     <ClInclude Include="src\lib\nix\nix.h" />
     <ClInclude Include="src\lib\nix\nix_common.h" />
     <ClInclude Include="src\lib\nix\nix_config.h" />

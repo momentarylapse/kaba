@@ -179,7 +179,7 @@ Socket *Socket::accept() {
 	struct sockaddr_in remote_addr;
 	int size = sizeof(remote_addr);
 #ifdef USE_WINSOCK
-	con->s = ::accept(s, (struct sockaddr *)&remote_addr, &size);
+	auto as = ::accept(s, (struct sockaddr *)&remote_addr, &size);
 #else
 	socklen_t len = (socklen_t)size;
 	auto as = ::accept(s, (struct sockaddr *)&remote_addr, &len);
