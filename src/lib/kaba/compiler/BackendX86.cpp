@@ -1106,8 +1106,8 @@ void BackendX86::assemble_cmd_arm(SerialNode &c) {
 
 
 void BackendX86::add_function_intro_frame(int stack_alloc_size) {
-	int reg_bp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RBP : Asm::REG_EBP;
-	int reg_sp = (config.instruction_set == Asm::InstructionSet::AMD64) ? Asm::REG_RSP : Asm::REG_ESP;
+	int reg_bp = Asm::REG_EBP;
+	int reg_sp = Asm::REG_ESP;
 	//int s = config.pointer_size;
 	list->add2(Asm::INST_PUSH, Asm::param_reg(reg_bp));
 	list->add2(Asm::INST_MOV, Asm::param_reg(reg_bp), Asm::param_reg(reg_sp));
