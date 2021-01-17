@@ -224,6 +224,13 @@ public:
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);
 			
+		if (flag_disassemble) {
+			flag_verbose = true;
+			if (debug_stage_filter == "*")
+				debug_stage_filter = "dasm*";
+			else
+				debug_stage_filter += ",dasm*";
+		}
 			
 		kaba::config.compile_silently = !flag_verbose;
 		kaba::config.verbose = flag_verbose;
@@ -269,16 +276,13 @@ public:
 				else if (output_format == "elf")
 					output_to_file_elf(s, out_file);
 
-				if (flag_disassemble)
-					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
+				//if (flag_disassemble)
+				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 			} else {
-				if (flag_disassemble)
-					msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
-
 				if (kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
 					execute(s, p.arg.sub(1, -1));
 			}
-		} catch(kaba::Exception &e) {
+		} catch (kaba::Exception &e) {
 			if (use_gui)
 				hui::ErrorBox(NULL, _("Error in script"), e.message());
 			else
