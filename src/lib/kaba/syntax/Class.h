@@ -46,7 +46,7 @@ public:
 		POINTER,
 		POINTER_SILENT, // pointer silent (&)
 		POINTER_SHARED,
-		POINTER_UNIQUE,
+		POINTER_OWNED,
 		FUNCTION,
 		DICT,
 	};
@@ -59,6 +59,7 @@ public:
 	bool is_pointer() const;
 	bool is_some_pointer() const;
 	bool is_pointer_shared() const;
+	bool is_pointer_owned() const;
 	bool is_pointer_silent() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;

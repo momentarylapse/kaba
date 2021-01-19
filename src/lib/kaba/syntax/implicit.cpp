@@ -78,7 +78,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 						self->shift(te->size * i, te)));
 			}
 		}
-	} else if (t->is_pointer_shared()) {
+	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		auto te = t->param[0];
 		// self.p = nil
 		f->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
@@ -136,7 +136,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 		} else if (te->needs_destructor()) {
 			do_error_implicit(f, "element desctructor missing");
 		}
-	} else if (t->is_pointer_shared()) {
+	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		// call clear()
 		auto f_clear = t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
 		if (!f_clear)
@@ -647,6 +647,13 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()}, {"p"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
 		add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
+	} else if (t->is_pointer_owned()) {
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()}, {"p"});
+		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
+		//add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
 	} else { // regular classes
 		if (!t->is_simple_class()) {
 			if (t->parent) {
@@ -735,6 +742,13 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()})), t);
 		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 		auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()})), t);
+	} else if (t->is_pointer_owned()) {
+		auto_implement_constructor(prepare_auto_impl(t, t->get_default_constructor()), t, true);
+		auto_implement_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		auto_implement_shared_clear(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {})), t);
+		auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()})), t);
+		//auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
+		//auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_constructor(prepare_auto_impl(t, cf), t, true);

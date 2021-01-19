@@ -31,6 +31,7 @@ const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_CLASSIFY = -30;
 const int TYPE_CAST_MAKE_SHARED = -40;
+const int TYPE_CAST_MAKE_OWNED = -40;
 
 bool type_match(const Class *given, const Class *wanted);
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
@@ -1112,6 +1113,10 @@ const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
 	return tree->make_class(IDENTIFIER_SHARED + " " + parent->name, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
+const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
+	return tree->make_class(IDENTIFIER_OWNED + " " + parent->name, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
@@ -1144,13 +1149,17 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		}
 	} else if (Exp.cur == "{") {
 		operands = {parse_dict(block)};
-	} else if (Exp.cur == IDENTIFIER_SHARED) {
+	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
+		string pre = Exp.cur;
 		Exp.next();
 		auto t = tree->find_root_type_by_name(Exp.cur, ns, true);
 		if (!t)
-			do_error("type expected after 'shared'");
+			do_error(format("type expected after '%s'", pre));
 		Exp.next();
-		t = make_pointer_shared(tree, t);
+		if (pre == IDENTIFIER_SHARED)
+			t = make_pointer_shared(tree, t);
+		else //if (pre == IDENTIFIER_OWNED)
+			t = make_pointer_owned(tree, t);
 		operands = {tree->add_node_class(t)};
 	} else {
 		// direct operand
@@ -1243,6 +1252,13 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		}
 	}
+	/*if (wanted->is_pointer_owned() and given->is_pointer()) {
+		if (type_match(given->param[0], wanted->param[0])) {
+			penalty = 10;
+			cast = TYPE_CAST_MAKE_OWNED;
+			return true;
+		}
+	}*/
 	if (wanted->is_pointer_silent()) {
 		// "silent" pointer (&)?
 		if (type_match(given, wanted->param[0])) {
@@ -1342,7 +1358,7 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 		}
 		do_error("classify...");
 	}
-	if (tc == TYPE_CAST_MAKE_SHARED) {
+	if ((tc == TYPE_CAST_MAKE_SHARED) or (tc == TYPE_CAST_MAKE_OWNED)) {
 		auto f = wanted->get_func(IDENTIFIER_FUNC_SHARED_CREATE, wanted, {node->type});
 		if (!f)
 			do_error("make shared... create missing...");
