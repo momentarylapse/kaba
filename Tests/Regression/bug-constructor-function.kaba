@@ -7,6 +7,6 @@ class Tag
 		print("del")
 
 void main()
-	Tag()
+	let t = Tag()
 	if false
-		Tag()
+		let t2 = Tag()

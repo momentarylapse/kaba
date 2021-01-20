@@ -70,6 +70,7 @@ public:
 	shared<Node> parse_list(Block *block);
 	shared<Node> build_abstract_dict(const Array<shared<Node>> &el);
 	shared<Node> parse_dict(Block *block);
+	shared<Node> build_abstract_tuple(const Array<shared<Node>> &el);
 
 	const Class *get_constant_type(const string &str);
 	void get_constant_value(const string &str, Value &value);

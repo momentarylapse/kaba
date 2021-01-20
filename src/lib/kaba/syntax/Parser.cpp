@@ -597,8 +597,8 @@ const Class *Parser::parse_type_extension_child(const Class *c) {
 	return sub;
 }
 
-bool is_type_list(const shared<Node> n) {
-	if (n->kind != NodeKind::ARRAY_BUILDER)
+bool is_type_tuple(const shared<Node> n) {
+	if (n->kind != NodeKind::TUPLE)
 		return false;
 	for (auto p: weak(n->params))
 		if (p->kind != NodeKind::CLASS)
@@ -617,7 +617,7 @@ Array<const Class*> extract_classes(const shared<Node> n) {
 shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type) {
 
 	// special
-	if (is_type_list(operands[0]) and (Exp.cur == "->")) {
+	if (is_type_tuple(operands[0]) and (Exp.cur == "->")) {
 		Exp.next();
 		auto ret = parse_type(block->name_space());
 		auto t = tree->make_class_func(extract_classes(operands[0]), ret);
@@ -857,6 +857,14 @@ shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {
 
 shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
 	auto c = new Node(NodeKind::DICT_BUILDER, 0, TypeAbstractDict, true);
+	c->set_num_params(el.num);
+	for (int i=0; i<el.num; i++)
+		c->set_param(i, el[i]);
+	return c;
+}
+
+shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
+	auto c = new Node(NodeKind::TUPLE, 0, TypeAbstractList, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -1117,6 +1125,27 @@ const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
 	return tree->make_class(IDENTIFIER_OWNED + " " + parent->name, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
+const Class *merge_type_list(SyntaxTree *tree, const Array<const Class*> &classes) {
+	string name;
+	int size = 0;
+	for (auto &c: classes) {
+		size += c->size;
+		if (name != "")
+			name += ",";
+		name += c->name;
+	}
+	return tree->make_class(name, Class::Type::OTHER, size, -1, nullptr, classes, tree->_base_class.get());
+
+}
+
+shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
+	if (!is_type_tuple(n))
+		return n;
+	auto classes = extract_classes(n);
+	msg_write("CAN MERGE...");
+	return tree->add_node_class(merge_type_list(tree, classes));
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
@@ -1199,6 +1228,9 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		}
 
 	}
+	if (prefer_class and (operands[0]->kind != NodeKind::CLASS))
+		operands[0] = digest_type(tree, operands[0]);
+
 	if (Exp.end_of_line())
 		return operands[0];
 
@@ -1572,7 +1604,7 @@ void Parser::link_most_important_operator(shared_array<Node> &operands, shared_a
 	if (op_no->id == OperatorID::COMMA) {
 		int first = mio, last = mio;
 		get_comma_range(_operators, mio, first, last);
-		auto n = build_abstract_list(operands.sub(first, last - first + 1));
+		auto n = build_abstract_tuple(operands.sub(first, last - first + 1));
 		operands[first] = n;
 		for (int i=last-1; i>=first; i--) {
 			_operators.erase(i);
@@ -2658,7 +2690,7 @@ void Parser::parse_complete_command(Block *block) {
 
 	} else {
 
-		auto first = parse_operand(block, block->name_space());
+		auto first = parse_operand(block, block->name_space(), true);
 
 		if ((first->kind == NodeKind::CLASS) and !Exp.end_of_line()) {
 			parse_local_definition(block, first->as_class());
@@ -3193,7 +3225,7 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 const Class *Parser::parse_type(const Class *ns) {
 	auto cc = parse_operand(tree->root_of_all_evil->block.get(), ns, true);
 	if (cc->kind != NodeKind::CLASS) {
-		//cc->show(TypeVoid);
+		cc->show(TypeVoid);
 		do_error("type expected");
 	}
 	return cc->as_class();
