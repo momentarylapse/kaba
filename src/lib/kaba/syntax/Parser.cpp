@@ -18,6 +18,7 @@ ExpressionBuffer *cur_exp_buf = nullptr;
 
 extern const Class *TypeAbstractList;
 extern const Class *TypeAbstractDict;
+extern const Class *TypeAbstractTuple;
 extern const Class *TypeIntList;
 extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
@@ -864,7 +865,7 @@ shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
 }
 
 shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::TUPLE, 0, TypeAbstractList, true);
+	auto c = new Node(NodeKind::TUPLE, 0, TypeAbstractTuple, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -1125,7 +1126,7 @@ const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
 	return tree->make_class(IDENTIFIER_OWNED + " " + parent->name, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
-const Class *merge_type_list(SyntaxTree *tree, const Array<const Class*> &classes) {
+const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes) {
 	string name;
 	int size = 0;
 	for (auto &c: classes) {
@@ -1134,7 +1135,16 @@ const Class *merge_type_list(SyntaxTree *tree, const Array<const Class*> &classe
 			name += ",";
 		name += c->name;
 	}
-	return tree->make_class(name, Class::Type::OTHER, size, -1, nullptr, classes, tree->_base_class.get());
+	auto c = const_cast<Class*>(tree->make_class("("+name+")", Class::Type::OTHER, size, -1, nullptr, classes, tree->_base_class.get()));
+	if (c->elements.num == 0) {
+		int offset = 0;
+		foreachi (auto &cc, classes, i) {
+			c->elements.add(ClassElement("e" + i2s(i), cc, offset));
+			offset += cc->size;
+		}
+		tree->add_missing_function_headers_for_class(c);
+	}
+	return c;
 
 }
 
@@ -1143,7 +1153,7 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 		return n;
 	auto classes = extract_classes(n);
 	msg_write("CAN MERGE...");
-	return tree->add_node_class(merge_type_list(tree, classes));
+	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
 }
 
 // minimal operand

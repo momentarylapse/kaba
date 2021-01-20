@@ -49,6 +49,7 @@ public:
 		POINTER_OWNED,
 		FUNCTION,
 		DICT,
+		PRODUCT, // (a,b) in (A x B)
 	};
 	Type type;
 	Flags flags;
@@ -82,7 +83,8 @@ public:
 	bool force_call_by_value() const;
 	bool uses_call_by_reference() const;
 	bool uses_return_by_memory() const;
-	bool is_simple_class() const;
+	//bool is_simple_class() const;
+	bool can_memcpy() const;
 	bool is_size_known() const;
 	const Class *get_array_element() const;
 	bool usable_as_super_array() const;

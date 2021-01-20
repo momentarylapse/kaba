@@ -572,6 +572,8 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	} else if (t->type == Class::Type::FUNCTION) {
 		t->derive_from(TypeFunction, true);
 		t->param = params;
+	//} else if (t->type == Class::Type::PRODUCT) {
+	//	add_missing_function_headers_for_class(t);
 	}
 	return t;
 }

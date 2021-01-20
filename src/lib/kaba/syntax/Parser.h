@@ -150,7 +150,7 @@ public:
 
 
 	void auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t);
-	void auto_implement_add_child_constructors(shared<Node> self, Function *f, const Class *t);
+	void auto_implement_add_child_constructors(shared<Node> self, Function *f, const Class *t, bool allow_elements_from_parent);
 	void auto_implement_constructor(Function *f, const Class *t, bool allow_parent_constructor);
 	void auto_implement_destructor(Function *f, const Class *t);
 	void auto_implement_assign(Function *f, const Class *t);

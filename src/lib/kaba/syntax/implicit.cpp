@@ -25,8 +25,10 @@ void Parser::auto_implement_add_virtual_table(shared<Node> self, Function *f, co
 	}
 }
 
-void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function *f, const Class *t) {
+void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function *f, const Class *t, bool allow_elements_from_parent) {
 	int i0 = t->parent ? t->parent->elements.num : 0;
+	if (allow_elements_from_parent)
+		i0 = 0;
 	foreachi(ClassElement &e, t->elements, i) {
 		if (i < i0)
 			continue;
@@ -84,6 +86,19 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 		f->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
 				self->shift(0, TypePointer),
 				tree->add_node_const(tree->add_constant_pointer(te->get_pointer(), nullptr))));
+	} else if (flags_has(f->flags, Flags::__INIT_FILL_ALL_PARAMS)) {
+		// init
+		auto_implement_add_child_constructors(self, f, t, true);
+
+		// element[] = param[]
+		foreachi(ClassElement &e, t->elements, i)
+			if (!e.hidden()) {
+				auto param = tree->add_node_local(f->__get_var(e.name));
+				auto n_assign = link_operator_id(OperatorID::ASSIGN, self->shift(e.offset, e.type), param);
+				if (!n_assign)
+					do_error_implicit(f, format("no %s.__assign__() found", e.type->long_name()));
+				f->block->add(n_assign);
+			}
 	} else {
 
 		// parent constructor
@@ -105,7 +120,7 @@ void Parser::auto_implement_constructor(Function *f, const Class *t, bool allow_
 		}
 
 		// call child constructors for elements
-		auto_implement_add_child_constructors(self, f, t);
+		auto_implement_add_child_constructors(self, f, t, false);
 
 		// add vtable reference
 		// after child constructor (otherwise would get overwritten)
@@ -564,7 +579,7 @@ void Parser::auto_implement_shared_create(Function *f, const Class *t) {
 }
 
 
-void SyntaxTree::add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf, Flags flags) {
+Function *SyntaxTree::add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf, Flags flags) {
 	Function *f = add_function(name, return_type, t, flags); // always member-function??? no...?
 	f->auto_declared = true;
 	foreachi (auto &p, param_types, i) {
@@ -573,9 +588,11 @@ void SyntaxTree::add_func_header(Class *t, const string &name, const Class *retu
 		v->is_const = true;
 		f->num_params ++;
 	}
+	//msg_write("ADD " + f->signature(TypeVoid));
 	f->update_parameters_after_parsing();
 	bool override = cf;
 	t->add_function(this, f, false, override);
+	return f;
 }
 
 bool needs_new(Function *f) {
@@ -611,6 +628,19 @@ void redefine_inherited_constructors(Class *t, SyntaxTree *tree) {
 		if (needs_new(c))
 			tree->add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c);
 	}
+}
+
+void add_full_constructor(Class *t, SyntaxTree *tree) {
+	Array<string> names;
+	Array<const Class*> types;
+	for (auto &e: t->elements) {
+		if (!e.hidden()) {
+			names.add(e.name);
+			types.add(e.type);
+		}
+	}
+	auto f = tree->add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, types, names);
+	flags_set(f->flags, Flags::__INIT_FILL_ALL_PARAMS);
 }
 
 void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
@@ -655,7 +685,12 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
 		//add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
 	} else { // regular classes
-		if (!t->is_simple_class()) {
+		if (t->can_memcpy()) {
+			if (has_user_constructors(t)) {
+			} else if (t->elements.num <= 8){
+				add_full_constructor(t, this);
+			}
+		} else {
 			if (t->parent) {
 				if (has_user_constructors(t)) {
 					// don't inherit constructors!
@@ -665,8 +700,11 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 					redefine_inherited_constructors(t, this);
 				}
 			}
-			if (t->needs_constructor() and t->get_constructors().num == 0)
+			if (t->needs_constructor() and t->get_constructors().num == 0) {
 				add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
+				if (t->vtable.num == 0 and t->elements.num <= 8)
+					add_full_constructor(t, this);
+			}
 			if (needs_new(t->get_destructor()))
 				add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
 		}
@@ -680,7 +718,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 				add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			}
 		}
-		if (t->get_assign() and t->is_simple_class()) {
+		if (t->get_assign() and t->can_memcpy()) {
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
 		}
 	}
