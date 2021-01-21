@@ -32,6 +32,7 @@ namespace kaba {
 
 
 const string IDENTIFIER_CLASS = "class";
+const string IDENTIFIER_FUNC = "func";
 const string IDENTIFIER_FUNC_INIT = "__init__";
 const string IDENTIFIER_FUNC_DELETE = "__delete__";
 const string IDENTIFIER_FUNC_ASSIGN = "__assign__";

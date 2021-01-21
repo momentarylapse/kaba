@@ -87,6 +87,7 @@ public:
 	void post_process_newly_parsed_class(Class *c, int size);
 	void skip_parse_class();
 	Function *parse_function_header(Class *name_space, Flags flags0);
+	Function *parse_function_header_new(Class *name_space, Flags flags0);
 	void skip_parsing_function_body();
 	void parse_function_body(Function *f);
 	bool parse_function_command(Function *f, int indent0);

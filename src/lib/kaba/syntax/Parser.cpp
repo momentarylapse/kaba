@@ -2993,6 +2993,10 @@ bool Parser::parse_class(Class *_namespace) {
 			}
 			//msg_write(">>");
 			continue;
+		} else if (Exp.cur == IDENTIFIER_FUNC) {
+			parse_function_header_new(_class, Flags::NONE);
+			skip_parsing_function_body();
+			continue;
 		}
 
 		Flags flags = parse_flags();
@@ -3294,6 +3298,69 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	return f;
 }
 
+Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
+	Exp.next(); // "func"
+
+	// TODO better to split/mask flags into return- and function-flags...
+	flags = parse_flags(flags);
+
+	Function *f = tree->add_function(Exp.cur, TypeVoid, name_space, flags);
+	//if (config.verbose)
+	//	msg_write("PARSE HEAD  " + f->signature());
+	f->_logical_line_no = Exp.get_line_no();
+	f->_exp_no = Exp.cur_exp;
+	cur_func = f;
+
+	Exp.next();
+	if (Exp.cur != "(")
+		do_error("'(' expected after function name");
+	Exp.next(); // '('
+
+// parameter list
+
+	if (Exp.cur != ")")
+		for (int k=0;;k++) {
+			// like variable definitions
+
+			auto pflags = parse_flags();
+
+			// type of parameter variable
+			const Class *param_type = parse_type(name_space); // force
+			auto v = f->block->add_var(Exp.cur, param_type);
+			v->is_const = !flags_has(pflags, Flags::OUT);
+			f->literal_param_type.add(param_type);
+			Exp.next();
+			f->num_params ++;
+
+			if (Exp.cur == ")")
+				break;
+
+			if (Exp.cur != ",")
+				do_error("',' or ')' expected after parameter");
+			Exp.next(); // ','
+		}
+	Exp.next(); // ')'
+
+	if (Exp.cur == "->") {
+		// return type
+		Exp.next();
+		const Class *return_type = parse_type(name_space); // force...
+		f->literal_return_type = return_type;
+		f->effective_return_type = return_type;
+	}
+
+	if (!Exp.end_of_line())
+		do_error("newline expected after parameter list");
+
+	f->update_parameters_after_parsing();
+
+	cur_func = nullptr;
+
+	name_space->add_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
+
+	return f;
+}
+
 void Parser::skip_parsing_function_body() {
 	int indent0 = Exp.cur_line->indent;
 	while (!Exp.end_of_file()) {
@@ -3430,6 +3497,11 @@ void Parser::parse_top_level() {
 		// class
 		} else if (Exp.cur == IDENTIFIER_CLASS) {
 			parse_class(tree->base_class);
+
+		// func
+		} else if (Exp.cur == IDENTIFIER_FUNC) {
+			parse_function_header_new(tree->base_class, Flags::STATIC);
+			skip_parsing_function_body();
 
 		} else {
 
