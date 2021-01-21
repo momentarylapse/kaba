@@ -643,6 +643,19 @@ void add_full_constructor(Class *t, SyntaxTree *tree) {
 	flags_set(f->flags, Flags::__INIT_FILL_ALL_PARAMS);
 }
 
+bool can_fully_construct(Class *t) {
+	if (t->vtable.num > 0)
+		return false;
+	if (t->elements.num > 8)
+		return false;
+	for (auto &e: t->elements)
+		if (!e.type->get_assign() and e.type->uses_call_by_reference()) {
+			msg_write(e.type->name);
+			return false;
+		}
+	return true;
+}
+
 void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != this)
 		return;
@@ -687,7 +700,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
-			} else if (t->elements.num <= 8){
+			} else if (can_fully_construct(t)){
 				add_full_constructor(t, this);
 			}
 		} else {
@@ -702,7 +715,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			}
 			if (t->needs_constructor() and t->get_constructors().num == 0) {
 				add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
-				if (t->vtable.num == 0 and t->elements.num <= 8)
+				if (can_fully_construct(t))
 					add_full_constructor(t, this);
 			}
 			if (needs_new(t->get_destructor()))

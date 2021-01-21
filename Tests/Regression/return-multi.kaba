@@ -1,0 +1,10 @@
+#void f((int,float) x)
+
+(int,float,string) f(int x)
+	return [1,2.3,"a"]
+
+
+#func main static virtual : (a: out int) -> void
+void main()
+	let x = f(1)
+	print(str(x))

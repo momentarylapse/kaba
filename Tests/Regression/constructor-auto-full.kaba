@@ -1,0 +1,14 @@
+
+
+class X
+	int i
+	string s
+	float f
+
+
+#func main static virtual : (a: out int) -> void
+void main()
+	X[] xx = [[3, "x", pi], [1,"a",9]]
+	xx.add([2, "x", pi])
+	print(str(xx))
+	

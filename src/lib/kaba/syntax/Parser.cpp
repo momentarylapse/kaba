@@ -1152,7 +1152,6 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 	if (!is_type_tuple(n))
 		return n;
 	auto classes = extract_classes(n);
-	msg_write("CAN MERGE...");
 	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
 }
 
