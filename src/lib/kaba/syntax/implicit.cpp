@@ -9,6 +9,8 @@
 namespace kaba {
 
 
+const int FULL_CONSTRUCTOR_MAX_PARAMS = 4;
+
 
 void Parser::do_error_implicit(Function *f, const string &str) {
 	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
@@ -646,7 +648,7 @@ void add_full_constructor(Class *t, SyntaxTree *tree) {
 bool can_fully_construct(Class *t) {
 	if (t->vtable.num > 0)
 		return false;
-	if (t->elements.num > 8)
+	if (t->elements.num > FULL_CONSTRUCTOR_MAX_PARAMS)
 		return false;
 	for (auto &e: t->elements)
 		if (!e.type->get_assign() and e.type->uses_call_by_reference()) {
