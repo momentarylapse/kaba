@@ -3026,6 +3026,14 @@ bool Parser::parse_class(Class *_namespace) {
 
 			parser_class_add_element(this, _class, name, type, flags, _offset);
 
+			if (Exp.cur == "=") {
+				Exp.next();
+				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), type);
+				Constant *c_value = cv->as_const();
+				ClassInitializers init = {_class->elements.num - 1, c_value};
+				_class->initializers.add(init);
+			}
+
 			if ((Exp.cur != ",") and !Exp.end_of_line())
 				do_error("',' or newline expected after class element");
 			if (Exp.end_of_line())

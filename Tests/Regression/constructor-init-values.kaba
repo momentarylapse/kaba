@@ -1,0 +1,11 @@
+class X
+	enum
+		A = 2001
+	float f = 1.2
+	int i = X.A + 13 - 1
+	void* p = nil
+
+
+func main()
+	X x
+	print(str(x))
