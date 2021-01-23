@@ -17,6 +17,7 @@ class Function;
 class SerializerX;
 class CommandList;
 class SerialNode;
+class SerialNodeParam;
 
 class Interpreter {
 public:
@@ -27,9 +28,9 @@ public:
 
 	Script *script;
 	//Asm::InstructionWithParamsList *list
-	string stack;
+	//string stack;
 	Array<int> stack_pointer;
-	Array<int64> call_params;
+	Array<void*> call_params;
 
 	struct IFunction {
 		Function *f;
@@ -38,9 +39,20 @@ public:
 	};
 	Array<IFunction> functions;
 
+	struct Frame {
+		string stack;
+		int offset;
+		Array<string> temps;
+		//SerializerX *ser;
+	};
+
 	void run(const string &name);
 	void run_function(Function *f, SerializerX *ser);
-	void run_command(SerialNode &n, SerializerX *ser);
+	int run_command(int index, SerialNode &n, SerializerX *ser, Frame &f);
+
+	void do_error(const string &s);
+
+	//int64 get_param(SerialNodeParam &p);
 };
 
 

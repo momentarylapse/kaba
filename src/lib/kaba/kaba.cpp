@@ -311,6 +311,12 @@ void execute_single_script_command(const string &cmd) {
 // compile
 	s->compile();
 
+
+	if (kaba::config.interpreted) {
+		s->interpreter->run("--command-func--");
+		return;
+	}
+
 // execute
 	typedef void void_func();
 	void_func *f = (void_func*)func->address;
