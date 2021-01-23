@@ -1,5 +1,5 @@
-extern int extern_variable1
+#extern int _extern_variable
 
 void main()
-	print(extern_variable1)
+	print(_extern_variable)
 

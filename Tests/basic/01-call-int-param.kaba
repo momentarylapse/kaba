@@ -1,5 +1,4 @@
-
-extern void __int_out(int a)
+#extern void __int_out(int a)
 
 void main()
-	__int_out(13)
+	_int_out(13)

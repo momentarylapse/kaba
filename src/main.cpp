@@ -20,31 +20,6 @@ namespace kaba {
 	extern int64 s2i2(const string &str);
 };
 
-static void extern_func_int_out(int a) {
-	msg_write("out: " + i2s(a));
-}
-
-static void extern_func_float_out(float a) {
-	msg_write("float out..." + d2h(&a, 4));
-	msg_write("out: " + f2s(a, 6));
-}
-
-static float extern_func_float_ret() {
-	return 13.0f;
-}
-
-static void _x_call_float() {
-	extern_func_float_out(13);
-}
-
-
-int extern_function2() {
-	return 2001;
-}
-
-static int extern_variable1 = 13;
-
-
 class CLIParser {
 public:
 	struct Option {
@@ -214,14 +189,6 @@ public:
 		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
 		kaba::link_external("ParseResource", (void*)&hui::ParseResource);
 
-
-		// for experiments
-		kaba::link_external("__int_out", (void*)&extern_func_int_out);
-		kaba::link_external("__float_out", (void*)&extern_func_float_out);
-		kaba::link_external("__float_ret", (void*)&extern_func_float_ret);
-		kaba::link_external("__xxx", (void*)&_x_call_float);
-		kaba::link_external("Test2", (void*)&extern_function2);
-		kaba::link_external("extern_variable1", (void*)&extern_variable1);
 
 		if (symbols_in_file.num > 0)
 			import_symbols(symbols_in_file);

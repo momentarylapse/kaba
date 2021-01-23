@@ -1,7 +1,7 @@
-extern void __int_out(int i)
+#extern void __int_out(int i)
 
 void f(int i, int j)
-	__int_out(i*j + i)
+	_int_out(i*j + i)
 
 void main()
 	f(13, 2)
