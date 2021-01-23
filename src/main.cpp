@@ -4,6 +4,7 @@
 #include "lib/nix/nix.h"
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
+#include "lib/kaba/Interpreter.h"
 
 
 string AppName = "Kaba";
@@ -133,6 +134,7 @@ public:
 		bool flag_compile_os = false;
 		string output_format = "raw";
 		string command;
+		bool flag_interpret = false;
 
 		bool error = false;
 
@@ -196,6 +198,7 @@ public:
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 			exit(0);
 		});
+		p.option("--interpret", [&]{ flag_interpret = true; });
 		p.option("--help/-h", [&p]{ p.show(); });
 		p.parse(arg0);
 
@@ -204,7 +207,6 @@ public:
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
 		kaba::init(instruction_set, abi, flag_allow_std_lib);
-		kaba::config.stack_size = 10485760; // 10 mb (mib)
 
 
 		// for huibui.kaba...
@@ -237,6 +239,7 @@ public:
 		kaba::config.verbose_func_filter = debug_func_filter;
 		kaba::config.verbose_stage_filter = debug_stage_filter;
 		kaba::config.compile_os = flag_compile_os;
+		kaba::config.interpreted = flag_interpret;
 
 		// script file as parameter?
 		Path filename;
@@ -305,6 +308,10 @@ public:
 #pragma GCC optimize("0")
 
 	void execute(shared<kaba::Script> s, const Array<string> &arg) {
+		if (kaba::config.interpreted) {
+			s->interpreter->run("main");
+			return;
+		}
 		// set working directory -> script file
 		//msg_write(initial_working_directory);
 		//hui::setDirectory(initial_working_directory);
