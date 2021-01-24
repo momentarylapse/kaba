@@ -2721,10 +2721,10 @@ string canonical_import_name(const string &s) {
 }
 
 string dir_has(const Path &dir, const string &name) {
-	auto list = dir_search(dir, "*", true);
+	auto list = dir_search(dir, "*", "fd");
 	for (auto &e: list)
-		if (canonical_import_name(e) == name)
-			return e;
+		if (canonical_import_name(e.str()) == name)
+			return e.str();
 	return "";
 }
 
