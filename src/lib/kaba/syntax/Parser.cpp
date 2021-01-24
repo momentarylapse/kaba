@@ -387,9 +387,10 @@ shared<Node> SyntaxTree::make_fake_constructor(const Class *t, Block *block, con
 	if (param_type->is_pointer())
 		param_type = param_type->param[0];
 		
-	auto *cf = param_type->get_func("__" + t->name + "__", t, {});
+	string fname = "__" + t->name + "__";
+	auto *cf = param_type->get_func(fname, t, {});
 	if (!cf)
-		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), t->long_name()));
+		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), fname));
 	return add_node_member_call(cf, nullptr); // temp var added later...
 		
 	auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
@@ -2593,7 +2594,7 @@ shared<Node> Parser::parse_statement(Block *block) {
 		return parse_statement_pass(block);
 	} else if (Exp.cur == IDENTIFIER_NEW) {
 		return parse_statement_new(block);
-	} else if (Exp.cur == IDENTIFIER_DELETE or Exp.cur == "delete") {
+	} else if (Exp.cur == IDENTIFIER_DELETE) {
 		return parse_statement_delete(block);
 	} else if (Exp.cur == IDENTIFIER_SIZEOF) {
 		return parse_statement_sizeof(block);
@@ -2620,7 +2621,7 @@ shared<Node> Parser::parse_statement(Block *block) {
 	} else if (Exp.cur == IDENTIFIER_WEAK) {
 		return parse_statement_weak(block);
 	}
-	do_error("unhandled statement..." + Exp.cur);
+	do_error("unhandled statement: " + Exp.cur);
 	return nullptr;
 }
 
@@ -2633,7 +2634,7 @@ shared<Node> Parser::parse_block(Block *parent, Block *block) {
 		block = new Block(parent->function, parent);
 
 	for (int i=0;true;i++) {
-		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or (Exp.end_of_file()))
+		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or Exp.end_of_file())
 			break;
 
 

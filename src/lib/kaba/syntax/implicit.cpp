@@ -163,7 +163,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 						self->shift(te->size * i, te)));
 			}
 		} else if (te->needs_destructor()) {
-			do_error_implicit(f, "element desctructor missing");
+			do_error_implicit(f, "element destructor missing");
 		}
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		// call clear()
@@ -195,7 +195,7 @@ void Parser::auto_implement_destructor(Function *f, const Class *t) {
 			if (ff)
 				f->block->add(tree->add_node_member_call(ff, self, {}, true));
 			else if (t->parent->needs_destructor())
-				do_error_implicit(f, "parent desctructor missing");
+				do_error_implicit(f, "parent destructor missing");
 		}
 	}
 }
@@ -240,7 +240,7 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 
 		auto n_assign = link_operator_id(OperatorID::ASSIGN, tree->add_node_local(v_el)->deref(), n_other_el);
 		if (!n_assign)
-			do_error_implicit(f, format("no %s.__assign__() found", te->long_name()));
+			do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
 		b->add(n_assign);
 
 		auto n_for = tree->add_node_statement(StatementID::FOR_ARRAY);
@@ -274,7 +274,7 @@ void Parser::auto_implement_assign(Function *f, const Class *t) {
 
 			auto n_assign = link_operator_id(OperatorID::ASSIGN, p, o);
 			if (!n_assign)
-				do_error_implicit(f, format("no %s.__assign__ for element \"%s\"", e.type->long_name(), e.name));
+				do_error_implicit(f, format("no operator %s = %s for element \"%s\"", e.type->long_name(), e.type->long_name(), e.name));
 			f->block->add(n_assign);
 		}
 	}
@@ -449,7 +449,7 @@ void Parser::auto_implement_array_add(Function *f, const Class *t) {
 
 	auto cmd_assign = link_operator_id(OperatorID::ASSIGN, cmd_el, item);
 	if (!cmd_assign)
-		do_error_implicit(f, format("no %s.%s for elements", te->long_name(), IDENTIFIER_FUNC_ASSIGN));
+		do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
 	b->add(cmd_assign);
 }
 
