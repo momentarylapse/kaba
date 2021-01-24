@@ -2288,7 +2288,7 @@ shared<Node> Parser::add_converter_str(shared<Node> sub, bool repr) {
 		return tree->add_node_member_call(cf, sub);
 
 	// "universal" var2str() or var_repr()
-	auto *c = tree->add_constant_pointer(TypeClassP, sub->type);
+	auto *c = tree->add_constant_pointer(TypeClassP, t);
 
 	shared_array<Node> links = tree->get_existence(repr ? "@var_repr" : "@var2str", nullptr, nullptr, false);
 	Function *f = links[0]->as_func();
@@ -2557,7 +2557,7 @@ shared<Node> Parser::parse_statement_weak(Block *block) {
 
 	auto t = params[0]->type;
 	while (true) {
-		if (t->is_pointer_shared()) {
+		if (t->is_pointer_shared() or t->is_pointer_owned()) {
 			auto tt = t->param[0]->get_pointer();
 			return params[0]->shift(0, tt);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
@@ -2569,7 +2569,7 @@ shared<Node> Parser::parse_statement_weak(Block *block) {
 		else
 			break;
 	}
-	do_error("weak() expects either a shared pointer, or a shared pointer array");
+	do_error("weak() expects either a shared pointer, an owned pointer, or a shared pointer array");
 	return nullptr;
 }
 
@@ -2656,6 +2656,12 @@ void Parser::parse_local_definition(Block *block, const Class *type) {
 	// type of variable
 	if (!type)
 		type = parse_type(block->name_space());
+
+	if (flags_has(flags, Flags::OWNED))
+		type = make_pointer_owned(tree, type);
+	else if (flags_has(flags, Flags::SHARED))
+		type = make_pointer_shared(tree, type);
+
 
 	if (type->needs_constructor() and !type->get_default_constructor())
 		do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()));
