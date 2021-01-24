@@ -3080,6 +3080,9 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 			auto el = ClassElement(IDENTIFIER_VTABLE_VAR, TypePointer, 0);
 			_class->elements.insert(el, 0);
 			size += config.pointer_size;
+
+			for (auto &i: _class->initializers)
+				i.element ++;
 		}
 	}
 
