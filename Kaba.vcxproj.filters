@@ -513,6 +513,9 @@
     <ClCompile Include="src\lib\kaba\compiler\BackendX86.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\Interpreter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\config.h">
