@@ -1188,6 +1188,16 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		}
 	} else if (Exp.cur == "{") {
 		operands = {parse_dict(block)};
+	} else if (Exp.cur == IDENTIFIER_FUNC) {
+		// local function definition
+		auto f = parse_function_header_new(tree->_base_class.get(), Flags::STATIC);
+		skip_parsing_function_body(); // we're still working through the list of all functions and parsing!
+
+		// not sure why, but is necessary:
+		Exp.cur_exp = Exp.cur_line->exp.num - 1;
+		Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+
+		operands = {tree->add_node_func_name(f)};
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
 		string pre = Exp.cur;
 		Exp.next();
@@ -3323,14 +3333,20 @@ Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
 	// TODO better to split/mask flags into return- and function-flags...
 	flags = parse_flags(flags);
 
-	Function *f = tree->add_function(Exp.cur, TypeVoid, name_space, flags);
+	string name = Exp.cur;
+	if (Exp.cur == "(") {
+		name = "-lambda-";
+	} else {
+		Exp.next();
+	}
+
+	Function *f = tree->add_function(name, TypeVoid, name_space, flags);
 	//if (config.verbose)
 	//	msg_write("PARSE HEAD  " + f->signature());
 	f->_logical_line_no = Exp.get_line_no();
 	f->_exp_no = Exp.cur_exp;
 	cur_func = f;
 
-	Exp.next();
 	if (Exp.cur != "(")
 		do_error("'(' expected after function name");
 	Exp.next(); // '('

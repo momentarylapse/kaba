@@ -1,0 +1,8 @@
+func main()
+	let f = func()
+		print("hallo")
+	#f = lambda() "hallo"
+	f()
+	#call(f)
+	print("dfg")
+
