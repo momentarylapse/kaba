@@ -25,6 +25,7 @@ extern const Class *TypeAnyDict;
 extern const Class *TypeDynamicArray;
 extern const Class *TypeIntDict;
 extern const Class *TypeStringAutoCast;
+extern const Class *TypePath;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -1290,6 +1291,8 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	if (type_match(given, wanted))
 		return true;
 	if (wanted == TypeStringAutoCast and given == TypeString)
+		return true;
+	if (wanted == TypeString and given == TypePath)
 		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
