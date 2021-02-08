@@ -24,6 +24,7 @@ extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
 extern const Class *TypeDynamicArray;
 extern const Class *TypeIntDict;
+extern const Class *TypeStringAutoCast;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -1041,7 +1042,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v) {
 			if (fmt != "") {
 				n = apply_format(n, fmt);
 			} else {
-				n = check_param_link(n, TypeString, "", 0);
+				n = check_param_link(n, TypeStringAutoCast, "", 0);
 			}
 			//n->show();
 			parts.add(n);
@@ -1288,6 +1289,8 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	cast = TYPE_CAST_NONE;
 	if (type_match(given, wanted))
 		return true;
+	if (wanted == TypeStringAutoCast and given == TypeString)
+		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (given->is_pointer()) {
@@ -1347,13 +1350,13 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		}
 	}
-	if (wanted == TypeString) {
-		Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
-		if (cf) {
+	if (wanted == TypeStringAutoCast) {
+		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
+		//if (cf) {
 			penalty = 50;
 			cast = TYPE_CAST_OWN_STRING;
 			return true;
-		}
+		//}
 	}
 	foreachi(auto &c, TypeCasts, i)
 		if ((type_match(given, c.source)) and (type_match(c.dest, wanted))) {
@@ -1372,11 +1375,12 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 	if (tc == TYPE_CAST_REFERENCE)
 		return node->ref();
 	if (tc == TYPE_CAST_OWN_STRING) {
-		Function *cf = node->type->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
+		return add_converter_str(node, false);
+		/*Function *cf = node->type->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		if (cf)
 			return tree->add_node_member_call(cf, node);
 		do_error("automatic .str() not implemented yet");
-		return node;
+		return node;*/
 	}
 	if (tc == TYPE_CAST_ABSTRACT_LIST) {
 		if (wanted == TypeDynamicArray)

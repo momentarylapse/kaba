@@ -144,6 +144,7 @@ const Class *TypeFloat32;
 const Class *TypeFloat64;
 const Class *TypeChar;
 const Class *TypeString = nullptr;
+const Class *TypeStringAutoCast;
 const Class *TypeCString;
 
 const Class *TypeVector;
@@ -618,10 +619,10 @@ void func_set_inline(InlineID index) {
 		cur_func->inline_no = index;
 }
 
-void func_add_param(const string &name, const Class *type) {
+void func_add_param(const string &name, const Class *type, Flags flags) {
 	if (cur_func) {
 		Variable *v = new Variable(name, type);
-		flags_set(v->flags, Flags::CONST);
+		v->flags = flags;
 		cur_func->var.add(v);
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;

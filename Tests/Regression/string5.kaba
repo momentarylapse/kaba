@@ -7,5 +7,5 @@ void main()
 	print(a <= b)
 	print(a >= b)
 	
-	a = b + 13
+	a = b + str(13)
 	print(a)

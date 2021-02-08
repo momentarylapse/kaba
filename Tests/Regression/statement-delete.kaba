@@ -4,9 +4,9 @@ class Test
 		print("new ---")
 	void __init__(int a)
 		x = a
-		print("new " + a)
+		print("new {{a}}")
 	void __delete__()
-		print("delete " + x)
+		print("delete {{x}}")
 
 void main()
 	Test *t = new Test(3)

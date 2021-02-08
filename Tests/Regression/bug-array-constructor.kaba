@@ -11,14 +11,14 @@ class Config
 class Base
 	string x
 	void __init__(int i)
-		print("Base.init " + i)
+		print("Base.init {{i}}")
 		x = "hallo"
 
 class Complex extends Base
 	Config[6] conf
 	int a
 	override void __init__(int i)
-		print("Complex.init " + i)
+		print("Complex.init {{i}}")
 		a = 13
 
 void main()

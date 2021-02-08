@@ -73,7 +73,7 @@ Function *add_funcx(const string &name, const Class *return_type, T func, Flags 
 	return add_func(name, return_type, (void*)func, flag);
 }
 void func_set_inline(InlineID index);
-void func_add_param(const string &name, const Class *type);
+void func_add_param(const string &name, const Class *type, Flags flags = Flags::CONST);
 Class *add_class(const Class *root_type);
 void class_add_element(const string &name, const Class *type, int offset, Flags flag = Flags::NONE);
 template<class T>

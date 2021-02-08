@@ -3,7 +3,7 @@ class A
 	void __init__()
 		print("A.init default")
 	void __init__(int a, float f)
-		print("A.init " + a + " " + f)
+		print("A.init {{a}} {{f}}")
 
 class B extends A
 	override void __init__(int a, float f)

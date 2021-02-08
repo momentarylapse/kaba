@@ -1,7 +1,7 @@
 class Test
 	int a, b
 	void __delete__()
-		print("del " + a)
+		print("del {{a}}")
 
 void main()
 	Test[] a

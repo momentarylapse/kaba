@@ -2,7 +2,7 @@ class Test
 	int x
 	void __init__(int i)
 		x = i
-		print("test " + x)
+		print("test {{x}}")
 
 void f(Test t)
 	print(t.x)
