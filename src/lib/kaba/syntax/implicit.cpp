@@ -659,7 +659,7 @@ Function *SyntaxTree::add_func_header(Class *t, const string &name, const Class 
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
 		auto v = f->block->add_var(param_names[i], p);
-		v->is_const = true;
+		flags_set(v->flags, Flags::CONST);
 		f->num_params ++;
 	}
 	//msg_write("ADD " + f->signature(TypeVoid));

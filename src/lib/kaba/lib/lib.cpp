@@ -621,7 +621,7 @@ void func_set_inline(InlineID index) {
 void func_add_param(const string &name, const Class *type) {
 	if (cur_func) {
 		Variable *v = new Variable(name, type);
-		v->is_const = true;
+		flags_set(v->flags, Flags::CONST);
 		cur_func->var.add(v);
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;

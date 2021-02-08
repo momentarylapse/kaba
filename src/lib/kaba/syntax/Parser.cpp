@@ -451,7 +451,7 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 			}
 		}
 		for (int i=0; i<f->num_params; i++)
-			if (n->params[i+offset]->is_const and !f->var[i]->is_const)
+			if (n->params[i+offset]->is_const and !f->var[i]->is_const())
 				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1, f->var[i]->name));
 	}
 	return n;
@@ -1777,7 +1777,8 @@ shared<Node> Parser::parse_for_header(Block *block) {
 		// variable...
 		const Class *var_type = for_array->type->get_array_element();
 		auto *var = block->add_var(var_name, var_type);
-		var->is_const = for_array->is_const;
+		if (for_array->is_const)
+			flags_set(var->flags, Flags::CONST);
 
 		// for index
 		auto *index = block->add_var(index_name, TypeInt);
@@ -2411,16 +2412,13 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		for (int k=0;;k++) {
 			// like variable definitions
 
-			bool rw = false;
-			if (Exp.cur == IDENTIFIER_OUT) {
-				rw = true;
-				Exp.next();
-			}
+			Flags flags = parse_flags();
 
 			// type of parameter variable
 			const Class *param_type = parse_type(tree->base_class); // force
 			auto v = f->block->add_var(Exp.cur, param_type);
-			v->is_const = !rw;
+			if (!flags_has(flags, Flags::OUT))
+				flags_set(v->flags, Flags::CONST);
 			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;
@@ -2925,7 +2923,7 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	// add element
 	if (flags_has(flags, Flags::STATIC)) {
 		auto v = new Variable(name, type);
-		v->is_extern = flags_has(flags, Flags::EXTERN);
+		flags_set(v->flags, flags);
 		_class->static_variables.add(v);
 	} else {
 		if (type_needs_alignment(type))
@@ -3191,7 +3189,7 @@ void Parser::parse_global_variable_def(bool single, Block *block, Flags flags0) 
 			parse_named_const(name, type, tree->base_class, block);
 		} else {
 			auto *v = new Variable(name, type);
-			v->is_extern = flags_has(flags, Flags::EXTERN);
+			flags_set(v->flags, flags);
 			tree->base_class->static_variables.add(v);
 		}
 
@@ -3301,7 +3299,8 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			// type of parameter variable
 			const Class *param_type = parse_type(name_space); // force
 			auto v = f->block->add_var(Exp.cur, param_type);
-			v->is_const = !flags_has(pflags, Flags::OUT);
+			if (!flags_has(pflags, Flags::OUT))
+				flags_set(v->flags, Flags::CONST);
 			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;
@@ -3362,7 +3361,8 @@ Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
 			// type of parameter variable
 			const Class *param_type = parse_type(name_space); // force
 			auto v = f->block->add_var(Exp.cur, param_type);
-			v->is_const = !flags_has(pflags, Flags::OUT);
+			if (!flags_has(pflags, Flags::OUT))
+				flags_set(v->flags, Flags::CONST);
 			f->literal_param_type.add(param_type);
 			Exp.next();
 			f->num_params ++;

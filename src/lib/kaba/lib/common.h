@@ -34,6 +34,7 @@ enum class Flags {
 	SELFREF = 0x800,
 	SHARED = 0x1000,
 	OWNED = 0x2000,
+	AUTO_CAST = 0x4000,
 
 	AUTO_IMPORT = 1<<24,
 	FULLY_PARSED = 1<<25,
