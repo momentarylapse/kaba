@@ -2,9 +2,16 @@
 #include "../lib/common.h"
 #include "../asm/asm.h"
 #include "../../file/file.h"
-#include "../../hui/Application.h"
 #include "Parser.h"
 #include <stdio.h>
+
+#include "../../config.h"
+
+#ifdef _X_USE_HUI_
+#include "../../hui/Application.h"
+#elif defined(_X_USE_HUI_MINIMAL_)
+#include "../../hui_minimal/Application.h"
+#endif
 
 
 #define NEW_NEW_PARSING 0

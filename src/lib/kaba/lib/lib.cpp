@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <string.h>
 
-#ifdef WIN32
-	#include "windows.h"
-#endif
 #include "../kaba.h"
 #include "common.h"
 #include "exception.h"
@@ -728,10 +725,9 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 		}
 	if (!c.f){
 #ifdef _X_USE_HUI_
-		hui::ErrorBox(nullptr, "", "add_type_cast (ScriptInit): " + cmd + " not found");
 		hui::RaiseError("add_type_cast (ScriptInit): " + cmd + " not found");
 #else
-		msg_error("add_type_cast (ScriptInit): " + string(cmd) + " not found"));
+		msg_error("add_type_cast (ScriptInit): " + string(cmd) + " not found");
 		exit(1);
 #endif
 	}
