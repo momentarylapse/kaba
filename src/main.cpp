@@ -5,6 +5,7 @@
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
+#include "Helper/CLIParser.h"
 
 
 string AppName = "Kaba";
@@ -19,70 +20,6 @@ typedef void main_void_func();
 namespace kaba {
 	extern int64 s2i2(const string &str);
 };
-
-class CLIParser {
-public:
-	struct Option {
-		string name;
-		string parameter;
-		hui::Callback callback;
-		std::function<void(const string&)> callback_param;
-	};
-	Array<Option> options;
-	void option(const string &name, const hui::Callback &cb) {
-		options.add({name, "", cb, nullptr});
-	}
-	void option(const string &name, const string &p, const std::function<void(const string&)> &cb) {
-		options.add({name, p, nullptr, cb});
-	}
-	string _info;
-	void info(const string &i) {
-		_info = i;
-	}
-	void show() {
-		msg_write(_info);
-		msg_write("");
-		msg_write("options:");
-		for (auto &o: options)
-			if (o.parameter.num > 0)
-				msg_write("  " + o.name + " " + o.parameter);
-			else
-				msg_write("  " + o.name);
-	}
-	Array<string> arg;
-	void parse(const Array<string> &_arg) {
-		for (int i=1; i<_arg.num; i++) {
-			if (_arg[i].head(1) == "-") {
-				bool found = false;
-				for (auto &o: options) {
-					if (sa_contains(o.name.explode("/"), _arg[i])) {
-						if (o.parameter.num > 0) {
-							if (_arg.num <= i + 1) {
-								msg_error("parameter '" + o.parameter + "' expected after " + o.name);
-								exit(1);
-							}
-							o.callback_param(_arg[i+1]);
-							i ++;
-						} else {
-							o.callback();
-						}
-						found = true;
-					}
-				}
-				if (!found) {
-					msg_error("unknown option " + _arg[i]);
-					exit(1);
-				}
-			} else {
-				// rest
-				arg = _arg.sub(i, -1);
-				break;
-			}
-		}
-
-	}
-};
-
 
 class KabaApp : public hui::Application {
 public:

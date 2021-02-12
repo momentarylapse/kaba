@@ -5,7 +5,8 @@ CXXFLAGS =   `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
 CXXFLAGSLINKING =   `pkg-config --cflags --libs gtk+-3.0` -lz -lX11 -lunwind -ldl -lvulkan -lGL -lglfw $(GLOBALFLAGS)
 prefix = /usr/local
 
-OBJ = lib/algebra/crypto.o \
+OBJ = Helper/CLIParser.o \
+ lib/algebra/crypto.o \
  lib/algebra/vli.o \
  lib/any/any.o \
  lib/base/array.o \
@@ -180,6 +181,9 @@ $(BIN) : $(OBJ) main.o
 	$(CPP) $(OBJ) main.o -o $(BIN) $(CXXFLAGSLINKING)
 
 all : $(BIN)
+
+Helper/CLIParser.o : Helper/CLIParser.cpp Helper/CLIParser.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h
+	$(CPP) -c Helper/CLIParser.cpp -o $@ $(CXXFLAGS)
 
 lib/algebra/crypto.o : lib/algebra/crypto.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/algebra/vli.h lib/algebra/crypto.h lib/math/math.h lib/image/color.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h
 	$(CPP) -c lib/algebra/crypto.cpp -o $@ $(CXXFLAGS)
@@ -691,7 +695,7 @@ lib/vulkan/VertexBuffer.o : lib/vulkan/VertexBuffer.cpp lib/vulkan/VertexBuffer.
 lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/DescriptorSet.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/vulkan/helper.h lib/vulkan/Buffer.h lib/vulkan/VertexBuffer.h lib/math/vector.h lib/vulkan/Texture.h lib/base/pointer.h lib/file/path.h lib/vulkan/Shader.h lib/vulkan/RenderPass.h lib/image/color.h lib/vulkan/Pipeline.h lib/vulkan/CommandBuffer.h lib/vulkan/FrameBuffer.h lib/vulkan/SwapChain.h lib/vulkan/Semaphore.h lib/vulkan/AccelerationStructure.h lib/file/msg.h
 	$(CPP) -c lib/vulkan/vulkan.cpp -o $@ $(CXXFLAGS)
 
-main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/hui/hui.h lib/hui/common.h lib/config.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/nix/nix.h lib/nix/nix_config.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/base/pointer.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/net/net.h lib/net/Socket.h lib/net/BinaryBuffer.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/Interpreter.h
+main.o : main.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/hui/hui.h lib/hui/common.h lib/config.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/nix/nix.h lib/nix/nix_config.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/nix/nix_draw.h lib/nix/nix_light.h lib/nix/nix_vertexbuffer.h lib/nix/nix_shader.h lib/base/pointer.h lib/nix/nix_view.h lib/nix/nix_textures.h lib/net/net.h lib/net/Socket.h lib/net/BinaryBuffer.h lib/kaba/kaba.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/Interpreter.h Helper/CLIParser.h
 	$(CPP) -c main.cpp -o $@ $(CXXFLAGS)
 
 install :
