@@ -308,6 +308,10 @@ void execute_single_script_command(const string &cmd) {
 		parser->auto_implement_functions(c);
 	//ps->show("aaaa");
 
+
+	if (config.verbose)
+		tree->show("parse:a");
+
 // compile
 	s->compile();
 

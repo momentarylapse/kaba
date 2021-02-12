@@ -39,6 +39,7 @@ const int TYPE_CAST_DEREFERENCE = -2;
 const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
+const int TYPE_CAST_ABSTRACT_TUPLE = -30;
 const int TYPE_CAST_CLASSIFY = -30;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -40;
@@ -390,7 +391,7 @@ shared<Node> Parser::make_func_node_callable(const shared<Node> l) {
 	return r;
 }
 
-shared<Node> SyntaxTree::make_fake_constructor(const Class *t, Block *block, const Class *param_type) {
+shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *param_type) {
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
 	if (param_type->is_pointer())
@@ -414,9 +415,9 @@ shared<Node> SyntaxTree::add_node_constructor(Function *f) {
 	return n;
 }
 
-shared_array<Node> Parser::make_class_node_callable(const Class *t, Block *block, shared_array<Node> &params) {
+shared_array<Node> Parser::make_class_node_callable(const Class *t, shared_array<Node> &params) {
 	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool) or (t == TypeChar)) and (params.num == 1))
-		return {tree->make_fake_constructor(t, block, params[0]->type)};
+		return {tree->make_fake_constructor(t, params[0]->type)};
 	
 	// constructor
 	//auto *vv = block->add_var(block->function->create_slightly_hidden_name(), t);
@@ -466,62 +467,61 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 	return n;
 }
 
+shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &params) {
+
+	//force_concrete_types(params);
+
+	// direct match...
+	for (shared<Node> operand: links) {
+		if (!direct_param_match(operand, params))
+			continue;
+
+		return check_const_params(tree, apply_params_direct(operand, params));
+	}
+
+
+	// advanced match...
+	Array<int> casts;
+	Array<const Class*> wanted;
+	int min_penalty = 1000000;
+	shared<Node> chosen;
+	for (auto operand: links) {
+		Array<int> cur_casts;
+		Array<const Class*> cur_wanted;
+		int cur_penalty;
+		if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
+			continue;
+		if (cur_penalty < min_penalty){
+			casts = cur_casts;
+			wanted = cur_wanted;
+			chosen = operand;
+			min_penalty = cur_penalty;
+			//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
+		}
+	}
+	if (chosen)
+		return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
+
+
+	// error message
+
+	if (links.num == 0)
+		do_error("can not call ...");
+
+	string found = type_list_to_str(type_list_from_nodes(params));
+	string available;
+	for (auto link: links) {
+		auto p = get_wanted_param_types(link);
+		available += format("\n%s: %s", link->sig(tree->base_class), type_list_to_str(p));
+	}
+	do_error(format("invalid function parameters: %s, expected: %s", found, available));
+	return shared<Node>();
+}
+
 shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &links, Block *block) {
 
 	// parse all parameters
 	auto params = parse_call_parameters(block);
-
-
-	auto try_to_match_params = [&](const shared_array<Node> &links) {
-		//force_concrete_types(params);
-
-		// direct match...
-		for (shared<Node> operand: links) {
-			if (!direct_param_match(operand, params))
-				continue;
-
-			return check_const_params(tree, apply_params_direct(operand, params));
-		}
-
-
-		// advanced match...
-		Array<int> casts;
-		Array<const Class*> wanted;
-		int min_penalty = 1000000;
-		shared<Node> chosen;
-		for (auto operand: links) {
-			Array<int> cur_casts;
-			Array<const Class*> cur_wanted;
-			int cur_penalty;
-			if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
-				continue;
-			if (cur_penalty < min_penalty){
-				casts = cur_casts;
-				wanted = cur_wanted;
-				chosen = operand;
-				min_penalty = cur_penalty;
-				//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
-			}
-		}
-		if (chosen)
-			return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
-
-
-		// error message
-
-		if (links.num == 0)
-			do_error("can not call ...");
-	
-		string found = type_list_to_str(type_list_from_nodes(params));
-		string available;
-		for (auto link: links) {
-			auto p = get_wanted_param_types(link);
-			available += format("\n%s: %s", link->sig(tree->base_class), type_list_to_str(p));
-		}
-		do_error(format("invalid function parameters: %s, expected: %s", found, available));
-		return shared<Node>();
-	};
-
 
 
 	// make links callable
@@ -530,12 +530,12 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
-			return try_to_match_params(make_class_node_callable(t, block, params));
+			return try_to_match_apply_params(make_class_node_callable(t, params), params);
 		} else if (is_typed_function_pointer(l->type)) {
 			auto c = new Node(NodeKind::POINTER_CALL, 0, get_function_pointer_return_type(l->type));
 			c->set_num_params(1 + get_function_pointer_param_types(l->type).num);
 			c->set_param(0, l);
-			return try_to_match_params({c});
+			return try_to_match_apply_params({c}, params);
 		/*} else if (l->type == TypeFunctionCodeP) {
 			auto c = new Node(NodeKind::POINTER_CALL, 0, TypeVoid);
 			c->set_num_params(1);
@@ -545,7 +545,7 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			do_error("can't call " + kind2str(l->kind));
 		}
 	}
-	return try_to_match_params(links);
+	return try_to_match_apply_params(links, params);
 }
 
 const Class *Parser::parse_type_extension_array(const Class *t) {
@@ -617,10 +617,17 @@ bool is_type_tuple(const shared<Node> n) {
 	return true;
 }
 
-Array<const Class*> extract_classes(const shared<Node> n) {
+Array<const Class*> class_tuple_extract_classes(const shared<Node> n) {
 	Array<const Class*> classes;
 	for (auto p: weak(n->params))
 		classes.add(p->as_class());
+	return classes;
+}
+
+Array<const Class*> node_extract_param_types(const shared<Node> n) {
+	Array<const Class*> classes;
+	for (auto p: weak(n->params))
+		classes.add(p->type);
 	return classes;
 }
 
@@ -631,7 +638,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 	if (is_type_tuple(operands[0]) and (Exp.cur == "->")) {
 		Exp.next();
 		auto ret = parse_type(block->name_space());
-		auto t = tree->make_class_func(extract_classes(operands[0]), ret);
+		auto t = tree->make_class_func(class_tuple_extract_classes(operands[0]), ret);
 
 		return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
 	}
@@ -790,7 +797,7 @@ shared<Node> Parser::check_param_link(shared<Node> link, const Class *wanted, co
 	return link;
 }
 
-bool Parser::direct_param_match(shared<Node> operand, shared_array<Node> &params) {
+bool Parser::direct_param_match(const shared<Node> operand, const shared_array<Node> &params) {
 	auto wanted_types = get_wanted_param_types(operand);
 	if (wanted_types.num != params.num)
 		return false;
@@ -803,7 +810,7 @@ bool Parser::direct_param_match(shared<Node> operand, shared_array<Node> &params
 	return true;
 }
 
-bool Parser::param_match_with_cast(shared<Node> operand, shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty) {
+bool Parser::param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty) {
 	wanted = get_wanted_param_types(operand);
 	if (wanted.num != params.num)
 		return false;
@@ -1161,7 +1168,7 @@ const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const C
 shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 	if (!is_type_tuple(n))
 		return n;
-	auto classes = extract_classes(n);
+	auto classes = class_tuple_extract_classes(n);
 	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
 }
 
@@ -1359,6 +1366,9 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			cast = TYPE_CAST_CLASSIFY;
 			return true;
 		}
+	}
+	if (node->kind == NodeKind::TUPLE and given == TypeAbstractTuple) {
+		//if (wanted->is)
 	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
@@ -2236,7 +2246,7 @@ void Parser::force_concrete_types(shared_array<Node> &nodes) {
 }
 
 shared<Node> Parser::force_concrete_type(shared<Node> node) {
-	if (node->type != TypeAbstractList and node->type != TypeAbstractDict)
+	if (node->type != TypeAbstractList and node->type != TypeAbstractDict and node->type != TypeAbstractTuple)
 		return node;
 
 	if (node->kind == NodeKind::ARRAY_BUILDER) {
@@ -2261,8 +2271,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 
 		node->type = tree->make_class_super_array(t);
 		return node;
-	}
-	if (node->kind == NodeKind::DICT_BUILDER) {
+	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		if (node->params.num == 0) {
 			node->type = TypeIntDict;
 			return node;
@@ -2284,8 +2293,13 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 
 		node->type = tree->make_class_dict(t);
 		return node;
+	} else if (node->kind == NodeKind::TUPLE) {
+		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node));
+		auto xx = make_class_node_callable(type, node->params);
+		return try_to_match_apply_params(xx, node->params);
+	} else {
+		do_error("unhandled abstract type: " + kind2str(node->kind));
 	}
-	do_error("unhandled abstract type...");
 	return node;
 }
 
