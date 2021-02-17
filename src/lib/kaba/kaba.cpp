@@ -322,10 +322,12 @@ void execute_single_script_command(const string &cmd) {
 	}
 
 // execute
-	typedef void void_func();
-	void_func *f = (void_func*)func->address;
-	if (f)
-		f();
+	if (kaba::config.instruction_set == Asm::QueryLocalInstructionSet()) {
+		typedef void void_func();
+		void_func *f = (void_func*)func->address;
+		if (f)
+			f();
+	}
 
 	} catch(const Exception &e) {
 		e.print();

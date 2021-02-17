@@ -29,9 +29,22 @@ public:
 	void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
 
 
+	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
+	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_intro_params(Function *f);
 	void assemble_cmd_arm(SerialNode &c);
 	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
+
+
+	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
+	int add_global_ref(void *p);
+
+
+	void _immediate_to_register(int val, int r);
+	void _register_to_local(int r, int offset);
+	void _local_to_register(int offset, int r);
 
 
 #if 0
@@ -39,10 +52,6 @@ public:
 	virtual void implement_return(kaba::SerialNode &c, int i);
 	virtual void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
 
-	virtual int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
-	virtual void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	virtual void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	virtual void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
 	/*void map();
 	void assemble();
@@ -54,8 +63,6 @@ public:
 	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);
 
 	//static int get_reg(int root, int size);
-
-	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
 
 
 	virtual void add_function_outro(Function *f);
