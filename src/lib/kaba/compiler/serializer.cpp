@@ -8,6 +8,7 @@
 #include "SerializerX.h"
 #include "BackendAmd64.h"
 #include "BackendX86.h"
+#include "BackendARM.h"
 #include "../Interpreter.h"
 
 
@@ -1855,8 +1856,9 @@ Backend *create_backend(SerializerX *s) {
 		return new BackendAmd64(s);
 	if (config.instruction_set == Asm::InstructionSet::X86)
 		return new BackendX86(s);
-//	if (config.instruction_set == Asm::InstructionSet::ARM)
-//		return new BackendARM(s);
+	if (config.instruction_set == Asm::InstructionSet::ARM)
+		return new BackendARM(s);
+	s->script->do_error("unable to create a backend for the architecture");
 	return nullptr;
 }
 

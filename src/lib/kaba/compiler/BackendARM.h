@@ -18,12 +18,23 @@ public:
 	BackendARM(Serializer *serializer);
 	~BackendARM() override;
 
-#if 0
+
 	void process(Function *f, int index) override;
 
 	void correct() override;
 	void correct_parameters();
+	void do_mapping() override;
+	void assemble() override;
+	void correct_implement_commands();
+	void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
 
+
+	void add_function_intro_params(Function *f);
+	void assemble_cmd_arm(SerialNode &c);
+	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
+
+
+#if 0
 	virtual void correct_implement_commands();
 	virtual void implement_return(kaba::SerialNode &c, int i);
 	virtual void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
