@@ -1894,10 +1894,9 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		x->serialize_function(f);
 		x->fix_return_by_ref();
 		auto be = create_backend(x);
-		be->process(f, index);
 
 		try {
-			be->do_mapping();
+			be->process(f, index);
 			be->assemble();
 		} catch (Exception &e) {
 			throw e;

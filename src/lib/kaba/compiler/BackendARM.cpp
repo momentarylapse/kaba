@@ -26,6 +26,7 @@ namespace kaba {
 bool is_typed_function_pointer(const Class *c);
 
 BackendARM::BackendARM(Serializer *s) : Backend(s) {
+	map_reg_root = {Asm::RegRoot[Asm::REG_R0], Asm::RegRoot[Asm::REG_R1]};
 }
 
 BackendARM::~BackendARM() {
@@ -38,6 +39,7 @@ void BackendARM::process(Function *f, int index) {
 	stack_offset = f->_var_size;
 	stack_max_size = f->_var_size;
 
+	do_mapping();
 	correct();
 }
 
@@ -70,20 +72,50 @@ void BackendARM::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
 }
 
 void BackendARM::_immediate_to_register(int val, int r) {
-	insert_cmd(Asm::INST_MOV, param_preg(TypeInt, r), param_imm(TypeInt, val&0x000000ff));
+	insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val&0x000000ff));
 	if ((val & 0x0000ff00) != 0)
-		insert_cmd(Asm::INST_ADD, param_preg(TypeInt, r), param_preg(TypeInt, r), param_imm(TypeInt, val&0x0000ff00));
+		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0x0000ff00));
 	if ((val & 0x00ff0000) != 0)
-		insert_cmd(Asm::INST_ADD, param_preg(TypeInt, r), param_preg(TypeInt, r), param_imm(TypeInt, val&0x00ff0000));
+		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0x00ff0000));
 	if ((val & 0xff000000) != 0)
-		insert_cmd(Asm::INST_ADD, param_preg(TypeInt, r), param_preg(TypeInt, r), param_imm(TypeInt, val&0xff000000));
+		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0xff000000));
 
 }
 void BackendARM::_register_to_local(int r, int offset) {
-	insert_cmd(Asm::INST_STR, param_preg(TypeInt, r), param_local(TypeInt, offset));
+	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
 void BackendARM::_local_to_register(int offset, int r) {
-	insert_cmd(Asm::INST_LDR, param_preg(TypeInt, r), param_local(TypeInt, offset));
+	insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
+}
+
+int BackendARM::_to_register(const SerialNodeParam &p, int offset) {
+	//if (p.kind == NodeKind::REGISTER)
+	//	return p.p;
+
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);//Asm::REG_R0;
+	if (p.kind == NodeKind::CONSTANT) {
+		auto cc = (Constant*)p.p;
+		_immediate_to_register(*((int*)((char*)cc->p() + offset)), reg);
+	} else if (p.kind == NodeKind::VAR_LOCAL) {
+		auto var2 = (Variable*)p.p;
+		_local_to_register(var2->_offset + offset, reg);
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		_local_to_register(p.p + offset, reg);
+	} else {
+		do_error("evil mov target..." + kind2str(p.kind));
+	}
+	return reg;
+}
+
+void BackendARM::_from_register(int reg, const SerialNodeParam &p, int offset) {
+	if (p.kind == NodeKind::VAR_LOCAL) {
+		auto var = (Variable*)p.p;
+		_register_to_local(reg, var->_offset + offset);
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		_register_to_local(reg, p.p + offset);
+	} else {
+		do_error("evil mov target..." + kind2str(p.kind));
+	}
 }
 
 void BackendARM::correct_implement_commands() {
@@ -96,42 +128,34 @@ void BackendARM::correct_implement_commands() {
 			continue;
 		if (c.inst == Asm::INST_MOV) {
 			int size = c.p[0].type->size;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			cmd.remove_cmd(i);
 
-			if (c.p[0].kind == NodeKind::VAR_LOCAL) {
-				auto p = c.p[0];
-				p.p = 88;
-				p.kind = NodeKind::LOCAL_MEMORY;
-				if (c.p[1].kind == NodeKind::CONSTANT) {
-					auto cc = (Constant*)c.p[1].p;
-					cmd.remove_cmd(i);
-					for (int k=0; k<size/4; k++) {
-						_immediate_to_register(*((int*)cc->p() + k), Asm::REG_R0);
-						_register_to_local(Asm::REG_R0, p.p + k*4);
-					}
-					i = cmd.next_cmd_index - 1;
-					continue;
-				} else if (c.p[1].kind == NodeKind::VAR_LOCAL) {
-					int offset = 100;//c.p[1].p;
-					cmd.remove_cmd(i);
-					for (int k=0; k<size/4; k++) {
-						_local_to_register(offset + k*4, Asm::REG_R0);
-						_register_to_local(Asm::REG_R0, p.p + k*4);
-					}
-					i = cmd.next_cmd_index - 1;
-					continue;
-				}
+			for (int k=0; k<size/4; k++) {
+				int reg = _to_register(p1, k*4);
+				_from_register(reg, p0, k*4);
 			}
-			do_error("evil mov...");
-						//insert_cmd(Asm::INST_LDR, param)
-
-			// mov can only copy these sizes (ignore 2...)
-			if (size != 1 and size != 4) {
-				implement_mov_chunk(c, i, size);
-				i = cmd.next_cmd_index - 1;
-			}
+			if ((size%4) != 0)
+				do_error("byte move...");
+			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_MOVSX or c.inst == Asm::INST_MOVZX) {
 			do_error("no movsx yet");
 
+		} else if (c.inst == Asm::INST_ADD) {
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+			cmd.remove_cmd(i);
+
+			int reg1 = _to_register(p1, 0);
+			cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
+			int reg2 = _to_register(p2, 0);
+
+			insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
+			_from_register(reg1, p0, 0);
+
+			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_PUSH) {
 			func_params.add(c.p[0]);
 			cmd.remove_cmd(i);
@@ -343,6 +367,33 @@ int BackendARM::add_global_ref(void *p) {
 }
 
 void BackendARM::do_mapping() {
+
+	map_remaining_temp_vars_to_stack();
+
+	serializer->cmd_list_out("map:e", "post var reg");
+}
+
+
+inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &stackvar) {
+	if ((p.kind == NodeKind::VAR_TEMP) and (p.p == v)) {
+		p.kind = NodeKind::LOCAL_MEMORY;//stackvar.kind;
+		p.p = stackvar.p;
+	} else if ((p.kind == NodeKind::DEREF_VAR_TEMP) and (p.p == v)) {
+		p.kind = NodeKind::DEREF_LOCAL_MEMORY;
+		p.p = stackvar.p;
+	}
+}
+
+void BackendARM::map_remaining_temp_vars_to_stack() {
+	for (int i=cmd.temp_var.num-1;i>=0;i--) {
+		SerialNodeParam stackvar;
+		serializer->add_stack_var(cmd.temp_var[i], stackvar);
+		for (int j=0;j<cmd.cmd.num;j++) {
+			for (int k=0; k<SERIAL_NODE_NUM_PARAMS; k++)
+				try_map_param_to_stack(cmd.cmd[j].p[k], i, stackvar);
+		}
+		cmd.remove_temp_var(i);
+	}
 }
 
 Asm::InstructionParam BackendARM::prepare_param(int inst, SerialNodeParam &p) {

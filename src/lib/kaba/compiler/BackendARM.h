@@ -42,9 +42,15 @@ public:
 	int add_global_ref(void *p);
 
 
+	int _to_register(const SerialNodeParam &p, int offset);
+	void _from_register(int reg, const SerialNodeParam &p, int offset);
 	void _immediate_to_register(int val, int r);
 	void _register_to_local(int r, int offset);
 	void _local_to_register(int offset, int r);
+
+
+
+	void map_remaining_temp_vars_to_stack();
 
 
 #if 0
