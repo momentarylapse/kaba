@@ -74,8 +74,8 @@ void arm_init() {
 
 	cpu_instructions_arm.clear();
 
-	add_inst_arm(INST_MUL,  0x00000090, 0x0ff00ff0, AP_REG_16, AP_REG_0, AP_REG_8);
-	add_inst_arm(INST_MULS, 0x00100090, 0x0ff00ff0, AP_REG_16, AP_REG_0, AP_REG_8);
+	add_inst_arm(INST_MUL,  0x00000090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
+	add_inst_arm(INST_MULS, 0x00100090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
 
 	// data
 	add_inst_arm(INST_AND,  0x00000000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);

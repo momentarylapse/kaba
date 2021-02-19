@@ -149,7 +149,16 @@ void BackendARM::correct_implement_commands() {
 		} else if (c.inst == Asm::INST_MOVSX or c.inst == Asm::INST_MOVZX) {
 			do_error("no movsx yet");
 
-		} else if (c.inst == Asm::INST_ADD) {
+		} else if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_SUB) or (c.inst == Asm::INST_IMUL) /*or (c.inst == Asm::INST_IDIV)*/ or (c.inst == Asm::INST_AND) or (c.inst == Asm::INST_OR)) {
+			int inst = c.inst;
+			if (inst ==  Asm::INST_ADD)
+				inst = Asm::INST_ADDS;
+			else if (inst ==  Asm::INST_SUB)
+				inst = Asm::INST_SUBS;
+			else if (inst ==  Asm::INST_IMUL)
+				inst = Asm::INST_MULS;
+//			if (inst ==  Asm::INST_IDIV)
+//				inst = Asm::INST_DIV;
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
 			auto p2 = c.p[2];
@@ -159,7 +168,7 @@ void BackendARM::correct_implement_commands() {
 			cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
 			int reg2 = _to_register(p2, 0);
 
-			insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
+			insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
 			_from_register(reg1, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
