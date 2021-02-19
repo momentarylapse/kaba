@@ -71,15 +71,27 @@ void BackendARM::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
 		insert_cmd(Asm::INST_MOV, param_shift(p1, j, TypeChar), param_shift(p2, j, TypeChar));
 }
 
-void BackendARM::_immediate_to_register(int val, int r) {
-	insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val&0x000000ff));
-	if ((val & 0x0000ff00) != 0)
-		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0x0000ff00));
-	if ((val & 0x00ff0000) != 0)
-		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0x00ff0000));
-	if ((val & 0xff000000) != 0)
-		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&0xff000000));
+int first_bit(int i) {
+	for (int b=0; b<32; b++)
+		if ((i & (1 << b)) != 0)
+			return b;
+	return 0;
+}
 
+void BackendARM::_immediate_to_register(int val, int r) {
+	bool first = true;
+	while (true) {
+		int b0 = first_bit(val);
+		int mask = 0xff << b0;
+		if (first)
+			insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val&mask));
+		else
+			insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&mask));
+		val -= (val & mask);
+		if (val == 0)
+			break;
+		first = false;
+	}
 }
 void BackendARM::_register_to_local(int r, int offset) {
 	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
@@ -169,6 +181,36 @@ void BackendARM::correct_implement_commands() {
 			int reg2 = _to_register(p2, 0);
 
 			insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
+			_from_register(reg1, p0, 0);
+
+			i = cmd.next_cmd_index - 1;
+		} else if ((c.inst == Asm::INST_FADD) or (c.inst == Asm::INST_FSUB) or (c.inst == Asm::INST_FMUL) or (c.inst == Asm::INST_FDIV)) {//or (c.inst == Asm::INST_SUB) or (c.inst == Asm::INST_IMUL) /*or (c.inst == Asm::INST_IDIV)*/ or (c.inst == Asm::INST_AND) or (c.inst == Asm::INST_OR)) {
+			int inst = c.inst;
+			if (inst ==  Asm::INST_FADD)
+				inst = Asm::INST_FADDS;
+			else if (inst ==  Asm::INST_FSUB)
+				inst = Asm::INST_FSUBS;
+			else if (inst ==  Asm::INST_FMUL)
+				inst = Asm::INST_FMULS;
+			else if (inst ==  Asm::INST_FDIV)
+				inst = Asm::INST_FDIVS;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+			cmd.remove_cmd(i);
+
+			int sreg1 = cmd.add_virtual_reg(Asm::REG_S0);
+			int reg1 = _to_register(p1, 0);
+			cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
+			insert_cmd(Asm::INST_FMSR, param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, reg1));
+
+			int sreg2 = cmd.add_virtual_reg(Asm::REG_S1);
+			int reg2 = _to_register(p2, 0);
+			insert_cmd(Asm::INST_FMSR, param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, reg1));
+
+			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
+
+			insert_cmd(Asm::INST_FMRS, param_vreg(TypeFloat32, reg1), param_vreg(TypeFloat32, sreg1));
 			_from_register(reg1, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
