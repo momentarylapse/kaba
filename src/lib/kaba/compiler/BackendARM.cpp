@@ -429,6 +429,7 @@ int BackendARM::add_global_ref(void *p) {
 void BackendARM::do_mapping() {
 
 	map_remaining_temp_vars_to_stack();
+	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
 
 	serializer->cmd_list_out("map:e", "post var reg");
 }
@@ -520,7 +521,30 @@ void BackendARM::assemble_cmd_arm(SerialNode &c) {
 }
 
 
+void BackendARM::add_function_intro_frame(int stack_alloc_size) {
+	cmd.next_cmd_target(0);
+	cmd.add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x6ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r14}
+	if (stack_max_size > 0){
+		cmd.next_cmd_target(1);
+		cmd.add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_R11), param_preg(TypePointer, Asm::REG_R13));
+		cmd.next_cmd_target(2);
+		cmd.add_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::REG_R13), param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, stack_max_size));
+	}
+}
+
 void BackendARM::assemble() {
+	// intro + allocate stack memory
+
+	foreachi(GlobalRef &g, global_refs, i) {
+		g.label = list->add_label(format("_kaba_ref_%d_%d", cur_func_index, i));
+		list->add2(Asm::INST_DD, Asm::param_imm((int_p)g.p, 4));
+	}
+
+	list->insert_label(cur_func->_label);
+
+	if (!config.no_function_frame)
+		add_function_intro_frame(stack_max_size);
+
 //	do_error("new ARM assemble() not yet implemented");
 	for (int i=0;i<cmd.cmd.num;i++) {
 

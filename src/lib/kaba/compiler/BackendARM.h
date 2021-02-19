@@ -52,6 +52,8 @@ public:
 
 	void map_remaining_temp_vars_to_stack();
 
+	void add_function_intro_frame(int stack_alloc_size);
+
 
 #if 0
 	virtual void correct_implement_commands();
