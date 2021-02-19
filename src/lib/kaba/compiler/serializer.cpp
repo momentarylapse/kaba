@@ -19,6 +19,18 @@ namespace kaba {
 
 //#ifdef ScriptDebug
 
+TempVar::TempVar() {
+	type = TypeUnknown;
+	first = last = -1;
+	usage_count = 0;
+	mapped = false;
+	referenced = false;
+	force_stack = false;
+	force_register = false;
+	stack_offset = -1;
+	entangled = 0;
+}
+
 void TempVar::use(int _first, int _last) {
 	if ((first < 0) or ((first >= 0) and (first > _first)))
 		first = _first;
@@ -29,7 +41,7 @@ void TempVar::use(int _first, int _last) {
 
 // return of a function might need temp vars without destructor FIXME ?!?
 SerialNodeParam Serializer::add_temp(const Class *t, bool add_constructor) {
-	SerialNodeParam r = cmd._add_temp(t);
+	auto r = cmd._add_temp(t);
 
 	if (t != TypeVoid) {
 		if (r.type->get_destructor())

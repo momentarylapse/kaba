@@ -88,11 +88,13 @@ void BackendARM::_local_to_register(int offset, int r) {
 	insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
 
-int BackendARM::_to_register(const SerialNodeParam &p, int offset) {
+int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_register) {
 	//if (p.kind == NodeKind::REGISTER)
 	//	return p.p;
 
-	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);//Asm::REG_R0;
+	int reg = force_register;
+	if (reg < 0)
+		reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);//Asm::REG_R0;
 	if (p.kind == NodeKind::CONSTANT) {
 		auto cc = (Constant*)p.p;
 		_immediate_to_register(*((int*)((char*)cc->p() + offset)), reg);
@@ -101,6 +103,11 @@ int BackendARM::_to_register(const SerialNodeParam &p, int offset) {
 		_local_to_register(var2->_offset + offset, reg);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		_local_to_register(p.p + offset, reg);
+	} else if (p.kind == NodeKind::GLOBAL_LOOKUP) {
+		// TODO really use global ref
+		if (offset != 0)
+			do_error("global lookup + offset");
+		_immediate_to_register((int)(int_p)global_refs[p.p].p, reg);
 	} else {
 		do_error("evil mov target..." + kind2str(p.kind));
 	}
@@ -284,7 +291,8 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	// r0, r1, r2, r3
 	foreachib(auto &p, reg_param, i){
 		int v = cmd.add_virtual_reg(Asm::REG_R0 + i);
-		insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
+		_to_register(p, 0, v);
+		//insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
 		cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call
 	}
 
@@ -338,7 +346,8 @@ void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 			// really find a usable register...
 
 			int v = cmd.add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.next_cmd_index-1, cmd.next_cmd_index-1, 4);
-			insert_cmd(Asm::INST_MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
+			_to_register(param_lookup(TypePointer, add_global_ref(f->address)), 0, v);
+			//insert_cmd(Asm::INST_MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
 			insert_cmd(Asm::INST_CALL, param_vreg(TypePointer, v));
 			cmd.set_virtual_reg(v, cmd.next_cmd_index-2, cmd.next_cmd_index-1);
 		}

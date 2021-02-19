@@ -42,7 +42,7 @@ public:
 	int add_global_ref(void *p);
 
 
-	int _to_register(const SerialNodeParam &p, int offset);
+	int _to_register(const SerialNodeParam &p, int offset, int force_register = -1);
 	void _from_register(int reg, const SerialNodeParam &p, int offset);
 	void _immediate_to_register(int val, int r);
 	void _register_to_local(int r, int offset);
