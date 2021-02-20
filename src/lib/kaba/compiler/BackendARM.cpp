@@ -78,6 +78,7 @@ int first_bit(int i) {
 	return 0;
 }
 
+// TODO better use int64?
 void BackendARM::_immediate_to_register(int val, int r) {
 	bool first = true;
 	while (true) {
@@ -124,6 +125,8 @@ int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_reg
 	if (p.kind == NodeKind::CONSTANT) {
 		auto cc = (Constant*)p.p;
 		_immediate_to_register(*((int*)((char*)cc->p() + offset)), reg);
+	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		_immediate_to_register(*((int*)((char*)p.p + offset)), reg);
 	} else if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var2 = (Variable*)p.p;
 		_local_to_register(var2->_offset + offset, reg);
@@ -251,6 +254,27 @@ void BackendARM::correct_implement_commands() {
 			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
 
 			_from_register_float(sreg1, p0, 0);
+
+			i = cmd.next_cmd_index - 1;
+		} else if (c.inst == Asm::INST_LEA) {
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			cmd.remove_cmd(i);
+
+			int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
+
+			if (p1.kind == NodeKind::VAR_LOCAL) {
+				// TODO: simplify for offset=0
+				auto var = (Variable*)p1.p;
+				_immediate_to_register(var->_offset, reg);
+				insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
+			} else if (p1.kind == NodeKind::LOCAL_MEMORY) {
+				_immediate_to_register(p1.p, reg);
+				insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
+			} else {
+				do_error("lea source not handled: " + kind2str(p1.kind));
+			}
+			_from_register(reg, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_PUSH) {
