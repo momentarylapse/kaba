@@ -228,9 +228,11 @@ void BackendARM::correct_implement_commands() {
 			auto p2 = c.p[2];
 			cmd.remove_cmd(i);
 
-			int reg1 = _to_register(p1, 0);
-			cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
-			int reg2 = _to_register(p2, 0);
+			int reg1 = find_unused_reg(i, i, 4);
+			int reg2 = find_unused_reg(i, i, 4, VREG_ROOT(reg1));
+			_to_register(p1, 0, reg1);
+			//cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
+			_to_register(p2, 0, reg2);
 
 			insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
 			_from_register(reg1, p0, 0);
