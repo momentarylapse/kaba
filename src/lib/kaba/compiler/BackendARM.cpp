@@ -81,7 +81,7 @@ int first_bit(int i) {
 void BackendARM::_immediate_to_register(int val, int r) {
 	bool first = true;
 	while (true) {
-		int b0 = first_bit(val);
+		int b0 = first_bit(val) & 0xfe; // only even bit positions allowed!
 		int mask = 0xff << b0;
 		if (first)
 			insert_cmd(Asm::INST_MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val&mask));
@@ -93,11 +93,25 @@ void BackendARM::_immediate_to_register(int val, int r) {
 		first = false;
 	}
 }
+
 void BackendARM::_register_to_local(int r, int offset) {
 	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
+
+void BackendARM::_register_to_global(int r, int64 addr) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, r);
+	_immediate_to_register(addr, reg);
+	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
+}
+
 void BackendARM::_local_to_register(int offset, int r) {
 	insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
+}
+
+void BackendARM::_global_to_register(int64 addr, int r) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, r);
+	_immediate_to_register(addr, reg);
+	insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
 }
 
 int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_register) {
@@ -120,8 +134,11 @@ int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_reg
 		if (offset != 0)
 			do_error("global lookup + offset");
 		_immediate_to_register((int)(int_p)global_refs[p.p].p, reg);
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
+		auto var = (Variable*)p.p;
+		_global_to_register((int_p)var->memory + offset, reg);
 	} else {
-		do_error("evil mov target..." + kind2str(p.kind));
+		do_error("evil read source..." + kind2str(p.kind));
 	}
 	return reg;
 }
@@ -132,8 +149,11 @@ void BackendARM::_from_register(int reg, const SerialNodeParam &p, int offset) {
 		_register_to_local(reg, var->_offset + offset);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		_register_to_local(reg, p.p + offset);
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
+		auto var = (Variable*)p.p;
+		_register_to_global(reg, (int_p)var->memory + offset);
 	} else {
-		do_error("evil mov target..." + kind2str(p.kind));
+		do_error("evil write target..." + kind2str(p.kind));
 	}
 }
 

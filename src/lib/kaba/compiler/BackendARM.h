@@ -47,7 +47,9 @@ public:
 
 	void _immediate_to_register(int val, int r);
 	void _register_to_local(int r, int offset);
+	void _register_to_global(int r, int64 addr);
 	void _local_to_register(int offset, int r);
+	void _global_to_register(int64 addr, int r);
 
 	int _to_register_float(const SerialNodeParam &p, int offset, int force_register = -1);
 	void _from_register_float(int reg, const SerialNodeParam &p, int offset);
