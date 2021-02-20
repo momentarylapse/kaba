@@ -432,12 +432,13 @@ void BackendARM::fc_end(int push_size, const Array<SerialNodeParam> &params, con
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
 		if (type == TypeFloat32) {
-			insert_cmd(Asm::INST_FSTS, ret, reg_s0);
+			int sreg = cmd.add_virtual_reg(Asm::REG_S0);
+			_from_register_float(sreg, ret, 0);
 		//else if (type == TypeFloat64)
 			//insert_cmd(Asm::INST_MOVSD, ret, param_preg(TypeReg128, Asm::REG_XMM0));
 		} else if ((type->size == 1) or (type->size == 4)) {
 			int v = cmd.add_virtual_reg(Asm::REG_R0);
-			insert_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, v));
+			_from_register(v, ret, 0);
 			cmd.set_virtual_reg(v, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		} else {
 			do_error("unhandled function value receiving... " + type->long_name());
