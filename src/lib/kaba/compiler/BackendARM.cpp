@@ -95,12 +95,14 @@ void BackendARM::_immediate_to_register(int val, int r) {
 	}
 }
 
+#define VREG_ROOT(r) cmd.virtual_reg[r].reg_root
+
 void BackendARM::_register_to_local(int r, int offset) {
 	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
 
 void BackendARM::_register_to_global(int r, int64 addr) {
-	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, r);
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, VREG_ROOT(r));
 	_immediate_to_register(addr, reg);
 	insert_cmd(Asm::INST_STR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
 }
@@ -110,7 +112,7 @@ void BackendARM::_local_to_register(int offset, int r) {
 }
 
 void BackendARM::_global_to_register(int64 addr, int r) {
-	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, r);
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, VREG_ROOT(r));
 	_immediate_to_register(addr, reg);
 	insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
 }
@@ -130,6 +132,10 @@ int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_reg
 	} else if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var2 = (Variable*)p.p;
 		_local_to_register(var2->_offset + offset, reg);
+	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
+		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, VREG_ROOT(reg));
+		_local_to_register(p.p + offset, reg2);
+		insert_cmd(Asm::INST_LDR, param_vreg(TypeInt, reg), param_deref_vreg(TypeInt, reg2));
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		_local_to_register(p.p + offset, reg);
 	} else if (p.kind == NodeKind::GLOBAL_LOOKUP) {
