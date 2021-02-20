@@ -137,6 +137,29 @@ void BackendARM::_from_register(int reg, const SerialNodeParam &p, int offset) {
 	}
 }
 
+
+int BackendARM::_to_register_float(const SerialNodeParam &p, int offset, int force_register) {
+	if (force_register < 0)
+		do_error("explicit register needed for float");
+	int sreg = force_register;//cmd.add_virtual_reg(Asm::REG_S1);
+	int reg = _to_register(p, offset);
+	insert_cmd(Asm::INST_FMSR, param_vreg(TypeFloat32, sreg), param_vreg(TypeFloat32, reg));
+	return sreg;
+}
+
+void BackendARM::_from_register_float(int sreg, const SerialNodeParam &p, int offset) {
+	if (p.kind == NodeKind::VAR_LOCAL) {
+		auto var = (Variable*)p.p;
+		insert_cmd(Asm::INST_FSTS, param_local(TypeFloat32, var->_offset + offset), param_vreg(TypeFloat32, sreg));
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		insert_cmd(Asm::INST_FSTS, param_local(TypeFloat32, p.p + offset), param_vreg(TypeFloat32, sreg));
+	} else {
+		int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
+		insert_cmd(Asm::INST_FMRS, param_vreg(TypeFloat32, reg), param_vreg(TypeFloat32, sreg));
+		_from_register(reg, p, offset);
+	}
+}
+
 void BackendARM::correct_implement_commands() {
 
 	Array<SerialNodeParam> func_params;
@@ -200,18 +223,14 @@ void BackendARM::correct_implement_commands() {
 			cmd.remove_cmd(i);
 
 			int sreg1 = cmd.add_virtual_reg(Asm::REG_S0);
-			int reg1 = _to_register(p1, 0);
-			cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
-			insert_cmd(Asm::INST_FMSR, param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, reg1));
-
 			int sreg2 = cmd.add_virtual_reg(Asm::REG_S1);
-			int reg2 = _to_register(p2, 0);
-			insert_cmd(Asm::INST_FMSR, param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, reg1));
+
+			_to_register_float(p1, 0, sreg1);
+			_to_register_float(p2, 0, sreg2);
 
 			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
 
-			insert_cmd(Asm::INST_FMRS, param_vreg(TypeFloat32, reg1), param_vreg(TypeFloat32, sreg1));
-			_from_register(reg1, p0, 0);
+			_from_register_float(sreg1, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_PUSH) {
