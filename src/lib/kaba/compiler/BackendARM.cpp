@@ -132,6 +132,10 @@ int BackendARM::_to_register(const SerialNodeParam &p, int offset, int force_reg
 		_immediate_to_register(*((int*)((char*)cc->p() + offset)), reg);
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		_immediate_to_register(*((int*)((char*)p.p + offset)), reg);
+	} else if (p.kind == NodeKind::IMMEDIATE) {
+		if (offset != 0)
+			do_error("immediate + offset");
+		_immediate_to_register(p.p, reg);
 	} else if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var2 = (Variable*)p.p;
 		_local_to_register(var2->_offset + offset, reg);
@@ -164,6 +168,16 @@ void BackendARM::_from_register(int reg, const SerialNodeParam &p, int offset) {
 	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
 		_register_to_global(reg, (int_p)var->memory + offset);
+	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
+		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, VREG_ROOT(reg));
+		// *mem = reg
+		if (offset != 0)
+			do_error("deref local + shift...");
+
+		// reg2 = mem
+		_register_to_local(reg2, p.p);
+		// [reg2] = reg
+		insert_cmd(Asm::INST_STR, param_vreg(TypeInt, reg), param_deref_vreg(TypeInt, reg2));
 	} else {
 		do_error("evil write target..." + kind2str(p.kind));
 	}
@@ -198,6 +212,7 @@ void BackendARM::correct_implement_commands() {
 
 	for (int i=0; i<cmd.cmd.num; i++) {
 		auto &c = cmd.cmd[i];
+		//msg_write("CORRECT  " + c.str(serializer));
 		if (c.inst == INST_MARKER)
 			continue;
 		if (c.inst == Asm::INST_MOV) {
@@ -508,7 +523,14 @@ void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 
 
 void BackendARM::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	serializer->call_used = true;
 
+	int push_size = fc_begin(params, ret, true);
+
+	int reg = _to_register(fp, 0);
+	insert_cmd(Asm::INST_CALL, param_vreg(TypePointer, reg));
+
+	fc_end(push_size, params, ret);
 }
 
 void BackendARM::add_function_intro_params(Function *f) {
