@@ -233,10 +233,17 @@ void BackendARM::correct_implement_commands() {
 
 			int reg1 = find_unused_reg(i, i, 4);
 			int reg2 = find_unused_reg(i, i, 4, VREG_ROOT(reg1));
-			_to_register(p1, 0, reg1);
-			//cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
-			_to_register(p2, 0, reg2);
 
+			if (p2.kind == NodeKind::NONE) {
+				// a += b
+				_to_register(p0, 0, reg1);
+				_to_register(p1, 0, reg2);
+			} else {
+				// a = b + c
+				_to_register(p1, 0, reg1);
+				//cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
+				_to_register(p2, 0, reg2);
+			}
 			insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
 			_from_register(reg1, p0, 0);
 
@@ -259,8 +266,15 @@ void BackendARM::correct_implement_commands() {
 			int sreg1 = cmd.add_virtual_reg(Asm::REG_S0);
 			int sreg2 = cmd.add_virtual_reg(Asm::REG_S1);
 
-			_to_register_float(p1, 0, sreg1);
-			_to_register_float(p2, 0, sreg2);
+			if (p2.kind == NodeKind::NONE) {
+				// a += b
+				_to_register_float(p0, 0, sreg1);
+				_to_register_float(p1, 0, sreg2);
+			} else {
+				// a = b + c
+				_to_register_float(p1, 0, sreg1);
+				_to_register_float(p2, 0, sreg2);
+			}
 
 			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
 
