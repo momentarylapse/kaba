@@ -269,19 +269,7 @@ void BackendARM::correct_implement_commands() {
 			auto p1 = c.p[1];
 			cmd.remove_cmd(i);
 
-			int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
-
-			if (p1.kind == NodeKind::VAR_LOCAL) {
-				// TODO: simplify for offset=0
-				auto var = (Variable*)p1.p;
-				_immediate_to_register(var->_offset, reg);
-				insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
-			} else if (p1.kind == NodeKind::LOCAL_MEMORY) {
-				_immediate_to_register(p1.p, reg);
-				insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
-			} else {
-				do_error("lea source not handled: " + kind2str(p1.kind));
-			}
+			int reg = _reference_to_register(p1);
 			_from_register(reg, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
@@ -325,16 +313,29 @@ void BackendARM::correct_implement_commands() {
 	}
 }
 
-SerialNodeParam BackendARM::insert_reference(const SerialNodeParam &param, const Class *type) {
-	SerialNodeParam ret;
+int BackendARM::_reference_to_register(const SerialNodeParam &p, const Class *type) {
 	if (!type)
-		type = param.type->get_pointer();
-	ret.type = type;
-	ret.shift = 0;
-	if (param.kind == NodeKind::CONSTANT_BY_ADDRESS) {
-		ret.kind = NodeKind::IMMEDIATE;
-		ret.p = (int_p)((char*)param.p + param.shift);
-	} else if ((param.kind == NodeKind::IMMEDIATE) or (param.kind == NodeKind::MEMORY)) {
+		type = p.type->get_pointer();
+
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
+
+	if (p.kind == NodeKind::VAR_LOCAL) {
+		// TODO: simplify for offset=0
+		auto var = (Variable*)p.p;
+		_immediate_to_register(var->_offset, reg);
+		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		_immediate_to_register(p.p, reg);
+		insert_cmd(Asm::INST_ADD, param_vreg(TypeInt, reg), param_vreg(TypeInt, reg), param_preg(TypeInt, Asm::REG_R13));
+	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		_immediate_to_register((int_p)((char*)p.p + p.shift), reg);
+	} else {
+		do_error("lea source not handled: " + kind2str(p.kind));
+	}
+
+
+
+	/*if ((param.kind == NodeKind::IMMEDIATE) or (param.kind == NodeKind::MEMORY)) {
 		ret.kind = NodeKind::IMMEDIATE;
 		if (param.shift > 0)
 			msg_error("Serializer: immediade/mem + shift?!?!?");
@@ -345,8 +346,8 @@ SerialNodeParam BackendARM::insert_reference(const SerialNodeParam &param, const
 	} else {
 		ret = cmd._add_temp(type);
 		insert_cmd(Asm::INST_LEA, ret, param);
-	}
-	return ret;
+	}*/
+	return reg;
 }
 
 int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
@@ -364,11 +365,13 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	//if (instance.type)
 	//	params.insert(instance, 0);
 
-	// return as _very_ first parameter
+	int max_reg_params = 4;
+	int reg_param_offset = 0;
 	if (type->uses_return_by_memory()) {
-		SerialNodeParam ret_ref = insert_reference(ret);
-		params.insert(ret_ref, 0);
+		max_reg_params = 3;
+		reg_param_offset = 1;
 	}
+
 
 	// map params...
 	Array<SerialNodeParam> reg_param;
@@ -376,7 +379,7 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	Array<SerialNodeParam> float_param;
 	for (SerialNodeParam &p: params){
 		if ((p.type == TypeInt) /*or (p.type == TypeInt64)*/ or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()){
-			if (reg_param.num < 4){
+			if (reg_param.num < max_reg_params){
 				reg_param.add(p);
 			}else{
 				stack_param.add(p);
@@ -407,12 +410,19 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 		/*if (p.type == TypeFloat64)
 			insert_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
 		else*/
-			insert_cmd(Asm::INST_FLDS, param_preg(TypeFloat32, reg), p);
+		_to_register_float(p, 0, cmd.add_virtual_reg(reg));
+			//insert_cmd(Asm::INST_FLDS, param_preg(TypeFloat32, reg), p);
+	}
+
+	// return as _very_ first parameter
+	if (type->uses_return_by_memory()) {
+		int reg = _reference_to_register(ret);
+		cmd.set_virtual_reg(reg, cmd.next_cmd_index - 1, -100); // -> call
 	}
 
 	// r0, r1, r2, r3
 	foreachib(auto &p, reg_param, i){
-		int v = cmd.add_virtual_reg(Asm::REG_R0 + i);
+		int v = cmd.add_virtual_reg(Asm::REG_R0 + i + reg_param_offset);
 		_to_register(p, 0, v);
 		//insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
 		cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call

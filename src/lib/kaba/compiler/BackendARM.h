@@ -38,7 +38,7 @@ public:
 	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
 
 
-	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
+	int _reference_to_register(const SerialNodeParam &p, const Class *type = nullptr);
 	int add_global_ref(void *p);
 
 
