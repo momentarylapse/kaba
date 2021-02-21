@@ -45,14 +45,17 @@ void BackendARM::process(Function *f, int index) {
 
 void BackendARM::correct() {
 	cmd.next_cmd_target(0);
-	add_function_intro_params(cur_func);
 
 	correct_parameters();
 
 	serializer->cmd_list_out("x:a", "paramtrafo");
 
 	correct_implement_commands();
+
+	cmd.next_cmd_target(0);
+	add_function_intro_params(cur_func);
 	serializer->cmd_list_out("x:b", "post paramtrafo");
+
 }
 
 void BackendARM::correct_parameters() {
@@ -377,20 +380,20 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	Array<SerialNodeParam> reg_param;
 	Array<SerialNodeParam> stack_param;
 	Array<SerialNodeParam> float_param;
-	for (SerialNodeParam &p: params){
-		if ((p.type == TypeInt) /*or (p.type == TypeInt64)*/ or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()){
-			if (reg_param.num < max_reg_params){
+	for (SerialNodeParam &p: params) {
+		if ((p.type == TypeInt) /*or (p.type == TypeInt64)*/ or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()) {
+			if (reg_param.num < max_reg_params) {
 				reg_param.add(p);
-			}else{
+			} else {
 				stack_param.add(p);
 			}
-		}else if ((p.type == TypeFloat32) /*or (p.type == TypeFloat64)*/){
-			if (float_param.num < 8){
+		} else if ((p.type == TypeFloat32) /*or (p.type == TypeFloat64)*/) {
+			if (float_param.num < 8) {
 				float_param.add(p);
-			}else{
+			} else {
 				stack_param.add(p);
 			}
-		}else
+		} else
 			do_error("parameter type currently not supported: " + p.type->name);
 	}
 
@@ -405,7 +408,7 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	max_push_size = max(max_push_size, push_size);*/
 
 	// s0-7
-	foreachib(auto &p, float_param, i){
+	foreachib(auto &p, float_param, i) {
 		int reg = Asm::REG_S0 + i;
 		/*if (p.type == TypeFloat64)
 			insert_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
@@ -421,7 +424,7 @@ int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNode
 	}
 
 	// r0, r1, r2, r3
-	foreachib(auto &p, reg_param, i){
+	foreachib(auto &p, reg_param, i) {
 		int v = cmd.add_virtual_reg(Asm::REG_R0 + i + reg_param_offset);
 		_to_register(p, 0, v);
 		//insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
@@ -495,6 +498,68 @@ void BackendARM::add_pointer_call(const SerialNodeParam &fp, const Array<SerialN
 }
 
 void BackendARM::add_function_intro_params(Function *f) {
+	// return, instance, params
+	Array<Variable*> param;
+	if (f->effective_return_type->uses_return_by_memory()) {
+		for (Variable *v: weak(f->var))
+			if (v->name == IDENTIFIER_RETURN_VAR) {
+				param.add(v);
+				break;
+			}
+	}
+	if (!f->is_static()) {
+		for (Variable *v: weak(f->var))
+			if (v->name == IDENTIFIER_SELF) {
+				param.add(v);
+				break;
+			}
+	}
+	for (int i=0;i<f->num_params;i++)
+		param.add(f->var[i].get());
+
+	// map params...
+	Array<Variable*> reg_param;
+	Array<Variable*> stack_param;
+	Array<Variable*> float_param;
+	for (Variable *p: param) {
+		if ((p->type == TypeInt) or (p->type == TypeChar) or (p->type == TypeBool) or p->type->is_some_pointer()) {
+			if (reg_param.num < 4) {
+				reg_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else if (p->type == TypeFloat32) {
+			if (float_param.num < 8) {
+				float_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else {
+			do_error("parameter type currently not supported: " + p->type->name);
+		}
+	}
+
+	// s0-7
+	foreachib(Variable *p, float_param, i) {
+		int reg = cmd.add_virtual_reg(Asm::REG_S0 + i);
+		_from_register_float(reg, param_local(p->type, p->_offset), 0);
+	}
+
+	// rdi, rsi,rdx, rcx, r8, r9
+	int param_regs[4] = {Asm::REG_R0, Asm::REG_R1, Asm::REG_R2, Asm::REG_R3};
+	foreachib(Variable *p, reg_param, i) {
+		int reg = cmd.add_virtual_reg(param_regs[i]);
+		_from_register(reg, param_local(p->type, p->_offset), 0);
+		cmd.set_virtual_reg(reg, cmd.cmd.num - 1, cmd.cmd.num - 1);
+	}
+
+	// get parameters from stack
+	foreachb(Variable *p, stack_param) {
+		do_error("func with stack...");
+		/*int s = 8;
+		cmd.add_cmd(Asm::inst_push, p);
+		push_size += s;*/
+	}
 }
 
 int BackendARM::add_global_ref(void *p) {
@@ -607,7 +672,7 @@ void BackendARM::assemble_cmd_arm(SerialNode &c) {
 void BackendARM::add_function_intro_frame(int stack_alloc_size) {
 	cmd.next_cmd_target(0);
 	cmd.add_cmd(Asm::INST_STMDB, param_preg(TypePointer, Asm::REG_R13), param_imm(TypeInt, 0x6ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r14}
-	if (stack_max_size > 0){
+	if (stack_max_size > 0) {
 		cmd.next_cmd_target(1);
 		cmd.add_cmd(Asm::INST_MOV, param_preg(TypePointer, Asm::REG_R11), param_preg(TypePointer, Asm::REG_R13));
 		cmd.next_cmd_target(2);
