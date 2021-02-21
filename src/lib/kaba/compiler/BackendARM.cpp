@@ -175,7 +175,7 @@ void BackendARM::_from_register(int reg, const SerialNodeParam &p, int offset) {
 			do_error("deref local + shift...");
 
 		// reg2 = mem
-		_register_to_local(reg2, p.p);
+		_local_to_register(p.p, reg2);
 		// [reg2] = reg
 		insert_cmd(Asm::INST_STR, param_vreg(TypeInt, reg), param_deref_vreg(TypeInt, reg2));
 	} else {
