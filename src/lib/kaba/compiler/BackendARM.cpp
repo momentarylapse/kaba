@@ -531,6 +531,7 @@ void BackendARM::map_remaining_temp_vars_to_stack() {
 	for (int i=cmd.temp_var.num-1;i>=0;i--) {
 		SerialNodeParam stackvar;
 		serializer->add_stack_var(cmd.temp_var[i], stackvar);
+		stack_max_size = max((int64)stack_max_size, stackvar.p + stackvar.type->size);
 		for (int j=0;j<cmd.cmd.num;j++) {
 			for (int k=0; k<SERIAL_NODE_NUM_PARAMS; k++)
 				try_map_param_to_stack(cmd.cmd[j].p[k], i, stackvar);
