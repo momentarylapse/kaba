@@ -160,6 +160,34 @@ string SerialNodeParam::str(Serializer *ser) const {
 	return str;
 }
 
+string _cond_str(int cond) {
+	if (cond == Asm::ARM_COND_EQUAL)
+		return "eq";
+	if (cond == Asm::ARM_COND_NOT_EQUAL)
+		return "ne";
+	if (cond == Asm::ARM_COND_LESS_THAN)
+		return "lt";
+	if (cond == Asm::ARM_COND_LESS_EQUAL)
+		return "le";
+	if (cond == Asm::ARM_COND_GREATER_THAN)
+		return "gt";
+	if (cond == Asm::ARM_COND_GREATER_EQUAL)
+		return "ge";
+	if (cond == Asm::ARM_COND_CARRY_SET)
+		return "carry";
+	if (cond == Asm::ARM_COND_CARRY_CLEAR)
+		return "nocarry";
+	if (cond == Asm::ARM_COND_NEGATIVE)
+		return "neg";
+	if (cond == Asm::ARM_COND_POSITIVE)
+		return "pos";
+	if (cond == Asm::ARM_COND_OVERFLOW)
+		return "over";
+	if (cond == Asm::ARM_COND_NO_OVERFLOW)
+		return "nover";
+	return "?";
+}
+
 string SerialNode::str(Serializer *ser) const {
 	if (inst == INST_MARKER)
 		return "-- " + ser->list->label[p[0].p].name + " --";
@@ -167,7 +195,7 @@ string SerialNode::str(Serializer *ser) const {
 		return format("-- Asm %d --", p[0].p);
 	string t;
 	if (cond != Asm::ARM_COND_ALWAYS)
-		t += "[cond]";
+		t += _cond_str(cond) + ":";
 	t += format("%-6s %s", Asm::GetInstructionName(inst), p[0].str(ser));
 	if (p[1].kind != NodeKind::NONE)
 		t += ",  " + p[1].str(ser);

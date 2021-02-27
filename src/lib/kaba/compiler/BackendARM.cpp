@@ -435,6 +435,25 @@ void BackendARM::correct_implement_commands() {
 			}
 			_from_register_8(reg, p0, 0);
 			i = cmd.next_cmd_index - 1;
+		} else if ((c.inst == Asm::INST_JMP) or (c.inst == Asm::INST_JZ) or (c.inst == Asm::INST_JNZ) or (c.inst == Asm::INST_JNLE) or (c.inst == Asm::INST_JNL) or (c.inst == Asm::INST_JLE) or (c.inst == Asm::INST_JL)) {
+			auto p0 = c.p[0];
+			int inst = c.inst;
+			cmd.remove_cmd(i);
+			insert_cmd(Asm::INST_B, p0);
+			if (inst == Asm::INST_JZ) { // ==
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_EQUAL;
+			} else if (inst == Asm::INST_JNZ) { // !=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_NOT_EQUAL;
+			} else if (inst == Asm::INST_JNLE) { // >
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_THAN;
+			} else if (inst == Asm::INST_JNL) { // >=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_EQUAL;
+			} else if (inst == Asm::INST_JL) { // <
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_THAN;
+			} else if (inst == Asm::INST_JLE) { // <=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_EQUAL;
+			}
+			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_LEA) {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
