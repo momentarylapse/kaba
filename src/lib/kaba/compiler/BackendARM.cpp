@@ -396,16 +396,18 @@ void BackendARM::correct_implement_commands() {
 			auto p1 = c.p[1];
 			cmd.remove_cmd(i);
 
-			int reg0, reg1;
+			int reg1 = find_unused_reg(i, i, 4);
+			int reg2 = find_unused_reg(i, i, 4, VREG_ROOT(reg1));
+
 			if (p0.type->size == 1) {
-				reg0 = _to_register_8(p0, 0);
-				reg1 = _to_register_8(p1, 0);
+				_to_register_8(p0, 0, reg1);
+				_to_register_8(p1, 0, reg2);
 			} else {
-				reg0 = _to_register_32(p0, 0);
-				reg1 = _to_register_32(p1, 0);
+				_to_register_32(p0, 0, reg1);
+				_to_register_32(p1, 0, reg2);
 			}
 
-			insert_cmd(Asm::INST_CMP, param_vreg(p0.type, reg0), param_vreg(p1.type, reg1));
+			insert_cmd(Asm::INST_CMP, param_vreg(p0.type, reg1), param_vreg(p1.type, reg2));
 			i = cmd.next_cmd_index - 1;
 		} else if ((c.inst == Asm::INST_SETZ) or (c.inst == Asm::INST_SETNZ) or (c.inst == Asm::INST_SETNLE) or (c.inst == Asm::INST_SETNL) or (c.inst == Asm::INST_SETLE) or (c.inst == Asm::INST_SETL)) {
 			auto p0 = c.p[0];
