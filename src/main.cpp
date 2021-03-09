@@ -150,11 +150,15 @@ public:
 		if (p.arg.num > 0) {
 			filename = p.arg[0];
 			if (installed and filename.extension() != "kaba") {
-				Path dd = directory_static << "apps" << filename.str() << (filename.str() + ".kaba");
-				if (filename.str().find("/") >= 0)
-					dd = directory_static << "apps" << (filename.str() + ".kaba");
-				if (file_exists(dd))
-					filename = dd;
+				for (auto &dir: Array<Path>({directory, directory_static})) {
+					Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
+					if (filename.str().find("/") >= 0)
+						dd = dir << "apps" << (filename.str() + ".kaba");
+					if (file_exists(dd)) {
+						filename = dd;
+						break;
+					}
+				}
 			}
 		} else if (command.num > 0) {
 			kaba::execute_single_script_command(command);
