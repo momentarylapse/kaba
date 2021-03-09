@@ -1,8 +1,8 @@
 BIN = ../kaba
 CPP = g++
-GLOBALFLAGS = -fno-omit-frame-pointer -O2 -g -std=c++17  -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1 -DHAS_LIB_VULKAN=1 -DHAS_LIB_GL=1 -DHAS_LIB_GLFW=1
+GLOBALFLAGS = -fno-omit-frame-pointer -O2 -g -std=c++17  -DHAS_LIB_GTK3=1 -DHAS_LIB_ZLIB=1 -DHAS_LIB_XLIB=1 -DHAS_LIB_UNWIND=1 -DHAS_LIB_DL=1 -DHAS_LIB_VULKAN=0 -DHAS_LIB_GL=1 -DHAS_LIB_GLFW=0
 CXXFLAGS =   `pkg-config --cflags gtk+-3.0` $(GLOBALFLAGS)
-CXXFLAGSLINKING =   `pkg-config --cflags --libs gtk+-3.0` -lz -lX11 -lunwind -ldl -lvulkan -lGL -lglfw $(GLOBALFLAGS)
+CXXFLAGSLINKING =   `pkg-config --cflags --libs gtk+-3.0` -lz -lX11 -lunwind -ldl -lGL $(GLOBALFLAGS)
 prefix = /usr/local
 
 OBJ = Helper/CLIParser.o \
