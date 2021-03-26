@@ -547,10 +547,11 @@ struct xf_format_data {
 	string apply_justify(const string &s) {
 		if (width <= 0 or fill_zeros)
 			return s;
+		int len = s.utf8len();
 		if (left_justify)
-			return s + str_repeat(" ", width - s.num);
+			return s + str_repeat(" ", width - len);
 		else
-			return str_repeat(" ", width - s.num) + s;
+			return str_repeat(" ", width - len) + s;
 	}
 };
 
