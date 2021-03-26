@@ -1034,29 +1034,29 @@ int string::utf8len() const {
 string utf8_char(unsigned int code) {
 	char r[6] = "";
 	if ((code & 0xffffff80) == 0) { // 7bit
-		return string((char*)&code, 1);
+		return bytes((char*)&code, 1);
 	} else if ((code & 0xfffff800) == 0) { // 11bit
 		r[1] = (code & 0x003f) | 0x80;        // 00-05
 		r[0] = ((code & 0x07c0) >> 6) | 0xc0; // 06-10
-		return string(r, 2);
+		return bytes(r, 2);
 	} else if ((code & 0xffff0000) == 0) { // 16bit
 		r[2] = (code & 0x003f) | 0x80;         // 00-05
 		r[1] = ((code & 0x0fc0) >> 6) | 0x80;  // 06-11
 		r[0] = ((code & 0xf000) >> 12) | 0xe0; // 12-15
-		return string(r, 3);
+		return bytes(r, 3);
 	} else if ((code & 0xffe00000) == 0) { // 21bit
 		r[3] = (code & 0x0000003f) | 0x80;         // 00-05
 		r[2] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
 		r[1] = ((code & 0x0003f000) >> 12) | 0x80; // 12-17
 		r[0] = ((code & 0x001c0000) >> 18) | 0xf0; // 18-20
-		return string(r, 4);
+		return bytes(r, 4);
 	} else if ((code & 0xffe00000) == 0) { // 26bit
 		r[4] = (code & 0x0000003f) | 0x80;         // 00-05
 		r[3] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
 		r[2] = ((code & 0x0003f000) >> 12) | 0x80; // 12-17
 		r[1] = ((code & 0x00fc0000) >> 18) | 0x80; // 18-23
 		r[1] = ((code & 0x03000000) >> 24) | 0xf4; // 24-25
-		return string(r, 5);
+		return bytes(r, 5);
 	} else { // 31bit
 		r[5] = (code & 0x0000003f) | 0x80;         // 00-05
 		r[4] = ((code & 0x00000fc0) >> 6) | 0x80;  // 06-11
@@ -1064,7 +1064,7 @@ string utf8_char(unsigned int code) {
 		r[2] = ((code & 0x00fc0000) >> 18) | 0x80; // 18-23
 		r[1] = ((code & 0x3f000000) >> 24) | 0x80; // 24-29
 		r[0] = ((code & 0x40000000) >> 30) | 0xfc; // 30
-		return string(r, 6);
+		return bytes(r, 6);
 	}
 }
 
