@@ -182,6 +182,7 @@ sources = [
 	'src/lib/kaba/lib/exception.cpp',
 	'src/lib/kaba/lib/lib.cpp',
 	'src/lib/kaba/lib/lib_base.cpp',
+	'src/lib/kaba/lib/lib_doc.cpp',
 	'src/lib/kaba/lib/lib_hui.cpp',
 	'src/lib/kaba/lib/lib_image.cpp',
 	'src/lib/kaba/lib/lib_kaba.cpp',
@@ -243,6 +244,9 @@ sources = [
 	'src/lib/vulkan/Texture.cpp',
 	'src/lib/vulkan/VertexBuffer.cpp',
 	'src/lib/vulkan/vulkan.cpp',
+	'src/lib/xfile/chunked.cpp',
+	'src/lib/xfile/pdf.cpp',
+	'src/lib/xfile/xml.cpp',
 	'src/main.cpp'
 ]
 

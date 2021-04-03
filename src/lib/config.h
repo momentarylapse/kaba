@@ -17,6 +17,7 @@
 #if HAS_LIB_VULKAN
 	#define _X_USE_VULKAN_
 #endif
+#define _X_USE_PDF_
 
 //#####################################################################
 // Hui-API
