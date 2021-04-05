@@ -9,6 +9,7 @@
 #define SRC_LIB_XFILE_PDF_H_
 
 #include "../base/base.h"
+#include "../base/pointer.h"
 #include "../image/Painter.h"
 
 class Path;
@@ -69,6 +70,8 @@ public:
 	float text_x, text_y;
 };
 
+class TTF;
+
 class Parser {
 	friend class PagePainter;
 public:
@@ -98,6 +101,7 @@ private:
 		int id, id_widths, id_descr, id_file;
 		Array<int> widths;
 		string file_contents;
+		shared<TTF> ttf;
 	};
 	Array<FontData> font_data;
 	//int font_id(const string &name);

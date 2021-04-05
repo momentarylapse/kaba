@@ -127,6 +127,8 @@ void SIAddPackageImage() {
 				func_add_param("x", TypeFloat32);
 				func_add_param("y", TypeFloat32);
 				func_add_param("str", TypeString);
+			class_add_func_virtualx("get_str_width", TypeFloat32, &Painter::get_str_width);
+				func_add_param("str", TypeString);
 			class_add_func_virtualx("draw_image", TypeVoid, &Painter::draw_image);
 				func_add_param("x", TypeFloat32);
 				func_add_param("y", TypeFloat32);

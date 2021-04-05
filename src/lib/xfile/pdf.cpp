@@ -13,16 +13,16 @@
 
 namespace pdf {
 
-Array<Path> font_paths;
+Array<Path> font_paths = {"./"};
 
 
-class TTF {
+class TTF : public Sharable<Empty> {
 public:
 
 
 	struct BEUShort {
 		unsigned char c[2];
-		int _int() {
+		int _int() const {
 			unsigned int a = c[0];
 			unsigned int b = c[1];
 			return (a << 8) + b;
@@ -30,7 +30,7 @@ public:
 	};
 	struct BESShort {
 		unsigned char c[2];
-		int _int() {
+		int _int() const {
 			unsigned int a = c[0];
 			unsigned int b = c[1];
 			unsigned int r = (a << 8) + b;
@@ -41,7 +41,7 @@ public:
 	};
 	struct BELong {
 		unsigned char x[4];
-		int _int() {
+		int _int() const {
 			unsigned int a = x[0];
 			unsigned int b = x[1];
 			unsigned int c = x[2];
@@ -67,6 +67,18 @@ public:
 		return t._int();
 	}
 
+	static int readUB(File *f) {
+		int t = 0;
+		f->read_buffer(&t, 1);
+		return t;
+	}
+
+	static int readL(File *f) {
+		BELong t;
+		f->read_buffer(&t, 4);
+		return t._int();
+	}
+
 	struct TableDirectory {
 		Fixed version;
 		BEUShort num_tables;
@@ -74,6 +86,7 @@ public:
 		BEUShort entry_selector;
 		BEUShort range_shift;
 	};
+	TableDirectory td;
 
 	struct TableDirectoryEntry {
 		BELong tag, chksum, offset, length;
@@ -86,6 +99,7 @@ public:
 			return s;
 		}
 	};
+	Array<TableDirectoryEntry> tdentries;
 
 	struct Header {
 		Fixed version;
@@ -96,10 +110,53 @@ public:
 		BEUShort units_per_em;
 		// more
 	};
-
-	TableDirectory td;
-	Array<TableDirectoryEntry> tdentries;
 	Header head;
+
+
+	struct MapHeader {
+		BEUShort version, num_tables;
+	};
+	MapHeader mh;
+
+	struct MapTable {
+		int platform, encoding;
+		int offset;
+		int format;
+
+		// format 4
+		Array<int> end_code;
+		Array<int> start_code;
+		Array<int> id_delta;
+		Array<int> id_range_offset;
+
+		// format 6
+		int first_code;
+		Array<int> glyph_id_array;
+
+		int map(int code) {
+			if (format == 4) {
+				for (int i=0; i<end_code.num; i++)
+					if (code >= start_code[i] and code <= end_code[i])
+						return (code + id_delta[i]) & 0x0000ffff;
+				return -1;
+			} else if (format == 6) {
+				if (code < first_code or code >= (first_code + glyph_id_array.num))
+					return -1;
+				return glyph_id_array[code - first_code];
+			}
+			return -1;
+		}
+	};
+	Array<MapTable> map_tables;
+
+	struct Glyph {
+		int code;
+		int xmin, ymin, xmax, ymax;
+		//Contour[] contours;
+		Array<int> codes;
+		float lsb, width;
+	};
+	Array<Glyph> glyphs;
 
 	Array<int> lsb, advance;
 
@@ -124,6 +181,19 @@ public:
 
 		//for (auto &ee: tdentries)
 		//	msg_write(format("%s  %d", ee.name(), ee.offset._int()));
+	}
+	bool read_head(File *f) {
+		auto te = get_table("head");
+		if (!te) {
+			msg_error("no head table");
+			return false;
+		}
+		f->set_pos(te->offset._int());
+		//msg_write("head-----------------------------");
+
+		f->read_buffer(&head, 32);
+		//msg_write(head.units_per_em._int());
+		return true;
 	}
 
 
@@ -157,20 +227,254 @@ public:
 		return true;
 	}
 
+
+	bool read_mapping(File *f) {
+		auto te = get_table("cmap");
+		if (!te) {
+			msg_error("no cmap table");
+			return false;
+		}
+		f->set_pos(te->offset._int());
+
+		f->read_buffer(&mh, 4);
+		int n = mh.num_tables._int();
+		//msg_write("map-----------------------------");
+		//msg_write(i2h(f->get_pos(), 4));
+		//msg_write mh.version.int();
+		//msg_write n;
+		if (n > 100000) {
+			msg_error("too many mapping tables");
+			return false;
+		}
+
+		for (int i=0; i<n; i++) {
+			MapTable t;
+			t.platform = readUS(f);
+			t.encoding = readUS(f);
+			t.offset = readL(f);
+			map_tables.add(t);
+		}
+
+		for (auto &m: map_tables) {
+			/*msg_write("--------------");
+			msg_write(m.offset);
+			msg_write(m.platform);
+			msg_write(m.encoding);*/
+			f->set_pos(te->offset._int() + m.offset);
+			m.format = readUS(f);
+
+			if (m.format == 0) {
+				int length = readUS(f);
+				//msg_write("l {{length}}");
+				int version = readUS(f);
+				for (int i=0; i<256; i++)
+					m.glyph_id_array.add(readUB(f));
+				//msg_write m.glyph_id_array;
+			} else if (m.format == 4) {
+				int length = readUS(f);
+				//msg_write("l {{length}}");
+				int version = readUS(f);
+				int seg_count = readUS(f) / 2;
+				//msg_write("s {{seg_count}}");
+				int search_range = readUS(f);
+				int entry_selector = readUS(f);
+				int range_shift = readUS(f);
+				for (int i=0; i<seg_count; i++)
+					m.end_code.add(readUS(f));
+				readUS(f);
+				for (int i=0; i<seg_count; i++)
+					m.start_code.add(readUS(f));
+				for (int i=0; i<seg_count; i++)
+					m.id_delta.add(readUS(f));
+				for (int i=0; i<seg_count; i++)
+					m.id_range_offset.add(readUS(f));
+				int rs = seg_count * 8 + 16;
+				//msg_write("r: {{length - rs}}");
+				int na = (length - rs) / 2;
+				for (int i=0; i<na; i++)
+					m.glyph_id_array.add(readUS(f));
+			} else if (m.format == 6) {
+				int length = readUS(f);
+				//msg_write("l {{length}}");
+				int version = readUS(f);
+				m.first_code = readUS(f);
+				int entry_count = readUS(f);
+				for (int i=0; i<entry_count; i++)
+					m.glyph_id_array.add(readUS(f));
+				//msg_write m.glyph_id_array
+
+			} else if (m.format == 12) {
+				readUS(f); // "padding"
+				int length = readL(f);
+				//msg_write("l {{length}}");
+				int version = readL(f);
+
+				int group_count = readL(f) / 2;
+				//msg_write("s {{group_count}}");
+
+				for (int i=0; i<group_count; i++) {
+					int start_code = readL(f);
+					m.start_code.add(start_code);
+					m.end_code.add(readL(f));
+					m.id_delta.add(readL(f) - start_code);
+				}
+
+			} else {
+				msg_error(format("unhandled format: %d", m.format));
+				return false;
+			}
+		}
+
+
+		return true;
+	}
+
+	void map_code(int index, int code) {
+		if (index < glyphs.num) {
+			glyphs[index].code = code;
+			if (glyphs[index].codes.find(code) >= 0)
+				glyphs[index].codes.add(code);
+			//msg_write(format("E: %d => %d", index, code));
+		}
+	}
+
+	void update_codes() {
+
+		for (auto &m: map_tables) {
+			if (m.format == 6) {
+				//msg_write("----------------------- 666");
+				foreachi(auto &n, m.glyph_id_array, i)
+					map_code(n, m.first_code + i);
+			} else if (m.format == 4) {
+				//msg_write("----------------------- 444");
+				//msg_write(m.end_code.num);
+				for (int i=0; i<m.end_code.num; i++) {
+					/*msg_write("----");
+					msg_write(m.start_code[i]);
+					msg_write(m.end_code[i]);
+					msg_write(m.id_delta[i]);*/
+					for (int code=m.start_code[i]; code<m.end_code[i]+1; code++) {
+						int n;
+						if (m.id_range_offset[i] == 0) {
+							n = (code + m.id_delta[i]) & 0x0000ffff;
+						} else {
+							int index = (code - m.start_code[i]) + m.id_range_offset[i]/2 - (m.id_range_offset.num - i);
+							n = m.glyph_id_array[index];
+						}
+						map_code(n, code);
+					}
+				}
+			} else if (m.format == 12) {
+				//msg_write("----------------------- 12 12 12");
+				//msg_write(m.end_code.num);
+				for (int i=0; i<m.end_code.num; i++) {
+					/*msg_write("----");
+					msg_write(m.start_code[i]);
+					msg_write(m.end_code[i]);
+					msg_write(m.id_delta[i]);*/
+					for (int code=m.start_code[i]; code<m.end_code[i]+1; code++)
+						map_code(code + m.id_delta[i], code);
+				}
+			} else {
+				msg_error(format("---------------- UNHANDLED %d", m.format));
+			}
+		}
+	}
+
+
+	bool read_glyphs(File *f) {
+		auto te = get_table("glyf");
+		if (!te) {
+			msg_error("no glyf table");
+			return false;
+		}
+		f->set_pos(te->offset._int());
+		int _max = te->offset._int() + te->length._int() - 32;
+
+		Glyph gg;
+		glyphs.add(gg);
+		glyphs.add(gg);
+		glyphs.add(gg);
+
+		/*while (f->get_pos() < _max) {
+			Glyph g;
+			if (!read_glyph(g))
+				return false;
+			glyphs.add(g);
+		}*/
+		glyphs.resize(_max + 3);
+		//print("Glyphs: {{len(glyphs)}}");
+
+
+		return true;
+	}
+
+	void update_size() {
+		float scale = 1.0 / head.units_per_em._int();
+		float w = 0;
+		foreachi(auto &g, glyphs, i) {
+			g.lsb = 0;
+			g.width = g.xmax - g.xmin;
+			if (i < lsb.num) {
+				g.lsb = lsb[i];
+				g.width = advance[i];
+				w = g.width;
+			} else if (lsb.num > 0) {
+				g.width = w;
+			}
+		}
+	}
+
 	void load(const Path &filename) {
 		auto f = FileOpen(filename);
 
 		read_table_directory(f);
-		//read_head(f);
-		//read_mapping(f);
+		read_head(f);
+		read_mapping(f);
 		try_read_hhead(f);
 		try_read_hmetrix(f);
-		//read_glyphs();
+		read_glyphs(f);
 
-		//update_codes()
-		//update_size()
+		update_codes();
+		update_size();
 
 		delete f;
+	}
+
+	int map(int code) {
+		for (auto &m: map_tables) {
+			int n = m.map(code);
+			if (n >= glyphs.num) {
+				msg_error("mapping error: {{code}} => {{n}}");
+				return -1;
+			}
+			if (n >= 0)
+				return n;
+		}
+		return -1;
+	}
+
+	Glyph* get(int code) {
+		//print("get {{code}}")
+		int n = map(code);
+		//print(n);
+		if (n < 0)
+			return &glyphs[0];
+		return &glyphs[n];
+	}
+
+	float scale() const {
+		return 1000.0f / (float)head.units_per_em._int();
+	}
+
+	Array<int> get_widths() {
+		float _scale = scale();
+		Array<int> widths;
+		for (int code=0; code<256; code++) {
+			auto g = get(code);
+			widths.add((int)(g->width * _scale));
+		}
+		return widths;
 	}
 };
 
@@ -341,6 +645,19 @@ void PagePainter::draw_str(float x, float y, const string& str) {
 }
 
 float PagePainter::get_str_width(const string& str) {
+	auto f = parser->font_get(font_name);
+	if (f->true_type) {
+		float dx = 0;
+		auto codes = str.utf8_to_utf32();
+		float scale = f->ttf->scale();
+		for (int c: codes) {
+			auto g = f->ttf->get(c);
+			if (g)
+				dx += g->width / 1000.0f;
+		}
+		//msg_write(format("www   %f", dx));
+		return font_size * dx * scale;
+	}
 	return font_size * str.num * 0.5f;
 }
 
@@ -414,10 +731,10 @@ Parser::FontData *Parser::font_get(const string &name) {
 		if (!ff.is_empty()) {
 			fd.true_type = true;
 			fd.file_contents = FileRead(ff);
-			load_ttf(name);
-
-			for (int k=0; k<256; k++)
-				fd.widths.add(800);
+			//load_ttf(name);
+			fd.ttf = new TTF;
+			fd.ttf->load(ff);
+			fd.widths = fd.ttf->get_widths();
 		} else {
 			msg_error("font not found: " + name);
 		}
