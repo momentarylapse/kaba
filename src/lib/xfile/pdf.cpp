@@ -429,164 +429,149 @@ Parser::FontData *Parser::font_get(const string &name) {
 void Parser::save(const Path &filename) {
 	auto f = FileCreate(filename);
 	Array<int> pos;
+	int next_id = 1;
+	auto mk_id = [&] {
+		return next_id ++;
+	};
+
+
+	int id_catalog = mk_id();
+	int id_outlines = mk_id();
+	int id_pages = mk_id();
 	Array<int> page_id;
 	for (int i=0; i<pages.num; i++)
-		page_id.add(4 + i);
+		page_id.add(mk_id());
 	Array<int> stream_id;
 	for (int i=0; i<pages.num; i++)
-		stream_id.add(4 + pages.num + i);
+		stream_id.add(mk_id());
 
-	int proc_id = 4 + pages.num * 2;
-	int next_id = proc_id + 1;
+	int id_proc = mk_id();
 
 	// preparing fonts
 	foreachi(auto &fd, font_data, i) {
 		if (fd.true_type) {
 			auto ff = find_ttf(fd.name);
 			if (!ff.is_empty()) {
-				fd.id_file = next_id ++;
+				fd.id_file = mk_id();
 				fd.file_contents = FileRead(ff);
 			}
-			fd.id_descr = next_id ++;
-			fd.id_widths = next_id ++;
+			fd.id_descr = mk_id();
+			fd.id_widths = mk_id();
 		}
-		fd.id = next_id ++;
+		fd.id = mk_id();
 	}
-	int xref_id = next_id;
+	int id_xref = mk_id();
+
+
+	pos.resize(id_xref);
+
+	auto write_obj = [&](File *f, int id, const string &contents) {
+		pos[id] = f->get_pos();
+		f->write_buffer(format("%d 0 obj\n", id));
+		f->write_buffer(contents + "\n");
+		f->write_buffer("endobj\n");
+	};
+
+	auto mk_dict = [](const Array<string> &lines) {
+		if (lines.num == 1)
+			return "<< " + lines[0] + " >>";
+		return "<< " + implode(lines, "\n   ") + "\n>>";
+	};
+
+	Array<string> page_ref;
+	for (int i=0; i<pages.num; i++)
+		page_ref.add(format("%d 0 R", page_id[i]));
 
 
 	f->write_buffer("%PDF-1.4\n");
-	pos.add(f->get_pos());
-	f->write_buffer("1 0 obj\n");
-	f->write_buffer("<< /Type /Catalog\n");
-	f->write_buffer("   /Outlines 2 0 R\n");
-	f->write_buffer("   /Pages 3 0 R\n");
-	f->write_buffer(">>\n");
-	f->write_buffer("endobj\n");
-	pos.add(f->get_pos());
-	f->write_buffer("2 0 obj\n");
-	f->write_buffer("<< /Type Outlines\n");
-	f->write_buffer("   /Count 0\n");
-	f->write_buffer(">>\n");
-	f->write_buffer("endobj\n");
-	pos.add(f->get_pos());
-	f->write_buffer("3 0 obj\n");
-	f->write_buffer("<< /Type /Pages\n");
-	f->write_buffer("   /Kids [");
-	for (int i=0; i<pages.num; i++) {
-		if (i > 0)
-			f->write_buffer(" ");
-		f->write_buffer(format("%d 0 R", page_id[i]));
-	}
-	f->write_buffer("]\n");
-	f->write_buffer(format("   /Count %d\n", pages.num));
-	f->write_buffer(">>\n");
-	f->write_buffer("endobj\n");
+	write_obj(f, id_catalog, mk_dict({
+		"/Type /Catalog",
+		format("/Outlines %d 0 R", id_outlines),
+		format("/Pages %d 0 R", id_pages)}));
+	write_obj(f, id_outlines, mk_dict({
+		"/Type Outlines",
+		"/Count 0"}));
+	write_obj(f, id_pages, mk_dict({"/Type /Pages",
+		"/Kids [" + implode(page_ref, " ") + "]",
+		format("/Count %d\n>>", pages.num)}));
+
 
 	// pages
 	foreachi(auto p, pages, i) {
-		pos.add(f->get_pos());
-		f->write_buffer(format("%d 0 obj\n", page_id[i]));
-		f->write_buffer("<< /Type /Page\n");
-		f->write_buffer("   /Parent 3 0 R\n");
-		f->write_buffer(format("   /MediaBox [0 0 %.3f %.3f]\n", p->width, p->height));
-		f->write_buffer(format("   /Contents %d 0 R\n", stream_id[i]));
-		f->write_buffer(format("   /Resources << /ProcSet %d 0 R\n", proc_id));
-		string fff;
+		Array<string> font_refs;
 		for (auto &fd: font_data)
-			fff += format("%s %d 0 R ", fd.internal_name, fd.id);
-		f->write_buffer("                 /Font << " + fff + ">>\n");
-		f->write_buffer("              >>\n");
-		f->write_buffer(">>\n");
+			font_refs.add(format("%s %d 0 R", fd.internal_name, fd.id));
+		write_obj(f, page_id[i], mk_dict({
+			"/Type /Page",
+			"/Parent 3 0 R",
+			format("/MediaBox [0 0 %.3f %.3f]", p->width, p->height),
+			format("/Contents %d 0 R", stream_id[i]),
+			format("/Resources << /ProcSet %d 0 R\n                 /Font << ", id_proc) + implode(font_refs, " ") + " >>\n              >>"}));
 	}
 
 	// streams
 	foreachi(auto p, pages, i) {
-		pos.add(f->get_pos());
-		f->write_buffer(format("%d 0 obj\n", stream_id[i]));
-		f->write_buffer(format("<< /Length %d >>\n", p->content.num));
-		f->write_buffer("stream\n");
-		f->write_buffer("  BT\n");
-		f->write_buffer(p->content);
-		f->write_buffer("  ET\n");
-		f->write_buffer("endstream\n");
-		f->write_buffer("endobj\n");
+		write_obj(f, stream_id[i], mk_dict({format("/Length %d", p->content.num)}) + format("\nstream\n  BT\n%s  ET\nendstream", p->content));
 	}
 
 	// proc
-	pos.add(f->get_pos());
-	f->write_buffer(format("%d 0 obj\n", proc_id));
-	f->write_buffer("  [/PDF]\n");
-	f->write_buffer("endobj\n");
+	write_obj(f, id_proc, "[/PDF]");
 
 	// fonts
 	for (auto &fd: font_data) {
 
 		if (fd.id_file > 0) {
-			pos.add(f->get_pos());
-			f->write_buffer(format("%d 0 obj\n", fd.id_file));
-			f->write_buffer(format("<< /Filter /ASCIIHexDecode /Length %d >>\n", fd.file_contents.num*3));
-			f->write_buffer("stream\n");
-			f->write_buffer(fd.file_contents.hex().replace("."," ") + " >\n");
-			f->write_buffer("endstream\n");
-			f->write_buffer("endobj\n");
+			write_obj(f, fd.id_file, mk_dict({
+				"/Filter /ASCIIHexDecode",
+				format("/Length %d", fd.file_contents.num*3)}) + "\nstream\n" + fd.file_contents.hex().replace("."," ") + " >\nendstream");
 		}
 
 		if (fd.id_descr > 0) {
-			pos.add(f->get_pos());
-			f->write_buffer(format("%d 0 obj\n", fd.id_descr));
-			f->write_buffer("<< /Type /FontDescriptor\n");
-			f->write_buffer(format("   /FontName %s\n", fd.internal_name));
-			f->write_buffer("   /Flags 4\n");
-			f->write_buffer("   /FontBBox [ -500 -300 1300 900 ]\n");
-			f->write_buffer("   /ItalicAngle 0\n");
-			f->write_buffer("   /Ascent 900\n");
-			f->write_buffer("   /Descent -200\n");
-			f->write_buffer("   /CapHeight 900\n");
-			f->write_buffer("   /StemV 80\n");
+			Array<string> dict = {
+					"/Type /FontDescriptor",
+					format("/FontName %s", fd.internal_name),
+					"/Flags 4",
+					"/FontBBox [-500 -300 1300 900]",
+					"/ItalicAngle 0",
+					"/Ascent 900",
+					"/Descent -200",
+					"/CapHeight 900",
+					"/StemV 80"};
 			if (fd.id_file > 0)
-				f->write_buffer(format("   /FontFile2 %d 0 R\n", fd.id_file));
-			f->write_buffer("  >>\n");
-			f->write_buffer("endobj\n");
+				dict.add(format("/FontFile2 %d 0 R", fd.id_file));
+			write_obj(f, fd.id_descr, mk_dict(dict));
 		}
-		if (fd.id_widths > 0) {
-			pos.add(f->get_pos());
-			f->write_buffer(format("%d 0 obj\n", fd.id_widths));
-			f->write_buffer(ia2s(fd.widths).replace(",", "") + "\n");
-			f->write_buffer("endobj\n");
-		}
-
-		pos.add(f->get_pos());
-		f->write_buffer(format("%d 0 obj\n", fd.id));
-		f->write_buffer("<< /Type /Font\n");
-		if (fd.true_type) {
-			f->write_buffer("   /Subtype /TrueType\n");
-			f->write_buffer("   /FirstChar 0\n");
-			f->write_buffer("   /LastChar 255\n");
-		} else {
-			f->write_buffer("   /Subtype /Type1\n");
-		}
-		f->write_buffer(format("   /Name %s\n", fd.internal_name));
-		f->write_buffer(format("   /BaseFont /%s\n", fd.name));
-		f->write_buffer("   /Encoding /MacRomanEncoding\n");
 		if (fd.id_widths > 0)
-			f->write_buffer(format("   /Widths %d 0 R\n", fd.id_widths));
+			write_obj(f, fd.id_widths, ia2s(fd.widths).replace(",", ""));
+
+		Array<string> dict = {"/Type /Font"};
+		if (fd.true_type) {
+			dict.add("/Subtype /TrueType");
+			dict.add("/FirstChar 0");
+			dict.add("/LastChar 255");
+		} else {
+			dict.add("/Subtype /Type1");
+		}
+		dict.add(format("/Name %s", fd.internal_name));
+		dict.add(format("/BaseFont /%s", fd.name));
+		dict.add("/Encoding /MacRomanEncoding");
+		if (fd.id_widths > 0)
+			dict.add(format("/Widths %d 0 R", fd.id_widths));
 		if (fd.id_descr > 0)
-			f->write_buffer(format("   /FontDescriptor %d 0 R\n", fd.id_descr));
-		f->write_buffer(">>\n");
-		f->write_buffer("endobj\n");
+			dict.add(format("/FontDescriptor %d 0 R", fd.id_descr));
+		write_obj(f, fd.id, mk_dict(dict));
 	}
 
 	int xref_pos = f->get_pos();
 	f->write_buffer("xref\n");
-	f->write_buffer(format("0 %d\n", xref_id));
+	f->write_buffer(format("0 %d\n", id_xref));
 	f->write_buffer("0000000000 65535 f\n");
 	for (int p: pos)
 		f->write_buffer(format("%010d 00000 n\n", p));
 	f->write_buffer("trailer\n");
-	f->write_buffer(format("<< /Size %d\n", xref_id));
-	f->write_buffer("   /Root 1 0 R\n");
-	f->write_buffer(">>\n");
+	f->write_buffer(mk_dict({
+		format("/Size %d", id_xref),
+		format("/Root %d 0 R", id_catalog)}) + "\n");
 	f->write_buffer("startxref\n");
 	f->write_buffer(format("%d\n", xref_pos));
 
