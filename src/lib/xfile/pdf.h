@@ -85,13 +85,26 @@ public:
 
 private:
 	Array<Page*> pages;
-	Array<string> font_names;
+	//Array<string> font_names;
 	float page_width, page_height;
 
 	Painter *current_painter;
 
-	int font_id(const string &name);
+
+
+	struct FontData {
+		bool true_type;
+		string name, internal_name;
+		int id, id_widths, id_descr, id_file;
+		Array<int> widths;
+		string file_contents;
+	};
+	Array<FontData> font_data;
+	//int font_id(const string &name);
+	FontData *font_get(const string &name);
 };
+
+void add_font_directory(const Path &dir);
 
 }
 

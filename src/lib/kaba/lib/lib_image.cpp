@@ -89,6 +89,11 @@ void SIAddPackageImage() {
 				func_add_param("r", TypeFloat32);
 			class_add_func_virtualx("set_antialiasing", TypeVoid, &Painter::set_antialiasing);
 				func_add_param("enabled", TypeBool);
+			class_add_func_virtualx("set_font", TypeVoid, &Painter::set_font);
+				func_add_param("font", TypeString);
+				func_add_param("size", TypeFloat32);
+				func_add_param("bold", TypeBool);
+				func_add_param("italic", TypeBool);
 			class_add_func_virtualx("set_font_size", TypeVoid, &Painter::set_font_size);
 				func_add_param("size", TypeFloat32);
 			class_add_func_virtualx("set_fill", TypeVoid, &Painter::set_fill);
