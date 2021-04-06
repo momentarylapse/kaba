@@ -626,10 +626,30 @@ void PagePainter::draw_circle(float x, float y, float radius) {
 		page->content += "     S\n";
 }
 
-static string _pdf_str_filter(const string &str) {
-	string x = str.replace(u8"\u266f", "#").replace(u8"\u266d", "b");
-	x = x.replace(u8"ä", "ae").replace(u8"ö", "oe").replace(u8"ü", "ue").replace(u8"ß", "ss");
-	x = x.replace(u8"Ä", "Ae").replace(u8"Ö", "Oe").replace(u8"Ü", "Ue");
+static string _pdf_str_filter(const string &str, FontData *fd) {
+	auto xx = str.utf8_to_utf32();
+	for (int &c: xx) {
+		// ascii
+		if (c < 0x80)
+			continue;
+		// Umlaut
+		if (c == 228 or c == 196 or c == 246 or c == 214 or c == 252 or c == 220 or c == 223)
+			continue;
+		if (c == 0x266f)
+			c = '#';
+		else if (c == 0x266d)
+			c = 'b';
+		else
+			c = '?';
+	}
+	return utf32_to_utf8(xx);
+}
+
+static string _pdf_str_encode(const string &str) {
+	string x = str.escape().replace("(", "\\(").replace(")", "\\)");
+	// https://apple.fandom.com/wiki/Mac-Roman_encoding
+	x = x.replace(u8"ä", "\\212").replace(u8"ö", "\\232").replace(u8"ü", "\\237").replace(u8"ß", "\\247");
+	x = x.replace(u8"Ä", "\\200").replace(u8"Ö", "\\205").replace(u8"Ü", "\\206");
 	return x;
 }
 
@@ -638,7 +658,8 @@ void PagePainter::draw_str(float x, float y, const string& str) {
 	float dx = x - text_x;
 	float dy = y - text_y;
 	auto f = parser->font_get(font_name);
-	page->content += format("     %s %.1f Tf\n     %.2f %.2f Td\n     (%s) Tj\n", f->internal_name, font_size, dx, dy, _pdf_str_filter(str));
+	string s = _pdf_str_encode(_pdf_str_filter(str, f));
+	page->content += format("     %s %.1f Tf\n     %.2f %.2f Td\n     (%s) Tj\n", f->internal_name, font_size, dx, dy, s);
 
 	text_x = x;
 	text_y = y;
@@ -646,9 +667,10 @@ void PagePainter::draw_str(float x, float y, const string& str) {
 
 float PagePainter::get_str_width(const string& str) {
 	auto f = parser->font_get(font_name);
+	string s = _pdf_str_filter(str, f);
 	if (f->true_type) {
 		float dx = 0;
-		auto codes = str.utf8_to_utf32();
+		auto codes = s.utf8_to_utf32();
 		float scale = f->ttf->scale();
 		for (int c: codes) {
 			auto g = f->ttf->get(c);
@@ -658,7 +680,7 @@ float PagePainter::get_str_width(const string& str) {
 		//msg_write(format("www   %f", dx));
 		return font_size * dx * scale;
 	}
-	return font_size * str.num * 0.5f;
+	return font_size * s.num * 0.5f;
 }
 
 void PagePainter::draw_image(float x, float y, const Image *image) {
@@ -713,7 +735,7 @@ Painter* Parser::add_page() {
 
 const Array<string> PDF_DEFAULT_FONTS = {"Times", "Courier", "Helvetica"};
 
-Parser::FontData *Parser::font_get(const string &name) {
+FontData *Parser::font_get(const string &name) {
 	for (auto &f: font_data)
 		if (name == f.name)
 			return &f;

@@ -31,6 +31,17 @@ struct Page {
 };
 
 
+class TTF;
+
+struct FontData {
+	bool true_type;
+	string name, internal_name;
+	int id, id_widths, id_descr, id_file;
+	Array<int> widths;
+	string file_contents;
+	shared<TTF> ttf;
+};
+
 class PagePainter : public ::Painter {
 public:
 	PagePainter(Parser *parser, Page *page);
@@ -70,8 +81,6 @@ public:
 	float text_x, text_y;
 };
 
-class TTF;
-
 class Parser {
 	friend class PagePainter;
 public:
@@ -93,16 +102,6 @@ private:
 
 	Painter *current_painter;
 
-
-
-	struct FontData {
-		bool true_type;
-		string name, internal_name;
-		int id, id_widths, id_descr, id_file;
-		Array<int> widths;
-		string file_contents;
-		shared<TTF> ttf;
-	};
 	Array<FontData> font_data;
 	//int font_id(const string &name);
 	FontData *font_get(const string &name);
