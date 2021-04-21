@@ -133,6 +133,9 @@ void SIAddPackageImage() {
 				func_add_param("x", TypeFloat32);
 				func_add_param("y", TypeFloat32);
 				func_add_param("image", TypeImage);
+			class_add_func_virtualx("set_option", TypeVoid, &Painter::set_option);
+				func_add_param("key", TypeString);
+				func_add_param("value", TypeString);
 			class_set_vtable(ImagePainter);
 }
 

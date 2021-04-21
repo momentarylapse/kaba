@@ -705,7 +705,7 @@ lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/Descr
 lib/xfile/chunked.o : lib/xfile/chunked.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/xfile/chunked.h
 	$(CPP) -c lib/xfile/chunked.cpp -o $@ $(CXXFLAGS)
 
-lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
+lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/math.h lib/math/vector.h lib/math/matrix.h lib/math/matrix3.h lib/math/quaternion.h lib/math/plane.h lib/math/rect.h lib/math/complex.h lib/math/interpolation.h lib/math/random.h lib/math/ray.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
 	$(CPP) -c lib/xfile/pdf.cpp -o $@ $(CXXFLAGS)
 
 lib/xfile/xml.o : lib/xfile/xml.cpp lib/xfile/xml.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
@@ -719,8 +719,8 @@ install :
 	xdg-desktop-menu install ../static/michisoft-kaba.desktop
 	xdg-mime install ../static/michisoft-kaba.xml
 	xdg-icon-resource install --context mimetypes --size 64 ../static/icon.png text-michisoft-kaba
-	cp -f '../static/icon.ico' $(prefix)/share/kaba
-	cp -f '../static/icon.png' $(prefix)/share/kaba
+	cp -uf '../static/icon.ico' $(prefix)/share/kaba
+	cp -uf '../static/icon.png' $(prefix)/share/kaba
 	cp $(BIN) $(prefix)/bin
 
 clean :
