@@ -1,0 +1,7 @@
+func f((int,string) x)
+	print(x)
+
+func main()
+#	(int,string) x
+	f([13,"a"])
+#	print(x)
