@@ -1,0 +1,7 @@
+amd64/gnu
+	non-volatile: rbx, rsp, rbp, r12-r15
+	red zone 128b ?
+amd64/win
+	non-volatile: rbx, rbp, rdi, rsi, rsp, r12-r15
+
+destructing parameters....?

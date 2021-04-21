@@ -1,0 +1,11 @@
+function pipes
+let x = 13 |> f1 |> f2
+
+with partial parameters
+f(a,b)...
+let x = 13 |> f(a)
+
+search input type's namespace
+"hallo" |> string.upper
+"hallo" |> upper
+

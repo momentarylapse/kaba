@@ -1,0 +1,70 @@
+only a single constructor, without parameters
+initializers
+...or single constructor with parameters, but default parameters...?
+
+
+
+default parameters...
+
+
+abstract syntax tree?
+
+
+
+
+new variable declaration
+func f(a: int, b: float)
+	let c: int
+	let d: float = 4
+
+
+
+
+
+
+== interfaces? ==
+
+interface I
+	func f()
+	func g()
+
+class A implements I
+	...
+
+
+func ff(I i)
+	i.f()
+let a:A
+ff(a)
+
+extra vtable for each interface in class
+no extra pointer for object/offset needed
+no data in interface
+
+
+== enum class ==
+
+enum XXX
+	A
+	B
+
+interpret like
+class XXX extends int
+	const XXX A = 0
+	const XXX B = 1
+
+
+
+== optional types ==
+
+...?
+
+
+
+== things that feel bad ==
+
+* failing to auto-implement __assign__ even if not needed/wanted
+* messy rules for constructors
+* parser operand/type confusion
+* error handling
+
