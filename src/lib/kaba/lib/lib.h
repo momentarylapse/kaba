@@ -142,6 +142,7 @@ enum class OperatorID {
 	DEREFERENCE,   // *
 	REFERENCE,     // &
 	ARRAY,         // [...]
+	FUNCTION_PIPE, // |>
 	_COUNT_
 };
 

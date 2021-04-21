@@ -669,8 +669,6 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 
 	// nothing?
 	auto primop = which_primitive_operator(Exp.cur, 1); // ++,--
-	if ((Exp.cur != ".") and (Exp.cur != "[") and (Exp.cur != "(") and (!primop))
-		return operands[0];
 
 	if (Exp.cur == ".") {
 		if (operands.num > 1)
@@ -692,7 +690,6 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 
 		return parse_operand_extension({parse_operand_extension_call(operands, block)}, block, prefer_type);
 
-
 	} else if (primop) {
 		if (operands.num > 1)
 			do_error("left side of ++/-- is ambiguous");
@@ -704,6 +701,8 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 					Exp.next();
 					return tree->add_node_operator(op, operands[0], nullptr);
 				}
+		return operands[0];
+	} else {
 		return operands[0];
 	}
 
@@ -1633,6 +1632,39 @@ void get_comma_range(shared_array<Node> &_operators, int mio, int &first, int &l
 	}
 }
 
+shared<Node> build_function_pipe(Parser *p, const shared<Node> &input, const shared<Node> &func) {
+
+	if (func->kind != NodeKind::FUNCTION)
+		p->do_error("function expected after '|>");
+	auto f = func->as_func();
+	if (f->is_static()) {
+		if (f->num_params != 1)
+			p->do_error("function after '|>' needs exactly 1 parameter");
+		//if (f->literal_param_type[0] != input->type)
+		//	p->do_error("pipe type mismatch...");
+	} else {
+		if (f->num_params != 0)
+			p->do_error("function after '|>' needs exactly 1 parameter (self)");
+		//if (f->name_space != input->type)
+		//	p->do_error("pipe type mismatch...");
+	}
+
+	auto out = p->tree->add_node_call(f);
+
+	shared_array<Node> inputs;
+	inputs.add(input);
+
+	Array<int> casts;
+	Array<const Class*> wanted;
+	int penalty;
+	if (!p->param_match_with_cast(out, {input}, casts, wanted, &penalty))
+		p->do_error("pipe type mismatch...xxx");
+	return check_const_params(p->tree, p->apply_params_with_cast(out, {input}, casts, wanted));
+	//auto out = p->tree->add_node_call(f);
+	//out->set_param(0, input);
+	//return out;
+}
+
 void Parser::link_most_important_operator(shared_array<Node> &operands, shared_array<Node> &_operators, Array<int> &op_exp) {
 	//force_concrete_types(operands);
 
@@ -1659,11 +1691,15 @@ void Parser::link_most_important_operator(shared_array<Node> &operands, shared_a
 			operands.erase(i + 1);
 		}
 		return;
+	} else if (op_no->id == OperatorID::FUNCTION_PIPE) {
+		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
+		_operators[mio] = build_function_pipe(this, param1, param2);
+	} else {
+		// regular operator
+		_operators[mio] = link_operator(op_no, param1, param2);
+		if (!_operators[mio])
+			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, param2->type->long_name()), op_exp[mio]);
 	}
-
-	_operators[mio] = link_operator(op_no, param1, param2);
-	if (!_operators[mio])
-		do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, param2->type->long_name()), op_exp[mio]);
 
 // remove from list
 	operands[mio] = _operators[mio];

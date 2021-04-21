@@ -358,7 +358,8 @@ PrimitiveOperator PrimitiveOperators[(int)OperatorID::_COUNT_] = {
 	{",",  OperatorID::COMMA,      false, 1,  "-none-", 3, false},
 	{"*",  OperatorID::DEREFERENCE,      false, 15,  "__get__", 2, false},
 	{"&",  OperatorID::REFERENCE,      false, 15,  "-none-", 2, false},
-	{"[...]",  OperatorID::ARRAY,      false, 16,  "-none-", 3, false}
+	{"[...]",  OperatorID::ARRAY,      false, 16,  "-none-", 3, false},
+	{"|>",  OperatorID::FUNCTION_PIPE,      false, 0,  "-none-", 3, false}
 // Level = 15 - (official C-operator priority)
 // priority from "C als erste Programmiersprache", page 552
 };
