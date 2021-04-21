@@ -29,6 +29,7 @@ namespace kaba {
 
 
 const string IDENTIFIER_CLASS = "class";
+const string IDENTIFIER_INTERFACE = "interface";
 const string IDENTIFIER_FUNC = "func";
 const string IDENTIFIER_FUNC_INIT = "__init__";
 const string IDENTIFIER_FUNC_DELETE = "__delete__";
@@ -44,6 +45,7 @@ const string IDENTIFIER_FUNC_SHARED_CREATE = "_create";
 const string IDENTIFIER_SUPER = "super";
 const string IDENTIFIER_SELF = "self";
 const string IDENTIFIER_EXTENDS = "extends";
+const string IDENTIFIER_IMPLEMENTS = "implements";
 const string IDENTIFIER_STATIC = "static";
 const string IDENTIFIER_NEW = "new";
 const string IDENTIFIER_DELETE = "del";

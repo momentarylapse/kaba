@@ -450,7 +450,7 @@ string type_list_to_str(const Array<const Class*> &tt) {
 }
 
 shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
-	if (n->kind == NodeKind::FUNCTION_CALL) {
+	if ((n->kind == NodeKind::FUNCTION_CALL) or (n->kind == NodeKind::VIRTUAL_CALL)) {
 		auto f = n->as_func();
 		int offset = 0;
 		if (!f->is_static()) {
@@ -458,7 +458,7 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 			if (f->is_selfref()) {
 				// const(return) = const(instance)
 				n->is_const = n->params[0]->is_const;
-			} else if (n->params[0]->is_const and !f->is_const()){
+			} else if (n->params[0]->is_const and !f->is_const()) {
 				//n->show();
 				tree->do_error(f->long_name() + ": member function expects a mutable instance, because it is declared without 'const'");
 			}
@@ -499,7 +499,6 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 			wanted = cur_wanted;
 			chosen = operand;
 			min_penalty = cur_penalty;
-			//return check_const_params(tree, apply_params_with_cast(operand, params, casts, wanted));
 		}
 	}
 	if (chosen)
@@ -3036,7 +3035,8 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 
 Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	offset0 = 0;
-	Exp.next(); // 'class'
+	bool as_interface = (Exp.cur == IDENTIFIER_INTERFACE);
+	Exp.next(); // 'class'/'interface'
 	string name = Exp.cur;
 	Exp.next();
 
@@ -3045,6 +3045,8 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	// already created...
 	if (!_class)
 		tree->script->do_error_internal("class declaration ...not found " + name);
+	if (as_interface)
+		_class->type = Class::Type::INTERFACE;
 
 	if (Exp.cur == IDENTIFIER_AS) {
 		Exp.next();
@@ -3062,6 +3064,15 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 		if (!parent->fully_parsed())
 			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
+		_class->derive_from(parent, true);
+		offset0 = parent->size;
+	}
+
+	if (Exp.cur == IDENTIFIER_IMPLEMENTS) {
+		Exp.next();
+		const Class *parent = parse_type(_namespace); // force
+		if (!parent->fully_parsed())
+			return nullptr;
 		_class->derive_from(parent, true);
 		offset0 = parent->size;
 	}
@@ -3098,7 +3109,7 @@ bool Parser::parse_class(Class *_namespace) {
 		if (Exp.cur == IDENTIFIER_ENUM) {
 			parse_enum(_class);
 			continue;
-		} else if (Exp.cur == IDENTIFIER_CLASS) {
+		} else if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 			//msg_write("sub....");
 			int cur_line = Exp.get_line_no();
 			if (!parse_class(_class)) {
@@ -3108,7 +3119,7 @@ bool Parser::parse_class(Class *_namespace) {
 			//msg_write(">>");
 			continue;
 		} else if (Exp.cur == IDENTIFIER_FUNC) {
-			auto f = parse_function_header_new(_class, Flags::NONE);
+			auto f = parse_function_header_new(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
 			skip_parsing_function_body(f);
 			continue;
 		}
@@ -3128,6 +3139,8 @@ bool Parser::parse_class(Class *_namespace) {
 			    is_function = true;
 			if (is_function) {
 				Exp.set(ie);
+				if (_class->is_interface())
+					flags_set(flags, Flags::VIRTUAL);
 				auto f = parse_function_header(_class, flags);
 				skip_parsing_function_body(f);
 				break;
@@ -3137,6 +3150,9 @@ bool Parser::parse_class(Class *_namespace) {
 				parse_named_const(name, type, _class, tree->root_of_all_evil->block.get());
 				break;
 			}
+
+			if (_class->is_interface())
+				do_error("interfaces can not have data elements");
 
 			parser_class_add_element(this, _class, name, type, flags, _offset);
 
@@ -3542,7 +3558,7 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 		Exp.reset_parser();
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->exp.num >= 2)) {
-			if (Exp.cur == IDENTIFIER_CLASS) {
+			if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 				Exp.next();
 				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns);
 				flags_clear(t->flags, Flags::FULLY_PARSED);
@@ -3624,7 +3640,7 @@ void Parser::parse_top_level() {
 			parse_enum(tree->base_class);
 
 		// class
-		} else if (Exp.cur == IDENTIFIER_CLASS) {
+		} else if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 			parse_class(tree->base_class);
 
 		// func
