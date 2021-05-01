@@ -20,6 +20,12 @@ func f(a: int, b: float)
 
 
 
+lambda captures
+
+partial evaluation
+let g = f(1,.)
+ -> also needs value bindings...
+
 
 
 == interfaces? ==
@@ -38,8 +44,13 @@ let a:A
 ff(a)
 
 extra vtable for each interface in class
-no extra pointer for object/offset needed
+##no extra pointer for object/offset needed
 no data in interface
+
+call via interface
+ i.f()
+requires 2 pointers... A instance + if-vtable
+ARGH
 
 
 == enum class ==
