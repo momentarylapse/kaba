@@ -18,7 +18,7 @@ do
 	k=${f%reg}kaba
 	printf "%-32s" "$k"
 	"$KABA" $OPT "$k" > out
-	x=`diff "$f" out`
+	x=`diff --strip-trailing-cr "$f" out`
 	if [ -n "$x" ]
 	then
 		echo "Fehler"
