@@ -16,9 +16,9 @@
 static std::thread::id main_thread_id = std::this_thread::get_id();
 
 
-#if !GTK_CHECK_VERSION(3,24,0)
+/*#if !GTK_CHECK_VERSION(3,24,0)
 #error gtk >= 3.24 required
-#endif
+#endif*/
 
 #define STUPID_HACK 0
 
@@ -27,13 +27,27 @@ static std::thread::id main_thread_id = std::this_thread::get_id();
 namespace hui
 {
 
-int GtkAreaMouseSet = -1;
-int GtkAreaMouseSetX, GtkAreaMouseSetY;
-
 static ControlDrawingArea *NixGlArea = nullptr;
 GdkGLContext *gtk_gl_context = nullptr;
 
 static Set<ControlDrawingArea*> _recently_deleted_areas;
+
+color color_from_gdk(const GdkRGBA &gcol);
+
+void get_style_colors(Panel *p, const string &id, Map<string,color> &colors) {
+	auto c = p->_get_control_(id);
+	if (!c)
+		return;
+	GtkStyleContext *sc = gtk_widget_get_style_context(c->widget);
+	Array<string> names = {"base_color", "text_color", "fg_color", "bg_color", "selected_fg_color", "selected_bg_color", "insensitive_fg_color", "insensitive_bg_color", "borders", "unfocused_borders", "warning_wolor", "error_color", "success_color"};
+	for (auto &name: names) {
+		GdkRGBA cc;
+		if (gtk_style_context_lookup_color(sc, ("theme_" + name).c_str(), &cc))
+			colors.set(name, color_from_gdk(cc));
+		else if (gtk_style_context_lookup_color(sc, name.c_str(), &cc))
+			colors.set(name, color_from_gdk(cc));
+	}
+}
 
 
 
@@ -152,16 +166,6 @@ void win_set_input_more(Window *win, T *event) {
 }
 
 gboolean on_gtk_area_mouse_move(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) {
-	// ignore if SetCursorPosition() was used...
-	if (GtkAreaMouseSet >= 0) {
-		if ((fabs(event->x - GtkAreaMouseSetX) > 2.0f) or (fabs(event->y - GtkAreaMouseSetY) > 2.0f)) {
-			GtkAreaMouseSet --;
-			//msg_write(format("ignore fail %.0f\t%0.f", event->x, event->y));
-			return false;
-		}
-		//msg_write(format("ignore %.0f\t%0.f", event->x, event->y));
-		GtkAreaMouseSet = -1;
-	}
 
 	auto c = reinterpret_cast<Control*>(user_data);
 	win_set_input(c->panel->win, event);
@@ -169,18 +173,20 @@ gboolean on_gtk_area_mouse_move(GtkWidget *widget, GdkEventMotion *event, gpoint
 
 	// gtk hinting system doesn't work?
 	// always use the real (current) cursor
-/*	int x, y, mod = 0;
+	int x, y, mod = 0;
 	#if GTK_MAJOR_VERSION >= 3
 		gdk_window_get_device_position(gtk_widget_get_window(c->widget), event->device, &x, &y, (GdkModifierType*)&mod);
 	#else
 		gdk_window_get_pointer(c->widget->window, &x, &y, (GdkModifierType*)&mod);
 	#endif
-	c->win->input.x = x;
-	c->win->input.y = y;*/
 
-	if (!c->panel->win->input.lb)
+
+	c->panel->win->input.x = x;
+	c->panel->win->input.y = y;
+
+	//if (!c->panel->win->input.lb)
 		c->notify(EventID::MOUSE_MOVE, false);
-//	gdk_event_request_motions(event); // to prevent too many signals for slow message processing
+	//gdk_event_request_motions(event); // to prevent too many signals for slow message processing
 	return false;
 }
 
@@ -257,6 +263,7 @@ gboolean on_gtk_area_focus_in(GtkWidget *widget, GdkEventButton *event, gpointer
 
 gboolean on_gtk_area_mouse_wheel(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
+
 	if (c->panel->win) {
 		win_set_modifier_keys(c->panel->win);
 		if (event->direction == GDK_SCROLL_UP) {
@@ -383,6 +390,7 @@ void on_gtk_gesture_drag_update(GtkGestureDrag *gesture, double offset_x, double
 	c->notify(EventID::MOUSE_MOVE, false);
 }
 
+#if GTK_CHECK_VERSION(3,24,0)
 void on_gtk_gesture_motion(GtkEventControllerMotion *controller, double x, double y, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
 	static int nn = 0;
@@ -411,7 +419,6 @@ void on_gtk_motion_leave(GtkEventControllerMotion *controller, gpointer user_dat
 	c->notify(EventID::MOUSE_LEAVE, false);
 }
 
-// gtk 3.24
 void on_gtk_gesture_scroll(GtkEventControllerScroll *controller, double dx, double dy, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
 	c->panel->win->input.scroll_x = (float)dx;
@@ -448,6 +455,7 @@ void on_gtk_key_released(GtkEventControllerKey *controller, guint keyval, guint 
 	c->panel->win->input.key_code = key_code;
 	c->notify(EventID::KEY_UP, false);
 }
+#endif
 
 #if GTK_CHECK_VERSION(4,0,0)
 void on_gtk_gesture_click_pressed(GtkGestureClick *gesture, int n_press, double x, double y, gpointer user_data) {
@@ -482,15 +490,15 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 		da = gtk_drawing_area_new();
 		g_signal_connect(G_OBJECT(da), "draw", G_CALLBACK(on_gtk_area_draw), this);
 	}
-///?	g_signal_connect(G_OBJECT(da), "key-press-event", G_CALLBACK(&on_gtk_area_key_down), this);
-///?	g_signal_connect(G_OBJECT(da), "key-release-event", G_CALLBACK(&on_gtk_area_key_up), this);
+	g_signal_connect(G_OBJECT(da), "key-press-event", G_CALLBACK(&on_gtk_area_key_down), this);
+	g_signal_connect(G_OBJECT(da), "key-release-event", G_CALLBACK(&on_gtk_area_key_up), this);
 	//g_signal_connect(G_OBJECT(da), "size-request", G_CALLBACK(&OnGtkAreaResize), this);
-////	g_signal_connect(G_OBJECT(da), "motion-notify-event", G_CALLBACK(&on_gtk_area_mouse_move), this);
+	g_signal_connect(G_OBJECT(da), "motion-notify-event", G_CALLBACK(&on_gtk_area_mouse_move), this);
 	g_signal_connect(G_OBJECT(da), "enter-notify-event", G_CALLBACK(&on_gtk_area_mouse_enter), this);
 	g_signal_connect(G_OBJECT(da), "leave-notify-event", G_CALLBACK(&on_gtk_area_mouse_leave), this);
 	g_signal_connect(G_OBJECT(da), "button-press-event", G_CALLBACK(&on_gtk_area_button), this);
 	g_signal_connect(G_OBJECT(da), "button-release-event", G_CALLBACK(&on_gtk_area_button), this);
-///	g_signal_connect(G_OBJECT(da), "scroll-event", G_CALLBACK(&on_gtk_area_mouse_wheel), this);
+	g_signal_connect(G_OBJECT(da), "scroll-event", G_CALLBACK(&on_gtk_area_mouse_wheel), this);
 //	g_signal_connect(G_OBJECT(da), "focus-in-event", G_CALLBACK(&on_gtk_area_focus_in), this);
 	//int mask;
 	//g_object_get(G_OBJECT(da), "events", &mask, NULL);
@@ -503,10 +511,12 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	//mask = GDK_ALL_EVENTS_MASK;
 //	g_object_set(G_OBJECT(da), "events", mask, NULL);
 
+#if GTK_CHECK_VERSION(3,24,0)
 	auto handler_key = gtk_event_controller_key_new(da);
 	g_signal_connect(G_OBJECT(handler_key), "key-pressed", G_CALLBACK(&on_gtk_key_pressed), this);
 	g_signal_connect(G_OBJECT(handler_key), "key-released", G_CALLBACK(&on_gtk_key_released), this);
 	g_object_weak_ref(G_OBJECT(da), (GWeakNotify)g_object_unref, handler_key);
+#endif
 
 #if GTK_CHECK_VERSION(4,0,0)
 	auto gesture_click = gtk_gesture_click_new(da);
@@ -514,6 +524,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	g_object_weak_ref(G_OBJECT(da), (GWeakNotify)g_object_unref, gesture_click);
 #endif
 
+#if GTK_CHECK_VERSION(3,24,0)
 	auto handler_motion = gtk_event_controller_motion_new(da);
 	g_signal_connect(G_OBJECT(handler_motion), "motion", G_CALLBACK(&on_gtk_gesture_motion), this);
 	// somehow getting ignored?
@@ -527,6 +538,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 
 ///	auto handler_drag = gtk_gesture_drag_new(da);
 ///	g_signal_connect(G_OBJECT(handler_drag), "drag-update", G_CALLBACK(&on_gtk_gesture_drag_update), this);
+#endif
 
 	widget = da;
 	gtk_widget_set_hexpand(widget, true);
