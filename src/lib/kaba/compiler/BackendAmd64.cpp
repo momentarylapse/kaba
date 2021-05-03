@@ -248,18 +248,28 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	// map params...
 	Array<SerialNodeParam> reg_param;
-	Array<SerialNodeParam> stack_param;
+	Array<int> reg_param_root;
 	Array<SerialNodeParam> xmm_param;
+	Array<int> xmm_param_root;
+	Array<SerialNodeParam> stack_param;
+	int reg_param_counter = 0;
+	int xmm_param_counter = 0;
 	for (auto &p: params) {
 		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeChar) or (p.type == TypeBool) or p.type->is_some_pointer()) {
-			if (reg_param.num < param_regs_root.num) {
+			if (reg_param_counter < param_regs_root.num) {
 				reg_param.add(p);
+				reg_param_root.add(param_regs_root[reg_param_counter ++]);
+				if (config.abi == Abi::WINDOWS_64)
+					xmm_param_counter ++;
 			} else {
 				stack_param.add(p);
 			}
 		} else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)) {
-			if (xmm_param.num < max_xmm_params) {
+			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
+				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
+				if (config.abi == Abi::WINDOWS_64)
+					reg_param_counter++;
 			} else {
 				stack_param.add(p);
 			}
@@ -282,7 +292,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	// xmm0-7
 	foreachib(auto &p, xmm_param, i) {
-		int reg = Asm::REG_XMM0 + i;
+		int reg = xmm_param_root[i];
 		if (p.type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_preg(TypeReg128, reg), p);
 		else
@@ -292,7 +302,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 	func_param_virts = {};
 
 	foreachib(auto &p, reg_param, i) {
-		int root = param_regs_root[i];
+		int root = reg_param_root[i];
 		int preg = get_reg(root, p.type->size);
 		if (preg >= 0) {
 			int v = cmd.add_virtual_reg(preg);
@@ -341,18 +351,28 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// map params...
 	Array<Variable*> reg_param;
-	Array<Variable*> stack_param;
+	Array<int> reg_param_root;
 	Array<Variable*> xmm_param;
+	Array<int> xmm_param_root;
+	Array<Variable*> stack_param;
+	int reg_param_counter = 0;
+	int xmm_param_counter = 0;
 	for (Variable *p: param) {
 		if ((p->type == TypeInt) or (p->type == TypeInt64) or (p->type == TypeChar) or (p->type == TypeBool) or p->type->is_some_pointer()) {
-			if (reg_param.num < param_regs_root.num) {
+			if (reg_param_counter < param_regs_root.num) {
 				reg_param.add(p);
+				reg_param_root.add(param_regs_root[reg_param_counter ++]);
+				if (config.abi == Abi::WINDOWS_64)
+					xmm_param_counter ++;
 			} else {
 				stack_param.add(p);
 			}
 		} else if ((p->type == TypeFloat32) or (p->type == TypeFloat64)) {
-			if (xmm_param.num < max_xmm_params) {
+			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
+				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
+				if (config.abi == Abi::WINDOWS_64)
+					reg_param_counter ++;
 			} else {
 				stack_param.add(p);
 			}
@@ -363,7 +383,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// xmm0-7
 	foreachib(Variable *p, xmm_param, i){
-		int reg = Asm::REG_XMM0 + i;
+		int reg = xmm_param_root[i];
 		if (p->type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
 		else
@@ -373,7 +393,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 
 	foreachib(Variable *p, reg_param, i) {
-		int root = param_regs_root[i];
+		int root = reg_param_root[i];
 		int preg = get_reg(root, p->type->size);
 		if (preg >= 0) {
 			int v = cmd.add_virtual_reg(preg);

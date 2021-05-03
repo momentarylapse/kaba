@@ -21,6 +21,19 @@ namespace kaba {
 	extern int64 s2i2(const string &str);
 };
 
+float fff(int i, int j, int k, float f1, float f2) {
+	return f1 + f2;
+}
+
+string disassemble(void* d, int size) {
+	unsigned char* c = (unsigned char*)d;
+	if (c[0] == 0xe9) {
+		int offset = *(int*)&c[1];
+		return Asm::disassemble(c + offset + 5, size);
+	}
+	return Asm::disassemble(d, size);
+}
+
 class KabaApp : public hui::Application {
 public:
 	KabaApp() :
@@ -119,6 +132,9 @@ public:
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
 		kaba::init(instruction_set, abi, flag_allow_std_lib);
+
+		//msg_write(disassemble((void*)&fff, 30));
+		//return false;
 
 
 		// for huibui.kaba...
