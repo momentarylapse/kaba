@@ -248,7 +248,10 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	// return as _very_ first parameter
 	if (type->uses_return_by_memory()) {
-		params.insert(insert_reference(ret), 0);
+		if ((config.abi == Abi::AMD64_WINDOWS) and !is_static and params[0].type->is_some_pointer())
+			params.insert(insert_reference(ret), 1);
+		else
+			params.insert(insert_reference(ret), 0);
 	}
 
 	// map params...
@@ -351,6 +354,11 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 				break;
 			}
 	}
+	// windows: self before return
+	if ((param.num == 2) and (config.abi == Abi::AMD64_WINDOWS) and param[1]->type->is_some_pointer()) {
+		param.swap(0, 1);
+	}
+
 	for (int i=0;i<f->num_params;i++)
 		param.add(f->var[i].get());
 

@@ -28,7 +28,7 @@ float fff(int i, int j, int k, float f1, float f2) {
 string disassemble(void* d, int size) {
 	unsigned char* c = (unsigned char*)d;
 	if (c[0] == 0xe9) {
-		msg_write("indirect");
+		msg_write("(indirect)");
 		int offset = *(int*)&c[1];
 		return Asm::disassemble(c + offset + 5, size);
 	}
@@ -54,6 +54,17 @@ string ggg(int i) {
 	kjhsdf = kjhsdf2;
 	return kjhsdf;
 }
+
+class CCC {
+public:
+	int a, b, c, d, e, f, g;
+	XXX ff(int i) {
+		a = 13;
+		b = i;
+		XXX x;
+		return x;
+	}
+};
 
 class KabaApp : public hui::Application {
 public:
@@ -89,8 +100,13 @@ public:
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			if (!kaba::config.use_new_serializer)
 				msg_write("(old serializer)");
+			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
+				msg_write("native arch: amd64:win");
+			if (kaba::config.native_abi == kaba::Abi::AMD64_GNU)
+				msg_write("native arch: amd64:gnu");
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
+			exit(0);
 		});
 		p.option("--gui/-g", [&]{ use_gui = true; });
 		//p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
@@ -162,7 +178,8 @@ public:
 		p.option("--xxx", [&] {
 			kaba::init(abi, flag_allow_std_lib);
 			//msg_write(disassemble((void*)&fff, 30));
-			msg_write(disassemble((void*)&ggg, -1));
+			//msg_write(disassemble((void*)&ggg, -1));
+			msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 			exit(0);
 		});
 		p.option("--help/-h", [&p]{ p.show(); });

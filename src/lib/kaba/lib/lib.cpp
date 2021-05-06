@@ -805,15 +805,15 @@ Asm::InstructionSet extract_instruction_set(Abi abi) {
 Abi guess_native_abi() {
 	auto instruction_set = Asm::guess_native_instruction_set();
 	if (instruction_set == Asm::InstructionSet::AMD64) {
-		return Abi::AMD64_GNU;
 #ifdef OS_WINDOWS
 		return Abi::AMD64_WINDOWS;
 #endif
+		return Abi::AMD64_GNU;
 	} else if (config.instruction_set == Asm::InstructionSet::X86) {
-		return Abi::X86_GNU;
 #ifdef OS_WINDOWS
 		return Abi::X86_WINDOWS;
 #endif
+		return Abi::X86_GNU;
 	} else if (config.instruction_set == Asm::InstructionSet::ARM) {
 		return Abi::ARM32_GNU;
 	}
@@ -856,10 +856,8 @@ CompilerConfiguration::CompilerConfiguration() {
 }
 
 void init(Abi abi, bool allow_std_lib) {
-	//config.native_abi = guess_native_abi();
 	if (abi == Abi::NATIVE) {
 		config.abi = config.native_abi;
-		//config.instruction_set = Asm::guess_native_instruction_set();
 	} else {
 		config.abi = abi;
 	}

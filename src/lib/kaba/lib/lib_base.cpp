@@ -162,13 +162,16 @@ string kaba_char_repr(char c) {
 }
 
 
-string kaba_string_format(const string &s, const string &fmt) {
-	try {
-		return _xf_str_<const string&>(fmt + "s", s);
-	} catch(::Exception &e) {
-		return "{ERROR: " + e.message() + "}";
+class KabaString : public string {
+public:
+	string format(const string& fmt) const {
+		try {
+			return _xf_str_<const string&>(fmt + "s", *this);
+		} catch (::Exception& e) {
+			return "{ERROR: " + e.message() + "}";
+		}
 	}
-}
+};
 
 
 
@@ -713,7 +716,7 @@ void SIAddPackageBase() {
 		class_add_funcx("utf8_to_utf32", TypeIntList, &string::utf8_to_utf32, Flags::PURE);
 		class_add_funcx("utf8_length", TypeInt, &string::utf8len, Flags::PURE);
 		class_add_funcx(IDENTIFIER_FUNC_REPR, TypeString, &string::repr, Flags::PURE);
-		class_add_funcx("format", TypeString, &kaba_string_format, Flags::PURE);
+		class_add_funcx("format", TypeString, &KabaString::format, Flags::PURE);
 			func_add_param("fmt", TypeString);
 
 
