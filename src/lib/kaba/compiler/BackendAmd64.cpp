@@ -19,7 +19,7 @@ BackendAmd64::BackendAmd64(Serializer *s) : BackendX86(s) {
 	// rax, rcx, rdx
 	map_reg_root = {0,1,2};
 
-	if (config.abi == Abi::WINDOWS_64) {
+	if (config.abi == Abi::AMD64_WINDOWS) {
 		// rcx, rdx, r8, r9
 		param_regs_root = { 1, 2, 8, 9 };
 		max_xmm_params = 4;
@@ -264,7 +264,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 			if (reg_param_counter < param_regs_root.num) {
 				reg_param.add(p);
 				reg_param_root.add(param_regs_root[reg_param_counter ++]);
-				if (config.abi == Abi::WINDOWS_64)
+				if (config.abi == Abi::AMD64_WINDOWS)
 					xmm_param_counter ++;
 			} else {
 				stack_param.add(p);
@@ -273,7 +273,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
 				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
-				if (config.abi == Abi::WINDOWS_64)
+				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter++;
 			} else {
 				stack_param.add(p);
@@ -367,7 +367,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 			if (reg_param_counter < param_regs_root.num) {
 				reg_param.add(p);
 				reg_param_root.add(param_regs_root[reg_param_counter ++]);
-				if (config.abi == Abi::WINDOWS_64)
+				if (config.abi == Abi::AMD64_WINDOWS)
 					xmm_param_counter ++;
 			} else {
 				stack_param.add(p);
@@ -376,7 +376,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
 				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
-				if (config.abi == Abi::WINDOWS_64)
+				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter ++;
 			} else {
 				stack_param.add(p);
@@ -453,7 +453,7 @@ void BackendAmd64::process_references() {
 
 // so far not used... x86 also implements both...
 void BackendAmd64::add_function_intro_frame(int stack_alloc_size) {
-	if (config.abi == Abi::WINDOWS_64)
+	if (config.abi == Abi::AMD64_WINDOWS)
 		stack_alloc_size += 32; // shadow space
 
 	int_p reg_bp = Asm::REG_RBP;

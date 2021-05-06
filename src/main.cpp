@@ -68,7 +68,6 @@ public:
 	virtual bool on_startup(const Array<string> &arg0) {
 
 		bool use_gui = false;
-		Asm::InstructionSet instruction_set = Asm::InstructionSet::NATIVE;
 		kaba::Abi abi = kaba::Abi::NATIVE;
 		string out_file, symbols_out_file, symbols_in_file;
 		bool flag_allow_std_lib = true;
@@ -81,7 +80,6 @@ public:
 		string output_format = "raw";
 		string command;
 		bool flag_interpret = false;
-		bool flag_experiment = false;
 
 		bool error = false;
 
@@ -95,9 +93,24 @@ public:
 			msg_write("hui: " + hui::Version);
 		});
 		p.option("--gui/-g", [&]{ use_gui = true; });
-		p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
-		p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });
-		p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
+		//p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
+		//p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });
+		//p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
+		p.option("--arch", "x86/amd64/arm:gnu/win", [&](const string &a) {
+			if (a == "amd64:gnu") {
+				abi = kaba::Abi::AMD64_GNU;
+			} else if (a == "amd64:win") {
+				abi = kaba::Abi::AMD64_WINDOWS;
+			} else if (a == "x86:gnu") {
+				abi = kaba::Abi::X86_GNU;
+			} else if (a == "x86:win") {
+				abi = kaba::Abi::X86_WINDOWS;
+			} else if (a == "arm:gnu") {
+				abi = kaba::Abi::ARM32_GNU;
+			} else {
+				throw Exception("unknown architecture");
+			}
+		});
 		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
 		p.option("--os", [&]{ flag_compile_os = true; });
 		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
@@ -131,7 +144,7 @@ public:
 		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
 		p.option("--just-disasm", "FILE", [&](const string &a){
 			string s = FileRead(a);
-			kaba::init(instruction_set, abi, flag_allow_std_lib);
+			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
 			if (flag_compile_os) {
 				for (int i=0; i<s.num-1; i++)
@@ -146,7 +159,12 @@ public:
 			exit(0);
 		});
 		p.option("--interpret", [&] { flag_interpret = true; });
-		p.option("--xxx", [&] { flag_experiment = true; });
+		p.option("--xxx", [&] {
+			kaba::init(abi, flag_allow_std_lib);
+			//msg_write(disassemble((void*)&fff, 30));
+			msg_write(disassemble((void*)&ggg, -1));
+			exit(0);
+		});
 		p.option("--help/-h", [&p]{ p.show(); });
 		p.parse(arg0);
 
@@ -154,13 +172,7 @@ public:
 		// init
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
-		kaba::init(instruction_set, abi, flag_allow_std_lib);
-
-		if (flag_experiment) {
-			//msg_write(disassemble((void*)&fff, 30));
-			msg_write(disassemble((void*)&ggg, -1));
-			return false;
-		}
+		kaba::init(abi, flag_allow_std_lib);
 
 
 		// for huibui.kaba...
@@ -232,7 +244,7 @@ public:
 				//if (flag_disassemble)
 				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 			} else {
-				if (kaba::config.instruction_set == Asm::QueryLocalInstructionSet())
+				if (kaba::config.abi == kaba::config.native_abi)
 					execute(s, p.arg.sub(1, -1));
 			}
 		} catch (kaba::Exception &e) {

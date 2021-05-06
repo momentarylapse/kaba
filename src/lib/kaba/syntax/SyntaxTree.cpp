@@ -1207,7 +1207,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 		if (config.instruction_set == Asm::InstructionSet::X86) {
 			f->_var_size = 0;
 
-			if (config.abi == Abi::WINDOWS_32) {
+			if (config.abi == Abi::X86_WINDOWS) {
 				// map "self" to the VERY first parameter
 				MapLVSX86Self(f);
 
