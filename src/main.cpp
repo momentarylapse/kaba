@@ -28,10 +28,31 @@ float fff(int i, int j, int k, float f1, float f2) {
 string disassemble(void* d, int size) {
 	unsigned char* c = (unsigned char*)d;
 	if (c[0] == 0xe9) {
+		msg_write("indirect");
 		int offset = *(int*)&c[1];
 		return Asm::disassemble(c + offset + 5, size);
 	}
 	return Asm::disassemble(d, size);
+}
+
+/*string ggg(string& s) {
+	return s + ".";
+}*/
+
+int skdjfhsjkdfh;
+
+struct XXX {
+	int i[128];
+};
+
+string kjhsdf, kjhsdf2;
+
+// https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-160
+
+string ggg(int i) {
+	//skdjfhsjkdfh = i;
+	kjhsdf = kjhsdf2;
+	return kjhsdf;
 }
 
 class KabaApp : public hui::Application {
@@ -60,6 +81,7 @@ public:
 		string output_format = "raw";
 		string command;
 		bool flag_interpret = false;
+		bool flag_experiment = false;
 
 		bool error = false;
 
@@ -67,8 +89,8 @@ public:
 		p.info(AppName + " " + AppVersion);
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
-			if (kaba::config.use_new_serializer)
-				msg_write("(new serializer)");
+			if (!kaba::config.use_new_serializer)
+				msg_write("(old serializer)");
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
@@ -123,7 +145,8 @@ public:
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 			exit(0);
 		});
-		p.option("--interpret", [&]{ flag_interpret = true; });
+		p.option("--interpret", [&] { flag_interpret = true; });
+		p.option("--xxx", [&] { flag_experiment = true; });
 		p.option("--help/-h", [&p]{ p.show(); });
 		p.parse(arg0);
 
@@ -133,8 +156,11 @@ public:
 		NetInit();
 		kaba::init(instruction_set, abi, flag_allow_std_lib);
 
-		//msg_write(disassemble((void*)&fff, 30));
-		//return false;
+		if (flag_experiment) {
+			//msg_write(disassemble((void*)&fff, 30));
+			msg_write(disassemble((void*)&ggg, -1));
+			return false;
+		}
 
 
 		// for huibui.kaba...

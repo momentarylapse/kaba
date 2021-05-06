@@ -23,10 +23,15 @@ BackendAmd64::BackendAmd64(Serializer *s) : BackendX86(s) {
 		// rcx, rdx, r8, r9
 		param_regs_root = { 1, 2, 8, 9 };
 		max_xmm_params = 4;
+		// volatile: rax, rcx, rdx, r8-11, xmm0-5 (can override)
+		// non-volatile: rbx, rbp, rdi, rsi, rsp, r12-r15, xmm6-15 (keep saved!)
+		// https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-160
 	} else {
 		// rdi, rsi, rdx, rcx, r8, r9
 		param_regs_root = {7, 6, 2, 1, 8, 9 };
 		max_xmm_params = 8;
+		// non-volatile: rbx, rsp, rbp, r12-r15
+		// volatile: rest
 	}
 }
 

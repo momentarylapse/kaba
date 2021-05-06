@@ -11,8 +11,11 @@ __test__
 Kaba.sdf
 Kaba.opensdf
 Kaba.suo
+kaba.vcxproj.user
 /.vs
 /build
 /x64/Debug
+/x64/Release
 /CppProperties.json
 *.exe
+*.dll
