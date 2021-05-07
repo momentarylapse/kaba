@@ -125,6 +125,9 @@ public:
 	void __adds__(const Array<string> &o) {
 		append(o);
 	}
+	string str() const {
+		return sa2s(*this);
+	}
 };
 
 string kaba_int_format(int i, const string &fmt) {
@@ -205,6 +208,10 @@ public:
 	Array<bool> _cdecl ne2(bool x)	IMPLEMENT_OP2(!=, bool, bool)
 
 	//Array<bool> _cdecl _not(BoolList &b)	IMPLEMENT_OP(!, bool, bool)
+
+	string str() const {
+		return ba2s(*this);
+	}
 };
 
 template<class T>
@@ -235,8 +242,9 @@ T list_sum(const Array<T> &a) {
 
 class IntList : public Array<int> {
 public:
-	void _cdecl sort()
-	{	std::sort((int*)data, (int*)data + num);	}
+	void _cdecl sort() {
+		std::sort((int*)data, (int*)data + num);
+	}
 	void _cdecl unique() {
 		int ndiff = 0;
 		int i0 = 1;
@@ -255,6 +263,9 @@ public:
 			if ((*this)[i] == v)
 				return true;
 		return false;
+	}
+	string str() const {
+		return ia2s(*this);
 	}
 	
 	// a += b
@@ -310,8 +321,13 @@ public:
 		return r;
 	}
 
-	void _cdecl sort()
-	{	std::sort((float*)data, (float*)data + num);	}
+	void _cdecl sort() {
+		std::sort((float*)data, (float*)data + num);
+	}
+
+	string str() const {
+		return fa2s(*this);
+	}
 	
 	// a += b
 	void _cdecl iadd(FloatList &b)	IMPLEMENT_IOP(+=, float)
@@ -722,7 +738,7 @@ void SIAddPackageBase() {
 
 
 	add_class(TypeBoolList);
-		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &ba2s, Flags::PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &BoolList::str, Flags::PURE);
 		class_add_func("__and__", TypeBoolList, mf(&BoolList::_and), Flags::PURE);
 			func_add_param("other", TypeBoolList);
 		class_add_func("__or__", TypeBoolList, mf(&BoolList::_or), Flags::PURE);
@@ -743,7 +759,7 @@ void SIAddPackageBase() {
 	
 	
 	add_class(TypeIntList);
-		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &ia2s, Flags::PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &IntList::str, Flags::PURE);
 		class_add_func("sort", TypeVoid, mf(&IntList::sort));
 		class_add_func("unique", TypeVoid, mf(&IntList::unique));
 		class_add_funcx("sum", TypeInt, &list_sum<int>, Flags::PURE);
@@ -807,7 +823,7 @@ void SIAddPackageBase() {
 			func_add_param("other", TypeInt);
 
 	add_class(TypeFloatList);
-		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &fa2s, Flags::PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &FloatList::str, Flags::PURE);
 		class_add_func("sort", TypeVoid, mf(&FloatList::sort));
 		class_add_funcx("sum", TypeFloat32, &list_sum<float>, Flags::PURE);
 		class_add_func("sum2", TypeFloat32, mf(&FloatList::sum2), Flags::PURE);
@@ -890,7 +906,7 @@ void SIAddPackageBase() {
 			func_add_param("o", TypeStringList);
 		class_add_funcx("__adds__", TypeVoid, &StringList::__adds__);
 			func_add_param("o", TypeStringList);
-		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &sa2s, Flags::PURE);
+		class_add_funcx(IDENTIFIER_FUNC_STR, TypeString, &StringList::str, Flags::PURE);
 
 
 	// constants
