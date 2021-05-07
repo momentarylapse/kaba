@@ -1183,20 +1183,20 @@ shared<Node> SyntaxTree::conv_func_inline(shared<Node> n) {
 
 void MapLVSX86Return(Function *f, int64 &stack_offset) {
 	if (f->literal_return_type->uses_return_by_memory()) {
-		foreachi(auto v, f->var, i)
+		foreachi (auto v, f->var, i)
 			if (v->name == IDENTIFIER_RETURN_VAR) {
 				v->_offset = stack_offset;
-				stack_offset += 4;
+				stack_offset += config.pointer_size;
 			}
 	}
 }
 
 void MapLVSX86Self(Function *f, int64 &stack_offset) {
 	if (!f->is_static()) {
-		foreachi(auto v, f->var, i)
+		foreachi (auto v, f->var, i)
 			if (v->name == IDENTIFIER_SELF) {
 				v->_offset = stack_offset;
-				stack_offset += 4;
+				stack_offset += config.pointer_size;
 			}
 	}
 }
@@ -1253,14 +1253,15 @@ void SyntaxTree::map_local_variables_to_stack() {
 						stack_offset += s;
 					} else {
 						// "real" local variables
-						long long s = mem_align(v->type->size, 4);
+						int64 s = mem_align(v->type->size, 4);
 						f->_var_size += s;
 						v->_offset = -f->_var_size;
 					}
 				}
 			} else {
+				// TODO map push parameters...
 				foreachi (auto v, f->var, i) {
-					long long s = mem_align(v->type->size, 4);
+					int64 s = mem_align(v->type->size, 4);
 					f->_var_size += s;
 					v->_offset = -f->_var_size;
 				}

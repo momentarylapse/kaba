@@ -300,7 +300,7 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 		else if (push_size > 0)
 			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
 		//}
-		foreachb(SerialNodeParam & p, stack_param) {
+		foreachb (SerialNodeParam &p, stack_param) {
 			insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
 			insert_cmd(Asm::INST_PUSH, p_rax);
 		}
@@ -408,7 +408,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 
 	// xmm0-7
-	foreachib(Variable *p, xmm_param, i){
+	foreachib (Variable *p, xmm_param, i){
 		int reg = xmm_param_root[i];
 		if (p->type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
@@ -418,7 +418,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	}
 
-	foreachib(Variable *p, reg_param, i) {
+	foreachib (Variable *p, reg_param, i) {
 		int root = reg_param_root[i];
 		int preg = get_reg(root, p->type->size);
 		if (preg >= 0) {
@@ -438,7 +438,9 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// get parameters from stack
 	foreachb(Variable *p, stack_param) {
-		do_error("func with stack...");
+		// variables are already where expect them ([rbp+...])
+		if (config.abi != Abi::AMD64_WINDOWS)
+			do_error("func with stack...");
 		/*int s = 8;
 		add_cmd(Asm::inst_push, p);
 		push_size += s;*/
