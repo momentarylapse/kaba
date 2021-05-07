@@ -89,8 +89,8 @@ static int kaba_int_ret() {
 	return 2001;
 }
 
-static void kaba_xxx(int a, int b, int c, int d, int e, int f) {
-	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
+static void kaba_xxx(int a, int b, int c, int d, int e, int f, int g, int h) {
+	msg_write(format("xxx  %d %d %d %d %d %d %d %d", a, b, c, d, e, f, g, h));
 }
 
 static int extern_variable1 = 13;
@@ -967,6 +967,8 @@ void SIAddPackageBase() {
 		func_add_param("d", TypeInt);
 		func_add_param("e", TypeInt);
 		func_add_param("f", TypeInt);
+		func_add_param("g", TypeInt);
+		func_add_param("h", TypeInt);
 	add_ext_var("_extern_variable", TypeInt, &extern_variable1);
 }
 

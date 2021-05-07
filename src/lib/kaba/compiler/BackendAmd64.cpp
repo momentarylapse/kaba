@@ -288,13 +288,26 @@ int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	// push parameters onto stack
 	push_size = 8 * stack_param.num;
-	if (push_size > 127)
-		insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeInt, push_size));
-	else if (push_size > 0)
-		insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
-	foreachb(SerialNodeParam &p, stack_param) {
-		insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
-		insert_cmd(Asm::INST_PUSH, p_rax);
+	if (stack_param.num > 0) {
+		if (config.abi == Abi::AMD64_WINDOWS) {
+			// TODO optimize... don't push, just write into stack
+			push_size += 32;
+		}
+		// stack pointer is already low enough to include stack parameters
+		// to compensate the following push's pre-increase rsp
+		if (push_size > 127)
+			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeInt, push_size));
+		else if (push_size > 0)
+			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
+		//}
+		foreachb(SerialNodeParam & p, stack_param) {
+			insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
+			insert_cmd(Asm::INST_PUSH, p_rax);
+		}
+		if (config.abi == Abi::AMD64_WINDOWS) {
+			push_size -= 32;
+			insert_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, 32));
+		}
 	}
 	max_push_size = max(max_push_size, (int)push_size);
 

@@ -63,11 +63,14 @@ complex fff3() {
 }
 
 __declspec(noinline) void f_xxx(int a, int b, int c, int d, int e, int f) {
+	//int e = 0, f = 0;
 	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
 }
 
 void fff2() {
 	f_xxx(1, 2, 3, 4, 5, 6);
+	//f_xxx(1, 2, 3, 4);
+	msg_write("hallo");
 }
 
 class CCC {
