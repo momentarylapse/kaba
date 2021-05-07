@@ -62,7 +62,12 @@ complex fff3() {
 	return complex(COLORX3.r*rand(), COLORX2.r);
 }
 
-__declspec(noinline) void f_xxx(int a, int b, int c, int d, int e, int f) {
+#ifdef OS_WINDOWS
+__declspec(noinline)
+#else
+[[gnu::noinline]]
+#endif
+void f_xxx(int a, int b, int c, int d, int e, int f) {
 	//int e = 0, f = 0;
 	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
 }
