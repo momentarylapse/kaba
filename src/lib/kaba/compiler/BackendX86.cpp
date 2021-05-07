@@ -1122,16 +1122,8 @@ void BackendX86::add_function_intro_frame(int stack_alloc_size) {
 // convert    SerialNode[] cmd   into    Asm::Instruction..List list
 void BackendX86::assemble() {
 	// intro + allocate stack memory
-	if (config.instruction_set != Asm::InstructionSet::ARM)
-		stack_max_size += max_push_size;
+	stack_max_size += max_push_size;
 	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
-
-	if (config.instruction_set == Asm::InstructionSet::ARM) {
-		foreachi(GlobalRef &g, global_refs, i) {
-			g.label = list->add_label(format("_kaba_ref_%d_%d", cur_func_index, i));
-			list->add2(Asm::INST_DD, Asm::param_imm((int_p)g.p, 4));
-		}
-	}
 
 	list->insert_label(cur_func->_label);
 
