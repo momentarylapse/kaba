@@ -3,33 +3,29 @@
 #include "../base/base.h"
 #include "algebra.h"
 
+using uint64 = unsigned long long;
+
 //#define vlidb(m)	msg_write((m));
 #define vlidb(m)
 
-#define ALLOW_ON_WINDOWS 0
 
-#ifdef CPU_ARM
+#if defined(OS_LINUX) && (defined(CPU_AMD64) || defined(CPU_X86))
+	#define ALLOW_ASM 1
+#elif defined(OS_WINDOWS) && defined(CPU_X86)
+	#define ALLOW_ASM 1
+#endif
 
-// TODO
-inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh){}
-inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned int &orem){}
-inline void _add_(unsigned int &a, unsigned int b, bool &carry){}
-inline void _sub_(unsigned int &a, unsigned int b, bool &carry){}
-
-#else
-
-
+//#if ALLOW_ASM
 
 inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh) {
+#if ALLOW_ASM
 #ifdef OS_WINDOWS
-#if ALLOW_ON_WINDOWS
 	__asm{
 		mov eax, b
 		mul a
 		mov a, eax
 		mov oh, edx
 	}
-#endif
 #else
 	asm volatile(	"mov %2, %%eax\n\t"
 		"mul %3\n\t"
@@ -39,12 +35,18 @@ inline void _mul_(unsigned int &a, unsigned int b, unsigned int &oh) {
 		: "r" (a), "r" (b)
 		: "%eax", "%edx");
 #endif
+#else
+	uint64 i = a;
+	i *= b;
+	oh = i >> 32;
+	a = i;
+#endif
 }
 
 
 inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned int &orem) {
+#if ALLOW_ASM
 #ifdef OS_WINDOWS
-#if ALLOW_ON_WINDOWS
 	__asm{
 		mov eax, a_l
 		mov edx, a_h
@@ -52,7 +54,6 @@ inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned 
 		mov a_l, eax
 		mov orem, edx
 	}
-#endif
 #else
 	asm volatile(	"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
@@ -63,11 +64,17 @@ inline void _div_(unsigned int &a_l, unsigned int a_h, unsigned int b, unsigned 
 		: "r" (a_l), "r" (a_h), "r" (b)
 		: "%eax", "%edx");
 #endif
+#else
+	uint64 i = a_l;
+	i += ((uint64)a_h) << 32;
+	orem = (i % (uint64)b);
+	a_l = (i / (uint64)b);
+#endif
 }
 
 inline void _add_(unsigned int &a, unsigned int b, bool &carry) {
+#if ALLOW_ASM
 #ifdef OS_WINDOWS
-#if ALLOW_ON_WINDOWS
 	if (carry)
 		__asm stc
 	else
@@ -79,7 +86,6 @@ inline void _add_(unsigned int &a, unsigned int b, bool &carry) {
 		setc _carry
 	}
 	carry = _carry;
-#endif
 #else
 	if (carry)
 		asm volatile("stc");
@@ -92,11 +98,19 @@ inline void _add_(unsigned int &a, unsigned int b, bool &carry) {
 		: "r" (a), "r" (b), "r" (carry)
 		: "%eax");
 #endif
+#else
+	uint64 i = a;
+	i += b;
+	if (carry)
+		i += 1;
+	a = i;
+	carry = (i & 0xffffffff00000000);
+#endif
 }
 
 inline void _sub_(unsigned int &a, unsigned int b, bool &carry) {
+#if ALLOW_ASM
 #ifdef OS_WINDOWS
-#if ALLOW_ON_WINDOWS
 	if (carry)
 		__asm stc
 	else
@@ -109,7 +123,6 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry) {
 		setc _carry
 	}
 	carry = _carry;
-#endif
 #else
 	if (carry)
 		asm volatile("stc");
@@ -124,9 +137,15 @@ inline void _sub_(unsigned int &a, unsigned int b, bool &carry) {
 		: "r" (a), "r" (b)
 		: "%eax");
 #endif
-}
-
+#else
+	uint64 i = a;
+	i -= b;
+	if (carry)
+		i -= 1;
+	a = i;
+	carry = (i & 0xffffffff00000000);
 #endif
+}
 
 
 vli::vli() {
