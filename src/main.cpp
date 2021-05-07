@@ -55,6 +55,18 @@ string ggg(int i) {
 	return kjhsdf;
 }
 
+#include "lib/math/complex.h"
+color COLORX1, COLORX2, COLORX3;
+complex COMPLEX1;
+complex fff3() {
+	return complex(COLORX3.r*rand(), COLORX2.r);
+}
+
+void fff2() {
+	//COLORX3 = color::interpolate(COLORX1, COLORX2, 1.0f);
+	COMPLEX1 = fff3();
+}
+
 class CCC {
 public:
 	int a, b, c, d, e, f, g;
@@ -178,8 +190,9 @@ public:
 		p.option("--xxx", [&] {
 			kaba::init(abi, flag_allow_std_lib);
 			//msg_write(disassemble((void*)&fff, 30));
+			msg_write(disassemble((void*)&fff2, -1));
 			//msg_write(disassemble((void*)&ggg, -1));
-			msg_write(disassemble(kaba::mf(&CCC::ff), -1));
+			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 			exit(0);
 		});
 		p.option("--help/-h", [&p]{ p.show(); });
