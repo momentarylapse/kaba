@@ -62,9 +62,12 @@ complex fff3() {
 	return complex(COLORX3.r*rand(), COLORX2.r);
 }
 
+__declspec(noinline) void f_xxx(int a, int b, int c, int d, int e, int f) {
+	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
+}
+
 void fff2() {
-	//COLORX3 = color::interpolate(COLORX1, COLORX2, 1.0f);
-	COMPLEX1 = fff3();
+	f_xxx(1, 2, 3, 4, 5, 6);
 }
 
 class CCC {
