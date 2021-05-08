@@ -1,8 +1,5 @@
 #include "../kaba.h"
 #include "serializer.h"
-#include "serializer_x86.h"
-#include "serializer_amd64.h"
-#include "serializer_arm.h"
 #include "../../file/file.h"
 
 #include "SerializerX.h"
@@ -1862,16 +1859,6 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) {
 Serializer::~Serializer() {
 }
 
-Serializer *CreateSerializer(Script *s, Asm::InstructionWithParamsList *list) {
-	if (config.instruction_set == Asm::InstructionSet::AMD64)
-		return new SerializerAMD64(s, list);
-	if (config.instruction_set == Asm::InstructionSet::X86)
-		return new SerializerX86(s, list);
-	if (config.instruction_set == Asm::InstructionSet::ARM)
-		return new SerializerARM(s, list);
-	return nullptr;
-}
-
 bool is_func(shared<Node> n) {
 	return (n->kind == NodeKind::FUNCTION_CALL or n->kind == NodeKind::VIRTUAL_CALL or n->kind == NodeKind::FUNCTION);
 }
@@ -1927,44 +1914,25 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		return;
 	}
 
-	if (config.use_new_serializer) {
 
-		auto x = new SerializerX(this, list);
-		x->cur_func_index = index;
-		x->serialize_function(f);
-		x->fix_return_by_ref();
-		auto be = create_backend(x);
+	auto x = new SerializerX(this, list);
+	x->cur_func_index = index;
+	x->serialize_function(f);
+	x->fix_return_by_ref();
+	auto be = create_backend(x);
 
-		try {
-			be->process(f, index);
-			be->assemble();
-		} catch (Exception &e) {
-			throw e;
-		} catch (Asm::Exception &e) {
-			throw Exception(e, this, f);
-		}
-		functions_to_link.append(be->list->wanted_label);
-		delete be;
-		delete x;
-
-	} else {
-
-		auto *d = CreateSerializer(this, list);
-
-		try {
-			d->cur_func_index = index;
-			d->serialize_function(f);
-			d->do_mapping();
-			d->assemble();
-		} catch (Exception &e) {
-			throw e;
-		} catch (Asm::Exception &e) {
-			throw Exception(e, this, f);
-		}
-		functions_to_link.append(d->list->wanted_label);
-		delete d;
-
+	try {
+		be->process(f, index);
+		be->assemble();
+	} catch (Exception &e) {
+		throw e;
+	} catch (Asm::Exception &e) {
+		throw Exception(e, this, f);
 	}
+	functions_to_link.append(be->list->wanted_label);
+	delete be;
+	delete x;
+
 }
 
 void Script::compile_functions(char *oc, int &ocs) {

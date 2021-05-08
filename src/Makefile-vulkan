@@ -105,9 +105,6 @@ OBJ = Helper/CLIParser.o \
  lib/kaba/compiler/compiler.o \
  lib/kaba/compiler/mapper.o \
  lib/kaba/compiler/serializer.o \
- lib/kaba/compiler/serializer_amd64.o \
- lib/kaba/compiler/serializer_arm.o \
- lib/kaba/compiler/serializer_x86.o \
  lib/kaba/compiler/SerializerX.o \
  lib/kaba/compiler/SerialNode.o \
  lib/kaba/lib/dict.o \
@@ -483,17 +480,8 @@ lib/kaba/compiler/compiler.o : lib/kaba/compiler/compiler.cpp lib/kaba/kaba.h li
 lib/kaba/compiler/mapper.o : lib/kaba/compiler/mapper.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
 	$(CPP) -c lib/kaba/compiler/mapper.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/compiler/serializer.o : lib/kaba/compiler/serializer.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_arm.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/compiler/SerializerX.h lib/kaba/compiler/BackendAmd64.h lib/kaba/compiler/BackendX86.h lib/kaba/compiler/Backend.h lib/kaba/compiler/BackendARM.h lib/kaba/Interpreter.h
+lib/kaba/compiler/serializer.o : lib/kaba/compiler/serializer.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/kaba/compiler/SerializerX.h lib/kaba/compiler/BackendAmd64.h lib/kaba/compiler/BackendX86.h lib/kaba/compiler/Backend.h lib/kaba/compiler/BackendARM.h lib/kaba/Interpreter.h
 	$(CPP) -c lib/kaba/compiler/serializer.cpp -o $@ $(CXXFLAGS)
-
-lib/kaba/compiler/serializer_amd64.o : lib/kaba/compiler/serializer_amd64.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer_amd64.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/compiler/serializer_amd64.cpp -o $@ $(CXXFLAGS)
-
-lib/kaba/compiler/serializer_arm.o : lib/kaba/compiler/serializer_arm.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer_arm.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/compiler/serializer_arm.cpp -o $@ $(CXXFLAGS)
-
-lib/kaba/compiler/serializer_x86.o : lib/kaba/compiler/serializer_x86.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer_x86.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/file.h lib/file/msg.h lib/file/file_op.h
-	$(CPP) -c lib/kaba/compiler/serializer_x86.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/compiler/SerializerX.o : lib/kaba/compiler/SerializerX.cpp lib/kaba/compiler/SerializerX.h lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/lib/common.h lib/kaba/compiler/serializer.h lib/kaba/compiler/CommandList.h lib/kaba/compiler/SerialNode.h lib/file/msg.h
 	$(CPP) -c lib/kaba/compiler/SerializerX.cpp -o $@ $(CXXFLAGS)

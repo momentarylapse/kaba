@@ -301,15 +301,6 @@
     <ClCompile Include="src\lib\kaba\compiler\serializer.cpp">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\kaba\compiler\serializer_amd64.cpp">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\compiler\serializer_arm.cpp">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\compiler\serializer_x86.cpp">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\kaba\compiler\SerializerX.cpp">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClCompile>
@@ -786,15 +777,6 @@
     <ClInclude Include="src\lib\kaba\compiler\serializer.h">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\kaba\compiler\serializer_amd64.h">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\kaba\compiler\serializer_arm.h">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\kaba\compiler\serializer_x86.h">
-      <Filter>src\lib\kaba\compiler</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\kaba\compiler\SerializerX.h">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClInclude>
@@ -981,67 +963,67 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
-      <UniqueIdentifier>{323591FB-C394-9DA6-BBCA-9F6C2BD3AC3E}</UniqueIdentifier>
+      <UniqueIdentifier>{5C31E80B-FC70-D329-6329-F1A5A93DB451}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Helper">
-      <UniqueIdentifier>{E6387334-6C80-A375-F3F8-355612ACFDBD}</UniqueIdentifier>
+      <UniqueIdentifier>{192F12B0-E21C-546B-7857-A0C4A0265776}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib">
-      <UniqueIdentifier>{4E5C2908-6980-C05B-4547-BAEDD9AC759B}</UniqueIdentifier>
+      <UniqueIdentifier>{1A62D13B-458A-9F60-7B82-C56659CB0411}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\algebra">
-      <UniqueIdentifier>{4F7698FF-18FE-85AC-BE47-9356CF235CF9}</UniqueIdentifier>
+      <UniqueIdentifier>{E84BA87E-E087-FF87-A096-50DB996AD8CC}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\any">
-      <UniqueIdentifier>{C705FF41-73F0-9AC4-90C2-31801A366303}</UniqueIdentifier>
+      <UniqueIdentifier>{118B90A8-03F0-288D-813E-20ABA158A24B}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\base">
-      <UniqueIdentifier>{A08A0DC8-1C8A-64FF-5B19-C99E4D5B05EB}</UniqueIdentifier>
+      <UniqueIdentifier>{3D6DD15E-44F6-C735-974B-8F730DBBF062}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\file">
-      <UniqueIdentifier>{676742F5-F7F5-CE41-A6A7-F4541BF21DE8}</UniqueIdentifier>
+      <UniqueIdentifier>{DD0BE593-A9A7-0EDA-526E-1D22ADDAE3DC}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui">
-      <UniqueIdentifier>{55F98EE7-6EC2-D147-7FF7-35B50B81979E}</UniqueIdentifier>
+      <UniqueIdentifier>{1D7F213D-AD4B-B251-4BF5-9284F5FE9CAA}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui\Controls">
-      <UniqueIdentifier>{C97576DE-4A02-B493-49B7-E7DF250BCA99}</UniqueIdentifier>
+      <UniqueIdentifier>{91AD3DAD-AF85-1E75-A7B3-9389977232CD}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\image">
-      <UniqueIdentifier>{31FB7C9C-6AE2-F863-11A0-88FAD06AA04E}</UniqueIdentifier>
+      <UniqueIdentifier>{47A7454F-4D56-BCC6-37AD-B2649E6D03B4}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba">
-      <UniqueIdentifier>{13990267-D49C-D0FF-1A0A-2F400BBABF9D}</UniqueIdentifier>
+      <UniqueIdentifier>{B6CFB0F0-E46A-1205-AA25-C9A671385FD0}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\asm">
-      <UniqueIdentifier>{42645CB2-15EF-5EF7-8F1B-E6BF16AD63AB}</UniqueIdentifier>
+      <UniqueIdentifier>{59019F28-3925-C2A6-DCC9-570D845E32E9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\compiler">
-      <UniqueIdentifier>{50FBDBDF-0CF6-AED3-DFEC-59B706479E3F}</UniqueIdentifier>
+      <UniqueIdentifier>{BEB5EDE2-6073-31A0-E6A4-EB17F753A4D6}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\lib">
-      <UniqueIdentifier>{F2ADE8DF-4C5F-A328-3058-A10B74302602}</UniqueIdentifier>
+      <UniqueIdentifier>{38C16A3D-BB0E-DAFB-1A0F-52659C8406A3}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\syntax">
-      <UniqueIdentifier>{9AF73C67-9C74-09C3-A1C4-3C0A03B3AB64}</UniqueIdentifier>
+      <UniqueIdentifier>{E745182D-32C0-DBCE-6CEC-F5181AC2075F}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\math">
-      <UniqueIdentifier>{55B9220C-E70E-1D1B-FE02-A0CA48EF3439}</UniqueIdentifier>
+      <UniqueIdentifier>{EA4037D7-A987-546C-1580-AA9C46E5E45C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\net">
-      <UniqueIdentifier>{AE2D039F-BAEC-7077-E7A8-873CF1B26EB0}</UniqueIdentifier>
+      <UniqueIdentifier>{FAD21AAB-423A-7A79-FFA9-A35FA4488A58}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\nix">
-      <UniqueIdentifier>{DEEE17DC-2B8A-B01A-8C20-35C2785D71E4}</UniqueIdentifier>
+      <UniqueIdentifier>{42A6C411-75CE-F38E-328D-6DC0219BBE30}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\threads">
-      <UniqueIdentifier>{FC3040D7-C628-642E-04F3-AC524B0BCF0B}</UniqueIdentifier>
+      <UniqueIdentifier>{1E6E38FA-DC9C-F1B3-430A-1DB4E5FA43A5}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\vulkan">
-      <UniqueIdentifier>{C3C14981-FA96-EC5F-142C-08E43F0FE1BB}</UniqueIdentifier>
+      <UniqueIdentifier>{103483F6-F93F-BE3F-23A4-168FB7A0A45C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\xfile">
-      <UniqueIdentifier>{57CA15B1-058F-1DE2-11E2-9D7DC7DB986F}</UniqueIdentifier>
+      <UniqueIdentifier>{591EC14C-A7C6-6F59-30D4-6542DF283849}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

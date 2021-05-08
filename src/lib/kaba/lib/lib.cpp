@@ -844,7 +844,6 @@ CompilerConfiguration::CompilerConfiguration() {
 
 	compile_os = false;
 	remove_unused = false;
-	use_new_serializer = true;
 	override_variables_offset = false;
 	variables_offset = 0;
 	override_code_origin = false;
