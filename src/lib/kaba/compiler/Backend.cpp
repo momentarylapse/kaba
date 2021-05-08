@@ -92,7 +92,7 @@ int Backend::get_reg(int root, int size) {
 }
 
 void Backend::do_error(const string &e) {
-	serializer->do_error(e);
+	script->do_error_internal(e);
 }
 
 

@@ -73,7 +73,6 @@ static bool inst_is_arithmetic(int i) {
 void BackendAmd64::implement_return(kaba::SerialNode &c, int i) {
 	auto p = c.p[0];
 	cmd.remove_cmd(i);
-	cmd.next_cmd_target(i);
 	if (p.kind != NodeKind::NONE) {
 		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
 			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
@@ -127,11 +126,10 @@ void BackendAmd64::implement_return(kaba::SerialNode &c, int i) {
 }
 
 
-void BackendAmd64::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
-	auto p1 = c.p[0];
-	auto p2 = c.p[1];
-	cmd.remove_cmd(i);
-	cmd.next_cmd_target(i);
+void BackendAmd64::implement_mov_chunk(const SerialNodeParam &p1, const SerialNodeParam &p2, int size) {
+	//auto p1 = c.p[0];
+	//auto p2 = c.p[1];
+	//cmd.remove_cmd(i);
 	//msg_error("CORRECT MOV " + p1.type->name);
 
 	for (int j=0; j<size/8; j++)
@@ -449,29 +447,6 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 
 //#define debug_evil_corrections
-
-static void _test_param_mem(SerialNodeParam &p) {
-	//if (p.kind == NodeKind::ADDRESS)
-}
-
-
-void BackendAmd64::process_references() {
-	for (int i=0;i<cmd.cmd.num;i++)
-		if (cmd.cmd[i].inst == Asm::INST_LEA) {
-			if (cmd.cmd[i].p[1].kind == NodeKind::LOCAL_MEMORY) {
-				auto p0 = cmd.cmd[i].p[0];
-				auto p1 = cmd.cmd[i].p[1];
-				cmd.remove_cmd(i);
-
-				int r = cmd.add_virtual_reg(Asm::REG_RAX);
-				insert_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), p1);
-				insert_cmd(Asm::INST_MOV, p0, param_vreg(TypeReg64, r));
-				cmd.set_virtual_reg(r, i, i+1);
-			} else {
-				do_error("reference in x86: " + cmd.cmd[i].p[1].str(serializer));
-			}
-		}
-}
 
 
 // so far not used... x86 also implements both...

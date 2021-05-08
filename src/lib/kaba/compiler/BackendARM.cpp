@@ -46,8 +46,6 @@ void BackendARM::process(Function *f, int index) {
 void BackendARM::correct() {
 	cmd.next_cmd_target(0);
 
-	correct_parameters();
-
 	serializer->cmd_list_out("x:a", "paramtrafo");
 
 	correct_implement_commands();
@@ -56,9 +54,6 @@ void BackendARM::correct() {
 	add_function_intro_params(cur_func);
 	serializer->cmd_list_out("x:b", "post paramtrafo");
 
-}
-
-void BackendARM::correct_parameters() {
 }
 
 void BackendARM::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {

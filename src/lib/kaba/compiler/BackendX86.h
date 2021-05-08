@@ -21,11 +21,11 @@ public:
 	void process(Function *f, int index) override;
 
 	void correct() override;
-	void correct_parameters();
+	void correct_parameters_variables_to_memory();
 
 	virtual void correct_implement_commands();
 	virtual void implement_return(kaba::SerialNode &c, int i);
-	virtual void implement_mov_chunk(kaba::SerialNode &c, int i, int size);
+	virtual void implement_mov_chunk(const SerialNodeParam &p1, const SerialNodeParam &p2, int size);
 
 	virtual int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
 	virtual void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
@@ -49,6 +49,7 @@ public:
 	//static int get_reg(int root, int size);
 
 	SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
+	void insert_lea(const SerialNodeParam &p1, const SerialNodeParam &p2);
 
 
 	virtual void add_function_outro(Function *f);
@@ -59,7 +60,6 @@ public:
 
 
 	void map_referenced_temp_vars_to_stack();
-	virtual void process_references();
 	void try_map_temp_vars_to_registers();
 	void map_remaining_temp_vars_to_stack();
 	void resolve_deref_temp_and_local();

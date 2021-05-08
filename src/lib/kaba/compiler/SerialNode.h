@@ -19,7 +19,7 @@ class Class;
 struct SerialNodeParam {
 	NodeKind kind;
 	int64 p;
-	int virt; // virtual register (if p represents a physical register)
+	int vreg; // virtual register (if p represents a physical register)
 	const Class *type;
 	int shift;
 	//int c_id, v_id;

@@ -80,8 +80,8 @@ SerialNodeParam CommandList::_add_temp(const Class *t) {
 void CommandList::set_cmd_param(SerialNode &c, int param_index, const SerialNodeParam &p) {
 	c.p[param_index] = p;
 	if ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::DEREF_REGISTER))
-		if (p.virt >= 0)
-			use_virtual_reg(p.virt, c.index, c.index);
+		if (p.vreg >= 0)
+			use_virtual_reg(p.vreg, c.index, c.index);
 	if ((p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::DEREF_VAR_TEMP)) {
 		int v = (int_p)p.p;
 		temp_var[v].use(c.index, c.index);

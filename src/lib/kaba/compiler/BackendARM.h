@@ -22,7 +22,6 @@ public:
 	void process(Function *f, int index) override;
 
 	void correct() override;
-	void correct_parameters();
 	void do_mapping() override;
 	void assemble() override;
 	void correct_implement_commands();
