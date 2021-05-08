@@ -5,7 +5,7 @@
  *      Author: michi
  */
 
-#include "SerializerX.h"
+#include "serializer.h"
 #include "../kaba.h"
 #include "../../file/msg.h"
 
@@ -17,11 +17,7 @@
 
 namespace kaba {
 
-SerializerX::SerializerX(Script *s, Asm::InstructionWithParamsList *l) : Serializer(s, l) {
-	//list->clear();
-}
-
-SerializerX::~SerializerX() {
+Serializer::~Serializer() {
 	/*msg_write("aa");
 	list->show();
 	msg_write("aa2");
@@ -31,7 +27,7 @@ SerializerX::~SerializerX() {
 	msg_write("aa3");*/
 }
 
-void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void Serializer::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
 	int push_size = fc_begin(f, params, ret);
 
@@ -41,7 +37,7 @@ void SerializerX::add_function_call(Function *f, const Array<SerialNodeParam> &p
 	fc_end(push_size, ret);
 }
 
-void SerializerX::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void Serializer::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
 	int push_size = fc_begin(f, params, ret);
 
@@ -56,16 +52,16 @@ void SerializerX::add_virtual_function_call(Function *f, const Array<SerialNodeP
 	fc_end(push_size, ret);
 }
 
-int SerializerX::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+int Serializer::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	for (SerialNodeParam &p: params)
 		cmd.add_cmd(Asm::INST_PUSH, p);
 	return 0;
 }
 
-void SerializerX::fc_end(int push_size, const SerialNodeParam &ret) {
+void Serializer::fc_end(int push_size, const SerialNodeParam &ret) {
 }
 
-void SerializerX::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void Serializer::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 
 	call_used = true;
 	int push_size = fc_begin(nullptr, params, ret);
@@ -80,18 +76,18 @@ void SerializerX::add_pointer_call(const SerialNodeParam &pointer, const Array<S
 	fc_end(push_size, ret);
 }
 
-void SerializerX::add_function_intro_params(Function *f) {
+void Serializer::add_function_intro_params(Function *f) {
 }
 
-void SerializerX::add_function_intro_frame(int stack_alloc_size) {
+void Serializer::add_function_intro_frame(int stack_alloc_size) {
 }
 
-void SerializerX::add_function_outro(Function *f) {
+void Serializer::add_function_outro(Function *f) {
 	if (f->literal_return_type == TypeVoid)
 		cmd.add_cmd(Asm::INST_RET);
 }
 
-SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int index) {
+SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int index) {
 	SerialNodeParam p;
 	p.kind = link->kind;
 	p.type = link->type;
@@ -155,7 +151,7 @@ SerialNodeParam SerializerX::serialize_parameter(Node *link, Block *block, int i
 	return p;
 }
 
-void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) {
+void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) {
 	auto statement = com->as_statement();
 	switch(statement->id){
 		case StatementID::IF:{
@@ -297,7 +293,7 @@ void SerializerX::serialize_statement(Node *com, const SerialNodeParam &ret, Blo
 	}
 }
 
-void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
+void Serializer::serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) {
 	auto index = com->as_func()->inline_no;
 	switch (index) {
 		case InlineID::INT_TO_FLOAT:
@@ -689,10 +685,7 @@ void SerializerX::serialize_inline_function(Node *com, const Array<SerialNodePar
 	}
 }
 
-void SerializerX::do_mapping() {
-}
-
-void SerializerX::fix_return_by_ref() {
+void Serializer::fix_return_by_ref() {
 
 
 

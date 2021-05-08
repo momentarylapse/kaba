@@ -2,7 +2,6 @@
 #include "serializer.h"
 #include "../../file/file.h"
 
-#include "SerializerX.h"
 #include "BackendAmd64.h"
 #include "BackendX86.h"
 #include "BackendARM.h"
@@ -1801,7 +1800,6 @@ void Serializer::assemble() {
 
 	if (!config.no_function_frame)
 		add_function_intro_frame(stack_max_size); // param intro later...
-	correct_return();
 
 	for (int i=0;i<cmd.cmd.num;i++) {
 
@@ -1856,9 +1854,6 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) {
 	p_xmm1 = param_preg(TypeReg128, Asm::REG_XMM1);
 }
 
-Serializer::~Serializer() {
-}
-
 bool is_func(shared<Node> n) {
 	return (n->kind == NodeKind::FUNCTION_CALL or n->kind == NodeKind::VIRTUAL_CALL or n->kind == NodeKind::FUNCTION);
 }
@@ -1878,7 +1873,7 @@ int check_needed(SyntaxTree *tree, Function *f) {
 	return ref_count;
 }
 
-Backend *create_backend(SerializerX *s) {
+Backend *create_backend(Serializer *s) {
 	if (config.instruction_set == Asm::InstructionSet::AMD64)
 		return new BackendAmd64(s);
 	if (config.instruction_set == Asm::InstructionSet::X86)
@@ -1904,7 +1899,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 		f->block->show(TypeVoid);
 
 	if (config.interpreted) {
-		auto x = new SerializerX(this, list);
+		auto x = new Serializer(this, list);
 		x->cur_func_index = index;
 		x->serialize_function(f);
 		x->fix_return_by_ref();
@@ -1915,7 +1910,7 @@ void Script::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	}
 
 
-	auto x = new SerializerX(this, list);
+	auto x = new Serializer(this, list);
 	x->cur_func_index = index;
 	x->serialize_function(f);
 	x->fix_return_by_ref();

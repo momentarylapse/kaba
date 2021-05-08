@@ -4,10 +4,20 @@
 #include "CommandList.h"
 #include "SerialNode.h"
 
+namespace Asm {
+	class InstructionWithParamsList;
+	class InstructionParam;
+}
+
 namespace kaba
 {
 
 class Serializer;
+class Script;
+class SyntaxTree;
+class Function;
+class Node;
+class Block;
 
 
 // high level instructions
@@ -25,7 +35,7 @@ struct LoopData {
 class Serializer {
 public:
 	Serializer(Script *script, Asm::InstructionWithParamsList *list);
-	virtual ~Serializer();
+	~Serializer();
 
 	CommandList cmd;
 	int num_markers;
@@ -63,14 +73,7 @@ public:
 
 	void serialize_function(Function *f);
 	void serialize_block(Block *block);
-	virtual SerialNodeParam serialize_parameter(Node *link, Block *block, int index) = 0;
 	SerialNodeParam serialize_node(Node *com, Block *block, int index);
-	virtual void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) = 0;
-	virtual void serialize_inline_function(Node *com, const Array<SerialNodeParam> &param, const SerialNodeParam &ret) = 0;
-	virtual void add_function_intro_params(Function *f) = 0;
-	virtual void add_function_intro_frame(int stack_alloc_size) = 0;
-	virtual void add_function_outro(Function *f) = 0;
-	virtual void correct_return(){};
 
 	void simplify_if_statements();
 	void simplify_float_store();
@@ -84,8 +87,6 @@ public:
 	Array<SerialNodeParam> inserted_temp;
 	void add_cmd_constructor(const SerialNodeParam &param, NodeKind modus);
 	void add_cmd_destructor(const SerialNodeParam &param, bool needs_ref = true);
-
-	virtual void do_mapping() = 0;
 	void map_referenced_temp_vars_to_stack();
 	void try_map_temp_vars_to_registers();
 	void map_remaining_temp_vars_to_stack();
@@ -108,11 +109,6 @@ public:
 	void remove_unused_temp_vars();
 
 	void add_member_function_call(Function *cf, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	virtual void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
-	virtual void add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
-	virtual void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
-	virtual int fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) = 0;
-	virtual void fc_end(int push_size, const SerialNodeParam &ret) = 0;
 	SerialNodeParam add_reference(const SerialNodeParam &param, const Class *force_type = nullptr);
 	SerialNodeParam add_dereference(const SerialNodeParam &param, const Class *type);
 
@@ -132,6 +128,24 @@ public:
 	SerialNodeParam p_rax;
 	SerialNodeParam p_ax, p_al, p_al_bool, p_al_char;
 	SerialNodeParam p_xmm0, p_xmm1;
+
+
+	// SerializerX
+
+	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	int fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void fc_end(int push_size, const SerialNodeParam &ret);
+	void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_function_intro_params(Function *f);
+	void add_function_intro_frame(int stack_alloc_size);
+	void add_function_outro(Function *f);
+	SerialNodeParam serialize_parameter(Node *link, Block *block, int index);
+	void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index);
+	void serialize_inline_function(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+
+
+	void fix_return_by_ref();
 
 
 	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);

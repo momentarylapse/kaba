@@ -7,7 +7,7 @@
 
 #include "Interpreter.h"
 #include "kaba.h"
-#include "compiler/SerializerX.h"
+#include "compiler/serializer.h"
 #include "../file/msg.h"
 
 namespace kaba {
@@ -26,7 +26,7 @@ void Interpreter::do_error(const string &s) {
 	script->do_error_internal("interpreter: " + s);
 }
 
-void Interpreter::add_function(Function *f, SerializerX *ser) {
+void Interpreter::add_function(Function *f, Serializer *ser) {
 	//msg_write("INT: add func " + f->signature(TypeVoid));
 	IFunction ff;
 	ff.f = f;
@@ -44,7 +44,7 @@ void Interpreter::run(const string &name) {
 	}
 }
 
-void Interpreter::run_function(Function *f, SerializerX *ser) {
+void Interpreter::run_function(Function *f, Serializer *ser) {
 	msg_write("RUN..." + f->signature(TypeVoid));
 	Frame frame;
 	frame.stack.resize(f->_var_size + 64);
@@ -68,7 +68,7 @@ void Interpreter::run_function(Function *f, SerializerX *ser) {
 	}
 }
 
-int Interpreter::run_command(int index, SerialNode &n,SerializerX *ser, Frame &frame) {
+int Interpreter::run_command(int index, SerialNode &n, Serializer *ser, Frame &frame) {
 	auto get_param = [&] (int i) {
 		if (n.p[i].kind == NodeKind::NONE) {
 			return (void*)nullptr;
