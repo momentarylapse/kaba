@@ -1095,17 +1095,6 @@ void BackendX86::assemble_cmd(SerialNode &c) {
 	list->add2(c.inst, p1, p2);
 }
 
-void BackendX86::assemble_cmd_arm(SerialNode &c) {
-	// translate parameters
-	auto p1 = prepare_param(c.inst, c.p[0]);
-	auto p2 = prepare_param(c.inst, c.p[1]);
-	auto p3 = prepare_param(c.inst, c.p[2]);
-
-	// assemble instruction
-	//list->current_line = c.
-	list->add_arm(c.cond, c.inst, p1, p2, p3);
-}
-
 
 void BackendX86::add_function_intro_frame(int stack_alloc_size) {
 	int reg_bp = Asm::REG_EBP;
@@ -1130,18 +1119,14 @@ void BackendX86::assemble() {
 	if (!config.no_function_frame)
 		add_function_intro_frame(stack_max_size); // param intro later...
 
-	for (int i=0;i<cmd.cmd.num;i++) {
+	for (auto &c: cmd.cmd) {
 
-		if (cmd.cmd[i].inst == INST_MARKER) {
-			list->insert_label(cmd.cmd[i].p[0].p);
-		} else if (cmd.cmd[i].inst == INST_ASM) {
+		if (c.inst == INST_MARKER) {
+			list->insert_label(c.p[0].p);
+		} else if (c.inst == INST_ASM) {
 			add_asm_block();
 		} else {
-
-			if (config.instruction_set == Asm::InstructionSet::ARM)
-				assemble_cmd_arm(cmd.cmd[i]);
-			else
-				assemble_cmd(cmd.cmd[i]);
+			assemble_cmd(c);
 		}
 	}
 	list->add2(Asm::INST_ALIGN_OPCODE);

@@ -74,7 +74,6 @@ public:
 
 	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
 	void assemble_cmd(SerialNode &c);
-	void assemble_cmd_arm(SerialNode &c);
 
 	void mark_regs_busy_at_call(int index);
 	void extend_reg_usage_to_call(int index);
