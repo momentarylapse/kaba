@@ -49,7 +49,11 @@ void Backend::insert_cmd(int inst, const SerialNodeParam &p1, const SerialNodePa
 
 
 bool Backend::is_reg_root_used_in_interval(int reg_root, int first, int last) {
-	return serializer->is_reg_root_used_in_interval(reg_root, first, last);
+	for (auto &r: cmd.virtual_reg)
+		if (r.reg_root == reg_root)
+			if ((r.first <= last) and (r.last >= first))
+				return true;
+	return false;
 }
 
 int Backend::find_unused_reg(int first, int last, int size, int exclude) {

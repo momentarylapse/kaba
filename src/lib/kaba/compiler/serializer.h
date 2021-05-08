@@ -45,19 +45,9 @@ public:
 	int cur_func_index;
 	bool call_used;
 
-	Array<int> map_reg_root;
-
-	bool reg_root_used[max_reg];
 	Array<LoopData> loop;
 
 	int stack_offset, stack_max_size, max_push_size;
-
-	struct GlobalRef {
-		int label;
-		void *p;
-	};
-	Array<GlobalRef> global_refs;
-	int add_global_ref(void *p);
 
 	Asm::InstructionWithParamsList *list;
 
@@ -66,7 +56,6 @@ public:
 	void do_error(const string &msg);
 	void do_error_link(const string &msg);
 
-	void assemble();
 	void assemble_cmd(SerialNode &c);
 	void assemble_cmd_arm(SerialNode &c);
 	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
@@ -87,22 +76,10 @@ public:
 	Array<SerialNodeParam> inserted_temp;
 	void add_cmd_constructor(const SerialNodeParam &param, NodeKind modus);
 	void add_cmd_destructor(const SerialNodeParam &param, bool needs_ref = true);
-	void map_referenced_temp_vars_to_stack();
-	void try_map_temp_vars_to_registers();
-	void map_remaining_temp_vars_to_stack();
-
-	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
-	void map_temp_var(int vi);
-	void map_temp_vars();
-	void disentangle_shifted_temp_vars();
-	void resolve_deref_reg_shift();
 
 	int temp_in_cmd(int c, int v);
 	void scan_temp_var_usage();
 
-	int find_unused_reg(int first, int last, int size, int exclude = -1);
-	void solve_deref_temp_local(int c, int np, bool is_local);
-	void resolve_deref_temp_and_local();
 	bool param_untouched_in_interval(SerialNodeParam &p, int first, int last);
 	void simplify_fpu_stack();
 	void simplify_movs();
@@ -113,9 +90,7 @@ public:
 	SerialNodeParam add_dereference(const SerialNodeParam &param, const Class *type);
 
 
-	void map_temp_var_to_reg(int vi, int reg);
 	void add_stack_var(TempVar &v, SerialNodeParam &p);
-	void map_temp_var_to_stack(int vi);
 
 
 	void insert_destructors_block(Block *b, bool recursive = false);
@@ -152,7 +127,6 @@ public:
 	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
 
 	static int reg_resize(int reg, int size);
-	void _resolve_deref_reg_shift_(SerialNodeParam &p, int i);
 
 	static int get_reg(int root, int size);
 };
