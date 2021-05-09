@@ -179,7 +179,7 @@ void BackendAmd64::function_call_post(int push_size, const Array<SerialNodeParam
 	}
 }
 
-static bool dist_fits_32bit(int64 a, void *b) {
+bool dist_fits_32bit(int64 a, void *b) {
 	int_p d = (int_p)a - (int_p)b;
 	if (d < 0)
 		d = -d;

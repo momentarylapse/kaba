@@ -330,6 +330,29 @@ void BackendX86::correct_implement_commands() {
 			cmd.set_virtual_reg(reg, i, i + 2);
 
 			i += 2;
+		} else if (c.inst == Asm::InstID::CMP) {
+/*			// TODO also check p[0]
+			if (((c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS) or (c.p[1].kind == NodeKind::IMMEDIATE)) and (c.p[1].type->size == 8)) {
+				int64 ii = c.p[1].p;
+				if (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS)
+					ii = *(int64*)c.p[1].p;
+				if ((ii & 0xffffffff00000000) == 0) {
+					c.p[1].type = TypeInt;
+				} else {
+					auto p1 = c.p[1];
+
+					int reg = find_unused_reg(i, i, p1.type->size);
+					auto t = param_vreg(p1.type, reg);
+					//cmd.remove_cmd(i);
+					cmd.next_cmd_target(i);
+					insert_cmd(Asm::InstID::MOV, t, p1);
+					cmd.set_cmd_param(i + 1, 1, t);
+					cmd.set_virtual_reg(reg, i, i + 1);
+					i ++;
+
+					//do_error("cmp immediate > 32bit");
+				}
+			}*/
 		} else if ((c.inst == Asm::InstID::FMUL) or (c.inst == Asm::InstID::FDIV) or (c.inst == Asm::InstID::FADD) or (c.inst == Asm::InstID::FSUB)) {
 			auto inst = c.inst;
 			auto p1 = c.p[0];
@@ -601,6 +624,32 @@ void BackendX86::add_function_intro_params(Function *f) {
 }
 
 
+
+bool dist_fits_32bit(int64 a, void *b);
+
+void correct_far_mem_access(BackendX86 *be) {
+	if (config.abi != Abi::AMD64_GNU)
+
+	for (int i=0; i<be->cmd.cmd.num; i++) {
+		auto &c = be->cmd.cmd[i];
+
+		if (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS) {
+			if (!dist_fits_32bit(c.p[1].p, be->script->opcode)) {
+				auto p1 = c.p[1];
+
+				int reg = be->find_unused_reg(i, i, config.pointer_size);
+				auto p_reg = be->param_vreg(TypePointer, reg);
+
+				be->cmd.next_cmd_target(i);
+				be->insert_cmd(Asm::InstID::MOV, p_reg, param_imm(TypePointer, p1.p)); // prepare input into register
+				be->cmd.set_cmd_param(i+1, 1, p_reg); // change input in original instruction
+				be->cmd.set_virtual_reg(reg, i, i + 1);
+			}
+		}
+	}
+}
+
+
 void BackendX86::do_mapping() {
 
 	map_referenced_temp_vars_to_stack();
@@ -636,17 +685,13 @@ void BackendX86::do_mapping() {
 	for (int i=0; i<cmd.cmd.num; i++)
 		correct_unallowed_param_combis2(cmd.cmd[i]);
 
+	if (config.abi == Abi::AMD64_GNU)
+		correct_far_mem_access(this);
+
 	serializer->cmd_list_out("map:z", "end");
 }
 
 void BackendX86::correct_unallowed_param_combis2(SerialNode &c) {
-	// push 8 bit -> push 32 bit
-	if (c.inst == Asm::InstID::PUSH)
-		if (c.p[0].kind == NodeKind::REGISTER) {
-			c.p[0].p = (int)reg_resize(c.p[0].as_reg(), config.pointer_size);
-			msg_write("PUSH REG");
-		}
-
 	if (c.inst == Asm::InstID::CMP)
 		if ((c.p[1].kind == NodeKind::IMMEDIATE) and (c.p[1].type->size == 8)) {
 			if ((c.p[1].p & 0xffffffff00000000) != 0)
