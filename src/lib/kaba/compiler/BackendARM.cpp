@@ -28,7 +28,7 @@ namespace kaba {
 bool is_typed_function_pointer(const Class *c);
 
 BackendARM::BackendARM(Serializer *s) : Backend(s) {
-	map_reg_root = {Asm::RegRoot[(int)Asm::RegID::R0], Asm::RegRoot[(int)Asm::RegID::R1]};
+	map_reg_root = {Asm::reg_root[(int)Asm::RegID::R0], Asm::reg_root[(int)Asm::RegID::R1]};
 }
 
 BackendARM::~BackendARM() {
@@ -414,23 +414,23 @@ void BackendARM::correct_implement_commands() {
 			insert_cmd(Asm::INST_MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 1), p_none);
 			insert_cmd(Asm::INST_MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 0), p_none);
 			if (inst == Asm::INST_SETZ) { // ==
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_NOT_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
 			} else if (inst == Asm::INST_SETNZ) { // !=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_NOT_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::NOT_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
 			} else if (inst == Asm::INST_SETNLE) { // >
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_GREATER_THAN;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
 			} else if (inst == Asm::INST_SETNL) { // >=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_GREATER_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_THAN;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
 			} else if (inst == Asm::INST_SETL) { // <
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_LESS_THAN;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
 			} else if (inst == Asm::INST_SETLE) { // <=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ARM_COND_LESS_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_THAN;
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
 			}
 			_from_register_8(reg, p0, 0);
 			i = cmd.next_cmd_index - 1;
@@ -440,17 +440,17 @@ void BackendARM::correct_implement_commands() {
 			cmd.remove_cmd(i);
 			insert_cmd(Asm::INST_B, p0);
 			if (inst == Asm::INST_JZ) { // ==
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
 			} else if (inst == Asm::INST_JNZ) { // !=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_NOT_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
 			} else if (inst == Asm::INST_JNLE) { // >
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
 			} else if (inst == Asm::INST_JNL) { // >=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_GREATER_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
 			} else if (inst == Asm::INST_JL) { // <
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
 			} else if (inst == Asm::INST_JLE) { // <=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ARM_COND_LESS_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
 			}
 			i = cmd.next_cmd_index - 1;
 		} else if (c.inst == Asm::INST_LEA) {

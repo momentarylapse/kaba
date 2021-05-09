@@ -11,6 +11,8 @@
 
 namespace Asm {
 	enum class RegID;
+	enum class RegRoot;
+	enum class ArmCond;
 }
 
 
@@ -30,7 +32,7 @@ class Class;
 // (or rather the data inside, since many VirtualRegisters might be mapped to the same physical register)
 struct VirtualRegister {
 	Asm::RegID reg;
-	int reg_root;
+	Asm::RegRoot reg_root;
 	int first, last;
 };
 
@@ -60,7 +62,7 @@ struct CommandList {
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
 	SerialNodeParam _add_temp(const Class *t);
-	void add_cmd(int cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
+	void add_cmd(Asm::ArmCond cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
 	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
 	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
 	void add_cmd(int inst, const SerialNodeParam &p);

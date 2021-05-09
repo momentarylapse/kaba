@@ -11,6 +11,7 @@
 
 namespace Asm {
 	enum class RegID;
+	enum class ArmCond;
 }
 
 
@@ -38,7 +39,7 @@ extern const SerialNodeParam p_none;
 
 struct SerialNode {
 	int inst;
-	int cond;
+	Asm::ArmCond cond;
 	SerialNodeParam p[SERIAL_NODE_NUM_PARAMS];
 	int index;
 	string str(Serializer *ser) const;

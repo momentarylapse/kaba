@@ -12,6 +12,7 @@
 
 namespace Asm {
 	enum class RegID;
+	enum class RegRoot;
 }
 
 namespace kaba {
@@ -41,13 +42,13 @@ public:
 	Serializer *serializer;
 
 
-	Array<int> map_reg_root;
+	Array<Asm::RegRoot> map_reg_root;
 
 	virtual void do_mapping() = 0;
 
 
-	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
-	int find_unused_reg(int first, int last, int size, int exclude = -1);
+	bool is_reg_root_used_in_interval(Asm::RegRoot reg_root, int first, int last);
+	int find_unused_reg(int first, int last, int size, Asm::RegRoot exclude = (Asm::RegRoot)-1);
 	Asm::RegID reg_resize(Asm::RegID reg, int size);
 
 	SerialNodeParam param_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
@@ -75,7 +76,7 @@ public:
 
 
 
-	static Asm::RegID get_reg(int root, int size);
+	static Asm::RegID get_reg(Asm::RegRoot root, int size);
 
 	void do_error(const string &e);
 

@@ -41,11 +41,20 @@ enum class RegID {
 	COUNT
 };
 
-const int NUM_REG_ROOTS = 40;
+enum class RegRoot {
+	A, C, D, B, SP, SI, DI, BP,
+	R0=A,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,
+	S0=32,S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,
+	X0,X1,X2,X3,X4,X5,X6,X7,
+	NONE,
+	COUNT,
+};
+
 const int MAX_REG_SIZE = 16;
 
-extern int RegRoot[];
-extern RegID RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
+
+extern RegRoot reg_root[];
+extern RegID reg_from_root[(int)RegRoot::COUNT][MAX_REG_SIZE + 1];
 string get_reg_name(RegID reg);
 
 
@@ -325,26 +334,26 @@ enum {
 	NUM_INSTRUCTION_NAMES
 };
 
-enum {
-	ARM_COND_EQUAL,
-	ARM_COND_NOT_EQUAL,
-	ARM_COND_CARRY_SET,
-	ARM_COND_CARRY_CLEAR,
-	ARM_COND_NEGATIVE,
-	ARM_COND_POSITIVE,
-	ARM_COND_OVERFLOW,
-	ARM_COND_NO_OVERFLOW,
-	ARM_COND_UNSIGNED_HIGHER,
-	ARM_COND_UNSIGNED_LOWER_SAME,
-	ARM_COND_GREATER_EQUAL,
-	ARM_COND_LESS_THAN,
-	ARM_COND_GREATER_THAN,
-	ARM_COND_LESS_EQUAL,
-	ARM_COND_ALWAYS,
-	ARM_COND_UNKNOWN,
+enum class ArmCond {
+	EQUAL,
+	NOT_EQUAL,
+	CARRY_SET,
+	CARRY_CLEAR,
+	NEGATIVE,
+	POSITIVE,
+	OVERFLOW,
+	NO_OVERFLOW,
+	UNSIGNED_HIGHER,
+	UNSIGNED_LOWER_SAME,
+	GREATER_EQUAL,
+	LESS_THAN,
+	GREATER_THAN,
+	LESS_EQUAL,
+	ALWAYS,
+	UNKNOWN = -1,
 };
 
-const string GetInstructionName(int inst);
+const string get_instruction_name(int inst);
 
 struct GlobalVar {
 	string name;
@@ -398,12 +407,14 @@ struct MetaInfo {
 };
 
 struct Register;
+enum class ParamType;
+enum class DispMode;
 
 // a real parameter (usable)
 struct InstructionParam {
 	InstructionParam();
-	int type;
-	int disp;
+	ParamType type;
+	DispMode disp;
 	Register *reg, *reg2;
 	bool deref;
 	int size;
@@ -415,7 +426,7 @@ struct InstructionParam {
 
 struct InstructionWithParams {
 	int inst;
-	int condition; // ARM
+	ArmCond condition;
 	InstructionParam p[3];
 	int line, col;
 	int size;
@@ -458,7 +469,7 @@ struct InstructionWithParamsList : public Array<InstructionWithParams> {
 
 //	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
 	void add2(int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2 = param_none);
-	void add_arm(int cond, int inst, const InstructionParam &p1, const InstructionParam &p2 = param_none, const InstructionParam &p3 = param_none);
+	void add_arm(ArmCond cond, int inst, const InstructionParam &p1, const InstructionParam &p2 = param_none, const InstructionParam &p3 = param_none);
 
 
 	// new label system

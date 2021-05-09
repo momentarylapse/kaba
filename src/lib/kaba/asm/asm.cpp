@@ -100,10 +100,10 @@ MetaInfo::MetaInfo() {
 
 Array<Register> registers;
 Array<Register*> register_by_id;
-int RegRoot[(int)RegID::COUNT];
-RegID RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
+RegRoot reg_root[(int)RegID::COUNT];
+RegID reg_from_root[(int)RegRoot::COUNT][MAX_REG_SIZE + 1];
 
-void add_reg(const string &name, RegID id, RegGroup group, int size, int root) {
+void add_reg(const string &name, RegID id, RegGroup group, int size, RegRoot root) {
 	Register r;
 	r.extend_mod_rm = false;
 	r.name = name;
@@ -115,10 +115,8 @@ void add_reg(const string &name, RegID id, RegGroup group, int size, int root) {
 	}
 	r.size = size;
 	registers.add(r);
-	if (root < 0)
-		root = NUM_REG_ROOTS - 1;
-	RegRoot[(int)id] = root;
-	RegResize[root][size] = id;
+	reg_root[(int)id] = root;
+	reg_from_root[(int)root][size] = id;
 }
 
 string get_reg_name(RegID reg) {
@@ -128,7 +126,7 @@ string get_reg_name(RegID reg) {
 }
 
 // rw1/2: 
-const InstructionName InstructionNames[NUM_INSTRUCTION_NAMES + 1] = {
+const InstructionName instruction_names[NUM_INSTRUCTION_NAMES + 1] = {
 	{INST_DB,		"db"},
 	{INST_DW,		"dw"},
 	{INST_DD,		"dd"},
@@ -424,7 +422,7 @@ Register *get_reg(Asm::RegID reg) {
 
 InstructionParam param_reg(Asm::RegID reg) {
 	InstructionParam p;
-	p.type = PARAMT_REGISTER;
+	p.type = ParamType::REGISTER;
 	p.reg = get_reg(reg);
 	p.size = p.reg->size;
 	return p;
@@ -432,7 +430,7 @@ InstructionParam param_reg(Asm::RegID reg) {
 
 InstructionParam param_deref_reg(Asm::RegID reg, int size) {
 	InstructionParam p;
-	p.type = PARAMT_REGISTER;
+	p.type = ParamType::REGISTER;
 	p.reg = get_reg(reg);
 	p.size = size;
 	p.deref = true;
@@ -441,7 +439,7 @@ InstructionParam param_deref_reg(Asm::RegID reg, int size) {
 
 InstructionParam param_reg_set(int set) {
 	InstructionParam p;
-	p.type = PARAMT_REGISTER_SET;
+	p.type = ParamType::REGISTER_SET;
 	p.size = SIZE_32;
 	p.value = set;
 	return p;
@@ -449,30 +447,30 @@ InstructionParam param_reg_set(int set) {
 
 InstructionParam param_deref_reg_shift(Asm::RegID reg, int shift, int size) {
 	InstructionParam p;
-	p.type = PARAMT_REGISTER;
+	p.type = ParamType::REGISTER;
 	p.reg = get_reg(reg);
 	p.size = size;
 	p.deref = true;
 	p.value = shift;
-	p.disp = ((shift < 120) and (shift > -120)) ? DISP_MODE_8 : DISP_MODE_32;
+	p.disp = ((shift < 120) and (shift > -120)) ? DispMode::_8 : DispMode::_32;
 	return p;
 }
 
 InstructionParam param_deref_reg_shift_reg(Asm::RegID reg, Asm::RegID reg2, int size) {
 	InstructionParam p;
-	p.type = PARAMT_REGISTER;
+	p.type = ParamType::REGISTER;
 	p.reg = get_reg(reg);
 	p.size = size;
 	p.reg2 = get_reg(reg2);
 	p.deref = true;
 	p.value = 1;
-	p.disp = DISP_MODE_REG2;
+	p.disp = DispMode::REG2;
 	return p;
 }
 
 InstructionParam param_imm(int64 value, int size) {
 	InstructionParam p;
-	p.type = PARAMT_IMMEDIATE;
+	p.type = ParamType::IMMEDIATE;
 	p.size = size;
 	p.value = value;
 	return p;
@@ -480,7 +478,7 @@ InstructionParam param_imm(int64 value, int size) {
 
 InstructionParam param_deref_imm(int64 value, int size) {
 	InstructionParam p;
-	p.type = PARAMT_IMMEDIATE;
+	p.type = ParamType::IMMEDIATE;
 	p.size = size;
 	p.value = value;
 	p.deref = true;
@@ -489,7 +487,7 @@ InstructionParam param_deref_imm(int64 value, int size) {
 
 InstructionParam param_label(int64 value, int size) {
 	InstructionParam p;
-	p.type = PARAMT_IMMEDIATE;
+	p.type = ParamType::IMMEDIATE;
 	p.size = size;
 	p.value = value;
 	p.is_label = true;
@@ -498,7 +496,7 @@ InstructionParam param_label(int64 value, int size) {
 
 InstructionParam param_deref_label(int64 value, int size) {
 	InstructionParam p;
-	p.type = PARAMT_IMMEDIATE;
+	p.type = ParamType::IMMEDIATE;
 	p.size = size;
 	p.value = value;
 	p.is_label = true;
@@ -506,7 +504,7 @@ InstructionParam param_deref_label(int64 value, int size) {
 	return p;
 }
 
-void InstructionWithParamsList::add_arm(int cond, int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2, const InstructionParam &p3) {
+void InstructionWithParamsList::add_arm(ArmCond cond, int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2, const InstructionParam &p3) {
 	InstructionWithParams i;
 	i.inst = inst;
 	i.condition = cond;
@@ -521,7 +519,7 @@ void InstructionWithParamsList::add_arm(int cond, int inst, const InstructionPar
 void InstructionWithParamsList::add2(int inst, const InstructionParam &p1, const InstructionParam &p2) {
 	InstructionWithParams i;
 	i.inst = inst;
-	i.condition = ARM_COND_ALWAYS;
+	i.condition = ArmCond::ALWAYS;
 	i.p[0] = p1;
 	i.p[1] = p2;
 	i.p[2] = param_none;
@@ -620,7 +618,7 @@ void InstructionWithParamsList::add_wanted_label(int pos, int label_no, int inst
 	so("add wanted label");
 }
 
-string SizeOut(int size) {
+string size_out(int size) {
 	if (size == SIZE_8)
 		return "8";
 	if (size == SIZE_16)
@@ -667,10 +665,10 @@ void InstructionParamFuzzy::print() const {
 		if (reg)
 			t += "  " + reg->name;
 		if (size != SIZE_UNKNOWN)
-			t += "  " + SizeOut(size);
-		if (mrm_mode == MRM_REG)
+			t += "  " + size_out(size);
+		if (mrm_mode == ModRM::REG)
 			t += "   /r";
-		else if (mrm_mode == MRM_MOD_RM)
+		else if (mrm_mode == ModRM::MOD_RM)
 			t += "   /m";
 	} else {
 		t += "	None";
@@ -678,33 +676,33 @@ void InstructionParamFuzzy::print() const {
 	msg_write(t);
 }
 
-const string GetInstructionName(int inst) {
+const string get_instruction_name(int inst) {
 	if ((inst >= 0) and (inst < NUM_INSTRUCTION_NAMES))
-		return Asm::InstructionNames[inst].name;
+		return Asm::instruction_names[inst].name;
 	return "???";
 }
 
 void get_instruction_param_flags(int inst, bool &p1_read, bool &p1_write, bool &p2_read, bool &p2_write) {
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-		if (InstructionNames[i].inst == inst) {
-			p1_read = ((InstructionNames[i].rw1 & 1) > 0);
-			p1_write = ((InstructionNames[i].rw1 & 2) > 0);
-			p2_read = ((InstructionNames[i].rw2 & 1) > 0);
-			p2_write = ((InstructionNames[i].rw2 & 2) > 0);
+		if (instruction_names[i].inst == inst) {
+			p1_read = ((instruction_names[i].rw1 & 1) > 0);
+			p1_write = ((instruction_names[i].rw1 & 2) > 0);
+			p2_read = ((instruction_names[i].rw2 & 1) > 0);
+			p2_write = ((instruction_names[i].rw2 & 2) > 0);
 		}
 }
 
 bool get_instruction_allow_const(int inst) {
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-		if (InstructionNames[i].inst == inst)
-			return ((InstructionNames[i].rw1 & 64) == 0);
+		if (instruction_names[i].inst == inst)
+			return ((instruction_names[i].rw1 & 64) == 0);
 	return false;
 }
 
 bool get_instruction_allow_gen_reg(int inst) {
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-		if (InstructionNames[i].inst == inst)
-			return ((InstructionNames[i].rw1 & 32) == 0);
+		if (instruction_names[i].inst == inst)
+			return ((instruction_names[i].rw1 & 32) == 0);
 	return false;
 }
 
@@ -735,14 +733,14 @@ void init(InstructionSet set) {
 	if (set == InstructionSet::AMD64)
 		instruction_set.pointer_size = 8;
 
-	for (int i=0;i<NUM_REG_ROOTS;i++)
+	for (int i=0;i<(int)RegRoot::COUNT;i++)
 		for (int j=0;j<=MAX_REG_SIZE;j++)
-			RegResize[i][j] = RegID::INVALID;
+			reg_from_root[i][j] = RegID::INVALID;
 
 
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-		if (InstructionNames[i].inst != i)
-			msg_error(string(InstructionNames[i].name) + "  " + i2s(InstructionNames[i].inst) + "  !=   " + i2s(i));
+		if (instruction_names[i].inst != i)
+			msg_error(string(instruction_names[i].name) + "  " + i2s(instruction_names[i].inst) + "  !=   " + i2s(i));
 
 	if (set == InstructionSet::ARM)
 		arm_init();
@@ -751,8 +749,8 @@ void init(InstructionSet set) {
 }
 
 InstructionParam::InstructionParam() {
-	type = PARAMT_NONE;
-	disp = DISP_MODE_NONE;
+	type = ParamType::NONE;
+	disp = DispMode::NONE;
 	reg = nullptr;
 	reg2 = nullptr;
 	deref = false;
@@ -766,11 +764,11 @@ InstructionParam::InstructionParam() {
 string InstructionParam::str(bool hide_size) {
 	//msg_write("----");
 	//msg_write(p.type);
-	if (type == PARAMT_INVALID) {
+	if (type == ParamType::INVALID) {
 		return "-\?\?\?-";
-	} else if (type == PARAMT_NONE) {
+	} else if (type == ParamType::NONE) {
 		return "";
-	} else if (type == PARAMT_REGISTER) {
+	} else if (type == ParamType::REGISTER) {
 		string post;
 		if (write_back)
 			post = "!";
@@ -782,33 +780,35 @@ string InstructionParam::str(bool hide_size) {
 			if (!hide_size or size != state.default_size)
 				ss = get_size_name(size) + " ";
 			string s = reg->name;
-			if (disp == DISP_MODE_8) {
+			if (disp == DispMode::_8) {
 				if (value > 0)
 					s += format("+0x%02x", (value & 0xff));
 				else
 					s += format("-0x%02x", ((-value) & 0xff));
-			} else if (disp == DISP_MODE_16)
+			} else if (disp == DispMode::_16) {
 				s += format("+0x%04x", (value & 0xffff));
-			else if (disp == DISP_MODE_32)
+			} else if (disp == DispMode::_32) {
 				s += format("+0x%08x", value);
-			else if (disp == DISP_MODE_SIB)
+			} else if (disp == DispMode::SIB) {
 				return "SIB[...][...]";
-			else if (disp == DISP_MODE_8_SIB)
+			} else if (disp == DispMode::_8_SIB) {
 				s += format("::SIB...+0x%02x", value);
-			else if (disp == DISP_MODE_8_REG2)
+			} else if (disp == DispMode::_8_REG2) {
 				s += format("%s+0x%02x", reg2->name.c_str(), value);
-			else if (disp == DISP_MODE_REG2)
+			} else if (disp == DispMode::REG2) {
 				s += "+" + reg2->name;
+			}
 			return ss + "[" + s + "]" + post;
-		} else
+		} else {
 			return reg->name + post;
-	} else if (type == PARAMT_REGISTER_SET) {
+		}
+	} else if (type == ParamType::REGISTER_SET) {
 		Array<string> s;
 		for (int i=0; i<16; i++)
 			if (value & (1<<i))
 				s.add(register_by_id[(int)RegID::R0 + i]->name);
 		return "{" + implode(s, ",") + "}";
-	} else if (type == PARAMT_IMMEDIATE) {
+	} else if (type == ParamType::IMMEDIATE) {
 		string s = "0x" + i2h(value, deref ? state.addr_size : size);
 		if (is_label)
 			s = state.get_label(value);
@@ -843,13 +843,13 @@ string ARMConditions[16] = {
 
 string InstructionWithParams::str(bool hide_size) {
 	string s;
-	if (condition != ARM_COND_ALWAYS)
-		s += ARMConditions[condition & 0xf] + ":";
-	s += GetInstructionName(inst);
+	if (condition != ArmCond::ALWAYS)
+		s += ARMConditions[(int)condition & 0xf] + ":";
+	s += get_instruction_name(inst);
 	s += "  " + p[0].str(hide_size);
-	if (p[1].type != PARAMT_NONE)
+	if (p[1].type != ParamType::NONE)
 		s += ",  " + p[1].str(hide_size);
-	if (p[2].type != PARAMT_NONE)
+	if (p[2].type != ParamType::NONE)
 		s += ",  " + p[2].str(hide_size);
 	return s;
 }
@@ -968,17 +968,17 @@ string FindMnemonic(int &pos) {
 
 // interpret an expression from source code as an assembler parameter
 void GetParam(InstructionParam &p, const string &param, InstructionWithParamsList &list, int pn) {
-	p.type = PARAMT_INVALID;
+	p.type = ParamType::INVALID;
 	p.reg = nullptr;
 	p.deref = false;
 	p.size = SIZE_UNKNOWN;
-	p.disp = DISP_MODE_NONE;
+	p.disp = DispMode::NONE;
 	p.is_label = false;
 	//msg_write(param);
 
 	// none
 	if (param.num == 0) {
-		p.type = PARAMT_NONE;
+		p.type = ParamType::NONE;
 
 	// deref
 	} else if ((param[0] == '[') and (param[param.num-1] == ']')) {
@@ -998,7 +998,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		char *ps = new char[param.num - 1];
 		strcpy(ps, param.substr(1, -2).c_str());
 		p.value = (int_p)ps;
-		p.type = PARAMT_IMMEDIATE;
+		p.type = ParamType::IMMEDIATE;
 
 	// complex...
 	} else if (param.find("+") >= 0) {
@@ -1015,13 +1015,13 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				part.add(param[i]);
 		int offset = part.num;
 		GetParam(sub, part, list, pn);
-		if (sub.type == PARAMT_REGISTER) {
+		if (sub.type == ParamType::REGISTER) {
 			//msg_write("reg");
-			p.type = PARAMT_REGISTER;
+			p.type = ParamType::REGISTER;
 			p.size = SIZE_32;
 			p.reg = sub.reg;
 		} else
-			p.type = PARAMT_INVALID;
+			p.type = ParamType::INVALID;
 
 		// second part (...up till now only hex)
 		for (int i=offset;i<param.num;i++)
@@ -1031,21 +1031,21 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			}
 		part = param.substr(offset, -1);
 		GetParam(sub, part, list, pn);
-		if (sub.type == PARAMT_IMMEDIATE) {
+		if (sub.type == ParamType::IMMEDIATE) {
 			//msg_write("c2 = im");
 			if (((int_p)sub.value & 0xffffff00) == 0)
-				p.disp = DISP_MODE_8;
+				p.disp = DispMode::_8;
 			else
-				p.disp = DISP_MODE_32;
+				p.disp = DispMode::_32;
 			p.value = sub.value;
 		} else
-			p.type = PARAMT_INVALID;
+			p.type = ParamType::INVALID;
 
 		
 
 	// hex const
 	} else if ((param[0] == '0') and (param[1] == 'x')) {
-		p.type = PARAMT_IMMEDIATE;
+		p.type = ParamType::IMMEDIATE;
 		int64 v = 0;
 		for (int i=2;i<param.num;i++) {
 			if (param[i] == '.') {
@@ -1074,7 +1074,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				break;*/
 			} else {
 				raise_error("evil character in hex parameter:  \"" + param + "\"");
-				p.type = PARAMT_INVALID;
+				p.type = ParamType::INVALID;
 				return;
 			}
 			p.value = (int_p)v;
@@ -1129,7 +1129,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			return;
 		}
 	}
-	if (p.type == PARAMT_INVALID)
+	if (p.type == ParamType::INVALID)
 		raise_error("unknown parameter:  \"" + param + "\"\n");
 }
 
@@ -1267,7 +1267,7 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		GetParam(p1, param1, *this, 0);
 		GetParam(p2, param2, *this, 1);
 		GetParam(p3, param3, *this, 1);
-		if ((p1.type == PARAMT_INVALID) or (p2.type == PARAMT_INVALID) or (p3.type == PARAMT_INVALID))
+		if ((p1.type == ParamType::INVALID) or (p2.type == ParamType::INVALID) or (p3.type == ParamType::INVALID))
 			return;
 
 	// special stuff
@@ -1333,15 +1333,15 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 
 
 		InstructionWithParams iwp;
-		iwp.condition = ARM_COND_ALWAYS;
+		iwp.condition = ArmCond::ALWAYS;
 
 		if (cmd.find(":") >= 0) {
-			iwp.condition = -1;
+			iwp.condition = ArmCond::UNKNOWN;
 			Array<string> l = cmd.explode(":");
 			for (int i=0; i<16; i++)
 				if (l[0] == ARMConditions[i])
-					iwp.condition = i;
-			if (iwp.condition < 0)
+					iwp.condition = (ArmCond)i;
+			if (iwp.condition == ArmCond::UNKNOWN)
 				raise_error("unknown condition: " + l[0]);
 			cmd = l[1];
 		}
@@ -1349,8 +1349,8 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		// command
 		int inst = -1;
 		for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-			if (string(InstructionNames[i].name) == cmd)
-				inst = InstructionNames[i].inst;
+			if (string(instruction_names[i].name) == cmd)
+				inst = instruction_names[i].inst;
 		if (inst < 0)
 			raise_error("unknown instruction:  " + cmd);
 		// prefix
@@ -1417,11 +1417,11 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p) {
 	//ParamFuzzyOut(&inst_p);
 	
 	// none
-	if ((wanted_p.type == PARAMT_NONE) or (!used))
-		return (wanted_p.type == PARAMT_NONE) and (!used);
+	if ((wanted_p.type == ParamType::NONE) or (!used))
+		return (wanted_p.type == ParamType::NONE) and (!used);
 
 	// xmm register...
-	if ((allow_register) and (wanted_p.type == PARAMT_REGISTER) and (wanted_p.reg)) {
+	if ((allow_register) and (wanted_p.type == ParamType::REGISTER) and (wanted_p.reg)) {
 		if ((reg_group == RegGroup::XMM) and (wanted_p.reg->group == RegGroup::XMM))
 			return true;
 	}
@@ -1432,7 +1432,7 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p) {
 			return false;
 
 	// immediate
-	if (wanted_p.type == PARAMT_IMMEDIATE) {
+	if (wanted_p.type == ParamType::IMMEDIATE) {
 		if ((allow_memory_address) and (wanted_p.deref))
 			return true;
 		if ((allow_immediate) and (!wanted_p.deref)) {
@@ -1450,7 +1450,7 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p) {
 	}*/
 
 	// reg
-	if (wanted_p.type == PARAMT_REGISTER) {
+	if (wanted_p.type == ParamType::REGISTER) {
 		// direct match
 		if ((allow_register) and (reg)) {
 			if (wanted_p.reg) {

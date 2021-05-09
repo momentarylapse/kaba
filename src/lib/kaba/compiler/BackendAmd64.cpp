@@ -17,18 +17,18 @@ namespace kaba {
 BackendAmd64::BackendAmd64(Serializer *s) : BackendX86(s) {
 
 	// rax, rcx, rdx
-	map_reg_root = {0,1,2};
+	map_reg_root = {Asm::RegRoot::A, Asm::RegRoot::C, Asm::RegRoot::D};
 
 	if (config.abi == Abi::AMD64_WINDOWS) {
 		// rcx, rdx, r8, r9
-		param_regs_root = { 1, 2, 8, 9 };
+		param_regs_root = {Asm::RegRoot::C, Asm::RegRoot::D, Asm::RegRoot::R8, Asm::RegRoot::R9};
 		max_xmm_params = 4;
 		// volatile: rax, rcx, rdx, r8-11, xmm0-5 (can override)
 		// non-volatile: rbx, rbp, rdi, rsi, rsp, r12-r15, xmm6-15 (keep saved!)
 		// https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-160
 	} else {
 		// rdi, rsi, rdx, rcx, r8, r9
-		param_regs_root = {7, 6, 2, 1, 8, 9 };
+		param_regs_root = {Asm::RegRoot::DI, Asm::RegRoot::SI, Asm::RegRoot::D, Asm::RegRoot::C, Asm::RegRoot::R8, Asm::RegRoot::R9};
 		max_xmm_params = 8;
 		// non-volatile: rbx, rsp, rbp, r12-r15
 		// volatile: rest
@@ -254,9 +254,9 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 
 	// map params...
 	Array<SerialNodeParam> reg_param;
-	Array<int> reg_param_root;
+	Array<Asm::RegRoot> reg_param_root;
 	Array<SerialNodeParam> xmm_param;
-	Array<int> xmm_param_root;
+	Array<Asm::RegID> xmm_param_reg;
 	Array<SerialNodeParam> stack_param;
 	int reg_param_counter = 0;
 	int xmm_param_counter = 0;
@@ -273,7 +273,7 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 		} else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)) {
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
-				xmm_param_root.add((int)Asm::RegID::XMM0 + (xmm_param_counter ++));
+				xmm_param_reg.add((Asm::RegID)((int)Asm::RegID::XMM0 + (xmm_param_counter ++)));
 				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter++;
 			} else {
@@ -299,7 +299,7 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::RegID::RSP), param_imm(TypeChar, push_size));
 		//}
 		foreachb (SerialNodeParam &p, stack_param) {
-			insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
+			insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(Asm::RegRoot::A, p.type->size)), p);
 			insert_cmd(Asm::INST_PUSH, p_rax);
 		}
 		if (config.abi == Abi::AMD64_WINDOWS) {
@@ -311,7 +311,7 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 
 	// xmm0-7
 	foreachib(auto &p, xmm_param, i) {
-		auto reg = (Asm::RegID)xmm_param_root[i];
+		auto reg = xmm_param_reg[i];
 		if (p.type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_preg(TypeReg128, reg), p);
 		else
@@ -321,7 +321,7 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 	func_param_virts = {};
 
 	foreachib(auto &p, reg_param, i) {
-		int root = reg_param_root[i];
+		auto root = reg_param_root[i];
 		auto preg = get_reg(root, p.type->size);
 		if (preg != Asm::RegID::INVALID) {
 			int v = cmd.add_virtual_reg(preg);
@@ -375,9 +375,9 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// map params...
 	Array<Variable*> reg_param;
-	Array<int> reg_param_root;
+	Array<Asm::RegRoot> reg_param_root;
 	Array<Variable*> xmm_param;
-	Array<int> xmm_param_root;
+	Array<Asm::RegID> xmm_param_reg;
 	Array<Variable*> stack_param;
 	int reg_param_counter = 0;
 	int xmm_param_counter = 0;
@@ -394,7 +394,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 		} else if ((p->type == TypeFloat32) or (p->type == TypeFloat64)) {
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
-				xmm_param_root.add((int)Asm::RegID::XMM0 + (xmm_param_counter ++));
+				xmm_param_reg.add((Asm::RegID)((int)Asm::RegID::XMM0 + (xmm_param_counter ++)));
 				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter ++;
 			} else {
@@ -407,7 +407,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// xmm0-7
 	foreachib (Variable *p, xmm_param, i){
-		auto reg = (Asm::RegID)xmm_param_root[i];
+		auto reg = xmm_param_reg[i];
 		if (p->type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
 		else
@@ -417,7 +417,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 
 	foreachib (Variable *p, reg_param, i) {
-		int root = reg_param_root[i];
+		auto root = reg_param_root[i];
 		auto preg = get_reg(root, p->type->size);
 		if (preg != Asm::RegID::INVALID) {
 			int v = cmd.add_virtual_reg(preg);
@@ -428,7 +428,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 			int v = cmd.add_virtual_reg(get_reg(root, 4));
 			int va = cmd.add_virtual_reg(Asm::RegID::EAX);
 			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, va), param_vreg(TypeReg32, v));
-			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, va, get_reg(0, p->type->size)));
+			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, va, get_reg(Asm::RegRoot::A, p->type->size)));
 			cmd.set_virtual_reg(v, 0, cmd.next_cmd_index-2);
 			cmd.set_virtual_reg(va, cmd.next_cmd_index-2, cmd.next_cmd_index-1);
 		}

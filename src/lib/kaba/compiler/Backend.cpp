@@ -48,7 +48,7 @@ void Backend::insert_cmd(int inst, const SerialNodeParam &p1, const SerialNodePa
 }
 
 
-bool Backend::is_reg_root_used_in_interval(int reg_root, int first, int last) {
+bool Backend::is_reg_root_used_in_interval(Asm::RegRoot reg_root, int first, int last) {
 	for (auto &r: cmd.virtual_reg)
 		if (r.reg_root == reg_root)
 			if ((r.first <= last) and (r.last >= first))
@@ -56,9 +56,9 @@ bool Backend::is_reg_root_used_in_interval(int reg_root, int first, int last) {
 	return false;
 }
 
-int Backend::find_unused_reg(int first, int last, int size, int exclude) {
+int Backend::find_unused_reg(int first, int last, int size, Asm::RegRoot exclude) {
 	//vr_list_out();
-	for (int r: map_reg_root)
+	for (auto r: map_reg_root)
 		if (r != exclude)
 			if (!is_reg_root_used_in_interval(r, first, last)) {
 				return cmd.add_virtual_reg(get_reg(r, size));
@@ -76,19 +76,19 @@ Asm::RegID Backend::reg_resize(Asm::RegID reg, int size) {
 		throw Asm::Exception("size=2", "kjlkjl", 0, 0);
 		//Asm::DoError("size=2");
 	}
-	return get_reg(Asm::RegRoot[(int)reg], size);
+	return get_reg(Asm::reg_root[(int)reg], size);
 }
 
 
 
-Asm::RegID Backend::get_reg(int root, int size) {
+Asm::RegID Backend::get_reg(Asm::RegRoot root, int size) {
 #if 1
 	if ((size != 1) and (size != 4) and (size != 8)) {
 		msg_write(msg_get_trace());
 		throw Asm::Exception("get_reg: bad reg size: " + i2s(size), "...", 0, 0);
 	}
 #endif
-	return Asm::RegResize[root][size];
+	return Asm::reg_from_root[(int)root][size];
 }
 
 void Backend::do_error(const string &e) {

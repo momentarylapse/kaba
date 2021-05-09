@@ -34,7 +34,7 @@ void TempVar::use(int _first, int _last) {
 
 
 int CommandList::add_virtual_reg(Asm::RegID preg) {
-	VirtualRegister c = {preg, Asm::RegRoot[(int)preg], -1, -1};
+	VirtualRegister c = {preg, Asm::reg_root[(int)preg], -1, -1};
 	virtual_reg.add(c);
 	return virtual_reg.num - 1;
 }
@@ -93,7 +93,7 @@ void CommandList::set_cmd_param(int index, int param_index, const SerialNodePara
 	}
 }
 
-void CommandList::add_cmd(int cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
+void CommandList::add_cmd(Asm::ArmCond cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
 	SerialNode c;
 	c.inst = inst;
 	c.cond = cond;
@@ -131,19 +131,19 @@ void CommandList::add_cmd(int cond, int inst, const SerialNodeParam &p1, const S
 }
 
 void CommandList::add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
-	add_cmd(Asm::ARM_COND_ALWAYS, inst, p1, p2, p3);
+	add_cmd(Asm::ArmCond::ALWAYS, inst, p1, p2, p3);
 }
 
 void CommandList::add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2) {
-	add_cmd(Asm::ARM_COND_ALWAYS, inst, p1, p2, p_none);
+	add_cmd(Asm::ArmCond::ALWAYS, inst, p1, p2, p_none);
 }
 
 void CommandList::add_cmd(int inst, const SerialNodeParam &p) {
-	add_cmd(Asm::ARM_COND_ALWAYS, inst, p, p_none, p_none);
+	add_cmd(Asm::ArmCond::ALWAYS, inst, p, p_none, p_none);
 }
 
 void CommandList::add_cmd(int inst) {
-	add_cmd(Asm::ARM_COND_ALWAYS, inst, p_none, p_none, p_none);
+	add_cmd(Asm::ArmCond::ALWAYS, inst, p_none, p_none, p_none);
 }
 
 void CommandList::next_cmd_target(int index) {
@@ -199,7 +199,7 @@ void CommandList::move_param(SerialNodeParam &p, int from, int to) {
 			temp_var[v].first = min(from, to);
 	} else if ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::DEREF_REGISTER)) {
 		// move_param reg
-		int r = Asm::RegRoot[p.p];
+		auto r = Asm::reg_root[p.p];
 		bool found = false;
 		for (VirtualRegister &rc: virtual_reg)
 			if ((r == rc.reg_root) and (from >= rc.first) and (from >= rc.first)) {
@@ -210,7 +210,7 @@ void CommandList::move_param(SerialNodeParam &p, int from, int to) {
 				found = true;
 			}
 		if (!found) {
-			msg_error(format("move_param: no RegChannel...  reg_root=%d  from=%d", r, from));
+			msg_error(format("move_param: no RegChannel...  reg_root=%d  from=%d", (int)r, from));
 			msg_write(ser->script->filename.str() + " : " + ser->cur_func->long_name());
 		}
 	}

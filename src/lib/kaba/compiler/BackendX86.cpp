@@ -20,7 +20,7 @@ bool is_typed_function_pointer(const Class *c);
 BackendX86::BackendX86(Serializer *s) : Backend(s) {
 
 	// eax, ecx, edx
-	map_reg_root = {0,1,2};
+	map_reg_root = {Asm::RegRoot::A, Asm::RegRoot::C, Asm::RegRoot::D};
 
 	p_eax = param_preg(TypeReg32, Asm::RegID::EAX);
 	p_eax_int = param_preg(TypeInt, Asm::RegID::EAX);
@@ -535,7 +535,7 @@ int BackendX86::function_call_pre(const Array<SerialNodeParam> &_params, const S
 void BackendX86::mark_regs_busy_at_call(int index) {
 	// call violates all used registers...
 	for (int i=0; i<map_reg_root.num; i++) {
-		int v = cmd.add_virtual_reg(get_reg(i, 4));
+		int v = cmd.add_virtual_reg(get_reg(map_reg_root[i], 4));
 		cmd.use_virtual_reg(v, index, index);
 	}
 }

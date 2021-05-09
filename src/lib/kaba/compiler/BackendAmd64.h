@@ -35,7 +35,7 @@ public:
 	void correct_return() {}
 
 
-	Array<int> param_regs_root;
+	Array<Asm::RegRoot> param_regs_root;
 	int max_xmm_params;
 };
 

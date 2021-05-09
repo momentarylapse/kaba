@@ -74,27 +74,7 @@ void Serializer::cmd_list_out(const string &stage, const string &comment, bool f
 void Serializer::vr_list_out() {
 	msg_write("---------- vr");
 	for (auto &r: cmd.virtual_reg)
-		msg_write(Asm::get_reg_name(r.reg) + format("  (%d)   %d -> %d", r.reg_root, r.first, r.last));
-}
-
-Asm::RegID Serializer::get_reg(int root, int size) {
-#if 1
-	if ((size != 1) and (size != 4) and (size != 8)) {
-		msg_write(msg_get_trace());
-		throw Asm::Exception("get_reg: bad reg size: " + i2s(size), "...", 0, 0);
-	}
-#endif
-	return Asm::RegResize[root][size];
-}
-
-Asm::RegID Serializer::reg_resize(Asm::RegID reg, int size) {
-	if (size == 2) {
-		msg_error("size = 2");
-		msg_write(msg_get_trace());
-		throw Asm::Exception("size=2", "kjlkjl", 0, 0);
-		//Asm::DoError("size=2");
-	}
-	return get_reg(Asm::RegRoot[(int)reg], size);
+		msg_write(Asm::get_reg_name(r.reg) + format("  (%d)   %d -> %d", (int)r.reg_root, r.first, r.last));
 }
 
 void Serializer::add_member_function_call(Function *cf, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
@@ -455,10 +435,10 @@ bool Serializer::param_untouched_in_interval(SerialNodeParam &p, int first, int 
 
 			// registers used? (may be part of the same meta-register)
 			if ((cmd.cmd[i].p[0].kind == NodeKind::REGISTER) or (cmd.cmd[i].p[0].kind == NodeKind::DEREF_REGISTER))
-				if (Asm::RegRoot[cmd.cmd[i].p[0].p] == Asm::RegRoot[p.p])
+				if (Asm::reg_root[cmd.cmd[i].p[0].p] == Asm::reg_root[p.p])
 					return false;
 			if ((cmd.cmd[i].p[1].kind == NodeKind::REGISTER) or (cmd.cmd[i].p[1].kind == NodeKind::DEREF_REGISTER))
-				if (Asm::RegRoot[cmd.cmd[i].p[1].p] == Asm::RegRoot[p.p])
+				if (Asm::reg_root[cmd.cmd[i].p[1].p] == Asm::reg_root[p.p])
 					return false;
 		}
 	}
@@ -762,8 +742,6 @@ void Serializer::serialize_function(Function *f) {
 
 
 // serialize
-
-	add_function_intro_params(f);
 
 	// function
 	serialize_block(f->block.get());

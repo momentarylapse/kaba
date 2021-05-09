@@ -7,6 +7,7 @@
 namespace Asm {
 	class InstructionWithParamsList;
 	class InstructionParam;
+	enum class RegID;
 }
 
 namespace kaba
@@ -109,11 +110,8 @@ public:
 
 	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	int fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void fc_end(int push_size, const SerialNodeParam &ret);
+	int function_call_push_params(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
-	void add_function_intro_params(Function *f);
-	void add_function_intro_frame(int stack_alloc_size);
 	void add_function_outro(Function *f);
 	SerialNodeParam serialize_parameter(Node *link, Block *block, int index);
 	void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index);
@@ -125,10 +123,6 @@ public:
 
 	SerialNodeParam param_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
 	SerialNodeParam param_deref_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
-
-	static Asm::RegID reg_resize(Asm::RegID reg, int size);
-
-	static Asm::RegID get_reg(int root, int size);
 };
 
 

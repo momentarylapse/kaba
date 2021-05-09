@@ -29,17 +29,15 @@ Serializer::~Serializer() {
 
 void Serializer::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(f, params, ret);
+	int push_size = function_call_push_params(f, params, ret);
 
 	SerialNodeParam fp = {NodeKind::FUNCTION, (int_p)f, -1, TypeFunctionP, 0};
 	cmd.add_cmd(Asm::INST_CALL, ret, fp); // the actual call
-
-	fc_end(push_size, ret);
 }
 
 void Serializer::add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	call_used = true;
-	int push_size = fc_begin(f, params, ret);
+	int push_size = function_call_push_params(f, params, ret);
 
 	auto t1 = add_temp(TypePointer);
 	auto t2 = add_temp(TypePointer);
@@ -48,23 +46,18 @@ void Serializer::add_virtual_function_call(Function *f, const Array<SerialNodePa
 	cmd.add_cmd(Asm::INST_ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, config.pointer_size * f->virtual_index)); // vtable + n
 	cmd.add_cmd(Asm::INST_MOV, t3, deref_temp(t2, TypeFunctionCodeP)); // vtable[n]
 	cmd.add_cmd(Asm::INST_CALL, ret, t3); // the actual call
-
-	fc_end(push_size, ret);
 }
 
-int Serializer::fc_begin(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+int Serializer::function_call_push_params(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	for (SerialNodeParam &p: params)
 		cmd.add_cmd(Asm::INST_PUSH, p);
 	return 0;
 }
 
-void Serializer::fc_end(int push_size, const SerialNodeParam &ret) {
-}
-
 void Serializer::add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 
 	call_used = true;
-	int push_size = fc_begin(nullptr, params, ret);
+	int push_size = function_call_push_params(nullptr, params, ret);
 
 	auto t1 = add_temp(TypePointer);
 	if (config.compile_os)
@@ -72,14 +65,6 @@ void Serializer::add_pointer_call(const SerialNodeParam &pointer, const Array<Se
 	else
 		cmd.add_cmd(Asm::INST_ADD, t1, pointer, param_imm(TypeInt, config.function_address_offset)); // function pointer
 	cmd.add_cmd(Asm::INST_CALL, ret, deref_temp(t1, TypeFunctionCodeP)); // the actual call
-
-	fc_end(push_size, ret);
-}
-
-void Serializer::add_function_intro_params(Function *f) {
-}
-
-void Serializer::add_function_intro_frame(int stack_alloc_size) {
 }
 
 void Serializer::add_function_outro(Function *f) {
@@ -94,28 +79,28 @@ SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int in
 	p.p = 0;
 	p.shift = 0;
 
-	if (link->kind == NodeKind::MEMORY){
+	if (link->kind == NodeKind::MEMORY) {
 		p.p = link->link_no;
-	}else if (link->kind == NodeKind::ADDRESS){
+	} else if (link->kind == NodeKind::ADDRESS) {
 		//p.p = link->link_no;
 		p.p = (int_p)&link->link_no;
 		p.kind = NodeKind::CONSTANT_BY_ADDRESS;
-	}else if (link->kind == NodeKind::VAR_GLOBAL){
+	} else if (link->kind == NodeKind::VAR_GLOBAL) {
 		p.p = link->link_no;
 		/*p.p = (int_p)link->as_global_p();
 		if (!p.p)
 			script->do_error_link("variable is not linkable: " + link->as_global()->name);
 		p.kind = NodeKind::MEMORY;*/
-	}else if (link->kind == NodeKind::VAR_LOCAL){
+	} else if (link->kind == NodeKind::VAR_LOCAL) {
 		p.p = link->link_no;
 		//p.p = link->as_local()->_offset;
 		//p.kind = NodeKind::LOCAL_MEMORY;
-	}else if (link->kind == NodeKind::LOCAL_MEMORY){
+	} else if (link->kind == NodeKind::LOCAL_MEMORY) {
 		p.p = link->link_no;
-	}else if (link->kind == NodeKind::LOCAL_ADDRESS){
+	} else if (link->kind == NodeKind::LOCAL_ADDRESS) {
 		SerialNodeParam param = param_local(TypePointer, link->link_no);
 		return add_reference(param, link->type);
-	}else if (link->kind == NodeKind::CONSTANT){
+	} else if (link->kind == NodeKind::CONSTANT) {
 		p.p = link->link_no;
 		/*p.p = (int_p)link->as_const()->address; // FIXME ....need a cleaner approach for compiling os...
 		if (config.compile_os)
@@ -127,13 +112,13 @@ SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int in
 			p.kind = NodeKind::MARKER;
 			p.p = fp->_label;
 		}*/
-	}else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::INLINE_CALL) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::POINTER_CALL) or (link->kind == NodeKind::STATEMENT)){
+	} else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::FUNCTION_CALL) or (link->kind == NodeKind::INLINE_CALL) or (link->kind == NodeKind::VIRTUAL_CALL) or (link->kind == NodeKind::POINTER_CALL) or (link->kind == NodeKind::STATEMENT)) {
 		p = serialize_node(link, block, index);
-	}else if (link->kind == NodeKind::REFERENCE){
+	} else if (link->kind == NodeKind::REFERENCE) {
 		auto param = serialize_parameter(link->params[0].get(), block, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return add_reference(param, link->type);
-	}else if (link->kind == NodeKind::DEREFERENCE){
+	} else if (link->kind == NodeKind::DEREFERENCE) {
 		auto param = serialize_parameter(link->params[0].get(), block, index);
 		/*if ((param.kind == KindVarLocal) or (param.kind == KindVarGlobal)){
 			p.type = param.type->sub_type;
@@ -142,10 +127,10 @@ SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int in
 			p.p = param.p;
 		}*/
 		return add_dereference(param, link->type);
-	}else if (link->kind == NodeKind::VAR_TEMP){
+	} else if (link->kind == NodeKind::VAR_TEMP) {
 		// only used by <new> operator
 		p.p = link->link_no;
-	}else{
+	} else {
 		do_error("unexpected type of parameter: " + kind2str(link->kind));
 	}
 	return p;
