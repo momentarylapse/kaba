@@ -75,7 +75,7 @@ public:
 	int64 _var_size;
 	int _logical_line_no;
 	int _exp_no;
-	void *address;
+	int64 address;
 	void *address_preprocess;
 	int _label;
 	Variable *__get_var(const string &name) const;

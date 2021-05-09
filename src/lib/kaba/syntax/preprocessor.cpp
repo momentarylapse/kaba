@@ -298,6 +298,10 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 	return false;
 }
 
+bool call_function(Function *f, void *ret, const Array<void*> &param) {
+	return call_function(f, (void*)(int_p)f->address, ret, param);
+}
+
 
 shared<Node> eval_function_call(SyntaxTree *tree, shared<Node> c, Function *f) {
 	db_out("??? " + f->signature());

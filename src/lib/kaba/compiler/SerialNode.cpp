@@ -42,7 +42,7 @@ string guess_constant(int64 c, Serializer *ser) {
 	if (c != 0) {
 		for (auto s: ser->syntax_tree->includes)
 			for (auto *f: s->syntax->functions)
-				if (c == (int_p)f->address)
+				if (c == f->address)
 					return "FUNC:" + f->long_name();
 	}
 

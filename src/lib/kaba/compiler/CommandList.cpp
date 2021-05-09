@@ -77,14 +77,15 @@ SerialNodeParam CommandList::_add_temp(const Class *t) {
 
 
 
-void CommandList::set_cmd_param(SerialNode &c, int param_index, const SerialNodeParam &p) {
+void CommandList::set_cmd_param(int index, int param_index, const SerialNodeParam &p) {
+	SerialNode &c = cmd[index];
 	c.p[param_index] = p;
 	if ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::DEREF_REGISTER))
 		if (p.vreg >= 0)
-			use_virtual_reg(p.vreg, c.index, c.index);
+			use_virtual_reg(p.vreg, index, index);
 	if ((p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::DEREF_VAR_TEMP)) {
 		int v = (int_p)p.p;
-		temp_var[v].use(c.index, c.index);
+		temp_var[v].use(index, index);
 		if ((c.inst == Asm::INST_LEA) and (param_index == 1)) {
 //			msg_error("ref a " + i2s(v));
 			temp_var[v].referenced = true;
@@ -122,9 +123,9 @@ void CommandList::add_cmd(int cond, int inst, const SerialNodeParam &p1, const S
 		}
 	}
 
-	set_cmd_param(cmd[next_cmd_index], 0, p1);
-	set_cmd_param(cmd[next_cmd_index], 1, p2);
-	set_cmd_param(cmd[next_cmd_index], 2, p3);
+	set_cmd_param(next_cmd_index, 0, p1);
+	set_cmd_param(next_cmd_index, 1, p2);
+	set_cmd_param(next_cmd_index, 2, p3);
 
 	next_cmd_index = cmd.num;
 }

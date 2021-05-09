@@ -460,7 +460,7 @@ Function* class_add_func(const string &name, const Class *return_type, void *fun
 	cur_package->syntax->functions.add(f);
 	f->address_preprocess = func;
 	if (config.allow_std_lib)
-		f->address = func;
+		f->address = (int_p)func;
 	cur_func = f;
 
 
@@ -944,7 +944,7 @@ void link_external(const string &name, void *pointer) {
 				if (names.num > 0)
 					if (n != names[1]._int())
 						continue;
-				f->address = pointer;
+				f->address = (int_p)pointer;
 			}
 }
 

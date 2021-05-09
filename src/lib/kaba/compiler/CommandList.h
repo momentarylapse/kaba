@@ -61,7 +61,7 @@ struct CommandList {
 	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
 	void add_cmd(int inst, const SerialNodeParam &p);
 	void add_cmd(int inst);
-	void set_cmd_param(SerialNode &c, int param_index, const SerialNodeParam &p);
+	void set_cmd_param(int index, int param_index, const SerialNodeParam &p);
 	void next_cmd_target(int index);
 	void remove_cmd(int index);
 	void remove_temp_var(int v);

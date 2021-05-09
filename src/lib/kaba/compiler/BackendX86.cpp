@@ -425,7 +425,7 @@ void BackendX86::correct_implement_commands() {
 }
 
 
-void BackendX86::fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendX86::function_call_post(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
 
 	if (push_size > 127)
@@ -454,10 +454,10 @@ void BackendX86::fc_end(int push_size, const Array<SerialNodeParam> &params, con
 
 void BackendX86::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret, f->is_static());
+	int push_size = function_call_pre(params, ret, f->is_static());
 
-	if (f->address) {
-		insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, (int_p)f->address)); // the actual call
+	if (f->address != 0) {
+		insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, f->address)); // the actual call
 		// function pointer will be shifted later...(asm translates to RIP-relative)
 	} else if (f->_label >= 0) {
 		insert_cmd(Asm::INST_CALL, param_marker(TypeInt, f->_label));
@@ -467,22 +467,22 @@ void BackendX86::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 	extend_reg_usage_to_call(cmd.next_cmd_index - 1);
 	mark_regs_busy_at_call(cmd.next_cmd_index - 1);
 
-	fc_end(push_size, params, ret);
+	function_call_post(push_size, params, ret);
 }
 
 void BackendX86::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret, true);
+	int push_size = function_call_pre(params, ret, true);
 
 	insert_cmd(Asm::INST_MOV, p_eax, fp);
 	insert_cmd(Asm::INST_CALL, p_eax);
 	extend_reg_usage_to_call(cmd.next_cmd_index - 1);
 	mark_regs_busy_at_call(cmd.next_cmd_index - 1);
 
-	fc_end(push_size, params, ret);
+	function_call_post(push_size, params, ret);
 }
 
-int BackendX86::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
+int BackendX86::function_call_pre(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
 	const Class *type = ret.get_type_save();
 
 	auto params = _params;
@@ -619,33 +619,18 @@ void BackendX86::do_mapping() {
 
 	serializer->cmd_list_out("map:c", "post deref t&l");
 
-	correct_unallowed_param_combis();
+	correct_params_indirect_in();
 
 	serializer->cmd_list_out("map:d", "unallowed");
 
-	/*MapReferencedTempVars();
-
-	//HandleDerefTemp();
-
-	DisentangleShiftedTempVars();
-
-	ResolveDerefTempAndLocal();
-
-	RemoveUnusedTempVars();
+	/*
 
 	if (config.allow_simplification){
 	SimplifyMovs();
 
 	SimplifyFPUStack();
 	}
-
-	MapTempVars();
-
-	ResolveDerefRegShift();
-
-	//ResolveDerefLocal();
-
-	CorrectUnallowedParamCombis();*/
+	*/
 
 
 	for (int i=0; i<cmd.cmd.num; i++)
@@ -654,20 +639,13 @@ void BackendX86::do_mapping() {
 	serializer->cmd_list_out("map:z", "end");
 }
 
-//#define debug_evil_corrections
-
-static void _test_param_mem(SerialNodeParam &p) {
-	//if (p.kind == NodeKind::ADDRESS)
-}
-
 void BackendX86::correct_unallowed_param_combis2(SerialNode &c) {
 	// push 8 bit -> push 32 bit
 	if (c.inst == Asm::INST_PUSH)
-		if (c.p[0].kind == NodeKind::REGISTER)
+		if (c.p[0].kind == NodeKind::REGISTER) {
 			c.p[0].p = reg_resize(c.p[0].p, config.pointer_size);
-
-	_test_param_mem(c.p[0]);
-	_test_param_mem(c.p[1]);
+			msg_write("PUSH REG");
+		}
 
 	if (c.inst == Asm::INST_CMP)
 		if ((c.p[1].kind == NodeKind::IMMEDIATE) and (c.p[1].type->size == 8)) {
@@ -675,72 +653,6 @@ void BackendX86::correct_unallowed_param_combis2(SerialNode &c) {
 				do_error("cmp immediate > 32bit");
 			c.p[1].type = TypeInt;
 		}
-
-
-	// FIXME
-	// evil hack to allow inconsistent param types (in address shifts)
-	if (config.instruction_set == Asm::InstructionSet::AMD64) {
-		if ((c.inst == Asm::INST_ADD) or (c.inst == Asm::INST_MOV)) {
-			if ((c.p[0].kind == NodeKind::REGISTER) and (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS)){
-				// TODO: should become an optimization if value fits into 32 bit...
-				/*if (c.p[0].type->is_pointer){
-#ifdef debug_evil_corrections
-					msg_write("----evil resize a");
-					msg_write(c.str());
-#endif
-					c.p[0].type = TypeReg32;
-					c.p[0].p = reg_resize(c.p[0].p, 4);
-#ifdef debug_evil_corrections
-					msg_write(c.str());
-#endif
-				}*/
-			}
-			if ((c.p[0].type->size == 8) and (c.p[1].type->size == 4)) {
-				/*if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
-#ifdef debug_evil_corrections
-					msg_write("----evil resize b");
-					msg_write(c.str());
-#endif
-					c.p[0].type = c.p[1].type;
-					c.p[0].p = (char*)(long)reg_resize((long)c.p[0].p, c.p[1].type->size);
-#ifdef debug_evil_corrections
-					msg_write(c.str());
-#endif
-				}else*/ if (c.p[1].kind == NodeKind::REGISTER) {
-#ifdef debug_evil_corrections
-					msg_write("----evil resize c");
-					msg_write(c.str());
-#endif
-					c.p[1].type = c.p[0].type;
-					c.p[1].p = reg_resize(c.p[1].p, c.p[0].type->size);
-#ifdef debug_evil_corrections
-					msg_write(c.str());
-#endif
-				}
-			}
-			if ((c.p[0].type->size < 8) and (c.p[1].type->size == 8)) {
-				if ((c.p[0].kind == NodeKind::REGISTER) and ((c.p[1].kind == NodeKind::REGISTER) or (c.p[1].kind == NodeKind::DEREF_REGISTER))) {
-#ifdef debug_evil_corrections
-					msg_write("----evil resize d");
-					msg_write(c.str());
-#endif
-					c.p[0].type = c.p[1].type;
-					c.p[0].p = reg_resize(c.p[0].p, c.p[1].type->size);
-#ifdef debug_evil_corrections
-					msg_write(c.str());
-#endif
-				}
-			}
-			/*if (c.p[0].type->size > c.p[1].type->size){
-				msg_write("size ok");
-				if ((c.p[0].kind == KindRegister) and ((c.p[1].kind == KindRegister) or (c.p[1].kind == KindConstant) or (c.p[1].kind == KindRefToConst))){
-					msg_error("----evil resize");
-					c.p[0].type = c.p[1].type;
-					c.p[0].p = (char*)(long)Asm::RegResize[Asm::RegRoot[(long)c.p[0].p]][c.p[1].type->size];
-				}
-			}*/
-		}
-	}
 }
 
 inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &stackvar) {
@@ -864,31 +776,38 @@ inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &
 }
 
 // mov [0x..] [0x...]  ->  mov eax, [0x..]   mov [0x..] eax    (etc)
-void BackendX86::correct_unallowed_param_combis() {
+void BackendX86::correct_params_indirect_in() {
 	for (int i=cmd.cmd.num-1;i>=0;i--){
-		if (cmd.cmd[i].inst >= INST_MARKER)
+		auto &c = cmd.cmd[i];
+		if (c.inst >= INST_MARKER)
 			continue;
 
 		// bad?
-		if (param_combi_allowed(cmd.cmd[i].inst, cmd.cmd[i].p[0], cmd.cmd[i].p[1]))
+		if (param_combi_allowed(c.inst, c.p[0], c.p[1]))
 			continue;
 
-		// correct
-//		msg_write(format("correcting param combi  cmd=%d", i));
-		bool mov_first_param = (cmd.cmd[i].p[1].kind == NodeKind::NONE) or (cmd.cmd[i].p[0].kind == NodeKind::CONSTANT_BY_ADDRESS) or (cmd.cmd[i].p[0].kind == NodeKind::IMMEDIATE);
-		int p_index = mov_first_param ? 0 : 1;
-		SerialNodeParam p = cmd.cmd[i].p[p_index];
-		SerialNodeParam p2 = p;
+#if !defined(NDEBUG)
+		if ((c.p[0].kind == NodeKind::CONSTANT_BY_ADDRESS) or (c.p[0].kind == NodeKind::IMMEDIATE))
+			if (c.inst != Asm::INST_CMP)
+				do_error("output into const: " + c.str(serializer));
+#endif
 
-		//msg_error("correct");
-		//msg_write(p.type->name);
+		// correct
+		bool mov_first_param = (c.p[1].kind == NodeKind::NONE) or (c.p[0].kind == NodeKind::CONSTANT_BY_ADDRESS) or (c.p[0].kind == NodeKind::IMMEDIATE);
+		int p_index = mov_first_param ? 0 : 1;
+		SerialNodeParam p = c.p[p_index];
+
+#if !defined(NDEBUG)
 		if (p.type->name == "color")
 			do_error("color in assembler..." + serializer->cur_func->long_name());
+#endif
+
 		int reg = find_unused_reg(i, i, p.type->size);
-		p2 = param_vreg(p.type, reg);
+		auto p_reg = param_vreg(p.type, reg);
+
 		cmd.next_cmd_target(i);
-		insert_cmd(Asm::INST_MOV, p2, p);
-		cmd.set_cmd_param(cmd.cmd[i+1], p_index, p2);
+		insert_cmd(Asm::INST_MOV, p_reg, p); // prepare input into register
+		cmd.set_cmd_param(i+1, p_index, p_reg); // change input in original instruction
 		cmd.set_virtual_reg(reg, i, i + 1);
 	}
 	scan_temp_var_usage();
@@ -913,7 +832,7 @@ void BackendX86::solve_deref_temp_local(int c, int np, bool is_local) {
 	SerialNodeParam p_reg = param_vreg(type_pointer, reg);
 	SerialNodeParam p_deref_reg = param_deref_vreg(type_data, reg);
 
-	cmd.set_cmd_param(cmd.cmd[c], np, p_deref_reg);
+	cmd.set_cmd_param(c, np, p_deref_reg);
 
 	cmd.next_cmd_target(c);
 	insert_cmd(Asm::INST_MOV, p_reg, p);
@@ -982,8 +901,8 @@ void BackendX86::resolve_deref_temp_and_local() {
 			p2.kind = is_local2 ? NodeKind::LOCAL_MEMORY : NodeKind::VAR_TEMP;
 			p1.type = type_pointer;
 			p2.type = type_pointer;
-			cmd.set_cmd_param(cmd.cmd[i], 0, p_deref_reg2);
-			cmd.set_cmd_param(cmd.cmd[i], 1, p_reg);
+			cmd.set_cmd_param(i, 0, p_deref_reg2);
+			cmd.set_cmd_param(i, 1, p_reg);
 			int cmd_pos = i;
 
 			int r2_first = cmd_pos;

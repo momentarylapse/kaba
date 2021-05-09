@@ -348,7 +348,7 @@ void *Script::match_function(const string &name, const string &return_type, cons
 				if (just_analyse)
 					return (void*)(int_p)0xdeadbeaf;
 				else
-					return f->address;
+					return (void*)(int_p)f->address;
 			}
 		}
 
@@ -379,7 +379,7 @@ void *Script::match_class_function(const string &_class, bool allow_derived, con
 				if (just_analyse)
 					return (void*)(int_p)0xdeadbeaf;
 				else
-					return f->address;
+					return (void*)(int_p)f->address;
 			}
 		}
 	}

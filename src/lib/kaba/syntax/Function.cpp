@@ -62,7 +62,8 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	inline_no = InlineID::NONE;
 	virtual_index = -1;
 	num_slightly_hidden_vars = 0;
-	address = address_preprocess = nullptr;
+	address = 0;
+	address_preprocess = nullptr;
 	_label = -1;
 	needs_overriding = false;
 }

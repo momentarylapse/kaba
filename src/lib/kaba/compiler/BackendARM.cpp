@@ -648,6 +648,10 @@ void BackendARM::fc_end(int push_size, const Array<SerialNodeParam> &params, con
 	}
 }
 
+static bool reachable_arm(int64 a, void *b) {
+	return (abs((int_p)a - (int_p)b) < 30000000);
+}
+
 void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
 	int push_size = fc_begin(params, ret, f->is_static());
@@ -655,10 +659,10 @@ void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 	if ((f->owner() == script->syntax) and (!f->is_extern())) {
 		insert_cmd(Asm::INST_CALL, param_marker(TypePointer, f->_label));
 	} else {
-		if (!f->address)
+		if (f->address == 0)
 			script->do_error_link("could not link function " + f->long_name());
-		if (abs((int_p)f->address - (int_p)this->script->opcode) < 30000000) {
-			insert_cmd(Asm::INST_CALL, param_imm(TypePointer, (int_p)f->address)); // the actual call
+		if (reachable_arm(f->address, this->script->opcode)) {
+			insert_cmd(Asm::INST_CALL, param_imm(TypePointer, f->address)); // the actual call
 			// function pointer will be shifted later...
 		} else {
 
@@ -666,7 +670,7 @@ void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 			// really find a usable register...
 
 			int v = cmd.add_virtual_reg(Asm::REG_R4);//find_unused_reg(cmd.next_cmd_index-1, cmd.next_cmd_index-1, 4);
-			_to_register_32(param_lookup(TypePointer, add_global_ref(f->address)), 0, v);
+			_to_register_32(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), 0, v);
 			//insert_cmd(Asm::INST_MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
 			insert_cmd(Asm::INST_CALL, param_vreg(TypePointer, v));
 			cmd.set_virtual_reg(v, cmd.next_cmd_index-2, cmd.next_cmd_index-1);

@@ -13,7 +13,7 @@
 namespace kaba {
 
 
-bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param);
+bool call_function(Function *f, void *ret, const Array<void*> &param);
 
 Interpreter::Interpreter(Script *s) {
 	script = s;
@@ -146,7 +146,7 @@ int Interpreter::run_command(int index, SerialNode &n, Serializer *ser, Frame &f
 	} else if (n.inst == Asm::INST_CALL) {
 		auto *f = ((Function*)n.p[1].p);
 		//msg_write("CALL " + f->signature(TypeVoid));
-		if (f->address) {
+		if (f->address != 0) {
 			//msg_write("addr...");
 			//char rrr[64];
 
@@ -159,7 +159,7 @@ int Interpreter::run_command(int index, SerialNode &n, Serializer *ser, Frame &f
 				if (pt[i]->uses_call_by_reference())
 					call_params[i] = *(void**)call_params[i];
 
-			call_function(f, f->address, get_param(0), call_params);
+			call_function(f, get_param(0), call_params);
 		} else {
 			do_error("call non-addr");
 		}

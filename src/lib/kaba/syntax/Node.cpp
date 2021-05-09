@@ -269,7 +269,7 @@ Operator *Node::as_op() const {
 	return (Operator*)link_no;
 }
 void *Node::as_func_p() const {
-	return as_func()->address;
+	return (void*)as_func()->address;
 }
 
 // will be the address at runtime...(not the current location...)

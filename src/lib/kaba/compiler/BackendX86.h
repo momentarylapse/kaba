@@ -27,15 +27,11 @@ public:
 	virtual void implement_return(kaba::SerialNode &c, int i);
 	virtual void implement_mov_chunk(const SerialNodeParam &p1, const SerialNodeParam &p2, int size);
 
-	virtual int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
-	virtual void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	virtual int function_call_pre(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
+	virtual void function_call_post(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	virtual void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	virtual void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
-	/*void map();
-	void assemble();
-
-	void map_referenced_temp_vars_to_stack();*/
 
 	SerialNodeParam p_eax, p_eax_int, p_deref_eax;
 	SerialNodeParam p_rax;
@@ -63,7 +59,7 @@ public:
 	void try_map_temp_vars_to_registers();
 	void map_remaining_temp_vars_to_stack();
 	void resolve_deref_temp_and_local();
-	void correct_unallowed_param_combis();
+	void correct_params_indirect_in();
 	void correct_unallowed_param_combis2(SerialNode &node);
 
 	void add_stack_var(TempVar &v, SerialNodeParam &p);

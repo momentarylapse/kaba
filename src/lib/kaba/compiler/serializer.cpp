@@ -532,7 +532,7 @@ void Serializer::simplify_fpu_stack() {
 
 		// store directly into target
 //		msg_write(format("fpu (b)  var=%d first=%d last=%d", v, v.first, v.last));
-		cmd.set_cmd_param(cmd.cmd[v.first], 0, target);
+		cmd.set_cmd_param(v.first, 0, target);
 		cmd.move_param(target, v.last, v.first);
 		cmd.remove_cmd(v.last);
 		cmd.remove_temp_var(vi);
@@ -585,9 +585,9 @@ void Serializer::simplify_movs() {
 		
 //		msg_write(format("mov simplification allowed  v=%d first=%d last=%d", vi, v.first, v.last));
 		if (fld)
-			cmd.set_cmd_param(cmd.cmd[v.last], 0, source);
+			cmd.set_cmd_param(v.last, 0, source);
 		else
-			cmd.set_cmd_param(cmd.cmd[v.last], 1, source);
+			cmd.set_cmd_param(v.last, 1, source);
 		cmd.move_param(source, v.first, v.last);
 		cmd.remove_cmd(v.first);
 		cmd.remove_temp_var(vi);
@@ -1063,10 +1063,10 @@ void Script::compile_functions(char *oc, int &ocs) {
 	for (Function *f: syntax->functions) {
 		if (f->is_extern()) {
 			string name = f->cname(f->owner()->base_class);
-			f->address = get_external_link(format("%s:%d", name, f->num_params));
-			if (!f->address)
-				f->address = get_external_link(name);
-			if (!f->address)
+			f->address = (int_p)get_external_link(format("%s:%d", name, f->num_params));
+			if (f->address == 0)
+				f->address = (int_p)get_external_link(name);
+			if (f->address == 0)
 				do_error_link(format("external function '%s:%d' not linkable", name, f->num_params));
 		} else {
 			f->_label = list->create_label("_FUNC_" + i2s(func_no ++));
@@ -1106,7 +1106,7 @@ void Script::compile_functions(char *oc, int &ocs) {
 	// get function addresses
 	for (auto *f: syntax->functions)
 		if (!f->is_extern()) {
-			f->address = (void*)list->_label_value(f->_label);
+			f->address = list->_label_value(f->_label);
 			for (Block *b: f->all_blocks()) {
 				b->_start = (void*)list->_label_value(b->_label_start);
 				b->_end = (void*)list->_label_value(b->_label_end);

@@ -396,7 +396,7 @@ public:
 			if (!fn->is_static())
 				n ++;
 			f->write_str(decode_symbol_name(fn->cname(fn->owner()->base_class)) + ":" + i2s(n));
-			f->write_int((int_p)fn->address);
+			f->write_int(fn->address);
 		}
 		for (auto *v: weak(s->syntax->base_class->static_variables)) {
 			f->write_str(decode_symbol_name(v->name));

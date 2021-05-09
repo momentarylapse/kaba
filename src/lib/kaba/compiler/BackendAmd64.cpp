@@ -139,7 +139,7 @@ void BackendAmd64::implement_mov_chunk(const SerialNodeParam &p1, const SerialNo
 }
 
 
-void BackendAmd64::fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+void BackendAmd64::function_call_post(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	const Class *type = ret.get_type_save();
 
 	// return > 4b already got copied to [ret] by the function!
@@ -179,7 +179,7 @@ void BackendAmd64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 	}
 }
 
-static bool dist_fits_32bit(void *a, void *b) {
+static bool dist_fits_32bit(int64 a, void *b) {
 	int_p d = (int_p)a - (int_p)b;
 	if (d < 0)
 		d = -d;
@@ -188,16 +188,16 @@ static bool dist_fits_32bit(void *a, void *b) {
 
 void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret, f->is_static());
+	int push_size = function_call_pre(params, ret, f->is_static());
 
-	if (f->address) {
+	if (f->address != 0) {
 		if (dist_fits_32bit(f->address, script->opcode)) {
 			// 32bit call distance
-			insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, (int_p)f->address)); // the actual call
+			insert_cmd(Asm::INST_CALL, param_imm(TypeReg32, f->address)); // the actual call
 			// function pointer will be shifted later...(asm translates to RIP-relative)
 		} else {
 			// 64bit call distance
-			insert_cmd(Asm::INST_MOV, p_rax, param_imm(TypeReg64, (int_p)f->address));
+			insert_cmd(Asm::INST_MOV, p_rax, param_imm(TypeReg64, f->address));
 			insert_cmd(Asm::INST_CALL, p_rax);
 		}
 	} else if (f->_label >= 0) {
@@ -215,22 +215,22 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	extend_reg_usage_to_call(cmd.next_cmd_index - 1);
 	mark_regs_busy_at_call(cmd.next_cmd_index - 1);
 
-	fc_end(push_size, params, ret);
+	function_call_post(push_size, params, ret);
 }
 
 void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	serializer->call_used = true;
-	int push_size = fc_begin(params, ret, true);
+	int push_size = function_call_pre(params, ret, true);
 
 	insert_cmd(Asm::INST_MOV, p_rax, fp);
 	insert_cmd(Asm::INST_CALL, p_rax);
 	extend_reg_usage_to_call(cmd.next_cmd_index - 1);
 	mark_regs_busy_at_call(cmd.next_cmd_index - 1);
 
-	fc_end(push_size, params, ret);
+	function_call_post(push_size, params, ret);
 }
 
-int BackendAmd64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
+int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
 	const Class *type = ret.get_type_save();
 
 
@@ -445,8 +445,6 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 }
 
-
-//#define debug_evil_corrections
 
 
 // so far not used... x86 also implements both...
