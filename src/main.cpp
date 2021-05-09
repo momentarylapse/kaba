@@ -92,7 +92,7 @@ public:
 class KabaApp : public hui::Application {
 public:
 	KabaApp() :
-		hui::Application("kaba", "", 0)//hui::FLAG_LOAD_RESOURCE)
+		hui::Application("kaba", "", hui::FLAG_DONT_LOAD_RESOURCE)
 	{
 		set_property("name", AppName);
 		set_property("version", AppVersion);
