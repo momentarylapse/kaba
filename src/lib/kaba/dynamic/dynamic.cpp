@@ -1,7 +1,7 @@
 #include "dynamic.h"
 #include "../kaba.h"
-#include "common.h"
 #include "exception.h"
+#include "call.h"
 #include "../../any/any.h"
 
 namespace kaba {
@@ -12,7 +12,6 @@ extern const Class *TypeBoolList;
 extern const Class *TypeAny;
 extern const Class *TypePath;
 
-bool call_function(Function *f, void *ret, const Array<void*> &param);
 
 	
 	
