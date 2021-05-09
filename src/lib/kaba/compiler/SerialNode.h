@@ -12,6 +12,7 @@
 namespace Asm {
 	enum class RegID;
 	enum class ArmCond;
+	enum class InstID;
 }
 
 
@@ -38,7 +39,7 @@ extern const SerialNodeParam p_none;
 #define SERIAL_NODE_NUM_PARAMS	3
 
 struct SerialNode {
-	int inst;
+	Asm::InstID inst;
 	Asm::ArmCond cond;
 	SerialNodeParam p[SERIAL_NODE_NUM_PARAMS];
 	int index;
@@ -49,9 +50,9 @@ SerialNodeParam param_shift(const SerialNodeParam &param, int shift, const Class
 SerialNodeParam param_global(const Class *type, void *v);
 SerialNodeParam param_local(const Class *type, int offset);
 SerialNodeParam param_imm(const Class *type, int64 c);
-SerialNodeParam param_marker(const Class *type, int m);
-SerialNodeParam param_marker32(int m);
-SerialNodeParam param_deref_marker(const Class *type, int m);
+SerialNodeParam param_label(const Class *type, int m);
+SerialNodeParam param_label32(int m);
+SerialNodeParam param_deref_label(const Class *type, int m);
 SerialNodeParam param_preg(const Class *type, Asm::RegID reg);
 SerialNodeParam param_deref_preg(const Class *type, Asm::RegID reg);
 SerialNodeParam param_lookup(const Class *type, int ref);

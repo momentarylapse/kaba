@@ -68,7 +68,7 @@ public:
 
 	void assemble() override;
 
-	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
+	Asm::InstructionParam prepare_param(Asm::InstID inst, SerialNodeParam &p);
 	void assemble_cmd(SerialNode &c);
 
 	void mark_regs_busy_at_call(int index);

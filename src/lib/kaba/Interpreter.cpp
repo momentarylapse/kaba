@@ -93,57 +93,57 @@ int Interpreter::run_command(int index, SerialNode &n, Serializer *ser, Frame &f
 
 
 	msg_write("    " + n.str(ser));
-	if (n.inst == INST_MARKER) {
-	} else if (n.inst == Asm::INST_PUSH) {
+	if (n.inst == Asm::InstID::LABEL) {
+	} else if (n.inst == Asm::InstID::PUSH) {
 		call_params.add(get_param(0));
-	} else if (n.inst == Asm::INST_RET) {
+	} else if (n.inst == Asm::InstID::RET) {
 		return 10000000;
-	} else if (n.inst == Asm::INST_LEA) {
+	} else if (n.inst == Asm::InstID::LEA) {
 		*(void**)get_param(0) = get_param(1);
-	} else if (n.inst == Asm::INST_MOV) {
+	} else if (n.inst == Asm::InstID::MOV) {
 		memcpy(get_param(0), get_param(1), n.p[0].type->size);
 		//msg_write(frame.stack.head(16).hex());
-	} else if (n.inst == Asm::INST_MOVZX) {
+	} else if (n.inst == Asm::InstID::MOVZX) {
 		if (n.p[0].type->size < n.p[1].type->size)
 			memcpy(get_param(0), get_param(1), n.p[0].type->size);
 		else
 			do_error("movzx...");
-	} else if (n.inst == Asm::INST_ADD) {
+	} else if (n.inst == Asm::InstID::ADD) {
 		if (n.p[0].type == TypeInt)
 			*(int*)get_param(0) = *(int*)get_param(1) + *(int*)get_param(2);
 		else if (n.p[0].type == TypeInt64)
 			*(int64*)get_param(0) = *(int64*)get_param(1) + *(int64*)get_param(2);
 		else if (n.p[0].type == TypeChar)
 			*(char*)get_param(0) = *(char*)get_param(1) + *(char*)get_param(2);
-	} else if (n.inst == Asm::INST_SUB) {
+	} else if (n.inst == Asm::InstID::SUB) {
 		if (n.p[0].type == TypeInt)
 			*(int*)get_param(0) = *(int*)get_param(1) - *(int*)get_param(2);
 		else if (n.p[0].type == TypeInt64)
 			*(int64*)get_param(0) = *(int64*)get_param(1) - *(int64*)get_param(2);
 		else if (n.p[0].type == TypeChar)
 			*(char*)get_param(0) = *(char*)get_param(1) - *(char*)get_param(2);
-	} else if (n.inst == Asm::INST_IMUL) {
+	} else if (n.inst == Asm::InstID::IMUL) {
 		if (n.p[0].type == TypeInt)
 			*(int*)get_param(0) = *(int*)get_param(1) * *(int*)get_param(2);
 		else if (n.p[0].type == TypeInt64)
 			*(int64*)get_param(0) = *(int64*)get_param(1) * *(int64*)get_param(2);
 		else if (n.p[0].type == TypeChar)
 			*(char*)get_param(0) = *(char*)get_param(1) * *(char*)get_param(2);
-	} else if (n.inst == Asm::INST_IDIV) {
+	} else if (n.inst == Asm::InstID::IDIV) {
 		if (n.p[0].type == TypeInt)
 			*(int*)get_param(0) = *(int*)get_param(1) / *(int*)get_param(2);
 		else if (n.p[0].type == TypeInt64)
 			*(int64*)get_param(0) = *(int64*)get_param(1) / *(int64*)get_param(2);
 		else if (n.p[0].type == TypeChar)
 			*(char*)get_param(0) = *(char*)get_param(1) / *(char*)get_param(2);
-	} else if (n.inst == Asm::INST_MODULO) {
+	} else if (n.inst == Asm::InstID::MODULO) {
 		if (n.p[0].type == TypeInt)
 			*(int*)get_param(0) = *(int*)get_param(1) % *(int*)get_param(2);
 		else if (n.p[0].type == TypeInt64)
 			*(int64*)get_param(0) = *(int64*)get_param(1) % *(int64*)get_param(2);
 		else if (n.p[0].type == TypeChar)
 			*(char*)get_param(0) = *(char*)get_param(1) % *(char*)get_param(2);
-	} else if (n.inst == Asm::INST_CALL) {
+	} else if (n.inst == Asm::InstID::CALL) {
 		auto *f = ((Function*)n.p[1].p);
 		//msg_write("CALL " + f->signature(TypeVoid));
 		if (f->address != 0) {

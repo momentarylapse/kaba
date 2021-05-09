@@ -44,14 +44,14 @@ int TaskReturnOffset;
 void add_esp_add(Asm::InstructionWithParamsList *list,int d) {
 	if (d > 0) {
 		if (d > 120)
-			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 4));
+			list->add2(Asm::InstID::ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 4));
 		else
-			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 1));
+			list->add2(Asm::InstID::ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 1));
 	} else if (d < 0) {
 		if (d < -120)
-			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 4));
+			list->add2(Asm::InstID::SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 4));
 		else
-			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 1));
+			list->add2(Asm::InstID::SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 1));
 	}
 }
 
@@ -271,7 +271,7 @@ void Script::CompileOsEntryPoint() {
 			do_error("os entry point: no 'void main()' found");
 
 	// call
-	Asm::add_instruction(opcode, opcode_size, Asm::INST_CALL, Asm::param_imm(0, 4));
+	Asm::add_instruction(opcode, opcode_size, Asm::InstID::CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset = opcode_size;
 	OCORA = Asm::OCParam;
 	align_opcode();

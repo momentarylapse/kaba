@@ -8,6 +8,7 @@ namespace Asm {
 	class InstructionWithParamsList;
 	class InstructionParam;
 	enum class RegID;
+	enum class InstID;
 }
 
 namespace kaba
@@ -21,14 +22,8 @@ class Node;
 class Block;
 
 
-// high level instructions
-enum {
-	INST_MARKER = 10000,
-	INST_ASM,
-};
-
 struct LoopData {
-	int marker_continue, marker_break;
+	int label_continue, label_break;
 	int level, index;
 };
 
@@ -39,7 +34,7 @@ public:
 	~Serializer();
 
 	CommandList cmd;
-	int num_markers;
+	int num_labels;
 	Script *script;
 	SyntaxTree *syntax_tree;
 	Function *cur_func;
@@ -59,7 +54,7 @@ public:
 
 	void assemble_cmd(SerialNode &c);
 	void assemble_cmd_arm(SerialNode &c);
-	Asm::InstructionParam get_param(int inst, SerialNodeParam &p);
+	Asm::InstructionParam get_param(Asm::InstID inst, SerialNodeParam &p);
 
 	void serialize_function(Function *f);
 	void serialize_block(Block *block);

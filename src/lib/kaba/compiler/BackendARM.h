@@ -34,7 +34,7 @@ public:
 	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_intro_params(Function *f);
 	void assemble_cmd_arm(SerialNode &c);
-	Asm::InstructionParam prepare_param(int inst, SerialNodeParam &p);
+	Asm::InstructionParam prepare_param(Asm::InstID inst, SerialNodeParam &p);
 
 
 	int _reference_to_register_32(const SerialNodeParam &p, const Class *type = nullptr);

@@ -126,277 +126,279 @@ string get_reg_name(RegID reg) {
 }
 
 // rw1/2: 
-const InstructionName instruction_names[NUM_INSTRUCTION_NAMES + 1] = {
-	{INST_DB,		"db"},
-	{INST_DW,		"dw"},
-	{INST_DD,		"dd"},
-	{INST_DS,		"ds"},
-	{INST_DZ,		"dz"},
-	{INST_ALIGN_OPCODE,	":align:"},
+const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] = {
+	{InstID::DB,		"db"},
+	{InstID::DW,		"dw"},
+	{InstID::DD,		"dd"},
+	{InstID::DS,		"ds"},
+	{InstID::DZ,		"dz"},
+	{InstID::ALIGN_OPCODE,	":align:"},
 
-	{INST_ADD,		"add",		3, 1},
-	{INST_ADC,		"adc",		3, 1},
-	{INST_SUB,		"sub",		3, 1},
-	{INST_SBB,		"sbb",		3, 1},
-	{INST_INC,		"inc",		3},
-	{INST_DEC,		"dec",		3},
-	{INST_MUL,		"mul",		3, 1},
-	{INST_IMUL,		"imul",		3, 1},
-	{INST_DIV,		"div",		64+3, 64+1},
-	{INST_IDIV,		"idiv",		64+3, 64+1},
-	{INST_MOV,		"mov",		2, 1},
-	{INST_MOVZX,	"movzx",	2, 1},
-	{INST_MOVSX,	"movsx",	2, 1},
-	{INST_MOVSXD,	"movsxd",	2, 1},
-	{INST_AND,		"and",		3, 1},
-	{INST_OR,		"or",		3, 1},
-	{INST_XOR,		"xor",		3, 1},
-	{INST_NOT,		"not",		3},
-	{INST_NEG,		"neg",		3},
-	{INST_POP,		"pop",		2},
-	{INST_POPA,		"popa",		2},
-	{INST_PUSH,		"push",		1},
-	{INST_PUSHA,	"pusha",	1},
+	{InstID::ADD,		"add",		3, 1},
+	{InstID::ADC,		"adc",		3, 1},
+	{InstID::SUB,		"sub",		3, 1},
+	{InstID::SBB,		"sbb",		3, 1},
+	{InstID::INC,		"inc",		3},
+	{InstID::DEC,		"dec",		3},
+	{InstID::MUL,		"mul",		3, 1},
+	{InstID::IMUL,		"imul",		3, 1},
+	{InstID::DIV,		"div",		64+3, 64+1},
+	{InstID::IDIV,		"idiv",		64+3, 64+1},
+	{InstID::MOV,		"mov",		2, 1},
+	{InstID::MOVZX,	"movzx",	2, 1},
+	{InstID::MOVSX,	"movsx",	2, 1},
+	{InstID::MOVSXD,	"movsxd",	2, 1},
+	{InstID::AND,		"and",		3, 1},
+	{InstID::OR,		"or",		3, 1},
+	{InstID::XOR,		"xor",		3, 1},
+	{InstID::NOT,		"not",		3},
+	{InstID::NEG,		"neg",		3},
+	{InstID::POP,		"pop",		2},
+	{InstID::POPA,		"popa",		2},
+	{InstID::PUSH,		"push",		1},
+	{InstID::PUSHA,	"pusha",	1},
 	
-	{INST_JO,		"jo",		1},
-	{INST_JNO,		"jno",		1},
-	{INST_JB,		"jb",		1},
-	{INST_JNB,		"jnb",		1},
-	{INST_JZ,		"jz",		1},
-	{INST_JNZ,		"jnz",		1},
-	{INST_JBE,		"jbe",		1},
-	{INST_JNBE,		"jnbe",		1},
-	{INST_JS,		"js",		1},
-	{INST_JNS,		"jns",		1},
-	{INST_JP,		"jp",		1},
-	{INST_JNP,		"jnp",		1},
-	{INST_JL,		"jl",		1},
-	{INST_JNL,		"jnl",		1},
-	{INST_JLE,		"jle",		1},
-	{INST_JNLE,		"jnle",		1},
+	{InstID::JO,		"jo",		1},
+	{InstID::JNO,		"jno",		1},
+	{InstID::JB,		"jb",		1},
+	{InstID::JNB,		"jnb",		1},
+	{InstID::JZ,		"jz",		1},
+	{InstID::JNZ,		"jnz",		1},
+	{InstID::JBE,		"jbe",		1},
+	{InstID::JNBE,		"jnbe",		1},
+	{InstID::JS,		"js",		1},
+	{InstID::JNS,		"jns",		1},
+	{InstID::JP,		"jp",		1},
+	{InstID::JNP,		"jnp",		1},
+	{InstID::JL,		"jl",		1},
+	{InstID::JNL,		"jnl",		1},
+	{InstID::JLE,		"jle",		1},
+	{InstID::JNLE,		"jnle",		1},
 	
-	{INST_CMP,		"cmp",		1, 1},
+	{InstID::CMP,		"cmp",		1, 1},
 	
-	{INST_SETO,		"seto",		2},
-	{INST_SETNO,	"setno",	2},
-	{INST_SETB,		"setb",		2},
-	{INST_SETNB,	"setnb",	2},
-	{INST_SETZ,		"setz",		2},
-	{INST_SETNZ,	"setnz",	2},
-	{INST_SETBE,	"setbe",	2},
-	{INST_SETNBE,	"setnbe",	2},
-	{INST_SETS,		"sets",		2},
-	{INST_SETNS,	"setns",	2},
-	{INST_SETP,		"setp",		2},
-	{INST_SETNP,	"setnp",	2},
-	{INST_SETL,		"setl",		2},
-	{INST_SETNL,	"setnl",	2},
-	{INST_SETLE,	"setle",	2},
-	{INST_SETNLE,	"setnle",	2},
+	{InstID::SETO,		"seto",		2},
+	{InstID::SETNO,	"setno",	2},
+	{InstID::SETB,		"setb",		2},
+	{InstID::SETNB,	"setnb",	2},
+	{InstID::SETZ,		"setz",		2},
+	{InstID::SETNZ,	"setnz",	2},
+	{InstID::SETBE,	"setbe",	2},
+	{InstID::SETNBE,	"setnbe",	2},
+	{InstID::SETS,		"sets",		2},
+	{InstID::SETNS,	"setns",	2},
+	{InstID::SETP,		"setp",		2},
+	{InstID::SETNP,	"setnp",	2},
+	{InstID::SETL,		"setl",		2},
+	{InstID::SETNL,	"setnl",	2},
+	{InstID::SETLE,	"setle",	2},
+	{InstID::SETNLE,	"setnle",	2},
 	
-	{INST_SLDT,		"sldt"},
-	{INST_STR,		"str"},
-	{INST_LLDT,		"lldt"},
-	{INST_LTR,		"ltr"},
-	{INST_VERR,		"verr"},
-	{INST_VERW,		"verw"},
-	{INST_SGDT,		"sgdt"},
-	{INST_SIDT,		"sidt"},
-	{INST_LGDT,		"lgdt"},
-	{INST_LIDT,		"lidt"},
-	{INST_SMSW,		"smsw"},
-	{INST_LMSW,		"lmsw"},
+	{InstID::SLDT,		"sldt"},
+	{InstID::STR,		"str"},
+	{InstID::LLDT,		"lldt"},
+	{InstID::LTR,		"ltr"},
+	{InstID::VERR,		"verr"},
+	{InstID::VERW,		"verw"},
+	{InstID::SGDT,		"sgdt"},
+	{InstID::SIDT,		"sidt"},
+	{InstID::LGDT,		"lgdt"},
+	{InstID::LIDT,		"lidt"},
+	{InstID::SMSW,		"smsw"},
+	{InstID::LMSW,		"lmsw"},
 	
-	{INST_TEST,		"test",		1, 1},
-	{INST_XCHG,		"xchg",		3, 3},
-	{INST_LEA,		"lea", 		32+2, 32+1},
-	{INST_NOP,		"nop"},
-	{INST_CBW_CWDE,	"cbw/cwde"},
-	{INST_CGQ_CWD,	"cgq/cwd"},
-	{INST_MOVS_DS_ESI_ES_EDI,	"movs_ds:esi,es:edi"},
-	{INST_MOVS_B_DS_ESI_ES_EDI,	"movs.b_ds:esi,es:edi"},
-	{INST_CMPS_DS_ESI_ES_EDI,	"cmps_ds:esi,es:edi"},
-	{INST_CMPS_B_DS_ESI_ES_EDI,	"cmps.b_ds:esi,es:edi"},
-	{INST_ROL,		"rol",		3, 1},
-	{INST_ROR,		"ror",		3, 1},
-	{INST_RCL,		"rcl",		3, 1},
-	{INST_RCR,		"rcr",		3, 1},
-	{INST_SHL,		"shl",		3, 1},
-	{INST_SHR,		"shr",		3, 1},
-	{INST_SAR,		"sar",		3, 1},
-	{INST_RET,		"ret",		1},
-	{INST_LEAVE,	"leave",	1},
-	{INST_RET_FAR,	"ret_far",	1},
-	{INST_INT,		"int",		1},
-	{INST_IRET,		"iret",		1},
+	{InstID::TEST,		"test",		1, 1},
+	{InstID::XCHG,		"xchg",		3, 3},
+	{InstID::LEA,		"lea", 		32+2, 32+1},
+	{InstID::NOP,		"nop"},
+	{InstID::CBW_CWDE,	"cbw/cwde"},
+	{InstID::CGQ_CWD,	"cgq/cwd"},
+	{InstID::MOVS_DS_ESI_ES_EDI,	"movs_ds:esi,es:edi"},
+	{InstID::MOVS_B_DS_ESI_ES_EDI,	"movs.b_ds:esi,es:edi"},
+	{InstID::CMPS_DS_ESI_ES_EDI,	"cmps_ds:esi,es:edi"},
+	{InstID::CMPS_B_DS_ESI_ES_EDI,	"cmps.b_ds:esi,es:edi"},
+	{InstID::ROL,		"rol",		3, 1},
+	{InstID::ROR,		"ror",		3, 1},
+	{InstID::RCL,		"rcl",		3, 1},
+	{InstID::RCR,		"rcr",		3, 1},
+	{InstID::SHL,		"shl",		3, 1},
+	{InstID::SHR,		"shr",		3, 1},
+	{InstID::SAR,		"sar",		3, 1},
+	{InstID::RET,		"ret",		1},
+	{InstID::LEAVE,	"leave",	1},
+	{InstID::RET_FAR,	"ret_far",	1},
+	{InstID::INT,		"int",		1},
+	{InstID::IRET,		"iret",		1},
 	
 	// x87
-	{INST_FADD,		"fadd",		64+32+1},
-	{INST_FMUL,		"fmul",		64+32+1},
-	{INST_FSUB,		"fsub",		64+32+1},
-	{INST_FDIV,		"fdiv",		64+32+1},
-	{INST_FLD,		"fld",		64+32+1},
-	{INST_FLD1,		"fld1",		64+32+0},
-	{INST_FLDZ,		"fldz",		64+32+0},
-	{INST_FLDPI,	"fldpi",	64+32+0},
-	{INST_FXCH,		"fxch",		64+32+3, 64+32+3},
-	{INST_FST,		"fst",		64+32+2},
-	{INST_FSTP,		"fstp",		64+32+2},
-	{INST_FILD,		"fild",		64+32+1},
-	{INST_FADDP,	"faddp",	64+32+1},
-	{INST_FMULP,	"fmulp",	64+32+1},
-	{INST_FSUBP,	"fsubp",	64+32+1},
-	{INST_FDIVP,	"fdivp",	64+32+1},
-	{INST_FLDCW,	"fldcw",	64+32+1},
-	{INST_FNSTCW,	"fnstcw",	64+32+2},
-	{INST_FNSTSW,	"fnstsw",	64+32+2},
-	{INST_FISTP,	"fistp",	64+32+2},
-	{INST_FSQRT,	"fsqrt",	64+32+3},
-	{INST_FSIN,		"fsin",		64+32+3},
-	{INST_FCOS,		"fcos",		64+32+3},
-	{INST_FPTAN,	"fptan",	64+32+3},
-	{INST_FPATAN,	"fpatan",	64+32+3},
-	{INST_FYL2X,	"fyl2x",	64+32+3},
-	{INST_FCHS,		"fchs",		64+32+3},
-	{INST_FABS,		"fabs",		64+32+3},
-	{INST_FUCOMPP,	"fucompp",	64+32+1, 64+32+1},
+	{InstID::FADD,		"fadd",		64+32+1},
+	{InstID::FMUL,		"fmul",		64+32+1},
+	{InstID::FSUB,		"fsub",		64+32+1},
+	{InstID::FDIV,		"fdiv",		64+32+1},
+	{InstID::FLD,		"fld",		64+32+1},
+	{InstID::FLD1,		"fld1",		64+32+0},
+	{InstID::FLDZ,		"fldz",		64+32+0},
+	{InstID::FLDPI,	"fldpi",	64+32+0},
+	{InstID::FXCH,		"fxch",		64+32+3, 64+32+3},
+	{InstID::FST,		"fst",		64+32+2},
+	{InstID::FSTP,		"fstp",		64+32+2},
+	{InstID::FILD,		"fild",		64+32+1},
+	{InstID::FADDP,	"faddp",	64+32+1},
+	{InstID::FMULP,	"fmulp",	64+32+1},
+	{InstID::FSUBP,	"fsubp",	64+32+1},
+	{InstID::FDIVP,	"fdivp",	64+32+1},
+	{InstID::FLDCW,	"fldcw",	64+32+1},
+	{InstID::FNSTCW,	"fnstcw",	64+32+2},
+	{InstID::FNSTSW,	"fnstsw",	64+32+2},
+	{InstID::FISTP,	"fistp",	64+32+2},
+	{InstID::FSQRT,	"fsqrt",	64+32+3},
+	{InstID::FSIN,		"fsin",		64+32+3},
+	{InstID::FCOS,		"fcos",		64+32+3},
+	{InstID::FPTAN,	"fptan",	64+32+3},
+	{InstID::FPATAN,	"fpatan",	64+32+3},
+	{InstID::FYL2X,	"fyl2x",	64+32+3},
+	{InstID::FCHS,		"fchs",		64+32+3},
+	{InstID::FABS,		"fabs",		64+32+3},
+	{InstID::FUCOMPP,	"fucompp",	64+32+1, 64+32+1},
 	
-	{INST_LOOP,		"loop"},
-	{INST_LOOPE,	"loope"},
-	{INST_LOOPNE,	"loopne"},
-	{INST_IN,		"in",		2, 1},
-	{INST_OUT,		"out",		1, 1},
+	{InstID::LOOP,		"loop"},
+	{InstID::LOOPE,	"loope"},
+	{InstID::LOOPNE,	"loopne"},
+	{InstID::IN,		"in",		2, 1},
+	{InstID::OUT,		"out",		1, 1},
 	
-	{INST_CALL,		"call",		1},
-	{INST_CALL_FAR,	"call_far", 1},
-	{INST_JMP,		"jmp",		1},
-	{INST_JMP_FAR,	"jmp_far",		1},
-	{INST_LOCK,		"lock"},
-	{INST_REP,		"rep"},
-	{INST_REPNE,	"repne"},
-	{INST_HLT,		"hlt"},
-	{INST_CMC,		"cmc"},
-	{INST_CLC,		"clc"},
-	{INST_STC,		"stc"},
-	{INST_CLI,		"cli"},
-	{INST_STI,		"sti"},
-	{INST_CLD,		"cld"},
-	{INST_STD,		"std"},
+	{InstID::CALL,		"call",		1},
+	{InstID::CALL_FAR,	"call_far", 1},
+	{InstID::JMP,		"jmp",		1},
+	{InstID::JMP_FAR,	"jmp_far",		1},
+	{InstID::LOCK,		"lock"},
+	{InstID::REP,		"rep"},
+	{InstID::REPNE,	"repne"},
+	{InstID::HLT,		"hlt"},
+	{InstID::CMC,		"cmc"},
+	{InstID::CLC,		"clc"},
+	{InstID::STC,		"stc"},
+	{InstID::CLI,		"cli"},
+	{InstID::STI,		"sti"},
+	{InstID::CLD,		"cld"},
+	{InstID::STD,		"std"},
 
 	// sse
-	{INST_MOVSS,  "movss",  64+3, 64+1},
-	{INST_MOVSD,  "movsd",  64+3, 64+1},
-	{INST_MOVUPS, "movups", 64+3, 64+1},
-	{INST_MOVAPS, "movaps", 64+3, 64+1},
-	{INST_MOVLPS, "movlps", 64+3, 64+1},
-	{INST_MOVHPS, "movhps", 64+3, 64+1},
-	{INST_ADDSS,  "addss",  64+3, 64+1},
-	{INST_ADDSD,  "addsd",  64+3, 64+1},
-	{INST_ADDPS,  "addps",  64+3, 64+1},
-	{INST_SUBSS,  "subss",  64+3, 64+1},
-	{INST_SUBSD,  "subsd",  64+3, 64+1},
-	{INST_MULSS,  "mulss",  64+3, 64+1},
-	{INST_MULSD,  "mulsd",  64+3, 64+1},
-	{INST_DIVSS,  "divss",  64+3, 64+1},
-	{INST_DIVSD,  "divsd",  64+3, 64+1},
-	{INST_SQRTSS, "sqrtss", 64+3, 64+1},
-	{INST_SQRTSD, "sqrtsd", 64+3, 64+1},
-	{INST_MINSS,  "minss",  64+3, 64+1},
-	{INST_MINSD,  "minsd",  64+3, 64+1},
-	{INST_MAXSS,  "maxss",  64+3, 64+1},
-	{INST_MAXSD,  "maxsd",  64+3, 64+1},
-	{INST_CVTSS2SD,  "cvtss2sd",  64+3, 64+1},
-	{INST_CVTSD2SS,  "cvtsd2ss",  64+3, 64+1},
-	{INST_CVTTSS2SI, "cvttss2si", 64+3, 64+1},
-	{INST_CVTTSD2SI, "cvttsd2si", 64+3, 64+1},
-	{INST_CVTSI2SS,  "cvtsi2ss",  64+3, 64+1},
-	{INST_CVTSI2SD,  "cvtsi2sd",  64+3, 64+1},
-	{INST_COMISS,    "comiss",    64+3, 64+1},
-	{INST_COMISD,    "comisd",    64+3, 64+1},
-	{INST_UCOMISS,   "ucomiss",   64+3, 64+1},
-	{INST_UCOMISD,   "ucomisd",   64+3, 64+1},
+	{InstID::MOVSS,  "movss",  64+3, 64+1},
+	{InstID::MOVSD,  "movsd",  64+3, 64+1},
+	{InstID::MOVUPS, "movups", 64+3, 64+1},
+	{InstID::MOVAPS, "movaps", 64+3, 64+1},
+	{InstID::MOVLPS, "movlps", 64+3, 64+1},
+	{InstID::MOVHPS, "movhps", 64+3, 64+1},
+	{InstID::ADDSS,  "addss",  64+3, 64+1},
+	{InstID::ADDSD,  "addsd",  64+3, 64+1},
+	{InstID::ADDPS,  "addps",  64+3, 64+1},
+	{InstID::SUBSS,  "subss",  64+3, 64+1},
+	{InstID::SUBSD,  "subsd",  64+3, 64+1},
+	{InstID::MULSS,  "mulss",  64+3, 64+1},
+	{InstID::MULSD,  "mulsd",  64+3, 64+1},
+	{InstID::DIVSS,  "divss",  64+3, 64+1},
+	{InstID::DIVSD,  "divsd",  64+3, 64+1},
+	{InstID::SQRTSS, "sqrtss", 64+3, 64+1},
+	{InstID::SQRTSD, "sqrtsd", 64+3, 64+1},
+	{InstID::MINSS,  "minss",  64+3, 64+1},
+	{InstID::MINSD,  "minsd",  64+3, 64+1},
+	{InstID::MAXSS,  "maxss",  64+3, 64+1},
+	{InstID::MAXSD,  "maxsd",  64+3, 64+1},
+	{InstID::CVTSS2SD,  "cvtss2sd",  64+3, 64+1},
+	{InstID::CVTSD2SS,  "cvtsd2ss",  64+3, 64+1},
+	{InstID::CVTTSS2SI, "cvttss2si", 64+3, 64+1},
+	{InstID::CVTTSD2SI, "cvttsd2si", 64+3, 64+1},
+	{InstID::CVTSI2SS,  "cvtsi2ss",  64+3, 64+1},
+	{InstID::CVTSI2SD,  "cvtsi2sd",  64+3, 64+1},
+	{InstID::COMISS,    "comiss",    64+3, 64+1},
+	{InstID::COMISD,    "comisd",    64+3, 64+1},
+	{InstID::UCOMISS,   "ucomiss",   64+3, 64+1},
+	{InstID::UCOMISD,   "ucomisd",   64+3, 64+1},
 
 	// amd64
-	{INST_SYSCALL,	"syscall"},
-	{INST_SYSRET,	"sysret"},
-	{INST_SYSENTER,	"sysenter"},
-	{INST_SYSEXIT,	"sysexit"},
+	{InstID::SYSCALL,	"syscall"},
+	{InstID::SYSRET,	"sysret"},
+	{InstID::SYSENTER,	"sysenter"},
+	{InstID::SYSEXIT,	"sysexit"},
 
-	{INST_B,		"b"},
-	{INST_BL,		"bl"},
-	{INST_BLX,		"blx"},
+	{InstID::B,		"b"},
+	{InstID::BL,		"bl"},
+	{InstID::BLX,		"blx"},
 
-	{INST_MULS, "muls"},
-	{INST_ADDS, "adds"},
-	{INST_SUBS, "subs"},
-	{INST_RSBS, "rsbs"},
-	{INST_ADCS, "adcs"},
-	{INST_SBCS, "sbcs"},
-	{INST_RSCS, "rscs"},
-	{INST_ANDS, "ands"},
-	{INST_BICS, "bics"},
-	{INST_XORS, "xors"},
-	{INST_ORS, "ors"},
-	{INST_MOVS, "movs"},
-	{INST_MVNS, "movns"},
+	{InstID::MULS, "muls"},
+	{InstID::ADDS, "adds"},
+	{InstID::SUBS, "subs"},
+	{InstID::RSBS, "rsbs"},
+	{InstID::ADCS, "adcs"},
+	{InstID::SBCS, "sbcs"},
+	{InstID::RSCS, "rscs"},
+	{InstID::ANDS, "ands"},
+	{InstID::BICS, "bics"},
+	{InstID::XORS, "xors"},
+	{InstID::ORS, "ors"},
+	{InstID::MOVS, "movs"},
+	{InstID::MVNS, "movns"},
 
-	{INST_LDR,		"ldr"},
-	{INST_LDRB,		"ldrb"},
+	{InstID::LDR,		"ldr"},
+	{InstID::LDRB,		"ldrb"},
 //	{inst_str,		"str"},
-	{INST_STRB,		"strb"},
+	{InstID::STRB,		"strb"},
 
-	{INST_LDMIA,		"ldmia"},
-	{INST_LDMIB,		"ldmib"},
-	{INST_LDMDA,		"ldmda"},
-	{INST_LDMDB,		"ldmdb"},
-	{INST_STMIA,		"stmia"},
-	{INST_STMIB,		"stmib"},
-	{INST_STMDA,		"stmda"},
-	{INST_STMDB,		"stmdb"},
+	{InstID::LDMIA,		"ldmia"},
+	{InstID::LDMIB,		"ldmib"},
+	{InstID::LDMDA,		"ldmda"},
+	{InstID::LDMDB,		"ldmdb"},
+	{InstID::STMIA,		"stmia"},
+	{InstID::STMIB,		"stmib"},
+	{InstID::STMDA,		"stmda"},
+	{InstID::STMDB,		"stmdb"},
 
-	{INST_RSB,	"rsb"},
-	{INST_SBC,	"sbc"},
-	{INST_RSC,	"rsc"},
-	{INST_TST,	"tst"},
-	{INST_TEQ,	"teq"},
-	{INST_CMN,	"cmn"},
-	{INST_BIC,	"bic"},
-	{INST_MVN,	"mvn"},
+	{InstID::RSB,	"rsb"},
+	{InstID::SBC,	"sbc"},
+	{InstID::RSC,	"rsc"},
+	{InstID::TST,	"tst"},
+	{InstID::TEQ,	"teq"},
+	{InstID::CMN,	"cmn"},
+	{InstID::BIC,	"bic"},
+	{InstID::MVN,	"mvn"},
 
 
 	// ARM float
-	{INST_FMACS,	"fmacs"},
-	{INST_FNMACS,	"fnmacs"},
-	{INST_FMSCS,	"fmscs"},
-	{INST_FNMSCS,	"fnmscs"},
-	{INST_FMULS,	"fmuls"},
-	{INST_FNMULS,	"fnmuls"},
-	{INST_FADDS,	"fadds"},
-	{INST_FSUBS,	"fsubs"},
-	{INST_FDIVS,	"fdivs"},
-	{INST_FCPYS,	"fcpys"},
-	{INST_FABSS,	"fabss"},
-	{INST_FNEGS,	"fnegs"},
-	{INST_FSQRTS,	"fsqrts"},
-	{INST_FCMPS,	"fcmps"},
-	{INST_FCMPES,	"fcmpes"},
-	{INST_FCMPZS,	"fcmpzs"},
-	{INST_FCMPEZS,	"fcmpezs"},
-	{INST_CVTDS,	"cvtds"},
-	{INST_FTOUIS,	"ftouis"},
-	{INST_FTOUIZS,	"ftouizs"},
-	{INST_FTOSIS,	"ftosis"},
-	{INST_FTOSIZS,	"ftosizs"},
-	{INST_FUITOS,	"fuitos"},
-	{INST_FSITOS,	"fsitos"},
-	{INST_FMRS,	"fmrs"},
-	{INST_FMSR,	"fmsr"},
-	{INST_FLDS,	"flds"},
-	{INST_FSTS,	"fsts"},
-	
-	{INST_MODULO, "modulo"},
+	{InstID::FMACS,	"fmacs"},
+	{InstID::FNMACS,	"fnmacs"},
+	{InstID::FMSCS,	"fmscs"},
+	{InstID::FNMSCS,	"fnmscs"},
+	{InstID::FMULS,	"fmuls"},
+	{InstID::FNMULS,	"fnmuls"},
+	{InstID::FADDS,	"fadds"},
+	{InstID::FSUBS,	"fsubs"},
+	{InstID::FDIVS,	"fdivs"},
+	{InstID::FCPYS,	"fcpys"},
+	{InstID::FABSS,	"fabss"},
+	{InstID::FNEGS,	"fnegs"},
+	{InstID::FSQRTS,	"fsqrts"},
+	{InstID::FCMPS,	"fcmps"},
+	{InstID::FCMPES,	"fcmpes"},
+	{InstID::FCMPZS,	"fcmpzs"},
+	{InstID::FCMPEZS,	"fcmpezs"},
+	{InstID::CVTDS,	"cvtds"},
+	{InstID::FTOUIS,	"ftouis"},
+	{InstID::FTOUIZS,	"ftouizs"},
+	{InstID::FTOSIS,	"ftosis"},
+	{InstID::FTOSIZS,	"ftosizs"},
+	{InstID::FUITOS,	"fuitos"},
+	{InstID::FSITOS,	"fsitos"},
+	{InstID::FMRS,	"fmrs"},
+	{InstID::FMSR,	"fmsr"},
+	{InstID::FLDS,	"flds"},
+	{InstID::FSTS,	"fsts"},
 
-	{-1,			"???"}
+	{InstID::MODULO, "modulo"},
+	{InstID::LABEL, "-label-"},
+	{InstID::ASM, "-asm-"},
+
+	{InstID::INVALID,			"???"}
 };
 
 
@@ -504,7 +506,7 @@ InstructionParam param_deref_label(int64 value, int size) {
 	return p;
 }
 
-void InstructionWithParamsList::add_arm(ArmCond cond, int inst, const InstructionParam &p1 = param_none, const InstructionParam &p2, const InstructionParam &p3) {
+void InstructionWithParamsList::add_arm(ArmCond cond, InstID inst, const InstructionParam &p1 = param_none, const InstructionParam &p2, const InstructionParam &p3) {
 	InstructionWithParams i;
 	i.inst = inst;
 	i.condition = cond;
@@ -516,7 +518,7 @@ void InstructionWithParamsList::add_arm(ArmCond cond, int inst, const Instructio
 	add(i);
 }
 
-void InstructionWithParamsList::add2(int inst, const InstructionParam &p1, const InstructionParam &p2) {
+void InstructionWithParamsList::add2(InstID inst, const InstructionParam &p1, const InstructionParam &p2) {
 	InstructionWithParams i;
 	i.inst = inst;
 	i.condition = ArmCond::ALWAYS;
@@ -676,14 +678,14 @@ void InstructionParamFuzzy::print() const {
 	msg_write(t);
 }
 
-const string get_instruction_name(int inst) {
-	if ((inst >= 0) and (inst < NUM_INSTRUCTION_NAMES))
-		return Asm::instruction_names[inst].name;
+const string get_instruction_name(InstID inst) {
+	if (((int)inst >= 0) and ((int)inst < (int)InstID::NUM_INSTRUCTION_NAMES))
+		return Asm::instruction_names[(int)inst].name;
 	return "???";
 }
 
-void get_instruction_param_flags(int inst, bool &p1_read, bool &p1_write, bool &p2_read, bool &p2_write) {
-	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
+void get_instruction_param_flags(InstID inst, bool &p1_read, bool &p1_write, bool &p2_read, bool &p2_write) {
+	for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
 		if (instruction_names[i].inst == inst) {
 			p1_read = ((instruction_names[i].rw1 & 1) > 0);
 			p1_write = ((instruction_names[i].rw1 & 2) > 0);
@@ -692,15 +694,15 @@ void get_instruction_param_flags(int inst, bool &p1_read, bool &p1_write, bool &
 		}
 }
 
-bool get_instruction_allow_const(int inst) {
-	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
+bool get_instruction_allow_const(InstID inst) {
+	for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
 		if (instruction_names[i].inst == inst)
 			return ((instruction_names[i].rw1 & 64) == 0);
 	return false;
 }
 
-bool get_instruction_allow_gen_reg(int inst) {
-	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
+bool get_instruction_allow_gen_reg(InstID inst) {
+	for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
 		if (instruction_names[i].inst == inst)
 			return ((instruction_names[i].rw1 & 32) == 0);
 	return false;
@@ -738,9 +740,10 @@ void init(InstructionSet set) {
 			reg_from_root[i][j] = RegID::INVALID;
 
 
-	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
-		if (instruction_names[i].inst != i)
-			msg_error(string(instruction_names[i].name) + "  " + i2s(instruction_names[i].inst) + "  !=   " + i2s(i));
+	// self check
+	for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
+		if (instruction_names[i].inst != (InstID)i)
+			msg_error(string(instruction_names[i].name) + "  " + i2s((int)instruction_names[i].inst) + "  !=   " + i2s(i));
 
 	if (set == InstructionSet::ARM)
 		arm_init();
@@ -1174,8 +1177,8 @@ void InstructionWithParamsList::link_wanted_labels(void *oc) {
 			// TODO first byte after command
 			if (instruction_set.set == InstructionSet::ARM) {
 				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
-				int inst = (*this)[w.inst_no].inst;
-				if ((inst == INST_BL) or (inst == INST_B) or (inst == INST_CALL) or (inst == INST_JMP)) {
+				InstID inst = (*this)[w.inst_no].inst;
+				if ((inst == InstID::BL) or (inst == InstID::B) or (inst == InstID::CALL) or (inst == InstID::JMP)) {
 					value = value >> 2;
 				}
 			} else {
@@ -1347,11 +1350,11 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		}
 
 		// command
-		int inst = -1;
-		for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
+		InstID inst = InstID::INVALID;
+		for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
 			if (string(instruction_names[i].name) == cmd)
 				inst = instruction_names[i].inst;
-		if (inst < 0)
+		if (inst == InstID::INVALID)
 			raise_error("unknown instruction:  " + cmd);
 		// prefix
 		if (state.param_size != state.default_size) {
@@ -1489,7 +1492,7 @@ void InstructionWithParamsList::shrink_jumps(void *oc, int ocs) {
 
 	// try shrinking
 	foreachi(InstructionWithParams &iwp, *this, i) {
-		if ((iwp.inst == INST_JMP) or (iwp.inst == INST_JZ) or (iwp.inst == INST_JNZ) or (iwp.inst == INST_JL) or (iwp.inst == INST_JNL) or (iwp.inst == INST_JLE) or (iwp.inst == INST_JNLE)) {
+		if ((iwp.inst == InstID::JMP) or (iwp.inst == InstID::JZ) or (iwp.inst == InstID::JNZ) or (iwp.inst == InstID::JL) or (iwp.inst == InstID::JNL) or (iwp.inst == InstID::JLE) or (iwp.inst == InstID::JNLE)) {
 			if (iwp.p[0].is_label) {
 				int target = label[(int)iwp.p[0].value].inst_no;
 
@@ -1565,7 +1568,7 @@ void InstructionWithParamsList::compile(void *oc, int &ocs) {
 	}
 }
 
-void add_instruction(char *oc, int &ocs, int inst, const InstructionParam &p1, const InstructionParam &p2, const InstructionParam &p3) {
+void add_instruction(char *oc, int &ocs, InstID inst, const InstructionParam &p1, const InstructionParam &p2, const InstructionParam &p3) {
 	/*if (!CPUInstructions)
 		SetInstructionSet(InstructionSetDefault);*/
 	state.default_size = SIZE_32;

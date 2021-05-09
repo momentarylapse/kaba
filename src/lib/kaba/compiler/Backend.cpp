@@ -41,7 +41,7 @@ SerialNodeParam Backend::param_deref_vreg(const Class *type, int vreg, Asm::RegI
 }
 
 
-void Backend::insert_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
+void Backend::insert_cmd(Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
 	int i = cmd.next_cmd_index;
 	cmd.add_cmd(inst, p1, p2, p3);
 	cmd.next_cmd_target(i + 1);

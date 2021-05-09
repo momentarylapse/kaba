@@ -136,7 +136,7 @@ struct InstructionParamFuzzy {
 
 
 struct InstructionName {
-	int inst;
+	InstID inst;
 	//const string name;
 	const char *name;
 	int rw1, rw2; // parameter is read(1), modified(2) or both (3)

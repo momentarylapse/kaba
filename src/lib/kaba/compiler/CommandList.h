@@ -13,6 +13,7 @@ namespace Asm {
 	enum class RegID;
 	enum class RegRoot;
 	enum class ArmCond;
+	enum class InstID;
 }
 
 
@@ -62,17 +63,17 @@ struct CommandList {
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
 	SerialNodeParam _add_temp(const Class *t);
-	void add_cmd(Asm::ArmCond cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
-	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
-	void add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
-	void add_cmd(int inst, const SerialNodeParam &p);
-	void add_cmd(int inst);
+	void add_cmd(Asm::ArmCond cond, Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
+	void add_cmd(Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3);
+	void add_cmd(Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2);
+	void add_cmd(Asm::InstID inst, const SerialNodeParam &p);
+	void add_cmd(Asm::InstID inst);
 	void set_cmd_param(int index, int param_index, const SerialNodeParam &p);
 	void next_cmd_target(int index);
 	void remove_cmd(int index);
 	void remove_temp_var(int v);
 	void move_param(SerialNodeParam &p, int from, int to);
-	int add_marker(int m = -1);
+	int add_label(int m = -1);
 };
 
 

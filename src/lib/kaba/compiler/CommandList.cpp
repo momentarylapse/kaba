@@ -86,14 +86,14 @@ void CommandList::set_cmd_param(int index, int param_index, const SerialNodePara
 	if ((p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::DEREF_VAR_TEMP)) {
 		int v = (int_p)p.p;
 		temp_var[v].use(index, index);
-		if ((c.inst == Asm::INST_LEA) and (param_index == 1)) {
+		if ((c.inst == Asm::InstID::LEA) and (param_index == 1)) {
 //			msg_error("ref a " + i2s(v));
 			temp_var[v].referenced = true;
 		}
 	}
 }
 
-void CommandList::add_cmd(Asm::ArmCond cond, int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
+void CommandList::add_cmd(Asm::ArmCond cond, Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
 	SerialNode c;
 	c.inst = inst;
 	c.cond = cond;
@@ -130,19 +130,19 @@ void CommandList::add_cmd(Asm::ArmCond cond, int inst, const SerialNodeParam &p1
 	next_cmd_index = cmd.num;
 }
 
-void CommandList::add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
+void CommandList::add_cmd(Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2, const SerialNodeParam &p3) {
 	add_cmd(Asm::ArmCond::ALWAYS, inst, p1, p2, p3);
 }
 
-void CommandList::add_cmd(int inst, const SerialNodeParam &p1, const SerialNodeParam &p2) {
+void CommandList::add_cmd(Asm::InstID inst, const SerialNodeParam &p1, const SerialNodeParam &p2) {
 	add_cmd(Asm::ArmCond::ALWAYS, inst, p1, p2, p_none);
 }
 
-void CommandList::add_cmd(int inst, const SerialNodeParam &p) {
+void CommandList::add_cmd(Asm::InstID inst, const SerialNodeParam &p) {
 	add_cmd(Asm::ArmCond::ALWAYS, inst, p, p_none, p_none);
 }
 
-void CommandList::add_cmd(int inst) {
+void CommandList::add_cmd(Asm::InstID inst) {
 	add_cmd(Asm::ArmCond::ALWAYS, inst, p_none, p_none, p_none);
 }
 
@@ -152,7 +152,7 @@ void CommandList::next_cmd_target(int index) {
 
 void CommandList::remove_cmd(int index) {
 	next_cmd_index = index;
-	if (cmd[index].inst == Asm::INST_CALL) {
+	if (cmd[index].inst == Asm::InstID::CALL) {
 		for (auto &r: virtual_reg)
 			if (r.first == index and r.last == index)
 				r.first = r.last = -1;
@@ -217,13 +217,13 @@ void CommandList::move_param(SerialNodeParam &p, int from, int to) {
 }
 
 // l is an asm label index
-int CommandList::add_marker(int l) {
+int CommandList::add_label(int l) {
 	SerialNodeParam p = p_none;
 	if (l < 0)
 		ser->do_error("trying to add non existing label");
-	p.kind = NodeKind::MARKER;
+	p.kind = NodeKind::LABEL;
 	p.p = l;
-	add_cmd(INST_MARKER, p);
+	add_cmd(Asm::InstID::LABEL, p);
 	return l;
 }
 

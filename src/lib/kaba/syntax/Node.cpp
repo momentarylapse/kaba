@@ -84,10 +84,10 @@ string kind2str(NodeKind kind) {
 		return "local memory";
 	if (kind == NodeKind::DEREF_REGISTER)
 		return "deref register";
-	if (kind == NodeKind::MARKER)
-		return "marker";
-	if (kind == NodeKind::DEREF_MARKER)
-		return "deref marker";
+	if (kind == NodeKind::LABEL)
+		return "label";
+	if (kind == NodeKind::DEREF_LABEL)
+		return "deref label";
 	if (kind == NodeKind::GLOBAL_LOOKUP)
 		return "global lookup";
 	if (kind == NodeKind::DEREF_GLOBAL_LOOKUP)

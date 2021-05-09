@@ -13,6 +13,7 @@
 namespace Asm {
 	enum class RegID;
 	enum class RegRoot;
+	enum class InstID;
 }
 
 namespace kaba {
@@ -55,7 +56,7 @@ public:
 	SerialNodeParam param_deref_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
 
 
-	void insert_cmd(int inst, const SerialNodeParam &p1 = p_none, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
+	void insert_cmd(Asm::InstID inst, const SerialNodeParam &p1 = p_none, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
 	//SerialNodeParam insert_reference(const SerialNodeParam &param, const Class *type = nullptr);
 
 

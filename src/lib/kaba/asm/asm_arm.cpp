@@ -15,7 +15,7 @@ namespace Asm {
 
 
 struct CPUInstructionARM {
-	int inst;
+	InstID inst;
 	int code, filter;
 	int p1, p2, p3;
 };
@@ -44,7 +44,7 @@ enum {
 };
 
 
-void add_inst_arm(int inst, int code, int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
+void add_inst_arm(InstID inst, int code, int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
 	CPUInstructionARM i;
 	i.inst = inst;
 	i.code = code;
@@ -84,135 +84,135 @@ void arm_init() {
 
 	cpu_instructions_arm.clear();
 
-	add_inst_arm(INST_MUL,  0x00000090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
-	add_inst_arm(INST_MULS, 0x00100090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
+	add_inst_arm(InstID::MUL,  0x00000090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
+	add_inst_arm(InstID::MULS, 0x00100090, 0x0ff0f0f0, AP_REG_16, AP_REG_0, AP_REG_8);
 
 	// data
-	add_inst_arm(INST_AND,  0x00000000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ANDS, 0x00100000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_XOR,  0x00200000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_XORS, 0x00300000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_SUB,  0x00400000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_SUBS, 0x00500000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_RSB,  0x00600000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_RSBS, 0x00700000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ADD,  0x00800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ADDS, 0x00900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ADC,  0x00a00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ADCS, 0x00b00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_SBC,  0x00c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_SBCS, 0x00d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_RSC,  0x00e00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_RSCS, 0x00f00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_TST,  0x01100000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_TEQ,  0x01300000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_CMP,  0x01500000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_CMN,  0x01700000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_OR,   0x01800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_ORS,  0x01900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_MOV,  0x01a00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_MOVS, 0x01b00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_BIC,  0x01c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_BICS, 0x01d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_MVN,  0x01e00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
-	add_inst_arm(INST_MVNS, 0x01f00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::AND,  0x00000000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ANDS, 0x00100000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::XOR,  0x00200000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::XORS, 0x00300000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::SUB,  0x00400000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::SUBS, 0x00500000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::RSB,  0x00600000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::RSBS, 0x00700000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ADD,  0x00800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ADDS, 0x00900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ADC,  0x00a00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ADCS, 0x00b00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::SBC,  0x00c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::SBCS, 0x00d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::RSC,  0x00e00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::RSCS, 0x00f00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::TST,  0x01100000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::TEQ,  0x01300000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::CMP,  0x01500000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::CMN,  0x01700000, 0x0df00000, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::OR,   0x01800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::ORS,  0x01900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::MOV,  0x01a00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::MOVS, 0x01b00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::BIC,  0x01c00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::BICS, 0x01d00000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::MVN,  0x01e00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
+	add_inst_arm(InstID::MVNS, 0x01f00000, 0x0df00000, AP_REG_12, AP_SHIFTER_0X12_I25);
 
 	// transfer
-	add_inst_arm(INST_LDR,  0x04100000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
-	add_inst_arm(INST_LDRB, 0x04500000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
-	add_inst_arm(INST_STR,  0x04000000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23); // TODO swap parameters...
-	add_inst_arm(INST_STRB, 0x04400000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
+	add_inst_arm(InstID::LDR,  0x04100000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23);
+	add_inst_arm(InstID::LDRB, 0x04500000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
+	add_inst_arm(InstID::STR,  0x04000000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23); // TODO swap parameters...
+	add_inst_arm(InstID::STRB, 0x04400000, 0x0c500000, AP_REG_12, AP_XX_R12_W21_UPI23_BYTE);
 
 	// transfer multiple
-	add_inst_arm(INST_LDMIA,  0x08900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_STMIA,  0x08800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_LDMIB,  0x09900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_STMIB,  0x09800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_LDMDA,  0x08100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_STMDA,  0x08000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_LDMDB,  0x09100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
-	add_inst_arm(INST_STMDB,  0x09000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::LDMIA,  0x08900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::STMIA,  0x08800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::LDMIB,  0x09900000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::STMIB,  0x09800000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::LDMDA,  0x08100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::STMDA,  0x08000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::LDMDB,  0x09100000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
+	add_inst_arm(InstID::STMDB,  0x09000000, 0x0f900000, AP_REG_16_W21, AP_REG_SET);
 
 	// branch
-	add_inst_arm(INST_BLX, 0x01200030, 0x0ff000f0, AP_REG_0);
-	add_inst_arm(INST_B,   0x0a000000 ,0x0f000000, AP_OFFSET24_0);
-	add_inst_arm(INST_BL,  0x0b000000 ,0x0f000000, AP_OFFSET24_0);
+	add_inst_arm(InstID::BLX, 0x01200030, 0x0ff000f0, AP_REG_0);
+	add_inst_arm(InstID::B,   0x0a000000 ,0x0f000000, AP_OFFSET24_0);
+	add_inst_arm(InstID::BL,  0x0b000000 ,0x0f000000, AP_OFFSET24_0);
 
 
 	// -- float --
 
-	add_inst_arm(INST_FMSR,  0x0e000a10, 0x0ff00f7f, AP_FREG_16_7, AP_REG_12);
-	add_inst_arm(INST_FMRS,  0x0e100a10, 0x0ff00f7f, AP_REG_12, AP_FREG_16_7);
+	add_inst_arm(InstID::FMSR,  0x0e000a10, 0x0ff00f7f, AP_FREG_16_7, AP_REG_12);
+	add_inst_arm(InstID::FMRS,  0x0e100a10, 0x0ff00f7f, AP_REG_12, AP_FREG_16_7);
 
-	add_inst_arm(INST_FLDS,   0x0d100a00, 0x0f300f00, AP_FREG_12_22, AP_DEREF_REG_16_OFFSET);
-	add_inst_arm(INST_FSTS,   0x0d000a00, 0x0f300f00, AP_DEREF_REG_16_OFFSET, AP_FREG_12_22);
+	add_inst_arm(InstID::FLDS,   0x0d100a00, 0x0f300f00, AP_FREG_12_22, AP_DEREF_REG_16_OFFSET);
+	add_inst_arm(InstID::FSTS,   0x0d000a00, 0x0f300f00, AP_DEREF_REG_16_OFFSET, AP_FREG_12_22);
 
-	add_inst_arm(INST_FMACS,  0x0e000a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FNMACS, 0x0e000a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FMSCS,  0x0e100a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FNMSCS, 0x0e100a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FMULS,  0x0e200a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FNMULS, 0x0e200a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FADDS,  0x0e300a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FSUBS,  0x0e300a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
-	add_inst_arm(INST_FDIVS,  0x0e800a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FMACS,  0x0e000a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FNMACS, 0x0e000a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FMSCS,  0x0e100a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FNMSCS, 0x0e100a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FMULS,  0x0e200a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FNMULS, 0x0e200a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FADDS,  0x0e300a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FSUBS,  0x0e300a40, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
+	add_inst_arm(InstID::FDIVS,  0x0e800a00, 0x0fb00f50, AP_FREG_12_22, AP_FREG_16_7, AP_FREG_0_5);
 
-	add_inst_arm(INST_FCPYS,  0x0eb00a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FABSS,  0x0eb00ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FNEGS,  0x0eb10a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FSQRTS, 0x0eb10ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FCMPS,   0x0eb40a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FCMPES,  0x0eb40ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FCMPZS,  0x0eb50a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FCMPEZS, 0x0eb50ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FCPYS,  0x0eb00a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FABSS,  0x0eb00ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FNEGS,  0x0eb10a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FSQRTS, 0x0eb10ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FCMPS,   0x0eb40a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FCMPES,  0x0eb40ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FCMPZS,  0x0eb50a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FCMPEZS, 0x0eb50ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
 
-	add_inst_arm(INST_CVTDS, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	//add_inst_arm(INST_CVTSD, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::CVTDS, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	//add_inst_arm(InstID::CVTSD, 0x0eb70ac0, 0x0fff0fd0, AP_FREG_12_22, AP_FREG_0_5);
 
-	add_inst_arm(INST_FUITOS, 0x0eb80a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FSITOS, 0x0eb80ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FUITOS, 0x0eb80a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FSITOS, 0x0eb80ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
 
-	add_inst_arm(INST_FTOUIS,  0x0ebc0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FTOUIZS, 0x0ebc0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FTOSIS,  0x0ebd0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
-	add_inst_arm(INST_FTOSIZS, 0x0ebd0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FTOUIS,  0x0ebc0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FTOUIZS, 0x0ebc0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FTOSIS,  0x0ebd0a40, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
+	add_inst_arm(InstID::FTOSIZS, 0x0ebd0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
 }
 
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;
 
-int ARM_DATA_INSTRUCTIONS[NUM_ARM_DATA_INSTRUCTIONS] = {
-	INST_AND,
-	INST_ANDS,
-	INST_XOR,
-	INST_XORS,
-	INST_SUB,
-	INST_SUBS,
-	INST_RSB,
-	INST_RSBS,
-	INST_ADD,
-	INST_ADDS,
-	INST_ADC,
-	INST_ADCS,
-	INST_SBC,
-	INST_SBCS,
-	INST_RSC,
-	INST_RSCS,
-	-1,
-	INST_TST,
-	-1,
-	INST_TEQ,
-	-1,
-	INST_CMP,
-	-1,
-	INST_CMN,
-	INST_OR,
-	INST_ORS,
-	INST_MOV,
-	INST_MOVS,
-	INST_BIC,
-	INST_BICS,
-	INST_MVN,
-	INST_MVNS
+InstID ARM_DATA_INSTRUCTIONS[NUM_ARM_DATA_INSTRUCTIONS] = {
+	InstID::AND,
+	InstID::ANDS,
+	InstID::XOR,
+	InstID::XORS,
+	InstID::SUB,
+	InstID::SUBS,
+	InstID::RSB,
+	InstID::RSBS,
+	InstID::ADD,
+	InstID::ADDS,
+	InstID::ADC,
+	InstID::ADCS,
+	InstID::SBC,
+	InstID::SBCS,
+	InstID::RSC,
+	InstID::RSCS,
+		InstID::INVALID,
+	InstID::TST,
+		InstID::INVALID,
+	InstID::TEQ,
+		InstID::INVALID,
+	InstID::CMP,
+		InstID::INVALID,
+	InstID::CMN,
+	InstID::OR,
+	InstID::ORS,
+	InstID::MOV,
+	InstID::MOVS,
+	InstID::BIC,
+	InstID::BICS,
+	InstID::MVN,
+	InstID::MVNS
 };
 
 int arm_decode_imm(int imm) {
@@ -318,7 +318,7 @@ InstructionParam disarm_param(int code, int p) {
 
 InstructionWithParams disarm_general(int code) {
 	InstructionWithParams i;
-	i.inst = INST_NOP;
+	i.inst = InstID::NOP;
 	i.p[0] = param_none;
 	i.p[1] = param_none;
 	i.p[2] = param_none;
@@ -383,11 +383,11 @@ int arm_encode_8l4(unsigned int value) {
 	return 0;
 }
 
-bool inline arm_is_load_store_reg(int inst) {
-	return (inst == INST_LDR) or (inst == INST_LDRB) or (inst == INST_STR) or (inst == INST_STRB);
+bool inline arm_is_load_store_reg(InstID inst) {
+	return (inst == InstID::LDR) or (inst == InstID::LDRB) or (inst == InstID::STR) or (inst == InstID::STRB);
 }
 
-bool inline arm_is_data(int inst, int &nn) {
+bool inline arm_is_data(InstID inst, int &nn) {
 	nn = -1;
 	for (int i=0; i<NUM_ARM_DATA_INSTRUCTIONS; i++)
 		if (inst == ARM_DATA_INSTRUCTIONS[i]) {
@@ -397,10 +397,10 @@ bool inline arm_is_data(int inst, int &nn) {
 	return false;
 }
 
-bool inline arm_is_load_store_multi(int inst) {
-	if ((inst == INST_LDMIA) or (inst == INST_LDMIB) or (inst == INST_LDMDA) or (inst == INST_LDMDB))
+bool inline arm_is_load_store_multi(InstID inst) {
+	if ((inst == InstID::LDMIA) or (inst == InstID::LDMIB) or (inst == InstID::LDMDA) or (inst == InstID::LDMDB))
 		return true;
-	if ((inst == INST_STMIA) or (inst == INST_STMIB) or (inst == INST_STMDA) or (inst == INST_STMDB))
+	if ((inst == InstID::STMIA) or (inst == InstID::STMIB) or (inst == InstID::STMDA) or (inst == InstID::STMDB))
 		return true;
 	return false;
 }
@@ -468,7 +468,7 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 	current_inst = n;
 	state.reset(this);
 
-	if (iwp.inst == INST_ALIGN_OPCODE)
+	if (iwp.inst == InstID::ALIGN_OPCODE)
 		return;
 
 	int code = 0;
@@ -476,16 +476,16 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 	code = (int)iwp.condition << 28;
 	int data_nn = -1;
 	if (arm_is_data(iwp.inst, data_nn)) {
-		if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ) or (iwp.inst == INST_MOV)) {
+		if ((iwp.inst == InstID::CMP) or (iwp.inst == InstID::CMN) or (iwp.inst == InstID::TST) or (iwp.inst == InstID::TEQ) or (iwp.inst == InstID::MOV)) {
 			iwp.p[2] = iwp.p[1];
-			if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN)) {
+			if ((iwp.inst == InstID::CMP) or (iwp.inst == InstID::CMN)) {
 				iwp.p[1] = iwp.p[0];
 				iwp.p[0] = param_reg(RegID::R0);
 			} else {
 				iwp.p[1] = param_reg(RegID::R0);
 			}
 		}
-//		bool ss = (iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ);
+//		bool ss = (iwp.inst == InstID::CMP) or (iwp.inst == InstID::CMN) or (iwp.inst == InstID::TST) or (iwp.inst == InstID::TEQ);
 		code |= 0x0 << 26;
 		code |= (data_nn << 20);
 	//	if (ss)
@@ -513,13 +513,13 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 		code |= arm_reg_no(iwp.p[0].reg) << 12;
 		code |= arm_reg_no(iwp.p[1].reg) << 16;
 	} else if (arm_is_load_store_reg(iwp.inst)) {
-		if (iwp.inst == INST_LDR)
+		if (iwp.inst == InstID::LDR)
 			code |= 0x04100000;
-		else if (iwp.inst == INST_LDRB)
+		else if (iwp.inst == InstID::LDRB)
 			code |= 0x04500000;
-		else if (iwp.inst == INST_STR)
+		else if (iwp.inst == InstID::STR)
 			code |= 0x04000000;
-		else if (iwp.inst == INST_STRB)
+		else if (iwp.inst == InstID::STRB)
 			code |= 0x04400000;
 
 		if ((iwp.p[1].type == ParamType::IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)) {
@@ -549,9 +549,9 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 		}
 	} else if (arm_is_load_store_multi(iwp.inst)) {
 		arm_expect(iwp, ParamType::REGISTER, ParamType::IMMEDIATE);
-		bool ll = ((iwp.inst == INST_LDMIA) or (iwp.inst == INST_LDMIB) or (iwp.inst == INST_LDMDA) or (iwp.inst == INST_LDMDB));
-		bool uu = ((iwp.inst == INST_LDMIA) or (iwp.inst == INST_LDMIB) or (iwp.inst == INST_STMIA) or (iwp.inst == INST_STMIB));
-		bool pp = ((iwp.inst == INST_LDMIB) or (iwp.inst == INST_LDMDB) or (iwp.inst == INST_STMIB) or (iwp.inst == INST_STMDB));
+		bool ll = ((iwp.inst == InstID::LDMIA) or (iwp.inst == InstID::LDMIB) or (iwp.inst == InstID::LDMDA) or (iwp.inst == InstID::LDMDB));
+		bool uu = ((iwp.inst == InstID::LDMIA) or (iwp.inst == InstID::LDMIB) or (iwp.inst == InstID::STMIA) or (iwp.inst == InstID::STMIB));
+		bool pp = ((iwp.inst == InstID::LDMIB) or (iwp.inst == InstID::LDMDB) or (iwp.inst == InstID::STMIB) or (iwp.inst == InstID::STMDB));
 		bool ww = true;
 		if (ll)
 			code |= 0x08100000;
@@ -565,37 +565,37 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 			code |= 0x00200000;
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= iwp.p[1].value & 0xffff;
-	} else if (iwp.inst == INST_MUL) {
+	} else if (iwp.inst == InstID::MUL) {
 		code |= 0x00000090;
 		arm_expect(iwp, ParamType::REGISTER, ParamType::REGISTER, ParamType::REGISTER);
 		code |= arm_reg_no(iwp.p[0].reg) << 16;
 		code |= arm_reg_no(iwp.p[1].reg);
 		code |= arm_reg_no(iwp.p[2].reg) << 8;
-	} else if ((iwp.inst == INST_BLX) or ((iwp.inst == INST_CALL) and (iwp.p[0].type == ParamType::REGISTER))) {
+	} else if ((iwp.inst == InstID::BLX) or ((iwp.inst == InstID::CALL) and (iwp.p[0].type == ParamType::REGISTER))) {
 		arm_expect(iwp, ParamType::REGISTER);
 		code |= 0x012fff30;
 		code |= arm_reg_no(iwp.p[0].reg);
-	} else if ((iwp.inst == INST_BL) or (iwp.inst == INST_B) or (iwp.inst == INST_JMP) or (iwp.inst == INST_CALL)) {
+	} else if ((iwp.inst == InstID::BL) or (iwp.inst == InstID::B) or (iwp.inst == InstID::JMP) or (iwp.inst == InstID::CALL)) {
 		arm_expect(iwp, ParamType::IMMEDIATE);
-		if ((iwp.inst == INST_BL) or (iwp.inst == INST_CALL))
+		if ((iwp.inst == InstID::BL) or (iwp.inst == InstID::CALL))
 			code |= 0x0b000000;
 		else
 			code |= 0x0a000000;
 		int value = iwp.p[0].value;
 		if (iwp.p[0].is_label) {
 			add_wanted_label(ocs + 1, value, n, true, false, SIZE_24);
-		} else if (iwp.inst == INST_CALL)
+		} else if (iwp.inst == InstID::CALL)
 			value = (iwp.p[0].value - (int_p)&oc[ocs] - 8) >> 2;
 		code |= (value & 0x00ffffff);
-	} else if (iwp.inst == INST_DD) {
+	} else if (iwp.inst == InstID::DD) {
 		arm_expect(iwp, ParamType::IMMEDIATE);
 		code = iwp.p[0].value;
-	} else if ((iwp.inst == INST_FLDS) or (iwp.inst == INST_FSTS)) {
-		if (iwp.inst == INST_FLDS)
+	} else if ((iwp.inst == InstID::FLDS) or (iwp.inst == InstID::FSTS)) {
+		if (iwp.inst == InstID::FLDS)
 			code |= 0x0d100a00;
 		else
 			code |= 0x0d000a00;
-		if (iwp.inst == INST_FSTS)
+		if (iwp.inst == InstID::FSTS)
 			std::swap(iwp.p[0], iwp.p[1]);
 
 		if ((iwp.p[1].type == ParamType::IMMEDIATE) and (iwp.p[1].deref)) {

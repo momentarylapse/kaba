@@ -106,13 +106,13 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 		ret.kind = NodeKind::VAR_TEMP; // FIXME why was it param.kind ?!?!?
 	} else {
 		ret = add_temp(type);
-		cmd.add_cmd(Asm::INST_LEA, ret, param);
+		cmd.add_cmd(Asm::InstID::LEA, ret, param);
 		/*if (config.instruction_set == Asm::InstructionSet::ARM) {
 			if (param.kind == NodeKind::VAR_LOCAL) {
 				int r = find_unused_reg(-1, -1, 4);
 				add_temp(type, ret);
-				add_cmd(Asm::INST_ADD, param_vreg(TypePointer, r), param_preg(TypePointer, Asm::RegID::R13), param_const(TypeInt, param.p));
-				add_cmd(Asm::INST_MOV, ret, param_vreg(TypePointer, r));
+				add_cmd(Asm::InstID::ADD, param_vreg(TypePointer, r), param_preg(TypePointer, Asm::RegID::R13), param_const(TypeInt, param.p));
+				add_cmd(Asm::InstID::MOV, ret, param_vreg(TypePointer, r));
 			} else {
 				DoError("reference in ARM: " + param.str());
 			}
@@ -120,12 +120,12 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 			add_temp(type, ret);
 			if (config.instruction_set == Asm::InstructionSet::AMD64) {
 				int r = add_virtual_reg(Asm::RegID::RAX);
-				add_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), param);
-				add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg64, r));
+				add_cmd(Asm::InstID::LEA, param_vreg(TypeReg64, r), param);
+				add_cmd(Asm::InstID::MOV, ret, param_vreg(TypeReg64, r));
 			} else {
 				int r = add_virtual_reg(Asm::RegID::EAX);
-				add_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), param);
-				add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, r));
+				add_cmd(Asm::InstID::LEA, param_vreg(TypeReg32, r), param);
+				add_cmd(Asm::InstID::MOV, ret, param_vreg(TypeReg32, r));
 			}
 		}*/
 	}
@@ -157,13 +157,13 @@ SerialNodeParam Serializer::add_dereference(const SerialNodeParam &param, const 
 			} else {
 //				do_error("arm deref...");
 				SerialNodeParam temp = add_temp(param.type);
-				cmd.add_cmd(Asm::INST_MOV, temp, param);
+				cmd.add_cmd(Asm::InstID::MOV, temp, param);
 				return deref_temp(temp, type);
 			}
 		} else {
 			//msg_error(string("unhandled deref ", Kind2Str(param.kind)));
 			SerialNodeParam temp = add_temp(param.type);
-			cmd.add_cmd(Asm::INST_MOV, temp, param);
+			cmd.add_cmd(Asm::InstID::MOV, temp, param);
 			return deref_temp(temp, type);
 		}
 	}
@@ -187,7 +187,7 @@ bool node_is_assign_mem(Node *n) {
 
 
 SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
-	// for/while need a marker to this point
+	// for/while need a label to this point
 	bool ignore_params = ((com->kind == NodeKind::BLOCK) or (com->kind == NodeKind::STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
 
 
@@ -258,7 +258,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 void Serializer::serialize_block(Block *block) {
 	block->_label_start = list->create_label("_BLOCK_START_" + p2s(block));
 	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
-	cmd.add_marker(block->_label_start);
+	cmd.add_label(block->_label_start);
 
 	insert_constructors_block(block);
 
@@ -280,7 +280,7 @@ void Serializer::serialize_block(Block *block) {
 
 	insert_destructors_block(block);
 
-	cmd.add_marker(block->_label_end);
+	cmd.add_label(block->_label_end);
 }
 
 // modus: NodeKind::VAR_LOCAL / NodeKind::VAR_TEMP
@@ -344,7 +344,7 @@ void Serializer::insert_destructors_temp() {
 }
 
 int Serializer::temp_in_cmd(int c, int v) {
-	if (cmd.cmd[c].inst >= INST_MARKER)
+	if ((int)cmd.cmd[c].inst >= (int)Asm::InstID::LABEL)
 		return 0;
 	int r = 0;
 	for (int i=0; i<SERIAL_NODE_NUM_PARAMS; i++)
@@ -376,8 +376,8 @@ inline bool param_is_simple(SerialNodeParam &p) {
 	return ((p.kind == NodeKind::REGISTER) or (p.kind == NodeKind::VAR_TEMP) or (p.kind == NodeKind::NONE));
 }
 
-inline bool param_combi_allowed(int inst, SerialNodeParam &p1, SerialNodeParam &p2) {
-//	if (inst >= Asm::inst_marker)
+inline bool param_combi_allowed(Asm::InstID inst, SerialNodeParam &p1, SerialNodeParam &p2) {
+//	if (inst >= Asm::inst_label)
 //		return true;
 	if ((!param_is_simple(p1)) and (!param_is_simple(p2)))
 		return false;
@@ -425,11 +425,11 @@ bool Serializer::param_untouched_in_interval(SerialNodeParam &p, int first, int 
 		for (int i=first;i<=last;i++) {
 			
 			// call violates all!
-			if (cmd.cmd[i].inst == Asm::INST_CALL)
+			if (cmd.cmd[i].inst == Asm::InstID::CALL)
 				return false;
 
 			// div violates eax and edx
-			if (cmd.cmd[i].inst == Asm::INST_DIV)
+			if (cmd.cmd[i].inst == Asm::InstID::DIV)
 				if ((p.as_reg() == Asm::RegID::EDX) or (p.as_reg() == Asm::RegID::EAX))
 					return false;
 
@@ -458,15 +458,15 @@ void Serializer::simplify_fpu_stack() {
 			continue;
 
 		// stored then loaded...?
-		if ((cmd.cmd[v.first].inst != Asm::INST_FSTP) or (cmd.cmd[v.last].inst != Asm::INST_FLD))
+		if ((cmd.cmd[v.first].inst != Asm::InstID::FSTP) or (cmd.cmd[v.last].inst != Asm::InstID::FLD))
 			continue;
 
 		// value still on the stack?
 		int d_stack = 0, min_d_stack = 0, max_d_stack = 0;
 		for (int i=v.first + 1;i<v.last;i++) {
-			if (cmd.cmd[i].inst == Asm::INST_FLD)
+			if (cmd.cmd[i].inst == Asm::InstID::FLD)
 				d_stack ++;
-			else if (cmd.cmd[i].inst == Asm::INST_FSTP)
+			else if (cmd.cmd[i].inst == Asm::InstID::FSTP)
 				d_stack --;
 			min_d_stack = min(min_d_stack, d_stack);
 			max_d_stack = max(max_d_stack, d_stack);
@@ -493,7 +493,7 @@ void Serializer::simplify_fpu_stack() {
 			continue;
 
 		// stored then moved...?
-		if ((cmd.cmd[v.first].inst != Asm::INST_FSTP) or (cmd.cmd[v.last].inst != Asm::INST_MOV))
+		if ((cmd.cmd[v.first].inst != Asm::InstID::FSTP) or (cmd.cmd[v.last].inst != Asm::InstID::MOV))
 			continue;
 		if (temp_in_cmd(v.last, vi) != 2)
 			continue;
@@ -535,11 +535,11 @@ void Serializer::simplify_movs() {
 			continue;
 
 		// both times in a mov command (or fld as second)
-		if (cmd.cmd[v.first].inst != Asm::INST_MOV)
+		if (cmd.cmd[v.first].inst != Asm::InstID::MOV)
 			continue;
-		int n = cmd.cmd[v.last].inst;
-		bool fld = (n == Asm::INST_FLD) or (n == Asm::INST_FADD) or (n == Asm::INST_FADD) or (n == Asm::INST_FSUB) or (n == Asm::INST_FMUL) or (n == Asm::INST_FDIV);
-		if ((cmd.cmd[v.last].inst != Asm::INST_MOV) and (!fld))
+		auto n = cmd.cmd[v.last].inst;
+		bool fld = (n == Asm::InstID::FLD) or (n == Asm::InstID::FADD) or (n == Asm::InstID::FADD) or (n == Asm::InstID::FSUB) or (n == Asm::InstID::FMUL) or (n == Asm::InstID::FDIV);
+		if ((cmd.cmd[v.last].inst != Asm::InstID::MOV) and (!fld))
 			continue;
 		
 		// used as source/target?   no deref?
@@ -735,7 +735,7 @@ void Serializer::serialize_function(Function *f) {
 	Asm::CurrentMetaInfo = syntax_tree->asm_meta_info.get();
 
 	cur_func = f;
-	num_markers = 0;
+	num_labels = 0;
 	call_used = false;
 	stack_offset = f->_var_size;
 	stack_max_size = f->_var_size;
@@ -777,19 +777,19 @@ void Serializer::serialize_function(Function *f) {
 
 void Serializer::simplify_if_statements() {
 	for (int i=0;i<cmd.cmd.num - 4;i++) {
-		if ((cmd.cmd[i].inst == Asm::INST_CMP) and (cmd.cmd[i+2].inst == Asm::INST_CMP) and (cmd.cmd[i+3].inst == Asm::INST_JZ)) {
-			if (cmd.cmd[i+1].inst == Asm::INST_SETL)
-				cmd.cmd[i+3].inst = Asm::INST_JNL;
-			else if (cmd.cmd[i+1].inst == Asm::INST_SETLE)
-				cmd.cmd[i+3].inst = Asm::INST_JNLE;
-			else if (cmd.cmd[i+1].inst == Asm::INST_SETNL)
-				cmd.cmd[i+3].inst = Asm::INST_JL;
-			else if (cmd.cmd[i+1].inst == Asm::INST_SETNLE)
-				cmd.cmd[i+3].inst = Asm::INST_JLE;
-			else if (cmd.cmd[i+1].inst == Asm::INST_SETZ)
-				cmd.cmd[i+3].inst = Asm::INST_JNZ;
-			else if (cmd.cmd[i+1].inst == Asm::INST_SETNZ)
-				cmd.cmd[i+3].inst = Asm::INST_JZ;
+		if ((cmd.cmd[i].inst == Asm::InstID::CMP) and (cmd.cmd[i+2].inst == Asm::InstID::CMP) and (cmd.cmd[i+3].inst == Asm::InstID::JZ)) {
+			if (cmd.cmd[i+1].inst == Asm::InstID::SETL)
+				cmd.cmd[i+3].inst = Asm::InstID::JNL;
+			else if (cmd.cmd[i+1].inst == Asm::InstID::SETLE)
+				cmd.cmd[i+3].inst = Asm::InstID::JNLE;
+			else if (cmd.cmd[i+1].inst == Asm::InstID::SETNL)
+				cmd.cmd[i+3].inst = Asm::InstID::JL;
+			else if (cmd.cmd[i+1].inst == Asm::InstID::SETNLE)
+				cmd.cmd[i+3].inst = Asm::InstID::JLE;
+			else if (cmd.cmd[i+1].inst == Asm::InstID::SETZ)
+				cmd.cmd[i+3].inst = Asm::InstID::JNZ;
+			else if (cmd.cmd[i+1].inst == Asm::InstID::SETNZ)
+				cmd.cmd[i+3].inst = Asm::InstID::JZ;
 			else
 				continue;
 
@@ -802,7 +802,7 @@ void Serializer::simplify_if_statements() {
 void Serializer::try_merge_temp_vars() {
 	return;
 	for (int i=0;i<cmd.cmd.num;i++)
-		if (cmd.cmd[i].inst == Asm::INST_MOV)
+		if (cmd.cmd[i].inst == Asm::InstID::MOV)
 			if ((cmd.cmd[i].p[0].kind == NodeKind::VAR_TEMP) and (cmd.cmd[i].p[1].kind == NodeKind::VAR_TEMP)) {
 				int v1 = cmd.cmd[i].p[0].p;
 				int v2 = cmd.cmd[i].p[1].p;
@@ -823,7 +823,7 @@ void Serializer::try_merge_temp_vars() {
 
 void Serializer::simplify_float_store() {
 	for (int i=0;i<cmd.cmd.num - 1;i++) {
-		if ((cmd.cmd[i].inst == Asm::INST_FSTP) and (cmd.cmd[i+1].inst == Asm::INST_MOV)) {
+		if ((cmd.cmd[i].inst == Asm::InstID::FSTP) and (cmd.cmd[i+1].inst == Asm::InstID::MOV)) {
 			if (cmd.cmd[i].p[0].kind == NodeKind::VAR_TEMP) {
 				int v = cmd.cmd[i].p[0].p;
 				if ((cmd.temp_var[v].first == i) and (cmd.temp_var[v].last == i+1)) {
@@ -837,12 +837,12 @@ void Serializer::simplify_float_store() {
 }
 
 
-Asm::InstructionParam Serializer::get_param(int inst, SerialNodeParam &p) {
+Asm::InstructionParam Serializer::get_param(Asm::InstID inst, SerialNodeParam &p) {
 	if (p.kind == NodeKind::NONE) {
 		return Asm::param_none;
-	} else if (p.kind == NodeKind::MARKER) {
+	} else if (p.kind == NodeKind::LABEL) {
 		return Asm::param_label(p.p, p.type->size);
-	} else if (p.kind == NodeKind::DEREF_MARKER) {
+	} else if (p.kind == NodeKind::DEREF_LABEL) {
 		return Asm::param_deref_label(p.p, p.type->size);
 	} else if (p.kind == NodeKind::REGISTER) {
 		if (p.shift > 0)
@@ -938,7 +938,7 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) {
 	call_used = false;
 	cur_func_index = -1;
 	cur_func = nullptr;
-	num_markers = 0;
+	num_labels = 0;
 
 	cmd.ser = this;
 

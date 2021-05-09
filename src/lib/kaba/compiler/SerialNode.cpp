@@ -84,7 +84,7 @@ string SerialNodeParam::str(Serializer *ser) const {
 			n = Asm::get_reg_name(as_reg());
 		else if ((kind == NodeKind::VAR_TEMP) or (kind == NodeKind::DEREF_VAR_TEMP))
 			n = "#" + i2s(p);
-		else if (kind == NodeKind::MARKER)
+		else if (kind == NodeKind::LABEL)
 			return ser->list->label[p].name;
 		else if (kind == NodeKind::LOCAL_MEMORY)
 			n = guess_local_mem(p, ser);
@@ -142,9 +142,9 @@ string _cond_str(Asm::ArmCond cond) {
 }
 
 string SerialNode::str(Serializer *ser) const {
-	if (inst == INST_MARKER)
+	if (inst == Asm::InstID::LABEL)
 		return "-- " + ser->list->label[p[0].p].name + " --";
-	if (inst == INST_ASM)
+	if (inst == Asm::InstID::ASM)
 		return format("-- Asm %d --", p[0].p);
 	string t;
 	if (cond != Asm::ArmCond::ALWAYS)
@@ -196,16 +196,16 @@ SerialNodeParam param_imm(const Class *type, int64 c) {
 	return p;
 }
 
-SerialNodeParam param_marker(const Class *type, int m) {
-	return {NodeKind::MARKER, m, -1, type, 0};
+SerialNodeParam param_label(const Class *type, int m) {
+	return {NodeKind::LABEL, m, -1, type, 0};
 }
 
-SerialNodeParam param_marker32(int m) {
-	return param_marker(TypeInt, m);
+SerialNodeParam param_label32(int m) {
+	return param_label(TypeInt, m);
 }
 
-SerialNodeParam param_deref_marker(const Class *type, int m) {
-	return {NodeKind::DEREF_MARKER, m, -1, type, 0};
+SerialNodeParam param_deref_label(const Class *type, int m) {
+	return {NodeKind::DEREF_LABEL, m, -1, type, 0};
 }
 
 SerialNodeParam param_preg(const Class *type, Asm::RegID reg) {
