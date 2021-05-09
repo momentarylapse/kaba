@@ -104,15 +104,15 @@ void BackendAmd64::implement_return(kaba::SerialNode &c, int i) {
 		} else {
 			// store return directly in eax / fpu stack (4 byte)
 			if (cur_func->effective_return_type->size == 1) {
-				int v = cmd.add_virtual_reg(Asm::REG_AL);
+				int v = cmd.add_virtual_reg(Asm::RegID::AL);
 				insert_cmd(Asm::INST_MOV,
 						param_vreg(cur_func->effective_return_type, v), p);
 			} else if (cur_func->effective_return_type->size == 8) {
-				int v = cmd.add_virtual_reg(Asm::REG_RAX);
+				int v = cmd.add_virtual_reg(Asm::RegID::RAX);
 				insert_cmd(Asm::INST_MOV,
 						param_vreg(cur_func->effective_return_type, v), p);
 			} else {
-				int v = cmd.add_virtual_reg(Asm::REG_EAX);
+				int v = cmd.add_virtual_reg(Asm::RegID::EAX);
 				insert_cmd(Asm::INST_MOV,
 						param_vreg(cur_func->effective_return_type, v), p);
 			}
@@ -164,15 +164,15 @@ void BackendAmd64::function_call_post(int push_size, const Array<SerialNodeParam
 				do_error("xmm return ..." + type->long_name());
 			}
 		} else if (type->size == 1) {
-			int r = cmd.add_virtual_reg(Asm::REG_AL);
+			int r = cmd.add_virtual_reg(Asm::RegID::AL);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			cmd.set_virtual_reg(r, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		} else if (type->size == 4) {
-			int r = cmd.add_virtual_reg(Asm::REG_EAX);
+			int r = cmd.add_virtual_reg(Asm::RegID::EAX);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			cmd.set_virtual_reg(r, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		} else {
-			int r = cmd.add_virtual_reg(Asm::REG_RAX);
+			int r = cmd.add_virtual_reg(Asm::RegID::RAX);
 			insert_cmd(Asm::INST_MOV, ret, param_vreg(type, r));
 			cmd.set_virtual_reg(r, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		}
@@ -273,7 +273,7 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 		} else if ((p.type == TypeFloat32) or (p.type == TypeFloat64)) {
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
-				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
+				xmm_param_root.add((int)Asm::RegID::XMM0 + (xmm_param_counter ++));
 				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter++;
 			} else {
@@ -294,9 +294,9 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 		// stack pointer is already low enough to include stack parameters
 		// to compensate the following push's pre-increase rsp
 		if (push_size > 127)
-			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeInt, push_size));
+			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::RegID::RSP), param_imm(TypeInt, push_size));
 		else if (push_size > 0)
-			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, push_size));
+			insert_cmd(Asm::INST_ADD, param_preg(TypePointer, Asm::RegID::RSP), param_imm(TypeChar, push_size));
 		//}
 		foreachb (SerialNodeParam &p, stack_param) {
 			insert_cmd(Asm::INST_MOV, param_preg(p.type, get_reg(0, p.type->size)), p);
@@ -304,14 +304,14 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 		}
 		if (config.abi == Abi::AMD64_WINDOWS) {
 			push_size -= 32;
-			insert_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::REG_RSP), param_imm(TypeChar, 32));
+			insert_cmd(Asm::INST_SUB, param_preg(TypePointer, Asm::RegID::RSP), param_imm(TypeChar, 32));
 		}
 	}
 	max_push_size = max(max_push_size, (int)push_size);
 
 	// xmm0-7
 	foreachib(auto &p, xmm_param, i) {
-		int reg = xmm_param_root[i];
+		auto reg = (Asm::RegID)xmm_param_root[i];
 		if (p.type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_preg(TypeReg128, reg), p);
 		else
@@ -322,8 +322,8 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 
 	foreachib(auto &p, reg_param, i) {
 		int root = reg_param_root[i];
-		int preg = get_reg(root, p.type->size);
-		if (preg >= 0) {
+		auto preg = get_reg(root, p.type->size);
+		if (preg != Asm::RegID::INVALID) {
 			int v = cmd.add_virtual_reg(preg);
 			func_param_virts.add(v);
 			insert_cmd(Asm::INST_MOV, param_vreg(p.type, v), p);
@@ -331,8 +331,8 @@ int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const
 			// some registers are not 8bit'able
 			int v = cmd.add_virtual_reg(get_reg(root, 4));
 			func_param_virts.add(v);
-			int va = cmd.add_virtual_reg(Asm::REG_EAX);
-			insert_cmd(Asm::INST_MOV, param_vreg(p.type, va, Asm::REG_AL), p);
+			int va = cmd.add_virtual_reg(Asm::RegID::EAX);
+			insert_cmd(Asm::INST_MOV, param_vreg(p.type, va, Asm::RegID::AL), p);
 			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, v), param_vreg(TypeReg32, va));
 		}
 	}
@@ -394,7 +394,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 		} else if ((p->type == TypeFloat32) or (p->type == TypeFloat64)) {
 			if (xmm_param_counter < max_xmm_params) {
 				xmm_param.add(p);
-				xmm_param_root.add(Asm::REG_XMM0 + (xmm_param_counter ++));
+				xmm_param_root.add((int)Asm::RegID::XMM0 + (xmm_param_counter ++));
 				if (config.abi == Abi::AMD64_WINDOWS)
 					reg_param_counter ++;
 			} else {
@@ -407,7 +407,7 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	// xmm0-7
 	foreachib (Variable *p, xmm_param, i){
-		int reg = xmm_param_root[i];
+		auto reg = (Asm::RegID)xmm_param_root[i];
 		if (p->type == TypeFloat64)
 			insert_cmd(Asm::INST_MOVSD, param_local(p->type, p->_offset), param_preg(TypeReg128, reg));
 		else
@@ -418,15 +418,15 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 
 	foreachib (Variable *p, reg_param, i) {
 		int root = reg_param_root[i];
-		int preg = get_reg(root, p->type->size);
-		if (preg >= 0) {
+		auto preg = get_reg(root, p->type->size);
+		if (preg != Asm::RegID::INVALID) {
 			int v = cmd.add_virtual_reg(preg);
 			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, v));
 			cmd.set_virtual_reg(v, 0, cmd.next_cmd_index-1);
 		} else {
 			// some registers are not 8bit'able
 			int v = cmd.add_virtual_reg(get_reg(root, 4));
-			int va = cmd.add_virtual_reg(Asm::REG_EAX);
+			int va = cmd.add_virtual_reg(Asm::RegID::EAX);
 			insert_cmd(Asm::INST_MOV, param_vreg(TypeReg32, va), param_vreg(TypeReg32, v));
 			insert_cmd(Asm::INST_MOV, param_local(p->type, p->_offset), param_vreg(p->type, va, get_reg(0, p->type->size)));
 			cmd.set_virtual_reg(v, 0, cmd.next_cmd_index-2);
@@ -452,8 +452,8 @@ void BackendAmd64::add_function_intro_frame(int stack_alloc_size) {
 	if (config.abi == Abi::AMD64_WINDOWS)
 		stack_alloc_size += 32; // shadow space
 
-	int_p reg_bp = Asm::REG_RBP;
-	int_p reg_sp = Asm::REG_RSP;
+	auto reg_bp = Asm::RegID::RBP;
+	auto reg_sp = Asm::RegID::RSP;
 	//int s = config.pointer_size;
 	list->add2(Asm::INST_PUSH, Asm::param_reg(reg_bp));
 	list->add2(Asm::INST_MOV, Asm::param_reg(reg_bp), Asm::param_reg(reg_sp));

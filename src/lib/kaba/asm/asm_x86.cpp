@@ -13,6 +13,8 @@
 
 namespace Asm {
 
+bool reg_between(RegID r, RegID a, RegID b);
+
 
 // short parameter type
 enum
@@ -37,9 +39,9 @@ enum
 bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 {
 	ip.reg = nullptr;
-	ip.reg_group = REG_GROUP_NONE;
+	ip.reg_group = RegGroup::NONE;
 	ip.mrm_mode = MRM_NONE;
-	ip.reg_group = -1;
+	ip.reg_group = RegGroup::INVALID;
 	ip._type_ = PARAMT_INVALID;
 	ip.allow_register = false;
 	ip.allow_immediate = false;
@@ -50,13 +52,13 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	ip.used = true;
 
 	// is it a register?
-	for (int i=0;i<Registers.num;i++)
-		if (Registers[i].id == param){
+	for (int i=0;i<registers.num;i++)
+		if (registers[i].id == (RegID)param){
 			ip._type_ = PARAMT_REGISTER;
-			ip.reg = &Registers[i];
+			ip.reg = &registers[i];
 			ip.allow_register = true;
-			ip.reg_group = Registers[i].group;
-			ip.size = Registers[i].size;
+			ip.reg_group = registers[i].group;
+			ip.size = registers[i].size;
 			return false;
 		}
 	// general reg / mem
@@ -65,7 +67,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
-		ip.reg_group = REG_GROUP_GENERAL;
+		ip.reg_group = RegGroup::GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Eb)	ip.size = SIZE_8;
 		if (param == Ew)	ip.size = SIZE_16;
@@ -80,7 +82,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip.allow_register = true;
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
-		ip.reg_group = REG_GROUP_XMM;
+		ip.reg_group = RegGroup::XMM;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == XMd)	ip.size = SIZE_32;
 		if (param == XMq)	ip.size = SIZE_64;
@@ -91,7 +93,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if ((param == Gb) or (param == Gq) or (param == Gw) or (param == Gd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = REG_GROUP_GENERAL;
+		ip.reg_group = RegGroup::GENERAL;
 		ip.mrm_mode = MRM_REG;
 		if (param == Gb)	ip.size = SIZE_8;
 		if (param == Gw)	ip.size = SIZE_16;
@@ -103,7 +105,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if ((param == Rb) or (param == Rq) or (param == Rw) or (param == Rd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = REG_GROUP_GENERAL;
+		ip.reg_group = RegGroup::GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Rb)	ip.size = SIZE_8;
 		if (param == Rw)	ip.size = SIZE_16;
@@ -148,7 +150,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 		ip._type_ = PARAMT_INVALID; // ...
 		ip.allow_memory_address = true;
 		ip.allow_memory_indirect = true;
-		ip.reg_group = REG_GROUP_GENERAL;
+		ip.reg_group = RegGroup::GENERAL;
 		ip.mrm_mode = MRM_MOD_RM;
 		if (param == Mb)	ip.size = SIZE_8;
 		if (param == Mw)	ip.size = SIZE_16;
@@ -160,7 +162,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if ((param == Cb) or (param == Cd) or (param == Cw) or (param == Cd)){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = REG_GROUP_CONTROL;
+		ip.reg_group = RegGroup::CONTROL;
 		ip.mrm_mode = MRM_REG;
 		if (param == Cb)	ip.size = SIZE_8;
 		if (param == Cw)	ip.size = SIZE_16;
@@ -172,7 +174,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if (param == Sw){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = REG_GROUP_SEGMENT;
+		ip.reg_group = RegGroup::SEGMENT;
 		ip.mrm_mode = MRM_REG;
 		ip.size = SIZE_16;
 		return true;
@@ -181,7 +183,7 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip)
 	if (param == Xx){
 		ip._type_ = PARAMT_REGISTER;
 		ip.allow_register = true;
-		ip.reg_group = REG_GROUP_XMM;
+		ip.reg_group = RegGroup::XMM;
 		ip.mrm_mode = MRM_REG;
 		ip.size = SIZE_128;
 		return true;
@@ -274,95 +276,95 @@ void x86_init()
 {
 	auto set = instruction_set.set;
 
-	Registers.clear();
-	add_reg("rax",	REG_RAX,	REG_GROUP_GENERAL,	SIZE_64,	0);
-	add_reg("eax",	REG_EAX,	REG_GROUP_GENERAL,	SIZE_32,	0);
-	add_reg("ax",	REG_AX,	REG_GROUP_GENERAL,	SIZE_16,	0);
-	add_reg("ah",	REG_AH,	REG_GROUP_GENERAL,	SIZE_8,	0); // RegResize[] will be overwritten by al
-	add_reg("al",	REG_AL,	REG_GROUP_GENERAL,	SIZE_8,	0);
-	add_reg("rcx",	REG_RCX,	REG_GROUP_GENERAL,	SIZE_64,	1);
-	add_reg("ecx",	REG_ECX,	REG_GROUP_GENERAL,	SIZE_32,	1);
-	add_reg("cx",	REG_CX,	REG_GROUP_GENERAL,	SIZE_16,	1);
-	add_reg("ch",	REG_CH,	REG_GROUP_GENERAL,	SIZE_8,	1);
-	add_reg("cl",	REG_CL,	REG_GROUP_GENERAL,	SIZE_8,	1);
-	add_reg("rdx",	REG_RDX,	REG_GROUP_GENERAL,	SIZE_64,	2);
-	add_reg("edx",	REG_EDX,	REG_GROUP_GENERAL,	SIZE_32,	2);
-	add_reg("dx",	REG_DX,	REG_GROUP_GENERAL,	SIZE_16,	2);
-	add_reg("dh",	REG_DH,	REG_GROUP_GENERAL,	SIZE_8,	2);
-	add_reg("dl",	REG_DL,	REG_GROUP_GENERAL,	SIZE_8,	2);
-	add_reg("rbx",	REG_RBX,	REG_GROUP_GENERAL,	SIZE_64,	3);
-	add_reg("ebx",	REG_EBX,	REG_GROUP_GENERAL,	SIZE_32,	3);
-	add_reg("bx",	REG_BX,	REG_GROUP_GENERAL,	SIZE_16,	3);
-	add_reg("bh",	REG_BH,	REG_GROUP_GENERAL,	SIZE_8,	3);
-	add_reg("bl",	REG_BL,	REG_GROUP_GENERAL,	SIZE_8,	3);
+	registers.clear();
+	add_reg("rax",	RegID::RAX,	RegGroup::GENERAL,	SIZE_64,	0);
+	add_reg("eax",	RegID::EAX,	RegGroup::GENERAL,	SIZE_32,	0);
+	add_reg("ax",	RegID::AX,	RegGroup::GENERAL,	SIZE_16,	0);
+	add_reg("ah",	RegID::AH,	RegGroup::GENERAL,	SIZE_8,	0); // RegResize[] will be overwritten by al
+	add_reg("al",	RegID::AL,	RegGroup::GENERAL,	SIZE_8,	0);
+	add_reg("rcx",	RegID::RCX,	RegGroup::GENERAL,	SIZE_64,	1);
+	add_reg("ecx",	RegID::ECX,	RegGroup::GENERAL,	SIZE_32,	1);
+	add_reg("cx",	RegID::CX,	RegGroup::GENERAL,	SIZE_16,	1);
+	add_reg("ch",	RegID::CH,	RegGroup::GENERAL,	SIZE_8,	1);
+	add_reg("cl",	RegID::CL,	RegGroup::GENERAL,	SIZE_8,	1);
+	add_reg("rdx",	RegID::RDX,	RegGroup::GENERAL,	SIZE_64,	2);
+	add_reg("edx",	RegID::EDX,	RegGroup::GENERAL,	SIZE_32,	2);
+	add_reg("dx",	RegID::DX,	RegGroup::GENERAL,	SIZE_16,	2);
+	add_reg("dh",	RegID::DH,	RegGroup::GENERAL,	SIZE_8,	2);
+	add_reg("dl",	RegID::DL,	RegGroup::GENERAL,	SIZE_8,	2);
+	add_reg("rbx",	RegID::RBX,	RegGroup::GENERAL,	SIZE_64,	3);
+	add_reg("ebx",	RegID::EBX,	RegGroup::GENERAL,	SIZE_32,	3);
+	add_reg("bx",	RegID::BX,	RegGroup::GENERAL,	SIZE_16,	3);
+	add_reg("bh",	RegID::BH,	RegGroup::GENERAL,	SIZE_8,	3);
+	add_reg("bl",	RegID::BL,	RegGroup::GENERAL,	SIZE_8,	3);
 
-	add_reg("rsp",	REG_RSP,	REG_GROUP_GENERAL,	SIZE_64,	4);
-	add_reg("esp",	REG_ESP,	REG_GROUP_GENERAL,	SIZE_32,	4);
-	add_reg("sp",	REG_SP,	REG_GROUP_GENERAL,	SIZE_16,	4);
-	add_reg("rbp",	REG_RBP,	REG_GROUP_GENERAL,	SIZE_64,	5);
-	add_reg("ebp",	REG_EBP,	REG_GROUP_GENERAL,	SIZE_32,	5);
-	add_reg("bp",	REG_BP,	REG_GROUP_GENERAL,	SIZE_16,	5);
-	add_reg("rsi",	REG_RSI,	REG_GROUP_GENERAL,	SIZE_64,	6);
-	add_reg("esi",	REG_ESI,	REG_GROUP_GENERAL,	SIZE_32,	6);
-	add_reg("si",	REG_SI,	REG_GROUP_GENERAL,	SIZE_16,	6);
-	add_reg("rdi",	REG_RDI,	REG_GROUP_GENERAL,	SIZE_64,	7);
-	add_reg("edi",	REG_EDI,	REG_GROUP_GENERAL,	SIZE_32,	7);
-	add_reg("di",	REG_DI,	REG_GROUP_GENERAL,	SIZE_16,	7);
+	add_reg("rsp",	RegID::RSP,	RegGroup::GENERAL,	SIZE_64,	4);
+	add_reg("esp",	RegID::ESP,	RegGroup::GENERAL,	SIZE_32,	4);
+	add_reg("sp",	RegID::SP,	RegGroup::GENERAL,	SIZE_16,	4);
+	add_reg("rbp",	RegID::RBP,	RegGroup::GENERAL,	SIZE_64,	5);
+	add_reg("ebp",	RegID::EBP,	RegGroup::GENERAL,	SIZE_32,	5);
+	add_reg("bp",	RegID::BP,	RegGroup::GENERAL,	SIZE_16,	5);
+	add_reg("rsi",	RegID::RSI,	RegGroup::GENERAL,	SIZE_64,	6);
+	add_reg("esi",	RegID::ESI,	RegGroup::GENERAL,	SIZE_32,	6);
+	add_reg("si",	RegID::SI,	RegGroup::GENERAL,	SIZE_16,	6);
+	add_reg("rdi",	RegID::RDI,	RegGroup::GENERAL,	SIZE_64,	7);
+	add_reg("edi",	RegID::EDI,	RegGroup::GENERAL,	SIZE_32,	7);
+	add_reg("di",	RegID::DI,	RegGroup::GENERAL,	SIZE_16,	7);
 
-	add_reg("r8",	REG_R8,	REG_GROUP_GENERAL2,	SIZE_64,	8);
-	add_reg("r8d",	REG_R8D,	REG_GROUP_GENERAL2,	SIZE_32,	8);
-	add_reg("r9",	REG_R9,	REG_GROUP_GENERAL2,	SIZE_64,	9);
-	add_reg("r9d",	REG_R9D,	REG_GROUP_GENERAL2,	SIZE_32,	9);
-	add_reg("r10",	REG_R10,	REG_GROUP_GENERAL2,	SIZE_64,	10);
-	add_reg("r10d",	REG_R10D,REG_GROUP_GENERAL2,	SIZE_32,	10);
-	add_reg("r11",	REG_R11,	REG_GROUP_GENERAL2,	SIZE_64,	10);
-	add_reg("r11d",	REG_R11D,REG_GROUP_GENERAL2,	SIZE_32,	11);
-	add_reg("r12",	REG_R12,	REG_GROUP_GENERAL2,	SIZE_64,	12);
-	add_reg("r12d",	REG_R12D,REG_GROUP_GENERAL2,	SIZE_32,	12);
-	add_reg("r13",	REG_R13,	REG_GROUP_GENERAL2,	SIZE_64,	13);
-	add_reg("r13d",	REG_R13D,REG_GROUP_GENERAL2,	SIZE_32,	13);
-	add_reg("r14",	REG_R14,	REG_GROUP_GENERAL2,	SIZE_64,	14);
-	add_reg("r14d",	REG_R14D,REG_GROUP_GENERAL2,	SIZE_32,	14);
-	add_reg("r15",	REG_R15,	REG_GROUP_GENERAL2,	SIZE_64,	15);
-	add_reg("r15d",	REG_R15D,REG_GROUP_GENERAL2,	SIZE_32,	15);
+	add_reg("r8",	RegID::R8,	RegGroup::GENERAL2,	SIZE_64,	8);
+	add_reg("r8d",	RegID::R8D,	RegGroup::GENERAL2,	SIZE_32,	8);
+	add_reg("r9",	RegID::R9,	RegGroup::GENERAL2,	SIZE_64,	9);
+	add_reg("r9d",	RegID::R9D,	RegGroup::GENERAL2,	SIZE_32,	9);
+	add_reg("r10",	RegID::R10,	RegGroup::GENERAL2,	SIZE_64,	10);
+	add_reg("r10d",	RegID::R10D,RegGroup::GENERAL2,	SIZE_32,	10);
+	add_reg("r11",	RegID::R11,	RegGroup::GENERAL2,	SIZE_64,	10);
+	add_reg("r11d",	RegID::R11D,RegGroup::GENERAL2,	SIZE_32,	11);
+	add_reg("r12",	RegID::R12,	RegGroup::GENERAL2,	SIZE_64,	12);
+	add_reg("r12d",	RegID::R12D,RegGroup::GENERAL2,	SIZE_32,	12);
+	add_reg("r13",	RegID::R13,	RegGroup::GENERAL2,	SIZE_64,	13);
+	add_reg("r13d",	RegID::R13D,RegGroup::GENERAL2,	SIZE_32,	13);
+	add_reg("r14",	RegID::R14,	RegGroup::GENERAL2,	SIZE_64,	14);
+	add_reg("r14d",	RegID::R14D,RegGroup::GENERAL2,	SIZE_32,	14);
+	add_reg("r15",	RegID::R15,	RegGroup::GENERAL2,	SIZE_64,	15);
+	add_reg("r15d",	RegID::R15D,RegGroup::GENERAL2,	SIZE_32,	15);
 
-	add_reg("cs",	REG_CS,	REG_GROUP_SEGMENT,	SIZE_16);
-	add_reg("ss",	REG_SS,	REG_GROUP_SEGMENT,	SIZE_16);
-	add_reg("ds",	REG_DS,	REG_GROUP_SEGMENT,	SIZE_16);
-	add_reg("es",	REG_ES,	REG_GROUP_SEGMENT,	SIZE_16);
-	add_reg("fs",	REG_FS,	REG_GROUP_SEGMENT,	SIZE_16);
-	add_reg("gs",	REG_GS,	REG_GROUP_SEGMENT,	SIZE_16);
+	add_reg("cs",	RegID::CS,	RegGroup::SEGMENT,	SIZE_16);
+	add_reg("ss",	RegID::SS,	RegGroup::SEGMENT,	SIZE_16);
+	add_reg("ds",	RegID::DS,	RegGroup::SEGMENT,	SIZE_16);
+	add_reg("es",	RegID::ES,	RegGroup::SEGMENT,	SIZE_16);
+	add_reg("fs",	RegID::FS,	RegGroup::SEGMENT,	SIZE_16);
+	add_reg("gs",	RegID::GS,	RegGroup::SEGMENT,	SIZE_16);
 
-	add_reg("cr0",	REG_CR0,	REG_GROUP_CONTROL,	SIZE_32);
-	add_reg("cr1",	REG_CR1,	REG_GROUP_CONTROL,	SIZE_32);
-	add_reg("cr2",	REG_RC2,	REG_GROUP_CONTROL,	SIZE_32);
-	add_reg("cr3",	REG_CR3,	REG_GROUP_CONTROL,	SIZE_32);
-	add_reg("cr4",	REG_CR4,	REG_GROUP_CONTROL,	SIZE_32);
+	add_reg("cr0",	RegID::CR0,	RegGroup::CONTROL,	SIZE_32);
+	add_reg("cr1",	RegID::CR1,	RegGroup::CONTROL,	SIZE_32);
+	add_reg("cr2",	RegID::RC2,	RegGroup::CONTROL,	SIZE_32);
+	add_reg("cr3",	RegID::CR3,	RegGroup::CONTROL,	SIZE_32);
+	add_reg("cr4",	RegID::CR4,	RegGroup::CONTROL,	SIZE_32);
 
-	add_reg("st0",	REG_ST0,	REG_GROUP_X87,	SIZE_32,	16); // ??? 32
-	add_reg("st1",	REG_ST1,	REG_GROUP_X87,	SIZE_32,	17);
-	add_reg("st2",	REG_ST2,	REG_GROUP_X87,	SIZE_32,	18);
-	add_reg("st3",	REG_ST3,	REG_GROUP_X87,	SIZE_32,	19);
-	add_reg("st4",	REG_ST4,	REG_GROUP_X87,	SIZE_32,	20);
-	add_reg("st5",	REG_ST5,	REG_GROUP_X87,	SIZE_32,	21);
-	add_reg("st6",	REG_ST6,	REG_GROUP_X87,	SIZE_32,	22);
-	add_reg("st7",	REG_ST7,	REG_GROUP_X87,	SIZE_32,	23);
+	add_reg("st0",	RegID::ST0,	RegGroup::X87,	SIZE_32,	16); // ??? 32
+	add_reg("st1",	RegID::ST1,	RegGroup::X87,	SIZE_32,	17);
+	add_reg("st2",	RegID::ST2,	RegGroup::X87,	SIZE_32,	18);
+	add_reg("st3",	RegID::ST3,	RegGroup::X87,	SIZE_32,	19);
+	add_reg("st4",	RegID::ST4,	RegGroup::X87,	SIZE_32,	20);
+	add_reg("st5",	RegID::ST5,	RegGroup::X87,	SIZE_32,	21);
+	add_reg("st6",	RegID::ST6,	RegGroup::X87,	SIZE_32,	22);
+	add_reg("st7",	RegID::ST7,	RegGroup::X87,	SIZE_32,	23);
 
-	add_reg("xmm0",	REG_XMM0,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm1",	REG_XMM1,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm2",	REG_XMM2,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm3",	REG_XMM3,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm4",	REG_XMM4,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm5",	REG_XMM5,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm6",	REG_XMM6,	REG_GROUP_XMM,	SIZE_128);
-	add_reg("xmm7",	REG_XMM7,	REG_GROUP_XMM,	SIZE_128);
+	add_reg("xmm0",	RegID::XMM0,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm1",	RegID::XMM1,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm2",	RegID::XMM2,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm3",	RegID::XMM3,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm4",	RegID::XMM4,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm5",	RegID::XMM5,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm6",	RegID::XMM6,	RegGroup::XMM,	SIZE_128);
+	add_reg("xmm7",	RegID::XMM7,	RegGroup::XMM,	SIZE_128);
 
 	// create easy to access array
-	RegisterByID.clear();
-	for (int i=0;i<Registers.num;i++){
-		if (RegisterByID.num <= Registers[i].id)
-			RegisterByID.resize(Registers[i].id + 1);
-		RegisterByID[Registers[i].id] = &Registers[i];
+	register_by_id.clear();
+	for (int i=0;i<registers.num;i++){
+		if (register_by_id.num <= (int)registers[i].id)
+			register_by_id.resize((int)registers[i].id + 1);
+		RegisterByID(registers[i].id) = &registers[i];
 	}
 
 	CPUInstructions.clear();
@@ -377,12 +379,12 @@ void x86_init()
 	add_inst(INST_ADD		,0x03	,1	,-1	,Gw	,Eq, OPT_SMALL_PARAM);
 	add_inst(INST_ADD		,0x03	,1	,-1	,Gd	,Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_ADD		,0x03	,1	,-1	,Gq	,Eq, OPT_BIG_PARAM);
-	add_inst(INST_ADD		,0x04	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_ADD		,0x05	,1	,-1	,REG_AX, Iw, OPT_SMALL_PARAM);
-	add_inst(INST_ADD		,0x05	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_ADD		,0x05	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
-	add_inst(INST_PUSH		,0x06	,1	,-1	,REG_ES	,-1);
-	add_inst(INST_POP		,0x07	,1	,-1	,REG_ES	,-1);
+	add_inst(INST_ADD		,0x04	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_ADD		,0x05	,1	,-1	,(int)RegID::AX, Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADD		,0x05	,1	,-1	,(int)RegID::EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADD		,0x05	,1	,-1	,(int)RegID::RAX, Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH		,0x06	,1	,-1	,(int)RegID::ES	,-1);
+	add_inst(INST_POP		,0x07	,1	,-1	,(int)RegID::ES	,-1);
 	add_inst(INST_OR		,0x08	,1	,-1	,Eb	,Gb);
 	add_inst(INST_OR		,0x09	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
 	add_inst(INST_OR		,0x09	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
@@ -391,11 +393,11 @@ void x86_init()
 	add_inst(INST_OR,	0x0b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_OR,	0x0b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_OR,	0x0b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_OR		,0x0c	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_OR		,0x0d	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
-	add_inst(INST_OR		,0x0d	,1	,-1	,REG_EAX,	Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_OR		,0x0d	,1	,-1	,REG_RAX,	Id, OPT_BIG_PARAM);
-	add_inst(INST_PUSH		,0x0e	,1	,-1	,REG_CS	,-1);
+	add_inst(INST_OR		,0x0c	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_OR		,0x0d	,1	,-1	,(int)RegID::AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_OR		,0x0d	,1	,-1	,(int)RegID::EAX,	Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_OR		,0x0d	,1	,-1	,(int)RegID::RAX,	Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH		,0x0e	,1	,-1	,(int)RegID::CS	,-1);
 	add_inst(INST_SLDT		,0x000f	,2	,0	,Ew	,-1);
 	add_inst(INST_STR		,0x000f	,2	,1	,Ew	,-1);
 	add_inst(INST_LLDT		,0x000f	,2	,2	,Ew	,-1);
@@ -474,12 +476,12 @@ void x86_init()
 	add_inst(INST_ADC,	0x13,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_ADC,	0x13,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_ADC,	0x13,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_ADC,	0x14	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_ADC,	0x15	,1	,-1	,REG_AX,	Iw, OPT_SMALL_PARAM);
-	add_inst(INST_ADC,	0x15	,1	,-1	,REG_EAX, Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_ADC,	0x15	,1	,-1	,REG_RAX, Id, OPT_BIG_PARAM);
-	add_inst(INST_PUSH,	0x16	,1	,-1	,REG_SS, -1);
-	add_inst(INST_POP,	0x17	,1	,-1	,REG_SS, -1);
+	add_inst(INST_ADC,	0x14	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_ADC,	0x15	,1	,-1	,(int)RegID::AX,	Iw, OPT_SMALL_PARAM);
+	add_inst(INST_ADC,	0x15	,1	,-1	,(int)RegID::EAX, Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_ADC,	0x15	,1	,-1	,(int)RegID::RAX, Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH,	0x16	,1	,-1	,(int)RegID::SS, -1);
+	add_inst(INST_POP,	0x17	,1	,-1	,(int)RegID::SS, -1);
 	add_inst(INST_SBB,	0x18	,1	,-1	,Eb	,Gb);
 	add_inst(INST_SBB,	0x19,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
 	add_inst(INST_SBB,	0x19,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
@@ -488,12 +490,12 @@ void x86_init()
 	add_inst(INST_SBB,	0x1b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_SBB,	0x1b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_SBB,	0x1b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_SBB,	0x1c	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_SBB,	0x1d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
-	add_inst(INST_PUSH,	0x1e	,1	,-1	,REG_DS	,-1);
-	add_inst(INST_POP,	0x1f	,1	,-1	,REG_DS	,-1);
+	add_inst(INST_SBB,	0x1c	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SBB,	0x1d	,1	,-1	,(int)RegID::RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_PUSH,	0x1e	,1	,-1	,(int)RegID::DS	,-1);
+	add_inst(INST_POP,	0x1f	,1	,-1	,(int)RegID::DS	,-1);
 	add_inst(INST_AND,	0x20	,1	,-1	,Eb	,Gb);
 	add_inst(INST_AND,	0x21,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
 	add_inst(INST_AND,	0x21,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
@@ -502,10 +504,10 @@ void x86_init()
 	add_inst(INST_AND,	0x23,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_AND,	0x23,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_AND,	0x23,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_AND,	0x24	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_AND,	0x25	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_AND,	0x25	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_AND,	0x25	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_AND,	0x24	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_AND,	0x25	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_AND,	0x25	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_AND,	0x25	,1	,-1	,(int)RegID::RAX	,Id, OPT_BIG_PARAM);
 	add_inst(INST_SUB,	0x28	,1	,-1	,Eb	,Gb);
 	add_inst(INST_SUB,	0x29,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
 	add_inst(INST_SUB,	0x29,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
@@ -514,10 +516,10 @@ void x86_init()
 	add_inst(INST_SUB,	0x2b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_SUB,	0x2b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_SUB,	0x2b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_SUB,	0x2c	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_SUB,	0x2d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_SUB,	0x2c	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_SUB,	0x2d	,1	,-1	,(int)RegID::RAX	,Id, OPT_BIG_PARAM);
 	add_inst(INST_XOR,	0x30	,1	,-1	,Eb	,Gb);
 	add_inst(INST_XOR,	0x31,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
 	add_inst(INST_XOR,	0x31,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
@@ -526,10 +528,10 @@ void x86_init()
 	add_inst(INST_XOR,	0x33,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_XOR,	0x33,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_XOR,	0x33,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_XOR,	0x34	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_XOR,	0x35	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_XOR,	0x35	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_XOR,	0x35	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_XOR,	0x34	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_XOR,	0x35	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_XOR,	0x35	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_XOR,	0x35	,1	,-1	,(int)RegID::RAX	,Id, OPT_BIG_PARAM);
 	add_inst(INST_CMP,	0x38	,1	,-1	,Eb	,Gb);
 	add_inst(INST_CMP,	0x39,	1,	-1,	Ew,	Gw, OPT_SMALL_PARAM);
 	add_inst(INST_CMP,	0x39,	1,	-1,	Ed,	Gd, OPT_MEDIUM_PARAM);
@@ -538,62 +540,62 @@ void x86_init()
 	add_inst(INST_CMP,	0x3b,	1,	-1,	Gw,	Ew, OPT_SMALL_PARAM);
 	add_inst(INST_CMP,	0x3b,	1,	-1,	Gd,	Ed, OPT_MEDIUM_PARAM);
 	add_inst(INST_CMP,	0x3b,	1,	-1,	Gq,	Eq, OPT_BIG_PARAM);
-	add_inst(INST_CMP,	0x3c	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_CMP,	0x3d	,1	,-1	,REG_RAX	,Id, OPT_BIG_PARAM);
+	add_inst(INST_CMP,	0x3c	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_CMP,	0x3d	,1	,-1	,(int)RegID::RAX	,Id, OPT_BIG_PARAM);
 	if (set == InstructionSet::X86){
-		add_inst(INST_INC		,0x40	,1	,-1	,REG_EAX	,-1);
-		add_inst(INST_INC		,0x41	,1	,-1	,REG_ECX	,-1);
-		add_inst(INST_INC		,0x42	,1	,-1	,REG_EDX	,-1);
-		add_inst(INST_INC		,0x43	,1	,-1	,REG_EBX	,-1);
-		add_inst(INST_INC		,0x44	,1	,-1	,REG_ESP	,-1);
-		add_inst(INST_INC		,0x45	,1	,-1	,REG_EBP	,-1);
-		add_inst(INST_INC		,0x46	,1	,-1	,REG_ESI	,-1);
-		add_inst(INST_INC		,0x47	,1	,-1	,REG_EDI	,-1);
-		add_inst(INST_DEC		,0x48	,1	,-1	,REG_EAX	,-1);
-		add_inst(INST_DEC		,0x49	,1	,-1	,REG_ECX	,-1);
-		add_inst(INST_DEC		,0x4a	,1	,-1	,REG_EDX	,-1);
-		add_inst(INST_DEC		,0x4b	,1	,-1	,REG_EBX	,-1);
-		add_inst(INST_DEC		,0x4c	,1	,-1	,REG_ESP	,-1);
-		add_inst(INST_DEC		,0x4d	,1	,-1	,REG_EBP	,-1);
-		add_inst(INST_DEC		,0x4e	,1	,-1	,REG_ESI	,-1);
-		add_inst(INST_DEC		,0x4f	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_INC		,0x40	,1	,-1	,(int)RegID::EAX	,-1);
+		add_inst(INST_INC		,0x41	,1	,-1	,(int)RegID::ECX	,-1);
+		add_inst(INST_INC		,0x42	,1	,-1	,(int)RegID::EDX	,-1);
+		add_inst(INST_INC		,0x43	,1	,-1	,(int)RegID::EBX	,-1);
+		add_inst(INST_INC		,0x44	,1	,-1	,(int)RegID::ESP	,-1);
+		add_inst(INST_INC		,0x45	,1	,-1	,(int)RegID::EBP	,-1);
+		add_inst(INST_INC		,0x46	,1	,-1	,(int)RegID::ESI	,-1);
+		add_inst(INST_INC		,0x47	,1	,-1	,(int)RegID::EDI	,-1);
+		add_inst(INST_DEC		,0x48	,1	,-1	,(int)RegID::EAX	,-1);
+		add_inst(INST_DEC		,0x49	,1	,-1	,(int)RegID::ECX	,-1);
+		add_inst(INST_DEC		,0x4a	,1	,-1	,(int)RegID::EDX	,-1);
+		add_inst(INST_DEC		,0x4b	,1	,-1	,(int)RegID::EBX	,-1);
+		add_inst(INST_DEC		,0x4c	,1	,-1	,(int)RegID::ESP	,-1);
+		add_inst(INST_DEC		,0x4d	,1	,-1	,(int)RegID::EBP	,-1);
+		add_inst(INST_DEC		,0x4e	,1	,-1	,(int)RegID::ESI	,-1);
+		add_inst(INST_DEC		,0x4f	,1	,-1	,(int)RegID::EDI	,-1);
 	}
 	if (set == InstructionSet::X86){
-		add_inst(INST_PUSH		,0x50	,1	,-1	,REG_EAX	,-1);
-		add_inst(INST_PUSH		,0x51	,1	,-1	,REG_ECX	,-1);
-		add_inst(INST_PUSH		,0x52	,1	,-1	,REG_EDX	,-1);
-		add_inst(INST_PUSH		,0x53	,1	,-1	,REG_EBX	,-1);
-		add_inst(INST_PUSH		,0x54	,1	,-1	,REG_ESP	,-1);
-		add_inst(INST_PUSH		,0x55	,1	,-1	,REG_EBP	,-1);
-		add_inst(INST_PUSH		,0x56	,1	,-1	,REG_ESI	,-1);
-		add_inst(INST_PUSH		,0x57	,1	,-1	,REG_EDI	,-1);
-		add_inst(INST_POP		,0x58	,1	,-1	,REG_EAX	,-1);
-		add_inst(INST_POP		,0x59	,1	,-1	,REG_ECX	,-1);
-		add_inst(INST_POP		,0x5a	,1	,-1	,REG_EDX	,-1);
-		add_inst(INST_POP		,0x5b	,1	,-1	,REG_EBX	,-1);
-		add_inst(INST_POP		,0x5c	,1	,-1	,REG_ESP	,-1);
-		add_inst(INST_POP		,0x5d	,1	,-1	,REG_EBP	,-1);
-		add_inst(INST_POP		,0x5e	,1	,-1	,REG_ESI	,-1);
-		add_inst(INST_POP		,0x5f	,1	,-1	,REG_EDI	,-1);
+		add_inst(INST_PUSH		,0x50	,1	,-1	,(int)RegID::EAX	,-1);
+		add_inst(INST_PUSH		,0x51	,1	,-1	,(int)RegID::ECX	,-1);
+		add_inst(INST_PUSH		,0x52	,1	,-1	,(int)RegID::EDX	,-1);
+		add_inst(INST_PUSH		,0x53	,1	,-1	,(int)RegID::EBX	,-1);
+		add_inst(INST_PUSH		,0x54	,1	,-1	,(int)RegID::ESP	,-1);
+		add_inst(INST_PUSH		,0x55	,1	,-1	,(int)RegID::EBP	,-1);
+		add_inst(INST_PUSH		,0x56	,1	,-1	,(int)RegID::ESI	,-1);
+		add_inst(INST_PUSH		,0x57	,1	,-1	,(int)RegID::EDI	,-1);
+		add_inst(INST_POP		,0x58	,1	,-1	,(int)RegID::EAX	,-1);
+		add_inst(INST_POP		,0x59	,1	,-1	,(int)RegID::ECX	,-1);
+		add_inst(INST_POP		,0x5a	,1	,-1	,(int)RegID::EDX	,-1);
+		add_inst(INST_POP		,0x5b	,1	,-1	,(int)RegID::EBX	,-1);
+		add_inst(INST_POP		,0x5c	,1	,-1	,(int)RegID::ESP	,-1);
+		add_inst(INST_POP		,0x5d	,1	,-1	,(int)RegID::EBP	,-1);
+		add_inst(INST_POP		,0x5e	,1	,-1	,(int)RegID::ESI	,-1);
+		add_inst(INST_POP		,0x5f	,1	,-1	,(int)RegID::EDI	,-1);
 	}else if (set == InstructionSet::AMD64){
-		add_inst(INST_PUSH		,0x50	,1	,-1	,REG_RAX	,-1);
-		add_inst(INST_PUSH		,0x51	,1	,-1	,REG_RCX	,-1);
-		add_inst(INST_PUSH		,0x52	,1	,-1	,REG_RDX	,-1);
-		add_inst(INST_PUSH		,0x53	,1	,-1	,REG_RBX	,-1);
-		add_inst(INST_PUSH		,0x54	,1	,-1	,REG_RSP	,-1);
-		add_inst(INST_PUSH		,0x55	,1	,-1	,REG_RBP	,-1);
-		add_inst(INST_PUSH		,0x56	,1	,-1	,REG_RSI	,-1);
-		add_inst(INST_PUSH		,0x57	,1	,-1	,REG_RDI	,-1);
-		add_inst(INST_POP		,0x58	,1	,-1	,REG_RAX	,-1);
-		add_inst(INST_POP		,0x59	,1	,-1	,REG_RCX	,-1);
-		add_inst(INST_POP		,0x5a	,1	,-1	,REG_RDX	,-1);
-		add_inst(INST_POP		,0x5b	,1	,-1	,REG_RBX	,-1);
-		add_inst(INST_POP		,0x5c	,1	,-1	,REG_RSP	,-1);
-		add_inst(INST_POP		,0x5d	,1	,-1	,REG_RBP	,-1);
-		add_inst(INST_POP		,0x5e	,1	,-1	,REG_RSI	,-1);
-		add_inst(INST_POP		,0x5f	,1	,-1	,REG_RDI	,-1);
+		add_inst(INST_PUSH		,0x50	,1	,-1	,(int)RegID::RAX	,-1);
+		add_inst(INST_PUSH		,0x51	,1	,-1	,(int)RegID::RCX	,-1);
+		add_inst(INST_PUSH		,0x52	,1	,-1	,(int)RegID::RDX	,-1);
+		add_inst(INST_PUSH		,0x53	,1	,-1	,(int)RegID::RBX	,-1);
+		add_inst(INST_PUSH		,0x54	,1	,-1	,(int)RegID::RSP	,-1);
+		add_inst(INST_PUSH		,0x55	,1	,-1	,(int)RegID::RBP	,-1);
+		add_inst(INST_PUSH		,0x56	,1	,-1	,(int)RegID::RSI	,-1);
+		add_inst(INST_PUSH		,0x57	,1	,-1	,(int)RegID::RDI	,-1);
+		add_inst(INST_POP		,0x58	,1	,-1	,(int)RegID::RAX	,-1);
+		add_inst(INST_POP		,0x59	,1	,-1	,(int)RegID::RCX	,-1);
+		add_inst(INST_POP		,0x5a	,1	,-1	,(int)RegID::RDX	,-1);
+		add_inst(INST_POP		,0x5b	,1	,-1	,(int)RegID::RBX	,-1);
+		add_inst(INST_POP		,0x5c	,1	,-1	,(int)RegID::RSP	,-1);
+		add_inst(INST_POP		,0x5d	,1	,-1	,(int)RegID::RBP	,-1);
+		add_inst(INST_POP		,0x5e	,1	,-1	,(int)RegID::RSI	,-1);
+		add_inst(INST_POP		,0x5f	,1	,-1	,(int)RegID::RDI	,-1);
 	}
 	add_inst(INST_PUSHA		,0x60	,1	,-1	,-1	,-1);
 	add_inst(INST_POPA		,0x61	,1	,-1	,-1	,-1);
@@ -705,73 +707,73 @@ void x86_init()
 	add_inst(INST_POP,	0x8f,	1,	-1,	Ed,	-1, OPT_MEDIUM_PARAM);
 	add_inst(INST_POP,	0x8f,	1,	-1,	Eq,	-1, OPT_BIG_PARAM);
 	add_inst(INST_NOP		,0x90	,1	,-1	,-1	,-1);
-	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_AX	,REG_CX, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_AX	,REG_DX, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_AX	,REG_BX, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_AX	,REG_SP, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_AX	,REG_BP, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_AX	,REG_SI, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_AX	,REG_DI, OPT_SMALL_PARAM);
-	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_EAX	,REG_ECX, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_EAX	,REG_EDX, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_EAX	,REG_EBX, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_EAX	,REG_ESP, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_EAX	,REG_EBP, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_EAX	,REG_ESI, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_EAX	,REG_EDI, OPT_MEDIUM_PARAM);
-	add_inst(INST_XCHG		,0x91	,1	,-1	,REG_RAX	,REG_RCX, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x92	,1	,-1	,REG_RAX	,REG_RDX, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x93	,1	,-1	,REG_RAX	,REG_RBX, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x94	,1	,-1	,REG_RAX	,REG_RSP, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x95	,1	,-1	,REG_RAX	,REG_RBP, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x96	,1	,-1	,REG_RAX	,REG_RSI, OPT_BIG_PARAM);
-	add_inst(INST_XCHG		,0x97	,1	,-1	,REG_RAX	,REG_RDI, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,(int)RegID::AX	,(int)RegID::CX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,(int)RegID::AX	,(int)RegID::DX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,(int)RegID::AX	,(int)RegID::BX, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,(int)RegID::AX	,(int)RegID::SP, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,(int)RegID::AX	,(int)RegID::BP, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,(int)RegID::AX	,(int)RegID::SI, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,(int)RegID::AX	,(int)RegID::DI, OPT_SMALL_PARAM);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,(int)RegID::EAX	,(int)RegID::ECX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,(int)RegID::EAX	,(int)RegID::EDX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,(int)RegID::EAX	,(int)RegID::EBX, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,(int)RegID::EAX	,(int)RegID::ESP, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,(int)RegID::EAX	,(int)RegID::EBP, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,(int)RegID::EAX	,(int)RegID::ESI, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,(int)RegID::EAX	,(int)RegID::EDI, OPT_MEDIUM_PARAM);
+	add_inst(INST_XCHG		,0x91	,1	,-1	,(int)RegID::RAX	,(int)RegID::RCX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x92	,1	,-1	,(int)RegID::RAX	,(int)RegID::RDX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x93	,1	,-1	,(int)RegID::RAX	,(int)RegID::RBX, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x94	,1	,-1	,(int)RegID::RAX	,(int)RegID::RSP, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x95	,1	,-1	,(int)RegID::RAX	,(int)RegID::RBP, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x96	,1	,-1	,(int)RegID::RAX	,(int)RegID::RSI, OPT_BIG_PARAM);
+	add_inst(INST_XCHG		,0x97	,1	,-1	,(int)RegID::RAX	,(int)RegID::RDI, OPT_BIG_PARAM);
 	add_inst(INST_CBW_CWDE	,0x98	,1	,-1	,-1 ,-1);
 	add_inst(INST_CGQ_CWD	,0x99	,1	,-1	,-1 ,-1);
-	add_inst(INST_MOV		,0xa0	,1	,-1	,REG_AL	,Ob, 0, true);
-	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_AX	,Ow, OPT_SMALL_PARAM, true);
-	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_EAX	,Od, OPT_MEDIUM_PARAM, true);
-	add_inst(INST_MOV		,0xa1	,1	,-1	,REG_RAX	,Oq, OPT_BIG_PARAM, true);
-	add_inst(INST_MOV		,0xa2	,1	,-1	,Ob	,REG_AL, 0, true);
-	add_inst(INST_MOV,	0xa3,	1,	-1,	Ow,	REG_AX, OPT_SMALL_PARAM, true);
-	add_inst(INST_MOV,	0xa3,	1,	-1,	Od,	REG_EAX, OPT_MEDIUM_PARAM, true);
-	add_inst(INST_MOV,	0xa3,	1,	-1,	Oq,	REG_RAX, OPT_BIG_PARAM, true);
+	add_inst(INST_MOV		,0xa0	,1	,-1	,(int)RegID::AL	,Ob, 0, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,(int)RegID::AX	,Ow, OPT_SMALL_PARAM, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,(int)RegID::EAX	,Od, OPT_MEDIUM_PARAM, true);
+	add_inst(INST_MOV		,0xa1	,1	,-1	,(int)RegID::RAX	,Oq, OPT_BIG_PARAM, true);
+	add_inst(INST_MOV		,0xa2	,1	,-1	,Ob	,(int)RegID::AL, 0, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Ow,	(int)RegID::AX, OPT_SMALL_PARAM, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Od,	(int)RegID::EAX, OPT_MEDIUM_PARAM, true);
+	add_inst(INST_MOV,	0xa3,	1,	-1,	Oq,	(int)RegID::RAX, OPT_BIG_PARAM, true);
 	add_inst(INST_MOVS_B_DS_ESI_ES_EDI	,0xa4	,1	,-1	,-1,-1);
 	add_inst(INST_MOVS_DS_ESI_ES_EDI	,0xa5	,1	,-1	,-1,-1);
 	add_inst(INST_CMPS_B_DS_ESI_ES_EDI	,0xa6	,1	,-1	,-1,-1);
 	add_inst(INST_CMPS_DS_ESI_ES_EDI	,0xa7	,1	,-1	,-1,-1);
-	add_inst(INST_MOV		,0xb0	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_MOV		,0xb1	,1	,-1	,REG_CL	,Ib);
-	add_inst(INST_MOV		,0xb2	,1	,-1	,REG_DL	,Ib);
-	add_inst(INST_MOV		,0xb3	,1	,-1	,REG_BL	,Ib);
-	add_inst(INST_MOV		,0xb4	,1	,-1	,REG_AH	,Ib);
-	add_inst(INST_MOV		,0xb5	,1	,-1	,REG_CH	,Ib);
-	add_inst(INST_MOV		,0xb6	,1	,-1	,REG_DH	,Ib);
-	add_inst(INST_MOV		,0xb7	,1	,-1	,REG_BH	,Ib);
-	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_EAX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_ECX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xba	,1	,-1	,REG_EDX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_EBX	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_ESP	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_EBP	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_ESI	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_EDI	,Id, OPT_MEDIUM_PARAM);
-	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_AX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_CX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xba	,1	,-1	,REG_DX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_BX	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_SP	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_BP	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_SI	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_DI	,Iw, OPT_SMALL_PARAM);
-	add_inst(INST_MOV		,0xb8	,1	,-1	,REG_RAX	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xb9	,1	,-1	,REG_RCX	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xba	,1	,-1	,REG_RDX	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xbb	,1	,-1	,REG_RBX	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xbc	,1	,-1	,REG_RSP	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xbd	,1	,-1	,REG_RBP	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xbe	,1	,-1	,REG_RSI	,Iq, OPT_BIG_PARAM);
-	add_inst(INST_MOV		,0xbf	,1	,-1	,REG_RDI	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xb0	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_MOV		,0xb1	,1	,-1	,(int)RegID::CL	,Ib);
+	add_inst(INST_MOV		,0xb2	,1	,-1	,(int)RegID::DL	,Ib);
+	add_inst(INST_MOV		,0xb3	,1	,-1	,(int)RegID::BL	,Ib);
+	add_inst(INST_MOV		,0xb4	,1	,-1	,(int)RegID::AH	,Ib);
+	add_inst(INST_MOV		,0xb5	,1	,-1	,(int)RegID::CH	,Ib);
+	add_inst(INST_MOV		,0xb6	,1	,-1	,(int)RegID::DH	,Ib);
+	add_inst(INST_MOV		,0xb7	,1	,-1	,(int)RegID::BH	,Ib);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,(int)RegID::EAX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,(int)RegID::ECX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,(int)RegID::EDX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,(int)RegID::EBX	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,(int)RegID::ESP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,(int)RegID::EBP	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,(int)RegID::ESI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,(int)RegID::EDI	,Id, OPT_MEDIUM_PARAM);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,(int)RegID::AX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,(int)RegID::CX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,(int)RegID::DX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,(int)RegID::BX	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,(int)RegID::SP	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,(int)RegID::BP	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,(int)RegID::SI	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,(int)RegID::DI	,Iw, OPT_SMALL_PARAM);
+	add_inst(INST_MOV		,0xb8	,1	,-1	,(int)RegID::RAX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xb9	,1	,-1	,(int)RegID::RCX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xba	,1	,-1	,(int)RegID::RDX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbb	,1	,-1	,(int)RegID::RBX	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbc	,1	,-1	,(int)RegID::RSP	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbd	,1	,-1	,(int)RegID::RBP	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbe	,1	,-1	,(int)RegID::RSI	,Iq, OPT_BIG_PARAM);
+	add_inst(INST_MOV		,0xbf	,1	,-1	,(int)RegID::RDI	,Iq, OPT_BIG_PARAM);
 	// Shift Group 2
 	add_inst(INST_ROL		,0xc0	,1	,0	,Eb	,Ib);
 	add_inst(INST_ROR		,0xc0	,1	,1	,Eb	,Ib);
@@ -812,27 +814,27 @@ void x86_init()
 	add_inst(INST_RET_FAR	,0xcb	,1	,-1	,-1	,-1);
 	add_inst(INST_INT		,0xcd	,1	,-1	,Ib	,-1);
 	add_inst(INST_IRET		,0xcf	,1	,-1	,-1	,-1);
-	add_inst(INST_ROL,	0xd3,	1,	0,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_ROL,	0xd3,	1,	0,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_ROL,	0xd3,	1,	0,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_ROR,	0xd3,	1,	1,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_ROR,	0xd3,	1,	1,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_ROR,	0xd3,	1,	1,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_RCL,	0xd3,	1,	2,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_RCL,	0xd3,	1,	2,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_RCL,	0xd3,	1,	2,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_RCR,	0xd3,	1,	3,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_RCR,	0xd3,	1,	3,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_RCR,	0xd3,	1,	3,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_SHL,	0xd3,	1,	4,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_SHL,	0xd3,	1,	4,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_SHL,	0xd3,	1,	4,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_SHR,	0xd3,	1,	5,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_SHR,	0xd3,	1,	5,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_SHR,	0xd3,	1,	5,	Eq,	REG_CL, OPT_BIG_PARAM);
-	add_inst(INST_SAR,	0xd3,	1,	7,	Ew,	REG_CL, OPT_SMALL_PARAM);
-	add_inst(INST_SAR,	0xd3,	1,	7,	Ed,	REG_CL, OPT_MEDIUM_PARAM);
-	add_inst(INST_SAR,	0xd3,	1,	7,	Eq,	REG_CL, OPT_BIG_PARAM);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROL,	0xd3,	1,	0,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_ROR,	0xd3,	1,	1,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCL,	0xd3,	1,	2,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_RCR,	0xd3,	1,	3,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHL,	0xd3,	1,	4,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SHR,	0xd3,	1,	5,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Ew,	(int)RegID::CL, OPT_SMALL_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Ed,	(int)RegID::CL, OPT_MEDIUM_PARAM);
+	add_inst(INST_SAR,	0xd3,	1,	7,	Eq,	(int)RegID::CL, OPT_BIG_PARAM);
 	add_inst(INST_FADD,	0xd8,	1,	0,	Ed,	-1);
 	add_inst(INST_FADD,	0xdc,	1,	0,	Eq,	-1);
 	add_inst(INST_FMUL,	0xd8,	1,	1,	Ed,	-1);
@@ -852,8 +854,8 @@ void x86_init()
 	add_inst(INST_FSTP,	0xdd,	1,	3,	Mq,	-1);
 	add_inst(INST_FLDCW,	0xd9,	1,	5,	Mw,	-1);
 	add_inst(INST_FNSTCW,	0xd9,	1,	7,	Mw,	-1);
-	add_inst(INST_FXCH		,0xc9d9	,2	,-1	,REG_ST0	,REG_ST1);
-	add_inst(INST_FUCOMPP	,0xe9da	,2	,-1	,REG_ST0	,REG_ST1);
+	add_inst(INST_FXCH		,0xc9d9	,2	,-1	,(int)RegID::ST0	,(int)RegID::ST1);
+	add_inst(INST_FUCOMPP	,0xe9da	,2	,-1	,(int)RegID::ST0	,(int)RegID::ST1);
 
 	add_inst(INST_FSQRT,	0xfad9,	2,	-1,	-1, -1);
 	add_inst(INST_FSIN,	0xfed9,	2,	-1,	-1, -1);
@@ -867,14 +869,14 @@ void x86_init()
 	add_inst(INST_FMULP,	0xde,	1,	1,	Ed,	-1);
 	add_inst(INST_FSUBP,	0xde,	1,	5,	Ed,	-1);
 	add_inst(INST_FDIVP,	0xde,	1,	7,	Ed,	-1); // de.f9 ohne Parameter...?
-	add_inst(INST_FNSTSW	,0xe0df	,2	,-1	,REG_AX	,-1);
+	add_inst(INST_FNSTSW	,0xe0df	,2	,-1	,(int)RegID::AX	,-1);
 	add_inst(INST_LOOPNE	,0xe0	,1	,-1	,Jb	,-1);
 	add_inst(INST_LOOPE		,0xe1	,1	,-1	,Jb	,-1);
 	add_inst(INST_LOOP		,0xe2	,1	,-1	,Jb	,-1);
-	add_inst(INST_IN		,0xe4	,1	,-1	,REG_AL	,Ib);
-	add_inst(INST_IN		,0xe5	,1	,-1	,REG_EAX,Ib);
-	add_inst(INST_OUT		,0xe6	,1	,-1	,Ib	,REG_AL);
-	add_inst(INST_OUT		,0xe7	,1	,-1	,Ib	,REG_EAX);
+	add_inst(INST_IN		,0xe4	,1	,-1	,(int)RegID::AL	,Ib);
+	add_inst(INST_IN		,0xe5	,1	,-1	,(int)RegID::EAX,Ib);
+	add_inst(INST_OUT		,0xe6	,1	,-1	,Ib	,(int)RegID::AL);
+	add_inst(INST_OUT		,0xe7	,1	,-1	,Ib	,(int)RegID::EAX);
 	add_inst(INST_CALL,	0xe8,	1,	-1,	Jw,	-1, OPT_SMALL_PARAM); // well... "Av" in table
 	add_inst(INST_CALL,	0xe8,	1,	-1,	Jd,	-1, OPT_MEDIUM_PARAM);
 //	add_inst(INST_CALL,	0xe8,	1,	-1,	Jq,	-1, OPT_BIG_PARAM);
@@ -885,10 +887,10 @@ void x86_init()
 	add_inst(INST_JMP_FAR, 0xea, 1, -1, Id, -1, OPT_SMALL_PARAM);
 	add_inst(INST_JMP_FAR, 0xea, 1, -1, I48, -1, OPT_MEDIUM_PARAM);
 	add_inst(INST_JMP		,0xeb	,1	,-1, Jb, -1);
-	add_inst(INST_IN		,0xec	,1	,-1, REG_AL, REG_DX);
-	add_inst(INST_IN		,0xed	,1	,-1, REG_EAX, REG_DX);
-	add_inst(INST_OUT		,0xee	,1	,-1, REG_DX, REG_AL);
-	add_inst(INST_OUT		,0xef	,1	,-1, REG_DX, REG_EAX);
+	add_inst(INST_IN		,0xec	,1	,-1, (int)RegID::AL, (int)RegID::DX);
+	add_inst(INST_IN		,0xed	,1	,-1, (int)RegID::EAX, (int)RegID::DX);
+	add_inst(INST_OUT		,0xee	,1	,-1, (int)RegID::DX, (int)RegID::AL);
+	add_inst(INST_OUT		,0xef	,1	,-1, (int)RegID::DX, (int)RegID::EAX);
 	add_inst(INST_LOCK		,0xf0	,1	,-1	,-1	,-1);
 	/*add_inst(inst_repne		,0xf2	,1	,-1	,-1	,-1);
 	add_inst(inst_rep		,0xf3	,1	,-1	,-1	,-1);*/
@@ -898,9 +900,9 @@ void x86_init()
 	add_inst(INST_TEST		,0xf6	,1	,0	,Eb	,Ib);
 	add_inst(INST_NOT		,0xf6	,1	,2	,Eb	,-1);
 	add_inst(INST_NEG		,0xf6	,1	,3	,Eb	,-1);
-	add_inst(INST_MUL		,0xf6	,1	,4	,REG_AL	,Eb);
-	add_inst(INST_IMUL		,0xf6	,1	,5	,REG_AL	,Eb);
-	add_inst(INST_DIV		,0xf6	,1	,6	,REG_AL	,Eb);
+	add_inst(INST_MUL		,0xf6	,1	,4	,(int)RegID::AL	,Eb);
+	add_inst(INST_IMUL		,0xf6	,1	,5	,(int)RegID::AL	,Eb);
+	add_inst(INST_DIV		,0xf6	,1	,6	,(int)RegID::AL	,Eb);
 	add_inst(INST_IDIV		,0xf6	,1	,7	,Eb	,-1);
 	add_inst(INST_TEST,	0xf7,	1,	0,	Ew,	Iw, OPT_SMALL_PARAM);
 	add_inst(INST_TEST,	0xf7,	1,	0,	Ed,	Id, OPT_MEDIUM_PARAM);
@@ -911,18 +913,18 @@ void x86_init()
 	add_inst(INST_NEG,	0xf7,	1,	3,	Ew,	-1, OPT_SMALL_PARAM);
 	add_inst(INST_NEG,	0xf7,	1,	3,	Ed,	-1, OPT_MEDIUM_PARAM);
 	add_inst(INST_NEG,	0xf7,	1,	3,	Eq,	-1, OPT_BIG_PARAM);
-	add_inst(INST_MUL		,0xf7	,1	,4	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(INST_DIV		,0xf7	,1	,6	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_EAX	,Ed, OPT_MEDIUM_PARAM);
-	add_inst(INST_MUL		,0xf7	,1	,4	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(INST_DIV		,0xf7	,1	,6	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_AX	,Ew, OPT_SMALL_PARAM);
-	add_inst(INST_MUL		,0xf7	,1	,4	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(INST_IMUL		,0xf7	,1	,5	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(INST_DIV		,0xf7	,1	,6	,REG_RAX	,Eq, OPT_BIG_PARAM);
-	add_inst(INST_IDIV		,0xf7	,1	,7	,REG_RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,(int)RegID::EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,(int)RegID::EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,(int)RegID::EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,(int)RegID::EAX	,Ed, OPT_MEDIUM_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,(int)RegID::AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,(int)RegID::AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,(int)RegID::AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,(int)RegID::AX	,Ew, OPT_SMALL_PARAM);
+	add_inst(INST_MUL		,0xf7	,1	,4	,(int)RegID::RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_IMUL		,0xf7	,1	,5	,(int)RegID::RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_DIV		,0xf7	,1	,6	,(int)RegID::RAX	,Eq, OPT_BIG_PARAM);
+	add_inst(INST_IDIV		,0xf7	,1	,7	,(int)RegID::RAX	,Eq, OPT_BIG_PARAM);
 	add_inst(INST_CLC		,0xf8	,1	,-1	,-1	,-1);
 	add_inst(INST_STC		,0xf9	,1	,-1	,-1	,-1);
 	add_inst(INST_CLI		,0xfa	,1	,-1	,-1	,-1);
@@ -999,65 +1001,65 @@ void x86_init()
 	}
 }
 
-int GetModRMRegister(int reg, int size, int group)
+RegID GetModRMRegister(int reg, int size, RegGroup group)
 {
-	if (group == REG_GROUP_XMM)
-		return REG_XMM0 + reg;
+	if (group == RegGroup::XMM)
+		return RegID((int)RegID::XMM0 + reg);
 	if (size == SIZE_8){
-		if (reg == 0x00)	return REG_AL;
-		if (reg == 0x01)	return REG_CL;
-		if (reg == 0x02)	return REG_DL;
-		if (reg == 0x03)	return REG_BL;
-		if (reg == 0x04)	return REG_AH;
-		if (reg == 0x05)	return REG_CH;
-		if (reg == 0x06)	return REG_DH;
-		if (reg == 0x07)	return REG_BH;
+		if (reg == 0x00)	return RegID::AL;
+		if (reg == 0x01)	return RegID::CL;
+		if (reg == 0x02)	return RegID::DL;
+		if (reg == 0x03)	return RegID::BL;
+		if (reg == 0x04)	return RegID::AH;
+		if (reg == 0x05)	return RegID::CH;
+		if (reg == 0x06)	return RegID::DH;
+		if (reg == 0x07)	return RegID::BH;
 	}else if (size == SIZE_16){
-		if (reg == 0x00)	return REG_AX;
-		if (reg == 0x01)	return REG_CX;
-		if (reg == 0x02)	return REG_DX;
-		if (reg == 0x03)	return REG_BX;
-		if (reg == 0x04)	return REG_SP;
-		if (reg == 0x05)	return REG_BP;
-		if (reg == 0x06)	return REG_SI;
-		if (reg == 0x07)	return REG_DI;
+		if (reg == 0x00)	return RegID::AX;
+		if (reg == 0x01)	return RegID::CX;
+		if (reg == 0x02)	return RegID::DX;
+		if (reg == 0x03)	return RegID::BX;
+		if (reg == 0x04)	return RegID::SP;
+		if (reg == 0x05)	return RegID::BP;
+		if (reg == 0x06)	return RegID::SI;
+		if (reg == 0x07)	return RegID::DI;
 	}else if (size == SIZE_32){
-		if (reg == 0x00)	return REG_EAX;
-		if (reg == 0x01)	return REG_ECX;
-		if (reg == 0x02)	return REG_EDX;
-		if (reg == 0x03)	return REG_EBX;
-		if (reg == 0x04)	return REG_ESP;
-		if (reg == 0x05)	return REG_EBP;
-		if (reg == 0x06)	return REG_ESI;
-		if (reg == 0x07)	return REG_EDI;
-		if (reg == 0x08)	return REG_R8D;
-		if (reg == 0x09)	return REG_R9D;
-		if (reg == 0x0a)	return REG_R10D;
-		if (reg == 0x0b)	return REG_R11D;
-		if (reg == 0x0c)	return REG_R12D;
-		if (reg == 0x0d)	return REG_R13D;
-		if (reg == 0x0e)	return REG_R14D;
-		if (reg == 0x0f)	return REG_R15D;
+		if (reg == 0x00)	return RegID::EAX;
+		if (reg == 0x01)	return RegID::ECX;
+		if (reg == 0x02)	return RegID::EDX;
+		if (reg == 0x03)	return RegID::EBX;
+		if (reg == 0x04)	return RegID::ESP;
+		if (reg == 0x05)	return RegID::EBP;
+		if (reg == 0x06)	return RegID::ESI;
+		if (reg == 0x07)	return RegID::EDI;
+		if (reg == 0x08)	return RegID::R8D;
+		if (reg == 0x09)	return RegID::R9D;
+		if (reg == 0x0a)	return RegID::R10D;
+		if (reg == 0x0b)	return RegID::R11D;
+		if (reg == 0x0c)	return RegID::R12D;
+		if (reg == 0x0d)	return RegID::R13D;
+		if (reg == 0x0e)	return RegID::R14D;
+		if (reg == 0x0f)	return RegID::R15D;
 	}else if (size == SIZE_64){
-		if (reg == 0x00)	return REG_RAX;
-		if (reg == 0x01)	return REG_RCX;
-		if (reg == 0x02)	return REG_RDX;
-		if (reg == 0x03)	return REG_RBX;
-		if (reg == 0x04)	return REG_RSP;
-		if (reg == 0x05)	return REG_RBP;
-		if (reg == 0x06)	return REG_RSI;
-		if (reg == 0x07)	return REG_RDI;
-		if (reg == 0x08)	return REG_R8;
-		if (reg == 0x09)	return REG_R9;
-		if (reg == 0x0a)	return REG_R10;
-		if (reg == 0x0b)	return REG_R11;
-		if (reg == 0x0c)	return REG_R12;
-		if (reg == 0x0d)	return REG_R13;
-		if (reg == 0x0e)	return REG_R14;
-		if (reg == 0x0f)	return REG_R15;
+		if (reg == 0x00)	return RegID::RAX;
+		if (reg == 0x01)	return RegID::RCX;
+		if (reg == 0x02)	return RegID::RDX;
+		if (reg == 0x03)	return RegID::RBX;
+		if (reg == 0x04)	return RegID::RSP;
+		if (reg == 0x05)	return RegID::RBP;
+		if (reg == 0x06)	return RegID::RSI;
+		if (reg == 0x07)	return RegID::RDI;
+		if (reg == 0x08)	return RegID::R8;
+		if (reg == 0x09)	return RegID::R9;
+		if (reg == 0x0a)	return RegID::R10;
+		if (reg == 0x0b)	return RegID::R11;
+		if (reg == 0x0c)	return RegID::R12;
+		if (reg == 0x0d)	return RegID::R13;
+		if (reg == 0x0e)	return RegID::R14;
+		if (reg == 0x0f)	return RegID::R15;
 	}
 	msg_error("unhandled mod/rm register: " + i2s(reg) + " (size " + i2s(size) + ")");
-	return 0;
+	return RegID::INVALID;
 }
 
 inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigned char modrm)
@@ -1066,24 +1068,24 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 		unsigned char reg = modrm & 0x38; // bits 5, 4, 3
 		p.type = PARAMT_REGISTER;
 		p.deref = false;
-		if (pf.reg_group == REG_GROUP_SEGMENT){
-			if (reg == 0x00)	p.reg = RegisterByID[REG_ES];
-			if (reg == 0x08)	p.reg = RegisterByID[REG_CS];
-			if (reg == 0x10)	p.reg = RegisterByID[REG_SS];
-			if (reg == 0x18)	p.reg = RegisterByID[REG_DS];
-			if (reg == 0x20)	p.reg = RegisterByID[REG_FS];
-			if (reg == 0x28)	p.reg = RegisterByID[REG_GS];
-		}else if (pf.reg_group == REG_GROUP_CONTROL){
-			if (reg == 0x00)	p.reg = RegisterByID[REG_CR0];
-			if (reg == 0x08)	p.reg = RegisterByID[REG_CR1];
-			if (reg == 0x10)	p.reg = RegisterByID[REG_RC2];
-			if (reg == 0x18)	p.reg = RegisterByID[REG_CR3];
-			if (reg == 0x20)	p.reg = RegisterByID[REG_CR4];
-		}else if (pf.reg_group == REG_GROUP_XMM){
-			p.reg = RegisterByID[REG_XMM0 + (reg >> 3)];
+		if (pf.reg_group == RegGroup::SEGMENT){
+			if (reg == 0x00)	p.reg = RegisterByID(RegID::ES);
+			if (reg == 0x08)	p.reg = RegisterByID(RegID::CS);
+			if (reg == 0x10)	p.reg = RegisterByID(RegID::SS);
+			if (reg == 0x18)	p.reg = RegisterByID(RegID::DS);
+			if (reg == 0x20)	p.reg = RegisterByID(RegID::FS);
+			if (reg == 0x28)	p.reg = RegisterByID(RegID::GS);
+		}else if (pf.reg_group == RegGroup::CONTROL){
+			if (reg == 0x00)	p.reg = RegisterByID(RegID::CR0);
+			if (reg == 0x08)	p.reg = RegisterByID(RegID::CR1);
+			if (reg == 0x10)	p.reg = RegisterByID(RegID::RC2);
+			if (reg == 0x18)	p.reg = RegisterByID(RegID::CR3);
+			if (reg == 0x20)	p.reg = RegisterByID(RegID::CR4);
+		}else if (pf.reg_group == RegGroup::XMM){
+			p.reg = register_by_id[(int)RegID::XMM0 + (reg >> 3)];
 		}else{
 			reg = (reg >> 3) | (state.extend_mod_rm_reg ? 0x08 : 0x00);
-			p.reg = RegisterByID[GetModRMRegister(reg, p.size, REG_GROUP_GENERAL)];
+			p.reg = RegisterByID(GetModRMRegister(reg, p.size, RegGroup::GENERAL));
 		}
 	}else if (pf.mrm_mode == MRM_MOD_RM){
 		unsigned char mod = modrm & 0xc0; // bits 7, 6
@@ -1093,49 +1095,49 @@ inline void GetFromModRM(InstructionParam &p, InstructionParamFuzzy &pf, unsigne
 			if (state.addr_size == SIZE_16){
 				p.type = PARAMT_REGISTER;
 				p.deref = true;
-				if (rm == 0x00){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_SI];	p.disp = DISP_MODE_REG2;	}
-				if (rm == 0x01){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_DI];	p.disp = DISP_MODE_REG2;	}
-				if (rm == 0x02){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_SI];	p.disp = DISP_MODE_REG2;	}
-				if (rm == 0x03){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_DI];	p.disp = DISP_MODE_REG2;	}
-				if (rm == 0x04)	p.reg = RegisterByID[REG_SI];
-				if (rm == 0x05)	p.reg = RegisterByID[REG_DI];
+				if (rm == 0x00){p.reg = RegisterByID(RegID::BX);	p.reg2 = RegisterByID(RegID::SI);	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x01){p.reg = RegisterByID(RegID::BX);	p.reg2 = RegisterByID(RegID::DI);	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x02){p.reg = RegisterByID(RegID::BP);	p.reg2 = RegisterByID(RegID::SI);	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x03){p.reg = RegisterByID(RegID::BP);	p.reg2 = RegisterByID(RegID::DI);	p.disp = DISP_MODE_REG2;	}
+				if (rm == 0x04)	p.reg = RegisterByID(RegID::SI);
+				if (rm == 0x05)	p.reg = RegisterByID(RegID::DI);
 				if (rm == 0x06){p.reg = nullptr;	p.type = PARAMT_IMMEDIATE;	}
-				if (rm == 0x07)	p.reg = RegisterByID[REG_BX];
+				if (rm == 0x07)	p.reg = RegisterByID(RegID::BX);
 			}else{
 				p.type = PARAMT_REGISTER;
 				p.deref = true;
 				//if (rm == 0x04){p.reg = NULL;	p.disp = DispModeSIB;	p.type = ParamTImmediate;}//p.type = ParamTInvalid;	Error("kein SIB byte...");}
-				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_SIB;	} // eax = provisoric
+				if (rm == 0x04){p.reg = RegisterByID(RegID::EAX);	p.disp = DISP_MODE_SIB;	} // eax = provisoric
 				else if (rm == 0x05){p.reg = nullptr;	p.type = PARAMT_IMMEDIATE;	}
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32, REG_GROUP_GENERAL)];
+					p.reg = RegisterByID(GetModRMRegister(rm, SIZE_32, RegGroup::GENERAL));
 			}
 		}else if ((mod == 0x40) or (mod == 0x80)){
 			if (state.addr_size == SIZE_16){
 				p.type = PARAMT_REGISTER;
 				p.deref = true;
-				if (rm == 0x00){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
-				if (rm == 0x01){p.reg = RegisterByID[REG_BX];	p.reg2 = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
-				if (rm == 0x02){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
-				if (rm == 0x03){p.reg = RegisterByID[REG_BP];	p.reg2 = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
-				if (rm == 0x04){p.reg = RegisterByID[REG_SI];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
-				if (rm == 0x05){p.reg = RegisterByID[REG_DI];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
-				if (rm == 0x06){p.reg = RegisterByID[REG_BP];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
-				if (rm == 0x07){p.reg = RegisterByID[REG_BX];	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x00){p.reg = RegisterByID(RegID::BX);	p.reg2 = RegisterByID(RegID::SI);	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x01){p.reg = RegisterByID(RegID::BX);	p.reg2 = RegisterByID(RegID::DI);	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x02){p.reg = RegisterByID(RegID::BP);	p.reg2 = RegisterByID(RegID::SI);	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x03){p.reg = RegisterByID(RegID::BP);	p.reg2 = RegisterByID(RegID::DI);	p.disp = (mod == 0x40) ? DISP_MODE_8_REG2 : DISP_MODE_16_REG2;	}
+				if (rm == 0x04){p.reg = RegisterByID(RegID::SI);	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x05){p.reg = RegisterByID(RegID::DI);	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x06){p.reg = RegisterByID(RegID::BP);	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
+				if (rm == 0x07){p.reg = RegisterByID(RegID::BX);	p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_16;	}
 			}else{
 				p.type = PARAMT_REGISTER;
 				p.deref = true;
 				p.disp = (mod == 0x40) ? DISP_MODE_8 : DISP_MODE_32;
 				//if (rm == 0x04){p.reg = NULL;	p.type = ParamTInvalid;	}
-				if (rm == 0x04){p.reg = RegisterByID[REG_EAX];	p.disp = DISP_MODE_8_SIB;	} // eax = provisoric
+				if (rm == 0x04){p.reg = RegisterByID(RegID::EAX);	p.disp = DISP_MODE_8_SIB;	} // eax = provisoric
 				else
-					p.reg = RegisterByID[GetModRMRegister(rm, SIZE_32, REG_GROUP_GENERAL)];
+					p.reg = RegisterByID(GetModRMRegister(rm, SIZE_32, RegGroup::GENERAL));
 			}
 		}else if (mod == 0xc0){
 			p.type = PARAMT_REGISTER;
 			p.deref = false;
 			if (state.extend_mod_rm_base)	rm |= 0x08;
-			p.reg = RegisterByID[GetModRMRegister(rm, p.size, pf.reg_group)];
+			p.reg = RegisterByID(GetModRMRegister(rm, p.size, pf.reg_group));
 		}
 	}
 }
@@ -1159,19 +1161,19 @@ inline void TryGetSIB(InstructionParam &p, char *&cur)
 			if (ss == 0x00){ // scale factor 1
 				p.deref = true;
 				p.disp = disp8 ? DISP_MODE_8_REG2 : DISP_MODE_REG2;
-				if (base == 0x00)		p.reg = RegisterByID[REG_EAX];
-				else if (base == 0x01)	p.reg = RegisterByID[REG_ECX];
-				else if (base == 0x02)	p.reg = RegisterByID[REG_EDX];
-				else if (base == 0x03)	p.reg = RegisterByID[REG_EBX];
-				else if (base == 0x04)	p.reg = RegisterByID[REG_ESP];
+				if (base == 0x00)		p.reg = RegisterByID(RegID::EAX);
+				else if (base == 0x01)	p.reg = RegisterByID(RegID::ECX);
+				else if (base == 0x02)	p.reg = RegisterByID(RegID::EDX);
+				else if (base == 0x03)	p.reg = RegisterByID(RegID::EBX);
+				else if (base == 0x04)	p.reg = RegisterByID(RegID::ESP);
 				else p.disp = DISP_MODE_SIB; // ...
-				if (index == 0x00)		p.reg2 = RegisterByID[REG_EAX];
-				else if (index == 0x08)	p.reg2 = RegisterByID[REG_ECX];
-				else if (index == 0x10)	p.reg2 = RegisterByID[REG_EDX];
-				else if (index == 0x18)	p.reg2 = RegisterByID[REG_EBX];
-				else if (index == 0x28)	p.reg2 = RegisterByID[REG_EBP];
-				else if (index == 0x30)	p.reg2 = RegisterByID[REG_ESI];
-				else if (index == 0x38)	p.reg2 = RegisterByID[REG_EDI];
+				if (index == 0x00)		p.reg2 = RegisterByID(RegID::EAX);
+				else if (index == 0x08)	p.reg2 = RegisterByID(RegID::ECX);
+				else if (index == 0x10)	p.reg2 = RegisterByID(RegID::EDX);
+				else if (index == 0x18)	p.reg2 = RegisterByID(RegID::EBX);
+				else if (index == 0x28)	p.reg2 = RegisterByID(RegID::EBP);
+				else if (index == 0x30)	p.reg2 = RegisterByID(RegID::ESI);
+				else if (index == 0x38)	p.reg2 = RegisterByID(RegID::EDI);
 				else p.disp = disp8 ? DISP_MODE_8 : DISP_MODE_NONE;
 			}
 		//}
@@ -1185,9 +1187,9 @@ inline void UnfuzzyParam(InstructionParam &p, InstructionParamFuzzy &pf)
 	p.reg2 = nullptr;
 	p.disp = DISP_MODE_NONE;
 	p.reg = pf.reg;
-	if ((p.reg) and (state.extend_mod_rm_base)){
-		if ((p.reg->id >= REG_RAX) and (p.reg->id <= REG_RBP))
-			p.reg = RegisterByID[p.reg->id + REG_R8 - REG_RAX];
+	if (p.reg and state.extend_mod_rm_base){
+		if (reg_between(p.reg->id, RegID::RAX, RegID::RBP))
+			p.reg = register_by_id[(int)p.reg->id + (int)RegID::R8 - (int)RegID::RAX];
 	}
 	p.size = pf.size;
 	p.deref = false; // well... FIXME
@@ -1340,12 +1342,12 @@ string x86_disassemble(void *_code_,int length,bool allow_comments)
 			}
 
 			// segment registers
-			if (cur[0]==0x2e){      seg = RegisterByID[REG_CS]; cur++; continue; }
-			else if (cur[0]==0x36){ seg = RegisterByID[REG_SS]; cur++; continue; }
-			else if (cur[0]==0x3e){ seg = RegisterByID[REG_DS]; cur++; continue; }
-			else if (cur[0]==0x26){ seg = RegisterByID[REG_ES]; cur++; continue; }
-			else if (cur[0]==0x64){ seg = RegisterByID[REG_FS]; cur++; continue; }
-			else if (cur[0]==0x65){ seg = RegisterByID[REG_GS]; cur++; continue; }
+			if (cur[0]==0x2e){      seg = RegisterByID(RegID::CS); cur++; continue; }
+			else if (cur[0]==0x36){ seg = RegisterByID(RegID::SS); cur++; continue; }
+			else if (cur[0]==0x3e){ seg = RegisterByID(RegID::DS); cur++; continue; }
+			else if (cur[0]==0x26){ seg = RegisterByID(RegID::ES); cur++; continue; }
+			else if (cur[0]==0x64){ seg = RegisterByID(RegID::FS); cur++; continue; }
+			else if (cur[0]==0x65){ seg = RegisterByID(RegID::GS); cur++; continue; }
 
 			break;
 
@@ -1471,37 +1473,37 @@ string x86_disassemble(void *_code_,int length,bool allow_comments)
 
 int GetModRMReg(Register *r)
 {
-	int id = r->id;
-	if ((id == REG_R8)  or (id == REG_R8D)  or (id == REG_RAX) or (id == REG_EAX) or (id == REG_AX) or (id == REG_AL))	return 0x00;
-	if ((id == REG_R9)  or (id == REG_R9D)  or (id == REG_RCX) or (id == REG_ECX) or (id == REG_CX) or (id == REG_CL))	return 0x01;
-	if ((id == REG_R10) or (id == REG_R10D) or (id == REG_RDX) or (id == REG_EDX) or (id == REG_DX) or (id == REG_DL))	return 0x02;
-	if ((id == REG_R11) or (id == REG_R11D) or (id == REG_RBX) or (id == REG_EBX) or (id == REG_BX) or (id == REG_BL))	return 0x03;
-	if ((id == REG_R12) or (id == REG_R12D) or (id == REG_RSP) or (id == REG_ESP) or (id == REG_SP) or (id == REG_AH))	return 0x04;
-	if ((id == REG_R13) or (id == REG_R13D) or (id == REG_RBP) or (id == REG_EBP) or (id == REG_BP) or (id == REG_CH))	return 0x05;
-	if ((id == REG_R14) or (id == REG_R14D) or (id == REG_RSI) or (id == REG_ESI) or (id == REG_SI) or (id == REG_DH))	return 0x06;
-	if ((id == REG_R15) or (id == REG_R15D) or (id == REG_RDI) or (id == REG_EDI) or (id == REG_DI) or (id == REG_BH))	return 0x07;
-	if ((id >= REG_XMM0) and (id <= REG_XMM7))	return (id - REG_XMM0);
+	RegID id = r->id;
+	if ((id == RegID::R8)  or (id == RegID::R8D)  or (id == RegID::RAX) or (id == RegID::EAX) or (id == RegID::AX) or (id == RegID::AL))	return 0x00;
+	if ((id == RegID::R9)  or (id == RegID::R9D)  or (id == RegID::RCX) or (id == RegID::ECX) or (id == RegID::CX) or (id == RegID::CL))	return 0x01;
+	if ((id == RegID::R10) or (id == RegID::R10D) or (id == RegID::RDX) or (id == RegID::EDX) or (id == RegID::DX) or (id == RegID::DL))	return 0x02;
+	if ((id == RegID::R11) or (id == RegID::R11D) or (id == RegID::RBX) or (id == RegID::EBX) or (id == RegID::BX) or (id == RegID::BL))	return 0x03;
+	if ((id == RegID::R12) or (id == RegID::R12D) or (id == RegID::RSP) or (id == RegID::ESP) or (id == RegID::SP) or (id == RegID::AH))	return 0x04;
+	if ((id == RegID::R13) or (id == RegID::R13D) or (id == RegID::RBP) or (id == RegID::EBP) or (id == RegID::BP) or (id == RegID::CH))	return 0x05;
+	if ((id == RegID::R14) or (id == RegID::R14D) or (id == RegID::RSI) or (id == RegID::ESI) or (id == RegID::SI) or (id == RegID::DH))	return 0x06;
+	if ((id == RegID::R15) or (id == RegID::R15D) or (id == RegID::RDI) or (id == RegID::EDI) or (id == RegID::DI) or (id == RegID::BH))	return 0x07;
+	if ((id >= RegID::XMM0) and (id <= RegID::XMM7))	return ((int)id - (int)RegID::XMM0);
 	raise_error("GetModRMReg: register not allowed: " + r->name);
 	return 0;
 }
 
 inline int CreatePartialModRMByte(InstructionParamFuzzy &pf, InstructionParam &p)
 {
-	int r = -1;
+	RegID r = RegID::INVALID;
 	if (p.reg)
 		r = p.reg->id;
 	if (pf.mrm_mode == MRM_REG){
-		if (r == REG_ES)	return 0x00;
-		if (r == REG_CS)	return 0x08;
-		if (r == REG_SS)	return 0x10;
-		if (r == REG_DS)	return 0x18;
-		if (r == REG_FS)	return 0x20;
-		if (r == REG_GS)	return 0x28;
-		if (r == REG_CR0)	return 0x00;
-		if (r == REG_CR1)	return 0x08;
-		if (r == REG_RC2)	return 0x10;
-		if (r == REG_CR3)	return 0x18;
-		if (r == REG_CR4)	return 0x20;
+		if (r == RegID::ES)	return 0x00;
+		if (r == RegID::CS)	return 0x08;
+		if (r == RegID::SS)	return 0x10;
+		if (r == RegID::DS)	return 0x18;
+		if (r == RegID::FS)	return 0x20;
+		if (r == RegID::GS)	return 0x28;
+		if (r == RegID::CR0)	return 0x00;
+		if (r == RegID::CR1)	return 0x08;
+		if (r == RegID::RC2)	return 0x10;
+		if (r == RegID::CR3)	return 0x18;
+		if (r == RegID::CR4)	return 0x20;
 		int mrm = GetModRMReg(p.reg) << 3;
 		if (p.reg->extend_mod_rm)
 			mrm += 0x0400; // REXR
@@ -1511,16 +1513,16 @@ inline int CreatePartialModRMByte(InstructionParamFuzzy &pf, InstructionParam &p
 			if (state.addr_size == SIZE_16){
 				if ((p.type == PARAMT_IMMEDIATE) and (p.deref))	return 0x06;
 			}else{
-				if ((r == REG_EAX) or (r == REG_RAX))	return (p.disp == DISP_MODE_NONE) ? 0x00 : ((p.disp == DISP_MODE_8) ? 0x40 : 0x80); // default = DispMode32
-				if ((r == REG_ECX) or (r == REG_RCX))	return (p.disp == DISP_MODE_NONE) ? 0x01 : ((p.disp == DISP_MODE_8) ? 0x41 : 0x81);
-				if ((r == REG_EDX) or (r == REG_RDX))	return (p.disp == DISP_MODE_NONE) ? 0x02 : ((p.disp == DISP_MODE_8) ? 0x42 : 0x82);
-				if ((r == REG_EBX) or (r == REG_RBX))	return (p.disp == DISP_MODE_NONE) ? 0x03 : ((p.disp == DISP_MODE_8) ? 0x43 : 0x83);
+				if ((r == RegID::EAX) or (r == RegID::RAX))	return (p.disp == DISP_MODE_NONE) ? 0x00 : ((p.disp == DISP_MODE_8) ? 0x40 : 0x80); // default = DispMode32
+				if ((r == RegID::ECX) or (r == RegID::RCX))	return (p.disp == DISP_MODE_NONE) ? 0x01 : ((p.disp == DISP_MODE_8) ? 0x41 : 0x81);
+				if ((r == RegID::EDX) or (r == RegID::RDX))	return (p.disp == DISP_MODE_NONE) ? 0x02 : ((p.disp == DISP_MODE_8) ? 0x42 : 0x82);
+				if ((r == RegID::EBX) or (r == RegID::RBX))	return (p.disp == DISP_MODE_NONE) ? 0x03 : ((p.disp == DISP_MODE_8) ? 0x43 : 0x83);
 				// sib			return 4;
 				// disp32		return 5;
 				if ((p.type == PARAMT_IMMEDIATE) and (p.deref))	return 0x05;
-				if ((r == REG_EBP) or (r == REG_RBP))	return (p.disp == DISP_MODE_8) ? 0x45 : 0x85;
-				if ((r == REG_ESI) or (r == REG_RSI))	return (p.disp == DISP_MODE_NONE) ? 0x06 : ((p.disp == DISP_MODE_8) ? 0x46 : 0x86);
-				if ((r == REG_EDI) or (r == REG_RDI))	return (p.disp == DISP_MODE_NONE) ? 0x07 : ((p.disp == DISP_MODE_8) ? 0x47 : 0x87);
+				if ((r == RegID::EBP) or (r == RegID::RBP))	return (p.disp == DISP_MODE_8) ? 0x45 : 0x85;
+				if ((r == RegID::ESI) or (r == RegID::RSI))	return (p.disp == DISP_MODE_NONE) ? 0x06 : ((p.disp == DISP_MODE_8) ? 0x46 : 0x86);
+				if ((r == RegID::EDI) or (r == RegID::RDI))	return (p.disp == DISP_MODE_NONE) ? 0x07 : ((p.disp == DISP_MODE_8) ? 0x47 : 0x87);
 			}
 		}else{
 			int mrm = GetModRMReg(p.reg) | 0xc0;
@@ -1609,7 +1611,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 	// REX prefix
 	char rex = mod_rm >> 8;
 	if ((inst.param1.reg) and (p1.reg))
-		if ((inst.param1.reg->id >= REG_RAX) and (inst.param1.reg->id <= REG_RBP) and (inst.param1.reg->id == p1.reg->id + REG_RAX - REG_R8))
+		if (reg_between(inst.param1.reg->id, RegID::RAX, RegID::RBP) and ((int)inst.param1.reg->id == (int)p1.reg->id + (int)RegID::RAX - (int)RegID::R8))
 			rex = 0x01;
 	if (inst.has_big_param)//state.ParamSize == Size64)
 		rex |= 0x08;

@@ -57,19 +57,29 @@ void add_inst_arm(int inst, int code, int filter, int param1, int param2 = AP_NO
 	cpu_instructions_arm.add(i);
 }
 
+
+
+RegID s_reg(int n) {
+	return (RegID)((int)RegID::S0 + n);
+}
+
+RegID r_reg(int n) {
+	return (RegID)((int)RegID::R0 + n);
+}
+
 void arm_init() {
-	Registers.clear();
+	registers.clear();
 	for (int i=0; i<16; i++)
-		add_reg(format("r%d", i), REG_R0 + i, REG_GROUP_GENERAL, SIZE_32, i);
+		add_reg(format("r%d", i), r_reg(i), RegGroup::GENERAL, SIZE_32, i);
 	for (int i=0; i<32; i++)
-		add_reg(format("s%d", i), REG_S0 + i, REG_GROUP_VFP, SIZE_32, 128 + i);
+		add_reg(format("s%d", i), s_reg(i), RegGroup::VFP, SIZE_32, 128 + i);
 
 	// create easy to access array
-	RegisterByID.clear();
-	for (int i=0;i<Registers.num;i++) {
-		if (RegisterByID.num <= Registers[i].id)
-			RegisterByID.resize(Registers[i].id + 1);
-		RegisterByID[Registers[i].id] = &Registers[i];
+	register_by_id.clear();
+	for (auto &r: registers) {
+		if (register_by_id.num <= (int)r.id)
+			register_by_id.resize((int)r.id + 1);
+		RegisterByID(r.id) = &r;
 	}
 
 	cpu_instructions_arm.clear();
@@ -212,7 +222,7 @@ int arm_decode_imm(int imm) {
 }
 
 InstructionParam disarm_shift_reg(int code) {
-	InstructionParam p = param_reg(REG_R0 + (code & 0xf));
+	InstructionParam p = param_reg(r_reg(code & 0xf));
 	bool by_reg = (code >> 4) & 0x1;
 	int r = ((code >> 7) & 0x1f);
 	if (!by_reg and r == 0)
@@ -242,9 +252,9 @@ InstructionParam param_xxx(int code, bool bb) {
 		msg_write( " --shifted reg--");
 	} else {
 		if (code & 0xfff)
-			p = param_deref_reg_shift(REG_R0 + Rn, up ? (code & 0xfff) : (-(code & 0xfff)), bb ? SIZE_8 : SIZE_32);
+			p = param_deref_reg_shift(r_reg(Rn), up ? (code & 0xfff) : (-(code & 0xfff)), bb ? SIZE_8 : SIZE_32);
 		else
-			p = param_deref_reg(REG_R0 + Rn, bb ? SIZE_8 : SIZE_32);
+			p = param_deref_reg(r_reg(Rn), bb ? SIZE_8 : SIZE_32);
 	}
 	p.write_back = ww;
 	return p;
@@ -255,39 +265,39 @@ InstructionParam disarm_param(int code, int p) {
 		int fm = (code & 0x0000000f) << 1;
 		if ((code & (1<<5)) != 0)
 			fm += 1;
-		return param_reg(REG_S0 + fm);
+		return param_reg(s_reg(fm));
 	} else if (p == AP_FREG_12_22) {
 		int fd = (code & 0x0000f000) >> 11;
 		if ((code & (1<<22)) != 0)
 			fd += 1;
-		return param_reg(REG_S0 + fd);
+		return param_reg(s_reg(fd));
 	} else if (p == AP_FREG_16_7) {
 		int fn = (code & 0x000f0000) >> 15;
 		if ((code & (1<<7)) != 0)
 			fn += 1;
-		return param_reg(REG_S0 + fn);
+		return param_reg(s_reg(fn));
 	} else if (p == AP_REG_0) {
 		int fm = (code & 0x0000000f);
-		return param_reg(REG_R0 + fm);
+		return param_reg(r_reg(fm));
 	} else if (p == AP_REG_8) {
 		int fm = (code & 0x00000f00) >> 8;
-		return param_reg(REG_R0 + fm);
+		return param_reg(r_reg(fm));
 	} else if (p == AP_REG_12) {
 		int fd = (code & 0x0000f000) >> 12;
-		return param_reg(REG_R0 + fd);
+		return param_reg(r_reg(fd));
 	} else if (p == AP_REG_16) {
 		int fn = (code & 0x000f0000) >> 16;
-		return param_reg(REG_R0 + fn);
+		return param_reg(r_reg(fn));
 	} else if (p == AP_REG_16_W21) {
 		int fm = (code & 0x000f0000) >> 16;
-		auto p = param_reg(REG_R0 + fm);
+		auto p = param_reg(r_reg(fm));
 		p.write_back = ((code >> 21) & 1);
 		return p;
 	} else if (p == AP_DEREF_REG_16_OFFSET) {
 		int Rn = (code >> 16) & 0xf;
 		bool up = ((code >> 23) & 1);
 		int offset = (code & 0xff) * 4;
-		return param_deref_reg_shift(REG_R0 + Rn, up ? offset : -offset, SIZE_32);
+		return param_deref_reg_shift(r_reg(Rn), up ? offset : -offset, SIZE_32);
 	} else if (p == AP_SHIFTER_0X12_I25) {
 		if ((code >> 25) & 1)
 			return param_imm(arm_decode_imm(code & 0xfff), SIZE_32);
@@ -347,16 +357,16 @@ string arm_disassemble(void *_code_,int length,bool allow_comments) {
 
 int arm_reg_no(Register *r) {
 	if (r)
-		if ((r->id >= REG_R0) and (r->id <= REG_R15))
-			return r->id - REG_R0;
+		if (((int)r->id >= (int)RegID::R0) and ((int)r->id <= (int)RegID::R15))
+			return (int)r->id - (int)RegID::R0;
 	raise_error("ARM: invalid register: " + r->name);
 	return -1;
 }
 
 int arm_freg_no(Register *r) {
 	if (r)
-		if ((r->id >= REG_S0) and (r->id <= REG_S31))
-			return r->id - REG_S0;
+		if (((int)r->id >= (int)RegID::S0) and ((int)r->id <= (int)RegID::S31))
+			return (int)r->id - (int)RegID::S0;
 	raise_error("ARM: invalid vfp register: " + r->name);
 	return -1;
 }
@@ -470,9 +480,9 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 			iwp.p[2] = iwp.p[1];
 			if ((iwp.inst == INST_CMP) or (iwp.inst == INST_CMN)) {
 				iwp.p[1] = iwp.p[0];
-				iwp.p[0] = param_reg(REG_R0);
+				iwp.p[0] = param_reg(RegID::R0);
 			} else {
-				iwp.p[1] = param_reg(REG_R0);
+				iwp.p[1] = param_reg(RegID::R0);
 			}
 		}
 //		bool ss = (iwp.inst == INST_CMP) or (iwp.inst == INST_CMN) or (iwp.inst == INST_TST) or (iwp.inst == INST_TEQ);
@@ -514,7 +524,7 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 
 		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref) and (iwp.p[1].is_label)) {
 			add_wanted_label(ocs + 2, iwp.p[1].value, n, true, true, SIZE_12);
-			iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+			iwp.p[1] = param_deref_reg_shift(RegID::R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
 		}
 
 		if (iwp.p[0].reg == iwp.p[1].reg)
@@ -591,9 +601,9 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 		if ((iwp.p[1].type == PARAMT_IMMEDIATE) and (iwp.p[1].deref)) {
 			if (iwp.p[1].is_label) {
 				add_wanted_label(ocs + 3, iwp.p[1].value, n, true, true, SIZE_8S2);
-				iwp.p[1] = param_deref_reg_shift(REG_R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
+				iwp.p[1] = param_deref_reg_shift(RegID::R15, label_after_now(this, iwp.p[1].value, n) ? 1 : -1, SIZE_32);
 			} else {
-				iwp.p[1] = param_deref_reg_shift(REG_R15, iwp.p[1].value - (int_p)&oc[ocs] - 8, SIZE_32);
+				iwp.p[1] = param_deref_reg_shift(RegID::R15, iwp.p[1].value - (int_p)&oc[ocs] - 8, SIZE_32);
 			}
 		}
 

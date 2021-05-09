@@ -17,16 +17,17 @@ namespace Asm {
 
 
 // groups of registers
-enum {
-	REG_GROUP_NONE,
-	REG_GROUP_GENERAL,
-	REG_GROUP_GENERAL2,
-	REG_GROUP_SEGMENT,
-	REG_GROUP_FLAGS,
-	REG_GROUP_CONTROL,
-	REG_GROUP_X87,
-	REG_GROUP_XMM,
-	REG_GROUP_VFP, // ARM-float
+enum class RegGroup {
+	INVALID = -1,
+	NONE,
+	GENERAL,
+	GENERAL2,
+	SEGMENT,
+	FLAGS,
+	CONTROL,
+	X87,
+	XMM,
+	VFP, // ARM-float
 };
 
 // parameter types
@@ -58,11 +59,14 @@ enum {
 
 struct Register {
 	string name;
-	int id, group, size;
+	RegID id;
+	RegGroup group;
+	int size;
 	bool extend_mod_rm;
 };
-extern Array<Register> Registers;
-extern Array<Register*> RegisterByID;
+extern Array<Register> registers;
+extern Array<Register*> register_by_id;
+#define RegisterByID(r)  register_by_id[(int)r]
 
 
 
@@ -95,7 +99,7 @@ string x86_disassemble(void *_code_,int length,bool allow_comments);
 
 void raise_error(const string &str);
 
-void add_reg(const string &name, int id, int group, int size, int root = -1);
+void add_reg(const string &name, RegID id, RegGroup group, int size, int root = -1);
 
 void insert_val(char *oc, int &ocs, int64 val, int size);
 string SizeOut(int size);
@@ -119,7 +123,7 @@ struct InstructionParamFuzzy {
 	bool allow_register;		// eax
 	int _type_;					// approximate type.... (UnFuzzy without mod/rm)
 	Register *reg;				// if != NULL  -> force a single register
-	int reg_group;
+	RegGroup reg_group;
 	int mrm_mode;				// which part of the modr/m byte is used?
 	int size;
 	bool immediate_is_relative;	// for jump

@@ -9,6 +9,10 @@
 
 #include "../../base/base.h"
 
+namespace Asm {
+	enum class RegID;
+}
+
 
 namespace kaba {
 
@@ -25,7 +29,7 @@ class Class;
 // represents a register
 // (or rather the data inside, since many VirtualRegisters might be mapped to the same physical register)
 struct VirtualRegister {
-	int reg;
+	Asm::RegID reg;
 	int reg_root;
 	int first, last;
 };
@@ -52,7 +56,7 @@ struct CommandList {
 	Serializer *ser = nullptr;
 
 	//void add_reg_channel(int reg, int first, int last);
-	int add_virtual_reg(int reg);
+	int add_virtual_reg(Asm::RegID reg);
 	void set_virtual_reg(int v, int first, int last);
 	void use_virtual_reg(int v, int first, int last);
 	SerialNodeParam _add_temp(const Class *t);

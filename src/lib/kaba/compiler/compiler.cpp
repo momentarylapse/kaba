@@ -44,14 +44,14 @@ int TaskReturnOffset;
 void add_esp_add(Asm::InstructionWithParamsList *list,int d) {
 	if (d > 0) {
 		if (d > 120)
-			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 4));
+			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 4));
 		else
-			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(d, 1));
+			list->add2(Asm::INST_ADD, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(d, 1));
 	} else if (d < 0) {
 		if (d < -120)
-			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 4));
+			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 4));
 		else
-			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::REG_ESP), Asm::param_imm(-d, 1));
+			list->add2(Asm::INST_SUB, Asm::param_reg(Asm::RegID::ESP), Asm::param_imm(-d, 1));
 	}
 }
 

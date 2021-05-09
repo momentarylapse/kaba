@@ -23,6 +23,10 @@ const Class* SerialNodeParam::get_type_save() const {
 	return type ? type : TypeVoid;
 }
 
+Asm::RegID SerialNodeParam::as_reg() const {
+	return (Asm::RegID)p;
+}
+
 
 
 string signed_hex(int64 i) {
@@ -77,7 +81,7 @@ string SerialNodeParam::str(Serializer *ser) const {
 	if (kind != NodeKind::NONE) {
 		string n = p2s((void*)p);
 		if ((kind == NodeKind::REGISTER) or (kind == NodeKind::DEREF_REGISTER))
-			n = Asm::get_reg_name(p);
+			n = Asm::get_reg_name(as_reg());
 		else if ((kind == NodeKind::VAR_TEMP) or (kind == NodeKind::DEREF_VAR_TEMP))
 			n = "#" + i2s(p);
 		else if (kind == NodeKind::MARKER)
@@ -204,12 +208,12 @@ SerialNodeParam param_deref_marker(const Class *type, int m) {
 	return {NodeKind::DEREF_MARKER, m, -1, type, 0};
 }
 
-SerialNodeParam param_preg(const Class *type, int reg) {
-	return {NodeKind::REGISTER, reg, -1, type, 0};
+SerialNodeParam param_preg(const Class *type, Asm::RegID reg) {
+	return {NodeKind::REGISTER, (int)reg, -1, type, 0};
 }
 
-SerialNodeParam param_deref_preg(const Class *type, int reg) {
-	return {NodeKind::DEREF_REGISTER, reg, -1, type, 0};
+SerialNodeParam param_deref_preg(const Class *type, Asm::RegID reg) {
+	return {NodeKind::DEREF_REGISTER, (int)reg, -1, type, 0};
 }
 
 SerialNodeParam param_lookup(const Class *type, int ref) {

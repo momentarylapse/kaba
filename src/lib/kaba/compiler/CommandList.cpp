@@ -33,8 +33,8 @@ void TempVar::use(int _first, int _last) {
 }
 
 
-int CommandList::add_virtual_reg(int preg) {
-	VirtualRegister c = {preg, Asm::RegRoot[preg], -1, -1};
+int CommandList::add_virtual_reg(Asm::RegID preg) {
+	VirtualRegister c = {preg, Asm::RegRoot[(int)preg], -1, -1};
 	virtual_reg.add(c);
 	return virtual_reg.num - 1;
 }

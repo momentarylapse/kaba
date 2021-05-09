@@ -21,31 +21,32 @@ struct InstructionSetData {
 extern InstructionSetData instruction_set;
 
 // single registers
-enum {
-	REG_EAX, REG_ECX, REG_EDX, REG_EBX, REG_ESP, REG_ESI, REG_EDI, REG_EBP, // 4 byte
-	REG_AX, REG_CX, REG_DX, REG_BX, REG_BP, REG_SP, REG_SI, REG_DI, // 2 byte
-	REG_AL, REG_CL, REG_DL, REG_BL, REG_AH, REG_CH, REG_DH, REG_BH, // 1 byte
-	REG_CS, REG_DS, REG_SS, REG_ES, REG_FS, REG_GS, // segment
-	REG_CR0, REG_CR1, REG_RC2, REG_CR3, REG_CR4,
-	REG_ST0, REG_ST1, REG_ST2, REG_ST3, REG_ST4, REG_ST5, REG_ST6, REG_ST7,
-	REG_RAX, REG_RCX, REG_RDX, REG_RBX, REG_RSP, REG_RSI, REG_RDI, REG_RBP, // 8 byte
-	REG_R0, REG_R1, REG_R2, REG_R3, REG_R4, REG_R5, REG_R6, REG_R7, // ARM
-	REG_R8, REG_R9, REG_R10, REG_R11, REG_R12, REG_R13, REG_R14, REG_R15, // ARM 4 byte / AMD64 8 byte
-	REG_R8D, REG_R9D, REG_R10D, REG_R11D, REG_R12D, REG_R13D, REG_R14D, REG_R15D,
-	REG_XMM0, REG_XMM1, REG_XMM2, REG_XMM3, REG_XMM4, REG_XMM5, REG_XMM6, REG_XMM7, // 16 byte
-	REG_S0,  REG_S1,  REG_S2,  REG_S3,  REG_S4,  REG_S5,  REG_S6,  REG_S7, // ARM float
-	REG_S8,  REG_S9,  REG_S10, REG_S11, REG_S12, REG_S13, REG_S14, REG_S15,
-	REG_S16, REG_S17, REG_S18, REG_S19, REG_S20, REG_S21, REG_S22, REG_S23,
-	REG_S24, REG_S25, REG_S26, REG_S27, REG_S28, REG_S29, REG_S30, REG_S31,
-	NUM_REGISTERS
+enum class RegID {
+	INVALID = -1,
+	EAX, ECX, EDX, EBX, ESP, ESI, EDI, EBP, // 4 byte
+	AX, CX, DX, BX, BP, SP, SI, DI, // 2 byte
+	AL, CL, DL, BL, AH, CH, DH, BH, // 1 byte
+	CS, DS, SS, ES, FS, GS, // segment
+	CR0, CR1, RC2, CR3, CR4,
+	ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7,
+	RAX, RCX, RDX, RBX, RSP, RSI, RDI, RBP, // 8 byte
+	R0, R1, R2, R3, R4, R5, R6, R7, // ARM
+	R8, R9, R10, R11, R12, R13, R14, R15, // ARM 4 byte / AMD64 8 byte
+	R8D, R9D, R10D, R11D, R12D, R13D, R14D, R15D,
+	XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, // 16 byte
+	S0,  S1,  S2,  S3,  S4,  S5,  S6,  S7, // ARM float
+	S8,  S9,  S10, S11, S12, S13, S14, S15,
+	S16, S17, S18, S19, S20, S21, S22, S23,
+	S24, S25, S26, S27, S28, S29, S30, S31,
+	COUNT
 };
 
 const int NUM_REG_ROOTS = 40;
 const int MAX_REG_SIZE = 16;
 
 extern int RegRoot[];
-extern int RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
-string get_reg_name(int reg);
+extern RegID RegResize[NUM_REG_ROOTS][MAX_REG_SIZE + 1];
+string get_reg_name(RegID reg);
 
 
 
@@ -441,11 +442,11 @@ enum {
 };
 
 extern InstructionParam param_none;
-InstructionParam param_reg(int reg);
+InstructionParam param_reg(RegID reg);
 InstructionParam param_reg_set(int set);
-InstructionParam param_deref_reg(int reg, int size);
-InstructionParam param_deref_reg_shift(int reg, int shift, int size);
-InstructionParam param_deref_reg_shift_reg(int reg, int reg2, int size);
+InstructionParam param_deref_reg(RegID reg, int size);
+InstructionParam param_deref_reg_shift(RegID reg, int shift, int size);
+InstructionParam param_deref_reg_shift_reg(RegID reg, RegID reg2, int size);
 InstructionParam param_imm(int64 value, int size);
 InstructionParam param_deref_imm(int64 value, int size);
 InstructionParam param_label(int64 value, int size);

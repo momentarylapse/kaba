@@ -41,16 +41,16 @@ const Class *get_subtype(const Class *t) {
 }
 
 
-SerialNodeParam Serializer::param_vreg(const Class *type, int vreg, int preg) {
-	if (preg < 0)
+SerialNodeParam Serializer::param_vreg(const Class *type, int vreg, Asm::RegID preg) {
+	if (preg == Asm::RegID::INVALID)
 		preg = cmd.virtual_reg[vreg].reg;
-	return {NodeKind::REGISTER, preg, vreg, type, 0};
+	return {NodeKind::REGISTER, (int)preg, vreg, type, 0};
 }
 
-SerialNodeParam Serializer::param_deref_vreg(const Class *type, int vreg, int preg) {
-	if (preg < 0)
+SerialNodeParam Serializer::param_deref_vreg(const Class *type, int vreg, Asm::RegID preg) {
+	if (preg == Asm::RegID::INVALID)
 		preg = cmd.virtual_reg[vreg].reg;
-	return {NodeKind::DEREF_REGISTER, preg, vreg, type, 0};
+	return {NodeKind::DEREF_REGISTER, (int)preg, vreg, type, 0};
 }
 
 
@@ -77,7 +77,7 @@ void Serializer::vr_list_out() {
 		msg_write(Asm::get_reg_name(r.reg) + format("  (%d)   %d -> %d", r.reg_root, r.first, r.last));
 }
 
-int Serializer::get_reg(int root, int size) {
+Asm::RegID Serializer::get_reg(int root, int size) {
 #if 1
 	if ((size != 1) and (size != 4) and (size != 8)) {
 		msg_write(msg_get_trace());
@@ -87,14 +87,14 @@ int Serializer::get_reg(int root, int size) {
 	return Asm::RegResize[root][size];
 }
 
-int Serializer::reg_resize(int reg, int size) {
+Asm::RegID Serializer::reg_resize(Asm::RegID reg, int size) {
 	if (size == 2) {
 		msg_error("size = 2");
 		msg_write(msg_get_trace());
 		throw Asm::Exception("size=2", "kjlkjl", 0, 0);
 		//Asm::DoError("size=2");
 	}
-	return get_reg(Asm::RegRoot[reg], size);
+	return get_reg(Asm::RegRoot[(int)reg], size);
 }
 
 void Serializer::add_member_function_call(Function *cf, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
@@ -131,7 +131,7 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 			if (param.kind == NodeKind::VAR_LOCAL) {
 				int r = find_unused_reg(-1, -1, 4);
 				add_temp(type, ret);
-				add_cmd(Asm::INST_ADD, param_vreg(TypePointer, r), param_preg(TypePointer, Asm::REG_R13), param_const(TypeInt, param.p));
+				add_cmd(Asm::INST_ADD, param_vreg(TypePointer, r), param_preg(TypePointer, Asm::RegID::R13), param_const(TypeInt, param.p));
 				add_cmd(Asm::INST_MOV, ret, param_vreg(TypePointer, r));
 			} else {
 				DoError("reference in ARM: " + param.str());
@@ -139,11 +139,11 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 		} else {
 			add_temp(type, ret);
 			if (config.instruction_set == Asm::InstructionSet::AMD64) {
-				int r = add_virtual_reg(Asm::REG_RAX);
+				int r = add_virtual_reg(Asm::RegID::RAX);
 				add_cmd(Asm::INST_LEA, param_vreg(TypeReg64, r), param);
 				add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg64, r));
 			} else {
-				int r = add_virtual_reg(Asm::REG_EAX);
+				int r = add_virtual_reg(Asm::RegID::EAX);
 				add_cmd(Asm::INST_LEA, param_vreg(TypeReg32, r), param);
 				add_cmd(Asm::INST_MOV, ret, param_vreg(TypeReg32, r));
 			}
@@ -450,7 +450,7 @@ bool Serializer::param_untouched_in_interval(SerialNodeParam &p, int first, int 
 
 			// div violates eax and edx
 			if (cmd.cmd[i].inst == Asm::INST_DIV)
-				if ((p.p == Asm::REG_EDX) or (p.p == Asm::REG_EAX))
+				if ((p.as_reg() == Asm::RegID::EDX) or (p.as_reg() == Asm::RegID::EAX))
 					return false;
 
 			// registers used? (may be part of the same meta-register)
@@ -869,13 +869,13 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialNodeParam &p) {
 	} else if (p.kind == NodeKind::REGISTER) {
 		if (p.shift > 0)
 			script->do_error_internal("get_param: reg + shift");
-		return Asm::param_reg(p.p);
+		return Asm::param_reg(p.as_reg());
 		//param_size = p.type->size;
 	} else if (p.kind == NodeKind::DEREF_REGISTER) {
 		if (p.shift != 0)
-			return Asm::param_deref_reg_shift(p.p, p.shift, p.type->size);
+			return Asm::param_deref_reg_shift(p.as_reg(), p.shift, p.type->size);
 		else
-			return Asm::param_deref_reg(p.p, p.type->size);
+			return Asm::param_deref_reg(p.as_reg(), p.type->size);
 	} else if (p.kind == NodeKind::MEMORY) {
 		int size = p.type->size;
 		// compiler self-test
@@ -884,9 +884,9 @@ Asm::InstructionParam Serializer::get_param(int inst, SerialNodeParam &p) {
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		if (config.instruction_set == Asm::InstructionSet::ARM) {
-			return Asm::param_deref_reg_shift(Asm::REG_R13, p.p + p.shift, p.type->size);
+			return Asm::param_deref_reg_shift(Asm::RegID::R13, p.p + p.shift, p.type->size);
 		} else {
-			return Asm::param_deref_reg_shift(Asm::REG_EBP, p.p + p.shift, p.type->size);
+			return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);
 		}
 		//if ((param_size != 1) and (param_size != 2) and (param_size != 4) and (param_size != 8))
 		//	param_size = -1; // lea doesn't need size...
@@ -964,18 +964,18 @@ Serializer::Serializer(Script *s, Asm::InstructionWithParamsList *_list) {
 
 	cmd.ser = this;
 
-	p_eax = param_preg(TypeReg32, Asm::REG_EAX);
-	p_eax_int = param_preg(TypeInt, Asm::REG_EAX);
-	p_rax = param_preg(TypeReg64, Asm::REG_RAX);
+	p_eax = param_preg(TypeReg32, Asm::RegID::EAX);
+	p_eax_int = param_preg(TypeInt, Asm::RegID::EAX);
+	p_rax = param_preg(TypeReg64, Asm::RegID::RAX);
 
-	p_deref_eax = param_deref_preg(TypePointer, Asm::REG_EAX);
+	p_deref_eax = param_deref_preg(TypePointer, Asm::RegID::EAX);
 
-	p_ax = param_preg(TypeReg16, Asm::REG_AX);
-	p_al = param_preg(TypeReg8, Asm::REG_AL);
-	p_al_bool = param_preg(TypeBool, Asm::REG_AL);
-	p_al_char = param_preg(TypeChar, Asm::REG_AL);
-	p_xmm0 = param_preg(TypeReg128, Asm::REG_XMM0);
-	p_xmm1 = param_preg(TypeReg128, Asm::REG_XMM1);
+	p_ax = param_preg(TypeReg16, Asm::RegID::AX);
+	p_al = param_preg(TypeReg8, Asm::RegID::AL);
+	p_al_bool = param_preg(TypeBool, Asm::RegID::AL);
+	p_al_char = param_preg(TypeChar, Asm::RegID::AL);
+	p_xmm0 = param_preg(TypeReg128, Asm::RegID::XMM0);
+	p_xmm1 = param_preg(TypeReg128, Asm::RegID::XMM1);
 }
 
 bool is_func(shared<Node> n) {

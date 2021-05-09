@@ -1014,70 +1014,70 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
-      <UniqueIdentifier>{B19C19DB-CB89-3011-473E-006CA0EDF67A}</UniqueIdentifier>
+      <UniqueIdentifier>{13585BC0-1944-3BA0-E5EB-21A42E3465B8}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Helper">
-      <UniqueIdentifier>{7178A537-0C03-D251-A90B-A7748617C923}</UniqueIdentifier>
+      <UniqueIdentifier>{810ECDED-6229-EC9C-2785-929B1D082B0A}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib">
-      <UniqueIdentifier>{AAC5F0CF-CD3A-08CA-1C6B-4E0D4251B856}</UniqueIdentifier>
+      <UniqueIdentifier>{C089E774-99D8-6649-ECE7-F83154A80A2C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\algebra">
-      <UniqueIdentifier>{22B1281F-5496-D51F-27B7-6C5AEACA3205}</UniqueIdentifier>
+      <UniqueIdentifier>{BB692EDC-8B4F-1980-6775-FB75F1D0CFC7}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\any">
-      <UniqueIdentifier>{4C76496A-E00C-51B8-960F-35A107C39D9D}</UniqueIdentifier>
+      <UniqueIdentifier>{B31E2FAA-AFAC-82CF-9459-0CE0EB0ABD27}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\base">
-      <UniqueIdentifier>{914DAA79-A850-A093-793A-EDCF482E5CBF}</UniqueIdentifier>
+      <UniqueIdentifier>{13533FED-F8A7-B675-BCFC-8DC69D14A3BC}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\file">
-      <UniqueIdentifier>{DFC7A415-C666-6FAE-8D87-B560D9E35A33}</UniqueIdentifier>
+      <UniqueIdentifier>{70FA0E8F-7273-9E94-A803-5DAFAB45FF16}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui">
-      <UniqueIdentifier>{AFB44CA1-2089-F278-00FC-56D3FB756A80}</UniqueIdentifier>
+      <UniqueIdentifier>{0101F917-B9B4-8493-CA62-8113D68C6A37}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui\Controls">
-      <UniqueIdentifier>{A45E0FF2-F8CF-B37C-3789-D5CC1328EB88}</UniqueIdentifier>
+      <UniqueIdentifier>{B48BDA39-4EEC-27FF-261B-73E5971F157C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\image">
-      <UniqueIdentifier>{FE7FD72D-FFDA-2466-CFF9-5C6708FE4863}</UniqueIdentifier>
+      <UniqueIdentifier>{9F87AB0E-AEAC-6AB9-0D48-02DA9FAB418E}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba">
-      <UniqueIdentifier>{6D344624-5FF8-46F0-5E9B-BF2B829DAF11}</UniqueIdentifier>
+      <UniqueIdentifier>{105CC5B6-462A-0E31-B89C-B675620B4895}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\asm">
-      <UniqueIdentifier>{D552C762-66AB-CAB1-95D4-5FFE29BD9CE6}</UniqueIdentifier>
+      <UniqueIdentifier>{8F254DB9-3E34-D759-0E6B-5D0C007491A1}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\compiler">
-      <UniqueIdentifier>{239EB001-6BC2-584E-D132-1204BC149FBB}</UniqueIdentifier>
+      <UniqueIdentifier>{0D75A2EE-122E-A77A-6E6C-C68C7F100C21}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\dynamic">
-      <UniqueIdentifier>{349E5AFB-5CEB-5292-4C56-F6AB2B0CAB7D}</UniqueIdentifier>
+      <UniqueIdentifier>{9A63D41E-64D0-C5B2-31FF-87C07D189492}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\lib">
-      <UniqueIdentifier>{01C5BC11-80CE-3607-36E3-C8EF3EBEA3CB}</UniqueIdentifier>
+      <UniqueIdentifier>{EF6B489B-C7C9-C7C0-9BF2-2C2A94238C56}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\syntax">
-      <UniqueIdentifier>{4810422D-3FB6-5CE9-3CDF-4CF8AB75E403}</UniqueIdentifier>
+      <UniqueIdentifier>{CC114CC1-38B0-0709-20C5-CFF5329BFE1C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\math">
-      <UniqueIdentifier>{D1424607-5CEB-9C5C-92BE-EB696EF53F80}</UniqueIdentifier>
+      <UniqueIdentifier>{B4DF0913-2C32-33C6-38C0-7C5AFE6ED8B9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\net">
-      <UniqueIdentifier>{1C3533D8-0B49-8951-C1FB-C65354883094}</UniqueIdentifier>
+      <UniqueIdentifier>{C89C2AF4-736B-722B-BEB2-A1D9038EB378}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\nix">
-      <UniqueIdentifier>{DCA107A1-3EAB-8FC5-1C0E-2518990DAA28}</UniqueIdentifier>
+      <UniqueIdentifier>{B14DB423-88FF-B1B6-F79A-8639AB76FFEB}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\threads">
-      <UniqueIdentifier>{7D984497-243B-4005-C13F-7571E8F9311A}</UniqueIdentifier>
+      <UniqueIdentifier>{039C8B00-3F0E-1B51-2EBB-5F4FBC6AC55D}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\vulkan">
-      <UniqueIdentifier>{FB33FCB2-0FE4-FFAC-0EB8-3391B8BFADA9}</UniqueIdentifier>
+      <UniqueIdentifier>{8F90AA1E-91DB-C2CF-17A6-6F62CCC8225A}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\xfile">
-      <UniqueIdentifier>{9DD999BA-8AF8-9A4A-8F3B-3CDF58E068AF}</UniqueIdentifier>
+      <UniqueIdentifier>{1FBC9CA3-D8FB-ABAB-352A-59C169A8BF3D}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -10,6 +10,10 @@
 #include "../kaba.h"
 #include "serializer.h"
 
+namespace Asm {
+	enum class RegID;
+}
+
 namespace kaba {
 
 class Serializer;
@@ -44,10 +48,10 @@ public:
 
 	bool is_reg_root_used_in_interval(int reg_root, int first, int last);
 	int find_unused_reg(int first, int last, int size, int exclude = -1);
-	int reg_resize(int reg, int size);
+	Asm::RegID reg_resize(Asm::RegID reg, int size);
 
-	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
-	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
+	SerialNodeParam param_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
+	SerialNodeParam param_deref_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
 
 
 	void insert_cmd(int inst, const SerialNodeParam &p1 = p_none, const SerialNodeParam &p2 = p_none, const SerialNodeParam &p3 = p_none);
@@ -71,7 +75,7 @@ public:
 
 
 
-	static int get_reg(int root, int size);
+	static Asm::RegID get_reg(int root, int size);
 
 	void do_error(const string &e);
 

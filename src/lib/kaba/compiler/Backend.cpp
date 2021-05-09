@@ -28,16 +28,16 @@ Backend::~Backend() {
 }
 
 
-SerialNodeParam Backend::param_vreg(const Class *type, int vreg, int preg) {
-	if (preg < 0)
+SerialNodeParam Backend::param_vreg(const Class *type, int vreg, Asm::RegID preg) {
+	if (preg == Asm::RegID::INVALID)
 		preg = cmd.virtual_reg[vreg].reg;
-	return {NodeKind::REGISTER, preg, vreg, type, 0};
+	return {NodeKind::REGISTER, (int)preg, vreg, type, 0};
 }
 
-SerialNodeParam Backend::param_deref_vreg(const Class *type, int vreg, int preg) {
-	if (preg < 0)
+SerialNodeParam Backend::param_deref_vreg(const Class *type, int vreg, Asm::RegID preg) {
+	if (preg == Asm::RegID::INVALID)
 		preg = cmd.virtual_reg[vreg].reg;
-	return {NodeKind::DEREF_REGISTER, preg, vreg, type, 0};
+	return {NodeKind::DEREF_REGISTER, (int)preg, vreg, type, 0};
 }
 
 
@@ -69,19 +69,19 @@ int Backend::find_unused_reg(int first, int last, int size, int exclude) {
 	return -1;
 }
 
-int Backend::reg_resize(int reg, int size) {
+Asm::RegID Backend::reg_resize(Asm::RegID reg, int size) {
 	if (size == 2) {
 		msg_error("size = 2");
 		msg_write(msg_get_trace());
 		throw Asm::Exception("size=2", "kjlkjl", 0, 0);
 		//Asm::DoError("size=2");
 	}
-	return get_reg(Asm::RegRoot[reg], size);
+	return get_reg(Asm::RegRoot[(int)reg], size);
 }
 
 
 
-int Backend::get_reg(int root, int size) {
+Asm::RegID Backend::get_reg(int root, int size) {
 #if 1
 	if ((size != 1) and (size != 4) and (size != 8)) {
 		msg_write(msg_get_trace());

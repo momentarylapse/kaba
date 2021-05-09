@@ -123,12 +123,12 @@ public:
 	void fix_return_by_ref();
 
 
-	SerialNodeParam param_vreg(const Class *type, int vreg, int preg = -1);
-	SerialNodeParam param_deref_vreg(const Class *type, int vreg, int preg = -1);
+	SerialNodeParam param_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
+	SerialNodeParam param_deref_vreg(const Class *type, int vreg, Asm::RegID preg = (Asm::RegID)-1);
 
-	static int reg_resize(int reg, int size);
+	static Asm::RegID reg_resize(Asm::RegID reg, int size);
 
-	static int get_reg(int root, int size);
+	static Asm::RegID get_reg(int root, int size);
 };
 
 

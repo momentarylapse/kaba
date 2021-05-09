@@ -9,6 +9,10 @@
 
 #include "../../base/base.h"
 
+namespace Asm {
+	enum class RegID;
+}
+
 
 namespace kaba {
 
@@ -26,6 +30,7 @@ struct SerialNodeParam {
 	bool operator == (const SerialNodeParam &param) const;
 	string str(Serializer *ser) const;
 	const Class* get_type_save() const;
+	Asm::RegID as_reg() const;
 };
 extern const SerialNodeParam p_none;
 
@@ -46,8 +51,8 @@ SerialNodeParam param_imm(const Class *type, int64 c);
 SerialNodeParam param_marker(const Class *type, int m);
 SerialNodeParam param_marker32(int m);
 SerialNodeParam param_deref_marker(const Class *type, int m);
-SerialNodeParam param_preg(const Class *type, int reg);
-SerialNodeParam param_deref_preg(const Class *type, int reg);
+SerialNodeParam param_preg(const Class *type, Asm::RegID reg);
+SerialNodeParam param_deref_preg(const Class *type, Asm::RegID reg);
 SerialNodeParam param_lookup(const Class *type, int ref);
 SerialNodeParam param_deref_lookup(const Class *type, int ref);
 SerialNodeParam deref_temp(const SerialNodeParam &param, const Class *type);
