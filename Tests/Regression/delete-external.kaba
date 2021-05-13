@@ -1,0 +1,16 @@
+extern void xxx_delete(void* p)
+
+class V
+	string s
+	func __init__(string _s)
+		s = _s
+		print("init  {{s}}")
+	func virtual __delete__()
+		print("delete  {{s}}")
+
+func main()
+	let v = new V("hallo")
+	#del v
+	xxx_delete(v)
+
+

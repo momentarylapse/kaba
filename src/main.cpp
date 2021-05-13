@@ -35,6 +35,20 @@ string disassemble(void* d, int size) {
 	return Asm::disassemble(d, size);
 }
 
+void xxx_delete0(VirtualBase* v) {
+	v->__delete_external__();
+	v->__delete__();
+	v->~VirtualBase();
+	//delete v;
+}
+
+void xxx_delete(VirtualBase* v) {
+	msg_write("...xxx_delete");// +p2s(v));
+	delete v;
+	//v->__delete_external__();
+	//v->__delete__();
+}
+
 /*string ggg(string& s) {
 	return s + ".";
 }*/
@@ -196,8 +210,9 @@ public:
 		p.option("--interpret", [&] { flag_interpret = true; });
 		p.option("--xxx", [&] {
 			kaba::init(abi, flag_allow_std_lib);
+			msg_write(disassemble((void*)&xxx_delete0, -1));
 			//msg_write(disassemble((void*)&fff, 30));
-			msg_write(disassemble((void*)&fff2, -1));
+			//msg_write(disassemble((void*)&fff2, -1));
 			//msg_write(disassemble((void*)&ggg, -1));
 			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 			exit(0);
@@ -216,6 +231,7 @@ public:
 		kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
 		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
 		kaba::link_external("ParseResource", (void*)&hui::ParseResource);
+		kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 
 		if (symbols_in_file.num > 0)
