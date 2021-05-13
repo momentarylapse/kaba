@@ -240,6 +240,16 @@ bytes bytes::repeat(int n) const {
 	return bytes_repeat(*this, n);
 }
 
+bytes _cdecl bytes::sub_ref(int start, int end) const {
+	return sub_ref_as<bytes>(start, end);
+}
+
+bytes _cdecl bytes::sub(int start, int end) const {
+	auto r = sub_ref(start, end);
+	r.make_own();
+	return r;
+}
+
 
 
 
@@ -281,36 +291,38 @@ bool string::operator == (const string &s) const {
 	return compare(s) == 0;
 }
 
-string string::substr(int start, int length) const {
-	string r;
-	if (start >= num)
-		return r;
-	if (start < 0) {
-		// start from the end
-		start = num + start;
-		if (start < 0)
-			return r;
-	}
-	if (length < 0) {
-		length = num - start + length + 1;
-	}
-	if (start + length > num)
-		length = num - start;
-	if (length > 0) {
-		r.resize(length);
-		memcpy(r.data, &((unsigned char*)data)[start], length);
-	}
+string string::sub_ref(int start, int end) const {
+	/*if (start < 0)
+		start += num;
+	if (end == MAGIC_END_INDEX)
+		end = num;
+	else if (end < 0)
+		end += num;
+	int new_num = 0;
+	if (end >= start)
+		new_num = end - start;*/
+
+	return sub_ref_as<string>(start, end);
+}
+
+string string::sub(int start, int end) const {
+	string r = sub_ref(start, end);
+	r.make_own();
 	return r;
+
 }
 
 string string::head(int size) const {
+	//printf("HEAD\n");
 	size = min(size, num);
-	return substr(0, size);
+	return sub(0, size);
 }
 
 string string::tail(int size) const {
+	if (size == 0)
+		return "";
 	size = min(size, num);
-	return substr(num - size, size);
+	return sub(- size);
 }
 
 int string::find(const string &s, int start) const {
@@ -370,12 +382,12 @@ Array<string> string::explode(const string &s) const {
 		if (pos2 < 0)
 			break;
 
-		r.add(substr(pos, pos2 - pos));
+		r.add(sub(pos, pos2));
 
 		pos = s.num + pos2;
 	}
 	if ((r.num > 0) or (pos < num))
-		r.add(substr(pos, num - pos));
+		r.add(sub(pos));
 	return r;
 }
 
@@ -863,7 +875,7 @@ bool _xf_split_first_(const string &s, string &pre, string &f, string &post) {
 				}
 			}
 			pre = s.head(i).replace("%%", "%");
-			post = s.substr(i+f.num+1, -1);
+			post = s.sub(i + f.num + 1);
 			return true;
 		}
 	}
@@ -936,7 +948,7 @@ double string::f64() const
 			else
 				res += float(c-48) / (float)e;
 		} else if ((c == 'e') or (c == 'E')) {
-			int ex = substr(i+1, -1)._int();
+			int ex = sub(i+1)._int();
 			res *= pow(10.0, ex);
 			break;
 		}
@@ -973,7 +985,7 @@ string string::trim() const {
 	for (i1=num-1; i1>=0; i1--)
 		if (!is_whitespace_x((*this)[i1]))
 			break;
-	return substr(i0, i1 - i0 + 1);
+	return sub(i0, i1 + 1);
 }
 
 string string::escape() const {
@@ -1213,12 +1225,12 @@ Array<string> str_split_any(const string &s, const string &splitters) {
 	int prev = 0;
 	for (int i=0; i<s.num; i++) {
 		if (splitters.has_char(s[i])) {
-			r.add(s.substr(prev, i-prev));
+			r.add(s.sub(prev, i));
 			prev = i + 1;
 			break;
 		}
 	}
-	r.add(s.substr(prev, -1));
+	r.add(s.sub(prev));
 	return r;
 }
 
@@ -1252,16 +1264,16 @@ Array<string> str_parse_tokens(const string &line, const string &splitters) {
 				} else if ((line[j] == '\"') or (line[j] == '\'')) {
 					i = j;
 					if (keep_quotes)
-						tokens.add(line.substr(start, i-start+1));
+						tokens.add(line.sub(start, i+1));
 					else
-						tokens.add(line.substr(start+1, i-start-1).unescape());
+						tokens.add(line.sub(start+1, i).unescape());
 					break;
 				}
 			}
 		} else 	if (splitters.has_char(line[i])) {
 			// splitter character
 			end_token();
-			tokens.add(line.substr(i, 1));
+			tokens.add(line.sub(i, i+1));
 		} else {
 			// regular token
 			temp.add(line[i]);

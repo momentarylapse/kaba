@@ -438,7 +438,7 @@ void import_includes(Script *s) {
 
 void Script::link_functions() {
 	for (Asm::WantedLabel &l: functions_to_link) {
-		string name = l.name.substr(10, -1);
+		string name = l.name.sub(10);
 		bool found = false;
 		for (Function *f: syntax->functions)
 			if (f->name == name) {
@@ -518,7 +518,7 @@ void parse_magic_linker_string(SyntaxTree *s) {
 					continue;
 				if (x[0] == '\t') {
 					if (d and x.find(":")) {
-						auto y = x.substr(1, -1).explode(":");
+						auto y = x.sub(1).explode(":");
 						link_external(y[0], d->get_symbol(y[1], s->script));
 					}
 				} else {
@@ -528,6 +528,66 @@ void parse_magic_linker_string(SyntaxTree *s) {
 		}
 
 }
+
+
+
+#ifdef OS_WINDOWS
+
+// https://pmeerw.net/blog/programming/RtlAddFunctionTable.html
+
+typedef union _UNWIND_CODE {
+	struct {
+		uint8_t CodeOffset;
+		uint8_t UnwindOp : 4;
+		uint8_t OpInfo : 4;
+	};
+	USHORT FrameOffset;
+} UNWIND_CODE;
+
+typedef struct _UNWIND_INFO {
+	uint8_t Version : 3;
+	uint8_t Flags : 5;
+	uint8_t SizeOfProlog;
+	uint8_t CountOfCodes;
+	uint8_t FrameRegister : 4;
+	uint8_t FrameOffset : 4;
+	UNWIND_CODE UnwindCode[1];
+	/*	UNWIND_CODE MoreUnwindCode[((CountOfCodes + 1) & ~1) - 1];
+	 *	OPTIONAL ULONG ExceptionHandler;
+	 *	OPTIONAL ULONG ExceptionData[]; */
+} UNWIND_INFO;
+
+// very experimental
+void register_functions(Script* s) {
+	int nf = s->functions().num;
+	RUNTIME_FUNCTION* function_table = new RUNTIME_FUNCTION[nf];
+	UNWIND_INFO* unwind_info = new UNWIND_INFO[nf];
+	foreachi (auto* f, s->functions(), i) {
+		unwind_info[i].Version = 1;
+		unwind_info[i].Flags = UNW_FLAG_EHANDLER;
+		unwind_info[i].SizeOfProlog = 0;
+		unwind_info[i].CountOfCodes = 0;
+		unwind_info[i].FrameRegister = 0;
+		unwind_info[i].FrameOffset = 0;
+		*(DWORD*)&unwind_info[i].UnwindCode = 0;
+
+		function_table[i].BeginAddress = (int_p)f->block->_start - (int_p)s->opcode;
+		function_table[i].EndAddress = (int_p)f->block->_end - (int_p)s->opcode;
+		function_table[i].UnwindInfoAddress = (int_p)&unwind_info[i] - (int_p)s->opcode;
+	}
+	RtlAddFunctionTable(function_table, nf, (int_p)s->opcode);
+
+
+	if (false) {
+		DWORD64 dyn_base = 0;
+		auto q = RtlLookupFunctionEntry((DWORD64)&register_functions, &dyn_base, NULL);
+		printf("lookup 'reg_func' %p %llx\n", q, dyn_base); // no function table entry
+		q = RtlLookupFunctionEntry(s->functions()[0]->address, &dyn_base, NULL);
+		printf("lookup 'f[0]' %p %llx\n", q, dyn_base); // no function table entry
+		fflush(stdout);
+	}
+}
+#endif
 
 // generate opcode
 void Script::compile() {
@@ -599,6 +659,11 @@ void Script::compile() {
 	}
 	if (config.allow_output_stage("dasm"))
 		msg_write(Asm::disassemble(opcode, opcode_size));
+
+
+#ifdef OS_WINDOWS
+	register_functions(this);
+#endif
 }
 
 };

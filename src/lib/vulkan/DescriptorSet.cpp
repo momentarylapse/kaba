@@ -256,7 +256,7 @@ VkDescriptorType descriptor_type(const string &s) {
 			int i2 = bindings.find("]", i1);
 			if (i2 < 0)
 				break;
-			string bb = bindings.substr(i1+1, i2-i1-1);
+			string bb = bindings.sub(i1+1, i2);
 			Array<VkDescriptorType> types;
 			Array<int> binding_no;
 			digest_bindings(bb, types, binding_no);

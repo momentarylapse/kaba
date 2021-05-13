@@ -269,9 +269,9 @@ Instance *Instance::create(const Array<string> &op) {
 	int api = VK_API_VERSION_1_0;
 	for (auto &o: op) {
 		if (o.head(5) == "name=")
-			name = o.substr(5, -1);
+			name = o.sub(5);
 		if (o.head(4) == "api=")
-			api = parse_version(o.substr(4, -1));
+			api = parse_version(o.sub(4));
 	}
 
 	if (sa_contains(op, "rtx")) {

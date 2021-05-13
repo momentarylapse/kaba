@@ -189,7 +189,7 @@ public:
 					}
 			}
 			for (int i=0; i<data_size; i+= 4)
-				msg_write(format("   data %03x:  ", i) + s.substr(i, 4).hex());
+				msg_write(format("   data %03x:  ", i) + s.sub(i, i+4).hex());
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 			exit(0);
 		});
@@ -282,7 +282,7 @@ public:
 				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 			} else {
 				if (kaba::config.abi == kaba::config.native_abi)
-					execute(s, p.arg.sub(1, -1));
+					execute(s, p.arg.sub_ref(1));
 			}
 		} catch (kaba::Exception &e) {
 			if (use_gui)

@@ -396,7 +396,7 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
 	groups.add(groupInfo);
 
     // hit groups
-    for (auto *s: shaders.sub(1, -1)) {
+    for (auto *s: shaders.sub_ref(1)) {
         groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         groupInfo.generalShader = VK_SHADER_UNUSED_NV;
         groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
@@ -423,7 +423,7 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
     miss_group_offset = groups.num;
 
     // miss groups
-    for (auto *s: shaders.sub(1, -1))
+    for (auto *s: shaders.sub_ref(1))
     	if (s->get_module(VK_SHADER_STAGE_MISS_BIT_NV)) {
 			groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
 			groupInfo.generalShader = shader_stages.num;

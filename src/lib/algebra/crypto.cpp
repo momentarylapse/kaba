@@ -188,7 +188,7 @@ void CryptoCreateKeys(Crypto &key1, Crypto &key2, const string &type, int bits)
 
 vli str2vli(const string &str, int offset, int bytes)
 {
-	string t = str.substr(offset, bytes);
+	string t = str.sub(offset, offset + bytes);
 	t.resize(bytes);
 	vli v;
 	v.data.resize((bytes - 1) / 4 + 1);

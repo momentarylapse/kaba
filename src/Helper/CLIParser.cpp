@@ -57,7 +57,7 @@ void CLIParser::parse(const Array<string> &_arg) {
 			}
 		} else {
 			// rest
-			arg = _arg.sub(i, -1);
+			arg = _arg.sub_ref(i);
 			break;
 		}
 	}

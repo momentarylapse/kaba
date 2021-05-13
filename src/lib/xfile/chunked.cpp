@@ -89,7 +89,7 @@ void FileChunkBasic::set_root(ChunkedFileParser *r) {
 
 string str_clamp(const string &s, int l) {
 	if (s.num > l)
-		return s.substr(0, l);
+		return s.sub(0, l);
 	return s;
 }
 
@@ -200,9 +200,7 @@ void FileChunkBasic::read_contents() {
 				break;
 			}
 		if (!ok) {
-			string tt;
-			tt.resize(context->end() - f->get_pos());
-			f->read_buffer(tt);
+			auto tt = f->read_buffer(context->end() - f->get_pos());
 			//msg_write(tt.substr(0, 100).hex());
 
 			if (root)
