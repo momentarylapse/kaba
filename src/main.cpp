@@ -19,6 +19,8 @@ typedef void main_void_func();
 
 namespace kaba {
 	extern int64 s2i2(const string &str);
+	extern string function_link_name(Function *f);
+	extern string decode_symbol_name(const string&);
 };
 
 float fff(int i, int j, int k, float f1, float f2) {
@@ -117,7 +119,7 @@ public:
 
 		bool use_gui = false;
 		kaba::Abi abi = kaba::Abi::NATIVE;
-		string out_file, symbols_out_file, symbols_in_file;
+		Path out_file, symbols_out_file, symbols_in_file;
 		bool flag_allow_std_lib = true;
 		bool flag_disassemble = false;
 		bool flag_verbose = false;
@@ -234,7 +236,7 @@ public:
 		kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 
-		if (symbols_in_file.num > 0)
+		if (!symbols_in_file.is_empty())
 			import_symbols(symbols_in_file);
 			
 		if (flag_disassemble) {
@@ -280,7 +282,7 @@ public:
 
 		try {
 			auto s = kaba::load(filename);
-			if (symbols_out_file.num > 0)
+			if (!symbols_out_file.is_empty())
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts) {
 				msg_write("---- constants ----");
@@ -288,7 +290,7 @@ public:
 					msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
 				}
 			}
-			if (out_file.num > 0) {
+			if (!out_file.is_empty()) {
 				if (output_format == "raw")
 					output_to_file_raw(s, out_file);
 				else if (output_format == "elf")
@@ -347,13 +349,13 @@ public:
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(shared<kaba::Script> s, const string &out_file) {
+	void output_to_file_raw(shared<kaba::Script> s, const Path &out_file) {
 		File *f = FileCreate(out_file);
 		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
-	void output_to_file_elf(shared<kaba::Script> s, const string &out_file) {
+	void output_to_file_elf(shared<kaba::Script> s, const Path &out_file) {
 		File *f = FileCreate(out_file);
 
 		bool is64bit = (kaba::config.pointer_size == 8);
@@ -398,31 +400,24 @@ public:
 		//f->WriteBuffer(s->opcode, s->opcode_size);
 		delete(f);
 
-		system(("chmod a+x " + out_file).c_str());
+		system(format("chmod a+x %s", out_file).c_str());
 	}
 
-	string decode_symbol_name(const string &name) {
-		return name.replace("lib__", "").replace("@list", "[]");
-	}
-
-	void export_symbols(shared<kaba::Script> s, const string &symbols_out_file) {
+	void export_symbols(shared<kaba::Script> s, const Path &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
-			int n = fn->num_params;
-			if (!fn->is_static())
-				n ++;
-			f->write_str(decode_symbol_name(fn->cname(fn->owner()->base_class)) + ":" + i2s(n));
+			f->write_str(kaba::function_link_name(fn));
 			f->write_int(fn->address);
 		}
 		for (auto *v: weak(s->syntax->base_class->static_variables)) {
-			f->write_str(decode_symbol_name(v->name));
+			f->write_str(kaba::decode_symbol_name(v->name));
 			f->write_int((int_p)v->memory);
 		}
 		f->write_str("#");
 		delete(f);
 	}
 
-	void import_symbols(const string &symbols_in_file) {
+	void import_symbols(const Path &symbols_in_file) {
 		File *f = FileOpen(symbols_in_file);
 		while (!f->end()) {
 			string name = f->read_str();
