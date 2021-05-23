@@ -42,9 +42,9 @@ const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_ABSTRACT_TUPLE = -30;
-const int TYPE_CAST_CLASSIFY = -30;
+const int TYPE_CAST_CLASSIFY = -31;
 const int TYPE_CAST_MAKE_SHARED = -40;
-const int TYPE_CAST_MAKE_OWNED = -40;
+const int TYPE_CAST_MAKE_OWNED = -41;
 
 bool type_match(const Class *given, const Class *wanted);
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
@@ -1321,6 +1321,19 @@ shared<Node> Parser::parse_primitive_operator(Block *block) {
 	return 0;
 }*/
 
+bool type_match_classify(shared<Node> node, Function *f_constructor, int &penalty) {
+	if (f_constructor->literal_param_type.num != node->params.num)
+		return false;
+
+	penalty = 20;
+	foreachi (auto *e, weak(node->params), i) {
+		int pen, c;
+		if (!type_match_with_cast(e, false, f_constructor->literal_param_type[i], pen, c))
+			return false;
+		penalty += pen;
+	}
+	return true;
+}
 
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
 	penalty = 0;
@@ -1369,9 +1382,11 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
 			int pen, c;
-			for (auto *e: weak(node->params))
+			for (auto *e: weak(node->params)) {
 				if (!type_match_with_cast(e, false, t, pen, c))
 					return false;
+				penalty += pen;
+			}
 			cast = TYPE_CAST_ABSTRACT_LIST;
 			return true;
 		}
@@ -1380,15 +1395,10 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		}
 		for (auto *f: wanted->get_constructors()) {
-			if (f->literal_param_type.num != node->params.num)
-				continue;
-
-			int pen, c;
-			foreachi (auto *e, weak(node->params), i)
-				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c))
-					return false;
-			cast = TYPE_CAST_CLASSIFY;
-			return true;
+			if (type_match_classify(node, f, penalty)) {
+				cast = TYPE_CAST_CLASSIFY;
+				return true;
+			}
 		}
 	}
 	if ((node->kind == NodeKind::TUPLE) and (given == TypeAbstractTuple)) {
@@ -1526,6 +1536,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 	if (primop->id == OperatorID::IN)
 		return link_special_operator_in(param1, param2);
 
+
 	auto *p1 = param1->type;
 	auto *p2 = param2->type;
 
@@ -1585,6 +1596,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 		}
 
 	// exact (operator) match?
+	// FIXME don't auto cast into arbitrary crap...
 	for (auto *op: tree->operators)
 		if (primop == op->primitive)
 			if (type_match(p1, op->param_type_1) and type_match(p2, op->param_type_2)) {
@@ -1756,7 +1768,6 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 		}
 		operands.add(parse_operand(block, block->name_space()));
 	}
-
 
 	// in each step remove/link the most important operator
 	while (operators.num > 0)
