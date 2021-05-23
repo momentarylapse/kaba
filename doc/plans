@@ -6,6 +6,7 @@
 	* ...or merge first assignment  A a = A(...)
 * amd64: return (float,float) etc
 
+* [1,2]==[1] -> [true,false]
 
 
 * ARM....
@@ -38,3 +39,12 @@ TODO
 
 
 "non-intuitive constructor" flag... for classes with user constructor... data should not need
+
+
+
+
+
+== operators ==
+
+unification... (-_-)'
+

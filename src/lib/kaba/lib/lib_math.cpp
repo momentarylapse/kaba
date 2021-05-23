@@ -621,7 +621,7 @@ void SIAddPackageMath() {
 			func_add_param("l1", TypeVector);
 			func_add_param("l2", TypeVector);
 			func_add_param("inter", TypeVector);
-		class_add_func("inverse", TypeVoid, mf(&plane::inverse), Flags::PURE);
+		class_add_func("inverse", TypePlane, mf(&plane::inverse), Flags::PURE);
 		class_add_func("distance", TypeFloat32, mf(&plane::distance), Flags::PURE);
 			func_add_param("p", TypeVector);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, mf(&plane::str), Flags::PURE);
