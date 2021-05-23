@@ -1600,7 +1600,8 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 	for (auto *op: tree->operators)
 		if (primop == op->primitive)
 			if (type_match(p1, op->param_type_1) and type_match(p2, op->param_type_2)) {
-				return tree->add_node_operator(op, param1, param2);
+				// UNUSED ANYWAY???
+	//			return tree->add_node_operator(op, param1, param2);
 			}
 
 
