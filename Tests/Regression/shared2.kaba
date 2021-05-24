@@ -17,7 +17,7 @@ shared X fff(shared X x)
 	return x
 
 void main()
-	let x = fff(ff())
+	var x = fff(ff())
 	print("aaaa")
 	#x.f()
 	

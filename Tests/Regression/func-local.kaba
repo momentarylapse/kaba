@@ -1,5 +1,5 @@
 func main()
-	let f = func()
+	var f = func()
 		print("hallo")
 	#f = lambda() "hallo"
 	f()

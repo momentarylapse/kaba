@@ -7,6 +7,6 @@ class Tag
 		print("del")
 
 void main()
-	let t = Tag()
+	var t = Tag()
 	if false
-		let t2 = Tag()
+		var t2 = Tag()

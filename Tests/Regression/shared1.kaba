@@ -17,7 +17,7 @@ class X
 
 
 void ff(shared X x)
-	let z = x
+	var z = x
 	z.f()
 
 

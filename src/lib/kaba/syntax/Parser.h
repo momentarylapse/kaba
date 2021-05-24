@@ -146,6 +146,7 @@ public:
 	shared<Node> parse_statement_repr(Block *block);
 	shared<Node> parse_statement_len(Block *block);
 	shared<Node> parse_statement_let(Block *block);
+	shared<Node> parse_statement_var(Block *block);
 	shared<Node> parse_statement_map(Block *block);
 	shared<Node> parse_statement_lambda(Block *block);
 	shared<Node> parse_statement_sorted(Block *block);

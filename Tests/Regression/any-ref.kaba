@@ -1,5 +1,5 @@
 void main()
-	let a = dyn({"a":[1,2], "b":"c"})
+	var a = dyn({"a":[1,2], "b":"c"})
 	print(a)
 	print(a["a"])
 	a["a"].add(9)

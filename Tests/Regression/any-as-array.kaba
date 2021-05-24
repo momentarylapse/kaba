@@ -1,5 +1,5 @@
 void main()
-	let a = dyn([1,"b",{"f":2.2}])
+	var a = dyn([1,"b",{"f":2.2}])
 	for b in a.as_array()
 		print(b)
 

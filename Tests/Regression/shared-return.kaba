@@ -7,7 +7,7 @@ class X as shared
 		print("test {{_shared_ref_count}}")
 
 shared X f()
-	let x = new X()
+	var x = new X()
 	return x
 
 void main()

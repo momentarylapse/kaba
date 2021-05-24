@@ -28,6 +28,6 @@ bool test(string filename)
 		return false
 
 void main()
-	let list = Filesystem.search(".", "*.reg", false)
+	var list = Filesystem.search(".", "*.reg", false)
 	for e in list
 		test(e)

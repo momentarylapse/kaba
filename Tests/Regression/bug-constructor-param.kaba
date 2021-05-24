@@ -3,4 +3,4 @@ class Test
 		print(z)
 
 void main()
-	let x = Test(complex(1,2))
+	var x = Test(complex(1,2))

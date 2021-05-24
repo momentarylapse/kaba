@@ -21,7 +21,7 @@ void main()
 	print("zzz")
 	
 	if true
-		let b = a
+		var b = a
 		print("zzz2")
 	print("zzz3")
 	

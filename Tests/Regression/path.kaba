@@ -1,7 +1,7 @@
 use os
 
 void main()
-	let p = Path("a/b/c")
+	var p = Path("a/b/c")
 	print(p) # a/b/c
 	print(p.is_relative()) # true
 #	print(p.as_dir()) # a/b/c/
@@ -12,7 +12,7 @@ void main()
 
 #	print(p == p.as_dir()) # true
 	
-	let p2 = Path("/a/b/c/../d")
+	var p2 = Path("/a/b/c/../d")
 	print(p2) # /a/b/c/../d
 	print(p2.is_relative()) # false
 	print(p2.canonical()) # /a/b/d
@@ -21,7 +21,7 @@ void main()
 	print(p2.parent().parent().parent()) # /
 	print(p2.parent().parent().parent().parent()) # ERROR
 	
-	let p3 = Path("./a/.//c")
+	var p3 = Path("./a/.//c")
 	print(p3) # ./a/./c
 	print(p3.canonical()) # ./a/c
 	print(str(p3.all_parents()))

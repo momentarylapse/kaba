@@ -1,7 +1,7 @@
 void f(int->void p)
 	print("f...")
 #	print(p2s(p))
-	let c= type(p)
+	var c= type(p)
 	print(c)
 	print(c.parent)
 	print(str(c.param))

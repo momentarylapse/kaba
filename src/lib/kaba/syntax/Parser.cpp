@@ -2444,6 +2444,45 @@ shared<Node> Parser::parse_statement_let(Block *block) {
 	return cmd;
 }
 
+// local (variable) definitions...
+shared<Node> Parser::parse_statement_var(Block *block) {
+	Exp.next(); // "var"
+
+	Array<string> names;
+	names.add(Exp.cur);
+	Exp.next();
+
+	while (Exp.cur == ",") {
+		Exp.next();
+		names.add(Exp.cur);
+		Exp.next();
+	}
+
+
+	if (Exp.cur == "=") {
+		Exp.next();
+		if (names.num != 1)
+			do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
+
+		auto rhs = parse_operand_super_greedy(block);
+		rhs = force_concrete_type(rhs);
+		auto *var = block->add_var(names[0], rhs->type);
+		auto cmd = link_operator_id(OperatorID::ASSIGN, tree->add_node_local(var), rhs);
+		if (!cmd)
+			do_error("let: no assignment operator for type " + rhs->type->long_name());
+		return cmd;
+	} else if (Exp.cur == ":") {
+		Exp.next();
+		auto type = parse_type(block->name_space());
+		for (auto &n: names)
+			block->add_var(n, type);
+		return tree->add_node_statement(StatementID::PASS);
+	} else {
+		do_error("'=' or ':' required after 'var' declaration");
+	}
+	return nullptr;
+}
+
 Array<const Class*> func_effective_params(const Function *f) {
 	auto p = f->literal_param_type;
 	if (!f->is_static())
@@ -2717,6 +2756,8 @@ shared<Node> Parser::parse_statement(Block *block) {
 		return parse_statement_len(block);
 	} else if (Exp.cur == IDENTIFIER_LET) {
 		return parse_statement_let(block);
+	} else if (Exp.cur == IDENTIFIER_VAR) {
+		return parse_statement_var(block);
 	} else if (Exp.cur == IDENTIFIER_MAP) {
 		return parse_statement_map(block);
 	} else if (Exp.cur == IDENTIFIER_LAMBDA) {

@@ -2,7 +2,7 @@ func f() -> (int,string)
 	return [2,"x"]
 
 func main()
-	let x = 13,"a"
+	var x = 13,"a"
 	x = f()
 	print(x)
 

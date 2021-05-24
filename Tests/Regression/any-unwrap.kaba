@@ -13,7 +13,7 @@ void main()
 	t.s = "hallo"
 	t.v = vector.EZ
 
-	let a = dyn(t)
+	var a = dyn(t)
 	print(a)
 
 	Test tt

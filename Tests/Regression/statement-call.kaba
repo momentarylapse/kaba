@@ -3,6 +3,6 @@ void f(string[] s)
 
 void main()
 	#f(["a", "b"])
-	let p = f
+	var p = f
 	call(p, ["a", "b"])
 

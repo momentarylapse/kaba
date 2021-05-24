@@ -6,5 +6,5 @@
 
 #func main static virtual : (a: out int) -> void
 void main()
-	let x = f(1)
+	var x = f(1)
 	print(str(x))

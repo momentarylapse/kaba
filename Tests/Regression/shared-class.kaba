@@ -9,5 +9,5 @@ class X as shared
 
 void main()
 	shared X x = new X()
-	let z = x
+	var z = x
 	z.f()
