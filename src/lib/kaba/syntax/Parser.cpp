@@ -3418,7 +3418,8 @@ void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int
 
 		auto cv = parse_and_eval_const(block, type);
 		c_value = cv->as_const();
-		type = cv->type;
+		if (!type)
+			type = cv->type;
 
 		/*auto rhs = parse_operand_super_greedy(block);
 		if (!type) {
