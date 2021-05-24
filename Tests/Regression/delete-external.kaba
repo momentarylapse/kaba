@@ -1,8 +1,8 @@
-extern void xxx_delete(void* p)
+func extern xxx_delete(p: void*)
 
 class V
 	string s
-	func __init__(string _s)
+	func __init__(_s: string)
 		s = _s
 		print("init  {{s}}")
 	func virtual __delete__()

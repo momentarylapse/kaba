@@ -1977,6 +1977,8 @@ shared<Node> Parser::parse_statement_return(Block *block) {
 	Exp.next();
 	auto cmd = tree->add_node_statement(StatementID::RETURN);
 	if (block->function->literal_return_type == TypeVoid) {
+		if (!Exp.end_of_line())
+			do_error("current function has type 'void', can not return a value");
 		cmd->set_num_params(0);
 	} else {
 		auto cmd_value = check_param_link(parse_operand_super_greedy(block), block->function->literal_return_type, IDENTIFIER_RETURN);
@@ -2427,6 +2429,7 @@ shared<Node> Parser::parse_statement_repr(Block *block) {
 
 // local (variable) definitions...
 shared<Node> Parser::parse_statement_let(Block *block) {
+	do_error("'let' is deprecated, will change it's meaning soon...");
 	Exp.next(); // "let"
 	string name = Exp.cur;
 	Exp.next();
@@ -3500,7 +3503,6 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
 	Exp.next(); // "func"
 
-	// TODO better to split/mask flags into return- and function-flags...
 	flags = parse_flags(flags);
 
 	string name = Exp.cur;
@@ -3527,15 +3529,21 @@ Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
 		for (int k=0;;k++) {
 			// like variable definitions
 
-			auto pflags = parse_flags();
+			auto param_flags = parse_flags();
+
+			string param_name = Exp.cur;
+			Exp.next();
+
+			if (Exp.cur != ":")
+				do_error("':' expected after parameter name");
+			Exp.next();
 
 			// type of parameter variable
 			const Class *param_type = parse_type(name_space); // force
-			auto v = f->block->add_var(Exp.cur, param_type);
-			if (!flags_has(pflags, Flags::OUT))
+			auto v = f->block->add_var(param_name, param_type);
+			if (!flags_has(param_flags, Flags::OUT))
 				flags_set(v->flags, Flags::CONST);
 			f->literal_param_type.add(param_type);
-			Exp.next();
 			f->num_params ++;
 
 			if (Exp.cur == ")")

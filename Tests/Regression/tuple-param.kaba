@@ -1,4 +1,4 @@
-func f((int,string) x)
+func f(x: (int,string))
 	print(x)
 
 func main()
