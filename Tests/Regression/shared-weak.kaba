@@ -1,15 +1,15 @@
 class X as shared
-	void __init__()
+	func __init__()
 		print("init")
-	void __delete__()
+	func __delete__()
 		print("del")
-	const void f()
+	func const f()
 		print("f")
 
-void ff(X x)
+func ff(x: X)
 	x.f()
 
-void main()
+func main()
 #	shared X x = new X()
 
 	shared X[] a

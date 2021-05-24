@@ -12,7 +12,7 @@ class X
 #		_ref_count --
 #		print("unref!!!  {{_ref_count}}")
 #		return _ref_count == 0
-	const void f()
+	func const f()
 		print("test {{_shared_ref_count}}")
 
 

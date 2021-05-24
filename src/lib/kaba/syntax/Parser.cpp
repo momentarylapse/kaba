@@ -3181,6 +3181,9 @@ bool Parser::parse_class(Class *_namespace) {
 			auto f = parse_function_header_new(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
 			skip_parsing_function_body(f);
 			continue;
+		} else if (Exp.cur == IDENTIFIER_CONST) {
+			parse_named_const_new(_class, tree->root_of_all_evil->block.get());
+			continue;
 		}
 
 		Flags flags = parse_flags();
@@ -3200,13 +3203,13 @@ bool Parser::parse_class(Class *_namespace) {
 				Exp.set(ie);
 				if (_class->is_interface())
 					flags_set(flags, Flags::VIRTUAL);
-				auto f = parse_function_header(_class, flags);
+				auto f = parse_function_header_old(_class, flags);
 				skip_parsing_function_body(f);
 				break;
 			}
 
 			if (flags_has(flags, Flags::CONST)) {
-				parse_named_const(name, type, _class, tree->root_of_all_evil->block.get());
+				parse_named_const_old(name, type, _class, tree->root_of_all_evil->block.get());
 				break;
 			}
 
@@ -3318,13 +3321,17 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 	// find const value
 	auto cv = parse_operand_super_greedy(block);
 
-	int pen, tc;
-	if (type_match_with_cast(cv, false, type, pen, tc)) {
-		cv = apply_type_cast(tc, cv, type);
+	if (type) {
+		int pen, tc;
+		if (type_match_with_cast(cv, false, type, pen, tc)) {
+			cv = apply_type_cast(tc, cv, type);
+		} else {
+			do_error(format("constant value of type '%s' expected", type->long_name()));
+		}
 	} else {
-		do_error(format("constant value of type '%s' expected", type->long_name()));
+		cv = force_concrete_type(cv);
+		type = cv->type;
 	}
-	//cv = force_concrete_type(cv);
 
 	cv = tree->transform_node(cv, [&](shared<Node> n) { return tree->conv_eval_const_func(n); });
 
@@ -3333,7 +3340,7 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 	return cv;
 }
 
-void Parser::parse_named_const(const string &name, const Class *type, Class *name_space, Block *block) {
+void Parser::parse_named_const_old(const string &name, const Class *type, Class *name_space, Block *block) {
 	if (Exp.cur != "=")
 		do_error("'=' expected after const name");
 	Exp.next();
@@ -3343,6 +3350,30 @@ void Parser::parse_named_const(const string &name, const Class *type, Class *nam
 	Constant *c_value = cv->as_const();
 
 	auto *c = tree->add_constant(type, name_space);
+	c->set(*c_value);
+	c->name = name;
+}
+
+void Parser::parse_named_const_new(Class *name_space, Block *block) {
+	Exp.next(); // 'const'
+	string name = Exp.cur;
+	Exp.next();
+
+	const Class *type = nullptr;
+	if (Exp.cur == ":") {
+		Exp.next();
+		type = parse_type(name_space);
+	}
+
+	if (Exp.cur != "=")
+		do_error("'=' expected after const name");
+	Exp.next();
+
+	// find const value
+	auto cv = parse_and_eval_const(block, type);
+	Constant *c_value = cv->as_const();
+
+	auto *c = tree->add_constant(c_value->type.get(), name_space);
 	c->set(*c_value);
 	c->name = name;
 }
@@ -3360,7 +3391,7 @@ void Parser::parse_global_variable_def(bool single, Block *block, Flags flags0) 
 		Exp.next();
 
 		if (flags_has(flags, Flags::CONST)) {
-			parse_named_const(name, type, tree->base_class, block);
+			parse_named_const_old(name, type, tree->base_class, block);
 		} else {
 			auto *v = new Variable(name, type);
 			flags_set(v->flags, flags);
@@ -3445,7 +3476,7 @@ const Class *Parser::parse_type(const Class *ns) {
 	return cc->as_class();
 }
 
-Function *Parser::parse_function_header(Class *name_space, Flags flags) {
+Function *Parser::parse_function_header_old(Class *name_space, Flags flags) {
 	// TODO better to split/mask flags into return- and function-flags...
 	flags = parse_flags(flags);
 	
@@ -3712,6 +3743,9 @@ void Parser::parse_top_level() {
 			auto f = parse_function_header_new(tree->base_class, Flags::STATIC);
 			skip_parsing_function_body(f);
 
+		} else if (Exp.cur == IDENTIFIER_CONST) {
+			parse_named_const_new(tree->base_class, tree->root_of_all_evil->block.get());
+
 		} else {
 
 			// type of definition
@@ -3722,7 +3756,7 @@ void Parser::parse_top_level() {
 
 			// function?
 			if (is_function) {
-				auto f = parse_function_header(tree->base_class, Flags::STATIC);
+				auto f = parse_function_header_old(tree->base_class, Flags::STATIC);
 				skip_parsing_function_body(f);
 
 			// global variables/consts

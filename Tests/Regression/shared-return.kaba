@@ -1,15 +1,15 @@
 class X as shared
-	void __init__()
+	func __init__()
 		print("X.init")
-	void __delete__()
+	func __delete__()
 		print("X.del")
-	const void f()
+	func const f()
 		print("test {{_shared_ref_count}}")
 
-shared X f()
+func f() -> shared X
 	var x = new X()
 	return x
 
-void main()
+func main()
 	shared X x = f()
 	x.f()

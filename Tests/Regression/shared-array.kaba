@@ -1,14 +1,14 @@
 class X as shared
-	void __init__()
+	func __init__()
 		print("X.init")
-	void __delete__()
+	func __delete__()
 		print("X.del")
-	const void f()
+	func const f()
 		print("test {{_shared_ref_count}}")
 
 
 
-void main()
+func main()
 	shared X[] a
 	if true
 		shared X x = new X()
