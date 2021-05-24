@@ -2446,18 +2446,22 @@ shared<Node> Parser::parse_statement_let(Block *block) {
 
 // local (variable) definitions...
 shared<Node> Parser::parse_statement_var(Block *block) {
-	Exp.next(); // "var"
-
 	Array<string> names;
-	names.add(Exp.cur);
-	Exp.next();
+	const Class *type = nullptr;
 
-	while (Exp.cur == ",") {
-		Exp.next();
+	do {
+		Exp.next(); // "var" or ","
 		names.add(Exp.cur);
 		Exp.next();
-	}
+	} while (Exp.cur == ",");
 
+	// explicit type?
+	if (Exp.cur == ":") {
+		Exp.next();
+		type = parse_type(block->name_space());
+	} else if (Exp.cur != "=") {
+		do_error("':' or '=' expected after 'var' declaration");
+	}
 
 	if (Exp.cur == "=") {
 		Exp.next();
@@ -2465,22 +2469,22 @@ shared<Node> Parser::parse_statement_var(Block *block) {
 			do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
 		auto rhs = parse_operand_super_greedy(block);
-		rhs = force_concrete_type(rhs);
-		auto *var = block->add_var(names[0], rhs->type);
+		if (!type) {
+			rhs = force_concrete_type(rhs);
+			type = rhs->type;
+		}
+		auto *var = block->add_var(names[0], type);
 		auto cmd = link_operator_id(OperatorID::ASSIGN, tree->add_node_local(var), rhs);
 		if (!cmd)
-			do_error("let: no assignment operator for type " + rhs->type->long_name());
+			do_error(format("var: no operator '%s' = '%s'", type->long_name(), rhs->type->long_name()));
 		return cmd;
-	} else if (Exp.cur == ":") {
-		Exp.next();
-		auto type = parse_type(block->name_space());
-		for (auto &n: names)
-			block->add_var(n, type);
-		return tree->add_node_statement(StatementID::PASS);
-	} else {
-		do_error("'=' or ':' required after 'var' declaration");
 	}
-	return nullptr;
+
+	expect_new_line();
+
+	for (auto &n: names)
+		block->add_var(n, type);
+	return tree->add_node_statement(StatementID::PASS);
 }
 
 Array<const Class*> func_effective_params(const Function *f) {
