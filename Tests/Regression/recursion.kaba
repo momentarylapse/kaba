@@ -1,9 +1,9 @@
 class A
-	int i
-	B[] b
+	var i: int
+	var b: B[]
 
 class B
-	int j
+	var j: int
 	void __init__()
 		j = 24
 

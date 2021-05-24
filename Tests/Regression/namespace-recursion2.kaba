@@ -1,9 +1,9 @@
 class A
 	class B
-		int x
+		var x: int
 		void __init__()
 			x = 13
-	B b
+	var b: B
 #	void __init__()  # BUG???
 #		b.x = 14
 

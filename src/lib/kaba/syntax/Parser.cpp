@@ -3184,6 +3184,11 @@ bool Parser::parse_class(Class *_namespace) {
 		} else if (Exp.cur == IDENTIFIER_CONST) {
 			parse_named_const_new(_class, tree->root_of_all_evil->block.get());
 			continue;
+		} else if (Exp.cur == IDENTIFIER_VAR) {
+			if (_class->is_interface())
+				do_error("interfaces can not have data elements");
+			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), _offset);
+			continue;
 		}
 
 		Flags flags = parse_flags();
@@ -3215,6 +3220,7 @@ bool Parser::parse_class(Class *_namespace) {
 
 			if (_class->is_interface())
 				do_error("interfaces can not have data elements");
+			do_error("deprecated class element declaration");
 
 			parser_class_add_element(this, _class, name, type, flags, _offset);
 
@@ -3378,7 +3384,73 @@ void Parser::parse_named_const_new(Class *name_space, Block *block) {
 	c->name = name;
 }
 
-void Parser::parse_global_variable_def(bool single, Block *block, Flags flags0) {
+void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0) {
+	Exp.next(); // "var"
+
+	Flags flags = parse_flags(flags0);
+
+	Array<string> names;
+	const Class *type = nullptr;
+
+	names.add(Exp.cur);
+	Exp.next();
+
+	while (Exp.cur == ",") {
+		Exp.next(); // ","
+		names.add(Exp.cur);
+		Exp.next();
+	}
+
+	// explicit type?
+	if (Exp.cur == ":") {
+		Exp.next();
+		type = parse_type(ns);
+	} else if (Exp.cur != "=") {
+		do_error("':' or '=' expected after 'var' declaration");
+	}
+
+	Constant *c_value = nullptr;
+	if (Exp.cur == "=") {
+		Exp.next();
+
+		//if (names.num != 1)
+		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
+
+		auto cv = parse_and_eval_const(block, type);
+		c_value = cv->as_const();
+		type = cv->type;
+
+		/*auto rhs = parse_operand_super_greedy(block);
+		if (!type) {
+			rhs = force_concrete_type(rhs);
+			type = rhs->type;
+		}
+		auto *var = block->add_var(names[0], type);
+		auto cmd = link_operator_id(OperatorID::ASSIGN, tree->add_node_local(var), rhs);
+		if (!cmd)
+			do_error(format("var: no operator '%s' = '%s'", type->long_name(), rhs->type->long_name()));
+		return cmd;*/
+	}
+
+	expect_new_line();
+
+	for (auto &n: names) {
+		auto cc = const_cast<Class*>(ns);
+		//block->add_var(n, type);
+		parser_class_add_element(this, cc, n, type, flags, _offset);
+		/*auto *v = new Variable(n, type);
+		flags_set(v->flags, flags);
+		tree->base_class->static_variables.add(v);*/
+
+		if (c_value) {
+			ClassInitializers init = {ns->elements.num - 1, c_value};
+			cc->initializers.add(init);
+		}
+	}
+}
+
+void Parser::parse_global_variable_def_old(Block *block, Flags flags0) {
+	do_error("deprecated class variable declaration");
 	Flags flags = parse_flags(flags0);
 
 	const Class *type = parse_type(block->name_space()); // force
@@ -3746,6 +3818,10 @@ void Parser::parse_top_level() {
 		} else if (Exp.cur == IDENTIFIER_CONST) {
 			parse_named_const_new(tree->base_class, tree->root_of_all_evil->block.get());
 
+		} else if (Exp.cur == IDENTIFIER_VAR) {
+			int offset = 0;
+			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block.get(), offset, Flags::STATIC);
+
 		} else {
 
 			// type of definition
@@ -3761,7 +3837,7 @@ void Parser::parse_top_level() {
 
 			// global variables/consts
 			} else {
-				parse_global_variable_def(false, tree->root_of_all_evil->block.get(), Flags::STATIC);
+				parse_global_variable_def_old(tree->root_of_all_evil->block.get(), Flags::STATIC);
 			}
 		}
 		if (!Exp.end_of_file())

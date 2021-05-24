@@ -1,5 +1,5 @@
 class Test
-	int x
+	var x: int
 	void __init__(int i)
 		x = i
 		print("test {{x}}")

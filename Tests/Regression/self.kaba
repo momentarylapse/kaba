@@ -1,5 +1,5 @@
 class Test
-	int i
+	var i: int
 	void p()
 		print(i)
 	void f(int x)

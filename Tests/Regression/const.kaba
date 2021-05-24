@@ -1,8 +1,8 @@
 const N = 5
 
-int[N] x
-int[N*2] y
+var x: int[N]
+var y: int[N*2]
 
-void main()
+func main()
 	print(sizeof(x))
 	print(sizeof(y))

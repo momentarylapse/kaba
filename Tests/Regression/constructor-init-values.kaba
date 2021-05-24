@@ -1,9 +1,9 @@
 class X
 	enum
 		A = 2001
-	float f = 1.2
-	int i = X.A + 13 - 1
-	X* p = nil
+	var f = 1.2
+	var i = X.A + 13 - 1
+	var p: X* = nil
 
 
 func main()

@@ -1,7 +1,7 @@
 class A
 	void __init__(void *p)
 		print("A " + p2s(p))
-	string xx
+	var xx: string
 
 class B extends A
 	void __init__(string a, int i)

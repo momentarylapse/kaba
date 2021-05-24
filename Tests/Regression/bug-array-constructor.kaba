@@ -1,6 +1,6 @@
 class Config
-	int a, b, c, d
-	string x
+	var a, b, c, d: int
+	var x: string
 	void __init__()
 		print("Config.init")
 		a = 0
@@ -9,14 +9,14 @@ class Config
 		d = 3
 
 class Base
-	string x
+	var x: string
 	void __init__(int i)
 		print("Base.init {{i}}")
 		x = "hallo"
 
 class Complex extends Base
-	Config[6] conf
-	int a
+	var conf: Config[6]
+	var a: int
 	override void __init__(int i)
 		print("Complex.init {{i}}")
 		a = 13

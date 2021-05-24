@@ -1,7 +1,7 @@
 use kaba
 
 class A
-	int a
+	var a: int
 
 class B extends A
 

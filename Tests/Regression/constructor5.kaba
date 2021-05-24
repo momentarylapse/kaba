@@ -1,6 +1,6 @@
 
 class c
-	int x
+	var x: int
 	void __init__()
 		self.x = -1
 		print("init")

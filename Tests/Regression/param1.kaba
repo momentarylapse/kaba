@@ -1,13 +1,13 @@
 #use x
 
 class TraceData2
-	vector pos
-	Model2 *o
-	Model2 *t
+	var pos: vector
+	var o: Model2*
+	var t: Model2*
 
 class Model2
-	vector pos
-	int object_id
+	var pos: vector
+	var object_id: int
 
 void Trace2(vector a, vector b, TraceData2 td, bool c, int ignore)
 	print(ignore)

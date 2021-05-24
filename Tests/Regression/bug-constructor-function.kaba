@@ -1,6 +1,6 @@
 
 class Tag
-	string key
+	var key: string
 	void __init__()
 		print("init")
 	void __delete__()

@@ -1,5 +1,5 @@
 class X
-	int _shared_ref_count
+	var _shared_ref_count: int
 	void __init__()
 		_shared_ref_count = 0
 		print("X.init")

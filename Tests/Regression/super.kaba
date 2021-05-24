@@ -1,5 +1,5 @@
 class Base
-	int x
+	var x: int
 	void __init__(int _x)
 		x = _x
 		print("Base.init_ext")
@@ -10,7 +10,7 @@ class Base
 		print("Base.f")
 
 class Test extends Base
-	int y
+	var y: int
 	void __init__(int _x, int _y)
 		super.__init__(_x)
 		print("Test.init")

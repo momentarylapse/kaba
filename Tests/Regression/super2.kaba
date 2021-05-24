@@ -1,11 +1,11 @@
 class Parent
-	int a, b
+	var a, b: int
 	void f()
 		print("parent")
 		print(a)
 
 class Child extends Parent
-	int c
+	var c: int
 	override void f()
 		print(super.a)
 		print("child")

@@ -1,5 +1,5 @@
 class Test
-	int a, b
+	var a, b: int
 	void __delete__()
 		print("del {{a}}")
 

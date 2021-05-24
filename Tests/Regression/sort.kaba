@@ -1,6 +1,6 @@
 class Test
-	string s
-	float i
+	var s: string
+	var i: float
 	void __init__(string _s, int _i)
 		s = _s
 		i = _i

@@ -1,9 +1,9 @@
 
 
 class X
-	int i
-	string s
-	float f
+	var i: int
+	var s: string
+	var f: float
 
 
 #func main static virtual : (a: out int) -> void

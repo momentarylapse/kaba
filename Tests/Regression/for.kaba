@@ -1,5 +1,5 @@
 
-int[] a
+var a: int[]
 
 void fill(out int[] x)
 	for y in x

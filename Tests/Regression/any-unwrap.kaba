@@ -1,8 +1,8 @@
 class Test
-	string s
-	int[3] i
-	vector v
-	string[] xx
+	var s: string
+	var i: int[3]
+	var v: vector
+	var xx: string[]
 
 void main()
 	Test t

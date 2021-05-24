@@ -1,7 +1,7 @@
 
 class c
-	int x
-	int[] a
+	var x: int
+	var a: int[]
 	void __init__()
 		print("init!!!")
 		self.a.__init__()

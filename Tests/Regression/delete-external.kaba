@@ -1,7 +1,7 @@
 func extern xxx_delete(p: void*)
 
 class V
-	string s
+	var s: string
 	func __init__(_s: string)
 		s = _s
 		print("init  {{s}}")

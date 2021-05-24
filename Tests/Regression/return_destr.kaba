@@ -1,5 +1,5 @@
 class T
-	int i
+	var i: int
 	void __init__()
 		self.i = 13
 		print("init")

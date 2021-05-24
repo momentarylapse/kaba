@@ -1,5 +1,5 @@
 class rat
-	vli a, b
+	var a, b: vli
 	void normalize()
 		vli gcd = self.a.gcd(self.b)
 		vli rem

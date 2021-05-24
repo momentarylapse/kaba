@@ -1,9 +1,9 @@
 class Test
-	vector v
-	int[3] i
-	complex[] z
-	void *p
-	string s
+	var v: vector
+	var i: int[3]
+	var z: complex[]
+	var p: void*
+	var s: string
 	void __init__()
 		v = vector(1,2,3)
 		z.add(complex.I)

@@ -1,7 +1,7 @@
 class Test
-	int i
-	static int a
-	static string s
+	var i: int
+	var static a: int
+	var static s: string
 	void f()
 		print(i)
 		print(a)

@@ -1,6 +1,6 @@
 
 class Test
-	float x, y
+	var x, y: float
 	float projectx(float _x)
 		return x + _x
 	float projecty(float _y)

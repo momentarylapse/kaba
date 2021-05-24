@@ -1,6 +1,6 @@
 
-int i
+var i: int
 
-void f()
+func f()
 	print("test")
 	i = 42

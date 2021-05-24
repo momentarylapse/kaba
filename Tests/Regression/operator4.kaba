@@ -1,9 +1,9 @@
-vector v
+var v: vector
 
-void _main()
+func _main()
 	v = matrix.ID * vector.EX
 
-void main()
+func main()
 	matrix m = matrix.rotation(vector(0,0,pi/4))
 	matrix mm = m
 	mm *= m * m

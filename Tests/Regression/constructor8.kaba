@@ -1,7 +1,7 @@
 
 class c
-	int x
-	vector v
+	var x: int
+	var v: vector
 	void __assign__(c other)
 		print("sdkjfh")
 		v = other.v

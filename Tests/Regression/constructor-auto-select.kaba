@@ -1,5 +1,5 @@
 class A
-	string x
+	var x: string
 	void __init__()
 		print("A.init default")
 	void __init__(int a, float f)

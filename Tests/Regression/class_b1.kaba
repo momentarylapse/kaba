@@ -1,5 +1,5 @@
 class Sub
-	int i
+	var i: int
 	void __init__()
 		self.i = 13
 		print("Sub.init")
@@ -7,8 +7,8 @@ class Sub
 		print("Sub.delete")
 
 class Test # : Sub
-	int j
-	Sub s
+	var j: int
+	var s: Sub
 	void __init__()
 		self.j = 14
 		print("Test.init")

@@ -1,5 +1,5 @@
 class A
-	int i
+	var i: int
 	void __init__(int _i)
 		i = _i
 
