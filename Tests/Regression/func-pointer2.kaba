@@ -1,4 +1,4 @@
-void f(int->void p)
+func f(p: int->void)
 	print("f...")
 #	print(p2s(p))
 	var c= type(p)
@@ -10,10 +10,10 @@ void f(int->void p)
 	call(ff, 23)
 	print(p.name)
 
-void ff(int a)
+func ff(a: int)
 	print("ff {{a}}")
 
-void main()
+func main()
 	f(ff)
 #	print(p2s(f))
 #	print(p2s(ff))

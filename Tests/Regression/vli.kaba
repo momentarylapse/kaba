@@ -1,4 +1,4 @@
-void main()
+func main()
 	vli a, b, r
 	a = -31
 	b = 101

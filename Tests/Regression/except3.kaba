@@ -1,6 +1,6 @@
 class MyError extends Exception
 
-void test(Exception *_e)
+func test(_e: Exception*)
 	try
 		raise(_e)
 	except MyError as e
@@ -8,7 +8,7 @@ void test(Exception *_e)
 #	except Exception as e
 #		print("Exception " + str(e))
 
-void main()
+func main()
 	try
 		test(new MyError("aaa"))
 		test(new Exception("bbb"))

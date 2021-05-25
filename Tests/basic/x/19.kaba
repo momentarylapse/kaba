@@ -1,11 +1,11 @@
-extern void Test1(int i)
+func extern Test1(i: int)
 
 class Test
-	int i
-	void f()
+	var i: int
+	func f()
 		i += 1
 
-void main()
+func main()
 	Test t
 	t.i = 2
 	

@@ -1,7 +1,7 @@
-void f(int[] x)
+func f(x: int[])
 	print(x)
 
-void main()
+func main()
 	f([])
 
 	

@@ -1,12 +1,12 @@
 class Test
 	var x: int
-	void __init__()
+	func __init__()
 		print("new ---")
-	void __init__(int a)
+	func __init__(a: int)
 		x = a
 		print("new {{a}}")
 
-void main()
+func main()
 	Test *t = new Test(3)
 	
 	

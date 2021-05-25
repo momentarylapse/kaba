@@ -1,13 +1,13 @@
 class T
 	var i: int
-	void __init__()
+	func __init__()
 		self.i = 13
 		print("init")
 		print(self.i)
-	void __delete__()
+	func __delete__()
 		print("delete")
 		print(self.i)
-	void __assign__(T other)
+	func __assign__(other: T)
 		print("assign")
 		print(self.i)
 		print(other.i)
@@ -23,10 +23,10 @@ class T
 #	print f()create_con
 #	print a
 
-T f()
+func f() -> T
 	#print "f"
 	T r
 	return r
 
-void main()
+func main()
 	f()

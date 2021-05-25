@@ -1,4 +1,4 @@
-void main()
+func main()
 	float[] f = rangef(0, 2, 0.1345)
 	print(f)
 	

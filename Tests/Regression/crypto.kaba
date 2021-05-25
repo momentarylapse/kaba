@@ -1,4 +1,4 @@
-void main()
+func main()
 	Crypto c1, c2 ,c3
 	Crypto.create_keys(c1, c2, "rsa", 64)
 	

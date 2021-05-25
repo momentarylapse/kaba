@@ -1,5 +1,5 @@
 use image
 
-void main()
+func main()
 	Image i
 	print(i.data.num)

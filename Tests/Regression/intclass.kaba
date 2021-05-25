@@ -1,11 +1,11 @@
 
-void f(int i)
+func f(i: int)
 	int j = i
 	j = 3
 	print(j)
 
 
-void main()
+func main()
 	int i = 2
 	f(i)
 	print(i)

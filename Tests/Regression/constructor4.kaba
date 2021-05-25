@@ -1,14 +1,14 @@
 
 class c
 	var x: int
-	void __init__()
+	func __init__()
 		self.x = -1
 		print("init")
-	void __delete__()
+	func __delete__()
 		print("delete")
 		print(self.x)
 
-void main()
+func main()
 	c[] a
 	a.resize(14)
 #	a.add(cc)

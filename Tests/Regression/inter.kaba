@@ -1,4 +1,4 @@
-void main()
+func main()
 	FloatInterpolator fi
 	#fi.set_type("
 	fi.add(0.0, 1)

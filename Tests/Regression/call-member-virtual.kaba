@@ -1,7 +1,7 @@
 class Test
-	virtual void f()
+	func virtual f()
 		print("Test.f")
 
-void main()
+func main()
 	Test t
 	t.f()

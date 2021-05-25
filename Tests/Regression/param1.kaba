@@ -9,10 +9,10 @@ class Model2
 	var pos: vector
 	var object_id: int
 
-void Trace2(vector a, vector b, TraceData2 td, bool c, int ignore)
+func Trace2(a: vector, b: vector, td: TraceData2, c: bool, ignore: int)
 	print(ignore)
 
-void main()
+func main()
 	TraceData2 td
 	vector p1, p2
 	Model2 m

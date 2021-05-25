@@ -1,5 +1,5 @@
 use include_source
 
-void main()
+func main()
 	f()
 	print(i)

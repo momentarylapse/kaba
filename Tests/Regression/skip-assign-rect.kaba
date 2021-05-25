@@ -1,11 +1,11 @@
 
-rect get_plot_region()
+func get_plot_region() -> rect
 	return rect(0,0,0,0)
 
 class GridData
 	var plot_rect: rect
 
-	void draw_background()
+	func draw_background()
 		plot_rect = get_plot_region()
 
-void main()
+func main()

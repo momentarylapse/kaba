@@ -1,4 +1,4 @@
-void main()
+func main()
 	string s = "a/test/c/"
 	string[] e = s.explode("/")
 	print(e)

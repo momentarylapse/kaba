@@ -1,4 +1,4 @@
-void main()
+func main()
 	any a, b
 	a = 2
 	b = pi

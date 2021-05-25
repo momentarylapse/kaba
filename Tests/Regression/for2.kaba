@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	for f in pi:10:1.5
 		print(f)
 	for i in 0:10

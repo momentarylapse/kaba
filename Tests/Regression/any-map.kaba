@@ -1,4 +1,4 @@
-void main()
+func main()
 	any a
 	any b = "hallo"
 	a.__set__("a", "hallo")

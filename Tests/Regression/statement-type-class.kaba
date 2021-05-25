@@ -1,5 +1,5 @@
 use kaba
 
-void main()
+func main()
 	Class *t = type(matrix[])
 	print(t.name)

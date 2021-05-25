@@ -1,17 +1,17 @@
 class A
 	var x: string
-	void __init__()
+	func __init__()
 		print("A.init default")
-	void __init__(int a, float f)
+	func __init__(a: int, f: float)
 		print("A.init {{a}} {{f}}")
 
 class B extends A
-	override void __init__(int a, float f)
+	func override __init__(a: int, f: float)
 		#super.__init__(a, f)
 		print("B.init ..2")
-	void __init__(int a, float f, float d)
+	func __init__(a: int, f: float, d: float)
 		print("B.init ..3")
 
-void main()
+func main()
 	new B(1, 2)
 	new B(1, 2, 3)

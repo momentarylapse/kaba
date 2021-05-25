@@ -1,4 +1,4 @@
-void main()
+func main()
 	int[] a = range(0, 20)
 	#a.subarray(5, 12) = -1
 	a[5:12] = -1

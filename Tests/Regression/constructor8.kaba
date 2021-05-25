@@ -2,11 +2,11 @@
 class c
 	var x: int
 	var v: vector
-	void __assign__(c other)
+	func __assign__(other: c)
 		print("sdkjfh")
 		v = other.v
 
-void main()
+func main()
 	c[] a
 	c i
 	i.x = -1

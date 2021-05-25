@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	color c = color(2,3,4,1)
 	color d = color(4,5,6,2)
 	color e = color.interpolate(c, d, 0.5)

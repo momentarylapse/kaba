@@ -1,4 +1,4 @@
-void main()
+func main()
 	int[] i, j, k
 	i = range(0, 10)
 	j.add(2)

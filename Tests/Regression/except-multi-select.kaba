@@ -1,7 +1,7 @@
 class Error1 extends Exception
 class Error2 extends Exception
 
-void main()
+func main()
 	try
 		raise(new Error2("a"))
 	except Error1 as e

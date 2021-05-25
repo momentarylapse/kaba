@@ -1,8 +1,8 @@
 
-int i
-int j
+var i: int
+var j: int
 
-int f(int a, int b)
+func f(a: int, b: int) -> int
 	i = a + b
 	j = i + a
 	return i

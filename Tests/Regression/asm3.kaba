@@ -1,6 +1,6 @@
 #disasm
-int i
-void main()
+var i: int
+func main()
 	i = 10
 	asm{
 		mov i, 0x00000010

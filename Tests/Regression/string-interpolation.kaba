@@ -1,4 +1,4 @@
-void main()
+func main()
 	int i = 13
 	print("hallo {{i+2}} bla bla")
 	print("test {{vector.EX}} {{1.0}}")

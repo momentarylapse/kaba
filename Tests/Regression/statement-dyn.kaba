@@ -4,7 +4,7 @@ class Test
 	var z: complex[]
 	var p: void*
 	var s: string
-	void __init__()
+	func __init__()
 		v = vector(1,2,3)
 		z.add(complex.I)
 		z.add(complex.I)
@@ -14,7 +14,7 @@ class Test
 		s = "a\\b\nc"
 		p = nil
 
-void main()
+func main()
 	print(dyn(1))
 	print(dyn(1.1))
 	print(dyn("hallo\ta"))

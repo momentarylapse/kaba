@@ -1,8 +1,8 @@
 #extern void __int_out(int i)
 
-int f(int i, int j)
+func f(i: int, j: int) -> int
 	return i*j + i
 
-void main()
+func main()
 	_int_out(f(13, 2))
 	_int_out(f(14, 3))

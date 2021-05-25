@@ -1,10 +1,10 @@
 #extern void __float_out(float a)
 #extern void __xxx()
 
-void f(float a)
+func f(a: float)
 	print(a)
 
-void main()
+func main()
 	float a = 12
 	print(a)
 	f(a)

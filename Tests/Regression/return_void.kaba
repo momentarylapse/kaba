@@ -1,8 +1,8 @@
-void f()
+func f()
 	print("hallo")
 	return
 	print("test")
 
-void main()
+func main()
 	f()
 	print("ok")

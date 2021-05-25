@@ -1,27 +1,27 @@
 class A
-	void __init__()
+	func __init__()
 		print("A.init")
-	void __init__(int a)
+	func __init__(a: int)
 		print("A.init {{a}}")
-	virtual void __delete__()
+	func virtual __delete__()
 		print("A.del")
-	virtual void x()
+	func virtual x()
 		print("A.x")
 
 class B extends A
-	override void __init__()
+	func override __init__()
 		print("B.init")
-	void __init__(string s)
+	func __init__(s: string)
 		print("B.init {{s}}")
-	override void x()
+	func override x()
 		print("B.x")
 
 class C extends B
-	override void __init__(string s)
+	func override __init__(s: string)
 		print("C.init {{s}}")
-	override void x()
+	func override x()
 		print("C.x")
 
-void main()
+func main()
 	A* a = new C("test")
 	a.x()

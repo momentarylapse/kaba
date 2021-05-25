@@ -1,11 +1,11 @@
 class Test
 	var s: string
 	var i: float
-	void __init__(string _s, int _i)
+	func __init__(_s: string, _i: int)
 		s = _s
 		i = _i
 
-void main()
+func main()
 	Test*[] tests
 	tests.add(new Test("a", 130000))
 	tests.add(new Test("c", 3))

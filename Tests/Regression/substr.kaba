@@ -1,4 +1,4 @@
-void main()
+func main()
 	string s = "hallo welt"
 	print(s[:])
 	print(s[1:3])

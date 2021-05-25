@@ -2,8 +2,8 @@
 class Test
 	int a, b
 
-Test*[] p
+var p: Test*[]
 
-void main()
+func main()
 	print(p.num)
 

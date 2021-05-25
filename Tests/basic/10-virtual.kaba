@@ -1,12 +1,12 @@
 class T
-	void __init__()
+	func __init__()
 		print("init")
-	void __delete__()
+	func __delete__()
 		print("del")
-	virtual void f()
+	func virtual f()
 		print("T.f")
 
-void main()
+func main()
 	T* t = new T()
 	t.f()
 	del t

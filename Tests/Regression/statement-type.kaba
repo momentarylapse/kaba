@@ -1,6 +1,6 @@
 use kaba
 
-void main()
+func main()
 	string s
 	Class* t = type(s)
 	print(t.name)

@@ -1,6 +1,6 @@
 use os
 
-void main()
+func main()
 	var p = Path("a/b/c")
 	print(p) # a/b/c
 	print(p.is_relative()) # true

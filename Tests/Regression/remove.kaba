@@ -1,9 +1,9 @@
 class Test
 	var a, b: int
-	void __delete__()
+	func __delete__()
 		print("del {{a}}")
 
-void main()
+func main()
 	Test[] a
 	for i in 0:10
 		Test t

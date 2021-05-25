@@ -1,4 +1,4 @@
-void main()
+func main()
 	int i,j
 	int* p
 	p = &i

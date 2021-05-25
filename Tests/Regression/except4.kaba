@@ -1,6 +1,6 @@
 use os
 
-void main()
+func main()
 	try
 		Filesystem.open("-non-existent-")
 	except FileError as e

@@ -1,7 +1,7 @@
 class Config
 	var a, b, c, d: int
 	var x: string
-	void __init__()
+	func __init__()
 		print("Config.init")
 		a = 0
 		b = 1
@@ -10,17 +10,17 @@ class Config
 
 class Base
 	var x: string
-	void __init__(int i)
+	func __init__(i: int)
 		print("Base.init {{i}}")
 		x = "hallo"
 
 class Complex extends Base
 	var conf: Config[6]
 	var a: int
-	override void __init__(int i)
+	func override __init__(i: int)
 		print("Complex.init {{i}}")
 		a = 13
 
-void main()
+func main()
 	Complex *c = new Complex(5)
 	print(str(*c))

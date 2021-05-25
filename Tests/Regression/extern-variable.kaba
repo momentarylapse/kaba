@@ -1,5 +1,5 @@
 #extern int _extern_variable
 
-void main()
+func main()
 	print(_extern_variable)
 

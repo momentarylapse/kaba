@@ -1,4 +1,4 @@
 #extern void __int_out(int a)
 
-void main()
+func main()
 	_int_out(13)

@@ -1,19 +1,19 @@
 class c
 	var x: int
-	void __init__()
+	func __init__()
 		nil
-	void __delete__()
+	func __delete__()
 		nil
-	void __assign__(c other)
+	func __assign__(other: c)
 		self.x = other.x
-	void __iadd__(c other)
+	func __iadd__(other: c)
 		self.x += other.x
-	c __add__(c other)
+	func __add__(other: c) -> c
 		c temp
 		temp.x = self.x + other.x
 		return temp
 
-void main()
+func main()
 	c a, b, d
 	a.x = 13
 	b.x = 1

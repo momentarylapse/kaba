@@ -1,6 +1,6 @@
 
-int f(int a, int b)
+func f(a: int, b: int) -> int
 	return a + 1025
 	
-void main()
-	print f(13, 19)
+func main()
+	print(f(13, 19))

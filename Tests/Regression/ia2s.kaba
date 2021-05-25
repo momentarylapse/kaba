@@ -1,4 +1,4 @@
-void main()
+func main()
 	#DirSearch(".", "*", true)
 	#print DirSearchName
 	#print DirSearchIsDir

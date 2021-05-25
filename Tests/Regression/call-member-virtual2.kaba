@@ -1,12 +1,12 @@
 class Base
-	virtual void f()
+	func virtual f()
 		print("Base.f")
 
 class Derived extends Base
-	override void f()
+	func override f()
 		print("Derived.f")
 
-void main()
+func main()
 	Base *t = new Base()
 	t.f()
 	t = new Derived()

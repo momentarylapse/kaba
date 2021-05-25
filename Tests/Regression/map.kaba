@@ -1,7 +1,7 @@
-string upper(string s)
+func upper(s: string) -> string
 	return s.upper()
 
-void main()
+func main()
 	#let f = string.upper
 	var b = map(string.upper, ["hallo", "welt"])
 	#let b = map(sqr, [2.0,4.0])

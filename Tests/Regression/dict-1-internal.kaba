@@ -1,4 +1,4 @@
-void main()
+func main()
 	int{} d, i
 	d.__set__("a", 9)
 	d["b"] = 19

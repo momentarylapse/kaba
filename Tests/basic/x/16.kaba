@@ -1,6 +1,6 @@
-void main()
+func main()
 	string s, t
 	s = "hallo"
 	t = " michi"
 	s += t
-	print s
+	print(s)

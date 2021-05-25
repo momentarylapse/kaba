@@ -1,7 +1,7 @@
-int f()
+func f() -> int
 	int[] e
 	e = range(5, 10)
 	return e[3]
 
-void main()
+func main()
 	print(f())

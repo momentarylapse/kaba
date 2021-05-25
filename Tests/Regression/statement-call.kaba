@@ -1,7 +1,7 @@
-void f(string[] s)
+func f(s: string[])
 	print("f()...{{s}}")
 
-void main()
+func main()
 	#f(["a", "b"])
 	var p = f
 	call(p, ["a", "b"])

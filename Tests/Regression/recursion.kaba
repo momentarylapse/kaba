@@ -4,10 +4,10 @@ class A
 
 class B
 	var j: int
-	void __init__()
+	func __init__()
 		j = 24
 
-void main()
+func main()
 	B b
 	A a
 	a.b.add(b)
@@ -20,5 +20,5 @@ void main()
 	print("main")
 	f()
 	
-void f()
+func f()
 	print("f")

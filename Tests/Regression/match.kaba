@@ -1,4 +1,4 @@
-void main()
+func main()
 	print("kleiner Test".match("*ein*"))
 	print("kleiner Test".match("*ein*s"))
 	print("kleiner Test".match("*ein*st"))

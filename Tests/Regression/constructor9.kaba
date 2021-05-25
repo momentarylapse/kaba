@@ -1,12 +1,12 @@
-int i
+var i: int
 
 class T
-	void __init__()
+	func __init__()
 		print("init")
 		i = 4
 
-T t
+var t: T
 
-void main()
+func main()
 	print("test")
 	print(i)

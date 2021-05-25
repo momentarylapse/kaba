@@ -1,4 +1,4 @@
-void main()
+func main()
 	float[] list = [0.1, 0.5, 7.4]
 	for f,i in list
 		print(i)

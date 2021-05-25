@@ -1,13 +1,13 @@
 
 var a: int[]
 
-void fill(out int[] x)
+func fill(out x: int[])
 	for y in x
 		if y == 5
 			continue
 		y += 100
 
-void main()
+func main()
 	# a = 2
 	#for int i, 0, 10
 	#	a.add(i*2)

@@ -1,12 +1,12 @@
 class Test
 	var x: int
-	void __init__(int i)
+	func __init__(i: int)
 		x = i
 		print("test {{x}}")
 
-void f(Test t)
+func f(t: Test)
 	print(t.x)
 
-void main()
+func main()
 	#f(Test(1))
 	f(Test(88))

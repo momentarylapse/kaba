@@ -1,9 +1,9 @@
 class X
 	var _shared_ref_count: int
-	void __init__()
+	func __init__()
 		_shared_ref_count = 0
 		print("X.init")
-	void __delete__()
+	func __delete__()
 		print("X.del")
 #	void _ref()
 #		_ref_count ++
@@ -16,12 +16,12 @@ class X
 		print("test {{_shared_ref_count}}")
 
 
-void ff(shared X x)
+func ff(x: shared X)
 	var z = x
 	z.f()
 
 
-void main()
+func main()
 	shared X x
 	shared X y
 	#print(binary(&x, 8).hex())

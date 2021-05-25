@@ -1,6 +1,6 @@
 class Test
-	void __init__(complex z)
+	func __init__(z: complex)
 		print(z)
 
-void main()
+func main()
 	var x = Test(complex(1,2))

@@ -1,4 +1,4 @@
-void main()
+func main()
 	int[] a
 	a.add(8)
 	a.add(5)

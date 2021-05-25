@@ -5,7 +5,7 @@ class A
 
 class B extends A
 
-void main()
+func main()
 	Class* ca = A
 	Class* cb = B
 	print(ca.name)

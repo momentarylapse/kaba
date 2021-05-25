@@ -2,11 +2,11 @@ class Test
 	var i: int
 	var static a: int
 	var static s: string
-	void f()
+	func f()
 		print(i)
 		print(a)
 
-void main()
+func main()
 	Test a, b
 	a.i = 1
 	a.a = 13

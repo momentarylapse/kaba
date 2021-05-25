@@ -1,8 +1,8 @@
 
-extern void Test1(int a)
-extern int Test2()
+func extern Test1(a: int)
+func extern Test2() -> int
 
-void main()
+func main()
 	bool b
 	b = true
 	b = b and b

@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	vector[] i
 	
 	#i = i

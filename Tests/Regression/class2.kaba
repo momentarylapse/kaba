@@ -3,7 +3,7 @@ class c
 	var a: int
 	var x: int[]
 
-void main()
+func main()
 	c a, b
 	a.a = 13
 	a.x.add(1)

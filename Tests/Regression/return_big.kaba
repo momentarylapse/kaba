@@ -1,6 +1,6 @@
 
-string f(string s)
+func f(s: string) -> string
 	return "a" + s + "hallo"
 
-void main()
+func main()
 	print("--" + f("__") + ":" + f(","))

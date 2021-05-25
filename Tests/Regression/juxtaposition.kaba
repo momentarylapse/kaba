@@ -1,4 +1,4 @@
-void main()
+func main()
 	vli a
 	a = 12
 	#print(str(a))

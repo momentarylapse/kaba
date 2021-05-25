@@ -4,7 +4,7 @@ class Test
 	var v: vector
 	var xx: string[]
 
-void main()
+func main()
 	Test t
 	t.i[0] = 13
 	t.i[1] = 14

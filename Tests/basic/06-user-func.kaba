@@ -1,9 +1,9 @@
 #extern void __int_out(int i)
 
-void f(int i, int j)
+func f(i: int, j: int)
 	_int_out(i*j + i)
 
-void main()
+func main()
 	f(13, 2)
 	f(14, 3)
 

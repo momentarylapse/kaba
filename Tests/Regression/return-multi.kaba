@@ -5,6 +5,6 @@
 
 
 #func main static virtual : (a: out int) -> void
-void main()
+func main()
 	var x = f(1)
 	print(str(x))

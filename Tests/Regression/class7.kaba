@@ -1,17 +1,17 @@
 class A
-	void __init__(void *p)
+	func __init__(p: void*)
 		print("A " + p2s(p))
 	var xx: string
 
 class B extends A
-	void __init__(string a, int i)
+	func __init__(a: string, i: int)
 		super.__init__(nil)
 		print("B {{a}} {{i}}")
 
 class C extends B
-	void __init__()
+	func __init__()
 		super.__init__("test", 13)
 		print("C")
 
-void main()
+func main()
 	new C()

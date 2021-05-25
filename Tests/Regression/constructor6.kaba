@@ -1,17 +1,17 @@
 
 class c
 	var x: int
-	void __init__()
+	func __init__()
 		self.x = -1
 		print("init")
-	void __delete__()
+	func __delete__()
 		print("delete")
 		print(self.x)
-	void __assign__(c other)
+	func __assign__(other: c)
 		print("assign")
 		self.x = other.x
 
-void main()
+func main()
 	print("--------------")
 	c[] a
 	a.resize(10)

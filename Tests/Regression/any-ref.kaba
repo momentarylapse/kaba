@@ -1,4 +1,4 @@
-void main()
+func main()
 	var a = dyn({"a":[1,2], "b":"c"})
 	print(a)
 	print(a["a"])

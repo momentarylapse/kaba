@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	int[4] a, b
 	b[0] = 1
 	b[1] = 24

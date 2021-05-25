@@ -1,21 +1,21 @@
 class Sub
 	var i: int
-	void __init__()
+	func __init__()
 		self.i = 13
 		print("Sub.init")
-	void __delete__()
+	func __delete__()
 		print("Sub.delete")
 
 class Test # : Sub
 	var j: int
 	var s: Sub
-	void __init__()
+	func __init__()
 		self.j = 14
 		print("Test.init")
-	void __delete__()
+	func __delete__()
 		print("Test.delete")
 
-void main()
+func main()
 	Test t
 	print(t.s.i)
 	print(t.j)

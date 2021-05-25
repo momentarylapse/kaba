@@ -1,4 +1,4 @@
-void main()
+func main()
 	string a = "hallo Welt"
 	for i in 0:10
 		a += a

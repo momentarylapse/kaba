@@ -1,8 +1,8 @@
 #extern void __int_out(int i)
 
-int a
+var a: int
 
-void main()
+func main()
 	a = 13
 	_int_out(a)
 

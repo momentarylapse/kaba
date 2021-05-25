@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	string a, b, c
 	a = "hallo"
 	b = " test"

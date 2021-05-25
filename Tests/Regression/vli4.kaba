@@ -1,6 +1,6 @@
 
 
-void main()
+func main()
 	vli v = "999999998443"
 	vli w = "29"
 	

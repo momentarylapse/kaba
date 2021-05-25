@@ -2,15 +2,15 @@
 class c
 	var x: int
 	var a: int[]
-	void __init__()
+	func __init__()
 		print("init!!!")
 		self.a.__init__()
 		self.x = -1
-	void f(int x)
+	func f(x: int)
 		self.x = x
 		self.a.add(20)
 
-void main()
+func main()
 	c a
 	a.a.add(13)
 	a.a.add(14)

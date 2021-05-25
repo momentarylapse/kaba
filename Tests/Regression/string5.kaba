@@ -1,4 +1,4 @@
-void main()
+func main()
 	string a, b
 	a = "hallo"
 	b = "a"

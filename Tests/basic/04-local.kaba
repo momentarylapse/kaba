@@ -1,6 +1,6 @@
 #extern void __int_out(int i)
 
-void main()
+func main()
 	int a = 13
 	int x = a
 	_int_out(a)

@@ -1,9 +1,9 @@
 class Test
 	var x: int
-	void __init__()
+	func __init__()
 		print("new ---")
 
-void main()
+func main()
 	Test *t = new Test()
 	
 	

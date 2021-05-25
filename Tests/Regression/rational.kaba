@@ -1,40 +1,40 @@
 class rat
 	var a, b: vli
-	void normalize()
+	func normalize()
 		vli gcd = self.a.gcd(self.b)
 		vli rem
 		self.a.idiv(gcd, rem)
 		self.b.idiv(gcd, rem)
-	void set(int a, int b)
+	func set(a: int, b: int)
 		self.a = a
 		self.b = b
-	void __assign__(int i)
+	func __assign__(i: int)
 		self.a = i
 		self.b = 1
-	void __assign__(rat other)
+	func __assign__(other: rat)
 		self.a = other.a
 		self.b = other.b
 		self.normalize()
-	void __imul__(rat other)
+	func __imul__(other: rat)
 		self.a *= other.a
 		self.b *= other.b
 		self.normalize()
-	void __idiv__(rat other)
+	func __idiv__(other: rat)
 		self.a *= other.b
 		self.b *= other.a
 		self.normalize()
-	void __iadd__(rat other)
+	func __iadd__(other: rat)
 		self.a = self.a * other.b + other.a * self.b
 		self.b *= other.b
 		self.normalize()
-	void __isub__(rat other)
+	func __isub__(other: rat)
 		self.a = self.a * other.b - other.a * self.b
 		self.b *= other.b
 		self.normalize()
-	string __str__()
+	func __str__() -> string
 		return "(" + str(self.a) + " / " + str(self.b) + ")"
 
-void main()
+func main()
 	rat r, s
 	r.set(3, 2)
 	s.set(5, 6)

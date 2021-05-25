@@ -1,4 +1,4 @@
-void main()
+func main()
 	print("a" in ["a", "b", "c"])
 	print("x" in ["a", "b", "c"])
 

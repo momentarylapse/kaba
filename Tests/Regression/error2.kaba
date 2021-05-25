@@ -1,14 +1,14 @@
 class sOnlineChar
-	string name
-	float var[]
+	var name: string
+	var var[]: float
 
-void xx(sOnlineChar c)
+func xx(c: sOnlineChar)
 	#print c.var
 	for v in c.var
 		print(v)
 
 
-void main()
+func main()
 	sOnlineChar c
 	c.var = rangef(0, 10, 1)
 	xx(c)

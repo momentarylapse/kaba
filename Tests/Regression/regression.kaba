@@ -1,6 +1,6 @@
 use os
 
-bool test(string filename)
+func test(filename: string) -> bool
 	string s = filename.head(filename.num - 4)
 	s += ".kaba"
 	try
@@ -27,7 +27,7 @@ bool test(string filename)
 		print("failed running")
 		return false
 
-void main()
+func main()
 	var list = Filesystem.search(".", "*.reg", false)
 	for e in list
 		test(e)

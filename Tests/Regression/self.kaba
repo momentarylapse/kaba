@@ -1,14 +1,14 @@
 class Test
 	var i: int
-	void p()
+	func p()
 		print(i)
-	void f(int x)
+	func f(x: int)
 		p()
 		i = x
 		p()
 
 
-void main()
+func main()
 	Test t
 	t.i = 13
 	t.f(3)

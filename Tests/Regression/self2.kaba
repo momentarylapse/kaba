@@ -1,14 +1,14 @@
 
 class Test
 	var x, y: float
-	float projectx(float _x)
+	func projectx(_x: float) -> float
 		return x + _x
-	float projecty(float _y)
+	func projecty(_y: float) -> float
 		return y + _y
-	complex project(complex z)
+	func project(z: complex) -> complex
 		return complex(projectx(z.x), projecty(z.y))
 
-void main()
+func main()
 	Test t
 	t.x = 2
 	t.y = 2

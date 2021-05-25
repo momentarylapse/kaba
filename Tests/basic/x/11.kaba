@@ -1,6 +1,6 @@
 
-extern void Test1(int a)
+func extern Test1(a: int)
 #extern int Test2()
 
-void main()
+func main()
 	Test1(13)

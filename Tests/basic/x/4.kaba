@@ -1,8 +1,8 @@
 
-int f(int a)
+func f(a: int) -> int
 	return a+a
 
-int g(int a, int b)
+func g(a: int, b: int) -> int
 	int c = a + b
 	int d = f(c)
 	return d

@@ -1,5 +1,5 @@
 
-void main()
+func main()
 	#string s = "hallo"
 	#print s
 	#print "-  welt  -".substr(3, 4)

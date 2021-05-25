@@ -1,6 +1,6 @@
 use kaba
 
-void test_class(Script p, Class c)
+func test_class(p: Script, c: Class)
 	for e in c.elements
 		if e.type == nil
 			print("MISSING: type of element {{p.name}}.{{c.name}}.{{e.name}}")
@@ -14,7 +14,7 @@ void test_class(Script p, Class c)
 		test_class(p, cc)
 
 
-void main()
+func main()
 	for p in weak(packages)
 		for c,i in p.classes()
 			if !c

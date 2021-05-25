@@ -1,10 +1,10 @@
 class Base
-	virtual void x()
+	func virtual x()
 
 class Derived extends Base
-	override void x()
+	func override x()
 
-void main()
+func main()
 	Base *a = new Base()
 	Base *b = new Derived()
 	if a is Derived

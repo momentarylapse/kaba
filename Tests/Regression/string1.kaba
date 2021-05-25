@@ -1,4 +1,4 @@
-void main()
+func main()
 	string a = "hallo"
 	a += " Welt - "
 	a += a

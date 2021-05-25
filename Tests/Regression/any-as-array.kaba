@@ -1,4 +1,4 @@
-void main()
+func main()
 	var a = dyn([1,"b",{"f":2.2}])
 	for b in a.as_array()
 		print(b)

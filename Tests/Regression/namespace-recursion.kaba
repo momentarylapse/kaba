@@ -1,11 +1,11 @@
 class A
 	var x: int
 	class B extends A
-		void __init__()
+		func __init__()
 			x = 12
 			y = 14
 		var y: int
 
-void main()
+func main()
 	A.B b
 	print(str(b))

@@ -1,4 +1,4 @@
-void main()
+func main()
 	try
 		raise(new Exception)
 	except

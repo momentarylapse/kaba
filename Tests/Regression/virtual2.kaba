@@ -2,17 +2,17 @@
 ##disasm
 
 class Base
-	virtual const void d()
+	func virtual const d()
 		print("Base.d")
 
 class Derived extends Base
-	override void d()
+	func override d()
 		print("Derived.d")
 
-void f(Base b)
+func f(b: Base)
 	b.d()
 
-void main()
+func main()
 	Base b
 	Derived d
 	f(b)
