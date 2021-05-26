@@ -1,3 +1,3 @@
 func main()
-	var a = map(lambda(string x) x.upper(), ["hallo", "welt"])
+	var a = map(lambda(x: string) x.upper(), ["hallo", "welt"])
 	print(a)

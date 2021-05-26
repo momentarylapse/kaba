@@ -2556,18 +2556,23 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 	// parameter list
 	if (Exp.cur != ")")
-		for (int k=0;;k++) {
+		while (true) {
 			// like variable definitions
 
 			Flags flags = parse_flags();
 
+			string param_name = Exp.cur;
+			Exp.next();
+			if (Exp.cur != ":")
+				do_error("':' after parameter name expected");
+			Exp.next();
+
 			// type of parameter variable
-			const Class *param_type = parse_type(tree->base_class); // force
-			auto v = f->block->add_var(Exp.cur, param_type);
+			auto param_type = parse_type(tree->base_class); // force
+			auto v = f->block->add_var(param_name, param_type);
 			if (!flags_has(flags, Flags::OUT))
 				flags_set(v->flags, Flags::CONST);
 			f->literal_param_type.add(param_type);
-			Exp.next();
 			f->num_params ++;
 
 			if (Exp.cur == ")")
