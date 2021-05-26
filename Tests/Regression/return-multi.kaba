@@ -1,6 +1,6 @@
 #void f((int,float) x)
 
-(int,float,string) f(int x)
+func f(x: int) -> (int,float,string)
 	return [1,2.3,"a"]
 
 

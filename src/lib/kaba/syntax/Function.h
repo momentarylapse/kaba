@@ -59,6 +59,8 @@ public:
 	int64 address;
 	void *address_preprocess;
 	int _label;
+	Variable *add_var(const string &name, const Class *type, Flags flags);
+	void set_return_type(const Class *type);
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
 	void update_parameters_after_parsing();
@@ -68,6 +70,15 @@ public:
 
 	Function *create_dummy_clone(const Class *name_space) const;
 };
+
+class LambdaTemplate {
+public:
+	Function *outer;
+	Function *lambda;
+	Array<Variable*> captures;
+};
+extern Array<LambdaTemplate*> lambda_templates;
+
 
 
 }

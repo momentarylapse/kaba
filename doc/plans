@@ -48,3 +48,12 @@ TODO
 
 unification... (-_-)'
 
+
+== lambda capture ==
+
+J check
+J modify, add params
+* create_dynamic_lambda
+...2 pointers
+  * LambdaTemplate (compile time), capture variables, Function)
+  * pointer to first captured variable

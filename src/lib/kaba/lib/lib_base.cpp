@@ -406,9 +406,23 @@ public:
 };
 
 
+Function *create_lambda_function(LambdaTemplate *lt, char *p0) {
+	msg_error("creating dynamic lambda...");
+	auto tree = lt->outer->owner();
+	for (auto v: lt->captures) {
+		msg_write(v->name + "  " + v->type->name + "  " + var_repr(p0 + v->_offset - lt->captures[0]->_offset, v->type));
+	}
+	auto ff = tree->add_function("-bind-", lt->lambda->literal_return_type, tree->base_class, Flags::STATIC);
+	for (int i=0; i<lt->lambda->num_params - lt->captures.num; i++)
+		ff->add_var(lt->lambda->var[i]->name, lt->lambda->literal_param_type[i], lt->lambda->var[i]->flags);
+	msg_write(ff->signature(TypeVoid));
+
+
+	return lt->lambda;
+}
+
 
 void SIAddXCommands() {
-
 
 	add_func("@sorted", TypeDynamicArray, &kaba_array_sort, Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("list", TypePointer);
@@ -444,6 +458,10 @@ void SIAddXCommands() {
 		func_add_param("p1", TypePointer);
 		func_add_param("p2", TypePointer);
 		func_add_param("p3", TypePointer);
+
+	add_func("@create_lambda_function", TypeFunctionP, &create_lambda_function, Flags::STATIC);
+		func_add_param("template", TypePointer);
+		func_add_param("p0", TypePointer);
 }
 
 
