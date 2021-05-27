@@ -2619,7 +2619,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		binding_templates.add(lt);
 		lt->outer = block->function;
 		lt->inner = f;
-		lt->captures = captures;
+		lt->captures_local = captures;
 		lt->capture_data.resize(10000); // 10k...
 		for (auto v: captures) {
 			if (config.verbose)
@@ -2648,11 +2648,11 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		// bind wrapper template
 		auto *bind_wrapper = tree->add_function("-bind-wrapper-", f->literal_return_type, tree->base_class, Flags::STATIC);
 	{
-		for (int k=0; k<f->num_params-lt->captures.num; k++) {
+		for (int k=0; k<f->num_params-captures.num; k++) {
 			auto v = bind_wrapper->add_param(f->var[k]->name, f->var[k]->type, f->var[k]->flags);
 		}
 		bind_wrapper->update_parameters_after_parsing();
-		bind_wrapper->num_params = f->num_params-lt->captures.num;
+		bind_wrapper->num_params = f->num_params - captures.num;
 		auto vfp = bind_wrapper->block->add_var("f", tree->make_class_func(bind_wrapper));
 		auto fp = tree->add_node_local(vfp);
 		bind_wrapper->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, fp, tree->add_node_func_name(f)));
@@ -2660,12 +2660,12 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		auto cc = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
 		cc->set_num_params(f->num_params + 1);
 		cc->set_param(0, fp);
-		for (int k=0; k<f->num_params-lt->captures.num; k++)
+		for (int k=0; k<f->num_params-captures.num; k++)
 			cc->set_param(1 + k, tree->add_node_local(bind_wrapper->var[k].get()));
-		foreachi (auto cap, lt->captures, k) {
+		foreachi (auto cap, captures, k) {
 			auto v = new Variable(format("-bind-ref-%d-", k), cap->type);
 			flags_set(v->flags, Flags::STATIC);
-			v->memory = &lt->capture_data[k];
+			lt->captures_global.add(v);
 			tree->base_class->static_variables.add(v);
 			// f->num_params
 			//auto pp = new Node(NodeKind::MEMORY, (int_p)&lt->capture_data[k], cap->type);
@@ -2685,7 +2685,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		auto rr = tree->add_node_call(fbind);
 		rr->type = tree->make_class_func(bind_wrapper);
 		rr->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypePointer, lt)));
-		rr->set_param(1, tree->add_node_local(lt->captures[0])->ref());
+		rr->set_param(1, tree->add_node_local(lt->captures_local[0])->ref());
 		return rr;
 	} else {
 

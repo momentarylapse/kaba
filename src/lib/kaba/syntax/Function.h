@@ -76,9 +76,11 @@ public:
 	Function *outer;
 	Function *bind_temp;
 	Function *inner;
-	Array<Variable*> captures;
+	Array<Variable*> captures_local;
+	Array<Variable*> captures_global;
 	bytes capture_data;
 	int capture_data_used = 0;
+	int counter = 0;
 };
 extern Array<BindingTemplate*> binding_templates;
 
