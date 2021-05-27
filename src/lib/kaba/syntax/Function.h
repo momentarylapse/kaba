@@ -59,7 +59,7 @@ public:
 	int64 address;
 	void *address_preprocess;
 	int _label;
-	Variable *add_var(const string &name, const Class *type, Flags flags);
+	Variable *add_param(const string &name, const Class *type, Flags flags);
 	void set_return_type(const Class *type);
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
@@ -71,13 +71,16 @@ public:
 	Function *create_dummy_clone(const Class *name_space) const;
 };
 
-class LambdaTemplate {
+class BindingTemplate {
 public:
 	Function *outer;
-	Function *lambda;
+	Function *bind_temp;
+	Function *inner;
 	Array<Variable*> captures;
+	bytes capture_data;
+	int capture_data_used = 0;
 };
-extern Array<LambdaTemplate*> lambda_templates;
+extern Array<BindingTemplate*> binding_templates;
 
 
 

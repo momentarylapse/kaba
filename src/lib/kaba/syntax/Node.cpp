@@ -68,8 +68,6 @@ string kind2str(NodeKind kind) {
 		return "tuple";
 	if (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)
 		return "constructor function";
-	if (kind == NodeKind::LAMBDA_CAPTURE)
-		return "lambda capture";
 	if (kind == NodeKind::VAR_TEMP)
 		return "temp";
 	if (kind == NodeKind::DEREF_VAR_TEMP)

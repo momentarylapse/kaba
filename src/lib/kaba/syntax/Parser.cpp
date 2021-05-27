@@ -2571,7 +2571,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 			// type of parameter variable
 			auto param_type = parse_type(tree->base_class); // force
-			auto v = f->add_var(param_name, param_type, flags);
+			auto v = f->add_param(param_name, param_type, flags);
 
 			if (Exp.cur == ")")
 				break;
@@ -2613,14 +2613,17 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 	};
 	tree->transform_block(f->block.get(), find_captures);
 	if (captures.num > 0) {
-		msg_write("CAPTURES:");
-		auto lt = new LambdaTemplate;
-		lambda_templates.add(lt);
+		if (config.verbose)
+			msg_write("CAPTURES:");
+		auto lt = new BindingTemplate;
+		binding_templates.add(lt);
 		lt->outer = block->function;
-		lt->lambda = f;
+		lt->inner = f;
 		lt->captures = captures;
+		lt->capture_data.resize(10000); // 10k...
 		for (auto v: captures) {
-			msg_write("  * " + v->name);
+			if (config.verbose)
+				msg_write("  * " + v->name);
 			//f->block->vars.insert()
 
 			auto vvv = f->block->insert_var(f->num_params, v->name, v->type);
@@ -2642,12 +2645,47 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		f->update_parameters_after_parsing();
 
 
-		auto rr = new Node(NodeKind::LAMBDA_CAPTURE, 0, tree->make_class_func(f), true);
-		rr->set_num_params(captures.num + 1);
-		rr->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypePointer, lt)));
-		foreachi (auto v, captures, ii) {
-			rr->set_param(ii + 1, tree->add_node_local(v));
+		// bind wrapper template
+		auto *bind_wrapper = tree->add_function("-bind-wrapper-", f->literal_return_type, tree->base_class, Flags::STATIC);
+	{
+		for (int k=0; k<f->num_params-lt->captures.num; k++) {
+			auto v = bind_wrapper->add_param(f->var[k]->name, f->var[k]->type, f->var[k]->flags);
 		}
+		bind_wrapper->update_parameters_after_parsing();
+		bind_wrapper->num_params = f->num_params-lt->captures.num;
+		auto vfp = bind_wrapper->block->add_var("f", tree->make_class_func(bind_wrapper));
+		auto fp = tree->add_node_local(vfp);
+		bind_wrapper->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, fp, tree->add_node_func_name(f)));
+
+		auto cc = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
+		cc->set_num_params(f->num_params + 1);
+		cc->set_param(0, fp);
+		for (int k=0; k<f->num_params-lt->captures.num; k++)
+			cc->set_param(1 + k, tree->add_node_local(bind_wrapper->var[k].get()));
+		foreachi (auto cap, lt->captures, k) {
+			auto v = new Variable(format("-bind-ref-%d-", k), cap->type);
+			flags_set(v->flags, Flags::STATIC);
+			v->memory = &lt->capture_data[k];
+			tree->base_class->static_variables.add(v);
+			// f->num_params
+			//auto pp = new Node(NodeKind::MEMORY, (int_p)&lt->capture_data[k], cap->type);
+			auto pp = tree->add_node_global(v);
+			cc->set_param(1 + bind_wrapper->num_params + k, pp);
+		}
+
+		auto ret = tree->add_node_statement(StatementID::RETURN);
+		ret->set_num_params(1);
+		ret->set_param(0, cc);
+		bind_wrapper->block->add(ret);
+	}
+		lt->bind_temp = bind_wrapper;
+
+		// runtime bind command
+		auto fbind = tree->required_func_global("@create_binding");
+		auto rr = tree->add_node_call(fbind);
+		rr->type = tree->make_class_func(bind_wrapper);
+		rr->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypePointer, lt)));
+		rr->set_param(1, tree->add_node_local(lt->captures[0])->ref());
 		return rr;
 	} else {
 
@@ -3243,6 +3281,8 @@ bool Parser::parse_class(Class *_namespace) {
 				do_error("interfaces can not have data elements");
 			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), _offset);
 			continue;
+		} else {
+			do_error("unknown definition inside a class");
 		}
 
 		Flags flags = parse_flags();
@@ -3630,7 +3670,7 @@ Function *Parser::parse_function_header_old(Class *name_space, Flags flags) {
 
 			// type of parameter variable
 			auto param_type = parse_type(name_space); // force
-			auto v = f->add_var(Exp.cur, param_type, pflags);
+			auto v = f->add_param(Exp.cur, param_type, pflags);
 			Exp.next();
 			f->num_params ++;
 
@@ -3695,7 +3735,7 @@ Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
 
 			// type of parameter variable
 			auto param_type = parse_type(name_space); // force
-			auto v = f->add_var(param_name, param_type, param_flags);
+			auto v = f->add_param(param_name, param_type, param_flags);
 
 			if (Exp.cur == ")")
 				break;
@@ -3869,6 +3909,7 @@ void Parser::parse_top_level() {
 			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block.get(), offset, Flags::STATIC);
 
 		} else {
+			do_error("unknown top level definition");
 
 			// type of definition
 			bool is_function = false;

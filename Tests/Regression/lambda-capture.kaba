@@ -1,0 +1,9 @@
+func main()
+	var a = 1000000
+	var b = -1
+	var f = lambda(i: int) i*i+a+b
+	a = 200
+	var g = lambda(i: int) i*i+a+b
+	a = 0
+	print(f(2))
+	print(g(2))

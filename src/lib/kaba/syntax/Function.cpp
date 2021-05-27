@@ -13,7 +13,7 @@ namespace kaba {
 
 string namespacify_rel(const string &name, const Class *name_space, const Class *observer_ns);
 
-Array<LambdaTemplate*> lambda_templates;
+Array<BindingTemplate*> binding_templates;
 
 
 
@@ -89,7 +89,7 @@ Variable *Function::__get_var(const string &name) const {
 	return block->get_var(name);
 }
 
-Variable *Function::add_var(const string &name, const Class *type, Flags flags) {
+Variable *Function::add_param(const string &name, const Class *type, Flags flags) {
 	auto v = block->add_var(name, type);
 	if (!flags_has(flags, Flags::OUT))
 		flags_set(v->flags, Flags::CONST);

@@ -1138,14 +1138,6 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 
 		_transform_insert_before_.add(n->params[0]);
 		return n->params[1];
-	} else if (n->kind == NodeKind::LAMBDA_CAPTURE) {
-		auto lt = *(LambdaTemplate**)n->params[0]->as_const_p();
-		auto f = required_func_global("@create_lambda_function");
-		auto nn = add_node_call(f);
-		nn->set_param(0, n->params[0]);
-		nn->set_param(1, add_node_local(lt->captures[0])->ref());
-		//nn->show(TypeVoid);
-		return nn;
 	}
 
 	// TODO experimental dynamic type insertion

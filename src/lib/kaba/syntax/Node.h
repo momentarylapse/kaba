@@ -66,7 +66,6 @@ enum class NodeKind {
 	DICT_BUILDER,		// = {"x":y, ...}
 	TUPLE,				// = (X,Y,...)
 	CONSTRUCTOR_AS_FUNCTION,
-	LAMBDA_CAPTURE,
 	// compilation
 	VAR_TEMP,
 	DEREF_VAR_TEMP,

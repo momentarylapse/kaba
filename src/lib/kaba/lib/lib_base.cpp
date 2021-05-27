@@ -406,19 +406,42 @@ public:
 };
 
 
-Function *create_lambda_function(LambdaTemplate *lt, char *p0) {
-	msg_error("creating dynamic lambda...");
+Function *create_binding(BindingTemplate *lt, char *p0) {
+	if (config.verbose)
+		msg_write("creating dynamic binding...");
 	auto tree = lt->outer->owner();
-	for (auto v: lt->captures) {
-		msg_write(v->name + "  " + v->type->name + "  " + var_repr(p0 + v->_offset - lt->captures[0]->_offset, v->type));
+	if (config.verbose)
+		for (auto v: lt->captures)
+			msg_write(v->name + "  " + v->type->name + "  " + var_repr(p0 + v->_offset - lt->captures[0]->_offset, v->type));
+
+	auto ff = tree->add_function("-bind-", lt->inner->literal_return_type, tree->base_class, Flags::STATIC);
+	for (int i=0; i<lt->inner->num_params - lt->captures.num; i++)
+		ff->add_param(lt->inner->var[i]->name, lt->inner->literal_param_type[i], lt->inner->var[i]->flags);
+	auto script = lt->outer->owner()->script;
+
+	foreachi (auto v, lt->captures, i) {
+		// allocate
+		void *pc = &lt->capture_data[lt->capture_data_used];
+		lt->capture_data_used += v->type->size;
+
+		// save to capture
+		memcpy(pc, p0 + v->_offset - lt->captures[0]->_offset, v->type->size);
+
+		bool found = false;
+		for (char *p = (char*)lt->bind_temp->block->_start; p<lt->bind_temp->block->_end; p++) {
+			int_p dd = (int_p)&lt->capture_data[i] - (int_p)p - 4;
+			if ((int)dd == *(int*)p) {
+				found = true;
+				*(int*)p = (int_p)pc - (int_p)p - 4;
+			}
+		}
+		if (!found)
+			msg_error("create dynamic bind: COULD NOT FIND: " + v->name);
 	}
-	auto ff = tree->add_function("-bind-", lt->lambda->literal_return_type, tree->base_class, Flags::STATIC);
-	for (int i=0; i<lt->lambda->num_params - lt->captures.num; i++)
-		ff->add_var(lt->lambda->var[i]->name, lt->lambda->literal_param_type[i], lt->lambda->var[i]->flags);
-	msg_write(ff->signature(TypeVoid));
 
+	// TODO COPY!!!!
 
-	return lt->lambda;
+	return lt->bind_temp;
 }
 
 
@@ -459,7 +482,7 @@ void SIAddXCommands() {
 		func_add_param("p2", TypePointer);
 		func_add_param("p3", TypePointer);
 
-	add_func("@create_lambda_function", TypeFunctionP, &create_lambda_function, Flags::STATIC);
+	add_func("@create_binding", TypeFunctionP, &create_binding, Flags::STATIC);
 		func_add_param("template", TypePointer);
 		func_add_param("p0", TypePointer);
 }
