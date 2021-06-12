@@ -659,6 +659,7 @@ void init(Abi abi, bool allow_std_lib) {
 
 
 	add_type_cast(10, TypeInt, TypeFloat32, "int.__float__");
+	add_type_cast(10, TypeInt, TypeFloat64, "int.__float64__");
 	add_type_cast(10, TypeInt, TypeInt64, "int.__int64__");
 	add_type_cast(15, TypeInt64, TypeInt, "int64.__int__");
 	add_type_cast(10, TypeFloat32, TypeFloat64,"float.__float64__");

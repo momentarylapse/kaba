@@ -48,25 +48,15 @@ void _cdecl kaba_cstringout(char *str)
 {	kaba_print(str);	}
 bytes _cdecl kaba_binary(const char *p, int length)
 {	return bytes(p, length);	}
-int _cdecl _Float2Int(float f)
-{	return (int)f;	}
-double _cdecl _Float2Float64(float f)
-{	return (double)f;	}
-float _cdecl _Float642Float(double f)
-{	return (float)f;	}
-float _cdecl _Int2Float(int i)
-{	return (float)i;	}
-int _cdecl _Int642Int(int64 i)
-{	return (int)i;	}
-int64 _cdecl _Int2Int64(int i)
-{	return (int64)i;	}
-char _cdecl _Int2Char(int i)
-{	return (char)i;	}
-int _cdecl _Char2Int(char c)
-{	return (int)c;	}
-bool _cdecl _Pointer2Bool(void *p)
-{	return (p != nullptr);	}
 
+template<class S, class T>
+T _cdecl kaba_cast(S s) {
+	return (T) s;
+}
+template<>
+bool _cdecl kaba_cast(void* s) {
+	return (s != nullptr);
+}
 
 
 static void kaba_int_out(int a) {
@@ -345,12 +335,12 @@ public:
 	Array<bool> _cdecl ne(XList<T> &b) IMPLEMENT_OP(!=, T, bool)
 
 	// a <= x
-	Array<bool> _cdecl lt2(T x) IMPLEMENT_OP2(<, T, bool)
-	Array<bool> _cdecl le2(T x) IMPLEMENT_OP2(<=, T, bool)
-	Array<bool> _cdecl gt2(T x) IMPLEMENT_OP2(>, T, bool)
-	Array<bool> _cdecl ge2(T x) IMPLEMENT_OP2(>=, T, bool)
-	Array<bool> _cdecl eq2(T x) IMPLEMENT_OP2(==, T, bool)
-	Array<bool> _cdecl ne2(T x) IMPLEMENT_OP2(!=, T, bool)
+	Array<bool> _cdecl lt_scalar(T x) IMPLEMENT_OP2(<, T, bool)
+	Array<bool> _cdecl le_scalar(T x) IMPLEMENT_OP2(<=, T, bool)
+	Array<bool> _cdecl gt_scalar(T x) IMPLEMENT_OP2(>, T, bool)
+	Array<bool> _cdecl ge_scalar(T x) IMPLEMENT_OP2(>=, T, bool)
+	Array<bool> _cdecl eq_scalar(T x) IMPLEMENT_OP2(==, T, bool)
+	Array<bool> _cdecl ne_scalar(T x) IMPLEMENT_OP2(!=, T, bool)
 };
 
 
@@ -571,7 +561,7 @@ void SIAddPackageBase() {
 	
 
 
-	add_func("p2b", TypeBool, &_Pointer2Bool, Flags::_STATIC__PURE);
+	add_func("p2b", TypeBool, &kaba_cast<void*,bool>, Flags::_STATIC__PURE);
 		func_set_inline(InlineID::POINTER_TO_BOOL);
 		func_add_param("p", TypePointer);
 	
@@ -588,11 +578,12 @@ void SIAddPackageBase() {
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
 		class_add_func("format", TypeString, &kaba_int_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
-		class_add_func("__float__", TypeFloat32, &_Int2Float, Flags::PURE);
+		class_add_func("__float__", TypeFloat32, &kaba_cast<int,float>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_FLOAT);
-		class_add_func("__char__", TypeChar, &_Int2Char, Flags::PURE);
+		class_add_func("__float64__", TypeFloat64, &kaba_cast<int,double>, Flags::PURE);
+		class_add_func("__char__", TypeChar, &kaba_cast<int,char>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_CHAR);
-		class_add_func("__int64__", TypeInt64, &_Int2Int64, Flags::PURE);
+		class_add_func("__int64__", TypeInt64, &kaba_cast<int,int64>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_INT64);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt, TypeInt, InlineID::INT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeInt, TypeInt, TypeInt, InlineID::INT_ADD, &op_int_add);
@@ -621,7 +612,7 @@ void SIAddPackageBase() {
 
 	add_class(TypeInt64);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i642s, Flags::PURE);
-		class_add_func("__int__", TypeInt, &_Int642Int, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<int64,int>, Flags::PURE);
 			func_set_inline(InlineID::INT64_TO_INT);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt64, TypeInt64, InlineID::INT64_ASSIGN);
 		add_operator(OperatorID::ADD, TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_ADD, &op_int64_add);
@@ -655,9 +646,9 @@ void SIAddPackageBase() {
 			func_add_param("decimals", TypeInt);
 		class_add_func("format", TypeString, &kaba_float_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
-		class_add_func("__int__", TypeInt, &_Float2Int, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<float,int>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT_TO_INT);    // sometimes causes floating point exceptions...
-		class_add_func("__float64__", TypeFloat64, &_Float2Float64, Flags::PURE);
+		class_add_func("__float64__", TypeFloat64, &kaba_cast<float,double>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT_TO_FLOAT64);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat32, TypeFloat32, InlineID::FLOAT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeFloat32, TypeFloat32, TypeFloat32, InlineID::FLOAT_ADD, &op_float_add);
@@ -680,13 +671,15 @@ void SIAddPackageBase() {
 
 	add_class(TypeFloat64);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &kaba_float642str, Flags::PURE);
-		class_add_func("__float__", TypeFloat32, &_Float642Float, Flags::PURE);
+		class_add_func("__float__", TypeFloat32, &kaba_cast<double,float>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT64_TO_FLOAT);
+		class_add_func("__int__", TypeInt, &kaba_cast<double,int>, Flags::PURE);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ASSIGN);
 		add_operator(OperatorID::ADD, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ADD, &op_double_add);
 		add_operator(OperatorID::SUBTRACT, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SUBTRACT, &op_double_sub);
 		add_operator(OperatorID::MULTIPLY, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_MULTIPLY, &op_double_mul);
 		add_operator(OperatorID::DIVIDE, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_DIVIDE, &op_double_div);
+		add_operator(OperatorID::EXPONENT, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::NONE, &xop_exp<double>);
 		add_operator(OperatorID::ADDS, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ADD_ASSIGN);
 		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SUBTRACT_ASSIGN);
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_MULTIPLY_ASSIGN);
@@ -712,7 +705,7 @@ void SIAddPackageBase() {
 	add_class(TypeChar);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &kaba_char2str, Flags::PURE);
 		class_add_func(IDENTIFIER_FUNC_REPR, TypeString, &kaba_char_repr, Flags::PURE);
-		class_add_func("__int__", TypeInt, &_Char2Int, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
 			func_set_inline(InlineID::CHAR_TO_INT);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeChar, TypeChar, InlineID::CHAR_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeChar, TypeChar, InlineID::CHAR_EQUAL);
@@ -831,85 +824,85 @@ void SIAddPackageBase() {
 		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeIntList, TypeIntList, InlineID::NONE, &XList<int>::ge);
 		add_operator(OperatorID::EQUAL, TypeBoolList, TypeIntList, TypeIntList, InlineID::NONE, &XList<int>::eq);
 		add_operator(OperatorID::NOTEQUAL, TypeBoolList, TypeIntList, TypeIntList, InlineID::NONE, &XList<int>::ne);
-		add_operator(OperatorID::SMALLER, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::lt2);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::le2);
-		add_operator(OperatorID::GREATER, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::gt2);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::ge2);
-		add_operator(OperatorID::EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::eq2);
-		add_operator(OperatorID::NOTEQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::ne2);
+		add_operator(OperatorID::SMALLER, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::lt_scalar);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::le_scalar);
+		add_operator(OperatorID::GREATER, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::gt_scalar);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::ge_scalar);
+		add_operator(OperatorID::EQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::eq_scalar);
+		add_operator(OperatorID::NOTEQUAL, TypeBoolList, TypeIntList, TypeInt, InlineID::NONE, &XList<int>::ne_scalar);
 		class_add_func("__contains__", TypeBool, &XList<int>::__contains__, Flags::PURE);
 			func_add_param("i", TypeInt);
 
 	add_class(TypeFloatList);
-		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &FloatList::str, Flags::PURE);
-		class_add_func("sort", TypeVoid, &FloatList::sort);
-		class_add_func("sum", TypeFloat32, &FloatList::sum, Flags::PURE);
-		class_add_func("sum2", TypeFloat32, &FloatList::sum_sqr, Flags::PURE);
-		class_add_func("max", TypeFloat32, &FloatList::max, Flags::PURE);
-		class_add_func("min", TypeFloat32, &FloatList::min, Flags::PURE);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::iadd);
-		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::isub);
-		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::imul);
-		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::idiv);
-		add_operator(OperatorID::ADD, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::add);
-		add_operator(OperatorID::SUBTRACT, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::sub);
-		add_operator(OperatorID::MULTIPLY, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::mul);
-		add_operator(OperatorID::DIVIDE, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::div);
-		add_operator(OperatorID::EXPONENT, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::exp);
-		add_operator(OperatorID::ADD, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::add_scalar);
-		add_operator(OperatorID::SUBTRACT, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::sub_scalar);
-		add_operator(OperatorID::MULTIPLY, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::mul_scalar);
-		add_operator(OperatorID::DIVIDE, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::div_scalar);
-		add_operator(OperatorID::EXPONENT, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::exp_scalar);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::iadd_scalar);
-		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::isub_scalar);
-		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::imul_scalar);
-		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::idiv_scalar);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::assign_scalar);
-		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::lt);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::le);
-		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::gt);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &FloatList::ge);
-		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::lt2);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::le2);
-		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::gt2);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &FloatList::ge2);
+		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &XList<float>::str, Flags::PURE);
+		class_add_func("sort", TypeVoid, &XList<float>::sort);
+		class_add_func("sum", TypeFloat32, &XList<float>::sum, Flags::PURE);
+		class_add_func("sum2", TypeFloat32, &XList<float>::sum_sqr, Flags::PURE);
+		class_add_func("max", TypeFloat32, &XList<float>::max, Flags::PURE);
+		class_add_func("min", TypeFloat32, &XList<float>::min, Flags::PURE);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::iadd);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::isub);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::imul);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::idiv);
+		add_operator(OperatorID::ADD, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::add);
+		add_operator(OperatorID::SUBTRACT, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::sub);
+		add_operator(OperatorID::MULTIPLY, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::mul);
+		add_operator(OperatorID::DIVIDE, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::div);
+		add_operator(OperatorID::EXPONENT, TypeFloatList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::exp);
+		add_operator(OperatorID::ADD, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::add_scalar);
+		add_operator(OperatorID::SUBTRACT, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::sub_scalar);
+		add_operator(OperatorID::MULTIPLY, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::mul_scalar);
+		add_operator(OperatorID::DIVIDE, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::div_scalar);
+		add_operator(OperatorID::EXPONENT, TypeFloatList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::exp_scalar);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::iadd_scalar);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::isub_scalar);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::imul_scalar);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::idiv_scalar);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::assign_scalar);
+		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::lt);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::le);
+		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::gt);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloatList, TypeFloatList, InlineID::NONE, &XList<float>::ge);
+		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::lt_scalar);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::le_scalar);
+		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::gt_scalar);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloatList, TypeFloat32, InlineID::NONE, &XList<float>::ge_scalar);
 
 
 	add_class(TypeFloat64List);
-		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &Float64List::str, Flags::PURE);
-		class_add_func("sort", TypeVoid, &Float64List::sort);
-		class_add_func("sum", TypeFloat64, &Float64List::sum, Flags::PURE);
-		class_add_func("sum2", TypeFloat64, &Float64List::sum_sqr, Flags::PURE);
-		class_add_func("max", TypeFloat64, &Float64List::max, Flags::PURE);
-		class_add_func("min", TypeFloat64, &Float64List::min, Flags::PURE);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::iadd);
-		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::isub);
-		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::imul);
-		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::idiv);
-		add_operator(OperatorID::ADD, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::add);
-		add_operator(OperatorID::SUBTRACT, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::sub);
-		add_operator(OperatorID::MULTIPLY, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::mul);
-		add_operator(OperatorID::DIVIDE, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::div);
-		add_operator(OperatorID::EXPONENT, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::exp);
-		add_operator(OperatorID::ADD, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::add_scalar);
-		add_operator(OperatorID::SUBTRACT, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::sub_scalar);
-		add_operator(OperatorID::MULTIPLY, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::mul_scalar);
-		add_operator(OperatorID::DIVIDE, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::div_scalar);
-		add_operator(OperatorID::EXPONENT, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::exp_scalar);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::iadd_scalar);
-		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::isub_scalar);
-		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::imul_scalar);
-		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::idiv_scalar);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::assign_scalar);
-		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::lt);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::le);
-		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::gt);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &Float64List::ge);
-		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::lt2);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::le2);
-		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::gt2);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &Float64List::ge2);
+		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &XList<double>::str, Flags::PURE);
+		class_add_func("sort", TypeVoid, &XList<double>::sort);
+		class_add_func("sum", TypeFloat64, &XList<double>::sum, Flags::PURE);
+		class_add_func("sum2", TypeFloat64, &XList<double>::sum_sqr, Flags::PURE);
+		class_add_func("max", TypeFloat64, &XList<double>::max, Flags::PURE);
+		class_add_func("min", TypeFloat64, &XList<double>::min, Flags::PURE);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::iadd);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::isub);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::imul);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::idiv);
+		add_operator(OperatorID::ADD, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::add);
+		add_operator(OperatorID::SUBTRACT, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::sub);
+		add_operator(OperatorID::MULTIPLY, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::mul);
+		add_operator(OperatorID::DIVIDE, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::div);
+		add_operator(OperatorID::EXPONENT, TypeFloat64List, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::exp);
+		add_operator(OperatorID::ADD, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::add_scalar);
+		add_operator(OperatorID::SUBTRACT, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::sub_scalar);
+		add_operator(OperatorID::MULTIPLY, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::mul_scalar);
+		add_operator(OperatorID::DIVIDE, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::div_scalar);
+		add_operator(OperatorID::EXPONENT, TypeFloat64List, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::exp_scalar);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::iadd_scalar);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::isub_scalar);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::imul_scalar);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::idiv_scalar);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::assign_scalar);
+		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::lt);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::le);
+		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::gt);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64List, InlineID::NONE, &XList<double>::ge);
+		add_operator(OperatorID::SMALLER, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::lt_scalar);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::le_scalar);
+		add_operator(OperatorID::GREATER, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::gt_scalar);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBoolList, TypeFloat64List, TypeFloat64, InlineID::NONE, &XList<double>::ge_scalar);
 
 
 
