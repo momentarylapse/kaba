@@ -80,6 +80,7 @@ const Class *TypeFloatList;
 const Class *TypeFloatArray;
 const Class *TypeFloatArrayP;
 const Class *TypeFloatDict;
+const Class *TypeFloat64List;
 const Class *TypeComplex;
 const Class *TypeComplexList;
 const Class *TypeStringList;
