@@ -12,6 +12,7 @@
 #include "../syntax/Flags.h"
 #include "extern.h"
 #include "../../base/pointer.h"
+#include <cstddef>
 
 namespace kaba {
 

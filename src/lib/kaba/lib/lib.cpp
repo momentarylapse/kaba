@@ -493,16 +493,16 @@ public:
 	}
 };
 
-void script_make_super_array(Class *t, SyntaxTree *ps)
-{
+void script_make_super_array(Class *t, SyntaxTree *ps) {
 	const Class *p = t->param[0];
 	t->derive_from(TypeDynamicArray, false);
 	t->param[0] = p;
 	add_class(t);
 
-	Function *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
-	sub->literal_return_type = t;
-	sub->effective_return_type= t;
+	// already done by derive_from()
+	//Function *sub = t->get_func(IDENTIFIER_FUNC_SUBARRAY, TypeDynamicArray, {nullptr,nullptr});
+	//sub->literal_return_type = t;
+	//sub->effective_return_type = t;
 
 	// FIXME  wrong for complicated classes
 	if (p->can_memcpy()) {
