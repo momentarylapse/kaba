@@ -23,7 +23,7 @@ extern unsigned int VertexArrayID;
 
 namespace nix{
 
-string version = "0.13.6.0";
+string version = "0.13.7.0";
 
 
 
@@ -57,6 +57,7 @@ rect target_rect;
 
 Fog fog;
 
+Array<string> extensions;
 
 
 
@@ -133,6 +134,12 @@ void init() {
 	msg_write(string("Renderer: ") + (char*)glGetString(GL_RENDERER));
 	msg_write(string("GLSL: ") + (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+	int num_extension = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &num_extension);
+	for (int i=0; i<num_extension; i++) {
+		extensions.add((char*)glGetStringi(GL_EXTENSIONS, i));
+	}
+
 #ifdef OS_WINDOWS
 	GLenum err = glewInit();
 	if (GLEW_OK != err) {
@@ -198,20 +205,24 @@ void reincarnate_device_objects() {
 #define GL_GPU_MEM_INFO_CURRENT_AVAILABLE_MEM_NVX 0x9049
 
 int total_mem() {
-	GLint total_mem_kb = 0;
-	glGetIntegerv(GL_GPU_MEM_INFO_TOTAL_AVAILABLE_MEM_NVX, &total_mem_kb);
-	int err = glGetError();
-	if (err == GL_NO_ERROR)
-		return total_mem_kb;
+	if (sa_contains(extensions, "GL_NVX_gpu_memory_info")) {
+		GLint total_mem_kb = 0;
+		glGetIntegerv(GL_GPU_MEM_INFO_TOTAL_AVAILABLE_MEM_NVX, &total_mem_kb);
+		int err = glGetError();
+		if (err == GL_NO_ERROR)
+			return total_mem_kb;
+	}
 	return -1;
 }
 
 int available_mem() {
-	GLint cur_avail_mem_kb = 0;
-	glGetIntegerv(GL_GPU_MEM_INFO_CURRENT_AVAILABLE_MEM_NVX, &cur_avail_mem_kb);
-	int err = glGetError();
-	if (err == GL_NO_ERROR)
-		return cur_avail_mem_kb;
+	if (sa_contains(extensions, "GL_NVX_gpu_memory_info")) {
+		GLint cur_avail_mem_kb = 0;
+		glGetIntegerv(GL_GPU_MEM_INFO_CURRENT_AVAILABLE_MEM_NVX, &cur_avail_mem_kb);
+		int err = glGetError();
+		if (err == GL_NO_ERROR)
+			return cur_avail_mem_kb;
+	}
 	return -1;
 }
 
