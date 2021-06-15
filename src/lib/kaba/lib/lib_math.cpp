@@ -159,6 +159,21 @@ public:
 	void assign(const vector &o) {
 		*(vector*)this = o;
 	}
+	vector negate() const {
+		return -(*(vector*)this);
+	}
+	float mul_vv(const vector &v) const {
+		return vector::dot(*(vector*)this, v);
+	}
+	vector mul_vf(float f) const {
+		return *(vector*)this * f;
+	}
+	static vector mul_fv(float f, const vector &v) {
+		return f * v;
+	}
+	vector div_f(float f) const {
+		return *(vector*)this / f;
+	}
 	static vector set(float x, float y, float z) {
 		return vector(x, y, z);
 	}
@@ -453,18 +468,18 @@ void SIAddPackageMath() {
 		class_add_const("EY", TypeVector, &vector::EY);
 		class_add_const("EZ", TypeVector, &vector::EZ);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeVector, TypeVector, InlineID::CHUNK_ASSIGN, &KabaVector::assign);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeVector, TypeVector, InlineID::CHUNK_EQUAL);
-		add_operator(OperatorID::ADD, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_ADD);
-		add_operator(OperatorID::SUBTRACT, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_SUBTRACT);
-		add_operator(OperatorID::MULTIPLY, TypeFloat32, TypeVector, TypeVector, InlineID::VECTOR_MULTIPLY_VV);
-		add_operator(OperatorID::MULTIPLY, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_VF);
-		add_operator(OperatorID::MULTIPLY, TypeVector, TypeFloat32, TypeVector, InlineID::VECTOR_MULTIPLY_FV);
-		add_operator(OperatorID::DIVIDE, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_VF);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_ADD_ASSIGN);
-		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_SUBTARCT_ASSIGN);
-		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_ASSIGN);
-		add_operator(OperatorID::DIVIDES, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_ASSIGN);
-		add_operator(OperatorID::NEGATIVE, TypeVector, nullptr, TypeVector, InlineID::VECTOR_NEGATE);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeVector, TypeVector, InlineID::CHUNK_EQUAL, &vector::operator==);
+		add_operator(OperatorID::ADD, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_ADD, &vector::operator+);
+		add_operator(OperatorID::SUBTRACT, TypeVector, TypeVector, TypeVector, InlineID::VECTOR_SUBTRACT, (decltype(&vector::operator+)) &vector::operator-);
+		add_operator(OperatorID::MULTIPLY, TypeFloat32, TypeVector, TypeVector, InlineID::VECTOR_MULTIPLY_VV, &KabaVector::mul_vv);
+		add_operator(OperatorID::MULTIPLY, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_VF, &KabaVector::mul_vf);
+		add_operator(OperatorID::MULTIPLY, TypeVector, TypeFloat32, TypeVector, InlineID::VECTOR_MULTIPLY_FV, &KabaVector::mul_fv);
+		add_operator(OperatorID::DIVIDE, TypeVector, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_VF, &KabaVector::div_f);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_ADD_ASSIGN, &vector::operator+=);
+		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeVector, TypeVector, InlineID::VECTOR_SUBTARCT_ASSIGN, &vector::operator-=);
+		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_MULTIPLY_ASSIGN, &vector::operator*=);
+		add_operator(OperatorID::DIVIDES, TypeVoid, TypeVector, TypeFloat32, InlineID::VECTOR_DIVIDE_ASSIGN, &vector::operator/=);
+		add_operator(OperatorID::NEGATIVE, TypeVector, nullptr, TypeVector, InlineID::VECTOR_NEGATE, &KabaVector::negate);
 	
 	add_class(TypeVectorList);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<vector>::__init__);

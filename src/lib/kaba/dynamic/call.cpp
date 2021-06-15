@@ -219,6 +219,11 @@ bool call_function(Function *f, void *ff, void *ret, const Array<void*> &param) 
 				call1<float,CBR>(ff, ret, param);
 				return true;
 			}
+		} else if (f->literal_return_type == TypeVector) {
+			if (ptype[0]->uses_call_by_reference()) {
+				call1<vec3,CBR>(ff, ret, param);
+				return true;
+			}
 		} else if (f->literal_return_type == TypeQuaternion) {
 			if (ptype[0]->uses_call_by_reference()) {
 				call1<vec4,CBR>(ff, ret, param);
