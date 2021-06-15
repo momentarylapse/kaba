@@ -134,12 +134,6 @@ void init() {
 	msg_write(string("Renderer: ") + (char*)glGetString(GL_RENDERER));
 	msg_write(string("GLSL: ") + (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	int num_extension = 0;
-	glGetIntegerv(GL_NUM_EXTENSIONS, &num_extension);
-	for (int i=0; i<num_extension; i++) {
-		extensions.add((char*)glGetStringi(GL_EXTENSIONS, i));
-	}
-
 #ifdef OS_WINDOWS
 	GLenum err = glewInit();
 	if (GLEW_OK != err) {
@@ -147,6 +141,12 @@ void init() {
 		msg_error((const char*)glewGetErrorString(err));
 	}
 #endif
+
+	int num_extension = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &num_extension);
+	for (int i = 0; i < num_extension; i++) {
+		extensions.add((char*)glGetStringi(GL_EXTENSIONS, i));
+	}
 
 
 	// default values of the engine
