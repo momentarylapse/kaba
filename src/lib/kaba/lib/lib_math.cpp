@@ -149,6 +149,9 @@ public:
 	complex negate() const {
 		return -(*(complex*)this);
 	}
+	void init(float x, float y) {
+		*(complex*)this = complex(x, y);
+	}
 	static complex set(float x, float y) {
 		return complex(x, y);
 	}
@@ -174,6 +177,9 @@ public:
 	vector div_f(float f) const {
 		return *(vector*)this / f;
 	}
+	void init(float x, float y, float z) {
+		*(vector*)this = vector(x,y,z);
+	}
 	static vector set(float x, float y, float z) {
 		return vector(x, y, z);
 	}
@@ -183,6 +189,9 @@ class KabaRect : public rect{
 public:
 	void assign(const rect& o) {
 		*(rect*)this = o;
+	}
+	void init(float x1, float x2, float y1, float y2) {
+		*(rect*)this = rect(x1, x2, y1, y2);
 	}
 	static rect set(float x1, float x2, float y1, float y2) {
 		return rect(x1, x2, y1, y2);
@@ -381,7 +390,7 @@ void SIAddPackageMath() {
 			func_set_inline(InlineID::COMPLEX_SET);
 			func_add_param("x", TypeFloat32);
 			func_add_param("y", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaComplex::set);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaComplex::init);
 			func_add_param("x", TypeFloat32);
 			func_add_param("y", TypeFloat32);	
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeComplex, TypeComplex, InlineID::CHUNK_ASSIGN, &KabaComplex::assign);
@@ -451,7 +460,7 @@ void SIAddPackageMath() {
 			func_add_param("y", TypeFloat32);
 			func_add_param("z", TypeFloat32);
 		// ignored, but useful for docu
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaVector::set);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaVector::init);
 			func_add_param("x", TypeFloat32);
 			func_add_param("y", TypeFloat32);
 			func_add_param("z", TypeFloat32);
@@ -542,7 +551,7 @@ void SIAddPackageMath() {
 			func_add_param("x2", TypeFloat32);
 			func_add_param("y1", TypeFloat32);
 			func_add_param("y2", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaRect::set);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaRect::init);
 			func_add_param("x1", TypeFloat32);
 			func_add_param("x2", TypeFloat32);
 			func_add_param("y1", TypeFloat32);
@@ -571,7 +580,7 @@ void SIAddPackageMath() {
 			func_add_param("g", TypeFloat32);
 			func_add_param("b", TypeFloat32);
 			func_add_param("a", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaColor::set);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaColor::init);
 			func_add_param("r", TypeFloat32);
 			func_add_param("g", TypeFloat32);
 			func_add_param("b", TypeFloat32);
