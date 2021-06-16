@@ -100,7 +100,6 @@ int mip_levels(int width, int height) {
 
 
 void Texture::_create_2d(int w, int h, const string &_format) {
-	msg_write(format("creating texture [%d x %d: %s] ", w, h, _format));
 	width = w;
 	height = h;
 	type = Type::DEFAULT;
@@ -116,6 +115,7 @@ void Texture::_create_2d(int w, int h, const string &_format) {
 }
 
 Texture::Texture(int w, int h, const string &_format) : Texture() {
+	msg_write(format("creating texture [%d x %d: %s] ", w, h, _format));
 	_create_2d(w, h, _format);
 }
 

@@ -396,7 +396,7 @@ void set_stencil(StencilOp mode, unsigned long param) {
 
 // mode=FogLinear:			start/end
 // mode=FogExp/FogExp2:		density
-void set_fog(int mode,float start,float end,float density,const color &c) {
+void set_fog(FogMode mode,float start,float end,float density,const color &c) {
 	fog.density = density;
 	fog._color = c;
 }

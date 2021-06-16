@@ -47,6 +47,8 @@ void kill_device_objects();
 void reincarnate_device_objects();
 void kill();
 
+enum class FogMode;
+
 // engine properties
 void _cdecl set_wire(bool enabled);
 void _cdecl set_cull(CullMode mode);
@@ -55,7 +57,7 @@ void _cdecl set_alpha(AlphaMode mode);
 void _cdecl set_alpha(Alpha src, Alpha dst);
 void _cdecl set_alpha_mode(AlphaMode mode);
 void _cdecl set_alpha_sd(Alpha src, Alpha dst);
-void _cdecl set_fog(int mode, float start, float end, float density, const color &c);
+void _cdecl set_fog(FogMode mode, float start, float end, float density, const color &c);
 void _cdecl enable_fog(bool enabled);
 void _cdecl set_stencil(StencilOp op, unsigned long param=0);
 void _cdecl set_offset(float offset);
