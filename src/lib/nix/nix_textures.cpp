@@ -107,7 +107,7 @@ void Texture::_create_2d(int w, int h, const string &_format) {
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 	glTextureStorage2D(texture, mip_levels(width, height), internal_format, width, height);
-	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_NEAREST);
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -389,6 +389,7 @@ ImageTexture::ImageTexture(int _width, int _height, const string &_format) {
 	width = _width;
 	height = _height;
 	type = Type::IMAGE;
+	internal_format = parse_format(_format);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 	glTextureStorage2D(texture, 1, internal_format, width, height);

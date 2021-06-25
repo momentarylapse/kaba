@@ -7,8 +7,7 @@
 
 #if HAS_LIB_GL
 
-#ifndef _NIX_DRAW_EXISTS_
-#define _NIX_DRAW_EXISTS_
+#pragma once
 
 namespace nix{
 
@@ -25,7 +24,5 @@ void _cdecl draw_lines(VertexBuffer *vb, bool contiguous);
 void _cdecl draw_points(VertexBuffer *vb);
 
 };
-
-#endif
 
 #endif

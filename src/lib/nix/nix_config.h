@@ -115,6 +115,7 @@ extern int target_width, target_height;						// current render target size (wind
 
 class VertexBuffer;
 extern VertexBuffer *vb_temp; // vertex buffer for 1-frame geometries
+extern VertexBuffer *vb_temp_i;
 };
 
 #endif

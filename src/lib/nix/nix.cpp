@@ -19,11 +19,10 @@
 #include "nix_common.h"
 
 
-extern unsigned int VertexArrayID;
-
 namespace nix{
 
-string version = "0.13.7.0";
+string version = "0.13.9.1";
+// currently, requiring OpenGL 4.5
 
 
 
@@ -186,7 +185,6 @@ void init() {
 void kill() {
 	msg_write("nix.kill");
 	kill_device_objects();
-	glDeleteVertexArrays(1, &VertexArrayID);
 }
 
 // erlaubt dem Device einen Neustart

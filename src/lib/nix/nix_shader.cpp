@@ -10,7 +10,7 @@
 #include "nix.h"
 #include "nix_common.h"
 
-namespace nix{
+namespace nix {
 
 const int TYPE_LAYOUT = -41;
 const int TYPE_MODULE = -42;
@@ -26,38 +26,6 @@ static shared_array<Shader> shaders;
 int current_program = 0;
 
 string shader_error;
-
-
-UniformBuffer::UniformBuffer() {
-	glGenBuffers(1, &buffer);
-}
-
-UniformBuffer::~UniformBuffer() {
-	glDeleteBuffers(1, &buffer);
-}
-
-void UniformBuffer::__init__() {
-	new(this) UniformBuffer();
-}
-
-void UniformBuffer::__delete__() {
-	this->~UniformBuffer();
-}
-
-void UniformBuffer::update(void *data, int size) {
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
-}
-
-void UniformBuffer::update_array(const DynamicArray &a) {
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	glBufferData(GL_UNIFORM_BUFFER, a.num * a.element_size, a.data, GL_DYNAMIC_DRAW);
-}
-
-void bind_uniform(UniformBuffer *ub, int index) {
-	//glUniformBlockBinding(program, index, 0);
-	glBindBufferBase(GL_UNIFORM_BUFFER, index, ub->buffer);
-}
 
 
 int create_empty_shader_program() {
@@ -356,60 +324,80 @@ bool Shader::link_uniform_block(const string &name, int binding) {
 	return true;
 }
 
-void Shader::set_data(int location, const float *data, int size) {
+void Shader::set_floats_l(int location, const float *data, int num) {
 	if (location < 0)
 		return;
 	//NixSetShader(this);
-	if (size == sizeof(float)) {
-		glUniform1f(location, *data);
-	} else if (size == sizeof(float)*2) {
-		glUniform2fv(location, 1, data);
-	} else if (size == sizeof(float)*3) {
-		glUniform3fv(location, 1, data);
-	} else if (size == sizeof(float)*4) {
-		glUniform4fv(location, 1, data);
-	} else if (size == sizeof(float)*16) {
-		glUniformMatrix4fv(location, 1, GL_FALSE, (float*)data);
+	if (num == 1) {
+		glProgramUniform1f(program, location, *data);
+	} else if (num == 2) {
+		glProgramUniform2fv(program, location, 1, data);
+	} else if (num == 3) {
+		glProgramUniform3fv(program, location, 1, data);
+	} else if (num == 4) {
+		glProgramUniform4fv(program, location, 1, data);
+	} else if (num == 16) {
+		glProgramUniformMatrix4fv(program, location, 1, GL_FALSE, (float*)data);
 	}
 }
 
-void Shader::set_int(int location, int i) {
+void Shader::set_int_l(int location, int i) {
 	if (location < 0)
 		return;
-	glUniform1i(location, i);
+	glProgramUniform1i(program, location, i);
 }
 
-void Shader::set_float(int location, float f) {
+void Shader::set_float_l(int location, float f) {
 	if (location < 0)
 		return;
-	glUniform1f(location, f);
+	glProgramUniform1f(program, location, f);
 }
 
-void Shader::set_color(int location, const color &c) {
+void Shader::set_color_l(int location, const color &c) {
 	if (location < 0)
 		return;
-	glUniform4fv(location, 1, (float*)&c);
+	glProgramUniform4fv(program, location, 1, (float*)&c);
 }
 
-void Shader::set_matrix(int location, const matrix &m) {
+void Shader::set_matrix_l(int location, const matrix &m) {
 	if (location < 0)
 		return;
-	glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&m);
+	glProgramUniformMatrix4fv(program, location, 1, GL_FALSE, (float*)&m);
+}
+
+void Shader::set_int(const string &name, int i) {
+	set_int_l(get_location(name), i);
+}
+
+void Shader::set_float(const string &name, float f) {
+	set_float_l(get_location(name), f);
+}
+
+void Shader::set_color(const string &name, const color &c) {
+	set_color_l(get_location(name), c);
+}
+
+void Shader::set_matrix(const string &name, const matrix &m) {
+	set_matrix_l(get_location(name), m);
+}
+
+void Shader::set_floats(const string &name, const float *data, int num) {
+	set_floats_l(get_location(name), data, num);
 }
 
 void Shader::set_default_data() {
-	set_matrix(location[LOCATION_MATRIX_MVP], model_view_projection_matrix);
-	set_matrix(location[LOCATION_MATRIX_M], model_matrix);
-	set_matrix(location[LOCATION_MATRIX_V], view_matrix);
-	set_matrix(location[LOCATION_MATRIX_P], projection_matrix);
+	set_matrix_l(location[LOCATION_MATRIX_MVP], model_view_projection_matrix);
+	set_matrix_l(location[LOCATION_MATRIX_M], model_matrix);
+	set_matrix_l(location[LOCATION_MATRIX_V], view_matrix);
+	set_matrix_l(location[LOCATION_MATRIX_P], projection_matrix);
 	for (int i=0; i<NIX_MAX_TEXTURELEVELS; i++)
-		set_int(location[LOCATION_TEX + i], i);
+		set_int_l(location[LOCATION_TEX + i], i);
 	if (tex_cube_level >= 0)
-		set_int(location[LOCATION_TEX_CUBE], tex_cube_level);
-	set_color(location[LOCATION_MATERIAL_ALBEDO], material.albedo);
-	set_float(location[LOCATION_MATERIAL_ROUGHNESS], material.roughness);
-	set_float(location[LOCATION_MATERIAL_METAL], material.metal);
-	set_color(location[LOCATION_MATERIAL_EMISSION], material.emission);
+		set_int_l(location[LOCATION_TEX_CUBE], tex_cube_level);
+	set_color_l(location[LOCATION_MATERIAL_ALBEDO], material.albedo);
+	set_float_l(location[LOCATION_MATERIAL_ROUGHNESS], material.roughness);
+	set_float_l(location[LOCATION_MATERIAL_METAL], material.metal);
+	set_color_l(location[LOCATION_MATERIAL_EMISSION], material.emission);
 }
 
 void Shader::dispatch(int nx, int ny, int nz) {

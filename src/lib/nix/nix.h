@@ -27,6 +27,8 @@
 #include "nix_shader.h"
 #include "nix_view.h"
 #include "nix_textures.h"
+#include "nix_framebuffer.h"
+#include "nix_buffer.h"
 
 namespace nix {
 
