@@ -10,6 +10,7 @@
 
 #include "nix.h"
 #include "nix_common.h"
+#include "../file/msg.h"
 
 
 

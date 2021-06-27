@@ -7,8 +7,10 @@
 
 #if HAS_LIB_GL
 
-#ifndef _NIX_VERTEXBUFFER_EXISTS_
-#define _NIX_VERTEXBUFFER_EXISTS_
+#pragma once
+
+
+#include "../math/rect.h"
 
 #define MAX_VB_ATTRIBUTES 8
 #define MAX_VB_BUFFERS 8
@@ -64,7 +66,5 @@ void bind_vertex_buffer(VertexBuffer *vb);
 
 };
 
-
-#endif
 
 #endif

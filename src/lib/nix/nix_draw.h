@@ -9,6 +9,8 @@
 
 #pragma once
 
+class color;
+
 namespace nix{
 
 class VertexBuffer;

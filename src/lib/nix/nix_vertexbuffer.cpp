@@ -23,15 +23,27 @@ unsigned int global_vao = 0;
 VertexBuffer *vb_temp = NULL;
 VertexBuffer *vb_temp_i = NULL;
 
+bool gl_is_integer(unsigned int type) {
+	if ((type == GL_INT) or (type == GL_UNSIGNED_INT))
+		return true;
+	if ((type == GL_SHORT) or (type == GL_UNSIGNED_SHORT))
+		return true;
+	if ((type == GL_BYTE) or (type == GL_UNSIGNED_BYTE))
+		return true;
+	return false;
+}
+
 
 void _post_config_vertex_buffer(VertexBuffer *vb) {
-	//glBindVertexArray(vb->vao);
 	for (int i=0; i<vb->num_attributes; i++) {
 		auto &a = vb->attr[i];
 		glEnableVertexArrayAttrib(vb->vao, i);
 		glVertexArrayAttribBinding(vb->vao, i, i);
 		glVertexArrayVertexBuffer(vb->vao, i, a.buffer, 0, a.stride);
-		glVertexArrayAttribFormat(vb->vao, i, a.num_components, a.type, a.normalized, 0);
+		if (gl_is_integer(a.type)) // argh!
+			glVertexArrayAttribIFormat(vb->vao, i, a.num_components, a.type, 0);
+		else
+			glVertexArrayAttribFormat(vb->vao, i, a.num_components, a.type, a.normalized, 0);
 
 		// TODO
 		if (false)
@@ -63,6 +75,37 @@ int gl_component_size(unsigned int type) {
 	if ((type == GL_BYTE) or (type == GL_UNSIGNED_BYTE))
 		return 1;
 	return 0;
+}
+
+// "2f" "3fn" "4i" etc
+bool parse_vb_component(const string &_f, unsigned int &type, int &num) {
+	string f = _f.replace("n", "");
+	if (f.num < 1)
+		return false;
+
+	num = 1;
+	if (f[0] >= '0' and f[0] <= '9') {
+		num = f.head(1)._int();
+		f = f.sub(1);
+	}
+
+	if (f == "f" or f == "f32")
+		type = GL_FLOAT;
+	else if (f == "i" or f == "i32")
+		type = GL_INT;
+	else if (f == "u" or f == "u32")
+		type = GL_UNSIGNED_INT;
+	else if (f == "i16")
+		type = GL_SHORT;
+	else if (f == "u16")
+		type = GL_UNSIGNED_SHORT;
+	else if (f == "i8")
+		type = GL_BYTE;
+	else if (f == "u8")
+		type = GL_UNSIGNED_BYTE;
+	else
+		return false;
+	return true;
 }
 
 // so far, map each attribute to another buffer
@@ -109,25 +152,11 @@ VertexBuffer::VertexBuffer(const string &_f) {
 		a.normalized = false;
 		a.divisor = 0;
 		a.stride = 0;
-		if (x == "1f") {
-			a.type = GL_FLOAT;
-			a.num_components = 1;
-		} else if (x == "2f") {
-			a.type = GL_FLOAT;
-			a.num_components = 2;
-		} else if (x == "3f") {
-			a.type = GL_FLOAT;
-			a.num_components = 3;
-		} else if (x == "3fn") {
-			a.type = GL_FLOAT;
-			a.num_components = 3;
-			a.normalized = true;
-		} else if (x == "4f") {
-			a.type = GL_FLOAT;
-			a.num_components = 4;
-		} else {
+		// "2f" "3fn" "4i" etc
+		if (!parse_vb_component(x, a.type, a.num_components))
 			throw Exception("VertexBuffer: unhandled format: " + x);
-		}
+		a.normalized = (x.find("n") >= 0);
+
 		a.stride = a.num_components * gl_component_size(a.type);
 	}
 

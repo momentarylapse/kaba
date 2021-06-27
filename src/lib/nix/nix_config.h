@@ -45,9 +45,11 @@
 
 #include <math.h>
 #include "../base/base.h"
-#include "../file/file.h"
-//#include "../hui/hui.h"
-#include "../math/math.h"
+
+class vector;
+class rect;
+class matrix;
+class color;
 
 
 typedef void callback_function();

@@ -9,6 +9,7 @@
 
 #include "nix.h"
 #include "nix_common.h"
+#include "../file/file.h"
 
 namespace nix {
 
@@ -122,7 +123,7 @@ string expand_shader_source(const string &source, ShaderMetaData &meta) {
 		bool found = false;
 		for (auto &m: shader_modules)
 			if (m.meta.name == imp) {
-				//msg_error("FOUND");
+				//msg_error("FOUND " + imp);
 				r = r.head(p) + "\n// <<\n" + m.source + "\n// >>\n" + r.sub(p2);
 				found = true;
 			}
@@ -317,6 +318,8 @@ int Shader::get_location(const string &name) {
 }
 
 bool Shader::link_uniform_block(const string &name, int binding) {
+	if (program < 0)
+		return false;
 	int index = glGetUniformBlockIndex(program, name.c_str());
 	if (index < 0)
 		return false;

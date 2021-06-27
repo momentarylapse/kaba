@@ -13,12 +13,10 @@
 
 #if HAS_LIB_GL
 
-#ifndef _NIX_EXISTS_
-#define _NIX_EXISTS_
+#pragma once
 
 
 #include "../config.h"
-
 
 #include "nix_config.h"
 #include "nix_draw.h"
@@ -68,7 +66,5 @@ void _cdecl set_offset(float offset);
 extern rect target_rect;
 
 };
-
-#endif
 
 #endif

@@ -17,6 +17,7 @@
 
 #include "nix_config.h"
 #include "nix_common.h"
+#include "../file/msg.h"
 
 
 namespace nix{
