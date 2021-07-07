@@ -61,8 +61,8 @@ public:
 	{	return v*f;	}
 	bool _cdecl operator == (const vector &v) const;
 	bool _cdecl operator != (const vector &v) const;
-//	float _cdecl operator * (const vector &v) const;
-//	vector operator ^ (const vector &v) const;
+	float _cdecl operator * (const vector &v) const;
+	vector operator ^ (const vector &v) const;
 	string _cdecl str() const;
 
 	float _cdecl length() const;
@@ -145,6 +145,12 @@ public:
 	void _cdecl normalize();
 	vec4 _cdecl normalized() const;
 
+	int argmin() const;
+	int argmax() const;
+	float sum() const;
+	float &operator[](int index);
+	float operator[](int index) const;
+
 	static const vec4 ZERO, EX, EY, EZ, EW;
 };
 
@@ -152,5 +158,9 @@ public:
 class ivec4 {
 public:
 	int i,j,k,l;
+
+	int find(int x) const;
+	int &operator[](int index);
+	int operator[](int index) const;
 };
 
