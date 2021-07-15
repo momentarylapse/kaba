@@ -719,6 +719,7 @@ void SIAddPackageMath() {
 		class_add_element("e", TypeFloatArray3x3, 0);
 		class_add_element("_e", TypeFloatArray9, 0);
 		class_add_const("ID", TypeMatrix3, &matrix3::ID);
+		class_add_const("0", TypeMatrix3, &matrix3::ZERO);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &matrix3::str, Flags::PURE);
 		class_add_func("inverse", TypeMatrix3, &matrix3::inverse, Flags::PURE);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeMatrix3, TypeMatrix3, InlineID::CHUNK_ASSIGN);

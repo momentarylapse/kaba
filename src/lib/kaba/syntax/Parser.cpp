@@ -241,11 +241,31 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 	if (!only_static) {
 		for (auto &e: type->elements)
 			if (Exp.cur == e.name) {
+				// direct
 				Exp.next();
 				if (deref)
 					return {operand->deref_shift(e.offset, e.type)};
 				else
 					return {operand->shift(e.offset, e.type)};
+			} else if (e.allow_indirect_use) {
+				// indirect ("use")
+				auto et = e.type;
+				if (e.type->is_some_pointer())
+					et = e.type->param[0];
+				for (auto &ee: et->elements)
+					if (Exp.cur == ee.name) {
+						Exp.next();
+						shared<Node> parent;
+						if (deref)
+							parent = operand->deref_shift(e.offset, e.type);
+						else
+							parent = operand->shift(e.offset, e.type);
+						if (e.type->is_some_pointer())
+							return {parent->deref_shift(ee.offset, ee.type)};
+						else
+							return {parent->shift(ee.offset, ee.type)};
+
+					}
 			}
 	}
 	for (auto *c: weak(type->constants))
@@ -3261,7 +3281,6 @@ bool Parser::parse_class(Class *_namespace) {
 
 		if (Exp.cur == IDENTIFIER_ENUM) {
 			parse_enum(_class);
-			continue;
 		} else if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 			//msg_write("sub....");
 			int cur_line = Exp.get_line_no();
@@ -3270,73 +3289,20 @@ bool Parser::parse_class(Class *_namespace) {
 				skip_parse_class();
 			}
 			//msg_write(">>");
-			continue;
 		} else if (Exp.cur == IDENTIFIER_FUNC) {
 			auto f = parse_function_header_new(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
 			skip_parsing_function_body(f);
-			continue;
 		} else if (Exp.cur == IDENTIFIER_CONST) {
 			parse_named_const(_class, tree->root_of_all_evil->block.get());
-			continue;
 		} else if (Exp.cur == IDENTIFIER_VAR) {
 			if (_class->is_interface())
 				do_error("interfaces can not have data elements");
 			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), _offset);
-			continue;
+		} else if (Exp.cur == IDENTIFIER_USE) {
+			parse_class_use_statement(_class);
 		} else {
 			do_error("unknown definition inside a class");
 		}
-
-		// DEPRECATED
-#if 0
-		Flags flags = parse_flags();
-
-		auto type = parse_type(_class); // force
-		while (!Exp.end_of_line()) {
-			//int indent = Exp.cur_line->indent;
-			
-			string name = Exp.cur;
-			Exp.next();
-
-			// is a function?
-			bool is_function = false;
-			if (Exp.cur == "(")
-			    is_function = true;
-			if (is_function) {
-				Exp.set(ie);
-				if (_class->is_interface())
-					flags_set(flags, Flags::VIRTUAL);
-				auto f = parse_function_header_old(_class, flags);
-				skip_parsing_function_body(f);
-				break;
-			}
-
-			if (flags_has(flags, Flags::CONST)) {
-				parse_named_const_old(name, type, _class, tree->root_of_all_evil->block.get());
-				break;
-			}
-
-			if (_class->is_interface())
-				do_error("interfaces can not have data elements");
-			do_error("deprecated class element declaration");
-
-			parser_class_add_element(this, _class, name, type, flags, _offset);
-
-			if (Exp.cur == "=") {
-				Exp.next();
-				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), type);
-				Constant *c_value = cv->as_const();
-				ClassInitializers init = {_class->elements.num - 1, c_value};
-				_class->initializers.add(init);
-			}
-
-			if ((Exp.cur != ",") and !Exp.end_of_line())
-				do_error("',' or newline expected after class element");
-			if (Exp.end_of_line())
-				break;
-			Exp.next();
-		}
-#endif
 	}
 
 	post_process_newly_parsed_class(_class, _offset);
@@ -3535,6 +3501,22 @@ void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int
 			cc->initializers.add(init);
 		}
 	}
+}
+
+void Parser::parse_class_use_statement(const Class *c) {
+	Exp.next(); // "use"
+	string name = Exp.cur;
+	bool found = false;
+	for (auto &e: c->elements)
+		if (e.name == name) {
+			e.allow_indirect_use = true;
+			found = true;
+		}
+	if (!found)
+		do_error(format("use: class '%s' does not have an element '%s'", c->name, name));
+
+	Exp.next();
+	expect_new_line();
 }
 
 bool peek_commands_super(ExpressionBuffer &Exp) {

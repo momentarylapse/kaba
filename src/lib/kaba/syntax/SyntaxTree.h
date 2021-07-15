@@ -117,6 +117,7 @@ public:
 	shared<Node> add_node_local(Variable *var, const Class *type);
 	shared<Node> make_constructor_static(shared<Node> n, const string &name);
 	shared<Node> exlink_add_element(Function *f, ClassElement &e);
+	shared<Node> exlink_add_element_indirect(Function *f, ClassElement &e, ClassElement &e2);
 	shared<Node> exlink_add_class_func(Function *f, Function *cf);
 	shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type);
 	shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index);

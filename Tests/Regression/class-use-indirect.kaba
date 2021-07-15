@@ -1,0 +1,19 @@
+class A
+	var i = 13
+	var s = "hallo"
+
+class B
+	var a: A
+	use a
+	var x = 3
+
+	func f()
+		print(i)
+
+func main()
+	A a
+	B b
+	#b.a = &a
+	b.f()
+	print(b.i)
+

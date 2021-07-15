@@ -395,6 +395,14 @@ shared<Node> SyntaxTree::exlink_add_element(Function *f, ClassElement &e) {
 	return self->shift(e.offset, e.type);
 }
 
+shared<Node> SyntaxTree::exlink_add_element_indirect(Function *f, ClassElement &e, ClassElement &e2) {
+	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	if (e.type->is_some_pointer())
+		return self->shift(e.offset, e.type)->deref_shift(e2.offset, e2.type);
+	else
+		return self->shift(e.offset + e2.offset, e2.type);
+}
+
 // functions of our "self" class
 shared<Node> SyntaxTree::exlink_add_class_func(Function *f, Function *cf) {
 	auto link = add_node_func_name(cf);
@@ -453,12 +461,25 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 	if (v)
 		return {add_node_local(v)};
 	if (!f->is_static()) {
-		if ((name == IDENTIFIER_SUPER) and (f->name_space->parent))
+		if ((name == IDENTIFIER_SUPER) and f->name_space->parent)
 			return {add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent)};
+
 		// class elements (within a class function)
-		for (auto &e: f->name_space->elements)
-			if (e.name == name)
+		for (auto &e: f->name_space->elements) {
+			if (e.name == name) {
+				// direct
 				return {exlink_add_element(f, e)};
+			} else if (e.allow_indirect_use) {
+				// indirect ("use")
+				auto et = e.type;
+				if (et->is_some_pointer())
+					et = et->param[0];
+				for (auto &ee: et->elements)
+					if (ee.name == name)
+						return {exlink_add_element_indirect(f, e, ee)};
+			}
+		}
+
 		shared_array<Node> op;
 		for (auto *cf: weak(f->name_space->functions))
 			if (cf->name == name)
