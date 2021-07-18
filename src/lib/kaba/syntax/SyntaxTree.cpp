@@ -453,6 +453,23 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 	return {};
 }
 
+// indirect ("use")
+shared_array<Node> get_existence_element_indirect(SyntaxTree *tree, const string &name, Function *f, const Class *c, ClassElement &e) {
+	auto et = e.type;
+	if (et->is_some_pointer())
+		et = et->param[0];
+	for (auto &ee: et->elements)
+		if (ee.name == name)
+			return {tree->exlink_add_element_indirect(f, e, ee)};
+
+	// functions... TODO
+	/*shared_array<Node> op;
+	for (auto *cf: weak(f->name_space->functions))
+		if (cf->name == name)
+			op.add(exlink_add_class_func(f, cf));*/
+	return {};
+}
+
 shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *block) {
 	Function *f = block->function;
 
@@ -465,20 +482,10 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 			return {add_node_local(f->__get_var(IDENTIFIER_SELF), f->name_space->parent)};
 
 		// class elements (within a class function)
-		for (auto &e: f->name_space->elements) {
-			if (e.name == name) {
+		for (auto &e: f->name_space->elements)
+			if (e.name == name)
 				// direct
 				return {exlink_add_element(f, e)};
-			} else if (e.allow_indirect_use) {
-				// indirect ("use")
-				auto et = e.type;
-				if (et->is_some_pointer())
-					et = et->param[0];
-				for (auto &ee: et->elements)
-					if (ee.name == name)
-						return {exlink_add_element_indirect(f, e, ee)};
-			}
-		}
 
 		shared_array<Node> op;
 		for (auto *cf: weak(f->name_space->functions))
@@ -486,6 +493,15 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 				op.add(exlink_add_class_func(f, cf));
 		if (op.num > 0)
 			return op;
+
+
+		// indirect ("use")
+		for (auto &e: f->name_space->elements)
+			if (e.allow_indirect_use) {
+				op = get_existence_element_indirect(this, name, f, f->name_space, e);
+				if (op.num > 0)
+					return op;
+			}
 	}
 	for (auto *v: weak(f->name_space->static_variables))
 		if (v->name == name)
