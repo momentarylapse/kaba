@@ -633,11 +633,11 @@ void Serializer::serialize_inline_function(Node *com, const Array<SerialNodePara
 			break;
 		case InlineID::VECTOR_MULTIPLY_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::InstID::FMUL, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::InstID::FMUL, param_shift(param[0], i * 4, TypeFloat32), param[1]);
 			break;
 		case InlineID::VECTOR_DIVIDE_ASSIGN:
 			for (int i=0;i<3;i++)
-				cmd.add_cmd(Asm::InstID::FDIV, param_shift(param[0], i * 4, TypeFloat32), param_shift(param[1], i * 4, TypeFloat32));
+				cmd.add_cmd(Asm::InstID::FDIV, param_shift(param[0], i * 4, TypeFloat32), param[1]);
 			break;
 		case InlineID::VECTOR_SUBTARCT_ASSIGN:
 			for (int i=0;i<3;i++)
