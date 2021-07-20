@@ -70,6 +70,8 @@ public:
 	shared_array<Node> get_existence_global(const string &name, const Class *ns);
 	shared_array<Node> get_existence_block(const string &name, Block *block);
 
+	shared_array<Node> get_element_of(shared<Node> n, const string &name);
+
 	Function *required_func_global(const string &name);
 
 	void create_asm_meta_info();
