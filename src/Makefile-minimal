@@ -153,6 +153,8 @@ OBJ = Helper/CLIParser.o \
  lib/math/random.o \
  lib/math/ray.o \
  lib/math/rect.o \
+ lib/math/vec2.o \
+ lib/math/vec4.o \
  lib/math/vector.o \
  lib/net/BinaryBuffer.o \
  lib/net/net.o \
@@ -397,7 +399,7 @@ lib/hui/MenuGtk.o : lib/hui/MenuGtk.cpp lib/hui/Controls/Control.h lib/image/ima
 lib/hui/MenuWin.o : lib/hui/MenuWin.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
 	$(CPP) -c lib/hui/MenuWin.cpp -o $@ $(CXXFLAGS)
 
-lib/hui/PainterGtk.o : lib/hui/PainterGtk.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/vector.h lib/math/math.h lib/math/rect.h lib/hui/Controls/Control.h lib/hui/Controls/ControlDrawingArea.h
+lib/hui/PainterGtk.o : lib/hui/PainterGtk.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/vec2.h lib/math/math.h lib/math/rect.h lib/hui/Controls/Control.h lib/hui/Controls/ControlDrawingArea.h
 	$(CPP) -c lib/hui/PainterGtk.cpp -o $@ $(CXXFLAGS)
 
 lib/hui/Panel.o : lib/hui/Panel.cpp lib/hui/Controls/Control.h lib/image/image.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/hui/common.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/hui/language.h lib/hui/hui.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/hui/internal.h
@@ -457,7 +459,7 @@ lib/image/image_png.o : lib/image/image_png.cpp lib/image/image.h lib/config.h l
 lib/image/image_tga.o : lib/image/image_tga.cpp lib/image/image.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
 	$(CPP) -c lib/image/image_tga.cpp -o $@ $(CXXFLAGS)
 
-lib/image/ImagePainter.o : lib/image/ImagePainter.cpp lib/image/ImagePainter.h lib/image/Painter.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/image/image.h lib/config.h lib/math/vector.h
+lib/image/ImagePainter.o : lib/image/ImagePainter.cpp lib/image/ImagePainter.h lib/image/Painter.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/image/image.h lib/config.h lib/math/vec2.h
 	$(CPP) -c lib/image/ImagePainter.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/asm/asm.o : lib/kaba/asm/asm.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/asm/internal.h
@@ -532,7 +534,7 @@ lib/kaba/lib/lib_image.o : lib/kaba/lib/lib_image.cpp lib/file/file.h lib/base/b
 lib/kaba/lib/lib_kaba.o : lib/kaba/lib/lib_kaba.cpp lib/kaba/kaba.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/CompilerConfiguration.h lib/kaba/syntax/Flags.h lib/kaba/lib/extern.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/syntax/Block.h lib/kaba/syntax/Operator.h lib/kaba/syntax/Variable.h lib/kaba/syntax/Identifier.h lib/kaba/syntax/Inline.h lib/kaba/syntax/Statement.h lib/kaba/dynamic/exception.h lib/kaba/dynamic/dynamic.h
 	$(CPP) -c lib/kaba/lib/lib_kaba.cpp -o $@ $(CXXFLAGS)
 
-lib/kaba/lib/lib_math.o : lib/kaba/lib/lib_math.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/math/math.h lib/math/vector.h lib/math/complex.h lib/math/quaternion.h lib/math/matrix.h lib/math/matrix3.h lib/math/plane.h lib/math/rect.h lib/math/interpolation.h lib/math/random.h lib/image/color.h lib/base/map.h lib/base/set.h lib/kaba/kaba.h lib/base/pointer.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/CompilerConfiguration.h lib/kaba/syntax/Flags.h lib/kaba/lib/extern.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/syntax/Block.h lib/kaba/syntax/Operator.h lib/kaba/syntax/Variable.h lib/kaba/syntax/Identifier.h lib/kaba/syntax/Inline.h lib/kaba/syntax/Statement.h lib/config.h lib/kaba/dynamic/exception.h lib/algebra/algebra.h lib/algebra/vli.h lib/algebra/crypto.h lib/any/any.h
+lib/kaba/lib/lib_math.o : lib/kaba/lib/lib_math.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/math/math.h lib/math/vec2.h lib/math/vector.h lib/math/complex.h lib/math/quaternion.h lib/math/matrix.h lib/math/matrix3.h lib/math/plane.h lib/math/rect.h lib/math/interpolation.h lib/math/random.h lib/image/color.h lib/base/map.h lib/base/set.h lib/kaba/kaba.h lib/base/pointer.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/CompilerConfiguration.h lib/kaba/syntax/Flags.h lib/kaba/lib/extern.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/syntax/Block.h lib/kaba/syntax/Operator.h lib/kaba/syntax/Variable.h lib/kaba/syntax/Identifier.h lib/kaba/syntax/Inline.h lib/kaba/syntax/Statement.h lib/config.h lib/kaba/dynamic/exception.h lib/algebra/algebra.h lib/algebra/vli.h lib/algebra/crypto.h lib/any/any.h
 	$(CPP) -c lib/kaba/lib/lib_math.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/lib/lib_net.o : lib/kaba/lib/lib_net.cpp lib/file/file.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/kaba/kaba.h lib/base/pointer.h lib/kaba/asm/asm.h lib/kaba/lib/lib.h lib/kaba/CompilerConfiguration.h lib/kaba/syntax/Flags.h lib/kaba/lib/extern.h lib/kaba/syntax/SyntaxTree.h lib/kaba/syntax/lexical.h lib/kaba/syntax/Class.h lib/kaba/syntax/Constant.h lib/kaba/syntax/Function.h lib/kaba/syntax/Node.h lib/kaba/syntax/Block.h lib/kaba/syntax/Operator.h lib/kaba/syntax/Variable.h lib/kaba/syntax/Identifier.h lib/kaba/syntax/Inline.h lib/kaba/syntax/Statement.h lib/config.h lib/kaba/dynamic/exception.h lib/net/net.h lib/net/Socket.h lib/net/BinaryBuffer.h
@@ -634,8 +636,14 @@ lib/math/random.o : lib/math/random.cpp lib/math/random.h lib/math/math.h lib/ba
 lib/math/ray.o : lib/math/ray.cpp lib/math/ray.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vector.h lib/math/plane.h
 	$(CPP) -c lib/math/ray.cpp -o $@ $(CXXFLAGS)
 
-lib/math/rect.o : lib/math/rect.cpp lib/math/rect.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h
+lib/math/rect.o : lib/math/rect.cpp lib/math/rect.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/vec2.h
 	$(CPP) -c lib/math/rect.cpp -o $@ $(CXXFLAGS)
+
+lib/math/vec2.o : lib/math/vec2.cpp lib/math/vec2.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h
+	$(CPP) -c lib/math/vec2.cpp -o $@ $(CXXFLAGS)
+
+lib/math/vec4.o : lib/math/vec4.cpp lib/math/vec4.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h
+	$(CPP) -c lib/math/vec4.cpp -o $@ $(CXXFLAGS)
 
 lib/math/vector.o : lib/math/vector.cpp lib/math/vector.h lib/math/math.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/math/matrix.h lib/math/plane.h
 	$(CPP) -c lib/math/vector.cpp -o $@ $(CXXFLAGS)
@@ -733,7 +741,7 @@ lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/Descr
 lib/xfile/chunked.o : lib/xfile/chunked.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/xfile/chunked.h
 	$(CPP) -c lib/xfile/chunked.cpp -o $@ $(CXXFLAGS)
 
-lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/math/vector.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
+lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/math/vec2.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
 	$(CPP) -c lib/xfile/pdf.cpp -o $@ $(CXXFLAGS)
 
 lib/xfile/xml.o : lib/xfile/xml.cpp lib/xfile/xml.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h

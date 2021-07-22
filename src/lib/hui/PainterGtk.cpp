@@ -6,7 +6,7 @@
  */
 
 #include "hui.h"
-#include "../math/vector.h"
+#include "../math/vec2.h"
 #include "../math/rect.h"
 #include "Controls/Control.h"
 #include "Controls/ControlDrawingArea.h"

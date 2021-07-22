@@ -1,5 +1,6 @@
 #include "../../file/file.h"
 #include "../../math/math.h"
+#include "../../math/vec2.h"
 #include "../../math/vector.h"
 #include "../../math/complex.h"
 #include "../../math/quaternion.h"
@@ -592,9 +593,9 @@ void SIAddPackageMath() {
 		class_add_func("width", TypeFloat32, &rect::width, Flags::PURE);
 		class_add_func("height", TypeFloat32, &rect::height, Flags::PURE);
 		class_add_func("area", TypeFloat32, &rect::area, Flags::PURE);
+		class_add_func("m", TypeVec2, &rect::m, Flags::PURE);
 		class_add_func("inside", TypeBool, &rect::inside, Flags::PURE);
-			func_add_param("x", TypeFloat32);
-			func_add_param("y", TypeFloat32);
+			func_add_param("p", TypeVec2);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &rect::str, Flags::PURE);
 		class_add_func("_create", TypeRect, &KabaRect::set, Flags::_STATIC__PURE);
 			func_set_inline(InlineID::RECT_SET);

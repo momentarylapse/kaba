@@ -7,7 +7,7 @@
 
 #include "ImagePainter.h"
 #include "image.h"
-#include "../math/vector.h"
+#include "../math/vec2.h"
 #include <math.h>
 
 #if HAS_LIB_GTK3
