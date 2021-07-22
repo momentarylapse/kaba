@@ -37,6 +37,8 @@ public:
 	void _cdecl normalize();
 	vec2 _cdecl normalized() const;
 
+	static float dot(const vec2 &a, const vec2 &b);
+
 	static const vec2 ZERO, EX, EY;
 };
 

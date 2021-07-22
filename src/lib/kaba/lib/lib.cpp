@@ -85,6 +85,8 @@ const Class *TypeComplex;
 const Class *TypeComplexList;
 const Class *TypeStringList;
 const Class *TypeStringDict;
+const Class *TypeVec2;
+const Class *TypeVec2List;
 const Class *TypeVectorArray;
 const Class *TypeVectorArrayP;
 const Class *TypeVectorList;

@@ -397,7 +397,7 @@ lib/hui/MenuGtk.o : lib/hui/MenuGtk.cpp lib/hui/Controls/Control.h lib/image/ima
 lib/hui/MenuWin.o : lib/hui/MenuWin.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h
 	$(CPP) -c lib/hui/MenuWin.cpp -o $@ $(CXXFLAGS)
 
-lib/hui/PainterGtk.o : lib/hui/PainterGtk.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/complex.h lib/math/math.h lib/math/rect.h lib/hui/Controls/Control.h lib/hui/Controls/ControlDrawingArea.h
+lib/hui/PainterGtk.o : lib/hui/PainterGtk.cpp lib/hui/hui.h lib/hui/common.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/image/image.h lib/image/color.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/language.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/math/vector.h lib/math/math.h lib/math/rect.h lib/hui/Controls/Control.h lib/hui/Controls/ControlDrawingArea.h
 	$(CPP) -c lib/hui/PainterGtk.cpp -o $@ $(CXXFLAGS)
 
 lib/hui/Panel.o : lib/hui/Panel.cpp lib/hui/Controls/Control.h lib/image/image.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/hui/common.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/hui/language.h lib/hui/hui.h lib/hui/Callback.h lib/hui/Application.h lib/base/map.h lib/base/set.h lib/hui/main.h lib/hui/Event.h lib/hui/Menu.h lib/hui/Panel.h lib/hui/Window.h lib/hui/common_dlg.h lib/hui/Config.h lib/hui/Resource.h lib/hui/utility.h lib/hui/Painter.h lib/image/Painter.h lib/hui/Timer.h lib/hui/Toolbar.h lib/hui/error.h lib/hui/Clipboard.h lib/hui/internal.h
@@ -457,7 +457,7 @@ lib/image/image_png.o : lib/image/image_png.cpp lib/image/image.h lib/config.h l
 lib/image/image_tga.o : lib/image/image_tga.cpp lib/image/image.h lib/config.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
 	$(CPP) -c lib/image/image_tga.cpp -o $@ $(CXXFLAGS)
 
-lib/image/ImagePainter.o : lib/image/ImagePainter.cpp lib/image/ImagePainter.h lib/image/Painter.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/image/image.h lib/config.h lib/math/complex.h
+lib/image/ImagePainter.o : lib/image/ImagePainter.cpp lib/image/ImagePainter.h lib/image/Painter.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/image/image.h lib/config.h lib/math/vector.h
 	$(CPP) -c lib/image/ImagePainter.cpp -o $@ $(CXXFLAGS)
 
 lib/kaba/asm/asm.o : lib/kaba/asm/asm.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/kaba/asm/asm.h lib/kaba/asm/internal.h
@@ -733,7 +733,7 @@ lib/vulkan/vulkan.o : lib/vulkan/vulkan.cpp lib/vulkan/vulkan.h lib/vulkan/Descr
 lib/xfile/chunked.o : lib/xfile/chunked.cpp lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h lib/xfile/chunked.h
 	$(CPP) -c lib/xfile/chunked.cpp -o $@ $(CXXFLAGS)
 
-lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/math/complex.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
+lib/xfile/pdf.o : lib/xfile/pdf.cpp lib/xfile/pdf.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/base/pointer.h lib/image/Painter.h lib/image/image.h lib/config.h lib/image/color.h lib/math/rect.h lib/math/math.h lib/math/vector.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
 	$(CPP) -c lib/xfile/pdf.cpp -o $@ $(CXXFLAGS)
 
 lib/xfile/xml.o : lib/xfile/xml.cpp lib/xfile/xml.h lib/base/base.h lib/base/macros.h lib/base/array.h lib/base/strings.h lib/file/file.h lib/file/msg.h lib/file/file_op.h lib/file/path.h
