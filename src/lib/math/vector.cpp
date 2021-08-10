@@ -1,4 +1,5 @@
 #include "vector.h"
+#include "vec2.h"
 #include "matrix.h"
 #include "plane.h"
 #include <math.h>
@@ -17,6 +18,16 @@ vector::vector(float x, float y, float z) {
 	this->x = x;
 	this->y = y;
 	this->z = z;
+}
+
+vector::vector(const vec2 &xy, float z) {
+	this->x = xy.x;
+	this->y = xy.y;
+	this->z = z;
+}
+
+vec2 &vector::xy() {
+	return *(vec2*)&x;
 }
 
 // assignment operators

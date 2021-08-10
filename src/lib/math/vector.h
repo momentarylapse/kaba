@@ -6,12 +6,17 @@
 
 class matrix;
 class matrix3;
+class vec2;
 
 class vector {
 public:
 	float x, y, z;
 	vector(){};
 	vector(float x, float y, float z);
+	vector(const vec2 &xy, float z);
+
+	vec2 &xy();
+
 	// assignment operators
 	void _cdecl operator += (const vector& v);
 	void _cdecl operator -= (const vector& v);

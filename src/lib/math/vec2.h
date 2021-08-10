@@ -40,8 +40,13 @@ public:
 	float _cdecl length_fuzzy() const;
 	void _cdecl normalize();
 	vec2 _cdecl normalized() const;
+	vec2 _cdecl ortho() const;
 
+	static float cross(const vec2 &a, const vec2 &b);
 	static float dot(const vec2 &a, const vec2 &b);
+
+	// P = A + f*( B - A ) + g*( C - A )
+	static vec2 bary_centric(const vec2 &P,const vec2 &A,const vec2 &B, const vec2 &C);
 
 	static const vec2 ZERO, EX, EY;
 };

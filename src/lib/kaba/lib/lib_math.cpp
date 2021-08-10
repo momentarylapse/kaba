@@ -485,6 +485,7 @@ void SIAddPackageMath() {
 		class_add_element("y", TypeFloat32, &vector::y);
 		class_add_element("z", TypeFloat32, &vector::z);
 		class_add_element("_e", TypeFloatArray3, 0);
+		class_add_element("_xy", TypeVec2, &vector::x);
 		class_add_func(IDENTIFIER_FUNC_LENGTH, TypeFloat32, type_p(&vector::length), Flags::PURE);
 		class_add_func("length", TypeFloat32, type_p(&vector::length), Flags::PURE);
 		class_add_func("length_sqr", TypeFloat32, type_p(&vector::length_sqr), Flags::PURE);
@@ -585,10 +586,10 @@ void SIAddPackageMath() {
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeQuaternion, TypeQuaternion, InlineID::NONE, &quaternion::imul);
 	
 	add_class(TypeRect);
-		class_add_element("x1", TypeFloat32, 0);
-		class_add_element("x2", TypeFloat32, 4);
-		class_add_element("y1", TypeFloat32, 8);
-		class_add_element("y2", TypeFloat32, 12);
+		class_add_element("x1", TypeFloat32, &rect::x1);
+		class_add_element("x2", TypeFloat32, &rect::x2);
+		class_add_element("y1", TypeFloat32, &rect::y1);
+		class_add_element("y2", TypeFloat32, &rect::y2);
 		class_add_const("ID", TypeRect, &rect::ID);
 		class_add_func("width", TypeFloat32, &rect::width, Flags::PURE);
 		class_add_func("height", TypeFloat32, &rect::height, Flags::PURE);
@@ -612,10 +613,10 @@ void SIAddPackageMath() {
 		add_operator(OperatorID::EQUAL, TypeBool, TypeRect, TypeRect, InlineID::CHUNK_EQUAL);
 	
 	add_class(TypeColor);
-		class_add_element("r", TypeFloat32, 0);
-		class_add_element("g", TypeFloat32, 4);
-		class_add_element("b", TypeFloat32, 8);
-		class_add_element("a", TypeFloat32, 12);
+		class_add_element("r", TypeFloat32, &color::r);
+		class_add_element("g", TypeFloat32, &color::g);
+		class_add_element("b", TypeFloat32, &color::b);
+		class_add_element("a", TypeFloat32, &color::a);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &color::str, Flags::PURE);
 		class_add_func("hsb", TypeColor, &color::hsb, Flags::_STATIC__PURE);
 			func_add_param("h", TypeFloat32);
@@ -660,11 +661,11 @@ void SIAddPackageMath() {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<color>::__init__);
 
 	add_class(TypePlane);
-		class_add_element("a", TypeFloat32, 0);
-		class_add_element("b", TypeFloat32, 4);
-		class_add_element("c", TypeFloat32, 8);
-		class_add_element("d", TypeFloat32, 12);
-		class_add_element("n", TypeVector, 0);
+		class_add_element("_a", TypeFloat32, 0);
+		class_add_element("_b", TypeFloat32, 4);
+		class_add_element("_c", TypeFloat32, 8);
+		class_add_element("d", TypeFloat32, &plane::d);
+		class_add_element("n", TypeVector, &plane::n);
 		class_add_func("intersect_line", TypeBool, &plane::intersect_line, Flags::PURE);
 			func_add_param("l1", TypeVector);
 			func_add_param("l2", TypeVector);

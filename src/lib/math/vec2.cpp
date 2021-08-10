@@ -98,8 +98,36 @@ vec2 vec2::normalized() const {
 	return *this / l;
 }
 
+vec2 vec2::ortho() const {
+	return {y, -x};
+}
+
+float vec2::cross(const vec2 &a, const vec2 &b) {
+	return a.x * b.y - a.y * b.x;
+}
+
 float vec2::dot(const vec2 &a, const vec2 &b) {
 	return a.x * b.x + a.y * b.y;
+}
+
+
+// P = A + f*( B - A ) + g*( C - A )
+vec2 vec2::bary_centric(const vec2 &P, const vec2 &A, const vec2 &B, const vec2 &C) {
+	vec2 ba = B - A;
+	vec2 ca = C - A;
+	vec2 pvec = ca.ortho();
+	float det = vec2::dot(ba, pvec);
+	vec2 pa;
+	if (det>0) {
+		pa = P - A;
+	} else {
+		pa = A - P;
+		det = -det;
+	}
+	vec2 fg;
+	fg.x = vec2::dot(pa, pvec);
+	fg.y = vec2::cross(pa, ba);
+	return fg / det;
 }
 
 
