@@ -16,6 +16,8 @@
 
 namespace vulkan {
 
+extern bool verbose;
+
 	VkShaderModule create_shader_module(const string &code) {
 		if (code == "")
 			return nullptr;
@@ -40,7 +42,8 @@ namespace vulkan {
 	}
 
 	Shader::~Shader() {
-		std::cout << "delete shader" << "\n";
+		if (verbose)
+			std::cout << "delete shader" << "\n";
 		for (auto &m: modules)
 			vkDestroyShaderModule(device, m.module, nullptr);
 		for (auto &l: descr_layouts) {
@@ -62,7 +65,8 @@ namespace vulkan {
 			return nullptr;
 		Shader *s = new Shader();
 		Path filename = directory << _filename;
-		std::cout << "load shader " << filename.str().c_str() << "\n";
+		if (verbose)
+			std::cout << "load shader " << filename.str().c_str() << "\n";
 
 		File *f = FileOpen(filename.with(".compiled"));
 		try {

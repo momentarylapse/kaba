@@ -61,6 +61,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
 
 namespace vulkan {
 
+bool verbose = false;
 
 
 	const Array<const char*> validation_layers = {
@@ -77,7 +78,8 @@ namespace vulkan {
 	VkDebugUtilsMessengerEXT debug_messenger;
 
 	void Instance::setup_debug_messenger() {
-		std::cout << " VALIDATION LAYER!\n";
+		if (verbose)
+			std::cout << " VALIDATION LAYER!\n";
 
 		VkDebugUtilsMessengerCreateInfoEXT create_info = {};
 		create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -106,7 +108,8 @@ VkQueue present_queue;
 #define DECLARE_EXT(NAME) PFN_##NAME _##NAME = nullptr;
 #define LOAD_EXT(NAME) \
 		_##NAME = (PFN_##NAME)vkGetInstanceProcAddr(instance, #NAME); \
-		msg_write(format(" %s: %s", #NAME, p2s((void*)_##NAME))); \
+		if (verbose) \
+			msg_write(format(" %s: %s", #NAME, p2s((void*)_##NAME))); \
 		if (!_##NAME) \
 			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
 
@@ -141,7 +144,8 @@ void Instance::_ensure_rtx() {
 	vkGetPhysicalDeviceProperties2(device, &devProps);*/
 
 
-	std::cout << "loading rtx extensions...\n";
+	if (verbose)
+		std::cout << "loading rtx extensions...\n";
 	LOAD_EXT(vkCmdTraceRaysNV);
 	LOAD_EXT(vkCreateRayTracingPipelinesNV);
 	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
@@ -155,7 +159,8 @@ void Instance::_ensure_rtx() {
 
 	if (!_vkCreateRayTracingPipelinesNV)
 		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
-	std::cout << " create pipeline: " << p2s((void*)_vkCreateRayTracingPipelinesNV).c_str() << "\n";
+	if (verbose)
+		std::cout << " create pipeline: " << p2s((void*)_vkCreateRayTracingPipelinesNV).c_str() << "\n";
 
 	rtx_loaded = true;
 }
@@ -183,7 +188,8 @@ Instance::Instance() {
 }
 
 Instance::~Instance() {
-	std::cout << "vulkan destroy\n";
+	if (verbose)
+		std::cout << "vulkan destroy\n";
 
 	destroy_command_pool();
 
@@ -265,6 +271,8 @@ Instance *Instance::create(const Array<string> &op) {
 		instance->using_validation_layers = false;
 	}
 
+	verbose = sa_contains(op, "verbose");
+
 	string name = "no name";
 	int api = VK_API_VERSION_1_0;
 	for (auto &o: op) {
@@ -333,11 +341,14 @@ void Instance::pick_physical_device() {
 
 	std::vector<VkPhysicalDevice> devices(device_count);
 	vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
-	std::cout << " a\n";
+
+	if (verbose)
+		std::cout << device_count << " devices found\n";
 
 	for (const auto& device: devices) {
 		if (is_device_suitable(device)) {
-			std::cout << " ok\n";
+			if (verbose)
+				std::cout << " ok\n";
 			physical_device = device;
 			break;
 		}
@@ -347,43 +358,47 @@ void Instance::pick_physical_device() {
 		throw Exception("failed to find a suitable GPU!");
 	}
 
-	std::cout << " props\n";
-	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
-	std::cout << "  minUniformBufferOffsetAlignment  " << device_properties.limits.minUniformBufferOffsetAlignment << "\n";
-	std::cout << "  maxPushConstantsSize  " << device_properties.limits.maxPushConstantsSize << "\n";
-	std::cout << "  maxImageDimension2D  " << device_properties.limits.maxImageDimension2D << "\n";
-	std::cout << "  maxUniformBufferRange  " << device_properties.limits.maxUniformBufferRange << "\n";
-	std::cout << "  maxPerStageDescriptorUniformBuffers  " << device_properties.limits.maxPerStageDescriptorUniformBuffers << "\n";
-	std::cout << "  maxPerStageDescriptorSamplers  " << device_properties.limits.maxPerStageDescriptorSamplers << "\n";
-	std::cout << "  maxDescriptorSetSamplers  " << device_properties.limits.maxDescriptorSetSamplers << "\n";
-	std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
-	std::cout << "  maxDescriptorSetUniformBuffersDynamic  " << device_properties.limits.maxDescriptorSetUniformBuffersDynamic << "\n";
-	//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
-	//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
+	if (verbose) {
+		std::cout << " props\n";
+		vkGetPhysicalDeviceProperties(physical_device, &device_properties);
+		std::cout << "  minUniformBufferOffsetAlignment  " << device_properties.limits.minUniformBufferOffsetAlignment << "\n";
+		std::cout << "  maxPushConstantsSize  " << device_properties.limits.maxPushConstantsSize << "\n";
+		std::cout << "  maxImageDimension2D  " << device_properties.limits.maxImageDimension2D << "\n";
+		std::cout << "  maxUniformBufferRange  " << device_properties.limits.maxUniformBufferRange << "\n";
+		std::cout << "  maxPerStageDescriptorUniformBuffers  " << device_properties.limits.maxPerStageDescriptorUniformBuffers << "\n";
+		std::cout << "  maxPerStageDescriptorSamplers  " << device_properties.limits.maxPerStageDescriptorSamplers << "\n";
+		std::cout << "  maxDescriptorSetSamplers  " << device_properties.limits.maxDescriptorSetSamplers << "\n";
+		std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
+		std::cout << "  maxDescriptorSetUniformBuffersDynamic  " << device_properties.limits.maxDescriptorSetUniformBuffersDynamic << "\n";
+		//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
+		//std::cout << "  maxDescriptorSetUniformBuffers  " << device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
+	}
 
 	/*VkPhysicalDeviceRayTracingFeaturesKHR rtf = {};
 
 	VkPhysicalDeviceFeatures2 dp2 = {};
 	dp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vkGetPhysicalDeviceFeatures2(physical_device, &dp2);*/
-	std::cout << " done\n";
+	if (verbose)
+		std::cout << " done\n";
 }
 
 
 bool is_device_suitable(VkPhysicalDevice device) {
 	QueueFamilyIndices indices = find_queue_families(device);
+	if (!indices.is_complete())
+		return false;
 
-	bool extensions_supported = check_device_extension_support(device);
+	if (!check_device_extension_support(device))
+		return false;
 
-	bool swap_chain_adequate = false;
-	if (extensions_supported) {
-		SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device);
-		swap_chain_adequate = (swapChainSupport.formats.num > 0) and (swapChainSupport.present_modes.num > 0);
-	}
+	SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device);
+	if ((swapChainSupport.formats.num == 0) or (swapChainSupport.present_modes.num == 0))
+		return false;
+
 	VkPhysicalDeviceFeatures supported_features;
 	vkGetPhysicalDeviceFeatures(device, &supported_features);
-
-	return indices.is_complete() and extensions_supported and swap_chain_adequate and supported_features.samplerAnisotropy;
+	return supported_features.samplerAnisotropy;
 }
 
 bool check_device_extension_support(VkPhysicalDevice device) {
@@ -395,9 +410,11 @@ bool check_device_extension_support(VkPhysicalDevice device) {
 
 	std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
 
-	std::cout << "---- GPU-----\n";
+	if (verbose)
+		std::cout << "---- GPU-----\n";
 	for (const auto& extension : available_extensions) {
-		std::cout << "   " << extension.extensionName << "\n";
+		if (verbose)
+			std::cout << "   " << extension.extensionName << "\n";
 		required_extensions.erase(extension.extensionName);
 	}
 
@@ -533,10 +550,12 @@ void get_properties() {
 
 	//pvkGetPhysicalDeviceProperties2() FIXME
 	vkGetPhysicalDeviceProperties2(physical_device, &devProps);
-	msg_write("PROPS");
-	msg_write(properties.maxShaderGroupStride);
-	msg_write(properties.shaderGroupBaseAlignment);
-	msg_write(properties.shaderGroupHandleSize);
+	if (verbose) {
+		msg_write("PROPS");
+		msg_write(properties.maxShaderGroupStride);
+		msg_write(properties.shaderGroupBaseAlignment);
+		msg_write(properties.shaderGroupHandleSize);
+	}
 }
 
 }

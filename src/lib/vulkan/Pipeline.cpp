@@ -22,6 +22,8 @@
 
 namespace vulkan {
 
+	extern bool verbose;
+
 
 	VkVertexInputBindingDescription create_binding_description(int num_textures) {
 		VkVertexInputBindingDescription bd = {};
@@ -95,7 +97,8 @@ BasePipeline::BasePipeline(Shader *s) {
 	}
 	pipeline_layout_info.setLayoutCount = descr_layouts.num;
 	pipeline_layout_info.pSetLayouts = &descr_layouts[0];
-	std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
+	if (verbose)
+		std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
 
 	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
 		throw Exception("failed to create pipeline layout!");
@@ -349,8 +352,8 @@ void Pipeline::rebuild() {
 }
 
 RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders) : BasePipeline(DescriptorSet::parse_bindings(dset_layouts)) {
-
-	msg_write("creating RTX pipeline...");
+	if (verbose)
+		msg_write("creating RTX pipeline...");
 
 	create_groups(shaders);
 
@@ -369,7 +372,8 @@ RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shade
 	if (_vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
-	msg_write("...done");
+	if (verbose)
+		msg_write("...done");
 }
 
 void RayPipeline::__init__(const string &dset_layouts, const Array<Shader*> &shaders) {
@@ -439,7 +443,8 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
 }
 
 void RayPipeline::create_sbt() {
-	std::cout << "SBT\n";
+	if (verbose)
+		std::cout << "SBT\n";
 	const size_t sbt_size = groups.num * rtx::properties.shaderGroupHandleSize;
 
 	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -448,7 +453,8 @@ void RayPipeline::create_sbt() {
 	if (_vkGetRayTracingShaderGroupHandlesNV(device, pipeline, 0, groups.num, sbt_size, mem))
 		throw Exception("vkGetRayTracingShaderGroupHandlesNV");
 	sbt.unmap();
-	std::cout << "   ok\n";
+	if (verbose)
+		std::cout << "   ok\n";
 }
 
 };

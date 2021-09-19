@@ -13,6 +13,8 @@
 
 namespace vulkan {
 
+extern bool verbose;
+
 Array<Texture*> textures;
 
 VkCompareOp next_compare_op = VK_COMPARE_OP_ALWAYS;
@@ -164,7 +166,8 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 	result = vkBindImageMemory(device, image, memory, 0);
 	if (VK_SUCCESS != result)
 		throw Exception("aaa3");
-	std::cout << "  storage image ok\n";
+	if (verbose)
+		std::cout << "  storage image ok\n";
 
 	_create_view();
 	//_create_sampler();
@@ -192,7 +195,8 @@ void Texture::_destroy() {
 }
 
 Texture* Texture::load(const Path &filename) {
-	std::cout << " load texture " << filename.str().c_str() << "\n";
+	if (verbose)
+		std::cout << " load texture " << filename.str().c_str() << "\n";
 	if (filename.is_empty())
 		return new Texture(16, 16);
 	Texture *t = new Texture();
