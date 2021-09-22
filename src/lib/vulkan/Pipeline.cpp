@@ -100,7 +100,7 @@ BasePipeline::BasePipeline(Shader *s) {
 	if (verbose)
 		std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
 
-	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(default_device->device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
 		throw Exception("failed to create pipeline layout!");
 	}
 }
@@ -122,7 +122,7 @@ VkPipelineLayout BasePipeline::create_layout(const Array<VkDescriptorSetLayout> 
 	pipeline_layout_info.pPushConstantRanges = nullptr;
 
 	VkPipelineLayout layout;
-	if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(default_device->device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
 		throw Exception("failed to create pipeline layout!");
 	}
 	return layout;
@@ -132,12 +132,12 @@ VkPipelineLayout BasePipeline::create_layout(const Array<VkDescriptorSetLayout> 
 BasePipeline::~BasePipeline() {
 	destroy();
 	if (layout)
-		vkDestroyPipelineLayout(device, layout, nullptr);
+		vkDestroyPipelineLayout(default_device->device, layout, nullptr);
 }
 
 void BasePipeline::destroy() {
 	if (pipeline)
-		vkDestroyPipeline(device, pipeline, nullptr);
+		vkDestroyPipeline(default_device->device, pipeline, nullptr);
 	pipeline = nullptr;
 }
 
@@ -346,7 +346,7 @@ void Pipeline::rebuild() {
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 	pipeline_info.pDynamicState = &dynamic_state;
 
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(default_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
 }
@@ -369,7 +369,7 @@ RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shade
 	info.basePipelineHandle = VK_NULL_HANDLE;
 	info.basePipelineIndex = 0;
 
-	if (_vkCreateRayTracingPipelinesNV(device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
+	if (_vkCreateRayTracingPipelinesNV(default_device->device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
 		throw Exception("failed to create graphics pipeline!");
 	}
 	if (verbose)
@@ -450,7 +450,7 @@ void RayPipeline::create_sbt() {
 	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 	void* mem = sbt.map();
-	if (_vkGetRayTracingShaderGroupHandlesNV(device, pipeline, 0, groups.num, sbt_size, mem))
+	if (_vkGetRayTracingShaderGroupHandlesNV(default_device->device, pipeline, 0, groups.num, sbt_size, mem))
 		throw Exception("vkGetRayTracingShaderGroupHandlesNV");
 	sbt.unmap();
 	if (verbose)

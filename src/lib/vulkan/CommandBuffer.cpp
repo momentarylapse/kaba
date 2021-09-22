@@ -27,24 +27,23 @@
 namespace vulkan{
 
 	VkCommandPool command_pool;
-	extern VkQueue graphics_queue;
 
 
 void create_command_pool() {
-	QueueFamilyIndices queue_family_indices = find_queue_families(physical_device);
+	QueueFamilyIndices queue_family_indices = find_queue_families(default_device->physical_device);
 
 	VkCommandPoolCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	info.queueFamilyIndex = queue_family_indices.graphics_family.value();
 	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(device, &info, nullptr, &command_pool) != VK_SUCCESS) {
+	if (vkCreateCommandPool(default_device->device, &info, nullptr, &command_pool) != VK_SUCCESS) {
 		throw Exception("failed to create command pool!");
 	}
 }
 
 void destroy_command_pool() {
-	vkDestroyCommandPool(device, command_pool, nullptr);
+	vkDestroyCommandPool(default_device->device, command_pool, nullptr);
 }
 
 
@@ -56,7 +55,7 @@ VkCommandBuffer begin_single_time_commands() {
 	ai.commandBufferCount = 1;
 
 	VkCommandBuffer command_buffer;
-	vkAllocateCommandBuffers(device, &ai, &command_buffer);
+	vkAllocateCommandBuffers(default_device->device, &ai, &command_buffer);
 
 	VkCommandBufferBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -75,10 +74,10 @@ void end_single_time_commands(VkCommandBuffer command_buffer) {
 	info.commandBufferCount = 1;
 	info.pCommandBuffers = &command_buffer;
 
-	vkQueueSubmit(graphics_queue, 1, &info, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphics_queue);
+	vkQueueSubmit(default_device->graphics_queue.queue, 1, &info, VK_NULL_HANDLE);
+	default_device->graphics_queue.wait_idle();
 
-	vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+	vkFreeCommandBuffers(default_device->device, command_pool, 1, &command_buffer);
 }
 
 CommandBuffer::CommandBuffer() {
@@ -106,13 +105,13 @@ void CommandBuffer::_create() {
 	ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	ai.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(device, &ai, &buffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(default_device->device, &ai, &buffer) != VK_SUCCESS) {
 		throw Exception("failed to allocate command buffers!");
 	}
 }
 
 void CommandBuffer::_destroy() {
-	vkFreeCommandBuffers(device, command_pool, 1, &buffer);
+	vkFreeCommandBuffers(default_device->device, command_pool, 1, &buffer);
 }
 
 
@@ -166,7 +165,7 @@ void CommandBuffer::draw(VertexBuffer *vb) {
 	vkCmdBindVertexBuffers(buffer, 0, 1, &vb->vertex_buffer.buffer, offsets);
 
 	if (vb->index_buffer.buffer) {
-		vkCmdBindIndexBuffer(buffer, vb->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(buffer, vb->index_buffer.buffer, 0, vb->index_type);
 		vkCmdDrawIndexed(buffer, vb->output_count, 1, 0, 0, 0);
 	} else {
 		vkCmdDraw(buffer, vb->output_count, 1, 0, 0);

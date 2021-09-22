@@ -7,6 +7,7 @@
 //
 
 #include "RenderPass.h"
+#include "Device.h"
 #include "helper.h"
 
 #include <iostream>
@@ -210,14 +211,14 @@ bool image_is_depth_buffer(VkFormat f);
 		info.dependencyCount = dependencies.num;
 		info.pDependencies = &dependencies[0];
 
-		if (vkCreateRenderPass(device, &info, nullptr, &render_pass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(default_device->device, &info, nullptr, &render_pass) != VK_SUCCESS) {
 			throw Exception("failed to create render pass!");
 		}
 	}
 
 	void RenderPass::destroy() {
 		if (render_pass)
-			vkDestroyRenderPass(device, render_pass, nullptr);
+			vkDestroyRenderPass(default_device->device, render_pass, nullptr);
 		render_pass = nullptr;
 	}
 

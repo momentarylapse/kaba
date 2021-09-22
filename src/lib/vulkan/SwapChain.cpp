@@ -17,6 +17,7 @@
 namespace vulkan {
 
 
+extern VkSurfaceKHR default_surface;
 
 
 
@@ -99,29 +100,29 @@ Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, Dep
 SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device) {
 	SwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, default_surface, &details.capabilities);
 
 	uint32_t format_count;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, default_surface, &format_count, nullptr);
 
 	if (format_count != 0) {
 		details.formats.resize(format_count);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, &details.formats[0]);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, default_surface, &format_count, &details.formats[0]);
 	}
 
 	uint32_t present_mode_count;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, default_surface, &present_mode_count, nullptr);
 
 	if (present_mode_count != 0) {
 		details.present_modes.resize(present_mode_count);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, &details.present_modes[0]);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, default_surface, &present_mode_count, &details.present_modes[0]);
 	}
 
 	return details;
 }
 
 DepthBuffer *SwapChain::create_depth_buffer() {
-	return new DepthBuffer(width, height, find_depth_format(), false);
+	return new DepthBuffer(width, height, default_device->find_depth_format(), false);
 }
 
 RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
@@ -133,7 +134,7 @@ RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
 
 
 void SwapChain::create() {
-	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(physical_device);
+	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(default_device->physical_device);
 
 	VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
 	VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
@@ -148,7 +149,7 @@ void SwapChain::create() {
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	info.surface = surface;
+	info.surface = default_surface;
 
 	info.minImageCount = image_count;
 	info.imageFormat = surface_format.format;
@@ -157,7 +158,7 @@ void SwapChain::create() {
 	info.imageArrayLayers = 1;
 	info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	QueueFamilyIndices indices = find_queue_families(physical_device);
+	QueueFamilyIndices indices = find_queue_families(default_device->physical_device);
 	uint32_t queue_family_indices[] = {indices.graphics_family.value(), indices.present_family.value()};
 
 	if (indices.graphics_family != indices.present_family) {
@@ -173,17 +174,17 @@ void SwapChain::create() {
 	info.presentMode = present_mode;
 	info.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(device, &info, nullptr, &swap_chain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(default_device->device, &info, nullptr, &swap_chain) != VK_SUCCESS) {
 		throw Exception("failed to create swap chain!");
 	}
 	image_format = surface_format.format;
 }
 
 Array<VkImage> SwapChain::get_images() {
-	vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+	vkGetSwapchainImagesKHR(default_device->device, swap_chain, &image_count, nullptr);
 	Array<VkImage> images;
 	images.resize(image_count);
-	vkGetSwapchainImagesKHR(device, swap_chain, &image_count, &images[0]);
+	vkGetSwapchainImagesKHR(default_device->device, swap_chain, &image_count, &images[0]);
 	return images;
 }
 
@@ -238,7 +239,7 @@ void SwapChain::cleanup() {
 		vkDestroyImageView(device, v, nullptr);
 	_image_views.clear();*/
 
-	vkDestroySwapchainKHR(device, swap_chain, nullptr);
+	vkDestroySwapchainKHR(default_device->device, swap_chain, nullptr);
 }
 
 void SwapChain::rebuild() {
@@ -249,7 +250,7 @@ void SwapChain::rebuild() {
 }
 
 
-bool SwapChain::present(unsigned int image_index, const Array<Semaphore*> &wait_sem) {
+bool SwapChain::present(int image_index, const Array<Semaphore*> &wait_sem) {
 
 	auto wait_semaphores = extract_semaphores(wait_sem);
 
@@ -259,9 +260,9 @@ bool SwapChain::present(unsigned int image_index, const Array<Semaphore*> &wait_
 	present_info.pWaitSemaphores = &wait_semaphores[0];
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = &swap_chain;
-	present_info.pImageIndices = &image_index;
+	present_info.pImageIndices = (unsigned int*)&image_index;
 
-	VkResult result = vkQueuePresentKHR(present_queue, &present_info);
+	VkResult result = vkQueuePresentKHR(default_device->present_queue.queue, &present_info);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR or result == VK_SUBOPTIMAL_KHR) {
 		return false;
@@ -271,9 +272,9 @@ bool SwapChain::present(unsigned int image_index, const Array<Semaphore*> &wait_
 	return true;
 }
 
-bool SwapChain::aquire_image(unsigned int *image_index, Semaphore *signal_sem) {
+bool SwapChain::acquire_image(int *image_index, Semaphore *signal_sem) {
 
-	VkResult result = vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), signal_sem->semaphore, VK_NULL_HANDLE, image_index);
+	VkResult result = vkAcquireNextImageKHR(default_device->device, swap_chain, std::numeric_limits<uint64_t>::max(), signal_sem->semaphore, VK_NULL_HANDLE, (unsigned int*)image_index);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return false;

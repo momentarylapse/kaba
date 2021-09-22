@@ -19,13 +19,13 @@ Fence::Fence() {
 	info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateFence(device, &info, nullptr, &fence) != VK_SUCCESS) {
+	if (vkCreateFence(default_device->device, &info, nullptr, &fence) != VK_SUCCESS) {
 		throw Exception("failed to create fence");
 	}
 }
 
 Fence::~Fence() {
-	vkDestroyFence(device, fence, nullptr);
+	vkDestroyFence(default_device->device, fence, nullptr);
 }
 
 void Fence::__init__() {
@@ -37,11 +37,11 @@ void Fence::__delete__() {
 }
 
 void Fence::reset() {
-	vkResetFences(device, 1, &fence);
+	vkResetFences(default_device->device, 1, &fence);
 }
 
 void Fence::wait() {
-	vkWaitForFences(device, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	vkWaitForFences(default_device->device, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 }
 
 
@@ -50,13 +50,13 @@ Semaphore::Semaphore() {
 	VkSemaphoreCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	if (vkCreateSemaphore(device, &info, nullptr, &semaphore) != VK_SUCCESS) {
+	if (vkCreateSemaphore(default_device->device, &info, nullptr, &semaphore) != VK_SUCCESS) {
 		throw Exception("failed to create semaphore");
 	}
 }
 
 Semaphore::~Semaphore() {
-	vkDestroySemaphore(device, semaphore, nullptr);
+	vkDestroySemaphore(default_device->device, semaphore, nullptr);
 }
 
 void Semaphore::__init__() {

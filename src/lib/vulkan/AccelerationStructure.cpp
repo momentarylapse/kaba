@@ -14,6 +14,7 @@
 
 namespace vulkan {
 
+
 AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV type, const Array<VkGeometryNV> &geo, const uint32_t instanceCount) {
 	std::cout << format(" + AccStruc  inst=%d  geo=%d\n", instanceCount, geo.num).c_str();
 	info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
@@ -27,7 +28,7 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 	ci.compactedSize = 0;
 	ci.info = info;
 
-	VkResult error = _vkCreateAccelerationStructureNV(device, &ci, nullptr, &structure);
+	VkResult error = _vkCreateAccelerationStructureNV(default_device->device, &ci, nullptr, &structure);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to create acceleration structure");
 
@@ -37,14 +38,14 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 	memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
 
 	VkMemoryRequirements2 memoryRequirements;
-	_vkGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo, &memoryRequirements);
+	_vkGetAccelerationStructureMemoryRequirementsNV(default_device->device, &memoryRequirementsInfo, &memoryRequirements);
 
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	memoryAllocateInfo.allocationSize = memoryRequirements.memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	memoryAllocateInfo.memoryTypeIndex = default_device->find_memory_type(memoryRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	error = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &memory);
+	error = vkAllocateMemory(default_device->device, &memoryAllocateInfo, nullptr, &memory);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to allocate memory");
 
@@ -56,11 +57,11 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 	bindInfo.deviceIndexCount = 0;
 	bindInfo.pDeviceIndices = nullptr;
 
-	error = _vkBindAccelerationStructureMemoryNV(device, 1, &bindInfo);
+	error = _vkBindAccelerationStructureMemoryNV(default_device->device, 1, &bindInfo);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to bind acceleration structure");
 
-	error = _vkGetAccelerationStructureHandleNV(device, structure, sizeof(uint64_t), &handle);
+	error = _vkGetAccelerationStructureHandleNV(default_device->device, structure, sizeof(uint64_t), &handle);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to get acceleration structure handle");
 	std::cout << "handle: " << handle << "\n";
@@ -68,9 +69,9 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 }
 
 AccelerationStructure::~AccelerationStructure() {
-	_vkDestroyAccelerationStructureNV(device, structure, nullptr);
+	_vkDestroyAccelerationStructureNV(default_device->device, structure, nullptr);
 	structure = VK_NULL_HANDLE;
-	vkFreeMemory(device, memory, nullptr);
+	vkFreeMemory(default_device->device, memory, nullptr);
 	memory = VK_NULL_HANDLE;
 }
 
@@ -100,7 +101,7 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 
 	VkMemoryRequirements2 mem_req = {};
 	mem_req.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-	_vkGetAccelerationStructureMemoryRequirementsNV(device, &mri, &mem_req);
+	_vkGetAccelerationStructureMemoryRequirementsNV(default_device->device, &mri, &mem_req);
 
 	Buffer scratch;
 	scratch.create(mem_req.memoryRequirements.size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);

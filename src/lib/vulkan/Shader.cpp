@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "DescriptorSet.h"
 #include "Texture.h"
+#include "Device.h"
 #include <vulkan/vulkan.h>
 
 #include <array>
@@ -27,7 +28,7 @@ extern bool verbose;
 		info.pCode = reinterpret_cast<const uint32_t*>(code.data);
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &info, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(default_device->device, &info, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw Exception("failed to create shader module!");
 		}
 
@@ -45,7 +46,7 @@ extern bool verbose;
 		if (verbose)
 			std::cout << "delete shader" << "\n";
 		for (auto &m: modules)
-			vkDestroyShaderModule(device, m.module, nullptr);
+			vkDestroyShaderModule(default_device->device, m.module, nullptr);
 		for (auto &l: descr_layouts) {
 			DescriptorSet::destroy_layout(l);
 		}

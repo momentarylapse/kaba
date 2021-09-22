@@ -1,5 +1,4 @@
-#ifndef _VULKAN_VULKAN_H
-#define _VULKAN_VULKAN_H
+#pragma once
 
 #if HAS_LIB_VULKAN
 
@@ -10,6 +9,9 @@
 #include <optional>
 #include <vector>
 
+#include "Instance.h"
+#include "Device.h"
+#include "Queue.h"
 #include "DescriptorSet.h"
 #include "Buffer.h"
 #include "VertexBuffer.h"
@@ -24,65 +26,19 @@
 #include "AccelerationStructure.h"
 
 
-VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-
-
-
 
 namespace vulkan {
 
-	class Instance {
-	public:
-		VkInstance instance;
-		bool using_validation_layers;
 
-		Instance();
-		~Instance();
-		void pick_physical_device();
-		void create_surface(GLFWwindow* vulkan_window);
-
-		void setup_debug_messenger();
-		void _ensure_rtx();
-
-		static Instance *create(const Array<string> &op);
-	};
-
-
-	//extern VkInstance instance;
-	//extern VkDebugUtilsMessengerEXT debug_messenger;
-	extern VkSurfaceKHR surface;
-
-	extern VkPhysicalDevice physical_device;
-	extern VkDevice device;
-
-	extern VkQueue graphics_queue;
-	extern VkQueue present_queue;
-
-
-	VkFormat find_depth_format();
 	void rebuild_pipelines();
-	void queue_submit_command_buffer(CommandBuffer *cb, const Array<Semaphore*> &wait_sem, const Array<Semaphore*> &signal_sem, Fence *fence);
 
 
 	GLFWwindow* create_window(const string &title, int width, int height);
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
 
-	void init(GLFWwindow* window, const Array<string> &op);
-	void destroy();
+	Instance *init(GLFWwindow* window, const Array<string> &op);
 
-
-	void wait_device_idle();
-
-
-	bool check_validation_layer_support();
-	bool is_device_suitable(VkPhysicalDevice device);
-	bool check_device_extension_support(VkPhysicalDevice device);
-	void create_logical_device(bool validation);
-
-
-	bool has_stencil_component(VkFormat format);
 
 
 	namespace rtx {
@@ -104,7 +60,5 @@ namespace vulkan {
 	DECLARE_EXT_H(vkGetRayTracingShaderGroupHandlesNV);
 	DECLARE_EXT_H(vkGetPhysicalDeviceProperties2);
 }
-
-#endif
 
 #endif

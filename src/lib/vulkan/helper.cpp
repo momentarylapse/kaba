@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include "helper.h"
 #include "CommandBuffer.h"
+#include "Device.h"
 #include <vector>
 
 namespace vulkan{
@@ -28,23 +29,23 @@ void create_image(uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_
 	image_info.samples = VK_SAMPLE_COUNT_1_BIT;
 	image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateImage(device, &image_info, nullptr, &image) != VK_SUCCESS) {
+	if (vkCreateImage(default_device->device, &image_info, nullptr, &image) != VK_SUCCESS) {
 		throw Exception("failed to create image!");
 	}
 
 	VkMemoryRequirements mem_requirements;
-	vkGetImageMemoryRequirements(device, image, &mem_requirements);
+	vkGetImageMemoryRequirements(default_device->device, image, &mem_requirements);
 
 	VkMemoryAllocateInfo alloc_info = {};
 	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	alloc_info.allocationSize = mem_requirements.size;
-	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements, properties);
+	alloc_info.memoryTypeIndex = default_device->find_memory_type(mem_requirements, properties);
 
-	if (vkAllocateMemory(device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
+	if (vkAllocateMemory(default_device->device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
 		throw Exception("failed to allocate image memory!");
 	}
 
-	vkBindImageMemory(device, image, image_memory, 0);
+	vkBindImageMemory(default_device->device, image, image_memory, 0);
 }
 
 void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
@@ -70,7 +71,7 @@ VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags
 	info.subresourceRange.layerCount = 1;
 
 	VkImageView image_view;
-	if (vkCreateImageView(device, &info, nullptr, &image_view) != VK_SUCCESS) {
+	if (vkCreateImageView(default_device->device, &info, nullptr, &image_view) != VK_SUCCESS) {
 		throw Exception("failed to create texture image view!");
 	}
 
@@ -164,79 +165,7 @@ void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLa
 
 
 
-uint32_t find_memory_type(const VkMemoryRequirements &requirements, VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
 
-	for (uint32_t i=0; i<memProperties.memoryTypeCount; i++) {
-		if ((requirements.memoryTypeBits & (1 << i)) and (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-			return i;
-		}
-	}
-
-	throw Exception("failed to find suitable memory type!");
-}
-
-
-VkFormat find_supported_format(const Array<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-	for (VkFormat format: candidates) {
-		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties(physical_device, format, &props);
-
-		if (tiling == VK_IMAGE_TILING_LINEAR and (props.linearTilingFeatures & features) == features) {
-			return format;
-		} else if (tiling == VK_IMAGE_TILING_OPTIMAL and (props.optimalTilingFeatures & features) == features) {
-			return format;
-		}
-	}
-
-	throw Exception("failed to find supported format!");
-}
-
-VkFormat find_depth_format() {
-	return find_supported_format(
-	{VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-	);
-}
-
-
-bool QueueFamilyIndices::is_complete() {
-	return graphics_family.has_value() and present_family.has_value();
-}
-
-QueueFamilyIndices find_queue_families(VkPhysicalDevice device) {
-	QueueFamilyIndices indices;
-
-	uint32_t queue_family_count = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
-
-	std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
-
-	int i = 0;
-	for (const auto& queueFamily: queue_families) {
-		if ((queueFamily.queueCount > 0) and (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-			indices.graphics_family = i;
-		}
-
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
-		if ((queueFamily.queueCount > 0) and presentSupport) {
-			indices.present_family = i;
-		}
-
-		if (indices.is_complete()) {
-			break;
-		}
-
-		i ++;
-	}
-
-	return indices;
-}
 
 };
 

@@ -9,6 +9,7 @@
 #include "helper.h"
 #include "CommandBuffer.h"
 #include "Buffer.h"
+#include "Device.h"
 #include "../image/image.h"
 
 namespace vulkan {
@@ -148,22 +149,22 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
     imageCreateInfo.pQueueFamilyIndices = nullptr;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    auto result = vkCreateImage(device, &imageCreateInfo, nullptr, &image);
+    auto result = vkCreateImage(default_device->device, &imageCreateInfo, nullptr, &image);
     if (VK_SUCCESS != result)
     	throw Exception("aaa");
 	VkMemoryRequirements memoryRequirements;
-	vkGetImageMemoryRequirements(device, image, &memoryRequirements);
+	vkGetImageMemoryRequirements(default_device->device, image, &memoryRequirements);
 
 	VkMemoryAllocateInfo memoryAllocateInfo;
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	memoryAllocateInfo.pNext = nullptr;
 	memoryAllocateInfo.allocationSize = memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	memoryAllocateInfo.memoryTypeIndex = default_device->find_memory_type(memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &memory);
+	result = vkAllocateMemory(default_device->device, &memoryAllocateInfo, nullptr, &memory);
 	if (VK_SUCCESS != result)
 		throw Exception("aaa2");
-	result = vkBindImageMemory(device, image, memory, 0);
+	result = vkBindImageMemory(default_device->device, image, memory, 0);
 	if (VK_SUCCESS != result)
 		throw Exception("aaa3");
 	if (verbose)
@@ -179,13 +180,13 @@ void StorageTexture::__init__(int nx, int ny, int nz, const string &format) {
 
 void Texture::_destroy() {
 	if (sampler)
-		vkDestroySampler(device, sampler, nullptr);
+		vkDestroySampler(default_device->device, sampler, nullptr);
 	if (view)
-		vkDestroyImageView(device, view, nullptr);
+		vkDestroyImageView(default_device->device, view, nullptr);
 	if (image)
-		vkDestroyImage(device, image, nullptr);
+		vkDestroyImage(default_device->device, image, nullptr);
 	if (memory)
-		vkFreeMemory(device, memory, nullptr);
+		vkFreeMemory(default_device->device, memory, nullptr);
 	sampler = nullptr;
 	view = nullptr;
 	image = nullptr;
@@ -268,7 +269,7 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 void Texture::_generate_mipmaps(VkFormat image_format) {
 	// Check if image format supports linear blitting
 	VkFormatProperties fp;
-	vkGetPhysicalDeviceFormatProperties(physical_device, image_format, &fp);
+	vkGetPhysicalDeviceFormatProperties(default_device->physical_device, image_format, &fp);
 
 	if (!(fp.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
 		throw Exception("texture image format does not support linear blitting!");
@@ -380,7 +381,7 @@ void Texture::_create_sampler() {
 	si.maxLod = static_cast<float>(mip_levels);
 	si.mipLodBias = 0;
 
-	if (vkCreateSampler(device, &si, nullptr, &sampler) != VK_SUCCESS) {
+	if (vkCreateSampler(default_device->device, &si, nullptr, &sampler) != VK_SUCCESS) {
 		throw Exception("failed to create texture sampler!");
 	}
 }

@@ -67,8 +67,8 @@ public:
 
 	void rebuild();
 
-	bool present(unsigned int image_index, const Array<Semaphore*> &wait_sem);
-	bool aquire_image(unsigned int *image_index, Semaphore *signal_sem);
+	bool present(int image_index, const Array<Semaphore*> &wait_sem);
+	bool acquire_image(int *image_index, Semaphore *signal_sem);
 };
 
 

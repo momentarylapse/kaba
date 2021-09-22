@@ -9,6 +9,7 @@
 
 
 #include "Buffer.h"
+#include "Device.h"
 #include <vulkan/vulkan.h>
 
 #include <array>
@@ -19,13 +20,13 @@
 
 namespace vulkan{
 
+
 Array<UniformBuffer*> ubo_wrappers;
 
-extern VkPhysicalDeviceProperties device_properties;
 int make_aligned(int size) {
-	if (device_properties.limits.minUniformBufferOffsetAlignment == 0)
+	if (default_device->device_properties.limits.minUniformBufferOffsetAlignment == 0)
 		return 0;
-	return (size + device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
+	return (size + default_device->device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
 }
 
 
@@ -48,31 +49,31 @@ void Buffer::create(VkDeviceSize _size, VkBufferUsageFlags usage, VkMemoryProper
 	info.usage = usage;
 	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateBuffer(device, &info, nullptr, &buffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(default_device->device, &info, nullptr, &buffer) != VK_SUCCESS) {
 		throw Exception("failed to create buffer!");
 	}
 
 	VkMemoryRequirements mem_requirements;
-	vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
+	vkGetBufferMemoryRequirements(default_device->device, buffer, &mem_requirements);
 
 	VkMemoryAllocateInfo alloc_info = {};
 	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	alloc_info.allocationSize = mem_requirements.size;
-	alloc_info.memoryTypeIndex = find_memory_type(mem_requirements, properties);
+	alloc_info.memoryTypeIndex = default_device->find_memory_type(mem_requirements, properties);
 
-	if (vkAllocateMemory(device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
+	if (vkAllocateMemory(default_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
 		throw Exception("failed to allocate buffer memory!");
 	}
 
-	vkBindBufferMemory(device, buffer, memory, 0);
+	vkBindBufferMemory(default_device->device, buffer, memory, 0);
 }
 
 void Buffer::destroy() {
 	if (buffer)
-		vkDestroyBuffer(device, buffer, nullptr);
+		vkDestroyBuffer(default_device->device, buffer, nullptr);
 	buffer = nullptr;
 	if (memory)
-		vkFreeMemory(device, memory, nullptr);
+		vkFreeMemory(default_device->device, memory, nullptr);
 	memory = nullptr;
 	size = 0;
 }
@@ -83,12 +84,12 @@ void *Buffer::map() {
 
 void *Buffer::map_part(VkDeviceSize _offset, VkDeviceSize _size) {
 	void *p;
-	vkMapMemory(device, memory, _offset, _size, 0, &p);
+	vkMapMemory(default_device->device, memory, _offset, _size, 0, &p);
 	return p;
 }
 
 void Buffer::unmap() {
-	vkUnmapMemory(device, memory);
+	vkUnmapMemory(default_device->device, memory);
 }
 
 void Buffer::update_part(const void *source, int offset, int update_size) {

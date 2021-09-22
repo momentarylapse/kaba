@@ -4,7 +4,6 @@
 
 #include "../base/base.h"
 #include <vulkan/vulkan.h>
-#include <optional>
 
 namespace vulkan{
 
@@ -17,28 +16,7 @@ namespace vulkan{
 	void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
 	void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels);
 
-	uint32_t find_memory_type(const VkMemoryRequirements &requirements, VkMemoryPropertyFlags properties);
 	bool has_stencil_component(VkFormat format);
-
-
-	VkFormat find_supported_format(const Array<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat find_depth_format();
-
-	extern VkDevice device;
-	extern VkPhysicalDevice physical_device;
-
-	extern VkSurfaceKHR surface;
-
-
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphics_family;
-		std::optional<uint32_t> present_family;
-
-		bool is_complete();
-	};
-
-	QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
-
 };
 
 #endif

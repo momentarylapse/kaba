@@ -12,6 +12,7 @@
 #include "DescriptorSet.h"
 #include "AccelerationStructure.h"
 #include "Buffer.h"
+#include "Device.h"
 #include "Shader.h"
 #include "Texture.h"
 #include <vulkan/vulkan.h>
@@ -61,13 +62,13 @@ VkDescriptorType descriptor_type(const string &s) {
 		info.pPoolSizes = &pool_sizes[0];
 		info.maxSets = max_sets;
 
-		if (vkCreateDescriptorPool(device, &info, nullptr, &pool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(default_device->device, &info, nullptr, &pool) != VK_SUCCESS) {
 			throw Exception("failed to create descriptor pool!");
 		}
 	}
 
 	DescriptorPool::~DescriptorPool() {
-		vkDestroyDescriptorPool(device, pool, nullptr);
+		vkDestroyDescriptorPool(default_device->device, pool, nullptr);
 	}
 
 	void DescriptorPool::__init__(const string &s, int max_sets) {
@@ -102,7 +103,7 @@ VkDescriptorType descriptor_type(const string &s) {
 		info.descriptorSetCount = 1;
 		info.pSetLayouts = &layout;
 
-		if (vkAllocateDescriptorSets(device, &info, &descriptor_set) != VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(default_device->device, &info, &descriptor_set) != VK_SUCCESS) {
 			throw Exception("failed to allocate descriptor sets!");
 		}
 	}
@@ -207,7 +208,7 @@ VkDescriptorType descriptor_type(const string &s) {
 			wds.add(w);
 		}
 
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
+		vkUpdateDescriptorSets(default_device->device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
 	}
 
 	VkDescriptorSetLayout DescriptorSet::create_layout(const Array<VkDescriptorType> &types, const Array<int> &binding_no) {
@@ -234,14 +235,14 @@ VkDescriptorType descriptor_type(const string &s) {
 		info.pBindings = &bindings[0];
 
 		VkDescriptorSetLayout layout;
-		if (vkCreateDescriptorSetLayout(device, &info, nullptr, &layout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(default_device->device, &info, nullptr, &layout) != VK_SUCCESS) {
 			throw Exception("failed to create descriptor set layout!");
 		}
 		return layout;
 	}
 
 	void DescriptorSet::destroy_layout(VkDescriptorSetLayout layout) {
-		vkDestroyDescriptorSetLayout(device, layout, nullptr);
+		vkDestroyDescriptorSetLayout(default_device->device, layout, nullptr);
 	}
 
 

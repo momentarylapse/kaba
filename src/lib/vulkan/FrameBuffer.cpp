@@ -89,14 +89,14 @@ void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<Texture*> &at
 	info.height = h;
 	info.layers = 1;
 
-	if (vkCreateFramebuffer(device, &info, nullptr, &frame_buffer) != VK_SUCCESS) {
+	if (vkCreateFramebuffer(default_device->device, &info, nullptr, &frame_buffer) != VK_SUCCESS) {
 		throw Exception("failed to create framebuffer!");
 	}
 }
 
 void FrameBuffer::destroy() {
 	if (frame_buffer)
-		vkDestroyFramebuffer(device, frame_buffer, nullptr);
+		vkDestroyFramebuffer(default_device->device, frame_buffer, nullptr);
 	frame_buffer = nullptr;
 }
 

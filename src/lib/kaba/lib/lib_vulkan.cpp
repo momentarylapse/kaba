@@ -70,7 +70,10 @@ public:
 
 
 #else
-	namespace vulkan{
+	namespace vulkan {
+		typedef int Instance;
+		typedef int Device;
+		typedef int Queue;
 		typedef int VertexBuffer;
 		typedef int Texture;
 		typedef int Shader;
@@ -108,7 +111,13 @@ extern const Class *TypeDynamicArray;
 
 void SIAddPackageVulkan() {
 	add_package("vulkan");
-	
+
+	auto TypeInstance		= add_type  ("Instance", sizeof(vulkan::Instance));
+	auto TypeInstanceP		= add_type_p(TypeInstance);
+	auto TypeDevice			= add_type  ("Device", sizeof(vulkan::Device));
+	auto TypeDeviceP		= add_type_p(TypeDevice);
+	auto TypeQueue			= add_type  ("Queue", sizeof(vulkan::Queue));
+	auto TypeQueueP			= add_type_p(TypeQueue);
 	auto TypeVertexBuffer	= add_type  ("VertexBuffer", sizeof(vulkan::VertexBuffer));
 	//auto TypeVertexBufferP	= add_type_p(TypeVertexBuffer);
 	auto TypeTexture		= add_type  ("Texture", sizeof(vulkan::Texture));
@@ -144,6 +153,16 @@ void SIAddPackageVulkan() {
 	auto TypeSemaphorePList	= add_type_l(TypeSemaphoreP);
 	auto TypeAccelerationStructure = add_type  ("AccelerationStructure", sizeof(vulkan::AccelerationStructure));
 	auto TypeAccelerationStructureP = add_type_p(TypeAccelerationStructure);
+
+
+	add_class(TypeInstance);
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Instance::__delete__));
+
+	add_class(TypeDevice);
+		class_add_element("graphics_queue", TypeQueue, vul_p(&vulkan::Device::graphics_queue));
+		class_add_element("present_queue", TypeQueue, vul_p(&vulkan::Device::present_queue));
+		class_add_func("wait_idle", TypeVoid, vul_p(&vulkan::Device::wait_idle));
+
 
 	add_class(TypeVertex);
 		class_add_element("pos", TypeVector, vul_p(&vulkan::Vertex1::pos));
@@ -332,7 +351,7 @@ void SIAddPackageVulkan() {
 		class_add_func("present", TypeBool, vul_p(&vulkan::SwapChain::present));
 			func_add_param("image_index", TypeInt);
 			func_add_param("wait_sem", TypeSemaphorePList);
-		class_add_func("aquire_image", TypeBool, vul_p(&vulkan::SwapChain::aquire_image));
+		class_add_func("acquire_image", TypeBool, vul_p(&vulkan::SwapChain::acquire_image));
 			func_add_param("image_index", TypeIntP);
 			func_add_param("signal_sem", TypeSemaphore);
 
@@ -402,6 +421,15 @@ void SIAddPackageVulkan() {
 		class_add_func("create_bottom", TypeAccelerationStructureP, vul_p(&vulkan::AccelerationStructure::create_bottom), Flags::STATIC);
 			func_add_param("vb", TypeVertexBuffer);
 
+
+
+	add_class(TypeQueue);
+		class_add_func("submit", TypeVoid, vul_p(&vulkan::Queue::submit));
+			func_add_param("cb", TypeCommandBuffer);
+			func_add_param("wait_sem", TypeSemaphorePList);
+			func_add_param("signal_sem", TypeSemaphorePList);
+			func_add_param("fence", TypeFence);
+
 	add_func("create_window", TypePointer, vul_p(&vulkan::create_window), Flags::STATIC);
 		func_add_param("title", TypeString);
 		func_add_param("w", TypeInt);
@@ -411,16 +439,12 @@ void SIAddPackageVulkan() {
 	add_func("window_close", TypeVoid, vul_p(&vulkan::window_close), Flags::STATIC);
 		func_add_param("w", TypePointer);
 
-	add_func("init", TypeVoid, vul_p(&__vulkan_init), Flags::_STATIC__RAISES_EXCEPTIONS);
+	add_func("init", TypeInstanceP, vul_p(&__vulkan_init), Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("win", TypePointer);
 		func_add_param("op", TypeStringList);
-	add_func("destroy", TypeVoid, vul_p(&vulkan::destroy), Flags::STATIC);
-	add_func("queue_submit_command_buffer", TypeVoid, vul_p(&vulkan::queue_submit_command_buffer), Flags::STATIC);
-		func_add_param("cb", TypeCommandBuffer);
-		func_add_param("wait_sem", TypeSemaphorePList);
-		func_add_param("signal_sem", TypeSemaphorePList);
-		func_add_param("fence", TypeFence);
-	add_func("wait_device_idle", TypeVoid, vul_p(&vulkan::wait_device_idle), Flags::STATIC);
+
+
+	add_ext_var("default_device", TypeDeviceP, vul_p(&vulkan::default_device));
 
 }
 
