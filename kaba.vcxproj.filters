@@ -382,6 +382,9 @@
     <ClCompile Include="src\lib\kaba\syntax\lexical.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\macros.cpp">
+      <Filter>src\lib\kaba\syntax</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Node.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
@@ -389,9 +392,6 @@
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Parser.cpp">
-      <Filter>src\lib\kaba\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\syntax\precompiler.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\preprocessor.cpp">
@@ -445,6 +445,12 @@
     <ClCompile Include="src\lib\math\rect.cpp">
       <Filter>src\lib\math</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\math\vec2.cpp">
+      <Filter>src\lib\math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\math\vec4.cpp">
+      <Filter>src\lib\math</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\math\vector.cpp">
       <Filter>src\lib\math</Filter>
     </ClCompile>
@@ -460,7 +466,13 @@
     <ClCompile Include="src\lib\nix\nix.cpp">
       <Filter>src\lib\nix</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_buffer.cpp">
+      <Filter>src\lib\nix</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\nix\nix_draw.cpp">
+      <Filter>src\lib\nix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\nix\nix_framebuffer.cpp">
       <Filter>src\lib\nix</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\nix\nix_light.cpp">
@@ -508,7 +520,13 @@
     <ClCompile Include="src\lib\vulkan\helper.cpp">
       <Filter>src\lib\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Instance.cpp">
+      <Filter>src\lib\vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\vulkan\Pipeline.cpp">
+      <Filter>src\lib\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\vulkan\Queue.cpp">
       <Filter>src\lib\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\vulkan\RenderPass.cpp">
@@ -906,6 +924,12 @@
     <ClInclude Include="src\lib\math\rect.h">
       <Filter>src\lib\math</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\math\vec2.h">
+      <Filter>src\lib\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\math\vec4.h">
+      <Filter>src\lib\math</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\math\vector.h">
       <Filter>src\lib\math</Filter>
     </ClInclude>
@@ -921,6 +945,9 @@
     <ClInclude Include="src\lib\nix\nix.h">
       <Filter>src\lib\nix</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_buffer.h">
+      <Filter>src\lib\nix</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\nix\nix_common.h">
       <Filter>src\lib\nix</Filter>
     </ClInclude>
@@ -928,6 +955,9 @@
       <Filter>src\lib\nix</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\nix\nix_draw.h">
+      <Filter>src\lib\nix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\nix\nix_framebuffer.h">
       <Filter>src\lib\nix</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\nix\nix_light.h">
@@ -975,7 +1005,13 @@
     <ClInclude Include="src\lib\vulkan\helper.h">
       <Filter>src\lib\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Instance.h">
+      <Filter>src\lib\vulkan</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\vulkan\Pipeline.h">
+      <Filter>src\lib\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\Queue.h">
       <Filter>src\lib\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\vulkan\RenderPass.h">
@@ -1014,70 +1050,70 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
-      <UniqueIdentifier>{13585BC0-1944-3BA0-E5EB-21A42E3465B8}</UniqueIdentifier>
+      <UniqueIdentifier>{F12EA729-9762-4175-D211-F4CA3BE60BD0}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Helper">
-      <UniqueIdentifier>{810ECDED-6229-EC9C-2785-929B1D082B0A}</UniqueIdentifier>
+      <UniqueIdentifier>{DDC14E95-3982-915A-1E60-98AEB5339C97}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib">
-      <UniqueIdentifier>{C089E774-99D8-6649-ECE7-F83154A80A2C}</UniqueIdentifier>
+      <UniqueIdentifier>{78C09F83-C1B9-0A6A-D375-DF41AB8FB723}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\algebra">
-      <UniqueIdentifier>{BB692EDC-8B4F-1980-6775-FB75F1D0CFC7}</UniqueIdentifier>
+      <UniqueIdentifier>{797D6FF2-5E74-6CA6-ADD5-8EB42E780638}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\any">
-      <UniqueIdentifier>{B31E2FAA-AFAC-82CF-9459-0CE0EB0ABD27}</UniqueIdentifier>
+      <UniqueIdentifier>{079B46C0-D05E-DDC6-4C92-F5156BF31271}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\base">
-      <UniqueIdentifier>{13533FED-F8A7-B675-BCFC-8DC69D14A3BC}</UniqueIdentifier>
+      <UniqueIdentifier>{3195EB06-4A31-4984-003C-A18F0D580394}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\file">
-      <UniqueIdentifier>{70FA0E8F-7273-9E94-A803-5DAFAB45FF16}</UniqueIdentifier>
+      <UniqueIdentifier>{596C5346-3ACF-8974-B6F3-FC96F58AE493}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui">
-      <UniqueIdentifier>{0101F917-B9B4-8493-CA62-8113D68C6A37}</UniqueIdentifier>
+      <UniqueIdentifier>{FDD61BAD-BC45-3E2C-366F-FF481FD83243}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui\Controls">
-      <UniqueIdentifier>{B48BDA39-4EEC-27FF-261B-73E5971F157C}</UniqueIdentifier>
+      <UniqueIdentifier>{6DBC4648-72EE-600C-6EBF-AA8637356A9C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\image">
-      <UniqueIdentifier>{9F87AB0E-AEAC-6AB9-0D48-02DA9FAB418E}</UniqueIdentifier>
+      <UniqueIdentifier>{D16B202D-81A6-5766-C70A-40015CB0AF67}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba">
-      <UniqueIdentifier>{105CC5B6-462A-0E31-B89C-B675620B4895}</UniqueIdentifier>
+      <UniqueIdentifier>{06B4C3FB-BAE3-C25A-153D-C8467EFAE23E}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\asm">
-      <UniqueIdentifier>{8F254DB9-3E34-D759-0E6B-5D0C007491A1}</UniqueIdentifier>
+      <UniqueIdentifier>{50FFB05E-2DAE-B2F1-895C-BE7514537EBD}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\compiler">
-      <UniqueIdentifier>{0D75A2EE-122E-A77A-6E6C-C68C7F100C21}</UniqueIdentifier>
+      <UniqueIdentifier>{2795D202-161C-0419-D346-8569E4D95E57}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\dynamic">
-      <UniqueIdentifier>{9A63D41E-64D0-C5B2-31FF-87C07D189492}</UniqueIdentifier>
+      <UniqueIdentifier>{57F01CD5-E9EB-9DD0-1F5D-1F9E9491573A}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\lib">
-      <UniqueIdentifier>{EF6B489B-C7C9-C7C0-9BF2-2C2A94238C56}</UniqueIdentifier>
+      <UniqueIdentifier>{AEA39F5A-0E05-8B32-D482-BF3D1D6108BB}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\syntax">
-      <UniqueIdentifier>{CC114CC1-38B0-0709-20C5-CFF5329BFE1C}</UniqueIdentifier>
+      <UniqueIdentifier>{0B82F8E6-4772-9B6E-BB6D-E1D33F81BFBC}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\math">
-      <UniqueIdentifier>{B4DF0913-2C32-33C6-38C0-7C5AFE6ED8B9}</UniqueIdentifier>
+      <UniqueIdentifier>{1F081DC5-6D76-2F90-38B0-1976FCE40371}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\net">
-      <UniqueIdentifier>{C89C2AF4-736B-722B-BEB2-A1D9038EB378}</UniqueIdentifier>
+      <UniqueIdentifier>{789414E1-20C9-D031-336D-CA070FB00B98}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\nix">
-      <UniqueIdentifier>{B14DB423-88FF-B1B6-F79A-8639AB76FFEB}</UniqueIdentifier>
+      <UniqueIdentifier>{F2B28380-C7CD-DA9A-3F74-DD2903EC2A01}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\threads">
-      <UniqueIdentifier>{039C8B00-3F0E-1B51-2EBB-5F4FBC6AC55D}</UniqueIdentifier>
+      <UniqueIdentifier>{00B3DEB1-3DBC-9488-47E6-BB73557F0D00}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\vulkan">
-      <UniqueIdentifier>{8F90AA1E-91DB-C2CF-17A6-6F62CCC8225A}</UniqueIdentifier>
+      <UniqueIdentifier>{CA8DC7DE-188E-45F8-3DB9-3760FBE1DAAA}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\xfile">
-      <UniqueIdentifier>{1FBC9CA3-D8FB-ABAB-352A-59C169A8BF3D}</UniqueIdentifier>
+      <UniqueIdentifier>{87F43273-B0B1-C1EC-F4A8-E622B9C0AE32}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

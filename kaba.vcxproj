@@ -70,7 +70,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=0;HAS_LIB_GL=0;HAS_LIB_GLFW=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=1;HAS_LIB_GL=0;HAS_LIB_GLFW=1</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -85,7 +85,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=0;HAS_LIB_GL=0;HAS_LIB_GLFW=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=1;HAS_LIB_GL=0;HAS_LIB_GLFW=1</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -101,13 +101,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>;HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=0;HAS_LIB_GL=0;HAS_LIB_GLFW=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=1;HAS_LIB_GL=0;HAS_LIB_GLFW=1</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>;HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=0;HAS_LIB_GL=0;HAS_LIB_GLFW=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);HAS_LIB_GTK3=1;HAS_LIB_ZLIB=1;HAS_LIB_XLIB=0;HAS_LIB_UNWIND=0;HAS_LIB_DL=0;HAS_LIB_VULKAN=1;HAS_LIB_GL=0;HAS_LIB_GLFW=1</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -239,10 +239,10 @@
     <ClCompile Include="src\lib\kaba\syntax\Identifier.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\implicit.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\lexical.cpp" />
+    <ClCompile Include="src\lib\kaba\syntax\macros.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Node.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Operator.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Parser.cpp" />
-    <ClCompile Include="src\lib\kaba\syntax\precompiler.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\preprocessor.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Statement.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\SyntaxTree.cpp" />
@@ -260,12 +260,16 @@
     <ClCompile Include="src\lib\math\random.cpp" />
     <ClCompile Include="src\lib\math\ray.cpp" />
     <ClCompile Include="src\lib\math\rect.cpp" />
+    <ClCompile Include="src\lib\math\vec2.cpp" />
+    <ClCompile Include="src\lib\math\vec4.cpp" />
     <ClCompile Include="src\lib\math\vector.cpp" />
     <ClCompile Include="src\lib\net\BinaryBuffer.cpp" />
     <ClCompile Include="src\lib\net\net.cpp" />
     <ClCompile Include="src\lib\net\Socket.cpp" />
     <ClCompile Include="src\lib\nix\nix.cpp" />
+    <ClCompile Include="src\lib\nix\nix_buffer.cpp" />
     <ClCompile Include="src\lib\nix\nix_draw.cpp" />
+    <ClCompile Include="src\lib\nix\nix_framebuffer.cpp" />
     <ClCompile Include="src\lib\nix\nix_light.cpp" />
     <ClCompile Include="src\lib\nix\nix_shader.cpp" />
     <ClCompile Include="src\lib\nix\nix_textures.cpp" />
@@ -281,7 +285,9 @@
     <ClCompile Include="src\lib\vulkan\Device.cpp" />
     <ClCompile Include="src\lib\vulkan\FrameBuffer.cpp" />
     <ClCompile Include="src\lib\vulkan\helper.cpp" />
+    <ClCompile Include="src\lib\vulkan\Instance.cpp" />
     <ClCompile Include="src\lib\vulkan\Pipeline.cpp" />
+    <ClCompile Include="src\lib\vulkan\Queue.cpp" />
     <ClCompile Include="src\lib\vulkan\RenderPass.cpp" />
     <ClCompile Include="src\lib\vulkan\Semaphore.cpp" />
     <ClCompile Include="src\lib\vulkan\Shader.cpp" />
@@ -415,14 +421,18 @@
     <ClInclude Include="src\lib\math\random.h" />
     <ClInclude Include="src\lib\math\ray.h" />
     <ClInclude Include="src\lib\math\rect.h" />
+    <ClInclude Include="src\lib\math\vec2.h" />
+    <ClInclude Include="src\lib\math\vec4.h" />
     <ClInclude Include="src\lib\math\vector.h" />
     <ClInclude Include="src\lib\net\BinaryBuffer.h" />
     <ClInclude Include="src\lib\net\net.h" />
     <ClInclude Include="src\lib\net\Socket.h" />
     <ClInclude Include="src\lib\nix\nix.h" />
+    <ClInclude Include="src\lib\nix\nix_buffer.h" />
     <ClInclude Include="src\lib\nix\nix_common.h" />
     <ClInclude Include="src\lib\nix\nix_config.h" />
     <ClInclude Include="src\lib\nix\nix_draw.h" />
+    <ClInclude Include="src\lib\nix\nix_framebuffer.h" />
     <ClInclude Include="src\lib\nix\nix_light.h" />
     <ClInclude Include="src\lib\nix\nix_shader.h" />
     <ClInclude Include="src\lib\nix\nix_textures.h" />
@@ -438,7 +448,9 @@
     <ClInclude Include="src\lib\vulkan\Device.h" />
     <ClInclude Include="src\lib\vulkan\FrameBuffer.h" />
     <ClInclude Include="src\lib\vulkan\helper.h" />
+    <ClInclude Include="src\lib\vulkan\Instance.h" />
     <ClInclude Include="src\lib\vulkan\Pipeline.h" />
+    <ClInclude Include="src\lib\vulkan\Queue.h" />
     <ClInclude Include="src\lib\vulkan\RenderPass.h" />
     <ClInclude Include="src\lib\vulkan\Semaphore.h" />
     <ClInclude Include="src\lib\vulkan\Shader.h" />
