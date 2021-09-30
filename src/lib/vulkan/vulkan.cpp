@@ -15,8 +15,6 @@
 #include <set>
 #include <array>
 
-#include <unistd.h>
-
 #include "helper.h"
 #include "../base/base.h"
 #include "../file/msg.h"

@@ -308,9 +308,9 @@ void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const
 	bool dst_is_depth = image_is_depth_buffer(dest->format);
 
 	VkImageCopy region;
-	region.srcSubresource = {src_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+	region.srcSubresource = {(VkImageAspectFlags)(src_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
 	region.srcOffset = {extend[0], extend[1], 0};
-	region.dstSubresource = {dst_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+	region.dstSubresource = {(VkImageAspectFlags)(dst_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
 	region.dstOffset = {extend[4], extend[5], 0};
 	region.extent = {(unsigned)extend[2], (unsigned)extend[3], 1};
 	vkCmdCopyImage(buffer,
