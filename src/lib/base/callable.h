@@ -22,7 +22,8 @@ class Callable<R(A...)> {
 public:
 	enum class Type {
 		EMPTY,
-		FUNCTION_POINTER
+		FUNCTION_POINTER,
+		COMPLEX
 	};
 	Type type;
 	typedef R t_func(A...);
@@ -38,9 +39,15 @@ public:
 		p = _p;
 	}
 
+	virtual ~Callable() {}
+
+	virtual R call_complex(A... args) {}
+
 	R operator()(A... args) {
 		if (type == Type::FUNCTION_POINTER) {
 			return p(args...);
+		} else if (type == Type::COMPLEX) {
+			return call_complex(args...);
 		} else {
 			throw EmptyCallableError();
 		}
