@@ -351,7 +351,7 @@ void Pipeline::rebuild() {
 	}
 }
 
-RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders) : BasePipeline(DescriptorSet::parse_bindings(dset_layouts)) {
+RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth) : BasePipeline(DescriptorSet::parse_bindings(dset_layouts)) {
 	if (verbose)
 		msg_write("creating RTX pipeline...");
 
@@ -364,7 +364,7 @@ RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shade
 	info.pGroups = &groups[0];
 	info.stageCount = shader_stages.num;
 	info.pStages = &shader_stages[0];
-	info.maxRecursionDepth = 1;
+	info.maxRecursionDepth = recursion_depth;
 	info.layout = layout;
 	info.basePipelineHandle = VK_NULL_HANDLE;
 	info.basePipelineIndex = 0;
@@ -376,8 +376,8 @@ RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shade
 		msg_write("...done");
 }
 
-void RayPipeline::__init__(const string &dset_layouts, const Array<Shader*> &shaders) {
-	new(this) RayPipeline(dset_layouts, shaders);
+void RayPipeline::__init__(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth) {
+	new(this) RayPipeline(dset_layouts, shaders, recursion_depth);
 }
 
 void RayPipeline::create_groups(const Array<Shader*> &shaders) {

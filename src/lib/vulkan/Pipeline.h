@@ -96,9 +96,9 @@ namespace vulkan{
 
 	class RayPipeline : public BasePipeline {
 	public:
-		RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders);
+		RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth);
 
-		void __init__(const string &dset_layouts, const Array<Shader*> &shaders);
+		void __init__(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth);
 
 		void create_groups(const Array<Shader*> &shaders);
 		void create_sbt();

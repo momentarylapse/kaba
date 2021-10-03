@@ -81,6 +81,7 @@ public:
 		typedef int RayPipeline;
 		typedef int Vertex1;
 		typedef int RenderPass;
+		typedef int Buffer;
 		typedef int UniformBuffer;
 		typedef int DescriptorPool;
 		typedef int DescriptorSet;
@@ -140,6 +141,7 @@ void SIAddPackageVulkan() {
 	auto TypeRayPipeline	= add_type  ("RayPipeline", sizeof(vulkan::RayPipeline));
 	auto TypeRenderPass		= add_type  ("RenderPass", sizeof(vulkan::RenderPass));
 	auto TypeRenderPassP	= add_type_p(TypeRenderPass);
+	auto TypeBuffer			= add_type  ("Buffer", sizeof(vulkan::Buffer));
 	auto TypeUniformBuffer	= add_type  ("UniformBuffer", sizeof(vulkan::UniformBuffer));
 	auto TypeUniformBufferP	= add_type_p(TypeUniformBuffer);
 	auto TypeUniformBufferPList= add_type_l(TypeUniformBufferP);
@@ -176,6 +178,8 @@ void SIAddPackageVulkan() {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&VulkanVertexList::__init__));
 
 	add_class(TypeVertexBuffer);
+		class_add_element("vertex", TypeBuffer, vul_p(&vulkan::VertexBuffer::vertex_buffer));
+		class_add_element("index", TypeBuffer, vul_p(&vulkan::VertexBuffer::index_buffer));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::VertexBuffer::__init__));
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::VertexBuffer::__delete__));
 		class_add_func("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build_v3_v3_v2_i));
@@ -244,6 +248,7 @@ void SIAddPackageVulkan() {
 
 
 	add_class(TypeUniformBuffer);
+		class_derive_from(TypeBuffer, false, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::UniformBuffer::__init__));
 			func_add_param("size", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::UniformBuffer::__delete__));
@@ -269,7 +274,7 @@ void SIAddPackageVulkan() {
 			func_add_param("tex", TypeTexture);
 		class_add_func("set_buffer", TypeVoid, vul_p(&vulkan::DescriptorSet::set_buffer));
 			func_add_param("binding", TypeInt);
-			func_add_param("ubo", TypeUniformBuffer);
+			func_add_param("buf", TypeBuffer);
 		class_add_func("set_acceleration_structure", TypeVoid, vul_p(&vulkan::DescriptorSet::set_acceleration_structure));
 			func_add_param("binding", TypeInt);
 			func_add_param("as", TypeAccelerationStructure);
@@ -313,6 +318,7 @@ void SIAddPackageVulkan() {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::RayPipeline::__init__));
 			func_add_param("layout", TypeString);
 			func_add_param("shader", TypeShaderPList);
+			func_add_param("recursion_depth", TypeInt);
 		class_add_func("create_sbt", TypeVoid, vul_p(&vulkan::RayPipeline::create_sbt));
 
 	add_class(TypeRenderPass);
