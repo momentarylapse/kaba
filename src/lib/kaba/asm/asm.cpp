@@ -316,11 +316,16 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 	{InstID::UCOMISS,   "ucomiss",   64+3, 64+1},
 	{InstID::UCOMISD,   "ucomisd",   64+3, 64+1},
 
+	{InstID::WRMSR,    "wrmsr"},
+	{InstID::RDTSC,    "rdtsc"},
+	{InstID::RDMSR,    "rdmsr"},
+	{InstID::RDPMC,    "rdpmc"},
+
 	// amd64
-	{InstID::SYSCALL,	"syscall"},
-	{InstID::SYSRET,	"sysret"},
-	{InstID::SYSENTER,	"sysenter"},
-	{InstID::SYSEXIT,	"sysexit"},
+	{InstID::SYSCALL,  "syscall"},
+	{InstID::SYSRET,   "sysret"},
+	{InstID::SYSENTER, "sysenter"},
+	{InstID::SYSEXIT,  "sysexit"},
 
 	{InstID::B,		"b"},
 	{InstID::BL,		"bl"},

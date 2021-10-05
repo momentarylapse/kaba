@@ -250,6 +250,11 @@ enum class InstID {
 	UCOMISS,
 	UCOMISD,
 
+	WRMSR,
+	RDTSC,
+	RDMSR,
+	RDPMC,
+
 	SYSCALL,
 	SYSRET,
 	SYSENTER,

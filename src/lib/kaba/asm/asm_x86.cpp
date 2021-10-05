@@ -986,11 +986,17 @@ void x86_init() {
 	add_inst(InstID::UCOMISS,   0x2e0f,   2, -1, Xx, XMd);
 	add_inst(InstID::UCOMISD,   0x2e0f66, 3, -1, Xx, XMq);
 
+	add_inst(InstID::WRMSR,     0x300f, 2, -1, -1, -1);
+	add_inst(InstID::RDTSC,     0x310f, 2, -1, -1, -1);
+	add_inst(InstID::RDMSR,     0x320f, 2, -1, -1, -1);
+	add_inst(InstID::RDPMC,     0x330f, 2, -1, -1, -1);
+
+
 	if (set == InstructionSet::AMD64) {
-		add_inst(InstID::SYSCALL,	0x050f, 2, -1, -1, -1);
-		add_inst(InstID::SYSRET,	0x070f, 2, -1, -1, -1);
-		add_inst(InstID::SYSENTER,	0x340f, 2, -1, -1, -1);
-		add_inst(InstID::SYSEXIT,	0x350f, 2, -1, -1, -1);
+		add_inst(InstID::SYSCALL,   0x050f, 2, -1, -1, -1);
+		add_inst(InstID::SYSRET,    0x070f, 2, -1, -1, -1);
+		add_inst(InstID::SYSENTER,  0x340f, 2, -1, -1, -1);
+		add_inst(InstID::SYSEXIT,   0x350f, 2, -1, -1, -1);
 	}
 }
 
