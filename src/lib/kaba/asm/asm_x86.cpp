@@ -990,6 +990,11 @@ void x86_init() {
 	add_inst(InstID::RDTSC,     0x310f, 2, -1, -1, -1);
 	add_inst(InstID::RDMSR,     0x320f, 2, -1, -1, -1);
 	add_inst(InstID::RDPMC,     0x330f, 2, -1, -1, -1);
+	add_inst(InstID::CPUID,     0xa20f, 2, -1, -1, -1);
+	add_inst(InstID::LFENCE,    0xe8ae0f, 3, -1, -1, -1);
+	add_inst(InstID::MFENCE,    0xf0ae0f, 3, -1, -1, -1);
+	add_inst(InstID::SFENCE,    0xf8ae0f, 3, -1, -1, -1);
+	add_inst(InstID::CLFLUSH,   0xae0f, 2, 7, Mb, -1);
 
 
 	if (set == InstructionSet::AMD64) {

@@ -320,6 +320,11 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 	{InstID::RDTSC,    "rdtsc"},
 	{InstID::RDMSR,    "rdmsr"},
 	{InstID::RDPMC,    "rdpmc"},
+	{InstID::CPUID,    "cpuid"},
+	{InstID::LFENCE,   "lfence"},
+	{InstID::MFENCE,   "mfence"},
+	{InstID::SFENCE,   "sfence"},
+	{InstID::CLFLUSH,  "clflush"},
 
 	// amd64
 	{InstID::SYSCALL,  "syscall"},

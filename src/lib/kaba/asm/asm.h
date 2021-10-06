@@ -254,6 +254,11 @@ enum class InstID {
 	RDTSC,
 	RDMSR,
 	RDPMC,
+	CPUID,
+	LFENCE,
+	MFENCE,
+	SFENCE,
+	CLFLUSH,
 
 	SYSCALL,
 	SYSRET,
