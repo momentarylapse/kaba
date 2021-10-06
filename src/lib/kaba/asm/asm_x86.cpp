@@ -364,6 +364,7 @@ void x86_init() {
 	add_inst(InstID::DB		,0x00	,0	,-1	,Ib	,-1);
 	add_inst(InstID::DW		,0x00	,0	,-1	,Iw	,-1);
 	add_inst(InstID::DD		,0x00	,0	,-1	,Id	,-1);
+	add_inst(InstID::DQ		,0x00	,0	,-1	,Iq	,-1);
 	add_inst(InstID::ADD		,0x00	,1	,-1	,Eb	,Gb);
 	add_inst(InstID::ADD		,0x01	,1	,-1	,Ew	,Gw, OPT_SMALL_PARAM);
 	add_inst(InstID::ADD		,0x01	,1	,-1	,Ed	,Gd, OPT_MEDIUM_PARAM);
@@ -995,6 +996,7 @@ void x86_init() {
 	add_inst(InstID::MFENCE,    0xf0ae0f, 3, -1, -1, -1);
 	add_inst(InstID::SFENCE,    0xf8ae0f, 3, -1, -1, -1);
 	add_inst(InstID::CLFLUSH,   0xae0f, 2, 7, Mb, -1);
+	add_inst(InstID::REP,       0xf3, 1, -1, -1, -1);
 
 
 	if (set == InstructionSet::AMD64) {
@@ -1372,7 +1374,7 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 			// cap correct?
 			if (ci.cap >= 0)
 				ok &= ((unsigned char)ci.cap == (((unsigned)cur[ci.code_size] >> 3) & 0x07));
-			if ((ok) and (ci.has_modrm)) {
+			if (ok and ci.has_modrm) {
 				InstructionParam p1, p2;
 				UnfuzzyParam(p1, ci.param1);
 				UnfuzzyParam(p2, ci.param2);
