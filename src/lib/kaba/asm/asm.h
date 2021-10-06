@@ -64,6 +64,7 @@ enum class InstID {
 	DB,
 	DW,
 	DD,
+	DQ,
 	DS,
 	DZ,
 	ALIGN_OPCODE,

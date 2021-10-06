@@ -130,6 +130,7 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 	{InstID::DB,		"db"},
 	{InstID::DW,		"dw"},
 	{InstID::DD,		"dd"},
+	{InstID::DQ,		"dq"},
 	{InstID::DS,		"ds"},
 	{InstID::DZ,		"dz"},
 	{InstID::ALIGN_OPCODE,	":align:"},
@@ -1311,14 +1312,13 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 			continue;
 
 		} else if (cmd == "db") {
-			so("Daten:   1 byte");
-			add_data_inst(this, 1);
+			add_data_inst(this, SIZE_8);
 		} else if (cmd == "dw") {
-			so("Daten:   2 byte");
-			add_data_inst(this, 2);
+			add_data_inst(this, SIZE_16);
 		} else if (cmd == "dd") {
-			so("Daten:   4 byte");
-			add_data_inst(this, 4);
+			add_data_inst(this, SIZE_32);
+		} else if (cmd == "dq") {
+			add_data_inst(this, SIZE_64);
 		}/*else if ((cmd == "ds") or (cmd == "dz")) {
 			so("Daten:   String");
 			char *s = (char*)p1.value;
