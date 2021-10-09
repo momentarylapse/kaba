@@ -574,7 +574,7 @@ int InstructionWithParamsList::_find_label(const string &name) {
 }
 
 // really declare an existing one now
-void InstructionWithParamsList::insert_label(int index) {
+void InstructionWithParamsList::insert_location_label(int index) {
 	if (index < 0)
 		return;
 	Label &l = label[index];
@@ -593,23 +593,13 @@ int64 InstructionWithParamsList::_label_value(int index) {
 }
 
 // declare
-int InstructionWithParamsList::add_label(const string &name) {
+int InstructionWithParamsList::find_or_create_label(const string &name) {
 	so("add_label: " + name);
 	// label already in use? (used before declared)
 	int l = _find_label(name);
 	if (l < 0)
 		l = create_label(name);
-	insert_label(l);
 	return l;
-}
-
-// good
-int InstructionWithParamsList::get_label(const string &name) {
-	so("add_label: " + name);
-	int l = _find_label(name);
-	if (l >= 0)
-		return l;
-	return create_label(name);
 }
 
 void *InstructionWithParamsList::get_label_value(const string &name) {
@@ -921,7 +911,7 @@ bool IgnoreUnimportant(int &pos) {
 }
 
 // returns one "word" in the source code
-string FindMnemonic(int &pos) {
+string find_mnemonic(int &pos) {
 	state.end_of_line = false;
 	char mne[128];
 	strcpy(mne, "");
@@ -982,7 +972,7 @@ string FindMnemonic(int &pos) {
 }
 
 // interpret an expression from source code as an assembler parameter
-void GetParam(InstructionParam &p, const string &param, InstructionWithParamsList &list, int pn) {
+void parse_parameter(InstructionParam &p, const string &param, InstructionWithParamsList &list, int pn) {
 	p.type = ParamType::INVALID;
 	p.reg = nullptr;
 	p.deref = false;
@@ -1001,7 +991,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			printf("deref:   ");
 		so("Deref:");
 		//bool u16 = use_mode16;
-		GetParam(p, param.sub(1, -1), list, pn);
+		parse_parameter(p, param.sub(1, -1), list, pn);
 		p.size = SIZE_UNKNOWN;
 		p.deref = true;
 		//use_mode16 = u16;
@@ -1029,7 +1019,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 			else
 				part.add(param[i]);
 		int offset = part.num;
-		GetParam(sub, part, list, pn);
+		parse_parameter(sub, part, list, pn);
 		if (sub.type == ParamType::REGISTER) {
 			//msg_write("reg");
 			p.type = ParamType::REGISTER;
@@ -1045,7 +1035,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 				break;
 			}
 		part = param.sub(offset);
-		GetParam(sub, part, list, pn);
+		parse_parameter(sub, part, list, pn);
 		if (sub.type == ParamType::IMMEDIATE) {
 			//msg_write("c2 = im");
 			if (((int_p)sub.value & 0xffffff00) == 0)
@@ -1115,7 +1105,9 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 
 	// label substitude
 	} else if (param == "$") {
-		p = param_label(list.add_label(param), SIZE_32);
+		int l = list.create_label(param);
+		list.insert_location_label(l);
+		p = param_label(l, SIZE_32);
 		
 	} else {
 		// register
@@ -1140,7 +1132,7 @@ void GetParam(InstructionParam &p, const string &param, InstructionWithParamsLis
 		// not yet existing label...
 		if (param[0]=='_') {
 			so("label as param:  \"" + param + "\"\n");
-			p = param_label(list.get_label(param), SIZE_32);
+			p = param_label(list.create_label(param), SIZE_32);
 			return;
 		}
 	}
@@ -1244,7 +1236,7 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 
 	// interpret asm code (1 line)
 		// find command
-		cmd = FindMnemonic(pos);
+		cmd = find_mnemonic(pos);
 		current_line = state.line_no;
 		current_col = state.column_no;
 		//msg_write(cmd);
@@ -1252,7 +1244,7 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 			break;
 		// find parameters
 		if (!state.end_of_line) {
-			param1 = FindMnemonic(pos);
+			param1 = find_mnemonic(pos);
 			if ((param1 == "dword") or (param1 == "word") or (param1 == "qword")) {
 				if (param1 == "word")
 					state.param_size = SIZE_16;
@@ -1261,13 +1253,13 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 				else if (param1 == "qword")
 					state.param_size = SIZE_64;
 				if (!state.end_of_line)
-					param1 = FindMnemonic(pos);
+					param1 = find_mnemonic(pos);
 			}
 		}
 		if (!state.end_of_line)
-			param2 = FindMnemonic(pos);
+			param2 = find_mnemonic(pos);
 		if (!state.end_of_line)
-			param3 = FindMnemonic(pos);
+			param3 = find_mnemonic(pos);
 		//msg_write(string2("----: %s %s%s %s", cmd, param1, (strlen(param2)>0)?",":"", param2));
 		if (state.end_of_code)
 			break;
@@ -1279,9 +1271,9 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		so("------");
 
 		// parameters
-		GetParam(p1, param1, *this, 0);
-		GetParam(p2, param2, *this, 1);
-		GetParam(p3, param3, *this, 1);
+		parse_parameter(p1, param1, *this, 0);
+		parse_parameter(p2, param2, *this, 1);
+		parse_parameter(p3, param3, *this, 1);
 		if ((p1.type == ParamType::INVALID) or (p2.type == ParamType::INVALID) or (p3.type == ParamType::INVALID))
 			return;
 
@@ -1340,7 +1332,8 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 			so("Label");
 			cmd.resize(cmd.num - 1);
 			so(cmd);
-			add_label(cmd);
+			int l = find_or_create_label(cmd);
+			insert_location_label(l);
 
 			continue;
 		}
@@ -1362,7 +1355,7 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 
 		// command
 		InstID inst = InstID::INVALID;
-		for (int i=0;i<(int)InstID::NUM_INSTRUCTION_NAMES;i++)
+		for (int i=0; i<(int)InstID::NUM_INSTRUCTION_NAMES; i++)
 			if (string(instruction_names[i].name) == cmd)
 				inst = instruction_names[i].inst;
 		if (inst == InstID::INVALID)

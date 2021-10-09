@@ -494,12 +494,11 @@ struct InstructionWithParamsList : public Array<InstructionWithParams> {
 	// new label system
 	int create_label(const string &name);
 	int _find_label(const string &name);
-	void insert_label(int index);
+	void insert_location_label(int index);
 	int64 _label_value(int index);
 
 
-	int add_label(const string &name);
-	int get_label(const string &name);
+	int find_or_create_label(const string &name);
 	void *get_label_value(const string &name);
 
 	void add_wanted_label(int pos, int label_no, int inst_no, bool rel, bool abs, int size);
