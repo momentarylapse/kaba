@@ -15,19 +15,26 @@ ParserState state;
 InstructionSetData instruction_set;
 
 void ParserState::init() {
-	default_size = SIZE_32;
-	full_register_size = instruction_set.pointer_size;
+	set_bits(instruction_set.pointer_size);
 
 	if (CurrentMetaInfo)
-		if (CurrentMetaInfo->mode16)
-			default_size = SIZE_16;
+		set_bits(CurrentMetaInfo->bits_size);
 
 	list = nullptr;
 }
 
+void ParserState::set_bits(int bits_size) {
+	default_addr_size = min(bits_size, (int)SIZE_32);
+	default_param_size = min(bits_size, (int)SIZE_32);
+	full_register_size = bits_size;
+	param_size = default_param_size;
+	addr_size = default_addr_size;
+}
+
 void ParserState::reset(InstructionWithParamsList *_list) {
-	param_size = default_size;
-	addr_size = default_size;
+	explicit_size = SIZE_UNKNOWN;
+	param_size = default_param_size;
+	addr_size = default_addr_size;
 	extend_mod_rm_base = false;
 	extend_mod_rm_reg = false;
 	extend_mod_rm_index = false;
@@ -43,7 +50,7 @@ string ParserState::get_label(int i) {
 
 const char *code_buffer;
 MetaInfo *CurrentMetaInfo = nullptr;
-MetaInfo DummyMetaInfo;
+MetaInfo DummyMetaInfo(SIZE_32);
 
 int arm_encode_8l4(unsigned int value);
 
@@ -89,8 +96,8 @@ static void so(int i) {
 
 
 
-MetaInfo::MetaInfo() {
-	mode16 = false;
+MetaInfo::MetaInfo(int _bits_size) {
+	bits_size = _bits_size;
 	code_origin = 0;
 	line_offset = 0;
 }
@@ -765,6 +772,15 @@ InstructionParam::InstructionParam() {
 	write_back = false;
 }
 
+bool InstructionParam::has_explicit_size() const {
+	if (type == ParamType::REGISTER) {
+		return !deref;
+	} else if (type == ParamType::IMMEDIATE) {
+		return !is_label and !deref;
+	}
+	return false;
+}
+
 // convert an asm parameter into a human readable expression
 string InstructionParam::str(bool hide_size) {
 	//msg_write("----");
@@ -782,7 +798,7 @@ string InstructionParam::str(bool hide_size) {
 		if (deref) {
 			//msg_write("deref");
 			string ss;
-			if (!hide_size or size != state.default_size)
+			if (!hide_size or size != state.default_param_size)
 				ss = get_size_name(size) + " ";
 			string s = reg->name;
 			if (disp == DispMode::_8) {
@@ -816,7 +832,7 @@ string InstructionParam::str(bool hide_size) {
 	} else if (type == ParamType::IMMEDIATE) {
 		string s = "0x" + i2h(value, deref ? state.addr_size : size);
 		if (is_label)
-			s = state.get_label(value);
+			s = get_size_name(size) + " " + state.get_label(value);
 		if (deref)
 			return get_size_name(size) + " [" + s + "]";
 		return s;
@@ -846,16 +862,16 @@ string ARMConditions[16] = {
 	"???",
 };
 
-string InstructionWithParams::str(bool hide_size) {
+string InstructionWithParams::str() {
 	string s;
 	if (condition != ArmCond::ALWAYS)
 		s += ARMConditions[(int)condition & 0xf] + ":";
 	s += get_instruction_name(inst);
-	s += "  " + p[0].str(hide_size);
+	s += "  " + p[0].str(false);
 	if (p[1].type != ParamType::NONE)
-		s += ",  " + p[1].str(hide_size);
+		s += ",  " + p[1].str(false);
 	if (p[2].type != ParamType::NONE)
-		s += ",  " + p[2].str(hide_size);
+		s += ",  " + p[2].str(false);
 	return s;
 }
 
@@ -992,7 +1008,7 @@ void parse_parameter(InstructionParam &p, const string &param, InstructionWithPa
 		so("Deref:");
 		//bool u16 = use_mode16;
 		parse_parameter(p, param.sub(1, -1), list, pn);
-		p.size = SIZE_UNKNOWN;
+		p.size = state.explicit_size; // SIZE_UNKNOWN, if not explicitly overwritten
 		p.deref = true;
 		//use_mode16 = u16;
 
@@ -1107,7 +1123,7 @@ void parse_parameter(InstructionParam &p, const string &param, InstructionWithPa
 	} else if (param == "$") {
 		int l = list.create_label(param);
 		list.insert_location_label(l);
-		p = param_label(l, SIZE_32);
+		p = param_label(l, state.default_addr_size);
 		
 	} else {
 		// register
@@ -1119,7 +1135,7 @@ void parse_parameter(InstructionParam &p, const string &param, InstructionWithPa
 		// existing label
 		for (int i=0;i<list.label.num;i++)
 			if (list.label[i].name == param) {
-				p = param_label(i, SIZE_32);
+				p = param_label(i, state.default_addr_size);
 				return;
 			}
 		// script variable (global)
@@ -1132,7 +1148,7 @@ void parse_parameter(InstructionParam &p, const string &param, InstructionWithPa
 		// not yet existing label...
 		if (param[0]=='_') {
 			so("label as param:  \"" + param + "\"\n");
-			p = param_label(list.create_label(param), SIZE_32);
+			p = param_label(list.create_label(param), state.default_addr_size);
 			return;
 		}
 	}
@@ -1207,6 +1223,18 @@ void add_data_inst(InstructionWithParamsList *l, int size) {
 	CurrentMetaInfo->data.add(d);
 }
 
+void list_set_bits(InstructionWithParamsList *list, int offset, int size) {
+	state.set_bits(size);
+	state.reset(list);
+	if (CurrentMetaInfo) {
+		CurrentMetaInfo->bits_size = size;
+		BitChange b;
+		b.cmd_pos = offset;
+		b.bits_size = size;
+		CurrentMetaInfo->bit_change.add(b);
+	}
+}
+
 void InstructionWithParamsList::append_from_source(const string &_code) {
 	const char *code = _code.c_str();
 
@@ -1221,12 +1249,11 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 
 	int pos = 0;
 	InstructionParam p1, p2, p3;
-	state.default_size = SIZE_32;
+	state.set_bits(instruction_set.pointer_size);
 	if (CurrentMetaInfo)
-		if (CurrentMetaInfo->mode16)
-			state.default_size = SIZE_16;
+		state.set_bits(CurrentMetaInfo->bits_size);
 	state.end_of_code = false;
-	while(pos < _code.num - 2) {
+	while (pos < _code.num - 2) {
 
 		string cmd, param1, param2, param3;
 
@@ -1245,13 +1272,15 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		// find parameters
 		if (!state.end_of_line) {
 			param1 = find_mnemonic(pos);
-			if ((param1 == "dword") or (param1 == "word") or (param1 == "qword")) {
+			if ((param1 == "dword") or (param1 == "word") or (param1 == "qword") or (param1 == "s48")) {
 				if (param1 == "word")
-					state.param_size = SIZE_16;
+					state.explicit_size = SIZE_16;
 				else if (param1 == "dword")
-					state.param_size = SIZE_32;
+					state.explicit_size = SIZE_32;
 				else if (param1 == "qword")
-					state.param_size = SIZE_64;
+					state.explicit_size = SIZE_64;
+				else if (param1 == "s48")
+					state.explicit_size = SIZE_48;
 				if (!state.end_of_line)
 					param1 = find_mnemonic(pos);
 			}
@@ -1273,34 +1302,22 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		// parameters
 		parse_parameter(p1, param1, *this, 0);
 		parse_parameter(p2, param2, *this, 1);
-		parse_parameter(p3, param3, *this, 1);
+		parse_parameter(p3, param3, *this, 2);
 		if ((p1.type == ParamType::INVALID) or (p2.type == ParamType::INVALID) or (p3.type == ParamType::INVALID))
 			return;
 
 	// special stuff
 		if (cmd == "bits_16") {
 			so("16 bit Modus!");
-			state.default_size = SIZE_16;
-			state.reset(this);
-			if (CurrentMetaInfo) {
-				CurrentMetaInfo->mode16 = true;
-				BitChange b;
-				b.cmd_pos = num;
-				b.bits = 16;
-				CurrentMetaInfo->bit_change.add(b);
-			}
+			list_set_bits(this, num, SIZE_16);
 			continue;
 		} else if (cmd == "bits_32") {
 			so("32 bit Modus!");
-			state.default_size = SIZE_32;
-			state.reset(this);
-			if (CurrentMetaInfo) {
-				CurrentMetaInfo->mode16 = false;
-				BitChange b;
-				b.cmd_pos = num;
-				b.bits = 32;
-				CurrentMetaInfo->bit_change.add(b);
-			}
+			list_set_bits(this, num, SIZE_32);
+			continue;
+		} else if (cmd == "bits_64") {
+			so("64 bit Modus!");
+			list_set_bits(this, num, SIZE_64);
 			continue;
 
 		} else if (cmd == "db") {
@@ -1344,7 +1361,7 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 
 		if (cmd.find(":") >= 0) {
 			iwp.condition = ArmCond::UNKNOWN;
-			Array<string> l = cmd.explode(":");
+			auto l = cmd.explode(":");
 			for (int i=0; i<16; i++)
 				if (l[0] == ARMConditions[i])
 					iwp.condition = (ArmCond)i;
@@ -1361,9 +1378,9 @@ void InstructionWithParamsList::append_from_source(const string &_code) {
 		if (inst == InstID::INVALID)
 			raise_error("unknown instruction:  " + cmd);
 		// prefix
-		if (state.param_size != state.default_size) {
+		if (state.param_size != state.default_param_size) {
 			//buffer[CodeLength ++] = 0x66;
-			raise_error("prefix unhandled:  " + cmd);
+			//raise_error("prefix unhandled:  " + cmd);
 		}
 		iwp.inst = inst;
 		iwp.p[0] = p1;
@@ -1487,6 +1504,15 @@ bool InstructionParamFuzzy::match(InstructionParam &wanted_p) {
 }
 
 
+static bool is_jump(InstID id) {
+	if (id == InstID::JMP)
+		return true;
+	if ((id == InstID::JZ) or (id == InstID::JNZ) or (id == InstID::JL) or (id == InstID::JNL) or (id == InstID::JLE) or (id == InstID::JNLE))
+		return true;
+	if ((id == InstID::JB) or (id == InstID::JNB) or (id == InstID::JS) or (id == InstID::JNS) or (id == InstID::JO) or (id == InstID::JNO))
+		return true;
+	return false;
+}
 
 void InstructionWithParamsList::shrink_jumps(void *oc, int ocs) {
 	// first pass compilation (we need real jump distances)
@@ -1496,7 +1522,7 @@ void InstructionWithParamsList::shrink_jumps(void *oc, int ocs) {
 
 	// try shrinking
 	foreachi(InstructionWithParams &iwp, *this, i) {
-		if ((iwp.inst == InstID::JMP) or (iwp.inst == InstID::JZ) or (iwp.inst == InstID::JNZ) or (iwp.inst == InstID::JL) or (iwp.inst == InstID::JNL) or (iwp.inst == InstID::JLE) or (iwp.inst == InstID::JNLE)) {
+		if (is_jump(iwp.inst)) {
 			if (iwp.p[0].is_label) {
 				int target = label[(int)iwp.p[0].value].inst_no;
 
@@ -1523,22 +1549,20 @@ void InstructionWithParamsList::optimize(void *oc, int ocs) {
 }
 
 void InstructionWithParamsList::compile(void *oc, int &ocs) {
-	state.default_size = SIZE_32;
 	state.reset(this);
 	if (!CurrentMetaInfo) {
+		DummyMetaInfo.bits_size = instruction_set.pointer_size;
 		DummyMetaInfo.code_origin = (int_p)oc;
 		CurrentMetaInfo = &DummyMetaInfo;
 	}
+	state.set_bits(CurrentMetaInfo->bits_size);
 
 	for (int i=0;i<num+1;i++) {
 		state.line_no = i;
 		// bit change
 		for (BitChange &b: CurrentMetaInfo->bit_change)
 			if (b.cmd_pos == i) {
-				state.default_size = SIZE_32;
-				if (b.bits == 16)
-					state.default_size = SIZE_16;
-				state.reset(this);
+				state.set_bits(b.bits_size);
 				b.offset = ocs;
 			}
 
@@ -1575,7 +1599,7 @@ void InstructionWithParamsList::compile(void *oc, int &ocs) {
 void add_instruction(char *oc, int &ocs, InstID inst, const InstructionParam &p1, const InstructionParam &p2, const InstructionParam &p3) {
 	/*if (!CPUInstructions)
 		SetInstructionSet(InstructionSetDefault);*/
-	state.default_size = SIZE_32;
+	state.set_bits(instruction_set.pointer_size);
 	state.reset(nullptr);
 	/*msg_write("--------");
 	for (int i=0;i<NUM_INSTRUCTION_NAMES;i++)
@@ -1583,7 +1607,7 @@ void add_instruction(char *oc, int &ocs, InstID inst, const InstructionParam &p1
 			printf("%s\n", InstructionName[i].name);*/
 
 	OCParam = ocs;
-	InstructionWithParamsList list = InstructionWithParamsList(0);
+	auto list = InstructionWithParamsList(0);
 	InstructionWithParams iwp;
 	iwp.inst = inst;
 	iwp.p[0] = p1;

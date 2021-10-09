@@ -192,8 +192,8 @@ bool _get_inst_param_(int param, InstructionParamFuzzy &ip) {
 	return false;
 }
 
-enum
-{
+enum {
+	// bits filter / needing prefixes...
 	OPT_SMALL_PARAM = 1,
 	OPT_SMALL_ADDR,
 	OPT_BIG_PARAM,
@@ -206,7 +206,7 @@ enum
 struct CPUInstruction {
 	InstID inst;
 	int code, code_size, cap;
-	bool has_modrm, has_small_param, has_small_addr, has_big_param, has_big_addr, has_fixed_param;
+	bool has_modrm, has_small_param, has_small_addr, has_medium_param, has_big_param, has_big_addr, has_fixed_param;
 	bool ignore;
 	InstructionParamFuzzy param1, param2;
 	string name;
@@ -227,7 +227,7 @@ bool CPUInstruction::match(InstructionWithParams &iwp) {
 		return false;
 
 	//return (param1.match(iwp.p[0])) and (param2.match(iwp.p[1]));
-	bool b = (param1.match(iwp.p[0])) and (param2.match(iwp.p[1]));
+	bool b = param1.match(iwp.p[0]) and param2.match(iwp.p[1]);
 	/*if (b) {
 		msg_write("source: " + iwp.p[0].str() + " " + iwp.p[1].str());
 		print();
@@ -249,6 +249,7 @@ void add_inst(InstID inst, int code, int code_size, int cap, int param1, int par
 	i.has_modrm  = m1 or m2 or (cap >= 0);
 	i.has_small_param = (opt == OPT_SMALL_PARAM);
 	i.has_small_addr = (opt == OPT_SMALL_ADDR);
+	i.has_medium_param = (opt == OPT_MEDIUM_PARAM);
 	i.has_big_param = (opt == OPT_BIG_PARAM);
 	i.has_big_addr = (opt == OPT_BIG_ADDR);
 	i.has_fixed_param = (opt != OPT_SMALL_PARAM) and (opt != OPT_MEDIUM_PARAM) and (opt != OPT_BIG_PARAM);
@@ -415,20 +416,36 @@ void x86_init() {
 	add_inst(InstID::MOV		,0x200f	,2	,-1	,Rd	,Cd); // Fehler im Algorhytmus!!!!  (wirklich ???) -> Fehler in Tabelle?!?
 	add_inst(InstID::MOV		,0x220f	,2	,-1	,Cd	,Rd);
 	add_inst(InstID::JO		,0x800f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM); // 16/32 bit???
+	add_inst(InstID::JO		,0x800f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
+	add_inst(InstID::JNO		,0x810f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNO		,0x810f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JB		,0x820f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JB		,0x820f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNB		,0x830f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNB		,0x830f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JZ		,0x840f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JZ		,0x840f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNZ		,0x850f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNZ		,0x850f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JBE		,0x860f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JBE		,0x860f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNBE		,0x870f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNBE		,0x870f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JS		,0x880f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JS		,0x880f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNS		,0x890f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNS		,0x890f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JP		,0x8a0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JP		,0x8a0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNP		,0x8b0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNP		,0x8b0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JL		,0x8c0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JL		,0x8c0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNL		,0x8d0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNL		,0x8d0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JLE		,0x8e0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JLE		,0x8e0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
+	add_inst(InstID::JNLE		,0x8f0f	,2	,-1	,Iw	,-1, OPT_SMALL_PARAM);
 	add_inst(InstID::JNLE		,0x8f0f	,2	,-1	,Id	,-1, OPT_MEDIUM_PARAM);
 	add_inst(InstID::SETO		,0x900f	,2	,-1	,Eb	,-1);
 	add_inst(InstID::SETNO		,0x910f	,2	,-1	,Eb	,-1);
@@ -598,7 +615,7 @@ void x86_init() {
 	add_inst(InstID::PUSH,	0x68,	1,	-1,	Iq,	-1, OPT_BIG_PARAM);
 	add_inst(InstID::IMUL,	0x69,	1,	-1,	Ew,	Iw, OPT_SMALL_PARAM);
 	add_inst(InstID::IMUL,	0x69,	1,	-1,	Ed,	Id, OPT_MEDIUM_PARAM);
-	add_inst(InstID::IMUL,	0x69,	1,	-1,	Eq,	Id, OPT_BIG_PARAM);
+	add_inst(InstID::IMUL,	0x69,	1,	-1,	Eq,	Id, OPT_BIG_PARAM); // yes, 32bit imm
 	add_inst(InstID::PUSH		,0x6a	,1	,-1	,Ib	,-1);
 	add_inst(InstID::JO		,0x70	,1	,-1	,Jb	,-1);
 	add_inst(InstID::JNO		,0x71	,1	,-1	,Jb	,-1);
@@ -696,7 +713,8 @@ void x86_init() {
 	add_inst(InstID::LEA,	0x8d,	1,	-1,	Gw,	Mw, OPT_SMALL_PARAM);
 	add_inst(InstID::LEA,	0x8d,	1,	-1,	Gd,	Md, OPT_MEDIUM_PARAM);
 	add_inst(InstID::LEA,	0x8d,	1,	-1,	Gq,	Mq, OPT_BIG_PARAM);
-	add_inst(InstID::MOV,	0x8e	,1	,-1	,Sw	,Ew, OPT_MEDIUM_PARAM);
+	add_inst(InstID::MOV,	0x8e	,1	,-1	,Sw	,Ew, OPT_SMALL_PARAM);
+	add_inst(InstID::MOV,	0x8e	,1	,-1	,Sw	,Ew, OPT_MEDIUM_PARAM); // s registers are always 16 bit!
 	add_inst(InstID::POP,	0x8f,	1,	-1,	Ew,	-1, OPT_SMALL_PARAM);
 	add_inst(InstID::POP,	0x8f,	1,	-1,	Ed,	-1, OPT_MEDIUM_PARAM);
 	add_inst(InstID::POP,	0x8f,	1,	-1,	Eq,	-1, OPT_BIG_PARAM);
@@ -1234,25 +1252,26 @@ inline void ReadParamData(char *&cur, InstructionParam &p, bool has_modrm) {
 }
 
 
-string x86_disassemble(void *_code_,int length,bool allow_comments) {
+string x86_disassemble(void *_code_, int length, bool allow_comments) {
 	char *code = (char*)_code_;
 
 	string param;
 	char *opcode;
 	string bufstr;
-	char *end=code+length;
-	char *orig=code;
-	if (length<0)	end=code+65536;
+	char *end = code + length;
+	char *orig = code;
+	if (length < 0)
+		end = code + 65536;
 
 	// code points to the start of the (current) complete command (dword cs: mov ax, ...)
 	// cur points to the currently processed byte
 	// opcode points to the start of the instruction (mov)
 	char *cur = code;
 	state.init();
-	state.default_size = SIZE_32;
+	state.set_bits(instruction_set.pointer_size);
 
 
-	while(code < end) {
+	while (code < end) {
 		state.reset(nullptr);
 		opcode = cur;
 		code = cur;
@@ -1274,23 +1293,26 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 
 			// data blocks
 			bool inserted = false;
-			for (int i=0;i<CurrentMetaInfo->data.num;i++) {
+			for (auto &data: CurrentMetaInfo->data) {
 				//printf("%d  %d  %d  %d\n", CurrentMetaInfo->data[i].Pos, (int_p)code, (int_p)orig, (int_p)code - (int_p)orig);
-				if ((int_p)code - (int_p)orig == CurrentMetaInfo->data[i].offset) {
+				if ((int_p)code - (int_p)orig == data.offset) {
 					//msg_write("data");
-					if (CurrentMetaInfo->data[i].size==1) {
+					if (data.size == SIZE_8) {
 						bufstr += "  db\t";
-						bufstr += d2h(cur,1);
-					} else if (CurrentMetaInfo->data[i].size==2) {
+						bufstr += d2h(cur, data.size);
+					} else if (data.size == SIZE_16) {
 						bufstr += "  dw\t";
-						bufstr += d2h(cur,2);
-					} else if (CurrentMetaInfo->data[i].size==4) {
+						bufstr += d2h(cur, data.size);
+					} else if (data.size == SIZE_32) {
 						bufstr += "  dd\t";
-						bufstr += d2h(cur,4);
+						bufstr += d2h(cur, data.size);
+					} else if (data.size == SIZE_64) {
+						bufstr += "  dq\t";
+						bufstr += d2h(cur, data.size);
 					} else {
 						bufstr += "  ds \t...";
 					}
-					cur += CurrentMetaInfo->data[i].size;
+					cur += data.size;
 					bufstr += "\n";
 					inserted = true;
 				}
@@ -1299,14 +1321,10 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 				continue;
 
 			// change of bits (processor mode)
-			for (int i=0;i<CurrentMetaInfo->bit_change.num;i++)
-				if ((int_p)code-(int_p)orig == CurrentMetaInfo->bit_change[i].offset) {
-					state.default_size = (CurrentMetaInfo->bit_change[i].bits == 16) ? SIZE_16 : SIZE_32;
-					state.reset(nullptr);
-					if (state.default_size == SIZE_16)
-						bufstr += "   bits_16\n";
-					else
-						bufstr += "   bits_32\n";
+			for (auto &bc: CurrentMetaInfo->bit_change)
+				if ((int_p)code - (int_p)orig == bc.offset) {
+					state.set_bits(bc.bits_size);
+					bufstr += format("   bits_%s\n", size_out(bc.bits_size));
 				}
 		}
 
@@ -1317,26 +1335,26 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 		while (true) {
 
 			// prefix (size/segment register)
-			if (cur[0]==0x67) {
-				state.addr_size = (state.default_size == SIZE_32) ? SIZE_16 : SIZE_32;
-				cur++;
+			if (cur[0] == 0x67) {
+				state.addr_size = (state.default_addr_size == SIZE_32) ? SIZE_16 : SIZE_32;
+				cur ++;
 				continue;
 			}
-			if (cur[0]==0x66) {
-				state.param_size = (state.default_size == SIZE_32) ? SIZE_16 : SIZE_32;
-				cur++;
+			if (cur[0] == 0x66) {
+				state.param_size = (state.default_param_size == SIZE_32) ? SIZE_16 : SIZE_32;
+				cur ++;
 				continue;
 			}
 
 			// REX
-			if (instruction_set.set == InstructionSet::AMD64) {
+			if (state.full_register_size == SIZE_64) { // amd64
 				if ((cur[0] & 0xf0) == 0x40) {
 					if ((cur[0] & 0x08) > 0)
 						state.param_size = SIZE_64;
 					state.extend_mod_rm_reg = ((cur[0] & 0x04) > 0);
 					state.extend_mod_rm_index = ((cur[0] & 0x02) > 0);
 					state.extend_mod_rm_base = ((cur[0] & 0x01) > 0);
-					cur++;
+					cur ++;
 					continue;
 				}
 			}
@@ -1361,9 +1379,11 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 			if (ci.code_size == 0)
 				continue;
 			if (!ci.has_fixed_param) {
-				if (ci.has_small_param != (state.param_size == SIZE_16))
+				if (ci.has_small_param and (state.param_size != SIZE_16))
 					continue;
-				if (ci.has_big_param != (state.param_size == SIZE_64))
+				if (ci.has_medium_param and (state.param_size != SIZE_32))
+					continue;
+				if (ci.has_big_param and (state.param_size != SIZE_64))
 					continue;
 			}
 			// opcode correct?
@@ -1431,14 +1451,14 @@ string x86_disassemble(void *_code_,int length,bool allow_comments) {
 			str += inst->name;
 
 			// parameters
-			if ((state.param_size != state.default_size) and ((p1.type != ParamType::REGISTER) or (p1.deref)) and ((p2.type != ParamType::REGISTER) or p2.deref)) {
+			/*if ((state.param_size != state.default_param_size) and ((p1.type != ParamType::REGISTER) or (p1.deref)) and ((p2.type != ParamType::REGISTER) or p2.deref)) {
 				if (state.param_size == SIZE_16)
 					str += " word";
 				else if (state.param_size == SIZE_32)
 					str += " dword";
 				else if (state.param_size == SIZE_64)
 					str += " qword";
-			}
+			}*/
 			bool hide_size = p2.type != ParamType::NONE;
 			if (p1.type != ParamType::NONE)
 				str += " " + p1.str(hide_size);
@@ -1596,8 +1616,12 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 	//---msg_write("add inst " + inst.name);
 
 	// 16/32 bit toggle prefix
-	if ((!inst.has_fixed_param) and (inst.has_small_param != (state.default_size == SIZE_16)))
-		append_val(oc, ocs, 0x66, 1);
+	if (!inst.has_fixed_param) {
+		if (inst.has_small_param and (state.default_param_size != SIZE_16))
+			append_val(oc, ocs, 0x66, 1);
+		else if (inst.has_medium_param and (state.default_param_size != SIZE_32))
+			append_val(oc, ocs, 0x66, 1);
+	}
 
 	int mod_rm = 0;
 	if (inst.has_modrm)
@@ -1605,7 +1629,7 @@ void OpcodeAddInstruction(char *oc, int &ocs, CPUInstruction &inst, InstructionP
 
 	// REX prefix
 	char rex = mod_rm >> 8;
-	if ((inst.param1.reg) and (p1.reg))
+	if (inst.param1.reg and p1.reg)
 		if (reg_between(inst.param1.reg->id, RegID::RAX, RegID::RBP) and ((int)inst.param1.reg->id == (int)p1.reg->id + (int)RegID::RAX - (int)RegID::R8))
 			rex = 0x01;
 	if (inst.has_big_param)//state.ParamSize == Size64)
