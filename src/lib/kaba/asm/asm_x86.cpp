@@ -1576,11 +1576,11 @@ void OpcodeAddImmideate(char *oc, int &ocs, InstructionParam &p, CPUInstruction 
 			size = state.addr_size; // inst.has_big_addr
 			if (instruction_set.set == InstructionSet::AMD64) {
 				if (inst.has_modrm) {
-					value -= (int_p)oc + ocs + size + next_param_size; // amd64 uses RIP-relative addressing!
+					value -= CurrentMetaInfo->code_origin + ocs + size + next_param_size; // amd64 uses RIP-relative addressing!
 					if ((value >= 0x80000000) or (-value >= 0x80000000)) {
 						//msg_write("-----");
 						//inst.print();
-						raise_error(format("RIP relative more than 32 bit: %x from %s", p.value, p2s(&oc[ocs])));
+						raise_error(format("RIP relative more than 32 bit: %x from %x", p.value, CurrentMetaInfo->code_origin));
 					}
 				} else {
 					size = SIZE_64; // Ov/Mv...
