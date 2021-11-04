@@ -259,6 +259,10 @@ bool Class::needs_constructor() const {
 		return param[0]->needs_constructor();
 	if (vtable.num > 0)
 		return true;
+	if (is_product())
+		for (auto p: param)
+			if (p->get_default_constructor())
+				return true;
 	if (parent)
 		if (parent->needs_constructor())
 			return true;

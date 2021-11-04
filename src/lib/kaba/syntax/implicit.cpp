@@ -783,6 +783,14 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()}, {"p"});
 		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
 		//add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
+	} else if (t->is_product()) {
+		if (t->needs_constructor())
+			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		add_full_constructor(t, this);
+		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		if (t->get_assign() and t->can_memcpy()) {
+			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+		}
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
