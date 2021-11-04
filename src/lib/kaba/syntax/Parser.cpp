@@ -42,7 +42,7 @@ const int TYPE_CAST_REFERENCE = -3;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_ABSTRACT_TUPLE = -30;
-const int TYPE_CAST_CLASSIFY = -31;
+const int TYPE_CAST_TUPLE_AS_CONSTRUCTOR = -31;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -41;
 
@@ -366,7 +366,7 @@ shared<Node> SyntaxTree::add_node_constructor(Function *f) {
 	return n;
 }
 
-shared_array<Node> Parser::make_class_node_callable(const Class *t, shared_array<Node> &params) {
+shared_array<Node> Parser::turn_class_node_into_constructor(const Class *t, shared_array<Node> &params) {
 	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool) or (t == TypeChar)) and (params.num == 1))
 		return {tree->make_fake_constructor(t, params[0]->type)};
 	
@@ -376,7 +376,10 @@ shared_array<Node> Parser::make_class_node_callable(const Class *t, shared_array
 	//shared<Node> dummy = add_node_local(vv);
 	shared_array<Node> links;
 	for (auto *cf: t->get_constructors())
-		links.add(tree->add_node_constructor(cf));
+		if (cf->num_params == params.num)
+			links.add(tree->add_node_constructor(cf));
+	if (links.num == 0)
+		do_error(format("class %s does not have a constructor with %d parameters", t->long_name(), params.num));
 	return links;
 }
 
@@ -486,7 +489,7 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
-			return try_to_match_apply_params(make_class_node_callable(t, params), params);
+			return try_to_match_apply_params(turn_class_node_into_constructor(t, params), params);
 		} else if (is_typed_function_pointer(l->type)) {
 			auto c = new Node(NodeKind::POINTER_CALL, 0, get_function_pointer_return_type(l->type));
 			c->set_num_params(1 + get_function_pointer_param_types(l->type).num);
@@ -1125,7 +1128,7 @@ const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const C
 			name += ",";
 		name += c->name;
 	}
-	auto c = const_cast<Class*>(tree->make_class("("+name+")", Class::Type::OTHER, size, -1, nullptr, classes, tree->_base_class.get()));
+	auto c = const_cast<Class*>(tree->make_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, tree->_base_class.get()));
 	if (c->elements.num == 0) {
 		int offset = 0;
 		foreachi (auto &cc, classes, i) {
@@ -1270,7 +1273,7 @@ shared<Node> Parser::parse_primitive_operator(Block *block) {
 	return 0;
 }*/
 
-bool type_match_classify(shared<Node> node, Function *f_constructor, int &penalty) {
+bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, int &penalty) {
 	if (f_constructor->literal_param_type.num != node->params.num)
 		return false;
 
@@ -1343,15 +1346,33 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			cast = TYPE_CAST_ABSTRACT_LIST;
 			return true;
 		}
+		// TODO: only for tuples
 		for (auto *f: wanted->get_constructors()) {
-			if (type_match_classify(node, f, penalty)) {
-				cast = TYPE_CAST_CLASSIFY;
+			if (type_match_tuple_as_contructor(node, f, penalty)) {
+				cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
 				return true;
 			}
 		}
 	}
 	if ((node->kind == NodeKind::TUPLE) and (given == TypeAbstractTuple)) {
-		//if (wanted->is)
+
+		for (auto *f: wanted->get_constructors()) {
+			if (type_match_tuple_as_contructor(node, f, penalty)) {
+				cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
+				return true;
+			}
+		}
+
+		if (!wanted->is_product())
+			return false;
+		if (wanted->param.num != node->params.num)
+			return false;
+		for (int i=0; i<node->params.num; i++)
+			if (!type_match(node->params[i]->type, wanted->param[i]))
+				return false;
+		msg_write("product");
+		cast = TYPE_CAST_ABSTRACT_TUPLE;
+		return true;
 	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
@@ -1398,8 +1419,13 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 		node->type = wanted;
 		return node;
 	}
+	if (tc == TYPE_CAST_ABSTRACT_TUPLE) {
+		msg_error("AUTO TUPLE");
+		node->type = wanted;
+		return node;
+	}
 
-	if (tc == TYPE_CAST_CLASSIFY) {
+	if (tc == TYPE_CAST_TUPLE_AS_CONSTRUCTOR) {
 		Array<int> c;
 		c.resize(node->params.num);
 		for (auto *f: wanted->get_constructors()) {
@@ -2324,7 +2350,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 		return node;
 	} else if (node->kind == NodeKind::TUPLE) {
 		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node));
-		auto xx = make_class_node_callable(type, node->params);
+		auto xx = turn_class_node_into_constructor(type, node->params);
 		return try_to_match_apply_params(xx, node->params);
 	} else {
 		do_error("unhandled abstract type: " + kind2str(node->kind));

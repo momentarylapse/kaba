@@ -71,6 +71,7 @@ public:
 	bool is_pointer_owned() const;
 	bool is_pointer_silent() const;
 	bool is_interface() const;
+	bool is_product() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;
 	Array<ClassInitializers> initializers;

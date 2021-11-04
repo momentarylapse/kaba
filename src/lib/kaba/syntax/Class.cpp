@@ -185,6 +185,9 @@ bool Class::is_interface() const
 bool Class::is_dict() const
 { return type == Type::DICT; }
 
+bool Class::is_product() const
+{ return type == Type::PRODUCT; }
+
 bool Class::uses_call_by_reference() const {
 	return (!force_call_by_value() and !is_pointer()) or is_array();
 }
