@@ -1285,18 +1285,6 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 	return true;
 }
 
-bool type_match_callable(const Class *given, const Class *wanted) {
-	if (!given->is_callable() or !wanted->is_callable())
-		return false;
-	if (given->param[0]->param.num != wanted->param[0]->param.num)
-		return false;
-	for (int i=0; i<given->param[0]->param.num; i++)
-		if (!type_match(given->param[0]->param[i], wanted->param[0]->param[i]))
-			return false;
-	return true;
-	return given->param[0]->param == wanted->param[0]->param;
-}
-
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
 	penalty = 0;
 	auto given = node->type;
@@ -1388,7 +1376,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		if (wanted->is_callable()) {
 			auto f = node->as_func();
 			auto ft = f->owner()->make_class_func(f);
-			if (type_match_callable(ft, wanted)) {
+			if (type_match(ft, wanted)) {
 				cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
 				return true;
 			}

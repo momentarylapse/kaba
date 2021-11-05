@@ -71,9 +71,12 @@ bool type_match(const Class *given, const Class *wanted) {
 	if (given->is_pointer() and wanted->is_pointer()) {
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
-		if (given->param[0]->type == Class::Type::FUNCTION and wanted->param[0]->type == Class::Type::FUNCTION)
-			return func_pointer_match(given, wanted);
+		//if (given->param[0]->type == Class::Type::FUNCTION and wanted->param[0]->type == Class::Type::FUNCTION)
+		//	return func_pointer_match(given, wanted);
 	}
+
+	if (given->is_callable() and wanted->is_callable())
+		return func_pointer_match(given, wanted);
 
 	if (wanted->is_super_array()) {
 		if (given->is_super_array()) {
