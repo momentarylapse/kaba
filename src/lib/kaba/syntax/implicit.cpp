@@ -787,10 +787,11 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		if (t->needs_constructor())
 			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_full_constructor(t, this);
+		if (!t->can_memcpy()) // needs destructor...
+			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
-		if (t->get_assign() and t->can_memcpy()) {
+		if (t->get_assign() and t->can_memcpy())
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
-		}
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
