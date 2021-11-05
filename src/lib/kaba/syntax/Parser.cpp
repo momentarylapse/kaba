@@ -25,9 +25,6 @@ void test_node_recursion(shared<Node> root, const Class *ns, const string &messa
 ExpressionBuffer *cur_exp_buf = nullptr;
 
 
-extern const Class *TypeAbstractList;
-extern const Class *TypeAbstractDict;
-extern const Class *TypeAbstractTuple;
 extern const Class *TypeIntList;
 extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
@@ -43,6 +40,7 @@ const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_ABSTRACT_TUPLE = -30;
 const int TYPE_CAST_TUPLE_AS_CONSTRUCTOR = -31;
+const int TYPE_CAST_FUNCTION_AS_CALLABLE = -32;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -41;
 
@@ -842,7 +840,7 @@ shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_a
 }
 
 shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeAbstractList, true);
+	auto c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -850,7 +848,7 @@ shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {
 }
 
 shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::DICT_BUILDER, 0, TypeAbstractDict, true);
+	auto c = new Node(NodeKind::DICT_BUILDER, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -858,7 +856,7 @@ shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
 }
 
 shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::TUPLE, 0, TypeAbstractTuple, true);
+	auto c = new Node(NodeKind::TUPLE, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -1287,6 +1285,18 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 	return true;
 }
 
+bool type_match_callable(const Class *given, const Class *wanted) {
+	if (!given->is_callable() or !wanted->is_callable())
+		return false;
+	if (given->param[0]->param.num != wanted->param[0]->param.num)
+		return false;
+	for (int i=0; i<given->param[0]->param.num; i++)
+		if (!type_match(given->param[0]->param[i], wanted->param[0]->param[i]))
+			return false;
+	return true;
+	return given->param[0]->param == wanted->param[0]->param;
+}
+
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
 	penalty = 0;
 	auto given = node->type;
@@ -1330,7 +1340,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		}
 	}
-	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeAbstractList) {
+	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
 			int pen, c;
@@ -1354,7 +1364,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			}
 		}
 	}
-	if ((node->kind == NodeKind::TUPLE) and (given == TypeAbstractTuple)) {
+	if ((node->kind == NodeKind::TUPLE) and (given == TypeUnknown)) {
 
 		for (auto *f: wanted->get_constructors()) {
 			if (type_match_tuple_as_contructor(node, f, penalty)) {
@@ -1373,6 +1383,18 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		msg_write("product");
 		cast = TYPE_CAST_ABSTRACT_TUPLE;
 		return true;
+	}
+	if ((node->kind == NodeKind::FUNCTION) and (given == TypeUnknown)) {
+		if (wanted->is_callable()) {
+			auto f = node->as_func();
+			auto ft = f->owner()->make_class_func(f);
+			if (type_match_callable(ft, wanted)) {
+				cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
+				return true;
+			}
+
+		}
+
 	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
@@ -1423,6 +1445,9 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 		msg_error("AUTO TUPLE");
 		node->type = wanted;
 		return node;
+	}
+	if (tc == TYPE_CAST_FUNCTION_AS_CALLABLE) {
+		return force_concrete_type(node);
 	}
 
 	if (tc == TYPE_CAST_TUPLE_AS_CONSTRUCTOR) {
@@ -2301,7 +2326,7 @@ void Parser::force_concrete_types(shared_array<Node> &nodes) {
 }
 
 shared<Node> Parser::force_concrete_type(shared<Node> node) {
-	if (node->type != TypeAbstractList and node->type != TypeAbstractDict and node->type != TypeAbstractTuple)
+	if (node->type != TypeUnknown)
 		return node;
 
 	if (node->kind == NodeKind::ARRAY_BUILDER) {
@@ -2352,6 +2377,10 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node));
 		auto xx = turn_class_node_into_constructor(type, node->params);
 		return try_to_match_apply_params(xx, node->params);
+	} else if (node->kind == NodeKind::FUNCTION) {
+		auto f = node->as_func();
+		node->type = tree->make_class_func(f);
+		return node;
 	} else {
 		do_error("unhandled abstract type: " + kind2str(node->kind));
 	}
@@ -2709,13 +2738,13 @@ shared<Node> Parser::parse_statement_sorted(Block *block) {
 }
 
 shared<Node> Parser::make_dynamical(shared<Node> node) {
-	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeAbstractList) {
+	if (node->kind == NodeKind::ARRAY_BUILDER and node->type == TypeUnknown) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = make_dynamical(node->params[i].get());
 		// TODO create...
 		node->type = TypeAnyList;
 		//return node;
-	} else  if (node->kind == NodeKind::DICT_BUILDER and node->type == TypeAbstractDict) {
+	} else  if (node->kind == NodeKind::DICT_BUILDER and node->type == TypeUnknown) {
 		for (int i=1; i<node->params.num; i+=2)
 			node->params[i] = make_dynamical(node->params[i].get());
 		// TODO create...
@@ -2749,6 +2778,7 @@ shared<Node> Parser::parse_statement_call(Block *block) {
 	auto params = parse_call_parameters(block);
 	if (params.num == 0)
 		do_error("call() expects at least 1 parameter");
+	params[0] = force_concrete_type(params[0]);
 	if (!is_function_pointer(params[0]->type))
 		do_error("call(): first parameter must be a function pointer ..." + params[0]->type->long_name());
 

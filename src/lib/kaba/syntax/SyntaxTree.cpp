@@ -118,7 +118,7 @@ shared<Node> SyntaxTree::add_node_call(Function *f) {
 }
 
 shared<Node> SyntaxTree::add_node_func_name(Function *f) {
-	return new Node(NodeKind::FUNCTION, (int_p)f, make_class_func(f), true);
+	return new Node(NodeKind::FUNCTION, (int_p)f, TypeUnknown /*make_class_func(f)*/, true);
 }
 
 shared<Node> SyntaxTree::add_node_class(const Class *c) {

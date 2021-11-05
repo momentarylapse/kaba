@@ -188,6 +188,12 @@ bool Class::is_dict() const
 bool Class::is_product() const
 { return type == Type::PRODUCT; }
 
+bool Class::is_callable() const {
+	if (is_pointer())
+		return param[0]->type == Type::FUNCTION;
+	return false;
+}
+
 bool Class::uses_call_by_reference() const {
 	return (!force_call_by_value() and !is_pointer()) or is_array();
 }
