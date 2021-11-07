@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "call.h"
 #include "../../any/any.h"
+#include "../../base/callable.h"
 
 namespace kaba {
 	
@@ -377,21 +378,10 @@ Any _cdecl kaba_dyn(const void *var, const Class *type) {
 
 Array<const Class*> func_effective_params(const Function *f);
 
-DynamicArray kaba_xmap(Function *func, DynamicArray *a, const Class *t) {
-	msg_write("xmap " + p2s(a) + " " + p2s(t));
-	msg_write(a->num);
-	msg_write(fa2s(*(Array<float>*)a));
-	msg_write(t->long_name());
-	return kaba_map(func, a);
-}
+DynamicArray kaba_xmap(void *fff, DynamicArray *a, const Class *ti, const Class *to) {
+	//msg_write("xmap " + ti->long_name() + " -> " + to->long_name());
 
-DynamicArray kaba_map(Function *func, DynamicArray *a) {
 	DynamicArray r;
-	auto p = func_effective_params(func);
-	if (p.num != 1)
-		kaba_raise_exception(new KabaException("map(): only functions with exactly 1 parameter allowed"));
-	auto *ti = p[0];
-	auto *to = func->literal_return_type;
 	r.init(to->size);
 	if (to->needs_constructor()) {
 		if (to == TypeString) {
@@ -405,9 +395,9 @@ DynamicArray kaba_map(Function *func, DynamicArray *a) {
 	for (int i=0; i<a->num; i++) {
 		void *po = r.simple_element(i);
 		void *pi = a->simple_element(i);
-		bool ok = call_function(func, po, {pi});
+		bool ok = call_callable(fff, po, {pi}, to, {ti});
 		if (!ok)
-			kaba_raise_exception(new KabaException("map(): failed to dynamically call " + func->signature()));
+			kaba_raise_exception(new KabaException(format("map(): failed to dynamically call %s -> %s", ti->long_name(), to->long_name())));
 	}
 	return r;
 }

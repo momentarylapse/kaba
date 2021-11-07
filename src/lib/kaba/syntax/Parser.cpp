@@ -2532,12 +2532,16 @@ Array<const Class*> func_effective_params(const Function *f) {
 }
 
 Array<const Class*> node_call_effective_params(shared<Node> node) {
+	if (node->type->is_callable_new_fp())
+		return get_callable_param_types(node->type);
 	if (node->kind == NodeKind::FUNCTION)
 		return func_effective_params(node->as_func());
 	return get_function_pointer_param_types(node->type);
 }
 
 const Class *node_call_return_type(shared<Node> node) {
+	if (node->type->is_callable_new_fp())
+		return get_callable_return_type(node->type);
 	if (node->kind == NodeKind::FUNCTION)
 		return node->as_func()->literal_return_type;
 	return get_function_pointer_return_type(node->type);
@@ -2550,8 +2554,11 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	auto params = parse_call_parameters(block);
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
-	if (!is_typed_function_pointer(params[0]->type) and (params[0]->kind != NodeKind::FUNCTION))
-		do_error("map(): first parameter must be a function or function pointer");
+	params[0] = force_concrete_type(params[0]);
+	if (!params[0]->type->is_callable_new_fp())
+		do_error("map(): first parameter must be callable");
+//	if (!is_typed_function_pointer(params[0]->type) and (params[0]->kind != NodeKind::FUNCTION))
+//		do_error("map(): first parameter must be a function or function pointer");
 	params[1] = force_concrete_type(params[1]);
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
@@ -2563,15 +2570,21 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	if (p[0] != params[1]->type->param[0])
 		do_error("map(): function parameter does not match list type");
 
-	auto *f = tree->required_func_global("@map");
+	auto *f = tree->required_func_global("@xmap");
 
 	auto cmd = tree->add_node_call(f);
-	if (params[0]->kind == NodeKind::FUNCTION) {
-		cmd->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypeFunctionP, params[0]->as_func())));
-	} else {
+//	if (params[0]->kind == NodeKind::FUNCTION) {
+//		cmd->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypeFunctionP, params[0]->as_func())));
+//	} else {
 		cmd->set_param(0, params[0]);
-	}
+//	}
 	cmd->set_param(1, params[1]);
+	auto t1 = tree->add_constant(TypeClassP);
+	t1->as_int64() = (int_p)p[0];
+	cmd->set_param(2, tree->add_node_const(t1));
+	auto t2 = tree->add_constant(TypeClassP);
+	t2->as_int64() = (int_p)rt;
+	cmd->set_param(3, tree->add_node_const(t2));
 	cmd->type = tree->make_class_super_array(rt);
 	return cmd;
 }
