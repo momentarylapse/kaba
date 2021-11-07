@@ -338,8 +338,10 @@ bool call_function(Function *f, void *ret, const Array<void*> &param) {
 	if ((config.abi == Abi::AMD64_WINDOWS) and !f->is_static() and f->name_space->uses_call_by_reference() and f->literal_return_type->uses_return_by_memory())
 		return false;
 
-	//f->address_preprocess ???
-	return call_function_pointer((void*)(int_p)f->address, ret, param, f->literal_return_type, ptype);
+	auto fp = f->address_preprocess;
+	if (!fp)
+		fp = (void*)(int_p)f->address;
+	return call_function_pointer(fp, ret, param, f->literal_return_type, ptype);
 }
 
 void *callable_get_func_pointer(void *c) {

@@ -198,7 +198,7 @@ bool Class::is_callable() const {
 }
 
 bool Class::is_callable_new() const
-{ return type == Type::CALLABLE; }
+{ return type == Type::CALLABLE or type == Type::CALLABLE_FUNCTION_POINTER; }
 
 bool Class::is_callable_new_fp() const
 { return type == Type::CALLABLE_FUNCTION_POINTER; }

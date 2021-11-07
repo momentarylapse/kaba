@@ -441,7 +441,7 @@ void SIAddXCommands() {
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
 	add_func("@xmap", TypeDynamicArray, &kaba_xmap, Flags::_STATIC__RAISES_EXCEPTIONS);
-		func_add_param("func", TypeFunctionP);
+		func_add_param("f", TypeCallableBase);
 		func_add_param("array", TypeDynamic);
 		func_add_param("t1", TypeClassP);
 		func_add_param("t2", TypeClassP);

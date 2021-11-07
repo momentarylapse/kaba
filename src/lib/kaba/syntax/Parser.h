@@ -51,6 +51,7 @@ public:
 	string param_match_with_cast_error(const shared_array<Node> &params, const Array<const Class*> &wanted);
 	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params);
 	shared<Node> force_concrete_type(shared<Node> node);
+	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);

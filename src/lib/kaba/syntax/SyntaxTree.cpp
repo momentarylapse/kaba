@@ -50,6 +50,8 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 	return cmd;
 }
 
+
+// deprecated
 const Class *SyntaxTree::make_class_func(Function *f) {
 	auto params = f->literal_param_type;
 	if (!f->is_static())
@@ -70,6 +72,7 @@ const Class *SyntaxTree::make_class_callable_fp(Function *f) {
 	//return TypeFunctionP;
 }
 
+// deprecated
 const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const Class *ret) {
 	do_error("make_class_func OLD...");
 
@@ -1117,9 +1120,7 @@ bool node_is_executable(shared<Node> n) {
 }
 
 shared<Node> SyntaxTree::conv_class_and_func_to_const(shared<Node> n) {
-	if (n->kind == NodeKind::FUNCTION) {
-		return add_node_const(add_constant_pointer(TypeFunctionP, n->as_func()));
-	} else if (n->kind == NodeKind::CLASS) {
+	if (n->kind == NodeKind::CLASS) {
 		return add_node_const(add_constant_pointer(TypeClassP, n->as_class()));
 	}
 	return n;

@@ -1,8 +1,7 @@
 f...
 <class func-pointer2.int->void>
+<class @CallableBase>
+[<class int>, <class void>]
 <class -nil->
-[<class func-pointer2.<func int->void>>]
-<class kaba.Function>
 ff 13
 ff 23
-ff
