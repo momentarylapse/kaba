@@ -58,6 +58,8 @@ public:
 		DICT,
 		PRODUCT, // (a,b) in (A x B)
 		INTERFACE,
+		CALLABLE,
+		CALLABLE_FUNCTION_POINTER,
 	};
 	Type type;
 	Flags flags;
@@ -73,6 +75,8 @@ public:
 	bool is_interface() const;
 	bool is_product() const;
 	bool is_callable() const;
+	bool is_callable_new() const;
+	bool is_callable_new_fp() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;
 	Array<ClassInitializers> initializers;
@@ -116,6 +120,7 @@ public:
 	Function *get_assign() const;
 	Function *get_virtual_function(int virtual_index) const;
 	Function *get_get(const Class *index) const;
+	Function *get_call() const;
 	void link_virtual_table();
 	void link_external_virtual_table(void *p);
 	void *create_instance() const;

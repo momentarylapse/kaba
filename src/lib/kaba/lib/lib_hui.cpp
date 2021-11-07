@@ -114,9 +114,9 @@ void SIAddPackageHui() {
 	auto TypeHuiPainter = add_type("Painter", sizeof(hui::Painter));
 	auto TypeHuiConfiguration = add_type("Configuration", sizeof(hui::Configuration));
 
-	auto TypeCallback = add_type_f(TypeVoid, {});
-	auto TypeCallbackObject = add_type_f(TypeVoid, {TypeObject});
-	auto TypeCallbackObjectP = add_type_f(TypeVoid, {TypeObject, TypeHuiPainter});
+	auto TypeCallback = TypeVoid;//add_type_f(TypeVoid, {});
+	auto TypeCallbackObject = TypeVoid;//add_type_f(TypeVoid, {TypeObject});
+	auto TypeCallbackObjectP = TypeVoid;//add_type_f(TypeVoid, {TypeObject, TypeHuiPainter});
 
 
 	add_class(TypeHuiMenu);

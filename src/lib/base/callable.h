@@ -20,6 +20,34 @@ class Callable;
 template<typename R, typename ...A>
 class Callable<R(A...)> {
 public:
+	typedef R t_func(A...);
+	t_func *fp;
+	void *pp;
+
+	Callable() {
+		fp = nullptr;
+		pp = nullptr;
+	}
+
+	Callable(t_func *_p) {
+		fp = _p;
+		pp = nullptr;
+	}
+
+	virtual ~Callable() {}
+
+	virtual R operator()(A... args) {
+		if (fp) {
+			return fp(args...);
+		} else {
+			throw EmptyCallableError();
+		}
+	}
+};
+
+/*template<typename R, typename ...A>
+class Callable<R(A...)> {
+public:
 	enum class Type {
 		EMPTY,
 		FUNCTION_POINTER,
@@ -52,5 +80,5 @@ public:
 			throw EmptyCallableError();
 		}
 	}
-};
+};*/
 

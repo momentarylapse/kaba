@@ -70,6 +70,15 @@ const Class *get_function_pointer_return_type(const Class *fp) {
 	return fp->param[0]->param.back();
 }
 
+
+Array<const Class*> get_callable_param_types(const Class *fp) {
+	return fp->param.sub_ref(0, -1); // skip return value
+}
+
+const Class *get_callable_return_type(const Class *fp) {
+	return fp->param.back();
+}
+
 int64 s2i2(const string &str) {
 	if ((str.num > 1) and (str[0]=='0') and (str[1]=='x')) {
 		int64 r=0;
@@ -364,7 +373,7 @@ shared<Node> SyntaxTree::add_node_constructor(Function *f) {
 	return n;
 }
 
-shared_array<Node> Parser::turn_class_node_into_constructor(const Class *t, shared_array<Node> &params) {
+shared_array<Node> Parser::turn_class_into_constructor(const Class *t, const shared_array<Node> &params) {
 	if (((t == TypeInt) or (t == TypeFloat32) or (t == TypeInt64) or (t == TypeFloat64) or (t == TypeBool) or (t == TypeChar)) and (params.num == 1))
 		return {tree->make_fake_constructor(t, params[0]->type)};
 	
@@ -487,7 +496,7 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
-			return try_to_match_apply_params(turn_class_node_into_constructor(t, params), params);
+			return try_to_match_apply_params(turn_class_into_constructor(t, params), params);
 		} else if (is_typed_function_pointer(l->type)) {
 			auto c = new Node(NodeKind::POINTER_CALL, 0, get_function_pointer_return_type(l->type));
 			c->set_num_params(1 + get_function_pointer_param_types(l->type).num);
@@ -498,6 +507,8 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			c->set_num_params(1);
 			c->set_param(0, l);
 			return try_to_match_params({c});*/
+		} else if (l->type->is_callable_new_fp()) {
+			return tree->add_node_member_call(l->type->get_call(), l, params);
 		} else {
 			do_error("can't call " + kind2str(l->kind));
 		}
@@ -784,7 +795,7 @@ bool Parser::param_match_with_cast(const shared<Node> operand, const shared_arra
 	return true;
 }
 
-string Parser::param_match_with_cast_error(const shared_array<Node> &params, Array<const Class*> &wanted) {
+string Parser::param_match_with_cast_error(const shared_array<Node> &params, const Array<const Class*> &wanted) {
 	if (wanted.num != params.num)
 		return format("%d parameters given, %d expected", params.num, wanted.num);
 	for (int p=0; p<params.num; p++) {
@@ -821,7 +832,7 @@ int node_param_offset(shared<Node> operand) {
 	return offset;
 }
 
-shared<Node> Parser::apply_params_direct(shared<Node> operand, shared_array<Node> &params) {
+shared<Node> Parser::apply_params_direct(shared<Node> operand, const shared_array<Node> &params) {
 	int offset = node_param_offset(operand);
 	auto r = operand->shallow_copy();
 	for (int p=0; p<params.num; p++)
@@ -1375,7 +1386,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	if ((node->kind == NodeKind::FUNCTION) and (given == TypeUnknown)) {
 		if (wanted->is_callable()) {
 			auto f = node->as_func();
-			auto ft = f->owner()->make_class_func(f);
+			auto ft = f->owner()->make_class_callable_fp(f);
 			if (type_match(ft, wanted)) {
 				cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
 				return true;
@@ -2308,6 +2319,25 @@ const Class *type_more_abstract(const Class *a, const Class *b) {
 	return nullptr;
 }
 
+shared<Node> Parser::wrap_function_into_callable(shared<Node> node) {
+	auto f = node->as_func();
+	auto t = tree->make_class_callable_fp(f);
+	//auto cons = turn_class_into_constructor(t, {node});
+
+
+	for (auto *cf: t->get_constructors())
+		if (cf->num_params == 1) {
+			auto con = tree->add_node_constructor(cf);
+			auto fp = tree->add_constant(TypePointer);
+			fp->as_int64() = (int_p)f;
+			return apply_params_direct(con, {tree->add_node_const(fp)});
+		}
+	do_error("X");
+
+	node->type = tree->make_class_func(f);
+	return node;
+}
+
 void Parser::force_concrete_types(shared_array<Node> &nodes) {
 	for (int i=0; i<nodes.num; i++)
 		nodes[i] = force_concrete_type(nodes[i].get());
@@ -2363,12 +2393,10 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 		return node;
 	} else if (node->kind == NodeKind::TUPLE) {
 		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node));
-		auto xx = turn_class_node_into_constructor(type, node->params);
+		auto xx = turn_class_into_constructor(type, node->params);
 		return try_to_match_apply_params(xx, node->params);
 	} else if (node->kind == NodeKind::FUNCTION) {
-		auto f = node->as_func();
-		node->type = tree->make_class_func(f);
-		return node;
+		return wrap_function_into_callable(node);
 	} else {
 		do_error("unhandled abstract type: " + kind2str(node->kind));
 	}
@@ -3706,9 +3734,9 @@ void Parser::parse_function_body(Function *f) {
 		if (peek_commands_super(Exp)) {
 			more_to_parse = parse_function_command(f, indent0);
 
-			auto_implement_constructor(f, f->name_space, false);
+			auto_implement_regular_constructor(f, f->name_space, false);
 		} else {
-			auto_implement_constructor(f, f->name_space, true);
+			auto_implement_regular_constructor(f, f->name_space, true);
 		}
 	}
 
@@ -3721,7 +3749,7 @@ void Parser::parse_function_body(Function *f) {
 
 	// auto implement destructor?
 	if (f->name == IDENTIFIER_FUNC_DELETE)
-		auto_implement_destructor(f, f->name_space);
+		auto_implement_regular_destructor(f, f->name_space);
 	cur_func = nullptr;
 
 	Exp.cur_line --;

@@ -197,6 +197,12 @@ bool Class::is_callable() const {
 	return false;
 }
 
+bool Class::is_callable_new() const
+{ return type == Type::CALLABLE; }
+
+bool Class::is_callable_new_fp() const
+{ return type == Type::CALLABLE_FUNCTION_POINTER; }
+
 bool Class::uses_call_by_reference() const {
 	return (!force_call_by_value() and !is_pointer()) or is_array();
 }
@@ -384,6 +390,14 @@ Function *Class::get_get(const Class *index) const {
 		if (cf->literal_param_type[0] != index)
 			continue;
 		return cf;
+	}
+	return nullptr;
+}
+
+Function *Class::get_call() const {
+	for (auto *cf: weak(functions)) {
+		if (cf->name == "call")
+			return cf;
 	}
 	return nullptr;
 }

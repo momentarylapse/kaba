@@ -12,6 +12,7 @@ namespace kaba {
 extern const Class *TypeDynamicArray;
 extern const Class *TypeDictBase;
 extern const Class *TypeSharedPointer;
+extern const Class *TypeCallableBase;
 extern const Class *TypeMatrix;
 extern const Class *TypeVec2;
 
@@ -59,7 +60,18 @@ const Class *SyntaxTree::make_class_func(Function *f) {
 	//return TypeFunctionP;
 }
 
+const Class *SyntaxTree::make_class_callable_fp(Function *f) {
+	auto params = f->literal_param_type;
+	if (!f->is_static())
+		params.insert(f->name_space, 0);
+	if (params.num == 0)
+		return make_class_callable_fp({TypeVoid}, f->literal_return_type);
+	return make_class_callable_fp(params, f->literal_return_type);
+	//return TypeFunctionP;
+}
+
 const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const Class *ret) {
+	do_error("make_class_func OLD...");
 
 	// maybe some day...
 	string params;// = param->name;
@@ -82,6 +94,31 @@ const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const
 	}
 	//auto p = ff->get_pointer();
 	return make_class(params + "->" + ret->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
+}
+
+const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
+
+	// maybe some day...
+	string params;// = param->name;
+	for (int i=0; i<param.num; i++) {
+		if (i > 0)
+			params += ",";
+		params += param[i]->name;
+	}
+	if (param.num > 1)
+		params = "(" + params + ")";
+	auto params_ret = param;
+	if (param.num == 0 or (param.num == 1 and param[0] == TypeVoid)) {
+		params = "void";
+		params_ret = {};
+	}
+	params_ret.add(ret);
+	/*auto ff = make_class("<func " + params + "->" + ret->name + ">", Class::Type::FUNCTION, 0, 0, nullptr, params_ret, base_class);
+	if (!ff->parent) {
+		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
+	}*/
+	//auto p = ff->get_pointer();
+	return make_class(params + "->" + ret->name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
 shared<Node> SyntaxTree::add_node_statement(StatementID id) {
@@ -676,6 +713,11 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	} else if (t->type == Class::Type::FUNCTION) {
 		t->derive_from(TypeFunction, true);
 		t->param = params;
+	} else if (t->type == Class::Type::CALLABLE_FUNCTION_POINTER) {
+		t->derive_from(TypeCallableBase, true);
+		t->functions.clear(); // don't inherit call() with specific types!
+		t->param = params;
+		add_missing_function_headers_for_class(t);
 	//} else if (t->type == Class::Type::PRODUCT) {
 	//	add_missing_function_headers_for_class(t);
 	}

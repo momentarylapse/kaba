@@ -3,6 +3,7 @@
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 #include "../../file/file.h"
+#include "../../base/callable.h"
 #include <algorithm>
 #include <math.h>
 #include <cstdio>
@@ -14,6 +15,7 @@ extern const Class *TypeDynamicArray;
 extern const Class *TypeSharedPointer;
 extern const Class *TypeStringAutoCast;
 extern const Class *TypeDictBase;
+extern const Class *TypeCallableBase;
 extern const Class *TypeFloat;
 extern const Class *TypePointerList;
 extern const Class *TypeObject;
@@ -360,6 +362,13 @@ string XList<double>::str() const {
 using FloatList = XList<float>;
 using Float64List = XList<double>;
 
+class KabaCallableBase : public Callable<void()> {
+public:
+	void __init__() {
+		new(this) KabaCallableBase();
+	}
+};
+
 static const bool USE_DYNAMIC_BIND = false;
 
 Function *create_binding(BindingTemplate *lt, char *first) {
@@ -481,6 +490,7 @@ void SIAddPackageBase() {
 	TypeDynamicArray	= add_type  ("@DynamicArray", config.super_array_size);
 	TypeDictBase		= add_type  ("@DictBase",   config.super_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.pointer_size);
+	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));
 	TypeExceptionP		= add_type_p(TypeException);
@@ -552,6 +562,15 @@ void SIAddPackageBase() {
 	TypeIntDict     = add_type_d(TypeInt);
 	TypeFloatDict   = add_type_d(TypeFloat);
 	TypeStringDict  = add_type_d(TypeString);
+
+
+	add_class(TypeCallableBase);
+		class_add_element("_fp", TypePointer, &KabaCallableBase::fp);
+		class_add_element("_pp", TypePointer, &KabaCallableBase::pp);
+		//class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaCallableBase::__init__);
+		class_add_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, nullptr);
+			func_set_inline(InlineID::CHUNK_ASSIGN);
+		class_add_func_virtual("call", TypeVoid, &KabaCallableBase::operator(), Flags::CONST);
 	
 
 
