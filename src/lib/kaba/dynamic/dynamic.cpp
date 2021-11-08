@@ -240,10 +240,25 @@ string class_repr(const Class *c) {
 	return "<class -nil->";
 }
 
+// probably deprecated...?
 string func_repr(const Function *f) {
 	if (f)
 		return "<func " + f->long_name() + ">";
 	return "<func -nil->";
+}
+
+
+Array<const Class*> get_callable_param_types(const Class *fp);
+const Class *get_callable_return_type(const Class *fp);
+string make_callable_signature(const Array<const Class*> &param, const Class *ret);
+string callable_signature(const Class *type) {
+	auto pp = get_callable_param_types(type);
+	auto r = get_callable_return_type(type);
+	return make_callable_signature(pp, r);
+}
+
+string callable_repr(const void *p, const Class *type) {
+	return "<callable " + callable_signature(type) + ">";
 }
 
 string _cdecl var_repr(const void *p, const Class *type) {
@@ -257,7 +272,10 @@ string _cdecl var_repr(const void *p, const Class *type) {
 		return b2s(*(bool*)p);
 	} else if (type == TypeClass) {
 		return class_repr((Class*)p);
+	} else if (type->is_callable_new()) {
+		return callable_repr(p, type);
 	} else if (type == TypeFunction or type->type == Class::Type::FUNCTION) {
+		// probably not...
 		return func_repr((Function*)p);
 	} else if (type == TypeAny) {
 		return ((Any*)p)->repr();

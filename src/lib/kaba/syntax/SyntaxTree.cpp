@@ -99,8 +99,7 @@ const Class *SyntaxTree::make_class_func(const Array<const Class*> &param, const
 	return make_class(params + "->" + ret->name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
 }
 
-const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
-
+string make_callable_signature(const Array<const Class*> &param, const Class *ret) {
 	// maybe some day...
 	string params;// = param->name;
 	for (int i=0; i<param.num; i++) {
@@ -110,18 +109,26 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 	}
 	if (param.num > 1)
 		params = "(" + params + ")";
-	auto params_ret = param;
 	if (param.num == 0 or (param.num == 1 and param[0] == TypeVoid)) {
 		params = "void";
-		params_ret = {};
 	}
+	return params + "->" + ret->name;
+}
+
+const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
+
+	string name = make_callable_signature(param, ret);
+
+	auto params_ret = param;
+	if (param.num == 1 and param[0] == TypeVoid)
+		params_ret = {};
 	params_ret.add(ret);
 	/*auto ff = make_class("<func " + params + "->" + ret->name + ">", Class::Type::FUNCTION, 0, 0, nullptr, params_ret, base_class);
 	if (!ff->parent) {
 		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
 	}*/
 	//auto p = ff->get_pointer();
-	return make_class(params + "->" + ret->name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
 shared<Node> SyntaxTree::add_node_statement(StatementID id) {
