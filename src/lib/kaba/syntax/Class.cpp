@@ -31,6 +31,7 @@ bool ClassElement::hidden() const {
 bool type_match(const Class *given, const Class *wanted);
 
 bool func_pointer_match(const Class *given, const Class *wanted) {
+	msg_write("FP MATCH...?");
 	auto g = given->param[0];
 	auto w = wanted->param[0];
 	//msg_write(format("%s   vs   %s", g->name, w->name));
@@ -193,7 +194,7 @@ bool Class::is_product() const
 
 bool Class::is_callable() const {
 	if (is_pointer())
-		return param[0]->type == Type::FUNCTION;
+		return param[0]->type == Type::CALLABLE_FUNCTION_POINTER;
 	return false;
 }
 

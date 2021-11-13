@@ -120,15 +120,17 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 	string name = make_callable_signature(param, ret);
 
 	auto params_ret = param;
-	if (param.num == 1 and param[0] == TypeVoid)
+	if ((param.num == 1) and (param[0] == TypeVoid))
 		params_ret = {};
 	params_ret.add(ret);
-	/*auto ff = make_class("<func " + params + "->" + ret->name + ">", Class::Type::FUNCTION, 0, 0, nullptr, params_ret, base_class);
-	if (!ff->parent) {
+
+	auto ff = make_class("Callable(...)", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	/*if (!ff->parent) {
 		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
 	}*/
 	//auto p = ff->get_pointer();
-	return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	return make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
+	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
 shared<Node> SyntaxTree::add_node_statement(StatementID id) {
@@ -141,7 +143,7 @@ shared<Node> SyntaxTree::add_node_statement(StatementID id) {
 // virtual call, if func is virtual
 shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params, bool force_non_virtual) {
 	shared<Node> c;
-	if ((f->virtual_index >= 0) and (!force_non_virtual)) {
+	if ((f->virtual_index >= 0) and !force_non_virtual) {
 		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type, true);
 	} else {
 		c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type, true);

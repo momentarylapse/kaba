@@ -740,7 +740,7 @@ void Parser::auto_implement_owned_clear(Function *f, const Class *t) {
 
 
 shared<Node> get_callable_fp(const Class *t, shared<Node> self) {
-	foreachi(ClassElement &e, t->elements, i)
+	for (auto &e: t->elements)
 		if (e.name == "_fp")
 			return self->shift(e.offset, e.type);
 	return nullptr;
@@ -750,8 +750,8 @@ shared<Node> get_callable_fp(const Class *t, shared<Node> self) {
 void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	if (!f->__get_var("p"))
-		return; // stupid hack... (default constructor only used before assigning anyway...)
+//	if (!f->__get_var("p"))
+//		return; // stupid hack... (default constructor only used before assigning anyway...)
 
 	auto_implement_add_virtual_table(self, f, t);
 	auto n_p = tree->add_node_local(f->__get_var("p"));
@@ -932,9 +932,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		if (t->get_assign() and t->can_memcpy())
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
 	} else if (t->is_callable_new_fp()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+		//add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"p"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"})->inline_no = InlineID::CHUNK_ASSIGN;
+		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"})->inline_no = InlineID::CHUNK_ASSIGN;
 		add_func_header(t, "call", get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f"})->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else { // regular classes
 		if (t->can_memcpy()) {
@@ -1046,7 +1046,7 @@ void Parser::auto_implement_functions(const Class *t) {
 	} else if (t->is_callable_new_fp()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_callable_constructor(prepare_auto_impl(t, cf), t);
-		auto_implement_callable_assign(prepare_auto_impl(t, t->get_assign()), t);
+		//auto_implement_callable_assign(prepare_auto_impl(t, t->get_assign()), t);
 		auto_implement_callable_call(prepare_auto_impl(t, t->get_call()), t);
 	} else {
 		for (auto *cf: t->get_constructors())
