@@ -36,7 +36,7 @@ public:
 
 	virtual ~Callable() {}
 
-	virtual R operator()(A... args) {
+	virtual R operator()(A... args) const {
 		if (fp) {
 			return fp(args...);
 		} else {
