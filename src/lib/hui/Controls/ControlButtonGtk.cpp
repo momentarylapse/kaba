@@ -13,7 +13,7 @@ namespace hui
 
 #ifdef HUI_API_GTK
 
-void *get_gtk_image(const string &image, GtkIconSize size); // -> hui_menu_gtk.cpp
+GtkWidget *get_gtk_image_x(const string &image, GtkIconSize size, GtkWidget *w); // -> hui_menu_gtk.cpp
 
 void on_gtk_button_press(GtkWidget *widget, gpointer data) {
 	reinterpret_cast<Control*>(data)->notify(EventID::CLICK);
@@ -37,6 +37,7 @@ ControlButton::ControlButton(const string &title, const string &id, Panel *panel
 		widget = gtk_button_new_with_label(sys_str(parts[0]));
 		g_signal_connect(G_OBJECT(widget), "clicked", G_CALLBACK(&on_gtk_button_press), this);
 	}
+	image_size = GTK_ICON_SIZE_BUTTON;
 	set_options(get_option_from_title(title));
 
 //	SetImageById(this, id);
@@ -51,7 +52,7 @@ void ControlButton::__set_string(const string &str) {
 }
 
 void ControlButton::set_image(const string& str) {
-	GtkWidget *im = (GtkWidget*)get_gtk_image(str, GTK_ICON_SIZE_BUTTON);
+	GtkWidget *im = get_gtk_image_x(str, image_size, widget);
 	gtk_button_set_image(GTK_BUTTON(widget), im);
 #if GTK_CHECK_VERSION(3,6,0)
 	if (strlen(gtk_button_get_label(GTK_BUTTON(widget))) == 0)
@@ -72,6 +73,10 @@ void ControlButton::__set_option(const string &op, const string &value) {
 		auto sc = gtk_widget_get_style_context(widget);
 		gtk_style_context_remove_class(sc, GTK_STYLE_CLASS_SUGGESTED_ACTION);
 		gtk_style_context_add_class(sc, GTK_STYLE_CLASS_DESTRUCTIVE_ACTION);
+	} else if (op == "big") {
+		image_size = GTK_ICON_SIZE_DND;
+	} else if (op == "huge") {
+		image_size = GTK_ICON_SIZE_DIALOG;
 	}
 }
 

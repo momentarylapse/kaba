@@ -13,7 +13,7 @@
 namespace hui
 {
 
-void *get_gtk_image(const string &image, GtkIconSize size); // -> hui_menu_gtk.cpp
+GtkWidget *get_gtk_image_x(const string &image, GtkIconSize size, GtkWidget *w); // -> hui_menu_gtk.cpp
 
 void on_gtk_toggle_button_toggle(GtkWidget *widget, gpointer data)
 {	reinterpret_cast<Control*>(data)->notify(EventID::CHANGE);	}
@@ -24,6 +24,7 @@ ControlToggleButton::ControlToggleButton(const string &title, const string &id) 
 	auto parts = split_title(title);
 	widget = gtk_toggle_button_new_with_label(sys_str(parts[0]));
 	g_signal_connect(G_OBJECT(widget), "toggled", G_CALLBACK(&on_gtk_toggle_button_toggle), this);
+	image_size = GTK_ICON_SIZE_BUTTON;
 	set_options(get_option_from_title(title));
 }
 
@@ -36,7 +37,7 @@ void ControlToggleButton::__set_string(const string &str) {
 }
 
 void ControlToggleButton::set_image(const string& str) {
-	GtkWidget *im = (GtkWidget*)get_gtk_image(str, GTK_ICON_SIZE_BUTTON);
+	GtkWidget *im = get_gtk_image_x(str, image_size, widget);
 	gtk_button_set_image(GTK_BUTTON(widget), im);
 	#if GTK_CHECK_VERSION(3,6,0)
 		if (strlen(gtk_button_get_label(GTK_BUTTON(widget))) == 0)
@@ -53,8 +54,13 @@ bool ControlToggleButton::is_checked() {
 }
 
 void ControlToggleButton::__set_option(const string &op, const string &value) {
-	if (op == "flat")
+	if (op == "flat") {
 		gtk_button_set_relief(GTK_BUTTON(widget), GTK_RELIEF_NONE);
+	} else if (op == "big") {
+		image_size = GTK_ICON_SIZE_DND;
+	} else if (op == "huge") {
+		image_size = GTK_ICON_SIZE_DIALOG;
+	}
 }
 
 };

@@ -191,12 +191,51 @@ HuiImage *get_image(const string &filename) {
 	return &_all_images_.back();
 }
 
-void *get_gtk_image(const string &image, GtkIconSize size) {
+GtkIconTheme *get_hui_icon_theme() {
+	static GtkIconTheme *hui_icon_theme = nullptr;
+	if (!hui_icon_theme) {
+		hui_icon_theme = gtk_icon_theme_new();
+		gtk_icon_theme_append_search_path(hui_icon_theme, sys_str_f(Application::directory_static << "icons"));
+		gtk_icon_theme_append_search_path(hui_icon_theme, sys_str_f(Application::directory_static << "icons" << "64x64"));
+		gtk_icon_theme_append_search_path(hui_icon_theme, sys_str_f(Application::directory_static << "icons" << "48x48"));
+		gtk_icon_theme_append_search_path(hui_icon_theme, sys_str_f(Application::directory_static << "icons" << "32x32"));
+		// guess, only 64x64 is used... could skip the others
+	}
+	return hui_icon_theme;
+}
+
+int absolute_gtk_size(int s) {
+	if (s == GTK_ICON_SIZE_BUTTON)
+		return 16;
+	if (s == GTK_ICON_SIZE_DND)
+		return 32;
+	if (s == GTK_ICON_SIZE_DIALOG)
+		return 48;
+	return s;
+}
+
+GtkWidget *get_gtk_image_x(const string &image, GtkIconSize size, GtkWidget *widget) {
 	if (image == "")
 		return nullptr;
 	if (image.head(4) == "hui:") {
 		// internal
 		return gtk_image_new_from_icon_name(get_gtk_icon_name(image), size);
+	} else if (image.find(".") < 0) {
+		size = (GtkIconSize)absolute_gtk_size((int)size);
+		auto theme = get_hui_icon_theme();
+		auto info = gtk_icon_theme_lookup_icon(theme, image.c_str(), size, GTK_ICON_LOOKUP_FORCE_SYMBOLIC);
+		if (!info)
+			info = gtk_icon_theme_lookup_icon(theme, image.c_str(), size, (GtkIconLookupFlags)0);//, GTK_ICON_LOOKUP_FORCE_SYMBOLIC);
+		auto sc = gtk_widget_get_style_context(widget);
+
+		gboolean was_sym = true;
+		GError *error = nullptr;
+		auto pixbuf = gtk_icon_info_load_symbolic_for_context(info, sc, &was_sym, &error);
+		if (error) {
+			msg_error(error->message);
+		}
+		return gtk_image_new_from_pixbuf(pixbuf);
+		//return gtk_image_new_from_file(sys_str_f(Application::directory_static << image.sub_ref(7)));
 	} else {
 		// file
 		//HuiImage *img = get_image(image);
@@ -208,6 +247,9 @@ void *get_gtk_image(const string &image, GtkIconSize size) {
 		// relative
 		return gtk_image_new_from_file(sys_str_f(Application::directory_static << image));
 	}
+}
+void *get_gtk_image(const string &image, GtkIconSize size) {
+	return get_gtk_image_x(image, size, nullptr);
 }
 
 void *get_gtk_image_pixbuf(const string &image)
