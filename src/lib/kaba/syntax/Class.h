@@ -58,7 +58,6 @@ public:
 		DICT,
 		PRODUCT, // (a,b) in (A x B)
 		INTERFACE,
-		CALLABLE,
 		CALLABLE_FUNCTION_POINTER,
 		CALLABLE_BIND,
 	};
@@ -76,8 +75,7 @@ public:
 	bool is_interface() const;
 	bool is_product() const;
 	bool is_callable() const;
-	bool is_callable_new() const;
-	bool is_callable_new_fp() const;
+	bool is_callable_fp() const;
 	bool is_callable_bind() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;

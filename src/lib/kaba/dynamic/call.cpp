@@ -249,6 +249,10 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				call2<int,int,int>(ff, ret, param);
 				return true;
 			}
+			if ((ptype[0]->uses_call_by_reference()) and (ptype[1] == TypeInt)) {
+				call2<int,CBR,int>(ff, ret, param);
+				return true;
+			}
 		} else if (return_type == TypeFloat32) {
 			if ((ptype[0] == TypeFloat32) and (ptype[1] == TypeFloat32)) {
 				call2<float,float,float>(ff, ret, param);

@@ -80,7 +80,7 @@ void Parser::auto_implement_regular_constructor(Function *f, const Class *t, boo
 	} else if (t->is_dict()) {
 	} else if (t->is_array()) {
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
-	} else if (t->is_callable_new_fp()) {
+	} else if (t->is_callable_fp()) {
 	} else if (flags_has(f->flags, Flags::__INIT_FILL_ALL_PARAMS)) {
 		// init
 		auto_implement_add_child_constructors(self, f, t, true);
@@ -968,7 +968,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 		if (t->get_assign() and t->can_memcpy())
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
-	} else if (t->is_callable_new_fp()) {
+	} else if (t->is_callable_fp()) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"p"});
 		add_func_header(t, "call", get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else if (t->is_callable_bind()) {
@@ -1083,7 +1083,7 @@ void Parser::auto_implement_functions(const Class *t) {
 		auto_implement_owned_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]->get_pointer()})), t);
 		//auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 		//auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()})), t);
-	} else if (t->is_callable_new_fp()) {
+	} else if (t->is_callable_fp()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_callable_constructor(prepare_auto_impl(t, cf), t);
 		auto_implement_callable_fp_call(prepare_auto_impl(t, t->get_call()), t);

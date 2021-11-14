@@ -49,12 +49,6 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 
 
 
-bool is_typed_function_pointer(const Class *c) {
-	if (c->is_pointer() and c->param[0]->is_callable_new_fp())
-		return true;
-	return false;
-}
-
 #if 0
 bool is_function_pointer(const Class *c) {
 	if (c ==  TypeFunctionP)
@@ -539,7 +533,7 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			c->set_param(0, l);
 			return try_to_match_params({c});*/
 #endif
-		} else if (is_typed_function_pointer(l->type)) {
+		} else if (l->type->is_callable()) {
 			links[i] = make_func_pointer_node_callable(l);
 			//return tree->add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
 		} else {
@@ -2579,7 +2573,7 @@ Array<const Class*> func_effective_params(const Function *f) {
 }
 
 Array<const Class*> node_call_effective_params(shared<Node> node) {
-	if (is_typed_function_pointer(node->type))
+	if (node->type->is_callable())
 		return get_callable_param_types(node->type);
 	if (node->kind == NodeKind::FUNCTION)
 		return func_effective_params(node->as_func());
@@ -2587,7 +2581,7 @@ Array<const Class*> node_call_effective_params(shared<Node> node) {
 }
 
 const Class *node_call_return_type(shared<Node> node) {
-	if (is_typed_function_pointer(node->type))
+	if (node->type->is_callable())
 		return get_callable_return_type(node->type);
 	if (node->kind == NodeKind::FUNCTION)
 		return node->as_func()->literal_return_type;
@@ -2602,10 +2596,8 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
 	params[0] = force_concrete_type(params[0]);
-	if (!is_typed_function_pointer(params[0]->type))
+	if (!params[0]->type->is_callable())
 		do_error("map(): first parameter must be callable");
-//	if (!is_typed_function_pointer(params[0]->type) and (params[0]->kind != NodeKind::FUNCTION))
-//		do_error("map(): first parameter must be a function or function pointer");
 	params[1] = force_concrete_type(params[1]);
 	if (!params[1]->type->is_super_array())
 		do_error("map(): second parameter must be a list[]");
@@ -2620,11 +2612,7 @@ shared<Node> Parser::parse_statement_map(Block *block) {
 	auto *f = tree->required_func_global("@xmap");
 
 	auto cmd = tree->add_node_call(f);
-//	if (params[0]->kind == NodeKind::FUNCTION) {
-//		cmd->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypeFunctionP, params[0]->as_func())));
-//	} else {
-		cmd->set_param(0, params[0]);
-//	}
+	cmd->set_param(0, params[0]);
 	cmd->set_param(1, params[1]);
 	cmd->set_param(2, tree->add_node_class(p[0]));
 	cmd->set_param(3, tree->add_node_class(p[1]));

@@ -193,14 +193,11 @@ bool Class::is_product() const
 
 bool Class::is_callable() const {
 	if (is_pointer())
-		return param[0]->type == Type::CALLABLE_FUNCTION_POINTER;
+		return param[0]->is_callable_fp() or param[0]->is_callable_bind();
 	return false;
 }
 
-bool Class::is_callable_new() const
-{ return type == Type::CALLABLE or type == Type::CALLABLE_FUNCTION_POINTER; }
-
-bool Class::is_callable_new_fp() const
+bool Class::is_callable_fp() const
 { return type == Type::CALLABLE_FUNCTION_POINTER; }
 
 bool Class::is_callable_bind() const

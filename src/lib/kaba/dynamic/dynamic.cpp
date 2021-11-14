@@ -272,7 +272,7 @@ string _cdecl var_repr(const void *p, const Class *type) {
 		return b2s(*(bool*)p);
 	} else if (type == TypeClass) {
 		return class_repr((Class*)p);
-	} else if (type->is_callable_new()) {
+	} else if (type->is_callable_fp() or type->is_callable_bind()) {
 		return callable_repr(p, type);
 	} else if (type == TypeFunction or type->type == Class::Type::FUNCTION) {
 		// probably not...

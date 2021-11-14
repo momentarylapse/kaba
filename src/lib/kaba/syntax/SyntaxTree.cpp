@@ -718,7 +718,7 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	} else if (t->type == Class::Type::FUNCTION) {
 		t->derive_from(TypeFunction, true);
 		t->param = params;
-	} else if (t->is_callable_new_fp()) {
+	} else if (t->is_callable_fp()) {
 		t->derive_from(TypeCallableBase, true);
 		t->functions.clear(); // don't inherit call() with specific types!
 		t->param = params;
