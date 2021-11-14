@@ -1,3 +1,5 @@
+use kaba
+
 func main()
 	var a = 1000000
 	var b = -1
@@ -5,5 +7,7 @@ func main()
 	a = 200
 	var g = lambda(i: int) i*i+a+b
 	a = 0
+#	print(kaba.get_dynamic_type(f))
+#	print(kaba.get_dynamic_type(g))
 	print(f(2))
 	print(g(2))

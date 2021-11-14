@@ -15,6 +15,7 @@ extern const Class *TypeCallableBase;
 
 Array<const Class*> get_callable_param_types(const Class *fp);
 const Class *get_callable_return_type(const Class *fp);
+Array<const Class*> get_callable_capture_types(const Class *fp);
 
 
 void Parser::do_error_implicit(Function *f, const string &str) {
@@ -746,48 +747,84 @@ shared<Node> get_callable_fp(const Class *t, shared<Node> self) {
 	return nullptr;
 }
 
+static const Array<string> DUMMY_PARAMS = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"};
+
 
 void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-//	if (!f->__get_var("p"))
-//		return; // stupid hack... (default constructor only used before assigning anyway...)
-
 	auto_implement_add_virtual_table(self, f, t);
-	auto n_p = tree->add_node_local(f->__get_var("p"));
 
-	auto fp = get_callable_fp(t, self);
-	auto n_assign = link_operator_id(OperatorID::ASSIGN, fp, n_p);
-	if (!n_assign)
-		do_error_implicit(f, format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"));
-	f->block->add(n_assign);
-}
+	// self.fp = p
+	{
+		auto n_p = tree->add_node_local(f->__get_var("p"));
 
-
-void Parser::auto_implement_callable_assign(Function *f, const Class *t) {
-	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
-}
-
-void Parser::auto_implement_callable_call(Function *f, const Class *t) {
-	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
-
-	auto cmd_call = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
-	cmd_call->set_num_params(1 + get_callable_param_types(t).num);
-	cmd_call->set_param(0, get_callable_fp(t, self));
-	for (int i=0; i<f->num_params; i++) {
-		cmd_call->set_param(i+1, tree->add_node_local(f->var[i].get()));
+		auto fp = get_callable_fp(t, self);
+		auto n_assign = link_operator_id(OperatorID::ASSIGN, fp, n_p);
+		if (!n_assign)
+			do_error_implicit(f, format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"));
+		f->block->add(n_assign);
 	}
+
+	int i_capture = 0;
+	for (auto &e: t->elements)
+		if (e.name.head(7) == "capture") {
+			auto n_p = tree->add_node_local(f->__get_var(DUMMY_PARAMS[i_capture ++]));
+
+			auto fp = self->shift(e.offset, e.type);
+			auto n_assign = link_operator_id(OperatorID::ASSIGN, fp, n_p);
+			if (!n_assign)
+				do_error_implicit(f, format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"));
+			f->block->add(n_assign);
+		}
+}
+
+
+void Parser::auto_implement_callable_fp_call(Function *f, const Class *t) {
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+
+	auto call = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
+	call->set_num_params(1 + get_callable_param_types(t).num);
+	call->set_param(0, get_callable_fp(t, self));
+	for (int i=0; i<f->num_params; i++)
+		call->set_param(i+1, tree->add_node_local(f->var[i].get()));
+
 	if (f->literal_return_type == TypeVoid) {
-		f->block->add(cmd_call);
+		f->block->add(call);
 	} else {
 		auto ret = tree->add_node_statement(StatementID::RETURN);
 		ret->set_num_params(1);
-		ret->set_param(0, cmd_call);
+		ret->set_param(0, call);
 		f->block->add(ret);
 	}
 }
 
 
+
+void Parser::auto_implement_callable_bind_call(Function *f, const Class *t) {
+	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
+
+	auto fp = get_callable_fp(t, self);
+	auto call = tree->add_node_member_call(fp->type->param[0]->get_call(), fp);
+	int index = 1;
+	//for (int i=0; i<f->num_params; i++)
+	//	call->set_param(i+1, tree->add_node_local(f->var[i].get()));
+	for (auto *v: weak(f->var))
+		if (v->name.num == 1)
+			call->set_param(index ++, tree->add_node_local(v));
+	for (auto &e: t->elements)
+		if (e.name.head(7) == "capture")
+			call->set_param(index ++, self->shift(e.offset, e.type));
+
+	if (f->literal_return_type == TypeVoid) {
+		f->block->add(call);
+	} else {
+		auto ret = tree->add_node_statement(StatementID::RETURN);
+		ret->set_num_params(1);
+		ret->set_param(0, call);
+		f->block->add(ret);
+	}
+}
 
 
 
@@ -932,10 +969,13 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		if (t->get_assign() and t->can_memcpy())
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
 	} else if (t->is_callable_new_fp()) {
-		//add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"p"});
-		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"})->inline_no = InlineID::CHUNK_ASSIGN;
-		add_func_header(t, "call", get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+		add_func_header(t, "call", get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+	} else if (t->is_callable_bind()) {
+		auto types = get_callable_capture_types(t);
+		types.insert(TypePointer, 0);
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, types, {"p", "a", "b", "c", "d", "e", "f", "g", "h"});
+		add_func_header(t, "call", get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
@@ -1046,8 +1086,11 @@ void Parser::auto_implement_functions(const Class *t) {
 	} else if (t->is_callable_new_fp()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_callable_constructor(prepare_auto_impl(t, cf), t);
-		//auto_implement_callable_assign(prepare_auto_impl(t, t->get_assign()), t);
-		auto_implement_callable_call(prepare_auto_impl(t, t->get_call()), t);
+		auto_implement_callable_fp_call(prepare_auto_impl(t, t->get_call()), t);
+	} else if (t->is_callable_bind()) {
+		for (auto *cf: t->get_constructors())
+			auto_implement_callable_constructor(prepare_auto_impl(t, cf), t);
+		auto_implement_callable_bind_call(prepare_auto_impl(t, t->get_call()), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_regular_constructor(prepare_auto_impl(t, cf), t, true);

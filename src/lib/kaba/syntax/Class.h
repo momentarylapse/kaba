@@ -60,6 +60,7 @@ public:
 		INTERFACE,
 		CALLABLE,
 		CALLABLE_FUNCTION_POINTER,
+		CALLABLE_BIND,
 	};
 	Type type;
 	Flags flags;
@@ -77,6 +78,7 @@ public:
 	bool is_callable() const;
 	bool is_callable_new() const;
 	bool is_callable_new_fp() const;
+	bool is_callable_bind() const;
 	bool fully_parsed() const;
 	Array<ClassElement> elements;
 	Array<ClassInitializers> initializers;

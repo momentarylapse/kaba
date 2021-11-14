@@ -203,6 +203,9 @@ bool Class::is_callable_new() const
 bool Class::is_callable_new_fp() const
 { return type == Type::CALLABLE_FUNCTION_POINTER; }
 
+bool Class::is_callable_bind() const
+{ return type == Type::CALLABLE_BIND; }
+
 bool Class::uses_call_by_reference() const {
 	return (!force_call_by_value() and !is_pointer()) or is_array();
 }

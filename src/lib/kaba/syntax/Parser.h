@@ -55,7 +55,7 @@ public:
 	void force_concrete_types(shared_array<Node> &nodes);
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
-	shared<Node> wrap_function_into_callable(shared<Node> node);
+	shared<Node> wrap_function_into_callable(Function *f);
 
 	void link_most_important_operator(shared_array<Node> &operand, shared_array<Node> &_operator, Array<int> &op_exp);
 	shared_array<Node> turn_class_into_constructor(const Class *t, const shared_array<Node> &params);
@@ -183,8 +183,8 @@ public:
 	void auto_implement_owned_clear(Function *f, const Class *t);
 	void auto_implement_owned_assign(Function *f, const Class *t);
 	void auto_implement_callable_constructor(Function *f, const Class *t);
-	void auto_implement_callable_assign(Function *f, const Class *t);
-	void auto_implement_callable_call(Function *f, const Class *t);
+	void auto_implement_callable_fp_call(Function *f, const Class *t);
+	void auto_implement_callable_bind_call(Function *f, const Class *t);
 	void auto_implement_functions(const Class *t);
 	
 	SyntaxTree *tree;

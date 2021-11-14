@@ -84,6 +84,16 @@ const Class *get_callable_return_type(const Class *fp) {
 	return fp->param.back();
 }
 
+Array<const Class*> get_callable_capture_types(const Class *fp) {
+	if (fp->is_pointer())
+		return get_callable_capture_types(fp->param[0]);
+	Array<const Class*> binds;
+	for (auto &e: fp->elements)
+		if (e.name.head(7) == "capture")
+			binds.add(e.type);
+	return binds;
+}
+
 int64 s2i2(const string &str) {
 	if ((str.num > 1) and (str[0]=='0') and (str[1]=='x')) {
 		int64 r=0;
@@ -298,11 +308,11 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 	}
 
 	// allowed?
-	bool allowed = ((operand->type->is_array()) or (operand->type->usable_as_super_array()));
+	bool allowed = (operand->type->is_array() or operand->type->usable_as_super_array());
 	bool pparray = false;
 	if (!allowed)
 		if (operand->type->is_pointer()) {
-			if ((!operand->type->param[0]->is_array()) and (!operand->type->param[0]->usable_as_super_array()))
+			if (!operand->type->param[0]->is_array() and !operand->type->param[0]->usable_as_super_array())
 				do_error(format("using pointer type '%s' as an array (like in C) is not allowed any more", operand->type->long_name()));
 			allowed = true;
 			pparray = (operand->type->param[0]->usable_as_super_array());
@@ -630,7 +640,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 		do_error("do we ever reach this point?");
 		Exp.next();
 		auto ret = parse_type(block->name_space());
-		auto t = tree->make_class_func(class_tuple_extract_classes(operands[0]), ret);
+		auto t = tree->make_class_callable_fp(class_tuple_extract_classes(operands[0]), ret);
 
 		return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
 	}
@@ -2346,20 +2356,8 @@ const Class *type_more_abstract(const Class *a, const Class *b) {
 	return nullptr;
 }
 
-shared<Node> Parser::wrap_function_into_callable(shared<Node> node) {
-	auto f = node->as_func();
+shared<Node> Parser::wrap_function_into_callable(Function *f) {
 	auto t = tree->make_class_callable_fp(f);
-	//auto cons = turn_class_into_constructor(t, {node});
-
-	/*constr->kind = NodeKind::FUNCTION_CALL;
-
-	auto ff = constr->as_func();
-	auto tt = ff->name_space;
-	//do_error("NEW " + tt->long_name());
-
-
-	cmd->type = tt->get_pointer();
-	cmd->set_param(0, constr);*/
 
 	for (auto *cf: t->param[0]->get_constructors())
 		if (cf->num_params == 1) {
@@ -2376,7 +2374,7 @@ shared<Node> Parser::wrap_function_into_callable(shared<Node> node) {
 			return cmd;
 		}
 	do_error("X");
-	return node;
+	return nullptr;
 }
 
 void Parser::force_concrete_types(shared_array<Node> &nodes) {
@@ -2386,7 +2384,7 @@ void Parser::force_concrete_types(shared_array<Node> &nodes) {
 
 shared<Node> Parser::force_concrete_type_if_function(shared<Node> node) {
 	if (node->kind == NodeKind::FUNCTION)
-		return wrap_function_into_callable(node);
+		return wrap_function_into_callable(node->as_func());
 	return node;
 }
 
@@ -2443,7 +2441,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 		auto xx = turn_class_into_constructor(type, node->params);
 		return try_to_match_apply_params(xx, node->params);
 	} else if (node->kind == NodeKind::FUNCTION) {
-		return wrap_function_into_callable(node);
+		return wrap_function_into_callable(node->as_func());
 	} else {
 		do_error("unhandled abstract type: " + kind2str(node->kind));
 	}
@@ -2639,7 +2637,9 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 	Exp.next(); // "lambda"
 	auto *prev_func = cur_func;
 
-	auto *f = tree->add_function("-lambda-", TypeUnknown, tree->base_class, Flags::STATIC);
+	static int unique_lambda_counter = 0;
+
+	auto *f = tree->add_function("<lambda-" + i2s(unique_lambda_counter ++) + ">", TypeUnknown, tree->base_class, Flags::STATIC);
 	f->_logical_line_no = Exp.get_line_no();
 	f->_exp_no = Exp.cur_exp;
 
@@ -2677,6 +2677,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 	cur_func = prev_func;
 
+	// lambda body
 	auto cmd = parse_operand_greedy(f->block.get());
 	f->literal_return_type = cmd->type;
 	f->effective_return_type = cmd->type;
@@ -2694,6 +2695,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 	tree->base_class->add_function(tree, f, false, false);
 
+	// find captures
 	Set<Variable*> captures;
 	auto find_captures = [block, &captures](shared<Node> n) {
 		if (n->kind == NodeKind::VAR_LOCAL) {
@@ -2705,19 +2707,26 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		return n;
 	};
 	tree->transform_block(f->block.get(), find_captures);
+
+	auto param_types = f->literal_param_type;
+
 	if (captures.num > 0) {
 		if (config.verbose)
 			msg_write("CAPTURES:");
-		auto lt = new BindingTemplate;
+		/*auto lt = new BindingTemplate;
 		binding_templates.add(lt);
 		lt->outer = block->function;
 		lt->inner = f;
 		lt->captures_local = captures;
-		lt->capture_data.resize(10000); // 10k...
+		lt->capture_data.resize(10000); // 10k...*/
+
+		Array<const Class*> capture_types;
+
 		for (auto v: captures) {
 			if (config.verbose)
 				msg_write("  * " + v->name);
 			//f->block->vars.insert()
+			capture_types.add(v->type);
 
 			auto vvv = f->block->insert_var(f->num_params, v->name, v->type);
 			//if (!flags_has(flags, Flags::OUT))
@@ -2737,49 +2746,32 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 		f->update_parameters_after_parsing();
 
+		auto bind_wrapper_type = tree->make_class_callable_bind(param_types, f->literal_return_type, capture_types);
 
-		// bind wrapper template
-		auto *bind_wrapper = tree->add_function("-bind-wrapper-", f->literal_return_type, tree->base_class, Flags::STATIC);
-	{
-		for (int k=0; k<f->num_params-captures.num; k++) {
-			auto v = bind_wrapper->add_param(f->var[k]->name, f->var[k]->type, f->var[k]->flags);
-		}
-		bind_wrapper->update_parameters_after_parsing();
-		bind_wrapper->num_params = f->num_params - captures.num;
-		auto vfp = bind_wrapper->block->add_var("f", tree->make_class_func(bind_wrapper));
-		auto fp = tree->add_node_local(vfp);
-		bind_wrapper->block->add(tree->add_node_operator_by_inline(InlineID::POINTER_ASSIGN, fp, tree->add_node_func_name(f)));
 
-		auto cc = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
-		cc->set_num_params(f->num_params + 1);
-		cc->set_param(0, fp);
-		for (int k=0; k<f->num_params-captures.num; k++)
-			cc->set_param(1 + k, tree->add_node_local(bind_wrapper->var[k].get()));
-		foreachi (auto cap, captures, k) {
-			auto v = new Variable(format("-bind-ref-%d-", k), cap->type);
-			flags_set(v->flags, Flags::STATIC);
-			lt->captures_global.add(v);
-			tree->base_class->static_variables.add(v);
-			// f->num_params
-			//auto pp = new Node(NodeKind::MEMORY, (int_p)&lt->capture_data[k], cap->type);
-			auto pp = tree->add_node_global(v);
-			cc->set_param(1 + bind_wrapper->num_params + k, pp);
+		auto create_inner_lambda = wrap_function_into_callable(f);
+
+
+		for (auto *cf: bind_wrapper_type->get_constructors()) {
+			auto cmd = tree->add_node_statement(StatementID::NEW);
+			auto con = tree->add_node_constructor(cf);
+			shared_array<Node> params = {create_inner_lambda.get()};
+			for (auto &c: captures)
+				params.add(tree->add_node_local(c));
+			con = apply_params_direct(con, params);
+			con->kind = NodeKind::FUNCTION_CALL;
+			con->type = TypeVoid;
+
+			cmd->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
+			//cmd->type = bind_wrapper_type->get_pointer();
+			cmd->set_param(0, con);
+			return cmd;
 		}
 
-		auto ret = tree->add_node_statement(StatementID::RETURN);
-		ret->set_num_params(1);
-		ret->set_param(0, cc);
-		bind_wrapper->block->add(ret);
-	}
-		lt->bind_temp = bind_wrapper;
 
-		// runtime bind command
-		auto fbind = tree->required_func_global("@create_binding");
-		auto rr = tree->add_node_call(fbind);
-		rr->type = tree->make_class_func(bind_wrapper);
-		rr->set_param(0, tree->add_node_const(tree->add_constant_pointer(TypePointer, lt)));
-		rr->set_param(1, tree->add_node_local(lt->captures_local[0])->ref());
-		return rr;
+		do_error("lambda bind failed...");
+		return nullptr;
+
 	} else {
 
 		f->update_parameters_after_parsing();
@@ -3235,7 +3227,7 @@ void Parser::parse_enum(Class *_namespace) {
 	Exp.cur_line --;
 }
 
-inline bool type_needs_alignment(const Class *t) {
+bool type_needs_alignment(const Class *t) {
 	if (t->is_array())
 		return type_needs_alignment(t->get_array_element());
 	return (t->size >= 4);
