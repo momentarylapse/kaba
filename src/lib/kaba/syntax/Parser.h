@@ -60,6 +60,7 @@ public:
 	void link_most_important_operator(shared_array<Node> &operand, shared_array<Node> &_operator, Array<int> &op_exp);
 	shared_array<Node> turn_class_into_constructor(const Class *t, const shared_array<Node> &params);
 	shared<Node> make_func_node_callable(const shared<Node> l);
+	shared<Node> make_func_pointer_node_callable(const shared<Node> l);
 	shared<Node> link_unary_operator(PrimitiveOperator *op, shared<Node> operand, Block *block);
 	//void FindFunctionSingleParameter(int p, Array<Type*> &wanted_type, Block *block, shared<Node> cmd);
 

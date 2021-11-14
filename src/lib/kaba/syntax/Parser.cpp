@@ -354,6 +354,21 @@ shared<Node> Parser::make_func_node_callable(const shared<Node> l) {
 	return r;
 }
 
+shared<Node> Parser::make_func_pointer_node_callable(const shared<Node> l) {
+	auto f = l->type->param[0]->get_call();
+
+	shared<Node> c;
+	if (f->virtual_index >= 0) {
+		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type, true);
+	} else {
+		do_error("function pointer call should be virtual???");
+		c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type, true);
+	}
+	c->set_num_params(f->num_params + 1);
+	c->set_instance(l->deref());
+	return c;
+}
+
 shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *param_type) {
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
@@ -515,7 +530,8 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 			return try_to_match_params({c});*/
 #endif
 		} else if (is_typed_function_pointer(l->type)) {
-			return tree->add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
+			links[i] = make_func_pointer_node_callable(l);
+			//return tree->add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
 		} else {
 			do_error("can't call " + kind2str(l->kind));
 		}

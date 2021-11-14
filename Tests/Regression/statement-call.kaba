@@ -4,6 +4,6 @@ func f(s: string[])
 func main()
 	#f(["a", "b"])
 	var p = f
-#	p(["a", "b"])
-	call(p, ["a", "b"])
+	p(["a", "b"])
+#	call(p, ["a", "b"])
 

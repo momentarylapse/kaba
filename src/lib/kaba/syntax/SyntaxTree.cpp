@@ -124,7 +124,7 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 		params_ret = {};
 	params_ret.add(ret);
 
-	auto ff = make_class("Callable(...)", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	auto ff = make_class("Callable(" + name + ")", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 	/*if (!ff->parent) {
 		const_cast<Class*>(ff)->derive_from(TypeFunction, true);
 	}*/
