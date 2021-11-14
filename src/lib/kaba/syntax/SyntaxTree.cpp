@@ -20,6 +20,7 @@ extern ExpressionBuffer *cur_exp_buf;
 
 bool is_func(shared<Node> n);
 
+const string class_name_might_need_parantheses(const Class *t);
 
 
 static shared_array<Node> _transform_insert_before_;
@@ -105,14 +106,14 @@ string make_callable_signature(const Array<const Class*> &param, const Class *re
 	for (int i=0; i<param.num; i++) {
 		if (i > 0)
 			params += ",";
-		params += param[i]->name;
+		params += class_name_might_need_parantheses(param[i]);
 	}
 	if (param.num > 1)
 		params = "(" + params + ")";
 	if (param.num == 0 or (param.num == 1 and param[0] == TypeVoid)) {
 		params = "void";
 	}
-	return params + "->" + ret->name;
+	return params + "->" + class_name_might_need_parantheses(ret);
 }
 
 const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
@@ -749,17 +750,17 @@ const Class *SyntaxTree::make_class(const string &name, Class::Type type, int si
 }
 
 const Class *SyntaxTree::make_class_super_array(const Class *element_type) {
-	string name = element_type->name + "[]";
+	string name = class_name_might_need_parantheses(element_type) + "[]";
 	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, {element_type}, element_type->name_space);
 }
 
 const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements) {
-	string name = element_type->name + format("[%d]", num_elements);
+	string name = class_name_might_need_parantheses(element_type) + format("[%d]", num_elements);
 	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, element_type->name_space);
 }
 
 const Class *SyntaxTree::make_class_dict(const Class *element_type) {
-	string name = element_type->name + "{}";
+	string name = class_name_might_need_parantheses(element_type) + "{}";
 	return make_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, {element_type}, element_type->name_space);
 }
 

@@ -236,8 +236,8 @@ DynamicArray _cdecl kaba_array_sort(DynamicArray &array, const Class *type, cons
 
 string class_repr(const Class *c) {
 	if (c)
-		return "<class " + c->long_name() + ">";
-	return "<class -nil->";
+		return c->long_name();
+	return "nil";
 }
 
 // probably deprecated...?

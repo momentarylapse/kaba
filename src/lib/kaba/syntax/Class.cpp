@@ -479,9 +479,14 @@ bool class_func_match(Function *a, Function *b) {
 	return true;
 }
 
+string class_name_might_need_parantheses(const Class *t) {
+	if (t->is_callable() /*or t->is_product()*/)
+		return "(" + t->name + ")";
+	return t->name;
+}
 
 const Class *Class::get_pointer() const {
-	return owner->make_class(name + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {this}, name_space);
+	return owner->make_class(class_name_might_need_parantheses(this) + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {this}, name_space);
 }
 
 const Class *Class::get_root() const {
