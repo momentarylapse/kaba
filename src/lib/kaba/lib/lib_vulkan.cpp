@@ -232,8 +232,6 @@ void SIAddPackageVulkan() {
 		class_add_element("width", TypeInt, vul_p(&vulkan::FrameBuffer::width));
 		class_add_element("height", TypeInt, vul_p(&vulkan::FrameBuffer::height));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::FrameBuffer::__init__));
-			func_add_param("w", TypeInt);
-			func_add_param("h", TypeInt);
 			func_add_param("rp", TypeRenderPass);
 			func_add_param("attachments", TypePointerList);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::FrameBuffer::__delete__));
