@@ -30,6 +30,7 @@ class rect;
 namespace vulkan{
 
 	class Shader;
+	class VertexBuffer;
 	class RenderPass;
 
 
@@ -62,15 +63,17 @@ namespace vulkan{
 		VkPipeline pipeline;
 
 
-	    static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
+		static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
 	};
 
 	class Pipeline : public BasePipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, int num_uvs);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &format);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, VertexBuffer *vb);
 		~Pipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass, int subpass, int num_uvs);
+		void __init__(Shader *shader, RenderPass *render_pass, int subpass, const string &format);
 		void __delete__();
 
 		void rebuild();

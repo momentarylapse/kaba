@@ -181,11 +181,12 @@ void SIAddPackageVulkan() {
 		class_add_element("vertex", TypeBuffer, vul_p(&vulkan::VertexBuffer::vertex_buffer));
 		class_add_element("index", TypeBuffer, vul_p(&vulkan::VertexBuffer::index_buffer));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::VertexBuffer::__init__));
+			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::VertexBuffer::__delete__));
-		class_add_func("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build_v3_v3_v2_i));
+		class_add_func("update", TypeVoid, vul_p(&vulkan::VertexBuffer::update_i));
 			func_add_param("vertices", TypeDynamicArray);
 			func_add_param("indices", TypeIntList);
-		class_add_func("build", TypeVoid, vul_p(&vulkan::VertexBuffer::build));
+		class_add_func("update", TypeVoid, vul_p(&vulkan::VertexBuffer::update));
 			func_add_param("vertices", TypeDynamicArray);
 
 
@@ -283,7 +284,7 @@ void SIAddPackageVulkan() {
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
 			func_add_param("subpass", TypeInt);
-			func_add_param("num_textures", TypeInt);
+			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Pipeline::__delete__));
 		class_add_func("set_wireframe", TypeVoid, vul_p(&vulkan::Pipeline::set_wireframe));
 			func_add_param("w", TypeBool);

@@ -53,25 +53,45 @@ VkFormat parse_format(const string &s) {
 	return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-int pixel_size(VkFormat f) {
+int format_size(VkFormat f) {
+	// i8
 	if (f == VK_FORMAT_R8G8B8A8_UNORM)
 		return 4;
 	if (f == VK_FORMAT_R8G8B8_UNORM)
 		return 3;
 	if (f == VK_FORMAT_R8_UNORM)
 		return 1;
+	// weird
 	if (f == VK_FORMAT_A2R10G10B10_SNORM_PACK32)
 		return 4;
+	// f32
 	if (f == VK_FORMAT_R32G32B32A32_SFLOAT)
 		return 16;
 	if (f == VK_FORMAT_R32G32B32_SFLOAT)
 		return 12;
+	if (f == VK_FORMAT_R32G32_SFLOAT)
+		return 8;
+	if (f == VK_FORMAT_R32_SFLOAT)
+		return 4;
+	// i32
+	if (f == VK_FORMAT_R32G32B32A32_SINT)
+		return 16;
+	if (f == VK_FORMAT_R32G32B32_SINT)
+		return 12;
+	if (f == VK_FORMAT_R32G32_SINT)
+		return 8;
+	if (f == VK_FORMAT_R32_SINT)
+		return 4;
+	// f16
 	if (f == VK_FORMAT_R16G16B16A16_SFLOAT)
 		return 8;
 	if (f == VK_FORMAT_R16G16B16_SFLOAT)
 		return 6;
-	if (f == VK_FORMAT_R32_SFLOAT)
+	if (f == VK_FORMAT_R16G16_SFLOAT)
 		return 4;
+	if (f == VK_FORMAT_R16_SFLOAT)
+		return 4;
+	// depth
 	if (f == VK_FORMAT_D32_SFLOAT)
 		return 4;
 	if (f == VK_FORMAT_D16_UNORM)
@@ -139,7 +159,7 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 	height = ny;
 	depth = nz;
 	format = parse_format(_format);
-	int ps = pixel_size(format);
+	int ps = format_size(format);
 	VkDeviceSize image_size = width * height * depth * ps;
 	mip_levels = 1;
 
@@ -246,7 +266,7 @@ void Texture::_create_image(const void *image_data, int nx, int ny, int nz, VkFo
 	height = ny;
 	depth = nz;
 	format = image_format;
-	int ps = pixel_size(image_format);
+	int ps = format_size(image_format);
 	VkDeviceSize image_size = width * height * depth * ps;
 	mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 	if (!allow_mip)

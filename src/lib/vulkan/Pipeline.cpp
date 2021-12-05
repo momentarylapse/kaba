@@ -141,12 +141,19 @@ void BasePipeline::destroy() {
 	pipeline = nullptr;
 }
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_uvs) : BasePipeline(_shader) {
+Array<VkVertexInputAttributeDescription> parse_attr_descr(const string &format);
+VkVertexInputBindingDescription parse_binding_descr(const string &format);
+
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VertexBuffer *vb) : Pipeline(_shader, _render_pass, _subpass, vb->binding_description, vb->attribute_descriptions) {}
+
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &format) : Pipeline(_shader, _render_pass, _subpass, parse_binding_descr(format), parse_attr_descr(format)) {}
+
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(_shader) {
 	render_pass = _render_pass;
 	subpass = _subpass;
 
-	binding_description = create_binding_description(num_uvs);
-	attribute_descriptions = create_attribute_descriptions(num_uvs);
+	binding_description = _binding_description;
+	attribute_descriptions = _attribute_descriptions;
 	vertex_input_info = {};
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
@@ -214,8 +221,8 @@ Pipeline::~Pipeline() {
 
 
 
-void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) {
-	new(this) Pipeline(_shader, _render_pass, _subpass, num_textures);
+void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &format) {
+	new(this) Pipeline(_shader, _render_pass, _subpass, format);
 }
 
 void Pipeline::__delete__() {

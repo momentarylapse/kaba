@@ -15,19 +15,16 @@ namespace vulkan {
 		vector pos;
 		vector normal;
 		float u,v;
-		Vertex1() {}
-		Vertex1(const vector &p, const vector &n, float u, float v);
-
-		static VkVertexInputBindingDescription binding_description();
-		static std::vector<VkVertexInputAttributeDescription> attribute_descriptions();
+		//Vertex1() {}
+		//Vertex1(const vector &p, const vector &n, float u, float v);
 	};
 
 	class VertexBuffer {
 	public:
-		VertexBuffer();
+		VertexBuffer(const string &format);
 		~VertexBuffer();
 
-		void __init__();
+		void __init__(const string &format);
 		void __delete__();
 
 		void _create_buffer(Buffer &buf, const DynamicArray &array);
@@ -39,15 +36,16 @@ namespace vulkan {
 		unsigned int output_count;
 		unsigned int vertex_count;
 		VkIndexType index_type;
+		Array<VkVertexInputAttributeDescription> attribute_descriptions;
+		VkVertexInputBindingDescription binding_description;
 
 		Buffer vertex_buffer;
 		Buffer index_buffer;
 
-		void build(const DynamicArray &array);
-		void build_v3_v3_v2(const Array<Vertex1> &vertices);
-		void build_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices);
-		void build_v3(const Array<vector> &vertices);
-		void build_v3_i(const Array<vector> &vertices, const Array<int> &indices);
+		void update(const DynamicArray &vertices);
+		void update_i(const DynamicArray &vertices, const Array<int> &indices);
+		void update_v3_v3_v2(const Array<Vertex1> &vertices);
+		void update_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices);
 	};
 };
 

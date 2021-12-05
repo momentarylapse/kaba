@@ -106,11 +106,10 @@ void SIAddPackageNix() {
 			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, nix_p(&nix::VertexBuffer::__delete__));
 		class_add_func("update", TypeVoid, nix_p(&nix::VertexBuffer::update));
-			func_add_param("index", TypeInt);
-			func_add_param("data", TypeDynamicArray);
+			func_add_param("vertices", TypeDynamicArray);
 		class_add_func("update_index", TypeVoid, nix_p(&nix::VertexBuffer::update_index));
-			func_add_param("data", TypeDynamicArray);
-		class_add_func("create_rect", TypeVoid, nix_p(&nix::VertexBuffer::create_rect));
+			func_add_param("indices", TypeDynamicArray);
+		class_add_func("create_quad", TypeVoid, nix_p(&nix::VertexBuffer::create_rect));
 			func_add_param("dest", TypeRect);
 			func_add_param("source", TypeRect);
 		class_add_func("count", TypeInt, nix_p(&nix::VertexBuffer::count));

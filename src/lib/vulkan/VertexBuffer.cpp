@@ -5,55 +5,69 @@
 #include <iostream>
 
 #include "helper.h"
+#include "../file/msg.h"
 
 namespace vulkan{
 
 Array<VertexBuffer*> vertex_buffers;
 
-Vertex1::Vertex1(const vector &p, const vector &n, float _u, float _v) {
-	pos = p;
-	normal = n;
-	u = _u;
-	v = _v;
+VkFormat _parse_vb_component_(const string &s) {
+	VkVertexInputAttributeDescription a;
+	if (s == "4f")
+		return VK_FORMAT_R32G32B32A32_SFLOAT;
+	if (s == "3f")
+		return VK_FORMAT_R32G32B32_SFLOAT;
+	if (s == "2f")
+		return VK_FORMAT_R32G32_SFLOAT;
+	if (s == "4i")
+		return VK_FORMAT_R32G32B32A32_SINT;
+	if (s == "3i")
+		return VK_FORMAT_R32G32B32_SINT;
+	if (s == "2i")
+		return VK_FORMAT_R32G32_SINT;
+	msg_error("unknown vertex buffer component: " + s);
+	return VK_FORMAT_R32G32B32_SFLOAT;
 }
 
-VkVertexInputBindingDescription Vertex1::binding_description() {
-	VkVertexInputBindingDescription bd = {};
-	bd.binding = 0;
-	bd.stride = sizeof(Vertex1);
-	bd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+int format_size(VkFormat f);
 
-	return bd;
+Array<VkVertexInputAttributeDescription> parse_attr_descr(const string &format) {
+	Array<VkVertexInputAttributeDescription> attribute_descriptions;
+
+	auto xx = format.replace("|i", "").explode(",");
+	int offset = 0;
+	int index = 0;
+	for (auto &f: xx) {
+		VkVertexInputAttributeDescription a;
+		a.binding = 0;
+		a.location = index ++;
+		a.format = _parse_vb_component_(f);
+		a.offset = offset;
+		offset += format_size(a.format);
+		attribute_descriptions.add(a);
+	}
+	return attribute_descriptions;
 }
 
-std::vector<VkVertexInputAttributeDescription> Vertex1::attribute_descriptions() {
-	std::vector<VkVertexInputAttributeDescription> ad;
-	ad.resize(3);
-
-	ad[0].binding = 0;
-	ad[0].location = 0;
-	ad[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	ad[0].offset = offsetof(Vertex1, pos);
-
-	ad[1].binding = 0;
-	ad[1].location = 1;
-	ad[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	ad[1].offset = offsetof(Vertex1, normal);
-
-	ad[2].binding = 0;
-	ad[2].location = 2;
-	ad[2].format = VK_FORMAT_R32G32_SFLOAT;
-	ad[2].offset = offsetof(Vertex1, u);
-
-	return ad;
+VkVertexInputBindingDescription parse_binding_descr(const string &format) {
+	VkVertexInputBindingDescription b;
+	int offset = 0;
+	for (auto &f: format.replace("|i", "").explode(","))
+		offset += format_size(_parse_vb_component_(f));
+	b.binding = 0;
+	b.stride = offset;
+	b.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	return b;
 }
 
 
-
-VertexBuffer::VertexBuffer() {
+VertexBuffer::VertexBuffer(const string &format) {
 	vertex_count = 0;
 	output_count = 0;
 	index_type = VK_INDEX_TYPE_UINT16;
+
+	attribute_descriptions = parse_attr_descr(format);
+	binding_description = parse_binding_descr(format);
 
 	vertex_buffers.add(this);
 }
@@ -66,8 +80,8 @@ VertexBuffer::~VertexBuffer() {
 			vertex_buffers.erase(i);
 }
 
-void VertexBuffer::__init__() {
-	new(this) VertexBuffer();
+void VertexBuffer::__init__(const string &format) {
+	new(this) VertexBuffer(format);
 }
 
 void VertexBuffer::__delete__() {
@@ -80,27 +94,23 @@ void VertexBuffer::_destroy() {
 	output_count = 0;
 }
 
-void VertexBuffer::build(const DynamicArray &array) {
-	_create_buffer(vertex_buffer, array);
-	vertex_count = array.num;
-	output_count = array.num; // might be overwritten by creat_index_buffer()
+void VertexBuffer::update(const DynamicArray &vertices) {
+	_create_buffer(vertex_buffer, vertices);
+	vertex_count = vertices.num;
+	output_count = vertices.num; // might be overwritten by creat_index_buffer()
 }
 
-void VertexBuffer::build_v3_v3_v2(const Array<Vertex1> &vertices) {
-	build(vertices);
-}
-
-void VertexBuffer::build_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices) {
-	build_v3_v3_v2(vertices);
+void VertexBuffer::update_i(const DynamicArray &vertices, const Array<int> &indices) {
+	update(vertices);
 	_create_index_buffer_i32(indices);
 }
 
-void VertexBuffer::build_v3(const Array<vector> &vertices) {
-	build(vertices);
+void VertexBuffer::update_v3_v3_v2(const Array<Vertex1> &vertices) {
+	update(vertices);
 }
 
-void VertexBuffer::build_v3_i(const Array<vector> &vertices, const Array<int> &indices) {
-	build_v3(vertices);
+void VertexBuffer::update_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices) {
+	update_v3_v3_v2(vertices);
 	_create_index_buffer_i32(indices);
 }
 
