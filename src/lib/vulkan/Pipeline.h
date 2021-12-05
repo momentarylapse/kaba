@@ -32,6 +32,20 @@ namespace vulkan{
 	class Shader;
 	class RenderPass;
 
+
+	enum class Alpha {
+		ZERO             = VK_BLEND_FACTOR_ZERO,
+		ONE              = VK_BLEND_FACTOR_ONE,
+		SOURCE_COLOR     = VK_BLEND_FACTOR_SRC_COLOR,
+		SOURCE_INV_COLOR = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+		SOURCE_ALPHA     = VK_BLEND_FACTOR_SRC_ALPHA,
+		SOURCE_INV_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		DEST_COLOR       = VK_BLEND_FACTOR_DST_COLOR,
+		DEST_INV_COLOR   = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+		DEST_ALPHA       = VK_BLEND_FACTOR_DST_ALPHA,
+		DEST_INV_ALPHA   = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+	};
+
 	class BasePipeline {
 	public:
 		BasePipeline(Shader *shader);
@@ -53,17 +67,17 @@ namespace vulkan{
 
 	class Pipeline : public BasePipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, int num_textures);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, int num_uvs);
 		~Pipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass, int subpass, int num_textures);
+		void __init__(Shader *shader, RenderPass *render_pass, int subpass, int num_uvs);
 		void __delete__();
 
 		void rebuild();
 
 		// configuration
 		void disable_blend();
-		void set_blend(VkBlendFactor src, VkBlendFactor dst);
+		void set_blend(Alpha src, Alpha dst);
 		void set_blend(float factor);
 		void set_wireframe(bool wireframe);
 		void set_line_width(float line_width);

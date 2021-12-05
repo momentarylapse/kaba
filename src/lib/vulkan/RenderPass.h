@@ -19,12 +19,18 @@
 
 namespace vulkan{
 
+	class Texture;
+	class CommandBuffer;
+
 	class RenderPass {
+		friend CommandBuffer;
 	public:
-		RenderPass(const Array<VkFormat> &format, const string &options);
+		RenderPass(const Array<Texture*> &images, const string &options);
+		RenderPass(const Array<string> &formats, const string &options);
+		RenderPass(const Array<VkFormat> &formats, const string &options);
 		~RenderPass();
 
-		void __init__(const Array<VkFormat> &format, const string &options);
+		void __init__(const Array<VkFormat> &formats, const string &options);
 		void __delete__();
 
 		void create();

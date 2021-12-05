@@ -78,6 +78,9 @@ Array<Texture*> SwapChain::create_textures() {
 	auto image_views = create_image_views(images);
 	for (int i=0; i<images.num; i++) {
 		auto t = new Texture();
+		t->width = width;
+		t->height = height;
+		t->format = image_format;
 		t->image = images[i];
 		t->view = image_views[i];
 		textures.add(t);
@@ -91,7 +94,7 @@ Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, Dep
 	auto textures = create_textures();
 
 	for (size_t i=0; i<image_count; i++) {
-		frame_buffers.add(new FrameBuffer(width, height, render_pass, {textures[i], depth_buffer}));
+		frame_buffers.add(new FrameBuffer(render_pass, {textures[i], depth_buffer}));
 	}
 	return frame_buffers;
 }

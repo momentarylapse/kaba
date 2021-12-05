@@ -52,9 +52,9 @@ void DepthBuffer::create(int w, int h, VkFormat _format) {
 
 
 
-FrameBuffer::FrameBuffer(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
+FrameBuffer::FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments) {
 	frame_buffer = nullptr;
-	create(w, h, rp, attachments);
+	create(rp, attachments);
 }
 
 FrameBuffer::~FrameBuffer() {
@@ -63,21 +63,27 @@ FrameBuffer::~FrameBuffer() {
 
 
 
-void FrameBuffer::__init__(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
-	new(this) FrameBuffer(w, h, rp, attachments);
+void FrameBuffer::__init__(RenderPass *rp, const Array<Texture*> &attachments) {
+	new(this) FrameBuffer(rp, attachments);
 }
 
 void FrameBuffer::__delete__() {
 	this->~FrameBuffer();
 }
 
-
-void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<Texture*> &attachments) {
-	width = w;
-	height = h;
+void FrameBuffer::create(RenderPass *rp, const Array<Texture*> &_attachments) {
+	attachments.clear();
+	for (auto a: _attachments)
+		attachments.add(a);
+	width = 1;
+	height = 1;
+	if (attachments.num > 0) {
+		width = attachments[0]->width;
+		height = attachments[0]->height;
+	}
 
 	Array<VkImageView> views;
-	for (auto a: attachments)
+	for (auto a: _attachments)
 		views.add(a->view);
 
 	VkFramebufferCreateInfo info = {};
@@ -85,8 +91,8 @@ void FrameBuffer::create(int w, int h, RenderPass *rp, const Array<Texture*> &at
 	info.renderPass = rp->render_pass;
 	info.attachmentCount = views.num;
 	info.pAttachments = &views[0];
-	info.width = w;
-	info.height = h;
+	info.width = width;
+	info.height = height;
 	info.layers = 1;
 
 	if (vkCreateFramebuffer(default_device->device, &info, nullptr, &frame_buffer) != VK_SUCCESS) {

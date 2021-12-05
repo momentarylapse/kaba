@@ -22,6 +22,7 @@ namespace vulkan{
 	class VertexBuffer;
 	class DescriptorSet;
 	class AccelerationStructure;
+	class Shader;
 
 	class DescriptorPool {
 	public:
@@ -32,6 +33,9 @@ namespace vulkan{
 		void __delete__();
 
 		DescriptorSet *create_set(const string &s);
+		DescriptorSet *_create_set_str(const string &s) { return create_set(s); }
+		DescriptorSet *create_set(Shader *s);
+		DescriptorSet *_create_set_sshader(Shader *s) { return create_set(s); }
 		DescriptorSet *create_set_from_layout(VkDescriptorSetLayout layout);
 
 		VkDescriptorPool pool;

@@ -13,9 +13,6 @@
 #include <cassert>
 
 #include "../config.h"
-#ifdef _X_ALLOW_X_
-	#include "../../meta.h"
-#endif
 
 #ifdef OS_LINUX
 	#include <sys/mman.h>

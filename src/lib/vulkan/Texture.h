@@ -23,14 +23,17 @@ namespace vulkan {
 		void __delete__();
 
 		void _load(const Path &filename);
-		void override(const Image *image);
+		void override(const Image &image);
 		void overridex(const void *image, int nx, int ny, int nz, const string &format);
+
+
+		void set_options(const string &op) const;
 
 		void _destroy();
 		void _generate_mipmaps(VkFormat image_format);
 		void _create_image(const void *data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip, bool as_storage);
-		void _create_view();
-		void _create_sampler();
+		void _create_view() const;
+		void _create_sampler() const;
 
 
 		int width, height, depth;
@@ -39,11 +42,12 @@ namespace vulkan {
 		VkImage image;
 		VkDeviceMemory memory;
 
-		VkImageView view;
-		VkSampler sampler;
-		VkCompareOp compare_op;
+		mutable VkImageView view;
+		mutable VkSampler sampler;
+		mutable VkCompareOp compare_op;
+		mutable VkFilter minfilter, magfilter;
+		mutable VkSamplerAddressMode address_mode;
 
-		static Path directory;
 		static Texture* load(const Path &filename);
 	};
 

@@ -87,6 +87,10 @@ VkDescriptorType descriptor_type(const string &s) {
 		return create_set_from_layout(layout);
 	}
 
+	DescriptorSet *DescriptorPool::create_set(Shader *s) {
+		return create_set_from_layout(s->descr_layouts[0]);
+	}
+
 	DescriptorSet *DescriptorPool::create_set_from_layout(VkDescriptorSetLayout layout) {
 		return new DescriptorSet(this, layout);
 	}

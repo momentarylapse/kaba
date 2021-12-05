@@ -742,6 +742,7 @@ void SIAddPackageMath() {
 			func_add_param("aspect", TypeFloat32);
 			func_add_param("z_near", TypeFloat32);
 			func_add_param("z_far", TypeFloat32);
+			func_add_param("z_sym", TypeBool);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeMatrix, TypeMatrix, InlineID::CHUNK_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeMatrix, TypeMatrix, InlineID::CHUNK_EQUAL);
 		add_operator(OperatorID::MULTIPLY, TypeMatrix, TypeMatrix, TypeMatrix, InlineID::NONE, &matrix::mul);

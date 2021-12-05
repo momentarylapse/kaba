@@ -34,6 +34,7 @@ namespace vulkan{
 
 		static Path directory;
 		static Shader* load(const Path &filename);
+		static Shader* create(const string &source);
 	};
 
 };

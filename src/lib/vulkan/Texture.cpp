@@ -35,15 +35,21 @@ VkFormat parse_format(const string &s) {
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
 	if (s == "rgb:f32")
 		return VK_FORMAT_R32G32B32_SFLOAT;
+	if (s == "rgba:f16")
+		return VK_FORMAT_R16G16B16A16_SFLOAT;
+	if (s == "rgb:f16")
+		return VK_FORMAT_R16G16B16_SFLOAT;
 	if (s == "r:f32")
 		return VK_FORMAT_R32_SFLOAT;
 	if (s == "d:f32")
 		return VK_FORMAT_D32_SFLOAT;
 	if (s == "d:i16")
 		return VK_FORMAT_D16_UNORM;
+	if (s == "ds:u24i8")
+		return VK_FORMAT_D24_UNORM_S8_UINT;
 	if (s == "ds:f32i8")
 		return VK_FORMAT_D32_SFLOAT_S8_UINT;
-	std::cerr << "unknown image format: " << s.c_str() << "\n";
+	throw Exception("unknown image format: " + s);
 	return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
@@ -60,6 +66,10 @@ int pixel_size(VkFormat f) {
 		return 16;
 	if (f == VK_FORMAT_R32G32B32_SFLOAT)
 		return 12;
+	if (f == VK_FORMAT_R16G16B16A16_SFLOAT)
+		return 8;
+	if (f == VK_FORMAT_R16G16B16_SFLOAT)
+		return 6;
 	if (f == VK_FORMAT_R32_SFLOAT)
 		return 4;
 	if (f == VK_FORMAT_D32_SFLOAT)
@@ -71,8 +81,6 @@ int pixel_size(VkFormat f) {
 	return 4;
 }
 
-Path Texture::directory;
-
 Texture::Texture() {
 	image = nullptr;
 	memory = nullptr;
@@ -82,6 +90,9 @@ Texture::Texture() {
 	mip_levels = 0;
 	format = VK_FORMAT_UNDEFINED;
 	compare_op = next_compare_op;
+	magfilter = VK_FILTER_LINEAR;
+	minfilter = VK_FILTER_LINEAR;
+	address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
 	textures.add(this);
 }
@@ -90,7 +101,7 @@ Texture::Texture(int w, int h) : Texture() {
 	// sometimes a newly created texture is already used....
 	Image im;
 	im.create(w, h, White);
-	override(&im);
+	override(im);
 }
 
 Texture::~Texture() {
@@ -109,8 +120,12 @@ void Texture::__delete__() {
 	this->~Texture();
 }
 
-DynamicTexture::DynamicTexture(int nx, int ny, int nz, const string &format) {
-	_create_image(nullptr, nx, ny, nz, parse_format(format), false, true);
+DynamicTexture::DynamicTexture(int nx, int ny, int nz, const string &_format) {
+	width = nx;
+	height = ny;
+	depth = nz;
+	format = parse_format(_format);
+	_create_image(nullptr, nx, ny, nz, format, false, true);
 	_create_view();
 	_create_sampler();
 }
@@ -128,30 +143,30 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 	VkDeviceSize image_size = width * height * depth * ps;
 	mip_levels = 1;
 
-    VkExtent3D extent = {(unsigned)nx, (unsigned)ny, (unsigned)nz};
+	VkExtent3D extent = {(unsigned)nx, (unsigned)ny, (unsigned)nz};
 
 
 
-    VkImageCreateInfo imageCreateInfo;
-    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageCreateInfo.pNext = nullptr;
-    imageCreateInfo.flags = 0;
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = format;
-    imageCreateInfo.extent = extent;
-    imageCreateInfo.mipLevels = 1;
-    imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageCreateInfo.queueFamilyIndexCount = 0;
-    imageCreateInfo.pQueueFamilyIndices = nullptr;
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	VkImageCreateInfo imageCreateInfo;
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.pNext = nullptr;
+	imageCreateInfo.flags = 0;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.format = format;
+	imageCreateInfo.extent = extent;
+	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.queueFamilyIndexCount = 0;
+	imageCreateInfo.pQueueFamilyIndices = nullptr;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    auto result = vkCreateImage(default_device->device, &imageCreateInfo, nullptr, &image);
-    if (VK_SUCCESS != result)
-    	throw Exception("aaa");
+	auto result = vkCreateImage(default_device->device, &imageCreateInfo, nullptr, &image);
+	if (VK_SUCCESS != result)
+		throw Exception("vkCreateImage failed");
 	VkMemoryRequirements memoryRequirements;
 	vkGetImageMemoryRequirements(default_device->device, image, &memoryRequirements);
 
@@ -163,10 +178,10 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 
 	result = vkAllocateMemory(default_device->device, &memoryAllocateInfo, nullptr, &memory);
 	if (VK_SUCCESS != result)
-		throw Exception("aaa2");
+		throw Exception("vkAllocateMemory failed");
 	result = vkBindImageMemory(default_device->device, image, memory, 0);
 	if (VK_SUCCESS != result)
-		throw Exception("aaa3");
+		throw Exception("vkBindImageMemory failed");
 	if (verbose)
 		std::cout << "  storage image ok\n";
 
@@ -201,7 +216,7 @@ Texture* Texture::load(const Path &filename) {
 	if (filename.is_empty())
 		return new Texture(16, 16);
 	Texture *t = new Texture();
-	t->_load(directory << filename);
+	t->_load(filename);
 	return t;
 }
 
@@ -211,12 +226,12 @@ void Texture::_load(const Path &filename) {
 	if (!im) {
 		throw Exception("failed to load texture image!");
 	}
-	override(im);
+	override(*im);
 	delete im;
 }
 
-void Texture::override(const Image *im) {
-	overridex(im->data.data, im->width, im->height, 1, "rgba:i8");
+void Texture::override(const Image &im) {
+	overridex(im.data.data, im.width, im.height, 1, "rgba:i8");
 }
 
 void Texture::overridex(const void *data, int nx, int ny, int nz, const string &format) {
@@ -355,21 +370,21 @@ void Texture::_generate_mipmaps(VkFormat image_format) {
 
 
 
-void Texture::_create_view() {
+void Texture::_create_view() const {
 	VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
 	if (depth > 1)
 		type = VK_IMAGE_VIEW_TYPE_3D;
 	view = create_image_view(image, format, VK_IMAGE_ASPECT_COLOR_BIT, type, mip_levels);
 }
 
-void Texture::_create_sampler() {
+void Texture::_create_sampler() const {
 	VkSamplerCreateInfo si = {};
 	si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	si.magFilter = VK_FILTER_LINEAR;
-	si.minFilter = VK_FILTER_LINEAR;
-	si.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	si.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	si.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	si.magFilter = magfilter;
+	si.minFilter = minfilter;
+	si.addressModeU = address_mode;
+	si.addressModeV = address_mode;
+	si.addressModeW = address_mode;
 	si.anisotropyEnable = VK_TRUE;
 	si.maxAnisotropy = 16;
 	si.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -384,6 +399,52 @@ void Texture::_create_sampler() {
 	if (vkCreateSampler(default_device->device, &si, nullptr, &sampler) != VK_SUCCESS) {
 		throw Exception("failed to create texture sampler!");
 	}
+}
+
+// hmmm, mag/minfilter doesn't seem to do much...
+void Texture::set_options(const string &options) const {
+	for (auto &x: options.explode(",")) {
+		auto y = x.explode("=");
+		if (y.num != 2)
+			throw Exception("key=value expected: " + x);
+		string key = y[0];
+		string value = y[1];
+		if (key == "wrap") {
+			if (value == "repeat") {
+				address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			} else if (value == "clamp") {
+				address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			} else {
+				throw Exception("unknown value for key: " + x);
+			}
+		} else if (key == "magfilter") {
+			if (value == "linear") {
+				magfilter = VK_FILTER_LINEAR;
+			} else if (value == "nearest") {
+				magfilter = VK_FILTER_NEAREST;
+			} else if (value == "cubic") {
+				magfilter = VK_FILTER_CUBIC_IMG;
+			} else {
+				throw Exception("unknown value for key: " + x);
+			}
+		} else if (key == "minfilter") {
+			if (value == "linear") {
+				minfilter = VK_FILTER_LINEAR;
+			} else if (value == "nearest") {
+				minfilter = VK_FILTER_NEAREST;
+			} else if (value == "cubic") {
+				minfilter = VK_FILTER_CUBIC_IMG;
+			} else {
+				throw Exception("unknown value for key: " + x);
+			}
+		} else {
+			throw Exception("unknown key: " + key);
+		}
+	}
+	if (sampler)
+		vkDestroySampler(default_device->device, sampler, nullptr);
+	sampler = nullptr;
+	_create_sampler();
 }
 
 

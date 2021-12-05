@@ -183,6 +183,9 @@ void CommandBuffer::begin() {
 }
 
 void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
+	if (fb->attachments.num != rp->attachments.num) {
+		std::cerr << "WARNING: CommandBuffer.begin_render_pass() - RenderPass/FrameBuffer attachment mismatch\n";
+	}
 	Array<VkClearValue> clear_values;
 	for (auto &c: rp->clear_color) {
 		VkClearValue cv = {};

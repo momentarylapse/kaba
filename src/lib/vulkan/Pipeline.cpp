@@ -25,17 +25,17 @@ namespace vulkan {
 	extern bool verbose;
 
 
-	VkVertexInputBindingDescription create_binding_description(int num_textures) {
+	VkVertexInputBindingDescription create_binding_description(int num_uvs) {
 		VkVertexInputBindingDescription bd = {};
 		bd.binding = 0;
-		bd.stride = 2 * sizeof(vector) + num_textures * 2 * sizeof(float);
+		bd.stride = 2 * sizeof(vector) + num_uvs * 2 * sizeof(float);
 		bd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		return bd;
 	}
 
-	Array<VkVertexInputAttributeDescription> create_attribute_descriptions(int num_textures) {
+	Array<VkVertexInputAttributeDescription> create_attribute_descriptions(int num_uvs) {
 		Array<VkVertexInputAttributeDescription> ad;
-		ad.resize(2 + num_textures);
+		ad.resize(2 + num_uvs);
 
 		// position
 		ad[0].binding = 0;
@@ -49,7 +49,7 @@ namespace vulkan {
 		ad[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		ad[1].offset = sizeof(vector);
 
-		for (int i=0; i<num_textures; i++) {
+		for (int i=0; i<num_uvs; i++) {
 			ad[i+2].binding = 0;
 			ad[i+2].location = 2;
 			ad[i+2].format = VK_FORMAT_R32G32_SFLOAT;
@@ -141,12 +141,12 @@ void BasePipeline::destroy() {
 	pipeline = nullptr;
 }
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_textures) : BasePipeline(_shader) {
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int num_uvs) : BasePipeline(_shader) {
 	render_pass = _render_pass;
 	subpass = _subpass;
 
-	binding_description = create_binding_description(num_textures);
-	attribute_descriptions = create_attribute_descriptions(num_textures);
+	binding_description = create_binding_description(num_uvs);
+	attribute_descriptions = create_attribute_descriptions(num_uvs);
 	vertex_input_info = {};
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
@@ -184,6 +184,7 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, int 
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1;
+	//rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
@@ -225,11 +226,11 @@ void Pipeline::disable_blend() {
 	color_blend_attachments[0].blendEnable = VK_FALSE;
 }
 
-void Pipeline::set_blend(VkBlendFactor src, VkBlendFactor dst) {
+void Pipeline::set_blend(Alpha src, Alpha dst) {
 	color_blend_attachments[0].blendEnable = VK_TRUE;
 	color_blend_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
-	color_blend_attachments[0].srcColorBlendFactor = src;
-	color_blend_attachments[0].dstColorBlendFactor = dst;
+	color_blend_attachments[0].srcColorBlendFactor = (VkBlendFactor)src;
+	color_blend_attachments[0].dstColorBlendFactor = (VkBlendFactor)dst;
 	color_blend_attachments[0].alphaBlendOp = VK_BLEND_OP_MAX;
 	color_blend_attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -391,54 +392,54 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
 	stage.module = shaders[0]->get_module(VK_SHADER_STAGE_RAYGEN_BIT_NV);
 	shader_stages.add(stage);
 
-	VkRayTracingShaderGroupCreateInfoNV groupInfo = {};
-	groupInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-	groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-	groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
-	groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
-	groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
-	groups.add(groupInfo);
+	VkRayTracingShaderGroupCreateInfoNV group_info = {};
+	group_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+	group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+	group_info.closestHitShader = VK_SHADER_UNUSED_NV;
+	group_info.anyHitShader = VK_SHADER_UNUSED_NV;
+	group_info.intersectionShader = VK_SHADER_UNUSED_NV;
+	groups.add(group_info);
 
     // hit groups
     for (auto *s: shaders.sub_ref(1)) {
-        groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-        groupInfo.generalShader = VK_SHADER_UNUSED_NV;
-        groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
-        groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
-        groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+        group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_info.generalShader = VK_SHADER_UNUSED_NV;
+        group_info.closestHitShader = VK_SHADER_UNUSED_NV;
+        group_info.anyHitShader = VK_SHADER_UNUSED_NV;
+        group_info.intersectionShader = VK_SHADER_UNUSED_NV;
 
     	Array<VkPipelineShaderStageCreateInfo> stages;
     	if (s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
-    		groupInfo.closestHitShader = shader_stages.num + stages.num;
+    		group_info.closestHitShader = shader_stages.num + stages.num;
     		stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
     		stage.module = s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
     		stages.add(stage);
     	}
     	if (s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
-    		groupInfo.anyHitShader = shader_stages.num + stages.num;
+    		group_info.anyHitShader = shader_stages.num + stages.num;
     		stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
     		stage.module = s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV);
     		stages.add(stage);
     	}
     	//VK_SHADER_STAGE_INTERSECTION_BIT_NV
     	shader_stages.append(stages);
-    	groups.add(groupInfo);
+    	groups.add(group_info);
     }
     miss_group_offset = groups.num;
 
     // miss groups
     for (auto *s: shaders.sub_ref(1))
     	if (s->get_module(VK_SHADER_STAGE_MISS_BIT_NV)) {
-			groupInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-			groupInfo.generalShader = shader_stages.num;
-			groupInfo.closestHitShader = VK_SHADER_UNUSED_NV;
-			groupInfo.anyHitShader = VK_SHADER_UNUSED_NV;
-			groupInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+			group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+			group_info.generalShader = shader_stages.num;
+			group_info.closestHitShader = VK_SHADER_UNUSED_NV;
+			group_info.anyHitShader = VK_SHADER_UNUSED_NV;
+			group_info.intersectionShader = VK_SHADER_UNUSED_NV;
 
     		stage.stage = VK_SHADER_STAGE_MISS_BIT_NV;
     		stage.module = s->get_module(VK_SHADER_STAGE_MISS_BIT_NV);
     		shader_stages.add(stage);
-    		groups.add(groupInfo);
+    		groups.add(group_info);
     	}
 }
 

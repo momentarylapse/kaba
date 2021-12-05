@@ -8,6 +8,7 @@
 
 #include "RenderPass.h"
 #include "Device.h"
+#include "Texture.h"
 #include "helper.h"
 
 #include <iostream>
@@ -103,10 +104,31 @@ VkAccessFlags parse_access(const string &s) {
 
 namespace vulkan {
 
-bool image_is_depth_buffer(VkFormat f);
+	bool image_is_depth_buffer(VkFormat f);
+	VkFormat parse_format(const string &s);
+
+	Array<VkFormat> extract_formats(const Array<Texture*> &images) {
+		Array<VkFormat> r;
+		for (auto t: images)
+			r.add(t->format);
+		return r;
+	}
+
+	Array<VkFormat> parse_formats(const Array<string> &formats) {
+		Array<VkFormat> r;
+		for (auto f: formats)
+			r.add(parse_format(f));
+		return r;
+	}
+
+	RenderPass::RenderPass(const Array<Texture*> &images, const string &options) : RenderPass(extract_formats(images), options) {
+	}
+
+	RenderPass::RenderPass(const Array<string> &formats, const string &options) : RenderPass(parse_formats(formats), options) {
+	}
 
 // so far, we can only create a "default" render pass with 1 color and 1 depth attachement!
-	RenderPass::RenderPass(const Array<VkFormat> &format, const string &options) {
+	RenderPass::RenderPass(const Array<VkFormat> &formats, const string &options) {
 		render_pass = nullptr;
 		auto_subpasses = false;
 		auto_dependencies = false;
@@ -118,7 +140,7 @@ bool image_is_depth_buffer(VkFormat f);
 		}
 
 		// attachments
-		for (auto &f: format) {
+		for (auto &f: formats) {
 			VkAttachmentDescription a = {};
 			a.format = f;
 			if (image_is_depth_buffer(f)) {
@@ -149,7 +171,7 @@ bool image_is_depth_buffer(VkFormat f);
 
 
 		// auto subpass
-		add_subpass(_range(format.num - 1), format.num - 1);
+		add_subpass(_range(formats.num - 1), formats.num - 1);
 		auto_subpasses = true;
 
 
@@ -168,7 +190,7 @@ bool image_is_depth_buffer(VkFormat f);
 				VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
 		auto_dependencies = true;
 
-		for (int i=0; i<format.num - 1; i++)
+		for (int i=0; i<formats.num - 1; i++)
 			clear_color.add(Black);
 		clear_z = 1.0f;
 		clear_stencil = 0;

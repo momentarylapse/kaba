@@ -52,6 +52,14 @@ else
 	add_project_arguments('-DHAS_LIB_VULKAN=0', language : ['cpp'])
 endif
 
+# optional dependency: shaderc
+if 
+	add_project_arguments('-DHAS_LIB_SHADERC=1', language : ['cpp'])
+	deps += []
+else
+	add_project_arguments('-DHAS_LIB_SHADERC=0', language : ['cpp'])
+endif
+
 # optional dependency: gl
 d = cc.find_library('GL', required : false)
 if d.found()

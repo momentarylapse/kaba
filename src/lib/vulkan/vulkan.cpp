@@ -33,7 +33,7 @@ Array<const char*> sa2pa(const Array<string> &sa) {
 
 namespace vulkan {
 
-bool verbose = false;
+bool verbose = true;
 
 extern VkSurfaceKHR default_surface;
 
