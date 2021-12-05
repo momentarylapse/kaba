@@ -1,13 +1,15 @@
-#ifndef _VULKAN_VERTEXBUFFER_H
-#define _VULKAN_VERTEXBUFFER_H
+#pragma once
 
 #if HAS_LIB_VULKAN
 
 #include "../base/base.h"
 #include "../math/vector.h"
+#include "../math/rect.h"
 #include <vector>
 #include <vulkan/vulkan.h>
 #include "Buffer.h"
+
+class rect;
 
 namespace vulkan {
 
@@ -43,12 +45,13 @@ namespace vulkan {
 		Buffer index_buffer;
 
 		void update(const DynamicArray &vertices);
-		void update_i(const DynamicArray &vertices, const Array<int> &indices);
+		void update_index(const Array<int> &indices);
 		void update_v3_v3_v2(const Array<Vertex1> &vertices);
-		void update_v3_v3_v2_i(const Array<Vertex1> &vertices, const Array<int> &indices);
+
+		bool is_indexed() const;
+
+		void create_quad(const rect &r, const rect &s = rect::ID);
 	};
 };
-
-#endif
 
 #endif

@@ -214,7 +214,7 @@ bool VertexBuffer::is_indexed() const {
 	return index.buffer > 0;
 }
 
-void VertexBuffer::create_rect(const rect &d, const rect &s) {
+void VertexBuffer::create_quad(const rect &d, const rect &s) {
 	if (is_indexed()) {
 		Array<Vertex1> v = {{{d.x1,d.y1,0}, {0,0,1}, s.x1,s.y1},
 		                    {{d.x1,d.y2,0}, {0,0,1}, s.x1,s.y2},

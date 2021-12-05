@@ -135,8 +135,6 @@ void SIAddPackageVulkan() {
 	auto TypeShaderPList	= add_type_l(TypeShaderP);
 	auto TypeCommandBuffer	= add_type  ("CommandBuffer", sizeof(vulkan::CommandBuffer));
 	auto TypeCommandBufferP	= add_type_p(TypeCommandBuffer);
-	auto TypeVertex			= add_type  ("Vertex", sizeof(vulkan::Vertex1));
-	auto TypeVertexList		= add_type_l(TypeVertex);
 	auto TypePipeline		= add_type  ("Pipeline", sizeof(vulkan::Pipeline));
 	auto TypeRayPipeline	= add_type  ("RayPipeline", sizeof(vulkan::RayPipeline));
 	auto TypeRenderPass		= add_type  ("RenderPass", sizeof(vulkan::RenderPass));
@@ -160,22 +158,12 @@ void SIAddPackageVulkan() {
 	add_class(TypeInstance);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Instance::__delete__));
 
+
 	add_class(TypeDevice);
 		class_add_element("graphics_queue", TypeQueue, vul_p(&vulkan::Device::graphics_queue));
 		class_add_element("present_queue", TypeQueue, vul_p(&vulkan::Device::present_queue));
 		class_add_func("wait_idle", TypeVoid, vul_p(&vulkan::Device::wait_idle));
 
-
-	add_class(TypeVertex);
-		class_add_element("pos", TypeVector, vul_p(&vulkan::Vertex1::pos));
-		class_add_element("normal", TypeVector, vul_p(&vulkan::Vertex1::normal));
-		class_add_element("u", TypeFloat32, vul_p(&vulkan::Vertex1::u));
-		class_add_element("v", TypeFloat32, vul_p(&vulkan::Vertex1::v));
-		class_add_func("__assign__", TypeVoid, vul_p(&VulkanVertex::__assign__));
-			func_add_param("o", TypeVertex);
-
-	add_class(TypeVertexList);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&VulkanVertexList::__init__));
 
 	add_class(TypeVertexBuffer);
 		class_add_element("vertex", TypeBuffer, vul_p(&vulkan::VertexBuffer::vertex_buffer));
@@ -183,11 +171,13 @@ void SIAddPackageVulkan() {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::VertexBuffer::__init__));
 			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::VertexBuffer::__delete__));
-		class_add_func("update", TypeVoid, vul_p(&vulkan::VertexBuffer::update_i));
-			func_add_param("vertices", TypeDynamicArray);
-			func_add_param("indices", TypeIntList);
 		class_add_func("update", TypeVoid, vul_p(&vulkan::VertexBuffer::update));
 			func_add_param("vertices", TypeDynamicArray);
+		class_add_func("update_index", TypeVoid, vul_p(&vulkan::VertexBuffer::update_index));
+			func_add_param("indices", TypeIntList);
+		class_add_func("create_quad", TypeVoid, vul_p(&vulkan::VertexBuffer::create_quad));
+			func_add_param("dest", TypeRect);
+			func_add_param("source", TypeRect);
 
 
 

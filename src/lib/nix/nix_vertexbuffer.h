@@ -60,7 +60,7 @@ public:
 	int count() const;
 	bool is_indexed() const;
 
-	void create_rect(const rect &dest, const rect &source = rect::ID);
+	void create_quad(const rect &dest, const rect &source = rect::ID);
 };
 
 void init_vertex_buffers();
