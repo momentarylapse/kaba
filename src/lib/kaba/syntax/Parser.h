@@ -115,7 +115,7 @@ public:
 	const Class *parse_type_extension_array(const Class *c);
 	const Class *parse_type_extension_dict(const Class *c);
 	const Class *parse_type_extension_pointer(const Class *c);
-	const Class *parse_type_extension_func(const Class *c);
+	const Class *parse_type_extension_func(const Class *c, const Class *ns);
 	const Class *parse_type_extension_child(const Class *c);
 	shared<Node> parse_single_func_param(Block *block);
 	void parse_complete_command(Block *block);

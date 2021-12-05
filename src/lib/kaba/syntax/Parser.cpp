@@ -585,9 +585,9 @@ const Class *Parser::parse_type_extension_pointer(const Class *c) {
 	return c->get_pointer();
 }
 
-const Class *Parser::parse_type_extension_func(const Class *c) {
+const Class *Parser::parse_type_extension_func(const Class *c, const Class *ns) {
 	Exp.next(); // "->"
-	auto tt = parse_type(TypeVoid);
+	auto tt = parse_type(ns);
 	return tree->make_class_callable_fp({c}, tt);
 }
 
@@ -630,13 +630,15 @@ Array<const Class*> node_extract_param_types(const shared<Node> n) {
 shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type) {
 
 	// special
-	if (is_type_tuple(operands[0]) and (Exp.cur == "->")) {
-		do_error("do we ever reach this point?");
-		Exp.next();
-		auto ret = parse_type(block->name_space());
-		auto t = tree->make_class_callable_fp(class_tuple_extract_classes(operands[0]), ret);
+	if (false) {
+		if (is_type_tuple(operands[0]) and (Exp.cur == "->")) {
+			do_error("do we ever reach this point?");
+			Exp.next();
+			auto ret = parse_type(block->name_space());
+			auto t = tree->make_class_callable_fp(class_tuple_extract_classes(operands[0]), ret);
 
-		return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
+			return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
+		}
 	}
 
 	// special
@@ -652,7 +654,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 		} else if (Exp.cur == "{") {
 			t = parse_type_extension_dict(t);
 		} else if (Exp.cur == "->") {
-			t = parse_type_extension_func(t);
+			t = parse_type_extension_func(t, block->name_space());
 		} else if (Exp.cur == ".") {
 			t = parse_type_extension_child(t);
 		}
