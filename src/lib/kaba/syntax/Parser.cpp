@@ -1152,10 +1152,14 @@ shared<Node> Parser::parse_dict(Block *block) {
 }
 
 const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
+	if (!parent->name_space)
+		tree->do_error("shared not allowed for: " + parent->long_name());
 	return tree->make_class(IDENTIFIER_SHARED + " " + parent->name, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
 const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
+	if (!parent->name_space)
+		tree->do_error("owned not allowed for: " + parent->long_name());
 	return tree->make_class(IDENTIFIER_OWNED + " " + parent->name, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
@@ -1233,7 +1237,8 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
 		string pre = Exp.cur;
 		Exp.next();
-		auto t = tree->find_root_type_by_name(Exp.cur, ns, true);
+		auto t = parse_type(ns);
+		//auto t = tree->find_root_type_by_name(Exp.cur, ns, true);
 		if (!t)
 			do_error(format("type expected after '%s'", pre));
 		Exp.next();

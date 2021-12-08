@@ -182,6 +182,7 @@ void SIAddPackageVulkan() {
 
 
 	add_class(TypeTexture);
+		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, vul_p(&vulkan::Texture::_pointer_ref_counter));
 		class_add_element("width", TypeInt, vul_p(&vulkan::Texture::width));
 		class_add_element("height", TypeInt, vul_p(&vulkan::Texture::height));
 		class_add_element("view", TypePointer, vul_p(&vulkan::Texture::view));
@@ -220,6 +221,7 @@ void SIAddPackageVulkan() {
 
 
 	add_class(TypeFrameBuffer);
+		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, vul_p(&vulkan::FrameBuffer::_pointer_ref_counter));
 		class_add_element("width", TypeInt, vul_p(&vulkan::FrameBuffer::width));
 		class_add_element("height", TypeInt, vul_p(&vulkan::FrameBuffer::height));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::FrameBuffer::__init__));
@@ -229,6 +231,7 @@ void SIAddPackageVulkan() {
 
 
 	add_class(TypeShader);
+		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, vul_p(&vulkan::Shader::_pointer_ref_counter));
 		//class_add_element("descr_layout", TypePointerList, vul_p(&vulkan::Shader::descr_layouts));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Shader::__init__));
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Shader::__delete__));
