@@ -1192,6 +1192,21 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
 }
 
+const Class *parse_root_type_with_dots(Parser *p, const Class *ns) {
+	string pre = p->Exp.cur;
+	p->Exp.next();
+	//auto t = parse_type(ns);
+	auto t = p->tree->find_root_type_by_name(p->Exp.cur, ns, true);
+	if (!t)
+		p->do_error(format("type expected after '%s'", pre));
+
+	p->Exp.next();
+	while (p->Exp.cur == ".") {
+		t = p->parse_type_extension_child(t);
+	}
+	return t;
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
@@ -1236,12 +1251,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		operands = {tree->add_node_func_name(f)};
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
 		string pre = Exp.cur;
-		Exp.next();
-		auto t = parse_type(ns);
-		//auto t = tree->find_root_type_by_name(Exp.cur, ns, true);
-		if (!t)
-			do_error(format("type expected after '%s'", pre));
-		Exp.next();
+		auto t = parse_root_type_with_dots(this, ns);
 		if (pre == IDENTIFIER_SHARED)
 			t = make_pointer_shared(tree, t);
 		else //if (pre == IDENTIFIER_OWNED)

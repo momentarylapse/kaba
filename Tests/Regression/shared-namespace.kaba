@@ -1,0 +1,12 @@
+use nix
+
+class X
+	var x: shared nix.Texture[]
+	var y: shared Texture
+
+func main()
+	X x
+	print(len(x.x))
+	print(type(x.x))
+	print(type(x.x).param[0])
+	print(type(x.x).param[0].param[0])
