@@ -42,6 +42,11 @@ public:
 	uint32_t find_memory_type(const VkMemoryRequirements &requirements, VkMemoryPropertyFlags properties);
 	VkFormat find_supported_format(const Array<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat find_depth_format();
+
+	VkQueryPool query_pool;
+	void create_query_pool(int count);
+	void reset_query_pool(int first, int count);
+	Array<int> get_timestamps(int first, int count);
 };
 
 extern Device *default_device;

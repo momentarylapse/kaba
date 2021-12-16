@@ -102,6 +102,10 @@ void Buffer::update(void *source) {
 	update_part(source, 0, size);
 }
 
+void Buffer::update_array(const DynamicArray &array, int offset) {
+	update_part(array.data, offset, array.num * array.element_size);
+}
+
 
 
 UniformBuffer::UniformBuffer(int _size) {

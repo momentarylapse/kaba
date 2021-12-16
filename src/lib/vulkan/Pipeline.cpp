@@ -24,41 +24,18 @@ namespace vulkan {
 
 	extern bool verbose;
 
-
-	VkVertexInputBindingDescription create_binding_description(int num_uvs) {
-		VkVertexInputBindingDescription bd = {};
-		bd.binding = 0;
-		bd.stride = 2 * sizeof(vector) + num_uvs * 2 * sizeof(float);
-		bd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bd;
-	}
-
-	Array<VkVertexInputAttributeDescription> create_attribute_descriptions(int num_uvs) {
-		Array<VkVertexInputAttributeDescription> ad;
-		ad.resize(2 + num_uvs);
-
-		// position
-		ad[0].binding = 0;
-		ad[0].location = 0;
-		ad[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		ad[0].offset = 0;
-
-		// normal
-		ad[1].binding = 0;
-		ad[1].location = 1;
-		ad[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		ad[1].offset = sizeof(vector);
-
-		for (int i=0; i<num_uvs; i++) {
-			ad[i+2].binding = 0;
-			ad[i+2].location = 2;
-			ad[i+2].format = VK_FORMAT_R32G32_SFLOAT;
-			ad[i+2].offset = 2 * sizeof(vector) + i * 2 * sizeof(float);
-		}
-
-		return ad;
-	}
-
+VkPrimitiveTopology parse_topology(const string &t) {
+	if (t == "points")
+		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+	if (t == "lines")
+		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	if (t == "triangles")
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	if (t == "triangles-fan")
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+	msg_error("invalid topology: " + t);
+	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+}
 
 
 Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
@@ -144,11 +121,11 @@ void BasePipeline::destroy() {
 Array<VkVertexInputAttributeDescription> parse_attr_descr(const string &format);
 VkVertexInputBindingDescription parse_binding_descr(const string &format);
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VertexBuffer *vb) : Pipeline(_shader, _render_pass, _subpass, vb->binding_description, vb->attribute_descriptions) {}
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VertexBuffer *vb) : Pipeline(_shader, _render_pass, _subpass, topology, vb->binding_description, vb->attribute_descriptions) {}
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &format) : Pipeline(_shader, _render_pass, _subpass, parse_binding_descr(format), parse_attr_descr(format)) {}
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) : Pipeline(_shader, _render_pass, _subpass, topology, parse_binding_descr(format), parse_attr_descr(format)) {}
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(_shader) {
+Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(_shader) {
 	render_pass = _render_pass;
 	subpass = _subpass;
 
@@ -163,7 +140,7 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VkVe
 
 	input_assembly = {};
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	input_assembly.topology = shader->topology;
+	input_assembly.topology = parse_topology(topology);
 	input_assembly.primitiveRestartEnable = VK_FALSE;
 
 	for (int i=0; i<render_pass->num_color_attachments(subpass); i++) {
@@ -190,6 +167,7 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, VkVe
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	//rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
 	rasterizer.lineWidth = 1;
 	//rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -221,8 +199,8 @@ Pipeline::~Pipeline() {
 
 
 
-void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &format) {
-	new(this) Pipeline(_shader, _render_pass, _subpass, format);
+void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) {
+	new(this) Pipeline(_shader, _render_pass, _subpass, topology, format);
 }
 
 void Pipeline::__delete__() {

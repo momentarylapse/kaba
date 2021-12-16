@@ -82,6 +82,7 @@ void end_single_time_commands(VkCommandBuffer command_buffer) {
 
 CommandBuffer::CommandBuffer() {
 	cur_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	current_framebuffer = nullptr;
 	_create();
 }
 
@@ -180,12 +181,15 @@ void CommandBuffer::begin() {
 	if (vkBeginCommandBuffer(buffer, &info) != VK_SUCCESS) {
 		throw Exception("failed to begin recording command buffer!");
 	}
+	current_framebuffer = nullptr;
 }
 
 void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
 	if (fb->attachments.num != rp->attachments.num) {
 		std::cerr << "WARNING: CommandBuffer.begin_render_pass() - RenderPass/FrameBuffer attachment mismatch\n";
 	}
+	current_framebuffer = fb;
+
 	Array<VkClearValue> clear_values;
 	for (auto &c: rp->clear_color) {
 		VkClearValue cv = {};
@@ -207,6 +211,36 @@ void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
 
 	vkCmdBeginRenderPass(buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
+
+void CommandBuffer::clear(const Array<color> &col, float z, bool clear_z) {
+	if (!current_framebuffer)
+		return;
+	Array<VkClearAttachment> clear_attachments;
+	//Array<VkClearRect> clear_rects;
+	foreachi (auto &c, col, i) {
+		VkClearAttachment ca = {};
+		ca.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ca.colorAttachment = i;
+		memcpy((void*)&ca.clearValue.color, &c, sizeof(color));
+		clear_attachments.add(ca);
+	}
+	if (clear_z) {
+		VkClearAttachment ca = {};
+		ca.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ca.colorAttachment = current_framebuffer->attachments.num - 1;
+		ca.clearValue.depthStencil = {z, 0};
+		clear_attachments.add(ca);
+	}
+	VkClearRect clear_rect = {};
+	clear_rect.rect = {{0,0}, {(unsigned)current_framebuffer->width, (unsigned)current_framebuffer->height}};
+	clear_rect.baseArrayLayer = 0;
+	clear_rect.layerCount = 1;
+
+	vkCmdClearAttachments(buffer,
+			clear_attachments.num, &clear_attachments[0],
+			1, &clear_rect); //clear_rects.num, &clear_rects[0]);
+}
+
 void CommandBuffer::next_subpass() {
 	vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
 }
@@ -325,9 +359,16 @@ void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const
 			&region);
 }
 
+void CommandBuffer::timestamp(int id) {
+	vkCmdWriteTimestamp(buffer,
+			(VkPipelineStageFlagBits)(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT),
+			default_device->query_pool, id);
+}
+
 
 void CommandBuffer::end_render_pass() {
 	vkCmdEndRenderPass(buffer);
+	current_framebuffer = nullptr;
 }
 
 void CommandBuffer::end() {

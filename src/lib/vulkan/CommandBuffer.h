@@ -15,6 +15,7 @@
 #include "../base/base.h"
 
 class rect;
+class color;
 
 namespace vulkan{
 
@@ -44,6 +45,7 @@ namespace vulkan{
 
 		VkPipelineBindPoint cur_bind_point;
 		BasePipeline *current_pipeline;
+		FrameBuffer *current_framebuffer;
 
 		void begin();
 		void end();
@@ -57,6 +59,7 @@ namespace vulkan{
 		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
 		void next_subpass();
 		void end_render_pass();
+		void clear(const Array<color> &col, float z, bool clear_z);
 		void draw(VertexBuffer *vb);
 
 		void set_bind_point(const string &s);
@@ -70,6 +73,8 @@ namespace vulkan{
 		void barrier(const Array<Texture*> &t, int mode);
 		void image_barrier(const Texture *t, const Array<int> &flags);
 		void copy_image(const Texture *source, const Texture *dest, const Array<int> &extend);
+
+		void timestamp(int id);
 	};
 
 	VkCommandBuffer begin_single_time_commands();

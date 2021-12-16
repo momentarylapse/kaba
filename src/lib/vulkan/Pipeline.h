@@ -15,8 +15,7 @@
 //
 //
 
-#ifndef Pipeline_hpp
-#define Pipeline_hpp
+#pragma once
 
 #if HAS_LIB_VULKAN
 
@@ -68,12 +67,12 @@ namespace vulkan{
 
 	class Pipeline : public BasePipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &format);
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, VertexBuffer *vb);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
+		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VertexBuffer *vb);
 		~Pipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass, int subpass, const string &format);
+		void __init__(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
 		void __delete__();
 
 		void rebuild();
@@ -128,5 +127,3 @@ namespace vulkan{
 };
 
 #endif
-
-#endif /* Pipeline_hpp */

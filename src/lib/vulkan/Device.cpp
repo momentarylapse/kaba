@@ -258,6 +258,25 @@ QueueFamilyIndices find_queue_families(VkPhysicalDevice device) {
 	return indices;
 }
 
+void Device::create_query_pool(int count) {
+	VkQueryPoolCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+	info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+	info.queryCount = count;
+	vkCreateQueryPool(device, &info, nullptr, &query_pool);
+}
+
+void Device::reset_query_pool(int first, int count) {
+	vkResetQueryPool(device, query_pool, first, count);
+}
+
+Array<int> Device::get_timestamps(int first, int count) {
+	Array<int> tt;
+	tt.resize(count);
+	vkGetQueryPoolResults(device, query_pool, first, count, sizeof(tt[0]) * tt.num, &tt[0], 4, VK_QUERY_RESULT_PARTIAL_BIT);//VK_QUERY_RESULT_WAIT_BIT);
+	return tt;
+}
+
 
 } /* namespace vulkan */
 

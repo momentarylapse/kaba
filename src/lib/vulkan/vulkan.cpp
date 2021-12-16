@@ -36,6 +36,9 @@ namespace vulkan {
 bool verbose = true;
 
 extern VkSurfaceKHR default_surface;
+VkQueryPool query_pool;
+
+
 
 
 Instance *init(GLFWwindow* window, const Array<string> &op) {
@@ -47,6 +50,7 @@ Instance *init(GLFWwindow* window, const Array<string> &op) {
 	default_surface = instance->create_surface(window);
 	default_device = instance->pick_device();
 	create_command_pool();
+	default_device->create_query_pool(16384);
 
 	if (want_rtx)
 		vulkan::rtx::get_properties();

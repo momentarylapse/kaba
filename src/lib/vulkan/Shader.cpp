@@ -68,7 +68,6 @@ extern bool verbose;
 	struct ShaderMetaData {
 		string version, name, bindings;
 		int push_size;
-		VkPrimitiveTopology topology;
 	};
 
 	struct ShaderModule {
@@ -227,12 +226,6 @@ extern bool verbose;
 					m.push_size = v._int();
 				} else if (k == "input") {
 				} else if (k == "topology") {
-					if (v == "points")
-						m.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-					else if (v == "lines")
-						m.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-					else if (v == "triangles")
-						m.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 				} else {
 					msg_error("unhandled shader meta: " + x);
 				}
@@ -269,7 +262,6 @@ extern bool verbose;
 		}
 
 		s->push_size = meta.push_size;
-		s->topology = meta.topology;
 		s->descr_layouts = DescriptorSet::parse_bindings(meta.bindings);
 
 		shaders.add(s);
@@ -286,7 +278,6 @@ extern bool verbose;
 
 
 	Shader::Shader() {
-		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		push_size = 0;
 	}
 
@@ -330,10 +321,6 @@ extern bool verbose;
 				string value = f->read_str();
 				//std::cout << tag << "\n";
 				if (tag == "Topology") {
-					if (value == "points")
-						s->topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-					if (value == "lines")
-						s->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 				} else if (tag == "Bindings") {
 					s->descr_layouts = DescriptorSet::parse_bindings(value);
 				} else if (tag == "PushSize") {

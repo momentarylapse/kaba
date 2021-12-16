@@ -277,6 +277,7 @@ void SIAddPackageVulkan() {
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
 			func_add_param("subpass", TypeInt);
+			func_add_param("topology", TypeString);
 			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Pipeline::__delete__));
 		class_add_func("set_wireframe", TypeVoid, vul_p(&vulkan::Pipeline::set_wireframe));

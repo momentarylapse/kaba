@@ -28,7 +28,6 @@ namespace vulkan{
 
 		Array<VkDescriptorSetLayout> descr_layouts;
 		int push_size;
-		VkPrimitiveTopology topology;
 
 		VkShaderModule get_module(VkShaderStageFlagBits stage) const;
 
