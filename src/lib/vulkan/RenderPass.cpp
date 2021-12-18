@@ -203,7 +203,7 @@ namespace vulkan {
 	}
 
 
-	void RenderPass::__init__(const Array<VkFormat> &format, const string &options) {
+	void RenderPass::__init__(const Array<string> &format, const string &options) {
 		new(this) RenderPass(format, options);
 	}
 

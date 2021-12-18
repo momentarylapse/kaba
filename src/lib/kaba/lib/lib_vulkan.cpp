@@ -260,6 +260,7 @@ void SIAddPackageVulkan() {
 		class_add_func("update", TypeVoid, vul_p(&vulkan::UniformBuffer::update));
 			func_add_param("source", TypePointer);
 
+
 	add_class(TypeDescriptorPool);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::DescriptorPool::__init__));
 			func_add_param("s", TypeString);
@@ -267,6 +268,7 @@ void SIAddPackageVulkan() {
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DescriptorPool::__delete__));
 		class_add_func("create_set", TypeDescriptorSetP, vul_p(&vulkan::DescriptorPool::_create_set_str), Flags::CONST);
 			func_add_param("bindings", TypeString);
+
 
 	add_class(TypeDescriptorSet);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::DescriptorSet::__delete__));
@@ -319,6 +321,7 @@ void SIAddPackageVulkan() {
 			func_add_param("mode", TypeIntList);
 		class_add_func("rebuild", TypeVoid, vul_p(&vulkan::Pipeline::rebuild));
 
+
 	add_class(TypeRayPipeline);
 		class_derive_from(TypePipeline, true, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::RayPipeline::__init__));
@@ -327,11 +330,12 @@ void SIAddPackageVulkan() {
 			func_add_param("recursion_depth", TypeInt);
 		class_add_func("create_sbt", TypeVoid, vul_p(&vulkan::RayPipeline::create_sbt));
 
+
 	add_class(TypeRenderPass);
 		class_add_element("clear_color", TypeColorList, vul_p(&vulkan::RenderPass::clear_color));
 		class_add_element("clear_z", TypeFloat32, vul_p(&vulkan::RenderPass::clear_z));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::RenderPass::__init__));
-			func_add_param("formats", TypeIntList);
+			func_add_param("formats", TypeStringList);
 			func_add_param("options", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::RenderPass::__delete__));
 		class_add_func("rebuild", TypeVoid, vul_p(&vulkan::RenderPass::rebuild));
@@ -426,6 +430,7 @@ void SIAddPackageVulkan() {
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
 
+
 	add_class(TypeAccelerationStructure);
 		//class_add_func("create_top", TypeAccelerationStructureP, vul_p(&vulkan::AccelerationStructure::create_top), Flags::STATIC);
 		class_add_func("create_top", TypeAccelerationStructureP, vul_p(&vulkan::AccelerationStructure::create_top_simple), Flags::STATIC);
@@ -434,13 +439,13 @@ void SIAddPackageVulkan() {
 			func_add_param("vb", TypeVertexBuffer);
 
 
-
 	add_class(TypeQueue);
 		class_add_func("submit", TypeVoid, vul_p(&vulkan::Queue::submit));
 			func_add_param("cb", TypeCommandBuffer);
 			func_add_param("wait_sem", TypeSemaphorePList);
 			func_add_param("signal_sem", TypeSemaphorePList);
 			func_add_param("fence", TypeFence);
+
 
 	add_func("create_window", TypePointer, vul_p(&vulkan::create_window), Flags::STATIC);
 		func_add_param("title", TypeString);
