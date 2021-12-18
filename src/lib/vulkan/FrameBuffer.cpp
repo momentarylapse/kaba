@@ -19,7 +19,7 @@ VkFormat parse_format(const string &s);
 
 
 DepthBuffer::DepthBuffer(int w, int h, VkFormat _format, bool _with_sampler) {
-	with_sampler = _with_sampler;
+	type = Type::DEPTH;
 	create(w, h, _format);
 }
 
@@ -29,24 +29,23 @@ void DepthBuffer::__init__(int w, int h, const string &format, bool _with_sample
 	new(this) DepthBuffer(w, h, format, _with_sampler);
 }
 
-void DepthBuffer::create(int w, int h, VkFormat _format) {
+void DepthBuffer::create(int w, int h, VkFormat format) {
 	width = w;
 	height = h;
 	depth = 1;
 	mip_levels = 1;
-	format = _format;
 
 	auto usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	if (!with_sampler)
-		usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	create_image(width, height, 1, 1, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
-	view = create_image_view(image, format, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D, 1);
+	//if (!with_sampler)
+	//	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	image.create(VK_IMAGE_TYPE_2D, width, height, 1, 1, 1, format, usage, false);
+	view = image.create_view(VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 0, 1);
 
-	transition_image_layout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+	image.transition_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 0, 1);
 
 
-	if (with_sampler)
-		_create_sampler();
+	//if (with_sampler)
+	_create_sampler();
 }
 
 
@@ -54,11 +53,11 @@ void DepthBuffer::create(int w, int h, VkFormat _format) {
 
 FrameBuffer::FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments) {
 	frame_buffer = nullptr;
-	create(rp, attachments);
+	update(rp, attachments);
 }
 
 FrameBuffer::~FrameBuffer() {
-	destroy();
+	_destroy();
 }
 
 
@@ -71,10 +70,21 @@ void FrameBuffer::__delete__() {
 	this->~FrameBuffer();
 }
 
-void FrameBuffer::create(RenderPass *rp, const Array<Texture*> &_attachments) {
-	attachments.clear();
+void FrameBuffer::update(RenderPass *rp, const Array<Texture*> &_attachments) {
+	update_x(rp, _attachments, 0);
+}
+
+void FrameBuffer::update_x(RenderPass *rp, const Array<Texture*> &_attachments, int layer) {
+	_destroy();
+	_create(rp, _attachments, layer);
+}
+
+void FrameBuffer::_create(RenderPass *rp, const Array<Texture*> &_attachments, int layer) {
+	shared_array<Texture> new_attachments;
 	for (auto a: _attachments)
-		attachments.add(a);
+		new_attachments.add(a);
+	attachments = new_attachments;
+
 	width = 1;
 	height = 1;
 	if (attachments.num > 0) {
@@ -83,8 +93,15 @@ void FrameBuffer::create(RenderPass *rp, const Array<Texture*> &_attachments) {
 	}
 
 	Array<VkImageView> views;
-	for (auto a: _attachments)
-		views.add(a->view);
+	for (auto a: _attachments) {
+		if (a->type == Texture::Type::CUBE) {
+			auto v = a->image.create_view(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, layer, 1);
+			cube_views.add(v);
+			views.add(v);
+		} else {
+			views.add(a->view);
+		}
+	}
 
 	VkFramebufferCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -100,10 +117,14 @@ void FrameBuffer::create(RenderPass *rp, const Array<Texture*> &_attachments) {
 	}
 }
 
-void FrameBuffer::destroy() {
+void FrameBuffer::_destroy() {
 	if (frame_buffer)
 		vkDestroyFramebuffer(default_device->device, frame_buffer, nullptr);
 	frame_buffer = nullptr;
+
+	for (auto v: cube_views)
+		vkDestroyImageView(default_device->device, v, nullptr);
+	cube_views.clear();
 }
 
 

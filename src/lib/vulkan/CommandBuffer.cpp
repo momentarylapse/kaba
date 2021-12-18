@@ -270,14 +270,10 @@ void CommandBuffer::trace_rays(int nx, int ny, int nz) {
 			nx, ny, nz);
 }
 
-bool image_is_depth_buffer(VkFormat f) {
-	return (f == VK_FORMAT_D32_SFLOAT) or (f == VK_FORMAT_D32_SFLOAT_S8_UINT) or (f == VK_FORMAT_D24_UNORM_S8_UINT) or (f == VK_FORMAT_D16_UNORM);
-}
-
 void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 	Array<VkImageMemoryBarrier> barriers;
 	for (auto *t: textures) {
-		bool is_depth = image_is_depth_buffer(t->format);
+		bool is_depth = t->image.is_depth_buffer();
 		VkImageSubresourceRange sr = {};
 		sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 		sr.baseArrayLayer = 0;
@@ -290,7 +286,7 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 		b.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		b.oldLayout = is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		b.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		b.image = t->image;
+		b.image = t->image.image;
 		b.subresourceRange = sr;
 		barriers.add(b);
 
@@ -312,7 +308,7 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 
 void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
 
-	bool is_depth = image_is_depth_buffer(t->format);
+	bool is_depth = t->image.is_depth_buffer();
 	VkImageSubresourceRange sr = {};
 	sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 	sr.baseArrayLayer = 0;
@@ -329,7 +325,7 @@ void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
 	barrier.newLayout = (VkImageLayout)flags[0];
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = t->image;
+	barrier.image = t->image.image;
 	barrier.subresourceRange = sr;
 
 	vkCmdPipelineBarrier(buffer,
@@ -341,8 +337,8 @@ void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
 
 void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const Array<int> &extend) {
 
-	bool src_is_depth = image_is_depth_buffer(source->format);
-	bool dst_is_depth = image_is_depth_buffer(dest->format);
+	bool src_is_depth = source->image.is_depth_buffer();
+	bool dst_is_depth = dest->image.is_depth_buffer();
 
 	VkImageCopy region;
 	region.srcSubresource = {(VkImageAspectFlags)(src_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
@@ -351,9 +347,9 @@ void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const
 	region.dstOffset = {extend[4], extend[5], 0};
 	region.extent = {(unsigned)extend[2], (unsigned)extend[3], 1};
 	vkCmdCopyImage(buffer,
-			source->image,
+			source->image.image,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			dest->image,
+			dest->image.image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1,
 			&region);

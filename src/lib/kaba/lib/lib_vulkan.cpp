@@ -91,7 +91,8 @@ public:
 		typedef int Semaphore;
 		typedef int DepthBuffer;
 		typedef int FrameBuffer;
-		typedef int DynamicTexture;
+		typedef int VolumeTexture;
+		typedef int CubeMap;
 		typedef int StorageImage;
 		typedef int AccelerationStructure;
 	};
@@ -124,7 +125,8 @@ void SIAddPackageVulkan() {
 	auto TypeTexture		= add_type  ("Texture", sizeof(vulkan::Texture));
 	auto TypeTextureP		= add_type_p(TypeTexture);
 	auto TypeTexturePList	= add_type_l(TypeTextureP);
-	auto TypeDynamicTexture	= add_type  ("DynamicTexture", sizeof(vulkan::DynamicTexture));
+	auto TypeVolumeTexture	= add_type  ("VolumeTexture", sizeof(vulkan::VolumeTexture));
+	auto TypeCubeMap		= add_type  ("CubeMap", sizeof(vulkan::CubeMap));
 	auto TypeDepthBuffer	= add_type  ("DepthBuffer", sizeof(vulkan::DepthBuffer));
 	auto TypeDepthBufferP	= add_type_p(TypeDepthBuffer);
 	auto TypeFrameBuffer	= add_type  ("FrameBuffer", sizeof(vulkan::FrameBuffer));
@@ -186,8 +188,12 @@ void SIAddPackageVulkan() {
 		class_add_element("width", TypeInt, vul_p(&vulkan::Texture::width));
 		class_add_element("height", TypeInt, vul_p(&vulkan::Texture::height));
 		class_add_element("view", TypePointer, vul_p(&vulkan::Texture::view));
-		class_add_element("format", TypeInt, vul_p(&vulkan::Texture::format));
+		//class_add_element("format", TypeInt, vul_p(&vulkan::Texture::format));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Texture::__init__));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Texture::__init_ext__));
+			func_add_param("w", TypeInt);
+			func_add_param("h", TypeInt);
+			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Texture::__delete__));
 		class_add_func("override", TypeVoid, vul_p(&vulkan::Texture::override));
 			func_add_param("image", TypeImage);
@@ -201,12 +207,19 @@ void SIAddPackageVulkan() {
 			func_add_param("filename", TypePath);
 
 
-	add_class(TypeDynamicTexture);
+	add_class(TypeVolumeTexture);
 		class_derive_from(TypeTexture, true, false);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::DynamicTexture::__init__));
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::VolumeTexture::__init__));
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
+			func_add_param("format", TypeString);
+
+
+	add_class(TypeCubeMap);
+		class_derive_from(TypeTexture, true, false);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::CubeMap::__init__));
+			func_add_param("size", TypeInt);
 			func_add_param("format", TypeString);
 
 

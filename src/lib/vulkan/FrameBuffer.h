@@ -21,7 +21,6 @@ class RenderPass;
 
 class DepthBuffer : public Texture {
 public:
-	bool with_sampler;
 
 	DepthBuffer(int w, int h, VkFormat format, bool with_sampler);
 	DepthBuffer(int w, int h, const string &format, bool with_sampler);
@@ -40,10 +39,15 @@ public:
 
 	VkFramebuffer frame_buffer;
 	int width, height;
-	void create(RenderPass *rp, const Array<Texture*> &attachments);
-	void destroy();
+
+	void update(RenderPass *rp, const Array<Texture*> &attachments);
+	void update_x(RenderPass *rp, const Array<Texture*> &attachments, int layer);
+
+	void _create(RenderPass *rp, const Array<Texture*> &attachments, int layer);
+	void _destroy();
 
 	shared_array<Texture> attachments;
+	Array<VkImageView> cube_views;
 };
 
 }

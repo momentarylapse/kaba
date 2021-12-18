@@ -1,5 +1,4 @@
-#ifndef _NIX_TEXTURE_H
-#define _NIX_TEXTURE_H
+#pragma once
 
 #if HAS_LIB_VULKAN
 
@@ -8,6 +7,7 @@
 #include "../base/pointer.h"
 #include "../file/path.h"
 #include <vulkan/vulkan.h>
+#include "helper.h"
 
 class Image;
 
@@ -15,11 +15,24 @@ namespace vulkan {
 
 	class Texture : public Sharable<Empty> {
 	public:
+		enum class Type {
+			NONE,
+			DEFAULT,
+			DYNAMIC,
+			CUBE,
+			DEPTH,
+			IMAGE,
+			VOLUME,
+			MULTISAMPLE,
+			RENDERBUFFER
+		};
+
 		Texture();
-		Texture(int w, int h);
+		Texture(int w, int h, const string &format);
 		~Texture();
 
 		void __init__();
+		void __init_ext__(int w, int h, const string &format);
 		void __delete__();
 
 		void _load(const Path &filename);
@@ -30,17 +43,14 @@ namespace vulkan {
 		void set_options(const string &op) const;
 
 		void _destroy();
-		void _generate_mipmaps(VkFormat image_format);
-		void _create_image(const void *data, int nx, int ny, int nz, VkFormat image_format, bool allow_mip, bool as_storage);
-		void _create_view() const;
+		void _create_image(const void *data, VkImageType type, VkFormat format, bool allow_mip, bool as_storage, bool cube);
 		void _create_sampler() const;
 
 
+		Type type;
 		int width, height, depth;
 		int mip_levels;
-		VkFormat format;
-		VkImage image;
-		VkDeviceMemory memory;
+		ImageAndMemory image;
 
 		mutable VkImageView view;
 		mutable VkSampler sampler;
@@ -51,9 +61,9 @@ namespace vulkan {
 		static Texture* load(const Path &filename);
 	};
 
-	class DynamicTexture : public Texture {
+	class VolumeTexture : public Texture {
 	public:
-		DynamicTexture(int nx, int ny, int nz, const string &format);
+		VolumeTexture(int nx, int ny, int nz, const string &format);
 		void __init__(int nx, int ny, int nz, const string &format);
 	};
 
@@ -63,9 +73,15 @@ namespace vulkan {
 		void __init__(int nx, int ny, int nz, const string &format);
 	};
 
+	class CubeMap : public Texture {
+	public:
+		CubeMap(int size, const string &format);
+		void __init__(int size, const string &format);
+		void override_side(int side, const Image &image);
+	};
+
 	extern Array<Texture*> textures;
 };
 
 #endif
 
-#endif

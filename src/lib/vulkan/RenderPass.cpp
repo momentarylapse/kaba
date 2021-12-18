@@ -104,13 +104,13 @@ VkAccessFlags parse_access(const string &s) {
 
 namespace vulkan {
 
-	bool image_is_depth_buffer(VkFormat f);
 	VkFormat parse_format(const string &s);
+	bool format_is_depth_buffer(VkFormat f);
 
 	Array<VkFormat> extract_formats(const Array<Texture*> &images) {
 		Array<VkFormat> r;
 		for (auto t: images)
-			r.add(t->format);
+			r.add(t->image.format);
 		return r;
 	}
 
@@ -143,7 +143,7 @@ namespace vulkan {
 		for (auto &f: formats) {
 			VkAttachmentDescription a = {};
 			a.format = f;
-			if (image_is_depth_buffer(f)) {
+			if (format_is_depth_buffer(f)) {
 				// depth buffer
 				a.samples = VK_SAMPLE_COUNT_1_BIT;
 				a.loadOp = depth_load_op;

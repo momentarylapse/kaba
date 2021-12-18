@@ -80,8 +80,8 @@ Array<Texture*> SwapChain::create_textures() {
 		auto t = new Texture();
 		t->width = width;
 		t->height = height;
-		t->format = image_format;
-		t->image = images[i];
+		t->image.format = image_format;
+		t->image.image = images[i];
 		t->view = image_views[i];
 		textures.add(t);
 	}
@@ -129,7 +129,7 @@ DepthBuffer *SwapChain::create_depth_buffer() {
 }
 
 RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
-	return new RenderPass({image_format, depth_buffer->format}, "clear,present");
+	return new RenderPass({image_format, depth_buffer->image.format}, "clear,present");
 }
 
 
@@ -183,6 +183,7 @@ void SwapChain::create() {
 	image_format = surface_format.format;
 }
 
+// well, no memory :P
 Array<VkImage> SwapChain::get_images() {
 	vkGetSwapchainImagesKHR(default_device->device, swap_chain, &image_count, nullptr);
 	Array<VkImage> images;
@@ -198,7 +199,7 @@ Array<VkImage> SwapChain::get_images() {
 Array<VkImageView> SwapChain::create_image_views(Array<VkImage> &images) {
 	Array<VkImageView> views;
 	for (uint32_t i=0; i<image_count; i++)
-		views.add(create_image_view(images[i], image_format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1));
+		views.add(ImageAndMemory{images[i], nullptr, image_format}.create_view(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 0, 1));
 	_image_views = views;
 	return views;
 }
