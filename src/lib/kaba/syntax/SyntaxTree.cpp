@@ -134,9 +134,9 @@ shared<Node> SyntaxTree::add_node_statement(StatementID id) {
 shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params, bool force_non_virtual) {
 	shared<Node> c;
 	if ((f->virtual_index >= 0) and !force_non_virtual) {
-		c = new Node(NodeKind::VIRTUAL_CALL, (int_p)f, f->literal_return_type, true);
+		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type, true);
 	} else {
-		c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type, true);
+		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
 	}
 	c->set_num_params(f->num_params + 1);
 	c->set_instance(inst);
@@ -148,7 +148,7 @@ shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> in
 // non-member!
 shared<Node> SyntaxTree::add_node_call(Function *f) {
 	// FIXME: literal_return_type???
-	shared<Node> c = new Node(NodeKind::FUNCTION_CALL, (int_p)f, f->literal_return_type, true);
+	shared<Node> c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
 	if (f->is_static())
 		c->set_num_params(f->num_params);
 	else
@@ -794,7 +794,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 			return c;
 		}
 
-	if ((c->kind == NodeKind::FUNCTION_CALL) or (c->kind == NodeKind::VIRTUAL_CALL) or (c->kind == NodeKind::POINTER_CALL) or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+	if (c->is_call() or (c->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
 		auto r = c->shallow_copy();
 		bool changed = false;
 
@@ -1318,9 +1318,9 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 }
 
 shared<Node> SyntaxTree::conv_func_inline(shared<Node> n) {
-	if (n->kind == NodeKind::FUNCTION_CALL) {
+	if (n->kind == NodeKind::CALL_FUNCTION) {
 		if (n->as_func()->inline_no != InlineID::NONE) {
-			auto r = new Node(NodeKind::INLINE_CALL, n->link_no, n->type, n->is_const);
+			auto r = new Node(NodeKind::CALL_INLINE, n->link_no, n->type, n->is_const);
 			r->params = n->params;
 			return r;
 		}
@@ -1328,11 +1328,11 @@ shared<Node> SyntaxTree::conv_func_inline(shared<Node> n) {
 	if (n->kind == NodeKind::OPERATOR) {
 		Operator *op = n->as_op();
 		if (op->f->inline_no != InlineID::NONE) {
-			auto r = new Node(NodeKind::INLINE_CALL, (int_p)op->f, n->type, n->is_const);
+			auto r = new Node(NodeKind::CALL_INLINE, (int_p)op->f, n->type, n->is_const);
 			r->params = n->params;
 			return r;
 		} else {
-			auto r = new Node(NodeKind::FUNCTION_CALL, (int_p)op->f, n->type, n->is_const);
+			auto r = new Node(NodeKind::CALL_FUNCTION, (int_p)op->f, n->type, n->is_const);
 			r->params = n->params;
 			return r;
 		}

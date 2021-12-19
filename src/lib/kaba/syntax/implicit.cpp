@@ -783,7 +783,8 @@ void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 void Parser::auto_implement_callable_fp_call(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	auto call = new Node(NodeKind::POINTER_CALL, 0, f->literal_return_type);
+	// contains a Function* pointer, call it
+	auto call = new Node(NodeKind::CALL_POINTER, 0, f->literal_return_type);
 	call->set_num_params(1 + get_callable_param_types(t).num);
 	call->set_param(0, get_callable_fp(t, self));
 	for (int i=0; i<f->num_params; i++)

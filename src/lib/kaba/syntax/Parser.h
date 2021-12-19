@@ -155,7 +155,7 @@ public:
 	shared<Node> parse_statement_lambda(Block *block);
 	shared<Node> parse_statement_sorted(Block *block);
 	shared<Node> parse_statement_dyn(Block *block);
-	shared<Node> parse_statement_call(Block *block);
+	shared<Node> parse_statement_raw_function_pointer(Block *block);
 	shared<Node> parse_statement_weak(Block *block);
 
 
