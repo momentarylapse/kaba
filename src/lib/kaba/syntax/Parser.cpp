@@ -2847,9 +2847,12 @@ shared<Node> Parser::parse_statement_raw_function_pointer(Block *block) {
 
 	auto sub = parse_single_func_param(block);
 	if (sub->kind == NodeKind::FUNCTION) {
+		auto func = tree->add_node_const(tree->add_constant(TypeFunctionP));
+		func->as_const()->as_int64() = (int_p)sub->as_func();
+
 		auto cmd = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER);
 		cmd->type = TypeFunctionCodeP;
-		cmd->set_param(0, sub);
+		cmd->set_param(0, func);
 		return cmd;
 	} else {
 		do_error("raw_function_pointer() expects a function name");
