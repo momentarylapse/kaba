@@ -2843,48 +2843,18 @@ shared<Node> Parser::parse_statement_dyn(Block *block) {
 }
 
 shared<Node> Parser::parse_statement_raw_function_pointer(Block *block) {
-#if 0
-	Exp.next(); // "call"
-	string name = Exp.cur;
+	Exp.next(); // "raw_function_pointer"
 
-	auto params = parse_call_parameters(block);
-	if (params.num == 0)
-		do_error("call() expects at least 1 parameter");
-	params[0] = force_concrete_type(params[0]);
-	if (!is_function_pointer(params[0]->type))
-		do_error("call(): first parameter must be a function pointer ..." + params[0]->type->long_name());
-
-	auto ft = params[0]->type;
-	if (ft == TypeFunctionP) {
-
-		int np = params.num-1;
-		for (int i=0; i<np; i++)
-			params[i+1] = force_concrete_type(params[i+1]);
-
-		auto f = tree->required_func_global("@call" + i2s(np));
-
-		auto cmd = tree->add_node_call(f);
-		cmd->set_param(0, params[0]);
-		for (int i=0; i<np; i++)
-			cmd->set_param(i+1, params[i+1]->ref());
+	auto sub = parse_single_func_param(block);
+	if (sub->kind == NodeKind::FUNCTION) {
+		auto cmd = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER);
+		cmd->type = TypePointer;
+		cmd->set_param(0, sub);
 		return cmd;
 	} else {
-		auto pp = ft->param[0]->param;
-
-		auto cmd = new Node(NodeKind::POINTER_CALL, 0, pp.back());
-		cmd->set_num_params(pp.num);
-		cmd->set_param(0, params[0]);
-
-		if (pp.num != params.num)
-			do_error(format("call(p,...): %d additional parameters given, but the function pointer expects %d", params.num-1, pp.num-1));
-
-		int np = params.num-1;
-		for (int i=0; i<np; i++)
-			cmd->set_param(i+1, check_param_link(params[i+1], pp[i], IDENTIFIER_CALL, i+1, np+1));
-		return cmd;
-
+		do_error("raw_function_pointer() expects a function name");
 	}
-#endif
+
 	return nullptr;
 }
 

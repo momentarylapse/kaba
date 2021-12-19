@@ -273,6 +273,9 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			break;
 		case StatementID::PASS:
 			break;
+		case StatementID::RAW_FUNCTION_POINTER:
+			cmd.add_cmd(Asm::InstID::ADD, ret, param_imm(TypePointer, (int_p)com->params[0]->as_func()), param_imm(TypeInt, config.function_address_offset));
+			break;
 		default:
 			do_error("statement unimplemented: " + com->as_statement()->name);
 	}
