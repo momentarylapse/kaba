@@ -720,8 +720,8 @@ Array<const Class*> Parser::get_wanted_param_types(shared<Node> link) {
 		const Class *t = link->as_class();
 		for (auto *c: t->get_constructors())
 			return c->literal_param_type;
-	} else if (link->kind == NodeKind::CALL_POINTER) {
-		return get_callable_param_types(link->params[0]->type);
+	/*} else if (link->kind == NodeKind::CALL_RAW_POINTER) {
+		return get_callable_param_types(link->params[0]->type);*/
 	} else {
 		do_error("evil function...kind: "+kind2str(link->kind));
 	}
@@ -858,7 +858,7 @@ int node_param_offset(shared<Node> operand) {
 	int offset = 0;
 	if (node_is_member_function_with_instance(operand))
 		offset ++;
-	if ((operand->kind == NodeKind::CALL_POINTER) or (operand->kind == NodeKind::CALL_RAW_POINTER))
+	if ((operand->kind == NodeKind::CALL_RAW_POINTER))
 		offset ++;
 	return offset;
 }
@@ -2848,7 +2848,7 @@ shared<Node> Parser::parse_statement_raw_function_pointer(Block *block) {
 	auto sub = parse_single_func_param(block);
 	if (sub->kind == NodeKind::FUNCTION) {
 		auto cmd = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER);
-		cmd->type = TypePointer;
+		cmd->type = TypeFunctionCodeP;
 		cmd->set_param(0, sub);
 		return cmd;
 	} else {

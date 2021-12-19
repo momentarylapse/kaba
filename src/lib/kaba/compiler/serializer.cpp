@@ -240,7 +240,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 		add_member_function_call(com->as_func(), params, ret);
 	} else if (com->kind == NodeKind::CALL_INLINE) {
 		serialize_inline_function(com, params, ret);
-	} else if (com->kind == NodeKind::CALL_POINTER) {
+	} else if (com->kind == NodeKind::CALL_RAW_POINTER) {
 		add_pointer_call(params[0], params.sub_ref(1), ret);
 	} else if (com->kind == NodeKind::STATEMENT) {
 		serialize_statement(com, ret, block, index);

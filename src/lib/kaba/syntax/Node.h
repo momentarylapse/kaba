@@ -41,7 +41,6 @@ enum class NodeKind {
 	CALL_VIRTUAL,       // = virtual function call
 	CALL_INLINE,        // = function defined inside the compiler...
 	CALL_RAW_POINTER,   // = function call via a raw pointer
-	CALL_POINTER,       // = function call via Function* pointer
 	STATEMENT,          // = if/while/break/...
 	BLOCK,              // = block of commands {...}
 	OPERATOR,
