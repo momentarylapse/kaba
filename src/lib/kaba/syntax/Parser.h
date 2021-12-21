@@ -66,6 +66,7 @@ public:
 
 	shared<Node> link_special_operator_is(shared<Node> param1, shared<Node> param2);
 	shared<Node> link_special_operator_in(shared<Node> param1, shared<Node> param2);
+	shared<Node> link_special_operator_as(shared<Node> param1, shared<Node> param2);
 	shared<Node> make_dynamical(shared<Node> node);
 	Array<const Class*> type_list_from_nodes(const shared_array<Node> &nn);
 

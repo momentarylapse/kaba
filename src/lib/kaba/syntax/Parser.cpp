@@ -1563,6 +1563,43 @@ shared<Node> Parser::link_special_operator_in(shared<Node> param1, shared<Node> 
 	return n;
 }
 
+shared<Node> explicit_cast(Parser *p, shared<Node> node, const Class *wanted) {
+	auto type = node->type;
+	if (type == wanted)
+		return node;
+
+	int penalty, cast;
+	if (type_match_with_cast(node, false, wanted, penalty, cast)) {
+		if (cast == TYPE_CAST_NONE) {
+			auto c = node->shallow_copy();
+			c->type = wanted;
+			return c;
+		}
+		return p->apply_type_cast(cast, node, wanted);
+	}
+
+	if (wanted == TypeString)
+		return p->add_converter_str(node, false);
+
+	if (type->get_func("__" + wanted->name + "__", wanted, {})) {
+		auto rrr = p->turn_class_into_constructor(wanted, {node});
+		if (rrr.num > 0) {
+			rrr[0]->set_param(0, node);
+			return rrr[0];
+		}
+	}
+
+	p->do_error(format("can not cast expression of type '%s' to type '%s'", node->type->long_name(), wanted->long_name()));
+	return nullptr;
+}
+
+shared<Node> Parser::link_special_operator_as(shared<Node> param1, shared<Node> param2) {
+	if (param2->kind != NodeKind::CLASS)
+		do_error("class name expected after 'as'");
+	auto wanted = param2->as_class();
+	return explicit_cast(this, param1, wanted);
+}
+
 shared<Node> Parser::link_operator_id(OperatorID op_no, shared<Node> param1, shared<Node> param2) {
 	return link_operator(&PrimitiveOperators[(int)op_no], param1, param2);
 }
@@ -1580,6 +1617,8 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 		return link_special_operator_is(param1, param2);
 	if (primop->id == OperatorID::IN)
 		return link_special_operator_in(param1, param2);
+	if (primop->id == OperatorID::AS)
+		return link_special_operator_as(param1, param2);
 
 
 	auto *p1 = param1->type;

@@ -1,0 +1,6 @@
+func main()
+	print(2 as float)
+	print(pi as int)
+	print(dyn(3) as int)
+	print(2 as string)
+
