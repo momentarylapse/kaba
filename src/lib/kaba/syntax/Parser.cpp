@@ -3108,12 +3108,16 @@ Path import_dir_match(const Path &dir0, const string &name) {
 }
 
 Path find_installed_lib_import(const string &name) {
-	for (auto &dir: Array<Path>({hui::Application::directory, hui::Application::directory_static})) {
-		auto path = (hui::Application::directory_static << "lib" << name).canonical(); // TODO...
+	Path kaba_dir = hui::Application::directory.parent() << "kaba";
+	if (hui::Application::directory.basename()[0] == '.')
+		kaba_dir = hui::Application::directory.parent() << ".kaba";
+	Path kaba_dir_static = hui::Application::directory_static.parent() << "kaba";
+	for (auto &dir: Array<Path>({kaba_dir, kaba_dir_static})) {
+		auto path = (dir << "lib" << name).canonical();
 		if (file_exists(path))
 			return path;
 	}
-	return name;
+	return Path::EMPTY;
 }
 
 Path find_import(Script *s, const string &_name) {
@@ -3128,6 +3132,8 @@ Path find_import(Script *s, const string &_name) {
 		if (!filename.is_empty())
 			return filename;
 	}
+
+	return find_installed_lib_import(name);
 
 	return Path::EMPTY;
 }
