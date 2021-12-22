@@ -1,0 +1,6 @@
+func f(a: int, b: float)
+	let c: int
+	let d: float = 4
+
+done!
+

@@ -1,0 +1,10 @@
+enum XXX
+	A
+	B
+
+interpret like
+class XXX extends int
+	const XXX A = 0
+	const XXX B = 1
+
+

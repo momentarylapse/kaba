@@ -1,0 +1,9 @@
+
+
+== things that feel bad ==
+
+* failing to auto-implement __assign__ even if not needed/wanted
+* messy rules for constructors
+* parser operand/type confusion
+* error handling
+

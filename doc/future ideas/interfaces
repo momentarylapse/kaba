@@ -1,0 +1,22 @@
+interface I
+	func f()
+	func g()
+
+class A implements I
+	...
+
+
+func ff(I i)
+	i.f()
+let a:A
+ff(a)
+
+extra vtable for each interface in class
+##no extra pointer for object/offset needed
+no data in interface
+
+call via interface
+ i.f()
+requires 2 pointers... A instance + if-vtable
+ARGH
+
