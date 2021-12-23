@@ -707,9 +707,10 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 
 
 // when calling ...(...)
-Array<const Class*> Parser::get_wanted_param_types(shared<Node> link) {
-	if ((link->kind == NodeKind::CALL_FUNCTION) or (link->kind == NodeKind::FUNCTION) or (link->kind == NodeKind::CALL_VIRTUAL) or (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)) {
+Array<const Class*> Parser::get_wanted_param_types(shared<Node> link, int &mandatory_params) {
+	if (link->is_function()) {
 		auto f = link->as_func();
+		mandatory_params = f->mandatory_params;
 		auto p = f->literal_param_type;
 		if (!f->is_static() and (link->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION))
 			if (link->params.num == 0 or !link->params[0])
@@ -718,8 +719,10 @@ Array<const Class*> Parser::get_wanted_param_types(shared<Node> link) {
 	} else if (link->kind == NodeKind::CLASS) {
 		// should be caught earlier and turned to func...
 		const Class *t = link->as_class();
-		for (auto *c: t->get_constructors())
+		for (auto *c: t->get_constructors()) {
+			mandatory_params = c->num_params;
 			return c->literal_param_type;
+		}
 	/*} else if (link->kind == NodeKind::CALL_RAW_POINTER) {
 		return get_callable_param_types(link->params[0]->type);*/
 	} else {
@@ -781,7 +784,8 @@ shared<Node> Parser::check_param_link(shared<Node> link, const Class *wanted, co
 }
 
 bool Parser::direct_param_match(const shared<Node> operand, const shared_array<Node> &params) {
-	auto wanted_types = get_wanted_param_types(operand);
+	int mandatory_params;
+	auto wanted_types = get_wanted_param_types(operand, mandatory_params);
 	if (wanted_types.num != params.num)
 		return false;
 	for (auto c: wanted_types)
@@ -794,8 +798,9 @@ bool Parser::direct_param_match(const shared<Node> operand, const shared_array<N
 }
 
 bool Parser::param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty) {
-	wanted = get_wanted_param_types(operand);
-	if (wanted.num != params.num)
+	int mandatory_params;
+	wanted = get_wanted_param_types(operand, mandatory_params);
+	if ((params.num < mandatory_params) or (params.num > wanted.num))
 		return false;
 	casts.resize(params.num);
 	*max_penalty = 0;
@@ -856,6 +861,12 @@ shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_a
 	for (int p=0; p<params.num; p++) {
 		auto pp = apply_type_cast(casts[p], params[p], wanted[p]);
 		r->set_param(p + offset, pp);
+	}
+	if (operand->is_function()) {
+		auto f = operand->as_func();
+		for (int p=params.num; p<f->num_params; p++) {
+			r->set_param(p + offset, f->default_parameters[p]);
+		}
 	}
 	return r;
 }
@@ -3668,6 +3679,17 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			// type of parameter variable
 			auto param_type = parse_type(name_space); // force
 			auto v = f->add_param(param_name, param_type, param_flags);
+
+
+			// default parameter?
+			if (Exp.cur == "=") {
+				Exp.next();
+				f->default_parameters.resize(f->num_params - 1);
+				auto dp = parse_operand(tree->root_of_all_evil->block.get(), name_space, false);
+				if (dp->type != param_type)
+					do_error(format("trying to set a default value of type '%s' for a parameter of type '%s'", dp->type->name, param_type->name));
+				f->default_parameters.add(dp);
+			}
 
 			if (Exp.cur == ")")
 				break;

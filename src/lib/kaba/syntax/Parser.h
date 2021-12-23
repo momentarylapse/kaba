@@ -41,7 +41,7 @@ public:
 	shared<Node> link_operator(PrimitiveOperator *primop, shared<Node> param1, shared<Node> param2);
 	shared<Node> link_operator_id(OperatorID op_no, shared<Node> param1, shared<Node> param2);
 
-	Array<const Class*> get_wanted_param_types(shared<Node> link);
+	Array<const Class*> get_wanted_param_types(shared<Node> link, int &mandatory_params);
 	shared<Node> check_param_link(shared<Node> link, const Class *type, const string &f_name = "", int param_no = -1, int num_params = 1);
 
 	shared<Node> apply_type_cast(int tc, shared<Node> param, const Class *wanted);

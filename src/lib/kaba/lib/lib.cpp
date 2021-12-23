@@ -483,6 +483,7 @@ void func_add_param(const string &name, const Class *type, Flags flags) {
 		cur_func->var.add(v);
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;
+		cur_func->mandatory_params = cur_func->num_params;
 	}
 }
 

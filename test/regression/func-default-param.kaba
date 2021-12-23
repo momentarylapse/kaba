@@ -1,0 +1,11 @@
+const A=[3,13]
+
+func f(i: int = A[1], j: int = 100)
+	print("{{i}} {{j}}")
+
+
+func main()
+	f(10, 5)
+	f(10)
+	f()
+
