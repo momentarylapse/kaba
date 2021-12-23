@@ -60,7 +60,6 @@ extern const Class *TypeColorList;
 extern const Class *TypeMatrix3;
 extern const Class *TypeIntList;
 extern const Class *TypeBoolList;
-extern const Class *TypeFloatPs;
 extern const Class *TypeAny;
 extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
@@ -1040,8 +1039,8 @@ void SIAddPackageMath() {
 		func_add_param("a", TypeVector);
 		func_add_param("b", TypeVector);
 		func_add_param("c", TypeVector);
-		func_add_param("f", TypeFloatPs);
-		func_add_param("g", TypeFloatPs);
+		func_add_param("f", TypeFloat32, Flags::OUT);
+		func_add_param("g", TypeFloat32, Flags::OUT);
 	// random numbers
 	add_func("randi", TypeInt, &randi, Flags::STATIC);
 		func_add_param("max", TypeInt);

@@ -1,0 +1,4 @@
+File.__rshift__(out x: int)
+
+should be turned into pointer (secretly)
+

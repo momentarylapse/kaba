@@ -505,19 +505,15 @@ void SIAddPackageBase() {
 	// derived   (must be defined after the primitive types and the bases!)
 	TypePointer     = add_type_p(TypeVoid, Flags::CALL_BY_VALUE); // substitute for all pointer types
 	TypePointerList = add_type_l(TypePointer);
-	TypeBoolPs      = add_type_p(TypeBool, Flags::SILENT);
 	TypeBoolList    = add_type_l(TypeBool);
-	TypeIntPs       = add_type_p(TypeInt, Flags::SILENT);
 	TypeIntP        = add_type_p(TypeInt);
 	TypeIntList     = add_type_l(TypeInt);
 	TypeIntArray    = add_type_a(TypeInt, 1, "int[?]");
 	TypeFloatP      = add_type_p(TypeFloat);
-	TypeFloatPs     = add_type_p(TypeFloat, Flags::SILENT);
 	TypeFloatArray  = add_type_a(TypeFloat, 1, "float[?]");
 	TypeFloatArrayP = add_type_p(TypeFloatArray);
 	TypeFloatList   = add_type_l(TypeFloat);
 	TypeFloat64List = add_type_l(TypeFloat64);
-	TypeCharPs      = add_type_p(TypeChar, Flags::SILENT);
 	TypeCString     = add_type_a(TypeChar, 256, "cstring");	// cstring := char[256]
 	TypeString      = add_type_l(TypeChar, "string");	// string := char[]
 	TypeStringAutoCast = add_type("<string-auto-cast>", config.super_array_size);	// string := char[]

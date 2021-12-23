@@ -767,33 +767,16 @@ shared<Node> Parser::check_param_link(shared<Node> link, const Class *wanted, co
 	if (type_match(given, wanted))
 		return link;
 
-	if (wanted->is_pointer_silent()) {
-		// "silent" pointer (&)?
-		if (type_match(given, wanted->param[0])) {
+	int pen, tc;
 
-			return link->ref();
-		} else if ((given->is_pointer()) and (type_match(given->param[0], wanted->param[0]))) {
-			// silent reference & of *
+	if (type_match_with_cast(link, false, wanted, pen, tc))
+		return apply_type_cast(tc, link, wanted);
 
-			return link;
-		} else {
-			Exp.rewind();
-			do_error(format("(c) parameter %d in command '%s' has type '%s', '%s' expected", param_no + 1, f_name, given->long_name(), wanted->long_name()));
-		}
-
-	} else {
-		// normal type cast
-		int pen, tc;
-
-		if (type_match_with_cast(link, false, wanted, pen, tc))
-			return apply_type_cast(tc, link, wanted);
-
-		Exp.rewind();
-		if (num_params > 1)
-			do_error(format("command '%s': type '%s' given, '%s' expected for parameter #%d", f_name, given->long_name(), wanted->long_name(), param_no + 1));
-		else
-			do_error(format("command '%s': type '%s' given, '%s' expected", f_name, given->long_name(), wanted->long_name()));
-	}
+	Exp.rewind();
+	if (num_params > 1)
+		do_error(format("command '%s': type '%s' given, '%s' expected for parameter #%d", f_name, given->long_name(), wanted->long_name(), param_no + 1));
+	else
+		do_error(format("command '%s': type '%s' given, '%s' expected", f_name, given->long_name(), wanted->long_name()));
 	return link;
 }
 
@@ -1350,7 +1333,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
-	if (given->is_pointer()) {
+	if (given->is_some_pointer()) {
 		if (type_match(given->param[0], wanted)) {
 			penalty = 10;
 			cast = TYPE_CAST_DEREFERENCE;
@@ -1371,16 +1354,6 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		}
 	}*/
-	if (wanted->is_pointer_silent()) {
-		// "silent" pointer (&)?
-		if (type_match(given, wanted->param[0])) {
-			cast = TYPE_CAST_REFERENCE;
-			return true;
-		} else if (given->is_pointer() and type_match(given->param[0], wanted->param[0])) {
-			// silent reference & of *
-			return true;
-		}
-	}
 	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
@@ -1654,17 +1627,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 		if ((f->name == op_func_name) and !f->is_static()) {
 			// exact match as class function but missing a "&"?
 			auto type1 = f->literal_param_type[0];
-			if (type1->is_pointer_silent()) {
-				if (type_match(p2, type1->param[0])) {
-					auto inst = param1;
-					if (p1 == pp1)
-						op = tree->add_node_member_call(f, inst);
-					else
-						op = tree->add_node_member_call(f, inst->deref());
-					op->set_param(1, param2->ref());
-					return op;
-				}
-			} else if (type_match(p2, type1)) {
+			if (type_match(p2, type1)) {
 				auto inst = param1;
 				if (p1 == pp1)
 					op = tree->add_node_member_call(f, inst);

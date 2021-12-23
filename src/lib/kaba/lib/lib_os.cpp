@@ -10,11 +10,7 @@ class vector;
 namespace kaba {
 
 
-extern const Class *TypeIntPs;
-extern const Class *TypeFloatPs;
-extern const Class *TypeBoolPs;
 extern const Class *TypeDate;
-extern const Class *TypeStringList;
 const Class *TypePath;
 const Class *TypePathList;
 
@@ -283,17 +279,17 @@ void SIAddPackageOS() {
 		class_add_func("__lshift__", TypeVoid, &KabaFile::_write_vector, Flags::RAISES_EXCEPTIONS);
 			func_add_param("v", TypeVector);
 		class_add_func("__lshift__", TypeVoid, &KabaFile::_write_str, Flags::RAISES_EXCEPTIONS);
-			func_add_param("s", TypeString);
+			func_add_param("s", TypeString, Flags::OUT);
 		class_add_func("__rshift__", TypeVoid, &KabaFile::_read_bool, Flags::RAISES_EXCEPTIONS);
-			func_add_param("b", TypeBoolPs);
+			func_add_param("b", TypeBool, Flags::OUT);
 		class_add_func("__rshift__", TypeVoid, &KabaFile::_read_int, Flags::RAISES_EXCEPTIONS);
-			func_add_param("i", TypeIntPs);
+			func_add_param("i", TypeInt, Flags::OUT);
 		class_add_func("__rshift__", TypeVoid, &KabaFile::_read_float, Flags::RAISES_EXCEPTIONS);
-			func_add_param("x", TypeFloatPs);
+			func_add_param("x", TypeFloat32, Flags::OUT);
 		class_add_func("__rshift__", TypeVoid, &KabaFile::_read_vector, Flags::RAISES_EXCEPTIONS);
-			func_add_param("v", TypeVector);
+			func_add_param("v", TypeVector, Flags::OUT);
 		class_add_func("__rshift__", TypeVoid, &KabaFile::_read_str, Flags::RAISES_EXCEPTIONS);
-			func_add_param("s", TypeString);
+			func_add_param("s", TypeString, Flags::OUT);
 		class_add_func("end", TypeBool, &KabaFile::end);
 
 	add_class(TypeFileError);

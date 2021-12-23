@@ -67,16 +67,12 @@ const Class *TypeDictBase;
 const Class *TypeCallableBase;
 const Class *TypeSharedPointer;
 const Class *TypePointerList;
-const Class *TypeCharPs;
-const Class *TypeBoolPs;
 const Class *TypeBoolList;
-const Class *TypeIntPs;
 const Class *TypeIntP;
 const Class *TypeIntList;
 const Class *TypeIntArray;
 const Class *TypeIntDict;
 const Class *TypeFloatP;
-const Class *TypeFloatPs;
 const Class *TypeFloatList;
 const Class *TypeFloatArray;
 const Class *TypeFloatArrayP;
@@ -175,16 +171,11 @@ const Class *add_type_p(const Class *sub_type, Flags flag, const string &_name) 
 	if (name == "") {
 		if (flags_has(flag, Flags::SHARED))
 			name = "shared " + sub_type->name;
-		else if (flags_has(flag, Flags::SILENT))
-			name = sub_type->name + "&";
-		else
-			name = sub_type->name + "*";
+		name = sub_type->name + "*";
 	}
 	Class *t = new Class(name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	t->type = Class::Type::POINTER;
-	if (flags_has(flag, Flags::SILENT))
-		t->type = Class::Type::POINTER_SILENT;
-	else if (flags_has(flag, Flags::SHARED))
+	if (flags_has(flag, Flags::SHARED))
 		t->type = Class::Type::POINTER_SHARED;
 	__add_class__(t, sub_type->name_space);
 	return t;
