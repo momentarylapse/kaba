@@ -1,0 +1,10 @@
+func min(a: T, b: T) -> T
+	if a > b
+		return b
+	return a
+
+
+very evil (should force t to be compile-time class name):
+
+func get_controller(t: Class) -> t*
+	return y_get_controller(t) as t*
