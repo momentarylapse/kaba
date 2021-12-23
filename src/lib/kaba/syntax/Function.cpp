@@ -177,7 +177,6 @@ Function *Function::create_dummy_clone(const Class *_name_space) const {
 		f->block->add_var(var[i]->name, var[i]->type);
 		f->var[i]->flags = var[i]->flags;
 	}
-	f->mandatory_params = num_params;
 
 	f->virtual_index = virtual_index;
 

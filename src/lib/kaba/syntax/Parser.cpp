@@ -407,10 +407,15 @@ shared_array<Node> Parser::turn_class_into_constructor(const Class *t, const sha
 	//shared<Node> dummy = add_node_local(vv);
 	shared_array<Node> links;
 	for (auto *cf: t->get_constructors())
-		if (cf->num_params == params.num)
+		if ((params.num >= cf->mandatory_params) and (params.num <= cf->num_params))
 			links.add(tree->add_node_constructor(cf));
-	if (links.num == 0)
+	if (links.num == 0) {
+		for (auto *cf: t->get_constructors()) {
+			msg_write(cf->signature(TypeVoid));
+			msg_write(cf->mandatory_params);
+		}
 		do_error(format("class %s does not have a constructor with %d parameters", t->long_name(), params.num));
+	}
 	return links;
 }
 
@@ -862,6 +867,8 @@ shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_a
 		auto pp = apply_type_cast(casts[p], params[p], wanted[p]);
 		r->set_param(p + offset, pp);
 	}
+
+	// default values
 	if (operand->is_function()) {
 		auto f = operand->as_func();
 		for (int p=params.num; p<f->num_params; p++) {
