@@ -1034,13 +1034,11 @@ void SIAddPackageMath() {
 		func_add_param("end", TypeFloat32);
 		func_add_param("step", TypeFloat32);
 	// other types
-	add_func("bary_centric", TypeVoid, (void*)&GetBaryCentric, Flags::_STATIC__PURE);
+	add_func("bary_centric", TypeVec2, (void*)&bary_centric, Flags::_STATIC__PURE);
 		func_add_param("p", TypeVector);
 		func_add_param("a", TypeVector);
 		func_add_param("b", TypeVector);
 		func_add_param("c", TypeVector);
-		func_add_param("f", TypeFloat32, Flags::OUT);
-		func_add_param("g", TypeFloat32, Flags::OUT);
 	// random numbers
 	add_func("randi", TypeInt, &randi, Flags::STATIC);
 		func_add_param("max", TypeInt);
