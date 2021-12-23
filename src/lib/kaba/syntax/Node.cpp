@@ -209,6 +209,10 @@ bool Node::is_call() const {
 	return (kind == NodeKind::CALL_FUNCTION) or (kind == NodeKind::CALL_VIRTUAL) or (kind == NodeKind::CALL_RAW_POINTER);
 }
 
+bool Node::is_function() const {
+	return (kind == NodeKind::CALL_FUNCTION) or (kind == NodeKind::CALL_VIRTUAL) or (kind == NodeKind::CALL_INLINE) or (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION);
+}
+
 Block *Node::as_block() const {
 	return (Block*)this;
 }

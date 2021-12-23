@@ -841,12 +841,8 @@ string Parser::param_match_with_cast_error(const shared_array<Node> &params, con
 	return "";
 }
 
-bool node_is_function(shared<Node> n) {
-	return n->kind == NodeKind::CALL_FUNCTION or n->kind == NodeKind::CALL_VIRTUAL or n->kind == NodeKind::CALL_INLINE or n->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION;
-}
-
 bool node_is_member_function_with_instance(shared<Node> n) {
-	if (!node_is_function(n))
+	if (!n->is_function())
 		return false;
 	auto *f = n->as_func();
 	if (f->is_static())
@@ -1241,7 +1237,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		operands = {parse_dict(block)};
 	} else if (Exp.cur == IDENTIFIER_FUNC) {
 		// local function definition
-		auto f = parse_function_header_new(tree->_base_class.get(), Flags::STATIC);
+		auto f = parse_function_header(tree->_base_class.get(), Flags::STATIC);
 		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
 
 		// not sure why, but is necessary:
@@ -3380,7 +3376,7 @@ bool Parser::parse_class(Class *_namespace) {
 			}
 			//msg_write(">>");
 		} else if (Exp.cur == IDENTIFIER_FUNC) {
-			auto f = parse_function_header_new(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
+			auto f = parse_function_header(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
 			skip_parsing_function_body(f);
 		} else if (Exp.cur == IDENTIFIER_CONST) {
 			parse_named_const(_class, tree->root_of_all_evil->block.get());
@@ -3668,59 +3664,7 @@ const Class *Parser::parse_type(const Class *ns) {
 	return cc->as_class();
 }
 
-Function *Parser::parse_function_header_old(Class *name_space, Flags flags) {
-	// TODO better to split/mask flags into return- and function-flags...
-	flags = parse_flags(flags);
-	
-// return type
-	auto return_type = parse_type(name_space); // force...
-
-	Function *f = tree->add_function(Exp.cur, return_type, name_space, flags);
-	if (config.verbose)
-		msg_write("PARSE HEAD  " + f->signature());
-	f->_logical_line_no = Exp.get_line_no();
-	f->_exp_no = Exp.cur_exp;
-	cur_func = f;
-
-	Exp.next();
-	Exp.next(); // '('
-
-// parameter list
-
-	if (Exp.cur != ")")
-		for (int k=0;;k++) {
-			// like variable definitions
-
-			auto pflags = parse_flags();
-
-			// type of parameter variable
-			auto param_type = parse_type(name_space); // force
-			auto v = f->add_param(Exp.cur, param_type, pflags);
-			Exp.next();
-			f->num_params ++;
-
-			if (Exp.cur == ")")
-				break;
-
-			if (Exp.cur != ",")
-				do_error("',' or ')' expected after parameter");
-			Exp.next(); // ','
-		}
-	Exp.next(); // ')'
-
-	if (!Exp.end_of_line())
-		do_error("newline expected after parameter list");
-
-	f->update_parameters_after_parsing();
-
-	cur_func = nullptr;
-
-	name_space->add_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
-
-	return f;
-}
-
-Function *Parser::parse_function_header_new(Class *name_space, Flags flags) {
+Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	Exp.next(); // "func"
 
 	flags = parse_flags(flags);
@@ -3922,7 +3866,7 @@ void Parser::parse_top_level() {
 
 		// func
 		} else if (Exp.cur == IDENTIFIER_FUNC) {
-			auto f = parse_function_header_new(tree->base_class, Flags::STATIC);
+			auto f = parse_function_header(tree->base_class, Flags::STATIC);
 			skip_parsing_function_body(f);
 
 		} else if (Exp.cur == IDENTIFIER_CONST) {

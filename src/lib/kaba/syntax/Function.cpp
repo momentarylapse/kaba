@@ -91,7 +91,9 @@ Variable *Function::__get_var(const string &name) const {
 
 Variable *Function::add_param(const string &name, const Class *type, Flags flags) {
 	auto v = block->add_var(name, type);
-	if (!flags_has(flags, Flags::OUT))
+	if (flags_has(flags, Flags::OUT))
+		flags_set(v->flags, Flags::OUT);
+	else
 		flags_set(v->flags, Flags::CONST);
 	literal_param_type.add(type);
 	num_params ++;
@@ -111,6 +113,8 @@ string Function::signature(const Class *ns) const {
 	for (int i=0; i<num_params; i++) {
 		if (i > 0)
 			r += ", ";
+		if (flags_has(var[i]->flags, Flags::OUT))
+			r += "out ";
 		r += literal_param_type[i]->cname(ns);
 	}
 	return r + ")";

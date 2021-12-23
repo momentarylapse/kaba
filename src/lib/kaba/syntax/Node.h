@@ -99,6 +99,7 @@ public:
 	Node *modifiable();
 	Node *make_const();
 	bool is_call() const;
+	bool is_function() const;
 	Block *as_block() const;
 	Function *as_func() const;
 	const Class *as_class() const;

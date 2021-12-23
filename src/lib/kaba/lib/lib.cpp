@@ -485,6 +485,7 @@ void func_set_inline(InlineID index) {
 
 void func_add_param(const string &name, const Class *type, Flags flags) {
 	if (cur_func) {
+		// FIXME: use call-by-reference type?
 		Variable *v = new Variable(name, type);
 		v->flags = flags;
 		cur_func->var.add(v);
