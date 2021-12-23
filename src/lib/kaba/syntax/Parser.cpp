@@ -268,7 +268,7 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 	if (Exp.cur == ":") {
 		Exp.next();
 		if (Exp.cur == "]") {
-			index2 = tree->add_node_const(tree->add_constant_int(0x81234567));
+			index2 = tree->add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX));
 			// magic value (-_-)'
 		} else {
 			index2 = parse_operand_greedy(block);

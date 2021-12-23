@@ -6,4 +6,4 @@ func main()
 	fi.add(-1.0, 1)
 	fi.normalize()
 	
-	print(fi.get_list(rangef(0, 1, 0.1)))
+	print(fi.get_list(range(0, 1, 0.1)))

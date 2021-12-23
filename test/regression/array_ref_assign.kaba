@@ -1,6 +1,6 @@
 func main()
 	float[] a
-	a = rangef(0, 2, 0.1)
+	a = range(0, 2, 0.1)
 	print(a[2:4])
-	a[2:4] = rangef(0,1,0.8)
+	a[2:4] = range(0,1,0.8)
 	print(a)

@@ -487,6 +487,24 @@ void func_add_param(const string &name, const Class *type, Flags flags) {
 	}
 }
 
+void func_add_param_def(const string &name, const Class *type, const void *p, Flags flags) {
+	if (cur_func) {
+		// FIXME: use call-by-reference type?
+		Variable *v = new Variable(name, type);
+		v->flags = flags;
+		cur_func->var.add(v);
+		cur_func->literal_param_type.add(type);
+		cur_func->num_params ++;
+		//cur_func->mandatory_params = cur_func->num_params;
+
+		Constant *c = cur_package->syntax->add_constant(type, cur_class);
+		if (type == TypeInt)
+			c->as_int() = (int_p)p;
+		cur_func->default_parameters.resize(cur_func->num_params - 1);
+		cur_func->default_parameters.add(cur_package->syntax->add_node_const(c));
+	}
+}
+
 class PointerList : public Array<void*> {
 public:
 	bool __contains__(void *x) {
