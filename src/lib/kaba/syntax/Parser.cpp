@@ -1333,7 +1333,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
-	if (given->is_some_pointer()) {
+	if (given->is_pointer()) {
 		if (type_match(given->param[0], wanted)) {
 			penalty = 10;
 			cast = TYPE_CAST_DEREFERENCE;

@@ -171,7 +171,8 @@ const Class *add_type_p(const Class *sub_type, Flags flag, const string &_name) 
 	if (name == "") {
 		if (flags_has(flag, Flags::SHARED))
 			name = "shared " + sub_type->name;
-		name = sub_type->name + "*";
+		else
+			name = sub_type->name + "*";
 	}
 	Class *t = new Class(name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	t->type = Class::Type::POINTER;
