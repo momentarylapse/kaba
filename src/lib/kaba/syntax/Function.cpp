@@ -111,8 +111,9 @@ string Function::signature(const Class *ns) const {
 		ns = owner()->base_class;
 	string r = literal_return_type->cname(ns) + " ";
 	r += cname(ns) + "(";
-	for (int i=0; i<num_params; i++) {
-		if (i > 0)
+	int first = is_member() ? 1 : 0;
+	for (int i=first; i<num_params; i++) {
+		if (i > first)
 			r += ", ";
 		if (flags_has(var[i]->flags, Flags::OUT))
 			r += "out ";
@@ -159,13 +160,22 @@ void Function::update_parameters_after_parsing() {
 		block->add_var(IDENTIFIER_RETURN_VAR, literal_return_type->get_pointer());
 
 	// class function
-	if (!is_static()) {
-		if (!__get_var(IDENTIFIER_SELF))
-			block->add_var(IDENTIFIER_SELF, name_space, is_const() ? Flags::CONST : Flags::NONE);
+	if (is_member()) {
+		if (!__get_var(IDENTIFIER_SELF)) {
+			add_self_parameter();
+		}
 	}
 }
 
+void Function::add_self_parameter() {
+	block->insert_var(0, IDENTIFIER_SELF, name_space, is_const() ? Flags::CONST : Flags::NONE);
+	literal_param_type.insert(name_space, 0);
+	num_params ++;
+	mandatory_params ++;
+	default_parameters.insert(nullptr, 0);
+}
 
+// member func!
 Function *Function::create_dummy_clone(const Class *_name_space) const {
 	Function *f = new Function(name, literal_return_type, _name_space, flags);
 	f->needs_overriding = true;
@@ -173,7 +183,12 @@ Function *Function::create_dummy_clone(const Class *_name_space) const {
 	f->num_params = num_params;
 	f->default_parameters = default_parameters;
 	f->literal_param_type = literal_param_type;
-	for (int i=0; i<num_params; i++) {
+	f->literal_param_type[0] = _name_space;
+	{
+		f->block->add_var(var[0]->name, _name_space);
+		f->var[0]->flags = var[0]->flags;
+	}
+	for (int i=1; i<num_params; i++) {
 		f->block->add_var(var[i]->name, var[i]->type);
 		f->var[i]->flags = var[i]->flags;
 	}
@@ -196,6 +211,10 @@ bool Function::is_pure() const {
 
 bool Function::is_static() const {
 	return flags_has(flags, Flags::STATIC);
+}
+
+bool Function::is_member() const {
+	return !flags_has(flags, Flags::STATIC);
 }
 
 bool Function::is_const() const {

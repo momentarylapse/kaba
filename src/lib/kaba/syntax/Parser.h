@@ -22,6 +22,7 @@ class SyntaxTree;
 class Statement;
 class PrimitiveOperator;
 enum class Flags;
+struct CastingData;
 
 class Parser {
 public:
@@ -44,12 +45,12 @@ public:
 	Array<const Class*> get_wanted_param_types(shared<Node> link, int &mandatory_params);
 	shared<Node> check_param_link(shared<Node> link, const Class *type, const string &f_name = "", int param_no = -1, int num_params = 1);
 
-	shared<Node> apply_type_cast(int tc, shared<Node> param, const Class *wanted);
-	shared<Node> apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<int> &casts, const Array<const Class*> &wanted);
+	shared<Node> apply_type_cast(const CastingData &cast, shared<Node> param, const Class *wanted);
+	shared<Node> apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<CastingData> &casts, const Array<const Class*> &wanted, int offset = 0);
 	bool direct_param_match(const shared<Node> operand, const shared_array<Node> &params);
-	bool param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty);
+	bool param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<CastingData> &casts, Array<const Class*> &wanted, int *max_penalty);
 	string param_match_with_cast_error(const shared_array<Node> &params, const Array<const Class*> &wanted);
-	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params);
+	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params, int offset = 0);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);

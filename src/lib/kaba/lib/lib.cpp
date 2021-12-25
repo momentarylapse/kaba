@@ -18,13 +18,6 @@
 #include "../../any/any.h"
 
 
-
-#ifdef _X_USE_HUI_
-#include "../../hui/hui.h"
-#endif
-
-
-
 namespace kaba {
 
 
@@ -297,18 +290,14 @@ void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable
 		cur_class->vtable = parent->vtable;
 }
 
-int _class_override_num_params = -1;
-
 void _class_add_member_func(const Class *ccc, Function *f, Flags flag) {
 	Class *c = const_cast<Class*>(ccc);
 	if (flags_has(flag, Flags::OVERRIDE)) {
 		foreachi(Function *ff, weak(c->functions), i)
 			if (ff->name == f->name) {
-				if (_class_override_num_params < 0 or _class_override_num_params == ff->num_params) {
-					//msg_write("OVERRIDE");
-					c->functions[i] = f;
-					return;
-				}
+				//msg_write("OVERRIDE");
+				c->functions[i] = f;
+				return;
 			}
 		msg_error(format("could not override %s.%s", c->name, f->name));
 	} else {
@@ -334,10 +323,12 @@ Function* class_add_func_x(const string &name, const Class *return_type, void *f
 	cur_func = f;
 
 
-	if (f->is_static())
+	if (f->is_static()) {
 		cur_class->functions.add(f);
-	else
+	} else {
+		f->add_self_parameter();
 		_class_add_member_func(cur_class, f, flags);
+	}
 	return f;
 }
 
@@ -603,12 +594,8 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 			break;
 		}
 	if (!c.f){
-#ifdef _X_USE_HUI_
-		hui::RaiseError("add_type_cast (ScriptInit): " + cmd + " not found");
-#else
 		msg_error("add_type_cast (ScriptInit): " + string(cmd) + " not found");
 		exit(1);
-#endif
 	}
 	c.source = source;
 	c.dest = dest;

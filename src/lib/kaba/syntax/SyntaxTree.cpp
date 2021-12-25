@@ -54,8 +54,6 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 
 const Class *SyntaxTree::make_class_callable_fp(Function *f) {
 	auto params = f->literal_param_type;
-	if (!f->is_static())
-		params.insert(f->name_space, 0);
 	if (params.num == 0)
 		return make_class_callable_fp({TypeVoid}, f->literal_return_type);
 	return make_class_callable_fp(params, f->literal_return_type);
@@ -87,7 +85,7 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 		params_ret = {};
 	params_ret.add(ret);
 
-	auto ff = make_class("Callable(" + name + ")", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	auto ff = make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 	return make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
 	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
@@ -138,7 +136,7 @@ shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> in
 	} else {
 		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
 	}
-	c->set_num_params(f->num_params + 1);
+	c->set_num_params(f->num_params);
 	c->set_instance(inst);
 	foreachi (auto p, params, i)
 		c->set_param(i + 1, p);
@@ -149,10 +147,7 @@ shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> in
 shared<Node> SyntaxTree::add_node_call(Function *f) {
 	// FIXME: literal_return_type???
 	shared<Node> c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
-	if (f->is_static())
 		c->set_num_params(f->num_params);
-	else
-		c->set_num_params(f->num_params + 1);
 	return c;
 }
 
@@ -907,26 +902,14 @@ void SyntaxTree::convert_call_by_reference() {
 		msg_write("ConvertCallByReference");
 	// convert functions
 	for (Function *f: functions) {
-		
-		// TODO: convert self...
-		if (!f->is_static() and f->name_space->uses_call_by_reference()) {
-			for (auto v: weak(f->var))
-				if (v->name == IDENTIFIER_SELF) {
-					//msg_write("CONV SELF....");
-					v->type = v->type->get_pointer();
-
-					// usage inside the function
-					transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, v); });
-				}
-		}
 
 		// parameter: array/class as reference
-		for (int j=0;j<f->num_params;j++)
-			if (f->var[j]->type->uses_call_by_reference() or flags_has(f->var[j]->flags, Flags::OUT)) {
-				f->var[j]->type = f->var[j]->type->get_pointer();
+		for (auto v: weak(f->var).sub_ref(0, f->num_params))
+			if (v->type->uses_call_by_reference() or flags_has(v->flags, Flags::OUT)) {
+				v->type = v->type->get_pointer();
 
 				// usage inside the function
-				transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, f->var[j].get()); });
+				transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, v); });
 			}
 	}
 
@@ -1172,7 +1155,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return dummy;
 	} else if (n->kind == NodeKind::ARRAY_BUILDER) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_func("add", TypeVoid, {t_el});
+		Function *cf = n->type->get_func("add", TypeVoid, {nullptr, t_el});
 		if (!cf)
 			do_error(format("[..]: can not find '%s.add(%s)' function???", n->type->long_name(), t_el->long_name()));
 
@@ -1191,7 +1174,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return array;
 	} else if (n->kind == NodeKind::DICT_BUILDER) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_func("__set__", TypeVoid, {TypeString, t_el});
+		Function *cf = n->type->get_func("__set__", TypeVoid, {nullptr, TypeString, t_el});
 		if (!cf)
 			do_error(format("[..]: can not find '%s.__set__(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 

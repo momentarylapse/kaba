@@ -48,6 +48,7 @@ public:
 	bool is_extern() const;
 	bool is_pure() const;
 	bool is_static() const;
+	bool is_member() const;
 	bool is_const() const;
 	bool is_selfref() const;
 	bool throws_exceptions() const; // for external
@@ -67,6 +68,7 @@ public:
 	Variable *__get_var(const string &name) const;
 	string create_slightly_hidden_name();
 	void update_parameters_after_parsing();
+	void add_self_parameter();
 	string signature(const Class *ns = nullptr) const;
 	Array<Block*> all_blocks();
 	void show(const string &stage = "") const;

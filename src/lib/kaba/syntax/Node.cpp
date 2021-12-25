@@ -100,7 +100,7 @@ string kind2str(NodeKind kind) {
 }
 
 
-string Node::sig(const Class *ns) const {
+string Node::signature(const Class *ns) const {
 	string t = type->cname(ns) + " ";
 	if (kind == NodeKind::PLACEHOLDER)
 		return "";
@@ -160,7 +160,7 @@ string Node::sig(const Class *ns) const {
 }
 
 string Node::str(const Class *ns) const {
-	return "<" + kind2str(kind) + ">  " + sig(ns);
+	return "<" + kind2str(kind) + ">  " + signature(ns);
 }
 
 
@@ -172,7 +172,7 @@ void Node::show(const Class *ns) const {
 		if (p)
 			p->show(ns);
 		else
-			msg_write("<-NULL->");
+			msg_write("<NULL>");
 	msg_left();
 }
 

@@ -42,7 +42,7 @@ public:
 	~Class();
 	string name;
 	string long_name() const;
-	string cname(const Class *ns) const;
+	string cname(const Class *ns = nullptr) const;
 	int64 size; // complete size of type
 	int array_length;
 
@@ -111,6 +111,7 @@ public:
 	const Class *get_root() const;
 	void add_function(SyntaxTree *s, Function *f, bool as_virtual = false, bool override = false);
 	Function *get_func(const string &name, const Class *return_type, const Array<const Class*> &params) const;
+	Function *get_member_func(const string &name, const Class *return_type, const Array<const Class*> &params) const;
 	Function *get_same_func(const string &name, Function *f) const;
 	Function *get_default_constructor() const;
 	Array<Function*> get_constructors() const;

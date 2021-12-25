@@ -44,8 +44,16 @@ const int TYPE_CAST_FUNCTION_AS_CALLABLE = -32;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -41;
 
+
+
+struct CastingData {
+	int cast;
+	int penalty;
+	Function *f;
+};
+
 bool type_match(const Class *given, const Class *wanted);
-bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast);
+bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd);
 
 
 
@@ -280,7 +288,7 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 
 	// subarray() ?
 	if (index2) {
-		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
+		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {operand->type, index->type, index->type});
 		if (cf) {
 			auto f = tree->add_node_member_call(cf, operand);
 			f->is_const = operand->is_const;
@@ -347,10 +355,7 @@ shared<Node> Parser::make_func_node_callable(const shared<Node> l) {
 	auto r = l->shallow_copy();
 	r->kind = NodeKind::CALL_FUNCTION;
 	r->type = f->literal_return_type;
-	if (f->is_static())
-		r->set_num_params(f->num_params);
-	else
-		r->set_num_params(f->num_params + 1);
+	r->set_num_params(f->num_params);
 
 	// virtual?
 	if (f->virtual_index >= 0)
@@ -368,7 +373,7 @@ shared<Node> Parser::make_func_pointer_node_callable(const shared<Node> l) {
 		do_error("function pointer call should be virtual???");
 		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
 	}
-	c->set_num_params(f->num_params + 1);
+	c->set_num_params(f->num_params);
 	c->set_instance(l->deref());
 	return c;
 }
@@ -380,7 +385,7 @@ shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *para
 		param_type = param_type->param[0];
 		
 	string fname = "__" + t->name + "__";
-	auto *cf = param_type->get_func(fname, t, {});
+	auto *cf = param_type->get_func(fname, t, {param_type});
 	if (!cf)
 		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), fname));
 	return add_node_member_call(cf, nullptr); // temp var added later...
@@ -390,7 +395,7 @@ shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *para
 }
 
 shared<Node> SyntaxTree::add_node_constructor(Function *f) {
-	auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, TypeVoid);
+	auto *dummy = new Node(NodeKind::PLACEHOLDER, 0, f->name_space);
 	auto n = add_node_member_call(f, dummy); // temp var added later...
 	n->kind = NodeKind::CONSTRUCTOR_AS_FUNCTION;
 	n->type = f->name_space;
@@ -407,7 +412,7 @@ shared_array<Node> Parser::turn_class_into_constructor(const Class *t, const sha
 	//shared<Node> dummy = add_node_local(vv);
 	shared_array<Node> links;
 	for (auto *cf: t->get_constructors())
-		if ((params.num >= cf->mandatory_params) and (params.num <= cf->num_params))
+		if ((params.num >= cf->mandatory_params-1) and (params.num <= cf->num_params-1)) // skip "self"
 			links.add(tree->add_node_constructor(cf));
 	if (links.num == 0) {
 		for (auto *cf: t->get_constructors()) {
@@ -440,7 +445,7 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 	if ((n->kind == NodeKind::CALL_FUNCTION) or (n->kind == NodeKind::CALL_VIRTUAL)) {
 		auto f = n->as_func();
 		int offset = 0;
-		if (!f->is_static()) {
+		if (f->is_member()) {
 			offset = 1;
 			if (f->is_selfref()) {
 				// const(return) = const(instance)
@@ -451,15 +456,29 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 			}
 		}
 		for (int i=0; i<f->num_params; i++)
-			if (n->params[i+offset]->is_const and !f->var[i]->is_const())
-				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1, f->var[i]->name));
+			if (n->params[i]->is_const and !f->var[i]->is_const())
+				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1-offset, f->var[i]->name));
 	}
 	return n;
 }
 
-shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &params) {
+bool node_is_member_function_with_instance(shared<Node> n) {
+	if (!n->is_function())
+		return false;
+	auto *f = n->as_func();
+	if (f->is_static())
+		return false;
+	return n->params.num == 0 or n->params[0];
+}
+
+shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &_params) {
 
 	//force_concrete_types(params);
+	auto params = _params;
+	if (node_is_member_function_with_instance(links[0])) {
+		params.insert(links[0]->params[0], 0);
+
+	}
 
 	// direct match...
 	for (shared<Node> operand: links) {
@@ -471,12 +490,12 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 
 
 	// advanced match...
-	Array<int> casts;
+	Array<CastingData> casts;
 	Array<const Class*> wanted;
 	int min_penalty = 1000000;
 	shared<Node> chosen;
 	for (auto operand: links) {
-		Array<int> cur_casts;
+		Array<CastingData> cur_casts;
 		Array<const Class*> cur_wanted;
 		int cur_penalty;
 		if (!param_match_with_cast(operand, params, cur_casts, cur_wanted, &cur_penalty))
@@ -488,6 +507,7 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 			min_penalty = cur_penalty;
 		}
 	}
+
 	if (chosen)
 		return check_const_params(tree, apply_params_with_cast(chosen, params, casts, wanted));
 
@@ -507,7 +527,7 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 	for (auto link: links) {
 		//auto p = get_wanted_param_types(link);
 		//available += format("\n * %s for %s", type_list_to_str(p), link->sig(tree->base_class));
-		available += format("\n * %s", link->sig(tree->base_class));
+		available += format("\n * %s", link->signature(tree->base_class));
 	}
 	do_error(format("invalid function parameters: %s given, possible options:%s", found, available));
 	return shared<Node>();
@@ -717,9 +737,13 @@ Array<const Class*> Parser::get_wanted_param_types(shared<Node> link, int &manda
 		auto f = link->as_func();
 		mandatory_params = f->mandatory_params;
 		auto p = f->literal_param_type;
-		if (!f->is_static() and (link->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION))
+		/*if (f->is_member() and (link->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION))
 			if (link->params.num == 0 or !link->params[0])
-				p.insert(f->name_space, 0);
+				p.insert(f->name_space, 0);*/
+		if (link->kind == NodeKind::CONSTRUCTOR_AS_FUNCTION) {
+			//msg_write("FIXME CONSTR AS FUNC");
+			// TODO: what is better, giving here an "effective" parameter set, or offseting from the outside?
+		}
 		return p;
 	} else if (link->kind == NodeKind::CLASS) {
 		// should be caught earlier and turned to func...
@@ -775,10 +799,9 @@ shared<Node> Parser::check_param_link(shared<Node> link, const Class *wanted, co
 	if (type_match(given, wanted))
 		return link;
 
-	int pen, tc;
-
-	if (type_match_with_cast(link, false, wanted, pen, tc))
-		return apply_type_cast(tc, link, wanted);
+	CastingData cast;
+	if (type_match_with_cast(link, false, wanted, cast))
+		return apply_type_cast(cast, link, wanted);
 
 	Exp.rewind();
 	if (num_params > 1)
@@ -802,7 +825,7 @@ bool Parser::direct_param_match(const shared<Node> operand, const shared_array<N
 	return true;
 }
 
-bool Parser::param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<int> &casts, Array<const Class*> &wanted, int *max_penalty) {
+bool Parser::param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<CastingData> &casts, Array<const Class*> &wanted, int *max_penalty) {
 	int mandatory_params;
 	wanted = get_wanted_param_types(operand, mandatory_params);
 	if ((params.num < mandatory_params) or (params.num > wanted.num))
@@ -811,9 +834,9 @@ bool Parser::param_match_with_cast(const shared<Node> operand, const shared_arra
 	*max_penalty = 0;
 	for (int p=0; p<params.num; p++) {
 		int penalty;
-		if (!type_match_with_cast(params[p], false, wanted[p], penalty, casts[p]))
+		if (!type_match_with_cast(params[p], false, wanted[p], casts[p]))
 			return false;
-		*max_penalty = max(*max_penalty, penalty);
+		*max_penalty = max(*max_penalty, casts[p].penalty);
 	}
 	return true;
 }
@@ -822,8 +845,8 @@ string Parser::param_match_with_cast_error(const shared_array<Node> &params, con
 	if (wanted.num != params.num)
 		return format("%d parameters given, %d expected", params.num, wanted.num);
 	for (int p=0; p<params.num; p++) {
-		int penalty, cast;
-		if (!type_match_with_cast(params[p], false, wanted[p], penalty, cast)) {
+		CastingData cast;
+		if (!type_match_with_cast(params[p], false, wanted[p], cast)) {
 			auto pt = give_useful_type(this, params[p]);
 			if (params.num > 1)
 				return format("type '%s' given, '%s' expected for parameter #%d", pt->long_name(), wanted[p]->long_name(), p+1);
@@ -834,45 +857,25 @@ string Parser::param_match_with_cast_error(const shared_array<Node> &params, con
 	return "";
 }
 
-bool node_is_member_function_with_instance(shared<Node> n) {
-	if (!n->is_function())
-		return false;
-	auto *f = n->as_func();
-	if (f->is_static())
-		return false;
-	return n->params.num == 0 or n->params[0];
-}
-
-int node_param_offset(shared<Node> operand) {
-	int offset = 0;
-	if (node_is_member_function_with_instance(operand))
-		offset ++;
-	if ((operand->kind == NodeKind::CALL_RAW_POINTER))
-		offset ++;
-	return offset;
-}
-
-shared<Node> Parser::apply_params_direct(shared<Node> operand, const shared_array<Node> &params) {
-	int offset = node_param_offset(operand);
+shared<Node> Parser::apply_params_direct(shared<Node> operand, const shared_array<Node> &params, int offset) {
 	auto r = operand->shallow_copy();
 	for (int p=0; p<params.num; p++)
-		r->set_param(p + offset, params[p]);
+		r->set_param(p+offset, params[p]);
 	return r;
 }
 
-shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<int> &casts, const Array<const Class*> &wanted) {
-	int offset = node_param_offset(operand);
+shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<CastingData> &casts, const Array<const Class*> &wanted, int offset) {
 	auto r = operand->shallow_copy();
 	for (int p=0; p<params.num; p++) {
 		auto pp = apply_type_cast(casts[p], params[p], wanted[p]);
-		r->set_param(p + offset, pp);
+		r->set_param(p+offset, pp);
 	}
 
 	// default values
 	if (operand->is_function()) {
 		auto f = operand->as_func();
-		for (int p=params.num; p<f->num_params; p++) {
-			r->set_param(p + offset, f->default_parameters[p]);
+		for (int p=params.num+offset; p<f->num_params; p++) {
+			r->set_param(p, f->default_parameters[p]);
 		}
 	}
 	return r;
@@ -920,24 +923,22 @@ shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> ope
 
 	// needs type casting?
 	if (!ok) {
-		int pen2 = 0;
-		int c2 = -1, c2_best = -1;
-		int pen_min = 100;
+		CastingData current;
+		CastingData best = {-1, 10000};
 		const Class *t_best = nullptr;
 		for (auto *_op: tree->operators)
 			if (po == _op->primitive)
-				if ((!_op->param_type_1) and (type_match_with_cast(operand, false, _op->param_type_2, pen2, c2))) {
+				if ((!_op->param_type_1) and (type_match_with_cast(operand, false, _op->param_type_2, current))) {
 					ok = true;
-					if (pen2 < pen_min) {
+					if (current.penalty < best.penalty) {
 						op = _op;
-						pen_min = pen2;
-						c2_best = c2;
+						best = current;
 						t_best = _op->param_type_2;
 					}
 			}
 		// cast
 		if (ok) {
-			operand = apply_type_cast(c2_best, operand, t_best);
+			operand = apply_type_cast(best, operand, t_best);
 		}
 	}
 
@@ -970,7 +971,7 @@ shared<Node> Parser::parse_set_builder(Block *block) {
 	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type);
 
 	// array.add(exp)
-	auto *f_add = type->get_func("add", TypeVoid, {el_type});
+	auto *f_add = type->get_func("add", TypeVoid, {type, el_type});
 	if (!f_add)
 		do_error("...add() ???");
 	auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
@@ -1007,7 +1008,7 @@ shared<Node> Parser::parse_set_builder(Block *block) {
 
 
 shared<Node> Parser::apply_format(shared<Node> n, const string &fmt) {
-	auto f = n->type->get_func("format", TypeString, {TypeString});
+	auto f = n->type->get_func("format", TypeString, {n->type, TypeString});
 	if (!f)
 		do_error(format("format string: no '%s.format(string)' function found", n->type->long_name()));
 	auto *c = tree->add_constant(TypeString);
@@ -1326,23 +1327,23 @@ shared<Node> Parser::parse_primitive_operator(Block *block) {
 }*/
 
 bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, int &penalty) {
-	if (f_constructor->literal_param_type.num != node->params.num)
+	if (f_constructor->literal_param_type.num != node->params.num + 1)
 		return false;
 
 	penalty = 20;
-	foreachi (auto *e, weak(node->params), i) {
-		int pen, c;
-		if (!type_match_with_cast(e, false, f_constructor->literal_param_type[i], pen, c))
+	foreachi (auto *e, weak(node->params).sub_ref(1), i) {
+		CastingData cast;
+		if (!type_match_with_cast(e, false, f_constructor->literal_param_type[i], cast))
 			return false;
-		penalty += pen;
+		penalty += cast.penalty;
 	}
 	return true;
 }
 
-bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, int &penalty, int &cast) {
-	penalty = 0;
+bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
+	cd.penalty = 0;
 	auto given = node->type;
-	cast = TYPE_CAST_NONE;
+	cd.cast = TYPE_CAST_NONE;
 	if (type_match(given, wanted))
 		return true;
 	if (wanted == TypeStringAutoCast and given == TypeString)
@@ -1353,15 +1354,15 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		return false;
 	if (given->is_pointer()) {
 		if (type_match(given->param[0], wanted)) {
-			penalty = 10;
-			cast = TYPE_CAST_DEREFERENCE;
+			cd.penalty = 10;
+			cd.cast = TYPE_CAST_DEREFERENCE;
 			return true;
 		}
 	}
 	if (wanted->is_pointer_shared() and given->is_pointer()) {
 		if (type_match(given->param[0], wanted->param[0])) {
-			penalty = 10;
-			cast = TYPE_CAST_MAKE_SHARED;
+			cd.penalty = 10;
+			cd.cast = TYPE_CAST_MAKE_SHARED;
 			return true;
 		}
 	}
@@ -1375,23 +1376,24 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
-			int pen, c;
+			CastingData cast;
 			for (auto *e: weak(node->params)) {
-				if (!type_match_with_cast(e, false, t, pen, c))
+				if (!type_match_with_cast(e, false, t, cast))
 					return false;
-				penalty += pen;
+				cd.penalty += cast.penalty;
 			}
-			cast = TYPE_CAST_ABSTRACT_LIST;
+			cd.cast = TYPE_CAST_ABSTRACT_LIST;
 			return true;
 		}
 		if (wanted == TypeDynamicArray) {
-			cast = TYPE_CAST_ABSTRACT_LIST;
+			cd.cast = TYPE_CAST_ABSTRACT_LIST;
 			return true;
 		}
 		// TODO: only for tuples
 		for (auto *f: wanted->get_constructors()) {
-			if (type_match_tuple_as_contructor(node, f, penalty)) {
-				cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
+			if (type_match_tuple_as_contructor(node, f, cd.penalty)) {
+				cd.cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
+				cd.f = f;
 				return true;
 			}
 		}
@@ -1399,12 +1401,14 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	if ((node->kind == NodeKind::TUPLE) and (given == TypeUnknown)) {
 
 		for (auto *f: wanted->get_constructors()) {
-			if (type_match_tuple_as_contructor(node, f, penalty)) {
-				cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
+			if (type_match_tuple_as_contructor(node, f, cd.penalty)) {
+				cd.cast = TYPE_CAST_TUPLE_AS_CONSTRUCTOR;
+				cd.f = f;
 				return true;
 			}
 		}
 
+		// FIXME this probably doesn't make sense... we should already know the wanted type!
 		if (!wanted->is_product())
 			return false;
 		if (wanted->param.num != node->params.num)
@@ -1412,8 +1416,8 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		for (int i=0; i<node->params.num; i++)
 			if (!type_match(node->params[i]->type, wanted->param[i]))
 				return false;
-		msg_write("product");
-		cast = TYPE_CAST_ABSTRACT_TUPLE;
+		msg_error("product");
+		cd.cast = TYPE_CAST_ABSTRACT_TUPLE;
 		return true;
 	}
 	if ((node->kind == NodeKind::FUNCTION) and (given == TypeUnknown)) {
@@ -1421,7 +1425,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			auto f = node->as_func();
 			auto ft = f->owner()->make_class_callable_fp(f);
 			if (type_match(ft, wanted)) {
-				cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
+				cd.cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
 				return true;
 			}
 
@@ -1431,28 +1435,28 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		//if (cf) {
-			penalty = 50;
-			cast = TYPE_CAST_OWN_STRING;
+			cd.penalty = 50;
+			cd.cast = TYPE_CAST_OWN_STRING;
 			return true;
 		//}
 	}
 	foreachi(auto &c, TypeCasts, i)
 		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
-			penalty = c.penalty;
-			cast = i;
+			cd.penalty = c.penalty;
+			cd.cast = i;
 			return true;
 		}
 	return false;
 }
 
-shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wanted) {
-	if (tc == TYPE_CAST_NONE)
+shared<Node> Parser::apply_type_cast(const CastingData &cast, shared<Node> node, const Class *wanted) {
+	if (cast.cast == TYPE_CAST_NONE)
 		return node;
-	if (tc == TYPE_CAST_DEREFERENCE)
+	if (cast.cast == TYPE_CAST_DEREFERENCE)
 		return node->deref();
-	if (tc == TYPE_CAST_REFERENCE)
+	if (cast.cast == TYPE_CAST_REFERENCE)
 		return node->ref();
-	if (tc == TYPE_CAST_OWN_STRING) {
+	if (cast.cast == TYPE_CAST_OWN_STRING) {
 		return add_converter_str(node, false);
 		/*Function *cf = node->type->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		if (cf)
@@ -1460,57 +1464,48 @@ shared<Node> Parser::apply_type_cast(int tc, shared<Node> node, const Class *wan
 		do_error("automatic .str() not implemented yet");
 		return node;*/
 	}
-	if (tc == TYPE_CAST_ABSTRACT_LIST) {
+	if (cast.cast == TYPE_CAST_ABSTRACT_LIST) {
 		if (wanted == TypeDynamicArray)
 			return force_concrete_type(node);
-		int pen, c;
+		CastingData cd2;
 		foreachi (auto e, node->params, i) {
-			if (!type_match_with_cast(e, false, wanted->get_array_element(), pen, c)) {
+			if (!type_match_with_cast(e, false, wanted->get_array_element(), cd2)) {
 				do_error("nope????");
 			}
-			node->params[i] = apply_type_cast(c, e, wanted->get_array_element());
+			node->params[i] = apply_type_cast(cd2, e, wanted->get_array_element());
 		}
 		node->type = wanted;
 		return node;
 	}
-	if (tc == TYPE_CAST_ABSTRACT_TUPLE) {
+	if (cast.cast == TYPE_CAST_ABSTRACT_TUPLE) {
 		msg_error("AUTO TUPLE");
 		node->type = wanted;
 		return node;
 	}
-	if (tc == TYPE_CAST_FUNCTION_AS_CALLABLE) {
+	if (cast.cast == TYPE_CAST_FUNCTION_AS_CALLABLE) {
 		return force_concrete_type(node);
 	}
 
-	if (tc == TYPE_CAST_TUPLE_AS_CONSTRUCTOR) {
-		Array<int> c;
+	if (cast.cast == TYPE_CAST_TUPLE_AS_CONSTRUCTOR) {
+		Array<CastingData> c;
 		c.resize(node->params.num);
-		for (auto *f: wanted->get_constructors()) {
-			if (f->literal_param_type.num != node->params.num)
-				continue;
-			int pen;
-			bool ok = true;
-			foreachi (auto e, node->params, i)
-				if (!type_match_with_cast(e, false, f->literal_param_type[i], pen, c[i]))
-					ok = false;
-			if (!ok)
-				continue;
-			auto cmd = tree->add_node_constructor(f);
-			return apply_params_with_cast(cmd, node->params, c, f->literal_param_type);
-		}
-		do_error("classify...");
+		auto f = cast.f;
+		foreachi (auto e, node->params, i)
+			if (!type_match_with_cast(e, false, f->literal_param_type[i+1], c[i])) { do_error("aaaaa"); }
+		auto cmd = tree->add_node_constructor(f);
+		return apply_params_with_cast(cmd, node->params, c, f->literal_param_type, 1);
 	}
-	if ((tc == TYPE_CAST_MAKE_SHARED) or (tc == TYPE_CAST_MAKE_OWNED)) {
+	if ((cast.cast == TYPE_CAST_MAKE_SHARED) or (cast.cast == TYPE_CAST_MAKE_OWNED)) {
 		auto f = wanted->get_func(IDENTIFIER_FUNC_SHARED_CREATE, wanted, {node->type});
 		if (!f)
-			do_error("make shared... create missing...");
+			do_error("make shared... create() missing...");
 		auto nn = tree->add_node_call(f);
 		nn->set_param(0, node);
 		return nn;
 	}
 	
-	auto c = tree->add_node_call(TypeCasts[tc].f);
-	c->type = TypeCasts[tc].dest;
+	auto c = tree->add_node_call(TypeCasts[cast.cast].f);
+	c->type = TypeCasts[cast.cast].dest;
 	c->set_param(0, node);
 	return c;
 }
@@ -1541,7 +1536,7 @@ shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> 
 
 shared<Node> Parser::link_special_operator_in(shared<Node> param1, shared<Node> param2) {
 	param2 = force_concrete_type(param2);
-	auto *f = param2->type->get_func("__contains__", TypeBool, {param1->type});
+	auto *f = param2->type->get_func("__contains__", TypeBool, {param2->type, param1->type});
 	if (!f)
 		do_error(format("no 'bool %s.__contains__(%s)' found", param2->type->long_name(), param1->type->long_name()));
 
@@ -1555,9 +1550,9 @@ shared<Node> explicit_cast(Parser *p, shared<Node> node, const Class *wanted) {
 	if (type == wanted)
 		return node;
 
-	int penalty, cast;
-	if (type_match_with_cast(node, false, wanted, penalty, cast)) {
-		if (cast == TYPE_CAST_NONE) {
+	CastingData cast;
+	if (type_match_with_cast(node, false, wanted, cast)) {
+		if (cast.cast == TYPE_CAST_NONE) {
 			auto c = node->shallow_copy();
 			c->type = wanted;
 			return c;
@@ -1568,7 +1563,7 @@ shared<Node> explicit_cast(Parser *p, shared<Node> node, const Class *wanted) {
 	if (wanted == TypeString)
 		return p->add_converter_str(node, false);
 
-	if (type->get_func("__" + wanted->name + "__", wanted, {})) {
+	if (type->get_func("__" + wanted->name + "__", wanted, {type})) {
 		auto rrr = p->turn_class_into_constructor(wanted, {node});
 		if (rrr.num > 0) {
 			rrr[0]->set_param(0, node);
@@ -1624,16 +1619,16 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 				auto index = param1->params[1];
 				//msg_write(format("[]=...    void %s.__set__(%s, %s)?", inst->type->long_name(), index->type->long_name(), p2->long_name()));
 				for (auto *ff: weak(inst->type->functions))
-					if (ff->name == IDENTIFIER_FUNC_SET and ff->literal_return_type == TypeVoid and ff->num_params == 2) {
-						if (ff->literal_param_type[0] != index->type)
+					if (ff->name == IDENTIFIER_FUNC_SET and ff->literal_return_type == TypeVoid and ff->num_params == 3) {
+						if (ff->literal_param_type[1] != index->type)
 							continue;
-						int pen, cast;
-						if (!type_match_with_cast(param2, false, ff->literal_param_type[1], pen, cast))
+						CastingData cast;
+						if (!type_match_with_cast(param2, false, ff->literal_param_type[2], cast))
 							continue;
 						//msg_write(ff->signature());
 						auto nn = tree->add_node_member_call(ff, inst);
 						nn->set_param(1, index);
-						nn->set_param(2, apply_type_cast(cast, param2, ff->literal_param_type[1]));
+						nn->set_param(2, apply_type_cast(cast, param2, ff->literal_param_type[2]));
 						return nn;
 					}
 			}
@@ -1642,10 +1637,10 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 
 	// exact match as class function?
 	for (auto *f: weak(pp1->functions))
-		if ((f->name == op_func_name) and !f->is_static()) {
+		if ((f->name == op_func_name) and f->is_member()) {
 			// exact match as class function but missing a "&"?
-			auto type1 = f->literal_param_type[0];
-			if (type_match(p2, type1)) {
+			auto type2 = f->literal_param_type[1];
+			if (type_match(p2, type2)) {
 				auto inst = param1;
 				if (p1 == pp1)
 					op = tree->add_node_member_call(f, inst);
@@ -1667,19 +1662,18 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 
 
 	// needs type casting?
-	int pen1 = 0, pen2 = 0;
-	int c1 = TYPE_CAST_NONE, c2 = TYPE_CAST_NONE;
-	int c1_best = TYPE_CAST_NONE, c2_best = TYPE_CAST_NONE;
+	CastingData c1 = {TYPE_CAST_NONE, 0};
+	CastingData c2 = {TYPE_CAST_NONE, 0};
+	CastingData c1_best = {TYPE_CAST_NONE, 1000};
+	CastingData c2_best = {TYPE_CAST_NONE, 1000};
 	const Class *t1_best = nullptr, *t2_best = nullptr;
-	int pen_min = 2000;
 	Operator *op_found = nullptr;
 	Function *op_cf_found = nullptr;
 	for (auto *op: tree->operators)
 		if (primop == op->primitive)
-			if (type_match_with_cast(param1, left_modifiable, op->param_type_1, pen1, c1) and type_match_with_cast(param2, false, op->param_type_2, pen2, c2))
-				if (pen1 + pen2 < pen_min) {
+			if (type_match_with_cast(param1, left_modifiable, op->param_type_1,  c1) and type_match_with_cast(param2, false, op->param_type_2, c2))
+				if (c1.penalty + c2.penalty < c1_best.penalty + c2_best.penalty) {
 					op_found = op;
-					pen_min = pen1 + pen2;
 					c1_best = c1;
 					c2_best = c2;
 					t1_best = op->param_type_1;
@@ -1687,13 +1681,12 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 				}
 	for (auto *cf: weak(p1->functions))
 		if (cf->name == op_func_name)
-			if (type_match_with_cast(param2, false, cf->literal_param_type[0], pen2, c2))
-				if (pen2 < pen_min) {
+			if (type_match_with_cast(param2, false, cf->literal_param_type[1], c2))
+				if (c2.penalty < c2_best.penalty) {
 					op_cf_found = cf;
-					pen_min = pen2;
-					c1_best = -1;
+					c1_best.cast = TYPE_CAST_NONE;
 					c2_best = c2;
-					t2_best = cf->literal_param_type[0];
+					t2_best = cf->literal_param_type[1];
 				}
 	// cast
 	if (op_found or op_cf_found) {
@@ -1733,24 +1726,17 @@ shared<Node> Parser::build_function_pipe(const shared<Node> &input, const shared
 	if (func->kind != NodeKind::FUNCTION)
 		do_error("function expected after '|>");
 	auto f = func->as_func();
-	if (f->is_static()) {
-		if (f->num_params != 1)
-			do_error("function after '|>' needs exactly 1 parameter");
-		//if (f->literal_param_type[0] != input->type)
-		//	do_error("pipe type mismatch...");
-	} else {
-		if (f->num_params != 0)
-			do_error("function after '|>' needs exactly 1 parameter (self)");
-		//if (f->name_space != input->type)
-		//	do_error("pipe type mismatch...");
-	}
+	if (f->num_params != 1)
+		do_error("function after '|>' needs exactly 1 parameter (including self)");
+	//if (f->literal_param_type[0] != input->type)
+	//	do_error("pipe type mismatch...");
 
 	auto out = tree->add_node_call(f);
 
 	shared_array<Node> inputs;
 	inputs.add(input);
 
-	Array<int> casts;
+	Array<CastingData> casts;
 	Array<const Class*> wanted;
 	int penalty;
 	if (!param_match_with_cast(out, {input}, casts, wanted, &penalty))
@@ -2290,7 +2276,7 @@ shared<Node> Parser::parse_statement_delete(Block *block) {
 		do_error("pointer expected after 'del'");
 
 	// override del operator?
-	auto f = p->type->param[0]->get_func("__del_override__", TypeVoid, {});
+	auto f = p->type->param[0]->get_func("__del_override__", TypeVoid, {p->type});
 	if (f) {
 		auto cmd = tree->add_node_call(f);
 		cmd->set_instance(p->deref());
@@ -2353,7 +2339,7 @@ shared<Node> Parser::parse_statement_len(Block *block) {
 		return tree->add_node_const(tree->add_constant_int(sub->type->array_length));
 
 	// __length__() function?
-	auto *f = sub->type->get_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {});
+	auto *f = sub->type->get_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {sub->type});
 	if (f)
 		return tree->add_node_member_call(f, sub);
 
@@ -2365,7 +2351,7 @@ shared<Node> Parser::parse_statement_len(Block *block) {
 		
 	// length() function?
 	for (auto f: sub->type->functions)
-		if ((f->name == "length") and (f->num_params == 0))
+		if ((f->name == "length") and (f->num_params == 1))
 			return tree->add_node_member_call(f.get(), sub);
 
 
@@ -2387,12 +2373,12 @@ shared<Node> Parser::wrap_function_into_callable(Function *f) {
 	auto t = tree->make_class_callable_fp(f);
 
 	for (auto *cf: t->param[0]->get_constructors())
-		if (cf->num_params == 1) {
+		if (cf->num_params == 2) {
 			auto cmd = tree->add_node_statement(StatementID::NEW);
 			auto con = tree->add_node_constructor(cf);
 			auto fp = tree->add_constant(TypeFunctionP);
 			fp->as_int64() = (int_p)f;
-			con = apply_params_direct(con, {tree->add_node_const(fp)});
+			con = apply_params_direct(con, {tree->add_node_const(fp)}, 1);
 			con->kind = NodeKind::CALL_FUNCTION;
 			con->type = TypeVoid;
 
@@ -2434,9 +2420,9 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 			do_error("inhomogeneous abstract array");
 
 		for (int i=0; i<node->params.num; i++) {
-			int pen, tc;
-			type_match_with_cast(node->params[i].get(), false, t, pen, tc);
-			node->params[i] = apply_type_cast(tc, node->params[i].get(), t);
+			CastingData cast;
+			type_match_with_cast(node->params[i].get(), false, t, cast);
+			node->params[i] = apply_type_cast(cast, node->params[i].get(), t);
 		}
 
 		node->type = tree->make_class_super_array(t);
@@ -2456,9 +2442,9 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 			do_error("inhomogeneous abstract dict");
 
 		for (int i=1; i<node->params.num; i+=2) {
-			int pen, tc;
-			type_match_with_cast(node->params[i].get(), false, t, pen, tc);
-			node->params[i] = apply_type_cast(tc, node->params[i].get(), t);
+			CastingData cast;
+			type_match_with_cast(node->params[i].get(), false, t, cast);
+			node->params[i] = apply_type_cast(cast, node->params[i].get(), t);
 		}
 
 		node->type = tree->make_class_dict(t);
@@ -2490,11 +2476,11 @@ shared<Node> Parser::add_converter_str(shared<Node> sub, bool repr) {
 	
 	auto *t = sub->type;
 
-	Function *cf = nullptr;	
+	Function *cf = nullptr;
 	if (repr)
-		cf = t->get_func(IDENTIFIER_FUNC_REPR, TypeString, {});
+		cf = t->get_member_func(IDENTIFIER_FUNC_REPR, TypeString, {});
 	if (!cf)
-		cf = t->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
+		cf = t->get_member_func(IDENTIFIER_FUNC_STR, TypeString, {});
 	if (cf)
 		return tree->add_node_member_call(cf, sub);
 
@@ -2599,10 +2585,7 @@ shared<Node> Parser::parse_statement_var(Block *block) {
 }
 
 Array<const Class*> func_effective_params(const Function *f) {
-	auto p = f->literal_param_type;
-	if (!f->is_static())
-		p.insert(f->name_space, 0);
-	return p;
+	return f->literal_param_type;
 }
 
 Array<const Class*> node_call_effective_params(shared<Node> node) {
@@ -2774,19 +2757,19 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 
 		for (auto *cf: bind_wrapper_type->get_constructors()) {
-			auto cmd = tree->add_node_statement(StatementID::NEW);
+			auto cmd_new = tree->add_node_statement(StatementID::NEW);
 			auto con = tree->add_node_constructor(cf);
 			shared_array<Node> params = {create_inner_lambda.get()};
 			for (auto &c: captures)
 				params.add(tree->add_node_local(c));
-			con = apply_params_direct(con, params);
+			con = apply_params_direct(con, params, 1);
 			con->kind = NodeKind::CALL_FUNCTION;
 			con->type = TypeVoid;
 
-			cmd->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
+			cmd_new->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
 			//cmd->type = bind_wrapper_type->get_pointer();
-			cmd->set_param(0, con);
-			return cmd;
+			cmd_new->set_param(0, con);
+			return cmd_new;
 		}
 
 
@@ -3460,9 +3443,9 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 	auto cv = parse_operand_super_greedy(block);
 
 	if (type) {
-		int pen, tc;
-		if (type_match_with_cast(cv, false, type, pen, tc)) {
-			cv = apply_type_cast(tc, cv, type);
+		CastingData cast;
+		if (type_match_with_cast(cv, false, type, cast)) {
+			cv = apply_type_cast(cast, cv, type);
 		} else {
 			do_error(format("constant value of type '%s' expected", type->long_name()));
 		}

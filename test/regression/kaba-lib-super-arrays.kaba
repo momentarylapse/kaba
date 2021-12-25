@@ -1,11 +1,11 @@
 use kaba
 
 func test_super_array(p: Script, c: Class)
-	if !c.get_func("__init__", void, [])
+	if !c.get_func("__init__", void, [nil])
 		print("MISSING DEFAULT CONSTRUCTOR for {{p.name}}.{{c.long_name()}}")
-	if !c.get_func("__delete__", void, [])
+	if !c.get_func("__delete__", void, [nil])
 		print("MISSING DESTRUCTOR for {{p.name}}.{{c.long_name()}}")
-	if !c.get_func("__assign__", void, [&c])
+	if !c.get_func("__assign__", void, [nil, &c])
 		print("MISSING ASSIGN for {{p.name}}.{{c.long_name()}}")
 
 func test_class(p: Script, c: Class)

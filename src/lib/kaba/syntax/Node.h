@@ -116,9 +116,9 @@ public:
 	void set_param(int index, shared<Node> p);
 	void set_instance(shared<Node> p);
 	void set_type(const Class *type);
-	string sig(const Class *ns) const;
-	string str(const Class *ns) const;
-	void show(const Class *ns) const;
+	string signature(const Class *ns = nullptr) const;
+	string str(const Class *ns = nullptr) const;
+	void show(const Class *ns = nullptr) const;
 
 	shared<Node> shallow_copy() const;
 	shared<Node> ref(const Class *override_type = nullptr) const;
