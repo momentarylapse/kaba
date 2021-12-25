@@ -161,9 +161,10 @@ void Function::update_parameters_after_parsing() {
 
 	// class function
 	if (is_member()) {
-		if (!__get_var(IDENTIFIER_SELF)) {
+		if (!__get_var(IDENTIFIER_SELF))
 			add_self_parameter();
-		}
+		if (!is_const())
+			flags_clear(__get_var(IDENTIFIER_SELF)->flags, Flags::CONST);
 	}
 }
 

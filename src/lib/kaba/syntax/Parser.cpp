@@ -455,7 +455,7 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 				tree->do_error(f->long_name() + ": member function expects a mutable instance, because it is declared without 'const'");
 			}
 		}
-		for (int i=0; i<f->num_params; i++)
+		for (int i=offset; i<f->num_params; i++)
 			if (n->params[i]->is_const and !f->var[i]->is_const())
 				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1-offset, f->var[i]->name));
 	}

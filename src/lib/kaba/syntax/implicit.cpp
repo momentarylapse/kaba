@@ -906,12 +906,17 @@ bool can_fully_construct(const Class *t) {
 		return false;
 	if (t->elements.num > FULL_CONSTRUCTOR_MAX_PARAMS)
 		return false;
-	for (auto &e: t->elements)
+	int num_el = 0;
+	for (auto &e: t->elements) {
+		if (e.hidden())
+			continue;
 		if (!e.type->get_assign() and e.type->uses_call_by_reference()) {
 			msg_write(format("class %s auto constructor prevented by element %s %s", t->name, e.name, e.type->name));
 			return false;
 		}
-	return true;
+		num_el ++;
+	}
+	return num_el > 0;
 }
 
 bool class_should_assign(const Class *t) {
