@@ -799,7 +799,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 			if (c->is_function()) {
 				auto f = c->as_func();
 				int param_offset = f->is_static() ? 0 : 1;
-				if ((j >= param_offset) and (flags_has(f->var[j - param_offset]->flags, Flags::OUT)))
+				if ((j >= param_offset) and (flags_has(f->var[j]->flags, Flags::OUT)))
 					return true;
 			}
 			return false;
