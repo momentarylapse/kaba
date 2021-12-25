@@ -288,7 +288,7 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 
 	// subarray() ?
 	if (index2) {
-		auto *cf = operand->type->get_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {operand->type, index->type, index->type});
+		auto *cf = operand->type->get_member_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
 		if (cf) {
 			auto f = tree->add_node_member_call(cf, operand);
 			f->is_const = operand->is_const;
@@ -385,7 +385,7 @@ shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *para
 		param_type = param_type->param[0];
 		
 	string fname = "__" + t->name + "__";
-	auto *cf = param_type->get_func(fname, t, {param_type});
+	auto *cf = param_type->get_member_func(fname, t, {});
 	if (!cf)
 		do_error(format("illegal fake constructor... requires '%s.%s()'", param_type->long_name(), fname));
 	return add_node_member_call(cf, nullptr); // temp var added later...
@@ -971,7 +971,7 @@ shared<Node> Parser::parse_set_builder(Block *block) {
 	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type);
 
 	// array.add(exp)
-	auto *f_add = type->get_func("add", TypeVoid, {type, el_type});
+	auto *f_add = type->get_member_func("add", TypeVoid, {el_type});
 	if (!f_add)
 		do_error("...add() ???");
 	auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
@@ -1008,7 +1008,7 @@ shared<Node> Parser::parse_set_builder(Block *block) {
 
 
 shared<Node> Parser::apply_format(shared<Node> n, const string &fmt) {
-	auto f = n->type->get_func("format", TypeString, {n->type, TypeString});
+	auto f = n->type->get_member_func("format", TypeString, {TypeString});
 	if (!f)
 		do_error(format("format string: no '%s.format(string)' function found", n->type->long_name()));
 	auto *c = tree->add_constant(TypeString);
@@ -1536,7 +1536,7 @@ shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> 
 
 shared<Node> Parser::link_special_operator_in(shared<Node> param1, shared<Node> param2) {
 	param2 = force_concrete_type(param2);
-	auto *f = param2->type->get_func("__contains__", TypeBool, {param2->type, param1->type});
+	auto *f = param2->type->get_member_func("__contains__", TypeBool, {param1->type});
 	if (!f)
 		do_error(format("no 'bool %s.__contains__(%s)' found", param2->type->long_name(), param1->type->long_name()));
 
@@ -1563,7 +1563,7 @@ shared<Node> explicit_cast(Parser *p, shared<Node> node, const Class *wanted) {
 	if (wanted == TypeString)
 		return p->add_converter_str(node, false);
 
-	if (type->get_func("__" + wanted->name + "__", wanted, {type})) {
+	if (type->get_member_func("__" + wanted->name + "__", wanted, {})) {
 		auto rrr = p->turn_class_into_constructor(wanted, {node});
 		if (rrr.num > 0) {
 			rrr[0]->set_param(0, node);
@@ -2339,7 +2339,7 @@ shared<Node> Parser::parse_statement_len(Block *block) {
 		return tree->add_node_const(tree->add_constant_int(sub->type->array_length));
 
 	// __length__() function?
-	auto *f = sub->type->get_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {sub->type});
+	auto *f = sub->type->get_member_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {});
 	if (f)
 		return tree->add_node_member_call(f, sub);
 

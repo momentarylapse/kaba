@@ -1155,7 +1155,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return dummy;
 	} else if (n->kind == NodeKind::ARRAY_BUILDER) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_func("add", TypeVoid, {nullptr, t_el});
+		Function *cf = n->type->get_member_func("add", TypeVoid, {t_el});
 		if (!cf)
 			do_error(format("[..]: can not find '%s.add(%s)' function???", n->type->long_name(), t_el->long_name()));
 
@@ -1174,7 +1174,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return array;
 	} else if (n->kind == NodeKind::DICT_BUILDER) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_func("__set__", TypeVoid, {nullptr, TypeString, t_el});
+		Function *cf = n->type->get_member_func("__set__", TypeVoid, {TypeString, t_el});
 		if (!cf)
 			do_error(format("[..]: can not find '%s.__set__(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 
