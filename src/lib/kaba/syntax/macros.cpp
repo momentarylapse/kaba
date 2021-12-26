@@ -142,7 +142,7 @@ void Parser::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just
 	}
 
 	// remove macro line
-	Exp.line.erase(line_no);
+	Exp.erase_logical_line(line_no);
 	line_no --;
 }
 
@@ -151,8 +151,9 @@ void Parser::parse_macros(bool just_analyse) {
 	int NumIfDefs = 0;
 	bool IfDefed[1024];
 	
-	for (int i=0;i<Exp.line.num-1;i++) {
-		Exp.set(0, i);
+	for (int i=0; i<Exp.lines.num-1; i++) {
+		Exp.jump(Exp.lines[i].token_ids[0]);
+
 		if (Exp.cur[0] == '#') {
 			handle_macro(i, NumIfDefs, IfDefed, just_analyse);
 		} else {

@@ -895,7 +895,7 @@ shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
 }
 
 shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> operand, Block *block) {
-	int _ie = Exp.cur_exp - 1;
+	int _ie = Exp.cur_token() - 1;
 	Operator *op = nullptr;
 	const Class *p2 = operand->type;
 
@@ -1048,10 +1048,12 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v) {
 		ee.cur_line->physical_line = Exp.cur_line->physical_line;
 		//ee.show();
 		
-		int cl = Exp.get_line_no();
-		int ce = Exp.cur_exp;
-		Exp.line.add(ee.line[0]);
-		Exp.set(0, Exp.line.num-1);
+		int token0 = Exp.cur_token();
+		//int cl = Exp.get_line_no();
+		//int ce = Exp.cur_exp;
+		Exp.lines.add(ee.lines[0]);
+		Exp.update_meta_data();
+		Exp.jump(Exp.lines.back().token_ids[0]);
 		
 		try {
 			auto n = parse_operand_super_greedy(block);
@@ -1065,7 +1067,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v) {
 			//n->show();
 			parts.add(n);
 		} catch (Exception &e) {
-			Exp.set(ce, cl);
+			Exp.jump(token0);
 			//e.line += cl;
 			//e.column += Exp.
 			
@@ -1073,8 +1075,9 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v) {
 			do_error(e.text);
 		}
 		
-		Exp.line.pop();
-		Exp.set(ce, cl);
+		Exp.lines.pop();
+		Exp.update_meta_data();
+		Exp.jump(token0);
 		
 		pos = p1 + 2;
 	
@@ -1232,8 +1235,8 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
 
 		// not sure why, but is necessary:
-		Exp.cur_exp = Exp.cur_line->tokens.num - 1;
-		Exp.cur = Exp.cur_line->tokens[Exp.cur_exp].name;
+		Exp._cur_exp = Exp.cur_line->tokens.num - 1;
+		Exp.cur = Exp.cur_line->tokens[Exp._cur_exp].name;
 
 		operands = {tree->add_node_func_name(f)};
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
@@ -1736,7 +1739,7 @@ shared<Node> Parser::build_function_pipe(const shared<Node> &input, const shared
 	//return out;
 }
 
-void Parser::link_most_important_operator(shared_array<Node> &operands, shared_array<Node> &_operators, Array<int> &op_exp) {
+void Parser::link_most_important_operator(shared_array<Node> &operands, shared_array<Node> &_operators, Array<int> &op_tokens) {
 	//force_concrete_types(operands);
 
 // find the most important operator (mio)
@@ -1758,7 +1761,7 @@ void Parser::link_most_important_operator(shared_array<Node> &operands, shared_a
 		operands[first] = n;
 		for (int i=last-1; i>=first; i--) {
 			_operators.erase(i);
-			op_exp.erase(i);
+			op_tokens.erase(i);
 			operands.erase(i + 1);
 		}
 		return;
@@ -1770,13 +1773,13 @@ void Parser::link_most_important_operator(shared_array<Node> &operands, shared_a
 		// regular operator
 		_operators[mio] = link_operator(op_no, param1, param2);
 		if (!_operators[mio])
-			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), op_exp[mio]);
+			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), op_tokens[mio]);
 	}
 
 // remove from list
 	operands[mio] = _operators[mio];
 	_operators.erase(mio);
-	op_exp.erase(mio);
+	op_tokens.erase(mio);
 	operands.erase(mio + 1);
 }
 
@@ -1784,7 +1787,7 @@ void Parser::link_most_important_operator(shared_array<Node> &operands, shared_a
 shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, shared<Node> first_operand) {
 	shared_array<Node> operands;
 	shared_array<Node> operators;
-	Array<int> op_exp;
+	Array<int> op_tokens;
 
 	// find the first operand
 	if (!first_operand)
@@ -1793,7 +1796,7 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 
 	// find pairs of operators and operands
 	for (int i=0;true;i++) {
-		op_exp.add(Exp.cur_exp);
+		op_tokens.add(Exp.cur_token());
 		if (!allow_tuples and Exp.cur == ",")
 			break;
 		auto op = parse_primitive_operator(block);
@@ -1809,7 +1812,7 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 
 	// in each step remove/link the most important operator
 	while (operators.num > 0)
-		link_most_important_operator(operands, operators, op_exp);
+		link_most_important_operator(operands, operators, op_tokens);
 
 	// complete command is now collected in operand[0]
 	return operands[0];
@@ -2064,68 +2067,69 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	Exp.next_line();
 	expect_indent();
 	cmd_try->set_param(0, parse_block(block));
+	int token0 = Exp.cur_token();
 	Exp.next_line();
 
 
 	int num_excepts = 0;
 
-	// else?
+	// except?
 	while (!Exp.end_of_file() and (Exp.cur == IDENTIFIER_EXCEPT) and (Exp.cur_line->indent == ind)) {
 
 
-//	if (Exp.cur != IDENTIFIER_EXCEPT)
-//		do_error("except after try expected");
-//	if (Exp.cur_line->indent != ind)
-//		do_error("wrong indentation for except");
-	Exp.next(); // except
+	//	if (Exp.cur != IDENTIFIER_EXCEPT)
+	//		do_error("except after try expected");
+	//	if (Exp.cur_line->indent != ind)
+	//		do_error("wrong indentation for except");
+		Exp.next(); // except
 
-	auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT);
+		auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT);
 
-	Block *except_block = new Block(block->function, block);
+		Block *except_block = new Block(block->function, block);
 
-	if (!Exp.end_of_line()) {
-		auto *ex_type = parse_type(block->name_space());
-		if (!ex_type)
-			do_error("Exception class expected");
-		if (!ex_type->is_derived_from(TypeException))
-			do_error("Exception class expected");
-		cmd_ex->type = ex_type;
-		ex_type = ex_type->get_pointer();
 		if (!Exp.end_of_line()) {
-			if (Exp.cur != IDENTIFIER_AS)
-				do_error("'as' expected");
-			Exp.next();
-			string ex_name = Exp.cur;
-			auto *v = except_block->add_var(ex_name, ex_type);
-			cmd_ex->params.add(tree->add_node_local(v));
-			Exp.next();
+			auto *ex_type = parse_type(block->name_space());
+			if (!ex_type)
+				do_error("Exception class expected");
+			if (!ex_type->is_derived_from(TypeException))
+				do_error("Exception class expected");
+			cmd_ex->type = ex_type;
+			ex_type = ex_type->get_pointer();
+			if (!Exp.end_of_line()) {
+				if (Exp.cur != IDENTIFIER_AS)
+					do_error("'as' expected");
+				Exp.next();
+				string ex_name = Exp.cur;
+				auto *v = except_block->add_var(ex_name, ex_type);
+				cmd_ex->params.add(tree->add_node_local(v));
+				Exp.next();
+			}
 		}
+
+		//int last_indent = Exp.indent_0;
+
+		expect_new_line();
+		// ...block
+		Exp.next_line();
+		expect_indent();
+		//ParseCompleteCommand(block);
+		//Exp.next_line();
+
+		//auto n = block->nodes.back();
+		//n->as_block()->
+
+		auto cmd_ex_block = parse_block(block, except_block);
+
+		num_excepts ++;
+		cmd_try->set_num_params(1 + num_excepts * 2);
+		cmd_try->set_param(num_excepts*2 - 1, cmd_ex);
+		cmd_try->set_param(num_excepts*2, cmd_ex_block);
+
+		token0 = Exp.cur_token();
+		Exp.next_line();
 	}
 
-	//int last_indent = Exp.indent_0;
-
-	expect_new_line();
-	// ...block
-	Exp.next_line();
-	expect_indent();
-	//ParseCompleteCommand(block);
-	//Exp.next_line();
-
-	//auto n = block->nodes.back();
-	//n->as_block()->
-
-	auto cmd_ex_block = parse_block(block, except_block);
-
-	num_excepts ++;
-	cmd_try->set_num_params(1 + num_excepts * 2);
-	cmd_try->set_param(num_excepts*2 - 1, cmd_ex);
-	cmd_try->set_param(num_excepts*2, cmd_ex_block);
-
-	Exp.next_line();
-	}
-
-	int line = Exp.get_line_no() - 1;
-	Exp.set(Exp.line[line].tokens.num - 1, line);
+	Exp.jump(token0); // undo next_line()
 
 
 
@@ -2169,10 +2173,11 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 	expect_indent();
 	//block->nodes.add(ParseBlock(block));
 	cmd_if->set_param(1, parse_block(block));
+	int token_id = Exp.cur_token();
 	Exp.next_line();
 
 	// else?
-	if ((!Exp.end_of_file()) and (Exp.cur == IDENTIFIER_ELSE) and (Exp.cur_line->indent >= ind)) {
+	if (!Exp.end_of_file() and (Exp.cur == IDENTIFIER_ELSE) and (Exp.cur_line->indent >= ind)) {
 		cmd_if->link_no = (int64)statement_from_id(StatementID::IF_ELSE);
 		cmd_if->set_num_params(3);
 		Exp.next();
@@ -2193,8 +2198,7 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 		cmd_if->set_param(2, parse_block(block));
 		//Exp.next_line();
 	} else {
-		int line = Exp.get_line_no() - 1;
-		Exp.set(Exp.line[line].tokens.num - 1, line);
+		Exp.jump(token_id);
 	}
 	return cmd_if;
 }
@@ -2279,7 +2283,7 @@ shared<Node> Parser::parse_statement_delete(Block *block) {
 }
 
 shared<Node> Parser::parse_single_func_param(Block *block) {
-	string func_name = Exp.cur_line->tokens[Exp.cur_exp-1].name;
+	string func_name = Exp.get_token(Exp.cur_token() - 1);
 	if (Exp.cur != "(")
 		do_error(format("'(' expected after '%s'", func_name));
 	Exp.next(); // "("
@@ -2932,7 +2936,6 @@ shared<Node> Parser::parse_block(Block *parent, Block *block) {
 	int last_indent = Exp.indent_0;
 
 	Exp.indented = false;
-	Exp.set(0); // bad hack...
 	if (!block)
 		block = new Block(parent->function, parent);
 
@@ -2947,8 +2950,8 @@ shared<Node> Parser::parse_block(Block *parent, Block *block) {
 	Exp.cur_line --;
 	Exp.indent_0 = Exp.cur_line->indent;
 	Exp.indented = false;
-	Exp.cur_exp = Exp.cur_line->tokens.num - 1;
-	Exp.cur = Exp.cur_line->tokens[Exp.cur_exp].name;
+	Exp._cur_exp = Exp.cur_line->tokens.num - 1;
+	Exp.cur = Exp.cur_line->tokens[Exp._cur_exp].name;
 
 	return block;
 }
@@ -3302,7 +3305,7 @@ bool Parser::parse_class(Class *_namespace) {
 	if (!_class)
 		return false;
 
-	Array<int> sub_class_line_offsets;
+	Array<int> sub_class_token_ids;
 
 	// body
 	while (!Exp.end_of_file()) {
@@ -3312,15 +3315,13 @@ bool Parser::parse_class(Class *_namespace) {
 		if (Exp.end_of_file())
 			break;
 
-		int ie = Exp.cur_exp;
-
 		if (Exp.cur == IDENTIFIER_ENUM) {
 			parse_enum(_class);
 		} else if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 			//msg_write("sub....");
-			int cur_line = Exp.get_line_no();
+			int cur_token = Exp.cur_token();
 			if (!parse_class(_class)) {
-				sub_class_line_offsets.add(cur_line);
+				sub_class_token_ids.add(cur_token);
 				skip_parse_class();
 			}
 			//msg_write(">>");
@@ -3343,20 +3344,19 @@ bool Parser::parse_class(Class *_namespace) {
 	post_process_newly_parsed_class(_class, _offset);
 
 
-	int cur_line = Exp.get_line_no();
+	int cur_token = Exp.cur_token();
 
 	//msg_write(ia2s(sub_class_line_offsets));
-	for (int l: sub_class_line_offsets) {
+	for (int id: sub_class_token_ids) {
 		//msg_write("SUB...");
-		Exp.set(0, l);
+		Exp.jump(id);
 		//.add(Exp.get_line_no());
 		if (!parse_class(_class))
 			do_error(format("parent class not fully parsed yet"));
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 	}
 
-	Exp.set(0, cur_line);
-	Exp.cur_line --;
+	Exp.jump(cur_token-1);
 	return true;
 }
 
@@ -3736,7 +3736,7 @@ void Parser::parse_function_body(Function *f) {
 
 void Parser::parse_all_class_names(Class *ns, int indent0) {
 	if (indent0 == 0)
-		Exp.reset_parser();
+		Exp.reset_walker();
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
 			if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
@@ -3807,7 +3807,7 @@ void Parser::parse_top_level() {
 
 	parse_all_class_names(tree->base_class, 0);
 
-	Exp.reset_parser();
+	Exp.reset_walker();
 
 	// global definitions (enum, class, variables and functions)
 	while (!Exp.end_of_file()) {
@@ -3847,7 +3847,7 @@ void Parser::parse_top_level() {
 // convert text into script data
 void Parser::parse() {
 	cur_exp_buf = &Exp;
-	Exp.reset_parser();
+	Exp.reset_walker();
 
 	parse_top_level();
 

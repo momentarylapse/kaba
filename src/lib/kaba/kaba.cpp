@@ -269,7 +269,7 @@ void execute_single_script_command(const string &cmd) {
 
 // find expressions
 	parser->Exp.analyse(tree, cmd);
-	if (parser->Exp.line[0].tokens.num < 1) {
+	if (parser->Exp.empty()) {
 		//clear_exp_buffer(&ps->Exp);
 		return;
 	}
@@ -284,7 +284,7 @@ void execute_single_script_command(const string &cmd) {
 	Function *func = tree->add_function("--command-func--", TypeVoid, tree->base_class, Flags::STATIC);
 	func->_var_size = 0; // set to -1...
 
-	parser->Exp.reset_parser();
+	parser->Exp.reset_walker();
 
 	// parse
 	parser->parse_complete_command(func->block.get());
