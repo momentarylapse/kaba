@@ -37,7 +37,7 @@ public:
 	void do_error_implicit(Function *f, const string &msg);
 	void expect_no_new_line();
 	void expect_new_line();
-	void expect_indent();
+	void expect_new_line_with_indent();
 
 	shared<Node> link_operator(PrimitiveOperator *primop, shared<Node> param1, shared<Node> param2);
 	shared<Node> link_operator_id(OperatorID op_no, shared<Node> param1, shared<Node> param2);
@@ -84,7 +84,7 @@ public:
 
 	void parse();
 	void parse_top_level();
-	void parse_all_class_names(Class *ns, int indent0);
+	void parse_all_class_names_in_block(Class *ns, int indent0);
 	void parse_all_function_bodies();
 	Flags parse_flags(Flags initial = Flags::NONE);
 	void parse_import();

@@ -1234,10 +1234,6 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		auto f = parse_function_header(tree->_base_class.get(), Flags::STATIC);
 		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
 
-		// not sure why, but is necessary:
-		Exp._cur_exp = Exp.cur_line->tokens.num - 1;
-		Exp.cur = Exp.cur_line->tokens[Exp._cur_exp].name;
-
 		operands = {tree->add_node_func_name(f)};
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
 		string pre = Exp.cur;
@@ -1961,10 +1957,9 @@ shared<Node> Parser::parse_statement_for(Block *block) {
 
 	auto cmd_for = parse_for_header(block);
 
-	expect_new_line();
 	// ...block
+	expect_new_line_with_indent();
 	Exp.next_line();
-	expect_indent();
 	parser_loop_depth ++;
 	auto loop_block = parse_block(block);
 	parser_loop_depth --;
@@ -1982,14 +1977,13 @@ shared<Node> Parser::parse_statement_for(Block *block) {
 shared<Node> Parser::parse_statement_while(Block *block) {
 	Exp.next();
 	auto cmd_cmp = check_param_link(parse_operand_greedy(block), TypeBool, IDENTIFIER_WHILE);
-	expect_new_line();
 
 	auto cmd_while = tree->add_node_statement(StatementID::WHILE);
 	cmd_while->set_param(0, cmd_cmp);
 
 	// ...block
+	expect_new_line_with_indent();
 	Exp.next_line();
-	expect_indent();
 	parser_loop_depth ++;
 	cmd_while->set_num_params(2);
 	cmd_while->set_param(1, parse_block(block));
@@ -2062,10 +2056,9 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	Exp.next();
 	auto cmd_try = tree->add_node_statement(StatementID::TRY);
 	cmd_try->set_num_params(3);
-	expect_new_line();
 	// ...block
+	expect_new_line_with_indent();
 	Exp.next_line();
-	expect_indent();
 	cmd_try->set_param(0, parse_block(block));
 	int token0 = Exp.cur_token();
 	Exp.next_line();
@@ -2108,10 +2101,9 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 
 		//int last_indent = Exp.indent_0;
 
-		expect_new_line();
 		// ...block
+		expect_new_line_with_indent();
 		Exp.next_line();
-		expect_indent();
 		//ParseCompleteCommand(block);
 		//Exp.next_line();
 
@@ -2164,14 +2156,12 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
 	auto cmd_cmp = check_param_link(parse_operand_greedy(block), TypeBool, IDENTIFIER_IF);
-	expect_new_line();
 
 	auto cmd_if = tree->add_node_statement(StatementID::IF);
 	cmd_if->set_param(0, cmd_cmp);
 	// ...block
+	expect_new_line_with_indent();
 	Exp.next_line();
-	expect_indent();
-	//block->nodes.add(ParseBlock(block));
 	cmd_if->set_param(1, parse_block(block));
 	int token_id = Exp.cur_token();
 	Exp.next_line();
@@ -2183,7 +2173,6 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 		Exp.next();
 		// iterative if
 		if (Exp.cur == IDENTIFIER_IF) {
-			//DoError("else if...");
 			// sub-if's in a new block
 			Block *cmd_block = new Block(block->function, block);
 			cmd_if->set_param(2, cmd_block);
@@ -2191,12 +2180,10 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 			parse_complete_command(cmd_block);
 			return cmd_if;
 		}
-		expect_new_line();
 		// ...block
+		expect_new_line_with_indent();
 		Exp.next_line();
-		expect_indent();
 		cmd_if->set_param(2, parse_block(block));
-		//Exp.next_line();
 	} else {
 		Exp.jump(token_id);
 	}
@@ -2933,25 +2920,19 @@ shared<Node> Parser::parse_statement(Block *block) {
 }
 
 shared<Node> Parser::parse_block(Block *parent, Block *block) {
-	int last_indent = Exp.indent_0;
+	int indent0 = Exp.cur_line->indent;
 
-	Exp.indented = false;
 	if (!block)
 		block = new Block(parent->function, parent);
 
-	for (int i=0;true;i++) {
-		if (((i > 0) and (Exp.cur_line->indent < last_indent)) or Exp.end_of_file())
-			break;
-
+	while (!Exp.end_of_file()) {
 
 		parse_complete_command(block);
+
+		if (Exp.next_line_indent() < indent0)
+			break;
 		Exp.next_line();
 	}
-	Exp.cur_line --;
-	Exp.indent_0 = Exp.cur_line->indent;
-	Exp.indented = false;
-	Exp._cur_exp = Exp.cur_line->tokens.num - 1;
-	Exp.cur = Exp.cur_line->tokens[Exp._cur_exp].name;
 
 	return block;
 }
@@ -2993,16 +2974,12 @@ void Parser::parse_local_definition(Block *block, const Class *type) {
 
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
 void Parser::parse_complete_command(Block *block) {
-	// cur_exp = 0!
+	// beginning of a line!
 
 	//bool is_type = tree->find_root_type_by_name(Exp.cur, block->name_space(), true);
 
-	// block?  <- indent
-	if (Exp.indented) {
-		block->add(parse_block(block));
-
 	// assembler block
-	} else if (Exp.cur == "-asm-") {
+	if (Exp.cur == "-asm-") {
 		Exp.next();
 		block->add(tree->add_node_statement(StatementID::ASM));
 
@@ -3162,11 +3139,11 @@ void Parser::parse_enum(Class *_namespace) {
 		Exp.next();
 	}
 
-	expect_new_line();
+	expect_new_line_with_indent();
 	Exp.next_line();
-	expect_indent();
+	int indent0 = Exp.cur_line->indent;
 
-	int value = 0;
+	int next_value = 0;
 
 	for (int i=0;!Exp.end_of_file();i++) {
 		for (int j=0;!Exp.end_of_line();j++) {
@@ -3180,9 +3157,9 @@ void Parser::parse_enum(Class *_namespace) {
 				expect_no_new_line();
 
 				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeInt);
-				value = cv->as_const()->as_int();
+				next_value = cv->as_const()->as_int();
 			}
-			c->as_int() = (value ++);
+			c->as_int() = (next_value ++);
 
 			if (Exp.end_of_line())
 				break;
@@ -3191,11 +3168,10 @@ void Parser::parse_enum(Class *_namespace) {
 			Exp.next();
 			expect_no_new_line();
 		}
-		Exp.next_line();
-		if (Exp.unindented)
+		if (Exp.next_line_indent() < indent0)
 			break;
+		Exp.next_line();
 	}
-	Exp.cur_line --;
 }
 
 bool type_needs_alignment(const Class *t) {
@@ -3400,11 +3376,11 @@ void Parser::skip_parse_class() {
 
 	// elements
 	while (!Exp.end_of_file()) {
-		Exp.next_line();
-		if (Exp.cur_line->indent <= indent0) //(unindented)
+		if (Exp.next_line_indent() <= indent0)
 			break;
+		Exp.next_line();
 	}
-	Exp.cur_line --;
+	Exp.jump(Exp.cur_line->token_ids.back());
 }
 
 void Parser::expect_no_new_line() {
@@ -3417,8 +3393,10 @@ void Parser::expect_new_line() {
 		do_error("newline expected");
 }
 
-void Parser::expect_indent() {
-	if (!Exp.indented)
+void Parser::expect_new_line_with_indent() {
+	if (!Exp.end_of_line())
+		do_error("newline expected");
+	if (Exp.next_line_indent() <= Exp.cur_line->indent)
 		do_error("additional indent expected");
 }
 
@@ -3560,7 +3538,6 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 		return false;
 
 	Exp.next_line();
-	Exp.indented = false;
 
 	// end of file
 	if (Exp.end_of_file())
@@ -3695,15 +3672,18 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 void Parser::skip_parsing_function_body(Function *f) {
 	int indent0 = Exp.cur_line->indent;
 	while (!Exp.end_of_file()) {
-		if (Exp.cur_line[1].indent <= indent0)
+		if (Exp.next_line_indent() <= indent0)
 			break;
 		Exp.next_line();
 	}
+
+	// jump to end of line
+	Exp.jump(Exp.cur_line->token_ids.back());
 	function_needs_parsing.add(f);
 }
 
 void Parser::parse_function_body(Function *f) {
-	Exp.cur_line = Exp.token_logical_line(f->_token_id);
+	Exp.jump(f->_token_id);
 
 	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
@@ -3731,12 +3711,10 @@ void Parser::parse_function_body(Function *f) {
 		auto_implement_regular_destructor(f, f->name_space);
 	cur_func = nullptr;
 
-	Exp.cur_line --;
+	Exp.rewind();
 }
 
-void Parser::parse_all_class_names(Class *ns, int indent0) {
-	if (indent0 == 0)
-		Exp.reset_walker();
+void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
 			if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
@@ -3745,7 +3723,7 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 				flags_clear(t->flags, Flags::FULLY_PARSED);
 
 				Exp.next_line();
-				parse_all_class_names(t, indent0 + 1);
+				parse_all_class_names_in_block(t, indent0 + 1);
 				continue;
 			}
 		}
@@ -3805,7 +3783,8 @@ void Parser::parse_top_level() {
 
 	// syntax analysis
 
-	parse_all_class_names(tree->base_class, 0);
+	Exp.reset_walker();
+	parse_all_class_names_in_block(tree->base_class, 0);
 
 	Exp.reset_walker();
 

@@ -62,13 +62,9 @@ public:
 	string &cur;
 
 	void reset_walker();
-	int indent_0;
-	bool indented, unindented;
-	void test_indent(int i);
-	void reset_indent();
+	int next_line_indent();
 
 	int cur_token() const;
-	int get_line_no();
 	void next();
 	void rewind();
 	bool end_of_line();

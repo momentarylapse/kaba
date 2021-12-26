@@ -28,7 +28,6 @@ static ExpKind exp_kind;
 
 ExpressionBuffer::ExpressionBuffer() : cur(dummy) {
 	clear();
-	reset_indent();
 }
 
 int ExpressionBuffer::cur_token() const {
@@ -91,21 +90,13 @@ int ExpressionBuffer::token_index_in_line(int id) const {
 	return -1;
 }
 
-int ExpressionBuffer::get_line_no() {
-	foreachi(Line &l, lines, i)
-		if (cur_line == &l)
-			return i;
-	return -1;
-}
-
 void ExpressionBuffer::next() {
 	_cur_exp ++;
 	cur = cur_line->tokens[_cur_exp].name;
 }
 
 void ExpressionBuffer::rewind() {
-	_cur_exp --;
-	cur = cur_line->tokens[_cur_exp].name;
+	jump(cur_token() - 1);
 }
 
 bool ExpressionBuffer::end_of_line() {
@@ -119,7 +110,6 @@ bool ExpressionBuffer::past_end_of_line() {
 void ExpressionBuffer::next_line() {
 	cur_line ++;
 	_cur_exp = 0;
-	test_indent(cur_line->indent);
 	cur = cur_line->tokens[_cur_exp].name;
 }
 
@@ -137,7 +127,6 @@ void ExpressionBuffer::reset_walker() {
 	cur_line = &lines[0];
 	_cur_exp = 0;
 	cur = cur_line->tokens[_cur_exp].name;
-	reset_indent();
 }
 
 bool ExpressionBuffer::empty() const {
@@ -172,16 +161,8 @@ void ExpressionBuffer::remove(int index) {
 	cur_line->tokens.erase(index);
 }
 
-void ExpressionBuffer::test_indent(int i) {
-	indented = (i > indent_0);
-	unindented = (i < indent_0);
-	indent_0 = i;
-
-}
-
-void ExpressionBuffer::reset_indent() {
-	indented = unindented = false;
-	indent_0 = 0;
+int ExpressionBuffer::next_line_indent() {
+	return (cur_line + 1)->indent;
 }
 
 ExpKind GetKind(char c) {
