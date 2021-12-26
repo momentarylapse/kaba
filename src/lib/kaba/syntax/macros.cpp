@@ -127,6 +127,7 @@ void Parser::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just
 					do_error("unknown compiler flag (define starting and ending with \"__\"): " + d.source);
 				}
 			} else {
+				do_error("#define deprecated");
 				// normal define
 				tree->defines.add(d);
 			}
@@ -141,7 +142,6 @@ void Parser::handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just
 	}
 
 	// remove macro line
-	Exp.line[line_no].exp.clear();
 	Exp.line.erase(line_no);
 	line_no --;
 }
@@ -156,6 +156,7 @@ void Parser::parse_macros(bool just_analyse) {
 		if (Exp.cur[0] == '#') {
 			handle_macro(i, NumIfDefs, IfDefed, just_analyse);
 		} else {
+#if 0
 			Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
 
 			// replace by definition?
@@ -202,6 +203,7 @@ void Parser::parse_macros(bool just_analyse) {
 				}
 				Exp.next();
 			}
+#endif
 		}
 	}
 }
