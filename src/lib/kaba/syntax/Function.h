@@ -58,8 +58,7 @@ public:
 	int num_slightly_hidden_vars;
 	// for compilation...
 	int64 _var_size;
-	int _logical_line_no;
-	int _exp_no;
+	int _token_id;
 	int64 address;
 	void *address_preprocess;
 	int _label;

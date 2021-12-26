@@ -333,8 +333,8 @@ void SyntaxTree::digest() {
 }
 
 
-void SyntaxTree::do_error(const string &str, int override_exp_no, int override_line) {
-	parser->do_error(str, override_exp_no, override_line);
+void SyntaxTree::do_error(const string &str, int override_token_id) {
+	parser->do_error(str, override_token_id);
 }
 
 
@@ -682,10 +682,8 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 
 	Class *t = new Class(name, size, this, parent, params);
 	t->type = type;
-	if (cur_exp_buf) {
-		t->_logical_line_no = cur_exp_buf->get_line_no();
-		t->_exp_no = cur_exp_buf->cur_exp;
-	}
+	if (cur_exp_buf)
+		t->_token_id = cur_exp_buf->cur_token();
 	owned_classes.add(t);
 	
 	// link namespace

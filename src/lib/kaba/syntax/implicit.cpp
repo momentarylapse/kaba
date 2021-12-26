@@ -19,9 +19,8 @@ Array<const Class*> get_callable_capture_types(const Class *fp);
 
 
 void Parser::do_error_implicit(Function *f, const string &str) {
-	int line = max(f->_logical_line_no, f->name_space->_logical_line_no);
-	int ex = max(f->_exp_no, f->name_space->_exp_no);
-	do_error(format("[auto generating %s] : %s", f->signature(), str), ex, line);
+	int token_id = max(f->_token_id, f->name_space->_token_id);
+	do_error(format("[auto generating %s] : %s", f->signature(), str), token_id);
 }
 
 void Parser::auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t) {

@@ -12,14 +12,14 @@ class ExpressionBuffer {
 public:
 	ExpressionBuffer();
 
-	struct Expression {
+	struct Token {
 		string name;
 		int pos;
 	};
 
 	struct Line {
 		int physical_line, length, indent;
-		Array<Expression> exp;
+		Array<Token> tokens;
 	};
 
 	Array<Line> line;
@@ -29,6 +29,13 @@ public:
 	string dummy;
 	string &cur;
 	SyntaxTree *syntax;
+
+
+	int cur_token() const;
+	string get_token(int id) const;
+	Line *token_logical_line(int id) const;
+	int token_physical_line_no(int id) const;
+	int token_line_offset(int id) const;
 
 	string get_name(int n);
 	int get_line_no();

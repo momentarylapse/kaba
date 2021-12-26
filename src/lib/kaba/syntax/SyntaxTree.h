@@ -52,7 +52,7 @@ public:
 	void default_import();
 	void add_include_data(shared<Script> s, bool indirect);
 
-	void do_error(const string &msg, int override_exp_no = -1, int override_line = -1);
+	void do_error(const string &msg, int override_token_id = -1);
 	
 	// syntax parsing
 	const Class *which_owned_class(const string &name);

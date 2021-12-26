@@ -86,8 +86,7 @@ public:
 	Array<const Class*> param; // for pointers/arrays etc
 	const Class *name_space;
 	SyntaxTree *owner; // to share and be able to delete...
-	int _logical_line_no;
-	int _exp_no;
+	int _token_id;
 	bool _amd64_allow_pass_in_xmm() const;
 	Array<void*> vtable;
 	void *_vtable_location_compiler_; // may point to const/opcode

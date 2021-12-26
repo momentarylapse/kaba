@@ -31,8 +31,58 @@ ExpressionBuffer::ExpressionBuffer() : cur(dummy) {
 	reset_indent();
 }
 
+int ExpressionBuffer::cur_token() const {
+	int i0 = 0;
+	for (auto &l: line) {
+		if (cur_line == &l)
+			return i0 + cur_exp;
+		i0 += l.tokens.num;
+	}
+	return -1;
+}
+
+string ExpressionBuffer::get_token(int id) const {
+	int i0 = 0;
+	for (auto &l: line) {
+		if ((id >= i0) and (id < i0 + l.tokens.num))
+			return l.tokens[id - i0].name;
+		i0 += l.tokens.num;
+	}
+	return "";
+}
+
+ExpressionBuffer::Line *ExpressionBuffer::token_logical_line(int id) const {
+	int i0 = 0;
+	for (auto &l: line) {
+		if ((id >= i0) and (id < i0 + l.tokens.num))
+			return &l;
+		i0 += l.tokens.num;
+	}
+	return nullptr;
+}
+
+int ExpressionBuffer::token_physical_line_no(int id) const {
+	int i0 = 0;
+	for (auto &l: line) {
+		if ((id >= i0) and (id < i0 + l.tokens.num))
+			return l.physical_line;
+		i0 += l.tokens.num;
+	}
+	return -1;
+}
+
+int ExpressionBuffer::token_line_offset(int id) const {
+	int i0 = 0;
+	for (auto &l: line) {
+		if ((id >= i0) and (id < i0 + l.tokens.num))
+			return l.tokens[id - i0].pos;
+		i0 += l.tokens.num;
+	}
+	return -1;
+}
+
 string ExpressionBuffer::get_name(int n) {
-	return cur_line->exp[n].name;
+	return cur_line->tokens[n].name;
 }
 
 int ExpressionBuffer::get_line_no() {
@@ -44,27 +94,27 @@ int ExpressionBuffer::get_line_no() {
 
 void ExpressionBuffer::next() {
 	cur_exp ++;
-	cur = cur_line->exp[cur_exp].name;
+	cur = cur_line->tokens[cur_exp].name;
 }
 
 void ExpressionBuffer::rewind() {
 	cur_exp --;
-	cur = cur_line->exp[cur_exp].name;
+	cur = cur_line->tokens[cur_exp].name;
 }
 
 bool ExpressionBuffer::end_of_line() {
-	return (cur_exp >= cur_line->exp.num - 1); // the last entry is "-eol-"#
+	return (cur_exp >= cur_line->tokens.num - 1); // the last entry is "-eol-"#
 }
 
 bool ExpressionBuffer::past_end_of_line() {
-	return (cur_exp >= cur_line->exp.num);
+	return (cur_exp >= cur_line->tokens.num);
 }
 
 void ExpressionBuffer::next_line() {
 	cur_line ++;
 	cur_exp = 0;
 	test_indent(cur_line->indent);
-	cur = cur_line->exp[cur_exp].name;
+	cur = cur_line->tokens[cur_exp].name;
 }
 
 void ExpressionBuffer::set(int exp_no, int line_no) {
@@ -72,7 +122,7 @@ void ExpressionBuffer::set(int exp_no, int line_no) {
 		line_no = get_line_no();
 	cur_line = &line[line_no];
 	cur_exp = exp_no;
-	cur = cur_line->exp[cur_exp].name;
+	cur = cur_line->tokens[cur_exp].name;
 }
 
 bool ExpressionBuffer::end_of_file() {
@@ -82,7 +132,7 @@ bool ExpressionBuffer::end_of_file() {
 void ExpressionBuffer::reset_parser() {
 	cur_line = &line[0];
 	cur_exp = 0;
-	cur = cur_line->exp[cur_exp].name;
+	cur = cur_line->tokens[cur_exp].name;
 	reset_indent();
 }
 
@@ -100,18 +150,18 @@ void ExpressionBuffer::add_line() {
 }
 
 void ExpressionBuffer::insert(const char *_name, int pos, int index) {
-	Expression e;
+	Token e;
 	e.name = _name;
 	e.pos = pos;
 	if (index < 0)
 		// at the end...
-		cur_line->exp.add(e);
+		cur_line->tokens.add(e);
 	else
-		cur_line->exp.insert(e, index);
+		cur_line->tokens.insert(e, index);
 }
 
 void ExpressionBuffer::remove(int index) {
-	cur_line->exp.erase(index);
+	cur_line->tokens.erase(index);
 }
 
 void ExpressionBuffer::test_indent(int i) {
@@ -158,11 +208,11 @@ void ExpressionBuffer::analyse(SyntaxTree *ps, const string &_source) {
 
 	// glue together lines ending with a "\" or ","
 	for (int i=0;i<(int)line.num-1;i++) {
-		if ((line[i].exp.back().name == "\\") or (line[i].exp.back().name == ",")) {
+		if ((line[i].tokens.back().name == "\\") or (line[i].tokens.back().name == ",")) {
 			// glue... (without \\ but with ,)
-			if (line[i].exp.back().name == "\\")
-				line[i].exp.pop();
-			line[i].exp.append(line[i + 1].exp);
+			if (line[i].tokens.back().name == "\\")
+				line[i].tokens.pop();
+			line[i].tokens.append(line[i + 1].tokens);
 			// remove line
 			line.erase(i + 1);
 			i --;
@@ -174,13 +224,13 @@ void ExpressionBuffer::analyse(SyntaxTree *ps, const string &_source) {
 
 	
 	// safety
-	temp_line.exp.clear();
+	temp_line.tokens.clear();
 	line.add(temp_line);
 	for (int i=0;i<line.num;i++) {
-		ExpressionBuffer::Expression e;
+		Token e;
 		e.name = str_eol;
 		e.pos = line[i].length;
-		line[i].exp.add(e);
+		line[i].tokens.add(e);
 	}
 }
 
@@ -188,8 +238,8 @@ void ExpressionBuffer::show() {
 	for (int i=0;i<line.num;i++) {
 		msg_write("--------------------");
 		msg_write(line[i].indent);
-		for (int j=0;j<line[i].exp.num;j++)
-			msg_write(line[i].exp[j].name);
+		for (int j=0;j<line[i].tokens.num;j++)
+			msg_write(line[i].tokens[j].name);
 	}
 }
 
@@ -199,14 +249,14 @@ bool ExpressionBuffer::analyse_line(const char *source, ExpressionBuffer::Line *
 	int pos = 0;
 	l->indent = 0;
 	l->length = 0;
-	l->exp.clear();
+	l->tokens.clear();
 
 	for (int i=0;true;i++) {
 		if (analyse_expression(source, pos, l, line_no))
 			break;
 	}
 	l->length = pos;
-	if (l->exp.num > 0)
+	if (l->tokens.num > 0)
 		line.add(*l);
 	return source[pos] == 0;
 }
@@ -270,7 +320,7 @@ bool ExpressionBuffer::analyse_expression(const char *source, int &pos, Expressi
 		} else if (source[pos]=='\n') { // line break
 			return true;
 		} else if (source[pos]=='\t') { // tab
-			if (l->exp.num == 0)
+			if (l->tokens.num == 0)
 				l->indent ++;
 		} else if (source[pos] == '#') { // single-line comment
 

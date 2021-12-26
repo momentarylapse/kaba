@@ -28,8 +28,7 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	flags = _flags;
 	auto_declared = false;
 	_var_size = 0;
-	_logical_line_no = -1;
-	_exp_no = -1;
+	_token_id = -1;
 	inline_no = InlineID::NONE;
 	virtual_index = -1;
 	num_slightly_hidden_vars = 0;

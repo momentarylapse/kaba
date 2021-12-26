@@ -184,11 +184,11 @@ void Script::load(const Path &_filename, bool _just_analyse) {
 	loading_script_stack.pop();
 }
 
-void Script::do_error(const string &str, int override_line) {
+void Script::do_error(const string &str, int override_token) {
 #ifdef CPU_ARM
 	msg_error(str);
 #endif
-	syntax->do_error(str, 0, override_line);
+	syntax->do_error(str, override_token);
 }
 
 void Script::do_error_internal(const string &str) {
@@ -269,7 +269,7 @@ void execute_single_script_command(const string &cmd) {
 
 // find expressions
 	parser->Exp.analyse(tree, cmd);
-	if (parser->Exp.line[0].exp.num < 1) {
+	if (parser->Exp.line[0].tokens.num < 1) {
 		//clear_exp_buffer(&ps->Exp);
 		return;
 	}

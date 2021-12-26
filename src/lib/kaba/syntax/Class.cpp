@@ -105,7 +105,7 @@ Class::Class(const string &_name, int64 _size, SyntaxTree *_owner, const Class *
 	// force_call_by_value = false;
 	// fully_parsed = true;
 	// _amd64_allow_pass_in_xmm = false;
-	_logical_line_no = _exp_no = -1;
+	_token_id = -1;
 	_vtable_location_target_ = nullptr;
 	_vtable_location_compiler_ = nullptr;
 	_vtable_location_external_ = nullptr;
@@ -540,11 +540,11 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 				orig_index = i;
 			}
 		if (override and !orig)
-			s->do_error(format("can not override function %s, no previous definition", f->signature()), f->_exp_no, f->_logical_line_no);
+			s->do_error(format("can not override function %s, no previous definition", f->signature()), f->_token_id);
 		if (!override and orig) {
 			msg_write(f->signature());
 			msg_write(orig->signature());
-			s->do_error(format("function %s is already defined, use '%s'", f->signature(), IDENTIFIER_OVERRIDE), f->_exp_no, f->_logical_line_no);
+			s->do_error(format("function %s is already defined, use '%s'", f->signature(), IDENTIFIER_OVERRIDE), f->_token_id);
 		}
 		if (override) {
 			if (config.verbose)

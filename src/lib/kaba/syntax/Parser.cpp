@@ -204,28 +204,17 @@ void Parser::get_constant_value(const string &str, Value &value) {
 
 
 // override_line is logical! not physical
-void Parser::do_error(const string &str, int override_exp_no, int override_line) {
+void Parser::do_error(const string &str, int override_token_id) {
 	// what data do we have?
-	int logical_line = Exp.get_line_no();
-	int exp_no = Exp.cur_exp;
-	int physical_line = 0;
-	int pos = 0;
-	string expr;
+	int token_id = Exp.cur_token();
 
 	// override?
-	if (override_line >= 0) {
-		logical_line = override_line;
-		exp_no = 0;
-	}
-	if (override_exp_no >= 0)
-		exp_no = override_exp_no;
+	if (override_token_id >= 0)
+		token_id = override_token_id;
 
-	// logical -> physical
-	if ((logical_line >= 0) and (logical_line < Exp.line.num)) {
-		physical_line = Exp.line[logical_line].physical_line;
-		pos = Exp.line[logical_line].exp[exp_no].pos;
-		expr = Exp.line[logical_line].exp[exp_no].name;
-	}
+	int physical_line = Exp.token_physical_line_no(token_id);
+	int pos = Exp.token_line_offset(token_id);
+	string expr = Exp.get_token(token_id);
 
 #ifdef CPU_ARM
 	msg_error(str);
@@ -1243,8 +1232,8 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
 
 		// not sure why, but is necessary:
-		Exp.cur_exp = Exp.cur_line->exp.num - 1;
-		Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+		Exp.cur_exp = Exp.cur_line->tokens.num - 1;
+		Exp.cur = Exp.cur_line->tokens[Exp.cur_exp].name;
 
 		operands = {tree->add_node_func_name(f)};
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
@@ -2136,7 +2125,7 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	}
 
 	int line = Exp.get_line_no() - 1;
-	Exp.set(Exp.line[line].exp.num - 1, line);
+	Exp.set(Exp.line[line].tokens.num - 1, line);
 
 
 
@@ -2205,7 +2194,7 @@ shared<Node> Parser::parse_statement_if(Block *block) {
 		//Exp.next_line();
 	} else {
 		int line = Exp.get_line_no() - 1;
-		Exp.set(Exp.line[line].exp.num - 1, line);
+		Exp.set(Exp.line[line].tokens.num - 1, line);
 	}
 	return cmd_if;
 }
@@ -2290,7 +2279,7 @@ shared<Node> Parser::parse_statement_delete(Block *block) {
 }
 
 shared<Node> Parser::parse_single_func_param(Block *block) {
-	string func_name = Exp.cur_line->exp[Exp.cur_exp-1].name;
+	string func_name = Exp.cur_line->tokens[Exp.cur_exp-1].name;
 	if (Exp.cur != "(")
 		do_error(format("'(' expected after '%s'", func_name));
 	Exp.next(); // "("
@@ -2644,8 +2633,7 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 	static int unique_lambda_counter = 0;
 
 	auto *f = tree->add_function("<lambda-" + i2s(unique_lambda_counter ++) + ">", TypeUnknown, tree->base_class, Flags::STATIC);
-	f->_logical_line_no = Exp.get_line_no();
-	f->_exp_no = Exp.cur_exp;
+	f->_token_id = Exp.cur_token();
 
 	f->block->parent = block;
 
@@ -2959,8 +2947,8 @@ shared<Node> Parser::parse_block(Block *parent, Block *block) {
 	Exp.cur_line --;
 	Exp.indent_0 = Exp.cur_line->indent;
 	Exp.indented = false;
-	Exp.cur_exp = Exp.cur_line->exp.num - 1;
-	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;
+	Exp.cur_exp = Exp.cur_line->tokens.num - 1;
+	Exp.cur = Exp.cur_line->tokens[Exp.cur_exp].name;
 
 	return block;
 }
@@ -3143,14 +3131,11 @@ void Parser::parse_import() {
 	} catch (Exception &e) {
 		msg_left();
 
-		int logical_line = Exp.get_line_no();
-		int exp_no = Exp.cur_exp;
-		int physical_line = Exp.line[logical_line].physical_line;
-		int pos = Exp.line[logical_line].exp[exp_no].pos;
-		string expr = Exp.line[logical_line].exp[exp_no].name;
-		e.line = physical_line;
-		e.column = pos;
-		e.text += format("\n...imported from:\nline %d, %s", physical_line, tree->script->filename);
+		int token_id = Exp.cur_token();
+		string expr = Exp.get_token(token_id);
+		e.line = Exp.token_physical_line_no(token_id);
+		e.column = Exp.token_line_offset(token_id);
+		e.text += format("\n...imported from:\nline %d, %s", e.line+1, tree->script->filename);
 		throw e;
 		//msg_write(e.message);
 		//msg_write("...");
@@ -3563,9 +3548,9 @@ void Parser::parse_class_use_statement(const Class *c) {
 
 bool peek_commands_super(ExpressionBuffer &Exp) {
 	ExpressionBuffer::Line *l = Exp.cur_line + 1;
-	if (l->exp.num < 3)
+	if (l->tokens.num < 3)
 		return false;
-	if ((l->exp[0].name == IDENTIFIER_SUPER) and (l->exp[1].name == ".") and (l->exp[2].name == IDENTIFIER_FUNC_INIT))
+	if ((l->tokens[0].name == IDENTIFIER_SUPER) and (l->tokens[1].name == ".") and (l->tokens[2].name == IDENTIFIER_FUNC_INIT))
 		return true;
 	return false;
 }
@@ -3643,8 +3628,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	Function *f = tree->add_function(name, TypeVoid, name_space, flags);
 	//if (config.verbose)
 	//	msg_write("PARSE HEAD  " + f->signature());
-	f->_logical_line_no = Exp.get_line_no();
-	f->_exp_no = Exp.cur_exp;
+	f->_token_id = Exp.cur_token();
 	cur_func = f;
 
 	if (Exp.cur != "(")
@@ -3719,7 +3703,7 @@ void Parser::skip_parsing_function_body(Function *f) {
 }
 
 void Parser::parse_function_body(Function *f) {
-	Exp.cur_line = &Exp.line[f->_logical_line_no];
+	Exp.cur_line = Exp.token_logical_line(f->_token_id);
 
 	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
@@ -3754,7 +3738,7 @@ void Parser::parse_all_class_names(Class *ns, int indent0) {
 	if (indent0 == 0)
 		Exp.reset_parser();
 	while (!Exp.end_of_file()) {
-		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->exp.num >= 2)) {
+		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
 			if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 				Exp.next();
 				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns);
@@ -3777,7 +3761,7 @@ void Parser::parse_all_function_bodies() {
 	//for (auto *f: function_needs_parsing)   might add lambda functions...
 	for (int i=0; i<function_needs_parsing.num; i++) {
 		auto f = function_needs_parsing[i];
-		if ((!f->is_extern()) and (f->_logical_line_no >= 0))
+		if (!f->is_extern() and (f->_token_id >= 0))
 			parse_function_body(f);
 	}
 }
