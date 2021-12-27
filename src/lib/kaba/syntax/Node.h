@@ -23,7 +23,7 @@ class Function;
 class Variable;
 class Constant;
 class Operator;
-class PrimitiveOperator;
+class AbstractOperator;
 class Statement;
 
 
@@ -44,7 +44,6 @@ enum class NodeKind {
 	STATEMENT,          // = if/while/break/...
 	BLOCK,              // = block of commands {...}
 	OPERATOR,
-	PRIMITIVE_OPERATOR, // tentative...
 	// data altering
 	ADDRESS_SHIFT,      // = . "struct"
 	ARRAY,              // = []
@@ -66,6 +65,9 @@ enum class NodeKind {
 	DICT_BUILDER,		// = {"x":y, ...}
 	TUPLE,				// = (X,Y,...)
 	CONSTRUCTOR_AS_FUNCTION,
+	// abstract syntax tree
+	ABSTRACT_TOKEN,
+	ABSTRACT_OPERATOR,
 	// compilation
 	VAR_TEMP,
 	DEREF_VAR_TEMP,
@@ -83,6 +85,7 @@ enum class NodeKind {
 class Node : public Sharable<Empty> {
 public:
 	NodeKind kind;
+	int token_id = -1;
 	int64 link_no;
 	// parameters
 	shared_array<Node> params;
@@ -105,7 +108,7 @@ public:
 	const Class *as_class() const;
 	Constant *as_const() const;
 	Operator *as_op() const;
-	PrimitiveOperator *as_prim_op() const;
+	AbstractOperator *as_abstract_op() const;
 	Statement *as_statement() const;
 	void *as_func_p() const;
 	void *as_const_p() const;

@@ -677,7 +677,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 	}
 
 	// nothing?
-	auto primop = which_primitive_operator(Exp.cur, 1); // ++,--
+	auto primop = which_abstract_operator(Exp.cur, 1); // ++,--
 
 	if (Exp.cur == ".") {
 		if (operands.num > 1)
@@ -705,7 +705,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 		// unary operator? (++,--)
 
 		for (auto *op: tree->operators)
-			if (op->primitive == primop)
+			if (op->abstract == primop)
 				if ((op->param_type_1 == operands[0]->type) and !op->param_type_2) {
 					Exp.next();
 					return tree->add_node_operator(op, operands[0], nullptr);
@@ -870,7 +870,7 @@ shared<Node> Parser::apply_params_with_cast(shared<Node> operand, const shared_a
 	return r;
 }
 
-shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {
+shared<Node> build_abstract_list(const Array<shared<Node>> &el) {
 	auto c = new Node(NodeKind::ARRAY_BUILDER, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
@@ -878,7 +878,7 @@ shared<Node> Parser::build_abstract_list(const Array<shared<Node>> &el) {
 	return c;
 }
 
-shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
+shared<Node> build_abstract_dict(const Array<shared<Node>> &el) {
 	auto c = new Node(NodeKind::DICT_BUILDER, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
@@ -886,7 +886,7 @@ shared<Node> Parser::build_abstract_dict(const Array<shared<Node>> &el) {
 	return c;
 }
 
-shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
+shared<Node> build_abstract_tuple(const Array<shared<Node>> &el) {
 	auto c = new Node(NodeKind::TUPLE, 0, TypeUnknown, true);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
@@ -894,7 +894,7 @@ shared<Node> Parser::build_abstract_tuple(const Array<shared<Node>> &el) {
 	return c;
 }
 
-shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> operand, Block *block) {
+shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> operand, Block *block) {
 	int _ie = Exp.cur_token() - 1;
 	Operator *op = nullptr;
 	const Class *p2 = operand->type;
@@ -902,7 +902,7 @@ shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> ope
 	// exact match?
 	bool ok=false;
 	for (auto *_op: tree->operators)
-		if (po == _op->primitive)
+		if (po == _op->abstract)
 			if ((!_op->param_type_1) and (type_match(p2, _op->param_type_2))) {
 				op = _op;
 				ok = true;
@@ -916,7 +916,7 @@ shared<Node> Parser::link_unary_operator(PrimitiveOperator *po, shared<Node> ope
 		CastingData best = {-1, 10000};
 		const Class *t_best = nullptr;
 		for (auto *_op: tree->operators)
-			if (po == _op->primitive)
+			if (po == _op->abstract)
 				if ((!_op->param_type_1) and (type_match_with_cast(operand, false, _op->param_type_2, current))) {
 					ok = true;
 					if (current.penalty < best.penalty) {
@@ -1251,10 +1251,10 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 			if (operands[0]->kind == NodeKind::STATEMENT) {
 				operands = {parse_statement(block)};
 
-			} else if (operands[0]->kind == NodeKind::PRIMITIVE_OPERATOR) {
+			} else if (operands[0]->kind == NodeKind::ABSTRACT_OPERATOR) {
 				// unary operator
 				Exp.next();
-				auto po = operands[0]->as_prim_op();
+				auto po = operands[0]->as_abstract_op();
 				auto sub_command = parse_operand(block, ns);
 				return link_unary_operator(po, sub_command, block);
 			} else {
@@ -1291,15 +1291,13 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 	return parse_operand_extension(operands, block, prefer_class);
 }
 
-// only "primitive" operator -> no type information
-shared<Node> Parser::parse_primitive_operator(Block *block) {
-	auto op = which_primitive_operator(Exp.cur, 3);
+// no type information
+shared<Node> Parser::parse_abstract_operator(Block *block) {
+	auto op = which_abstract_operator(Exp.cur, 3);
 	if (!op)
 		return nullptr;
 
-	// command from operator
-	auto cmd = new Node(NodeKind::PRIMITIVE_OPERATOR, (int_p)op, TypeUnknown);
-	// only provisional (only operator sign, parameters and their types by GetCommand!!!)
+	auto cmd = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)op, TypeUnknown);
 
 	Exp.next();
 	return cmd;
@@ -1571,10 +1569,10 @@ shared<Node> Parser::link_special_operator_as(shared<Node> param1, shared<Node> 
 }
 
 shared<Node> Parser::link_operator_id(OperatorID op_no, shared<Node> param1, shared<Node> param2) {
-	return link_operator(&PrimitiveOperators[(int)op_no], param1, param2);
+	return link_operator(&abstract_operators[(int)op_no], param1, param2);
 }
 
-shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param1, shared<Node> param2) {
+shared<Node> Parser::link_operator(AbstractOperator *primop, shared<Node> param1, shared<Node> param2) {
 	bool left_modifiable = primop->left_modifiable;
 	bool order_inverted = primop->order_inverted;
 	string op_func_name = primop->function_name;
@@ -1658,7 +1656,7 @@ shared<Node> Parser::link_operator(PrimitiveOperator *primop, shared<Node> param
 	Operator *op_found = nullptr;
 	Function *op_cf_found = nullptr;
 	for (auto *op: tree->operators)
-		if (primop == op->primitive)
+		if (primop == op->abstract)
 			if (type_match_with_cast(param1, left_modifiable, op->param_type_1,  c1) and type_match_with_cast(param2, false, op->param_type_2, c2))
 				if (c1.penalty + c2.penalty < c1_best.penalty + c2_best.penalty) {
 					op_found = op;
@@ -1696,13 +1694,13 @@ void get_comma_range(shared_array<Node> &_operators, int mio, int &first, int &l
 	first = mio;
 	last = mio+1;
 	for (int i=mio; i>=0; i--) {
-		if (_operators[i]->as_prim_op()->id == OperatorID::COMMA)
+		if (_operators[i]->as_abstract_op()->id == OperatorID::COMMA)
 			first = i;
 		else
 			break;
 	}
 	for (int i=mio; i<_operators.num; i++) {
-		if (_operators[i]->as_prim_op()->id == OperatorID::COMMA)
+		if (_operators[i]->as_abstract_op()->id == OperatorID::COMMA)
 			last = i+1;
 		else
 			break;
@@ -1735,55 +1733,81 @@ shared<Node> Parser::build_function_pipe(const shared<Node> &input, const shared
 	//return out;
 }
 
-void Parser::link_most_important_operator(shared_array<Node> &operands, shared_array<Node> &_operators, Array<int> &op_tokens) {
-	//force_concrete_types(operands);
+shared<Node> Parser::concretify_abstract_tree(shared<Node> node) {
+	if (node->type != TypeUnknown)
+		return node;
 
-// find the most important operator (mio)
-	int mio = 0;
-	for (int i=0;i<_operators.num;i++) {
-		if (_operators[i]->as_prim_op()->level > _operators[mio]->as_prim_op()->level)
-			mio = i;
-	}
-
-// link it
-	auto param1 = operands[mio];
-	auto param2 = operands[mio + 1];
-	auto op_no = _operators[mio]->as_prim_op();
-
-	if (op_no->id == OperatorID::COMMA) {
-		int first = mio, last = mio;
-		get_comma_range(_operators, mio, first, last);
-		auto n = build_abstract_tuple(operands.sub_ref(first, last + 1));
-		operands[first] = n;
-		for (int i=last-1; i>=first; i--) {
-			_operators.erase(i);
-			op_tokens.erase(i);
-			operands.erase(i + 1);
+	for (int p=0; p<node->params.num; p++)
+		if (node->params[p]->type == TypeUnknown) {
+			node->params[p] = concretify_abstract_tree(node->params[p]);
 		}
-		return;
-	} else if (op_no->id == OperatorID::FUNCTION_PIPE) {
-		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
-		_operators[mio] = build_function_pipe(param1, param2);
-	} else {
-		param2 = force_concrete_type_if_function(param2);
+
+	if (node->kind == NodeKind::ABSTRACT_OPERATOR) {
+		auto op_no = node->as_abstract_op();
+
+		if (op_no->id == OperatorID::FUNCTION_PIPE) {
+			// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
+			return build_function_pipe(node->params[0], node->params[1]);
+		}
+
 		// regular operator
-		_operators[mio] = link_operator(op_no, param1, param2);
-		if (!_operators[mio])
-			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), op_tokens[mio]);
+		auto param1 = node->params[0];
+		auto param2 = force_concrete_type_if_function(node->params[1]);
+		auto op = link_operator(op_no, param1, param2);
+		if (!op)
+			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node->token_id);
+		return op;
 	}
 
-// remove from list
-	operands[mio] = _operators[mio];
-	_operators.erase(mio);
-	op_tokens.erase(mio);
-	operands.erase(mio + 1);
+	return node;
+}
+
+// A+B*C  ->  +(A, *(B, C))
+shared<Node> digest_operator_list_to_tree(shared_array<Node> &operands, shared_array<Node> &operators) {
+	while (operators.num > 0) {
+
+		// find the most important operator (mio)
+		int mio = 0;
+		int level_max = -10000;
+		for (int i=0;i<operators.num;i++) {
+			if (operators[i]->as_abstract_op()->level > level_max) {
+				mio = i;
+				level_max = operators[i]->as_abstract_op()->level;
+			}
+		}
+		auto op_no = operators[mio]->as_abstract_op();
+
+		if (op_no->id == OperatorID::COMMA) {
+			int first = mio, last = mio;
+			get_comma_range(operators, mio, first, last);
+			auto n = build_abstract_tuple(operands.sub_ref(first, last + 1));
+			operands[first] = n;
+			for (int i=last-1; i>=first; i--) {
+				operators.erase(i);
+				//op_tokens.erase(i);
+				operands.erase(i + 1);
+			}
+			continue;
+		}
+
+		// link it
+		operators[mio]->set_num_params(2);
+		operators[mio]->set_param(0, operands[mio]);
+		operators[mio]->set_param(1, operands[mio+1]);
+
+		// remove from list
+		operands[mio] = operators[mio];
+		operators.erase(mio);
+		//op_tokens.erase(mio);
+		operands.erase(mio + 1);
+	}
+	return operands[0];
 }
 
 // greedily parse AxBxC...(operand, operator)
 shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, shared<Node> first_operand) {
 	shared_array<Node> operands;
 	shared_array<Node> operators;
-	Array<int> op_tokens;
 
 	// find the first operand
 	if (!first_operand)
@@ -1792,12 +1816,12 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 
 	// find pairs of operators and operands
 	for (int i=0;true;i++) {
-		op_tokens.add(Exp.cur_token());
 		if (!allow_tuples and Exp.cur == ",")
 			break;
-		auto op = parse_primitive_operator(block);
+		auto op = parse_abstract_operator(block);
 		if (!op)
 			break;
+		op->token_id = Exp.cur_token() - 1;
 		operators.add(op);
 		if (Exp.end_of_line()) {
 			//Exp.rewind();
@@ -1806,12 +1830,9 @@ shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, share
 		operands.add(parse_operand(block, block->name_space()));
 	}
 
-	// in each step remove/link the most important operator
-	while (operators.num > 0)
-		link_most_important_operator(operands, operators, op_tokens);
+	auto tree = digest_operator_list_to_tree(operands, operators);
 
-	// complete command is now collected in operand[0]
-	return operands[0];
+	return concretify_abstract_tree(tree);
 }
 
 // greedily parse AxBxC...(operand, operator)

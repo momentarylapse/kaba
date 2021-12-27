@@ -30,10 +30,10 @@ shared<Node> conv_break_down_med_level(SyntaxTree *tree, shared<Node> c);
 
 string Operator::sig(const Class *ns) const {
 	if (param_type_1 and param_type_2)
-		return format("(%s) %s (%s)", param_type_1->cname(ns), primitive->name, param_type_2->cname(ns));
+		return format("(%s) %s (%s)", param_type_1->cname(ns), abstract->name, param_type_2->cname(ns));
 	if (param_type_1)
-		return format("(%s) %s", param_type_1->cname(ns), primitive->name);
-	return format("%s (%s)", primitive->name, param_type_2->cname(ns));
+		return format("(%s) %s", param_type_1->cname(ns), abstract->name);
+	return format("%s (%s)", abstract->name, param_type_2->cname(ns));
 }
 
 
@@ -164,7 +164,7 @@ shared<Node> SyntaxTree::add_node_operator(Operator *op, const shared<Node> p1, 
 	if (!override_type)
 		override_type = op->return_type;
 	shared<Node> cmd = new Node(NodeKind::OPERATOR, (int_p)op, override_type, true);
-	if (op->primitive->param_flags == 3) {
+	if (op->abstract->param_flags == 3) {
 		cmd->set_num_params(2); // binary
 		cmd->set_param(0, p1);
 		cmd->set_param(1, p2);
@@ -399,14 +399,14 @@ shared<Node> SyntaxTree::add_node_const(Constant *c) {
 	return new Node(NodeKind::BLOCK, (int_p)b, TypeVoid);
 }*/
 
-PrimitiveOperator *Parser::which_primitive_operator(const string &name, int param_flags) {
+AbstractOperator *Parser::which_abstract_operator(const string &name, int param_flags) {
 	for (int i=0; i<(int)OperatorID::_COUNT_; i++)
-		if (name == PrimitiveOperators[i].name and param_flags == PrimitiveOperators[i].param_flags)
-			return &PrimitiveOperators[i];
+		if ((name == abstract_operators[i].name) and (param_flags == abstract_operators[i].param_flags))
+			return &abstract_operators[i];
 
 	// old hack
 	if (name == "!")
-		return &PrimitiveOperators[(int)OperatorID::NEGATE];
+		return &abstract_operators[(int)OperatorID::NEGATE];
 
 	return nullptr;
 }
@@ -640,9 +640,9 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 	}
 
 	// operators
-	auto w = parser->which_primitive_operator(name, 2); // negate/not...
+	auto w = parser->which_abstract_operator(name, 2); // negate/not...
 	if (w)
-		return {new Node(NodeKind::PRIMITIVE_OPERATOR, (int_p)w, TypeUnknown)};
+		return {new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown)};
 
 	// in include files (only global)...
 	links.append(get_existence_global(name, imported_symbols.get()));

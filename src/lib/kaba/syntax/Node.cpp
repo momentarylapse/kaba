@@ -36,8 +36,10 @@ string kind2str(NodeKind kind) {
 		return "statement";
 	if (kind == NodeKind::OPERATOR)
 		return "operator";
-	if (kind == NodeKind::PRIMITIVE_OPERATOR)
-		return "PRIMITIVE operator";
+	if (kind == NodeKind::ABSTRACT_TOKEN)
+		return "token";
+	if (kind == NodeKind::ABSTRACT_OPERATOR)
+		return "abstract operator";
 	if (kind == NodeKind::BLOCK)
 		return "block";
 	if (kind == NodeKind::ADDRESS_SHIFT)
@@ -126,8 +128,10 @@ string Node::signature(const Class *ns) const {
 		return t + as_statement()->name;
 	if (kind == NodeKind::OPERATOR)
 		return as_op()->sig(ns);
-	if (kind == NodeKind::PRIMITIVE_OPERATOR)
-		return as_prim_op()->name;
+	if (kind == NodeKind::ABSTRACT_TOKEN)
+		return ((ExpressionBuffer*)type)->get_token(link_no);
+	if (kind == NodeKind::ABSTRACT_OPERATOR)
+		return "<" + as_abstract_op()->name + ">";
 	if (kind == NodeKind::BLOCK)
 		return "";//p2s(as_block());
 	if (kind == NodeKind::ADDRESS_SHIFT)
@@ -257,8 +261,8 @@ Statement *Node::as_statement() const {
 	return (Statement*)link_no;
 }
 
-PrimitiveOperator *Node::as_prim_op() const {
-	return (PrimitiveOperator*)link_no;
+AbstractOperator *Node::as_abstract_op() const {
+	return (AbstractOperator*)link_no;
 }
 
 void Node::set_instance(shared<Node> p) {

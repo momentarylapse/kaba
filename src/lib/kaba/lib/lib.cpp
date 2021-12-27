@@ -226,7 +226,7 @@ const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params
 void add_operator_x(OperatorID primitive_op, const Class *return_type, const Class *param_type1, const Class *param_type2, InlineID inline_index, void *func) {
 	Operator *o = new Operator;
 	o->owner = cur_package->syntax;
-	o->primitive = &PrimitiveOperators[(int)primitive_op];
+	o->abstract = &abstract_operators[(int)primitive_op];
 	o->return_type = return_type;
 	o->param_type_1 = param_type1;
 	o->param_type_2 = param_type2;
@@ -238,21 +238,21 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	}
 
 	Flags flags = Flags::NONE;
-	if (!o->primitive->left_modifiable)
+	if (!o->abstract->left_modifiable)
 		flags = Flags::PURE;
 
 	//if (!c->uses_call_by_reference())
-	if (o->primitive->left_modifiable and !c->uses_call_by_reference())
+	if (o->abstract->left_modifiable and !c->uses_call_by_reference())
 		flags = flags_mix({flags, Flags::STATIC});
 
 	if (!flags_has(flags, Flags::STATIC)) {
 		add_class(c);
-		o->f = class_add_func_x(o->primitive->function_name, return_type, func, flags);
+		o->f = class_add_func_x(o->abstract->function_name, return_type, func, flags);
 		if (p)
 			func_add_param("b", p);
 	} else {
 		add_class(c);
-		o->f = class_add_func_x(o->primitive->function_name, return_type, func, flags);
+		o->f = class_add_func_x(o->abstract->function_name, return_type, func, flags);
 		func_add_param("a", c);
 		if (p)
 			func_add_param("b", p);

@@ -20,7 +20,7 @@ class Function;
 class Block;
 class SyntaxTree;
 class Statement;
-class PrimitiveOperator;
+class AbstractOperator;
 enum class Flags;
 struct CastingData;
 
@@ -39,7 +39,7 @@ public:
 	void expect_new_line();
 	void expect_new_line_with_indent();
 
-	shared<Node> link_operator(PrimitiveOperator *primop, shared<Node> param1, shared<Node> param2);
+	shared<Node> link_operator(AbstractOperator *primop, shared<Node> param1, shared<Node> param2);
 	shared<Node> link_operator_id(OperatorID op_no, shared<Node> param1, shared<Node> param2);
 
 	Array<const Class*> get_wanted_param_types(shared<Node> link, int &mandatory_params);
@@ -51,6 +51,7 @@ public:
 	bool param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<CastingData> &casts, Array<const Class*> &wanted, int *max_penalty);
 	string param_match_with_cast_error(const shared_array<Node> &params, const Array<const Class*> &wanted);
 	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params, int offset = 0);
+	shared<Node> concretify_abstract_tree(shared<Node> node);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
@@ -58,11 +59,10 @@ public:
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
 	shared<Node> wrap_function_into_callable(Function *f);
 
-	void link_most_important_operator(shared_array<Node> &operand, shared_array<Node> &_operator, Array<int> &op_tokens);
 	shared_array<Node> turn_class_into_constructor(const Class *t, const shared_array<Node> &params);
 	shared<Node> make_func_node_callable(const shared<Node> l);
 	shared<Node> make_func_pointer_node_callable(const shared<Node> l);
-	shared<Node> link_unary_operator(PrimitiveOperator *op, shared<Node> operand, Block *block);
+	shared<Node> link_unary_operator(AbstractOperator *op, shared<Node> operand, Block *block);
 	//void FindFunctionSingleParameter(int p, Array<Type*> &wanted_type, Block *block, shared<Node> cmd);
 
 	shared<Node> link_special_operator_is(shared<Node> param1, shared<Node> param2);
@@ -72,11 +72,8 @@ public:
 	Array<const Class*> type_list_from_nodes(const shared_array<Node> &nn);
 
 
-	shared<Node> build_abstract_list(const Array<shared<Node>> &el);
 	shared<Node> parse_list(Block *block);
-	shared<Node> build_abstract_dict(const Array<shared<Node>> &el);
 	shared<Node> parse_dict(Block *block);
-	shared<Node> build_abstract_tuple(const Array<shared<Node>> &el);
 	shared<Node> build_function_pipe(const shared<Node> &input, const shared<Node> &func);
 
 	const Class *get_constant_type(const string &str);
@@ -103,7 +100,7 @@ public:
 	void parse_class_use_statement(const Class *c);
 	void parse_named_const(Class *name_space, Block *block);
 	shared<Node> parse_and_eval_const(Block *block, const Class *type);
-	static PrimitiveOperator *which_primitive_operator(const string &name, int param_flags = 3);
+	static AbstractOperator *which_abstract_operator(const string &name, int param_flags = 3);
 	static Statement *which_statement(const string &name);
 
 	shared<Node> parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type);
@@ -127,7 +124,7 @@ public:
 	shared<Node> parse_operand_super_greedy(Block *block);
 	shared<Node> parse_set_builder(Block *block);
 
-	shared<Node> parse_primitive_operator(Block *block);
+	shared<Node> parse_abstract_operator(Block *block);
 	shared_array<Node> parse_call_parameters(Block *block);
 	shared<Node> try_parse_format_string(Block *block, Value &v);
 	shared<Node> apply_format(shared<Node> n, const string &fmt);
