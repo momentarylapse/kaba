@@ -103,6 +103,7 @@ string kind2str(NodeKind kind) {
 
 
 string Node::signature(const Class *ns) const {
+	//string t = (kind == NodeKind::ABSTRACT_TOKEN) ? " " : type->cname(ns) + " ";
 	string t = type->cname(ns) + " ";
 	if (kind == NodeKind::PLACEHOLDER)
 		return "";
@@ -129,7 +130,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::OPERATOR)
 		return as_op()->sig(ns);
 	if (kind == NodeKind::ABSTRACT_TOKEN)
-		return ((ExpressionBuffer*)type)->get_token(link_no);
+		return "<" + ((ExpressionBuffer*)(int_p)link_no)->get_token(token_id) + ">";
 	if (kind == NodeKind::ABSTRACT_OPERATOR)
 		return "<" + as_abstract_op()->name + ">";
 	if (kind == NodeKind::BLOCK)
