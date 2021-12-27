@@ -234,6 +234,7 @@ void ExpressionBuffer::analyse(SyntaxTree *ps, const string &_source) {
 	
 	// safety
 	temp_line.tokens.clear();
+	temp_line.indent = 0;
 	lines.add(temp_line);
 	for (int i=0;i<lines.num;i++) {
 		Token e;
@@ -252,7 +253,7 @@ string ExpressionBuffer::line_str(Line *l) const {
 			s += "  ";
 		s += t.name;
 	}
-	return s;
+	return format("%d  %d   ", l->physical_line, l->indent) + s;
 }
 
 void ExpressionBuffer::show() {
