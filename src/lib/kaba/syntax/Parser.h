@@ -103,6 +103,12 @@ public:
 	static AbstractOperator *which_abstract_operator(const string &name, int param_flags = 3);
 	static Statement *which_statement(const string &name);
 
+
+	shared<Node> parse_operand_abstract_extension(shared<Node> operands, Block *block);
+	shared<Node> parse_operand_abstract_extension_element(shared<Node> operand, Block *block);
+	shared<Node> parse_operand_abstract_extension_array(shared<Node> operand, Block *block);
+	shared<Node> parse_operand_abstract_extension_call(shared<Node> operand, Block *block);
+
 	shared<Node> parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type);
 	shared_array<Node> parse_operand_extension_element(shared<Node> operand);
 	shared<Node> parse_operand_extension_array(shared<Node> operand, Block *block);
@@ -120,14 +126,15 @@ public:
 	void parse_local_definition(Block *block, const Class *type);
 	shared<Node> parse_block(Block *parent, Block *block = nullptr);
 	shared<Node> parse_operand(Block *block, const Class *ns, bool prefer_class = false);
-	shared<Node> parse_operand_abstract(Block *block, const Class *ns);
+	shared<Node> parse_operand_abstract(Block *block);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
 	shared<Node> parse_operand_greedy_abstract(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
 	shared<Node> parse_operand_super_greedy(Block *block);
 	shared<Node> parse_set_builder(Block *block);
 
-	shared<Node> parse_abstract_operator(Block *block);
+	shared<Node> parse_abstract_operator(int param_flags);
 	shared_array<Node> parse_call_parameters(Block *block);
+	shared_array<Node> parse_abstract_call_parameters(Block *block);
 	shared<Node> try_parse_format_string(Block *block, Value &v);
 	shared<Node> apply_format(shared<Node> n, const string &fmt);
 	shared<Node> parse_statement(Block *block);

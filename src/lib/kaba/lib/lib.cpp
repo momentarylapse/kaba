@@ -228,6 +228,10 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	o->owner = cur_package->syntax;
 	o->abstract = &abstract_operators[(int)primitive_op];
 	o->return_type = return_type;
+	if (!param_type1) {
+		param_type1 = param_type2;
+		param_type2 = nullptr;
+	}
 	o->param_type_1 = param_type1;
 	o->param_type_2 = param_type2;
 	auto c = param_type1;

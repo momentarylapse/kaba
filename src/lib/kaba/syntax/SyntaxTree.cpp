@@ -213,8 +213,10 @@ shared<Node> SyntaxTree::add_node_dyn_array(shared<Node> array, shared<Node> ind
 	return cmd_el;
 }
 
-shared<Node> SyntaxTree::add_node_array(shared<Node> array, shared<Node> index) {
-	auto *el = new Node(NodeKind::ARRAY, 0, array->type->param[0]);
+shared<Node> SyntaxTree::add_node_array(shared<Node> array, shared<Node> index, const Class *type) {
+	if (!type)
+		type = array->type->param[0];
+	auto *el = new Node(NodeKind::ARRAY, 0, type);
 	el->set_num_params(2);
 	el->set_param(0, array);
 	el->set_param(1, index);
