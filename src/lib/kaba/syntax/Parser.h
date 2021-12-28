@@ -52,10 +52,15 @@ public:
 	bool param_match_with_cast(const shared<Node> operand, const shared_array<Node> &params, Array<CastingData> &casts, Array<const Class*> &wanted, int *max_penalty);
 	string param_match_with_cast_error(const shared_array<Node> &params, const Array<const Class*> &wanted);
 	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params, int offset = 0);
-	shared<Node> concretify_abstract_tree(shared<Node> node, Block *block);
+
+	shared<Node> concretify_abstract_tree(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_abstract_array(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_abstract_element(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_abstract_call(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
+
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
 	shared<Node> wrap_function_into_callable(Function *f);
@@ -105,10 +110,13 @@ public:
 	static Statement *which_statement(const string &name);
 
 
-	shared<Node> parse_operand_abstract_extension(shared<Node> operands, Block *block);
-	shared<Node> parse_operand_abstract_extension_element(shared<Node> operand, Block *block);
-	shared<Node> parse_operand_abstract_extension_array(shared<Node> operand, Block *block);
-	shared<Node> parse_operand_abstract_extension_call(shared<Node> operand, Block *block);
+	shared<Node> parse_abstract_operand_extension(shared<Node> operands, Block *block);
+	shared<Node> parse_abstract_operand_extension_element(shared<Node> operand);
+	shared<Node> parse_abstract_operand_extension_array(shared<Node> operand, Block *block);
+	shared<Node> parse_abstract_operand_extension_pointer(shared<Node> operand);
+	shared<Node> parse_abstract_operand_extension_dict(shared<Node> operand);
+	shared<Node> parse_abstract_operand_extension_callable(shared<Node> operand, Block *block);
+	shared<Node> parse_abstract_operand_extension_call(shared<Node> operand, Block *block);
 
 	shared<Node> parse_operand_extension(const shared_array<Node> &operands, Block *block, bool prefer_type);
 	shared_array<Node> parse_operand_extension_element(shared<Node> operand);
@@ -127,9 +135,9 @@ public:
 	void parse_local_definition(Block *block, const Class *type);
 	shared<Node> parse_block(Block *parent, Block *block = nullptr);
 	shared<Node> parse_operand(Block *block, const Class *ns, bool prefer_class = false);
-	shared<Node> parse_operand_abstract(Block *block);
+	shared<Node> parse_abstract_operand(Block *block);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
-	shared<Node> parse_operand_greedy_abstract(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
+	shared<Node> parse_abstract_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
 	shared<Node> parse_operand_super_greedy(Block *block);
 	shared<Node> parse_set_builder(Block *block);
 

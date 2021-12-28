@@ -52,6 +52,10 @@ string kind2str(NodeKind kind) {
 		return "pointer";
 	if (kind == NodeKind::ABSTRACT_TYPE_LIST)
 		return "list";
+	if (kind == NodeKind::ABSTRACT_TYPE_DICT)
+		return "dict";
+	if (kind == NodeKind::ABSTRACT_TYPE_CALLABLE)
+		return "callable type";
 	if (kind == NodeKind::ABSTRACT_VAR)
 		return "var";
 	if (kind == NodeKind::BLOCK)

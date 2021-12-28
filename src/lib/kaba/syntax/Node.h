@@ -74,6 +74,8 @@ enum class NodeKind {
 	ABSTRACT_TYPE_OWNED,   // owned X
 	ABSTRACT_TYPE_POINTER, // X*
 	ABSTRACT_TYPE_LIST,    // X[]
+	ABSTRACT_TYPE_DICT,    // X{}
+	ABSTRACT_TYPE_CALLABLE,// X->Y
 	ABSTRACT_VAR,          // var x ...
 	// compilation
 	VAR_TEMP,

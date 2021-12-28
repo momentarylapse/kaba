@@ -60,17 +60,19 @@ public:
 	Line *cur_line;
 	int _cur_exp;
 	string &cur;
+	string peek_next() const;
 
 	void reset_walker();
-	int next_line_indent();
+	int next_line_indent() const;
 
 	int cur_token() const;
 	void next();
 	void rewind();
-	bool end_of_line();
-	bool past_end_of_line();
+	bool end_of_line() const;
+	bool almost_end_of_line() const;
+	bool past_end_of_line() const;
 	void next_line();
-	bool end_of_file();
+	bool end_of_file() const;
 	void jump(int token_id);
 };
 
