@@ -54,8 +54,9 @@ public:
 	shared<Node> apply_params_direct(shared<Node> operand, const shared_array<Node> &params, int offset = 0);
 
 	shared<Node> concretify_abstract_tree(shared<Node> node, Block *block, const Class *ns);
+	shared_array<Node> concretify_abstract_tree_multi(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_abstract_array(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_abstract_element(shared<Node> node, Block *block, const Class *ns);
+	shared_array<Node> concretify_abstract_element(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_abstract_call(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);

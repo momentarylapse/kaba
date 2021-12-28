@@ -1405,21 +1405,6 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
 }
 
-const Class *parse_root_type_with_dots(Parser *p, const Class *ns) {
-	string pre = p->Exp.cur;
-	p->Exp.next();
-	//auto t = parse_type(ns);
-	auto t = p->tree->find_root_type_by_name(p->Exp.cur, ns, true);
-	if (!t)
-		p->do_error(format("type expected after '%s'", pre));
-
-	p->Exp.next();
-	while (p->Exp.cur == ".") {
-		t = p->parse_type_extension_child(t);
-	}
-	return t;
-}
-
 shared<Node> create_node_token(Parser *p) {
 	auto t = new Node(NodeKind::ABSTRACT_TOKEN, (int_p)&p->Exp, TypeUnknown);
 	t->token_id = p->Exp.cur_token();
@@ -1455,96 +1440,6 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 	if (config.verbose)
 		operands[0]->show();
 	return concretify_abstract_tree(operands[0], block, ns);
-
-#if 0
-	// ( -> one level down and combine commands
-	if (Exp.cur == "(") {
-		Exp.next();
-		operands = {parse_operand_super_greedy(block)};
-		if (Exp.cur != ")")
-			do_error("')' expected");
-		Exp.next();
-	} else if (Exp.cur == "&") { // & -> address operator
-		Exp.next();
-		operands = {parse_operand(block, ns)->ref()};
-	} else if (Exp.cur == "*") { // * -> dereference
-		Exp.next();
-		auto sub = parse_operand(block, ns);
-		if (!sub->type->is_pointer()) {
-			Exp.rewind();
-			do_error("only pointers can be dereferenced using '*'");
-		}
-		operands = {sub->deref()};
-	} else if (Exp.cur == "[") {
-		Exp.next();
-		if (Exp.cur == "for") {
-			operands = {parse_set_builder(block)};
-		} else {
-			operands = {parse_list(block)};
-		}
-	} else if (Exp.cur == "{") {
-		operands = {parse_dict(block)};
-	} else if (Exp.cur == IDENTIFIER_FUNC) {
-		// local function definition
-		auto f = parse_function_header(tree->_base_class.get(), Flags::STATIC);
-		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
-
-		operands = {tree->add_node_func_name(f)};
-	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
-		string pre = Exp.cur;
-		auto t = parse_root_type_with_dots(this, ns);
-		if (pre == IDENTIFIER_SHARED)
-			t = make_pointer_shared(tree, t);
-		else //if (pre == IDENTIFIER_OWNED)
-			t = make_pointer_owned(tree, t);
-		operands = {tree->add_node_class(t)};
-	} else {
-		// direct operand
-		operands = tree->get_existence(Exp.cur, block, ns);
-		if (operands.num > 0) {
-
-			if (operands[0]->kind == NodeKind::STATEMENT) {
-				operands = {parse_statement(block)};
-
-			} else if (operands[0]->kind == NodeKind::ABSTRACT_OPERATOR) {
-				// unary operator
-				Exp.next();
-				auto po = operands[0]->as_abstract_op();
-				auto sub_command = parse_operand(block, ns);
-				return link_unary_operator(po, sub_command, block);
-			} else {
-				Exp.next();
-				// direct operand!
-
-			}
-		} else {
-			auto t = get_constant_type(Exp.cur);
-			if (t == TypeUnknown)
-				do_error("unknown operand");
-
-			Value v;
-			get_constant_value(Exp.cur, v);
-			Exp.next();
-			
-			if (t == TypeString) {
-				operands = {try_parse_format_string(block, v)};
-			} else {
-				auto *c = tree->add_constant(t);
-				c->set(v);
-				operands = {tree->add_node_const(c)};
-			}
-		}
-
-	}
-#endif
-	if (prefer_class and (operands[0]->kind != NodeKind::CLASS))
-		operands[0] = digest_type(tree, operands[0]);
-
-	if (Exp.end_of_line())
-		return operands[0];
-
-	// resolve arrays, structures, calls...
-	return parse_operand_extension(operands, block, prefer_class);
 }
 
 // minimal operand
@@ -2069,18 +1964,27 @@ inline void concretify_param(shared<Node> &node, int p, Block *block, const Clas
 		node->params[p] = parser->concretify_abstract_tree(node->params[p], block, ns);
 };
 
+inline shared_array<Node> concretify_param_multi(shared<Node> &node, int p, Block *block, const Class *ns, Parser *parser) {
+	if (node->params[p]->type == TypeUnknown)
+		return parser->concretify_abstract_tree_multi(node->params[p], block, ns);
+	return {};
+};
+
 
 shared<Node> Parser::concretify_abstract_call(shared<Node> node, Block *block, const Class *ns) {
-	concretify_all_params(node, block, ns, this);
+	//concretify_all_params(node, block, ns, this);
+	auto links = concretify_param_multi(node, 0, block, ns, this);
+	for (int p=1; p<node->params.num; p++)
+		if (node->params[p]->type == TypeUnknown)
+			node->params[p] = concretify_abstract_tree(node->params[p], block, ns);
 
-	auto l = node->params[0];
 	auto params = node->params.sub_ref(1);
 
 
 	// make links callable
-	{
+	foreachi (auto l, weak(links), i) {
 		if (l->kind == NodeKind::FUNCTION) {
-			node = make_func_node_callable(l);
+			links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
 			return try_to_match_apply_params(turn_class_into_constructor(t, params), params);
@@ -2097,16 +2001,16 @@ shared<Node> Parser::concretify_abstract_call(shared<Node> node, Block *block, c
 			return try_to_match_params({c});*/
 #endif
 		} else if (l->type->is_callable()) {
-			node = make_func_pointer_node_callable(l);
+			links[i] = make_func_pointer_node_callable(l);
 			//return tree->add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
 		} else {
 			do_error("can't call " + kind2str(l->kind), l);
 		}
 	}
-	return try_to_match_apply_params({node}, params);
+	return try_to_match_apply_params(links, params);
 }
 
-shared<Node> Parser::concretify_abstract_element(shared<Node> node, Block *block, const Class *ns) {
+shared_array<Node> Parser::concretify_abstract_element(shared<Node> node, Block *block, const Class *ns) {
 	concretify_param(node, 0, block, ns, this);
 	//node->show();
 
@@ -2115,13 +2019,11 @@ shared<Node> Parser::concretify_abstract_element(shared<Node> node, Block *block
 
 	base = force_concrete_type(base);
 	auto links = tree->get_element_of(base, el);
-	if (links.num > 1)
-		msg_write("WARNING: multiple elements...");
 	if (links.num > 0)
-		return links[0];
+		return links;
 
 	do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()), node->params[1]);
-	return nullptr;
+	return {};
 }
 
 shared<Node> Parser::concretify_abstract_array(shared<Node> node, Block *block, const Class *ns) {
@@ -2143,6 +2045,11 @@ shared<Node> Parser::concretify_abstract_array(shared<Node> node, Block *block, 
 		int array_size = index->as_const()->as_int();
 		auto t = tree->make_class_array(operand->as_class(), array_size);
 		return tree->add_node_class(t);
+
+	}
+
+	if (operand->kind == NodeKind::FUNCTION) {
+		do_error("function[]...?");
 
 	}
 
@@ -2213,6 +2120,42 @@ shared<Node> Parser::concretify_abstract_array(shared<Node> node, Block *block, 
 
 }
 
+shared_array<Node> Parser::concretify_abstract_tree_multi(shared<Node> node, Block *block, const Class *ns) {
+	if (node->type != TypeUnknown)
+		return {node};
+
+	if (node->kind == NodeKind::ABSTRACT_TOKEN) {
+		string token = Exp.get_token(node->token_id);
+
+		// direct operand
+		auto operands = tree->get_existence(token, block, ns);
+		if (operands.num > 0) {
+			// direct operand
+			return operands;
+		} else {
+			auto t = get_constant_type(token);
+			if (t == TypeUnknown)
+				do_error("unknown operand", node);
+
+			Value v;
+			get_constant_value(token, v);
+
+			if (t == TypeString) {
+				return {try_parse_format_string(block, v)};
+			} else {
+				auto *c = tree->add_constant(t);
+				c->set(v);
+				return {tree->add_node_const(c)};
+			}
+		}
+	} else if (node->kind == NodeKind::ABSTRACT_ELEMENT) {
+		return concretify_abstract_element(node, block, ns);
+	} else {
+		return {concretify_abstract_tree(node, block, ns)};
+	}
+	return {};
+}
+
 shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, const Class *ns) {
 	if (node->type != TypeUnknown)
 		return node;
@@ -2248,38 +2191,20 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		concretify_all_params(node, block, ns, this);
 		auto sub = node->params[0];
 		node->type = sub->type->get_pointer();
-	} else if (node->kind == NodeKind::ABSTRACT_TOKEN) {
-		string token = Exp.get_token(node->token_id);
-
-		// direct operand
-		auto operands = tree->get_existence(token, block, ns);
-		if (operands.num > 0) {
-			// direct operand
-			return operands[0];
-		} else {
-			auto t = get_constant_type(token);
-			if (t == TypeUnknown)
-				do_error("unknown operand", node);
-
-			Value v;
-			get_constant_value(token, v);
-
-			if (t == TypeString) {
-				return try_parse_format_string(block, v);
-			} else {
-				auto *c = tree->add_constant(t);
-				c->set(v);
-				return tree->add_node_const(c);
-			}
-		}
-	} else if (node->kind == NodeKind::ABSTRACT_ELEMENT) {
-		return concretify_abstract_element(node, block, ns);
 	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
 		return concretify_abstract_call(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY) {
 		return concretify_abstract_array(node, block, ns);
 	} else if (node->kind == NodeKind::TUPLE) {
 		concretify_all_params(node, block, ns, this);
+		return node;
+	} else if (node->kind == NodeKind::ARRAY_BUILDER) {
+		concretify_all_params(node, block, ns, this);
+		return node;
+	} else if (node->kind == NodeKind::DICT_BUILDER) {
+		concretify_all_params(node, block, ns, this);
+		return node;
+	} else if (node->kind == NodeKind::FUNCTION) {
 		return node;
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
 		concretify_all_params(node, block, ns, this);
@@ -2303,6 +2228,8 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_CALLABLE) {
 		concretify_all_params(node, block, ns, this);
+		node->params[0] = digest_type(tree, node->params[0]);
+		node->params[1] = digest_type(tree, node->params[1]);
 		if (node->params[0]->kind != NodeKind::CLASS)
 			do_error("type expected before '->'", node->params[0]);
 		if (node->params[1]->kind != NodeKind::CLASS)
@@ -2324,6 +2251,16 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		const Class *t = node->params[0]->as_class();
 		t = make_pointer_owned(tree, t);
 		return tree->add_node_class(t);
+
+	} else if ((node->kind == NodeKind::ABSTRACT_TOKEN) or (node->kind == NodeKind::ABSTRACT_ELEMENT)) {
+		auto operands = concretify_abstract_tree_multi(node, block, ns);
+		if (operands.num > 1)
+			msg_write("WARNING: node not unique");
+		if (operands.num > 0)
+			return operands[0];
+	} else {
+		node->show();
+		do_error("unexpected node", node);
 	}
 
 	return node;
