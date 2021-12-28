@@ -33,6 +33,7 @@ public:
 	void parse_macros(bool just_analyse);
 	void handle_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse);
 
+	void do_error(const string &msg, shared<Node> node);
 	void do_error(const string &msg, int override_token_id = -1);
 	void do_error_implicit(Function *f, const string &msg);
 	void expect_no_new_line();

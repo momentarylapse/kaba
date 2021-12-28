@@ -204,8 +204,10 @@ void Parser::get_constant_value(const string &str, Value &value) {
 	}
 }
 
+void Parser::do_error(const string &str, shared<Node> node) {
+	do_error(str, node->token_id);
+}
 
-// override_line is logical! not physical
 void Parser::do_error(const string &str, int override_token_id) {
 	// what data do we have?
 	int token_id = Exp.cur_token();
@@ -355,6 +357,17 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 shared<Node> Parser::parse_operand_abstract_extension_array(shared<Node> operand, Block *block) {
 	// array index...
 	Exp.next();
+
+
+	if (Exp.cur == "]") {
+		auto node = new Node(NodeKind::ABSTRACT_TYPE_LIST, 0, TypeUnknown);
+		node->token_id = Exp.cur_token();
+		Exp.next();
+		node->set_num_params(1);
+		node->set_param(0, operand);
+		return node;
+	}
+
 	shared<Node> index;
 	shared<Node> index2;
 	if (Exp.cur == ":") {
@@ -404,7 +417,7 @@ shared<Node> Parser::make_func_pointer_node_callable(const shared<Node> l) {
 	if (f->virtual_index >= 0) {
 		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type, true);
 	} else {
-		do_error("function pointer call should be virtual???");
+		do_error("function pointer call should be virtual???", l);
 		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
 	}
 	c->set_num_params(f->num_params);
@@ -748,7 +761,7 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 	} else if (Exp.cur == "[") {
 		if (operands.num > 1)
 			do_error("left side of '[' is ambiguous");
-			
+
 		// array?
 		return parse_operand_extension({parse_operand_extension_array(operands[0], block)}, block, prefer_type);
 
@@ -836,8 +849,6 @@ shared<Node> Parser::parse_operand_abstract_extension(shared<Node> operand, Bloc
 		if (op) {
 			op->set_num_params(1);
 			op->set_param(0, operand);
-			msg_write("unary...");
-			op->show();
 			return parse_operand_abstract_extension(op, block);
 		}
 		return operand;
@@ -1384,7 +1395,8 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 	shared_array<Node> operands;
 
 	operands = {parse_operand_abstract(block)};
-	operands[0]->show();
+	if (config.verbose)
+		operands[0]->show();
 	operands[0] = concretify_abstract_tree(operands[0], block);
 
 #if 0
@@ -2017,7 +2029,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 			auto param2 = force_concrete_type_if_function(node->params[1]);
 			auto op = link_operator(op_no, param1, param2);
 			if (!op)
-				do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node->token_id);
+				do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node);
 			return op;
 		} else {
 			return link_unary_operator(op_no, node->params[0], block);
@@ -2026,7 +2038,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		concretify_all_params();
 		auto sub = node->params[0];
 		if (!sub->type->is_pointer())
-			do_error("only pointers can be dereferenced using '*'", node->token_id);
+			do_error("only pointers can be dereferenced using '*'", node);
 		node->type = sub->type->param[0];
 	} else if (node->kind == NodeKind::REFERENCE) {
 		concretify_all_params();
@@ -2044,7 +2056,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		} else {
 			auto t = get_constant_type(token);
 			if (t == TypeUnknown)
-				do_error("unknown operand", node->token_id);
+				do_error("unknown operand", node);
 
 			Value v;
 			get_constant_value(token, v);
@@ -2064,31 +2076,59 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		auto base = node->params[0];
 		auto el = Exp.get_token(node->params[1]->token_id);
 
-		if (base->kind == NodeKind::CLASS) {
-			auto t = base->as_class();
+		base = force_concrete_type(base);
+		auto links = tree->get_element_of(base, el);
+		if (links.num > 1)
+			msg_write("WARNING: multiple elements...");
+		if (links.num > 0)
+			return links[0];
 
-			for (auto *cc: weak(t->classes))
-				if (cc->name == el)
-					return tree->add_node_class(cc);
-			do_error(format("class '%s' does not have a sub-class '%s'", t->long_name(), el), node->params[1]->token_id);
-		} else {
-
-			base = force_concrete_type(base);
-			auto links = tree->get_element_of(base, el);
-			if (links.num > 1)
-				msg_write("WARNING: multiple elements...");
-			if (links.num > 0)
-				return links[0];
-
-			do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()));
-		}
+		do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()), node->params[1]);
 	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
 		concretify_all_params();
-		node->show();
-		do_error("ABSTRACT CALL");
+
+		auto l = node->params[0];
+		auto params = node->params.sub_ref(1);
+
+
+		// make links callable
+		{
+			if (l->kind == NodeKind::FUNCTION) {
+				node = make_func_node_callable(l);
+			} else if (l->kind == NodeKind::CLASS) {
+				auto *t = l->as_class();
+				return try_to_match_apply_params(turn_class_into_constructor(t, params), params);
+	#if 0
+			} else if (is_typed_function_pointer(l->type)) {
+				auto c = new Node(NodeKind::POINTER_CALL, 0, get_function_pointer_return_type(l->type));
+				c->set_num_params(1 + get_function_pointer_param_types(l->type).num);
+				c->set_param(0, l);
+				return try_to_match_apply_params({c}, params);
+			/*} else if (l->type == TypeFunctionCodeP) {
+				auto c = new Node(NodeKind::POINTER_CALL, 0, TypeVoid);
+				c->set_num_params(1);
+				c->set_param(0, l);
+				return try_to_match_params({c});*/
+	#endif
+			} else if (l->type->is_callable()) {
+				node = make_func_pointer_node_callable(l);
+				//return tree->add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
+			} else {
+				do_error("can't call " + kind2str(l->kind), l);
+			}
+		}
+		return try_to_match_apply_params({node}, params);
+
+
+
+
+
+
+
+
+
 	} else if (node->kind == NodeKind::ARRAY) {
 		concretify_all_params();
-		node->show();
 
 		auto operand = node->params[0];
 		auto index = node->params[1];
@@ -2098,7 +2138,15 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 
 		if (operand->kind == NodeKind::CLASS) {
 			// int[3]
-			do_error("fixed arrays...");
+			// find array index
+			index = tree->transform_node(index, [&](shared<Node> n) { return tree->conv_eval_const_func(n); });
+
+			if ((index->kind != NodeKind::CONSTANT) or (index->type != TypeInt))
+				do_error("only constants of type 'int' allowed for size of arrays", index);
+			int array_size = index->as_const()->as_int();
+			auto t = tree->make_class_array(operand->as_class(), array_size);
+			return tree->add_node_class(t);
+
 		}
 
 
@@ -2114,7 +2162,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 				f->set_param(2, index2);
 				return f;
 			} else {
-				do_error(format("function '%s.%s(int,int) -> %s' required by '[a:b]' missing", operand->type->name, IDENTIFIER_FUNC_SUBARRAY, operand->type->name));
+				do_error(format("function '%s.%s(int,int) -> %s' required by '[a:b]' missing", operand->type->name, IDENTIFIER_FUNC_SUBARRAY, operand->type->name), index);
 			}
 		}
 
@@ -2133,24 +2181,24 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		if (!allowed)
 			if (operand->type->is_pointer()) {
 				if (!operand->type->param[0]->is_array() and !operand->type->param[0]->usable_as_super_array())
-					do_error(format("using pointer type '%s' as an array (like in C) is not allowed any more", operand->type->long_name()));
+					do_error(format("using pointer type '%s' as an array (like in C) is deprecated", operand->type->long_name()), index);
 				allowed = true;
 				pparray = (operand->type->param[0]->usable_as_super_array());
 			}
 		if (!allowed)
-			do_error(format("type '%s' is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->long_name(), index->type->long_name()));
+			do_error(format("type '%s' is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->long_name(), index->type->long_name()), index);
 
 
 		if (index->type != TypeInt) {
 			Exp.rewind();
-			do_error(format("type of index for an array needs to be 'int', not '%s'", index->type->long_name()));
+			do_error(format("array index needs to be of type 'int', not '%s'", index->type->long_name()), index);
 		}
 
 		shared<Node> array;
 
 		// pointer?
 		if (pparray) {
-			do_error("test... anscheinend gibt es [] auf * super array");
+			do_error("test... anscheinend gibt es [] auf * super array"), index;
 			//array = cp_command(this, Operand);
 	/*		Operand->kind = KindPointerAsArray;
 			Operand->type = t->type->parent;
@@ -2165,17 +2213,24 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		}
 		array->is_const = operand->is_const;
 		return array;
+	} else if (node->kind == NodeKind::ABSTRACT_TYPE_LIST) {
+		concretify_all_params();
+		if (node->params[0]->kind != NodeKind::CLASS)
+			do_error("type expected before '[]'", node->params[0]);
+		const Class *t = node->params[0]->as_class();
+		t = tree->make_class_super_array(t);
+		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
 		concretify_all_params();
 		if (node->params[0]->kind != NodeKind::CLASS)
-			do_error("type expected after 'shared'", node->params[0]->token_id);
+			do_error("type expected after 'shared'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
 		t = make_pointer_shared(tree, t);
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
 		concretify_all_params();
 		if (node->params[0]->kind != NodeKind::CLASS)
-			do_error("type expected after 'owned'", node->params[0]->token_id);
+			do_error("type expected after 'owned'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
 		t = make_pointer_owned(tree, t);
 		return tree->add_node_class(t);
@@ -2229,7 +2284,7 @@ shared<Node> digest_operator_list_to_tree(shared_array<Node> &operands, shared_a
 // greedily parse AxBxC...(operand, operator)
 shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, shared<Node> first_operand) {
 	auto tree = parse_operand_greedy_abstract(block, allow_tuples, first_operand);
-	//if (config.verbose)
+	if (config.verbose)
 		tree->show();
 	return concretify_abstract_tree(tree, block);
 }
@@ -2243,8 +2298,10 @@ shared<Node> Parser::parse_operand_greedy_abstract(Block *block, bool allow_tupl
 	if (!first_operand)
 		first_operand = parse_operand_abstract(block);
 		//first_operand = parse_operand(block, block->name_space());
-	msg_write("---first:");
-	first_operand->show();
+	if (config.verbose) {
+		msg_write("---first:");
+		first_operand->show();
+	}
 	operands.add(first_operand);
 
 	// find pairs of operators and operands
