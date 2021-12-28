@@ -30,6 +30,10 @@ ExpressionBuffer::ExpressionBuffer() : cur(dummy) {
 	clear();
 }
 
+string ExpressionBuffer::peek_next() const {
+	return cur_line->tokens[_cur_exp + 1].name;
+}
+
 int ExpressionBuffer::cur_token() const {
 	int i0 = 0;
 	for (auto &l: lines) {
@@ -99,11 +103,15 @@ void ExpressionBuffer::rewind() {
 	jump(cur_token() - 1);
 }
 
-bool ExpressionBuffer::end_of_line() {
+bool ExpressionBuffer::end_of_line() const {
 	return (_cur_exp >= cur_line->tokens.num - 1); // the last entry is "-eol-"#
 }
 
-bool ExpressionBuffer::past_end_of_line() {
+bool ExpressionBuffer::almost_end_of_line() const {
+	return (_cur_exp >= cur_line->tokens.num - 2); // the last entry is "-eol-"#
+}
+
+bool ExpressionBuffer::past_end_of_line() const {
 	return (_cur_exp >= cur_line->tokens.num);
 }
 
@@ -119,7 +127,7 @@ void ExpressionBuffer::jump(int token_id) {
 	cur = cur_line->tokens[_cur_exp].name;
 }
 
-bool ExpressionBuffer::end_of_file() {
+bool ExpressionBuffer::end_of_file() const {
 	return (int_p)cur_line >= (int_p)&lines.back(); // last line = "-eol-"*/
 }
 
@@ -161,7 +169,7 @@ void ExpressionBuffer::remove(int index) {
 	cur_line->tokens.erase(index);
 }
 
-int ExpressionBuffer::next_line_indent() {
+int ExpressionBuffer::next_line_indent() const {
 	return (cur_line + 1)->indent;
 }
 
