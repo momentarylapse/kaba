@@ -869,6 +869,14 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 			return true;
 		return false;
 	};
+	auto might_declare_pointer_variable = [this] {
+		// a line of "int *p = ..."
+		if (Exp._cur_exp != 1)
+			return false;
+		if (is_number(Exp.cur_line->tokens[0].name[0]))
+			return false;
+		return true;
+	};
 
 	if (Exp.cur == ".") {
 		// element?
@@ -888,7 +896,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	} else {
 
 		if (Exp.cur == "*") {
-			if (no_identifier_after() or (Exp._cur_exp == 1)) { // might be a line of "int *p = ..."
+			if (no_identifier_after() or might_declare_pointer_variable()) {
 				return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block);
 			}
 		}
@@ -2270,6 +2278,9 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		return concretify_abstract_call(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY) {
 		return concretify_abstract_array(node, block, ns);
+	} else if (node->kind == NodeKind::TUPLE) {
+		concretify_all_params(node, block, ns, this);
+		return node;
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
 		concretify_all_params(node, block, ns, this);
 		if (node->params[0]->kind != NodeKind::CLASS)
@@ -4144,9 +4155,10 @@ bool Parser::parse_function_command(Function *f, int indent0) {
 const Class *Parser::parse_type(const Class *ns) {
 	auto cc = parse_abstract_operand(tree->root_of_all_evil->block.get());
 	cc = concretify_abstract_tree(cc, tree->root_of_all_evil->block.get(), ns);
+	cc = digest_type(tree, cc);
 	if (cc->kind != NodeKind::CLASS) {
 		cc->show(TypeVoid);
-		do_error("type expected");
+		do_error("type expected", cc);
 	}
 	return cc->as_class();
 }
