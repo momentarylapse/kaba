@@ -21,6 +21,8 @@ const int MAX_IMPORT_DIRECTORY_PARENTS = 5;
 namespace kaba {
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
+shared<Node> parse_abstract_with_dots(Parser *p);
+shared<Node> create_node_token(Parser *p);
 
 ExpressionBuffer *cur_exp_buf = nullptr;
 
@@ -249,6 +251,18 @@ shared_array<Node> Parser::parse_operand_extension_element(shared<Node> operand)
 	return {};
 }
 
+shared<Node> Parser::parse_operand_abstract_extension_element(shared<Node> operand, Block *block) {
+	Exp.next(); // .
+
+	auto el = new Node(NodeKind::ABSTRACT_ELEMENT, 0, TypeUnknown);
+	el->token_id = Exp.cur_token();
+	el->set_num_params(2);
+	el->set_param(0, operand);
+	el->set_param(1, create_node_token(this));
+	Exp.next();
+	return el;
+}
+
 shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *block) {
 	operand = force_concrete_type(operand);
 	operand = deref_if_pointer(operand);
@@ -335,6 +349,37 @@ shared<Node> Parser::parse_operand_extension_array(shared<Node> operand, Block *
 		array = tree->add_node_array(operand, index);
 	}
 	array->is_const = operand->is_const;
+	return array;
+}
+
+shared<Node> Parser::parse_operand_abstract_extension_array(shared<Node> operand, Block *block) {
+	// array index...
+	Exp.next();
+	shared<Node> index;
+	shared<Node> index2;
+	if (Exp.cur == ":") {
+		index = tree->add_node_const(tree->add_constant_int(0));
+	} else {
+		index = parse_operand_greedy_abstract(block);
+	}
+	if (Exp.cur == ":") {
+		Exp.next();
+		if (Exp.cur == "]") {
+			index2 = tree->add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX));
+			// magic value (-_-)'
+		} else {
+			index2 = parse_operand_greedy_abstract(block);
+		}
+	}
+	if (Exp.cur != "]")
+		do_error("']' expected after array index");
+	Exp.next();
+
+	auto array = tree->add_node_array(operand, index, TypeUnknown);
+	if (index2) {
+		array->set_num_params(3);
+		array->set_param(2, index2);
+	}
 	return array;
 }
 
@@ -557,6 +602,20 @@ shared<Node> Parser::parse_operand_extension_call(const shared_array<Node> &link
 	return try_to_match_apply_params(links, params);
 }
 
+shared<Node> Parser::parse_operand_abstract_extension_call(shared<Node> link, Block *block) {
+
+	// parse all parameters
+	auto params = parse_abstract_call_parameters(block);
+
+	auto node = new Node(NodeKind::ABSTRACT_CALL, 0, TypeUnknown);
+	node->set_num_params(params.num + 1);
+	node->set_param(0, link);
+	foreachi (auto p, params, i)
+		node->set_param(i + 1, p);
+
+	return node;
+}
+
 const Class *Parser::parse_type_extension_array(const Class *t) {
 	Exp.next(); // "["
 
@@ -719,6 +778,75 @@ shared<Node> Parser::parse_operand_extension(const shared_array<Node> &operands,
 	return parse_operand_extension(operands, block, prefer_type);
 }
 
+// find any ".", or "[...]"'s    or operators?
+shared<Node> Parser::parse_operand_abstract_extension(shared<Node> operand, Block *block) {
+
+#if 0
+	// special
+	if (false) {
+		if (is_type_tuple(operand) and (Exp.cur == "->")) {
+			do_error("do we ever reach this point?");
+			Exp.next();
+			auto ret = parse_type(block->name_space());
+			auto t = tree->make_class_callable_fp(class_tuple_extract_classes(operands[0]), ret);
+
+			return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
+		}
+	}
+#endif
+
+
+#if 0
+	// special
+	if ((operands[0]->kind == NodeKind::CLASS) and ((Exp.cur == "*") or (Exp.cur == "[") or (Exp.cur == "{") or (Exp.cur == "->"))) {
+		if (operands.num > 1)
+			do_error("ambiguous class?!?!?");
+		auto *t = operands[0]->as_class();
+
+		if (Exp.cur == "*") {
+			t = parse_type_extension_pointer(t);
+		} else if (Exp.cur == "[") {
+			t = parse_type_extension_array(t);
+		} else if (Exp.cur == "{") {
+			t = parse_type_extension_dict(t);
+		} else if (Exp.cur == "->") {
+			t = parse_type_extension_func(t, block->name_space());
+		} else if (Exp.cur == ".") {
+			t = parse_type_extension_child(t);
+		}
+
+		return parse_operand_extension({tree->add_node_class(t)}, block, prefer_type);
+	}
+#endif
+
+
+	if (Exp.cur == ".") {
+		// class element?
+		return parse_operand_abstract_extension(parse_operand_abstract_extension_element(operand, block), block);
+	} else if (Exp.cur == "[") {
+		// array?
+		return parse_operand_abstract_extension(parse_operand_abstract_extension_array(operand, block), block);
+	} else if (Exp.cur == "(") {
+		// call?
+		return parse_operand_abstract_extension(parse_operand_abstract_extension_call(operand, block), block);
+	} else {
+		// unary operator? (++,--)
+
+		auto op = parse_abstract_operator(1);
+		if (op) {
+			op->set_num_params(1);
+			op->set_param(0, operand);
+			msg_write("unary...");
+			op->show();
+			return parse_operand_abstract_extension(op, block);
+		}
+		return operand;
+	}
+
+	// recursion
+	return parse_operand_abstract_extension(operand, block);
+}
+
 
 // when calling ...(...)
 Array<const Class*> Parser::get_wanted_param_types(shared<Node> link, int &mandatory_params) {
@@ -765,6 +893,33 @@ shared_array<Node> Parser::parse_call_parameters(Block *block) {
 
 		// find parameter
 		params.add(parse_operand_greedy(block));
+
+		if (Exp.cur != ",") {
+			if (Exp.cur == ")")
+				break;
+			do_error("',' or ')' expected after parameter for function");
+		}
+		Exp.next();
+	}
+	Exp.next(); // ')'
+	return params;
+}
+
+shared_array<Node> Parser::parse_abstract_call_parameters(Block *block) {
+	if (Exp.cur != "(")
+		do_error("'(' expected in front of function parameter list");
+
+	Exp.next();
+
+	shared_array<Node> params;
+
+	// list of parameters
+	for (int p=0;;p++) {
+		if (Exp.cur == ")")
+			break;
+
+		// find parameter
+		params.add(parse_operand_greedy_abstract(block));
 
 		if (Exp.cur != ",") {
 			if (Exp.cur == ")")
@@ -897,13 +1052,13 @@ shared<Node> build_abstract_tuple(const Array<shared<Node>> &el) {
 shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> operand, Block *block) {
 	int _ie = Exp.cur_token() - 1;
 	Operator *op = nullptr;
-	const Class *p2 = operand->type;
+	const Class *p1 = operand->type;
 
 	// exact match?
 	bool ok=false;
 	for (auto *_op: tree->operators)
 		if (po == _op->abstract)
-			if ((!_op->param_type_1) and (type_match(p2, _op->param_type_2))) {
+			if ((!_op->param_type_2) and (type_match(p1, _op->param_type_1))) {
 				op = _op;
 				ok = true;
 				break;
@@ -917,12 +1072,12 @@ shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> oper
 		const Class *t_best = nullptr;
 		for (auto *_op: tree->operators)
 			if (po == _op->abstract)
-				if ((!_op->param_type_1) and (type_match_with_cast(operand, false, _op->param_type_2, current))) {
+				if ((!_op->param_type_2) and (type_match_with_cast(operand, false, _op->param_type_1, current))) {
 					ok = true;
 					if (current.penalty < best.penalty) {
 						op = _op;
 						best = current;
-						t_best = _op->param_type_2;
+						t_best = _op->param_type_1;
 					}
 			}
 		// cast
@@ -933,7 +1088,7 @@ shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> oper
 
 
 	if (!ok)
-		do_error(format("unknown unitary operator '%s %s'", po->name, p2->long_name()), _ie);
+		do_error(format("unknown unitary operator '%s %s'", po->name, p1->long_name()), _ie);
 	return tree->add_node_operator(op, operand, nullptr);
 }
 
@@ -1197,12 +1352,39 @@ const Class *parse_root_type_with_dots(Parser *p, const Class *ns) {
 	return t;
 }
 
+shared<Node> create_node_token(Parser *p) {
+	auto t = new Node(NodeKind::ABSTRACT_TOKEN, (int_p)&p->Exp, TypeUnknown);
+	t->token_id = p->Exp.cur_token();
+	return t;
+}
+
+shared<Node> parse_abstract_with_dots(Parser *p) {
+	auto t = create_node_token(p);
+	p->Exp.next();
+	while (p->Exp.cur == ".") {
+		p->Exp.next();
+
+		auto sub = t;
+
+		auto el = create_node_token(p);
+		p->Exp.next();
+
+		t = new Node(NodeKind::ABSTRACT_ELEMENT, 0, TypeUnknown);
+		t->token_id = p->Exp.cur_token();
+		t->set_num_params(2);
+		t->set_param(0, sub);
+		t->set_param(1, el);
+	}
+	return t;
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
 	shared_array<Node> operands;
 
-	operands = {parse_operand_abstract(block, ns)};
+	operands = {parse_operand_abstract(block)};
+	operands[0]->show();
 	operands[0] = concretify_abstract_tree(operands[0], block);
 
 #if 0
@@ -1298,7 +1480,7 @@ shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_cl
 
 // minimal operand
 // but with A[...], A(...) etc
-shared<Node> Parser::parse_operand_abstract(Block *block, const Class *ns) {
+shared<Node> Parser::parse_operand_abstract(Block *block) {
 	shared<Node> operand;
 
 	// ( -> one level down and combine commands
@@ -1311,12 +1493,12 @@ shared<Node> Parser::parse_operand_abstract(Block *block, const Class *ns) {
 	} else if (Exp.cur == "&") { // & -> address operator
 		Exp.next();
 		int token = Exp.cur_token();
-		operand = parse_operand_abstract(block, ns)->ref(TypeUnknown);
+		operand = parse_operand_abstract(block)->ref(TypeUnknown);
 		operand->token_id = token;
 	} else if (Exp.cur == "*") { // * -> dereference
 		Exp.next();
 		int token = Exp.cur_token();
-		operand = parse_operand_abstract(block, ns)->deref(TypeUnknown);
+		operand = parse_operand_abstract(block)->deref(TypeUnknown);
 		operand->token_id = token;
 	} else if (Exp.cur == "[") {
 		Exp.next();
@@ -1334,43 +1516,43 @@ shared<Node> Parser::parse_operand_abstract(Block *block, const Class *ns) {
 
 		operand = tree->add_node_func_name(f);
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
-		do_error("shared...X");
-		string pre = Exp.cur;
-		auto t = parse_root_type_with_dots(this, ns);
-		if (pre == IDENTIFIER_SHARED)
-			t = make_pointer_shared(tree, t);
-		else //if (pre == IDENTIFIER_OWNED)
-			t = make_pointer_owned(tree, t);
-		operand = tree->add_node_class(t);
+		if (Exp.cur == IDENTIFIER_SHARED) {
+			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
+		} else { //if (pre == IDENTIFIER_OWNED)
+			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown);
+		}
+		operand->token_id = Exp.cur_token();
+		operand->set_num_params(1);
+		Exp.next();
+		operand->set_param(0, parse_abstract_with_dots(this));
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_statement(block);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
 		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
 		Exp.next();
 		operand->set_num_params(1);
-		operand->set_param(0, parse_operand_abstract(block, ns));
+		operand->set_param(0, parse_operand_abstract(block));
 	} else {
-		auto t = new Node(NodeKind::ABSTRACT_TOKEN, (int_p)&Exp, TypeUnknown);
-		t->token_id = Exp.cur_token();
+		operand = create_node_token(this);
 		Exp.next();
-		operand = t;
 	}
 
 	if (Exp.end_of_line())
 		return operand;
 
-	return operand;
+	//return operand;
 	// resolve arrays, structures, calls...
-	//return parse_operand_extension(operand, block, prefer_class);
+	return parse_operand_abstract_extension(operand, block);
 }
 
 // no type information
-shared<Node> Parser::parse_abstract_operator(Block *block) {
-	auto op = which_abstract_operator(Exp.cur, 3);
+shared<Node> Parser::parse_abstract_operator(int param_flags) {
+	auto op = which_abstract_operator(Exp.cur, param_flags);
 	if (!op)
 		return nullptr;
 
 	auto cmd = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)op, TypeUnknown);
+	cmd->token_id = Exp.cur_token();
 
 	Exp.next();
 	return cmd;
@@ -1810,12 +1992,18 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 	if (node->type != TypeUnknown)
 		return node;
 
-	for (int p=0; p<node->params.num; p++)
-		if (node->params[p]->type == TypeUnknown) {
+	auto concretify_all_params = [node,block,this] {
+		for (int p=0; p<node->params.num; p++)
+			if (node->params[p]->type == TypeUnknown)
+				node->params[p] = concretify_abstract_tree(node->params[p], block);
+	};
+	auto concretify_param = [node,block,this] (int p) {
+		if (node->params[p]->type == TypeUnknown)
 			node->params[p] = concretify_abstract_tree(node->params[p], block);
-		}
+	};
 
 	if (node->kind == NodeKind::ABSTRACT_OPERATOR) {
+		concretify_all_params();
 		auto op_no = node->as_abstract_op();
 
 		if (op_no->id == OperatorID::FUNCTION_PIPE) {
@@ -1835,11 +2023,13 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 			return link_unary_operator(op_no, node->params[0], block);
 		}
 	} else if (node->kind == NodeKind::DEREFERENCE) {
+		concretify_all_params();
 		auto sub = node->params[0];
 		if (!sub->type->is_pointer())
 			do_error("only pointers can be dereferenced using '*'", node->token_id);
 		node->type = sub->type->param[0];
 	} else if (node->kind == NodeKind::REFERENCE) {
+		concretify_all_params();
 		auto sub = node->params[0];
 		node->type = sub->type->get_pointer();
 	} else if (node->kind == NodeKind::ABSTRACT_TOKEN) {
@@ -1849,18 +2039,8 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 		// direct operand
 		auto operands = tree->get_existence(token, block, ns);
 		if (operands.num > 0) {
-
-			if (operands[0]->kind == NodeKind::STATEMENT) {
-			} else if (operands[0]->kind == NodeKind::ABSTRACT_OPERATOR) {
-				// unary operator
-				Exp.next();
-				auto po = operands[0]->as_abstract_op();
-				auto sub_command = parse_operand(block, ns);
-				return link_unary_operator(po, sub_command, block);
-			} else {
-				// direct operand
-				return operands[0];
-			}
+			// direct operand
+			return operands[0];
 		} else {
 			auto t = get_constant_type(token);
 			if (t == TypeUnknown)
@@ -1877,6 +2057,128 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block) {
 				return tree->add_node_const(c);
 			}
 		}
+	} else if (node->kind == NodeKind::ABSTRACT_ELEMENT) {
+		concretify_param(0);
+		//node->show();
+
+		auto base = node->params[0];
+		auto el = Exp.get_token(node->params[1]->token_id);
+
+		if (base->kind == NodeKind::CLASS) {
+			auto t = base->as_class();
+
+			for (auto *cc: weak(t->classes))
+				if (cc->name == el)
+					return tree->add_node_class(cc);
+			do_error(format("class '%s' does not have a sub-class '%s'", t->long_name(), el), node->params[1]->token_id);
+		} else {
+
+			base = force_concrete_type(base);
+			auto links = tree->get_element_of(base, el);
+			if (links.num > 1)
+				msg_write("WARNING: multiple elements...");
+			if (links.num > 0)
+				return links[0];
+
+			do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()));
+		}
+	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
+		concretify_all_params();
+		node->show();
+		do_error("ABSTRACT CALL");
+	} else if (node->kind == NodeKind::ARRAY) {
+		concretify_all_params();
+		node->show();
+
+		auto operand = node->params[0];
+		auto index = node->params[1];
+		shared<Node> index2;
+		if (node->params.num >= 3)
+			index2 = node->params[2];
+
+		if (operand->kind == NodeKind::CLASS) {
+			// int[3]
+			do_error("fixed arrays...");
+		}
+
+
+
+
+		// subarray() ?
+		if (index2) {
+			auto *cf = operand->type->get_member_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
+			if (cf) {
+				auto f = tree->add_node_member_call(cf, operand);
+				f->is_const = operand->is_const;
+				f->set_param(1, index);
+				f->set_param(2, index2);
+				return f;
+			} else {
+				do_error(format("function '%s.%s(int,int) -> %s' required by '[a:b]' missing", operand->type->name, IDENTIFIER_FUNC_SUBARRAY, operand->type->name));
+			}
+		}
+
+		// __get__() ?
+		auto *cf = operand->type->get_get(index->type);
+		if (cf) {
+			auto f = tree->add_node_member_call(cf, operand);
+			f->is_const = operand->is_const;
+			f->set_param(1, index);
+			return f;
+		}
+
+		// allowed?
+		bool allowed = (operand->type->is_array() or operand->type->usable_as_super_array());
+		bool pparray = false;
+		if (!allowed)
+			if (operand->type->is_pointer()) {
+				if (!operand->type->param[0]->is_array() and !operand->type->param[0]->usable_as_super_array())
+					do_error(format("using pointer type '%s' as an array (like in C) is not allowed any more", operand->type->long_name()));
+				allowed = true;
+				pparray = (operand->type->param[0]->usable_as_super_array());
+			}
+		if (!allowed)
+			do_error(format("type '%s' is neither an array nor a pointer to an array nor does it have a function __get__(%s)", operand->type->long_name(), index->type->long_name()));
+
+
+		if (index->type != TypeInt) {
+			Exp.rewind();
+			do_error(format("type of index for an array needs to be 'int', not '%s'", index->type->long_name()));
+		}
+
+		shared<Node> array;
+
+		// pointer?
+		if (pparray) {
+			do_error("test... anscheinend gibt es [] auf * super array");
+			//array = cp_command(this, Operand);
+	/*		Operand->kind = KindPointerAsArray;
+			Operand->type = t->type->parent;
+			deref_command_old(this, Operand);
+			array = Operand->param[0];*/
+		} else if (operand->type->usable_as_super_array()) {
+			array = tree->add_node_dyn_array(operand, index);
+		} else if (operand->type->is_pointer()) {
+			array = tree->add_node_parray(operand, index, operand->type->param[0]->param[0]);
+		} else {
+			array = tree->add_node_array(operand, index);
+		}
+		array->is_const = operand->is_const;
+		return array;
+	} else if (node->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+		concretify_all_params();
+		if (node->params[0]->kind != NodeKind::CLASS)
+			do_error("type expected after 'shared'", node->params[0]->token_id);
+		const Class *t = node->params[0]->as_class();
+		t = make_pointer_shared(tree, t);
+		return tree->add_node_class(t);
+	} else if (node->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
+		concretify_all_params();
+		if (node->params[0]->kind != NodeKind::CLASS)
+			do_error("type expected after 'owned'", node->params[0]->token_id);
+		const Class *t = node->params[0]->as_class();
+		t = make_pointer_owned(tree, t);
+		return tree->add_node_class(t);
 	}
 
 	return node;
@@ -1927,6 +2229,8 @@ shared<Node> digest_operator_list_to_tree(shared_array<Node> &operands, shared_a
 // greedily parse AxBxC...(operand, operator)
 shared<Node> Parser::parse_operand_greedy(Block *block, bool allow_tuples, shared<Node> first_operand) {
 	auto tree = parse_operand_greedy_abstract(block, allow_tuples, first_operand);
+	//if (config.verbose)
+		tree->show();
 	return concretify_abstract_tree(tree, block);
 }
 
@@ -1937,14 +2241,17 @@ shared<Node> Parser::parse_operand_greedy_abstract(Block *block, bool allow_tupl
 
 	// find the first operand
 	if (!first_operand)
-		first_operand = parse_operand(block, block->name_space());
+		first_operand = parse_operand_abstract(block);
+		//first_operand = parse_operand(block, block->name_space());
+	msg_write("---first:");
+	first_operand->show();
 	operands.add(first_operand);
 
 	// find pairs of operators and operands
 	for (int i=0;true;i++) {
 		if (!allow_tuples and Exp.cur == ",")
 			break;
-		auto op = parse_abstract_operator(block);
+		auto op = parse_abstract_operator(3);
 		if (!op)
 			break;
 		op->token_id = Exp.cur_token() - 1;
@@ -1953,7 +2260,8 @@ shared<Node> Parser::parse_operand_greedy_abstract(Block *block, bool allow_tupl
 			//Exp.rewind();
 			do_error("unexpected end of line after operator");
 		}
-		operands.add(parse_operand(block, block->name_space()));
+		operands.add(parse_operand_abstract(block));
+		//operands.add(parse_operand(block, block->name_space()));
 	}
 
 	return digest_operator_list_to_tree(operands, operators);

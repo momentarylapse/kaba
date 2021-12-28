@@ -40,6 +40,20 @@ string kind2str(NodeKind kind) {
 		return "token";
 	if (kind == NodeKind::ABSTRACT_OPERATOR)
 		return "abstract operator";
+	if (kind == NodeKind::ABSTRACT_ELEMENT)
+		return "abstract element";
+	if (kind == NodeKind::ABSTRACT_CALL)
+		return "abstract call";
+	if (kind == NodeKind::ABSTRACT_TYPE_SHARED)
+		return "shared";
+	if (kind == NodeKind::ABSTRACT_TYPE_OWNED)
+		return "owned";
+	if (kind == NodeKind::ABSTRACT_TYPE_POINTER)
+		return "pointer";
+	if (kind == NodeKind::ABSTRACT_TYPE_LIST)
+		return "list";
+	if (kind == NodeKind::ABSTRACT_VAR)
+		return "var";
 	if (kind == NodeKind::BLOCK)
 		return "block";
 	if (kind == NodeKind::ADDRESS_SHIFT)
@@ -150,7 +164,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::DEREF_ADDRESS_SHIFT)
 		return t + i2s(link_no);
 	if (kind == NodeKind::CLASS)
-		return as_class()->name;
+		return as_class()->cname(ns);
 	if (kind == NodeKind::REGISTER)
 		return t + Asm::get_reg_name((Asm::RegID)link_no);
 	if (kind == NodeKind::ADDRESS)

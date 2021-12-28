@@ -68,6 +68,13 @@ enum class NodeKind {
 	// abstract syntax tree
 	ABSTRACT_TOKEN,
 	ABSTRACT_OPERATOR,
+	ABSTRACT_ELEMENT,
+	ABSTRACT_CALL,
+	ABSTRACT_TYPE_SHARED,  // shared X
+	ABSTRACT_TYPE_OWNED,   // owned X
+	ABSTRACT_TYPE_POINTER, // X*
+	ABSTRACT_TYPE_LIST,    // X[]
+	ABSTRACT_VAR,          // var x ...
 	// compilation
 	VAR_TEMP,
 	DEREF_VAR_TEMP,

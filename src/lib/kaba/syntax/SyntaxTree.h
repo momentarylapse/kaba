@@ -124,7 +124,7 @@ public:
 	shared<Node> exlink_add_class_func(Function *f, Function *cf);
 	shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type);
 	shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index);
-	shared<Node> add_node_array(shared<Node> array, shared<Node> index);
+	shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class *override_type = nullptr);
 	shared<Node> add_node_constructor(Function *f);
 	shared<Node> make_fake_constructor(const Class *t, const Class *param_type);
 	//shared<Node> add_node_block(Block *b);
