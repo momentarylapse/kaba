@@ -19,7 +19,7 @@ class Test extends Base
 		print("Test.f")
 
 func main()
-	Test *t = new Test(1, 2)
+	var t = new Test(1, 2)
 	print(t.x)
 	print(t.y)
 	t.f()

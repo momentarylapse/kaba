@@ -58,6 +58,7 @@ public:
 	shared<Node> concretify_abstract_array(shared<Node> node, Block *block, const Class *ns);
 	shared_array<Node> concretify_abstract_element(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_abstract_call(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_abstract_statement(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
@@ -126,7 +127,7 @@ public:
 
 	shared<Node> try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &params);
 
-	shared<Node> parse_single_func_param(Block *block);
+	shared<Node> parse_abstract_single_func_param(Block *block);
 	void parse_abstract_complete_command(Block *block);
 	void parse_abstract_local_definition_old(Block *block, shared<Node> first);
 	shared<Node> parse_abstract_block(Block *parent, Block *block = nullptr);
