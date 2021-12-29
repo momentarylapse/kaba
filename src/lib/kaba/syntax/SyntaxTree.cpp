@@ -633,13 +633,13 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 		return links;
 
 	// then the statements
-	auto s = Parser::which_statement(name);
+	/*auto s = Parser::which_statement(name);
 	if (s) {
 		//return {add_node_statement(s->id)};
 		auto n = new Node(NodeKind::STATEMENT, (int_p)s, TypeVoid);
 		n->set_num_params(s->num_params);
 		return {n};
-	}
+	}*/
 
 	// operators
 	auto w = parser->which_abstract_operator(name, 2); // negate/not...

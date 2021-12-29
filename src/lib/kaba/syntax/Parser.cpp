@@ -1488,7 +1488,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block) {
 		operand->token_id = Exp.cur_token();
 		operand->set_num_params(1);
 		Exp.next();
-		operand->set_param(0, parse_abstract_with_dots(this));
+		operand->set_param(0, parse_abstract_with_dots(this)); // don't parse a full operand like "nix.Texture[]"
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_statement(block);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
@@ -2006,6 +2006,15 @@ shared_array<Node> Parser::concretify_abstract_element(shared<Node> node, Block 
 	auto links = tree->get_element_of(base, el);
 	if (links.num > 0)
 		return links;
+
+	if (base->kind == NodeKind::CLASS) {
+		auto c = tree->add_node_const(tree->add_constant(TypeClassP));
+		c->as_const()->as_int64() = (int_p)base->as_class();
+
+		auto links = tree->get_element_of(c, el);
+		if (links.num > 0)
+			return links;
+	}
 
 	do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()), node->params[1]);
 	return {};
@@ -2800,17 +2809,16 @@ shared<Node> Parser::parse_statement_sizeof(Block *block) {
 }
 
 shared<Node> Parser::parse_statement_type(Block *block) {
-	Exp.next(); // type
+	Exp.next(); // typeof
 	auto sub = parse_single_func_param(block);
 	sub = force_concrete_type(sub);
 
 	auto c = tree->add_node_const(tree->add_constant(TypeClassP));
 	if (sub->kind == NodeKind::CLASS) {
-		c->as_const()->as_int64() = (int_p)sub->as_class();
+		return tree->add_node_class(sub->as_class());
 	} else {
-		c->as_const()->as_int64() = (int_p)sub->type;
+		return tree->add_node_class(sub->type);
 	}
-	return c;
 }
 
 shared<Node> Parser::parse_statement_len(Block *block) {
@@ -3395,7 +3403,7 @@ shared<Node> Parser::parse_statement(Block *block) {
 		return parse_statement_delete(block);
 	} else if (Exp.cur == IDENTIFIER_SIZEOF) {
 		return parse_statement_sizeof(block);
-	} else if (Exp.cur == IDENTIFIER_TYPE) {
+	} else if (Exp.cur == IDENTIFIER_TYPEOF) {
 		return parse_statement_type(block);
 	} else if (Exp.cur == IDENTIFIER_STR) {
 		return parse_statement_str(block);

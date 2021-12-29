@@ -1,5 +1,5 @@
 use kaba
 
 func main()
-	Class *t = type(matrix[])
+	Class *t = typeof(matrix[])
 	print(t.name)
