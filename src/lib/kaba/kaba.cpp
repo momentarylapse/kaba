@@ -287,7 +287,13 @@ void execute_single_script_command(const string &cmd) {
 	parser->Exp.reset_walker();
 
 	// parse
-	parser->parse_complete_command(func->block.get());
+	func->block->type = TypeUnknown;
+	parser->parse_abstract_complete_command(func->block.get());
+	if (config.verbose) {
+		msg_write("ABSTRACT SINGLE:");
+		func->block->show();
+	}
+	parser->concretify_abstract_tree(func->block.get(), func->block.get(), func->name_space);
 	
 	// implicit print(...)?
 	if (func->block->params.num > 0 and func->block->params[0]->type != TypeVoid) {

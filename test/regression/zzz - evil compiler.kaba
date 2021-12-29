@@ -1,8 +1,8 @@
 func main()
-	int 4 = 5
+	var 4 = 5
 	#4 *= 4
 	4 += 4
 	print(4)
-	int = = 8
-	int + = = + 7
+	var = = 8
+	var + = = + 7
 	print(+ + = + + + = + +)

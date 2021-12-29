@@ -100,7 +100,7 @@ public:
 	Function *parse_function_header(Class *name_space, Flags flags0);
 	void skip_parsing_function_body(Function *f);
 	void parse_function_body(Function *f);
-	bool parse_function_command(Function *f, int indent0);
+	bool parse_abstract_function_command(Function *f, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);
 	void parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0 = Flags::NONE);
@@ -126,15 +126,10 @@ public:
 
 	shared<Node> try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &params);
 
-	const Class *parse_type_extension_array(const Class *c);
-	const Class *parse_type_extension_dict(const Class *c);
-	const Class *parse_type_extension_pointer(const Class *c);
-	const Class *parse_type_extension_func(const Class *c, const Class *ns);
-	const Class *parse_type_extension_child(const Class *c);
 	shared<Node> parse_single_func_param(Block *block);
-	void parse_complete_command(Block *block);
-	void parse_local_definition(Block *block, const Class *type);
-	shared<Node> parse_block(Block *parent, Block *block = nullptr);
+	void parse_abstract_complete_command(Block *block);
+	void parse_abstract_local_definition_old(Block *block, shared<Node> first);
+	shared<Node> parse_abstract_block(Block *parent, Block *block = nullptr);
 	shared<Node> parse_operand(Block *block, const Class *ns, bool prefer_class = false);
 	shared<Node> parse_abstract_operand(Block *block);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
@@ -147,14 +142,10 @@ public:
 	shared_array<Node> parse_abstract_call_parameters(Block *block);
 	shared<Node> try_parse_format_string(Block *block, Value &v);
 	shared<Node> apply_format(shared<Node> n, const string &fmt);
-	shared<Node> parse_statement(Block *block);
 	shared<Node> parse_for_header(Block *block);
 	void post_process_for(shared<Node> n);
 	shared<Node> parse_statement_for(Block *block);
 	shared<Node> parse_statement_while(Block *block);
-	shared<Node> parse_statement_break(Block *block);
-	shared<Node> parse_statement_continue(Block *block);
-	shared<Node> parse_statement_return(Block *block);
 	shared<Node> parse_statement_raise(Block *block);
 	shared<Node> parse_statement_try(Block *block);
 	shared<Node> parse_statement_if(Block *block);
@@ -174,6 +165,33 @@ public:
 	shared<Node> parse_statement_dyn(Block *block);
 	shared<Node> parse_statement_raw_function_pointer(Block *block);
 	shared<Node> parse_statement_weak(Block *block);
+
+	shared<Node> parse_abstract_statement(Block *block);
+	shared<Node> parse_abstract_for_header(Block *block);
+	shared<Node> parse_abstract_statement_for(Block *block);
+	shared<Node> parse_abstract_statement_while(Block *block);
+	shared<Node> parse_abstract_statement_break();
+	shared<Node> parse_abstract_statement_continue();
+	shared<Node> parse_abstract_statement_return(Block *block);
+	shared<Node> parse_abstract_statement_raise(Block *block);
+	shared<Node> parse_abstract_statement_try(Block *block);
+	shared<Node> parse_abstract_statement_if(Block *block);
+	shared<Node> parse_abstract_statement_pass(Block *block);
+	shared<Node> parse_abstract_statement_new(Block *block);
+	shared<Node> parse_abstract_statement_delete(Block *block);
+	shared<Node> parse_abstract_statement_sizeof(Block *block);
+	shared<Node> parse_abstract_statement_type(Block *block);
+	shared<Node> parse_abstract_statement_str(Block *block);
+	shared<Node> parse_abstract_statement_repr(Block *block);
+	shared<Node> parse_abstract_statement_len(Block *block);
+	shared<Node> parse_abstract_statement_let(Block *block);
+	shared<Node> parse_abstract_statement_var(Block *block);
+	shared<Node> parse_abstract_statement_map(Block *block);
+	shared<Node> parse_abstract_statement_lambda(Block *block);
+	shared<Node> parse_abstract_statement_sorted(Block *block);
+	shared<Node> parse_abstract_statement_dyn(Block *block);
+	shared<Node> parse_abstract_statement_raw_function_pointer(Block *block);
+	shared<Node> parse_abstract_statement_weak(Block *block);
 
 
 	void auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t);
