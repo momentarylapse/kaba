@@ -2206,9 +2206,10 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		return tree->add_node_class(t->get_pointer());
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_LIST) {
 		concretify_all_params(node, block, ns, this);
-		if (node->params[0]->kind != NodeKind::CLASS)
-			do_error("type expected before '[]'", node->params[0]);
-		const Class *t = node->params[0]->as_class();
+		auto n = digest_type(tree, node->params[0]);
+		if (n->kind != NodeKind::CLASS)
+			do_error("type expected before '[]'", n);
+		const Class *t = n->as_class();
 		t = tree->make_class_super_array(t);
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_DICT) {
