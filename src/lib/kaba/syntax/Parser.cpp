@@ -2009,6 +2009,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 			node->params[0] = check_param_link(node->params[0], TypeBool, IDENTIFIER_IF);
 			return node;
 		} else if (s->id == StatementID::WHILE) {
+			// [COND, BLOCK]
 			concretify_all_params(node, block, ns, this);
 			node->type = TypeVoid;
 			node->params[0] = check_param_link(node->params[0], TypeBool, IDENTIFIER_WHILE);
@@ -2062,12 +2063,12 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 
 		} else if (s->id == StatementID::FOR_ARRAY) {
 			// [VAR, INDEX, ARRAY, BLOCK]
-			concretify_all_params(node, block, ns, this);
 
-			auto array = force_concrete_type(node->params[2]);
+			auto array = force_concrete_type(concretify_abstract_tree(node->params[2], block, ns));
 			array = deref_if_pointer(array);
 			if (!array->type->usable_as_super_array() and !array->type->is_array())
 				do_error("array or list expected as second parameter in 'for . in .'", array);
+			node->params[2] = array;
 
 
 			// variable...
@@ -2078,6 +2079,8 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 			if (array->is_const)
 				flags_set(var->as_local()->flags, Flags::CONST);
 
+			// block
+			node->params[3] = concretify_abstract_tree(node->params[3], block, ns);
 			post_process_for(node);
 
 			node->type = TypeVoid;
@@ -2263,16 +2266,10 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		// array
 
 		auto for_array = val0;//parse_operand(block);
-		if ((!for_array->type->usable_as_super_array()) and (!for_array->type->is_array()))
-			do_error("array or list expected as second parameter in 'for . in .'");
-		//Exp.next();
 
 
 		// variable...
-		const Class *var_type = for_array->type->get_array_element();
-		auto *var = block->add_var(var_name, var_type);
-		if (for_array->is_const)
-			flags_set(var->flags, Flags::CONST);
+		auto *var = block->add_var(var_name, TypeUnknown);
 
 		// for index
 		auto *index = block->add_var(index_name, TypeInt);
