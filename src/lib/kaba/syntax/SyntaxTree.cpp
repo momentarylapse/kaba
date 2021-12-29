@@ -121,9 +121,9 @@ const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &par
 	return t;
 }
 
-shared<Node> SyntaxTree::add_node_statement(StatementID id) {
+shared<Node> SyntaxTree::add_node_statement(StatementID id, const Class *type) {
 	auto *s = statement_from_id(id);
-	shared<Node> c = new Node(NodeKind::STATEMENT, (int64)s, TypeVoid);
+	auto c = new Node(NodeKind::STATEMENT, (int64)s, type);
 	c->set_num_params(s->num_params);
 	return c;
 }

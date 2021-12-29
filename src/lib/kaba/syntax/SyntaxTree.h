@@ -106,7 +106,7 @@ public:
 	Function *add_function(const string &name, const Class *type, const Class *name_space, Flags flags);
 
 	// nodes
-	shared<Node> add_node_statement(StatementID id);//, const shared_array<Node> &params);
+	shared<Node> add_node_statement(StatementID id, const Class *type = TypeVoid);//, const shared_array<Node> &params);
 	shared<Node> add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params = {}, bool force_non_virtual = false);
 	shared<Node> add_node_func_name(Function *f);
 	shared<Node> add_node_class(const Class *c);
