@@ -1,13 +1,13 @@
 func main()
-	string a = "hallo Welt"
+	var a = "hallo Welt"
 	for i in 0:10
 		a += a
 	print(a[4:7])
-	string n = "ll"
+	var n = "ll"
 	# print a.find(n, 0)
 	a = a.replace("h", n)
 	print(a)
 	
-	string[] s = a.explode("W")
+	var s = a.explode("W")
 	print(s)
 	print("---")

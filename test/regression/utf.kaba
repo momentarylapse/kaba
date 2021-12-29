@@ -1,4 +1,4 @@
 func main()
 	print("äöü")
-	int ä = 1
+	var ä = 1
 	print(ä)

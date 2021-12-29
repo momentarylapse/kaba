@@ -2,5 +2,5 @@ use kaba
 
 func main()
 	string s
-	Class* t = typeof(s)
+	var t = typeof(s)
 	print(t.name)
