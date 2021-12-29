@@ -482,7 +482,7 @@ void func_add_param(const string &name, const Class *type, Flags flags) {
 	}
 }
 
-void func_add_param_def(const string &name, const Class *type, const void *p, Flags flags) {
+void func_add_param_def_x(const string &name, const Class *type, const void *p, Flags flags) {
 	if (cur_func) {
 		// FIXME: use call-by-reference type?
 		Variable *v = new Variable(name, type);
@@ -494,7 +494,9 @@ void func_add_param_def(const string &name, const Class *type, const void *p, Fl
 
 		Constant *c = cur_package->syntax->add_constant(type, cur_class);
 		if (type == TypeInt)
-			c->as_int() = (int_p)p;
+			c->as_int() = *(int*)p;
+		if (type == TypeFloat32)
+			c->as_float() = *(float*)p;
 		cur_func->default_parameters.resize(cur_func->num_params - 1);
 		cur_func->default_parameters.add(cur_package->syntax->add_node_const(c));
 	}
