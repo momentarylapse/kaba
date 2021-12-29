@@ -1959,21 +1959,9 @@ inline void concretify_all_params(shared<Node> &node, Block *block, const Class 
 };
 
 
-inline void concretify_param(shared<Node> &node, int p, Block *block, const Class *ns, Parser *parser) {
-	if (node->params[p]->type == TypeUnknown)
-		node->params[p] = parser->concretify_abstract_tree(node->params[p], block, ns);
-};
-
-inline shared_array<Node> concretify_param_multi(shared<Node> &node, int p, Block *block, const Class *ns, Parser *parser) {
-	if (node->params[p]->type == TypeUnknown)
-		return parser->concretify_abstract_tree_multi(node->params[p], block, ns);
-	return {};
-};
-
-
 shared<Node> Parser::concretify_abstract_call(shared<Node> node, Block *block, const Class *ns) {
 	//concretify_all_params(node, block, ns, this);
-	auto links = concretify_param_multi(node, 0, block, ns, this);
+	auto links = concretify_abstract_tree_multi(node->params[0], block, ns);
 	for (int p=1; p<node->params.num; p++)
 		if (node->params[p]->type == TypeUnknown)
 			node->params[p] = concretify_abstract_tree(node->params[p], block, ns);
@@ -2011,10 +1999,7 @@ shared<Node> Parser::concretify_abstract_call(shared<Node> node, Block *block, c
 }
 
 shared_array<Node> Parser::concretify_abstract_element(shared<Node> node, Block *block, const Class *ns) {
-	concretify_param(node, 0, block, ns, this);
-	//node->show();
-
-	auto base = node->params[0];
+	auto base = concretify_abstract_tree(node->params[0], block, ns);
 	auto el = Exp.get_token(node->params[1]->token_id);
 
 	base = force_concrete_type(base);
@@ -2027,13 +2012,11 @@ shared_array<Node> Parser::concretify_abstract_element(shared<Node> node, Block 
 }
 
 shared<Node> Parser::concretify_abstract_array(shared<Node> node, Block *block, const Class *ns) {
-	concretify_all_params(node, block, ns, this);
-
-	auto operand = node->params[0];
-	auto index = node->params[1];
+	auto operand = concretify_abstract_tree(node->params[0], block, ns);
+	auto index = concretify_abstract_tree(node->params[1], block, ns);
 	shared<Node> index2;
 	if (node->params.num >= 3)
-		index2 = node->params[2];
+		index2 = concretify_abstract_tree(node->params[2], block, ns);
 
 	if (operand->kind == NodeKind::CLASS) {
 		// int[3]
@@ -2049,8 +2032,17 @@ shared<Node> Parser::concretify_abstract_array(shared<Node> node, Block *block, 
 	}
 
 	if (operand->kind == NodeKind::FUNCTION) {
-		do_error("function[]...?");
-
+		auto links = concretify_abstract_tree_multi(node->params[0], block, ns);
+		if (index->kind != NodeKind::CLASS)
+			do_error("functions can only be indexed by a type", index);
+		auto t = index->as_class();
+		for (auto l: weak(links)) {
+			auto f = l->as_func();
+			if (f->num_params >= 1)
+				if (f->literal_param_type[0] == t)
+					return l;
+		}
+		do_error(format("function has no version [%s]", t->name), index);
 	}
 
 
