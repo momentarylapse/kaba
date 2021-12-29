@@ -31,7 +31,7 @@ enum class StatementID {
 	NEW,
 	DELETE,
 	SIZEOF,
-	TYPE,
+	TYPEOF,
 	ASM,
 	//RAISE,
 	TRY,

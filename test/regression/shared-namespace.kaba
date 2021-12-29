@@ -7,6 +7,6 @@ class X
 func main()
 	X x
 	print(len(x.x))
-	print(type(x.x))
-	print(type(x.x).param[0])
-	print(type(x.x).param[0].param[0])
+	print(typeof(x.x))
+	print(typeof(x.x).param[0])
+	print(typeof(x.x).param[0].param[0])

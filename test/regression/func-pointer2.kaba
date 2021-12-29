@@ -1,7 +1,7 @@
 func f(p: int->void)
 	print("f...")
 #	print(p2s(p))
-	var c= type(p)
+	var c= typeof(p)
 	print(c)
 	print(c.parent)
 	print(str(c.param))

@@ -43,7 +43,7 @@ void SIAddStatements() {
 	add_statement(IDENTIFIER_NEW, StatementID::NEW, 1);
 	add_statement(IDENTIFIER_DELETE, StatementID::DELETE, 1);
 	add_statement(IDENTIFIER_SIZEOF, StatementID::SIZEOF, 1);
-	add_statement(IDENTIFIER_TYPE, StatementID::TYPE, 1);
+	add_statement(IDENTIFIER_TYPEOF, StatementID::TYPEOF, 1);
 	add_statement(IDENTIFIER_STR, StatementID::STR, 1);
 	add_statement(IDENTIFIER_REPR, StatementID::REPR, 1);
 	add_statement(IDENTIFIER_LEN, StatementID::LEN, 1);
