@@ -2151,6 +2151,140 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 			node->params[2 + 2*i] = ex_block;
 		}
 		node->type = TypeVoid;
+
+
+	} else if (s->id == StatementID::LAMBDA) {
+		msg_error("LAMBDA");
+
+
+		auto f = node->params[0]->as_func();
+		auto cmd = f->block->params[0];
+		cmd->show();
+
+
+		auto *prev_func = cur_func;
+
+		f->block->parent = block; // to allow captured variable lookup
+
+		cur_func = f;
+
+		msg_write("CONCRET:");
+		cmd = concretify_abstract_tree(cmd, f->block.get(), block->name_space());
+		cmd->show();
+
+
+		cur_func = prev_func;
+
+
+
+
+
+
+
+
+
+
+		f->literal_return_type = cmd->type;
+		f->effective_return_type = cmd->type;
+
+		if (cmd->type == TypeVoid) {
+			f->block->add(cmd);
+		} else {
+			auto ret = tree->add_node_statement(StatementID::RETURN);
+			ret->set_num_params(1);
+			ret->params[0] = cmd;
+			f->block->add(ret);
+		}
+
+		f->block->parent = nullptr;
+
+		tree->base_class->add_function(tree, f, false, false);
+
+		// find captures
+		Set<Variable*> captures;
+		auto find_captures = [block, &captures](shared<Node> n) {
+			if (n->kind == NodeKind::VAR_LOCAL) {
+				auto v = n->as_local();
+				for (auto vv: block->function->var)
+					if (v == vv)
+						captures.add(v);
+			}
+			return n;
+		};
+		tree->transform_block(f->block.get(), find_captures);
+
+		auto param_types = f->literal_param_type;
+
+		if (captures.num > 0) {
+			if (config.verbose)
+				msg_write("CAPTURES:");
+			/*auto lt = new BindingTemplate;
+			binding_templates.add(lt);
+			lt->outer = block->function;
+			lt->inner = f;
+			lt->captures_local = captures;
+			lt->capture_data.resize(10000); // 10k...*/
+
+			Array<const Class*> capture_types;
+
+			for (auto v: captures) {
+				if (config.verbose)
+					msg_write("  * " + v->name);
+				//f->block->vars.insert()
+				capture_types.add(v->type);
+
+				auto vvv = f->block->insert_var(f->num_params, v->name, v->type);
+				//if (!flags_has(flags, Flags::OUT))
+				//flags_set(v->flags, Flags::CONST);
+				f->literal_param_type.add(v->type);
+				f->num_params ++;
+
+
+				auto replace_local = [v,vvv](shared<Node> n) {
+					if (n->kind == NodeKind::VAR_LOCAL)
+						if (n->as_local() == v)
+							n->link_no = (int_p)vvv;
+					return n;
+				};
+				tree->transform_block(f->block.get(), replace_local);
+			}
+
+			f->update_parameters_after_parsing();
+
+			auto bind_wrapper_type = tree->make_class_callable_bind(param_types, f->literal_return_type, capture_types);
+
+
+			auto create_inner_lambda = wrap_function_into_callable(f);
+
+
+			for (auto *cf: bind_wrapper_type->get_constructors()) {
+				auto cmd_new = tree->add_node_statement(StatementID::NEW);
+				auto con = tree->add_node_constructor(cf);
+				shared_array<Node> params = {create_inner_lambda.get()};
+				for (auto &c: captures)
+					params.add(tree->add_node_local(c));
+				con = apply_params_direct(con, params, 1);
+				con->kind = NodeKind::CALL_FUNCTION;
+				con->type = TypeVoid;
+
+				cmd_new->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
+				//cmd->type = bind_wrapper_type->get_pointer();
+				cmd_new->set_param(0, con);
+				return cmd_new;
+			}
+
+
+			do_error("lambda bind failed...");
+			return nullptr;
+
+		} else {
+
+			f->update_parameters_after_parsing();
+
+			return tree->add_node_func_name(f);
+		}
+
+
 	} else {
 		node->show();
 		do_error("INTERNAL: unexpected statement", node);
@@ -3121,18 +3255,13 @@ shared<Node> Parser::parse_abstract_statement_map(Block *block) {
 }
 
 
-shared<Node> Parser::parse_statement_lambda(Block *block) {
+shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	Exp.next(); // "lambda"
-	auto *prev_func = cur_func;
 
 	static int unique_lambda_counter = 0;
 
 	auto *f = tree->add_function("<lambda-" + i2s(unique_lambda_counter ++) + ">", TypeUnknown, tree->base_class, Flags::STATIC);
 	f->_token_id = Exp.cur_token();
-
-	f->block->parent = block;
-
-	cur_func = f;
 
 	Exp.next(); // '('
 
@@ -3162,109 +3291,14 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 		}
 	Exp.next(); // ')'
 
-	cur_func = prev_func;
-
 	// lambda body
-	auto cmd = parse_operand_greedy(f->block.get());
-	f->literal_return_type = cmd->type;
-	f->effective_return_type = cmd->type;
+	auto cmd = parse_abstract_operand_greedy(f->block.get());
+	f->block->add(cmd);
 
-	if (cmd->type == TypeVoid) {
-		f->block->add(cmd);
-	} else {
-		auto ret = tree->add_node_statement(StatementID::RETURN);
-		ret->set_num_params(1);
-		ret->params[0] = cmd;
-		f->block->add(ret);
-	}
-
-	f->block->parent = nullptr;
-
-	tree->base_class->add_function(tree, f, false, false);
-
-	// find captures
-	Set<Variable*> captures;
-	auto find_captures = [block, &captures](shared<Node> n) {
-		if (n->kind == NodeKind::VAR_LOCAL) {
-			auto v = n->as_local();
-			for (auto vv: block->function->var)
-				if (v == vv)
-					captures.add(v);
-		}
-		return n;
-	};
-	tree->transform_block(f->block.get(), find_captures);
-
-	auto param_types = f->literal_param_type;
-
-	if (captures.num > 0) {
-		if (config.verbose)
-			msg_write("CAPTURES:");
-		/*auto lt = new BindingTemplate;
-		binding_templates.add(lt);
-		lt->outer = block->function;
-		lt->inner = f;
-		lt->captures_local = captures;
-		lt->capture_data.resize(10000); // 10k...*/
-
-		Array<const Class*> capture_types;
-
-		for (auto v: captures) {
-			if (config.verbose)
-				msg_write("  * " + v->name);
-			//f->block->vars.insert()
-			capture_types.add(v->type);
-
-			auto vvv = f->block->insert_var(f->num_params, v->name, v->type);
-			//if (!flags_has(flags, Flags::OUT))
-			//flags_set(v->flags, Flags::CONST);
-			f->literal_param_type.add(v->type);
-			f->num_params ++;
-
-
-			auto replace_local = [v,vvv](shared<Node> n) {
-				if (n->kind == NodeKind::VAR_LOCAL)
-					if (n->as_local() == v)
-						n->link_no = (int_p)vvv;
-				return n;
-			};
-			tree->transform_block(f->block.get(), replace_local);
-		}
-
-		f->update_parameters_after_parsing();
-
-		auto bind_wrapper_type = tree->make_class_callable_bind(param_types, f->literal_return_type, capture_types);
-
-
-		auto create_inner_lambda = wrap_function_into_callable(f);
-
-
-		for (auto *cf: bind_wrapper_type->get_constructors()) {
-			auto cmd_new = tree->add_node_statement(StatementID::NEW);
-			auto con = tree->add_node_constructor(cf);
-			shared_array<Node> params = {create_inner_lambda.get()};
-			for (auto &c: captures)
-				params.add(tree->add_node_local(c));
-			con = apply_params_direct(con, params, 1);
-			con->kind = NodeKind::CALL_FUNCTION;
-			con->type = TypeVoid;
-
-			cmd_new->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
-			//cmd->type = bind_wrapper_type->get_pointer();
-			cmd_new->set_param(0, con);
-			return cmd_new;
-		}
-
-
-		do_error("lambda bind failed...");
-		return nullptr;
-
-	} else {
-
-		f->update_parameters_after_parsing();
-
-		return tree->add_node_func_name(f);
-	}
+	auto node = tree->add_node_statement(StatementID::LAMBDA, TypeUnknown);
+	node->set_num_params(1);
+	node->set_param(0, tree->add_node_func_name(f));
+	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
@@ -3365,7 +3399,7 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	} else if (Exp.cur == IDENTIFIER_MAP) {
 		return parse_abstract_statement_map(block);
 	} else if (Exp.cur == IDENTIFIER_LAMBDA) {
-		return parse_statement_lambda(block); // TODO
+		return parse_abstract_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
 		return parse_abstract_statement_sorted(block);
 	} else if (Exp.cur == IDENTIFIER_DYN) {
