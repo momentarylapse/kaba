@@ -22,6 +22,10 @@ void test_node_recursion(shared<Node> root, const Class *ns, const string &messa
 shared<Node> parse_abstract_with_dots(Parser *p);
 shared<Node> create_node_token(Parser *p);
 
+Array<const Class*> func_effective_params(const Function *f);
+Array<const Class*> node_call_effective_params(shared<Node> node);
+const Class *node_call_return_type(shared<Node> node);
+
 ExpressionBuffer *cur_exp_buf = nullptr;
 
 void crash() {
@@ -674,33 +678,6 @@ Array<const Class*> Parser::get_wanted_param_types(shared<Node> link, int &manda
 	}
 
 	return {};
-}
-
-shared_array<Node> Parser::parse_call_parameters(Block *block) {
-	if (Exp.cur != "(")
-		do_error("'(' expected in front of function parameter list");
-
-	Exp.next();
-
-	shared_array<Node> params;
-
-	// list of parameters
-	for (int p=0;;p++) {
-		if (Exp.cur == ")")
-			break;
-
-		// find parameter
-		params.add(parse_operand_greedy(block));
-
-		if (Exp.cur != ",") {
-			if (Exp.cur == ")")
-				break;
-			do_error("',' or ')' expected after parameter for function");
-		}
-		Exp.next();
-	}
-	Exp.next(); // ')'
-	return params;
 }
 
 shared_array<Node> Parser::parse_abstract_call_parameters(Block *block) {
@@ -2083,26 +2060,53 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 
 
 	} else if (s->id == StatementID::SORTED) {
+		concretify_all_params(node, block, ns, this);
+		auto array = force_concrete_type(node->params[0]);
+		auto crit = force_concrete_type(node->params[1]);
 
-
-		string name = Exp.cur;
-
-		auto params = parse_call_parameters(block);
-		if (params.num != 2)
-			do_error("sorted() expects 2 parameters");
-		params[0] = force_concrete_type(params[0]);
-		if (!params[0]->type->is_super_array())
+		if (!array->type->is_super_array())
 			do_error("sorted(): first parameter must be a list[]");
-		if (params[1]->type != TypeString)
+		if (crit->type != TypeString)
 			do_error("sorted(): second parameter must be a string");
 
 		Function *f = tree->required_func_global("@sorted");
 
 		auto cmd = tree->add_node_call(f);
-		cmd->set_param(0, params[0]);
-		cmd->set_param(1, tree->add_node_class(params[0]->type));
-		cmd->set_param(2, params[1]);
-		cmd->type = params[0]->type;
+		cmd->set_param(0, array);
+		cmd->set_param(1, tree->add_node_class(array->type));
+		cmd->set_param(2, crit);
+		cmd->type = array->type;
+		return cmd;
+
+
+	} else if (s->id == StatementID::MAP) {
+
+		auto func = concretify_abstract_tree(node->params[0], block, block->name_space());
+		auto array = concretify_abstract_tree(node->params[1], block, block->name_space());
+		func = force_concrete_type(func);
+		array = force_concrete_type(array);
+
+
+		if (!func->type->is_callable())
+			do_error("map(): first parameter must be callable");
+		if (!array->type->is_super_array())
+			do_error("map(): second parameter must be a list[]");
+
+		auto p = node_call_effective_params(func);
+		auto rt = node_call_return_type(func);
+		if (p.num != 1)
+			do_error("map(): function must have exactly one parameter");
+		if (p[0] != array->type->param[0])
+			do_error("map(): function parameter does not match list type");
+
+		auto *f = tree->required_func_global("@xmap");
+
+		auto cmd = tree->add_node_call(f);
+		cmd->set_param(0, func);
+		cmd->set_param(1, array);
+		cmd->set_param(2, tree->add_node_class(p[0]));
+		cmd->set_param(3, tree->add_node_class(p[1]));
+		cmd->type = tree->make_class_super_array(rt);
 		return cmd;
 	} else {
 		node->show();
@@ -3065,36 +3069,17 @@ const Class *node_call_return_type(shared<Node> node) {
 	return get_callable_return_type(node->type);
 }
 
-shared<Node> Parser::parse_statement_map(Block *block) {
+shared<Node> Parser::parse_abstract_statement_map(Block *block) {
 	Exp.next(); // "map"
-	string name = Exp.cur;
 
-	auto params = parse_call_parameters(block);
+	auto params = parse_abstract_call_parameters(block);
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
-	params[0] = force_concrete_type(params[0]);
-	if (!params[0]->type->is_callable())
-		do_error("map(): first parameter must be callable");
-	params[1] = force_concrete_type(params[1]);
-	if (!params[1]->type->is_super_array())
-		do_error("map(): second parameter must be a list[]");
 
-	auto p = node_call_effective_params(params[0]);
-	auto rt = node_call_return_type(params[0]);
-	if (p.num != 1)
-		do_error("map(): function must have exactly one parameter");
-	if (p[0] != params[1]->type->param[0])
-		do_error("map(): function parameter does not match list type");
-
-	auto *f = tree->required_func_global("@xmap");
-
-	auto cmd = tree->add_node_call(f);
-	cmd->set_param(0, params[0]);
-	cmd->set_param(1, params[1]);
-	cmd->set_param(2, tree->add_node_class(p[0]));
-	cmd->set_param(3, tree->add_node_class(p[1]));
-	cmd->type = tree->make_class_super_array(rt);
-	return cmd;
+	auto node = tree->add_node_statement(StatementID::MAP, TypeUnknown);
+	node->set_param(0, params[0]);
+	node->set_param(1, params[1]);
+	return node;
 }
 
 
@@ -3246,8 +3231,12 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 
 shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	Exp.next(); // "sorted"
+	auto params = parse_abstract_call_parameters(block);
+	if (params.num != 2)
+		do_error("sorted(array, criterion) expects 2 parameters");
 	auto node = tree->add_node_statement(StatementID::SORTED, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
+	node->set_param(0, params[0]);
+	node->set_param(1, params[1]);
 	return node;
 }
 
@@ -3336,7 +3325,7 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	} else if (Exp.cur == IDENTIFIER_VAR) {
 		return parse_abstract_statement_var(block);
 	} else if (Exp.cur == IDENTIFIER_MAP) {
-		return parse_statement_map(block); // TODO
+		return parse_abstract_statement_map(block);
 	} else if (Exp.cur == IDENTIFIER_LAMBDA) {
 		return parse_statement_lambda(block); // TODO
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
