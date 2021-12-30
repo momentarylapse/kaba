@@ -2108,6 +2108,49 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 		cmd->set_param(3, tree->add_node_class(p[1]));
 		cmd->type = tree->make_class_super_array(rt);
 		return cmd;
+
+
+	} else if (s->id == StatementID::TRY) {
+		// [TRY-BLOCK, EX:[TYPE, NAME], EX-BLOCK, ...]
+
+		auto try_block = concretify_abstract_tree(node->params[0], block, block->name_space());
+		node->params[0] = try_block;
+
+		int num_exceptions = (node->params.num - 1) / 2;
+
+		for (int i=0; i<num_exceptions; i++) {
+
+			auto ex = node->params[1 + 2*i];
+
+			auto ex_block = node->params[2 + 2*i];
+
+			if (ex->params.num > 0) {
+				auto ex_type = ex->params[0];
+				ex_type = concretify_abstract_tree(ex_type, block, block->name_space());
+				ex_type = digest_type(tree, ex_type);
+				auto var_name = Exp.get_token(ex->params[1]->token_id);
+
+				ex->params.resize(1);
+
+
+				if (ex_type->kind != NodeKind::CLASS)
+					do_error("Exception class expected", ex_type);
+				auto type = ex_type->as_class();
+				if (!type->is_derived_from(TypeException))
+					do_error("Exception class expected", ex_type);
+				ex->type = type;
+
+				auto *v = ex_block->as_block()->add_var(var_name, type->get_pointer());
+				ex->set_param(0, tree->add_node_local(v));
+			} else {
+				ex->type = TypeVoid;
+			}
+
+			// find types AFTER creating the variable
+			ex_block = concretify_abstract_tree(ex_block, block, block->name_space());
+			node->params[2 + 2*i] = ex_block;
+		}
+		node->type = TypeVoid;
 	} else {
 		node->show();
 		do_error("INTERNAL: unexpected statement", node);
@@ -2577,7 +2620,7 @@ shared<Node> Parser::parse_abstract_statement_return(Block *block) {
 }
 
 // IGNORE!!! raise() is a function :P
-shared<Node> Parser::parse_statement_raise(Block *block) {
+shared<Node> Parser::parse_abstract_statement_raise(Block *block) {
 	throw "jhhhh";
 #if 0
 	Exp.next();
@@ -2604,10 +2647,10 @@ shared<Node> Parser::parse_statement_raise(Block *block) {
 //  p[0]: try block
 //  p[1]: statement except (with type of Exception filter...)
 //  p[2]: except block
-shared<Node> Parser::parse_statement_try(Block *block) {
+shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	int ind = Exp.cur_line->indent;
 	Exp.next();
-	auto cmd_try = tree->add_node_statement(StatementID::TRY);
+	auto cmd_try = tree->add_node_statement(StatementID::TRY, TypeUnknown);
 	cmd_try->set_num_params(3);
 	// ...block
 	expect_new_line_with_indent();
@@ -2629,25 +2672,20 @@ shared<Node> Parser::parse_statement_try(Block *block) {
 	//		do_error("wrong indentation for except");
 		Exp.next(); // except
 
-		auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT);
+		auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT, TypeUnknown);
 
 		auto except_block = new Block(block->function, block, TypeUnknown);
 
 		if (!Exp.end_of_line()) {
-			auto *ex_type = parse_type(block->name_space());
+			auto ex_type = parse_abstract_operand(block); // type
 			if (!ex_type)
 				do_error("Exception class expected");
-			if (!ex_type->is_derived_from(TypeException))
-				do_error("Exception class expected");
-			cmd_ex->type = ex_type;
-			ex_type = ex_type->get_pointer();
+			cmd_ex->params.add(ex_type);
 			if (!Exp.end_of_line()) {
 				if (Exp.cur != IDENTIFIER_AS)
 					do_error("'as' expected");
-				Exp.next();
-				string ex_name = Exp.cur;
-				auto *v = except_block->add_var(ex_name, ex_type);
-				cmd_ex->params.add(tree->add_node_local(v));
+				Exp.next(); // 'as'
+				cmd_ex->params.add(create_node_token(this)); // var name
 				Exp.next();
 			}
 		}
@@ -3301,7 +3339,7 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	//} else if (Exp.cur == IDENTIFIER_RAISE) {
 	//	ParseStatementRaise(block);
 	} else if (Exp.cur == IDENTIFIER_TRY) {
-		return parse_statement_try(block); // TODO
+		return parse_abstract_statement_try(block);
 	} else if (Exp.cur == IDENTIFIER_IF) {
 		return parse_abstract_statement_if(block);
 	} else if (Exp.cur == IDENTIFIER_PASS) {
