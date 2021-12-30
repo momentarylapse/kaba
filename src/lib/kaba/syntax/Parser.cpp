@@ -1042,17 +1042,11 @@ shared<Node> Parser::parse_abstract_dict(Block *block) {
 	while(true) {
 		if (Exp.cur == "}")
 			break;
-		auto key = parse_abstract_operand_greedy(block);
-		if (key->type != TypeString or key->kind != NodeKind::CONSTANT)
-			do_error("key needs to be a constant string");
-		el.add(key);
+		el.add(parse_abstract_operand_greedy(block)); // key
 		if (Exp.cur != ":")
 			do_error("':' after key expected");
 		Exp.next();
-		auto value = parse_abstract_operand_greedy(block);
-		if ((Exp.cur != ",") and (Exp.cur != "}"))
-			do_error("',' or '}' expected");
-		el.add(value);
+		el.add(parse_abstract_operand_greedy(block)); // value
 		if (Exp.cur == "}")
 			break;
 		Exp.next();
@@ -2050,6 +2044,66 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 		node->params[0] = p;
 		node->type = TypeVoid;
 		return node;
+
+	} else if (s->id == StatementID::DYN) {
+		auto sub = concretify_abstract_tree(node->params[0], block, block->name_space());
+		//sub = force_concrete_type(sub); // TODO
+		return make_dynamical(sub);
+
+	} else if (s->id == StatementID::RAW_FUNCTION_POINTER) {
+
+		auto sub = concretify_abstract_tree(node->params[0], block, block->name_space());
+		if (sub->kind != NodeKind::FUNCTION)
+			do_error("raw_function_pointer() expects a function name");
+		auto func = tree->add_node_const(tree->add_constant(TypeFunctionP));
+		func->as_const()->as_int64() = (int_p)sub->as_func();
+
+		node->type = TypeFunctionCodeP;
+		node->set_param(0, func);
+		return node;
+
+	} else if (s->id == StatementID::WEAK) {
+		auto sub = concretify_abstract_tree(node->params[0], block, block->name_space());
+
+		auto t = sub->type;
+		while (true) {
+			if (t->is_pointer_shared() or t->is_pointer_owned()) {
+				auto tt = t->param[0]->get_pointer();
+				return sub->shift(0, tt);
+			} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
+				auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer());
+				return sub->shift(0, tt);
+			}
+			if (t->parent)
+				t = t->parent;
+			else
+				break;
+		}
+		do_error("weak() expects either a shared pointer, an owned pointer, or a shared pointer array");
+
+
+	} else if (s->id == StatementID::SORTED) {
+
+
+		string name = Exp.cur;
+
+		auto params = parse_call_parameters(block);
+		if (params.num != 2)
+			do_error("sorted() expects 2 parameters");
+		params[0] = force_concrete_type(params[0]);
+		if (!params[0]->type->is_super_array())
+			do_error("sorted(): first parameter must be a list[]");
+		if (params[1]->type != TypeString)
+			do_error("sorted(): second parameter must be a string");
+
+		Function *f = tree->required_func_global("@sorted");
+
+		auto cmd = tree->add_node_call(f);
+		cmd->set_param(0, params[0]);
+		cmd->set_param(1, tree->add_node_class(params[0]->type));
+		cmd->set_param(2, params[1]);
+		cmd->type = params[0]->type;
+		return cmd;
 	} else {
 		node->show();
 		do_error("INTERNAL: unexpected statement", node);
@@ -2103,6 +2157,9 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		return node;
 	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		concretify_all_params(node, block, ns, this);
+		for (int p=0; p<node->params.num; p+=2)
+			if (node->params[p]->type != TypeString or node->params[p]->kind != NodeKind::CONSTANT)
+				do_error("key needs to be a constant string");
 		return node;
 	} else if (node->kind == NodeKind::FUNCTION) {
 		return node;
@@ -3187,27 +3244,11 @@ shared<Node> Parser::parse_statement_lambda(Block *block) {
 	}
 }
 
-shared<Node> Parser::parse_statement_sorted(Block *block) {
+shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	Exp.next(); // "sorted"
-	string name = Exp.cur;
-
-	auto params = parse_call_parameters(block);
-	if (params.num != 2)
-		do_error("sorted() expects 2 parameters");
-	params[0] = force_concrete_type(params[0]);
-	if (!params[0]->type->is_super_array())
-		do_error("sorted(): first parameter must be a list[]");
-	if (params[1]->type != TypeString)
-		do_error("sorted(): second parameter must be a string");
-
-	Function *f = tree->required_func_global("@sorted");
-
-	auto cmd = tree->add_node_call(f);
-	cmd->set_param(0, params[0]);
-	cmd->set_param(1, tree->add_node_class(params[0]->type));
-	cmd->set_param(2, params[1]);
-	cmd->type = params[0]->type;
-	return cmd;
+	auto node = tree->add_node_statement(StatementID::SORTED, TypeUnknown);
+	node->set_param(0, parse_abstract_single_func_param(block));
+	return node;
 }
 
 shared<Node> Parser::make_dynamical(shared<Node> node) {
@@ -3236,59 +3277,25 @@ shared<Node> Parser::make_dynamical(shared<Node> node) {
 	return cmd;
 }
 
-shared<Node> Parser::parse_statement_dyn(Block *block) {
+shared<Node> Parser::parse_abstract_statement_dyn(Block *block) {
 	Exp.next(); // dyn
-	auto sub = parse_abstract_single_func_param(block);
-	sub = concretify_abstract_tree(sub, block, block->name_space());
-	//sub = force_concrete_type(sub); // TODO
-
-	return make_dynamical(sub);
+	auto node = tree->add_node_statement(StatementID::DYN, TypeUnknown);
+	node->set_param(0, parse_abstract_single_func_param(block));
+	return node;
 }
 
-shared<Node> Parser::parse_statement_raw_function_pointer(Block *block) {
+shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block) {
 	Exp.next(); // "raw_function_pointer"
-
-	auto sub = parse_abstract_single_func_param(block);
-	sub = concretify_abstract_tree(sub, block, block->name_space());
-	if (sub->kind == NodeKind::FUNCTION) {
-		auto func = tree->add_node_const(tree->add_constant(TypeFunctionP));
-		func->as_const()->as_int64() = (int_p)sub->as_func();
-
-		auto cmd = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER);
-		cmd->type = TypeFunctionCodeP;
-		cmd->set_param(0, func);
-		return cmd;
-	} else {
-		do_error("raw_function_pointer() expects a function name");
-	}
-
-	return nullptr;
+	auto node = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER, TypeUnknown);
+	node->set_param(0, parse_abstract_single_func_param(block));
+	return node;
 }
 
-shared<Node> Parser::parse_statement_weak(Block *block) {
+shared<Node> Parser::parse_abstract_statement_weak(Block *block) {
 	Exp.next(); // "weak"
-	string name = Exp.cur;
-
-	auto params = parse_call_parameters(block);
-	if (params.num != 1)
-		do_error("weak() expects 1 parameter");
-
-	auto t = params[0]->type;
-	while (true) {
-		if (t->is_pointer_shared() or t->is_pointer_owned()) {
-			auto tt = t->param[0]->get_pointer();
-			return params[0]->shift(0, tt);
-		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
-			auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer());
-			return params[0]->shift(0, tt);
-		}
-		if (t->parent)
-			t = t->parent;
-		else
-			break;
-	}
-	do_error("weak() expects either a shared pointer, an owned pointer, or a shared pointer array");
-	return nullptr;
+	auto node = tree->add_node_statement(StatementID::WEAK, TypeUnknown);
+	node->set_param(0, parse_abstract_single_func_param(block));
+	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement(Block *block) {
@@ -3333,13 +3340,13 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	} else if (Exp.cur == IDENTIFIER_LAMBDA) {
 		return parse_statement_lambda(block); // TODO
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
-		return parse_statement_sorted(block); // TODO
+		return parse_abstract_statement_sorted(block);
 	} else if (Exp.cur == IDENTIFIER_DYN) {
-		return parse_statement_dyn(block); // TODO
+		return parse_abstract_statement_dyn(block);
 	} else if (Exp.cur == IDENTIFIER_RAW_FUNCTION_POINTER) {
-		return parse_statement_raw_function_pointer(block); // TODO
+		return parse_abstract_statement_raw_function_pointer(block);
 	} else if (Exp.cur == IDENTIFIER_WEAK) {
-		return parse_statement_weak(block); // TODO
+		return parse_abstract_statement_weak(block);
 	}
 	do_error("unhandled statement: " + Exp.cur);
 	return nullptr;
