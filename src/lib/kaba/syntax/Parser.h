@@ -80,8 +80,8 @@ public:
 	Array<const Class*> type_list_from_nodes(const shared_array<Node> &nn);
 
 
-	shared<Node> parse_list(Block *block);
-	shared<Node> parse_dict(Block *block);
+	shared<Node> parse_abstract_list(Block *block);
+	shared<Node> parse_abstract_dict(Block *block);
 	shared<Node> build_function_pipe(const shared<Node> &input, const shared<Node> &func);
 
 	const Class *get_constant_type(const string &str);
@@ -136,7 +136,7 @@ public:
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
 	shared<Node> parse_abstract_operand_greedy(Block *block, bool allow_tuples = false, shared<Node> first_operand = nullptr);
 	shared<Node> parse_operand_super_greedy(Block *block);
-	shared<Node> parse_set_builder(Block *block);
+	shared<Node> parse_abstract_set_builder(Block *block);
 
 	shared<Node> parse_abstract_operator(int param_flags);
 	shared_array<Node> parse_call_parameters(Block *block);
