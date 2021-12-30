@@ -320,10 +320,12 @@ void Node::set_param(int index, shared<Node> p) {
 	}*/
 #endif
 	params[index] = p;
+#if 0
 	if (this->_pointer_ref_counter > 1) {
 		msg_write("ppp");
 		msg_write(msg_get_trace());
 	}
+#endif
 }
 
 shared<Node> Node::shallow_copy() const {
