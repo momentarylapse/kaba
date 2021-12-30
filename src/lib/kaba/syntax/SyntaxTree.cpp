@@ -43,8 +43,8 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 	if (c->kind == NodeKind::BLOCK)
 		cmd = new Block(c->as_block()->function, c->as_block()->parent);
 	else
-		cmd = new Node(c->kind, c->link_no, c->type);
-	cmd->is_const = c->is_const;
+		cmd = new Node(c->kind, c->link_no, c->type, c->is_const);
+	cmd->token_id = c->token_id;
 	cmd->set_num_params(c->params.num);
 	for (int i=0;i<c->params.num;i++)
 		if (c->params[i])

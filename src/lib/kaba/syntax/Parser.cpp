@@ -902,46 +902,15 @@ shared<Node> Parser::parse_abstract_set_builder(Block *block) {
 		n_cmp = parse_abstract_operand_greedy(block);
 	}
 
-
 	if (Exp.cur != "]")
 		do_error("] expected");
 	Exp.next();
 
-
-	const Class *el_type = n_exp->type;
-	const Class *type = tree->make_class_super_array(el_type);
-	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type);
-
-	// array.add(exp)
-	auto *f_add = type->get_member_func("add", TypeVoid, {el_type});
-	if (!f_add)
-		do_error("...add() ???");
-	auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
-	n_add->set_param(1, n_exp);
-
-	Block *b;
-	if (n_cmp) {
-		auto b_if = new Block(block->function, block, TypeUnknown);
-		auto b_add = new Block(block->function, b_if, TypeUnknown);
-		b_add->add(n_add);
-	
-		auto n_if = tree->add_node_statement(StatementID::IF, TypeUnknown);
-		n_if->set_param(0, n_cmp);
-		n_if->set_param(1, b_add);
-	
-		b_if->add(n_if);
-		b = b_if;
-	} else {
-		b = new Block(block->function, block, TypeUnknown);
-		b->add(n_add);
-	}
-
-	n_for->set_param(n_for->params.num - 1, b);
-
 	auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, TypeUnknown);
-	n->set_num_params(2);
+	n->set_num_params(3);
 	n->set_param(0, n_for);
-	n->set_param(1, tree->add_node_local(var));
+	n->set_param(1, n_exp);
+	n->set_param(2, n_cmp);
 	return n;
 
 }
@@ -1193,7 +1162,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block) {
 	} else if (Exp.cur == "[") {
 		Exp.next();
 		if (Exp.cur == "for") {
-			operand = parse_set_builder(block);
+			operand = parse_abstract_set_builder(block);
 		} else {
 			operand = parse_abstract_list(block);
 		}
@@ -1867,7 +1836,7 @@ shared_array<Node> Parser::concretify_abstract_tree_multi(shared<Node> node, Blo
 		} else {
 			auto t = get_constant_type(token);
 			if (t == TypeUnknown) {
-				crash();
+				//crash();
 				do_error("unknown operand", node);
 			}
 
@@ -2222,19 +2191,35 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 
 
 	} else if (node->kind == NodeKind::ARRAY_BUILDER_FOR) {
-		// [FOR, VAR]
+		// IN:  [FOR, EXP, IF]
+		// OUT: [FOR, VAR]
 
-		const Class *el_type = n_exp->type;
-		const Class *type = tree->make_class_super_array(el_type);
-		auto *var = block->add_var(block->function->create_slightly_hidden_name(), type);
+		auto n_for = node->params[0];
+		auto n_exp = node->params[1];
+		auto n_cmp = node->params[2];
+
+		// first pass: find types in the for loop
+		auto fake_for = tree->cp_node(n_for); //->shallow_copy();
+		fake_for->set_param(fake_for->params.num - 1, tree->cp_node(n_exp)); //->shallow_copy());
+		fake_for = concretify_abstract_tree(fake_for, block, ns);
+		// TODO: remove new variables!
+
+		// create an array
+		auto type_el = fake_for->params.back()->type;
+		auto type_array = tree->make_class_super_array(type_el);
+		auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
+
+
 
 		// array.add(exp)
-		auto *f_add = type->get_member_func("add", TypeVoid, {el_type});
+		auto *f_add = type_array->get_member_func("add", TypeVoid, {type_el});
 		if (!f_add)
 			do_error("...add() ???");
 		auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
 		n_add->set_param(1, n_exp);
+		n_add->type = TypeUnknown; // mark abstract so n_exp will be concretified
 
+		// add new code to the loop
 		Block *b;
 		if (n_cmp) {
 			auto b_if = new Block(block->function, block, TypeUnknown);
@@ -2254,15 +2239,19 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 
 		n_for->set_param(n_for->params.num - 1, b);
 
-		post_process_for(n_for);
+		// NOW we can set the types
+		n_for = concretify_abstract_tree(n_for, block, ns);
 
-		auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type);
+		auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type_array);
 		n->set_num_params(2);
 		n->set_param(0, n_for);
 		n->set_param(1, tree->add_node_local(var));
 		return n;
 
 	} else if (node->kind == NodeKind::NONE) {
+	} else if (node->kind == NodeKind::CALL_FUNCTION) {
+		concretify_all_params(node, block, ns, this);
+		node->type = node->as_func()->literal_return_type;
 	} else {
 		node->show();
 		do_error("INTERNAL ERROR: unexpected node", node);
