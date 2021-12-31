@@ -7,7 +7,7 @@ class Test
 		print("new {{a}}")
 
 func main()
-	Test *t = new Test(3)
+	var t = new Test(3)
 	
 	
 	

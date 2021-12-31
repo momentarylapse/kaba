@@ -8,6 +8,6 @@ class Test
 
 
 func main()
-	Test *a = new Test()
+	var a = new Test()
 	print(a.x)
 	del a

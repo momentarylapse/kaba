@@ -598,7 +598,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		if (Exp.almost_end_of_line())
 			return true;
 		string next = Exp.peek_next();
-		if ((next == ",") or (next == "=") or (next == "[") or (next == "{") or (next == "->") or (next == ")"))
+		if ((next == ",") or (next == "=") or (next == "[") or (next == "{") or (next == "->") or (next == ")") or (next == "*"))
 			return true;
 		return false;
 	};
@@ -629,7 +629,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	} else {
 
 		if (Exp.cur == "*") {
-			if (no_identifier_after() or might_declare_pointer_variable()) {
+			if (no_identifier_after()){// or might_declare_pointer_variable()) {
 				// FIXME: false positives for "{{pi * 10}}"
 				return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block);
 			}
@@ -2444,7 +2444,7 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 	} else if ((node->kind == NodeKind::ABSTRACT_TOKEN) or (node->kind == NodeKind::ABSTRACT_ELEMENT)) {
 		auto operands = concretify_node_multi(node, block, ns);
 		if (operands.num > 1)
-			msg_write("WARNING: node not unique");
+			msg_write(format("WARNING: node not unique:  %s  -  line %d", Exp.get_token(node->token_id), Exp.token_physical_line_no(node->token_id) + 1));
 		if (operands.num > 0)
 			return operands[0];
 	} else if (node->kind == NodeKind::STATEMENT) {
