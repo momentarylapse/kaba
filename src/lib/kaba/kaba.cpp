@@ -293,7 +293,7 @@ void execute_single_script_command(const string &cmd) {
 		msg_write("ABSTRACT SINGLE:");
 		func->block->show();
 	}
-	parser->concretify_abstract_tree(func->block.get(), func->block.get(), func->name_space);
+	parser->concretify_node(func->block.get(), func->block.get(), func->name_space);
 	
 	// implicit print(...)?
 	if (func->block->params.num > 0 and func->block->params[0]->type != TypeVoid) {
