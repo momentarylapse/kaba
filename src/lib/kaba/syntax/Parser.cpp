@@ -2154,12 +2154,9 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 
 
 	} else if (s->id == StatementID::LAMBDA) {
-		msg_error("LAMBDA");
-
 
 		auto f = node->params[0]->as_func();
 		auto cmd = f->block->params[0];
-		cmd->show();
 
 
 		auto *prev_func = cur_func;
@@ -2168,9 +2165,7 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 
 		cur_func = f;
 
-		msg_write("CONCRET:");
 		cmd = concretify_abstract_tree(cmd, f->block.get(), block->name_space());
-		cmd->show();
 
 
 		cur_func = prev_func;
@@ -2188,12 +2183,12 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 		f->effective_return_type = cmd->type;
 
 		if (cmd->type == TypeVoid) {
-			f->block->add(cmd);
+			f->block->params[0] = cmd;
 		} else {
 			auto ret = tree->add_node_statement(StatementID::RETURN);
 			ret->set_num_params(1);
 			ret->params[0] = cmd;
-			f->block->add(ret);
+			f->block->params[0] = ret;
 		}
 
 		f->block->parent = nullptr;
@@ -2275,7 +2270,6 @@ shared<Node> Parser::concretify_abstract_statement(shared<Node> node, Block *blo
 
 
 			do_error("lambda bind failed...");
-			return nullptr;
 
 		} else {
 
@@ -2400,9 +2394,8 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 	} else if (node->kind == NodeKind::STATEMENT) {
 		return concretify_abstract_statement(node, block, ns);
 	} else if (node->kind == NodeKind::BLOCK) {
-		for (int i=0; i<node->params.num; i++) {
+		for (int i=0; i<node->params.num; i++)
 			node->params[i] = concretify_abstract_tree(node->params[i], node->as_block(), ns);
-		}
 		//concretify_all_params(node, node->as_block(), ns, this);
 		node->type = TypeVoid;
 		for (int i=node->params.num-1; i>=0; i--)
@@ -2418,6 +2411,7 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 		} else {
 			//assert(node->params[2]);
 			auto rhs = force_concrete_type(concretify_abstract_tree(node->params[2]->params[1], block, ns));
+			node->params[2]->params[1] = rhs;
 			type = rhs->type;
 		}
 		if (type->needs_constructor() and !type->get_default_constructor())
@@ -2426,7 +2420,6 @@ shared<Node> Parser::concretify_abstract_tree(shared<Node> node, Block *block, c
 
 		if (node->params.num == 3)
 			return concretify_abstract_tree(node->params[2], block, ns);
-
 
 	} else if (node->kind == NodeKind::ARRAY_BUILDER_FOR) {
 		// IN:  [FOR, EXP, IF]
