@@ -6,6 +6,6 @@ func f2(a: Test*[]) -> bool
 
 
 func main()
-	Test* a = nil
+	var a: Test* = nil
 	if f2([a])
 		pass

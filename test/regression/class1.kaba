@@ -1,7 +1,7 @@
 use os
 
 func main()
-	File *f = Filesystem.create("__test__")
+	var f = Filesystem.create("__test__")
 	f << 1
 	del f
 

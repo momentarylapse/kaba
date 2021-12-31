@@ -9,5 +9,5 @@ class Test
 		print("delete {{x}}")
 
 func main()
-	Test *t = new Test(3)
+	var t = new Test(3)
 	del t

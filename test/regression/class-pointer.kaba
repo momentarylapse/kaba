@@ -6,8 +6,8 @@ class A
 class B extends A
 
 func main()
-	Class* ca = A
-	Class* cb = B
+	var ca = A
+	var cb = B
 	print(ca.name)
 	print(cb.name)
 	print(ca.is_derived_from(cb))

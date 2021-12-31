@@ -5,7 +5,7 @@ class f extends File
 		print("hallo")
 
 func main()
-	f *a
+	var a: f*
 	a = Filesystem.create("__test__")
 	a << 2
 	a.func()

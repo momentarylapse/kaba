@@ -4,7 +4,7 @@ class Test
 		print("new ---")
 
 func main()
-	Test *t = new Test()
+	var t = new Test()
 	
 	
 	

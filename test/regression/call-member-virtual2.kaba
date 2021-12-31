@@ -7,7 +7,7 @@ class Derived extends Base
 		print("Derived.f")
 
 func main()
-	Base *t = new Base()
+	var t = new Base()
 	t.f()
 	t = new Derived()
 	t.f()

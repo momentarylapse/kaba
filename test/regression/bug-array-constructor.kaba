@@ -22,5 +22,5 @@ class Complex extends Base
 		a = 13
 
 func main()
-	Complex *c = new Complex(5)
+	var c = new Complex(5)
 	print(str(*c))

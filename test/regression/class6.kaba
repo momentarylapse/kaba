@@ -23,5 +23,5 @@ class C extends B
 		print("C.x")
 
 func main()
-	A* a = new C("test")
+	var a: A* = new C("test")
 	a.x()
