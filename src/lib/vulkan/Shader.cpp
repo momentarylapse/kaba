@@ -67,6 +67,7 @@ extern bool verbose;
 
 	struct ShaderMetaData {
 		string version, name, bindings;
+		Array<string> extensions;
 		int push_size;
 	};
 
@@ -114,6 +115,14 @@ extern bool verbose;
 				p.type = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 			} else if (tag == "GeometryShader") {
 				p.type = VK_SHADER_STAGE_GEOMETRY_BIT;
+			} else if (tag == "RayGenShader") {
+				p.type = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+			} else if (tag == "RayClosestHitShader") {
+				p.type = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+			} else if (tag == "RayAnyHitShader") {
+				p.type = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+			} else if (tag == "RayMissShader") {
+				p.type = VK_SHADER_STAGE_MISS_BIT_KHR;
 			} else if (tag == "Module") {
 				p.type = (VkShaderStageFlagBits)TYPE_MODULE;
 			} else if (tag == "Layout") {
@@ -167,6 +176,8 @@ extern bool verbose;
 		string intro;
 		if (meta.version != "")
 			intro += "#version " + meta.version + "\n";
+		for (auto &e: meta.extensions)
+			intro += "#extension " + e + " : require\n";
 		if (r.find("GL_ARB_separate_shader_objects", 0) < 0)
 			intro += "#extension GL_ARB_separate_shader_objects : enable\n";
 		return intro + r;
@@ -177,6 +188,23 @@ extern bool verbose;
 			return shaderc_glsl_vertex_shader;
 		if (s == VK_SHADER_STAGE_FRAGMENT_BIT)
 			return shaderc_glsl_fragment_shader;
+		if (s == VK_SHADER_STAGE_COMPUTE_BIT)
+			return shaderc_compute_shader;
+		if (s == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
+			return shaderc_tess_control_shader;
+		if (s == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+			return shaderc_tess_evaluation_shader;
+		if (s == VK_SHADER_STAGE_GEOMETRY_BIT)
+			return shaderc_geometry_shader;
+		if (s == VK_SHADER_STAGE_RAYGEN_BIT_KHR)
+			return shaderc_raygen_shader;
+		if (s == VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+			return shaderc_closesthit_shader;
+		if (s == VK_SHADER_STAGE_ANY_HIT_BIT_KHR)
+			return shaderc_anyhit_shader;
+		if (s == VK_SHADER_STAGE_MISS_BIT_KHR)
+			return shaderc_miss_shader;
+		throw Exception("unhandled shader type...");
 		return shaderc_glsl_vertex_shader;
 	}
 
@@ -226,6 +254,8 @@ extern bool verbose;
 					m.push_size = v._int();
 				} else if (k == "input") {
 				} else if (k == "topology") {
+				} else if (k == "extensions") {
+					m.extensions = v.explode(",");
 				} else {
 					msg_error("unhandled shader meta: " + x);
 				}
