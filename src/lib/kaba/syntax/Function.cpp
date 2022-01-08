@@ -36,6 +36,7 @@ Function::Function(const string &_name, const Class *_return_type, const Class *
 	address_preprocess = nullptr;
 	_label = -1;
 	needs_overriding = false;
+	is_abstract = false;
 }
 
 #include "../../base/set.h"
