@@ -102,6 +102,7 @@ public:
 	shared<Node> parse_abstract_list(Block *block);
 	shared<Node> parse_abstract_dict(Block *block);
 	shared<Node> build_function_pipe(const shared<Node> &input, const shared<Node> &func);
+	shared<Node> build_lambda_new(const shared<Node> &param, const shared<Node> &expression);
 
 	const Class *get_constant_type(const string &str);
 	void get_constant_value(const string &str, Value &value);

@@ -47,7 +47,8 @@ AbstractOperator abstract_operators[(int)OperatorID::_COUNT_] = {
 	{"&",  OperatorID::REFERENCE,     false, 15,  "-none-", 2, false},
 	{"[...]",  OperatorID::ARRAY,     false, 16,  "-none-", 3, false},
 	{"|>",  OperatorID::FUNCTION_PIPE,false,  1,  "-none-", 3, false},
-	{IDENTIFIER_AS, OperatorID::AS,   false, 15,  "-none-", 3, false}
+	{IDENTIFIER_AS, OperatorID::AS,   false, 15,  "-none-", 3, false},
+	{"=>",  OperatorID::MAPS_TO,      false,  1,  "__mapsto__", 3, false}
 };
 
 }
