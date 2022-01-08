@@ -55,6 +55,7 @@ public:
 
 	shared<Node> concretify_node(shared<Node> node, Block *block, const Class *ns);
 	shared_array<Node> concretify_node_multi(shared<Node> node, Block *block, const Class *ns);
+	const Class *concretify_as_type(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_array(shared<Node> node, Block *block, const Class *ns);
 	shared_array<Node> concretify_element(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_call(shared<Node> node, Block *block, const Class *ns);
@@ -81,6 +82,7 @@ public:
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
+	void concretify_function(Function *f);
 
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);

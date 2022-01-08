@@ -35,6 +35,8 @@ public:
 	int num_params;
 	int mandatory_params;
 	shared_array<Node> default_parameters;
+	shared_array<Node> abstract_param_types;
+	shared<Node> abstract_return_type;
 	// block of code
 	shared<Block> block;
 	// local variables
@@ -55,6 +57,7 @@ public:
 	InlineID inline_no;
 	int virtual_index;
 	bool needs_overriding;
+	bool is_abstract;
 	int num_slightly_hidden_vars;
 	// for compilation...
 	int64 _var_size;

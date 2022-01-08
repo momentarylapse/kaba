@@ -2556,6 +2556,17 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 	return node;
 }
 
+
+const Class *Parser::concretify_as_type(shared<Node> node, Block *block, const Class *ns) {
+	auto cc = concretify_node(node, block, ns);
+	cc = digest_type(tree, cc);
+	if (cc->kind != NodeKind::CLASS) {
+		cc->show(TypeVoid);
+		do_error("type expected", cc);
+	}
+	return cc->as_class();
+}
+
 // A+B*C  ->  +(A, *(B, C))
 shared<Node> digest_operator_list_to_tree(shared_array<Node> &operands, shared_array<Node> &operators) {
 	while (operators.num > 0) {
@@ -4119,17 +4130,13 @@ bool Parser::parse_abstract_function_command(Function *f, int indent0) {
 // greedy
 const Class *Parser::parse_type(const Class *ns) {
 	auto cc = parse_abstract_operand(tree->root_of_all_evil->block.get());
-	cc = concretify_node(cc, tree->root_of_all_evil->block.get(), ns);
-	cc = digest_type(tree, cc);
-	if (cc->kind != NodeKind::CLASS) {
-		cc->show(TypeVoid);
-		do_error("type expected", cc);
-	}
-	return cc->as_class();
+	return concretify_as_type(cc, tree->root_of_all_evil->block.get(), ns);
 }
 
 Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	Exp.next(); // "func"
+
+	auto block = tree->root_of_all_evil->block.get();
 
 	flags = parse_flags(flags);
 
@@ -4141,6 +4148,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	}
 
 	Function *f = tree->add_function(name, TypeVoid, name_space, flags);
+	f->is_abstract = true;
 	//if (config.verbose)
 	//	msg_write("PARSE HEAD  " + f->signature());
 	f->_token_id = Exp.cur_token();
@@ -4166,17 +4174,15 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			Exp.next();
 
 			// type of parameter variable
-			auto param_type = parse_type(name_space); // force
-			auto v = f->add_param(param_name, param_type, param_flags);
+			f->abstract_param_types.add(parse_operand(block, name_space));
+			auto v = f->add_param(param_name, TypeUnknown, param_flags);
 
 
 			// default parameter?
 			if (Exp.cur == "=") {
 				Exp.next();
 				f->default_parameters.resize(f->num_params - 1);
-				auto dp = parse_operand(tree->root_of_all_evil->block.get(), name_space, false);
-				if (dp->type != param_type)
-					do_error(format("trying to set a default value of type '%s' for a parameter of type '%s'", dp->type->name, param_type->name));
+				auto dp = parse_abstract_operand(block);
 				f->default_parameters.add(dp);
 			}
 
@@ -4192,11 +4198,13 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	if (Exp.cur == "->") {
 		// return type
 		Exp.next();
-		f->set_return_type(parse_type(name_space));
+		f->abstract_return_type = parse_abstract_operand(tree->root_of_all_evil->block.get());
 	}
 
 	if (!Exp.end_of_line())
 		do_error("newline expected after parameter list");
+
+	concretify_function(f);
 
 	f->update_parameters_after_parsing();
 
@@ -4205,6 +4213,29 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	name_space->add_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
 
 	return f;
+}
+
+void Parser::concretify_function(Function *f) {
+	auto block = tree->root_of_all_evil->block.get();
+
+	if (f->abstract_return_type) {
+		f->set_return_type(concretify_as_type(f->abstract_return_type, block, f->name_space));
+	}
+	f->literal_param_type.resize(f->abstract_param_types.num);
+	foreachi (auto at, weak(f->abstract_param_types), i) {
+		auto t = concretify_as_type(at, block, f->name_space);
+		auto v = f->var[i];
+		v->type = t;
+		f->literal_param_type[i] = t;
+
+
+		if (i < f->default_parameters.num) {
+			f->default_parameters[i] = concretify_node(f->default_parameters[i], block, f->name_space);
+			if (f->default_parameters[i]->type != t)
+				do_error(format("trying to set a default value of type '%s' for a parameter of type '%s'", f->default_parameters[i]->type->name, t->name));
+		}
+	}
+	f->is_abstract = false;
 }
 
 void Parser::skip_parsing_function_body(Function *f) {
