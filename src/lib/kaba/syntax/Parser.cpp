@@ -1618,6 +1618,12 @@ shared<Node> Parser::build_function_pipe(const shared<Node> &input, const shared
 	//return out;
 }
 
+
+shared<Node> Parser::build_lambda_new(const shared<Node> &param, const shared<Node> &expression) {
+	do_error("abstract lambda not implemented yet", param);
+	return nullptr;
+}
+
 inline void concretify_all_params(shared<Node> &node, Block *block, const Class *ns, Parser *parser) {
 	for (int p=0; p<node->params.num; p++)
 		if (node->params[p]->type == TypeUnknown) {
@@ -2347,13 +2353,16 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 		return node;
 
 	if (node->kind == NodeKind::ABSTRACT_OPERATOR) {
-		concretify_all_params(node, block, ns, this);
 		auto op_no = node->as_abstract_op();
 
 		if (op_no->id == OperatorID::FUNCTION_PIPE) {
+			concretify_all_params(node, block, ns, this);
 			// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
 			return build_function_pipe(node->params[0], node->params[1]);
+		} else if (op_no->id == OperatorID::MAPS_TO) {
+			return build_lambda_new(node->params[0], node->params[1]);
 		}
+		concretify_all_params(node, block, ns, this);
 
 		if (node->params.num == 2) {
 			// binary operator A+B
