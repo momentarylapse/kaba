@@ -82,7 +82,8 @@ public:
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
-	void concretify_function(Function *f);
+	void concretify_function_header(Function *f);
+	void concretify_function_body(Function *f);
 
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
@@ -122,7 +123,7 @@ public:
 	void skip_parse_class();
 	Function *parse_function_header(Class *name_space, Flags flags0);
 	void skip_parsing_function_body(Function *f);
-	void parse_function_body(Function *f);
+	void parse_abstract_function_body(Function *f);
 	bool parse_abstract_function_command(Function *f, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);

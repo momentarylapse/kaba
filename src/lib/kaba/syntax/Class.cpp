@@ -513,6 +513,19 @@ const Class *Class::get_root() const {
 	return r;
 }
 
+void Class::add_abstract_function(SyntaxTree *s, Function *f, bool as_virtual, bool override) {
+	if (config.verbose)
+		msg_write("CLASS ADD ABSTRACT   " + long_name() + "    " + f->signature());
+	if (f->is_static()) {
+		if (config.verbose)
+			msg_write("   STATIC");
+		functions.add(f);
+	} else {
+		// too lazy for checking...
+		functions.add(f);
+	}
+}
+
 void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool override) {
 	if (config.verbose)
 		msg_write("CLASS ADD   " + long_name() + "    " + f->signature());

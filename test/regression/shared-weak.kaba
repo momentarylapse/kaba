@@ -1,4 +1,4 @@
-class X as shared
+class Test as shared
 	func __init__()
 		print("init")
 	func __delete__()
@@ -6,22 +6,22 @@ class X as shared
 	func const f()
 		print("f")
 
-func ff(x: X)
+func ff(x: Test)
 	x.f()
 
 func main()
-#	shared X x = new X()
+#	shared Test x = new Test()
 
-	shared X[] a
+	shared Test[] a
 	print("a")
-	shared X xx = new X()
+	shared Test xx = new Test()
 	ff(weak(xx))
 	print("a2")
 	a.add(xx)
 	print("a3")
 	a.add(xx)
 	print("a4")
-	xx = new X()
+	xx = new Test()
 	a.add(xx)
 	print("a5")
 
