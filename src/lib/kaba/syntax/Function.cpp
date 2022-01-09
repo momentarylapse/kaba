@@ -78,7 +78,7 @@ void Function::show(const string &stage) const {
 	if (!config.allow_output(this, stage))
 		return;
 	auto ns = owner()->base_class;
-	msg_write("[function] " + literal_return_type->cname(ns) + " " + cname(ns));
+	msg_write("[function] " + cname(ns) + " -> " + literal_return_type->cname(ns));
 	block->show(ns);
 }
 

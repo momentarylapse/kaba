@@ -1697,6 +1697,98 @@ shared_array<Node> Parser::concretify_element(shared<Node> node, Block *block, c
 	return {};
 }
 
+
+class TemplateManager {
+public:
+	static void add_template(Function *f) {
+		if (config.verbose)
+			msg_write("ADD TEMPLATE");
+		Template t;
+		t.func = f;
+		templates.add(t);
+	}
+
+	static Function *full_copy(Parser *parser, Function *f0) {
+		auto f = f0->create_dummy_clone(f0->name_space);
+		f->block = (Block*)parser->tree->cp_node(f0->block.get()).get();
+		f->needs_overriding = false;
+
+		auto convert = [f](shared<Node> n) {
+			if (n->kind != NodeKind::BLOCK)
+				return n;
+			auto b = n->as_block();
+			foreachi (auto v, b->vars, vi) {
+				int i = weak(b->function->var).find(v);
+				//msg_write(i);
+				b->vars[vi] = f->var[i].get();
+			}
+			b->function = f;
+			return n;
+		};
+
+		convert(f->block.get());
+		parser->tree->transform_block(f->block.get(), convert);
+
+		f->abstract_param_types = f0->abstract_param_types;
+		f->abstract_return_type = f0->abstract_return_type;
+		return f;
+	}
+
+	static Function *instantiate(Parser *parser, Function *f0, const Array<const Class*> &params) {
+		if (config.verbose)
+			msg_write("INSTANTIATE TEMPLATE");
+		auto f = full_copy(parser, f0);
+		//f->block->show();
+
+		/*for (auto pp: weak(f->abstract_param_types))
+			pp->show();
+		msg_write(params[0]->name);*/
+
+		// lazy experiment...
+		//f->literal_param_type[0] = params[0];
+		//f->literal_return_type = params[0];
+		//msg_write("INSTANTIATE 01");
+		//msg_write(f0->abstract_param_types.num);
+		f->abstract_param_types[0] = parser->tree->add_node_class(params[0]);
+		//msg_write("INSTANTIATE 02");
+		f->abstract_return_type = parser->tree->add_node_class(params[0]);
+
+		//msg_write("INSTANTIATE 2");
+
+		parser->concretify_function_header(f);
+		//msg_write("INSTANTIATE 3");
+
+		f->update_parameters_after_parsing();
+
+		//msg_write("INSTANTIATE 4");
+		parser->concretify_function_body(f);
+		//msg_write("INSTANTIATE 41");
+
+		if (config.verbose)
+			f->block->show();
+		//msg_write("INSTANTIATE 42");
+
+		auto ns = const_cast<Class*>(f0->name_space);
+		ns->add_function(parser->tree, f, false, false);
+		parser->tree->functions.add(f);
+
+		//parser->do_error("template instantiate");
+		return f;
+	}
+
+	struct Instance {
+		Function *f;
+		Array<const Class*> params;
+	};
+	struct Template {
+		Function *func;
+		Array<string> params;
+		Array<Instance> instances;
+	};
+	static Array<Template> templates;
+};
+Array<TemplateManager::Template> TemplateManager::templates;
+
 shared<Node> Parser::concretify_array(shared<Node> node, Block *block, const Class *ns) {
 	auto operand = concretify_node(node->params[0], block, ns);
 	auto index = concretify_node(node->params[1], block, ns);
@@ -1724,9 +1816,15 @@ shared<Node> Parser::concretify_array(shared<Node> node, Block *block, const Cla
 		auto t = index->as_class();
 		for (auto l: weak(links)) {
 			auto f = l->as_func();
-			if (f->num_params >= 1)
-				if (f->literal_param_type[0] == t)
-					return l;
+			if (f->is_abstract) {
+				auto ff = TemplateManager::instantiate(this, f, {t});
+				if (ff)
+					return tree->add_node_func_name(ff);
+			} else {
+				if (f->num_params >= 1)
+					if (f->literal_param_type[0] == t)
+						return l;
+			}
 		}
 		do_error(format("function has no version [%s]", t->name), index);
 	}
@@ -1813,6 +1911,12 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 		} else {
 			auto t = get_constant_type(token);
 			if (t == TypeUnknown) {
+
+				msg_write("----");
+				for (auto vv: weak(block->function->var))
+					msg_write(vv->type->name + " .... " + vv->name);
+				for (auto p: block->function->literal_param_type)
+					msg_write(p->name);
 				//crash();
 				do_error("unknown operand", node);
 			}
@@ -4133,6 +4237,23 @@ const Class *Parser::parse_type(const Class *ns) {
 	return concretify_as_type(cc, tree->root_of_all_evil->block.get(), ns);
 }
 
+bool node_is_template_type_name(Parser *parser, shared<Node> node) {
+	if (node->kind != NodeKind::ABSTRACT_TOKEN)
+		return false;
+	auto t = parser->Exp.get_token(node->token_id);
+	return (t.num == 1) and (t[0] >= 'A') and (t[0] <= 'Z');
+}
+
+bool func_is_template(Parser *parser, Function *f) {
+	if (f->abstract_return_type)
+		if (node_is_template_type_name(parser, f->abstract_return_type))
+			return true;
+	for (auto p: weak(f->abstract_param_types))
+		if (node_is_template_type_name(parser, p))
+			return true;
+	return false;
+}
+
 Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	Exp.next(); // "func"
 
@@ -4174,7 +4295,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			Exp.next();
 
 			// type of parameter variable
-			f->abstract_param_types.add(parse_operand(block, name_space));
+			f->abstract_param_types.add(parse_abstract_operand(block));
 			auto v = f->add_param(param_name, TypeUnknown, param_flags);
 
 
@@ -4204,18 +4325,23 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	if (!Exp.end_of_line())
 		do_error("newline expected after parameter list");
 
-	concretify_function(f);
+	if (func_is_template(this, f)) {
+		TemplateManager::add_template(f);
+		name_space->add_abstract_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
+	} else {
+		concretify_function_header(f);
 
-	f->update_parameters_after_parsing();
+		f->update_parameters_after_parsing();
+
+		name_space->add_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
+	}
 
 	cur_func = nullptr;
-
-	name_space->add_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
 
 	return f;
 }
 
-void Parser::concretify_function(Function *f) {
+void Parser::concretify_function_header(Function *f) {
 	auto block = tree->root_of_all_evil->block.get();
 
 	if (f->abstract_return_type) {
@@ -4251,7 +4377,7 @@ void Parser::skip_parsing_function_body(Function *f) {
 	function_needs_parsing.add(f);
 }
 
-void Parser::parse_function_body(Function *f) {
+void Parser::parse_abstract_function_body(Function *f) {
 	Exp.jump(f->_token_id);
 	f->block->type = TypeUnknown; // abstract parsing
 
@@ -4281,14 +4407,21 @@ void Parser::parse_function_body(Function *f) {
 		f->block->show();
 	}
 
+	if (f->is_abstract) {
+		//msg_error("ABSTRACT FUNC");
+	} else {
+		concretify_function_body(f);
+	}
+
+	cur_func = nullptr;
+}
+
+void Parser::concretify_function_body(Function *f) {
 	concretify_node(f->block.get(), f->block.get(), f->name_space);
 
 	// auto implement destructor?
 	if (f->name == IDENTIFIER_FUNC_DELETE)
 		auto_implement_regular_destructor(f, f->name_space);
-	cur_func = nullptr;
-
-	Exp.rewind();
 }
 
 void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
@@ -4317,7 +4450,7 @@ void Parser::parse_all_function_bodies() {
 	for (int i=0; i<function_needs_parsing.num; i++) {
 		auto f = function_needs_parsing[i];
 		if (!f->is_extern() and (f->_token_id >= 0))
-			parse_function_body(f);
+			parse_abstract_function_body(f);
 	}
 }
 

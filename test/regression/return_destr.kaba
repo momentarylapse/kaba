@@ -1,4 +1,4 @@
-class T
+class Test
 	var i: int
 	func __init__()
 		self.i = 13
@@ -7,13 +7,13 @@ class T
 	func __delete__()
 		print("delete")
 		print(self.i)
-	func __assign__(other: T)
+	func __assign__(other: Test)
 		print("assign")
 		print(self.i)
 		print(other.i)
 		self.i = other.i
 #int f()
-#	T t
+#	Test t
 #	return 2
 #	return 1
 #
@@ -23,9 +23,9 @@ class T
 #	print f()create_con
 #	print a
 
-func f() -> T
+func f() -> Test
 	#print "f"
-	T r
+	Test r
 	return r
 
 func main()
