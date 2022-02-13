@@ -1,4 +1,4 @@
-project('kaba', 'cpp', default_options : ['cpp_std=c++20', 'warning_level=1', 'optimization=2', 'debug=true'])
+project('kaba', 'cpp', default_options : ['cpp_std=c++17', 'warning_level=1', 'optimization=2', 'debug=true'])
 add_project_arguments('-Wno-unused', '-Wstrict-aliasing=0', '-fno-omit-frame-pointer', language : ['cpp'])
 
 #install_data
@@ -274,4 +274,6 @@ executable('kaba', sources, dependencies : deps, install : true)
 
 install_data('static/icon.ico', install_dir : join_paths(get_option('datadir'), 'kaba'))
 install_data('static/icon.png', install_dir : join_paths(get_option('datadir'), 'kaba'))
+install_data('static/michisoft-kaba.desktop', install_dir : join_paths(get_option('datadir'), 'kaba'))
+install_data('static/michisoft-kaba.xml', install_dir : join_paths(get_option('datadir'), 'kaba'))
 install_data('static/michisoft-kaba.desktop', install_dir : join_paths(get_option('datadir'), 'applications'))
