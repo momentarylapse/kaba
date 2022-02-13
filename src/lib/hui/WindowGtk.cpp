@@ -1,7 +1,9 @@
 #include "Controls/Control.h"
+#include "Controls/ControlHeaderBar.h"
 #include "hui.h"
 #include "internal.h"
 #include "Toolbar.h"
+#include "../base/pointer.h"
 #ifdef HUI_API_GTK
 
 
@@ -9,8 +11,10 @@
 	#include <gdk/gdkwin32.h>
 #endif
 #ifdef OS_LINUX
+#if !GTK_CHECK_VERSION(4,0,0)
 #if HAS_LIB_XLIB
 	#include <gdk/gdkx.h>
+#endif
 #endif
 #endif
 
@@ -18,7 +22,8 @@ namespace hui
 {
 
 
-void DBDEL(const string &type, const string &id, void *p);
+void DBDEL_START(const string &type, const string &id, void *p);
+void DBDEL_X(const string &m);
 void DBDEL_DONE();
 
 
@@ -40,21 +45,34 @@ inline Window *win_from_widget(void *widget) {
 	return nullptr;
 }
 
-void WinTrySendByKeyCode(Window *win, int key_code) {
+void Window::_try_send_by_key_code_(int key_code) {
 	if (key_code <= 0)
 		return;
-	for (auto &k: win->event_key_codes)
+	for (auto &k: event_key_codes)
 		if (key_code == k.key_code) {
 			Event e = Event(k.id, k.message);
-			win->_send_event_(&e);
+			_send_event_(&e);
 		}
 }
 
-static gboolean on_gtk_window_close(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+#if GTK_CHECK_VERSION(4,0,0)
+static gboolean on_gtk_window_close_request(GtkWidget *widget, gpointer user_data) {
 	Window *win = (Window *)user_data;
 	Event e = Event("", EventID::CLOSE);
 	if (win->_send_event_(&e))
 		return true;
+	win->on_close_request();
+	return true;
+}
+#else
+static gboolean on_gtk_window_close(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+	//msg_write("close request...");
+	Window *win = (Window *)user_data;
+	Event e = Event("", EventID::CLOSE);
+	//msg_write("close request...2");
+	if (win->_send_event_(&e))
+		return true;
+	//msg_write("close request...3");
 	win->on_close_request();
 	return true;
 }
@@ -70,6 +88,7 @@ static gboolean on_gtk_window_focus(GtkWidget *widget, GdkEventFocus *event, gpo
 	win->input.key[KEY_RALT] = win->input.key[KEY_LALT] = false;*/
 	return false;
 }
+#endif
 
 static void on_gtk_window_resize(GtkWidget *widget, gpointer user_data) {
 	Window *win = (Window *)user_data;
@@ -84,22 +103,36 @@ static void on_gtk_window_resize(GtkWidget *widget, gpointer user_data) {
 // window functions
 
 
+
+string get_gtk_action_name(const string &id, Panel *scope_panel) {
+	string scope;
+	if (scope_panel) {
+		if (scope_panel == scope_panel->win)
+			scope = "win.";
+		else
+			scope = p2s(scope_panel) + ".";
+	}
+	return format("%shuiactionX%s", scope, id.hex().replace(".", ""));
+	//return format("%shuiaction('%s')", with_scope ? "win." : "", id);
+}
+
+
 // general window
 
-void Window::_init_(const string &title, int width, int height, Window *parent, bool allow_parent, int mode) {
+void Window::_init_(const string &title, int width, int height, Window *_parent, bool allow_parent, int mode) {
 	window = nullptr;
 	win = this;
-	headerbar = nullptr;
+	header_bar = nullptr;
 	statusbar = nullptr;
 	requested_destroy = false;
 
 	if ((mode & WIN_MODE_DUMMY) > 0)
 		return;
 
-	_init_generic_(parent, allow_parent, mode);
+	_init_generic_(_parent, allow_parent, mode);
 
 	// creation
-	if (parent) {
+	if (is_dialog()) {
 		window = gtk_dialog_new();
 
 
@@ -114,10 +147,24 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 #endif
 
 		// dialog -> center on screen or root (if given)    ->  done by gtk....later
-		gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(parent->window));
+		gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(parent_window->window));
 		gtk_window_set_resizable(GTK_WINDOW(window), false);
 	} else {
+#if GTK_CHECK_VERSION(4,0,0)
+		window = gtk_window_new();
+		if (Application::application) {
+			gtk_application_add_window(Application::application, GTK_WINDOW(window));
+
+			//g_action_map_add_action_entries(G_ACTION_MAP(group), entries, G_N_ELEMENTS(entries), this);
+			gtk_widget_insert_action_group(window, "win", G_ACTION_GROUP(action_group));
+
+			shortcut_controller = gtk_shortcut_controller_new ();
+			gtk_shortcut_controller_set_scope(GTK_SHORTCUT_CONTROLLER(shortcut_controller), GTK_SHORTCUT_SCOPE_GLOBAL);
+			gtk_widget_add_controller(window, shortcut_controller);
+		}
+#else
 		window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+#endif
 		gtk_window_set_resizable(GTK_WINDOW(window), true);
 	}
 
@@ -125,32 +172,67 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 	gtk_window_set_title(GTK_WINDOW(window), sys_str(parts[0]));
 
 	// size
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+#else
 	gtk_window_resize(GTK_WINDOW(window), width, height);
 	desired_width = width;
 	desired_height = height;
+#endif
 
 	// icon
 	string logo = Application::get_property("logo");
+#if !GTK_CHECK_VERSION(4,0,0)
 	if (logo.num > 0)
 		gtk_window_set_icon_from_file(GTK_WINDOW(window), sys_str_f(logo), nullptr);
+#endif
 
 	// catch signals
+#if GTK_CHECK_VERSION(4,0,0)
+	g_signal_connect(G_OBJECT(window), "close-request", G_CALLBACK(&on_gtk_window_close_request), this);
+#else
 	g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(&on_gtk_window_close), this);
 	g_signal_connect(G_OBJECT(window), "focus-in-event", G_CALLBACK(&on_gtk_window_focus), this);
+#endif
 	//g_signal_connect(G_OBJECT(window), "state-flags-changed", G_CALLBACK(&on_gtk_window_resize), this);
 
 	// fill in some stuff
+#if !GTK_CHECK_VERSION(4,0,0)
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-	if (parent) {
+#endif
+	if (is_dialog()) {
 		vbox = gtk_dialog_get_content_area(GTK_DIALOG(window));
 		plugable = vbox;
-		cur_control = nullptr;
+		target_control = nullptr;
 	} else {
 		vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 		//gtk_box_pack_start(GTK_BOX(window), vbox, TRUE, TRUE, 0);
+#if GTK_CHECK_VERSION(4,0,0)
+		gtk_window_set_child(GTK_WINDOW(window), vbox);
+#else
 		gtk_container_add(GTK_CONTAINER(window), vbox);
+#endif
 		gtk_widget_show(vbox);
 
+#if GTK_CHECK_VERSION(4,0,0)
+		plugable = vbox;
+
+
+
+		auto menu = g_menu_new();
+		auto m1 = g_menu_new();
+		g_menu_append(m1, "test", nullptr);
+		//g_menu_append_submenu(menu, "A", G_MENU_MODEL(m1));
+		menubar = gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menu));
+		gtk_box_append(GTK_BOX(vbox), menubar);
+
+		gtk_box_append(GTK_BOX(vbox), toolbar[TOOLBAR_TOP]->widget);
+
+		plugable = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_widget_show(plugable);
+		//gtk_container_set_border_width(GTK_CONTAINER(plugable), 0);
+		gtk_box_append(GTK_BOX(vbox), plugable);
+#else
 		// menu bar
 		menubar = gtk_menu_bar_new();
 		gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
@@ -161,7 +243,6 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 	#endif
 		gtk_box_pack_start(GTK_BOX(vbox), toolbar[TOOLBAR_TOP]->widget, FALSE, FALSE, 0);
 
-
 		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 		gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
 		//gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
@@ -170,9 +251,9 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 		gtk_box_pack_start(GTK_BOX(hbox), toolbar[TOOLBAR_LEFT]->widget, FALSE, FALSE, 0);
 
 		plugable = nullptr;
-		cur_control = nullptr;
+		target_control = nullptr;
 		// free to use...
-		//cur_control = hbox;
+		//target_control = hbox;
 		plugable = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 		gtk_widget_show(plugable);
 		//gtk_container_set_border_width(GTK_CONTAINER(plugable), 0);
@@ -184,16 +265,23 @@ void Window::_init_(const string &title, int width, int height, Window *parent, 
 		// status bar
 		statusbar = gtk_statusbar_new();
 		gtk_box_pack_start(GTK_BOX(vbox), statusbar, FALSE, FALSE, 0);
+#endif
 	}
 }
 
 Window::~Window() {
-	DBDEL("window", id, this);
+	DBDEL_START("window", id, this);
 
 	if (window) {
 		_clean_up_();
+#if GTK_CHECK_VERSION(4,0,0)
 
+		DBDEL_X("win destroy");
+		gtk_window_destroy(GTK_WINDOW(window));
+		DBDEL_X("/win destroy");
+#else
 		gtk_widget_destroy(window);
+#endif
 	}
 	DBDEL_DONE();
 
@@ -208,7 +296,7 @@ void Window::__delete__() {
 }
 
 void Window::request_destroy() {
-	if (parent_window) {
+	if (is_dialog()) {
 		gtk_dialog_response(GTK_DIALOG(window), GTK_RESPONSE_DELETE_EVENT);
 	}
 	requested_destroy = true;
@@ -220,13 +308,60 @@ void Window::show() {
 	gtk_widget_show(window);
 }
 
-void Window::run() {
+
+void on_gtk_window_response(GtkDialog *self, gint response_id, gpointer user_data) {
+	auto win = reinterpret_cast<Window*>(user_data);
+	if (win->end_run_callback)
+		win->end_run_callback();
+	//gtk_window_destroy(GTK_WINDOW(self));
+	run_later(0.01f, [win] { delete win; });
+}
+
+namespace WindowFlightManager {
+	static shared_array<Window> windows;
+	void add(Window *win) {
+		windows.add(win);
+	}
+	void remove(Window *win) {
+		for (int i=0; i<windows.num; i++)
+			if (windows[i] == win)
+				windows.erase(i);
+	}
+}
+
+void on_gtk_window_response_fly(GtkDialog *self, gint response_id, gpointer user_data) {
+	auto win = reinterpret_cast<Window*>(user_data);
+	if (win->end_run_callback)
+		win->end_run_callback();
+	run_later(0.01f, [win] { WindowFlightManager::remove(win); });
+}
+
+void Window::_fly(Callback cb) {
+	show();
+
+	WindowFlightManager::add(win);
+
+	end_run_callback = cb;
+
+#if GTK_CHECK_VERSION(4,0,0)
+	g_signal_connect(window, "response", G_CALLBACK(on_gtk_window_response_fly), this);
+	gtk_window_present(GTK_WINDOW(window));
+#else
+	g_signal_connect(window, "response", G_CALLBACK(on_gtk_window_response_fly), this);
+#endif
+}
+
+void Window::_run(Callback cb) {
 	show();
 	int uid = unique_id;
-	/*msg_write((int)win);
-	msg_write(win->uid);*/
 	string last_id = "";
 
+#if GTK_CHECK_VERSION(4,0,0)
+	msg_error("TODO: hui.run() gtk4");
+	end_run_callback = cb;
+	g_signal_connect(window, "response", G_CALLBACK(on_gtk_window_response), this);
+	gtk_window_present(GTK_WINDOW(window));
+#else
 	// hmmmm, gtk_dialog_response() seems to be ignored here...?!?
 	/*if (get_parent()) {
 		msg_write("...dialog");
@@ -237,9 +372,39 @@ void Window::run() {
 			Sleep(0.005f);
 		}
 //	}
+#endif
+}
+
+void fly(Window *win, Callback cb) {
+	if (!win->is_dialog())
+		msg_error("hui.fly() only allowed for Dialog!");
+	win->_fly(cb);
+}
+
+void run(Window *win, Callback cb) {
+	win->_run(cb);
 }
 
 void Window::set_menu(Menu *_menu) {
+#if GTK_CHECK_VERSION(4,0,0)
+	//action_group = g_simple_action_group_new();
+
+	if (_menu) {
+		menu = _menu;
+
+		_connect_menu_to_panel(menu);
+
+		gtk_popover_menu_bar_set_menu_model(GTK_POPOVER_MENU_BAR(menubar), G_MENU_MODEL(menu->gmenu));
+		gtk_widget_show(menubar);
+	} else {
+		menu = _menu;
+		gtk_popover_menu_bar_set_menu_model(GTK_POPOVER_MENU_BAR(menubar), nullptr);
+		gtk_widget_hide(menubar);
+	}
+	// only one group allowed!
+
+
+#else
 	// remove old menu...
 	if (menu) {
 		Array<Control*> list = menu->get_all_controls();
@@ -273,8 +438,36 @@ void Window::set_menu(Menu *_menu) {
 			gtk_menu_shell_append(GTK_MENU_SHELL(menubar), gtk_menu[i]);
 			g_object_unref(it->widget);
 		}
-	} else
+
+	} else {
 		gtk_widget_hide(menubar);
+	}
+#endif
+}
+
+void Window::set_key_code(const string &id, int key_code, const string &image) {
+	// make sure, each id has only 1 code
+	//   (multiple ids may have the same code)
+	for (auto &e: event_key_codes)
+		if (e.id == id) {
+			e.key_code = key_code;
+			return;
+		}
+	event_key_codes.add(EventKeyCode(id, "", key_code));
+
+#if GTK_CHECK_VERSION(4,0,0)
+	_try_add_action_(id, false);
+
+	int mod = (((key_code&KEY_SHIFT)>0) ? GDK_SHIFT_MASK : 0) | (((key_code&KEY_CONTROL)>0) ? GDK_CONTROL_MASK : 0) | (((key_code&KEY_ALT)>0) ? GDK_ALT_MASK : 0);
+	gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(shortcut_controller),
+		gtk_shortcut_new(gtk_keyval_trigger_new(HuiKeyID[key_code & 255], (GdkModifierType)mod), gtk_named_action_new(get_gtk_action_name(id, this).c_str())));
+#endif
+}
+
+void Window::add_action_checkable(const string &id) {
+#if GTK_CHECK_VERSION(4,0,0)
+	_try_add_action_(id, true);
+#endif
 }
 
 // show/hide without closing the window
@@ -289,30 +482,45 @@ void Window::set_title(const string &title) {
 
 // set the upper left corner of the window in screen corrdinates
 void Window::set_position(int x, int y) {
+#if !GTK_CHECK_VERSION(4,0,0)
 	gtk_window_move(GTK_WINDOW(window),x,y);
+#endif
 }
 
 void Window::get_position(int &x, int &y) {
+#if !GTK_CHECK_VERSION(4,0,0)
 	gtk_window_get_position(GTK_WINDOW(window), &x, &y);
+#endif
 }
 
 void Window::set_size(int width, int height) {
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+#else
 	desired_width = width;
 	desired_height = height;
-	/*if (parent)
+	/*if (is_dialog())
 		gtk_widget_set_size_request(window, width, height);
 	else*/
 		gtk_window_resize(GTK_WINDOW(window), width, height);
+#endif
 }
 
 // get the current window position and size (including the frame and menu/toolbars...)
 void Window::get_size(int &width, int &height) {
+#if GTK_CHECK_VERSION(4,0,0)
+	//gtk_widget_get_size(GTK_WIDGET(window), &width, &height);
+#else
 	gtk_window_get_size(GTK_WINDOW(window), &width, &height);
+#endif
 }
 
 // set the window position and size it had wouldn't it be maximized (including the frame and menu/toolbars...)
 //    if not maximized this behaves like <SetOuterior>
 void Window::set_size_desired(int width, int height) {
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+#else
 	// bad hack
 	bool maximized = is_maximized();
 	if (maximized)
@@ -322,17 +530,22 @@ void Window::set_size_desired(int width, int height) {
 		gtk_window_maximize(GTK_WINDOW(window));
 	desired_width = width;
 	desired_height = height;
+#endif
 }
 
 // get the window position and size it had wouldn't it be maximized (including the frame and menu/toolbars...)
 //    if not maximized this behaves like <GetOuterior>
 void Window::get_size_desired(int &width, int &height) {
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_window_get_default_size(GTK_WINDOW(window), &width, &height);
+#else
 	if (is_maximized()) {
 		width = desired_width;
 		height = desired_height;
 	} else {
 		gtk_window_get_size(GTK_WINDOW(window), &width, &height);
 	}
+#endif
 }
 
 void Window::show_cursor(bool show) {
@@ -346,10 +559,12 @@ void Window::show_cursor(bool show) {
 			s=::ShowCursor(show);
 	}
 #else
+#if !GTK_CHECK_VERSION(4,0,0)
 	if (show)
 		gdk_window_set_cursor(gtk_widget_get_window(vbox), nullptr);
 	else
 		gdk_window_set_cursor(gtk_widget_get_window(vbox), (GdkCursor*)invisible_cursor);
+#endif
 #endif
 }
 
@@ -380,8 +595,10 @@ void Window::set_cursor_pos(int x, int y) {
 
 void Window::set_maximized(bool maximized) {
 	if (maximized) {
+#if !GTK_CHECK_VERSION(4,0,0)
 		if (!is_maximized())
 			gtk_window_get_size(GTK_WINDOW(window), &desired_width, &desired_height);
+#endif
 		gtk_window_maximize(GTK_WINDOW(window));
 	} else {
 		gtk_window_unmaximize(GTK_WINDOW(window));
@@ -393,8 +610,12 @@ bool Window::is_maximized() {
 }
 
 bool Window::is_minimized() {
+#if GTK_CHECK_VERSION(4,0,0)
+	return false;
+#else
 	int state = gdk_window_get_state(gtk_widget_get_window(window));
 	return ((state & GDK_WINDOW_STATE_ICONIFIED) > 0);
+#endif
 }
 
 void Window::set_fullscreen(bool fullscreen) {
@@ -426,8 +647,11 @@ static int make_info_bar_response(const string &id) {
 }
 
 void __GtkOnInfoBarResponse(GtkWidget *widget, int response, gpointer data) {
-	msg_write("on response...?");
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_widget_unparent(widget);
+#else
 	gtk_widget_destroy(widget);
+#endif
 	Window *win = (Window*)data;
 
 	int index = response - 1234;
@@ -442,7 +666,11 @@ void __GtkOnInfoBarResponse(GtkWidget *widget, int response, gpointer data) {
 Window::InfoBar *Window::_get_info_bar(const string &id) {
 	for (auto &i: info_bars)
 		if (i.id == id) {
+#if GTK_CHECK_VERSION(4,0,0)
+			gtk_widget_unparent(i.widget);
+#else
 			gtk_widget_destroy(i.widget);
+#endif
 			return &i;
 		}
 
@@ -454,6 +682,7 @@ Window::InfoBar *Window::_get_info_bar(const string &id) {
 }
 
 void Window::set_info_text(const string &str, const Array<string> &options) {
+//#if !GTK_CHECK_VERSION(4,0,0)
 	string id = "default";
 	for (string &o: options)
 		if (o.head(3) == "id=")
@@ -462,14 +691,22 @@ void Window::set_info_text(const string &str, const Array<string> &options) {
 	auto infobar = _get_info_bar(id);
 
 	infobar->widget = gtk_info_bar_new();
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_box_insert_child_after(GTK_BOX(vbox), infobar->widget, menubar);
+#else
 	gtk_box_pack_start(GTK_BOX(vbox), infobar->widget, FALSE, FALSE, 0);
 	gtk_box_reorder_child(GTK_BOX(vbox), infobar->widget, 2);
+#endif
 	//gtk_widget_set_no_show_all(infobar, TRUE);
 
-	auto *content_area = gtk_info_bar_get_content_area(GTK_INFO_BAR(infobar->widget));
 	infobar->label = gtk_label_new("");
 	//gtk_label_set_text(GTK_LABEL (message_label), sys_str(str));
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_info_bar_add_child(GTK_INFO_BAR(infobar->widget), infobar->label);
+#else
+	auto *content_area = gtk_info_bar_get_content_area(GTK_INFO_BAR(infobar->widget));
 	gtk_container_add(GTK_CONTAINER(content_area), infobar->label);
+#endif
 
 	g_signal_connect(infobar->widget, "response", G_CALLBACK(&__GtkOnInfoBarResponse), this);
 
@@ -504,6 +741,7 @@ void Window::set_info_text(const string &str, const Array<string> &options) {
 		gtk_widget_show(infobar->widget);
 		gtk_widget_show(infobar->label);
 	}
+//#endif
 }
 
 void Window::__set_options(const string &options) {
@@ -521,8 +759,8 @@ void Window::__set_options(const string &options) {
 		} else if (op == "statusbar") {
 			enable_statusbar(val_is_positive(val, true));
 		} else if (op == "closebutton") {
-			if (headerbar)
-				gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), val_is_positive(val, true));
+			if (header_bar)
+				header_bar->set_options(op + "=" + val);
 		} else if (op == "cursor") {
 			show_cursor(val_is_positive(val, true));
 		} else if (op == "borderwidth") {
@@ -534,13 +772,10 @@ void Window::__set_options(const string &options) {
 }
 
 void Window::_add_headerbar() {
-	if (headerbar)
+	if (header_bar)
 		return;
-	headerbar = gtk_header_bar_new();
-
-	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), true);
-	gtk_widget_show(headerbar);
-	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
+	header_bar = new ControlHeaderBar("", ":header:", this);
+	gtk_window_set_titlebar(GTK_WINDOW(window), header_bar->widget);
 }
 
 
@@ -551,13 +786,13 @@ void Panel::activate(const string &control_id) {
 		gtk_window_present(GTK_WINDOW(win->window));
 	}
 	if (control_id.num > 0)
-		apply_foreach(control_id, [=](Control *c) { c->focus(); });
+		apply_foreach(control_id, [](Control *c) { c->focus(); });
 }
 
 bool Panel::is_active(const string &control_id) {
 	if (control_id.num > 0) {
 		bool r = false;
-		apply_foreach(control_id, [&](Control *c) { r = c->has_focus(); });
+		apply_foreach(control_id, [&r](Control *c) { r = c->has_focus(); });
 		return r;
 	}
 	if (!win)

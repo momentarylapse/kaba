@@ -26,6 +26,7 @@ set(SOURCE
 	src/lib/hui/Controls/ControlExpanderGtk.cpp
 	src/lib/hui/Controls/ControlGridGtk.cpp
 	src/lib/hui/Controls/ControlGroupGtk.cpp
+	src/lib/hui/Controls/ControlHeaderBar.cpp
 	src/lib/hui/Controls/ControlLabelGtk.cpp
 	src/lib/hui/Controls/ControlListViewGtk.cpp
 	src/lib/hui/Controls/ControlMenuButtonGtk.cpp

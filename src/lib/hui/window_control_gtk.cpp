@@ -87,16 +87,30 @@ extern string OptionString, HuiFormatString;
 void Panel::_insert_control_(Control *c, int x, int y) {
 	GtkWidget *frame = c->get_frame();
 	c->panel = this;
-	if (cur_control) {
-		cur_control->add(c, x, y);
-	}else{
+	if (target_control) {
+		target_control->add(c, x, y);
+	} else {
 		root_control = c;
 		// directly into the window...
 		//gtk_container_add(GTK_CONTAINER(plugable), frame);
 		if (plugable) {
 			// this = HuiWindow...
+#if GTK_CHECK_VERSION(4,0,0)
+			gtk_box_append(GTK_BOX(plugable), frame);
+			//g_object_set(G_OBJECT(plugable), "margin-start", 40, nullptr);
+			gtk_widget_set_margin_bottom(plugable, border_width);
+			gtk_widget_set_margin_top(plugable, border_width);
+			gtk_widget_set_margin_start(plugable, border_width);
+			gtk_widget_set_margin_end(plugable, border_width);
+#else
 			gtk_box_pack_start(GTK_BOX(plugable), frame, true, true, 0);
 			gtk_container_set_border_width(GTK_CONTAINER(plugable), border_width);
+#endif
+		} else {
+			// sub-panel
+#if GTK_CHECK_VERSION(4,0,0)
+			gtk_widget_insert_action_group(c->widget, id.c_str(), G_ACTION_GROUP(action_group));
+#endif
 		}
 	}
 	if (frame != c->widget)
@@ -227,9 +241,9 @@ void Panel::add_tab_control(const string &title, int x, int y, const string &id)
 }
 
 void Panel::set_target(const string &id) {
-	cur_control = nullptr;
+	target_control = nullptr;
 	if (id.num > 0)
-		cur_control = _get_control_(id);
+		target_control = _get_control_(id);
 }
 
 void Panel::add_list_view(const string &title, int x, int y, const string &id) {
@@ -327,13 +341,13 @@ void Panel::add_revealer(const string &title, int x, int y, const string &id) {
 }
 
 void Panel::add_menu_button(const string &title, int x, int y, const string &id) {
-	_insert_control_(new ControlMenuButton(title, id), x, y);
+	_insert_control_(new ControlMenuButton(title, id, this), x, y);
 }
 
 void Panel::embed_dialog(const string &id, int x, int y) {
 	spacing = 5;
 
-	Resource *res = GetResource(id);
+	Resource *res = get_resource(id);
 	if (!res)
 		return;
 	if (res->type != "Dialog")
@@ -345,8 +359,8 @@ void Panel::embed_dialog(const string &id, int x, int y) {
 	rr.y = y;
 
 	string parent_id;
-	if (cur_control)
-		parent_id = cur_control->id;
+	if (target_control)
+		parent_id = target_control->id;
 	_add_control(id, rr, parent_id);
 }
 

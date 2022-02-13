@@ -19,12 +19,11 @@ class Menu;
 class Control;
 
 
-class Menu : public VirtualBase
-{
+class Menu : public VirtualBase {
 public:
-	Menu();
+	Menu(Panel *p);
 	~Menu();
-	void _cdecl __init__();
+	void _cdecl __init__(Panel *p);
 	void _cdecl __delete__();
 	void _cdecl clear();
 	void _cdecl open_popup(Panel *panel);
@@ -47,12 +46,13 @@ public:
 #ifdef HUI_API_GTK
 	void gtk_realize();
 	void gtk_unrealize();
+#if GTK_CHECK_VERSION(4,0,0)
+	GMenu *gmenu;
+#else
 	GtkWidget* widget;
 #endif
-
-#ifdef HUI_API_WIN
-	HMENU hMenu;
 #endif
+
 	Array<Control*> items;
 	Panel *panel;
 

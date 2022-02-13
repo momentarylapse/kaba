@@ -47,7 +47,7 @@ Resource *Resource::get_node(const string &id) const {
 	return nullptr;
 }
 
-void LoadResourceCommand7(File *f, Resource *c) {
+void load_resource_command7(File *f, Resource *c) {
 	c->type = f->read_str();
 	c->id = f->read_str();
 	if (c->id == "?")
@@ -58,12 +58,31 @@ void LoadResourceCommand7(File *f, Resource *c) {
 	int n = f->read_int();
 	for (int i=0; i<n; i++) {
 		Resource child;
-		LoadResourceCommand7(f, &child);
+		load_resource_command7(f, &child);
 		c->children.add(child);
 	}
 }
 
-void LoadResource(const Path &filename) {
+void resource_post_process(Resource &res) {
+	if ((res.type == "Dialog") or (res.type == "Window")) {
+		if (res.has("headerbar")) {
+			if (res.children.num >= 0 and res.children[0].type == "Grid")
+				if (res.children[0].children.num >= 0) {
+					auto &c = res.children[0].children.back();
+					if (c.type == "Grid" and c.has("buttonbar")) {
+						Resource hb;
+						hb.id = ":header:";
+						hb.type = "HeaderBar";
+						hb.children = c.children;
+						res.children.add(hb);
+						res.children[0].children.pop();
+					}
+				}
+		}
+	}
+}
+
+void load_resource(const Path &filename) {
 	// dirty...
 	_resources_.clear();
 	_languages_.clear();
@@ -83,7 +102,8 @@ void LoadResource(const Path &filename) {
 			Resource res;
 			res.children.clear();
 			f->read_comment();
-			LoadResourceCommand7(f, &res);
+			load_resource_command7(f, &res);
+			resource_post_process(res);
 			_resources_.add(res);
 		}
 
@@ -131,7 +151,7 @@ void LoadResource(const Path &filename) {
 	}
 }
 
-Resource *GetResource(const string &id) {
+Resource *get_resource(const string &id) {
 	for (Resource &r: _resources_)
 		if (r.id == id)
 			return &r;
@@ -140,9 +160,9 @@ Resource *GetResource(const string &id) {
 	return nullptr;
 }
 
-Window *CreateResourceDialog(const string &id, Window *root) {
+Window *create_resource_dialog(const string &id, Window *root) {
 	//return HuiCreateDialog("-dialog not found in resource-",200,100,root,true,mf);
-	Resource *res = GetResource(id);
+	Resource *res = get_resource(id);
 	if (!res) {
 		msg_error(format("CreateResourceDialog  (id=%s)  m(-_-)m", id));
 		return nullptr;
@@ -161,11 +181,11 @@ Window *CreateResourceDialog(const string &id, Window *root) {
 	// dialog
 	int width = res->value("width", "300")._int();
 	int height = res->value("height", "250")._int();
-	Window *dlg = new Dialog(GetLanguageR(res->id, *res), width, height, root, allow_parent);
+	Window *dlg = new Dialog(get_language_r(res->id, *res), width, height, root, allow_parent);
 
 	// menu?
 	if (menu_id.num > 0)
-		dlg->set_menu(CreateResourceMenu(menu_id));
+		dlg->set_menu(create_resource_menu(menu_id, dlg));
 
 	// toolbar?
 	if (toolbar_id.num > 0)
@@ -182,8 +202,8 @@ Window *CreateResourceDialog(const string &id, Window *root) {
 	return d;*/
 }
 
-Menu *_create_res_menu_(const string &ns, Resource *res) {
-	Menu *menu = new Menu();
+Menu *_create_res_menu_(const string &ns, Resource *res, Panel *panel) {
+	Menu *menu = new Menu(panel);
 
 	for (Resource &c: res->children) {
 		if (c.type == "Item") {
@@ -196,30 +216,31 @@ Menu *_create_res_menu_(const string &ns, Resource *res) {
 		} else if (c.type == "Separator") {
 			menu->add_separator();
 		} else if (c.type == "Menu") {
-			Menu *sub = _create_res_menu_(ns, &c);
+			Menu *sub = _create_res_menu_(ns, &c, panel);
 			menu->add_sub_menu(get_lang(ns, c.id, c.title, true), c.id, sub);
 		}
-		if (menu->items.num > 0)
-			menu->items.back()->enable(c.enabled());
+
+		if (sa_contains(c.options, "disabled"))
+			menu->items.back()->enable(false);
 	}
 	return menu;
 }
 
-Menu *CreateResourceMenu(const string &id) {
-	Resource *res = GetResource(id);
+Menu *create_resource_menu(const string &id, Panel *panel) {
+	Resource *res = get_resource(id);
 	if (!res) {
 		msg_error(format("CreateResourceMenu  (id=%s)  m(-_-)m", id));
 		throw Exception(format("CreateResourceMenu  (id=%s)  m(-_-)m", id));
 		return nullptr;
 	}
 
-	return _create_res_menu_(id, res);
+	return _create_res_menu_(id, res, panel);
 }
 
-Menu *CreateMenuFromSource(const string &source) {
-	Resource res = ParseResource(source);
+Menu *create_menu_from_source(const string &source, Panel *panel) {
+	Resource res = parse_resource(source);
 
-	return _create_res_menu_(res.id, &res);
+	return _create_res_menu_(res.id, &res, panel);
 }
 
 
@@ -388,7 +409,7 @@ string Resource::to_string(int indent) {
 	return nn;
 }
 
-Resource ParseResource(const string &buffer, bool literally) {
+Resource parse_resource(const string &buffer, bool literally) {
 	Resource r;
 	auto lines = buffer.explode("\n");
 	for (int i=lines.num-1; i>=0; i--)

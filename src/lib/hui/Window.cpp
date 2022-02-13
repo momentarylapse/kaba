@@ -19,6 +19,8 @@ Array<Window*> _all_windows_;
 
 Window *CurWindow = nullptr;
 
+void DBDEL_X(const string &);
+
 
 void InputData::reset() {
 	x = y = dx = dy = scroll_x = scroll_y = 0;
@@ -30,11 +32,11 @@ void InputData::reset() {
 	just_focused = false;
 }
 
-Window::Window() {
+Window::Window() : Panel() {
 	_init_("", 0, 0, nullptr, true, WIN_MODE_DUMMY);
 }
 
-Window::Window(const string &title, int width, int height) {
+Window::Window(const string &title, int width, int height) : Panel() {
 	_init_(title, width, height, nullptr, true, 0);
 }
 
@@ -44,8 +46,8 @@ void Window::__init_ext__(const string& title, int width, int height) {
 
 
 // resource constructor
-Window::Window(const string &id, Window *parent) {
-	Resource *res = GetResource(id);
+Window::Window(const string &id, Window *parent) : Panel(id, nullptr) {
+	Resource *res = get_resource(id);
 	if (!res) {
 		msg_error("Window: undefined resource id: " + id);
 		return;
@@ -55,13 +57,13 @@ Window::Window(const string &id, Window *parent) {
 	set_from_resource(res);
 }
 
-void Window::_init_generic_(Window *_root, bool _allow_root, int _mode) {
+void Window::_init_generic_(Window *_parent, bool _allow_root, int _mode) {
 	_MakeUsable_();
 	_all_windows_.add(this);
 
 	allowed = true;
 	allow_keys = true;
-	parent_window = _root;
+	parent_window = _parent;
 	main_input_control = nullptr;
 	if (parent_window) {
 		parent_window->allowed = _allow_root;
@@ -78,8 +80,12 @@ void Window::_init_generic_(Window *_root, bool _allow_root, int _mode) {
 }
 
 void Window::_clean_up_() {
+	DBDEL_X("win clean up");
 	for (int i=0; i<4; i++)
-		delete(toolbar[i]);
+		delete toolbar[i];
+
+	if (header_bar)
+		delete header_bar;
 
 	_ClearPanel_();
 	input.reset();
@@ -90,6 +96,7 @@ void Window::_clean_up_() {
 			_all_windows_.erase(i);
 			break;
 		}
+	DBDEL_X("/win clean up");
 }
 
 // default handler when trying to close the windows
@@ -102,7 +109,7 @@ void Window::on_close_request() {
 void Window::set_id(const string &_id) {
 	id = _id;
 	if (_using_language_ and (id.num > 0))
-		set_title(GetLanguage(id, id));
+		set_title(get_language(id, id));
 }
 
 // align window relative to another window (like..."top right corner")
@@ -128,6 +135,10 @@ Menu *Window::get_menu() {
 }
 
 Window *Window::get_parent() {
+	return parent_window;
+}
+
+bool Window::is_dialog() {
 	return parent_window;
 }
 

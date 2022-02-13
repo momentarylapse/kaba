@@ -24,6 +24,8 @@ extern Callback _idle_function_;
 	extern void *invisible_cursor;
 #endif
 
+GtkApplication *Application::application = nullptr;
+
 
 Map<string, string> Application::_properties_;
 
@@ -34,7 +36,6 @@ Path Application::initial_working_directory;
 bool Application::installed;
 
 Array<string> Application::_args;
-
 
 
 Application::Application(const string &app_name, const string &def_lang, int flags) {
@@ -54,14 +55,14 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 		SetDefaultErrorHandler(nullptr);
 
 	if (file_exists(directory << "config.txt"))
-		Config.load(directory << "config.txt");
+		config.load(directory << "config.txt");
 
 
 	if ((flags & FLAG_DONT_LOAD_RESOURCE) == 0)
-		LoadResource(directory_static << "hui_resources.txt");
+		load_resource(directory_static << "hui_resources.txt");
 
 	if (def_lang.num > 0)
-		SetLanguage(Config.get_str("Language", def_lang));
+		set_language(config.get_str("Language", def_lang));
 
 
 #ifdef OS_LINUX
@@ -73,15 +74,24 @@ Application::Application(const string &app_name, const string &def_lang, int fla
 		set_property("logo", (directory_static << "icon.png").str());
 	else if (file_exists(directory_static << "icon.ico"))
 		set_property("logo", (directory_static << "icon.ico").str());
+
+
+#if GTK_CHECK_VERSION(4,0,0)
+	application = gtk_application_new(nullptr, G_APPLICATION_NON_UNIQUE);
+#endif
 }
 
 Application::~Application() {
 	//foreachb(Window *w, _all_windows_)
 	//	delete(w);
-	if (Config.changed)
-		Config.save(directory << "config.txt");
+	if (config.changed)
+		config.save(directory << "config.txt");
 	if ((msg_inited) /*&& (HuiMainLevel == 0)*/)
 		msg_end();
+
+#if GTK_CHECK_VERSION(4,0,0)
+	g_object_unref(application);
+#endif
 }
 
 Path strip_dev_dirs(const Path &p) {
@@ -150,16 +160,48 @@ void Application::guess_directories(const Array<string> &arg, const string &app_
 	#endif
 }
 
+#if GTK_CHECK_VERSION(4,0,0)
+static bool keep_running = true;
+#endif
+
 int Application::run() {
+#if GTK_CHECK_VERSION(4,0,0)
+	return g_application_run(G_APPLICATION (application), 0, nullptr);
+	while (keep_running)
+		do_single_main_loop();
+#else
 	gtk_main();
+#endif
 
 	on_end();
 	return 0;
 }
 
+
+static void on_gtk_application_activate(GApplication *_g_app, gpointer user_data) {
+	auto app = reinterpret_cast<Application*>(user_data);
+	app->on_startup(app->_args);
+}
+
+
+
+int Application::try_execute(const Array<string> &args) {
+#if GTK_CHECK_VERSION(4,0,0)
+	g_signal_connect(application, "activate", G_CALLBACK(on_gtk_application_activate), this);
+	return g_application_run(G_APPLICATION(application), 0, nullptr);
+#endif
+	if (on_startup(args))
+		return run();
+	return 0;
+}
+
 void Application::end() {
-	SetIdleFunction(nullptr);
+	set_idle_function(nullptr);
+#if GTK_CHECK_VERSION(4,0,0)
+	keep_running = false;
+#else
 	gtk_main_quit();
+#endif
 }
 
 void Application::do_single_main_loop() {
@@ -170,11 +212,18 @@ void Application::do_single_main_loop() {
 	int counter = 0;
 	do {
 		g_main_context_iteration(nullptr, false);
+#if !GTK_CHECK_VERSION(4,0,0)
 		gtk_main_iteration_do(false);
+#endif
 		counter ++;
 		if (counter > 5)
 			break;
+#if GTK_CHECK_VERSION(4,0,0)
+	} while (g_main_context_pending(nullptr));
+#else
 	} while (gtk_events_pending());
+#endif
+
 
 	// pop idle function
 	//SetIdleFunction(_if_);
@@ -194,7 +243,7 @@ string Application::get_property(const string &name) {
 }
 
 void Application::about_box(Window *win) {
-	AboutBox(win);
+	hui::about_box(win);
 }
 
 };

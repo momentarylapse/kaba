@@ -13,9 +13,6 @@
 
 
 namespace hui{
-#ifdef _X_USE_HUI_
-	Menu *CreateMenuFromSource(const string &source);
-#endif
 #ifdef _X_USE_HUI_MINIMAL_
 	typedef int Menu;
 	typedef int Toolbar;
@@ -24,6 +21,9 @@ namespace hui{
 	typedef int Panel;
 	typedef int Event;
 	typedef int Painter;
+#endif
+#ifdef _X_USE_HUI_
+	hui::Menu *create_menu_from_source(const string &source, hui::Panel*);
 #endif
 }
 
@@ -35,14 +35,14 @@ namespace kaba {
 	#define GetDAPanel(x)			int_p(&_panel->x)-int_p(_panel)
 	#define GetDAWindow(x)			int_p(&_win->x)-int_p(_win)
 	#define GetDAEvent(x)	int_p(&_event->x)-int_p(_event)
-	void HuiSetIdleFunctionKaba(Callable<void()> &c) {
-		hui::SetIdleFunction([&c]{ c(); });
+	void hui_set_idle_function_kaba(Callable<void()> &c) {
+		hui::set_idle_function([&c]{ c(); });
 	}
-	int HuiRunLaterKaba(float dt, hui::EventHandler *p, Callable<void(hui::EventHandler*)> &c) {
-		return hui::RunLater(dt, [&c,p]{ c(p); });
+	int hui_run_later_kaba(float dt, hui::EventHandler *p, Callable<void(hui::EventHandler*)> &c) {
+		return hui::run_later(dt, [&c,p]{ c(p); });
 	}
-	int HuiRunRepeatedKaba(float dt, hui::EventHandler *p, Callable<void(hui::EventHandler*)> &c) {
-		return hui::RunRepeated(dt, [&c,p]{ c(p); });
+	int hui_run_repeated_kaba(float dt, hui::EventHandler *p, Callable<void(hui::EventHandler*)> &c) {
+		return hui::run_repeated(dt, [&c,p]{ c(p); });
 	}
 	class KabaPanelWrapper : public hui::Panel {
 	public:
@@ -65,6 +65,21 @@ namespace kaba {
 			}
 		}
 	};
+	void hui_fly_kaba(hui::Window *win, Callable<void()> &c) {
+		hui::fly(win, [&c]{ if (&c) c(); });
+	}
+	void hui_file_dialog_open_kaba(hui::Window *win, const string &title, const Path &dir, const Array<string> &params, Callable<void(const Path &)> &c) {
+		hui::file_dialog_open(win, title, dir, params, [c] (const Path &p) { c(p); });
+	}
+	void hui_file_dialog_save_kaba(hui::Window *win, const string &title, const Path &dir, const Array<string> &params, Callable<void(const Path &)> &c) {
+		hui::file_dialog_save(win, title, dir, params, [c] (const Path &p) { c(p); });
+	}
+	void hui_file_dialog_dir_kaba(hui::Window *win, const string &title, const Path &dir, const Array<string> &params, Callable<void(const Path &)> &c) {
+		hui::file_dialog_dir(win, title, dir, params, [c] (const Path &p) { c(p); });
+	}
+	void hui_question_box_kaba(hui::Window *win, const string &title, const string &text, Callable<void(const string &)> &c, bool allow_cancel) {
+		hui::question_box(win, title, text, [c] (const string &p) { c(p); }, allow_cancel);
+	}
 #else
 	#define GetDAWindow(x)		0
 	#define GetDAEvent(x)	0
@@ -100,7 +115,7 @@ void SIAddPackageHui() {
 	auto TypeHuiToolbar = add_type("Toolbar",  sizeof(hui::Toolbar));
 	auto TypeHuiToolbarP = add_type_p(TypeHuiToolbar);
 	auto TypeHuiPanel = add_type("Panel", sizeof(hui::Panel));
-	//auto TypeHuiPanelP = add_type_p(TypeHuiPanel);
+	auto TypeHuiPanelP = add_type_p(TypeHuiPanel);
 	auto TypeHuiWindow = add_type("Window", sizeof(hui::Window));
 	TypeHuiWindowP = add_type_p(TypeHuiWindow);
 	auto TypeHuiNixWindow = add_type("NixWindow", sizeof(hui::Window));
@@ -113,10 +128,13 @@ void SIAddPackageHui() {
 	auto TypeCallback = add_type_f(TypeVoid, {});
 	auto TypeCallbackObject = add_type_f(TypeVoid, {TypeObject});
 	auto TypeCallbackObjectP = add_type_f(TypeVoid, {TypeObject, TypeHuiPainter});
+	auto TypeCallbackPath = add_type_f(TypeVoid, {TypePath});
+	auto TypeCallbackString = add_type_f(TypeVoid, {TypeString});
 
 
 	add_class(TypeHuiMenu);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, hui_p(&hui::Menu::__init__));
+			func_add_param("p", TypeHuiPanel);
 		class_add_func("popup", TypeVoid, hui_p(&hui::Menu::open_popup));
 			func_add_param("p", TypeHuiPanel);
 		class_add_func("add", TypeVoid, hui_p(&hui::Menu::add));
@@ -152,6 +170,7 @@ void SIAddPackageHui() {
 		class_derive_from(TypeObject, false, true);
 		class_add_element("win", TypeHuiWindowP, GetDAPanel(win));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, hui_p(&hui::Panel::__init__), Flags::OVERRIDE);
+		//	func_add_param("parent", TypeHuiPanelP);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&hui::Panel::__delete__), Flags::OVERRIDE);
 		class_add_func("set_border_width", TypeVoid, hui_p(&hui::Panel::set_border_width));
 			func_add_param("width", TypeInt);
@@ -383,7 +402,7 @@ void SIAddPackageHui() {
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&hui::Window::__delete__), Flags::OVERRIDE);
-		class_add_func("run", TypeVoid, hui_p(&hui::Window::run));
+		//class_add_func("run", TypeVoid, hui_p(&hui::Window::run));
 		class_add_func("destroy", TypeVoid, hui_p(&hui::Window::request_destroy));
 		class_add_func("show", TypeVoid, hui_p(&hui::Window::show));
 		class_add_func("hide", TypeVoid, hui_p(&hui::Window::hide));
@@ -504,18 +523,21 @@ void SIAddPackageHui() {
 		class_add_func("keys", TypeStringList, &hui::Configuration::keys, Flags::CONST);
 	
 	// user interface
-	add_func("set_idle_function", TypeVoid, hui_p(&HuiSetIdleFunctionKaba), Flags::STATIC);
+	add_func("set_idle_function", TypeVoid, hui_p(&hui_set_idle_function_kaba), Flags::STATIC);
 		func_add_param("idle_func", TypeCallback);
-	add_func("run_later", TypeInt, hui_p(&HuiRunLaterKaba), Flags::STATIC);
+	add_func("run_later", TypeInt, hui_p(&hui_run_later_kaba), Flags::STATIC);
 		func_add_param("dt", TypeFloat32);
 		func_add_param("handler", TypeObject);
 		func_add_param("f", TypeCallbackObject);
-	add_func("run_repeated", TypeInt, hui_p(&HuiRunRepeatedKaba), Flags::STATIC);
+	add_func("run_repeated", TypeInt, hui_p(&hui_run_repeated_kaba), Flags::STATIC);
 		func_add_param("dt", TypeFloat32);
 		func_add_param("handler", TypeObject);
 		func_add_param("f", TypeCallbackObject);
-	add_func("cancel_runner", TypeVoid, hui_p(&hui::CancelRunner), Flags::STATIC);
+	add_func("cancel_runner", TypeVoid, hui_p(&hui::cancel_runner), Flags::STATIC);
 		func_add_param("id", TypeInt);
+	add_func("fly", TypeVoid, hui_p(&hui_fly_kaba), Flags::STATIC);
+		func_add_param("win", TypeHuiWindow);
+		func_add_param("idle_func", TypeCallback);
 	/*add_func("HuiAddKeyCode", TypeVoid, (void*)&hui::AddKeyCode, Flags::STATIC);
 		func_add_param("id", TypeString);
 		func_add_param("key_code", TypeInt);
@@ -524,50 +546,53 @@ void SIAddPackageHui() {
 		func_add_param("image", TypeString);
 		func_add_param("key_code", TypeInt);
 		func_add_param("func", TypeFunctionP);*/
-	add_func("get_event", TypeHuiEventP, hui_p(&hui::GetEvent), Flags::STATIC);
+	add_func("get_event", TypeHuiEventP, hui_p(&hui::get_event), Flags::STATIC);
 	/*add_func("HuiRun", TypeVoid, (void*)&hui::Run);
 	add_func("HuiEnd", TypeVoid, (void*)&hui::End, Flags::STATIC);*/
 	add_func("do_single_main_loop", TypeVoid, hui_p(&hui::Application::do_single_main_loop), Flags::STATIC);
-	add_func("file_dialog_open", TypeBool, hui_p(&hui::FileDialogOpen), Flags::STATIC);
+	add_func("file_dialog_open", TypeVoid, hui_p(&hui_file_dialog_open_kaba), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypePath);
-		func_add_param("show_filter", TypeString);
-		func_add_param("filter", TypeString);
-	add_func("file_dialog_save", TypeBool, hui_p(&hui::FileDialogSave), Flags::STATIC);
+		func_add_param("params", TypeStringList);
+		func_add_param("cb", TypeCallbackPath);
+	add_func("file_dialog_save", TypeVoid, hui_p(&hui_file_dialog_save_kaba), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypePath);
-		func_add_param("show_filter", TypeString);
-		func_add_param("filter", TypeString);
-	add_func("file_dialog_dir", TypeBool, hui_p(&hui::FileDialogDir), Flags::STATIC);
+		func_add_param("params", TypeStringList);
+		func_add_param("cb", TypeCallbackPath);
+	add_func("file_dialog_dir", TypeVoid, hui_p(&hui_file_dialog_dir_kaba), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("dir", TypePath);
-	add_func("question_box", TypeString, hui_p(&hui::QuestionBox), Flags::STATIC);
+		func_add_param("cb", TypeCallbackPath);
+	add_func("question_box", TypeString, hui_p(&hui_question_box_kaba), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
+		func_add_param("cb", TypeCallbackString);
 		func_add_param("allow_cancel", TypeBool);
-	add_func("info_box", TypeVoid, hui_p(&hui::InfoBox), Flags::STATIC);
+	add_func("info_box", TypeVoid, hui_p(&hui::info_box), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
-	add_func("error_box", TypeVoid, hui_p(&hui::ErrorBox), Flags::STATIC);
+	add_func("error_box", TypeVoid, hui_p(&hui::error_box), Flags::STATIC);
 		func_add_param("root", TypeHuiWindow);
 		func_add_param("title", TypeString);
 		func_add_param("text", TypeString);
-	add_func("create_menu_from_source", TypeHuiMenuP, hui_p(&hui::CreateMenuFromSource), Flags::STATIC);
+	add_func("create_menu_from_source", TypeHuiMenuP, hui_p(&hui::create_menu_from_source), Flags::STATIC);
 		func_add_param("source", TypeString);
-	add_func("get_key_name", TypeString, hui_p(&hui::GetKeyCodeName), Flags::_STATIC__PURE);
+		func_add_param("panel", TypeHuiPanel);
+	add_func("get_key_name", TypeString, hui_p(&hui::get_key_code_name), Flags::_STATIC__PURE);
 		func_add_param("id", TypeInt);
 //	add_func("get_key_char", TypeString, hui_p(&hui::GetKeyChar), Flags::_STATIC__PURE);
 //		func_add_param("id", TypeInt);
 
 	// clipboard
-	add_func("copy_to_clipboard", TypeVoid, hui_p(&hui::Clipboard::Copy), Flags::STATIC);
+	add_func("copy_to_clipboard", TypeVoid, hui_p(&hui::Clipboard::copy), Flags::STATIC);
 		func_add_param("buffer", TypeString);
-	add_func("paste_from_clipboard", TypeString, hui_p(&hui::Clipboard::Paste), Flags::STATIC);
+	add_func("paste_from_clipboard", TypeString, hui_p(&hui::Clipboard::paste), Flags::STATIC);
 	add_func("open_document", TypeVoid, hui_p(&hui::OpenDocument), Flags::STATIC);
 		func_add_param("filename", TypePath);
 	add_func("make_gui_image", TypeString, hui_p(&hui::SetImage), Flags::STATIC);
@@ -692,8 +717,8 @@ void SIAddPackageHui() {
 	add_ext_var("app_filename", TypePath, hui_p(&hui::Application::filename));
 	add_ext_var("app_directory", TypePath, hui_p(&hui::Application::directory));
 	add_ext_var("app_directory_static", TypePath, hui_p(&hui::Application::directory_static));
-	add_ext_var("filename", TypePath, hui_p(&hui::Filename));
-	add_ext_var("app_config", TypeHuiConfiguration, hui_p(&hui::Config));
+	//add_ext_var("filename", TypePath, hui_p(&hui::Filename));
+	add_ext_var("app_config", TypeHuiConfiguration, hui_p(&hui::config));
 }
 
 };

@@ -63,6 +63,7 @@ class Window : public Panel {
 	friend class ControlGroup;
 	friend class ControlExpander;
 	friend class Menu;
+	friend class Panel;
 public:
 	Window();
 	Window(const string &title, int width, int height);
@@ -78,7 +79,9 @@ public:
 	void _cdecl request_destroy();
 
 	// the window
-	void _cdecl run();
+	void _run(Callback cb = nullptr);
+	void _fly(Callback cb = nullptr);
+	bool is_dialog();
 	void _cdecl show();
 	void _cdecl hide();
 	void _cdecl set_maximized(bool maximized);
@@ -155,7 +158,9 @@ private:
 public:
 	GtkWidget *window;
 private:
-	GtkWidget *vbox, *hbox, *menubar, *statusbar, *headerbar;
+public:
+	GtkWidget *vbox, *hbox, *menubar, *statusbar;
+	Control *header_bar;
 	Array<GtkWidget*> gtk_menu;
 	int gtk_num_menus;
 	struct InfoBar {
@@ -174,6 +179,22 @@ protected:
 	bool allowed, allow_keys;
 	Window *parent_window;
 	bool requested_destroy;
+
+	Array<EventKeyCode> event_key_codes;
+public:
+	void _cdecl set_key_code(const string &id, int key_code, const string &image = "");
+	void _cdecl add_action_checkable(const string &id);
+	Array<EventKeyCode> get_event_key_codes() const { return event_key_codes; }
+protected:
+
+#if GTK_CHECK_VERSION(4,0,0)
+	GtkEventController *shortcut_controller = nullptr;
+#endif
+
+public:
+	Callback end_run_callback;
+
+	void _try_send_by_key_code_(int key_code);
 };
 
 
@@ -198,6 +219,10 @@ public:
 	SourceWindow(const string &source, Window *parent);
 	void _cdecl __init_ext__(const string &source, Window *parent);
 };
+
+
+void run(Window *win, Callback cb = nullptr);
+void fly(Window *win, Callback cb = nullptr);
 
 
 

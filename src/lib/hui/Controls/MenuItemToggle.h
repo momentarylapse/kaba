@@ -16,10 +16,15 @@ namespace hui
 class MenuItemToggle : public Control
 {
 public:
-	MenuItemToggle(const string &title, const string &id);
+	MenuItemToggle(const string &title, const string &id, Panel *panel);
 
 	void __check(bool checked) override;
 	bool is_checked() override;
+
+#if GTK_CHECK_VERSION(4,0,0)
+	GMenuItem *item;
+#endif
+	bool checked = false;
 };
 
 };

@@ -14,10 +14,11 @@ namespace hui
 {
 
 
-void DBDEL(const string &type, const string &id, void *p);
+void DBDEL_START(const string &type, const string &id, void *p);
+void DBDEL_X(const string &);
 void DBDEL_DONE();
 
-void WinTrySendByKeyCode(Window *win, int key_code);
+GAction *panel_get_action(Panel *panel, const string &id);
 
 // safety feature... in case we delete the control while it notifies us
 struct _HuiNotifyStackElement {
@@ -75,52 +76,55 @@ void unset_widgets_rec(Control *c) {
 }
 
 Control::~Control() {
+	DBDEL_START(i2s(type), id, this);
 	notify_set_del(this);
-	DBDEL("control", id, this);
 
 #ifdef HUI_API_GTK
-	g_signal_handlers_disconnect_by_data(widget, this);
+	if (widget)
+		g_signal_handlers_disconnect_by_data(widget, this);
 	//if (widget)
 	//	gtk_widget_destroy(widget);
 	//unset_widgets_rec(this);
 #endif
-
+	DBDEL_X("children");
+	while (children.num > 0) {
+		Control *c = children.pop();
+		delete c;
+	}
+	DBDEL_X("parent");
+#if GTK_CHECK_VERSION(4,0,0)
 	if (parent) {
 		for (int i=0;i<parent->children.num;i++)
 			if (parent->children[i] == this)
 				parent->children.erase(i);
 	}
-	while (children.num > 0) {
-		Control *c = children.pop();
-		delete c;
-	}
+#endif
+	DBDEL_X("remove");
 
 
 	//msg_write("widget: " + p2s(widget));
 #ifdef HUI_API_GTK
 	if (widget and (type != CONTROL_CHECKBOX)) // switch bug.... not sure why...
+#if GTK_CHECK_VERSION(4,0,0)
+		//g_object_unref(widget);
+		//gtk_widget_unparent(get_frame());
+
+		if (parent) {
+			parent->remove_child(this);
+			for (int i=0;i<parent->children.num;i++)
+				if (parent->children[i] == this)
+					parent->children.erase(i);
+		}
+		// FIXME: probably still exists...
+#else
 		gtk_widget_destroy(widget);
+#endif
+
 	widget = nullptr;
 	//unset_widgets_rec(this);
 #endif
 	DBDEL_DONE();
 }
-
-#ifdef HUI_API_WIN
-
-void Control::enable(bool _enabled) {
-}
-
-void Control::hide(bool hidden) {
-}
-
-void Control::setTooltip(const string& str) {
-}
-
-void Control::focus() {
-}
-
-#endif
 
 #ifdef HUI_API_GTK
 
@@ -132,8 +136,17 @@ GtkWidget *Control::get_frame() {
 }
 
 void Control::enable(bool _enabled) {
-    enabled = _enabled;
-	gtk_widget_set_sensitive(widget, enabled);
+	enabled = _enabled;
+	if (widget)
+		gtk_widget_set_sensitive(widget, enabled);
+	//msg_write("Control.enable " + (panel?panel->id:"") + ":" + id + "   " + b2s(enabled));
+
+#if GTK_CHECK_VERSION(4,0,0)
+	if (auto a = panel_get_action(panel, id)) {
+		//msg_write("Action.enable " + id);
+		g_simple_action_set_enabled(G_SIMPLE_ACTION(a), _enabled);
+	}
+#endif
 }
 
 void Control::hide(bool hidden) {
@@ -181,24 +194,24 @@ Panel::SizeGroup *get_size_group(Panel *panel, const string &name, int mode) {
 void set_style_for_widget(GtkWidget *widget, const string &id, const string &_css) {
 	string css = "#" + id.replace(":", "") + _css;
 	//msg_write(css);
-	GError *error = nullptr;
 
 	auto *css_provider = gtk_css_provider_new();
+
+#if GTK_CHECK_VERSION(4,0,0)
+	gtk_css_provider_load_from_data(css_provider, (char*)css.data, css.num);
+#else
+	GError *error = nullptr;
 	gtk_css_provider_load_from_data(css_provider, (char*)css.data, css.num, &error);
 	if (error) {
 		msg_error(string("css: ") + error->message + " (" + css + ")");
 		return;
 	}
-
+#endif
 
 	auto *context = gtk_widget_get_style_context(widget);
 	gtk_style_context_add_provider(context,
-					                                GTK_STYLE_PROVIDER(css_provider),
-													GTK_STYLE_PROVIDER_PRIORITY_USER);
-	/*gtk_style_context_add_provider_for_screen
-	                               (gdk_screen_get_default(),
-	                                GTK_STYLE_PROVIDER(css_provider),
-									GTK_STYLE_PROVIDER_PRIORITY_USER);*/
+			GTK_STYLE_PROVIDER(css_provider),
+			GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 
 Array<std::pair<string, string>> parse_options(const string &options) {
@@ -263,20 +276,33 @@ void Control::set_options(const string &options) {
 		#endif
 		} else if (op == "grabfocus") {
 			grab_focus = val_is_positive(val, true);
+#if GTK_CHECK_VERSION(4,0,0)
+			gtk_widget_set_focusable(widget, grab_focus);
+			if (grab_focus) {
+				gtk_widget_set_focus_on_click(widget, true);
+				// maybe the dialog should choose the focus...?
+				/*run_later(.01f, [this] {
+					msg_write("  GRAB FOCUS " + b2s(gtk_widget_grab_focus(widget)) + "   " + id  + "  " + p2s(this));
+				})*/;
+			}
+#else
 			gtk_widget_set_can_focus(widget, grab_focus);
-			if (grab_focus)
-				gtk_widget_grab_focus(widget);
+#endif
 		} else if (op == "ignorefocus") {
 			grab_focus = false;
+#if GTK_CHECK_VERSION(4,0,0)
+			gtk_widget_set_focusable(widget, false);
+#else
 			gtk_widget_set_can_focus(widget, false);
+#endif
 		} else if (op == "big") {
-			set_style_for_widget(widget, id, "{font-size: 125%}");
+			set_style_for_widget(widget, id, "{font-size: 125%;}");
 			__set_option(op, val);
 		} else if (op == "huge") {
-			set_style_for_widget(widget, id, "{font-size: 150%}");
+			set_style_for_widget(widget, id, "{font-size: 150%;}");
 			__set_option(op, val);
 		} else if (op == "small") {
-			set_style_for_widget(widget, id, "{font-size: 75%}");
+			set_style_for_widget(widget, id, "{font-size: 75%;}");
 			__set_option(op, val);
 		} else if (op == "disabled") {
 			enable(false);
@@ -307,7 +333,7 @@ void Control::set_options(const string &options) {
 		} else if (op == "marginbottom") {
 			gtk_widget_set_margin_bottom(get_frame(), val._int());
 		} else if (op == "padding") {
-			set_style_for_widget(widget, id, format("{padding: %dpx}", val._int()));
+			set_style_for_widget(widget, id, format("{padding: %dpx;}", val._int()));
 		} else if ((op == "hgroup") or (op == "vgroup")) {
 			if (panel) {
 				auto g = get_size_group(panel, val, (op == "vgroup") ? 2 : 1);
@@ -322,8 +348,13 @@ void Control::set_options(const string &options) {
 }
 
 void Control::get_size(int &w, int &h) {
+#if GTK_CHECK_VERSION(4,0,0)
+	w = gtk_widget_get_width(widget);
+	h = gtk_widget_get_height(widget);
+#else
 	w = gdk_window_get_width(gtk_widget_get_window(widget));
 	h = gdk_window_get_height(gtk_widget_get_window(widget));
+#endif
 }
 
 #endif
@@ -449,7 +480,7 @@ void Control::notify(const string &message, bool is_default) {
 			win->on_right_button_up();
 		} else if (message == EventID::KEY_DOWN) {
 			win->on_key_down();
-			WinTrySendByKeyCode(win, GetEvent()->key_code);
+			win->_try_send_by_key_code_(get_event()->key_code);
 		} else if (message == "hui:key-up") {
 			win->on_key_up();
 		} else if (message == "hui:draw") {
@@ -459,7 +490,7 @@ void Control::notify(const string &message, bool is_default) {
 	} else if (type == CONTROL_MULTILINEEDIT) {
 		if (message == "hui:key-down") {
 			if (reinterpret_cast<ControlMultilineEdit*>(this)->handle_keys)
-				WinTrySendByKeyCode(win, GetEvent()->key_code);
+				win->_try_send_by_key_code_(get_event()->key_code);
 		}
 	}
 	notify_pop();
@@ -472,6 +503,14 @@ void Control::apply_foreach(const string &_id, std::function<void(Control*)> f) 
 	for (Control *c: children)
 		if (c->panel == panel)
 			c->apply_foreach(_id, f);
+}
+
+void Control::_set_css(const string &css) {
+#if GTK_CHECK_VERSION(4,0,0)
+	auto cssp = gtk_css_provider_new();
+	gtk_css_provider_load_from_data(cssp, (const char*)css.data, css.num);
+	gtk_style_context_add_provider(gtk_widget_get_style_context(widget), GTK_STYLE_PROVIDER(cssp), GTK_STYLE_PROVIDER_PRIORITY_USER);
+#endif
 }
 
 };

@@ -6,6 +6,8 @@
  */
 
 #include "Controls/Control.h"
+#include "Controls/MenuItem.h"
+#include "Controls/MenuItemToggle.h"
 #include "hui.h"
 #include "internal.h"
 
@@ -15,12 +17,22 @@ namespace hui
 // for unique window identifiers
 static int current_uid = 0;
 
+const int DEFAULT_SPACING = 5;
+const int DEFAULT_WINDOW_BORDER = 8;
+
+string get_gtk_action_name(const string &id, Panel *scope);
+
+Panel::Panel(const string &_id, Panel *_parent) : Panel() {
+	set_parent(_parent);
+	set_id(_id);
+}
+
 Panel::Panel() {
 	win = nullptr;
 	parent = nullptr;
-	border_width = 5;
-	spacing = 5;
-	id = "";
+	border_width = DEFAULT_WINDOW_BORDER;
+	spacing = DEFAULT_SPACING;
+	id = p2s(this);
 	num_float_decimals = 3;
 	root_control = nullptr;
 	plugable = nullptr;
@@ -28,7 +40,12 @@ Panel::Panel() {
 
 	unique_id = current_uid ++;
 
+#if GTK_CHECK_VERSION(4,0,0)
+	action_group = g_simple_action_group_new();
+#endif
+
 	set_target("");
+
 }
 
 Panel::~Panel() {
@@ -36,26 +53,48 @@ Panel::~Panel() {
 }
 
 void Panel::__init__() {
-	new(this) Panel;
+	new(this) Panel();
 }
 
 void Panel::__delete__() {
 	this->Panel::~Panel();
 }
 
-void DBDEL(const string &type, const string &id, void *p) {
-	//msg_write("<del " + type + " " + id + " " + p2s(p) + ">");
-	//msg_right();
+void Panel::set_id(const string &_id) {
+	id = _id;
+}
+
+void Panel::set_parent(Panel *_parent) {
+	parent = _parent;
+	if (parent)
+		_set_win(parent->win);
+}
+
+#define DEBUG_CONTROLS 0
+
+void DBDEL_START(const string &type, const string &id, void *p) {
+#if DEBUG_CONTROLS
+	msg_write("del " + type + " " + id);
+	msg_right();
+#endif
+}
+
+void DBDEL_X(const string &m) {
+#if DEBUG_CONTROLS
+	msg_write(m);
+#endif
 }
 
 void DBDEL_DONE() {
-	//msg_left();
-	//msg_write("</>");
+#if DEBUG_CONTROLS
+	msg_left();
+	msg_write("/del");
+#endif
 }
 
 // might be executed repeatedly
 void Panel::_ClearPanel_() {
-	DBDEL("panel", id, this);
+	DBDEL_START("Panel", id, this);
 	event_listeners.clear();
 	if (parent) {
 		// disconnect
@@ -65,13 +104,19 @@ void Panel::_ClearPanel_() {
 			}
 		parent = nullptr;
 	}
+	DBDEL_X("children");
+	msg_right();
 	while (children.num > 0) {
 		Panel *p = children.pop();
 		delete(p);
 	}
+	msg_left();
+	DBDEL_X("root");
 
 	if (root_control)
 		delete root_control;
+
+	DBDEL_X("x");
 	root_control = nullptr;
 
 	id.clear();
@@ -109,6 +154,9 @@ int Panel::event_x(const string &id, const string &msg, const Callback &function
 	if (!EventID::is_valid(msg))
 		msg_error(format("invalid event message: %s/%s", id, msg));
 	int uid = current_event_listener_uid ++;
+#if GTK_CHECK_VERSION(4,0,0)
+	_try_add_action_(id, false);
+#endif
 	event_listeners.add(EventListener(uid, id, msg, function));
 	return uid;
 }
@@ -126,17 +174,6 @@ void Panel::remove_event_handler(int event_handler_id) {
 	for (int i=event_listeners.num-1; i>=0; i--)
 		if (event_listeners[i].uid == event_handler_id)
 			event_listeners.erase(i);
-}
-
-void Panel::set_key_code(const string &id, int key_code, const string &image) {
-	// make sure, each id has only 1 code
-	//   (multiple ids may have the same code)
-	for (auto &e: event_key_codes)
-		if (e.id == id) {
-			e.key_code = key_code;
-			return;
-		}
-	event_key_codes.add(EventKeyCode(id, "", key_code));
 }
 
 bool Panel::_send_event_(Event *e, bool force_if_not_allowed) {
@@ -283,7 +320,7 @@ void Panel::add_control(const string &type, const string &title, int x, int y, c
 void Panel::_add_control(const string &ns, Resource &cmd, const string &parent_id) {
 	//msg_write(format("%d:  %d / %d",j,(cmd->type & 1023),(cmd->type >> 10)).c_str(),4);
 	set_target(parent_id);
-	add_control(cmd.type, GetLanguageR(ns, cmd),
+	add_control(cmd.type, get_language_r(ns, cmd),
 				cmd.x, cmd.y,
 				cmd.id);
 
@@ -298,7 +335,7 @@ void Panel::_add_control(const string &ns, Resource &cmd, const string &parent_i
 		set_image(cmd.id, cmd.image());
 
 
-	string tooltip = GetLanguageT(ns, cmd.id, cmd.tooltip);
+	string tooltip = get_language_t(ns, cmd.id, cmd.tooltip);
 	if (tooltip.num > 0)
 		set_tooltip(cmd.id, tooltip);
 
@@ -307,7 +344,7 @@ void Panel::_add_control(const string &ns, Resource &cmd, const string &parent_i
 }
 
 void Panel::from_resource(const string &id) {
-	Resource *res = GetResource(id);
+	Resource *res = get_resource(id);
 	if (res)
 		set_from_resource(res);
 }
@@ -315,6 +352,7 @@ void Panel::from_resource(const string &id) {
 void Panel::set_from_resource(Resource *res) {
 	if (!res)
 		return;
+
 
 	bool res_is_window = ((res->type == "Dialog") or (res->type == "Window"));
 	bool panel_is_window = win and !parent;
@@ -325,7 +363,7 @@ void Panel::set_from_resource(Resource *res) {
 			win->__set_options(o);
 
 		// title
-		win->set_title(GetLanguage(res->id, res->id));
+		win->set_title(get_language(res->id, res->id));
 
 		// size
 		int width = res->value("width", "0")._int();
@@ -337,12 +375,19 @@ void Panel::set_from_resource(Resource *res) {
 		string toolbar = res->value("toolbar");
 		string menu = res->value("menu");
 		if (menu != "")
-			win->set_menu(CreateResourceMenu(menu));
+			win->set_menu(create_resource_menu(menu, this));
 		if (toolbar != "")
 			win->toolbar[TOOLBAR_TOP]->set_by_id(toolbar);
+
+		for (auto &c: res->children)
+			if (c.type == "HeaderBar") {
+				win->_add_headerbar();
+				for (auto &cc: c.children)
+					_add_control(id, cc, ":header:");
+			}
 	}
 
-	id = res->id;
+	set_id(res->id);
 
 	int bw = res->value("borderwidth", "-1")._int();
 	if (bw >= 0)
@@ -351,15 +396,15 @@ void Panel::set_from_resource(Resource *res) {
 
 	// controls
 	if (res_is_window) {
-		for (Resource &cmd: res->children)
-			_add_control(id, cmd, "");
+		if (res->children.num > 0)
+			_add_control(id, res->children[0], "");
 	} else {
 		embed_resource(*res, "", 0, 0);
 	}
 }
 
 void Panel::from_source(const string &buffer) {
-	Resource res = ParseResource(buffer);
+	Resource res = parse_resource(buffer);
 	set_from_resource(&res);
 }
 
@@ -372,7 +417,7 @@ void Panel::_embed_resource(const string &ns, Resource &c, const string &parent_
 	//_addControl(main_id, c, parent_id);
 
 	set_target(parent_id);
-	string title = GetLanguageR(ns, c);
+	string title = get_language_r(ns, c);
 	//if (c.options.num > 0)
 	//	title = "!" + implode(c.options, ",") + "\\" + title;
 	add_control(c.type, title, x, y, c.id);
@@ -383,7 +428,7 @@ void Panel::_embed_resource(const string &ns, Resource &c, const string &parent_
 	if (c.image().num > 0)
 		set_image(c.id, c.image());
 
-	string tooltip = GetLanguageT(ns, c.id, c.tooltip);
+	string tooltip = get_language_t(ns, c.id, c.tooltip);
 	if (tooltip.num > 0)
 		set_tooltip(c.id, tooltip);
 
@@ -392,7 +437,7 @@ void Panel::_embed_resource(const string &ns, Resource &c, const string &parent_
 }
 
 void Panel::embed_source(const string &buffer, const string &parent_id, int x, int y) {
-	Resource res = ParseResource(buffer);
+	Resource res = parse_resource(buffer);
 	embed_resource(res, parent_id, x, y);
 }
 
@@ -403,8 +448,7 @@ void Panel::embed(Panel *panel, const string &parent_id, int x, int y) {
 		msg_error("trying to embed an empty panel");
 		return;
 	}
-	panel->parent = this;
-	panel->set_win(win);
+	panel->set_parent(this);
 	children.add(panel);
 
 	Panel* orig = panel->root_control->panel;
@@ -413,15 +457,18 @@ void Panel::embed(Panel *panel, const string &parent_id, int x, int y) {
 	if (parent_id.num > 0 and !_get_control_(parent_id))
 		msg_error(parent_id + " not found...embed");
 	_insert_control_(panel->root_control, x, y);
-//	if (cur_control) // don't really add... (stop some information propagation between Panels)
-//		cur_control->children.pop();    ...no...now checked in apply_foreach()
 	panel->root_control->panel = orig;//panel;
+
+#if GTK_CHECK_VERSION(4,0,0)
+	//msg_error("ATTACH ACTION GROUP  " + p2s(panel));
+	gtk_widget_insert_action_group(win->window, p2s(panel).c_str(), G_ACTION_GROUP(panel->action_group));
+#endif
 }
 
-void Panel::set_win(Window *_win) {
+void Panel::_set_win(Window *_win) {
 	win = _win;
 	for (Panel *p: children)
-		p->set_win(win);
+		p->_set_win(win);
 }
 
 
@@ -443,6 +490,8 @@ void Panel::apply_foreach(const string &_id, std::function<void(Control*)> f) {
 
 	// FIXME: might be a derived class by kaba....
 	if (panel_equal(win, this)) {
+		if (win->header_bar)
+			win->header_bar->apply_foreach(id, f);
 		if (win->get_menu())
 			win->get_menu()->apply_foreach(id, f);
 		/*if (win->popup)
@@ -458,7 +507,9 @@ void Panel::apply_foreach(const string &_id, std::function<void(Control*)> f) {
 void Panel::set_string(const string &_id, const string &str) {
 	if (win and (id == _id))
 		win->set_title(str);
-	apply_foreach(_id, [=](Control *c) { c->set_string(str); });
+	apply_foreach(_id, [&str](Control *c) {
+		c->set_string(str);
+	});
 }
 
 // replace all the text with a numerical value (int)
@@ -466,69 +517,93 @@ void Panel::set_string(const string &_id, const string &str) {
 // select an item
 //    for ComboBox, TabControl, ListView?
 void Panel::set_int(const string &_id, int n) {
-	apply_foreach(_id, [=](Control *c) { c->set_int(n); });
+	apply_foreach(_id, [n](Control *c) {
+		c->set_int(n);
+	});
 }
 
 // replace all the text with a float
 //    for all
 void Panel::set_float(const string &_id, float f) {
-	apply_foreach(_id, [=](Control *c) { c->set_float(f); });
+	apply_foreach(_id, [f](Control *c) {
+		c->set_float(f);
+	});
 }
 
 void Panel::set_image(const string &_id, const string &image) {
-	apply_foreach(_id, [=](Control *c) { c->set_image(image); });
+	apply_foreach(_id, [&image](Control *c) {
+		c->set_image(image);
+	});
 }
 
 void Panel::set_tooltip(const string &_id, const string &tip) {
-	apply_foreach(_id, [=](Control *c) { c->set_tooltip(tip); });
+	apply_foreach(_id, [&tip](Control *c) {
+		c->set_tooltip(tip);
+	});
 }
 
 
 // add a single line/string
 //    for ComboBox, ListView, ListViewTree, ListViewIcons
 void Panel::add_string(const string &_id, const string &str) {
-	apply_foreach(_id, [=](Control *c) { c->add_string(str); });
+	apply_foreach(_id, [&str](Control *c) {
+		c->add_string(str);
+	});
 }
 
 // add a single line as a child in the tree of a ListViewTree
 //    for ListViewTree
 void Panel::add_child_string(const string &_id, int parent_row, const string &str) {
-	apply_foreach(_id, [=](Control *c) { c->add_child_string(parent_row, str); });
+	apply_foreach(_id, [parent_row,&str](Control *c) {
+		c->add_child_string(parent_row, str);
+	});
 }
 
 // change a single line in the tree of a ListViewTree
 //    for ListViewTree
 void Panel::change_string(const string &_id, int row, const string &str) {
-	apply_foreach(_id, [=](Control *c) { c->change_string(row, str); });
+	apply_foreach(_id, [row,&str](Control *c) {
+		c->change_string(row, str);
+	});
 }
 
 // change a single line in the tree of a ListViewTree
 //    for ListViewTree
 void Panel::remove_string(const string &_id, int row) {
-	apply_foreach(_id, [=](Control *c) { c->remove_string(row); });
+	apply_foreach(_id, [row](Control *c) {
+		c->remove_string(row);
+	});
 }
 
 // listview / treeview
 string Panel::get_cell(const string &_id, int row, int column) {
 	string r = "";
-	apply_foreach(_id, [&](Control *c) { r = c->get_cell(row, column); });
+	apply_foreach(_id, [&r,row,column](Control *c) {
+		r = c->get_cell(row, column);
+	});
 	return r;
 }
 
 // listview / treeview
 void Panel::set_cell(const string &_id, int row, int column, const string &str) {
-	apply_foreach(_id, [=](Control *c) { c->set_cell(row, column, str); });
+	apply_foreach(_id, [row,column,&str](Control *c) {
+		c->set_cell(row, column, str);
+	});
 }
 
 void Panel::set_color(const string &_id, const color &col) {
-	apply_foreach(_id, [=](Control *c) { c->set_color(col); });
+	apply_foreach(_id, [&col](Control *c) {
+		c->set_color(col);
+	});
 }
 
 // retrieve the text
 //    for edit
 string Panel::get_string(const string &_id) {
 	string r = "";
-	apply_foreach(_id, [&](Control *c) { r = c->get_string(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->get_string();
+	});
 	return r;
 }
 
@@ -538,7 +613,9 @@ string Panel::get_string(const string &_id) {
 //    for ComboBox, TabControl, ListView
 int Panel::get_int(const string &_id) {
 	int r = 0;
-	apply_foreach(_id, [&](Control *c) { r = c->get_int(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->get_int();
+	});
 	return r;
 }
 
@@ -546,39 +623,71 @@ int Panel::get_int(const string &_id) {
 //    for edit
 float Panel::get_float(const string &_id) {
 	float r = 0;
-	apply_foreach(_id, [&](Control *c) { r = c->get_float(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->get_float();
+	});
 	return r;
 }
 
 color Panel::get_color(const string &_id) {
 	color r = Black;
-	apply_foreach(_id, [&](Control *c) { r = c->get_color(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->get_color();
+	});
 	return r;
+}
+
+
+// might be called from menus in preparation
+GAction *panel_get_action(Panel *panel, const string &id) {
+#if GTK_CHECK_VERSION(4,0,0)
+	if (!panel) {
+		//msg_error("NO PANEL..." + id);
+		return nullptr;
+	}
+	return panel->_get_action(id);
+	if (!panel->win) {
+		//msg_error("NO WINDOW..." + id);
+		return nullptr;
+	}
+
+	//return panel->win->_get_action(id);
+#else
+	return nullptr;
+#endif
 }
 
 // switch control to usable/unusable
 //    for all
 void Panel::enable(const string &_id,bool enabled) {
-	apply_foreach(_id, [=](Control *c) { c->enable(enabled); });
+	apply_foreach(_id, [enabled](Control *c) {
+		c->enable(enabled);
+	});
 }
 
 // show/hide control
 //    for all
 void Panel::hide_control(const string &_id,bool hide) {
-	apply_foreach(_id, [=](Control *c) { c->hide(hide); });
+	apply_foreach(_id, [hide](Control *c) {
+		c->hide(hide);
+	});
 }
 
 // mark as "checked"
 //    for CheckBox, ToolBarItemCheckable
 void Panel::check(const string &_id,bool checked) {
-	apply_foreach(_id, [=](Control *c) { c->check(checked); });
+	apply_foreach(_id, [checked](Control *c) {
+		c->check(checked);
+	});
 }
 
 // is marked as "checked"?
 //    for CheckBox
 bool Panel::is_checked(const string &_id) {
 	bool r = false;
-	apply_foreach(_id, [&](Control *c) { r = c->is_checked(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->is_checked();
+	});
 	return r;
 }
 
@@ -586,30 +695,40 @@ bool Panel::is_checked(const string &_id) {
 //    for ListView
 Array<int> Panel::get_selection(const string &_id) {
 	Array<int> r;
-	apply_foreach(_id, [&](Control *c) { r = c->get_selection(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->get_selection();
+	});
 	return r;
 }
 
 void Panel::set_selection(const string &_id, const Array<int> &sel) {
-	apply_foreach(_id, [=](Control *c) { c->set_selection(sel); });
+	apply_foreach(_id, [&sel](Control *c) {
+		c->set_selection(sel);
+	});
 }
 
 // delete all the content
 //    for ComboBox, ListView
 void Panel::reset(const string &_id) {
-	apply_foreach(_id, [=](Control *c) { c->reset(); });
+	apply_foreach(_id, [](Control *c) {
+		c->reset();
+	});
 }
 
 // expand a single row
 //    for TreeView
 void Panel::expand(const string &_id, int row, bool expand) {
-	apply_foreach(_id, [=](Control *c) { c->expand(row, expand); });
+	apply_foreach(_id, [row,expand](Control *c) {
+		c->expand(row, expand);
+	});
 }
 
 // expand all rows
 //    for TreeView
 void Panel::expand_all(const string &_id, bool expand) {
-	apply_foreach(_id, [=](Control *c) { c->expand_all(expand); });
+	apply_foreach(_id, [expand](Control *c) {
+		c->expand_all(expand);
+	});
 }
 
 // is column in tree expanded?
@@ -622,29 +741,130 @@ bool Panel::is_expanded(const string &_id, int row) {
 
 //    for Revealer
 void Panel::reveal(const string &_id, bool reveal) {
-	apply_foreach(_id, [=](Control *c) { c->reveal(reveal); });
+	apply_foreach(_id, [reveal](Control *c) {
+		c->reveal(reveal);
+	});
 }
 
 //    for Revealer
 bool Panel::is_revealed(const string &_id) {
 	bool r = false;
-	apply_foreach(_id, [&](Control *c) { r = c->is_revealed(); });
+	apply_foreach(_id, [&r](Control *c) {
+		r = c->is_revealed();
+	});
 	return r;
 }
 
 void Panel::delete_control(const string &_id) {
-	apply_foreach(_id, [=](Control *c) { delete c; });
+	apply_foreach(_id, [](Control *c) {
+		delete c;
+	});
 }
 
 void Panel::set_options(const string &_id, const string &options) {
 	if (id == "toolbar[0]" and win == this) {
 		win->toolbar[0]->set_options(options);
 	} else if (_id != "") {
-		apply_foreach(_id, [=](Control *c) { c->set_options(options); });
+		apply_foreach(_id, [&options](Control *c) {
+			c->set_options(options);
+		});
 	} else if (win == this) {
 		win->__set_options(options);
 	}
 }
+
+string panel_scope(Panel *p) {
+	if (!p)
+		return "";
+	if (p == p->win)
+		return "win.";
+	return p->id + ".";
+}
+
+#if GTK_CHECK_VERSION(4,0,0)
+void Panel::_try_add_action_(const string &id, bool as_checkable) {
+	if ((id == "") or (id == "*") or (id == "hui:close"))
+		return;
+	string name = get_gtk_action_name(id, nullptr);
+	//msg_write(this->id + ":" + id + "   (...)  ");
+	auto aa = g_action_map_lookup_action(G_ACTION_MAP(action_group), name.c_str());
+	if (aa)
+		return;
+	if (as_checkable) {
+		//msg_write("ACTION C   " + panel_scope(this) + id);
+		GVariant *state = g_variant_new_boolean(FALSE);
+		auto a = g_simple_action_new_stateful(name.c_str(), /*G_VARIANT_TYPE_BOOLEAN*/ nullptr, state);
+		//auto a = g_simple_action_new_stateful(name.c_str(), G_VARIANT_TYPE_BOOLEAN, state);
+		g_signal_connect(G_OBJECT(a), "activate", G_CALLBACK(_on_menu_action_), this);
+		g_action_map_add_action(G_ACTION_MAP(action_group), G_ACTION(a));
+	} else {
+		//msg_write("ACTION     " + panel_scope(this) + id + "   " + get_gtk_action_name(id, this));
+		auto a = g_simple_action_new(name.c_str(), nullptr);
+		g_signal_connect(G_OBJECT(a), "activate", G_CALLBACK(_on_menu_action_), this);
+		g_action_map_add_action(G_ACTION_MAP(action_group), G_ACTION(a));
+	}
+}
+
+
+GAction *Panel::_get_action(const string &id) {
+	if (action_group)
+		return g_action_map_lookup_action(G_ACTION_MAP(action_group), get_gtk_action_name(id, nullptr).c_str());
+	return nullptr;
+}
+
+#endif
+
+void Panel::_connect_menu_to_panel(Menu *menu) {
+	menu->set_panel(this);
+
+#if GTK_CHECK_VERSION(4,0,0)
+	for (auto c: menu->get_all_controls()) {
+		if (c->type == MENU_ITEM_TOGGLE) {
+			_try_add_action_(c->id, true);
+			if (auto i = static_cast<MenuItemToggle*>(c)) {
+				if (i->checked)
+					i->__check(true);
+			}
+		} else if (c->type == MENU_ITEM_BUTTON) {
+			_try_add_action_(c->id, false);
+		} else {
+			//_try_add_action_(c->id, false);
+		}
+		if (!c->enabled) {
+			c->enable(false); // update action...
+			//enable(c->id, false);
+		}
+	}
+#endif
+}
+
+string decode_gtk_action(const string &name) {
+	return name.sub_ref(10).unhex();
+}
+
+#if GTK_CHECK_VERSION(4,0,0)
+void Panel::_on_menu_action_(GSimpleAction *simple, GVariant *parameter, gpointer user_data) {
+	auto panel = static_cast<Panel*>(user_data);
+	auto win = panel->win;
+	//string id = g_variant_get_string(parameter, nullptr);
+
+	GValue value = {0,};
+	g_value_init(&value, G_TYPE_STRING);
+	g_object_get_property(G_OBJECT(simple), "name", &value);
+	string id = string(g_value_get_string(&value));
+	id = decode_gtk_action(id);
+	//msg_write("ACTION CALLBACK " + id);
+	//msg_write(id);
+	g_value_unset(&value);
+
+	panel->_set_cur_id_(id);
+	if (id.num == 0)
+		return;
+	//notify_push(this);
+	Event e = Event(id, EventID::CLICK);
+	panel->_send_event_(&e);
+}
+#endif
 
 };
 

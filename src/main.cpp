@@ -232,7 +232,7 @@ public:
 		// for huibui.kaba...
 		kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
 		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
-		kaba::link_external("ParseResource", (void*)&hui::ParseResource);
+		kaba::link_external("ParseResource", (void*)&hui::parse_resource);
 		kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 
@@ -304,7 +304,7 @@ public:
 			}
 		} catch (kaba::Exception &e) {
 			if (use_gui)
-				hui::ErrorBox(NULL, _("Error in script"), e.message());
+				hui::error_box(NULL, _("Error in script"), e.message());
 			else
 				msg_error(e.message());
 			error = true;

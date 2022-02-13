@@ -102,6 +102,7 @@ public:
 	virtual void completion_clear(){}
 
 	virtual void add(Control *child, int x, int y){}
+	virtual void remove_child(Control *child) {}
 	void set_options(const string &options);
 	virtual void __set_option(const string &op, const string &value){}
 	void get_size(int &w, int &h);
@@ -109,6 +110,8 @@ public:
 	void notify(const string &message = "", bool is_default = true);
 
 	void apply_foreach(const string &id, std::function<void(Control*)> f);
+
+	void _set_css(const string &css);
 
 private:
 	int min_width, min_height;

@@ -9,6 +9,7 @@
 #define HUIPANEL_H_
 
 #include "hui.h"
+#include "../base/pointer.h"
 
 
 class Painter;
@@ -26,11 +27,12 @@ class EventKeyCode;
 class Control;
 class ControlRadioButton;
 
-class Panel : public EventHandler {
+class Panel : public Sharable<EventHandler> {
 	friend class Control;
 	friend class ControlRadioButton;
 	friend class Menu;
 public:
+	Panel(const string &id, Panel *parent);
 	Panel();
 	virtual ~Panel();
 	void _cdecl __init__();
@@ -49,14 +51,15 @@ public:
 	virtual void _cdecl on_show(){}
 	virtual void _cdecl on_hide(){}
 
-	void set_win(Window *win);
+	void set_id(const string &id);
+	void set_parent(Panel *parent);
+	void _set_win(Window *win);
 
 	// events
 	int _cdecl event(const string &id, const Callback &function);
 	int _cdecl event_x(const string &id, const string &msg, const Callback &function);
 	int _cdecl event_xp(const string &id, const string &msg, const CallbackP &function);
 	void _cdecl remove_event_handler(int event_handler_id);
-	void _cdecl set_key_code(const string &id, int key_code, const string &image = "");
 	bool _send_event_(Event *e, bool force_if_not_allowed = false);
 
 	// creating controls
@@ -155,6 +158,8 @@ public:
 	void _cdecl set_spacing(int width);
 
 
+	void _connect_menu_to_panel(Menu *menu);
+
 protected:
 
 
@@ -174,16 +179,16 @@ protected:
 	int desired_width, desired_height;
 #endif
 
-	Control *cur_control;
+	Control *target_control;
 	Control *root_control;
 	void apply_foreach(const string &id, std::function<void(Control*)> f);
 public:
 	Array<EventListener> event_listeners;
-	Array<EventKeyCode> event_key_codes;
 	int current_event_listener_uid;
-protected:
+//protected:
 
 	string id;
+protected:
 	int unique_id;
 	string cur_id;
 public:
@@ -194,6 +199,15 @@ public:
 	Window *win;
 	Panel *parent;
 	Array<Panel*> children;
+
+
+#if GTK_CHECK_VERSION(4,0,0)
+	static void _on_menu_action_(GSimpleAction *simple, GVariant *parameter, gpointer user_data);
+	GSimpleActionGroup *action_group = nullptr;
+	void _try_add_action_(const string &id, bool checkable);
+public:
+	GAction *_get_action(const string &id);
+#endif
 };
 
 };
