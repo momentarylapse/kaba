@@ -113,9 +113,11 @@ void Panel::_insert_control_(Control *c, int x, int y) {
 #endif
 		}
 	}
+#if !GTK_CHECK_VERSION(4,0,0)
 	if (frame != c->widget)
 		gtk_widget_show(frame);
 	gtk_widget_show(c->widget);
+#endif
 	c->enabled = true;
 }
 
@@ -375,11 +377,15 @@ void hui_rm_event(Array<EventListener> &event, Control *c) {
 		hui_rm_event(event, cc);
 }
 
+
+void control_delete_rec(Control *c);
+
 void Panel::remove_control(const string &id) {
 	Control *c = _get_control_(id);
 	if (c) {
 		hui_rm_event(event_listeners, c);
-		delete(c);
+		//delete(c);
+		control_delete_rec(c);
 	}
 }
 
