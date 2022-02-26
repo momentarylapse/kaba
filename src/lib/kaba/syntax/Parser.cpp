@@ -1139,12 +1139,12 @@ shared<Node> Parser::parse_abstract_operand(Block *block) {
 		}
 	} else if (Exp.cur == "{") {
 		operand = parse_abstract_dict(block);
-	} else if (Exp.cur == IDENTIFIER_FUNC) {
+	/*} else if (Exp.cur == IDENTIFIER_FUNC) {
 		// local function definition
 		auto f = parse_function_header(tree->_base_class.get(), Flags::STATIC);
 		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
 
-		operand = tree->add_node_func_name(f);
+		operand = tree->add_node_func_name(f);*/
 	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
 		if (Exp.cur == IDENTIFIER_SHARED) {
 			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
@@ -2285,7 +2285,6 @@ shared<Node> Parser::concretify_statement_try(shared<Node> node, Block *block, c
 
 shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block, const Class *ns) {
 	auto f = node->params[0]->as_func();
-	auto cmd = f->block->params[0];
 
 
 	auto *prev_func = cur_func;
@@ -2294,25 +2293,32 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 
 	cur_func = f;
 
-	cmd = concretify_node(cmd, f->block.get(), block->name_space());
+	if (f->block->params.num == 1) {
 
+		auto cmd = f->block->params[0];
+		cmd = concretify_node(cmd, f->block.get(), block->name_space());
+
+		f->literal_return_type = cmd->type;
+		f->effective_return_type = cmd->type;
+
+		if (cmd->type == TypeVoid) {
+			f->block->params[0] = cmd;
+		} else {
+			auto ret = tree->add_node_statement(StatementID::RETURN);
+			ret->set_num_params(1);
+			ret->params[0] = cmd;
+			f->block->params[0] = ret;
+		}
+
+	} else {
+		f->block->type = TypeUnknown;
+		f->literal_return_type = TypeVoid;
+		f->effective_return_type = TypeVoid;
+		concretify_node(f->block.get(), f->block.get(), f->name_space);
+	}
 
 	cur_func = prev_func;
 
-
-
-
-	f->literal_return_type = cmd->type;
-	f->effective_return_type = cmd->type;
-
-	if (cmd->type == TypeVoid) {
-		f->block->params[0] = cmd;
-	} else {
-		auto ret = tree->add_node_statement(StatementID::RETURN);
-		ret->set_num_params(1);
-		ret->params[0] = cmd;
-		f->block->params[0] = ret;
-	}
 
 	f->block->parent = nullptr;
 
@@ -3461,8 +3467,23 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	Exp.next(); // ')'
 
 	// lambda body
-	auto cmd = parse_abstract_operand_greedy(f->block.get());
-	f->block->add(cmd);
+	if (Exp.end_of_line()) {
+		//parse_abstract_block(parent, f->block.get());
+
+		int indent0 = Exp.cur_line->indent;
+		bool more_to_parse = true;
+
+	// instructions
+		while (more_to_parse) {
+			more_to_parse = parse_abstract_function_command(f, indent0);
+		}
+		Exp.rewind();
+
+	} else {
+		// single expression
+		auto cmd = parse_abstract_operand_greedy(f->block.get());
+		f->block->add(cmd);
+	}
 
 	auto node = tree->add_node_statement(StatementID::LAMBDA, TypeUnknown);
 	node->set_num_params(1);
@@ -3567,7 +3588,7 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 		return parse_abstract_statement_var(block);
 	} else if (Exp.cur == IDENTIFIER_MAP) {
 		return parse_abstract_statement_map(block);
-	} else if (Exp.cur == IDENTIFIER_LAMBDA) {
+	} else if (Exp.cur == IDENTIFIER_LAMBDA or Exp.cur == IDENTIFIER_FUNC) {
 		return parse_abstract_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
 		return parse_abstract_statement_sorted(block);

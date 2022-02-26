@@ -44,6 +44,7 @@ enum class StatementID {
 	VAR,
 	MAP,
 	LAMBDA,
+	FUNC,
 	SORTED,
 	DYN,
 	WEAK,
