@@ -1,0 +1,17 @@
+class XX
+	i: int
+	func __init__()
+		print("INIT")
+	func __assign__(o: XX)
+		print("ASSIGN...")
+	func ff()
+		var f = lambda() self.g()
+		f()
+	func g()
+		print(i)
+
+func main()
+	XX x
+	x.i = 13
+	x.ff()
+

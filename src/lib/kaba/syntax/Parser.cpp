@@ -1510,6 +1510,9 @@ shared<Node> Parser::link_operator(AbstractOperator *primop, shared<Node> param1
 	for (auto *f: weak(pp1->functions))
 		if ((f->name == op_func_name) and f->is_member()) {
 			// exact match as class function but missing a "&"?
+			if (f->literal_param_type.num != 2)
+				continue;
+
 			auto type2 = f->literal_param_type[1];
 			if (type_match(p2, type2)) {
 				auto inst = param1;
@@ -2357,24 +2360,45 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	lt->capture_data.resize(10000); // 10k...*/
 
 	Array<const Class*> capture_types;
+	Array<bool> capture_via_ref;
 
+	auto should_capture_via_ref = [this] (Variable *v) {
+		if (v->name == IDENTIFIER_SELF)
+			return true;
+		if (v->type->can_memcpy() or v->type == TypeString)
+			return false;
+		do_error(format("currently not supported to capture variable '%s' of type '%s'", v->name, v->type->long_name()));
+		return true;
+	};
+
+	// replace captured variables by added parameters
 	for (auto v: captures) {
 		if (config.verbose)
 			msg_write("  * " + v->name);
-		//f->block->vars.insert()
-		capture_types.add(v->type);
 
-		auto vvv = f->block->insert_var(f->num_params, v->name, v->type);
+		bool via_ref = should_capture_via_ref(v);
+		capture_via_ref.add(via_ref);
+		auto cap_type = via_ref ? v->type->get_pointer() : v->type;
+		capture_types.add(cap_type);
+
+
+		auto vvv = f->add_param(v->name, cap_type, Flags::NONE);
 		//if (!flags_has(flags, Flags::OUT))
 		//flags_set(v->flags, Flags::CONST);
-		f->literal_param_type.add(v->type);
-		f->num_params ++;
 
 
-		auto replace_local = [v,vvv](shared<Node> n) {
+
+		auto replace_local = [v,vvv,cap_type,via_ref](shared<Node> n) {
 			if (n->kind == NodeKind::VAR_LOCAL)
-				if (n->as_local() == v)
-					n->link_no = (int_p)vvv;
+				if (n->as_local() == v) {
+					if (via_ref) {
+						n->link_no = (int_p)vvv;
+						n->type = cap_type;
+						return n->deref();
+					} else {
+						n->link_no = (int_p)vvv;
+					}
+				}
 			return n;
 		};
 		tree->transform_block(f->block.get(), replace_local);
@@ -2388,18 +2412,22 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	auto create_inner_lambda = wrap_function_into_callable(f);
 
 
+	// "new bind(f, a, b,...)"
 	for (auto *cf: bind_wrapper_type->get_constructors()) {
 		auto cmd_new = tree->add_node_statement(StatementID::NEW);
 		auto con = tree->add_node_constructor(cf);
 		shared_array<Node> params = {create_inner_lambda.get()};
-		for (auto &c: captures)
-			params.add(tree->add_node_local(c));
+		foreachi (auto &c, captures, i) {
+			if (capture_via_ref[i])
+				params.add(tree->add_node_local(c)->ref());
+			else
+				params.add(tree->add_node_local(c));
+		}
 		con = apply_params_direct(con, params, 1);
 		con->kind = NodeKind::CALL_FUNCTION;
 		con->type = TypeVoid;
 
 		cmd_new->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
-		//cmd->type = bind_wrapper_type->get_pointer();
 		cmd_new->set_param(0, con);
 		return cmd_new;
 	}
@@ -4284,7 +4312,8 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 
 	string name = Exp.cur;
 	if (Exp.cur == "(") {
-		name = "-lambda-";
+		static int lambda_count = 0;
+		name = format("-lambda-%d-", lambda_count ++);
 	} else {
 		Exp.next();
 	}
