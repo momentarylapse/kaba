@@ -1,0 +1,8 @@
+class C
+	i: int
+	func f(a: int, s: string = "hallo")
+		print(" a={{a}} s={{s}}")
+
+func main()
+	C c
+	c.f(13)

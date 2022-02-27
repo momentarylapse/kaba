@@ -4408,8 +4408,8 @@ void Parser::concretify_function_header(Function *f) {
 		v->type = t;
 		f->literal_param_type[i] = t;
 
-
-		if (i < f->default_parameters.num) {
+		// mandatory_params not yet
+		if ((i < f->default_parameters.num) and f->default_parameters[i]) {
 			f->default_parameters[i] = concretify_node(f->default_parameters[i], block, f->name_space);
 			if (f->default_parameters[i]->type != t)
 				do_error(format("trying to set a default value of type '%s' for a parameter of type '%s'", f->default_parameters[i]->type->name, t->name));
