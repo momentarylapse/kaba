@@ -79,7 +79,6 @@ string make_callable_signature(const Array<const Class*> &param, const Class *re
 }
 
 const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
-
 	string name = make_callable_signature(param, ret);
 
 	auto params_ret = param;
@@ -733,7 +732,7 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 
 const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns) {
 	//msg_write("make class " + name + " ns=" + ns->long_name() + " param=" + param->long_name());
-	
+
 	// check if it already exists
 	auto *tt = find_root_type_by_name(name, ns, false);
 	if (tt)

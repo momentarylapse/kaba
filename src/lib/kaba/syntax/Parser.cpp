@@ -501,11 +501,11 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 	// error message
 
 	if (links.num == 0)
-		do_error("can not call ...");
+		do_error("can not call ...", links[0]);
 
 	if (links.num == 1) {
 		param_match_with_cast(links[0], params, casts, wanted, &min_penalty);
-		do_error("invalid function parameters: " + param_match_with_cast_error(params, wanted));
+		do_error("invalid function parameters: " + param_match_with_cast_error(params, wanted), links[0]);
 	}
 
 	string found = type_list_to_str(type_list_from_nodes(params));
@@ -515,7 +515,7 @@ shared<Node> Parser::try_to_match_apply_params(const shared_array<Node> &links, 
 		//available += format("\n * %s for %s", type_list_to_str(p), link->sig(tree->base_class));
 		available += format("\n * %s", link->signature(tree->base_class));
 	}
-	do_error(format("invalid function parameters: %s given, possible options:%s", found, available));
+	do_error(format("invalid function parameters: %s given, possible options:%s", found, available), links[0]);
 	return shared<Node>();
 }
 
@@ -3194,7 +3194,7 @@ const Class *type_more_abstract(const Class *a, const Class *b) {
 shared<Node> Parser::wrap_function_into_callable(Function *f) {
 	auto t = tree->make_class_callable_fp(f);
 
-	for (auto *cf: t->param[0]->get_constructors())
+	for (auto *cf: t->param[0]->get_constructors()) {
 		if (cf->num_params == 2) {
 			auto cmd = tree->add_node_statement(StatementID::NEW);
 			auto con = tree->add_node_constructor(cf);
@@ -3208,7 +3208,8 @@ shared<Node> Parser::wrap_function_into_callable(Function *f) {
 			cmd->set_param(0, con);
 			return cmd;
 		}
-	do_error("X");
+	}
+	do_error("wrap_function_into_callable() failed? " + f->signature());
 	return nullptr;
 }
 
@@ -4482,6 +4483,8 @@ void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
 			if ((Exp.cur == IDENTIFIER_CLASS) or (Exp.cur == IDENTIFIER_INTERFACE)) {
 				Exp.next();
+//				if (Exp.cur.num == 1)
+//					do_error("class names must be at least 2 characters long", Exp.cur_token());
 				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns);
 				flags_clear(t->flags, Flags::FULLY_PARSED);
 

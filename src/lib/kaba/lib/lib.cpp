@@ -16,6 +16,7 @@
 #include "../../config.h"
 #include "../../math/complex.h"
 #include "../../any/any.h"
+#include "../../base/callable.h"
 
 
 namespace kaba {
@@ -212,8 +213,74 @@ const Class *add_type_d(const Class *sub_type, const string &_name) {
 	return t;
 }
 
+template<typename Sig>
+class KabaCallable;
+
+template<typename R, typename ...A>
+class KabaCallable<R(A...)> : public Callable<R(A...)> {
+public:
+	typedef R t_func(A...);
+	Function *f;
+
+	KabaCallable(Function *_f) {
+		f = _f;
+	}
+	void __init__(Function *_f) {
+		new(this) KabaCallable<R(A...)>(_f);
+	}
+
+	R operator()(A... args) const override {
+		if (f) {
+			auto fp = (t_func*)f->address;
+			return fp(args...);
+		} else {
+			throw EmptyCallableError();
+		}
+	}
+};
+
+string make_callable_signature(const Array<const Class*> &param, const Class *ret);
+
 const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params) {
-	return cur_package->syntax->make_class_callable_fp(params, ret_type);
+	string name = make_callable_signature(params, ret_type);
+
+	auto params_ret = params;
+	if ((params.num == 1) and (params[0] == TypeVoid))
+		params_ret = {};
+	params_ret.add(ret_type);
+
+	//auto ff = cur_package->syntax->make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, cur_package->syntax->base_class);
+	Class *ff = new Class("XCallable[" + name + "]", /*TypeCallableBase->size*/ sizeof(KabaCallable<void()>), cur_package->syntax, nullptr, params_ret);
+	ff->type = Class::Type::CALLABLE_FUNCTION_POINTER;
+	__add_class__(ff, cur_package->syntax->base_class);
+
+	auto ptr_param = [] (const Class *p) {
+		return p->is_pointer() or p->uses_call_by_reference();
+	};
+
+	add_class(ff);
+	if (ret_type == TypeVoid) {
+		if (params.num == 0) {
+			class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaCallable<void()>::__init__);
+				func_add_param("fp", TypePointer);
+			class_add_func_virtual("call", TypeVoid, &KabaCallable<void()>::operator());
+		} else if (params.num == 1 and ptr_param(params[0])) {
+			class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaCallable<void(void*)>::__init__);
+				func_add_param("fp", TypePointer);
+			class_add_func_virtual("call", TypeVoid, &KabaCallable<void(void*)>::operator());
+		} else if (params.num == 2 and ptr_param(params[0]) and ptr_param(params[1])) {
+			class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaCallable<void(void*,void*)>::__init__);
+				func_add_param("fp", TypePointer);
+			class_add_func_virtual("call", TypeVoid, &KabaCallable<void(void*,void*)>::operator());
+		}
+	}
+	return cur_package->syntax->make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, cur_package->syntax->base_class);
+
+	/*auto c = cur_package->syntax->make_class_callable_fp(params, ret_type);
+	add_class(c);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &kaba_callable_fp_init);
+			func_add_param("fp", TypePointer);
+	return c;*/
 }
 
 //------------------------------------------------------------------------------------------------//
