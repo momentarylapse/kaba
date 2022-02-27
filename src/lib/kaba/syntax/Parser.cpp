@@ -2293,6 +2293,8 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	auto *prev_func = cur_func;
 
 	f->block->parent = block; // to allow captured variable lookup
+	if (block->function->is_member())
+		flags_clear(f->flags, Flags::STATIC); // allow finding "self.x" via "x"
 
 	cur_func = f;
 
@@ -2324,6 +2326,7 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 
 
 	f->block->parent = nullptr;
+	flags_set(f->flags, Flags::STATIC);
 
 	tree->base_class->add_function(tree, f, false, false);
 

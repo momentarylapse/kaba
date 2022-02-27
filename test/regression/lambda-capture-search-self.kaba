@@ -1,0 +1,10 @@
+class XX
+	i: int
+	func ff()
+		var f = lambda() i * 2
+		print(f())
+
+func main()
+	XX x
+	x.i = 13
+	x.ff()
