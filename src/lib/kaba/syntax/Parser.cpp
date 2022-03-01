@@ -557,7 +557,7 @@ Array<const Class*> node_extract_param_types(const shared<Node> n) {
 }
 
 // find any ".", or "[...]"'s    or operators?
-shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Block *block) {
+shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Block *block, bool prefer_class) {
 
 #if 0
 	// special
@@ -613,26 +613,24 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 
 	if (Exp.cur == ".") {
 		// element?
-		return parse_abstract_operand_extension(parse_abstract_operand_extension_element(operand), block);
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_element(operand), block, prefer_class);
 	} else if (Exp.cur == "[") {
 		// array?
-		return parse_abstract_operand_extension(parse_abstract_operand_extension_array(operand, block), block);
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_array(operand, block), block, prefer_class);
 	} else if (Exp.cur == "(") {
 		// call?
-		return parse_abstract_operand_extension(parse_abstract_operand_extension_call(operand, block), block);
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_call(operand, block), block, prefer_class);
 	} else if (Exp.cur == "{") {
 		// dict?
-		return parse_abstract_operand_extension(parse_abstract_operand_extension_dict(operand), block);
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_dict(operand), block, prefer_class);
 	} else if (Exp.cur == "->") {
 		// A->B?
-		return parse_abstract_operand_extension(parse_abstract_operand_extension_callable(operand, block), block);
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_callable(operand, block), block, true);
 	} else {
 
-		if (Exp.cur == "*") {
-			if (no_identifier_after()){// or might_declare_pointer_variable()) {
-				// FIXME: false positives for "{{pi * 10}}"
-				return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block);
-			}
+		if ((Exp.cur == "*" and (prefer_class or no_identifier_after())) or Exp.cur == "ptr") {
+			// FIXME: false positives for "{{pi * 10}}"
+			return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block, true);
 		}
 		// unary operator? (++,--)
 
@@ -640,13 +638,13 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		if (op) {
 			op->set_num_params(1);
 			op->set_param(0, operand);
-			return parse_abstract_operand_extension(op, block);
+			return parse_abstract_operand_extension(op, block, prefer_class);
 		}
 		return operand;
 	}
 
 	// recursion
-	return parse_abstract_operand_extension(operand, block);
+	return parse_abstract_operand_extension(operand, block, prefer_class);
 }
 
 
@@ -1101,16 +1099,7 @@ shared<Node> parse_abstract_with_dots(Parser *p) {
 
 // minimal operand
 // but with A[...], A(...) etc
-shared<Node> Parser::parse_operand(Block *block, const Class *ns, bool prefer_class) {
-	shared_array<Node> operands;
-
-	operands = {parse_abstract_operand(block)};
-	return concretify_node(operands[0], block, ns);
-}
-
-// minimal operand
-// but with A[...], A(...) etc
-shared<Node> Parser::parse_abstract_operand(Block *block) {
+shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	shared<Node> operand;
 
 	// ( -> one level down and combine commands
@@ -1172,7 +1161,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block) {
 
 	//return operand;
 	// resolve arrays, structures, calls...
-	return parse_abstract_operand_extension(operand, block);
+	return parse_abstract_operand_extension(operand, block, prefer_class);
 }
 
 // no type information
@@ -2766,7 +2755,6 @@ shared<Node> Parser::parse_abstract_operand_greedy(Block *block, bool allow_tupl
 	// find the first operand
 	if (!first_operand)
 		first_operand = parse_abstract_operand(block);
-		//first_operand = parse_operand(block, block->name_space());
 	if (config.verbose) {
 		msg_write("---first:");
 		first_operand->show();
@@ -2782,12 +2770,9 @@ shared<Node> Parser::parse_abstract_operand_greedy(Block *block, bool allow_tupl
 			break;
 		op->token_id = Exp.cur_token() - 1;
 		operators.add(op);
-		if (Exp.end_of_line()) {
-			//Exp.rewind();
+		if (Exp.end_of_line())
 			do_error("unexpected end of line after operator");
-		}
 		operands.add(parse_abstract_operand(block));
-		//operands.add(parse_operand(block, block->name_space()));
 	}
 
 	return digest_operator_list_to_tree(operands, operators);
@@ -2853,7 +2838,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 	} else {
 		// array
 
-		auto array = val0;//parse_operand(block);
+		auto array = val0;
 
 
 		auto cmd_for = tree->add_node_statement(StatementID::FOR_ARRAY, TypeUnknown);
@@ -3017,7 +3002,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 		auto except_block = new Block(block->function, block, TypeUnknown);
 
 		if (!Exp.end_of_line()) {
-			auto ex_type = parse_abstract_operand(block); // type
+			auto ex_type = parse_abstract_operand(block, true); // type
 			if (!ex_type)
 				do_error("Exception class expected");
 			cmd_ex->params.add(ex_type);
@@ -3376,7 +3361,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	// explicit type?
 	if (Exp.cur == ":") {
 		Exp.next();
-		type = parse_abstract_operand(block);
+		type = parse_abstract_operand(block, true);
 	} else if (Exp.cur != "=") {
 		do_error("':' or '=' expected after 'var' declaration");
 	}
@@ -4286,7 +4271,7 @@ bool Parser::parse_abstract_function_command(Function *f, int indent0) {
 // complicated types like "int[]*[4]" etc
 // greedy
 const Class *Parser::parse_type(const Class *ns) {
-	auto cc = parse_abstract_operand(tree->root_of_all_evil->block.get());
+	auto cc = parse_abstract_operand(tree->root_of_all_evil->block.get(), true);
 	return concretify_as_type(cc, tree->root_of_all_evil->block.get(), ns);
 }
 
@@ -4349,7 +4334,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 			Exp.next();
 
 			// type of parameter variable
-			f->abstract_param_types.add(parse_abstract_operand(block));
+			f->abstract_param_types.add(parse_abstract_operand(block, true));
 			auto v = f->add_param(param_name, TypeUnknown, param_flags);
 
 

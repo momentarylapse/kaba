@@ -6,7 +6,7 @@ class Test
 		i = _i
 
 func main()
-	Test*[] tests
+	var tests: Test*[]
 	tests.add(new Test("a", 130000))
 	tests.add(new Test("c", 3))
 	tests.add(new Test("b", 23))
