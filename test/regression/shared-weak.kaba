@@ -12,9 +12,9 @@ func ff(x: Test)
 func main()
 #	shared Test x = new Test()
 
-	shared Test[] a
+	Test shared[] a
 	print("a")
-	shared Test xx = new Test()
+	Test shared xx = new Test()
 	ff(weak(xx))
 	print("a2")
 	a.add(xx)

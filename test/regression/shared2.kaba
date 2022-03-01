@@ -9,11 +9,11 @@ class X as shared
 #shared X f()
 #	return new X()
 
-func ff() -> shared X
-	shared X x = new X()
+func ff() -> X shared
+	X shared x = new X()
 	return x
 
-func fff(x: shared X) -> shared X
+func fff(x: X shared) -> X shared
 	return x
 
 func main()

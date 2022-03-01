@@ -1,8 +1,8 @@
 use nix
 
 class X
-	var x: shared nix.Texture[]
-	var y: shared Texture
+	var x: nix.Texture shared[]
+	var y: Texture shared
 
 func main()
 	X x

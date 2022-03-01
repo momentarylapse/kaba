@@ -1,4 +1,4 @@
 0
-nix.shared Texture[]
-nix.shared Texture
+nix.Texture shared[]
+nix.Texture shared
 nix.Texture

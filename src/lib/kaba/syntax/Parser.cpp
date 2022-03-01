@@ -19,7 +19,6 @@ const int MAX_IMPORT_DIRECTORY_PARENTS = 5;
 namespace kaba {
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
-shared<Node> parse_abstract_with_dots(Parser *p);
 shared<Node> create_node_token(Parser *p);
 
 Array<const Class*> func_effective_params(const Function *f);
@@ -626,6 +625,18 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	} else if (Exp.cur == "->") {
 		// A->B?
 		return parse_abstract_operand_extension(parse_abstract_operand_extension_callable(operand, block), block, true);
+	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
+		auto sub = operand;
+		if (Exp.cur == IDENTIFIER_SHARED) {
+			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
+		} else { //if (pre == IDENTIFIER_OWNED)
+			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown);
+		}
+		operand->token_id = Exp.cur_token();
+		Exp.next();
+		operand->set_num_params(1);
+		operand->set_param(0, sub);
+		return parse_abstract_operand_extension(operand, block, true);
 	} else {
 
 		if ((Exp.cur == "*" and (prefer_class or no_identifier_after())) or Exp.cur == "ptr") {
@@ -1033,13 +1044,13 @@ shared<Node> Parser::parse_abstract_dict(Block *block) {
 const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
 	if (!parent->name_space)
 		tree->do_error("shared not allowed for: " + parent->long_name());
-	return tree->make_class(IDENTIFIER_SHARED + " " + parent->name, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
+	return tree->make_class(parent->name + " " + IDENTIFIER_SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
 const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
 	if (!parent->name_space)
 		tree->do_error("owned not allowed for: " + parent->long_name());
-	return tree->make_class(IDENTIFIER_OWNED + " " + parent->name, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
+	return tree->make_class(parent->name + " " + IDENTIFIER_OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
 }
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes) {
@@ -1077,26 +1088,6 @@ shared<Node> create_node_token(Parser *p) {
 	return t;
 }
 
-shared<Node> parse_abstract_with_dots(Parser *p) {
-	auto t = create_node_token(p);
-	p->Exp.next();
-	while (p->Exp.cur == ".") {
-		p->Exp.next();
-
-		auto sub = t;
-
-		auto el = create_node_token(p);
-		p->Exp.next();
-
-		t = new Node(NodeKind::ABSTRACT_ELEMENT, 0, TypeUnknown);
-		t->token_id = p->Exp.cur_token();
-		t->set_num_params(2);
-		t->set_param(0, sub);
-		t->set_param(1, el);
-	}
-	return t;
-}
-
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
@@ -1128,22 +1119,6 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		}
 	} else if (Exp.cur == "{") {
 		operand = parse_abstract_dict(block);
-	/*} else if (Exp.cur == IDENTIFIER_FUNC) {
-		// local function definition
-		auto f = parse_function_header(tree->_base_class.get(), Flags::STATIC);
-		skip_parsing_function_body(f); // we're still working through the list of all functions and parsing!
-
-		operand = tree->add_node_func_name(f);*/
-	} else if (Exp.cur == IDENTIFIER_SHARED or Exp.cur == IDENTIFIER_OWNED) {
-		if (Exp.cur == IDENTIFIER_SHARED) {
-			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
-		} else { //if (pre == IDENTIFIER_OWNED)
-			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown);
-		}
-		operand->token_id = Exp.cur_token();
-		operand->set_num_params(1);
-		Exp.next();
-		operand->set_param(0, parse_abstract_with_dots(this)); // don't parse a full operand like "nix.Texture[]"
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_abstract_statement(block);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
