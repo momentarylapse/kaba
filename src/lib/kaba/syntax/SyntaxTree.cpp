@@ -55,29 +55,28 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 }
 
 const Class *SyntaxTree::make_class_callable_fp(Function *f) {
-	auto params = f->literal_param_type;
-	if (params.num == 0)
-		return make_class_callable_fp({TypeVoid}, f->literal_return_type);
-	return make_class_callable_fp(params, f->literal_return_type);
-	//return TypeFunctionP;
+	return make_class_callable_fp(f->literal_param_type, f->literal_return_type);
 }
 
-string make_callable_signature(const Array<const Class*> &param, const Class *ret) {
+string make_callable_signature(const Array<const Class*> &params, const Class *ret) {
 	// maybe some day...
-	string params;// = param->name;
-	for (int i=0; i<param.num; i++) {
+	string signature;// = param->name;
+	for (int i=0; i<params.num; i++) {
 		if (i > 0)
-			params += ",";
-		params += class_name_might_need_parantheses(param[i]);
+			signature += ",";
+		signature += class_name_might_need_parantheses(params[i]);
 	}
-	if (param.num > 1)
-		params = "(" + params + ")";
-	if (param.num == 0 or (param.num == 1 and param[0] == TypeVoid)) {
-		params = "void";
+	if (params.num == 0)
+		signature = "void";
+	if (params.num > 1)
+		signature = "(" + signature + ")";
+	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
+		signature = "void";
 	}
-	return params + "->" + class_name_might_need_parantheses(ret);
+	return signature + "->" + class_name_might_need_parantheses(ret);
 }
 
+// input {}->R  OR  void->void   BOTH creates  void->R
 const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
 	string name = make_callable_signature(param, ret);
 
@@ -91,24 +90,35 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
-const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &param, const Class *ret, const Array<const Class*> &binds) {
+// inner callable: params [A,B,C,D,E]
+// captures: [-,x0,-,-,x1]
+// class CallableBind
+//     func __init__(f, c0, c1)
+//     func call(a,b,c)
+//         f(a,x0,b,c,c1)
+// (A,C,D) -> R
+const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures) {
 
-	string name = make_callable_signature(param, ret);
+	string name = make_callable_signature(params, ret);
 
-	auto params_ret = param;
-	if ((param.num == 1) and (param[0] == TypeVoid))
-		params_ret = {};
-	params_ret.add(ret);
+	Array<const Class*> outer_params_ret;
+	//if ((params.num == 1) and (params[0] == TypeVoid))
+	//	outer_params_ret = {};
+	for (int i=0; i<params.num; i++)
+		if (!captures[i])
+			outer_params_ret.add(params[i]);
+	outer_params_ret.add(ret);
 
 	static int unique_bind_counter = 0;
 
-	auto t = (Class*)make_class("<bind-" + i2s(unique_bind_counter++) + ">", Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	auto t = (Class*)make_class("<bind-" + i2s(unique_bind_counter++) + ">", Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, base_class);
 	int offset = t->size;
-	int i = 0;
-	for (auto &b: binds) {
+	foreachi (auto &b, captures, i) {
+		if (!b)
+			continue;
 		if (type_needs_alignment(b))
 			offset = mem_align(offset, 4);
-		auto el = ClassElement("capture" + i2s(i ++), b, offset);
+		auto el = ClassElement(format("capture%d", i), b, offset);
 		offset += b->size;
 		t->elements.add(el);
 	}
@@ -116,7 +126,7 @@ const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &par
 
 	for (auto &e: t->elements)
 		if (e.name == "_fp")
-			e.type = make_class_callable_fp(param + binds, ret);
+			e.type = make_class_callable_fp(params, ret);
 
 	add_missing_function_headers_for_class(t);
 	return t;

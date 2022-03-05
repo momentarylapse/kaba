@@ -87,7 +87,8 @@ public:
 
 	shared<Node> deref_if_pointer(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
-	shared<Node> wrap_function_into_callable(Function *f);
+	shared<Node> wrap_function_into_callable(Function *f, int token_id);
+	shared<Node> wrap_node_into_callable(shared<Node> node);
 
 	shared_array<Node> turn_class_into_constructor(const Class *t, const shared_array<Node> &params);
 	shared<Node> make_func_node_callable(const shared<Node> l);

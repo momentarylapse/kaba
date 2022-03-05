@@ -747,9 +747,10 @@ bool Parser::direct_param_match(const shared<Node> operand, const shared_array<N
 	for (auto c: wanted_types)
 		if (c == TypeDynamic)
 			found_dynamic_param = true;
-	for (int p=0; p<params.num; p++)
+	for (int p=0; p<params.num; p++) {
 		if (!type_match(params[p]->type, wanted_types[p]))
 			return false;
+	}
 	return true;
 }
 
@@ -779,7 +780,7 @@ string Parser::param_match_with_cast_error(const shared_array<Node> &params, con
 			if (params.num > 1)
 				return format("type '%s' given, '%s' expected for parameter #%d", pt->long_name(), wanted[p]->long_name(), p+1);
 			else
-				return format("type '%s' given, '%s' expected", pt->long_name(), wanted[p]->long_name());
+				return format("type '%s' given, '%s' expected    %s  %s", pt->long_name(), wanted[p]->long_name(), p2s(pt), p2s(wanted[p]));
 		}
 	}
 	return "";
@@ -1175,6 +1176,13 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 	return true;
 }
 
+const Class *make_effective_class_callable(shared<Node> node) {
+	auto f = node->as_func();
+	if (f->is_member() and node->params.num > 0 and node->params[0])
+		return f->owner()->make_class_callable_fp(f->literal_param_type.sub_ref(1), f->literal_return_type);
+	return f->owner()->make_class_callable_fp(f);
+}
+
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
 	cd.penalty = 0;
 	auto given = node->type;
@@ -1255,17 +1263,14 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		cd.cast = TYPE_CAST_ABSTRACT_TUPLE;
 		return true;
 	}
-	if ((node->kind == NodeKind::FUNCTION) and (given == TypeUnknown)) {
-		if (wanted->is_callable()) {
-			auto f = node->as_func();
-			auto ft = f->owner()->make_class_callable_fp(f);
+	if (wanted->is_callable() and (given == TypeUnknown)) {
+		if (node->kind == NodeKind::FUNCTION) {
+			auto ft = make_effective_class_callable(node);
 			if (type_match(ft, wanted)) {
 				cd.cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
 				return true;
 			}
-
 		}
-
 	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
@@ -2250,6 +2255,50 @@ shared<Node> Parser::concretify_statement_try(shared<Node> node, Block *block, c
 	return node;
 }
 
+// inner_callable: (A,B,C,D,E)->R
+// captures:       [-,x0,-,-,x1]
+shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_array<Node> &captures) {
+	SyntaxTree *tree = p->tree;
+
+	Array<const Class*> capture_types;
+	for (auto c: weak(captures))
+		if (c)
+			capture_types.add(c->type);
+		else
+			capture_types.add(nullptr);
+
+	auto param_types = get_callable_param_types(inner_callable->type);
+	auto return_type = get_callable_return_type(inner_callable->type);
+
+	Array<const Class*> outer_call_types;
+	for (int i=0; i<param_types.num; i++)
+		if (!captures[i])
+			outer_call_types.add(param_types[i]);
+
+	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, return_type, capture_types);
+
+	// "new bind(f, x0, x1, ...)"
+	for (auto *cf: bind_wrapper_type->get_constructors()) {
+		auto cmd_new = tree->add_node_statement(StatementID::NEW);
+		auto con = tree->add_node_constructor(cf);
+		shared_array<Node> params = {inner_callable.get()};
+		for (auto c: weak(captures))
+			if (c)
+				params.add(c);
+		con = p->apply_params_direct(con, params, 1);
+		con->kind = NodeKind::CALL_FUNCTION;
+		con->type = TypeVoid;
+
+		cmd_new->type = tree->make_class_callable_fp(outer_call_types, return_type);
+		cmd_new->set_param(0, con);
+		cmd_new->token_id = inner_callable->token_id;
+		return cmd_new;
+	}
+
+	p->do_error("bind failed...", inner_callable);
+	return nullptr;
+}
+
 shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block, const Class *ns) {
 	auto f = node->params[0]->as_func();
 
@@ -2263,6 +2312,9 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	cur_func = f;
 
 	if (f->block->params.num == 1) {
+		// func(i)              (multi line)
+		//     bla..
+		//     return i*i       (explicit return)
 
 		auto cmd = f->block->params[0];
 		cmd = concretify_node(cmd, f->block.get(), block->name_space());
@@ -2280,6 +2332,7 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 		}
 
 	} else {
+		// func(i) i*i      (single line, direct return)
 		f->block->type = TypeUnknown;
 		f->literal_return_type = TypeVoid;
 		f->effective_return_type = TypeVoid;
@@ -2307,8 +2360,6 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	};
 	tree->transform_block(f->block.get(), find_captures);
 
-	auto param_types = f->literal_param_type;
-
 
 	// no captures?
 	if (captures.num == 0) {
@@ -2316,17 +2367,12 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 		return tree->add_node_func_name(f);
 	}
 
+	auto explicit_param_types = f->literal_param_type;
+
 
 	if (config.verbose)
 		msg_write("CAPTURES:");
-	/*auto lt = new BindingTemplate;
-	binding_templates.add(lt);
-	lt->outer = block->function;
-	lt->inner = f;
-	lt->captures_local = captures;
-	lt->capture_data.resize(10000); // 10k...*/
 
-	Array<const Class*> capture_types;
 	Array<bool> capture_via_ref;
 
 	auto should_capture_via_ref = [this] (Variable *v) {
@@ -2338,7 +2384,7 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 		return true;
 	};
 
-	// replace captured variables by added parameters
+	// replace captured variables by adding more parameters to f
 	for (auto v: captures) {
 		if (config.verbose)
 			msg_write("  * " + v->name);
@@ -2346,7 +2392,6 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 		bool via_ref = should_capture_via_ref(v);
 		capture_via_ref.add(via_ref);
 		auto cap_type = via_ref ? v->type->get_pointer() : v->type;
-		capture_types.add(cap_type);
 
 
 		auto vvv = f->add_param(v->name, cap_type, Flags::NONE);
@@ -2373,40 +2418,22 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 
 	f->update_parameters_after_parsing();
 
-	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, f->literal_return_type, capture_types);
+	auto create_inner_lambda = wrap_function_into_callable(f, node->token_id);
 
-
-	auto create_inner_lambda = wrap_function_into_callable(f);
-
-
-	// "new bind(f, a, b,...)"
-	for (auto *cf: bind_wrapper_type->get_constructors()) {
-		auto cmd_new = tree->add_node_statement(StatementID::NEW);
-		auto con = tree->add_node_constructor(cf);
-		shared_array<Node> params = {create_inner_lambda.get()};
-		foreachi (auto &c, captures, i) {
-			if (capture_via_ref[i])
-				params.add(tree->add_node_local(c)->ref());
-			else
-				params.add(tree->add_node_local(c));
-		}
-		con = apply_params_direct(con, params, 1);
-		con->kind = NodeKind::CALL_FUNCTION;
-		con->type = TypeVoid;
-
-		cmd_new->type = tree->make_class_callable_fp(param_types, f->literal_return_type);
-		cmd_new->set_param(0, con);
-		return cmd_new;
+	shared_array<Node> capture_nodes;
+	for (auto e: explicit_param_types)
+		capture_nodes.add(nullptr);
+	foreachi (auto &c, captures, i) {
+		if (capture_via_ref[i])
+			capture_nodes.add(tree->add_node_local(c)->ref());
+		else
+			capture_nodes.add(tree->add_node_local(c));
 	}
 
-
-	do_error("lambda bind failed...");
-	return nullptr;
+	return create_bind(this, create_inner_lambda, capture_nodes);
 }
 
 shared<Node> Parser::concretify_statement(shared<Node> node, Block *block, const Class *ns) {
-
-
 	auto s = node->as_statement();
 	if (s->id == StatementID::RETURN) {
 		return concretify_statement_return(node, block, ns);
@@ -3151,7 +3178,23 @@ const Class *type_more_abstract(const Class *a, const Class *b) {
 	return nullptr;
 }
 
-shared<Node> Parser::wrap_function_into_callable(Function *f) {
+shared<Node> Parser::wrap_node_into_callable(shared<Node> node) {
+	if (node->kind != NodeKind::FUNCTION)
+		return node;
+	auto f = node->as_func();
+	auto callable = wrap_function_into_callable(f, node->token_id);
+	if (f->is_member() and node->params.num > 0 and node->params[0]) {
+		shared_array<Node> captures = {node->params[0]};
+		for (int i=1; i<f->literal_param_type.num; i++)
+			captures.add(nullptr);
+		auto b = create_bind(this, callable, captures);
+		return b;
+	}
+	return callable;
+}
+
+// f : (A,B,...)->R  =>  new Callable[](f) : (A,B,...)->R
+shared<Node> Parser::wrap_function_into_callable(Function *f, int token_id) {
 	auto t = tree->make_class_callable_fp(f);
 
 	for (auto *cf: t->param[0]->get_constructors()) {
@@ -3166,6 +3209,7 @@ shared<Node> Parser::wrap_function_into_callable(Function *f) {
 
 			cmd->type = t;
 			cmd->set_param(0, con);
+			cmd->token_id = token_id;
 			return cmd;
 		}
 	}
@@ -3180,7 +3224,7 @@ void Parser::force_concrete_types(shared_array<Node> &nodes) {
 
 shared<Node> Parser::force_concrete_type_if_function(shared<Node> node) {
 	if (node->kind == NodeKind::FUNCTION)
-		return wrap_function_into_callable(node->as_func());
+		return wrap_node_into_callable(node);
 	return node;
 }
 
@@ -3237,7 +3281,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 		auto xx = turn_class_into_constructor(type, node->params);
 		return try_to_match_apply_params(xx, node->params);
 	} else if (node->kind == NodeKind::FUNCTION) {
-		return wrap_function_into_callable(node->as_func());
+		return wrap_node_into_callable(node);
 	} else {
 		do_error("unhandled abstract type: " + kind2str(node->kind));
 	}

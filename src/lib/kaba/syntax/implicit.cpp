@@ -18,6 +18,30 @@ const Class *get_callable_return_type(const Class *fp);
 Array<const Class*> get_callable_capture_types(const Class *fp);
 
 
+void db_add_print_node(Parser *p, shared<Block> block, shared<Node> node) {
+	auto ff = p->tree->required_func_global("print");
+	auto cmd = p->tree->add_node_call(ff);
+	cmd->set_param(0, p->add_converter_str(node, false));
+	block->add(cmd);
+}
+
+void db_add_print_label(Parser *p, shared<Block> block, const string &s) {
+	auto c = p->tree->add_constant(TypeString);
+	c->as_string() = s;
+	db_add_print_node(p, block, p->tree->add_node_const(c));
+}
+
+void db_add_print_label_node(Parser *p, shared<Block> block, const string &s, shared<Node> node) {
+	auto c = p->tree->add_constant(TypeString);
+	c->as_string() = s;
+
+	auto ff = p->tree->required_func_global("print");
+	auto cmd = p->tree->add_node_call(ff);
+	cmd->set_param(0, p->link_operator_id(OperatorID::ADD, p->tree->add_node_const(c), p->add_converter_str(node, false)));
+	block->add(cmd);
+}
+
+
 void Parser::do_error_implicit(Function *f, const string &str) {
 	int token_id = max(f->_token_id, f->name_space->_token_id);
 	do_error(format("[auto generating %s] : %s", f->signature(), str), token_id);
@@ -782,6 +806,8 @@ void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 void Parser::auto_implement_callable_fp_call(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
+	//db_add_print_label(this, f->block, "== callable.call ==");
+
 	// contains a Function* pointer, extract its raw pointer
 	auto raw = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER);
 	raw->type = TypeFunctionCodeP;
@@ -809,17 +835,23 @@ void Parser::auto_implement_callable_fp_call(Function *f, const Class *t) {
 void Parser::auto_implement_callable_bind_call(Function *f, const Class *t) {
 	auto self = tree->add_node_local(f->__get_var(IDENTIFIER_SELF));
 
+	//db_add_print_label(this, f->block, "== bind.call ==");
+
 	auto fp = get_callable_fp(t, self);
 	auto call = tree->add_node_member_call(fp->type->param[0]->get_call(), fp);
 	int index = 1;
 	//for (int i=0; i<f->num_params; i++)
 	//	call->set_param(i+1, tree->add_node_local(f->var[i].get()));
 	for (auto *v: weak(f->var))
-		if (v->name.num == 1)
+		if (v->name.num == 1) {
+			//db_add_print_label_node(this, f->block, "  param " + v->name + ": ", tree->add_node_local(v));
 			call->set_param(index ++, tree->add_node_local(v));
+		}
 	for (auto &e: t->elements)
-		if (e.name.head(7) == "capture")
+		if (e.name.head(7) == "capture") {
+			//db_add_print_label_node(this, f->block, "  capture " + e.name + ": ", self->shift(e.offset, e.type));
 			call->set_param(index ++, self->shift(e.offset, e.type));
+		}
 
 	if (f->literal_return_type == TypeVoid) {
 		f->block->add(call);
