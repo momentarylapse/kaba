@@ -154,7 +154,7 @@ void Parser::auto_implement_super_array_constructor(Function *f, const Class *t)
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt});
 	f->block->add(tree->add_node_member_call(ff,
-			self,
+			self, -1,
 			{tree->add_node_const(tree->add_constant_int(te->size))}));
 }
 
@@ -185,7 +185,7 @@ void Parser::auto_implement_dict_constructor(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt});
 	f->block->add(tree->add_node_member_call(ff,
-			self,
+			self, -1,
 			{tree->add_node_const(tree->add_constant_int(te->size + TypeString->size))}));
 }
 
@@ -250,7 +250,7 @@ void Parser::auto_implement_regular_destructor(Function *f, const Class *t) {
 		if (t->parent) {
 			Function *ff = t->parent->get_destructor();
 			if (ff)
-				f->block->add(tree->add_node_member_call(ff, self, {}, true));
+				f->block->add(tree->add_node_member_call(ff, self, -1, {}, true));
 			else if (t->parent->needs_destructor())
 				do_error_implicit(f, "parent destructor missing");
 		}

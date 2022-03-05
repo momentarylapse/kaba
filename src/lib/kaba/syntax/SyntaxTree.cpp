@@ -142,12 +142,12 @@ shared<Node> SyntaxTree::add_node_statement(StatementID id, int token_id, const 
 }
 
 // virtual call, if func is virtual
-shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params, bool force_non_virtual) {
+shared<Node> SyntaxTree::add_node_member_call(Function *f, const shared<Node> inst, int token_id, const shared_array<Node> &params, bool force_non_virtual) {
 	shared<Node> c;
 	if ((f->virtual_index >= 0) and !force_non_virtual) {
-		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type, true);
+		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type, true, token_id);
 	} else {
-		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true);
+		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, true, token_id);
 	}
 	c->set_num_params(f->num_params);
 	c->set_instance(inst);
@@ -668,10 +668,10 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 	return links;
 }
 
-Function *SyntaxTree::required_func_global(const string &name) {
+Function *SyntaxTree::required_func_global(const string &name, int token_id) {
 	auto links = get_existence(name, nullptr, base_class);
 	if (links.num == 0)
-		do_error(format("internal error: '%s()' not found????", name));
+		do_error(format("internal error: '%s()' not found????", name), token_id);
 	return links[0]->as_func();
 }
 
@@ -1162,7 +1162,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		vv->explicitly_constructed = true;
 		auto dummy = add_node_local(vv);
 		
-		auto ib = add_node_call(n->as_func());
+		auto ib = add_node_call(n->as_func(), n->token_id);
 		ib->params = n->params;
 		ib->set_instance(dummy);
 		if (config.verbose)
@@ -1184,7 +1184,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 
 		Block *bb = new Block(f, b);
 		for (int i=0; i<n->params.num; i++){
-			auto cc = add_node_member_call(cf, array);
+			auto cc = add_node_member_call(cf, array, n->token_id);
 			cc->set_param(1, n->params[i]);
 			bb->add(cc);
 		}
@@ -1203,7 +1203,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 
 		Block *bb = new Block(f, b);
 		for (int i=0; i<n->params.num/2; i++){
-			auto cc = add_node_member_call(cf, array);
+			auto cc = add_node_member_call(cf, array, n->token_id);
 			cc->set_param(1, n->params[i*2]);
 			cc->set_param(2, n->params[i*2+1]);
 			bb->add(cc);

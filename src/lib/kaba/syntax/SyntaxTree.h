@@ -73,7 +73,7 @@ public:
 
 	shared_array<Node> get_element_of(shared<Node> n, const string &name);
 
-	Function *required_func_global(const string &name);
+	Function *required_func_global(const string &name, int token_id = -1);
 
 	void create_asm_meta_info();
 
@@ -107,7 +107,7 @@ public:
 
 	// nodes
 	shared<Node> add_node_statement(StatementID id, int token_id = -1, const Class *type = TypeVoid);//, const shared_array<Node> &params);
-	shared<Node> add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params = {}, bool force_non_virtual = false);
+	shared<Node> add_node_member_call(Function *f, const shared<Node> inst, int token_id = -1, const shared_array<Node> &params = {}, bool force_non_virtual = false);
 	shared<Node> add_node_func_name(Function *f, int token_id = -1);
 	shared<Node> add_node_class(const Class *c, int token_id = -1);
 	shared<Node> add_node_call(Function *f, int token_id = -1);
@@ -125,8 +125,8 @@ public:
 	shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type);
 	shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index);
 	shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class *override_type = nullptr);
-	shared<Node> add_node_constructor(Function *f);
-	shared<Node> make_fake_constructor(const Class *t, const Class *param_type);
+	shared<Node> add_node_constructor(Function *f, int token_id = -1);
+	shared<Node> make_fake_constructor(const Class *t, const Class *param_type, int token_id = -1);
 	//shared<Node> add_node_block(Block *b);
 	shared<Node> cp_node(shared<Node> c);
 
