@@ -65,8 +65,8 @@ public:
 	const Class *make_class_array(const Class *element_type, int num_elements);
 	const Class *make_class_dict(const Class *element_type);
 	const Class *make_class_callable_fp(Function *f);
-	const Class *make_class_callable_fp(const Array<const Class*> &param, const Class *ret);
-	const Class *make_class_callable_bind(const Array<const Class*> &param, const Class *ret, const Array<const Class*> &binds);
+	const Class *make_class_callable_fp(const Array<const Class*> &params, const Class *ret);
+	const Class *make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref);
 	shared_array<Node> get_existence(const string &name, Block *block, const Class *ns);
 	shared_array<Node> get_existence_global(const string &name, const Class *ns);
 	shared_array<Node> get_existence_block(const string &name, Block *block);

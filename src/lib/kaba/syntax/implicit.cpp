@@ -842,16 +842,43 @@ void Parser::auto_implement_callable_bind_call(Function *f, const Class *t) {
 	int index = 1;
 	//for (int i=0; i<f->num_params; i++)
 	//	call->set_param(i+1, tree->add_node_local(f->var[i].get()));
-	for (auto *v: weak(f->var))
+
+	msg_write("BIND");
+	int nn = f->var.num + t->elements.num; // too lazy... just max
+	/*int
+	for (int index=0; index<nn; index++) {
+
+	}*/
+
+	shared_array<Node> params;
+
+	for (auto *v: weak(f->var)) {
+		msg_write("V " + v->name);
 		if (v->name.num == 1) {
 			//db_add_print_label_node(this, f->block, "  param " + v->name + ": ", tree->add_node_local(v));
-			call->set_param(index ++, tree->add_node_local(v));
+			params.add(tree->add_node_local(v));
+			//call->set_param(index ++, tree->add_node_local(v));
 		}
-	for (auto &e: t->elements)
+	}
+	msg_write(params.num);
+	for (auto &e: t->elements){
+		msg_write("E " + e.name);
 		if (e.name.head(7) == "capture") {
+			int n = e.name.replace("capture", "").replace("_ref", "")._int();
+			msg_write(n);
+			if (params.num == 0)
+				params.add(self->shift(e.offset, e.type));
+			else
+				params.insert(self->shift(e.offset, e.type), n);
 			//db_add_print_label_node(this, f->block, "  capture " + e.name + ": ", self->shift(e.offset, e.type));
-			call->set_param(index ++, self->shift(e.offset, e.type));
+			//call->set_param(index ++, self->shift(e.offset, e.type));
 		}
+	}
+	msg_write("aaaa");
+
+	foreachi(auto &p, params, i)
+		call->set_param(i+1, p);
+	call->show();
 
 	if (f->literal_return_type == TypeVoid) {
 		f->block->add(call);

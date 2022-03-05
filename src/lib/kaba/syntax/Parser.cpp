@@ -2257,7 +2257,7 @@ shared<Node> Parser::concretify_statement_try(shared<Node> node, Block *block, c
 
 // inner_callable: (A,B,C,D,E)->R
 // captures:       [-,x0,-,-,x1]
-shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_array<Node> &captures) {
+shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_array<Node> &captures, const Array<bool> &capture_via_ref) {
 	SyntaxTree *tree = p->tree;
 
 	Array<const Class*> capture_types;
@@ -2275,7 +2275,7 @@ shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_ar
 		if (!captures[i])
 			outer_call_types.add(param_types[i]);
 
-	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, return_type, capture_types);
+	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, return_type, capture_types, capture_via_ref);
 
 	// "new bind(f, x0, x1, ...)"
 	for (auto *cf: bind_wrapper_type->get_constructors()) {
@@ -2421,16 +2421,18 @@ shared<Node> Parser::concretify_statement_lambda(shared<Node> node, Block *block
 	auto create_inner_lambda = wrap_function_into_callable(f, node->token_id);
 
 	shared_array<Node> capture_nodes;
-	for (auto e: explicit_param_types)
-		capture_nodes.add(nullptr);
 	foreachi (auto &c, captures, i) {
 		if (capture_via_ref[i])
 			capture_nodes.add(tree->add_node_local(c)->ref());
 		else
 			capture_nodes.add(tree->add_node_local(c));
 	}
+	for (auto e: explicit_param_types) {
+		capture_nodes.insert(nullptr, 0);
+		capture_via_ref.insert(false, 0);
+	}
 
-	return create_bind(this, create_inner_lambda, capture_nodes);
+	return create_bind(this, create_inner_lambda, capture_nodes, capture_via_ref);
 }
 
 shared<Node> Parser::concretify_statement(shared<Node> node, Block *block, const Class *ns) {
@@ -3184,10 +3186,15 @@ shared<Node> Parser::wrap_node_into_callable(shared<Node> node) {
 	auto f = node->as_func();
 	auto callable = wrap_function_into_callable(f, node->token_id);
 	if (f->is_member() and node->params.num > 0 and node->params[0]) {
+		//if (f->literal_param_type.num > 1)
+		//	do_error("wrapping member functions with parameters into callables currently not implemented...", node);
 		shared_array<Node> captures = {node->params[0]};
-		for (int i=1; i<f->literal_param_type.num; i++)
+		Array<bool> capture_via_ref = {true};
+		for (int i=1; i<f->literal_param_type.num; i++) {
 			captures.add(nullptr);
-		auto b = create_bind(this, callable, captures);
+			capture_via_ref.add(false);
+		}
+		auto b = create_bind(this, callable, captures, capture_via_ref);
 		return b;
 	}
 	return callable;

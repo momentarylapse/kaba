@@ -76,7 +76,7 @@ string make_callable_signature(const Array<const Class*> &params, const Class *r
 	return signature + "->" + class_name_might_need_parantheses(ret);
 }
 
-// input {}->R  OR  void->void   BOTH creates  void->R
+// input {}->R  OR  void->void   BOTH create  void->R
 const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
 	string name = make_callable_signature(param, ret);
 
@@ -97,7 +97,7 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 //     func call(a,b,c)
 //         f(a,x0,b,c,c1)
 // (A,C,D) -> R
-const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures) {
+const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref) {
 
 	string name = make_callable_signature(params, ret);
 
@@ -113,12 +113,14 @@ const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &par
 
 	auto t = (Class*)make_class("<bind-" + i2s(unique_bind_counter++) + ">", Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, base_class);
 	int offset = t->size;
-	foreachi (auto &b, captures, i) {
+	foreachi (auto b, captures, i) {
 		if (!b)
 			continue;
+		if (capture_via_ref[i])
+			b = b->get_pointer();
 		if (type_needs_alignment(b))
 			offset = mem_align(offset, 4);
-		auto el = ClassElement(format("capture%d", i), b, offset);
+		auto el = ClassElement(format("capture%d%s", i, capture_via_ref[i] ? "_ref" : ""), b, offset);
 		offset += b->size;
 		t->elements.add(el);
 	}
