@@ -293,13 +293,13 @@ shared<Node> Parser::parse_abstract_operand_extension_pointer(shared<Node> opera
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand, Block *block) {
+	int token0 = Exp.cur_token();
 	// array index...
 	Exp.next();
 
 
 	if (Exp.cur == "]") {
-		auto node = new Node(NodeKind::ABSTRACT_TYPE_LIST, 0, TypeUnknown);
-		node->token_id = Exp.cur_token();
+		auto node = new Node(NodeKind::ABSTRACT_TYPE_LIST, 0, TypeUnknown, false, token0);
 		Exp.next();
 		node->set_num_params(1);
 		node->set_param(0, operand);
@@ -911,7 +911,7 @@ shared<Node> Parser::apply_format(shared<Node> n, const string &fmt) {
 	c->as_string() = fmt;
 	auto nf = tree->add_node_call(f);
 	nf->set_instance(n);
-	nf->set_param(1, tree->add_node_const(c));
+	nf->set_param(1, tree->add_node_const(c, n->token_id));
 	return nf;
 }
 
@@ -1351,11 +1351,12 @@ shared<Node> Parser::apply_type_cast(const CastingData &cast, shared<Node> node,
 }
 
 shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> param2) {
+	int token0 = Exp.cur_token();
 	if (param2->kind != NodeKind::CLASS)
-		do_error("class name expected after 'is'");
+		do_error("class name expected after 'is'", param2);
 	const Class *t2 = param2->as_class();
 	if (t2->vtable.num == 0)
-		do_error(format("class after 'is' needs to have virtual functions: '%s'", t2->long_name()));
+		do_error(format("class after 'is' needs to have virtual functions: '%s'", t2->long_name()), param2);
 
 	const Class *t1 = param1->type;
 	if (t1->is_pointer()) {
@@ -1363,15 +1364,15 @@ shared<Node> Parser::link_special_operator_is(shared<Node> param1, shared<Node> 
 		t1 = t1->param[0];
 	}
 	if (!t2->is_derived_from(t1))
-		do_error(format("'is': class '%s' is not derived from '%s'", t2->long_name(), t1->long_name()));
+		do_error(format("'is': class '%s' is not derived from '%s'", t2->long_name(), t1->long_name()), param2);
 
 	// vtable2
-	auto vtable2 = tree->add_node_const(tree->add_constant_pointer(TypePointer, t2->_vtable_location_compiler_));
+	auto vtable2 = tree->add_node_const(tree->add_constant_pointer(TypePointer, t2->_vtable_location_compiler_), param2->token_id);
 
 	// vtable1
 	param1->type = TypePointer;
 
-	return tree->add_node_operator_by_inline(InlineID::POINTER_EQUAL, param1, vtable2);
+	return tree->add_node_operator_by_inline(InlineID::POINTER_EQUAL, param1, vtable2, token0);
 }
 
 shared<Node> Parser::link_special_operator_in(shared<Node> param1, shared<Node> param2) {
@@ -1653,7 +1654,7 @@ shared_array<Node> Parser::concretify_element(shared<Node> node, Block *block, c
 		return links;
 
 	if (base->kind == NodeKind::CLASS) {
-		auto c = tree->add_node_const(tree->add_constant(TypeClassP));
+		auto c = tree->add_node_const(tree->add_constant(TypeClassP), node->token_id);
 		c->as_const()->as_int64() = (int_p)base->as_class();
 
 		auto links = tree->get_element_of(c, el);
@@ -1879,6 +1880,8 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 		auto operands = tree->get_existence(token, block, ns);
 		if (operands.num > 0) {
 			// direct operand
+			for (auto &o: weak(operands))
+				o->token_id = node->token_id;
 			return operands;
 		} else {
 			auto t = get_constant_type(token);
@@ -1901,7 +1904,7 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 			} else {
 				auto *c = tree->add_constant(t);
 				c->set(v);
-				return {tree->add_node_const(c)};
+				return {tree->add_node_const(c, node->token_id)};
 			}
 		}
 	} else if (node->kind == NodeKind::ABSTRACT_ELEMENT) {
@@ -2039,9 +2042,9 @@ shared<Node> Parser::concretify_statement_sizeof(shared<Node> node, Block *block
 	sub = force_concrete_type(sub);
 
 	if (sub->kind == NodeKind::CLASS) {
-		return tree->add_node_const(tree->add_constant_int(sub->as_class()->size));
+		return tree->add_node_const(tree->add_constant_int(sub->as_class()->size), node->token_id);
 	} else {
-		return tree->add_node_const(tree->add_constant_int(sub->type->size));
+		return tree->add_node_const(tree->add_constant_int(sub->type->size), node->token_id);
 	}
 }
 
@@ -2049,11 +2052,11 @@ shared<Node> Parser::concretify_statement_typeof(shared<Node> node, Block *block
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
 
-	auto c = tree->add_node_const(tree->add_constant(TypeClassP));
+	auto c = tree->add_node_const(tree->add_constant(TypeClassP), node->token_id);
 	if (sub->kind == NodeKind::CLASS) {
-		return tree->add_node_class(sub->as_class());
+		return tree->add_node_class(sub->as_class(), node->token_id);
 	} else {
-		return tree->add_node_class(sub->type);
+		return tree->add_node_class(sub->type, node->token_id);
 	}
 }
 
@@ -2064,7 +2067,7 @@ shared<Node> Parser::concretify_statement_len(shared<Node> node, Block *block, c
 
 	// array?
 	if (sub->type->is_array())
-		return tree->add_node_const(tree->add_constant_int(sub->type->array_length));
+		return tree->add_node_const(tree->add_constant_int(sub->type->array_length), node->token_id);
 
 	// __length__() function?
 	auto *f = sub->type->get_member_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {});
@@ -2203,7 +2206,7 @@ shared<Node> Parser::concretify_statement_raw_function_pointer(shared<Node> node
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	if (sub->kind != NodeKind::FUNCTION)
 		do_error("raw_function_pointer() expects a function name");
-	auto func = tree->add_node_const(tree->add_constant(TypeFunctionP));
+	auto func = tree->add_node_const(tree->add_constant(TypeFunctionP), node->token_id);
 	func->as_const()->as_int64() = (int_p)sub->as_func();
 
 	node->type = TypeFunctionCodeP;
@@ -2656,7 +2659,7 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 			auto b_add = new Block(block->function, b_if, TypeUnknown);
 			b_add->add(n_add);
 
-			auto n_if = tree->add_node_statement(StatementID::IF, TypeUnknown);
+			auto n_if = tree->add_node_statement(StatementID::IF, node->token_id, TypeUnknown);
 			n_if->set_param(0, n_cmp);
 			n_if->set_param(1, b_add);
 
@@ -2797,6 +2800,7 @@ shared<Node> Parser::parse_operand_super_greedy(Block *block) {
 shared<Node> Parser::parse_abstract_for_header(Block *block) {
 
 	// variable name
+	int token0 = Exp.cur_token();
 	Exp.next(); // for
 	auto var = create_node_token(this);
 	Exp.next();
@@ -2830,7 +2834,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 			val_step = parse_abstract_operand_greedy(block);
 		}
 
-		auto cmd_for = tree->add_node_statement(StatementID::FOR_RANGE, TypeUnknown);
+		auto cmd_for = tree->add_node_statement(StatementID::FOR_RANGE, token0, TypeUnknown);
 		cmd_for->set_param(0, var);
 		cmd_for->set_param(1, val0);
 		cmd_for->set_param(2, val1);
@@ -2845,7 +2849,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		auto array = val0;
 
 
-		auto cmd_for = tree->add_node_statement(StatementID::FOR_ARRAY, TypeUnknown);
+		auto cmd_for = tree->add_node_statement(StatementID::FOR_ARRAY, token0, TypeUnknown);
 		// [VAR, INDEX, ARRAY, BLOCK]
 
 		cmd_for->set_param(0, var);
@@ -2903,10 +2907,11 @@ shared<Node> Parser::parse_abstract_statement_for(Block *block) {
 //  p[0]: test
 //  p[1]: loop block
 shared<Node> Parser::parse_abstract_statement_while(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // while
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
-	auto cmd_while = tree->add_node_statement(StatementID::WHILE, TypeUnknown);
+	auto cmd_while = tree->add_node_statement(StatementID::WHILE, token0, TypeUnknown);
 	cmd_while->set_param(0, cmd_cmp);
 
 	// ...block
@@ -2936,8 +2941,9 @@ shared<Node> Parser::parse_abstract_statement_continue() {
 // Node structure
 //  p[0]: value (if not void)
 shared<Node> Parser::parse_abstract_statement_return(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next();
-	auto cmd = tree->add_node_statement(StatementID::RETURN, TypeUnknown);
+	auto cmd = tree->add_node_statement(StatementID::RETURN, token0, TypeUnknown);
 	if (Exp.end_of_line()) {
 		cmd->set_num_params(0);
 	} else {
@@ -2978,14 +2984,15 @@ shared<Node> Parser::parse_abstract_statement_raise(Block *block) {
 //  p[2]: except block
 shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	int ind = Exp.cur_line->indent;
+	int token0 = Exp.cur_token();
 	Exp.next();
-	auto cmd_try = tree->add_node_statement(StatementID::TRY, TypeUnknown);
+	auto cmd_try = tree->add_node_statement(StatementID::TRY, token0, TypeUnknown);
 	cmd_try->set_num_params(3);
 	// ...block
 	expect_new_line_with_indent();
 	Exp.next_line();
 	cmd_try->set_param(0, parse_abstract_block(block));
-	int token0 = Exp.cur_token();
+	token0 = Exp.cur_token();
 	Exp.next_line();
 
 
@@ -2993,6 +3000,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 
 	// except?
 	while (!Exp.end_of_file() and (Exp.cur == IDENTIFIER_EXCEPT) and (Exp.cur_line->indent == ind)) {
+		int token1 = Exp.cur_token();
 
 
 	//	if (Exp.cur != IDENTIFIER_EXCEPT)
@@ -3001,7 +3009,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	//		do_error("wrong indentation for except");
 		Exp.next(); // except
 
-		auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT, TypeUnknown);
+		auto cmd_ex = tree->add_node_statement(StatementID::EXCEPT, token1, TypeUnknown);
 
 		auto except_block = new Block(block->function, block, TypeUnknown);
 
@@ -3074,10 +3082,11 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 //  p[2]: false block
 shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 	int ind = Exp.cur_line->indent;
+	int token0 = Exp.cur_token();
 	Exp.next();
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
-	auto cmd_if = tree->add_node_statement(StatementID::IF, TypeUnknown);
+	auto cmd_if = tree->add_node_statement(StatementID::IF, token0, TypeUnknown);
 	cmd_if->set_param(0, cmd_cmp);
 	// ...block
 	expect_new_line_with_indent();
@@ -3121,8 +3130,9 @@ shared<Node> Parser::parse_abstract_statement_pass(Block *block) {
 //  type: class
 //  p[0]: call to constructor (optional)
 shared<Node> Parser::parse_abstract_statement_new(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // new
-	auto cmd = tree->add_node_statement(StatementID::NEW, TypeUnknown);
+	auto cmd = tree->add_node_statement(StatementID::NEW, token0, TypeUnknown);
 	cmd->set_param(0, parse_abstract_operand(block));
 	return cmd;
 }
@@ -3130,8 +3140,9 @@ shared<Node> Parser::parse_abstract_statement_new(Block *block) {
 // Node structure
 //  p[0]: operand
 shared<Node> Parser::parse_abstract_statement_delete(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // del
-	auto cmd = tree->add_node_statement(StatementID::DELETE, TypeUnknown);
+	auto cmd = tree->add_node_statement(StatementID::DELETE, token0, TypeUnknown);
 	cmd->set_param(0, parse_abstract_operand(block));
 	return cmd;
 }
@@ -3149,23 +3160,26 @@ shared<Node> Parser::parse_abstract_single_func_param(Block *block) {
 }
 
 shared<Node> Parser::parse_abstract_statement_sizeof(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // sizeof
-	auto node = tree->add_node_statement(StatementID::SIZEOF, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::SIZEOF, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 
 }
 
 shared<Node> Parser::parse_abstract_statement_type(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // typeof
-	auto node = tree->add_node_statement(StatementID::TYPEOF, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::TYPEOF, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_len(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // len
-	auto node = tree->add_node_statement(StatementID::LEN, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::LEN, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
@@ -3210,7 +3224,7 @@ shared<Node> Parser::wrap_function_into_callable(Function *f, int token_id) {
 			auto con = tree->add_node_constructor(cf);
 			auto fp = tree->add_constant(TypeFunctionP);
 			fp->as_int64() = (int_p)f;
-			con = apply_params_direct(con, {tree->add_node_const(fp)}, 1);
+			con = apply_params_direct(con, {tree->add_node_const(fp, token_id)}, 1);
 			con->kind = NodeKind::CALL_FUNCTION;
 			con->type = TypeVoid;
 
@@ -3330,15 +3344,17 @@ shared<Node> Parser::add_converter_str(shared<Node> sub, bool repr) {
 }
 
 shared<Node> Parser::parse_abstract_statement_str(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // str
-	auto node = tree->add_node_statement(StatementID::STR, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::STR, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_repr(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // repr
-	auto node = tree->add_node_statement(StatementID::REPR, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::REPR, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
@@ -3460,13 +3476,14 @@ const Class *node_call_return_type(shared<Node> node) {
 }
 
 shared<Node> Parser::parse_abstract_statement_map(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // "map"
 
 	auto params = parse_abstract_call_parameters(block);
 	if (params.num != 2)
 		do_error("map() expects 2 parameters");
 
-	auto node = tree->add_node_statement(StatementID::MAP, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::MAP, token0, TypeUnknown);
 	node->set_param(0, params[0]);
 	node->set_param(1, params[1]);
 	return node;
@@ -3474,6 +3491,7 @@ shared<Node> Parser::parse_abstract_statement_map(Block *block) {
 
 
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // "lambda"
 
 	static int unique_lambda_counter = 0;
@@ -3528,18 +3546,19 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 		f->block->add(cmd);
 	}
 
-	auto node = tree->add_node_statement(StatementID::LAMBDA, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::LAMBDA, token0, TypeUnknown);
 	node->set_num_params(1);
 	node->set_param(0, tree->add_node_func_name(f));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // "sorted"
 	auto params = parse_abstract_call_parameters(block);
 	if (params.num != 2)
 		do_error("sorted(array, criterion) expects 2 parameters");
-	auto node = tree->add_node_statement(StatementID::SORTED, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::SORTED, token0, TypeUnknown);
 	node->set_param(0, params[0]);
 	node->set_param(1, params[1]);
 	return node;
@@ -3572,22 +3591,25 @@ shared<Node> Parser::make_dynamical(shared<Node> node) {
 }
 
 shared<Node> Parser::parse_abstract_statement_dyn(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // dyn
-	auto node = tree->add_node_statement(StatementID::DYN, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::DYN, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // "raw_function_pointer"
-	auto node = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::RAW_FUNCTION_POINTER, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_weak(Block *block) {
+	int token0 = Exp.cur_token();
 	Exp.next(); // "weak"
-	auto node = tree->add_node_statement(StatementID::WEAK, TypeUnknown);
+	auto node = tree->add_node_statement(StatementID::WEAK, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }

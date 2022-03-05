@@ -106,18 +106,18 @@ public:
 	Function *add_function(const string &name, const Class *type, const Class *name_space, Flags flags);
 
 	// nodes
-	shared<Node> add_node_statement(StatementID id, const Class *type = TypeVoid);//, const shared_array<Node> &params);
+	shared<Node> add_node_statement(StatementID id, int token_id = -1, const Class *type = TypeVoid);//, const shared_array<Node> &params);
 	shared<Node> add_node_member_call(Function *f, const shared<Node> inst, const shared_array<Node> &params = {}, bool force_non_virtual = false);
-	shared<Node> add_node_func_name(Function *f);
-	shared<Node> add_node_class(const Class *c);
-	shared<Node> add_node_call(Function *f);
-	shared<Node> add_node_const(Constant *c);
+	shared<Node> add_node_func_name(Function *f, int token_id = -1);
+	shared<Node> add_node_class(const Class *c, int token_id = -1);
+	shared<Node> add_node_call(Function *f, int token_id = -1);
+	shared<Node> add_node_const(Constant *c, int token_id = -1);
 	//shared<Node> add_node_block(Block *b);
-	shared<Node> add_node_operator(Operator *op, const shared<Node> p1, const shared<Node> p2, const Class *override_type = nullptr);
-	shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, const Class *override_type = nullptr);
-	shared<Node> add_node_global(Variable *var);
-	shared<Node> add_node_local(Variable *var);
-	shared<Node> add_node_local(Variable *var, const Class *type);
+	shared<Node> add_node_operator(Operator *op, const shared<Node> p1, const shared<Node> p2, int token_id = -1, const Class *override_type = nullptr);
+	shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, int token_id = -1, const Class *override_type = nullptr);
+	shared<Node> add_node_global(Variable *var, int token_id = -1);
+	shared<Node> add_node_local(Variable *var, int token_id = -1);
+	shared<Node> add_node_local(Variable *var, const Class *type, int token_id = -1);
 	shared<Node> make_constructor_static(shared<Node> n, const string &name);
 	shared<Node> exlink_add_element(Function *f, ClassElement &e);
 	shared<Node> exlink_add_element_indirect(Function *f, ClassElement &e, ClassElement &e2);
