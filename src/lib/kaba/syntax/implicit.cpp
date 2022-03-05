@@ -43,7 +43,7 @@ void db_add_print_label_node(Parser *p, shared<Block> block, const string &s, sh
 
 
 void Parser::do_error_implicit(Function *f, const string &str) {
-	int token_id = max(f->_token_id, f->name_space->_token_id);
+	int token_id = max(f->token_id, f->name_space->token_id);
 	do_error(format("[auto generating %s] : %s", f->signature(), str), token_id);
 }
 
@@ -886,6 +886,7 @@ void Parser::auto_implement_callable_bind_call(Function *f, const Class *t) {
 Function *SyntaxTree::add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf, Flags flags, const shared_array<Node> &def_params) {
 	Function *f = add_function(name, return_type, t, flags); // always member-function??? no...?
 	f->auto_declared = true;
+	f->token_id = t->token_id;
 	foreachi (auto &p, param_types, i) {
 		f->literal_param_type.add(p);
 		auto v = f->block->add_var(param_names[i], p);

@@ -54,8 +54,8 @@ shared<Node> SyntaxTree::cp_node(shared<Node> c) {
 	return cmd;
 }
 
-const Class *SyntaxTree::make_class_callable_fp(Function *f) {
-	return make_class_callable_fp(f->literal_param_type, f->literal_return_type);
+const Class *SyntaxTree::make_class_callable_fp(Function *f, int token_id) {
+	return make_class_callable_fp(f->literal_param_type, f->literal_return_type, token_id);
 }
 
 string make_callable_signature(const Array<const Class*> &params, const Class *ret) {
@@ -77,7 +77,7 @@ string make_callable_signature(const Array<const Class*> &params, const Class *r
 }
 
 // input {}->R  OR  void->void   BOTH create  void->R
-const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret) {
+const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param, const Class *ret, int token_id) {
 	string name = make_callable_signature(param, ret);
 
 	auto params_ret = param;
@@ -85,8 +85,8 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 		params_ret = {};
 	params_ret.add(ret);
 
-	auto ff = make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
-	return make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class);
+	auto ff = make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class, token_id);
+	return make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, base_class, token_id);
 	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
@@ -97,7 +97,7 @@ const Class *SyntaxTree::make_class_callable_fp(const Array<const Class*> &param
 //     func call(a,b,c)
 //         f(a,x0,b,c,c1)
 // (A,C,D) -> R
-const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref) {
+const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id) {
 
 	string name = make_callable_signature(params, ret);
 
@@ -111,7 +111,7 @@ const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &par
 
 	static int unique_bind_counter = 0;
 
-	auto t = (Class*)make_class("<bind-" + i2s(unique_bind_counter++) + ">", Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, base_class);
+	auto t = (Class*)make_class("<bind-" + i2s(unique_bind_counter++) + ">", Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, base_class, token_id);
 	int offset = t->size;
 	foreachi (auto b, captures, i) {
 		if (!b)
@@ -128,7 +128,7 @@ const Class *SyntaxTree::make_class_callable_bind(const Array<const Class*> &par
 
 	for (auto &e: t->elements)
 		if (e.name == "_fp")
-			e.type = make_class_callable_fp(params, ret);
+			e.type = make_class_callable_fp(params, ret, token_id);
 
 	add_missing_function_headers_for_class(t);
 	return t;
@@ -692,14 +692,13 @@ const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class 
 	return nullptr;
 }
 
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns) {
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
 	if (find_root_type_by_name(name, ns, false))
-		do_error("class already exists");
+		do_error("class already exists", token_id);
 
 	Class *t = new Class(name, size, this, parent, params);
 	t->type = type;
-	if (cur_exp_buf)
-		t->_token_id = cur_exp_buf->cur_token();
+	t->token_id = token_id;
 	owned_classes.add(t);
 	
 	// link namespace
@@ -712,12 +711,12 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	if (t->is_super_array() or t->is_dict()) {
 		t->derive_from(TypeDynamicArray, false); // we already set its size!
 		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
-			do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()));
+			do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_array()) {
 		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
-			do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()));
+			do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
@@ -743,7 +742,7 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	return t;
 }
 
-const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns) {
+const Class *SyntaxTree::make_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
 	//msg_write("make class " + name + " ns=" + ns->long_name() + " param=" + param->long_name());
 
 	// check if it already exists
@@ -752,22 +751,22 @@ const Class *SyntaxTree::make_class(const string &name, Class::Type type, int si
 		return tt;
 
 	// add new class
-	return create_new_class(name, type, size, array_size, parent, params, ns);
+	return create_new_class(name, type, size, array_size, parent, params, ns, token_id);
 }
 
-const Class *SyntaxTree::make_class_super_array(const Class *element_type) {
+const Class *SyntaxTree::make_class_super_array(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "[]";
-	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, {element_type}, element_type->name_space);
+	return make_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, {element_type}, element_type->name_space, token_id);
 }
 
-const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements) {
+const Class *SyntaxTree::make_class_array(const Class *element_type, int num_elements, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + format("[%d]", num_elements);
-	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, element_type->name_space);
+	return make_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, element_type->name_space, token_id);
 }
 
-const Class *SyntaxTree::make_class_dict(const Class *element_type) {
+const Class *SyntaxTree::make_class_dict(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "{}";
-	return make_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, {element_type}, element_type->name_space);
+	return make_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, {element_type}, element_type->name_space, token_id);
 }
 
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {

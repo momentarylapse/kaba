@@ -1047,19 +1047,19 @@ shared<Node> Parser::parse_abstract_dict(Block *block) {
 	return build_abstract_dict(el);
 }
 
-const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent) {
+const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent, int token_id) {
 	if (!parent->name_space)
-		tree->do_error("shared not allowed for: " + parent->long_name()); // TODO
-	return tree->make_class(parent->name + " " + IDENTIFIER_SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
+		tree->do_error("shared not allowed for: " + parent->long_name(), token_id); // TODO
+	return tree->make_class(parent->name + " " + IDENTIFIER_SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space, token_id);
 }
 
-const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent) {
+const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent, int token_id) {
 	if (!parent->name_space)
-		tree->do_error("owned not allowed for: " + parent->long_name());
-	return tree->make_class(parent->name + " " + IDENTIFIER_OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space);
+		tree->do_error("owned not allowed for: " + parent->long_name(), token_id);
+	return tree->make_class(parent->name + " " + IDENTIFIER_OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space, token_id);
 }
 
-const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes) {
+const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id) {
 	string name;
 	int size = 0;
 	for (auto &c: classes) {
@@ -1068,7 +1068,7 @@ const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const C
 			name += ",";
 		name += c->name;
 	}
-	auto c = const_cast<Class*>(tree->make_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, tree->_base_class.get()));
+	auto c = const_cast<Class*>(tree->make_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, tree->_base_class.get(), token_id));
 	if (c->elements.num == 0) {
 		int offset = 0;
 		foreachi (auto &cc, classes, i) {
@@ -1085,7 +1085,7 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 	if (!is_type_tuple(n))
 		return n;
 	auto classes = class_tuple_extract_classes(n);
-	return tree->add_node_class(merge_type_tuple_into_product(tree, classes));
+	return tree->add_node_class(merge_type_tuple_into_product(tree, classes, n->token_id), n->token_id);
 }
 
 shared<Node> create_node_token(Parser *p) {
@@ -1184,8 +1184,8 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 const Class *make_effective_class_callable(shared<Node> node) {
 	auto f = node->as_func();
 	if (f->is_member() and node->params.num > 0 and node->params[0])
-		return f->owner()->make_class_callable_fp(f->literal_param_type.sub_ref(1), f->literal_return_type);
-	return f->owner()->make_class_callable_fp(f);
+		return f->owner()->make_class_callable_fp(f->literal_param_type.sub_ref(1), f->literal_return_type, node->token_id);
+	return f->owner()->make_class_callable_fp(f, node->token_id);
 }
 
 bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
@@ -1781,7 +1781,7 @@ shared<Node> Parser::concretify_array(shared<Node> node, Block *block, const Cla
 		if ((index->kind != NodeKind::CONSTANT) or (index->type != TypeInt))
 			do_error("only constants of type 'int' allowed for size of arrays", index);
 		int array_size = index->as_const()->as_int();
-		auto t = tree->make_class_array(operand->as_class(), array_size);
+		auto t = tree->make_class_array(operand->as_class(), array_size, operand->token_id);
 		return tree->add_node_class(t);
 
 	}
@@ -2145,7 +2145,7 @@ shared<Node> Parser::concretify_statement_sorted(shared<Node> node, Block *block
 	if (crit->type != TypeString)
 		do_error("sorted(): second parameter must be a string", crit);
 
-	Function *f = tree->required_func_global("@sorted");
+	Function *f = tree->required_func_global("@sorted", node->token_id);
 
 	auto cmd = tree->add_node_call(f, node->token_id);
 	cmd->set_param(0, array);
@@ -2164,7 +2164,7 @@ shared<Node> Parser::concretify_statement_weak(shared<Node> node, Block *block, 
 			auto tt = t->param[0]->get_pointer();
 			return sub->shift(0, tt);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
-			auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer());
+			auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer(), node->token_id);
 			return sub->shift(0, tt);
 		}
 		if (t->parent)
@@ -2202,7 +2202,7 @@ shared<Node> Parser::concretify_statement_map(shared<Node> node, Block *block, c
 	cmd->set_param(1, array);
 	cmd->set_param(2, tree->add_node_class(p[0]));
 	cmd->set_param(3, tree->add_node_class(p[1]));
-	cmd->type = tree->make_class_super_array(rt);
+	cmd->type = tree->make_class_super_array(rt, node->token_id);
 	return cmd;
 }
 
@@ -2266,6 +2266,7 @@ shared<Node> Parser::concretify_statement_try(shared<Node> node, Block *block, c
 // captures:       [-,x0,-,-,x1]
 shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_array<Node> &captures, const Array<bool> &capture_via_ref) {
 	SyntaxTree *tree = p->tree;
+	int token_id = inner_callable->token_id;
 
 	Array<const Class*> capture_types;
 	for (auto c: weak(captures))
@@ -2282,7 +2283,7 @@ shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_ar
 		if (!captures[i])
 			outer_call_types.add(param_types[i]);
 
-	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, return_type, capture_types, capture_via_ref);
+	auto bind_wrapper_type = tree->make_class_callable_bind(param_types, return_type, capture_types, capture_via_ref, token_id);
 
 	// "new bind(f, x0, x1, ...)"
 	for (auto *cf: bind_wrapper_type->get_constructors()) {
@@ -2296,7 +2297,7 @@ shared<Node> create_bind(Parser *p, shared<Node> inner_callable, const shared_ar
 		con->kind = NodeKind::CALL_FUNCTION;
 		con->type = TypeVoid;
 
-		cmd_new->type = tree->make_class_callable_fp(outer_call_types, return_type);
+		cmd_new->type = tree->make_class_callable_fp(outer_call_types, return_type, token_id);
 		cmd_new->set_param(0, con);
 		cmd_new->token_id = inner_callable->token_id;
 		return cmd_new;
@@ -2556,14 +2557,14 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 		if (n->kind != NodeKind::CLASS)
 			do_error("type expected before '[]'", n);
 		const Class *t = n->as_class();
-		t = tree->make_class_super_array(t);
+		t = tree->make_class_super_array(t, node->token_id);
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_DICT) {
 		concretify_all_params(node, block, ns, this);
 		if (node->params[0]->kind != NodeKind::CLASS)
 			do_error("type expected before '{}'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
-		t = tree->make_class_dict(t);
+		t = tree->make_class_dict(t, node->token_id);
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_CALLABLE) {
 		concretify_all_params(node, block, ns, this);
@@ -2575,20 +2576,20 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 			do_error("type expected before '->'", node->params[1]);
 		const Class *t0 = node->params[0]->as_class();
 		const Class *t1 = node->params[1]->as_class();
-		return tree->add_node_class(tree->make_class_callable_fp({t0}, t1));
+		return tree->add_node_class(tree->make_class_callable_fp({t0}, t1, node->token_id));
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
 		concretify_all_params(node, block, ns, this);
 		if (node->params[0]->kind != NodeKind::CLASS)
 			do_error("type expected after 'shared'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
-		t = make_pointer_shared(tree, t);
+		t = make_pointer_shared(tree, t, node->token_id);
 		return tree->add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
 		concretify_all_params(node, block, ns, this);
 		if (node->params[0]->kind != NodeKind::CLASS)
 			do_error("type expected after 'owned'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
-		t = make_pointer_owned(tree, t);
+		t = make_pointer_owned(tree, t, node->token_id);
 		return tree->add_node_class(t);
 
 	} else if ((node->kind == NodeKind::ABSTRACT_TOKEN) or (node->kind == NodeKind::ABSTRACT_ELEMENT)) {
@@ -2643,7 +2644,7 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 
 		// create an array
 		auto type_el = fake_for->params.back()->type;
-		auto type_array = tree->make_class_super_array(type_el);
+		auto type_array = tree->make_class_super_array(type_el, node->token_id);
 		auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
 
 
@@ -3220,7 +3221,7 @@ shared<Node> Parser::wrap_node_into_callable(shared<Node> node) {
 
 // f : (A,B,...)->R  =>  new Callable[](f) : (A,B,...)->R
 shared<Node> Parser::wrap_function_into_callable(Function *f, int token_id) {
-	auto t = tree->make_class_callable_fp(f);
+	auto t = tree->make_class_callable_fp(f, token_id);
 
 	for (auto *cf: t->param[0]->get_constructors()) {
 		if (cf->num_params == 2) {
@@ -3276,7 +3277,7 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 			node->params[i] = apply_type_cast(cast, node->params[i].get(), t);
 		}
 
-		node->type = tree->make_class_super_array(t);
+		node->type = tree->make_class_super_array(t, node->token_id);
 		return node;
 	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		if (node->params.num == 0) {
@@ -3298,10 +3299,10 @@ shared<Node> Parser::force_concrete_type(shared<Node> node) {
 			node->params[i] = apply_type_cast(cast, node->params[i].get(), t);
 		}
 
-		node->type = tree->make_class_dict(t);
+		node->type = tree->make_class_dict(t, node->token_id);
 		return node;
 	} else if (node->kind == NodeKind::TUPLE) {
-		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node));
+		auto type = merge_type_tuple_into_product(tree, node_extract_param_types(node), node->token_id);
 		auto xx = turn_class_into_constructor(type, node->params, node->token_id);
 		return try_to_match_apply_params(xx, node->params);
 	} else if (node->kind == NodeKind::FUNCTION) {
@@ -3338,7 +3339,7 @@ shared<Node> Parser::add_converter_str(shared<Node> sub, bool repr) {
 	// "universal" var2str() or var_repr()
 	auto *c = tree->add_constant_pointer(TypeClassP, t);
 
-	Function *f = tree->required_func_global(repr ? "@var_repr" : "@var2str");
+	Function *f = tree->required_func_global(repr ? "@var_repr" : "@var2str", sub->token_id);
 
 	auto cmd = tree->add_node_call(f, sub->token_id);
 	cmd->set_param(0, sub->ref());
@@ -3500,7 +3501,7 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	static int unique_lambda_counter = 0;
 
 	auto *f = tree->add_function("<lambda-" + i2s(unique_lambda_counter ++) + ">", TypeUnknown, tree->base_class, Flags::STATIC);
-	f->_token_id = Exp.cur_token();
+	f->token_id = Exp.cur_token();
 
 	Exp.next(); // '('
 
@@ -3585,7 +3586,7 @@ shared<Node> Parser::make_dynamical(shared<Node> node) {
 
 	auto *c = tree->add_constant_pointer(TypeClassP, node->type);
 
-	Function *f = tree->required_func_global("@dyn");
+	Function *f = tree->required_func_global("@dyn", node->token_id);
 
 	auto cmd = tree->add_node_call(f, node->token_id);
 	cmd->set_param(0, node->ref());
@@ -3875,7 +3876,7 @@ void Parser::parse_enum(Class *_namespace) {
 
 	// class name?
 	if (!Exp.end_of_line()) {
-		_namespace = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, {}, _namespace);
+		_namespace = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
 		Exp.next();
 	}
 
@@ -3965,6 +3966,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	bool as_interface = (Exp.cur == IDENTIFIER_INTERFACE);
 	Exp.next(); // 'class'/'interface'
 	string name = Exp.cur;
+	int token_id = Exp.cur_token();
 	Exp.next();
 
 	// create class
@@ -3972,6 +3974,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	// already created...
 	if (!_class)
 		tree->script->do_error_internal("class declaration ...not found " + name);
+	_class->token_id = token_id;
 	if (as_interface)
 		_class->type = Class::Type::INTERFACE;
 
@@ -4006,7 +4009,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	expect_new_line();
 
 	if (flags_has(_class->flags, Flags::SHARED)) {
-		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, offset0, _class->_token_id);
+		parser_class_add_element(this, _class, IDENTIFIER_SHARED_COUNT, TypeInt, Flags::NONE, offset0, _class->token_id);
 	}
 
 	//msg_write("parse " + _class->long_name());
@@ -4018,7 +4021,7 @@ bool Parser::parse_class(Class *_namespace) {
 	int _offset = 0;
 
 	auto _class = parse_class_header(_namespace, _offset);
-	if (!_class)
+	if (!_class) // in case, not fully parsed
 		return false;
 
 	Array<int> sub_class_token_ids;
@@ -4085,7 +4088,7 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 	if (_class->vtable.num > 0) {
 		if (_class->parent) {
 			if (_class->parent->vtable.num == 0)
-				do_error("no virtual functions allowed when inheriting from class without virtual functions", _class->_token_id);
+				do_error("no virtual functions allowed when inheriting from class without virtual functions", _class->token_id);
 			// element "-vtable-" being derived
 		} else {
 			for (ClassElement &e: _class->elements)
@@ -4363,7 +4366,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	f->is_abstract = true;
 	//if (config.verbose)
 	//	msg_write("PARSE HEAD  " + f->signature());
-	f->_token_id = Exp.cur_token();
+	f->token_id = Exp.cur_token();
 	cur_func = f;
 
 	if (Exp.cur != "(")
@@ -4469,7 +4472,7 @@ void Parser::skip_parsing_function_body(Function *f) {
 }
 
 void Parser::parse_abstract_function_body(Function *f) {
-	Exp.jump(f->_token_id);
+	Exp.jump(f->token_id);
 	f->block->type = TypeUnknown; // abstract parsing
 
 	int indent0 = Exp.cur_line->indent;
@@ -4522,7 +4525,7 @@ void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 				Exp.next();
 //				if (Exp.cur.num == 1)
 //					do_error("class names must be at least 2 characters long", Exp.cur_token());
-				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns);
+				Class *t = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, 0, nullptr, {}, ns, Exp.cur_token());
 				flags_clear(t->flags, Flags::FULLY_PARSED);
 
 				Exp.next_line();
@@ -4542,7 +4545,7 @@ void Parser::parse_all_function_bodies() {
 	//for (auto *f: function_needs_parsing)   might add lambda functions...
 	for (int i=0; i<function_needs_parsing.num; i++) {
 		auto f = function_needs_parsing[i];
-		if (!f->is_extern() and (f->_token_id >= 0))
+		if (!f->is_extern() and (f->token_id >= 0))
 			parse_abstract_function_body(f);
 	}
 }
