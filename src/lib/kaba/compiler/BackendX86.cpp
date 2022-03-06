@@ -774,8 +774,9 @@ void BackendX86::map_remaining_temp_vars_to_stack() {
 			for (int k=0; k<SERIAL_NODE_NUM_PARAMS; k++)
 				try_map_param_to_stack(cmd.cmd[j].p[k], i, stackvar);
 		}
-		cmd.remove_temp_var(i);
+		//cmd.remove_temp_var(i); // nah, no need, it's faster to just clear them all!
 	}
+	cmd.temp_var.clear();
 }
 
 
@@ -785,12 +786,10 @@ void BackendX86::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	// don't mind... use old algorithm: ALWAYS grow stack... remove ALL on each command in a block
 
 	int s = mem_align(v.type->size, 4);
-	StackOccupationX so;
 //	msg_write(format("add stack var  %s %d   %d-%d       vs=%d", v.type->name.c_str(), v.type->size, v.first, v.last, cur_func->_var_size));
 //	foreachi(TempVar &t, temp_var, i)
 //		if (&t == &v)
 //			msg_write("#" + i2s(i));
-	so.create(serializer, (config.instruction_set != Asm::InstructionSet::ARM), cur_func->_var_size, v.first, v.last);
 
 	if (true) {
 		// TODO super important!!!!!!
@@ -803,6 +802,8 @@ void BackendX86::add_stack_var(TempVar &v, SerialNodeParam &p) {
 			v.stack_offset = - stack_offset;
 		}
 	} else {
+		StackOccupationX so;
+		so.create(serializer, (config.instruction_set != Asm::InstructionSet::ARM), cur_func->_var_size, v.first, v.last);
 		v.stack_offset = so.find_free(v.type->size);
 		if (config.instruction_set == Asm::InstructionSet::ARM) {
 			stack_offset = v.stack_offset + s;
