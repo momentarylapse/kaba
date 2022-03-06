@@ -23,7 +23,7 @@ namespace Asm {
 
 namespace kaba {
 
-class Script;
+class Module;
 class SyntaxTree;
 class Parser;
 
@@ -46,11 +46,11 @@ struct AsmBlock {
 // data structures (uncompiled)
 class SyntaxTree {
 public:
-	SyntaxTree(Script *_script);
+	SyntaxTree(Module *module);
 	~SyntaxTree();
 
 	void default_import();
-	void add_include_data(shared<Script> s, bool indirect);
+	void add_include_data(shared<Module> s, bool indirect);
 
 	void do_error(const string &msg, int override_token_id = -1);
 	
@@ -156,7 +156,7 @@ public:
 	shared<Class> _base_class;
 	shared<Class> imported_symbols;
 	Array<const Class*> owned_classes;
-	shared_array<Script> includes;
+	shared_array<Module> includes;
 	Array<Define> defines;
 	owned<Asm::MetaInfo> asm_meta_info;
 	Array<AsmBlock> asm_blocks;
@@ -165,7 +165,7 @@ public:
 
 	shared<Function> root_of_all_evil;
 
-	Script *script;
+	Module *module;
 	owned<Parser> parser;
 };
 

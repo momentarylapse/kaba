@@ -6,7 +6,7 @@
 
 namespace kaba {
 
-class Script;
+class Module;
 class SyntaxTree;
 class Class;
 class Function;

@@ -106,11 +106,11 @@ void BackendX86::correct_parameters_variables_to_memory() {
 				auto v = (Variable*)p.p;
 				p.p = (int_p)v->memory;
 				if (!p.p)
-					script->do_error_link("variable is not linkable: " + v->name);
+					module->do_error_link("variable is not linkable: " + v->name);
 				p.kind = NodeKind::MEMORY;
 			} else if (p.kind == NodeKind::CONSTANT) {
 				auto cc = (Constant*)p.p;
-				if (script->syntax->flag_function_pointer_as_code and (p.type == TypeFunctionP)) {
+				if (module->syntax->flag_function_pointer_as_code and (p.type == TypeFunctionP)) {
 					auto *fp = (Function*)(int_p)cc->as_int64();
 					p.kind = NodeKind::LABEL;
 					p.p = fp->_label;
@@ -654,7 +654,7 @@ void BackendX86::correct_far_mem_access() {
 		auto &c = cmd.cmd[i];
 
 		if (c.p[1].kind == NodeKind::CONSTANT_BY_ADDRESS) {
-			if (!dist_fits_32bit(c.p[1].p + c.p[1].shift, script->opcode)) {
+			if (!dist_fits_32bit(c.p[1].p + c.p[1].shift, module->opcode)) {
 				auto p1 = c.p[1];
 
 
@@ -898,7 +898,7 @@ void BackendX86::solve_deref_temp_local(int c, int np, bool is_local) {
 
 	int reg = find_unused_reg(c, c, config.pointer_size);
 	if (reg < 0)
-		script->do_error_internal("solve_deref_temp_local... no registers available");
+		module->do_error_internal("solve_deref_temp_local... no registers available");
 	SerialNodeParam p_reg = param_vreg(type_pointer, reg);
 	SerialNodeParam p_deref_reg = param_deref_vreg(type_data, reg);
 

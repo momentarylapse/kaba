@@ -241,7 +241,7 @@ shared<Node> SyntaxTree::add_node_array(shared<Node> array, shared<Node> index, 
 	return new Node(NodeKind::BLOCK, (long long)(int_p)b, TypeVoid);
 }*/
 
-SyntaxTree::SyntaxTree(Script *_script) {
+SyntaxTree::SyntaxTree(Module *_module) {
 	base_class = new Class("-base-", 0, this);
 	_base_class = base_class;
 	imported_symbols = new Class("-imported-", 0, this);
@@ -251,7 +251,7 @@ SyntaxTree::SyntaxTree(Script *_script) {
 	flag_string_const_as_cstring = false;
 	flag_function_pointer_as_code = false;
 	flag_immortal = false;
-	script = _script;
+	module = _module;
 	asm_meta_info = new Asm::MetaInfo(config.pointer_size);
 	parser = nullptr;
 }
@@ -1464,15 +1464,15 @@ void SyntaxTree::map_local_variables_to_stack() {
 }
 
 
-// no included scripts may be deleted before us!!!
+// no included modules may be deleted before us!!!
 SyntaxTree::~SyntaxTree() {
-	// delete all classes, functions etc created by this script
+	// delete all classes, functions etc created by this module
 }
 
 void SyntaxTree::show(const string &stage) {
 	if (!config.allow_output_stage(stage))
 		return;
-	msg_write(format("--------- Syntax of %s  %s ---------", script->filename, stage));
+	msg_write(format("--------- Syntax of %s  %s ---------", module->filename, stage));
 	msg_right();
 	for (auto *f: functions)
 		if (!f->is_extern())

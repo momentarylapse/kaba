@@ -29,8 +29,8 @@ static bool _class_contains(const Class *c, const string &name) {
 	return false;
 }
 
-// import data from an included script file
-void SyntaxTree::add_include_data(shared<Script> s, bool indirect) {
+// import data from an included module file
+void SyntaxTree::add_include_data(shared<Module> s, bool indirect) {
 	for (auto i: weak(includes))
 		if (i == s)
 			return;

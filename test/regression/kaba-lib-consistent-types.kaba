@@ -1,6 +1,6 @@
 use kaba
 
-func test_class(p: Script, c: Class)
+func test_class(p: Module, c: Class)
 	for e in c.elements
 		if e.type == nil
 			print("MISSING: type of element {{p.name}}.{{c.name}}.{{e.name}}")

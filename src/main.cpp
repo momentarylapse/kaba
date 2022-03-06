@@ -270,7 +270,7 @@ public:
 				}
 			}
 		} else if (command.num > 0) {
-			kaba::execute_single_script_command(command);
+			kaba::execute_single_command(command);
 			msg_end();
 			return false;
 		} else {
@@ -324,7 +324,7 @@ public:
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-	void execute(shared<kaba::Script> s, const Array<string> &arg) {
+	void execute(shared<kaba::Module> s, const Array<string> &arg) {
 		if (kaba::config.interpreted) {
 			s->interpreter->run("main");
 			return;
@@ -349,13 +349,13 @@ public:
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(shared<kaba::Script> s, const Path &out_file) {
+	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
 		File *f = FileCreate(out_file);
 		f->write_buffer(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
-	void output_to_file_elf(shared<kaba::Script> s, const Path &out_file) {
+	void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
 		File *f = FileCreate(out_file);
 
 		bool is64bit = (kaba::config.pointer_size == 8);
@@ -403,7 +403,7 @@ public:
 		system(format("chmod a+x %s", out_file).c_str());
 	}
 
-	void export_symbols(shared<kaba::Script> s, const Path &symbols_out_file) {
+	void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
 		File *f = FileCreate(symbols_out_file);
 		for (auto *fn: s->syntax->functions) {
 			f->write_str(kaba::function_link_name(fn));

@@ -18,7 +18,7 @@ namespace kaba {
 class Class;
 class Block;
 class SyntaxTree;
-class Script;
+class Module;
 class Function;
 class Variable;
 class Constant;

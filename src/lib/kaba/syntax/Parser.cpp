@@ -233,7 +233,7 @@ void Parser::do_error_exp(const string &str, int override_token_id) {
 #ifdef CPU_ARM
 	msg_error(str);
 #endif
-	throw Exception(str, expr, physical_line, pos, tree->script);
+	throw Exception(str, expr, physical_line, pos, tree->module);
 }
 
 const Class *get_user_friendly_type(shared<Node> operand) {
@@ -3745,7 +3745,7 @@ void Parser::parse_abstract_complete_command(Block *block) {
 	expect_new_line();
 }
 
-extern Array<shared<Script>> loading_script_stack;
+extern Array<shared<Module>> loading_module_stack;
 
 string canonical_import_name(const string &s) {
 	return s.lower().replace(" ", "").replace("_", "");
@@ -3789,7 +3789,7 @@ Path find_installed_lib_import(const string &name) {
 	return Path::EMPTY;
 }
 
-Path find_import(Script *s, const string &_name) {
+Path find_import(Module *s, const string &_name) {
 	string name = _name.replace(".kaba", "");
 	name = name.replace(".", "/") + ".kaba";
 
@@ -3836,18 +3836,18 @@ void Parser::parse_import() {
 			return;
 		}
 
-	Path filename = find_import(tree->script, name);
+	Path filename = find_import(tree->module, name);
 	if (filename.is_empty())
 		do_error_exp(format("can not find import '%s'", name));
 
-	for (auto ss: weak(loading_script_stack))
+	for (auto ss: weak(loading_module_stack))
 		if (ss->filename == filename)
 			do_error_exp("recursive include");
 
 	msg_right();
-	shared<Script> include;
+	shared<Module> include;
 	try {
-		include = load(filename, tree->script->just_analyse or config.compile_os);
+		include = load(filename, tree->module->just_analyse or config.compile_os);
 		// os-includes will be appended to syntax_tree... so don't compile yet
 	} catch (Exception &e) {
 		msg_left();
@@ -3856,7 +3856,7 @@ void Parser::parse_import() {
 		string expr = Exp.get_token(token_id);
 		e.line = Exp.token_physical_line_no(token_id);
 		e.column = Exp.token_line_offset(token_id);
-		e.text += format("\n...imported from:\nline %d, %s", e.line+1, tree->script->filename);
+		e.text += format("\n...imported from:\nline %d, %s", e.line+1, tree->module->filename);
 		throw e;
 		//msg_write(e.message);
 		//msg_write("...");
@@ -3973,7 +3973,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	Class *_class = const_cast<Class*>(tree->find_root_type_by_name(name, _namespace, false));
 	// already created...
 	if (!_class)
-		tree->script->do_error_internal("class declaration ...not found " + name);
+		tree->module->do_error_internal("class declaration ...not found " + name);
 	_class->token_id = token_id;
 	if (as_interface)
 		_class->type = Class::Type::INTERFACE;

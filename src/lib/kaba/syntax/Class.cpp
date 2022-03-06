@@ -456,7 +456,7 @@ void Class::link_virtual_table() {
 }
 
 void Class::link_external_virtual_table(void *p) {
-	// link script functions according to external vtable
+	// link module functions according to external vtable
 	VirtualTable *t = (VirtualTable*)p;
 	vtable.clear();
 	int max_vindex = 1;
@@ -611,7 +611,7 @@ void Class::derive_from(const Class* root, bool increase_size) {
 			ff->address = f->address;
 
 			// leave it for now
-			//   script_make_super_array() is looking for DynamicArray as a return type
+			//   kaba_make_super_array() is looking for DynamicArray as a return type
 			// nahhh, let's do it here
 			ff->literal_return_type = this;
 			ff->effective_return_type = this;
