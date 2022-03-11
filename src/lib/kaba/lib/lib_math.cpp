@@ -1051,7 +1051,7 @@ void SIAddPackageMath() {
 		func_add_param("b", TypeVector);
 		func_add_param("c", TypeVector);
 	// random numbers
-	add_func("randi", TypeInt, &randi, Flags::STATIC);
+	add_func("rand", TypeInt, &randi, Flags::STATIC);
 		func_add_param("max", TypeInt);
 	add_func("rand", TypeFloat32, &randf, Flags::STATIC);
 		func_add_param("max", TypeFloat32);
