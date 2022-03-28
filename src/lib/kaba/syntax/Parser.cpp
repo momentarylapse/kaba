@@ -1,20 +1,10 @@
 #include "../kaba.h"
 #include "../asm/asm.h"
 #include "../../file/file.h"
+#include "../../base/set.h"
 #include "Parser.h"
 #include <stdio.h>
 
-#include "../../config.h"
-
-#ifdef _X_USE_HUI_
-#include "../../hui/Application.h"
-#elif defined(_X_USE_HUI_MINIMAL_)
-#include "../../hui_minimal/Application.h"
-#endif
-
-
-
-const int MAX_IMPORT_DIRECTORY_PARENTS = 5;
 
 namespace kaba {
 
@@ -24,6 +14,8 @@ shared<Node> create_node_token(Parser *p);
 Array<const Class*> func_effective_params(const Function *f);
 Array<const Class*> node_call_effective_params(shared<Node> node);
 const Class *node_call_return_type(shared<Node> node);
+
+shared<Module> get_import(Parser *parser, const string &name);
 
 ExpressionBuffer *cur_exp_buf = nullptr;
 
@@ -3736,68 +3728,6 @@ void Parser::parse_abstract_complete_command(Block *block) {
 	expect_new_line();
 }
 
-extern Array<shared<Module>> loading_module_stack;
-
-string canonical_import_name(const string &s) {
-	return s.lower().replace(" ", "").replace("_", "");
-}
-
-string dir_has(const Path &dir, const string &name) {
-	auto list = dir_search(dir, "*", "fd");
-	for (auto &e: list)
-		if (canonical_import_name(e.str()) == name)
-			return e.str();
-	return "";
-}
-
-Path import_dir_match(const Path &dir0, const string &name) {
-	auto xx = name.explode("/");
-	Path filename = dir0;
-
-	for (int i=0; i<xx.num; i++) {
-		string e = dir_has(filename, canonical_import_name(xx[i]));
-		if (e == "")
-			return Path::EMPTY;
-		filename <<= e;
-	}
-	return filename;
-
-	if (file_exists(dir0 << name))
-		return dir0 << name;
-	return Path::EMPTY;
-}
-
-Path find_installed_lib_import(const string &name) {
-	Path kaba_dir = hui::Application::directory.parent() << "kaba";
-	if (hui::Application::directory.basename()[0] == '.')
-		kaba_dir = hui::Application::directory.parent() << ".kaba";
-	Path kaba_dir_static = hui::Application::directory_static.parent() << "kaba";
-	for (auto &dir: Array<Path>({kaba_dir, kaba_dir_static})) {
-		auto path = (dir << "lib" << name).canonical();
-		if (file_exists(path))
-			return path;
-	}
-	return Path::EMPTY;
-}
-
-Path find_import(Module *s, const string &_name) {
-	string name = _name.replace(".kaba", "");
-	name = name.replace(".", "/") + ".kaba";
-
-	if (name.head(2) == "@/")
-		return find_installed_lib_import(name.sub(2));
-
-	for (int i=0; i<MAX_IMPORT_DIRECTORY_PARENTS; i++) {
-		Path filename = import_dir_match((s->filename.parent() << string("../").repeat(i)).canonical(), name);
-		if (!filename.is_empty())
-			return filename;
-	}
-
-	return find_installed_lib_import(name);
-
-	return Path::EMPTY;
-}
-
 void Parser::parse_import() {
 	string command = Exp.cur; // 'use' / 'import'
 	bool indirect = (command == IDENTIFIER_IMPORT);
@@ -3819,46 +3749,8 @@ void Parser::parse_import() {
 	if (name.match("\"*\""))
 		name = name.sub(1, -1); // remove ""
 		
-	
-	// internal packages?
-	for (auto p: packages)
-		if (p->filename.str() == name) {
-			tree->add_include_data(p, indirect);
-			return;
-		}
-
-	Path filename = find_import(tree->module, name);
-	if (filename.is_empty())
-		do_error_exp(format("can not find import '%s'", name));
-
-	for (auto ss: weak(loading_module_stack))
-		if (ss->filename == filename)
-			do_error_exp("recursive include");
-
-	msg_right();
-	shared<Module> include;
-	try {
-		include = load(filename, tree->module->just_analyse or config.compile_os);
-		// os-includes will be appended to syntax_tree... so don't compile yet
-	} catch (Exception &e) {
-		msg_left();
-
-		int token_id = Exp.cur_token();
-		string expr = Exp.get_token(token_id);
-		e.line = Exp.token_physical_line_no(token_id);
-		e.column = Exp.token_line_offset(token_id);
-		e.text += format("\n...imported from:\nline %d, %s", e.line+1, tree->module->filename);
-		throw e;
-		//msg_write(e.message);
-		//msg_write("...");
-		string msg = e.message() + "\nimported file:";
-		//string msg = "in imported file:\n\"" + e.message + "\"";
-		do_error_exp(msg);
-	}
-	cur_exp_buf = &Exp;
-
-	msg_left();
-	tree->add_include_data(include, indirect);
+	auto import = get_import(this, name);
+	tree->add_include_data(import, indirect);
 }
 
 

@@ -379,6 +379,9 @@
     <ClCompile Include="src\lib\kaba\syntax\implicit.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\import.cpp">
+      <Filter>src\lib\kaba\syntax</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\lexical.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>

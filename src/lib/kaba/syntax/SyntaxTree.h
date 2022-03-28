@@ -28,13 +28,6 @@ class SyntaxTree;
 class Parser;
 
 
-// macros
-struct Define {
-	string source;
-	Array<string> dest;
-};
-
-
 
 struct AsmBlock {
 	string block;
@@ -157,7 +150,6 @@ public:
 	shared<Class> imported_symbols;
 	Array<const Class*> owned_classes;
 	shared_array<Module> includes;
-	Array<Define> defines;
 	owned<Asm::MetaInfo> asm_meta_info;
 	Array<AsmBlock> asm_blocks;
 	Array<Operator*> operators;
