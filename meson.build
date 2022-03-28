@@ -80,7 +80,7 @@ endif
 
 
 sources = [
-	'src/Helper/CLIParser.cpp',
+	'src/helper/CommandLineParser.cpp',
 	'src/lib/algebra/crypto.cpp',
 	'src/lib/algebra/vli.cpp',
 	'src/lib/any/any.cpp',

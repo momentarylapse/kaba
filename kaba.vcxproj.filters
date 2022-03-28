@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\Helper\CLIParser.cpp">
-      <Filter>src\Helper</Filter>
+    <ClCompile Include="src\helper\CommandLineParser.cpp">
+      <Filter>src\helper</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\algebra\crypto.cpp">
       <Filter>src\lib\algebra</Filter>
@@ -564,8 +564,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Helper\CLIParser.h">
-      <Filter>src\Helper</Filter>
+    <ClInclude Include="src\helper\CommandLineParser.h">
+      <Filter>src\helper</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\algebra\algebra.h">
       <Filter>src\lib\algebra</Filter>
@@ -1055,8 +1055,8 @@
     <Filter Include="src">
       <UniqueIdentifier>{F12EA729-9762-4175-D211-F4CA3BE60BD0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\Helper">
-      <UniqueIdentifier>{DDC14E95-3982-915A-1E60-98AEB5339C97}</UniqueIdentifier>
+    <Filter Include="src\helper">
+      <UniqueIdentifier>{31ED1856-3429-E478-D5BE-822EACE478DB}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib">
       <UniqueIdentifier>{78C09F83-C1B9-0A6A-D375-DF41AB8FB723}</UniqueIdentifier>

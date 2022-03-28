@@ -1,5 +1,5 @@
 /*
- * CLIParser.h
+ * CommandLineParser.h
  *
  *  Created on: Feb 12, 2021
  *      Author: michi
@@ -11,7 +11,7 @@
 #include <functional>
 
 
-class CLIParser {
+class CommandLineParser {
 public:
 	using Callback = std::function<void()>;
 	using CallbackString = std::function<void(const string&)>;

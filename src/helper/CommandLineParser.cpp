@@ -5,23 +5,24 @@
  *      Author: michi
  */
 
-#include "CLIParser.h"
+#include "CommandLineParser.h"
+
 #include "../lib/file/msg.h"
 
 
-void CLIParser::option(const string &name, Callback cb) {
+void CommandLineParser::option(const string &name, Callback cb) {
 	options.add({name, "", cb, nullptr});
 }
 
-void CLIParser::option(const string &name, const string &p, CallbackString cb) {
+void CommandLineParser::option(const string &name, const string &p, CallbackString cb) {
 	options.add({name, p, nullptr, cb});
 }
 
-void CLIParser::info(const string &i) {
+void CommandLineParser::info(const string &i) {
 	_info = i;
 }
 
-void CLIParser::show() {
+void CommandLineParser::show() {
 	msg_write(_info);
 	msg_write("");
 	msg_write("options:");
@@ -32,7 +33,7 @@ void CLIParser::show() {
 			msg_write("  " + o.name);
 }
 
-void CLIParser::parse(const Array<string> &_arg) {
+void CommandLineParser::parse(const Array<string> &_arg) {
 	for (int i=1; i<_arg.num; i++) {
 		if (_arg[i].head(1) == "-") {
 			bool found = false;

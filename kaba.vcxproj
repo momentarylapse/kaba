@@ -116,7 +116,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Helper\CLIParser.cpp" />
+    <ClCompile Include="src\helper\CommandLineParser.cpp" />
     <ClCompile Include="src\lib\algebra\crypto.cpp" />
     <ClCompile Include="src\lib\algebra\vli.cpp" />
     <ClCompile Include="src\lib\any\any.cpp" />
@@ -305,7 +305,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Helper\CLIParser.h" />
+    <ClInclude Include="src\helper\CommandLineParser.h" />
     <ClInclude Include="src\lib\algebra\algebra.h" />
     <ClInclude Include="src\lib\algebra\crypto.h" />
     <ClInclude Include="src\lib\algebra\vli.h" />

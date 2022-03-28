@@ -5,7 +5,7 @@
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
-#include "Helper/CLIParser.h"
+#include "helper/CommandLineParser.h"
 
 
 string AppName = "Kaba";
@@ -133,7 +133,7 @@ public:
 
 		bool error = false;
 
-		CLIParser p;
+		CommandLineParser p;
 		p.info(AppName + " " + AppVersion);
 		p.option("--version/-v", [=]{
 			msg_write("--- " + AppName + " " + AppVersion + " ---");

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 set(SOURCE 
-	src/Helper/CLIParser.cpp
+	src/helper/CommandLineParser.cpp
 	src/lib/algebra/crypto.cpp
 	src/lib/algebra/vli.cpp
 	src/lib/any/any.cpp
