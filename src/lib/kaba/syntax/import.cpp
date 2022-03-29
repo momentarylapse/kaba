@@ -187,10 +187,6 @@ void SyntaxTree::import_data(shared<Module> s, bool indirect, const string &as_n
 	}
 	includes.add(s);
 	//}
-
-	for (Operator *op: ps->operators)
-		if (op->owner == ps)
-			operators.add(op);
 }
 
 

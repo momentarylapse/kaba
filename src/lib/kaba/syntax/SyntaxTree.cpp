@@ -188,8 +188,10 @@ shared<Node> SyntaxTree::add_node_operator(Operator *op, const shared<Node> p1, 
 	return cmd;
 }
 
+extern Array<Operator*> global_operators;
+
 shared<Node> SyntaxTree::add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, int token_id, const Class *override_type) {
-	for (auto *op: operators)
+	for (auto *op: global_operators)
 		if (op->f->inline_no == inline_index)
 			return add_node_operator(op, p1, p2, token_id, override_type);
 

@@ -833,13 +833,15 @@ shared<Node> build_abstract_tuple(const Array<shared<Node>> &el) {
 	return c;
 }
 
+extern Array<Operator*> global_operators;
+
 shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> operand, Block *block, int token_id) {
 	Operator *op = nullptr;
 	const Class *p1 = operand->type;
 
 	// exact match?
 	bool ok=false;
-	for (auto *_op: tree->operators)
+	for (auto *_op: global_operators)
 		if (po == _op->abstract)
 			if ((!_op->param_type_2) and (type_match(p1, _op->param_type_1))) {
 				op = _op;
@@ -853,7 +855,7 @@ shared<Node> Parser::link_unary_operator(AbstractOperator *po, shared<Node> oper
 		CastingData current;
 		CastingData best = {-1, 10000};
 		const Class *t_best = nullptr;
-		for (auto *_op: tree->operators)
+		for (auto *_op: global_operators)
 			if (po == _op->abstract)
 				if ((!_op->param_type_2) and (type_match_with_cast(operand, false, _op->param_type_1, current))) {
 					ok = true;
@@ -1509,7 +1511,7 @@ shared<Node> Parser::link_operator(AbstractOperator *primop, shared<Node> param1
 	const Class *t1_best = nullptr, *t2_best = nullptr;
 	Operator *op_found = nullptr;
 	Function *op_cf_found = nullptr;
-	for (auto *op: tree->operators)
+	for (auto *op: global_operators)
 		if (primop == op->abstract)
 			if (type_match_with_cast(param1, left_modifiable, op->param_type_1,  c1) and type_match_with_cast(param2, false, op->param_type_2, c2))
 				if (c1.penalty + c2.penalty < c1_best.penalty + c2_best.penalty) {

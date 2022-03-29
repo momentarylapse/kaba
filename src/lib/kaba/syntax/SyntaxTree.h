@@ -152,7 +152,6 @@ public:
 	shared_array<Module> includes;
 	owned<Asm::MetaInfo> asm_meta_info;
 	Array<AsmBlock> asm_blocks;
-	Array<Operator*> operators;
 	Array<Function*> functions;
 
 	shared<Function> root_of_all_evil;
