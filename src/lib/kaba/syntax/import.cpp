@@ -41,14 +41,36 @@ string dir_has(const Path &dir, const string &name) {
 }
 
 Path import_dir_match(const Path &dir0, const string &name) {
-	auto xx = name.explode("/");
+	auto xx = name.replace(".kaba", "").explode("/");
 	Path filename = dir0;
 
-	for (int i=0; i<xx.num; i++) {
+	// parents matching?
+	for (int i=0; i<xx.num-1; i++) {
 		string e = dir_has(filename, canonical_import_name(xx[i]));
 		if (e == "")
 			return Path::EMPTY;
 		filename <<= e;
+	}
+	{
+		// direct file  zzz.kaba?
+		string e = dir_has(filename, canonical_import_name(xx.back() + ".kaba"));
+		if (e != "") {
+			filename <<= e;
+			return filename;
+		}
+
+		// package  zzz/zzz.kaba  or  zzz/__main__.kaba?
+		e = dir_has(filename, canonical_import_name(xx.back()));
+		if (e == "")
+			return Path::EMPTY;
+		filename <<= e;
+		if (file_exists(filename << "__main__.kaba"))
+			return filename << "__main__.kaba";
+		if (file_exists(filename << (xx.back() + ".kaba")))
+			return filename << (xx.back() + ".kaba");
+		if (file_exists(filename << "main.kaba"))
+			return filename << "main.kaba";
+		return Path::EMPTY;
 	}
 	return filename;
 
@@ -74,15 +96,17 @@ Path find_import(Module *s, const string &_name) {
 	string name = _name.replace(".kaba", "");
 	name = name.replace(".", "/") + ".kaba";
 
+	// deprecated...
 	if (name.head(2) == "@/")
 		return find_installed_lib_import(name.sub(2));
 
 	for (int i=0; i<MAX_IMPORT_DIRECTORY_PARENTS; i++) {
 		Path filename = import_dir_match((s->filename.parent() << string("../").repeat(i)).canonical(), name);
-		if (!filename.is_empty())
+		if (filename)
 			return filename;
 	}
 
+	// installed?
 	return find_installed_lib_import(name);
 
 	return Path::EMPTY;
@@ -96,7 +120,7 @@ shared<Module> get_import(Parser *parser, const string &name) {
 			return p;
 
 	Path filename = find_import(parser->tree->module, name);
-	if (filename.is_empty())
+	if (!filename)
 		parser->do_error_exp(format("can not find import '%s'", name));
 
 	for (auto ss: weak(loading_module_stack))
@@ -143,7 +167,7 @@ static bool _class_contains(const Class *c, const string &name) {
 	return false;
 }
 
-void namespace_import(Class *parent, const Class *child) {
+void namespace_import_contents(Class *parent, const Class *child) {
 	for (auto *c: weak(child->classes))
 		parent->classes.add(c);
 	for (auto *f: weak(child->functions))
@@ -152,6 +176,22 @@ void namespace_import(Class *parent, const Class *child) {
 		parent->static_variables.add(v);
 	for (auto *c: weak(child->constants))
 		parent->constants.add(c);
+}
+
+Class *get_namespace_for_import(SyntaxTree *tree, const string &name) {
+	auto xx = name.explode(".");
+	Class *ns = tree->base_class;
+
+	auto get_next = [tree] (Class *ns, const string &name) {
+		for (auto c: weak(ns->classes))
+			if (c->name == name)
+				return const_cast<Class*>(c);
+		return tree->create_new_class(name, Class::Type::OTHER, 0, 0, nullptr, {}, ns, -1);
+	};
+
+	for (auto &x: xx)
+		ns = get_next(ns, x);
+	return ns;
 }
 
 // import data from an included module file
@@ -171,15 +211,10 @@ void SyntaxTree::import_data(shared<Module> s, bool indirect, const string &as_n
 		import_deep(this, ps);
 	} else {*/
 	if (indirect) {
-		if (as_name == "") {
-			imported_symbols->classes.add(ps->base_class);
-		} else {
-			auto ns = this->create_new_class(as_name, Class::Type::OTHER, 0, 0, nullptr, {}, base_class, -1);
-			namespace_import(ns, ps->base_class);
-			imported_symbols->classes.add(ns);
-		}
+		auto ns = get_namespace_for_import(this, as_name);
+		namespace_import_contents(ns, ps->base_class);
 	} else {
-		namespace_import(imported_symbols.get(), ps->base_class);
+		namespace_import_contents(imported_symbols.get(), ps->base_class);
 		if (s->filename.basename().find(".kaba") < 0)
 			if (!_class_contains(imported_symbols.get(), ps->base_class->name)) {
 				imported_symbols->classes.add(ps->base_class);

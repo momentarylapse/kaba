@@ -3756,10 +3756,14 @@ void Parser::parse_import() {
 		Exp.next();
 	}
 	
+	// "old/style.kaba" -> old.style
 	if (name.match("\"*\""))
-		name = name.sub(1, -1); // remove ""
+		name = name.sub(1, -1).replace(".kaba", "").replace("/", ".");
 		
 	auto import = get_import(this, name);
+
+	if (as_name == "")
+		as_name = name;
 	tree->import_data(import, indirect, as_name);
 }
 
