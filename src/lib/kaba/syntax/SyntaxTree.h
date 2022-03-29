@@ -43,7 +43,7 @@ public:
 	~SyntaxTree();
 
 	void default_import();
-	void add_include_data(shared<Module> s, bool indirect);
+	void import_data(shared<Module> s, bool indirect, const string &as_name);
 
 	void do_error(const string &msg, int override_token_id = -1);
 	

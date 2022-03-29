@@ -259,7 +259,7 @@ SyntaxTree::SyntaxTree(Module *_module) {
 void SyntaxTree::default_import() {
 	for (auto p: packages)
 		if (p->used_by_default)
-			add_include_data(p, false);
+			import_data(p, false, "");
 }
 
 

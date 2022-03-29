@@ -1,0 +1,8 @@
+add_type_cast()
+	slow lookup
+correct_implement_commands()  !!!
+	..remove_cmd()
+do_mapping()  !!!
+insert_lea()
+	insert_cmd()
+		add_cmd()

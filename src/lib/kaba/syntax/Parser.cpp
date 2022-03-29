@@ -3735,10 +3735,18 @@ void Parser::parse_import() {
 
 	// parse import name
 	string name = Exp.cur;
+	string as_name;
 	Exp.next();
 	while (!Exp.end_of_line()) {
-		if (Exp.cur != ".")
+		if (Exp.cur == IDENTIFIER_AS) {
+			Exp.next();
+			if (Exp.end_of_line())
+				do_error_exp("name expected after 'as'");
+			as_name = Exp.cur;
+			break;
+		} else if (Exp.cur != ".") {
 			do_error_exp("'.' expected in import name");
+		}
 		name += ".";
 		expect_no_new_line();
 		Exp.next();
@@ -3750,7 +3758,7 @@ void Parser::parse_import() {
 		name = name.sub(1, -1); // remove ""
 		
 	auto import = get_import(this, name);
-	tree->add_include_data(import, indirect);
+	tree->import_data(import, indirect, as_name);
 }
 
 

@@ -1,0 +1,6 @@
+for x in list
+	if ...
+		del
+		# or?
+		del x
+

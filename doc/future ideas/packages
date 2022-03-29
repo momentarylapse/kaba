@@ -1,0 +1,31 @@
+
+via directory structure (like python)
+
+x
+	.package
+	a.kaba  # namespace x.a
+	b.kaba  # namespace x.b
+	x.kaba  # namespace x
+	y
+		.package
+		c.kaba  # namespace x.y.c
+		y.kaba  # namespace x.y
+
+
+import x
+import x.a
+import x.y
+import x.y.c
+
+import x.a
+# auto imports x
+
+import x.y.x
+# auto imports x and x.y
+
+
+
+
+
+files (=modules) not in packages -> always flat namespace (filename, not parent)
+

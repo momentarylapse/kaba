@@ -143,8 +143,19 @@ static bool _class_contains(const Class *c, const string &name) {
 	return false;
 }
 
+void namespace_import(Class *parent, const Class *child) {
+	for (auto *c: weak(child->classes))
+		parent->classes.add(c);
+	for (auto *f: weak(child->functions))
+		parent->functions.add(f);
+	for (auto *v: weak(child->static_variables))
+		parent->static_variables.add(v);
+	for (auto *c: weak(child->constants))
+		parent->constants.add(c);
+}
+
 // import data from an included module file
-void SyntaxTree::add_include_data(shared<Module> s, bool indirect) {
+void SyntaxTree::import_data(shared<Module> s, bool indirect, const string &as_name) {
 	for (auto i: weak(includes))
 		if (i == s)
 			return;
@@ -160,16 +171,15 @@ void SyntaxTree::add_include_data(shared<Module> s, bool indirect) {
 		import_deep(this, ps);
 	} else {*/
 	if (indirect) {
-		imported_symbols->classes.add(ps->base_class);
+		if (as_name == "") {
+			imported_symbols->classes.add(ps->base_class);
+		} else {
+			auto ns = this->create_new_class(as_name, Class::Type::OTHER, 0, 0, nullptr, {}, base_class, -1);
+			namespace_import(ns, ps->base_class);
+			imported_symbols->classes.add(ns);
+		}
 	} else {
-		for (auto *c: weak(ps->base_class->classes))
-			imported_symbols->classes.add(c);
-		for (auto *f: weak(ps->base_class->functions))
-			imported_symbols->functions.add(f);
-		for (auto *v: weak(ps->base_class->static_variables))
-			imported_symbols->static_variables.add(v);
-		for (auto *c: weak(ps->base_class->constants))
-			imported_symbols->constants.add(c);
+		namespace_import(imported_symbols.get(), ps->base_class);
 		if (s->filename.basename().find(".kaba") < 0)
 			if (!_class_contains(imported_symbols.get(), ps->base_class->name)) {
 				imported_symbols->classes.add(ps->base_class);
