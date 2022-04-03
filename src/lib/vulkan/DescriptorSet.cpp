@@ -178,7 +178,7 @@ VkDescriptorType descriptor_type(const string &s) {
 
 		Array<VkWriteDescriptorSet> wds;
 		for (auto &b: buffers) {
-			VkWriteDescriptorSet w;
+			VkWriteDescriptorSet w = {};
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
 			w.dstBinding = b.binding;
@@ -190,7 +190,7 @@ VkDescriptorType descriptor_type(const string &s) {
 		}
 
 		for (auto &i: images) {
-			VkWriteDescriptorSet w;
+			VkWriteDescriptorSet w = {};
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
 			w.dstBinding = i.binding;
@@ -201,7 +201,7 @@ VkDescriptorType descriptor_type(const string &s) {
 			wds.add(w);
 		}
 		for (auto &a: accelerations) {
-			VkWriteDescriptorSet w;
+			VkWriteDescriptorSet w = {};
 			w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			w.dstSet = descriptor_set;
 			w.dstBinding = a.binding;

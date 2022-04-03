@@ -70,9 +70,7 @@ static bool inst_is_arithmetic(Asm::InstID i) {
 }
 
 
-void BackendAmd64::implement_return(kaba::SerialNode &c, int i) {
-	auto p = c.p[0];
-	cmd.remove_cmd(i);
+void BackendAmd64::implement_return(const SerialNodeParam &p) {
 	if (p.kind != NodeKind::NONE) {
 		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
 			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
