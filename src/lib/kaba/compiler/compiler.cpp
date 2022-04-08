@@ -463,7 +463,8 @@ void Module::link_functions() {
 
 void Module::link_virtual_functions_into_vtable(const Class *c) {
 	Class *t = const_cast<Class*>(c);
-	t->link_virtual_table();
+	if (t->owner == syntax)
+		t->link_virtual_table();
 
 	/*if (config.compile_os)*/{
 		for (int i=0; i<t->vtable.num; i++) {

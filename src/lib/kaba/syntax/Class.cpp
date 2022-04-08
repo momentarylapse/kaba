@@ -428,7 +428,7 @@ void Class::link_virtual_table() {
 	if (vtable.num == 0)
 		return;
 
-	//msg_write("link vtable " + name);
+	//msg_write("link vtable " + long_name());
 	// derive from parent
 	if (parent)
 		for (int i=0; i<parent->vtable.num; i++)
