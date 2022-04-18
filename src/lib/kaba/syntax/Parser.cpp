@@ -1644,10 +1644,11 @@ shared<Node> Parser::concretify_call(shared<Node> node, Block *block, const Clas
 
 shared_array<Node> Parser::concretify_element(shared<Node> node, Block *block, const Class *ns) {
 	auto base = concretify_node(node->params[0], block, ns);
-	auto el = Exp.get_token(node->params[1]->token_id);
+	int token_id = node->params[1]->token_id;
+	auto el = Exp.get_token(token_id);
 
 	base = force_concrete_type(base);
-	auto links = tree->get_element_of(base, el);
+	auto links = tree->get_element_of(base, el, token_id);
 	if (links.num > 0)
 		return links;
 
@@ -1655,7 +1656,7 @@ shared_array<Node> Parser::concretify_element(shared<Node> node, Block *block, c
 		auto c = tree->add_node_const(tree->add_constant(TypeClassP), node->token_id);
 		c->as_const()->as_int64() = (int_p)base->as_class();
 
-		auto links = tree->get_element_of(c, el);
+		auto links = tree->get_element_of(c, el, token_id);
 		if (links.num > 0)
 			return links;
 	}
@@ -1866,11 +1867,9 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 		string token = Exp.get_token(node->token_id);
 
 		// direct operand
-		auto operands = tree->get_existence(token, block, ns);
+		auto operands = tree->get_existence(token, block, ns, node->token_id);
 		if (operands.num > 0) {
 			// direct operand
-			for (auto &o: weak(operands))
-				o->token_id = node->token_id;
 			return operands;
 		} else {
 			auto t = get_constant_type(token);
@@ -2066,7 +2065,7 @@ shared<Node> Parser::concretify_statement_len(shared<Node> node, Block *block, c
 	// element "int num/length"?
 	for (auto &e: sub->type->elements)
 		if (e.type == TypeInt and (e.name == "length" or e.name == "num")) {
-			return sub->shift(e.offset, e.type);
+			return sub->shift(e.offset, e.type, node->token_id);
 		}
 
 	// length() function?
@@ -2147,10 +2146,10 @@ shared<Node> Parser::concretify_statement_weak(shared<Node> node, Block *block, 
 	while (true) {
 		if (t->is_pointer_shared() or t->is_pointer_owned()) {
 			auto tt = t->param[0]->get_pointer();
-			return sub->shift(0, tt);
+			return sub->shift(0, tt, node->token_id);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
 			auto tt = tree->make_class_super_array(t->param[0]->param[0]->get_pointer(), node->token_id);
-			return sub->shift(0, tt);
+			return sub->shift(0, tt, node->token_id);
 		}
 		if (t->parent)
 			t = t->parent;
