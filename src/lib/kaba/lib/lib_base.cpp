@@ -612,9 +612,14 @@ void SIAddPackageBase() {
 		add_operator(OperatorID::DECREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_DECREASE);
 
 	add_class(TypeEnumBase);
+		//class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &kaba_cast<int,int>);
+		//	func_add_param("i", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_cast<int,int>, Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
+		class_add_func("from_int", TypeEnumBase, &kaba_cast<int,int>, Flags::_STATIC__PURE);
+		func_set_inline(InlineID::PASSTHROUGH);
+			func_add_param("i", TypeInt);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);
 		add_operator(OperatorID::ADDS, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD_ASSIGN);
