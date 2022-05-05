@@ -289,10 +289,10 @@ bool Class::needs_constructor() const {
 }
 
 bool Class::is_size_known() const {
+	if (is_super_array() or is_dict() or is_some_pointer() or is_enum())
+		return true;
 	if (!fully_parsed())
 		return false;
-	if (is_super_array() or is_dict() or is_some_pointer())
-		return true;
 	for (ClassElement &e: elements)
 		if (!e.type->is_size_known())
 			return false;

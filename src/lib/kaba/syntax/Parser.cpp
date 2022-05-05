@@ -3868,6 +3868,8 @@ void Parser::parse_enum(Class *_namespace) {
 			break;
 		Exp.next_line();
 	}
+
+	flags_set(_class->flags, Flags::FULLY_PARSED);
 }
 
 bool type_needs_alignment(const Class *t) {
