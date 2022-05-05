@@ -1,0 +1,16 @@
+enum Enum
+	A
+	B = 18
+	C = int(Enum.A) + 9
+
+func f(x: Enum)
+	print(x)
+
+func main()
+	print(typeof(Enum.A))
+	var x = Enum.B
+	print(x)
+	print(int(x) + 2)
+	print(x == Enum.A)
+	print(x == Enum.B)
+	f(x)

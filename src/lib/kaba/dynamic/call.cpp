@@ -25,6 +25,7 @@ void db_out(const string &s) {
 namespace kaba {
 
 extern const Class *TypeCallableBase;
+extern const Class *TypeEnumBase;
 
 #define CALL_DEBUG_X		0
 
@@ -178,7 +179,7 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type == TypeInt) {
-			if (ptype[0] == TypeInt) {
+			if (ptype[0] == TypeInt or ptype[0]->is_derived_from(TypeEnumBase)) {
 				call1<int,int>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == TypeChar) {

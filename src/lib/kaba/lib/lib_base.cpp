@@ -16,6 +16,7 @@ extern const Class *TypeSharedPointer;
 extern const Class *TypeStringAutoCast;
 extern const Class *TypeDictBase;
 extern const Class *TypeCallableBase;
+extern const Class *TypeEnumBase;
 extern const Class *TypeFloat;
 extern const Class *TypePointerList;
 extern const Class *TypeObject;
@@ -110,6 +111,7 @@ MAKE_OP_FOR(double)
 int op_int_mod(int a, int b) { return a % b; }
 int op_int_shr(int a, int b) { return a >> b; }
 int op_int_shl(int a, int b) { return a << b; }
+int op_int_passthrough(int i) { return i; }
 int64 op_int64_mod(int64 a, int64 b) { return a % b; }
 int64 op_int64_shr(int64 a, int64 b) { return a >> b; }
 int64 op_int64_shl(int64 a, int64 b) { return a << b; }
@@ -429,15 +431,15 @@ void SIAddPackageBase() {
 	add_package("base", Flags::AUTO_IMPORT);
 
 	// internal
-	TypeUnknown			= add_type  ("-unknown-", 0); // should not appear anywhere....or else we're screwed up!
-	TypeReg128			= add_type  ("-reg128-", 16, Flags::CALL_BY_VALUE);
-	TypeReg64			= add_type  ("-reg64-", 8, Flags::CALL_BY_VALUE);
-	TypeReg32			= add_type  ("-reg32-", 4, Flags::CALL_BY_VALUE);
-	TypeReg16			= add_type  ("-reg16-", 2, Flags::CALL_BY_VALUE);
-	TypeReg8			= add_type  ("-reg8-", 1, Flags::CALL_BY_VALUE);
+	TypeUnknown			= add_type  ("@unknown", 0); // should not appear anywhere....or else we're screwed up!
+	TypeReg128			= add_type  ("@reg128", 16, Flags::CALL_BY_VALUE);
+	TypeReg64			= add_type  ("@reg64", 8, Flags::CALL_BY_VALUE);
+	TypeReg32			= add_type  ("@reg32", 4, Flags::CALL_BY_VALUE);
+	TypeReg16			= add_type  ("@reg16", 2, Flags::CALL_BY_VALUE);
+	TypeReg8			= add_type  ("@reg8", 1, Flags::CALL_BY_VALUE);
 	TypeObject			= add_type  ("Object", sizeof(VirtualBase)); // base for most virtual classes
 	TypeObjectP			= add_type_p(TypeObject);
-	TypeDynamic			= add_type  ("-dynamic-", 0);
+	TypeDynamic			= add_type  ("@dynamic", 0);
 
 	// "real"
 	TypeVoid			= add_type  ("void", 0, Flags::CALL_BY_VALUE);
@@ -451,6 +453,7 @@ void SIAddPackageBase() {
 	TypeDictBase		= add_type  ("@DictBase",   config.super_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.pointer_size);
 	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
+	TypeEnumBase		= add_type  ("@EnumBase", sizeof(int), Flags::CALL_BY_VALUE);
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));
 	TypeExceptionP		= add_type_p(TypeException);
@@ -608,6 +611,17 @@ void SIAddPackageBase() {
 		add_operator(OperatorID::INCREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_INCREASE);
 		add_operator(OperatorID::DECREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_DECREASE);
 
+	add_class(TypeEnumBase);
+		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<int,int>, Flags::PURE);
+			func_set_inline(InlineID::PASSTHROUGH);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
+		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_EQUAL, &op_int_eq);
+		add_operator(OperatorID::NOTEQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_NOT_EQUAL, &op_int_neq);
+		add_operator(OperatorID::BIT_AND, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_AND);
+		add_operator(OperatorID::BIT_OR, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_OR);
 
 	add_class(TypeFloat32);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &kaba_float2str, Flags::PURE);

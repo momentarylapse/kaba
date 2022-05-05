@@ -59,6 +59,7 @@ const Class *TypeDynamic;
 const Class *TypeDynamicArray;
 const Class *TypeDictBase;
 const Class *TypeCallableBase;
+const Class *TypeEnumBase;
 const Class *TypeSharedPointer;
 const Class *TypePointerList;
 const Class *TypeBoolList;
