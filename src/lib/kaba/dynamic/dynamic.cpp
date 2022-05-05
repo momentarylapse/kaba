@@ -234,6 +234,38 @@ DynamicArray _cdecl kaba_array_sort(DynamicArray &array, const Class *type, cons
 	return rr;
 }
 
+
+struct EnumLabel {
+	const Class *type;
+	int value;
+	string label;
+};
+Array<EnumLabel> all_enum_labels;
+void add_enum_label(const Class *type, int value, const string &label) {
+	all_enum_labels.add({type, value, label});
+}
+void remove_enum_labels(const Class *type) {
+	for (int i=all_enum_labels.num-1; i>=0; i--)
+		if (all_enum_labels[i].type == type)
+			all_enum_labels.erase(i);
+}
+string find_enum_label(const Class *type, int value) {
+	// explicit labels
+	for (auto &l: all_enum_labels)
+		if (l.value == value)
+			return l.label;
+
+	// const names
+	for (auto c: type->constants)
+		if (c->type == type and c->as_int() == value)
+			return c->name;
+
+	// not found
+	return i2s(value);
+}
+
+
+
 string class_repr(const Class *c) {
 	if (c)
 		return c->long_name();
@@ -330,6 +362,8 @@ string _cdecl var_repr(const void *p, const Class *type) {
 			s += var_repr(((char*)p) + i * type->param[0]->size, type->param[0]);
 		}
 		return "[" + s + "]";
+	} else if (type->is_enum()) {
+		return find_enum_label(type, *(int*)p);
 	}
 	return d2h(p, type->size);
 }

@@ -21,8 +21,6 @@ namespace Asm{
 
 namespace kaba {
 
-extern const Class *TypeEnumBase;
-
 #define reg_s0 param_preg(TypeFloat32, Asm::RegID::S0)
 #define reg_s1 param_preg(TypeFloat32, Asm::RegID::S1)
 
@@ -541,7 +539,7 @@ int BackendARM::_reference_to_register_32(const SerialNodeParam &p, const Class 
 }
 
 bool arm_type_uses_int_register(const Class *t) {
-	return (t == TypeInt) /*or (t == TypeInt64)*/ or (t == TypeChar) or (t == TypeBool) or (t->parent == TypeEnumBase) or t->is_some_pointer();
+	return (t == TypeInt) /*or (t == TypeInt64)*/ or (t == TypeChar) or (t == TypeBool) or t->is_enum() or t->is_some_pointer();
 }
 
 int BackendARM::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {

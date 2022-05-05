@@ -13,8 +13,6 @@
 
 namespace kaba {
 
-extern const Class *TypeEnumBase;
-
 
 BackendAmd64::BackendAmd64(Serializer *s) : BackendX86(s) {
 
@@ -233,7 +231,7 @@ void BackendAmd64::add_pointer_call(const SerialNodeParam &fp, const Array<Seria
 }
 
 bool amd64_type_uses_int_register(const Class *t) {
-	return (t == TypeInt) or (t == TypeInt64) or (t == TypeChar) or (t == TypeBool) or (t->parent == TypeEnumBase) or t->is_some_pointer();
+	return (t == TypeInt) or (t == TypeInt64) or (t == TypeChar) or (t == TypeBool) or t->is_enum() or t->is_some_pointer();
 }
 
 int BackendAmd64::function_call_pre(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {

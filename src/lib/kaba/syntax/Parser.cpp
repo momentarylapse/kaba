@@ -17,6 +17,8 @@ const Class *node_call_return_type(shared<Node> node);
 
 shared<Module> get_import(Parser *parser, const string &name);
 
+void add_enum_label(const Class *type, int value, const string &label);
+
 ExpressionBuffer *cur_exp_buf = nullptr;
 
 void crash() {
@@ -3768,6 +3770,7 @@ void Parser::parse_import() {
 }
 
 
+
 void Parser::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
 
@@ -3775,7 +3778,7 @@ void Parser::parse_enum(Class *_namespace) {
 		do_error_exp("anonymous enum is deprecated");
 
 	// class name
-	auto _class = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
+	auto _class = tree->create_new_class(Exp.cur, Class::Type::ENUM, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
 	_class->derive_from(TypeEnumBase, true);
 	_class->flags = TypeEnumBase->flags; // call-by-value
 	Exp.next();
@@ -3801,6 +3804,15 @@ void Parser::parse_enum(Class *_namespace) {
 				next_value = cv->as_const()->as_int();
 			}
 			c->as_int() = (next_value ++);
+
+			if (Exp.cur == IDENTIFIER_AS) {
+				Exp.next();
+				expect_no_new_line();
+
+				auto cn = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeString);
+				auto label = cn->as_const()->as_string();
+				add_enum_label(_class, c->as_int(), label);
+			}
 
 			if (Exp.end_of_line())
 				break;

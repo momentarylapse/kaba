@@ -5,6 +5,8 @@
 
 namespace kaba {
 
+void remove_enum_labels(const Class *type);
+
 ClassElement::ClassElement() {
 	offset = 0;
 	type = nullptr;
@@ -110,6 +112,7 @@ Class::Class(const string &_name, int64 _size, SyntaxTree *_owner, const Class *
 };
 
 Class::~Class() {
+	remove_enum_labels(this);
 }
 
 bool Class::force_call_by_value() const {
@@ -176,6 +179,9 @@ bool Class::is_pointer_shared() const
 
 bool Class::is_pointer_owned() const
 { return type == Type::POINTER_OWNED; }
+
+bool Class::is_enum() const
+{ return type == Type::ENUM; }
 
 bool Class::is_interface() const
 { return type == Type::INTERFACE; }
