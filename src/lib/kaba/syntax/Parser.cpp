@@ -3771,16 +3771,14 @@ void Parser::parse_import() {
 void Parser::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
 
-	const Class *_class = TypeInt;
+	if (Exp.end_of_line())
+		do_error_exp("anonymous enum is deprecated");
 
-	// class name?
-	if (!Exp.end_of_line()) {
-		_namespace = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
-		_namespace->derive_from(TypeEnumBase, true);
-		_namespace->flags = TypeEnumBase->flags;
-		_class = _namespace;
-		Exp.next();
-	}
+	// class name
+	auto _class = tree->create_new_class(Exp.cur, Class::Type::OTHER, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
+	_class->derive_from(TypeEnumBase, true);
+	_class->flags = TypeEnumBase->flags; // call-by-value
+	Exp.next();
 
 	expect_new_line_with_indent();
 	Exp.next_line();
@@ -3790,7 +3788,7 @@ void Parser::parse_enum(Class *_namespace) {
 
 	for (int i=0;!Exp.end_of_file();i++) {
 		for (int j=0;!Exp.end_of_line();j++) {
-			auto *c = tree->add_constant(_class, _namespace);
+			auto *c = tree->add_constant(_class, _class);
 			c->name = Exp.cur;
 			Exp.next();
 

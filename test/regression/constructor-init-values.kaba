@@ -1,8 +1,8 @@
 class X
-	enum
+	enum Enum
 		A = 2001
 	var f = 1.2
-	var i = X.A + 13 - 1
+	var i = int(X.Enum.A) + 13 - 1
 	var p: X* = nil
 
 
