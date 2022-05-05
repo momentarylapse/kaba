@@ -34,7 +34,6 @@ extern const Class *TypeDynamicArray;
 extern const Class *TypeIntDict;
 extern const Class *TypeStringAutoCast;
 extern const Class *TypePath;
-extern const Class *TypeEnumBase;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -3770,6 +3769,13 @@ void Parser::parse_import() {
 }
 
 
+int kaba_int_passthrough(int i);
+int op_int_add(int a, int b);
+bool op_int_eq(int a, int b);
+bool op_int_neq(int a, int b);
+int enum_parse(const string&, const Class*);
+Array<int> enum_all(const Class*);
+
 
 void Parser::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
@@ -3778,14 +3784,32 @@ void Parser::parse_enum(Class *_namespace) {
 		do_error_exp("anonymous enum is deprecated");
 
 	// class name
-	auto _class = tree->create_new_class(Exp.cur, Class::Type::ENUM, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
-	_class->derive_from(TypeEnumBase, true);
-	_class->flags = TypeEnumBase->flags; // call-by-value
+	auto _class = tree->create_new_class(Exp.cur, Class::Type::ENUM, sizeof(int), -1, nullptr, {}, _namespace, Exp.cur_token());
+	_class->flags = Flags::FORCE_CALL_BY_VALUE; // FORCE_CALL_BY_VALUE
+
+
+	add_class(_class);
+	class_add_func("from_int", _class, &kaba_int_passthrough, Flags::_STATIC__PURE);
+		func_set_inline(InlineID::PASSTHROUGH);
+		func_add_param("i", TypeInt);
+	//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
+	class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
+		func_set_inline(InlineID::PASSTHROUGH);
+	class_add_func("parse", _class, &enum_parse, Flags::_STATIC__PURE);
+		func_add_param("label", TypeString);
+		func_add_param("type", TypeClassP);
+	class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
+		func_add_param("type", TypeClassP);
+	add_operator(OperatorID::ASSIGN, TypeVoid, _class, _class, InlineID::INT_ASSIGN);
+	add_operator(OperatorID::ADD, _class, _class, _class, InlineID::INT_ADD, &op_int_add);
+	add_operator(OperatorID::ADDS, TypeVoid, _class, _class, InlineID::INT_ADD_ASSIGN);
+	add_operator(OperatorID::EQUAL, TypeBool, _class, _class, InlineID::INT_EQUAL, &op_int_eq);
+	add_operator(OperatorID::NOTEQUAL, TypeBool, _class, _class, InlineID::INT_NOT_EQUAL, &op_int_neq);
+	add_operator(OperatorID::BIT_AND, _class, _class, _class, InlineID::INT_AND);
+	add_operator(OperatorID::BIT_OR, _class, _class, _class, InlineID::INT_OR);
+
 	for (auto f: weak(_class->functions)) {
-		if (f->name == "from_int") {
-			f->literal_return_type = _class;
-		} else if (f->name == "parse") {
-			f->literal_return_type = _class;
+		if (f->name == "parse") {
 			f->default_parameters.resize(2);
 			auto c = tree->add_constant(TypeClassP, _class);
 			c->as_int64() = (int_p)_class;

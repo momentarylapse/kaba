@@ -16,7 +16,6 @@ extern const Class *TypeSharedPointer;
 extern const Class *TypeStringAutoCast;
 extern const Class *TypeDictBase;
 extern const Class *TypeCallableBase;
-extern const Class *TypeEnumBase;
 extern const Class *TypeFloat;
 extern const Class *TypePointerList;
 extern const Class *TypeObject;
@@ -69,6 +68,8 @@ template<>
 bool _cdecl kaba_cast(void* s) {
 	return (s != nullptr);
 }
+
+int kaba_int_passthrough(int i) { return i; }
 
 
 static void kaba_ping() {
@@ -433,30 +434,6 @@ void SIAddXCommands() {
 		func_add_param("p1", TypePointer);
 		func_add_param("p2", TypePointer);
 		func_add_param("p3", TypePointer);
-
-
-
-	add_class(TypeEnumBase);
-		//class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &kaba_cast<int,int>);
-		//	func_add_param("i", TypeInt);
-		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<int,int>, Flags::PURE);
-			func_set_inline(InlineID::PASSTHROUGH);
-		class_add_func("from_int", TypeEnumBase, &kaba_cast<int,int>, Flags::_STATIC__PURE);
-		func_set_inline(InlineID::PASSTHROUGH);
-			func_add_param("i", TypeInt);
-		class_add_func("parse", TypeEnumBase, &enum_parse, Flags::_STATIC__PURE);
-			func_add_param("label", TypeString);
-			func_add_param("type", TypeClassP);
-		class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
-			func_add_param("type", TypeClassP);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
-		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD_ASSIGN);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_EQUAL, &op_int_eq);
-		add_operator(OperatorID::NOTEQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_NOT_EQUAL, &op_int_neq);
-		add_operator(OperatorID::BIT_AND, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_AND);
-		add_operator(OperatorID::BIT_OR, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_OR);
 }
 
 
@@ -486,7 +463,6 @@ void SIAddPackageBase() {
 	TypeDictBase		= add_type  ("@DictBase",   config.super_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.pointer_size);
 	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
-	TypeEnumBase		= add_type  ("@EnumBase", sizeof(int), Flags::CALL_BY_VALUE);
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));
 	TypeExceptionP		= add_type_p(TypeException);
