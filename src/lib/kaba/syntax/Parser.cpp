@@ -3782,15 +3782,22 @@ void Parser::parse_enum(Class *_namespace) {
 	_class->derive_from(TypeEnumBase, true);
 	_class->flags = TypeEnumBase->flags; // call-by-value
 	for (auto f: weak(_class->functions)) {
-		if (f->name == "from_int")
+		if (f->name == "from_int") {
 			f->literal_return_type = _class;
-		if (f->name == "parse") {
+		} else if (f->name == "parse") {
 			f->literal_return_type = _class;
 			f->default_parameters.resize(2);
 			auto c = tree->add_constant(TypeClassP, _class);
 			c->as_int64() = (int_p)_class;
 			f->mandatory_params = 1;
-			f->default_parameters[1] = tree->add_node_const(c, -1);
+			f->default_parameters[1] = tree->add_node_const(c, _class->token_id);
+		} else if (f->name == "all") {
+			f->literal_return_type = tree->make_class_super_array(_class, _class->token_id);
+			f->default_parameters.resize(1);
+			auto c = tree->add_constant(TypeClassP, _class);
+			c->as_int64() = (int_p)_class;
+			f->mandatory_params = 0;
+			f->default_parameters[0] = tree->add_node_const(c, _class->token_id);
 		}
 	}
 	Exp.next();

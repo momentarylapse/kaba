@@ -387,6 +387,13 @@ public:
 	}
 };
 
+Array<int> enum_all(const Class *e) {
+	Array<int> r;
+	for (auto c: weak(e->constants))
+		if (c->type == e)
+			r.add(c->as_int());
+	return r;
+}
 
 void SIAddXCommands() {
 
@@ -440,6 +447,8 @@ void SIAddXCommands() {
 			func_add_param("i", TypeInt);
 		class_add_func("parse", TypeEnumBase, &enum_parse, Flags::_STATIC__PURE);
 			func_add_param("label", TypeString);
+			func_add_param("type", TypeClassP);
+		class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
 			func_add_param("type", TypeClassP);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);

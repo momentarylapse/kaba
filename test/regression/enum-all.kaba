@@ -1,0 +1,8 @@
+enum EE
+	X
+	Y
+	Z
+
+func main()
+	print(EE.all())
+
