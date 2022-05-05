@@ -252,7 +252,7 @@ void remove_enum_labels(const Class *type) {
 string find_enum_label(const Class *type, int value) {
 	// explicit labels
 	for (auto &l: all_enum_labels)
-		if (l.value == value)
+		if (l.type == type and l.value == value)
 			return l.label;
 
 	// const names
@@ -262,6 +262,21 @@ string find_enum_label(const Class *type, int value) {
 
 	// not found
 	return i2s(value);
+}
+
+int enum_parse(const string &label, const Class *type) {
+	// explicit labels
+	for (auto &l: all_enum_labels)
+		if (l.type == type and l.label == label)
+			return l.value;
+
+	// const names
+	for (auto c: type->constants)
+		if (c->type == type and c->name == label)
+			return c->as_int();
+
+	// not found
+	return -1;
 }
 
 

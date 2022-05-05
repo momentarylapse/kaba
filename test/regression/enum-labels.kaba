@@ -1,0 +1,12 @@
+enum EE
+	X as "xx"
+	Y as "yy"
+	Z as "zz"
+
+func main()
+	var e = EE.from_int(1)
+	print(e)
+	e = EE.parse("zz")
+	print(e)
+	
+	

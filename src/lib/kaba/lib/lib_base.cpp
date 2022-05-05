@@ -36,6 +36,8 @@ extern const Class *TypeFloatDict;
 extern const Class *TypeStringDict;
 extern const Class *TypeAny;
 
+int enum_parse(const string &label, const Class *type);
+
 
 static string kaba_print_postfix = "\n";
 void _cdecl kaba_print(const string &str) {
@@ -424,6 +426,28 @@ void SIAddXCommands() {
 		func_add_param("p1", TypePointer);
 		func_add_param("p2", TypePointer);
 		func_add_param("p3", TypePointer);
+
+
+
+	add_class(TypeEnumBase);
+		//class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &kaba_cast<int,int>);
+		//	func_add_param("i", TypeInt);
+		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<int,int>, Flags::PURE);
+			func_set_inline(InlineID::PASSTHROUGH);
+		class_add_func("from_int", TypeEnumBase, &kaba_cast<int,int>, Flags::_STATIC__PURE);
+		func_set_inline(InlineID::PASSTHROUGH);
+			func_add_param("i", TypeInt);
+		class_add_func("parse", TypeEnumBase, &enum_parse, Flags::_STATIC__PURE);
+			func_add_param("label", TypeString);
+			func_add_param("type", TypeClassP);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
+		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);
+		add_operator(OperatorID::ADDS, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_EQUAL, &op_int_eq);
+		add_operator(OperatorID::NOTEQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_NOT_EQUAL, &op_int_neq);
+		add_operator(OperatorID::BIT_AND, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_AND);
+		add_operator(OperatorID::BIT_OR, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_OR);
 }
 
 
@@ -610,23 +634,6 @@ void SIAddPackageBase() {
 		add_operator(OperatorID::NEGATIVE, TypeInt64, nullptr, TypeInt64, InlineID::INT64_NEGATE, &op_int64_neg);
 		add_operator(OperatorID::INCREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_INCREASE);
 		add_operator(OperatorID::DECREASE, TypeVoid, TypeInt64, nullptr, InlineID::INT64_DECREASE);
-
-	add_class(TypeEnumBase);
-		//class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &kaba_cast<int,int>);
-		//	func_add_param("i", TypeInt);
-		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<int,int>, Flags::PURE);
-			func_set_inline(InlineID::PASSTHROUGH);
-		class_add_func("from_int", TypeEnumBase, &kaba_cast<int,int>, Flags::_STATIC__PURE);
-		func_set_inline(InlineID::PASSTHROUGH);
-			func_add_param("i", TypeInt);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ASSIGN);
-		add_operator(OperatorID::ADD, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD, &op_int_add);
-		add_operator(OperatorID::ADDS, TypeVoid, TypeEnumBase, TypeEnumBase, InlineID::INT_ADD_ASSIGN);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_EQUAL, &op_int_eq);
-		add_operator(OperatorID::NOTEQUAL, TypeBool, TypeEnumBase, TypeEnumBase, InlineID::INT_NOT_EQUAL, &op_int_neq);
-		add_operator(OperatorID::BIT_AND, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_AND);
-		add_operator(OperatorID::BIT_OR, TypeEnumBase, TypeEnumBase, TypeEnumBase, InlineID::INT_OR);
 
 	add_class(TypeFloat32);
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &kaba_float2str, Flags::PURE);

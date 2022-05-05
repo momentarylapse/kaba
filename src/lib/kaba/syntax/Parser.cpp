@@ -3781,6 +3781,18 @@ void Parser::parse_enum(Class *_namespace) {
 	auto _class = tree->create_new_class(Exp.cur, Class::Type::ENUM, 0, -1, nullptr, {}, _namespace, Exp.cur_token());
 	_class->derive_from(TypeEnumBase, true);
 	_class->flags = TypeEnumBase->flags; // call-by-value
+	for (auto f: weak(_class->functions)) {
+		if (f->name == "from_int")
+			f->literal_return_type = _class;
+		if (f->name == "parse") {
+			f->literal_return_type = _class;
+			f->default_parameters.resize(2);
+			auto c = tree->add_constant(TypeClassP, _class);
+			c->as_int64() = (int_p)_class;
+			f->mandatory_params = 1;
+			f->default_parameters[1] = tree->add_node_const(c, -1);
+		}
+	}
 	Exp.next();
 
 	expect_new_line_with_indent();

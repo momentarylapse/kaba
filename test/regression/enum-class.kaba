@@ -5,11 +5,13 @@ enum Enum
 
 func f(x: Enum)
 	print(x)
+	print(int(x))
 
 func main()
 	print(typeof(Enum.A))
 	var x = Enum.B
 	print(x)
+	print(int(x))
 	print(int(x) + 2)
 	print(x == Enum.A)
 	print(x == Enum.B)
