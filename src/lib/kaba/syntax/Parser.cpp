@@ -1427,11 +1427,51 @@ shared<Node> Parser::link_operator_id(OperatorID op_no, shared<Node> param1, sha
 	return link_operator(&abstract_operators[(int)op_no], param1, param2, token_id);
 }
 
+bool tuple_all_editable(shared<Node> node) {
+	for (auto p: weak(node->params))
+		if ((p->kind != NodeKind::VAR_LOCAL) and (p->kind != NodeKind::VAR_GLOBAL))
+			return false;
+	return true;
+}
+
+shared<Node> Parser::link_special_operator_tuple_extract(shared<Node> param1, shared<Node> param2, int token_id) {
+	if (!tuple_all_editable(param1))
+		do_error("tuple extraction only allowed if all elements are variables", token_id);
+
+	param2 = force_concrete_type(param2);
+
+	auto t = param2->type;
+
+	if (!t->is_product() and t->elements.num <= 1)
+		do_error(format("can not extract type '%s' into a tuple", t->long_name()), token_id);
+
+	//msg_write(t->name);
+	//if (!t->is_product() and )
+	//	do_error("not a tuple...", token_id);
+	if (param1->params.num != t->elements.num)
+		do_error(format("tuple extraction: number mismatch (%d vs %d)", param1->params.num, t->elements.num), token_id);
+	for (int i=0; i<t->elements.num; i++)
+		if (param1->params[i]->type != t->elements[i].type)
+			do_error(format("tuple extraction: type mismatch element #%d (%s vs %s)", i+1, param1->params[i]->type->long_name(), t->elements[i].type->long_name()), token_id);
+
+	auto node = new Node(NodeKind::TUPLE_EXTRACTION, -1, TypeVoid, false, token_id);
+	node->set_num_params(t->elements.num + 1);
+	node->set_param(0, param2);
+	for (int i=0; i<t->elements.num; i++)
+		node->set_param(i+1, param1->params[i]);
+	//node->show();
+	return node;
+}
+
 shared<Node> Parser::link_operator(AbstractOperator *primop, shared<Node> param1, shared<Node> param2, int token_id) {
 	bool left_modifiable = primop->left_modifiable;
 	bool order_inverted = primop->order_inverted;
 	string op_func_name = primop->function_name;
 	shared<Node> op;
+
+	// tuple extractor?
+	if ((primop->id == OperatorID::ASSIGN) and (param1->kind == NodeKind::TUPLE))
+		return link_special_operator_tuple_extract(param1, param2, token_id);
 
 	if (primop->left_modifiable and param1->is_const)
 		do_error("trying to modify a constant expression", token_id);

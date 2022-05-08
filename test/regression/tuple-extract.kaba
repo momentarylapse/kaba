@@ -1,0 +1,18 @@
+func f() -> (int,string)
+	return (13,"hallo")
+
+func main()
+	#var (x,y) = f()
+	if true
+		int x
+		string y
+		(x,y) = f()
+		print(x)
+		print(y)
+
+	if true
+		int x = 13
+		int y = 5
+		(x,y) = (y,x)
+		print(x)
+		print(y)
