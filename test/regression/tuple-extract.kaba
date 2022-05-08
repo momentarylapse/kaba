@@ -2,11 +2,15 @@ func f() -> (int,string)
 	return (13,"hallo")
 
 func main()
-	#var (x,y) = f()
 	if true
 		int x
 		string y
 		(x,y) = f()
+		print(x)
+		print(y)
+	
+	if true
+		var (x,y) = (pi,"aaaa") #f()
 		print(x)
 		print(y)
 

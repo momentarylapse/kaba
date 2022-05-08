@@ -1434,6 +1434,17 @@ bool tuple_all_editable(shared<Node> node) {
 	return true;
 }
 
+Array<const Class*> tuple_get_element_types(const Class *type) {
+	Array<const Class*> r;
+	if (type->is_super_array())
+		return r;
+
+	for (auto &e: type->elements)
+		if (!e.hidden())
+			r.add(e.type);
+	return r;
+}
+
 shared<Node> Parser::link_special_operator_tuple_extract(shared<Node> param1, shared<Node> param2, int token_id) {
 	if (!tuple_all_editable(param1))
 		do_error("tuple extraction only allowed if all elements are variables", token_id);
@@ -1441,23 +1452,21 @@ shared<Node> Parser::link_special_operator_tuple_extract(shared<Node> param1, sh
 	param2 = force_concrete_type(param2);
 
 	auto t = param2->type;
+	auto etypes = tuple_get_element_types(t);
 
-	if (!t->is_product() and t->elements.num <= 1)
+	if (etypes.num == 0)
 		do_error(format("can not extract type '%s' into a tuple", t->long_name()), token_id);
 
-	//msg_write(t->name);
-	//if (!t->is_product() and )
-	//	do_error("not a tuple...", token_id);
-	if (param1->params.num != t->elements.num)
+	if (param1->params.num != etypes.num)
 		do_error(format("tuple extraction: number mismatch (%d vs %d)", param1->params.num, t->elements.num), token_id);
-	for (int i=0; i<t->elements.num; i++)
-		if (param1->params[i]->type != t->elements[i].type)
-			do_error(format("tuple extraction: type mismatch element #%d (%s vs %s)", i+1, param1->params[i]->type->long_name(), t->elements[i].type->long_name()), token_id);
+	for (int i=0; i<etypes.num; i++)
+		if (param1->params[i]->type != etypes[i])
+			do_error(format("tuple extraction: type mismatch element #%d (%s vs %s)", i+1, param1->params[i]->type->long_name(), etypes[i]->long_name()), token_id);
 
 	auto node = new Node(NodeKind::TUPLE_EXTRACTION, -1, TypeVoid, false, token_id);
-	node->set_num_params(t->elements.num + 1);
+	node->set_num_params(etypes.num + 1);
 	node->set_param(0, param2);
-	for (int i=0; i<t->elements.num; i++)
+	for (int i=0; i<etypes.num; i++)
 		node->set_param(i+1, param1->params[i]);
 	//node->show();
 	return node;
@@ -2637,6 +2646,7 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 	} else if (node->kind == NodeKind::ABSTRACT_VAR) {
 		const Class *type = nullptr;
 		if (node->params[0]) {
+			// explicit type
 			auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
 			if (t->kind != NodeKind::CLASS)
 				do_error("variable declaration requires a type", t);
@@ -2647,9 +2657,19 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 			node->params[2]->params[1] = rhs;
 			type = rhs->type;
 		}
-		if (type->needs_constructor() and !type->get_default_constructor())
-			do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
-		block->add_var(Exp.get_token(node->params[1]->token_id), type);
+
+		if (node->params[1]->kind == NodeKind::TUPLE) {
+			auto etypes = tuple_get_element_types(type);
+			foreachi (auto t, etypes, i) {
+				if (t->needs_constructor() and !t->get_default_constructor())
+					do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
+				block->add_var(Exp.get_token(node->params[1]->params[i]->token_id), t);
+			}
+		} else {
+			if (type->needs_constructor() and !type->get_default_constructor())
+				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
+			block->add_var(Exp.get_token(node->params[1]->token_id), type);
+		}
 
 		if (node->params.num == 3)
 			return concretify_node(node->params[2], block, ns);
@@ -3427,6 +3447,36 @@ shared_array<Node> parse_comma_sep_token_list(Parser *p) {
 shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	Exp.next(); // "var"
 
+	// tuple "var (x,y) = ..."
+	if (Exp.cur == "(") {
+		Exp.next();
+		auto names = parse_comma_sep_token_list(this);
+		if (Exp.cur != ")")
+			do_error_exp("')' expected after tuple declaration");
+		Exp.next();
+
+		if (Exp.cur != "=")
+			do_error_exp("'=' expected after tuple declaration");
+
+		auto tuple = build_abstract_tuple(names);
+
+		auto assign = parse_abstract_operator(3);
+
+		auto rhs = parse_abstract_operand_greedy(block, true);
+
+		assign->set_num_params(2);
+		assign->set_param(0, tuple);
+		assign->set_param(1, rhs);
+
+		auto node = new Node(NodeKind::ABSTRACT_VAR, 0, TypeUnknown);
+		node->set_num_params(3);
+		//node->set_param(0, type); // no type
+		node->set_param(1, tree->cp_node(tuple));
+		node->set_param(2, assign);
+		expect_new_line();
+		return node;
+	}
+
 	auto names = parse_comma_sep_token_list(this);
 	shared<Node> type;
 
@@ -3457,20 +3507,6 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		node->set_param(2, assign);
 		expect_new_line();
 		return node;
-
-
-
-		/*if (type) {
-			rhs = force_concrete_type_if_function(rhs);
-		} else {
-			rhs = force_concrete_type(rhs);
-			type = rhs->type;
-		}
-		auto *var = block->add_var(names[0], type);
-		auto cmd = link_operator_id(OperatorID::ASSIGN, tree->add_node_local(var), rhs);
-		if (!cmd)
-			do_error(format("var: no operator '%s' = '%s'", type->long_name(), rhs->type->long_name()));
-		return cmd;*/
 	}
 
 	expect_new_line();
