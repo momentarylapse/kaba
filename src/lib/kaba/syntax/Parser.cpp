@@ -2525,33 +2525,129 @@ shared<Node> Parser::concretify_statement(shared<Node> node, Block *block, const
 	return nullptr;
 }
 
+shared<Node> Parser::concretify_operator(shared<Node> node, Block *block, const Class *ns) {
+	auto op_no = node->as_abstract_op();
+
+	if (op_no->id == OperatorID::FUNCTION_PIPE) {
+		concretify_all_params(node, block, ns, this);
+		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
+		return build_function_pipe(node->params[0], node->params[1]);
+	} else if (op_no->id == OperatorID::MAPS_TO) {
+		return build_lambda_new(node->params[0], node->params[1]);
+	}
+	concretify_all_params(node, block, ns, this);
+
+	if (node->params.num == 2) {
+		// binary operator A+B
+		auto param1 = node->params[0];
+		auto param2 = force_concrete_type_if_function(node->params[1]);
+		auto op = link_operator(op_no, param1, param2);
+		if (!op)
+			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node);
+		return op;
+	} else {
+		return link_unary_operator(op_no, node->params[0], block, node->token_id);
+	}
+}
+
+shared<Node> Parser::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
+	const Class *type = nullptr;
+	if (node->params[0]) {
+		// explicit type
+		auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
+		if (t->kind != NodeKind::CLASS)
+			do_error("variable declaration requires a type", t);
+		type = t->as_class();
+	} else {
+		//assert(node->params[2]);
+		auto rhs = force_concrete_type(concretify_node(node->params[2]->params[1], block, ns));
+		node->params[2]->params[1] = rhs;
+		type = rhs->type;
+	}
+
+	if (node->params[1]->kind == NodeKind::TUPLE) {
+		auto etypes = tuple_get_element_types(type);
+		foreachi (auto t, etypes, i) {
+			if (t->needs_constructor() and !t->get_default_constructor())
+				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
+			block->add_var(Exp.get_token(node->params[1]->params[i]->token_id), t);
+		}
+	} else {
+		if (type->needs_constructor() and !type->get_default_constructor())
+			do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
+		block->add_var(Exp.get_token(node->params[1]->token_id), type);
+	}
+
+	if (node->params.num == 3)
+		return concretify_node(node->params[2], block, ns);
+	return node;
+}
+
+shared<Node> Parser::concretify_array_builder_for(shared<Node> node, Block *block, const Class *ns) {
+	// IN:  [FOR, EXP, IF]
+	// OUT: [FOR, VAR]
+
+	auto n_for = node->params[0];
+	auto n_exp = node->params[1];
+	auto n_cmp = node->params[2];
+
+	// first pass: find types in the for loop
+	auto fake_for = tree->cp_node(n_for); //->shallow_copy();
+	fake_for->set_param(fake_for->params.num - 1, tree->cp_node(n_exp)); //->shallow_copy());
+	fake_for = concretify_node(fake_for, block, ns);
+	// TODO: remove new variables!
+
+	// create an array
+	auto type_el = fake_for->params.back()->type;
+	auto type_array = tree->make_class_super_array(type_el, node->token_id);
+	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
+
+
+
+	// array.add(exp)
+	auto *f_add = type_array->get_member_func("add", TypeVoid, {type_el});
+	if (!f_add)
+		do_error("...add() ???", node);
+	auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
+	n_add->set_param(1, n_exp);
+	n_add->type = TypeUnknown; // mark abstract so n_exp will be concretified
+
+	// add new code to the loop
+	Block *b;
+	if (n_cmp) {
+		auto b_if = new Block(block->function, block, TypeUnknown);
+		auto b_add = new Block(block->function, b_if, TypeUnknown);
+		b_add->add(n_add);
+
+		auto n_if = tree->add_node_statement(StatementID::IF, node->token_id, TypeUnknown);
+		n_if->set_param(0, n_cmp);
+		n_if->set_param(1, b_add);
+
+		b_if->add(n_if);
+		b = b_if;
+	} else {
+		b = new Block(block->function, block, TypeUnknown);
+		b->add(n_add);
+	}
+
+	n_for->set_param(n_for->params.num - 1, b);
+
+	// NOW we can set the types
+	n_for = concretify_node(n_for, block, ns);
+
+	auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type_array);
+	n->set_num_params(2);
+	n->set_param(0, n_for);
+	n->set_param(1, tree->add_node_local(var));
+	return n;
+}
+
 shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Class *ns) {
 	if (node->type != TypeUnknown)
 		return node;
 
 	if (node->kind == NodeKind::ABSTRACT_OPERATOR) {
-		auto op_no = node->as_abstract_op();
-
-		if (op_no->id == OperatorID::FUNCTION_PIPE) {
-			concretify_all_params(node, block, ns, this);
-			// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
-			return build_function_pipe(node->params[0], node->params[1]);
-		} else if (op_no->id == OperatorID::MAPS_TO) {
-			return build_lambda_new(node->params[0], node->params[1]);
-		}
-		concretify_all_params(node, block, ns, this);
-
-		if (node->params.num == 2) {
-			// binary operator A+B
-			auto param1 = node->params[0];
-			auto param2 = force_concrete_type_if_function(node->params[1]);
-			auto op = link_operator(op_no, param1, param2);
-			if (!op)
-				do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node);
-			return op;
-		} else {
-			return link_unary_operator(op_no, node->params[0], block, node->token_id);
-		}
+		return concretify_operator(node, block, ns);
 	} else if (node->kind == NodeKind::DEREFERENCE) {
 		concretify_all_params(node, block, ns, this);
 		auto sub = node->params[0];
@@ -2626,7 +2722,6 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 		const Class *t = node->params[0]->as_class();
 		t = make_pointer_owned(tree, t, node->token_id);
 		return tree->add_node_class(t);
-
 	} else if ((node->kind == NodeKind::ABSTRACT_TOKEN) or (node->kind == NodeKind::ABSTRACT_ELEMENT)) {
 		auto operands = concretify_node_multi(node, block, ns);
 		if (operands.num > 1)
@@ -2644,94 +2739,9 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 			if (node->params[i]->kind == NodeKind::ABSTRACT_VAR)
 				node->params.erase(i);
 	} else if (node->kind == NodeKind::ABSTRACT_VAR) {
-		const Class *type = nullptr;
-		if (node->params[0]) {
-			// explicit type
-			auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
-			if (t->kind != NodeKind::CLASS)
-				do_error("variable declaration requires a type", t);
-			type = t->as_class();
-		} else {
-			//assert(node->params[2]);
-			auto rhs = force_concrete_type(concretify_node(node->params[2]->params[1], block, ns));
-			node->params[2]->params[1] = rhs;
-			type = rhs->type;
-		}
-
-		if (node->params[1]->kind == NodeKind::TUPLE) {
-			auto etypes = tuple_get_element_types(type);
-			foreachi (auto t, etypes, i) {
-				if (t->needs_constructor() and !t->get_default_constructor())
-					do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
-				block->add_var(Exp.get_token(node->params[1]->params[i]->token_id), t);
-			}
-		} else {
-			if (type->needs_constructor() and !type->get_default_constructor())
-				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
-			block->add_var(Exp.get_token(node->params[1]->token_id), type);
-		}
-
-		if (node->params.num == 3)
-			return concretify_node(node->params[2], block, ns);
-
+		return concretify_var_declaration(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY_BUILDER_FOR) {
-		// IN:  [FOR, EXP, IF]
-		// OUT: [FOR, VAR]
-
-		auto n_for = node->params[0];
-		auto n_exp = node->params[1];
-		auto n_cmp = node->params[2];
-
-		// first pass: find types in the for loop
-		auto fake_for = tree->cp_node(n_for); //->shallow_copy();
-		fake_for->set_param(fake_for->params.num - 1, tree->cp_node(n_exp)); //->shallow_copy());
-		fake_for = concretify_node(fake_for, block, ns);
-		// TODO: remove new variables!
-
-		// create an array
-		auto type_el = fake_for->params.back()->type;
-		auto type_array = tree->make_class_super_array(type_el, node->token_id);
-		auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
-
-
-
-		// array.add(exp)
-		auto *f_add = type_array->get_member_func("add", TypeVoid, {type_el});
-		if (!f_add)
-			do_error("...add() ???", node);
-		auto n_add = tree->add_node_member_call(f_add, tree->add_node_local(var));
-		n_add->set_param(1, n_exp);
-		n_add->type = TypeUnknown; // mark abstract so n_exp will be concretified
-
-		// add new code to the loop
-		Block *b;
-		if (n_cmp) {
-			auto b_if = new Block(block->function, block, TypeUnknown);
-			auto b_add = new Block(block->function, b_if, TypeUnknown);
-			b_add->add(n_add);
-
-			auto n_if = tree->add_node_statement(StatementID::IF, node->token_id, TypeUnknown);
-			n_if->set_param(0, n_cmp);
-			n_if->set_param(1, b_add);
-
-			b_if->add(n_if);
-			b = b_if;
-		} else {
-			b = new Block(block->function, block, TypeUnknown);
-			b->add(n_add);
-		}
-
-		n_for->set_param(n_for->params.num - 1, b);
-
-		// NOW we can set the types
-		n_for = concretify_node(n_for, block, ns);
-
-		auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, 0, type_array);
-		n->set_num_params(2);
-		n->set_param(0, n_for);
-		n->set_param(1, tree->add_node_local(var));
-		return n;
-
+		return concretify_array_builder_for(node, block, ns);
 	} else if (node->kind == NodeKind::NONE) {
 	} else if (node->kind == NodeKind::CALL_FUNCTION) {
 		concretify_all_params(node, block, ns, this);
