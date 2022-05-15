@@ -519,6 +519,7 @@ void add_const(const string &name, const Class *type, const void *value) {
 
 void add_ext_var(const string &name, const Class *type, void *var) {
 	auto *v = new Variable(name, type);
+	flags_set(v->flags, Flags::EXTERN); // prevent initialization when importing
 	cur_package->syntax->base_class->static_variables.add(v);
 	if (config.allow_std_lib)
 		v->memory = var;

@@ -274,7 +274,7 @@ void execute_single_command(const string &cmd) {
 	
 	for (auto p: packages)
 		if (!p->used_by_default)
-			tree->import_data(p, true, "");
+			tree->import_data(p, true, p->filename.str());
 
 // analyse syntax
 
