@@ -3855,61 +3855,15 @@ void Parser::parse_import() {
 }
 
 
-int kaba_int_passthrough(int i);
-int op_int_add(int a, int b);
-bool op_int_eq(int a, int b);
-bool op_int_neq(int a, int b);
-int enum_parse(const string&, const Class*);
-Array<int> enum_all(const Class*);
-
-
 void Parser::parse_enum(Class *_namespace) {
 	Exp.next(); // 'enum'
 
 	if (Exp.end_of_line())
-		do_error_exp("anonymous enum is deprecated");
+		do_error_exp("name expexted (anonymous enum is deprecated)");
 
 	// class name
 	auto _class = tree->create_new_class(Exp.cur, Class::Type::ENUM, sizeof(int), -1, nullptr, {}, _namespace, Exp.cur_token());
-	_class->flags = Flags::FORCE_CALL_BY_VALUE; // FORCE_CALL_BY_VALUE
 
-
-	add_class(_class);
-	class_add_func("from_int", _class, &kaba_int_passthrough, Flags::_STATIC__PURE);
-		func_set_inline(InlineID::PASSTHROUGH);
-		func_add_param("i", TypeInt);
-	//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
-	class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
-		func_set_inline(InlineID::PASSTHROUGH);
-	class_add_func("parse", _class, &enum_parse, Flags::_STATIC__PURE);
-		func_add_param("label", TypeString);
-		func_add_param("type", TypeClassP);
-	class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
-		func_add_param("type", TypeClassP);
-	add_operator(OperatorID::ASSIGN, TypeVoid, _class, _class, InlineID::INT_ASSIGN);
-	add_operator(OperatorID::ADD, _class, _class, _class, InlineID::INT_ADD, &op_int_add);
-	add_operator(OperatorID::ADDS, TypeVoid, _class, _class, InlineID::INT_ADD_ASSIGN);
-	add_operator(OperatorID::EQUAL, TypeBool, _class, _class, InlineID::INT_EQUAL, &op_int_eq);
-	add_operator(OperatorID::NOTEQUAL, TypeBool, _class, _class, InlineID::INT_NOT_EQUAL, &op_int_neq);
-	add_operator(OperatorID::BIT_AND, _class, _class, _class, InlineID::INT_AND);
-	add_operator(OperatorID::BIT_OR, _class, _class, _class, InlineID::INT_OR);
-
-	for (auto f: weak(_class->functions)) {
-		if (f->name == "parse") {
-			f->default_parameters.resize(2);
-			auto c = tree->add_constant(TypeClassP, _class);
-			c->as_int64() = (int_p)_class;
-			f->mandatory_params = 1;
-			f->default_parameters[1] = tree->add_node_const(c, _class->token_id);
-		} else if (f->name == "all") {
-			f->literal_return_type = tree->make_class_super_array(_class, _class->token_id);
-			f->default_parameters.resize(1);
-			auto c = tree->add_constant(TypeClassP, _class);
-			c->as_int64() = (int_p)_class;
-			f->mandatory_params = 0;
-			f->default_parameters[0] = tree->add_node_const(c, _class->token_id);
-		}
-	}
 	Exp.next();
 
 	expect_new_line_with_indent();
