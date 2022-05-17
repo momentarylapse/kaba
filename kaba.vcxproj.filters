@@ -331,6 +331,9 @@
     <ClCompile Include="src\lib\kaba\lib\lib_doc.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\lib_gl.cpp">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\lib\lib_hui.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
@@ -344,9 +347,6 @@
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\lib\lib_net.cpp">
-      <Filter>src\lib\kaba\lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\lib\lib_nix.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\lib\lib_os.cpp">

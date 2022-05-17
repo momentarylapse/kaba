@@ -691,7 +691,7 @@ void SIAddPackageOSPath();
 void SIAddPackageMath();
 void SIAddPackageThread();
 void SIAddPackageHui();
-void SIAddPackageNix();
+void SIAddPackageGl();
 void SIAddPackageNet();
 void SIAddPackageImage();
 void SIAddPackageDoc();
@@ -728,7 +728,7 @@ void init(Abi abi, bool allow_std_lib) {
 	SIAddPackageOS();
 	SIAddPackageImage();
 	SIAddPackageHui();
-	SIAddPackageNix();
+	SIAddPackageGl();
 	SIAddPackageNet();
 	SIAddPackageThread();
 	SIAddPackageDoc();
