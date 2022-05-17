@@ -1,4 +1,4 @@
 0
-nix.Texture shared[]
-nix.Texture shared
-nix.Texture
+gl.Texture shared[]
+gl.Texture shared
+gl.Texture

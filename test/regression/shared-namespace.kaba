@@ -1,7 +1,7 @@
-use nix
+use gl
 
 class X
-	var x: nix.Texture shared[]
+	var x: gl.Texture shared[]
 	var y: Texture shared
 
 func main()
