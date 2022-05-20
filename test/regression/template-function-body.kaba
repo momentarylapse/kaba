@@ -1,0 +1,8 @@
+func f[T]()
+	T t
+	print(typeof(t))
+
+func main()
+	f[string]()
+	f[int]()
+	f[complex]()

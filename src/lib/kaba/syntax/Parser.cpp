@@ -1699,7 +1699,6 @@ public:
 	static void add_template(Function *f, const Array<string> &param_names) {
 		if (config.verbose)
 			msg_write("ADD TEMPLATE");
-		f->literal_return_type = TypeUnknown; // mark as template
 		Template t;
 		t.func = f;
 		t.params = param_names;
@@ -1774,46 +1773,37 @@ public:
 		Function *f0 = t.func;
 		auto f = full_copy(parser, f0);
 		f->name += "[...]";
-		//f->block->show();
 
+		// replace in parameters/return type
 		for (int i=0; i<f->num_params; i++)
 			f->abstract_param_types[i] = node_replace(parser, f->abstract_param_types[i], t.params, params);
-		//msg_write("INSTANTIATE 02");
-		f->abstract_return_type = node_replace(parser, f->abstract_return_type, t.params, params);
+		if (f->abstract_return_type)
+			f->abstract_return_type = node_replace(parser, f->abstract_return_type, t.params, params);
 
-		// TODO replace in body
+		// replace in body
+		for (int i=0; i<f->block->params.num; i++)
+			f->block->params[i] = node_replace(parser, f->block->params[i], t.params, params);
 
-		//msg_write("INSTANTIATE 2");
-
+		// concretify
 		try {
-			msg_write(">>>> INSTA...1");
 
 			parser->concretify_function_header(f);
-			//msg_write("INSTANTIATE 3");
 
 			f->update_parameters_after_parsing();
-			msg_write(">>>> INSTA...2");
 
-			//msg_write("INSTANTIATE 4");
 			parser->concretify_function_body(f);
-			//msg_write("INSTANTIATE 41");
 
 			if (config.verbose)
 				f->block->show();
-			//msg_write("INSTANTIATE 42");
 
 			auto __ns = const_cast<Class*>(f0->name_space);
 			__ns->add_function(parser->tree, f, false, false);
 			parser->tree->functions.add(f);
 
-			msg_write(">>>> INSTA...");
-			f->show();
-
 		} catch (kaba::Exception &e) {
 			parser->do_error(format("failed to instantiate template %s[%s]: %s", f->name, params[0]->long_name(), e.text), token_id);
 		}
 
-		//parser->do_error("template instantiate");
 		return f;
 	}
 };
