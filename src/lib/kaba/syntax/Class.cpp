@@ -455,7 +455,7 @@ void Class::link_virtual_table() {
 				msg_write("VIRTUAL   " + i2s(cf->virtual_index) + "   " + cf->signature());
 			vtable[cf->virtual_index] = (void*)cf->address;
 		}
-		if (cf->needs_overriding) {
+		if (cf->needs_overriding()) {
 			msg_error("needs overriding: " + cf->signature());
 		}
 	}
@@ -517,9 +517,9 @@ const Class *Class::get_root() const {
 	return r;
 }
 
-void Class::add_abstract_function(SyntaxTree *s, Function *f, bool as_virtual, bool override) {
+void Class::add_template_function(SyntaxTree *s, Function *f, bool as_virtual, bool override) {
 	if (config.verbose)
-		msg_write("CLASS ADD ABSTRACT   " + long_name() + "    " + f->signature());
+		msg_write("CLASS ADD TEMPLATE   " + long_name() + "    " + f->signature());
 	if (f->is_static()) {
 		if (config.verbose)
 			msg_write("   STATIC");

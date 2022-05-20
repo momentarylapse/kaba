@@ -1,5 +1,5 @@
 #func f(a: int) -> int
-func f(a: T) -> T
+func f[T](a: T) -> T
 	return a*a
 
 
