@@ -1,0 +1,15 @@
+class C
+	var x: string
+	
+	#func ff(i: int)
+	
+	func f[T](t: T)
+		print(t)
+
+
+
+func main()
+	C c
+	
+	c.f[int](3)
+	c.f[string]("hallo")

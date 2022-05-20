@@ -1681,6 +1681,19 @@ shared_array<Node> Parser::concretify_element(shared<Node> node, Block *block, c
 	return {};
 }
 
+void analyse_func(Function *f) {
+	msg_write("----------------------------");
+	msg_write(f->signature());
+	msg_write(f->num_params);
+	msg_write(b2s(f->is_member()));
+	for (auto p: f->literal_param_type)
+		msg_write("  LPT: " + p->long_name());
+	for (auto p: f->abstract_param_types)
+		if (p)
+			msg_write("  APT: " + p->str());
+		else
+			msg_write("  APT: <nil>");
+}
 
 class TemplateManager {
 public:
@@ -1726,9 +1739,6 @@ public:
 		convert(f->block.get())->as_block();
 		parser->tree->transform_block(f->block.get(), convert);
 
-		f->abstract_param_types = f0->abstract_param_types;
-		f->abstract_return_type = f0->abstract_return_type;
-
 		return f;
 	}
 
@@ -1772,7 +1782,7 @@ public:
 			msg_write("INSTANTIATE TEMPLATE");
 		Function *f0 = t.func;
 		auto f = full_copy(parser, f0);
-		f->name += "[...]";
+		f->name += format("[%s]", params[0]->long_name());
 
 		// replace in parameters/return type
 		for (int i=0; i<f->num_params; i++)
@@ -1798,6 +1808,7 @@ public:
 
 			auto __ns = const_cast<Class*>(f0->name_space);
 			__ns->add_function(parser->tree, f, false, false);
+
 			parser->tree->functions.add(f);
 
 		} catch (kaba::Exception &e) {
@@ -1838,8 +1849,11 @@ shared<Node> Parser::concretify_array(shared<Node> node, Block *block, const Cla
 		for (auto l: weak(links)) {
 			auto f = l->as_func();
 			auto ff = TemplateManager::get_instantiated(this, f, {t}, block, ns, node->token_id);
-			if (ff)
-				return tree->add_node_func_name(ff);
+			if (ff) {
+				auto tf = tree->add_node_func_name(ff);
+				tf->params = l->params; // in case we have a member instance
+				return tf;
+			}
 		}
 		do_error(format("function has no version [%s]", t->name), index);
 	}

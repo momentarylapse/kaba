@@ -173,11 +173,14 @@ void Function::update_parameters_after_parsing() {
 void Function::add_self_parameter() {
 	block->insert_var(0, IDENTIFIER_SELF, name_space, is_const() ? Flags::CONST : Flags::NONE);
 	literal_param_type.insert(name_space, 0);
+	abstract_param_types.insert(nullptr, 0);
 	num_params ++;
 	mandatory_params ++;
 	default_parameters.insert(nullptr, 0);
 }
 
+// * NOT added to namespace
+// * update_parameters_after_parsing() called
 Function *Function::create_dummy_clone(const Class *_name_space) const {
 	Function *f = new Function(name, literal_return_type, _name_space, flags);
 	flags_set(f->flags, Flags::NEEDS_OVERRIDE);
@@ -185,6 +188,8 @@ Function *Function::create_dummy_clone(const Class *_name_space) const {
 	f->num_params = num_params;
 	f->default_parameters = default_parameters;
 	f->literal_param_type = literal_param_type;
+	f->abstract_param_types = abstract_param_types;
+	f->abstract_return_type = abstract_return_type;
 	for (int i=0; i<num_params; i++) {
 		auto type = var[i]->type;
 		if (is_member() and (i == 0)) { // adapt the "self" parameter
