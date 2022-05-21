@@ -636,8 +636,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		}
 		// unary operator? (++,--)
 
-		auto op = parse_abstract_operator(1);
-		if (op) {
+		if (auto op = parse_abstract_operator(1)) {
 			op->set_num_params(1);
 			op->set_param(0, operand);
 			return parse_abstract_operand_extension(op, block, prefer_class);
@@ -2114,8 +2113,7 @@ shared<Node> Parser::concretify_statement_len(shared<Node> node, Block *block, c
 		return tree->add_node_const(tree->add_constant_int(sub->type->array_length), node->token_id);
 
 	// __length__() function?
-	auto *f = sub->type->get_member_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {});
-	if (f)
+	if (auto *f = sub->type->get_member_func(IDENTIFIER_FUNC_LENGTH, TypeInt, {}))
 		return tree->add_node_member_call(f, sub, node->token_id);
 
 	// element "int num/length"?
@@ -2156,8 +2154,7 @@ shared<Node> Parser::concretify_statement_delete(shared<Node> node, Block *block
 		do_error("pointer expected after 'del'", node->params[0]);
 
 	// override del operator?
-	auto f = p->type->param[0]->get_member_func(IDENTIFIER_FUNC_DELETE_OVERRIDE, TypeVoid, {});
-	if (f) {
+	if (auto f = p->type->param[0]->get_member_func(IDENTIFIER_FUNC_DELETE_OVERRIDE, TypeVoid, {})) {
 		auto cmd = tree->add_node_call(f, node->token_id);
 		cmd->set_instance(p->deref());
 		return cmd;
@@ -2838,16 +2835,16 @@ shared<Node> Parser::parse_abstract_operand_greedy(Block *block, bool allow_tupl
 	operands.add(first_operand);
 
 	// find pairs of operators and operands
-	for (int i=0;true;i++) {
+	while (true) {
 		if (!allow_tuples and Exp.cur == ",")
 			break;
-		auto op = parse_abstract_operator(3);
-		if (!op)
+		if (auto op = parse_abstract_operator(3)) {
+			operators.add(op);
+			expect_no_new_line("unexpected end of line after operator");
+			operands.add(parse_abstract_operand(block));
+		} else {
 			break;
-		op->token_id = Exp.cur_token() - 1;
-		operators.add(op);
-		expect_no_new_line("unexpected end of line after operator");
-		operands.add(parse_abstract_operand(block));
+		}
 	}
 
 	return digest_operator_list_to_tree(operands, operators);
