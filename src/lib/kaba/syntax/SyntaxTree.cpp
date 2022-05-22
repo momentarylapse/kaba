@@ -16,8 +16,6 @@ extern const Class *TypeCallableBase;
 extern const Class *TypeMatrix;
 extern const Class *TypeVec2;
 
-extern ExpressionBuffer *cur_exp_buf;
-
 bool is_func(shared<Node> n);
 
 string class_name_might_need_parantheses(const Class *t);
@@ -1131,14 +1129,14 @@ void SyntaxTree::transformb_block(Block *block, std::function<shared<Node>(share
 // split arrays and address shifts into simpler commands...
 void SyntaxTree::transform(std::function<shared<Node>(shared<Node>)> F) {
 	for (Function *f: functions)
-		if (f->literal_return_type != TypeUnknown) {
+		if (!f->is_template()) {
 			parser->cur_func = f;
 			transform_block(f->block.get(), F);
 		}
 }
 void SyntaxTree::transformb(std::function<shared<Node>(shared<Node>, Block*)> F) {
 	for (Function *f: functions)
-		if (f->literal_return_type != TypeUnknown) {
+		if (!f->is_template()) {
 			parser->cur_func = f;
 			transformb_block(f->block.get(), F);
 		}

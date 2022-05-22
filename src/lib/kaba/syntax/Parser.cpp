@@ -9,7 +9,6 @@
 namespace kaba {
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
-shared<Node> create_node_token(Parser *p);
 
 Array<const Class*> func_effective_params(const Function *f);
 Array<const Class*> node_call_effective_params(shared<Node> node);
@@ -18,8 +17,6 @@ const Class *node_call_return_type(shared<Node> node);
 shared<Module> get_import(Parser *parser, const string &name, int token);
 
 void add_enum_label(const Class *type, int value, const string &label);
-
-ExpressionBuffer *cur_exp_buf = nullptr;
 
 void crash() {
 	int *p = nullptr;
@@ -115,7 +112,9 @@ int64 s2i2(const string &str) {
 		return	str.i64();
 }
 
-Parser::Parser(SyntaxTree *t) {
+Parser::Parser(SyntaxTree *t) :
+	Exp(t->expressions)
+{
 	tree = t;
 	cur_func = nullptr;
 	for_index_count = 0;
@@ -131,8 +130,6 @@ void Parser::parse_buffer(const string &buffer, bool just_analyse) {
 	parse_macros(just_analyse);
 
 	parse();
-
-	Exp.clear();
 
 	if (config.verbose)
 		tree->show("parse:a");
@@ -1055,7 +1052,7 @@ shared<Node> digest_type(SyntaxTree *tree, shared<Node> n) {
 }
 
 shared<Node> Parser::parse_abstract_token() {
-	return new Node(NodeKind::ABSTRACT_TOKEN, (int_p)&Exp, TypeUnknown, false, Exp.consume_token());
+	return new Node(NodeKind::ABSTRACT_TOKEN, (int_p)tree, TypeUnknown, false, Exp.consume_token());
 }
 
 // minimal operand
@@ -1767,7 +1764,7 @@ public:
 		//return parser->concretify_as_type(n, block, ns);
 		return parser->tree->transform_node(n, [parser, &names, &params](shared<Node> nn) {
 			if (nn->kind == NodeKind::ABSTRACT_TOKEN) {
-				string token = parser->Exp.get_token(nn->token_id);
+				string token = nn->as_token();
 				for (int i=0; i<names.num; i++)
 					if (token == names[i])
 						return parser->tree->add_node_class(params[i], nn->token_id);
@@ -1919,7 +1916,7 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 		return {node};
 
 	if (node->kind == NodeKind::ABSTRACT_TOKEN) {
-		string token = Exp.get_token(node->token_id);
+		string token = node->as_token();
 
 		// direct operand
 		auto operands = tree->get_existence(token, block, ns, node->token_id);
@@ -2729,7 +2726,7 @@ shared<Node> Parser::concretify_node(shared<Node> node, Block *block, const Clas
 		if (operands.num > 1) {
 			for (auto o: weak(operands))
 				o->show();
-			msg_write(format("WARNING: node not unique:  %s  -  line %d", Exp.get_token(node->token_id), Exp.token_physical_line_no(node->token_id) + 1));
+			msg_write(format("WARNING: node not unique:  %s  -  line %d", node->as_token(), reinterpret_cast<SyntaxTree*>(node->link_no)->expressions.token_physical_line_no(node->token_id) + 1));
 		}
 		if (operands.num > 0)
 			return operands[0];
@@ -4540,7 +4537,6 @@ void Parser::parse_top_level() {
 
 // convert text into script data
 void Parser::parse() {
-	cur_exp_buf = &Exp;
 	Exp.reset_walker();
 
 	parse_top_level();
