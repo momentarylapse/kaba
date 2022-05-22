@@ -3969,7 +3969,10 @@ bool Parser::parse_class(Class *_namespace) {
 			}
 			//msg_write(">>");
 		} else if (Exp.cur == IDENTIFIER_FUNC) {
-			auto f = parse_function_header(_class, _class->is_interface() ? Flags::VIRTUAL : Flags::NONE);
+			auto flags = Flags::CONST;
+			if (_class->is_interface())
+				flags_set(flags, Flags::VIRTUAL);
+			auto f = parse_function_header(_class, flags);
 			skip_parsing_function_body(f);
 		} else if (Exp.cur == IDENTIFIER_CONST) {
 			parse_named_const(_class, tree->root_of_all_evil->block.get());
@@ -4274,6 +4277,8 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 		name = format(":lambda-%d:", lambda_count ++);
 	} else {
 		name = Exp.consume();
+		if ((name == IDENTIFIER_FUNC_INIT) or (name == IDENTIFIER_FUNC_DELETE) or (name == IDENTIFIER_FUNC_ASSIGN))
+			flags_clear(flags, Flags::CONST);
 	}
 
 	Function *f = tree->add_function(name, TypeVoid, name_space, flags);
@@ -4465,27 +4470,31 @@ Flags Parser::parse_flags(Flags initial) {
 
 	while (true) {
 		if (Exp.cur == IDENTIFIER_STATIC) {
-			flags = flags_mix({flags, Flags::STATIC});
+			flags_set(flags, Flags::STATIC);
 		} else if (Exp.cur == IDENTIFIER_EXTERN) {
-			flags = flags_mix({flags, Flags::EXTERN});
+			flags_set(flags, Flags::EXTERN);
 		} else if (Exp.cur == IDENTIFIER_CONST) {
-			flags = flags_mix({flags, Flags::CONST});
+			flags_set(flags, Flags::CONST);
+		} else if (Exp.cur == IDENTIFIER_MUTABLE) {
+			flags_clear(flags, Flags::CONST);
+		} else if (Exp.cur == IDENTIFIER_CONST) {
+			flags_set(flags, Flags::CONST);
 		} else if (Exp.cur == IDENTIFIER_VIRTUAL) {
-			flags = flags_mix({flags, Flags::VIRTUAL});
+			flags_set(flags, Flags::VIRTUAL);
 		} else if (Exp.cur == IDENTIFIER_OVERRIDE) {
-			flags = flags_mix({flags, Flags::OVERRIDE});
+			flags_set(flags, Flags::OVERRIDE);
 		} else if (Exp.cur == IDENTIFIER_SELFREF) {
-			flags = flags_mix({flags, Flags::SELFREF});
+			flags_set(flags, Flags::SELFREF);
 		//} else if (Exp.cur == IDENTIFIER_SHARED) {
 		//	flags = flags_mix({flags, Flags::SHARED});
 		//} else if (Exp.cur == IDENTIFIER_OWNED) {
 		//	flags = flags_mix({flags, Flags::OWNED});
 		} else if (Exp.cur == IDENTIFIER_OUT) {
-			flags = flags_mix({flags, Flags::OUT});
+			flags_set(flags, Flags::OUT);
 		} else if (Exp.cur == IDENTIFIER_THROWS) {
-			flags = flags_mix({flags, Flags::RAISES_EXCEPTIONS});
+			flags_set(flags, Flags::RAISES_EXCEPTIONS);
 		} else if (Exp.cur == IDENTIFIER_PURE) {
-			flags = flags_mix({flags, Flags::PURE});
+			flags_set(flags, Flags::PURE);
 		} else {
 			break;
 		}

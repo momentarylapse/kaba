@@ -1,11 +1,11 @@
 class rat
 	var a, b: vli
-	func normalize()
+	func mut normalize()
 		vli gcd = self.a.gcd(self.b)
 		vli rem
 		self.a.idiv(gcd, rem)
 		self.b.idiv(gcd, rem)
-	func set(a: int, b: int)
+	func mut set(a: int, b: int)
 		self.a = a
 		self.b = b
 	func __assign__(i: int)
@@ -15,19 +15,19 @@ class rat
 		self.a = other.a
 		self.b = other.b
 		self.normalize()
-	func __imul__(other: rat)
+	func mut __imul__(other: rat)
 		self.a *= other.a
 		self.b *= other.b
 		self.normalize()
-	func __idiv__(other: rat)
+	func mut __idiv__(other: rat)
 		self.a *= other.b
 		self.b *= other.a
 		self.normalize()
-	func __iadd__(other: rat)
+	func mut __iadd__(other: rat)
 		self.a = self.a * other.b + other.a * self.b
 		self.b *= other.b
 		self.normalize()
-	func __isub__(other: rat)
+	func mut __isub__(other: rat)
 		self.a = self.a * other.b - other.a * self.b
 		self.b *= other.b
 		self.normalize()

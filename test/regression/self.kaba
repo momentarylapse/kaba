@@ -2,7 +2,7 @@ class Test
 	var i: int
 	func p()
 		print(i)
-	func f(x: int)
+	func mut f(x: int)
 		p()
 		i = x
 		p()

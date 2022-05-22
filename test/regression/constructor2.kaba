@@ -2,11 +2,11 @@
 class c
 	var x: int
 	var a: int[]
-	func __init__()
+	func mut __init__()
 		print("init!!!")
 		self.a.__init__()
 		self.x = -1
-	func f(x: int)
+	func mut f(x: int)
 		self.x = x
 		self.a.add(20)
 

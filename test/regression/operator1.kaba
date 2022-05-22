@@ -1,12 +1,12 @@
 class c
 	var x: int
 	func __init__()
-		nil
+		pass
 	func __delete__()
-		nil
+		pass
 	func __assign__(other: c)
 		self.x = other.x
-	func __iadd__(other: c)
+	func mut __iadd__(other: c)
 		self.x += other.x
 	func __add__(other: c) -> c
 		c temp

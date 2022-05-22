@@ -5,7 +5,7 @@ func get_plot_region() -> rect
 class GridData
 	var plot_rect: rect
 
-	func draw_background()
+	func mut draw_background()
 		plot_rect = get_plot_region()
 
 func main()
