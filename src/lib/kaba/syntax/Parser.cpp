@@ -1743,7 +1743,7 @@ public:
 			if (t.func == f0) {
 				// already instanciated?
 				for (auto &i: t.instances)
-					if (i.f->literal_param_type == params)
+					if (i.params == params)
 						return i.f;
 				// new
 				Instance ii;
