@@ -1808,7 +1808,7 @@ public:
 			parser->tree->functions.add(f);
 
 		} catch (kaba::Exception &e) {
-			parser->do_error(format("failed to instantiate template %s[%s]: %s", f->name, params[0]->long_name(), e.text), token_id);
+			parser->do_error(format("failed to instantiate template %s: %s", f->name, e.message()), token_id);
 		}
 
 		return f;
@@ -1927,13 +1927,16 @@ shared_array<Node> Parser::concretify_node_multi(shared<Node> node, Block *block
 			auto t = get_constant_type(token);
 			if (t == TypeUnknown) {
 
-				msg_write("----");
+				msg_write("--------");
+				msg_write(block->function->signature());
+				msg_write("local vars:");
 				for (auto vv: weak(block->function->var))
-					msg_write(vv->type->name + " .... " + vv->name);
+					msg_write(format("    %s: %s", vv->name, vv->type->name));
+				msg_write("params:");
 				for (auto p: block->function->literal_param_type)
-					msg_write(p->name);
+					msg_write("    " + p->name);
 				//crash();
-				do_error("unknown operand", node);
+				do_error(format("unknown operand \"%s\"", token), node);
 			}
 
 			Value v;
@@ -2569,12 +2572,12 @@ shared<Node> Parser::concretify_var_declaration(shared<Node> node, Block *block,
 		foreachi (auto t, etypes, i) {
 			if (t->needs_constructor() and !t->get_default_constructor())
 				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
-			block->add_var(Exp.get_token(node->params[1]->params[i]->token_id), t);
+			block->add_var(node->params[1]->params[i]->as_token(), t);
 		}
 	} else {
 		if (type->needs_constructor() and !type->get_default_constructor())
 			do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
-		block->add_var(Exp.get_token(node->params[1]->token_id), type);
+		block->add_var(node->params[1]->as_token(), type);
 	}
 
 	if (node->params.num == 3)
