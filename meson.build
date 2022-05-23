@@ -215,6 +215,7 @@ sources = [
 	'src/lib/kaba/syntax/preprocessor.cpp',
 	'src/lib/kaba/syntax/Statement.cpp',
 	'src/lib/kaba/syntax/SyntaxTree.cpp',
+	'src/lib/kaba/syntax/template.cpp',
 	'src/lib/kaba/syntax/Variable.cpp',
 	'src/lib/kaba/CompilerConfiguration.cpp',
 	'src/lib/kaba/Interpreter.cpp',

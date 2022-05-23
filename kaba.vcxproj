@@ -251,6 +251,7 @@
     <ClCompile Include="src\lib\kaba\syntax\preprocessor.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Statement.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\SyntaxTree.cpp" />
+    <ClCompile Include="src\lib\kaba\syntax\template.cpp" />
     <ClCompile Include="src\lib\kaba\syntax\Variable.cpp" />
     <ClCompile Include="src\lib\kaba\CompilerConfiguration.cpp" />
     <ClCompile Include="src\lib\kaba\Interpreter.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="src\lib\algebra\crypto.h" />
     <ClInclude Include="src\lib\algebra\vli.h" />
     <ClInclude Include="src\lib\any\any.h" />
+    <ClInclude Include="src\lib\base\algo.h" />
     <ClInclude Include="src\lib\base\array.h" />
     <ClInclude Include="src\lib\base\base.h" />
     <ClInclude Include="src\lib\base\callable.h" />
@@ -413,6 +415,7 @@
     <ClInclude Include="src\lib\kaba\syntax\Parser.h" />
     <ClInclude Include="src\lib\kaba\syntax\Statement.h" />
     <ClInclude Include="src\lib\kaba\syntax\SyntaxTree.h" />
+    <ClInclude Include="src\lib\kaba\syntax\template.h" />
     <ClInclude Include="src\lib\kaba\syntax\Variable.h" />
     <ClInclude Include="src\lib\kaba\CompilerConfiguration.h" />
     <ClInclude Include="src\lib\kaba\Interpreter.h" />

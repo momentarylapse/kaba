@@ -406,6 +406,9 @@
     <ClCompile Include="src\lib\kaba\syntax\SyntaxTree.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\syntax\template.cpp">
+      <Filter>src\lib\kaba\syntax</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Variable.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
@@ -581,6 +584,9 @@
     </ClInclude>
     <ClInclude Include="src\lib\any\any.h">
       <Filter>src\lib\any</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\base\algo.h">
+      <Filter>src\lib\base</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\base\array.h">
       <Filter>src\lib\base</Filter>
@@ -886,6 +892,9 @@
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\SyntaxTree.h">
+      <Filter>src\lib\kaba\syntax</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\syntax\template.h">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\Variable.h">
