@@ -1,6 +1,6 @@
 
-#ifndef LEXICAL_H_
-#define LEXICAL_H_
+#ifndef SRC_LIB_KABA_PARSER_LEXICAL_H_
+#define SRC_LIB_KABA_PARSER_LEXICAL_H_
 
 namespace kaba {
 
@@ -120,4 +120,4 @@ inline bool is_sign(char c) {
 
 };
 
-#endif /* LEXICAL_H_ */
+#endif /* SRC_LIB_KABA_PARSER_LEXICAL_H_ */

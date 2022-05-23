@@ -3,7 +3,7 @@
 #include "../../file/msg.h"
 #include "../../base/set.h"
 #include "Parser.h"
-#include "template.h"
+#include "../syntax/template.h"
 
 
 namespace kaba {

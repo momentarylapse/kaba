@@ -5,13 +5,11 @@
  *      Author: michi
  */
 
-#ifndef SRC_LIB_KABA_SYNTAX_PARSER_H_
-#define SRC_LIB_KABA_SYNTAX_PARSER_H_
+#ifndef SRC_LIB_KABA_PARSER_PARSER_H_
+#define SRC_LIB_KABA_PARSER_PARSER_H_
 
 #include "lexical.h"
-#include "SyntaxTree.h"
-
-//#include "lexical.h"
+#include "../syntax/SyntaxTree.h"
 
 namespace kaba {
 

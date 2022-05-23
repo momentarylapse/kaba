@@ -3,7 +3,7 @@
 
 
 #include <functional>
-#include "lexical.h"
+#include "../parser/lexical.h"
 #include "Class.h"
 #include "Constant.h"
 #include "Flags.h"

@@ -1,6 +1,6 @@
 #include "../kaba.h"
 #include "../asm/asm.h"
-#include "Parser.h"
+#include "../parser/Parser.h"
 #include "SyntaxTree.h"
 #include <stdio.h>
 #include "../../file/file.h"

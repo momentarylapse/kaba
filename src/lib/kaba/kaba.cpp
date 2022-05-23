@@ -8,7 +8,7 @@
 \*----------------------------------------------------------------------------*/
 #include "../file/file.h"
 #include "kaba.h"
-#include "syntax/Parser.h"
+#include "parser/Parser.h"
 #include "Interpreter.h"
 #include <cassert>
 
