@@ -570,13 +570,17 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 			//f->flags = orig->flags;
 			// don't copy __INIT_FILL_ALL_PARAMS etc...
 			// better copy one-by-one for now
+			if (flags_has(orig->flags, Flags::CONST))
+				flags_set(f->flags, Flags::CONST);
+			else
+				flags_clear(f->flags, Flags::CONST);
+			if (flags_has(orig->flags, Flags::SELFREF))
+				flags_set(f->flags, Flags::SELFREF);
+
 			if (flags_has(orig->flags, Flags::CONST)) {
 				if (auto self = f->__get_var(IDENTIFIER_SELF))
 					flags_set(self->flags, Flags::CONST);
-				flags_set(f->flags, Flags::CONST);
 			}
-			if (flags_has(orig->flags, Flags::SELFREF))
-				flags_set(f->flags, Flags::SELFREF);
 			functions[orig_index] = f;
 		} else {
 			functions.add(f);

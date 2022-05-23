@@ -2543,7 +2543,7 @@ shared<Node> Parser::concretify_operator(shared<Node> node, Block *block, const 
 		// binary operator A+B
 		auto param1 = node->params[0];
 		auto param2 = force_concrete_type_if_function(node->params[1]);
-		auto op = link_operator(op_no, param1, param2);
+		auto op = link_operator(op_no, param1, param2, node->token_id);
 		if (!op)
 			do_error(format("no operator found: '%s %s %s'", param1->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node);
 		return op;
