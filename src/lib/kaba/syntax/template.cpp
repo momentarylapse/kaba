@@ -26,7 +26,7 @@ void TemplateManager::add_template(Function *f, const Array<string> &param_names
 
 Function *TemplateManager::full_copy(Parser *parser, Function *f0) {
 	auto f = f0->create_dummy_clone(f0->name_space);
-	f->block = parser->tree->cp_node(f0->block.get())->as_block();
+	f->block = cp_node(f0->block.get())->as_block();
 	flags_clear(f->flags, Flags::NEEDS_OVERRIDE);
 
 	auto convert = [f,parser](shared<Node> n) {
@@ -77,7 +77,7 @@ shared<Node> TemplateManager::node_replace(Parser *parser, shared<Node> n, const
 			string token = nn->as_token();
 			for (int i=0; i<names.num; i++)
 				if (token == names[i])
-					return parser->tree->add_node_class(params[i], nn->token_id);
+					return add_node_class(params[i], nn->token_id);
 		}
 		return nn;
 	});

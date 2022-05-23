@@ -304,7 +304,7 @@ void execute_single_command(const string &cmd) {
 		
 		auto f = tree->required_func_global("print");
 
-		auto cmd = tree->add_node_call(f);
+		auto cmd = add_node_call(f);
 		cmd->set_param(0, n);
 		func->block->params[0] = cmd;
 	}
