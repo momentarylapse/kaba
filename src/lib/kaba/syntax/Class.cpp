@@ -577,9 +577,11 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 			if (flags_has(orig->flags, Flags::SELFREF))
 				flags_set(f->flags, Flags::SELFREF);
 
-			if (flags_has(orig->flags, Flags::CONST)) {
-				if (auto self = f->__get_var(IDENTIFIER_SELF))
+			if (auto self = f->__get_var(IDENTIFIER_SELF)) {
+				if (flags_has(f->flags, Flags::CONST))
 					flags_set(self->flags, Flags::CONST);
+				else
+					flags_clear(self->flags, Flags::CONST);
 			}
 			functions[orig_index] = f;
 		} else {
