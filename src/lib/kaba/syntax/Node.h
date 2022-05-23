@@ -151,6 +151,8 @@ shared<Node> cp_node(shared<Node> c);
 
 Array<const Class*> node_extract_param_types(const shared<Node> n);
 bool node_is_member_function_with_instance(shared<Node> n);
+bool is_type_tuple(const shared<Node> n);
+Array<const Class*> class_tuple_extract_classes(const shared<Node> n);
 
 shared<Node> add_node_statement(StatementID id, int token_id = -1, const Class *type = TypeVoid);//, const shared_array<Node> &params);
 shared<Node> add_node_member_call(Function *f, const shared<Node> inst, int token_id = -1, const shared_array<Node> &params = {}, bool force_non_virtual = false);

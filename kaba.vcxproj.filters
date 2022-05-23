@@ -361,6 +361,12 @@
     <ClCompile Include="src\lib\kaba\lib\lib_vulkan.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\abstract.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\Concretifier.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\lexical.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
@@ -854,6 +860,12 @@
     </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\lib.h">
       <Filter>src\lib\kaba\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\parser\abstract.h">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\parser\Concretifier.h">
+      <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\parser\lexical.h">
       <Filter>src\lib\kaba\parser</Filter>

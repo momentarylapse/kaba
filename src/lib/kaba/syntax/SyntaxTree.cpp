@@ -752,7 +752,7 @@ shared<Node> SyntaxTree::conv_return_by_memory(shared<Node> n, Function *f) {
 	if (!p_ret)
 		do_error("-return- not found...");
 	auto ret = p_ret->deref();
-	auto cmd_assign = parser->link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
+	auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
 		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
@@ -1122,7 +1122,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 			// -> assign into variable before the loop
 			auto *v = b->add_var(b->function->create_slightly_hidden_name(), array->type);
 
-			auto assign = parser->link_operator_id(OperatorID::ASSIGN, add_node_local(v), array);
+			auto assign = parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(v), array);
 			_transform_insert_before_.add(assign);
 
 			array = add_node_local(v);

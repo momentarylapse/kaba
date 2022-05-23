@@ -543,5 +543,21 @@ bool node_is_member_function_with_instance(shared<Node> n) {
 	return n->params.num == 0 or n->params[0];
 }
 
+bool is_type_tuple(const shared<Node> n) {
+	if (n->kind != NodeKind::TUPLE)
+		return false;
+	for (auto p: weak(n->params))
+		if (p->kind != NodeKind::CLASS)
+			return false;
+	return true;
+}
+
+Array<const Class*> class_tuple_extract_classes(const shared<Node> n) {
+	Array<const Class*> classes;
+	for (auto p: weak(n->params))
+		classes.add(p->as_class());
+	return classes;
+}
+
 }
 

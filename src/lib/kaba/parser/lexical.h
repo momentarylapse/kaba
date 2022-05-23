@@ -2,6 +2,8 @@
 #ifndef SRC_LIB_KABA_PARSER_LEXICAL_H_
 #define SRC_LIB_KABA_PARSER_LEXICAL_H_
 
+#include "../../base/base.h"
+
 namespace kaba {
 
 class SyntaxTree;

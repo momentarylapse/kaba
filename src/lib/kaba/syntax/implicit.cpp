@@ -21,7 +21,7 @@ Array<const Class*> get_callable_capture_types(const Class *fp);
 void db_add_print_node(Parser *p, shared<Block> block, shared<Node> node) {
 	auto ff = p->tree->required_func_global("print");
 	auto cmd = add_node_call(ff);
-	cmd->set_param(0, p->add_converter_str(node, false));
+	cmd->set_param(0, p->con.add_converter_str(node, false));
 	block->add(cmd);
 }
 
@@ -37,7 +37,7 @@ void db_add_print_label_node(Parser *p, shared<Block> block, const string &s, sh
 
 	auto ff = p->tree->required_func_global("print");
 	auto cmd = add_node_call(ff);
-	cmd->set_param(0, p->link_operator_id(OperatorID::ADD, add_node_const(c), p->add_converter_str(node, false)));
+	cmd->set_param(0, p->con.link_operator_id(OperatorID::ADD, add_node_const(c), p->con.add_converter_str(node, false)));
 	block->add(cmd);
 }
 
@@ -75,7 +75,7 @@ void Parser::auto_implement_add_child_constructors(shared<Node> n_self, Function
 	// auto initializers
 	for (auto &init: t->initializers) {
 		auto &e = t->elements[init.element];
-		auto n_assign = link_operator_id(OperatorID::ASSIGN,
+		auto n_assign = con.link_operator_id(OperatorID::ASSIGN,
 				n_self->shift(e.offset, e.type),
 				add_node_const(init.value.get()));
 		if (!n_assign)
@@ -112,7 +112,7 @@ void Parser::auto_implement_regular_constructor(Function *f, const Class *t, boo
 		foreachi(ClassElement &e, t->elements, i)
 			if (!e.hidden()) {
 				auto param = add_node_local(f->__get_var(e.name));
-				auto n_assign = link_operator_id(OperatorID::ASSIGN, self->shift(e.offset, e.type), param);
+				auto n_assign = con.link_operator_id(OperatorID::ASSIGN, self->shift(e.offset, e.type), param);
 				if (!n_assign)
 					do_error_implicit(f, format("no operator %s = %s found", param->type->long_name(), e.type->long_name()));
 				f->block->add(n_assign);
@@ -300,7 +300,7 @@ void Parser::auto_implement_regular_assign(Function *f, const Class *t) {
 		auto p = n_self->shift(0, t->parent);
 		auto o = n_other->shift(0, t->parent);
 
-		auto cmd_assign = link_operator_id(OperatorID::ASSIGN, p, o);
+		auto cmd_assign = con.link_operator_id(OperatorID::ASSIGN, p, o);
 		if (!cmd_assign)
 			do_error_implicit(f, "missing parent default constructor");
 		f->block->add(cmd_assign);
@@ -314,7 +314,7 @@ void Parser::auto_implement_regular_assign(Function *f, const Class *t) {
 		auto p = n_self->shift(e.offset, e.type);
 		auto o = n_other->shift(e.offset, e.type); // needed for call-by-ref conversion!
 
-		auto n_assign = link_operator_id(OperatorID::ASSIGN, p, o);
+		auto n_assign = con.link_operator_id(OperatorID::ASSIGN, p, o);
 		if (!n_assign)
 			do_error_implicit(f, format("no operator %s = %s for element \"%s\"", e.type->long_name(), e.type->long_name(), e.name));
 		f->block->add(n_assign);
@@ -350,7 +350,7 @@ void Parser::auto_implement_array_assign(Function *f, const Class *t) {
 	// other[i]
 	shared<Node> n_other_el = add_node_array(n_other, add_node_local(v_i));
 
-	auto n_assign = link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
+	auto n_assign = con.link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
 	if (!n_assign)
 		do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
 	b->add(n_assign);
@@ -394,7 +394,7 @@ void Parser::auto_implement_super_array_assign(Function *f, const Class *t) {
 	// other[i]
 	shared<Node> n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
 
-	auto n_assign = link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
+	auto n_assign = con.link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
 	if (!n_assign)
 		do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
 	b->add(n_assign);
@@ -566,7 +566,7 @@ void Parser::auto_implement_super_array_add(Function *f, const Class *t) {
 	auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, self_num, cmd_1);
 	auto cmd_el = add_node_dyn_array(self, cmd_sub);
 
-	auto cmd_assign = link_operator_id(OperatorID::ASSIGN, cmd_el, item);
+	auto cmd_assign = con.link_operator_id(OperatorID::ASSIGN, cmd_el, item);
 	if (!cmd_assign)
 		do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
 	b->add(cmd_assign);
@@ -783,7 +783,7 @@ void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 		auto n_p = add_node_local(f->__get_var("p"));
 
 		auto fp = get_callable_fp(t, self);
-		auto n_assign = link_operator_id(OperatorID::ASSIGN, fp, n_p);
+		auto n_assign = con.link_operator_id(OperatorID::ASSIGN, fp, n_p);
 		if (!n_assign)
 			do_error_implicit(f, format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"));
 		f->block->add(n_assign);
@@ -795,7 +795,7 @@ void Parser::auto_implement_callable_constructor(Function *f, const Class *t) {
 			auto n_p = add_node_local(f->__get_var(DUMMY_PARAMS[i_capture ++]));
 
 			auto fp = self->shift(e.offset, e.type);
-			auto n_assign = link_operator_id(OperatorID::ASSIGN, fp, n_p);
+			auto n_assign = con.link_operator_id(OperatorID::ASSIGN, fp, n_p);
 			if (!n_assign)
 				do_error_implicit(f, format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"));
 			f->block->add(n_assign);

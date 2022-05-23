@@ -7,6 +7,7 @@
 
 #include "../kaba.h"
 #include "../parser/Parser.h"
+#include "../parser/Concretifier.h"
 #include "template.h"
 #include "../../file/msg.h"
 
@@ -103,11 +104,11 @@ Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<
 	// concretify
 	try {
 
-		parser->concretify_function_header(f);
+		parser->con.concretify_function_header(f);
 
 		f->update_parameters_after_parsing();
 
-		parser->concretify_function_body(f);
+		parser->con.concretify_function_body(f);
 
 		if (config.verbose)
 			f->block->show();
