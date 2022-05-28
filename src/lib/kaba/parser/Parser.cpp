@@ -4,7 +4,7 @@
 #include "../../base/set.h"
 #include "../../base/algo.h"
 #include "Parser.h"
-#include "../syntax/template.h"
+#include "template.h"
 
 
 namespace kaba {

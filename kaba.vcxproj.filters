@@ -367,6 +367,12 @@
     <ClCompile Include="src\lib\kaba\parser\Concretifier.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\implicit.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\import.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\lexical.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
@@ -374,6 +380,9 @@
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\Parser.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\template.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Block.cpp">
@@ -391,12 +400,6 @@
     <ClCompile Include="src\lib\kaba\syntax\Identifier.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\kaba\syntax\implicit.cpp">
-      <Filter>src\lib\kaba\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\syntax\import.cpp">
-      <Filter>src\lib\kaba\syntax</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Node.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
@@ -410,9 +413,6 @@
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\SyntaxTree.cpp">
-      <Filter>src\lib\kaba\syntax</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\syntax\template.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Variable.cpp">
@@ -873,6 +873,9 @@
     <ClInclude Include="src\lib\kaba\parser\Parser.h">
       <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\kaba\parser\template.h">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\Block.h">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
@@ -904,9 +907,6 @@
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\SyntaxTree.h">
-      <Filter>src\lib\kaba\syntax</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\kaba\syntax\template.h">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\Variable.h">

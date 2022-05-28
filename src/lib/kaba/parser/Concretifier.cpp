@@ -7,7 +7,7 @@
 
 #include "Concretifier.h"
 #include "Parser.h"
-#include "../syntax/template.h"
+#include "template.h"
 #include "../lib/lib.h"
 #include "../../base/set.h"
 #include "../../file/msg.h"

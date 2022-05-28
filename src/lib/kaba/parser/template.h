@@ -5,8 +5,8 @@
  *      Author: michi
  */
 
-#ifndef SRC_LIB_KABA_SYNTAX_TEMPLATE_H_
-#define SRC_LIB_KABA_SYNTAX_TEMPLATE_H_
+#ifndef SRC_LIB_KABA_PARSER_TEMPLATE_H_
+#define SRC_LIB_KABA_PARSER_TEMPLATE_H_
 
 namespace kaba {
 
@@ -38,4 +38,4 @@ public:
 
 }
 
-#endif /* SRC_LIB_KABA_SYNTAX_TEMPLATE_H_ */
+#endif /* SRC_LIB_KABA_PARSER_TEMPLATE_H_ */
