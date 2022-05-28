@@ -2,13 +2,12 @@
 #include "../asm/asm.h"
 #include "../../file/msg.h"
 #include "../../base/set.h"
+#include "../../base/algo.h"
 #include "Parser.h"
 #include "../syntax/template.h"
 
 
 namespace kaba {
-
-extern Array<Operator*> global_operators;
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
 
@@ -21,14 +20,7 @@ void crash() {
 	*p = 4;
 }
 
-
-extern const Class *TypeIntList;
-extern const Class *TypeAnyList;
-extern const Class *TypeAnyDict;
-extern const Class *TypeDynamicArray;
-extern const Class *TypeIntDict;
 extern const Class *TypeStringAutoCast;
-extern const Class *TypePath;
 
 
 
@@ -1571,10 +1563,8 @@ bool type_needs_alignment(const Class *t) {
 void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int &_offset, int token_id) {
 
 	// override?
-	ClassElement *orig = nullptr;
-	for (auto &e: _class->elements)
-		if (e.name == name) //and e.type->is_pointer and el.type->is_pointer)
-			orig = &e;
+	ClassElement *orig = find_by_element(_class->elements, &ClassElement::name, name);
+
 	bool override = flags_has(flags, Flags::OVERRIDE);
 	if (override and ! orig)
 		p->do_error(format("can not override element '%s', no previous definition", name), token_id);

@@ -11,8 +11,26 @@
 #include "array.h"
 #include <functional>
 
+template<class T, class F>
+T *find_if(const Array<T> &array, F f) {
+	for (auto &e: array)
+		if (f(e))
+			return &e;
+	return nullptr;
+}
+
 template<class T>
-int find_index_if(const Array<T> &array, std::function<bool(const T&)> f) {
+T *find(const Array<T> &array, const T &t) {
+	return find_if(array, [&t] (const T &v) { return v == t; });
+}
+
+template<class T, class E, class V>
+T *find_by_element(const Array<T> &array, E e, const V &t) {
+	return find_if(array, [&t, e] (const T &v) { return v.*e == t; });
+}
+
+template<class T, class F>
+int find_index_if(const Array<T> &array, F f) {
 	for (int i=0; i<array.num; i++)
 		if (f(array[i]))
 			return i;
@@ -24,8 +42,8 @@ int find_index(const Array<T> &array, const T &t) {
 	return find_index_if(array, [&t] (const T &v) { return v == t; });
 }
 
-template<class T>
-int count_if(const Array<T> &array, std::function<bool(const T&)> f) {
+template<class T, class F>
+int count_if(const Array<T> &array, F f) {
 	int n = 0;
 	for (auto &e: array)
 		if (f(e))
@@ -38,8 +56,8 @@ int count(const Array<T> &array, const T &t) {
 	return count_if(array, [&t] (const T &v) { return v == t; });
 }
 
-template<class T>
-void replace_if(Array<T> &array, std::function<bool(const T&)> f, const T &by) {
+template<class T, class F>
+void replace_if(Array<T> &array, F f, const T &by) {
 	for (T &e: array)
 		if (f(e))
 			e = by;
@@ -56,8 +74,8 @@ void fill(Array<T> &array, const T &t) {
 		e = t;
 }
 
-template<class T>
-Array<T> filter(const Array<T> &array, std::function<bool(const T&)> f) {
+template<class T, class F>
+Array<T> filter(const Array<T> &array, F f) {
 	Array<T> r;
 	for (T &e: array)
 		if (f(e))
@@ -65,8 +83,8 @@ Array<T> filter(const Array<T> &array, std::function<bool(const T&)> f) {
 	return r;
 }
 
-template<class T, class U>
-Array<U> transform(const Array<T> &array, std::function<U(const T&)> f) {
+template<class T, class F, class U>
+Array<U> transform(const Array<T> &array, F f) {
 	Array<U> r;
 	for (T &e: array)
 		r.add(f(e));
