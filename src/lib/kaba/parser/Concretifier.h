@@ -20,6 +20,7 @@ class SyntaxTree;
 class Statement;
 enum class Flags;
 class Parser;
+class AutoImplementer;
 
 struct CastingData {
 	int cast;
@@ -117,6 +118,7 @@ public:
 
 	SyntaxTree *tree;
 	Parser *parser;
+	AutoImplementer *auto_implementer;
 	int for_index_count = 0;
 };
 

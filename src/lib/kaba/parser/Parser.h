@@ -10,6 +10,7 @@
 
 #include "lexical.h"
 #include "Concretifier.h"
+#include "implicit.h"
 #include "../syntax/SyntaxTree.h"
 
 namespace kaba {
@@ -35,7 +36,6 @@ public:
 	void do_error(const string &msg, shared<Node> node);
 	void do_error(const string &msg, int token_id);
 	void do_error_exp(const string &msg, int override_token_id = -1);
-	void do_error_implicit(Function *f, const string &msg);
 	void expect_no_new_line(const string &error_msg = "");
 	void expect_new_line(const string &error_msg = "");
 	void expect_new_line_with_indent();
@@ -131,39 +131,12 @@ public:
 	shared<Node> parse_abstract_statement_weak(Block *block);
 
 
-	void auto_implement_add_virtual_table(shared<Node> self, Function *f, const Class *t);
-	void auto_implement_add_child_constructors(shared<Node> self, Function *f, const Class *t, bool allow_elements_from_parent);
-	void auto_implement_regular_constructor(Function *f, const Class *t, bool allow_parent_constructor);
-	void auto_implement_regular_destructor(Function *f, const Class *t);
-	void auto_implement_regular_assign(Function *f, const Class *t);
-	void auto_implement_array_constructor(Function *f, const Class *t);
-	void auto_implement_array_destructor(Function *f, const Class *t);
-	void auto_implement_array_assign(Function *f, const Class *t);
-	void auto_implement_super_array_constructor(Function *f, const Class *t);
-	void auto_implement_super_array_destructor(Function *f, const Class *t);
-	void auto_implement_super_array_assign(Function *f, const Class *t);
-	void auto_implement_super_array_clear(Function *f, const Class *t);
-	void auto_implement_super_array_resize(Function *f, const Class *t);
-	void auto_implement_super_array_add(Function *f, const Class *t);
-	void auto_implement_super_array_remove(Function *f, const Class *t);
-	void auto_implement_dict_constructor(Function *f, const Class *t);
-	void auto_implement_shared_constructor(Function *f, const Class *t);
-	void auto_implement_shared_destructor(Function *f, const Class *t);
-	void auto_implement_shared_assign(Function *f, const Class *t);
-	void auto_implement_shared_clear(Function *f, const Class *t);
-	void auto_implement_shared_create(Function *f, const Class *t);
-	void auto_implement_owned_clear(Function *f, const Class *t);
-	void auto_implement_owned_assign(Function *f, const Class *t);
-	void auto_implement_callable_constructor(Function *f, const Class *t);
-	void auto_implement_callable_fp_call(Function *f, const Class *t);
-	void auto_implement_callable_bind_call(Function *f, const Class *t);
-	void auto_implement_functions(const Class *t);
-	
 	SyntaxTree *tree;
 	Function *cur_func;
 	ExpressionBuffer &Exp;
 
 	Concretifier con;
+	AutoImplementer auto_implementer;
 
 	int parser_loop_depth;
 	bool found_dynamic_param;

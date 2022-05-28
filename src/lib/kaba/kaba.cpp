@@ -310,7 +310,7 @@ void execute_single_command(const string &cmd) {
 		func->block->params[0] = cmd;
 	}
 	for (auto *c: tree->owned_classes)
-		parser->auto_implement_functions(c);
+		parser->auto_implementer.auto_implement_functions(c);
 	//ps->show("aaaa");
 
 

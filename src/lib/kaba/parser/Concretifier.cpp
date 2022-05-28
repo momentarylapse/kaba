@@ -99,6 +99,7 @@ const Class *node_call_return_type(shared<Node> node) {
 Concretifier::Concretifier(Parser *_parser, SyntaxTree *_tree) {
 	parser = _parser;
 	tree = _tree;
+	auto_implementer = &parser->auto_implementer;
 }
 
 
@@ -1861,7 +1862,7 @@ void Concretifier::concretify_function_body(Function *f) {
 
 	// auto implement destructor?
 	if (f->name == IDENTIFIER_FUNC_DELETE)
-		parser->auto_implement_regular_destructor(f, f->name_space);
+		auto_implementer->auto_implement_regular_destructor(f, f->name_space);
 }
 
 Array<const Class*> Concretifier::type_list_from_nodes(const shared_array<Node> &nn) {

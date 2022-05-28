@@ -53,7 +53,8 @@ int64 s2i2(const string &str) {
 
 Parser::Parser(SyntaxTree *t) :
 	Exp(t->expressions),
-	con(this, t)
+	con(this, t),
+	auto_implementer(this, t)
 {
 	tree = t;
 	cur_func = nullptr;
@@ -2089,9 +2090,9 @@ void Parser::parse_abstract_function_body(Function *f) {
 		if (peek_commands_super(Exp)) {
 			more_to_parse = parse_abstract_function_command(f, indent0);
 
-			auto_implement_regular_constructor(f, f->name_space, false);
+			auto_implementer.auto_implement_regular_constructor(f, f->name_space, false);
 		} else {
-			auto_implement_regular_constructor(f, f->name_space, true);
+			auto_implementer.auto_implement_regular_constructor(f, f->name_space, true);
 		}
 	}
 
@@ -2241,7 +2242,7 @@ void Parser::parse() {
 		test_node_recursion(f->block.get(), tree->base_class, "a " + f->long_name());
 
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
-		auto_implement_functions(tree->owned_classes[i]);
+		auto_implementer.auto_implement_functions(tree->owned_classes[i]);
 
 	for (auto *f: tree->functions)
 		test_node_recursion(f->block.get(), tree->base_class, "b " + f->long_name());
