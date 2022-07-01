@@ -1,12 +1,11 @@
 use os
 
-class f extends File
-	func func()
+class F extends BinaryFormatter
+	func f()
 		print("hallo")
 
 func main()
-	var a: f*
-	a = Filesystem.create("__test__")
+	var a = new F(fs.open("__test__", "wb"))
 	a << 2
-	a.func()
+	a.f()
 	del a

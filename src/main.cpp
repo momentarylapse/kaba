@@ -194,7 +194,7 @@ public:
 		p.option("--import-symbols", "FILE", [&](const string &a){ symbols_in_file = a; });
 		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
 		p.option("--just-disasm", "FILE", [&](const string &a){
-			string s = FileRead(a);
+			bytes s = file_read_binary(a);
 			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
 			if (flag_compile_os) {
@@ -350,13 +350,13 @@ public:
 #pragma GCC pop_options
 
 	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
-		File *f = FileCreate(out_file);
-		f->write_buffer(s->opcode, s->opcode_size);
+		auto f = file_open(out_file, "wb");
+		f->write(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
 	void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
-		File *f = FileCreate(out_file);
+		auto f = new BinaryFormatter(file_open(out_file, "wb"));
 
 		bool is64bit = (kaba::config.pointer_size == 8);
 
@@ -404,7 +404,7 @@ public:
 	}
 
 	void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
-		File *f = FileCreate(symbols_out_file);
+		auto f = new BinaryFormatter(file_open(symbols_out_file, "wb"));
 		for (auto *fn: s->syntax->functions) {
 			f->write_str(kaba::function_link_name(fn));
 			f->write_int(fn->address);
@@ -418,8 +418,8 @@ public:
 	}
 
 	void import_symbols(const Path &symbols_in_file) {
-		File *f = FileOpen(symbols_in_file);
-		while (!f->end()) {
+		auto f = new BinaryFormatter(file_open(symbols_in_file, "rb"));
+		while (!f->stream->is_end()) {
 			string name = f->read_str();
 			if (name == "#")
 				break;

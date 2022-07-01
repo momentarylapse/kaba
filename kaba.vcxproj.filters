@@ -28,6 +28,9 @@
     <ClCompile Include="src\lib\file\file_op.cpp">
       <Filter>src\lib\file</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\file\formatter.cpp">
+      <Filter>src\lib\file</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\file\msg.cpp">
       <Filter>src\lib\file</Filter>
     </ClCompile>
@@ -622,6 +625,9 @@
       <Filter>src\lib\file</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\file\file_op.h">
+      <Filter>src\lib\file</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\file\formatter.h">
       <Filter>src\lib\file</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\file\msg.h">

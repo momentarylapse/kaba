@@ -15,6 +15,7 @@ set(SOURCE
 	src/lib/base/strings.cpp
 	src/lib/file/file.cpp
 	src/lib/file/file_op.cpp
+	src/lib/file/formatter.cpp
 	src/lib/file/msg.cpp
 	src/lib/file/path.cpp
 	src/lib/hui/Controls/Control.cpp

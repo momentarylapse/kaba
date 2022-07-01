@@ -2,6 +2,6 @@ use os
 
 func main()
 	try
-		Filesystem.open("-non-existent-")
+		fs.open("-non-existent-", "rt")
 	except FileError as e
 		print(str(e))

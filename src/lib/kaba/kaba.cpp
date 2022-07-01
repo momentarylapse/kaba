@@ -171,7 +171,7 @@ void Module::load(const Path &_filename, bool _just_analyse) {
 		syntax->default_import();
 
 	// read file
-		string buffer = FileReadText(filename);
+		string buffer = file_read_text(filename);
 		parser->parse_buffer(buffer, just_analyse);
 
 

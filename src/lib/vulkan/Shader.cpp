@@ -339,16 +339,16 @@ extern bool verbose;
 
 #if HAS_LIB_SHADERC
 		if (!file_exists(filename.with(".compiled")))
-			return Shader::create(FileReadText(filename));
+			return Shader::create(file_read_text(filename));
 #endif
 
 		Shader *s = new Shader();
 
-		File *f = FileOpen(filename.with(".compiled"));
+		auto f = BinaryFormatter(file_open(filename.with(".compiled"), "rb"));
 		try {
 			while(true) {
-				string tag = f->read_str();
-				string value = f->read_str();
+				string tag = f.read_str();
+				string value = f.read_str();
 				//std::cout << tag << "\n";
 				if (tag == "Topology") {
 				} else if (tag == "Bindings") {
@@ -379,7 +379,6 @@ extern bool verbose;
 			}
 		} catch(...) {
 		}
-		delete f;
 
 		return s;
 	}
