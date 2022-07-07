@@ -5,7 +5,7 @@
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
-#include "helper/CommandLineParser.h"
+#include "lib/terminal/CommandLineParser.h"
 
 
 string AppName = "Kaba";

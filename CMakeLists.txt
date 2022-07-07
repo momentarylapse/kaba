@@ -1,12 +1,11 @@
 # created by xmake
 
 project(kaba)
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.21)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 set(SOURCE 
-	src/helper/CommandLineParser.cpp
 	src/lib/algebra/crypto.cpp
 	src/lib/algebra/vli.cpp
 	src/lib/any/any.cpp
@@ -174,6 +173,7 @@ set(SOURCE
 	src/lib/nix/nix_textures.cpp
 	src/lib/nix/nix_vertexbuffer.cpp
 	src/lib/nix/nix_view.cpp
+	src/lib/terminal/CommandLineParser.cpp
 	src/lib/threads/Mutex.cpp
 	src/lib/threads/Thread.cpp
 	src/lib/threads/ThreadedWork.cpp

@@ -6,8 +6,7 @@
  */
 
 #include "CommandLineParser.h"
-
-#include "../lib/file/msg.h"
+#include "../file/msg.h"
 
 
 void CommandLineParser::option(const string &name, Callback cb) {

@@ -116,7 +116,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\helper\CommandLineParser.cpp" />
     <ClCompile Include="src\lib\algebra\crypto.cpp" />
     <ClCompile Include="src\lib\algebra\vli.cpp" />
     <ClCompile Include="src\lib\any\any.cpp" />
@@ -284,6 +283,7 @@
     <ClCompile Include="src\lib\nix\nix_textures.cpp" />
     <ClCompile Include="src\lib\nix\nix_vertexbuffer.cpp" />
     <ClCompile Include="src\lib\nix\nix_view.cpp" />
+    <ClCompile Include="src\lib\terminal\CommandLineParser.cpp" />
     <ClCompile Include="src\lib\threads\Mutex.cpp" />
     <ClCompile Include="src\lib\threads\Thread.cpp" />
     <ClCompile Include="src\lib\threads\ThreadedWork.cpp" />
@@ -310,7 +310,6 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\helper\CommandLineParser.h" />
     <ClInclude Include="src\lib\algebra\algebra.h" />
     <ClInclude Include="src\lib\algebra\crypto.h" />
     <ClInclude Include="src\lib\algebra\vli.h" />
@@ -454,6 +453,7 @@
     <ClInclude Include="src\lib\nix\nix_textures.h" />
     <ClInclude Include="src\lib\nix\nix_vertexbuffer.h" />
     <ClInclude Include="src\lib\nix\nix_view.h" />
+    <ClInclude Include="src\lib\terminal\CommandLineParser.h" />
     <ClInclude Include="src\lib\threads\Mutex.h" />
     <ClInclude Include="src\lib\threads\Thread.h" />
     <ClInclude Include="src\lib\threads\ThreadedWork.h" />

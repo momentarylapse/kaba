@@ -80,7 +80,6 @@ endif
 
 
 sources = [
-	'src/helper/CommandLineParser.cpp',
 	'src/lib/algebra/crypto.cpp',
 	'src/lib/algebra/vli.cpp',
 	'src/lib/any/any.cpp',
@@ -248,6 +247,7 @@ sources = [
 	'src/lib/nix/nix_textures.cpp',
 	'src/lib/nix/nix_vertexbuffer.cpp',
 	'src/lib/nix/nix_view.cpp',
+	'src/lib/terminal/CommandLineParser.cpp',
 	'src/lib/threads/Mutex.cpp',
 	'src/lib/threads/Thread.cpp',
 	'src/lib/threads/ThreadedWork.cpp',
