@@ -3,6 +3,12 @@
 #include "../../config.h"
 #include "lib.h"
 #include "../dynamic/exception.h"
+#include "../../base/callable.h"
+
+#if __has_include("../../terminal/CommandLineParser.h")
+#define HAS_TERMINAL 1
+#include "../../terminal/CommandLineParser.h"
+#endif
 
 class vector;
 
@@ -11,10 +17,14 @@ namespace kaba {
 
 
 extern const Class *TypeDate;
+extern const Class *TypeStringList;
 const Class *TypePath;
 const Class *TypePathList;
 const Class *TypeStreamP;
 //const Class *TypeStreamSP;
+
+const Class* TypeCallback;
+const Class* TypeCallbackString;
 
 
 static FileStream *_kaba_stdin = nullptr;
@@ -341,6 +351,28 @@ public:
 	}
 };
 
+#ifdef HAS_TERMINAL
+class KabaCommandLineParser : CommandLineParser {
+public:
+	void __init__() {
+		new(this) CommandLineParser;
+	}
+	void __delete__() {
+		CommandLineParser::~CommandLineParser();
+	}
+	void option1(const string &name, Callable<void()> &cb) {
+		option(name, [&cb] { cb(); });
+	}
+	void option2(const string &name, const string &p, Callable<void(const string&)> &cb) {
+		option(name, p, [&cb] (const string &s) { cb(s); });
+	}
+};
+#define term_p(p) (p)
+#else
+struct CommandLineParser{};
+#define term_p(p) nullptr
+#endif
+
 void SIAddPackageOS() {
 	add_package("os");
 
@@ -355,6 +387,10 @@ void SIAddPackageOS() {
 	const Class *TypeFileError = add_type("FileError", sizeof(KabaFileError));
 	//Class *TypeFileNotFoundError= add_type  ("FileError", sizeof(KabaFileNotFoundError));
 	//Class *TypeFileNotWritableError= add_type  ("FileError", sizeof(KabaFileNotWritableError));
+	auto TypeCommandLineParser = add_type("CommandLineParser", sizeof(CommandLineParser));
+
+	TypeCallback = add_type_f(TypeVoid, {});
+	TypeCallbackString = add_type_f(TypeVoid, {TypeString});
 
 	add_class(TypeStream);
 		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, evil_member_offset(FileStream, _pointer_ref_counter));
@@ -400,6 +436,23 @@ void SIAddPackageOS() {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &KabaFileError::__init__, Flags::OVERRIDE);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, &KabaFileError::__delete__, Flags::OVERRIDE);
 		class_set_vtable(KabaFileError);
+
+
+	add_class(TypeCommandLineParser);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, term_p(&KabaCommandLineParser::__init__));
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, term_p(&KabaCommandLineParser::__delete__));
+		class_add_func("info", TypeVoid, term_p(&CommandLineParser::info));
+			func_add_param("i", TypeString);
+		class_add_func("show", TypeVoid, term_p(&CommandLineParser::show));
+		class_add_func("parse", TypeVoid, term_p(&CommandLineParser::parse));
+			func_add_param("arg", TypeStringList);
+		class_add_func("option", TypeVoid, term_p(&KabaCommandLineParser::option1));
+			func_add_param("name", TypeString);
+			func_add_param("f", TypeCallback);
+		class_add_func("option", TypeVoid, term_p(&KabaCommandLineParser::option2));
+			func_add_param("name", TypeString);
+			func_add_param("p", TypeString);
+			func_add_param("f", TypeCallbackString);
 
 
 	// file access
