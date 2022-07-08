@@ -117,6 +117,8 @@ public:
 
 	virtual bool on_startup(const Array<string> &arg0) {
 
+		Path filename;
+		Array<string> execute_args;
 		bool use_gui = false;
 		kaba::Abi abi = kaba::Abi::NATIVE;
 		Path out_file, symbols_out_file, symbols_in_file;
@@ -135,21 +137,11 @@ public:
 
 		CommandLineParser p;
 		p.info(AppName + " " + AppVersion);
-		p.option("--version/-v", [=]{
-			msg_write("--- " + AppName + " " + AppVersion + " ---");
-			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
-				msg_write("native arch: amd64:win");
-			if (kaba::config.native_abi == kaba::Abi::AMD64_GNU)
-				msg_write("native arch: amd64:gnu");
-			msg_write("kaba: " + kaba::Version);
-			msg_write("hui: " + hui::Version);
-			exit(0);
-		});
-		p.option("--gui/-g", [&]{ use_gui = true; });
+		p.option("--gui/-g", "", [&]{ use_gui = true; });
 		//p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
 		//p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });
 		//p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
-		p.option("--arch", "x86/amd64/arm:gnu/win", [&](const string &a) {
+		p.option("--arch", "CPU:SYSTEM", "x86/amd64/arm:gnu/win", [&](const string &a) {
 			if (a == "amd64:gnu") {
 				abi = kaba::Abi::AMD64_GNU;
 			} else if (a == "amd64:win") {
@@ -164,37 +156,62 @@ public:
 				throw Exception("unknown architecture");
 			}
 		});
-		p.option("--no-std-lib", [&]{ flag_allow_std_lib = false; });
-		p.option("--os", [&]{ flag_compile_os = true; });
-		p.option("--remove-unused", [&]{ kaba::config.remove_unused = true; });
-		p.option("--no-simplify-consts", [&]{ kaba::config.allow_simplify_consts = false; });
-		p.option("--verbose", [&]{ flag_verbose = true; });
-		p.option("--vfunc", "FILTER", [&](const string &a){ debug_func_filter = a; });
-		p.option("--vstage", "FILTER", [&](const string &a){ debug_stage_filter = a; });
-		p.option("--disasm", [&]{ flag_disassemble = true; });
-		p.option("--show-tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
-		p.option("--show-consts", [&]{ flag_show_consts = true; });
-		p.option("--no-function-frames", [&]{ kaba::config.no_function_frame = true; });
-		p.option("--add-entry-point", [&]{ kaba::config.add_entry_point = true; });
-		p.option("--code-origin", "ORIGIN", [&](const string &a) {
+		p.option("--no-std-lib", "", [&]{ flag_allow_std_lib = false; });
+		p.option("--os", "", [&]{ flag_compile_os = true; });
+		p.option("--remove-unused", "", [&]{ kaba::config.remove_unused = true; });
+		p.option("--no-simplify-consts", "", [&]{ kaba::config.allow_simplify_consts = false; });
+		p.option("--verbose", "", [&]{ flag_verbose = true; });
+		p.option("--vfunc", "FILTER", "", [&](const string &a){ debug_func_filter = a; });
+		p.option("--vstage", "FILTER", "", [&](const string &a){ debug_stage_filter = a; });
+		p.option("--disasm", "", [&]{ flag_disassemble = true; });
+		p.option("--show-tree", "", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
+		p.option("--show-consts", "", [&]{ flag_show_consts = true; });
+		p.option("--no-function-frames", "", [&]{ kaba::config.no_function_frame = true; });
+		p.option("--add-entry-point", "", [&]{ kaba::config.add_entry_point = true; });
+		p.option("--code-origin", "ORIGIN", "", [&](const string &a) {
 			kaba::config.override_code_origin = true;
-			kaba::config.code_origin = kaba::s2i2(a); });
-		p.option("--variable-offset", "OFFSET", [&](const string &a) {
+			kaba::config.code_origin = kaba::s2i2(a);
+		});
+		p.option("--variable-offset", "OFFSET", "", [&](const string &a) {
 			kaba::config.override_variables_offset = true;
-			kaba::config.variables_offset = kaba::s2i2(a); });
-		p.option("--output/-o", "OUTFILE", [&](const string &a){ out_file = a; });
-		p.option("--output-format", "raw/elf", [&](const string &a){
+			kaba::config.variables_offset = kaba::s2i2(a);
+		});
+		p.option("--output/-o", "OUTFILE", "", [&](const string &a){ out_file = a; });
+		p.option("--output-format", "FORMAT", "raw/elf", [&](const string &a){
 			output_format = a;
 			if ((output_format != "raw") and (output_format != "elf")) {
 				msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
 				exit(1);
 			}
 		});
-		p.option("--export-symbols", "FILE", [&](const string &a){ symbols_out_file = a; });
-		p.option("--import-symbols", "FILE", [&](const string &a){ symbols_in_file = a; });
-		p.option("--command/-c", "CODE", [&](const string &a){ command = a; });
-		p.option("--just-disasm", "FILE", [&](const string &a){
-			bytes s = file_read_binary(a);
+		p.option("--export-symbols", "FILE", "", [&](const string &a){ symbols_out_file = a; });
+		p.option("--import-symbols", "FILE", "", [&](const string &a){ symbols_in_file = a; });
+		p.option("--interpret", "", [&] { flag_interpret = true; });
+		p.option("--xxx", "", [&] {
+			kaba::init(abi, flag_allow_std_lib);
+			msg_write(disassemble((void*)&xxx_delete0, -1));
+			//msg_write(disassemble((void*)&fff, 30));
+			//msg_write(disassemble((void*)&fff2, -1));
+			//msg_write(disassemble((void*)&ggg, -1));
+			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
+			exit(0);
+		});
+		p.cmd("--version/-v", "", "", [=] (const Array<string>&) {
+			msg_write("--- " + AppName + " " + AppVersion + " ---");
+			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
+				msg_write("native arch: amd64:win");
+			if (kaba::config.native_abi == kaba::Abi::AMD64_GNU)
+				msg_write("native arch: amd64:gnu");
+			msg_write("kaba: " + kaba::Version);
+			msg_write("hui: " + hui::Version);
+			exit(0);
+		});
+		p.cmd("--help/-h", "", "", [&p] (const Array<string>&) {
+			p.show();
+			exit(0);
+		});
+		p.cmd("--just-disasm", "FILE", "", [&] (const Array<string> &a){
+			bytes s = file_read_binary(a[0]);
 			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
 			if (flag_compile_os) {
@@ -209,18 +226,16 @@ public:
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 			exit(0);
 		});
-		p.option("--interpret", [&] { flag_interpret = true; });
-		p.option("--xxx", [&] {
-			kaba::init(abi, flag_allow_std_lib);
-			msg_write(disassemble((void*)&xxx_delete0, -1));
-			//msg_write(disassemble((void*)&fff, 30));
-			//msg_write(disassemble((void*)&fff2, -1));
-			//msg_write(disassemble((void*)&ggg, -1));
-			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
-			exit(0);
+		p.cmd("--command/-c", "CODE", "", [&] (const Array<string> &a) {
+			command = a[0];
 		});
-		p.option("--help/-h", [&p]{ p.show(); });
+		p.cmd("", "FILENAME ...", "", [&filename, &execute_args] (const Array<string> &a) {
+			filename = a[0];
+			execute_args = a.sub_ref(1);
+		});
+
 		p.parse(arg0);
+
 
 
 		// init
@@ -255,9 +270,7 @@ public:
 		kaba::config.interpreted = flag_interpret;
 
 		// script file as parameter?
-		Path filename;
-		if (p.arg.num > 0) {
-			filename = p.arg[0];
+		if (filename) {
 			if (installed and filename.extension() != "kaba") {
 				for (auto &dir: Array<Path>({directory, directory_static})) {
 					Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
@@ -300,7 +313,7 @@ public:
 				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
 			} else {
 				if (kaba::config.abi == kaba::config.native_abi)
-					execute(s, p.arg.sub_ref(1));
+					execute(s, execute_args);
 			}
 		} catch (kaba::Exception &e) {
 			if (use_gui)

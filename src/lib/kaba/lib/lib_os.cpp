@@ -360,11 +360,18 @@ public:
 	void __delete__() {
 		CommandLineParser::~CommandLineParser();
 	}
-	void option1(const string &name, Callable<void()> &cb) {
-		option(name, [&cb] { cb(); });
+	void option1(const string &name, const string &comment, Callable<void()> &cb) {
+		option(name, comment, [&cb] { cb(); });
 	}
-	void option2(const string &name, const string &p, Callable<void(const string&)> &cb) {
-		option(name, p, [&cb] (const string &s) { cb(s); });
+	void option2(const string &name, const string &p, const string &comment, Callable<void(const string&)> &cb) {
+		option(name, p, comment, [&cb] (const string &s) { cb(s); });
+	}
+	void cmd1(const string &name, const string &p, const string &comment, Callable<void(const Array<string>&)> &cb) {
+		cmd(name, p, comment, [&cb] (const Array<string> &s) { cb(s); });
+	}
+	void parse1(const Array<string> &arg) {
+		Array<string> a = {"?"};
+		parse(a + arg);
 	}
 };
 #define term_p(p) (p)
@@ -391,6 +398,7 @@ void SIAddPackageOS() {
 
 	TypeCallback = add_type_f(TypeVoid, {});
 	TypeCallbackString = add_type_f(TypeVoid, {TypeString});
+	auto TypeCallbackStringList = add_type_f(TypeVoid, {TypeStringList});
 
 	add_class(TypeStream);
 		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, evil_member_offset(FileStream, _pointer_ref_counter));
@@ -444,15 +452,22 @@ void SIAddPackageOS() {
 		class_add_func("info", TypeVoid, term_p(&CommandLineParser::info));
 			func_add_param("i", TypeString);
 		class_add_func("show", TypeVoid, term_p(&CommandLineParser::show));
-		class_add_func("parse", TypeVoid, term_p(&CommandLineParser::parse));
+		class_add_func("parse", TypeVoid, term_p(&KabaCommandLineParser::parse1));
 			func_add_param("arg", TypeStringList);
 		class_add_func("option", TypeVoid, term_p(&KabaCommandLineParser::option1));
 			func_add_param("name", TypeString);
+			func_add_param("comment", TypeString);
 			func_add_param("f", TypeCallback);
 		class_add_func("option", TypeVoid, term_p(&KabaCommandLineParser::option2));
 			func_add_param("name", TypeString);
 			func_add_param("p", TypeString);
+			func_add_param("comment", TypeString);
 			func_add_param("f", TypeCallbackString);
+		class_add_func("cmd", TypeVoid, term_p(&KabaCommandLineParser::cmd1));
+			func_add_param("name", TypeString);
+			func_add_param("p", TypeString);
+			func_add_param("comment", TypeString);
+			func_add_param("f", TypeCallbackStringList);
 
 
 	// file access
