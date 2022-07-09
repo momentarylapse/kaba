@@ -12,12 +12,46 @@
 #include "../base/base.h"
 #include "../base/pointer.h"
 
-class Stream;
 
 
-class Formatter {
+class Stream : public Sharable<Empty> {
+public:
+	virtual ~Stream() {}
+
+	// meta
+	virtual void set_pos(int pos) = 0;
+	virtual void seek(int delta) = 0;
+	virtual int get_size32() = 0;
+	virtual int64 get_size() = 0;
+	virtual int get_pos() = 0;
+
+	virtual int read_basic(void *buffer, int size) = 0;
+	virtual int write_basic(const void *buffer, int size) = 0;
+	int read(void *buffer, int size);
+	int write(const void *buffer, int size);
+	int read(bytes&);
+	bytes read(int size);
+	int write(const bytes&);
+
+	virtual bool is_end() = 0;
+
+	bytes read_complete();
+};
+
+
+class Formatter : public Stream {
 public:
 	Formatter(shared<Stream> s);
+
+	void set_pos(int pos) override;
+	void seek(int delta) override;
+	int get_size32() override;
+	int64 get_size() override;
+	int get_pos() override;
+
+	int read_basic(void *buffer, int size) override;
+	int write_basic(const void *buffer, int size) override;
+	bool is_end() override;
 
 	shared<Stream> stream;
 };

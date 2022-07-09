@@ -45,8 +45,9 @@ public:
 	};
 	Array<Command> commands;
 
-	void info(const string &i);
+	void info(const string &i, const string &p = "");
 	string _info;
+	string _program;
 
 	void show();
 	//Array<string> arg;

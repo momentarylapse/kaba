@@ -22,11 +22,20 @@ void CommandLineParser::cmd(const string &name, const string &params, const stri
 	Array<Array<string>> names;
 	for (auto &n: name.replace(",", "/").explode("/"))
 		names.add(n.explode(" "));
+	if (names.num == 0)
+		names.add({});
 	commands.add({names, params.explode(" "), comment, cb});
+
+	// make sure short commands are last
+	for (int i=0; i<commands.num; i++)
+		for (int j=i+1; j<commands.num; j++)
+			if (commands[i].names[0].num < commands[j].names[0].num)
+				commands.swap(i, j);
 }
 
-void CommandLineParser::info(const string &i) {
+void CommandLineParser::info(const string &i, const string &p) {
 	_info = i;
+	_program = p;
 }
 
 void CommandLineParser::show() {

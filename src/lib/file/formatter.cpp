@@ -12,7 +12,7 @@
 
 static void read_buffer_asserted(Stream *s, void *buf, int size) {
 	if (auto f = dynamic_cast<FileStream*>(s)) {
-		int r = f->read(buf, size);
+		int r = f->read_basic(buf, size);
 		if (r < size)
 			throw FileError(format("end of file '%s'", f->filename));
 	}
@@ -185,7 +185,7 @@ void TextLinesFormatter::read_vector(void *v) {
 
 // write a single character (1 byte)
 void BinaryFormatter::write_char(char c) {
-	stream->write(&c, 1);
+	stream->write_basic(&c, 1);
 }
 
 void TextLinesFormatter::write_char(char c) {
@@ -195,7 +195,7 @@ void TextLinesFormatter::write_char(char c) {
 
 // write a single character (1 byte)
 void BinaryFormatter::write_byte(unsigned char c) {
-	stream->write(&c, 1);
+	stream->write_basic(&c, 1);
 }
 
 void TextLinesFormatter::write_byte(unsigned char c) {
@@ -204,7 +204,7 @@ void TextLinesFormatter::write_byte(unsigned char c) {
 
 // write a word (2 bytes)
 void BinaryFormatter::write_word(unsigned int w) {
-	stream->write(&w, 2);
+	stream->write_basic(&w, 2);
 }
 
 void TextLinesFormatter::write_word(unsigned int w) {
@@ -213,7 +213,7 @@ void TextLinesFormatter::write_word(unsigned int w) {
 
 // write an integer (4 bytes)
 void BinaryFormatter::write_int(int i) {
-	stream->write(&i, 4);
+	stream->write_basic(&i, 4);
 }
 
 void TextLinesFormatter::write_int(int i) {
@@ -222,7 +222,7 @@ void TextLinesFormatter::write_int(int i) {
 
 // write a float (4 bytes)
 void BinaryFormatter::write_float(float f) {
-	stream->write(&f, 4);
+	stream->write_basic(&f, 4);
 }
 
 void TextLinesFormatter::write_float(float f) {
@@ -231,7 +231,7 @@ void TextLinesFormatter::write_float(float f) {
 
 // write a boolean (1 byte)
 void BinaryFormatter::write_bool(bool b) {
-	stream->write(&b, 1);
+	stream->write_basic(&b, 1);
 }
 
 void TextLinesFormatter::write_bool(bool b) {
@@ -246,10 +246,10 @@ void BinaryFormatter::write_str(const string &str) {
 	if (num >= 0xc000) {
 		write_word((num & 0x3fff) | 0xc000);
 		write_word(num >> 14);
-		stream->write(str.data, num);
+		stream->write_basic(str.data, num);
 	} else {
 		write_word(num);
-		stream->write(str.data, num);
+		stream->write_basic(str.data, num);
 	}
 }
 void TextLinesFormatter::write_str(const string &str) {
@@ -279,9 +279,37 @@ void TextLinesFormatter::write_vector(const void *v) {
 	write_float(((float*)v)[2]);
 }
 
+void Formatter::set_pos(int pos) {
+	stream->set_pos(pos);
+}
 
+void Formatter::seek(int delta) {
+	stream->seek(delta);
+}
 
+int Formatter::get_size32() {
+	return stream->get_size32();
+}
 
+int64 Formatter::get_size() {
+	return stream->get_size();
+}
+
+int Formatter::get_pos() {
+	return stream->get_pos();
+}
+
+int Formatter::read_basic(void *buffer, int size) {
+	return stream->read_basic(buffer, size);
+}
+
+int Formatter::write_basic(const void *buffer, int size) {
+	return stream->write_basic(buffer, size);
+}
+
+bool Formatter::is_end() {
+	return stream->is_end();
+}
 // read a single character followed by the file-format-version-number
 /*int File::ReadFileFormatVersion()
 {

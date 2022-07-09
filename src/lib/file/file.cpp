@@ -97,8 +97,6 @@ void Date::__assign__(const Date &d) {
 	*this = d;
 }
 
-t_file_try_again_func *FileTryAgainFunc;
-
 
 FileStream::FileStream(int h) {
 	handle = h;
@@ -268,7 +266,7 @@ bytes Stream::read_complete() {
 }
 
 // read a part of the file into the buffer
-int FileStream::read(void *buffer, int size) {
+int FileStream::read_basic(void *buffer, int size) {
 	int r = _read(handle, buffer, size);
 	if (r < 0)
 		throw FileError(format("failed reading file '%s'", filename));
@@ -276,7 +274,7 @@ int FileStream::read(void *buffer, int size) {
 }
 
 // insert the buffer into the file
-int FileStream::write(const void *buffer, int size) {
+int FileStream::write_basic(const void *buffer, int size) {
 	if (size == 0)
 		return 0;
 	int r = _write(handle,buffer,size);
@@ -285,18 +283,26 @@ int FileStream::write(const void *buffer, int size) {
 	return r;
 }
 
+int Stream::read(void *data, int size) {
+	return read_basic(data, size);
+}
+
+int Stream::write(const void *data, int size) {
+	return write_basic(data, size);
+}
+
 int Stream::read(bytes &data) {
-	return read(data.data, data.num);
+	return read_basic(data.data, data.num);
+}
+
+bytes Stream::read(int size) {
+	bytes data;
+	data.resize(size);
+	int r = read(data);
+	data.resize(max(r, 0));
+	return data;
 }
 
 int Stream::write(const bytes &data) {
-	return write(data.data, data.num);
-}
-
-int FileStream::read(bytes &data) {
-	return read(data.data, data.num);
-}
-
-int FileStream::write(const bytes &data) {
-	return write(data.data, data.num);
+	return write_basic(data.data, data.num);
 }

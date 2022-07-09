@@ -19,7 +19,7 @@ int endian_big_to_little(int i) {
 }
 
 int read_int_big_endian(FileStream *f) {
-	char c[4];
+	unsigned char c[4];
 	f->read(c, 4);
 	return c[3] + (c[2] << 8) + (c[1] << 16) + (c[0] << 24);
 }
@@ -61,30 +61,28 @@ void png_unfilter(unsigned char *cur, unsigned char *prev, int num, int stride, 
 }
 
 void image_load_png(const Path &filename, Image &image) {
-	char buf[8];
 	FileStream *f = nullptr;
 	try {
 	f = file_open(filename, "rb");
 
 	// intro
-	f->read(buf, 8);
+	bytes buf = f->read(8);
 
-	string data;
+	bytes data;
 
 	int bytes_per_pixel = 1;
 
 	while (!f->is_end()) {
 		// read chunk
 		int size = read_int_big_endian(f);//endian_big_to_little(f->ReadInt());
-		f->read(buf, 4);
-		string name = string(buf, 4);
+		string name = f->read(4);
 		//msg_write(size);
 		//msg_write("chunk: " + name);
 		if (name == "IHDR") {
 			int w = read_int_big_endian(f);
 			int h = read_int_big_endian(f);
 			image.create(w, h, Black);
-			f->read(buf, 2);
+			buf = f->read(2);
 			int bits_per_channel = (unsigned char)buf[0];
 			int type = (unsigned char)buf[1];
 			// 0 = gray, 2 = rgb, 6 = rgba
@@ -109,10 +107,10 @@ void image_load_png(const Path &filename, Image &image) {
 		} else {
 			f->seek(size);
 		}
-		f->read(buf, 4); // crc
+		f->read(4); // crc
 	}
 
-	string dest;
+	bytes dest;
 	dest.resize(image.height * (image.width * bytes_per_pixel + 2) + 1024);
 	unsigned long len = dest.num;
 	int r = uncompress((unsigned char*)&dest[0], &len, (unsigned char*)&data[0], data.num);
@@ -148,6 +146,9 @@ void image_load_png(const Path &filename, Image &image) {
 	delete f;
 
 	} catch(FileError &e) {
+		msg_error("png: " + e.message());
+		if (f)
+			delete f;
 	} catch(string &s) {
 		msg_error("png: " + s);
 		if (f)

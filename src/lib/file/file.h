@@ -65,31 +65,6 @@ public:
 //--------------------------------------------------------------
 // file operation class
 
-typedef bool t_file_try_again_func(const string &filename);
-
-extern t_file_try_again_func *FileTryAgainFunc;
-
-class Stream : public Sharable<Empty> {
-public:
-	virtual ~Stream() {}
-
-	// meta
-	virtual void set_pos(int pos) = 0;
-	virtual void seek(int delta) = 0;
-	virtual int get_size32() = 0;
-	virtual int64 get_size() = 0;
-	virtual int get_pos() = 0;
-
-	virtual int read(void *buffer, int size) = 0;
-	virtual int write(const void *buffer, int size) = 0;
-	int read(bytes&);
-	int write(const bytes&);
-
-	virtual bool is_end() = 0;
-
-	bytes read_complete();
-};
-
 class FileStream : public Stream {
 public:
 	FileStream(int handle);
@@ -108,10 +83,8 @@ public:
 	bool is_end() override;
 	void close();
 
-	int read(void *buffer, int size) override;
-	int write(const void *buffer, int size) override;
-	int read(bytes&); // why???
-	int write(const bytes&);
+	int read_basic(void *buffer, int size) override;
+	int write_basic(const void *buffer, int size) override;
 
 //private:
 	Path filename;
