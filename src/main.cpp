@@ -136,7 +136,7 @@ public:
 		bool error = false;
 
 		CommandLineParser p;
-		p.info(AppName + " " + AppVersion);
+		p.info(AppName, "compiler for the kaba language");
 		p.option("--gui/-g", "", [&]{ use_gui = true; });
 		//p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
 		//p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });

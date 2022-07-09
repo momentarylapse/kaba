@@ -33,9 +33,9 @@ void CommandLineParser::cmd(const string &name, const string &params, const stri
 				commands.swap(i, j);
 }
 
-void CommandLineParser::info(const string &i, const string &p) {
-	_info = i;
+void CommandLineParser::info(const string &p, const string &i) {
 	_program = p;
+	_info = i;
 }
 
 void CommandLineParser::show() {
