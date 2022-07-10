@@ -8,7 +8,7 @@
 #include "lib/terminal/CommandLineParser.h"
 
 
-string AppName = "Kaba";
+string AppName = "kaba";
 string AppVersion = kaba::Version;
 
 
