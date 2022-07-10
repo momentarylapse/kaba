@@ -156,27 +156,27 @@ public:
 				throw Exception("unknown architecture");
 			}
 		});
-		p.option("--no-std-lib", "", [&]{ flag_allow_std_lib = false; });
-		p.option("--os", "", [&]{ flag_compile_os = true; });
-		p.option("--remove-unused", "", [&]{ kaba::config.remove_unused = true; });
+		p.option("--os", "when compiling an operating system", [&]{ flag_compile_os = true; });
+		p.option("--no-std-lib", "(os)", [&]{ flag_allow_std_lib = false; });
+		p.option("--remove-unused", "code size optimization", [&]{ kaba::config.remove_unused = true; });
 		p.option("--no-simplify-consts", "", [&]{ kaba::config.allow_simplify_consts = false; });
-		p.option("--verbose", "", [&]{ flag_verbose = true; });
-		p.option("--vfunc", "FILTER", "", [&](const string &a){ debug_func_filter = a; });
-		p.option("--vstage", "FILTER", "", [&](const string &a){ debug_stage_filter = a; });
-		p.option("--disasm", "", [&]{ flag_disassemble = true; });
-		p.option("--show-tree", "", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
+		p.option("--verbose", "lots of output", [&]{ flag_verbose = true; });
+		p.option("--vfunc", "FILTER", "restrict verbosity to functions", [&](const string &a){ debug_func_filter = a; });
+		p.option("--vstage", "FILTER", "restrict verbosity to compile stages", [&](const string &a){ debug_stage_filter = a; });
+		p.option("--disasm", "show disassemble of opcode", [&]{ flag_disassemble = true; });
+		p.option("--show-tree", "show syntax tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
 		p.option("--show-consts", "", [&]{ flag_show_consts = true; });
-		p.option("--no-function-frames", "", [&]{ kaba::config.no_function_frame = true; });
+		p.option("--no-function-frames", "(os) ", [&]{ kaba::config.no_function_frame = true; });
 		p.option("--add-entry-point", "", [&]{ kaba::config.add_entry_point = true; });
-		p.option("--code-origin", "ORIGIN", "", [&](const string &a) {
+		p.option("--code-origin", "ORIGIN", "(os) set a custom code location", [&](const string &a) {
 			kaba::config.override_code_origin = true;
 			kaba::config.code_origin = kaba::s2i2(a);
 		});
-		p.option("--variable-offset", "OFFSET", "", [&](const string &a) {
+		p.option("--variable-offset", "OFFSET", "(os) ", [&](const string &a) {
 			kaba::config.override_variables_offset = true;
 			kaba::config.variables_offset = kaba::s2i2(a);
 		});
-		p.option("--output/-o", "OUTFILE", "", [&](const string &a){ out_file = a; });
+		p.option("--output/-o", "OUTFILE", "compile into file", [&](const string &a){ out_file = a; });
 		p.option("--output-format", "FORMAT", "raw/elf", [&](const string &a){
 			output_format = a;
 			if ((output_format != "raw") and (output_format != "elf")) {
@@ -184,10 +184,10 @@ public:
 				exit(1);
 			}
 		});
-		p.option("--export-symbols", "FILE", "", [&](const string &a){ symbols_out_file = a; });
-		p.option("--import-symbols", "FILE", "", [&](const string &a){ symbols_in_file = a; });
-		p.option("--interpret", "", [&] { flag_interpret = true; });
-		p.option("--xxx", "", [&] {
+		p.option("--export-symbols", "FILE", "save link table to file", [&](const string &a){ symbols_out_file = a; });
+		p.option("--import-symbols", "FILE", "load link table from file", [&](const string &a){ symbols_in_file = a; });
+		p.option("--interpret", "run in interpreter instead of native", [&] { flag_interpret = true; });
+		p.option("--xxx", "some experiment", [&] {
 			kaba::init(abi, flag_allow_std_lib);
 			msg_write(disassemble((void*)&xxx_delete0, -1));
 			//msg_write(disassemble((void*)&fff, 30));
@@ -196,7 +196,7 @@ public:
 			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 			exit(0);
 		});
-		p.cmd("--version/-v", "", "", [=] (const Array<string>&) {
+		p.cmd("--version/-v", "", "print the version", [=] (const Array<string>&) {
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
 				msg_write("native arch: amd64:win");
@@ -206,11 +206,11 @@ public:
 			msg_write("hui: " + hui::Version);
 			exit(0);
 		});
-		p.cmd("--help/-h", "", "", [&p] (const Array<string>&) {
+		p.cmd("--help/-h", "", "show this page", [&p] (const Array<string>&) {
 			p.show();
 			exit(0);
 		});
-		p.cmd("--just-disasm", "FILE", "", [&] (const Array<string> &a){
+		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [&] (const Array<string> &a){
 			bytes s = file_read_binary(a[0]);
 			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
@@ -226,10 +226,10 @@ public:
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 			exit(0);
 		});
-		p.cmd("--command/-c", "CODE", "", [&] (const Array<string> &a) {
+		p.cmd("--command/-c", "CODE", "compile and run a single command", [&] (const Array<string> &a) {
 			command = a[0];
 		});
-		p.cmd("", "FILENAME ...", "", [&filename, &execute_args] (const Array<string> &a) {
+		p.cmd("", "FILENAME ...", "compile and run a file", [&filename, &execute_args] (const Array<string> &a) {
 			filename = a[0];
 			execute_args = a.sub_ref(1);
 		});

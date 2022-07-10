@@ -42,6 +42,7 @@ public:
 		bool match(const Array<string> &arg, int &offset) const;
 		int min_params() const;
 		string sig() const;
+		bool is_default() const;
 	};
 	Array<Command> commands;
 
