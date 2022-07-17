@@ -60,7 +60,6 @@ void kaba_inplace_quick_sort(DynamicArray &array, int first, int last, F f) {
 
 template<class T>
 void _kaba_array_sort(DynamicArray &array, int offset_by, bool reverse) {
-
 	if (false and offset_by == 0 and sizeof(T) == array.element_size) {
 		auto f = [] (const T &a, const T &b) {
 			return a <= b;
