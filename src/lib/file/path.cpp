@@ -90,6 +90,14 @@ bool Path::operator >(const Path &p) const {
 	return compare(p) > 0;
 }
 
+bool Path::operator <=(const Path &p) const {
+	return compare(p) <= 0;
+}
+
+bool Path::operator >=(const Path &p) const {
+	return compare(p) >= 0;
+}
+
 Path::operator bool() const {
 	return !is_empty();
 }
