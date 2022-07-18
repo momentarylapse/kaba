@@ -203,7 +203,7 @@ void inplace_quick_sort(Array<T> &array, F f) {
 }
 
 template<class T, class F>
-void inplace_sort(Array<T> &array, F f) {
+void inplace_sort(Array<T> &array, F f /*= [](const T &a, const T &b) { return a <= b; }*/) {
 	if (array.num <= 8) {
 		// small
 		inplace_bubble_sort(array, f);
@@ -214,7 +214,7 @@ void inplace_sort(Array<T> &array, F f) {
 }
 
 template<class T, class F>
-Array<T> sorted(const Array<T> &array, F f) {
+Array<T> sorted(const Array<T> &array, F f /*= [](const T &a, const T &b) { return a <= b; }*/) {
 	auto r = array;
 	inplace_sort(r, f);
 	return r;
