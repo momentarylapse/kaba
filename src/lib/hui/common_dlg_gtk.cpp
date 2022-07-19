@@ -2,7 +2,7 @@
 #ifdef HUI_API_GTK
 
 #include "../os/file.h"
-#include "../os/file_op.h"
+#include "../os/filesystem.h"
 
 namespace hui
 {

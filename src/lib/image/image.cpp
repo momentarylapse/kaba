@@ -1,7 +1,7 @@
 #include "image.h"
 #include "../os/msg.h"
 #include "../os/path.h"
-#include "../os/file_op.h"
+#include "../os/filesystem.h"
 
 #include "image_bmp.h"
 #include "image_tga.h"

@@ -12,7 +12,7 @@
 #include "nix_common.h"
 #include "../image/image.h"
 #include "../os/msg.h"
-#include "../os/file_op.h"
+#include "../os/filesystem.h"
 
 // management:
 //  Texture.load()

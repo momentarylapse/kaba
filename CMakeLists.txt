@@ -171,13 +171,13 @@ set(SOURCE
 	src/lib/nix/nix_textures.cpp
 	src/lib/nix/nix_vertexbuffer.cpp
 	src/lib/nix/nix_view.cpp
+	src/lib/os/CommandLineParser.cpp
 	src/lib/os/date.cpp
 	src/lib/os/file.cpp
-	src/lib/os/file_op.cpp
+	src/lib/os/filesystem.cpp
 	src/lib/os/formatter.cpp
 	src/lib/os/msg.cpp
 	src/lib/os/path.cpp
-	src/lib/terminal/CommandLineParser.cpp
 	src/lib/threads/Mutex.cpp
 	src/lib/threads/Thread.cpp
 	src/lib/threads/ThreadedWork.cpp
