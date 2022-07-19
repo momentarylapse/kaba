@@ -5,7 +5,8 @@
  *      Author: michi
  */
 
-#include "Timer.h"
+#include "time.h"
+#include "msg.h"
 #include <thread>
 
 static std::thread::id main_thread_id = std::this_thread::get_id();
@@ -16,8 +17,6 @@ void require_main_thread(const string &msg) {
 
 }
 
-
-namespace hui {
 
 
 
@@ -44,7 +43,7 @@ float Timer::get() {
 static bool _sleep_complained_ = false;
 
 // don't call in main thread!!!!!
-void Sleep(float duration) {
+void sleep(float duration) {
 	if (duration <= 0)
 		return;
 	std::this_thread::sleep_for(std::chrono::microseconds(int64(duration * 1000000)));
@@ -55,7 +54,5 @@ void Sleep(float duration) {
 		_sleep_complained_ = true;
 	}*/
 }
-
-};
 
 

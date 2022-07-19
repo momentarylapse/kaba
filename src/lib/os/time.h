@@ -5,13 +5,10 @@
  *      Author: michi
  */
 
-#ifndef HUITIMER_H_
-#define HUITIMER_H_
+#ifndef SRC_LIB_OS_TIME_H_
+#define SRC_LIB_OS_TIME_H_
 
-#include "hui.h"
 #include <chrono>
-
-namespace hui {
 
 class Timer {
 public:
@@ -26,8 +23,6 @@ private:
 };
 
 
-void _cdecl Sleep(float duration);
-
-};
+void sleep(float duration);
 
 #endif /* HUITIMER_H_ */

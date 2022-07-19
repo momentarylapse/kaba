@@ -66,7 +66,6 @@ extern string ComboBoxSeparator;
 #include "Resource.h"
 #include "utility.h"
 #include "Painter.h"
-#include "Timer.h"
 #include "Toolbar.h"
 #include "error.h"
 #include "Clipboard.h"

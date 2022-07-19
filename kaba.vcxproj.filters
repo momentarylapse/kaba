@@ -208,9 +208,6 @@
     <ClCompile Include="src\lib\hui\Resource.cpp">
       <Filter>src\lib\hui</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\hui\Timer.cpp">
-      <Filter>src\lib\hui</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\hui\Toolbar.cpp">
       <Filter>src\lib\hui</Filter>
     </ClCompile>
@@ -517,6 +514,9 @@
     <ClCompile Include="src\lib\os\path.cpp">
       <Filter>src\lib\os</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\os\time.cpp">
+      <Filter>src\lib\os</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\threads\Mutex.cpp">
       <Filter>src\lib\threads</Filter>
     </ClCompile>
@@ -777,9 +777,6 @@
     <ClInclude Include="src\lib\hui\Resource.h">
       <Filter>src\lib\hui</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\hui\Timer.h">
-      <Filter>src\lib\hui</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\hui\Toolbar.h">
       <Filter>src\lib\hui</Filter>
     </ClInclude>
@@ -1024,6 +1021,9 @@
       <Filter>src\lib\os</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\os\path.h">
+      <Filter>src\lib\os</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\os\time.h">
       <Filter>src\lib\os</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\threads\Mutex.h">

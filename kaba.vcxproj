@@ -185,7 +185,6 @@
     <ClCompile Include="src\lib\hui\PainterGtk.cpp" />
     <ClCompile Include="src\lib\hui\Panel.cpp" />
     <ClCompile Include="src\lib\hui\Resource.cpp" />
-    <ClCompile Include="src\lib\hui\Timer.cpp" />
     <ClCompile Include="src\lib\hui\Toolbar.cpp" />
     <ClCompile Include="src\lib\hui\ToolbarGtk.cpp" />
     <ClCompile Include="src\lib\hui\ToolbarWin.cpp" />
@@ -288,6 +287,7 @@
     <ClCompile Include="src\lib\os\formatter.cpp" />
     <ClCompile Include="src\lib\os\msg.cpp" />
     <ClCompile Include="src\lib\os\path.cpp" />
+    <ClCompile Include="src\lib\os\time.cpp" />
     <ClCompile Include="src\lib\threads\Mutex.cpp" />
     <ClCompile Include="src\lib\threads\Thread.cpp" />
     <ClCompile Include="src\lib\threads\ThreadedWork.cpp" />
@@ -376,7 +376,6 @@
     <ClInclude Include="src\lib\hui\Painter.h" />
     <ClInclude Include="src\lib\hui\Panel.h" />
     <ClInclude Include="src\lib\hui\Resource.h" />
-    <ClInclude Include="src\lib\hui\Timer.h" />
     <ClInclude Include="src\lib\hui\Toolbar.h" />
     <ClInclude Include="src\lib\hui\utility.h" />
     <ClInclude Include="src\lib\hui\Window.h" />
@@ -459,6 +458,7 @@
     <ClInclude Include="src\lib\os\formatter.h" />
     <ClInclude Include="src\lib\os\msg.h" />
     <ClInclude Include="src\lib\os\path.h" />
+    <ClInclude Include="src\lib\os\time.h" />
     <ClInclude Include="src\lib\threads\Mutex.h" />
     <ClInclude Include="src\lib\threads\Thread.h" />
     <ClInclude Include="src\lib\threads\ThreadedWork.h" />
