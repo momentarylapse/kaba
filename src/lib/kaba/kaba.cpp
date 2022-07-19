@@ -14,8 +14,6 @@
 #include "Interpreter.h"
 #include <cassert>
 
-#include "../config.h"
-
 #ifdef OS_LINUX
 	#include <sys/mman.h>
 #endif

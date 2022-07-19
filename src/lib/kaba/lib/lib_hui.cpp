@@ -3,17 +3,19 @@
 #include "lib.h"
 #include "../../base/callable.h"
 
-#ifdef _X_USE_HUI_
+#if __has_include("../../hui/hui.h")
 	#include "../../hui/hui.h"
-#elif defined(_X_USE_HUI_MINIMAL_)
+	#define KABA_EXPORT_HUI
+#elif __has_include("../../hui_minimal/hui.h")
 	#include "../../hui_minimal/hui.h"
+	#define KABA_EXPORT_HUI_MINIMAL
 #else
-	we are re screwed.... TODO: test for _X_USE_HUI_
+	#error("we are re screwed.... no hui or hui_minimal")
 #endif
 
 
 namespace hui{
-#ifdef _X_USE_HUI_MINIMAL_
+#ifdef KABA_EXPORT_HUI_MINIMAL
 	typedef int Menu;
 	typedef int Toolbar;
 	typedef int Window;
@@ -22,14 +24,14 @@ namespace hui{
 	typedef int Event;
 	typedef int Painter;
 #endif
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 	hui::Menu *create_menu_from_source(const string &source, hui::Panel*);
 #endif
 }
 
 namespace kaba {
 
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 	static hui::Event *_event;
 	static hui::Panel *_panel;
 	#define GetDAPanel(x)			int_p(&_panel->x)-int_p(_panel)
@@ -86,7 +88,7 @@ namespace kaba {
 	#define GetDAPanel(x) 0
 #endif
 
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 	#define hui_p(p)		p
 #else
 	#define hui_p(p)		nullptr
@@ -371,7 +373,7 @@ void SIAddPackageHui() {
 			func_add_param("func", TypeCallbackPainter);
 		class_add_func("remove_event_handler", TypeVoid, hui_p(&hui::Panel::remove_event_handler));
 			func_add_param("uid", TypeInt);
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 		class_set_vtable(hui::Panel);
 #endif
 
@@ -435,7 +437,7 @@ void SIAddPackageHui() {
 		class_add_func_virtual("on_key_up", TypeVoid, hui_p(&hui::Window::on_key_up));
 		class_add_func_virtual("on_draw", TypeVoid, hui_p(&hui::Window::on_draw));
 			func_add_param("p", TypeHuiPainter);
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 		class_set_vtable(hui::Window);
 #endif
 
@@ -446,7 +448,7 @@ void SIAddPackageHui() {
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&hui::Window::__delete__), Flags::OVERRIDE);
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 		class_set_vtable(hui::Window);
 #endif
 
@@ -459,7 +461,7 @@ void SIAddPackageHui() {
 			func_add_param("parent", TypeHuiWindow);
 			func_add_param("allow_parent",TypeBool);
 		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&hui::Window::__delete__), Flags::OVERRIDE);
-#ifdef _X_USE_HUI_
+#ifdef KABA_EXPORT_HUI
 		class_set_vtable(hui::Window);
 #endif
 

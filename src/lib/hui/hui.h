@@ -13,7 +13,7 @@
 #define _HUI_EXISTS_
 
 #include "common.h"
-#ifdef _X_USE_IMAGE_
+#if __has_include("../image/image.h")
 	#include "../image/image.h"
 #else
 	typedef int Image;

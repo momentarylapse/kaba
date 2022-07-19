@@ -1,9 +1,8 @@
 #include "any.h"
 #include "../base/map.h"
 #include "../os/msg.h"
-#include "../config.h"
 
-#ifdef _X_USE_KABA_
+#if __has_include("../kaba/kaba.h")
 #include "../kaba/kaba.h"
 namespace kaba {
 	extern const Class *TypeAnyList;

@@ -5,7 +5,7 @@
 
 
 
-#ifdef _X_USE_PDF_
+#if __has_include("../../doc/pdf.h")
 	#include "../../doc/pdf.h"
 	#define pdf_p(p)		p
 #else
