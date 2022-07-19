@@ -123,6 +123,7 @@
     <ClCompile Include="src\lib\base\pointer.cpp" />
     <ClCompile Include="src\lib\base\strings.cpp" />
     <ClCompile Include="src\lib\doc\chunked.cpp" />
+    <ClCompile Include="src\lib\doc\config.cpp" />
     <ClCompile Include="src\lib\doc\pdf.cpp" />
     <ClCompile Include="src\lib\doc\xml.cpp" />
     <ClCompile Include="src\lib\hui\Controls\Control.cpp" />
@@ -172,7 +173,6 @@
     <ClCompile Include="src\lib\hui\common_dlg.cpp" />
     <ClCompile Include="src\lib\hui\common_dlg_gtk.cpp" />
     <ClCompile Include="src\lib\hui\common_dlg_win.cpp" />
-    <ClCompile Include="src\lib\hui\Config.cpp" />
     <ClCompile Include="src\lib\hui\error.cpp" />
     <ClCompile Include="src\lib\hui\Event.cpp" />
     <ClCompile Include="src\lib\hui\hui.cpp" />
@@ -325,6 +325,7 @@
     <ClInclude Include="src\lib\base\set.h" />
     <ClInclude Include="src\lib\base\strings.h" />
     <ClInclude Include="src\lib\doc\chunked.h" />
+    <ClInclude Include="src\lib\doc\config.h" />
     <ClInclude Include="src\lib\doc\pdf.h" />
     <ClInclude Include="src\lib\doc\xml.h" />
     <ClInclude Include="src\lib\hui\Controls\Control.h" />
@@ -365,7 +366,6 @@
     <ClInclude Include="src\lib\hui\Clipboard.h" />
     <ClInclude Include="src\lib\hui\common.h" />
     <ClInclude Include="src\lib\hui\common_dlg.h" />
-    <ClInclude Include="src\lib\hui\Config.h" />
     <ClInclude Include="src\lib\hui\error.h" />
     <ClInclude Include="src\lib\hui\Event.h" />
     <ClInclude Include="src\lib\hui\hui.h" />

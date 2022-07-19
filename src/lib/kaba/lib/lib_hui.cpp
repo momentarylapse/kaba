@@ -103,11 +103,8 @@ extern const Class *TypeVec2;
 //extern const Class *TypeTimer;
 extern const Class* TypeCallback;
 extern const Class* TypeCallbackString;
+extern const Class* TypeDocConfiguration;
 const Class *TypeHuiWindowP;
-
-string _hui_config_get(hui::Configuration &c, const string &key) {
-	return c.get_str(key, "");
-}
 
 void SIAddPackageHui() {
 	add_package("hui");
@@ -125,7 +122,6 @@ void SIAddPackageHui() {
 	auto TypeHuiEvent = add_type("Event", sizeof(hui::Event));
 	auto TypeHuiEventP = add_type_p(TypeHuiEvent);
 	auto TypeHuiPainter = add_type("Painter", sizeof(hui::Painter));
-	auto TypeHuiConfiguration = add_type("Configuration", sizeof(hui::Configuration));
 
 	auto TypeCallbackPainter = add_type_f(TypeVoid, {TypeHuiPainter});
 	auto TypeCallbackPath = add_type_f(TypeVoid, {TypePath});
@@ -471,41 +467,6 @@ void SIAddPackageHui() {
 	add_class(TypeHuiPainter);
 		class_derive_from(TypeBasePainter, true, true);
 
-
-	add_class(TypeHuiConfiguration);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &hui::Configuration::__init__);
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, &hui::Configuration::__del__);
-		class_add_func("load", TypeBool, &hui::Configuration::load);
-			func_add_param("path", TypePath);
-		class_add_func("save", TypeVoid, &hui::Configuration::save, Flags::CONST);
-			func_add_param("path", TypePath);
-		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &hui::Configuration::set_int);
-			func_add_param("name", TypeString);
-			func_add_param("value", TypeInt);
-		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &hui::Configuration::set_float);
-			func_add_param("name", TypeString);
-			func_add_param("value", TypeFloat32);
-		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &hui::Configuration::set_bool);
-			func_add_param("name", TypeString);
-			func_add_param("value", TypeBool);
-		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &hui::Configuration::set_str);
-			func_add_param("name", TypeString);
-			func_add_param("value", TypeString);
-		class_add_func("get_int", TypeInt, &hui::Configuration::get_int, Flags::CONST);
-			func_add_param("name", TypeString);
-			func_add_param("default", TypeInt);
-		class_add_func("get_float", TypeFloat32, &hui::Configuration::get_float, Flags::CONST);
-			func_add_param("name", TypeString);
-			func_add_param("default", TypeFloat32);
-		class_add_func("get_bool", TypeBool, &hui::Configuration::get_bool, Flags::CONST);
-			func_add_param("name", TypeString);
-			func_add_param("default", TypeBool);
-		class_add_func("get_str", TypeString, &hui::Configuration::get_str, Flags::CONST);
-			func_add_param("name", TypeString);
-			func_add_param("default", TypeString);
-		class_add_func(IDENTIFIER_FUNC_GET, TypeString, &_hui_config_get, Flags::CONST);
-			func_add_param("name", TypeString);
-		class_add_func("keys", TypeStringList, &hui::Configuration::keys, Flags::CONST);
 	
 	// user interface
 	add_func("set_idle_function", TypeVoid, hui_p(&hui_set_idle_function_kaba), Flags::STATIC);
@@ -704,7 +665,7 @@ void SIAddPackageHui() {
 	add_ext_var("app_directory", TypePath, hui_p(&hui::Application::directory));
 	add_ext_var("app_directory_static", TypePath, hui_p(&hui::Application::directory_static));
 	//add_ext_var("filename", TypePath, hui_p(&hui::Filename));
-	add_ext_var("app_config", TypeHuiConfiguration, hui_p(&hui::config));
+	add_ext_var("app_config", TypeDocConfiguration, hui_p(&hui::config));
 }
 
 };

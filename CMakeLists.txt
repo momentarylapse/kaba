@@ -13,6 +13,7 @@ set(SOURCE
 	src/lib/base/pointer.cpp
 	src/lib/base/strings.cpp
 	src/lib/doc/chunked.cpp
+	src/lib/doc/config.cpp
 	src/lib/doc/pdf.cpp
 	src/lib/doc/xml.cpp
 	src/lib/hui/Controls/Control.cpp
@@ -62,7 +63,6 @@ set(SOURCE
 	src/lib/hui/common_dlg.cpp
 	src/lib/hui/common_dlg_gtk.cpp
 	src/lib/hui/common_dlg_win.cpp
-	src/lib/hui/Config.cpp
 	src/lib/hui/error.cpp
 	src/lib/hui/Event.cpp
 	src/lib/hui/hui.cpp

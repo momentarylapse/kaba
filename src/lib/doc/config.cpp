@@ -5,7 +5,7 @@
  *      Author: michi
  */
 
-#include "Config.h"
+#include "config.h"
 #include "../os/file.h"
 #include "../os/filesystem.h"
 #include "../os/msg.h"
@@ -13,15 +13,6 @@
 
 string f2s_clean(float f, int dez);
 
-namespace hui
-{
-
-
-#ifdef OS_WINDOWS
-	//int _tchar_str_size_(TCHAR *str);
-#endif
-
-Configuration config;
 
 Configuration::Configuration() {
 	loaded = false;
@@ -225,7 +216,4 @@ Array<string> Configuration::keys() const {
 	return map.keys();
 }
 
-
-
-};
 

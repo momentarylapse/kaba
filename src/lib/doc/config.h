@@ -1,5 +1,5 @@
 /*
- * HuiConfig.h
+ * config.h
  *
  *  Created on: 01.03.2014
  *      Author: michi
@@ -10,9 +10,10 @@
 
 #include "../base/base.h"
 #include "../base/map.h"
-#include "../os/path.h"
 
-namespace hui {
+
+class Path;
+
 
 class Configuration {
 public:
@@ -40,10 +41,5 @@ public:
 	Map<string, string> map;
 };
 
-extern Configuration config;
-
-
-
-};
 
 #endif /* HUICONFIG_H_ */

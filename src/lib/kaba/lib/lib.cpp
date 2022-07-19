@@ -728,11 +728,11 @@ void init(Abi abi, bool allow_std_lib) {
 	SIAddPackageTime();
 	SIAddPackageOS();
 	SIAddPackageImage();
-	SIAddPackageHui();
+	SIAddPackageDoc();
+	SIAddPackageHui(); // depends on doc
 	SIAddPackageGl();
 	SIAddPackageNet();
 	SIAddPackageThread();
-	SIAddPackageDoc();
 	SIAddPackageVulkan();
 
 	add_package("base");

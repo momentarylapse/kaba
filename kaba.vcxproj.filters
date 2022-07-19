@@ -22,6 +22,9 @@
     <ClCompile Include="src\lib\doc\chunked.cpp">
       <Filter>src\lib\doc</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\doc\config.cpp">
+      <Filter>src\lib\doc</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\doc\pdf.cpp">
       <Filter>src\lib\doc</Filter>
     </ClCompile>
@@ -167,9 +170,6 @@
       <Filter>src\lib\hui</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\hui\common_dlg_win.cpp">
-      <Filter>src\lib\hui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\hui\Config.cpp">
       <Filter>src\lib\hui</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\hui\error.cpp">
@@ -624,6 +624,9 @@
     <ClInclude Include="src\lib\doc\chunked.h">
       <Filter>src\lib\doc</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\doc\config.h">
+      <Filter>src\lib\doc</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\doc\pdf.h">
       <Filter>src\lib\doc</Filter>
     </ClInclude>
@@ -742,9 +745,6 @@
       <Filter>src\lib\hui</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\hui\common_dlg.h">
-      <Filter>src\lib\hui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\hui\Config.h">
       <Filter>src\lib\hui</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\hui\error.h">

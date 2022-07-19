@@ -62,13 +62,18 @@ extern string ComboBoxSeparator;
 #include "Window.h"
 #include "common_dlg.h"
 #include "language.h"
-#include "Config.h"
 #include "Resource.h"
 #include "utility.h"
 #include "Painter.h"
 #include "Toolbar.h"
 #include "error.h"
 #include "Clipboard.h"
+
+
+#include "../doc/config.h"
+namespace hui {
+extern Configuration config;
+}
 
 
 #endif
