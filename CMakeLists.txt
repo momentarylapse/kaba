@@ -12,11 +12,9 @@ set(SOURCE
 	src/lib/base/array.cpp
 	src/lib/base/pointer.cpp
 	src/lib/base/strings.cpp
-	src/lib/file/file.cpp
-	src/lib/file/file_op.cpp
-	src/lib/file/formatter.cpp
-	src/lib/file/msg.cpp
-	src/lib/file/path.cpp
+	src/lib/doc/chunked.cpp
+	src/lib/doc/pdf.cpp
+	src/lib/doc/xml.cpp
 	src/lib/hui/Controls/Control.cpp
 	src/lib/hui/Controls/ControlButtonGtk.cpp
 	src/lib/hui/Controls/ControlCheckBoxGtk.cpp
@@ -173,6 +171,12 @@ set(SOURCE
 	src/lib/nix/nix_textures.cpp
 	src/lib/nix/nix_vertexbuffer.cpp
 	src/lib/nix/nix_view.cpp
+	src/lib/os/date.cpp
+	src/lib/os/file.cpp
+	src/lib/os/file_op.cpp
+	src/lib/os/formatter.cpp
+	src/lib/os/msg.cpp
+	src/lib/os/path.cpp
 	src/lib/terminal/CommandLineParser.cpp
 	src/lib/threads/Mutex.cpp
 	src/lib/threads/Thread.cpp
@@ -194,9 +198,6 @@ set(SOURCE
 	src/lib/vulkan/Texture.cpp
 	src/lib/vulkan/VertexBuffer.cpp
 	src/lib/vulkan/vulkan.cpp
-	src/lib/xfile/chunked.cpp
-	src/lib/xfile/pdf.cpp
-	src/lib/xfile/xml.cpp
 	src/main.cpp
 )
 

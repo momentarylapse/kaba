@@ -1,6 +1,9 @@
 #include "hui.h"
 #ifdef HUI_API_GTK
 
+#include "../os/file.h"
+#include "../os/file_op.h"
+
 namespace hui
 {
 

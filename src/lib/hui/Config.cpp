@@ -6,7 +6,9 @@
  */
 
 #include "Config.h"
-#include "../file/file.h"
+#include "../os/file.h"
+#include "../os/file_op.h"
+#include "../os/msg.h"
 
 
 string f2s_clean(float f, int dez);

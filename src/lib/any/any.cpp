@@ -1,5 +1,6 @@
 #include "any.h"
 #include "../base/map.h"
+#include "../os/msg.h"
 #include "../config.h"
 
 #ifdef _X_USE_KABA_

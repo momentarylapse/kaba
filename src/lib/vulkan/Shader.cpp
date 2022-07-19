@@ -11,7 +11,9 @@
 #include <iostream>
 
 #include "helper.h"
-#include "../file/file.h"
+#include "../os/file.h"
+#include "../os/file_op.h"
+#include "../os/msg.h"
 #include "../image/image.h"
 
 #if HAS_LIB_SHADERC

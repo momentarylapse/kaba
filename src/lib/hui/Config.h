@@ -10,7 +10,7 @@
 
 #include "../base/base.h"
 #include "../base/map.h"
-#include "../file/path.h"
+#include "../os/path.h"
 
 namespace hui {
 

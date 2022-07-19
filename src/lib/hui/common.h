@@ -48,7 +48,7 @@
 #endif
 
 
-#include "../file/file.h"
+#include "../os/msg.h"
 
 
 typedef struct _XDisplay Display; // Xorg

@@ -6,7 +6,8 @@
 |                                                                              |
 | last updated: 2010.07.07 (c) by MichiSoft TM                                 |
 \*----------------------------------------------------------------------------*/
-#include "../file/file.h"
+#include "../os/file.h"
+#include "../os/msg.h"
 #include "kaba.h"
 #include "parser/Parser.h"
 #include "parser/Concretifier.h"

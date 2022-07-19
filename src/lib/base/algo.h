@@ -112,7 +112,7 @@ void inplace_bubble_sort(Array<T> &array, F f) {
 				array.swap(i, j);
 }
 
-#include "../file/msg.h"
+#include "../os/msg.h"
 #define DEBUG_SORT 0
 
 template<class T, class F>

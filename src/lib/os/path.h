@@ -5,8 +5,8 @@
  *      Author: michi
  */
 
-#ifndef SRC_LIB_FILE_PATH_H_
-#define SRC_LIB_FILE_PATH_H_
+#ifndef SRC_LIB_OS_PATH_H_
+#define SRC_LIB_OS_PATH_H_
 
 #include "../base/base.h"
 
@@ -63,4 +63,4 @@ private:
 };
 
 
-#endif /* SRC_LIB_FILE_PATH_H_ */
+#endif /* SRC_LIB_OS_PATH_H_ */

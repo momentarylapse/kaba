@@ -17,6 +17,7 @@
 #include "../../math/complex.h"
 #include "../../any/any.h"
 #include "../../base/callable.h"
+#include "../../os/msg.h"
 
 
 namespace kaba {

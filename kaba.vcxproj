@@ -122,11 +122,9 @@
     <ClCompile Include="src\lib\base\array.cpp" />
     <ClCompile Include="src\lib\base\pointer.cpp" />
     <ClCompile Include="src\lib\base\strings.cpp" />
-    <ClCompile Include="src\lib\file\file.cpp" />
-    <ClCompile Include="src\lib\file\file_op.cpp" />
-    <ClCompile Include="src\lib\file\formatter.cpp" />
-    <ClCompile Include="src\lib\file\msg.cpp" />
-    <ClCompile Include="src\lib\file\path.cpp" />
+    <ClCompile Include="src\lib\doc\chunked.cpp" />
+    <ClCompile Include="src\lib\doc\pdf.cpp" />
+    <ClCompile Include="src\lib\doc\xml.cpp" />
     <ClCompile Include="src\lib\hui\Controls\Control.cpp" />
     <ClCompile Include="src\lib\hui\Controls\ControlButtonGtk.cpp" />
     <ClCompile Include="src\lib\hui\Controls\ControlCheckBoxGtk.cpp" />
@@ -283,6 +281,12 @@
     <ClCompile Include="src\lib\nix\nix_textures.cpp" />
     <ClCompile Include="src\lib\nix\nix_vertexbuffer.cpp" />
     <ClCompile Include="src\lib\nix\nix_view.cpp" />
+    <ClCompile Include="src\lib\os\date.cpp" />
+    <ClCompile Include="src\lib\os\file.cpp" />
+    <ClCompile Include="src\lib\os\file_op.cpp" />
+    <ClCompile Include="src\lib\os\formatter.cpp" />
+    <ClCompile Include="src\lib\os\msg.cpp" />
+    <ClCompile Include="src\lib\os\path.cpp" />
     <ClCompile Include="src\lib\terminal\CommandLineParser.cpp" />
     <ClCompile Include="src\lib\threads\Mutex.cpp" />
     <ClCompile Include="src\lib\threads\Thread.cpp" />
@@ -304,9 +308,6 @@
     <ClCompile Include="src\lib\vulkan\Texture.cpp" />
     <ClCompile Include="src\lib\vulkan\VertexBuffer.cpp" />
     <ClCompile Include="src\lib\vulkan\vulkan.cpp" />
-    <ClCompile Include="src\lib\xfile\chunked.cpp" />
-    <ClCompile Include="src\lib\xfile\pdf.cpp" />
-    <ClCompile Include="src\lib\xfile\xml.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -323,11 +324,9 @@
     <ClInclude Include="src\lib\base\pointer.h" />
     <ClInclude Include="src\lib\base\set.h" />
     <ClInclude Include="src\lib\base\strings.h" />
-    <ClInclude Include="src\lib\file\file.h" />
-    <ClInclude Include="src\lib\file\file_op.h" />
-    <ClInclude Include="src\lib\file\formatter.h" />
-    <ClInclude Include="src\lib\file\msg.h" />
-    <ClInclude Include="src\lib\file\path.h" />
+    <ClInclude Include="src\lib\doc\chunked.h" />
+    <ClInclude Include="src\lib\doc\pdf.h" />
+    <ClInclude Include="src\lib\doc\xml.h" />
     <ClInclude Include="src\lib\hui\Controls\Control.h" />
     <ClInclude Include="src\lib\hui\Controls\ControlButton.h" />
     <ClInclude Include="src\lib\hui\Controls\ControlCheckBox.h" />
@@ -453,6 +452,12 @@
     <ClInclude Include="src\lib\nix\nix_textures.h" />
     <ClInclude Include="src\lib\nix\nix_vertexbuffer.h" />
     <ClInclude Include="src\lib\nix\nix_view.h" />
+    <ClInclude Include="src\lib\os\date.h" />
+    <ClInclude Include="src\lib\os\file.h" />
+    <ClInclude Include="src\lib\os\file_op.h" />
+    <ClInclude Include="src\lib\os\formatter.h" />
+    <ClInclude Include="src\lib\os\msg.h" />
+    <ClInclude Include="src\lib\os\path.h" />
     <ClInclude Include="src\lib\terminal\CommandLineParser.h" />
     <ClInclude Include="src\lib\threads\Mutex.h" />
     <ClInclude Include="src\lib\threads\Thread.h" />
@@ -474,9 +479,6 @@
     <ClInclude Include="src\lib\vulkan\Texture.h" />
     <ClInclude Include="src\lib\vulkan\VertexBuffer.h" />
     <ClInclude Include="src\lib\vulkan\vulkan.h" />
-    <ClInclude Include="src\lib\xfile\chunked.h" />
-    <ClInclude Include="src\lib\xfile\pdf.h" />
-    <ClInclude Include="src\lib\xfile\xml.h" />
     <ClInclude Include="src\lib\config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

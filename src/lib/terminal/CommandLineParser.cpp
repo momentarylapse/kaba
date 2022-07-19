@@ -7,7 +7,7 @@
 
 #include "CommandLineParser.h"
 #include "../base/algo.h"
-#include "../file/msg.h"
+#include "../os/msg.h"
 
 
 void CommandLineParser::option(const string &name, const string &comment, Callback cb) {

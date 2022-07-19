@@ -5,7 +5,7 @@
 
 
 #ifdef _X_USE_PDF_
-	#include "../../xfile/pdf.h"
+	#include "../../doc/pdf.h"
 	#define pdf_p(p)		p
 #else
 	namespace pdf {
