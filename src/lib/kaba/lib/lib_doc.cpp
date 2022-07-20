@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "../../doc/config.h"
+#include "../../any/any.h"
 #include "lib.h"
 
 
@@ -22,11 +23,12 @@ namespace kaba {
 extern const Class *TypeBasePainterP;
 extern const Class *TypePath;
 extern const Class *TypeStringList;
+extern const Class *TypeAny;
 const Class *TypeDocConfiguration;
 
 
-string _doc_config_get(Configuration &c, const string &key) {
-	return c.get_str(key, "");
+Any _doc_config_get(Configuration &c, const string &key) {
+	return c.get(key, Any());
 }
 
 void SIAddPackageDoc() {
@@ -62,7 +64,7 @@ void SIAddPackageDoc() {
 		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set_int);
 			func_add_param("name", TypeString);
 			func_add_param("value", TypeInt);
-		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set_float);
+		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set_float); // FIXME: operator preference...
 			func_add_param("name", TypeString);
 			func_add_param("value", TypeFloat32);
 		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set_bool);
@@ -71,6 +73,9 @@ void SIAddPackageDoc() {
 		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set_str);
 			func_add_param("name", TypeString);
 			func_add_param("value", TypeString);
+		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &Configuration::set);
+			func_add_param("name", TypeString);
+			func_add_param("value", TypeAny);
 		class_add_func("get_int", TypeInt, &Configuration::get_int, Flags::CONST);
 			func_add_param("name", TypeString);
 			func_add_param("default", TypeInt);
@@ -83,7 +88,7 @@ void SIAddPackageDoc() {
 		class_add_func("get_str", TypeString, &Configuration::get_str, Flags::CONST);
 			func_add_param("name", TypeString);
 			func_add_param("default", TypeString);
-		class_add_func(IDENTIFIER_FUNC_GET, TypeString, &_doc_config_get, Flags::CONST);
+		class_add_func(IDENTIFIER_FUNC_GET, TypeAny, &_doc_config_get, Flags::CONST);
 			func_add_param("name", TypeString);
 		class_add_func("keys", TypeStringList, &Configuration::keys, Flags::CONST);
 }
