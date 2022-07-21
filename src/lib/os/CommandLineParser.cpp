@@ -7,6 +7,7 @@
 
 #include "CommandLineParser.h"
 #include "../base/algo.h"
+#include "../base/sort.h"
 #include "../os/msg.h"
 
 
