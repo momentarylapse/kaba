@@ -115,7 +115,7 @@ public:
 		p.option("-o/--output", "OUTFILE", "compile into file", [this] (const string &a) {
 			out_file = a;
 		});
-		p.option("--output-format", "FORMAT", "raw/elf", [this] (const string &a) {
+		p.option("--output-format", "FORMAT", "format for --output: raw/elf", [this] (const string &a) {
 			output_format = a;
 			if ((output_format != "raw") and (output_format != "elf"))
 				die("output format has to be 'raw' or 'elf', not: " + output_format);
@@ -142,25 +142,13 @@ public:
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
-		p.cmd("-h/--help", "", "show this page", [&p] (const Array<string>&) {
+		p.cmd("-h/--help", "", "show this help page", [&p] (const Array<string>&) {
 			p.show();
 		});
 		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [this] (const Array<string> &a){
-			bytes s = os::fs::read_binary(a[0]);
-			kaba::init(abi, flag_allow_std_lib);
-			int data_size = 0;
-			if (flag_compile_os) {
-				for (int i=0; i<s.num-1; i++)
-					if (s[i] == 0x55 and s[i+1] == 0x89) {
-						data_size = i;
-						break;
-					}
-			}
-			for (int i=0; i<data_size; i+= 4)
-				msg_write(format("   data %03x:  ", i) + s.sub(i, i+4).hex());
-			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
+			disassemble_file(a[0]);
 		});
-		p.cmd("--command/-c", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
+		p.cmd("-c/--command", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
 			init_environment();
 			try {
 				kaba::execute_single_command(a[0]);
@@ -189,7 +177,7 @@ public:
 				// direct execution
 				execute(s, a.sub_ref(1));
 			} else {
-				die("can only execute files when the native ABI is used");
+				die("can only execute files when using the native ABI");
 			}
 			kaba::clean_up();
 		});
@@ -294,13 +282,11 @@ public:
 		typedef void main_void_func();
 
 		if (auto f = (main_arg_func*)s->match_function("main", "void", {"string[]"})) {
-			// special execution...
 			f(args);
 		} else if (auto f = (main_void_func*)s->match_function("main", "void", {})) {
-			// default execution
 			f();
 		} else {
-			die("no 'void main()' found");
+			die("no 'func main()' or 'func main(string[])' found");
 		}
 	}
 #pragma GCC pop_options
@@ -309,6 +295,22 @@ public:
 		auto f = os::fs::open(out_file, "wb");
 		f->write(s->opcode, s->opcode_size);
 		delete(f);
+	}
+
+	void disassemble_file(const Path &filename) {
+		bytes s = os::fs::read_binary(filename);
+		kaba::init(abi, flag_allow_std_lib);
+		int data_size = 0;
+		if (flag_compile_os) {
+			for (int i=0; i<s.num-1; i++)
+				if (s[i] == 0x55 and s[i+1] == 0x89) {
+					data_size = i;
+					break;
+				}
+		}
+		for (int i=0; i<data_size; i+= 4)
+			msg_write(format("   data %03x:  ", i) + s.sub(i, i+4).hex());
+		msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 	}
 };
 
