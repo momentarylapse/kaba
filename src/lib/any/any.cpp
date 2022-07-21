@@ -566,7 +566,7 @@ void Any::append(const Any &a) {
 	}
 }
 
-int Any::length() {
+int Any::length() const {
 	if (is_array())
 		return as_array().num;
 	if (is_map())
