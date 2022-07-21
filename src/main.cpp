@@ -162,7 +162,11 @@ public:
 		});
 		p.cmd("--command/-c", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
 			init_environment();
-			kaba::execute_single_command(a[0]);
+			try {
+				kaba::execute_single_command(a[0]);
+			} catch (Exception &e) {
+				die(e.message());
+			}
 			kaba::clean_up();
 		});
 		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
@@ -252,9 +256,8 @@ public:
 
 	void show_constants(shared<kaba::Module> s) {
 		msg_write("---- constants ----");
-		for (auto *c: weak(s->syntax->base_class->constants)) {
-			msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
-		}
+		for (auto *c: weak(s->syntax->base_class->constants))
+			msg_write(format("%12s %-20s %s", c->type->name, c->str(), c->value.hex()));
 	}
 
 	shared<kaba::Module> compile_file(const Path &_filename) {
