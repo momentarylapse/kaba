@@ -199,7 +199,7 @@ bool CommandLineParser::Command::match(const Array<string> &arg, int &offset) co
 		bool ok = true;
 		for (int i=0; i<nn.num; i++)
 			if (arg[i] != nn[i])
-				if (i == 0 and arg[i] != "--" + nn[i])
+				if ((i == 0 and arg[i] != "--" + nn[i]) or (i > 0))
 					ok = false;
 		//msg_write(ok);
 		if (ok) {
