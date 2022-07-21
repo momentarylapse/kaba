@@ -80,6 +80,9 @@ endif
 
 
 sources = [
+	'src/helper/elf.cpp',
+	'src/helper/experiments.cpp',
+	'src/helper/symbols.cpp',
 	'src/lib/algebra/crypto.cpp',
 	'src/lib/algebra/vli.cpp',
 	'src/lib/any/any.cpp',

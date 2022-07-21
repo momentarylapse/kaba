@@ -1,112 +1,25 @@
 #include "lib/base/base.h"
 #include "lib/os/file.h"
 #include "lib/os/filesystem.h"
-#include "lib/os/formatter.h"
 #include "lib/os/msg.h"
 #include "lib/os/date.h"
 #include "lib/os/CommandLineParser.h"
 #include "lib/hui/hui.h"
-#include "lib/nix/nix.h"
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
+#include "helper/elf.h"
+#include "helper/symbols.h"
+#include "helper/experiments.h"
 
 
 string AppName = "kaba";
 string AppVersion = kaba::Version;
 
 
-typedef void main_arg_func(const Array<string>&);
-typedef void main_void_func();
-
-
 
 namespace kaba {
 	extern int64 s2i2(const string &str);
-	extern string function_link_name(Function *f);
-	extern string decode_symbol_name(const string&);
-};
-
-float fff(int i, int j, int k, float f1, float f2) {
-	return f1 + f2;
-}
-
-string disassemble(void* d, int size) {
-	unsigned char* c = (unsigned char*)d;
-	if (c[0] == 0xe9) {
-		msg_write("(indirect)");
-		int offset = *(int*)&c[1];
-		return Asm::disassemble(c + offset + 5, size);
-	}
-	return Asm::disassemble(d, size);
-}
-
-void xxx_delete0(VirtualBase* v) {
-	v->__delete_external__();
-	v->__delete__();
-	v->~VirtualBase();
-	//delete v;
-}
-
-void xxx_delete(VirtualBase* v) {
-	msg_write("...xxx_delete");// +p2s(v));
-	delete v;
-	//v->__delete_external__();
-	//v->__delete__();
-}
-
-/*string ggg(string& s) {
-	return s + ".";
-}*/
-
-int skdjfhsjkdfh;
-
-struct XXX {
-	int i[128];
-};
-
-string kjhsdf, kjhsdf2;
-
-// https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-160
-
-string ggg(int i) {
-	//skdjfhsjkdfh = i;
-	kjhsdf = kjhsdf2;
-	return kjhsdf;
-}
-
-#include "lib/math/complex.h"
-color COLORX1, COLORX2, COLORX3;
-complex COMPLEX1;
-complex fff3() {
-	return complex(COLORX3.r*rand(), COLORX2.r);
-}
-
-#ifdef OS_WINDOWS
-__declspec(noinline)
-#else
-[[gnu::noinline]]
-#endif
-void f_xxx(int a, int b, int c, int d, int e, int f) {
-	//int e = 0, f = 0;
-	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
-}
-
-void fff2() {
-	f_xxx(1, 2, 3, 4, 5, 6);
-	//f_xxx(1, 2, 3, 4);
-	msg_write("hallo");
-}
-
-class CCC {
-public:
-	int a, b, c, d, e, f, g;
-	XXX ff(int i) {
-		a = 13;
-		b = i;
-		XXX x;
-		return x;
-	}
 };
 
 class KabaApp : public hui::Application {
@@ -119,33 +32,27 @@ public:
 		//hui::EndKeepMsgAlive = true;
 	}
 
+	bool use_gui = false;
+	kaba::Abi abi = kaba::Abi::NATIVE;
+	Path out_file, symbols_out_file, symbols_in_file;
+	bool flag_allow_std_lib = true;
+	bool flag_disassemble = false;
+	bool flag_verbose = false;
+	string debug_func_filter = "*";
+	string debug_stage_filter = "*";
+	bool flag_show_consts = false;
+	bool flag_compile_os = false;
+	string output_format = "raw";
+	bool flag_interpret = false;
+
 	virtual bool on_startup(const Array<string> &arg0) {
-
-		Path filename;
-		Array<string> execute_args;
-		bool use_gui = false;
-		kaba::Abi abi = kaba::Abi::NATIVE;
-		Path out_file, symbols_out_file, symbols_in_file;
-		bool flag_allow_std_lib = true;
-		bool flag_disassemble = false;
-		bool flag_verbose = false;
-		string debug_func_filter = "*";
-		string debug_stage_filter = "*";
-		bool flag_show_consts = false;
-		bool flag_compile_os = false;
-		string output_format = "raw";
-		string command;
-		bool flag_interpret = false;
-
-		bool error = false;
 
 		CommandLineParser p;
 		p.info(AppName, "compiler for the kaba language");
-		p.option("--gui/-g", "", [&]{ use_gui = true; });
-		//p.option("--arm", [&]{ instruction_set = Asm::InstructionSet::ARM; });
-		//p.option("--amd64", [&]{ instruction_set = Asm::InstructionSet::AMD64; });
-		//p.option("--x86", [&]{ instruction_set = Asm::InstructionSet::X86; });
-		p.option("--arch", "CPU:SYSTEM", "x86/amd64/arm:gnu/win", [&](const string &a) {
+		p.option("-g/--gui", "show errors in dialog box", [this] {
+			use_gui = true;
+		});
+		p.option("--arch", "CPU:SYSTEM", "override target architecture: x86/amd64/arm:gnu/win", [&] (const string &a) {
 			if (a == "amd64:gnu") {
 				abi = kaba::Abi::AMD64_GNU;
 			} else if (a == "amd64:win") {
@@ -160,47 +67,73 @@ public:
 				throw Exception("unknown architecture");
 			}
 		});
-		p.option("--os", "when compiling an operating system", [&]{ flag_compile_os = true; });
-		p.option("--no-std-lib", "(os)", [&]{ flag_allow_std_lib = false; });
-		p.option("--remove-unused", "code size optimization", [&]{ kaba::config.remove_unused = true; });
-		p.option("--no-simplify-consts", "", [&]{ kaba::config.allow_simplify_consts = false; });
-		p.option("--verbose", "lots of output", [&]{ flag_verbose = true; });
-		p.option("--vfunc", "FILTER", "restrict verbosity to functions", [&](const string &a){ debug_func_filter = a; });
-		p.option("--vstage", "FILTER", "restrict verbosity to compile stages", [&](const string &a){ debug_stage_filter = a; });
-		p.option("--disasm", "show disassemble of opcode", [&]{ flag_disassemble = true; });
-		p.option("--show-tree", "show syntax tree", [&]{ flag_verbose = true; debug_stage_filter = "parse:a"; });
-		p.option("--show-consts", "", [&]{ flag_show_consts = true; });
-		p.option("--no-function-frames", "(os) ", [&]{ kaba::config.no_function_frame = true; });
-		p.option("--add-entry-point", "", [&]{ kaba::config.add_entry_point = true; });
-		p.option("--code-origin", "ORIGIN", "(os) set a custom code location", [&](const string &a) {
+		p.option("--os", "when compiling an operating system", [this] {
+			flag_compile_os = true;
+		});
+		p.option("--no-std-lib", "(os)", [this] {
+			flag_allow_std_lib = false;
+		});
+		p.option("--remove-unused", "code size optimization", [] {
+				kaba::config.remove_unused = true;
+		});
+		p.option("--no-simplify-consts", "don't evaluate constant terms at compile time", [] {
+				kaba::config.allow_simplify_consts = false;
+		});
+		p.option("--verbose", "lots of output", [this] {
+			flag_verbose = true;
+		});
+		p.option("--vfunc", "FILTER", "restrict verbosity to functions", [this] (const string &a) {
+			debug_func_filter = a;
+		});
+		p.option("--vstage", "FILTER", "restrict verbosity to compile stages", [this](const string &a) {
+			debug_stage_filter = a;
+		});
+		p.option("--disasm", "show disassemble of opcode", [this] {
+			flag_disassemble = true;
+		});
+		p.option("--show-tree", "show syntax tree", [this] {
+			flag_verbose = true;
+			debug_stage_filter = "parse:a";
+		});
+		p.option("--show-consts", "", [this] {
+			flag_show_consts = true;
+		});
+		p.option("--no-function-frames", "(os) ", [] {
+			kaba::config.no_function_frame = true;
+		});
+		p.option("--add-entry-point", "(os)", [] {
+				kaba::config.add_entry_point = true;
+		});
+		p.option("--code-origin", "ORIGIN", "(os) set a custom code location", [] (const string &a) {
 			kaba::config.override_code_origin = true;
 			kaba::config.code_origin = kaba::s2i2(a);
 		});
-		p.option("--variable-offset", "OFFSET", "(os) ", [&](const string &a) {
+		p.option("--variable-offset", "OFFSET", "(os) ", [] (const string &a) {
 			kaba::config.override_variables_offset = true;
 			kaba::config.variables_offset = kaba::s2i2(a);
 		});
-		p.option("--output/-o", "OUTFILE", "compile into file", [&](const string &a){ out_file = a; });
-		p.option("--output-format", "FORMAT", "raw/elf", [&](const string &a){
+		p.option("-o/--output", "OUTFILE", "compile into file", [this] (const string &a) {
+			out_file = a;
+		});
+		p.option("--output-format", "FORMAT", "raw/elf", [this] (const string &a) {
 			output_format = a;
-			if ((output_format != "raw") and (output_format != "elf")) {
-				msg_error("output format has to be 'raw' or 'elf', not: " + output_format);
-				exit(1);
-			}
+			if ((output_format != "raw") and (output_format != "elf"))
+				die("output format has to be 'raw' or 'elf', not: " + output_format);
 		});
-		p.option("--export-symbols", "FILE", "save link table to file", [&](const string &a){ symbols_out_file = a; });
-		p.option("--import-symbols", "FILE", "load link table from file", [&](const string &a){ symbols_in_file = a; });
-		p.option("--interpret", "run in interpreter instead of native", [&] { flag_interpret = true; });
-		p.option("--xxx", "some experiment", [&] {
+		p.option("--export-symbols", "FILE", "save link table to file", [this] (const string &a) {
+			symbols_out_file = a;
+		});
+		p.option("--import-symbols", "FILE", "load link table from file", [this] (const string &a) {
+			symbols_in_file = a;
+		});
+		p.option("--interpret", "run in interpreter instead of native", [this] {
+			flag_interpret = true;
+		});
+		p.cmd("--xxx", "", "some experiment", [this] (const Array<string>&) {
 			kaba::init(abi, flag_allow_std_lib);
-			msg_write(disassemble((void*)&xxx_delete0, -1));
-			//msg_write(disassemble((void*)&fff, 30));
-			//msg_write(disassemble((void*)&fff2, -1));
-			//msg_write(disassemble((void*)&ggg, -1));
-			//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
-			exit(0);
+			do_experiments();
 		});
-		p.cmd("--version/-v", "", "print the version", [=] (const Array<string>&) {
+		p.cmd("-v/--version", "", "print the version", [] (const Array<string>&) {
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
 				msg_write("native arch: amd64:win");
@@ -208,13 +141,11 @@ public:
 				msg_write("native arch: amd64:gnu");
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
-			exit(0);
 		});
-		p.cmd("--help/-h", "", "show this page", [&p] (const Array<string>&) {
+		p.cmd("-h/--help", "", "show this page", [&p] (const Array<string>&) {
 			p.show();
-			exit(0);
 		});
-		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [&] (const Array<string> &a){
+		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [this] (const Array<string> &a){
 			bytes s = os::fs::read_binary(a[0]);
 			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
@@ -228,21 +159,55 @@ public:
 			for (int i=0; i<data_size; i+= 4)
 				msg_write(format("   data %03x:  ", i) + s.sub(i, i+4).hex());
 			msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
-			exit(0);
 		});
-		p.cmd("--command/-c", "CODE", "compile and run a single command", [&] (const Array<string> &a) {
-			command = a[0];
+		p.cmd("--command/-c", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
+			init_environment();
+			kaba::execute_single_command(a[0]);
+			kaba::clean_up();
 		});
-		p.cmd("", "FILENAME ...", "compile and run a file", [&filename, &execute_args] (const Array<string> &a) {
-			filename = a[0];
-			execute_args = a.sub_ref(1);
+		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
+			init_environment();
+
+			auto s = compile_file(a[0]);
+			if (!s)
+				return;
+
+			if (out_file) {
+				// output into file?
+				if (output_format == "raw")
+					output_to_file_raw(s, out_file);
+				else if (output_format == "elf")
+					output_to_file_elf(s, out_file);
+
+				//if (flag_disassemble)
+				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
+			} else if (kaba::config.abi == kaba::config.native_abi) {
+				// direct execution
+				execute(s, a.sub_ref(1));
+			} else {
+				die("can only execute files when the native ABI is used");
+			}
+			kaba::clean_up();
 		});
 
 		p.parse(arg0);
 
+		/*	// end
+			kaba::clean_up();
+			msg_end();*/
 
+		return false;
+	}
 
-		// init
+	void die(const string &msg) {
+		if (use_gui)
+			hui::error_box(NULL, _("Error in script"), msg);
+		else
+			msg_error(msg);
+		exit(1);
+	}
+
+	void init_environment() {
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
 		kaba::init(abi, flag_allow_std_lib);
@@ -252,12 +217,11 @@ public:
 		kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
 		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
 		kaba::link_external("ParseResource", (void*)&hui::parse_resource);
-		kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 
-		if (!symbols_in_file.is_empty())
+		if (symbols_in_file)
 			import_symbols(symbols_in_file);
-			
+
 		if (flag_disassemble) {
 			flag_verbose = true;
 			if (debug_stage_filter == "*")
@@ -265,75 +229,50 @@ public:
 			else
 				debug_stage_filter += ",dasm*";
 		}
-			
+
 		kaba::config.compile_silently = !flag_verbose;
 		kaba::config.verbose = flag_verbose;
 		kaba::config.verbose_func_filter = debug_func_filter;
 		kaba::config.verbose_stage_filter = debug_stage_filter;
 		kaba::config.compile_os = flag_compile_os;
 		kaba::config.interpreted = flag_interpret;
+	}
 
-		// script file as parameter?
-		if (filename) {
-			if (installed and filename.extension() != "kaba") {
-				for (auto &dir: Array<Path>({directory, directory_static})) {
-					Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
-					if (filename.str().find("/") >= 0)
-						dd = dir << "apps" << (filename.str() + ".kaba");
-					if (os::fs::exists(dd)) {
-						filename = dd;
-						break;
-					}
-				}
-			}
-		} else if (command.num > 0) {
-			kaba::execute_single_command(command);
-			msg_end();
-			return false;
-		} else {
-			msg_end();
-			return false;
+	Path try_get_installed_app_file(const Path &filename) {
+		for (auto &dir: Array<Path>({directory, directory_static})) {
+			Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
+			if (filename.str().find("/") >= 0)
+				dd = dir << "apps" << (filename.str() + ".kaba");
+			if (os::fs::exists(dd))
+				return dd;
 		}
+		// nope, not found
+		return filename;
+	}
 
-		// compile
+	void show_constants(shared<kaba::Module> s) {
+		msg_write("---- constants ----");
+		for (auto *c: weak(s->syntax->base_class->constants)) {
+			msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
+		}
+	}
+
+	shared<kaba::Module> compile_file(const Path &_filename) {
+		auto filename = _filename;
+		if (installed and filename.extension() != "kaba")
+			filename = try_get_installed_app_file(filename);
 
 		try {
 			auto s = kaba::load(filename);
-			if (!symbols_out_file.is_empty())
+			if (symbols_out_file)
 				export_symbols(s, symbols_out_file);
-			if (flag_show_consts) {
-				msg_write("---- constants ----");
-				for (auto *c: weak(s->syntax->base_class->constants)) {
-					msg_write(c->type->name + " " + c->str() + "  " + c->value.hex());
-				}
-			}
-			if (!out_file.is_empty()) {
-				if (output_format == "raw")
-					output_to_file_raw(s, out_file);
-				else if (output_format == "elf")
-					output_to_file_elf(s, out_file);
-
-				//if (flag_disassemble)
-				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
-			} else {
-				if (kaba::config.abi == kaba::config.native_abi)
-					execute(s, execute_args);
-			}
+			if (flag_show_consts)
+				show_constants(s);
+			return s;
 		} catch (kaba::Exception &e) {
-			if (use_gui)
-				hui::error_box(NULL, _("Error in script"), e.message());
-			else
-				msg_error(e.message());
-			error = true;
+			die(e.message());
 		}
-
-		// end
-		kaba::clean_up();
-		msg_end();
-		if (error)
-			exit(1);
-		return false;
-
+		return nullptr;
 	}
 
 #pragma GCC push_options
@@ -341,27 +280,24 @@ public:
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-	void execute(shared<kaba::Module> s, const Array<string> &arg) {
+	void execute(shared<kaba::Module> s, const Array<string> &args) {
 		if (kaba::config.interpreted) {
 			s->interpreter->run("main");
 			return;
 		}
-		// set working directory -> script file
-		//msg_write(initial_working_directory);
-		//hui::setDirectory(initial_working_directory);
-		//setDirectory(s->filename.dirname());
 
-		main_arg_func *f_arg = (main_arg_func*)s->match_function("main", "void", {"string[]"});
-		main_void_func *f_void = (main_void_func*)s->match_function("main", "void", {});
 
-		if (f_arg) {
+		typedef void main_arg_func(const Array<string>&);
+		typedef void main_void_func();
+
+		if (auto f = (main_arg_func*)s->match_function("main", "void", {"string[]"})) {
 			// special execution...
-			f_arg(arg);
-		} else if (f_void) {
+			f(args);
+		} else if (auto f = (main_void_func*)s->match_function("main", "void", {})) {
 			// default execution
-			f_void();
+			f();
 		} else {
-			msg_error("no 'void main()' found");
+			die("no 'void main()' found");
 		}
 	}
 #pragma GCC pop_options
@@ -369,80 +305,6 @@ public:
 	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
 		auto f = os::fs::open(out_file, "wb");
 		f->write(s->opcode, s->opcode_size);
-		delete(f);
-	}
-
-	void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
-		auto f = new BinaryFormatter(os::fs::open(out_file, "wb"));
-
-		bool is64bit = (kaba::config.pointer_size == 8);
-
-		// 16b header
-		f->write_char(0x7f);
-		f->write_char('E');
-		f->write_char('L');
-		f->write_char('F');
-		f->write_char(0x02); // 64 bit
-		f->write_char(0x01); // little-endian
-		f->write_char(0x01); // version
-		for (int i=0; i<9; i++)
-			f->write_char(0x00);
-
-		f->write_word(0x0003); // 3=shared... 2=exec
-		if (kaba::config.instruction_set == Asm::InstructionSet::AMD64) {
-			f->write_word(0x003e); // machine
-		} else if (kaba::config.instruction_set == Asm::InstructionSet::X86) {
-			f->write_word(0x0003); // machine
-		} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM) {
-			f->write_word(0x0028); // machine
-		}
-		f->write_int(1); // version
-
-		if (is64bit){
-			f->write_int(0);	f->write_int(0);// entry point
-			f->write_int(0x40);	f->write_int(0x00); // program header table offset
-			f->write_int(0x00);	f->write_int(0x00); // section header table
-		} else {
-			f->write_int(0);// entry point
-			f->write_int(0x00); // program header table offset
-			f->write_int(0x00); // section header table
-		}
-		f->write_int(0); // flags
-		f->write_word(is64bit ? 64 : 52); // header size
-		f->write_word(0); // prog header size
-		f->write_word(0); // # prog header table entries
-		f->write_word(0); // size of section header entry table
-		f->write_word(0); // # section headers
-		f->write_word(0); // names entry section header index
-		//f->WriteBuffer(s->opcode, s->opcode_size);
-		delete(f);
-
-		system(format("chmod a+x %s", out_file).c_str());
-	}
-
-	void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
-		auto f = new BinaryFormatter(os::fs::open(symbols_out_file, "wb"));
-		for (auto *fn: s->syntax->functions) {
-			f->write_str(kaba::function_link_name(fn));
-			f->write_int(fn->address);
-		}
-		for (auto *v: weak(s->syntax->base_class->static_variables)) {
-			f->write_str(kaba::decode_symbol_name(v->name));
-			f->write_int((int_p)v->memory);
-		}
-		f->write_str("#");
-		delete(f);
-	}
-
-	void import_symbols(const Path &symbols_in_file) {
-		auto f = new BinaryFormatter(os::fs::open(symbols_in_file, "rb"));
-		while (!f->stream->is_end()) {
-			string name = f->read_str();
-			if (name == "#")
-				break;
-			int pos = f->read_int();
-			kaba::link_external(name, (void*)(int_p)pos);
-		}
 		delete(f);
 	}
 };
