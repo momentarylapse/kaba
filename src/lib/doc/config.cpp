@@ -93,8 +93,12 @@ Array<string> Configuration::get_str_array(const string &name, const Array<strin
 	if (a.is_string())
 		return {a.str()};
 	Array<string> r;
-	for (auto &s: a.as_array())
-		r.add(s.str());
+	for (auto &s: a.as_array()) {
+		if (s.is_empty())
+			r.add("");
+		else
+			r.add(s.str());
+	}
 	return r;
 }
 

@@ -10,6 +10,7 @@
 
 #include "../base/base.h"
 #include "../base/map.h"
+#include "../any/any.h"
 
 
 class Path;
@@ -34,7 +35,7 @@ public:
 	bool get_bool(const string &name, bool default_val = false) const;
 	string get_str(const string &name, const string &default_val = "") const;
 	Array<string> get_str_array(const string &name, const Array<string> &default_val = {}) const;
-	Any get(const string &name, const Any &default_val) const;
+	Any get(const string &name, const Any &default_val = Any()) const;
 	bool has(const string &name) const;
 	bool load(const Path &filename);
 	void save(const Path &filename);
