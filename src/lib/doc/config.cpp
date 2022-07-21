@@ -8,6 +8,7 @@
 #include "config.h"
 #include "../os/file.h"
 #include "../os/filesystem.h"
+#include "../os/formatter.h"
 #include "../os/msg.h"
 #include "../any/any.h"
 
@@ -90,7 +91,7 @@ bool Configuration::has(const string& name) const {
 
 bool Configuration::load(const Path &filename) {
 	try {
-		auto f = new TextLinesFormatter(file_open(filename, "rt"));
+		auto f = new TextLinesFormatter(os::fs::open(filename, "rt"));
 		map.clear();
 
 		string t = f->read_str();
@@ -190,9 +191,9 @@ string config_get_base(const string &key) {
 }
 
 void Configuration::save(const Path &filename) {
-	dir_create(filename.parent());
+	os::fs::create_directory(filename.parent());
 	try {
-		auto f = new TextLinesFormatter(file_open(filename, "wt"));
+		auto f = new TextLinesFormatter(os::fs::open(filename, "wt"));
 		Set<string> namespaces;
 		for (auto &e: map)
 			namespaces.add(config_get_namespace(e.key));

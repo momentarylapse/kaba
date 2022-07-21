@@ -15,28 +15,17 @@
 |                                                                              |
 | last update: 2010.07.01 (c) by MichiSoft TM                                  |
 \*----------------------------------------------------------------------------*/
-#if !defined(FILE_H)
-#define FILE_H
-
-
-
-// ANSI:
-//#include <stdarg.h>
-// UNIX:
-//#include <varargs.h>
-
+#ifndef SRC_LIB_OS_FILE_H_
+#define SRC_LIB_OS_FILE_H_
 
 #include "../base/base.h"
-
-
-#include <string.h>
-#include <stdlib.h>
-	
-#include "formatter.h"
+#include "stream.h"
 #include "path.h"
 
 
 class Date;
+
+namespace os::fs {
 
 
 class FileError : public Exception {
@@ -74,14 +63,14 @@ public:
 	int handle = -1;
 };
 
+extern FileStream *open(const Path &filename, const string &mode);
 
-extern FileStream *file_open(const Path &filename, const string &mode);
+extern bytes read_binary(const Path &filename);
+extern string read_text(const Path &filename);
+extern void write_binary(const Path &filename, const bytes &data);
+extern void write_text(const Path &filename, const string &str);
 
-extern bytes file_read_binary(const Path &filename);
-extern string file_read_text(const Path &filename);
-extern void file_write_binary(const Path &filename, const bytes &data);
-extern void file_write_text(const Path &filename, const string &str);
-
+}
 
 
 

@@ -13,6 +13,7 @@
 #include "helper.h"
 #include "../os/file.h"
 #include "../os/filesystem.h"
+#include "../os/formatter.h"
 #include "../os/msg.h"
 #include "../image/image.h"
 
@@ -340,13 +341,13 @@ extern bool verbose;
 			std::cout << "load shader " << filename.str().c_str() << "\n";
 
 #if HAS_LIB_SHADERC
-		if (!file_exists(filename.with(".compiled")))
-			return Shader::create(file_read_text(filename));
+		if (!os::fs::exists(filename.with(".compiled")))
+			return Shader::create(os::fs::read_text(filename));
 #endif
 
 		Shader *s = new Shader();
 
-		auto f = BinaryFormatter(file_open(filename.with(".compiled"), "rb"));
+		auto f = BinaryFormatter(os::fs::open(filename.with(".compiled"), "rb"));
 		try {
 			while(true) {
 				string tag = f.read_str();

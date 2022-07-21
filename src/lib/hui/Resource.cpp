@@ -1,6 +1,7 @@
 #include "hui.h"
 #include "../os/file.h"
 #include "../os/filesystem.h"
+#include "../os/formatter.h"
 #include "../math/math.h"
 #include "Controls/Control.h"
 #include "internal.h"
@@ -90,7 +91,7 @@ void load_resource(const Path &filename) {
 	_languages_.clear();
 
 	try{
-		auto f = new TextLinesFormatter(file_open(filename, "rt"));
+		auto f = new TextLinesFormatter(os::fs::open(filename, "rt"));
 		int ffv = f->read_str().sub_ref(1)._int();
 		if (ffv != 7) {
 			delete f;

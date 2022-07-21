@@ -11,10 +11,10 @@
 
 
 static void read_buffer_asserted(Stream *s, void *buf, int size) {
-	if (auto f = dynamic_cast<FileStream*>(s)) {
+	if (auto f = dynamic_cast<os::fs::FileStream*>(s)) {
 		int r = f->read_basic(buf, size);
 		if (r < size)
-			throw FileError(format("end of file '%s'", f->filename));
+			throw os::fs::FileError(format("end of file '%s'", f->filename));
 	}
 }
 

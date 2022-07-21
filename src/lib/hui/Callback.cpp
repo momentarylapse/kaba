@@ -72,7 +72,7 @@ static std::mutex runner_mutex;
 		if (_idle_function_)
 			_idle_function_();
 		else
-			sleep(0.010f);
+			os::sleep(0.010f);
 		return TRUE;
 	}
 

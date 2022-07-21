@@ -14,7 +14,7 @@ void SIAddPackageTime() {
 	add_package("time");
 
 	TypeDate = add_type("Date", sizeof(Date));
-	TypeTimer = add_type("Timer", sizeof(Timer));
+	TypeTimer = add_type("Timer", sizeof(os::Timer));
 
 
 	add_class(TypeDate);
@@ -28,14 +28,14 @@ void SIAddPackageTime() {
 
 
 	add_class(TypeTimer);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &Timer::reset);
-		class_add_func("get", TypeFloat32, &Timer::get);
-		class_add_func("reset", TypeVoid, &Timer::reset);
-		class_add_func("peek", TypeFloat32, &Timer::peek);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &os::Timer::reset);
+		class_add_func("get", TypeFloat32, &os::Timer::get);
+		class_add_func("reset", TypeVoid, &os::Timer::reset);
+		class_add_func("peek", TypeFloat32, &os::Timer::peek);
 
 
 
-	add_func("sleep", TypeVoid, &sleep, Flags::STATIC);
+	add_func("sleep", TypeVoid, &os::sleep, Flags::STATIC);
 		func_add_param("duration", TypeFloat32);
 }
 

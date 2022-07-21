@@ -10,6 +10,8 @@
 
 #include <chrono>
 
+namespace os {
+
 class Timer {
 public:
 	Timer();
@@ -24,5 +26,7 @@ private:
 
 
 void sleep(float duration);
+
+}
 
 #endif /* HUITIMER_H_ */

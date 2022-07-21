@@ -1,6 +1,7 @@
 #include "lib/base/base.h"
 #include "lib/os/file.h"
 #include "lib/os/filesystem.h"
+#include "lib/os/formatter.h"
 #include "lib/os/msg.h"
 #include "lib/os/date.h"
 #include "lib/os/CommandLineParser.h"
@@ -214,7 +215,7 @@ public:
 			exit(0);
 		});
 		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [&] (const Array<string> &a){
-			bytes s = file_read_binary(a[0]);
+			bytes s = os::fs::read_binary(a[0]);
 			kaba::init(abi, flag_allow_std_lib);
 			int data_size = 0;
 			if (flag_compile_os) {
@@ -279,7 +280,7 @@ public:
 					Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
 					if (filename.str().find("/") >= 0)
 						dd = dir << "apps" << (filename.str() + ".kaba");
-					if (file_exists(dd)) {
+					if (os::fs::exists(dd)) {
 						filename = dd;
 						break;
 					}
@@ -366,13 +367,13 @@ public:
 #pragma GCC pop_options
 
 	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
-		auto f = file_open(out_file, "wb");
+		auto f = os::fs::open(out_file, "wb");
 		f->write(s->opcode, s->opcode_size);
 		delete(f);
 	}
 
 	void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
-		auto f = new BinaryFormatter(file_open(out_file, "wb"));
+		auto f = new BinaryFormatter(os::fs::open(out_file, "wb"));
 
 		bool is64bit = (kaba::config.pointer_size == 8);
 
@@ -420,7 +421,7 @@ public:
 	}
 
 	void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
-		auto f = new BinaryFormatter(file_open(symbols_out_file, "wb"));
+		auto f = new BinaryFormatter(os::fs::open(symbols_out_file, "wb"));
 		for (auto *fn: s->syntax->functions) {
 			f->write_str(kaba::function_link_name(fn));
 			f->write_int(fn->address);
@@ -434,7 +435,7 @@ public:
 	}
 
 	void import_symbols(const Path &symbols_in_file) {
-		auto f = new BinaryFormatter(file_open(symbols_in_file, "rb"));
+		auto f = new BinaryFormatter(os::fs::open(symbols_in_file, "rb"));
 		while (!f->stream->is_end()) {
 			string name = f->read_str();
 			if (name == "#")

@@ -9,6 +9,8 @@
 #include "msg.h"
 #include <thread>
 
+namespace os {
+
 static std::thread::id main_thread_id = std::this_thread::get_id();
 void require_main_thread(const string &msg) {
 	if (main_thread_id != std::this_thread::get_id()) {
@@ -40,7 +42,7 @@ float Timer::get() {
 	return elapsed;
 }
 
-static bool _sleep_complained_ = false;
+//static bool _sleep_complained_ = false;
 
 // don't call in main thread!!!!!
 void sleep(float duration) {
@@ -55,4 +57,4 @@ void sleep(float duration) {
 	}*/
 }
 
-
+}
