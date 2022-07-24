@@ -179,6 +179,10 @@ void kaba_file_rename(const Path &a, const Path &b) {
 	KABA_EXCEPTION_WRAPPER2(os::fs::rename(a, b), KabaFileError);
 }
 
+void kaba_file_move(const Path &a, const Path &b) {
+	KABA_EXCEPTION_WRAPPER2(os::fs::move(a, b), KabaFileError);
+}
+
 void kaba_file_copy(const Path &a, const Path &b) {
 	KABA_EXCEPTION_WRAPPER2(os::fs::copy(a, b), KabaFileError);
 }
@@ -490,6 +494,9 @@ void SIAddPackageOS() {
 		class_add_func("hash", TypeString, &kaba_file_hash, Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("filename", TypePath);
 			func_add_param("type", TypeString);
+		class_add_func("move", TypeVoid, &kaba_file_move, Flags::_STATIC__RAISES_EXCEPTIONS);
+			func_add_param("source", TypePath);
+			func_add_param("dest", TypePath);
 		class_add_func("rename", TypeVoid, &kaba_file_rename, Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("source", TypePath);
 			func_add_param("dest", TypePath);
