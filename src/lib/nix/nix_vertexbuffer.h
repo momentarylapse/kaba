@@ -61,6 +61,7 @@ public:
 	bool is_indexed() const;
 
 	void create_quad(const rect &dest, const rect &source = rect::ID);
+	void create_cube(const vector &a, const vector &b);
 };
 
 void init_vertex_buffers();

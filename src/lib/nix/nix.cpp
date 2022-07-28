@@ -22,7 +22,7 @@
 
 namespace nix{
 
-string version = "0.13.10.0";
+string version = "0.13.10.1";
 // currently, requiring OpenGL 4.5
 
 

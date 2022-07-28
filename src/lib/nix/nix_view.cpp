@@ -13,9 +13,13 @@
 #include "../math/vec2.h"
 #if __has_include("../hui/hui.h")
 #include "../hui/hui.h"
+#define NIX_USE_HUI 1
 #endif
 #if __has_include("../image/image.h")
 #include "../image/image.h"
+#endif
+#if HAS_LIB_GLFW
+#include <GLFW/glfw3.h>
 #endif
 
 namespace nix {
@@ -131,8 +135,7 @@ void screen_shot_to_image(Image &image) {
 					GL_RGBA, GL_UNSIGNED_BYTE, &image.data[0]);
 }
 
-#ifdef _X_USE_HUI_
-
+#ifdef NIX_USE_HUI
 void start_frame_hui() {
 	int fb;
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fb);
@@ -146,13 +149,8 @@ void start_frame_hui() {
 void end_frame_hui() {
 	FrameBuffer::DEFAULT->frame_buffer = 0;
 }
-
 #endif
 
-
-#if HAS_LIB_GLFW
-#include <GLFW/glfw3.h>
-#endif
 
 #if HAS_LIB_GLFW
 void start_frame_glfw(void *win) {

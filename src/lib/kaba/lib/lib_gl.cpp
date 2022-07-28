@@ -116,6 +116,9 @@ void SIAddPackageGl() {
 		class_add_func("create_quad", TypeVoid, gl_p(&nix::VertexBuffer::create_quad));
 			func_add_param("dest", TypeRect);
 			func_add_param("source", TypeRect);
+		class_add_func("create_cube", TypeVoid, gl_p(&nix::VertexBuffer::create_cube));
+			func_add_param("a", TypeVector);
+			func_add_param("b", TypeVector);
 		class_add_func("count", TypeInt, gl_p(&nix::VertexBuffer::count));
 
 
