@@ -1,5 +1,5 @@
 func main()
 	int i = 13
 	print("hallo {{i+2}} bla bla")
-	print("test {{vector.EX}} {{1.0}}")
+	print("test {{vec3.EX}} {{1.0}}")
 	print("{{pi|.2}}")

@@ -1,4 +1,4 @@
-func f(v: vector)
+func f(v: vec3)
 	print(v)
 
 func main()

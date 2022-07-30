@@ -1,12 +1,12 @@
-var v: vector
+var v: vec3
 
 func _main()
-	v = matrix.ID * vector.EX
+	v = mat4.ID * vec3.EX
 
 func main()
-	matrix m = matrix.rotation(vector(0,0,pi/4))
-	matrix mm = m
+	mat4 m = mat4.rotation(vec3(0,0,pi/4))
+	mat4 mm = m
 	mm *= m * m
-	vector v = mm * vector.EX
+	vec3 v = mm * vec3.EX
 	print(v)
 	

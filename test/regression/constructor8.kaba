@@ -1,7 +1,7 @@
 
 class c
 	var x: int
-	var v: vector
+	var v: vec3
 	func __assign__(other: c)
 		print("sdkjfh")
 		v = other.v
@@ -10,13 +10,13 @@ func main()
 	c[] a
 	c i
 	i.x = -1
-	i.v = vector.EX
+	i.v = vec3.EX
 	a.add(i)
 	
 	
 	c[] b
 	b = a
-	a[0].v = vector.0
+	a[0].v = vec3.0
 	print(a[0].v)
 	print(b[0].v)
 	

@@ -6,8 +6,8 @@ func main()
 	print(e)
 	
 	quaternion q1, q2, q3
-	q1 = quaternion(vector.EX)
-	q2 = quaternion(vector.EY)
+	q1 = quaternion(vec3.EX)
+	q2 = quaternion(vec3.EY)
 	print(q1)
 	print(q2)
 	q3 = q1 * q2

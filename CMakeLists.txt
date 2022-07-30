@@ -151,17 +151,17 @@ set(SOURCE
 	src/lib/kaba/kaba.cpp
 	src/lib/math/complex.cpp
 	src/lib/math/interpolation.cpp
+	src/lib/math/mat3.cpp
+	src/lib/math/mat4.cpp
 	src/lib/math/math.cpp
-	src/lib/math/matrix.cpp
-	src/lib/math/matrix3.cpp
 	src/lib/math/plane.cpp
 	src/lib/math/quaternion.cpp
 	src/lib/math/random.cpp
 	src/lib/math/ray.cpp
 	src/lib/math/rect.cpp
 	src/lib/math/vec2.cpp
+	src/lib/math/vec3.cpp
 	src/lib/math/vec4.cpp
-	src/lib/math/vector.cpp
 	src/lib/net/BinaryBuffer.cpp
 	src/lib/net/net.cpp
 	src/lib/net/Socket.cpp

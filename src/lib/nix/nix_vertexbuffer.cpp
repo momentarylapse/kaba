@@ -214,7 +214,7 @@ bool VertexBuffer::is_indexed() const {
 	return index.buffer > 0;
 }
 
-static Array<Vertex1> _quad_(const vector &p0, const vector &d1, const vector &d2, const vector &n, const rect &s = rect::ID) {
+static Array<Vertex1> _quad_(const vec3 &p0, const vec3 &d1, const vec3 &d2, const vec3 &n, const rect &s = rect::ID) {
 	Array<Vertex1> vv = {{p0,       n, s.x1,s.y1},
 	                     {p0+d2,    n, s.x1,s.y2},
 	                     {p0+d1+d2, n, s.x2,s.y2},
@@ -239,12 +239,12 @@ void VertexBuffer::create_quad(const rect &d, const rect &s) {
 	}
 }
 
-void VertexBuffer::create_cube(const vector &a, const vector &b) {
+void VertexBuffer::create_cube(const vec3 &a, const vec3 &b) {
 	if (is_indexed()) {
 	} else {
-		vector dx = {b.x-a.x,0,0};
-		vector dy = {0,b.y-a.y,0};
-		vector dz = {0,0,b.z-a.z};
+		vec3 dx = {b.x-a.x,0,0};
+		vec3 dy = {0,b.y-a.y,0};
+		vec3 dz = {0,0,b.z-a.z};
 		auto v = _quad_(a, dx, dy, {0,0,-1});
 		v.append(_quad_(a+dz+dy, dx, -dy, {0,0,1}));
 

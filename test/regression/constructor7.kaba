@@ -1,11 +1,11 @@
 
 func main()
-	vector[] i
+	vec3[] i
 	
 	#i = i
-	vector v = vector(2,3,4)
+	vec3 v = vec3(2,3,4)
 	i.add(v)
-	i.add(vector(1,2,3))
-	i.add(vector.EX)
+	i.add(vec3(1,2,3))
+	i.add(vec3.EX)
 	for ii in i
 		print(ii)

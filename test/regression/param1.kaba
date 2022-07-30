@@ -1,20 +1,20 @@
 #use x
 
 class TraceData2
-	var pos: vector
+	var pos: vec3
 	var o: Model2*
 	var t: Model2*
 
 class Model2
-	var pos: vector
+	var pos: vec3
 	var object_id: int
 
-func Trace2(a: vector, b: vector, td: TraceData2, c: bool, ignore: int)
+func Trace2(a: vec3, b: vec3, td: TraceData2, c: bool, ignore: int)
 	print(ignore)
 
 func main()
 	TraceData2 td
-	vector p1, p2
+	vec3 p1, p2
 	Model2 m
 	m.object_id = 13
 	var p = &m

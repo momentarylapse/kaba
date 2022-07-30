@@ -1,11 +1,11 @@
 class Test
-	var v: vector
+	var v: vec3
 	var i: int[3]
 	var z: complex[]
 	var p: void*
 	var s: string
 	func __init__()
-		v = vector(1,2,3)
+		v = vec3(1,2,3)
 		z.add(complex.I)
 		z.add(complex.I)
 		i[0] = 1
@@ -19,7 +19,7 @@ func main()
 	print(dyn(1.1))
 	print(dyn("hallo\ta"))
 	print(dyn([1,2,3]))
-	print(dyn(vector.0))
+	print(dyn(vec3.0))
 	#print(dyn(main))
 	Test t
 	print(dyn(t))

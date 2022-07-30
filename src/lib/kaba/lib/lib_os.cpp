@@ -10,7 +10,7 @@
 #include "../dynamic/exception.h"
 #include "../../base/callable.h"
 
-class vector;
+class vec3;
 
 
 namespace kaba {
@@ -93,13 +93,13 @@ public:
 	void _cdecl _read_bool(bool &b) {
 		KABA_EXCEPTION_WRAPPER(b = F::read_bool());
 	}
-	void _cdecl _read_vector(vector &v) {
+	void _cdecl _read_vector(vec3 &v) {
 		KABA_EXCEPTION_WRAPPER(F::read_vector(&v));
 	}
 	void _cdecl _read_str(string &s) {
 		KABA_EXCEPTION_WRAPPER(s = F::read_str());
 	}
-	void _cdecl _write_vector(const vector &v) {
+	void _cdecl _write_vector(const vec3 &v) {
 		KABA_EXCEPTION_WRAPPER(F::write_vector(&v));
 	}
 
@@ -124,7 +124,7 @@ public:
 			class_add_func("__lshift__", TypeVoid, &KF::_write_float, Flags::RAISES_EXCEPTIONS);
 				func_add_param("x", TypeFloat32);
 			class_add_func("__lshift__", TypeVoid, &KF::_write_vector, Flags::RAISES_EXCEPTIONS);
-				func_add_param("v", TypeVector);
+				func_add_param("v", TypeVec3);
 			class_add_func("__lshift__", TypeVoid, &KF::_write_str, Flags::RAISES_EXCEPTIONS);
 				func_add_param("s", TypeString, Flags::OUT);
 			class_add_func("__rshift__", TypeVoid, &KF::_read_bool, Flags::RAISES_EXCEPTIONS);
@@ -134,7 +134,7 @@ public:
 			class_add_func("__rshift__", TypeVoid, &KF::_read_float, Flags::RAISES_EXCEPTIONS);
 				func_add_param("x", TypeFloat32, Flags::OUT);
 			class_add_func("__rshift__", TypeVoid, &KF::_read_vector, Flags::RAISES_EXCEPTIONS);
-				func_add_param("v", TypeVector, Flags::OUT);
+				func_add_param("v", TypeVec3, Flags::OUT);
 			class_add_func("__rshift__", TypeVoid, &KF::_read_str, Flags::RAISES_EXCEPTIONS);
 				func_add_param("s", TypeString, Flags::OUT);
 	}

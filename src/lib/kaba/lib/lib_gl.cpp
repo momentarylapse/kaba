@@ -59,7 +59,7 @@ struct FakeTexture {
 
 
 
-extern const Class *TypeMatrix;
+extern const Class *TypeMat4;
 extern const Class *TypeVec2;
 extern const Class *TypeImage;
 extern const Class *TypeFloatList;
@@ -117,8 +117,8 @@ void SIAddPackageGl() {
 			func_add_param("dest", TypeRect);
 			func_add_param("source", TypeRect);
 		class_add_func("create_cube", TypeVoid, gl_p(&nix::VertexBuffer::create_cube));
-			func_add_param("a", TypeVector);
-			func_add_param("b", TypeVector);
+			func_add_param("a", TypeVec3);
+			func_add_param("b", TypeVec3);
 		class_add_func("count", TypeInt, gl_p(&nix::VertexBuffer::count));
 
 
@@ -199,7 +199,7 @@ void SIAddPackageGl() {
 			func_add_param("f", TypeFloat32);
 		class_add_func("set_matrix_l", TypeVoid, gl_p(&nix::Shader::set_matrix_l));
 			func_add_param("loc", TypeInt);
-			func_add_param("m", TypeMatrix);
+			func_add_param("m", TypeMat4);
 		class_add_func("set_color_l", TypeVoid, gl_p(&nix::Shader::set_color_l));
 			func_add_param("loc", TypeInt);
 			func_add_param("c", TypeColor);
@@ -215,7 +215,7 @@ void SIAddPackageGl() {
 			func_add_param("f", TypeFloat32);
 		class_add_func("set_matrix", TypeVoid, gl_p(&nix::Shader::set_matrix));
 			func_add_param("name", TypeString);
-			func_add_param("m", TypeMatrix);
+			func_add_param("m", TypeMat4);
 		class_add_func("set_color", TypeVoid, gl_p(&nix::Shader::set_color));
 			func_add_param("name", TypeString);
 			func_add_param("c", TypeColor);
@@ -282,7 +282,7 @@ void SIAddPackageGl() {
 	add_func("reset_to_color", TypeVoid, gl_p(&nix::clear_color), Flags::STATIC);
 		func_add_param("c", TypeColor);
 	add_func("set_model_matrix", TypeVoid, gl_p(&nix::set_model_matrix), Flags::STATIC);
-		func_add_param("m", TypeMatrix);
+		func_add_param("m", TypeMat4);
 	add_func("draw_triangles", TypeVoid, gl_p(&nix::draw_triangles), Flags::STATIC);
 		func_add_param("vb", TypeVertexBuffer);
 	add_func("draw_lines", TypeVoid, gl_p(&nix::draw_lines), Flags::STATIC);
@@ -311,9 +311,9 @@ void SIAddPackageGl() {
 		func_add_param("zmin", TypeFloat32);
 		func_add_param("zmax", TypeFloat32);
 	add_func("set_projection_matrix", TypeVoid, gl_p(&nix::set_projection_matrix), Flags::STATIC);
-		func_add_param("m", TypeMatrix);
+		func_add_param("m", TypeMat4);
 	add_func("set_view_matrix", TypeVoid, gl_p(&nix::set_view_matrix), Flags::STATIC);
-		func_add_param("view_mat", TypeMatrix);
+		func_add_param("view_mat", TypeMat4);
 	add_func("set_scissor", TypeVoid, gl_p(&nix::set_scissor), Flags::STATIC);
 		func_add_param("r", TypeRect);
 	add_func("set_z", TypeVoid, gl_p(&nix::set_z), Flags::STATIC);

@@ -9,7 +9,7 @@
 
 #include "AccelerationStructure.h"
 #include "helper.h"
-#include "../math/matrix.h"
+#include "../math/mat4.h"
 #include <iostream>
 
 namespace vulkan {
@@ -181,7 +181,7 @@ AccelerationStructure *AccelerationStructure::create_top_simple(const Array<Acce
     for (size_t i = 0; i < blas.num; ++i) {
 
         VkGeometryInstance& instance = instances[i];
-        memcpy(instance.transform, &matrix::ID, 12*4);
+        memcpy(instance.transform, &mat4::ID, 12*4);
         instance.instanceId = static_cast<uint32_t>(i);
         instance.mask = 0xff;
         instance.instanceOffset = 0;

@@ -48,7 +48,7 @@ const Class *TypeString = nullptr;
 const Class *TypeStringAutoCast;
 const Class *TypeCString;
 
-const Class *TypeVector;
+const Class *TypeVec3;
 const Class *TypeRect;
 const Class *TypeColor;
 const Class *TypeQuaternion;
@@ -79,14 +79,14 @@ const Class *TypeStringList;
 const Class *TypeStringDict;
 const Class *TypeVec2;
 const Class *TypeVec2List;
-const Class *TypeVectorArray;
-const Class *TypeVectorArrayP;
-const Class *TypeVectorList;
-const Class *TypeMatrix;
+const Class *TypeVec3Array;
+const Class *TypeVec3ArrayP;
+const Class *TypeVec3List;
+const Class *TypeMat4;
 const Class *TypePlane;
 const Class *TypePlaneList;
 const Class *TypeColorList;
-const Class *TypeMatrix3;
+const Class *TypeMat3;
 const Class *TypeDate;
 const Class *TypeImage;
 

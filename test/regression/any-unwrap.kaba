@@ -1,7 +1,7 @@
 class Test
 	var s: string
 	var i: int[3]
-	var v: vector
+	var v: vec3
 	var xx: string[]
 
 func main()
@@ -11,7 +11,7 @@ func main()
 	t.i[2] = 15
 	t.xx = ["hallo", "welt", "test"]
 	t.s = "hallo"
-	t.v = vector.EZ
+	t.v = vec3.EZ
 
 	var a = dyn(t)
 	print(a)

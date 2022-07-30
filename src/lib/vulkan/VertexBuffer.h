@@ -3,7 +3,7 @@
 #if HAS_LIB_VULKAN
 
 #include "../base/base.h"
-#include "../math/vector.h"
+#include "../math/vec3.h"
 #include "../math/rect.h"
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -14,8 +14,8 @@ class rect;
 namespace vulkan {
 
 	struct Vertex1 {
-		vector pos;
-		vector normal;
+		vec3 pos;
+		vec3 normal;
 		float u,v;
 		//Vertex1() {}
 		//Vertex1(const vector &p, const vector &n, float u, float v);
