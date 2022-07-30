@@ -361,6 +361,9 @@
     <ClCompile Include="src\lib\kaba\lib\lib_vulkan.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\lib\list.cpp">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\abstract.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
@@ -880,6 +883,12 @@
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\lib.h">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\list.h">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\operators.h">
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\parser\abstract.h">

@@ -2,4 +2,4 @@ func main()
 	float[] f = range(0, 2, 0.1345)
 	print(f)
 	
-	print(range(0, 100).sum())
+	print(sum(range(0, 100)))

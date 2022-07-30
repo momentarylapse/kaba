@@ -126,6 +126,7 @@ set(SOURCE
 	src/lib/kaba/lib/lib_threads.cpp
 	src/lib/kaba/lib/lib_time.cpp
 	src/lib/kaba/lib/lib_vulkan.cpp
+	src/lib/kaba/lib/list.cpp
 	src/lib/kaba/parser/abstract.cpp
 	src/lib/kaba/parser/Concretifier.cpp
 	src/lib/kaba/parser/implicit.cpp

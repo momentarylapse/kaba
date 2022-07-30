@@ -236,6 +236,7 @@
     <ClCompile Include="src\lib\kaba\lib\lib_threads.cpp" />
     <ClCompile Include="src\lib\kaba\lib\lib_time.cpp" />
     <ClCompile Include="src\lib\kaba\lib\lib_vulkan.cpp" />
+    <ClCompile Include="src\lib\kaba\lib\list.cpp" />
     <ClCompile Include="src\lib\kaba\parser\abstract.cpp" />
     <ClCompile Include="src\lib\kaba\parser\Concretifier.cpp" />
     <ClCompile Include="src\lib\kaba\parser\implicit.cpp" />
@@ -411,6 +412,8 @@
     <ClInclude Include="src\lib\kaba\lib\dict.h" />
     <ClInclude Include="src\lib\kaba\lib\extern.h" />
     <ClInclude Include="src\lib\kaba\lib\lib.h" />
+    <ClInclude Include="src\lib\kaba\lib\list.h" />
+    <ClInclude Include="src\lib\kaba\lib\operators.h" />
     <ClInclude Include="src\lib\kaba\parser\abstract.h" />
     <ClInclude Include="src\lib\kaba\parser\Concretifier.h" />
     <ClInclude Include="src\lib\kaba\parser\implicit.h" />

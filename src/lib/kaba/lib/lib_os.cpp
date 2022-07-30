@@ -6,6 +6,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "lib.h"
+#include "list.h"
 #include "../dynamic/exception.h"
 #include "../../base/callable.h"
 
@@ -294,7 +295,7 @@ void SIAddPackageOSPath() {
 		class_add_func("all_parents", TypePathList, &Path::all_parents, Flags::PURE);
 
 	add_class(TypePathList);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &Array<Path>::__init__);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &XList<Path>::__init__);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, &Array<Path>::clear);
 		class_add_func("clear", TypeVoid, &Array<Path>::clear);
 		class_add_func("add", TypeVoid, &Array<Path>::add);

@@ -33,13 +33,6 @@ void xxx_delete0(VirtualBase* v) {
 	//delete v;
 }
 
-void xxx_delete(VirtualBase* v) {
-	msg_write("...xxx_delete");// +p2s(v));
-	delete v;
-	//v->__delete_external__();
-	//v->__delete__();
-}
-
 /*string ggg(string& s) {
 	return s + ".";
 }*/
@@ -94,7 +87,7 @@ public:
 };
 
 void do_experiments() {
-	kaba::link_external("xxx_delete", (void*)&xxx_delete);
+	//kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 	msg_write(disassemble((void*)&xxx_delete0, -1));
 	//msg_write(disassemble((void*)&fff, 30));
