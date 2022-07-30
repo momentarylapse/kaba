@@ -78,6 +78,15 @@ else
 	add_project_arguments('-DHAS_LIB_GLFW=0', language : ['cpp'])
 endif
 
+# optional dependency: fftw3
+d = cc.find_library('fftw3f', required : false)
+if d.found()
+	add_project_arguments('-DHAS_LIB_FFTW3=1', language : ['cpp'])
+	deps += [d]
+else
+	add_project_arguments('-DHAS_LIB_FFTW3=0', language : ['cpp'])
+endif
+
 
 sources = [
 	'src/helper/elf.cpp',
@@ -93,6 +102,7 @@ sources = [
 	'src/lib/doc/config.cpp',
 	'src/lib/doc/pdf.cpp',
 	'src/lib/doc/xml.cpp',
+	'src/lib/fft/fft.cpp',
 	'src/lib/hui/Controls/Control.cpp',
 	'src/lib/hui/Controls/ControlButtonGtk.cpp',
 	'src/lib/hui/Controls/ControlCheckBoxGtk.cpp',

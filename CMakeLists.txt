@@ -19,6 +19,7 @@ set(SOURCE
 	src/lib/doc/config.cpp
 	src/lib/doc/pdf.cpp
 	src/lib/doc/xml.cpp
+	src/lib/fft/fft.cpp
 	src/lib/hui/Controls/Control.cpp
 	src/lib/hui/Controls/ControlButtonGtk.cpp
 	src/lib/hui/Controls/ControlCheckBoxGtk.cpp
@@ -325,6 +326,18 @@ if(GLFW3_FOUND)
 	add_compile_definitions(HAS_LIB_GLFW=1)
 else()
 	add_compile_definitions(HAS_LIB_GLFW=0)
+endif()
+
+# fftw3 (optional)
+pkg_check_modules(FFTW3F fftw3f)
+if(FFTW3F_FOUND)
+	include_directories(${FFTW3F_INCLUDE_DIRS})
+	link_directories(${FFTW3F_LIBRARY_DIRS})
+	list(APPEND DEPS ${FFTW3F_LIBRARIES})
+	add_definitions(${FFTW3F_CFLAGS_OTHER})
+	add_compile_definitions(HAS_LIB_FFTW3=1)
+else()
+	add_compile_definitions(HAS_LIB_FFTW3=0)
 endif()
 
 add_executable(kaba ${SOURCE})
