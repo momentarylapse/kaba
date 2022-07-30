@@ -68,18 +68,32 @@ public:
 	static T min(const XList<T> &a) {
 		if (a.num == 0)
 			return 0;
-		T r = a[0];
-		for (int i=1; i<a.num; i++)
-			r = ::min<T>(r, a[i]);
-		return r;
+		return a[argmin(a)];
 	}
 	static T max(const XList<T> &a) {
 		if (a.num == 0)
 			return 0;
-		T r = a[0];
+		return a[argmax(a)];
+	}
+
+	static int argmin(const XList<T> &a) {
+		if (a.num == 0)
+			return -1;
+		int best = 0;
 		for (int i=1; i<a.num; i++)
-			r = ::max<T>(r, a[i]);
-		return r;
+			if (a[i] < a[best])
+				best = i;
+		return best;
+	}
+
+	static int argmax(const XList<T> &a) {
+		if (a.num == 0)
+			return -1;
+		int best = 0;
+		for (int i=1; i<a.num; i++)
+			if (a[i] > a[best])
+				best = i;
+		return best;
 	}
 
 	string str() const {

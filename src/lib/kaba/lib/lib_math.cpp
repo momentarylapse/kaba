@@ -1050,6 +1050,10 @@ void SIAddPackageMath() {
 		func_add_param("list", TypeIntList);
 	add_func("max", TypeInt, &XList<int>::max, Flags::_STATIC__PURE);
 		func_add_param("list", TypeIntList);
+	add_func("argmin", TypeInt, &XList<int>::argmin, Flags::_STATIC__PURE);
+		func_add_param("list", TypeIntList);
+	add_func("argmax", TypeInt, &XList<int>::argmax, Flags::_STATIC__PURE);
+		func_add_param("list", TypeIntList);
 	add_func("unique", TypeIntList, &XList<int>::unique, Flags::_STATIC__PURE);
 		func_add_param("list", TypeIntList);
 	add_func("range", TypeIntList, (void*)&kaba_range<int>, Flags::_STATIC__PURE);
@@ -1066,6 +1070,10 @@ void SIAddPackageMath() {
 		func_add_param("list", TypeFloatList);
 	add_func("max", TypeFloat32, &XList<float>::max, Flags::_STATIC__PURE);
 		func_add_param("list", TypeFloatList);
+	add_func("argmin", TypeInt, &XList<float>::argmin, Flags::_STATIC__PURE);
+		func_add_param("list", TypeFloatList);
+	add_func("argmax", TypeInt, &XList<float>::argmax, Flags::_STATIC__PURE);
+		func_add_param("list", TypeFloatList);
 	add_func("range", TypeFloatList, (void*)&kaba_range<float>, Flags::_STATIC__PURE);
 		func_add_param("start", TypeFloat32);
 		func_add_param_def("end", TypeFloat32, (float)DynamicArray::MAGIC_END_INDEX);
@@ -1079,6 +1087,10 @@ void SIAddPackageMath() {
 	add_func("min", TypeFloat64, &XList<double>::min, Flags::_STATIC__PURE);
 		func_add_param("list", TypeFloat64List);
 	add_func("max", TypeFloat64, &XList<double>::max, Flags::_STATIC__PURE);
+		func_add_param("list", TypeFloat64List);
+	add_func("argmin", TypeInt, &XList<double>::argmin, Flags::_STATIC__PURE);
+		func_add_param("list", TypeFloat64List);
+	add_func("argmax", TypeInt, &XList<double>::argmax, Flags::_STATIC__PURE);
 		func_add_param("list", TypeFloat64List);
 
 	// vec2[]
