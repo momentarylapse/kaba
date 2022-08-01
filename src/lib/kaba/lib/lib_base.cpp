@@ -48,8 +48,12 @@ void _cdecl kaba_cstringout(char *str) {
 	kaba_print(str);
 }
 
-bytes _cdecl kaba_binary(const char *p, int length) {
-	return bytes(p, length);
+bytes _cdecl kaba_binary(char *p, int length) {
+	//return bytes(p, length);
+	bytes b;
+	b.num = length;
+	b.data = p;
+	return b;
 }
 
 #if 0
