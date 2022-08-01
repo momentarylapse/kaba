@@ -1,0 +1,30 @@
+
+func f(ref a: int[], ...) -> int[]
+	return a[...]
+
+
+
+func selfref f() -> ...
+func ref f() -> ...
+
+	ownership: self -> return
+	self=mut => return=mut
+
+func f(ref p: ...) -> ...
+
+	ownership: param -> return
+	param=mut => return=mut
+
+func f(selfref p: ...)
+
+	ownership: param -> self
+	...why do we care...?
+
+
+
+
+func mut/ref f()
+
+	... describes "self"
+	"mut return" does not make sense otherwise
+

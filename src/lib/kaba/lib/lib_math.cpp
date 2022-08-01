@@ -846,12 +846,12 @@ void SIAddPackageMath() {
 			func_add_param("a", TypeAny);
 		class_add_func("clear", TypeVoid, &Any::clear);
 		class_add_func(IDENTIFIER_FUNC_LENGTH, TypeInt, &Any::length, Flags::PURE);
-		class_add_func(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_map_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
+		class_add_func(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_map_get, Flags::_REF__RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_func(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_array_get, Flags::_SELFREF__RAISES_EXCEPTIONS);
+		class_add_func(IDENTIFIER_FUNC_GET, TypeAny, &KabaAny::_array_get, Flags::_REF__RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
 		class_add_func(IDENTIFIER_FUNC_SET, TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS);
 			func_add_param("index", TypeInt);
@@ -1191,8 +1191,8 @@ void SIAddPackageMath() {
 
 
 	add_class(TypeAny);
-		class_add_func("as_array", TypeAnyList, &KabaAny::_as_array, Flags::_SELFREF__RAISES_EXCEPTIONS);
-		class_add_func("as_map", TypeAnyDict, &KabaAny::_as_map, Flags::_SELFREF__RAISES_EXCEPTIONS);
+		class_add_func("as_array", TypeAnyList, &KabaAny::_as_array, Flags::_REF__RAISES_EXCEPTIONS);
+		class_add_func("as_map", TypeAnyDict, &KabaAny::_as_map, Flags::_REF__RAISES_EXCEPTIONS);
 }
 
 };
