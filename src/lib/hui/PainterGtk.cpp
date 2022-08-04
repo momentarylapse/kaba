@@ -11,6 +11,10 @@
 #include "Controls/Control.h"
 #include "Controls/ControlDrawingArea.h"
 #include "Painter.h"
+#if __has_include("../image/image.h")
+#include "../image/image.h"
+#define HAS_IMAGE
+#endif
 
 namespace hui {
 
@@ -61,6 +65,8 @@ Painter::Painter(Panel *panel, const string &_id) : Painter(nullptr, nullptr, 0,
 		cairo_get_matrix(cr, &m);
 		_initial_offset_x = m.x0;
 		_initial_offset_y = m.y0;
+
+		set_font("Sans", 16, false, false);
 	}
 }
 
@@ -240,7 +246,7 @@ void Painter::draw_circle(const vec2 &c, float radius) {
 }
 
 void Painter::draw_image(const vec2 &d, const Image *image) {
-#ifdef _X_USE_IMAGE_
+#ifdef HAS_IMAGE
 	if (!cr)
 		return;
 	image->set_mode(Image::Mode::BGRA);
@@ -261,7 +267,7 @@ void Painter::draw_image(const vec2 &d, const Image *image) {
 }
 
 void Painter::draw_mask_image(const vec2 &d, const Image *image) {
-#ifdef _X_USE_IMAGE_
+#ifdef HAS_IMAGE
 	if (!cr)
 		return;
 	image->set_mode(Image::Mode::BGRA);
