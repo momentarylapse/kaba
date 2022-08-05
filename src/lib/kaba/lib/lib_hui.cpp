@@ -115,7 +115,7 @@ extern const Class *TypeVec2;
 //extern const Class *TypeTimer;
 extern const Class* TypeCallback;
 extern const Class* TypeCallbackString;
-extern const Class* TypeDocConfiguration;
+extern const Class* TypeOsConfiguration;
 const Class *TypeHuiWindowP;
 
 void SIAddPackageHui() {
@@ -690,7 +690,7 @@ void SIAddPackageHui() {
 	add_ext_var("app_directory", TypePath, hui_p(&hui::Application::directory));
 	add_ext_var("app_directory_static", TypePath, hui_p(&hui::Application::directory_static));
 	//add_ext_var("filename", TypePath, hui_p(&hui::Filename));
-	add_ext_var("app_config", TypeDocConfiguration, hui_p(&hui::config));
+	add_ext_var("app_config", TypeOsConfiguration, hui_p(&hui::config));
 }
 
 };

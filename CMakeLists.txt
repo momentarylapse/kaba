@@ -16,7 +16,6 @@ set(SOURCE
 	src/lib/base/pointer.cpp
 	src/lib/base/strings.cpp
 	src/lib/doc/chunked.cpp
-	src/lib/doc/config.cpp
 	src/lib/doc/pdf.cpp
 	src/lib/doc/xml.cpp
 	src/lib/fft/fft.cpp
@@ -176,6 +175,7 @@ set(SOURCE
 	src/lib/nix/nix_vertexbuffer.cpp
 	src/lib/nix/nix_view.cpp
 	src/lib/os/CommandLineParser.cpp
+	src/lib/os/config.cpp
 	src/lib/os/date.cpp
 	src/lib/os/file.cpp
 	src/lib/os/filesystem.cpp

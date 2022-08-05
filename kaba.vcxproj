@@ -126,7 +126,6 @@
     <ClCompile Include="src\lib\base\pointer.cpp" />
     <ClCompile Include="src\lib\base\strings.cpp" />
     <ClCompile Include="src\lib\doc\chunked.cpp" />
-    <ClCompile Include="src\lib\doc\config.cpp" />
     <ClCompile Include="src\lib\doc\pdf.cpp" />
     <ClCompile Include="src\lib\doc\xml.cpp" />
     <ClCompile Include="src\lib\fft\fft.cpp" />
@@ -286,6 +285,7 @@
     <ClCompile Include="src\lib\nix\nix_vertexbuffer.cpp" />
     <ClCompile Include="src\lib\nix\nix_view.cpp" />
     <ClCompile Include="src\lib\os\CommandLineParser.cpp" />
+    <ClCompile Include="src\lib\os\config.cpp" />
     <ClCompile Include="src\lib\os\date.cpp" />
     <ClCompile Include="src\lib\os\file.cpp" />
     <ClCompile Include="src\lib\os\filesystem.cpp" />
@@ -330,12 +330,13 @@
     <ClInclude Include="src\lib\base\callable.h" />
     <ClInclude Include="src\lib\base\macros.h" />
     <ClInclude Include="src\lib\base\map.h" />
+    <ClInclude Include="src\lib\base\optional.h" />
     <ClInclude Include="src\lib\base\pointer.h" />
     <ClInclude Include="src\lib\base\set.h" />
     <ClInclude Include="src\lib\base\sort.h" />
     <ClInclude Include="src\lib\base\strings.h" />
+    <ClInclude Include="src\lib\base\tuple.h" />
     <ClInclude Include="src\lib\doc\chunked.h" />
-    <ClInclude Include="src\lib\doc\config.h" />
     <ClInclude Include="src\lib\doc\pdf.h" />
     <ClInclude Include="src\lib\doc\xml.h" />
     <ClInclude Include="src\lib\fft\fft.h" />
@@ -465,6 +466,7 @@
     <ClInclude Include="src\lib\nix\nix_vertexbuffer.h" />
     <ClInclude Include="src\lib\nix\nix_view.h" />
     <ClInclude Include="src\lib\os\CommandLineParser.h" />
+    <ClInclude Include="src\lib\os\config.h" />
     <ClInclude Include="src\lib\os\date.h" />
     <ClInclude Include="src\lib\os\file.h" />
     <ClInclude Include="src\lib\os\filesystem.h" />

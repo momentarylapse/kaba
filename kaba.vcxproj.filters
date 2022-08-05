@@ -31,9 +31,6 @@
     <ClCompile Include="src\lib\doc\chunked.cpp">
       <Filter>src\lib\doc</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\doc\config.cpp">
-      <Filter>src\lib\doc</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\doc\pdf.cpp">
       <Filter>src\lib\doc</Filter>
     </ClCompile>
@@ -511,6 +508,9 @@
     <ClCompile Include="src\lib\os\CommandLineParser.cpp">
       <Filter>src\lib\os</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\os\config.cpp">
+      <Filter>src\lib\os</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\os\date.cpp">
       <Filter>src\lib\os</Filter>
     </ClCompile>
@@ -639,6 +639,9 @@
     <ClInclude Include="src\lib\base\map.h">
       <Filter>src\lib\base</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\base\optional.h">
+      <Filter>src\lib\base</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\base\pointer.h">
       <Filter>src\lib\base</Filter>
     </ClInclude>
@@ -651,10 +654,10 @@
     <ClInclude Include="src\lib\base\strings.h">
       <Filter>src\lib\base</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\doc\chunked.h">
-      <Filter>src\lib\doc</Filter>
+    <ClInclude Include="src\lib\base\tuple.h">
+      <Filter>src\lib\base</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\doc\config.h">
+    <ClInclude Include="src\lib\doc\chunked.h">
       <Filter>src\lib\doc</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\doc\pdf.h">
@@ -1042,6 +1045,9 @@
       <Filter>src\lib\nix</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\os\CommandLineParser.h">
+      <Filter>src\lib\os</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\os\config.h">
       <Filter>src\lib\os</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\os\date.h">

@@ -5,8 +5,8 @@
  *      Author: michi
  */
 
-#ifndef HUICONFIG_H_
-#define HUICONFIG_H_
+#ifndef SRC_LIB_OS_CONFIG_H_
+#define SRC_LIB_OS_CONFIG_H_
 
 #include "../base/base.h"
 #include "../base/map.h"
@@ -48,4 +48,4 @@ public:
 };
 
 
-#endif /* HUICONFIG_H_ */
+#endif /* SRC_LIB_OS_CONFIG_H_ */
