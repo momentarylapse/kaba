@@ -7,6 +7,26 @@
 
 #include "experiments.h"
 #include "../lib/os/msg.h"
+#include "../lib/base/optional.h"
+
+void show_opt(const optional<string> &o) {
+	if (o.has_value())
+		msg_write(o.value());
+	else
+		msg_write("NO VALUE");
+}
+
+void test_optional() {
+	optional<string> o, p;
+	o = "hallo";
+	show_opt(o);
+	p = o;
+	show_opt(p);
+	o = None;
+	show_opt(o);
+
+}
+
 #include "../lib/kaba/kaba.h"
 #include "../lib/image/color.h"
 #include "../lib/math/complex.h"
@@ -94,6 +114,8 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, -1));
 	//msg_write(disassemble((void*)&ggg, -1));
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
+
+	test_optional();
 }
 
 

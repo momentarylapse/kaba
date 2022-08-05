@@ -11,7 +11,6 @@
 
 
 namespace kaba {
-	extern int64 s2i2(const string &str);
 	extern string function_link_name(Function *f);
 	extern string decode_symbol_name(const string&);
 };
@@ -28,7 +27,7 @@ void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
 		f->write_int((int_p)v->memory);
 	}
 	f->write_str("#");
-	delete(f);
+	delete f;
 }
 
 void import_symbols(const Path &symbols_in_file) {
@@ -40,7 +39,7 @@ void import_symbols(const Path &symbols_in_file) {
 		int pos = f->read_int();
 		kaba::link_external(name, (void*)(int_p)pos);
 	}
-	delete(f);
+	delete f;
 }
 
 
