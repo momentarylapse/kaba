@@ -51,6 +51,17 @@ namespace kaba {
 	}
 	class KabaPanelWrapper : public hui::Panel {
 	public:
+		KabaPanelWrapper() : hui::Panel() {}
+		KabaPanelWrapper(const string &id, hui::Panel *parent) : hui::Panel(id, parent) {}
+		void __init0__() {
+			new(this) KabaPanelWrapper();
+		}
+		void __init2__(const string &id, hui::Panel *parent) {
+			new(this) KabaPanelWrapper(id, parent);
+		}
+		virtual void __delete__() {
+			this->KabaPanelWrapper::~KabaPanelWrapper();
+		}
 		void _kaba_event(const string &id, Callable<void()> &c) {
 			event(id, [&c]{ c(); });
 		}
@@ -90,16 +101,6 @@ namespace kaba {
 
 #ifdef KABA_EXPORT_HUI
 	#define hui_p(p)		p
-	class KabaHuiPanel : public hui::Panel {
-	public:
-		KabaHuiPanel(const string &id, hui::Panel *parent) : hui::Panel(id, parent) {}
-		void __init__(const string &id, hui::Panel *parent) {
-			new(this) KabaHuiPanel(id, parent);
-		}
-		virtual void __delete__() {
-			this->KabaHuiPanel::~KabaHuiPanel();
-		}
-	};
 #else
 	#define hui_p(p)		nullptr
 #endif
@@ -176,10 +177,11 @@ void SIAddPackageHui() {
 	add_class(TypeHuiPanel);
 		class_derive_from(TypeObject, false, true);
 		class_add_element("win", TypeHuiWindowP, GetDAPanel(win));
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, hui_p(&KabaHuiPanel::__init__), Flags::OVERRIDE);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, hui_p(&KabaPanelWrapper::__init0__), Flags::OVERRIDE);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, hui_p(&KabaPanelWrapper::__init2__), Flags::OVERRIDE);
 			func_add_param("parent", TypeHuiPanelP);
 			func_add_param("id", TypeString);
-		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&KabaHuiPanel::__delete__), Flags::OVERRIDE);
+		class_add_func_virtual(IDENTIFIER_FUNC_DELETE, TypeVoid, hui_p(&KabaPanelWrapper::__delete__), Flags::OVERRIDE);
 		class_add_func("set_border_width", TypeVoid, hui_p(&hui::Panel::set_border_width));
 			func_add_param("width", TypeInt);
 		class_add_func("set_decimals", TypeVoid, hui_p(&hui::Panel::set_decimals));
