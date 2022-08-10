@@ -1815,13 +1815,13 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 		type = cv->type;
 	}
 
-	cv = tree->transform_node(cv, [&] (shared<Node> n) {
-		return tree->conv_eval_const_func(n);
+	cv = tree->transform_node(cv, [this] (shared<Node> n) {
+		return tree->conv_eval_const_func(tree->conv_fake_constructors(n));
 	});
 
 	if (cv->kind != NodeKind::CONSTANT) {
 		//cv->show(TypeVoid);
-		do_error("constant value expected", cv);
+		do_error("constant value expected, but expression can not be evaluated at compile time", cv);
 	}
 	return cv;
 }

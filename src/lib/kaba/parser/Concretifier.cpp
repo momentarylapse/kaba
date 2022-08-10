@@ -642,12 +642,14 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	// int[3]
 	if (operand->kind == NodeKind::CLASS) {
 		// find array index
-		index = tree->transform_node(index, [&] (shared<Node> n) {
+		index = tree->transform_node(index, [this] (shared<Node> n) {
 			return tree->conv_eval_const_func(n);
 		});
 
-		if ((index->kind != NodeKind::CONSTANT) or (index->type != TypeInt))
-			do_error("only constants of type 'int' allowed for size of arrays", index);
+		if (index->type != TypeInt)
+			do_error(format("array size must be of type 'int', not '%s'", index->type->name), index);
+		if (index->kind != NodeKind::CONSTANT)
+			do_error("array size must be compile-time constant", index);
 		int array_size = index->as_const()->as_int();
 		auto t = tree->make_class_array(operand->as_class(), array_size, operand->token_id);
 		return add_node_class(t);
@@ -1500,9 +1502,12 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return node;
 	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		concretify_all_params(node, block, ns);
-		for (int p=0; p<node->params.num; p+=2)
-			if (node->params[p]->type != TypeString or node->params[p]->kind != NodeKind::CONSTANT)
-				do_error("key needs to be a constant string", node->params[p]);
+		for (int p=0; p<node->params.num; p+=2) {
+			if (node->params[p]->type != TypeString)
+				do_error(format("key type needs to be 'string', not '%s'", node->params[p]->type->long_name()), node->params[p]);
+			if (node->params[p]->kind != NodeKind::CONSTANT)
+				do_error("key needs to be a compile-time constant", node->params[p]);
+		}
 		return node;
 	} else if (node->kind == NodeKind::FUNCTION) {
 		return node;

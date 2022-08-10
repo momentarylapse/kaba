@@ -135,35 +135,31 @@ void SyntaxTree::digest() {
 
 	// turn vector(x,y,z) into vector._create(x,y,z)
 	// TODO make more universal! maybe general __create__() function as fake constructor?
-	transform([&](shared<Node> n){
-		if (n->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION)
-			return n;
-		if ((n->type == TypeVec3) or (n->type == TypeVec2) or (n->type == TypeColor) or (n->type == TypeRect) or (n->type == TypeComplex)) {
-			return make_constructor_static(n, "_create");
-		}
-		if (n->type == TypeQuaternion) {
-			if (n->params.num == 2 and n->params[1]->type == TypeVec3)
-				return make_constructor_static(n, "_rotation_v");
-			if (n->params.num == 3 and n->params[1]->type == TypeVec3)
-				return make_constructor_static(n, "_rotation_a");
-			if (n->params.num == 2 and n->params[1]->type == TypeMat4)
-				return make_constructor_static(n, "_rotation_m");
-		}
-		return n;
+	transform([this] (shared<Node> n) {
+		return conv_fake_constructors(n);
 	});
 
-	transform([&](shared<Node> n){ return conv_class_and_func_to_const(n); });
+	transform([this] (shared<Node> n) {
+		return conv_class_and_func_to_const(n);
+	});
 
 	if (config.allow_simplify_consts)
 		eval_const_expressions(true);
 
-	transformb([&](shared<Node> n, Block* b){ return conv_break_down_high_level(n, b); });
+	transformb([this] (shared<Node> n, Block* b) {
+		return conv_break_down_high_level(n, b);
+	});
+	
 	if (config.verbose)
 		show("digest:break-high");
 
 
-	transform([&](shared<Node> n){ return conv_break_down_med_level(this, n); });
-	transform([&](shared<Node> n){ return conv_break_down_low_level(n); });
+	transform([this] (shared<Node> n) {
+		return conv_break_down_med_level(this, n);
+	});
+	transform([this] (shared<Node> n) {
+		return conv_break_down_low_level(n);
+	});
 	if (config.verbose)
 		show("digest:break-low");
 
@@ -176,7 +172,9 @@ void SyntaxTree::digest() {
 	if (config.verbose)
 		show("digest:pre-proc");
 
-	transform([&](shared<Node> n){ return conv_func_inline(n); });
+	transform([this] (shared<Node> n) {
+		return conv_func_inline(n);
+	});
 	if (config.verbose)
 		show("digest:inline");
 
@@ -994,6 +992,23 @@ bool node_is_executable(shared<Node> n) {
 	if ((n->kind == NodeKind::ADDRESS_SHIFT) or (n->kind == NodeKind::ARRAY) or (n->kind == NodeKind::DYNAMIC_ARRAY) or (n->kind == NodeKind::REFERENCE) or (n->kind == NodeKind::DEREFERENCE) or (n->kind == NodeKind::DEREF_ADDRESS_SHIFT))
 		return node_is_executable(n->params[0]);
 	return true;
+}
+
+shared<Node> SyntaxTree::conv_fake_constructors(shared<Node> n) {
+	if (n->kind != NodeKind::CONSTRUCTOR_AS_FUNCTION)
+		return n;
+	if ((n->type == TypeVec3) or (n->type == TypeVec2) or (n->type == TypeColor) or (n->type == TypeRect) or (n->type == TypeComplex)) {
+		return make_constructor_static(n, "_create");
+	}
+	if (n->type == TypeQuaternion) {
+		if (n->params.num == 2 and n->params[1]->type == TypeVec3)
+			return make_constructor_static(n, "_rotation_v");
+		if (n->params.num == 3 and n->params[1]->type == TypeVec3)
+			return make_constructor_static(n, "_rotation_a");
+		if (n->params.num == 2 and n->params[1]->type == TypeMat4)
+			return make_constructor_static(n, "_rotation_m");
+	}
+	return n;
 }
 
 shared<Node> SyntaxTree::conv_class_and_func_to_const(shared<Node> n) {
