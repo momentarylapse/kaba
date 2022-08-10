@@ -579,7 +579,10 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 	// make links callable
 	foreachi (auto l, weak(links), i) {
 		if (l->kind == NodeKind::FUNCTION) {
-			links[i] = make_func_node_callable(l);
+			if (l->as_func()->is_template())
+				links[i] = make_func_node_callable(match_template_params(l, params, block, ns));
+			else
+				links[i] = make_func_node_callable(l);
 		} else if (l->kind == NodeKind::CLASS) {
 			auto *t = l->as_class();
 			return try_to_match_apply_params(turn_class_into_constructor(t, params, node->token_id), params);
@@ -683,7 +686,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	}
 
 
-	// subarray() ?
+	// __subarray__() ?
 	if (index2) {
 		auto *cf = operand->type->get_member_func(IDENTIFIER_FUNC_SUBARRAY, operand->type, {index->type, index->type});
 		if (cf) {
@@ -1740,6 +1743,14 @@ shared<Node> Concretifier::make_func_node_callable(const shared<Node> l) {
 	// virtual?
 	if (f->virtual_index >= 0)
 		r->kind = NodeKind::CALL_VIRTUAL;
+	return r;
+}
+
+shared<Node> Concretifier::match_template_params(const shared<Node> l, const shared_array<Node> &params, Block *block, const Class *ns) {
+	auto f0 = l->as_func();
+	auto ff = TemplateManager::get_instantiated_matching(parser, f0, params, block, ns, l->token_id);
+	auto r = l->shallow_copy();
+	r->link_no = (int_p)ff;
 	return r;
 }
 

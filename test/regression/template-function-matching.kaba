@@ -4,7 +4,8 @@ func f[T](a: T) -> T
 
 
 func main()
-	# explicit parameters
-	print(f[int](13))
-	print(f[float](13))
+#	print(f)
+	print(f(13))
+	print(f(13.0))
+	print(f(complex.I))
 
