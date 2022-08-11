@@ -1860,7 +1860,7 @@ void Concretifier::concretify_function_header(Function *f) {
 	f->literal_param_type.resize(f->abstract_param_types.num);
 	for (auto&& [i,at]: enumerate(weak(f->abstract_param_types))) {
 		auto t = concretify_as_type(at, block, f->name_space);
-		auto v = f->var[i];
+		auto v = f->var[i].get();
 		v->type = t;
 		f->literal_param_type[i] = t;
 

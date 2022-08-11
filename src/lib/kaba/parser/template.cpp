@@ -26,7 +26,28 @@ void TemplateManager::add_template(Function *f, const Array<string> &param_names
 	templates.add(t);
 }
 
+
+void show_node_details(shared<Node> n) {
+	if (n->kind == NodeKind::BLOCK) {
+		msg_write("block " + p2s(n.get()) + "  ->  " + p2s(n->as_block()->function));
+		msg_right();
+		for (auto v: n->as_block()->vars)
+			msg_write(v->name + ": " + v->type->name + "  " + p2s(v));
+	}
+	for (auto p: weak(n->params))
+		show_node_details(p);
+	if (n->kind == NodeKind::BLOCK) {
+		msg_left();
+	}
+}
+
+void show_func_details(Function *f) {
+	msg_write("DETAILS:    " + f->signature() + "  " + p2s(f));
+	show_node_details(f->block.get());
+}
+
 Function *TemplateManager::full_copy(Parser *parser, Function *f0) {
+	//msg_error("FULL COPY");
 	auto f = f0->create_dummy_clone(f0->name_space);
 	f->block = cp_node(f0->block.get())->as_block();
 	flags_clear(f->flags, Flags::NEEDS_OVERRIDE);
@@ -35,17 +56,22 @@ Function *TemplateManager::full_copy(Parser *parser, Function *f0) {
 		if (n->kind != NodeKind::BLOCK)
 			return n;
 		auto b = n->as_block();
+		//msg_write("block " + p2s(b));
 		for (auto&& [vi,v]: enumerate(b->vars)) {
 			int i = weak(b->function->var).find(v);
-			//msg_write(i);
 			b->vars[vi] = f->var[i].get();
 		}
 		b->function = f;
 		return n;
 	};
 
-	convert(f->block.get())->as_block();
-	parser->tree->transform_block(f->block.get(), convert);
+	//convert(f->block.get())->as_block();
+	parser->tree->transform_node(f->block.get(), convert);
+
+	//show_func_details(f0);
+	//show_func_details(f);
+
+	//parser->do_error("x", -1);
 
 	return f;
 }
@@ -67,6 +93,8 @@ Function *TemplateManager::get_instantiated(Parser *parser, Function *f0, const 
 }
 
 Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id) {
+	if (config.verbose)
+		msg_write("____MATCHING");
 	auto &t = get_template(parser, f0, token_id);
 
 	Array<const Class*> arg_types;
@@ -134,14 +162,18 @@ Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<
 	f->name += format("[%s]", params[0]->long_name());
 
 	// replace in parameters/return type
-	for (int i=0; i<f->num_params; i++)
+	for (int i=0; i<f->num_params; i++) {
 		f->abstract_param_types[i] = node_replace(parser, f->abstract_param_types[i], t.params, params);
+		//f->abstract_param_types[i]->show();
+	}
 	if (f->abstract_return_type)
 		f->abstract_return_type = node_replace(parser, f->abstract_return_type, t.params, params);
 
 	// replace in body
 	for (int i=0; i<f->block->params.num; i++)
 		f->block->params[i] = node_replace(parser, f->block->params[i], t.params, params);
+	
+	//f->show();
 
 	// concretify
 	try {
