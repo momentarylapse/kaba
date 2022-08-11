@@ -18,6 +18,7 @@
 #include "Shader.h"
 #include "FrameBuffer.h"
 #include "vulkan.h"
+#include "../base/iter.h"
 #include "../image/color.h"
 #include "../math/rect.h"
 #include <array>
@@ -217,7 +218,7 @@ void CommandBuffer::clear(const Array<color> &col, float z, bool clear_z) {
 		return;
 	Array<VkClearAttachment> clear_attachments;
 	//Array<VkClearRect> clear_rects;
-	foreachi (auto &c, col, i) {
+	for (auto&& [i,c]: enumerate(col)) {
 		VkClearAttachment ca = {};
 		ca.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		ca.colorAttachment = i;

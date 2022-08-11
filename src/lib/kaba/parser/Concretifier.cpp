@@ -10,6 +10,7 @@
 #include "template.h"
 #include "../lib/lib.h"
 #include "../../base/set.h"
+#include "../../base/iter.h"
 #include "../../os/msg.h"
 
 namespace kaba {
@@ -165,7 +166,7 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 		return false;
 
 	penalty = 20;
-	foreachi (auto *e, weak(node->params).sub_ref(1), i) {
+	for (auto&& [i,e]: enumerate(weak(node->params).sub_ref(1))) {
 		CastingData cast;
 		if (!type_match_with_cast(e, false, f_constructor->literal_param_type[i], cast))
 			return false;
@@ -279,7 +280,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		//}
 	}
-	foreachi(auto &c, TypeCasts, i)
+	for (auto&& [i,c]: enumerate(TypeCasts))
 		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
 			cd.penalty = c.penalty;
 			cd.cast = i;
@@ -301,7 +302,7 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 		if (wanted == TypeDynamicArray)
 			return force_concrete_type(node);
 		CastingData cd2;
-		foreachi (auto e, node->params, i) {
+		for (auto&& [i,e]: enumerate(node->params)) {
 			if (!type_match_with_cast(e, false, wanted->get_array_element(), cd2)) {
 				do_error("nope????", node);
 			}
@@ -323,7 +324,7 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 		Array<CastingData> c;
 		c.resize(node->params.num);
 		auto f = cast.f;
-		foreachi (auto e, node->params, i)
+		for (auto&& [i,e]: enumerate(node->params))
 			if (!type_match_with_cast(e, false, f->literal_param_type[i+1], c[i])) { do_error("aaaaa", e); }
 		auto cmd = add_node_constructor(f);
 		return apply_params_with_cast(cmd, node->params, c, f->literal_param_type, 1);
@@ -577,7 +578,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 
 
 	// make links callable
-	foreachi (auto l, weak(links), i) {
+	for (auto&& [i,l]: enumerate(weak(links))) {
 		if (l->kind == NodeKind::FUNCTION) {
 			if (l->as_func()->is_template())
 				links[i] = make_func_node_callable(match_template_params(l, params, block, ns));
@@ -1287,7 +1288,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	auto create_inner_lambda = wrap_function_into_callable(f, node->token_id);
 
 	shared_array<Node> capture_nodes;
-	foreachi (auto &c, captures, i) {
+	for (auto&& [i,c]: enumerate(captures)) {
 		if (capture_via_ref[i])
 			capture_nodes.add(add_node_local(c)->ref());
 		else
@@ -1390,7 +1391,7 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 
 	if (node->params[1]->kind == NodeKind::TUPLE) {
 		auto etypes = tuple_get_element_types(type);
-		foreachi (auto t, etypes, i) {
+		for (auto&& [i,t]: enumerate(etypes)) {
 			if (t->needs_constructor() and !t->get_default_constructor())
 				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
 			block->add_var(node->params[1]->params[i]->as_token(), t);
@@ -1857,7 +1858,7 @@ void Concretifier::concretify_function_header(Function *f) {
 		f->set_return_type(concretify_as_type(f->abstract_return_type, block, f->name_space));
 	}
 	f->literal_param_type.resize(f->abstract_param_types.num);
-	foreachi (auto at, weak(f->abstract_param_types), i) {
+	for (auto&& [i,at]: enumerate(weak(f->abstract_param_types))) {
 		auto t = concretify_as_type(at, block, f->name_space);
 		auto v = f->var[i];
 		v->type = t;

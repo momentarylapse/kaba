@@ -10,6 +10,7 @@
 #include "Concretifier.h"
 #include "template.h"
 #include "../../os/msg.h"
+#include "../../base/iter.h"
 
 namespace kaba {
 
@@ -34,7 +35,7 @@ Function *TemplateManager::full_copy(Parser *parser, Function *f0) {
 		if (n->kind != NodeKind::BLOCK)
 			return n;
 		auto b = n->as_block();
-		foreachi (auto v, b->vars, vi) {
+		for (auto&& [vi,v]: enumerate(b->vars)) {
 			int i = weak(b->function->var).find(v);
 			//msg_write(i);
 			b->vars[vi] = f->var[i].get();
@@ -83,7 +84,7 @@ Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f
 			}
 	};
 
-	foreachi (auto *p, weak(params), i) {
+	for (auto&& [i,p]: enumerate(weak(params))) {
 		//f0->abstract_param_types[i]->show();
 		if (f0->abstract_param_types[i]->kind == NodeKind::ABSTRACT_TOKEN) {
 			string token = f0->abstract_param_types[i]->as_token();

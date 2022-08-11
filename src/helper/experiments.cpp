@@ -8,6 +8,7 @@
 #include "experiments.h"
 #include "../lib/os/msg.h"
 #include "../lib/base/optional.h"
+#include "../lib/base/iter.h"
 
 void show_opt(const optional<string> &o) {
 	if (o.has_value())
@@ -15,6 +16,11 @@ void show_opt(const optional<string> &o) {
 	else
 		msg_write("NO VALUE");
 }
+
+struct S {
+	int a;
+	string s;
+};
 
 void test_optional() {
 	optional<string> o, p;
@@ -25,6 +31,23 @@ void test_optional() {
 	o = None;
 	show_opt(o);
 
+
+
+	auto x = S{13, "hallo"};
+	auto [a,b] = x;
+	msg_write(a);
+	msg_write(b);
+
+
+	Array<int> aa = {13, 14, 15, 16};
+	for (auto i: aa)
+		msg_write(i);
+	for (auto [k,i]: enumerate(aa))
+		msg_write(format("%d => %d", k, i));
+	for (auto&& [k,i]: enumerate(aa))
+		i += 13;
+	for (auto [k,i]: enumerate(aa))
+		msg_write(format("%d => %d", k, i));
 }
 
 #include "../lib/kaba/kaba.h"

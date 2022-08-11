@@ -393,7 +393,7 @@ void Module::show_vars(bool include_consts) {
 	for (auto *v: weak(syntax->base_class->static_variables))
 		print_var(v->memory, v->name, v->type);
 	/*if (include_consts)
-		foreachi(LocalVariable &c, pre_script->Constant, i)
+		for ([i,c]: pre_script->Constant)
 			print_var((void*)g_var[i], c.name, c.type);*/
 }
 
