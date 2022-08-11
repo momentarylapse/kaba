@@ -1,0 +1,37 @@
+
+func xmax[T](a: T, b: T) -> T
+	if b > a
+		return b
+	return a
+
+
+func xsort[T](a: T, b: T) -> T[]
+	if b > a
+		return [a,b]
+	else
+		return [b,a]
+
+
+func first[T](a: T[]) -> T
+	return a[0]
+
+
+func deref[T](p: T*[]) -> T
+	return p[0]
+
+
+
+
+func main()
+	print(xmax(13, 30))
+	print(xmax("c", "b"))
+	
+	print(xsort(pi,1.0))
+	
+	let l = [1,2,3]
+	print(first(l)) # [1,2,3]
+	
+	
+	let i = vec3.EZ
+	let p = [&i]
+	print(deref(p))

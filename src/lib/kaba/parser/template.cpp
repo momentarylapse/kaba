@@ -92,6 +92,22 @@ Function *TemplateManager::get_instantiated(Parser *parser, Function *f0, const 
 	return ii.f;
 }
 
+void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f) {
+	//msg_write("  match..." + t->name);
+	//p->show();
+	if (p->kind == NodeKind::ABSTRACT_TOKEN) {
+		// direct
+		string token = p->as_token();
+		f(token, t);
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_LIST) {
+		if (t->is_super_array())
+			match_parameter_type(p->params[0], t->get_array_element(), f);
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
+		if (t->is_pointer())
+			match_parameter_type(p->params[0], t->param[0], f);
+	}
+}
+
 Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id) {
 	if (config.verbose)
 		msg_write("____MATCHING");
@@ -113,11 +129,10 @@ Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f
 	};
 
 	for (auto&& [i,p]: enumerate(weak(params))) {
+		if (p->type == TypeUnknown)
+			parser->do_error(format("parameter #%d '%s' has undecided type when trying to match template arguments", i+1, f0->var[i]->name), token_id);
 		//f0->abstract_param_types[i]->show();
-		if (f0->abstract_param_types[i]->kind == NodeKind::ABSTRACT_TOKEN) {
-			string token = f0->abstract_param_types[i]->as_token();
-			set_match_type(token, params[i]->type);
-		}
+		match_parameter_type(f0->abstract_param_types[i], p->type, set_match_type);
 	}
 
 	for (auto t: arg_types)

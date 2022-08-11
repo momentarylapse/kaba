@@ -1500,9 +1500,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return concretify_array(node, block, ns);
 	} else if (node->kind == NodeKind::TUPLE) {
 		concretify_all_params(node, block, ns);
+		// NOT specifying the type
 		return node;
 	} else if (node->kind == NodeKind::ARRAY_BUILDER) {
 		concretify_all_params(node, block, ns);
+		// NOT specifying the type
 		return node;
 	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		concretify_all_params(node, block, ns);
@@ -1512,6 +1514,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			if (node->params[p]->kind != NodeKind::CONSTANT)
 				do_error("key needs to be a compile-time constant", node->params[p]);
 		}
+		// NOT specifying the type
 		return node;
 	} else if (node->kind == NodeKind::FUNCTION) {
 		return node;
