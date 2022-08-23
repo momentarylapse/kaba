@@ -196,6 +196,8 @@ const char *get_gtk_icon_name_base(const string image) {
 	if (image=="hui:spell-check")	return "tools-check-spelling";
 	if (image=="hui:convert")	return "gtk-convert";//GTK_STOCK_CONVERT;
 
+	if (image.head(4) == "hui:")
+		return image.sub_ref(4).c_str();
 	return "";
 }
 
@@ -360,13 +362,11 @@ void *get_gtk_image_pixbuf(const string &image) {
 		HuiImage *img = get_image(image);
 		if (img->type == 0){
 		}else if (img->type == 1){
-#ifdef _X_USE_IMAGE_
 			if (!img->pix_buf) {
 				img->pix_buf = gdk_pixbuf_new_from_data((guchar*)img->image->data.data, GDK_COLORSPACE_RGB, true, 8, img->image->width, img->image->height, img->image->width * 4, nullptr, nullptr);
 				for (int i=0; i<1000; i++)
 					g_object_ref(GDK_PIXBUF(img->pix_buf));
 			}
-#endif
 			return img->pix_buf;
 		}
 	}

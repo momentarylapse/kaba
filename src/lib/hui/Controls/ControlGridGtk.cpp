@@ -38,11 +38,8 @@ ControlGrid::ControlGrid(const string &title, const string &id, Panel *panel) :
 }
 
 void ControlGrid::add_child(shared<Control> child, int x, int y) {
-	if (vertical) {
-		int t = x;
-		x = y;
-		y = t;
-	}
+	if (vertical)
+		std::swap(x, y);
 	GtkWidget *child_widget = child->get_frame();
 	gtk_grid_attach(GTK_GRID(widget), child_widget, x, y, 1, 1);
 	control_link(this, child);
@@ -59,11 +56,6 @@ void ControlGrid::add_child(shared<Control> child, int x, int y) {
 		child->set_options("padding=6");
 	} else if (action_bar) {
 		child->set_options("min-width=25,min-height=25,padding=3");
-	} else {
-		if (((child->type == CONTROL_GROUP) or (child->type == CONTROL_EXPANDER)) and (y > 0)) {
-			gtk_widget_set_margin_top(child->widget, FRAME_MARGIN);
-		}
-
 	}
 }
 
