@@ -1035,6 +1035,21 @@ shared<Node> Concretifier::concretify_statement_weak(shared<Node> node, Block *b
 	return nullptr;
 }
 
+shared<Node> create_map_call(SyntaxTree *tree, shared<Node> func, shared<Node> array, int token_id) {
+	auto *f = tree->required_func_global("@xmap", token_id);
+
+	auto p = node_call_effective_params(func);
+	auto rt = node_call_return_type(func);
+
+	auto cmd = add_node_call(f, token_id);
+	cmd->set_param(0, func);
+	cmd->set_param(1, array);
+	cmd->set_param(2, add_node_class(p[0]));
+	cmd->set_param(3, add_node_class(rt));
+	cmd->type = tree->make_class_super_array(rt, token_id);
+	return cmd;
+}
+
 shared<Node> Concretifier::concretify_statement_map(shared<Node> node, Block *block, const Class *ns) {
 	auto func = concretify_node(node->params[0], block, block->name_space());
 	auto array = concretify_node(node->params[1], block, block->name_space());
@@ -1054,7 +1069,9 @@ shared<Node> Concretifier::concretify_statement_map(shared<Node> node, Block *bl
 	if (p[0] != array->type->param[0])
 		do_error("map(): function parameter does not match list type", array);
 
-	auto *f = tree->required_func_global("@xmap", node->token_id);
+	return create_map_call(tree, func, array, node->token_id);
+
+	/*auto *f = tree->required_func_global("@xmap", node->token_id);
 
 	auto cmd = add_node_call(f, node->token_id);
 	cmd->set_param(0, func);
@@ -1062,7 +1079,7 @@ shared<Node> Concretifier::concretify_statement_map(shared<Node> node, Block *bl
 	cmd->set_param(2, add_node_class(p[0]));
 	cmd->set_param(3, add_node_class(p[1]));
 	cmd->type = tree->make_class_super_array(rt, node->token_id);
-	return cmd;
+	return cmd;*/
 }
 
 shared<Node> Concretifier::concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns) {
@@ -1355,7 +1372,7 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 	if (op_no->id == OperatorID::FUNCTION_PIPE) {
 		concretify_all_params(node, block, ns);
 		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
-		return build_function_pipe(node->params[0], node->params[1]);
+		return build_function_pipe(node->params[0], node->params[1], block, node->token_id);
 	} else if (op_no->id == OperatorID::MAPS_TO) {
 		return build_lambda_new(node->params[0], node->params[1]);
 	}
@@ -1992,20 +2009,33 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 	return shared<Node>();
 }
 
-shared<Node> Concretifier::build_function_pipe(const shared<Node> &input, const shared<Node> &func) {
+shared<Node> Concretifier::build_function_pipe(const shared<Node> &_input, const shared<Node> &func, Block *block, int token_id) {
+//	auto func = force_concrete_type(_func);
+	auto input = force_concrete_type(_input);
 
+
+	//if (!func->type->is_callable())
+	//	do_error("operand after '|>' must be callable", func);
 	if (func->kind != NodeKind::FUNCTION)
-		do_error("function expected after '|>", func);
-	auto f = func->as_func();
-	if (f->num_params != 1)
+		do_error("operand after '|>' must be a function", func);
+
+	auto p = node_call_effective_params(func);
+	auto rt = node_call_return_type(func);
+
+	if (p.num != 1)
 		do_error("function after '|>' needs exactly 1 parameter (including self)", func);
 	//if (f->literal_param_type[0] != input->type)
 	//	do_error("pipe type mismatch...");
 
-	auto out = add_node_call(f, func->token_id);
 
-	shared_array<Node> inputs;
-	inputs.add(input);
+	// array |> func
+	if (input->type->is_super_array() and input->type->param[0] == p[0]) {
+		// -> map(func, array)
+		auto fp = wrap_node_into_callable(func);
+		return create_map_call(tree, fp, input, input->token_id);
+	}
+
+	auto out = add_node_call(func->as_func(), func->token_id);
 
 	Array<CastingData> casts;
 	Array<const Class*> wanted;
