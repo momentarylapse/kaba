@@ -996,6 +996,9 @@ shared<Node> Concretifier::concretify_statement_dyn(shared<Node> node, Block *bl
 
 shared<Node> Concretifier::concretify_statement_sorted(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
+	if (node->params.num < 2)
+		return node;
+		//do_error("'(' expected after 'sorted'", node);
 	auto array = force_concrete_type(node->params[0]);
 	auto crit = force_concrete_type(node->params[1]);
 
@@ -2013,6 +2016,20 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &_input, const
 //	auto func = force_concrete_type(_func);
 	auto input = force_concrete_type(_input);
 
+	if (func->kind == NodeKind::STATEMENT)
+		if (func->as_statement()->id == StatementID::SORTED) {
+			if (!input->type->is_super_array())
+				do_error("'|> sorted' only allowed for lists", input);
+			Function *f = tree->required_func_global("@sorted", token_id);
+			auto crit = tree->add_constant(TypeString);
+
+			auto cmd = add_node_call(f, token_id);
+			cmd->set_param(0, input);
+			cmd->set_param(1, add_node_class(input->type));
+			cmd->set_param(2, add_node_const(crit));
+			cmd->type = input->type;
+			return cmd;
+		}
 
 	//if (!func->type->is_callable())
 	//	do_error("operand after '|>' must be callable", func);

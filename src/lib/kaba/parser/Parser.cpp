@@ -1326,11 +1326,16 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	int token0 = Exp.consume_token(); // "sorted"
 
+	auto node = add_node_statement(StatementID::SORTED, token0, TypeUnknown);
+	if (Exp.peek_next() != "(") {
+		node->set_num_params(0);
+		return node;
+	}
+
 	auto params = parse_abstract_call_parameters(block);
+	node->set_param(0, params[0]);
 	if (params.num < 0 or params.num > 2)
 		do_error_exp("sorted(array, criterion=\"\") expects 1 or 2 parameters");
-	auto node = add_node_statement(StatementID::SORTED, token0, TypeUnknown);
-	node->set_param(0, params[0]);
 	if (params.num >= 2) {
 		node->set_param(1, params[1]);
 	} else {
