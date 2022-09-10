@@ -1373,9 +1373,9 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 	auto op_no = node->as_abstract_op();
 
 	if (op_no->id == OperatorID::FUNCTION_PIPE) {
-		concretify_all_params(node, block, ns);
+		// concretify_all_params(..); NO, the parameters' types will influence each other
 		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
-		return build_function_pipe(node->params[0], node->params[1], block, node->token_id);
+		return build_function_pipe(node->params[0], node->params[1], block, ns, node->token_id);
 	} else if (op_no->id == OperatorID::MAPS_TO) {
 		return build_lambda_new(node->params[0], node->params[1]);
 	}
@@ -2012,12 +2012,15 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 	return shared<Node>();
 }
 
-shared<Node> Concretifier::build_function_pipe(const shared<Node> &_input, const shared<Node> &func, Block *block, int token_id) {
+shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &abs_func, Block *block, const Class *ns, int token_id) {
 //	auto func = force_concrete_type(_func);
-	auto input = force_concrete_type(_input);
+	auto input = abs_input;
+	if (input->type == TypeUnknown)
+		input = concretify_node(input, block, ns);
+	input = force_concrete_type(input);
 
-	if (func->kind == NodeKind::STATEMENT)
-		if (func->as_statement()->id == StatementID::SORTED) {
+	if (abs_func->kind == NodeKind::STATEMENT)
+		if (abs_func->as_statement()->id == StatementID::SORTED) {
 			if (!input->type->is_super_array())
 				do_error("'|> sorted' only allowed for lists", input);
 			Function *f = tree->required_func_global("@sorted", token_id);
@@ -2031,38 +2034,48 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &_input, const
 			return cmd;
 		}
 
-	//if (!func->type->is_callable())
-	//	do_error("operand after '|>' must be callable", func);
-	if (func->kind != NodeKind::FUNCTION)
-		do_error("operand after '|>' must be a function", func);
-
-	auto p = node_call_effective_params(func);
-	auto rt = node_call_return_type(func);
-
-	if (p.num != 1)
-		do_error("function after '|>' needs exactly 1 parameter (including self)", func);
-	//if (f->literal_param_type[0] != input->type)
-	//	do_error("pipe type mismatch...");
+	auto funcs = concretify_node_multi(abs_func, block, ns);
+	for (auto f: weak(funcs)) {
 
 
-	// array |> func
-	if (input->type->is_super_array() and input->type->param[0] == p[0]) {
-		// -> map(func, array)
-		auto fp = wrap_node_into_callable(func);
-		return create_map_call(tree, fp, input, input->token_id);
+		//if (!func->type->is_callable())
+		//	do_error("operand after '|>' must be callable", func);
+		if (f->kind != NodeKind::FUNCTION)
+			do_error("operand after '|>' must be a function", f);
+
+		auto p = node_call_effective_params(f);
+		auto rt = node_call_return_type(f);
+
+		if (p.num != 1)
+			continue;//do_error("function after '|>' needs exactly 1 parameter (including self)", f);
+		//if (f->literal_param_type[0] != input->type)
+		//	do_error("pipe type mismatch...");
+
+
+		// array |> func
+		if (input->type->is_super_array() and input->type->param[0] == p[0]) {
+			// -> map(func, array)
+			auto fp = wrap_node_into_callable(f);
+			return create_map_call(tree, fp, input, input->token_id);
+		}
+
+		auto out = add_node_call(f->as_func(), f->token_id);
+
+		Array<CastingData> casts;
+		Array<const Class*> wanted;
+		int penalty;
+		if (!param_match_with_cast(out, {input}, casts, wanted, &penalty))
+			continue;//do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
+		return check_const_params(tree, apply_params_with_cast(out, {input}, casts, wanted));
+		//auto out = p->add_node_call(f);
+		//out->set_param(0, input);
+		//return out;
 	}
-
-	auto out = add_node_call(func->as_func(), func->token_id);
-
-	Array<CastingData> casts;
-	Array<const Class*> wanted;
-	int penalty;
-	if (!param_match_with_cast(out, {input}, casts, wanted, &penalty))
-		do_error("pipe: " + param_match_with_cast_error({input}, wanted), func);
-	return check_const_params(tree, apply_params_with_cast(out, {input}, casts, wanted));
-	//auto out = p->add_node_call(f);
-	//out->set_param(0, input);
-	//return out;
+	if (input->type->is_super_array())
+		do_error(format("'|>' type mismatch: can not call right side with type '%s' or '%s'", input->type->long_name(), input->type->param[0]->long_name()), abs_func);
+	else
+		do_error(format("'|>' type mismatch: can not call right side with type '%s'", input->type->long_name()), abs_func);
+	return nullptr;
 }
 
 
