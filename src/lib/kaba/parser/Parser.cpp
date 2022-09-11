@@ -1183,6 +1183,7 @@ shared_array<Node> parse_comma_sep_token_list(Parser *p) {
 
 // local (variable) definitions...
 shared<Node> Parser::parse_abstract_statement_var(Block *block) {
+	bool is_let = (Exp.cur == IDENTIFIER_LET);
 	Exp.next(); // "var"/"let"
 
 	// tuple "var (x,y) = ..."
@@ -1202,7 +1203,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		assign->set_param(0, tuple);
 		assign->set_param(1, rhs);
 
-		auto node = new Node(NodeKind::ABSTRACT_VAR, 0, TypeUnknown);
+		auto node = new Node(NodeKind::ABSTRACT_VAR, (int)is_let, TypeUnknown);
 		node->set_num_params(3);
 		//node->set_param(0, type); // no type
 		node->set_param(1, cp_node(tuple));
@@ -1233,7 +1234,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		assign->set_param(0, names[0]);
 		assign->set_param(1, rhs);
 
-		auto node = new Node(NodeKind::ABSTRACT_VAR, 0, TypeUnknown);
+		auto node = new Node(NodeKind::ABSTRACT_VAR, (int)is_let, TypeUnknown);
 		node->set_num_params(3);
 		node->set_param(0, type); // type
 		node->set_param(1, names[0]->shallow_copy()); // name
@@ -1245,7 +1246,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	expect_new_line();
 
 	for (auto &n: names) {
-		auto node = new Node(NodeKind::ABSTRACT_VAR, 0, TypeUnknown);
+		auto node = new Node(NodeKind::ABSTRACT_VAR, (int)is_let, TypeUnknown);
 		node->set_num_params(2);
 		node->set_param(0, type); // type
 		node->set_param(1, n); // name

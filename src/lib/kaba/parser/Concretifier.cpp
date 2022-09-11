@@ -1395,6 +1395,9 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 }
 
 shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
+	bool as_const = (node->link_no == 1);
+
+	// type?
 	const Class *type = nullptr;
 	if (node->params[0]) {
 		// explicit type
@@ -1409,21 +1412,29 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 		type = rhs->type;
 	}
 
-	if (node->params[1]->kind == NodeKind::TUPLE) {
-		auto etypes = tuple_get_element_types(type);
-		for (auto&& [i,t]: enumerate(etypes)) {
-			if (t->needs_constructor() and !t->get_default_constructor())
-				do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", t->long_name()), node);
-			block->add_var(node->params[1]->params[i]->as_token(), t);
-		}
-	} else {
+	//as_const
+	auto create_var= [block, &node, this] (const Class *type, const string &name) {
 		if (type->needs_constructor() and !type->get_default_constructor())
 			do_error(format("declaring a variable of type '%s' requires a constructor but no default constructor exists", type->long_name()), node);
-		block->add_var(node->params[1]->as_token(), type);
+		return block->add_var(name, type);
+	};
+	Array<Variable*> vars;
+
+	// add variable(s)
+	if (node->params[1]->kind == NodeKind::TUPLE) {
+		auto etypes = tuple_get_element_types(type);
+		for (auto&& [i,t]: enumerate(etypes))
+			vars.add(create_var(t, node->params[1]->params[i]->as_token()));
+	} else {
+		vars.add(create_var(type, node->params[1]->as_token()));
 	}
 
+	// assign?
 	if (node->params.num == 3)
-		return concretify_node(node->params[2], block, ns);
+		node = concretify_node(node->params[2], block, ns);
+	if (as_const)
+		for (auto v: vars)
+			flags_set(v->flags, Flags::CONST);
 	return node;
 }
 
