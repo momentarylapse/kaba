@@ -1328,7 +1328,8 @@ shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	int token0 = Exp.consume_token(); // "sorted"
 
 	auto node = add_node_statement(StatementID::SORTED, token0, TypeUnknown);
-	if (Exp.end_of_line() or Exp.peek_next() != "(") {
+
+	if (Exp.cur != "(") {
 		node->set_num_params(0);
 		return node;
 	}
