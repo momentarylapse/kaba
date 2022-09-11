@@ -1,0 +1,8 @@
+func main()
+	let x = range(5.0)
+		|> sin
+		|> sorted
+	print(x)
+
+	print([1.,2.,3.] |> sqr |> sum)
+
