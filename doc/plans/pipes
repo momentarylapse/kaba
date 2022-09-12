@@ -1,6 +1,9 @@
 function pipes
 let x = 13 |> f1 |> f2
 
+monad (auto unwrap/wrap)
+let x = [1.,2.,3.] |> sqrt
+
 with partial parameters
 f(a,b)...
 let x = 13 |> f(a)
@@ -8,4 +11,7 @@ let x = 13 |> f(a)
 search input type's namespace
 "hallo" |> string.upper
 "hallo" |> upper
+
+filter
+range(10) |> filter(i => i>5)
 
