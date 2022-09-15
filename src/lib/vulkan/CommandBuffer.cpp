@@ -322,8 +322,8 @@ void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
 	barrier.pNext = nullptr;
 	barrier.srcAccessMask = (VkAccessFlags)flags[0];
 	barrier.dstAccessMask = (VkAccessFlags)flags[1];
-	barrier.oldLayout = (VkImageLayout)flags[0];
-	barrier.newLayout = (VkImageLayout)flags[0];
+	barrier.oldLayout = (VkImageLayout)flags[2];
+	barrier.newLayout = (VkImageLayout)flags[3];
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = t->image.image;
