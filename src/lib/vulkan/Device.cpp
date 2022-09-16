@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <set>
+#include "../os/msg.h"
 
 namespace vulkan {
 
@@ -103,9 +104,8 @@ void Device::pick_physical_device(Instance *instance) {
 		}
 	}
 
-	if (physical_device == VK_NULL_HANDLE) {
+	if (physical_device == VK_NULL_HANDLE)
 		throw Exception("failed to find a suitable GPU!");
-	}
 
 	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
 	if (verbose) {

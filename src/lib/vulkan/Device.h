@@ -22,7 +22,7 @@ public:
 	Device();
 	~Device();
 
-	VkPhysicalDevice physical_device;
+	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 	VkDevice device;
 
 	Queue graphics_queue;

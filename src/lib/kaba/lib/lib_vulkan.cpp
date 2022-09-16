@@ -32,8 +32,9 @@ vulkan::Shader* __vulkan_load_shader(const Path &filename) {
 	return nullptr;
 }
 
-void __vulkan_init(GLFWwindow* window, const Array<string> &op) {
-	KABA_EXCEPTION_WRAPPER(vulkan::init(window, op));
+void* __vulkan_init(GLFWwindow* window, const Array<string> &op) {
+	KABA_EXCEPTION_WRAPPER(return vulkan::init(window, op));
+	return nullptr;
 }
 
 #pragma GCC pop_options
