@@ -12,7 +12,7 @@
 
 namespace vulkan{
 
-	class Shader : public Sharable<Empty> {
+	class Shader : public Sharable<base::Empty> {
 	public:
 		Shader();
 		~Shader();

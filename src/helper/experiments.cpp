@@ -10,7 +10,7 @@
 #include "../lib/base/optional.h"
 #include "../lib/base/iter.h"
 
-void show_opt(const optional<string> &o) {
+void show_opt(const base::optional<string> &o) {
 	if (o.has_value())
 		msg_write(o.value());
 	else
@@ -23,12 +23,12 @@ struct S {
 };
 
 void test_optional() {
-	optional<string> o, p;
+	base::optional<string> o, p;
 	o = "hallo";
 	show_opt(o);
 	p = o;
 	show_opt(p);
-	o = None;
+	o = base::None;
 	show_opt(o);
 
 

@@ -10,6 +10,8 @@
 
 #include "base.h"
 
+namespace base {
+
 //class E {};
 class Empty;
 extern Empty None;
@@ -73,6 +75,6 @@ private:
 	}
 };
 
-
+}
 
 #endif /* SRC_LIB_BASE_OPTIONAL_H_ */

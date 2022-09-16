@@ -4,17 +4,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <fstream>
-#include <stdexcept>
-#include <algorithm>
-#include <vector>
-#include <cstring>
-#include <cstdlib>
-#include <optional>
-#include <set>
-#include <array>
-
 #include "helper.h"
 #include "../base/base.h"
 #include "../os/msg.h"
@@ -42,7 +31,7 @@ VkQueryPool query_pool;
 
 
 Instance *init(GLFWwindow* window, const Array<string> &op) {
-	std::cout << "vulkan init\n";
+	msg_write("vulkan init");
 
 	bool want_rtx = sa_contains(op, "rtx");
 

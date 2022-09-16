@@ -29,7 +29,7 @@ public:
 	void create(int w, int h, VkFormat format);
 };
 
-class FrameBuffer : public Sharable<Empty> {
+class FrameBuffer : public Sharable<base::Empty> {
 public:
 	FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments);
 	~FrameBuffer();

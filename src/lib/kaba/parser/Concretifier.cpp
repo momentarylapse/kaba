@@ -1266,7 +1266,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	tree->base_class->add_function(tree, f, false, false);
 
 	// find captures
-	Set<Variable*> captures;
+	base::set<Variable*> captures;
 	auto find_captures = [block, &captures](shared<Node> n) {
 		if (n->kind == NodeKind::VAR_LOCAL) {
 			auto v = n->as_local();

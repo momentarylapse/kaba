@@ -23,7 +23,7 @@ void reincarnate_textures();
 
 
 
-class Texture : public Sharable<Empty> {
+class Texture : public Sharable<base::Empty> {
 public:
 	enum class Type {
 		NONE,
