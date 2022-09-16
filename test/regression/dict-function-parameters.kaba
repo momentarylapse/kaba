@@ -1,0 +1,21 @@
+func f(d: string{})
+	print("string{}")
+	print(len(d))
+	print(d)
+#	for k=>v in d
+#		print("{{k}} : {{v}}")
+
+
+func f(d: float{})
+	print("float{}")
+	print(len(d))
+	print(d)
+
+func main()
+	var m = {"a":"b"}
+	f(m)
+
+	f({"c": "d", "x": "y"})
+
+	f({"a": 1.0})
+

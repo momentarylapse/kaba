@@ -1,5 +1,5 @@
 func main()
-	int{} d, i
+	var d, i: int{}
 	d.__set__("a", 9)
 	d["b"] = 19
 	i = d
@@ -11,12 +11,12 @@ func main()
 	#d["a"] = 9
 	#print(d.str())
 	
-	string{} dd
+	var dd: string{}
 	dd["a"] = "test"
 	print(dd["a"])
 	print(dd)
 	
-	float{} ff
+	var ff: float{}
 	ff["pi"] = pi
 	print(ff)
 	print(ff["pi"])
