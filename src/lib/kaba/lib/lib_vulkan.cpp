@@ -151,6 +151,9 @@ void SIAddPackageVulkan() {
 	auto TypeSemaphorePList	= add_type_l(TypeSemaphoreP);
 	auto TypeAccelerationStructure = add_type  ("AccelerationStructure", sizeof(vulkan::AccelerationStructure));
 	auto TypeAccelerationStructureP = add_type_p(TypeAccelerationStructure);
+	auto TypeImageLayout    = add_type_e("ImageLayout");
+	auto TypeAccessFlags    = add_type_e("AccessFlags");
+	auto TypePipelineBindPoint = add_type_e("BindPoint", TypePipeline);
 
 
 	add_class(TypeInstance);
@@ -386,7 +389,7 @@ void SIAddPackageVulkan() {
 		class_add_func("begin", TypeVoid, vul_p(&vulkan::CommandBuffer::begin));
 		class_add_func("end", TypeVoid, vul_p(&vulkan::CommandBuffer::end));
 		class_add_func("set_bind_point", TypeVoid, vul_p(&vulkan::CommandBuffer::set_bind_point));
-			func_add_param("p", TypeString);
+			func_add_param("bp", TypePipelineBindPoint);
 		class_add_func("bind_pipeline", TypeVoid, vul_p(&vulkan::CommandBuffer::bind_pipeline));
 			func_add_param("p", TypePipeline);
 		class_add_func("draw", TypeVoid, vul_p(&vulkan::CommandBuffer::draw));
@@ -416,7 +419,10 @@ void SIAddPackageVulkan() {
 			func_add_param("mode", TypeInt);
 		class_add_func("image_barrier", TypeVoid, vul_p(&vulkan::CommandBuffer::image_barrier));
 			func_add_param("t", TypeTexture);
-			func_add_param("flags", TypeIntList);
+			func_add_param("src_access", TypeAccessFlags);
+			func_add_param("dst_access", TypeAccessFlags);
+			func_add_param("old_layout", TypeImageLayout);
+			func_add_param("new_layout", TypeImageLayout);
 		class_add_func("copy_image", TypeVoid, vul_p(&vulkan::CommandBuffer::copy_image));
 			func_add_param("src", TypeTexture);
 			func_add_param("dst", TypeTexture);
@@ -459,6 +465,24 @@ void SIAddPackageVulkan() {
 
 	add_ext_var("default_device", TypeDeviceP, vul_p(&vulkan::default_device));
 
+
+	add_class(TypeAccessFlags);
+		class_add_enum("NONE", TypeAccessFlags, vul_p(vulkan::AccessFlags::NONE));
+		class_add_enum("SHADER_WRITE_BIT", TypeAccessFlags, vul_p(vulkan::AccessFlags::SHADER_WRITE_BIT));
+		class_add_enum("TRANSFER_READ_BIT", TypeAccessFlags, vul_p(vulkan::AccessFlags::TRANSFER_READ_BIT));
+		class_add_enum("TRANSFER_WRITE_BIT", TypeAccessFlags, vul_p(vulkan::AccessFlags::TRANSFER_WRITE_BIT));
+
+	add_class(TypeImageLayout);
+		class_add_enum("UNDEFINED", TypeImageLayout, vul_p(vulkan::ImageLayout::UNDEFINED));
+		class_add_enum("GENERAL", TypeImageLayout, vul_p(vulkan::ImageLayout::GENERAL));
+		class_add_enum("TRANSFER_SRC_OPTIMAL", TypeImageLayout, vul_p(vulkan::ImageLayout::TRANSFER_SRC_OPTIMAL));
+		class_add_enum("TRANSFER_DST_OPTIMAL", TypeImageLayout, vul_p(vulkan::ImageLayout::TRANSFER_DST_OPTIMAL));
+		class_add_enum("PRESENT_SRC", TypeImageLayout, vul_p(vulkan::ImageLayout::PRESENT_SRC));
+
+	add_class(TypePipelineBindPoint);
+		class_add_enum("GRAPHICS", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::GRAPHICS));
+		class_add_enum("RAY_TRACING", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::RAY_TRACING));
+		class_add_enum("COMPUTE", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::COMPUTE));
 }
 
 };

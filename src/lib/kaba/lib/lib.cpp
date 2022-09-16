@@ -215,6 +215,13 @@ const Class *add_type_d(const Class *sub_type, const string &_name) {
 	return t;
 }
 
+const Class *add_type_e(const string &name, const Class *_namespace) {
+	Class *t = new Class(name, sizeof(int), cur_package->syntax);
+	t->type = Class::Type::ENUM;
+	__add_class__(t, _namespace);
+	return t;
+}
+
 template<typename Sig>
 class KabaCallable;
 
@@ -503,7 +510,7 @@ void class_add_const(const string &name, const Class *type, const void *value) {
 	c->name = name;
 
 	// enums can't be referenced...
-	if (type == TypeInt)
+	if (type == TypeInt or type->is_enum())
 		*(const void**)c->p() = value;
 	else if (value)
 		memcpy(c->p(), value, type->size);

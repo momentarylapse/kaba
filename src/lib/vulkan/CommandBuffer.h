@@ -26,6 +26,28 @@ namespace vulkan{
 	class FrameBuffer;
 	class Texture;
 
+
+	enum class AccessFlags {
+		NONE = VK_ACCESS_NONE,
+		SHADER_WRITE_BIT = VK_ACCESS_SHADER_WRITE_BIT,
+		TRANSFER_READ_BIT = VK_ACCESS_TRANSFER_READ_BIT,
+		TRANSFER_WRITE_BIT = VK_ACCESS_TRANSFER_WRITE_BIT
+	};
+
+	enum class ImageLayout {
+		UNDEFINED = VK_IMAGE_LAYOUT_UNDEFINED,
+		GENERAL = VK_IMAGE_LAYOUT_GENERAL,
+		TRANSFER_SRC_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		TRANSFER_DST_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		PRESENT_SRC = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	};
+
+	enum class PipelineBindPoint {
+		GRAPHICS = VK_PIPELINE_BIND_POINT_GRAPHICS,
+		RAY_TRACING = VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+		COMPUTE = VK_PIPELINE_BIND_POINT_COMPUTE
+	};
+
 	extern VkCommandPool command_pool;
 
 	void create_command_pool();
@@ -62,7 +84,7 @@ namespace vulkan{
 		void clear(const Array<color> &col, float z, bool clear_z);
 		void draw(VertexBuffer *vb);
 
-		void set_bind_point(const string &s);
+		void set_bind_point(PipelineBindPoint bind_point);
 
 		void set_scissor(const rect &r);
 		void set_viewport(const rect &r);
@@ -71,7 +93,7 @@ namespace vulkan{
 		void trace_rays(int nx, int ny, int nz);
 
 		void barrier(const Array<Texture*> &t, int mode);
-		void image_barrier(const Texture *t, const Array<int> &flags);
+		void image_barrier(const Texture *t, AccessFlags src_access, AccessFlags dst_access, ImageLayout old_layout, ImageLayout new_layout);
 		void copy_image(const Texture *source, const Texture *dest, const Array<int> &extend);
 
 		void timestamp(int id);

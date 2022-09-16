@@ -104,6 +104,10 @@ void SIAddPackageGl() {
 	TypeBuffer			= add_type  ("Buffer", sizeof(nix::Buffer));
 	TypeUniformBuffer	= add_type  ("UniformBuffer", sizeof(nix::Buffer));
 	TypeShaderStorageBuffer = add_type  ("ShaderStorageBuffer", sizeof(nix::Buffer));
+	auto TypeAlpha = add_type_e("Alpha");
+	auto TypeStencilOp = add_type_e("StencilOp");
+	auto TypeFogMode = add_type_e("FogMode");
+	auto TypeCullMode = add_type_e("CullMode");
 	
 	add_class(TypeVertexBuffer);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, gl_p(&nix::VertexBuffer::__init__));
@@ -274,11 +278,6 @@ void SIAddPackageGl() {
 		// drawing
 	add_func("init", TypeVoid, gl_p(&nix::init), Flags::STATIC);
 	add_func("kill", TypeVoid, gl_p(&nix::kill), Flags::STATIC);
-	/*add_func("SetVideoMode", TypeVoid, nix_p(&NixSetVideoMode), Flags::STATIC);
-		func_add_param("api", TypeString);
-		func_add_param("xres", TypeInt);
-		func_add_param("yres", TypeInt);
-		func_add_param("fullscreen",TypeBool);*/
 #ifdef _X_USE_HUI_
 	add_func("start_frame_hui", TypeVoid, gl_p(&nix::start_frame_hui), Flags::STATIC);
 	add_func("end_frame_hui", TypeVoid, gl_p(&nix::end_frame_hui), Flags::STATIC);
@@ -307,10 +306,10 @@ void SIAddPackageGl() {
 		func_add_param("vb", TypeVertexBuffer);
 	add_func("disable_alpha", TypeVoid, gl_p(&nix::disable_alpha), Flags::STATIC);
 	add_func("set_alpha", TypeVoid, gl_p(&nix::set_alpha_sd), Flags::STATIC);
-		func_add_param("source", TypeInt);
-		func_add_param("dest", TypeInt);
+		func_add_param("source", TypeAlpha);
+		func_add_param("dest", TypeAlpha);
 	add_func("set_stencil", TypeVoid, gl_p(&nix::set_stencil), Flags::STATIC);
-		func_add_param("mode", TypeInt);
+		func_add_param("mode", TypeStencilOp);
 		func_add_param("param", TypeInt);
 	add_func("set_projection_perspective", TypeVoid, gl_p(&nix::set_projection_perspective), Flags::STATIC);
 	add_func("set_projection_perspective_ext", TypeVoid, gl_p(&nix::set_projection_perspective_ext), Flags::STATIC);
@@ -335,7 +334,7 @@ void SIAddPackageGl() {
 		func_add_param("write", TypeBool);
 		func_add_param("test", TypeBool);
 	add_func("set_cull", TypeVoid, gl_p(&nix::set_cull), Flags::STATIC);
-		func_add_param("mode", TypeInt);
+		func_add_param("mode", TypeCullMode);
 	add_func("set_wire", TypeVoid, gl_p(&nix::set_wire), Flags::STATIC);
 		func_add_param("enabled", TypeBool);
 	add_func("set_material", TypeVoid, gl_p(&nix::set_material), Flags::STATIC);
@@ -356,39 +355,42 @@ void SIAddPackageGl() {
 		func_add_param("im", TypeImage);
 
 	add_ext_var("target", TypeRect, gl_p(&nix::target_rect));
-	//add_ext_var("fullscreen", TypeBool, nix_p(&nix::Fullscreen));
 
 	// alpha operations
-	add_enum("ALPHA_ZERO",             TypeInt, gl_p(nix::Alpha::ZERO));
-	add_enum("ALPHA_ONE",              TypeInt, gl_p(nix::Alpha::ONE));
-	add_enum("ALPHA_SOURCE_COLOR",     TypeInt, gl_p(nix::Alpha::SOURCE_COLOR));
-	add_enum("ALPHA_SOURCE_INV_COLOR", TypeInt, gl_p(nix::Alpha::SOURCE_INV_COLOR));
-	add_enum("ALPHA_SOURCE_ALPHA",     TypeInt, gl_p(nix::Alpha::SOURCE_ALPHA));
-	add_enum("ALPHA_SOURCE_INV_ALPHA", TypeInt, gl_p(nix::Alpha::SOURCE_INV_ALPHA));
-	add_enum("ALPHA_DEST_COLOR",       TypeInt, gl_p(nix::Alpha::DEST_COLOR));
-	add_enum("ALPHA_DEST_INV_COLOR",   TypeInt, gl_p(nix::Alpha::DEST_INV_COLOR));
-	add_enum("ALPHA_DEST_ALPHA",       TypeInt, gl_p(nix::Alpha::DEST_ALPHA));
-	add_enum("ALPHA_DEST_INV_ALPHA",   TypeInt, gl_p(nix::Alpha::DEST_INV_ALPHA));
+	add_class(TypeAlpha);
+		class_add_enum("ZERO",             TypeAlpha, gl_p(nix::Alpha::ZERO));
+		class_add_enum("ONE",              TypeAlpha, gl_p(nix::Alpha::ONE));
+		class_add_enum("SOURCE_COLOR",     TypeAlpha, gl_p(nix::Alpha::SOURCE_COLOR));
+		class_add_enum("SOURCE_INV_COLOR", TypeAlpha, gl_p(nix::Alpha::SOURCE_INV_COLOR));
+		class_add_enum("SOURCE_ALPHA",     TypeAlpha, gl_p(nix::Alpha::SOURCE_ALPHA));
+		class_add_enum("SOURCE_INV_ALPHA", TypeAlpha, gl_p(nix::Alpha::SOURCE_INV_ALPHA));
+		class_add_enum("DEST_COLOR",       TypeAlpha, gl_p(nix::Alpha::DEST_COLOR));
+		class_add_enum("DEST_INV_COLOR",   TypeAlpha, gl_p(nix::Alpha::DEST_INV_COLOR));
+		class_add_enum("DEST_ALPHA",       TypeAlpha, gl_p(nix::Alpha::DEST_ALPHA));
+		class_add_enum("DEST_INV_ALPHA",   TypeAlpha, gl_p(nix::Alpha::DEST_INV_ALPHA));
 	// stencil operations
-	add_enum("STENCIL_NONE",               TypeInt, gl_p(nix::StencilOp::NONE));
-	add_enum("STENCIL_INCREASE",           TypeInt, gl_p(nix::StencilOp::INCREASE));
-	add_enum("STENCIL_DECREASE",           TypeInt, gl_p(nix::StencilOp::DECREASE));
-	add_enum("STENCIL_SET",                TypeInt, gl_p(nix::StencilOp::SET));
-	add_enum("STENCIL_MASK_EQUAL",         TypeInt, gl_p(nix::StencilOp::MASK_EQUAL));
-	add_enum("STENCIL_MASK_NOT_EQUAL",     TypeInt, gl_p(nix::StencilOp::MASK_NOT_EQUAL));
-	add_enum("STENCIL_MASK_LESS",          TypeInt, gl_p(nix::StencilOp::MASK_LESS));
-	add_enum("STENCIL_MASK_LESS_EQUAL",    TypeInt, gl_p(nix::StencilOp::MASK_LESS_EQUAL));
-	add_enum("STENCIL_MASK_GREATER",       TypeInt, gl_p(nix::StencilOp::MASK_GREATER));
-	add_enum("STENCIL_MASK_GREATER_EQUAL", TypeInt, gl_p(nix::StencilOp::MASK_GREATER_EQUAL));
-	add_enum("STENCIL_RESET",              TypeInt, gl_p(nix::StencilOp::RESET));
+	add_class(TypeStencilOp);
+		class_add_enum("NONE",               TypeStencilOp, gl_p(nix::StencilOp::NONE));
+		class_add_enum("INCREASE",           TypeStencilOp, gl_p(nix::StencilOp::INCREASE));
+		class_add_enum("DECREASE",           TypeStencilOp, gl_p(nix::StencilOp::DECREASE));
+		class_add_enum("SET",                TypeStencilOp, gl_p(nix::StencilOp::SET));
+		class_add_enum("MASK_EQUAL",         TypeStencilOp, gl_p(nix::StencilOp::MASK_EQUAL));
+		class_add_enum("MASK_NOT_EQUAL",     TypeStencilOp, gl_p(nix::StencilOp::MASK_NOT_EQUAL));
+		class_add_enum("MASK_LESS",          TypeStencilOp, gl_p(nix::StencilOp::MASK_LESS));
+		class_add_enum("MASK_LESS_EQUAL",    TypeStencilOp, gl_p(nix::StencilOp::MASK_LESS_EQUAL));
+		class_add_enum("MASK_GREATER",       TypeStencilOp, gl_p(nix::StencilOp::MASK_GREATER));
+		class_add_enum("MASK_GREATER_EQUAL", TypeStencilOp, gl_p(nix::StencilOp::MASK_GREATER_EQUAL));
+		class_add_enum("RESET",              TypeStencilOp, gl_p(nix::StencilOp::RESET));
 	// fog
-	add_enum("FOG_LINEAR", TypeInt, gl_p(nix::FogMode::LINEAR));
-	add_enum("FOG_EXP",    TypeInt, gl_p(nix::FogMode::EXP));
-	add_enum("FOG_EXP2",   TypeInt, gl_p(nix::FogMode::EXP2));
+	add_class(TypeFogMode);
+		class_add_enum("LINEAR", TypeFogMode, gl_p(nix::FogMode::LINEAR));
+		class_add_enum("EXP",    TypeFogMode, gl_p(nix::FogMode::EXP));
+		class_add_enum("EXP2",   TypeFogMode, gl_p(nix::FogMode::EXP2));
 	// culling
-	add_enum("CULL_NONE", TypeInt, gl_p(nix::CullMode::NONE));
-	add_enum("CULL_CW",    TypeInt, gl_p(nix::CullMode::CW));
-	add_enum("CULL_CCW",   TypeInt, gl_p(nix::CullMode::CCW));
+	add_class(TypeCullMode);
+		class_add_enum("NONE", TypeCullMode, gl_p(nix::CullMode::NONE));
+		class_add_enum("CW",   TypeCullMode, gl_p(nix::CullMode::CW));
+		class_add_enum("CCW",  TypeCullMode, gl_p(nix::CullMode::CCW));
 
 	add_ext_var("vb_temp", TypeVertexBufferP, gl_p(&nix::vb_temp));
 }

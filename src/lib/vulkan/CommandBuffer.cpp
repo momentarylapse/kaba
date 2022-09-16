@@ -119,15 +119,8 @@ void CommandBuffer::_destroy() {
 
 //VkDescriptorSet current_set;
 
-void CommandBuffer::set_bind_point(const string &s) {
-	if (s == "graphics")
-		cur_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	else if (s == "raytracing")
-		cur_bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
-	else if (s == "compute")
-		cur_bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
-	else
-		throw Exception("unknown bind point: " + s);
+void CommandBuffer::set_bind_point(PipelineBindPoint bind_point) {
+	cur_bind_point = (VkPipelineBindPoint)bind_point;
 }
 
 void CommandBuffer::bind_pipeline(BasePipeline *pl) {
@@ -307,7 +300,7 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 }
 
 
-void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
+void CommandBuffer::image_barrier(const Texture *t, AccessFlags src_access, AccessFlags dst_access, ImageLayout old_layout, ImageLayout new_layout) {
 
 	bool is_depth = t->image.is_depth_buffer();
 	VkImageSubresourceRange sr = {};
@@ -320,10 +313,10 @@ void CommandBuffer::image_barrier(const Texture *t, const Array<int> &flags) {
 	VkImageMemoryBarrier barrier;
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.pNext = nullptr;
-	barrier.srcAccessMask = (VkAccessFlags)flags[0];
-	barrier.dstAccessMask = (VkAccessFlags)flags[1];
-	barrier.oldLayout = (VkImageLayout)flags[2];
-	barrier.newLayout = (VkImageLayout)flags[3];
+	barrier.srcAccessMask = (VkAccessFlags)src_access;
+	barrier.dstAccessMask = (VkAccessFlags)dst_access;
+	barrier.oldLayout = (VkImageLayout)old_layout;
+	barrier.newLayout = (VkImageLayout)new_layout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = t->image.image;
