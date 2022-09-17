@@ -6,8 +6,6 @@
 #include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <optional>
-#include <vector>
 
 #include "Instance.h"
 #include "Device.h"
@@ -37,14 +35,7 @@ namespace vulkan {
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
 
-	Instance *init(GLFWwindow* window, const Array<string> &op);
-
-
-
-	namespace rtx {
-		extern VkPhysicalDeviceRayTracingPropertiesNV properties;
-		void get_properties();
-	}
+	Instance *init(const Array<string> &op);
 
 
 #define DECLARE_EXT_H(NAME) extern PFN_##NAME _##NAME;

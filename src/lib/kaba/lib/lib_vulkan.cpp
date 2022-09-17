@@ -32,8 +32,13 @@ vulkan::Shader* __vulkan_load_shader(const Path &filename) {
 	return nullptr;
 }
 
-void* __vulkan_init(GLFWwindow* window, const Array<string> &op) {
-	KABA_EXCEPTION_WRAPPER(return vulkan::init(window, op));
+void* __vulkan_init(const Array<string> &op) {
+	KABA_EXCEPTION_WRAPPER(return vulkan::init(op));
+	return nullptr;
+}
+
+void* __vulkan_device_create_simple(vulkan::Instance *instance, GLFWwindow* window, const Array<string> &op) {
+	KABA_EXCEPTION_WRAPPER(return vulkan::Device::create_simple(instance, window, op));
 	return nullptr;
 }
 
@@ -165,6 +170,10 @@ void SIAddPackageVulkan() {
 		class_add_element("graphics_queue", TypeQueue, vul_p(&vulkan::Device::graphics_queue));
 		class_add_element("present_queue", TypeQueue, vul_p(&vulkan::Device::present_queue));
 		class_add_func("wait_idle", TypeVoid, vul_p(&vulkan::Device::wait_idle));
+		class_add_func("create_simple", TypeDeviceP, vul_p(&__vulkan_device_create_simple), Flags::_STATIC__RAISES_EXCEPTIONS);
+			func_add_param("instance", TypeInstanceP);
+			func_add_param("win", TypePointer);
+			func_add_param("op", TypeStringList);
 
 
 	add_class(TypeVertexBuffer);
@@ -355,6 +364,7 @@ void SIAddPackageVulkan() {
 		class_add_element("format", TypeInt, vul_p(&vulkan::SwapChain::image_format));
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::SwapChain::__init__));
 			func_add_param("win", TypePointer);
+			func_add_param("device", TypeDeviceP);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::SwapChain::__delete__));
 		class_add_func("create_depth_buffer", TypeDepthBufferP, vul_p(&vulkan::SwapChain::create_depth_buffer));
 		class_add_func("create_render_pass", TypeRenderPassP, vul_p(&vulkan::SwapChain::create_render_pass));
@@ -460,7 +470,6 @@ void SIAddPackageVulkan() {
 		func_add_param("w", TypePointer);
 
 	add_func("init", TypeInstanceP, vul_p(&__vulkan_init), Flags::_STATIC__RAISES_EXCEPTIONS);
-		func_add_param("win", TypePointer);
 		func_add_param("op", TypeStringList);
 
 

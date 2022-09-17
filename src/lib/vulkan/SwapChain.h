@@ -25,6 +25,7 @@ namespace vulkan {
 class FrameBuffer;
 class RenderPass;
 class Semaphore;
+class Device;
 
 struct SwapChainSupportDetails {
 	VkSurfaceCapabilitiesKHR capabilities;
@@ -42,15 +43,13 @@ public:
 	VkFormat image_format;
 	uint32_t image_count;
 	Array<VkImageView> _image_views;
-	//Array<FrameBuffer*> frame_buffers;
-	//DepthBuffer *depth_buffer;
-	//RenderPass *default_render_pass;
+	Device *device;
 	GLFWwindow* window;
 
-	SwapChain(GLFWwindow* window);
+	SwapChain(GLFWwindow* window, Device *device);
 	~SwapChain();
 
-	void __init__(GLFWwindow* window);
+	void __init__(GLFWwindow* window, Device *device);
 	void __delete__();
 
 	void cleanup();

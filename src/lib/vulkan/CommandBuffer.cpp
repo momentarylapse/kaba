@@ -30,21 +30,18 @@ namespace vulkan{
 	VkCommandPool command_pool;
 
 
-void create_command_pool() {
-	QueueFamilyIndices queue_family_indices = find_queue_families(default_device->physical_device);
-
+void create_command_pool(Device *device) {
 	VkCommandPoolCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	info.queueFamilyIndex = queue_family_indices.graphics_family.value();
+	info.queueFamilyIndex = device->indices.graphics_family.value();
 	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(default_device->device, &info, nullptr, &command_pool) != VK_SUCCESS) {
+	if (vkCreateCommandPool(device->device, &info, nullptr, &command_pool) != VK_SUCCESS)
 		throw Exception("failed to create command pool!");
-	}
 }
 
-void destroy_command_pool() {
-	vkDestroyCommandPool(default_device->device, command_pool, nullptr);
+void destroy_command_pool(Device *device) {
+	vkDestroyCommandPool(device->device, command_pool, nullptr);
 }
 
 
@@ -255,7 +252,7 @@ void CommandBuffer::dispatch(int nx, int ny, int nz) {
 
 void CommandBuffer::trace_rays(int nx, int ny, int nz) {
 	auto rtp = static_cast<RayPipeline*>(current_pipeline);
-	int hs = rtx::properties.shaderGroupHandleSize;
+	int hs = default_device->ray_tracing_properties.shaderGroupHandleSize;
 	_vkCmdTraceRaysNV(buffer,
 			rtp->sbt.buffer, 0,
 			rtp->sbt.buffer, rtp->miss_group_offset*hs, hs,

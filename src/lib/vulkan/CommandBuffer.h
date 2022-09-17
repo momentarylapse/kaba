@@ -25,6 +25,7 @@ namespace vulkan{
 	class DescriptorSet;
 	class FrameBuffer;
 	class Texture;
+	class Device;
 
 
 	enum class AccessFlags {
@@ -50,8 +51,8 @@ namespace vulkan{
 
 	extern VkCommandPool command_pool;
 
-	void create_command_pool();
-	void destroy_command_pool();
+	void create_command_pool(Device *device);
+	void destroy_command_pool(Device *device);
 
 	class CommandBuffer {
 	public:

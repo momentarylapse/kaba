@@ -31,6 +31,16 @@ public:
 		return _is_set;
 	}
 
+	operator bool() const {
+		return has_value();
+	}
+	T &operator*() const {
+		return value();
+	}
+	T &operator*() {
+		return value();
+	}
+
 	void operator=(const T &o) {
 		_init();
 		value() = o;

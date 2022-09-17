@@ -9,6 +9,7 @@
 
 #include "vulkan.h"
 #include "Instance.h"
+#include "common.h"
 
 #include "../os/msg.h"
 #include <iostream>
@@ -55,7 +56,6 @@ namespace vulkan {
 		//"VK_LAYER_LUNARG_standard_validation",
 		"VK_LAYER_KHRONOS_validation",
 	};
-	extern std::vector<const char*> device_extensions;
 
 
 Array<const char*> get_required_instance_extensions(bool glfw, bool validation) {
@@ -106,7 +106,7 @@ Instance::~Instance() {
 	if (verbose)
 		std::cout << "vulkan destroy\n";
 
-	destroy_command_pool();
+	destroy_command_pool(default_device);
 
 	vkDestroyDevice(default_device->device, nullptr);
 
@@ -150,11 +150,6 @@ Instance *Instance::create(const Array<string> &op) {
 			name = o.sub(5);
 		if (o.head(4) == "api=")
 			api = parse_version(o.sub(4));
-	}
-
-	if (sa_contains(op, "rtx")) {
-		device_extensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
-		device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 	}
 
 	VkApplicationInfo app_info = {};
@@ -204,11 +199,26 @@ VkSurfaceKHR Instance::create_surface(GLFWwindow* window) {
 }
 
 
-Device *Instance::pick_device() {
-	auto dev = new Device();
-	dev->pick_physical_device(this);
-	dev->create_logical_device(using_validation_layers);
-	return dev;
+Device *Instance::pick_device(VkSurfaceKHR surface, const Array<string> &op) {
+	Requirements req = Requirements::NONE; //Requirements::GRAPHICS | Requirements::PRESENT | Requirements::SWAP_CHAIN | Requirements::ANISOTROPY;
+	if (sa_contains(op, "validation"))
+		req = req | Requirements::VALIDATION;
+	if (sa_contains(op, "graphics"))
+		req = req | Requirements::GRAPHICS;
+	if (sa_contains(op, "present"))
+		req = req | Requirements::PRESENT;
+	if (sa_contains(op, "compute"))
+		req = req | Requirements::COMPUTE;
+	if (sa_contains(op, "swapchain"))
+		req = req | Requirements::SWAP_CHAIN;
+	if (sa_contains(op, "anisotropy"))
+		req = req | Requirements::ANISOTROPY;
+	if (sa_contains(op, "rtx"))
+		req = req | Requirements::RTX;
+	auto device = new Device();
+	device->pick_physical_device(this, surface, req);
+	device->create_logical_device(surface, req);
+	return device;
 }
 
 

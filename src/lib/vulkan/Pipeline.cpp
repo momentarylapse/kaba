@@ -430,7 +430,7 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
 void RayPipeline::create_sbt() {
 	if (verbose)
 		std::cout << "SBT\n";
-	const size_t sbt_size = groups.num * rtx::properties.shaderGroupHandleSize;
+	const size_t sbt_size = groups.num * default_device->ray_tracing_properties.shaderGroupHandleSize;
 
 	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 

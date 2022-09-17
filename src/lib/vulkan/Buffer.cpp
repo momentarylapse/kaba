@@ -23,12 +23,6 @@ namespace vulkan{
 
 Array<UniformBuffer*> ubo_wrappers;
 
-int make_aligned(int size) {
-	if (default_device->device_properties.limits.minUniformBufferOffsetAlignment == 0)
-		return 0;
-	return (size + default_device->device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
-}
-
 
 
 Buffer::Buffer() {
@@ -123,7 +117,7 @@ UniformBuffer::UniformBuffer(int _size, int _count) {
 	// "dynamic"
 	count = _count;
 	size_single = _size;
-	size_single_aligned = make_aligned(size_single);
+	size_single_aligned = default_device->make_aligned(size_single);
 	size = size_single_aligned * count;
 	VkDeviceSize buffer_size = size;
 

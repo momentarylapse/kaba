@@ -12,9 +12,10 @@
 #include "Semaphore.h"
 #include "vulkan.h"
 #include "helper.h"
+#include "common.h"
+#include "../base/set.h"
 
 #include <iostream>
-#include <set>
 
 namespace vulkan {
 
@@ -52,9 +53,66 @@ void Queue::wait_idle() {
 }
 
 
-bool QueueFamilyIndices::is_complete() {
-	return graphics_family.has_value() and present_family.has_value();
+
+QueueFamilyIndices QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceKHR surface) {
+
+	uint32_t queue_family_count = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
+	Array<VkQueueFamilyProperties> queue_families;
+	queue_families.resize(queue_family_count);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, &queue_families[0]);
+
+	QueueFamilyIndices indices;
+	int i = 0;
+	for (const auto& family: queue_families) {
+		if (family.queueCount == 0)
+			continue;
+
+		if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			indices.graphics_family = i;
+
+		if (family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			indices.compute_family = i;
+
+		VkBool32 present_support = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+		if (present_support)
+			indices.present_family = i;
+
+		i ++;
+	}
+
+	return indices;
 }
+bool QueueFamilyIndices::is_complete(Requirements req) const {
+	if (req & Requirements::GRAPHICS)
+		if (!graphics_family)
+			return false;
+	if (req & Requirements::COMPUTE)
+		if (!compute_family)
+			return false;
+	if (req & Requirements::PRESENT)
+		if (!present_family)
+			return false;
+	return true;
+}
+
+Array<uint32_t> QueueFamilyIndices::unique() const {
+	base::set<uint32_t> unique_queue_families;
+	if (graphics_family)
+		unique_queue_families.add(*graphics_family);
+	if (present_family)
+		unique_queue_families.add(*present_family);
+	if (compute_family)
+		unique_queue_families.add(*compute_family);
+	return unique_queue_families;
+}
+
+
+/*bool QueueFamilyIndices::is_complete() {
+	return graphics_family.has_value() and present_family.has_value();
+}*/
 
 
 
