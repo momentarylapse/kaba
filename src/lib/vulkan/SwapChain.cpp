@@ -18,8 +18,6 @@
 namespace vulkan {
 
 
-extern VkSurfaceKHR default_surface;
-
 
 
 VkSurfaceFormatKHR choose_swap_surface_format(const Array<VkSurfaceFormatKHR>& available_formats) {
@@ -101,24 +99,24 @@ Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, Dep
 }
 
 
-SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device) {
+SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface) {
 	SwapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, default_surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
 	uint32_t format_count;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, default_surface, &format_count, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
 
 	if (format_count != 0) {
 		details.formats.resize(format_count);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, default_surface, &format_count, &details.formats[0]);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, &details.formats[0]);
 	}
 
 	uint32_t present_mode_count;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, default_surface, &present_mode_count, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
 
 	if (present_mode_count != 0) {
 		details.present_modes.resize(present_mode_count);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, default_surface, &present_mode_count, &details.present_modes[0]);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, &details.present_modes[0]);
 	}
 
 	return details;
@@ -137,7 +135,7 @@ RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
 
 
 void SwapChain::create() {
-	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device);
+	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
 
 	VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
 	VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
@@ -152,7 +150,7 @@ void SwapChain::create() {
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	info.surface = default_surface;
+	info.surface = device->surface;
 
 	info.minImageCount = image_count;
 	info.imageFormat = surface_format.format;

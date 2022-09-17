@@ -25,7 +25,6 @@ namespace vulkan {
 
 		void __delete__();
 
-		Device *pick_device(VkSurfaceKHR surface, const Array<string> &op);
 		VkSurfaceKHR create_surface(GLFWwindow* window);
 
 		void setup_debug_messenger();

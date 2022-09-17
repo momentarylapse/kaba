@@ -26,10 +26,14 @@ public:
 	Device();
 	~Device();
 
-	VkDevice device;
+	Instance *instance = nullptr;
+	VkDevice device = VK_NULL_HANDLE;
 	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_properties;
+
+	VkSurfaceKHR surface = VK_NULL_HANDLE; // TODO extract
+
 
 	QueueFamilyIndices indices;
 	Queue graphics_queue;

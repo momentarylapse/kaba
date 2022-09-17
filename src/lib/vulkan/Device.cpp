@@ -23,7 +23,6 @@ namespace vulkan {
 extern bool verbose;
 
 Device *default_device;
-extern VkSurfaceKHR default_surface;
 
 	bool check_device_extension_support(VkPhysicalDevice device, Requirements req);
 
@@ -51,7 +50,7 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requireme
 	if (!check_device_extension_support(device, req))
 		return false;
 
-	SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device);
+	SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device, surface);
 
 	if (req & Requirements::SWAP_CHAIN)
 		if (swapChainSupport.formats.num == 0)
@@ -99,10 +98,17 @@ Device::Device() {
 }
 
 Device::~Device() {
+	if (surface)
+		vkDestroySurfaceKHR(instance->instance, surface, nullptr);
+	if (device)
+		vkDestroyDevice(device, nullptr);
 }
 
 
-void Device::pick_physical_device(Instance *instance, VkSurfaceKHR surface, Requirements req) {
+void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Requirements req) {
+	instance = _instance;
+	surface = _surface;
+
 	uint32_t device_count = 0;
 	vkEnumeratePhysicalDevices(instance->instance, &device_count, nullptr);
 
@@ -195,8 +201,10 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS)
 		throw Exception("failed to create logical device!");
 
-	vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue.queue);
-	vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue.queue);
+	if (indices.graphics_family)
+		vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue.queue);
+	if (indices.present_family)
+		vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue.queue);
 }
 
 
@@ -274,14 +282,39 @@ int Device::make_aligned(int size) {
 	return (size + physical_device_properties.limits.minUniformBufferOffsetAlignment - 1) & ~(size - 1);
 }
 
-
+Requirements parse_requirements(const Array<string> &op) {
+	Requirements req = Requirements::NONE;
+	for (auto &o: op) {
+		if (o == "validation")
+			req = req | Requirements::VALIDATION;
+		else if (o == "graphics")
+			req = req | Requirements::GRAPHICS;
+		else if (o == "present")
+			req = req | Requirements::PRESENT;
+		else if (o == "compute")
+			req = req | Requirements::COMPUTE;
+		else if (o == "swapchain")
+			req = req | Requirements::SWAP_CHAIN;
+		else if (o == "anisotropy")
+			req = req | Requirements::ANISOTROPY;
+		else if (o == "rtx")
+			req = req | Requirements::RTX;
+		else
+			throw Exception("unknown requirement: " + o);
+	}
+	return req;
+}
 
 Device *Device::create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op) {
-	default_surface = instance->create_surface(window);
+	auto surface = instance->create_surface(window);
+
 	//op.append({"graphics", "present", "swapchain", "anisotropy"});
-	auto device = instance->pick_device(default_surface, op);
+	auto req = parse_requirements(op);
+	auto device = new Device();
+	device->pick_physical_device(instance, surface, req);
+	device->create_logical_device(surface, req);
+
 	create_command_pool(device);
-	//device->create_query_pool(16384);
 
 	if (sa_contains(op, "rtx"))
 		device->get_rtx_properties();

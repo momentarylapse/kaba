@@ -32,7 +32,7 @@ struct SwapChainSupportDetails {
 	Array<VkSurfaceFormatKHR> formats;
 	Array<VkPresentModeKHR> present_modes;
 };
-SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
+SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 
 class SwapChain {

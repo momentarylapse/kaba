@@ -46,8 +46,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
 namespace vulkan {
 
 
-	VkSurfaceKHR default_surface;
-
 	bool check_validation_layer_support();
 
 	extern bool verbose;
@@ -108,13 +106,13 @@ Instance::~Instance() {
 
 	destroy_command_pool(default_device);
 
-	vkDestroyDevice(default_device->device, nullptr);
+	if (default_device)
+		delete default_device;
+	default_device = nullptr;
 
-	if (using_validation_layers) {
+	if (using_validation_layers)
 		destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
-	}
 
-	vkDestroySurfaceKHR(instance, default_surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 }
 
@@ -177,9 +175,8 @@ Instance *Instance::create(const Array<string> &op) {
 		create_info.enabledLayerCount = 0;
 	}
 
-	if (vkCreateInstance(&create_info, nullptr, &instance->instance) != VK_SUCCESS) {
+	if (vkCreateInstance(&create_info, nullptr, &instance->instance) != VK_SUCCESS)
 		throw Exception("failed to create instance!");
-	}
 
 
 	if (instance->using_validation_layers)
@@ -192,33 +189,9 @@ Instance *Instance::create(const Array<string> &op) {
 
 VkSurfaceKHR Instance::create_surface(GLFWwindow* window) {
 	VkSurfaceKHR surface;
-	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) 
 		throw Exception("failed to create window surface!");
-	}
 	return surface;
-}
-
-
-Device *Instance::pick_device(VkSurfaceKHR surface, const Array<string> &op) {
-	Requirements req = Requirements::NONE; //Requirements::GRAPHICS | Requirements::PRESENT | Requirements::SWAP_CHAIN | Requirements::ANISOTROPY;
-	if (sa_contains(op, "validation"))
-		req = req | Requirements::VALIDATION;
-	if (sa_contains(op, "graphics"))
-		req = req | Requirements::GRAPHICS;
-	if (sa_contains(op, "present"))
-		req = req | Requirements::PRESENT;
-	if (sa_contains(op, "compute"))
-		req = req | Requirements::COMPUTE;
-	if (sa_contains(op, "swapchain"))
-		req = req | Requirements::SWAP_CHAIN;
-	if (sa_contains(op, "anisotropy"))
-		req = req | Requirements::ANISOTROPY;
-	if (sa_contains(op, "rtx"))
-		req = req | Requirements::RTX;
-	auto device = new Device();
-	device->pick_physical_device(this, surface, req);
-	device->create_logical_device(surface, req);
-	return device;
 }
 
 
