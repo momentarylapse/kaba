@@ -234,7 +234,6 @@ void Instance::_ensure_rtx() {
 
 	vkGetPhysicalDeviceProperties2(device, &devProps);*/
 
-
 	if (verbose)
 		std::cout << "loading rtx extensions...\n";
 	LOAD_EXT(vkCmdTraceRaysNV);

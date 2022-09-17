@@ -327,15 +327,16 @@ Device *Device::create_simple(Instance *instance, GLFWwindow* window, const Arra
 
 void Device::get_rtx_properties() {
 
+	ray_tracing_properties = {};
 	ray_tracing_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
 
-	VkPhysicalDeviceProperties2 dev_props;
+	VkPhysicalDeviceProperties2 dev_props = {};
 	dev_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	dev_props.pNext = &ray_tracing_properties;
-	dev_props.properties = { };
+	dev_props.properties = {};
 
 	//pvkGetPhysicalDeviceProperties2() FIXME
-	vkGetPhysicalDeviceProperties2(physical_device, &dev_props);
+	_vkGetPhysicalDeviceProperties2(physical_device, &dev_props);
 	if (verbose) {
 		msg_write("PROPS");
 		msg_write(ray_tracing_properties.maxShaderGroupStride);
