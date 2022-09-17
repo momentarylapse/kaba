@@ -54,7 +54,7 @@ void Queue::wait_idle() {
 
 
 
-QueueFamilyIndices QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceKHR surface) {
+base::optional<QueueFamilyIndices> QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
 
 	uint32_t queue_family_count = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
@@ -80,10 +80,13 @@ QueueFamilyIndices QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceK
 		if (present_support)
 			indices.present_family = i;
 
+		if (indices.is_complete(req))
+			return indices;
+
 		i ++;
 	}
 
-	return indices;
+	return base::None;
 }
 bool QueueFamilyIndices::is_complete(Requirements req) const {
 	if (req & Requirements::GRAPHICS)

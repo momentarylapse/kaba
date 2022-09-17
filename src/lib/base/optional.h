@@ -23,6 +23,11 @@ public:
 	optional() {
 		_is_set = false;
 	}
+	optional(const Empty&) : optional() {
+	}
+	optional(const T &o) : optional() {
+		*this = o;
+	}
 	~optional() {
 		clear();
 	}

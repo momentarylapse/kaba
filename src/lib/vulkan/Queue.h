@@ -37,7 +37,7 @@ public:
 		bool is_complete(Requirements req) const;
 		Array<uint32_t> unique() const;
 
-		static QueueFamilyIndices query(VkPhysicalDevice device, VkSurfaceKHR surface);
+		static base::optional<QueueFamilyIndices> query(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req);
 	};
 
 

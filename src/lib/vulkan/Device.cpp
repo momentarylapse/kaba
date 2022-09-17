@@ -43,8 +43,8 @@ Device *default_device;
 
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
-	QueueFamilyIndices indices = QueueFamilyIndices::query(device, surface);
-	if (!indices.is_complete(req))
+	auto indices = QueueFamilyIndices::query(device, surface, req);
+	if (!indices)
 		return false;
 
 	if (!check_device_extension_support(device, req))
@@ -161,7 +161,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 }
 
 void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
-	indices = QueueFamilyIndices::query(physical_device, surface);
+	indices = *QueueFamilyIndices::query(physical_device, surface, req);
 
 	Array<VkDeviceQueueCreateInfo> queue_create_infos;
 	auto unique_queue_families = indices.unique();
