@@ -34,6 +34,14 @@ nix::Shader* __CreateShader(const string &source) {
 	return nullptr;
 }
 
+nix::Shader* __LoadShaderDefault3d() {
+	return nix::Shader::default_3d;
+}
+
+nix::Shader* __LoadShaderDefault2d() {
+	return nix::Shader::default_2d;
+}
+
 #pragma GCC pop_options
 
 class KabaShader : public nix::Shader {
@@ -134,7 +142,7 @@ void SIAddPackageGl() {
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, gl_p(&nix::Texture::__delete__));
 		class_add_func("set_options", TypeVoid, gl_p(&nix::Texture::set_options));
 			func_add_param("op", TypeString);
-		class_add_func("override", TypeVoid, gl_p(&nix::Texture::override));
+		class_add_func("write", TypeVoid, gl_p(&nix::Texture::write));
 			func_add_param("image", TypeImage);
 		class_add_func("read", TypeVoid, gl_p(&nix::Texture::read));
 			func_add_param("image", TypeImage);
@@ -249,8 +257,8 @@ void SIAddPackageGl() {
 			func_add_param("filename", TypePath);
 		class_add_func("create", TypeShaderP, gl_p(&__CreateShader), Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("source", TypeString);
-		class_add_const("DEFAULT_3D", TypeShaderP, gl_p(&nix::Shader::default_3d));
-		class_add_const("DEFAULT_2D", TypeShaderP, gl_p(&nix::Shader::default_2d));
+		class_add_func("get_default_3d", TypeShaderP, gl_p(&__LoadShaderDefault3d), Flags::STATIC);
+		class_add_func("get_default_2d", TypeShaderP, gl_p(&__LoadShaderDefault2d), Flags::STATIC);
 		class_add_element(IDENTIFIER_SHARED_COUNT, TypeInt, gl_p(&nix::Shader::_pointer_ref_counter));
 
 
@@ -349,8 +357,14 @@ void SIAddPackageGl() {
 	add_func("set_shader", TypeVoid, gl_p(&nix::set_shader), Flags::STATIC);
 		func_add_param("s", TypeShader);
 	add_func("bind_buffer", TypeVoid, gl_p(&nix::bind_buffer), Flags::STATIC);
-		func_add_param("buf", TypeBuffer);
 		func_add_param("binding", TypeInt);
+		func_add_param("buf", TypeBuffer);
+	add_func("bind_image", TypeVoid, gl_p(&nix::bind_image), Flags::STATIC);
+		func_add_param("binding", TypeInt);
+		func_add_param("t", TypeTexture);
+		func_add_param("level", TypeInt);
+		func_add_param("layer", TypeInt);
+		func_add_param("writable", TypeBool);
 	add_func("screen_shot_to_image", TypeVoid, gl_p(&nix::screen_shot_to_image), Flags::STATIC);
 		func_add_param("im", TypeImage);
 
