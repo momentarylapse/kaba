@@ -204,9 +204,9 @@ void SIAddPackageVulkan() {
 			func_add_param("h", TypeInt);
 			func_add_param("format", TypeString);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Texture::__delete__));
-		class_add_func("override", TypeVoid, vul_p(&vulkan::Texture::override));
+		class_add_func("write", TypeVoid, vul_p(&vulkan::Texture::write));
 			func_add_param("image", TypeImage);
-		class_add_func("override", TypeVoid, vul_p(&vulkan::Texture::overridex));
+		class_add_func("write", TypeVoid, vul_p(&vulkan::Texture::writex));
 			func_add_param("data", TypePointer);
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);

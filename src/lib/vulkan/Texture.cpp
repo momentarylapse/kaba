@@ -249,15 +249,15 @@ void Texture::_load(const Path &filename) {
 	if (!im) {
 		throw Exception("failed to load texture image!");
 	}
-	override(*im);
+	write(*im);
 	delete im;
 }
 
-void Texture::override(const Image &im) {
-	overridex(im.data.data, im.width, im.height, 1, "rgba:i8");
+void Texture::write(const Image &im) {
+	writex(im.data.data, im.width, im.height, 1, "rgba:i8");
 }
 
-void Texture::overridex(const void *data, int nx, int ny, int nz, const string &format) {
+void Texture::writex(const void *data, int nx, int ny, int nz, const string &format) {
 	_destroy();
 	width = nx;
 	height = ny;
@@ -395,13 +395,13 @@ void CubeMap::__init__(int size, const string &format) {
 	new(this) CubeMap(size, format);
 }
 
-void CubeMap::override_side(int side, const Image &_image) {
+void CubeMap::write_side(int side, const Image &_image) {
 	if (image.format != VK_FORMAT_R8G8B8A8_UNORM) {
-		msg_error("CubeMap.override_side(): format is not rgba:i8");
+		msg_error("CubeMap.write_side(): format is not rgba:i8");
 		return;
 	}
 	if (_image.width != width or _image.height != height) {
-		msg_error("CubeMap.override_side(): size mismatch");
+		msg_error("CubeMap.write_side(): size mismatch");
 		return;
 	}
 	//overridex();

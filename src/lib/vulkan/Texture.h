@@ -36,8 +36,8 @@ namespace vulkan {
 		void __delete__();
 
 		void _load(const Path &filename);
-		void override(const Image &image);
-		void overridex(const void *image, int nx, int ny, int nz, const string &format);
+		void write(const Image &image);
+		void writex(const void *image, int nx, int ny, int nz, const string &format);
 
 
 		void set_options(const string &op) const;
@@ -77,7 +77,7 @@ namespace vulkan {
 	public:
 		CubeMap(int size, const string &format);
 		void __init__(int size, const string &format);
-		void override_side(int side, const Image &image);
+		void write_side(int side, const Image &image);
 	};
 
 	extern Array<Texture*> textures;
