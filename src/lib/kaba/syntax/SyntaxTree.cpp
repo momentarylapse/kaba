@@ -1,5 +1,6 @@
 #include "../kaba.h"
 #include "../parser/Parser.h"
+#include "../parser/template.h"
 #include "../asm/asm.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
@@ -602,16 +603,19 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	return t;
 }
 
+// X[], X{}, X*, X shared, (X,Y,Z), X->Y
 const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
 	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
 
 	// check if it already exists
-	auto *tt = find_root_type_by_name(name, ns, false);
-	if (tt)
+	//auto *tt = find_root_type_by_name(name, ns, false);
+	if (auto *tt = implicit_class_registry::find(name, type, array_size, params))
 		return tt;
 
 	// add new class
-	return create_new_class(name, type, size, array_size, parent, params, ns, token_id);
+	auto t = create_new_class(name, type, size, array_size, parent, params, ns, token_id);
+	implicit_class_registry::add(t);
+	return t;
 }
 
 const Class *SyntaxTree::request_implicit_class_super_array(const Class *element_type, int token_id) {
