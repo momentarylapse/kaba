@@ -51,11 +51,10 @@ Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
 	return shader_stages;
 }
 
-BasePipeline::BasePipeline(Shader *s) {
+BasePipeline::BasePipeline(VkPipelineBindPoint bp, Shader *s) {
+	bind_point = bp;
 	shader = s;
 	descr_layouts = shader->descr_layouts;
-	pipeline = nullptr;
-	layout = nullptr;
 
 	shader_stages = create_shader_stages(shader);
 
@@ -81,10 +80,9 @@ BasePipeline::BasePipeline(Shader *s) {
 	}
 }
 
-BasePipeline::BasePipeline(const Array<VkDescriptorSetLayout> &dset_layouts) {
+BasePipeline::BasePipeline(VkPipelineBindPoint bp, const Array<VkDescriptorSetLayout> &dset_layouts) {
+	bind_point = bp;
 	descr_layouts = dset_layouts;
-	shader = nullptr;
-	pipeline = nullptr;
 	layout = create_layout(dset_layouts);
 }
 
@@ -120,11 +118,11 @@ void BasePipeline::destroy() {
 Array<VkVertexInputAttributeDescription> parse_attr_descr(const string &format);
 VkVertexInputBindingDescription parse_binding_descr(const string &format);
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VertexBuffer *vb) : Pipeline(_shader, _render_pass, _subpass, topology, vb->binding_description, vb->attribute_descriptions) {}
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VertexBuffer *vb) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, vb->binding_description, vb->attribute_descriptions) {}
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) : Pipeline(_shader, _render_pass, _subpass, topology, parse_binding_descr(format), parse_attr_descr(format)) {}
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, parse_binding_descr(format), parse_attr_descr(format)) {}
 
-Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(_shader) {
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, _shader) {
 	render_pass = _render_pass;
 	subpass = _subpass;
 
@@ -192,25 +190,25 @@ Pipeline::Pipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, cons
 	rebuild();
 }
 
-Pipeline::~Pipeline() {
+GraphicsPipeline::~GraphicsPipeline() {
 	destroy();
 }
 
 
 
-void Pipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) {
-	new(this) Pipeline(_shader, _render_pass, _subpass, topology, format);
+void GraphicsPipeline::__init__(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) {
+	new(this) GraphicsPipeline(_shader, _render_pass, _subpass, topology, format);
 }
 
-void Pipeline::__delete__() {
-	this->~Pipeline();
+void GraphicsPipeline::__delete__() {
+	this->~GraphicsPipeline();
 }
 
-void Pipeline::disable_blend() {
+void GraphicsPipeline::disable_blend() {
 	color_blend_attachments[0].blendEnable = VK_FALSE;
 }
 
-void Pipeline::set_blend(Alpha src, Alpha dst) {
+void GraphicsPipeline::set_blend(Alpha src, Alpha dst) {
 	color_blend_attachments[0].blendEnable = VK_TRUE;
 	color_blend_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
 	color_blend_attachments[0].srcColorBlendFactor = (VkBlendFactor)src;
@@ -220,7 +218,7 @@ void Pipeline::set_blend(Alpha src, Alpha dst) {
 	color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 }
 
-void Pipeline::set_blend(float alpha) {
+void GraphicsPipeline::set_blend(float alpha) {
 	color_blend_attachments[0].blendEnable = VK_TRUE;
 	color_blend_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
 	color_blend_attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
@@ -234,11 +232,11 @@ void Pipeline::set_blend(float alpha) {
 	color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 }
 
-void Pipeline::set_line_width(float line_width) {
+void GraphicsPipeline::set_line_width(float line_width) {
 	rasterizer.lineWidth = line_width;
 }
 
-void Pipeline::set_wireframe(bool wireframe) {
+void GraphicsPipeline::set_wireframe(bool wireframe) {
 	if (wireframe) {
 		rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
 	} else {
@@ -246,7 +244,7 @@ void Pipeline::set_wireframe(bool wireframe) {
 	}
 }
 
-void Pipeline::set_z(bool test, bool write) {
+void GraphicsPipeline::set_z(bool test, bool write) {
 	depth_stencil.depthTestEnable = test ? VK_TRUE : VK_FALSE;
 	depth_stencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
 
@@ -254,7 +252,7 @@ void Pipeline::set_z(bool test, bool write) {
 		depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 }
 
-void Pipeline::set_viewport(const rect &r) {
+void GraphicsPipeline::set_viewport(const rect &r) {
 	viewport = {};
 	viewport.x = r.x1;
 	viewport.y = r.y1;
@@ -264,12 +262,8 @@ void Pipeline::set_viewport(const rect &r) {
 	viewport.maxDepth = 1.0f;
 }
 
-void Pipeline::set_culling(int mode) {
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	if (mode == 0)
-		rasterizer.cullMode = VK_CULL_MODE_NONE;
-	if (mode == -1)
-		rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+void GraphicsPipeline::set_culling(CullMode mode) {
+	rasterizer.cullMode = (VkCullModeFlags)mode;
 }
 
 VkDynamicState parse_dynamic_state(const string &d) {
@@ -283,7 +277,7 @@ VkDynamicState parse_dynamic_state(const string &d) {
 	return VK_DYNAMIC_STATE_MAX_ENUM;
 }
 
-void Pipeline::set_dynamic(const Array<string> &_dynamic_states) {
+void GraphicsPipeline::set_dynamic(const Array<string> &_dynamic_states) {
 	for (string &d: _dynamic_states) {
 		auto ds = parse_dynamic_state(d);
 		if (ds != VK_DYNAMIC_STATE_VIEWPORT)
@@ -291,7 +285,7 @@ void Pipeline::set_dynamic(const Array<string> &_dynamic_states) {
 	}
 }
 
-void Pipeline::rebuild() {
+void GraphicsPipeline::rebuild() {
 	destroy();
 
 	// sometimes a dummy scissor is required!
@@ -331,12 +325,32 @@ void Pipeline::rebuild() {
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 	pipeline_info.pDynamicState = &dynamic_state;
 
-	if (vkCreateGraphicsPipelines(default_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(default_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS)
 		throw Exception("failed to create graphics pipeline!");
-	}
 }
 
-RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth) : BasePipeline(DescriptorSet::parse_bindings(dset_layouts)) {
+
+
+ComputePipeline::ComputePipeline(const string &dset_layouts, Shader *shader) : BasePipeline(VK_PIPELINE_BIND_POINT_COMPUTE, DescriptorSet::parse_bindings(dset_layouts)) {
+	if (verbose)
+		msg_write("creating compute pipeline...");
+
+	
+	VkComputePipelineCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	info.layout = layout;
+
+	if (vkCreateComputePipelines(default_device->device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS)
+		throw Exception("failed to create compute pipeline!");
+}
+
+void ComputePipeline::__init__(const string &dset_layouts, Shader *shader) {
+	new(this) ComputePipeline(dset_layouts, shader);
+}
+
+
+
+RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth) : BasePipeline(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, DescriptorSet::parse_bindings(dset_layouts)) {
 	if (verbose)
 		msg_write("creating RTX pipeline...");
 

@@ -46,31 +46,39 @@ namespace vulkan{
 		DEST_INV_ALPHA   = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
 	};
 
+	enum class CullMode {
+		NONE = VK_CULL_MODE_NONE,
+		BACK = VK_CULL_MODE_BACK_BIT,
+		FRONT = VK_CULL_MODE_FRONT_BIT
+	};
+
 	class BasePipeline {
 	public:
-		BasePipeline(Shader *shader);
-		BasePipeline(const Array<VkDescriptorSetLayout> &dset_layouts);
+		BasePipeline(VkPipelineBindPoint bind_point, Shader *shader);
+		BasePipeline(VkPipelineBindPoint bind_point, const Array<VkDescriptorSetLayout> &dset_layouts);
 		~BasePipeline();
 
 		void destroy();
 
-		Shader *shader;
+		Shader *shader = nullptr;
 		Array<VkDescriptorSetLayout> descr_layouts;
-		VkPipelineLayout layout;
+		VkPipelineLayout layout = VK_NULL_HANDLE;
 		Array<VkPipelineShaderStageCreateInfo> shader_stages;
 
-		VkPipeline pipeline;
+		VkPipeline pipeline = VK_NULL_HANDLE;
+
+		VkPipelineBindPoint bind_point;
 
 
 		static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
 	};
 
-	class Pipeline : public BasePipeline {
+	class GraphicsPipeline : public BasePipeline {
 	public:
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
-		Pipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VertexBuffer *vb);
-		~Pipeline();
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VertexBuffer *vb);
+		~GraphicsPipeline();
 
 		void __init__(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
 		void __delete__();
@@ -85,7 +93,7 @@ namespace vulkan{
 		void set_line_width(float line_width);
 		void set_z(bool test, bool write);
 		void set_viewport(const rect &r);
-		void set_culling(int mode);
+		void set_culling(CullMode mode);
 
 		void set_dynamic(const Array<string> &dynamic_states);
 
@@ -109,6 +117,13 @@ namespace vulkan{
 	};
 
 
+
+	class ComputePipeline : public BasePipeline {
+	public:
+		ComputePipeline(const string &dset_layouts, Shader *shader);
+
+		void __init__(const string &dset_layouts, Shader *shaders);
+	};
 
 	class RayPipeline : public BasePipeline {
 	public:

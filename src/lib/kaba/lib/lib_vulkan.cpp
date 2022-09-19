@@ -79,7 +79,9 @@ public:
 		typedef int VertexBuffer;
 		typedef int Texture;
 		typedef int Shader;
-		typedef int Pipeline;
+		typedef int BasePipeline;
+		typedef int GraphicsPipeline;
+		typedef int ComputePipeline;
 		typedef int RayPipeline;
 		typedef int Vertex1;
 		typedef int RenderPass;
@@ -139,7 +141,9 @@ void SIAddPackageVulkan() {
 	auto TypeShaderPList	= add_type_l(TypeShaderP);
 	auto TypeCommandBuffer	= add_type  ("CommandBuffer", sizeof(vulkan::CommandBuffer));
 	auto TypeCommandBufferP	= add_type_p(TypeCommandBuffer);
-	auto TypePipeline		= add_type  ("Pipeline", sizeof(vulkan::Pipeline));
+	auto TypePipeline       = add_type  ("Pipeline", sizeof(vulkan::BasePipeline));
+	auto TypeGraphicsPipeline = add_type  ("GraphicsPipeline", sizeof(vulkan::GraphicsPipeline));
+	auto TypeComputePipeline = add_type  ("ComputePipeline", sizeof(vulkan::ComputePipeline));
 	auto TypeRayPipeline	= add_type  ("RayPipeline", sizeof(vulkan::RayPipeline));
 	auto TypeRenderPass		= add_type  ("RenderPass", sizeof(vulkan::RenderPass));
 	auto TypeRenderPassP	= add_type_p(TypeRenderPass);
@@ -296,39 +300,47 @@ void SIAddPackageVulkan() {
 			func_add_param("as", TypeAccelerationStructure);
 
 
-	add_class(TypePipeline);
-		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::Pipeline::__init__));
+	add_class(TypeGraphicsPipeline);
+		class_derive_from(TypePipeline, true, false);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::GraphicsPipeline::__init__));
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
 			func_add_param("subpass", TypeInt);
 			func_add_param("topology", TypeString);
 			func_add_param("format", TypeString);
-		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::Pipeline::__delete__));
-		class_add_func("set_wireframe", TypeVoid, vul_p(&vulkan::Pipeline::set_wireframe));
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&vulkan::GraphicsPipeline::__delete__));
+		class_add_func("set_wireframe", TypeVoid, vul_p(&vulkan::GraphicsPipeline::set_wireframe));
 			func_add_param("w", TypeBool);
-		class_add_func("set_line_width", TypeVoid, vul_p(&vulkan::Pipeline::set_line_width));
+		class_add_func("set_line_width", TypeVoid, vul_p(&vulkan::GraphicsPipeline::set_line_width));
 			func_add_param("w", TypeFloat32);
 #ifdef KABA_EXPORT_VULKAN
-		void (vulkan::Pipeline::*mpf)(float) = &vulkan::Pipeline::set_blend;
+		void (vulkan::GraphicsPipeline::*mpf)(float) = &vulkan::GraphicsPipeline::set_blend;
 		class_add_func("set_blend", TypeVoid, vul_p(mpf));
 #else
 		class_add_func("set_blend", TypeVoid, nullptr);
 #endif
 			func_add_param("alpha", TypeFloat32);
 #ifdef KABA_EXPORT_VULKAN
-		void (vulkan::Pipeline::*mpf2)(vulkan::Alpha, vulkan::Alpha) = &vulkan::Pipeline::set_blend;
+		void (vulkan::GraphicsPipeline::*mpf2)(vulkan::Alpha, vulkan::Alpha) = &vulkan::GraphicsPipeline::set_blend;
 		class_add_func("set_blend", TypeVoid, vul_p(mpf2));
 #else
 		class_add_func("set_blend", TypeVoid, nullptr);
 #endif
 			func_add_param("src", TypeInt);
 			func_add_param("dst", TypeInt);
-		class_add_func("set_z", TypeVoid, vul_p(&vulkan::Pipeline::set_z));
+		class_add_func("set_z", TypeVoid, vul_p(&vulkan::GraphicsPipeline::set_z));
 			func_add_param("test", TypeBool);
 			func_add_param("write", TypeBool);
-		class_add_func("set_dynamic", TypeVoid, vul_p(&vulkan::Pipeline::set_dynamic));
+		class_add_func("set_dynamic", TypeVoid, vul_p(&vulkan::GraphicsPipeline::set_dynamic));
 			func_add_param("mode", TypeIntList);
-		class_add_func("rebuild", TypeVoid, vul_p(&vulkan::Pipeline::rebuild));
+		class_add_func("rebuild", TypeVoid, vul_p(&vulkan::GraphicsPipeline::rebuild));
+
+
+	add_class(TypeComputePipeline);
+		class_derive_from(TypePipeline, true, false);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::ComputePipeline::__init__));
+			func_add_param("layout", TypeString);
+			func_add_param("shader", TypeShader);
 
 
 	add_class(TypeRayPipeline);

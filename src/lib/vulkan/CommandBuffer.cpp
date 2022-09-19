@@ -121,7 +121,8 @@ void CommandBuffer::set_bind_point(PipelineBindPoint bind_point) {
 }
 
 void CommandBuffer::bind_pipeline(BasePipeline *pl) {
-	vkCmdBindPipeline(buffer, cur_bind_point, pl->pipeline);
+	vkCmdBindPipeline(buffer, pl->bind_point, pl->pipeline);
+	cur_bind_point = pl->bind_point;
 	current_pipeline = pl;
 }
 
