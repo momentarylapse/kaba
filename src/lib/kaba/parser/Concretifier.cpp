@@ -741,6 +741,17 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		return f;
 	}
 
+	// tuple
+	if (operand->type->is_product()) {
+		if (index->type != TypeInt or index->kind != NodeKind::CONSTANT)
+			do_error("tuple indices must be constant ints", index);
+		int i = index->as_const()->as_int();
+		if (i < 0 or i >= operand->type->param.num)
+			do_error("tuple index out of range", index);
+		auto &e = operand->type->elements[i];
+		return operand->shift(e.offset, e.type, operand->token_id);
+	}
+
 	// allowed?
 	if (!operand->type->is_array() and !operand->type->usable_as_super_array())
 		do_error(format("type '%s' is neither an array nor does it have a function %s(%s)", operand->type->long_name(), IDENTIFIER_FUNC_GET, index->type->long_name()), index);
