@@ -284,7 +284,7 @@ const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params
 			class_add_func_virtual("call", TypeVoid, &KabaCallable<void(void*,void*)>::operator());
 		}
 	}
-	return cur_package->syntax->make_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, cur_package->syntax->base_class, -1);
+	return cur_package->syntax->request_implicit_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, cur_package->syntax->base_class, -1);
 
 	/*auto c = cur_package->syntax->make_class_callable_fp(params, ret_type);
 	add_class(c);
