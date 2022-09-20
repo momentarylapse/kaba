@@ -147,7 +147,8 @@ void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, 
 }
 
 void CommandBuffer::push_constant(int offset, int size, void *data) {
-	auto stage_flags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
+	//auto stage_flags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
+	auto stage_flags = VK_SHADER_STAGE_ALL;
 	vkCmdPushConstants(buffer, current_pipeline->layout, stage_flags, offset, size, data);
 }
 

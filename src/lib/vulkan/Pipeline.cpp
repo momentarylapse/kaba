@@ -51,6 +51,28 @@ Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
 	return shader_stages;
 }
 
+VkPipelineLayout create_pipeline_layout(Shader *shader, const Array<VkDescriptorSetLayout> &dset_layouts) {
+	VkPipelineLayoutCreateInfo info = {};
+	VkPushConstantRange pci = {0};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	if (shader and shader->push_size > 0) {
+		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
+		pci.offset = 0;
+		pci.size = shader->push_size;
+		info.pushConstantRangeCount = 1;
+		info.pPushConstantRanges = &pci;
+	}
+	info.setLayoutCount = dset_layouts.num;
+	info.pSetLayouts = &dset_layouts[0];
+	if (verbose)
+		std::cout << "create pipeline with " << dset_layouts.num << " layouts, " << shader->push_size << " push size\n";
+
+	VkPipelineLayout layout = VK_NULL_HANDLE;
+	if (vkCreatePipelineLayout(default_device->device, &info, nullptr, &layout) != VK_SUCCESS)
+		throw Exception("failed to create pipeline layout!");
+	return layout;
+}
+
 BasePipeline::BasePipeline(VkPipelineBindPoint bp, Shader *s) {
 	bind_point = bp;
 	shader = s;
@@ -58,49 +80,13 @@ BasePipeline::BasePipeline(VkPipelineBindPoint bp, Shader *s) {
 
 	shader_stages = create_shader_stages(shader);
 
-	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-	VkPushConstantRange pci = {0};
-	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	if (shader->push_size > 0) {
-		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
-		pci.offset = 0;
-		pci.size = shader->push_size;
-		pipeline_layout_info.pushConstantRangeCount = 1;
-		pipeline_layout_info.pPushConstantRanges = &pci;
-	} else {
-		pipeline_layout_info.pushConstantRangeCount = 0;
-	}
-	pipeline_layout_info.setLayoutCount = descr_layouts.num;
-	pipeline_layout_info.pSetLayouts = &descr_layouts[0];
-	if (verbose)
-		std::cout << "create pipeline with " << descr_layouts.num << " layouts, " << shader->push_size << " push size\n";
-
-	if (vkCreatePipelineLayout(default_device->device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
-		throw Exception("failed to create pipeline layout!");
-	}
+	layout = create_pipeline_layout(shader, descr_layouts);
 }
 
 BasePipeline::BasePipeline(VkPipelineBindPoint bp, const Array<VkDescriptorSetLayout> &dset_layouts) {
 	bind_point = bp;
 	descr_layouts = dset_layouts;
-	layout = create_layout(dset_layouts);
-}
-
-VkPipelineLayout BasePipeline::create_layout(const Array<VkDescriptorSetLayout> &dset_layouts) {
-
-	VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-	pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipeline_layout_info.setLayoutCount = dset_layouts.num;
-	pipeline_layout_info.pSetLayouts = &dset_layouts[0];
-	pipeline_layout_info.pushConstantRangeCount = 0;
-	pipeline_layout_info.pPushConstantRanges = nullptr;
-
-	VkPipelineLayout layout;
-	if (vkCreatePipelineLayout(default_device->device, &pipeline_layout_info, nullptr, &layout) != VK_SUCCESS) {
-		throw Exception("failed to create pipeline layout!");
-	}
-	return layout;
-
+	layout = create_pipeline_layout(nullptr, dset_layouts);
 }
 
 BasePipeline::~BasePipeline() {
@@ -331,14 +317,14 @@ void GraphicsPipeline::rebuild() {
 
 
 
-ComputePipeline::ComputePipeline(const string &dset_layouts, Shader *shader) : BasePipeline(VK_PIPELINE_BIND_POINT_COMPUTE, DescriptorSet::parse_bindings(dset_layouts)) {
+ComputePipeline::ComputePipeline(const string &dset_layouts, Shader *shader) : BasePipeline(VK_PIPELINE_BIND_POINT_COMPUTE, shader) { //DescriptorSet::parse_bindings(dset_layouts)) {
 	if (verbose)
 		msg_write("creating compute pipeline...");
-
 	
 	VkComputePipelineCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	info.layout = layout;
+	info.stage = shader_stages[0];
 
 	if (vkCreateComputePipelines(default_device->device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS)
 		throw Exception("failed to create compute pipeline!");

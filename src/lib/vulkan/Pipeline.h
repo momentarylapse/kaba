@@ -70,7 +70,7 @@ namespace vulkan{
 		VkPipelineBindPoint bind_point;
 
 
-		static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
+		//static VkPipelineLayout create_layout(const Array<VkDescriptorSetLayout> &dset_layouts);
 	};
 
 	class GraphicsPipeline : public BasePipeline {

@@ -71,7 +71,7 @@ extern bool verbose;
 	struct ShaderMetaData {
 		string version, name, bindings;
 		Array<string> extensions;
-		int push_size;
+		int push_size = 0;
 	};
 
 	struct ShaderModule {
