@@ -112,9 +112,9 @@ const Class *SyntaxTree::request_implicit_class_callable_bind(const Array<const 
 }
 
 SyntaxTree::SyntaxTree(Module *_module) {
-	base_class = new Class("-base-", 0, this);
+	base_class = new Class(Class::Type::REGULAR, "-base-", 0, this);
 	_base_class = base_class;
-	imported_symbols = new Class("-imported-", 0, this);
+	imported_symbols = new Class(Class::Type::REGULAR, "-imported-", 0, this);
 	root_of_all_evil = new Function("-root-", TypeVoid, base_class, Flags::STATIC);
 
 
@@ -511,10 +511,9 @@ Array<int> enum_all(const Class*);
 Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
 	//msg_write("CREATE " + name);
 	if (find_root_type_by_name(name, ns, false))
-		do_error("class already exists", token_id);
+		do_error(format("class '%s' already exists", name), token_id);
 
-	Class *t = new Class(name, size, this, parent, params);
-	t->type = type;
+	Class *t = new Class(type, name, size, this, parent, params);
 	t->token_id = token_id;
 	owned_classes.add(t);
 	
@@ -539,6 +538,10 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		//t->derive_from(TypeSharedPointer, true);
 		t->param = params;
+		add_missing_function_headers_for_class(t);
+	} else if (t->is_optional()) {
+		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
+			do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		add_missing_function_headers_for_class(t);
 	} else if (t->type == Class::Type::FUNCTION) {
 		t->derive_from(TypeFunction, true);
@@ -608,7 +611,6 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
 
 	// check if it already exists
-	//auto *tt = find_root_type_by_name(name, ns, false);
 	if (auto *tt = implicit_class_registry::find(name, type, array_size, params))
 		return tt;
 
@@ -631,6 +633,11 @@ const Class *SyntaxTree::request_implicit_class_array(const Class *element_type,
 const Class *SyntaxTree::request_implicit_class_dict(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "{}";
 	return request_implicit_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, {element_type}, element_type->name_space, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_optional(const Class *param, int token_id) {
+	string name = class_name_might_need_parantheses(param) + "?";
+	return request_implicit_class(name, Class::Type::OPTIONAL, param->size + 1, 0, nullptr, {param}, param->name_space, token_id);
 }
 
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {
