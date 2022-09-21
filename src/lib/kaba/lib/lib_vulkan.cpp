@@ -97,7 +97,7 @@ public:
 		typedef int FrameBuffer;
 		typedef int VolumeTexture;
 		typedef int CubeMap;
-		typedef int StorageImage;
+		typedef int StorageTexture;
 		typedef int AccelerationStructure;
 	};
 	#define vul_p(p)		nullptr
@@ -131,6 +131,7 @@ void SIAddPackageVulkan() {
 	auto TypeTexturePList	= add_type_l(TypeTextureP);
 	auto TypeVolumeTexture	= add_type  ("VolumeTexture", sizeof(vulkan::VolumeTexture));
 	auto TypeCubeMap		= add_type  ("CubeMap", sizeof(vulkan::CubeMap));
+	auto TypeStorageTexture	= add_type  ("StorageTexture", sizeof(vulkan::StorageTexture));
 	auto TypeDepthBuffer	= add_type  ("DepthBuffer", sizeof(vulkan::DepthBuffer));
 	auto TypeDepthBufferP	= add_type_p(TypeDepthBuffer);
 	auto TypeFrameBuffer	= add_type  ("FrameBuffer", sizeof(vulkan::FrameBuffer));
@@ -173,6 +174,7 @@ void SIAddPackageVulkan() {
 	add_class(TypeDevice);
 		class_add_element("graphics_queue", TypeQueue, vul_p(&vulkan::Device::graphics_queue));
 		class_add_element("present_queue", TypeQueue, vul_p(&vulkan::Device::present_queue));
+		class_add_element("compute_queue", TypeQueue, vul_p(&vulkan::Device::compute_queue));
 		class_add_func("wait_idle", TypeVoid, vul_p(&vulkan::Device::wait_idle));
 		class_add_func("create_simple", TypeDeviceP, vul_p(&__vulkan_device_create_simple), Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("instance", TypeInstanceP);
@@ -233,6 +235,15 @@ void SIAddPackageVulkan() {
 		class_derive_from(TypeTexture, true, false);
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::CubeMap::__init__));
 			func_add_param("size", TypeInt);
+			func_add_param("format", TypeString);
+
+
+	add_class(TypeStorageTexture);
+		class_derive_from(TypeTexture, true, false);
+		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, vul_p(&vulkan::StorageTexture::__init__));
+			func_add_param("nx", TypeInt);
+			func_add_param("ny", TypeInt);
+			func_add_param("nz", TypeInt);
 			func_add_param("format", TypeString);
 
 

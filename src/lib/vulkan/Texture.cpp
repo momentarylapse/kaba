@@ -175,7 +175,7 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 
 
 
-	VkImageCreateInfo imageCreateInfo;
+	VkImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageCreateInfo.pNext = nullptr;
 	imageCreateInfo.flags = 0;

@@ -25,6 +25,7 @@ extern bool verbose;
 Device *default_device;
 
 	bool check_device_extension_support(VkPhysicalDevice device, Requirements req);
+	Array<VkQueueFamilyProperties> get_queue_families(VkPhysicalDevice device);
 
 
 
@@ -83,10 +84,10 @@ bool check_device_extension_support(VkPhysicalDevice device, Requirements req) {
 		required_extensions.add(e);
 
 	if (verbose)
-		std::cout << "---- GPU-----\n";
+		msg_write("---- GPU-----");
 	for (const auto& extension : available_extensions) {
 		if (verbose)
-			std::cout << "   " << extension.extensionName << "\n";
+			msg_write("   " + string(extension.extensionName));
 		required_extensions.erase(extension.extensionName);
 	}
 
@@ -104,11 +105,23 @@ Device::~Device() {
 		vkDestroyDevice(device, nullptr);
 }
 
+void show_physical_devices(const Array<VkPhysicalDevice>& devices) {
+	msg_write(format("%d devices found:", devices.num));
+	for (const auto& dev: devices) {
+		VkPhysicalDeviceProperties p;
+		vkGetPhysicalDeviceProperties(dev, &p);
+		msg_write("  PHYSICAL: " + string(p.deviceName));
+		auto families = get_queue_families(dev);
+		for (auto f: families) {
+			string s = i2s(f.queueCount);
+			if (f.queueFlags & VK_QUEUE_GRAPHICS_BIT) s += " graphics";
+			if (f.queueFlags & VK_QUEUE_COMPUTE_BIT) s += " compute";
+			msg_write("    Q: " + s);
+		}
+	}
+}
 
-void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Requirements req) {
-	instance = _instance;
-	surface = _surface;
-
+Array<VkPhysicalDevice> get_all_physical_devices(Instance *instance) {
 	uint32_t device_count = 0;
 	vkEnumeratePhysicalDevices(instance->instance, &device_count, nullptr);
 
@@ -118,15 +131,27 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 	Array<VkPhysicalDevice> devices;
 	devices.resize(device_count);
 	vkEnumeratePhysicalDevices(instance->instance, &device_count, &devices[0]);
+	return devices;
+}
+
+string Device::physical_name() const {
+	return physical_device_properties.deviceName;
+}
+
+void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Requirements req) {
+	instance = _instance;
+	surface = _surface;
+
+	auto devices = get_all_physical_devices(instance);
 
 	if (verbose)
-		std::cout << device_count << " devices found\n";
+		show_physical_devices(devices);
 
 	physical_device = VK_NULL_HANDLE;
 	for (const auto& dev: devices) {
 		if (is_device_suitable(dev, surface, req)) {
 			if (verbose)
-				std::cout << " ok\n";
+				msg_write(" ok");
 			physical_device = dev;
 			break;
 		}
@@ -137,6 +162,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 	if (verbose) {
+		msg_write("  CHOSEN: " + physical_name());
 		std::cout << " props\n";
 		std::cout << "  minUniformBufferOffsetAlignment  " << physical_device_properties.limits.minUniformBufferOffsetAlignment << "\n";
 		std::cout << "  maxPushConstantsSize  " << physical_device_properties.limits.maxPushConstantsSize << "\n";
@@ -157,7 +183,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 	dp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vkGetPhysicalDeviceFeatures2(physical_device, &dp2);*/
 	if (verbose)
-		std::cout << " done\n";
+		msg_write(" done");
 }
 
 void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
@@ -177,7 +203,8 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	}
 
 	VkPhysicalDeviceFeatures device_features = {};
-	device_features.samplerAnisotropy = VK_TRUE;
+	if (req & Requirements::ANISOTROPY)
+		device_features.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -205,6 +232,8 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 		vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue.queue);
 	if (indices.present_family)
 		vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue.queue);
+	if (indices.compute_family)
+		vkGetDeviceQueue(device, indices.compute_family.value(), 0, &compute_queue.queue);
 }
 
 

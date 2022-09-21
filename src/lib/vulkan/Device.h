@@ -38,7 +38,9 @@ public:
 	QueueFamilyIndices indices;
 	Queue graphics_queue;
 	Queue present_queue;
+	Queue compute_queue;
 
+	string physical_name() const;
 
 	static Device *create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op);
 

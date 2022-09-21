@@ -14,6 +14,7 @@
 #include "helper.h"
 #include "common.h"
 #include "../base/set.h"
+#include "../base/iter.h"
 
 #include <iostream>
 
@@ -53,19 +54,22 @@ void Queue::wait_idle() {
 }
 
 
-
-base::optional<QueueFamilyIndices> QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
-
+Array<VkQueueFamilyProperties> get_queue_families(VkPhysicalDevice device) {
 	uint32_t queue_family_count = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 
 	Array<VkQueueFamilyProperties> queue_families;
 	queue_families.resize(queue_family_count);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, &queue_families[0]);
+	return queue_families;
+}
+
+
+base::optional<QueueFamilyIndices> QueueFamilyIndices::query(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
+	auto queue_families = get_queue_families(device);
 
 	QueueFamilyIndices indices;
-	int i = 0;
-	for (const auto& family: queue_families) {
+	for (auto&& [i,family]: enumerate(queue_families)) {
 		if (family.queueCount == 0)
 			continue;
 
@@ -82,8 +86,6 @@ base::optional<QueueFamilyIndices> QueueFamilyIndices::query(VkPhysicalDevice de
 
 		if (indices.is_complete(req))
 			return indices;
-
-		i ++;
 	}
 
 	return base::None;
