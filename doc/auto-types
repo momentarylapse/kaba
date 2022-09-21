@@ -1,0 +1,3 @@
+XXX[], XXX{}, XXX*, XXX shared, (XXX,YYY), XXX? etc
+
+treat as template -> T[], T{}, T* defined in base, add implementation XXX[] INTO base

@@ -331,12 +331,12 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 	//operand = force_concrete_type(operand);
 	const Class *type = operand->type;
 	bool deref = false;
-	bool only_static = false;
+	bool allow_member = true;
 
 	if (operand->kind == NodeKind::CLASS) {
 		// referencing class functions
 		type = operand->as_class();
-		only_static = true;
+		allow_member = false;
 	} else if (type->is_some_pointer()) {
 		// pointer -> dereference
 		type = type->param[0];
@@ -355,7 +355,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 
 
 	// find element
-	if (!only_static) {
+	if (allow_member) {
 		for (auto &e: type->elements)
 			if (name == e.name) {
 				// direct
@@ -390,22 +390,20 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 			}
 	}
 	for (auto *c: weak(type->constants))
-		if (name == c->name) {
+		if (name == c->name)
 			return {add_node_const(c, token_id)};
-		}
+
 	for (auto *v: weak(type->static_variables))
-		if (name == v->name) {
+		if (name == v->name)
 			return {add_node_global(v, token_id)};
-		}
 
 	// sub-class
 	for (auto *c: weak(type->classes))
-		if (name == c->name) {
+		if (name == c->name)
 			return {add_node_class(c, token_id)};
-		}
 
 
-	if (deref and !only_static)
+	if (deref and allow_member)
 		operand = operand->deref();
 
 	// class function?
@@ -413,7 +411,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 	for (auto *cf: weak(type->functions))
 		if (name == cf->name) {
 			links.add(add_node_func_name(cf, token_id));
-			if (!cf->is_static() and !only_static)
+			if (cf->is_member() and allow_member)
 				links.back()->params.add(cp_node(operand));
 		}
 	return links;
@@ -423,12 +421,11 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 	Function *f = block->function;
 
 	// first test local variables
-	auto *v = block->get_var(name);
-	if (v)
+	if (auto *v = block->get_var(name))
 		return {add_node_local(v, token_id)};
 
 	// self.x?
-	if (!f->is_static()) {
+	if (f->is_member()) {
 		auto self = add_node_local(f->__get_var(IDENTIFIER_SELF), token_id);
 		auto links = get_element_of(self, name, token_id);
 		if (links.num > 0)
@@ -454,8 +451,7 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 		return links;
 
 	// then the statements
-	/*auto s = Parser::which_statement(name);
-	if (s) {
+	/*if (auto s = Parser::which_statement(name)) {
 		//return {add_node_statement(s->id)};
 		auto n = new Node(NodeKind::STATEMENT, (int_p)s, TypeVoid);
 		n->set_num_params(s->num_params);
@@ -463,8 +459,7 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 	}*/
 
 	// operators
-	auto w = parser->which_abstract_operator(name, 2); // negate/not...
-	if (w)
+	if (auto w = parser->which_abstract_operator(name, 2)) // negate/not...
 		return {new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown, token_id)};
 
 	// in include files (only global)...
@@ -697,7 +692,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 			}
 
 		// return: array reference (-> dereference)
-		if ((c->type->is_array()) /*or (c->Type->IsSuperArray)*/) {
+		if (c->type->is_array() /*or c->type->is_super_array()*/) {
 			r->set_type(c->type->get_pointer());
 			return r->deref();
 		}
@@ -709,7 +704,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 	if (c->kind == NodeKind::OPERATOR) {
 		// parameters: super array as reference
 		for (int j=0;j<c->params.num;j++)
-			if ((c->params[j]->type->is_array()) or (c->params[j]->type->is_super_array())) {
+			if (c->params[j]->type->is_array() or c->params[j]->type->is_super_array()) {
 				c->set_param(j, c->params[j]->ref());
 				// REALLY ?!?!?!?  FIXME?!?!?
 				msg_error("this might be bad");
@@ -1305,7 +1300,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 
 			if (config.abi == Abi::X86_WINDOWS) {
 				// map "self" to the VERY first parameter
-				if (!f->is_static())
+				if (f->is_member())
 					MapLVSX86Self(f, stack_offset);
 
 				// map "-return-" to the first parameter
@@ -1317,12 +1312,12 @@ void SyntaxTree::map_local_variables_to_stack() {
 					MapLVSX86Return(f, stack_offset);
 
 				// map "self" to the first parameter
-				if (!f->is_static())
+				if (f->is_member())
 					MapLVSX86Self(f, stack_offset);
 			}
 
 			for (auto&& [i,v]: enumerate(weak(f->var))) {
-				if (!f->is_static() and (v->name == IDENTIFIER_SELF))
+				if (f->is_member() and (v->name == IDENTIFIER_SELF))
 					continue;
 				if (v->name == IDENTIFIER_RETURN_VAR)
 					continue;
@@ -1345,7 +1340,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 			if (config.abi == Abi::AMD64_WINDOWS) {
 
 				// map "self" to the VERY first parameter
-				if (!f->is_static())
+				if (f->is_member())
 					MapLVSX86Self(f, stack_offset);
 
 				// map "-return-" to the first parameter
@@ -1353,7 +1348,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 					MapLVSX86Return(f, stack_offset);
 
 				for (auto&& [i,v]: enumerate(weak(f->var))) {
-					if (!f->is_static() and (v->name == IDENTIFIER_SELF))
+					if (f->is_member() and (v->name == IDENTIFIER_SELF))
 						continue;
 					if (v->name == IDENTIFIER_RETURN_VAR)
 						continue;

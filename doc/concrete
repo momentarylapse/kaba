@@ -1,0 +1,39 @@
+ABSTRACT >> FLEXIBLE >> CONCRETE
+
+concretify_node() FLEXIBLE for
+	array
+	dict
+	tuple
+	function
+
+
+
+
+force_concrete_type()  -> CONCRETE
+	array [...]
+	dict {...}
+	tuple (...)
+	function -> callable
+	
+MAYBE function should have type <Function>
+only wrap if required by cast
+let f = some_func  # still function name
+event(some_func) # required void->void, so we cast
+...would lose information???
+
+
+requires FLEXIBLE
+	operator
+		pipe   data |> max
+			max has multiple versions... select during |>
+		=> lambda
+	dyn()
+	call
+		don't wrap callable into callable
+
+
+hacks
+	operator
+		force_concrete_if_function param[1]
+			probably for f=some_func
+
