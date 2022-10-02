@@ -69,7 +69,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 		throw Exception("texture image format does not support linear blitting!");
 	}
 
-	VkCommandBuffer command_buffer = begin_single_time_commands();
+	auto command_buffer = begin_single_time_commands();
 
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -91,7 +91,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-		vkCmdPipelineBarrier(command_buffer,
+		vkCmdPipelineBarrier(command_buffer->buffer,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
 			0, nullptr,
 			0, nullptr,
@@ -111,7 +111,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 		blit.dstSubresource.baseArrayLayer = layer0;
 		blit.dstSubresource.layerCount = num_layers;
 
-		vkCmdBlitImage(command_buffer,
+		vkCmdBlitImage(command_buffer->buffer,
 			image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1, &blit,
@@ -122,7 +122,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		vkCmdPipelineBarrier(command_buffer,
+		vkCmdPipelineBarrier(command_buffer->buffer,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
 			0, nullptr,
 			0, nullptr,
@@ -138,7 +138,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-	vkCmdPipelineBarrier(command_buffer,
+	vkCmdPipelineBarrier(command_buffer->buffer,
 		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
 		0, nullptr,
 		0, nullptr,
@@ -159,11 +159,11 @@ bool ImageAndMemory::has_stencil_component() const {
 }
 
 void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
-	VkCommandBuffer command_buffer = begin_single_time_commands();
+	auto command_buffer = begin_single_time_commands();
 
 	VkBufferCopy copy_region = {};
 	copy_region.size = size;
-	vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+	vkCmdCopyBuffer(command_buffer->buffer, src_buffer, dst_buffer, 1, &copy_region);
 
 	end_single_time_commands(command_buffer);
 }
@@ -181,15 +181,14 @@ VkImageView ImageAndMemory::create_view(VkImageAspectFlags aspect, VkImageViewTy
 	info.subresourceRange.layerCount = num_layers;
 
 	VkImageView image_view;
-	if (vkCreateImageView(default_device->device, &info, nullptr, &image_view) != VK_SUCCESS) {
+	if (vkCreateImageView(default_device->device, &info, nullptr, &image_view) != VK_SUCCESS)
 		throw Exception("failed to create texture image view!");
-	}
 
 	return image_view;
 }
 
 void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth, uint32_t level, uint32_t layer) {
-	VkCommandBuffer command_buffer = begin_single_time_commands();
+	auto command_buffer = begin_single_time_commands();
 
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
@@ -202,13 +201,24 @@ void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32
 	region.imageOffset = {0, 0, 0};
 	region.imageExtent = {width, height, depth};
 
-	vkCmdCopyBufferToImage(command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	vkCmdCopyBufferToImage(command_buffer->buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 	end_single_time_commands(command_buffer);
 }
 
+VkImageAspectFlags image_aspect(const ImageAndMemory &i, VkImageLayout new_layout) {
+	if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		VkImageAspectFlags a = VK_IMAGE_ASPECT_DEPTH_BIT;
+		if (i.has_stencil_component())
+			a |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		return a;
+	} else {
+		return VK_IMAGE_ASPECT_COLOR_BIT;
+	}
+}
+
 void ImageAndMemory::transition_layout(VkImageLayout old_layout, VkImageLayout new_layout, uint32_t mip_levels, uint32_t layer0, uint32_t num_layers) const {
-	VkCommandBuffer command_buffer = begin_single_time_commands();
+	auto command_buffer = begin_single_time_commands();
 
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -218,16 +228,7 @@ void ImageAndMemory::transition_layout(VkImageLayout old_layout, VkImageLayout n
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
 
-	if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-		if (has_stencil_component()) {
-			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-		}
-	} else {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
-
+	barrier.subresourceRange.aspectMask = image_aspect(*this, new_layout);
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = mip_levels;
 	barrier.subresourceRange.baseArrayLayer = layer0;
@@ -264,8 +265,10 @@ void ImageAndMemory::transition_layout(VkImageLayout old_layout, VkImageLayout n
 		throw Exception("unsupported layout transition!");
 	}
 
+	//command_buffer->image_barrier();
+
 	vkCmdPipelineBarrier(
-		command_buffer,
+		command_buffer->buffer,
 		source_stage, destination_stage,
 		0,
 		0, nullptr,

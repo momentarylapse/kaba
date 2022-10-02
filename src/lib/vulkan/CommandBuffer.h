@@ -30,6 +30,7 @@ namespace vulkan{
 
 	enum class AccessFlags {
 		NONE = 0, // VK_ACCESS_NONE,
+		SHADER_READ_BIT = VK_ACCESS_SHADER_READ_BIT,
 		SHADER_WRITE_BIT = VK_ACCESS_SHADER_WRITE_BIT,
 		TRANSFER_READ_BIT = VK_ACCESS_TRANSFER_READ_BIT,
 		TRANSFER_WRITE_BIT = VK_ACCESS_TRANSFER_WRITE_BIT
@@ -40,6 +41,7 @@ namespace vulkan{
 		GENERAL = VK_IMAGE_LAYOUT_GENERAL,
 		TRANSFER_SRC_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		TRANSFER_DST_OPTIMAL = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		SHADER_READ_ONLY_OPTIMAL = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		PRESENT_SRC = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
 
@@ -100,8 +102,8 @@ namespace vulkan{
 		void timestamp(int id);
 	};
 
-	VkCommandBuffer begin_single_time_commands();
-	void end_single_time_commands(VkCommandBuffer commandBuffer);
+	CommandBuffer *begin_single_time_commands();
+	void end_single_time_commands(CommandBuffer *cb);
 
 
 };

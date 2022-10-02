@@ -255,13 +255,24 @@ void Instance::_ensure_rtx() {
 	rtx_loaded = true;
 }
 
-bool check_validation_layer_support() {
+Array<VkLayerProperties> get_available_layers() {
 	uint32_t layer_count;
 	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
 	Array<VkLayerProperties> available_layers;
 	available_layers.resize(layer_count);
 	vkEnumerateInstanceLayerProperties(&layer_count, &available_layers[0]);
+	return available_layers;
+}
+
+bool check_validation_layer_support() {
+	auto available_layers = get_available_layers();
+
+	if (verbose) {
+		msg_write("available layers:");
+		for (const auto& layer_properties : available_layers)
+			msg_write(format("  %s", layer_properties.layerName));
+	}
 
 	for (const char* layer_name : validation_layers) {
 		bool layer_found = false;
@@ -273,9 +284,8 @@ bool check_validation_layer_support() {
 			}
 		}
 
-		if (!layer_found) {
+		if (!layer_found)
 			return false;
-		}
 	}
 
 	return true;

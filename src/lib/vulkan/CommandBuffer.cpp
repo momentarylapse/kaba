@@ -45,37 +45,30 @@ void destroy_command_pool(Device *device) {
 }
 
 
-VkCommandBuffer begin_single_time_commands() {
-	VkCommandBufferAllocateInfo ai = {};
-	ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	ai.commandPool = command_pool;
-	ai.commandBufferCount = 1;
-
-	VkCommandBuffer command_buffer;
-	vkAllocateCommandBuffers(default_device->device, &ai, &command_buffer);
+CommandBuffer *begin_single_time_commands() {
+	auto cb = new CommandBuffer();
 
 	VkCommandBufferBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(cb->buffer, &info);
 
-	vkBeginCommandBuffer(command_buffer, &info);
-
-	return command_buffer;
+	return cb;
 }
 
-void end_single_time_commands(VkCommandBuffer command_buffer) {
-	vkEndCommandBuffer(command_buffer);
+void end_single_time_commands(CommandBuffer *cb) { //VkCommandBuffer command_buffer) {
+	vkEndCommandBuffer(cb->buffer);
 
 	VkSubmitInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	info.commandBufferCount = 1;
-	info.pCommandBuffers = &command_buffer;
+	info.pCommandBuffers = &cb->buffer;
 
 	vkQueueSubmit(default_device->graphics_queue.queue, 1, &info, VK_NULL_HANDLE);
 	default_device->graphics_queue.wait_idle();
 
-	vkFreeCommandBuffers(default_device->device, command_pool, 1, &command_buffer);
+	//vkFreeCommandBuffers(default_device->device, command_pool, 1, &cb->command_buffer);
+	delete cb;
 }
 
 CommandBuffer::CommandBuffer() {
@@ -104,9 +97,8 @@ void CommandBuffer::_create() {
 	ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	ai.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(default_device->device, &ai, &buffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(default_device->device, &ai, &buffer) != VK_SUCCESS)
 		throw Exception("failed to allocate command buffers!");
-	}
 }
 
 void CommandBuffer::_destroy() {
@@ -171,9 +163,8 @@ void CommandBuffer::begin() {
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	if (vkBeginCommandBuffer(buffer, &info) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(buffer, &info) != VK_SUCCESS)
 		throw Exception("failed to begin recording command buffer!");
-	}
 	current_framebuffer = nullptr;
 }
 

@@ -108,7 +108,7 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 
 	auto cb = begin_single_time_commands();
 
-	_vkCmdBuildAccelerationStructureNV(cb, &info,
+	_vkCmdBuildAccelerationStructureNV(cb->buffer, &info,
 							instancesBuffer.buffer, 0, VK_FALSE,
 							structure, VK_NULL_HANDLE,
 							scratch.buffer, 0);
@@ -119,7 +119,7 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 	memoryBarrier.pNext = nullptr;
 	memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
 	memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-	vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+	vkCmdPipelineBarrier(cb->buffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
 	end_single_time_commands(cb);
 
 }

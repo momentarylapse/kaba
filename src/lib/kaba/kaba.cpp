@@ -80,6 +80,7 @@ shared<Module> load(const Path &filename, bool just_analyse) {
 shared<Module> create_for_source(const string &buffer, bool just_analyse) {
 	shared<Module> s = new Module;
 	s->just_analyse = just_analyse;
+	s->filename = config.default_filename;
 	s->syntax->parser = new Parser(s->syntax);
 	s->syntax->default_import();
 	s->syntax->parser->parse_buffer(buffer, just_analyse);
