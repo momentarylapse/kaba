@@ -10,9 +10,7 @@
 #include "vulkan.h"
 #include "Instance.h"
 #include "common.h"
-
 #include "../os/msg.h"
-#include <iostream>
 
 
 
@@ -28,16 +26,14 @@ VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtil
 
 void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
+	if (func != nullptr)
 		func(instance, debugMessenger, pAllocator);
-	}
 }
 
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
+	msg_write(format("VALIDATION LAYER:  %s", pCallbackData->pMessage));
 	return VK_FALSE;
 }
 
@@ -47,8 +43,6 @@ namespace vulkan {
 
 
 	bool check_validation_layer_support();
-
-	extern bool verbose;
 
 	Array<const char*> validation_layers = {
 		//"VK_LAYER_LUNARG_standard_validation",
@@ -80,8 +74,8 @@ Array<const char*> get_required_instance_extensions(bool glfw, bool validation) 
 	VkDebugUtilsMessengerEXT debug_messenger;
 
 	void Instance::setup_debug_messenger() {
-		if (verbose)
-			std::cout << " VALIDATION LAYER!\n";
+		if (verbosity >= 2)
+			msg_write(" VALIDATION LAYER!");
 
 		VkDebugUtilsMessengerCreateInfoEXT create_info = {};
 		create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -89,9 +83,8 @@ Array<const char*> get_required_instance_extensions(bool glfw, bool validation) 
 		create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		create_info.pfnUserCallback = debug_callback;
 
-		if (create_debug_utils_messenger_ext(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
+		if (create_debug_utils_messenger_ext(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS)
 			throw Exception("failed to set up debug messenger!");
-		}
 	}
 
 
@@ -101,23 +94,13 @@ Instance::Instance() {
 }
 
 Instance::~Instance() {
-	if (verbose)
-		std::cout << "vulkan destroy\n";
-
-	destroy_command_pool(default_device);
-
-	if (default_device)
-		delete default_device;
-	default_device = nullptr;
+	if (verbosity >= 1)
+		msg_write("vulkan destroy");
 
 	if (using_validation_layers)
 		destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
 
 	vkDestroyInstance(instance, nullptr);
-}
-
-void Instance::__delete__() {
-	this->Instance::~Instance();
 }
 
 
@@ -130,16 +113,7 @@ int parse_version(const string &v) {
 }
 
 Instance *Instance::create(const Array<string> &op) {
-	Instance *instance = new Instance();
 
-	instance->using_validation_layers = sa_contains(op, "validation");
-	if (instance->using_validation_layers and !check_validation_layer_support()) {
-		//throw Exception("validation layers requested, but not available!");
-		std::cout << "validation layers requested, but not available!" << '\n';
-		instance->using_validation_layers = false;
-	}
-
-	verbose = sa_contains(op, "verbose");
 
 	string name = "no name";
 	int api = VK_API_VERSION_1_0;
@@ -148,6 +122,22 @@ Instance *Instance::create(const Array<string> &op) {
 			name = o.sub(5);
 		if (o.head(4) == "api=")
 			api = parse_version(o.sub(4));
+		if (o.head(10) == "verbosity=")
+			verbosity = o.sub(10)._int();
+	}
+	if (sa_contains(op, "verbose"))
+		verbosity = 10;
+
+	if (verbosity >= 1)
+		msg_write("vulkan init");
+
+	Instance *instance = new Instance();
+
+	instance->using_validation_layers = sa_contains(op, "validation");
+	if (instance->using_validation_layers and !check_validation_layer_support()) {
+		//throw Exception("validation layers requested, but not available!");
+		msg_error("validation layers requested, but not available!");
+		instance->using_validation_layers = false;
 	}
 
 	VkApplicationInfo app_info = {};
@@ -182,8 +172,14 @@ Instance *Instance::create(const Array<string> &op) {
 	if (instance->using_validation_layers)
 		instance->setup_debug_messenger();
 
-	if (sa_contains(op, "rtx"))
-		instance->_ensure_rtx();
+	if (sa_contains(op, "rtx") or sa_contains(op, "rtx?")) {
+		try {
+			instance->_ensure_rtx_extensions();
+		} catch (Exception &e) {
+			if (verbosity >= 2)
+				msg_write("FAILED TO LOAD RTX EXTENSIONS");
+		}
+	}
 	return instance;
 }
 
@@ -199,7 +195,7 @@ VkSurfaceKHR Instance::create_surface(GLFWwindow* window) {
 #define DECLARE_EXT(NAME) PFN_##NAME _##NAME = nullptr;
 #define LOAD_EXT(NAME) \
 		_##NAME = (PFN_##NAME)vkGetInstanceProcAddr(instance, #NAME); \
-		if (verbose) \
+		if (verbosity >= 2) \
 			msg_write(format(" %s: %s", #NAME, p2s((void*)_##NAME))); \
 		if (!_##NAME) \
 			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
@@ -214,11 +210,10 @@ DECLARE_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
 DECLARE_EXT(vkGetAccelerationStructureHandleNV);
 DECLARE_EXT(vkGetRayTracingShaderGroupHandlesNV);
 DECLARE_EXT(vkGetPhysicalDeviceProperties2);
-static bool rtx_loaded = false;
 
 
-void Instance::_ensure_rtx() {
-	if (rtx_loaded)
+void Instance::_ensure_rtx_extensions() {
+	if (rtx_extensions_loaded)
 		return;
 
 /*	VkPhysicalDeviceRaytracingPropertiesNV mRTProps;
@@ -234,8 +229,8 @@ void Instance::_ensure_rtx() {
 
 	vkGetPhysicalDeviceProperties2(device, &devProps);*/
 
-	if (verbose)
-		std::cout << "loading rtx extensions...\n";
+	if (verbosity >= 1)
+		msg_write("loading rtx extensions...");
 	LOAD_EXT(vkCmdTraceRaysNV);
 	LOAD_EXT(vkCreateRayTracingPipelinesNV);
 	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
@@ -248,11 +243,11 @@ void Instance::_ensure_rtx() {
 	LOAD_EXT(vkGetPhysicalDeviceProperties2);
 
 	if (!_vkCreateRayTracingPipelinesNV)
-		std::cerr << "CAN NOT LOAD RTX EXTENSIONS\n";
-	if (verbose)
-		std::cout << " create pipeline: " << p2s((void*)_vkCreateRayTracingPipelinesNV).c_str() << "\n";
+		msg_error("CAN NOT LOAD RTX EXTENSIONS");
+	if (verbosity >= 3)
+		msg_write(" create pipeline: " + p2s((void*)_vkCreateRayTracingPipelinesNV));
 
-	rtx_loaded = true;
+	rtx_extensions_loaded = true;
 }
 
 Array<VkLayerProperties> get_available_layers() {
@@ -268,7 +263,7 @@ Array<VkLayerProperties> get_available_layers() {
 bool check_validation_layer_support() {
 	auto available_layers = get_available_layers();
 
-	if (verbose) {
+	if (verbosity >= 3) {
 		msg_write("available layers:");
 		for (const auto& layer_properties : available_layers)
 			msg_write(format("  %s", layer_properties.layerName));

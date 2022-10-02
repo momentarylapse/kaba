@@ -155,7 +155,13 @@ bool ImageAndMemory::is_depth_buffer() const {
 	return format_is_depth_buffer(format);
 }
 bool ImageAndMemory::has_stencil_component() const {
-	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT or format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+VkImageAspectFlagBits ImageAndMemory::aspect() const {
+	if (is_depth_buffer())
+		return VK_IMAGE_ASPECT_DEPTH_BIT;
+	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {

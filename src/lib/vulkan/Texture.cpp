@@ -4,8 +4,8 @@
 #include <vulkan/vulkan.h>
 
 #include <cmath>
-#include <iostream>
 
+#include "common.h"
 #include "helper.h"
 #include "CommandBuffer.h"
 #include "Buffer.h"
@@ -14,10 +14,6 @@
 #include "../os/msg.h"
 
 namespace vulkan {
-
-extern bool verbose;
-
-Array<Texture*> textures;
 
 VkFormat parse_format(const string &s) {
 	if (s == "rgba:i8")
@@ -111,8 +107,6 @@ Texture::Texture() {
 	magfilter = VK_FILTER_LINEAR;
 	minfilter = VK_FILTER_LINEAR;
 	address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-	textures.add(this);
 }
 
 Texture::Texture(int w, int h, const string &format) : Texture() {
@@ -130,22 +124,6 @@ Texture::Texture(int w, int h, const string &format) : Texture() {
 
 Texture::~Texture() {
 	_destroy();
-
-	for (int i=0; i<textures.num; i++)
-		if (textures[i] == this)
-			textures.erase(i);
-}
-
-void Texture::__init__() {
-	new(this) Texture();
-}
-
-void Texture::__init_ext__(int w, int h, const string &format) {
-	new(this) Texture(w, h, format);
-}
-
-void Texture::__delete__() {
-	this->~Texture();
 }
 
 VolumeTexture::VolumeTexture(int nx, int ny, int nz, const string &format) {
@@ -156,10 +134,6 @@ VolumeTexture::VolumeTexture(int nx, int ny, int nz, const string &format) {
 	_create_image(nullptr, VK_IMAGE_TYPE_3D, parse_format(format), false, false, false);
 	view = image.create_view(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_3D, mip_levels, 0, 1);
 	_create_sampler();
-}
-
-void VolumeTexture::__init__(int nx, int ny, int nz, const string &format) {
-	new(this) VolumeTexture(nx, ny, nz, format);
 }
 
 StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
@@ -210,15 +184,11 @@ StorageTexture::StorageTexture(int nx, int ny, int nz, const string &_format) {
 	result = vkBindImageMemory(default_device->device, image.image, image.memory, 0);
 	if (VK_SUCCESS != result)
 		throw Exception("vkBindImageMemory failed");
-	if (verbose)
-		std::cout << "  storage image ok\n";
+	if (verbosity >= 2)
+		msg_write("  storage image ok");
 
 	view = image.create_view(VK_IMAGE_ASPECT_COLOR_BIT, depth == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_3D, mip_levels, 0, 1);
 	//_create_sampler();
-}
-
-void StorageTexture::__init__(int nx, int ny, int nz, const string &format) {
-	new(this) StorageTexture(nx, ny, nz, format);
 }
 
 void Texture::_destroy() {
@@ -234,9 +204,9 @@ void Texture::_destroy() {
 }
 
 Texture* Texture::load(const Path &filename) {
-	if (verbose)
-		std::cout << " load texture " << filename.str().c_str() << "\n";
-	if (filename.is_empty())
+	if (verbosity >= 1)
+		msg_write(" load texture " + filename.str());
+	if (!filename)
 		return new Texture(16, 16, "rgba:i8");
 	Texture *t = new Texture();
 	t->_load(filename);
@@ -290,7 +260,7 @@ void Texture::_create_image(const void *image_data, VkImageType type, VkFormat f
 
 
 	if (image_data) {
-		Buffer staging;
+		Buffer staging(default_device);
 		staging.create(layer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		for (int k=0; k<num_layers; k++) {
@@ -391,10 +361,6 @@ CubeMap::CubeMap(int size, const string &format) {
 	_create_sampler();
 }
 
-void CubeMap::__init__(int size, const string &format) {
-	new(this) CubeMap(size, format);
-}
-
 void CubeMap::write_side(int side, const Image &_image) {
 	if (image.format != VK_FORMAT_R8G8B8A8_UNORM) {
 		msg_error("CubeMap.write_side(): format is not rgba:i8");
@@ -413,7 +379,7 @@ void CubeMap::write_side(int side, const Image &_image) {
 	int layer_size = width * height * 4;
 
 
-	Buffer staging;
+	Buffer staging(default_device);
 	staging.create(layer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	staging.update_part(&_image.data[0], 0, layer_size);

@@ -21,15 +21,12 @@ namespace vulkan {
 
 
 VkSurfaceFormatKHR choose_swap_surface_format(const Array<VkSurfaceFormatKHR>& available_formats) {
-	if (available_formats.num == 1 and available_formats[0].format == VK_FORMAT_UNDEFINED) {
+	if (available_formats.num == 1 and available_formats[0].format == VK_FORMAT_UNDEFINED)
 		return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-	}
 
-	for (const auto& format: available_formats) {
-		if (format.format == VK_FORMAT_B8G8R8A8_UNORM and format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+	for (const auto& format: available_formats)
+		if (format.format == VK_FORMAT_B8G8R8A8_UNORM and format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return format;
-		}
-	}
 
 	return available_formats[0];
 }
@@ -38,11 +35,10 @@ VkPresentModeKHR choose_swap_present_mode(const Array<VkPresentModeKHR> availabl
 	VkPresentModeKHR best_mode = VK_PRESENT_MODE_FIFO_KHR;
 
 	for (const auto& mode: available_present_modes) {
-		if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
 			return mode;
-		} else if (mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+		else if (mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
 			best_mode = mode;
-		}
 	}
 
 	return best_mode;
@@ -52,7 +48,6 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFW
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
 	} else {
-
 
 		int win_width = 0;
 		int win_height = 0;
@@ -92,9 +87,9 @@ Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, Dep
 	Array<FrameBuffer*> frame_buffers;
 	auto textures = create_textures();
 
-	for (size_t i=0; i<image_count; i++) {
+	for (size_t i=0; i<image_count; i++)
 		frame_buffers.add(new FrameBuffer(render_pass, {textures[i], depth_buffer}));
-	}
+
 	return frame_buffers;
 }
 
@@ -131,9 +126,6 @@ RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
 }
 
 
-//	create_frame_buffers(default_render_pass, depth_buffer);
-
-
 void SwapChain::create() {
 	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
 
@@ -144,9 +136,8 @@ void SwapChain::create() {
 	height = extent.height;
 
 	image_count = swap_chain_support.capabilities.minImageCount + 1;
-	if (swap_chain_support.capabilities.maxImageCount > 0 and image_count > swap_chain_support.capabilities.maxImageCount) {
+	if (swap_chain_support.capabilities.maxImageCount > 0 and image_count > swap_chain_support.capabilities.maxImageCount)
 		image_count = swap_chain_support.capabilities.maxImageCount;
-	}
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -175,9 +166,9 @@ void SwapChain::create() {
 	info.presentMode = present_mode;
 	info.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain) != VK_SUCCESS)
 		throw Exception("failed to create swap chain!");
-	}
+
 	image_format = surface_format.format;
 }
 
@@ -215,21 +206,8 @@ SwapChain::~SwapChain() {
 	cleanup();
 }
 
-
-void SwapChain::__init__(GLFWwindow* window, Device *device) {
-	new(this) SwapChain(window, device);
-}
-
-void SwapChain::__delete__() {
-	this->~SwapChain();
-}
-
 void SwapChain::cleanup() {
-/*	if (default_render_pass)
-		delete default_render_pass;
-	default_render_pass = nullptr;
-
-	for (auto frame_buffer: frame_buffers)
+/*	for (auto frame_buffer: frame_buffers)
 		delete frame_buffer;
 	frame_buffers.clear();
 	images.clear(); // only references anyways
@@ -248,13 +226,10 @@ void SwapChain::cleanup() {
 void SwapChain::rebuild() {
 	cleanup();
 	create();
-
-	//default_render_pass->rebuild();
 }
 
 
 bool SwapChain::present(int image_index, const Array<Semaphore*> &wait_sem) {
-
 	auto wait_semaphores = extract_semaphores(wait_sem);
 
 	VkPresentInfoKHR present_info = {};
@@ -276,7 +251,6 @@ bool SwapChain::present(int image_index, const Array<Semaphore*> &wait_sem) {
 }
 
 bool SwapChain::acquire_image(int *image_index, Semaphore *signal_sem) {
-
 	VkResult result = vkAcquireNextImageKHR(device->device, swap_chain, std::numeric_limits<uint64_t>::max(), signal_sem->semaphore, VK_NULL_HANDLE, (unsigned int*)image_index);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {

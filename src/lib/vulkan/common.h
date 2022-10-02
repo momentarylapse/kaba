@@ -10,6 +10,8 @@
 
 namespace vulkan {
 
+extern int verbosity;
+
 enum class Requirements {
 	NONE = 0,
 	ANISOTROPY = 1,

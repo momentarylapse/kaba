@@ -7,9 +7,7 @@
 #include "Device.h"
 #include <vulkan/vulkan.h>
 
-#include <array>
-#include <iostream>
-
+#include "common.h"
 #include "helper.h"
 #include "../os/file.h"
 #include "../os/filesystem.h"
@@ -28,7 +26,6 @@ namespace vulkan {
 static shaderc_compiler_t shaderc = nullptr;
 #endif
 
-extern bool verbose;
 
 	VkShaderModule create_shader_module(const bytes &code) {
 		if (code.num == 0)
@@ -39,9 +36,8 @@ extern bool verbose;
 		info.pCode = reinterpret_cast<const uint32_t*>(code.data);
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(default_device->device, &info, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(default_device->device, &info, nullptr, &shaderModule) != VK_SUCCESS)
 			throw Exception("failed to create shader module!");
-		}
 
 		return shaderModule;
 	}
@@ -57,8 +53,6 @@ extern bool verbose;
 
 
 	string vertex_module_default = "vertex-default-nix";
-
-	static shared_array<Shader> shaders;
 
 	string shader_error;
 
@@ -296,8 +290,6 @@ extern bool verbose;
 
 		s->push_size = meta.push_size;
 		s->descr_layouts = DescriptorSet::parse_bindings(meta.bindings);
-
-		shaders.add(s);
 		return s;
 	}
 #else
@@ -315,30 +307,21 @@ extern bool verbose;
 	}
 
 	Shader::~Shader() {
-		if (verbose)
-			std::cout << "delete shader" << "\n";
+		if (verbosity >= 1)
+			msg_write("delete shader");
 		for (auto &m: modules)
 			vkDestroyShaderModule(default_device->device, m.module, nullptr);
-		for (auto &l: descr_layouts) {
+		for (auto &l: descr_layouts)
 			DescriptorSet::destroy_layout(l);
-		}
 	}
 
-
-	void Shader::__init__() {
-		new(this) Shader();
-	}
-
-	void Shader::__delete__() {
-		this->~Shader();
-	}
 
 	Shader* Shader::load(const Path &_filename) {
 		if (_filename.is_empty())
 			return nullptr;
 		Path filename = directory << _filename;
-		if (verbose)
-			std::cout << "load shader " << filename.str().c_str() << "\n";
+		if (verbosity >= 1)
+			msg_write(format("load shader %s", filename));
 
 #if HAS_LIB_SHADERC
 		if (!os::fs::exists(filename.with(".compiled")))
@@ -377,7 +360,7 @@ extern bool verbose;
 				} else if (tag == "RayAnyHitShader") {
 					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_ANY_HIT_BIT_NV});
 				} else {
-					std::cerr << "WARNING: " << value.c_str() << "\n";
+					msg_write("WARNING: " + value);
 				}
 			}
 		} catch(...) {

@@ -11,7 +11,6 @@
 #include "vulkan.h"
 #include "FrameBuffer.h"
 #include "helper.h"
-#include <iostream>
 
 namespace vulkan {
 
@@ -24,10 +23,6 @@ DepthBuffer::DepthBuffer(int w, int h, VkFormat _format, bool _with_sampler) {
 }
 
 DepthBuffer::DepthBuffer(int w, int h, const string &format, bool _with_sampler) : DepthBuffer(w, h, parse_format(format), _with_sampler) {}
-
-void DepthBuffer::__init__(int w, int h, const string &format, bool _with_sampler) {
-	new(this) DepthBuffer(w, h, format, _with_sampler);
-}
 
 void DepthBuffer::create(int w, int h, VkFormat format) {
 	width = w;
@@ -61,14 +56,6 @@ FrameBuffer::~FrameBuffer() {
 }
 
 
-
-void FrameBuffer::__init__(RenderPass *rp, const Array<Texture*> &attachments) {
-	new(this) FrameBuffer(rp, attachments);
-}
-
-void FrameBuffer::__delete__() {
-	this->~FrameBuffer();
-}
 
 void FrameBuffer::update(RenderPass *rp, const Array<Texture*> &_attachments) {
 	update_x(rp, _attachments, 0);
@@ -112,9 +99,8 @@ void FrameBuffer::_create(RenderPass *rp, const Array<Texture*> &_attachments, i
 	info.height = height;
 	info.layers = 1;
 
-	if (vkCreateFramebuffer(default_device->device, &info, nullptr, &frame_buffer) != VK_SUCCESS) {
+	if (vkCreateFramebuffer(default_device->device, &info, nullptr, &frame_buffer) != VK_SUCCESS)
 		throw Exception("failed to create framebuffer!");
-	}
 }
 
 void FrameBuffer::_destroy() {

@@ -9,14 +9,18 @@
 
 #include "AccelerationStructure.h"
 #include "helper.h"
+#include "common.h"
 #include "../math/mat4.h"
-#include <iostream>
+#include "../os/msg.h"
 
 namespace vulkan {
 
 
-AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV type, const Array<VkGeometryNV> &geo, const uint32_t instanceCount) {
-	std::cout << format(" + AccStruc  inst=%d  geo=%d\n", instanceCount, geo.num).c_str();
+AccelerationStructure::AccelerationStructure(Device *_device, const VkAccelerationStructureTypeNV type, const Array<VkGeometryNV> &geo, const uint32_t instanceCount) {
+	if (verbosity >= 2)
+		msg_write(format(" + AccStruc  inst=%d  geo=%d", instanceCount, geo.num));
+	device = _device->device;
+
 	info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
 	info.type = type;
 	info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
@@ -28,62 +32,65 @@ AccelerationStructure::AccelerationStructure(const VkAccelerationStructureTypeNV
 	ci.compactedSize = 0;
 	ci.info = info;
 
-	VkResult error = _vkCreateAccelerationStructureNV(default_device->device, &ci, nullptr, &structure);
+	VkResult error = _vkCreateAccelerationStructureNV(device, &ci, nullptr, &structure);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to create acceleration structure");
 
-	VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-	memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-	memoryRequirementsInfo.accelerationStructure = structure;
-	memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+	VkAccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = {};
+	memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+	memory_requirements_info.accelerationStructure = structure;
+	memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
 
 	VkMemoryRequirements2 memoryRequirements;
-	_vkGetAccelerationStructureMemoryRequirementsNV(default_device->device, &memoryRequirementsInfo, &memoryRequirements);
+	_vkGetAccelerationStructureMemoryRequirementsNV(device, &memory_requirements_info, &memoryRequirements);
 
-	VkMemoryAllocateInfo memoryAllocateInfo = {};
-	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.allocationSize = memoryRequirements.memoryRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = default_device->find_memory_type(memoryRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VkMemoryAllocateInfo memory_allocate_info = {};
+	memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memory_allocate_info.allocationSize = memoryRequirements.memoryRequirements.size;
+	memory_allocate_info.memoryTypeIndex = _device->find_memory_type(memoryRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	error = vkAllocateMemory(default_device->device, &memoryAllocateInfo, nullptr, &memory);
+	error = vkAllocateMemory(device, &memory_allocate_info, nullptr, &memory);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to allocate memory");
 
-	VkBindAccelerationStructureMemoryInfoNV bindInfo = {};
-	bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-	bindInfo.accelerationStructure = structure;
-	bindInfo.memory = memory;
-	bindInfo.memoryOffset = 0;
-	bindInfo.deviceIndexCount = 0;
-	bindInfo.pDeviceIndices = nullptr;
+	VkBindAccelerationStructureMemoryInfoNV bind_info = {};
+	bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+	bind_info.accelerationStructure = structure;
+	bind_info.memory = memory;
+	bind_info.memoryOffset = 0;
+	bind_info.deviceIndexCount = 0;
+	bind_info.pDeviceIndices = nullptr;
 
-	error = _vkBindAccelerationStructureMemoryNV(default_device->device, 1, &bindInfo);
+	error = _vkBindAccelerationStructureMemoryNV(device, 1, &bind_info);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to bind acceleration structure");
 
-	error = _vkGetAccelerationStructureHandleNV(default_device->device, structure, sizeof(uint64_t), &handle);
+	error = _vkGetAccelerationStructureHandleNV(device, structure, sizeof(uint64_t), &handle);
 	if (VK_SUCCESS != error)
 		throw Exception("failed to get acceleration structure handle");
-	std::cout << "handle: " << handle << "\n";
-
+	if (verbosity >= 2)
+		msg_write("handle: " + i2s(handle));
 }
 
 AccelerationStructure::~AccelerationStructure() {
-	_vkDestroyAccelerationStructureNV(default_device->device, structure, nullptr);
+	_vkDestroyAccelerationStructureNV(device, structure, nullptr);
 	structure = VK_NULL_HANDLE;
-	vkFreeMemory(default_device->device, memory, nullptr);
+	vkFreeMemory(device, memory, nullptr);
 	memory = VK_NULL_HANDLE;
 }
 
 void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicArray &instances) {
-	std::cout << "   AccStr build\n";
+	if (verbosity >= 2)
+		msg_write("   AccStr build");
 
-	Buffer instancesBuffer;
+	Buffer instances_buffer(default_device);
 	if (instances.num > 0) {
-		std::cout << p2s(&instances).c_str() << "\n";
-		std::cout << "instance buffer " << instances.num <<"*"<< instances.element_size <<"\n";
-		instancesBuffer.create(instances.num * instances.element_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		instancesBuffer.update(instances.data);
+		if (verbosity >= 2) {
+			msg_write(p2s(&instances));
+			msg_write(format("instance buffer %d*%d", instances.num, instances.element_size));
+		}
+		instances_buffer.create(instances.num * instances.element_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		instances_buffer.update(instances.data);
 
 		info.instanceCount = static_cast<uint32_t>(instances.num);
 		info.geometryCount = geo.num;
@@ -101,30 +108,30 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 
 	VkMemoryRequirements2 mem_req = {};
 	mem_req.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-	_vkGetAccelerationStructureMemoryRequirementsNV(default_device->device, &mri, &mem_req);
+	_vkGetAccelerationStructureMemoryRequirementsNV(device, &mri, &mem_req);
 
-	Buffer scratch;
+	Buffer scratch(default_device);
 	scratch.create(mem_req.memoryRequirements.size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	auto cb = begin_single_time_commands();
 
 	_vkCmdBuildAccelerationStructureNV(cb->buffer, &info,
-							instancesBuffer.buffer, 0, VK_FALSE,
+							instances_buffer.buffer, 0, VK_FALSE,
 							structure, VK_NULL_HANDLE,
 							scratch.buffer, 0);
 
 	// multiple needs a memory barrier
-	VkMemoryBarrier memoryBarrier;
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-	memoryBarrier.pNext = nullptr;
-	memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-	memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-	vkCmdPipelineBarrier(cb->buffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &memoryBarrier, 0, 0, 0, 0);
+	VkMemoryBarrier barrier;
+	barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	barrier.pNext = nullptr;
+	barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+	vkCmdPipelineBarrier(cb->buffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &barrier, 0, 0, 0, 0);
 	end_single_time_commands(cb);
 
 }
 
-AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb) {
+AccelerationStructure *AccelerationStructure::create_bottom(Device *device, VertexBuffer *vb) {
 	Array<VkGeometryNV> geo;
 
 	//for (int i=0; i<vb.num; i++) {
@@ -148,24 +155,25 @@ AccelerationStructure *AccelerationStructure::create_bottom(VertexBuffer *vb) {
 		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 		geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 		geo.add(geometry);
-		std::cout << vb->output_count << "\n";
+		if (verbosity >= 3)
+			msg_write(vb->output_count);
 	//}
 
-	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geo, 0);
+	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geo, 0);
 	as->build(geo, {});
 	return as;
 }
 
-AccelerationStructure *AccelerationStructure::create_top(const DynamicArray &instances) {
-	std::cout << p2s(&instances).c_str() << "  ct\n";
-	AccelerationStructure *as = new AccelerationStructure(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
+AccelerationStructure *AccelerationStructure::create_top(Device *device, const DynamicArray &instances) {
+	if (verbosity >= 3)
+		msg_write(p2s(&instances) + "  ct");
+	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
 	as->build({}, instances);
 	return as;
 }
 
 
-AccelerationStructure *AccelerationStructure::create_top_simple(const Array<AccelerationStructure*> &blas) {
-
+AccelerationStructure *AccelerationStructure::create_top_simple(Device *device, const Array<AccelerationStructure*> &blas) {
 	struct VkGeometryInstance {
 	    float transform[12];
 	    uint32_t instanceId : 24;
@@ -179,7 +187,6 @@ AccelerationStructure *AccelerationStructure::create_top_simple(const Array<Acce
     instances.resize(blas.num);
 
     for (size_t i = 0; i < blas.num; ++i) {
-
         VkGeometryInstance& instance = instances[i];
         memcpy(instance.transform, &mat4::ID, 12*4);
         instance.instanceId = static_cast<uint32_t>(i);
@@ -189,8 +196,7 @@ AccelerationStructure *AccelerationStructure::create_top_simple(const Array<Acce
         instance.accelerationStructureHandle = blas[i]->handle;
     }
 
-
-    return create_top(instances);
+    return create_top(device, instances);
 }
 
 } /* namespace vulkan */

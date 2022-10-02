@@ -21,10 +21,8 @@ class RenderPass;
 
 class DepthBuffer : public Texture {
 public:
-
 	DepthBuffer(int w, int h, VkFormat format, bool with_sampler);
 	DepthBuffer(int w, int h, const string &format, bool with_sampler);
-	void __init__(int w, int h, const string &format, bool with_sampler);
 
 	void create(int w, int h, VkFormat format);
 };
@@ -33,9 +31,6 @@ class FrameBuffer : public Sharable<base::Empty> {
 public:
 	FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments);
 	~FrameBuffer();
-
-	void __init__(RenderPass *rp, const Array<Texture*> &attachments);
-	void __delete__();
 
 	VkFramebuffer frame_buffer;
 	int width, height;

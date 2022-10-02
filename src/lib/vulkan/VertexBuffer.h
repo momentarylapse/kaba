@@ -26,9 +26,6 @@ namespace vulkan {
 		VertexBuffer(const string &format);
 		~VertexBuffer();
 
-		void __init__(const string &format);
-		void __delete__();
-
 		void _create_buffer(Buffer &buf, const DynamicArray &array);
 		void _create_index_buffer_i16(const Array<uint16_t> &indices);
 		void _create_index_buffer_i32(const Array<int> &indices);

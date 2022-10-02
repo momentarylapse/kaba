@@ -26,6 +26,7 @@ namespace vulkan{
 
 		bool is_depth_buffer() const;
 		bool has_stencil_component() const;
+		VkImageAspectFlagBits aspect() const;
 	};
 
 	//void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);

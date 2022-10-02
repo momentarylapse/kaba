@@ -31,10 +31,6 @@ namespace vulkan {
 		Texture(int w, int h, const string &format);
 		~Texture();
 
-		void __init__();
-		void __init_ext__(int w, int h, const string &format);
-		void __delete__();
-
 		void _load(const Path &filename);
 		void write(const Image &image);
 		void writex(const void *image, int nx, int ny, int nz, const string &format);
@@ -64,23 +60,18 @@ namespace vulkan {
 	class VolumeTexture : public Texture {
 	public:
 		VolumeTexture(int nx, int ny, int nz, const string &format);
-		void __init__(int nx, int ny, int nz, const string &format);
 	};
 
 	class StorageTexture : public Texture {
 	public:
 		StorageTexture(int nx, int ny, int nz, const string &format);
-		void __init__(int nx, int ny, int nz, const string &format);
 	};
 
 	class CubeMap : public Texture {
 	public:
 		CubeMap(int size, const string &format);
-		void __init__(int size, const string &format);
 		void write_side(int side, const Image &image);
 	};
-
-	extern Array<Texture*> textures;
 };
 
 #endif

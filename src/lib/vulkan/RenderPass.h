@@ -30,9 +30,6 @@ namespace vulkan{
 		RenderPass(const Array<VkFormat> &formats, const string &options);
 		~RenderPass();
 
-		void __init__(const Array<string> &formats, const string &options);
-		void __delete__();
-
 		void create();
 		void destroy();
 		void rebuild();

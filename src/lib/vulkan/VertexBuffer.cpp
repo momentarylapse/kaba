@@ -2,7 +2,6 @@
 
 #include "VertexBuffer.h"
 #include <vulkan/vulkan.h>
-#include <iostream>
 
 #include "helper.h"
 #include "../os/msg.h"
@@ -10,6 +9,7 @@
 namespace vulkan{
 
 Array<VertexBuffer*> vertex_buffers;
+extern Device *default_device;
 
 VkFormat _parse_vb_component_(const string &s) {
 	VkVertexInputAttributeDescription a;
@@ -61,7 +61,10 @@ VkVertexInputBindingDescription parse_binding_descr(const string &format) {
 }
 
 
-VertexBuffer::VertexBuffer(const string &format) {
+VertexBuffer::VertexBuffer(const string &format) :
+		vertex_buffer(default_device),
+		index_buffer(default_device)
+{
 	vertex_count = 0;
 	output_count = 0;
 	index_type = VK_INDEX_TYPE_UINT16;
@@ -78,14 +81,6 @@ VertexBuffer::~VertexBuffer() {
 	for (int i=0; i<vertex_buffers.num; i++)
 		if (vertex_buffers[i] == this)
 			vertex_buffers.erase(i);
-}
-
-void VertexBuffer::__init__(const string &format) {
-	new(this) VertexBuffer(format);
-}
-
-void VertexBuffer::__delete__() {
-	this->~VertexBuffer();
 }
 
 void VertexBuffer::_destroy() {
@@ -115,7 +110,7 @@ void VertexBuffer::_create_buffer(Buffer &buf, const DynamicArray &array) {
 	VkDeviceSize buffer_size = array.num * array.element_size;
 
 	// -> staging
-	Buffer staging;
+	Buffer staging(vertex_buffer.device);
 	staging.create(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	staging.update_part(array.data, 0, buffer_size);
 

@@ -16,8 +16,6 @@
 #include "../base/set.h"
 #include "../base/iter.h"
 
-#include <iostream>
-
 namespace vulkan {
 
 

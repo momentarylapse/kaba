@@ -14,15 +14,12 @@
 
 namespace vulkan {
 
-bool verbose = true;
+int verbosity = 0;
 
 
 
 
 Instance *init(const Array<string> &op) {
-	if (verbose)
-		msg_write("vulkan init");
-
 	return Instance::create(op);
 }
 

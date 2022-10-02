@@ -16,15 +16,16 @@
 
 namespace vulkan {
 
+class Device;
+
+
 class Fence {
 public:
-	Fence();
+	Fence(Device *device);
 	~Fence();
 
-	void __init__();
-	void __delete__();
-
 	VkFence fence;
+	VkDevice device;
 
 	void reset();
 	void wait();
@@ -32,13 +33,11 @@ public:
 
 class Semaphore {
 public:
-	Semaphore();
+	Semaphore(Device *device);
 	~Semaphore();
 
-	void __init__();
-	void __delete__();
-
 	VkSemaphore semaphore;
+	VkDevice device;
 };
 
 

@@ -21,16 +21,14 @@
 #include "../base/iter.h"
 #include "../image/color.h"
 #include "../math/rect.h"
-#include <array>
-
-#include <iostream>
+#include "../os/msg.h"
 
 namespace vulkan{
 
-	VkCommandPool command_pool;
+	//VkCommandPool command_pool;
 
-
-void create_command_pool(Device *device) {
+CommandPool::CommandPool(Device *_device) {
+	device = _device;
 	VkCommandPoolCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	info.queueFamilyIndex = device->indices.graphics_family.value();
@@ -40,13 +38,17 @@ void create_command_pool(Device *device) {
 		throw Exception("failed to create command pool!");
 }
 
-void destroy_command_pool(Device *device) {
+CommandPool::~CommandPool() {
 	vkDestroyCommandPool(device->device, command_pool, nullptr);
+}
+
+CommandBuffer *CommandPool::create_command_buffer() {
+	return new CommandBuffer(this);
 }
 
 
 CommandBuffer *begin_single_time_commands() {
-	auto cb = new CommandBuffer();
+	auto cb = new CommandBuffer(default_device->command_pool);
 
 	VkCommandBufferBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -71,38 +73,23 @@ void end_single_time_commands(CommandBuffer *cb) { //VkCommandBuffer command_buf
 	delete cb;
 }
 
-CommandBuffer::CommandBuffer() {
+CommandBuffer::CommandBuffer(CommandPool *_pool) {
+	pool = _pool;
 	cur_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	current_framebuffer = nullptr;
-	_create();
-}
-
-CommandBuffer::~CommandBuffer() {
-	_destroy();
-}
-
-void CommandBuffer::__init__() {
-	new(this) CommandBuffer();
-}
-
-void CommandBuffer::__delete__() {
-	this->~CommandBuffer();
-}
-
-void CommandBuffer::_create() {
 
 	VkCommandBufferAllocateInfo ai = {};
 	ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	ai.commandPool = command_pool;
+	ai.commandPool = pool->command_pool;
 	ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	ai.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(default_device->device, &ai, &buffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(pool->device->device, &ai, &buffer) != VK_SUCCESS)
 		throw Exception("failed to allocate command buffers!");
 }
 
-void CommandBuffer::_destroy() {
-	vkFreeCommandBuffers(default_device->device, command_pool, 1, &buffer);
+CommandBuffer::~CommandBuffer() {
+	vkFreeCommandBuffers(pool->device->device, pool->command_pool, 1, &buffer);
 }
 
 
@@ -127,6 +114,7 @@ void CommandBuffer::bind_descriptor_set(int index, DescriptorSet *dset) {
 void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices) {
 	if (dset->num_dynamic_ubos != indices.num)
 		throw Exception("number of indices does not match descriptor set");
+
 	Array<unsigned int> offsets;
 	int i = 0;
 	for (auto &b: dset->buffers) {
@@ -169,9 +157,8 @@ void CommandBuffer::begin() {
 }
 
 void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
-	if (fb->attachments.num != rp->attachments.num) {
-		std::cerr << "WARNING: CommandBuffer.begin_render_pass() - RenderPass/FrameBuffer attachment mismatch\n";
-	}
+	if (fb->attachments.num != rp->attachments.num)
+		msg_write("WARNING: CommandBuffer.begin_render_pass() - RenderPass/FrameBuffer attachment mismatch");
 	current_framebuffer = fb;
 
 	Array<VkClearValue> clear_values;
@@ -259,7 +246,7 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 	for (auto *t: textures) {
 		bool is_depth = t->image.is_depth_buffer();
 		VkImageSubresourceRange sr = {};
-		sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+		sr.aspectMask = t->image.aspect();
 		sr.baseArrayLayer = 0;
 		sr.baseMipLevel = 0;
 		sr.layerCount = 1;
@@ -273,7 +260,6 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 		b.image = t->image.image;
 		b.subresourceRange = sr;
 		barriers.add(b);
-
 	}
 
 	auto source_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
@@ -291,10 +277,8 @@ void CommandBuffer::barrier(const Array<Texture*> &textures, int mode) {
 
 
 void CommandBuffer::image_barrier(const Texture *t, AccessFlags src_access, AccessFlags dst_access, ImageLayout old_layout, ImageLayout new_layout) {
-
-	bool is_depth = t->image.is_depth_buffer();
 	VkImageSubresourceRange sr = {};
-	sr.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	sr.aspectMask = t->image.aspect();
 	sr.baseArrayLayer = 0;
 	sr.baseMipLevel = 0;
 	sr.layerCount = 1;
@@ -320,14 +304,10 @@ void CommandBuffer::image_barrier(const Texture *t, AccessFlags src_access, Acce
 }
 
 void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const Array<int> &extend) {
-
-	bool src_is_depth = source->image.is_depth_buffer();
-	bool dst_is_depth = dest->image.is_depth_buffer();
-
 	VkImageCopy region;
-	region.srcSubresource = {(VkImageAspectFlags)(src_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
+	region.srcSubresource = {source->image.aspect(), 0, 0, 1};
 	region.srcOffset = {extend[0], extend[1], 0};
-	region.dstSubresource = {(VkImageAspectFlags)(dst_is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
+	region.dstSubresource = {dest->image.aspect(), 0, 0, 1};
 	region.dstOffset = {extend[4], extend[5], 0};
 	region.extent = {(unsigned)extend[2], (unsigned)extend[3], 1};
 	vkCmdCopyImage(buffer,
@@ -352,9 +332,8 @@ void CommandBuffer::end_render_pass() {
 }
 
 void CommandBuffer::end() {
-	if (vkEndCommandBuffer(buffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
 		throw Exception("failed to record command buffer!");
-	}
 }
 
 

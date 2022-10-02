@@ -80,9 +80,6 @@ namespace vulkan{
 		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VertexBuffer *vb);
 		~GraphicsPipeline();
 
-		void __init__(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
-		void __delete__();
-
 		void rebuild();
 
 		// configuration
@@ -121,15 +118,11 @@ namespace vulkan{
 	class ComputePipeline : public BasePipeline {
 	public:
 		ComputePipeline(const string &dset_layouts, Shader *shader);
-
-		void __init__(const string &dset_layouts, Shader *shaders);
 	};
 
 	class RayPipeline : public BasePipeline {
 	public:
 		RayPipeline(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth);
-
-		void __init__(const string &dset_layouts, const Array<Shader*> &shaders, int recursion_depth);
 
 		void create_groups(const Array<Shader*> &shaders);
 		void create_sbt();

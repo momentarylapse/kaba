@@ -29,9 +29,6 @@ namespace vulkan{
 		DescriptorPool(const string &s, int max_sets);
 		~DescriptorPool();
 
-		void __init__(const string &s, int max_sets);
-		void __delete__();
-
 		DescriptorSet *create_set(const string &s);
 		DescriptorSet *_create_set_str(const string &s) { return create_set(s); }
 		DescriptorSet *create_set(Shader *s);
@@ -46,7 +43,6 @@ namespace vulkan{
 		DescriptorSet(DescriptorPool *pool, VkDescriptorSetLayout layout);
 	public:
 		~DescriptorSet();
-		void __delete__();
 
 		void set_buffer(int binding, Buffer *b);
 		void set_buffer_with_offset(int binding, Buffer *b, int offset);

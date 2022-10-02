@@ -14,13 +14,10 @@
 #include "helper.h"
 #include "common.h"
 
-#include <iostream>
 #include "../base/set.h"
 #include "../os/msg.h"
 
 namespace vulkan {
-
-extern bool verbose;
 
 Device *default_device;
 
@@ -83,10 +80,10 @@ bool check_device_extension_support(VkPhysicalDevice device, Requirements req) {
 	for (auto e: device_extensions(req))
 		required_extensions.add(e);
 
-	if (verbose)
+	if (verbosity >= 3)
 		msg_write("---- GPU-----");
 	for (const auto& extension : available_extensions) {
-		if (verbose)
+		if (verbosity >= 3)
 			msg_write("   " + string(extension.extensionName));
 		required_extensions.erase(extension.extensionName);
 	}
@@ -99,6 +96,8 @@ Device::Device() {
 }
 
 Device::~Device() {
+	if (command_pool)
+		delete command_pool;
 	if (surface)
 		vkDestroySurfaceKHR(instance->instance, surface, nullptr);
 	if (device)
@@ -144,13 +143,13 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 
 	auto devices = get_all_physical_devices(instance);
 
-	if (verbose)
+	if (verbosity >= 3)
 		show_physical_devices(devices);
 
 	physical_device = VK_NULL_HANDLE;
 	for (const auto& dev: devices) {
 		if (is_device_suitable(dev, surface, req)) {
-			if (verbose)
+			if (verbosity >= 2)
 				msg_write(" ok");
 			physical_device = dev;
 			break;
@@ -161,18 +160,18 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 		throw Exception("failed to find a suitable GPU!");
 
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
-	if (verbose) {
+	if (verbosity >= 2) {
 		msg_write("  CHOSEN: " + physical_name());
-		std::cout << " props\n";
-		std::cout << "  minUniformBufferOffsetAlignment  " << physical_device_properties.limits.minUniformBufferOffsetAlignment << "\n";
-		std::cout << "  maxPushConstantsSize  " << physical_device_properties.limits.maxPushConstantsSize << "\n";
-		std::cout << "  maxImageDimension2D  " << physical_device_properties.limits.maxImageDimension2D << "\n";
-		std::cout << "  maxUniformBufferRange  " << physical_device_properties.limits.maxUniformBufferRange << "\n";
-		std::cout << "  maxPerStageDescriptorUniformBuffers  " << physical_device_properties.limits.maxPerStageDescriptorUniformBuffers << "\n";
-		std::cout << "  maxPerStageDescriptorSamplers  " << physical_device_properties.limits.maxPerStageDescriptorSamplers << "\n";
-		std::cout << "  maxDdevice->escriptorSetSamplers  " << physical_device_properties.limits.maxDescriptorSetSamplers << "\n";
-		std::cout << "  maxDescriptorSetUniformBuffers  " << physical_device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
-		std::cout << "  maxDescriptorSetUniformBuffersDynamic  " << physical_device_properties.limits.maxDescriptorSetUniformBuffersDynamic << "\n";
+		msg_write(" props:");
+		msg_write("  minUniformBufferOffsetAlignment  " + i2s(physical_device_properties.limits.minUniformBufferOffsetAlignment));
+		msg_write("  maxPushConstantsSize  " + i2s(physical_device_properties.limits.maxPushConstantsSize));
+		msg_write("  maxImageDimension2D  " + i2s(physical_device_properties.limits.maxImageDimension2D));
+		msg_write("  maxUniformBufferRange  " + i2s(physical_device_properties.limits.maxUniformBufferRange));
+		msg_write("  maxPerStageDescriptorUniformBuffers  " + i2s(physical_device_properties.limits.maxPerStageDescriptorUniformBuffers));
+		msg_write("  maxPerStageDescriptorSamplers  " + i2s(physical_device_properties.limits.maxPerStageDescriptorSamplers));
+		msg_write("  maxDdevice->escriptorSetSamplers  " + i2s(physical_device_properties.limits.maxDescriptorSetSamplers));
+		msg_write("  maxDescriptorSetUniformBuffers  " + i2s(physical_device_properties.limits.maxDescriptorSetUniformBuffers));
+		msg_write("  maxDescriptorSetUniformBuffersDynamic  " + i2s(physical_device_properties.limits.maxDescriptorSetUniformBuffersDynamic));
 		//std::cout << "  maxDescriptorSetUniformBuffers  " << physical_device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
 		//std::cout << "  maxDescriptorSetUniformBuffers  " << physical_device_properties.limits.maxDescriptorSetUniformBuffers << "\n";
 	}
@@ -182,7 +181,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 	VkPhysicalDeviceFeatures2 dp2 = {};
 	dp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vkGetPhysicalDeviceFeatures2(physical_device, &dp2);*/
-	if (verbose)
+	if (verbosity >= 2)
 		msg_write(" done");
 }
 
@@ -343,7 +342,7 @@ Device *Device::create_simple(Instance *instance, GLFWwindow* window, const Arra
 	device->pick_physical_device(instance, surface, req);
 	device->create_logical_device(surface, req);
 
-	create_command_pool(device);
+	device->command_pool = new CommandPool(device);
 
 	if (sa_contains(op, "rtx"))
 		device->get_rtx_properties();
@@ -366,7 +365,7 @@ void Device::get_rtx_properties() {
 
 	//pvkGetPhysicalDeviceProperties2() FIXME
 	_vkGetPhysicalDeviceProperties2(physical_device, &dev_props);
-	if (verbose) {
+	if (verbosity >= 3) {
 		msg_write("PROPS");
 		msg_write(ray_tracing_properties.maxShaderGroupStride);
 		msg_write(ray_tracing_properties.shaderGroupBaseAlignment);

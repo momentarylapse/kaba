@@ -49,9 +49,6 @@ public:
 	SwapChain(GLFWwindow* window, Device *device);
 	~SwapChain();
 
-	void __init__(GLFWwindow* window, Device *device);
-	void __delete__();
-
 	void cleanup();
 	void create();
 

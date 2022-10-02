@@ -26,6 +26,7 @@ namespace vulkan{
 	class FrameBuffer;
 	class Texture;
 	class Device;
+	class CommandBuffer;
 
 
 	enum class AccessFlags {
@@ -51,22 +52,24 @@ namespace vulkan{
 		COMPUTE = VK_PIPELINE_BIND_POINT_COMPUTE
 	};
 
-	extern VkCommandPool command_pool;
+	class CommandPool {
+	public:
+		CommandPool(Device *device);
+		~CommandPool();
 
-	void create_command_pool(Device *device);
-	void destroy_command_pool(Device *device);
+		VkCommandPool command_pool;
+		Device *device;
+
+		CommandBuffer *create_command_buffer();
+	};
 
 	class CommandBuffer {
 	public:
-		CommandBuffer();
+		CommandBuffer(CommandPool *pool);
 		~CommandBuffer();
 
-		void __init__();
-		void __delete__();
-
-		void _create();
-		void _destroy();
 		VkCommandBuffer buffer;
+		CommandPool *pool;
 
 		VkPipelineBindPoint cur_bind_point;
 		BasePipeline *current_pipeline;

@@ -18,6 +18,7 @@
 namespace vulkan {
 
 	class Instance;
+	class CommandPool;
 	enum class Requirements;
 
 
@@ -39,6 +40,8 @@ public:
 	Queue graphics_queue;
 	Queue present_queue;
 	Queue compute_queue;
+
+	CommandPool *command_pool = nullptr;
 
 	string physical_name() const;
 

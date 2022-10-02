@@ -17,9 +17,6 @@ namespace vulkan{
 		Shader();
 		~Shader();
 
-		void __init__();
-		void __delete__();
-
 		struct Module {
 			VkShaderModule module;
 			VkShaderStageFlagBits stage;

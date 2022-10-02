@@ -17,9 +17,6 @@
 #include "Texture.h"
 #include <vulkan/vulkan.h>
 
-#include <array>
-#include <iostream>
-
 #include "helper.h"
 
 namespace vulkan {
@@ -69,13 +66,6 @@ VkDescriptorType descriptor_type(const string &s) {
 		vkDestroyDescriptorPool(default_device->device, pool, nullptr);
 	}
 
-	void DescriptorPool::__init__(const string &s, int max_sets) {
-		new(this) DescriptorPool(s, max_sets);
-	}
-	void DescriptorPool::__delete__() {
-		this->~DescriptorPool();
-	}
-
 	DescriptorSet *DescriptorPool::create_set(const string &s) {
 		Array<VkDescriptorType> types;
 		Array<int> binding_no;
@@ -112,10 +102,6 @@ VkDescriptorType descriptor_type(const string &s) {
 		// no VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT...
 		//vkFreeDescriptorSets(device, descriptor_pool, 1, &descriptor_set);
 		destroy_layout(layout);
-	}
-
-	void DescriptorSet::__delete__() {
-		this->~DescriptorSet();
 	}
 
 	template<class T>
@@ -221,11 +207,10 @@ VkDescriptorType descriptor_type(const string &s) {
 			lb.descriptorCount = 1;
 			lb.binding = binding_no[i];
 			lb.pImmutableSamplers = nullptr;
-			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-			} else {
+			else
 				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
-			}
 			lb.stageFlags = VK_SHADER_STAGE_ALL;
 			bindings.add(lb);
 		}
