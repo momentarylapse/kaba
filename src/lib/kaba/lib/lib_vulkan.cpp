@@ -438,6 +438,7 @@ void SIAddPackageVulkan() {
 			func_add_param("h", TypeInt);
 			func_add_param("format", TypeString);
 			func_add_param("with_sampler", TypeBool);
+		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, vul_p(&VulkanTexture::__delete__), Flags::OVERRIDE);
 
 
 	add_class(TypeFrameBuffer);
