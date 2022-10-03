@@ -63,7 +63,7 @@ VkPipelineLayout create_pipeline_layout(Shader *shader, const Array<VkDescriptor
 	info.setLayoutCount = dset_layouts.num;
 	info.pSetLayouts = &dset_layouts[0];
 	if (verbosity >= 2)
-		msg_write(format("create pipeline with %d layouts, %d push size", dset_layouts.num, shader->push_size));
+		msg_write(format("create pipeline with %d layouts, %d push size", dset_layouts.num, shader ? shader->push_size : -1));
 
 	VkPipelineLayout layout = VK_NULL_HANDLE;
 	if (vkCreatePipelineLayout(default_device->device, &info, nullptr, &layout) != VK_SUCCESS)
