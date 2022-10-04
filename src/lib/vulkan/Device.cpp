@@ -160,8 +160,9 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 		throw Exception("failed to find a suitable GPU!");
 
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
-	if (verbosity >= 2) {
+	if (verbosity >= 2)
 		msg_write("  CHOSEN: " + physical_name());
+	if (verbosity >= 3) {
 		msg_write(" props:");
 		msg_write("  minUniformBufferOffsetAlignment  " + i2s(physical_device_properties.limits.minUniformBufferOffsetAlignment));
 		msg_write("  maxPushConstantsSize  " + i2s(physical_device_properties.limits.maxPushConstantsSize));
@@ -186,6 +187,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 }
 
 void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
+	requirements = req;
 	indices = *QueueFamilyIndices::query(physical_device, surface, req);
 
 	Array<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -283,6 +285,13 @@ VkFormat Device::find_depth_format() {
 
 
 
+bool Device::has_rtx() const {
+	return requirements & Requirements::RTX;
+}
+
+bool Device::has_compute() const {
+	return requirements & Requirements::COMPUTE;
+}
 
 void Device::create_query_pool(int count) {
 	VkQueryPoolCreateInfo info = {};

@@ -35,6 +35,10 @@ public:
 
 	VkSurfaceKHR surface = VK_NULL_HANDLE; // TODO extract
 
+	Requirements requirements;
+	bool has_rtx() const;
+	bool has_compute() const;
+
 
 	QueueFamilyIndices indices;
 	Queue graphics_queue;

@@ -46,6 +46,7 @@ namespace vulkan {
 		void update_v3_v3_v2(const Array<Vertex1> &vertices);
 
 		bool is_indexed() const;
+		int stride() const;
 
 		void create_quad(const rect &r, const rect &s = rect::ID);
 	};

@@ -135,21 +135,24 @@ AccelerationStructure *AccelerationStructure::create_bottom(Device *device, Vert
 	Array<VkGeometryNV> geo;
 
 	//for (int i=0; i<vb.num; i++) {
+		if (verbosity >= 3)
+			msg_write(format("AS vertices=%d stride=%d", vb->vertex_count, vb->stride()));
 		VkGeometryNV geometry = {};
-
 		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
 		geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
 		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 		geometry.geometry.triangles.vertexData = vb->vertex_buffer.buffer;
 		geometry.geometry.triangles.vertexOffset = 0;
 		geometry.geometry.triangles.vertexCount = vb->vertex_count;
-		geometry.geometry.triangles.vertexStride = sizeof(float)*3;
+		geometry.geometry.triangles.vertexStride = vb->stride();
 		geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		geometry.geometry.triangles.indexData = VK_NULL_HANDLE;
-		//geometry.geometry.triangles.indexData = vb->index_buffer.buffer;
-		geometry.geometry.triangles.indexOffset = 0;
-		geometry.geometry.triangles.indexCount = vb->output_count;
-		geometry.geometry.triangles.indexType = vb->index_type;
+		if (vb->is_indexed()) {
+			msg_write("AS indexed");
+			geometry.geometry.triangles.indexData = vb->index_buffer.buffer;
+			geometry.geometry.triangles.indexOffset = 0;
+			geometry.geometry.triangles.indexCount = vb->output_count;
+			geometry.geometry.triangles.indexType = vb->index_type;
+		}
 		geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
 		geometry.geometry.triangles.transformOffset = 0;
 		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;

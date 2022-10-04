@@ -150,6 +150,10 @@ bool VertexBuffer::is_indexed() const {
 	return index_buffer.buffer;
 }
 
+int VertexBuffer::stride() const {
+	return binding_description.stride;
+}
+
 void VertexBuffer::create_quad(const rect &r, const rect &s) {
 	if (is_indexed()) {
 		update_v3_v3_v2({
