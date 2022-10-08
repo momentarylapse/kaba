@@ -2253,6 +2253,9 @@ void Parser::parse_top_level() {
 // convert text into script data
 void Parser::parse() {
 	Exp.reset_walker();
+	Exp.do_error_endl = [this] {
+		do_error_exp("unexpected newline");
+	};
 
 	parse_top_level();
 

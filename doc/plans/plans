@@ -50,3 +50,18 @@ TODO
 
 unification... (-_-)'
 
+
+
+
+== other ==
+
+* absolute base for namespaces?
+* generic classes
+* int[] etc as generics
+* max() etc as generics
+* aliases?
+** f32, f64?
+
+* don't allow explicit &x for input parameters?
+* syntax func f(i: out int)?
+
