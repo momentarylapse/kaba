@@ -5,12 +5,10 @@
 #include "../dynamic/dynamic.h"
 #include "../../os/msg.h"
 #include "../../base/callable.h"
+#include "../../base/map.h"
 #include <algorithm>
 #include <math.h>
 #include <cstdio>
-
-
-#include "../../base/map.h"
 
 
 namespace kaba {

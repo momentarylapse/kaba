@@ -130,6 +130,11 @@ public:
 };
 
 void do_experiments() {
+	msg_write(str(13.3f));
+	Array<int> i =  {1,2,3};
+	msg_write(str(i));
+	Array<string> ss = {"hallo", "b", "c"};
+	msg_write(str(ss));
 	//kaba::link_external("xxx_delete", (void*)&xxx_delete);
 
 	msg_write(disassemble((void*)&xxx_delete0, -1));
