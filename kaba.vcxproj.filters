@@ -633,6 +633,9 @@
     <ClInclude Include="src\lib\base\callable.h">
       <Filter>src\lib\base</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\base\iter.h">
+      <Filter>src\lib\base</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\base\macros.h">
       <Filter>src\lib\base</Filter>
     </ClInclude>
@@ -1090,6 +1093,9 @@
       <Filter>src\lib\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\vulkan\CommandBuffer.h">
+      <Filter>src\lib\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vulkan\common.h">
       <Filter>src\lib\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\vulkan\DescriptorSet.h">

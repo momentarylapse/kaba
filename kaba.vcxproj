@@ -328,6 +328,7 @@
     <ClInclude Include="src\lib\base\array.h" />
     <ClInclude Include="src\lib\base\base.h" />
     <ClInclude Include="src\lib\base\callable.h" />
+    <ClInclude Include="src\lib\base\iter.h" />
     <ClInclude Include="src\lib\base\macros.h" />
     <ClInclude Include="src\lib\base\map.h" />
     <ClInclude Include="src\lib\base\optional.h" />
@@ -481,6 +482,7 @@
     <ClInclude Include="src\lib\vulkan\AccelerationStructure.h" />
     <ClInclude Include="src\lib\vulkan\Buffer.h" />
     <ClInclude Include="src\lib\vulkan\CommandBuffer.h" />
+    <ClInclude Include="src\lib\vulkan\common.h" />
     <ClInclude Include="src\lib\vulkan\DescriptorSet.h" />
     <ClInclude Include="src\lib\vulkan\Device.h" />
     <ClInclude Include="src\lib\vulkan\FrameBuffer.h" />
