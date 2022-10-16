@@ -28,6 +28,9 @@ namespace vulkan {
 		void update(void *source);
 		void update_array(const DynamicArray &array, int offset);
 		void update_part(const void *source, int offset, int update_size);
+
+		int64 get_device_address() const;
+
 		VkBuffer buffer;
 		VkDeviceMemory memory;
 		VkDeviceSize size;

@@ -23,7 +23,7 @@ AccelerationStructure::AccelerationStructure(Device *_device, const VkAccelerati
 
 	info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
 	info.type = type;
-	info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
+	info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_NV;
 	info.instanceCount = instanceCount;
 	info.geometryCount = geo.num;
 	info.pGeometries = &geo[0];
@@ -79,13 +79,13 @@ AccelerationStructure::~AccelerationStructure() {
 	memory = VK_NULL_HANDLE;
 }
 
-void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicArray &instances) {
-	if (verbosity >= 2)
+void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const Array<VkAccelerationStructureInstanceKHR> &instances, bool update) {
+	if (verbosity >= 3)
 		msg_write("   AccStr build");
 
 	Buffer instances_buffer(default_device);
 	if (instances.num > 0) {
-		if (verbosity >= 2) {
+		if (verbosity >= 3) {
 			msg_write(p2s(&instances));
 			msg_write(format("instance buffer %d*%d", instances.num, instances.element_size));
 		}
@@ -116,7 +116,7 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 	auto cb = begin_single_time_commands();
 
 	_vkCmdBuildAccelerationStructureNV(cb->buffer, &info,
-							instances_buffer.buffer, 0, VK_FALSE,
+							instances_buffer.buffer, 0, update, //VK_FALSE,
 							structure, VK_NULL_HANDLE,
 							scratch.buffer, 0);
 
@@ -128,10 +128,10 @@ void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const DynamicA
 	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
 	vkCmdPipelineBarrier(cb->buffer, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV, 0, 1, &barrier, 0, 0, 0, 0);
 	end_single_time_commands(cb);
-
 }
 
-AccelerationStructure *AccelerationStructure::create_bottom(Device *device, VertexBuffer *vb) {
+
+static Array<VkGeometryNV> create_geometries(VertexBuffer *vb) {
 	Array<VkGeometryNV> geo;
 
 	//for (int i=0; i<vb.num; i++) {
@@ -147,7 +147,8 @@ AccelerationStructure *AccelerationStructure::create_bottom(Device *device, Vert
 		geometry.geometry.triangles.vertexStride = vb->stride();
 		geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 		if (vb->is_indexed()) {
-			msg_write("AS indexed");
+			if (verbosity >= 3)
+				msg_write("AS indexed");
 			geometry.geometry.triangles.indexData = vb->index_buffer.buffer;
 			geometry.geometry.triangles.indexOffset = 0;
 			geometry.geometry.triangles.indexCount = vb->output_count;
@@ -161,45 +162,47 @@ AccelerationStructure *AccelerationStructure::create_bottom(Device *device, Vert
 		if (verbosity >= 3)
 			msg_write(vb->output_count);
 	//}
-
-	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geo, 0);
-	as->build(geo, {});
-	return as;
+	return geo;
 }
 
-AccelerationStructure *AccelerationStructure::create_top(Device *device, const DynamicArray &instances) {
-	if (verbosity >= 3)
-		msg_write(p2s(&instances) + "  ct");
-	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
-	as->build({}, instances);
-	return as;
-}
-
-
-AccelerationStructure *AccelerationStructure::create_top_simple(Device *device, const Array<AccelerationStructure*> &blas) {
-	struct VkGeometryInstance {
-	    float transform[12];
-	    uint32_t instanceId : 24;
-	    uint32_t mask : 8;
-	    uint32_t instanceOffset : 24;
-	    uint32_t flags : 8;
-	    uint64_t accelerationStructureHandle;
-	};
-
-    Array<VkGeometryInstance> instances;
+static Array<VkAccelerationStructureInstanceKHR> create_instances(const Array<AccelerationStructure*> &blas, const Array<mat4> &matrices) {
+    Array<VkAccelerationStructureInstanceKHR> instances;
     instances.resize(blas.num);
 
+	int triangle_offset = 0;
     for (size_t i = 0; i < blas.num; ++i) {
-        VkGeometryInstance& instance = instances[i];
-        memcpy(instance.transform, &mat4::ID, 12*4);
-        instance.instanceId = static_cast<uint32_t>(i);
+        auto &instance = instances[i];
+        memcpy(&instance.transform, &matrices[i], 12*sizeof(float));
+        instance.instanceCustomIndex = static_cast<uint32_t>(triangle_offset);
         instance.mask = 0xff;
-        instance.instanceOffset = 0;
+        instance.instanceShaderBindingTableRecordOffset = 0;
         instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV;
-        instance.accelerationStructureHandle = blas[i]->handle;
+        instance.accelerationStructureReference = blas[i]->handle;
+		triangle_offset += blas[i]->triangle_count;
     }
+	return instances;
+}
 
-    return create_top(device, instances);
+void AccelerationStructure::update_top(const Array<AccelerationStructure*> &blas, const Array<mat4> &matrices) {
+	auto instances = create_instances(blas, matrices);
+	build({}, instances, true);
+}
+
+
+AccelerationStructure *AccelerationStructure::create_bottom(Device *device, VertexBuffer *vb) {
+	auto geometries = create_geometries(vb);
+	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV, geometries, 0);
+	as->triangle_count = vb->output_count / 3;
+	as->build(geometries, {}, false);
+	return as;
+}
+
+
+AccelerationStructure *AccelerationStructure::create_top(Device *device, const Array<AccelerationStructure*> &blas, const Array<mat4> &matrices) {
+	auto instances = create_instances(blas, matrices);
+	auto as = new AccelerationStructure(device, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV, {}, instances.num);
+	as->build({}, instances, false);
+	return as;
 }
 
 } /* namespace vulkan */
