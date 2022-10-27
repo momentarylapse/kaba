@@ -119,7 +119,7 @@ void VertexBuffer::_create_buffer(Buffer &buf, const DynamicArray &array) {
 	if (buffer_size > buf.size) {
 		buf.destroy();
 		//auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+		auto usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 		buf.create(buffer_size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 

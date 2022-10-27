@@ -266,6 +266,7 @@ sources = [
 	'src/lib/os/msg.cpp',
 	'src/lib/os/path.cpp',
 	'src/lib/os/stream.cpp',
+	'src/lib/os/terminal.cpp',
 	'src/lib/os/time.cpp',
 	'src/lib/threads/Mutex.cpp',
 	'src/lib/threads/Thread.cpp',

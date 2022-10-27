@@ -229,8 +229,30 @@ int decode_gtk_keyval(int keyval) {
 	return -1;
 }
 
-void _get_hui_key_id_2(int keyval, int mod, int &key, int &key_code) {
+int decode_gtk_keycode(int keycode) {
+	int basic_keyval = -1;
+	guint *rkeys = nullptr;
+	int nkeys = -1;
+#if GTK_CHECK_VERSION(4,0,0)
+	if (gdk_display_map_keycode(gdk_display_get_default(), keycode, nullptr, &rkeys, &nkeys)) {
+#else
+	auto map = gdk_keymap_get_for_display(gdk_display_get_default());
+	if (gdk_keymap_get_entries_for_keycode(map, keycode, nullptr, &rkeys, &nkeys)) {
+#endif
+		if (nkeys > 0)
+			basic_keyval = rkeys[0];
+		g_free(rkeys);
+	}
+	if (basic_keyval < 0)
+		return -1;
 
+	for (int i=0; i<NUM_KEYS; i++)
+		if (HuiKeyID[i] == basic_keyval)
+			return i;
+	return -1;
+}
+
+int _get_hui_key_id_2(guint keyval, guint keycode, int mod) {
 
 	Event::_text = utf32_to_utf8({(int)gdk_keyval_to_unicode(keyval)});
 
@@ -238,10 +260,12 @@ void _get_hui_key_id_2(int keyval, int mod, int &key, int &key_code) {
 
 	//msg_write(format("%d  %d", (int)event->keyval, (int)event->hardware_keycode));
 	// convert GDK keyvalue into HUI key id
-	key = decode_gtk_keyval(keyval);
-	key_code = key;
-	if (key < 0)
-		return;
+
+	int key_code = decode_gtk_keycode(keycode);
+	if (key_code < 0)
+		key_code = decode_gtk_keyval(keyval);
+	if (key_code < 0)
+		return -1;
 
 
 	// key code?
@@ -256,6 +280,7 @@ void _get_hui_key_id_2(int keyval, int mod, int &key, int &key_code) {
 	if (((mod & GDK_MOD1_MASK) > 0) /*or ((event->state & GDK_MOD2_MASK) > 0) or ((event->state & GDK_MOD5_MASK) > 0)*/)
 		key_code += KEY_ALT;
 #endif
+	return key_code;
 }
 
 #if !GTK_CHECK_VERSION(4,0,0)
@@ -551,11 +576,11 @@ gboolean on_gtk_area_mouse_wheel(GtkWidget *widget, GdkEventScroll *event, gpoin
 gboolean on_gtk_key_pressed(GtkEventControllerKey *controller, guint keyval, guint keycode, GdkModifierType state, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
 
-	int key, key_code;
-	_get_hui_key_id_2(keyval, state, key, key_code);
-	if (key < 0)
+	int key_code = _get_hui_key_id_2(keyval, keycode, state);
+	if (key_code < 0)
 		return false;
 
+	int key = (key_code & 0xff);
 	c->panel->win->input.key[key] = true;
 	c->panel->win->input.key_code = key_code;
 #if GTK_CHECK_VERSION(4,0,0)
@@ -571,11 +596,11 @@ gboolean on_gtk_key_pressed(GtkEventControllerKey *controller, guint keyval, gui
 void on_gtk_key_released(GtkEventControllerKey *controller, guint keyval, guint keycode, GdkModifierType state, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
 
-	int key, key_code;
-	_get_hui_key_id_2(keyval, state, key, key_code);
-	if (key < 0)
+	int key_code = _get_hui_key_id_2(keyval, keycode, state);
+	if (key_code < 0)
 		return;
 
+	int key = (key_code & 0xff);
 	c->panel->win->input.key[key] = false;
 	c->panel->win->input.key_code = key_code;
 #if GTK_CHECK_VERSION(4,0,0)
@@ -709,13 +734,14 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 		g_signal_connect(G_OBJECT(da), "draw", G_CALLBACK(on_gtk_area_draw), this);
 #endif
 	}
+	widget = da;
 
 
 
 	// mouse motion
 #if GTK_CHECK_VERSION(4,0,0)
 	auto handler_motion = gtk_event_controller_motion_new();
-	gtk_widget_add_controller(da, handler_motion);
+	__gtk_add_controller(handler_motion);
 	g_signal_connect(G_OBJECT(handler_motion), "motion", G_CALLBACK(&on_gtk_gesture_motion), this);
 	// somehow getting ignored?
 	g_signal_connect(G_OBJECT(handler_motion), "enter", G_CALLBACK(&on_gtk_motion_enter), this);
@@ -738,7 +764,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 #if GTK_CHECK_VERSION(4,0,0)
 	auto gesture_click = gtk_gesture_click_new();
 	gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture_click), 0);
-	gtk_widget_add_controller(da, GTK_EVENT_CONTROLLER(gesture_click));
+	__gtk_add_controller(GTK_EVENT_CONTROLLER(gesture_click));
 	g_signal_connect(G_OBJECT(gesture_click), "pressed", G_CALLBACK(&on_gtk_gesture_click_pressed), this);
 	g_signal_connect(G_OBJECT(gesture_click), "released", G_CALLBACK(&on_gtk_gesture_click_released), this);
 #else
@@ -750,7 +776,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	// scroll
 #if GTK_CHECK_VERSION(4,0,0)
 	auto handler_scroll = gtk_event_controller_scroll_new(GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES);
-	gtk_widget_add_controller(da, handler_scroll);
+	__gtk_add_controller(handler_scroll);
 	g_signal_connect(G_OBJECT(handler_scroll), "scroll", G_CALLBACK(&on_gtk_gesture_scroll), this);
 /*#elif GTK_CHECK_VERSION(3,24,0)
 	auto handler_scroll = gtk_event_controller_scroll_new(da, GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES);
@@ -764,7 +790,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 	// keys
 #if GTK_CHECK_VERSION(4,0,0)
 	auto handler_key = gtk_event_controller_key_new();
-	gtk_widget_add_controller(da, handler_key);
+	__gtk_add_controller(handler_key);
 	g_signal_connect(G_OBJECT(handler_key), "key-pressed", G_CALLBACK(&on_gtk_key_pressed), this);
 	g_signal_connect(G_OBJECT(handler_key), "key-released", G_CALLBACK(&on_gtk_key_released), this);
 #elif GTK_CHECK_VERSION(3,24,0)
@@ -782,7 +808,7 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 #if GTK_CHECK_VERSION(4,0,0)
 #if 0
 	auto handler_focus = gtk_event_controller_focus_new();
-	gtk_widget_add_controller(da, handler_focus);
+	__gtk_add_controller(handler_focus);
 	g_signal_connect(G_OBJECT(handler_focus), "enter", G_CALLBACK(&on_gtk_focus_enter), this);
 #endif
 #else
@@ -811,7 +837,6 @@ ControlDrawingArea::ControlDrawingArea(const string &title, const string &id) :
 ///	auto handler_drag = gtk_gesture_drag_new(da);
 ///	g_signal_connect(G_OBJECT(handler_drag), "drag-update", G_CALLBACK(&on_gtk_gesture_drag_update), this);
 
-	widget = da;
 	gtk_widget_set_hexpand(widget, true);
 	gtk_widget_set_vexpand(widget, true);
 	set_options(get_option_from_title(title));
@@ -835,6 +860,19 @@ void ControlDrawingArea::make_current() {
 	if (is_opengl)
 		gtk_gl_area_make_current(GTK_GL_AREA(widget));
 }
+
+#if GTK_CHECK_VERSION(4,0,0)
+void ControlDrawingArea::disable_event_handlers_rec() {
+	for (auto c: __controllers)
+		gtk_widget_remove_controller(widget, c);
+	Control::disable_event_handlers_rec();
+}
+
+void ControlDrawingArea::__gtk_add_controller(GtkEventController* controller) {
+	gtk_widget_add_controller(widget, controller);
+	__controllers.add(controller);
+}
+#endif
 
 void on_gtk_gesture_zoom(GtkGestureZoom *controller, gdouble scale, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
@@ -860,7 +898,7 @@ void ControlDrawingArea::__set_option(const string &op, const string &value) {
 		if (value == "zoom") {
 #if GTK_CHECK_VERSION(4,0,0)
 			auto gesture_zoom = gtk_gesture_zoom_new();
-			gtk_widget_add_controller(widget, GTK_EVENT_CONTROLLER(gesture_zoom));
+			__gtk_add_controller(GTK_EVENT_CONTROLLER(gesture_zoom));
 #else
 			auto gesture_zoom = gtk_gesture_zoom_new(widget);
 #endif
