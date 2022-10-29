@@ -26,10 +26,7 @@ extern const Class *TypeObjectP;
 extern const Class *TypeBoolList;
 extern const Class *TypeIntP;
 extern const Class *TypeIntList;
-extern const Class *TypeIntArray;
 extern const Class *TypeFloatP;
-extern const Class *TypeFloatArray;
-extern const Class *TypeFloatArrayP;
 extern const Class *TypeFloatList;
 extern const Class *TypeFloat64List;
 extern const Class *TypeStringList;
@@ -355,10 +352,7 @@ void SIAddPackageBase() {
 	TypeBoolList    = add_type_l(TypeBool);
 	TypeIntP        = add_type_p(TypeInt);
 	TypeIntList     = add_type_l(TypeInt);
-	TypeIntArray    = add_type_a(TypeInt, 1, "int[?]");
 	TypeFloatP      = add_type_p(TypeFloat);
-	TypeFloatArray  = add_type_a(TypeFloat, 1, "float[?]");
-	TypeFloatArrayP = add_type_p(TypeFloatArray);
 	TypeFloatList   = add_type_l(TypeFloat);
 	TypeFloat64List = add_type_l(TypeFloat64);
 	TypeCString     = add_type_a(TypeChar, 256, "cstring");	// cstring := char[256]
