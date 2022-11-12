@@ -8,6 +8,7 @@
 #include "experiments.h"
 #include "../lib/os/msg.h"
 #include "../lib/base/optional.h"
+#include "../lib/base/variant.h"
 #include "../lib/base/iter.h"
 
 void show_opt(const base::optional<string> &o) {
@@ -48,6 +49,18 @@ void test_optional() {
 		i += 13;
 	for (auto [k,i]: enumerate(aa))
 		msg_write(format("%d => %d", k, i));
+}
+
+void test_variant() {
+	variant<int, float> v;
+	msg_write(v.index());
+	v = 13;
+	msg_write(v.index());
+	msg_write(v.get<int>());
+	v = 13.1f;
+	msg_write(v.index());
+	msg_write(str(v.get<float>()));
+	msg_write(v.get<int>());
 }
 
 #include "../lib/kaba/kaba.h"
@@ -130,6 +143,7 @@ public:
 };
 
 void do_experiments() {
+#if 0
 	msg_write(str(13.3f));
 	Array<int> i =  {1,2,3};
 	msg_write(str(i));
@@ -142,8 +156,10 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, -1));
 	//msg_write(disassemble((void*)&ggg, -1));
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
+#endif
 
-	test_optional();
+	//test_optional();
+	test_variant();
 }
 
 
