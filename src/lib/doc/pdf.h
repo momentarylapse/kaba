@@ -11,6 +11,7 @@
 #include "../base/base.h"
 #include "../base/pointer.h"
 #include "../image/Painter.h"
+#include "../image/color.h"
 
 class Path;
 class Painter;
@@ -18,6 +19,10 @@ class Image;
 class color;
 class rect;
 class vec2;
+
+namespace ttf {
+	class TTF;
+}
 
 namespace pdf {
 
@@ -30,15 +35,13 @@ struct Page {
 };
 
 
-class TTF;
-
 struct FontData {
 	bool true_type;
 	string name, internal_name;
 	int id, id_widths, id_descr, id_file;
 	Array<int> widths;
 	string file_contents;
-	shared<TTF> ttf;
+	shared<ttf::TTF> ttf;
 };
 
 class PagePainter : public ::Painter {
@@ -71,7 +74,7 @@ public:
 	Parser *parser;
 	Page *page;
 
-	color *col;
+	color current_color;
 	float font_size;
 	string font_name;
 	float line_width;
@@ -105,8 +108,6 @@ private:
 	//int font_id(const string &name);
 	FontData *font_get(const string &name);
 };
-
-void add_font_directory(const Path &dir);
 
 }
 
