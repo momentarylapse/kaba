@@ -52,7 +52,7 @@ void test_optional() {
 }
 
 void test_variant() {
-	variant<int, float> v;
+	base::variant<int, float> v;
 	msg_write(v.index());
 	v = 13;
 	msg_write(v.index());
