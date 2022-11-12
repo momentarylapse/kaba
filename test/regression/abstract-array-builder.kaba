@@ -1,5 +1,5 @@
 func main()
-	float[] a = [1,2]
+	let a: float[] = [1,2.]
 	print(str([1,2.0,3]))
 	var x = [1,2.0,3]
 

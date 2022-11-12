@@ -1,5 +1,5 @@
 
 func main()
-	char a = 200
+	char a = char(200)
 	int i = a
 	print(i)

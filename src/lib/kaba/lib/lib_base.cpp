@@ -597,7 +597,7 @@ void SIAddPackageBase() {
 		class_add_func(IDENTIFIER_FUNC_STR, TypeString, &BoolList::str, Flags::PURE);
 		class_add_func("all", TypeBool, &BoolList::all, Flags::PURE);
 		class_add_func("any", TypeBool, &BoolList::any, Flags::PURE);
-		class_add_func("__bool__", TypeBool, &BoolList::all, Flags::PURE);
+		//class_add_func("__bool__", TypeBool, &BoolList::all, Flags::PURE);
 		add_operator(OperatorID::AND, TypeBoolList, TypeBoolList, TypeBoolList, InlineID::NONE, &BoolList::and_values);
 		add_operator(OperatorID::OR, TypeBoolList, TypeBoolList, TypeBoolList, InlineID::NONE, &BoolList::or_values);
 		add_operator(OperatorID::EQUAL, TypeBoolList, TypeBoolList, TypeBoolList, InlineID::NONE, &BoolList::eq_values);
@@ -787,6 +787,19 @@ void SIAddPackageBase() {
 	add_ext_var("_extern_variable", TypeInt, &extern_variable1);
 
 	link_external("xxx_delete", (void*)&xxx_delete);
+
+
+	add_type_cast(10, TypeInt, TypeFloat32, "int.__float__");
+	add_type_cast(10, TypeInt, TypeFloat64, "int.__float64__");
+	add_type_cast(10, TypeInt, TypeInt64, "int.__int64__");
+	add_type_cast(200, TypeInt64, TypeInt, "int64.__int__");
+	add_type_cast(10, TypeFloat32, TypeFloat64,"float.__float64__");
+	add_type_cast(200, TypeFloat32, TypeInt, "float.__int__");
+	add_type_cast(200, TypeInt, TypeChar, "int.__char__");
+	add_type_cast(20, TypeChar, TypeInt, "char.__int__");
+	//add_type_cast(30, TypeBoolList, TypeBool, "bool[].__bool__");
+	add_type_cast(50, TypePointer, TypeBool, "p2b");
+	//add_type_cast(50, TypePointer, TypeString, "p2s");
 }
 
 
