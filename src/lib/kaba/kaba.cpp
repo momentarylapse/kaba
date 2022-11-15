@@ -11,20 +11,18 @@
 
 namespace kaba {
 
-string Version = "0.19.22.11";
+string Version = "0.19.23.0";
 
 //#define ScriptDebug
 
 
 
-
-
 shared<Module> load(const Path &filename, bool just_analyse) {
-	return default_context.load(filename, just_analyse);
+	return default_context->load(filename, just_analyse);
 }
 
 shared<Module> create_for_source(const string &buffer, bool just_analyse) {
-	return default_context.create_for_source(buffer, just_analyse);
+	return default_context->create_for_source(buffer, just_analyse);
 }
 
 VirtualTable* get_vtable(const VirtualBase *p) {
@@ -32,12 +30,12 @@ VirtualTable* get_vtable(const VirtualBase *p) {
 }
 
 const Class *get_dynamic_type(const VirtualBase *p) {
-	return default_context.get_dynamic_type(p);
+	return default_context->get_dynamic_type(p);
 }
 
 
 void execute_single_command(const string &cmd) {
-	default_context.execute_single_command(cmd);
+	default_context->execute_single_command(cmd);
 }
 
 };

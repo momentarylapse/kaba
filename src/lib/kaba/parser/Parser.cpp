@@ -54,9 +54,10 @@ int64 s2i2(const string &str) {
 
 Parser::Parser(SyntaxTree *t) :
 	Exp(t->expressions),
-	con(this, t),
+	con(t->module->context, this, t),
 	auto_implementer(this, t)
 {
+	context = t->module->context;
 	tree = t;
 	cur_func = nullptr;
 	Exp.cur_line = nullptr;
@@ -2072,7 +2073,7 @@ Function *Parser::parse_function_header(Class *name_space, Flags flags) {
 	expect_new_line("newline expected after parameter list");
 
 	if (f->is_template()) {
-		TemplateManager::add_template(f, template_param_names);
+		context->template_manager->add_template(f, template_param_names);
 		name_space->add_template_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
 	} else {
 		con.concretify_function_header(f);

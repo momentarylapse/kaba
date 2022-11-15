@@ -83,9 +83,9 @@ void Module::set_variable(const string &name, void *data) {
 	msg_error("Module.set_variable: variable " + name + " not found");
 }
 
-Module::Module(Context *c) {
+Module::Module(Context *c, const Path &_filename) {
     context = c;
-	filename = "-empty module-";
+	filename = _filename;
 	used_by_default = false;
 
 	show_compiler_stats = !config.compile_silently;

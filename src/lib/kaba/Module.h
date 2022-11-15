@@ -27,7 +27,7 @@ class Context;
 class Module : public Sharable<base::Empty> {
 public:
 	// don't call yourself.... better use LoadScript(...)
-	Module(Context *c);
+	Module(Context *c, const Path &filename);
 	~Module();
 
 	void load(const Path &filename, bool just_analyse = false);

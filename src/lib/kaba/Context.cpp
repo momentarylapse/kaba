@@ -3,13 +3,14 @@
 #include "Interpreter.h"
 #include "parser/Parser.h"
 #include "parser/Concretifier.h"
+#include "parser/template.h"
 #include "../os/msg.h"
 
 namespace kaba {
 
 VirtualTable* get_vtable(const VirtualBase *p);
 
-Context default_context;
+Context *default_context = nullptr;
 
 
 Exception::Exception(const string &_message, const string &_expression, int _line, int _column, Module *s) :
@@ -39,6 +40,10 @@ Path absolute_module_path(const Path &filename) {
 		return filename.absolute().canonical();
 }
 
+Context::Context() {
+	template_manager = new TemplateManager(this);
+	implicit_class_registry = new ImplicitClassRegistry(this);
+}
 
 Context::~Context() {
     clean_up();
@@ -57,7 +62,7 @@ shared<Module> Context::load(const Path &filename, bool just_analyse) {
 			return ps;
 	
 	// load
-    auto s = create_empty();
+    auto s = create_empty(filename);
 	s->load(filename, just_analyse);
 
 	// store module in database
@@ -66,7 +71,7 @@ shared<Module> Context::load(const Path &filename, bool just_analyse) {
 }
 
 shared<Module> Context::create_for_source(const string &buffer, bool just_analyse) {
-    auto s = create_empty();
+    auto s = create_empty("<from-source>");
 	s->just_analyse = just_analyse;
 	s->filename = config.default_filename;
 	s->syntax->parser = new Parser(s->syntax);
@@ -78,8 +83,8 @@ shared<Module> Context::create_for_source(const string &buffer, bool just_analys
 	return s;
 }
 
-shared<Module> Context::create_empty() {
-	shared<Module> s = new Module(this);
+shared<Module> Context::create_empty(const Path &filename) {
+	shared<Module> s = new Module(this, filename);
     return s;
 }
 
@@ -99,8 +104,7 @@ void Context::execute_single_command(const string &cmd) {
 		return;
 	//msg_write("command: " + cmd);
 
-    auto s = create_empty();
-	s->filename = "-command line-";
+    auto s = create_empty("<command-line>");
 	auto tree = s->syntax;
 	tree->default_import();
 	auto parser = new Parser(tree);

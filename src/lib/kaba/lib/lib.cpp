@@ -130,10 +130,9 @@ void add_package(Context *c, const string &name, Flags flags) {
 			cur_package = p.get();
 			return;
 		}
-	auto s = c->create_empty();
+	auto s = c->create_empty(name);
 	s->used_by_default = flags_has(flags, Flags::AUTO_IMPORT);
 	s->syntax->base_class->name = name;
-	s->filename = name;
 	c->packages.add(s);
 	cur_package = s.get();
 }
@@ -166,7 +165,7 @@ const Class *add_type_p(const Class *sub_type, Flags flag) {
 	if (flags_has(flag, Flags::SHARED))
 		t->type = Class::Type::POINTER_SHARED;
 	__add_class__(t, sub_type->name_space);
-	implicit_class_registry::add(t);
+	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
@@ -176,7 +175,7 @@ const Class *add_type_a(const Class *sub_type, int array_length) {
 	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, cur_package->syntax, nullptr, {sub_type});
 	t->array_length = array_length;
 	__add_class__(t, sub_type->name_space);
-	implicit_class_registry::add(t);
+	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
@@ -186,7 +185,7 @@ const Class *add_type_l(const Class *sub_type) {
 	Class *t = new Class(Class::Type::SUPER_ARRAY, name, config.super_array_size, cur_package->syntax, nullptr, {sub_type});
 	kaba_make_super_array(t);
 	__add_class__(t, sub_type->name_space);
-	implicit_class_registry::add(t);
+	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
@@ -196,7 +195,7 @@ const Class *add_type_d(const Class *sub_type) {
 	Class *t = new Class(Class::Type::DICT, name, config.super_array_size, cur_package->syntax, nullptr, {sub_type});
 	kaba_make_dict(t);
 	__add_class__(t, sub_type->name_space);
-	implicit_class_registry::add(t);
+	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
@@ -253,7 +252,7 @@ const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params
 	//auto ff = cur_package->syntax->make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, cur_package->syntax->base_class);
 	Class *ff = new Class(Class::Type::CALLABLE_FUNCTION_POINTER, "XCallable[" + name + "]", /*TypeCallableBase->size*/ sizeof(KabaCallable<void()>), cur_package->syntax, nullptr, params_ret);
 	__add_class__(ff, cur_package->syntax->base_class);
-	implicit_class_registry::add(ff);
+	cur_package->context->implicit_class_registry->add(ff);
 
 	auto ptr_param = [] (const Class *p) {
 		return p->is_pointer() or p->uses_call_by_reference();
@@ -663,9 +662,11 @@ void init(Abi abi, bool allow_std_lib) {
 	config.function_align = 2 * config.pointer_size;
 	config.stack_frame_align = 2 * config.pointer_size;
 
+	default_context = new Context;
+
 	SIAddStatements();
 
-	init_lib(&default_context);
+	init_lib(default_context);
 }
 
 };

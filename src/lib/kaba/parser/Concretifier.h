@@ -21,6 +21,7 @@ class Statement;
 enum class Flags;
 class Parser;
 class AutoImplementer;
+class Context;
 
 struct CastingData {
 	int cast;
@@ -30,7 +31,7 @@ struct CastingData {
 
 class Concretifier {
 public:
-	Concretifier(Parser *parser, SyntaxTree *tree);
+	Concretifier(Context *c, Parser *parser, SyntaxTree *tree);
 
 	void concretify_all_params(shared<Node> &node, Block *block, const Class *ns);
 
@@ -117,6 +118,7 @@ public:
 	void do_error(const string &msg, int token_id);
 
 
+	Context *context;
 	SyntaxTree *tree;
 	Parser *parser;
 	AutoImplementer *auto_implementer;

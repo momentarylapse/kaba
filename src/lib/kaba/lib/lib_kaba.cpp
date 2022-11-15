@@ -206,7 +206,7 @@ void SIAddPackageKaba(Context *c) {
 	add_func("show_func", TypeVoid, &show_func, Flags::STATIC);
 		func_add_param("f", TypeFunction);
 
-	add_ext_var("packages", TypeModulePList, (void*)&default_context.packages);
+	add_ext_var("packages", TypeModulePList, (void*)&c->packages);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
 	add_ext_var("kaba_version", TypeString, (void*)&Version);
 }

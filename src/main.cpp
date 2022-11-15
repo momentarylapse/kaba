@@ -151,11 +151,11 @@ public:
 		p.cmd("-c/--command", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
 			init_environment();
 			try {
-				kaba::execute_single_command(a[0]);
+				kaba::default_context->execute_single_command(a[0]);
 			} catch (Exception &e) {
 				die(e.message());
 			}
-			kaba::default_context.clean_up();
+			kaba::default_context->clean_up();
 		});
 		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
 			init_environment();
@@ -179,7 +179,7 @@ public:
 			} else {
 				die("can only execute files when using the native ABI");
 			}
-			kaba::default_context.clean_up();
+			kaba::default_context->clean_up();
 		});
 
 		p.parse(arg0);
@@ -254,7 +254,7 @@ public:
 			filename = try_get_installed_app_file(filename);
 
 		try {
-			auto s = kaba::load(filename);
+			auto s = kaba::default_context->load(filename);
 			if (symbols_out_file)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts)
