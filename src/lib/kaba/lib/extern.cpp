@@ -76,7 +76,7 @@ void link_external(const string &name, void *pointer) {
 
 	auto names = name.explode(":");
 	string sname = decode_symbol_name(names[0]);
-	for (auto p: packages)
+	for (auto p: default_context.packages)
 		for (auto&& [i,f]: enumerate(p->syntax->functions))
 			if (f->cname(p->base_class()) == sname) {
 				if (names.num > 1)

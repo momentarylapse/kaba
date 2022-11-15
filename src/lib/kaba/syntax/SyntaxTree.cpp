@@ -127,7 +127,7 @@ SyntaxTree::SyntaxTree(Module *_module) {
 }
 
 void SyntaxTree::default_import() {
-	for (auto p: packages)
+	for (auto p: module->context->packages)
 		if (p->used_by_default)
 			import_data(p, false, "");
 }
@@ -506,7 +506,7 @@ Array<int> enum_all(const Class*);
 Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
 	//msg_write("CREATE " + name);
 	if (find_root_type_by_name(name, ns, false))
-		do_error(format("class '%s' already exists", name), token_id);
+		do_error(format("class '%s' already exists...", name), token_id);
 
 	Class *t = new Class(type, name, size, this, parent, params);
 	t->token_id = token_id;
@@ -1388,6 +1388,9 @@ void SyntaxTree::map_local_variables_to_stack() {
 // no included modules may be deleted before us!!!
 SyntaxTree::~SyntaxTree() {
 	// delete all classes, functions etc created by this module
+
+	TemplateManager::clear_from_module(module);
+	implicit_class_registry::clear_from_module(module);
 }
 
 void SyntaxTree::show(const string &stage) {

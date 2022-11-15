@@ -155,7 +155,7 @@ public:
 			} catch (Exception &e) {
 				die(e.message());
 			}
-			kaba::clean_up();
+			kaba::default_context.clean_up();
 		});
 		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
 			init_environment();
@@ -179,7 +179,7 @@ public:
 			} else {
 				die("can only execute files when using the native ABI");
 			}
-			kaba::clean_up();
+			kaba::default_context.clean_up();
 		});
 
 		p.parse(arg0);

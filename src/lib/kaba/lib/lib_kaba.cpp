@@ -59,8 +59,8 @@ public:
 	}
 };
 
-void SIAddPackageKaba() {
-	add_package("kaba");
+void SIAddPackageKaba(Context *c) {
+	add_package(c, "kaba");
 
 
 	TypeClass 			= add_type  ("Class", sizeof(Class));
@@ -180,8 +180,8 @@ void SIAddPackageKaba() {
 		class_add_func("create", TypeModuleP, &__create_from_source__, Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("source", TypeString);
 			func_add_param("just_analize", TypeBool);
-		class_add_func("delete", TypeVoid, &remove_module, Flags::STATIC);
-			func_add_param("script", TypeModule);
+		//class_add_func("delete", TypeVoid, &remove_module, Flags::STATIC);
+		//	func_add_param("script", TypeModule);
 		class_add_func("execute_single_command", TypeVoid, &__execute_single_command__, Flags::_STATIC__RAISES_EXCEPTIONS);
 			func_add_param("cmd", TypeString);
 	
@@ -206,7 +206,7 @@ void SIAddPackageKaba() {
 	add_func("show_func", TypeVoid, &show_func, Flags::STATIC);
 		func_add_param("f", TypeFunction);
 
-	add_ext_var("packages", TypeModulePList, (void*)&packages);
+	add_ext_var("packages", TypeModulePList, (void*)&default_context.packages);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
 	add_ext_var("kaba_version", TypeString, (void*)&Version);
 }

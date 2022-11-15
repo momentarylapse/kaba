@@ -11,6 +11,7 @@
 #include "template.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
+#include "../../base/algo.h"
 
 namespace kaba {
 
@@ -24,6 +25,10 @@ void TemplateManager::add_template(Function *f, const Array<string> &param_names
 	t.func = f;
 	t.params = param_names;
 	templates.add(t);
+}
+
+void TemplateManager::clear_from_module(Module *m) {
+
 }
 
 
@@ -217,7 +222,13 @@ Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<
 
 
 namespace implicit_class_registry {
+	Module *module = nullptr;
 	Array<const Class*> classes;
+
+	void init() {
+		module = new Module(&default_context);
+		module->filename = "<implicit-class-owner>";
+	}
 
 	const Class *find(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {
 		for (auto t: classes) {
@@ -235,13 +246,23 @@ namespace implicit_class_registry {
 		return nullptr;
 	}
 	void add(const Class* t) {
+		//msg_write("ADD  " + t->long_name());
+		//if (!module)
+		//	init();
+		//module->syntax->owned_classes.add(t);
 		classes.add(t);
 	}
 
 	// TODO track which module requests what
 	// TODO implement as templates INSIDE base module
-	void remove_module(Module *m) {
-
+	void clear_from_module(Module *m) {
+		return;
+		msg_write("CLEAR..." + str(m->filename));
+		remove_if(classes, [m] (const Class *c) {
+			if (c->owner->module == m)
+				msg_write("  " + c->name);
+			return c->owner->module == m;
+		});
 	}
 }
 

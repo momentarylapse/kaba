@@ -51,7 +51,6 @@ public:
 	const Class *which_owned_class(const string &name);
 
 	// syntax analysis
-	const Class *add_class(const Class *type);
 	Class *create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id);
 	const Class *request_implicit_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id);
 	const Class *request_implicit_class_super_array(const Class *element_type, int token_id);

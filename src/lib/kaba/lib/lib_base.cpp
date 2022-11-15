@@ -232,7 +232,7 @@ Array<int> enum_all(const Class *e) {
 	return r;
 }
 
-void SIAddXCommands() {
+void SIAddXCommands(Context *c) {
 
 	add_func("@sorted", TypeDynamicArray, &array_sort, Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("list", TypePointer);
@@ -273,8 +273,8 @@ void SIAddXCommands() {
 }
 
 
-void SIAddPackageBase() {
-	add_package("base", Flags::AUTO_IMPORT);
+void SIAddPackageBase(Context *c) {
+	add_package(c, "base", Flags::AUTO_IMPORT);
 
 	// internal
 	TypeUnknown			= add_type  ("@unknown", 0); // should not appear anywhere....or else we're screwed up!
@@ -355,8 +355,10 @@ void SIAddPackageBase() {
 	TypeFloatP      = add_type_p(TypeFloat);
 	TypeFloatList   = add_type_l(TypeFloat);
 	TypeFloat64List = add_type_l(TypeFloat64);
-	TypeCString     = add_type_a(TypeChar, 256, "cstring");	// cstring := char[256]
-	TypeString      = add_type_l(TypeChar, "string");	// string := char[]
+	TypeCString     = add_type_a(TypeChar, 256);
+	capture_implicit_type(TypeCString, "cstring"); // cstring := char[256]
+	TypeString      = add_type_l(TypeChar);
+	capture_implicit_type(TypeString, "string"); // string := char[]
 	TypeStringAutoCast = add_type("<string-auto-cast>", config.super_array_size);	// string := char[]
 	TypeStringList  = add_type_l(TypeString);
 

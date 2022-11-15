@@ -259,8 +259,8 @@ public:
 	}
 };
 
-void SIAddPackageOSPath() {
-	add_package("os");
+void SIAddPackageOSPath(Context *c) {
+	add_package(c, "os");
 
 	TypePath = add_type("Path", config.super_array_size);
 
@@ -389,8 +389,8 @@ public:
 	}
 };
 
-void SIAddPackageOS() {
-	add_package("os");
+void SIAddPackageOS(Context *c) {
+	add_package(c, "os");
 
 	const Class *TypeStream = add_type("Stream", sizeof(Stream));
 	TypeStreamP = add_type_p(TypeStream);
