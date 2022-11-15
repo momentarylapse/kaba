@@ -43,6 +43,7 @@ Path absolute_module_path(const Path &filename) {
 Context::Context() {
 	template_manager = new TemplateManager(this);
 	implicit_class_registry = new ImplicitClassRegistry(this);
+	external = new ExternalLinkData(this);
 }
 
 Context::~Context() {
@@ -205,9 +206,17 @@ void Context::clean_up() {
 
 	packages.clear();
 
-	reset_external_data();
+	external->reset();
 }
 
+
+void init_lib(Context *c);
+
+Context *Context::create() {
+	auto c = new Context;
+	init_lib(c);
+	return c;
+}
 
 
 }

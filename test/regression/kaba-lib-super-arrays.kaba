@@ -14,6 +14,6 @@ func test_class(p: Module, c: Class)
 	for cc in c.classes
 		test_class(p, cc)
 func main()
-	for p in weak(packages)
+	for p in weak(default_context.packages)
 		for c in p.classes()
 			test_class(p, c)

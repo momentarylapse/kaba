@@ -206,9 +206,10 @@ public:
 
 
 		// for huibui.kaba...
-		kaba::link_external_class_func("Resource.str", &hui::Resource::to_string);
-		kaba::link_external_class_func("Resource.show", &hui::Resource::show);
-		kaba::link_external("ParseResource", (void*)&hui::parse_resource);
+		auto e = kaba::default_context->external.get();
+		e->link_class_func("Resource.str", &hui::Resource::to_string);
+		e->link_class_func("Resource.show", &hui::Resource::show);
+		e->link("ParseResource", (void*)&hui::parse_resource);
 
 
 		if (symbols_in_file)

@@ -8,6 +8,7 @@
 #include "symbols.h"
 #include "../lib/os/file.h"
 #include "../lib/os/formatter.h"
+#include "../lib/kaba/lib/extern.h"
 
 
 namespace kaba {
@@ -37,7 +38,7 @@ void import_symbols(const Path &symbols_in_file) {
 		if (name == "#")
 			break;
 		int pos = f->read_int();
-		kaba::link_external(name, (void*)(int_p)pos);
+		kaba::default_context->external->link(name, (void*)(int_p)pos);
 	}
 	delete f;
 }

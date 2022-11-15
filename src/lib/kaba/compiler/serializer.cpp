@@ -1050,6 +1050,8 @@ void Module::compile_functions(char *oc, int &ocs) {
 	auto *list = new Asm::InstructionWithParamsList(0);
 	Array<int> func_offset;
 
+	auto external = context->external.get();
+
 	// link external functions
 	int func_no = 0;
 	for (Function *f: syntax->functions) {
@@ -1057,9 +1059,9 @@ void Module::compile_functions(char *oc, int &ocs) {
 			//msg_write("SKIP COMPILE " + f->signature());
 		} else if (f->is_extern()) {
 			string name = function_link_name(f);
-			f->address = (int_p)get_external_link(name);
+			f->address = (int_p)external->get_link(name);
 			if (f->address == 0)
-				f->address = (int_p)get_external_link(f->cname(f->owner()->base_class));
+				f->address = (int_p)external->get_link(f->cname(f->owner()->base_class));
 			if (f->address == 0)
 				do_error_link(format("external function '%s' not linkable", name));
 		} else {

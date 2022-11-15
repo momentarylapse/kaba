@@ -573,7 +573,7 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 		if (as_virtual and (f->virtual_index < 0)) {
 			if (config.verbose)
 				msg_write("VVVVV +");
-			f->virtual_index = process_class_offset(cname(owner->base_class), f->name, max(vtable.num, 2));
+			f->virtual_index = s->module->context->external->process_class_offset(cname(owner->base_class), f->name, max(vtable.num, 2));
 			if ((f->name == IDENTIFIER_FUNC_DELETE) and (config.abi == Abi::AMD64_WINDOWS or config.abi == Abi::X86_WINDOWS))
 				f->virtual_index = 1;
 		}

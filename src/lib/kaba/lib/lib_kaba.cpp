@@ -81,6 +81,9 @@ void SIAddPackageKaba(Context *c) {
 	auto *TypeModuleP = add_type_p(TypeModule, Flags::SHARED);
 	auto *TypeModulePList = add_type_l(TypeModuleP);
 
+	auto *TypeContext = add_type  ("Context", sizeof(Context));
+	auto *TypeContextP = add_type_p(TypeContext);
+
 	
 	auto *TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
 	auto *TypeClassElementList = add_type_l(TypeClassElement);
@@ -197,6 +200,11 @@ void SIAddPackageKaba(Context *c) {
 		class_add_func(IDENTIFIER_FUNC_INIT, TypeVoid, &XList<ClassElement>::__init__);
 		class_add_func(IDENTIFIER_FUNC_DELETE, TypeVoid, &Array<ClassElement>::clear);
 
+
+	add_class(TypeContext);
+		class_add_element("packages", TypeModulePList, &Context::packages);
+		class_add_func("create", TypeContextP, &Context::create, Flags::STATIC);
+
 	add_func("get_dynamic_type", TypeClassP, &get_dynamic_type, Flags::_STATIC__PURE);
 		func_add_param("p", TypePointer);
 	add_func("disassemble", TypeString, &Asm::disassemble, Flags::_STATIC__PURE);
@@ -206,7 +214,7 @@ void SIAddPackageKaba(Context *c) {
 	add_func("show_func", TypeVoid, &show_func, Flags::STATIC);
 		func_add_param("f", TypeFunction);
 
-	add_ext_var("packages", TypeModulePList, (void*)&c->packages);
+	add_ext_var("default_context", TypeContextP, (void*)&default_context);
 	add_ext_var("statements", TypeStatementPList, (void*)&Statements);
 	add_ext_var("kaba_version", TypeString, (void*)&Version);
 }

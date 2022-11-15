@@ -662,11 +662,9 @@ void init(Abi abi, bool allow_std_lib) {
 	config.function_align = 2 * config.pointer_size;
 	config.stack_frame_align = 2 * config.pointer_size;
 
-	default_context = new Context;
-
 	SIAddStatements();
 
-	init_lib(default_context);
+	default_context = Context::create();
 }
 
 };

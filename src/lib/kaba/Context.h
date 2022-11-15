@@ -19,6 +19,7 @@ class Function;
 class Class;
 class TemplateManager;
 class ImplicitClassRegistry;
+class ExternalLinkData;
 
 class Exception : public Asm::Exception {
 public:
@@ -38,6 +39,7 @@ public:
     shared_array<Module> packages;
     owned<TemplateManager> template_manager;
     owned<ImplicitClassRegistry> implicit_class_registry;
+    owned<ExternalLinkData> external;
 
     Context();
     ~Context();
@@ -53,6 +55,8 @@ public:
     void execute_single_command(const string &cmd);
 
     const Class *get_dynamic_type(const VirtualBase *p) const;
+
+    static Context *create();
 };
 
 extern Context *default_context;
