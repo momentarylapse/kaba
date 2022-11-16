@@ -1340,7 +1340,7 @@ shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 
 	auto params = parse_abstract_call_parameters(block);
 	node->set_param(0, params[0]);
-	if (params.num < 0 or params.num > 2)
+	if (params.num == 0 or params.num > 2)
 		do_error_exp("sorted(array, criterion=\"\") expects 1 or 2 parameters");
 	if (params.num >= 2) {
 		node->set_param(1, params[1]);

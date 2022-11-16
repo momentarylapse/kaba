@@ -2096,12 +2096,19 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 			if (!input->type->is_super_array())
 				do_error("'|> sorted' only allowed for lists", input);
 			Function *f = tree->required_func_global("@sorted", token_id);
-			auto crit = tree->add_constant(TypeString);
 
 			auto cmd = add_node_call(f, token_id);
 			cmd->set_param(0, input);
 			cmd->set_param(1, add_node_class(input->type));
-			cmd->set_param(2, add_node_const(crit));
+			if (abs_func->params.num >= 1) {
+				auto crit = concretify_node(abs_func->params[0], block, ns);
+				if (crit->type != TypeString or crit->kind != NodeKind::CONSTANT)
+					do_error("sorted() expects a string literal when used in a pipe", token_id);
+				cmd->set_param(2, crit);
+			} else {
+				auto crit = tree->add_constant(TypeString);
+				cmd->set_param(2, add_node_const(crit));
+			}
 			cmd->type = input->type;
 			return cmd;
 		}
