@@ -90,13 +90,13 @@ void _array_sort_p(DynamicArray &array, int offset_by) {
 
 template<class T>
 void _array_sort_pf(DynamicArray &array, Function *func) {
-	auto f = [func] (void **a, void **b) {
+	auto f = [func] (void *a, void *b) {
 		T r1, r2;
-		if (!call_function(func, &r1, {*a}) or !call_function(func, &r2, {*b}))
+		if (!call_function(func, &r1, {a}) or !call_function(func, &r2, {b}))
 			kaba_raise_exception(new KabaException("call failed " + func->long_name()));
 		return (r1 <= r2);
 	};
-	inplace_sort(*(Array<void**>*)&array, f);
+	inplace_sort(*(Array<void*>*)&array, f);
 }
 
 void var_assign(void *pa, const void *pb, const Class *type) {
