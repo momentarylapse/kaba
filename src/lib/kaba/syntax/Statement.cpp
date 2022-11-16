@@ -58,6 +58,7 @@ void SIAddStatements() {
 	add_statement(IDENTIFIER_LAMBDA, StatementID::LAMBDA);
 	add_statement(IDENTIFIER_FUNC, StatementID::FUNC);
 	add_statement(IDENTIFIER_SORTED, StatementID::SORTED, 2);
+	add_statement(IDENTIFIER_FILTER, StatementID::FILTER, 1);
 	add_statement(IDENTIFIER_DYN, StatementID::DYN, 1);
 	add_statement(IDENTIFIER_WEAK, StatementID::WEAK, 1);
 	add_statement(IDENTIFIER_RAW_FUNCTION_POINTER, StatementID::RAW_FUNCTION_POINTER, 1);

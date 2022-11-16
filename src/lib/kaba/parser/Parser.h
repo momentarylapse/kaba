@@ -128,6 +128,7 @@ public:
 	shared<Node> parse_abstract_statement_map(Block *block);
 	shared<Node> parse_abstract_statement_lambda(Block *block);
 	shared<Node> parse_abstract_statement_sorted(Block *block);
+	shared<Node> parse_abstract_statement_filter(Block *block);
 	shared<Node> parse_abstract_statement_dyn(Block *block);
 	shared<Node> parse_abstract_statement_raw_function_pointer(Block *block);
 	shared<Node> parse_abstract_statement_weak(Block *block);

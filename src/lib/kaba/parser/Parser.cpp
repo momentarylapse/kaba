@@ -778,7 +778,8 @@ shared<Node> Parser::parse_operand_super_greedy(Block *block) {
 //  * for_var in for "Block"
 
 // Node structure
-//  p = [VAR, START, STOP, STEP, BLOCK]
+//  p = [VAR, START, STOP, STEP]
+//  p = [VAR, KEY, ARRAY]
 shared<Node> Parser::parse_abstract_for_header(Block *block) {
 
 	// variable name
@@ -1339,15 +1340,27 @@ shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	}
 
 	auto params = parse_abstract_call_parameters(block);
-	node->set_param(0, params[0]);
 	if (params.num == 0 or params.num > 2)
 		do_error_exp("sorted(array, criterion=\"\") expects 1 or 2 parameters");
+	node->set_param(0, params[0]);
 	if (params.num >= 2) {
 		node->set_param(1, params[1]);
 	} else {
 		// empty string
 		node->set_param(1, add_node_const(tree->add_constant(TypeString)));
 	}
+	return node;
+}
+
+shared<Node> Parser::parse_abstract_statement_filter(Block *block) {
+	int token0 = Exp.consume_token(); // "filter"
+
+	auto node = add_node_statement(StatementID::FILTER, token0, TypeUnknown);
+
+	auto params = parse_abstract_call_parameters(block);
+	if (params.num != 1)
+		do_error_exp("filter(array, criterion) 1 parameter");
+	node->set_param(0, params[0]);
 	return node;
 }
 
@@ -1413,6 +1426,8 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 		return parse_abstract_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {
 		return parse_abstract_statement_sorted(block);
+	} else if (Exp.cur == IDENTIFIER_FILTER) {
+		return parse_abstract_statement_filter(block);
 	} else if (Exp.cur == IDENTIFIER_DYN) {
 		return parse_abstract_statement_dyn(block);
 	} else if (Exp.cur == IDENTIFIER_RAW_FUNCTION_POINTER) {

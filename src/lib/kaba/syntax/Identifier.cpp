@@ -86,6 +86,7 @@ const string IDENTIFIER_ASM = "asm";
 const string IDENTIFIER_MAP = "map";
 const string IDENTIFIER_LAMBDA = "lambda";
 const string IDENTIFIER_SORTED = "sorted";
+const string IDENTIFIER_FILTER = "filter";
 const string IDENTIFIER_DYN = "dyn";
 const string IDENTIFIER_RAW_FUNCTION_POINTER = "raw_function_pointer";
 

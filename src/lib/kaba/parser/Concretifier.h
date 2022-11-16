@@ -114,6 +114,9 @@ public:
 	shared<Node> try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &params);
 
 	shared<Node> build_function_pipe(const shared<Node> &input, const shared<Node> &func, Block *block, const Class *ns, int token_id);
+	shared<Node> build_pipe_sort(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id);
+	shared<Node> build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id);
+	shared<Node> build_pipe_map(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id);
 	shared<Node> build_lambda_new(const shared<Node> &param, const shared<Node> &expression);
 
 

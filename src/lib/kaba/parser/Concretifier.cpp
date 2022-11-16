@@ -1487,7 +1487,7 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 
 	auto n_for = node->params[0];
 	auto n_exp = node->params[1];
-	auto n_cmp = node->params[2];
+	auto n_cmp = node->params[2]; // optional
 
 	// first pass: find types in the for loop
 	auto fake_for = cp_node(n_for); //->shallow_copy();
@@ -2084,38 +2084,52 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 	return shared<Node>();
 }
 
-shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &abs_func, Block *block, const Class *ns, int token_id) {
-//	auto func = force_concrete_type(_func);
-	auto input = abs_input;
-	if (input->type == TypeUnknown)
-		input = concretify_node(input, block, ns);
-	input = force_concrete_type(input);
+shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
+	if (!input->type->is_super_array())
+		do_error("'|> sorted' only allowed for lists", input);
+	Function *f = tree->required_func_global("@sorted", token_id);
 
-	if (abs_func->kind == NodeKind::STATEMENT)
-		if (abs_func->as_statement()->id == StatementID::SORTED) {
-			if (!input->type->is_super_array())
-				do_error("'|> sorted' only allowed for lists", input);
-			Function *f = tree->required_func_global("@sorted", token_id);
+	auto cmd = add_node_call(f, token_id);
+	cmd->set_param(0, input);
+	cmd->set_param(1, add_node_class(input->type));
+	if (rhs->params.num >= 1) {
+		auto crit = concretify_node(rhs->params[0], block, ns);
+		if (crit->type != TypeString or crit->kind != NodeKind::CONSTANT)
+			do_error("sorted() expects a string literal when used in a pipe", token_id);
+		cmd->set_param(2, crit);
+	} else {
+		auto crit = tree->add_constant(TypeString);
+		cmd->set_param(2, add_node_const(crit));
+	}
+	cmd->type = input->type;
+	return cmd;
+}
 
-			auto cmd = add_node_call(f, token_id);
-			cmd->set_param(0, input);
-			cmd->set_param(1, add_node_class(input->type));
-			if (abs_func->params.num >= 1) {
-				auto crit = concretify_node(abs_func->params[0], block, ns);
-				if (crit->type != TypeString or crit->kind != NodeKind::CONSTANT)
-					do_error("sorted() expects a string literal when used in a pipe", token_id);
-				cmd->set_param(2, crit);
-			} else {
-				auto crit = tree->add_constant(TypeString);
-				cmd->set_param(2, add_node_const(crit));
-			}
-			cmd->type = input->type;
-			return cmd;
-		}
 
-	auto funcs = concretify_node_multi(abs_func, block, ns);
+shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
+	auto l = rhs->params[0];
+	if (l->kind != NodeKind::ABSTRACT_OPERATOR or l->as_abstract_op()->name != "=>")
+		do_error("labmda expression '=>' expected inside 'filter()'", l);
+
+//  p = [VAR, KEY, ARRAY]
+	auto n_for = add_node_statement(StatementID::FOR_ARRAY, token_id, TypeUnknown);
+	n_for->set_param(0, l->params[0]); // token variable
+	//n_for->set_param(1, key);
+	n_for->set_param(2, input);
+
+	auto n = new Node(NodeKind::ARRAY_BUILDER_FOR, token_id, TypeUnknown);
+	n->set_num_params(3);
+	n->set_param(0, n_for);
+	n->set_param(1, l->params[0]); // expression -> variable
+	n->set_param(2, l->params[1]); // comparison
+
+	return concretify_node(n, block, ns);
+}
+
+shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
+
+	auto funcs = concretify_node_multi(rhs, block, ns);
 	for (auto f: weak(funcs)) {
-
 
 		//if (!func->type->is_callable())
 		//	do_error("operand after '|>' must be callable", func);
@@ -2151,10 +2165,27 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 		//return out;
 	}
 	if (input->type->is_super_array())
-		do_error(format("'|>' type mismatch: can not call right side with type '%s' or '%s'", input->type->long_name(), input->type->param[0]->long_name()), abs_func);
+		do_error(format("'|>' type mismatch: can not call right side with type '%s' or '%s'", input->type->long_name(), input->type->param[0]->long_name()), rhs);
 	else
-		do_error(format("'|>' type mismatch: can not call right side with type '%s'", input->type->long_name()), abs_func);
+		do_error(format("'|>' type mismatch: can not call right side with type '%s'", input->type->long_name()), rhs);
 	return nullptr;
+}
+
+shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &abs_func, Block *block, const Class *ns, int token_id) {
+//	auto func = force_concrete_type(_func);
+	auto input = abs_input;
+	if (input->type == TypeUnknown)
+		input = concretify_node(input, block, ns);
+	input = force_concrete_type(input);
+
+	if (abs_func->kind == NodeKind::STATEMENT)
+		if (abs_func->as_statement()->id == StatementID::SORTED) {
+			return build_pipe_sort(input, abs_func, block, ns, token_id);
+		} else if (abs_func->as_statement()->id == StatementID::FILTER) {
+			return build_pipe_filter(input, abs_func, block, ns, token_id);
+		}
+
+	return build_pipe_map(input, abs_func, block, ns, token_id);
 }
 
 

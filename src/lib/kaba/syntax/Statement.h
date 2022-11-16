@@ -46,6 +46,7 @@ enum class StatementID {
 	LAMBDA,
 	FUNC,
 	SORTED,
+	FILTER,
 	DYN,
 	WEAK,
 	RAW_FUNCTION_POINTER
