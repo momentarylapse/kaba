@@ -102,13 +102,6 @@ static void kaba_xxx(int a, int b, int c, int d, int e, int f, int g, int h) {
 
 static int extern_variable1 = 13;
 
-static void xxx_delete(VirtualBase* v) {
-	msg_write("...xxx_delete");// +p2s(v));
-	delete v;
-	//v->__delete_external__();
-	//v->__delete__();
-}
-
 
 MAKE_OP_FOR(int)
 MAKE_OP_FOR(float)
@@ -787,8 +780,6 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("g", TypeInt);
 		func_add_param("h", TypeInt);
 	add_ext_var("_extern_variable", TypeInt, &extern_variable1);
-
-	c->external->link("xxx_delete", (void*)&xxx_delete);
 
 
 	add_type_cast(10, TypeInt, TypeFloat32, "int.__float__");

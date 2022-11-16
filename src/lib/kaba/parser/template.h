@@ -21,6 +21,7 @@ class TemplateManager {
 public:
 
 	TemplateManager(Context *c);
+	void copy_from(TemplateManager *m);
 	
 	void add_template(Function *f, const Array<string> &param_names);
 	Function *get_instantiated(Parser *parser, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
@@ -55,6 +56,7 @@ private:
 class ImplicitClassRegistry {
 public:
 	ImplicitClassRegistry(Context *c);
+	void copy_from(ImplicitClassRegistry *i);
 	void init();
 	const Class *find(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
 	void add(const Class* t);

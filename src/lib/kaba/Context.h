@@ -17,6 +17,7 @@ namespace kaba {
 class Module;
 class Function;
 class Class;
+class TypeCast;
 class TemplateManager;
 class ImplicitClassRegistry;
 class ExternalLinkData;
@@ -37,6 +38,7 @@ class Context {
 public:
     shared_array<Module> public_modules;
     shared_array<Module> packages;
+    Array<TypeCast> type_casts;
     owned<TemplateManager> template_manager;
     owned<ImplicitClassRegistry> implicit_class_registry;
     owned<ExternalLinkData> external;

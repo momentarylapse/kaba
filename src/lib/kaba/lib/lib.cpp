@@ -277,7 +277,7 @@ const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params
 				func_add_param("b", params[1]);
 		}
 	}
-	return cur_package->syntax->request_implicit_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, cur_package->syntax->base_class, -1);
+	return cur_package->syntax->request_implicit_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, -1);
 
 	/*auto c = cur_package->syntax->make_class_callable_fp(params, ret_type);
 	add_class(c);
@@ -580,7 +580,6 @@ void func_add_param_def_x(const string &name, const Class *type, const void *p, 
 }
 
 
-Array<TypeCast> TypeCasts;
 void add_type_cast(int penalty, const Class *source, const Class *dest, const string &cmd) {
 	TypeCast c;
 	c.penalty = penalty;
@@ -596,7 +595,7 @@ void add_type_cast(int penalty, const Class *source, const Class *dest, const st
 	}
 	c.source = source;
 	c.dest = dest;
-	TypeCasts.add(c);
+	cur_package->context->type_casts.add(c);
 }
 
 
@@ -644,6 +643,8 @@ void init_lib(Context *c) {
 }
 
 
+Context *_secret_lib_context_ = nullptr;
+
 void init(Abi abi, bool allow_std_lib) {
 	if (abi == Abi::NATIVE) {
 		config.abi = config.native_abi;
@@ -663,6 +664,10 @@ void init(Abi abi, bool allow_std_lib) {
 	config.stack_frame_align = 2 * config.pointer_size;
 
 	SIAddStatements();
+
+
+	_secret_lib_context_ = new Context;
+	init_lib(_secret_lib_context_);
 
 	default_context = Context::create();
 }

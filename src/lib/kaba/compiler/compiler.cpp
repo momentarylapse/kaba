@@ -642,6 +642,7 @@ void Module::compile() {
 // link functions
 	link_functions();
 	link_virtual_functions_into_vtable(syntax->base_class);
+	link_virtual_functions_into_vtable(syntax->implicit_symbols.get());
 	if (config.compile_os)
 		link_virtual_functions_into_vtable(syntax->imported_symbols.get());
 

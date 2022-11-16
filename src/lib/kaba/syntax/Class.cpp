@@ -535,10 +535,6 @@ string class_name_might_need_parantheses(const Class *t) {
 	return t->name;
 }
 
-const Class *Class::get_pointer() const {
-	return owner->request_implicit_class(class_name_might_need_parantheses(this) + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {this}, name_space, token_id);
-}
-
 const Class *Class::get_root() const {
 	const Class *r = this;
 	while (r->parent)

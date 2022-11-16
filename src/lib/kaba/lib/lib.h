@@ -19,7 +19,6 @@ namespace kaba {
 
 
 #define MAX_OPCODE				(2*65536)	// max. amount of opcode
-#define MAX_THREAD_OPCODE		1024
 
 
 //#define mem_align(x)	((x) + (4 - (x) % 4) % 4)
@@ -51,7 +50,6 @@ public:
 	const Class *source, *dest;
 	Function *f;
 };
-extern Array<TypeCast> TypeCasts;
 
 
 typedef void t_func();

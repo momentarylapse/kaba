@@ -584,7 +584,7 @@ const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const C
 			name += ",";
 		name += c->name;
 	}
-	return tree->request_implicit_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, tree->_base_class.get(), token_id);
+	return tree->request_implicit_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, token_id);
 }
 
 shared<Node> Parser::parse_abstract_token() {
@@ -849,7 +849,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 		auto *loop_block = cmd_for->params[3].get();
 
 	// ref.
-		var->type = var->type->get_pointer();
+		var->type = tree->get_pointer(var->type);
 		n_var->type = var->type;
 		tree->transform_node(loop_block, [this, var] (shared<Node> n) {
 			return tree->conv_cbr(n, var);
@@ -1817,7 +1817,6 @@ bool Parser::try_consume(const string &identifier) {
 }
 
 
-bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd);
 
 shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 
@@ -1826,7 +1825,7 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 
 	if (type) {
 		CastingData cast;
-		if (type_match_with_cast(cv, false, type, cast)) {
+		if (con.type_match_with_cast(cv, false, type, cast)) {
 			cv = con.apply_type_cast(cast, cv, type);
 		} else {
 			do_error(format("constant value of type '%s' expected", type->long_name()), cv);

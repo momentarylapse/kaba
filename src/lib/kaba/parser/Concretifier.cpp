@@ -20,7 +20,6 @@ extern Array<Operator*> global_operators;
 
 
 bool type_match(const Class *given, const Class *wanted);
-bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd);
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
@@ -164,7 +163,7 @@ shared<Node> Concretifier::explicit_cast(shared<Node> node, const Class *wanted)
 }
 
 
-bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, int &penalty) {
+bool Concretifier::type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, int &penalty) {
 	if (f_constructor->literal_param_type.num != node->params.num + 1)
 		return false;
 
@@ -178,14 +177,14 @@ bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, 
 	return true;
 }
 
-const Class *make_effective_class_callable(shared<Node> node) {
+const Class *Concretifier::make_effective_class_callable(shared<Node> node) {
 	auto f = node->as_func();
 	if (f->is_member() and node->params.num > 0 and node->params[0])
-		return f->owner()->request_implicit_class_callable_fp(f->literal_param_type.sub_ref(1), f->literal_return_type, node->token_id);
-	return f->owner()->request_implicit_class_callable_fp(f, node->token_id);
+		return tree->request_implicit_class_callable_fp(f->literal_param_type.sub_ref(1), f->literal_return_type, node->token_id);
+	return tree->request_implicit_class_callable_fp(f, node->token_id);
 }
 
-bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
+bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
 	cd.penalty = 0;
 	auto given = node->type;
 	cd.cast = TYPE_CAST_NONE;
@@ -208,7 +207,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 		if (type_match(given->param[0], wanted->param[0])) {
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_MAKE_SHARED;
-			cd.f = wanted->get_func(IDENTIFIER_FUNC_SHARED_CREATE, wanted, {wanted->param[0]->get_pointer()});
+			cd.f = wanted->get_func(IDENTIFIER_FUNC_SHARED_CREATE, wanted, {tree->get_pointer(wanted->param[0], -1)});
 			return true;
 		}
 	}
@@ -298,7 +297,7 @@ bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wa
 			return true;
 		//}
 	}
-	for (auto&& [i,c]: enumerate(TypeCasts))
+	for (auto&& [i,c]: enumerate(context->type_casts))
 		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
 			cd.penalty = c.penalty;
 			cd.cast = i;
@@ -313,7 +312,7 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 	if (cast.cast == TYPE_CAST_DEREFERENCE)
 		return node->deref();
 	if (cast.cast == TYPE_CAST_REFERENCE)
-		return node->ref();
+		return node->ref(tree);
 	if (cast.cast == TYPE_CAST_OWN_STRING)
 		return add_converter_str(node, false);
 	if (cast.cast == TYPE_CAST_ABSTRACT_LIST) {
@@ -370,8 +369,8 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 		return nn;
 	}
 
-	auto c = add_node_call(TypeCasts[cast.cast].f, node->token_id);
-	c->type = TypeCasts[cast.cast].dest;
+	auto c = add_node_call(context->type_casts[cast.cast].f, node->token_id);
+	c->type = context->type_casts[cast.cast].dest;
 	c->set_param(0, node);
 	return c;
 }
@@ -1010,7 +1009,7 @@ shared<Node> Concretifier::concretify_statement_new(shared<Node> node, Block *bl
 	auto tt = ff->name_space;
 	//do_error("NEW " + tt->long_name());
 
-	node->type = tt->get_pointer();
+	node->type = tree->get_pointer(tt, -1);
 	return node;
 }
 
@@ -1067,10 +1066,10 @@ shared<Node> Concretifier::concretify_statement_weak(shared<Node> node, Block *b
 	auto t = sub->type;
 	while (true) {
 		if (t->is_pointer_shared() or t->is_pointer_owned()) {
-			auto tt = t->param[0]->get_pointer();
+			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->shift(0, tt, node->token_id);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
-			auto tt = tree->request_implicit_class_super_array(t->param[0]->param[0]->get_pointer(), node->token_id);
+			auto tt = tree->request_implicit_class_super_array(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
 			return sub->shift(0, tt, node->token_id);
 		}
 		if (t->parent)
@@ -1171,7 +1170,7 @@ shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *bl
 				do_error("Exception class expected", ex_type);
 			ex->type = type;
 
-			auto *v = ex_block->as_block()->add_var(var_name, type->get_pointer());
+			auto *v = ex_block->as_block()->add_var(var_name, tree->get_pointer(type, -1));
 			ex->set_param(0, add_node_local(v));
 		} else {
 			ex->type = TypeVoid;
@@ -1322,7 +1321,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 
 		bool via_ref = should_capture_via_ref(v);
 		capture_via_ref.add(via_ref);
-		auto cap_type = via_ref ? v->type->get_pointer() : v->type;
+		auto cap_type = via_ref ? tree->get_pointer(v->type, -1) : v->type;
 
 
 		auto vvv = f->add_param(v->name, cap_type, Flags::NONE);
@@ -1354,7 +1353,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	shared_array<Node> capture_nodes;
 	for (auto&& [i,c]: enumerate(captures)) {
 		if (capture_via_ref[i])
-			capture_nodes.add(add_node_local(c)->ref());
+			capture_nodes.add(add_node_local(c)->ref(tree));
 		else
 			capture_nodes.add(add_node_local(c));
 	}
@@ -1544,13 +1543,13 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent, int token_id) {
 	if (!parent->name_space)
 		tree->do_error("shared not allowed for: " + parent->long_name(), token_id); // TODO
-	return tree->request_implicit_class(parent->name + " " + IDENTIFIER_SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, parent->name_space, token_id);
+	return tree->request_implicit_class(parent->name + " " + IDENTIFIER_SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent, int token_id) {
 	if (!parent->name_space)
 		tree->do_error("owned not allowed for: " + parent->long_name(), token_id);
-	return tree->request_implicit_class(parent->name + " " + IDENTIFIER_OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, parent->name_space, token_id);
+	return tree->request_implicit_class(parent->name + " " + IDENTIFIER_OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 // concretify as far as possible
@@ -1574,7 +1573,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::REFERENCE) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
-		node->type = sub->type->get_pointer();
+		node->type = tree->get_pointer(sub->type, -1);
 	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
 		return concretify_call(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY) {
@@ -1604,7 +1603,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		if (node->params[0]->kind != NodeKind::CLASS)
 			do_error("type expected before '*'", node->params[0]);
 		const Class *t = node->params[0]->as_class();
-		return add_node_class(t->get_pointer());
+		return add_node_class(tree->get_pointer(t, -1));
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_LIST) {
 		concretify_all_params(node, block, ns);
 		auto n = digest_type(tree, node->params[0]);
@@ -2308,7 +2307,7 @@ shared<Node> Concretifier::add_converter_str(shared<Node> sub, bool repr) {
 	Function *f = tree->required_func_global(repr ? "@var_repr" : "@var2str", sub->token_id);
 
 	auto cmd = add_node_call(f, sub->token_id);
-	cmd->set_param(0, sub->ref());
+	cmd->set_param(0, sub->ref(tree));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
 }
@@ -2334,7 +2333,7 @@ shared<Node> Concretifier::make_dynamical(shared<Node> node) {
 	Function *f = tree->required_func_global("@dyn", node->token_id);
 
 	auto cmd = add_node_call(f, node->token_id);
-	cmd->set_param(0, node->ref());
+	cmd->set_param(0, node->ref(tree));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
 }

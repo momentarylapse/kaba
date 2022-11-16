@@ -1,7 +1,7 @@
 f...
-func-pointer2.int->void
+int->void
 nil
-[func-pointer2.Callable[int->void]]
+[Callable[int->void]]
 @CallableBase
 [int, void]
 ff 13

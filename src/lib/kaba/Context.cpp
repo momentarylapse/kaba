@@ -209,12 +209,15 @@ void Context::clean_up() {
 	external->reset();
 }
 
-
-void init_lib(Context *c);
+extern Context *_secret_lib_context_;
 
 Context *Context::create() {
 	auto c = new Context;
-	init_lib(c);
+	c->packages = _secret_lib_context_->packages;
+	c->type_casts = _secret_lib_context_->type_casts;
+	//c->external = _secret_lib_context_->external;
+	c->template_manager->copy_from(_secret_lib_context_->template_manager.get());
+	c->implicit_class_registry->copy_from(_secret_lib_context_->implicit_class_registry.get());
 	return c;
 }
 

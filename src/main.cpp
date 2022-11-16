@@ -199,6 +199,13 @@ public:
 		exit(1);
 	}
 
+	static void xxx_delete(VirtualBase* v) {
+		msg_write("...xxx_delete");// +p2s(v));
+		delete v;
+		//v->__delete_external__();
+		//v->__delete__();
+	}
+
 	void init_environment() {
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
@@ -210,6 +217,9 @@ public:
 		e->link_class_func("Resource.str", &hui::Resource::to_string);
 		e->link_class_func("Resource.show", &hui::Resource::show);
 		e->link("ParseResource", (void*)&hui::parse_resource);
+
+		e->link("xxx_delete", (void*)&xxx_delete);
+
 
 
 		if (symbols_in_file)

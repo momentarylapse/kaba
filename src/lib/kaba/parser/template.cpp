@@ -19,6 +19,9 @@ TemplateManager::TemplateManager(Context *c) {
 	context = c;
 }
 
+void TemplateManager::copy_from(TemplateManager *t) {
+}
+
 
 void TemplateManager::add_template(Function *f, const Array<string> &param_names) {
 	if (config.verbose)
@@ -225,6 +228,10 @@ ImplicitClassRegistry::ImplicitClassRegistry(Context *c) {
 	context = c;
 }
 
+void ImplicitClassRegistry::copy_from(ImplicitClassRegistry *i) {
+	classes = i->classes;
+}
+
 void ImplicitClassRegistry::init() {
 	module = new Module(context, "<implicit-class-owner>");
 }
@@ -246,7 +253,7 @@ const Class *ImplicitClassRegistry::find(const string &name, Class::Type type, i
 }
 
 void ImplicitClassRegistry::add(const Class* t) {
-	//msg_write("ADD  " + t->long_name());
+	//msg_write("ADD  " + p2s(this) + "  " + t->long_name());
 	//if (!module)
 	//	init();
 	//module->syntax->owned_classes.add(t);
