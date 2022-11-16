@@ -130,7 +130,7 @@ void add_package(Context *c, const string &name, Flags flags) {
 			cur_package = p.get();
 			return;
 		}
-	auto s = c->create_empty(name);
+	auto s = c->create_empty_module(name);
 	s->used_by_default = flags_has(flags, Flags::AUTO_IMPORT);
 	s->syntax->base_class->name = name;
 	c->packages.add(s);

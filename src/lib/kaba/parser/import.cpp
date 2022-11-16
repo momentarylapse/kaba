@@ -130,7 +130,7 @@ shared<Module> get_import(Parser *parser, const string &name, int token) {
 	msg_right();
 	shared<Module> include;
 	try {
-		include = parser->context->load(filename, parser->tree->module->just_analyse or config.compile_os);
+		include = parser->context->load_module(filename, parser->tree->module->just_analyse or config.compile_os);
 		// os-includes will be appended to syntax_tree... so don't compile yet
 	} catch (Exception &e) {
 		msg_left();

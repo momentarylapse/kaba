@@ -265,7 +265,7 @@ public:
 			filename = try_get_installed_app_file(filename);
 
 		try {
-			auto s = kaba::default_context->load(filename);
+			auto s = kaba::default_context->load_module(filename);
 			if (symbols_out_file)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts)

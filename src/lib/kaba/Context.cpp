@@ -50,9 +50,13 @@ Context::~Context() {
     clean_up();
 }
 
+void Context::__delete__() {
+	this->Context::~Context();
+}
 
 
-shared<Module> Context::load(const Path &filename, bool just_analyse) {
+
+shared<Module> Context::load_module(const Path &filename, bool just_analyse) {
 	//msg_write("loading " + filename.str());
 
 	auto _filename = absolute_module_path(filename);
@@ -63,7 +67,7 @@ shared<Module> Context::load(const Path &filename, bool just_analyse) {
 			return ps;
 	
 	// load
-    auto s = create_empty(filename);
+    auto s = create_empty_module(filename);
 	s->load(filename, just_analyse);
 
 	// store module in database
@@ -71,8 +75,8 @@ shared<Module> Context::load(const Path &filename, bool just_analyse) {
 	return s;
 }
 
-shared<Module> Context::create_for_source(const string &buffer, bool just_analyse) {
-    auto s = create_empty("<from-source>");
+shared<Module> Context::create_module_for_source(const string &buffer, bool just_analyse) {
+    auto s = create_empty_module("<from-source>");
 	s->just_analyse = just_analyse;
 	s->filename = config.default_filename;
 	s->syntax->parser = new Parser(s->syntax);
@@ -84,18 +88,18 @@ shared<Module> Context::create_for_source(const string &buffer, bool just_analys
 	return s;
 }
 
-shared<Module> Context::create_empty(const Path &filename) {
+shared<Module> Context::create_empty_module(const Path &filename) {
 	shared<Module> s = new Module(this, filename);
     return s;
 }
 
-void Context::remove_module(Module *s) {
+/*void Context::remove_module(Module *s) {
 
 	// remove from normal list
 	for (int i=0;i<public_modules.num;i++)
 		if (public_modules[i] == s)
 			public_modules.erase(i);
-}
+}*/
 
 
 
@@ -105,7 +109,7 @@ void Context::execute_single_command(const string &cmd) {
 		return;
 	//msg_write("command: " + cmd);
 
-    auto s = create_empty("<command-line>");
+    auto s = create_empty_module("<command-line>");
 	auto tree = s->syntax;
 	tree->default_import();
 	auto parser = new Parser(tree);

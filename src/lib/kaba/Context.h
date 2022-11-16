@@ -46,13 +46,15 @@ public:
     Context();
     ~Context();
 
+    void __delete__();
+
     void clean_up();
 
 
-    shared<Module> load(const Path &filename, bool just_analyse = false);
-    shared<Module> create_for_source(const string &buffer, bool just_analyse = false);
-    shared<Module> create_empty(const Path &filename);
-    void remove_module(Module *s);
+    shared<Module> load_module(const Path &filename, bool just_analyse = false);
+    shared<Module> create_module_for_source(const string &buffer, bool just_analyse = false);
+    shared<Module> create_empty_module(const Path &filename);
+    //void remove_module(Module *s);
     
     void execute_single_command(const string &cmd);
 
