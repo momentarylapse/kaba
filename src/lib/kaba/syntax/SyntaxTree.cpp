@@ -503,9 +503,14 @@ Array<int> enum_all(const Class*);
 
 
 Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
-	//msg_write("CREATE " + name);
 	if (find_root_type_by_name(name, ns, false))
 		do_error(format("class '%s' already exists", name), token_id);
+	return create_new_class_no_check(name, type, size, array_size, parent, params, ns, token_id);
+}
+
+
+Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
+	//msg_write("CREATE " + name);
 
 	Class *t = new Class(type, name, size, this, parent, params);
 	t->token_id = token_id;
@@ -609,7 +614,7 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 		return tt;
 
 	// add new class
-	auto t = create_new_class(name, type, size, array_size, parent, params, implicit_symbols.get(), token_id);
+	auto t = create_new_class_no_check(name, type, size, array_size, parent, params, implicit_symbols.get(), token_id);
 	module->context->implicit_class_registry->add(t);
 	return t;
 }

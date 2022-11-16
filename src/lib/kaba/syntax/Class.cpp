@@ -529,10 +529,12 @@ bool member_func_override_match(Function *a, Function *b) {
 	return true;
 }
 
+// only used to create "implicit" types
+// TODO: find a better system
 string class_name_might_need_parantheses(const Class *t) {
 	if (t->is_callable() /*or t->is_product()*/)
-		return "(" + t->name + ")";
-	return t->name;
+		return "(" + t->long_name() + ")";
+	return t->long_name();
 }
 
 const Class *Class::get_root() const {
