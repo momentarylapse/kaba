@@ -17,12 +17,12 @@ extern const Class *TypePath;
 class KabaContext : public Context {
 public:
 	shared<Module> __load_module__(const string &filename, bool just_analyse) {
-		KABA_EXCEPTION_WRAPPER( return load(filename, just_analyse); );
+		KABA_EXCEPTION_WRAPPER( return load_module(filename, just_analyse); );
 		return nullptr;
 	}
 
 	shared<Module> __create_from_source__(const string &source, bool just_analyse) {
-		KABA_EXCEPTION_WRAPPER( return create_for_source(source, just_analyse); );
+		KABA_EXCEPTION_WRAPPER( return create_module_for_source(source, just_analyse); );
 		return nullptr;
 	}
 
