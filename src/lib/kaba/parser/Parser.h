@@ -60,7 +60,8 @@ public:
 	Class *parse_class_header(Class *_namespace, int &offset0);
 	void post_process_newly_parsed_class(Class *c, int size);
 	void skip_parse_class();
-	Function *parse_function_header(Class *name_space, Flags flags0);
+	Function *parse_function_header(const Class *default_type, Class *name_space, Flags flags0);
+	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void skip_parsing_function_body(Function *f);
 	void parse_abstract_function_body(Function *f);
 	bool parse_abstract_function_command(Function *f, int indent0);

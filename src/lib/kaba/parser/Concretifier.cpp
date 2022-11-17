@@ -1420,7 +1420,7 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 		// well... we're abusing that we will always get the FIRST 2 pipe elements!!!
 		return build_function_pipe(node->params[0], node->params[1], block, ns, node->token_id);
 	} else if (op_no->id == OperatorID::MAPS_TO) {
-		return build_lambda_new(node->params[0], node->params[1]);
+		return build_lambda_new(node->params[0], node->params[1], block, ns, node->token_id);
 	}
 	concretify_all_params(node, block, ns);
 
@@ -2189,9 +2189,25 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 }
 
 
-shared<Node> Concretifier::build_lambda_new(const shared<Node> &param, const shared<Node> &expression) {
-	do_error("abstract lambda not implemented yet", param);
-	return nullptr;
+shared<Node> Concretifier::build_lambda_new(const shared<Node> &param, const shared<Node> &expression, Block *block, const Class *ns, int token_id) {
+
+	static int lambda_count = 0;
+	string name = format(":lambda-evil-%d:", lambda_count ++);
+	Function *f = tree->add_function(name, TypeUnknown, tree->base_class, Flags::STATIC);
+
+	//f->abstract_param_types.add();
+	auto v = f->add_param(param->as_token(), TypeInt, Flags::NONE);
+	parser->post_process_function_header(f, {}, tree->base_class, Flags::STATIC);
+
+	// body
+	f->block->add(expression);
+
+	// statement wrapper
+	auto node = add_node_statement(StatementID::LAMBDA, f->token_id, TypeUnknown);
+	node->set_num_params(1);
+	node->set_param(0, add_node_func_name(f));
+
+	return concretify_statement_lambda(node, block, ns);
 }
 
 // when calling ...(...)
