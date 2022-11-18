@@ -42,6 +42,7 @@ public:
 	shared_array<Node> concretify_element(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_var_declaration(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_array_builder_for(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_array_builder_for_inner(shared<Node> n_for, shared<Node> n_exp, shared<Node> n_cmp, const Class *type_el, Block *block, const Class *ns, int token_id);
 	shared<Node> concretify_operator(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_call(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement(shared<Node> node, Block *block, const Class *ns);

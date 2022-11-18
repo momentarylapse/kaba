@@ -914,7 +914,7 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, Blo
 
 
 	// variable...
-	auto var_name = parser->Exp.get_token(node->params[0]->token_id);
+	auto var_name = node->params[0]->as_token();
 	auto var_type = array->type->get_array_element();
 	auto var = block->add_var(var_name, var_type);
 	if (array->is_const)
@@ -923,7 +923,7 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, Blo
 
 	string index_name = format("-for_index_%d-", for_index_count ++);
 	if (node->params[1])
-		index_name = parser->Exp.get_token(node->params[1]->token_id);
+		index_name = node->params[1]->as_token();
 	auto index = block->add_var(index_name, TypeInt);
 	node->set_param(1, add_node_local(index));
 
@@ -1487,7 +1487,7 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 
 	auto n_for = node->params[0];
 	auto n_exp = node->params[1];
-	auto n_cmp = node->params[2]; // optional
+	auto n_cmp = node->params[2];
 
 	// first pass: find types in the for loop
 	auto fake_for = cp_node(n_for); //->shallow_copy();
@@ -1495,9 +1495,15 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 	fake_for = concretify_node(fake_for, block, ns);
 	// TODO: remove new variables!
 
+	return concretify_array_builder_for_inner(n_for, n_exp, n_cmp, fake_for->params.back()->type, block, ns, node->token_id);
+}
+
+shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for, shared<Node> n_exp, shared<Node> n_cmp, const Class *type_el, Block *block, const Class *ns, int token_id) {
+	// OUT: [FOR, VAR]
+
+
 	// create an array
-	auto type_el = fake_for->params.back()->type;
-	auto type_array = tree->request_implicit_class_super_array(type_el, node->token_id);
+	auto type_array = tree->request_implicit_class_super_array(type_el, token_id);
 	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
 
 
@@ -1505,7 +1511,7 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 	// array.add(exp)
 	auto *f_add = type_array->get_member_func("add", TypeVoid, {type_el});
 	if (!f_add)
-		do_error("...add() ???", node);
+		do_error("...add() ???", token_id);
 	auto n_add = add_node_member_call(f_add, add_node_local(var));
 	n_add->set_param(1, n_exp);
 	n_add->type = TypeUnknown; // mark abstract so n_exp will be concretified
@@ -1517,7 +1523,7 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 		auto b_add = new Block(block->function, b_if, TypeUnknown);
 		b_add->add(n_add);
 
-		auto n_if = add_node_statement(StatementID::IF, node->token_id, TypeUnknown);
+		auto n_if = add_node_statement(StatementID::IF, token_id, TypeUnknown);
 		n_if->set_param(0, n_cmp);
 		n_if->set_param(1, b_add);
 
@@ -2107,6 +2113,8 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 
 
 shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
+	if (input->type->is_super_array())
+		do_error(format("'|> filter()' expects a list on the left, but '%s' given", input->type->long_name()), token_id);
 	auto l = rhs->params[0];
 	if (l->kind != NodeKind::ABSTRACT_OPERATOR or l->as_abstract_op()->name != "=>")
 		do_error("labmda expression '=>' expected inside 'filter()'", l);
@@ -2144,10 +2152,44 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 		//if (f->literal_param_type[0] != input->type)
 		//	do_error("pipe type mismatch...");
 
-
 		// array |> func
 		if (input->type->is_super_array() and input->type->param[0] == p[0]) {
 			// -> map(func, array)
+
+
+			// [VAR, INDEX, ARRAY, BLOCK]
+			auto n_for = add_node_statement(StatementID::FOR_ARRAY, token_id, TypeVoid);
+			n_for->set_param(2, input);
+
+			auto el_type = input->type->get_array_element();
+			auto var = block->add_var("x", el_type);
+			flags_set(var->flags, Flags::CONST);
+			n_for->set_param(0, add_node_local(var));
+			auto index = block->add_var("<index>", TypeInt);
+			n_for->set_param(1, add_node_local(index));
+
+
+			auto out = add_node_call(f->as_func(), f->token_id);
+
+			Array<CastingData> casts;
+			Array<const Class*> wanted;
+			int penalty;
+			auto nvar = add_node_local(var);
+
+			if (!param_match_with_cast(out, {nvar}, casts, wanted, &penalty))
+				continue;//do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
+
+			auto n_exp = check_const_params(tree, apply_params_with_cast(out, {nvar}, casts, wanted));
+
+			auto rrr = concretify_array_builder_for_inner(n_for, n_exp, nullptr, rt, block, ns, token_id);
+
+			parser->post_process_for(rrr->params[0]);
+
+			return rrr;
+
+
+
+			// old:
 			auto fp = wrap_node_into_callable(f);
 			return create_map_call(tree, fp, input, input->token_id);
 		}
