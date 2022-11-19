@@ -287,6 +287,13 @@ Statement *Parser::which_statement(const string &name) {
 	return nullptr;
 }
 
+SpecialFunction *Parser::which_special_function(const string &name) {
+	for (auto *s: special_functions)
+		if (name == s->name)
+			return s;
+	return nullptr;
+}
+
 shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Class *ns, int token_id) {
 	shared_array<Node> links;
 

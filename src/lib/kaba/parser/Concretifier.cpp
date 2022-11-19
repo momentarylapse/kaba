@@ -600,6 +600,17 @@ void Concretifier::concretify_all_params(shared<Node> &node, Block *block, const
 
 
 shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, const Class *ns) {
+
+	// special function
+	if (node->params[0]->kind == NodeKind::ABSTRACT_TOKEN)
+		if (auto s = parser->which_special_function(node->params[0]->as_token())) {
+			auto n = add_node_special_function(s->id, node->token_id);
+			n->set_num_params(node->params.num - 1);
+			n->params = node->params.sub_ref(1);
+			return concretify_special_function(n, block, ns);
+		}
+
+
 	//concretify_all_params(node, block, ns, this);
 	auto links = concretify_node_multi(node->params[0], block, ns);
 	for (int p=1; p<node->params.num; p++)
@@ -935,17 +946,17 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, Blo
 	return node;
 }
 
-shared<Node> Concretifier::concretify_statement_str(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_str(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
 	return add_converter_str(node->params[0], false);
 }
 
-shared<Node> Concretifier::concretify_statement_repr(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_repr(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
 	return add_converter_str(node->params[0], true);
 }
 
-shared<Node> Concretifier::concretify_statement_sizeof(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_sizeof(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
 
@@ -956,7 +967,7 @@ shared<Node> Concretifier::concretify_statement_sizeof(shared<Node> node, Block 
 	}
 }
 
-shared<Node> Concretifier::concretify_statement_typeof(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_typeof(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
 
@@ -968,7 +979,7 @@ shared<Node> Concretifier::concretify_statement_typeof(shared<Node> node, Block 
 	}
 }
 
-shared<Node> Concretifier::concretify_statement_len(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_len(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
 	sub = deref_if_pointer(sub);
@@ -1031,13 +1042,13 @@ shared<Node> Concretifier::concretify_statement_delete(shared<Node> node, Block 
 	return node;
 }
 
-shared<Node> Concretifier::concretify_statement_dyn(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_dyn(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	//sub = force_concrete_type(sub); // TODO
 	return make_dynamical(sub);
 }
 
-shared<Node> Concretifier::concretify_statement_sorted(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_sorted(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
 	if (node->params.num < 2)
 		return node;
@@ -1060,7 +1071,7 @@ shared<Node> Concretifier::concretify_statement_sorted(shared<Node> node, Block 
 	return cmd;
 }
 
-shared<Node> Concretifier::concretify_statement_weak(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 
 	auto t = sub->type;
@@ -1330,28 +1341,12 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 		return concretify_statement_for_range(node, block, ns);
 	} else if (s->id == StatementID::FOR_ARRAY) {
 		return concretify_statement_for_array(node, block, ns);
-	} else if (s->id == StatementID::STR) {
-		return concretify_statement_str(node, block, ns);
-	} else if (s->id == StatementID::REPR) {
-		return concretify_statement_repr(node, block, ns);
-	} else if (s->id == StatementID::SIZEOF) {
-		return concretify_statement_sizeof(node, block, ns);
-	} else if (s->id == StatementID::TYPEOF) {
-		return concretify_statement_typeof(node, block, ns);
-	} else if (s->id == StatementID::LEN) {
-		return concretify_statement_len(node, block, ns);
 	} else if (s->id == StatementID::NEW) {
 		return concretify_statement_new(node, block, ns);
 	} else if (s->id == StatementID::DELETE) {
 		return concretify_statement_delete(node, block, ns);
-	} else if (s->id == StatementID::DYN) {
-		return concretify_statement_dyn(node, block, ns);
 	} else if (s->id == StatementID::RAW_FUNCTION_POINTER) {
 		return concretify_statement_raw_function_pointer(node, block, ns);
-	} else if (s->id == StatementID::WEAK) {
-		return concretify_statement_weak(node, block, ns);
-	} else if (s->id == StatementID::SORTED) {
-		return concretify_statement_sorted(node, block, ns);
 	} else if (s->id == StatementID::TRY) {
 		return concretify_statement_try(node, block, ns);
 	} else if (s->id == StatementID::LAMBDA) {
@@ -1359,6 +1354,35 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 	} else {
 		node->show();
 		do_error("INTERNAL: unexpected statement", node);
+	}
+	return nullptr;
+}
+
+shared<Node> Concretifier::concretify_special_function(shared<Node> node, Block *block, const Class *ns) {
+	auto s = node->as_special_function();
+	if (s->id == SpecialFunctionID::STR) {
+		return concretify_special_function_str(node, block, ns);
+	} else if (s->id == SpecialFunctionID::REPR) {
+		return concretify_special_function_repr(node, block, ns);
+	} else if (s->id == SpecialFunctionID::SIZEOF) {
+		return concretify_special_function_sizeof(node, block, ns);
+	} else if (s->id == SpecialFunctionID::TYPEOF) {
+		return concretify_special_function_typeof(node, block, ns);
+	} else if (s->id == SpecialFunctionID::LEN) {
+		return concretify_special_function_len(node, block, ns);
+	} else if (s->id == SpecialFunctionID::DYN) {
+		return concretify_special_function_dyn(node, block, ns);
+	} else if (s->id == SpecialFunctionID::WEAK) {
+		return concretify_special_function_weak(node, block, ns);
+	} else if (s->id == SpecialFunctionID::SORTED) {
+		return concretify_special_function_sorted(node, block, ns);
+	} else if (s->id == SpecialFunctionID::FILTER) {
+		//return concretify_special_function_filter(node, block, ns);
+		do_error("filter() not allowed outside |> pipes", node);
+	} else {
+		node->show();
+		//tree->module->do_error("");
+		do_error("INTERNAL: unexpected special function", node);
 	}
 	return nullptr;
 }
@@ -1618,6 +1642,8 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			return operands[0];
 	} else if (node->kind == NodeKind::STATEMENT) {
 		return concretify_statement(node, block, ns);
+	} else if (node->kind == NodeKind::SPECIAL_FUNCTION) {
+		return concretify_special_function(node, block, ns);
 	} else if (node->kind == NodeKind::BLOCK) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
@@ -2170,10 +2196,10 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 		input = concretify_node(input, block, ns);
 	input = force_concrete_type(input);
 
-	if (abs_func->kind == NodeKind::STATEMENT)
-		if (abs_func->as_statement()->id == StatementID::SORTED) {
+	if (abs_func->kind == NodeKind::SPECIAL_FUNCTION)
+		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED) {
 			return build_pipe_sort(input, abs_func, block, ns, token_id);
-		} else if (abs_func->as_statement()->id == StatementID::FILTER) {
+		} else if (abs_func->as_special_function()->id == SpecialFunctionID::FILTER) {
 			return build_pipe_filter(input, abs_func, block, ns, token_id);
 		}
 

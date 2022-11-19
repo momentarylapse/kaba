@@ -618,6 +618,8 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		operand = parse_abstract_dict(block);
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_abstract_statement(block);
+	} else if (auto s = which_special_function(Exp.cur)) {
+		operand = parse_abstract_special_function(block);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
 		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
 		Exp.next();
@@ -1122,38 +1124,38 @@ shared<Node> Parser::parse_abstract_single_func_param(Block *block) {
 	return n;
 }
 
-shared<Node> Parser::parse_abstract_statement_sizeof(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_sizeof(Block *block) {
 	int token0 = Exp.consume_token(); // "sizeof"
-	auto node = add_node_statement(StatementID::SIZEOF, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::SIZEOF, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 
 }
 
-shared<Node> Parser::parse_abstract_statement_type(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_typeof(Block *block) {
 	int token0 = Exp.consume_token(); // typeof
-	auto node = add_node_statement(StatementID::TYPEOF, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::TYPEOF, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_len(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_len(Block *block) {
 	int token0 = Exp.consume_token(); // len
-	auto node = add_node_statement(StatementID::LEN, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::LEN, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_str(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_str(Block *block) {
 	int token0 = Exp.consume_token(); // str
-	auto node = add_node_statement(StatementID::STR, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::STR, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_repr(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_repr(Block *block) {
 	int token0 = Exp.consume_token(); // repr
-	auto node = add_node_statement(StatementID::REPR, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::REPR, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
@@ -1260,7 +1262,6 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	return add_node_statement(StatementID::PASS);
 }
 
-
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	auto f = parse_function_header(TypeUnknown, tree->base_class, Flags::STATIC);
 
@@ -1289,10 +1290,10 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_sorted(Block *block) {
 	int token0 = Exp.consume_token(); // "sorted"
 
-	auto node = add_node_statement(StatementID::SORTED, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::SORTED, token0, TypeUnknown);
 
 	if (Exp.cur != "(") {
 		node->set_num_params(0);
@@ -1312,10 +1313,10 @@ shared<Node> Parser::parse_abstract_statement_sorted(Block *block) {
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_filter(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_filter(Block *block) {
 	int token0 = Exp.consume_token(); // "filter"
 
-	auto node = add_node_statement(StatementID::FILTER, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::FILTER, token0, TypeUnknown);
 
 	auto params = parse_abstract_call_parameters(block);
 	if (params.num != 1)
@@ -1324,9 +1325,16 @@ shared<Node> Parser::parse_abstract_statement_filter(Block *block) {
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_statement_dyn(Block *block) {
+shared<Node> Parser::parse_abstract_special_function_dyn(Block *block) {
 	int token0 = Exp.consume_token(); // "dyn"
-	auto node = add_node_statement(StatementID::DYN, token0, TypeUnknown);
+	auto node = add_node_special_function(SpecialFunctionID::DYN, token0, TypeUnknown);
+	node->set_param(0, parse_abstract_single_func_param(block));
+	return node;
+}
+
+shared<Node> Parser::parse_abstract_special_function_weak(Block *block) {
+	int token0 = Exp.consume_token(); // "weak"
+	auto node = add_node_special_function(SpecialFunctionID::WEAK, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
@@ -1334,13 +1342,6 @@ shared<Node> Parser::parse_abstract_statement_dyn(Block *block) {
 shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block) {
 	int token0 = Exp.consume_token(); // "raw_function_pointer"
 	auto node = add_node_statement(StatementID::RAW_FUNCTION_POINTER, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_statement_weak(Block *block) {
-	int token0 = Exp.consume_token(); // "weak"
-	auto node = add_node_statement(StatementID::WEAK, token0, TypeUnknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
@@ -1368,32 +1369,38 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 		return parse_abstract_statement_new(block);
 	} else if (Exp.cur == IDENTIFIER_DELETE) {
 		return parse_abstract_statement_delete(block);
-	} else if (Exp.cur == IDENTIFIER_SIZEOF) {
-		return parse_abstract_statement_sizeof(block);
-	} else if (Exp.cur == IDENTIFIER_TYPEOF) {
-		return parse_abstract_statement_type(block);
-	} else if (Exp.cur == IDENTIFIER_STR) {
-		return parse_abstract_statement_str(block);
-	} else if (Exp.cur == IDENTIFIER_REPR) {
-		return parse_abstract_statement_repr(block);
-	} else if (Exp.cur == IDENTIFIER_LEN) {
-		return parse_abstract_statement_len(block);
 	} else if (Exp.cur == IDENTIFIER_LET or Exp.cur == IDENTIFIER_VAR) {
 		return parse_abstract_statement_var(block);
 	} else if (Exp.cur == IDENTIFIER_LAMBDA or Exp.cur == IDENTIFIER_FUNC) {
 		return parse_abstract_statement_lambda(block);
-	} else if (Exp.cur == IDENTIFIER_SORTED) {
-		return parse_abstract_statement_sorted(block);
-	} else if (Exp.cur == IDENTIFIER_FILTER) {
-		return parse_abstract_statement_filter(block);
-	} else if (Exp.cur == IDENTIFIER_DYN) {
-		return parse_abstract_statement_dyn(block);
 	} else if (Exp.cur == IDENTIFIER_RAW_FUNCTION_POINTER) {
 		return parse_abstract_statement_raw_function_pointer(block);
-	} else if (Exp.cur == IDENTIFIER_WEAK) {
-		return parse_abstract_statement_weak(block);
 	}
 	do_error_exp("unhandled statement: " + Exp.cur);
+	return nullptr;
+}
+
+shared<Node> Parser::parse_abstract_special_function(Block *block) {
+	if (Exp.cur == IDENTIFIER_SIZEOF) {
+		return parse_abstract_special_function_sizeof(block);
+	} else if (Exp.cur == IDENTIFIER_TYPEOF) {
+		return parse_abstract_special_function_typeof(block);
+	} else if (Exp.cur == IDENTIFIER_STR) {
+		return parse_abstract_special_function_str(block);
+	} else if (Exp.cur == IDENTIFIER_REPR) {
+		return parse_abstract_special_function_repr(block);
+	} else if (Exp.cur == IDENTIFIER_LEN) {
+		return parse_abstract_special_function_len(block);
+	} else if (Exp.cur == IDENTIFIER_SORTED) {
+		return parse_abstract_special_function_sorted(block);
+	} else if (Exp.cur == IDENTIFIER_FILTER) {
+		return parse_abstract_special_function_filter(block);
+	} else if (Exp.cur == IDENTIFIER_DYN) {
+		return parse_abstract_special_function_dyn(block);
+	} else if (Exp.cur == IDENTIFIER_WEAK) {
+		return parse_abstract_special_function_weak(block);
+	}
+	do_error_exp("unhandled special function: " + Exp.cur);
 	return nullptr;
 }
 
