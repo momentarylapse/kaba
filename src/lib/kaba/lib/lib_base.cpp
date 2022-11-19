@@ -237,17 +237,9 @@ void SIAddXCommands(Context *c) {
 	add_func("@var_repr", TypeString, &var_repr, Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
-//	add_func("@map", TypeDynamicArray, &kaba_map, Flags::_STATIC__RAISES_EXCEPTIONS);
-//		func_add_param("func", TypeFunctionP);
-//		func_add_param("array", TypePointer);
 	add_func("@dyn", TypeAny, &dynify, Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("var", TypePointer);
 		func_add_param("class", TypeClassP);
-	add_func("@xmap", TypeDynamicArray, &array_map, Flags::_STATIC__RAISES_EXCEPTIONS);
-		func_add_param("f", TypeCallableBase);
-		func_add_param("array", TypeDynamic);
-		func_add_param("t1", TypeClassP);
-		func_add_param("t2", TypeClassP);
 
 	add_func("@call0", TypeVoid, &kaba_call0, Flags::_STATIC__RAISES_EXCEPTIONS);
 		func_add_param("f", TypeFunctionP);

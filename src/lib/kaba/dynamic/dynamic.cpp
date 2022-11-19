@@ -473,6 +473,7 @@ Any _cdecl dynify(const void *var, const Class *type) {
 
 Array<const Class*> func_effective_params(const Function *f);
 
+// deprecated, but who knows...
 DynamicArray array_map(void *fff, DynamicArray *a, const Class *ti, const Class *to) {
 	//msg_write("map " + ti->long_name() + " -> " + to->long_name());
 

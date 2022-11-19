@@ -3,7 +3,7 @@ func upper(s: string) -> string
 
 func main()
 	#let f = string.upper
-	var b = map(string.upper, ["hallo", "welt"])
+	let b = ["hallo", "welt"] |> string.upper
 	#let b = map(sqr, [2.0,4.0])
 	print(b)
 	

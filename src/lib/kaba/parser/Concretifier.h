@@ -61,7 +61,6 @@ public:
 	shared<Node> concretify_statement_dyn(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_sorted(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_weak(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_statement_map(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_try(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_lambda(shared<Node> node, Block *block, const Class *ns);

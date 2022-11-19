@@ -1081,53 +1081,6 @@ shared<Node> Concretifier::concretify_statement_weak(shared<Node> node, Block *b
 	return nullptr;
 }
 
-shared<Node> create_map_call(SyntaxTree *tree, shared<Node> func, shared<Node> array, int token_id) {
-	auto *f = tree->required_func_global("@xmap", token_id);
-
-	auto p = node_call_effective_params(func);
-	auto rt = node_call_return_type(func);
-
-	auto cmd = add_node_call(f, token_id);
-	cmd->set_param(0, func);
-	cmd->set_param(1, array);
-	cmd->set_param(2, add_node_class(p[0]));
-	cmd->set_param(3, add_node_class(rt));
-	cmd->type = tree->request_implicit_class_super_array(rt, token_id);
-	return cmd;
-}
-
-shared<Node> Concretifier::concretify_statement_map(shared<Node> node, Block *block, const Class *ns) {
-	auto func = concretify_node(node->params[0], block, block->name_space());
-	auto array = concretify_node(node->params[1], block, block->name_space());
-	func = force_concrete_type(func);
-	array = force_concrete_type(array);
-
-
-	if (!func->type->is_callable())
-		do_error("map(): first parameter must be callable", func);
-	if (!array->type->is_super_array())
-		do_error("map(): second parameter must be a list[]", array);
-
-	auto p = node_call_effective_params(func);
-	auto rt = node_call_return_type(func);
-	if (p.num != 1)
-		do_error("map(): function must have exactly one parameter", func);
-	if (p[0] != array->type->param[0])
-		do_error("map(): function parameter does not match list type", array);
-
-	return create_map_call(tree, func, array, node->token_id);
-
-	/*auto *f = tree->required_func_global("@xmap", node->token_id);
-
-	auto cmd = add_node_call(f, node->token_id);
-	cmd->set_param(0, func);
-	cmd->set_param(1, array);
-	cmd->set_param(2, add_node_class(p[0]));
-	cmd->set_param(3, add_node_class(p[1]));
-	cmd->type = tree->make_class_super_array(rt, node->token_id);
-	return cmd;*/
-}
-
 shared<Node> Concretifier::concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	if (sub->kind != NodeKind::FUNCTION)
@@ -1399,8 +1352,6 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 		return concretify_statement_weak(node, block, ns);
 	} else if (s->id == StatementID::SORTED) {
 		return concretify_statement_sorted(node, block, ns);
-	} else if (s->id == StatementID::MAP) {
-		return concretify_statement_map(node, block, ns);
 	} else if (s->id == StatementID::TRY) {
 		return concretify_statement_try(node, block, ns);
 	} else if (s->id == StatementID::LAMBDA) {
@@ -2191,12 +2142,6 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 			parser->post_process_for(rrr->params[0]);
 
 			return rrr;
-
-
-
-			// old:
-			auto fp = wrap_node_into_callable(f);
-			return create_map_call(tree, fp, input, input->token_id);
 		}
 
 		auto out = add_node_call(f->as_func(), f->token_id);

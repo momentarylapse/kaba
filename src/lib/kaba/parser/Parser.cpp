@@ -1260,19 +1260,6 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	return add_node_statement(StatementID::PASS);
 }
 
-shared<Node> Parser::parse_abstract_statement_map(Block *block) {
-	int token0 = Exp.consume_token(); // "map"
-
-	auto params = parse_abstract_call_parameters(block);
-	if (params.num != 2)
-		do_error_exp("map() expects 2 parameters");
-
-	auto node = add_node_statement(StatementID::MAP, token0, TypeUnknown);
-	node->set_param(0, params[0]);
-	node->set_param(1, params[1]);
-	return node;
-}
-
 
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	auto f = parse_function_header(TypeUnknown, tree->base_class, Flags::STATIC);
@@ -1393,8 +1380,6 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 		return parse_abstract_statement_len(block);
 	} else if (Exp.cur == IDENTIFIER_LET or Exp.cur == IDENTIFIER_VAR) {
 		return parse_abstract_statement_var(block);
-	} else if (Exp.cur == IDENTIFIER_MAP) {
-		return parse_abstract_statement_map(block);
 	} else if (Exp.cur == IDENTIFIER_LAMBDA or Exp.cur == IDENTIFIER_FUNC) {
 		return parse_abstract_statement_lambda(block);
 	} else if (Exp.cur == IDENTIFIER_SORTED) {

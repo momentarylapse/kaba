@@ -83,7 +83,6 @@ const string IDENTIFIER_XOR = "xor";
 const string IDENTIFIER_NOT = "not";
 const string IDENTIFIER_IS = "is";
 const string IDENTIFIER_ASM = "asm";
-const string IDENTIFIER_MAP = "map";
 const string IDENTIFIER_LAMBDA = "lambda";
 const string IDENTIFIER_SORTED = "sorted";
 const string IDENTIFIER_FILTER = "_filter";
