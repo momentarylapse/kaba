@@ -2113,7 +2113,7 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 
 
 shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
-	if (input->type->is_super_array())
+	if (!input->type->is_super_array())
 		do_error(format("'|> filter()' expects a list on the left, but '%s' given", input->type->long_name()), token_id);
 	auto l = rhs->params[0];
 	if (l->kind != NodeKind::ABSTRACT_OPERATOR or l->as_abstract_op()->name != "=>")
@@ -2162,12 +2162,14 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 			n_for->set_param(2, input);
 
 			auto el_type = input->type->get_array_element();
-			auto var = block->add_var("x", el_type);
+			static int map_counter = 0;
+			string viname = format("<map-index-%d>", map_counter);
+			string vname = format("<map-var-%d>", map_counter++);
+			auto var = block->add_var(vname, el_type);
 			flags_set(var->flags, Flags::CONST);
 			n_for->set_param(0, add_node_local(var));
-			auto index = block->add_var("<index>", TypeInt);
+			auto index = block->add_var(viname, TypeInt);
 			n_for->set_param(1, add_node_local(index));
-
 
 			auto out = add_node_call(f->as_func(), f->token_id);
 
@@ -2180,8 +2182,11 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 				continue;//do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
 
 			auto n_exp = check_const_params(tree, apply_params_with_cast(out, {nvar}, casts, wanted));
+			n_exp = concretify_node(n_exp, block, ns);
 
+		//	n_for->type = TypeUnknown;
 			auto rrr = concretify_array_builder_for_inner(n_for, n_exp, nullptr, rt, block, ns, token_id);
+			rrr->params[0]->params[3] = concretify_node(rrr->params[0]->params[3], block, ns);
 
 			parser->post_process_for(rrr->params[0]);
 

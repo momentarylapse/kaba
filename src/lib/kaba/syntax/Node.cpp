@@ -188,7 +188,7 @@ string Node::signature(const Class *ns) const {
 }
 
 string Node::str(const Class *ns) const {
-	return "<" + kind2str(kind) + ">  " + signature(ns);
+	return "<" + kind2str(kind) + ">  " + signature(ns) + "     " + type->name;
 }
 
 
