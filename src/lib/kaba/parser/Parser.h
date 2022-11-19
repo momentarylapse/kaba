@@ -127,17 +127,7 @@ public:
 	shared<Node> parse_abstract_statement_raw_function_pointer(Block *block);
 
 
-	shared<Node> parse_abstract_special_function(Block *block);
-	shared<Node> parse_abstract_special_function_sizeof(Block *block);
-	shared<Node> parse_abstract_special_function_typeof(Block *block);
-	shared<Node> parse_abstract_special_function_str(Block *block);
-	shared<Node> parse_abstract_special_function_repr(Block *block);
-	shared<Node> parse_abstract_special_function_len(Block *block);
-	shared<Node> parse_abstract_special_function_map(Block *block);
-	shared<Node> parse_abstract_special_function_sorted(Block *block);
-	shared<Node> parse_abstract_special_function_filter(Block *block);
-	shared<Node> parse_abstract_special_function_dyn(Block *block);
-	shared<Node> parse_abstract_special_function_weak(Block *block);
+	shared<Node> parse_abstract_special_function(Block *block, SpecialFunction *s);
 
 
 	Context *context;

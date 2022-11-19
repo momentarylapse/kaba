@@ -619,7 +619,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_abstract_statement(block);
 	} else if (auto s = which_special_function(Exp.cur)) {
-		operand = parse_abstract_special_function(block);
+		operand = parse_abstract_special_function(block, s);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
 		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
 		Exp.next();
@@ -1124,42 +1124,6 @@ shared<Node> Parser::parse_abstract_single_func_param(Block *block) {
 	return n;
 }
 
-shared<Node> Parser::parse_abstract_special_function_sizeof(Block *block) {
-	int token0 = Exp.consume_token(); // "sizeof"
-	auto node = add_node_special_function(SpecialFunctionID::SIZEOF, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-
-}
-
-shared<Node> Parser::parse_abstract_special_function_typeof(Block *block) {
-	int token0 = Exp.consume_token(); // typeof
-	auto node = add_node_special_function(SpecialFunctionID::TYPEOF, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_len(Block *block) {
-	int token0 = Exp.consume_token(); // len
-	auto node = add_node_special_function(SpecialFunctionID::LEN, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_str(Block *block) {
-	int token0 = Exp.consume_token(); // str
-	auto node = add_node_special_function(SpecialFunctionID::STR, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_repr(Block *block) {
-	int token0 = Exp.consume_token(); // repr
-	auto node = add_node_special_function(SpecialFunctionID::REPR, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
 // local (variable) definitions...
 shared<Node> Parser::parse_abstract_statement_let(Block *block) {
 	do_error_exp("'let' is deprecated, will change it's meaning soon...");
@@ -1290,55 +1254,6 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_special_function_sorted(Block *block) {
-	int token0 = Exp.consume_token(); // "sorted"
-
-	auto node = add_node_special_function(SpecialFunctionID::SORTED, token0, TypeUnknown);
-
-	if (Exp.cur != "(") {
-		node->set_num_params(0);
-		return node;
-	}
-
-	auto params = parse_abstract_call_parameters(block);
-	if (params.num == 0 or params.num > 2)
-		do_error_exp("sorted(array, criterion=\"\") expects 1 or 2 parameters");
-	node->set_param(0, params[0]);
-	if (params.num >= 2) {
-		node->set_param(1, params[1]);
-	} else {
-		// empty string
-		node->set_param(1, add_node_const(tree->add_constant(TypeString)));
-	}
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_filter(Block *block) {
-	int token0 = Exp.consume_token(); // "filter"
-
-	auto node = add_node_special_function(SpecialFunctionID::FILTER, token0, TypeUnknown);
-
-	auto params = parse_abstract_call_parameters(block);
-	if (params.num != 1)
-		do_error_exp("filter(array, criterion) 1 parameter");
-	node->set_param(0, params[0]);
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_dyn(Block *block) {
-	int token0 = Exp.consume_token(); // "dyn"
-	auto node = add_node_special_function(SpecialFunctionID::DYN, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
-shared<Node> Parser::parse_abstract_special_function_weak(Block *block) {
-	int token0 = Exp.consume_token(); // "weak"
-	auto node = add_node_special_function(SpecialFunctionID::WEAK, token0, TypeUnknown);
-	node->set_param(0, parse_abstract_single_func_param(block));
-	return node;
-}
-
 shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block) {
 	int token0 = Exp.consume_token(); // "raw_function_pointer"
 	auto node = add_node_statement(StatementID::RAW_FUNCTION_POINTER, token0, TypeUnknown);
@@ -1380,28 +1295,33 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	return nullptr;
 }
 
-shared<Node> Parser::parse_abstract_special_function(Block *block) {
-	if (Exp.cur == IDENTIFIER_SIZEOF) {
-		return parse_abstract_special_function_sizeof(block);
-	} else if (Exp.cur == IDENTIFIER_TYPEOF) {
-		return parse_abstract_special_function_typeof(block);
-	} else if (Exp.cur == IDENTIFIER_STR) {
-		return parse_abstract_special_function_str(block);
-	} else if (Exp.cur == IDENTIFIER_REPR) {
-		return parse_abstract_special_function_repr(block);
-	} else if (Exp.cur == IDENTIFIER_LEN) {
-		return parse_abstract_special_function_len(block);
-	} else if (Exp.cur == IDENTIFIER_SORTED) {
-		return parse_abstract_special_function_sorted(block);
-	} else if (Exp.cur == IDENTIFIER_FILTER) {
-		return parse_abstract_special_function_filter(block);
-	} else if (Exp.cur == IDENTIFIER_DYN) {
-		return parse_abstract_special_function_dyn(block);
-	} else if (Exp.cur == IDENTIFIER_WEAK) {
-		return parse_abstract_special_function_weak(block);
+shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFunction *s) {
+	int token0 = Exp.consume_token(); // name
+
+	// no call, just the name
+	if (Exp.cur != "(") {
+		auto node = add_node_special_function_name(s->id, token0, TypeUnknown);
+		node->set_num_params(0);
+		return node;
 	}
-	do_error_exp("unhandled special function: " + Exp.cur);
-	return nullptr;
+
+	auto node = add_node_special_function_call(s->id, token0, TypeUnknown);
+	auto params = parse_abstract_call_parameters(block);
+	node->params = params;
+	if (params.num < s->min_params or params.num > s->max_params) {
+		if (s->min_params == s->max_params)
+			do_error_exp(format("%s() expects %d parameters", s->name, s->min_params));
+		else
+			do_error_exp(format("%s() expects %d-%d parameters", s->name, s->min_params, s->max_params));
+	}
+	/*node->set_param(0, params[0]);
+	if (params.num >= 2) {
+		node->set_param(1, params[1]);
+	} else {
+		// empty string
+		node->set_param(1, add_node_const(tree->add_constant(TypeString)));
+	}*/
+	return node;
 }
 
 shared<Node> Parser::parse_abstract_block(Block *parent, Block *block) {

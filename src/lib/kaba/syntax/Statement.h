@@ -71,13 +71,14 @@ enum class SpecialFunctionID {
 class SpecialFunction {
 public:
 	string name;
-	int num_params;
+	int min_params;
+	int max_params;
 	SpecialFunctionID id;
 };
 extern Array<SpecialFunction*> special_functions;
 
 SpecialFunction *special_function_from_id(SpecialFunctionID id);
-int add_special_function(const string &name, SpecialFunctionID id, int num_params = 0);
+int add_special_function(const string &name, SpecialFunctionID id, int min_params, int max_params);
 
 }
 

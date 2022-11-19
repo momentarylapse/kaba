@@ -35,8 +35,10 @@ string kind2str(NodeKind kind) {
 		return "virtual call";
 	if (kind == NodeKind::STATEMENT)
 		return "statement";
-	if (kind == NodeKind::SPECIAL_FUNCTION)
-		return "special function";
+	if (kind == NodeKind::CALL_SPECIAL_FUNCTION)
+		return "special function call";
+	if (kind == NodeKind::SPECIAL_FUNCTION_NAME)
+		return "special function name";
 	if (kind == NodeKind::OPERATOR)
 		return "operator";
 	if (kind == NodeKind::ABSTRACT_TOKEN)
@@ -152,7 +154,9 @@ string Node::signature(const Class *ns) const {
 		return as_func()->signature(ns);
 	if (kind == NodeKind::STATEMENT)
 		return as_statement()->name + t;
-	if (kind == NodeKind::SPECIAL_FUNCTION)
+	if (kind == NodeKind::CALL_SPECIAL_FUNCTION)
+		return as_special_function()->name + t;
+	if (kind == NodeKind::SPECIAL_FUNCTION_NAME)
 		return as_special_function()->name + t;
 	if (kind == NodeKind::OPERATOR)
 		return as_op()->sig(ns);
@@ -192,7 +196,7 @@ string Node::signature(const Class *ns) const {
 }
 
 string Node::str(const Class *ns) const {
-	return "<" + kind2str(kind) + ">  " + signature(ns) + "     " + type->name;
+	return "<" + kind2str(kind) + ">  " + signature(ns);
 }
 
 
@@ -432,10 +436,16 @@ shared<Node> add_node_statement(StatementID id, int token_id, const Class *type)
 	return c;
 }
 
-shared<Node> add_node_special_function(SpecialFunctionID id, int token_id, const Class *type) {
+shared<Node> add_node_special_function_call(SpecialFunctionID id, int token_id, const Class *type) {
 	auto *s = special_function_from_id(id);
-	auto c = new Node(NodeKind::SPECIAL_FUNCTION, (int_p)s, type, false, token_id);
-	c->set_num_params(s->num_params);
+	auto c = new Node(NodeKind::CALL_SPECIAL_FUNCTION, (int_p)s, type, false, token_id);
+	c->set_num_params(s->max_params);
+	return c;
+}
+
+shared<Node> add_node_special_function_name(SpecialFunctionID id, int token_id, const Class *type) {
+	auto *s = special_function_from_id(id);
+	auto c = new Node(NodeKind::SPECIAL_FUNCTION_NAME, (int_p)s, type, false, token_id);
 	return c;
 }
 

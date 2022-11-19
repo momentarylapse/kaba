@@ -39,11 +39,12 @@ SpecialFunction *special_function_from_id(SpecialFunctionID id) {
 	return nullptr;
 }
 
-int add_special_function(const string &name, SpecialFunctionID id, int num_params) {
+int add_special_function(const string &name, SpecialFunctionID id, int min_params, int max_params) {
 	auto s = new SpecialFunction;
 	s->name = name;
 	s->id = id;
-	s->num_params = num_params;
+	s->min_params = min_params;
+	s->max_params = max_params;
 	special_functions.add(s);
 	return 0;
 }
@@ -72,15 +73,15 @@ void SIAddStatements() {
 	add_statement(IDENTIFIER_FUNC, StatementID::FUNC);
 	add_statement(IDENTIFIER_RAW_FUNCTION_POINTER, StatementID::RAW_FUNCTION_POINTER, 1);
 
-	add_special_function(IDENTIFIER_SIZEOF, SpecialFunctionID::SIZEOF, 1);
-	add_special_function(IDENTIFIER_TYPEOF, SpecialFunctionID::TYPEOF, 1);
-	add_special_function(IDENTIFIER_STR, SpecialFunctionID::STR, 1);
-	add_special_function(IDENTIFIER_REPR, SpecialFunctionID::REPR, 1);
-	add_special_function(IDENTIFIER_LEN, SpecialFunctionID::LEN, 1);
-	add_special_function(IDENTIFIER_SORTED, SpecialFunctionID::SORTED, 2);
-	add_special_function(IDENTIFIER_FILTER, SpecialFunctionID::FILTER, 1);
-	add_special_function(IDENTIFIER_DYN, SpecialFunctionID::DYN, 1);
-	add_special_function(IDENTIFIER_WEAK, SpecialFunctionID::WEAK, 1);
+	add_special_function(IDENTIFIER_SIZEOF, SpecialFunctionID::SIZEOF, 1, 1);
+	add_special_function(IDENTIFIER_TYPEOF, SpecialFunctionID::TYPEOF, 1, 1);
+	add_special_function(IDENTIFIER_STR, SpecialFunctionID::STR, 1, 1);
+	add_special_function(IDENTIFIER_REPR, SpecialFunctionID::REPR, 1, 1);
+	add_special_function(IDENTIFIER_LEN, SpecialFunctionID::LEN, 1, 1);
+	add_special_function(IDENTIFIER_SORTED, SpecialFunctionID::SORTED, 1, 2);
+	add_special_function(IDENTIFIER_FILTER, SpecialFunctionID::FILTER, 1, 1);
+	add_special_function(IDENTIFIER_DYN, SpecialFunctionID::DYN, 1, 1);
+	add_special_function(IDENTIFIER_WEAK, SpecialFunctionID::WEAK, 1, 1);
 }
 
 

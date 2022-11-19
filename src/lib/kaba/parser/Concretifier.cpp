@@ -604,7 +604,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 	// special function
 	if (node->params[0]->kind == NodeKind::ABSTRACT_TOKEN)
 		if (auto s = parser->which_special_function(node->params[0]->as_token())) {
-			auto n = add_node_special_function(s->id, node->token_id);
+			auto n = add_node_special_function_call(s->id, node->token_id);
 			n->set_num_params(node->params.num - 1);
 			n->params = node->params.sub_ref(1);
 			return concretify_special_function(n, block, ns);
@@ -1050,16 +1050,21 @@ shared<Node> Concretifier::concretify_special_function_dyn(shared<Node> node, Bl
 
 shared<Node> Concretifier::concretify_special_function_sorted(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
-	if (node->params.num < 2)
-		return node;
-		//do_error("'(' expected after 'sorted'", node);
+	if (node->params.num < 2) {
+		// default criterion ""
+		node = cp_node(node);
+		node->set_num_params(2);
+		auto crit = tree->add_constant(TypeString);
+		node->set_param(1, add_node_const(crit));
+	}
+
 	auto array = force_concrete_type(node->params[0]);
 	auto crit = force_concrete_type(node->params[1]);
 
 	if (!array->type->is_super_array())
-		do_error("sorted(): first parameter must be a list[]", array);
-	if (crit->type != TypeString)
-		do_error("sorted(): second parameter must be a string", crit);
+		do_error(format("%s(): first parameter must be a list[]", IDENTIFIER_SORTED), array);
+	if (crit->type != TypeString or !crit->is_const)
+		do_error(format("%s(): second parameter must be a string literal", IDENTIFIER_SORTED), crit);
 
 	Function *f = tree->required_func_global("@sorted", node->token_id);
 
@@ -1642,8 +1647,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			return operands[0];
 	} else if (node->kind == NodeKind::STATEMENT) {
 		return concretify_statement(node, block, ns);
-	} else if (node->kind == NodeKind::SPECIAL_FUNCTION) {
+	} else if (node->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
 		return concretify_special_function(node, block, ns);
+	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
+		//return concretify_special_function(node, block, ns);
+		do_error("special function without '(...)'", node);
 	} else if (node->kind == NodeKind::BLOCK) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
@@ -2069,7 +2077,7 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 
 shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 	if (!input->type->is_super_array())
-		do_error("'|> sorted' only allowed for lists", input);
+		do_error(format("'|> %s' only allowed for lists", IDENTIFIER_SORTED), input);
 	Function *f = tree->required_func_global("@sorted", token_id);
 
 	auto cmd = add_node_call(f, token_id);
@@ -2196,12 +2204,15 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 		input = concretify_node(input, block, ns);
 	input = force_concrete_type(input);
 
-	if (abs_func->kind == NodeKind::SPECIAL_FUNCTION)
-		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED) {
+	if (abs_func->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
+		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED)
 			return build_pipe_sort(input, abs_func, block, ns, token_id);
-		} else if (abs_func->as_special_function()->id == SpecialFunctionID::FILTER) {
+		else if (abs_func->as_special_function()->id == SpecialFunctionID::FILTER)
 			return build_pipe_filter(input, abs_func, block, ns, token_id);
-		}
+	} else if (abs_func->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
+		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED)
+			return build_pipe_sort(input, abs_func, block, ns, token_id);
+	}
 
 	return build_pipe_map(input, abs_func, block, ns, token_id);
 }
