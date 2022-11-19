@@ -61,8 +61,7 @@ enum class SpecialFunctionID {
 	STR,
 	REPR,
 	LEN,
-	MAP,
-	SORTED,
+	SORT,
 	FILTER,
 	DYN,
 	WEAK

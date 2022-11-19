@@ -83,7 +83,7 @@ extern const string IDENTIFIER_NOT;
 extern const string IDENTIFIER_IS;
 extern const string IDENTIFIER_ASM;
 extern const string IDENTIFIER_LAMBDA;
-extern const string IDENTIFIER_SORTED;
+extern const string IDENTIFIER_SORT;
 extern const string IDENTIFIER_FILTER;
 extern const string IDENTIFIER_DYN;
 extern const string IDENTIFIER_RAW_FUNCTION_POINTER;

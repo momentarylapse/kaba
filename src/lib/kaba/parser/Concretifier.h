@@ -63,7 +63,7 @@ public:
 	shared<Node> concretify_special_function_typeof(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_len(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_dyn(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_special_function_sorted(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_special_function_sort(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_filter(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_weak(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> force_concrete_type(shared<Node> node);

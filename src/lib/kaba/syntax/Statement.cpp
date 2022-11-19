@@ -78,7 +78,7 @@ void SIAddStatements() {
 	add_special_function(IDENTIFIER_STR, SpecialFunctionID::STR, 1, 1);
 	add_special_function(IDENTIFIER_REPR, SpecialFunctionID::REPR, 1, 1);
 	add_special_function(IDENTIFIER_LEN, SpecialFunctionID::LEN, 1, 1);
-	add_special_function(IDENTIFIER_SORTED, SpecialFunctionID::SORTED, 1, 2);
+	add_special_function(IDENTIFIER_SORT, SpecialFunctionID::SORT, 1, 2);
 	add_special_function(IDENTIFIER_FILTER, SpecialFunctionID::FILTER, 1, 1);
 	add_special_function(IDENTIFIER_DYN, SpecialFunctionID::DYN, 1, 1);
 	add_special_function(IDENTIFIER_WEAK, SpecialFunctionID::WEAK, 1, 1);

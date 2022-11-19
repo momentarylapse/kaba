@@ -1048,7 +1048,7 @@ shared<Node> Concretifier::concretify_special_function_dyn(shared<Node> node, Bl
 	return make_dynamical(sub);
 }
 
-shared<Node> Concretifier::concretify_special_function_sorted(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
 	if (node->params.num < 2) {
 		// default criterion ""
@@ -1062,9 +1062,9 @@ shared<Node> Concretifier::concretify_special_function_sorted(shared<Node> node,
 	auto crit = force_concrete_type(node->params[1]);
 
 	if (!array->type->is_super_array())
-		do_error(format("%s(): first parameter must be a list[]", IDENTIFIER_SORTED), array);
+		do_error(format("%s(): first parameter must be a list[]", IDENTIFIER_SORT), array);
 	if (crit->type != TypeString or !crit->is_const)
-		do_error(format("%s(): second parameter must be a string literal", IDENTIFIER_SORTED), crit);
+		do_error(format("%s(): second parameter must be a string literal", IDENTIFIER_SORT), crit);
 
 	Function *f = tree->required_func_global("@sorted", node->token_id);
 
@@ -1379,8 +1379,8 @@ shared<Node> Concretifier::concretify_special_function(shared<Node> node, Block 
 		return concretify_special_function_dyn(node, block, ns);
 	} else if (s->id == SpecialFunctionID::WEAK) {
 		return concretify_special_function_weak(node, block, ns);
-	} else if (s->id == SpecialFunctionID::SORTED) {
-		return concretify_special_function_sorted(node, block, ns);
+	} else if (s->id == SpecialFunctionID::SORT) {
+		return concretify_special_function_sort(node, block, ns);
 	} else if (s->id == SpecialFunctionID::FILTER) {
 		//return concretify_special_function_filter(node, block, ns);
 		do_error("filter() not allowed outside |> pipes", node);
@@ -2075,7 +2075,7 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 
 shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 	if (!input->type->is_super_array())
-		do_error(format("'|> %s' only allowed for lists", IDENTIFIER_SORTED), input);
+		do_error(format("'|> %s' only allowed for lists", IDENTIFIER_SORT), input);
 	Function *f = tree->required_func_global("@sorted", token_id);
 
 	auto cmd = add_node_call(f, token_id);
@@ -2084,7 +2084,7 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 	if (rhs->params.num >= 1) {
 		auto crit = concretify_node(rhs->params[0], block, ns);
 		if (crit->type != TypeString or crit->kind != NodeKind::CONSTANT)
-			do_error("sorted() expects a string literal when used in a pipe", token_id);
+			do_error(format("%s() expects a string literal when used in a pipe", IDENTIFIER_SORT), token_id);
 		cmd->set_param(2, crit);
 	} else {
 		auto crit = tree->add_constant(TypeString);
@@ -2121,6 +2121,12 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 
 	auto funcs = concretify_node_multi(rhs, block, ns);
 	for (auto f: weak(funcs)) {
+
+
+		/*if (f->kind != NodeKind::SPECIAL_FUNCTION_NAME) {
+			auto s = f->as_special_function();
+			if (s->id == SpecialFunctionID::STR)
+		}*/
 
 		//if (!func->type->is_callable())
 		//	do_error("operand after '|>' must be callable", func);
@@ -2202,14 +2208,11 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 		input = concretify_node(input, block, ns);
 	input = force_concrete_type(input);
 
-	if (abs_func->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
-		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED)
+	if ((abs_func->kind == NodeKind::CALL_SPECIAL_FUNCTION) or (abs_func->kind == NodeKind::SPECIAL_FUNCTION_NAME)) {
+		if (abs_func->as_special_function()->id == SpecialFunctionID::SORT)
 			return build_pipe_sort(input, abs_func, block, ns, token_id);
 		else if (abs_func->as_special_function()->id == SpecialFunctionID::FILTER)
 			return build_pipe_filter(input, abs_func, block, ns, token_id);
-	} else if (abs_func->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
-		if (abs_func->as_special_function()->id == SpecialFunctionID::SORTED)
-			return build_pipe_sort(input, abs_func, block, ns, token_id);
 	}
 
 	return build_pipe_map(input, abs_func, block, ns, token_id);
