@@ -350,6 +350,8 @@ string _cdecl var_repr(const void *p, const Class *type) {
 	} else if (type == TypeFunction or type->type == Class::Type::FUNCTION) {
 		// probably not...
 		return func_repr((Function*)p);
+	} else if (type == TypeSpecialFunctionP) {
+		return format("<special function %s>", (*(SpecialFunction**)p)->name);
 	} else if (type == TypeAny) {
 		return ((Any*)p)->repr();
 	} else if (type->is_some_pointer()) {

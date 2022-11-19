@@ -1300,7 +1300,7 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 
 	// no call, just the name
 	if (Exp.cur != "(") {
-		auto node = add_node_special_function_name(s->id, token0, TypeUnknown);
+		auto node = add_node_special_function_name(s->id, token0, TypeSpecialFunctionP);
 		node->set_num_params(0);
 		return node;
 	}

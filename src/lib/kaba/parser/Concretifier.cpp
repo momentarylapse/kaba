@@ -1650,8 +1650,6 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
 		return concretify_special_function(node, block, ns);
 	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
-		//return concretify_special_function(node, block, ns);
-		do_error("special function without '(...)'", node);
 	} else if (node->kind == NodeKind::BLOCK) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
