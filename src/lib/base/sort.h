@@ -32,10 +32,15 @@ Array<T> reverse(const Array<T> &array) {
 
 template<class T, class F>
 void inplace_bubble_sort(Array<T> &array, F f) {
-	for (int i=0; i<array.num; i++)
-		for (int j=i+1; j<array.num; j++)
-			if (!f(array[i], array[j]))
-				array.swap(i, j);
+	bool more = true;
+	while (more) {
+		more = false;
+		for (int i=1; i<array.num; i++)
+			if (!f(array[i-1], array[i])) {
+				array.swap(i-1, i);
+				more = true;
+			}
+	}
 }
 
 template<class T, class F>

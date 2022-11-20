@@ -70,33 +70,58 @@ void array_inplace_quick_sort(DynamicArray &array, int first, int last, F f) {
 	array_inplace_quick_sort(array, p+1, last, f);
 }
 
-template<class T>
-void _array_sort(DynamicArray &array, int offset_by) {
-	auto f = [offset_by] (const void *a, const void *b) {
-		return *(T*)((const char*)a + offset_by) <= *(T*)((const char*)b + offset_by);
-	};
-	array_inplace_quick_sort(array, 0, array.num-1, f);
+template<class F>
+void array_inplace_bubble_sort(DynamicArray &array, F f) {
+	bool more = true;
+	while (more) {
+		more = false;
+		for (int i=1; i<array.num; i++) {
+			const auto pa = array.simple_element(i-1);
+			const auto pb = array.simple_element(i);
+			if (!f(pa, pb)) {
+				array.simple_swap(i-1, i);
+				more = true;
+			}
+		}
+	}
 }
 
 template<class T>
-void _array_sort_p(DynamicArray &array, int offset_by) {
+void _array_sort(DynamicArray &array, int offset_by, bool stable) {
+	auto f = [offset_by] (const void *a, const void *b) {
+		return *(T*)((const char*)a + offset_by) <= *(T*)((const char*)b + offset_by);
+	};
+	if (stable)
+		array_inplace_bubble_sort(array, f);
+	else
+		array_inplace_quick_sort(array, 0, array.num-1, f);
+}
+
+template<class T>
+void _array_sort_p(DynamicArray &array, int offset_by, bool stable) {
 	auto f = [offset_by] (const void *a, const void *b) {
 		auto *aa = (const T*) ((const char*)a + offset_by);
 		auto *bb = (const T*) ((const char*)b + offset_by);
 		return (*aa <= *bb);
 	};
-	inplace_sort(*(Array<void*>*)&array, f);
+	if (stable)
+		inplace_bubble_sort(*(Array<void*>*)&array, f);
+	else
+		inplace_sort(*(Array<void*>*)&array, f);
 }
 
 template<class T>
-void _array_sort_pf(DynamicArray &array, Function *func) {
+void _array_sort_pf(DynamicArray &array, Function *func, bool stable) {
 	auto f = [func] (void *a, void *b) {
 		T r1, r2;
 		if (!call_function(func, &r1, {a}) or !call_function(func, &r2, {b}))
 			kaba_raise_exception(new KabaException("call failed " + func->long_name()));
 		return (r1 <= r2);
 	};
-	inplace_sort(*(Array<void*>*)&array, f);
+	if (stable)
+		inplace_bubble_sort(*(Array<void*>*)&array, f);
+	else
+		inplace_sort(*(Array<void*>*)&array, f);
 }
 
 void var_assign(void *pa, const void *pb, const Class *type) {
@@ -179,6 +204,8 @@ DynamicArray _cdecl array_sort(DynamicArray &array, const Class *type, const str
 		rel = el->param[0];
 
 	string by = _by;
+	bool stable = (by.find("!") >= 0);
+	by = by.replace("!", "");
 	bool reverse = false;
 	if (_by.head(1) == "-") {
 		by = by.sub(1);
@@ -214,41 +241,41 @@ DynamicArray _cdecl array_sort(DynamicArray &array, const Class *type, const str
 		if (!el->is_pointer())
 			kaba_raise_exception(new KabaException("function sorting only for pointers"));
 		if (by_type == TypeString)
-			_array_sort_pf<string>(rr, sfunc);
+			_array_sort_pf<string>(rr, sfunc, stable);
 		else if (by_type == TypePath)
-			_array_sort_pf<Path>(rr, sfunc);
+			_array_sort_pf<Path>(rr, sfunc, stable);
 		else if (by_type == TypeInt)
-			_array_sort_pf<int>(rr, sfunc);
+			_array_sort_pf<int>(rr, sfunc, stable);
 		else if (by_type == TypeFloat32)
-			_array_sort_pf<float>(rr, sfunc);
+			_array_sort_pf<float>(rr, sfunc, stable);
 		else if (by_type == TypeBool)
-			_array_sort_pf<bool>(rr, sfunc);
+			_array_sort_pf<bool>(rr, sfunc, stable);
 		else
 			kaba_raise_exception(new KabaException("can't sort by function '" + by_type->long_name() + "' yet"));
 	} else if (el->is_pointer()) {
 		if (by_type == TypeString)
-			_array_sort_p<string>(rr, offset);
+			_array_sort_p<string>(rr, offset, stable);
 		else if (by_type == TypePath)
-			_array_sort_p<Path>(rr, offset);
+			_array_sort_p<Path>(rr, offset, stable);
 		else if (by_type == TypeInt)
-			_array_sort_p<int>(rr, offset);
+			_array_sort_p<int>(rr, offset, stable);
 		else if (by_type == TypeFloat32)
-			_array_sort_p<float>(rr, offset);
+			_array_sort_p<float>(rr, offset, stable);
 		else if (by_type == TypeBool)
-			_array_sort_p<bool>(rr, offset);
+			_array_sort_p<bool>(rr, offset, stable);
 		else
 			kaba_raise_exception(new KabaException("can't sort by type '" + by_type->long_name() + "' yet"));
 	} else {
 		if (by_type == TypeString)
-			_array_sort<string>(rr, offset);
+			_array_sort<string>(rr, offset, stable);
 		else if (by_type == TypePath)
-			_array_sort<Path>(rr, offset);
+			_array_sort<Path>(rr, offset, stable);
 		else if (by_type == TypeInt)
-			_array_sort<int>(rr, offset);
+			_array_sort<int>(rr, offset, stable);
 		else if (by_type == TypeFloat32)
-			_array_sort<float>(rr, offset);
+			_array_sort<float>(rr, offset, stable);
 		else if (by_type == TypeBool)
-			_array_sort<bool>(rr, offset);
+			_array_sort<bool>(rr, offset, stable);
 		else
 			kaba_raise_exception(new KabaException("can't sort by type '" + by_type->long_name() + "' yet"));
 	}
