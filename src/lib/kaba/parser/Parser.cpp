@@ -276,19 +276,6 @@ shared<Node> Parser::parse_abstract_operand_extension_call(shared<Node> link, Bl
 // find any ".", or "[...]"'s    or operators?
 shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Block *block, bool prefer_class) {
 
-#if 0
-	// special
-	if (false) {
-		if (is_type_tuple(operand) and (Exp.cur == "->")) {
-			do_error("do we ever reach this point?");
-			Exp.next();
-			auto ret = parse_type(block->name_space());
-			auto t = tree->make_class_callable_fp(class_tuple_extract_classes(operands[0]), ret);
-
-			return parse_operand_extension({add_node_class(t)}, block, prefer_type);
-		}
-	}
-#endif
 
 
 #if 0
@@ -618,8 +605,8 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		operand = parse_abstract_dict(block);
 	} else if (auto s = which_statement(Exp.cur)) {
 		operand = parse_abstract_statement(block);
-	} else if (auto s = which_special_function(Exp.cur)) {
-		operand = parse_abstract_special_function(block, s);
+	//} else if (auto s = which_special_function(Exp.cur)) {
+	//	operand = parse_abstract_special_function(block, s);
 	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
 		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
 		Exp.next();

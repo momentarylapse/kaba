@@ -603,12 +603,8 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 
 	// special function
 	if (node->params[0]->kind == NodeKind::ABSTRACT_TOKEN)
-		if (auto s = parser->which_special_function(node->params[0]->as_token())) {
-			auto n = add_node_special_function_call(s->id, node->token_id);
-			n->set_num_params(node->params.num - 1);
-			n->params = node->params.sub_ref(1);
-			return concretify_special_function(n, block, ns);
-		}
+		if (auto s = parser->which_special_function(node->params[0]->as_token()))
+			return concretify_special_function_call(node, s, block, ns);
 
 
 	//concretify_all_params(node, block, ns, this);
@@ -792,45 +788,59 @@ shared_array<Node> Concretifier::concretify_node_multi(shared<Node> node, Block 
 		return {node};
 
 	if (node->kind == NodeKind::ABSTRACT_TOKEN) {
-		string token = node->as_token();
-
-		// direct operand
-		auto operands = tree->get_existence(token, block, ns, node->token_id);
-		if (operands.num > 0) {
-			// direct operand
-			return operands;
-		} else {
-			auto t = parser->get_constant_type(token);
-			if (t == TypeUnknown) {
-
-				msg_write("--------");
-				msg_write(block->function->signature());
-				msg_write("local vars:");
-				for (auto vv: weak(block->function->var))
-					msg_write(format("    %s: %s", vv->name, vv->type->name));
-				msg_write("params:");
-				for (auto p: block->function->literal_param_type)
-					msg_write("    " + p->name);
-				//crash();
-				do_error(format("unknown operand \"%s\"", token), node);
-			}
-
-			Value v;
-			parser->get_constant_value(token, v);
-
-			if (t == TypeString) {
-				return {parser->try_parse_format_string(block, v, node->token_id)};
-			} else {
-				auto *c = tree->add_constant(t);
-				c->set(v);
-				return {add_node_const(c, node->token_id)};
-			}
-		}
+		return concretify_token(node, block, ns);
 	} else if (node->kind == NodeKind::ABSTRACT_ELEMENT) {
 		return concretify_element(node, block, ns);
 	} else {
 		return {concretify_node(node, block, ns)};
 	}
+	return {};
+}
+
+shared_array<Node> Concretifier::concretify_token(shared<Node> node, Block *block, const Class *ns) {
+
+	string token = node->as_token();
+
+	// direct operand
+	auto operands = tree->get_existence(token, block, ns, node->token_id);
+	if (operands.num > 0) {
+		// direct operand
+		return operands;
+	}
+
+	// constant?
+	auto t = parser->get_constant_type(token);
+	if (t != TypeUnknown) {
+		Value v;
+		parser->get_constant_value(token, v);
+
+		if (t == TypeString) {
+			return {parser->try_parse_format_string(block, v, node->token_id)};
+		} else {
+			auto *c = tree->add_constant(t);
+			c->set(v);
+			return {add_node_const(c, node->token_id)};
+		}
+	}
+
+	// special function name
+	if (auto s = parser->which_special_function(token)) {
+		// no call, just the name
+		return {add_node_special_function_name(s->id, node->token_id, TypeSpecialFunctionP)};
+	}
+
+#if 0
+	msg_write("--------");
+	msg_write(block->function->signature());
+	msg_write("local vars:");
+	for (auto vv: weak(block->function->var))
+		msg_write(format("    %s: %s", vv->name, vv->type->name));
+	msg_write("params:");
+	for (auto p: block->function->literal_param_type)
+		msg_write("    " + p->name);
+	//crash();
+#endif
+	do_error(format("unknown operand \"%s\"", token), node);
 	return {};
 }
 
@@ -1363,8 +1373,14 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 	return nullptr;
 }
 
-shared<Node> Concretifier::concretify_special_function(shared<Node> node, Block *block, const Class *ns) {
-	auto s = node->as_special_function();
+shared<Node> Concretifier::concretify_special_function_call(shared<Node> node, SpecialFunction *s, Block *block, const Class *ns) {
+	node = node->shallow_copy();
+	node->params.erase(0);
+	if (node->params.num < s->min_params)
+		do_error(format("special function %s() expects at least %d parameter(s), but %d were given", s->name, s->min_params, node->params.num), node);
+	if (node->params.num > s->max_params)
+		do_error(format("special function %s() expects at most %d parameter(s), but %d were given", s->name, s->max_params, node->params.num), node);
+
 	if (s->id == SpecialFunctionID::STR) {
 		return concretify_special_function_str(node, block, ns);
 	} else if (s->id == SpecialFunctionID::REPR) {
@@ -1647,9 +1663,9 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			return operands[0];
 	} else if (node->kind == NodeKind::STATEMENT) {
 		return concretify_statement(node, block, ns);
-	} else if (node->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
+	/*} else if (node->kind == NodeKind::CALL_SPECIAL_FUNCTION) {
 		return concretify_special_function(node, block, ns);
-	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
+	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {*/
 	} else if (node->kind == NodeKind::BLOCK) {
 		for (int i=0; i<node->params.num; i++)
 			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
@@ -2078,11 +2094,15 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 		do_error(format("'|> %s' only allowed for lists", IDENTIFIER_SORT), input);
 	Function *f = tree->required_func_global("@sorted", token_id);
 
+	shared_array<Node> params;
+	if (rhs->kind == NodeKind::ABSTRACT_CALL)
+		params = rhs->params.sub_ref(1);
+
 	auto cmd = add_node_call(f, token_id);
 	cmd->set_param(0, input);
 	cmd->set_param(1, add_node_class(input->type));
-	if (rhs->params.num >= 1) {
-		auto crit = concretify_node(rhs->params[0], block, ns);
+	if (params.num >= 1) {
+		auto crit = concretify_node(params[0], block, ns);
 		if (crit->type != TypeString or crit->kind != NodeKind::CONSTANT)
 			do_error(format("%s() expects a string literal when used in a pipe", IDENTIFIER_SORT), token_id);
 		cmd->set_param(2, crit);
@@ -2094,11 +2114,14 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 	return cmd;
 }
 
-
+// rhs is already the "lambda"  x=>y
 shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 	if (!input->type->is_super_array())
 		do_error(format("'|> filter()' expects a list on the left, but '%s' given", input->type->long_name()), token_id);
+
 	auto l = rhs->params[0];
+	if (rhs->kind == NodeKind::ABSTRACT_CALL)
+		l = rhs->params[1];
 	if (l->kind != NodeKind::ABSTRACT_OPERATOR or l->as_abstract_op()->name != "=>")
 		do_error("labmda expression '=>' expected inside 'filter()'", l);
 
@@ -2201,21 +2224,30 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 	return nullptr;
 }
 
-shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &abs_func, Block *block, const Class *ns, int token_id) {
+shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 //	auto func = force_concrete_type(_func);
 	auto input = abs_input;
 	if (input->type == TypeUnknown)
 		input = concretify_node(input, block, ns);
 	input = force_concrete_type(input);
 
-	if ((abs_func->kind == NodeKind::CALL_SPECIAL_FUNCTION) or (abs_func->kind == NodeKind::SPECIAL_FUNCTION_NAME)) {
-		if (abs_func->as_special_function()->id == SpecialFunctionID::SORT)
-			return build_pipe_sort(input, abs_func, block, ns, token_id);
-		else if (abs_func->as_special_function()->id == SpecialFunctionID::FILTER)
-			return build_pipe_filter(input, abs_func, block, ns, token_id);
+	if ((rhs->kind == NodeKind::ABSTRACT_TOKEN)) {
+		if (auto s = parser->which_special_function(rhs->as_token())) {
+			if (s->id == SpecialFunctionID::FILTER)
+				return build_pipe_filter(input, rhs, block, ns, token_id);
+			if (s->id == SpecialFunctionID::SORT)
+				return build_pipe_sort(input, rhs, block, ns, token_id);
+		}
+	} else if ((rhs->kind == NodeKind::ABSTRACT_CALL)) {
+		if (auto s = parser->which_special_function(rhs->params[0]->as_token())) {
+			if (s->id == SpecialFunctionID::FILTER)
+				return build_pipe_filter(input, rhs, block, ns, token_id);
+			if (s->id == SpecialFunctionID::SORT)
+				return build_pipe_sort(input, rhs, block, ns, token_id);
+		}
 	}
 
-	return build_pipe_map(input, abs_func, block, ns, token_id);
+	return build_pipe_map(input, rhs, block, ns, token_id);
 }
 
 
