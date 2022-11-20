@@ -3,6 +3,7 @@
 #include "list.h"
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
+#include "../dynamic/sorting.h"
 #include "../../os/msg.h"
 #include "../../os/terminal.h"
 #include "../../base/callable.h"

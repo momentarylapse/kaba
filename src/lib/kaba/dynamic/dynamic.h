@@ -15,7 +15,6 @@ void var_init(void *p, const Class *type);
 void array_clear(void *p, const Class *type);
 void array_resize(void *p, const Class *type, int num);
 void array_add(DynamicArray &array, void *p, const Class *type);
-DynamicArray array_sort(DynamicArray &array, const Class *type, const string &by);
 string var_repr(const void *p, const Class *type);
 string var2str(const void *p, const Class *type);
 Any dynify(const void *var, const Class *type);
