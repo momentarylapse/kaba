@@ -16,6 +16,8 @@
 	#include "../os/msg.h"
 #endif
 
+namespace base {
+
 
 template<class T>
 void inplace_reverse(Array<T> &array) {
@@ -146,6 +148,8 @@ Array<T> sorted(const Array<T> &array, F f /*= [](const T &a, const T &b) { retu
 	auto r = array;
 	inplace_sort(r, f);
 	return r;
+}
+
 }
 
 

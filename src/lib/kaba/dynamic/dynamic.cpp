@@ -28,11 +28,11 @@ extern const Class *TypePath;
 
 void array_inplace_reverse(DynamicArray &array) {
 	if (array.element_size == 4)
-		inplace_reverse(*reinterpret_cast<Array<int>*>(&array));
+		base::inplace_reverse(*reinterpret_cast<Array<int>*>(&array));
 	else if (array.element_size == 1)
-		inplace_reverse(*reinterpret_cast<Array<char>*>(&array));
+		base::inplace_reverse(*reinterpret_cast<Array<char>*>(&array));
 	else if (array.element_size == 8)
-		inplace_reverse(*reinterpret_cast<Array<int64>*>(&array));
+		base::inplace_reverse(*reinterpret_cast<Array<int64>*>(&array));
 	else
 		array.reverse();
 }
@@ -105,9 +105,9 @@ void _array_sort_p(DynamicArray &array, int offset_by, bool stable) {
 		return (*aa <= *bb);
 	};
 	if (stable)
-		inplace_bubble_sort(*(Array<void*>*)&array, f);
+		base::inplace_bubble_sort(*(Array<void*>*)&array, f);
 	else
-		inplace_sort(*(Array<void*>*)&array, f);
+		base::inplace_sort(*(Array<void*>*)&array, f);
 }
 
 template<class T>
@@ -119,9 +119,9 @@ void _array_sort_pf(DynamicArray &array, Function *func, bool stable) {
 		return (r1 <= r2);
 	};
 	if (stable)
-		inplace_bubble_sort(*(Array<void*>*)&array, f);
+		base::inplace_bubble_sort(*(Array<void*>*)&array, f);
 	else
-		inplace_sort(*(Array<void*>*)&array, f);
+		base::inplace_sort(*(Array<void*>*)&array, f);
 }
 
 void var_assign(void *pa, const void *pb, const Class *type) {
