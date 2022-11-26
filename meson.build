@@ -90,6 +90,7 @@ endif
 
 sources = [
 	'src/helper/elf.cpp',
+	'src/helper/ErrorHandler.cpp',
 	'src/helper/experiments.cpp',
 	'src/helper/symbols.cpp',
 	'src/lib/algebra/crypto.cpp',

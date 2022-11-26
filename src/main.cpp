@@ -11,6 +11,7 @@
 #include "helper/elf.h"
 #include "helper/symbols.h"
 #include "helper/experiments.h"
+#include "helper/ErrorHandler.h"
 
 
 string AppName = "kaba";
@@ -210,6 +211,7 @@ public:
 		srand(Date::now().time*73 + Date::now().milli_second);
 		NetInit();
 		kaba::init(abi, flag_allow_std_lib);
+		ErrorHandler::init();
 
 
 		// for huibui.kaba...

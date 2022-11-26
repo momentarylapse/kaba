@@ -4,6 +4,9 @@
     <ClCompile Include="src\helper\elf.cpp">
       <Filter>src\helper</Filter>
     </ClCompile>
+    <ClCompile Include="src\helper\ErrorHandler.cpp">
+      <Filter>src\helper</Filter>
+    </ClCompile>
     <ClCompile Include="src\helper\experiments.cpp">
       <Filter>src\helper</Filter>
     </ClCompile>
@@ -616,6 +619,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helper\elf.h">
+      <Filter>src\helper</Filter>
+    </ClInclude>
+    <ClInclude Include="src\helper\ErrorHandler.h">
       <Filter>src\helper</Filter>
     </ClInclude>
     <ClInclude Include="src\helper\experiments.h">

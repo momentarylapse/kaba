@@ -117,6 +117,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\helper\elf.cpp" />
+    <ClCompile Include="src\helper\ErrorHandler.cpp" />
     <ClCompile Include="src\helper\experiments.cpp" />
     <ClCompile Include="src\helper\symbols.cpp" />
     <ClCompile Include="src\lib\algebra\crypto.cpp" />
@@ -323,6 +324,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helper\elf.h" />
+    <ClInclude Include="src\helper\ErrorHandler.h" />
     <ClInclude Include="src\helper\experiments.h" />
     <ClInclude Include="src\helper\symbols.h" />
     <ClInclude Include="src\lib\algebra\algebra.h" />
