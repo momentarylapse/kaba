@@ -1,6 +1,6 @@
 
 func main()
-	int[][] a
+	var a: int[][]
 	
 	a.resize(2)
 	a[0].resize(4)

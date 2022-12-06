@@ -21,6 +21,6 @@ func main()
 	print(dyn([1,2,3]))
 	print(dyn(vec3.0))
 	#print(dyn(main))
-	Test t
+	var t: Test
 	print(dyn(t))
 

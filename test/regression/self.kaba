@@ -9,6 +9,6 @@ class Test
 
 
 func main()
-	Test t
+	var t: Test
 	t.i = 13
 	t.f(3)

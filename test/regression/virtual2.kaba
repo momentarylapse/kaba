@@ -13,7 +13,7 @@ func f(b: Base)
 	b.d()
 
 func main()
-	Base b
-	Derived d
+	var b: Base
+	var d: Derived
 	f(b)
 	f(d)

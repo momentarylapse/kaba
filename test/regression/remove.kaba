@@ -4,9 +4,9 @@ class Test
 		print("del {{a}}")
 
 func main()
-	Test[] a
+	var a: Test[]
 	for i in 0:10
-		Test t
+		var t: Test
 		t.a = i
 		a.add(t)
 	a.remove(3)

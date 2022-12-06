@@ -1,7 +1,7 @@
 
 
 func main()
-	float[] f
+	var f: float[]
 	f.add(1)
 	f.add(2)
 	f.add(3)

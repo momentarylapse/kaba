@@ -1,14 +1,14 @@
 func main()
-	float[] list = [0.1, 0.5, 7.4]
-	for f,i in list
+	var list: float[] = [0.1, 0.5, 7.4]
+	for i=>f in list
 		print(i)
 		print(f)
 	
-	float[3] a
+	var a: float[3]
 	a[0] = 0.2
 	a[1] = 0.3
 	a[2] = 1.0
-	for f,i in a
+	for i=>f in a
 		print(i)
 		print(f)
 		

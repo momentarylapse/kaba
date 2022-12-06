@@ -1,6 +1,6 @@
 use kaba
 
 func main()
-	string s
+	var s: string
 	var t = typeof(s)
 	print(t.name)

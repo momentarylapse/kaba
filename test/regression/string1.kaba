@@ -1,5 +1,5 @@
 func main()
-	string a = "hallo"
+	var a = "hallo"
 	a += " Welt - "
 	a += a
 	a += a
@@ -16,7 +16,7 @@ func main()
 	a.add('x')
 	print(a)
 	
-	string[] s = a.explode(" - ")
+	var s: string[] = a.explode(" - ")
 	
 	for ss in s
 		print(ss)

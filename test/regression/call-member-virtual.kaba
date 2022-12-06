@@ -3,5 +3,5 @@ class Test
 		print("Test.f")
 
 func main()
-	Test t
+	var t: Test
 	t.f()

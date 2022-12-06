@@ -1,5 +1,5 @@
 func main()
-	vli a
+	var a: vli
 	a = 12
 	#print(str(a))
 	print(str(a).find("2", 0))

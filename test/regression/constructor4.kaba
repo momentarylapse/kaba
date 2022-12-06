@@ -9,7 +9,7 @@ class c
 		print(self.x)
 
 func main()
-	c[] a
+	var a: c[]
 	a.resize(14)
 #	a.add(cc)
 	#print a.num

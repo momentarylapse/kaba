@@ -1,5 +1,5 @@
 func main()
-	any a, b
+	var a, b: any
 	a = 2
 	b = pi
 	a += b

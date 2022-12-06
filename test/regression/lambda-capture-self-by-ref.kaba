@@ -11,7 +11,7 @@ class XX
 		print(i)
 
 func main()
-	XX x
+	var x: XX
 	x.i = 13
 	x.ff()
 

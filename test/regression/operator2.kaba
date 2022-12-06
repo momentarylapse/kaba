@@ -1,6 +1,6 @@
 
 func main()
-	string a, b, c
+	var a, b, c: string
 	a = "hallo"
 	b = " test"
 	c = a + b

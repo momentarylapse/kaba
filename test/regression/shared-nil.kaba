@@ -8,7 +8,7 @@ class X as shared
 
 
 func main()
-	X shared x = new X()
+	var x: X shared = new X()
 	print("a")
 	x = nil
 	print("b")

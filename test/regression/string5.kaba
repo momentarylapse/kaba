@@ -1,5 +1,5 @@
 func main()
-	string a, b
+	var a, b: string
 	a = "hallo"
 	b = "a"
 	print(a < b)

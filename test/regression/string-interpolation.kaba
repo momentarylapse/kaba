@@ -1,5 +1,5 @@
 func main()
-	int i = 13
+	var i = 13
 	print("hallo {{i+2}} bla bla")
 	print("test {{vec3.EX}} {{1.0}}")
 	print("{{pi|.2}}")

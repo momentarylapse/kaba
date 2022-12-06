@@ -9,12 +9,12 @@ class c
 	func mut __iadd__(other: c)
 		self.x += other.x
 	func __add__(other: c) -> c
-		c temp
+		var temp: c
 		temp.x = self.x + other.x
 		return temp
 
 func main()
-	c a, b, d
+	var a, b, d: c
 	a.x = 13
 	b.x = 1
 	#d = a.__add__(b)

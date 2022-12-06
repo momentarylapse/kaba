@@ -13,9 +13,9 @@ func Trace2(a: vec3, b: vec3, td: TraceData2, c: bool, ignore: int)
 	print(ignore)
 
 func main()
-	TraceData2 td
-	vec3 p1, p2
-	Model2 m
+	var td: TraceData2
+	var p1, p2: vec3
+	var m: Model2
 	m.object_id = 13
 	var p = &m
 	Trace2(p1, p2, td, false, p.object_id)

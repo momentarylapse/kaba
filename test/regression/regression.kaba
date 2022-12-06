@@ -1,11 +1,11 @@
 use os
 
 func test(filename: string) -> bool
-	string s = filename.head(filename.num - 4)
+	var s = filename.head(filename.num - 4)
 	s += ".kaba"
 	try
-		string r1 = shell_execute("kaba '{{s}}'")
-		string r2 = Filesystem.read(filename)
+		var r1 = shell_execute("kaba '{{s}}'")
+		var r2 = Filesystem.read(filename)
 
 	
 		for i in s.num:42

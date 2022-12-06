@@ -3,8 +3,8 @@ func f() -> (int,string)
 
 func main()
 	if true
-		int x
-		string y
+		var x: int
+		var y: string
 		(x,y) = f()
 		print(x)
 		print(y)
@@ -15,8 +15,8 @@ func main()
 		print(y)
 
 	if true
-		int x = 13
-		int y = 5
+		var x = 13
+		var y = 5
 		(x,y) = (y,x)
 		print(x)
 		print(y)

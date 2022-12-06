@@ -2,7 +2,7 @@ func f(out i: int)
 	i = 13
 
 func main()
-	int i = 0
+	var i = 0
 	f(i)
 	print(i)
 

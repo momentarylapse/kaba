@@ -4,9 +4,9 @@ func _main()
 	v = mat4.ID * vec3.EX
 
 func main()
-	mat4 m = mat4.rotation(vec3(0,0,pi/4))
-	mat4 mm = m
+	var m = mat4.rotation(vec3(0,0,pi/4))
+	var mm = m
 	mm *= m * m
-	vec3 v = mm * vec3.EX
+	var v = mm * vec3.EX
 	print(v)
 	

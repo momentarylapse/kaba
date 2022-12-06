@@ -1,5 +1,5 @@
 func main()
-	int[] a
+	var a: int[]
 	a.add(8)
 	a.add(5)
 	print(a)

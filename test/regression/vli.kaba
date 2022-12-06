@@ -1,5 +1,5 @@
 func main()
-	vli a, b, r
+	var a, b, r: vli
 	a = -31
 	b = 101
 	a = a.pow(b)

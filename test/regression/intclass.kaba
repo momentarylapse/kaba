@@ -1,12 +1,12 @@
 
 func f(i: int)
-	int j = i
+	var j = i
 	j = 3
 	print(j)
 
 
 func main()
-	int i = 2
+	var i = 2
 	f(i)
 	print(i)
 	print(i.__str__())

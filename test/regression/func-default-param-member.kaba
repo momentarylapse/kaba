@@ -4,5 +4,5 @@ class C
 		print(" a={{a}} s={{s}}")
 
 func main()
-	C c
+	var c: C
 	c.f(13)

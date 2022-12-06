@@ -5,7 +5,7 @@ class Test
 	var xx: string[]
 
 func main()
-	Test t
+	var t: Test
 	t.i[0] = 13
 	t.i[1] = 14
 	t.i[2] = 15
@@ -16,7 +16,7 @@ func main()
 	var a = dyn(t)
 	print(a)
 
-	Test tt
+	var tt: Test
 	#print(str(tt))
 	a.unwrap(&tt, Test)
 	print(str(tt))

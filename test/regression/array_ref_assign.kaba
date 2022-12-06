@@ -1,5 +1,5 @@
 func main()
-	float[] a
+	var a: float[]
 	a = range(0, 2, 0.1)
 	print(a[2:4])
 	a[2:4] = range(0,1,0.8)

@@ -1,9 +1,9 @@
 
 
 func main()
-	vli v = "999999998443"
-	vli w = "29"
+	var v: vli = "999999998443"
+	var w: vli = "29"
 	
-	vli r
+	var r: vli
 	v.idiv(w, r)
 	print(str(v) + " mod " + str(r))

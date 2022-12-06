@@ -9,7 +9,7 @@ func xx(c: sOnlineChar)
 
 
 func main()
-	sOnlineChar c
+	var c: sOnlineChar
 	c.var = rangef(0, 10, 1)
 	xx(c)
 

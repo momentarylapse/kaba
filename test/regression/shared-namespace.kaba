@@ -5,7 +5,7 @@ class X
 	var y: Texture shared
 
 func main()
-	X x
+	var x: X
 	print(len(x.x))
 	print(typeof(x.x))
 	print(typeof(x.x).param[0])

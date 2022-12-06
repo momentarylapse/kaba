@@ -1,5 +1,5 @@
 func main()
-	string a = "hallo"
+	var a = "hallo"
 	print(str(a))
 	print(repr(a))
 

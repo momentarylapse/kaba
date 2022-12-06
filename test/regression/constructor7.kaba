@@ -1,9 +1,9 @@
 
 func main()
-	vec3[] i
+	var i: vec3[]
 	
 	#i = i
-	vec3 v = vec3(2,3,4)
+	var v = vec3(2,3,4)
 	i.add(v)
 	i.add(vec3(1,2,3))
 	i.add(vec3.EX)

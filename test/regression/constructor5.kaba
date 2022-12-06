@@ -13,10 +13,10 @@ class c
 
 func main()
 	print("--------------")
-	c[] a
+	var a: c[]
 	a.resize(10)
 	print("--------------")
-	c cc
+	var cc: c
 	cc.x = 13
 	a.add(cc)
 	print("--------------")

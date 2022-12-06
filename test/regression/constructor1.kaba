@@ -1,5 +1,5 @@
 use image
 
 func main()
-	Image i
+	var i: Image
 	print(i.data.num)

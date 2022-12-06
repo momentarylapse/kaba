@@ -1,5 +1,5 @@
 func main()
-	string s = "a/test/c/"
-	string[] e = s.explode("/")
+	var s = "a/test/c/"
+	var e: string[] = s.explode("/")
 	print(e)
 	print(e.join("---"))

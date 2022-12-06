@@ -1,8 +1,8 @@
 func main()
-	vli a = "7353404411"
-	vli b = "7352204413"
+	var a: vli = "7353404411"
+	var b: vli = "7352204413"
 	
-	vli r
+	var r: vli
 	a.idiv(b, r)
 	print(a)
 	print(r)

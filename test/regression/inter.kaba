@@ -1,5 +1,5 @@
 func main()
-	FloatInterpolator fi
+	var fi: FloatInterpolator
 	#fi.set_type("
 	fi.add(0.0, 1)
 	fi.add(1.0, 1)

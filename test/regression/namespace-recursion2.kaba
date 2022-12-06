@@ -8,5 +8,5 @@ class A
 #		b.x = 14
 
 func main()
-	A a
+	var a: A
 	print(str(a))

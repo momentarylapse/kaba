@@ -10,7 +10,7 @@ class X as shared
 #	return new X()
 
 func ff() -> X shared
-	X shared x = new X()
+	var x: X shared = new X()
 	return x
 
 func fff(x: X shared) -> X shared

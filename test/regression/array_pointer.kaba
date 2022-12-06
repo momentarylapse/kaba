@@ -1,6 +1,6 @@
 
 class Test
-	int a, b
+	var a, b: int
 
 var p: Test*[]
 

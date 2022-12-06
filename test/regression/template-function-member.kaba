@@ -9,7 +9,7 @@ class C
 
 
 func main()
-	C c
+	var c: C
 	
 	c.f[int](3)
 	c.f[string]("hallo")

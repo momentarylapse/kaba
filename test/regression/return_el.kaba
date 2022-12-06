@@ -1,5 +1,5 @@
 func f() -> int
-	int[] e
+	var e: int[]
 	e = range(5, 10)
 	return e[3]
 

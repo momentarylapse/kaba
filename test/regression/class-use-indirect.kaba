@@ -11,8 +11,8 @@ class B
 		print(i)
 
 func main()
-	A a
-	B b
+	var a: A
+	var b: B
 	#b.a = &a
 	b.f()
 	print(b.i)

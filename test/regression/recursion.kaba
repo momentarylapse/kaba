@@ -8,8 +8,8 @@ class B
 		j = 24
 
 func main()
-	B b
-	A a
+	var b: B
+	var a: A
 	a.b.add(b)
 	b.j = 13
 	a.b.add(b)

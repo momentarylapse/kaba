@@ -12,7 +12,7 @@ class Child extends Parent
 		super.f()
 
 func main()
-	Child c
+	var c: Child
 	c.a = 13
 	c.f()
 	c.super.f()

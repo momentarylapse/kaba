@@ -7,14 +7,14 @@ class c
 		v = other.v
 
 func main()
-	c[] a
-	c i
+	var a: c[]
+	var i: c
 	i.x = -1
 	i.v = vec3.EX
 	a.add(i)
 	
 	
-	c[] b
+	var b: c[]
 	b = a
 	a[0].v = vec3.0
 	print(a[0].v)

@@ -1,7 +1,7 @@
 func main()
-	string a = "hallo"
-	string b = " michi"
-	string c
+	var a = "hallo"
+	var b = " michi"
+	var c: string
 	for i in 0:1000000
 		c = a + b
 	print(c)

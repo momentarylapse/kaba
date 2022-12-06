@@ -22,8 +22,8 @@ func ff(x: X shared)
 
 
 func main()
-	X shared x
-	X shared y
+	var x: X shared
+	var y: X shared
 	#print(binary(&x, 8).hex())
 	x = new X()
 	#print(binary(&x, 8).hex())

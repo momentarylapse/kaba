@@ -11,7 +11,7 @@ class c
 		self.a.add(20)
 
 func main()
-	c a
+	var a: c
 	a.a.add(13)
 	a.a.add(14)
 	a.a.add(15)

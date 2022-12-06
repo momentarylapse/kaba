@@ -25,7 +25,7 @@ class Test
 
 func f() -> Test
 	#print "f"
-	Test r
+	var r: Test
 	return r
 
 func main()

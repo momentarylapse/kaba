@@ -12,8 +12,8 @@ class c
 		x = other.x
 
 func main()
-	c[] a
-	c cc
+	var a: c[]
+	var cc: c
 	cc.x = 13
 	a.resize(14)
 	a[2] = cc

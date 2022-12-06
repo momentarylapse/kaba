@@ -4,7 +4,7 @@ class c
 	var x: int[]
 
 func main()
-	c a, b
+	var a, b: c
 	a.a = 13
 	a.x.add(1)
 	a.x.add(1)

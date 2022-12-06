@@ -1,11 +1,11 @@
 
 func main()
-	color c = color(2,3,4,1)
-	color d = color(4,5,6,2)
-	color e = color.interpolate(c, d, 0.5)
+	var c = color(2,3,4,1)
+	var d = color(4,5,6,2)
+	var e = color.interpolate(c, d, 0.5)
 	print(e)
 	
-	quaternion q1, q2, q3
+	var q1, q2, q3: quaternion
 	q1 = quaternion(vec3.EX)
 	q2 = quaternion(vec3.EY)
 	print(q1)

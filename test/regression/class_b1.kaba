@@ -16,6 +16,6 @@ class Test # : Sub
 		print("Test.delete")
 
 func main()
-	Test t
+	var t: Test
 	print(t.s.i)
 	print(t.j)

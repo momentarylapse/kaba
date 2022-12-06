@@ -4,7 +4,7 @@ func f(v: vec3)
 func main()
 	f([1,2,3])
 
-	color c = [3,4,1,2]
+	var c: color = [3,4,1,2]
 	print(c)
 
 	print(quaternion([0.1,0,0]))

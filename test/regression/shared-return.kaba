@@ -11,5 +11,5 @@ func f() -> X shared
 	return x
 
 func main()
-	X shared x = f()
+	var x: X shared = f()
 	x.f()
