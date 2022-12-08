@@ -1,12 +1,11 @@
 #show
 #disasm
 
-complex z[]
+var z: complex[]
 
-void main()
-	int i
-	for i, 0, 10
-		z.push(complex(i,2))
+func main()
+	for i in 0:10
+		z.ad(complex(i,2))
 		
-	for i, 0, z.num
-		print z[i]
+	for i in 0:len(z)
+		print(z[i])

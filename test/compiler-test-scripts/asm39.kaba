@@ -25,19 +25,19 @@ void CreateW(sStroke *s)
 	//print s.NumPoints
 	s.l = 0
 	int i, j
-	for i, 0, s.NumPoints-1
+	for i in 0:s.NumPoints-1
 		s.dl[i] = sqrt(sqr(s.x[i+1] - s.x[i]) + sqr(s.y[i+1] - s.y[i]))
 		s.l += s.dl[i]
 		temp_w[i] = atan2(s.x[i+1] - s.x[i], s.y[i+1] - s.y[i]) / (2*pi) + 0.5
 	print "a"
-	for i, 0, s.NumPoints-1
+	for i in 0:s.NumPoints-1
 		s.dl[i]/=s.l
 	print "b"
 	// w interpolieren
-	for i, 0, NUM_W-1
+	for i in 0:NUM_W-1
 		float li = i2f(i) / i2f(NUM_W - 1)
 		float lj=0
-		for j, 0, s.NumPoints-1
+		for j in 0:s.NumPoints-1
 			if (li >= lj) and (li <= lj + s.dl[j])
 				s.w[i]=temp_w[j]
 				break
@@ -49,7 +49,7 @@ void CreateW(sStroke *s)
 	// bounding box (relativ zur Box des Zeichens)
 	int i
 	float x0=1, x1=0, y0=1, y1=0
-	for i, 0, s.NumPoints
+	for i in 0:s.NumPoints
 		print i
 		if x0 > s.x[i]
 			x0 = s.x[i]
@@ -79,14 +79,14 @@ void main()
 	//int n = f.ReadInt()
 	//print n
 	int i //= 0
-	//for i, 0, n
+	//for i in 0:n
 	//stroke[i].NumPoints=f.ReadInt()
 	//print stroke[i].NumPoints
 	sStroke *s //= &stroke[0]
 	//stroke[0].NumPoints = 13
 	s.w[NUM_W-1]=temp_w[s.NumPoints-2]
 	float x0=1, x1=0, y0=1, y1=0
-	for i, 0, s.NumPoints
+	for i in 0:s.NumPoints
 		print i
 		if x0 > s.x[i]
 			x0 = s.x[i]

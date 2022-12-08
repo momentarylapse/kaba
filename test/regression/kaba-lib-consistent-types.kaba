@@ -7,7 +7,7 @@ func test_class(p: Module, c: Class)
 	for f in c.functions
 		if !f.return_type
 			print("MISSING: return of {{p.name}}.{{c.name}}.{{f.name}}()")
-		for t,i in f.param_type
+		for i=>t in f.param_type
 			if !t
 				print("MISSING: param #{{i}} of {{p.name}}.{{c.name}}.{{f.name}}()")
 	for cc in c.classes
@@ -16,7 +16,7 @@ func test_class(p: Module, c: Class)
 
 func main()
 	for p in weak(default_context.packages)
-		for c,i in p.classes()
+		for i=>c in p.classes()
 			if !c
 				print("MISSING: class #{{i}} in {{p.name}}")
 				continue

@@ -201,12 +201,12 @@ model ItemGetModel(item i)
 //   - leere Items loeschen
 void InventaryUpdate(object o)
 	int i, j, k
-	for i, 0, o.Item.num
+	for i in 0:o.Item.num
 		item it = o.Item[i]
 		if it
 			// zu voll?
 			/*if it.QuantityMax > it.Quantity
-				for j, i + 1, o.Item.num
+				for j in i + 1 : o.Item.num
 					if it.OID == inv[j].OID
 						it.Quantity += inv[j].Quantity
 						int k = j
@@ -284,7 +284,7 @@ bool CharGiveItems( sCharacter *ce, sCharacter *cc, string filename, int num )
 	int oid = GetItemOID( filename )
 	int ae = -1
 	int i
-	for i, 0, oe.Item.num
+	for i in 0 : oe.Item.num
 		if oid == oe.Item[i].OID
 			if oe.Item[i].Quantity >= num
 				ae = i
@@ -505,8 +505,7 @@ void AddCharacter( object o, int type )
 	c.Type = type
 	o.Model.AllowShadow = true
 	
-	int i
-	for i, 0, NumSpecialItems
+	for i in 0:NumSpecialItems
 		c.Item[i] = nil
 	
 	// sicher gehen, dass das Modell eigene Daten besitzt

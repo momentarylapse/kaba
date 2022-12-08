@@ -781,8 +781,6 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		// key => value
 		key = var;
 		var = parse_abstract_token();
-	} else if (try_consume(",")) {
-		key = parse_abstract_token();
 	}
 
 

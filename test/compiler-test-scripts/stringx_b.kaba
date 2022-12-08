@@ -10,8 +10,7 @@ void main()
 	s.add('i')
 	print s
 	t = s
-	int i
-	for i, 0, 1000
+	for i in 0:1000
 		t += s
 	//printx t
 	print t.num

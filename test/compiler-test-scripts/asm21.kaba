@@ -1,11 +1,10 @@
 #show
 #disasm
 
-void main()
-	int i
-	for i, 0, 10
-		print i
+func main()
+	for i in 0:10
+		print(i)
 		if i > 5
 			continue
-		print "------"
-	print "fertig"
+		print("------")
+	print("fertig")

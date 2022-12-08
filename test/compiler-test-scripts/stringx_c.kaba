@@ -8,5 +8,5 @@ void main()
 	string ss[]
 	ss = s.explode(",")
 	int i
-	for i, 0, ss.num
+	for i in 0:ss.num
 		print ss[i]

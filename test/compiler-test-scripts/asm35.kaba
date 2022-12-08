@@ -3,36 +3,36 @@
 
 #show
 #disasm
-//#noexec
+####noexec
 
-vector d[], d2[]
+var d, d2: vec3[]
 
-void main()
-	int i, j, k
+func main()
+	var i, j, k: int
 	
-	d.push(vector(1,2,3))
-	d.push(vector(4,5,6))
+	d.add(vec3(1,2,3))
+	d.add(vec3(4,5,6))
 	d2.resize(2)
 	
 	
 	
-	/*if d.num > 1
-		for i, 0, NUM_LINE_PARTS + 1
-			float t = i2f(i) / i2f(NUM_LINE_PARTS)
-			print t
-			for j, 0, d.num - 1
-				print j
-				for k, 0, d.num - j - 1
-					print k
-					print d[k] + "  " + d[k+1]
-					print d[k] * (1 - t)
-					print d[k + 1] * t
-					//d2[k] = d[k] * (1 - t) + d[k + 1] * t
-					d2[k] = d[k] + d[k + 1]
-					print d[k] * (1 - t) + d[k + 1] * t
-					print d2[k]
-				//d = d2
-			print d[0]
-*/
+	#if d.num > 1
+	#	for i, 0, NUM_LINE_PARTS + 1
+	#		float t = i2f(i) / i2f(NUM_LINE_PARTS)
+	#		print t
+	#		for j, 0, d.num - 1
+	#			print j
+	#			for k, 0, d.num - j - 1
+	#				print k
+	#				print d[k] + "  " + d[k+1]
+	#				print d[k] * (1 - t)
+	#				print d[k + 1] * t
+	#				//d2[k] = d[k] * (1 - t) + d[k + 1] * t
+	#				d2[k] = d[k] + d[k + 1]
+	#				print d[k] * (1 - t) + d[k + 1] * t
+	#				print d2[k]
+	#			//d = d2
+	#		print d[0]
+
 	d2[0] += d[0] + d[1]
-	print d2[0]
+	print(d2[0])
