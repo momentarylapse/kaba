@@ -579,11 +579,13 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
-		class_add_func("parse", t, &enum_parse, Flags::_STATIC__PURE);
-			func_add_param("label", TypeString);
-			func_add_param("type", TypeClassP);
-		class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
-			func_add_param("type", TypeClassP);
+        if (!config.compile_os) {
+            class_add_func("parse", t, &enum_parse, Flags::_STATIC__PURE);
+                func_add_param("label", TypeString);
+                func_add_param("type", TypeClassP);
+            class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
+                func_add_param("type", TypeClassP);
+        }
 		add_operator(OperatorID::ASSIGN, TypeVoid, t, t, InlineID::INT_ASSIGN);
 		add_operator(OperatorID::ADD, t, t, t, InlineID::INT_ADD, &op_int_add);
 		add_operator(OperatorID::ADDS, TypeVoid, t, t, InlineID::INT_ADD_ASSIGN);
