@@ -1,3 +1,17 @@
+== problems to solve ==
+
+* "aliasing"/overlap read/write parameter
+
+f(out a,a)
+
+* pointer bleeding/keeping reference
+  -> to self
+  -> to return
+  -> to global
+  -> to out param? ...forbidden?
+
+
+== suggestion ==
 
 func f(ref a: int[], ...) -> int[]
 	return a[...]
