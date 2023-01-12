@@ -294,17 +294,12 @@ void remap_virtual_tables(Module *s, char *mem, int &offset, char *address, cons
 	// vtables -> no data yet...
 	if (ct->vtable.num > 0) {
 		Class *t = const_cast<Class*>(ct);
-        //msg_write("VT  " + t->name);
-        //msg_write(p2s(ct));
 		t->_vtable_location_compiler_ = &mem[offset];
 		t->_vtable_location_target_ = &address[offset];
-        //msg_write(p2s(t->_vtable_location_target_));
 		offset += config.pointer_size * t->vtable.num;
 		for (Constant *c: weak(s->syntax->base_class->constants))
-			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data)) {
-                //msg_write(format("  REMAP %s   %x  ->  %x", c->name, c->as_int64(), (int_p)t->_vtable_location_target_));
+			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data))
 				c->as_int64() = (int_p)t->_vtable_location_target_;
-			}
 	}
 
 	for (auto *c: weak(ct->classes))
@@ -471,16 +466,10 @@ void Module::link_functions() {
 
 void Module::link_virtual_functions_into_vtable(const Class *c) {
 	Class *t = const_cast<Class*>(c);
-//	if (t->owner == syntax)
-		t->link_virtual_table();
+	t->link_virtual_table();
 
-	/*if (config.compile_os)*/{
-		for (int i=0; i<t->vtable.num; i++) {
-            //msg_write(t->name);
-            //msg_write(p2s(t->vtable[i]));
-			memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
-		}
-	}
+	for (int i=0; i<t->vtable.num; i++)
+		memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
 
 	for (auto *cc: weak(c->classes))
 		link_virtual_functions_into_vtable(cc);
