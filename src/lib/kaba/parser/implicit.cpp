@@ -987,7 +987,13 @@ bool op_int_neq(int a, int b);
 int enum_parse(const string&, const Class*);
 Array<int> enum_all(const Class*);
 
-
+bool class_can_assign(const Class *t) {
+	if (t->is_pointer())
+		return true;
+	if (t->get_assign())
+		return true;
+	return false;
+}
 
 void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != this)
@@ -1008,7 +1014,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		if (t->needs_destructor())
 			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		if (t->param[0]->get_assign()) // or t->param[0]->can_memcpy())
+		if (class_can_assign(t->param[0]))
 			add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_dict()) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
@@ -1124,7 +1130,7 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			//add_func_header(t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
 			// implement only if parent has also done so
 			if (t->parent) {
-				if (t->parent->get_assign())
+				if (class_can_assign(t->parent))
 					add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			} else {
 				add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
