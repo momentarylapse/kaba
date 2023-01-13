@@ -296,6 +296,7 @@ void AutoImplementer::auto_implement_shared_destructor(Function *f, const Class 
 void AutoImplementer::auto_implement_regular_assign(Function *f, const Class *t) {
 	if (!f)
 		return;
+
 	auto te = t->get_array_element();
 	auto n_other = add_node_local(f->__get_var("other"));
 	auto n_self = add_node_local(f->__get_var(IDENTIFIER_SELF));
@@ -322,7 +323,7 @@ void AutoImplementer::auto_implement_regular_assign(Function *f, const Class *t)
 
 		auto n_assign = parser->con.link_operator_id(OperatorID::ASSIGN, p, o);
 		if (!n_assign)
-			do_error_implicit(f, format("no operator %s = %s for element \"%s\"", e.type->long_name(), e.type->long_name(), e.name));
+			do_error_implicit(f, format("no operator '%s = %s' for element '%s'", e.type->long_name(), e.type->long_name(), e.name));
 		f->block->add(n_assign);
 	}
 }
@@ -975,19 +976,6 @@ bool can_fully_construct(const Class *t) {
 	return num_el > 0;
 }
 
-bool class_should_assign(const Class *t) {
-	if (t->parent)
-		if (!class_should_assign(t->parent))
-			return false;
-	for (auto &e: t->elements) {
-		if (!class_should_assign(e.type))
-			return false;
-		if (e.type->is_pointer_owned())
-			return false;
-	}
-	return true;
-}
-
 void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != this)
 		return;
@@ -1052,8 +1040,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			} else {
 				if (t->needs_constructor())
 					add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
-				if (can_fully_construct(t))
-					add_full_constructor(t, this);
+				if (!flags_has(t->flags, Flags::NOAUTO))
+					if (can_fully_construct(t))
+						add_full_constructor(t, this);
 			}
 		} else {
 			if (t->parent) {
@@ -1068,13 +1057,14 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			if (t->get_constructors().num == 0) {
 				if (t->needs_constructor())
 					add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
-				if (can_fully_construct(t))
-					add_full_constructor(t, this);
+				if (!flags_has(t->flags, Flags::NOAUTO))
+					if (can_fully_construct(t))
+						add_full_constructor(t, this);
 			}
 			if (needs_new(t->get_destructor()))
 				add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
 		}
-		if (class_should_assign(t) and needs_new(t->get_assign())) {
+		if (!flags_has(t->flags, Flags::NOAUTO) and needs_new(t->get_assign())) {
 			//add_func_header(t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
 			// implement only if parent has also done so
 			if (t->parent) {
