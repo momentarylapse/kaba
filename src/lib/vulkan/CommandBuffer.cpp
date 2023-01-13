@@ -133,6 +133,10 @@ void CommandBuffer::push_constant(int offset, int size, void *data) {
 }
 
 void CommandBuffer::draw(VertexBuffer *vb) {
+	draw_instanced(vb, 1);
+}
+
+void CommandBuffer::draw_instanced(VertexBuffer *vb, int num_instances) {
 	if (vb->output_count == 0)
 		return;
 	VkDeviceSize offsets[] = {0};
@@ -140,9 +144,9 @@ void CommandBuffer::draw(VertexBuffer *vb) {
 
 	if (vb->index_buffer.buffer) {
 		vkCmdBindIndexBuffer(buffer, vb->index_buffer.buffer, 0, vb->index_type);
-		vkCmdDrawIndexed(buffer, vb->output_count, 1, 0, 0, 0);
+		vkCmdDrawIndexed(buffer, vb->output_count, num_instances, 0, 0, 0);
 	} else {
-		vkCmdDraw(buffer, vb->output_count, 1, 0, 0);
+		vkCmdDraw(buffer, vb->output_count, num_instances, 0, 0);
 	}
 }
 

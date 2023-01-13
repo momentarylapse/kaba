@@ -89,6 +89,7 @@ namespace vulkan{
 		void end_render_pass();
 		void clear(const Array<color> &col, float z, bool clear_z);
 		void draw(VertexBuffer *vb);
+		void draw_instanced(VertexBuffer *vb, int num_instances);
 
 		void set_bind_point(PipelineBindPoint bind_point);
 
