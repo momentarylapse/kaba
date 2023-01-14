@@ -126,8 +126,8 @@ void BackendX86::correct_parameters_variables_to_memory(CommandList &cmd) {
 					p.kind = NodeKind::LABEL;
 					p.p = fp->_label;
 				} else {
-					p.p = (int_p)cc->address; // FIXME ....need a cleaner approach for compiling os...
-					if (config.compile_os)
+					p.p = (int_p)cc->address_runtime; // FIXME ....need a cleaner approach for compiling os...
+					if (config.compile_os or (p.type == TypeFunctionCodeP)) // from raw_function_pointer
 						p.kind = NodeKind::MEMORY;
 					else
 						p.kind = NodeKind::CONSTANT_BY_ADDRESS;
