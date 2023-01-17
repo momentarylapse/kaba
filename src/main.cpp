@@ -99,11 +99,8 @@ public:
 		p.option("--show-consts", "", [this] {
 			flag_show_consts = true;
 		});
-		p.option("--no-function-frames", "(os) ", [] {
-			kaba::config.no_function_frame = true;
-		});
 		p.option("--add-entry-point", "(os)", [] {
-				kaba::config.add_entry_point = true;
+			kaba::config.add_entry_point = true;
 		});
 		p.option("--code-origin", "ORIGIN", "(os) set a custom code location", [] (const string &a) {
 			kaba::config.override_code_origin = true;

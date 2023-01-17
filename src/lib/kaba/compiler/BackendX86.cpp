@@ -1090,8 +1090,7 @@ void BackendX86::assemble() {
 	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
 
 	list->insert_location_label(cur_func->_label);
-
-	if (!config.no_function_frame)
+	if (!flags_has(cur_func->flags, Flags::NOFRAME))
 		add_function_intro_frame(stack_max_size); // param intro later...
 
 	for (auto &c: cmd.cmd) {
