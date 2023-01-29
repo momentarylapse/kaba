@@ -242,9 +242,9 @@ public:
 
 	Path try_get_installed_app_file(const Path &filename) {
 		for (auto &dir: Array<Path>({directory, directory_static})) {
-			Path dd = dir << "apps" << filename.str() << (filename.str() + ".kaba");
+			Path dd = dir | "apps" | filename.str() | (filename.str() + ".kaba");
 			if (filename.str().find("/") >= 0)
-				dd = dir << "apps" << (filename.str() + ".kaba");
+				dd = dir | "apps" | (filename.str() + ".kaba");
 			if (os::fs::exists(dd))
 				return dd;
 		}

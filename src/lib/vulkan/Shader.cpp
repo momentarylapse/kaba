@@ -317,9 +317,9 @@ static shaderc_compiler_t shaderc = nullptr;
 
 
 	Shader* Shader::load(const Path &_filename) {
-		if (_filename.is_empty())
+		if (_filename)
 			return nullptr;
-		Path filename = directory << _filename;
+		Path filename = directory | _filename;
 		if (verbosity >= 1)
 			msg_write(format("load shader %s", filename));
 
