@@ -1,0 +1,47 @@
+func max(a: T < Comparable, b: T) -> T
+
+func max(a: Comparable, b: Comparable) -> mintype(type(a), type(b))
+
+concept Comparable
+	func <= ...
+
+
+
+class Pointer[t: Type]
+	bla
+
+class DynamicArray[t: Type...]
+
+class Array[t: Type, n: int]
+
+
+
+
+== concerns ==
+
+class A extends Base
+
+type as "set of values"  ->  A < Base
+ ->  extending a class secretly increases its set of values
+
+func f(b: Base)
+
+
+
+
+
+
+
+== random thoughts
+
+=== "extends"
+
+some use cases:
+
+* heavy functionality inheritance
+	class W extends hui.Window
+	class MidiEventBuffer extends MidiEvent[]
+* virtual interface
+	class Error extends Exception
+
+

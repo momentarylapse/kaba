@@ -1,0 +1,6 @@
+macro m()
+	print("hi")
+
+func main()
+	m()
+

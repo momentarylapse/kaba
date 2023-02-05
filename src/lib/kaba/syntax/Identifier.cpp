@@ -29,6 +29,7 @@ const string IDENTIFIER_FUNC_SHARED_CLEAR = "_clear";
 const string IDENTIFIER_FUNC_SHARED_CREATE = "_create";
 const string IDENTIFIER_FUNC_CONTAINS = "__contains__";
 const string IDENTIFIER_FUNC_FORMAT = "format";
+const string IDENTIFIER_MACRO = "macro";
 const string IDENTIFIER_SUPER = "super";
 const string IDENTIFIER_SELF = "self";
 const string IDENTIFIER_EXTENDS = "extends";

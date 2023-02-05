@@ -599,6 +599,22 @@ void Concretifier::concretify_all_params(shared<Node> &node, Block *block, const
 };
 
 
+shared<Node> check_macro(Concretifier *con, shared<Node> node, Block *block, const Class *ns) {
+	if (node->is_function()) {
+		auto f = node->as_func();
+		if (f->is_macro()) {
+			if (f->num_params > 0)
+				con->do_error("macro with parameters not allowed yet", node);
+			if (f->literal_return_type != TypeVoid)
+				con->do_error("macro with return value not allowed yet", node);
+
+			return (Node*)f->block.get();
+		}
+	}
+	return node;
+}
+
+
 shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, const Class *ns) {
 
 	// special function
@@ -645,7 +661,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 			do_error("can't call " + kind2str(l->kind), l);
 		}
 	}
-	return try_to_match_apply_params(links, params);
+	return check_macro(this, try_to_match_apply_params(links, params), block, ns);
 }
 
 shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *block, const Class *ns) {

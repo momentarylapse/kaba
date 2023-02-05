@@ -1,0 +1,23 @@
+macro f()
+	print("hi")
+
+macro g(s: string)
+	print(s)
+
+macro m(e: Expression)
+	print($e)
+	print($e)
+	print($e)
+	print($e)
+
+func main()
+	# inline function
+	f()
+
+	g("hi")
+
+	m(rand(10))
+
+
+
+
