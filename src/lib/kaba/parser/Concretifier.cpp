@@ -124,6 +124,8 @@ const int TYPE_CAST_TUPLE_AS_CONSTRUCTOR = -23;
 const int TYPE_CAST_FUNCTION_AS_CALLABLE = -30;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -41;
+const int TYPE_CAST_MAKE_OPTIONAL = -50;
+const int TYPE_CAST_MAKE_OPTIONAL_NIL = -50;
 
 
 shared<Node> Concretifier::explicit_cast(shared<Node> node, const Class *wanted) {
@@ -289,6 +291,20 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			}
 		}
 	}
+	if (wanted->is_optional()) {
+		if (type_match(given, wanted->param[0])) {
+			cd.penalty = 10;
+			cd.cast = TYPE_CAST_MAKE_OPTIONAL;
+			cd.f = wanted->get_func("create", wanted, {wanted->param[0]});
+			return true;
+		}
+		if (given == TypePointer and node->kind == NodeKind::CONSTANT and node->as_const()->as_int64() == 0) { // nil
+			cd.penalty = 10;
+			cd.cast = TYPE_CAST_MAKE_OPTIONAL_NIL;
+			cd.f = wanted->get_func("create", wanted, {TypePointer});
+			return true;
+		}
+	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		//if (cf) {
@@ -363,7 +379,14 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 	}
 	if ((cast.cast == TYPE_CAST_MAKE_SHARED) or (cast.cast == TYPE_CAST_MAKE_OWNED)) {
 		if (!cast.f)
-			do_error(format("internal: make shared... %s.() missing...", wanted->name, IDENTIFIER_FUNC_SHARED_CREATE), node);
+			do_error(format("internal: make shared... %s.%s() missing...", wanted->name, IDENTIFIER_FUNC_SHARED_CREATE), node);
+		auto nn = add_node_call(cast.f, node->token_id);
+		nn->set_param(0, node);
+		return nn;
+	}
+	if ((cast.cast == TYPE_CAST_MAKE_OPTIONAL) or (cast.cast == TYPE_CAST_MAKE_OPTIONAL_NIL)) {
+		if (!cast.f)
+			do_error(format("internal: make optional... %s.%s() missing...", wanted->name, IDENTIFIER_FUNC_SHARED_CREATE), node);
 		auto nn = add_node_call(cast.f, node->token_id);
 		nn->set_param(0, node);
 		return nn;
