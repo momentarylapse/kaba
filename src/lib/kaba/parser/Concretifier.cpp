@@ -111,7 +111,6 @@ extern const Class *TypeAnyDict;
 extern const Class *TypeDynamicArray;
 extern const Class *TypeIntDict;
 extern const Class *TypeStringAutoCast;
-extern const Class *TypePath;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -123,7 +122,7 @@ const int TYPE_CAST_ABSTRACT_DICT = -22;
 const int TYPE_CAST_TUPLE_AS_CONSTRUCTOR = -23;
 const int TYPE_CAST_AUTO_CONSTRUCTOR = -24;
 const int TYPE_CAST_FUNCTION_AS_CALLABLE = -30;
-const int TYPE_CAST_MAKE_SHARED = -40;
+const int TYPE_CAST_MAKE_SHARED = -40; // TODO use auto constructor instead
 const int TYPE_CAST_MAKE_OWNED = -41;
 
 
@@ -193,8 +192,6 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		return true;
 	if (wanted == TypeStringAutoCast and given == TypeString)
 		return true;
-	//if (wanted == TypeString and given == TypePath)
-	//	return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (given->is_pointer()) {
@@ -255,16 +252,16 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		}
 
 		// FIXME this probably doesn't make sense... we should already know the wanted type!
-		if (!wanted->is_product())
-			return false;
-		if (wanted->param.num != node->params.num)
-			return false;
-		for (int i=0; i<node->params.num; i++)
-			if (!type_match(node->params[i]->type, wanted->param[i]))
+		if (wanted->is_product()) {
+			if (wanted->param.num != node->params.num)
 				return false;
-		msg_error("product");
-		cd.cast = TYPE_CAST_ABSTRACT_TUPLE;
-		return true;
+			for (int i=0; i<node->params.num; i++)
+				if (!type_match(node->params[i]->type, wanted->param[i]))
+					return false;
+			msg_error("product");
+			cd.cast = TYPE_CAST_ABSTRACT_TUPLE;
+			return true;
+		}
 	}
 	if (node->kind == NodeKind::DICT_BUILDER and given == TypeUnknown) {
 		if (wanted->is_dict()) {
@@ -301,12 +298,14 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 
 	// single parameter auto-constructor?
 	for (auto *f: wanted->get_constructors())
-		if (f->num_params == 2 and flags_has(f->flags, Flags::AUTO_CAST))
-			if (type_match(node->type, f->literal_param_type[1])) {
+		if (f->num_params == 2 and flags_has(f->flags, Flags::AUTO_CAST)) {
+			CastingData c;
+			if (type_match_with_cast(node, false, f->literal_param_type[1], c)) {
 				cd.cast = TYPE_CAST_AUTO_CONSTRUCTOR;
 				cd.f = f;
 				return true;
 			}
+		}
 
 	for (auto&& [i,c]: enumerate(context->type_casts))
 		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
@@ -376,8 +375,13 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 		return apply_params_with_cast(cmd, node->params, c, f->literal_param_type, 1);
 	}
 	if (cast.cast == TYPE_CAST_AUTO_CONSTRUCTOR) {
-		auto cmd = add_node_constructor(cast.f);
-		return apply_params_direct(cmd, {node}, 1);
+		auto f = cast.f;
+		CastingData c;
+		if (!type_match_with_cast(node, false, f->literal_param_type[1], c)) {
+			do_error("auto constructor...mismatch", node);
+		}
+		auto cmd = add_node_constructor(f);
+		return apply_params_with_cast(cmd, {node}, {c}, f->literal_param_type, 1);
 	}
 	if ((cast.cast == TYPE_CAST_MAKE_SHARED) or (cast.cast == TYPE_CAST_MAKE_OWNED)) {
 		if (!cast.f)
