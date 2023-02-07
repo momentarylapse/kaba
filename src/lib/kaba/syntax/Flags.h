@@ -52,10 +52,6 @@ enum class Flags {
 	AMD64_ALLOW_PASS_IN_XMM = 1<<27,
 
 	__INIT_FILL_ALL_PARAMS = 1<<28,
-
-	_STATIC__RAISES_EXCEPTIONS = STATIC | RAISES_EXCEPTIONS,
-	_STATIC__PURE = STATIC | PURE,
-	_REF__RAISES_EXCEPTIONS = REF | RAISES_EXCEPTIONS
 };
 Flags operator|(Flags a, Flags b);
 bool flags_has(Flags flags, Flags t);

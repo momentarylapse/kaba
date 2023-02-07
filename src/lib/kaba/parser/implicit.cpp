@@ -1270,17 +1270,17 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, types, {"p", "a", "b", "c", "d", "e", "f", "g", "h"});
 		add_func_header(t, IDENTIFIER_FUNC_CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else if (t->is_enum()) {
-		class_add_func("from_int", t, &kaba_int_passthrough, Flags::_STATIC__PURE);
+		class_add_func("from_int", t, &kaba_int_passthrough, Flags::STATIC | Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
 			func_add_param("i", TypeInt);
 		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
         if (!flags_has(t->flags, Flags::NOAUTO)) {
-            class_add_func("parse", t, &enum_parse, Flags::_STATIC__PURE);
+            class_add_func("parse", t, &enum_parse, Flags::STATIC | Flags::PURE);
                 func_add_param("label", TypeString);
                 func_add_param("type", TypeClassP);
-            class_add_func("all", TypeDynamicArray, &enum_all, Flags::_STATIC__PURE);
+            class_add_func("all", TypeDynamicArray, &enum_all, Flags::STATIC | Flags::PURE);
                 func_add_param("type", TypeClassP);
         }
 		add_operator(OperatorID::ASSIGN, TypeVoid, t, t, InlineID::INT_ASSIGN);
@@ -1309,8 +1309,8 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		}
 	} else if (t->is_optional()) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]}, {"value"});
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"value"});
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]}, {"value"}, nullptr, Flags::AUTO_CAST);
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"value"}, nullptr, Flags::AUTO_CAST);
 		if (t->param[0]->get_destructor())
 			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
