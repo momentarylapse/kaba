@@ -218,21 +218,20 @@ void AutoImplementer::auto_implement_optional_constructor(Function *f, const Cla
 			add_node_const(c_false)));
 }
 
-void AutoImplementer::auto_implement_optional_create(Function *f, const Class *t) {
-	auto r = add_node_local(f->block->add_var("r", t));
+void AutoImplementer::auto_implement_optional_constructor_wrap(Function *f, const Class *t) {
+	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 	auto value = add_node_local(f->__get_var("value"));
 
-
 	if (auto f_con = t->param[0]->get_default_constructor()) {
-		// r.data.__init__()
+		// self.data.__init__()
 		f->block->add(add_node_member_call(f_con,
-				r->shift(0, t->param[0])));
+				self->shift(0, t->param[0])));
 	}
 
 	{
 		// self.data = value
 		auto assign = parser->con.link_operator_id(OperatorID::ASSIGN,
-				r->shift(0, t->param[0]),
+				self->shift(0, t->param[0]),
 				value);
 		if (!assign)
 			do_error_implicit(f, format("(auto init) no operator %s = %s found", t->param[0]->long_name(), t->param[0]->long_name()));
@@ -244,28 +243,8 @@ void AutoImplementer::auto_implement_optional_create(Function *f, const Class *t
 		auto c_true = tree->add_constant(TypeBool);
 		c_true->as_int() = 1;
 		f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
-				r->shift(t->size - 1, TypeBool),
+				self->shift(t->size - 1, TypeBool),
 				add_node_const(c_true)));
-	}
-
-	{
-		// return r
-		auto ret = add_node_statement(StatementID::RETURN, -1);
-		ret->set_num_params(1);
-		ret->set_param(0, r);
-		f->block->add(ret);
-	}
-}
-
-void AutoImplementer::auto_implement_optional_create_nil(Function *f, const Class *t) {
-	auto r = add_node_local(f->block->add_var("r", t));
-
-	{
-		// return r
-		auto ret = add_node_statement(StatementID::RETURN, -1);
-		ret->set_num_params(1);
-		ret->set_param(0, r);
-		f->block->add(ret);
 	}
 }
 
@@ -1330,8 +1309,8 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		}
 	} else if (t->is_optional()) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, "create", t, {t->param[0]}, {"value"}, nullptr, Flags::STATIC);
-		add_func_header(t, "create", t, {TypePointer}, {"value"}, nullptr, Flags::STATIC);
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]}, {"value"});
+		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"value"});
 		if (t->param[0]->get_destructor())
 			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
@@ -1459,8 +1438,8 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 		auto_implement_callable_bind_call(prepare_auto_impl(t, t->get_call()), t);
 	} else if (t->is_optional()) {
 		auto_implement_optional_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		auto_implement_optional_create_nil(prepare_auto_impl(t, t->get_func("create", t, {TypePointer})), t);
-		auto_implement_optional_create(prepare_auto_impl(t, t->get_func("create", t, {t->param[0]})), t);
+		auto_implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer})), t);
+		auto_implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]})), t);
 		auto_implement_optional_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 		auto_implement_optional_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 		auto_implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]})), t);
