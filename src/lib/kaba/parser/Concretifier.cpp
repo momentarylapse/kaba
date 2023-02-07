@@ -121,6 +121,7 @@ const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_ABSTRACT_TUPLE = -21;
 const int TYPE_CAST_ABSTRACT_DICT = -22;
 const int TYPE_CAST_TUPLE_AS_CONSTRUCTOR = -23;
+const int TYPE_CAST_AUTO_CONSTRUCTOR = -24;
 const int TYPE_CAST_FUNCTION_AS_CALLABLE = -30;
 const int TYPE_CAST_MAKE_SHARED = -40;
 const int TYPE_CAST_MAKE_OWNED = -41;
@@ -192,8 +193,8 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		return true;
 	if (wanted == TypeStringAutoCast and given == TypeString)
 		return true;
-	if (wanted == TypeString and given == TypePath)
-		return true;
+	//if (wanted == TypeString and given == TypePath)
+	//	return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (given->is_pointer()) {
@@ -297,6 +298,16 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			return true;
 		//}
 	}
+
+	// single parameter auto-constructor?
+	for (auto *f: wanted->get_constructors())
+		if (f->num_params == 2 and flags_has(f->flags, Flags::AUTO_CAST))
+			if (type_match(node->type, f->literal_param_type[1])) {
+				cd.cast = TYPE_CAST_AUTO_CONSTRUCTOR;
+				cd.f = f;
+				return true;
+			}
+
 	for (auto&& [i,c]: enumerate(context->type_casts))
 		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
 			cd.penalty = c.penalty;
@@ -363,6 +374,10 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 			}
 		auto cmd = add_node_constructor(f);
 		return apply_params_with_cast(cmd, node->params, c, f->literal_param_type, 1);
+	}
+	if (cast.cast == TYPE_CAST_AUTO_CONSTRUCTOR) {
+		auto cmd = add_node_constructor(cast.f);
+		return apply_params_direct(cmd, {node}, 1);
 	}
 	if ((cast.cast == TYPE_CAST_MAKE_SHARED) or (cast.cast == TYPE_CAST_MAKE_OWNED)) {
 		if (!cast.f)
