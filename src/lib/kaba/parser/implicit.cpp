@@ -1316,9 +1316,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer}, {"other"});
-		add_func_header(t, "has_value", TypeBool, {}, {});
-		add_func_header(t, "__bool__", TypeBool, {}, {});
-		add_func_header(t, "value", t->param[0], {}, {});
+		add_func_header(t, "has_value", TypeBool, {}, {}, nullptr, Flags::PURE);
+		add_func_header(t, "__bool__", TypeBool, {}, {}, nullptr, Flags::PURE);
+		add_func_header(t, "value", t->param[0], {}, {}, nullptr, Flags::REF);
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
