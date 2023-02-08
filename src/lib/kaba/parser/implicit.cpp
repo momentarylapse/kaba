@@ -1311,8 +1311,8 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]}, {"value"}, nullptr, Flags::AUTO_CAST);
 		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"value"}, nullptr, Flags::AUTO_CAST);
-		if (t->param[0]->get_destructor())
-			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		//if (t->param[0]->get_destructor())
+		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer}, {"other"});
