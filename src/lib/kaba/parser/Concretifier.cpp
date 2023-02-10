@@ -124,6 +124,8 @@ const int TYPE_CAST_AUTO_CONSTRUCTOR = -24;
 const int TYPE_CAST_FUNCTION_AS_CALLABLE = -30;
 const int TYPE_CAST_MAKE_SHARED = -40; // TODO use auto constructor instead
 const int TYPE_CAST_MAKE_OWNED = -41;
+const int TYPE_CAST_OPTIONAL_HAS_VALUE = -50;
+const int TYPE_CAST_OPTIONAL_VALUE = -51;
 
 
 shared<Node> Concretifier::explicit_cast(shared<Node> node, const Class *wanted) {
@@ -287,6 +289,13 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			}
 		}
 	}
+	if (given->is_optional() and given->param[0] == wanted) {
+		cd.cast == TYPE_CAST_OPTIONAL_VALUE;
+		cd.penalty = 20;
+		//cd.f = given->get_call();
+		cd.f = given->get_member_func(IDENTIFIER_FUNC_OPTIONAL_VALUE, wanted, {});
+		return true;
+	}
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(IDENTIFIER_FUNC_STR, TypeString, {});
 		//if (cf) {
@@ -386,6 +395,13 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 	if ((cast.cast == TYPE_CAST_MAKE_SHARED) or (cast.cast == TYPE_CAST_MAKE_OWNED)) {
 		if (!cast.f)
 			do_error(format("internal: make shared... %s.%s() missing...", wanted->name, IDENTIFIER_FUNC_SHARED_CREATE), node);
+		auto nn = add_node_call(cast.f, node->token_id);
+		nn->set_param(0, node);
+		return nn;
+	}
+	if (cast.cast == TYPE_CAST_OPTIONAL_VALUE) {
+		if (!cast.f)
+			do_error(format("internal: optional cast... %s.%s() missing...", wanted->name, IDENTIFIER_FUNC_CALL), node);
 		auto nn = add_node_call(cast.f, node->token_id);
 		nn->set_param(0, node);
 		return nn;
@@ -680,7 +696,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 			links[i] = make_func_pointer_node_callable(l);
 			//return add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
 		} else {
-			do_error("can't call " + kind2str(l->kind), l);
+			do_error(format("this %s does not seem callable", kind2str(l->kind)), l);
 		}
 	}
 	return check_macro(this, try_to_match_apply_params(links, params), block, ns);

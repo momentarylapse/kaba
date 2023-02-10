@@ -1,0 +1,8 @@
+func f(s: string)
+	print(s)
+
+func main()
+	var s: string? = "hallo"
+
+	f(s)
+

@@ -1316,9 +1316,9 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]}, {"other"});
 		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer}, {"other"});
-		add_func_header(t, "has_value", TypeBool, {}, {}, nullptr, Flags::PURE);
+		add_func_header(t, IDENTIFIER_FUNC_OPTIONAL_HAS_VALUE, TypeBool, {}, {}, nullptr, Flags::PURE);
 		add_func_header(t, "__bool__", TypeBool, {}, {}, nullptr, Flags::PURE);
-		add_func_header(t, "value", t->param[0], {}, {}, nullptr, Flags::REF);
+		add_func_header(t, IDENTIFIER_FUNC_OPTIONAL_VALUE /*IDENTIFIER_FUNC_CALL*/, t->param[0], {}, {}, nullptr, Flags::REF);
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
@@ -1444,9 +1444,9 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 		auto_implement_optional_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
 		auto_implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]})), t);
 		auto_implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer})), t);
-		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("has_value", TypeBool, {})), t);
+		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_OPTIONAL_HAS_VALUE, TypeBool, {})), t);
 		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("__bool__", TypeBool, {})), t);
-		auto_implement_optional_value(prepare_auto_impl(t, t->get_member_func("value", t->param[0], {})), t);
+		auto_implement_optional_value(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_OPTIONAL_VALUE /*IDENTIFIER_FUNC_CALL*/, t->param[0], {})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_regular_constructor(prepare_auto_impl(t, cf), t, true);

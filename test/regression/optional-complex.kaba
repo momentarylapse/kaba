@@ -1,0 +1,11 @@
+func f() -> (int,string)?
+	return (13, "hallo")
+
+func g() -> (int,string)?
+	return nil
+
+func main()
+	let x = f()
+	print(x)
+	print(g())
+
