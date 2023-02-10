@@ -413,6 +413,10 @@ void AutoImplementer::auto_implement_optional_has_value(Function *f, const Class
 void AutoImplementer::auto_implement_optional_value(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 
+	// if not self.has_value
+	//     raise(new Exception("bla"))
+	// TODO
+
 	// return self.has_value
 	auto ret = add_node_statement(StatementID::RETURN, -1);
 	ret->set_num_params(1);
@@ -426,54 +430,28 @@ void AutoImplementer::auto_implement_regular_destructor(Function *f, const Class
 	auto te = t->get_array_element();
 	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	if (t->is_super_array() or t->is_dict()) {
-		Function *f_clear = t->get_member_func("clear", TypeVoid, {});
-		if (!f_clear)
-			do_error_implicit(f, "clear() missing");
-		f->block->add(add_node_member_call(f_clear, self));
-	} else if (t->is_array()) {
-		auto *f_el_del = te->get_destructor();
-		if (f_el_del) {
-			for (int i=0; i<t->array_length; i++) {
-				// self[i].__delete__()
-				f->block->add(add_node_member_call(f_el_del,
-						self->shift(te->size * i, te)));
-			}
-		} else if (te->needs_destructor()) {
-			do_error_implicit(f, "element destructor missing");
-		}
-	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
-		// call clear()
-		auto f_clear = t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
-		if (!f_clear)
-			do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
-		f->block->add(add_node_member_call(f_clear,
-				self));
-	} else {
+	// call child destructors
+	int i0 = t->parent ? t->parent->elements.num : 0;
+	for (auto&& [i,e]: enumerate(t->elements)) {
+		if (i < i0)
+			continue;
+		Function *ff = e.type->get_destructor();
+		if (!ff and e.type->needs_destructor())
+			do_error_implicit(f, format("missing destructor for element %s", e.name));
+		if (!ff)
+			continue;
+		// self.el.__delete__()
+		f->block->add(add_node_member_call(ff,
+				self->shift(e.offset, e.type)));
+	}
 
-		// call child destructors
-		int i0 = t->parent ? t->parent->elements.num : 0;
-		for (auto&& [i,e]: enumerate(t->elements)) {
-			if (i < i0)
-				continue;
-			Function *ff = e.type->get_destructor();
-			if (!ff and e.type->needs_destructor())
-				do_error_implicit(f, format("missing destructor for element %s", e.name));
-			if (!ff)
-				continue;
-			// self.el.__delete__()
-			f->block->add(add_node_member_call(ff,
-					self->shift(e.offset, e.type)));
-		}
-
-		// parent destructor
-		if (t->parent) {
-			Function *ff = t->parent->get_destructor();
-			if (ff)
-				f->block->add(add_node_member_call(ff, self, -1, {}, true));
-			else if (t->parent->needs_destructor())
-				do_error_implicit(f, "parent destructor missing");
-		}
+	// parent destructor
+	if (t->parent) {
+		Function *ff = t->parent->get_destructor();
+		if (ff)
+			f->block->add(add_node_member_call(ff, self, -1, {}, true));
+		else if (t->parent->needs_destructor())
+			do_error_implicit(f, "parent destructor missing");
 	}
 }
 
@@ -1414,6 +1392,7 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 		auto_implement_array_assign(prepare_auto_impl(t, t->get_assign()), t);
 	} else if (t->is_dict()) {
 		auto_implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+		auto_implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	} else if (t->is_pointer_shared()) {
 		auto_implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 		auto_implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
