@@ -292,8 +292,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	if (given->is_optional() and given->param[0] == wanted) {
 		cd.cast == TYPE_CAST_OPTIONAL_VALUE;
 		cd.penalty = 20;
-		//cd.f = given->get_call();
-		cd.f = given->get_member_func(IDENTIFIER_FUNC_OPTIONAL_VALUE, wanted, {});
+		cd.f = given->get_call();
 		return true;
 	}
 	if (wanted == TypeStringAutoCast) {
@@ -695,6 +694,8 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 		} else if (l->type->is_callable()) {
 			links[i] = make_func_pointer_node_callable(l);
 			//return add_node_member_call(l->type->param[0]->get_call(), l->deref(), params);
+		} else if (auto c = l->type->get_call()) {
+			return add_node_member_call(l->type->get_call(), l, {});
 		} else {
 			do_error(format("this %s does not seem callable", kind2str(l->kind)), l);
 		}

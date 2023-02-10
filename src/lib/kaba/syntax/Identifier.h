@@ -30,7 +30,6 @@ extern const string IDENTIFIER_FUNC_SHARED_CREATE;
 extern const string IDENTIFIER_FUNC_CONTAINS;
 extern const string IDENTIFIER_FUNC_FORMAT;
 extern const string IDENTIFIER_FUNC_OPTIONAL_HAS_VALUE;
-extern const string IDENTIFIER_FUNC_OPTIONAL_VALUE;
 extern const string IDENTIFIER_MACRO;
 extern const string IDENTIFIER_SUPER;
 extern const string IDENTIFIER_SELF;
