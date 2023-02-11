@@ -14,6 +14,7 @@ const int FULL_CONSTRUCTOR_MAX_PARAMS = 4;
 
 extern const Class *TypeCallableBase;
 extern const Class *TypeDynamicArray;
+extern const Class *TypeNoValueError;
 
 
 Array<const Class*> get_callable_param_types(const Class *fp);
@@ -413,15 +414,43 @@ void AutoImplementer::auto_implement_optional_has_value(Function *f, const Class
 void AutoImplementer::auto_implement_optional_value(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
 
-	// if not self.has_value
-	//     raise(new Exception("bla"))
-	// TODO
+	{
+		// if not self.has_value
+		//     raise(new NoValueError())
+		//     self.value.__init__()
+		auto cmd_if = add_node_statement(StatementID::IF);
+		auto cmd_not = add_node_operator_by_inline(InlineID::BOOL_NEGATE, self->shift(t->size - 1, TypeBool), nullptr);
+		cmd_if->set_param(0, cmd_not);
 
-	// return self.has_value
-	auto ret = add_node_statement(StatementID::RETURN, -1);
-	ret->set_num_params(1);
-	ret->set_param(0, self->shift(0, t->param[0]));
-	f->block->add(ret);
+		auto b = new Block(f, f->block.get());
+
+		auto f_ex = TypeNoValueError->get_default_constructor();
+		auto cmd_call_ex = add_node_call(f_ex, -1);
+		cmd_call_ex->set_num_params(1);
+		cmd_call_ex->set_param(0, new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
+
+		auto cmd_new = add_node_statement(StatementID::NEW);
+		cmd_new->set_num_params(1);
+		cmd_new->set_param(0, cmd_call_ex);
+		cmd_new->type = TypeExceptionP;
+
+
+		auto cmd_raise = add_node_call(tree->required_func_global("raise"));
+		cmd_raise->set_param(0, cmd_new);
+		b->add(cmd_raise);
+
+		cmd_if->set_param(1, b);
+		f->block->add(cmd_if);
+	}
+
+
+	{
+		// return self.has_value
+		auto ret = add_node_statement(StatementID::RETURN, -1);
+		ret->set_num_params(1);
+		ret->set_param(0, self->shift(0, t->param[0]));
+		f->block->add(ret);
+	}
 }
 
 void AutoImplementer::auto_implement_regular_destructor(Function *f, const Class *t) {
