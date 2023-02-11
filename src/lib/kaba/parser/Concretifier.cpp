@@ -290,7 +290,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		}
 	}
 	if (given->is_optional() and given->param[0] == wanted) {
-		cd.cast == TYPE_CAST_OPTIONAL_VALUE;
+		cd.cast = TYPE_CAST_OPTIONAL_VALUE;
 		cd.penalty = 20;
 		cd.f = given->get_call();
 		return true;
