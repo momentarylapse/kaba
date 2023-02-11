@@ -1,0 +1,6 @@
+func main()
+	print((13 as int?) == (13 as int?))
+	print((13 as int?) == (9999 as int?))
+	print((13 as int?) == (nil as int?))
+	print((nil as int?) == (13 as int?))
+	print((nil as int?) == (nil as int?))
