@@ -94,7 +94,7 @@ void AutoImplementer::auto_implement_add_child_constructors(shared<Node> n_self,
 
 	if (flags_has(t->flags, Flags::SHARED)) {
 		for (auto &e: t->elements)
-			if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+			if (e.name == Identifier::SHARED_COUNT and e.type == TypeInt) {
 				f->block->add(add_node_operator_by_inline(InlineID::INT_ASSIGN,
 						n_self->shift(e.offset, e.type),
 						add_node_const(tree->add_constant_int(0))));
@@ -105,7 +105,7 @@ void AutoImplementer::auto_implement_add_child_constructors(shared<Node> n_self,
 void AutoImplementer::auto_implement_regular_constructor(Function *f, const Class *t, bool allow_parent_constructor) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	if (t->is_super_array()) {
 	} else if (t->is_dict()) {
@@ -129,7 +129,7 @@ void AutoImplementer::auto_implement_regular_constructor(Function *f, const Clas
 
 		// parent constructor
 		if (t->parent and allow_parent_constructor) {
-			Function *f_same = t->parent->get_same_func(IDENTIFIER_FUNC_INIT, f);
+			Function *f_same = t->parent->get_same_func(Identifier::Func::INIT, f);
 			Function *f_def = t->parent->get_default_constructor();
 			if (f_same) {
 				// first, try same signature
@@ -157,7 +157,7 @@ void AutoImplementer::auto_implement_regular_constructor(Function *f, const Clas
 
 
 void AutoImplementer::auto_implement_super_array_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt});
@@ -171,7 +171,7 @@ void AutoImplementer::auto_implement_super_array_constructor(Function *f, const 
 void AutoImplementer::auto_implement_array_constructor(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto te = t->get_array_element();
 	auto *f_el_init = te->get_default_constructor();
@@ -188,7 +188,7 @@ void AutoImplementer::auto_implement_array_constructor(Function *f, const Class 
 
 
 void AutoImplementer::auto_implement_dict_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt});
@@ -199,7 +199,7 @@ void AutoImplementer::auto_implement_dict_constructor(Function *f, const Class *
 
 
 void AutoImplementer::auto_implement_shared_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto te = t->param[0];
 	// self.p = nil
@@ -236,7 +236,7 @@ shared<Node> op_data(shared<Node> node) {
 }
 
 void AutoImplementer::auto_implement_optional_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// self.has_value = false
 	f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
@@ -245,7 +245,7 @@ void AutoImplementer::auto_implement_optional_constructor(Function *f, const Cla
 }
 
 void AutoImplementer::auto_implement_optional_constructor_wrap(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto value = add_node_local(f->__get_var("value"));
 
 	if (auto f_con = t->param[0]->get_default_constructor()) {
@@ -279,7 +279,7 @@ void AutoImplementer::auto_implement_optional_destructor(Function *f, const Clas
 	if (!f_des)
 		return;
 
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	{
 		// if self.has_value
@@ -299,7 +299,7 @@ void AutoImplementer::auto_implement_optional_destructor(Function *f, const Clas
 }
 
 void AutoImplementer::auto_implement_optional_assign(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto other = add_node_local(f->__get_var("other"));
 
 	if (auto f_des = t->param[0]->get_destructor()) {
@@ -354,7 +354,7 @@ void AutoImplementer::auto_implement_optional_assign(Function *f, const Class *t
 }
 
 void AutoImplementer::auto_implement_optional_assign_raw(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto other = add_node_local(f->__get_var("other"));
 
 	if (auto f_con = t->param[0]->get_default_constructor()) {
@@ -393,7 +393,7 @@ void AutoImplementer::auto_implement_optional_assign_raw(Function *f, const Clas
 }
 
 void AutoImplementer::auto_implement_optional_assign_null(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	if (auto f_des = t->param[0]->get_destructor()) {
 		// if self.has_value
@@ -420,7 +420,7 @@ void AutoImplementer::auto_implement_optional_assign_null(Function *f, const Cla
 }
 
 void AutoImplementer::auto_implement_optional_has_value(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// return self.has_value
 	auto ret = add_node_statement(StatementID::RETURN, -1);
@@ -430,7 +430,7 @@ void AutoImplementer::auto_implement_optional_has_value(Function *f, const Class
 }
 
 void AutoImplementer::auto_implement_optional_value(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	{
 		// if not self.has_value
@@ -472,7 +472,7 @@ void AutoImplementer::auto_implement_optional_value(Function *f, const Class *t)
 void AutoImplementer::auto_implement_optional_equal_raw(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto other = add_node_local(f->__get_var("other"));
 
 	{
@@ -510,7 +510,7 @@ void AutoImplementer::auto_implement_optional_equal_raw(Function *f, const Class
 void AutoImplementer::auto_implement_optional_equal(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto other = add_node_local(f->__get_var("other"));
 
 	{
@@ -557,7 +557,7 @@ void AutoImplementer::auto_implement_regular_destructor(Function *f, const Class
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// call child destructors
 	int i0 = t->parent ? t->parent->elements.num : 0;
@@ -588,7 +588,7 @@ void AutoImplementer::auto_implement_array_destructor(Function *f, const Class *
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto *f_el_del = te->get_destructor();
 	if (f_el_del) {
@@ -605,12 +605,12 @@ void AutoImplementer::auto_implement_array_destructor(Function *f, const Class *
 
 void AutoImplementer::auto_implement_shared_destructor(Function *f, const Class *t) {
 	auto te = t->get_array_element();
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// call clear()
-	auto f_clear = t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
+	auto f_clear = t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {});
 	if (!f_clear)
-		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
+		do_error_implicit(f, Identifier::Func::SHARED_CLEAR + "() missing");
 	f->block->add(add_node_member_call(f_clear, self));
 }
 
@@ -620,7 +620,7 @@ void AutoImplementer::auto_implement_regular_assign(Function *f, const Class *t)
 
 	auto te = t->get_array_element();
 	auto n_other = add_node_local(f->__get_var("other"));
-	auto n_self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_self = add_node_local(f->__get_var(Identifier::SELF));
 
 
 	// parent assignment
@@ -653,7 +653,7 @@ void AutoImplementer::auto_implement_regular_assign(Function *f, const Class *t)
 
 void AutoImplementer::auto_implement_super_array_destructor(Function *f, const Class *t) {
 	auto te = t->get_array_element();
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	Function *f_clear = t->get_member_func("clear", TypeVoid, {});
 	if (!f_clear)
@@ -668,7 +668,7 @@ void AutoImplementer::auto_implement_array_assign(Function *f, const Class *t) {
 
 	auto te = t->get_array_element();
 	auto n_other = add_node_local(f->__get_var("other"));
-	auto n_self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// for el,i in *self
 	//    el = other[i]
@@ -700,7 +700,7 @@ void AutoImplementer::auto_implement_array_assign(Function *f, const Class *t) {
 void AutoImplementer::auto_implement_super_array_assign(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 	auto n_other = add_node_local(f->__get_var("other"));
-	auto n_self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto n_self = add_node_local(f->__get_var(Identifier::SELF));
 
 	Function *f_resize = t->get_member_func("resize", TypeVoid, {TypeInt});
 	if (!f_resize)
@@ -743,7 +743,7 @@ void AutoImplementer::auto_implement_super_array_assign(Function *f, const Class
 void AutoImplementer::auto_implement_super_array_clear(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 // delete...
 	Function *f_del = te->get_destructor();
@@ -782,7 +782,7 @@ void AutoImplementer::auto_implement_super_array_resize(Function *f, const Class
 
 	auto num = add_node_local(f->__get_var("num"));
 
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto self_num = self->shift(config.pointer_size, TypeInt);
 
@@ -853,7 +853,7 @@ void AutoImplementer::auto_implement_super_array_resize(Function *f, const Class
 void AutoImplementer::auto_implement_super_array_remove(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 	auto index = add_node_local(f->__get_var("index"));
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// delete...
 	Function *f_del = te->get_destructor();
@@ -880,7 +880,7 @@ void AutoImplementer::auto_implement_super_array_add(Function *f, const Class *t
 	Block *b = f->block.get();
 	auto item = add_node_local(b->get_var("x"));
 
-	auto self = add_node_local(b->get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(b->get_var(Identifier::SELF));
 
 	auto self_num = self->shift(config.pointer_size, TypeInt);
 
@@ -907,14 +907,14 @@ void AutoImplementer::auto_implement_super_array_add(Function *f, const Class *t
 
 void AutoImplementer::auto_implement_shared_assign(Function *f, const Class *t) {
 	auto p = add_node_local(f->__get_var("p"));
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto self_p = self->shift(0, tree->get_pointer(t->param[0]));
 
 	// call clear()
-	auto f_clear = t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
+	auto f_clear = t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {});
 	if (!f_clear)
-		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
+		do_error_implicit(f, Identifier::Func::SHARED_CLEAR + "() missing");
 	auto call_clear = add_node_member_call(f_clear, self);
 	f->block->add(call_clear);
 
@@ -942,7 +942,7 @@ void AutoImplementer::auto_implement_shared_assign(Function *f, const Class *t) 
 	auto tt = self->type->param[0];
 	bool found = false;
 	for (auto &e: tt->elements)
-		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt) {
+		if (e.name == Identifier::SHARED_COUNT and e.type == TypeInt) {
 			// count ++
 			auto count = self_p->deref()->shift(e.offset, e.type);
 			auto inc = add_node_operator_by_inline(InlineID::INT_INCREASE, count, nullptr);
@@ -950,11 +950,11 @@ void AutoImplementer::auto_implement_shared_assign(Function *f, const Class *t) 
 			found = true;
 		}
 	if (!found)
-		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), IDENTIFIER_SHARED, IDENTIFIER_SHARED_COUNT));
+		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), Identifier::SHARED, Identifier::SHARED_COUNT));
 }
 
 void AutoImplementer::auto_implement_shared_clear(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto self_p = self->shift(0, tree->get_pointer(t->param[0]));
 
 	auto tt = t->param[0];
@@ -978,10 +978,10 @@ void AutoImplementer::auto_implement_shared_clear(Function *f, const Class *t) {
 
 	shared<Node> count;
 	for (auto &e: tt->elements)
-		if (e.name == IDENTIFIER_SHARED_COUNT and e.type == TypeInt)
+		if (e.name == Identifier::SHARED_COUNT and e.type == TypeInt)
 			count = self_p->deref_shift(e.offset, e.type, -1);
 	if (!count)
-		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), IDENTIFIER_SHARED, IDENTIFIER_SHARED_COUNT));
+		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), Identifier::SHARED, Identifier::SHARED_COUNT));
 
 	// count --
 	auto dec = add_node_operator_by_inline(InlineID::INT_DECREASE, count, nullptr);
@@ -1022,7 +1022,7 @@ void AutoImplementer::auto_implement_shared_create(Function *f, const Class *t) 
 
 
 	// r = p
-	auto f_assign = t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {p->type});
+	auto f_assign = t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {p->type});
 	if (!f_assign)
 		do_error_implicit(f, "= missing...");
 	auto call_assign = add_node_member_call(f_assign, r);
@@ -1040,14 +1040,14 @@ void AutoImplementer::auto_implement_shared_create(Function *f, const Class *t) 
 
 void AutoImplementer::auto_implement_owned_assign(Function *f, const Class *t) {
 	auto p = add_node_local(f->__get_var("p"));
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto self_p = self->shift(0, tree->get_pointer(t->param[0]));
 
 	// call clear()
-	auto f_clear = t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {});
+	auto f_clear = t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {});
 	if (!f_clear)
-		do_error_implicit(f, IDENTIFIER_FUNC_SHARED_CLEAR + "() missing");
+		do_error_implicit(f, Identifier::Func::SHARED_CLEAR + "() missing");
 	auto call_clear = add_node_member_call(f_clear, self);
 	f->block->add(call_clear);
 
@@ -1057,7 +1057,7 @@ void AutoImplementer::auto_implement_owned_assign(Function *f, const Class *t) {
 }
 
 void AutoImplementer::auto_implement_owned_clear(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto self_p = self->shift(0, tree->get_pointer(t->param[0]));
 
 	auto tt = t->param[0];
@@ -1105,7 +1105,7 @@ static const Array<string> DUMMY_PARAMS = {"a", "b", "c", "d", "e", "f", "g", "h
 
 
 void AutoImplementer::auto_implement_callable_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	auto_implement_add_virtual_table(self, f, t);
 
@@ -1135,7 +1135,7 @@ void AutoImplementer::auto_implement_callable_constructor(Function *f, const Cla
 
 
 void AutoImplementer::auto_implement_callable_fp_call(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	//db_add_print_label(this, f->block, "== callable.call ==");
 
@@ -1164,7 +1164,7 @@ void AutoImplementer::auto_implement_callable_fp_call(Function *f, const Class *
 
 
 void AutoImplementer::auto_implement_callable_bind_call(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(IDENTIFIER_SELF));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	//db_add_print_label(this, f->block, "== bind.call ==");
 
@@ -1256,15 +1256,15 @@ bool has_user_constructors(const Class *t) {
 
 void remove_inherited_constructors(Class *t) {
 	for (int i=t->functions.num-1; i>=0; i--)
-		if (t->functions[i]->name == IDENTIFIER_FUNC_INIT and t->functions[i]->needs_overriding())
+		if (t->functions[i]->name == Identifier::Func::INIT and t->functions[i]->needs_overriding())
 			t->functions.erase(i);
 }
 
 void redefine_inherited_constructors(Class *t, SyntaxTree *tree) {
 	for (auto *pcc: t->parent->get_constructors()) {
-		auto c = t->get_same_func(IDENTIFIER_FUNC_INIT, pcc);
+		auto c = t->get_same_func(Identifier::Func::INIT, pcc);
 		if (needs_new(c)) {
-			auto ff = tree->add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c, Flags::NONE, pcc->default_parameters);
+			auto ff = tree->add_func_header(t, Identifier::Func::INIT, TypeVoid, pcc->literal_param_type, class_func_param_names(pcc), c, Flags::NONE, pcc->default_parameters);
 		}
 	}
 }
@@ -1278,7 +1278,7 @@ void add_full_constructor(Class *t, SyntaxTree *tree) {
 			types.add(e.type);
 		}
 	}
-	auto f = tree->add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, types, names);
+	auto f = tree->add_func_header(t, Identifier::Func::INIT, TypeVoid, types, names);
 	flags_set(f->flags, Flags::__INIT_FILL_ALL_PARAMS);
 }
 
@@ -1322,65 +1322,65 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 		return;
 
 	if (t->is_super_array()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 		add_func_header(t, "clear", TypeVoid, {}, {});
 		add_func_header(t, "resize", TypeVoid, {TypeInt}, {"num"});
 		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
 		add_func_header(t, "remove", TypeVoid, {TypeInt}, {"index"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_array()) {
 		if (t->needs_constructor())
-			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+			add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 		if (t->needs_destructor())
-			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+			add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 		if (class_can_assign(t->param[0]))
-			add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+			add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_dict()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 		add_func_header(t, "clear", TypeVoid, {}, {});
 		add_func_header(t, "add", TypeVoid, {TypeString, t->param[0]}, {"key", "x"});
-		add_func_header(t, IDENTIFIER_FUNC_GET, t->param[0], {TypeString}, {"key"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, Identifier::Func::GET, t->param[0], {TypeString}, {"key"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->is_pointer_shared()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {get_pointer(t->param[0])}, {"p"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
-		add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {get_pointer(t->param[0])}, {"p"}, nullptr, Flags::STATIC);
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {get_pointer(t->param[0])}, {"p"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"p"});
+		add_func_header(t, Identifier::Func::SHARED_CREATE, t, {get_pointer(t->param[0])}, {"p"}, nullptr, Flags::STATIC);
 	} else if (t->is_pointer_owned()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {get_pointer(t->param[0])}, {"p"});
-		//add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"p"});
-		//add_func_header(t, IDENTIFIER_FUNC_SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {get_pointer(t->param[0])}, {"p"});
+		//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"p"});
+		//add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
 	} else if (t->is_product()) {
 		if (t->needs_constructor())
-			add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
+			add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 		// TODO check if possible:
 		add_full_constructor(t, this);
 		if (!t->can_memcpy()) // needs destructor...
-			add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
+			add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 		// TODO check if possible:
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 		if (t->get_assign() and t->can_memcpy())
 			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
 	} else if (t->is_callable_fp()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"p"});
-		add_func_header(t, IDENTIFIER_FUNC_CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {TypePointer}, {"p"});
+		add_func_header(t, Identifier::Func::CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else if (t->is_callable_bind()) {
 		auto types = get_callable_capture_types(t);
 		types.insert(TypePointer, 0);
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, types, {"p", "a", "b", "c", "d", "e", "f", "g", "h"});
-		add_func_header(t, IDENTIFIER_FUNC_CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, types, {"p", "a", "b", "c", "d", "e", "f", "g", "h"});
+		add_func_header(t, Identifier::Func::CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 	} else if (t->is_enum()) {
 		class_add_func("from_int", t, &kaba_int_passthrough, Flags::STATIC | Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
 			func_add_param("i", TypeInt);
-		//class_add_func(IDENTIFIER_FUNC_STR, TypeString, &i2s, Flags::PURE);
+		//class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
 			func_set_inline(InlineID::PASSTHROUGH);
         if (!flags_has(t->flags, Flags::NOAUTO)) {
@@ -1415,27 +1415,31 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			}
 		}
 	} else if (t->is_optional()) {
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]}, {"value"}, nullptr, Flags::AUTO_CAST);
-		add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer}, {"value"}, nullptr, Flags::AUTO_CAST);
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {t->param[0]}, {"value"}, nullptr, Flags::AUTO_CAST);
+		add_func_header(t, Identifier::Func::INIT, TypeVoid, {TypePointer}, {"value"}, nullptr, Flags::AUTO_CAST);
 		//if (t->param[0]->get_destructor())
-		add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]}, {"other"});
-		add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer}, {"other"});
-		add_func_header(t, IDENTIFIER_FUNC_OPTIONAL_HAS_VALUE, TypeBool, {}, {}, nullptr, Flags::PURE);
+		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t->param[0]}, {"other"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {TypePointer}, {"other"});
+		add_func_header(t, Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}, {}, nullptr, Flags::PURE);
 		add_func_header(t, "__bool__", TypeBool, {}, {}, nullptr, Flags::PURE);
-		add_func_header(t, IDENTIFIER_FUNC_CALL, t->param[0], {}, {}, nullptr, Flags::REF);
-		if (t->param[0]->get_member_func("__eq__", TypeBool, {t->param[0]})) {
-			add_func_header(t, "__eq__", TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
-			add_func_header(t, "__eq__", TypeBool, {t->param[0]}, {"other"}, nullptr, Flags::PURE);
+		add_func_header(t, Identifier::Func::CALL, t->param[0], {}, {}, nullptr, Flags::REF);
+		if (t->param[0]->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})) {
+			add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
+			add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t->param[0]}, {"other"}, nullptr, Flags::PURE);
 		}
+	//} else if (t->is_product()) {
+	//	TODO
+
+
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
 			} else {
 				if (t->needs_constructor())
-					add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
+					add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
 				if (!flags_has(t->flags, Flags::NOAUTO))
 					if (can_fully_construct(t))
 						add_full_constructor(t, this);
@@ -1452,22 +1456,22 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			}
 			if (t->get_constructors().num == 0) {
 				if (t->needs_constructor())
-					add_func_header(t, IDENTIFIER_FUNC_INIT, TypeVoid, {}, {}, t->get_default_constructor());
+					add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
 				if (!flags_has(t->flags, Flags::NOAUTO))
 					if (can_fully_construct(t))
 						add_full_constructor(t, this);
 			}
 			if (needs_new(t->get_destructor()))
-				add_func_header(t, IDENTIFIER_FUNC_DELETE, TypeVoid, {}, {}, t->get_destructor());
+				add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {}, t->get_destructor());
 		}
 		if (!flags_has(t->flags, Flags::NOAUTO) and needs_new(t->get_assign())) {
 			//add_func_header(t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
 			// implement only if parent has also done so
 			if (t->parent) {
 				if (class_can_assign(t->parent))
-					add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+					add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			} else {
-				add_func_header(t, IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+				add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			}
 		}
 		if (t->get_assign() and t->can_memcpy()) {
@@ -1529,17 +1533,17 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 	} else if (t->is_pointer_shared()) {
 		auto_implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 		auto_implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		auto_implement_shared_clear(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {})), t);
-		auto_implement_shared_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
-		auto_implement_shared_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
-		auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {tree->get_pointer(t->param[0])})), t);
+		auto_implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
+		auto_implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+		auto_implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
+		auto_implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {tree->get_pointer(t->param[0])})), t);
 	} else if (t->is_pointer_owned()) {
 		auto_implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 		auto_implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		auto_implement_owned_clear(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_SHARED_CLEAR, TypeVoid, {})), t);
-		auto_implement_owned_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
-		//auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {nullptr, t})), t);
-		//auto_implement_shared_create(prepare_auto_impl(t, t->get_func(IDENTIFIER_FUNC_SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
+		auto_implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
+		auto_implement_owned_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+		//auto_implement_shared_assign(prepare_auto_impl(t, t->get_func(Identifier::Func::ASSIGN, TypeVoid, {nullptr, t})), t);
+		//auto_implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
 	} else if (t->is_callable_fp()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_callable_constructor(prepare_auto_impl(t, cf), t);
@@ -1550,17 +1554,17 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 		auto_implement_callable_bind_call(prepare_auto_impl(t, t->get_call()), t);
 	} else if (t->is_optional()) {
 		auto_implement_optional_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		auto_implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_INIT, TypeVoid, {TypePointer})), t);
-		auto_implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_INIT, TypeVoid, {t->param[0]})), t);
+		auto_implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(Identifier::Func::INIT, TypeVoid, {TypePointer})), t);
+		auto_implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(Identifier::Func::INIT, TypeVoid, {t->param[0]})), t);
 		auto_implement_optional_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		auto_implement_optional_assign(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t})), t);
-		auto_implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {t->param[0]})), t);
-		auto_implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_ASSIGN, TypeVoid, {TypePointer})), t);
-		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_OPTIONAL_HAS_VALUE, TypeBool, {})), t);
+		auto_implement_optional_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
+		auto_implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t->param[0]})), t);
+		auto_implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {TypePointer})), t);
+		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {})), t);
 		auto_implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("__bool__", TypeBool, {})), t);
-		auto_implement_optional_value(prepare_auto_impl(t, t->get_member_func(IDENTIFIER_FUNC_CALL, t->param[0], {})), t);
-		auto_implement_optional_equal(prepare_auto_impl(t, t->get_member_func("__eq__", TypeBool, {t})), t);
-		auto_implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func("__eq__", TypeBool, {t->param[0]})), t);
+		auto_implement_optional_value(prepare_auto_impl(t, t->get_member_func(Identifier::Func::CALL, t->param[0], {})), t);
+		auto_implement_optional_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
+		auto_implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})), t);
 	} else {
 		for (auto *cf: t->get_constructors())
 			auto_implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
