@@ -55,6 +55,7 @@ public:
 	void implement_super_array_resize(Function *f, const Class *t);
 	void implement_super_array_add(Function *f, const Class *t);
 	void implement_super_array_remove(Function *f, const Class *t);
+	void implement_super_array_equal(Function *f, const Class *t);
 	void implement_dict_constructor(Function *f, const Class *t);
 	void implement_shared_constructor(Function *f, const Class *t);
 	void implement_shared_destructor(Function *f, const Class *t);
@@ -81,6 +82,7 @@ public:
 
 	shared<Node> node_false();
 	shared<Node> node_true();
+	shared<Node> const_int(int i);
 
 	void db_add_print_node(shared<Block> block, shared<Node> node);
 	void db_add_print_label(shared<Block> block, const string &s);

@@ -1,0 +1,19 @@
+#class 
+
+func main()
+	var a: (int,string)[]
+
+	a = a
+	var b = a
+	print(b == a)
+	a.add((13,"a"))
+	print(b == a)
+	b.add((99,"x"))
+	print(b == a)
+
+	b[0][0] = 13
+	b[0][1] = "a"
+	print(b == a)
+
+
+

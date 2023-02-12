@@ -19,15 +19,19 @@ AutoImplementer::AutoImplementer(Parser *p, SyntaxTree *t) {
 }
 
 shared<Node> AutoImplementer::node_false() {
-	auto c_false = tree->add_constant(TypeBool);
-	c_false->as_int() = 0;
-	return add_node_const(c_false);
+	auto c = tree->add_constant(TypeBool);
+	c->as_int() = 0;
+	return add_node_const(c);
 }
 
 shared<Node> AutoImplementer::node_true() {
-	auto c_false = tree->add_constant(TypeBool);
-	c_false->as_int() = 1;
-	return add_node_const(c_false);
+	auto c = tree->add_constant(TypeBool);
+	c->as_int() = 1;
+	return add_node_const(c);
+}
+
+shared<Node> AutoImplementer::const_int(int i) {
+	return add_node_const(tree->add_constant_int(i));
 }
 
 void AutoImplementer::db_add_print_node(shared<Block> block, shared<Node> node) {
@@ -233,6 +237,7 @@ void AutoImplementer::implement_functions(const Class *t) {
 		implement_super_array_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt})), t);
 		implement_super_array_add(class_get_member_func(t, "add", TypeVoid, {nullptr}), t);
 		implement_super_array_assign(prepare_auto_impl(t, t->get_assign()), t);
+		implement_super_array_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
 	} else if (t->is_array()) {
 		implement_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 		implement_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);

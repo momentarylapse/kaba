@@ -8,8 +8,17 @@
 #include "../../kaba.h"
 #include "../implicit.h"
 #include "../Parser.h"
+#include "../../../os/msg.h"
 
 namespace kaba {
+
+static shared<Node> sa_num(shared<Node> node) {
+	return node->shift(config.pointer_size, TypeInt);
+}
+
+/*static shared<Node> sa_data(shared<Node> node) {
+	return node->shift(config.pointer_size, TypeInt);
+}*/
 
 void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
@@ -19,6 +28,8 @@ void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 	add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
 	add_func_header(t, "remove", TypeVoid, {TypeInt}, {"index"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	if (t->param[0]->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]}))
+		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"});
 }
 
 void AutoImplementer::implement_super_array_constructor(Function *f, const Class *t) {
@@ -28,17 +39,17 @@ void AutoImplementer::implement_super_array_constructor(Function *f, const Class
 	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt});
 	f->block->add(add_node_member_call(ff,
 			self, -1,
-			{add_node_const(tree->add_constant_int(te->size))}));
+			{const_int(te->size)}));
 }
 
 void AutoImplementer::implement_super_array_destructor(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	Function *f_clear = t->get_member_func("clear", TypeVoid, {});
-	if (!f_clear)
+	if (auto f_clear = t->get_member_func("clear", TypeVoid, {}))
+		f->block->add(add_node_member_call(f_clear, self));
+	else
 		do_error_implicit(f, "clear() missing");
-	f->block->add(add_node_member_call(f_clear, self));
 }
 
 void AutoImplementer::implement_super_array_assign(Function *f, const Class *t) {
@@ -46,42 +57,43 @@ void AutoImplementer::implement_super_array_assign(Function *f, const Class *t) 
 	auto n_other = add_node_local(f->__get_var("other"));
 	auto n_self = add_node_local(f->__get_var(Identifier::SELF));
 
-	Function *f_resize = t->get_member_func("resize", TypeVoid, {TypeInt});
-	if (!f_resize)
+	if (auto f_resize = t->get_member_func("resize", TypeVoid, {TypeInt})) {
+		// self.resize(other.num)
+		auto n_other_num = sa_num(n_other);
+
+		auto n_resize = add_node_member_call(f_resize, n_self);
+		n_resize->set_num_params(2);
+		n_resize->set_param(1, n_other_num);
+		f->block->add(n_resize);
+	} else {
 		do_error_implicit(f, format("no %s.resize(int) found", t->long_name()));
+	}
 
-	// self.resize(other.num)
-	auto n_other_num = n_other->shift(config.pointer_size, TypeInt);
+	{
+		// for i=>el in self
+		//    el = other[i]
 
-	auto n_resize = add_node_member_call(f_resize, n_self);
-	n_resize->set_num_params(2);
-	n_resize->set_param(1, n_other_num);
-	f->block->add(n_resize);
+		auto *v_el = f->block->add_var("el", tree->get_pointer(t->get_array_element()));
+		auto *v_i = f->block->add_var("i", TypeInt);
 
-	// for el,i in *self
-	//    el = other[i]
+		Block *b = new Block(f, f->block.get());
 
-	auto *v_el = f->block->add_var("el", tree->get_pointer(t->get_array_element()));
-	auto *v_i = f->block->add_var("i", TypeInt);
+		// other[i]
+		auto n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
 
-	Block *b = new Block(f, f->block.get());
+		auto n_assign = parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
+		if (!n_assign)
+			do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
+		b->add(n_assign);
 
-	// other[i]
-	shared<Node> n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
-
-	auto n_assign = parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
-	if (!n_assign)
-		do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
-	b->add(n_assign);
-
-	auto n_for = add_node_statement(StatementID::FOR_ARRAY);
-	// [VAR, INDEX, ARRAY, BLOCK]
-	n_for->set_param(0, add_node_local(v_el));
-	n_for->set_param(1, add_node_local(v_i));
-	n_for->set_param(2, n_self);
-	n_for->set_param(3, b);
-	f->block->add(n_for);
-
+		auto n_for = add_node_statement(StatementID::FOR_ARRAY);
+		// [VAR, INDEX, ARRAY, BLOCK]
+		n_for->set_param(0, add_node_local(v_el));
+		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(2, n_self);
+		n_for->set_param(3, b);
+		f->block->add(n_for);
+	}
 }
 
 void AutoImplementer::implement_super_array_clear(Function *f, const Class *t) {
@@ -90,8 +102,7 @@ void AutoImplementer::implement_super_array_clear(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 // delete...
-	Function *f_del = te->get_destructor();
-	if (f_del) {
+	if (auto f_del = te->get_destructor()) {
 
 		auto *var_i = f->block->add_var("i", TypeInt);
 		auto *var_el = f->block->add_var("el", tree->get_pointer(t->get_array_element()));
@@ -113,11 +124,12 @@ void AutoImplementer::implement_super_array_clear(Function *f, const Class *t) {
 		do_error_implicit(f, "element destructor missing");
 	}
 
-	// clear
-	auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", TypeVoid, {}), self);
-	f->block->add(cmd_clear);
+	{
+		// clear
+		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", TypeVoid, {}), self);
+		f->block->add(cmd_clear);
+	}
 }
-
 
 void AutoImplementer::implement_super_array_resize(Function *f, const Class *t) {
 	auto te = t->get_array_element();
@@ -128,17 +140,17 @@ void AutoImplementer::implement_super_array_resize(Function *f, const Class *t) 
 
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	auto self_num = self->shift(config.pointer_size, TypeInt);
+	auto self_num = sa_num(self);
 
 	auto num_old = add_node_local(f->__get_var("num_old"));
 
-	// num_old = self.num
-	f->block->add(add_node_operator_by_inline(InlineID::INT_ASSIGN, num_old, self_num));
+	{
+		// num_old = self.num
+		f->block->add(add_node_operator_by_inline(InlineID::INT_ASSIGN, num_old, self_num));
+	}
 
 // delete...
-	Function *f_del = te->get_destructor();
-	if (f_del) {
-
+	if (auto f_del = te->get_destructor()) {
 		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
@@ -153,7 +165,7 @@ void AutoImplementer::implement_super_array_resize(Function *f, const Class *t) 
 		cmd_for->set_param(0, add_node_local(var));
 		cmd_for->set_param(1, num);
 		cmd_for->set_param(2, self_num);
-		cmd_for->set_param(3, add_node_const(tree->add_constant_int(1)));
+		cmd_for->set_param(3, const_int(1));
 		cmd_for->set_param(4, b);
 		f->block->add(cmd_for);
 
@@ -161,15 +173,15 @@ void AutoImplementer::implement_super_array_resize(Function *f, const Class *t) 
 		do_error_implicit(f, "element destructor missing");
 	}
 
-	// resize
-	auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", TypeVoid, {TypeInt}), self);
-	c_resize->set_param(1, num);
-	f->block->add(c_resize);
+	{
+		// resize
+		auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", TypeVoid, {TypeInt}), self);
+		c_resize->set_param(1, num);
+		f->block->add(c_resize);
+	}
 
 	// new...
-	Function *f_init = te->get_default_constructor();
-	if (f_init) {
-
+	if (auto f_init = te->get_default_constructor()) {
 		Block *b = new Block(f, f->block.get());
 
 		// el := self[i]
@@ -184,7 +196,7 @@ void AutoImplementer::implement_super_array_resize(Function *f, const Class *t) 
 		cmd_for->set_param(0, add_node_local(var));
 		cmd_for->set_param(1, num_old);
 		cmd_for->set_param(2, self_num);
-		cmd_for->set_param(3, add_node_const(tree->add_constant_int(1)));
+		cmd_for->set_param(3, const_int(1));
 		cmd_for->set_param(4, b);
 		f->block->add(cmd_for);
 
@@ -200,8 +212,7 @@ void AutoImplementer::implement_super_array_remove(Function *f, const Class *t) 
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// delete...
-	Function *f_del = te->get_destructor();
-	if (f_del) {
+	if (auto f_del = te->get_destructor()) {
 
 		// el := self[index]
 		auto cmd_el = add_node_dyn_array(self, index);
@@ -213,10 +224,12 @@ void AutoImplementer::implement_super_array_remove(Function *f, const Class *t) 
 		do_error_implicit(f, "element destructor missing");
 	}
 
-	// resize
-	auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", TypeVoid, {TypeInt}), self);
-	c_remove->set_param(1, index);
-	f->block->params.add(c_remove);
+	{
+		// resize
+		auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", TypeVoid, {TypeInt}), self);
+		c_remove->set_param(1, index);
+		f->block->params.add(c_remove);
+	}
 }
 
 void AutoImplementer::implement_super_array_add(Function *f, const Class *t) {
@@ -226,25 +239,101 @@ void AutoImplementer::implement_super_array_add(Function *f, const Class *t) {
 
 	auto self = add_node_local(b->get_var(Identifier::SELF));
 
-	auto self_num = self->shift(config.pointer_size, TypeInt);
+	{
+		// resize(self.num + 1)
+		auto cmd_add = add_node_operator_by_inline(InlineID::INT_ADD, sa_num(self), const_int(1));
+		auto cmd_resize = add_node_member_call(t->get_member_func("resize", TypeVoid, {TypeInt}), self);
+		cmd_resize->set_param(1, cmd_add);
+		b->add(cmd_resize);
+	}
+
+	{
+		// el := self.data[self.num - 1]
+		auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, sa_num(self), const_int(1));
+		auto cmd_el = add_node_dyn_array(self, cmd_sub);
+
+		if (auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, cmd_el, item))
+			b->add(cmd_assign);
+		else
+			do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
+	}
+}
+
+void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
+	if (!f)
+		return;
+	auto te = t->get_array_element();
+	auto other = add_node_local(f->__get_var("other"));
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
+
+	{
+		// if self.num != other.num
+		//     return false
+		auto n_eq = add_node_operator_by_inline(InlineID::INT_NOT_EQUAL,  sa_num(self), sa_num(other));
+		auto n_if = add_node_statement(StatementID::IF);
+		n_if->set_num_params(2);
+		n_if->set_param(0, n_eq);
+
+		auto b = new Block(f, f->block.get());
+
+		auto n_ret = add_node_statement(StatementID::RETURN);
+		n_ret->set_num_params(1);
+		n_ret->set_param(0, node_false());
+		b->add(n_ret);
+
+		n_if->set_param(1, b);
+		f->block->add(n_if);
+	}
+
+	{
+		// for i=>e in self
+		//     if e != other[i]
+		//         return false
+		auto *v_el = f->block->add_var("el", tree->get_pointer(t->get_array_element()));
+		auto *v_i = f->block->add_var("i", TypeInt);
+
+		Block *b = new Block(f, f->block.get());
+		Block *b2 = new Block(f, b);
+
+		// other[i]
+		auto n_other_el = add_node_dyn_array(other, add_node_local(v_i));
+
+		auto n_if = add_node_statement(StatementID::IF);
+		n_if->set_num_params(2);
+		n_if->set_param(1, b2);
+		b->add(n_if);
+
+		if (auto n_neq = parser->con.link_operator_id(OperatorID::NOTEQUAL, add_node_local(v_el)->deref(), n_other_el)) {
+			n_if->set_param(0, n_neq);
+		} else if (auto n_eq = parser->con.link_operator_id(OperatorID::EQUAL, add_node_local(v_el)->deref(), n_other_el)) {
+			n_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NEGATE, n_eq, nullptr));
+		} else {
+			do_error_implicit(f, format("neither operator %s != %s nor == found", te->long_name(), te->long_name()));
+		}
+
+		auto n_ret = add_node_statement(StatementID::RETURN);
+		n_ret->set_num_params(1);
+		n_ret->set_param(0, node_false());
+		b2->add(n_ret);
 
 
-	// resize(self.num + 1)
-	auto cmd_1 = add_node_const(tree->add_constant_int(1));
-	auto cmd_add = add_node_operator_by_inline(InlineID::INT_ADD, self_num, cmd_1);
-	auto cmd_resize = add_node_member_call(t->get_member_func("resize", TypeVoid, {TypeInt}), self);
-	cmd_resize->set_param(1, cmd_add);
-	b->add(cmd_resize);
+		auto n_for = add_node_statement(StatementID::FOR_ARRAY);
+		// [VAR, INDEX, ARRAY, BLOCK]
+		n_for->set_param(0, add_node_local(v_el));
+		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(2, self);
+		n_for->set_param(3, b);
+		f->block->add(n_for);
+	}
 
+	{
+		// return true
+		auto n_ret = add_node_statement(StatementID::RETURN);
+		n_ret->set_num_params(1);
+		n_ret->set_param(0, node_true());
+		f->block->add(n_ret);
+	}
 
-	// el := self.data[self.num - 1]
-	auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, self_num, cmd_1);
-	auto cmd_el = add_node_dyn_array(self, cmd_sub);
-
-	auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, cmd_el, item);
-	if (!cmd_assign)
-		do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
-	b->add(cmd_assign);
 }
 
 }
