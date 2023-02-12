@@ -22,33 +22,47 @@ const Class *get_callable_return_type(const Class *fp);
 Array<const Class*> get_callable_capture_types(const Class *fp);
 
 
-void db_add_print_node(Parser *p, shared<Block> block, shared<Node> node) {
-	auto ff = p->tree->required_func_global("print");
-	auto cmd = add_node_call(ff);
-	cmd->set_param(0, p->con.add_converter_str(node, false));
-	block->add(cmd);
-}
-
-void db_add_print_label(Parser *p, shared<Block> block, const string &s) {
-	auto c = p->tree->add_constant(TypeString);
-	c->as_string() = s;
-	db_add_print_node(p, block, add_node_const(c));
-}
-
-void db_add_print_label_node(Parser *p, shared<Block> block, const string &s, shared<Node> node) {
-	auto c = p->tree->add_constant(TypeString);
-	c->as_string() = s;
-
-	auto ff = p->tree->required_func_global("print");
-	auto cmd = add_node_call(ff);
-	cmd->set_param(0, p->con.link_operator_id(OperatorID::ADD, add_node_const(c), p->con.add_converter_str(node, false)));
-	block->add(cmd);
-}
-
 AutoImplementer::AutoImplementer(Parser *p, SyntaxTree *t) {
 	parser = p;
 	tree = t;
 }
+
+shared<Node> AutoImplementer::node_false() {
+	auto c_false = tree->add_constant(TypeBool);
+	c_false->as_int() = 0;
+	return add_node_const(c_false);
+}
+
+shared<Node> AutoImplementer::node_true() {
+	auto c_false = tree->add_constant(TypeBool);
+	c_false->as_int() = 1;
+	return add_node_const(c_false);
+}
+
+void AutoImplementer::db_add_print_node(shared<Block> block, shared<Node> node) {
+	auto ff = tree->required_func_global("print");
+	auto cmd = add_node_call(ff);
+	cmd->set_param(0, parser->con.add_converter_str(node, false));
+	block->add(cmd);
+}
+
+void AutoImplementer::db_add_print_label(shared<Block> block, const string &s) {
+	auto c = tree->add_constant(TypeString);
+	c->as_string() = s;
+	db_add_print_node(block, add_node_const(c));
+}
+
+void AutoImplementer::db_add_print_label_node(shared<Block> block, const string &s, shared<Node> node) {
+	auto c = tree->add_constant(TypeString);
+	c->as_string() = s;
+
+	auto ff = tree->required_func_global("print");
+	auto cmd = add_node_call(ff);
+	cmd->set_param(0, parser->con.link_operator_id(OperatorID::ADD, add_node_const(c), parser->con.add_converter_str(node, false)));
+	block->add(cmd);
+}
+
+
 
 void AutoImplementer::do_error_implicit(Function *f, const string &str) {
 	int token_id = max(f->token_id, f->name_space->token_id);
@@ -214,19 +228,6 @@ void AutoImplementer::auto_implement_shared_constructor(Function *f, const Class
 //===================================================================================
 // optional
 
-
-shared<Node> node_false(AutoImplementer *a) {
-	auto c_false = a->tree->add_constant(TypeBool);
-	c_false->as_int() = 0;
-	return add_node_const(c_false);
-}
-
-shared<Node> node_true(AutoImplementer *a) {
-	auto c_false = a->tree->add_constant(TypeBool);
-	c_false->as_int() = 1;
-	return add_node_const(c_false);
-}
-
 shared<Node> op_has_value(shared<Node> node) {
 	return node->shift(node->type->size - 1, TypeBool);
 }
@@ -241,7 +242,7 @@ void AutoImplementer::auto_implement_optional_constructor(Function *f, const Cla
 	// self.has_value = false
 	f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
 			op_has_value(self),
-			node_false(this)));
+			node_false()));
 }
 
 void AutoImplementer::auto_implement_optional_constructor_wrap(Function *f, const Class *t) {
@@ -268,7 +269,7 @@ void AutoImplementer::auto_implement_optional_constructor_wrap(Function *f, cons
 		// self.has_value = true
 		f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
 				op_has_value(self),
-				node_true(this)));
+				node_true()));
 	}
 }
 
@@ -388,7 +389,7 @@ void AutoImplementer::auto_implement_optional_assign_raw(Function *f, const Clas
 		// self.has_value = true
 		f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
 				op_has_value(self),
-				node_true(this)));
+				node_true()));
 	}
 }
 
@@ -415,7 +416,7 @@ void AutoImplementer::auto_implement_optional_assign_null(Function *f, const Cla
 		// self.has_value = false
 		f->block->add(add_node_operator_by_inline(InlineID::BOOL_ASSIGN,
 				op_has_value(self),
-				node_false(this)));
+				node_false()));
 	}
 }
 
@@ -486,7 +487,7 @@ void AutoImplementer::auto_implement_optional_equal_raw(Function *f, const Class
 
 		auto cmd_ret = add_node_statement(StatementID::RETURN);
 		cmd_ret->set_num_params(1);
-		cmd_ret->set_param(0, node_false(this));
+		cmd_ret->set_param(0, node_false());
 		b->add(cmd_ret);
 
 		cmd_if->set_param(1, b);
@@ -549,14 +550,59 @@ void AutoImplementer::auto_implement_optional_equal(Function *f, const Class *t)
 	}
 }
 
+//===================================================================================
+// product
 
 
+
+void AutoImplementer::auto_implement_product_equal(Function *f, const Class *t) {
+	if (!f)
+		return;
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
+	auto other = add_node_local(f->__get_var("other"));
+
+	for (auto& e: t->elements) {
+		// if not (self.e == other.e)
+		//     return false
+
+		auto n_eq = parser->con.link_operator_id(OperatorID::EQUAL, self->shift(e.offset, e.type), other->shift(e.offset, e.type));
+		if (!n_eq)
+			do_error_implicit(f, format("missing %s == %s", e.type->long_name(), e.type->long_name()));
+
+
+		auto cmd_if = add_node_statement(StatementID::IF);
+		auto cmd_neq = add_node_operator_by_inline(InlineID::BOOL_NEGATE, n_eq, nullptr);
+		cmd_if->set_param(0, cmd_neq);
+
+		auto b = new Block(f, f->block.get());
+
+		auto cmd_ret = add_node_statement(StatementID::RETURN);
+		cmd_ret->set_num_params(1);
+		cmd_ret->set_param(0, node_false());
+		b->add(cmd_ret);
+
+		cmd_if->set_param(1, b);
+		f->block->add(cmd_if);
+	}
+
+	{
+		// return true
+		auto cmd_ret = add_node_statement(StatementID::RETURN);
+		cmd_ret->set_num_params(1);
+		cmd_ret->set_param(0, node_true());
+		f->block->add(cmd_ret);
+	}
+}
+
+
+
+//===================================================================================
+// regular
 
 
 void AutoImplementer::auto_implement_regular_destructor(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto te = t->get_array_element();
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
 	// call child destructors
@@ -564,21 +610,20 @@ void AutoImplementer::auto_implement_regular_destructor(Function *f, const Class
 	for (auto&& [i,e]: enumerate(t->elements)) {
 		if (i < i0)
 			continue;
-		Function *ff = e.type->get_destructor();
-		if (!ff and e.type->needs_destructor())
-			do_error_implicit(f, format("missing destructor for element %s", e.name));
-		if (!ff)
-			continue;
+
 		// self.el.__delete__()
-		f->block->add(add_node_member_call(ff,
-				self->shift(e.offset, e.type)));
+		if (auto f_des = e.type->get_destructor()) {
+			f->block->add(add_node_member_call(f_des,
+					self->shift(e.offset, e.type)));
+		} else if (e.type->needs_destructor()) {
+			do_error_implicit(f, format("missing destructor for element %s", e.name));
+		}
 	}
 
 	// parent destructor
 	if (t->parent) {
-		Function *ff = t->parent->get_destructor();
-		if (ff)
-			f->block->add(add_node_member_call(ff, self, -1, {}, true));
+		if (auto f_des = t->parent->get_destructor())
+			f->block->add(add_node_member_call(f_des, self, -1, {}, true));
 		else if (t->parent->needs_destructor())
 			do_error_implicit(f, "parent destructor missing");
 	}
@@ -1360,14 +1405,27 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 	} else if (t->is_product()) {
 		if (t->needs_constructor())
 			add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
-		// TODO check if possible:
+		if (can_fully_construct(t))
 		add_full_constructor(t, this);
-		if (!t->can_memcpy()) // needs destructor...
+		if (t->needs_destructor())
 			add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
-		// TODO check if possible:
-		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
-		if (t->get_assign() and t->can_memcpy())
-			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+
+		bool allow_assign = true;
+		bool allow_equal = true;
+		for (const auto p: t->param) {
+			if (!p->get_assign())
+				allow_assign = false;
+			if (!p->get_member_func(Identifier::Func::EQUAL, TypeBool, {p}))
+				allow_equal = false;
+		}
+
+		if (allow_assign) {
+			add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+			if (t->can_memcpy())
+				t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+		}
+		if (allow_equal)
+			add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 	} else if (t->is_callable_fp()) {
 		add_func_header(t, Identifier::Func::INIT, TypeVoid, {TypePointer}, {"p"});
 		add_func_header(t, Identifier::Func::CALL, get_callable_return_type(t), get_callable_param_types(t), {"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::CONST)->virtual_index = TypeCallableBase->get_call()->virtual_index;
@@ -1430,10 +1488,6 @@ void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
 			add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 			add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t->param[0]}, {"other"}, nullptr, Flags::PURE);
 		}
-	//} else if (t->is_product()) {
-	//	TODO
-
-
 	} else { // regular classes
 		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
@@ -1565,12 +1619,18 @@ void AutoImplementer::auto_implement_functions(const Class *t) {
 		auto_implement_optional_value(prepare_auto_impl(t, t->get_member_func(Identifier::Func::CALL, t->param[0], {})), t);
 		auto_implement_optional_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
 		auto_implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})), t);
-	} else {
+	} else if (t->is_product()) {
 		for (auto *cf: t->get_constructors())
 			auto_implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
 		auto_implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
 		auto_implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
-
+		auto_implement_product_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t); // if exists...
+	} else {
+		// regular
+		for (auto *cf: t->get_constructors())
+			auto_implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
+		auto_implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
+		auto_implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
 	}
 
 	// recursion

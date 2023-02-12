@@ -741,7 +741,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 
 	// int[3]
 	if (operand->kind == NodeKind::CLASS) {
-		// find array index
+		// find array size
 		index = tree->transform_node(index, [this] (shared<Node> n) {
 			return tree->conv_eval_const_func(n);
 		});
@@ -773,6 +773,8 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		}
 		do_error(format("function has no version [%s]", t->name), index);
 	}
+
+	operand = force_concrete_type(operand);
 
 
 	// auto deref?
@@ -808,8 +810,13 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 
 	// tuple
 	if (operand->type->is_product()) {
-		if (index->type != TypeInt or index->kind != NodeKind::CONSTANT)
-			do_error("tuple indices must be constant ints", index);
+		index = tree->transform_node(index, [this] (shared<Node> n) {
+			return tree->conv_eval_const_func(n);
+		});
+		if (index->type != TypeInt)
+			do_error("tuple index must be of type 'int'", index);
+		if (index->kind != NodeKind::CONSTANT)
+			do_error("tuple index must be compile-time constant", index);
 		int i = index->as_const()->as_int();
 		if (i < 0 or i >= operand->type->param.num)
 			do_error("tuple index out of range", index);
@@ -1497,7 +1504,8 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 	const Class *type = nullptr;
 	if (node->params[0]) {
 		// explicit type
-		auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
+		auto t = digest_type(tree, concretify_node(node->params[0], block, ns));
+		//auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
 		if (t->kind != NodeKind::CLASS)
 			do_error("variable declaration requires a type", t);
 		type = t->as_class();

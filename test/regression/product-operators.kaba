@@ -1,0 +1,11 @@
+func main()
+	let a = (13,"a")
+	print(a)
+	var b: (int,string)
+
+	b = a
+	print(b)
+	print(b == a)
+	b[0] ++
+	print(b)
+	print(b == a)

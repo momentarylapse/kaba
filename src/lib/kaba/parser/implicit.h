@@ -60,7 +60,17 @@ public:
 	void auto_implement_optional_value(Function *f, const Class *t);
 	void auto_implement_optional_equal(Function *f, const Class *t);
 	void auto_implement_optional_equal_raw(Function *f, const Class *t);
+	void auto_implement_product_equal(Function *f, const Class *t);
 	void auto_implement_functions(const Class *t);
+
+	shared<Node> node_false();
+	shared<Node> node_true();
+
+	void db_add_print_node(shared<Block> block, shared<Node> node);
+	void db_add_print_label(shared<Block> block, const string &s);
+	void db_add_print_label_node(shared<Block> block, const string &s, shared<Node> node);
+
+
 
 	SyntaxTree *tree;
 	Parser *parser;

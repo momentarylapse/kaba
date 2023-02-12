@@ -553,10 +553,10 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 		t->functions.clear(); // don't inherit call() with specific types!
 		t->param = params;
 		//add_missing_function_headers_for_class(t); // later... depending on the bind variables
-	} else if (t->type == Class::Type::PRODUCT) {
+	} else if (t->is_product()) {
 		int offset = 0;
 		for (auto&& [i,cc]: enumerate(params)) {
-			t->elements.add(ClassElement("e" + i2s(i), cc, offset));
+			t->elements.add(ClassElement(format("e%d", i), cc, offset));
 			offset += cc->size;
 		}
 		add_missing_function_headers_for_class(t);
