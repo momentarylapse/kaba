@@ -1,7 +1,7 @@
 #include "../kaba.h"
 #include "implicit.h"
 #include "../asm/asm.h"
-#include "Parser.h"
+#include "../parser/Parser.h"
 #include "../syntax/SyntaxTree.h"
 #include <stdio.h>
 #include "../../os/msg.h"
@@ -194,21 +194,7 @@ void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 	}
 }
 
-Function* class_get_member_func(const Class *t, const string &name, const Class *return_type, const Array<const Class*> &params) {
-	Function *cf = t->get_member_func(name, return_type, params);
-	if (cf) {
-		Function *f = cf;
-		flags_clear(f->flags, Flags::NEEDS_OVERRIDE); // we're about to implement....
-		if (f->auto_declared) {
-			return f;
-		}
-		return nullptr;
-	}
-	//t->owner->DoError("class_get_func... " + t->name + "." + name);
-	return nullptr;
-}
-
-Function* prepare_auto_impl(const Class *t, Function *f) {
+Function* AutoImplementer::prepare_auto_impl(const Class *t, Function *f) {
 	if (!f)
 		return nullptr;
 	if (f->auto_declared) {
@@ -230,68 +216,28 @@ void AutoImplementer::implement_functions(const Class *t) {
 	auto sub_classes = t->classes; // might change
 
 	if (t->is_super_array()) {
-		implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		implement_super_array_clear(prepare_auto_impl(t, t->get_member_func("clear", TypeVoid, {})), t);
-		implement_super_array_resize(prepare_auto_impl(t, t->get_member_func("resize", TypeVoid, {TypeInt})), t);
-		implement_super_array_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt})), t);
-		implement_super_array_add(class_get_member_func(t, "add", TypeVoid, {nullptr}), t);
-		implement_super_array_assign(prepare_auto_impl(t, t->get_assign()), t);
-		implement_super_array_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
+		_implement_functions_for_super_array(t);
 	} else if (t->is_array()) {
-		implement_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		implement_array_assign(prepare_auto_impl(t, t->get_assign()), t);
+		_implement_functions_for_array(t);
 	} else if (t->is_dict()) {
-		implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+		_implement_functions_for_dict(t);
 	} else if (t->is_pointer_shared()) {
-		implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
-		implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
-		implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
-		implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {tree->get_pointer(t->param[0])})), t);
+		_implement_functions_for_shared(t);
 	} else if (t->is_pointer_owned()) {
-		implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
-		implement_owned_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
-		//implement_shared_assign(prepare_auto_impl(t, t->get_func(Identifier::Func::ASSIGN, TypeVoid, {nullptr, t})), t);
-		//implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
+		_implement_functions_for_owned(t);
+	} else if (t->is_enum()) {
+		_implement_functions_for_enum(t);
 	} else if (t->is_callable_fp()) {
-		for (auto *cf: t->get_constructors())
-			implement_callable_constructor(prepare_auto_impl(t, cf), t);
-		implement_callable_fp_call(prepare_auto_impl(t, t->get_call()), t);
+		_implement_functions_for_callable_fp(t);
 	} else if (t->is_callable_bind()) {
-		for (auto *cf: t->get_constructors())
-			implement_callable_constructor(prepare_auto_impl(t, cf), t);
-		implement_callable_bind_call(prepare_auto_impl(t, t->get_call()), t);
+		_implement_functions_for_callable_bind(t);
 	} else if (t->is_optional()) {
-		implement_optional_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-		implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(Identifier::Func::INIT, TypeVoid, {TypePointer})), t);
-		implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(Identifier::Func::INIT, TypeVoid, {t->param[0]})), t);
-		implement_optional_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-		implement_optional_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
-		implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t->param[0]})), t);
-		implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {TypePointer})), t);
-		implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {})), t);
-		implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("__bool__", TypeBool, {})), t);
-		implement_optional_value(prepare_auto_impl(t, t->get_member_func(Identifier::Func::CALL, t->param[0], {})), t);
-		implement_optional_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
-		implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})), t);
+		_implement_functions_for_optional(t);
 	} else if (t->is_product()) {
-		for (auto *cf: t->get_constructors())
-			implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
-		implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
-		implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
-		implement_product_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t); // if exists...
+		_implement_functions_for_product(t);
 	} else {
 		// regular
-		for (auto *cf: t->get_constructors())
-			implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
-		implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
-		implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
+		_implement_functions_for_regular(t);
 	}
 
 	// recursion

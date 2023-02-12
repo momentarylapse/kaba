@@ -5,10 +5,9 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
-#include "../../../os/msg.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -303,10 +302,10 @@ void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
 		n_if->set_param(1, b2);
 		b->add(n_if);
 
-		if (auto n_neq = parser->con.link_operator_id(OperatorID::NOTEQUAL, add_node_local(v_el)->deref(), n_other_el)) {
+		if (auto n_neq = parser->con.link_operator_id(OperatorID::NOT_EQUAL, add_node_local(v_el)->deref(), n_other_el)) {
 			n_if->set_param(0, n_neq);
 		} else if (auto n_eq = parser->con.link_operator_id(OperatorID::EQUAL, add_node_local(v_el)->deref(), n_other_el)) {
-			n_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NEGATE, n_eq, nullptr));
+			n_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, n_eq, nullptr));
 		} else {
 			do_error_implicit(f, format("neither operator %s != %s nor == found", te->long_name(), te->long_name()));
 		}
@@ -333,7 +332,17 @@ void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
 		n_ret->set_param(0, node_true());
 		f->block->add(n_ret);
 	}
+}
 
+void AutoImplementer::_implement_functions_for_super_array(const Class *t) {
+	implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+	implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+	implement_super_array_clear(prepare_auto_impl(t, t->get_member_func("clear", TypeVoid, {})), t);
+	implement_super_array_resize(prepare_auto_impl(t, t->get_member_func("resize", TypeVoid, {TypeInt})), t);
+	implement_super_array_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt})), t);
+	implement_super_array_add(prepare_auto_impl(t, t->get_member_func("add", TypeVoid, {nullptr})), t);
+	implement_super_array_assign(prepare_auto_impl(t, t->get_assign()), t);
+	implement_super_array_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
 }
 
 }

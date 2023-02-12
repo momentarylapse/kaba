@@ -5,9 +5,9 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -28,6 +28,11 @@ void AutoImplementer::implement_dict_constructor(Function *f, const Class *t) {
 	f->block->add(add_node_member_call(ff,
 			self, -1,
 			{add_node_const(tree->add_constant_int(te->size + TypeString->size))}));
+}
+
+void AutoImplementer::_implement_functions_for_dict(const Class *t) {
+	implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+	implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 }
 
 }

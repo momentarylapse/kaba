@@ -5,10 +5,10 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
-#include "../../../base/iter.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
+#include "../../base/iter.h"
 
 namespace kaba {
 
@@ -155,6 +155,18 @@ void AutoImplementer::implement_callable_bind_call(Function *f, const Class *t) 
 		ret->set_param(0, call);
 		f->block->add(ret);
 	}
+}
+
+void AutoImplementer::_implement_functions_for_callable_fp(const Class *t) {
+	for (auto *cf: t->get_constructors())
+		implement_callable_constructor(prepare_auto_impl(t, cf), t);
+	implement_callable_fp_call(prepare_auto_impl(t, t->get_call()), t);
+}
+
+void AutoImplementer::_implement_functions_for_callable_bind(const Class *t) {
+	for (auto *cf: t->get_constructors())
+		implement_callable_constructor(prepare_auto_impl(t, cf), t);
+	implement_callable_bind_call(prepare_auto_impl(t, t->get_call()), t);
 }
 
 

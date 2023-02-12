@@ -303,7 +303,7 @@ void SIAddPackageOSPath(Context *c) {
 			func_add_param("p", TypeString);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypePath, TypePath, InlineID::NONE, &Path::operator =);
 		add_operator(OperatorID::EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator ==);
-		add_operator(OperatorID::NOTEQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator !=);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator !=);
 		add_operator(OperatorID::SMALLER, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator <);
 		add_operator(OperatorID::GREATER, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator >);
 		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypePath, InlineID::NONE, &KabaPath::lshift_p);

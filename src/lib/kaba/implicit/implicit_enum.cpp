@@ -5,9 +5,10 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
+
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -38,7 +39,7 @@ void AutoImplementer::_add_missing_function_headers_for_enum(Class *t) {
 	add_operator(OperatorID::ADD, t, t, t, InlineID::INT_ADD, &op_int_add);
 	add_operator(OperatorID::ADDS, TypeVoid, t, t, InlineID::INT_ADD_ASSIGN);
 	add_operator(OperatorID::EQUAL, TypeBool, t, t, InlineID::INT_EQUAL, &op_int_eq);
-	add_operator(OperatorID::NOTEQUAL, TypeBool, t, t, InlineID::INT_NOT_EQUAL, &op_int_neq);
+	add_operator(OperatorID::NOT_EQUAL, TypeBool, t, t, InlineID::INT_NOT_EQUAL, &op_int_neq);
 	add_operator(OperatorID::BIT_AND, t, t, t, InlineID::INT_AND);
 	add_operator(OperatorID::BIT_OR, t, t, t, InlineID::INT_OR);
 
@@ -58,6 +59,9 @@ void AutoImplementer::_add_missing_function_headers_for_enum(Class *t) {
 			f->default_parameters[0] = add_node_const(c, t->token_id);
 		}
 	}
+}
+
+void AutoImplementer::_implement_functions_for_enum(const Class *t) {
 }
 
 }

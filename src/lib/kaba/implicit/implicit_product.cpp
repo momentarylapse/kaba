@@ -5,9 +5,9 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -46,17 +46,16 @@ void AutoImplementer::implement_product_equal(Function *f, const Class *t) {
 	auto other = add_node_local(f->__get_var("other"));
 
 	for (auto& e: t->elements) {
-		// if not (self.e == other.e)
+		// if self.e != other.e
 		//     return false
 
-		auto n_eq = parser->con.link_operator_id(OperatorID::EQUAL, self->shift(e.offset, e.type), other->shift(e.offset, e.type));
-		if (!n_eq)
-			do_error_implicit(f, format("missing %s == %s", e.type->long_name(), e.type->long_name()));
-
-
 		auto cmd_if = add_node_statement(StatementID::IF);
-		auto cmd_neq = add_node_operator_by_inline(InlineID::BOOL_NEGATE, n_eq, nullptr);
-		cmd_if->set_param(0, cmd_neq);
+		if (auto n_neq = parser->con.link_operator_id(OperatorID::NOT_EQUAL, self->shift(e.offset, e.type), other->shift(e.offset, e.type)))
+			cmd_if->set_param(0, n_neq);
+		else if (auto n_eq = parser->con.link_operator_id(OperatorID::EQUAL, self->shift(e.offset, e.type), other->shift(e.offset, e.type)))
+			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, n_eq, nullptr));
+		else
+			do_error_implicit(f, format("neither operator %s != %s nor == found", e.type->long_name(), e.type->long_name()));
 
 		auto b = new Block(f, f->block.get());
 
@@ -76,6 +75,14 @@ void AutoImplementer::implement_product_equal(Function *f, const Class *t) {
 		cmd_ret->set_param(0, node_true());
 		f->block->add(cmd_ret);
 	}
+}
+
+void AutoImplementer::_implement_functions_for_product(const Class *t) {
+	for (auto *cf: t->get_constructors())
+		implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
+	implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
+	implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
+	implement_product_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t); // if exists...
 }
 
 

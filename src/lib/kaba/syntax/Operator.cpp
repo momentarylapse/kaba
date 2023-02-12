@@ -24,7 +24,7 @@ AbstractOperator abstract_operators[(int)OperatorID::_COUNT_] = {
 	{"*=", OperatorID::MULTIPLYS,     true,   0,  Identifier::Func::MULTIPLY_ASSIGN, 3, false},
 	{"/=", OperatorID::DIVIDES,       true,   0,  Identifier::Func::DIVIDE_ASSIGN, 3, false},
 	{"==", OperatorID::EQUAL,         false,  8,  Identifier::Func::EQUAL, 3, false},
-	{"!=", OperatorID::NOTEQUAL,      false,  8,  Identifier::Func::NOT_EQUAL, 3, false},
+	{"!=", OperatorID::NOT_EQUAL,      false,  8,  Identifier::Func::NOT_EQUAL, 3, false},
 	{Identifier::NOT,OperatorID::NEGATE,false, 2,  Identifier::Func::NOT, 2, false},
 	{"<",  OperatorID::SMALLER,       false,  9,  Identifier::Func::SMALLER, 3, false},
 	{">",  OperatorID::GREATER,       false,  9,  Identifier::Func::GREATER, 3, false},

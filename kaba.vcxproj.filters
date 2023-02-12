@@ -325,6 +325,36 @@
     <ClCompile Include="src\lib\kaba\dynamic\sorting.cpp">
       <Filter>src\lib\kaba\dynamic</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_array.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_callable.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_dict.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_enum.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_optional.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_product.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_regular.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_shared.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_super_array.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\lib\dict.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
@@ -373,40 +403,10 @@
     <ClCompile Include="src\lib\kaba\lib\list.cpp">
       <Filter>src\lib\kaba\lib</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_array.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_callable.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_dict.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_enum.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_optional.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_product.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_regular.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_shared.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_super_array.cpp">
-      <Filter>src\lib\kaba\parser\implicit</Filter>
-    </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\abstract.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\Concretifier.cpp">
-      <Filter>src\lib\kaba\parser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\parser\implicit.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\import.cpp">
@@ -945,6 +945,9 @@
     <ClInclude Include="src\lib\kaba\dynamic\sorting.h">
       <Filter>src\lib\kaba\dynamic</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\kaba\implicit\implicit.h">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\dict.h">
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
@@ -964,9 +967,6 @@
       <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\parser\Concretifier.h">
-      <Filter>src\lib\kaba\parser</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\kaba\parser\implicit.h">
       <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\parser\lexical.h">
@@ -1256,14 +1256,14 @@
     <Filter Include="src\lib\kaba\dynamic">
       <UniqueIdentifier>{57F01CD5-E9EB-9DD0-1F5D-1F9E9491573A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\lib\kaba\implicit">
+      <UniqueIdentifier>{70257FD8-1C72-1AC7-0094-53631741D695}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\lib\kaba\lib">
       <UniqueIdentifier>{AEA39F5A-0E05-8B32-D482-BF3D1D6108BB}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\parser">
       <UniqueIdentifier>{2D8437E9-6291-928F-6DC4-E4F66D846B88}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\lib\kaba\parser\implicit">
-      <UniqueIdentifier>{237AE727-5ECB-A753-C998-0EC481C165E8}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\kaba\syntax">
       <UniqueIdentifier>{0B82F8E6-4772-9B6E-BB6D-E1D33F81BFBC}</UniqueIdentifier>

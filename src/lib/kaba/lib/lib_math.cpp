@@ -864,7 +864,7 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("gcd", TypeVli, algebra_p(&vli::gcd), Flags::PURE);
 			func_add_param("v", TypeVli);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator==));
-		add_operator(OperatorID::NOTEQUAL, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator!=));
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator!=));
 		add_operator(OperatorID::GREATER, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator<));
 		add_operator(OperatorID::GREATER, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator>));
 		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator<=));

@@ -5,10 +5,10 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
-#include "../../../base/iter.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
+#include "../../base/iter.h"
 
 namespace kaba {
 
@@ -220,6 +220,13 @@ void AutoImplementer::implement_regular_assign(Function *f, const Class *t) {
 			do_error_implicit(f, format("no operator '%s = %s' for element '%s'", e.type->long_name(), e.type->long_name(), e.name));
 		f->block->add(n_assign);
 	}
+}
+
+void AutoImplementer::_implement_functions_for_regular(const Class *t) {
+	for (auto *cf: t->get_constructors())
+		implement_regular_constructor(prepare_auto_impl(t, cf), t, true);
+	implement_regular_destructor(prepare_auto_impl(t, t->get_destructor()), t); // if exists...
+	implement_regular_assign(prepare_auto_impl(t, t->get_assign()), t); // if exists...
 }
 
 

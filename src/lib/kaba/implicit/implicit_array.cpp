@@ -5,9 +5,9 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -87,7 +87,11 @@ void AutoImplementer::implement_array_assign(Function *f, const Class *t) {
 	n_for->set_param(2, n_self);
 	n_for->set_param(3, b);
 	f->block->add(n_for);
-
+}
+void AutoImplementer::_implement_functions_for_array(const Class *t) {
+	implement_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+	implement_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+	implement_array_assign(prepare_auto_impl(t, t->get_assign()), t);
 }
 
 

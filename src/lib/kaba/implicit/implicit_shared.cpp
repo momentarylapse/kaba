@@ -5,9 +5,9 @@
  *      Author: michi
  */
 
-#include "../../kaba.h"
-#include "../implicit.h"
-#include "../Parser.h"
+#include "../kaba.h"
+#include "implicit.h"
+#include "../parser/Parser.h"
 
 namespace kaba {
 
@@ -236,6 +236,24 @@ void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 
 	cmd_if->set_param(1, b);
 	f->block->add(cmd_if);
+}
+
+void AutoImplementer::_implement_functions_for_shared(const Class *t) {
+	implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+	implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+	implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
+	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
+	implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {tree->get_pointer(t->param[0])})), t);
+}
+
+void AutoImplementer::_implement_functions_for_owned(const Class *t) {
+	implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
+	implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
+	implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
+	implement_owned_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+	//implement_shared_assign(prepare_auto_impl(t, t->get_func(Identifier::Func::ASSIGN, TypeVoid, {nullptr, t})), t);
+	//implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
 }
 
 
