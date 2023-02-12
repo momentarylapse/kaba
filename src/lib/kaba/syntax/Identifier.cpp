@@ -12,6 +12,7 @@ namespace kaba {
 
 namespace Identifier {
 	const string CLASS = "class";
+	const string STRUCT = "struct";
 	const string INTERFACE = "interface";
 	const string FUNC = "func";
 	const string MACRO = "macro";

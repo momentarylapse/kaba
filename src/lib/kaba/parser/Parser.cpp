@@ -1483,7 +1483,7 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 
 Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	offset0 = 0;
-	bool as_interface = (Exp.consume() == Identifier::INTERFACE); // 'class'/'interface'
+	bool as_interface = (Exp.consume() == Identifier::INTERFACE); // class/struct/interface
 	string name = Exp.cur;
 	int token_id = Exp.consume_token();
 
@@ -1992,7 +1992,7 @@ void Parser::parse_abstract_function_body(Function *f) {
 void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
-			if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::INTERFACE)) {
+			if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
 				Exp.next();
 //				if (Exp.cur.num == 1)
 //					do_error("class names must be at least 2 characters long", Exp.cur_token());
@@ -2084,7 +2084,7 @@ void Parser::parse_top_level() {
 			parse_enum(tree->base_class);
 
 		// class
-		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::INTERFACE)) {
+		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
 			parse_class(tree->base_class);
 
 		// func

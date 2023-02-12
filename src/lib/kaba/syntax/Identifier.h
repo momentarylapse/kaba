@@ -13,6 +13,7 @@ namespace kaba {
 
 namespace Identifier {
 	extern const string CLASS;
+	extern const string STRUCT;
 	extern const string INTERFACE;
 	extern const string FUNC;
 	extern const string MACRO;
