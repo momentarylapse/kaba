@@ -1394,7 +1394,7 @@ void Parser::parse_enum(Class *_namespace) {
 	if (try_consume(Identifier::AS))
 		_class->flags = parse_flags(_class->flags);
 
-	tree->add_missing_function_headers_for_class(_class);
+	auto_implementer.add_missing_function_headers_for_class(_class);
 
 	expect_new_line_with_indent();
 	Exp.next_line();
@@ -1621,7 +1621,7 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 	_class->size = external->process_class_size(_class->cname(tree->base_class), size);
 
 
-	tree->add_missing_function_headers_for_class(_class);
+	auto_implementer.add_missing_function_headers_for_class(_class);
 
 	flags_set(_class->flags, Flags::FULLY_PARSED);
 }
@@ -1965,9 +1965,9 @@ void Parser::parse_abstract_function_body(Function *f) {
 		if (peek_commands_super(Exp)) {
 			more_to_parse = parse_abstract_function_command(f, indent0);
 
-			auto_implementer.auto_implement_regular_constructor(f, f->name_space, false);
+			auto_implementer.implement_regular_constructor(f, f->name_space, false);
 		} else {
-			auto_implementer.auto_implement_regular_constructor(f, f->name_space, true);
+			auto_implementer.implement_regular_constructor(f, f->name_space, true);
 		}
 	}
 
@@ -2131,7 +2131,7 @@ void Parser::parse() {
 		test_node_recursion(f->block.get(), tree->base_class, "a " + f->long_name());
 
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
-		auto_implementer.auto_implement_functions(tree->owned_classes[i]);
+		auto_implementer.implement_functions(tree->owned_classes[i]);
 
 	for (auto *f: tree->functions)
 		test_node_recursion(f->block.get(), tree->base_class, "b " + f->long_name());

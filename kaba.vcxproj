@@ -240,6 +240,15 @@
     <ClCompile Include="src\lib\kaba\lib\lib_time.cpp" />
     <ClCompile Include="src\lib\kaba\lib\lib_vulkan.cpp" />
     <ClCompile Include="src\lib\kaba\lib\list.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_array.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_callable.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_dict.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_enum.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_optional.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_product.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_regular.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_shared.cpp" />
+    <ClCompile Include="src\lib\kaba\parser\implicit\implicit_super_array.cpp" />
     <ClCompile Include="src\lib\kaba\parser\abstract.cpp" />
     <ClCompile Include="src\lib\kaba\parser\Concretifier.cpp" />
     <ClCompile Include="src\lib\kaba\parser\implicit.cpp" />
