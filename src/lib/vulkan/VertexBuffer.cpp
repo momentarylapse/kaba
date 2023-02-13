@@ -25,6 +25,10 @@ VkFormat _parse_vb_component_(const string &s) {
 		return VK_FORMAT_R32G32B32_SINT;
 	if (s == "2i")
 		return VK_FORMAT_R32G32_SINT;
+	if (s == "f")
+		return VK_FORMAT_R32_SFLOAT;
+	if (s == "i")
+		return VK_FORMAT_R32_SINT;
 	msg_error("unknown vertex buffer component: " + s);
 	return VK_FORMAT_R32G32B32_SFLOAT;
 }

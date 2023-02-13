@@ -354,6 +354,9 @@ void SIAddPackageGl(Context *c) {
 		func_add_param("t", TypeTexture);
 	add_func("set_textures", TypeVoid, gl_p(&nix::set_textures), Flags::STATIC);
 		func_add_param("t", TypeTexturePList);
+	add_func("bind_texture", TypeVoid, gl_p(&nix::bind_texture), Flags::STATIC);
+		func_add_param("binding", TypeInt);
+		func_add_param("t", TypeTexture);
 	add_func("set_shader", TypeVoid, gl_p(&nix::set_shader), Flags::STATIC);
 		func_add_param("s", TypeShader);
 	add_func("bind_buffer", TypeVoid, gl_p(&nix::bind_buffer), Flags::STATIC);

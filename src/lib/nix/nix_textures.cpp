@@ -321,20 +321,20 @@ void bind_image(int binding, Texture *t, int level, int layer, bool writable) {
 	glBindImageTexture(binding, t->texture, level, GL_FALSE, layer, writable ? GL_READ_WRITE : GL_READ_ONLY, t->internal_format);
 }
 
-void set_texture(Texture *t) {
+void bind_texture(int binding, Texture *t) {
 	//refresh_texture(t);
 	if (!t)
 		t = default_texture;
 
-	tex_cube_level = -1;
-	/*glActiveTexture(GL_TEXTURE0);
+//	tex_cube_level = -1;
+	/*glActiveTexture(GL_TEXTURE0 + binding);
 	if (t->type == Texture::Type::CUBE){
 		glEnable(GL_TEXTURE_CUBE_MAP);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, t->texture);
-		tex_cube_level = 0;
+		tex_cube_level = binding;
 	} else if (t->type == Texture::Type::IMAGE){
 		glBindTexture(GL_TEXTURE_2D, t->texture);
-		glBindImageTexture(0, t->texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, t->internal_format);
+		glBindImageTexture(binding, t->texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, t->internal_format);
 	} else if (t->type == Texture::Type::VOLUME){
 		glBindTexture(GL_TEXTURE_3D, t->texture);
 	} else if (t->type == Texture::Type::MULTISAMPLE){
@@ -344,8 +344,13 @@ void set_texture(Texture *t) {
 	}*/
 
 	if (t->type == Texture::Type::CUBE)
-		tex_cube_level = 0;
-	glBindTextureUnit(0, t->texture);
+		tex_cube_level = binding;
+	glBindTextureUnit(binding, t->texture);
+}
+
+
+void set_texture(Texture *t) {
+	bind_texture(0, t);
 }
 
 void set_textures(const Array<Texture*> &textures) {
@@ -353,7 +358,7 @@ void set_textures(const Array<Texture*> &textures) {
 		if (texture[i] >= 0)
 			refresh_texture(texture[i]);*/
 
-	tex_cube_level = -1;
+	//tex_cube_level = -1;
 	for (int i=0; i<textures.num; i++) {
 		auto t = textures[i];
 		if (!t)
