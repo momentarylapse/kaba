@@ -506,14 +506,14 @@ const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class 
 }
 
 
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
+Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
 	if (find_root_type_by_name(name, ns, false))
 		do_error(format("class '%s' already exists", name), token_id);
 	return create_new_class_no_check(name, type, size, array_size, parent, params, ns, token_id);
 }
 
 
-Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, const Class *ns, int token_id) {
+Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
 	//msg_write("CREATE " + name);
 
 	Class *t = new Class(type, name, size, this, parent, params);
@@ -521,7 +521,7 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 	owned_classes.add(t);
 	
 	// link namespace
-	(const_cast<Class*>(ns))->classes.add(t);
+	ns->classes.add(t);
 	t->name_space = ns;
 	
 	// ->derive_from() will overwrite params!!!
