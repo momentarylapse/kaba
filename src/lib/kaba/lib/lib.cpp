@@ -319,11 +319,11 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	}
 
 	Flags flags = Flags::NONE;
-	if (!o->abstract->left_modifiable)
+	if (!(o->abstract->flags & OperatorFlags::LEFT_IS_MODIFIABLE))
 		flags = Flags::PURE;
 
 	//if (!c->uses_call_by_reference())
-	if (o->abstract->left_modifiable and !c->uses_call_by_reference())
+	if ((o->abstract->flags & OperatorFlags::LEFT_IS_MODIFIABLE) and !c->uses_call_by_reference())
 		flags_set(flags, Flags::STATIC);
 
 	if (!flags_has(flags, Flags::STATIC)) {

@@ -505,8 +505,8 @@ shared<Node> Concretifier::link_special_operator_tuple_extract(shared<Node> para
 }
 
 shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> param1, shared<Node> param2, int token_id) {
-	bool left_modifiable = primop->left_modifiable;
-	bool order_inverted = primop->order_inverted;
+	bool left_modifiable = primop->flags & OperatorFlags::ORDER_INVERTED;
+	bool order_inverted = primop->flags & OperatorFlags::ORDER_INVERTED;
 	string op_func_name = primop->function_name;
 	shared<Node> op;
 
@@ -514,7 +514,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 	if ((primop->id == OperatorID::ASSIGN) and (param1->kind == NodeKind::TUPLE))
 		return link_special_operator_tuple_extract(param1, param2, token_id);
 
-	if (primop->left_modifiable and param1->is_const)
+	if ((primop->flags & OperatorFlags::LEFT_IS_MODIFIABLE) and param1->is_const)
 		do_error("trying to modify a constant expression", token_id);
 
 	if (primop->id == OperatorID::IS)

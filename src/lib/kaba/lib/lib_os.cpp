@@ -149,7 +149,7 @@ public:
 			class_add_func("__lshift__", TypeVoid, &KF::_write_vector, Flags::RAISES_EXCEPTIONS);
 				func_add_param("v", TypeVec3);
 			class_add_func("__lshift__", TypeVoid, &KF::_write_str, Flags::RAISES_EXCEPTIONS);
-				func_add_param("s", TypeString, Flags::OUT);
+				func_add_param("s", TypeString);
 			class_add_func("__rshift__", TypeVoid, &KF::_read_bool, Flags::RAISES_EXCEPTIONS);
 				func_add_param("b", TypeBool, Flags::OUT);
 			class_add_func("__rshift__", TypeVoid, &KF::_read_int, Flags::RAISES_EXCEPTIONS);

@@ -352,7 +352,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		}
 		// unary operator? (++,--)
 
-		if (auto op = parse_abstract_operator(1)) {
+		if (auto op = parse_abstract_operator(OperatorFlags::UNARY_LEFT)) {
 			op->set_num_params(1);
 			op->set_param(0, operand);
 			return parse_abstract_operand_extension(op, block, prefer_class);
@@ -607,7 +607,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		operand = parse_abstract_statement(block);
 	//} else if (auto s = which_special_function(Exp.cur)) {
 	//	operand = parse_abstract_special_function(block, s);
-	} else if (auto w = which_abstract_operator(Exp.cur, 2)) { // negate/not...
+	} else if (auto w = which_abstract_operator(Exp.cur, OperatorFlags::UNARY_RIGHT)) { // negate/not...
 		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
 		Exp.next();
 		operand->set_num_params(1);
@@ -625,7 +625,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 }
 
 // no type information
-shared<Node> Parser::parse_abstract_operator(int param_flags) {
+shared<Node> Parser::parse_abstract_operator(OperatorFlags param_flags) {
 	auto op = which_abstract_operator(Exp.cur, param_flags);
 	if (!op)
 		return nullptr;
@@ -743,7 +743,7 @@ shared<Node> Parser::parse_abstract_operand_greedy(Block *block, bool allow_tupl
 	while (true) {
 		if (!allow_tuples and Exp.cur == ",")
 			break;
-		if (auto op = parse_abstract_operator(3)) {
+		if (auto op = parse_abstract_operator(OperatorFlags::BINARY)) {
 			operators.add(op);
 			expect_no_new_line("unexpected end of line after operator");
 			operands.add(parse_abstract_operand(block));
@@ -1150,7 +1150,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 
 		auto tuple = build_abstract_tuple(names);
 
-		auto assign = parse_abstract_operator(3);
+		auto assign = parse_abstract_operator(OperatorFlags::BINARY);
 
 		auto rhs = parse_abstract_operand_greedy(block, true);
 
@@ -1181,7 +1181,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		if (names.num != 1)
 			do_error_exp(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
-		auto assign = parse_abstract_operator(3);
+		auto assign = parse_abstract_operator(OperatorFlags::BINARY);
 
 		auto rhs = parse_abstract_operand_greedy(block, true);
 

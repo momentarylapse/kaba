@@ -260,9 +260,9 @@ Function *SyntaxTree::add_function(const string &name, const Class *return_type,
 
 
 
-AbstractOperator *Parser::which_abstract_operator(const string &name, int param_flags) {
+AbstractOperator *Parser::which_abstract_operator(const string &name, OperatorFlags param_flags) {
 	for (int i=0; i<(int)OperatorID::_COUNT_; i++)
-		if ((name == abstract_operators[i].name) and (param_flags == abstract_operators[i].param_flags))
+		if ((name == abstract_operators[i].name) and ((int)param_flags == (abstract_operators[i].flags & OperatorFlags::BINARY)))
 			return &abstract_operators[i];
 
 	// old hack
@@ -464,7 +464,7 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 	}*/
 
 	// operators
-	if (auto w = parser->which_abstract_operator(name, 2)) // negate/not...
+	if (auto w = parser->which_abstract_operator(name, OperatorFlags::UNARY_RIGHT)) // negate/not...
 		return {new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown, token_id)};
 
 	// in include files (only global)...

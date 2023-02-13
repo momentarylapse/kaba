@@ -485,7 +485,7 @@ shared<Node> add_node_operator(Operator *op, const shared<Node> p1, const shared
 	if (!override_type)
 		override_type = op->return_type;
 	shared<Node> cmd = new Node(NodeKind::OPERATOR, (int_p)op, override_type, true, token_id);
-	if (op->abstract->param_flags == 3) {
+	if (op->abstract->is_binary()) {
 		cmd->set_num_params(2); // binary
 		cmd->set_param(0, p1);
 		cmd->set_param(1, p2);
