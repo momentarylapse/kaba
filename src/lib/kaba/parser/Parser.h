@@ -81,6 +81,7 @@ public:
 	shared<Node> parse_abstract_operand_extension_element(shared<Node> operand);
 	shared<Node> parse_abstract_operand_extension_array(shared<Node> operand, Block *block);
 	shared<Node> parse_abstract_operand_extension_pointer(shared<Node> operand);
+	shared<Node> parse_abstract_operand_extension_reference(shared<Node> operand);
 	shared<Node> parse_abstract_operand_extension_dict(shared<Node> operand);
 	shared<Node> parse_abstract_operand_extension_optional(shared<Node> operand);
 	shared<Node> parse_abstract_operand_extension_callable(shared<Node> operand, Block *block);

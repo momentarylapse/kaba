@@ -221,6 +221,14 @@ shared<Node> Parser::parse_abstract_operand_extension_pointer(shared<Node> opera
 	return node;
 }
 
+shared<Node> Parser::parse_abstract_operand_extension_reference(shared<Node> operand) {
+	auto node = new Node(NodeKind::ABSTRACT_TYPE_REFERENCE, 0, TypeUnknown);
+	node->token_id = Exp.consume_token(); // "&"
+	node->set_num_params(1);
+	node->set_param(0, operand);
+	return node;
+}
+
 shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand, Block *block) {
 	int token0 = Exp.consume_token();
 	// array index...
@@ -349,6 +357,9 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		if ((Exp.cur == "*" and (prefer_class or no_identifier_after())) or Exp.cur == "ptr") {
 			// FIXME: false positives for "{{pi * 10}}"
 			return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block, true);
+		}
+		if ((Exp.cur == "&" and (prefer_class or no_identifier_after())) or Exp.cur == "ref") {
+			return parse_abstract_operand_extension(parse_abstract_operand_extension_reference(operand), block, true);
 		}
 		// unary operator? (++,--)
 

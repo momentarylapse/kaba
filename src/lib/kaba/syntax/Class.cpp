@@ -186,7 +186,7 @@ bool Class::is_pointer() const {
 }
 
 bool Class::is_some_pointer() const {
-	return type == Type::POINTER  or type == Type::POINTER_SHARED or type == Type::POINTER_OWNED;
+	return type == Type::POINTER  or type == Type::POINTER_SHARED or type == Type::POINTER_OWNED or type == Type::REFERENCE;
 }
 
 bool Class::is_pointer_shared() const {
@@ -195,6 +195,10 @@ bool Class::is_pointer_shared() const {
 
 bool Class::is_pointer_owned() const {
 	return type == Type::POINTER_OWNED;
+}
+
+bool Class::is_reference() const {
+	return type == Type::REFERENCE;
 }
 
 bool Class::is_enum() const {
@@ -232,13 +236,13 @@ bool Class::is_callable_bind() const {
 }
 
 bool Class::uses_call_by_reference() const {
-	return (!force_call_by_value() and !is_pointer()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer() and !is_reference()) or is_array() or is_optional();
 }
 
 bool Class::uses_return_by_memory() const {
 	if (_amd64_allow_pass_in_xmm())
 		return false;
-	return (!force_call_by_value() and !is_pointer()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer() and !is_reference()) or is_array() or is_optional();
 }
 
 

@@ -592,6 +592,10 @@ const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
 	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {base}, token_id);
 }
 
+const Class *SyntaxTree::request_implicit_class_reference(const Class *base, int token_id) {
+	return request_implicit_class(class_name_might_need_parantheses(base) + "&", Class::Type::REFERENCE, config.pointer_size, 0, nullptr, {base}, token_id);
+}
+
 const Class *SyntaxTree::request_implicit_class_super_array(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "[]";
 	return request_implicit_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, {element_type}, token_id);

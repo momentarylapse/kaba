@@ -174,6 +174,14 @@ const Class *add_type_p(const Class *sub_type, Flags flag) {
 	return t;
 }
 
+const Class *add_type_ref(const Class *sub_type) {
+	string name = sub_type->name + "&";
+	Class *t = new Class(Class::Type::REFERENCE, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
 // fixed array
 const Class *add_type_a(const Class *sub_type, int array_length) {
 	string name = sub_type->name + "[" + i2s(array_length) + "]";

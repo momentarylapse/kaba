@@ -45,6 +45,7 @@ public:
 		POINTER,
 		POINTER_SHARED,
 		POINTER_OWNED,
+		REFERENCE,
 		ENUM,
 		FUNCTION,
 		DICT,
@@ -74,6 +75,7 @@ public:
 	bool is_some_pointer() const;
 	bool is_pointer_shared() const;
 	bool is_pointer_owned() const;
+	bool is_reference() const;
 	bool is_enum() const;
 	bool is_interface() const;
 	bool is_product() const;

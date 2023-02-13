@@ -1672,6 +1672,14 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			do_error("type expected before '*'", node->params[0]);
 		const Class *t = n->as_class();
 		return add_node_class(tree->get_pointer(t, -1));
+	} else if (node->kind == NodeKind::ABSTRACT_TYPE_REFERENCE) {
+		concretify_all_params(node, block, ns);
+		auto n = digest_type(tree, node->params[0]);
+		if (n->kind != NodeKind::CLASS)
+			do_error("type expected before '&'", node->params[0]);
+		const Class *t = n->as_class();
+		t = tree->request_implicit_class_reference(t, node->token_id);
+		return add_node_class(t);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_LIST) {
 		concretify_all_params(node, block, ns);
 		auto n = digest_type(tree, node->params[0]);
