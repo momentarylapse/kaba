@@ -163,6 +163,14 @@ bool AutoImplementer::class_can_assign(const Class *t) {
 	return false;
 }
 
+bool AutoImplementer::class_can_equal(const Class *t) {
+	if (t->is_pointer())
+		return true;
+	if (t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t}))
+		return true;
+	return false;
+}
+
 void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != tree)
 		return;

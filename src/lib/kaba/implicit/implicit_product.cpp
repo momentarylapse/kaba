@@ -24,9 +24,9 @@ void AutoImplementer::_add_missing_function_headers_for_product(Class *t) {
 	bool allow_assign = true;
 	bool allow_equal = true;
 	for (const auto p: t->param) {
-		if (!p->get_assign())
+		if (!class_can_assign(p))
 			allow_assign = false;
-		if (!p->get_member_func(Identifier::Func::EQUAL, TypeBool, {p}))
+		if (!class_can_equal(p))
 			allow_equal = false;
 	}
 

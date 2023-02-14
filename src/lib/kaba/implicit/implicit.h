@@ -108,6 +108,7 @@ public:
 	void add_full_constructor(Class *t);
 	bool can_fully_construct(const Class *t);
 	static bool class_can_assign(const Class *t);
+	static bool class_can_equal(const Class *t);
 
 	static Function* prepare_auto_impl(const Class *t, Function *f);
 
