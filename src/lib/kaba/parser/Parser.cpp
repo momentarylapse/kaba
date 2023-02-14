@@ -598,9 +598,13 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	if (try_consume("(")) {
 		operand = parse_abstract_operand_greedy(block, true);
 		expect_identifier(")", "')' expected");
-	} else if (try_consume("&")) { // & -> address operator
+	} else if (try_consume("&!")) { // &! -> new address operator
 		int token = Exp.cur_token();
-		operand = parse_abstract_operand(block)->ref(TypeUnknown);
+		operand = parse_abstract_operand(block)->ref_new(TypeUnknown);
+		operand->token_id = token;
+	} else if (try_consume("&")) { // & -> legacy address operator
+		int token = Exp.cur_token();
+		operand = parse_abstract_operand(block)->ref_legacy(TypeUnknown);
 		operand->token_id = token;
 	} else if (try_consume("*")) { // * -> dereference
 		int token = Exp.cur_token();

@@ -124,7 +124,8 @@ extern const Class *TypeStringAutoCast;
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
-const int TYPE_CAST_REFERENCE = -3;
+const int TYPE_CAST_REFERENCE_LEGACY = -3;
+const int TYPE_CAST_REFERENCE_NEW = -4;
 const int TYPE_CAST_OWN_STRING = -10;
 const int TYPE_CAST_ABSTRACT_LIST = -20;
 const int TYPE_CAST_ABSTRACT_TUPLE = -21;
@@ -339,8 +340,10 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 		return node;
 	if (cast.cast == TYPE_CAST_DEREFERENCE)
 		return node->deref();
-	if (cast.cast == TYPE_CAST_REFERENCE)
-		return node->ref(tree);
+	if (cast.cast == TYPE_CAST_REFERENCE_LEGACY)
+		return node->ref_legacy(tree);
+	if (cast.cast == TYPE_CAST_REFERENCE_NEW)
+		return node->ref_new(tree);
 	if (cast.cast == TYPE_CAST_OWN_STRING)
 		return add_converter_str(node, false);
 	if (cast.cast == TYPE_CAST_ABSTRACT_LIST) {
@@ -1404,7 +1407,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	shared_array<Node> capture_nodes;
 	for (auto&& [i,c]: enumerate(captures)) {
 		if (capture_via_ref[i])
-			capture_nodes.add(add_node_local(c)->ref(tree));
+			capture_nodes.add(add_node_local(c)->ref_legacy(tree));
 		else
 			capture_nodes.add(add_node_local(c));
 	}
@@ -1646,7 +1649,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		if (!sub->type->is_pointer() and !sub->type->is_reference())
 			do_error("only pointers can be dereferenced using '*'", node);
 		node->type = sub->type->param[0];
-	} else if (node->kind == NodeKind::REFERENCE) {
+	} else if (node->kind == NodeKind::REFERENCE_LEGACY) {
+		concretify_all_params(node, block, ns);
+		auto sub = node->params[0];
+		node->type = tree->get_pointer(sub->type, node->token_id);
+	} else if (node->kind == NodeKind::REFERENCE_NEW) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
 		node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
@@ -2501,7 +2508,7 @@ shared<Node> Concretifier::add_converter_str(shared<Node> sub, bool repr) {
 	Function *f = tree->required_func_global(repr ? "@var_repr" : "@var2str", sub->token_id);
 
 	auto cmd = add_node_call(f, sub->token_id);
-	cmd->set_param(0, sub->ref(tree));
+	cmd->set_param(0, sub->ref_legacy(tree));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
 }
@@ -2527,7 +2534,7 @@ shared<Node> Concretifier::make_dynamical(shared<Node> node) {
 	Function *f = tree->required_func_global("@dyn", node->token_id);
 
 	auto cmd = add_node_call(f, node->token_id);
-	cmd->set_param(0, node->ref(tree));
+	cmd->set_param(0, node->ref_legacy(tree));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
 }
