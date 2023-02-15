@@ -109,12 +109,7 @@ void AutoImplementer::implement_regular_constructor(Function *f, const Class *t,
 		return;
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	if (t->is_super_array()) {
-	} else if (t->is_dict()) {
-	} else if (t->is_array()) {
-	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
-	} else if (t->is_callable_fp()) {
-	} else if (flags_has(f->flags, Flags::__INIT_FILL_ALL_PARAMS)) {
+	if (flags_has(f->flags, Flags::__INIT_FILL_ALL_PARAMS)) {
 		// init
 		implement_add_child_constructors(self, f, t, true);
 

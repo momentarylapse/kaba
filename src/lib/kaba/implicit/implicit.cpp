@@ -30,6 +30,12 @@ shared<Node> AutoImplementer::node_true() {
 	return add_node_const(c);
 }
 
+shared<Node> AutoImplementer::node_nil() {
+	auto c = tree->add_constant(TypePointer);
+	c->as_int64() = 0;
+	return add_node_const(c);
+}
+
 shared<Node> AutoImplementer::const_int(int i) {
 	return add_node_const(tree->add_constant_int(i));
 }
@@ -156,7 +162,7 @@ bool AutoImplementer::can_fully_construct(const Class *t) {
 }
 
 bool AutoImplementer::class_can_assign(const Class *t) {
-	if (t->is_pointer())
+	if (t->is_pointer() or t->is_reference())
 		return true;
 	if (t->get_assign())
 		return true;
@@ -164,7 +170,7 @@ bool AutoImplementer::class_can_assign(const Class *t) {
 }
 
 bool AutoImplementer::class_can_equal(const Class *t) {
-	if (t->is_pointer())
+	if (t->is_pointer() or t->is_reference())
 		return true;
 	if (t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t}))
 		return true;
@@ -174,7 +180,7 @@ bool AutoImplementer::class_can_equal(const Class *t) {
 void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != tree)
 		return;
-	if (t->is_pointer())
+	if (t->is_pointer() or t->is_reference())
 		return;
 
 	if (t->is_super_array()) {
@@ -218,7 +224,7 @@ Function* AutoImplementer::prepare_auto_impl(const Class *t, Function *f) {
 void AutoImplementer::implement_functions(const Class *t) {
 	if (t->owner != tree)
 		return;
-	if (t->is_pointer())
+	if (t->is_pointer() or t->is_reference())
 		return;
 
 	auto sub_classes = t->classes; // might change

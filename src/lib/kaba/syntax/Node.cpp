@@ -370,7 +370,7 @@ shared<Node> Node::ref_new(const Class *t) const {
 }
 
 shared<Node> Node::ref_new(SyntaxTree *tree) const {
-	return ref_new(tree->get_pointer(type, token_id));
+	return ref_legacy(tree->request_implicit_class_reference(type, token_id));
 }
 
 shared<Node> Node::ref_legacy(const Class *t) const {
@@ -381,7 +381,7 @@ shared<Node> Node::ref_legacy(const Class *t) const {
 }
 
 shared<Node> Node::ref_legacy(SyntaxTree *tree) const {
-	return ref_legacy(tree->request_implicit_class_reference(type, token_id));
+	return ref_new(tree->get_pointer(type, token_id));
 }
 
 shared<Node> Node::deref(const Class *override_type) const {
