@@ -538,8 +538,13 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 			do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
+	} else if (t->is_pointer()) {
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
+	} else if (t->is_reference()) {
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		//t->derive_from(TypeSharedPointer, true);
+		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_optional()) {

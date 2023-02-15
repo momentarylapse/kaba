@@ -199,14 +199,14 @@ void AutoImplementer::implement_owned_constructor(Function *f, const Class *t) {
 void AutoImplementer::implement_owned_destructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	db_add_print_label(f->block.get(), "owned del a");
+	//db_add_print_label(f->block.get(), "owned del a");
 
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {}))
 		f->block->add(add_node_member_call(f_clear, self));
 	else
 		do_error_implicit(f, Identifier::Func::SHARED_CLEAR + "() missing");
-	db_add_print_label(f->block.get(), "owned del b");
+	//db_add_print_label(f->block.get(), "owned del b");
 }
 
 // TODO prevent self-assignment...
@@ -234,7 +234,7 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 	auto other = add_node_local(f->__get_var("other"));
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	db_add_print_label(f->block.get(), "owned = a");
+	//db_add_print_label(f->block.get(), "owned = a");
 
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})) {
@@ -243,7 +243,7 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 	} else {
 		do_error_implicit(f, Identifier::Func::SHARED_CLEAR + "() missing");
 	}
-	db_add_print_label(f->block.get(), "owned = b");
+	//db_add_print_label(f->block.get(), "owned = b");
 
 	{
 		// self.p = other.p
@@ -257,7 +257,7 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 		auto op = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, SHARED_P(other), node_nil());
 		f->block->add(op);
 	}
-	db_add_print_label(f->block.get(), "owned = c");
+	//db_add_print_label(f->block.get(), "owned = c");
 }
 
 void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {

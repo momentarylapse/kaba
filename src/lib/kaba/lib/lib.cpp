@@ -152,22 +152,21 @@ void __add_class__(Class *t, const Class *name_space) {
 	}
 }
 
-const Class *add_type(const string &name, int size, Flags flag, const Class *name_space) {
+const Class *add_type(const string &name, int size, Flags flags, const Class *name_space) {
 	Class *t = new Class(Class::Type::REGULAR, name, size, cur_package->syntax);
-	if (flags_has(flag, Flags::CALL_BY_VALUE))
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
+	flags_set(t->flags, flags);
 	__add_class__(t, name_space);
 	return t;
 }
 
-const Class *add_type_p(const Class *sub_type, Flags flag) {
+const Class *add_type_p(const Class *sub_type, Flags flags) {
 	string name;
-	if (flags_has(flag, Flags::SHARED))
+	if (flags_has(flags, Flags::SHARED))
 		name = sub_type->name + " shared";
 	else
 		name = sub_type->name + "*";
 	Class *t = new Class(Class::Type::POINTER, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
-	if (flags_has(flag, Flags::SHARED))
+	if (flags_has(flags, Flags::SHARED))
 		t->type = Class::Type::POINTER_SHARED;
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);

@@ -2486,29 +2486,30 @@ shared<Node> Concretifier::deref_if_pointer(shared<Node> node) {
 }
 
 
-shared<Node> Concretifier::add_converter_str(shared<Node> sub, bool repr) {
-	sub = force_concrete_type(sub);
-	// evil shortcut for pointers (carefull with nil!!)
-	if (!repr)
-		sub = deref_if_pointer(sub);
+shared<Node> Concretifier::add_converter_str(shared<Node> node, bool as_repr) {
+	node = force_concrete_type(node);
+	// evil shortcut for pointers (careful with nil!!)
+	if (!as_repr)
+		node = deref_if_pointer(node);
 
-	auto *t = sub->type;
+	auto *t = node->type;
 
+	// member x.__str__/__repr__()
 	Function *cf = nullptr;
-	if (repr)
+	if (as_repr)
 		cf = t->get_member_func(Identifier::Func::REPR, TypeString, {});
 	if (!cf)
 		cf = t->get_member_func(Identifier::Func::STR, TypeString, {});
 	if (cf)
-		return add_node_member_call(cf, sub, sub->token_id);
+		return add_node_member_call(cf, node, node->token_id);
 
 	// "universal" var2str() or var_repr()
 	auto *c = tree->add_constant_pointer(TypeClassP, t);
 
-	Function *f = tree->required_func_global(repr ? "@var_repr" : "@var2str", sub->token_id);
+	Function *f = tree->required_func_global(as_repr ? "@var_repr" : "@var2str", node->token_id);
 
-	auto cmd = add_node_call(f, sub->token_id);
-	cmd->set_param(0, sub->ref_legacy(tree));
+	auto cmd = add_node_call(f, node->token_id);
+	cmd->set_param(0, node->ref_legacy(tree));
 	cmd->set_param(1, add_node_const(c));
 	return cmd;
 }

@@ -261,23 +261,23 @@ void SIAddPackageBase(Context *c) {
 
 	// internal
 	TypeUnknown			= add_type  ("@unknown", 0); // should not appear anywhere....or else we're screwed up!
-	TypeReg128			= add_type  ("@reg128", 16, Flags::CALL_BY_VALUE);
-	TypeReg64			= add_type  ("@reg64", 8, Flags::CALL_BY_VALUE);
-	TypeReg32			= add_type  ("@reg32", 4, Flags::CALL_BY_VALUE);
-	TypeReg16			= add_type  ("@reg16", 2, Flags::CALL_BY_VALUE);
-	TypeReg8			= add_type  ("@reg8", 1, Flags::CALL_BY_VALUE);
+	TypeReg128			= add_type  ("@reg128", 16, Flags::FORCE_CALL_BY_VALUE);
+	TypeReg64			= add_type  ("@reg64", 8, Flags::FORCE_CALL_BY_VALUE);
+	TypeReg32			= add_type  ("@reg32", 4, Flags::FORCE_CALL_BY_VALUE);
+	TypeReg16			= add_type  ("@reg16", 2, Flags::FORCE_CALL_BY_VALUE);
+	TypeReg8			= add_type  ("@reg8", 1, Flags::FORCE_CALL_BY_VALUE);
 	TypeObject			= add_type  ("Object", sizeof(VirtualBase)); // base for most virtual classes
 	TypeObjectP			= add_type_p(TypeObject);
 	TypeDynamic			= add_type  ("@dynamic", 0);
 
 	// "real"
-	TypeVoid			= add_type  ("void", 0, Flags::CALL_BY_VALUE);
-	TypeBool			= add_type  ("bool", sizeof(bool), Flags::CALL_BY_VALUE);
-	TypeInt				= add_type  ("int", sizeof(int), Flags::CALL_BY_VALUE);
-	TypeInt64			= add_type  ("int64", sizeof(int64), Flags::CALL_BY_VALUE);
-	TypeFloat32			= add_type  ("float32", sizeof(float), Flags::CALL_BY_VALUE);
-	TypeFloat64			= add_type  ("float64", sizeof(double), Flags::CALL_BY_VALUE);
-	TypeChar			= add_type  ("char", sizeof(char), Flags::CALL_BY_VALUE);
+	TypeVoid			= add_type  ("void", 0, Flags::FORCE_CALL_BY_VALUE);
+	TypeBool			= add_type  ("bool", sizeof(bool), Flags::FORCE_CALL_BY_VALUE);
+	TypeInt				= add_type  ("int", sizeof(int), Flags::FORCE_CALL_BY_VALUE);
+	TypeInt64			= add_type  ("int64", sizeof(int64), Flags::FORCE_CALL_BY_VALUE);
+	TypeFloat32			= add_type  ("float32", sizeof(float), Flags::FORCE_CALL_BY_VALUE);
+	TypeFloat64			= add_type  ("float64", sizeof(double), Flags::FORCE_CALL_BY_VALUE);
+	TypeChar			= add_type  ("char", sizeof(char), Flags::FORCE_CALL_BY_VALUE);
 	TypeDynamicArray	= add_type  ("@DynamicArray", config.super_array_size);
 	TypeDictBase		= add_type  ("@DictBase",   config.super_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.pointer_size);
@@ -331,7 +331,7 @@ void SIAddPackageBase(Context *c) {
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 	// derived   (must be defined after the primitive types and the bases!)
-	TypePointer     = add_type_p(TypeVoid, Flags::CALL_BY_VALUE); // substitute for all pointer types
+	TypePointer     = add_type_p(TypeVoid, Flags::FORCE_CALL_BY_VALUE); // substitute for all pointer types
 	TypePointerList = add_type_l(TypePointer);
 	TypeBoolList    = add_type_l(TypeBool);
 	TypeIntP        = add_type_p(TypeInt);
