@@ -2,34 +2,5 @@ X.init
 ---a
 bbb
 hallo
-
------------------------------ Error! -----------------------------
-segfault
-------------------------------------------------------------------
-
->>  __sigaction()
->>  bytes>ixEi()
->>  str_escape()
->>  string.escape()
->>  string.repr()
->>  kaba.var_repr()
->>  kaba.var_repr()
->>  kaba.var2str()
->>  owned-return.main()  +0xc4  (/home/michi/Projekte/Kaba/test/regression/owned-return.kaba)
->>  KabaApp.execute()
->>  >ZN7KabaApp10on_startupERK5ArrayI6stringEENKUlS4_E24_clES4_()
->>  >St13__invoke_implIvRZN7KabaApp10on_startupERK5ArrayI6stringEEUlS5_E24_JS5_EET_St14__invoke_otherOT0_DpOT1_()
->>  >St10__invoke_rIvRZN7KabaApp10on_startupERK5ArrayI6stringEEUlS5_E24_JS5_EENSt9enable_ifIX16is_invocable_r_vIT_T0_DpT1_EES9_E4typeEOSA_DpOSB_()
->>  >St17_Function_handlerIFvRK5ArrayI6stringEEZN7KabaApp10on_startupES4_EUlS4_E24_E9_M_invokeERKSt9_Any_dataS4_()
->>  >St8functionIFvRK5ArrayI6stringEEEclES4_()
->>  CommandLineParser.parse_commands()
->>  CommandLineParser.parse()
->>  KabaApp.on_startup()
->>  hui.Application.try_execute()
->>  hui_main()
->>  main()
-
-
-------  local variables  ------
-owned-return.main
-              owned[X] p               = 
+("hallo")
+X.del

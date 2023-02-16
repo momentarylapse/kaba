@@ -20,5 +20,5 @@ func main()
 	let p = f()
 	print("bbb")
 	print(p.s)
-	print(str(p))
+	print(repr(p))
 
