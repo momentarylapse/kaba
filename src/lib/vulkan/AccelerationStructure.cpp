@@ -170,7 +170,7 @@ static Array<VkAccelerationStructureInstanceKHR> create_instances(const Array<Ac
     instances.resize(blas.num);
 
 	int triangle_offset = 0;
-    for (size_t i = 0; i < blas.num; ++i) {
+    for (int i = 0; i < blas.num; i++) {
         auto &instance = instances[i];
         memcpy(&instance.transform, &matrices[i], 12*sizeof(float));
         instance.instanceCustomIndex = static_cast<uint32_t>(triangle_offset);

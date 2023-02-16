@@ -60,7 +60,7 @@ Array<const char*> get_required_instance_extensions(bool glfw, bool validation) 
 		uint32_t glfw_extension_count = 0;
 		const char** glfw_extensions;
 		glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-		for (int i=0; i<glfw_extension_count; i++)
+		for (uint32_t i=0; i<glfw_extension_count; i++)
 			extensions.add(glfw_extensions[i]);
 	}
 

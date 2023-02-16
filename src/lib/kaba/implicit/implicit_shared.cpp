@@ -39,7 +39,6 @@ void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
 void AutoImplementer::implement_shared_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	auto te = t->param[0];
 	// self.p = nil
 	f->block->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
 			SHARED_P(self),
@@ -189,7 +188,6 @@ void AutoImplementer::implement_shared_create(Function *f, const Class *t) {
 void AutoImplementer::implement_owned_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
-	auto te = t->param[0];
 	// self.p = nil
 	f->block->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
 			SHARED_P(self),
@@ -262,8 +260,6 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 
 void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
-
-	auto tt = t->param[0];
 
 	// if self.p
 	//     del self.p

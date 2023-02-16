@@ -317,7 +317,7 @@ static shaderc_compiler_t shaderc = nullptr;
 
 
 	Shader* Shader::load(const Path &_filename) {
-		if (_filename)
+		if (!_filename)
 			return nullptr;
 		Path filename = directory | _filename;
 		if (verbosity >= 1)

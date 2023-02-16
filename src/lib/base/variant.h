@@ -14,12 +14,12 @@
 namespace base {
 
 template<typename T, typename... Ts>
-constexpr int _max_type_size() {
+constexpr size_t _max_type_size() {
 	if constexpr (sizeof...(Ts) == 0) {
 		return sizeof(T);
 	} else {
-		auto s1 = sizeof(T);
-		auto s2 = _max_type_size<Ts...>();
+		const size_t s1 = sizeof(T);
+		const size_t s2 = _max_type_size<Ts...>();
 		return (s1 > s2) ? s1 : s2;
 	}
 }

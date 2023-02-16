@@ -12,7 +12,6 @@ Array<VertexBuffer*> vertex_buffers;
 extern Device *default_device;
 
 VkFormat _parse_vb_component_(const string &s) {
-	VkVertexInputAttributeDescription a;
 	if (s == "4f")
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
 	if (s == "3f")

@@ -414,7 +414,7 @@ void vli::div(const vli &divisor, vli &remainder)
 	bool first_set = true;
 	for (int i=data.num-1;i>=(int)divisor.data.num-1;i--){
 		vlidb(format("# %d    ", i));
-		unsigned int guess, guess2=0;
+		[[maybe_unused]] unsigned int guess, guess2=0;
 		if (i == (int)remainder.data.num - 1){
 			guess  = div_fair(remainder.data[i], 0, div_lo, div_hi);
 			//guess2 = div_fair(remainder.data[i], 0, div_lo, div_hi+1);

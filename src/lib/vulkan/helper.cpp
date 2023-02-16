@@ -84,7 +84,7 @@ void ImageAndMemory::generate_mipmaps(uint32_t width, uint32_t height, uint32_t 
 	int32_t mip_width = width;
 	int32_t mip_height = height;
 
-	for (int i=1; i<mip_levels; i++) {
+	for (uint32_t i=1; i<mip_levels; i++) {
 		barrier.subresourceRange.baseMipLevel = i - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
