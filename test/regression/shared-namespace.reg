@@ -1,4 +1,4 @@
 0
-Texture shared[]
-Texture shared
+shared[Texture][]
+shared[Texture]
 gl.Texture

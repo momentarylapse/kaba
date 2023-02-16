@@ -1,0 +1,29 @@
+class X
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	s: string
+
+
+func f(out p: owned[X])
+	print("---f")
+#	print(p2s(weak(p)))
+	print(repr(p))
+	let q = p
+#	print(p2s(weak(q)))
+	print(repr(q))
+#	print(p2s(weak(p)))
+	print(repr(p))
+
+
+func main()
+	var p: owned[X] = new X()
+	p.s = "hallo"
+#	print(p2s(weak(p)))
+	
+	f(p)
+	
+	print("---")
+#	print(p2s(weak(p)))
+	print(repr(p))

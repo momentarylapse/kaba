@@ -8,6 +8,6 @@ class X as shared
 		print("test {{_shared_ref_count}}")
 
 func main()
-	var x: X shared = new X()
+	var x: shared[X] = new X()
 	var z = x
 	z.f()

@@ -10,11 +10,11 @@ func ff(x: Test)
 	x.f()
 
 func main()
-#	shared Test x = new Test()
+#	shared[Test] x = new Test()
 
-	var a: Test shared[]
+	var a: shared[Test][]
 	print("a")
-	var xx: Test shared = new Test()
+	var xx: shared[Test] = new Test()
 	ff(weak(xx))
 	print("a2")
 	a.add(xx)

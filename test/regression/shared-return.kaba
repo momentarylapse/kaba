@@ -6,10 +6,10 @@ class X as shared
 	func const f()
 		print("test {{_shared_ref_count}}")
 
-func f() -> X shared
+func f() -> shared[X]
 	var x = new X()
 	return x
 
 func main()
-	var x: X shared = f()
+	var x: shared[X] = f()
 	x.f()

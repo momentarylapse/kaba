@@ -16,14 +16,14 @@ class X
 		print("test {{_shared_ref_count}}")
 
 
-func ff(x: X shared)
+func ff(x: shared[X])
 	var z = x
 	z.f()
 
 
 func main()
-	var x: X shared
-	var y: X shared
+	var x: shared[X]
+	var y: shared[X]
 	#print(binary(&x, 8).hex())
 	x = new X()
 	#print(binary(&x, 8).hex())

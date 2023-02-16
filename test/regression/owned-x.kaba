@@ -1,0 +1,25 @@
+class X
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	s: string
+
+
+func main()
+	var p: owned[X] = new X()
+	p.s = "hallo"
+	
+#	print(p2s(p))
+	
+	if p
+		print(p.s)
+	print(repr(p))
+	
+	p = nil
+	
+	if p
+		print(p.s)
+	else
+		print("no object")
+	print(repr(p))

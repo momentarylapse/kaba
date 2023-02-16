@@ -742,12 +742,35 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 	return {};
 }
 
+const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent, int token_id) {
+	if (!parent->name_space)
+		tree->do_error("shared not allowed for: " + parent->long_name(), token_id); // TODO
+	return tree->request_implicit_class(format("%s[%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
+const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent, int token_id) {
+	if (!parent->name_space)
+		tree->do_error("owned not allowed for: " + parent->long_name(), token_id);
+	return tree->request_implicit_class(format("%s[%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
 shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, const Class *ns) {
 	auto operand = concretify_node(node->params[0], block, ns);
 	auto index = concretify_node(node->params[1], block, ns);
 	shared<Node> index2;
 	if (node->params.num >= 3)
 		index2 = concretify_node(node->params[2], block, ns);
+
+	// shared[X] / owned[X]
+	if (operand->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+		if (auto t = try_digest_type(tree, index))
+			return add_node_class(make_pointer_shared(tree, t, node->token_id), node->token_id);
+		do_error("type expected in 'shared[...]'", index);
+	} else if (operand->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
+		if (auto t = try_digest_type(tree, index))
+			return add_node_class(make_pointer_owned(tree, t, node->token_id), node->token_id);
+		do_error("type expected in 'owned[...]'", index);
+	}
 
 	// int[3]
 	if (operand->kind == NodeKind::CLASS) {
@@ -1617,18 +1640,6 @@ shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for
 	return n;
 }
 
-const Class *make_pointer_shared(SyntaxTree *tree, const Class *parent, int token_id) {
-	if (!parent->name_space)
-		tree->do_error("shared not allowed for: " + parent->long_name(), token_id); // TODO
-	return tree->request_implicit_class(parent->name + " " + Identifier::SHARED, Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, token_id);
-}
-
-const Class *make_pointer_owned(SyntaxTree *tree, const Class *parent, int token_id) {
-	if (!parent->name_space)
-		tree->do_error("owned not allowed for: " + parent->long_name(), token_id);
-	return tree->request_implicit_class(parent->name + " " + Identifier::OWNED, Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, token_id);
-}
-
 // concretify as far as possible
 // will leave FLEXIBLE:
 //  * list [...]
@@ -1722,6 +1733,9 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			do_error("type expected before '->'", node->params[1]);
 		return add_node_class(tree->request_implicit_class_callable_fp({t0}, t1, node->token_id), node->token_id);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+		if (node->params.num == 0)
+			return node;
+		// TODO deprecate... use shared[X]
 		concretify_all_params(node, block, ns);
 		auto t = try_digest_type(tree, node->params[0]);
 		if (!t)
@@ -1729,6 +1743,9 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		t = make_pointer_shared(tree, t, node->token_id);
 		return add_node_class(t, node->token_id);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
+		if (node->params.num == 0)
+			return node;
+		// TODO deprecate... use owned[X]
 		concretify_all_params(node, block, ns);
 		auto t = try_digest_type(tree, node->params[0]);
 		if (!t)

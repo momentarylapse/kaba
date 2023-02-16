@@ -1,0 +1,8 @@
+X.init
+---f
+("hallo")
+("hallo")
+(nil)
+X.del
+---
+(nil)

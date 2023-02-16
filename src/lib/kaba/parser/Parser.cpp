@@ -623,10 +623,14 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	//} else if (auto s = which_special_function(Exp.cur)) {
 	//	operand = parse_abstract_special_function(block, s);
 	} else if (auto w = which_abstract_operator(Exp.cur, OperatorFlags::UNARY_RIGHT)) { // negate/not...
-		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown);
+		operand = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)w, TypeUnknown, false, Exp.cur_token());
 		Exp.next();
 		operand->set_num_params(1);
 		operand->set_param(0, parse_abstract_operand(block));
+	} else if (try_consume(Identifier::SHARED)) {
+		operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown, false, Exp.cur_token());
+	} else if (try_consume(Identifier::OWNED)) {
+		operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown, false, Exp.cur_token());
 	} else {
 		operand = parse_abstract_token();
 	}

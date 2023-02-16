@@ -9,9 +9,9 @@ class X as shared
 
 
 func main()
-	var a: X shared[]
+	var a: shared[X][]
 	if true
-		var x: X shared = new X()
+		var x: shared[X] = new X()
 		a.add(x)
 		a.add(x)
 		print("iii")

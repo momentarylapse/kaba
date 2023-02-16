@@ -1,8 +1,8 @@
 use gl
 
 class X
-	var x: gl.Texture shared[]
-	var y: Texture shared
+	var x: shared[gl.Texture][]
+	var y: shared[Texture]
 
 func main()
 	var x: X

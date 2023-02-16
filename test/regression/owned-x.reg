@@ -1,0 +1,6 @@
+
+----------------------------- Error! -----------------------------
+"p": command 'if': type 'owned[X]' given, 'bool' expected
+line 14, /home/michi/Projekte/Kaba/test/regression/owned-x.kaba
+------------------------------------------------------------------
+

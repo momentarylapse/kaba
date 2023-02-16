@@ -1,0 +1,24 @@
+class X
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	s: string
+
+
+func f() -> owned[X]
+	var p: owned[X] = new X()
+	p.s = "hallo"
+	print("---a")
+	return p
+	var q: owned[X]
+	q = p
+	print("---b")
+	return q
+
+func main()
+	let p = f()
+	print("bbb")
+	print(p.s)
+	print(str(p))
+
