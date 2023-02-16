@@ -8,7 +8,7 @@ func main()
 	print(p.parent()) # a/b/
 	print(p.parent().parent()) # a/
 	print(p.parent().parent().parent()) #
-	print(p << "x" << "y") # a/b/c/x/y
+	print(p | "x" | "y") # a/b/c/x/y
 
 #	print(p == p.as_dir()) # true
 	

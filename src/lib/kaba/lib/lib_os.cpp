@@ -238,10 +238,10 @@ string _cdecl kaba_shell_execute(const string &cmd) {
 
 class KabaPath : public Path {
 public:
-	Path lshift_p(const Path &p) const {
+	Path cat_p(const Path &p) const {
 		return *this | p;
 	}
-	Path lshift_s(const string &p) const {
+	Path cat_s(const string &p) const {
 		return *this | p;
 	}
 	bool __contains__(const Path &p) const {
@@ -289,6 +289,7 @@ void SIAddPackageOSPath(Context *c) {
 		class_add_func("extension", TypeString, &Path::extension, Flags::PURE);
 		class_add_func("canonical", TypePath, &Path::canonical, Flags::PURE);
 		class_add_func(Identifier::Func::STR, TypeString, &Path::str, Flags::PURE);
+		class_add_func(Identifier::Func::REPR, TypeString, &Path::repr, Flags::PURE);
 		class_add_func("is_empty", TypeBool, &Path::is_empty, Flags::PURE);
 		class_add_func("is_relative", TypeBool, &Path::is_relative, Flags::PURE);
 		class_add_func("is_absolute", TypeBool, &Path::is_absolute, Flags::PURE);
@@ -306,10 +307,8 @@ void SIAddPackageOSPath(Context *c) {
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator !=);
 		add_operator(OperatorID::SMALLER, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator <);
 		add_operator(OperatorID::GREATER, TypeBool, TypePath, TypePath, InlineID::NONE, &Path::operator >);
-		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypePath, InlineID::NONE, &KabaPath::lshift_p);
-		add_operator(OperatorID::SHIFT_LEFT, TypePath, TypePath, TypeString, InlineID::NONE, &KabaPath::lshift_s);
-		add_operator(OperatorID::BIT_OR, TypePath, TypePath, TypePath, InlineID::NONE, &KabaPath::lshift_p);
-		add_operator(OperatorID::BIT_OR, TypePath, TypePath, TypeString, InlineID::NONE, &KabaPath::lshift_s);
+		add_operator(OperatorID::BIT_OR, TypePath, TypePath, TypePath, InlineID::NONE, &KabaPath::cat_p);
+		add_operator(OperatorID::BIT_OR, TypePath, TypePath, TypeString, InlineID::NONE, &KabaPath::cat_s);
 		add_operator(OperatorID::IN, TypeBool, TypePath, TypePath, InlineID::NONE, &KabaPath::__contains__);
 
 

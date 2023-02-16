@@ -2503,8 +2503,8 @@ shared<Node> Concretifier::deref_if_pointer(shared<Node> node) {
 shared<Node> Concretifier::add_converter_str(shared<Node> node, bool as_repr) {
 	node = force_concrete_type(node);
 	// evil shortcut for pointers (careful with nil!!)
-	if (!as_repr)
-		node = deref_if_pointer(node);
+//	if (!as_repr)
+//		node = deref_if_pointer(node);
 
 	auto *t = node->type;
 

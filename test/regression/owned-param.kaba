@@ -9,12 +9,12 @@ class X
 func f(out p: owned[X])
 	print("---f")
 #	print(p2s(weak(p)))
-	print(repr(p))
+	print(p)
 	let q = p
 #	print(p2s(weak(q)))
-	print(repr(q))
+	print(q)
 #	print(p2s(weak(p)))
-	print(repr(p))
+	print(p)
 
 
 func main()
@@ -26,4 +26,4 @@ func main()
 	
 	print("---")
 #	print(p2s(weak(p)))
-	print(repr(p))
+	print(p)
