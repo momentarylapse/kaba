@@ -27,13 +27,19 @@ void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
 }
 
 void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
+	[[maybe_unused]] auto t_p = tree->get_pointer(t->param[0]);
+	auto t_x = tree->request_implicit_class_xfer(t->param[0], -1);
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
-	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])}, {"other"});
+	//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_p}, {"other"});
+	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_x}, {"other"});
 	auto assign = add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	flags_set(assign->var.back()->flags, Flags::OUT);
 	//add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
+}
+
+void AutoImplementer::_add_missing_function_headers_for_xfer(Class *t) {
 }
 
 void AutoImplementer::implement_shared_constructor(Function *f, const Class *t) {
@@ -300,12 +306,18 @@ void AutoImplementer::_implement_functions_for_shared(const Class *t) {
 }
 
 void AutoImplementer::_implement_functions_for_owned(const Class *t) {
+	[[maybe_unused]] auto t_p = tree->get_pointer(t->param[0]);
+	auto t_x = tree->request_implicit_class_xfer(t->param[0], -1);
 	implement_owned_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_owned_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
-	implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+	//implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_p})), t);
+	implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_x})), t);
 	implement_owned_assign(prepare_auto_impl(t, t->get_func(Identifier::Func::ASSIGN, TypeVoid, {nullptr, t})), t);
 	//implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
+}
+
+void AutoImplementer::_implement_functions_for_xfer(const Class *t) {
 }
 
 

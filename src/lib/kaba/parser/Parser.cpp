@@ -341,7 +341,7 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	} else if (Exp.cur == "?") {
 		// optional?
 		return parse_abstract_operand_extension(parse_abstract_operand_extension_optional(operand), block, true);
-	} else if (Exp.cur == Identifier::SHARED or Exp.cur == Identifier::OWNED) {
+	/*} else if (Exp.cur == Identifier::SHARED or Exp.cur == Identifier::OWNED) {
 		auto sub = operand;
 		if (Exp.cur == Identifier::SHARED) {
 			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
@@ -351,9 +351,10 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		operand->token_id = Exp.consume_token();
 		operand->set_num_params(1);
 		operand->set_param(0, sub);
-		return parse_abstract_operand_extension(operand, block, true);
+		return parse_abstract_operand_extension(operand, block, true);*/
 	} else {
 
+		// TODO ptr[X]
 		if ((Exp.cur == "*" and (prefer_class or no_identifier_after())) or Exp.cur == "ptr") {
 			// FIXME: false positives for "{{pi * 10}}"
 			return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block, true);
@@ -631,6 +632,8 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown, false, Exp.cur_token());
 	} else if (try_consume(Identifier::OWNED)) {
 		operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown, false, Exp.cur_token());
+	} else if (try_consume(Identifier::XFER)) {
+		operand = new Node(NodeKind::ABSTRACT_TYPE_XFER, 0, TypeUnknown, false, Exp.cur_token());
 	} else {
 		operand = parse_abstract_token();
 	}

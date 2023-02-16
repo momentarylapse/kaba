@@ -542,6 +542,8 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_reference()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
+	} else if (t->is_pointer_xfer()) {
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
 		//t->derive_from(TypeSharedPointer, true);
 		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
@@ -595,6 +597,24 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 
 const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
 	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {base}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_shared(const Class *parent, int token_id) {
+	if (!parent->name_space)
+		do_error("shared[..] not allowed for: " + parent->long_name(), token_id); // TODO
+	return request_implicit_class(format("%s[%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_owned(const Class *parent, int token_id) {
+	if (!parent->name_space)
+		do_error("owned[..] not allowed for: " + parent->long_name(), token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_xfer(const Class *parent, int token_id) {
+	if (!parent->name_space)
+		do_error("xfer[..] not allowed for: " + parent->long_name(), token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::XFER, parent->name), Class::Type::POINTER_XFER, config.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_reference(const Class *base, int token_id) {

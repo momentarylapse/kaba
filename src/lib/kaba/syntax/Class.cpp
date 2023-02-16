@@ -186,7 +186,7 @@ bool Class::is_pointer() const {
 }
 
 bool Class::is_some_pointer() const {
-	return type == Type::POINTER  or type == Type::POINTER_SHARED or type == Type::POINTER_OWNED or type == Type::REFERENCE;
+	return type == Type::POINTER  or type == Type::POINTER_SHARED or type == Type::POINTER_OWNED or type == Type::REFERENCE or type == Type::POINTER_XFER;
 }
 
 bool Class::is_pointer_shared() const {
@@ -195,6 +195,10 @@ bool Class::is_pointer_shared() const {
 
 bool Class::is_pointer_owned() const {
 	return type == Type::POINTER_OWNED;
+}
+
+bool Class::is_pointer_xfer() const {
+	return type == Type::POINTER_XFER;
 }
 
 bool Class::is_reference() const {

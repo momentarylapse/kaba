@@ -47,6 +47,7 @@ namespace Identifier {
 	const string WEAK = "weak";
 	const string SHARED = "shared";
 	const string OWNED = "owned";
+	const string XFER = "xfer";
 	const string PURE = "pure";
 	const string NOAUTO = "@noauto";
 	const string NOFRAME = "@noframe";

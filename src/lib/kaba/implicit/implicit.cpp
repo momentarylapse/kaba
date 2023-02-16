@@ -193,6 +193,8 @@ void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 		_add_missing_function_headers_for_shared(t);
 	} else if (t->is_pointer_owned()) {
 		_add_missing_function_headers_for_owned(t);
+	} else if (t->is_pointer_xfer()) {
+		_add_missing_function_headers_for_xfer(t);
 	} else if (t->is_product()) {
 		_add_missing_function_headers_for_product(t);
 	} else if (t->is_callable_fp()) {
@@ -239,6 +241,8 @@ void AutoImplementer::implement_functions(const Class *t) {
 		_implement_functions_for_shared(t);
 	} else if (t->is_pointer_owned()) {
 		_implement_functions_for_owned(t);
+	} else if (t->is_pointer_xfer()) {
+		_implement_functions_for_xfer(t);
 	} else if (t->is_enum()) {
 		_implement_functions_for_enum(t);
 	} else if (t->is_callable_fp()) {
