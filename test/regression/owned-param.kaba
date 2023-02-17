@@ -6,11 +6,12 @@ class X
 	s: string
 
 
-func f(p: xfer[X])
+func f(_p: xfer[X])
 	print("---f")
+	let p = _p
 #	print(p2s(weak(p)))
 	print(p)
-	let q = p
+	let q = give(p)
 #	print(p2s(weak(q)))
 	print(q)
 #	print(p2s(weak(p)))

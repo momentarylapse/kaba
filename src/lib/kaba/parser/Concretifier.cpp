@@ -212,11 +212,13 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			return true;
 		}
 	}
-	if (wanted->is_pointer_shared() and given->is_pointer()) {
-		if (type_match(given->param[0], wanted->param[0])) {
+	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer())) {
+		// TODO really raw pointer?!?
+		if (type_match(given->param[0], wanted->param[0]) or (given == TypePointer /* nil etc */)) {
+			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_MAKE_SHARED;
-			cd.f = wanted->get_func(Identifier::Func::SHARED_CREATE, wanted, {tree->get_pointer(wanted->param[0], -1)});
+			cd.f = wanted->get_func(Identifier::Func::SHARED_CREATE, wanted, {t_xfer});
 			return true;
 		}
 	}

@@ -10,4 +10,4 @@ class Test
 
 func main()
 	var t = new Test(3)
-	del t
+	del weak(give(t))

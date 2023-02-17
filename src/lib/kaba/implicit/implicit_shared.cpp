@@ -22,6 +22,7 @@ void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
+	// do we really need this, or can we use auto cast xfer[X] -> shared[X]?!?
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t_xfer}, {"p"}, nullptr, Flags::STATIC);

@@ -166,6 +166,8 @@ bool AutoImplementer::class_can_assign(const Class *t) {
 		return true;
 	if (t->get_assign())
 		return true;
+	if (t->can_memcpy())
+		return true;
 	return false;
 }
 

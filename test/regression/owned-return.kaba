@@ -6,15 +6,15 @@ class X
 	s: string
 
 
-func f() -> owned[X]
+func f() -> xfer[X]
 	var p: owned[X] = new X()
 	p.s = "hallo"
 	print("---a")
-	return p
+	return give(p)
 	var q: owned[X]
-	q = p
+	q = give(p)
 	print("---b")
-	return q
+	return give(q)
 
 func main()
 	let p = f()
