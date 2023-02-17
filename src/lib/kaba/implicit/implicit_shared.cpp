@@ -18,12 +18,13 @@ namespace kaba {
 //#define SHARED_COUNTER(N) (SHARED_P(self)->deref()->shift(e.offset, e.type))
 
 void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
+	auto t_xfer = tree->request_implicit_class_xfer(t->param[0], -1);
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
-	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])}, {"other"});
+	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
-	add_func_header(t, Identifier::Func::SHARED_CREATE, t, {tree->get_pointer(t->param[0])}, {"p"}, nullptr, Flags::STATIC);
+	add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t_xfer}, {"p"}, nullptr, Flags::STATIC);
 }
 
 void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
@@ -326,12 +327,13 @@ void AutoImplementer::implement_owned_give(Function *f, const Class *t) {
 }
 
 void AutoImplementer::_implement_functions_for_shared(const Class *t) {
+	auto t_xfer = tree->request_implicit_class_xfer(t->param[0], -1);
 	implement_shared_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
-	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {tree->get_pointer(t->param[0])})), t);
+	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_xfer})), t);
 	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
-	implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {tree->get_pointer(t->param[0])})), t);
+	implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {t_xfer})), t);
 }
 
 void AutoImplementer::_implement_functions_for_owned(const Class *t) {

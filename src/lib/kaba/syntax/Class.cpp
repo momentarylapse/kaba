@@ -63,12 +63,17 @@ bool type_match(const Class *given, const Class *wanted) {
 		return true;
 
 	// allow any pointer?
+	// FIXME don't use raw pointer parameters...
 	if ((given->is_pointer() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
 		return true;
 
 	// FIXME... quick'n'dirty hack to allow nil as parameter
 	if ((given == TypePointer) and wanted->is_pointer())
 		return true;
+
+	/*if (given->is_() and wanted->is_pointer_xfer())
+		if (given->param[0] == wanted->param[0])
+			return true;*/
 
 	if (given->is_pointer_xfer() and wanted->is_pointer_owned())
 		if (given->param[0] == wanted->param[0])
