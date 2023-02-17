@@ -57,6 +57,7 @@ public:
 	void implement_super_array_add(Function *f, const Class *t);
 	void implement_super_array_remove(Function *f, const Class *t);
 	void implement_super_array_equal(Function *f, const Class *t);
+	void implement_super_array_give(Function *f, const Class *t);
 	void implement_dict_constructor(Function *f, const Class *t);
 	void implement_shared_constructor(Function *f, const Class *t);
 	void implement_shared_destructor(Function *f, const Class *t);

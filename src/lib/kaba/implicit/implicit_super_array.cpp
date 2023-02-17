@@ -24,11 +24,20 @@ void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, "clear", TypeVoid, {}, {});
 	add_func_header(t, "resize", TypeVoid, {TypeInt}, {"num"});
-	add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
+	if (t->param[0]->is_pointer_owned()) {
+		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
+		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
+		add_func_header(t, "add", TypeVoid, {t_xfer}, {"x"});
+		add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer_list, {}, {});
+		//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
+	} else {
+		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
+	}
 	add_func_header(t, "remove", TypeVoid, {TypeInt}, {"index"});
-	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
-	if (t->param[0]->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]}))
-		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"});
+	if (class_can_assign(t->param[0]))
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	if (class_can_equal(t->param[0]))
+		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 }
 
 void AutoImplementer::implement_super_array_constructor(Function *f, const Class *t) {
@@ -51,6 +60,8 @@ void AutoImplementer::implement_super_array_destructor(Function *f, const Class 
 }
 
 void AutoImplementer::implement_super_array_assign(Function *f, const Class *t) {
+	if (!f)
+		return;
 	auto te = t->get_array_element();
 	auto n_other = add_node_local(f->__get_var("other"));
 	auto n_self = add_node_local(f->__get_var(Identifier::SELF));
@@ -333,6 +344,32 @@ void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
 	}
 }
 
+void AutoImplementer::implement_super_array_give(Function *f, const Class *t) {
+	auto t_el = t->get_array_element();
+	auto t_xfer = tree->request_implicit_class_xfer(t_el, -1);
+	auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
+	auto self = add_node_local(f->__get_var(Identifier::SELF));
+	auto temp = add_node_local(f->block->add_var("temp", t_xfer_list));
+
+	{
+		// memcpy(temp, self)
+		f->block->add(add_node_operator_by_inline(InlineID::CHUNK_ASSIGN, temp, self));
+	}
+
+	{
+		// self.forget()
+		f->block->add(add_node_member_call(t->get_member_func("__mem_forget__", TypeVoid, {}), self));
+	}
+
+	{
+		// return temp
+		auto n_ret = add_node_statement(StatementID::RETURN);
+		n_ret->set_num_params(1);
+		n_ret->set_param(0, temp);
+		f->block->add(n_ret);
+	}
+}
+
 void AutoImplementer::_implement_functions_for_super_array(const Class *t) {
 	implement_super_array_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_super_array_destructor(prepare_auto_impl(t, t->get_destructor()), t);
@@ -340,6 +377,11 @@ void AutoImplementer::_implement_functions_for_super_array(const Class *t) {
 	implement_super_array_resize(prepare_auto_impl(t, t->get_member_func("resize", TypeVoid, {TypeInt})), t);
 	implement_super_array_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt})), t);
 	implement_super_array_add(prepare_auto_impl(t, t->get_member_func("add", TypeVoid, {nullptr})), t);
+	if (t->param[0]->is_pointer_owned()) {
+		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
+		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
+		implement_super_array_give(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer_list, {})), t);
+	}
 	implement_super_array_assign(prepare_auto_impl(t, t->get_assign()), t);
 	implement_super_array_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
 }

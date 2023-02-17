@@ -18,6 +18,8 @@ void AutoImplementer::_add_missing_function_headers_for_array(Class *t) {
 		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	if (class_can_assign(t->param[0]))
 		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	if (class_can_equal(t->param[0]) and false) // TODO
+		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 }
 
 void AutoImplementer::implement_array_constructor(Function *f, const Class *t) {

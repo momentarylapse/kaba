@@ -8,6 +8,6 @@ func main()
 	tests.add(new Test("c", 3))
 	tests.add(new Test("b", 23))
 	tests.add(new Test("d", 213))
-	let o = sort(tests, "i")
+	let o = sort(give(tests), "i")
 	for t in o
 		print("{{t.s}} {{t.i}}")

@@ -309,6 +309,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init);
 			func_add_param("element_size", TypeInt);
 		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
+		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget);
 		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("size", TypeInt);
 		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single);
@@ -320,6 +321,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init);
 			func_add_param("element_size", TypeInt);
 		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
+		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget);
 		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
 			func_add_param("size", TypeInt);
 		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single);

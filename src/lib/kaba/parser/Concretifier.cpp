@@ -1180,7 +1180,7 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 
 	auto t = sub->type;
 	while (true) {
-		if (t->is_pointer_shared() or t->is_pointer_owned()) {
+		if (t->is_pointer_shared() or t->is_pointer_owned() or t->is_pointer_xfer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->shift(0, tt, node->token_id);
 		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
@@ -1205,6 +1205,9 @@ shared<Node> Concretifier::concretify_special_function_give(shared<Node> node, B
 		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, tt, {}))
 			return add_node_member_call(f, sub);
 		do_error("give...aaaa", sub);
+	} else if (t->is_super_array() and t->get_array_element()->is_pointer_owned()) {
+		auto tt = tree->request_implicit_class_super_array(tree->request_implicit_class_xfer(t->param[0]->param[0], -1), node->token_id);
+		return sub->shift(0, tt, node->token_id);
 	}
 	do_error("give() expects an owned pointer", sub);
 	return nullptr;

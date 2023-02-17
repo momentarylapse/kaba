@@ -340,7 +340,7 @@ void AutoImplementer::_implement_functions_for_owned(const Class *t) {
 	implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
 	//implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_p})), t);
 	implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_xfer})), t);
-	//implement_owned_assign(prepare_auto_impl(t, t->get_func(Identifier::Func::ASSIGN, TypeVoid, {nullptr, t})), t);
+	//implement_owned_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
 	//implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
 	implement_owned_give(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer, {})), t);
 }
