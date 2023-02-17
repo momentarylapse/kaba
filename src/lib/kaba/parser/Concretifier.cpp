@@ -424,14 +424,16 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 }
 
 shared<Node> Concretifier::link_special_operator_is(shared<Node> param1, shared<Node> param2, int token_id) {
-	if (param2->kind != NodeKind::CLASS)
+	const Class *t2 = try_digest_type(tree, param2);
+	if (!t2)
 		do_error("class name expected after 'is'", param2);
-	const Class *t2 = param2->as_class();
 	if (t2->vtable.num == 0)
 		do_error(format("class after 'is' needs to have virtual functions: '%s'", t2->long_name()), param2);
 
+	// vtable1
 	const Class *t1 = param1->type;
-	if (t1->is_pointer()) {
+	if (t1->is_some_pointer()) {
+		param1->type = tree->get_pointer(TypePointer, token_id);
 		param1 = param1->deref();
 		t1 = t1->param[0];
 	}
@@ -440,9 +442,6 @@ shared<Node> Concretifier::link_special_operator_is(shared<Node> param1, shared<
 
 	// vtable2
 	auto vtable2 = add_node_const(tree->add_constant_pointer(TypePointer, t2->_vtable_location_compiler_), token_id);
-
-	// vtable1
-	param1->type = TypePointer;
 
 	return add_node_operator_by_inline(InlineID::POINTER_EQUAL, param1, vtable2, token_id);
 }
@@ -1762,8 +1761,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return concretify_special_function(node, block, ns);
 	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {*/
 	} else if (node->kind == NodeKind::BLOCK) {
-		for (int i=0; i<node->params.num; i++)
+		for (int i=0; i<node->params.num; i++) {
 			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
+			if (node->params[i]->type->is_pointer_xfer())
+				do_error("xfer[..] values must not be discarded", node->params[i]);
+		}
 		//concretify_all_params(node, node->as_block(), ns, this);
 		node->type = TypeVoid;
 		for (int i=node->params.num-1; i>=0; i--)

@@ -63,7 +63,7 @@ bool type_match(const Class *given, const Class *wanted) {
 		return true;
 
 	// allow any pointer?
-	if ((given->is_pointer() or given->is_reference()) and (wanted == TypePointer))
+	if ((given->is_pointer() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
 		return true;
 
 	// FIXME... quick'n'dirty hack to allow nil as parameter
@@ -71,13 +71,13 @@ bool type_match(const Class *given, const Class *wanted) {
 		return true;
 
 	// compatible pointers (of same or derived class)
-	if (given->is_pointer() and wanted->is_pointer()) {
+	if ((given->is_pointer() and wanted->is_pointer()) or (given->is_pointer_xfer() and wanted->is_pointer_xfer())) {
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}
 
 	// compatible shared pointers (of same or derived class)
-	if (given->is_pointer_shared() and wanted->is_pointer_shared()) {
+	if ((given->is_pointer_shared() and wanted->is_pointer_shared()) or (given->is_pointer_owned() and wanted->is_pointer_owned())) {
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}

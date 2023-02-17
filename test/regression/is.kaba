@@ -5,8 +5,8 @@ class Derived extends Base
 	func override x()
 
 func main()
-	var a: Base* = new Base()
-	var b: Base* = new Derived()
+	var a: owned[Base] = new Base()
+	var b: owned[Base] = new Derived()
 	if a is Derived
 		print("a is Derived")
 	if b is Derived
