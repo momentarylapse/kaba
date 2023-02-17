@@ -14,4 +14,4 @@ class C extends B
 		print("C")
 
 func main()
-	new C()
+	let x = new C()

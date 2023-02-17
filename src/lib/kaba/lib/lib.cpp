@@ -88,7 +88,7 @@ const Class *TypeDate;
 const Class *TypeImage;
 
 const Class *TypeException;
-const Class *TypeExceptionP;
+const Class *TypeExceptionXfer;
 const Class *TypeNoValueError;
 
 const Class *TypeClass;
@@ -162,7 +162,7 @@ const Class *add_type(const string &name, int size, Flags flags, const Class *na
 const Class *add_type_p(const Class *sub_type, Flags flags) {
 	string name;
 	if (flags_has(flags, Flags::SHARED))
-		name = sub_type->name + " shared";
+		name = Identifier::SHARED + "[" + sub_type->name + "]";
 	else
 		name = sub_type->name + "*";
 	Class *t = new Class(Class::Type::POINTER, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
@@ -176,6 +176,14 @@ const Class *add_type_p(const Class *sub_type, Flags flags) {
 const Class *add_type_ref(const Class *sub_type) {
 	string name = sub_type->name + "&";
 	Class *t = new Class(Class::Type::REFERENCE, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
+const Class *add_type_xfer(const Class *sub_type) {
+	string name = format("%s[%s]", Identifier::XFER, sub_type->name);
+	Class *t = new Class(Class::Type::POINTER_XFER, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;

@@ -11,6 +11,6 @@ class V
 func main()
 	var v = new V("hallo")
 	#del v
-	xxx_delete(v)
+	xxx_delete(weak(give(v)))
 
 

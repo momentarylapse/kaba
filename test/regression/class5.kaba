@@ -10,4 +10,4 @@ class Test
 func main()
 	var a = new Test()
 	print(a.x)
-	del a
+	#del a

@@ -13,5 +13,5 @@ class B extends A
 		print("B.init ..3")
 
 func main()
-	new B(1, 2)
-	new B(1, 2, 3)
+	let a = new B(1, 2)
+	let b = new B(1, 2, 3)

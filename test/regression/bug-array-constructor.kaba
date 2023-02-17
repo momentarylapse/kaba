@@ -23,4 +23,4 @@ class Complex extends Base
 
 func main()
 	var c = new Complex(5)
-	print(str(*c))
+	print(str(c))

@@ -8,4 +8,4 @@ func main()
 	var a = new F(fs.open("__test__", "wb"))
 	a << 2
 	a.f()
-	del a
+	#del a

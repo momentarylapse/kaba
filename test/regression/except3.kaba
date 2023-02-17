@@ -1,6 +1,6 @@
 class MyError extends Exception
 
-func test(_e: Exception*)
+func test(_e: xfer[Exception])
 	try
 		raise(_e)
 	except MyError as e

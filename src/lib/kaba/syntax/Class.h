@@ -158,7 +158,7 @@ extern const Class *TypeColor;
 extern const Class *TypeQuaternion;
 
 extern const Class *TypeException;
-extern const Class *TypeExceptionP;
+extern const Class *TypeExceptionXfer;
 
 extern const Class *TypeClass;
 extern const Class *TypeClassP;

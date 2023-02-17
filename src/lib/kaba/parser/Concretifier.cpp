@@ -541,7 +541,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 	auto *p2 = param2->type;
 
 	const Class *pp1 = p1;
-	if (pp1->is_pointer())
+	if (pp1->is_some_pointer())
 		pp1 = p1->param[0];
 
 	if (primop->id == OperatorID::ASSIGN) {

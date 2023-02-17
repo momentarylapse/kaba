@@ -283,7 +283,7 @@ void SIAddPackageBase(Context *c) {
 	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
 
 	TypeException		= add_type  ("Exception", sizeof(KabaException));
-	TypeExceptionP		= add_type_p(TypeException);
+	TypeExceptionXfer	= add_type_xfer(TypeException);
 	TypeNoValueError    = add_type  ("NoValueError", sizeof(KabaException));
 
 
@@ -739,7 +739,7 @@ void SIAddPackageBase(Context *c) {
 		class_set_vtable(KabaNoValueError);
 
 	add_func(Identifier::RAISE, TypeVoid, &kaba_raise_exception, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
-		func_add_param("e", TypeExceptionP);
+		func_add_param("e", TypeExceptionXfer);
 		
 		
 	// type casting

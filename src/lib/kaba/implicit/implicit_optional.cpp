@@ -253,7 +253,7 @@ void AutoImplementer::implement_optional_value(Function *f, const Class *t) {
 		auto cmd_new = add_node_statement(StatementID::NEW);
 		cmd_new->set_num_params(1);
 		cmd_new->set_param(0, cmd_call_ex);
-		cmd_new->type = TypeExceptionP;
+		cmd_new->type = TypeExceptionXfer;
 
 		auto cmd_raise = add_node_call(tree->required_func_global("raise"));
 		cmd_raise->set_param(0, cmd_new);
