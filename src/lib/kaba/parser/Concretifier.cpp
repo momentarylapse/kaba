@@ -1196,6 +1196,20 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 	return nullptr;
 }
 
+shared<Node> Concretifier::concretify_special_function_give(shared<Node> node, Block *block, const Class *ns) {
+	auto sub = concretify_node(node->params[0], block, block->name_space());
+
+	auto t = sub->type;
+	if (/*t->is_pointer_shared() or*/ t->is_pointer_owned()) {
+		auto tt = tree->request_implicit_class_xfer(t->param[0], -1);
+		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, tt, {}))
+			return add_node_member_call(f, sub);
+		do_error("give...aaaa", sub);
+	}
+	do_error("give() expects an owned pointer", sub);
+	return nullptr;
+}
+
 shared<Node> Concretifier::concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	if (sub->kind != NodeKind::FUNCTION)
@@ -1483,6 +1497,8 @@ shared<Node> Concretifier::concretify_special_function_call(shared<Node> node, S
 		return concretify_special_function_dyn(node, block, ns);
 	} else if (s->id == SpecialFunctionID::WEAK) {
 		return concretify_special_function_weak(node, block, ns);
+	} else if (s->id == SpecialFunctionID::GIVE) {
+		return concretify_special_function_give(node, block, ns);
 	} else if (s->id == SpecialFunctionID::SORT) {
 		return concretify_special_function_sort(node, block, ns);
 	} else if (s->id == SpecialFunctionID::FILTER) {
@@ -1534,11 +1550,16 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 			do_error("variable declaration requires a type", node->params[0]);
 		if (type->is_reference() and node->params.num < 3)
 			do_error("variables of reference type must be initialized", node->params[0]);
+		if (type->is_pointer_xfer())
+			do_error("no variables of type xfer[..] allowed", node->params[0]);
 	} else {
 		//assert(node->params[2]);
 		auto rhs = force_concrete_type(concretify_node(node->params[2]->params[1], block, ns));
 		node->params[2]->params[1] = rhs;
 		type = rhs->type;
+		// don't create xfer[X] variables!
+		if (type->is_pointer_xfer())
+			type = tree->request_implicit_class_owned(type->param[0], -1);
 	}
 
 	//as_const

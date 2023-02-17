@@ -6,7 +6,7 @@ class X
 	s: string
 
 
-func f(out p: owned[X])
+func f(p: xfer[X])
 	print("---f")
 #	print(p2s(weak(p)))
 	print(p)
@@ -22,7 +22,7 @@ func main()
 	p.s = "hallo"
 #	print(p2s(weak(p)))
 	
-	f(p)
+	f(give(p))
 	
 	print("---")
 #	print(p2s(weak(p)))

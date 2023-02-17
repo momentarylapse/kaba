@@ -3,7 +3,7 @@ class Test
 	var i: float
 
 func main()
-	var tests: Test*[]
+	var tests: owned[Test][]
 	tests.add(new Test("a", 130000))
 	tests.add(new Test("c", 3))
 	tests.add(new Test("b", 23))

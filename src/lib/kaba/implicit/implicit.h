@@ -68,6 +68,7 @@ public:
 	void implement_owned_clear(Function *f, const Class *t);
 	void implement_owned_assign_raw(Function *f, const Class *t);
 	void implement_owned_assign(Function *f, const Class *t);
+	void implement_owned_give(Function *f, const Class *t);
 	void implement_callable_constructor(Function *f, const Class *t);
 	void implement_callable_fp_call(Function *f, const Class *t);
 	void implement_callable_bind_call(Function *f, const Class *t);

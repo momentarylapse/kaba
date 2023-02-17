@@ -70,8 +70,13 @@ bool type_match(const Class *given, const Class *wanted) {
 	if ((given == TypePointer) and wanted->is_pointer())
 		return true;
 
+	if (given->is_pointer_xfer() and wanted->is_pointer_owned())
+		if (given->param[0] == wanted->param[0])
+			return true;
+
 	// compatible pointers (of same or derived class)
 	if ((given->is_pointer() and wanted->is_pointer()) or (given->is_pointer_xfer() and wanted->is_pointer_xfer())) {
+		// MAYBE: return type_match(given->param[0], wanted->param[0]);
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}

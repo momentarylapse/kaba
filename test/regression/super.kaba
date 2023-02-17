@@ -23,5 +23,5 @@ func main()
 	print(t.x)
 	print(t.y)
 	t.f()
-	del t
+#	del t
 	

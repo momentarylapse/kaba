@@ -82,6 +82,7 @@ void SIAddStatements() {
 	add_special_function(Identifier::FILTER, SpecialFunctionID::FILTER, 1, 1);
 	add_special_function(Identifier::DYN, SpecialFunctionID::DYN, 1, 1);
 	add_special_function(Identifier::WEAK, SpecialFunctionID::WEAK, 1, 1);
+	add_special_function(Identifier::GIVE, SpecialFunctionID::GIVE, 1, 1);
 }
 
 

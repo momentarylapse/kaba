@@ -64,7 +64,8 @@ enum class SpecialFunctionID {
 	SORT,
 	FILTER,
 	DYN,
-	WEAK
+	WEAK,
+	GIVE
 };
 
 class SpecialFunction {
