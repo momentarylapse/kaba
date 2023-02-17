@@ -205,7 +205,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
-	if (given->is_pointer()) {
+	if (given->is_some_pointer()) {
 		if (type_match(given->param[0], wanted)) {
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_DEREFERENCE;
@@ -1185,7 +1185,7 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 		if (t->is_pointer_shared() or t->is_pointer_owned() or t->is_pointer_xfer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->shift(0, tt, node->token_id);
-		} else if (t->is_super_array() and t->get_array_element()->is_pointer_shared()) {
+		} else if (t->is_super_array() and (t->get_array_element()->is_pointer_shared() or t->get_array_element()->is_pointer_owned())) {
 			auto tt = tree->request_implicit_class_super_array(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
 			return sub->shift(0, tt, node->token_id);
 		}
