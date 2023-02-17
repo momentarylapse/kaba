@@ -41,6 +41,8 @@ void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
 }
 
 void AutoImplementer::_add_missing_function_headers_for_xfer(Class *t) {
+	auto assign = add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	assign->inline_no = InlineID::POINTER_ASSIGN;
 }
 
 void AutoImplementer::implement_shared_constructor(Function *f, const Class *t) {

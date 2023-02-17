@@ -772,7 +772,7 @@ shared<Node> SyntaxTree::conv_return_by_memory(shared<Node> n, Function *f) {
 	auto ret = p_ret->deref();
 	auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, ret, n->params[0]);
 	if (!cmd_assign)
-		do_error(format("no '=' operator for return from function found: '%s'", f->long_name()));
+		do_error(format("no operator '%s = %s' for return from function found: '%s'", ret->type->long_name(), n->params[0]->type->long_name(), f->long_name()));
 	_transform_insert_before_.add(cmd_assign);
 
 	return add_node_statement(StatementID::RETURN);

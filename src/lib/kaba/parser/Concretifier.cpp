@@ -1201,13 +1201,16 @@ shared<Node> Concretifier::concretify_special_function_give(shared<Node> node, B
 
 	auto t = sub->type;
 	if (/*t->is_pointer_shared() or*/ t->is_pointer_owned()) {
-		auto tt = tree->request_implicit_class_xfer(t->param[0], -1);
-		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, tt, {}))
+		auto t_xfer = tree->request_implicit_class_xfer(t->param[0], -1);
+		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer, {}))
 			return add_node_member_call(f, sub);
 		do_error("give...aaaa", sub);
 	} else if (t->is_super_array() and t->get_array_element()->is_pointer_owned()) {
-		auto tt = tree->request_implicit_class_super_array(tree->request_implicit_class_xfer(t->param[0]->param[0], -1), node->token_id);
-		return sub->shift(0, tt, node->token_id);
+		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
+		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
+		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer_list, {}))
+			return add_node_member_call(f, sub);
+		do_error("give...aaaa", sub);
 	}
 	do_error("give() expects an owned pointer", sub);
 	return nullptr;
@@ -1540,6 +1543,14 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 	}
 }
 
+const Class *type_ownify_xfer(SyntaxTree *tree, const Class *t) {
+	if (t->is_pointer_xfer())
+		return tree->request_implicit_class_owned(t->param[0], -1);
+	if (t->is_super_array())
+		return tree->request_implicit_class_super_array(type_ownify_xfer(tree, t->param[0]), -1);
+	return t;
+}
+
 shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
 	bool as_const = (node->link_no == 1);
 
@@ -1559,10 +1570,8 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 		//assert(node->params[2]);
 		auto rhs = force_concrete_type(concretify_node(node->params[2]->params[1], block, ns));
 		node->params[2]->params[1] = rhs;
-		type = rhs->type;
 		// don't create xfer[X] variables!
-		if (type->is_pointer_xfer())
-			type = tree->request_implicit_class_owned(type->param[0], -1);
+		type = type_ownify_xfer(tree, rhs->type);
 	}
 
 	//as_const

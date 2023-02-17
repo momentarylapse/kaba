@@ -30,12 +30,16 @@ void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 		add_func_header(t, "add", TypeVoid, {t_xfer}, {"x"});
 		add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer_list, {}, {});
 		//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
+	} else if (t->param[0]->is_pointer_xfer()) {
+		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else {
 		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
+		if (class_can_assign(t->param[0]))
+			add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	}
 	add_func_header(t, "remove", TypeVoid, {TypeInt}, {"index"});
-	if (class_can_assign(t->param[0]))
-		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	if (class_can_equal(t->param[0]))
 		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 }
@@ -346,7 +350,7 @@ void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
 
 void AutoImplementer::implement_super_array_give(Function *f, const Class *t) {
 	auto t_el = t->get_array_element();
-	auto t_xfer = tree->request_implicit_class_xfer(t_el, -1);
+	auto t_xfer = tree->request_implicit_class_xfer(t_el->param[0], -1);
 	auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto temp = add_node_local(f->block->add_var("temp", t_xfer_list));
@@ -381,6 +385,7 @@ void AutoImplementer::_implement_functions_for_super_array(const Class *t) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
 		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
 		implement_super_array_give(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer_list, {})), t);
+		implement_super_array_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list})), t);
 	}
 	implement_super_array_assign(prepare_auto_impl(t, t->get_assign()), t);
 	implement_super_array_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
