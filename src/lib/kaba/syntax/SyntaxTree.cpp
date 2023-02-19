@@ -61,7 +61,7 @@ const Class *SyntaxTree::request_implicit_class_callable_fp(const Array<const Cl
 	params_ret.add(ret);
 
 	auto ff = request_implicit_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, token_id);
-	return request_implicit_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, token_id);
+	return request_implicit_class(name, Class::Type::POINTER, config.target.pointer_size, 0, nullptr, {ff}, token_id);
 	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
@@ -115,7 +115,7 @@ SyntaxTree::SyntaxTree(Module *_module) {
 	flag_function_pointer_as_code = false;
 	flag_immortal = false;
 	module = _module;
-	asm_meta_info = new Asm::MetaInfo(config.pointer_size);
+	asm_meta_info = new Asm::MetaInfo(config.target.pointer_size);
 
 	base_class = new Class(Class::Type::REGULAR, "-base-", 0, this);
 	_base_class = base_class;
@@ -596,34 +596,34 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 }
 
 const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
-	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER, config.pointer_size, 0, nullptr, {base}, token_id);
+	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER, config.target.pointer_size, 0, nullptr, {base}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared(const Class *parent, int token_id) {
 	if (!parent->name_space)
 		do_error("shared[..] not allowed for: " + parent->long_name(), token_id); // TODO
-	return request_implicit_class(format("%s[%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED, config.pointer_size, 0, nullptr, {parent}, token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED, config.target.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned(const Class *parent, int token_id) {
 	if (!parent->name_space)
 		do_error("owned[..] not allowed for: " + parent->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED, config.pointer_size, 0, nullptr, {parent}, token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED, config.target.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_xfer(const Class *parent, int token_id) {
 	if (!parent->name_space)
 		do_error("xfer[..] not allowed for: " + parent->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::XFER, parent->name), Class::Type::POINTER_XFER, config.pointer_size, 0, nullptr, {parent}, token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::XFER, parent->name), Class::Type::POINTER_XFER, config.target.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_reference(const Class *base, int token_id) {
-	return request_implicit_class(class_name_might_need_parantheses(base) + "&", Class::Type::REFERENCE, config.pointer_size, 0, nullptr, {base}, token_id);
+	return request_implicit_class(class_name_might_need_parantheses(base) + "&", Class::Type::REFERENCE, config.target.pointer_size, 0, nullptr, {base}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_super_array(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "[]";
-	return request_implicit_class(name, Class::Type::SUPER_ARRAY, config.super_array_size, -1, TypeDynamicArray, {element_type}, token_id);
+	return request_implicit_class(name, Class::Type::SUPER_ARRAY, config.target.super_array_size, -1, TypeDynamicArray, {element_type}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_array(const Class *element_type, int num_elements, int token_id) {
@@ -633,7 +633,7 @@ const Class *SyntaxTree::request_implicit_class_array(const Class *element_type,
 
 const Class *SyntaxTree::request_implicit_class_dict(const Class *element_type, int token_id) {
 	string name = class_name_might_need_parantheses(element_type) + "{}";
-	return request_implicit_class(name, Class::Type::DICT, config.super_array_size, 0, TypeDictBase, {element_type}, token_id);
+	return request_implicit_class(name, Class::Type::DICT, config.target.super_array_size, 0, TypeDictBase, {element_type}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_optional(const Class *param, int token_id) {
@@ -813,16 +813,20 @@ void SyntaxTree::convert_call_by_reference() {
 
 void SyntaxTree::simplify_ref_deref() {
 	// remove &*
-	transform([&](shared<Node> n){ return conv_easyfy_ref_deref(n, 0); });
+	transform([this] (shared<Node> n) {
+		return conv_easyfy_ref_deref(n, 0);
+	});
 }
 
 void SyntaxTree::simplify_shift_deref() {
 	// remove &*
-	transform([&](shared<Node> n){ return conv_easyfy_shift_deref(n, 0); });
+	transform([this] (shared<Node> n) {
+		return conv_easyfy_shift_deref(n, 0);
+	});
 }
 
 InlineID __get_pointer_add_int() {
-	if (config.instruction_set == Asm::InstructionSet::AMD64)
+	if (config.target.instruction_set == Asm::InstructionSet::AMD64)
 		return InlineID::INT64_ADD_INT;
 	return InlineID::INT_ADD;
 }
@@ -1182,7 +1186,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		shared<Node> val1;
 		if (array->type->usable_as_super_array()) {
 			// array.num
-			val1 = array->shift(config.pointer_size, TypeInt, array->token_id);
+			val1 = array->shift(config.target.pointer_size, TypeInt, array->token_id);
 		} else {
 			// array.size
 			val1 = add_node_const(add_constant_int(array->type->array_length));
@@ -1296,7 +1300,7 @@ void MapLVSX86Return(Function *f, int64 &stack_offset) {
 	for (auto &v: f->var)
 		if (v->name == Identifier::RETURN_VAR) {
 			v->_offset = stack_offset;
-			stack_offset += config.pointer_size;
+			stack_offset += config.target.pointer_size;
 		}
 }
 
@@ -1304,19 +1308,19 @@ void MapLVSX86Self(Function *f, int64 &stack_offset) {
 	for (auto &v: f->var)
 		if (v->name == Identifier::SELF) {
 			v->_offset = stack_offset;
-			stack_offset += config.pointer_size;
+			stack_offset += config.target.pointer_size;
 		}
 }
 
 void SyntaxTree::map_local_variables_to_stack() {
 	for (Function *f: functions) {
 
-		if (config.instruction_set == Asm::InstructionSet::X86) {
+		if (config.target.instruction_set == Asm::InstructionSet::X86) {
 			f->_var_size = 0;
-			int64 stack_offset = 2 * config.pointer_size; // space for eIP and eBP
+			int64 stack_offset = 2 * config.target.pointer_size; // space for eIP and eBP
 			// offsets to stack pointer (for push parameters)
 
-			if (config.abi == Abi::X86_WINDOWS) {
+			if (config.target.abi == Abi::X86_WINDOWS) {
 				// map "self" to the VERY first parameter
 				if (f->is_member())
 					MapLVSX86Self(f, stack_offset);
@@ -1350,12 +1354,12 @@ void SyntaxTree::map_local_variables_to_stack() {
 					f->_var_size += s;
 				}
 			}
-		} else if (config.instruction_set == Asm::InstructionSet::AMD64) {
+		} else if (config.target.instruction_set == Asm::InstructionSet::AMD64) {
 			f->_var_size = 0;
-			int64 stack_offset = 2 * config.pointer_size; // space for rIP and rBP
+			int64 stack_offset = 2 * config.target.pointer_size; // space for rIP and rBP
 			// offsets to stack pointer (for push parameters)
 
-			if (config.abi == Abi::AMD64_WINDOWS) {
+			if (config.target.abi == Abi::AMD64_WINDOWS) {
 
 				// map "self" to the VERY first parameter
 				if (f->is_member())
@@ -1390,7 +1394,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 					v->_offset = -f->_var_size;
 				}
 			}
-		} else if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64)) {
+		} else if (config.target.is_arm()) {
 			f->_var_size = 0;
 
 			for (auto v: weak(f->var)) {

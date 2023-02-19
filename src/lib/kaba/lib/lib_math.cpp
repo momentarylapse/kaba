@@ -415,7 +415,7 @@ void SIAddPackageMath(Context *c) {
 	/*if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)*/ {
 		flags_set(((Class*)TypeFloat32)->flags, Flags::AMD64_ALLOW_PASS_IN_XMM);
 		flags_set(((Class*)TypeFloat64)->flags, Flags::AMD64_ALLOW_PASS_IN_XMM);
-		if (config.abi == Abi::AMD64_GNU) {
+		if (config.target.abi == Abi::AMD64_GNU) {
 			// not on windows!
 			flags_set(((Class*)TypeComplex)->flags, Flags::AMD64_ALLOW_PASS_IN_XMM);
 			flags_set(((Class*)TypeVec2)->flags, Flags::AMD64_ALLOW_PASS_IN_XMM);

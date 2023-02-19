@@ -12,7 +12,7 @@
 void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
 	auto f = new BinaryFormatter(os::fs::open(out_file, "wb"));
 
-	bool is64bit = (kaba::config.pointer_size == 8);
+	bool is64bit = (kaba::config.target.pointer_size == 8);
 
 	// 16b header
 	f->write_char(0x7f);
@@ -26,13 +26,13 @@ void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
 		f->write_char(0x00);
 
 	f->write_word(0x0003); // 3=shared... 2=exec
-	if (kaba::config.instruction_set == Asm::InstructionSet::AMD64) {
+	if (kaba::config.target.instruction_set == Asm::InstructionSet::AMD64) {
 		f->write_word(0x003e); // machine
-	} else if (kaba::config.instruction_set == Asm::InstructionSet::X86) {
+	} else if (kaba::config.target.instruction_set == Asm::InstructionSet::X86) {
 		f->write_word(0x0003); // machine
-	} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM32) {
+	} else if (kaba::config.target.instruction_set == Asm::InstructionSet::ARM32) {
 		f->write_word(0x0028); // machine
-	} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM64) {
+	} else if (kaba::config.target.instruction_set == Asm::InstructionSet::ARM64) {
 		f->write_word(0x0028); // machine ?!?!?!?
 	}
 	f->write_int(1); // version

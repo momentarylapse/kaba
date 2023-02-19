@@ -486,7 +486,7 @@ void Class::link_virtual_table() {
 	if (parent)
 		for (int i=0; i<parent->vtable.num; i++)
 			vtable[i] = parent->vtable[i];
-	if ((config.abi == Abi::X86_WINDOWS) or (config.abi == Abi::AMD64_WINDOWS))
+	if ((config.target.abi == Abi::X86_WINDOWS) or (config.target.abi == Abi::AMD64_WINDOWS))
 		vtable[0] = mf(&VirtualBase::__delete_external__);
 	else
 		vtable[1] = mf(&VirtualBase::__delete_external__);
@@ -527,7 +527,7 @@ void Class::link_external_virtual_table(void *p) {
 	for (int i=0; i<vtable.num; i++)
 		vtable[i] = t[i];
 	// this should also link the "real" c++ destructor
-	if ((config.abi == Abi::X86_WINDOWS) or (config.abi == Abi::AMD64_WINDOWS))
+	if ((config.target.abi == Abi::X86_WINDOWS) or (config.target.abi == Abi::AMD64_WINDOWS))
 		vtable[0] = mf(&VirtualBase::__delete_external__);
 	else
 		vtable[1] = mf(&VirtualBase::__delete_external__);
@@ -590,7 +590,7 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 			if (config.verbose)
 				msg_write("VVVVV +");
 			f->virtual_index = s->module->context->external->process_class_offset(cname(owner->base_class), f->name, max(vtable.num, 2));
-			if ((f->name == Identifier::Func::DELETE) and (config.abi == Abi::AMD64_WINDOWS or config.abi == Abi::X86_WINDOWS))
+			if ((f->name == Identifier::Func::DELETE) and (config.target.abi == Abi::AMD64_WINDOWS or config.target.abi == Abi::X86_WINDOWS))
 				f->virtual_index = 1;
 		}
 

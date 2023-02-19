@@ -21,9 +21,6 @@ namespace kaba {
 #define MAX_OPCODE				(2*65536)	// max. amount of opcode
 
 
-//#define mem_align(x)	((x) + (4 - (x) % 4) % 4)
-#define mem_align(x, n)		((((x) + (n) - 1) / (n) ) * (n))
-
 class SyntaxTree;
 class Module;
 class Class;

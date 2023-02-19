@@ -776,7 +776,7 @@ int BackendARM::add_global_ref(void *p) {
 void BackendARM::do_mapping() {
 
 	map_remaining_temp_vars_to_stack();
-	stack_max_size = mem_align(stack_max_size, config.stack_frame_align);
+	stack_max_size = mem_align(stack_max_size, config.target.stack_frame_align);
 
 	serializer->cmd_list_out("map:e", "post var reg");
 }

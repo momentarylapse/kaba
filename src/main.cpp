@@ -135,17 +135,14 @@ public:
 		});
 		p.cmd("-v/--version", "", "print the version", [] (const Array<string>&) {
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
-			if (kaba::config.native_abi == kaba::Abi::AMD64_WINDOWS)
-				msg_write("native arch: amd64:win");
-			if (kaba::config.native_abi == kaba::Abi::AMD64_GNU)
-				msg_write("native arch: amd64:gnu");
+			msg_write("native arch: " + kaba::abi_name(kaba::guess_native_abi()));;
 			msg_write("kaba: " + kaba::Version);
 			msg_write("hui: " + hui::Version);
 		});
 		p.cmd("-h/--help", "", "show this help page", [&p] (const Array<string>&) {
 			p.show();
 		});
-		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [this] (const Array<string> &a){
+		p.cmd("--just-disasm", "FILE", "disassemble opcode from a file", [this] (const Array<string> &a) {
 			disassemble_file(a[0]);
 		});
 		p.cmd("-c/--command", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
@@ -173,7 +170,7 @@ public:
 
 				//if (flag_disassemble)
 				//	msg_write(Asm::disassemble(s->opcode, s->opcode_size, true));
-			} else if (kaba::config.abi == kaba::config.native_abi) {
+			} else if (kaba::config.target.is_native) {
 				// direct execution
 				execute(s, a.sub_ref(1));
 			} else {
@@ -239,7 +236,7 @@ public:
 		kaba::config.verbose_func_filter = debug_func_filter;
 		kaba::config.verbose_stage_filter = debug_stage_filter;
 		kaba::config.compile_os = flag_compile_os;
-		kaba::config.interpreted = flag_interpret;
+		kaba::config.target.interpreted = flag_interpret;
 	}
 
 	Path try_get_installed_app_file(const Path &filename) {
@@ -284,7 +281,7 @@ public:
 #pragma GCC optimize("0")
 
 	void execute(shared<kaba::Module> s, const Array<string> &args) {
-		if (kaba::config.interpreted) {
+		if (kaba::config.target.interpreted) {
 			s->interpreter->run("main");
 			return;
 		}

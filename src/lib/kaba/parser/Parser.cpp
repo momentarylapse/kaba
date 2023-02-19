@@ -1626,11 +1626,11 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 			// element "-vtable-" being derived
 		} else {
 			for (ClassElement &e: _class->elements)
-				e.offset = external->process_class_offset(_class->cname(tree->base_class), e.name, e.offset + config.pointer_size);
+				e.offset = external->process_class_offset(_class->cname(tree->base_class), e.name, e.offset + config.target.pointer_size);
 
 			auto el = ClassElement(Identifier::VTABLE_VAR, TypePointer, 0);
 			_class->elements.insert(el, 0);
-			size += config.pointer_size;
+			size += config.target.pointer_size;
 
 			for (auto &i: _class->initializers)
 				i.element ++;

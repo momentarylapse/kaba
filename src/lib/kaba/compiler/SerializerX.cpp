@@ -43,7 +43,7 @@ void Serializer::add_virtual_function_call(Function *f, const Array<SerialNodePa
 	auto t2 = add_temp(TypePointer);
 	auto t3 = add_temp(TypeFunctionCodeP);
 	cmd.add_cmd(Asm::InstID::MOV, t1, params[0]); // self
-	cmd.add_cmd(Asm::InstID::ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, config.pointer_size * f->virtual_index)); // vtable + n
+	cmd.add_cmd(Asm::InstID::ADD, t2, deref_temp(t1, TypePointer), param_imm(TypeInt, config.target.pointer_size * f->virtual_index)); // vtable + n
 	cmd.add_cmd(Asm::InstID::MOV, t3, deref_temp(t2, TypeFunctionCodeP)); // vtable[n]
 	cmd.add_cmd(Asm::InstID::CALL_MEMBER, ret, t3); // the actual call
 }
@@ -340,7 +340,7 @@ void Serializer::serialize_inline_function(Node *com, const Array<SerialNodePara
 			cmd.add_cmd(Asm::InstID::MOV, param[0], param[1]);
 			break;
 		case InlineID::CHUNK_EQUAL:
-			if (param[0].type->size > config.pointer_size) {
+			if (param[0].type->size > config.target.pointer_size) {
 				// chunk cmp
 				int label_after_cmp = list->create_label("_CMP_AFTER_" + i2s(num_labels ++));
 				for (int k=0; k<param[0].type->size/4; k++) {

@@ -165,7 +165,7 @@ const Class *add_type_p(const Class *sub_type, Flags flags) {
 		name = Identifier::SHARED + "[" + sub_type->name + "]";
 	else
 		name = sub_type->name + "*";
-	Class *t = new Class(Class::Type::POINTER, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	if (flags_has(flags, Flags::SHARED))
 		t->type = Class::Type::POINTER_SHARED;
 	__add_class__(t, sub_type->name_space);
@@ -175,7 +175,7 @@ const Class *add_type_p(const Class *sub_type, Flags flags) {
 
 const Class *add_type_ref(const Class *sub_type) {
 	string name = sub_type->name + "&";
-	Class *t = new Class(Class::Type::REFERENCE, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	Class *t = new Class(Class::Type::REFERENCE, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
@@ -183,7 +183,7 @@ const Class *add_type_ref(const Class *sub_type) {
 
 const Class *add_type_xfer(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::XFER, sub_type->name);
-	Class *t = new Class(Class::Type::POINTER_XFER, name, config.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_XFER, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
@@ -202,7 +202,7 @@ const Class *add_type_a(const Class *sub_type, int array_length) {
 // super array
 const Class *add_type_l(const Class *sub_type) {
 	string name = sub_type->name + "[]";
-	Class *t = new Class(Class::Type::SUPER_ARRAY, name, config.super_array_size, cur_package->syntax, nullptr, {sub_type});
+	Class *t = new Class(Class::Type::SUPER_ARRAY, name, config.target.super_array_size, cur_package->syntax, nullptr, {sub_type});
 	kaba_make_super_array(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
@@ -212,7 +212,7 @@ const Class *add_type_l(const Class *sub_type) {
 // dict
 const Class *add_type_d(const Class *sub_type) {
 	string name = sub_type->name + "{}";
-	Class *t = new Class(Class::Type::DICT, name, config.super_array_size, cur_package->syntax, nullptr, {sub_type});
+	Class *t = new Class(Class::Type::DICT, name, config.target.super_array_size, cur_package->syntax, nullptr, {sub_type});
 	kaba_make_dict(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
@@ -297,7 +297,7 @@ const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params
 				func_add_param("b", params[1]);
 		}
 	}
-	return cur_package->syntax->request_implicit_class(name, Class::Type::POINTER, config.pointer_size, 0, nullptr, {ff}, -1);
+	return cur_package->syntax->request_implicit_class(name, Class::Type::POINTER, config.target.pointer_size, 0, nullptr, {ff}, -1);
 
 	/*auto c = cur_package->syntax->make_class_callable_fp(params, ret_type);
 	add_class(c);
@@ -434,7 +434,7 @@ Function* class_add_func(const string &name, const Class *return_type, std::null
 }
 
 int get_virtual_index(void *func, const string &tname, const string &name) {
-	if ((config.native_abi == Abi::X86_WINDOWS) or (config.native_abi == Abi::AMD64_WINDOWS)) {
+	if ((config.native_target.abi == Abi::X86_WINDOWS) or (config.native_target.abi == Abi::AMD64_WINDOWS)) {
 		if (!func)
 			return 0;
 		unsigned char* pp = (unsigned char*)func;
@@ -478,7 +478,7 @@ int get_virtual_index(void *func, const string &tname, const string &name) {
 			msg_write(p2s(pp));
 			msg_write(Asm::disassemble(func, 16));
 		}
-	} else if (config.native_abi == Abi::AMD64_WINDOWS) {
+	} else if (config.native_target.abi == Abi::AMD64_WINDOWS) {
 		msg_error("class_add_func_virtual(" + tname + "." + name + "):  can't read virtual index");
 		msg_write(Asm::disassemble(func, 16));
 	} else {
@@ -666,22 +666,14 @@ void init_lib(Context *c) {
 Context *_secret_lib_context_ = nullptr;
 
 void init(Abi abi, bool allow_std_lib) {
+	config.native_target = CompilerConfiguration::Target::get_native();
 	if (abi == Abi::NATIVE) {
-		config.abi = config.native_abi;
+		config.target = config.native_target;
 	} else {
-		config.abi = abi;
+		config.target = CompilerConfiguration::Target::get_for_abi(abi);
 	}
-	config.instruction_set = extract_instruction_set(config.abi);
-	Asm::init(config.instruction_set);
+	Asm::init(config.target.instruction_set);
 	config.allow_std_lib = allow_std_lib;
-	config.pointer_size = Asm::instruction_set.pointer_size;
-	if (abi == Abi::NATIVE)
-		config.super_array_size = sizeof(DynamicArray);
-	else
-		config.super_array_size = mem_align(config.pointer_size + 3 * sizeof(int), config.pointer_size);
-
-	config.function_align = 2 * config.pointer_size;
-	config.stack_frame_align = 2 * config.pointer_size;
 
 	SIAddStatements();
 

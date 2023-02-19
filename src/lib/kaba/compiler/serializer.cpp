@@ -151,7 +151,7 @@ SerialNodeParam Serializer::add_dereference(const SerialNodeParam &param, const 
 		ret.type = type;// ? type : get_subtype(param.type);
 		ret.shift = 0;
 	} else {
-		if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64)) {
+		if (config.target.is_arm()) {
 			if (param.kind == NodeKind::LOCAL_ADDRESS) {
 				ret = param;
 				ret.kind = NodeKind::DEREF_LOCAL_MEMORY;
@@ -697,11 +697,11 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 //	for (auto&& [i,t]: temp_var)
 //		if (&t == &v)
 //			msg_write("#" + i2s(i));
-	so.create(this, (config.instruction_set != Asm::InstructionSet::ARM32), cur_func->_var_size, v.first, v.last);
+	so.create(this, !config.target.is_arm(), cur_func->_var_size, v.first, v.last);
 
 	if (true) {
 	// TODO super important!!!!!!
-	if (config.instruction_set == Asm::InstructionSet::ARM32) {
+	if (config.target.instruction_set == Asm::InstructionSet::ARM32) {
 		v.stack_offset = stack_offset;
 		stack_offset += s;
 
@@ -711,7 +711,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	}
 	} else {
 		v.stack_offset = so.find_free(v.type->size);
-		if (config.instruction_set == Asm::InstructionSet::ARM32) {
+		if (config.target.instruction_set == Asm::InstructionSet::ARM32) {
 			stack_offset = v.stack_offset + s;
 		} else {
 			stack_offset = - v.stack_offset;
@@ -864,7 +864,7 @@ Asm::InstructionParam Serializer::get_param(Asm::InstID inst, SerialNodeParam &p
 			module->do_error_internal("get_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		if (config.instruction_set == Asm::InstructionSet::ARM32) {
+		if (config.target.is_arm()) {
 			return Asm::param_deref_reg_shift(Asm::RegID::R13, p.p + p.shift, p.type->size);
 		} else {
 			return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);
@@ -965,7 +965,11 @@ bool is_func(shared<Node> n) {
 
 int check_needed(SyntaxTree *tree, Function *f) {
 	int ref_count = 0;
-	tree->transform([&](shared<Node> n){ if (is_func(n) and n->as_func() == f) ref_count ++; return n; });
+	tree->transform([&](shared<Node> n) {
+		if (is_func(n) and n->as_func() == f)
+			ref_count ++;
+		return n;
+	});
 
 	if (f->is_static() and f->name == "main")
 		ref_count ++;
@@ -979,11 +983,11 @@ int check_needed(SyntaxTree *tree, Function *f) {
 }
 
 Backend *create_backend(Serializer *s) {
-	if (config.instruction_set == Asm::InstructionSet::AMD64)
+	if (config.target.instruction_set == Asm::InstructionSet::AMD64)
 		return new BackendAmd64(s);
-	if (config.instruction_set == Asm::InstructionSet::X86)
+	if (config.target.instruction_set == Asm::InstructionSet::X86)
 		return new BackendX86(s);
-	if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64))
+	if (config.target.is_arm())
 		return new BackendARM(s);
 	s->module->do_error("unable to create a backend for the architecture");
 	return nullptr;
@@ -1003,7 +1007,7 @@ void Module::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	if (config.verbose and config.allow_output(f, "ser:0"))
 		f->block->show(TypeVoid);
 
-	if (config.interpreted) {
+	if (config.target.interpreted) {
 		auto x = new Serializer(this, list);
 		x->cur_func_index = index;
 		x->serialize_function(f);
@@ -1104,7 +1108,7 @@ void Module::compile_functions(char *oc, int &ocs) {
 		if (!f->is_extern() and !f->is_template() and !f->is_macro())
 			function_update_address(f, list);
 
-	if (!config.interpreted)
+	if (!config.target.interpreted)
 		delete list;
 }
 

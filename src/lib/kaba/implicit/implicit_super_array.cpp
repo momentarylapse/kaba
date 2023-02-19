@@ -12,7 +12,7 @@
 namespace kaba {
 
 static shared<Node> sa_num(shared<Node> node) {
-	return node->shift(config.pointer_size, TypeInt);
+	return node->shift(config.target.pointer_size, TypeInt);
 }
 
 /*static shared<Node> sa_data(shared<Node> node) {

@@ -190,7 +190,7 @@ void Module::allocate_opcode() {
 int mem_size_needed(const Class *c) {
 	int memory_size = 0;
 	if (c->vtable.num > 0)
-		memory_size += config.pointer_size * c->vtable.num;
+		memory_size += config.target.pointer_size * c->vtable.num;
 	for (auto *v: weak(c->static_variables))
 		memory_size += mem_align(v->type->size, 4);
 	for (auto *cc: weak(c->constants))
@@ -249,7 +249,7 @@ void Module::map_global_variables_to_memory() {
 }
 
 void Module::align_opcode() {
-	int ocs_new = mem_align(opcode_size, config.function_align);
+	int ocs_new = mem_align(opcode_size, config.target.function_align);
 	for (int i=opcode_size;i<ocs_new;i++)
 		opcode[i] = 0x90;
 	opcode_size = ocs_new;
@@ -283,7 +283,7 @@ void remap_virtual_tables(Module *s, char *mem, int &offset, char *address, cons
 		Class *t = const_cast<Class*>(ct);
 		t->_vtable_location_compiler_ = &mem[offset];
 		t->_vtable_location_target_ = &address[offset];
-		offset += config.pointer_size * t->vtable.num;
+		offset += config.target.pointer_size * t->vtable.num;
 		for (Constant *c: weak(s->syntax->base_class->constants))
 			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data))
 				c->as_int64() = (int_p)t->_vtable_location_target_;
@@ -327,7 +327,9 @@ void Module::map_constants_to_memory(char *mem, int &offset, char *address) {
 	remap_virtual_tables(this, mem, offset, address, syntax->base_class);
 
 
-	syntax->transform([&](shared<Node> n) { return check_const_used(n, this); });
+	syntax->transform([this] (shared<Node> n) {
+		return check_const_used(n, this);
+	});
 
 	/*int n = 0;
 	for (bool b: used)
@@ -435,7 +437,7 @@ void link_raw_function_pointers(Module *m) {
 			c->as_int64() = f->address;
 
 			// remap
-			memcpy(c->address_compiler, &c->as_int64(), config.pointer_size);
+			memcpy(c->address_compiler, &c->as_int64(), config.target.pointer_size);
 		}
 }
 
@@ -459,7 +461,7 @@ void Module::link_functions() {
 	for (int n: function_vars_to_link) {
 		int64 p = (n + 0xefef0000);
 		int64 q = syntax->functions[n]->address;
-		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.pointer_size, (char*)&q))
+		if (!find_and_replace(opcode, opcode_size, (char*)&p, config.target.pointer_size, (char*)&q))
 			do_error_link("could not link function as variable: " + syntax->functions[n]->signature());
 	}
 
@@ -471,7 +473,7 @@ void Module::link_virtual_functions_into_vtable(const Class *c) {
 	t->link_virtual_table();
 
 	for (int i=0; i<t->vtable.num; i++)
-		memcpy((char*)t->_vtable_location_compiler_ + i*config.pointer_size, &t->vtable[i], config.pointer_size);
+		memcpy((char*)t->_vtable_location_compiler_ + i*config.target.pointer_size, &t->vtable[i], config.target.pointer_size);
 
 	for (auto *cc: weak(c->classes))
 		link_virtual_functions_into_vtable(cc);

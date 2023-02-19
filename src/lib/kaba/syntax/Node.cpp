@@ -193,13 +193,13 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::REGISTER)
 		return Asm::get_reg_name((Asm::RegID)link_no) + t;
 	if (kind == NodeKind::ADDRESS)
-		return i2h(link_no, config.pointer_size) + t;
+		return i2h(link_no, config.target.pointer_size) + t;
 	if (kind == NodeKind::MEMORY)
-		return i2h(link_no, config.pointer_size) + t;
+		return i2h(link_no, config.target.pointer_size) + t;
 	if (kind == NodeKind::LOCAL_ADDRESS)
-		return i2h(link_no, config.pointer_size) + t;
+		return i2h(link_no, config.target.pointer_size) + t;
 	if (kind == NodeKind::LOCAL_MEMORY)
-		return i2h(link_no, config.pointer_size) + t;
+		return i2h(link_no, config.target.pointer_size) + t;
 	return i2s(link_no) + t;
 }
 

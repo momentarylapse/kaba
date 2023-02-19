@@ -350,7 +350,7 @@ bool call_function(Function *f, void *ret, const Array<void*> &param) {
 	auto ptype = f->literal_param_type;
 
 	// TODO handle return in member functions on windows...
-	if ((config.abi == Abi::AMD64_WINDOWS) and !f->is_static() and f->name_space->uses_call_by_reference() and f->literal_return_type->uses_return_by_memory())
+	if ((config.target.abi == Abi::AMD64_WINDOWS) and !f->is_static() and f->name_space->uses_call_by_reference() and f->literal_return_type->uses_return_by_memory())
 		return false;
 
 	auto fp = f->address_preprocess;
@@ -379,7 +379,7 @@ bool call_member_function(Function *f, void *instance, void *ret, const Array<vo
 	auto ptype = f->literal_param_type;
 
 	// TODO handle return in member functions on windows...
-	if ((config.abi == Abi::AMD64_WINDOWS) and !f->is_static() and f->name_space->uses_call_by_reference() and f->literal_return_type->uses_return_by_memory())
+	if ((config.target.abi == Abi::AMD64_WINDOWS) and f->name_space->uses_call_by_reference() and f->literal_return_type->uses_return_by_memory())
 		return false;
 
 	auto fp = object_get_member_func_pointer(instance, f, allow_virtual);

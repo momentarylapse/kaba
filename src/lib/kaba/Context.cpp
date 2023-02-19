@@ -165,13 +165,13 @@ void Context::execute_single_command(const string &cmd) {
 	s->compile();
 
 
-	if (config.interpreted) {
+	if (config.target.interpreted) {
 		s->interpreter->run("--command-func--");
 		return;
 	}
 
 // execute
-	if (config.abi == config.native_abi) {
+	if (config.target.is_native) {
 		typedef void void_func();
 		void_func *f = (void_func*)func->address;
 		if (f)
