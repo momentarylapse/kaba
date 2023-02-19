@@ -30,8 +30,10 @@ void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
 		f->write_word(0x003e); // machine
 	} else if (kaba::config.instruction_set == Asm::InstructionSet::X86) {
 		f->write_word(0x0003); // machine
-	} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM) {
+	} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM32) {
 		f->write_word(0x0028); // machine
+	} else if (kaba::config.instruction_set == Asm::InstructionSet::ARM64) {
+		f->write_word(0x0028); // machine ?!?!?!?
 	}
 	f->write_int(1); // version
 

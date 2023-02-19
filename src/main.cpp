@@ -53,7 +53,7 @@ public:
 		p.option("-g/--gui", "show errors in dialog box", [this] {
 			use_gui = true;
 		});
-		p.option("--arch", "CPU:SYSTEM", "override target architecture: x86/amd64/arm:gnu/win", [&] (const string &a) {
+		p.option("--arch", "CPU:SYSTEM", "override target architecture: x86/amd64/arm32/arm64:gnu/win", [this] (const string &a) {
 			if (a == "amd64:gnu") {
 				abi = kaba::Abi::AMD64_GNU;
 			} else if (a == "amd64:win") {
@@ -62,8 +62,10 @@ public:
 				abi = kaba::Abi::X86_GNU;
 			} else if (a == "x86:win") {
 				abi = kaba::Abi::X86_WINDOWS;
-			} else if (a == "arm:gnu") {
+			} else if (a == "arm32:gnu") {
 				abi = kaba::Abi::ARM32_GNU;
+			} else if (a == "arm64:gnu") {
+				abi = kaba::Abi::ARM64_GNU;
 			} else {
 				throw Exception("unknown architecture");
 			}

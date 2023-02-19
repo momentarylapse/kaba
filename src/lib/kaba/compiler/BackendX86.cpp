@@ -14,6 +14,9 @@
 namespace kaba {
 
 
+// FIXME why are there ::ARM checks?!?
+
+
 
 //bool is_typed_function_pointer(const Class *c);
 
@@ -772,7 +775,7 @@ void BackendX86::add_stack_var(TempVar &v, SerialNodeParam &p) {
 
 	if (true) {
 		// TODO super important!!!!!!
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if (config.instruction_set == Asm::InstructionSet::ARM32) {
 			v.stack_offset = stack_offset;
 			stack_offset += s;
 
@@ -782,9 +785,9 @@ void BackendX86::add_stack_var(TempVar &v, SerialNodeParam &p) {
 		}
 	} else {
 		StackOccupationX so;
-		so.create(serializer, (config.instruction_set != Asm::InstructionSet::ARM), cur_func->_var_size, v.first, v.last);
+		so.create(serializer, (config.instruction_set != Asm::InstructionSet::ARM32), cur_func->_var_size, v.first, v.last);
 		v.stack_offset = so.find_free(v.type->size);
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if (config.instruction_set == Asm::InstructionSet::ARM32) {
 			stack_offset = v.stack_offset + s;
 		} else {
 			stack_offset = - v.stack_offset;
@@ -1032,7 +1035,7 @@ Asm::InstructionParam BackendX86::prepare_param(Asm::InstID inst, SerialNodePara
 			do_error("prepare_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if (config.instruction_set == Asm::InstructionSet::ARM32) {
 			return Asm::param_deref_reg_shift(Asm::RegID::R13, p.p + p.shift, p.type->size);
 		} else {
 			return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);

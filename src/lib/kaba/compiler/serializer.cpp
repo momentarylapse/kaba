@@ -151,7 +151,7 @@ SerialNodeParam Serializer::add_dereference(const SerialNodeParam &param, const 
 		ret.type = type;// ? type : get_subtype(param.type);
 		ret.shift = 0;
 	} else {
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64)) {
 			if (param.kind == NodeKind::LOCAL_ADDRESS) {
 				ret = param;
 				ret.kind = NodeKind::DEREF_LOCAL_MEMORY;
@@ -697,11 +697,11 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 //	for (auto&& [i,t]: temp_var)
 //		if (&t == &v)
 //			msg_write("#" + i2s(i));
-	so.create(this, (config.instruction_set != Asm::InstructionSet::ARM), cur_func->_var_size, v.first, v.last);
+	so.create(this, (config.instruction_set != Asm::InstructionSet::ARM32), cur_func->_var_size, v.first, v.last);
 
 	if (true) {
 	// TODO super important!!!!!!
-	if (config.instruction_set == Asm::InstructionSet::ARM) {
+	if (config.instruction_set == Asm::InstructionSet::ARM32) {
 		v.stack_offset = stack_offset;
 		stack_offset += s;
 
@@ -711,7 +711,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	}
 	} else {
 		v.stack_offset = so.find_free(v.type->size);
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if (config.instruction_set == Asm::InstructionSet::ARM32) {
 			stack_offset = v.stack_offset + s;
 		} else {
 			stack_offset = - v.stack_offset;
@@ -864,7 +864,7 @@ Asm::InstructionParam Serializer::get_param(Asm::InstID inst, SerialNodeParam &p
 			module->do_error_internal("get_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		if (config.instruction_set == Asm::InstructionSet::ARM) {
+		if (config.instruction_set == Asm::InstructionSet::ARM32) {
 			return Asm::param_deref_reg_shift(Asm::RegID::R13, p.p + p.shift, p.type->size);
 		} else {
 			return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);
@@ -983,7 +983,7 @@ Backend *create_backend(Serializer *s) {
 		return new BackendAmd64(s);
 	if (config.instruction_set == Asm::InstructionSet::X86)
 		return new BackendX86(s);
-	if (config.instruction_set == Asm::InstructionSet::ARM)
+	if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64))
 		return new BackendARM(s);
 	s->module->do_error("unable to create a backend for the architecture");
 	return nullptr;

@@ -1390,7 +1390,7 @@ void SyntaxTree::map_local_variables_to_stack() {
 					v->_offset = -f->_var_size;
 				}
 			}
-		} else if (config.instruction_set == Asm::InstructionSet::ARM) {
+		} else if ((config.instruction_set == Asm::InstructionSet::ARM32) or (config.instruction_set == Asm::InstructionSet::ARM64)) {
 			f->_var_size = 0;
 
 			for (auto v: weak(f->var)) {

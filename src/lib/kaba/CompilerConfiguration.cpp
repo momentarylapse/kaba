@@ -25,8 +25,10 @@ Asm::InstructionSet extract_instruction_set(Abi abi) {
 		return Asm::InstructionSet::X86;
 	if ((abi == Abi::AMD64_GNU) or (abi == Abi::AMD64_WINDOWS))
 		return Asm::InstructionSet::AMD64;
-	if ((abi == Abi::ARM32_GNU) or (abi == Abi::ARM64_GNU))
-		return Asm::InstructionSet::ARM;
+	if (abi == Abi::ARM32_GNU)
+		return Asm::InstructionSet::ARM32;
+	if (abi == Abi::ARM64_GNU)
+		return Asm::InstructionSet::ARM64;
 	//if (abi == Abi::NATIVE)
 	return Asm::InstructionSet::NATIVE;
 }
@@ -43,8 +45,10 @@ Abi guess_native_abi() {
 		return Abi::X86_WINDOWS;
 #endif
 		return Abi::X86_GNU;
-	} else if (config.instruction_set == Asm::InstructionSet::ARM) {
+	} else if (config.instruction_set == Asm::InstructionSet::ARM32) {
 		return Abi::ARM32_GNU;
+	} else if (config.instruction_set == Asm::InstructionSet::ARM64) {
+		return Abi::ARM64_GNU;
 	}
 	return Abi::UNKNOWN;
 }
