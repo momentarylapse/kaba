@@ -1,0 +1,12 @@
+class X
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	s = "hallo"
+
+func main()
+	let x = new X()
+	print(typeof(x))
+	print(x)
+
