@@ -404,7 +404,7 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeVolumeTexture);
-		class_derive_from(TypeTexture, true, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanVolumeTexture::__init__));
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
@@ -413,14 +413,14 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeCubeMap);
-		class_derive_from(TypeTexture, true, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanCubeMap::__init__));
 			func_add_param("size", TypeInt);
 			func_add_param("format", TypeString);
 
 
 	add_class(TypeStorageTexture);
-		class_derive_from(TypeTexture, true, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanStorageTexture::__init__));
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
@@ -429,7 +429,7 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeDepthBuffer);
-		class_derive_from(TypeTexture, true, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanDepthBuffer::__init__));
 			func_add_param("w", TypeInt);
 			func_add_param("h", TypeInt);
@@ -458,7 +458,7 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeUniformBuffer);
-		class_derive_from(TypeBuffer, false, false);
+		class_derive_from(TypeBuffer);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanUniformBuffer::__init__));
 			func_add_param("size", TypeInt);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, vul_p(&VulkanUniformBuffer::__delete__));
@@ -493,7 +493,7 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeGraphicsPipeline);
-		class_derive_from(TypePipeline, true, false);
+		class_derive_from(TypePipeline);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanGraphicsPipeline::__init__));
 			func_add_param("shader", TypeShader);
 			func_add_param("pass", TypeRenderPass);
@@ -529,14 +529,14 @@ void SIAddPackageVulkan(Context *c) {
 
 
 	add_class(TypeComputePipeline);
-		class_derive_from(TypePipeline, true, false);
+		class_derive_from(TypePipeline);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanComputePipeline::__init__));
 			func_add_param("layout", TypeString);
 			func_add_param("shader", TypeShader);
 
 
 	add_class(TypeRayPipeline);
-		class_derive_from(TypePipeline, true, false);
+		class_derive_from(TypePipeline);
 		class_add_func(Identifier::Func::INIT, TypeVoid, vul_p(&VulkanRayPipeline::__init__));
 			func_add_param("layout", TypeString);
 			func_add_param("shader", TypeShaderPList);

@@ -1,8 +1,8 @@
-class A
+struct A
 	var i: int
 	var b: B[]
 
-class B
+struct B
 	var j: int
 	func __init__()
 		j = 24

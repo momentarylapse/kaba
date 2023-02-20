@@ -54,7 +54,7 @@ public:
 
 void kaba_make_dict(Class *t, SyntaxTree *ps) {
 	const Class *p = t->param[0];
-	t->derive_from(TypeDictBase, false);
+	t->derive_from(TypeDictBase, DeriveFlags::SET_SIZE);
 	t->param = {p};
 	add_class(t);
 

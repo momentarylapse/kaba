@@ -437,7 +437,7 @@ void SIAddPackageOS(Context *c) {
 	//KabaSharedPointer<FileStream>::declare(TypeStreamSP);
 
 	add_class(TypeFileStream);
-		class_derive_from(TypeStream, false, false);
+		class_derive_from(TypeStream);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaFileStream::__delete__);
 		//class_add_func("getCDate", TypeDate, &File::GetDateCreation);
 		class_add_func("mtime", TypeDate, &os::fs::FileStream::mtime);
@@ -464,8 +464,8 @@ void SIAddPackageOS(Context *c) {
 
 
 	add_class(TypeFileError);
-		class_derive_from(TypeException, false, false);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaFileError::__init__, Flags::OVERRIDE);
+		class_derive_from(TypeException);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaFileError::__init__);
 		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &KabaFileError::__delete__, Flags::OVERRIDE);
 		class_set_vtable(KabaFileError);
 

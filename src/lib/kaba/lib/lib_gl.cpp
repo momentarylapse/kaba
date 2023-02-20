@@ -157,7 +157,7 @@ void SIAddPackageGl(Context *c) {
 		class_add_element(Identifier::SHARED_COUNT, TypeInt, gl_p(&nix::Texture::_pointer_ref_counter));
 
 	add_class(TypeVolumeTexture);
-		class_derive_from(TypeTexture, false, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::VolumeTexture::__init__));
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
@@ -166,23 +166,23 @@ void SIAddPackageGl(Context *c) {
 		class_add_func(Identifier::Func::DELETE, TypeVoid, gl_p(&nix::Texture::__delete__), Flags::OVERRIDE);
 
 	add_class(TypeImageTexture);
-		class_derive_from(TypeTexture, false, false);
-		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::ImageTexture::__init__), Flags::OVERRIDE);
+		class_derive_from(TypeTexture);
+		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::ImageTexture::__init__));
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 			func_add_param("format", TypeString);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, gl_p(&nix::Texture::__delete__), Flags::OVERRIDE);
 
 	add_class(TypeDepthBuffer);
-		class_derive_from(TypeTexture, false, false);
-		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::DepthBuffer::__init__), Flags::OVERRIDE);
+		class_derive_from(TypeTexture);
+		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::DepthBuffer::__init__));
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 			func_add_param("format", TypeString);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, gl_p(&nix::Texture::__delete__), Flags::OVERRIDE);
 
 	add_class(TypeCubeMap);
-		class_derive_from(TypeTexture, false, false);
+		class_derive_from(TypeTexture);
 		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::CubeMap::__init__));
 			func_add_param("size", TypeInt);
 			func_add_param("format", TypeString);
@@ -276,11 +276,11 @@ void SIAddPackageGl(Context *c) {
 			func_add_param("data", TypeDynamicArray);
 
 	add_class(TypeUniformBuffer);
-	class_derive_from(TypeBuffer, false, false);
+		class_derive_from(TypeBuffer);
 		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::UniformBuffer::__init__));
 
 	add_class(TypeShaderStorageBuffer);
-	class_derive_from(TypeBuffer, false, false);
+		class_derive_from(TypeBuffer);
 		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::ShaderStorageBuffer::__init__));
 
 		// drawing

@@ -168,16 +168,16 @@ void SIAddPackageHui(Context *c) {
 			func_add_param("checked", TypeBool);
 
 	add_class(TypeHuiToolbar);
-		class_derive_from(TypeObject, false, true);
+		class_derive_from(TypeObject);
 		class_add_func("set_by_id", TypeVoid, hui_p(&hui::Toolbar::set_by_id));
 			func_add_param("id", TypeString);
 		class_add_func("from_source", TypeVoid, hui_p(&hui::Toolbar::from_source));
 			func_add_param("source", TypeString);
 
 	add_class(TypeHuiPanel);
-		class_derive_from(TypeObject, false, true);
+		class_derive_from(TypeObject);
 		class_add_element("win", TypeHuiWindowP, GetDAPanel(win));
-		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&KabaPanelWrapper::__init0__), Flags::OVERRIDE);
+		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&KabaPanelWrapper::__init0__));
 		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&KabaPanelWrapper::__init2__));
 			func_add_param("parent", TypeHuiPanelP);
 			func_add_param("id", TypeString);
@@ -402,8 +402,8 @@ void SIAddPackageHui(Context *c) {
 
 
 	add_class(TypeHuiWindow);
-		class_derive_from(TypeHuiPanel, false, true);
-		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Window::__init_ext__), Flags::OVERRIDE);
+		class_derive_from(TypeHuiPanel);
+		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Window::__init_ext__));
 			func_add_param("title", TypeString);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
@@ -465,8 +465,8 @@ void SIAddPackageHui(Context *c) {
 #endif
 
 	add_class(TypeHuiGlWindow);
-		class_derive_from(TypeHuiWindow, false, true);
-		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::NixWindow::__init_ext__), Flags::OVERRIDE);
+		class_derive_from(TypeHuiWindow);
+		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::NixWindow::__init_ext__));
 			func_add_param("title", TypeString);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
@@ -476,8 +476,8 @@ void SIAddPackageHui(Context *c) {
 #endif
 
 	add_class(TypeHuiDialog);
-		class_derive_from(TypeHuiWindow, false, true);
-		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Dialog::__init_ext__), Flags::OVERRIDE);
+		class_derive_from(TypeHuiWindow);
+		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Dialog::__init_ext__));
 			func_add_param("title", TypeString);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
@@ -490,7 +490,7 @@ void SIAddPackageHui(Context *c) {
 
 	
 	add_class(TypeHuiPainter);
-		class_derive_from(TypeBasePainter, true, true);
+		class_derive_from(TypeBasePainter);
 
 	
 	// user interface

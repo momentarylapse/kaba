@@ -528,7 +528,7 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 
 	t->array_length = max(array_size, 0);
 	if (t->is_super_array() or t->is_dict()) {
-		t->derive_from(TypeDynamicArray, false); // we already set its size!
+		t->derive_from(TypeDynamicArray); // we already set its size!
 		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
 			do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
@@ -545,7 +545,7 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 	} else if (t->is_pointer_xfer()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
-		//t->derive_from(TypeSharedPointer, true);
+		//t->derive_from(TypeSharedPointer);
 		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
@@ -554,15 +554,15 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 			do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		add_missing_function_headers_for_class(t);
 	} else if (t->type == Class::Type::FUNCTION) {
-		t->derive_from(TypeFunction, true);
+		t->derive_from(TypeFunction);
 		t->param = params;
 	} else if (t->is_callable_fp()) {
-		t->derive_from(TypeCallableBase, true);
+		t->derive_from(TypeCallableBase);
 		t->functions.clear(); // don't inherit call() with specific types!
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_callable_bind()) {
-		t->derive_from(TypeCallableBase, true);
+		t->derive_from(TypeCallableBase);
 		t->functions.clear(); // don't inherit call() with specific types!
 		t->param = params;
 		//add_missing_function_headers_for_class(t); // later... depending on the bind variables

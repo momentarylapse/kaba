@@ -1524,17 +1524,17 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 		if (!parent->fully_parsed())
 			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
-		_class->derive_from(parent, true);
+		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
 		_class->flags = parent->flags;
-		offset0 = parent->size;
+		offset0 = _class->size;
 	}
 
 	if (try_consume(Identifier::IMPLEMENTS)) {
 		auto parent = parse_type(_namespace); // force
 		if (!parent->fully_parsed())
 			return nullptr;
-		_class->derive_from(parent, true);
-		offset0 = parent->size;
+		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
+		offset0 = _class->size;
 	}
 
 	// as shared|@noauto

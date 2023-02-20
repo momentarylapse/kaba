@@ -74,7 +74,7 @@ void SIAddPackageImage(Context *c) {
 
 
 	add_class(TypeBasePainter);
-		class_derive_from(TypeObject, false, true);
+		class_derive_from(TypeObject, DeriveFlags::COPY_VTABLE);
 		class_add_element("width", TypeInt, &Painter::width);
 		class_add_element("height", TypeInt, &Painter::height);
 		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &ImagePainter::__delete__);

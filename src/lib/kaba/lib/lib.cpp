@@ -381,10 +381,8 @@ void class_add_element_x(const string &name, const Class *type, int offset, Flag
 	cur_class->elements.add(ClassElement(name, type, offset));
 }
 
-void class_derive_from(const Class *parent, bool increase_size, bool copy_vtable) {
-	cur_class->derive_from(parent, increase_size);
-	if (copy_vtable)
-		cur_class->vtable = parent->vtable;
+void class_derive_from(const Class *parent, DeriveFlags flags) {
+	cur_class->derive_from(parent, flags);
 }
 
 void _class_add_member_func(const Class *ccc, Function *f, Flags flag) {

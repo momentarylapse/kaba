@@ -647,7 +647,15 @@ void Class::add_function(SyntaxTree *s, Function *f, bool as_virtual, bool overr
 	}
 }
 
-void Class::derive_from(const Class* root, bool increase_size) {
+DeriveFlags operator|(DeriveFlags a, DeriveFlags b) {
+	return (DeriveFlags)((int)a | (int)b);
+}
+
+int operator&(DeriveFlags a, DeriveFlags b) {
+	return ((int)a & (int)b);
+}
+
+void Class::derive_from(const Class* root, DeriveFlags derive_flags) {
 	if (config.verbose)
 		msg_write("DERIVE  " + long_name() + " from " + root->long_name());
 	parent = const_cast<Class*>(root);
@@ -661,7 +669,11 @@ void Class::derive_from(const Class* root, bool increase_size) {
 		if (f->name == Identifier::Func::ASSIGN)
 			continue;
 		Function *ff = f;
-		if ((f->name == Identifier::Func::INIT) or (f->name == Identifier::Func::DELETE)) {
+		if (f->name == Identifier::Func::INIT) {
+			if (!(derive_flags & DeriveFlags::KEEP_CONSTRUCTORS))
+				continue;
+			ff = f->create_dummy_clone(this);
+		} else if (f->name == Identifier::Func::DELETE) {
 			ff = f->create_dummy_clone(this);
 		} else if (f->name == Identifier::Func::SUBARRAY) {
 			ff = f->create_dummy_clone(this);
@@ -679,8 +691,10 @@ void Class::derive_from(const Class* root, bool increase_size) {
 		functions.add(ff);
 	}
 
-	if (increase_size)
-		size += parent->size;
+	if (derive_flags & DeriveFlags::SET_SIZE)
+		size = parent->size;
+
+	//if (derive_flags & DeriveFlags::COPY_VTABLE)
 	vtable = parent->vtable;
 	_vtable_location_compiler_ = vtable.data;
 	_vtable_location_target_ = vtable.data;

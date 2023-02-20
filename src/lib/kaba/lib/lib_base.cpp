@@ -734,8 +734,9 @@ void SIAddPackageBase(Context *c) {
 		class_set_vtable(KabaException);
 
 	add_class(TypeNoValueError);
-		class_derive_from(TypeException, false, true);
+		class_derive_from(TypeException);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaNoValueError::__init__);
+		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaNoValueError::__delete__, Flags::OVERRIDE);
 		class_set_vtable(KabaNoValueError);
 
 	add_func(Identifier::RAISE, TypeVoid, &kaba_raise_exception, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
