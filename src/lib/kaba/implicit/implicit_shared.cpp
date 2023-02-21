@@ -11,6 +11,8 @@
 
 namespace kaba {
 
+extern Class* TypeNone;
+
 /*static shared<Node> shared_p(shared<Node> n) {
 	return n->shift(0, tree->get_pointer(t->param[0]));
 }*/
@@ -24,6 +26,7 @@ void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
 	// do we really need this, or can we use auto cast xfer[X] -> shared[X]?!?
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"});
+	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {TypeNone}, {"other"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t_xfer}, {"p"}, nullptr, Flags::STATIC);
 }
@@ -35,8 +38,8 @@ void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer, {}, {});
-	//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_p}, {"other"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"});
+	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {TypeNone}, {"other"});
 	//auto assign = add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	//flags_set(assign->var.back()->flags, Flags::OUT);
 	//add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t->param[0]->get_pointer()}, {"p"}, nullptr, Flags::STATIC);
@@ -333,6 +336,7 @@ void AutoImplementer::_implement_functions_for_shared(const Class *t) {
 	implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
 	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_xfer})), t);
+	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {TypeNone})), t);
 	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
 	implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {t_xfer})), t);
 }
@@ -343,8 +347,8 @@ void AutoImplementer::_implement_functions_for_owned(const Class *t) {
 	implement_owned_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_owned_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_owned_clear(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {})), t);
-	//implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_p})), t);
 	implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t_xfer})), t);
+	implement_owned_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {TypeNone})), t);
 	//implement_owned_assign(prepare_auto_impl(t, t->get_member_func(Identifier::Func::ASSIGN, TypeVoid, {t})), t);
 	//implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::Func::SHARED_CREATE, t, {nullptr, tree->get_pointer(t->param[0])})), t);
 	implement_owned_give(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer, {})), t);

@@ -21,6 +21,7 @@ extern const Class *TypeStringAutoCast;
 extern const Class *TypeDictBase;
 extern const Class *TypeCallableBase;
 extern const Class *TypeFloat;
+extern const Class *TypeNone;
 extern const Class *TypePointerList;
 extern const Class *TypeObject;
 extern const Class *TypeObjectP;
@@ -333,6 +334,8 @@ void SIAddPackageBase(Context *c) {
 
 	// derived   (must be defined after the primitive types and the bases!)
 	TypePointer     = add_type_p(TypeVoid, Flags::FORCE_CALL_BY_VALUE); // substitute for all pointer types
+	TypeNone        = add_type_p(TypeVoid, Flags::FORCE_CALL_BY_VALUE); // type of <nil>
+	const_cast<Class*>(TypeNone)->name = "None";
 	TypePointerList = add_type_l(TypePointer);
 	TypeBoolList    = add_type_l(TypeBool);
 	TypeIntP        = add_type_p(TypeInt);
@@ -720,7 +723,7 @@ void SIAddPackageBase(Context *c) {
 	void *kaba_nil = nullptr;
 	bool kaba_true = true;
 	bool kaba_false = false;
-	add_const("nil", TypePointer, &kaba_nil);
+	add_const("nil", TypeNone, &kaba_nil);
 	add_const("false", TypeBool, &kaba_false);
 	add_const("true",  TypeBool, &kaba_true);
 

@@ -6,6 +6,8 @@
 
 namespace kaba {
 
+extern Class *TypeNone;
+
 void remove_enum_labels(const Class *type);
 
 ClassElement::ClassElement() {
@@ -57,6 +59,10 @@ bool func_pointer_match(const Class *given, const Class *wanted) {
 	return true;
 }
 
+bool is_same_kind_of_pointer(const Class *a, const Class *b) {
+	return (a->is_some_pointer() and (a->type == b->type));
+}
+
 bool type_match(const Class *given, const Class *wanted) {
 	// exact match?
 	if (given == wanted)
@@ -67,27 +73,21 @@ bool type_match(const Class *given, const Class *wanted) {
 	if ((given->is_pointer() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
 		return true;
 
-	// FIXME... quick'n'dirty hack to allow nil as parameter
-	if ((given == TypePointer) and wanted->is_pointer())
+	// allow nil as parameter
+	if ((given == TypeNone) and wanted->is_pointer())
 		return true;
 
 	/*if (given->is_() and wanted->is_pointer_xfer())
 		if (given->param[0] == wanted->param[0])
 			return true;*/
 
-	if (given->is_pointer_xfer() and wanted->is_pointer_owned())
+	/*if (given->is_pointer_xfer() and wanted->is_pointer_owned())
 		if (given->param[0] == wanted->param[0])
-			return true;
+			return true;*/
 
 	// compatible pointers (of same or derived class)
-	if ((given->is_pointer() and wanted->is_pointer()) or (given->is_pointer_xfer() and wanted->is_pointer_xfer())) {
+	if (is_same_kind_of_pointer(given, wanted)) {
 		// MAYBE: return type_match(given->param[0], wanted->param[0]);
-		if (given->param[0]->is_derived_from(wanted->param[0]))
-			return true;
-	}
-
-	// compatible shared pointers (of same or derived class)
-	if ((given->is_pointer_shared() and wanted->is_pointer_shared()) or (given->is_pointer_owned() and wanted->is_pointer_owned())) {
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}

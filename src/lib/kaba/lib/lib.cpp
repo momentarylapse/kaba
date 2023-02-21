@@ -37,6 +37,7 @@ const Class *TypeReg16;
 const Class *TypeReg8;
 const Class *TypeVoid;
 const Class *TypePointer;
+const Class *TypeNone; // nil
 const Class *TypeObject;
 const Class *TypeObjectP;
 const Class *TypeBool;

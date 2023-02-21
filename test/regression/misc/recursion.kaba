@@ -1,11 +1,11 @@
-struct A
-	var i: int
-	var b: B[]
-
 struct B
 	var j: int
 	func __init__()
 		j = 24
+
+struct A
+	var i: int
+	var b: B[]
 
 func main()
 	var b: B
