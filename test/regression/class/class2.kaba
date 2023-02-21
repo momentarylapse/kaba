@@ -1,5 +1,5 @@
 
-class c
+struct c
 	var a: int
 	var x: int[]
 

@@ -1,4 +1,4 @@
-class Test
+struct Test
 	var s: string
 	var i: float
 

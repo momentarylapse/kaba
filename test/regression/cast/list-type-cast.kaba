@@ -1,9 +1,9 @@
-class A
+struct A
 	var i: int
 	func __init__(_i: int)
 		i = _i
 
-class B extends A
+struct B extends A
 
 
 func f(a: A[])

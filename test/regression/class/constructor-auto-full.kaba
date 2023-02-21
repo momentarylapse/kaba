@@ -1,6 +1,6 @@
 
 
-class X
+struct X
 	var i: int
 	var s: string
 	var f: float

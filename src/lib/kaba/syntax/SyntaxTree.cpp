@@ -524,60 +524,8 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 	ns->classes.add(t);
 	t->name_space = ns;
 	
-	// ->derive_from() will overwrite params!!!
-
-	t->array_length = max(array_size, 0);
-	if (t->is_super_array() or t->is_dict()) {
-		t->derive_from(TypeDynamicArray); // we already set its size!
-		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
-			do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()), token_id);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_array()) {
-		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
-			do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), token_id);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_reference()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_xfer()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
-		//t->derive_from(TypeSharedPointer);
-		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_optional()) {
-		if (params[0]->needs_constructor() and !params[0]->get_default_constructor())
-			do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), token_id);
-		add_missing_function_headers_for_class(t);
-	} else if (t->type == Class::Type::FUNCTION) {
-		t->derive_from(TypeFunction);
-		t->param = params;
-	} else if (t->is_callable_fp()) {
-		t->derive_from(TypeCallableBase);
-		t->functions.clear(); // don't inherit call() with specific types!
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_callable_bind()) {
-		t->derive_from(TypeCallableBase);
-		t->functions.clear(); // don't inherit call() with specific types!
-		t->param = params;
-		//add_missing_function_headers_for_class(t); // later... depending on the bind variables
-	} else if (t->is_product()) {
-		int offset = 0;
-		for (auto&& [i,cc]: enumerate(params)) {
-			t->elements.add(ClassElement(format("e%d", i), cc, offset));
-			offset += cc->size;
-		}
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_enum()) {
-		t->flags = Flags::FORCE_CALL_BY_VALUE; // FORCE_CALL_BY_VALUE
-		kaba::add_class(t);
-		//add_missing_function_headers_for_class(t); // later... might need to parse @noauto first
-	}
+	AutoImplementer ai(nullptr, this);
+	ai.complete_type(t, array_size, token_id);
 	return t;
 }
 

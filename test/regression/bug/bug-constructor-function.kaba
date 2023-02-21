@@ -1,5 +1,5 @@
 
-class Tag
+struct Tag
 	var key: string
 	func __init__()
 		print("init")

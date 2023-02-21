@@ -1,4 +1,4 @@
-class X
+struct X
 	func __init__()
 		print("X.init")
 	func __delete__()

@@ -13,47 +13,81 @@
 namespace kaba {
 
 void AutoImplementer::_add_missing_function_headers_for_regular(Class *t) {
-	if (t->can_memcpy()) {
-		if (has_user_constructors(t)) {
-		} else {
-			if (t->needs_constructor())
-				add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
-			if (!flags_has(t->flags, Flags::NOAUTO))
-				if (can_fully_construct(t))
+	if (t->is_struct()) {
+		// force to have:
+		if (!flags_has(t->flags, Flags::NOAUTO)) {
+			if (t->parent) {
+				if (has_user_constructors(t)) {
+					// don't inherit constructors!
+					remove_inherited_constructors(t);
+				} else {
+					// only auto-implement matching constructors
+					redefine_inherited_constructors(t);
+				}
+			}
+			if (t->get_constructors().num == 0) {
+				if (t->needs_constructor())
+					add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
+				if (class_can_fully_construct(t))
 					add_full_constructor(t);
+			}
+			if (needs_new(t->get_destructor()))
+				add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {}, t->get_destructor());
+			if (needs_new(t->get_assign()))
+				add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+
 		}
+		if (t->get_assign() and t->can_memcpy()) {
+			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+		}
+
 	} else {
-		if (t->parent) {
+		// class X
+
+		// TODO rethink
+		if (t->can_memcpy()) {
 			if (has_user_constructors(t)) {
-				// don't inherit constructors!
-				remove_inherited_constructors(t);
 			} else {
-				// only auto-implement matching constructors
-				redefine_inherited_constructors(t);
+				if (t->needs_constructor())
+					add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
+				/*if (!flags_has(t->flags, Flags::NOAUTO))
+					if (can_fully_construct(t))
+						add_full_constructor(t);*/
+			}
+		} else {
+			if (t->parent) {
+				if (has_user_constructors(t)) {
+					// don't inherit constructors!
+					remove_inherited_constructors(t);
+				} else {
+					// only auto-implement matching constructors
+					redefine_inherited_constructors(t);
+				}
+			}
+			if (t->get_constructors().num == 0) {
+				if (t->needs_constructor())
+					add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
+				/*if (!flags_has(t->flags, Flags::NOAUTO))
+					if (can_fully_construct(t))
+						add_full_constructor(t);*/
+			}
+			if (needs_new(t->get_destructor()))
+				add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {}, t->get_destructor());
+		}
+
+		/*if (!flags_has(t->flags, Flags::NOAUTO) and needs_new(t->get_assign())) {
+			if (t->parent) {
+				// implement only if parent has also done so
+				if (class_can_assign(t->parent))
+					add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
+			} else {
+				if (class_can_elements_assign(t))
+					add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
 			}
 		}
-		if (t->get_constructors().num == 0) {
-			if (t->needs_constructor())
-				add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, t->get_default_constructor());
-			if (!flags_has(t->flags, Flags::NOAUTO))
-				if (can_fully_construct(t))
-					add_full_constructor(t);
-		}
-		if (needs_new(t->get_destructor()))
-			add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {}, t->get_destructor());
-	}
-	if (!flags_has(t->flags, Flags::NOAUTO) and needs_new(t->get_assign())) {
-		//add_func_header(t, NAME_FUNC_ASSIGN, TypeVoid, t, "other");
-		// implement only if parent has also done so
-		if (t->parent) {
-			if (class_can_assign(t->parent))
-				add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
-		} else {
-			add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"}, t->get_assign());
-		}
-	}
-	if (t->get_assign() and t->can_memcpy()) {
-		t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+		if (t->get_assign() and t->can_memcpy()) {
+			t->get_assign()->inline_no = InlineID::CHUNK_ASSIGN;
+		}*/
 	}
 }
 

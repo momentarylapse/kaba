@@ -183,6 +183,10 @@ bool Class::is_regular() const {
 	return type == Type::REGULAR;
 }
 
+bool Class::is_struct() const {
+	return type == Type::STRUCT;
+}
+
 bool Class::is_array() const {
 	return type == Type::ARRAY;
 }
@@ -352,7 +356,7 @@ bool Class::needs_destructor() const {
 	if (is_super_array() or is_dict() or is_optional())
 		return true;
 	if (is_array())
-		return param[0]->get_destructor();
+		return param[0]->needs_destructor();
 	if (parent) {
 		if (parent->get_destructor())
 			return true;

@@ -48,7 +48,8 @@ class Class : public Sharable<base::Empty> {
 public:
 
 	enum class Type {
-		REGULAR,
+		REGULAR, // COMMON/BASIC
+		STRUCT,
 		ARRAY,
 		SUPER_ARRAY,
 		POINTER,
@@ -78,6 +79,7 @@ public:
 	Flags flags;
 
 	bool is_regular() const;
+	bool is_struct() const;
 	bool is_array() const;
 	bool is_super_array() const;
 	bool is_dict() const;

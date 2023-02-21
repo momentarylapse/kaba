@@ -12,9 +12,9 @@
 namespace kaba {
 
 void AutoImplementer::_add_missing_function_headers_for_array(Class *t) {
-	if (t->needs_constructor())
+	if (t->param[0]->needs_constructor() and class_can_default_construct(t->param[0]))
 		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
-	if (t->needs_destructor())
+	if (t->param[0]->needs_destructor() and class_can_destruct(t->param[0]))
 		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	if (class_can_assign(t->param[0]))
 		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});

@@ -1,5 +1,5 @@
 
-class c
+struct c
 	var x: int
 	func __init__()
 		self.x = -1

@@ -1,4 +1,4 @@
-class Test
+struct Test
 	var a, b: int
 	func __delete__()
 		print("del {{a}}")

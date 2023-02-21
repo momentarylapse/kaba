@@ -39,6 +39,7 @@ public:
 	bool flag_allow_std_lib = true;
 	bool flag_disassemble = false;
 	bool flag_verbose = false;
+	bool flag_just_check_syntax = false;
 	string debug_func_filter = "*";
 	string debug_stage_filter = "*";
 	bool flag_show_consts = false;
@@ -77,10 +78,13 @@ public:
 			flag_allow_std_lib = false;
 		});
 		p.option("--remove-unused", "code size optimization", [] {
-				kaba::config.remove_unused = true;
+			kaba::config.remove_unused = true;
 		});
 		p.option("--no-simplify-consts", "don't evaluate constant terms at compile time", [] {
-				kaba::config.allow_simplify_consts = false;
+			kaba::config.allow_simplify_consts = false;
+		});
+		p.option("--just-check", "check syntax, don't compile", [this] {
+			flag_just_check_syntax = true;
 		});
 		p.option("--verbose", "lots of output", [this] {
 			flag_verbose = true;
@@ -157,8 +161,8 @@ public:
 		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
 			init_environment();
 
-			auto s = compile_file(a[0]);
-			if (!s)
+			auto s = compile_file(a[0], flag_just_check_syntax);
+			if (!s or flag_just_check_syntax)
 				return;
 
 			if (out_file) {
@@ -257,13 +261,13 @@ public:
 			msg_write(format("%12s %-20s %s", c->type->name, c->str(), c->value.hex()));
 	}
 
-	shared<kaba::Module> compile_file(const Path &_filename) {
+	shared<kaba::Module> compile_file(const Path &_filename, bool flag_just_check_syntax) {
 		auto filename = _filename;
 		if (installed and filename.extension() != "kaba")
 			filename = try_get_installed_app_file(filename);
 
 		try {
-			auto s = kaba::default_context->load_module(filename);
+			auto s = kaba::default_context->load_module(filename, flag_just_check_syntax);
 			if (symbols_out_file)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts)

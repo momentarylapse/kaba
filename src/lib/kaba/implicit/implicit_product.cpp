@@ -16,7 +16,7 @@ namespace kaba {
 void AutoImplementer::_add_missing_function_headers_for_product(Class *t) {
 	if (t->needs_constructor())
 		add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
-	if (can_fully_construct(t))
+	if (class_can_fully_construct(t))
 		add_full_constructor(t);
 	if (t->needs_destructor())
 		add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});

@@ -114,11 +114,17 @@ public:
 	void remove_inherited_constructors(Class *t);
 	void redefine_inherited_constructors(Class *t);
 	void add_full_constructor(Class *t);
-	bool can_fully_construct(const Class *t);
+	static bool class_can_fully_construct(const Class *t);
+	static bool class_can_default_construct(const Class *t);
+	static bool class_can_destruct(const Class *t);
 	static bool class_can_assign(const Class *t);
+	static bool class_can_elements_assign(const Class *t);
 	static bool class_can_equal(const Class *t);
 
 	static Function* prepare_auto_impl(const Class *t, Function *f);
+
+
+	void complete_type(Class *t, int array_size, int token_id);
 
 
 	SyntaxTree *tree;

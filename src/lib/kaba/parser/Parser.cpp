@@ -1503,9 +1503,17 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	}
 }
 
+Class::Type parse_class_type(const string& e) {
+	if (e == Identifier::INTERFACE)
+		return Class::Type::INTERFACE;
+	if (e == Identifier::STRUCT)
+		return Class::Type::STRUCT;
+	return Class::Type::REGULAR;
+}
+
 Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	offset0 = 0;
-	bool as_interface = (Exp.consume() == Identifier::INTERFACE); // class/struct/interface
+	auto class_type = parse_class_type(Exp.consume()); // class/struct/interface
 	string name = Exp.cur;
 	int token_id = Exp.consume_token();
 
@@ -1515,8 +1523,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	if (!_class)
 		tree->module->do_error_internal("class declaration ...not found " + name);
 	_class->token_id = token_id;
-	if (as_interface)
-		_class->type = Class::Type::INTERFACE;
+	_class->type = class_type;
 
 	// parent class
 	if (try_consume(Identifier::EXTENDS)) {
@@ -1573,7 +1580,7 @@ bool Parser::parse_class(Class *_namespace) {
 
 		if (Exp.cur == Identifier::ENUM) {
 			parse_enum(_class);
-		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::INTERFACE)) {
+		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
 			int cur_token = Exp.cur_token();
 			if (!parse_class(_class)) {
 				sub_class_token_ids.add(cur_token);
