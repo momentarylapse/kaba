@@ -10,6 +10,7 @@
 #if HAS_LIB_VULKAN
 
 #include "../base/base.h"
+#include "../base/pointer.h"
 
 namespace vulkan {
 
@@ -29,7 +30,7 @@ namespace vulkan {
 		void setup_debug_messenger();
 		void _ensure_rtx_extensions();
 
-		static Instance *create(const Array<string> &op);
+		static xfer<Instance> create(const Array<string> &op);
 	};
 }
 

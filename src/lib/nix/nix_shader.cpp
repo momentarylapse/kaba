@@ -25,8 +25,6 @@ Shader *Shader::default_load = nullptr;
 
 string vertex_module_default = "vertex-default-nix";
 
-static shared_array<Shader> shaders;
-
 int current_program = 0;
 
 string shader_error;
@@ -244,7 +242,6 @@ void Shader::update(const string &source) {
 Shader *Shader::create(const string &source) {
 	shared<Shader> s = new Shader;
 	s->update(source);
-	shaders.add(s);
 	return s.get();
 }
 
@@ -276,13 +273,9 @@ void Shader::find_locations() {
 	link_uniform_block("Fog", 3);
 }
 
-Shader *Shader::load(const Path &filename) {
-	if (filename.is_empty())
-		return default_load;
-
-	for (Shader *s: weak(shaders))
-		if (s->filename == filename)
-			return (s->program >= 0) ? s : nullptr;
+xfer<Shader> Shader::load(const Path &filename) {
+	//if (filename.is_empty())
+	//	return default_load;
 
 	msg_write("loading shader: " + filename.str());
 
@@ -310,12 +303,6 @@ Shader::~Shader() {
 	if (program >= 0)
 		glDeleteProgram(program);
 	program = -1;
-}
-
-void delete_all_shaders() {
-	return;
-	shaders.clear();
-	init_shaders();
 }
 
 void set_shader(Shader *s) {

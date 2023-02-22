@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "lib.h"
 #include "list.h"
+#include "shared.h"
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 
@@ -91,6 +92,7 @@ void SIAddPackageKaba(Context *c) {
 
 	auto TypeContext = add_type  ("Context", sizeof(Context));
 	auto TypeContextP = add_type_p(TypeContext);
+	auto TypeContextXfer = add_type_p_xfer(TypeContext);
 
 	
 	auto TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
@@ -102,6 +104,7 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeConstantP = add_type_p(TypeConstant);
 	auto TypeConstantPList = add_type_l(TypeConstantP);
 	
+	kaba_create_pointer_xfer(TypeContextXfer);
 	
 	add_class(TypeClassElement);
 		class_add_element("name", TypeString, &ClassElement::name);
@@ -219,7 +222,7 @@ void SIAddPackageKaba(Context *c) {
 			func_add_param("cmd", TypeString);
 		class_add_func("get_dynamic_type", TypeClassP, &Context::get_dynamic_type, Flags::PURE);
 			func_add_param("p", TypePointer);
-		class_add_func("create", TypeContextP, &Context::create, Flags::STATIC);
+		class_add_func("create", TypeContextXfer, &Context::create, Flags::STATIC);
 
 	add_func("disassemble", TypeString, &Asm::disassemble, Flags::STATIC | Flags::PURE);
 		func_add_param("p", TypePointer);

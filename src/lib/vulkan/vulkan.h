@@ -24,18 +24,16 @@
 #include "AccelerationStructure.h"
 
 
-
 namespace vulkan {
-
 
 	void rebuild_pipelines();
 
 
-	GLFWwindow* create_window(const string &title, int width, int height);
+	xfer<GLFWwindow> create_window(const string &title, int width, int height);
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
 
-	Instance *init(const Array<string> &op);
+	xfer<Instance> init(const Array<string> &op);
 
 
 #define DECLARE_EXT_H(NAME) extern PFN_##NAME _##NAME;

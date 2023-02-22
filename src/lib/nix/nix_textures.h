@@ -16,11 +16,7 @@
 
 namespace nix{
 
-// textures
 void init_textures();
-void release_textures();
-void reincarnate_textures();
-
 
 
 class Texture : public Sharable<base::Empty> {
@@ -67,7 +63,7 @@ public:
 
 	void _cdecl set_options(const string &op) const;
 
-	static Texture* _cdecl load(const Path &filename);
+	static xfer<Texture> _cdecl load(const Path &filename);
 };
 
 

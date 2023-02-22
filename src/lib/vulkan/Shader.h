@@ -29,8 +29,8 @@ namespace vulkan{
 		VkShaderModule get_module(VkShaderStageFlagBits stage) const;
 
 		static Path directory;
-		static Shader* load(const Path &filename);
-		static Shader* create(const string &source);
+		static xfer<Shader> load(const Path &filename);
+		static xfer<Shader> create(const string &source);
 	};
 
 };

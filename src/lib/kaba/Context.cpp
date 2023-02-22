@@ -215,7 +215,7 @@ void Context::clean_up() {
 
 extern Context *_secret_lib_context_;
 
-Context *Context::create() {
+xfer<Context> Context::create() {
 	auto c = new Context;
 	c->packages = _secret_lib_context_->packages;
 	c->type_casts = _secret_lib_context_->type_casts;

@@ -185,18 +185,6 @@ void init() {
 
 void kill() {
 	msg_write("nix.kill");
-	kill_device_objects();
-}
-
-// erlaubt dem Device einen Neustart
-void kill_device_objects() {
-	// textures
-	release_textures();
-}
-
-void reincarnate_device_objects() {
-	// textures
-	reincarnate_textures();
 }
 
 void flush() {

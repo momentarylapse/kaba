@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "lib.h"
+#include "shared.h"
 
 #ifdef _X_USE_IMAGE_
 	#include "../../image/image.h"
@@ -21,6 +22,7 @@ extern const Class *TypePath;
 
 const Class *TypeBasePainter;
 const Class *TypeBasePainterP;
+const Class *TypeBasePainterXfer;
 
 
 
@@ -28,9 +30,13 @@ void SIAddPackageImage(Context *c) {
 	add_package(c, "image");
 
 	TypeImage = add_type("Image", sizeof(Image));
-	auto TypeImageP = add_type_p(TypeImage);
+	auto TypeImageXfer = add_type_p_xfer(TypeImage);
 	TypeBasePainter = add_type("Painter", sizeof(Painter), Flags::NONE, TypeImage);
 	TypeBasePainterP = add_type_p(TypeBasePainter);
+	TypeBasePainterXfer = add_type_p_xfer(TypeBasePainter);
+
+	kaba_create_pointer_xfer(TypeImageXfer);
+	kaba_create_pointer_xfer(TypeBasePainterXfer);
 
 	
 	add_class(TypeImage);
@@ -50,11 +56,11 @@ void SIAddPackageImage(Context *c) {
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 			func_add_param("c", TypeColor);
-		class_add_func("load", TypeImageP, &Image::load, Flags::STATIC);
+		class_add_func("load", TypeImageXfer, &Image::load, Flags::STATIC);
 			func_add_param("filename", TypePath);
 		class_add_func("save", TypeVoid, &Image::save);
 			func_add_param("filename", TypePath);
-		class_add_func("scale", TypeImageP, &Image::scale, Flags::CONST);
+		class_add_func("scale", TypeImageXfer, &Image::scale, Flags::CONST);
 			func_add_param("width", TypeInt);
 			func_add_param("height", TypeInt);
 		class_add_func("set_pixel", TypeVoid, &Image::set_pixel);
@@ -70,7 +76,7 @@ void SIAddPackageImage(Context *c) {
 		class_add_func("clear", TypeVoid, &Image::clear);
 		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &Image::__assign__);
 			func_add_param("other", TypeImage);
-		class_add_func("start_draw", TypeBasePainterP, &Image::start_draw);
+		class_add_func("start_draw", TypeBasePainterXfer, &Image::start_draw);
 
 
 	add_class(TypeBasePainter);

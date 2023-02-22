@@ -22,9 +22,7 @@
 
 namespace nix{
 
-shared_array<Texture> textures;
 Texture *default_texture = nullptr;
-Texture *tex_text = nullptr;
 int tex_cube_level = -1;
 
 
@@ -35,28 +33,16 @@ const unsigned int NO_TEXTURE = 0xffffffff;
 // common stuff
 //--------------------------------------------------------------------------------------------------
 
-void init_textures() {
-
-	default_texture = new Texture(16, 16, "rgba:i8");
+Texture* create_white_texture() {
+	auto t = new Texture(4, 4, "rgba:i8");
 	Image image;
-	image.create(16, 16, White);
-	default_texture->write(image);
-
-	tex_text = new Texture;
+	image.create(4, 4, White);
+	t->write(image);
+	return t;
 }
 
-void release_textures() {
-	for (Texture *t: weak(textures)) {
-		//glBindTexture(GL_TEXTURE_2D, t->texture);
-		glDeleteTextures(1, &t->texture);
-	}
-}
-
-void reincarnate_textures() {
-	for (Texture *t: weak(textures)) {
-		//glGenTextures(1, &t->texture);
-		t->reload();
-	}
+void init_textures() {
+	default_texture = create_white_texture();
 }
 
 
@@ -167,13 +153,8 @@ void Texture::__delete__() {
 	this->~Texture();
 }
 
-void TextureClear() {
-	msg_error("Texture Clear");
-	for (Texture *t: weak(textures))
-		msg_write(t->filename.str());
-}
-
 Texture *Texture::load(const Path &filename) {
+	// return create_white_texture() ?
 	if (filename.is_empty())
 		return nullptr;
 
@@ -185,7 +166,6 @@ Texture *Texture::load(const Path &filename) {
 	try {
 		t->filename = filename;
 		t->reload();
-		textures.add(t);
 		return t;
 	} catch (...) {
 		delete t;

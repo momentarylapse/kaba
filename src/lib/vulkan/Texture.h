@@ -54,7 +54,7 @@ namespace vulkan {
 		mutable VkFilter minfilter, magfilter;
 		mutable VkSamplerAddressMode address_mode;
 
-		static Texture* load(const Path &filename);
+		static xfer<Texture> load(const Path &filename);
 	};
 
 	class VolumeTexture : public Texture {

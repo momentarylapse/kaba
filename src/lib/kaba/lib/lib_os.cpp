@@ -9,6 +9,7 @@
 #include "../../config.h"
 #include "lib.h"
 #include "list.h"
+#include "shared.h"
 #include "../dynamic/exception.h"
 #include "../../base/callable.h"
 
@@ -22,8 +23,8 @@ extern const Class *TypeDate;
 extern const Class *TypeStringList;
 const Class *TypePath;
 const Class *TypePathList;
-const Class *TypeStreamP;
-//const Class *TypeStreamSP;
+//const Class *TypeStreamP;
+const Class *TypeStreamShared;
 
 const Class* TypeCallback;
 const Class* TypeCallbackString;
@@ -38,7 +39,7 @@ Any _os_config_get(Configuration &c, const string &key) {
 }
 
 
-static Stream *_kaba_stdin = nullptr;
+static shared<Stream> _kaba_stdin;
 
 
 #pragma GCC push_options
@@ -101,7 +102,7 @@ public:
 		msg_write(stream->get_pos());
 		new(this) F(stream);
 	}*/
-	void __init__(Stream* stream) {
+	void __init__(shared<Stream> stream) {
 		new(this) F(stream);
 	}
 	void __delete__() {
@@ -135,10 +136,10 @@ public:
 		using KF = KabaFormatter<F>;
 		add_class(c);
 			//class_add_element("stream", TypeStreamSP, &KF::stream);
-		class_add_element("stream", TypeStreamP, &KF::stream);
+			class_add_element("stream", TypeStreamShared, &KF::stream);
 			class_add_func(Identifier::Func::INIT, TypeVoid, &KF::__init__);
-				//func_add_param("stream", TypeStreamSP);
-				func_add_param("stream", TypeStreamP);
+				func_add_param("stream", TypeStreamShared);
+				//func_add_param("stream", TypeStreamP);
 			class_add_func(Identifier::Func::DELETE, TypeVoid, &KF::__delete__);
 			class_add_func("__lshift__", TypeVoid, &KF::_write_bool, Flags::RAISES_EXCEPTIONS);
 				func_add_param("b", TypeBool);
@@ -171,7 +172,7 @@ class KabaFileNotWritableError : public KabaFileError
 
 
 
-os::fs::FileStream* kaba_file_open(const Path &filename, const string &mode) {
+xfer<os::fs::FileStream> kaba_file_open(const Path &filename, const string &mode) {
 	KABA_EXCEPTION_WRAPPER2(return os::fs::open(filename, mode), KabaFileError);
 	return nullptr;
 }
@@ -406,23 +407,30 @@ void SIAddPackageOS(Context *c) {
 	add_package(c, "os");
 
 	const Class *TypeStream = add_type("Stream", sizeof(Stream));
-	TypeStreamP = add_type_p(TypeStream);
-	//TypeStreamSP = add_type_p(TypeStream, Flags::SHARED);
-	const Class *TypeFileStream = add_type("FileStream", sizeof(os::fs::FileStream));
-	const Class *TypeFileStreamP = add_type_p(TypeFileStream);
-	const Class *TypeBinaryFormatter = add_type("BinaryFormatter", sizeof(BinaryFormatter));
-	const Class *TypeTextLinesFormatter = add_type("TextLinesFormatter", sizeof(TextLinesFormatter));
-	const Class *TypeFilesystem = add_type("fs", 0);
-	const Class *TypeFileError = add_type("FileError", sizeof(KabaFileError));
+	//TypeStreamP = add_type_p(TypeStream);
+	auto TypeStreamXfer = add_type_p_xfer(TypeStream);
+	TypeStreamShared = add_type_p_shared(TypeStream);
+	auto TypeFileStream = add_type("FileStream", sizeof(os::fs::FileStream));
+	auto TypeFileStreamXfer = add_type_p_xfer(TypeFileStream);
+	auto TypeFileStreamShared = add_type_p_shared(TypeFileStream);
+	auto TypeBinaryFormatter = add_type("BinaryFormatter", sizeof(BinaryFormatter));
+	auto TypeTextLinesFormatter = add_type("TextLinesFormatter", sizeof(TextLinesFormatter));
+	auto TypeFilesystem = add_type("fs", 0);
+	auto TypeFileError = add_type("FileError", sizeof(KabaFileError));
 	//Class *TypeFileNotFoundError= add_type  ("FileError", sizeof(KabaFileNotFoundError));
 	//Class *TypeFileNotWritableError= add_type  ("FileError", sizeof(KabaFileNotWritableError));
 	auto TypeCommandLineParser = add_type("CommandLineParser", sizeof(CommandLineParser));
 	TypeOsConfiguration = add_type("Configuration", sizeof(Configuration));
-	const Class *TypeTerminal = add_type("terminal", 0);
+	auto TypeTerminal = add_type("terminal", 0);
 
 	TypeCallback = add_type_f(TypeVoid, {});
 	TypeCallbackString = add_type_f(TypeVoid, {TypeString});
 	auto TypeCallbackStringList = add_type_f(TypeVoid, {TypeStringList});
+
+	kaba_create_pointer_xfer(TypeStreamXfer);
+	kaba_create_pointer_xfer(TypeFileStreamXfer);
+	kaba_create_pointer_shared<Stream>(TypeStreamShared, TypeStreamXfer);
+	kaba_create_pointer_shared<os::fs::FileStream>(TypeFileStreamShared, TypeFileStreamXfer);
 
 	add_class(TypeStream);
 		class_add_element(Identifier::SHARED_COUNT, TypeInt, evil_member_offset(os::fs::FileStream, _pointer_ref_counter));
@@ -536,7 +544,7 @@ void SIAddPackageOS(Context *c) {
 
 	// file access
 	add_class(TypeFilesystem);
-		class_add_func("open", TypeFileStreamP, &kaba_file_open, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
+		class_add_func("open", TypeFileStreamXfer, &kaba_file_open, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 			func_add_param("filename", TypePath);
 			func_add_param("mode", TypeString);
 		class_add_func("read", TypeString, &kaba_file_read, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
@@ -583,7 +591,7 @@ void SIAddPackageOS(Context *c) {
 		
 		if (!_kaba_stdin)
 			_kaba_stdin = new os::fs::FileStream(0);
-		add_ext_var("stdin", TypeFileStreamP, &_kaba_stdin);
+		add_ext_var("stdin", TypeFileStreamShared, &_kaba_stdin);
 	
 	add_class(TypeTerminal);
 		class_add_const("RED", TypeString, &os::terminal::RED);

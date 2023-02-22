@@ -261,7 +261,7 @@ static shaderc_compiler_t shaderc = nullptr;
 		return m;
 	}
 
-	Shader *Shader::create(const string &source) {
+	xfer<Shader> Shader::create(const string &source) {
 		auto parts = get_shader_parts(source);
 
 		if (parts.num == 0)
@@ -294,7 +294,7 @@ static shaderc_compiler_t shaderc = nullptr;
 	}
 #else
 
-	Shader *Shader::create(const string &source) {
+	xfer<Shader> Shader::create(const string &source) {
 		throw Exception("Shader.crete() requires this program to be compiled with shaderc support!");
 		return nullptr;
 	}
@@ -316,7 +316,7 @@ static shaderc_compiler_t shaderc = nullptr;
 	}
 
 
-	Shader* Shader::load(const Path &_filename) {
+	xfer<Shader> Shader::load(const Path &_filename) {
 		if (!_filename)
 			return nullptr;
 		Path filename = directory | _filename;

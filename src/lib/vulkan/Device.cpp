@@ -342,7 +342,7 @@ Requirements parse_requirements(const Array<string> &op) {
 	return req;
 }
 
-Device *Device::create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op) {
+xfer<Device> Device::create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op) {
 	auto surface = instance->create_surface(window);
 
 	//op.append({"graphics", "present", "swapchain", "anisotropy"});

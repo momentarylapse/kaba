@@ -112,9 +112,7 @@ int parse_version(const string &v) {
 	return VK_MAKE_VERSION(vv[0]._int(), 0, 0);
 }
 
-Instance *Instance::create(const Array<string> &op) {
-
-
+xfer<Instance> Instance::create(const Array<string> &op) {
 	string name = "no name";
 	int api = VK_API_VERSION_1_0;
 	for (auto &o: op) {

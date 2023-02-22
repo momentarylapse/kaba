@@ -117,11 +117,11 @@ SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device, VkSurf
 	return details;
 }
 
-DepthBuffer *SwapChain::create_depth_buffer() {
+xfer<DepthBuffer> SwapChain::create_depth_buffer() {
 	return new DepthBuffer(width, height, device->find_depth_format(), false);
 }
 
-RenderPass *SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
+xfer<RenderPass> SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
 	return new RenderPass({image_format, depth_buffer->image.format}, "clear,present");
 }
 

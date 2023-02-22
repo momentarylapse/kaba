@@ -203,7 +203,7 @@ void Texture::_destroy() {
 	mip_levels = 1;
 }
 
-Texture* Texture::load(const Path &filename) {
+xfer<Texture> Texture::load(const Path &filename) {
 	if (verbosity >= 1)
 		msg_write(" load texture " + filename.str());
 	if (!filename)
@@ -215,12 +215,10 @@ Texture* Texture::load(const Path &filename) {
 
 
 void Texture::_load(const Path &filename) {
-	Image *im = Image::load(filename);
-	if (!im) {
+	auto im = ownify(Image::load(filename));
+	if (!im)
 		throw Exception("failed to load texture image!");
-	}
 	write(*im);
-	delete im;
 }
 
 void Texture::write(const Image &im) {

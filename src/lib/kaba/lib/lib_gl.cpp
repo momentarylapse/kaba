@@ -1,5 +1,6 @@
 #include "../kaba.h"
 #include "lib.h"
+#include "shared.h"
 #include "../dynamic/exception.h"
 
 #if __has_include("../../nix/nix.h") && HAS_LIB_GL
@@ -19,17 +20,17 @@ namespace kaba {
 #pragma GCC optimize("no-inline")
 #pragma GCC optimize("0")
 
-nix::Texture* __LoadTexture(const Path &filename) {
+xfer<nix::Texture> __LoadTexture(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER(return nix::Texture::load(filename));
 	return nullptr;
 }
 
-nix::Shader* __LoadShader(const Path &filename) {
+xfer<nix::Shader> __LoadShader(const Path &filename) {
 	KABA_EXCEPTION_WRAPPER(return nix::Shader::load(filename));
 	return nullptr;
 }
 
-nix::Shader* __CreateShader(const string &source) {
+xfer<nix::Shader> __CreateShader(const string &source) {
 	KABA_EXCEPTION_WRAPPER(return nix::Shader::create(source));
 	return nullptr;
 }
@@ -77,6 +78,7 @@ extern const Class *TypePath;
 const Class *TypeVertexBuffer;
 const Class *TypeVertexBufferP;
 const Class *TypeTexture;
+const Class *TypeTextureXfer;
 const Class *TypeTextureP;
 const Class *TypeTexturePList;
 const Class *TypeVolumeTexture;
@@ -88,6 +90,7 @@ const Class *TypeFrameBufferP;
 const Class *TypeCubeMap;
 const Class *TypeShader;
 const Class *TypeShaderP;
+const Class *TypeShaderXfer;
 const Class *TypeBuffer;
 const Class *TypeUniformBuffer;
 const Class *TypeShaderStorageBuffer;
@@ -98,6 +101,7 @@ void SIAddPackageGl(Context *c) {
 	TypeVertexBuffer	= add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
 	TypeVertexBufferP	= add_type_p(TypeVertexBuffer);
 	TypeTexture			= add_type  ("Texture", sizeof(nix::Texture));
+	TypeTextureXfer		= add_type_p_xfer(TypeTexture);
 	TypeTextureP		= add_type_p(TypeTexture);
 	TypeTexturePList	= add_type_l(TypeTextureP);
 	TypeImageTexture	= add_type  ("ImageTexture", sizeof(nix::Texture));
@@ -109,6 +113,7 @@ void SIAddPackageGl(Context *c) {
 	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
 	TypeShader			= add_type  ("Shader", sizeof(nix::Shader));
 	TypeShaderP			= add_type_p(TypeShader);
+	TypeShaderXfer		= add_type_p_xfer(TypeShader);
 	TypeBuffer			= add_type  ("Buffer", sizeof(nix::Buffer));
 	TypeUniformBuffer	= add_type  ("UniformBuffer", sizeof(nix::Buffer));
 	TypeShaderStorageBuffer = add_type  ("ShaderStorageBuffer", sizeof(nix::Buffer));
@@ -116,6 +121,9 @@ void SIAddPackageGl(Context *c) {
 	auto TypeStencilOp = add_type_e("StencilOp");
 	auto TypeFogMode = add_type_e("FogMode");
 	auto TypeCullMode = add_type_e("CullMode");
+
+	kaba_create_pointer_xfer(TypeTextureXfer);
+	kaba_create_pointer_xfer(TypeShaderXfer);
 	
 	add_class(TypeVertexBuffer);
 		class_add_func(Identifier::Func::INIT, TypeVoid, gl_p(&nix::VertexBuffer::__init__));
@@ -150,7 +158,7 @@ void SIAddPackageGl(Context *c) {
 			func_add_param("data", TypeFloatList);
 		class_add_func("write_float", TypeVoid, gl_p(&nix::Texture::write_float));
 			func_add_param("data", TypeFloatList);
-		class_add_func("load", TypeTextureP, gl_p(&__LoadTexture), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
+		class_add_func("load", TypeTextureXfer, gl_p(&__LoadTexture), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 			func_add_param("filename", TypePath);
 		class_add_element("width", TypeInt, gl_p(&nix::Texture::width));
 		class_add_element("height", TypeInt, gl_p(&nix::Texture::height));
@@ -253,9 +261,9 @@ void SIAddPackageGl(Context *c) {
 			func_add_param("nx", TypeInt);
 			func_add_param("ny", TypeInt);
 			func_add_param("nz", TypeInt);
-		class_add_func("load", TypeShaderP, gl_p(&__LoadShader), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
+		class_add_func("load", TypeShaderXfer, gl_p(&__LoadShader), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 			func_add_param("filename", TypePath);
-		class_add_func("create", TypeShaderP, gl_p(&__CreateShader), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
+		class_add_func("create", TypeShaderXfer, gl_p(&__CreateShader), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 			func_add_param("source", TypeString);
 		class_add_func("get_default_3d", TypeShaderP, gl_p(&__LoadShaderDefault3d), Flags::STATIC);
 		class_add_func("get_default_2d", TypeShaderP, gl_p(&__LoadShaderDefault2d), Flags::STATIC);

@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "../../config.h"
 #include "lib.h"
+#include "shared.h"
 #include "../../base/callable.h"
 
 #if __has_include("../../hui/hui.h")
@@ -120,47 +121,6 @@ extern const Class* TypeOsConfiguration;
 extern const Class* TypeNone;
 const Class *TypeHuiWindowP;
 
-template<class T>
-class XShared : public shared<T> {
-public:
-	void __init__() {
-		new(this) XShared();
-	}
-	void __assign_raw__(T *p) {
-		this->set(p);
-	}
-	void __assign__(shared<T> p) {
-		this->set(p.get());
-	}
-	static shared<T> create(T *p) {
-		return p;
-	}
-};
-
-void create_xfer(const Class *tt) {
-	auto t = const_cast<Class*>(tt);
-
-	add_class(t);
-		add_operator(OperatorID::ASSIGN, TypeVoid, t, t, InlineID::POINTER_ASSIGN);
-}
-
-template<class T>
-void create_shared_pointer(const Class *tt, const Class *t_xfer) {
-	auto t = const_cast<Class*>(tt);
-
-	add_class(t);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XShared<T>::__init__);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &XShared<T>::clear);
-		class_add_func(Identifier::Func::SHARED_CLEAR, TypeVoid, &XShared<T>::clear);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XShared<T>::__assign_raw__);
-			func_add_param("other", t_xfer);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XShared<T>::__assign_raw__);
-			func_add_param("other", TypeNone);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XShared<T>::__assign__);
-			func_add_param("other", t);
-		class_add_func(Identifier::Func::SHARED_CREATE, t, &XShared<T>::create, Flags::STATIC);
-			func_add_param("p", t_xfer);
-}
 
 
 void SIAddPackageHui(Context *c) {
@@ -187,12 +147,12 @@ void SIAddPackageHui(Context *c) {
 	auto TypeCallbackPainter = add_type_f(TypeVoid, {TypeHuiPainter});
 	auto TypeCallbackPath = add_type_f(TypeVoid, {TypePath});
 
-	create_xfer(TypeHuiMenuXfer);
-	create_xfer(TypeHuiPanelXfer);
-	create_xfer(TypeHuiWindowXfer);
+	kaba_create_pointer_xfer(TypeHuiMenuXfer);
+	kaba_create_pointer_xfer(TypeHuiPanelXfer);
+	kaba_create_pointer_xfer(TypeHuiWindowXfer);
 
-	create_shared_pointer<hui::Panel>(TypeHuiPanelShared, TypeHuiPanelXfer);
-	create_shared_pointer<hui::Window>(TypeHuiWindowShared, TypeHuiWindowXfer);
+	kaba_create_pointer_shared<hui::Panel>(TypeHuiPanelShared, TypeHuiPanelXfer);
+	kaba_create_pointer_shared<hui::Window>(TypeHuiWindowShared, TypeHuiWindowXfer);
 
 	add_class(TypeHuiMenu);
 		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Menu::__init__));
