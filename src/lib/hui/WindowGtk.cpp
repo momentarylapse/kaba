@@ -402,14 +402,14 @@ void run(Window *win, Callback cb) {
 	win->_run(cb);
 }
 
-void Window::set_menu(Menu *_menu) {
+void Window::set_menu(xfer<Menu> _menu) {
 #if GTK_CHECK_VERSION(4,0,0)
 	//action_group = g_simple_action_group_new();
 
 	if (_menu) {
 		menu = _menu;
 
-		_connect_menu_to_panel(menu);
+		_connect_menu_to_panel(menu.get());
 
 		gtk_popover_menu_bar_set_menu_model(GTK_POPOVER_MENU_BAR(menubar), G_MENU_MODEL(menu->gmenu));
 		gtk_widget_show(menubar);
@@ -436,7 +436,7 @@ void Window::set_menu(Menu *_menu) {
 		gtk_menu.clear();
 		/*menu->set_win(NULL);
 		}*/
-		delete(menu);
+		menu = nullptr;
 	}
 
 	

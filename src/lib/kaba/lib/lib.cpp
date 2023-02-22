@@ -130,6 +130,7 @@ Flags flags_mix(const Array<Flags> &f) {
 	return r;
 }
 
+
 void add_package(Context *c, const string &name, Flags flags) {
 	for (auto &p: c->packages)
 		if (p->filename.str() == name) {
@@ -160,15 +161,10 @@ const Class *add_type(const string &name, int size, Flags flags, const Class *na
 	return t;
 }
 
-const Class *add_type_p(const Class *sub_type, Flags flags) {
-	string name;
-	if (flags_has(flags, Flags::SHARED))
-		name = Identifier::SHARED + "[" + sub_type->name + "]";
-	else
-		name = sub_type->name + "*";
+const Class *add_type_p(const Class *sub_type) {
+	string name = sub_type->name + "*";
 	Class *t = new Class(Class::Type::POINTER, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
-	if (flags_has(flags, Flags::SHARED))
-		t->type = Class::Type::POINTER_SHARED;
+	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
@@ -177,14 +173,32 @@ const Class *add_type_p(const Class *sub_type, Flags flags) {
 const Class *add_type_ref(const Class *sub_type) {
 	string name = sub_type->name + "&";
 	Class *t = new Class(Class::Type::REFERENCE, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
-const Class *add_type_xfer(const Class *sub_type) {
+const Class *add_type_p_owned(const Class *sub_type) {
+	string name = format("%s[%s]", Identifier::OWNED, sub_type->name);
+	Class *t = new Class(Class::Type::POINTER_OWNED, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
+const Class *add_type_p_shared(const Class *sub_type) {
+	string name = format("%s[%s]", Identifier::SHARED, sub_type->name);
+	Class *t = new Class(Class::Type::POINTER_SHARED, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
+const Class *add_type_p_xfer(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::XFER, sub_type->name);
 	Class *t = new Class(Class::Type::POINTER_XFER, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;

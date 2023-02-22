@@ -77,6 +77,10 @@ bool type_match(const Class *given, const Class *wanted) {
 	if ((given == TypeNone) and wanted->is_pointer())
 		return true;
 
+	// allow any pointer
+	if (given->is_pointer() and wanted == TypePointer)
+		return true;
+
 	/*if (given->is_() and wanted->is_pointer_xfer())
 		if (given->param[0] == wanted->param[0])
 			return true;*/

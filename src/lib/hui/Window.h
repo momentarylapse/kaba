@@ -97,7 +97,7 @@ public:
 	void _cdecl get_size(int &width, int &height);
 	void _cdecl set_size_desired(int width, int height);
 	void _cdecl get_size_desired(int &width, int &height);
-	void _cdecl set_menu(Menu *menu);
+	void _cdecl set_menu(xfer<Menu> menu);
 	Menu* _cdecl get_menu();
 	Window* _cdecl get_parent();
 	void _cdecl __set_options(const string &options);
@@ -174,7 +174,8 @@ public:
 #endif
 	
 protected:
-	Menu *menu, *popup;
+	owned<Menu> menu;
+	Menu *popup;
 	bool statusbar_enabled;
 	bool allowed, allow_keys;
 	Window *parent_window;

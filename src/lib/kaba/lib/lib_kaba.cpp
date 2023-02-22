@@ -86,7 +86,7 @@ void SIAddPackageKaba(Context *c) {
 		
 
 	auto TypeModule = add_type  ("Module", sizeof(Module));
-	auto TypeModuleP = add_type_p(TypeModule, Flags::SHARED);
+	auto TypeModuleP = add_type_p_shared(TypeModule);
 	auto TypeModulePList = add_type_l(TypeModuleP);
 
 	auto TypeContext = add_type  ("Context", sizeof(Context));
