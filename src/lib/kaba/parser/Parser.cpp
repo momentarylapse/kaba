@@ -1521,6 +1521,8 @@ bool type_needs_alignment(const Class *t) {
 	return (t->size >= 4);
 }
 
+bool is_same_kind_of_pointer(const Class *a, const Class *b);
+
 void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int &_offset, int token_id) {
 
 	// override?
@@ -1532,7 +1534,7 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	if (!override and orig)
 		p->do_error(format("element '%s' is already defined, use '%s' to override", name, Identifier::OVERRIDE), token_id);
 	if (override) {
-		if (orig->type->is_pointer_raw() and type->is_pointer_raw())
+		if (is_same_kind_of_pointer(orig->type, type))
 			orig->type = type;
 		else
 			p->do_error("can only override pointer elements with other pointer type", token_id);

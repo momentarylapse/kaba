@@ -49,7 +49,8 @@ AbstractOperator abstract_operators[(int)OperatorID::_COUNT_] = {
 	{"[...]",  OperatorID::ARRAY,     16,  "-none-", OperatorFlags::BINARY},
 	{"|>",  OperatorID::FUNCTION_PIPE,1,  "-none-", OperatorFlags::BINARY},
 	{Identifier::AS, OperatorID::AS,  15,  "-none-", OperatorFlags::BINARY},
-	{"=>",  OperatorID::MAPS_TO,      1,  Identifier::Func::MAPS_TO, OperatorFlags::BINARY}
+	{"=>",  OperatorID::MAPS_TO,      1,  Identifier::Func::MAPS_TO, OperatorFlags::BINARY},
+	{":=",  OperatorID::REF_ASSIGN,   0, "-none-", OperatorFlags::BINARY | OperatorFlags::LEFT_IS_MODIFIABLE}
 };
 
 OperatorFlags operator|(OperatorFlags a, OperatorFlags b) {

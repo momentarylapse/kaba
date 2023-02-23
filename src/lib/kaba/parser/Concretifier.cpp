@@ -120,6 +120,96 @@ extern const Class *TypeAnyDict;
 extern const Class *TypeDynamicArray;
 extern const Class *TypeIntDict;
 extern const Class *TypeStringAutoCast;
+extern const Class *TypeNone;
+
+
+bool func_pointer_match_up(const Class *given, const Class *wanted) {
+	auto g = given->param[0];
+	auto w = wanted->param[0];
+	//msg_write(format("%s   vs   %s", g->name, w->name));
+	if (g->param.num != w->param.num) {
+		//msg_error(format("%s   vs   %s     ###", g->name, w->name));
+		return false;
+	}
+	// hmmm, let's be pedantic for return values
+	if (g->param.back() != w->param.back()) {
+		//msg_error(format("%s   vs   %s     return", g->name, w->name));
+		return false;
+	}
+	// allow down-cast for parameters
+	// ACTUALLY, this is the wrong way!!!!
+	//    but we can't know user types when creating the standard library...
+	for (int i=0; i<g->param.num-1; i++)
+		if (!type_match_up(g->param[i], w->param[i])) {
+			//msg_error(format("%s   vs   %s     param", g->name, w->name, i));
+			return false;
+		}
+	return true;
+}
+
+bool is_same_kind_of_pointer(const Class *a, const Class *b) {
+	return (a->is_some_pointer() and (a->type == b->type));
+}
+
+// can be re-interpreted as...?
+bool type_match_up(const Class *given, const Class *wanted) {
+	// exact match?
+	if (given == wanted)
+		return true;
+
+	// allow any pointer?
+	// FIXME don't use raw pointer parameters...
+	// TODO also shared/owned
+	if ((given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
+		return true;
+
+	if (given->is_reference() and (wanted == TypeReference))
+		return true;
+
+	// allow nil as parameter
+	if ((given == TypeNone) and wanted->is_pointer_raw())
+		return true;
+
+	/*if (given->is_() and wanted->is_pointer_xfer())
+		if (given->param[0] == wanted->param[0])
+			return true;*/
+
+	/*if (given->is_pointer_xfer() and wanted->is_pointer_owned())
+		if (given->param[0] == wanted->param[0])
+			return true;*/
+
+	// compatible pointers (of same or derived class)
+	if (is_same_kind_of_pointer(given, wanted)) {
+		// MAYBE: return type_match(given->param[0], wanted->param[0]);
+		if (given->param[0]->is_derived_from(wanted->param[0]))
+			return true;
+	}
+
+	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
+	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
+		if (type_match_up(given->param[0], wanted->param[0])) {
+			//msg_error("XXXX");
+			return true;
+		}
+
+	if (given->is_callable() and wanted->is_callable())
+		return func_pointer_match_up(given, wanted);
+
+	if (wanted->is_super_array()) {
+		if (given->is_super_array()) {
+			if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
+				return true;
+		}
+	}
+
+	if (wanted == TypeStringAutoCast and given == TypeString)
+		return true;
+
+	if (wanted == TypeDynamic)
+		return true;
+
+	return given->is_derived_from(wanted);
+}
 
 const int TYPE_CAST_NONE = -1;
 const int TYPE_CAST_DEREFERENCE = -2;
@@ -235,9 +325,9 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	}*/
 
 
-	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer_raw())) {
+	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer_raw() or given->is_reference())) {
 		// TODO really raw pointer?!?
-		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypePointer /* nil etc */)) {
+		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypeNone /* nil etc */)) {
 			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_MAKE_SHARED;
@@ -546,6 +636,13 @@ shared<Node> Concretifier::link_special_operator_tuple_extract(shared<Node> para
 	return node;
 }
 
+// TODO clean-up
+shared<Node> Concretifier::link_special_operator_ref_assign(shared<Node> param1, shared<Node> param2, int token_id) {
+	param1->show();
+	param2->show();
+	return add_node_operator_by_inline(InlineID::POINTER_ASSIGN, param1, param2, token_id);
+}
+
 shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> param1, shared<Node> param2, int token_id) {
 	bool left_modifiable = primop->flags & OperatorFlags::LEFT_IS_MODIFIABLE;
 	[[maybe_unused]] bool order_inverted = primop->flags & OperatorFlags::ORDER_INVERTED;
@@ -555,6 +652,10 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 	// tuple extractor?
 	if ((primop->id == OperatorID::ASSIGN) and (param1->kind == NodeKind::TUPLE))
 		return link_special_operator_tuple_extract(param1, param2, token_id);
+
+	// &ref := &ref
+	if ((primop->id == OperatorID::REF_ASSIGN) and param1->type->is_reference() and param2->type->is_reference())
+		return link_special_operator_ref_assign(param1, param2, token_id);
 
 	if (left_modifiable and param1->is_const)
 		do_error("trying to modify a constant expression", token_id);

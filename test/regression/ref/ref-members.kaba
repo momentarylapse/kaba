@@ -1,0 +1,14 @@
+class X
+	var i = 1000
+	var p: int&
+
+	func __init__(x: int&)
+		p := x
+
+
+func main()
+	var i = 13
+	var x = new X(&!i)
+
+	print(x)
+

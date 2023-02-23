@@ -6,9 +6,6 @@
 
 namespace kaba {
 
-extern Class* TypeNone;
-extern Class* TypeStringAutoCast;
-
 void remove_enum_labels(const Class *type);
 
 ClassElement::ClassElement() {
@@ -36,90 +33,6 @@ bool ClassElement::hidden() const {
 
 bool type_match_up(const Class *given, const Class *wanted);
 
-bool func_pointer_match_up(const Class *given, const Class *wanted) {
-	auto g = given->param[0];
-	auto w = wanted->param[0];
-	//msg_write(format("%s   vs   %s", g->name, w->name));
-	if (g->param.num != w->param.num) {
-		//msg_error(format("%s   vs   %s     ###", g->name, w->name));
-		return false;
-	}
-	// hmmm, let's be pedantic for return values
-	if (g->param.back() != w->param.back()) {
-		//msg_error(format("%s   vs   %s     return", g->name, w->name));
-		return false;
-	}
-	// allow down-cast for parameters
-	// ACTUALLY, this is the wrong way!!!!
-	//    but we can't know user types when creating the standard library...
-	for (int i=0; i<g->param.num-1; i++)
-		if (!type_match_up(g->param[i], w->param[i])) {
-			//msg_error(format("%s   vs   %s     param", g->name, w->name, i));
-			return false;
-		}
-	return true;
-}
-
-bool is_same_kind_of_pointer(const Class *a, const Class *b) {
-	return (a->is_some_pointer() and (a->type == b->type));
-}
-
-// can be re-interpreted as...?
-bool type_match_up(const Class *given, const Class *wanted) {
-	// exact match?
-	if (given == wanted)
-		return true;
-
-	// allow any pointer?
-	// FIXME don't use raw pointer parameters...
-	// TODO also shared/owned
-	if ((given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
-		return true;
-
-	// allow nil as parameter
-	if ((given == TypeNone) and wanted->is_pointer_raw())
-		return true;
-
-	/*if (given->is_() and wanted->is_pointer_xfer())
-		if (given->param[0] == wanted->param[0])
-			return true;*/
-
-	/*if (given->is_pointer_xfer() and wanted->is_pointer_owned())
-		if (given->param[0] == wanted->param[0])
-			return true;*/
-
-	// compatible pointers (of same or derived class)
-	if (is_same_kind_of_pointer(given, wanted)) {
-		// MAYBE: return type_match(given->param[0], wanted->param[0]);
-		if (given->param[0]->is_derived_from(wanted->param[0]))
-			return true;
-	}
-
-	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
-	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
-		if (type_match_up(given->param[0], wanted->param[0])) {
-			//msg_error("XXXX");
-			return true;
-		}
-
-	if (given->is_callable() and wanted->is_callable())
-		return func_pointer_match_up(given, wanted);
-
-	if (wanted->is_super_array()) {
-		if (given->is_super_array()) {
-			if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
-				return true;
-		}
-	}
-
-	if (wanted == TypeStringAutoCast and given == TypeString)
-		return true;
-
-	if (wanted == TypeDynamic)
-		return true;
-
-	return given->is_derived_from(wanted);
-}
 
 
 Class::Class(Type _type, const string &_name, int64 _size, SyntaxTree *_owner, const Class *_parent, const Array<const Class*> &_param) {

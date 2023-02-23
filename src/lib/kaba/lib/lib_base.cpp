@@ -322,6 +322,7 @@ void SIAddPackageBase(Context *c) {
 
 	// derived   (must be defined after the primitive types and the bases!)
 	TypePointer     = add_type_p(TypeVoid); // substitute for all pointer types
+	TypeReference   = add_type_ref(TypeVoid); // substitute for all reference types
 	TypeNone        = add_type_p(TypeVoid); // type of <nil>
 	const_cast<Class*>(TypeNone)->name = "None";
 	TypePointerList = add_type_l(TypePointer);
@@ -365,6 +366,8 @@ void SIAddPackageBase(Context *c) {
 		add_operator(OperatorID::EQUAL, TypeBool, TypePointer, TypePointer, InlineID::POINTER_EQUAL);
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePointer, TypePointer, InlineID::POINTER_NOT_EQUAL);
 
+	add_class(TypeReference);
+		add_operator(OperatorID::REF_ASSIGN, TypeVoid, TypeReference, TypeReference, InlineID::POINTER_ASSIGN);
 
 	add_class(TypeInt);
 		class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);

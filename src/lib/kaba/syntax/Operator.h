@@ -62,6 +62,7 @@ enum class OperatorID {
 	FUNCTION_PIPE, // |>
 	AS,            // as
 	MAPS_TO,       // =>
+	REF_ASSIGN,    // :=
 	_COUNT_
 };
 
