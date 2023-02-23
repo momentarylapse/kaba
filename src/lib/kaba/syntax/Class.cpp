@@ -33,9 +33,9 @@ bool ClassElement::hidden() const {
 	return (name[0] == '_') or (name[0] == '-');
 }
 
-bool type_match(const Class *given, const Class *wanted);
+bool type_match_up(const Class *given, const Class *wanted);
 
-bool func_pointer_match(const Class *given, const Class *wanted) {
+bool func_pointer_match_up(const Class *given, const Class *wanted) {
 	auto g = given->param[0];
 	auto w = wanted->param[0];
 	//msg_write(format("%s   vs   %s", g->name, w->name));
@@ -52,7 +52,7 @@ bool func_pointer_match(const Class *given, const Class *wanted) {
 	// ACTUALLY, this is the wrong way!!!!
 	//    but we can't know user types when creating the standard library...
 	for (int i=0; i<g->param.num-1; i++)
-		if (!type_match(g->param[i], w->param[i])) {
+		if (!type_match_up(g->param[i], w->param[i])) {
 			//msg_error(format("%s   vs   %s     param", g->name, w->name, i));
 			return false;
 		}
@@ -63,7 +63,7 @@ bool is_same_kind_of_pointer(const Class *a, const Class *b) {
 	return (a->is_some_pointer() and (a->type == b->type));
 }
 
-bool type_match(const Class *given, const Class *wanted) {
+bool type_match_up(const Class *given, const Class *wanted) {
 	// exact match?
 	if (given == wanted)
 		return true;
@@ -77,7 +77,7 @@ bool type_match(const Class *given, const Class *wanted) {
 	if ((given == TypeNone) and wanted->is_pointer())
 		return true;
 
-	// allow any pointer
+	// allow any raw pointer
 	if (given->is_pointer() and wanted == TypePointer)
 		return true;
 
@@ -97,11 +97,11 @@ bool type_match(const Class *given, const Class *wanted) {
 	}
 
 	if (given->is_callable() and wanted->is_callable())
-		return func_pointer_match(given, wanted);
+		return func_pointer_match_up(given, wanted);
 
 	if (wanted->is_super_array()) {
 		if (given->is_super_array()) {
-			if (type_match(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
+			if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
 				return true;
 		}
 	}
@@ -550,7 +550,7 @@ bool member_func_override_match(Function *a, Function *b) {
 	if (a->num_params != b->num_params)
 		return false;
 	for (int i=1; i<a->num_params; i++)
-		if (!type_match(b->literal_param_type[i], a->literal_param_type[i]))
+		if (!type_match_up(b->literal_param_type[i], a->literal_param_type[i]))
 			return false;
 	return true;
 }

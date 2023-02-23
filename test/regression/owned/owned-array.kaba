@@ -1,0 +1,12 @@
+func main()
+	var a: owned[string][]
+	
+	a.add(new string())
+	a.add(new string())
+	a[0] = "b"
+	a[1] = "a"
+	print(a)
+	
+	let x = sort(give(a))
+	print(a)
+	print(x)

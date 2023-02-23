@@ -19,7 +19,7 @@ namespace kaba {
 extern Array<Operator*> global_operators;
 
 
-bool type_match(const Class *given, const Class *wanted);
+bool type_match_up(const Class *given, const Class *wanted);
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
@@ -199,14 +199,24 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	cd.penalty = 0;
 	auto given = node->type;
 	cd.cast = TYPE_CAST_NONE;
-	if (type_match(given, wanted))
+	if (is_modifiable) {
+		if (given == wanted)
+			return true;
+
+		// allow any raw pointer
+		if (given->is_pointer() and wanted == TypePointer)
+			return true;
+
+		return false;
+	}
+	if (type_match_up(given, wanted))
 		return true;
 	if (wanted == TypeStringAutoCast and given == TypeString)
 		return true;
 	if (is_modifiable) // is a variable getting assigned.... better not cast
 		return false;
 	if (given->is_some_pointer()) {
-		if (type_match(given->param[0], wanted)) {
+		if (type_match_up(given->param[0], wanted)) {
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_DEREFERENCE;
 			return true;
@@ -214,7 +224,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	}
 	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer())) {
 		// TODO really raw pointer?!?
-		if (type_match(given->param[0], wanted->param[0]) or (given == TypePointer /* nil etc */)) {
+		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypePointer /* nil etc */)) {
 			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_MAKE_SHARED;
@@ -269,7 +279,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			if (wanted->param.num != node->params.num)
 				return false;
 			for (int i=0; i<node->params.num; i++)
-				if (!type_match(node->params[i]->type, wanted->param[i]))
+				if (!type_match_up(node->params[i]->type, wanted->param[i]))
 					return false;
 			msg_error("product");
 			cd.cast = TYPE_CAST_ABSTRACT_TUPLE;
@@ -294,7 +304,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	if (wanted->is_callable() and (given == TypeUnknown)) {
 		if (node->kind == NodeKind::FUNCTION) {
 			auto ft = make_effective_class_callable(node);
-			if (type_match(ft, wanted)) {
+			if (type_match_up(ft, wanted)) {
 				cd.cast = TYPE_CAST_FUNCTION_AS_CALLABLE;
 				return true;
 			}
@@ -327,7 +337,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		}
 
 	for (auto&& [i,c]: enumerate(context->type_casts))
-		if (type_match(given, c.source) and type_match(c.dest, wanted)) {
+		if (type_match_up(given, c.source) and type_match_up(c.dest, wanted)) {
 			cd.penalty = c.penalty;
 			cd.cast = i;
 			return true;
@@ -577,7 +587,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 				continue;
 
 			auto type2 = f->literal_param_type[1];
-			if (type_match(p2, type2)) {
+			if (type_match_up(p2, type2)) {
 				auto inst = param1;
 				if (p1 == pp1)
 					op = add_node_member_call(f, inst, token_id);
@@ -2049,7 +2059,7 @@ shared<Node> Concretifier::link_unary_operator(AbstractOperator *po, shared<Node
 	bool ok=false;
 	for (auto *_op: global_operators)
 		if (po == _op->abstract)
-			if ((!_op->param_type_2) and (type_match(p1, _op->param_type_1))) {
+			if ((!_op->param_type_2) and (type_match_up(p1, _op->param_type_1))) {
 				op = _op;
 				ok = true;
 				break;
@@ -2440,7 +2450,7 @@ shared<Node> Concretifier::check_param_link(shared<Node> link, const Class *want
 	// type cast needed and possible?
 	const Class *given = link->type;
 
-	if (type_match(given, wanted))
+	if (type_match_up(given, wanted))
 		return link;
 
 	CastingData cast;
@@ -2464,7 +2474,7 @@ bool Concretifier::direct_param_match(const shared<Node> operand, const shared_a
 		if (c == TypeDynamic)
 			parser->found_dynamic_param = true;
 	for (int p=0; p<params.num; p++) {
-		if (!type_match(params[p]->type, wanted_types[p]))
+		if (!type_match_up(params[p]->type, wanted_types[p]))
 			return false;
 	}
 	return true;
