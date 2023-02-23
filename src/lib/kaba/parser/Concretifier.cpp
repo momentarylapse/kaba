@@ -960,12 +960,45 @@ shared<Node> Concretifier::concretify_statement_return(shared<Node> node, Block 
 }
 
 shared<Node> Concretifier::concretify_statement_if(shared<Node> node, Block *block, const Class *ns) {
-	// [COND, TRUE-BLOCK, FALSE-BLOCK]
+	// [COND, TRUE-BLOCK, [FALSE-BLOCK]]
 	concretify_all_params(node, block, ns);
 	node->type = TypeVoid;
 	//node->set_param(0, check_param_link(node->params[0], TypeBool, Identifier::IF));
 	node->params[0] = check_param_link(node->params[0], TypeBool, Identifier::IF);
 	return node;
+}
+
+shared<Node> Concretifier::concretify_statement_if_unwrap(shared<Node> node, Block *block, const Class *ns) {
+	// [EXPRESSION, OUT-VAR, TRUE-BLOCK, [FALSE-BLOCK]]
+	auto expr = concretify_node(node->params[0], block, ns);
+	auto t0 = expr->type;
+	auto var_name = parser->Exp.get_token(node->params[1]->token_id);
+
+	auto block_x = new Block(block->function, block);
+
+	if (t0->is_pointer_owned() or t0->is_pointer_shared() or t0->is_pointer()) {
+		auto t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
+
+		auto *var = block_x->add_var(var_name, t_out);
+		block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->shift(0, t_out)));
+
+		auto n_if = add_node_statement(StatementID::IF, node->token_id);
+		n_if->set_num_params(node->params.num - 1);
+		Function *f_p2b = tree->required_func_global("p2b", node->token_id);
+		auto n_p2b = add_node_call(f_p2b);
+		n_p2b->set_num_params(1);
+		n_p2b->set_param(0, add_node_local(var));
+		n_if->set_param(0, n_p2b);
+		n_if->set_param(1, concretify_node(cp_node(node->params[2], block_x), block_x, ns));
+		if (node->params.num >= 4)
+			n_if->set_param(2, concretify_node(cp_node(node->params[3], block_x), block_x, ns));
+		block_x->add(n_if);
+
+		return block_x;
+	} else {
+		do_error(format("only pointers can be unwrapped, not type '%s'", t0->long_name()), node->params[0]);
+	}
+	return nullptr;
 }
 
 shared<Node> Concretifier::concretify_statement_while(shared<Node> node, Block *block, const Class *ns) {
@@ -1468,8 +1501,10 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 	auto s = node->as_statement();
 	if (s->id == StatementID::RETURN) {
 		return concretify_statement_return(node, block, ns);
-	} else if ((s->id == StatementID::IF) or (s->id == StatementID::IF_ELSE)) {
+	} else if (s->id == StatementID::IF) {
 		return concretify_statement_if(node, block, ns);
+	} else if (s->id == StatementID::IF_UNWRAP) {
+		return concretify_statement_if_unwrap(node, block, ns);
 	} else if (s->id == StatementID::WHILE) {
 		return concretify_statement_while(node, block, ns);
 	} else if (s->id == StatementID::FOR_RANGE) {

@@ -49,6 +49,7 @@ public:
 	shared<Node> concretify_statement(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_return(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_if(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_if_unwrap(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_while(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_range(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_array(shared<Node> node, Block *block, const Class *ns);

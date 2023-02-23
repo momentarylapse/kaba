@@ -1054,10 +1054,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 // Node structure (IF):
 //  p[0]: test
 //  p[1]: true block
-// Node structure (IF_ELSE):
-//  p[0]: test
-//  p[1]: true block
-//  p[2]: false block
+// [p[2]: false block]
 shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 	int ind = Exp.cur_line->indent;
 	int token0 = Exp.consume_token(); // "if"
@@ -1074,7 +1071,6 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 
 	// else?
 	if (!Exp.end_of_file() and (Exp.cur == Identifier::ELSE) and (Exp.cur_line->indent >= ind)) {
-		cmd_if->link_no = (int64)statement_from_id(StatementID::IF_ELSE);
 		cmd_if->set_num_params(3);
 		Exp.next();
 		// iterative if
@@ -1090,6 +1086,45 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 		expect_new_line_with_indent();
 		Exp.next_line();
 		cmd_if->set_param(2, parse_abstract_block(block));
+	} else {
+		Exp.jump(token_id);
+	}
+	return cmd_if;
+}
+
+// Node structure (IF_UNWRAP):
+//  p[0]: expression
+//  p[1]: out var
+//  p[2]: true block
+// [p[3]: false block]
+shared<Node> Parser::parse_abstract_statement_if_unwrap(Block *block) {
+	int ind = Exp.cur_line->indent;
+	int token0 = Exp.consume_token(); // "if"
+
+	[[maybe_unused]] bool is_var = (Exp.consume() == Identifier::VAR);
+
+	auto out_var = parse_abstract_token();
+	expect_identifier("=", "'=' expected after unwrapped variable");
+	auto expression = parse_abstract_operand_greedy(block);
+
+	auto cmd_if = add_node_statement(StatementID::IF_UNWRAP, token0, TypeUnknown);
+	cmd_if->set_param(0, expression);
+	cmd_if->set_param(1, out_var);
+	// ...block
+	expect_new_line_with_indent();
+	Exp.next_line();
+	cmd_if->set_param(2, parse_abstract_block(block));
+	int token_id = Exp.cur_token();
+	Exp.next_line();
+
+	// else?
+	if (!Exp.end_of_file() and (Exp.cur == Identifier::ELSE) and (Exp.cur_line->indent >= ind)) {
+		cmd_if->set_num_params(4);
+		Exp.next();
+		// ...block
+		expect_new_line_with_indent();
+		Exp.next_line();
+		cmd_if->set_param(3, parse_abstract_block(block));
 	} else {
 		Exp.jump(token_id);
 	}
@@ -1283,7 +1318,10 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	} else if (Exp.cur == Identifier::TRY) {
 		return parse_abstract_statement_try(block);
 	} else if (Exp.cur == Identifier::IF) {
-		return parse_abstract_statement_if(block);
+		if (Exp.peek_next() == Identifier::VAR or Exp.peek_next() == Identifier::LET)
+			return parse_abstract_statement_if_unwrap(block);
+		else
+			return parse_abstract_statement_if(block);
 	} else if (Exp.cur == Identifier::PASS) {
 		return parse_abstract_statement_pass(block);
 	} else if (Exp.cur == Identifier::NEW) {

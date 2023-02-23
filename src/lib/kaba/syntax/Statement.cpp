@@ -52,8 +52,8 @@ int add_special_function(const string &name, SpecialFunctionID id, int min_param
 void SIAddStatements() {
 	// statements
 	add_statement(Identifier::RETURN, StatementID::RETURN); // return: ParamType will be defined by the parser!
-	add_statement(Identifier::IF, StatementID::IF, 2); // [CMP, BLOCK]
-	add_statement("-if/else-", StatementID::IF_ELSE, 3); // [CMP, BLOCK, ELSE-BLOCK]
+	add_statement(Identifier::IF, StatementID::IF, 2); // [CMP, BLOCK, [ELSE-BLOCK]]
+	add_statement("-if/unwrap-", StatementID::IF_UNWRAP, 3); // [EXPR, OUT_VAR, BLOCK, [ELSE-BLOCK]]
 	add_statement(Identifier::WHILE, StatementID::WHILE, 2); // [CMP, BLOCK]
 	add_statement("-for-array-", StatementID::FOR_ARRAY, 4); // [VAR, INDEX, ARRAY, BLOCK]
 	add_statement("-for-range-", StatementID::FOR_RANGE, 5); // [VAR, START, STOP, STEP, BLOCK]

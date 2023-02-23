@@ -133,28 +133,29 @@ SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int in
 void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) {
 	auto statement = com->as_statement();
 	switch(statement->id){
-		case StatementID::IF:{
-			int label_after_true = list->create_label("_IF_AFTER_" + i2s(num_labels ++));
-			auto cond = serialize_parameter(com->params[0].get(), block, index);
-			// cmp;  jz m;  -block-  m;
-			cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
-			cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true));
-			serialize_block(com->params[1]->as_block());
-			cmd.add_label(label_after_true);
-			}break;
-		case StatementID::IF_ELSE:{
-			int label_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_labels ++));
-			int label_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_labels ++));
-			auto cond = serialize_parameter(com->params[0].get(), block, index);
-			// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
-			cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
-			cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
-			serialize_block(com->params[1]->as_block());
-			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
-			cmd.add_label(label_after_true);
-			serialize_block(com->params[2]->as_block());
-			cmd.add_label(label_after_false);
-			}break;
+		case StatementID::IF:
+			if (com->params.num == 2) {
+				int label_after_true = list->create_label("_IF_AFTER_" + i2s(num_labels ++));
+				auto cond = serialize_parameter(com->params[0].get(), block, index);
+				// cmp;  jz m;  -block-  m;
+				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
+				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true));
+				serialize_block(com->params[1]->as_block());
+				cmd.add_label(label_after_true);
+			} else {
+				int label_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_labels ++));
+				int label_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_labels ++));
+				auto cond = serialize_parameter(com->params[0].get(), block, index);
+				// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
+				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
+				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
+				serialize_block(com->params[1]->as_block());
+				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
+				cmd.add_label(label_after_true);
+				serialize_block(com->params[2]->as_block());
+				cmd.add_label(label_after_false);
+			}
+			break;
 		case StatementID::WHILE:{
 			int label_before_while = list->create_label("_WHILE_BEFORE_" + i2s(num_labels ++));
 			int label_after_while = list->create_label("_WHILE_AFTER_" + i2s(num_labels ++));
