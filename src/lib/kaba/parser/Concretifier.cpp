@@ -17,6 +17,7 @@
 namespace kaba {
 
 extern Array<Operator*> global_operators;
+extern const Class *TypeSpecialFunctionRef;
 
 
 bool type_match_up(const Class *given, const Class *wanted);
@@ -946,7 +947,7 @@ shared_array<Node> Concretifier::concretify_token(shared<Node> node, Block *bloc
 	// special function name
 	if (auto s = parser->which_special_function(token)) {
 		// no call, just the name
-		return {add_node_special_function_name(s->id, node->token_id, TypeSpecialFunctionP)};
+		return {add_node_special_function_name(s->id, node->token_id, TypeSpecialFunctionRef)};
 	}
 
 #if 0
@@ -1265,7 +1266,8 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 
 	auto t = sub->type;
 	while (true) {
-		if (t->is_pointer_shared() or t->is_pointer_owned() or t->is_pointer_xfer()) {
+		//if (t->is_pointer() or t->is_pointer_shared() or t->is_pointer_owned() or t->is_reference()) {
+		if (t->is_some_pointer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->shift(0, tt, node->token_id);
 		} else if (t->is_super_array() and (t->get_array_element()->is_pointer_shared() or t->get_array_element()->is_pointer_owned())) {
@@ -1277,7 +1279,7 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 		else
 			break;
 	}
-	do_error("weak() expects either a shared pointer, an owned pointer, or a shared pointer array", sub);
+	do_error(format("weak() expects either pointer (raw, shared, owned, ref), or a shared pointer array. Given: '%s'", t->long_name()), sub);
 	return nullptr;
 }
 

@@ -2,22 +2,22 @@ use kaba
 
 func test_class(p: Module, c: Class)
 	for e in c.elements
-		if e.type == nil
+		if not e.type
 			print("MISSING: type of element {{p.name}}.{{c.name}}.{{e.name}}")
 	for f in c.functions
-		if !f.return_type
+		if not f.return_type
 			print("MISSING: return of {{p.name}}.{{c.name}}.{{f.name}}()")
 		for i=>t in f.param_type
 			if !t
 				print("MISSING: param #{{i}} of {{p.name}}.{{c.name}}.{{f.name}}()")
 	for cc in c.classes
-		test_class(p, cc)
+		test_class(p, *cc)
 
 
 func main()
-	for p in weak(default_context.packages)
+	for p in default_context.packages
 		for i=>c in p.classes()
-			if !c
+			if not weak(c)
 				print("MISSING: class #{{i}} in {{p.name}}")
 				continue
 			test_class(p, c)

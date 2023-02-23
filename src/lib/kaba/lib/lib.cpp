@@ -99,7 +99,7 @@ const Class *TypeFunctionP;
 const Class *TypeFunctionCode;
 const Class *TypeFunctionCodeP;
 const Class *TypeSpecialFunction;
-const Class *TypeSpecialFunctionP;
+const Class *TypeSpecialFunctionRef;
 
 Module *cur_package = nullptr;
 

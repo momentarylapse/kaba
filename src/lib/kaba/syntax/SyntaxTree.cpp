@@ -16,6 +16,7 @@ extern const Class *TypeDictBase;
 extern const Class *TypeCallableBase;
 extern const Class *TypeMat4;
 extern const Class *TypeVec2;
+extern const Class *TypeSpecialFunctionRef;
 
 bool is_func(shared<Node> n);
 
@@ -989,7 +990,7 @@ shared<Node> SyntaxTree::conv_class_and_func_to_const(shared<Node> n) {
 		return add_node_const(add_constant_pointer(TypeClassP, n->as_class()));
 	}
 	if (n->kind == NodeKind::SPECIAL_FUNCTION_NAME) {
-		return add_node_const(add_constant_pointer(TypeSpecialFunctionP, n->as_special_function()));
+		return add_node_const(add_constant_pointer(TypeSpecialFunctionRef, n->as_special_function()));
 	}
 	return n;
 }

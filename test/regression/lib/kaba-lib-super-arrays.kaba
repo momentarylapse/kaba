@@ -12,8 +12,8 @@ func test_class(p: Module, c: Class)
 	if c.is_super_array()
 		test_super_array(p, c)
 	for cc in c.classes
-		test_class(p, cc)
+		test_class(p, *cc)
 func main()
-	for p in weak(default_context.packages)
+	for p in default_context.packages
 		for c in p.classes()
 			test_class(p, c)

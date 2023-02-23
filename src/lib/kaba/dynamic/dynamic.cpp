@@ -13,7 +13,7 @@ extern const Class *TypeFloatList;
 extern const Class *TypeBoolList;
 extern const Class *TypeAny;
 extern const Class *TypePath;
-
+extern const Class *TypeSpecialFunction;
 
 	
 	
@@ -182,8 +182,8 @@ string _cdecl var_repr_str(const void *p, const Class *type, bool as_repr) {
 	} else if (type == TypeFunction or type->type == Class::Type::FUNCTION) {
 		// probably not...
 		return func_repr((Function*)p);
-	} else if (type == TypeSpecialFunctionP) {
-		return format("<special function %s>", (*(SpecialFunction**)p)->name);
+	} else if (type == TypeSpecialFunction) {
+		return format("<special function %s>", ((SpecialFunction*)p)->name);
 	} else if (type == TypeAny) {
 		if (as_repr)
 			return ((Any*)p)->repr();

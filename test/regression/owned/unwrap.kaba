@@ -2,7 +2,7 @@ func test_owned()
 	var o = new string()
 	o = "hallo"
 
-	if let s = o
+	if let s in o
 		print(typeof(s))
 		print(s)
 	else
@@ -10,14 +10,14 @@ func test_owned()
 		
 	o = nil
 		
-	if let s = o
+	if let s in o
 		print(s)
 	else
 		print("nope")
 
 func test_optional()
 	var o: int? = 13
-	if let i = o
+	if let i in o
 		print(typeof(i))
 		print(i)
 		i = 28
@@ -27,7 +27,7 @@ func test_optional()
 	print(o)
 	o = nil
 		
-	if let i = o
+	if let i in o
 		print(i)
 	else
 		print("nope")

@@ -22,6 +22,7 @@ void crash() {
 }
 
 extern const Class *TypeStringAutoCast;
+extern const Class *TypeSpecialFunctionRef;
 
 
 
@@ -1104,7 +1105,7 @@ shared<Node> Parser::parse_abstract_statement_if_unwrap(Block *block) {
 	[[maybe_unused]] bool is_var = (Exp.consume() == Identifier::VAR);
 
 	auto out_var = parse_abstract_token();
-	expect_identifier("=", "'=' expected after unwrapped variable");
+	expect_identifier(Identifier::IN, "'in' expected after unwrapped variable");
 	auto expression = parse_abstract_operand_greedy(block);
 
 	auto cmd_if = add_node_statement(StatementID::IF_UNWRAP, token0, TypeUnknown);
@@ -1344,7 +1345,7 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 
 	// no call, just the name
 	if (Exp.cur != "(") {
-		auto node = add_node_special_function_name(s->id, token0, TypeSpecialFunctionP);
+		auto node = add_node_special_function_name(s->id, token0, TypeSpecialFunctionRef);
 		node->set_num_params(0);
 		return node;
 	}

@@ -177,8 +177,6 @@ extern const Class *TypeFunction;
 extern const Class *TypeFunctionP;
 extern const Class *TypeFunctionCode;
 extern const Class *TypeFunctionCodeP;
-extern const Class *TypeSpecialFunction;
-extern const Class *TypeSpecialFunctionP;
 
 };
 
