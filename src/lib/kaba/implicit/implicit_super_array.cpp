@@ -34,6 +34,9 @@ void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 	} else if (t->param[0]->is_pointer_xfer()) {
 	//	add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
 		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	} else if (t->param[0]->is_reference()) {
+		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
+		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else {
 		add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
 		if (class_can_assign(t->param[0]))
@@ -94,7 +97,7 @@ void AutoImplementer::implement_super_array_assign(Function *f, const Class *t) 
 		// other[i]
 		auto n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
 
-		if (t_el->is_pointer_xfer()) {
+		if (t_el->is_pointer_xfer() or t_el->is_reference()) {
 			auto assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(v_el)->deref(), n_other_el);
 			b->add(assign);
 		} else {
@@ -276,10 +279,13 @@ void AutoImplementer::implement_super_array_add(Function *f, const Class *t) {
 		auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, sa_num(self), const_int(1));
 		auto cmd_el = add_node_dyn_array(self, cmd_sub);
 
-		if (auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, cmd_el, item))
+		if (te->is_reference()) {
+			b->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, cmd_el, item));
+		} else if (auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, cmd_el, item)) {
 			b->add(cmd_assign);
-		else
+		} else {
 			do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
+		}
 	}
 }
 

@@ -1,0 +1,9 @@
+func main()
+	var a: string&[]
+	var i = "hi"
+	a.add(&!i)
+	a.add(&!i)
+	print(a)
+	i = "xxx"
+	print(a)
+
