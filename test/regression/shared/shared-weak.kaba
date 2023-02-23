@@ -15,7 +15,7 @@ func main()
 	var a: shared[Test][]
 	print("a")
 	var xx: shared[Test] = new Test()
-	ff(weak(xx))
+	ff(*weak(xx))
 	print("a2")
 	a.add(xx)
 	print("a3")
@@ -26,5 +26,5 @@ func main()
 	print("a5")
 
 	for x in weak(a)
-		ff(x)
+		ff(*x)
 

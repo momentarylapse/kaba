@@ -197,9 +197,23 @@ const Class *Concretifier::make_effective_class_callable(shared<Node> node) {
 
 bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
 	cd.penalty = 0;
-	auto given = node->type;
 	cd.cast = TYPE_CAST_NONE;
+	cd.pre_deref = false;
+	auto given = node->type;
+
+
+	if (given->is_reference()) {
+		CastingData cd_sub;
+		if (type_match_with_cast(node->deref(), is_modifiable, wanted, cd_sub)) {
+			cd = cd_sub;
+			cd.pre_deref = true;
+			cd.penalty += 10;
+			return true;
+		}
+	}
+
 	if (is_modifiable) {
+		// is a variable getting assigned.... better not cast
 		if (given == wanted)
 			return true;
 
@@ -211,17 +225,15 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	}
 	if (type_match_up(given, wanted))
 		return true;
-	if (wanted == TypeStringAutoCast and given == TypeString)
-		return true;
-	if (is_modifiable) // is a variable getting assigned.... better not cast
-		return false;
-	if (given->is_some_pointer()) {
+	/*if (given->is_some_pointer()) {
 		if (type_match_up(given->param[0], wanted)) {
 			cd.penalty = 10;
 			cd.cast = TYPE_CAST_DEREFERENCE;
 			return true;
 		}
-	}
+	}*/
+
+
 	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer())) {
 		// TODO really raw pointer?!?
 		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypePointer /* nil etc */)) {
@@ -345,7 +357,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	return false;
 }
 
-shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node> node, const Class *wanted) {
+shared<Node> Concretifier::apply_type_cast_basic(const CastingData &cast, shared<Node> node, const Class *wanted) {
 	if (cast.cast == TYPE_CAST_NONE)
 		return node;
 	if (cast.cast == TYPE_CAST_DEREFERENCE)
@@ -433,6 +445,14 @@ shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node>
 	c->type = context->type_casts[cast.cast].dest;
 	c->set_param(0, node);
 	return c;
+}
+
+shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node> node, const Class *wanted) {
+	if (cast.pre_deref) {
+		return apply_type_cast_basic(cast, node->deref(), wanted);
+	} else {
+		return apply_type_cast_basic(cast, node, wanted);
+	}
 }
 
 shared<Node> Concretifier::link_special_operator_is(shared<Node> param1, shared<Node> param2, int token_id) {

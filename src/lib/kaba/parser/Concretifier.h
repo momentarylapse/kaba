@@ -27,6 +27,7 @@ struct CastingData {
 	int cast;
 	int penalty;
 	Function *f;
+	bool pre_deref;
 };
 
 class Concretifier {
@@ -90,6 +91,7 @@ public:
 	bool type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd);
 	bool type_match_tuple_as_contructor(shared<Node> node, Function *f_constructor, int &penalty);
 
+	shared<Node> apply_type_cast_basic(const CastingData &cast, shared<Node> param, const Class *wanted);
 	shared<Node> apply_type_cast(const CastingData &cast, shared<Node> param, const Class *wanted);
 	shared<Node> apply_params_with_cast(shared<Node> operand, const shared_array<Node> &params, const Array<CastingData> &casts, const Array<const Class*> &wanted, int offset = 0);
 	bool direct_param_match(const shared<Node> operand, const shared_array<Node> &params);

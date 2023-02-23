@@ -17,7 +17,7 @@ func first[T](a: T[]) -> T
 
 
 func deref[T](p: T*[]) -> T
-	return p[0]
+	return *(p[0])
 
 
 

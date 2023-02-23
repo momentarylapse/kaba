@@ -6,7 +6,8 @@
 
 namespace kaba {
 
-extern Class *TypeNone;
+extern Class* TypeNone;
+extern Class* TypeStringAutoCast;
 
 void remove_enum_labels(const Class *type);
 
@@ -105,6 +106,9 @@ bool type_match_up(const Class *given, const Class *wanted) {
 				return true;
 		}
 	}
+
+	if (wanted == TypeStringAutoCast and given == TypeString)
+		return true;
 
 	if (wanted == TypeDynamic)
 		return true;

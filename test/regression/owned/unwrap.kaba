@@ -20,7 +20,7 @@ func test_optional()
 	if let i = o
 		print(typeof(i))
 		print(i)
-		*i = 28
+		i = 28
 	else
 		print("nope")
 	
