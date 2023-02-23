@@ -57,7 +57,7 @@ enum class NodeKind {
 	POINTER_AS_ARRAY,   // = []
 	DYNAMIC_ARRAY,      // = []
 	REFERENCE_NEW,      // = &!
-	REFERENCE_LEGACY,   // = &  ->  pointer
+	REFERENCE_RAW,   // = &  ->  pointer
 	DEREFERENCE,        // = *
 	DEREF_ADDRESS_SHIFT,// = ->
 	CONSTANT_BY_ADDRESS,
@@ -150,8 +150,8 @@ public:
 	shared<Node> shallow_copy() const;
 	shared<Node> ref_new(const Class *t) const;
 	shared<Node> ref_new(SyntaxTree *tree) const;
-	shared<Node> ref_legacy(const Class *t) const;
-	shared<Node> ref_legacy(SyntaxTree *tree) const;
+	shared<Node> ref_raw(const Class *t) const;
+	shared<Node> ref_raw(SyntaxTree *tree) const;
 	shared<Node> deref(const Class *override_type = nullptr) const;
 	shared<Node> shift(int64 shift, const Class *type, int token_id = -1) const;
 	shared<Node> deref_shift(int64 shift, const Class *type, int token_id) const;

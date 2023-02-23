@@ -118,7 +118,7 @@ SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int in
 		}*/
 	} else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::CALL_FUNCTION) or (link->kind == NodeKind::CALL_INLINE) or (link->kind == NodeKind::CALL_VIRTUAL) or (link->kind == NodeKind::CALL_RAW_POINTER) or (link->kind == NodeKind::STATEMENT)) {
 		p = serialize_node(link, block, index);
-	} else if ((link->kind == NodeKind::REFERENCE_LEGACY) or (link->kind == NodeKind::REFERENCE_NEW)) {
+	} else if ((link->kind == NodeKind::REFERENCE_RAW) or (link->kind == NodeKind::REFERENCE_NEW)) {
 		auto param = serialize_parameter(link->params[0].get(), block, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return add_reference(param, link->type);

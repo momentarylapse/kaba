@@ -506,7 +506,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 		
 		try {
 			auto n = parse_operand_greedy(block, false);
-			n = con.deref_if_pointer(n);
+			n = con.deref_if_reference(n);
 
 			if (fmt != "") {
 				n = apply_format(n, fmt);
@@ -606,7 +606,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		operand->token_id = token;
 	} else if (try_consume("&")) { // & -> legacy address operator
 		int token = Exp.cur_token();
-		operand = parse_abstract_operand(block)->ref_legacy(TypeUnknown);
+		operand = parse_abstract_operand(block)->ref_raw(TypeUnknown);
 		operand->token_id = token;
 	} else if (try_consume("*")) { // * -> dereference
 		int token = Exp.cur_token();
@@ -858,7 +858,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 	auto *n_var = cmd_for->params[0].get();
 	auto *var = n_var->as_local();
 
-	if (cmd_for->as_statement()->id == StatementID::FOR_CONTAINER) {
+	/*if (cmd_for->as_statement()->id == StatementID::FOR_CONTAINER) {
 		auto *loop_block = cmd_for->params[3].get();
 
 	// ref.
@@ -867,7 +867,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 		tree->transform_node(loop_block, [this, var] (shared<Node> n) {
 			return tree->conv_cbr(n, var);
 		});
-	}
+	}*/
 
 	// force for_var out of scope...
 	var->name = ":" + var->name;

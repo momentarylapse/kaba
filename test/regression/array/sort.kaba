@@ -10,4 +10,5 @@ func main()
 	tests.add(new Test("d", 213))
 	let o = sort(give(tests), "i")
 	for t in o
-		print("{{t.s}} {{t.i}}")
+		for x in t
+			print("{{x.s}} {{x.i}}")

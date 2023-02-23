@@ -109,7 +109,7 @@ public:
 	shared<Node> check_param_link(shared<Node> link, const Class *type, const string &f_name = "", int param_no = -1, int num_params = 1);
 
 
-	shared<Node> deref_if_pointer(shared<Node> node);
+	shared<Node> deref_if_reference(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
 
 	shared<Node> link_special_operator_is(shared<Node> param1, shared<Node> param2, int token_id);

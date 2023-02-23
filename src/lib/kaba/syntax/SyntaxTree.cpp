@@ -626,7 +626,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 	if ((c->kind == NodeKind::STATEMENT) and (c->as_statement()->id == StatementID::RETURN))
 		if (c->params.num > 0) {
 			if ((c->params[0]->type->is_array()) /*or (c->Param[j]->Type->IsSuperArray)*/) {
-				c->set_param(0, c->params[0]->ref_legacy(this));
+				c->set_param(0, c->params[0]->ref_raw(this));
 			}
 			return c;
 		}
@@ -651,7 +651,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 		// parameters, instance: class as reference
 		for (int j=0;j<c->params.num;j++)
 			if (c->params[j] and needs_conversion(j)) {
-				r->set_param(j, c->params[j]->ref_legacy(this));
+				r->set_param(j, c->params[j]->ref_raw(this));
 				changed = true;
 			}
 
@@ -669,7 +669,7 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 
 // remove &*x
 shared<Node> SyntaxTree::conv_easyfy_ref_deref(shared<Node> c, int l) {
-	if ((c->kind == NodeKind::REFERENCE_LEGACY) or (c->kind == NodeKind::REFERENCE_NEW)) {
+	if ((c->kind == NodeKind::REFERENCE_RAW) or (c->kind == NodeKind::REFERENCE_NEW)) {
 		if (c->params[0]->kind == NodeKind::DEREFERENCE) {
 			// remove 2 knots...
 			return c->params[0]->params[0];
@@ -809,7 +809,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 //             -> index
 
 		return add_node_operator_by_inline(__get_pointer_add_int(),
-				c->params[0]->ref_legacy(this), // array
+				c->params[0]->ref_raw(this), // array
 				add_node_operator_by_inline(InlineID::INT_MULTIPLY,
 						c->params[1], // ref
 						add_node_const(add_constant_int(el_type->size))),
@@ -845,7 +845,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 //        -> shift
 
 		return add_node_operator_by_inline(__get_pointer_add_int(),
-				c->params[0]->ref_legacy(this), // struct
+				c->params[0]->ref_raw(this), // struct
 				add_node_const(add_constant_int(c->link_no)),
 				c->token_id,
 				get_pointer(el_type, c->token_id))->deref();
@@ -966,7 +966,7 @@ bool node_is_executable(shared<Node> n) {
 	if ((n->kind == NodeKind::CONSTANT) or (n->kind == NodeKind::VAR_LOCAL) or (n->kind == NodeKind::VAR_GLOBAL))
 		return false;
 	if ((n->kind == NodeKind::ADDRESS_SHIFT) or (n->kind == NodeKind::ARRAY) or (n->kind == NodeKind::DYNAMIC_ARRAY)
-			or (n->kind == NodeKind::REFERENCE_LEGACY) or (n->kind == NodeKind::REFERENCE_NEW) or (n->kind == NodeKind::DEREFERENCE)
+			or (n->kind == NodeKind::REFERENCE_RAW) or (n->kind == NodeKind::REFERENCE_NEW) or (n->kind == NodeKind::DEREFERENCE)
 			or (n->kind == NodeKind::DEREF_ADDRESS_SHIFT))
 		return node_is_executable(n->params[0]);
 	return true;
@@ -1163,7 +1163,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		}
 
 		// &for_var = &array[index]
-		auto cmd_var_assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, var, el->ref_legacy(this));
+		auto cmd_var_assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, var, el->ref_raw(this));
 		block->params.insert(cmd_var_assign, 0);
 
 		return nn;

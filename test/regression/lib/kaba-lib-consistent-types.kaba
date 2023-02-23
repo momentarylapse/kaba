@@ -11,7 +11,7 @@ func test_class(p: Module, c: Class)
 			if not t
 				print("MISSING: param #{{i}} of {{p.name}}.{{c.name}}.{{f.name}}()")
 	for cc in c.classes
-		test_class(p, *cc)
+		test_class(p, cc)
 
 
 func main()
