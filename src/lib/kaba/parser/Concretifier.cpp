@@ -48,7 +48,7 @@ const Class *get_user_friendly_type(shared<Node> operand) {
 	if (operand->kind == NodeKind::CLASS) {
 		// referencing class functions
 		return operand->as_class();
-	} else if (type->is_some_pointer()) {
+	} else if (type->is_reference()) {
 		return type->param[0];
 	}
 	return type;
@@ -1658,6 +1658,7 @@ const Class *type_ownify_xfer(SyntaxTree *tree, const Class *t) {
 }
 
 shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
+	// [TYPE?, VAR, =[VAR,EXPR]]
 	bool as_const = (node->link_no == 1);
 
 	// type?
@@ -1698,8 +1699,16 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 	}
 
 	// assign?
-	if (node->params.num == 3)
-		node = concretify_node(node->params[2], block, ns);
+	if (node->params.num == 3) {
+		if (type->is_reference()) {
+			auto p = concretify_node(node->params[2]->params[1], block, ns);
+			if (p->type != vars[0]->type)
+				do_error("reference initialization type mismatch", p);
+			node = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(vars[0]), p, node->token_id);
+		} else {
+			node = concretify_node(node->params[2], block, ns);
+		}
+	}
 	if (as_const)
 		for (auto v: vars)
 			flags_set(v->flags, Flags::CONST);

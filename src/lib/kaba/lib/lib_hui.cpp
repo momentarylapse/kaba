@@ -142,7 +142,7 @@ void SIAddPackageHui(Context *c) {
 	auto TypeHuiGlWindow = add_type("GlWindow", sizeof(hui::Window));
 	auto TypeHuiDialog = add_type("Dialog", sizeof(hui::Window));
 	auto TypeHuiEvent = add_type("Event", sizeof(hui::Event));
-	auto TypeHuiEventP = add_type_p(TypeHuiEvent);
+	auto TypeHuiEventRef = add_type_ref(TypeHuiEvent);
 	auto TypeHuiPainter = add_type("Painter", sizeof(hui::Painter));
 
 	auto TypeCallbackPainter = add_type_f(TypeVoid, {TypeHuiPainter});
@@ -534,7 +534,7 @@ void SIAddPackageHui(Context *c) {
 		func_add_param("image", TypeString);
 		func_add_param("key_code", TypeInt);
 		func_add_param("func", TypeFunctionP);*/
-	add_func("get_event", TypeHuiEventP, hui_p(&hui::get_event), Flags::STATIC);
+	add_func("get_event", TypeHuiEventRef, hui_p(&hui::get_event), Flags::STATIC);
 	/*add_func("HuiRun", TypeVoid, (void*)&hui::Run);
 	add_func("HuiEnd", TypeVoid, (void*)&hui::End, Flags::STATIC);*/
 	add_func("do_single_main_loop", TypeVoid, hui_p(&hui::Application::do_single_main_loop), Flags::STATIC);

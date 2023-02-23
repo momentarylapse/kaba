@@ -81,6 +81,7 @@ void SIAddPackageGl(Context *c) {
 	
 	auto TypeVertexBuffer = add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
 	auto TypeVertexBufferP = add_type_p(TypeVertexBuffer);
+	auto TypeVertexBufferRef = add_type_ref(TypeVertexBuffer);
 	auto TypeTexture = add_type  ("Texture", sizeof(nix::Texture));
 	auto TypeTextureXfer = add_type_p_xfer(TypeTexture);
 	auto TypeTextureP = add_type_p(TypeTexture);
@@ -93,6 +94,7 @@ void SIAddPackageGl(Context *c) {
 	auto TypeFrameBufferP = add_type_p(TypeFrameBuffer);
 	auto TypeCubeMap = add_type  ("CubeMap", sizeof(nix::Texture));
 	auto TypeShader = add_type  ("Shader", sizeof(nix::Shader));
+	auto TypeShaderRef = add_type_ref(TypeShader);
 	auto TypeShaderP = add_type_p(TypeShader);
 	auto TypeShaderXfer = add_type_p_xfer(TypeShader);
 	auto TypeBuffer = add_type  ("Buffer", sizeof(nix::Buffer));
@@ -247,8 +249,8 @@ void SIAddPackageGl(Context *c) {
 			func_add_param("filename", TypePath);
 		class_add_func("create", TypeShaderXfer, gl_p(&__CreateShader), Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 			func_add_param("source", TypeString);
-		class_add_func("get_default_3d", TypeShaderP, gl_p(&__LoadShaderDefault3d), Flags::STATIC);
-		class_add_func("get_default_2d", TypeShaderP, gl_p(&__LoadShaderDefault2d), Flags::STATIC);
+		class_add_func("get_default_3d", TypeShaderRef, gl_p(&__LoadShaderDefault3d), Flags::STATIC);
+		class_add_func("get_default_2d", TypeShaderRef, gl_p(&__LoadShaderDefault2d), Flags::STATIC);
 		class_add_element(Identifier::SHARED_COUNT, TypeInt, gl_p(&nix::Shader::_pointer_ref_counter));
 
 
@@ -399,7 +401,7 @@ void SIAddPackageGl(Context *c) {
 		class_add_enum("CW",   TypeCullMode, gl_p(nix::CullMode::CW));
 		class_add_enum("CCW",  TypeCullMode, gl_p(nix::CullMode::CCW));
 
-	add_ext_var("vb_temp", TypeVertexBufferP, gl_p(&nix::vb_temp));
+	add_ext_var("vb_temp", TypeVertexBufferRef, gl_p(&nix::vb_temp));
 }
 
 };

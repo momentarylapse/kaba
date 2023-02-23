@@ -244,17 +244,6 @@ void SIAddXCommands(Context *c) {
 		func_add_param("class", TypeClassP);
 }
 
-int& kaba_x_array_ref(Array<int>& a) {
-	msg_write("_x_array_ref... ");
-	msg_write(p2s(a.data));
-	return a[0];
-};
-void kaba_x_ref_set(int& r, int i) {
-	msg_write(r);
-	r = i;
-	msg_write(r);
-};
-
 void SIAddPackageBase(Context *c) {
 	add_package(c, "base", Flags::AUTO_IMPORT);
 
@@ -795,21 +784,6 @@ void SIAddPackageBase(Context *c) {
 	//add_type_cast(30, TypeBoolList, TypeBool, "bool[].__bool__");
 	add_type_cast(50, TypePointer, TypeBool, "p2b");
 	//add_type_cast(50, TypePointer, TypeString, "p2s");
-
-
-
-	//---------------------------------------------
-	// experiments
-	auto TypeIntRef = add_type_ref(TypeInt);
-
-	add_class(TypeIntRef);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeIntRef,  TypeIntRef, InlineID::POINTER_ASSIGN);
-
-	add_func("_x_array_ref", TypeIntRef, &kaba_x_array_ref, Flags::STATIC);
-		func_add_param("a", TypeIntList);
-	add_func("_x_ref_set", TypeVoid, &kaba_x_ref_set, Flags::STATIC);
-		func_add_param("r", TypeIntRef);
-		func_add_param("i", TypeInt);
 }
 
 

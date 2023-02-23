@@ -1,0 +1,9 @@
+func main()
+	var i: int
+	var r1: int& = &!i
+	var r2 = r1
+
+	r2 = 13
+	r1 = r2
+	print(i)
+
