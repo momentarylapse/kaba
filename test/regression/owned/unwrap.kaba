@@ -1,7 +1,8 @@
 func test_owned()
 	var o : owned[string] = new string()
 	
-	o = "hallo"
+	for s in o
+		s = "hallo"
 
 	for s in o
 		print(typeof(s))

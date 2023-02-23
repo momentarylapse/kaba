@@ -674,8 +674,8 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 	auto *p2 = param2->type;
 
 	const Class *pp1 = p1;
-	if (pp1->is_some_pointer())
-		pp1 = p1->param[0];
+//	if (pp1->is_some_pointer())
+//		pp1 = p1->param[0];
 
 	if (primop->id == OperatorID::ASSIGN) {
 		// x.get(..) = y   =>   x.set(.., y)
@@ -749,27 +749,35 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 					t1_best = op->param_type_1;
 					t2_best = op->param_type_2;
 				}
-	for (auto *cf: weak(p1->functions))
-		if (cf->name == op_func_name)
-			if (type_match_with_cast(param2, false, cf->literal_param_type[1], c2))
+	for (auto *cf: weak(pp1->functions))
+		if (cf->name == op_func_name) {
+			if (type_match_with_cast(param2, false, cf->literal_param_type[1], c2)) {
 				if (c2.penalty < c2_best.penalty) {
 					op_cf_found = cf;
 					c1_best.cast = TYPE_CAST_NONE;
 					c2_best = c2;
 					t2_best = cf->literal_param_type[1];
 				}
+			}
+		}
 	// cast
 	if (op_found or op_cf_found) {
 		param1 = apply_type_cast(c1_best, param1, t1_best);
 		param2 = apply_type_cast(c2_best, param2, t2_best);
 		if (op_cf_found) {
-			op = add_node_member_call(op_cf_found, param1, token_id);
+			if (p1 == pp1)
+				op = add_node_member_call(op_cf_found, param1, token_id);
+			else
+				op = add_node_member_call(op_cf_found, param1->deref(), token_id);
 			op->set_param(1, param2);
 		} else {
 			return add_node_operator(op_found, param1, param2, token_id);
 		}
 		return op;
 	}
+
+	if (p1->is_reference() or p1->is_pointer_owned_not_null())
+		return link_operator(primop, param1->deref(), param2, token_id);
 
 	return nullptr;
 }

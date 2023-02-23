@@ -3,8 +3,10 @@ func main()
 	
 	a.add(new string())
 	a.add(new string())
-	a[0] = "b"
-	a[1] = "a"
+	for x in a[0]
+		x = "b"
+	for x in a[1]
+		x = "a"
 	print(a)
 	
 	let x = sort(give(a))
