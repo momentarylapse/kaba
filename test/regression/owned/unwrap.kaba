@@ -1,0 +1,42 @@
+func test_owned()
+	var o = new string()
+	o = "hallo"
+
+	if let s = o
+		print(typeof(s))
+		print(s)
+	else
+		print("nope")
+		
+	o = nil
+		
+	if let s = o
+		print(s)
+	else
+		print("nope")
+
+func test_optional()
+	var o: int? = 13
+	if let i = o
+		print(typeof(i))
+		print(i)
+		*i = 28
+	else
+		print("nope")
+	
+	print(o)
+	o = nil
+		
+	if let i = o
+		print(i)
+	else
+		print("nope")
+	
+#	match o
+#		int(i) => print(i)
+#		nil => print("nope")
+
+func main()
+	test_owned()
+	test_optional()
+

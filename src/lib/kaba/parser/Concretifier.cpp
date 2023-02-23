@@ -995,8 +995,28 @@ shared<Node> Concretifier::concretify_statement_if_unwrap(shared<Node> node, Blo
 		block_x->add(n_if);
 
 		return block_x;
+	} else if (t0->is_optional()) {
+		auto t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
+
+		auto *var = block_x->add_var(var_name, t_out);
+		auto assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->ref_legacy(t_out));
+
+		auto n_if = add_node_statement(StatementID::IF, node->token_id);
+		n_if->set_num_params(node->params.num - 1);
+		auto f_has_val = t0->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {});
+//		if (!f_has_val)
+//			do_error("")
+		n_if->set_param(0, add_node_member_call(f_has_val, expr));
+		n_if->set_param(1, concretify_node(cp_node(node->params[2], block_x), block_x, ns));
+		if (node->params.num >= 4)
+			n_if->set_param(2, concretify_node(cp_node(node->params[3], block_x), block_x, ns));
+		block_x->add(n_if);
+
+		n_if->params[1]->params.insert(assign, 0);
+
+		return block_x;
 	} else {
-		do_error(format("only pointers can be unwrapped, not type '%s'", t0->long_name()), node->params[0]);
+		do_error(format("only pointers and optionals can be unwrapped, not type '%s'", t0->long_name()), node->params[0]);
 	}
 	return nullptr;
 }

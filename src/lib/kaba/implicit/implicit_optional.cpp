@@ -34,6 +34,7 @@ void AutoImplementer::_add_missing_function_headers_for_optional(Class *t) {
 	add_func_header(t, Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}, {}, nullptr, Flags::PURE);
 	add_func_header(t, "__bool__", TypeBool, {}, {}, nullptr, Flags::PURE);
 	add_func_header(t, Identifier::Func::CALL, t->param[0], {}, {}, nullptr, Flags::REF);
+	//add_func_header(t, "_get_p", t->param[0], {}, {}, nullptr, Flags::REF);
 	if (t->param[0]->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})) {
 		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t}, {"other"}, nullptr, Flags::PURE);
 		add_func_header(t, Identifier::Func::EQUAL, TypeBool, {t->param[0]}, {"other"}, nullptr, Flags::PURE);
