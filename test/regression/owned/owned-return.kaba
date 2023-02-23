@@ -8,9 +8,11 @@ class X
 
 func f() -> xfer[X]
 	var p: owned[X] = new X()
-	p.s = "hallo"
+	if var x in p
+		x.s = "hallo"
 	print("---a")
 	return give(p)
+	
 	var q: owned[X]
 	q = give(p)
 	print("---b")

@@ -1,6 +1,6 @@
 use gl
 
-class X
+struct X
 	var x: shared[gl.Texture][]
 	var y: shared[Texture]
 

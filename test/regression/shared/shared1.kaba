@@ -18,7 +18,8 @@ class X
 
 func ff(x: shared[X])
 	var z = x
-	z.f()
+	if var _z in z
+		_z.f()
 
 
 func main()
@@ -28,7 +29,8 @@ func main()
 	x = new X()
 	#print(binary(&x, 8).hex())
 	y = x
-	x.f()
+	if var _x in x
+		_x.f()
 	ff(x)
 	#print(binary(&x, 8).hex())
 	#print(binary(&y, 8).hex())

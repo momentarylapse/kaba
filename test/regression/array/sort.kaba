@@ -9,6 +9,5 @@ func main()
 	tests.add(new Test("b", 23))
 	tests.add(new Test("d", 213))
 	let o = sort(give(tests), "i")
-	for p in o
-		if let t in p
-			print("{{t.s}} {{t.i}}")
+	for t in o
+		print("{{t.s}} {{t.i}}")

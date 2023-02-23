@@ -1,5 +1,6 @@
 func test_owned()
-	var o = new string()
+	var o : owned[string] = new string()
+	
 	o = "hallo"
 
 	if let s in o

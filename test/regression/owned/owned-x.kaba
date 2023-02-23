@@ -7,20 +7,21 @@ struct X
 
 
 func main()
-	var p: owned[X] = new X()
-	p.s = "hallo"
+	var p : owned[X] = new X()
+	if var x in p
+		x.s = "hallo"
 	
 #	print(p2s(p))
 	
-	if weak(p)
-		print(p.s)
+	if var x in p
+		print(x.s)
 	print(repr(p))
 	
 	p = nil
 	#del weak(give(p))
 	
-	if weak(p)
-		print(p.s)
+	if var x in p
+		print(x.s)
 	else
 		print("no object")
 	print(repr(p))

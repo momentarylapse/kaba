@@ -12,5 +12,6 @@ func f() -> shared[X]
 	return x
 
 func main()
-	var x: shared[X] = f()
-	x.f()
+	var p = f()
+	if var x in p
+		x.f()

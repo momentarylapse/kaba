@@ -835,7 +835,7 @@ Asm::InstructionParam BackendARM::prepare_param(Asm::InstID inst, SerialNodePara
 			//s->DoErrorInternal("get_param: evil local of type " + p.type->name);
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		bool imm_allowed = Asm::get_instruction_allow_const(inst);
-		if ((imm_allowed) and (p.type->is_pointer())) {
+		if ((imm_allowed) and (p.type->is_pointer_raw())) {
 			return Asm::param_imm(*(int_p*)(p.p + p.shift), p.type->size);
 		} else if ((p.type->size <= 4) and (imm_allowed)) {
 			return Asm::param_imm(*(int*)(p.p + p.shift), p.type->size);

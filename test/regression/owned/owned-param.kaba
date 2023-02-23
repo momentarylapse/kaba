@@ -8,7 +8,7 @@ class X
 
 func f(_p: xfer[X])
 	print("---f")
-	let p = _p
+	let p: owned[X] = _p
 #	print(p2s(weak(p)))
 	print(p)
 	let q = give(p)
@@ -20,7 +20,8 @@ func f(_p: xfer[X])
 
 func main()
 	var p: owned[X] = new X()
-	p.s = "hallo"
+	if let x in p
+		x.s = "hallo"
 #	print(p2s(weak(p)))
 	
 	f(give(p))

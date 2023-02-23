@@ -62,7 +62,7 @@ const Class *SyntaxTree::request_implicit_class_callable_fp(const Array<const Cl
 	params_ret.add(ret);
 
 	auto ff = request_implicit_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, token_id);
-	return request_implicit_class(name, Class::Type::POINTER, config.target.pointer_size, 0, nullptr, {ff}, token_id);
+	return request_implicit_class(name, Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {ff}, token_id);
 	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
 }
 
@@ -344,7 +344,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		type = operand->as_class();
 		allow_member = false;
 	//} else if (type->is_some_pointer()) {
-	} else if (type->is_reference()) {
+	} else if (type->is_reference() or type->is_pointer_owned_not_null()) {
 		// pointer -> dereference
 		type = type->param[0];
 		deref = true;
@@ -547,7 +547,7 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 }
 
 const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
-	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {base}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared(const Class *parent, int token_id) {
@@ -560,6 +560,12 @@ const Class *SyntaxTree::request_implicit_class_owned(const Class *parent, int t
 	if (!parent->name_space)
 		do_error("owned[..] not allowed for: " + parent->long_name(), token_id);
 	return request_implicit_class(format("%s[%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED, config.target.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_owned_not_null(const Class *parent, int token_id) {
+	if (!parent->name_space)
+		do_error("owned![..] not allowed for: " + parent->long_name(), token_id);
+	return request_implicit_class(format("%s![%s]", Identifier::OWNED, parent->name), Class::Type::POINTER_OWNED_NOT_NULL, config.target.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_xfer(const Class *parent, int token_id) {

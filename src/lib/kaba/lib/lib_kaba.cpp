@@ -99,7 +99,7 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeModuleRefList = add_type_l(TypeModuleRef);
 
 	auto TypeContext = add_type  ("Context", sizeof(Context));
-	auto TypeContextP = add_type_p(TypeContext);
+	auto TypeContextRef = add_type_ref(TypeContext);
 	auto TypeContextXfer = add_type_p_xfer(TypeContext);
 
 	
@@ -136,7 +136,7 @@ void SIAddPackageKaba(Context *c) {
 		class_add_element(Identifier::SHARED_COUNT, TypeInt, &Class::_pointer_ref_counter);
 		class_add_func("is_derived_from", TypeBool, &Class::is_derived_from, Flags::PURE);
 			func_add_param("c", TypeClassP);
-		class_add_func("is_pointer", TypeBool, &Class::is_pointer, Flags::PURE);
+		class_add_func("is_pointer", TypeBool, &Class::is_pointer_raw, Flags::PURE);
 		class_add_func("is_super_array", TypeBool, &Class::is_super_array, Flags::PURE);
 		class_add_func("is_array", TypeBool, &Class::is_array, Flags::PURE);
 		class_add_func("is_dict", TypeBool, &Class::is_dict, Flags::PURE);
@@ -240,7 +240,7 @@ void SIAddPackageKaba(Context *c) {
 	add_func("show_func", TypeVoid, &show_func, Flags::STATIC);
 		func_add_param("f", TypeFunction);
 
-	add_ext_var("default_context", TypeContextP, (void*)&default_context);
+	add_ext_var("default_context", TypeContextRef, (void*)&default_context);
 	add_ext_var("statements", TypeStatementRefList, (void*)&Statements);
 	add_ext_var("special_functions", TypeSpecialFunctionRefList, (void*)&special_functions);
 	add_ext_var("kaba_version", TypeString, (void*)&Version);

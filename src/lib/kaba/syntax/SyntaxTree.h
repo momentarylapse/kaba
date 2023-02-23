@@ -57,6 +57,7 @@ public:
 	const Class *get_pointer(const Class *base, int token_id = -1);
 	const Class *request_implicit_class_shared(const Class *parent, int token_id);
 	const Class *request_implicit_class_owned(const Class *parent, int token_id);
+	const Class *request_implicit_class_owned_not_null(const Class *parent, int token_id);
 	const Class *request_implicit_class_xfer(const Class *parent, int token_id);
 	const Class *request_implicit_class_reference(const Class *base, int token_id);
 	const Class *request_implicit_class_super_array(const Class *element_type, int token_id);

@@ -632,7 +632,10 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	} else if (try_consume(Identifier::SHARED)) {
 		operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown, false, Exp.cur_token());
 	} else if (try_consume(Identifier::OWNED)) {
-		operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown, false, Exp.cur_token());
+		if (try_consume("!"))
+			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL, 0, TypeUnknown, false, Exp.cur_token()-1);
+		else
+			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown, false, Exp.cur_token());
 	} else if (try_consume(Identifier::XFER)) {
 		operand = new Node(NodeKind::ABSTRACT_TYPE_XFER, 0, TypeUnknown, false, Exp.cur_token());
 	} else {
@@ -1515,7 +1518,7 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	if (!override and orig)
 		p->do_error(format("element '%s' is already defined, use '%s' to override", name, Identifier::OVERRIDE), token_id);
 	if (override) {
-		if (orig->type->is_pointer() and type->is_pointer())
+		if (orig->type->is_pointer_raw() and type->is_pointer_raw())
 			orig->type = type;
 		else
 			p->do_error("can only override pointer elements with other pointer type", token_id);

@@ -234,7 +234,7 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 			} else if (ptype[0] == TypeFloat32) {
 				call1<CBR,float>(ff, ret, param);
 				return true;
-			} else if (ptype[0]->is_pointer()) {
+			} else if (ptype[0]->is_pointer_raw()) {
 				call1<CBR,void*>(ff, ret, param);
 				return true;
 			} else if (ptype[0]->uses_call_by_reference()) {

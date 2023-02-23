@@ -8,7 +8,7 @@ func test_class(p: Module, c: Class)
 		if not f.return_type
 			print("MISSING: return of {{p.name}}.{{c.name}}.{{f.name}}()")
 		for i=>t in f.param_type
-			if !t
+			if not t
 				print("MISSING: param #{{i}} of {{p.name}}.{{c.name}}.{{f.name}}()")
 	for cc in c.classes
 		test_class(p, *cc)

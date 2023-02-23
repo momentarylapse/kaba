@@ -299,7 +299,7 @@ public:
 			*(bool*)var = aa.as_bool();
 		} else if (type == TypeString) {
 			*(string*)var = aa.as_string();
-		} else if (type->is_pointer()) {
+		} else if (type->is_pointer_raw()) {
 			*(const void**)var = aa.as_pointer();
 		} else if (type->is_super_array() and (aa.type == TYPE_ARRAY)) {
 			auto *t_el = type->get_array_element();

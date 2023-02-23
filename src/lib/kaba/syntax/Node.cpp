@@ -53,6 +53,8 @@ string kind2str(NodeKind kind) {
 		return "shared";
 	if (kind == NodeKind::ABSTRACT_TYPE_OWNED)
 		return "owned";
+	if (kind == NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL)
+		return "owned!";
 	if (kind == NodeKind::ABSTRACT_TYPE_POINTER)
 		return "pointer";
 	if (kind == NodeKind::ABSTRACT_TYPE_XFER)

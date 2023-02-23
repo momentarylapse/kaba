@@ -24,7 +24,7 @@ void AutoImplementer::_add_missing_function_headers_for_super_array(Class *t) {
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
 	add_func_header(t, "clear", TypeVoid, {}, {});
 	add_func_header(t, "resize", TypeVoid, {TypeInt}, {"num"});
-	if (t->param[0]->is_pointer_owned()) {
+	if (t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null()) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
 		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
 		add_func_header(t, "add", TypeVoid, {t_xfer}, {"x"});
@@ -392,7 +392,7 @@ void AutoImplementer::_implement_functions_for_super_array(const Class *t) {
 	implement_super_array_resize(prepare_auto_impl(t, t->get_member_func("resize", TypeVoid, {TypeInt})), t);
 	implement_super_array_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt})), t);
 	implement_super_array_add(prepare_auto_impl(t, t->get_member_func("add", TypeVoid, {nullptr})), t);
-	if (t->param[0]->is_pointer_owned()) {
+	if (t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null()) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
 		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
 		implement_super_array_give(prepare_auto_impl(t, t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer_list, {})), t);

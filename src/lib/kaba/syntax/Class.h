@@ -52,9 +52,10 @@ public:
 		STRUCT,
 		ARRAY,
 		SUPER_ARRAY,
-		POINTER,
+		POINTER_RAW,
 		POINTER_SHARED,
 		POINTER_OWNED,
+		POINTER_OWNED_NOT_NULL,
 		POINTER_XFER,
 		REFERENCE,
 		ENUM,
@@ -83,10 +84,11 @@ public:
 	bool is_array() const;
 	bool is_super_array() const;
 	bool is_dict() const;
-	bool is_pointer() const;
+	bool is_pointer_raw() const;
 	bool is_some_pointer() const;
 	bool is_pointer_shared() const;
 	bool is_pointer_owned() const;
+	bool is_pointer_owned_not_null() const;
 	bool is_pointer_xfer() const;
 	bool is_reference() const;
 	bool is_enum() const;

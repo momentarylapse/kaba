@@ -187,7 +187,7 @@ bool AutoImplementer::class_can_destruct(const Class *t) {
 }
 
 bool AutoImplementer::class_can_assign(const Class *t) {
-	if (t->is_pointer() or t->is_reference())
+	if (t->is_pointer_raw() or t->is_reference())
 		return true;
 	if (t->get_assign())
 		return true;
@@ -208,7 +208,7 @@ bool AutoImplementer::class_can_elements_assign(const Class *t) {
 }
 
 bool AutoImplementer::class_can_equal(const Class *t) {
-	if (t->is_pointer() or t->is_reference())
+	if (t->is_pointer_raw() or t->is_reference())
 		return true;
 	if (t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t}))
 		return true;
@@ -218,7 +218,7 @@ bool AutoImplementer::class_can_equal(const Class *t) {
 void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 	if (t->owner != tree)
 		return;
-	if (t->is_pointer() or t->is_reference())
+	if (t->is_pointer_raw() or t->is_reference())
 		return;
 
 	if (t->is_super_array()) {
@@ -229,7 +229,7 @@ void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 		_add_missing_function_headers_for_dict(t);
 	} else if (t->is_pointer_shared()) {
 		_add_missing_function_headers_for_shared(t);
-	} else if (t->is_pointer_owned()) {
+	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_add_missing_function_headers_for_owned(t);
 	} else if (t->is_pointer_xfer()) {
 		_add_missing_function_headers_for_xfer(t);
@@ -261,7 +261,7 @@ Function* AutoImplementer::prepare_auto_impl(const Class *t, Function *f) {
 void AutoImplementer::implement_functions(const Class *t) {
 	if (t->owner != tree)
 		return;
-	if (t->is_pointer() or t->is_reference())
+	if (t->is_pointer_raw() or t->is_reference())
 		return;
 
 	auto sub_classes = t->classes; // might change
@@ -274,7 +274,7 @@ void AutoImplementer::implement_functions(const Class *t) {
 		_implement_functions_for_dict(t);
 	} else if (t->is_pointer_shared()) {
 		_implement_functions_for_shared(t);
-	} else if (t->is_pointer_owned()) {
+	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_implement_functions_for_owned(t);
 	} else if (t->is_pointer_xfer()) {
 		_implement_functions_for_xfer(t);
@@ -318,7 +318,7 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 			tree->do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer()) {
+	} else if (t->is_pointer_raw()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_reference()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
@@ -329,7 +329,7 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer_owned()) {
+	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 		t->param = params;
 		add_missing_function_headers_for_class(t);

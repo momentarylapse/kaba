@@ -73,11 +73,11 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	// allow any pointer?
 	// FIXME don't use raw pointer parameters...
 	// TODO also shared/owned
-	if ((given->is_pointer() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
+	if ((given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
 		return true;
 
 	// allow nil as parameter
-	if ((given == TypeNone) and wanted->is_pointer())
+	if ((given == TypeNone) and wanted->is_pointer_raw())
 		return true;
 
 	/*if (given->is_() and wanted->is_pointer_xfer())
@@ -96,7 +96,7 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	}
 
 	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
-	if (wanted->is_pointer() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned()))
+	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
 		if (type_match_up(given->param[0], wanted->param[0])) {
 			//msg_error("XXXX");
 			return true;
@@ -208,12 +208,17 @@ bool Class::is_super_array() const {
 	return type == Type::SUPER_ARRAY;
 }
 
-bool Class::is_pointer() const {
-	return type == Type::POINTER /* or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE */;
+bool Class::is_pointer_raw() const {
+	return type == Type::POINTER_RAW /* or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE */;
 }
 
 bool Class::is_some_pointer() const {
-	return type == Type::POINTER  or type == Type::POINTER_SHARED or type == Type::POINTER_OWNED or type == Type::REFERENCE or type == Type::POINTER_XFER;
+	return type == Type::POINTER_RAW
+			or type == Type::POINTER_SHARED
+			or type == Type::POINTER_OWNED
+			or type == Type::POINTER_OWNED_NOT_NULL
+			or type == Type::REFERENCE
+			or type == Type::POINTER_XFER;
 }
 
 bool Class::is_pointer_shared() const {
@@ -222,6 +227,10 @@ bool Class::is_pointer_shared() const {
 
 bool Class::is_pointer_owned() const {
 	return type == Type::POINTER_OWNED;
+}
+
+bool Class::is_pointer_owned_not_null() const {
+	return type == Type::POINTER_OWNED_NOT_NULL;
 }
 
 bool Class::is_pointer_xfer() const {
@@ -253,7 +262,7 @@ bool Class::is_optional() const {
 }
 
 bool Class::is_callable() const {
-	if (is_pointer())
+	if (is_pointer_raw())
 		return param[0]->is_callable_fp() or param[0]->is_callable_bind();
 	return false;
 }
@@ -267,13 +276,13 @@ bool Class::is_callable_bind() const {
 }
 
 bool Class::uses_call_by_reference() const {
-	return (!force_call_by_value() and !is_pointer() and !is_reference()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer_raw() and !is_reference()) or is_array() or is_optional();
 }
 
 bool Class::uses_return_by_memory() const {
 	if (_amd64_allow_pass_in_xmm())
 		return false;
-	return (!force_call_by_value() and !is_pointer() and !is_reference()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer_raw() and !is_reference()) or is_array() or is_optional();
 }
 
 
@@ -308,7 +317,7 @@ bool Class::can_memcpy() const {
 bool Class::usable_as_super_array() const {
 	if (is_super_array())
 		return true;
-	if (is_array() or is_dict() or is_pointer())
+	if (is_array() or is_dict() or is_pointer_raw())
 		return false;
 	if (parent)
 		return parent->usable_as_super_array();
@@ -318,7 +327,7 @@ bool Class::usable_as_super_array() const {
 const Class *Class::get_array_element() const {
 	if (is_array() or is_super_array() or is_dict())
 		return param[0];
-	if (is_pointer())
+	if (is_pointer_raw())
 		return nullptr;
 	if (parent)
 		return parent->get_array_element();
