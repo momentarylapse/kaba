@@ -36,11 +36,11 @@ xfer<nix::Shader> __CreateShader(const string &source) {
 }
 
 nix::Shader* __LoadShaderDefault3d() {
-	return nix::Shader::default_3d;
+	return nix::Shader::default_3d.get();
 }
 
 nix::Shader* __LoadShaderDefault2d() {
-	return nix::Shader::default_2d;
+	return nix::Shader::default_2d.get();
 }
 
 #pragma GCC pop_options

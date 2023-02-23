@@ -62,9 +62,9 @@ public:
 	void _cdecl update(const string &source);
 
 
-	static Shader *default_2d;
-	static Shader *default_3d;
-	static Shader *default_load;
+	static shared<Shader> default_2d;
+	static shared<Shader> default_3d;
+	static shared<Shader> default_load;
 	static Shader *_current_;
 };
 

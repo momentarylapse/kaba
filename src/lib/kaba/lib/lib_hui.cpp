@@ -19,9 +19,10 @@ namespace hui{
 #ifdef KABA_EXPORT_HUI_MINIMAL
 	typedef int Menu;
 	typedef int Toolbar;
-	typedef int Window;
-	typedef int Dialog;
-	typedef int Panel;
+	class Panel : public Sharable<base::Empty> {
+	};
+	using Window = Panel;
+	using Dialog = Panel;
 	typedef int Event;
 	typedef int Painter;
 #endif
