@@ -13,5 +13,5 @@ func f() -> shared[X]
 
 func main()
 	var p = f()
-	if var x in p
+	for x in p
 		x.f()

@@ -20,7 +20,7 @@ func f(_p: xfer[X])
 
 func main()
 	var p: owned[X] = new X()
-	if let x in p
+	for x in p
 		x.s = "hallo"
 #	print(p2s(weak(p)))
 	

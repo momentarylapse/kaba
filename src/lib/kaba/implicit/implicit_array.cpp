@@ -82,7 +82,7 @@ void AutoImplementer::implement_array_assign(Function *f, const Class *t) {
 		do_error_implicit(f, format("no operator %s = %s found", te->long_name(), te->long_name()));
 	b->add(n_assign);
 
-	auto n_for = add_node_statement(StatementID::FOR_ARRAY);
+	auto n_for = add_node_statement(StatementID::FOR_CONTAINER);
 	// [VAR, INDEX, ARRAY, BLOCK]
 	n_for->set_param(0, add_node_local(v_el));
 	n_for->set_param(1, add_node_local(v_i));

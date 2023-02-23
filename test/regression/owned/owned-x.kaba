@@ -8,19 +8,19 @@ struct X
 
 func main()
 	var p : owned[X] = new X()
-	if var x in p
+	for x in p
 		x.s = "hallo"
 	
 #	print(p2s(p))
 	
-	if var x in p
+	for x in p
 		print(x.s)
 	print(repr(p))
 	
 	p = nil
 	#del weak(give(p))
 	
-	if var x in p
+	for x in p
 		print(x.s)
 	else
 		print("no object")

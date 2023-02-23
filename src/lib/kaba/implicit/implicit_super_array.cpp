@@ -104,7 +104,7 @@ void AutoImplementer::implement_super_array_assign(Function *f, const Class *t) 
 			b->add(assign);
 		}
 
-		auto n_for = add_node_statement(StatementID::FOR_ARRAY);
+		auto n_for = add_node_statement(StatementID::FOR_CONTAINER);
 		// [VAR, INDEX, ARRAY, BLOCK]
 		n_for->set_param(0, add_node_local(v_el));
 		n_for->set_param(1, add_node_local(v_i));
@@ -131,7 +131,7 @@ void AutoImplementer::implement_super_array_clear(Function *f, const Class *t) {
 		auto cmd_delete = add_node_member_call(f_del, add_node_local(var_el)->deref());
 		b->add(cmd_delete);
 
-		auto cmd_for = add_node_statement(StatementID::FOR_ARRAY);
+		auto cmd_for = add_node_statement(StatementID::FOR_CONTAINER);
 		cmd_for->set_param(0, add_node_local(var_el));
 		cmd_for->set_param(1, add_node_local(var_i));
 		cmd_for->set_param(2, self);
@@ -341,7 +341,7 @@ void AutoImplementer::implement_super_array_equal(Function *f, const Class *t) {
 		b2->add(n_ret);
 
 
-		auto n_for = add_node_statement(StatementID::FOR_ARRAY);
+		auto n_for = add_node_statement(StatementID::FOR_CONTAINER);
 		// [VAR, INDEX, ARRAY, BLOCK]
 		n_for->set_param(0, add_node_local(v_el));
 		n_for->set_param(1, add_node_local(v_i));

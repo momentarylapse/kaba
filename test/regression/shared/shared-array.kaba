@@ -17,7 +17,7 @@ func main()
 		print("iii")
 	for p in a
 		print("--->")
-		if var _p in p
+		for _p in p
 			_p.f()
 	print("zzz")
 	

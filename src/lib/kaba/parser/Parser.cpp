@@ -842,7 +842,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		auto array = val0;
 
 
-		auto cmd_for = add_node_statement(StatementID::FOR_ARRAY, token0, TypeUnknown);
+		auto cmd_for = add_node_statement(StatementID::FOR_CONTAINER, token0, TypeUnknown);
 		// [VAR, KEY, ARRAY, BLOCK]
 
 		cmd_for->set_param(0, var);
@@ -858,7 +858,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 	auto *n_var = cmd_for->params[0].get();
 	auto *var = n_var->as_local();
 
-	if (cmd_for->as_statement()->id == StatementID::FOR_ARRAY) {
+	if (cmd_for->as_statement()->id == StatementID::FOR_CONTAINER) {
 		auto *loop_block = cmd_for->params[3].get();
 
 	// ref.
@@ -871,7 +871,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 
 	// force for_var out of scope...
 	var->name = ":" + var->name;
-	if (cmd_for->as_statement()->id == StatementID::FOR_ARRAY) {
+	if (cmd_for->as_statement()->id == StatementID::FOR_CONTAINER) {
 		auto *index = cmd_for->params[1]->as_local();
 		index->name = ":" + index->name;
 	}
@@ -881,6 +881,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 
 // Node structure
 shared<Node> Parser::parse_abstract_statement_for(Block *block) {
+	int ind0 = Exp.cur_line->indent;
 
 	auto cmd_for = parse_abstract_for_header(block);
 
@@ -892,6 +893,19 @@ shared<Node> Parser::parse_abstract_statement_for(Block *block) {
 	parser_loop_depth --;
 
 	cmd_for->set_param(cmd_for->params.num - 1, loop_block);
+
+	// else?
+	int token_id = Exp.cur_token();
+	Exp.next_line();
+	if (!Exp.end_of_file() and (Exp.cur == Identifier::ELSE) and (Exp.cur_line->indent >= ind0)) {
+		Exp.next();
+		// ...block
+		expect_new_line_with_indent();
+		Exp.next_line();
+		cmd_for->params.add(parse_abstract_block(block));
+	} else {
+		Exp.jump(token_id);
+	}
 
 	//post_process_for(cmd_for);
 
@@ -1060,7 +1074,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 //  p[1]: true block
 // [p[2]: false block]
 shared<Node> Parser::parse_abstract_statement_if(Block *block) {
-	int ind = Exp.cur_line->indent;
+	int ind0 = Exp.cur_line->indent;
 	int token0 = Exp.consume_token(); // "if"
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
@@ -1070,11 +1084,11 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 	expect_new_line_with_indent();
 	Exp.next_line();
 	cmd_if->set_param(1, parse_abstract_block(block));
-	int token_id = Exp.cur_token();
-	Exp.next_line();
 
 	// else?
-	if (!Exp.end_of_file() and (Exp.cur == Identifier::ELSE) and (Exp.cur_line->indent >= ind)) {
+	int token_id = Exp.cur_token();
+	Exp.next_line();
+	if (!Exp.end_of_file() and (Exp.cur == Identifier::ELSE) and (Exp.cur_line->indent >= ind0)) {
 		cmd_if->set_num_params(3);
 		Exp.next();
 		// iterative if

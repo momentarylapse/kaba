@@ -3,7 +3,7 @@ func test_owned()
 	
 	o = "hallo"
 
-	if let s in o
+	for s in o
 		print(typeof(s))
 		print(s)
 	else
@@ -11,14 +11,14 @@ func test_owned()
 		
 	o = nil
 		
-	if let s in o
+	for s in o
 		print(s)
 	else
 		print("nope")
 
 func test_optional()
 	var o: int? = 13
-	if let i in o
+	for i in o
 		print(typeof(i))
 		print(i)
 		i = 28
@@ -28,7 +28,7 @@ func test_optional()
 	print(o)
 	o = nil
 		
-	if let i in o
+	for i in o
 		print(i)
 	else
 		print("nope")

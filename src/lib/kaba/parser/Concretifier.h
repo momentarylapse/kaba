@@ -50,10 +50,12 @@ public:
 	shared<Node> concretify_statement(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_return(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_if(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_statement_if_unwrap(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_while(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_range(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_statement_for_array(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for_container(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for_array(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for_unwrap_pointer(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for_unwrap_optional(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
 	shared<Node> concretify_statement_new(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_delete(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns);

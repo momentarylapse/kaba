@@ -10,5 +10,5 @@ class X as shared
 func main()
 	var x: shared[X] = new X()
 	var z = x
-	if var _z in z
+	for _z in z
 		_z.f()

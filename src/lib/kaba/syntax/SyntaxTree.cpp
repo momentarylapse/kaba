@@ -1104,7 +1104,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		nn->set_param(3, cmd_inc); // add to loop-block
 
 		return nn;
-	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::FOR_ARRAY)) {
+	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::FOR_CONTAINER)) {
 
 		// [VAR, INDEX, ARRAY, BLOCK]
 		auto var = n->params[0];
