@@ -64,6 +64,7 @@ bool is_same_kind_of_pointer(const Class *a, const Class *b) {
 	return (a->is_some_pointer() and (a->type == b->type));
 }
 
+// can be re-interpreted as...?
 bool type_match_up(const Class *given, const Class *wanted) {
 	// exact match?
 	if (given == wanted)
@@ -71,15 +72,12 @@ bool type_match_up(const Class *given, const Class *wanted) {
 
 	// allow any pointer?
 	// FIXME don't use raw pointer parameters...
+	// TODO also shared/owned
 	if ((given->is_pointer() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
 		return true;
 
 	// allow nil as parameter
 	if ((given == TypeNone) and wanted->is_pointer())
-		return true;
-
-	// allow any raw pointer
-	if (given->is_pointer() and wanted == TypePointer)
 		return true;
 
 	/*if (given->is_() and wanted->is_pointer_xfer())
@@ -96,6 +94,13 @@ bool type_match_up(const Class *given, const Class *wanted) {
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}
+
+	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
+	if (wanted->is_pointer() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned()))
+		if (type_match_up(given->param[0], wanted->param[0])) {
+			//msg_error("XXXX");
+			return true;
+		}
 
 	if (given->is_callable() and wanted->is_callable())
 		return func_pointer_match_up(given, wanted);

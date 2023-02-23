@@ -75,48 +75,30 @@ extern const Class *TypeFloatList;
 extern const Class *TypeFloatP;
 extern const Class *TypeDynamicArray;
 extern const Class *TypePath;
-const Class *TypeVertexBuffer;
-const Class *TypeVertexBufferP;
-const Class *TypeTexture;
-const Class *TypeTextureXfer;
-const Class *TypeTextureP;
-const Class *TypeTexturePList;
-const Class *TypeVolumeTexture;
-const Class *TypeImageTexture;
-const Class *TypeDepthBuffer;
-const Class *TypeDepthBufferP;
-const Class *TypeFrameBuffer;
-const Class *TypeFrameBufferP;
-const Class *TypeCubeMap;
-const Class *TypeShader;
-const Class *TypeShaderP;
-const Class *TypeShaderXfer;
-const Class *TypeBuffer;
-const Class *TypeUniformBuffer;
-const Class *TypeShaderStorageBuffer;
 
 void SIAddPackageGl(Context *c) {
 	add_package(c, "gl");
 	
-	TypeVertexBuffer	= add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
-	TypeVertexBufferP	= add_type_p(TypeVertexBuffer);
-	TypeTexture			= add_type  ("Texture", sizeof(nix::Texture));
-	TypeTextureXfer		= add_type_p_xfer(TypeTexture);
-	TypeTextureP		= add_type_p(TypeTexture);
-	TypeTexturePList	= add_type_l(TypeTextureP);
-	TypeImageTexture	= add_type  ("ImageTexture", sizeof(nix::Texture));
-	TypeVolumeTexture	= add_type  ("VolumeTexture", sizeof(nix::Texture));
-	TypeDepthBuffer		= add_type  ("DepthBuffer", sizeof(nix::Texture));
-	TypeDepthBufferP	= add_type_p(TypeDepthBuffer);
-	TypeFrameBuffer		= add_type  ("FrameBuffer", sizeof(nix::FrameBuffer));
-	TypeFrameBufferP	= add_type_p(TypeFrameBuffer);
-	TypeCubeMap			= add_type  ("CubeMap", sizeof(nix::Texture));
-	TypeShader			= add_type  ("Shader", sizeof(nix::Shader));
-	TypeShaderP			= add_type_p(TypeShader);
-	TypeShaderXfer		= add_type_p_xfer(TypeShader);
-	TypeBuffer			= add_type  ("Buffer", sizeof(nix::Buffer));
-	TypeUniformBuffer	= add_type  ("UniformBuffer", sizeof(nix::Buffer));
-	TypeShaderStorageBuffer = add_type  ("ShaderStorageBuffer", sizeof(nix::Buffer));
+	auto TypeVertexBuffer = add_type  ("VertexBuffer", sizeof(nix::VertexBuffer));
+	auto TypeVertexBufferP = add_type_p(TypeVertexBuffer);
+	auto TypeTexture = add_type  ("Texture", sizeof(nix::Texture));
+	auto TypeTextureXfer = add_type_p_xfer(TypeTexture);
+	auto TypeTextureP = add_type_p(TypeTexture);
+	auto TypeTexturePList = add_type_l(TypeTextureP);
+	auto TypeImageTexture = add_type  ("ImageTexture", sizeof(nix::Texture));
+	auto TypeVolumeTexture = add_type  ("VolumeTexture", sizeof(nix::Texture));
+	auto TypeDepthBuffer = add_type  ("DepthBuffer", sizeof(nix::Texture));
+	auto TypeDepthBufferP = add_type_p(TypeDepthBuffer);
+	auto TypeFrameBuffer = add_type  ("FrameBuffer", sizeof(nix::FrameBuffer));
+	auto TypeFrameBufferP = add_type_p(TypeFrameBuffer);
+	auto TypeCubeMap = add_type  ("CubeMap", sizeof(nix::Texture));
+	auto TypeShader = add_type  ("Shader", sizeof(nix::Shader));
+	auto TypeShaderP = add_type_p(TypeShader);
+	auto TypeShaderXfer = add_type_p_xfer(TypeShader);
+	auto TypeBuffer = add_type  ("Buffer", sizeof(nix::Buffer));
+	auto TypeBufferP = add_type_p(TypeBuffer);
+	auto TypeUniformBuffer = add_type  ("UniformBuffer", sizeof(nix::Buffer));
+	auto TypeShaderStorageBuffer = add_type  ("ShaderStorageBuffer", sizeof(nix::Buffer));
 	auto TypeAlpha = add_type_e("Alpha");
 	auto TypeStencilOp = add_type_e("StencilOp");
 	auto TypeFogMode = add_type_e("FogMode");
@@ -302,7 +284,7 @@ void SIAddPackageGl(Context *c) {
 	add_func("end_frame_hui", TypeVoid, nullptr, Flags::STATIC);
 #endif
 	add_func("bind_frame_buffer", TypeVoid, gl_p(&nix::bind_frame_buffer), Flags::STATIC);
-		func_add_param("fb", TypeFrameBuffer);
+		func_add_param("fb", TypeFrameBuffer); // -> ref
 	add_func("set_viewport", TypeVoid, gl_p(&nix::set_viewport), Flags::STATIC);
 		func_add_param("r", TypeRect);
 	add_func("clear_color", TypeVoid, gl_p(&nix::clear_color), Flags::STATIC);
@@ -314,12 +296,12 @@ void SIAddPackageGl(Context *c) {
 	add_func("set_model_matrix", TypeVoid, gl_p(&nix::set_model_matrix), Flags::STATIC);
 		func_add_param("m", TypeMat4);
 	add_func("draw_triangles", TypeVoid, gl_p(&nix::draw_triangles), Flags::STATIC);
-		func_add_param("vb", TypeVertexBuffer);
+		func_add_param("vb", TypeVertexBufferP); // -> ref
 	add_func("draw_lines", TypeVoid, gl_p(&nix::draw_lines), Flags::STATIC);
-		func_add_param("vb", TypeVertexBuffer);
+		func_add_param("vb", TypeVertexBufferP); // -> ref
 		func_add_param("contiguous", TypeBool);
 	add_func("draw_points", TypeVoid, gl_p(&nix::draw_points), Flags::STATIC);
-		func_add_param("vb", TypeVertexBuffer);
+		func_add_param("vb", TypeVertexBufferP); // -> ref
 	add_func("disable_alpha", TypeVoid, gl_p(&nix::disable_alpha), Flags::STATIC);
 	add_func("set_alpha", TypeVoid, gl_p(&nix::set_alpha_sd), Flags::STATIC);
 		func_add_param("source", TypeAlpha);
@@ -359,20 +341,20 @@ void SIAddPackageGl(Context *c) {
 		func_add_param("metal", TypeFloat32);
 		func_add_param("emission", TypeColor);
 	add_func("set_texture", TypeVoid, gl_p(&nix::set_texture), Flags::STATIC);
-		func_add_param("t", TypeTexture);
+		func_add_param("t", TypeTextureP); // -> ref
 	add_func("set_textures", TypeVoid, gl_p(&nix::set_textures), Flags::STATIC);
-		func_add_param("t", TypeTexturePList);
+		func_add_param("t", TypeTexturePList); // -> ref[]
 	add_func("bind_texture", TypeVoid, gl_p(&nix::bind_texture), Flags::STATIC);
 		func_add_param("binding", TypeInt);
-		func_add_param("t", TypeTexture);
+		func_add_param("t", TypeTextureP); // -> ref
 	add_func("set_shader", TypeVoid, gl_p(&nix::set_shader), Flags::STATIC);
-		func_add_param("s", TypeShader);
+		func_add_param("s", TypeShaderP); // -> ref
 	add_func("bind_buffer", TypeVoid, gl_p(&nix::bind_buffer), Flags::STATIC);
 		func_add_param("binding", TypeInt);
-		func_add_param("buf", TypeBuffer);
+		func_add_param("buf", TypeBufferP); // -> ref
 	add_func("bind_image", TypeVoid, gl_p(&nix::bind_image), Flags::STATIC);
 		func_add_param("binding", TypeInt);
-		func_add_param("t", TypeTexture);
+		func_add_param("t", TypeTextureP); // -> ref
 		func_add_param("level", TypeInt);
 		func_add_param("layer", TypeInt);
 		func_add_param("writable", TypeBool);

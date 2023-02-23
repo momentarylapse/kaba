@@ -89,6 +89,7 @@ Function *AutoImplementer::add_func_header(Class *t, const string &name, const C
 	f->update_parameters_after_parsing();
 	if (config.verbose)
 		msg_write("ADD HEADER " + f->signature(TypeVoid));
+
 	bool override = cf;
 	t->add_function(tree, f, false, override);
 	return f;
@@ -323,9 +324,13 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_xfer()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_shared() or t->is_pointer_owned()) {
+	} else if (t->is_pointer_shared()) {
 		//t->derive_from(TypeSharedPointer);
 		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
+		t->param = params;
+		add_missing_function_headers_for_class(t);
+	} else if (t->is_pointer_owned()) {
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_optional()) {

@@ -75,12 +75,11 @@ public:
 	void _init_(const string &title, int width, int height, Window *parent, bool allow_parent, int mode);
 	void _init_generic_(Window *parent, bool allow_parent, int mode);
 	void _clean_up_();
+	void _wait_till_closed();
 
 	void _cdecl request_destroy();
 
 	// the window
-	void _run(Callback cb = nullptr);
-	void _fly(Callback cb = nullptr);
 	bool is_dialog();
 	void _cdecl show();
 	void _cdecl hide();
@@ -222,8 +221,8 @@ public:
 };
 
 
-void run(Window *win, Callback cb = nullptr);
-void fly(Window *win, Callback cb = nullptr);
+void run(shared<Window> win, Callback cb = nullptr);
+void fly(shared<Window> win, Callback cb = nullptr);
 
 
 

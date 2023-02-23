@@ -2613,8 +2613,10 @@ shared<Node> Concretifier::apply_params_with_cast(shared<Node> operand, const sh
 }
 
 shared<Node> Concretifier::deref_if_pointer(shared<Node> node) {
-	if (node->type->is_some_pointer())
+	if (node->type->is_some_pointer()) {
+		do_error("no DEFERF", node);
 		return node->deref();
+	}
 	return node;
 }
 

@@ -12,7 +12,6 @@
 #include <math.h>
 #include <cstdio>
 
-
 namespace kaba {
 
 extern const Class *TypeDynamicArray;

@@ -306,6 +306,7 @@ Shader::~Shader() {
 }
 
 void set_shader(Shader *s) {
+	msg_write("SET  " + p2s(s));
 	if (s == nullptr) {
 		msg_error("setting null shader");
 		return;

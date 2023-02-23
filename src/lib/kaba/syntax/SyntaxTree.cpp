@@ -343,7 +343,8 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		// referencing class functions
 		type = operand->as_class();
 		allow_member = false;
-	} else if (type->is_some_pointer()) {
+	//} else if (type->is_some_pointer()) {
+	} else if (type->is_reference()) {
 		// pointer -> dereference
 		type = type->param[0];
 		deref = true;
@@ -352,11 +353,12 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 	// super
 	if (type->parent and (name == Identifier::SUPER)) {
 		operand->token_id = token_id;
+		auto t_ref = request_implicit_class_reference(type->parent, token_id);
 		if (deref) {
-			operand->type = get_pointer(type->parent, token_id);
+			operand->type = t_ref;
 			return {operand};
 		}
-		return {operand->ref_legacy(get_pointer(type->parent, token_id))};
+		return {operand->ref_new(t_ref)};
 	}
 
 
@@ -632,7 +634,8 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 				return true;
 			if (c->is_function()) {
 				auto f = c->as_func();
-				int param_offset = f->is_static() ? 0 : 1;
+				int param_offset = 0;//f->is_static() ? 0 : 1;
+				// TODO does g++ keep const refs to instance?!
 				if ((j >= param_offset) and (flags_has(f->var[j]->flags, Flags::OUT)))
 					return true;
 			}
@@ -654,17 +657,6 @@ shared<Node> SyntaxTree::conv_calls(shared<Node> c) {
 		if (changed)
 			return r;
 	}
-
-	// special string / list operators
-	if (c->kind == NodeKind::OPERATOR) {
-		// parameters: super array as reference
-		for (int j=0;j<c->params.num;j++)
-			if (c->params[j]->type->is_array() or c->params[j]->type->is_super_array()) {
-				c->set_param(j, c->params[j]->ref_legacy(this));
-				// REALLY ?!?!?!?  FIXME?!?!?
-				msg_error("this might be bad");
-			}
-  	}
 	return c;
 }
 
@@ -745,7 +737,9 @@ void SyntaxTree::convert_call_by_reference() {
 				v->type = get_pointer(v->type, -1);
 
 				// usage inside the function
-				transform_block(f->block.get(), [&](shared<Node> n){ return conv_cbr(n, v); });
+				transform_block(f->block.get(), [this, v](shared<Node> n) {
+					return conv_cbr(n, v);
+				});
 			}
 	}
 
@@ -753,10 +747,14 @@ void SyntaxTree::convert_call_by_reference() {
 	for (Function *f: functions)
 		if (f->literal_return_type->uses_return_by_memory() and (f->literal_return_type != TypeUnknown))
 			//convert_return_by_memory(this, f->block, f);
-			transform_block(f->block.get(), [&](shared<Node> n){ return conv_return_by_memory(n, f); });
+			transform_block(f->block.get(), [this, f](shared<Node> n) {
+				return conv_return_by_memory(n, f);
+			});
 
 	// convert function calls
-	transform([&](shared<Node> n){ return conv_calls(n); });
+	transform([this](shared<Node> n) {
+		return conv_calls(n);
+	});
 }
 
 

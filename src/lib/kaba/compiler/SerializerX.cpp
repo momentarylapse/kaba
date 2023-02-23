@@ -48,9 +48,19 @@ void Serializer::add_virtual_function_call(Function *f, const Array<SerialNodePa
 	cmd.add_cmd(Asm::InstID::CALL_MEMBER, ret, t3); // the actual call
 }
 
+inline SerialNodeParam auto_weakify(Serializer *ser, Function *f, const SerialNodeParam& p) {
+	if (p.type->is_pointer_owned() or p.type->is_pointer_shared()) {
+		//msg_write("AUTO WEAK  " + f->signature());
+		auto pp = p;
+		pp.type = ser->module->syntax->get_pointer(p.type->param[0]);
+		return pp;
+	}
+	return p;
+}
+
 int Serializer::function_call_push_params(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
 	for (SerialNodeParam &p: params)
-		cmd.add_cmd(Asm::InstID::PUSH, p);
+		cmd.add_cmd(Asm::InstID::PUSH, auto_weakify(this, f, p));
 	return 0;
 }
 

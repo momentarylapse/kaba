@@ -9,6 +9,8 @@
 #include "implicit.h"
 #include "../parser/Parser.h"
 
+#include "../../os/msg.h"
+
 namespace kaba {
 
 extern Class* TypeNone;
@@ -31,12 +33,33 @@ void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
 	add_func_header(t, Identifier::Func::SHARED_CREATE, t, {t_xfer}, {"p"}, nullptr, Flags::STATIC);
 }
 
+
+struct XX {
+	void __init__() {
+		msg_write("XX.init");
+		msg_write(p2s(this));
+		p = nullptr;
+		msg_write(p2s(p));
+	}
+	void __del__() {
+		msg_write("XX.del");
+		msg_write(p2s(this));
+		msg_write(p2s(p));
+	}
+	int *p;
+};
+
+
 void AutoImplementer::_add_missing_function_headers_for_owned(Class *t) {
 	[[maybe_unused]] auto t_p = tree->get_pointer(t->param[0]);
 	auto t_xfer = tree->request_implicit_class_xfer(t->param[0], -1);
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
+//	f->address_preprocess = mf(&XX::__del__);
+//	f->address = (int_p)f->address_preprocess;
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {});
+	//f->address_preprocess = mf(&XX::__del__);
+	//f->address = (int_p)f->address_preprocess;
 	add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer, {}, {});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"});
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {TypeNone}, {"other"});
@@ -291,14 +314,14 @@ void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 
 
 	// del self.p
-	auto cmd_del = add_node_statement(StatementID::DELETE);
+/*	auto cmd_del = add_node_statement(StatementID::DELETE);
 	cmd_del->set_param(0, SHARED_P(self));
 	b->add(cmd_del);
 
 
 	// self.p = nil
 	auto n_op = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, SHARED_P(self), node_nil());
-	b->add(n_op);
+	b->add(n_op);*/
 
 	cmd_if->set_param(1, b);
 	f->block->add(cmd_if);
