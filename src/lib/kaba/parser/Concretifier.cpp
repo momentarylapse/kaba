@@ -1911,11 +1911,19 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::REFERENCE_RAW) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
-		node->type = tree->get_pointer(sub->type, node->token_id);
+		if (sub->type->is_reference()) {
+			return sub->change_type(tree->get_pointer(sub->type->param[0], node->token_id));
+		} else {
+			node->type = tree->get_pointer(sub->type, node->token_id);
+		}
 	} else if (node->kind == NodeKind::REFERENCE_NEW) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
-		node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
+		if (sub->type->is_reference() or sub->type->is_pointer_owned_not_null()) {
+			return sub->change_type(tree->request_implicit_class_reference(sub->type->param[0], node->token_id));
+		} else {
+			node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
+		}
 	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
 		return concretify_call(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY) {

@@ -411,6 +411,12 @@ shared<Node> Node::deref_shift(int64 shift, const Class *type, int token_id) con
 	return c;
 }
 
+shared<Node> Node::change_type(const Class *type, int token_id) const {
+	auto c = shallow_copy();
+	c->type = type;
+	return c;
+}
+
 
 // recursive
 shared<Node> cp_node(shared<Node> c, Block *parent_block) {
