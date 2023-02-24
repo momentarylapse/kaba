@@ -54,6 +54,7 @@ public:
 		SUPER_ARRAY,
 		POINTER_RAW,
 		POINTER_SHARED,
+		POINTER_SHARED_NOT_NULL,
 		POINTER_OWNED,
 		POINTER_OWNED_NOT_NULL,
 		POINTER_XFER,
@@ -84,9 +85,10 @@ public:
 	bool is_array() const;
 	bool is_super_array() const;
 	bool is_dict() const;
-	bool is_pointer_raw() const;
 	bool is_some_pointer() const;
+	bool is_pointer_raw() const;
 	bool is_pointer_shared() const;
+	bool is_pointer_shared_not_null() const;
 	bool is_pointer_owned() const;
 	bool is_pointer_owned_not_null() const;
 	bool is_pointer_xfer() const;

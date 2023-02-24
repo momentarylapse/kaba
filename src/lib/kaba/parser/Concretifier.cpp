@@ -24,6 +24,11 @@ bool type_match_up(const Class *given, const Class *wanted);
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
+
+bool is_pointer_not_null(const Class *t) {
+	return t->is_reference() or t->is_pointer_shared_not_null() or t->is_pointer_owned_not_null();
+}
+
 shared<Node> __digest_type(SyntaxTree *tree, shared<Node> n) {
 	if (!is_type_tuple(n))
 		return n;
@@ -160,14 +165,15 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	// allow any pointer?
 	// FIXME don't use raw pointer parameters...
 	// TODO also shared/owned
-	if ((given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()) and (wanted == TypePointer))
+	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()))
 		return true;
 
-	if (given->is_reference() and (wanted == TypeReference))
+	// TODO allow any not_null?
+	if ((wanted == TypeReference) and given->is_reference())
 		return true;
 
 	// allow nil as parameter
-	if ((given == TypeNone) and wanted->is_pointer_raw())
+	if (wanted->is_pointer_raw() and (given == TypeNone))
 		return true;
 
 	/*if (given->is_() and wanted->is_pointer_xfer())
@@ -186,7 +192,7 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	}
 
 	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
-	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
+	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_shared_not_null() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
 		if (type_match_up(given->param[0], wanted->param[0])) {
 			//msg_error("XXXX");
 			return true;
@@ -293,7 +299,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	auto given = node->type;
 
 
-	if (given->is_reference() or given->is_pointer_owned_not_null()) {
+	if (is_pointer_not_null(given)) {
 		CastingData cd_sub;
 		if (type_match_with_cast(node->deref(), is_modifiable, wanted, cd_sub)) {
 			cd = cd_sub;
@@ -325,7 +331,9 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	}*/
 
 
-	if (wanted->is_pointer_shared() and (given->is_pointer_xfer() or given->is_pointer_raw() or given->is_reference())) {
+	// FIXME we should not allow ownifying references!!!
+	if ((wanted->is_pointer_shared() or wanted->is_pointer_shared_not_null())
+			and (given->is_pointer_xfer() /*or given->is_pointer_raw() or given->is_reference()*/)) {
 		// TODO really raw pointer?!?
 		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypeNone /* nil etc */)) {
 			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
@@ -776,7 +784,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 		return op;
 	}
 
-	if (p1->is_reference() or p1->is_pointer_owned_not_null())
+	if (is_pointer_not_null(p1))
 		return link_operator(primop, param1->deref(), param2, token_id);
 
 	return nullptr;
@@ -895,6 +903,10 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		if (auto t = try_digest_type(tree, index))
 			return add_node_class(tree->request_implicit_class_shared(t, node->token_id), node->token_id);
 		do_error("type expected in 'shared[...]'", index);
+	} else if (operand->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL) {
+		if (auto t = try_digest_type(tree, index))
+			return add_node_class(tree->request_implicit_class_shared_not_null(t, node->token_id), node->token_id);
+		do_error("type expected in 'shared![...]'", index);
 	} else if (operand->kind == NodeKind::ABSTRACT_TYPE_OWNED) {
 		if (auto t = try_digest_type(tree, index))
 			return add_node_class(tree->request_implicit_class_owned(t, node->token_id), node->token_id);
@@ -1224,7 +1236,8 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
 	container = deref_if_reference(container);
 	auto t_c = container->type;
-	if (t_c->is_pointer_shared() or t_c->is_pointer_owned() or t_c->is_pointer_owned_not_null() or t_c->is_pointer_raw())
+	if (t_c->is_pointer_shared() or t_c->is_pointer_shared_not_null() or t_c->is_pointer_owned() or t_c->is_pointer_owned_not_null() or t_c->is_pointer_raw())
+		// "*_not_null" only for convenience
 		return concretify_statement_for_unwrap_pointer(node, container, block, ns);
 	else if (t_c->is_optional())
 		return concretify_statement_for_unwrap_optional(node, container, block, ns);
@@ -1399,7 +1412,9 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 		if (t->is_some_pointer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->shift(0, tt, node->token_id);
-		} else if (t->is_super_array() and (t->get_array_element()->is_pointer_shared() or t->get_array_element()->is_pointer_owned())) {
+		} else if (t->is_super_array()
+				and (t->param[0]->is_pointer_shared() or t->param[0]->is_pointer_shared_not_null()
+						or t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null())) {
 			auto tt = tree->request_implicit_class_super_array(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
 			return sub->shift(0, tt, node->token_id);
 		}
@@ -1779,7 +1794,7 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 		//auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
 		if (!type)
 			do_error("variable declaration requires a type", node->params[0]);
-		if ((type->is_reference() or type->is_pointer_owned_not_null()) and node->params.num < 3)
+		if (is_pointer_not_null(type) and node->params.num < 3)
 			do_error("variables of reference type must be initialized", node->params[0]);
 		if (type->is_pointer_xfer())
 			do_error("no variables of type xfer[..] allowed", node->params[0]);
@@ -1919,7 +1934,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::REFERENCE_NEW) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
-		if (sub->type->is_reference() or sub->type->is_pointer_owned_not_null()) {
+		if (is_pointer_not_null(sub->type)) {
 			return sub->change_type(tree->request_implicit_class_reference(sub->type->param[0], node->token_id));
 		} else {
 			node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
@@ -1990,7 +2005,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		if (!t1)
 			do_error("type expected before '->'", node->params[1]);
 		return add_node_class(tree->request_implicit_class_callable_fp({t0}, t1, node->token_id), node->token_id);
-	} else if ((node->kind == NodeKind::ABSTRACT_TYPE_SHARED) or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED) or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL) or (node->kind == NodeKind::ABSTRACT_TYPE_XFER)) {
+	} else if ((node->kind == NodeKind::ABSTRACT_TYPE_SHARED)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_XFER)) {
 		return node;
 	/*} else if (node->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
 		if (node->params.num == 0)
@@ -2237,7 +2256,7 @@ shared<Node> Concretifier::make_func_pointer_node_callable(const shared<Node> l)
 shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *param_type, int token_id) {
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
-	if (param_type->is_pointer_raw())
+	if (is_pointer_not_null(param_type))
 		param_type = param_type->param[0];
 
 	string fname = "__" + t->name + "__";
@@ -2757,9 +2776,8 @@ shared<Node> Concretifier::apply_params_with_cast(shared<Node> operand, const sh
 }
 
 shared<Node> Concretifier::deref_if_reference(shared<Node> node) {
-	if (node->type->is_reference() or node->type->is_pointer_owned_not_null()) {
+	if (is_pointer_not_null(node->type))
 		return node->deref();
-	}
 	return node;
 }
 

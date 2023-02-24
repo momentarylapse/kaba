@@ -8,8 +8,8 @@ class X as shared
 
 func f() -> shared[X]
 	# return new X()
-	var x = weak(new X())
-	return x
+	var x = new X()
+	return give(x)
 
 func main()
 	var p = f()

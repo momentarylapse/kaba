@@ -121,21 +121,26 @@ bool Class::is_super_array() const {
 	return type == Type::SUPER_ARRAY;
 }
 
-bool Class::is_pointer_raw() const {
-	return type == Type::POINTER_RAW /* or type == Type::POINTER_SHARED or type == Type::POINTER_UNIQUE */;
-}
-
 bool Class::is_some_pointer() const {
 	return type == Type::POINTER_RAW
 			or type == Type::POINTER_SHARED
+			or type == Type::POINTER_SHARED_NOT_NULL
 			or type == Type::POINTER_OWNED
 			or type == Type::POINTER_OWNED_NOT_NULL
 			or type == Type::REFERENCE
 			or type == Type::POINTER_XFER;
 }
 
+bool Class::is_pointer_raw() const {
+	return type == Type::POINTER_RAW;
+}
+
 bool Class::is_pointer_shared() const {
 	return type == Type::POINTER_SHARED;
+}
+
+bool Class::is_pointer_shared_not_null() const {
+	return type == Type::POINTER_SHARED_NOT_NULL;
 }
 
 bool Class::is_pointer_owned() const {

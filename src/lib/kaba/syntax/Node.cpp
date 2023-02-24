@@ -51,6 +51,8 @@ string kind2str(NodeKind kind) {
 		return "abstract call";
 	if (kind == NodeKind::ABSTRACT_TYPE_SHARED)
 		return "shared";
+	if (kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL)
+		return "shared!";
 	if (kind == NodeKind::ABSTRACT_TYPE_OWNED)
 		return "owned";
 	if (kind == NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL)

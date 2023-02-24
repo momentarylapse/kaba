@@ -333,6 +333,8 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 	return {};
 }
 
+bool is_pointer_not_null(const Class *t);
+
 shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string &name, int token_id) {
 	//operand = force_concrete_type(operand);
 	const Class *type = operand->type;
@@ -344,7 +346,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		type = operand->as_class();
 		allow_member = false;
 	//} else if (type->is_some_pointer()) {
-	} else if (type->is_reference() or type->is_pointer_owned_not_null()) {
+	} else if (is_pointer_not_null(type)) {
 		// pointer -> dereference
 		type = type->param[0];
 		deref = true;
@@ -554,6 +556,12 @@ const Class *SyntaxTree::request_implicit_class_shared(const Class *parent, int 
 	if (!parent->name_space)
 		do_error("shared[..] not allowed for: " + parent->long_name(), token_id); // TODO
 	return request_implicit_class(format("%s[%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED, config.target.pointer_size, 0, nullptr, {parent}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_shared_not_null(const Class *parent, int token_id) {
+	if (!parent->name_space)
+		do_error("shared![..] not allowed for: " + parent->long_name(), token_id); // TODO
+	return request_implicit_class(format("%s![%s]", Identifier::SHARED, parent->name), Class::Type::POINTER_SHARED_NOT_NULL, config.target.pointer_size, 0, nullptr, {parent}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned(const Class *parent, int token_id) {

@@ -227,7 +227,7 @@ void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 		_add_missing_function_headers_for_array(t);
 	} else if (t->is_dict()) {
 		_add_missing_function_headers_for_dict(t);
-	} else if (t->is_pointer_shared()) {
+	} else if (t->is_pointer_shared() or t->is_pointer_shared_not_null()) {
 		_add_missing_function_headers_for_shared(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_add_missing_function_headers_for_owned(t);
@@ -272,7 +272,7 @@ void AutoImplementer::implement_functions(const Class *t) {
 		_implement_functions_for_array(t);
 	} else if (t->is_dict()) {
 		_implement_functions_for_dict(t);
-	} else if (t->is_pointer_shared()) {
+	} else if (t->is_pointer_shared() or t->is_pointer_shared_not_null()) {
 		_implement_functions_for_shared(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_implement_functions_for_owned(t);
@@ -324,9 +324,9 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_xfer()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_shared()) {
+	} else if (t->is_pointer_shared() or t->is_pointer_shared_not_null()) {
 		//t->derive_from(TypeSharedPointer);
-		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
+		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
