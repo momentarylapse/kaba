@@ -314,14 +314,14 @@ void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 
 
 	// del self.p
-/*	auto cmd_del = add_node_statement(StatementID::DELETE);
+	auto cmd_del = add_node_statement(StatementID::DELETE);
 	cmd_del->set_param(0, SHARED_P(self));
 	b->add(cmd_del);
 
 
 	// self.p = nil
 	auto n_op = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, SHARED_P(self), node_nil());
-	b->add(n_op);*/
+	b->add(n_op);
 
 	cmd_if->set_param(1, b);
 	f->block->add(cmd_if);

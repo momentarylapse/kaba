@@ -47,6 +47,17 @@ void AutoImplementer::db_add_print_node(shared<Block> block, shared<Node> node) 
 	block->add(cmd);
 }
 
+void AutoImplementer::db_add_print_p2s_node(shared<Block> block, shared<Node> node) {
+	auto f_p2s = tree->required_func_global("p2s");
+	auto n_p2s = add_node_call(f_p2s);
+	n_p2s->set_param(0, node);
+
+	auto f_print = tree->required_func_global("print");
+	auto n_print = add_node_call(f_print);
+	n_print->set_param(0, n_p2s);
+	block->add(n_print);
+}
+
 void AutoImplementer::db_add_print_label(shared<Block> block, const string &s) {
 	auto c = tree->add_constant(TypeString);
 	c->as_string() = s;

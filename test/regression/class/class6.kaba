@@ -19,9 +19,11 @@ class B extends A
 class C extends B
 	func override __init__(s: string)
 		print("C.init {{s}}")
+	func override __delete__()
+		print("C.del")
 	func override x()
 		print("C.x")
 
 func main()
-	var a: owned![A] = new C("test")
+	var a = new C("test")
 	a.x()

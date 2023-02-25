@@ -2,3 +2,5 @@ A.init
 B.init test
 C.init test
 C.x
+C.del
+A.del

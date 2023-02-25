@@ -104,6 +104,7 @@ public:
 	shared<Node> const_int(int i);
 
 	void db_add_print_node(shared<Block> block, shared<Node> node);
+	void db_add_print_p2s_node(shared<Block> block, shared<Node> node);
 	void db_add_print_label(shared<Block> block, const string &s);
 	void db_add_print_label_node(shared<Block> block, const string &s, shared<Node> node);
 
