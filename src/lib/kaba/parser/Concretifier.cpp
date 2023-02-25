@@ -647,8 +647,6 @@ shared<Node> Concretifier::link_special_operator_tuple_extract(shared<Node> para
 
 // TODO clean-up
 shared<Node> Concretifier::link_special_operator_ref_assign(shared<Node> param1, shared<Node> param2, int token_id) {
-	param1->show();
-	param2->show();
 	return add_node_operator_by_inline(InlineID::POINTER_ASSIGN, param1, param2, token_id);
 }
 
@@ -1860,12 +1858,13 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for, shared<Node> n_exp, shared<Node> n_cmp, const Class *type_el, Block *block, const Class *ns, int token_id) {
 	// OUT: [FOR, VAR]
 
+	// FIXME already feed the correct type here
+	if (type_el->is_reference())
+		type_el = type_el->param[0];
 
 	// create an array
 	auto type_array = tree->request_implicit_class_super_array(type_el, token_id);
 	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
-
-
 
 	// array.add(exp)
 	auto *f_add = type_array->get_member_func("add", TypeVoid, {type_el});
