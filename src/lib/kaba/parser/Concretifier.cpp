@@ -191,6 +191,10 @@ bool type_match_up(const Class *given, const Class *wanted) {
 			return true;
 	}
 
+	if (given->is_pointer_shared_not_null() and wanted->is_pointer_shared())
+		if (given->param[0]->is_derived_from(wanted->param[0]))
+			return true;
+
 	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
 	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_shared_not_null() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
 		if (type_match_up(given->param[0], wanted->param[0])) {
@@ -1403,6 +1407,9 @@ shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, B
 
 shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
+
+	if (sub->type->is_reference())
+		sub = sub->deref();
 
 	auto t = sub->type;
 	while (true) {

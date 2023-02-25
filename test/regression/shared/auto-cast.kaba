@@ -1,0 +1,8 @@
+class X as shared
+	func __init__()
+		pass
+
+func main()
+	var a: shared![X] = new X()
+	var b: shared[X]
+	b = a
