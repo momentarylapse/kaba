@@ -19,7 +19,7 @@ static shared<Node> op_has_value(shared<Node> node) {
 }
 
 static shared<Node> op_data(shared<Node> node) {
-	return node->shift(0, node->type->param[0]);
+	return node->change_type(node->type->param[0]);
 }
 
 void AutoImplementer::_add_missing_function_headers_for_optional(Class *t) {

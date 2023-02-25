@@ -797,7 +797,7 @@ shared<Node> conv_break_down_med_level(SyntaxTree *tree, shared<Node> c) {
 	if (c->kind == NodeKind::DYNAMIC_ARRAY) {
 		return tree->conv_break_down_low_level(
 				add_node_parray(
-						c->params[0]->shift(0, tree->get_pointer(c->type, c->token_id)),
+						c->params[0]->change_type(tree->get_pointer(c->type, c->token_id)),
 						c->params[1], c->type));
 	}
 	return c;

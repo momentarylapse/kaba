@@ -1126,7 +1126,7 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> 
 	auto t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
 
 	auto *var = block_x->add_var(var_name, t_out);
-	block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->shift(0, t_out)));
+	block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->change_type(t_out)));
 
 	auto n_if = add_node_statement(StatementID::IF, node->token_id);
 	n_if->set_num_params(node->params.num - 2);
@@ -1409,12 +1409,12 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 		//if (t->is_pointer() or t->is_pointer_shared() or t->is_pointer_owned() or t->is_reference()) {
 		if (t->is_some_pointer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
-			return sub->shift(0, tt, node->token_id);
+			return sub->change_type(tt, node->token_id);
 		} else if (t->is_super_array()
 				and (t->param[0]->is_pointer_shared() or t->param[0]->is_pointer_shared_not_null()
 						or t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null())) {
 			auto tt = tree->request_implicit_class_super_array(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
-			return sub->shift(0, tt, node->token_id);
+			return sub->change_type(tt, node->token_id);
 		}
 		if (t->parent)
 			t = t->parent;

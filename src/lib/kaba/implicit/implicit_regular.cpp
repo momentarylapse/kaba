@@ -95,7 +95,7 @@ void AutoImplementer::implement_add_virtual_table(shared<Node> self, Function *f
 	if (t->vtable.num > 0) {
 		auto *c = tree->add_constant_pointer(TypePointer, t->_vtable_location_target_);
 		f->block->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN,
-				self->shift(0, TypePointer),
+				self->change_type(TypePointer),
 				add_node_const(c)));
 	}
 }
@@ -226,8 +226,8 @@ void AutoImplementer::implement_regular_assign(Function *f, const Class *t) {
 
 	// parent assignment
 	if (t->parent) {
-		auto p = n_self->shift(0, t->parent);
-		auto o = n_other->shift(0, t->parent);
+		auto p = n_self->change_type(t->parent);
+		auto o = n_other->change_type(t->parent);
 
 		auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, p, o);
 		if (!cmd_assign)

@@ -400,7 +400,7 @@ shared<Node> Node::deref(const Class *override_type) const {
 }
 
 shared<Node> Node::shift(int64 shift, const Class *type, int token_id) const {
-	shared<Node> c = new Node(NodeKind::ADDRESS_SHIFT, shift, type, is_const, token_id);
+	shared<Node> c = new Node(NodeKind::ADDRESS_SHIFT, shift, type, is_const, token_id >= 0 ? token_id : this->token_id);
 	c->set_num_params(1);
 	c->set_param(0, const_cast<Node*>(this));
 	return c;

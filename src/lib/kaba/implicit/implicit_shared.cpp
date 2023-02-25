@@ -16,9 +16,9 @@ namespace kaba {
 extern Class* TypeNone;
 
 /*static shared<Node> shared_p(shared<Node> n) {
-	return n->shift(0, tree->get_pointer(t->param[0]));
+	return n->change_type(tree->get_pointer(t->param[0]));
 }*/
-#define SHARED_P(N)       (N->shift(0, tree->get_pointer(t->param[0])))
+#define SHARED_P(N)       (N->change_type(tree->get_pointer(t->param[0])))
 //#define SHARED_COUNTER(N) (SHARED_P(self)->deref()->shift(e.offset, e.type))
 
 void AutoImplementer::_add_missing_function_headers_for_shared(Class *t) {
