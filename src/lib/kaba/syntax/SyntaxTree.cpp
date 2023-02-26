@@ -852,6 +852,10 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 // * -> + -> & struct
 //        -> shift
 
+		//if (c->link_no == 0)
+		//	return c->params[0]->ref_raw(this)->deref(el_type);
+		// FIXME this causes a bug, probably by omtimizing away *(&x) and changing types
+
 		return add_node_operator_by_inline(__get_pointer_add_int(),
 				c->params[0]->ref_raw(this), // struct
 				add_node_const(add_constant_int(c->link_no)),
@@ -867,6 +871,9 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 //
 // * -> + -> struct_pointer
 //        -> shift
+
+		//if (c->link_no == 0)
+		//	return c->params[0]->deref(el_type);
 
 		// create command for shift constant
 		// address = &struct + shift

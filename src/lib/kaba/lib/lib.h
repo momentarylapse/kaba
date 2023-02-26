@@ -81,6 +81,7 @@ const Class *add_type_l(const Class *sub_type);
 const Class *add_type_d(const Class *sub_type);
 const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params);
 const Class *add_type_e(const string &name, const Class *_namespace = nullptr);
+const Class *add_type_optional(const Class *sub_type);
 void capture_implicit_type(const Class *t, const string &name);
 
 

@@ -1,7 +1,9 @@
 #include "../kaba.h"
 #include "../../math/mat4.h"
+#include "../../base/optional.h"
 #include "lib.h"
 #include "shared.h"
+#include "optional.h"
 #include "../dynamic/exception.h"
 
 #if __has_include("../../vulkan/vulkan.h") && HAS_LIB_VULKAN
@@ -199,6 +201,12 @@ public:
 	void __delete__() {
 		this->~SwapChain();
 	}
+	base::optional<int> acquire_image_x(vulkan::Semaphore *sem) {
+		int index;
+		if (vulkan::SwapChain::acquire_image(&index, sem))
+			return index;
+		return base::None;
+	}
 };
 
 class VulkanFence : public vulkan::Fence {
@@ -353,6 +361,8 @@ void SIAddPackageVulkan(Context *c) {
 	auto TypeAccessFlags    = add_type_e("AccessFlags");
 	auto TypePipelineBindPoint = add_type_e("BindPoint", TypePipeline);
 
+	auto TypeIntOptional = add_type_optional(TypeInt);
+
 	kaba_create_pointer_xfer(TypeDeviceXfer);
 	kaba_create_pointer_xfer(TypeInstanceXfer);
 	kaba_create_pointer_xfer(TypeTextureXfer);
@@ -362,6 +372,8 @@ void SIAddPackageVulkan(Context *c) {
 	kaba_create_pointer_xfer(TypeCommandBufferXfer);
 	kaba_create_pointer_xfer(TypeRenderPassXfer);
 	kaba_create_pointer_xfer(TypeAccelerationStructureXfer);
+
+	kaba_create_optional<int>(TypeIntOptional);
 
 
 	add_class(TypeInstance);
@@ -598,9 +610,8 @@ void SIAddPackageVulkan(Context *c) {
 		class_add_func("present", TypeBool, vul_p(&vulkan::SwapChain::present));
 			func_add_param("image_index", TypeInt);
 			func_add_param("wait_sem", TypeSemaphorePList);
-		class_add_func("acquire_image", TypeBool, vul_p(&vulkan::SwapChain::acquire_image));
-			func_add_param("image_index", TypeIntP);
-			func_add_param("signal_sem", TypeSemaphore);
+		class_add_func("acquire_image", TypeIntOptional, vul_p(&VulkanSwapChain::acquire_image_x));
+			func_add_param("signal_sem", TypeSemaphoreP);
 
 
 	add_class(TypeFence);
