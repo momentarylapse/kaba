@@ -414,9 +414,11 @@ shared<Node> Node::deref_shift(int64 shift, const Class *type, int token_id) con
 }
 
 shared<Node> Node::change_type(const Class *type, int token_id) const {
-	auto c = shallow_copy();
+	return shift(0, type, token_id);
+	// FIXME: simply changing the type causes bugs (due to temp vars/constructors etc missing)
+	/*auto c = shallow_copy();
 	c->type = type;
-	return c;
+	return c;*/
 }
 
 
