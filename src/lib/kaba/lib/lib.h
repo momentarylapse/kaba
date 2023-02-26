@@ -74,6 +74,7 @@ const Class *add_type(const string &name, int size, Flags = Flags::NONE, const C
 const Class *add_type_p(const Class *sub_type);
 const Class *add_type_p_owned(const Class *sub_type);
 const Class *add_type_p_shared(const Class *sub_type);
+const Class *add_type_p_shared_not_null(const Class *sub_type);
 const Class *add_type_p_xfer(const Class *sub_type);
 const Class *add_type_ref(const Class *sub_type);
 const Class *add_type_a(const Class *sub_type, int array_length);

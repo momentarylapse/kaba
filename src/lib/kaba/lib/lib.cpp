@@ -196,6 +196,14 @@ const Class *add_type_p_shared(const Class *sub_type) {
 	return t;
 }
 
+const Class *add_type_p_shared_not_null(const Class *sub_type) {
+	string name = format("%s![%s]", Identifier::SHARED, sub_type->name);
+	Class *t = new Class(Class::Type::POINTER_SHARED_NOT_NULL, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
 const Class *add_type_p_xfer(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::XFER, sub_type->name);
 	Class *t = new Class(Class::Type::POINTER_XFER, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
