@@ -30,8 +30,8 @@ public:
 	void __init__() {
 		new(this) XOptional();
 	}
-	void __init_raw__(T x) {
-		new(this) XOptional(x);
+	static void __init_raw__(base::optional<T> &self, T x) {
+		new(&self) base::optional(x);
 	}
 	void __init_nil__(void* p) {
 		new(this) XOptional();

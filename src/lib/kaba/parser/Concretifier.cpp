@@ -425,12 +425,12 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			}
 		}
 	}
-	if (given->is_optional() and given->param[0] == wanted) {
+	/*if (given->is_optional() and given->param[0] == wanted) {
 		cd.cast = TYPE_CAST_OPTIONAL_VALUE;
 		cd.penalty = 20;
 		cd.f = given->get_call();
 		return true;
-	}
+	}*/
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(Identifier::Func::STR, TypeString, {});
 		//if (cf) {
@@ -536,13 +536,13 @@ shared<Node> Concretifier::apply_type_cast_basic(const CastingData &cast, shared
 		nn->set_param(0, node);
 		return nn;
 	}
-	if (cast.cast == TYPE_CAST_OPTIONAL_VALUE) {
+	/*if (cast.cast == TYPE_CAST_OPTIONAL_VALUE) {
 		if (!cast.f)
 			do_error(format("internal: optional cast... %s.%s() missing...", wanted->name, Identifier::Func::CALL), node);
 		auto nn = add_node_call(cast.f, node->token_id);
 		nn->set_param(0, node);
 		return nn;
-	}
+	}*/
 
 	auto c = add_node_call(context->type_casts[cast.cast].f, node->token_id);
 	c->type = context->type_casts[cast.cast].dest;

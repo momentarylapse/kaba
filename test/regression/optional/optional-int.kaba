@@ -12,8 +12,8 @@ func main()
 	print(i)
 	print(i.has_value())
 
-	if bool(i)
-		let j = i() + 10000
+	for ii in i
+		let j = ii + 10000
 		print(j)
 	i = f()
 	print(i)
