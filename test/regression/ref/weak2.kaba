@@ -1,0 +1,13 @@
+class X as shared
+	func __init__()
+		pass
+
+func main()
+	var oo: shared![X][]
+	oo.add(new X())
+	print(typeof(oo))
+	for r in oo
+		print(typeof(r))
+		var p = weak(r)
+		print(typeof(p))
+

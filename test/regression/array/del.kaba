@@ -1,0 +1,6 @@
+func main()
+	var i = range(10)
+	print(i)
+	del i
+	print(i)
+

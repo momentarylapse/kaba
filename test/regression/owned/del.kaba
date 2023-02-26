@@ -1,0 +1,13 @@
+class X
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+
+func main()
+	let p: owned[X] = new X()
+	print("a")
+	del p
+	print("b")
+
+	
