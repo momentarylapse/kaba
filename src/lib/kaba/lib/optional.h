@@ -67,7 +67,7 @@ public:
 #pragma GCC pop_options
 
 template<class T>
-void kaba_create_optional(const Class *tt) {
+void lib_create_optional(const Class *tt) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);

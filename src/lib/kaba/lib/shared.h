@@ -33,7 +33,7 @@ public:
 	}
 };
 
-inline void kaba_create_pointer_xfer(const Class *tt) {
+inline void lib_create_pointer_xfer(const Class *tt) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);
@@ -41,7 +41,7 @@ inline void kaba_create_pointer_xfer(const Class *tt) {
 }
 
 template<class T>
-void kaba_create_pointer_shared(const Class *tt, const Class *t_xfer) {
+void lib_create_pointer_shared(const Class *tt, const Class *t_xfer) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);

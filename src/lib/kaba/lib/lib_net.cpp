@@ -50,12 +50,12 @@ xfer<Socket> __socket_create_udp__(int port) {
 void SIAddPackageNet(Context *c) {
 	add_package(c, "net");
 
-	auto TypeNetAddress  = add_type  ("NetAddress", sizeof(NetAddress));
-	auto TypeSocket      = add_type  ("Socket", sizeof(Socket));
+	auto TypeNetAddress  = add_type("NetAddress", sizeof(NetAddress));
+	auto TypeSocket      = add_type("Socket", sizeof(Socket));
 	auto TypeSocketXfer  = add_type_p_xfer(TypeSocket);
-	auto TypeBinaryBuffer = add_type  ("BinaryBuffer", sizeof(BinaryBuffer));
+	auto TypeBinaryBuffer = add_type("BinaryBuffer", sizeof(BinaryBuffer));
 
-	kaba_create_pointer_xfer(TypeSocketXfer);
+	lib_create_pointer_xfer(TypeSocketXfer);
 
 
 	add_class(TypeNetAddress);

@@ -255,7 +255,7 @@ void SIAddPackageBase(Context *c) {
 	TypeReg16			= add_type  ("@reg16", 2, Flags::FORCE_CALL_BY_VALUE);
 	TypeReg8			= add_type  ("@reg8", 1, Flags::FORCE_CALL_BY_VALUE);
 	TypeObject			= add_type  ("Object", sizeof(VirtualBase)); // base for most virtual classes
-	TypeObjectP			= add_type_p(TypeObject);
+	TypeObjectP			= add_type_p_raw(TypeObject);
 	TypeDynamic			= add_type  ("@dynamic", 0);
 
 	// "real"
@@ -321,27 +321,27 @@ void SIAddPackageBase(Context *c) {
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 	// derived   (must be defined after the primitive types and the bases!)
-	TypePointer     = add_type_p(TypeVoid); // substitute for all pointer types
+	TypePointer     = add_type_p_raw(TypeVoid); // substitute for all pointer types
 	TypeReference   = add_type_ref(TypeVoid); // substitute for all reference types
-	TypeNone        = add_type_p(TypeVoid); // type of <nil>
+	TypeNone        = add_type_p_raw(TypeVoid); // type of <nil>
 	const_cast<Class*>(TypeNone)->name = "None";
-	TypePointerList = add_type_l(TypePointer);
-	TypeBoolList    = add_type_l(TypeBool);
-	TypeIntP        = add_type_p(TypeInt);
-	TypeIntList     = add_type_l(TypeInt);
-	TypeFloatP      = add_type_p(TypeFloat);
-	TypeFloatList   = add_type_l(TypeFloat);
-	TypeFloat64List = add_type_l(TypeFloat64);
-	TypeCString     = add_type_a(TypeChar, 256);
+	TypePointerList = add_type_list(TypePointer);
+	TypeBoolList    = add_type_list(TypeBool);
+	TypeIntP        = add_type_p_raw(TypeInt);
+	TypeIntList     = add_type_list(TypeInt);
+	TypeFloatP      = add_type_p_raw(TypeFloat);
+	TypeFloatList   = add_type_list(TypeFloat);
+	TypeFloat64List = add_type_list(TypeFloat64);
+	TypeCString     = add_type_array(TypeChar, 256);
 	capture_implicit_type(TypeCString, "cstring"); // cstring := char[256]
-	TypeString      = add_type_l(TypeChar);
+	TypeString      = add_type_list(TypeChar);
 	capture_implicit_type(TypeString, "string"); // string := char[]
 	TypeStringAutoCast = add_type("<string-auto-cast>", config.target.super_array_size);	// string := char[]
-	TypeStringList  = add_type_l(TypeString);
+	TypeStringList  = add_type_list(TypeString);
 
-	TypeIntDict     = add_type_d(TypeInt);
-	TypeFloatDict   = add_type_d(TypeFloat);
-	TypeStringDict  = add_type_d(TypeString);
+	TypeIntDict     = add_type_dict(TypeInt);
+	TypeFloatDict   = add_type_dict(TypeFloat);
+	TypeStringDict  = add_type_dict(TypeString);
 
 
 	add_class(TypeCallableBase);

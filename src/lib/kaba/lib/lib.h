@@ -32,8 +32,8 @@ class Context;
 enum class DeriveFlags;
 
 
-void kaba_make_super_array(Class *t, SyntaxTree *ps = nullptr);
-void kaba_make_dict(Class *t, SyntaxTree *ps = nullptr);
+void lib_make_list(Class *t, SyntaxTree *ps = nullptr);
+void lib_make_dict(Class *t, SyntaxTree *ps = nullptr);
 
 
 
@@ -71,17 +71,17 @@ int element_offset(M C::* p) {
 
 void add_package(Context *c, const string &name, Flags = Flags::NONE);
 const Class *add_type(const string &name, int size, Flags = Flags::NONE, const Class *_namespace = nullptr);
-const Class *add_type_p(const Class *sub_type);
+const Class *add_type_p_raw(const Class *sub_type);
 const Class *add_type_p_owned(const Class *sub_type);
 const Class *add_type_p_shared(const Class *sub_type);
 const Class *add_type_p_shared_not_null(const Class *sub_type);
 const Class *add_type_p_xfer(const Class *sub_type);
 const Class *add_type_ref(const Class *sub_type);
-const Class *add_type_a(const Class *sub_type, int array_length);
-const Class *add_type_l(const Class *sub_type);
-const Class *add_type_d(const Class *sub_type);
-const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params);
-const Class *add_type_e(const string &name, const Class *_namespace = nullptr);
+const Class *add_type_array(const Class *sub_type, int array_length);
+const Class *add_type_list(const Class *sub_type);
+const Class *add_type_dict(const Class *sub_type);
+const Class *add_type_func(const Class *ret_type, const Array<const Class*> &params);
+const Class *add_type_enum(const string &name, const Class *_namespace = nullptr);
 const Class *add_type_optional(const Class *sub_type);
 void capture_implicit_type(const Class *t, const string &name);
 

@@ -162,7 +162,7 @@ const Class *add_type(const string &name, int size, Flags flags, const Class *na
 	return t;
 }
 
-const Class *add_type_p(const Class *sub_type) {
+const Class *add_type_p_raw(const Class *sub_type) {
 	string name = sub_type->name + "*";
 	Class *t = new Class(Class::Type::POINTER_RAW, name, config.target.pointer_size, cur_package->syntax, nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
@@ -214,7 +214,7 @@ const Class *add_type_p_xfer(const Class *sub_type) {
 }
 
 // fixed array
-const Class *add_type_a(const Class *sub_type, int array_length) {
+const Class *add_type_array(const Class *sub_type, int array_length) {
 	string name = sub_type->name + "[" + i2s(array_length) + "]";
 	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, cur_package->syntax, nullptr, {sub_type});
 	t->array_length = array_length;
@@ -224,20 +224,20 @@ const Class *add_type_a(const Class *sub_type, int array_length) {
 }
 
 // super array
-const Class *add_type_l(const Class *sub_type) {
+const Class *add_type_list(const Class *sub_type) {
 	string name = sub_type->name + "[]";
 	Class *t = new Class(Class::Type::SUPER_ARRAY, name, config.target.super_array_size, cur_package->syntax, nullptr, {sub_type});
-	kaba_make_super_array(t);
+	lib_make_list(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
 }
 
 // dict
-const Class *add_type_d(const Class *sub_type) {
+const Class *add_type_dict(const Class *sub_type) {
 	string name = sub_type->name + "{}";
 	Class *t = new Class(Class::Type::DICT, name, config.target.super_array_size, cur_package->syntax, nullptr, {sub_type});
-	kaba_make_dict(t);
+	lib_make_dict(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
 	return t;
@@ -250,7 +250,7 @@ void capture_implicit_type(const Class *_t, const string &name) {
 }
 
 // enum
-const Class *add_type_e(const string &name, const Class *_namespace) {
+const Class *add_type_enum(const string &name, const Class *_namespace) {
 	Class *t = new Class(Class::Type::ENUM, name, sizeof(int), cur_package->syntax);
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, _namespace);
@@ -293,7 +293,7 @@ public:
 
 string make_callable_signature(const Array<const Class*> &param, const Class *ret);
 
-const Class *add_type_f(const Class *ret_type, const Array<const Class*> &params) {
+const Class *add_type_func(const Class *ret_type, const Array<const Class*> &params) {
 	string name = make_callable_signature(params, ret_type);
 
 	auto params_ret = params;

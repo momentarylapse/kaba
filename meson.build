@@ -230,6 +230,7 @@ sources = [
 	'src/lib/kaba/parser/macros.cpp',
 	'src/lib/kaba/parser/Parser.cpp',
 	'src/lib/kaba/parser/template.cpp',
+	'src/lib/kaba/parser/type_matching.cpp',
 	'src/lib/kaba/syntax/Block.cpp',
 	'src/lib/kaba/syntax/Class.cpp',
 	'src/lib/kaba/syntax/Constant.cpp',

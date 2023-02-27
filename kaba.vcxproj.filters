@@ -424,6 +424,9 @@
     <ClCompile Include="src\lib\kaba\parser\template.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\type_matching.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\syntax\Block.cpp">
       <Filter>src\lib\kaba\syntax</Filter>
     </ClCompile>
@@ -961,6 +964,9 @@
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\operators.h">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\optional.h">
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\shared.h">

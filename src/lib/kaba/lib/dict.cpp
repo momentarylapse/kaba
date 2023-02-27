@@ -52,7 +52,7 @@ public:
 };
 #pragma GCC pop_options
 
-void kaba_make_dict(Class *t, SyntaxTree *ps) {
+void lib_make_dict(Class *t, SyntaxTree *ps) {
 	const Class *p = t->param[0];
 	t->derive_from(TypeDictBase, DeriveFlags::SET_SIZE);
 	t->param = {p};

@@ -314,7 +314,7 @@ void SIAddPackageOSPath(Context *c) {
 
 
 	// AFTER TypePath!
-	TypePathList = add_type_l(TypePath);
+	TypePathList = add_type_list(TypePath);
 
 	add_class(TypePath);
 		class_add_func("all_parents", TypePathList, &Path::all_parents, Flags::PURE);
@@ -423,14 +423,14 @@ void SIAddPackageOS(Context *c) {
 	TypeOsConfiguration = add_type("Configuration", sizeof(Configuration));
 	auto TypeTerminal = add_type("terminal", 0);
 
-	TypeCallback = add_type_f(TypeVoid, {});
-	TypeCallbackString = add_type_f(TypeVoid, {TypeString});
-	auto TypeCallbackStringList = add_type_f(TypeVoid, {TypeStringList});
+	TypeCallback = add_type_func(TypeVoid, {});
+	TypeCallbackString = add_type_func(TypeVoid, {TypeString});
+	auto TypeCallbackStringList = add_type_func(TypeVoid, {TypeStringList});
 
-	kaba_create_pointer_xfer(TypeStreamXfer);
-	kaba_create_pointer_xfer(TypeFileStreamXfer);
-	kaba_create_pointer_shared<Stream>(TypeStreamShared, TypeStreamXfer);
-	kaba_create_pointer_shared<os::fs::FileStream>(TypeFileStreamSharedNN, TypeFileStreamXfer);
+	lib_create_pointer_xfer(TypeStreamXfer);
+	lib_create_pointer_xfer(TypeFileStreamXfer);
+	lib_create_pointer_shared<Stream>(TypeStreamShared, TypeStreamXfer);
+	lib_create_pointer_shared<os::fs::FileStream>(TypeFileStreamSharedNN, TypeFileStreamXfer);
 
 	add_class(TypeStream);
 		class_add_element(Identifier::SHARED_COUNT, TypeInt, evil_member_offset(os::fs::FileStream, _pointer_ref_counter));

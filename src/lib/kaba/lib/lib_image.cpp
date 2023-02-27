@@ -32,11 +32,11 @@ void SIAddPackageImage(Context *c) {
 	TypeImage = add_type("Image", sizeof(Image));
 	auto TypeImageXfer = add_type_p_xfer(TypeImage);
 	TypeBasePainter = add_type("Painter", sizeof(Painter), Flags::NONE, TypeImage);
-	TypeBasePainterP = add_type_p(TypeBasePainter);
+	TypeBasePainterP = add_type_p_raw(TypeBasePainter);
 	TypeBasePainterXfer = add_type_p_xfer(TypeBasePainter);
 
-	kaba_create_pointer_xfer(TypeImageXfer);
-	kaba_create_pointer_xfer(TypeBasePainterXfer);
+	lib_create_pointer_xfer(TypeImageXfer);
+	lib_create_pointer_xfer(TypeBasePainterXfer);
 
 	
 	add_class(TypeImage);

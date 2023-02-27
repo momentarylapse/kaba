@@ -130,13 +130,13 @@ void SIAddPackageHui(Context *c) {
 	auto TypeHuiMenu = add_type("Menu",  sizeof(hui::Menu));
 	auto TypeHuiMenuXfer = add_type_p_xfer(TypeHuiMenu);
 	auto TypeHuiToolbar = add_type("Toolbar",  sizeof(hui::Toolbar));
-	auto TypeHuiToolbarP = add_type_p(TypeHuiToolbar);
+	auto TypeHuiToolbarP = add_type_p_raw(TypeHuiToolbar);
 	auto TypeHuiPanel = add_type("Panel", sizeof(hui::Panel));
-	auto TypeHuiPanelP = add_type_p(TypeHuiPanel); // TODO use ref instead (after owned![X])
+	auto TypeHuiPanelP = add_type_p_raw(TypeHuiPanel); // TODO use ref instead (after owned![X])
 	auto TypeHuiPanelXfer = add_type_p_xfer(TypeHuiPanel);
 	auto TypeHuiPanelShared = add_type_p_shared(TypeHuiPanel);
 	auto TypeHuiWindow = add_type("Window", sizeof(hui::Window));
-	TypeHuiWindowP = add_type_p(TypeHuiWindow);
+	TypeHuiWindowP = add_type_p_raw(TypeHuiWindow);
 	auto TypeHuiWindowXfer = add_type_p_xfer(TypeHuiWindow);
 	auto TypeHuiWindowShared = add_type_p_shared(TypeHuiWindow);
 	auto TypeHuiGlWindow = add_type("GlWindow", sizeof(hui::Window));
@@ -145,15 +145,15 @@ void SIAddPackageHui(Context *c) {
 	auto TypeHuiEventRef = add_type_ref(TypeHuiEvent);
 	auto TypeHuiPainter = add_type("Painter", sizeof(hui::Painter));
 
-	auto TypeCallbackPainter = add_type_f(TypeVoid, {TypeHuiPainter});
-	auto TypeCallbackPath = add_type_f(TypeVoid, {TypePath});
+	auto TypeCallbackPainter = add_type_func(TypeVoid, {TypeHuiPainter});
+	auto TypeCallbackPath = add_type_func(TypeVoid, {TypePath});
 
-	kaba_create_pointer_xfer(TypeHuiMenuXfer);
-	kaba_create_pointer_xfer(TypeHuiPanelXfer);
-	kaba_create_pointer_xfer(TypeHuiWindowXfer);
+	lib_create_pointer_xfer(TypeHuiMenuXfer);
+	lib_create_pointer_xfer(TypeHuiPanelXfer);
+	lib_create_pointer_xfer(TypeHuiWindowXfer);
 
-	kaba_create_pointer_shared<hui::Panel>(TypeHuiPanelShared, TypeHuiPanelXfer);
-	kaba_create_pointer_shared<hui::Window>(TypeHuiWindowShared, TypeHuiWindowXfer);
+	lib_create_pointer_shared<hui::Panel>(TypeHuiPanelShared, TypeHuiPanelXfer);
+	lib_create_pointer_shared<hui::Window>(TypeHuiWindowShared, TypeHuiWindowXfer);
 
 	add_class(TypeHuiMenu);
 		class_add_func(Identifier::Func::INIT, TypeVoid, hui_p(&hui::Menu::__init__));

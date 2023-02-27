@@ -337,7 +337,7 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_shared() or t->is_pointer_shared_not_null()) {
 		//t->derive_from(TypeSharedPointer);
-		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
+		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
 		t->param = params;
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
