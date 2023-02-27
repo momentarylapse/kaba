@@ -1909,6 +1909,18 @@ shared<Node> Concretifier::link_unary_operator(AbstractOperator *po, shared<Node
 	return add_node_operator(op, operand, nullptr, token_id);
 }
 
+void check_function_signature_legal(Concretifier *c, Function *f) {
+	auto forbidden = [](const Class *t) {
+		return t->is_pointer_owned() or t->is_pointer_owned_not_null();
+	};
+
+	if (forbidden(f->literal_return_type))
+		c->do_error("return type must not be owned. Use xfer[...] instead", f->abstract_return_type);
+	for (int i=0; i<f->num_params; i++)
+		if (forbidden(f->literal_param_type[i]))
+			c->do_error("parameter must not be owned. Use xfer[...] instead", f->abstract_param_types[i]);
+}
+
 void Concretifier::concretify_function_header(Function *f) {
 	auto block = tree->root_of_all_evil->block.get();
 
@@ -1931,6 +1943,8 @@ void Concretifier::concretify_function_header(Function *f) {
 		}
 	}
 	flags_clear(f->flags, Flags::TEMPLATE);
+
+	check_function_signature_legal(this, f);
 }
 
 void Concretifier::concretify_function_body(Function *f) {
