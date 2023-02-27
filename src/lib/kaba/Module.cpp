@@ -4,6 +4,7 @@
 #include "CompilerConfiguration.h"
 #include "syntax/SyntaxTree.h"
 #include "parser/Parser.h"
+#include "compiler/Compiler.h"
 #include "dynamic/dynamic.h"
 #include "lib/lib.h"
 #include "../os/filesystem.h"
@@ -45,12 +46,14 @@ void Module::load(const Path &_filename, bool _just_analyse) {
 		parser->parse_buffer(buffer, just_analyse);
 
 
-		if (!just_analyse)
-			compile();
+		if (!just_analyse) {
+			Compiler compiler(this);
+			compiler.compile();
+		}
 
 	} catch (os::fs::FileError &e) {
 		loading_module_stack.pop();
-		do_error("module file not loadable: " + filename.str());
+		do_error("module file not loadable: " + str(filename));
 	} catch (Exception &e) {
 		loading_module_stack.pop();
 		throw e;

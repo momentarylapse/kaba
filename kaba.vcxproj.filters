@@ -298,7 +298,7 @@
     <ClCompile Include="src\lib\kaba\compiler\CommandList.cpp">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\kaba\compiler\compiler.cpp">
+    <ClCompile Include="src\lib\kaba\compiler\Compiler.cpp">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\compiler\mapper.cpp">
@@ -422,6 +422,9 @@
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\template.cpp">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\parser\Transformer.cpp">
       <Filter>src\lib\kaba\parser</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\parser\type_matching.cpp">
@@ -927,6 +930,9 @@
     <ClInclude Include="src\lib\kaba\compiler\CommandList.h">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\kaba\compiler\Compiler.h">
+      <Filter>src\lib\kaba\compiler</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\kaba\compiler\serializer.h">
       <Filter>src\lib\kaba\compiler</Filter>
     </ClInclude>
@@ -985,6 +991,9 @@
       <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\parser\template.h">
+      <Filter>src\lib\kaba\parser</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\parser\Transformer.h">
       <Filter>src\lib\kaba\parser</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\syntax\Block.h">

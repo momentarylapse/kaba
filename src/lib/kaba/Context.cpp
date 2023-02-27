@@ -4,6 +4,7 @@
 #include "parser/Parser.h"
 #include "parser/Concretifier.h"
 #include "parser/template.h"
+#include "compiler/Compiler.h"
 #include "../os/msg.h"
 
 namespace kaba {
@@ -83,8 +84,10 @@ shared<Module> Context::create_module_for_source(const string &buffer, bool just
 	s->syntax->default_import();
 	s->syntax->parser->parse_buffer(buffer, just_analyse);
 
-	if (!just_analyse)
-		s->compile();
+	if (!just_analyse) {
+		Compiler compiler(s.get());
+		compiler.compile();
+	}
 	return s;
 }
 
@@ -162,7 +165,8 @@ void Context::execute_single_command(const string &cmd) {
 		tree->show("parse:a");
 
 // compile
-	s->compile();
+	Compiler compiler(s.get());
+	compiler.compile();
 
 
 	if (config.target.interpreted) {

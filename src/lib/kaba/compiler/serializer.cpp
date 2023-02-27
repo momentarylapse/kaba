@@ -1,5 +1,6 @@
 #include "../kaba.h"
 #include "serializer.h"
+#include "Compiler.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
 
@@ -993,7 +994,7 @@ Backend *create_backend(Serializer *s) {
 	return nullptr;
 }
 
-void Module::assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list) {
+void Compiler::assemble_function(int index, Function *f, Asm::InstructionWithParamsList *list) {
 	if (config.verbose and config.allow_output(f, "asm"))
 		msg_write("serializing " + f->long_name() + " -------------------");
 	f->show("asm");
@@ -1001,25 +1002,25 @@ void Module::assemble_function(int index, Function *f, Asm::InstructionWithParam
 
 	// skip unused functions?
 	if (config.remove_unused)
-		if (check_needed(syntax, f) == 0)
+		if (check_needed(tree, f) == 0)
 			return;
 
 	if (config.verbose and config.allow_output(f, "ser:0"))
 		f->block->show(TypeVoid);
 
 	if (config.target.interpreted) {
-		auto x = new Serializer(this, list);
+		auto x = new Serializer(module, list);
 		x->cur_func_index = index;
 		x->serialize_function(f);
 		x->fix_return_by_ref();
-		if (!syntax->module->interpreter)
-			syntax->module->interpreter = new Interpreter(syntax->module);
-		syntax->module->interpreter->add_function(f, x);
+		if (!module->interpreter)
+			module->interpreter = new Interpreter(module);
+		module->interpreter->add_function(f, x);
 		return;
 	}
 
 
-	auto x = new Serializer(this, list);
+	auto x = new Serializer(module, list);
 	x->cur_func_index = index;
 	x->serialize_function(f);
 	x->fix_return_by_ref();
@@ -1031,9 +1032,9 @@ void Module::assemble_function(int index, Function *f, Asm::InstructionWithParam
 	} catch (Exception &e) {
 		throw e;
 	} catch (Asm::Exception &e) {
-		throw Exception(e, this, f);
+		throw Exception(e, module, f);
 	}
-	functions_to_link.append(be->list->wanted_label);
+	module->functions_to_link.append(be->list->wanted_label);
 	delete be;
 	delete x;
 
@@ -1050,7 +1051,7 @@ void function_update_address(Function *f, Asm::InstructionWithParamsList *list) 
 	}
 }
 
-void Module::compile_functions(char *oc, int &ocs) {
+void Compiler::compile_functions(char *oc, int &ocs) {
 	auto *list = new Asm::InstructionWithParamsList(0);
 	Array<int> func_offset;
 
@@ -1058,7 +1059,7 @@ void Module::compile_functions(char *oc, int &ocs) {
 
 	// link external functions
 	int func_no = 0;
-	for (Function *f: syntax->functions) {
+	for (Function *f: tree->functions) {
 		if (f->is_template() or  f->is_macro()) {
 			//msg_write("SKIP COMPILE " + f->signature());
 		} else if (f->is_extern()) {
@@ -1067,14 +1068,14 @@ void Module::compile_functions(char *oc, int &ocs) {
 			if (f->address == 0)
 				f->address = (int_p)external->get_link(f->cname(f->owner()->base_class));
 			if (f->address == 0)
-				do_error_link(format("external function '%s' not linkable", name));
+				module->do_error_link(format("external function '%s' not linkable", name));
 		} else {
 			f->_label = list->create_label("_FUNC_" + i2s(func_no ++));
 		}
 	}
 
 	// create assembler
-	for (auto&& [i,f]: enumerate(syntax->functions)) {
+	for (auto&& [i,f]: enumerate(tree->functions)) {
 		func_offset.add(list->num);
 		if (!f->is_extern() and !f->is_template() and !f->is_macro()) {
 			assemble_function(i, f, list);
@@ -1095,16 +1096,16 @@ void Module::compile_functions(char *oc, int &ocs) {
 		Function *f = nullptr;
 		for (int i=0; i<func_offset.num; i++)
 			if (e.line >= func_offset[i] and e.line < func_offset[i+1]) {
-				f = syntax->functions[i];
+				f = tree->functions[i];
 				break;
 			}
 		msg_write(f->long_name());
-		throw Exception(e, this, f);
+		throw Exception(e, module, f);
 	}
 
 
 	// get function addresses
-	for (auto *f: syntax->functions)
+	for (auto *f: tree->functions)
 		if (!f->is_extern() and !f->is_template() and !f->is_macro())
 			function_update_address(f, list);
 

@@ -105,7 +105,7 @@ set(SOURCE
 	src/lib/kaba/compiler/BackendARM.cpp
 	src/lib/kaba/compiler/BackendX86.cpp
 	src/lib/kaba/compiler/CommandList.cpp
-	src/lib/kaba/compiler/compiler.cpp
+	src/lib/kaba/compiler/Compiler.cpp
 	src/lib/kaba/compiler/mapper.cpp
 	src/lib/kaba/compiler/serializer.cpp
 	src/lib/kaba/compiler/SerializerX.cpp
@@ -147,6 +147,7 @@ set(SOURCE
 	src/lib/kaba/parser/macros.cpp
 	src/lib/kaba/parser/Parser.cpp
 	src/lib/kaba/parser/template.cpp
+	src/lib/kaba/parser/Transformer.cpp
 	src/lib/kaba/parser/type_matching.cpp
 	src/lib/kaba/syntax/Block.cpp
 	src/lib/kaba/syntax/Class.cpp
