@@ -45,7 +45,7 @@ string signed_hex(int64 i) {
 string guess_constant(int64 c, Serializer *ser) {
 	if (c != 0) {
 		for (auto s: ser->syntax_tree->includes)
-			for (auto *f: s->syntax->functions)
+			for (auto *f: s->tree->functions)
 				if (c == f->address)
 					return "FUNC:" + f->long_name();
 	}

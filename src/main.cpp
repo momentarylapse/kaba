@@ -257,7 +257,7 @@ public:
 
 	void show_constants(shared<kaba::Module> s) {
 		msg_write("---- constants ----");
-		for (auto *c: weak(s->syntax->base_class->constants))
+		for (auto *c: weak(s->tree->base_class->constants))
 			msg_write(format("%12s %-20s %s", c->type->name, c->str(), c->value.hex()));
 	}
 

@@ -200,7 +200,7 @@ void SyntaxTree::import_data(shared<Module> s, bool indirect, const string &as_n
 		if (i == s)
 			return;
 
-	SyntaxTree *ps = s->syntax;
+	SyntaxTree *ps = s->tree.get();
 	if (flag_immortal)
 		SetImmortal(ps);
 

@@ -47,7 +47,7 @@ public:
 // data
 
 	Path filename;
-	SyntaxTree *syntax;
+	owned<SyntaxTree> tree;
     Context *context;
 
 	char *opcode; // executable code

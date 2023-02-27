@@ -33,7 +33,7 @@ namespace kaba {
 
 Compiler::Compiler(Module *m) {
 	module = m;
-	tree = m->syntax;
+	tree = m->tree.get();
 	context = m->context;
 }
 
@@ -301,7 +301,7 @@ void remap_virtual_tables(Module *s, char *mem, int &offset, char *address, cons
 		t->_vtable_location_compiler_ = &mem[offset];
 		t->_vtable_location_target_ = &address[offset];
 		offset += config.target.pointer_size * t->vtable.num;
-		for (Constant *c: weak(s->syntax->base_class->constants))
+		for (Constant *c: weak(s->tree->base_class->constants))
 			if ((c->type == TypePointer) and (c->as_int64() == (int_p)t->vtable.data))
 				c->as_int64() = (int_p)t->_vtable_location_target_;
 	}
@@ -430,7 +430,7 @@ void import_deep(SyntaxTree *dest, SyntaxTree *source) {
 }
 
 void find_all_includes_rec(Module *s, base::set<Module*> &includes) {
-	for (Module *i: weak(s->syntax->includes)) {
+	for (Module *i: weak(s->tree->includes)) {
 		//if (i->filename.find(".kaba") < 0)
 		//	continue;
 		includes.add(i);
@@ -444,7 +444,7 @@ void import_includes(Module *s) {
 	find_all_includes_rec(s, includes);
 
 	for (Module *i: includes)
-		import_deep(s->syntax, i->syntax);
+		import_deep(s->tree.get(), i->tree.get());
 }
 
 void link_raw_function_pointers(Module *m) {
@@ -613,8 +613,13 @@ void register_functions(Module* s) {
 }
 #endif
 
+void Compiler::compile(Module *m) {
+	Compiler c(m);
+	c._compile();
+}
+
 // generate opcode
-void Compiler::compile() {
+void Compiler::_compile() {
 	Asm::CurrentMetaInfo = tree->asm_meta_info.get();
 
 	if (config.compile_os)

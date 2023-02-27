@@ -915,7 +915,7 @@ void Serializer::assemble_cmd_arm(SerialNode &c) {
 
 void AddAsmBlock(Asm::InstructionWithParamsList *list, Module *s) {
 	//msg_write(".------------------------------- asm");
-	SyntaxTree *ps = s->syntax;
+	SyntaxTree *ps = s->tree.get();
 	if (ps->asm_blocks.num == 0)
 		s->do_error("asm block mismatch");
 	ps->asm_meta_info->line_offset = ps->asm_blocks[0].line;
@@ -934,7 +934,7 @@ void Serializer::do_error_link(const string &msg) {
 
 Serializer::Serializer(Module *m, Asm::InstructionWithParamsList *_list) {
 	module = m;
-	syntax_tree = m->syntax;
+	syntax_tree = m->tree.get();
 	list = _list;
 	max_push_size = 0;
 	stack_max_size = 0;
@@ -966,7 +966,7 @@ bool is_func(shared<Node> n) {
 
 int check_needed(SyntaxTree *tree, Function *f) {
 	int ref_count = 0;
-	tree->transform([&](shared<Node> n) {
+	tree->transform([&ref_count, f](shared<Node> n) {
 		if (is_func(n) and n->as_func() == f)
 			ref_count ++;
 		return n;

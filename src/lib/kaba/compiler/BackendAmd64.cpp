@@ -201,7 +201,7 @@ void BackendAmd64::add_function_call(Function *f, const Array<SerialNodeParam> &
 			insert_cmd(Asm::InstID::CALL, p_rax);
 		}
 	} else if (f->_label >= 0) {
-		if (f->owner() == module->syntax) {
+		if (f->owner() == module->tree) {
 			// 32bit call distance
 			insert_cmd(Asm::InstID::CALL, param_label(TypeInt, f->_label));
 		} else {

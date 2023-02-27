@@ -52,7 +52,7 @@ inline SerialNodeParam auto_weakify(Serializer *ser, Function *f, const SerialNo
 	if (p.type->is_pointer_owned() or p.type->is_pointer_shared()) {
 		//msg_write("AUTO WEAK  " + f->signature());
 		auto pp = p;
-		pp.type = ser->module->syntax->get_pointer(p.type->param[0]);
+		pp.type = ser->module->tree->get_pointer(p.type->param[0]);
 		return pp;
 	}
 	return p;

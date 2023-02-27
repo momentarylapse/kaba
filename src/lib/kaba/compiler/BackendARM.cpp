@@ -503,7 +503,7 @@ void BackendARM::correct_implement_commands() {
 
 int BackendARM::_reference_to_register_32(const SerialNodeParam &p, const Class *type) {
 	if (!type)
-		type = module->syntax->get_pointer(p.type, -1);
+		type = module->tree->get_pointer(p.type, -1);
 
 	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
 
@@ -661,7 +661,7 @@ void BackendARM::add_function_call(Function *f, const Array<SerialNodeParam> &pa
 	serializer->call_used = true;
 	int push_size = fc_begin(params, ret, f->is_static());
 
-	if ((f->owner() == module->syntax) and (!f->is_extern())) {
+	if ((f->owner() == module->tree) and (!f->is_extern())) {
 		insert_cmd(Asm::InstID::CALL, param_label(TypePointer, f->_label));
 	} else {
 		if (f->address == 0)
