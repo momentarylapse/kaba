@@ -138,6 +138,10 @@ Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f
 			}
 	};
 
+	if (params.num != f0->abstract_param_types.num)
+		parser->do_error(format("not able to match all template parameters: %d parameters given, %d expected", params.num, f0->abstract_param_types.num), token_id);
+
+
 	for (auto&& [i,p]: enumerate(weak(params))) {
 		if (p->type == TypeUnknown)
 			parser->do_error(format("parameter #%d '%s' has undecided type when trying to match template arguments", i+1, f0->var[i]->name), token_id);
