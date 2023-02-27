@@ -48,9 +48,7 @@ public:
 		FUNCTION_AS_CALLABLE = -30,
 		MAKE_SHARED = -40, // TODO use auto constructor instead
 		MAKE_OWNED = -41,
-		OPTIONAL_HAS_VALUE = -50,
-		OPTIONAL_VALUE = -51,
-		WEAK_POINTER = -60
+		WEAK_POINTER = -42
 	};
 
 

@@ -70,16 +70,10 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	if (given == wanted)
 		return true;
 
-	// FIXME: don't allow shared[X] -> X* here
-	// needs a proper reinterpreting cast!
-
-	// allow any pointer?
-	// FIXME don't use raw pointer parameters...
-	// TODO also shared/owned
-	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_reference() or given->is_pointer_xfer()))
+	// allow any non-owning pointer?
+	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_reference()))
 		return true;
 
-	// TODO allow any not_null?
 	if ((wanted == TypeReference) and given->is_reference())
 		return true;
 
@@ -87,17 +81,9 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	if (wanted->is_pointer_raw() and (given == TypeNone))
 		return true;
 
-	/*if (given->is_() and wanted->is_pointer_xfer())
-		if (given->param[0] == wanted->param[0])
-			return true;*/
-
-	/*if (given->is_pointer_xfer() and wanted->is_pointer_owned())
-		if (given->param[0] == wanted->param[0])
-			return true;*/
-
 	// compatible pointers (of same or derived class)
 	if (is_same_kind_of_pointer(given, wanted)) {
-		// MAYBE: return type_match(given->param[0], wanted->param[0]);
+		// MAYBE: return type_match_up(given->param[0], wanted->param[0]);
 		if (given->param[0]->is_derived_from(wanted->param[0]))
 			return true;
 	}
@@ -107,20 +93,16 @@ bool type_match_up(const Class *given, const Class *wanted) {
 			return true;
 
 	//msg_write(given->long_name() + "  ->  " + wanted->long_name());
-	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_shared() or given->is_pointer_shared_not_null() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
-		if (type_match_up(given->param[0], wanted->param[0])) {
-			//msg_error("XXXX");
+	if (wanted->is_pointer_raw() and (given->is_reference() or given->is_pointer_owned() or given->is_pointer_owned_not_null()))
+		if (type_match_up(given->param[0], wanted->param[0]))
 			return true;
-		}
 
 	if (given->is_callable() and wanted->is_callable())
 		return func_pointer_match_up(given, wanted);
 
-	if (wanted->is_super_array()) {
-		if (given->is_super_array()) {
-			if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
-				return true;
-		}
+	if (wanted->is_super_array() and given->is_super_array()) {
+		if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
+			return true;
 	}
 
 	if (wanted == TypeStringAutoCast and given == TypeString)
@@ -224,8 +206,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 
 	// FIXME we should not allow ownifying references!!!
 	if ((wanted->is_pointer_shared() or wanted->is_pointer_shared_not_null())
-			and (given->is_pointer_xfer() /*or given->is_pointer_raw() or given->is_reference()*/)) {
-		// TODO really raw pointer?!?
+			and given->is_pointer_xfer()) {
 		if (type_match_up(given->param[0], wanted->param[0]) or (given == TypeNone /* nil etc */)) {
 			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
 			cd.penalty = 10;
@@ -234,13 +215,13 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			return true;
 		}
 	}
-	/*if (wanted->is_pointer_owned() and given->is_pointer()) {
-		if (type_match(given->param[0], wanted->param[0])) {
-			penalty = 10;
-			cast = TypeCastId::MAKE_OWNED;
+	if (wanted->is_pointer_raw() and (given->is_some_pointer())) {
+		if (type_match_up(given->param[0], wanted->param[0])) {
+			cd.penalty = 10;
+			cd.cast = TypeCastId::WEAK_POINTER;
 			return true;
 		}
-	}*/
+	}
 	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
 		if (wanted->is_super_array()) {
 			auto t = wanted->get_array_element();
@@ -312,12 +293,6 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			}
 		}
 	}
-	/*if (given->is_optional() and given->param[0] == wanted) {
-		cd.cast = TypeCastId::OPTIONAL_VALUE;
-		cd.penalty = 20;
-		cd.f = given->get_call();
-		return true;
-	}*/
 	if (wanted == TypeStringAutoCast) {
 		//Function *cf = given->get_func(Identifier::Func::STR, TypeString, {});
 		//if (cf) {
@@ -423,13 +398,9 @@ shared<Node> Concretifier::apply_type_cast_basic(const CastingData &cast, shared
 		nn->set_param(0, node);
 		return nn;
 	}
-	/*if (cast.cast == TypeCastId::OPTIONAL_VALUE) {
-		if (!cast.f)
-			do_error(format("internal: optional cast... %s.%s() missing...", wanted->name, Identifier::Func::CALL), node);
-		auto nn = add_node_call(cast.f, node->token_id);
-		nn->set_param(0, node);
-		return nn;
-	}*/
+	if (cast.cast == TypeCastId::WEAK_POINTER) {
+		return node->change_type(wanted, node->token_id);
+	}
 
 	auto c = add_node_call(context->type_casts[cast.cast].f, node->token_id);
 	c->type = context->type_casts[cast.cast].dest;
