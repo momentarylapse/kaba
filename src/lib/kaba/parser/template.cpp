@@ -222,6 +222,7 @@ Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<
 		parser->tree->functions.add(f);
 
 	} catch (kaba::Exception &e) {
+		//msg_write(e.message());
 		parser->do_error(format("failed to instantiate template %s: %s", f->name, e.message()), token_id);
 	}
 

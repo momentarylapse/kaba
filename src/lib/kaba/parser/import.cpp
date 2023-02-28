@@ -24,7 +24,6 @@ const int MAX_IMPORT_DIRECTORY_PARENTS = 5;
 
 namespace kaba {
 
-extern ExpressionBuffer *cur_exp_buf;
 extern Array<shared<Module>> loading_module_stack;
 void SetImmortal(SyntaxTree *ps);
 
