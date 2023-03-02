@@ -272,7 +272,7 @@ shared<Node> Parser::parse_abstract_operand_extension_call(shared<Node> link, Bl
 	// parse all parameters
 	auto params = parse_abstract_call_parameters(block);
 
-	auto node = new Node(NodeKind::ABSTRACT_CALL, 0, TypeUnknown);
+	auto node = new Node(NodeKind::ABSTRACT_CALL, 0, TypeUnknown, false, link->token_id);
 	node->set_num_params(params.num + 1);
 	node->set_param(0, link);
 	for (auto&& [i,p]: enumerate(params))
@@ -494,8 +494,9 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 		//msg_write("format:  " + xx);
 		ExpressionBuffer ee;
 		ee.analyse(tree, xx);
-		ee.cur_line->physical_line = Exp.cur_line->physical_line;
-		//ee.show();
+		ee.lines[0].physical_line = Exp.token_logical_line(token_id)->physical_line;
+		for (auto& t: ee.lines[0].tokens)
+			t.pos += Exp.token_line_offset(token_id) + p0 + 2;
 		
 		int token0 = Exp.cur_token();
 		//int cl = Exp.get_line_no();
@@ -504,7 +505,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 		Exp.update_meta_data();
 		Exp.jump(Exp.lines.back().token_ids[0]);
 		
-		try {
+		//try {
 			auto n = parse_operand_greedy(block, false);
 			n = con.deref_if_reference(n);
 
@@ -515,13 +516,16 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 			}
 			//n->show();
 			parts.add(n);
-		} catch (Exception &e) {
+		/*} catch (Exception &e) {
+			msg_write(e.line);
+			msg_write(e.column);
+			throw;
 			//e.line += cl;
 			//e.column += Exp.
 			
 			// not perfect (e has physical line-no etc and e.text has filenames baked in)
-			do_error(e.text, token0);
-		}
+			do_error(e.text, token_id);
+		}*/
 		
 		Exp.lines.pop();
 		Exp.update_meta_data();
@@ -1360,6 +1364,7 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 	return nullptr;
 }
 
+// unused
 shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFunction *s) {
 	int token0 = Exp.consume_token(); // name
 
