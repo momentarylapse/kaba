@@ -553,15 +553,6 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		}
 	}
 
-	// __get__() ?
-	auto *cf = operand->type->get_get(index->type);
-	if (cf) {
-		auto f = add_node_member_call(cf, operand, operand->token_id);
-		f->is_const = operand->is_const;
-		f->set_param(1, index);
-		return f;
-	}
-
 	// tuple
 	if (operand->type->is_product()) {
 		index = tree->transform_node(index, [this] (shared<Node> n) {
@@ -578,8 +569,35 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		return operand->shift(e.offset, e.type, operand->token_id);
 	}
 
+	// __get__() ?
+	auto *cf = operand->type->get_get(index->type);
+	if (cf) {
+		auto f = add_node_member_call(cf, operand, operand->token_id);
+		f->is_const = operand->is_const;
+		f->set_param(1, index);
+		return f;
+	}
+
 	if (index->type != TypeInt)
 		do_error(format("array index needs to be of type 'int', not '%s'", index->type->long_name()), index);
+
+	index = tree->transform_node(index, [this] (shared<Node> n) {
+		return tree->conv_eval_const_func(n);
+	});
+	auto is_simple = [] (NodeKind k) {
+		return k == NodeKind::VAR_GLOBAL or k == NodeKind::VAR_LOCAL or k == NodeKind::CONSTANT;
+	};
+	if (index->kind == NodeKind::CONSTANT) {
+		int n = index->as_const()->as_int();
+		if (n < 0) {
+			if (!is_simple(operand->kind))
+					do_error("negative indices only allowed for simple operands", index);
+			auto l = add_node_special_function_call(SpecialFunctionID::LEN, index->token_id, index->type);
+			l->set_param(0, operand);
+			l = concretify_special_function_len(l, block, ns);
+			index = add_node_operator_by_inline(InlineID::INT_ADD, l, index, index->token_id);
+		}
+	}
 
 	shared<Node> array_element;
 	if (operand->type->usable_as_super_array())
