@@ -160,6 +160,7 @@ extern const Class *TypeReg8; // dummy for compilation
 extern const Class *TypeDynamic;
 extern const Class *TypeVoid;
 extern const Class *TypePointer;
+extern const Class *TypePointerNN;
 extern const Class *TypeReference;
 extern const Class *TypeBool;
 extern const Class *TypeInt;

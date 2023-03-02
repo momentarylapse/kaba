@@ -321,7 +321,8 @@ void SIAddPackageBase(Context *c) {
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 	// derived   (must be defined after the primitive types and the bases!)
-	TypePointer     = add_type_p_raw(TypeVoid); // substitute for all pointer types
+	TypePointer     = add_type_p_raw(TypeVoid); // substitute for all raw pointer types
+	TypePointerNN   = add_type_p_raw_not_null(TypeVoid); // substitute for all raw-not-null pointer types
 	TypeReference   = add_type_ref(TypeVoid); // substitute for all reference types
 	TypeNone        = add_type_p_raw(TypeVoid); // type of <nil>
 	const_cast<Class*>(TypeNone)->name = "None";
@@ -359,12 +360,18 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("p", TypePointer);
 	
 
-
 	add_class(TypePointer);
 		class_add_func(Identifier::Func::STR, TypeString, &p2s, Flags::PURE);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypePointer, TypePointer, InlineID::POINTER_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypePointer, TypePointer, InlineID::POINTER_EQUAL);
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePointer, TypePointer, InlineID::POINTER_NOT_EQUAL);
+
+
+	add_class(TypePointerNN);
+			class_add_func(Identifier::Func::STR, TypeString, &p2s, Flags::PURE);
+			add_operator(OperatorID::ASSIGN, TypeVoid, TypePointerNN, TypePointerNN, InlineID::POINTER_ASSIGN);
+			add_operator(OperatorID::EQUAL, TypeBool, TypePointerNN, TypePointerNN, InlineID::POINTER_EQUAL);
+			add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePointerNN, TypePointerNN, InlineID::POINTER_NOT_EQUAL);
 
 	add_class(TypeReference);
 		add_operator(OperatorID::REF_ASSIGN, TypeVoid, TypeReference, TypeReference, InlineID::POINTER_ASSIGN);
@@ -747,7 +754,7 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("str", TypeStringAutoCast);//, (Flags)((int)Flags::CONST | (int)Flags::AUTO_CAST));
 	add_ext_var("_print_postfix", TypeString, &os::terminal::_print_postfix_);
 	add_func("as_binary", TypeString, &kaba_binary, Flags::STATIC);
-		func_add_param("p", TypePointer, Flags::REF);
+		func_add_param("p", TypePointerNN, Flags::REF);
 		func_add_param("length", TypeInt);
 	// memory
 	add_func("@malloc", TypePointer, &kaba_malloc, Flags::STATIC);

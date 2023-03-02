@@ -132,6 +132,13 @@ bool Class::is_some_pointer() const {
 			or type == Type::POINTER_XFER;
 }
 
+bool Class::is_some_pointer_not_null() const {
+	return type == Type::POINTER_RAW_NOT_NULL
+			or type == Type::POINTER_SHARED_NOT_NULL
+			or type == Type::POINTER_OWNED_NOT_NULL
+			or type == Type::REFERENCE;
+}
+
 bool Class::is_pointer_raw() const {
 	return type == Type::POINTER_RAW;
 }

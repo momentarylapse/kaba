@@ -389,7 +389,7 @@ shared<Node> Node::ref_raw(const Class *t) const {
 }
 
 shared<Node> Node::ref_raw(SyntaxTree *tree) const {
-	return ref_new(tree->get_pointer(type, token_id));
+	return ref_new(tree->request_implicit_class_pointer_not_null(type, token_id));
 }
 
 shared<Node> Node::deref(const Class *override_type) const {

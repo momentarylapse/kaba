@@ -333,8 +333,6 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 	return {};
 }
 
-bool is_pointer_not_null(const Class *t);
-
 shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string &name, int token_id) {
 	//operand = force_concrete_type(operand);
 	const Class *type = operand->type;
@@ -346,7 +344,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		type = operand->as_class();
 		allow_member = false;
 	//} else if (type->is_some_pointer()) {
-	} else if (is_pointer_not_null(type)) {
+	} else if (type->is_some_pointer_not_null()) {
 		// pointer -> dereference
 		type = type->param[0];
 		deref = true;
@@ -831,7 +829,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 //             -> index
 
 		return add_node_operator_by_inline(__get_pointer_add_int(),
-				c->params[0]->ref_raw(this), // array
+				c->params[0]->ref_new(this), // array
 				add_node_operator_by_inline(InlineID::INT_MULTIPLY,
 						c->params[1], // ref
 						add_node_const(add_constant_int(el_type->size))),

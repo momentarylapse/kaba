@@ -103,8 +103,6 @@ Function *TemplateManager::get_instantiated(Parser *parser, Function *f0, const 
 }
 
 void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f) {
-	//msg_write("  match..." + t->name);
-	//p->show();
 	if (p->kind == NodeKind::ABSTRACT_TOKEN) {
 		// direct
 		string token = p->as_token();
@@ -116,6 +114,7 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 		if (t->is_pointer_raw())
 			match_parameter_type(p->params[0], t->param[0], f);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL) {
+		msg_write("RAW...!");
 		if (t->is_pointer_raw_not_null())
 			match_parameter_type(p->params[0], t->param[0], f);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
@@ -124,6 +123,15 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL) {
 		if (t->is_pointer_shared_not_null())
 			match_parameter_type(p->params[0], t->param[0], f);
+	} else if (p->kind == NodeKind::ARRAY) {
+		if (p->params[0]->kind == NodeKind::ABSTRACT_TYPE_POINTER and t->is_pointer_raw())
+			match_parameter_type(p->params[1], t->param[0], f);
+		else if (p->params[0]->kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL and t->is_pointer_raw_not_null())
+			match_parameter_type(p->params[1], t->param[0], f);
+		else if (p->params[0]->kind == NodeKind::ABSTRACT_TYPE_SHARED and t->is_pointer_shared())
+			match_parameter_type(p->params[1], t->param[0], f);
+		else if (p->params[0]->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL and t->is_pointer_shared_not_null())
+			match_parameter_type(p->params[1], t->param[0], f);
 	}
 }
 

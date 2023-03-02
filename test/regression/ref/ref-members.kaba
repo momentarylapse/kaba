@@ -1,14 +1,14 @@
 class X
 	var i = 1000
-	var p: int&
+	var p: ptr![int]
 
-	func __init__(x: int&)
+	func __init__(x: ptr![int])
 		p := x
 
 
 func main()
 	var i = 13
-	var x = new X(&!i)
+	var x = new X(&i)
 
 	print(x)
 

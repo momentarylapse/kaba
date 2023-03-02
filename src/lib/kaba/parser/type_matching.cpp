@@ -25,13 +25,9 @@ extern const Class *TypeNone;
 
 bool type_match_up(const Class *given, const Class *wanted);
 
-bool is_pointer_not_null(const Class *t) {
-	return t->is_reference() or t->is_pointer_shared_not_null() or t->is_pointer_owned_not_null();
-}
-
 
 shared<Node> Concretifier::deref_if_reference(shared<Node> node) {
-	if (is_pointer_not_null(node->type))
+	if (node->type->is_some_pointer_not_null())
 		return node->deref();
 	return node;
 }
@@ -71,7 +67,11 @@ bool type_match_up(const Class *given, const Class *wanted) {
 		return true;
 
 	// allow any non-owning pointer?
-	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_reference()))
+	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_pointer_raw_not_null() or given->is_reference()))
+		return true;
+
+	// allow any non-owning pointer?
+	if ((wanted == TypePointerNN) and (given->is_pointer_raw_not_null() or given->is_reference()))
 		return true;
 
 	if ((wanted == TypeReference) and given->is_reference())
@@ -172,7 +172,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 	auto given = node->type;
 
 
-	if (is_pointer_not_null(given)) {
+	if (given->is_some_pointer_not_null()) {
 		CastingData cd_sub;
 		if (type_match_with_cast(node->deref(), is_modifiable, wanted, cd_sub)) {
 			cd = cd_sub;

@@ -27,7 +27,6 @@ extern const Class *TypeIntDict;
 
 
 bool type_match_up(const Class *given, const Class *wanted);
-bool is_pointer_not_null(const Class *t);
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
@@ -235,7 +234,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 		return link_special_operator_tuple_extract(param1, param2, token_id);
 
 	// &ref := &ref
-	if ((primop->id == OperatorID::REF_ASSIGN) and param1->type->is_reference() and param2->type->is_reference())
+	if ((primop->id == OperatorID::REF_ASSIGN) and ((param1->type->is_reference() and param2->type->is_reference()) or (param1->type->is_pointer_raw_not_null() and param2->type->is_pointer_raw_not_null())))
 		return link_special_operator_ref_assign(param1, param2, token_id);
 
 	if (left_modifiable and param1->is_const)
@@ -356,7 +355,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 		return op;
 	}
 
-	if (is_pointer_not_null(p1))
+	if (p1->is_some_pointer_not_null())
 		return link_operator(primop, param1->deref(), param2, token_id);
 
 	return nullptr;
@@ -1395,7 +1394,7 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 		//auto t = digest_type(tree, force_concrete_type(concretify_node(node->params[0], block, ns)));
 		if (!type)
 			do_error("variable declaration requires a type", node->params[0]);
-		if (is_pointer_not_null(type) and node->params.num < 3)
+		if (type->is_some_pointer_not_null() and node->params.num < 3)
 			do_error("variables of reference type must be initialized", node->params[0]);
 		if (type->is_pointer_xfer())
 			do_error("no variables of type xfer[..] allowed", node->params[0]);
@@ -1426,11 +1425,12 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 
 	// assign?
 	if (node->params.num == 3) {
-		if (type->is_reference()) {
-			auto p = concretify_node(node->params[2]->params[1], block, ns);
-			if (p->type != vars[0]->type)
-				do_error("reference initialization type mismatch", p);
-			node = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(vars[0]), p, node->token_id);
+		auto rhs = concretify_node(node->params[2]->params[1], block, ns);
+		node->params[2]->params[1] = rhs;
+		if (type->is_some_pointer_not_null() and !rhs->type->is_pointer_xfer()) {
+			if (rhs->type != vars[0]->type)
+				do_error(format("reference initialization type mismatch '%s = %s'", vars[0]->type->long_name(), rhs->type->long_name()), rhs);
+			node = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(vars[0]), rhs, node->token_id);
 		} else {
 			node = concretify_node(node->params[2], block, ns);
 		}
@@ -1529,14 +1529,14 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
 		if (sub->type->is_reference()) {
-			return sub->change_type(tree->request_implicit_class_pointer(sub->type->param[0], node->token_id));
+			return sub->change_type(tree->request_implicit_class_pointer_not_null(sub->type->param[0], node->token_id));
 		} else {
-			node->type = tree->request_implicit_class_pointer(sub->type, node->token_id);
+			node->type = tree->request_implicit_class_pointer_not_null(sub->type, node->token_id);
 		}
 	} else if (node->kind == NodeKind::REFERENCE_NEW) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
-		if (is_pointer_not_null(sub->type)) {
+		if (sub->type->is_some_pointer_not_null()) {
 			return sub->change_type(tree->request_implicit_class_reference(sub->type->param[0], node->token_id));
 		} else {
 			node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
@@ -1860,7 +1860,7 @@ shared<Node> Concretifier::make_func_pointer_node_callable(const shared<Node> l)
 shared<Node> SyntaxTree::make_fake_constructor(const Class *t, const Class *param_type, int token_id) {
 	//if ((t == TypeInt) and (param_type == TypeFloat32))
 	//	return add_node_call(get_existence("f2i", nullptr, nullptr, false)[0]->as_func());
-	if (is_pointer_not_null(param_type))
+	if (param_type->is_some_pointer_not_null())
 		param_type = param_type->param[0];
 
 	string fname = "__" + t->name + "__";
