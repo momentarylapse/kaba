@@ -182,7 +182,7 @@ bool tuple_all_editable(shared<Node> node) {
 
 Array<const Class*> tuple_get_element_types(const Class *type) {
 	Array<const Class*> r;
-	if (type->is_super_array())
+	if (type->is_list())
 		return r;
 
 	for (auto &e: type->elements)
@@ -607,7 +607,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	}
 
 	shared<Node> array_element;
-	if (operand->type->usable_as_super_array())
+	if (operand->type->usable_as_list())
 		array_element = add_node_dyn_array(operand, index);
 	else if (operand->type->is_array())
 		array_element = add_node_array(operand, index);
@@ -827,7 +827,7 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 		return concretify_statement_for_unwrap_pointer(node, container, block, ns);
 	else if (t_c->is_optional())
 		return concretify_statement_for_unwrap_optional(node, container, block, ns);
-	else if (t_c->usable_as_super_array() or t_c->is_array())
+	else if (t_c->usable_as_list() or t_c->is_array())
 		return concretify_statement_for_array(node, container, block, ns);
 	do_error("array/list/shared/owned/optional expected as second parameter in 'for . in .'", container);
 	return nullptr;
@@ -956,7 +956,7 @@ shared<Node> Concretifier::concretify_statement_delete(shared<Node> node, Block 
 		if (auto f = p->type->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {}))
 			return add_node_member_call(f, p, p->token_id);
 		do_error("clear missing...", p);
-	} else if (p->type->is_super_array()) {
+	} else if (p->type->is_list()) {
 		if (auto f = p->type->get_member_func("clear", TypeVoid, {}))
 			return add_node_member_call(f, p, p->token_id);
 		do_error("clear missing...", p);
@@ -985,7 +985,7 @@ shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, B
 	auto array = force_concrete_type(node->params[0]);
 	auto crit = force_concrete_type(node->params[1]);
 
-	if (!array->type->is_super_array())
+	if (!array->type->is_list())
 		do_error(format("%s(): first parameter must be a list[]", Identifier::SORT), array);
 	if (crit->type != TypeString or !crit->is_const)
 		do_error(format("%s(): second parameter must be a string literal", Identifier::SORT), crit);
@@ -1012,10 +1012,10 @@ shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, B
 		if (t->is_some_pointer()) {
 			auto tt = tree->get_pointer(t->param[0], -1);
 			return sub->change_type(tt, node->token_id);
-		} else if (t->is_super_array()
+		} else if (t->is_list()
 				and (t->param[0]->is_pointer_shared() or t->param[0]->is_pointer_shared_not_null()
 						or t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null())) {
-			auto tt = tree->request_implicit_class_super_array(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
+			auto tt = tree->request_implicit_class_list(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
 			return sub->change_type(tt, node->token_id);
 		}
 		if (t->parent)
@@ -1036,9 +1036,9 @@ shared<Node> Concretifier::concretify_special_function_give(shared<Node> node, B
 		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer, {}))
 			return add_node_member_call(f, sub);
 		do_error("give...aaaa", sub);
-	} else if (t->is_super_array() and (t->get_array_element()->is_pointer_owned() or t->get_array_element()->is_pointer_owned_not_null())) {
+	} else if (t->is_list() and (t->get_array_element()->is_pointer_owned() or t->get_array_element()->is_pointer_owned_not_null())) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
-		auto t_xfer_list = tree->request_implicit_class_super_array(t_xfer, -1);
+		auto t_xfer_list = tree->request_implicit_class_list(t_xfer, -1);
 		if (auto f = t->get_member_func(Identifier::Func::OWNED_GIVE, t_xfer_list, {}))
 			return add_node_member_call(f, sub);
 		do_error("give...aaaa", sub);
@@ -1377,8 +1377,8 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 const Class *type_ownify_xfer(SyntaxTree *tree, const Class *t) {
 	if (t->is_pointer_xfer())
 		return tree->request_implicit_class_owned_not_null(t->param[0], -1);
-	if (t->is_super_array())
-		return tree->request_implicit_class_super_array(type_ownify_xfer(tree, t->param[0]), -1);
+	if (t->is_list())
+		return tree->request_implicit_class_list(type_ownify_xfer(tree, t->param[0]), -1);
 	return t;
 }
 
@@ -1466,7 +1466,7 @@ shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for
 		type_el = type_el->param[0];
 
 	// create an array
-	auto type_array = tree->request_implicit_class_super_array(type_el, token_id);
+	auto type_array = tree->request_implicit_class_list(type_el, token_id);
 	auto *var = block->add_var(block->function->create_slightly_hidden_name(), type_array);
 
 	// array.add(exp)
@@ -1583,7 +1583,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		auto t = try_digest_type(tree, node->params[0]);
 		if (!t)
 			do_error("type expected before '[]'", node->params[0]);
-		t = tree->request_implicit_class_super_array(t, node->token_id);
+		t = tree->request_implicit_class_list(t, node->token_id);
 		return add_node_class(t, node->token_id);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_DICT) {
 		concretify_all_params(node, block, ns);
@@ -1783,7 +1783,7 @@ shared<Node> Concretifier::force_concrete_type(shared<Node> node) {
 			node->params[i] = apply_type_cast(cast, node->params[i].get(), t);
 		}
 
-		node->type = tree->request_implicit_class_super_array(t, node->token_id);
+		node->type = tree->request_implicit_class_list(t, node->token_id);
 		return node;
 	} else if (node->kind == NodeKind::DICT_BUILDER) {
 		if (node->params.num == 0) {
@@ -2090,7 +2090,7 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 }
 
 shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
-	if (!input->type->is_super_array())
+	if (!input->type->is_list())
 		do_error(format("'|> %s' only allowed for lists", Identifier::SORT), input);
 	Function *f = tree->required_func_global("@sorted", token_id);
 
@@ -2116,7 +2116,7 @@ shared<Node> Concretifier::build_pipe_sort(const shared<Node> &input, const shar
 
 // rhs is already the "lambda"  x=>y
 shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
-	if (!input->type->is_super_array())
+	if (!input->type->is_list())
 		do_error(format("'|> filter()' expects a list on the left, but '%s' given", input->type->long_name()), token_id);
 
 	auto l = rhs->params[0];
@@ -2165,7 +2165,7 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 		//	do_error("pipe type mismatch...");
 
 		// array |> func
-		if (input->type->is_super_array() and input->type->param[0] == p[0]) {
+		if (input->type->is_list() and input->type->param[0] == p[0]) {
 			// -> map(func, array)
 
 
@@ -2217,7 +2217,7 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 		//out->set_param(0, input);
 		//return out;
 	}
-	if (input->type->is_super_array())
+	if (input->type->is_list())
 		do_error(format("'|>' type mismatch: can not call right side with type '%s' or '%s'", input->type->long_name(), input->type->param[0]->long_name()), rhs);
 	else
 		do_error(format("'|>' type mismatch: can not call right side with type '%s'", input->type->long_name()), rhs);

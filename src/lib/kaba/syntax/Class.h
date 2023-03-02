@@ -50,8 +50,8 @@ public:
 	enum class Type {
 		REGULAR, // COMMON/BASIC
 		STRUCT,
-		ARRAY,
-		SUPER_ARRAY,
+		ARRAY, // fixed [N]
+		LIST, // dynamic []
 		POINTER_RAW,
 		POINTER_RAW_NOT_NULL,
 		POINTER_SHARED,
@@ -84,7 +84,7 @@ public:
 	bool is_regular() const;
 	bool is_struct() const;
 	bool is_array() const;
-	bool is_super_array() const;
+	bool is_list() const;
 	bool is_dict() const;
 	bool is_some_pointer() const;
 	bool is_some_pointer_not_null() const;
@@ -128,7 +128,7 @@ public:
 	bool can_memcpy() const;
 	bool is_size_known() const;
 	const Class *get_array_element() const;
-	bool usable_as_super_array() const;
+	bool usable_as_list() const;
 	bool needs_constructor() const;
 	bool needs_destructor() const;
 	bool is_derived_from(const Class *root) const;

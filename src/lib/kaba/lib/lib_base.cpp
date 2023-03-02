@@ -266,8 +266,8 @@ void SIAddPackageBase(Context *c) {
 	TypeFloat32			= add_type  ("float32", sizeof(float), Flags::FORCE_CALL_BY_VALUE);
 	TypeFloat64			= add_type  ("float64", sizeof(double), Flags::FORCE_CALL_BY_VALUE);
 	TypeChar			= add_type  ("char", sizeof(char), Flags::FORCE_CALL_BY_VALUE);
-	TypeDynamicArray	= add_type  ("@DynamicArray", config.target.super_array_size);
-	TypeDictBase		= add_type  ("@DictBase",   config.target.super_array_size);
+	TypeDynamicArray	= add_type  ("@DynamicArray", config.target.dynamic_array_size);
+	TypeDictBase		= add_type  ("@DictBase",   config.target.dynamic_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.target.pointer_size);
 	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
 
@@ -337,7 +337,7 @@ void SIAddPackageBase(Context *c) {
 	capture_implicit_type(TypeCString, "cstring"); // cstring := char[256]
 	TypeString      = add_type_list(TypeChar);
 	capture_implicit_type(TypeString, "string"); // string := char[]
-	TypeStringAutoCast = add_type("<string-auto-cast>", config.target.super_array_size);	// string := char[]
+	TypeStringAutoCast = add_type("<string-auto-cast>", config.target.dynamic_array_size);	// string := char[]
 	TypeStringList  = add_type_list(TypeString);
 
 	TypeIntDict     = add_type_dict(TypeInt);

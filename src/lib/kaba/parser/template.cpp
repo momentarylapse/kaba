@@ -108,7 +108,7 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 		string token = p->as_token();
 		f(token, t);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_LIST) {
-		if (t->is_super_array())
+		if (t->is_list())
 			match_parameter_type(p->params[0], t->get_array_element(), f);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER or p->kind == NodeKind::ABSTRACT_TYPE_STAR) {
 		if (t->is_pointer_raw())

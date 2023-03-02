@@ -229,11 +229,11 @@
     <ClCompile Include="src\lib\kaba\implicit\implicit_callable.cpp" />
     <ClCompile Include="src\lib\kaba\implicit\implicit_dict.cpp" />
     <ClCompile Include="src\lib\kaba\implicit\implicit_enum.cpp" />
+    <ClCompile Include="src\lib\kaba\implicit\implicit_list.cpp" />
     <ClCompile Include="src\lib\kaba\implicit\implicit_optional.cpp" />
+    <ClCompile Include="src\lib\kaba\implicit\implicit_pointer.cpp" />
     <ClCompile Include="src\lib\kaba\implicit\implicit_product.cpp" />
     <ClCompile Include="src\lib\kaba\implicit\implicit_regular.cpp" />
-    <ClCompile Include="src\lib\kaba\implicit\implicit_shared.cpp" />
-    <ClCompile Include="src\lib\kaba\implicit\implicit_super_array.cpp" />
     <ClCompile Include="src\lib\kaba\lib\dict.cpp" />
     <ClCompile Include="src\lib\kaba\lib\extern.cpp" />
     <ClCompile Include="src\lib\kaba\lib\lib.cpp" />

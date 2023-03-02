@@ -301,7 +301,7 @@ public:
 			*(string*)var = aa.as_string();
 		} else if (type->is_pointer_raw()) {
 			*(const void**)var = aa.as_pointer();
-		} else if (type->is_super_array() and (aa.type == TYPE_ARRAY)) {
+		} else if (type->is_list() and (aa.type == TYPE_ARRAY)) {
 			auto *t_el = type->get_array_element();
 			auto *a = (DynamicArray*)var;
 			auto &b = aa.as_array();

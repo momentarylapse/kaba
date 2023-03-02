@@ -340,19 +340,19 @@
     <ClCompile Include="src\lib\kaba\implicit\implicit_enum.cpp">
       <Filter>src\lib\kaba\implicit</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_list.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\implicit\implicit_optional.cpp">
+      <Filter>src\lib\kaba\implicit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\kaba\implicit\implicit_pointer.cpp">
       <Filter>src\lib\kaba\implicit</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\implicit\implicit_product.cpp">
       <Filter>src\lib\kaba\implicit</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\implicit\implicit_regular.cpp">
-      <Filter>src\lib\kaba\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\implicit\implicit_shared.cpp">
-      <Filter>src\lib\kaba\implicit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\kaba\implicit\implicit_super_array.cpp">
       <Filter>src\lib\kaba\implicit</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\kaba\lib\dict.cpp">

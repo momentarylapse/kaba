@@ -117,8 +117,8 @@ bool Class::is_array() const {
 	return type == Type::ARRAY;
 }
 
-bool Class::is_super_array() const {
-	return type == Type::SUPER_ARRAY;
+bool Class::is_list() const {
+	return type == Type::LIST;
 }
 
 bool Class::is_some_pointer() const {
@@ -223,7 +223,7 @@ bool Class::can_memcpy() const {
 		return true;
 	if (is_array() or is_optional())
 		return param[0]->can_memcpy();
-	if (is_super_array())
+	if (is_list())
 		return false;
 	if (is_dict())
 		return false;
@@ -244,18 +244,18 @@ bool Class::can_memcpy() const {
 	return true;
 }
 
-bool Class::usable_as_super_array() const {
-	if (is_super_array())
+bool Class::usable_as_list() const {
+	if (is_list())
 		return true;
 	if (is_array() or is_dict() or is_pointer_raw())
 		return false;
 	if (parent)
-		return parent->usable_as_super_array();
+		return parent->usable_as_list();
 	return false;
 }
 
 const Class *Class::get_array_element() const {
-	if (is_array() or is_super_array() or is_dict())
+	if (is_array() or is_list() or is_dict())
 		return param[0];
 	if (is_pointer_raw())
 		return nullptr;
@@ -268,7 +268,7 @@ const Class *Class::get_array_element() const {
 bool Class::needs_constructor() const {
 	if (!uses_call_by_reference()) // int/float/pointer etc
 		return false;
-	if (is_super_array() or is_dict() or is_optional())
+	if (is_list() or is_dict() or is_optional())
 		return true;
 	if (initializers.num > 0)
 		return true;
@@ -290,7 +290,7 @@ bool Class::needs_constructor() const {
 }
 
 bool Class::is_size_known() const {
-	if (is_super_array() or is_dict() or is_some_pointer() or is_enum())
+	if (is_list() or is_dict() or is_some_pointer() or is_enum())
 		return true;
 	if (!fully_parsed())
 		return false;
@@ -305,7 +305,7 @@ bool Class::is_size_known() const {
 bool Class::needs_destructor() const {
 	if (!uses_call_by_reference())
 		return false;
-	if (is_super_array() or is_dict() or is_optional())
+	if (is_list() or is_dict() or is_optional())
 		return true;
 	if (is_array())
 		return param[0]->needs_destructor();

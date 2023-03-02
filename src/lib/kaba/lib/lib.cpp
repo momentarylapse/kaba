@@ -234,10 +234,10 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 	return t;
 }
 
-// super array
+// dynamic array
 const Class *add_type_list(const Class *sub_type) {
 	string name = sub_type->name + "[]";
-	Class *t = new Class(Class::Type::SUPER_ARRAY, name, config.target.super_array_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, cur_package->tree.get(), nullptr, {sub_type});
 	lib_make_list(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);
@@ -247,7 +247,7 @@ const Class *add_type_list(const Class *sub_type) {
 // dict
 const Class *add_type_dict(const Class *sub_type) {
 	string name = sub_type->name + "{}";
-	Class *t = new Class(Class::Type::DICT, name, config.target.super_array_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::DICT, name, config.target.dynamic_array_size, cur_package->tree.get(), nullptr, {sub_type});
 	lib_make_dict(t);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->implicit_class_registry->add(t);

@@ -9,7 +9,7 @@ func test_super_array(p: Module, c: Class)
 		print("MISSING ASSIGN for {{p.name}}.{{c.long_name()}}")
 
 func test_class(p: Module, c: Class)
-	if c.is_super_array()
+	if c.is_list()
 		test_super_array(p, c)
 	for cc in c.classes
 		test_class(p, cc)

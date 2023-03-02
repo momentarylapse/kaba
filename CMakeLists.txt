@@ -119,11 +119,11 @@ set(SOURCE
 	src/lib/kaba/implicit/implicit_callable.cpp
 	src/lib/kaba/implicit/implicit_dict.cpp
 	src/lib/kaba/implicit/implicit_enum.cpp
+	src/lib/kaba/implicit/implicit_list.cpp
 	src/lib/kaba/implicit/implicit_optional.cpp
+	src/lib/kaba/implicit/implicit_pointer.cpp
 	src/lib/kaba/implicit/implicit_product.cpp
 	src/lib/kaba/implicit/implicit_regular.cpp
-	src/lib/kaba/implicit/implicit_shared.cpp
-	src/lib/kaba/implicit/implicit_super_array.cpp
 	src/lib/kaba/lib/dict.cpp
 	src/lib/kaba/lib/extern.cpp
 	src/lib/kaba/lib/lib.cpp

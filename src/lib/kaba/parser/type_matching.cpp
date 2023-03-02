@@ -110,10 +110,10 @@ bool type_match_up(const Class *given, const Class *wanted) {
 	if (given->is_callable() and wanted->is_callable())
 		return func_pointer_match_up(given, wanted);
 
-	if (wanted->is_super_array() and given->is_super_array()) {
+	// lists
+	if (wanted->is_list() and given->is_list())
 		if (type_match_up(given->param[0], wanted->param[0]) and (given->param[0]->size == wanted->param[0]->size))
 			return true;
-	}
 
 	if (wanted == TypeStringAutoCast and given == TypeString)
 		return true;
@@ -242,7 +242,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		}
 	}
 	if (node->kind == NodeKind::ARRAY_BUILDER and given == TypeUnknown) {
-		if (wanted->is_super_array()) {
+		if (wanted->is_list()) {
 			auto t = wanted->get_array_element();
 			CastingData cast;
 			for (auto *e: weak(node->params)) {
@@ -267,7 +267,6 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 		}
 	}
 	if ((node->kind == NodeKind::TUPLE) and (given == TypeUnknown)) {
-
 		for (auto *f: wanted->get_constructors()) {
 			if (type_match_tuple_as_contructor(node, f, cd.penalty)) {
 				cd.cast = TypeCastId::TUPLE_AS_CONSTRUCTOR;
