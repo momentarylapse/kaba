@@ -1,6 +1,6 @@
 #include "../kaba.h"
 #include "../parser/Parser.h"
-#include "../parser/template.h"
+#include "../template/template.h"
 #include "../asm/asm.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"

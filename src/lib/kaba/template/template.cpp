@@ -6,8 +6,8 @@
  */
 
 #include "../kaba.h"
-#include "Parser.h"
-#include "Concretifier.h"
+#include "../parser/Parser.h"
+#include "../parser/Concretifier.h"
 #include "template.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"

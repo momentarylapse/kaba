@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "../kaba.h"
-#include "../parser/template.h"
+#include "../template/template.h"
 #include "lib.h"
 #include "dict.h"
 #include "../dynamic/exception.h"
