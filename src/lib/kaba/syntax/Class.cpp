@@ -123,6 +123,7 @@ bool Class::is_super_array() const {
 
 bool Class::is_some_pointer() const {
 	return type == Type::POINTER_RAW
+			or type == Type::POINTER_RAW_NOT_NULL
 			or type == Type::POINTER_SHARED
 			or type == Type::POINTER_SHARED_NOT_NULL
 			or type == Type::POINTER_OWNED
@@ -133,6 +134,10 @@ bool Class::is_some_pointer() const {
 
 bool Class::is_pointer_raw() const {
 	return type == Type::POINTER_RAW;
+}
+
+bool Class::is_pointer_raw_not_null() const {
+	return type == Type::POINTER_RAW_NOT_NULL;
 }
 
 bool Class::is_pointer_shared() const {

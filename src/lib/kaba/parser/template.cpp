@@ -112,8 +112,17 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_LIST) {
 		if (t->is_super_array())
 			match_parameter_type(p->params[0], t->get_array_element(), f);
-	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER or p->kind == NodeKind::ABSTRACT_TYPE_STAR) {
 		if (t->is_pointer_raw())
+			match_parameter_type(p->params[0], t->param[0], f);
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL) {
+		if (t->is_pointer_raw_not_null())
+			match_parameter_type(p->params[0], t->param[0], f);
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+		if (t->is_pointer_shared())
+			match_parameter_type(p->params[0], t->param[0], f);
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL) {
+		if (t->is_pointer_shared_not_null())
 			match_parameter_type(p->params[0], t->param[0], f);
 	}
 }

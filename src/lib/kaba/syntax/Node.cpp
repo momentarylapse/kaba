@@ -59,6 +59,8 @@ string kind2str(NodeKind kind) {
 		return "owned!";
 	if (kind == NodeKind::ABSTRACT_TYPE_POINTER)
 		return "pointer";
+	if (kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL)
+		return "pointer!";
 	if (kind == NodeKind::ABSTRACT_TYPE_XFER)
 		return "xfer";
 	if (kind == NodeKind::ABSTRACT_TYPE_REFERENCE)

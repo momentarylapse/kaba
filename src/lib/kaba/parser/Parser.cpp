@@ -215,7 +215,7 @@ shared<Node> Parser::parse_abstract_operand_extension_callable(shared<Node> oper
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_pointer(shared<Node> operand) {
-	auto node = new Node(NodeKind::ABSTRACT_TYPE_POINTER, 0, TypeUnknown);
+	auto node = new Node(NodeKind::ABSTRACT_TYPE_STAR, 0, TypeUnknown);
 	node->token_id = Exp.consume_token(); // "*"
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -355,12 +355,11 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 		return parse_abstract_operand_extension(operand, block, true);*/
 	} else {
 
-		// TODO ptr[X]
-		if ((Exp.cur == "*" and (prefer_class or no_identifier_after())) or Exp.cur == "ptr") {
+		if (Exp.cur == "*" and (prefer_class or no_identifier_after())) {
 			// FIXME: false positives for "{{pi * 10}}"
 			return parse_abstract_operand_extension(parse_abstract_operand_extension_pointer(operand), block, true);
 		}
-		if ((Exp.cur == "&" and (prefer_class or no_identifier_after())) or Exp.cur == "ref") {
+		if (Exp.cur == "&" and (prefer_class or no_identifier_after())) {
 			return parse_abstract_operand_extension(parse_abstract_operand_extension_reference(operand), block, true);
 		}
 		// unary operator? (++,--)
@@ -633,6 +632,11 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		Exp.next();
 		operand->set_num_params(1);
 		operand->set_param(0, parse_abstract_operand(block));
+	} else if (try_consume(Identifier::RAW_POINTER)) {
+		if (try_consume("!"))
+			operand = new Node(NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL, 0, TypeUnknown, false, Exp.cur_token()-1);
+		else
+			operand = new Node(NodeKind::ABSTRACT_TYPE_POINTER, 0, TypeUnknown, false, Exp.cur_token());
 	} else if (try_consume(Identifier::SHARED)) {
 		if (try_consume("!"))
 			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL, 0, TypeUnknown, false, Exp.cur_token()-1);

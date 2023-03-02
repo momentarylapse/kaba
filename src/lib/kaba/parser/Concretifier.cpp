@@ -470,8 +470,16 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	if (node->params.num >= 3)
 		index2 = concretify_node(node->params[2], block, ns);
 
-	// shared[X] / owned[X]
-	if (operand->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+	// ptr[X] / shared[X] / owned[X]
+	if (operand->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
+		if (auto t = try_digest_type(tree, index))
+			return add_node_class(tree->request_implicit_class_pointer(t, node->token_id), node->token_id);
+		do_error("type expected in 'ptr[...]'", index);
+	} else if (operand->kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL) {
+		if (auto t = try_digest_type(tree, index))
+			return add_node_class(tree->request_implicit_class_pointer_not_null(t, node->token_id), node->token_id);
+		do_error("type expected in 'ptr![...]'", index);
+	} else if (operand->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
 		if (auto t = try_digest_type(tree, index))
 			return add_node_class(tree->request_implicit_class_shared(t, node->token_id), node->token_id);
 		do_error("type expected in 'shared[...]'", index);
@@ -1521,9 +1529,9 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
 		if (sub->type->is_reference()) {
-			return sub->change_type(tree->get_pointer(sub->type->param[0], node->token_id));
+			return sub->change_type(tree->request_implicit_class_pointer(sub->type->param[0], node->token_id));
 		} else {
-			node->type = tree->get_pointer(sub->type, node->token_id);
+			node->type = tree->request_implicit_class_pointer(sub->type, node->token_id);
 		}
 	} else if (node->kind == NodeKind::REFERENCE_NEW) {
 		concretify_all_params(node, block, ns);
@@ -1557,7 +1565,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return node;
 	} else if (node->kind == NodeKind::FUNCTION) {
 		return node;
-	} else if (node->kind == NodeKind::ABSTRACT_TYPE_POINTER) {
+	} else if (node->kind == NodeKind::ABSTRACT_TYPE_STAR) {
 		concretify_all_params(node, block, ns);
 		auto t = try_digest_type(tree, node->params[0]);
 		if (!t)
@@ -1599,7 +1607,9 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		if (!t1)
 			do_error("type expected before '->'", node->params[1]);
 		return add_node_class(tree->request_implicit_class_callable_fp({t0}, t1, node->token_id), node->token_id);
-	} else if ((node->kind == NodeKind::ABSTRACT_TYPE_SHARED)
+	} else if ((node->kind == NodeKind::ABSTRACT_TYPE_POINTER)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_POINTER_NOT_NULL)
+			or (node->kind == NodeKind::ABSTRACT_TYPE_SHARED)
 			or (node->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL)
 			or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED)
 			or (node->kind == NodeKind::ABSTRACT_TYPE_OWNED_NOT_NULL)
