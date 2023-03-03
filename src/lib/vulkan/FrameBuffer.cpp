@@ -46,7 +46,7 @@ void DepthBuffer::create(int w, int h, VkFormat format) {
 
 
 
-FrameBuffer::FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments) {
+FrameBuffer::FrameBuffer(RenderPass *rp, const shared_array<Texture> &attachments) {
 	frame_buffer = nullptr;
 	update(rp, attachments);
 }
@@ -57,18 +57,18 @@ FrameBuffer::~FrameBuffer() {
 
 
 
-void FrameBuffer::update(RenderPass *rp, const Array<Texture*> &_attachments) {
+void FrameBuffer::update(RenderPass *rp, const shared_array<Texture> &_attachments) {
 	update_x(rp, _attachments, 0);
 }
 
-void FrameBuffer::update_x(RenderPass *rp, const Array<Texture*> &_attachments, int layer) {
+void FrameBuffer::update_x(RenderPass *rp, const shared_array<Texture> &_attachments, int layer) {
 	_destroy();
 	_create(rp, _attachments, layer);
 }
 
-void FrameBuffer::_create(RenderPass *rp, const Array<Texture*> &_attachments, int layer) {
+void FrameBuffer::_create(RenderPass *rp, const shared_array<Texture> &_attachments, int layer) {
 	shared_array<Texture> new_attachments;
-	for (auto a: _attachments)
+	for (auto a: weak(_attachments))
 		new_attachments.add(a);
 	attachments = new_attachments;
 
@@ -80,7 +80,7 @@ void FrameBuffer::_create(RenderPass *rp, const Array<Texture*> &_attachments, i
 	}
 
 	Array<VkImageView> views;
-	for (auto a: _attachments) {
+	for (auto a: weak(_attachments)) {
 		if (a->type == Texture::Type::CUBE) {
 			auto v = a->image.create_view(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, layer, 1);
 			cube_views.add(v);

@@ -29,16 +29,16 @@ public:
 
 class FrameBuffer : public Sharable<base::Empty> {
 public:
-	FrameBuffer(RenderPass *rp, const Array<Texture*> &attachments);
+	FrameBuffer(RenderPass *rp, const shared_array<Texture> &attachments);
 	~FrameBuffer();
 
 	VkFramebuffer frame_buffer;
 	int width, height;
 
-	void update(RenderPass *rp, const Array<Texture*> &attachments);
-	void update_x(RenderPass *rp, const Array<Texture*> &attachments, int layer);
+	void update(RenderPass *rp, const shared_array<Texture> &attachments);
+	void update_x(RenderPass *rp, const shared_array<Texture> &attachments, int layer);
 
-	void _create(RenderPass *rp, const Array<Texture*> &attachments, int layer);
+	void _create(RenderPass *rp, const shared_array<Texture> &attachments, int layer);
 	void _destroy();
 
 	shared_array<Texture> attachments;

@@ -66,8 +66,8 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFW
 }
 
 
-Array<Texture*> SwapChain::create_textures() {
-	Array<Texture*> textures;
+Array<xfer<Texture>> SwapChain::create_textures() {
+	Array<xfer<Texture>> textures;
 	auto images = get_images();
 	auto image_views = create_image_views(images);
 	for (int i=0; i<images.num; i++) {
@@ -83,8 +83,8 @@ Array<Texture*> SwapChain::create_textures() {
 }
 
 
-Array<FrameBuffer*> SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
-	Array<FrameBuffer*> frame_buffers;
+Array<xfer<FrameBuffer>> SwapChain::create_frame_buffers(RenderPass *render_pass, DepthBuffer *depth_buffer) {
+	Array<xfer<FrameBuffer>> frame_buffers;
 	auto textures = create_textures();
 
 	for (size_t i=0; i<image_count; i++)
