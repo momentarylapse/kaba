@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "shared.h"
 #include "optional.h"
+#include "list.h"
 #include "../dynamic/exception.h"
 
 #if __has_include("../../vulkan/vulkan.h") && HAS_LIB_VULKAN
@@ -729,6 +730,10 @@ void SIAddPackageVulkan(Context *c) {
 		class_add_enum("GRAPHICS", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::GRAPHICS));
 		class_add_enum("RAY_TRACING", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::RAY_TRACING));
 		class_add_enum("COMPUTE", TypePipelineBindPoint, vul_p(vulkan::PipelineBindPoint::COMPUTE));
+
+
+
+	lib_create_list<shared<vulkan::Texture>>(TypeTextureSharedNNList);
 
 
 	add_func("create_window", TypePointerNN, vul_p(&vulkan::create_window), Flags::STATIC);

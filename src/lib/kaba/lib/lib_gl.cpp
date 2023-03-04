@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "lib.h"
 #include "shared.h"
+#include "list.h"
 #include "../dynamic/exception.h"
 
 #if __has_include("../../nix/nix.h") && HAS_LIB_GL
@@ -440,6 +441,10 @@ void SIAddPackageGl(Context *c) {
 		class_add_enum("NONE", TypeCullMode, gl_p(nix::CullMode::NONE));
 		class_add_enum("CW",   TypeCullMode, gl_p(nix::CullMode::CW));
 		class_add_enum("CCW",  TypeCullMode, gl_p(nix::CullMode::CCW));
+
+
+	lib_create_list<shared<nix::Texture>>(TypeTextureSharedNNList);
+
 
 	add_ext_var("vb_temp", TypeVertexBufferRef, gl_p(&nix::vb_temp));
 }
