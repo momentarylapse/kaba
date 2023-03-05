@@ -1,2 +1,3 @@
 owned![string]
-string&
+owned![string]&
+string*

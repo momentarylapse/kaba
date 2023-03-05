@@ -1,8 +1,8 @@
 func main()
 	var o = new string()
 	print(typeof(o))
-	var r = &!o
+	var r = &o
 	print(typeof(r))
-#	var p = weak(r)
-#	print(typeof(p))
+	var p = weak(o)
+	print(typeof(p)) # TODO should be string&
 
