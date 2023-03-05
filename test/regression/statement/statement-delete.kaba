@@ -9,5 +9,5 @@ class Test
 		print("delete {{x}}")
 
 func main()
-	var t = new Test(3)
-	del weak(give(t))
+	var t: owned[Test] = new Test(3)
+	del t

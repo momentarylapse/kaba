@@ -17,7 +17,7 @@ func test_class(p: Module, c: Class)
 func main()
 	for p in default_context.packages
 		for i=>c in p.classes()
-			if not weak(c)
+			if not c
 				print("MISSING: class #{{i}} in {{p.name}}")
 				continue
 			test_class(p, c)

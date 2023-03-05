@@ -1,8 +1,22 @@
-func main()
-	var o = new string()
-	print(typeof(o))
-	var r = &o
-	print(typeof(r))
-	var p = weak(o)
-	print(typeof(p)) # TODO should be string&
+class X as shared
+	s: string
 
+func main()
+	var o1: owned![X] = new X()
+	print(typeof(weak(o1)))
+	var o2: owned[X] = new X()
+	print(typeof(weak(o2)))
+	var s1: shared![X] = new X()
+	print(typeof(weak(s1)))
+	var s2: shared[X] = new X()
+	print(typeof(weak(s2)))
+
+	
+	var lo1: owned![X][]
+	print(typeof(weak(lo1)))
+	var lo2: owned[X][]
+	print(typeof(weak(lo2)))
+	var ls1: shared![X][]
+	print(typeof(weak(ls1)))
+	var ls2: shared[X][]
+	print(typeof(weak(ls2)))

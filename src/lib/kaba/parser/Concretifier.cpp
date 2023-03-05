@@ -999,28 +999,26 @@ shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, B
 
 shared<Node> Concretifier::concretify_special_function_weak(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
+	int token_id = node->token_id;
 
 	if (sub->type->is_reference())
 		sub = sub->deref();
 
 	auto t = sub->type;
-	while (true) {
-		//if (t->is_pointer() or t->is_pointer_shared() or t->is_pointer_owned() or t->is_reference()) {
-		if (t->is_some_pointer()) {
-			auto tt = tree->get_pointer(t->param[0], -1);
-			return sub->change_type(tt, node->token_id);
-		} else if (t->is_list()
-				and (t->param[0]->is_pointer_shared() or t->param[0]->is_pointer_shared_not_null()
-						or t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null())) {
-			auto tt = tree->request_implicit_class_list(tree->get_pointer(t->param[0]->param[0], -1), node->token_id);
-			return sub->change_type(tt, node->token_id);
-		}
-		if (t->parent)
-			t = t->parent;
-		else
-			break;
+	if (t->is_pointer_owned() or t->is_pointer_shared()) {
+		auto tt = tree->get_pointer(t->param[0], token_id);
+		return sub->change_type(tt, token_id);
+	} else if (t->is_pointer_owned_not_null() or t->is_pointer_shared_not_null()) {
+		auto tt = tree->request_implicit_class_reference(t->param[0], token_id);
+		return sub->change_type(tt, token_id);
+	} else if (t->is_list() and (t->param[0]->is_pointer_shared() or t->param[0]->is_pointer_owned())) {
+		auto tt = tree->request_implicit_class_list(tree->get_pointer(t->param[0]->param[0], token_id), token_id);
+		return sub->change_type(tt, token_id);
+	} else if (t->is_list() and (t->param[0]->is_pointer_shared_not_null() or t->param[0]->is_pointer_owned_not_null())) {
+		auto tt = tree->request_implicit_class_list(tree->request_implicit_class_reference(t->param[0]->param[0], token_id), token_id);
+		return sub->change_type(tt, token_id);
 	}
-	do_error(format("weak() expects either pointer (raw, shared, owned, ref), or a shared pointer array. Given: '%s'", t->long_name()), sub);
+	do_error(format("weak() expects either a shared/owned pointer, or a shared/owned pointer array. Given: '%s'", t->long_name()), sub);
 	return nullptr;
 }
 

@@ -66,8 +66,12 @@ bool type_match_generic_pointer(const Class *given, const Class *wanted) {
 	if ((wanted == TypePointer) and (given->is_pointer_raw() or given->is_reference()))
 		return true;
 
-	// reference
+	// any reference
 	if ((wanted == TypeReference) and given->is_reference())
+		return true;
+
+	// any xfer[..]?
+	if ((wanted->is_pointer_xfer() and wanted->param[0] == TypeVoid) and given->is_pointer_xfer())
 		return true;
 
 	return false;

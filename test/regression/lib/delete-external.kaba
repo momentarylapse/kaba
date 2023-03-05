@@ -1,4 +1,4 @@
-func extern xxx_delete(p: void*)
+func extern xxx_delete(p: xfer[void])
 
 class V
 	var s: string
@@ -11,6 +11,6 @@ class V
 func main()
 	var v = new V("hallo")
 	#del v
-	xxx_delete(weak(give(v)))
+	xxx_delete(give(v))
 
 

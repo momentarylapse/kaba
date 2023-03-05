@@ -1,3 +1,8 @@
-owned![string]
-owned![string]&
-string*
+weak.X&
+weak.X*
+weak.X&
+weak.X*
+weak.X&[]
+weak.X*[]
+weak.X&[]
+weak.X*[]
