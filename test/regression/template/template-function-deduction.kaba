@@ -16,7 +16,7 @@ func first[T](a: T[]) -> T
 	return a[0]
 
 
-func deref[T](p: ptr![T][]) -> T
+func deref[T](p: T&[]) -> T
 	return p[0]
 
 

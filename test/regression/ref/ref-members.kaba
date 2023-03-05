@@ -1,8 +1,8 @@
 class X
 	var i = 1000
-	var p: ptr![int]
+	var p: int&
 
-	func __init__(x: ptr![int])
+	func __init__(x: int&)
 		p := x
 
 

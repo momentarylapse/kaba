@@ -1,8 +1,10 @@
 func main()
 	var i = 13
-	var r = &!i
+	var r = &i
+	print(typeof(r))
+	print(r)
 
 	var p = &r
 	print(typeof(p))
-	print(p)
+	#print(p)
 

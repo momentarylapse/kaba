@@ -329,7 +329,7 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 			tree->do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		t->param = params;
 		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer_raw() or t->is_pointer_raw_not_null()) {
+	} else if (t->is_pointer_raw()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_reference()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
