@@ -1,0 +1,12 @@
+class X
+	s: string
+
+struct Y
+	s: string
+	i: int
+	r: X&
+
+func main()
+	var y: Y[]
+#	var p = new X()
+

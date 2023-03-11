@@ -97,15 +97,7 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 		// other[i]
 		auto n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
 
-		if (t_el->is_pointer_xfer() or t_el->is_reference()) {
-			auto assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(v_el)->deref(), n_other_el);
-			b->add(assign);
-		} else {
-			auto assign = parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(v_el)->deref(), n_other_el);
-			if (!assign)
-				do_error_implicit(f, format("no operator %s = %s found", t_el->long_name(), t_el->long_name()));
-			b->add(assign);
-		}
+		b->add(add_assign(f, "", add_node_local(v_el)->deref(), n_other_el));
 
 		auto n_for = add_node_statement(StatementID::FOR_CONTAINER);
 		// [VAR, INDEX, ARRAY, BLOCK]
@@ -279,13 +271,7 @@ void AutoImplementer::implement_list_add(Function *f, const Class *t) {
 		auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, sa_num(self), const_int(1));
 		auto cmd_el = add_node_dyn_array(self, cmd_sub);
 
-		if (te->is_reference()) {
-			b->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, cmd_el, item));
-		} else if (auto cmd_assign = parser->con.link_operator_id(OperatorID::ASSIGN, cmd_el, item)) {
-			b->add(cmd_assign);
-		} else {
-			do_error_implicit(f, format("no operator %s = %s for elements found", te->long_name(), te->long_name()));
-		}
+		b->add(add_assign(f, "", format("no operator %s = %s for elements found", te->long_name(), te->long_name()), cmd_el, item));
 	}
 }
 
