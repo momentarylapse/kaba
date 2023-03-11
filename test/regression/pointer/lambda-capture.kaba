@@ -1,0 +1,9 @@
+class X as shared
+	s: string
+
+func main()
+	var p: shared![X] = new X()
+	var f = func()
+		print(p.s)
+	f()
+

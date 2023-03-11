@@ -1,0 +1,22 @@
+class X as shared
+	s: string
+
+func main()
+	var o1: owned![X] = new X()
+	var o2: owned[X] = new X()
+	var s1: shared![X] = new X()
+	var s2: shared[X] = new X()
+	var x0: X
+	var p: X* = weak(o2) #&x0
+	var r: X& = &x0
+	
+#	for x in o1
+#		print(typeof(x))
+	for x in o2
+		print(typeof(x))
+#	for x in s1
+#		print(typeof(x))
+	for x in s2
+		print(typeof(x))
+	for x in p
+		print(typeof(x))

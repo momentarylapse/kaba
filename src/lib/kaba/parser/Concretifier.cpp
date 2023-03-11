@@ -708,10 +708,19 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> 
 
 	auto block_x = new Block(block->function, block);
 
-	auto t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
+	auto t_out = TypeVoid;
+	if (t0->is_pointer_shared())
+		// TODO would be nice to simply have an alias here!
+		// ...add temp var fist, then delete and remap inside the block_x?
+		t_out = tree->request_implicit_class_shared_not_null(t0->param[0], node->token_id);
+	else
+		t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
 
 	auto *var = block_x->add_var(var_name, t_out);
-	block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->change_type(t_out)));
+	if (t0->is_pointer_shared())
+		block_x->add(parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(var), expr->change_type(t_out)));
+	else
+		block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->change_type(t_out)));
 
 	auto n_if = add_node_statement(StatementID::IF, node->token_id);
 	n_if->set_num_params(node->params.num - 2);
@@ -1221,7 +1230,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	auto should_capture_via_ref = [this, node] (Variable *v) {
 		if (v->name == Identifier::SELF)
 			return true;
-		if (v->type->can_memcpy() or v->type == TypeString)
+		if (v->type->can_memcpy() or v->type == TypeString /*or v->type->is_pointer_shared() or v->type->is_pointer_shared_not_null()*/)
 			return false;
 		do_error(format("currently not supported to capture variable '%s' of type '%s'", v->name, v->type->long_name()), node);
 		return true;
