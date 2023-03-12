@@ -946,19 +946,13 @@ shared<Node> Concretifier::concretify_statement_new(shared<Node> node, Block *bl
 shared<Node> Concretifier::concretify_statement_delete(shared<Node> node, Block *block, const Class *ns) {
 	auto p = force_concrete_type(concretify_node(node->params[0], block, block->name_space()));
 
-	if (p->type->is_pointer_raw()) {
-		// override del operator?
-		if (auto f = p->type->param[0]->get_member_func(Identifier::Func::DELETE_OVERRIDE, TypeVoid, {})) {
-			auto cmd = add_node_call(f, node->token_id);
-			cmd->set_instance(p->deref());
-			return cmd;
-		}
-
-		// default delete
+	/*if (p->type->is_pointer_raw()) {
+		// classic default delete  -  OBSOLETE
 		node->params[0] = p;
 		node->type = TypeVoid;
 		return node;
-	} else if (p->type->is_pointer_shared() or p->type->is_pointer_owned()) {
+	}*/
+	if (p->type->is_pointer_shared() or p->type->is_pointer_owned()) {
 		if (auto f = p->type->get_member_func(Identifier::Func::SHARED_CLEAR, TypeVoid, {}))
 			return add_node_member_call(f, p, p->token_id);
 		do_error("clear missing...", p);
@@ -966,9 +960,15 @@ shared<Node> Concretifier::concretify_statement_delete(shared<Node> node, Block 
 		if (auto f = p->type->get_member_func("clear", TypeVoid, {}))
 			return add_node_member_call(f, p, p->token_id);
 		do_error("clear missing...", p);
-	} else {
-		do_error("pointer expected after 'del'", node->params[0]);
 	}
+
+	p = deref_if_reference(p);
+
+	// override del operator?
+	if (auto f = p->type->get_member_func(Identifier::Func::DELETE_OVERRIDE, TypeVoid, {}))
+		return add_node_member_call(f, p, node->token_id);
+
+	do_error("shared/owned pointer expected after 'del'", node->params[0]);
 	return nullptr;
 }
 
