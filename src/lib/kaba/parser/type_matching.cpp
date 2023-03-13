@@ -187,19 +187,20 @@ bool Concretifier::type_match_tuple_as_contructor(shared<Node> node, Function *f
 bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, const Class *wanted, CastingData &cd) {
 	cd.penalty = 0;
 	cd.cast = TypeCastId::NONE;
-	cd.pre_deref = false;
+	cd.pre_deref_count = 0;
 	auto given = node->type;
+
+	//msg_write("?   " + given->long_name() + " -> " + wanted->long_name());
 
 
 	if (given->is_some_pointer_not_null()) {
 		CastingData cd_sub;
-		if (type_match_with_cast(node->deref(), is_modifiable, wanted, cd_sub))
-			if (!cd.pre_deref) {
-				cd = cd_sub;
-				cd.pre_deref = true;
-				cd.penalty += 10;
-				return true;
-			}
+		if (type_match_with_cast(node->deref(), is_modifiable, wanted, cd_sub)) {
+			cd = cd_sub;
+			cd.pre_deref_count ++;
+			cd.penalty += 10;
+			return true;
+		}
 	}
 
 	if (is_modifiable) {
@@ -446,11 +447,11 @@ shared<Node> Concretifier::apply_type_cast_basic(const CastingData &cast, shared
 }
 
 shared<Node> Concretifier::apply_type_cast(const CastingData &cast, shared<Node> node, const Class *wanted) {
-	if (cast.pre_deref) {
-		return apply_type_cast_basic(cast, node->deref(), wanted);
-	} else {
-		return apply_type_cast_basic(cast, node, wanted);
+	if (cast.pre_deref_count > 0) {
+		for (int i=0; i<cast.pre_deref_count; i++)
+			node = node->deref();
 	}
+	return apply_type_cast_basic(cast, node, wanted);
 }
 
 }

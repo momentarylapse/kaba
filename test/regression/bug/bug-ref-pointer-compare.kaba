@@ -1,0 +1,24 @@
+#var actives: int&[]
+#
+#func raw(r: int&) -> int*
+#	return r
+#	
+func main()
+	var r = &4
+	var rr = &r
+	if rr == 4
+		pass
+#	var b = raw(r)
+#	
+#	actives.add(r)
+#
+#	for i=>o in actives
+#		print(i)
+#		print(o)
+#	#	if o == 3
+#	#		pass
+#		if o == b
+#			print("aaaa")
+#		else
+#			print("ERROR")
+#
