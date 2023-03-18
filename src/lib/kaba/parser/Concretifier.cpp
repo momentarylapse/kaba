@@ -1243,7 +1243,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 
 		bool via_ref = should_capture_via_ref(v);
 		capture_via_ref.add(via_ref);
-		auto cap_type = via_ref ? tree->get_pointer(v->type, -1) : v->type;
+		auto cap_type = via_ref ? tree->request_implicit_class_reference(v->type, -1) : v->type;
 
 
 		auto vvv = f->add_param(v->name, cap_type, Flags::NONE);
