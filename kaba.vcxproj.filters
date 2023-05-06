@@ -1232,6 +1232,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{F12EA729-9762-4175-D211-F4CA3BE60BD0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Helper">
+      <UniqueIdentifier>{DDC14E95-3982-915A-1E60-98AEB5339C97}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\helper">
       <UniqueIdentifier>{31ED1856-3429-E478-D5BE-822EACE478DB}</UniqueIdentifier>
     </Filter>
@@ -1252,6 +1255,9 @@
     </Filter>
     <Filter Include="src\lib\fft">
       <UniqueIdentifier>{E7559A58-BF41-808F-3F10-62C8B9F73A51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lib\file">
+      <UniqueIdentifier>{596C5346-3ACF-8974-B6F3-FC96F58AE493}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\hui">
       <UniqueIdentifier>{FDD61BAD-BC45-3E2C-366F-FF481FD83243}</UniqueIdentifier>
@@ -1298,11 +1304,17 @@
     <Filter Include="src\lib\os">
       <UniqueIdentifier>{71C98AAD-A0D7-45A4-DD42-1D9B63491998}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\lib\sound">
+      <UniqueIdentifier>{5EA1CAA4-2FB1-9A0B-18B4-1F9FB1E00655}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\lib\threads">
       <UniqueIdentifier>{00B3DEB1-3DBC-9488-47E6-BB73557F0D00}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\lib\vulkan">
       <UniqueIdentifier>{CA8DC7DE-188E-45F8-3DB9-3760FBE1DAAA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lib\xfile">
+      <UniqueIdentifier>{87F43273-B0B1-C1EC-F4A8-E622B9C0AE32}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -261,14 +261,6 @@ if(GTK4_OR_GTK3 STREQUAL "gtk3")
 	add_compile_definitions(HAS_LIB_GTK3=1)
 endif()
 
-# adwaita mandatory
-pkg_check_modules(ADWAITA REQUIRED libadwaita-1)
-include_directories(${ADWAITA_INCLUDE_DIRS})
-link_directories(${ADWAITA_LIBRARY_DIRS})
-list(APPEND DEPS ${ADWAITA_LIBRARIES})
-add_definitions(${ADWAITA_CFLAGS_OTHER})
-add_compile_definitions(HAS_LIB_ADWAITA=1)
-
 # zlib mandatory
 pkg_check_modules(ZLIB REQUIRED zlib)
 include_directories(${ZLIB_INCLUDE_DIRS})
@@ -276,6 +268,18 @@ link_directories(${ZLIB_LIBRARY_DIRS})
 list(APPEND DEPS ${ZLIB_LIBRARIES})
 add_definitions(${ZLIB_CFLAGS_OTHER})
 add_compile_definitions(HAS_LIB_ZLIB=1)
+
+# adwaita (optional)
+pkg_check_modules(LIBADWAITA-1 libadwaita-1)
+if(LIBADWAITA-1_FOUND)
+	include_directories(${LIBADWAITA-1_INCLUDE_DIRS})
+	link_directories(${LIBADWAITA-1_LIBRARY_DIRS})
+	list(APPEND DEPS ${LIBADWAITA-1_LIBRARIES})
+	add_definitions(${LIBADWAITA-1_CFLAGS_OTHER})
+	add_compile_definitions(HAS_LIB_ADWAITA=1)
+else()
+	add_compile_definitions(HAS_LIB_ADWAITA=0)
+endif()
 
 # xlib (optional)
 pkg_check_modules(X11 x11)
