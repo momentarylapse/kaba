@@ -26,7 +26,7 @@ namespace kaba {
 class KabaApp : public hui::Application {
 public:
 	KabaApp() :
-		hui::Application("kaba", "", hui::FLAG_DONT_LOAD_RESOURCE)
+		hui::Application("kaba", "", hui::Flags::DONT_LOAD_RESOURCE | hui::Flags::LAZY_GUI_INITIALIZATION)
 	{
 		set_property("name", AppName);
 		set_property("version", AppVersion);
@@ -47,7 +47,7 @@ public:
 	string output_format = "raw";
 	bool flag_interpret = false;
 
-	virtual bool on_startup(const Array<string> &arg0) {
+	bool on_startup(const Array<string> &arg0) override {
 
 		CommandLineParser p;
 		p.info(AppName, "compiler for the kaba language");
@@ -161,7 +161,7 @@ public:
 		p.cmd("", "FILENAME ...", "compile and run a file", [this] (const Array<string> &a) {
 			init_environment();
 
-			auto s = compile_file(a[0], flag_just_check_syntax);
+			auto s = compile_file(a[0]);
 			if (!s or flag_just_check_syntax)
 				return;
 
@@ -261,7 +261,7 @@ public:
 			msg_write(format("%12s %-20s %s", c->type->name, c->str(), c->value.hex()));
 	}
 
-	shared<kaba::Module> compile_file(const Path &_filename, bool flag_just_check_syntax) {
+	shared<kaba::Module> compile_file(const Path &_filename) {
 		auto filename = _filename;
 		if (installed and filename.extension() != "kaba")
 			filename = try_get_installed_app_file(filename);
@@ -307,7 +307,7 @@ public:
 	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
 		auto f = os::fs::open(out_file, "wb");
 		f->write(s->opcode, s->opcode_size);
-		delete(f);
+		delete f;
 	}
 
 	void disassemble_file(const Path &filename) {
