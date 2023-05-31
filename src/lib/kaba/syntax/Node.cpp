@@ -242,6 +242,8 @@ Node::Node(NodeKind _kind, int64 _link_no, const Class *_type, bool _const, int 
 }
 
 Node::~Node() {
+	if (kind == NodeKind::BLOCK)
+		as_block()->vars.clear();
 }
 
 Node *Node::modifiable() {

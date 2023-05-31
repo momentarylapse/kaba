@@ -46,6 +46,7 @@ public:
 	bool flag_compile_os = false;
 	string output_format = "raw";
 	bool flag_interpret = false;
+	bool flag_clean_up = false;
 
 	bool on_startup(const Array<string> &arg0) override {
 
@@ -133,6 +134,9 @@ public:
 		p.option("--interpret", "run in interpreter instead of native", [this] {
 			flag_interpret = true;
 		});
+		p.option("--clean", "clean up after execution", [this] {
+			flag_clean_up = true;
+		});
 		p.cmd("--xxx", "", "some experiment", [this] (const Array<string>&) {
 			kaba::init(abi, flag_allow_std_lib);
 			do_experiments();
@@ -180,14 +184,14 @@ public:
 			} else {
 				die("can only execute files when using the native ABI");
 			}
-			kaba::default_context->clean_up();
 		});
 
 		p.parse(arg0);
 
-		/*	// end
+		// end
+		if (flag_clean_up)
 			kaba::clean_up();
-			msg_end();*/
+		//msg_end();
 
 		return false;
 	}

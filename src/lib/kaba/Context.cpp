@@ -198,8 +198,7 @@ const Class *_dyn_type_in_namespace(const VirtualTable *p, const Class *ns) {
 const Class *Context::get_dynamic_type(const VirtualBase *p) const {
 	auto *pp = get_vtable(p);
 	for (auto s: public_modules) {
-		auto t = _dyn_type_in_namespace(pp, s->tree->base_class);
-		if (t)
+		if (auto t = _dyn_type_in_namespace(pp, s->tree->base_class))
 			return t;
 	}
 	return nullptr;
@@ -208,10 +207,9 @@ const Class *Context::get_dynamic_type(const VirtualBase *p) const {
 
 
 void Context::clean_up() {
-	//delete_all_modules(true, true);
-
+	global_operators.clear();
+	public_modules.clear();
 	packages.clear();
-
 	external->reset();
 }
 
