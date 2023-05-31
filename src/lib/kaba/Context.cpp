@@ -224,6 +224,7 @@ xfer<Context> Context::create() {
 	//c->external = _secret_lib_context_->external;
 	c->template_manager->copy_from(_secret_lib_context_->template_manager.get());
 	c->implicit_class_registry->copy_from(_secret_lib_context_->implicit_class_registry.get());
+	c->global_operators = _secret_lib_context_->global_operators;
 	return c;
 }
 

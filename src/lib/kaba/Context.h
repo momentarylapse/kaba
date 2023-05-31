@@ -18,6 +18,7 @@ class Module;
 class Function;
 class Class;
 class TypeCast;
+class Operator;
 class TemplateManager;
 class ImplicitClassRegistry;
 class ExternalLinkData;
@@ -42,6 +43,8 @@ public:
     owned<TemplateManager> template_manager;
     owned<ImplicitClassRegistry> implicit_class_registry;
     owned<ExternalLinkData> external;
+
+    shared_array<Operator> global_operators;
 
     Context();
     ~Context();

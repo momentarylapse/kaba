@@ -346,8 +346,6 @@ const Class *add_type_func(const Class *ret_type, const Array<const Class*> &par
 
 //   with type information
 
-Array<Operator*> global_operators;
-
 void add_operator_x(OperatorID primitive_op, const Class *return_type, const Class *param_type1, const Class *param_type2, InlineID inline_index, void *func) {
 	Operator *o = new Operator;
 	o->owner = cur_package->tree.get();
@@ -388,7 +386,7 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	}
 	func_set_inline(inline_index);
 	if (inline_index != InlineID::NONE)
-		global_operators.add(o);
+		cur_package->context->global_operators.add(o);
 }
 
 
