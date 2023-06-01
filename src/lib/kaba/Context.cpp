@@ -27,8 +27,36 @@ Exception::Exception(const Asm::Exception &e, Module *s, Function *f) :
 	text = format("assembler: %s, %s", message(), f->long_name());
 }
 
+Exception::Exception(const Exception& e) :
+	Asm::Exception(e.text, e.expression, e.line, e.column)
+{
+	filename = e.filename;
+	if (e.parent.get())
+		parent = new Exception(*e.parent.get());
+}
+
 string Exception::message() const {
-	return format("%s, %s", Asm::Exception::message(), filename);
+	string m;
+	if (expression != "")
+		m += format("\"%s\": ", expression);
+	m += text;
+
+	auto location = [] (const Exception &e) {
+		if (e.line >= 0)
+			return format("%s, line %d", e.filename, e.line + 1);
+		return str(e.filename);
+	};
+
+	Array<string> locations;
+	locations.add(location(*this));
+
+	auto ee = parent.get();
+	while (ee) {
+		locations.add(location(*ee));
+		ee = ee->parent.get();
+	}
+	locations.reverse();
+	return m + "\nat: " + implode(locations, "\nimported at: ");
 }
 
 

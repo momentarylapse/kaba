@@ -27,9 +27,12 @@ class Exception : public Asm::Exception {
 public:
 	Exception(const string &message, const string &expression, int line, int column, Module *s);
 	Exception(const Asm::Exception &e, Module *s, Function *f);
+	Exception(const Exception& e);
 	string message() const override;
 	//Module *module;
 	Path filename;
+
+	owned<Exception> parent;
 };
 /*struct SyntaxException : Exception{};
 struct LinkerException : Exception{};
