@@ -385,7 +385,7 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 			func_add_param("b", p);
 	}
 	func_set_inline(inline_index);
-	if (inline_index != InlineID::NONE)
+	if (inline_index != InlineID::NONE and cur_package->filename.extension() == "")
 		cur_package->context->global_operators.add(o);
 	else
 		delete o;
