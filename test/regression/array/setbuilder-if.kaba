@@ -1,3 +1,5 @@
 func main()
 	print([for i in 2:10 str(i*i)+"-" if i >= 3 and i <= 8])
+	let arr = range(10)
+	print([for i in arr  i  if i >= 3 and i <= 8])
 
