@@ -1,0 +1,12 @@
+func main()
+
+	print([1,2,3] |> sum)
+	
+	
+	let array = range(10)
+	let y = array
+		|> filter(x => x > 2)
+		|> filter(x => x < 8)
+	print(typeof(y))
+	print(y)
+

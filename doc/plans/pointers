@@ -1,0 +1,112 @@
+== current usage ==
+
+X	new X() -> X*
+=>	new X() -> xfer[X]
+
+J	p2b(void*) -> bool
+J	p2s(void*) -> string
+
+J	malloc(int) -> void*
+J	free(void*)
+
+~	as_binary(void*,int) -> string
+=>	as_binary(
+
+X	os.fs.open(...) -> FileStream*
+=>	os.fs.open(...) -> xfer[FileStream]
+
+J	kaba.Class.get_func(...) -> Function*
+X	kaba.Context.create() -> Context*
+=>	kaba.Context.create() -> xfer[Context]    ..shared?
+
+X	image.Image.load(...) -> Image*
+=>	image.Image.load(...) -> xfer[Image]
+
+# callback
+xxx(...,void->void)
+
+
+gl.Shader.set_floats(float*,int)
+gl.Buffer.update(void*,int)
+gl.Buffer.read(void*,int)
+gl.Texture.load() -> Texture*
+	=> xfer[]
+gl.Shader.load() -> Shader*
+	=> xfer[]
+gl.Shader.get_default_3d() -> Shader*
+	=> Shader&
+
+vk.Device.create_simple(Instance*,Window*) -> Device*
+	=> (&,&) -> xfer[]
+vk.SwapChain.create_render_pass(DepthBuffer*) -> RenderPass*
+	=> & -> xfer[]
+vk.SwapChain.create_frame_buffers(RenderPass*,DepthBuffer*) -> FrameBuffer*[]
+	=> (RenderPass&, DepthBuffer&) -> xfer[...][]
+vk.SwapChain.acquire_image(int*,Semaphore) -> bool
+	=> int?
+
+
+== rules: proposal ==
+
+types
+* X* - "raw", might be nil
+* X& - "raw", NOT nil, auto cast to X
+* xfer[X] - "mostly raw", nil?!?
+* owned[X] - "smart", might be nil
+* owned![X] - "smart", NOT nil
+* shared[X] - "smart", might be nil
+* shared![X] - "smart", NOT nil
+
+new -> xfer[X] ~~> owned![X]
+
+auto cast:
+* X& -> X
+* owned![X] -> X
+* owned![X] -> X&
+* owned![X][] -> X&[]  ?!?
+* all -> X*
+* all[] -> X*[]
+
+explicit unwrap
+* X* -> X&
+* owned[X] -> X&
+* shared[X] -> X&
+
+
+============================================
+
+weak/borrow()
+weak(shared[X]) -> X*
+weak(shared![X]) -> X&
+weak(owned[X]) -> X*
+weak(owned![X]) -> X&
+
+===========================================
+
+&(X) -> X&
+maybe not...:
+	&(X*) -> ???
+	&(X&) -> ???
+	&(shared[X]) -> X*
+	&(shared![X]) -> X&
+	&(owned[X]) -> X*
+	&(owned![X]) -> X&
+weak/borrow() instead
+
+
+============================================
+
+x: X, X&
+x.bla
+
+p: X?, X*, shared[X], owned[X]
+for x in p
+	x: X&
+	x.black
+
+p: shared![X], owned![X]
+
+
+
+
+
