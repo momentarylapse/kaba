@@ -2015,12 +2015,12 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 		if (f->is_member()) {
 			offset = 1;
 			if (f->is_selfref()) {
-			} else if (!n->params[0]->is_mutable() and !f->is_const()) {
+			} else if (!n->params[0]->is_mutable() and f->is_mutable()) {
 				tree->do_error(f->long_name() + ": member function expects a mutable instance, because it is declared 'mut'", n->token_id);
 			}
 		}
 		for (int i=offset; i<f->num_params; i++)
-			if (!n->params[i]->is_mutable() and !f->var[i]->is_const())
+			if (!n->params[i]->is_mutable() and f->var[i]->is_mutable())
 				tree->do_error(format("%s: function parameter %d ('%s') is 'out' and does not accept a constant value", f->long_name(), i+1-offset, f->var[i]->name), n->token_id);
 	}
 	return n;
