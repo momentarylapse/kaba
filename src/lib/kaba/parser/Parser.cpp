@@ -1422,7 +1422,9 @@ void Parser::parse_abstract_complete_command(Block *block) {
 
 	// assembler block
 	if (try_consume("-asm-")) {
-		block->add(add_node_statement(StatementID::ASM));
+		auto a = add_node_statement(StatementID::ASM);
+		a->params.add(add_node_const(tree->add_constant_int(tree->asm_blocks[next_asm_block ++].uuid), -1));
+		block->add(a);
 
 	} else {
 

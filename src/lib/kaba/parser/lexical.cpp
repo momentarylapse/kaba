@@ -339,6 +339,8 @@ void ExpressionBuffer::do_asm_block(const char *source, int &pos, int &line_no) 
 	pos ++;
 
 	AsmBlock a;
+	static int next_asm_uuid = 0;
+	a.uuid = next_asm_uuid ++;
 	a.line = cur_line->physical_line;
 	a.block = strip_comments(string(&source[asm_start], asm_end - asm_start));
 	syntax->asm_blocks.add(a);
