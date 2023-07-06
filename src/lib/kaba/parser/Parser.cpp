@@ -114,7 +114,7 @@ const Class *Parser::get_constant_type(const string &str) {
 	}
 	if (type == TypeInt) {
 		if (hex) {
-			if ((s2i2(str) >= 0x100000000) or (-s2i2(str) > 0x00000000))
+			if (str.num > 10)
 				type = TypeInt64;
 		} else {
 			if ((s2i2(str) >= 0x80000000) or (-s2i2(str) > 0x80000000))
