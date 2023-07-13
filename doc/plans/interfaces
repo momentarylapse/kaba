@@ -6,9 +6,9 @@ class A implements I
 	...
 
 
-func ff(I i)
+func ff(i: I)
 	i.f()
-let a:A
+let a: A
 ff(a)
 
 extra vtable for each interface in class
@@ -19,4 +19,19 @@ call via interface
  i.f()
 requires 2 pointers... A instance + if-vtable
 ARGH
+
+
+
+== alternative ==
+
+class A implements I
+only performs compile-time checks (do we implement all methods?)
+
+func ff(i: I)
+either
+* adds wrapper with virtual functions to forward calls ("virtual interface")
+* templated ff[T](i: T) ?
+
+interface I as virtual
+interface I as template  ???
 
