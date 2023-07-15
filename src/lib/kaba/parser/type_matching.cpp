@@ -157,6 +157,10 @@ shared<Node> Concretifier::explicit_cast(shared<Node> node, const Class *wanted)
 		node->type = wanted;
 		return node;
 	}
+	if (wanted->is_pointer_xfer() and type->is_reference()) {
+		node->type = wanted;
+		return node;
+	}
 
 	if (wanted == TypeString)
 		return add_converter_str(node, false);
