@@ -5,3 +5,48 @@ amd64/win
 	non-volatile: rbx, rbp, rdi, rsi, rsp, r12-r15
 
 destructing parameters....?
+
+
+
+== amd64/gnu ==
+
+void f(int a, int b, int c, int d, int e, int f, int g, int h) {
+	a = g;
+	b = h;
+}
+push rbp                                         // 55
+mov rbp, rsp                                     // 48.89.e5
+mov [ebp+0xfc], edi                              // 89.7d.fc
+mov [ebp+0xf8], esi                              // 89.75.f8
+mov [ebp+0xf4], edx                              // 89.55.f4
+mov [ebp+0xf0], ecx                              // 89.4d.f0
+mov [ebp+0xec], r8d                              // 44.89.45.ec
+mov [ebp+0xe8], r9d                              // 44.89.4d.e8
+mov eax, [ebp+0x10]                              // 8b.45.10
+mov [ebp+0xfc], eax                              // 89.45.fc
+mov eax, [ebp+0x18]                              // 8b.45.18
+mov [ebp+0xf8], eax                              // 89.45.f8
+nop                                              // 90
+pop rbp                                          // 5d
+ret                                              // c3
+
+func g()
+	f(1, 2, 3, 4, 5, 6, 7, 8)
+
+push rbp                                         // 55
+mov rbp, rsp                                     // 48.89.e5
+push 0x08                                        // 6a.08
+push 0x07                                        // 6a.07
+mov ecx, 0x00000006                              // 41.b9.06.00.00.00
+mov eax, 0x00000005                              // 41.b8.05.00.00.00
+mov ecx, 0x00000004                              // b9.04.00.00.00
+mov edx, 0x00000003                              // ba.03.00.00.00
+mov esi, 0x00000002                              // be.02.00.00.00
+mov edi, 0x00000001                              // bf.01.00.00.00
+call 0xffffffac                                  // e8.ac.ff.ff.ff
+add rsp, 0x10                                    // 48.83.c4.10
+nop                                              // 90
+leave                                            // c9
+ret                                              // c3
+
+

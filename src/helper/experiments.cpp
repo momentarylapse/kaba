@@ -120,15 +120,17 @@ __declspec(noinline)
 #else
 [[gnu::noinline]]
 #endif
-void f_xxx(int a, int b, int c, int d, int e, int f) {
+void f_xxx(int a, int b, int c, int d, int e, int f, int g, int h) {
 	//int e = 0, f = 0;
-	msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
+	//msg_write(format("xxx  %d %d %d %d %d %d", a, b, c, d, e, f));
+	a = g;
+	b = h;
 }
 
 void fff2() {
-	f_xxx(1, 2, 3, 4, 5, 6);
+	f_xxx(1, 2, 3, 4, 5, 6, 7, 8);
 	//f_xxx(1, 2, 3, 4);
-	msg_write("hallo");
+	//msg_write("hallo");
 }
 
 class CCC {
@@ -157,9 +159,11 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&ggg, -1));
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 #endif
+	msg_write(disassemble((void*)&fff2, -1));
+	//msg_write(disassemble((void*)&f_xxx, -1));
 
 	//test_optional();
-	test_variant();
+	//test_variant();
 }
 
 
