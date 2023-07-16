@@ -13,6 +13,7 @@ extern const Class *TypeDictBase;
 extern const Class *TypeIntDict;
 extern const Class *TypeFloatDict;
 extern const Class *TypeStringDict;
+extern const Class *TypeStringList;
 
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")
@@ -51,6 +52,13 @@ public:
 //	{ return var2str(this, TypeStringDict); }
 };
 #pragma GCC pop_options
+
+Array<string> dict_get_keys(const DynamicArray& a) {
+	Array<string> keys;
+	for (int i=0; i<a.num; i++)
+		keys.add(*(string*)((char*)a.data + i * a.element_size));
+	return keys;
+}
 
 void lib_make_dict(Class *t, SyntaxTree *ps) {
 	const Class *p = t->param[0];
@@ -101,6 +109,8 @@ void lib_make_dict(Class *t, SyntaxTree *ps) {
 		class_add_func(Identifier::Func::CONTAINS, TypeBool, &XDict<string>::contains);
 			func_add_param("key", TypeString);
 	}
+
+	class_add_func("keys", TypeStringList, &dict_get_keys, Flags::PURE);
 }
 
 
