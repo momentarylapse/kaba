@@ -708,17 +708,17 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> 
 	auto block_x = new Block(block->function, block);
 
 	auto t_out = TypeVoid;
-	if (t0->is_pointer_shared())
+	/*if (t0->is_pointer_shared())
 		// TODO would be nice to simply have an alias here!
 		// ...add temp var fist, then delete and remap inside the block_x?
 		t_out = tree->request_implicit_class_shared_not_null(t0->param[0], node->token_id);
-	else
-		t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
+	else*/
+		t_out = tree->request_implicit_class_alias(t0->param[0], node->token_id);
 
 	auto *var = block_x->add_var(var_name, t_out);
-	if (t0->is_pointer_shared())
+	/*if (t0->is_pointer_shared())
 		block_x->add(parser->con.link_operator_id(OperatorID::ASSIGN, add_node_local(var), expr->change_type(t_out)));
-	else
+	else*/
 		block_x->add(add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->change_type(t_out)));
 
 	auto n_if = add_node_statement(StatementID::IF, node->token_id);
@@ -744,7 +744,7 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_optional(shared<Node>
 
 	auto block_x = new Block(block->function, block);
 
-	auto t_out = tree->request_implicit_class_reference(t0->param[0], node->token_id);
+	auto t_out = tree->request_implicit_class_alias(t0->param[0], node->token_id);
 
 	auto *var = block_x->add_var(var_name, t_out);
 	auto assign = add_node_operator_by_inline(InlineID::POINTER_ASSIGN, add_node_local(var), expr->ref_raw(t_out));
@@ -825,7 +825,7 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 	// [VAR, INDEX, ARRAY, BLOCK]
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
-	container = deref_if_reference(container);
+	//container = deref_if_reference(container);
 	auto t_c = container->type;
 	if (t_c->is_pointer_shared() or t_c->is_pointer_shared_not_null() or t_c->is_pointer_owned() or t_c->is_pointer_owned_not_null() or t_c->is_pointer_raw())
 		// "*_not_null" only for convenience
@@ -843,7 +843,7 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, sha
 	node->params[2] = container;
 
 	auto var_name = node->params[0]->as_token();
-	auto var_type = tree->request_implicit_class_reference(container->type->get_array_element(), node->params[0]->token_id);
+	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type);
 	if (!container->is_mutable())
 		flags_set(var->flags, Flags::CONST);
