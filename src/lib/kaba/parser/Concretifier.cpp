@@ -899,7 +899,7 @@ shared<Node> Concretifier::concretify_special_function_typeof(shared<Node> node,
 shared<Node> Concretifier::concretify_special_function_len(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
-	//sub = deref_if_reference(sub);
+	sub = deref_if_reference(sub);
 
 	// array?
 	if (sub->type->is_array())
@@ -1471,10 +1471,6 @@ shared<Node> Concretifier::concretify_array_builder_for(shared<Node> node, Block
 shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for, shared<Node> n_exp, shared<Node> n_cmp, const Class *type_el, Block *block, const Class *ns, int token_id) {
 	// OUT: [FOR, VAR]
 
-	// FIXME already feed the correct type here
-//	if (type_el->is_reference())
-//		type_el = type_el->param[0];
-
 	// create an array
 	auto array_type = tree->request_implicit_class_list(type_el, token_id);
 	auto array_var = block->add_var(block->function->create_slightly_hidden_name(), array_type);
@@ -1534,8 +1530,13 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::DEREFERENCE) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];//deref_if_reference(node->params[0]);
-		if (!sub->type->is_pointer_raw()) // and !sub->type->is_reference())
-			do_error("only raw pointers can be dereferenced using '*'", node);
+		if (block->is_trust_me()) {
+			if (!sub->type->is_some_pointer())
+				do_error("only pointers can be dereferenced using '*' inside 'trust_me'", node);
+		} else {
+			if (!sub->type->is_some_pointer_not_null()) //   is_pointer_raw()) // and !sub->type->is_reference())
+				do_error("only not-null pointers (references, shared![X], owned![X]) can be dereferenced using '*'", node);
+		}
 		node->type = sub->type->param[0];
 	} else if (node->kind == NodeKind::REFERENCE_RAW) {
 		concretify_all_params(node, block, ns);
