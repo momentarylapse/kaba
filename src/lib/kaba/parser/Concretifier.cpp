@@ -1472,8 +1472,8 @@ shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for
 	// OUT: [FOR, VAR]
 
 	// FIXME already feed the correct type here
-	if (type_el->is_reference())
-		type_el = type_el->param[0];
+//	if (type_el->is_reference())
+//		type_el = type_el->param[0];
 
 	// create an array
 	auto array_type = tree->request_implicit_class_list(type_el, token_id);

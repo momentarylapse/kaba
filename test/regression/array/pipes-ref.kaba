@@ -1,0 +1,9 @@
+use kaba
+
+func main()
+	for c in int
+		let ff = c.functions
+			|> filter(f => f.name == "__eq__")
+			|> sort("name")
+		print(ff)
+
