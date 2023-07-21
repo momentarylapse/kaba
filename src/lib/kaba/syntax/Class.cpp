@@ -212,13 +212,13 @@ bool Class::is_callable_bind() const {
 }
 
 bool Class::uses_call_by_reference() const {
-	return (!force_call_by_value() and !is_pointer_raw() and !is_reference()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer_raw() and !is_reference() and !is_pointer_alias()) or is_array() or is_optional();
 }
 
 bool Class::uses_return_by_memory() const {
 	if (_amd64_allow_pass_in_xmm())
 		return false;
-	return (!force_call_by_value() and !is_pointer_raw() and !is_reference()) or is_array() or is_optional();
+	return (!force_call_by_value() and !is_pointer_raw() and !is_reference() and !is_pointer_alias()) or is_array() or is_optional();
 }
 
 
