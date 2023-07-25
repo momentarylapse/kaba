@@ -2,7 +2,7 @@ X.init
 ---f
 ("hallo")
 ("hallo")
-(nil)
+nil
 X.del
 ---
-(nil)
+nil

@@ -1,5 +1,5 @@
 use kaba
 
 func main()
-	for t in typeof(mat4[])
-		print(t.name)
+	var t = typeof(mat4[])
+	print(t.name)

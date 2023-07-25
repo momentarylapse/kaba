@@ -8,9 +8,7 @@ class B extends A
 func main()
 	var ca = A
 	var cb = B
-	for _ca in ca
-		for _cb in cb
-			print(_ca.name)
-			print(_cb.name)
-			print(_ca.is_derived_from(cb))
-			print(_cb.is_derived_from(ca))
+	print(ca.name)
+	print(cb.name)
+	print(ca.is_derived_from(cb))
+	print(cb.is_derived_from(ca))

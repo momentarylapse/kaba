@@ -7,7 +7,7 @@ struct X
 func main()
 	var x: X
 	print(len(x.x))
-	for t in typeof(x.x)
-		print(t)
-		print(t.param[0])
-		print(t.param[0].param[0])
+	var t = typeof(x.x)
+	print(t)
+	print(t.param[0])
+	print(t.param[0].param[0])

@@ -2,5 +2,5 @@ use kaba
 
 func main()
 	var s: string
-	for t in typeof(s)
-		print(t.name)
+	var t = typeof(s)
+	print(t.name)
