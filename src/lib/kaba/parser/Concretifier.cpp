@@ -879,32 +879,36 @@ shared<Node> Concretifier::concretify_special_function_typeof(shared<Node> node,
 	}
 }
 
-shared<Node> Concretifier::concretify_special_function_len(shared<Node> node, Block *block, const Class *ns) {
-	auto sub = concretify_node(node->params[0], block, block->name_space());
-	sub = force_concrete_type(sub);
+shared<Node> implement_len(shared<Node> node, Concretifier *con, Block *block, const Class *ns, int token_id) {
+	node = con->concretify_node(node, block, ns);
+	node = con->force_concrete_type(node);
 
 	// array?
-	if (sub->type->is_array())
-		return add_node_const(tree->add_constant_int(sub->type->array_length), node->token_id);
+	if (node->type->is_array())
+		return add_node_const(con->tree->add_constant_int(node->type->array_length), token_id);
 
 	// __length__() function?
-	if (auto *f = sub->type->get_member_func(Identifier::Func::LENGTH, TypeInt, {}))
-		return add_node_member_call(f, sub, node->token_id);
+	if (auto *f = node->type->get_member_func(Identifier::Func::LENGTH, TypeInt, {}))
+		return add_node_member_call(f, node, node->token_id);
 
 	// element "int num/length"?
-	for (auto &e: sub->type->elements)
+	for (auto &e: node->type->elements)
 		if (e.type == TypeInt and (e.name == "length" or e.name == "num")) {
-			return sub->shift(e.offset, e.type, node->token_id);
+			return node->shift(e.offset, e.type, node->token_id);
 		}
 
 	// length() function?
-	for (auto f: sub->type->functions)
+	for (auto f: node->type->functions)
 		if ((f->name == "length") and (f->num_params == 1))
-			return add_node_member_call(f.get(), sub, node->token_id);
+			return add_node_member_call(f.get(), node, node->token_id);
 
 
-	do_error(format("don't know how to get the length of an object of class '%s'", sub->type->long_name()), node);
+	con->do_error(format("don't know how to get the length of an object of class '%s'", node->type->long_name()), node);
 	return nullptr;
+}
+
+shared<Node> Concretifier::concretify_special_function_len(shared<Node> node, Block *block, const Class *ns) {
+	return implement_len(node->params[0], this, block, block->name_space(), node->token_id);
 }
 
 shared<Node> Concretifier::concretify_statement_new(shared<Node> node, Block *block, const Class *ns) {
@@ -2219,6 +2223,13 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 	return nullptr;
 }
 
+shared<Node> Concretifier::build_pipe_len(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
+	if (!input->type->is_list())
+		do_error(format("'|> %s' only allowed for lists", Identifier::LEN), input);
+
+	return implement_len(input, this, block, block->name_space(), token_id);
+}
+
 shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 //	auto func = force_concrete_type(_func);
 	auto input = abs_input;
@@ -2232,6 +2243,8 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 				return build_pipe_filter(input, rhs, block, ns, token_id);
 			if (s->id == SpecialFunctionID::SORT)
 				return build_pipe_sort(input, rhs, block, ns, token_id);
+			if (s->id == SpecialFunctionID::LEN)
+				return build_pipe_len(input, rhs, block, ns, token_id);
 		}
 	} else if ((rhs->kind == NodeKind::ABSTRACT_CALL)) {
 		if (auto s = parser->which_special_function(rhs->params[0]->as_token())) {
