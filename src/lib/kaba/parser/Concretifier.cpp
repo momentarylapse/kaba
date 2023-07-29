@@ -2139,6 +2139,66 @@ shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const sh
 	return concretify_node(n, block, ns);
 }
 
+shared<Node> Concretifier::try_build_pipe_map_array(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
+	if (input->type->param[0] != pt)
+		return nullptr;
+	// -> map(func, array)
+
+
+	// [VAR, INDEX, ARRAY, BLOCK]
+	auto n_for = add_node_statement(StatementID::FOR_CONTAINER, token_id, TypeVoid);
+	n_for->set_param(2, input);
+
+	auto el_type = input->type->get_array_element();
+	static int map_counter = 0;
+	string viname = format("<map-index-%d>", map_counter);
+	string vname = format("<map-var-%d>", map_counter++);
+	auto var = block->add_var(vname, tree->request_implicit_class_reference(el_type, token_id));
+	flags_set(var->flags, Flags::CONST);
+	n_for->set_param(0, add_node_local(var));
+	auto index = block->add_var(viname, TypeInt);
+	n_for->set_param(1, add_node_local(index));
+
+	auto out = add_node_call(f->as_func(), f->token_id);
+
+	Array<CastingData> casts;
+	Array<const Class*> wanted;
+	int penalty;
+	auto nvar = add_node_local(var);
+
+	if (!param_match_with_cast(out, {nvar}, casts, wanted, &penalty))
+		return nullptr; //do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
+
+	auto n_exp = check_const_params(tree, apply_params_with_cast(out, {nvar}, casts, wanted));
+	n_exp = concretify_node(n_exp, block, ns);
+
+//	n_for->type = TypeUnknown;
+	auto rrr = concretify_array_builder_for_inner(n_for, n_exp, nullptr, rt, block, ns, token_id);
+	rrr->params[0]->params[3] = concretify_node(rrr->params[0]->params[3], block, ns);
+
+	parser->post_process_for(rrr->params[0]);
+
+	return rrr;
+}
+
+shared<Node> Concretifier::try_build_pipe_map_optional(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
+	if (input->type->param[0] != pt)
+		return nullptr;
+
+	return nullptr;
+}
+
+shared<Node> Concretifier::try_build_pipe_map_direct(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
+	auto out = add_node_call(f->as_func(), f->token_id);
+
+	Array<CastingData> casts;
+	Array<const Class*> wanted;
+	int penalty;
+	if (!param_match_with_cast(out, {input}, casts, wanted, &penalty))
+		return nullptr; //do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
+	return check_const_params(tree, apply_params_with_cast(out, {input}, casts, wanted));
+}
+
 shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const shared<Node> &rhs, Block *block, const Class *ns, int token_id) {
 
 	auto funcs = concretify_node_multi(rhs, block, ns);
@@ -2164,57 +2224,17 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 		//	do_error("pipe type mismatch...");
 
 		// array |> func
-		if (input->type->is_list() and input->type->param[0] == p[0]) {
-			// -> map(func, array)
+		if (input->type->is_list())
+			if (auto x = try_build_pipe_map_array(input, f, rt, p[0], block, ns, token_id))
+				return x;
 
+		// optional |> func
+		if (input->type->is_optional())
+			if (auto x = try_build_pipe_map_optional(input, f, rt, p[0], block, ns, token_id))
+				return x;
 
-			// [VAR, INDEX, ARRAY, BLOCK]
-			auto n_for = add_node_statement(StatementID::FOR_CONTAINER, token_id, TypeVoid);
-			n_for->set_param(2, input);
-
-			auto el_type = input->type->get_array_element();
-			static int map_counter = 0;
-			string viname = format("<map-index-%d>", map_counter);
-			string vname = format("<map-var-%d>", map_counter++);
-			auto var = block->add_var(vname, tree->request_implicit_class_reference(el_type, token_id));
-			flags_set(var->flags, Flags::CONST);
-			n_for->set_param(0, add_node_local(var));
-			auto index = block->add_var(viname, TypeInt);
-			n_for->set_param(1, add_node_local(index));
-
-			auto out = add_node_call(f->as_func(), f->token_id);
-
-			Array<CastingData> casts;
-			Array<const Class*> wanted;
-			int penalty;
-			auto nvar = add_node_local(var);
-
-			if (!param_match_with_cast(out, {nvar}, casts, wanted, &penalty))
-				continue;//do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
-
-			auto n_exp = check_const_params(tree, apply_params_with_cast(out, {nvar}, casts, wanted));
-			n_exp = concretify_node(n_exp, block, ns);
-
-		//	n_for->type = TypeUnknown;
-			auto rrr = concretify_array_builder_for_inner(n_for, n_exp, nullptr, rt, block, ns, token_id);
-			rrr->params[0]->params[3] = concretify_node(rrr->params[0]->params[3], block, ns);
-
-			parser->post_process_for(rrr->params[0]);
-
-			return rrr;
-		}
-
-		auto out = add_node_call(f->as_func(), f->token_id);
-
-		Array<CastingData> casts;
-		Array<const Class*> wanted;
-		int penalty;
-		if (!param_match_with_cast(out, {input}, casts, wanted, &penalty))
-			continue;//do_error("pipe: " + param_match_with_cast_error({input}, wanted), f);
-		return check_const_params(tree, apply_params_with_cast(out, {input}, casts, wanted));
-		//auto out = p->add_node_call(f);
-		//out->set_param(0, input);
-		//return out;
+		if (auto x = try_build_pipe_map_direct(input, f, rt, p[0], block, ns, token_id))
+			return x;
 	}
 	if (input->type->is_list())
 		do_error(format("'|>' type mismatch: can not call right side with type '%s' or '%s'", input->type->long_name(), input->type->param[0]->long_name()), rhs);
