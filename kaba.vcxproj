@@ -217,8 +217,7 @@
     <ClCompile Include="src\lib\kaba\compiler\CommandList.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\Compiler.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\mapper.cpp" />
-    <ClCompile Include="src\lib\kaba\compiler\serializer.cpp" />
-    <ClCompile Include="src\lib\kaba\compiler\SerializerX.cpp" />
+    <ClCompile Include="src\lib\kaba\compiler\Serializer.cpp" />
     <ClCompile Include="src\lib\kaba\compiler\SerialNode.cpp" />
     <ClCompile Include="src\lib\kaba\dynamic\call.cpp" />
     <ClCompile Include="src\lib\kaba\dynamic\dynamic.cpp" />
@@ -428,8 +427,7 @@
     <ClInclude Include="src\lib\kaba\compiler\BackendX86.h" />
     <ClInclude Include="src\lib\kaba\compiler\CommandList.h" />
     <ClInclude Include="src\lib\kaba\compiler\Compiler.h" />
-    <ClInclude Include="src\lib\kaba\compiler\serializer.h" />
-    <ClInclude Include="src\lib\kaba\compiler\SerializerX.h" />
+    <ClInclude Include="src\lib\kaba\compiler\Serializer.h" />
     <ClInclude Include="src\lib\kaba\compiler\SerialNode.h" />
     <ClInclude Include="src\lib\kaba\dynamic\call.h" />
     <ClInclude Include="src\lib\kaba\dynamic\dynamic.h" />
