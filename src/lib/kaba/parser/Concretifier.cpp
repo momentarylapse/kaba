@@ -677,7 +677,10 @@ shared<Node> Concretifier::concretify_statement_return(shared<Node> node, Block 
 shared<Node> Concretifier::concretify_statement_if(shared<Node> node, Block *block, const Class *ns) {
 	// [COND, TRUE-BLOCK, [FALSE-BLOCK]]
 	concretify_all_params(node, block, ns);
-	node->type = TypeVoid;
+
+	// return type from true block
+	node->type = node->params[1]->type;
+
 	//node->set_param(0, check_param_link(node->params[0], TypeBool, Identifier::IF));
 	node->params[0] = check_param_link(node->params[0], TypeBool, Identifier::IF);
 	return node;
@@ -1371,6 +1374,25 @@ bool is_non_owning_pointer(const Class *t) {
 	return t->is_reference() or t->is_pointer_raw();
 }
 
+shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, const Class *ns) {
+	for (int i=0; i<node->params.num; i++) {
+		node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
+		if (node->params[i]->type->is_pointer_xfer())
+			do_error("xfer[..] values must not be discarded", node->params[i]);
+	}
+	//concretify_all_params(node, node->as_block(), ns, this);
+
+	// return type from last command:
+	node->type = TypeVoid;
+	if (node->params.num > 0)
+		node->type = node->params.back()->type;
+
+	for (int i=node->params.num-1; i>=0; i--)
+		if (node->params[i]->kind == NodeKind::ABSTRACT_VAR)
+			node->params.erase(i);
+	return node;
+}
+
 shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
 	// [TYPE?, VAR, =[VAR,EXPR]]
 	bool as_const = (node->link_no == 1);
@@ -1644,16 +1666,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return concretify_special_function(node, block, ns);
 	} else if (node->kind == NodeKind::SPECIAL_FUNCTION_NAME) {*/
 	} else if (node->kind == NodeKind::BLOCK) {
-		for (int i=0; i<node->params.num; i++) {
-			node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
-			if (node->params[i]->type->is_pointer_xfer())
-				do_error("xfer[..] values must not be discarded", node->params[i]);
-		}
-		//concretify_all_params(node, node->as_block(), ns, this);
-		node->type = TypeVoid;
-		for (int i=node->params.num-1; i>=0; i--)
-			if (node->params[i]->kind == NodeKind::ABSTRACT_VAR)
-				node->params.erase(i);
+		return concretify_block(node, block, ns);
 	} else if (node->kind == NodeKind::ABSTRACT_VAR) {
 		return concretify_var_declaration(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY_BUILDER_FOR) {
