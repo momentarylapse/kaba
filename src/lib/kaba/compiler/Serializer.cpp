@@ -278,7 +278,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 			p.p = fp->_label;
 		}*/
 		return p;
-	} else if ((com->kind == NodeKind::REFERENCE_RAW) or (com->kind == NodeKind::REFERENCE_NEW)) {
+	} else if (com->kind == NodeKind::REFERENCE) {
 		auto param = serialize_node(com->params[0].get(), block, index);
 		//printf("%d  -  %s\n",pk,Kind2Str(pk));
 		return add_reference(param, com->type);

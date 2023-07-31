@@ -37,8 +37,7 @@ public:
 	enum TypeCastId {
 		NONE = -1,
 		DEREFERENCE = -2,
-		REFERENCE_LEGACY = -3,
-		REFERENCE_NEW = -4,
+		REFERENCE = -3,
 		OWN_STRING = -10,
 		ABSTRACT_LIST = -20,
 		ABSTRACT_TUPLE = -21,
