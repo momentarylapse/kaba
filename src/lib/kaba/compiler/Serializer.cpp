@@ -299,10 +299,6 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 
 
 
-	// for/while need a label to this point
-	bool ignore_params = ((com->kind == NodeKind::BLOCK) or (com->kind == NodeKind::STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
-
-
 	// EXPERIMENTAL DIRTY HACK !!!!!!!!!!!
 	//syntax_tree->ShowNode(com, cur_func);
 	Node *override_ret = nullptr;
@@ -331,32 +327,33 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	}
 
 
-	Array<SerialNodeParam> params;
-	params.resize(com->params.num);
-
-	// serialize parameters
-	if (!ignore_params) {
-		for (int p=0;p<com->params.num;p++)
+	auto serialize_params = [this, block, index] (Node *com) {
+		Array<SerialNodeParam> params;
+		params.resize(com->params.num);
+		for (int p=0; p<com->params.num; p++)
 			params[p] = serialize_node(com->params[p].get(), block, index);
-	}
+		return params;
+	};
+
+	// for/while can't pre-serialize params, because they need a label to this point
 
 
 	if (com->kind == NodeKind::CALL_FUNCTION) {
+		const auto params = serialize_params(com);
 		add_function_call(com->as_func(), params, ret);
 	} else if (com->kind == NodeKind::CALL_VIRTUAL) {
+		const auto params = serialize_params(com);
 		add_member_function_call(com->as_func(), params, ret);
 	} else if (com->kind == NodeKind::CALL_INLINE) {
+		const auto params = serialize_params(com);
 		serialize_inline_function(com, params, ret);
 	} else if (com->kind == NodeKind::CALL_RAW_POINTER) {
+		const auto params = serialize_params(com);
 		add_pointer_call(params[0], params.sub_ref(1), ret);
 	} else if (com->kind == NodeKind::STATEMENT) {
 		serialize_statement(com, ret, block, index);
 	} else if (com->kind == NodeKind::BLOCK) {
 		serialize_block(com->as_block(), ret);
-	} else if (com->kind == NodeKind::CONSTANT) {
-		// sometimes "nil" is used as pass etc...
-	} else if (com->kind == NodeKind::MEMORY) {
-		// when ignoring a string variable just "lying around"
 	} else {
 		do_error("type of command is unimplemented: " + kind2str(com->kind));
 	}
