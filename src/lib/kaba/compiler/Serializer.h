@@ -101,14 +101,11 @@ public:
 	SerialNodeParam p_xmm0, p_xmm1;
 
 
-	// SerializerX
-
 	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_virtual_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	int function_call_push_params(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_outro(Function *f);
-	SerialNodeParam serialize_parameter(Node *link, Block *block, int index);
 	void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index);
 	void serialize_inline_function(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 

@@ -227,6 +227,78 @@ bool node_is_assign_mem(Node *n) {
 
 
 SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
+
+	/*----- direct nodes --------*/
+
+	SerialNodeParam p;
+	p.kind = com->kind;
+	p.type = com->type;
+	p.p = 0;
+	p.shift = 0;
+
+	if (com->kind == NodeKind::MEMORY) {
+		p.p = com->link_no;
+		return p;
+	} else if (com->kind == NodeKind::ADDRESS) {
+		//p.p = com->link_no;
+		if (config.compile_os)
+			p.p = com->link_no; // by map_address_constants_to_opcode()
+		else
+			p.p = (int_p)&com->link_no;
+		p.kind = NodeKind::CONSTANT_BY_ADDRESS;
+		return p;
+	} else if (com->kind == NodeKind::VAR_GLOBAL) {
+		p.p = com->link_no;
+		/*p.p = (int_p)com->as_global_p();
+		if (!p.p)
+			script->do_error_link("variable is not linkable: " + com->as_global()->name);
+		p.kind = NodeKind::MEMORY;*/
+		return p;
+	} else if (com->kind == NodeKind::VAR_LOCAL) {
+		p.p = com->link_no;
+		//p.p = com->as_local()->_offset;
+		//p.kind = NodeKind::LOCAL_MEMORY;
+		return p;
+	} else if (com->kind == NodeKind::LOCAL_MEMORY) {
+		p.p = com->link_no;
+		return p;
+	} else if (com->kind == NodeKind::LOCAL_ADDRESS) {
+		SerialNodeParam param = param_local(TypePointer, com->link_no);
+		return add_reference(param, com->type);
+	} else if (com->kind == NodeKind::CONSTANT) {
+		p.p = com->link_no;
+		/*p.p = (int_p)com->as_const()->address; // FIXME ....need a cleaner approach for compiling os...
+		if (config.compile_os)
+			p.kind = NodeKind::MEMORY;
+		else
+			p.kind = NodeKind::CONSTANT_BY_ADDRESS;
+		if (syntax_tree->flag_function_pointer_as_code and (com->type == TypeFunctionP)) {
+			auto *fp = (Function*)(int_p)com->as_const()->as_int64();
+			p.kind = NodeKind::LABEL;
+			p.p = fp->_label;
+		}*/
+		return p;
+	} else if ((com->kind == NodeKind::REFERENCE_RAW) or (com->kind == NodeKind::REFERENCE_NEW)) {
+		auto param = serialize_node(com->params[0].get(), block, index);
+		//printf("%d  -  %s\n",pk,Kind2Str(pk));
+		return add_reference(param, com->type);
+	} else if (com->kind == NodeKind::DEREFERENCE) {
+		auto param = serialize_node(com->params[0].get(), block, index);
+		/*if ((param.kind == KindVarLocal) or (param.kind == KindVarGlobal)){
+			p.type = param.type->sub_type;
+			if (param.kind == KindVarLocal)		p.kind = KindRefToLocal;
+			if (param.kind == KindVarGlobal)	p.kind = KindRefToGlobal;
+			p.p = param.p;
+		}*/
+		return add_dereference(param, com->type);
+	} else if (com->kind == NodeKind::VAR_TEMP) {
+		// only used by <new> operator
+		p.p = com->link_no;
+		return p;
+	}
+
+
+
 	// for/while need a label to this point
 	bool ignore_params = ((com->kind == NodeKind::BLOCK) or (com->kind == NodeKind::STATEMENT));// and ((com->link_no == STATEMENT_WHILE) or (com->link_no == STATEMENT_FOR) or (com->link_no == STATEMENT_IF) or (com->link_no == STATEMENT_IF_ELSE)));
 
@@ -252,7 +324,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	// return value
 	SerialNodeParam ret;
 	if (override_ret) {
-		ret = serialize_parameter(override_ret, block, index);
+		ret = serialize_node(override_ret, block, index);
 	} else {
 		bool create_constructor_for_return = ((com->kind != NodeKind::STATEMENT) and (com->kind != NodeKind::CALL_FUNCTION) and (com->kind != NodeKind::CALL_VIRTUAL));
 		ret = add_temp(com->type, create_constructor_for_return);
@@ -262,15 +334,10 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	Array<SerialNodeParam> params;
 	params.resize(com->params.num);
 
+	// serialize parameters
 	if (!ignore_params) {
-
-		// compile parameters
 		for (int p=0;p<com->params.num;p++)
-			params[p] = serialize_parameter(com->params[p].get(), block, index);
-
-		// class function -> compile instance
-		//if (com->instance)
-		//	params.insert(serialize_parameter(com->instance, block, index), 0);
+			params[p] = serialize_node(com->params[p].get(), block, index);
 	}
 
 
@@ -285,7 +352,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	} else if (com->kind == NodeKind::STATEMENT) {
 		serialize_statement(com, ret, block, index);
 	} else if (com->kind == NodeKind::BLOCK) {
-		serialize_block(com->as_block());
+		serialize_block(com->as_block(), ret);
 	} else if (com->kind == NodeKind::CONSTANT) {
 		// sometimes "nil" is used as pass etc...
 	} else if (com->kind == NodeKind::MEMORY) {
@@ -297,7 +364,7 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	return ret;
 }
 
-void Serializer::serialize_block(Block *block) {
+void Serializer::serialize_block(Block *block, const SerialNodeParam &ret) {
 	block->_label_start = list->create_label("_BLOCK_START_" + p2s(block));
 	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
 	cmd.add_label(block->_label_start);
@@ -374,96 +441,29 @@ void Serializer::add_function_outro(Function *f) {
 		cmd.add_cmd(Asm::InstID::RET);
 }
 
-SerialNodeParam Serializer::serialize_parameter(Node *link, Block *block, int index) {
-	SerialNodeParam p;
-	p.kind = link->kind;
-	p.type = link->type;
-	p.p = 0;
-	p.shift = 0;
-
-	if (link->kind == NodeKind::MEMORY) {
-		p.p = link->link_no;
-	} else if (link->kind == NodeKind::ADDRESS) {
-		//p.p = link->link_no;
-		if (config.compile_os)
-			p.p = link->link_no; // by map_address_constants_to_opcode()
-		else
-			p.p = (int_p)&link->link_no;
-		p.kind = NodeKind::CONSTANT_BY_ADDRESS;
-	} else if (link->kind == NodeKind::VAR_GLOBAL) {
-		p.p = link->link_no;
-		/*p.p = (int_p)link->as_global_p();
-		if (!p.p)
-			script->do_error_link("variable is not linkable: " + link->as_global()->name);
-		p.kind = NodeKind::MEMORY;*/
-	} else if (link->kind == NodeKind::VAR_LOCAL) {
-		p.p = link->link_no;
-		//p.p = link->as_local()->_offset;
-		//p.kind = NodeKind::LOCAL_MEMORY;
-	} else if (link->kind == NodeKind::LOCAL_MEMORY) {
-		p.p = link->link_no;
-	} else if (link->kind == NodeKind::LOCAL_ADDRESS) {
-		SerialNodeParam param = param_local(TypePointer, link->link_no);
-		return add_reference(param, link->type);
-	} else if (link->kind == NodeKind::CONSTANT) {
-		p.p = link->link_no;
-		/*p.p = (int_p)link->as_const()->address; // FIXME ....need a cleaner approach for compiling os...
-		if (config.compile_os)
-			p.kind = NodeKind::MEMORY;
-		else
-			p.kind = NodeKind::CONSTANT_BY_ADDRESS;
-		if (syntax_tree->flag_function_pointer_as_code and (link->type == TypeFunctionP)) {
-			auto *fp = (Function*)(int_p)link->as_const()->as_int64();
-			p.kind = NodeKind::LABEL;
-			p.p = fp->_label;
-		}*/
-	} else if ((link->kind == NodeKind::OPERATOR) or (link->kind == NodeKind::CALL_FUNCTION) or (link->kind == NodeKind::CALL_INLINE) or (link->kind == NodeKind::CALL_VIRTUAL) or (link->kind == NodeKind::CALL_RAW_POINTER) or (link->kind == NodeKind::STATEMENT)) {
-		p = serialize_node(link, block, index);
-	} else if ((link->kind == NodeKind::REFERENCE_RAW) or (link->kind == NodeKind::REFERENCE_NEW)) {
-		auto param = serialize_parameter(link->params[0].get(), block, index);
-		//printf("%d  -  %s\n",pk,Kind2Str(pk));
-		return add_reference(param, link->type);
-	} else if (link->kind == NodeKind::DEREFERENCE) {
-		auto param = serialize_parameter(link->params[0].get(), block, index);
-		/*if ((param.kind == KindVarLocal) or (param.kind == KindVarGlobal)){
-			p.type = param.type->sub_type;
-			if (param.kind == KindVarLocal)		p.kind = KindRefToLocal;
-			if (param.kind == KindVarGlobal)	p.kind = KindRefToGlobal;
-			p.p = param.p;
-		}*/
-		return add_dereference(param, link->type);
-	} else if (link->kind == NodeKind::VAR_TEMP) {
-		// only used by <new> operator
-		p.p = link->link_no;
-	} else {
-		do_error("unexpected type of parameter: " + kind2str(link->kind));
-	}
-	return p;
-}
-
 void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index) {
 	auto statement = com->as_statement();
-	switch(statement->id){
+	switch (statement->id) {
 		case StatementID::IF:
 			if (com->params.num == 2) {
 				int label_after_true = list->create_label("_IF_AFTER_" + i2s(num_labels ++));
-				auto cond = serialize_parameter(com->params[0].get(), block, index);
+				auto cond = serialize_node(com->params[0].get(), block, index);
 				// cmp;  jz m;  -block-  m;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true));
-				serialize_block(com->params[1]->as_block());
+				serialize_block(com->params[1]->as_block(), ret);
 				cmd.add_label(label_after_true);
 			} else {
 				int label_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_labels ++));
 				int label_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_labels ++));
-				auto cond = serialize_parameter(com->params[0].get(), block, index);
+				auto cond = serialize_node(com->params[0].get(), block, index);
 				// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
-				serialize_block(com->params[1]->as_block());
+				serialize_block(com->params[1]->as_block(), ret);
 				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
 				cmd.add_label(label_after_true);
-				serialize_block(com->params[2]->as_block());
+				serialize_block(com->params[2]->as_block(), ret);
 				cmd.add_label(label_after_false);
 			}
 			break;
@@ -471,7 +471,7 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			int label_before_while = list->create_label("_WHILE_BEFORE_" + i2s(num_labels ++));
 			int label_after_while = list->create_label("_WHILE_AFTER_" + i2s(num_labels ++));
 			cmd.add_label(label_before_while);
-			auto cond = serialize_parameter(com->params[0].get(), block, index);
+			auto cond = serialize_node(com->params[0].get(), block, index);
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
 			cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
@@ -480,7 +480,8 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			// body of loop
 			LoopData l = {label_before_while, label_after_while, block->level, index};
 			loop.add(l);
-			serialize_block(com->params[1]->as_block());
+			SerialNodeParam dummy_ret;
+			serialize_block(com->params[1]->as_block(), dummy_ret);
 			loop.pop();
 
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_before_while));
@@ -492,7 +493,7 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			int label_continue = list->create_label("_FOR_CONTINUE_" + i2s(num_labels ++));
 			serialize_node(com->params[0].get(), block, index); // i=0
 			cmd.add_label(label_before_for);
-			auto cond = serialize_parameter(com->params[1].get(), block, index);
+			auto cond = serialize_node(com->params[1].get(), block, index);
 			// m1;  cmp;  jz m2;  -block-             jmp m1;  m2;     (while)
 			// m1;  cmp;  jz m2;  -block-  m3;  i++;  jmp m1;  m2;     (for)
 			cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
@@ -501,7 +502,8 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			// body of loop
 			LoopData l = {label_continue, label_after_for, block->level, index};
 			loop.add(l);
-			serialize_block(com->params[2]->as_block());
+			SerialNodeParam dummy_ret;
+			serialize_block(com->params[2]->as_block(), dummy_ret);
 			loop.pop();
 
 			// "i++"
@@ -519,7 +521,7 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			break;
 		case StatementID::RETURN:
 			if (com->params.num > 0) {
-				auto p = serialize_parameter(com->params[0].get(), block, index);
+				auto p = serialize_node(com->params[0].get(), block, index);
 				if (p.kind == NodeKind::DEREF_VAR_TEMP and !cur_func->literal_return_type->uses_return_by_memory()) {
 					auto t = add_temp(p.type);
 					cmd.add_cmd(Asm::InstID::MOV, t, p);
@@ -548,7 +550,7 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			break;}
 		case StatementID::DELETE:{
 			// __delete__()
-			auto operand = serialize_parameter(com->params[0].get(), block, index);
+			auto operand = serialize_node(com->params[0].get(), block, index);
 			add_cmd_destructor(operand, false);
 
 			// free()
@@ -562,12 +564,12 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			int label_finish = list->create_label("_TRY_AFTER_" + i2s(num_labels ++));
 
 			// try
-			serialize_block(com->params[0]->as_block());
+			serialize_block(com->params[0]->as_block(), ret);
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
 
 			// except
 			for (int i=2; i<com->params.num; i+=2) {
-				serialize_block(com->params[i]->as_block());
+				serialize_block(com->params[i]->as_block(), ret);
 				if (i < com->params.num-1)
 					cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
 			}
@@ -583,7 +585,7 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			// only from callable can reach here!
 			if (config.compile_os)
 				do_error("implicit raw_function_pointer() for os not implemented yet (i.e. don't use callables/function pointers)");
-			auto func = serialize_parameter(com->params[0].get(), block, index);
+			auto func = serialize_node(com->params[0].get(), block, index);
 			auto t1 = add_temp(TypePointer);
 			cmd.add_cmd(Asm::InstID::ADD, t1, func, param_imm(TypeInt, config.function_address_offset)); // Function* pointer
 			cmd.add_cmd(Asm::InstID::MOV, ret, deref_temp(t1, TypeFunctionCodeRef)); // the actual call
@@ -1012,7 +1014,7 @@ void Serializer::fix_return_by_ref() {
 		if (cmd.cmd[i].inst == Asm::InstID::RET) {
 
 	if (com->params.num > 0){
-		auto operand = serialize_parameter(com->params[0].get(), block, index);
+		auto operand = serialize_node(com->params[0].get(), block, index);
 
 		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
 			insert_destructors_block(block, true);
@@ -1554,7 +1556,9 @@ void Serializer::serialize_function(Function *f) {
 // serialize
 
 	// function
-	serialize_block(f->block.get());
+
+	SerialNodeParam dummy_ret;
+	serialize_block(f->block.get(), dummy_ret);
 	scan_temp_var_usage();
 
 	cmd_list_out("ser:a", "start");
