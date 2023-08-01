@@ -1384,8 +1384,15 @@ shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, con
 
 	// return type from last command:
 	node->type = TypeVoid;
-	if (node->params.num > 0)
-		node->type = node->params.back()->type;
+	if (node->params.num > 0) {
+		auto b = node->params.back();
+		if (b->type != TypeVoid) {
+			node->type = b->type;
+			auto br = add_node_statement(StatementID::BLOCK_RETURN, b->token_id, TypeVoid);
+			br->params[0] = b;
+			node->params.back() = br;
+		}
+	}
 
 	for (int i=node->params.num-1; i>=0; i--)
 		if (node->params[i]->kind == NodeKind::ABSTRACT_VAR)

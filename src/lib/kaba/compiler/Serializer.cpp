@@ -532,6 +532,10 @@ void Serializer::serialize_statement(Node *com, const SerialNodeParam &ret, Bloc
 			}
 
 			break;
+		case StatementID::BLOCK_RETURN:{
+			[[maybe_unused]] auto p = serialize_node(com->params[0].get(), block, index);
+			//cmd.add_cmd(Asm::InstID::MOV, ret, p);
+			break;}
 		case StatementID::NEW:{
 			// malloc()
 			auto f = syntax_tree->required_func_global("@malloc");
