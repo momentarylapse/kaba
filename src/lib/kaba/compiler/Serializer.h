@@ -57,7 +57,7 @@ public:
 	Asm::InstructionParam get_param(Asm::InstID inst, SerialNodeParam &p);
 
 	void serialize_function(Function *f);
-	void serialize_block(Block *block, const SerialNodeParam &ret);
+	SerialNodeParam serialize_block(Block *block);
 	SerialNodeParam serialize_node(Node *com, Block *block, int index);
 
 	void simplify_if_statements();
@@ -106,7 +106,7 @@ public:
 	int function_call_push_params(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_pointer_call(const SerialNodeParam &pointer, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_outro(Function *f);
-	void serialize_statement(Node *com, const SerialNodeParam &ret, Block *block, int index);
+	SerialNodeParam serialize_statement(Node *com, Block *block, int index);
 	void serialize_inline_function(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
 
