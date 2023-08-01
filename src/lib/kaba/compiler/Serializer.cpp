@@ -372,7 +372,7 @@ SerialNodeParam Serializer::serialize_block(Block *block) {
 
 	insert_constructors_block(block);
 
-	for (int i=0;i<block->params.num;i++) {
+	for (int i=0; i<block->params.num; i++) {
 		stack_offset = cur_func->_var_size;
 
 		// serialize
@@ -456,17 +456,27 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				serialize_block(com->params[1]->as_block());
 				cmd.add_label(label_after_true);
 			} else {
+				auto ret = add_temp(com->type, true);
+				if (com->type->needs_constructor())
+					module->do_error("currently only trivial types allowed in valued `if/else`", com->token_id);
+
 				int label_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_labels ++));
 				int label_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_labels ++));
 				auto cond = serialize_node(com->params[0].get(), block, index);
 				// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
-				serialize_block(com->params[1]->as_block());
+				auto ret_true = serialize_block(com->params[1]->as_block());
+				if (com->type != TypeVoid)
+					cmd.add_cmd(Asm::InstID::MOV, ret, ret_true);
 				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
 				cmd.add_label(label_after_true);
-				serialize_block(com->params[2]->as_block());
+				auto ret_false = serialize_block(com->params[2]->as_block());
+				if (com->type != TypeVoid)
+					cmd.add_cmd(Asm::InstID::MOV, ret, ret_false);
 				cmd.add_label(label_after_false);
+
+				return ret;
 			}
 			break;
 		case StatementID::WHILE:{
@@ -535,10 +545,8 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			}
 
 			break;
-		case StatementID::BLOCK_RETURN:{
-			[[maybe_unused]] auto p = serialize_node(com->params[0].get(), block, index);
-			//cmd.add_cmd(Asm::InstID::MOV, ret, p);
-			break;}
+		case StatementID::BLOCK_RETURN:
+			return serialize_node(com->params[0].get(), block, index);
 		case StatementID::NEW:{
 			auto ret = add_temp(com->type, false);
 
@@ -595,7 +603,7 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			auto func = serialize_node(com->params[0].get(), block, index);
 			auto t1 = add_temp(TypePointer);
 			cmd.add_cmd(Asm::InstID::ADD, t1, func, param_imm(TypeInt, config.function_address_offset)); // Function* pointer
-			cmd.add_cmd(Asm::InstID::MOV, ret, deref_temp(t1, TypeFunctionCodeRef)); // the actual call
+			cmd.add_cmd(Asm::InstID::MOV, ret, deref_temp(t1, TypeFunctionCodeRef)); // the actual code pointer
 			return ret;}
 		default:
 			do_error("statement unimplemented: " + com->as_statement()->name);

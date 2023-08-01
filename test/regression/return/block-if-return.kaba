@@ -1,0 +1,7 @@
+func main()
+	let i = if false #true
+		4
+	else
+		6
+	print(i)
+
