@@ -153,6 +153,9 @@ void Parser::do_error(const string &str, int token_id) {
 }
 
 void Parser::do_error_exp(const string &str, int override_token_id) {
+	if (Exp.lines.num == 0)
+		throw Exception(str, "", 0, 0, tree->module);
+
 	// what data do we have?
 	int token_id = Exp.cur_token();
 
