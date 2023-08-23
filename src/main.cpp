@@ -26,7 +26,7 @@ namespace kaba {
 class KabaApp : public hui::Application {
 public:
 	KabaApp() :
-		hui::Application("kaba", "", hui::Flags::DONT_LOAD_RESOURCE | hui::Flags::LAZY_GUI_INITIALIZATION)
+		hui::Application("kaba", "", hui::Flags::DONT_LOAD_RESOURCE)
 	{
 		set_property("name", AppName);
 		set_property("version", AppVersion);
@@ -48,7 +48,7 @@ public:
 	bool flag_interpret = false;
 	bool flag_clean_up = false;
 
-	bool on_startup(const Array<string> &arg0) override {
+	hui::AppStatus on_startup_before_gui_init(const Array<string> &arg0) override {
 
 		CommandLineParser p;
 		p.info(AppName, "compiler for the kaba language");
@@ -193,7 +193,10 @@ public:
 			kaba::clean_up();
 		//msg_end();
 
-		return false;
+		return hui::AppStatus::END;
+	}
+	hui::AppStatus on_startup(const Array<string> &arg0) override {
+		return hui::AppStatus::END;
 	}
 
 	void die(const string &msg) {
