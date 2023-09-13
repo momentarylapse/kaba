@@ -37,7 +37,7 @@ public:
 
 	void _check();
 
-	static FrameBuffer *DEFAULT;
+	void read(Image &image) const;
 };
 
 void bind_frame_buffer(FrameBuffer *fb);

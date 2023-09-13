@@ -59,7 +59,6 @@ Panel::Panel() {
 	id = p2s(this);
 	num_float_decimals = 3;
 	root_control = nullptr;
-	plugable = nullptr;
 	current_event_listener_uid = 0;
 
 	unique_id = current_uid ++;
@@ -351,7 +350,7 @@ void Panel::set_from_resource(Resource *res) {
 		if (menu != "")
 			win->set_menu(create_resource_menu(menu, this));
 		if (toolbar != "")
-			win->toolbar[TOOLBAR_TOP]->set_by_id(toolbar);
+			win->get_toolbar(TOOLBAR_TOP)->set_by_id(toolbar);
 
 		for (auto &c: res->children)
 			if (c.type == "HeaderBar") {
@@ -438,7 +437,9 @@ void Panel::embed(shared<Panel> panel, const string &parent_id, int x, int y) {
 
 #if GTK_CHECK_VERSION(4,0,0)
 	//msg_error("ATTACH ACTION GROUP  " + p2s(panel.get()));
-	gtk_widget_insert_action_group(win->window, p2s(panel.get()).c_str(), G_ACTION_GROUP(panel->action_group));
+	if (win) {
+		gtk_widget_insert_action_group(win->window, p2s(panel.get()).c_str(), G_ACTION_GROUP(panel->action_group));
+	}
 #endif
 }
 
@@ -482,14 +483,15 @@ void Panel::apply_foreach(const string &_id, std::function<void(Control*)> f) {
 
 	// FIXME: might be a derived class by kaba....
 	if (panel_equal(win, this)) {
-		if (win->header_bar)
-			win->header_bar->apply_foreach(id, f);
-		if (win->get_menu())
-			win->get_menu()->apply_foreach(id, f);
+		if (auto h = win->header_bar)
+			h->apply_foreach(id, f);
+		if (auto m = win->get_menu())
+			m->apply_foreach(id, f);
 		/*if (win->popup)
 			win->popup->apply_foreach(id, f);*/
 		for (int i=0; i<4; i++)
-			win->toolbar[i]->apply_foreach(id, f);
+			if (auto t = win->get_toolbar(i))
+				t->apply_foreach(id, f);
 	}
 }
 
@@ -733,7 +735,8 @@ bool Panel::is_expanded(const string &_id, int row) {
 
 void Panel::set_options(const string &_id, const string &options) {
 	if (id == "toolbar[0]" and win == this) {
-		win->toolbar[0]->set_options(options);
+		if (auto t = win->get_toolbar(0))
+			t->set_options(options);
 	} else if (_id != "") {
 		apply_foreach(_id, [&options](Control *c) {
 			c->set_options(options);

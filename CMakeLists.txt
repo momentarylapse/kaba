@@ -5,7 +5,7 @@ project(kaba)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
-set(SOURCE 
+set(SOURCE
 	src/helper/elf.cpp
 	src/helper/ErrorHandler.cpp
 	src/helper/experiments.cpp
@@ -223,9 +223,12 @@ set(SOURCE
 	src/main.cpp
 )
 
+add_executable(kaba ${SOURCE})
+
 find_package(PkgConfig REQUIRED)
 
-# gtk4 or gtk3 mandatory
+
+# lib: gtk4 or gtk3 (mandatory)
 set(GTK4_OR_GTK3 "gtk4" CACHE STRING "Use gtk4 or gtk3?")
 pkg_check_modules(GTK4 gtk4)
 if(GTK4_FOUND)
@@ -260,15 +263,7 @@ if(GTK4_OR_GTK3 STREQUAL "gtk3")
 	add_compile_definitions(HAS_LIB_GTK3=1)
 endif()
 
-# zlib mandatory
-pkg_check_modules(ZLIB REQUIRED zlib)
-include_directories(${ZLIB_INCLUDE_DIRS})
-link_directories(${ZLIB_LIBRARY_DIRS})
-list(APPEND DEPS ${ZLIB_LIBRARIES})
-add_definitions(${ZLIB_CFLAGS_OTHER})
-add_compile_definitions(HAS_LIB_ZLIB=1)
-
-# adwaita (optional)
+# lib: adwaita (optional)
 pkg_check_modules(LIBADWAITA-1 libadwaita-1)
 if(LIBADWAITA-1_FOUND)
 	include_directories(${LIBADWAITA-1_INCLUDE_DIRS})
@@ -280,7 +275,15 @@ else()
 	add_compile_definitions(HAS_LIB_ADWAITA=0)
 endif()
 
-# xlib (optional)
+# lib: zlib mandatory
+pkg_check_modules(ZLIB REQUIRED zlib)
+include_directories(${ZLIB_INCLUDE_DIRS})
+link_directories(${ZLIB_LIBRARY_DIRS})
+list(APPEND DEPS ${ZLIB_LIBRARIES})
+add_definitions(${ZLIB_CFLAGS_OTHER})
+add_compile_definitions(HAS_LIB_ZLIB=1)
+
+# lib: xlib (optional)
 pkg_check_modules(X11 x11)
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIRS})
@@ -292,7 +295,7 @@ else()
 	add_compile_definitions(HAS_LIB_XLIB=0)
 endif()
 
-# unwind (optional)
+# lib: unwind (optional)
 pkg_check_modules(LIBUNWIND libunwind)
 if(LIBUNWIND_FOUND)
 	include_directories(${LIBUNWIND_INCLUDE_DIRS})
@@ -304,11 +307,11 @@ else()
 	add_compile_definitions(HAS_LIB_UNWIND=0)
 endif()
 
-# dl...
+# lib: dl...
 list(APPEND DEPS ${CMAKE_DL_LIBS})
 add_compile_definitions(HAS_LIB_DL=1)
 
-# vulkan (optional)
+# lib: vulkan (optional)
 pkg_check_modules(VULKAN vulkan)
 if(VULKAN_FOUND)
 	include_directories(${VULKAN_INCLUDE_DIRS})
@@ -320,7 +323,7 @@ else()
 	add_compile_definitions(HAS_LIB_VULKAN=0)
 endif()
 
-# shaderc (optional)
+# lib: shaderc (optional)
 pkg_check_modules(SHADERC shaderc)
 if(SHADERC_FOUND)
 	include_directories(${SHADERC_INCLUDE_DIRS})
@@ -332,7 +335,7 @@ else()
 	add_compile_definitions(HAS_LIB_SHADERC=0)
 endif()
 
-# gl (optional)
+# lib: gl (optional)
 pkg_check_modules(GL gl)
 if(GL_FOUND)
 	include_directories(${GL_INCLUDE_DIRS})
@@ -344,7 +347,7 @@ else()
 	add_compile_definitions(HAS_LIB_GL=0)
 endif()
 
-# glfw (optional)
+# lib: glfw (optional)
 pkg_check_modules(GLFW3 glfw3)
 if(GLFW3_FOUND)
 	include_directories(${GLFW3_INCLUDE_DIRS})
@@ -356,7 +359,7 @@ else()
 	add_compile_definitions(HAS_LIB_GLFW=0)
 endif()
 
-# fftw3 (optional)
+# lib: fftw3 (optional)
 pkg_check_modules(FFTW3F fftw3f)
 if(FFTW3F_FOUND)
 	include_directories(${FFTW3F_INCLUDE_DIRS})
@@ -368,8 +371,6 @@ else()
 	add_compile_definitions(HAS_LIB_FFTW3=0)
 endif()
 
-add_executable(kaba ${SOURCE})
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(kaba PRIVATE Threads::Threads ${DEPS})
@@ -380,15 +381,12 @@ install(TARGETS kaba DESTINATION bin)
 install(FILES "static/icon.ico" DESTINATION share/kaba)
 install(FILES "static/icon.png" DESTINATION share/kaba)
 
+# install .desktop file
 set(INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 configure_file("static/michisoft-kaba.desktop" /tmp/michisoft-kaba.desktop NO_SOURCE_PERMISSIONS)
+install(FILES /tmp/michisoft-kaba.desktop DESTINATION share/applications)
 
-find_program(XDG_DESKTOP_MENU_EXECUTABLE xdg-desktop-menu)
-if(NOT XDG_DESKTOP_MENU_EXECUTABLE STREQUAL "XDG_DESKTOP_MENU_EXECUTABLE_NOTFOUND")
-	install(CODE "message(STATUS \"installing desktop file\")")
-	install(CODE "execute_process(COMMAND ${XDG_DESKTOP_MENU_EXECUTABLE} install /tmp/michisoft-kaba.desktop)")
-endif()
-
+# install mime
 find_program(XDG_MIME_EXECUTABLE xdg-mime)
 if(NOT XDG_MIME_EXECUTABLE STREQUAL "XDG_MIME_EXECUTABLE_NOTFOUND")
 	install(CODE "message(STATUS \"installing mime file\")")

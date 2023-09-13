@@ -26,6 +26,8 @@ VkPrimitiveTopology parse_topology(const string &t) {
 		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 	if (t == "lines")
 		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	if (t == "line-strip")
+		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 	if (t == "triangles")
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	if (t == "triangles-fan")
