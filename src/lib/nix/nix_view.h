@@ -39,7 +39,7 @@ void start_frame_hui(Context *gl);
 void end_frame_hui();
 #if HAS_LIB_GLFW
 void start_frame_glfw(Context *gl, void *win);
-void end_frame_glfw(void *win);
+void end_frame_glfw();
 #endif
 
 };
