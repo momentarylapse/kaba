@@ -292,6 +292,8 @@ void AutoImplementer::add_missing_function_headers_for_class(Class *t) {
 		_add_missing_function_headers_for_enum(t);
 	} else if (t->is_optional()) {
 		_add_missing_function_headers_for_optional(t);
+	} else if (t->is_future()) {
+		_add_missing_function_headers_for_future(t);
 	} else { // regular classes
 		_add_missing_function_headers_for_regular(t);
 	}
@@ -339,6 +341,8 @@ void AutoImplementer::implement_functions(const Class *t) {
 		_implement_functions_for_optional(t);
 	} else if (t->is_product()) {
 		_implement_functions_for_product(t);
+	} else if (t->is_future()) {
+		_implement_functions_for_future(t);
 	} else {
 		// regular
 		_implement_functions_for_regular(t);
@@ -409,6 +413,10 @@ void AutoImplementer::complete_type(Class *t, int array_size, int token_id) {
 			t->elements.add(ClassElement(format("e%d", i), cc, offset));
 			offset += cc->size;
 		}
+		add_missing_function_headers_for_class(t);
+	} else if (t->is_future()) {
+		//if (!class_can_default_construct(params[0]))
+		//	tree->do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), token_id);
 		add_missing_function_headers_for_class(t);
 	} else if (t->is_enum()) {
 		t->flags = Flags::FORCE_CALL_BY_VALUE; // FORCE_CALL_BY_VALUE

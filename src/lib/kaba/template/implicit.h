@@ -39,6 +39,7 @@ public:
 	void _add_missing_function_headers_for_alias(Class *t);
 	void _add_missing_function_headers_for_callable_fp(Class *t);
 	void _add_missing_function_headers_for_callable_bind(Class *t);
+	void _add_missing_function_headers_for_future(Class *t);
 
 	Function *add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf = nullptr, Flags flags = Flags::NONE, const shared_array<Node> &def_params = {});
 
@@ -86,6 +87,7 @@ public:
 	void implement_optional_equal_raw(Function *f, const Class *t);
 	void implement_product_equal(Function *f, const Class *t);
 	void implement_product_not_equal(Function *f, const Class *t);
+	void implement_future_constructor(Function *f, const Class *t);
 	void implement_functions(const Class *t);
 	void _implement_functions_for_array(const Class *t);
 	void _implement_functions_for_list(const Class *t);
@@ -99,6 +101,7 @@ public:
 	void _implement_functions_for_alias(const Class *t);
 	void _implement_functions_for_callable_fp(const Class *t);
 	void _implement_functions_for_callable_bind(const Class *t);
+	void _implement_functions_for_future(const Class *t);
 	void _implement_functions_for_regular(const Class *t);
 
 	shared<Node> node_false();

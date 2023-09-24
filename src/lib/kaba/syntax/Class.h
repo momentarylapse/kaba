@@ -68,6 +68,7 @@ public:
 		INTERFACE,
 		CALLABLE_FUNCTION_POINTER,
 		CALLABLE_BIND,
+		FUTURE,
 	};
 	
 	//Class();
@@ -86,6 +87,7 @@ public:
 	bool is_array() const;
 	bool is_list() const;
 	bool is_dict() const;
+	bool is_future() const;
 	bool is_some_pointer() const;
 	bool is_some_pointer_not_null() const;
 	bool is_pointer_raw() const;

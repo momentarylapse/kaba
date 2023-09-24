@@ -442,6 +442,9 @@
     <ClCompile Include="src\lib\kaba\template\implicit_enum.cpp">
       <Filter>src\lib\kaba\template</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\kaba\template\implicit_future.cpp">
+      <Filter>src\lib\kaba\template</Filter>
+    </ClCompile>
     <ClCompile Include="src\lib\kaba\template\implicit_list.cpp">
       <Filter>src\lib\kaba\template</Filter>
     </ClCompile>

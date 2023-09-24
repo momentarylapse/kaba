@@ -266,6 +266,14 @@ const Class *add_type_optional(const Class *sub_type) {
 	return t;
 }
 
+const Class *add_type_future(const Class *sub_type) {
+	string name = "future[" + sub_type->name + "]";
+	Class *t = new Class(Class::Type::FUTURE, name, sizeof(void*), cur_package->tree.get(), nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	cur_package->context->implicit_class_registry->add(t);
+	return t;
+}
+
 template<typename Sig>
 class KabaCallable;
 

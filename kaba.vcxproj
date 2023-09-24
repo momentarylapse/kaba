@@ -263,6 +263,7 @@
     <ClCompile Include="src\lib\kaba\template\implicit_callable.cpp" />
     <ClCompile Include="src\lib\kaba\template\implicit_dict.cpp" />
     <ClCompile Include="src\lib\kaba\template\implicit_enum.cpp" />
+    <ClCompile Include="src\lib\kaba\template\implicit_future.cpp" />
     <ClCompile Include="src\lib\kaba\template\implicit_list.cpp" />
     <ClCompile Include="src\lib\kaba\template\implicit_optional.cpp" />
     <ClCompile Include="src\lib\kaba\template\implicit_pointer.cpp" />

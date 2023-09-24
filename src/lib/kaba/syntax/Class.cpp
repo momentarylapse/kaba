@@ -189,6 +189,10 @@ bool Class::is_dict() const {
 	return type == Type::DICT;
 }
 
+bool Class::is_future() const {
+	return type == Type::FUTURE;
+}
+
 bool Class::is_product() const {
 	return type == Type::PRODUCT;
 }
