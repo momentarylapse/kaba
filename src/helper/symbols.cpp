@@ -8,6 +8,7 @@
 #include "symbols.h"
 #include "../lib/os/file.h"
 #include "../lib/os/formatter.h"
+#include "../lib/os/msg.h"
 #include "../lib/kaba/lib/extern.h"
 
 
@@ -20,6 +21,7 @@ namespace kaba {
 void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
 	auto f = new BinaryFormatter(os::fs::open(symbols_out_file, "wb"));
 	for (auto *fn: s->tree->functions) {
+		msg_write(kaba::function_link_name(fn));
 		f->write_str(kaba::function_link_name(fn));
 		f->write_int(fn->address);
 	}
