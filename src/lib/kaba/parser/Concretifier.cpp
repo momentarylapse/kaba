@@ -2003,9 +2003,10 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 		int offset = 0;
 
 		// "ref" parameter -> return mut/const depends on param!
-		if (f->num_params >= 1)
-			if (flags_has(f->var[0]->flags, Flags::REF))
+		if (f->num_params >= 1) {
+			if (flags_has(f->var[0]->flags, Flags::REF) or flags_has(f->flags, Flags::REF))
 				n->set_mutable(n->params[0]->is_mutable());
+		}
 
 		// const check
 		if (f->is_member()) {
