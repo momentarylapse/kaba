@@ -283,7 +283,7 @@ void Texture::_create_sampler() const {
 	info.addressModeU = address_mode;
 	info.addressModeV = address_mode;
 	info.addressModeW = address_mode;
-	info.anisotropyEnable = VK_TRUE;
+	info.anisotropyEnable = (magfilter == VK_FILTER_NEAREST) ? VK_FALSE : VK_TRUE;
 	info.maxAnisotropy = 16;
 	info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	info.unnormalizedCoordinates = VK_FALSE;
