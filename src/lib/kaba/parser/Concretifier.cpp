@@ -818,15 +818,16 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 	// [VAR, INDEX, ARRAY, BLOCK]
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
+	container = deref_if_reference(container);
 	auto t_c = container->type;
-	if (t_c->is_pointer_shared() or t_c->is_pointer_shared_not_null() or t_c->is_pointer_owned() or t_c->is_pointer_owned_not_null() or t_c->is_pointer_raw())
-		// "*_not_null" only for convenience
+	if (t_c->is_pointer_shared() or t_c->is_pointer_owned() or t_c->is_pointer_raw())
 		return concretify_statement_for_unwrap_pointer(node, container, block, ns);
 	else if (t_c->is_optional())
 		return concretify_statement_for_unwrap_optional(node, container, block, ns);
 	else if (t_c->usable_as_list() or t_c->is_array())
 		return concretify_statement_for_array(node, container, block, ns);
-	do_error("array/list/shared/owned/optional expected as second parameter in 'for . in .'", container);
+
+	do_error(format("unable to iterate over type '%s' - array/list/shared/owned/optional expected as second parameter in 'for . in .'", t_c->long_name()), container);
 	return nullptr;
 }
 
