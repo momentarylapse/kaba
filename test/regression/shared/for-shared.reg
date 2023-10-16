@@ -1,0 +1,6 @@
+X.init
+for-shared.X
+test 1
+shared![X]
+test 2
+X.del

@@ -1,0 +1,20 @@
+class X as shared
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	func const f()
+		print("test {{_shared_ref_count}}")
+
+
+
+func main()
+	var a: shared[X] = new X()
+	for x in a
+		print(typeof(x))
+#		print(p2s(&x))
+		x.f()
+	for shared x in a
+		print(typeof(x))
+#		print(p2s(weak(x)))
+		x.f()
