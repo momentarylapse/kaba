@@ -8,18 +8,21 @@
 #include "../kaba.h"
 #include "implicit.h"
 #include "../parser/Parser.h"
+#include "../../os/msg.h"
 
 namespace kaba {
 
 void AutoImplementer::_add_missing_function_headers_for_future(Class *t) {
 	//auto t_shared_core = tree->request_implicit_class_shared_not_null(BLA, -1);
+	msg_error("NEW FUTURE: ");
+	msg_write(t->param[0]->long_name());
 	auto t_callback = tree->request_implicit_class_callable_fp({t->param[0]}, TypeVoid, -1);
 	auto t_callback_fail = tree->request_implicit_class_callable_fp({}, TypeVoid, -1);
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
-	add_func_header(t, "then", TypeVoid, {t_callback}, {"f"});
-	add_func_header(t, "then_or_fail", TypeVoid, {t_callback, t_callback_fail}, {"f"});
-	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
+	add_func_header(t, "then", TypeVoid, {t_callback}, {"f"}, nullptr, Flags::CONST);
+	add_func_header(t, "then_or_fail", TypeVoid, {t_callback, t_callback_fail}, {"f"}, nullptr, Flags::CONST);
+	//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 }
 
 void AutoImplementer::implement_future_constructor(Function *f, const Class *t) {

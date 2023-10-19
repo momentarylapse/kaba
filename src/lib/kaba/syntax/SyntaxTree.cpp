@@ -4,6 +4,7 @@
 #include "../asm/asm.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
+#include "../../base/future.h"
 #include <stdio.h>
 
 namespace kaba {
@@ -625,6 +626,12 @@ const Class *SyntaxTree::request_implicit_class_dict(const Class *element_type, 
 const Class *SyntaxTree::request_implicit_class_optional(const Class *param, int token_id) {
 	string name = class_name_might_need_parantheses(param) + "?";
 	return request_implicit_class(name, Class::Type::OPTIONAL, param->size + 1, 0, nullptr, {param}, token_id);
+}
+
+const Class *SyntaxTree::request_implicit_class_future(const Class *base, int token_id) {
+	if (!base->name_space)
+		do_error("future[..] not allowed for: " + base->long_name(), token_id);
+	return request_implicit_class(format("%s[%s]", Identifier::FUTURE, base->name), Class::Type::FUTURE, sizeof(base::future<void>), 0, nullptr, {base}, token_id);
 }
 
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {

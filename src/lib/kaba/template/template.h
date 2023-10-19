@@ -27,27 +27,43 @@ public:
 	Function *get_instantiated(Parser *parser, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 	Function *get_instantiated_matching(Parser *parser, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id);
 
+	void add_template(Class *c, const Array<string> &param_names);
+	const Class *get_instantiated(Parser *parser, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+
 	void clear_from_module(Module *m);
 
 private:
 	Context *context;
 
-	struct Instance {
+	struct FunctionInstance {
 		Function *f;
 		Array<const Class*> params;
 	};
-	struct Template {
+	struct FunctionTemplate {
 		Function *func;
 		Array<string> params;
-		Array<Instance> instances;
+		Array<FunctionInstance> instances;
 	};
-	Array<Template> templates;
+	Array<FunctionTemplate> function_templates;
 
-	Template &get_template(Parser *parser, Function *f0, int token_id);
+	struct ClassInstance {
+		const Class *c;
+		Array<const Class*> params;
+	};
+	struct ClassTemplate {
+		const Class *_class;
+		Array<string> params;
+		Array<ClassInstance> instances;
+	};
+	Array<ClassTemplate> class_templates;
+
+	FunctionTemplate &get_template(Parser *parser, Function *f0, int token_id);
+	ClassTemplate &get_template(Parser *parser, const Class *c0, int token_id);
 
 	Function *full_copy(Parser *parser, Function *f0);
 	shared<Node> node_replace(Parser *parser, shared<Node> n, const Array<string> &names, const Array<const Class*> &params);
-	Function *instantiate(Parser *parser, Template &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	Function *instantiate(Parser *parser, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	const Class *instantiate(Parser *parser, ClassTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 
 	void match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f);
 };

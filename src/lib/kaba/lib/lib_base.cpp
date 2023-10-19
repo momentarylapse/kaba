@@ -4,6 +4,7 @@
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 #include "../dynamic/sorting.h"
+#include "../template/template.h"
 #include "../../os/msg.h"
 #include "../../os/terminal.h"
 #include "../../base/callable.h"
@@ -36,6 +37,18 @@ extern const Class *TypeFloatDict;
 extern const Class *TypeStringDict;
 extern const Class *TypeAny;
 extern const Class *TypeNoValueError;
+
+const Class *TypeRawT;
+const Class *TypeXferT;
+const Class *TypeSharedT;
+const Class *TypeSharedNotNullT;
+const Class *TypeOwnedT;
+const Class *TypeOwnedNotNullT;
+const Class *TypeListT;
+const Class *TypeDictT;
+const Class *TypeOptionalT;
+const Class *TypeFutureT;
+
 
 
 void _cdecl kaba_cstringout(char *str) {
@@ -317,6 +330,31 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeSharedPointer);
 		class_add_func(Identifier::Func::INIT, TypeVoid, nullptr);
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
+
+
+
+	TypeRawT = (Class*)add_type("ptr", 0);
+	c->template_manager->add_template((Class*)TypeRawT, {"T"});
+	TypeXferT = (Class*)add_type("xfer", 0);
+	c->template_manager->add_template((Class*)TypeXferT, {"T"});
+	TypeSharedT = (Class*)add_type("shared", 0);
+	c->template_manager->add_template((Class*)TypeSharedT, {"T"});
+	TypeSharedNotNullT = (Class*)add_type("shared!", 0);
+	c->template_manager->add_template((Class*)TypeSharedNotNullT, {"T"});
+	TypeOwnedT = (Class*)add_type("owned", 0);
+	c->template_manager->add_template((Class*)TypeOwnedT, {"T"});
+	TypeOwnedNotNullT = (Class*)add_type("owned!", 0);
+	c->template_manager->add_template((Class*)TypeOwnedNotNullT, {"T"});
+	TypeListT = (Class*)add_type("@list", 0);
+	c->template_manager->add_template((Class*)TypeListT, {"T"});
+	TypeDictT = (Class*)add_type("@dict", 0);
+	c->template_manager->add_template((Class*)TypeDictT, {"T"});
+	TypeOptionalT = (Class*)add_type("@optional", 0);
+	c->template_manager->add_template((Class*)TypeOptionalT, {"T"});
+	TypeFutureT = (Class*)add_type("future", 0);
+	c->template_manager->add_template((Class*)TypeFutureT, {"T"});
+
+
 
 	// derived   (must be defined after the primitive types and the bases!)
 	TypePointer     = add_type_p_raw(TypeVoid); // substitute for all raw pointer types

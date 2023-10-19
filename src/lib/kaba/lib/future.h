@@ -54,7 +54,7 @@ void lib_create_future(const Class *tt, const Class *t_cb) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaFuture<T>::__init__);
+		//class_add_func(Identifier::Func::INIT, TypeVoid, &KabaFuture<T>::__init__);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaFuture<T>::__delete__);
 		class_add_func("then", TypeVoid, &KabaFuture<T>::kaba_then, Flags::CONST);
 			func_add_param("cb", t_cb);
@@ -68,7 +68,7 @@ void lib_create_future<void>(const Class *tt, const Class *t_cb) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaVoidFuture::__init__);
+		//class_add_func(Identifier::Func::INIT, TypeVoid, &KabaVoidFuture::__init__);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaVoidFuture::__delete__);
 		class_add_func("then", TypeVoid, &KabaVoidFuture::kaba_then, Flags::CONST);
 			func_add_param("cb", t_cb);

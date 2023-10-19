@@ -20,16 +20,30 @@ TemplateManager::TemplateManager(Context *c) {
 }
 
 void TemplateManager::copy_from(TemplateManager *t) {
+	function_templates = t->function_templates;
+	class_templates = t->class_templates;
 }
 
 
 void TemplateManager::add_template(Function *f, const Array<string> &param_names) {
 	if (config.verbose)
 		msg_write("ADD TEMPLATE");
-	Template t;
+	FunctionTemplate t;
 	t.func = f;
 	t.params = param_names;
-	templates.add(t);
+	function_templates.add(t);
+}
+
+
+void TemplateManager::add_template(Class *c, const Array<string> &param_names) {
+	if (config.verbose)
+		msg_write("ADD TEMPLATE");
+	//msg_write("add class template  " + c->long_name());
+	flags_set(c->flags, Flags::TEMPLATE);
+	ClassTemplate t;
+	t._class = c;
+	t.params = param_names;
+	class_templates.add(t);
 }
 
 void TemplateManager::clear_from_module(Module *m) {
@@ -95,11 +109,27 @@ Function *TemplateManager::get_instantiated(Parser *parser, Function *f0, const 
 			return i.f;
 	
 	// new
-	Instance ii;
+	FunctionInstance ii;
 	ii.f = instantiate(parser, t, params, block, ns, token_id);
 	ii.params = params;
 	t.instances.add(ii);
 	return ii.f;
+}
+
+const Class *TemplateManager::get_instantiated(Parser *parser, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+	auto &t = get_template(parser, c0, token_id);
+
+	// already instanciated?
+	for (auto &i: t.instances)
+		if (i.params == params)
+			return i.c;
+
+	// new
+	ClassInstance ii;
+	ii.c = instantiate(parser, t, params, block, ns, token_id);
+	ii.params = params;
+	t.instances.add(ii);
+	return ii.c;
 }
 
 void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f) {
@@ -110,13 +140,13 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_LIST) {
 		if (t->is_list())
 			match_parameter_type(p->params[0], t->get_array_element(), f);
-	} else if (p->kind == NodeKind::ABSTRACT_TYPE_POINTER or p->kind == NodeKind::ABSTRACT_TYPE_STAR) {
+	} else if (p->kind == NodeKind::ABSTRACT_TYPE_STAR) {
 		if (t->is_pointer_raw())
 			match_parameter_type(p->params[0], t->param[0], f);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_REFERENCE) {
 		if (t->is_reference())
 			match_parameter_type(p->params[0], t->param[0], f);
-	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
+	} /*else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED) {
 		if (t->is_pointer_shared())
 			match_parameter_type(p->params[0], t->param[0], f);
 	} else if (p->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL) {
@@ -129,7 +159,7 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 			match_parameter_type(p->params[1], t->param[0], f);
 		else if (p->params[0]->kind == NodeKind::ABSTRACT_TYPE_SHARED_NOT_NULL and t->is_pointer_shared_not_null())
 			match_parameter_type(p->params[1], t->param[0], f);
-	}
+	}*/
 }
 
 Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id) {
@@ -171,13 +201,23 @@ Function *TemplateManager::get_instantiated_matching(Parser *parser, Function *f
 	return get_instantiated(parser, f0, arg_types, block, ns, token_id);
 }
 
-TemplateManager::Template &TemplateManager::get_template(Parser *parser, Function *f0, int token_id) {
-	for (auto &t: templates)
+TemplateManager::FunctionTemplate &TemplateManager::get_template(Parser *parser, Function *f0, int token_id) {
+	for (auto &t: function_templates)
 		if (t.func == f0)
 			return t;
 
 	parser->do_error("INTERNAL: can not find template...", token_id);
-	return templates[0];
+	return function_templates[0];
+}
+
+TemplateManager::ClassTemplate &TemplateManager::get_template(Parser *parser, const Class *c0, int token_id) {
+	for (auto &t: class_templates)
+		if (t._class == c0)
+			return t;
+	msg_write(class_templates.num);
+
+	parser->do_error("INTERNAL: can not find template...", token_id);
+	return class_templates[0];
 }
 
 /*static const Class *concretify_type(shared<Node> n, Parser *parser, Block *block, const Class *ns) {
@@ -197,7 +237,7 @@ shared<Node> TemplateManager::node_replace(Parser *parser, shared<Node> n, const
 	});
 }
 
-Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+Function *TemplateManager::instantiate(Parser *parser, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
 	if (config.verbose)
 		msg_write("INSTANTIATE TEMPLATE");
 	Function *f0 = t.func;
@@ -241,6 +281,48 @@ Function *TemplateManager::instantiate(Parser *parser, Template &t, const Array<
 	}
 
 	return f;
+}
+
+
+extern const Class *TypeRawT;
+extern const Class *TypeXferT;
+extern const Class *TypeSharedT;
+extern const Class *TypeSharedNotNullT;
+extern const Class *TypeOwnedT;
+extern const Class *TypeOwnedNotNullT;
+extern const Class *TypeListT;
+extern const Class *TypeDictT;
+extern const Class *TypeOptionalT;
+extern const Class *TypeFutureT;
+
+
+const Class *TemplateManager::instantiate(Parser *parser, ClassTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+	if (config.verbose)
+		msg_write("INSTANTIATE TEMPLATE CLASS");
+	const Class *c0 = t._class;
+
+	if (c0 == TypeRawT)
+		return parser->tree->request_implicit_class_pointer(params[0], token_id);
+	if (c0 == TypeSharedT)
+		return parser->tree->request_implicit_class_shared(params[0], token_id);
+	if (c0 == TypeSharedNotNullT)
+		return parser->tree->request_implicit_class_shared_not_null(params[0], token_id);
+	if (c0 == TypeOwnedT)
+		return parser->tree->request_implicit_class_owned(params[0], token_id);
+	if (c0 == TypeOwnedNotNullT)
+		return parser->tree->request_implicit_class_owned_not_null(params[0], token_id);
+	if (c0 == TypeXferT)
+		return parser->tree->request_implicit_class_xfer(params[0], token_id);
+	if (c0 == TypeListT)
+		return parser->tree->request_implicit_class_list(params[0], token_id);
+	if (c0 == TypeDictT)
+		return parser->tree->request_implicit_class_dict(params[0], token_id);
+	if (c0 == TypeOptionalT)
+		return parser->tree->request_implicit_class_optional(params[0], token_id);
+	if (c0 == TypeFutureT)
+		return parser->tree->request_implicit_class_future(params[0], token_id);
+
+	return c0;
 }
 
 ImplicitClassRegistry::ImplicitClassRegistry(Context *c) {
