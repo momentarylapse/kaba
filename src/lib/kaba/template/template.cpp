@@ -370,6 +370,55 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 	return c;
 }
 
+
+const Class *TemplateManager::request_pointer(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeRawT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_shared(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeSharedT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_shared_not_null(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeSharedNotNullT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_owned(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeOwnedT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_owned_not_null(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeOwnedNotNullT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_xfer(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeXferT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_alias(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeAliasT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_reference(SyntaxTree *tree, const Class *base, int token_id) {
+	return request_instance(tree, TypeReferenceT, {base}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_list(SyntaxTree *tree, const Class *element_type, int token_id) {
+	return request_instance(tree, TypeListT, {element_type}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_array(SyntaxTree *tree, const Class *element_type, int num_elements, int token_id) {
+	return request_instance(tree, TypeArrayT, {element_type}, num_elements, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_dict(SyntaxTree *tree, const Class *element_type, int token_id) {
+	return request_instance(tree, TypeDictT, {element_type}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_optional(SyntaxTree *tree, const Class *param, int token_id) {
+	return request_instance(tree, TypeOptionalT, {param}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
 const Class *TemplateManager::find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {
 	return implicit_class_registry->find(name, type, array_size, params);
 }

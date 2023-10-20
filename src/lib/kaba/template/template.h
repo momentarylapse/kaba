@@ -53,6 +53,23 @@ public:
 	void add_implicit_legacy(const Class* t);
 	void add_explicit(SyntaxTree *tree, const Class* t, const Class* t0, const Array<const Class*> &params, int array_size = 0);
 
+
+	const Class *request_pointer(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_shared(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_shared_not_null(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_owned(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_owned_not_null(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_xfer(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_alias(SyntaxTree *tree, const Class *parent, int token_id);
+	const Class *request_reference(SyntaxTree *tree, const Class *base, int token_id);
+	const Class *request_list(SyntaxTree *tree, const Class *element_type, int token_id);
+	const Class *request_array(SyntaxTree *tree, const Class *element_type, int num_elements, int token_id);
+	const Class *request_dict(SyntaxTree *tree, const Class *element_type, int token_id);
+	const Class *request_optional(SyntaxTree *tree, const Class *param, int token_id);
+	const Class *request_callable_fp(SyntaxTree *tree, Function *f, int token_id);
+	const Class *request_callable_fp(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, int token_id);
+	const Class *request_callable_bind(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id);
+
 private:
 	Context *context;
 	owned<ImplicitClassRegistry> implicit_class_registry;

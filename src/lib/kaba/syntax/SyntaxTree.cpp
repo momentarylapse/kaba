@@ -555,72 +555,56 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 	return t;
 }
 
-extern const Class *TypeRawT;
-extern const Class *TypeSharedT;
-extern const Class *TypeSharedNotNullT;
-extern const Class *TypeOwnedT;
-extern const Class *TypeOwnedNotNullT;
-extern const Class *TypeXferT;
-extern const Class *TypeAliasT;
-extern const Class *TypeReferenceT;
-extern const Class *TypeOptionalT;
-extern const Class *TypeArrayT;
-extern const Class *TypeListT;
-extern const Class *TypeDictT;
-
 const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
 	return request_implicit_class_pointer(base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_pointer(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeRawT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_pointer(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeSharedT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_shared(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared_not_null(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeSharedNotNullT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_shared_not_null(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeOwnedT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_owned(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned_not_null(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeOwnedNotNullT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_owned_not_null(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_xfer(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeXferT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_xfer(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_alias(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeAliasT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_alias(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_reference(const Class *base, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeReferenceT, {base}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_reference(this, base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_list(const Class *element_type, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeListT, {element_type}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_list(this, element_type, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_array(const Class *element_type, int num_elements, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeArrayT, {element_type}, num_elements, nullptr, implicit_symbols.get(), token_id);
-	// TODO
-	string name = class_name_might_need_parantheses(element_type) + format("[%d]", num_elements);
-	return request_implicit_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, token_id);
+	return module->context->template_manager->request_array(this, element_type, num_elements, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_dict(const Class *element_type, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeDictT, {element_type}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_dict(this, element_type, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_optional(const Class *param, int token_id) {
-	return module->context->template_manager->request_instance(this, TypeOptionalT, {param}, nullptr, implicit_symbols.get(), token_id);
+	return module->context->template_manager->request_optional(this, param, token_id);
 }
 
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {
