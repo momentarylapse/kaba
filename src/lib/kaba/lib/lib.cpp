@@ -166,11 +166,10 @@ extern const Class *TypeRawT;
 extern const Class *TypeSharedT;
 extern const Class *TypeSharedNotNullT;
 extern const Class *TypeOwnedT;
-extern const Class *TypeOwnedNotNullT;
 extern const Class *TypeXferT;
-extern const Class *TypeAliasT;
 extern const Class *TypeReferenceT;
 extern const Class *TypeOptionalT;
+extern const Class *TypeArrayT;
 extern const Class *TypeListT;
 extern const Class *TypeDictT;
 extern const Class *TypeFutureT;
@@ -233,7 +232,8 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, cur_package->tree.get(), nullptr, {sub_type});
 	t->array_length = array_length;
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_implicit_legacy(t);
+	//cur_package->context->template_manager->add_implicit_legacy(t);
+	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeArrayT, {sub_type}, array_length);
 	return t;
 }
 

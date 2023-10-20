@@ -119,20 +119,25 @@ Function *TemplateManager::request_instance(SyntaxTree *tree, Function *f0, cons
 	return ii.f;
 }
 
-const Class *TemplateManager::request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+const Class *TemplateManager::request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, int array_size, Block *block, const Class *ns, int token_id) {
 	auto &t = get_template(tree, c0, token_id);
 
 	// already instanciated?
 	for (auto &i: t.instances)
-		if (i.params == params)
+		if (i.params == params and i.array_size == array_size)
 			return i.c;
 
 	// new
 	ClassInstance ii;
-	ii.c = instantiate(tree, t, params, token_id);
+	ii.c = instantiate(tree, t, params, array_size, token_id);
+	ii.array_size = array_size;
 	ii.params = params;
 	t.instances.add(ii);
 	return ii.c;
+}
+
+const Class *TemplateManager::request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+	return request_instance(tree, c0, params, 0, block, ns, token_id);
 }
 
 void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f) {
@@ -217,7 +222,6 @@ TemplateManager::ClassTemplate &TemplateManager::get_template(SyntaxTree *tree, 
 	for (auto &t: class_templates)
 		if (t._class == c0)
 			return t;
-	msg_write(class_templates.num);
 
 	tree->do_error("INTERNAL: can not find template...", token_id);
 	return class_templates[0];
@@ -295,6 +299,7 @@ extern const Class *TypeSharedT;
 extern const Class *TypeSharedNotNullT;
 extern const Class *TypeOwnedT;
 extern const Class *TypeOwnedNotNullT;
+extern const Class *TypeArrayT;
 extern const Class *TypeListT;
 extern const Class *TypeDictT;
 extern const Class *TypeOptionalT;
@@ -304,7 +309,7 @@ extern const Class *TypeDictBase;
 string class_name_might_need_parantheses(const Class *t);
 
 
-const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int token_id) {
+const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int array_size, int token_id) {
 	if (config.verbose)
 		msg_write("INSTANTIATE TEMPLATE CLASS  " + t._class->name + " ... " + params[0]->name);
 	const Class *c0 = t._class;
@@ -329,6 +334,7 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		return t;
 	};
 
+	// so far, only special cases:
 	Class *c = nullptr;
 	if (c0 == TypeRawT)
 		c = create_class(class_name_might_need_parantheses(params[0]) + "*", Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, params, token_id);
@@ -347,6 +353,8 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		c = create_class(format("%s[%s]", Identifier::XFER, params[0]->name), Class::Type::POINTER_XFER, config.target.pointer_size, 0, nullptr, params, token_id);
 	else if (c0 == TypeAliasT)
 		c = create_class(format("%s[%s]", Identifier::ALIAS, params[0]->name), Class::Type::POINTER_ALIAS, config.target.pointer_size, 0, nullptr, params, token_id);
+	else if (c0 == TypeArrayT)
+		c = create_class(class_name_might_need_parantheses(params[0]) + "[" + i2s(array_size) + "]", Class::Type::ARRAY, params[0]->size * array_size, array_size, nullptr, params, token_id);
 	else if (c0 == TypeListT)
 		c = create_class(class_name_might_need_parantheses(params[0]) + "[]", Class::Type::LIST, config.target.dynamic_array_size, -1, TypeDynamicArray, params, token_id);
 	else if (c0 == TypeDictT)
@@ -362,19 +370,20 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 	return c;
 }
 
-const Class *TemplateManager::find_implicit(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {
+const Class *TemplateManager::find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {
 	return implicit_class_registry->find(name, type, array_size, params);
 }
 void TemplateManager::add_implicit_legacy(const Class* t) {
 	implicit_class_registry->add(t);
 }
 
-void TemplateManager::add_explicit(SyntaxTree *tree, const Class* c, const Class* c0, const Array<const Class*> &params) {
+void TemplateManager::add_explicit(SyntaxTree *tree, const Class* c, const Class* c0, const Array<const Class*> &params, int array_size) {
 	auto &t = get_template(tree, c0, -1);
 
 	ClassInstance ii;
 	ii.c = c;
 	ii.params = params;
+	ii.array_size = array_size;
 	t.instances.add(ii);
 }
 

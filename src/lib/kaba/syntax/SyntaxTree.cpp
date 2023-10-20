@@ -546,7 +546,7 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
 
 	// check if it already exists
-	if (auto *tt = module->context->template_manager->find_implicit(name, type, array_size, params))
+	if (auto *tt = module->context->template_manager->find_implicit_legacy(name, type, array_size, params))
 		return tt;
 
 	// add new class
@@ -564,6 +564,7 @@ extern const Class *TypeXferT;
 extern const Class *TypeAliasT;
 extern const Class *TypeReferenceT;
 extern const Class *TypeOptionalT;
+extern const Class *TypeArrayT;
 extern const Class *TypeListT;
 extern const Class *TypeDictT;
 
@@ -608,6 +609,7 @@ const Class *SyntaxTree::request_implicit_class_list(const Class *element_type, 
 }
 
 const Class *SyntaxTree::request_implicit_class_array(const Class *element_type, int num_elements, int token_id) {
+	return module->context->template_manager->request_instance(this, TypeArrayT, {element_type}, num_elements, nullptr, implicit_symbols.get(), token_id);
 	// TODO
 	string name = class_name_might_need_parantheses(element_type) + format("[%d]", num_elements);
 	return request_implicit_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, token_id);

@@ -45,12 +45,13 @@ public:
 
 	void add_template(Class *c, const Array<string> &param_names);
 	const Class *request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	const Class *request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, int array_size, Block *block, const Class *ns, int token_id);
 
 	void clear_from_module(Module *m);
 
-	const Class *find_implicit(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
+	const Class *find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
 	void add_implicit_legacy(const Class* t);
-	void add_explicit(SyntaxTree *tree, const Class* t, const Class* t0, const Array<const Class*> &params);
+	void add_explicit(SyntaxTree *tree, const Class* t, const Class* t0, const Array<const Class*> &params, int array_size = 0);
 
 private:
 	Context *context;
@@ -70,6 +71,7 @@ private:
 	struct ClassInstance {
 		const Class *c;
 		Array<const Class*> params;
+		int array_size;
 	};
 	struct ClassTemplate {
 		const Class *_class;
@@ -84,7 +86,7 @@ private:
 	Function *full_copy(SyntaxTree *tree, Function *f0);
 	shared<Node> node_replace(SyntaxTree *tree, shared<Node> n, const Array<string> &names, const Array<const Class*> &params);
 	Function *instantiate(SyntaxTree *tree, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
-	const Class *instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int token_id);
+	const Class *instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int array_size, int token_id);
 
 	void match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f);
 };

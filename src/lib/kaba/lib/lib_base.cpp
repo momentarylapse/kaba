@@ -46,8 +46,10 @@ const Class *TypeOwnedT;
 const Class *TypeOwnedNotNullT;
 const Class *TypeAliasT;
 const Class *TypeReferenceT;
+const Class *TypeArrayT;
 const Class *TypeListT;
 const Class *TypeDictT;
+const Class *TypeCallableT;
 const Class *TypeOptionalT;
 const Class *TypeFutureT;
 
@@ -347,10 +349,14 @@ void SIAddPackageBase(Context *c) {
 	c->template_manager->add_template((Class*)TypeAliasT, {"T"});
 	TypeReferenceT = (Class*)add_type("ref", 0);
 	c->template_manager->add_template((Class*)TypeReferenceT, {"T"});
+	TypeArrayT = (Class*)add_type("@array", 0);
+	c->template_manager->add_template((Class*)TypeArrayT, {"T"});
 	TypeListT = (Class*)add_type("@list", 0);
 	c->template_manager->add_template((Class*)TypeListT, {"T"});
 	TypeDictT = (Class*)add_type("@dict", 0);
 	c->template_manager->add_template((Class*)TypeDictT, {"T"});
+	TypeCallableT = (Class*)add_type("@callable", 0);
+	c->template_manager->add_template((Class*)TypeCallableT, {"T"});
 	TypeOptionalT = (Class*)add_type("@optional", 0);
 	c->template_manager->add_template((Class*)TypeOptionalT, {"T"});
 	TypeFutureT = (Class*)add_type("future", 0);
