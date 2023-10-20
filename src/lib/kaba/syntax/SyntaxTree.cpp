@@ -11,18 +11,11 @@ namespace kaba {
 //#define ScriptDebug
 
 
-extern const Class *TypeDynamicArray;
-extern const Class *TypeDictBase;
-extern const Class *TypeCallableBase;
 extern const Class *TypeMat4;
 extern const Class *TypeVec2;
 extern const Class *TypeSpecialFunctionRef;
 
 bool is_func(shared<Node> n);
-
-string class_name_might_need_parantheses(const Class *t);
-bool type_needs_alignment(const Class *t);
-
 
 static shared_array<Node> _transform_insert_before_;
 shared<Node> conv_break_down_med_level(SyntaxTree *tree, shared<Node> c);
@@ -34,36 +27,9 @@ const Class *SyntaxTree::request_implicit_class_callable_fp(Function *f, int tok
 	return request_implicit_class_callable_fp(f->literal_param_type, f->literal_return_type, token_id);
 }
 
-string make_callable_signature(const Array<const Class*> &params, const Class *ret) {
-	// maybe some day...
-	string signature;// = param->name;
-	for (int i=0; i<params.num; i++) {
-		if (i > 0)
-			signature += ",";
-		signature += class_name_might_need_parantheses(params[i]);
-	}
-	if (params.num == 0)
-		signature = "void";
-	if (params.num > 1)
-		signature = "(" + signature + ")";
-	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
-		signature = "void";
-	}
-	return signature + "->" + class_name_might_need_parantheses(ret);
-}
-
 // input {}->R  OR  void->void   BOTH create  void->R
 const Class *SyntaxTree::request_implicit_class_callable_fp(const Array<const Class*> &param, const Class *ret, int token_id) {
-	string name = make_callable_signature(param, ret);
-
-	auto params_ret = param;
-	if ((param.num == 1) and (param[0] == TypeVoid))
-		params_ret = {};
-	params_ret.add(ret);
-
-	auto ff = request_implicit_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, token_id);
-	return request_implicit_class(name, Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {ff}, token_id);
-	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+	return module->context->template_manager->request_callable_fp(this, param, ret, token_id);
 }
 
 // inner callable: params [A,B,C,D,E]
@@ -74,41 +40,7 @@ const Class *SyntaxTree::request_implicit_class_callable_fp(const Array<const Cl
 //         f(a,x0,b,c,c1)
 // (A,C,D) -> R
 const Class *SyntaxTree::request_implicit_class_callable_bind(const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id) {
-
-	string name = make_callable_signature(params, ret);
-
-	Array<const Class*> outer_params_ret;
-	//if ((params.num == 1) and (params[0] == TypeVoid))
-	//	outer_params_ret = {};
-	for (int i=0; i<params.num; i++)
-		if (!captures[i])
-			outer_params_ret.add(params[i]);
-	outer_params_ret.add(ret);
-
-	static int unique_bind_counter = 0;
-
-	auto t = (Class*)create_new_class(format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, base_class, token_id);
-	int offset = t->size;
-	for (auto [i,b]: enumerate(captures)) {
-		if (!b)
-			continue;
-		auto c = b;
-		if (capture_via_ref[i])
-			c = get_pointer(c, token_id);
-		if (type_needs_alignment(b))
-			offset = mem_align(offset, 4);
-		auto el = ClassElement(format("capture%d%s", i, capture_via_ref[i] ? "_ref" : ""), c, offset);
-		offset += c->size;
-		t->elements.add(el);
-	}
-	t->size = offset;
-
-	for (auto &e: t->elements)
-		if (e.name == "_fp")
-			e.type = request_implicit_class_callable_fp(params, ret, token_id);
-
-	add_missing_function_headers_for_class(t);
-	return t;
+	return module->context->template_manager->request_callable_bind(this, params, ret, captures, capture_via_ref, token_id);
 }
 
 SyntaxTree::SyntaxTree(Module *_module) {
@@ -538,20 +470,6 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 	
 	AutoImplementer ai(nullptr, this);
 	ai.complete_type(t, array_size, token_id);
-	return t;
-}
-
-// X[], X{}, X*, X shared, (X,Y,Z), X->Y
-const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, int token_id) {
-	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
-
-	// check if it already exists
-	if (auto *tt = module->context->template_manager->find_implicit_legacy(name, type, array_size, params))
-		return tt;
-
-	// add new class
-	auto t = create_new_class_no_check(name, type, size, array_size, parent, params, implicit_symbols.get(), token_id);
-	module->context->template_manager->add_implicit_legacy(t);
 	return t;
 }
 

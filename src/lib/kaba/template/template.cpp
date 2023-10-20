@@ -304,8 +304,11 @@ extern const Class *TypeListT;
 extern const Class *TypeDictT;
 extern const Class *TypeOptionalT;
 extern const Class *TypeFutureT;
+
 extern const Class *TypeDynamicArray;
 extern const Class *TypeDictBase;
+extern const Class *TypeCallableBase;
+
 string class_name_might_need_parantheses(const Class *t);
 
 
@@ -417,6 +420,143 @@ const Class *TemplateManager::request_dict(SyntaxTree *tree, const Class *elemen
 
 const Class *TemplateManager::request_optional(SyntaxTree *tree, const Class *param, int token_id) {
 	return request_instance(tree, TypeOptionalT, {param}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+
+
+string make_callable_signature(const Array<const Class*> &params, const Class *ret) {
+	// maybe some day...
+	string signature;// = param->name;
+	for (int i=0; i<params.num; i++) {
+		if (i > 0)
+			signature += ",";
+		signature += class_name_might_need_parantheses(params[i]);
+	}
+	if (params.num == 0)
+		signature = "void";
+	if (params.num > 1)
+		signature = "(" + signature + ")";
+	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
+		signature = "void";
+	}
+	return signature + "->" + class_name_might_need_parantheses(ret);
+}
+
+
+
+const Class *xxx_create_class(TemplateManager *tm, SyntaxTree *tree, const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, int token_id) {
+	/*msg_write("CREATE " + name);
+	msg_write(p2s(tree));
+	msg_write(p2s(tree->implicit_symbols.get()));*/
+
+	auto ns = tree->implicit_symbols.get();
+
+	Class *t = new Class(type, name, size, tree, parent, params);
+	t->token_id = token_id;
+	tree->owned_classes.add(t);
+
+	// link namespace
+	ns->classes.add(t);
+	t->name_space = ns;
+
+	AutoImplementer ai(nullptr, tree);
+	ai.complete_type(t, array_size, token_id);
+	return (const Class*)t;
+};
+
+
+// X[], X{}, X*, X shared, (X,Y,Z), X->Y
+const Class *xxx_request_implicit_class(TemplateManager *tm, SyntaxTree *tree, const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, int token_id) {
+	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
+
+	// check if it already exists
+	if (auto *tt = tm->find_implicit_legacy(name, type, array_size, params))
+		return tt;
+
+
+
+	// add new class
+	auto t = xxx_create_class(tm, tree, name, type, size, array_size, parent, params, token_id);
+	tm->add_implicit_legacy(t);
+	return t;
+};
+
+
+// input {}->R  OR  void->void   BOTH create  void->R
+const Class *TemplateManager::request_callable_fp(SyntaxTree *tree, const Array<const Class*> &param, const Class *ret, int token_id) {
+
+
+	string name = make_callable_signature(param, ret);
+
+	auto params_ret = param;
+	if ((param.num == 1) and (param[0] == TypeVoid))
+		params_ret = {};
+	params_ret.add(ret);
+
+	auto ff = xxx_request_implicit_class(this, tree, "Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, token_id);
+	return xxx_request_implicit_class(this, tree, name, Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {ff}, token_id);
+	//return make_class(name, Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, base_class);
+}
+
+bool type_needs_alignment(const Class *t);
+
+// inner callable: params [A,B,C,D,E]
+// captures: [-,x0,-,-,x1]
+// class CallableBind
+//     func __init__(f, c0, c1)
+//     func call(a,b,c)
+//         f(a,x0,b,c,c1)
+// (A,C,D) -> R
+const Class *TemplateManager::request_callable_bind(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id) {
+
+	string name = make_callable_signature(params, ret);
+
+	Array<const Class*> outer_params_ret;
+	//if ((params.num == 1) and (params[0] == TypeVoid))
+	//	outer_params_ret = {};
+	for (int i=0; i<params.num; i++)
+		if (!captures[i])
+			outer_params_ret.add(params[i]);
+	outer_params_ret.add(ret);
+
+	static int unique_bind_counter = 0;
+
+	auto t = (Class*)xxx_create_class(this, tree, format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, 0, nullptr, outer_params_ret, token_id);
+	int offset = t->size;
+	for (auto [i,b]: enumerate(captures)) {
+		if (!b)
+			continue;
+		auto c = b;
+		if (capture_via_ref[i])
+			c = request_pointer(tree, c, token_id);
+		if (type_needs_alignment(b))
+			offset = mem_align(offset, 4);
+		auto el = ClassElement(format("capture%d%s", i, capture_via_ref[i] ? "_ref" : ""), c, offset);
+		offset += c->size;
+		t->elements.add(el);
+	}
+	t->size = offset;
+
+	for (auto &e: t->elements)
+		if (e.name == "_fp")
+			e.type = request_callable_fp(tree, params, ret, token_id);
+
+	tree->add_missing_function_headers_for_class(t);
+	return t;
+}
+
+
+
+const Class *TemplateManager::request_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id) {
+	string name;
+	int size = 0;
+	for (auto &c: classes) {
+		size += c->size;
+		if (name != "")
+			name += ",";
+		name += c->name;
+	}
+	return xxx_request_implicit_class(this, tree, "("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, token_id);
 }
 
 const Class *TemplateManager::find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {

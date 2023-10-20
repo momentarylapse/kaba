@@ -582,15 +582,7 @@ shared<Node> Parser::parse_abstract_dict(Block *block) {
 }
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id) {
-	string name;
-	int size = 0;
-	for (auto &c: classes) {
-		size += c->size;
-		if (name != "")
-			name += ",";
-		name += c->name;
-	}
-	return tree->request_implicit_class("("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, token_id);
+	return tree->module->context->template_manager->request_product(tree, classes, token_id);
 }
 
 shared<Node> Parser::parse_abstract_token() {

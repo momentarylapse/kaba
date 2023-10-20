@@ -69,6 +69,7 @@ public:
 	const Class *request_callable_fp(SyntaxTree *tree, Function *f, int token_id);
 	const Class *request_callable_fp(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, int token_id);
 	const Class *request_callable_bind(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id);
+	const Class *request_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
 private:
 	Context *context;

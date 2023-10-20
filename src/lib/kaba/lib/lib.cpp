@@ -355,7 +355,10 @@ const Class *add_type_func(const Class *ret_type, const Array<const Class*> &par
 			msg_error("NOT SURE HOW TO CREATE ..." + ff->long_name());
 		}
 	}
-	return cur_package->tree->request_implicit_class(name, Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {ff}, -1);
+	auto pp = const_cast<Class*>(cur_package->tree->request_implicit_class_pointer(ff, -1));
+	pp->name = name;
+	return pp;
+	//return cur_package->tree->request_implicit_class(name, Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {ff}, -1);
 
 	/*auto c = cur_package->syntax->make_class_callable_fp(params, ret_type);
 	add_class(c);
