@@ -303,6 +303,7 @@ extern const Class *TypeArrayT;
 extern const Class *TypeListT;
 extern const Class *TypeDictT;
 extern const Class *TypeOptionalT;
+extern const Class *TypeProductT;
 extern const Class *TypeFutureT;
 
 extern const Class *TypeDynamicArray;
@@ -311,6 +312,23 @@ extern const Class *TypeCallableBase;
 
 string class_name_might_need_parantheses(const Class *t);
 
+
+string product_class_name(const Array<const Class*> &classes) {
+	string name;
+	for (auto &c: classes) {
+		if (name != "")
+			name += ",";
+		name += c->name;
+	}
+	return "("+name+")";
+}
+
+int product_class_size(const Array<const Class*> &classes) {
+	int size = 0;
+	for (auto &c: classes)
+		size += c->size;
+	return size;
+}
 
 const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int array_size, int token_id) {
 	if (config.verbose)
@@ -331,9 +349,6 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		// link namespace
 		ns->classes.add(t);
 		t->name_space = ns;
-
-		AutoImplementer ai(nullptr, tree);
-		ai.complete_type(t, array_size, token_id);
 		return t;
 	};
 
@@ -364,12 +379,16 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		c = create_class(class_name_might_need_parantheses(params[0]) + "{}", Class::Type::DICT, config.target.dynamic_array_size, -1, TypeDictBase, params, token_id);
 	else if (c0 == TypeOptionalT)
 		c = create_class(class_name_might_need_parantheses(params[0]) + "?", Class::Type::OPTIONAL, params[0]->size + 1, 0, nullptr, params, token_id);
+	else if (c0 == TypeProductT)
+		c = create_class(product_class_name(params), Class::Type::PRODUCT, product_class_size(params), 0, nullptr, params, token_id);
 	else if (c0 == TypeFutureT)
 		c = create_class(format("%s[%s]", Identifier::FUTURE, params[0]->name), Class::Type::FUTURE, sizeof(base::future<void>), 0, nullptr, params, token_id);
 	else
 		tree->do_error("can not instantiate template " + c0->name, token_id);
 
-	//add_implicit(c);
+	AutoImplementer ai(nullptr, tree);
+	ai.complete_type(c, array_size, token_id);
+
 	return c;
 }
 
@@ -545,18 +564,8 @@ const Class *TemplateManager::request_callable_bind(SyntaxTree *tree, const Arra
 	return t;
 }
 
-
-
 const Class *TemplateManager::request_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id) {
-	string name;
-	int size = 0;
-	for (auto &c: classes) {
-		size += c->size;
-		if (name != "")
-			name += ",";
-		name += c->name;
-	}
-	return xxx_request_implicit_class(this, tree, "("+name+")", Class::Type::PRODUCT, size, -1, nullptr, classes, token_id);
+	return request_instance(tree, TypeProductT, classes, nullptr, tree->implicit_symbols.get(), token_id);
 }
 
 const Class *TemplateManager::find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {

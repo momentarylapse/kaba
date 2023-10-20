@@ -51,6 +51,7 @@ const Class *TypeListT;
 const Class *TypeDictT;
 const Class *TypeCallableT;
 const Class *TypeOptionalT;
+const Class *TypeProductT;
 const Class *TypeFutureT;
 
 
@@ -359,6 +360,8 @@ void SIAddPackageBase(Context *c) {
 	c->template_manager->add_template((Class*)TypeCallableT, {"T"});
 	TypeOptionalT = (Class*)add_type("@optional", 0);
 	c->template_manager->add_template((Class*)TypeOptionalT, {"T"});
+	TypeProductT = (Class*)add_type("@product", 0);
+	c->template_manager->add_template((Class*)TypeProductT, {"T..."});
 	TypeFutureT = (Class*)add_type("future", 0);
 	c->template_manager->add_template((Class*)TypeFutureT, {"T"});
 
