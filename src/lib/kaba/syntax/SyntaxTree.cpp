@@ -4,7 +4,6 @@
 #include "../asm/asm.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
-#include "../../base/future.h"
 #include <stdio.h>
 
 namespace kaba {
@@ -552,86 +551,74 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 
 	// add new class
 	auto t = create_new_class_no_check(name, type, size, array_size, parent, params, implicit_symbols.get(), token_id);
-	module->context->template_manager->add_implicit(t);
+	module->context->template_manager->add_implicit_legacy(t);
 	return t;
 }
 
+extern const Class *TypeRawT;
+extern const Class *TypeSharedT;
+extern const Class *TypeSharedNotNullT;
+extern const Class *TypeOwnedT;
+extern const Class *TypeOwnedNotNullT;
+extern const Class *TypeXferT;
+extern const Class *TypeAliasT;
+extern const Class *TypeReferenceT;
+extern const Class *TypeOptionalT;
+extern const Class *TypeListT;
+extern const Class *TypeDictT;
+
 const Class *SyntaxTree::get_pointer(const Class *base, int token_id) {
-//	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {base}, token_id);
 	return request_implicit_class_pointer(base, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_pointer(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("ptr[..] not allowed for: " + base->long_name(), token_id); // TODO
-	return request_implicit_class(class_name_might_need_parantheses(base) + "*", Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {base}, token_id);
-//	return request_implicit_class(format("%s[%s]", Identifier::RAW_POINTER, base->name), Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeRawT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("shared[..] not allowed for: " + base->long_name(), token_id); // TODO
-	return request_implicit_class(format("%s[%s]", Identifier::SHARED, base->name), Class::Type::POINTER_SHARED, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeSharedT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_shared_not_null(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("shared![..] not allowed for: " + base->long_name(), token_id); // TODO
-	return request_implicit_class(format("%s![%s]", Identifier::SHARED, base->name), Class::Type::POINTER_SHARED_NOT_NULL, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeSharedNotNullT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("owned[..] not allowed for: " + base->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::OWNED, base->name), Class::Type::POINTER_OWNED, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeOwnedT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_owned_not_null(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("owned![..] not allowed for: " + base->long_name(), token_id);
-	return request_implicit_class(format("%s![%s]", Identifier::OWNED, base->name), Class::Type::POINTER_OWNED_NOT_NULL, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeOwnedNotNullT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_xfer(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("xfer[..] not allowed for: " + base->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::XFER, base->name), Class::Type::POINTER_XFER, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeXferT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_alias(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("@alias[..] not allowed for: " + base->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::ALIAS, base->name), Class::Type::POINTER_ALIAS, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeAliasT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_reference(const Class *base, int token_id) {
-	return request_implicit_class(class_name_might_need_parantheses(base) + "&", Class::Type::REFERENCE, config.target.pointer_size, 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeReferenceT, {base}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_list(const Class *element_type, int token_id) {
-	string name = class_name_might_need_parantheses(element_type) + "[]";
-	return request_implicit_class(name, Class::Type::LIST, config.target.dynamic_array_size, -1, TypeDynamicArray, {element_type}, token_id);
+	return module->context->template_manager->request_instance(this, TypeListT, {element_type}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_array(const Class *element_type, int num_elements, int token_id) {
+	// TODO
 	string name = class_name_might_need_parantheses(element_type) + format("[%d]", num_elements);
 	return request_implicit_class(name, Class::Type::ARRAY, element_type->size * num_elements, num_elements, nullptr, {element_type}, token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_dict(const Class *element_type, int token_id) {
-	string name = class_name_might_need_parantheses(element_type) + "{}";
-	return request_implicit_class(name, Class::Type::DICT, config.target.dynamic_array_size, 0, TypeDictBase, {element_type}, token_id);
+	return module->context->template_manager->request_instance(this, TypeDictT, {element_type}, nullptr, implicit_symbols.get(), token_id);
 }
 
 const Class *SyntaxTree::request_implicit_class_optional(const Class *param, int token_id) {
-	string name = class_name_might_need_parantheses(param) + "?";
-	return request_implicit_class(name, Class::Type::OPTIONAL, param->size + 1, 0, nullptr, {param}, token_id);
-}
-
-const Class *SyntaxTree::request_implicit_class_future(const Class *base, int token_id) {
-	if (!base->name_space)
-		do_error("future[..] not allowed for: " + base->long_name(), token_id);
-	return request_implicit_class(format("%s[%s]", Identifier::FUTURE, base->name), Class::Type::FUTURE, sizeof(base::future<void>), 0, nullptr, {base}, token_id);
+	return module->context->template_manager->request_instance(this, TypeOptionalT, {param}, nullptr, implicit_symbols.get(), token_id);
 }
 
 shared<Node> SyntaxTree::conv_cbr(shared<Node> c, Variable *var) {

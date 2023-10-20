@@ -44,6 +44,8 @@ const Class *TypeSharedT;
 const Class *TypeSharedNotNullT;
 const Class *TypeOwnedT;
 const Class *TypeOwnedNotNullT;
+const Class *TypeAliasT;
+const Class *TypeReferenceT;
 const Class *TypeListT;
 const Class *TypeDictT;
 const Class *TypeOptionalT;
@@ -266,7 +268,6 @@ void SIAddPackageBase(Context *c) {
 	TypeReg16			= add_type  ("@reg16", 2, Flags::FORCE_CALL_BY_VALUE);
 	TypeReg8			= add_type  ("@reg8", 1, Flags::FORCE_CALL_BY_VALUE);
 	TypeObject			= add_type  ("Object", sizeof(VirtualBase)); // base for most virtual classes
-	TypeObjectP			= add_type_p_raw(TypeObject);
 	TypeDynamic			= add_type  ("@dynamic", 0);
 
 	// "real"
@@ -282,8 +283,6 @@ void SIAddPackageBase(Context *c) {
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.target.pointer_size);
 	TypeCallableBase	= add_type  ("@CallableBase", sizeof(Callable<void()>));
 
-	TypeException		= add_type  ("Exception", sizeof(KabaException));
-	TypeExceptionXfer	= add_type_p_xfer(TypeException);
 	TypeNoValueError    = add_type  ("NoValueError", sizeof(KabaException));
 
 
@@ -332,7 +331,6 @@ void SIAddPackageBase(Context *c) {
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 
-
 	TypeRawT = (Class*)add_type("ptr", 0);
 	c->template_manager->add_template((Class*)TypeRawT, {"T"});
 	TypeXferT = (Class*)add_type("xfer", 0);
@@ -345,6 +343,10 @@ void SIAddPackageBase(Context *c) {
 	c->template_manager->add_template((Class*)TypeOwnedT, {"T"});
 	TypeOwnedNotNullT = (Class*)add_type("owned!", 0);
 	c->template_manager->add_template((Class*)TypeOwnedNotNullT, {"T"});
+	TypeAliasT = (Class*)add_type("@alias", 0);
+	c->template_manager->add_template((Class*)TypeAliasT, {"T"});
+	TypeReferenceT = (Class*)add_type("ref", 0);
+	c->template_manager->add_template((Class*)TypeReferenceT, {"T"});
 	TypeListT = (Class*)add_type("@list", 0);
 	c->template_manager->add_template((Class*)TypeListT, {"T"});
 	TypeDictT = (Class*)add_type("@dict", 0);
@@ -354,6 +356,7 @@ void SIAddPackageBase(Context *c) {
 	TypeFutureT = (Class*)add_type("future", 0);
 	c->template_manager->add_template((Class*)TypeFutureT, {"T"});
 
+	TypeObjectP			= add_type_p_raw(TypeObject);
 
 
 	// derived   (must be defined after the primitive types and the bases!)
@@ -378,6 +381,9 @@ void SIAddPackageBase(Context *c) {
 	TypeIntDict     = add_type_dict(TypeInt);
 	TypeFloatDict   = add_type_dict(TypeFloat);
 	TypeStringDict  = add_type_dict(TypeString);
+
+	TypeException		= add_type  ("Exception", sizeof(KabaException));
+	TypeExceptionXfer	= add_type_p_xfer(TypeException);
 
 
 	add_class(TypeCallableBase);

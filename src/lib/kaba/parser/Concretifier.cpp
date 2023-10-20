@@ -459,7 +459,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		if (index->kind == NodeKind::CLASS) {
 			auto c1 = operand->as_class();
 			auto c2 = index->as_class();
-			if (auto cc = context->template_manager->get_instantiated(parser, c1, {c2}, block, ns, node->token_id)) {
+			if (auto cc = context->template_manager->request_instance(tree, c1, {c2}, block, ns, node->token_id)) {
 				return add_node_class(cc, node->token_id);
 			}
 		}
@@ -490,7 +490,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		auto t = index->as_class();
 		for (auto l: weak(links)) {
 			auto f = l->as_func();
-			if (auto ff = context->template_manager->get_instantiated(parser, f, {t}, block, ns, node->token_id)) {
+			if (auto ff = context->template_manager->request_instance(tree, f, {t}, block, ns, node->token_id)) {
 				auto tf = add_node_func_name(ff);
 				tf->params = l->params; // in case we have a member instance
 				return tf;
@@ -1819,7 +1819,7 @@ shared<Node> Concretifier::make_func_node_callable(const shared<Node> l) {
 
 shared<Node> Concretifier::match_template_params(const shared<Node> l, const shared_array<Node> &params, Block *block, const Class *ns) {
 	auto f0 = l->as_func();
-	auto ff = context->template_manager->get_instantiated_matching(parser, f0, params, block, ns, l->token_id);
+	auto ff = context->template_manager->request_instance_matching(tree, f0, params, block, ns, l->token_id);
 	auto r = l->shallow_copy();
 	r->link_no = (int_p)ff;
 	return r;

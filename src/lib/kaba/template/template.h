@@ -15,6 +15,7 @@ class Class;
 class Node;
 class Block;
 class Parser;
+class SyntaxTree;
 class Context;
 
 
@@ -39,16 +40,17 @@ public:
 	void copy_from(TemplateManager *m);
 	
 	void add_template(Function *f, const Array<string> &param_names);
-	Function *get_instantiated(Parser *parser, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
-	Function *get_instantiated_matching(Parser *parser, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id);
+	Function *request_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	Function *request_instance_matching(SyntaxTree *tree, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id);
 
 	void add_template(Class *c, const Array<string> &param_names);
-	const Class *get_instantiated(Parser *parser, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	const Class *request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 
 	void clear_from_module(Module *m);
 
 	const Class *find_implicit(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
-	void add_implicit(const Class* t);
+	void add_implicit_legacy(const Class* t);
+	void add_explicit(SyntaxTree *tree, const Class* t, const Class* t0, const Array<const Class*> &params);
 
 private:
 	Context *context;
@@ -76,13 +78,13 @@ private:
 	};
 	Array<ClassTemplate> class_templates;
 
-	FunctionTemplate &get_template(Parser *parser, Function *f0, int token_id);
-	ClassTemplate &get_template(Parser *parser, const Class *c0, int token_id);
+	FunctionTemplate &get_template(SyntaxTree *tree, Function *f0, int token_id);
+	ClassTemplate &get_template(SyntaxTree *tree, const Class *c0, int token_id);
 
-	Function *full_copy(Parser *parser, Function *f0);
-	shared<Node> node_replace(Parser *parser, shared<Node> n, const Array<string> &names, const Array<const Class*> &params);
-	Function *instantiate(Parser *parser, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
-	const Class *instantiate(Parser *parser, ClassTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	Function *full_copy(SyntaxTree *tree, Function *f0);
+	shared<Node> node_replace(SyntaxTree *tree, shared<Node> n, const Array<string> &names, const Array<const Class*> &params);
+	Function *instantiate(SyntaxTree *tree, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
+	const Class *instantiate(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int token_id);
 
 	void match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f);
 };
