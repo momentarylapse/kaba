@@ -17,6 +17,21 @@ class Block;
 class Parser;
 class Context;
 
+
+class ImplicitClassRegistry {
+public:
+	ImplicitClassRegistry(Context *c);
+	void copy_from(ImplicitClassRegistry *i);
+	void init();
+	const Class *find(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
+	void add(const Class* t);
+	void clear_from_module(Module *m);
+
+	Context *context;
+	Module *module = nullptr;
+	Array<const Class*> classes;
+};
+
 class TemplateManager {
 public:
 
@@ -32,8 +47,12 @@ public:
 
 	void clear_from_module(Module *m);
 
+	const Class *find_implicit(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
+	void add_implicit(const Class* t);
+
 private:
 	Context *context;
+	owned<ImplicitClassRegistry> implicit_class_registry;
 
 	struct FunctionInstance {
 		Function *f;
@@ -66,21 +85,6 @@ private:
 	const Class *instantiate(Parser *parser, ClassTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 
 	void match_parameter_type(shared<Node> p, const Class *t, std::function<void(const string&, const Class*)> f);
-};
-
-
-class ImplicitClassRegistry {
-public:
-	ImplicitClassRegistry(Context *c);
-	void copy_from(ImplicitClassRegistry *i);
-	void init();
-	const Class *find(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
-	void add(const Class* t);
-	void clear_from_module(Module *m);
-
-	Context *context;
-	Module *module = nullptr;
-	Array<const Class*> classes;
 };
 
 

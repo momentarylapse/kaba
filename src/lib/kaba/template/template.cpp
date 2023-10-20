@@ -17,11 +17,13 @@ namespace kaba {
 
 TemplateManager::TemplateManager(Context *c) {
 	context = c;
+	implicit_class_registry = new ImplicitClassRegistry(c);
 }
 
 void TemplateManager::copy_from(TemplateManager *t) {
 	function_templates = t->function_templates;
 	class_templates = t->class_templates;
+	implicit_class_registry->copy_from(t->implicit_class_registry.get());
 }
 
 
@@ -47,7 +49,7 @@ void TemplateManager::add_template(Class *c, const Array<string> &param_names) {
 }
 
 void TemplateManager::clear_from_module(Module *m) {
-
+	implicit_class_registry->clear_from_module(m);
 }
 
 
@@ -323,6 +325,13 @@ const Class *TemplateManager::instantiate(Parser *parser, ClassTemplate &t, cons
 		return parser->tree->request_implicit_class_future(params[0], token_id);
 
 	return c0;
+}
+
+const Class *TemplateManager::find_implicit(const string &name, Class::Type type, int array_size, const Array<const Class*> &params) {
+	return implicit_class_registry->find(name, type, array_size, params);
+}
+void TemplateManager::add_implicit(const Class* t) {
+	implicit_class_registry->add(t);
 }
 
 ImplicitClassRegistry::ImplicitClassRegistry(Context *c) {

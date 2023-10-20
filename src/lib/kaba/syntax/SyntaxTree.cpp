@@ -547,12 +547,12 @@ const Class *SyntaxTree::request_implicit_class(const string &name, Class::Type 
 	//msg_write("make class " + name + " ns=" + ns->long_name());// + " params=" + param->long_name());
 
 	// check if it already exists
-	if (auto *tt = module->context->implicit_class_registry->find(name, type, array_size, params))
+	if (auto *tt = module->context->template_manager->find_implicit(name, type, array_size, params))
 		return tt;
 
 	// add new class
 	auto t = create_new_class_no_check(name, type, size, array_size, parent, params, implicit_symbols.get(), token_id);
-	module->context->implicit_class_registry->add(t);
+	module->context->template_manager->add_implicit(t);
 	return t;
 }
 
@@ -1417,7 +1417,6 @@ SyntaxTree::~SyntaxTree() {
 	delete_all_constants(base_class);
 
 	module->context->template_manager->clear_from_module(module);
-	module->context->implicit_class_registry->clear_from_module(module);
 }
 
 void SyntaxTree::show(const string &stage) {
