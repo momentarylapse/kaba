@@ -162,6 +162,13 @@ const Class *add_type(const string &name, int size, Flags flags, const Class *na
 	return t;
 }
 
+
+const Class *add_class_template(const string &name, const Array<string>& params, TemplateManager::ClassCreateF f) {
+	auto t = cur_package->context->template_manager->add_class_template(cur_package->tree.get(), name, params, f);
+	__add_class__(t, nullptr);
+	return t;
+}
+
 extern const Class *TypeRawT;
 extern const Class *TypeSharedT;
 extern const Class *TypeSharedNotNullT;
@@ -281,7 +288,7 @@ const Class *add_type_optional(const Class *sub_type) {
 
 const Class *add_type_future(const Class *sub_type) {
 	string name = "future[" + sub_type->name + "]";
-	Class *t = new Class(Class::Type::FUTURE, name, sizeof(void*), cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::REGULAR, name, sizeof(void*), cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeFutureT, {sub_type});
 	return t;

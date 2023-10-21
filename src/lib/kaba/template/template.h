@@ -8,6 +8,9 @@
 #ifndef SRC_LIB_KABA_PARSER_TEMPLATE_H_
 #define SRC_LIB_KABA_PARSER_TEMPLATE_H_
 
+#include <functional>
+#include "../syntax/Class.h"
+
 namespace kaba {
 
 class Function;
@@ -39,11 +42,13 @@ public:
 	TemplateManager(Context *c);
 	void copy_from(TemplateManager *m);
 	
-	void add_template(Function *f, const Array<string> &param_names);
+	void add_function_template(Function *f, const Array<string> &param_names);
 	Function *request_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 	Function *request_instance_matching(SyntaxTree *tree, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id);
 
-	void add_template(Class *c, const Array<string> &param_names);
+	using ClassCreateF = std::function<const Class*(SyntaxTree *, const Array<const Class*>&, int)>;
+
+	Class *add_class_template(SyntaxTree *tree, const string &name, const Array<string> &param_names, ClassCreateF f);
 	const Class *request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);
 	const Class *request_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, int array_size, Block *block, const Class *ns, int token_id);
 
@@ -70,6 +75,8 @@ public:
 	const Class *request_callable_fp(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, int token_id);
 	const Class *request_callable_bind(SyntaxTree *tree, const Array<const Class*> &params, const Class *ret, const Array<const Class*> &captures, const Array<bool> &capture_via_ref, int token_id);
 	const Class *request_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
+	const Class *request_future(SyntaxTree *tree, const Class *base, int token_id);
+	const Class *request_futurecore(SyntaxTree *tree, const Class *base, int token_id);
 
 private:
 	Context *context;
@@ -94,6 +101,7 @@ private:
 	struct ClassTemplate {
 		const Class *_class;
 		Array<string> params;
+		ClassCreateF f_create;
 		Array<ClassInstance> instances;
 	};
 	Array<ClassTemplate> class_templates;

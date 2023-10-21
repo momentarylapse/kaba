@@ -9,6 +9,7 @@
 #include "../parser/Parser.h"
 #include "../parser/Concretifier.h"
 #include "template.h"
+#include "implicit_future.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
 #include "../../base/algo.h"
@@ -28,25 +29,27 @@ void TemplateManager::copy_from(TemplateManager *t) {
 }
 
 
-void TemplateManager::add_template(Function *f, const Array<string> &param_names) {
+void TemplateManager::add_function_template(Function *f, const Array<string> &param_names) {
 	if (config.verbose)
-		msg_write("ADD TEMPLATE");
+		msg_write("ADD FUNC TEMPLATE");
 	FunctionTemplate t;
 	t.func = f;
 	t.params = param_names;
 	function_templates.add(t);
 }
 
-
-void TemplateManager::add_template(Class *c, const Array<string> &param_names) {
+Class *TemplateManager::add_class_template(SyntaxTree *tree, const string &name, const Array<string> &param_names, ClassCreateF f) {
 	if (config.verbose)
-		msg_write("ADD TEMPLATE");
+		msg_write("ADD CLASS TEMPLATE " + name);
 	//msg_write("add class template  " + c->long_name());
+	Class *c = new Class(Class::Type::REGULAR, name, 0, tree);
 	flags_set(c->flags, Flags::TEMPLATE);
 	ClassTemplate t;
 	t._class = c;
 	t.params = param_names;
+	t.f_create = f;
 	class_templates.add(t);
+	return c;
 }
 
 void TemplateManager::clear_from_module(Module *m) {
@@ -305,6 +308,7 @@ extern const Class *TypeDictT;
 extern const Class *TypeOptionalT;
 extern const Class *TypeProductT;
 extern const Class *TypeFutureT;
+extern const Class *TypeFutureCoreT;
 
 extern const Class *TypeDynamicArray;
 extern const Class *TypeDictBase;
@@ -381,12 +385,22 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		c = create_class(class_name_might_need_parantheses(params[0]) + "?", Class::Type::OPTIONAL, params[0]->size + 1, 0, nullptr, params, token_id);
 	else if (c0 == TypeProductT)
 		c = create_class(product_class_name(params), Class::Type::PRODUCT, product_class_size(params), 0, nullptr, params, token_id);
-	else if (c0 == TypeFutureT)
-		c = create_class(format("%s[%s]", Identifier::FUTURE, params[0]->name), Class::Type::FUTURE, sizeof(base::future<void>), 0, nullptr, params, token_id);
+	else if (c0 == TypeFutureT) {
+		c = create_class(format("%s[%s]", Identifier::FUTURE, params[0]->name), Class::Type::REGULAR, sizeof(base::future<void>), 0, nullptr, params, token_id);
+		AutoImplementerFuture ai(nullptr, tree);
+		ai.complete_type(c, array_size, token_id);
+		return c;
+	} else if (c0 == TypeFutureCoreT) {
+		c = create_class(format("@futurecore[%s]", params[0]->name), Class::Type::REGULAR, sizeof(base::_promise_core_<void>) + params[0]->size, 0, nullptr, params, token_id);
+		AutoImplementerFutureCore ai(nullptr, tree);
+		ai.complete_type(c, array_size, token_id);
+		return c;
+	} else if (t.f_create)
+		return t.f_create(tree, params, token_id);
 	else
 		tree->do_error("can not instantiate template " + c0->name, token_id);
 
-	AutoImplementer ai(nullptr, tree);
+	AutoImplementerInternal ai(nullptr, tree);
 	ai.complete_type(c, array_size, token_id);
 
 	return c;
@@ -441,6 +455,14 @@ const Class *TemplateManager::request_optional(SyntaxTree *tree, const Class *pa
 	return request_instance(tree, TypeOptionalT, {param}, nullptr, tree->implicit_symbols.get(), token_id);
 }
 
+const Class *TemplateManager::request_future(SyntaxTree *tree, const Class *param, int token_id) {
+	return request_instance(tree, TypeFutureT, {param}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
+const Class *TemplateManager::request_futurecore(SyntaxTree *tree, const Class *param, int token_id) {
+	return request_instance(tree, TypeFutureCoreT, {param}, nullptr, tree->implicit_symbols.get(), token_id);
+}
+
 
 
 string make_callable_signature(const Array<const Class*> &params, const Class *ret) {
@@ -478,7 +500,7 @@ const Class *xxx_create_class(TemplateManager *tm, SyntaxTree *tree, const strin
 	ns->classes.add(t);
 	t->name_space = ns;
 
-	AutoImplementer ai(nullptr, tree);
+	AutoImplementerInternal ai(nullptr, tree);
 	ai.complete_type(t, array_size, token_id);
 	return (const Class*)t;
 };

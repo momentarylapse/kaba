@@ -5,6 +5,7 @@
 #include "../dynamic/dynamic.h"
 #include "../dynamic/sorting.h"
 #include "../template/template.h"
+#include "../template/implicit.h"
 #include "../../os/msg.h"
 #include "../../os/terminal.h"
 #include "../../base/callable.h"
@@ -53,7 +54,9 @@ const Class *TypeCallableT;
 const Class *TypeOptionalT;
 const Class *TypeProductT;
 const Class *TypeFutureT;
+const Class *TypeFutureCoreT;
 
+string class_name_might_need_parantheses(const Class *t);
 
 
 void _cdecl kaba_cstringout(char *str) {
@@ -334,36 +337,75 @@ void SIAddPackageBase(Context *c) {
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 
-	TypeRawT = (Class*)add_type("ptr", 0);
-	c->template_manager->add_template((Class*)TypeRawT, {"T"});
-	TypeXferT = (Class*)add_type("xfer", 0);
-	c->template_manager->add_template((Class*)TypeXferT, {"T"});
-	TypeSharedT = (Class*)add_type("shared", 0);
-	c->template_manager->add_template((Class*)TypeSharedT, {"T"});
-	TypeSharedNotNullT = (Class*)add_type("shared!", 0);
-	c->template_manager->add_template((Class*)TypeSharedNotNullT, {"T"});
-	TypeOwnedT = (Class*)add_type("owned", 0);
-	c->template_manager->add_template((Class*)TypeOwnedT, {"T"});
-	TypeOwnedNotNullT = (Class*)add_type("owned!", 0);
-	c->template_manager->add_template((Class*)TypeOwnedNotNullT, {"T"});
-	TypeAliasT = (Class*)add_type("@alias", 0);
-	c->template_manager->add_template((Class*)TypeAliasT, {"T"});
-	TypeReferenceT = (Class*)add_type("ref", 0);
-	c->template_manager->add_template((Class*)TypeReferenceT, {"T"});
-	TypeArrayT = (Class*)add_type("@array", 0);
-	c->template_manager->add_template((Class*)TypeArrayT, {"T"});
-	TypeListT = (Class*)add_type("@list", 0);
-	c->template_manager->add_template((Class*)TypeListT, {"T"});
-	TypeDictT = (Class*)add_type("@dict", 0);
-	c->template_manager->add_template((Class*)TypeDictT, {"T"});
-	TypeCallableT = (Class*)add_type("@callable", 0);
-	c->template_manager->add_template((Class*)TypeCallableT, {"T"});
-	TypeOptionalT = (Class*)add_type("@optional", 0);
-	c->template_manager->add_template((Class*)TypeOptionalT, {"T"});
-	TypeProductT = (Class*)add_type("@product", 0);
-	c->template_manager->add_template((Class*)TypeProductT, {"T..."});
-	TypeFutureT = (Class*)add_type("future", 0);
-	c->template_manager->add_template((Class*)TypeFutureT, {"T"});
+#if 0
+	auto create_class = [] (SyntaxTree *tree, const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, int token_id) {
+		/*msg_write("CREATE " + name);
+		msg_write(p2s(tree));
+		msg_write(p2s(tree->implicit_symbols.get()));*/
+
+		auto ns = tree->implicit_symbols.get();
+
+		Class *t = new Class(type, name, size, tree, parent, params);
+		t->token_id = token_id;
+		tree->owned_classes.add(t);
+
+		// link namespace
+		ns->classes.add(t);
+		t->name_space = ns;
+		return t;
+	};
+
+	auto create_auto_class = [create_class] (SyntaxTree *tree, const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, int token_id) {
+		auto t = create_class(tree, name, type, size, array_size, parent, params, token_id);
+		AutoImplementer ai(nullptr, tree);
+		ai.complete_type(t, 0, token_id);
+		return t;
+	};
+
+	TypeRawT = add_class_template("ptr", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, class_name_might_need_parantheses(params[0]) + "*", Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, params, token_id);
+//		return create_auto_class(format("%s[%s]", Identifier::RAW_POINTER, params[0]->name), Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeXferT = add_class_template("xfer", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s[%s]", Identifier::XFER, params[0]->name), Class::Type::POINTER_XFER, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeSharedT = add_class_template("shared", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s[%s]", Identifier::SHARED, params[0]->name), Class::Type::POINTER_SHARED, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeSharedNotNullT = add_class_template("shared!", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s![%s]", Identifier::SHARED, params[0]->name), Class::Type::POINTER_SHARED_NOT_NULL, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeOwnedT = add_class_template("owned", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s[%s]", Identifier::OWNED, params[0]->name), Class::Type::POINTER_OWNED, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeOwnedNotNullT = add_class_template("owned!", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s![%s]", Identifier::OWNED, params[0]->name), Class::Type::POINTER_OWNED_NOT_NULL, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeAliasT = add_class_template("@alias", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, format("%s[%s]", Identifier::ALIAS, params[0]->name), Class::Type::POINTER_ALIAS, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+	TypeReferenceT = add_class_template("ref", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
+		return create_auto_class(tree, class_name_might_need_parantheses(params[0]) + "&", Class::Type::REFERENCE, config.target.pointer_size, 0, nullptr, params, token_id);
+	});
+
+#else
+	TypeRawT = add_class_template("ptr", {"T"}, nullptr);
+	TypeXferT = add_class_template("xfer", {"T"}, nullptr);
+	TypeSharedT = add_class_template("shared", {"T"}, nullptr);
+	TypeSharedNotNullT = add_class_template("shared!", {"T"}, nullptr);
+	TypeOwnedT = add_class_template("owned", {"T"}, nullptr);
+	TypeOwnedNotNullT = add_class_template("owned!", {"T"}, nullptr);
+	TypeAliasT = add_class_template("@alias", {"T"}, nullptr);
+	TypeReferenceT = add_class_template("ref", {"T"}, nullptr);
+	TypeArrayT = add_class_template("@Array", {"T"}, nullptr);
+	TypeListT = add_class_template("@List", {"T"}, nullptr);
+	TypeDictT = add_class_template("@Dict", {"T"}, nullptr);
+	TypeCallableT = add_class_template("@Callable", {"T..."}, nullptr);
+	TypeOptionalT = add_class_template("@Optional", {"T"}, nullptr);
+	TypeProductT = add_class_template("@Product", {"T"}, nullptr);
+	TypeFutureCoreT = add_class_template("@FutureCore", {"T"}, nullptr);
+	TypeFutureT = add_class_template("future", {"T"}, nullptr);
+#endif
 
 	TypeObjectP			= add_type_p_raw(TypeObject);
 

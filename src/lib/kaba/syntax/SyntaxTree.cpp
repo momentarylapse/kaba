@@ -428,7 +428,7 @@ Function *SyntaxTree::required_func_global(const string &name, int token_id) {
 
 
 void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
-	AutoImplementer a(nullptr, this);
+	AutoImplementerInternal a(nullptr, this);
 	a.add_missing_function_headers_for_class(t);
 }
 
@@ -468,7 +468,7 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type typ
 	ns->classes.add(t);
 	t->name_space = ns;
 	
-	AutoImplementer ai(nullptr, this);
+	AutoImplementerInternal ai(nullptr, this);
 	ai.complete_type(t, array_size, token_id);
 	return t;
 }
