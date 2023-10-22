@@ -17,7 +17,9 @@
 string AppName = "kaba";
 string AppVersion = kaba::Version;
 
-
+base::future<string> xxx_fff() {
+	return base::failed<string>();
+}
 
 namespace kaba {
 	extern int64 s2i2(const string &str);
@@ -228,6 +230,8 @@ public:
 		e->link("ParseResource", (void*)&hui::parse_resource);
 
 		e->link("xxx_delete", (void*)&xxx_delete);
+		e->link("f", (void*)&xxx_fff);
+		e->link("future[string].__delete__", (void*)&xxx_fff);
 
 
 
