@@ -286,7 +286,7 @@ void Texture::write_float(const DynamicArray &data) {
 
 void Texture::unload() {
 	if (type != Type::NONE) {
-		msg_write("unloading texture: " + filename.str());
+		//msg_write("unloading texture: " + filename.str());
 		glDeleteTextures(1, &texture);
 	}
 }

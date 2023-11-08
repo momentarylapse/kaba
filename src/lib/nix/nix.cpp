@@ -22,9 +22,8 @@
 
 namespace nix{
 
-string version = "0.14.0.0";
+string version = "0.14.0.1";
 // currently, requiring OpenGL 4.5
-
 
 
 void TestGLError(const char *pos) {
@@ -202,7 +201,6 @@ xfer<Context> init(const Array<string>& flags) {
 
 	glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
-
 	if (ctx->verbosity >= 1) {
 		msg_ok();
 		msg_left();
@@ -222,6 +220,28 @@ void flush() {
 	glFlush();
 	glFinish();
 }
+
+
+static Array<unsigned int> time_queries;
+
+void create_query_pool(int size) {
+	time_queries.resize(size);
+	glGenQueries(size, &time_queries[0]);
+}
+
+void query_timestamp(int index) {
+	glQueryCounter(time_queries[index], GL_TIMESTAMP);
+}
+
+
+Array<int64> get_timestamps(int first, int count) {
+	Array<int64> result;
+	result.resize(count);
+	for (int i=0; i<count; i++)
+		glGetQueryObjecti64v(time_queries[first + i], GL_QUERY_RESULT, (GLint64*)&result[i]);
+	return result;
+}
+
 
 
 #define GL_GPU_MEM_INFO_TOTAL_AVAILABLE_MEM_NVX 0x9048

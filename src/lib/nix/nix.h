@@ -80,6 +80,10 @@ xfer<Context> init(const Array<string>& = {});
 void kill(Context *ctx);
 void flush();
 
+void create_query_pool(int size);
+void query_timestamp(int index);
+Array<int64> get_timestamps(int first, int count);
+
 enum class FogMode;
 
 // engine properties

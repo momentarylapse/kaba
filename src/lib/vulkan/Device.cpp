@@ -37,7 +37,7 @@ Device *default_device;
 		return ext;
 	}
 
-	extern Array<const char*> validation_layers;
+	//extern Array<const char*> validation_layers;
 
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
@@ -219,12 +219,12 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.num);
 	create_info.ppEnabledExtensionNames = &extensions[0];
 
-	if (req & Requirements::VALIDATION) {
+	/*if (req & Requirements::VALIDATION) {
 		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.num);
 		create_info.ppEnabledLayerNames = &validation_layers[0];
 	} else {
 		create_info.enabledLayerCount = 0;
-	}
+	}*/
 
 	if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS)
 		throw Exception("failed to create logical device!");
