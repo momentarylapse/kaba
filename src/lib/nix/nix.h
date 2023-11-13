@@ -33,6 +33,7 @@ namespace nix {
 extern string version;
 
 enum class CullMode;
+enum class Orientation;
 enum class AlphaMode;
 enum class Alpha;
 enum class StencilOp;
@@ -89,6 +90,7 @@ enum class FogMode;
 // engine properties
 void _cdecl set_wire(bool enabled);
 void _cdecl set_cull(CullMode mode);
+void _cdecl set_front(Orientation front);
 void _cdecl set_z(bool write, bool test);
 void _cdecl _set_alpha(AlphaMode mode);
 void _cdecl set_alpha(Alpha src, Alpha dst);

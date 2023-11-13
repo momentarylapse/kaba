@@ -120,21 +120,21 @@ namespace vulkan {
 		return r;
 	}
 
-	RenderPass::RenderPass(const Array<Texture*> &images, const string &options) : RenderPass(extract_formats(images), options) {
+	RenderPass::RenderPass(const Array<Texture*> &images, const Array<string> &options) : RenderPass(extract_formats(images), options) {
 	}
 
-	RenderPass::RenderPass(const Array<string> &formats, const string &options) : RenderPass(parse_formats(formats), options) {
+	RenderPass::RenderPass(const Array<string> &formats, const Array<string> &options) : RenderPass(parse_formats(formats), options) {
 	}
 
 // so far, we can only create a "default" render pass with 1 color and 1 depth attachement!
-	RenderPass::RenderPass(const Array<VkFormat> &formats, const string &options) {
+	RenderPass::RenderPass(const Array<VkFormat> &formats, const Array<string> &options) {
 		render_pass = nullptr;
 		auto_subpasses = false;
 		auto_dependencies = false;
 
 		VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
 		VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-		if (options.find("clear") >= 0) {
+		if (sa_contains(options, "clear") or sa_contains(options, "autoclear")) {
 			color_load_op = depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 

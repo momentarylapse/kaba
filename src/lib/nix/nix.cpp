@@ -185,7 +185,8 @@ xfer<Context> init(const Array<string>& flags) {
 	init_shaders(ctx);
 	init_vertex_buffers(ctx);
 
-	set_cull(CullMode::DEFAULT);
+	set_front(Orientation::CW);
+	set_cull(CullMode::BACK);
 	set_wire(false);
 	disable_alpha();
 	set_material(White, 0.5f, 0, color(0.1f, 0.1f, 0.1f, 0.1f));
@@ -300,14 +301,22 @@ void set_wire(bool wire) {
 }
 
 void set_cull(CullMode mode) {
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	if (mode == CullMode::NONE)
+	if (mode == CullMode::NONE) {
 		glDisable(GL_CULL_FACE);
-	if (mode == CullMode::CCW)
+	} else if (mode == CullMode::FRONT) {
+		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
-	if (mode == CullMode::CW)
+	} else if (mode == CullMode::BACK) {
+		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
+	}
+}
+
+void set_front(Orientation front) {
+	if (front == Orientation::CW)
+		glFrontFace(GL_CW);
+	else
+		glFrontFace(GL_CCW);
 }
 
 void set_z(bool write, bool test) {

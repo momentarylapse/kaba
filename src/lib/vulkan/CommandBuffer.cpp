@@ -187,7 +187,7 @@ void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
 	vkCmdBeginRenderPass(buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::clear(const Array<color> &col, float z, bool clear_z) {
+void CommandBuffer::clear(const Array<color> &col, base::optional<float> z) {
 	if (!current_framebuffer)
 		return;
 	Array<VkClearAttachment> clear_attachments;
@@ -199,11 +199,11 @@ void CommandBuffer::clear(const Array<color> &col, float z, bool clear_z) {
 		memcpy((void*)&ca.clearValue.color, &c, sizeof(color));
 		clear_attachments.add(ca);
 	}
-	if (clear_z) {
+	if (z.has_value()) {
 		VkClearAttachment ca = {};
-		ca.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ca.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 		ca.colorAttachment = current_framebuffer->attachments.num - 1;
-		ca.clearValue.depthStencil = {z, 0};
+		ca.clearValue.depthStencil = {*z, 0};
 		clear_attachments.add(ca);
 	}
 	VkClearRect clear_rect = {};

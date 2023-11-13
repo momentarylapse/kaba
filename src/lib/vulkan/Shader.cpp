@@ -45,6 +45,7 @@ static shaderc_compiler_t shaderc = nullptr;
 	Path Shader::directory;
 
 
+	string overwrite_bindings;
 
 
 
@@ -258,6 +259,8 @@ static shaderc_compiler_t shaderc = nullptr;
 				}
 			}
 		}
+		if (overwrite_bindings != "")
+			m.bindings = overwrite_bindings;
 		return m;
 	}
 

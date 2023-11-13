@@ -121,8 +121,10 @@ xfer<DepthBuffer> SwapChain::create_depth_buffer() {
 	return new DepthBuffer(width, height, device->find_depth_format(), false);
 }
 
-xfer<RenderPass> SwapChain::create_render_pass(DepthBuffer *depth_buffer) {
-	return new RenderPass({image_format, depth_buffer->image.format}, "clear,present");
+xfer<RenderPass> SwapChain::create_render_pass(DepthBuffer *depth_buffer, const Array<string> &options) {
+	auto _options = options;
+	_options.add("present");
+	return new RenderPass({image_format, depth_buffer->image.format}, _options);
 }
 
 

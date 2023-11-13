@@ -336,7 +336,7 @@ void set_textures(const Array<Texture*> &textures) {
 	for (int i=0; i<textures.num; i++) {
 		auto t = textures[i];
 		if (!t)
-			return;
+			continue;
 
 		if (t->type == Texture::Type::CUBE)
 			tex_cube_level = i;

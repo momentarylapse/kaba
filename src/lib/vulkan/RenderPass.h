@@ -25,9 +25,9 @@ namespace vulkan{
 	class RenderPass {
 		friend CommandBuffer;
 	public:
-		RenderPass(const Array<Texture*> &images, const string &options);
-		RenderPass(const Array<string> &formats, const string &options);
-		RenderPass(const Array<VkFormat> &formats, const string &options);
+		RenderPass(const Array<Texture*> &images, const Array<string> &options = {});
+		RenderPass(const Array<string> &formats, const Array<string> &options = {});
+		RenderPass(const Array<VkFormat> &formats, const Array<string> &options = {});
 		~RenderPass();
 
 		void create();

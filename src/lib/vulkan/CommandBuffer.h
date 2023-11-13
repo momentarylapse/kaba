@@ -13,6 +13,7 @@
 
 #include <vulkan/vulkan.h>
 #include "../base/base.h"
+#include "../base/optional.h"
 
 class rect;
 class color;
@@ -87,7 +88,7 @@ namespace vulkan{
 		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
 		void next_subpass();
 		void end_render_pass();
-		void clear(const Array<color> &col, float z, bool clear_z);
+		void clear(const Array<color> &col, base::optional<float> z);
 		void draw(VertexBuffer *vb);
 		void draw_instanced(VertexBuffer *vb, int num_instances);
 

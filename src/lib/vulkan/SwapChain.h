@@ -57,7 +57,7 @@ public:
 	Array<VkImageView> create_image_views(Array<VkImage> &images);
 
 	xfer<DepthBuffer> create_depth_buffer();
-	xfer<RenderPass> create_render_pass(DepthBuffer *depth_buffer);
+	xfer<RenderPass> create_render_pass(DepthBuffer *depth_buffer, const Array<string> &options = {});
 	Array<xfer<Texture>> create_textures();
 	Array<xfer<FrameBuffer>> create_frame_buffers(RenderPass *rp, DepthBuffer *db);
 
