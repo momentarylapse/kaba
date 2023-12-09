@@ -177,6 +177,17 @@ public:
 	}
 };
 
+template<class K, class V>
+string str(const base::map<K,V> &a) {
+	string r;
+	for (auto && [k,v]: a) {
+		if (r.num > 0)
+			r += ", ";
+		r += repr(k) + ": " + repr(v);
+	}
+	return "{" + r + "}";
+}
+
 }
 
 #endif
