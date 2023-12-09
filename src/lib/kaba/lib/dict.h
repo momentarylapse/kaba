@@ -32,10 +32,6 @@ namespace kaba {
 			KABA_EXCEPTION_WRAPPER(return (*this)[k]);
 			return T();
 		}
-		string __str() {
-			return str(*(base::map<string,T>*)this);
-			//return var2str(this, TypeAnyDict);
-		}
 	};
 
 
@@ -60,7 +56,7 @@ namespace kaba {
 			class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XDict<T>::assign);
 				func_add_param("other", t);
 			class_add_func("keys", TypeStringList, &dict_get_keys, Flags::PURE);
-			class_add_func(Identifier::Func::STR, TypeString, &XDict<T>::__str);
+			class_add_func(Identifier::Func::STR, TypeString, &XDict<T>::str);
 	}
 
 

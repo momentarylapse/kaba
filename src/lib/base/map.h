@@ -71,9 +71,18 @@ public:
 	}
 	Array<K> keys() const {
 		Array<K> keys;
-		for (int i=0; i<this->num; i++)
-			keys.add(((Entry*)data)[i].key);
+		for (auto && [k,v]: *this)
+			keys.add(k);
 		return keys;
+	}
+	string str() const {
+		string r;
+		for (auto && [k,v]: *this) {
+			if (r.num > 0)
+				r += ", ";
+			r += repr(k) + ": " + repr(v);
+		}
+		return "{" + r + "}";
 	}
 
 	struct ConstIterator {
@@ -176,17 +185,6 @@ public:
 		//return V();
 	}
 };
-
-template<class K, class V>
-string str(const base::map<K,V> &a) {
-	string r;
-	for (auto && [k,v]: a) {
-		if (r.num > 0)
-			r += ", ";
-		r += repr(k) + ": " + repr(v);
-	}
-	return "{" + r + "}";
-}
 
 }
 
