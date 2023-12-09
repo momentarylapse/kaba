@@ -75,6 +75,8 @@ void SIAddPackageKaba(Context *c) {
 	TypeClassRef = add_type_ref(TypeClass);
 	auto TypeClassPList = add_type_list(TypeClassP);
 	auto TypeClassRefList = add_type_list(TypeClassRef);
+	lib_make_list(TypeClassPList);
+	lib_make_list(TypeClassRefList);
 
 	TypeFunction = add_type  ("Function", sizeof(Function));
 	auto TypeFunctionP = add_type_p_raw(TypeFunction);
@@ -89,6 +91,9 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeStatement = add_type  ("Statement", sizeof(Statement));
 	auto TypeStatementRef = add_type_ref(TypeStatement);
 	auto TypeStatementRefList = add_type_list(TypeStatementRef);
+	lib_make_list(TypeFunctionRefList);
+	lib_make_list(TypeSpecialFunctionRefList);
+	lib_make_list(TypeStatementRefList);
 		
 
 	auto TypeModule = add_type  ("Module", sizeof(Module));
@@ -97,6 +102,8 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeModuleSharedList = add_type_list(TypeModuleShared);
 	auto TypeModuleRef = add_type_ref(TypeModule);
 	auto TypeModuleRefList = add_type_list(TypeModuleRef);
+	lib_make_list(TypeModuleSharedList);
+	lib_make_list(TypeModuleRefList);
 
 	auto TypeContext = add_type  ("Context", sizeof(Context));
 	auto TypeContextRef = add_type_ref(TypeContext);
@@ -111,6 +118,9 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeConstant = add_type("Constant", sizeof(Constant));
 	auto TypeConstantRef = add_type_ref(TypeConstant);
 	auto TypeConstantRefList = add_type_list(TypeConstantRef);
+	lib_make_list(TypeClassElementList);
+	lib_make_list(TypeVariableRefList);
+	lib_make_list(TypeConstantRefList);
 	
 	lib_create_pointer_xfer(TypeContextXfer);
 	lib_create_pointer_shared<Module>(TypeModuleShared, TypeModuleXfer);

@@ -9,6 +9,7 @@
 #define SRC_LIB_KABA_LIB_LIST_H_
 
 #include "../../base/base.h"
+#include "../../base/future.h" // xparam
 #include "lib.h"
 #include "operators.h"
 #include "../syntax/Identifier.h"
@@ -20,8 +21,14 @@ extern const Class *TypeDynamicArray;
 extern const Class *TypePath;
 extern const Class *TypeVoid;
 
-void lib_make_list(Class *t, SyntaxTree *ps);
-
+template<class T>
+struct is_shared {
+	static constexpr bool v = false;
+};
+template<class T>
+struct is_shared<shared<T>> {
+	static constexpr bool v = true;
+};
 
 
 template<class T>
@@ -59,11 +66,20 @@ public:
 		r.resize(r.num - ndiff);
 		return r;
 	}
-	bool __contains__(T v) const {
-		for (int i=0; i<this->num; i++)
-			if ((*this)[i] == v)
-				return true;
-		return false;
+	void __add(const typename base::xparam<T>::t v) {
+		this->add(v);
+	}
+	void __insert(const typename base::xparam<T>::t v, int index) {
+		this->insert(v, index);
+	}
+	bool __contains__(const typename base::xparam<T>::t v) const {
+		if constexpr (is_shared<T>::v)
+			return false; // FIXME argh, shared<> == shared<>...
+		else
+			return this->find(v) >= 0;
+	}
+	void assign(const Array<T> &o) {
+		*(Array<T>*)this = o;
 	}
 
 	static T min(const XList<T> &a) {
@@ -180,10 +196,27 @@ public:
 template<class T>
 void lib_create_list(const Class *tt) {
 	auto t = const_cast<Class*>(tt);
+	t->derive_from(TypeDynamicArray, DeriveFlags::SET_SIZE);
+	auto t_element = t->param[0];
 
 	add_class(t);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<T>::__init__);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, &XList<T>::clear);
+		class_add_func("clear", TypeVoid, &XList<T>::clear);
+		class_add_func("add", TypeVoid, &XList<T>::__add);
+			func_add_param("x", t_element);
+		class_add_func("insert", TypeVoid, &XList<T>::__insert);
+			func_add_param("x", t_element);
+			func_add_param("index", TypeInt);
+		class_add_func(Identifier::Func::CONTAINS, TypeBool, &XList<T>::__contains__);
+			func_add_param("x", t_element);
+
+		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XList<T>::assign);
+			func_add_param("other", t);
+		class_add_func("remove", TypeVoid, &XList<T>::erase);
+			func_add_param("index", TypeInt);
+		class_add_func("resize", TypeVoid, &XList<T>::resize);
+			func_add_param("num", TypeInt);
 }
 
 
