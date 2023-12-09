@@ -319,7 +319,7 @@ void SIAddPackageOSPath(Context *c) {
 	add_class(TypePath);
 		class_add_func("all_parents", TypePathList, &Path::all_parents, Flags::PURE);
 
-	lib_make_list(TypePathList);
+	lib_create_list<Path>(TypePathList);
 
 	add_class(TypePathList);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<Path>::__init__);

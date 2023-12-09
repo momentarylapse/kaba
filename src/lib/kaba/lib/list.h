@@ -73,7 +73,7 @@ public:
 		this->insert(v, index);
 	}
 	bool __contains__(const typename base::xparam<T>::t v) const {
-		if constexpr (is_shared<T>::v)
+		if constexpr (is_shared<T>::v or std::is_same_v<T, ClassElement>)
 			return false; // FIXME argh, shared<> == shared<>...
 		else
 			return this->find(v) >= 0;
@@ -218,10 +218,6 @@ void lib_create_list(const Class *tt) {
 		class_add_func("resize", TypeVoid, &XList<T>::resize);
 			func_add_param("num", TypeInt);
 }
-
-
-//using FloatList = XList<float>;
-//using Float64List = XList<double>;
 
 }
 

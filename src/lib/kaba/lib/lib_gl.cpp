@@ -144,8 +144,7 @@ void SIAddPackageGl(Context *c) {
 	auto TypeStencilOp = add_type_enum("StencilOp");
 	auto TypeFogMode = add_type_enum("FogMode");
 	auto TypeCullMode = add_type_enum("CullMode");
-	lib_make_list(TypeTexturePList);
-	lib_make_list(TypeTextureSharedNNList); // can move down, after templating this
+	lib_create_list<nix::Texture*>(TypeTexturePList);
 
 	lib_create_pointer_xfer(TypeTextureXfer);
 	lib_create_pointer_xfer(TypeShaderXfer);
