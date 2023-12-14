@@ -960,6 +960,9 @@
     <ClInclude Include="src\lib\kaba\lib\extern.h">
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\kaba\lib\future.h">
+      <Filter>src\lib\kaba\lib</Filter>
+    </ClInclude>
     <ClInclude Include="src\lib\kaba\lib\lib.h">
       <Filter>src\lib\kaba\lib</Filter>
     </ClInclude>
@@ -1027,6 +1030,9 @@
       <Filter>src\lib\kaba\syntax</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\template\implicit.h">
+      <Filter>src\lib\kaba\template</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\kaba\template\implicit_future.h">
       <Filter>src\lib\kaba\template</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\kaba\template\template.h">
