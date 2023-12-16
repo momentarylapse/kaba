@@ -1,0 +1,12 @@
+class A
+	var p: void&
+
+
+#class B extends A
+class override A
+	var override p: int&
+
+func main()
+	print(sizeof(A) == sizeof(void*))
+	var a: A
+	print(typeof(a.p))
