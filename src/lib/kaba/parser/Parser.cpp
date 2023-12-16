@@ -1594,6 +1594,8 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 		// class override X
 		_class = const_cast<Class*>(parse_type(_namespace));
 		offset0 = _class->size;
+		restore_namespace_mapping.add({_class, _class->name_space});
+		_class->name_space = _namespace;
 	} else {
 		int token_id = Exp.consume_token();
 		// create class
@@ -1701,6 +1703,10 @@ bool Parser::parse_class(Class *_namespace) {
 
 void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 	auto external = context->external.get();
+
+	for (const auto [c,n]: restore_namespace_mapping)
+		if (c == _class)
+			_class->name_space = n;
 
 	// virtual functions?     (derived -> _class->num_virtual)
 //	_class->vtable = cur_virtual_index;
