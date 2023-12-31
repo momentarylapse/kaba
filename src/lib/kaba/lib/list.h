@@ -13,6 +13,8 @@
 #include "lib.h"
 #include "operators.h"
 #include "../syntax/Identifier.h"
+#include "../syntax/Operator.h"
+#include "../syntax/Inline.h"
 
 namespace kaba {
 
@@ -29,6 +31,60 @@ template<class T>
 struct is_shared<shared<T>> {
 	static constexpr bool v = true;
 };
+
+template<class T>
+struct is_pointer {
+	static constexpr bool v = false;
+};
+template<class T>
+struct is_pointer<T*> {
+	static constexpr bool v = true;
+};
+
+typedef Function *FunctionP;
+typedef Class *ClassP;
+
+template<class T>
+string kaba_stringify(const T& t) {
+	if constexpr (std::is_same_v<T, FunctionP>) {
+		if (t)
+			return t->long_name();
+		return "nil";
+	} else if constexpr (std::is_same_v<T, ClassP>) {
+		if (t)
+			return t->long_name();
+		return "nil";
+	} else if constexpr (is_pointer<T>::v)
+		return p2s(t);
+	else if constexpr (is_shared<T>::v)
+		return p2s(t.get());
+	else
+		return ::str(t);
+}
+
+template<class T>
+string kaba_repr(const T& t) {
+	if constexpr (std::is_same_v<T, string> or std::is_same_v<T, Path>)
+		return t.repr();
+	else
+		return kaba_stringify(t);
+	//return ::repr(t);
+}
+
+template<class T>
+string kaba_stringify(const Array<T>& a) {
+	if constexpr (std::is_same_v<T, char>)
+		return *(string*)&a;
+	else {
+		string r;
+		for (int i=0; i<a.num; i++) {
+			if (i > 0)
+				r += ", ";
+			r += kaba_repr(a[i]);
+		}
+		return "[" + r + "]";
+	}
+}
 
 
 template<class T>
@@ -114,7 +170,13 @@ public:
 	}
 
 	string str() const {
-		return ::str(*(Array<T>*)this);
+		return kaba_stringify(*(Array<T>*)this);
+		/*if constexpr (is_pointer<T>::v or is_shared<T>::v)
+			return "[pointers...]";
+		else if constexpr (std::is_same_v<T, char>)
+			return *(string*)this;
+		else
+			return ::str(*(Array<T>*)this);*/
 	}
 
 // component-wise operations:
@@ -217,6 +279,7 @@ void lib_create_list(const Class *tt) {
 			func_add_param("index", TypeInt);
 		class_add_func("resize", TypeVoid, &XList<T>::resize);
 			func_add_param("num", TypeInt);
+		class_add_func(Identifier::Func::STR, TypeString, &XList<T>::str, Flags::PURE);
 }
 
 }
