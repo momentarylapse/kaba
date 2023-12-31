@@ -222,13 +222,6 @@ void SIAddPackageKaba(Context *c) {
 		class_add_element("id", TypeInt, &SpecialFunction::id);
 		class_add_element("min_params", TypeInt, &SpecialFunction::min_params);
 		class_add_element("max_params", TypeInt, &SpecialFunction::max_params);
-		
-	add_class(TypeModuleSharedList);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XSharedArray<Module>::__init__);
-
-	add_class(TypeClassElementList);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<ClassElement>::__init__);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &Array<ClassElement>::clear);
 
 	add_class(TypeContext);
 		class_add_element("packages", TypeModuleRefList, &Context::packages);

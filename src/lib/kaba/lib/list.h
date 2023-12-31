@@ -137,6 +137,12 @@ public:
 	void assign(const Array<T> &o) {
 		*(Array<T>*)this = o;
 	}
+	Array<T> __add__(const Array<T> &o) const {
+		return *(Array<T>*)this + o;
+	}
+	void __adds__(const Array<T> &o) {
+		this->append(o);
+	}
 
 	static T min(const XList<T> &a) {
 		if (a.num == 0)
@@ -270,16 +276,20 @@ void lib_create_list(const Class *tt) {
 		class_add_func("insert", TypeVoid, &XList<T>::__insert);
 			func_add_param("x", t_element);
 			func_add_param("index", TypeInt);
-		class_add_func(Identifier::Func::CONTAINS, TypeBool, &XList<T>::__contains__);
+		/*class_add_func(Identifier::Func::CONTAINS, TypeBool, &XList<T>::__contains__);
 			func_add_param("x", t_element);
-
 		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XList<T>::assign);
-			func_add_param("other", t);
+			func_add_param("other", t);*/
 		class_add_func("remove", TypeVoid, &XList<T>::erase);
 			func_add_param("index", TypeInt);
 		class_add_func("resize", TypeVoid, &XList<T>::resize);
 			func_add_param("num", TypeInt);
 		class_add_func(Identifier::Func::STR, TypeString, &XList<T>::str, Flags::PURE);
+
+		add_operator(OperatorID::ASSIGN, TypeVoid, t, t, InlineID::NONE, &XList<T>::assign);
+		add_operator(OperatorID::IN, TypeBool, t, t_element, InlineID::NONE, &XList<T>::__contains__);
+		add_operator(OperatorID::BIT_OR, t, t, t, InlineID::NONE, &XList<T>::__add__);
+		//add_operator(OperatorID::BIT_OR_ASSIGN, TypeVoid, t, t, InlineID::NONE, &XList<T>::__adds__);
 }
 
 }
