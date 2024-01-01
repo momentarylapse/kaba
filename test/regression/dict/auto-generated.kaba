@@ -5,6 +5,7 @@ func main()
 	print("a" in dict)
 	print("z" in dict)
 	print(dict)
+	print(dict.keys())
 
 	for k=>v in dict
 		print("{{k}} => {{v}}")
