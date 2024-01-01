@@ -11,6 +11,10 @@
 
 namespace kaba {
 
+	int dict_row_size(const Class *t_val) {
+		return mem_align(t_val->size,config.target.pointer_size) + TypeString->size;
+	}
+
 void AutoImplementer::_add_missing_function_headers_for_dict(Class *t) {
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {});
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {});
