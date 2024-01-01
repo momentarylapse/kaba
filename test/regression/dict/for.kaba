@@ -1,0 +1,4 @@
+func main()
+	for k=>v in {"a":13, "b":20}
+		print("{{k}} => {{v}}")
+
