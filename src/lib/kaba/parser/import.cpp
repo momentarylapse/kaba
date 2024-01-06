@@ -194,6 +194,15 @@ void general_import(SyntaxTree *me, SyntaxTree *source) {
 void SyntaxTree::import_data_all(const Class *source, int token_id) {
 	general_import(this, source->owner);
 	namespace_import_contents(this, global_scope, source, token_id);
+
+
+	// hack: package auto import
+	for (auto c: weak(source->constants))
+		if (c->name == "EXPORT_IMPORTS") {
+			for (auto i: weak(source->owner->includes))
+				if (!i->is_system_module())
+					import_data_all(i->base_class(), token_id);
+		}
 }
 
 void SyntaxTree::import_data_selective(const Class *cl, const Function *f, const Variable *v, const Constant *cn, const string &as_name, int token_id) {
