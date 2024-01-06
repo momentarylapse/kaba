@@ -1529,9 +1529,9 @@ void Parser::parse_import() {
 	if (as_name == "")
 		as_name = name.back();
 	if (recursively)
-		tree->import_data_all(source._class);
+		tree->import_data_all(source._class, token);
 	else
-		tree->import_data_selective(source._class, source.func, source.var, source._const, as_name);
+		tree->import_data_selective(source._class, source.func, source.var, source._const, as_name, token);
 }
 
 

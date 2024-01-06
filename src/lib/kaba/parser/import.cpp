@@ -159,32 +159,20 @@ shared<Module> get_import_module(Parser *parser, const string &name, int token_i
 	return false;
 }
 
-void namespace_import_contents(Class *dest, const Class *source) {
-	for (auto *c: weak(source->classes))
-		dest->classes.add(c);
-	for (auto *f: weak(source->functions))
-		dest->functions.add(f);
-	for (auto *v: weak(source->static_variables))
-		dest->static_variables.add(v);
-	for (auto *c: weak(source->constants))
-		dest->constants.add(c);
-}
-
-Class *get_namespace_for_import(SyntaxTree *tree, const string &name) {
-	auto xx = name.explode(".");
-	Class *ns = tree->imported_symbols.get();
-	flags_set(ns->flags, Flags::EXTERN); // "don't delete contents..."
-
-	/*auto get_next = [tree] (Class *ns, const string &name) {
-		for (auto c: weak(ns->classes))
-			if (c->name == name)
-				return const_cast<Class*>(c);
-		return tree->create_new_class(name, Class::Type::REGULAR, 0, 0, nullptr, {}, ns, -1);
+void namespace_import_contents(SyntaxTree *tree, Scope &dest, const Class *source, int token_id) {
+	auto check = [tree, token_id, source] (bool ok, const string &name) {
+		if (!ok)
+			tree->do_error(format("can not import class '%s' since symbol '%s' is already in scope", source->long_name(), name));
 	};
-
-	for (auto &x: xx)
-		ns = get_next(ns, x);*/
-	return ns;
+	for (auto *c: weak(source->classes))
+		check(dest.add_class(c->name, c), c->name);
+	for (auto *f: weak(source->functions))
+		check(dest.add_function(f->name, f), f->name);
+	for (auto *v: weak(source->static_variables))
+		check(dest.add_variable(v->name, v), v->name);
+	for (auto *c: weak(source->constants))
+		if (c->name.head(1) != "-")
+			check(dest.add_const(c->name, c), c->name);
 }
 
 void general_import(SyntaxTree *me, SyntaxTree *source) {
@@ -203,25 +191,30 @@ void general_import(SyntaxTree *me, SyntaxTree *source) {
 	me->includes.add(source->module);
 }
 
-void SyntaxTree::import_data_all(const Class *source) {
+void SyntaxTree::import_data_all(const Class *source, int token_id) {
 	general_import(this, source->owner);
-	namespace_import_contents(imported_symbols.get(), source);
+	namespace_import_contents(this, global_scope, source, token_id);
 }
 
-void SyntaxTree::import_data_selective(const Class *cl, const Function *f, const Variable *v, const Constant *cn, const string &as_name) {
+void SyntaxTree::import_data_selective(const Class *cl, const Function *f, const Variable *v, const Constant *cn, const string &as_name, int token_id) {
 	if (cl) {
 		general_import(this, cl->owner);
-		imported_symbols->classes.add(cl);
+		if (global_scope.add_class(as_name, cl))
+			return;
 	} else if (f) {
 		general_import(this, f->owner());
-		imported_symbols->functions.add(const_cast<Function*>(f));
+		if (global_scope.add_function(as_name, f))
+			return;
 	} else if (v) {
 		//general_import(this, v->);
-		imported_symbols->static_variables.add(const_cast<Variable*>(v));
+		if (global_scope.add_variable(as_name, v))
+			return;
 	} else if (cn) {
 		general_import(this, cn->owner);
-		imported_symbols->constants.add(const_cast<Constant*>(cn));
+		if (global_scope.add_const(as_name, cn))
+			return;
 	}
+	do_error(format("symbol '%s' already in scope", as_name), token_id);
 }
 
 #if 0
