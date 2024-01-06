@@ -1,4 +1,4 @@
-use kaba
+use kaba.*
 
 func test_super_array(p: Module, c: Class)
 	if not c.get_func("__init__", void, [nil])

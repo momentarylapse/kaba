@@ -12,7 +12,7 @@ namespace kaba {
 
 void test_node_recursion(shared<Node> root, const Class *ns, const string &message);
 
-shared<Module> get_import(Parser *parser, const string &name, int token);
+shared<Module> get_import_module(Parser *parser, const string &name, int token);
 
 void add_enum_label(const Class *type, int value, const string &label);
 
@@ -1435,9 +1435,7 @@ void Parser::parse_abstract_complete_command(Block *block) {
 }
 
 void Parser::parse_import() {
-	string command = Exp.cur; // 'use' / 'import'
-	bool indirect = (command == Identifier::IMPORT);
-	Exp.next();
+	Exp.next(); // 'use'
 
 	[[maybe_unused]] bool also_export = false;
 	if (try_consume("@export") or try_consume("out"))
@@ -1447,29 +1445,36 @@ void Parser::parse_import() {
 	string name = Exp.cur;
 	int token = Exp.consume_token();
 
+	bool directly_import_contents = false;
+
 	string as_name;
 	while (!Exp.end_of_line()) {
 		if (try_consume(Identifier::AS)) {
 			expect_no_new_line("name expected after 'as'");
 			as_name = Exp.cur;
+			if (directly_import_contents)
+				do_error_exp("'as' not allowed after 'use module.*'");
 			break;
 		} else {
 			expect_identifier(".", "'.' expected in import name");
 		}
-		name += ".";
 		expect_no_new_line();
-		name += Exp.consume();
+		name += "." + Exp.consume();
+		if (name.tail(2) == ".*") {
+			name = name.sub(0, -2);
+			directly_import_contents = true;
+		}
 	}
 	
 	// "old/style.kaba" -> old.style
-	if (name.match("\"*\""))
-		name = name.sub(1, -1).replace(".kaba", "").replace("/", ".");
+//	if (name.match("\"*\""))
+//		name = name.sub(1, -1).replace(".kaba", "").replace("/", ".");
 		
-	auto import = get_import(this, name, token);
+	auto import = get_import_module(this, name, token);
 
 	if (as_name == "")
 		as_name = name;
-	tree->import_data(import, indirect, as_name);
+	tree->import_data(import, directly_import_contents, as_name);
 }
 
 
@@ -2191,7 +2196,7 @@ void Parser::parse_top_level() {
 	// global definitions (enum, class, variables and functions)
 	while (!Exp.end_of_file()) {
 
-		if ((Exp.cur == Identifier::IMPORT) or (Exp.cur == Identifier::USE)) {
+		if (Exp.cur == Identifier::USE) {
 			parse_import();
 
 		// enum

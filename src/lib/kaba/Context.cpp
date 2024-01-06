@@ -153,7 +153,7 @@ void Context::execute_single_command(const string &cmd) {
 	
 	for (auto p: packages)
 		if (!p->used_by_default)
-			tree->import_data(p, true, str(p->filename));
+			tree->import_data(p, false, str(p->filename));
 
 // analyse syntax
 

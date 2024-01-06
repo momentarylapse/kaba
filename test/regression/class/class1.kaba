@@ -1,4 +1,4 @@
-use os
+use os.*
 
 func main()
 	var f = new BinaryFormatter(fs.open("__test__", "wb"))

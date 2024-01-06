@@ -1,4 +1,4 @@
-use image
+use image.*
 
 func main()
 	var i: Image

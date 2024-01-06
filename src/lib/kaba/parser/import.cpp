@@ -28,7 +28,7 @@ extern Array<shared<Module>> loading_module_stack;
 void SetImmortal(SyntaxTree *ps);
 
 string canonical_import_name(const string &s) {
-	return s.lower().replace(" ", "").replace("_", "");
+	return s.lower().replace(" ", "").replace("_", "").replace("-", "");
 }
 
 string dir_has(const Path &dir, const string &name) {
@@ -58,13 +58,11 @@ Path import_dir_match(const Path &dir0, const string &name) {
 			return filename;
 		}
 
-		// package  zzz/zzz.kaba  or  zzz/__main__.kaba?
+		// package  zzz/zzz.kaba  or  zzz/main.kaba?
 		e = dir_has(filename, canonical_import_name(xx.back()));
 		if (e == "")
 			return Path::EMPTY;
 		filename |= e;
-		if (os::fs::exists(filename | "__main__.kaba"))
-			return filename | "__main__.kaba";
 		if (os::fs::exists(filename | (xx.back() + ".kaba")))
 			return filename | (xx.back() + ".kaba");
 		if (os::fs::exists(filename | "main.kaba"))
@@ -111,7 +109,7 @@ Path find_import(Module *s, const string &_name) {
 	return Path::EMPTY;
 }
 
-shared<Module> get_import(Parser *parser, const string &name, int token_id) {
+shared<Module> get_import_module(Parser *parser, const string &name, int token_id) {
 
 	// internal packages?
 	for (auto p: parser->context->packages)
@@ -189,8 +187,7 @@ Class *get_namespace_for_import(SyntaxTree *tree, const string &name) {
 }
 
 // import data from an included module file
-//   indirect: "import" => true, "use" => false
-void SyntaxTree::import_data(shared<Module> source, bool indirect, const string &as_name) {
+void SyntaxTree::import_data(shared<Module> source, bool directly_import_contents, const string &as_name) {
 	for (auto i: weak(includes))
 		if (i == source)
 			return;
@@ -208,12 +205,12 @@ void SyntaxTree::import_data(shared<Module> source, bool indirect, const string 
 	/*if (FlagCompileOS) {
 		import_deep(this, ps);
 	} else {*/
-	if (indirect) {
-		// "import"
+	if (!directly_import_contents) {
+		// "use module"
 		auto ns = get_namespace_for_import(this, as_name);
 		namespace_import_contents(ns, ps->base_class);
 	} else {
-		// "use"
+		// "use module.*"
 		namespace_import_contents(imported_symbols.get(), ps->base_class);
 		if (source->is_system_module())
 			if (!_class_contains(imported_symbols.get(), ps->base_class->name)) {
@@ -225,7 +222,7 @@ void SyntaxTree::import_data(shared<Module> source, bool indirect, const string 
 			if (c->name == "EXPORT_IMPORTS") {
 				for (auto i: weak(ps->includes))
 					if (!i->is_system_module())
-						import_data(i, indirect, "");
+						import_data(i, directly_import_contents, "");
 			}
 	}
 	includes.add(source);
