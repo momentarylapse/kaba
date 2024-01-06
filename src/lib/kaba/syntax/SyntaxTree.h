@@ -44,7 +44,8 @@ public:
 	~SyntaxTree();
 
 	void default_import();
-	void import_data(shared<Module> s, bool directly_import_contents, const string &as_name);
+	void import_data_all(const Class *source);
+	void import_data_selective(const Class *cl, const Function *f, const Variable *v, const Constant *cn, const string &as_name);
 
 	void do_error(const string &msg, int override_token_id = -1);
 	

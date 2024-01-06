@@ -61,7 +61,7 @@ SyntaxTree::SyntaxTree(Module *_module) {
 void SyntaxTree::default_import() {
 	for (auto p: module->context->packages)
 		if (p->used_by_default)
-			import_data(p, true, "");
+			import_data_all(p->base_class());
 }
 
 void SyntaxTree::digest() {

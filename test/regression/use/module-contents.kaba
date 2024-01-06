@@ -1,0 +1,7 @@
+use source.*
+use os.fs.*
+
+func main()
+	f()
+	print(i)
+	let l = search(".", "f", "*")

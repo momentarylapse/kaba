@@ -1,5 +1,0 @@
-use include_source.*
-
-func main()
-	f()
-	print(i)

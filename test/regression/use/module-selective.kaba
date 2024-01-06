@@ -1,0 +1,11 @@
+use source.f
+use source.i
+use os.Path
+use os.fs.search
+
+func main()
+	f()
+	print(i)
+	var p: Path
+	let l = search(".", "*", "f")
+

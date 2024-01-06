@@ -1,0 +1,8 @@
+use source
+use os
+
+func main()
+	source.f()
+	print(source.i)
+	var p: os.Path
+	let l = os.fs.search(".", "*", "f")
