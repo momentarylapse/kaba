@@ -222,6 +222,7 @@ set(SOURCE
 	src/lib/vulkan/VertexBuffer.cpp
 	src/lib/vulkan/vulkan.cpp
 	src/main.cpp
+		src/lib/kaba/parser/import.h
 )
 
 add_executable(kaba ${SOURCE})
