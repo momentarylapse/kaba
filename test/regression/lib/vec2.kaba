@@ -1,0 +1,15 @@
+func main()
+	var v = vec2(1,2)
+	v *= 2
+	print(v)
+	v /= 2
+	print(v)
+
+	print(v + [2,3])
+	print(v - [2,3])
+	print(v * 10)
+	print(v / 2)
+
+	v += [4,5]
+	print(v)
+
