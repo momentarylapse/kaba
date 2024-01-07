@@ -175,24 +175,37 @@ ImportSource resolve_import_sub(ImportSource source, const string &name) {
 				return r;
 			}
 	}
-	return source;
+	return {};
 }
 
 ImportSource resolve_import_source(Parser *parser, const Array<string> &name, int token) {
 	ImportSource source;
 
-	for (int i=0; i<name.num; i++) {
-		if (source.module) {
-			if (source._class)
-				source = resolve_import_sub(source, name[i]);
-
-		} else if (auto m = get_import_module(parser, implode(name.sub_ref(0, i+1), "."), token)) {
+	// find (longest possible) module path
+	int i_module = -1;
+	for (int i=name.num-1; i>=0; i--) {
+		if (auto m = get_import_module(parser, implode(name.sub_ref(0, i+1), "."), token)) {
 			source.module = m;
 			source._class = m->base_class();
+			i_module = i;
+			break;
 		}
 	}
 	if (!source.module)
 		parser->do_error(format("can not find import '%s'", implode(name, ".")), token);
+
+	for (int i=i_module+1; i<name.num; i++) {
+		if (source._class) {
+			source = resolve_import_sub(source, name[i]);
+			if (!source.module)
+				parser->do_error(format("can not use '%s' from module '%s'",
+						implode(name.sub_ref(i_module, i), "."),
+						implode(name.sub_ref(0, i_module), ".")), token);
+		} else {
+			parser->do_error(format("can not use '%s' from non-class '%s'", name[i],
+					implode(name.sub_ref(0, i), ".")), token);
+		}
+	}
 	return source;
 }
 
