@@ -1,0 +1,6 @@
+use sourceforward.*
+
+func main()
+	f()
+	print(i)
+
