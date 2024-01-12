@@ -290,14 +290,20 @@ void Compiler::align_opcode() {
 	module->opcode_size = ocs_new;
 }
 
-static int OCORA;
-void Compiler::CompileOsEntryPoint() {
-	tree->do_error("FIXME: compile os... main()");
-	/*if (!module->base_class()->get_func("main", TypeVoid, {}))
-		if (!tree->imported_symbols->get_func("main", TypeVoid, {}))
-			module->do_error("os entry point: no 'void main()' found");*/
+Function *get_entry_point(SyntaxTree *tree) {
+	if (auto f = tree->base_class->get_func("main", TypeVoid, {}))
+		return f;
+	auto rmain = tree->global_scope.find("main", -1);
+	if (rmain.num > 0)
+		if (rmain[0]->kind == NodeKind::FUNCTION)
+			return rmain[0]->as_func();
+	tree->do_error("no entry point 'func main()' found");
+	return nullptr;
+}
 
-	// call
+static int OCORA;
+void Compiler::compile_os_entry_point() {
+	// call main()  (linked later)
 	Asm::add_instruction(module->opcode, module->opcode_size, Asm::InstID::CALL, Asm::param_imm(0, 4));
 	TaskReturnOffset = module->opcode_size;
 	OCORA = Asm::OCParam;
@@ -413,13 +419,8 @@ void Compiler::map_address_constants_to_opcode() {
 	align_opcode();
 }
 
-void Compiler::LinkOsEntryPoint() {
-	auto *f = module->base_class()->get_func("main", TypeVoid, {});
-	tree->do_error("FIXME: compile os... main()");
-	/*if (!f)
-		f = tree->imported_symbols->get_func("main", TypeVoid, {});*/
-	if (!f)
-		module->do_error_internal("os entry point missing...");
+void Compiler::link_os_entry_point() {
+	auto f = get_entry_point(tree);
 
 	int64 lll = f->address - tree->asm_meta_info->code_origin - TaskReturnOffset;
 	//printf("insert   %d  an %d\n", lll, OCORA);
@@ -681,7 +682,7 @@ void Compiler::_compile() {
 // compiling an operating system?
 //   -> create an entry point for execution... so we can just call Opcode like a function
 	if (config.add_entry_point)
-		CompileOsEntryPoint();
+		compile_os_entry_point();
 
 	if (config.fully_linear_output)
 		map_constants_to_opcode();
@@ -708,7 +709,8 @@ void Compiler::_compile() {
 	link_virtual_functions_into_vtable(tree->base_class);
 	link_virtual_functions_into_vtable(tree->implicit_symbols.get());
 	if (config.fully_linear_output) {
-		tree->do_error("FIXME: compile os... vtable in imported?");
+		//tree->do_error("FIXME: compile os... vtable in imported?");
+		msg_write("   WARNING: compile os... vtable in imported?");
 		//link_virtual_functions_into_vtable(tree->imported_symbols.get());
 	}
 
@@ -717,7 +719,7 @@ void Compiler::_compile() {
 
 
 	if (config.add_entry_point)
-		LinkOsEntryPoint();
+		link_os_entry_point();
 
 
 	// initialize global objects
