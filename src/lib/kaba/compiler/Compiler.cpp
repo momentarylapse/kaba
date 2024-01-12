@@ -207,7 +207,7 @@ void* get_nice_memory(int64 size, bool executable, Module *module) {
 
 void Compiler::allocate_opcode() {
 	int max_opcode = MAX_OPCODE;
-	if (config.compile_os)
+	if (config.fully_linear_output)
 		max_opcode *= 10;
 
 	module->opcode = (char*)get_nice_memory(max_opcode, true, module);
@@ -334,7 +334,7 @@ void _map_constants_to_memory(char *mem, int &offset, char *address, const Class
 
 	// also allow named constants... might be imported by other modules!
 	for (Constant *c: weak(ns->constants))
-		if (c->used or ((c->name[0] != '-') and !config.compile_os)) {
+		if (c->used or ((c->name[0] != '-') and !config.fully_linear_output)) {
 			c->address_runtime = (void*)(address + offset);//ns->owner->asm_meta_info->code_origin + offset);
 			c->address_compiler = &mem[offset];
 			c->map_into(&mem[offset], (char*)c->address_runtime);
@@ -660,7 +660,7 @@ void Compiler::compile(Module *m) {
 void Compiler::_compile() {
 	Asm::CurrentMetaInfo = tree->asm_meta_info.get();
 
-	if (config.compile_os)
+	if (config.fully_linear_output)
 		import_includes(module);
 
 	parse_magic_linker_string(tree);
@@ -671,7 +671,7 @@ void Compiler::_compile() {
 	map_global_variables_to_memory();
 
 	// useful because some constants might have ended up outside of RIP-relative addressing!
-	if (!config.compile_os)
+	if (!config.fully_linear_output)
 		map_constants_to_memory(module->memory, module->memory_size, module->memory);
 
 	allocate_opcode();
@@ -683,7 +683,7 @@ void Compiler::_compile() {
 	if (config.add_entry_point)
 		CompileOsEntryPoint();
 
-	if (config.compile_os)
+	if (config.fully_linear_output)
 		map_constants_to_opcode();
 
 
@@ -693,7 +693,7 @@ void Compiler::_compile() {
 
 	tree->pre_processor_addresses();
 
-	if (config.compile_os)
+	if (config.fully_linear_output)
 		map_address_constants_to_opcode();
 
 	if (config.verbose)
@@ -707,7 +707,7 @@ void Compiler::_compile() {
 	link_functions();
 	link_virtual_functions_into_vtable(tree->base_class);
 	link_virtual_functions_into_vtable(tree->implicit_symbols.get());
-	if (config.compile_os) {
+	if (config.fully_linear_output) {
 		tree->do_error("FIXME: compile os... vtable in imported?");
 		//link_virtual_functions_into_vtable(tree->imported_symbols.get());
 	}
@@ -721,7 +721,7 @@ void Compiler::_compile() {
 
 
 	// initialize global objects
-	if (!config.compile_os)
+	if (!config.fully_linear_output)
 		init_all_global_objects(tree, tree->base_class);
 
 	//_expand(Opcode,OpcodeSize);

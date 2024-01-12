@@ -45,7 +45,6 @@ public:
 	string debug_func_filter = "*";
 	string debug_stage_filter = "*";
 	bool flag_show_consts = false;
-	bool flag_compile_os = false;
 	string output_format = "raw";
 	bool flag_interpret = false;
 	bool flag_clean_up = false;
@@ -74,10 +73,7 @@ public:
 				throw Exception("unknown architecture");
 			}
 		});
-		p.option("--os", "when compiling an operating system", [this] {
-			flag_compile_os = true;
-		});
-		p.option("--no-std-lib", "(os)", [this] {
+		p.option("--no-std-lib", "(for --output)", [this] {
 			flag_allow_std_lib = false;
 		});
 		p.option("--remove-unused", "code size optimization", [] {
@@ -250,11 +246,11 @@ public:
 		kaba::config.verbose = flag_verbose;
 		kaba::config.verbose_func_filter = debug_func_filter;
 		kaba::config.verbose_stage_filter = debug_stage_filter;
-		kaba::config.compile_os = flag_compile_os;
+		kaba::config.fully_linear_output = !out_file.is_empty();
 		kaba::config.target.interpreted = flag_interpret;
 	}
 
-	Path try_get_installed_app_file(const Path &filename) {
+	static Path try_get_installed_app_file(const Path &filename) {
 		for (auto &dir: Array<Path>({directory, directory_static})) {
 			Path dd = dir | "apps" | filename.str() | (filename.str() + ".kaba");
 			if (filename.str().find("/") >= 0)
@@ -266,7 +262,7 @@ public:
 		return filename;
 	}
 
-	void show_constants(shared<kaba::Module> s) {
+	static void show_constants(shared<kaba::Module> s) {
 		msg_write("---- constants ----");
 		for (auto *c: weak(s->tree->base_class->constants))
 			msg_write(format("%12s %-20s %s", c->type->name, c->str(), c->value.hex()));
@@ -315,17 +311,17 @@ public:
 	}
 #pragma GCC pop_options
 
-	void output_to_file_raw(shared<kaba::Module> s, const Path &out_file) {
-		auto f = os::fs::open(out_file, "wb");
+	static void output_to_file_raw(shared<kaba::Module> s, const Path &_out_file) {
+		auto f = os::fs::open(_out_file, "wb");
 		f->write(s->opcode, s->opcode_size);
 		delete f;
 	}
 
-	void disassemble_file(const Path &filename) {
+	void disassemble_file(const Path &filename) const {
 		bytes s = os::fs::read_binary(filename);
 		kaba::init(abi, flag_allow_std_lib);
 		int data_size = 0;
-		if (flag_compile_os) {
+		if (kaba::config.target.is_x86()) {
 			for (int i=0; i<s.num-1; i++)
 				if (s[i] == 0x55 and s[i+1] == 0x89) {
 					data_size = i;
