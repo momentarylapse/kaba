@@ -21,12 +21,11 @@ namespace kaba {
 void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
 	auto f = new BinaryFormatter(os::fs::open(symbols_out_file, "wb"));
 	for (auto *fn: s->tree->functions) {
-		msg_write(kaba::function_link_name(fn));
 		f->write_str(kaba::function_link_name(fn));
 		f->write_int(fn->address);
 	}
 	for (auto *v: weak(s->tree->base_class->static_variables)) {
-		f->write_str(kaba::decode_symbol_name(v->name));
+		f->write_str(kaba::decode_symbol_name(v->name)); // FIXME can not produce internal /os.whatever
 		f->write_int((int_p)v->memory);
 	}
 	f->write_str("#");
