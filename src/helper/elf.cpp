@@ -10,7 +10,7 @@
 #include "../lib/os/formatter.h"
 
 void output_to_file_elf(shared<kaba::Module> s, const Path &out_file) {
-	auto f = new BinaryFormatter(os::fs::open(out_file, "wb"));
+	auto f = os::fs::open(out_file, "wb");
 
 	bool is64bit = (kaba::config.target.pointer_size == 8);
 

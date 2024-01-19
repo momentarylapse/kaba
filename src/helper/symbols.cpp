@@ -19,7 +19,7 @@ namespace kaba {
 
 
 void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
-	auto f = new BinaryFormatter(os::fs::open(symbols_out_file, "wb"));
+	auto f = os::fs::open(symbols_out_file, "wb");
 	for (auto *fn: s->tree->functions) {
 		f->write_str(kaba::function_link_name(fn));
 		f->write_int(fn->address);
@@ -33,8 +33,8 @@ void export_symbols(shared<kaba::Module> s, const Path &symbols_out_file) {
 }
 
 void import_symbols(const Path &symbols_in_file) {
-	auto f = new BinaryFormatter(os::fs::open(symbols_in_file, "rb"));
-	while (!f->stream->is_end()) {
+	auto f = os::fs::open(symbols_in_file, "rb");
+	while (!f->is_end()) {
 		string name = f->read_str();
 		if (name == "#")
 			break;

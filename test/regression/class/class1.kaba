@@ -1,6 +1,6 @@
 use os.*
 
 func main()
-	var f = new BinaryFormatter(fs.open("__test__", "wb"))
+	var f = fs.open("__test__", "wb")
+	#var f: shared![FileStream] = fs.open("__test__", "wb")
 	f << 1
-	#del f

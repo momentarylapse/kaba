@@ -333,11 +333,11 @@ static shaderc_compiler_t shaderc = nullptr;
 
 		Shader *s = new Shader();
 
-		auto f = BinaryFormatter(os::fs::open(filename.with(".compiled"), "rb"));
+		auto f = ownify(os::fs::open(filename.with(".compiled"), "rb"));
 		try {
 			while(true) {
-				string tag = f.read_str();
-				string value = f.read_str();
+				string tag = f->read_str();
+				string value = f->read_str();
 				//std::cout << tag << "\n";
 				if (tag == "Topology") {
 				} else if (tag == "Bindings") {

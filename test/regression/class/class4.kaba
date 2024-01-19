@@ -1,11 +1,14 @@
 use os.*
 
-class F extends BinaryFormatter
+class F #extends BinaryFormatter
 	func f()
 		print("hallo")
 
 func main()
-	var a = new F(fs.open("__test__", "wb"))
+	#var a = new F(fs.open("__test__", "wb"))
+	var a = fs.open("__test__", "wb")
 	a << 2
-	a.f()
+	
+	var b: F
+	b.f()
 	#del a
