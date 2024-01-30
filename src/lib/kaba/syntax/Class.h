@@ -58,7 +58,7 @@ public:
 		POINTER_SHARED_NOT_NULL,
 		POINTER_OWNED,
 		POINTER_OWNED_NOT_NULL,
-		POINTER_XFER,
+		POINTER_XFER_NOT_NULL,
 		POINTER_ALIAS,
 		REFERENCE,
 		ENUM,
@@ -94,7 +94,7 @@ public:
 	bool is_pointer_shared_not_null() const;
 	bool is_pointer_owned() const;
 	bool is_pointer_owned_not_null() const;
-	bool is_pointer_xfer() const;
+	bool is_pointer_xfer_not_null() const;
 	bool is_pointer_alias() const;
 	bool is_reference() const;
 	bool is_enum() const;

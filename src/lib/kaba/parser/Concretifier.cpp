@@ -1400,7 +1400,7 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 }
 
 const Class *type_ownify_xfer(SyntaxTree *tree, const Class *t) {
-	if (t->is_pointer_xfer())
+	if (t->is_pointer_xfer_not_null())
 		return tree->request_implicit_class_owned_not_null(t->param[0], -1);
 	if (t->is_list())
 		return tree->request_implicit_class_list(type_ownify_xfer(tree, t->param[0]), -1);
@@ -1414,7 +1414,7 @@ bool is_non_owning_pointer(const Class *t) {
 shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, const Class *ns) {
 	for (int i=0; i<node->params.num; i++) {
 		node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
-		if (node->params[i]->type->is_pointer_xfer())
+		if (node->params[i]->type->is_pointer_xfer_not_null())
 			do_error("xfer[..] values must not be discarded", node->params[i]);
 	}
 	//concretify_all_params(node, node->as_block(), ns, this);
@@ -1451,7 +1451,7 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 			do_error("variable declaration requires a type", node->params[0]);
 		if (type->is_some_pointer_not_null() and node->params.num < 3)
 			do_error("variables of reference type must be initialized", node->params[0]);
-		if (type->is_pointer_xfer())
+		if (type->is_pointer_xfer_not_null())
 			do_error("no variables of type xfer[..] allowed", node->params[0]);
 	} else {
 		//assert(node->params[2]);
@@ -1482,7 +1482,7 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 	if (node->params.num == 3) {
 		auto rhs = concretify_node(node->params[2]->params[1], block, ns);
 		node->params[2]->params[1] = rhs;
-		//if (type->is_some_pointer_not_null() and !rhs->type->is_pointer_xfer()) {
+		//if (type->is_some_pointer_not_null() and !rhs->type->is_pointer_xfer_not_null()) {
 		if (is_non_owning_pointer(type)) {
 			if (rhs->type != vars[0]->type)
 				if (rhs->type != TypeNone)

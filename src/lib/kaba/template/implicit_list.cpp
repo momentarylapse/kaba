@@ -31,7 +31,7 @@ void AutoImplementer::_add_missing_function_headers_for_list(Class *t) {
 		add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer_list, {}, {});
 		//add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
 		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
-	} else if (t->param[0]->is_pointer_xfer()) {
+	} else if (t->param[0]->is_pointer_xfer_not_null()) {
 	//	add_func_header(t, "add", TypeVoid, {t->param[0]}, {"x"});
 		add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t}, {"other"});
 	} else if (t->param[0]->is_reference()) {

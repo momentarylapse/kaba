@@ -76,7 +76,8 @@ void AutoImplementer::db_add_print_label_node(shared<Block> block, const string 
 }
 
 shared<Node> AutoImplementer::add_assign(Function *f, const string &ctx, shared<Node> a, shared<Node> b) {
-	if ((a->type->is_reference() and b->type->is_reference()) or (a->type->is_pointer_xfer() and b->type->is_pointer_xfer()))
+	if ((a->type->is_reference() and b->type->is_reference())
+				or (a->type->is_pointer_xfer_not_null() and b->type->is_pointer_xfer_not_null()))
 		return add_node_operator_by_inline(InlineID::POINTER_ASSIGN, a, b);
 	if (auto n_assign = parser->con.link_operator_id(OperatorID::ASSIGN, a, b))
 		return n_assign;
@@ -85,7 +86,9 @@ shared<Node> AutoImplementer::add_assign(Function *f, const string &ctx, shared<
 }
 
 shared<Node> AutoImplementer::add_assign(Function *f, const string &ctx, const string &msg, shared<Node> a, shared<Node> b) {
-	if ((a->type->is_reference() and b->type->is_reference()) or (a->type->is_pointer_xfer() and b->type->is_pointer_xfer()) or (a->type->is_pointer_alias() and b->type->is_pointer_alias()))
+	if ((a->type->is_reference() and b->type->is_reference())
+				or (a->type->is_pointer_xfer_not_null() and b->type->is_pointer_xfer_not_null())
+				or (a->type->is_pointer_alias() and b->type->is_pointer_alias()))
 		return add_node_operator_by_inline(InlineID::POINTER_ASSIGN, a, b);
 	if (auto n_assign = parser->con.link_operator_id(OperatorID::ASSIGN, a, b))
 		return n_assign;
@@ -279,7 +282,7 @@ void AutoImplementerInternal::add_missing_function_headers_for_class(Class *t) {
 		_add_missing_function_headers_for_shared(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_add_missing_function_headers_for_owned(t);
-	} else if (t->is_pointer_xfer()) {
+	} else if (t->is_pointer_xfer_not_null()) {
 		_add_missing_function_headers_for_xfer(t);
 	} else if (t->is_pointer_alias()) {
 		_add_missing_function_headers_for_alias(t);
@@ -326,7 +329,7 @@ void AutoImplementerInternal::implement_functions(const Class *t) {
 		_implement_functions_for_shared(t);
 	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		_implement_functions_for_owned(t);
-	} else if (t->is_pointer_xfer()) {
+	} else if (t->is_pointer_xfer_not_null()) {
 		_implement_functions_for_xfer(t);
 	} else if (t->is_pointer_alias()) {
 		_implement_functions_for_alias(t);
@@ -374,7 +377,7 @@ void AutoImplementerInternal::complete_type(Class *t, int array_size, int token_
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_reference()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_xfer()) {
+	} else if (t->is_pointer_xfer_not_null()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	} else if (t->is_pointer_alias()) {
 		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);

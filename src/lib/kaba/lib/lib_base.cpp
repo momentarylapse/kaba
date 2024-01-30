@@ -368,7 +368,7 @@ void SIAddPackageBase(Context *c) {
 //		return create_auto_class(format("%s[%s]", Identifier::RAW_POINTER, params[0]->name), Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, params, token_id);
 	});
 	TypeXferT = add_class_template("xfer", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
-		return create_auto_class(tree, format("%s[%s]", Identifier::XFER, params[0]->name), Class::Type::POINTER_XFER, config.target.pointer_size, 0, nullptr, params, token_id);
+		return create_auto_class(tree, format("%s[%s]", Identifier::XFER, params[0]->name), Class::Type::POINTER_XFER_NOT_NULL, config.target.pointer_size, 0, nullptr, params, token_id);
 	});
 	TypeSharedT = add_class_template("shared", {"T"}, [create_auto_class] (SyntaxTree *tree, const Array<const Class*>& params, int token_id) {
 		return create_auto_class(tree, format("%s[%s]", Identifier::SHARED, params[0]->name), Class::Type::POINTER_SHARED, config.target.pointer_size, 0, nullptr, params, token_id);
