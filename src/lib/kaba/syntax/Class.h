@@ -62,6 +62,7 @@ public:
 		POINTER_ALIAS,
 		REFERENCE,
 		ENUM,
+		NAMESPACE,
 		FUNCTION,
 		DICT,
 		PRODUCT, // (a,b) in (A x B)
@@ -98,6 +99,7 @@ public:
 	bool is_pointer_alias() const;
 	bool is_reference() const;
 	bool is_enum() const;
+	bool is_namespace() const;
 	bool is_interface() const;
 	bool is_product() const;
 	bool is_optional() const;

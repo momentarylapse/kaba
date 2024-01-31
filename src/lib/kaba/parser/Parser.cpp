@@ -1584,6 +1584,8 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 Class::Type parse_class_type(const string& e) {
 	if (e == Identifier::INTERFACE)
 		return Class::Type::INTERFACE;
+	if (e == Identifier::NAMESPACE)
+		return Class::Type::NAMESPACE;
 	if (e == Identifier::STRUCT)
 		return Class::Type::STRUCT;
 	return Class::Type::REGULAR;
@@ -1668,7 +1670,7 @@ bool Parser::parse_class(Class *_namespace) {
 
 		if (Exp.cur == Identifier::ENUM) {
 			parse_enum(_class);
-		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
+		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE) or (Exp.cur == Identifier::NAMESPACE)) {
 			int cur_token = Exp.cur_token();
 			if (!parse_class(_class)) {
 				sub_class_token_ids.add(cur_token);
@@ -1678,6 +1680,8 @@ bool Parser::parse_class(Class *_namespace) {
 			auto flags = Flags::CONST;
 			if (_class->is_interface())
 				flags_set(flags, Flags::VIRTUAL);
+			if (_class->is_namespace())
+				flags_set(flags, Flags::STATIC);
 			auto f = parse_function_header(TypeVoid, _class, flags);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
@@ -1846,6 +1850,8 @@ void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int
 
 	int token0 = Exp.cur_token();
 	Flags flags = parse_flags(flags0);
+	if (ns->is_namespace())
+		flags_set(flags, Flags::STATIC);
 
 	auto names = parse_comma_sep_list(this);
 	const Class *type = nullptr;
@@ -2108,7 +2114,7 @@ void Parser::parse_abstract_function_body(Function *f) {
 void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 	while (!Exp.end_of_file()) {
 		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
-			if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
+			if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE) or (Exp.cur == Identifier::NAMESPACE)) {
 				Exp.next();
 				if (Exp.cur == Identifier::OVERRIDE)
 					continue;
@@ -2205,7 +2211,7 @@ void Parser::parse_top_level() {
 			parse_enum(tree->base_class);
 
 		// class
-		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE)) {
+		} else if ((Exp.cur == Identifier::CLASS) or (Exp.cur == Identifier::STRUCT) or (Exp.cur == Identifier::INTERFACE) or (Exp.cur == Identifier::NAMESPACE)) {
 			parse_class(tree->base_class);
 
 		// func

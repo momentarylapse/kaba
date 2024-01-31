@@ -95,9 +95,9 @@ SyntaxTree::SyntaxTree(Module *_module) {
 	module = _module;
 	asm_meta_info = new Asm::MetaInfo(config.target.pointer_size);
 
-	base_class = new Class(Class::Type::REGULAR, "-base-", 0, this);
+	base_class = new Class(Class::Type::NAMESPACE, "-base-", 0, this);
 	_base_class = base_class;
-	implicit_symbols = new Class(Class::Type::REGULAR, "-implicit-", 0, this);
+	implicit_symbols = new Class(Class::Type::NAMESPACE, "-implicit-", 0, this);
 	root_of_all_evil = new Function("-root-", TypeVoid, base_class, Flags::STATIC);
 }
 

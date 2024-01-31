@@ -185,6 +185,10 @@ bool Class::is_enum() const {
 	return type == Type::ENUM;
 }
 
+bool Class::is_namespace() const {
+	return type == Type::NAMESPACE;
+}
+
 bool Class::is_interface() const {
 	return type == Type::INTERFACE;
 }

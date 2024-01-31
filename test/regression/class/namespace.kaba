@@ -1,0 +1,10 @@
+namespace A
+
+	var x: int
+
+	func f()
+		print("hi")
+
+func main()
+	A.x = 13
+	A.f()
