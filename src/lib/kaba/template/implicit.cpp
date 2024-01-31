@@ -10,7 +10,7 @@
 namespace kaba {
 
 
-const int FULL_CONSTRUCTOR_MAX_PARAMS = 4;
+const int FULL_CONSTRUCTOR_MAX_PARAMS = 8;
 
 
 AutoImplementer::AutoImplementer(Parser *p, SyntaxTree *t) {
