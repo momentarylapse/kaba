@@ -161,7 +161,7 @@ void AutoImplementer::implement_list_resize(Function *f, const Class *t) {
 
 	{
 		// num_old = self.num
-		f->block->add(add_node_operator_by_inline(InlineID::INT_ASSIGN, num_old, self_num));
+		f->block->add(add_node_operator_by_inline(InlineID::INT32_ASSIGN, num_old, self_num));
 	}
 
 // delete...
@@ -260,7 +260,7 @@ void AutoImplementer::implement_list_add(Function *f, const Class *t) {
 
 	{
 		// resize(self.num + 1)
-		auto cmd_add = add_node_operator_by_inline(InlineID::INT_ADD, sa_num(self), const_int(1));
+		auto cmd_add = add_node_operator_by_inline(InlineID::INT32_ADD, sa_num(self), const_int(1));
 		auto cmd_resize = add_node_member_call(t->get_member_func("resize", TypeVoid, {TypeInt}), self);
 		cmd_resize->set_param(1, cmd_add);
 		b->add(cmd_resize);
@@ -268,7 +268,7 @@ void AutoImplementer::implement_list_add(Function *f, const Class *t) {
 
 	{
 		// el := self.data[self.num - 1]
-		auto cmd_sub = add_node_operator_by_inline(InlineID::INT_SUBTRACT, sa_num(self), const_int(1));
+		auto cmd_sub = add_node_operator_by_inline(InlineID::INT32_SUBTRACT, sa_num(self), const_int(1));
 		auto cmd_el = add_node_dyn_array(self, cmd_sub);
 
 		b->add(add_assign(f, "", format("no operator %s = %s for elements found", te->long_name(), te->long_name()), cmd_el, item));
@@ -285,7 +285,7 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 	{
 		// if self.num != other.num
 		//     return false
-		auto n_eq = add_node_operator_by_inline(InlineID::INT_NOT_EQUAL,  sa_num(self), sa_num(other));
+		auto n_eq = add_node_operator_by_inline(InlineID::INT32_NOT_EQUAL,  sa_num(self), sa_num(other));
 		f->block->add(node_if(n_eq, node_return(node_false())));
 	}
 

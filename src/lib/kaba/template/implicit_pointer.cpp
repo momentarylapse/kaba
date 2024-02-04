@@ -132,7 +132,7 @@ void AutoImplementer::implement_shared_assign(Function *f, const Class *t) {
 		if (e.name == Identifier::SHARED_COUNT and e.type == TypeInt) {
 			// count ++
 			auto count = SHARED_P(self)->deref()->shift(e.offset, e.type);
-			auto inc = add_node_operator_by_inline(InlineID::INT_INCREASE, count, nullptr);
+			auto inc = add_node_operator_by_inline(InlineID::INT32_INCREASE, count, nullptr);
 			b->add(inc);
 			found = true;
 		}
@@ -169,14 +169,14 @@ void AutoImplementer::implement_shared_clear(Function *f, const Class *t) {
 		do_error_implicit(f, format("class '%s' is not a shared class (declare with '%s class' or add an element 'int %s')", tt->long_name(), Identifier::SHARED, Identifier::SHARED_COUNT));
 
 	// count --
-	auto dec = add_node_operator_by_inline(InlineID::INT_DECREASE, count, nullptr);
+	auto dec = add_node_operator_by_inline(InlineID::INT32_DECREASE, count, nullptr);
 	b->add(dec);
 
 
 	auto cmd_if_del = add_node_statement(StatementID::IF);
 
 	// if count == 0
-	auto cmp = add_node_operator_by_inline(InlineID::INT_EQUAL, count, const_int(0));
+	auto cmp = add_node_operator_by_inline(InlineID::INT32_EQUAL, count, const_int(0));
 	cmd_if_del->set_param(0, cmp);
 
 	auto b2 = new Block(f, b);

@@ -564,7 +564,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 			auto l = add_node_special_function_call(SpecialFunctionID::LEN, index->token_id, index->type);
 			l->set_param(0, operand);
 			l = concretify_special_function_len(l, block, ns);
-			index = add_node_operator_by_inline(InlineID::INT_ADD, l, index, index->token_id);
+			index = add_node_operator_by_inline(InlineID::INT32_ADD, l, index, index->token_id);
 		}
 	}
 
