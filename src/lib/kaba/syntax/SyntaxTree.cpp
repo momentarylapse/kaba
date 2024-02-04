@@ -1214,6 +1214,13 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 			n->params[0]->as_const()->type = TypeFunctionCodeRef;
 			return n->params[0];
 		}
+	} else if (n->kind == NodeKind::DEFINITELY) {
+		AutoImplementer ai(parser.get(), this);
+		auto bb = new Block(b->function, b);
+		bb->type = n->type;
+	//	bb->add(ai.node_if(ai.node_not(ai.optional_has_value(n->params[0])), ai.node_raise_no_value()));
+		bb->add(ai.node_block_return(ai.optional_data(n->params[0])));
+		return bb;
 	}
 
 	// TODO experimental dynamic type insertion

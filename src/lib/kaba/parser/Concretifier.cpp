@@ -1680,6 +1680,17 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::CALL_FUNCTION) {
 		concretify_all_params(node, block, ns);
 		node->type = node->as_func()->literal_return_type;
+	} else if (node->kind == NodeKind::DEFINITELY) {
+		concretify_all_params(node, block, ns);
+		auto t = node->params[0]->type;
+		if (t->is_optional()) {
+
+			node->type = t->param[0];
+			return node;
+
+		} else {
+			do_error("'!' only allowed for optional values", node);
+		}
 	} else {
 		node->show();
 		do_error("INTERNAL ERROR: unexpected node", node);

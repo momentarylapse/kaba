@@ -185,6 +185,14 @@ shared<Node> Parser::parse_abstract_operand_extension_element(shared<Node> opera
 	return el;
 }
 
+shared<Node> Parser::parse_abstract_operand_extension_definitely(shared<Node> operand) {
+	auto node = new Node(NodeKind::DEFINITELY, 0, TypeUnknown);
+	node->token_id = Exp.consume_token(); // "!"
+	node->set_num_params(1);
+	node->set_param(0, operand);
+	return node;
+}
+
 shared<Node> Parser::parse_abstract_operand_extension_dict(shared<Node> operand) {
 	Exp.next(); // "{"
 
@@ -343,6 +351,9 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	} else if (Exp.cur == "->") {
 		// A->B?
 		return parse_abstract_operand_extension(parse_abstract_operand_extension_callable(operand, block), block, true);
+	} else if (Exp.cur == "!") {
+		// definitely?
+		return parse_abstract_operand_extension(parse_abstract_operand_extension_definitely(operand), block, prefer_class);
 	} else if (Exp.cur == "?") {
 		// optional?
 		return parse_abstract_operand_extension(parse_abstract_operand_extension_optional(operand), block, true);
