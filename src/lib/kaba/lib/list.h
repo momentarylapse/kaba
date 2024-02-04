@@ -16,6 +16,10 @@
 #include "../syntax/Operator.h"
 #include "../syntax/Inline.h"
 
+template<> inline string str(const u_int8_t& c) {
+	return format("0x%02x", (int)c);
+}
+
 namespace kaba {
 
 extern const Class *TypeAny;
@@ -262,7 +266,7 @@ public:
 
 
 template<class T>
-void lib_create_list(const Class *tt) {
+void lib_create_list(const Class *tt, bool allow_str = true) {
 	auto t = const_cast<Class*>(tt);
 	t->derive_from(TypeDynamicArray, DeriveFlags::SET_SIZE);
 	auto t_element = t->param[0];
@@ -284,7 +288,8 @@ void lib_create_list(const Class *tt) {
 			func_add_param("index", TypeInt);
 		class_add_func("resize", TypeVoid, &XList<T>::resize);
 			func_add_param("num", TypeInt);
-		class_add_func(Identifier::Func::STR, TypeString, &XList<T>::str, Flags::PURE);
+		if (allow_str)
+			class_add_func(Identifier::Func::STR, TypeString, &XList<T>::str, Flags::PURE);
 
 		add_operator(OperatorID::ASSIGN, TypeVoid, t, t, InlineID::NONE, &XList<T>::assign);
 		add_operator(OperatorID::IN, TypeBool, t, t_element, InlineID::NONE, &XList<T>::__contains__);
