@@ -167,8 +167,10 @@ string callable_repr(const void *p, const Class *type) {
 string _cdecl var_repr_str(const void *p, const Class *type, bool as_repr) {
 //	msg_write(type->name);
 	// fixed
-	if (type == TypeInt) {
+	if (type == TypeInt32) {
 		return str(*reinterpret_cast<const int *>(p));
+	} if (type == TypeInt8) {
+		return format("0x%02x", (int)*reinterpret_cast<const char *>(p));
 	} if (type == TypeInt64) {
 		return str(*reinterpret_cast<const int64*>(p));
 	} else if (type == TypeFloat32) {

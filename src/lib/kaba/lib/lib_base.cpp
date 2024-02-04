@@ -135,10 +135,10 @@ MAKE_OP_FOR(float)
 MAKE_OP_FOR(int64)
 MAKE_OP_FOR(double)
 
-static int op_int_mod(int a, int b) { return a % b; }
-static int op_int_shr(int a, int b) { return a >> b; }
-static int op_int_shl(int a, int b) { return a << b; }
-//static int op_int_passthrough(int i) { return i; }
+static int op_int32_mod(int a, int b) { return a % b; }
+static int op_int32_shr(int a, int b) { return a >> b; }
+static int op_int32_shl(int a, int b) { return a << b; }
+//static int op_int32_passthrough(int i) { return i; }
 static int64 op_int64_mod(int64 a, int64 b) { return a % b; }
 static int64 op_int64_shr(int64 a, int64 b) { return a >> b; }
 static int64 op_int64_shl(int64 a, int64 b) { return a << b; }
@@ -197,13 +197,27 @@ string kaba_float642str(double f) {
 	return f642s(f, 6);
 }
 
-string kaba_char2str(char c) {
-	return string(&c, 1);
+// char()
+string kaba_char2str(int c) {
+	return utf32_to_utf8({c});
+	//return string(&c, 1);
 }
 
-string kaba_char_repr(char c) {
-	return "'" + string(&c, 1).escape() + "'";
+string kaba_int32_hex(int i) {
+	return format("%x", i);
 }
+
+/*string kaba_char_repr(char c) {
+	return "'" + string(&c, 1).escape() + "'";
+}*/
+
+string kaba_int8_to_str(char c) {
+	return format("0x%02x", (int)c);//i2s((int)c);
+}
+
+/*string kaba_char_repr(char c) {
+	return "'" + string(&c, 1).escape() + "'";
+}*/
 
 
 class KabaString : public string {
@@ -484,6 +498,44 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeReference);
 		add_operator(OperatorID::REF_ASSIGN, TypeVoid, TypeReference, TypeReference, InlineID::POINTER_ASSIGN);
 
+
+	add_class(TypeBool);
+		class_add_func(Identifier::Func::STR, TypeString, &b2s, Flags::PURE);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeBool, TypeBool, InlineID::BOOL_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeBool, TypeBool, InlineID::BOOL_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeBool, TypeBool, InlineID::BOOL_NOT_EQUAL);
+		add_operator(OperatorID::AND, TypeBool, TypeBool, TypeBool, InlineID::BOOL_AND);
+		add_operator(OperatorID::OR, TypeBool, TypeBool, TypeBool, InlineID::BOOL_OR);
+		add_operator(OperatorID::NEGATE, TypeBool, nullptr, TypeBool, InlineID::BOOL_NOT);
+
+
+	add_class(TypeInt8);
+		class_add_func(Identifier::Func::STR, TypeString, &kaba_int8_to_str, Flags::PURE);
+		//class_add_func(Identifier::Func::REPR, TypeString, &kaba_char_repr, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
+		func_set_inline(InlineID::INT8_TO_INT32);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt8, TypeInt8, InlineID::INT8_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_NOT_EQUAL);
+		add_operator(OperatorID::GREATER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER_EQUAL);
+		add_operator(OperatorID::SMALLER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER_EQUAL);
+		add_operator(OperatorID::ADD, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD);
+		add_operator(OperatorID::SUBTRACTS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT_ASSIGN);
+		add_operator(OperatorID::ADDS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD_ASSIGN);
+		add_operator(OperatorID::SUBTRACT, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT);
+		add_operator(OperatorID::BIT_AND, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_AND);
+		add_operator(OperatorID::BIT_OR, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_OR);
+		add_operator(OperatorID::NEGATIVE, TypeInt8, nullptr, TypeInt8, InlineID::INT8_NEGATIVE);
+
+
+	add_class(TypeInt16);
+		class_add_element("low", TypeInt8, 0);
+		class_add_element("high", TypeInt8, 1);
+		//class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
+
+
 	add_class(TypeInt32);
 		class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
 		class_add_func(Identifier::Func::FORMAT, TypeString, &kaba_int_format, Flags::PURE);
@@ -505,7 +557,7 @@ void SIAddPackageBase(Context *c) {
 		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeInt, TypeInt, InlineID::INT32_SUBTRACT_ASSIGN);
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeInt, TypeInt, InlineID::INT32_MULTIPLY_ASSIGN);
 		add_operator(OperatorID::DIVIDES, TypeVoid, TypeInt, TypeInt, InlineID::INT32_DIVIDE_ASSIGN);
-		add_operator(OperatorID::MODULO, TypeInt, TypeInt, TypeInt, InlineID::INT32_MODULO, &op_int_mod);
+		add_operator(OperatorID::MODULO, TypeInt, TypeInt, TypeInt, InlineID::INT32_MODULO, &op_int32_mod);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeInt, TypeInt, InlineID::INT32_EQUAL, &op_int_eq);
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeInt, TypeInt, InlineID::INT32_NOT_EQUAL, &op_int_neq);
 		add_operator(OperatorID::GREATER, TypeBool, TypeInt, TypeInt, InlineID::INT32_GREATER, &op_int_g);
@@ -514,8 +566,8 @@ void SIAddPackageBase(Context *c) {
 		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeInt, TypeInt, InlineID::INT32_SMALLER_EQUAL, &op_int_le);
 		add_operator(OperatorID::BIT_AND, TypeInt, TypeInt, TypeInt, InlineID::INT32_AND);
 		add_operator(OperatorID::BIT_OR, TypeInt, TypeInt, TypeInt, InlineID::INT32_OR);
-		add_operator(OperatorID::SHIFT_RIGHT, TypeInt, TypeInt, TypeInt, InlineID::INT32_SHIFT_RIGHT, &op_int_shr);
-		add_operator(OperatorID::SHIFT_LEFT, TypeInt, TypeInt, TypeInt, InlineID::INT32_SHIFT_LEFT, &op_int_shl);
+		add_operator(OperatorID::SHIFT_RIGHT, TypeInt, TypeInt, TypeInt, InlineID::INT32_SHIFT_RIGHT, &op_int32_shr);
+		add_operator(OperatorID::SHIFT_LEFT, TypeInt, TypeInt, TypeInt, InlineID::INT32_SHIFT_LEFT, &op_int32_shl);
 		add_operator(OperatorID::NEGATIVE, TypeInt, nullptr, TypeInt, InlineID::INT32_NEGATIVE, &op_int_neg);
 		add_operator(OperatorID::INCREASE, TypeVoid, TypeInt, nullptr, InlineID::INT32_INCREASE);
 		add_operator(OperatorID::DECREASE, TypeVoid, TypeInt, nullptr, InlineID::INT32_DECREASE);
@@ -600,36 +652,6 @@ void SIAddPackageBase(Context *c) {
 		add_operator(OperatorID::SMALLER, TypeBool, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SMALLER, &op_double_l);
 		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SMALLER_EQUAL, &op_double_le);
 		add_operator(OperatorID::NEGATIVE, TypeFloat32, nullptr, TypeFloat64, InlineID::FLOAT64_NEGATIVE, &op_double_neg);
-
-
-	add_class(TypeBool);
-		class_add_func(Identifier::Func::STR, TypeString, &b2s, Flags::PURE);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeBool, TypeBool, InlineID::BOOL_ASSIGN);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeBool, TypeBool, InlineID::BOOL_EQUAL);
-		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeBool, TypeBool, InlineID::BOOL_NOT_EQUAL);
-		add_operator(OperatorID::AND, TypeBool, TypeBool, TypeBool, InlineID::BOOL_AND);
-		add_operator(OperatorID::OR, TypeBool, TypeBool, TypeBool, InlineID::BOOL_OR);
-		add_operator(OperatorID::NEGATE, TypeBool, nullptr, TypeBool, InlineID::BOOL_NOT);
-
-	add_class(TypeInt8);
-		class_add_func(Identifier::Func::STR, TypeString, &kaba_char2str, Flags::PURE);
-		class_add_func(Identifier::Func::REPR, TypeString, &kaba_char_repr, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
-			func_set_inline(InlineID::INT8_TO_INT32);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt8, TypeInt8, InlineID::INT8_ASSIGN);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_EQUAL);
-		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_NOT_EQUAL);
-		add_operator(OperatorID::GREATER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER_EQUAL);
-		add_operator(OperatorID::SMALLER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER_EQUAL);
-		add_operator(OperatorID::ADD, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD);
-		add_operator(OperatorID::SUBTRACTS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT_ASSIGN);
-		add_operator(OperatorID::ADDS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD_ASSIGN);
-		add_operator(OperatorID::SUBTRACT, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT);
-		add_operator(OperatorID::BIT_AND, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_AND);
-		add_operator(OperatorID::BIT_OR, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_OR);
-		add_operator(OperatorID::NEGATIVE, TypeInt8, nullptr, TypeInt8, InlineID::INT8_NEGATIVE);
 
 
 	add_class(TypeString);
@@ -857,6 +879,10 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("p", TypePointer);
 	add_func("@pointer_definitely", TypeReference, &kaba_pointer_definitely, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 		func_add_param("p", TypePointer);
+	add_func("char", TypeString, &kaba_char2str, Flags::STATIC | Flags::PURE);
+		func_add_param("c", TypeInt);
+	add_func("hex", TypeString, &kaba_int32_hex, Flags::STATIC | Flags::PURE);
+		func_add_param("i", TypeInt);
 	// debug output
 	/*add_func("cprint", TypeVoid, &_cstringout, Flags::STATIC);
 		func_add_param("str", TypeCString);*/

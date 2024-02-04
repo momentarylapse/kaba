@@ -115,6 +115,8 @@ const Class *Parser::get_constant_type(const string &str) {
 	}
 	if (type == TypeInt) {
 		if (hex) {
+			if (str.num == 4)
+				type = TypeInt8;
 			if (str.num > 10)
 				type = TypeInt64;
 		} else {
@@ -129,7 +131,10 @@ void Parser::get_constant_value(const string &str, Value &value) {
 	value.init(get_constant_type(str));
 // literal
 	if (value.type == TypeInt8) {
-		value.as_int() = str.unescape()[1];
+		if (str[0] == '\'') // 'bla'
+			value.as_int() = str.unescape()[1];
+		else // 0x12
+			value.as_int() = (int)s2i2(str);
 	} else if (value.type == TypeString) {
 		value.as_string() = str.sub(1, -1).unescape();
 	} else if (value.type == TypeCString) {
