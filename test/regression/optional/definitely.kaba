@@ -1,0 +1,10 @@
+
+
+func main()
+	try
+		var o: int? = 5
+		print(o! * 8)
+		o = nil
+		print(o! * 8)
+	except
+		print("nope")

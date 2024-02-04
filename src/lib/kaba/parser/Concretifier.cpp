@@ -1684,9 +1684,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		auto t = node->params[0]->type;
 		if (t->is_optional()) {
-
-			node->type = t->param[0];
-			return node;
+			if (auto f = t->get_member_func("_value", t->param[0], {}))
+				return add_node_member_call(f, node->params[0]);
+			do_error(format("missing: %s._value()", t->long_name()), node);
+			//node->type = t->param[0];
+			//return node;
 
 		} else {
 			do_error("'!' only allowed for optional values", node);
