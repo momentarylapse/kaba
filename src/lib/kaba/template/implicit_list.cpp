@@ -286,19 +286,7 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 		// if self.num != other.num
 		//     return false
 		auto n_eq = add_node_operator_by_inline(InlineID::INT_NOT_EQUAL,  sa_num(self), sa_num(other));
-		auto n_if = add_node_statement(StatementID::IF);
-		n_if->set_num_params(2);
-		n_if->set_param(0, n_eq);
-
-		auto b = new Block(f, f->block.get());
-
-		auto n_ret = add_node_statement(StatementID::RETURN);
-		n_ret->set_num_params(1);
-		n_ret->set_param(0, node_false());
-		b->add(n_ret);
-
-		n_if->set_param(1, b);
-		f->block->add(n_if);
+		f->block->add(node_if(n_eq, node_return(node_false())));
 	}
 
 	{
@@ -309,14 +297,13 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 		auto *v_i = f->block->add_var("i", TypeInt);
 
 		Block *b = new Block(f, f->block.get());
-		Block *b2 = new Block(f, b);
 
 		// other[i]
 		auto n_other_el = add_node_dyn_array(other, add_node_local(v_i));
 
 		auto n_if = add_node_statement(StatementID::IF);
 		n_if->set_num_params(2);
-		n_if->set_param(1, b2);
+		n_if->set_param(1, node_return(node_false()));
 		b->add(n_if);
 
 		if (auto n_neq = parser->con.link_operator_id(OperatorID::NOT_EQUAL, add_node_local(v_el)->deref(), n_other_el)) {
@@ -326,11 +313,6 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 		} else {
 			do_error_implicit(f, format("neither operator %s != %s nor == found", te->long_name(), te->long_name()));
 		}
-
-		auto n_ret = add_node_statement(StatementID::RETURN);
-		n_ret->set_num_params(1);
-		n_ret->set_param(0, node_false());
-		b2->add(n_ret);
 
 
 		auto n_for = add_node_statement(StatementID::FOR_CONTAINER);
@@ -344,10 +326,7 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 
 	{
 		// return true
-		auto n_ret = add_node_statement(StatementID::RETURN);
-		n_ret->set_num_params(1);
-		n_ret->set_param(0, node_true());
-		f->block->add(n_ret);
+		f->block->add(node_return(node_true()));
 	}
 }
 
@@ -370,10 +349,7 @@ void AutoImplementer::implement_list_give(Function *f, const Class *t) {
 
 	{
 		// return temp
-		auto n_ret = add_node_statement(StatementID::RETURN);
-		n_ret->set_num_params(1);
-		n_ret->set_param(0, temp);
-		f->block->add(n_ret);
+		f->block->add(node_return(temp));
 	}
 }
 

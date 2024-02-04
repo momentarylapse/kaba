@@ -1413,6 +1413,7 @@ bool is_non_owning_pointer(const Class *t) {
 
 shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, const Class *ns) {
 	for (int i=0; i<node->params.num; i++) {
+
 		node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
 		if (node->params[i]->type->is_pointer_xfer_not_null())
 			do_error("xfer[..] values must not be discarded", node->params[i]);

@@ -12,6 +12,8 @@ namespace kaba {
 
 const int FULL_CONSTRUCTOR_MAX_PARAMS = 8;
 
+extern const Class* TypeNoValueError;
+
 
 AutoImplementer::AutoImplementer(Parser *p, SyntaxTree *t) {
 	parser = p;
@@ -41,14 +43,67 @@ shared<Node> AutoImplementer::const_int(int i) {
 	return add_node_const(tree->add_constant_int(i));
 }
 
-void AutoImplementer::db_add_print_node(shared<Block> block, shared<Node> node) {
+shared<Node> AutoImplementer::node_not(shared<kaba::Node> n) {
+	return add_node_operator_by_inline(InlineID::BOOL_NOT, n, nullptr);
+}
+
+shared<Node> AutoImplementer::node_return(shared<Node> n) {
+	auto ret = add_node_statement(StatementID::RETURN, -1);
+	ret->set_num_params(1);
+	ret->set_param(0, n);
+	return ret;
+}
+
+shared<Node> AutoImplementer::node_block_return(shared<Node> n) {
+	auto ret = add_node_statement(StatementID::BLOCK_RETURN, -1);
+	ret->set_num_params(1);
+	ret->set_param(0, n);
+	return ret;
+}
+
+shared<Node> AutoImplementer::node_if(shared<Node> n_test, shared<Node> n_true) {
+	auto cmd_if = add_node_statement(StatementID::IF);
+	//cmd_if->type = n_true->type;
+	cmd_if->set_num_params(2);
+	cmd_if->set_param(0, n_test);
+	cmd_if->set_param(1, n_true);
+	return cmd_if;
+}
+
+shared<Node> AutoImplementer::node_if_else(shared<Node> n_test, shared<Node> n_true, shared<Node> n_false) {
+	auto cmd_if = add_node_statement(StatementID::IF);
+	//cmd_if->type = n_true->type;
+	cmd_if->set_num_params(3);
+	cmd_if->set_param(0, n_test);
+	cmd_if->set_param(1, n_true);
+	cmd_if->set_param(2, n_false);
+	return cmd_if;
+}
+
+shared<Node> AutoImplementer::node_raise_no_value() {
+	auto f_ex = TypeNoValueError->get_default_constructor();
+	auto cmd_call_ex = add_node_call(f_ex, -1);
+	cmd_call_ex->set_num_params(1);
+	cmd_call_ex->set_param(0, new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
+
+	auto cmd_new = add_node_statement(StatementID::NEW);
+	cmd_new->set_num_params(1);
+	cmd_new->set_param(0, cmd_call_ex);
+	cmd_new->type = TypeExceptionXfer;
+
+	auto cmd_raise = add_node_call(tree->required_func_global("raise"));
+	cmd_raise->set_param(0, cmd_new);
+	return cmd_raise;
+}
+
+shared<Node> AutoImplementer::db_print_node(shared<Node> node) {
 	auto ff = tree->required_func_global("print");
 	auto cmd = add_node_call(ff);
 	cmd->set_param(0, parser->con.add_converter_str(node, false));
-	block->add(cmd);
+	return cmd;
 }
 
-void AutoImplementer::db_add_print_p2s_node(shared<Block> block, shared<Node> node) {
+shared<Node> AutoImplementer::db_print_p2s_node(shared<Node> node) {
 	auto f_p2s = tree->required_func_global("p2s");
 	auto n_p2s = add_node_call(f_p2s);
 	n_p2s->set_param(0, node);
@@ -56,23 +111,23 @@ void AutoImplementer::db_add_print_p2s_node(shared<Block> block, shared<Node> no
 	auto f_print = tree->required_func_global("print");
 	auto n_print = add_node_call(f_print);
 	n_print->set_param(0, n_p2s);
-	block->add(n_print);
+	return n_print;
 }
 
-void AutoImplementer::db_add_print_label(shared<Block> block, const string &s) {
+shared<Node> AutoImplementer::db_print_label(const string &s) {
 	auto c = tree->add_constant(TypeString);
 	c->as_string() = s;
-	db_add_print_node(block, add_node_const(c));
+	return db_print_node(add_node_const(c));
 }
 
-void AutoImplementer::db_add_print_label_node(shared<Block> block, const string &s, shared<Node> node) {
+shared<Node> AutoImplementer::db_print_label_node(const string &s, shared<Node> node) {
 	auto c = tree->add_constant(TypeString);
 	c->as_string() = s;
 
 	auto ff = tree->required_func_global("print");
 	auto cmd = add_node_call(ff);
 	cmd->set_param(0, parser->con.link_operator_id(OperatorID::ADD, add_node_const(c), parser->con.add_converter_str(node, false)));
-	block->add(cmd);
+	return cmd;
 }
 
 shared<Node> AutoImplementer::add_assign(Function *f, const string &ctx, shared<Node> a, shared<Node> b) {
