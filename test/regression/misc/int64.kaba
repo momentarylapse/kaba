@@ -1,6 +1,6 @@
 func main()
 	var a = 13
-	var b: int64 = a
+	var b: i64 = a
 	print(b)
 	
 	b = 0x100000002

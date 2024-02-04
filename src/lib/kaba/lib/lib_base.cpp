@@ -22,7 +22,6 @@ extern const Class *TypeSharedPointer;
 extern const Class *TypeStringAutoCast;
 extern const Class *TypeDictBase;
 extern const Class *TypeCallableBase;
-extern const Class *TypeFloat;
 extern const Class *TypeNone;
 extern const Class *TypePointerList;
 extern const Class *TypeObject;
@@ -286,11 +285,12 @@ void SIAddPackageBase(Context *c) {
 	// "real"
 	TypeVoid			= add_type  ("void", 0, Flags::FORCE_CALL_BY_VALUE);
 	TypeBool			= add_type  ("bool", sizeof(bool), Flags::FORCE_CALL_BY_VALUE);
-	TypeInt				= add_type  ("int", sizeof(int), Flags::FORCE_CALL_BY_VALUE);
-	TypeInt64			= add_type  ("int64", sizeof(int64), Flags::FORCE_CALL_BY_VALUE);
-	TypeFloat32			= add_type  ("float32", sizeof(float), Flags::FORCE_CALL_BY_VALUE);
-	TypeFloat64			= add_type  ("float64", sizeof(double), Flags::FORCE_CALL_BY_VALUE);
-	TypeChar			= add_type  ("char", sizeof(char), Flags::FORCE_CALL_BY_VALUE);
+	TypeInt8			= add_type  ("i8", 1, Flags::FORCE_CALL_BY_VALUE);
+	TypeInt16			= add_type  ("i16", 2, Flags::FORCE_CALL_BY_VALUE);
+	TypeInt32			= add_type  ("i32", sizeof(int32), Flags::FORCE_CALL_BY_VALUE);
+	TypeInt64			= add_type  ("i64", sizeof(int64), Flags::FORCE_CALL_BY_VALUE);
+	TypeFloat32			= add_type  ("f32", sizeof(float), Flags::FORCE_CALL_BY_VALUE);
+	TypeFloat64			= add_type  ("f64", sizeof(double), Flags::FORCE_CALL_BY_VALUE);
 	TypeDynamicArray	= add_type  ("@DynamicArray", config.target.dynamic_array_size);
 	TypeDictBase		= add_type  ("@DictBase",   config.target.dynamic_array_size);
 	TypeSharedPointer	= add_type  ("@SharedPointer", config.target.pointer_size);
@@ -302,6 +302,8 @@ void SIAddPackageBase(Context *c) {
 	// select default float type
 	TypeFloat = TypeFloat32;
 	(const_cast<Class*>(TypeFloat))->name = "float";
+	TypeInt = TypeInt32;
+	(const_cast<Class*>(TypeInt32))->name = "int";
 
 
 	add_class(TypeObject);
@@ -429,9 +431,9 @@ void SIAddPackageBase(Context *c) {
 	TypeFloatP      = add_type_p_raw(TypeFloat);
 	TypeFloatList   = add_type_list(TypeFloat);
 	TypeFloat64List = add_type_list(TypeFloat64);
-	TypeCString     = add_type_array(TypeChar, 256);
+	TypeCString     = add_type_array(TypeInt8, 256);
 	capture_implicit_type(TypeCString, "cstring"); // cstring := char[256]
-	TypeString      = add_type_list(TypeChar);
+	TypeString      = add_type_list(TypeInt8);
 	capture_implicit_type(TypeString, "string"); // string := char[]
 	TypeStringAutoCast = add_type("<string-auto-cast>", config.target.dynamic_array_size);	// string := char[]
 	TypeStringList  = add_type_list(TypeString);
@@ -482,16 +484,16 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeReference);
 		add_operator(OperatorID::REF_ASSIGN, TypeVoid, TypeReference, TypeReference, InlineID::POINTER_ASSIGN);
 
-	add_class(TypeInt);
+	add_class(TypeInt32);
 		class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
 		class_add_func(Identifier::Func::FORMAT, TypeString, &kaba_int_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
 		class_add_func("__float__", TypeFloat32, &kaba_cast<int,float>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_FLOAT);
-		class_add_func("__float64__", TypeFloat64, &kaba_cast<int,double>, Flags::PURE);
-		class_add_func("__char__", TypeChar, &kaba_cast<int,char>, Flags::PURE);
+		class_add_func("__f64__", TypeFloat64, &kaba_cast<int,double>, Flags::PURE);
+		class_add_func("__i8__", TypeInt8, &kaba_cast<int,char>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_CHAR);
-		class_add_func("__int64__", TypeInt64, &kaba_cast<int,int64>, Flags::PURE);
+		class_add_func("__i64__", TypeInt64, &kaba_cast<int,int64>, Flags::PURE);
 			func_set_inline(InlineID::INT_TO_INT64);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt, TypeInt, InlineID::INT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeInt, TypeInt, TypeInt, InlineID::INT_ADD, &op_int_add);
@@ -555,7 +557,7 @@ void SIAddPackageBase(Context *c) {
 			func_add_param("fmt", TypeString);
 		class_add_func("__int__", TypeInt, &kaba_cast<float,int>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT_TO_INT);    // sometimes causes floating point exceptions...
-		class_add_func("__float64__", TypeFloat64, &kaba_cast<float,double>, Flags::PURE);
+		class_add_func("__f64__", TypeFloat64, &kaba_cast<float,double>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT_TO_FLOAT64);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat32, TypeFloat32, InlineID::FLOAT_ASSIGN);
 		add_operator(OperatorID::ADD, TypeFloat32, TypeFloat32, TypeFloat32, InlineID::FLOAT_ADD, &op_float_add);
@@ -609,25 +611,25 @@ void SIAddPackageBase(Context *c) {
 		add_operator(OperatorID::OR, TypeBool, TypeBool, TypeBool, InlineID::BOOL_OR);
 		add_operator(OperatorID::NEGATE, TypeBool, nullptr, TypeBool, InlineID::BOOL_NOT);
 
-	add_class(TypeChar);
+	add_class(TypeInt8);
 		class_add_func(Identifier::Func::STR, TypeString, &kaba_char2str, Flags::PURE);
 		class_add_func(Identifier::Func::REPR, TypeString, &kaba_char_repr, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
 			func_set_inline(InlineID::CHAR_TO_INT);
-		add_operator(OperatorID::ASSIGN, TypeVoid, TypeChar, TypeChar, InlineID::CHAR_ASSIGN);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeChar, TypeChar, InlineID::CHAR_EQUAL);
-		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeChar, TypeChar, InlineID::CHAR_NOT_EQUAL);
-		add_operator(OperatorID::GREATER, TypeBool, TypeChar, TypeChar, InlineID::CHAR_GREATER);
-		add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeChar, TypeChar, InlineID::CHAR_GREATER_EQUAL);
-		add_operator(OperatorID::SMALLER, TypeBool, TypeChar, TypeChar, InlineID::CHAR_SMALLER);
-		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeChar, TypeChar, InlineID::CHAR_SMALLER_EQUAL);
-		add_operator(OperatorID::ADD, TypeChar, TypeChar, TypeChar, InlineID::CHAR_ADD);
-		add_operator(OperatorID::SUBTRACTS, TypeChar, TypeChar, TypeChar, InlineID::CHAR_SUBTRACT_ASSIGN);
-		add_operator(OperatorID::ADDS, TypeChar, TypeChar, TypeChar, InlineID::CHAR_ADD_ASSIGN);
-		add_operator(OperatorID::SUBTRACT, TypeChar, TypeChar, TypeChar, InlineID::CHAR_SUBTRACT);
-		add_operator(OperatorID::BIT_AND, TypeChar, TypeChar, TypeChar, InlineID::CHAR_AND);
-		add_operator(OperatorID::BIT_OR, TypeChar, TypeChar, TypeChar, InlineID::CHAR_OR);
-		add_operator(OperatorID::NEGATIVE, TypeChar, nullptr, TypeChar, InlineID::CHAR_NEGATIVE);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt8, TypeInt8, InlineID::INT8_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_NOT_EQUAL);
+		add_operator(OperatorID::GREATER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER);
+		add_operator(OperatorID::GREATER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_GREATER_EQUAL);
+		add_operator(OperatorID::SMALLER, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER);
+		add_operator(OperatorID::SMALLER_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_SMALLER_EQUAL);
+		add_operator(OperatorID::ADD, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD);
+		add_operator(OperatorID::SUBTRACTS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT_ASSIGN);
+		add_operator(OperatorID::ADDS, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_ADD_ASSIGN);
+		add_operator(OperatorID::SUBTRACT, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_SUBTRACT);
+		add_operator(OperatorID::BIT_AND, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_AND);
+		add_operator(OperatorID::BIT_OR, TypeInt8, TypeInt8, TypeInt8, InlineID::INT8_OR);
+		add_operator(OperatorID::NEGATIVE, TypeInt8, nullptr, TypeInt8, InlineID::INT8_NEGATIVE);
 
 
 	add_class(TypeString);
@@ -669,9 +671,9 @@ void SIAddPackageBase(Context *c) {
 		class_add_func("match", TypeBool, &string::match, Flags::PURE);
 			func_add_param("glob", TypeString);
 		class_add_func("__int__", TypeInt, &string::_int, Flags::PURE);
-		class_add_func("__int64__", TypeInt64, &string::i64, Flags::PURE);
+		class_add_func("__i64__", TypeInt64, &string::i64, Flags::PURE);
 		class_add_func("__float__", TypeFloat32, &string::_float, Flags::PURE);
-		class_add_func("__float64__", TypeFloat64, &string::f64, Flags::PURE);
+		class_add_func("__f64__", TypeFloat64, &string::f64, Flags::PURE);
 		class_add_func("trim", TypeString, &string::trim, Flags::PURE);
 		class_add_func("escape", TypeString, &string::escape, Flags::PURE);
 		class_add_func("unescape", TypeString, &string::unescape, Flags::PURE);
@@ -683,7 +685,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_func(Identifier::Func::CONTAINS, TypeBool, &KabaString::contains_s, Flags::PURE);
 			func_add_param("s", TypeString);
 		class_add_func(Identifier::Func::CONTAINS, TypeBool, &KabaString::contains_c, Flags::PURE);
-			func_add_param("c", TypeChar);
+			func_add_param("c", TypeInt8);
 
 
 
@@ -892,13 +894,13 @@ void SIAddPackageBase(Context *c) {
 
 
 	add_type_cast(10, TypeInt, TypeFloat32, "int.__float__");
-	add_type_cast(10, TypeInt, TypeFloat64, "int.__float64__");
-	add_type_cast(10, TypeInt, TypeInt64, "int.__int64__");
-	add_type_cast(200, TypeInt64, TypeInt, "int64.__int__");
-	add_type_cast(10, TypeFloat32, TypeFloat64,"float.__float64__");
+	add_type_cast(10, TypeInt, TypeFloat64, "int.__f64__");
+	add_type_cast(10, TypeInt, TypeInt64, "int.__i64__");
+	add_type_cast(200, TypeInt64, TypeInt, "i64.__int__");
+	add_type_cast(10, TypeFloat32, TypeFloat64,"float.__f64__");
 	add_type_cast(200, TypeFloat32, TypeInt, "float.__int__");
-	add_type_cast(200, TypeInt, TypeChar, "int.__char__");
-	add_type_cast(20, TypeChar, TypeInt, "char.__int__");
+	add_type_cast(200, TypeInt, TypeInt8, "int.__i8__");
+	add_type_cast(20, TypeInt8, TypeInt, "i8.__int__");
 	//add_type_cast(30, TypeBoolList, TypeBool, "bool[].__bool__");
 	add_type_cast(50, TypePointer, TypeBool, "p2b");
 	//add_type_cast(50, TypePointer, TypeString, "p2s");

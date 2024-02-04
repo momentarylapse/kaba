@@ -1,7 +1,7 @@
 func main()
-	var dict = {"a": int64(13), "b": int64(20)}
-	dict["a"] = int64(5)
-	dict["c"] = int64(32)
+	var dict = {"a": i64(13), "b": i64(20)}
+	dict["a"] = i64(5)
+	dict["c"] = i64(32)
 	print("a" in dict)
 	print("z" in dict)
 	print(dict)

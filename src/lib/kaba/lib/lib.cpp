@@ -42,12 +42,14 @@ const Class *TypeNone; // nil
 const Class *TypeObject;
 const Class *TypeObjectP;
 const Class *TypeBool;
+const Class *TypeInt8;
+const Class *TypeInt16;
+const Class *TypeInt32;
 const Class *TypeInt;
 const Class *TypeInt64;
 const Class *TypeFloat;
 const Class *TypeFloat32;
 const Class *TypeFloat64;
-const Class *TypeChar;
 const Class *TypeString = nullptr;
 const Class *TypeStringAutoCast;
 const Class *TypeCString;

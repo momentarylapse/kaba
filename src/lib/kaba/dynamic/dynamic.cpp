@@ -27,7 +27,7 @@ extern const Class *TypeSpecialFunction;
 void var_assign(void *pa, const void *pb, const Class *type) {
 	if ((type == TypeInt) or (type == TypeFloat32)) {
 		*(int*)pa = *(int*)pb;
-	} else if ((type == TypeBool) or (type == TypeChar)) {
+	} else if ((type == TypeBool) or (type == TypeInt8)) {
 		*(char*)pa = *(char*)pb;
 	} else if (type->is_pointer_raw()) {
 		*(void**)pa = *(void**)pb;

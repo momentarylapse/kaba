@@ -165,11 +165,14 @@ extern const Class *TypeVoid;
 extern const Class *TypePointer;
 extern const Class *TypeReference;
 extern const Class *TypeBool;
-extern const Class *TypeInt;
+extern const Class *TypeInt8;
+extern const Class *TypeInt16;
+extern const Class *TypeInt32;
 extern const Class *TypeInt64;
+extern const Class *TypeInt;
 extern const Class *TypeFloat32;
 extern const Class *TypeFloat64;
-extern const Class *TypeChar;
+extern const Class *TypeFloat;
 extern const Class *TypeCString;
 extern const Class *TypeString;
 
