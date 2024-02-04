@@ -17,6 +17,7 @@
 
 namespace kaba {
 
+	extern const Class *TypeNone;
 
 #pragma GCC push_options
 #pragma GCC optimize("no-omit-frame-pointer")

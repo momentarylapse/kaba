@@ -2,6 +2,7 @@
 #include "lib.h"
 #include "list.h"
 #include "dict.h"
+#include "optional.h"
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 #include "../dynamic/sorting.h"
@@ -38,6 +39,8 @@ extern const Class *TypeFloatDict;
 extern const Class *TypeStringDict;
 extern const Class *TypeAny;
 extern const Class *TypeNoValueError;
+
+const Class *TypeIntOptional;
 
 const Class *TypeRawT;
 const Class *TypeXferT;
@@ -237,6 +240,12 @@ public:
 			if (cc == c)
 				return true;
 		return false;
+	}
+	base::optional<int> _find(const string& s, int pos0) const {
+		int r = find(s, pos0);
+		if (r < 0)
+			return base::None;
+		return r;
 	}
 };
 
@@ -441,6 +450,7 @@ void SIAddPackageBase(Context *c) {
 	TypePointerList = add_type_list(TypePointer);
 	TypeBoolList    = add_type_list(TypeBool);
 	TypeIntP        = add_type_p_raw(TypeInt);
+	TypeIntOptional = add_type_optional(TypeInt);
 	TypeIntList     = add_type_list(TypeInt);
 	TypeFloatP      = add_type_p_raw(TypeFloat);
 	TypeFloatList   = add_type_list(TypeFloat);
@@ -471,6 +481,9 @@ void SIAddPackageBase(Context *c) {
 	lib_create_dict<int>(TypeIntDict);
 	lib_create_dict<float>(TypeFloatDict);
 	lib_create_dict<string>(TypeStringDict);
+
+
+	lib_create_optional<int>(TypeIntOptional);
 
 
 	add_class(TypeCallableBase);
@@ -667,7 +680,7 @@ void SIAddPackageBase(Context *c) {
 			func_add_param("size", TypeInt);
 		class_add_func("tail", TypeString, &string::tail, Flags::PURE);
 			func_add_param("size", TypeInt);
-		class_add_func("find", TypeInt, &string::find, Flags::PURE);
+		class_add_func("find", TypeIntOptional, &KabaString::_find, Flags::PURE);
 			func_add_param("str", TypeString);
 			func_add_param_def("start", TypeInt, 0);
 		class_add_func("compare", TypeInt, &string::compare, Flags::PURE);
