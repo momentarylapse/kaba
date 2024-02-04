@@ -1,0 +1,13 @@
+func main()
+	var w: i16
+	w.high = 0xff
+	w.low = 0x00
+	
+	let v = w
+	
+	w = 1000
+	
+	print(sizeof(w))
+	print(w)
+	print(int(v))
+	

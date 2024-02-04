@@ -184,6 +184,14 @@ string kaba_int_format(int i, const string &fmt) {
 	}
 }
 
+string kaba_i16_to_str(unsigned short w) {
+	return str((int)w);
+}
+
+void kaba_i16_from_i32(unsigned short& w, int i) {
+	w = i;
+}
+
 string kaba_float2str(float f) {
 	return f2s(f, 6);
 }
@@ -526,7 +534,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_func(Identifier::Func::STR, TypeString, &kaba_int8_to_str, Flags::PURE);
 		//class_add_func(Identifier::Func::REPR, TypeString, &kaba_char_repr, Flags::PURE);
 		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
-		func_set_inline(InlineID::INT8_TO_INT32);
+			func_set_inline(InlineID::INT8_TO_INT32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt8, TypeInt8, InlineID::INT8_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_EQUAL);
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_NOT_EQUAL);
@@ -546,7 +554,13 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeInt16);
 		class_add_element("low", TypeInt8, 0);
 		class_add_element("high", TypeInt8, 1);
-		//class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
+		class_add_func(Identifier::Func::STR, TypeString, &kaba_i16_to_str, Flags::PURE);
+		class_add_func("__int__", TypeInt, &kaba_cast<unsigned short,int>, Flags::PURE);
+		//	func_set_inline(InlineID::INT16_TO_INT32);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt16, InlineID::CHUNK_ASSIGN);
+		//add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt32, InlineID::INT16_ASSIGN_INT32);
+		class_add_func("__assign__", TypeVoid, &kaba_i16_from_i32);
+			func_add_param("o", TypeInt);
 
 
 	add_class(TypeInt32);
