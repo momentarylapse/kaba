@@ -453,7 +453,7 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				// cmp;  jz m;  -block-  m;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true));
-				serialize_block(com->params[1]->as_block());
+				serialize_node(com->params[1].get(), block, index);
 				cmd.add_label(label_after_true);
 			} else { // if/else
 				auto ret = add_temp(com->type, true);
@@ -466,12 +466,12 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
-				auto ret_true = serialize_block(com->params[1]->as_block());
+				auto ret_true = serialize_node(com->params[1].get(), block, index);
 				if (com->type != TypeVoid)
 					cmd.add_cmd(Asm::InstID::MOV, ret, ret_true);
 				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
 				cmd.add_label(label_after_true);
-				auto ret_false = serialize_block(com->params[2]->as_block());
+				auto ret_false = serialize_node(com->params[2].get(), block, index);
 				if (com->type != TypeVoid)
 					cmd.add_cmd(Asm::InstID::MOV, ret, ret_false);
 				cmd.add_label(label_after_false);
@@ -492,7 +492,7 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			// body of loop
 			LoopData l = {label_before_while, label_after_while, block->level, index};
 			loop.add(l);
-			serialize_block(com->params[1]->as_block());
+			serialize_node(com->params[1].get(), block, index);
 			loop.pop();
 
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_before_while));
@@ -513,7 +513,7 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			// body of loop
 			LoopData l = {label_continue, label_after_for, block->level, index};
 			loop.add(l);
-			serialize_block(com->params[2]->as_block());
+			serialize_node(com->params[2].get(), block, index);
 			loop.pop();
 
 			// "i++"
@@ -578,12 +578,12 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			int label_finish = list->create_label("_TRY_AFTER_" + i2s(num_labels ++));
 
 			// try
-			serialize_block(com->params[0]->as_block());
+			serialize_node(com->params[0].get(), block, index);
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
 
 			// except
 			for (int i=2; i<com->params.num; i+=2) {
-				serialize_block(com->params[i]->as_block());
+				serialize_node(com->params[i].get(), block, index);
 				if (i < com->params.num-1)
 					cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
 			}
