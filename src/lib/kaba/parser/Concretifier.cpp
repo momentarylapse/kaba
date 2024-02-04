@@ -1682,16 +1682,31 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		node->type = node->as_func()->literal_return_type;
 	} else if (node->kind == NodeKind::DEFINITELY) {
 		concretify_all_params(node, block, ns);
-		auto t = node->params[0]->type;
+		auto sub = node->params[0];
+		auto t = sub->type;
 		if (t->is_optional()) {
-			if (auto f = t->get_member_func("_value", t->param[0], {}))
-				return add_node_member_call(f, node->params[0]);
-			do_error(format("missing: %s._value()", t->long_name()), node);
-			//node->type = t->param[0];
-			//return node;
-
+			// optional?
+			if (block->is_trust_me()) {
+				return sub->change_type(t->param[0]);
+			} else {
+				if (auto f = t->get_member_func("_value", t->param[0], {}))
+					return add_node_member_call(f, sub);
+				do_error(format("missing: %s._value()", t->long_name()), node);
+			}
+		} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
+			// null-able pointer?
+			auto t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+			if (block->is_trust_me()) {
+				return sub->change_type(t_def);
+			} else {
+				auto n = add_node_call(tree->required_func_global("@pointer_definitely", node->token_id), node->token_id);
+				n->set_num_params(1);
+				n->set_param(0, sub);
+				n->type = t_def;
+				return n;
+			}
 		} else {
-			do_error("'!' only allowed for optional values", node);
+			do_error("'!' only allowed for optional values and null-able pointers", node);
 		}
 	} else {
 		node->show();

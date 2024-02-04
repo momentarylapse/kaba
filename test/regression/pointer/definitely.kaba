@@ -1,0 +1,28 @@
+func main()
+	var v = vec3(1,2,3)
+	var p = &v as vec3*
+	
+	
+	trust_me
+		print(p!.x)
+	
+	print(*(p!))
+
+
+	try
+		print(p!.x)
+	except
+		print("NOPE")
+		
+	p = nil
+
+	# should throw
+	try
+		print(p!.x)
+	except
+		print("NOPE")
+	
+	
+	# also works for "smart" pointers?
+	var q: owned[vec3] = new vec3(4,5,6)
+	print(q!.y)
