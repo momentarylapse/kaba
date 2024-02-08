@@ -130,16 +130,6 @@ public:
 	void _cdecl assign_values_scalar(T x)	IMPLEMENT_IOP_LIST_SCALAR(=, T)
 };
 
-class AnyList : public Array<Any> {
-public:
-	void __delete__() {
-		this->~AnyList();
-	}
-	void assign(const AnyList &o) {
-		*this = o;
-	}
-};
-
 template<class T>
 Array<T> kaba_range(T start, T end, T step) {
 	if (end == DynamicArray::MAGIC_END_INDEX) {
@@ -1203,13 +1193,7 @@ void SIAddPackageMath(Context *c) {
 
 	// needs to be defined after any
 	TypeAnyList = add_type_list(TypeAny);
-	add_class(TypeAnyList);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<Any>::__init__);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &AnyList::__delete__);
-		class_add_func("add", TypeVoid, &AnyList::add);
-			func_add_param("a", TypeAny);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &AnyList::assign);
-			func_add_param("other", TypeAnyList);
+	lib_create_list<Any>(TypeAnyList);
 
 	TypeAnyDict = add_type_dict(TypeAny);
 	lib_create_dict<Any>(TypeAnyDict);
