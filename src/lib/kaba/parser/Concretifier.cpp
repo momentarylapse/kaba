@@ -1402,8 +1402,11 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 const Class *type_ownify_xfer(SyntaxTree *tree, const Class *t) {
 	if (t->is_pointer_xfer_not_null())
 		return tree->request_implicit_class_owned_not_null(t->param[0], -1);
-	if (t->is_list())
-		return tree->request_implicit_class_list(type_ownify_xfer(tree, t->param[0]), -1);
+	if (t->is_list()) {
+		auto tt = type_ownify_xfer(tree, t->param[0]);
+		if (tt != t->param[0])
+			return tree->request_implicit_class_list(tt, -1);
+	}
 	return t;
 }
 
