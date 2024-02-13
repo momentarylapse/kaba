@@ -439,7 +439,7 @@ void SIAddPackageOS(Context *c) {
 			func_add_param("delta", TypeInt);
 		class_add_func("is_end", TypeBool, &KabaFileStream::is_end);
 		{
-			os::fs::FileStream my_instance(0, Stream::Mode::NONE);
+			os::fs::FileStream my_instance(-1, Stream::Mode::NONE);
 			class_link_vtable(*(void***)&my_instance);
 		}
 
