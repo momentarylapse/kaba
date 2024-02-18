@@ -453,6 +453,10 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 	}
 
 	base = deref_if_reference(base);
+
+	if (base->type->is_some_pointer() and !base->type->is_some_pointer_not_null())
+		do_error("can not implicitly dereference a pointer that can be null. Use '!' or 'for . in .'", node);
+
 	auto links = tree->get_element_of(base, el, token_id);
 	if (links.num > 0)
 		return links;
