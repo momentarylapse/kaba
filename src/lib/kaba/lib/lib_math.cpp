@@ -7,6 +7,7 @@
 #include "../../math/mat4.h"
 #include "../../math/mat3.h"
 #include "../../math/plane.h"
+#include "../../math/ray.h"
 #include "../../math/rect.h"
 #include "../../math/interpolation.h"
 #include "../../math/random.h"
@@ -17,6 +18,7 @@
 #include "lib.h"
 #include "list.h"
 #include "dict.h"
+#include "optional.h"
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 
@@ -354,6 +356,15 @@ public:
 	}
 };
 
+class KabaRay : public Ray {
+public:
+	void init() {
+		new(this) Ray();
+	}
+	void init_ex(const vec3& u, const vec3& v) {
+		new(this) Ray(u, v);
+	}
+};
 
 void SIAddPackageMath(Context *c) {
 	add_package(c, "math", Flags::AUTO_IMPORT);
@@ -372,6 +383,7 @@ void SIAddPackageMath(Context *c) {
 	TypePlaneList = add_type_list(TypePlane);
 	TypeColor = add_type("color", sizeof(color));
 	TypeColorList = add_type_list(TypeColor);
+	auto TypeRay = add_type("ray", sizeof(Ray));
 	TypeMat3 = add_type("mat3", sizeof(mat3));
 	auto TypeFloatArray3 = add_type_array(TypeFloat32, 3);
 	auto TypeFloatArray4 = add_type_array(TypeFloat32, 4);
@@ -386,6 +398,8 @@ void SIAddPackageMath(Context *c) {
 	auto TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vec3>));
 	auto TypeRandom = add_type("Random", sizeof(Random));
 	auto TypeFFT = add_type("fft", 0);
+
+	auto TypeVec3Optional = add_type_optional(TypeVec3);
 	
 	// dirty hack :P
 	/*if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)*/ {
@@ -409,6 +423,7 @@ void SIAddPackageMath(Context *c) {
 	lib_create_list<plane>(TypePlaneList);
 	lib_create_list<color>(TypeColorList);
 
+	lib_create_optional<vec3>(TypeVec3Optional);
 
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloatArray3, TypeFloatArray3, InlineID::CHUNK_ASSIGN, &FloatN<3>::__assign__);
 	add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloatArray4, TypeFloatArray4, InlineID::CHUNK_ASSIGN, &FloatN<4>::__assign__);
@@ -493,6 +508,7 @@ void SIAddPackageMath(Context *c) {
 		class_add_const("EY", TypeVec2, &vec2::EY);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeVec2, TypeVec2, InlineID::CHUNK_ASSIGN, &KabaVector<vec2>::assign);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeVec2, TypeVec2, InlineID::CHUNK_EQUAL, &vec2::operator==);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeVec2, TypeVec2, InlineID::CHUNK_NOT_EQUAL, &vec2::operator!=);
 		add_operator(OperatorID::ADD, TypeVec2, TypeVec2, TypeVec2, InlineID::VEC2_ADD, &vec2::operator+);
 		add_operator(OperatorID::SUBTRACT, TypeVec2, TypeVec2, TypeVec2, InlineID::VEC2_SUBTRACT, (decltype(&vec2::operator+)) &vec2::operator-);
 //		add_operator(OperatorID::MULTIPLY, TypeFloat32, TypeVec2, TypeVec2, InlineID::COMPLEX_MULTIPLY_VV, &KabaVector<vec2>::mul_vv);
@@ -560,6 +576,7 @@ void SIAddPackageMath(Context *c) {
 		class_add_const("EZ", TypeVec3, &vec3::EZ);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeVec3, TypeVec3, InlineID::CHUNK_ASSIGN, &KabaVector<vec3>::assign);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeVec3, TypeVec3, InlineID::CHUNK_EQUAL, &vec3::operator==);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeVec3, TypeVec3, InlineID::CHUNK_NOT_EQUAL, &vec3::operator!=);
 		add_operator(OperatorID::ADD, TypeVec3, TypeVec3, TypeVec3, InlineID::VEC3_ADD, &vec3::operator+);
 		add_operator(OperatorID::SUBTRACT, TypeVec3, TypeVec3, TypeVec3, InlineID::VEC3_SUBTRACT, (decltype(&vec3::operator+)) &vec3::operator-);
 		add_operator(OperatorID::MULTIPLY, TypeFloat32, TypeVec3, TypeVec3, InlineID::VEC3_MULTIPLY_VV, &KabaVector<vec3>::mul_vv);
@@ -610,6 +627,7 @@ void SIAddPackageMath(Context *c) {
 		class_add_const("ID", TypeQuaternion, &quaternion::ID);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeQuaternion, TypeQuaternion, InlineID::CHUNK_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeQuaternion, TypeQuaternion, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeQuaternion, TypeQuaternion, InlineID::CHUNK_NOT_EQUAL);
 		add_operator(OperatorID::MULTIPLY, TypeQuaternion, TypeQuaternion, TypeQuaternion, InlineID::NONE, &quaternion::mul);
 		add_operator(OperatorID::MULTIPLY, TypeVec3, TypeQuaternion, TypeVec3, InlineID::NONE, &KabaQuaternion::mulv);
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeQuaternion, TypeQuaternion, InlineID::NONE, &quaternion::imul);
@@ -642,7 +660,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("y1", TypeFloat32);
 			func_add_param("y2", TypeFloat32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeRect, TypeRect, InlineID::CHUNK_ASSIGN, &KabaRect::assign);
-		add_operator(OperatorID::EQUAL, TypeBool, TypeRect, TypeRect, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeRect, TypeRect, InlineID::CHUNK_EQUAL, &rect::operator==);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeRect, TypeRect, InlineID::CHUNK_NOT_EQUAL, &rect::operator!=);
 	
 	add_class(TypeColor);
 		class_add_element("r", TypeFloat32, &color::r);
@@ -675,6 +694,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("a", TypeFloat32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeColor, TypeColor, InlineID::CHUNK_ASSIGN, &KabaColor::assign);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeColor, TypeColor, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeColor, TypeColor, InlineID::CHUNK_NOT_EQUAL);
 		add_operator(OperatorID::ADD, TypeColor, TypeColor, TypeColor, InlineID::NONE, &color::operator+);
 		add_operator(OperatorID::ADDS, TypeVoid, TypeColor, TypeColor, InlineID::NONE, &color::operator+=);
 		add_operator(OperatorID::SUBTRACT, TypeColor, TypeColor, TypeColor, InlineID::NONE, &color::operator-);
@@ -720,10 +740,26 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("n", TypeVec3);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypePlane, TypePlane, InlineID::CHUNK_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypePlane, TypePlane, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypePlane, TypePlane, InlineID::CHUNK_NOT_EQUAL);
 	
 	add_class(TypePlaneList);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<plane>::__init__);
-	
+
+
+	/*add_class(TypeRay);
+		class_add_element("u", TypeVec3, &Ray::u);
+		class_add_element("v", TypeVec3, &Ray::v);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaRay::init);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaRay::init_ex);
+			func_add_param("u", TypeVec3);
+			func_add_param("v", TypeVec3);
+		class_add_func("dot", TypeFloat32, &Ray::dot, Flags::STATIC | Flags::PURE);
+			func_add_param("r1", TypeRay);
+			func_add_param("r2", TypeRay);
+		class_add_func("intersect_plane", TypeVec3Optional, &Ray::intersect_plane, Flags::PURE);
+			func_add_param("pl", TypePlane);*/
+
+
 	add_class(TypeMat4);
 		class_add_element("_00", TypeFloat32, 0);
 		class_add_element("_10", TypeFloat32, 4);
@@ -783,6 +819,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("z_sym", TypeBool);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeMat4, TypeMat4, InlineID::CHUNK_ASSIGN, &KabaVector<mat4>::assign);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeMat4, TypeMat4, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeMat4, TypeMat4, InlineID::CHUNK_NOT_EQUAL);
 		add_operator(OperatorID::MULTIPLY, TypeMat4, TypeMat4, TypeMat4, InlineID::NONE, &KabaMatrix<mat4>::mul);
 		add_operator(OperatorID::MULTIPLY, TypeVec3, TypeMat4, TypeVec3, InlineID::NONE, &KabaMatrix<mat4>::mul_v<vec3>);
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeMat4, TypeMat4, InlineID::NONE, &KabaMatrix<mat4>::imul);
@@ -815,6 +852,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("s", TypeVec3);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeMat3, TypeMat3, InlineID::CHUNK_ASSIGN, &KabaVector<mat3>::assign);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeMat3, TypeMat3, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeMat3, TypeMat3, InlineID::CHUNK_NOT_EQUAL);
 		add_operator(OperatorID::MULTIPLY, TypeMat3, TypeMat3, TypeMat3, InlineID::NONE, &KabaMatrix<mat3>::mul);
 		add_operator(OperatorID::MULTIPLY, TypeVec3, TypeMat3, TypeVec3, InlineID::NONE, &KabaMatrix<mat3>::mul_v<vec3>);
 	
