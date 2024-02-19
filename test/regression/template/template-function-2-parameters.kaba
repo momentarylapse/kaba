@@ -1,0 +1,7 @@
+func f[T,U](a: T, b: U)
+	print("{{a}}  {{b}}")
+
+func main()
+	f[int,string](13, "hi")
+	f(pi, "x")
+

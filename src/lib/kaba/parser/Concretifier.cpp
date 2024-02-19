@@ -30,6 +30,19 @@ bool type_match_up(const Class *given, const Class *wanted);
 
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 
+string type_list_to_str(const Array<const Class*> &tt) {
+	string s;
+	for (auto *t: tt) {
+		if (s.num > 0)
+			s += ", ";
+		if (t)
+			s += t->long_name();
+		else
+			s += "<nil>";
+	}
+	return s;
+}
+
 
 shared<Node> __digest_type(SyntaxTree *tree, shared<Node> n) {
 	if (!is_type_tuple(n))
@@ -476,24 +489,31 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		int array_size = index->as_const()->as_int();
 		auto t = tree->request_implicit_class_array(operand->as_class(), array_size, operand->token_id);
 		return add_node_class(t);
-
 	}
 
 	// min[float]()
 	if (operand->kind == NodeKind::FUNCTION) {
 		auto links = concretify_node_multi(node->params[0], block, ns);
-		if (index->kind != NodeKind::CLASS)
+		Array<const Class*> tt;
+		if (index->kind == NodeKind::TUPLE and index->params.num == 2) {
+			if (index->params[0]->kind != NodeKind::CLASS or index->params[1]->kind != NodeKind::CLASS)
+				do_error("functions can only be indexed by a type", index);
+			tt.add(index->params[0]->as_class());
+			tt.add(index->params[1]->as_class());
+		} else if (index->kind == NodeKind::CLASS) {
+			tt.add(index->as_class());
+		} else {
 			do_error("functions can only be indexed by a type", index);
-		auto t = index->as_class();
+		}
 		for (auto l: weak(links)) {
 			auto f = l->as_func();
-			if (auto ff = context->template_manager->request_instance(tree, f, {t}, block, ns, node->token_id)) {
+			if (auto ff = context->template_manager->request_instance(tree, f, tt, block, ns, node->token_id)) {
 				auto tf = add_node_func_name(ff);
 				tf->params = l->params; // in case we have a member instance
 				return tf;
 			}
 		}
-		do_error(format("function has no version [%s]", t->name), index);
+		do_error(format("function has no version [%s]", type_list_to_str(tt)), index);
 	}
 
 	operand = force_concrete_type(operand);
@@ -2060,19 +2080,6 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 	return n;
 }
 
-string type_list_to_str(const Array<const Class*> &tt) {
-	string s;
-	for (auto *t: tt) {
-		if (s.num > 0)
-			s += ", ";
-		if (t)
-			s += t->long_name();
-		else
-			s += "<nil>";
-	}
-	return "(" + s + ")";
-}
-
 shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &links, shared_array<Node> &_params) {
 	//force_concrete_types(params);
 	// no, keep params FLEXIBLE
@@ -2130,7 +2137,7 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		//available += format("\n * %s for %s", type_list_to_str(p), link->sig(tree->base_class));
 		available += format("\n * %s", link->signature(tree->base_class));
 	}
-	do_error(format("invalid function parameters: %s given, possible options:%s", found, available), links[0]);
+	do_error(format("invalid function parameters: (%s) given, possible options:%s", found, available), links[0]);
 	return shared<Node>();
 }
 

@@ -17,6 +17,8 @@ shared<Module> get_import_module(Parser *parser, const string &name, int token);
 
 void add_enum_label(const Class *type, int value, const string &label);
 
+shared<Node> build_abstract_tuple(const Array<shared<Node>> &el);
+
 void crash() {
 	int *p = nullptr;
 	*p = 4;
@@ -280,6 +282,10 @@ shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand
 	};
 
 	shared<Node> index = parse_value_or_slice(block);
+	if (try_consume(",")) {
+		// TODO ...more
+		auto index_b = parse_abstract_operand_greedy(block);
+		index = build_abstract_tuple({index, index_b});
 	}
 	expect_identifier("]", "']' expected after array index");
 
@@ -2022,7 +2028,11 @@ Function *Parser::parse_function_header(const Class *default_type, Class *name_s
 	// template?
 	Array<string> template_param_names;
 	if (try_consume("[")) {
-		template_param_names.add(Exp.consume());
+		while (true) {
+			template_param_names.add(Exp.consume());
+			if (!try_consume(","))
+				break;
+		}
 		expect_identifier("]", "']' expected after template parameter");
 		flags_set(f->flags, Flags::TEMPLATE);
 	}
