@@ -259,29 +259,31 @@ shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand
 		return node;
 	}
 
-	shared<Node> index;
-	shared<Node> index2;
-	if (Exp.cur == ":") {
-		index = add_node_const(tree->add_constant_int(0));
-	} else {
-		index = parse_abstract_operand_greedy(block);
-	}
-	if (try_consume(":")) {
-		if (Exp.cur == "]") {
-			index2 = add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX));
-			// magic value (-_-)'
+	auto parse_value_or_slice = [this] (Block* block) {
+		shared<Node> index;
+		if (Exp.cur == ":") {
+			index = add_node_const(tree->add_constant_int(0));
 		} else {
-			index2 = parse_abstract_operand_greedy(block);
+			index = parse_abstract_operand_greedy(block);
 		}
+		if (try_consume(":")) {
+			shared<Node> index2;
+			if (Exp.cur == "]" or Exp.cur == ",") {
+				index2 = add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX));
+				// magic value (-_-)'
+			} else {
+				index2 = parse_abstract_operand_greedy(block);
+			}
+			index = add_node_slice(index, index2);
+		}
+		return index;
+	};
+
+	shared<Node> index = parse_value_or_slice(block);
 	}
 	expect_identifier("]", "']' expected after array index");
 
-	auto array = add_node_array(operand, index, TypeUnknown);
-	if (index2) {
-		array->set_num_params(3);
-		array->set_param(2, index2);
-	}
-	return array;
+	return add_node_array(operand, index, TypeUnknown);
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_call(shared<Node> link, Block *block) {

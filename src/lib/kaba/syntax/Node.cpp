@@ -95,6 +95,8 @@ string kind2str(NodeKind kind) {
 		return "tuple extract";
 	if (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)
 		return "constructor function";
+	if (kind == NodeKind::SLICE)
+		return "slice";
 	if (kind == NodeKind::VAR_TEMP)
 		return "temp";
 	if (kind == NodeKind::DEREF_VAR_TEMP)
@@ -150,6 +152,8 @@ string Node::signature(const Class *ns) const {
 		return as_func()->signature(ns);
 	if (kind == NodeKind::CONSTRUCTOR_AS_FUNCTION)
 		return as_func()->signature(ns);
+	if (kind == NodeKind::SLICE)
+		return t;
 	if (kind == NodeKind::STATEMENT)
 		return as_statement()->name + t;
 	if (kind == NodeKind::CALL_SPECIAL_FUNCTION)
@@ -543,6 +547,14 @@ shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class 
 	el->set_param(0, array);
 	el->set_param(1, index);
 	return el;
+}
+
+shared<Node> add_node_slice(shared<Node> start, shared<Node> end) {
+	auto n = new Node(NodeKind::SLICE, 0, TypeUnknown);
+	n->set_num_params(2);
+	n->set_param(0, start);
+	n->set_param(1, end);
+	return n;
 }
 
 shared<Node> make_constructor_static(shared<Node> n, const string &name) {

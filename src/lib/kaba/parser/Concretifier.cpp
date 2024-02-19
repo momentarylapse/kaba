@@ -451,9 +451,6 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, const Class *ns) {
 	auto operand = concretify_node(node->params[0], block, ns);
 	auto index = concretify_node(node->params[1], block, ns);
-	shared<Node> index2;
-	if (node->params.num >= 3)
-		index2 = concretify_node(node->params[2], block, ns);
 
 	if (operand->kind == NodeKind::CLASS) {
 		if (index->kind == NodeKind::CLASS) {
@@ -509,16 +506,17 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 
 
 	// __subarray__() ?
-	if (index2) {
-		auto *cf = operand->type->get_member_func(Identifier::Func::SUBARRAY, operand->type, {index->type, index->type});
-		if (cf) {
+	if (index->kind == NodeKind::SLICE) {
+		auto t1 = index->params[0]->type;
+		auto t2 = index->params[1]->type;
+		if (auto *cf = operand->type->get_member_func(Identifier::Func::SUBARRAY, operand->type, {t1, t2})) {
 			auto f = add_node_member_call(cf, operand, operand->token_id);
 			f->set_mutable(operand->is_mutable());
-			f->set_param(1, index);
-			f->set_param(2, index2);
+			f->set_param(1, index->params[0]);
+			f->set_param(2, index->params[1]);
 			return f;
 		} else {
-			do_error(format("function '%s.%s(int,int) -> %s' required by '[a:b]' missing", operand->type->name, Identifier::Func::SUBARRAY, operand->type->name), index);
+			do_error(format("function '%s.%s(%s,%s) -> %s' required by '[a:b]' not found", operand->type->name, Identifier::Func::SUBARRAY, t1->long_name(), t2->long_name(), operand->type->name), index);
 		}
 	}
 
@@ -539,8 +537,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	}
 
 	// __get__() ?
-	auto *cf = operand->type->get_get(index->type);
-	if (cf) {
+	if (auto *cf = operand->type->get_get(index->type)) {
 		auto f = add_node_member_call(cf, operand, operand->token_id);
 		f->set_mutable(operand->is_mutable());
 		f->set_param(1, index);
@@ -1683,6 +1680,10 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::CALL_FUNCTION) {
 		concretify_all_params(node, block, ns);
 		node->type = node->as_func()->literal_return_type;
+	} else if (node->kind == NodeKind::SLICE) {
+		concretify_all_params(node, block, ns);
+		node->type = TypeVoid;
+		return node;
 	} else if (node->kind == NodeKind::DEFINITELY) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
