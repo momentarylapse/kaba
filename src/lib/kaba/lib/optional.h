@@ -72,21 +72,21 @@ void lib_create_optional(const Class *tt) {
 	auto t = const_cast<Class*>(tt);
 
 	add_class(t);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init__);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init_raw__, Flags::AUTO_CAST);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init__, Flags::MUTABLE);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init_raw__, Flags::AUTO_CAST | Flags::MUTABLE);
 			func_add_param("x", tt->param[0]);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init_nil__, Flags::AUTO_CAST);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &XOptional<T>::__init_nil__, Flags::AUTO_CAST | Flags::MUTABLE);
 			func_add_param("x", TypeNone);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &XOptional<T>::__delete__);
+		class_add_func(Identifier::Func::DELETE, TypeVoid, &XOptional<T>::__delete__, Flags::MUTABLE);
 		class_add_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, &XOptional<T>::has_value, Flags::PURE);
 		class_add_func("__bool__", TypeBool, &XOptional<T>::has_value, Flags::PURE);
 		class_add_func("_value", tt->param[0], &XOptional<T>::_value, Flags::REF | Flags::RAISES_EXCEPTIONS);
 
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign__);
+		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign__, Flags::MUTABLE);
 			func_add_param("x", tt);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign_raw__);
+		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign_raw__, Flags::MUTABLE);
 			func_add_param("x", tt->param[0]);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign_nil__);
+		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XOptional<T>::__assign_nil__, Flags::MUTABLE);
 			func_add_param("x", TypeNone);
 
 		class_add_func(Identifier::Func::EQUAL, TypeBool, &XOptional<T>::__equal__);

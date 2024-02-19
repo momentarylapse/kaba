@@ -347,42 +347,42 @@ void SIAddPackageBase(Context *c) {
 
 
 	add_class(TypeObject);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &_VirtualBase::__init__);
-		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &VirtualBase::__delete__);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &_VirtualBase::__init__, Flags::MUTABLE);
+		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &VirtualBase::__delete__, Flags::MUTABLE);
 		class_set_vtable(VirtualBase);
 
 	add_class(TypeDynamicArray);
 		class_add_element("num", TypeInt, config.target.pointer_size);
-		class_add_func("swap", TypeVoid, &DynamicArray::simple_swap);
+		class_add_func("swap", TypeVoid, &DynamicArray::simple_swap, Flags::MUTABLE);
 			func_add_param("i1", TypeInt);
 			func_add_param("i2", TypeInt);
 		class_add_func(Identifier::Func::SUBARRAY, TypeDynamicArray, &DynamicArray::ref_subarray, Flags::REF);
 			func_add_param("start", TypeInt);
 			func_add_param("end", TypeInt);
 		// low level operations
-		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init);
+		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init, Flags::MUTABLE);
 			func_add_param("element_size", TypeInt);
-		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
-		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget);
-		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
+		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear, Flags::MUTABLE);
+		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget, Flags::MUTABLE);
+		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize, Flags::MUTABLE);
 			func_add_param("size", TypeInt);
-		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single);
+		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single, Flags::MUTABLE);
 			func_add_param("index", TypeInt);
 
 	add_class(TypeDictBase);
 		class_add_element("num", TypeInt, config.target.pointer_size);
 		// low level operations
-		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init);
+		class_add_func("__mem_init__", TypeVoid, &DynamicArray::init, Flags::MUTABLE);
 			func_add_param("element_size", TypeInt);
-		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear);
-		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget);
-		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize);
+		class_add_func("__mem_clear__", TypeVoid, &DynamicArray::simple_clear, Flags::MUTABLE);
+		class_add_func("__mem_forget__", TypeVoid, &DynamicArray::forget, Flags::MUTABLE);
+		class_add_func("__mem_resize__", TypeVoid, &DynamicArray::simple_resize, Flags::MUTABLE);
 			func_add_param("size", TypeInt);
-		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single);
+		class_add_func("__mem_remove__", TypeVoid, &DynamicArray::delete_single, Flags::MUTABLE);
 			func_add_param("index", TypeInt);
 
 	add_class(TypeSharedPointer);
-		class_add_func(Identifier::Func::INIT, TypeVoid, nullptr);
+		class_add_func(Identifier::Func::INIT, TypeVoid, nullptr, Flags::MUTABLE);
 			func_set_inline(InlineID::SHARED_POINTER_INIT);
 
 
@@ -510,9 +510,9 @@ void SIAddPackageBase(Context *c) {
 		class_add_element("_fp", TypePointer, &KabaCallableBase::fp);
 		class_add_element("_pp", TypePointer, &KabaCallableBase::pp);
 		//class_add_func(Identifier::Func::INIT, TypeVoid, &KabaCallableBase::__init__);
-		class_add_func(Identifier::Func::ASSIGN, TypeVoid, nullptr);
+		class_add_func(Identifier::Func::ASSIGN, TypeVoid, nullptr, Flags::MUTABLE);
 			func_set_inline(InlineID::CHUNK_ASSIGN);
-		class_add_func_virtual("call", TypeVoid, &KabaCallableBase::operator(), Flags::CONST);
+		class_add_func_virtual("call", TypeVoid, &KabaCallableBase::operator());
 	
 
 
@@ -571,7 +571,7 @@ void SIAddPackageBase(Context *c) {
 		//	func_set_inline(InlineID::INT16_TO_INT32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt16, InlineID::CHUNK_ASSIGN);
 		//add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt32, InlineID::INT16_ASSIGN_INT32);
-		class_add_func("__assign__", TypeVoid, &kaba_i16_from_i32);
+		class_add_func("__assign__", TypeVoid, &kaba_i16_from_i32, Flags::MUTABLE);
 			func_add_param("o", TypeInt);
 
 
@@ -876,14 +876,14 @@ void SIAddPackageBase(Context *c) {
 
 
 	add_class(TypeStringList);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &StringList::__init__);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &StringList::clear);
-		class_add_func("add", TypeVoid, &StringList::add);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &StringList::__init__, Flags::MUTABLE);
+		class_add_func(Identifier::Func::DELETE, TypeVoid, &StringList::clear, Flags::MUTABLE);
+		class_add_func("add", TypeVoid, &StringList::add, Flags::MUTABLE);
 			func_add_param("x", TypeString);
-		class_add_func("clear", TypeVoid, &StringList::clear);
-		class_add_func("remove", TypeVoid, &StringList::erase);
+		class_add_func("clear", TypeVoid, &StringList::clear, Flags::MUTABLE);
+		class_add_func("remove", TypeVoid, &StringList::erase, Flags::MUTABLE);
 			func_add_param("index", TypeInt);
-		class_add_func("resize", TypeVoid, &StringList::resize);
+		class_add_func("resize", TypeVoid, &StringList::resize, Flags::MUTABLE);
 			func_add_param("num", TypeInt);
 		class_add_func("join", TypeString, &StringList::join, Flags::PURE);
 			func_add_param("glue", TypeString);
@@ -908,17 +908,17 @@ void SIAddPackageBase(Context *c) {
 
 
 	add_class(TypeException);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaException::__init__);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaException::__init__, Flags::MUTABLE);
 			func_add_param("message", TypeString);
-		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &KabaException::__delete__);
+		class_add_func_virtual(Identifier::Func::DELETE, TypeVoid, &KabaException::__delete__, Flags::MUTABLE);
 		class_add_func_virtual(Identifier::Func::STR, TypeString, &KabaException::message);
 		class_add_element("_text", TypeString, config.target.pointer_size);
 		class_set_vtable(KabaException);
 
 	add_class(TypeNoValueError);
 		class_derive_from(TypeException);
-		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaNoValueError::__init__);
-		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaNoValueError::__delete__, Flags::OVERRIDE);
+		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaNoValueError::__init__, Flags::MUTABLE);
+		class_add_func(Identifier::Func::DELETE, TypeVoid, &KabaNoValueError::__delete__, Flags::OVERRIDE | Flags::MUTABLE);
 		class_set_vtable(KabaNoValueError);
 
 	add_func(Identifier::RAISE, TypeVoid, &kaba_raise_exception, Flags::STATIC | Flags::RAISES_EXCEPTIONS);

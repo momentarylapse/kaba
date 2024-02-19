@@ -3,7 +3,7 @@ class X as shared
 		print("X.init")
 	func __delete__()
 		print("X.del")
-	func const f()
+	func f()
 		print("test {{_shared_ref_count}}")
 
 #shared[X] f()

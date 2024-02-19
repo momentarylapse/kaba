@@ -400,7 +400,7 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 		p = nullptr;
 	}
 
-	Flags flags = Flags::NONE;
+	Flags flags = Flags::MUTABLE;
 	if (!(o->abstract->flags & OperatorFlags::LEFT_IS_MODIFIABLE))
 		flags = Flags::PURE;
 

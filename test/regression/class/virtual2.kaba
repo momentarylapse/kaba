@@ -2,7 +2,7 @@
 ##disasm
 
 class Base
-	func virtual const d()
+	func virtual d()
 		print("Base.d")
 
 class Derived extends Base

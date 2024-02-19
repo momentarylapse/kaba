@@ -864,7 +864,7 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, sha
 	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type);
 	if (!container->is_mutable())
-		flags_set(var->flags, Flags::CONST);
+		flags_clear(var->flags, Flags::MUTABLE);
 	node->set_param(0, add_node_local(var));
 
 	string index_name = format("-for_index_%d-", for_index_count ++);
@@ -890,7 +890,7 @@ shared<Node> Concretifier::concretify_statement_for_dict(shared<Node> node, shar
 	auto key_type = tree->request_implicit_class_alias(TypeString, node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type);
 	if (!container->is_mutable())
-		flags_set(var->flags, Flags::CONST);
+		flags_clear(var->flags, Flags::MUTABLE);
 	node->set_param(0, add_node_local(var));
 
 	string key_name = format("-for_key_%d-", for_index_count ++);
@@ -1464,7 +1464,7 @@ shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, con
 
 shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *block, const Class *ns) {
 	// [TYPE?, VAR, =[VAR,EXPR]]
-	bool as_const = (node->link_no == 1);
+	bool as_mutable = node->is_mutable();
 
 	// type?
 	const Class *type = nullptr;
@@ -1517,9 +1517,9 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 			node = concretify_node(node->params[2], block, ns);
 		}
 	}
-	if (as_const)
+	if (!as_mutable)
 		for (auto v: vars)
-			flags_set(v->flags, Flags::CONST);
+			flags_clear(v->flags, Flags::MUTABLE);
 	return node;
 }
 
@@ -1915,10 +1915,10 @@ shared<Node> Concretifier::make_func_pointer_node_callable(const shared<Node> l)
 
 	shared<Node> c;
 	if (f->virtual_index >= 0) {
-		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type, Flags::CONST);
+		c = new Node(NodeKind::CALL_VIRTUAL, (int_p)f, f->literal_return_type);
 	} else {
 		do_error("function pointer call should be virtual???", l);
-		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type, Flags::CONST);
+		c = new Node(NodeKind::CALL_FUNCTION, (int_p)f, f->literal_return_type);
 	}
 	c->set_num_params(f->num_params);
 	c->set_instance(l->deref());
@@ -2216,7 +2216,7 @@ shared<Node> Concretifier::try_build_pipe_map_array(const shared<Node> &input, N
 	string viname = format("<map-index-%d>", map_counter);
 	string vname = format("<map-var-%d>", map_counter++);
 	auto var = block->add_var(vname, tree->request_implicit_class_reference(el_type, token_id));
-	flags_set(var->flags, Flags::CONST);
+	flags_clear(var->flags, Flags::MUTABLE);
 	n_for->set_param(0, add_node_local(var));
 	auto index = block->add_var(viname, TypeInt);
 	n_for->set_param(1, add_node_local(index));

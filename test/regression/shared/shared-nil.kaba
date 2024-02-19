@@ -3,7 +3,7 @@ class X as shared
 		print("init")
 	func __delete__()
 		print("del")
-	func const f()
+	func f()
 		print("f")
 
 
