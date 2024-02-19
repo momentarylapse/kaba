@@ -446,14 +446,14 @@ shared<Node> add_node_const(const Constant *c, int token_id) {
 
 shared<Node> add_node_statement(StatementID id, int token_id, const Class *type) {
 	auto *s = statement_from_id(id);
-	auto c = new Node(NodeKind::STATEMENT, (int_p)s, type, Flags::MUTABLE, token_id);
+	auto c = new Node(NodeKind::STATEMENT, (int_p)s, type, Flags::NONE, token_id);
 	c->set_num_params(s->num_params);
 	return c;
 }
 
 shared<Node> add_node_special_function_call(SpecialFunctionID id, int token_id, const Class *type) {
 	auto *s = special_function_from_id(id);
-	auto c = new Node(NodeKind::CALL_SPECIAL_FUNCTION, (int_p)s, type, Flags::MUTABLE, token_id);
+	auto c = new Node(NodeKind::CALL_SPECIAL_FUNCTION, (int_p)s, type, Flags::NONE, token_id);
 	c->set_num_params(s->max_params);
 	return c;
 }

@@ -863,8 +863,12 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, sha
 	auto var_name = node->params[0]->as_token();
 	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type);
-	if (!container->is_mutable())
+	if (node->is_mutable()) {
+		if (!container->is_mutable())
+			do_error("can not iterate mutating over a constant container", node);
+	} else {
 		flags_clear(var->flags, Flags::MUTABLE);
+	}
 	node->set_param(0, add_node_local(var));
 
 	string index_name = format("-for_index_%d-", for_index_count ++);

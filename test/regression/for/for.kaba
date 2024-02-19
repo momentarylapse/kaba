@@ -2,7 +2,7 @@
 var a: int[]
 
 func fill(out x: int[])
-	for y in x
+	for mut y in x
 		if y == 5
 			continue
 		y += 100
@@ -17,7 +17,7 @@ func main()
 	fill(a)
 	print(a)
 	
-	for j in a
+	for mut j in a
 		j += 100
 	
 	for j in a
