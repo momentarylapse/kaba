@@ -265,6 +265,13 @@ public:
 	string utf8() const {
 		return *(string*)this;
 	}
+
+	base::optional<int> _find(const bytes &s, int pos0) const {
+		int r = reinterpret_cast<const string*>(this)->find(s, pos0);
+		if (r < 0)
+			return base::None;
+		return r;
+	}
 };
 
 
@@ -757,6 +764,9 @@ void SIAddPackageBase(Context *c) {
 		class_add_func("md5", TypeString, &bytes::md5, Flags::PURE);
 		class_add_func("hex", TypeString, &bytes::hex, Flags::PURE);
 		class_add_func("utf8", TypeString, &KabaBytes::utf8, Flags::PURE);
+		class_add_func("find", TypeIntOptional, &KabaBytes::_find, Flags::PURE);
+			func_add_param("str", TypeBytes);
+			func_add_param_def("start", TypeInt, 0);
 		//class_add_func(Identifier::Func::REPR, TypeString, &bytes::hex, Flags::PURE);
 	//	class_add_func(Identifier::Func::FORMAT, TypeString, &KabaString::format, Flags::PURE);
 	//		func_add_param("fmt", TypeString);
