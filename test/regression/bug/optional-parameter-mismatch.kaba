@@ -1,0 +1,10 @@
+func f() -> vec3?
+	return vec3(1,2,3)
+
+
+func main()
+	var o = f()
+	print(o)
+	o = vec3(4,5,6)
+	print(o)
+
