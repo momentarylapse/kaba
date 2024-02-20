@@ -1,0 +1,9 @@
+func main()
+	var s = "hallo__"
+	
+	&s[1] = 'A'
+
+	as_binary(&s[5], 2) = [0x30, 0x31]
+
+	print(s)
+

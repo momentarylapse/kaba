@@ -1618,6 +1618,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];
 		node->type = tree->request_implicit_class_reference(sub->type, node->token_id);
+		node->set_mutable(sub->is_mutable());
 	} else if (node->kind == NodeKind::ABSTRACT_CALL) {
 		return concretify_call(node, block, ns);
 	} else if (node->kind == NodeKind::ARRAY) {
