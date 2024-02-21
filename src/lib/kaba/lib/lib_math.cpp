@@ -746,18 +746,21 @@ void SIAddPackageMath(Context *c) {
 		class_add_func(Identifier::Func::INIT, TypeVoid, &XList<plane>::__init__, Flags::MUTABLE);
 
 
-	/*add_class(TypeRay);
+	add_class(TypeRay);
 		class_add_element("u", TypeVec3, &Ray::u);
 		class_add_element("v", TypeVec3, &Ray::v);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaRay::init);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &KabaRay::init_ex);
-			func_add_param("u", TypeVec3);
-			func_add_param("v", TypeVec3);
+			func_add_param("a", TypeVec3);
+			func_add_param("b", TypeVec3);
 		class_add_func("dot", TypeFloat32, &Ray::dot, Flags::STATIC | Flags::PURE);
 			func_add_param("r1", TypeRay);
 			func_add_param("r2", TypeRay);
 		class_add_func("intersect_plane", TypeVec3Optional, &Ray::intersect_plane, Flags::PURE);
-			func_add_param("pl", TypePlane);*/
+			func_add_param("pl", TypePlane);
+		add_operator(OperatorID::ASSIGN, TypeVoid, TypeRay, TypeRay, InlineID::CHUNK_ASSIGN);
+		add_operator(OperatorID::EQUAL, TypeBool, TypeRay, TypeRay, InlineID::CHUNK_EQUAL);
+		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeRay, TypeRay, InlineID::CHUNK_NOT_EQUAL);
 
 
 	add_class(TypeMat4);

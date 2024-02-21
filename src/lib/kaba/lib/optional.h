@@ -31,7 +31,7 @@ public:
 	void __init__() {
 		new(this) XOptional();
 	}
-	static void __init_raw__(base::optional<T> &self, base::xparam<T>::t x) {
+	static void __init_raw__(base::optional<T> &self, typename base::xparam<T>::t x) {
 		new(&self) base::optional(x);
 	}
 	void __init_nil__(void* p) {
@@ -51,7 +51,7 @@ public:
 	void __assign__(const base::optional<T>& o) {
 		*((base::optional<T>*)this) = o;
 	}
-	void __assign_raw__(base::xparam<T>::t o) {
+	void __assign_raw__(typename base::xparam<T>::t o) {
 		*((base::optional<T>*)this) = o;
 	}
 	void __assign_nil__(void *p) {
