@@ -398,6 +398,7 @@ void SIAddPackageMath(Context *c) {
 	auto TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vec3>));
 	auto TypeRandom = add_type("Random", sizeof(Random));
 	auto TypeFFT = add_type("fft", 0);
+	const_cast<Class*>(TypeFFT)->type = Class::Type::NAMESPACE;
 
 	auto TypeVec3Optional = add_type_optional(TypeVec3);
 	
