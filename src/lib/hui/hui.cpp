@@ -43,7 +43,7 @@ namespace hui
 {
 
 
-string Version = "0.7.6.3";
+string Version = "0.7.6.4";
 
 
 #ifdef OS_WINDOWS
@@ -100,6 +100,10 @@ int hui_main(const Array<string> &);
 // for a system independent usage of this library
 
 #ifdef OS_WINDOWS
+
+int main(int num_args, char* args[]) {
+	return hui_main(hui::make_args(num_args, args));
+}
 
 #ifdef _CONSOLE
 
