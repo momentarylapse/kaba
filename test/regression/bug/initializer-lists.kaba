@@ -1,0 +1,13 @@
+struct A
+	a: int
+	b: bool[]
+
+
+func main()
+	var a: A
+	a = [1, []]
+	print(a)
+	
+	var list: A[] = [[13,[]], [14,[]]]
+	print(list)
+
