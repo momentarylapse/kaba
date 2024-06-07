@@ -541,8 +541,18 @@ gboolean on_gtk_area_focus_in(GtkWidget *widget, GdkEventButton *event, gpointer
 
 void on_gtk_gesture_scroll(GtkEventControllerScroll *controller, double dx, double dy, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
-	c->panel->win->input.scroll_x = (float)dx;
-	c->panel->win->input.scroll_y = (float)dy;
+
+#if GTK_CHECK_VERSION(4,8,0)
+	const auto unit = gtk_event_controller_scroll_get_unit(controller);
+	if (unit == GDK_SCROLL_UNIT_SURFACE) { // px
+		// we're mostly expecting "clicks" ... 1 click ~ 25px
+		dx *= 0.04;
+		dy *= 0.04;
+	}
+#endif
+	const float factor = config.get_float("hui.scroll-factor", 1.0f);
+	c->panel->win->input.scroll_x = (float)dx * factor;
+	c->panel->win->input.scroll_y = (float)dy * factor;
 
 	auto mod = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(controller));
 	win_correct_by_modifier(c->panel->win, mod);
@@ -556,20 +566,21 @@ void on_gtk_gesture_scroll(GtkEventControllerScroll *controller, double dx, doub
 
 gboolean on_gtk_area_mouse_wheel(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
 	auto c = reinterpret_cast<Control*>(user_data);
+	const float factor = config.get_float("hui.scroll-factor", 1.0f);
 
 	if (c->panel->win) {
 		win_correct_by_modifier(c->panel->win, (GdkModifierType)event->state);
 		if (event->direction == GDK_SCROLL_UP) {
-			c->panel->win->input.scroll_y = 1;
+			c->panel->win->input.scroll_y = factor;
 		} else if (event->direction == GDK_SCROLL_DOWN) {
-			c->panel->win->input.scroll_y = -1;
+			c->panel->win->input.scroll_y = - factor;
 		} else if (event->direction == GDK_SCROLL_LEFT) {
-			c->panel->win->input.scroll_x = -1;
+			c->panel->win->input.scroll_x = factor;
 		} else if (event->direction == GDK_SCROLL_RIGHT) {
-			c->panel->win->input.scroll_x = -1;
+			c->panel->win->input.scroll_x = - factor;
 		} else if (event->direction == GDK_SCROLL_SMOOTH) {
-			c->panel->win->input.scroll_x = (float)event->delta_x;
-			c->panel->win->input.scroll_y = (float)event->delta_y;
+			c->panel->win->input.scroll_x = (float)event->delta_x * factor;
+			c->panel->win->input.scroll_y = (float)event->delta_y * factor;
 		}
 		c->notify(EventID::MOUSE_WHEEL, false);
 	}
