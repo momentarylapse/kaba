@@ -112,7 +112,6 @@ public:
 
 	static shared<Node> node_not(shared<Node> n);
 	static shared<Node> node_return(shared<Node> n);
-	static shared<Node> node_block_return(shared<Node> n);
 	static shared<Node> node_if(shared<Node> n_test, shared<Node> n_true);
 	static shared<Node> node_if_else(shared<Node> n_test, shared<Node> n_true, shared<Node> n_false);
 	shared<Node> node_raise_no_value();

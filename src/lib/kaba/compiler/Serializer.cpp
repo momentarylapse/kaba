@@ -545,8 +545,6 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			}
 
 			break;
-		case StatementID::BLOCK_RETURN:
-			return serialize_node(com->params[0].get(), block, index);
 		case StatementID::NEW:{
 			auto ret = add_temp(com->type, false);
 
