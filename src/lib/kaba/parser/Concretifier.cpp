@@ -1740,9 +1740,15 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			if (block->is_trust_me()) {
 				return sub->change_type(t->param[0]);
 			} else {
-				if (auto f = t->get_member_func("_value", t->param[0], {}))
-					return add_node_member_call(f, sub);
-				do_error(format("missing: %s._value()", t->long_name()), node);
+				// value or raise
+				auto bb = new Block(block->function, block, TypeUnknown);
+				auto cmd_if = add_node_statement(StatementID::IF, node->token_id, TypeVoid);
+				if (auto f = t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}))
+					 cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, add_node_member_call(f, sub), nullptr, node->token_id));
+				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
+				bb->add(cmd_if);
+				bb->add(sub->change_type(t->param[0]));
+				return concretify_node(bb, block, ns);
 			}
 		} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
 			// null-able pointer?

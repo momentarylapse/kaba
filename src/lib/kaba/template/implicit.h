@@ -85,7 +85,6 @@ public:
 	void implement_optional_assign_raw(Function *f, const Class *t);
 	void implement_optional_assign_null(Function *f, const Class *t);
 	void implement_optional_has_value(Function *f, const Class *t);
-	void implement_optional_value(Function *f, const Class *t);
 	void implement_optional_equal(Function *f, const Class *t);
 	void implement_optional_equal_raw(Function *f, const Class *t);
 	void implement_product_equal(Function *f, const Class *t);
