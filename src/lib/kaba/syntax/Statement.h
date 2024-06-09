@@ -31,7 +31,7 @@ enum class StatementID {
 	NEW,
 	DELETE,
 	ASM,
-	//RAISE,
+	RAISE,
 	TRY,
 	EXCEPT,
 	PASS,

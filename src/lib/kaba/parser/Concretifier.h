@@ -80,6 +80,7 @@ public:
 	shared<Node> concretify_statement_delete(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_raw_function_pointer(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_try(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_raise(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_lambda(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_call(shared<Node> node, SpecialFunction *s, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_str(shared<Node> node, Block *block, const Class *ns);

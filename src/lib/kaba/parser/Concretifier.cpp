@@ -10,6 +10,7 @@
 #include "../template/template.h"
 #include "../Context.h"
 #include "../lib/lib.h"
+#include "../dynamic/exception.h"
 #include "../../base/set.h"
 #include "../../base/iter.h"
 #include "../../os/msg.h"
@@ -1152,6 +1153,10 @@ shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *bl
 	return node;
 }
 
+shared<Node> Concretifier::concretify_statement_raise(shared<Node> node, Block *block, const Class *ns) {
+	return node;
+}
+
 // inner_callable: (A,B,C,D,E)->R
 // captures:       [-,x0,-,-,x1]
 shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable, const shared_array<Node> &captures, const Array<bool> &capture_via_ref) {
@@ -1353,6 +1358,8 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 		return concretify_statement_raw_function_pointer(node, block, ns);
 	} else if (s->id == StatementID::TRY) {
 		return concretify_statement_try(node, block, ns);
+	} else if (s->id == StatementID::RAISE) {
+		return concretify_statement_raise(node, block, ns);
 	} else if (s->id == StatementID::LAMBDA) {
 		return concretify_statement_lambda(node, block, ns);
 	} else {
@@ -1441,7 +1448,6 @@ bool is_non_owning_pointer(const Class *t) {
 
 shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, const Class *ns) {
 	for (int i=0; i<node->params.num; i++) {
-
 		node->params[i] = concretify_node(node->params[i], node->as_block(), ns);
 		if (node->params[i]->type->is_pointer_xfer_not_null())
 			do_error("xfer[..] values must not be discarded", node->params[i]);
@@ -1585,6 +1591,22 @@ shared<Node> Concretifier::concretify_array_builder_for_inner(shared<Node> n_for
 	n->set_param(0, n_for);
 	n->set_param(1, add_node_local(array_var));
 	return n;
+}
+
+KabaException* create_exception(ErrorID code) {
+	if (code == ErrorID::OPTIONAL_NO_VALUE)
+		return new KabaNoValueError;
+	if (code == ErrorID::NULL_POINTER)
+		return new KabaException("null pointer");
+	return new KabaException("???");
+}
+
+shared<Node> add_raise(SyntaxTree* tree, int token_id, ErrorID code) {
+	auto e = create_exception(code);
+	tree->raised_exceptions.add(e);
+	auto node = add_node_statement(StatementID::RAISE, token_id);
+	node->set_param(0, add_node_const(tree->add_constant_pointer(TypePointer, e)));
+	return node;
 }
 
 // concretify as far as possible

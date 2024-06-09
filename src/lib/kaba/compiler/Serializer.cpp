@@ -1,6 +1,7 @@
 #include "../kaba.h"
 #include "Serializer.h"
 #include "Compiler.h"
+#include "../dynamic/exception.h"
 #include "../../os/msg.h"
 #include "../../base/algo.h"
 #include "../../base/iter.h"
@@ -582,9 +583,11 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			auto f = syntax_tree->required_func_global("@free");
 			add_function_call(f, {operand}, p_none);
 			break;}
-		/*case StatementID::RAISE:
-			AddFunctionCall();
-			break;*/
+		case StatementID::RAISE:{
+			auto e = com->params[0]->as_const_p();
+			auto f = syntax_tree->required_func_global(block->is_in_try() ? Identifier::RAISE : "@die");
+			add_function_call(f, {param_global(TypePointer, e)}, p_none);
+			break;}
 		case StatementID::TRY:{
 			int label_finish = list->create_label("_TRY_AFTER_" + i2s(num_labels ++));
 
