@@ -1597,7 +1597,7 @@ KabaException* create_exception(ErrorID code) {
 	if (code == ErrorID::OPTIONAL_NO_VALUE)
 		return new KabaNoValueError;
 	if (code == ErrorID::NULL_POINTER)
-		return new KabaException("null pointer");
+		return new KabaNullPointerError();
 	return new KabaException("???");
 }
 
@@ -1732,39 +1732,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		node->type = TypeVoid;
 		return node;
 	} else if (node->kind == NodeKind::DEFINITELY) {
-		concretify_all_params(node, block, ns);
-		auto sub = node->params[0];
-		auto t = sub->type;
-		if (t->is_optional()) {
-			// optional?
-			if (block->is_trust_me()) {
-				return sub->change_type(t->param[0]);
-			} else {
-				// value or raise
-				auto bb = new Block(block->function, block, TypeUnknown);
-				auto cmd_if = add_node_statement(StatementID::IF, node->token_id, TypeVoid);
-				if (auto f = t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}))
-					 cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, add_node_member_call(f, sub), nullptr, node->token_id));
-				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
-				bb->add(cmd_if);
-				bb->add(sub->change_type(t->param[0]));
-				return concretify_node(bb, block, ns);
-			}
-		} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
-			// null-able pointer?
-			auto t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
-			if (block->is_trust_me()) {
-				return sub->change_type(t_def);
-			} else {
-				auto n = add_node_call(tree->required_func_global("@pointer_definitely", node->token_id), node->token_id);
-				n->set_num_params(1);
-				n->set_param(0, sub);
-				n->type = t_def;
-				return n;
-			}
-		} else {
-			do_error("'!' only allowed for optional values and null-able pointers", node);
-		}
+		return concretify_definitely(node, block, ns);
 	} else {
 		node->show();
 		do_error("INTERNAL ERROR: unexpected node", node);
@@ -1773,6 +1741,47 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	return node;
 }
 
+shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block, const Class *ns) {
+	concretify_all_params(node, block, ns);
+	auto sub = node->params[0];
+	auto t = sub->type;
+	if (t->is_optional()) {
+		// optional?
+		if (block->is_trust_me()) {
+			return sub->change_type(t->param[0]);
+		} else {
+			// value or raise
+			auto bb = new Block(block->function, block, TypeUnknown);
+			auto cmd_if = add_node_statement(StatementID::IF, node->token_id, TypeVoid);
+			if (auto f = t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}))
+				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, add_node_member_call(f, sub), nullptr, node->token_id));
+			cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
+			bb->add(cmd_if);
+			bb->add(sub->change_type(t->param[0]));
+			return concretify_node(bb, block, ns);
+		}
+	} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
+		// null-able pointer?
+		auto t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+		if (block->is_trust_me()) {
+			return sub->change_type(t_def);
+		} else {
+			auto bb = new Block(block->function, block, TypeUnknown);
+			auto cmd_if = add_node_statement(StatementID::IF, node->token_id, TypeVoid);
+			auto f = tree->required_func_global("p2b", node->token_id);
+			auto cmd_p2b = add_node_call(f, node->token_id);
+			cmd_p2b->set_param(0, sub);
+			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, cmd_p2b, nullptr, node->token_id));
+			cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::NULL_POINTER));
+			bb->add(cmd_if);
+			bb->add(sub->change_type(t_def));
+			return concretify_node(bb, block, ns);
+		}
+	} else {
+		do_error("'!' only allowed for optional values and null-able pointers", node);
+	}
+	return node;
+}
 
 const Class *Concretifier::concretify_as_type(shared<Node> node, Block *block, const Class *ns) {
 	auto cc = concretify_node(node, block, ns);

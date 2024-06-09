@@ -32,6 +32,11 @@ public:
 	void _cdecl __init__();
 };
 
+class KabaNullPointerError : public KabaException {
+public:
+	KabaNullPointerError();
+};
+
 enum class ErrorID {
 	NONE,
 	OPTIONAL_NO_VALUE,

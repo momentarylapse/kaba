@@ -52,6 +52,9 @@ void KabaNoValueError::__init__() {
 	new(this) KabaNoValueError();
 }
 
+KabaNullPointerError::KabaNullPointerError() : KabaException("null pointer") {
+}
+
 
 
 struct StackFrameInfo {

@@ -74,12 +74,6 @@ bytes _cdecl kaba_binary(char *p, int length) {
 	return b;
 }
 
-void* kaba_pointer_definitely(void* p) {
-	if (!p)
-		kaba::kaba_raise_exception(new KabaNoValueError());
-	return p;
-}
-
 #if 0
 void* kaba_malloc(int size) {
 	msg_error("MALLOC " + i2s(size));
@@ -939,8 +933,6 @@ void SIAddPackageBase(Context *c) {
 		
 	// type casting
 	add_func("p2s", TypeString, &p2s, Flags::STATIC | Flags::PURE);
-		func_add_param("p", TypePointer);
-	add_func("@pointer_definitely", TypeReference, &kaba_pointer_definitely, Flags::STATIC | Flags::RAISES_EXCEPTIONS);
 		func_add_param("p", TypePointer);
 	add_func("char", TypeString, &kaba_char2str, Flags::STATIC | Flags::PURE);
 		func_add_param("c", TypeInt);
