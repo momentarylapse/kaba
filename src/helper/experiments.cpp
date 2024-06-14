@@ -144,6 +144,10 @@ public:
 	}
 };
 
+int f_add(int a, int b) {
+	return a + b;
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -159,7 +163,7 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&ggg, -1));
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 #endif
-	msg_write(disassemble((void*)&fff2, -1));
+	msg_write(disassemble((void*)&f_add, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 
 	//test_optional();
