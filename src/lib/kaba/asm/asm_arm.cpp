@@ -26,7 +26,9 @@ static Array<CPUInstructionARM> cpu_instructions_arm;
 enum {
 	AP_NONE,
 	AP_REG_0,
+	AP_REG_0P5,
 	AP_FREG_0_5,
+	AP_REG_5P5,
 	AP_REG_8,
 	AP_REG_12,
 	AP_FREG_12_22,
@@ -36,6 +38,8 @@ enum {
 	AP_REG_SET,
 	AP_OFFSET24_0,
 	AP_IMM12_0,
+	AP_IMM12_10,
+	AP_IMM12_10SH,
 	AP_SHIFTED12_0,
 	AP_DEREF_REG_16_OFFSET,
 	AP_SHIFTER_0X12_I25,
@@ -67,7 +71,7 @@ RegID r_reg(int n) {
 	return (RegID)((int)RegID::R0 + n);
 }
 
-void arm_init() {
+void arm32_init() {
 	registers.clear();
 	for (int i=0; i<16; i++)
 		add_reg(format("r%d", i), r_reg(i), RegGroup::GENERAL, SIZE_32, (RegRoot)((int)RegRoot::R0 + i));
@@ -178,6 +182,42 @@ void arm_init() {
 	add_inst_arm(InstID::FTOSIZS, 0x0ebd0ac0, 0x0fbf0fd0, AP_FREG_12_22, AP_FREG_0_5);
 }
 
+
+
+void arm64_init() {
+	registers.clear();
+	for (int i=0; i<32; i++)
+		add_reg(format("r%d", i), r_reg(i), RegGroup::GENERAL, SIZE_64, (RegRoot)((int)RegRoot::R0 + i));
+	for (int i=0; i<16; i++)
+		add_reg(format("s%d", i), s_reg(i), RegGroup::VFP, SIZE_32, (RegRoot)((int)RegRoot::S0 + i));
+
+	// create easy to access array
+	register_by_id.clear();
+	for (auto &r: registers) {
+		if (register_by_id.num <= (int)r.id)
+			register_by_id.resize((int)r.id + 1);
+		RegisterByID(r.id) = &r;
+	}
+
+	cpu_instructions_arm.clear();
+
+	//add_inst_arm(InstID::ADD,  0x00800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	//add_inst_arm(InstID::ADDS, 0x00900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
+	/*add_inst_arm(InstID::ADC,  0x1b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
+	add_inst_arm(InstID::ADCS, 0x3b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
+
+	add_inst_arm(InstID::ADC,  0x9b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
+	add_inst_arm(InstID::ADCS, 0xbb000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);*/
+
+
+	add_inst_arm(InstID::SUB,  0xd1000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
+	add_inst_arm(InstID::ADD,  0x91000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
+
+
+	add_inst_arm(InstID::STR,  0xb9000000, 0xffc00000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10); // 32bit
+	add_inst_arm(InstID::STR,  0xf9000000, 0xffc00000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10); // 64bit
+}
+
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;
 
 InstID ARM_DATA_INSTRUCTIONS[NUM_ARM_DATA_INSTRUCTIONS] = {
@@ -279,6 +319,12 @@ InstructionParam disarm_param(int code, int p) {
 	} else if (p == AP_REG_0) {
 		int fm = (code & 0x0000000f);
 		return param_reg(r_reg(fm));
+	} else if (p == AP_REG_0P5) {
+		int fm = (code & 0x0000001f);
+		return param_reg(r_reg(fm));
+	} else if (p == AP_REG_5P5) {
+		int fm = (code & 0x000003e0) >> 5;
+		return param_reg(r_reg(fm));
 	} else if (p == AP_REG_8) {
 		int fm = (code & 0x00000f00) >> 8;
 		return param_reg(r_reg(fm));
@@ -310,6 +356,13 @@ InstructionParam disarm_param(int code, int p) {
 		return param_xxx(code, true);
 	} else if (p == AP_REG_SET) {
 		return param_reg_set(code & 0xffff);
+	} else if (p == AP_IMM12_10) {
+		return param_imm((code & 0x003ffc00) >> 10, SIZE_64);
+	} else if (p == AP_IMM12_10SH) {
+		if (code & 0x00400000)
+			return param_imm((code & 0x003ffc00) << 2, SIZE_64);
+		else
+			return param_imm((code & 0x003ffc00) >> 10, SIZE_64);
 	} else if (p != AP_NONE) {
 		msg_error("disasm_param... unhandled " + i2s(p));
 	}
@@ -340,15 +393,17 @@ string arm_disassemble(void *_code_,int length,bool allow_comments) {
 	for (int ni=0; ni<length/4; ni++) {
 		int cur = code[ni];
 
-		[[maybe_unused]] int x = (cur >> 25) & 0x7;
+	//	[[maybe_unused]] int x = (cur >> 25) & 0x7;
 
 		buf += i2h(cur, 4);
 		buf += "    ";
 
 		InstructionWithParams iwp;
 		iwp = disarm_general(cur);
-		iwp.condition = (ArmCond)((cur >> 28) & 0xf);
-
+		if (instruction_set.set == InstructionSet::ARM64) {
+		} else {
+			iwp.condition = (ArmCond)((cur >> 28) & 0xf);
+		}
 
 		buf += iwp.str() + "\n";
 	}

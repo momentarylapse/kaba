@@ -763,8 +763,10 @@ void init(InstructionSet set) {
 		if (instruction_names[i].inst != (InstID)i)
 			msg_error(format("%s  %d  !=  %d", instruction_names[i].name, (int)instruction_names[i].inst, i));
 
-	if ((set == InstructionSet::ARM32) || (set == InstructionSet::ARM64))
-		arm_init();
+	if (set == InstructionSet::ARM32)
+		arm32_init();
+	else if (set == InstructionSet::ARM64)
+		arm64_init();
 	else if ((set == InstructionSet::X86) || (set == InstructionSet::AMD64))
 		x86_init();
 
