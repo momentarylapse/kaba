@@ -350,6 +350,8 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 	{InstID::B,		"b"},
 	{InstID::BL,		"bl"},
 	{InstID::BLX,		"blx"},
+	{InstID::ADR,		"adr"},
+	{InstID::ADRP,		"adrp"},
 
 	{InstID::MULS, "muls"},
 	{InstID::ADDS, "adds"},
@@ -367,8 +369,11 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 
 	{InstID::LDR,		"ldr"},
 	{InstID::LDRB,		"ldrb"},
+	{InstID::LDRSW,		"ldrsw"},
+	{InstID::LDP,		"ldp"},
 //	{inst_str,		"str"},
 	{InstID::STRB,		"strb"},
+	{InstID::STP,		"stp"},
 
 	{InstID::LDMIA,		"ldmia"},
 	{InstID::LDMIB,		"ldmib"},
