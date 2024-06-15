@@ -94,7 +94,8 @@ struct ParserState {
 extern ParserState state;
 
 
-void arm_init();
+void arm32_init();
+void arm64_init();
 string arm_disassemble(void *_code_,int length,bool allow_comments);
 
 void x86_init();
