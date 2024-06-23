@@ -148,6 +148,12 @@ int f_add(int a, int b) {
 	return a + b;
 }
 
+#include "../lib/kaba/compiler/Compiler.h"
+
+namespace kaba {
+	void* get_nice_memory(int64 size, bool executable, Module *module);
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -168,6 +174,36 @@ void do_experiments() {
 
 	//test_optional();
 	//test_variant();
+
+	auto m = kaba::default_context->create_empty_module("-test-");
+
+	kaba::Compiler c(m.get());
+	//c.allocate_memory()
+	//c._compile();
+	auto mem = kaba::get_nice_memory(4096, true, m.get());
+	msg_write(p2s(mem));
+
+	auto mi = (unsigned int*)mem;
+	msg_write("A");
+	pthread_jit_write_protect_np(0);
+	msg_write("A2");
+	mi[0] = 0xd10043ff;
+	mi[1] = 0xb9000fe0;
+	mi[2] = 0xb9000be1;
+	mi[3] = 0xb9400fe8;
+	mi[4] = 0xb9400be9;
+	mi[5] = 0x0b090100;
+	mi[6] = 0x910043ff;
+	mi[7] = 0xd65f03c0;
+	msg_write("B");
+	pthread_jit_write_protect_np(1);
+	msg_write("B2");
+
+	using funcp = int(*)(int, int);
+	auto f = (funcp)mem;
+
+	int x = (*f)(1, 2);
+	msg_write(x);
 }
 
 
