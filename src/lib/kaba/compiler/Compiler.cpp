@@ -10,6 +10,7 @@
 #include "BackendAmd64.h"
 #include "BackendX86.h"
 #include "BackendARM.h"
+#include "BackendArm64.h"
 #include "Serializer.h"
 #include "../Interpreter.h"
 #include "../asm/asm.h"
@@ -802,6 +803,8 @@ Backend *create_backend(Serializer *s) {
 		return new BackendAmd64(s);
 	if (config.target.instruction_set == Asm::InstructionSet::X86)
 		return new BackendX86(s);
+	if (config.target.instruction_set == Asm::InstructionSet::ARM64)
+		return new BackendArm64(s);
 	if (config.target.is_arm())
 		return new BackendARM(s);
 	s->module->do_error("unable to create a backend for the architecture");

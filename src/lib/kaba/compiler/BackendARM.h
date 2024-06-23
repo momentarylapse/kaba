@@ -15,7 +15,7 @@ namespace kaba {
 
 class BackendARM : public Backend {
 public:
-	BackendARM(Serializer *serializer);
+	explicit BackendARM(Serializer *serializer);
 	~BackendARM() override;
 
 
