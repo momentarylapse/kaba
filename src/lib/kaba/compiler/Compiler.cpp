@@ -826,34 +826,34 @@ void Compiler::assemble_function(int index, Function *f, Asm::InstructionWithPar
 		f->block->show(TypeVoid);
 
 	if (config.target.interpreted) {
-		auto x = new Serializer(module, list);
-		x->cur_func_index = index;
-		x->serialize_function(f);
-		x->fix_return_by_ref();
+		auto serializer = new Serializer(module, list);
+		serializer->cur_func_index = index;
+		serializer->serialize_function(f);
+		serializer->fix_return_by_ref();
 		if (!module->interpreter)
 			module->interpreter = new Interpreter(module);
-		module->interpreter->add_function(f, x);
+		module->interpreter->add_function(f, serializer);
 		return;
 	}
 
 
-	auto x = new Serializer(module, list);
-	x->cur_func_index = index;
-	x->serialize_function(f);
-	x->fix_return_by_ref();
-	auto be = create_backend(x);
+	auto serializer = new Serializer(module, list);
+	serializer->cur_func_index = index;
+	serializer->serialize_function(f);
+	serializer->fix_return_by_ref();
+	auto backend = create_backend(serializer);
 
 	try {
-		be->process(f, index);
-		be->assemble();
+		backend->process(f, index);
+		backend->assemble();
 	} catch (Exception &e) {
 		throw e;
 	} catch (Asm::Exception &e) {
 		throw Exception(e, module, f);
 	}
-	module->functions_to_link.append(be->list->wanted_label);
-	delete be;
-	delete x;
+	module->functions_to_link.append(backend->list->wanted_label);
+	delete backend;
+	delete serializer;
 
 }
 
@@ -906,7 +906,7 @@ void Compiler::compile_functions(char *oc, int &ocs) {
 
 	// assemble into opcode
 	try {
-		list->optimize(oc, ocs);
+//		list->optimize(oc, ocs);
 		list->compile(oc, ocs);
 	} catch(Asm::Exception &e) {
 		list->show();

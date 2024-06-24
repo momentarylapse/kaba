@@ -1612,8 +1612,10 @@ void InstructionWithParamsList::compile(void *oc, int &ocs) {
 			break;
 
 		// opcode
-		if ((instruction_set.set == InstructionSet::ARM32) or (instruction_set.set == InstructionSet::ARM64))
-			add_instruction_arm((char*)oc, ocs, i);
+		if (instruction_set.set == InstructionSet::ARM64)
+			add_instruction_arm64((char*)oc, ocs, i);
+		else if (instruction_set.set == InstructionSet::ARM32)
+			add_instruction_arm32((char*)oc, ocs, i);
 		else
 			add_instruction((char*)oc, ocs, i);
 	}

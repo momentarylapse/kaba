@@ -33,10 +33,10 @@ enum class RegID {
 	ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7,
 	RAX, RCX, RDX, RBX, RSP, RSI, RDI, RBP, // 8 byte
 	R0, R1, R2, R3, R4, R5, R6, R7, // ARM 4 byte / AMD64 8 byte
-	R8, R9, R10, R11, R12, R13, R14, R15,
+	R8, R9, R10, R11, R12, R13, R14, R15, R31 = R0 + 31,
 	R8D = R0 + 32, R9D, R10D, R11D, R12D, R13D, R14D, R15D,
 	W0, W1, W2, W3, W4, W5, W6, W7, // ARM64 4 byte
-	W8, W9, W10, W11, W12, W13, W14, W15,
+	W8, W9, W10, W11, W12, W13, W14, W15, W31 = W0 + 31,
 	XMM0 = W0 + 32, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, // 16 byte
 	S0,  S1,  S2,  S3,  S4,  S5,  S6,  S7, // ARM float
 	S8,  S9,  S10, S11, S12, S13, S14, S15,
@@ -491,7 +491,7 @@ InstructionParam param_label(int64 value, int size);
 InstructionParam param_deref_label(int64 value, int size);
 
 struct InstructionWithParamsList : public Array<InstructionWithParams> {
-	InstructionWithParamsList(int line_offset);
+	explicit InstructionWithParamsList(int line_offset);
 	~InstructionWithParamsList();
 
 //	void add_easy(int inst, int param1_type = PK_NONE, int param1_size = -1, void *param1 = NULL, int param2_type = PK_NONE, int param2_size = -1, void *param2 = NULL);
@@ -517,7 +517,8 @@ struct InstructionWithParamsList : public Array<InstructionWithParams> {
 	void compile(void *oc, int &ocs);
 	void link_wanted_labels(void *oc);
 	void add_instruction(char *oc, int &ocs, int n);
-	void add_instruction_arm(char *oc, int &ocs, int n);
+	void add_instruction_arm32(char *oc, int &ocs, int n);
+	void add_instruction_arm64(char *oc, int &ocs, int n);
 
 	void show();
 
