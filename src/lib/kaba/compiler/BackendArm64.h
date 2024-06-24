@@ -13,6 +13,10 @@ class BackendArm64 : public BackendARM {
 public:
 	explicit BackendArm64(Serializer* serializer);
 
+	void process(Function *f, int index) override;
+	void correct() override;
+	void correct_implement_commands();
+	void assemble() override;
 };
 
 } // kaba

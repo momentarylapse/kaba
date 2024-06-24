@@ -55,7 +55,6 @@ void BackendARM::correct() {
 	cmd.next_cmd_target(0);
 	add_function_intro_params(cur_func);
 	serializer->cmd_list_out("x:b", "post paramtrafo");
-
 }
 
 void BackendARM::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
@@ -299,6 +298,8 @@ void BackendARM::correct_implement_commands() {
 		auto &c = cmd.cmd[i];
 		//msg_write("CORRECT  " + c.str(serializer));
 		if (c.inst == Asm::InstID::LABEL)
+			continue;
+		if (c.inst == Asm::InstID::ASM)
 			continue;
 		if (c.inst == Asm::InstID::MOV) {
 			int size = c.p[0].type->size;
@@ -904,7 +905,6 @@ void BackendARM::assemble() {
 		}
 	}
 	list->add2(Asm::InstID::ALIGN_OPCODE);
-
 }
 
 
