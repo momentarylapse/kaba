@@ -461,9 +461,12 @@ string arm_disassemble(void *_code_,int length,bool allow_comments) {
 }
 
 int arm_reg_no(Register *r) {
-	if (r)
-		if (((int)r->id >= (int)RegID::R0) and ((int)r->id <= (int)RegID::R15))
+	if (r) {
+		if (((int)r->id >= (int)RegID::R0) and ((int)r->id <= (int)RegID::R0 + 31))
 			return (int)r->id - (int)RegID::R0;
+		if (((int)r->id >= (int)RegID::W0) and ((int)r->id <= (int)RegID::W0 + 31))
+			return (int)r->id - (int)RegID::W0;
+	}
 	raise_error("ARM: invalid register: " + r->name);
 	return -1;
 }
