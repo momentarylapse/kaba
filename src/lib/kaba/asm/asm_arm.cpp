@@ -571,7 +571,7 @@ inline bool label_after_now(InstructionWithParamsList *list, int label_no, int n
 	return list->label[label_no].inst_no > now;
 }
 
-void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
+void InstructionWithParamsList::add_instruction_arm32(char *oc, int &ocs, int n) {
 	InstructionWithParams &iwp = (*this)[n];
 	current_inst = n;
 	state.reset(this);
@@ -740,4 +740,86 @@ void InstructionWithParamsList::add_instruction_arm(char *oc, int &ocs, int n) {
 	ocs += 4;
 }
 
+bool apply_param(int&code, const InstructionParam& p, int pf) {
+	if (pf == AP_NONE and p.type == ParamType::NONE)
+		return true;
+	if (p.type == ParamType::REGISTER) {
+		if ((pf == AP_REG_0P5 or pf == AP_REG_5P5 or pf == AP_REG_10P5) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
+			auto r = arm_reg_no(p.reg);
+			if (pf == AP_REG_0P5)
+				code |= r << 0;
+			else if (pf == AP_REG_5P5)
+				code |= r << 5;
+			else if (pf == AP_REG_10P5)
+				code |= r << 10;
+			return true;
+		}
+		if ((pf == AP_WREG_0P5 or pf == AP_WREG_5P5 or pf == AP_WREG_16) and (p.reg->id >= RegID::W0 and p.reg->id <= RegID::W31)) {
+			auto r = arm_reg_no(p.reg);
+			if (pf == AP_WREG_0P5)
+				code |= r << 0;
+			else if (pf == AP_WREG_5P5)
+				code |= r << 5;
+			else if (pf == AP_WREG_16)
+				code |= r << 16;
+			return true;
+		}
+		return false;
+	}
+	if (p.type == ParamType::IMMEDIATE) {
+		if (pf == AP_IMM12_10SH) {
+			if ((p.value & 0xfffff000) == 0)
+				code |= p.value << 10;
+			else if ((p.value & 0xff000fff) == 0)
+				code |= p.value >> 2;
+			else
+				return false; //raise_error("immediate not supported");
+			return true;
+		} else if (pf == AP_IMM12_10) {
+			if ((p.value & 0xfffff000) == 0)
+				code |= p.value << 10;
+			else
+				return false;
+			return true;
+		}
+		msg_write("WRONG IMM");
+		return false;
+	}
+	return false;
+}
+
+void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n) {
+	InstructionWithParams &iwp = (*this)[n];
+	current_inst = n;
+	state.reset(this);
+
+	if (iwp.inst == InstID::ALIGN_OPCODE)
+		return;
+
+	int code = 0;
+	bool found = false;
+
+	msg_write("assemble: " + iwp.str());
+
+	for (const auto& i: cpu_instructions_arm)
+		if (i.inst == iwp.inst) {
+			msg_write("...");
+			code = i.code;
+			if (!apply_param(code, iwp.p[0], i.p1))
+				continue;
+			if (!apply_param(code, iwp.p[1], i.p2))
+				continue;
+			if (!apply_param(code, iwp.p[2], i.p3))
+				continue;
+			found = true;
+			break;
+		}
+
+	if (!found)
+		raise_error("cannot assemble instruction: " + iwp.str());
+
+
+	*(int*)&oc[ocs] = code;
+	ocs += 4;
+}
 };

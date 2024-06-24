@@ -53,8 +53,6 @@ void BackendArm64::assemble() {
 	//if (!flags_has(cur_func->flags, Flags::NOFRAME))
 	//	add_function_intro_frame(stack_max_size);
 
-	msg_write("AAAAAAAAA");
-
 	//	do_error("new ARM assemble() not yet implemented");
 	for (int i=0;i<cmd.cmd.num;i++) {
 		if (cmd.cmd[i].inst == Asm::InstID::LABEL) {
@@ -67,7 +65,6 @@ void BackendArm64::assemble() {
 	}
 
 	list->show();
-	msg_write("AAAAAAAAA2");
 	//list->add2(Asm::InstID::ALIGN_OPCODE);
 }
 
