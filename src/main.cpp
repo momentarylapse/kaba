@@ -304,7 +304,12 @@ public:
 		if (auto f = (main_arg_func*)s->match_function("main", "void", {"string[]"})) {
 			f(args);
 		} else if (auto f = (main_void_func*)s->match_function("main", "void", {})) {
-			f();
+			//f();
+			typedef int xfunc(int, int);
+			auto xf = (xfunc*)f;
+			msg_write("EXECUTE:");
+			int r = xf(13, 4);
+			msg_write(r);
 		} else {
 			die("no 'func main()' or 'func main(string[])' found");
 		}
