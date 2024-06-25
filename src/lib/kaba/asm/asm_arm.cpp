@@ -48,8 +48,9 @@ enum {
 	AP_IMM16E2_5,
 	AP_SHIFTED12_0,
 	AP_DEREF_REG_16_OFFSET,
-	AP_DEREF_REG_5P5_S32,
-	AP_DEREF_REG_5P5_S64,
+	AP_DEREF_S32_REG_5P5_PLUS_IMM12P10,
+	AP_DEREF_S64_REG_5P5_PLUS_IMM12P10,
+	AP_DEREF_S128_REG_5P5_PLUS_IMM7P15,
 	AP_SHIFTER_0X12_I25,
 	AP_XX_R12_W21_UPI23,
 	AP_XX_R12_W21_UPI23_BYTE,
@@ -230,15 +231,15 @@ void arm64_init() {
 	add_inst_arm(InstID::ADD,  0x0b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
 
 
-	add_inst_arm(InstID::STR,  0xb9000000, 0xffc00000, AP_WREG_0P5, AP_DEREF_REG_5P5_S32, AP_IMM12_10); // 32bit
-	add_inst_arm(InstID::STR,  0xf9000000, 0xffc00000, AP_REG_0P5, AP_DEREF_REG_5P5_S64, AP_IMM12_10); // 64bit
+	add_inst_arm(InstID::STR,  0xb9000000, 0xffc00000, AP_WREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10 /*, AP_IMM12_10*/); // 32bit
+	add_inst_arm(InstID::STR,  0xf9000000, 0xffc00000, AP_REG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10 /*, AP_IMM12_10*/); // 64bit
 
-	add_inst_arm(InstID::STP, 0xa9000000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_REG_5P5_S64); // 64bit
+	add_inst_arm(InstID::STP, 0xa9000000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
 	// p[2] = [Rn + imm7@15 * 4/8] (32bit / 64bit)
 	// TODO p[3]: imm
 	
-	add_inst_arm(InstID::LDR,  0xb9400000, 0xffc00000, AP_WREG_0P5, AP_DEREF_REG_5P5_S32, AP_IMM12_10); // 32bit
-	add_inst_arm(InstID::LDR,  0xf9400000, 0xffc00000, AP_REG_0P5, AP_DEREF_REG_5P5_S64, AP_IMM12_10); // 64bit
+	add_inst_arm(InstID::LDR,  0xb9400000, 0xffc00000, AP_WREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10); // 32bit
+	add_inst_arm(InstID::LDR,  0xf9400000, 0xffc00000, AP_REG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10); // 64bit
 
 	add_inst_arm(InstID::LDRSW,  0xb8800400, 0xffe00c00, AP_REG_0P5, AP_REG_5P5, AP_IMM9_12);
 	add_inst_arm(InstID::LDRSW,  0xb9800000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10);
@@ -363,9 +364,15 @@ InstructionParam disarm_param(int code, int p) {
 	} else if (p == AP_REG_5P5) {
 		int fm = (code & 0x000003e0) >> 5;
 		return param_reg(r_reg(fm));
-	} else if (p == AP_DEREF_REG_5P5_S64 or p == AP_DEREF_REG_5P5_S32) {
+	} else if (p == AP_DEREF_S64_REG_5P5_PLUS_IMM12P10 or p == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10) {
 		int fm = (code & 0x000003e0) >> 5;
-		return param_deref_reg(r_reg(fm), p == AP_DEREF_REG_5P5_S64 ? SIZE_64 : SIZE_32);
+		int imm = (code & 0x003ffc00) >> 10;
+		int size = p == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10 ? SIZE_32 : SIZE_64;
+		return param_deref_reg_shift(r_reg(fm), imm * size, size);
+	} else if (p == AP_DEREF_S128_REG_5P5_PLUS_IMM7P15) {
+		int fm = (code & 0x000003e0) >> 5;
+		int imm = (code & 0x003f8000) >> 10;
+		return param_deref_reg_shift(r_reg(fm), imm * 8, SIZE_128);
 	} else if (p == AP_WREG_5P5) {
 		int fm = (code & 0x000003e0) >> 5;
 		return param_reg(w_reg(fm));
@@ -773,9 +780,11 @@ bool apply_param(int&code, const InstructionParam& p, int pf) {
 		return false;
 	}
 	if (p.type == ParamType::REGISTER and p.deref) {
-		if ((pf == AP_DEREF_REG_5P5_S64 or pf == AP_DEREF_REG_5P5_S32) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
+		if ((pf == AP_DEREF_S64_REG_5P5_PLUS_IMM12P10 or pf == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
 			auto r = arm_reg_no(p.reg);
 			code |= r << 5;
+			int size = (pf == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10) ? SIZE_32 : SIZE_64;
+			code |= ((int)(p.value / size) & 0x00000fff) << 10;
 			return true;
 		}
 		return false;
