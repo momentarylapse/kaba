@@ -1731,8 +1731,10 @@ Asm::InstructionParam Serializer::get_param(Asm::InstID inst, SerialNodeParam &p
 			module->do_error_internal("get_param: evil global of type " + p.type->name);
 		return Asm::param_deref_imm(p.p + p.shift, size);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		if (config.target.is_arm()) {
+		if (config.target.instruction_set == Asm::InstructionSet::ARM32) {
 			return Asm::param_deref_reg_shift(Asm::RegID::R13, p.p + p.shift, p.type->size);
+		} else if (config.target.instruction_set == Asm::InstructionSet::ARM64) {
+			return Asm::param_deref_reg_shift(Asm::RegID::R31, p.p + p.shift, p.type->size);
 		} else {
 			return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);
 		}

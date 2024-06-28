@@ -300,15 +300,20 @@ public:
 
 		typedef void main_arg_func(const Array<string>&);
 		typedef void main_void_func();
+		typedef int xfunc(int, int);
 
 		if (auto f = (main_arg_func*)s->match_function("main", "void", {"string[]"})) {
 			f(args);
 		} else if (auto f = (main_void_func*)s->match_function("main", "void", {})) {
 			//f();
-			typedef int xfunc(int, int);
 			auto xf = (xfunc*)f;
 			msg_write("EXECUTE:");
 			int r = xf(13, 4);
+			msg_write(r);
+		} else if (auto f = (xfunc*)s->match_function("main", "int", {"int", "int"})) {
+			//f();
+			msg_write("EXECUTE:");
+			int r = f(13, 4);
 			msg_write(r);
 		} else {
 			die("no 'func main()' or 'func main(string[])' found");
