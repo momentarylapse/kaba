@@ -16,6 +16,7 @@ public:
 	void process(Function *f, int index) override;
 	void correct() override;
 	void correct_implement_commands();
+	void add_function_intro_params(Function *f);
 	void assemble() override;
 };
 
