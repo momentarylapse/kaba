@@ -1564,7 +1564,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 
 	if (true) {
 	// TODO super important!!!!!!
-	if (config.target.instruction_set == Asm::InstructionSet::ARM32) {
+	if (config.target.is_arm()) {
 		v.stack_offset = stack_offset;
 		stack_offset += s;
 
@@ -1574,7 +1574,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	}
 	} else {
 		v.stack_offset = so.find_free(v.type->size);
-		if (config.target.instruction_set == Asm::InstructionSet::ARM32) {
+		if (config.target.is_arm()) {
 			stack_offset = v.stack_offset + s;
 		} else {
 			stack_offset = - v.stack_offset;

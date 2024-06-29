@@ -17,7 +17,10 @@ public:
 	void correct() override;
 	void correct_implement_commands();
 	void add_function_intro_params(Function *f);
+	void implement_return(const SerialNodeParam &p);
 	void assemble() override;
+
+	CommandList pre_cmd;
 };
 
 } // kaba
