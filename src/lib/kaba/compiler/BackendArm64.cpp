@@ -13,6 +13,8 @@ namespace Asm{
 	extern Asm::RegID s_reg(int i);
 };
 
+#define VREG_ROOT(r) cmd.virtual_reg[r].reg_root
+
 namespace kaba {
 
 BackendArm64::BackendArm64(Serializer* serializer) : BackendARM(serializer) {
@@ -25,7 +27,7 @@ void BackendArm64::process(Function *f, int index) {
 	stack_offset = f->_var_size;
 	stack_max_size = f->_var_size;
 
-	//do_mapping();
+	do_mapping();
 	correct();
 }
 
@@ -100,6 +102,14 @@ void BackendArm64::add_function_intro_params(Function *f) {
 }
 
 void BackendArm64::correct() {
+	// instead of in-place editing, let's create a backup and a new list from that
+	pre_cmd.ser = cmd.ser;
+	cmd.cmd.exchange(pre_cmd.cmd);
+	// no vregs yet, but temp vars
+	pre_cmd.temp_var = cmd.temp_var;
+	for (auto &t: cmd.temp_var)
+		t.first = t.last = -1;
+
 	cmd.next_cmd_target(0);
 
 	serializer->cmd_list_out("x:a", "paramtrafo");
@@ -112,6 +122,260 @@ void BackendArm64::correct() {
 }
 
 void BackendArm64::correct_implement_commands() {
+
+	Array<SerialNodeParam> func_params;
+
+	for (int _i=0; _i<pre_cmd.cmd.num; _i++) {
+		auto &c = pre_cmd.cmd[_i];
+		cmd.next_cmd_index = cmd.cmd.num;
+
+		//msg_write("CORRECT  " + c.str(serializer));
+		if (c.inst == Asm::InstID::LABEL or c.inst == Asm::InstID::ASM)
+			insert_cmd(c.inst, c.p[0], c.p[1], c.p[2]); // cmd.cmd.add(c);
+		else if (c.inst == Asm::InstID::MOV) {
+			int size = c.p[0].type->size;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+
+			for (int k=0; k<size/4; k++) {
+				int reg = _to_register_32(p1, k*4);
+				_from_register_32(reg, p0, k*4);
+			}
+			int offset = (size / 4) * 4;
+			for (int k=0; k<size%4; k++) {
+				int reg = _to_register_8(p1, offset + k);
+				_from_register_8(reg, p0, offset + k);
+			}
+#if 0
+		} else if (c.inst == Asm::InstID::MOVSX or c.inst == Asm::InstID::MOVZX) {
+			do_error("no movsx yet");
+#endif
+		} else if ((c.inst == Asm::InstID::ADD) or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) /*or (c.inst == Asm::InstID::IDIV)*/ or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR)) {
+			auto inst = c.inst;
+			/*if (inst ==  Asm::InstID::ADD)
+				inst = Asm::InstID::ADDS;
+			else if (inst ==  Asm::InstID::SUB)
+				inst = Asm::InstID::SUBS;
+			else*/ if (inst ==  Asm::InstID::IMUL)
+				inst = Asm::InstID::MUL;
+//			if (inst ==  Asm::InstID::IDIV)
+//				inst = Asm::InstID::DIV;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+
+			int reg1 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, 4);
+			int reg2 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, 4, VREG_ROOT(reg1));
+
+			if (p2.kind == NodeKind::NONE) {
+				// a += b
+				_to_register_32(p0, 0, reg1);
+				_to_register_32(p1, 0, reg2);
+			} else {
+				// a = b + c
+				_to_register_32(p1, 0, reg1);
+				//cmd.set_virtual_reg(reg1, i, cmd.next_cmd_index);
+				_to_register_32(p2, 0, reg2);
+			}
+			insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
+			_from_register_32(reg1, p0, 0);
+
+#if 0
+		} else if ((c.inst == Asm::InstID::FADD) or (c.inst == Asm::InstID::FSUB) or (c.inst == Asm::InstID::FMUL) or (c.inst == Asm::InstID::FDIV)) {//or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) /*or (c.inst == Asm::InstID::IDIV)*/ or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR)) {
+			auto inst = c.inst;
+			if (inst ==  Asm::InstID::FADD)
+				inst = Asm::InstID::FADDS;
+			else if (inst ==  Asm::InstID::FSUB)
+				inst = Asm::InstID::FSUBS;
+			else if (inst ==  Asm::InstID::FMUL)
+				inst = Asm::InstID::FMULS;
+			else if (inst ==  Asm::InstID::FDIV)
+				inst = Asm::InstID::FDIVS;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+			cmd.remove_cmd(i);
+
+			int sreg1 = cmd.add_virtual_reg(Asm::RegID::S0);
+			int sreg2 = cmd.add_virtual_reg(Asm::RegID::S1);
+
+			if (p2.kind == NodeKind::NONE) {
+				// a += b
+				_to_register_float(p0, 0, sreg1);
+				_to_register_float(p1, 0, sreg2);
+			} else {
+				// a = b + c
+				_to_register_float(p1, 0, sreg1);
+				_to_register_float(p2, 0, sreg2);
+			}
+
+			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
+
+			_from_register_float(sreg1, p0, 0);
+
+			i = cmd.next_cmd_index - 1;
+
+
+		} else if (c.inst == Asm::InstID::CMP) {
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			cmd.remove_cmd(i);
+
+			int reg1 = find_unused_reg(i, i, 4);
+			int reg2 = find_unused_reg(i, i, 4, VREG_ROOT(reg1));
+
+			if (p0.type->size == 1) {
+				_to_register_8(p0, 0, reg1);
+				_to_register_8(p1, 0, reg2);
+			} else {
+				_to_register_32(p0, 0, reg1);
+				_to_register_32(p1, 0, reg2);
+			}
+
+			insert_cmd(Asm::InstID::CMP, param_vreg(p0.type, reg1), param_vreg(p1.type, reg2));
+			i = cmd.next_cmd_index - 1;
+		} else if ((c.inst == Asm::InstID::SETZ) or (c.inst == Asm::InstID::SETNZ) or (c.inst == Asm::InstID::SETNLE) or (c.inst == Asm::InstID::SETNL) or (c.inst == Asm::InstID::SETLE) or (c.inst == Asm::InstID::SETL)) {
+			auto p0 = c.p[0];
+			auto inst = c.inst;
+			cmd.remove_cmd(i);
+			int reg = cmd.add_virtual_reg(Asm::RegID::R0);
+			insert_cmd(Asm::InstID::MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 1), p_none);
+			insert_cmd(Asm::InstID::MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 0), p_none);
+			if (inst == Asm::InstID::SETZ) { // ==
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
+			} else if (inst == Asm::InstID::SETNZ) { // !=
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::NOT_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
+			} else if (inst == Asm::InstID::SETNLE) { // >
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
+			} else if (inst == Asm::InstID::SETNL) { // >=
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
+			} else if (inst == Asm::InstID::SETL) { // <
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_THAN;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
+			} else if (inst == Asm::InstID::SETLE) { // <=
+				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_EQUAL;
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
+			}
+			_from_register_8(reg, p0, 0);
+			i = cmd.next_cmd_index - 1;
+		} else if ((c.inst == Asm::InstID::JMP) or (c.inst == Asm::InstID::JZ) or (c.inst == Asm::InstID::JNZ) or (c.inst == Asm::InstID::JNLE) or (c.inst == Asm::InstID::JNL) or (c.inst == Asm::InstID::JLE) or (c.inst == Asm::InstID::JL)) {
+			auto p0 = c.p[0];
+			auto inst = c.inst;
+			cmd.remove_cmd(i);
+			insert_cmd(Asm::InstID::B, p0);
+			if (inst == Asm::InstID::JZ) { // ==
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
+			} else if (inst == Asm::InstID::JNZ) { // !=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
+			} else if (inst == Asm::InstID::JNLE) { // >
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
+			} else if (inst == Asm::InstID::JNL) { // >=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
+			} else if (inst == Asm::InstID::JL) { // <
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
+			} else if (inst == Asm::InstID::JLE) { // <=
+				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
+			}
+			i = cmd.next_cmd_index - 1;
+		} else if (c.inst == Asm::InstID::LEA) {
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			cmd.remove_cmd(i);
+
+			int reg = _reference_to_register_32(p1);
+			_from_register_32(reg, p0, 0);
+
+			i = cmd.next_cmd_index - 1;
+		} else if (c.inst == Asm::InstID::PUSH) {
+			func_params.add(c.p[0]);
+			cmd.remove_cmd(i);
+			i --;
+		} else if (c.inst == Asm::InstID::CALL) {
+
+			if (c.p[1].type == TypeFunctionCodeRef) {
+				//do_error("indirect call...");
+				auto fp = c.p[1];
+				auto ret = c.p[0];
+				cmd.remove_cmd(i);
+				cmd.next_cmd_target(i);
+				add_pointer_call(fp, func_params, ret);
+//			} else if (is_typed_function_pointer(c.p[1].type)) {
+//				do_error("BACKEND: POINTER CALL");
+			} else {
+				//func_params.add(c.p[0]);
+				auto *f = ((Function*)c.p[1].p);
+				auto ret = c.p[0];
+				cmd.remove_cmd(i);
+				cmd.next_cmd_target(i);
+				add_function_call(f, func_params, ret);
+			}
+			func_params.clear();
+			i = cmd.next_cmd_index - 1;
+#endif
+		} else if (c.inst == Asm::InstID::RET) {
+			implement_return(c.p[0]);
+
+#if 0
+			i ++;
+	//		cmd.next_cmd_target(i);
+	//		insert_cmd(Asm::InstID::LDMIA, param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, 0xaff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r15}
+#endif
+		} else {
+			do_error("unhandled:  " + c.str(serializer));
+		}
+	}
+}
+
+void BackendArm64::implement_return(const SerialNodeParam &p) {
+	if (p.kind != NodeKind::NONE) {
+		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+/*			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
+			//		cmd.add_cmd(Asm::InstID::FLD, t);
+			if (cur_func->effective_return_type == TypeFloat32) {
+				insert_cmd(Asm::InstID::MOVSS, p_xmm0, p);
+			} else if (cur_func->effective_return_type == TypeFloat64) {
+				insert_cmd(Asm::InstID::MOVSD, p_xmm0, p);
+			} else if (cur_func->effective_return_type->size == 8) {
+				// float[2]
+				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, p);
+			} else if (cur_func->effective_return_type->size == 12) {
+				// float[3]
+				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
+				insert_cmd(Asm::InstID::MOVSS, p_xmm1, param_shift(p, 8, TypeFloat32));
+			} else if (cur_func->effective_return_type->size == 16) {
+				// float[4]
+				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
+				insert_cmd(Asm::InstID::MOVLPS, p_xmm1, param_shift(p, 8, TypeReg64));
+			} else {
+				do_error("...ret xmm " + cur_func->effective_return_type->long_name());
+			}*/
+		} else {
+			// store return directly in eax / fpu stack (4 byte)
+			if (cur_func->effective_return_type->size == 1) {
+	//			int v = cmd.add_virtual_reg(Asm::RegID::AL);
+	//			insert_cmd(Asm::InstID::MOV, param_vreg(cur_func->effective_return_type, v), p);
+			} else if (cur_func->effective_return_type->size == 8) {
+	//			int v = cmd.add_virtual_reg(Asm::RegID::RAX);
+	//			insert_cmd(Asm::InstID::MOV, param_vreg(cur_func->effective_return_type, v), p);
+			} else {
+				int reg = cmd.add_virtual_reg(Asm::RegID::W0);
+				_to_register_32(p, 0, reg);
+			}
+		}
+	}
+	//if (cur_func->effective_return_type->uses_return_by_memory())
+	//	insert_cmd(Asm::InstID::RET, param_imm(TypeReg16, 4));
+	//else
+
+	if (stack_max_size > 0) {
+//		insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size));
+	}
+
+	insert_cmd(Asm::InstID::RET);
 }
 
 void BackendArm64::assemble() {

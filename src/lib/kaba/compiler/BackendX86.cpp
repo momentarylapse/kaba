@@ -1047,7 +1047,7 @@ Asm::InstructionParam BackendX86::prepare_param(Asm::InstID inst, SerialNodePara
 		return Asm::param_deref_reg_shift(Asm::RegID::EBP, p.p + p.shift, p.type->size);
 		//if ((param_size != 1) and (param_size != 2) and (param_size != 4) and (param_size != 8))
 		//	param_size = -1; // lea doesn't need size...
-			//s->DoErrorInternal("get_param: evil local of type " + p.type->name);
+			//s->DoErrorInternal("prepare_param: evil local of type " + p.type->name);
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		bool imm_allowed = Asm::get_instruction_allow_const(inst);
 		if (imm_allowed and p.type->is_pointer_raw()) {
@@ -1059,7 +1059,7 @@ Asm::InstructionParam BackendX86::prepare_param(Asm::InstID inst, SerialNodePara
 		}
 	} else if (p.kind == NodeKind::IMMEDIATE) {
 		if (p.shift > 0)
-			do_error("get_param: immediate + shift");
+			do_error("prepare_param: immediate + shift");
 		return Asm::param_imm(p.p, p.type->size);
 	} else {
 		do_error("prepare_param: unexpected param..." + p.str(serializer));
