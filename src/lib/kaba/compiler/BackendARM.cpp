@@ -70,7 +70,7 @@ void BackendARM::implement_mov_chunk(kaba::SerialNode &c, int i, int size) {
 		insert_cmd(Asm::InstID::MOV, param_shift(p1, j, TypeInt8), param_shift(p2, j, TypeInt8));
 }
 
-int first_bit(int i) {
+static int first_bit(int i) {
 	for (int b=0; b<32; b++)
 		if ((i & (1 << b)) != 0)
 			return b;

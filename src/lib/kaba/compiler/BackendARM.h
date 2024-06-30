@@ -40,7 +40,7 @@ public:
 	int _reference_to_register_32(const SerialNodeParam &p, const Class *type = nullptr);
 	int add_global_ref(void *p);
 
-
+private:
 	int _to_register_32(const SerialNodeParam &p, int offset, int force_register = -1);
 	void _from_register_32(int reg, const SerialNodeParam &p, int offset);
 
@@ -61,7 +61,7 @@ public:
 
 	int _to_register_float(const SerialNodeParam &p, int offset, int force_register = -1);
 	void _from_register_float(int reg, const SerialNodeParam &p, int offset);
-
+public:
 
 
 	void map_remaining_temp_vars_to_stack();
