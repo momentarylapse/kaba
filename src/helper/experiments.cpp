@@ -138,6 +138,8 @@ void fff2() {
 	//msg_write("hallo");
 	int b = 13;
 	int c = a + b;
+	int64 d = 4;
+	int64 e = 7;
 	ff1(c);
 }
 
