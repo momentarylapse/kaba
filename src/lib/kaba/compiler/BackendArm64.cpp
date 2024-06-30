@@ -123,27 +123,22 @@ void BackendArm64::correct() {
 
 
 
-static int first_bit(int i) {
-	for (int b=0; b<32; b++)
-		if ((i & (1 << b)) != 0)
-			return b;
-	return 0;
-}
-
 	// TODO better use int64?
 void BackendArm64::_immediate_to_register_32(int val, int r) {
+	// 16bit chunks
 	bool first = true;
-	while (true) {
-		int b0 = first_bit(val) & 0xfe; // only even bit positions allowed!
-		int mask = 0xff << b0;
-		if (first)
-			insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val&mask));
-		else
-			insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_imm(TypeInt, val&mask));
-		val -= (val & mask);
-		if (val == 0)
-			break;
-		first = false;
+	int mask = 0x0000ffff;
+	for (int k=0; k<2; k++) {
+		if (val & mask) {
+			if (first) {
+				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, (val & mask)));
+			} else {
+				insert_cmd(Asm::InstID::MOV, param_preg(TypeInt, Asm::RegID::W5), param_imm(TypeInt, (val & mask)));
+				insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_preg(TypeInt, Asm::RegID::W5));
+			}
+			first = false;
+		}
+		mask = mask << 16;
 	}
 }
 

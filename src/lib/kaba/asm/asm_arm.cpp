@@ -438,7 +438,7 @@ InstructionParam disarm_param(int code, int p) {
 		return param_imm((code & 0x003ffc00) >> 10, SIZE_64);
 	} else if (p == AP_IMM16E2_5) {
 		int e = (code & 0x00600000) >> 21;
-		return param_imm(((code & 0x001fffe0) >> 5) << e, SIZE_64);
+		return param_imm(((code & 0x001fffe0) >> 5) << (e * 16), SIZE_64);
 	} else if (p == AP_IMM12_10SH) {
 		if (code & 0x00400000)
 			return param_imm((code & 0x003ffc00) << 2, SIZE_64);
