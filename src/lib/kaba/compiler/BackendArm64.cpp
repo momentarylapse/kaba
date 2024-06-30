@@ -363,9 +363,10 @@ void BackendArm64::implement_return(const SerialNodeParam &p) {
 	//	insert_cmd(Asm::InstID::RET, param_imm(TypeReg16, 4));
 	//else
 
-	if (stack_max_size > 0) {
+	/*if (stack_max_size > 0) {
 		insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size + 8));
-	}
+	}*/
+	cmd.add_cmd(Asm::InstID::LDP_POSTINDEX, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size + 16));
 
 	insert_cmd(Asm::InstID::RET);
 }
