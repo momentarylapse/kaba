@@ -261,7 +261,7 @@ void arm64_init() {
 	add_inst_arm(InstID::ADRP, 0x90000000, 0x9f000000, AP_REG_0P5);
 
 	add_inst_arm(InstID::MOV, 0xd2800000, 0xff800000, AP_REG_0P5, AP_IMM16E2_5); // 64bit
-	add_inst_arm(InstID::MOV, 0x52800000, 0xff800000, AP_REG_0P5, AP_IMM16E2_5); // 32bit
+	add_inst_arm(InstID::MOV, 0x52800000, 0xff800000, AP_WREG_0P5, AP_IMM16E2_5); // 32bit
 
 	add_inst_arm(InstID::BL, 0x94000000, 0xfc000000, AP_IMM26X4REL_0);
 }
@@ -830,6 +830,18 @@ bool apply_param(unsigned int&code, const InstructionParam& p, int pf) {
 		} else if (pf == AP_IMM12_10) {
 			if ((p.value & 0xfffffffffffff000) == 0)
 				code |= (int)p.value << 10;
+			else
+				return false;
+			return true;
+		} else if (pf == AP_IMM16E2_5) {
+			if ((p.value & 0xffffffffffff0000) == 0)
+				code |= (int)p.value << 5;
+			else if ((p.value & 0xffffffff0000ffff) == 0)
+				code |= (unsigned int)(p.value >> (16 - 5)) & 0x001fffe0 | 0x00200000;
+			else if ((p.value & 0xffff0000ffffffff) == 0)
+				code |= (unsigned int)(p.value >> (32 - 5)) & 0x001fffe0 | 0x00400000;
+			else if ((p.value & 0x0000ffffffffffff) == 0)
+				code |= (unsigned int)(p.value >> (48 - 5)) & 0x001fffe0 | 0x00600000;
 			else
 				return false;
 			return true;
