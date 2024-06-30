@@ -305,13 +305,14 @@ public:
 		if (auto f = (main_arg_func*)s->match_function("main", "void", {"string[]"})) {
 			f(args);
 		} else if (auto f = (main_void_func*)s->match_function("main", "void", {})) {
-			//f();
-			auto xf = (xfunc*)f;
+			f();
+		} else if (auto f = (xfunc*)s->match_function("xmain", "void", {})) {
+			// EXPERIMENT!
 			msg_write("EXECUTE:");
-			int r = xf(13, 4);
+			int r = f(13, 4);
 			msg_write(r);
 		} else if (auto f = (xfunc*)s->match_function("main", "int", {"int", "int"})) {
-			//f();
+			//EXPERIMENT
 			msg_write("EXECUTE:");
 			int r = f(13, 4);
 			msg_write(r);

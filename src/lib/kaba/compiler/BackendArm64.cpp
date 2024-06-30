@@ -690,7 +690,6 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 		if (f->address == 0)
 			module->do_error_link("could not link function " + f->long_name());
 		if (reachable_arm(f->address, this->module->opcode)) {
-			msg_write("REACHABLE....");
 			insert_cmd(Asm::InstID::BL, param_imm(TypePointer, f->address)); // the actual call
 			// function pointer will be shifted later...
 		} else {
@@ -748,7 +747,6 @@ void BackendArm64::assemble() {
 		}
 	}
 
-	list->show();
 	//list->add2(Asm::InstID::ALIGN_OPCODE);
 }
 
