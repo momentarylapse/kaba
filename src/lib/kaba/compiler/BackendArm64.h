@@ -18,6 +18,11 @@ public:
 	void correct_implement_commands();
 	void add_function_intro_params(Function *f);
 	void implement_return(const SerialNodeParam &p);
+
+	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
+	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+
 	void assemble() override;
 
 	CommandList pre_cmd;

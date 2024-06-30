@@ -290,18 +290,14 @@ void BackendArm64::correct_implement_commands() {
 			_from_register_32(reg, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
+#endif
 		} else if (c.inst == Asm::InstID::PUSH) {
 			func_params.add(c.p[0]);
-			cmd.remove_cmd(i);
-			i --;
 		} else if (c.inst == Asm::InstID::CALL) {
-
 			if (c.p[1].type == TypeFunctionCodeRef) {
 				//do_error("indirect call...");
 				auto fp = c.p[1];
 				auto ret = c.p[0];
-				cmd.remove_cmd(i);
-				cmd.next_cmd_target(i);
 				add_pointer_call(fp, func_params, ret);
 //			} else if (is_typed_function_pointer(c.p[1].type)) {
 //				do_error("BACKEND: POINTER CALL");
@@ -309,13 +305,9 @@ void BackendArm64::correct_implement_commands() {
 				//func_params.add(c.p[0]);
 				auto *f = ((Function*)c.p[1].p);
 				auto ret = c.p[0];
-				cmd.remove_cmd(i);
-				cmd.next_cmd_target(i);
 				add_function_call(f, func_params, ret);
 			}
 			func_params.clear();
-			i = cmd.next_cmd_index - 1;
-#endif
 		} else if (c.inst == Asm::InstID::RET) {
 			implement_return(c.p[0]);
 
@@ -377,6 +369,155 @@ void BackendArm64::implement_return(const SerialNodeParam &p) {
 
 	insert_cmd(Asm::InstID::RET);
 }
+
+static bool arm_type_uses_int_register(const Class *t) {
+	return (t == TypeInt) /*or (t == TypeInt64)*/ or (t == TypeInt8) or (t == TypeBool) or t->is_enum() or t->is_some_pointer();
+}
+
+int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static) {
+	const Class *type = ret.type;
+	if (!type)
+		type = TypeVoid;
+
+	// grow stack (down) for local variables of the calling function
+//	insert_cmd(- cur_func->_VarSize - LocalOffset - 8);
+	int64 push_size = 0;
+
+	Array<SerialNodeParam> params = _params;
+
+	// instance as first parameter
+	//if (instance.type)
+	//	params.insert(instance, 0);
+
+	int max_reg_params = 8;
+	int reg_param_offset = 0;
+	if (type->uses_return_by_memory()) {
+		max_reg_params --;
+		reg_param_offset = 1;
+	}
+
+
+	// map params...
+	Array<SerialNodeParam> reg_param;
+	Array<SerialNodeParam> stack_param;
+	Array<SerialNodeParam> float_param;
+	for (SerialNodeParam &p: params) {
+		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeInt8) or (p.type == TypeBool) or p.type->is_some_pointer()) {
+			if (reg_param.num < max_reg_params) {
+				reg_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else if (p.type == TypeFloat32 /*or (p.type == TypeFloat64)*/) {
+			if (float_param.num < 8) {
+				float_param.add(p);
+			} else {
+				stack_param.add(p);
+			}
+		} else
+			do_error("parameter type currently not supported: " + p.type->name);
+	}
+
+	// push parameters onto stack
+/*	push_size = 4 * stack_param.num;
+	if (push_size > 127)
+		insert_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegID::RSP), param_const(TypeInt, (void*)push_size));
+	else if (push_size > 0)
+		insert_cmd(Asm::inst_add, param_reg(TypePointer, Asm::RegID::RSP), param_const(TypeInt8, (void*)push_size));
+	foreachb(SerialCommandParam &p, stack_param)
+		insert_cmd(Asm::inst_push, p);
+	max_push_size = max(max_push_size, push_size);*/
+
+	// s0-7
+	foreachib(auto &p, float_param, i) {
+		auto reg = Asm::s_reg(i);
+		/*if (p.type == TypeFloat64)
+			insert_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
+		else*/
+		_to_register_float(p, 0, cmd.add_virtual_reg(reg));
+			//insert_cmd(Asm::InstID::FLDS, param_preg(TypeFloat32, reg), p);
+	}
+
+	// return as _very_ first parameter
+	if (type->uses_return_by_memory()) {
+		int reg = _reference_to_register_32(ret);
+		cmd.set_virtual_reg(reg, cmd.next_cmd_index - 1, -100); // -> call
+	}
+
+	// r0, r1, r2, r3
+	foreachib(auto &p, reg_param, i) {
+		int v = cmd.add_virtual_reg(Asm::w_reg(i + reg_param_offset));
+		_to_register_32(p, 0, v);
+		//insert_cmd(Asm::InstID::MOV, param_vreg(p.type, v), p);
+		cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call
+	}
+
+	// extend reg channels to call
+	for (VirtualRegister &r: cmd.virtual_reg)
+		if (r.last == -100)
+			r.last = cmd.next_cmd_index;
+
+	return push_size;
+}
+
+void BackendArm64::fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	const Class *type = ret.type;
+	if (!type)
+		return;
+
+	// return > 4b already got copied to [ret] by the function!
+	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
+		if (type == TypeFloat32) {
+			int sreg = cmd.add_virtual_reg(Asm::RegID::S0);
+			_from_register_float(sreg, ret, 0);
+		//else if (type == TypeFloat64)
+			//insert_cmd(Asm::InstID::MOVSD, ret, param_preg(TypeReg128, Asm::RegID::XMM0));
+		} else if ((type->size == 1) or (type->size == 4)) {
+			int v = cmd.add_virtual_reg(Asm::RegID::W0);
+			_from_register_32(v, ret, 0);
+			cmd.set_virtual_reg(v, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
+		} else {
+			do_error("unhandled function value receiving... " + type->long_name());
+			int v = cmd.add_virtual_reg(Asm::RegID::R0);
+			insert_cmd(Asm::InstID::MOV, ret, param_vreg(TypeReg32, v));
+			cmd.set_virtual_reg(v, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
+		}
+	}
+}
+
+static bool reachable_arm(int64 a, void *b) {
+	return (abs((int_p)a - (int_p)b) < 0x10000000);
+}
+
+void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret) {
+	serializer->call_used = true;
+	int push_size = fc_begin(params, ret, f->is_static());
+
+	if ((f->owner() == module->tree) and !f->is_extern()) {
+		insert_cmd(Asm::InstID::BL, param_label(TypePointer, f->_label));
+	} else {
+		if (f->address == 0)
+			module->do_error_link("could not link function " + f->long_name());
+		if (reachable_arm(f->address, this->module->opcode)) {
+			msg_write("REACHABLE....");
+			insert_cmd(Asm::InstID::BL, param_imm(TypePointer, f->address)); // the actual call
+			// function pointer will be shifted later...
+		} else {
+
+			// TODO FIXME
+			// really find a usable register...
+
+			int v = cmd.add_virtual_reg(Asm::RegID::R4);//find_unused_reg(cmd.next_cmd_index-1, cmd.next_cmd_index-1, 4);
+			_to_register_32(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), 0, v);
+			//insert_cmd(Asm::InstID::MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
+			insert_cmd(Asm::InstID::BL, param_vreg(TypePointer, v));
+			cmd.set_virtual_reg(v, cmd.next_cmd_index-2, cmd.next_cmd_index-1);
+		}
+	}
+
+	fc_end(push_size, params, ret);
+}
+
 
 void BackendArm64::assemble() {
 	// intro + allocate stack memory

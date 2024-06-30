@@ -46,6 +46,7 @@ enum {
 	AP_IMM12_10SH,
 	AP_IMM9_12,
 	AP_IMM16E2_5,
+	AP_IMM26X4REL_0, // relative to rip x4
 	AP_SHIFTED12_0,
 	AP_DEREF_REG_16_OFFSET,
 	AP_DEREF_S32_REG_5P5_PLUS_IMM12P10,
@@ -257,6 +258,8 @@ void arm64_init() {
 
 	add_inst_arm(InstID::MOV, 0xd2800000, 0xff800000, AP_REG_0P5, AP_IMM16E2_5); // 64bit
 	add_inst_arm(InstID::MOV, 0x52800000, 0xff800000, AP_REG_0P5, AP_IMM16E2_5); // 32bit
+
+	add_inst_arm(InstID::BL, 0x94000000, 0xfc000000, AP_IMM26X4REL_0);
 }
 
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;
@@ -430,6 +433,8 @@ InstructionParam disarm_param(int code, int p) {
 			return param_imm((code & 0x003ffc00) >> 10, SIZE_64);
 	} else if (p == AP_IMM9_12) {
 		return param_imm((code & 0x001ff000) >> 12, SIZE_64);
+	} else if (p == AP_IMM26X4REL_0) {
+		return param_imm((code & 0x03ffffff) >> 2, SIZE_64);
 	} else if (p != AP_NONE) {
 		msg_error("disasm_param... unhandled " + i2s(p));
 	}
@@ -796,16 +801,25 @@ bool apply_param(int&code, const InstructionParam& p, int pf) {
 	}
 	if (p.type == ParamType::IMMEDIATE) {
 		if (pf == AP_IMM12_10SH) {
-			if ((p.value & 0xfffff000) == 0)
+			if ((p.value & 0xfffffffffffff000) == 0)
 				code |= p.value << 10;
-			else if ((p.value & 0xff000fff) == 0)
+			else if ((p.value & 0xffffffffff000fff) == 0)
 				code |= p.value >> 2;
 			else
 				return false; //raise_error("immediate not supported");
 			return true;
 		} else if (pf == AP_IMM12_10) {
-			if ((p.value & 0xfffff000) == 0)
-				code |= p.value << 10;
+			if ((p.value & 0xfffffffffffff000) == 0)
+				code |= (int)p.value << 10;
+			else
+				return false;
+			return true;
+		} else if (pf == AP_IMM26X4REL_0) {
+			int64 val = p.value - (int_p)&code; // relative to rip
+			msg_write(format("BL   =>   %x", val));
+			//if ((val & 0xfffffffff0000003) == 0)
+			if ((val < (2<<28)) and (val >= -(2<<28)))
+				code |= ((unsigned int)(val) >> 2) & 0x03ffffff;
 			else
 				return false;
 			return true;
@@ -824,7 +838,8 @@ void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n)
 	if (iwp.inst == InstID::ALIGN_OPCODE)
 		return;
 
-	int code = 0;
+	int& code = *(int*)&oc[ocs];
+	code = 0;
 	bool found = false;
 
 	//msg_write("assemble: " + iwp.str());
@@ -846,8 +861,6 @@ void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n)
 	if (!found)
 		raise_error("can not assemble instruction: " + iwp.str());
 
-
-	*(int*)&oc[ocs] = code;
 	ocs += 4;
 }
 };

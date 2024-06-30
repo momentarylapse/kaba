@@ -659,6 +659,7 @@ void Serializer::serialize_inline_function(Node *com, const Array<SerialNodePara
 			cmd.add_cmd(Asm::InstID::MOV, param[0], param[1]);
 			break;
 		case InlineID::SHARED_POINTER_INIT:
+			// FIXME does this work for 64bit?!?
 			cmd.add_cmd(Asm::InstID::MOV, param[0], param_imm(TypeInt, 0));
 			break;
 		case InlineID::INT8_ASSIGN:
