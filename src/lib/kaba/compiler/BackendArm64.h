@@ -16,6 +16,7 @@ public:
 	void process(Function *f, int index) override;
 	void correct() override;
 	void correct_implement_commands();
+	void add_function_intro_frame(int stack_alloc_size);
 	void add_function_intro_params(Function *f);
 	void implement_return(const SerialNodeParam &p);
 

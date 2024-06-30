@@ -169,8 +169,11 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&ggg, -1));
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 #endif
-	msg_write(disassemble((void*)&f_add, 64));
+	//msg_write(disassemble((void*)&f_add, 64));
+	msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
+
+	return;
 
 	//test_optional();
 	//test_variant();

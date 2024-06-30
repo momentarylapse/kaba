@@ -217,15 +217,6 @@ void arm64_init() {
 
 	cpu_instructions_arm.clear();
 
-	//add_inst_arm(InstID::ADD,  0x00800000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	//add_inst_arm(InstID::ADDS, 0x00900000, 0x0df00000, AP_REG_12, AP_REG_16, AP_SHIFTER_0X12_I25);
-	/*add_inst_arm(InstID::ADC,  0x1b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
-	add_inst_arm(InstID::ADCS, 0x3b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
-
-	add_inst_arm(InstID::ADC,  0x9b000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);
-	add_inst_arm(InstID::ADCS, 0xbb000000, 0xffe0fc00, AP_REG_12, AP_REG_16, AP_REG_0);*/
-
-
 	add_inst_arm(InstID::SUB,  0xd1000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::SUB,  0x51000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
 	add_inst_arm(InstID::SUB,  0x4b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
@@ -240,12 +231,17 @@ void arm64_init() {
 	add_inst_arm(InstID::STR,  0xb9000000, 0xffc00000, AP_WREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10 /*, AP_IMM12_10*/); // 32bit
 	add_inst_arm(InstID::STR,  0xf9000000, 0xffc00000, AP_REG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10 /*, AP_IMM12_10*/); // 64bit
 
+	add_inst_arm(InstID::STP_POSTINDEX, 0xa8800000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
+	add_inst_arm(InstID::STP_PREINDEX, 0xa9800000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
 	add_inst_arm(InstID::STP, 0xa9000000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
 	// p[2] = [Rn + imm7@15 * 4/8] (32bit / 64bit)
-	// TODO p[3]: imm
-	
+
 	add_inst_arm(InstID::LDR,  0xb9400000, 0xffc00000, AP_WREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10); // 32bit
 	add_inst_arm(InstID::LDR,  0xf9400000, 0xffc00000, AP_REG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10); // 64bit
+
+	add_inst_arm(InstID::LDP_POSTINDEX,  0xa8c00000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
+	add_inst_arm(InstID::LDP_PREINDEX,  0xa9c00000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
+	add_inst_arm(InstID::LDP,  0xa9400000, 0xffc00000, AP_REG_0P5, AP_REG_10P5, AP_DEREF_S128_REG_5P5_PLUS_IMM7P15); // 64bit
 
 	add_inst_arm(InstID::LDRSW,  0xb8800400, 0xffe00c00, AP_REG_0P5, AP_REG_5P5, AP_IMM9_12);
 	add_inst_arm(InstID::LDRSW,  0xb9800000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10);
@@ -379,7 +375,9 @@ InstructionParam disarm_param(int code, int p) {
 		return param_deref_reg_shift(r_reg(fm), imm * size, size);
 	} else if (p == AP_DEREF_S128_REG_5P5_PLUS_IMM7P15) {
 		int fm = (code & 0x000003e0) >> 5;
-		int imm = (code & 0x003f8000) >> 10;
+		int imm = (code & 0x003f8000) >> 15;
+		if (imm & 0x40)
+			imm |= 0xffffff80;
 		return param_deref_reg_shift(r_reg(fm), imm * 8, SIZE_128);
 	} else if (p == AP_WREG_5P5) {
 		int fm = (code & 0x000003e0) >> 5;
@@ -816,7 +814,6 @@ bool apply_param(int&code, const InstructionParam& p, int pf) {
 			return true;
 		} else if (pf == AP_IMM26X4REL_0) {
 			int64 val = p.value - (int_p)&code; // relative to rip
-			msg_write(format("BL   =>   %x", val));
 			//if ((val & 0xfffffffff0000003) == 0)
 			if ((val < (2<<28)) and (val >= -(2<<28)))
 				code |= ((unsigned int)(val) >> 2) & 0x03ffffff;

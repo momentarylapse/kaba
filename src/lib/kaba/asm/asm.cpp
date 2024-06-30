@@ -371,9 +371,13 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 	{InstID::LDRB,		"ldrb"},
 	{InstID::LDRSW,		"ldrsw"},
 	{InstID::LDP,		"ldp"},
+	{InstID::LDP_PREINDEX,		"ldp!"},
+	{InstID::LDP_POSTINDEX,		"ldp_post"},
 //	{inst_str,		"str"},
 	{InstID::STRB,		"strb"},
 	{InstID::STP,		"stp"},
+	{InstID::STP_PREINDEX,		"stp!"},
+	{InstID::STP_POSTINDEX,		"stp_post"},
 
 	{InstID::LDMIA,		"ldmia"},
 	{InstID::LDMIB,		"ldmib"},
