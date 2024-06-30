@@ -127,11 +127,18 @@ void f_xxx(int a, int b, int c, int d, int e, int f, int g, int h) {
 	b = h;
 }
 
+void ff1(int a) {
+	msg_write(a);
+}
+
 void fff2() {
 	int a = 8;
-	f_xxx(1, 2, 3, 4, 5, 6, 7, a);
+	//f_xxx(1, 2, 3, 4, 5, 6, 7, a);
 	//f_xxx(1, 2, 3, 4);
 	//msg_write("hallo");
+	int b = 13;
+	int c = a + b;
+	ff1(c);
 }
 
 class CCC {

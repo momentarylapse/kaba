@@ -219,7 +219,7 @@ void arm64_init() {
 	cpu_instructions_arm.clear();
 
 	// multiple possibilities...
-	add_inst_arm(InstID::MOV,  0x91000000, 0xff800000, AP_REG_0P5, AP_REG_5P5); // 64bit
+	add_inst_arm(InstID::MOV,  0x91000000, 0xfffffc00, AP_REG_0P5, AP_REG_5P5); // 64bit
 
 	add_inst_arm(InstID::SUB,  0xd1000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::SUB,  0x51000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
