@@ -16,7 +16,7 @@ namespace Asm {
 
 struct CPUInstructionARM {
 	InstID inst;
-	int code, filter;
+	unsigned code, filter;
 	int p1, p2, p3;
 };
 static Array<CPUInstructionARM> cpu_instructions_arm;
@@ -58,16 +58,15 @@ enum {
 };
 
 
-void add_inst_arm(InstID inst, int code, int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
-	CPUInstructionARM i;
-	i.inst = inst;
-	i.code = code;
-	i.filter = filter;
-	i.p1 = param1;
-	i.p2 = param2;
-	i.p3 = param3;
+void add_inst_arm(InstID inst, unsigned int code, unsigned int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
+	CPUInstructionARM i{
+		.inst = inst,
+		.code = code,
+		.filter = filter,
+		.p1 = param1,
+		.p2 = param2,
+		.p3 = param3};
 
-	//i.name = GetInstructionName(inst);
 	cpu_instructions_arm.add(i);
 }
 
@@ -216,6 +215,9 @@ void arm64_init() {
 	}
 
 	cpu_instructions_arm.clear();
+
+	// multiple possibilities...
+	add_inst_arm(InstID::MOV,  0x91000000, 0xff800000, AP_REG_0P5, AP_REG_5P5); // 64bit
 
 	add_inst_arm(InstID::SUB,  0xd1000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::SUB,  0x51000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
@@ -761,7 +763,7 @@ void InstructionWithParamsList::add_instruction_arm32(char *oc, int &ocs, int n)
 	ocs += 4;
 }
 
-bool apply_param(int&code, const InstructionParam& p, int pf) {
+bool apply_param(unsigned int&code, const InstructionParam& p, int pf) {
 	if (pf == AP_NONE and p.type == ParamType::NONE)
 		return true;
 	if (p.type == ParamType::REGISTER and !p.deref) {
@@ -793,6 +795,12 @@ bool apply_param(int&code, const InstructionParam& p, int pf) {
 			code |= r << 5;
 			int size = (pf == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10) ? SIZE_32 : SIZE_64;
 			code |= ((int)(p.value / size) & 0x00000fff) << 10;
+			return true;
+		}
+		if ((pf == AP_DEREF_S128_REG_5P5_PLUS_IMM7P15) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
+			auto r = arm_reg_no(p.reg);
+			code |= r << 5;
+			code |= ((int)(p.value / SIZE_64) & 0x0000007f) << 15;
 			return true;
 		}
 		return false;
@@ -835,7 +843,7 @@ void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n)
 	if (iwp.inst == InstID::ALIGN_OPCODE)
 		return;
 
-	int& code = *(int*)&oc[ocs];
+	unsigned int& code = *(unsigned int*)&oc[ocs];
 	code = 0;
 	bool found = false;
 

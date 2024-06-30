@@ -521,10 +521,13 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 void BackendArm64::add_function_intro_frame(int stack_alloc_size) {
 	cmd.next_cmd_target(0);
 	//cmd.add_cmd(Asm::InstID::STMDB, param_preg(TypePointer, Asm::RegID::R13), param_imm(TypeInt, 0x6ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r14}
-	if (stack_max_size > 0) {
+	/*if (stack_max_size > 0) {
 		cmd.next_cmd_target(1);
 		cmd.add_cmd(Asm::InstID::SUB, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size + 8));
-	}
+	}*/
+	cmd.add_cmd(Asm::InstID::STP_PREINDEX, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, -stack_max_size - 16));
+	cmd.next_cmd_target(1);
+	cmd.add_cmd(Asm::InstID::MOV, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R31));
 }
 
 void BackendArm64::assemble() {
