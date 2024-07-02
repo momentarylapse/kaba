@@ -480,6 +480,7 @@ enum {
 	SIZE_8L4 = -13,
 	SIZE_12 = -14,
 	SIZE_8S2 = -15,
+	SIZE_26X = -16, // arm64 bl
 	/*SIZE_VARIABLE = -5,
 	SIZE_32OR48 = -6,*/
 	SIZE_UNKNOWN = -7,

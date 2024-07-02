@@ -671,7 +671,7 @@ void BackendArm64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 	}
 }
 
-static bool reachable_arm(int64 a, void *b) {
+static bool reachable_arm64(int64 a, void *b) {
 	return (abs((int_p)a - (int_p)b) < 0x10000000);
 }
 
@@ -684,7 +684,7 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	} else {
 		if (f->address == 0)
 			module->do_error_link("could not link function " + f->long_name());
-		if (reachable_arm(f->address, this->module->opcode)) {
+		if (reachable_arm64(f->address, this->module->opcode)) {
 			insert_cmd(Asm::InstID::BL, param_imm(TypePointer, f->address)); // the actual call
 			// function pointer will be shifted later...
 		} else {

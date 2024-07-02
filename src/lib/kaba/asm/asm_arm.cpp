@@ -776,7 +776,7 @@ void InstructionWithParamsList::add_instruction_arm32(char *oc, int &ocs, int n)
 	ocs += 4;
 }
 
-bool apply_param(unsigned int&code, const InstructionParam& p, int pf) {
+bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, const InstructionParam& p, int pf) {
 	if (pf == AP_NONE and p.type == ParamType::NONE)
 		return true;
 	if (p.type == ParamType::REGISTER and !p.deref) {
@@ -847,6 +847,10 @@ bool apply_param(unsigned int&code, const InstructionParam& p, int pf) {
 			return true;
 		} else if (pf == AP_IMM26X4REL_0) {
 			int64 val = p.value - (int_p)&code; // relative to rip
+			if (p.is_label) {
+				list.add_wanted_label(ocs, p.value, ocs/4, true, false, SIZE_26X);
+				return true;
+			}
 			//if ((val & 0xfffffffff0000003) == 0)
 			if ((val < (2<<28)) and (val >= -(2<<28)))
 				code |= ((unsigned int)(val) >> 2) & 0x03ffffff;
@@ -854,7 +858,7 @@ bool apply_param(unsigned int&code, const InstructionParam& p, int pf) {
 				return false;
 			return true;
 		}
-		msg_write("WRONG IMM");
+		//msg_write("WRONG IMM");
 		return false;
 	}
 	return false;
@@ -878,11 +882,11 @@ void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n)
 		if (i.inst == iwp.inst) {
 			//msg_write("...");
 			code = i.code;
-			if (!apply_param(code, iwp.p[0], i.p1))
+			if (!apply_param(*this, ocs, code, iwp.p[0], i.p1))
 				continue;
-			if (!apply_param(code, iwp.p[1], i.p2))
+			if (!apply_param(*this, ocs, code, iwp.p[1], i.p2))
 				continue;
-			if (!apply_param(code, iwp.p[2], i.p3))
+			if (!apply_param(*this, ocs, code, iwp.p[2], i.p3))
 				continue;
 			found = true;
 			break;
