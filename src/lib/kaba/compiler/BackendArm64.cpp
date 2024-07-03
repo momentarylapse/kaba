@@ -219,7 +219,7 @@ void BackendArm64::_immediate_to_register_64(int64 val, int r) {
 	bool first = true;
 	int64 mask = 0x000000000000ffff;
 	for (int k=0; k<4; k++) {
-		if (val & mask) {
+		if (val & mask or (val == 0 and k == 0)) {
 			if (first) {
 				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt64, r), param_imm(TypeInt64, (val & mask)));
 			} else {
@@ -288,14 +288,21 @@ int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, const Clas
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		// TODO: simplify for offset=0
 		auto var = (Variable*)p.p;
-		_immediate_to_register_64(var->_offset, reg);
-		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
-		msg_error("aaa");
-		list->show();
-
+//		_immediate_to_register_64(var->_offset, reg);
+//		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+		if (var->_offset >= 4096)
+			do_error("local memory only referencable until 4k");
+		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31), param_imm(TypeInt64, var->_offset));
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		_immediate_to_register_64(p.p, reg);
-		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+	// nope, this will interpret r31 as 0!
+	//	_immediate_to_register_64(p.p, reg);
+	//	insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+
+		if (p.p >= 4096)
+			do_error("local memory only referencable until 4k");
+
+		// FIXME for large offsets...
+		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31), param_imm(TypeInt64, p.p));
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		_immediate_to_register_64((int_p)((char*)p.p + p.shift), reg);
 	} else {
