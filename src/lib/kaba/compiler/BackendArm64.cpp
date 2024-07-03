@@ -279,6 +279,31 @@ int BackendArm64::_to_register_64(const SerialNodeParam &p, int offset, int forc
 	return reg;
 }
 
+int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, const Class *type) {
+	if (!type)
+		type = module->tree->get_pointer(p.type, -1);
+
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8);
+
+	if (p.kind == NodeKind::VAR_LOCAL) {
+		// TODO: simplify for offset=0
+		auto var = (Variable*)p.p;
+		_immediate_to_register_64(var->_offset, reg);
+		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+		msg_error("aaa");
+		list->show();
+
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		_immediate_to_register_64(p.p, reg);
+		insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, reg), param_vreg(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		_immediate_to_register_64((int_p)((char*)p.p + p.shift), reg);
+	} else {
+		do_error("lea source not handled: " + kind2str(p.kind));
+	}
+	return reg;
+}
+
 void BackendArm64::_from_register_64(int reg, const SerialNodeParam &p, int offset) {
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
@@ -572,16 +597,13 @@ void BackendArm64::correct_implement_commands() {
 				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
 			}
 			i = cmd.next_cmd_index - 1;
+#endif
 		} else if (c.inst == Asm::InstID::LEA) {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
-			cmd.remove_cmd(i);
 
-			int reg = _reference_to_register_32(p1);
-			_from_register_32(reg, p0, 0);
-
-			i = cmd.next_cmd_index - 1;
-#endif
+			int reg = _reference_to_register_64(p1);
+			_from_register_64(reg, p0, 0);
 		} else if (c.inst == Asm::InstID::PUSH) {
 			func_params.add(c.p[0]);
 		} else if (c.inst == Asm::InstID::CALL) {
