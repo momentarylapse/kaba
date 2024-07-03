@@ -20,6 +20,11 @@ public:
 	void add_function_intro_params(Function *f);
 	void implement_return(const SerialNodeParam &p);
 
+	void _immediate_to_register_64(int64 val, int r);
+	void _local_to_register_64(int offset, int r);
+	void _register_to_local_64(int r, int offset);
+	int _to_register_64(const SerialNodeParam &p, int offset, int force_register = -1);
+	void _from_register_64(int reg, const SerialNodeParam &p, int offset);
 	void _immediate_to_register_32(int val, int r);
 	void _local_to_register_32(int offset, int r);
 	void _register_to_local_32(int r, int offset);

@@ -225,9 +225,10 @@ void arm64_init() {
 	add_inst_arm(InstID::SUB,  0x51000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
 	add_inst_arm(InstID::SUB,  0x4b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
 
+	add_inst_arm(InstID::ADD,  0x8b000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16); // 64bit
+	add_inst_arm(InstID::ADD,  0x0b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
 	add_inst_arm(InstID::ADD,  0x91000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::ADD,  0x11000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
-	add_inst_arm(InstID::ADD,  0x0b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
 
 	add_inst_arm(InstID::MUL,  0x9b007c00, 0xff00fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16); // 32bit
 	add_inst_arm(InstID::MUL,  0x1b007c00, 0xff00fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16); // 64bit
@@ -780,7 +781,7 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 	if (pf == AP_NONE and p.type == ParamType::NONE)
 		return true;
 	if (p.type == ParamType::REGISTER and !p.deref) {
-		if ((pf == AP_REG_0P5 or pf == AP_REG_5P5 or pf == AP_REG_10P5) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
+		if ((pf == AP_REG_0P5 or pf == AP_REG_5P5 or pf == AP_REG_10P5 or pf == AP_REG_16) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
 			auto r = arm_reg_no(p.reg);
 			if (pf == AP_REG_0P5)
 				code |= r << 0;
@@ -788,6 +789,8 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 				code |= r << 5;
 			else if (pf == AP_REG_10P5)
 				code |= r << 10;
+			else if (pf == AP_REG_16)
+				code |= r << 16;
 			return true;
 		}
 		if ((pf == AP_WREG_0P5 or pf == AP_WREG_5P5 or pf == AP_WREG_16) and (p.reg->id >= RegID::W0 and p.reg->id <= RegID::W31)) {
