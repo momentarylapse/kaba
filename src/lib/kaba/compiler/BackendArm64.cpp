@@ -860,9 +860,9 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 			// really find a usable register...
 
 			int v = cmd.add_virtual_reg(Asm::RegID::R4);//find_unused_reg(cmd.next_cmd_index-1, cmd.next_cmd_index-1, 4);
-			_to_register_32(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), 0, v);
+			_to_register_64(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), 0, v);
 			//insert_cmd(Asm::InstID::MOV, param_vreg(TypePointer, v), param_lookup(TypePointer, add_global_ref(f->address)));
-			insert_cmd(Asm::InstID::BL, param_vreg(TypePointer, v));
+			insert_cmd(Asm::InstID::BLR, param_vreg(TypePointer, v));
 			cmd.set_virtual_reg(v, cmd.next_cmd_index-2, cmd.next_cmd_index-1);
 		}
 	}
