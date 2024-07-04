@@ -147,6 +147,12 @@ void BackendArm64::_local_to_register_32(int offset, int r) {
 	insert_cmd(Asm::InstID::LDR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
 
+void BackendArm64::_global_to_register_32(int64 addr, int r) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::LDR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
+}
+
 void BackendArm64::_register_to_local_32(int r, int offset) {
 	insert_cmd(Asm::InstID::STR, param_vreg(TypeInt, r), param_local(TypeInt, offset));
 }
@@ -181,13 +187,19 @@ int BackendArm64::_to_register_32(const SerialNodeParam &p, int offset, int forc
 		if (offset != 0)
 			do_error("global lookup + offset");
 		_immediate_to_register_32((int)(int_p)global_refs[p.p].p, reg);
-	/*} else if (p.kind == NodeKind::VAR_GLOBAL) {
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
-		_global_to_register_32((int_p)var->memory + offset, reg);*/
+		_global_to_register_32((int_p)var->memory + offset, reg);
 	} else {
 		do_error("evil read source..." + kind2str(p.kind));
 	}
 	return reg;
+}
+
+void BackendArm64::_register_to_global_32(int r, int64 addr) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::STR, param_vreg(TypeInt, r), param_deref_vreg(TypeInt, reg));
 }
 
 void BackendArm64::_from_register_32(int reg, const SerialNodeParam &p, int offset) {
@@ -196,9 +208,9 @@ void BackendArm64::_from_register_32(int reg, const SerialNodeParam &p, int offs
 		_register_to_local_32(reg, var->_offset + offset);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		_register_to_local_32(reg, p.p + offset);
-	/*} else if (p.kind == NodeKind::VAR_GLOBAL) {
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
-		_register_to_global_32(reg, (int_p)var->memory + offset);*/
+		_register_to_global_32(reg, (int_p)var->memory + offset);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4, VREG_ROOT(reg));
 		// *mem = reg
@@ -237,6 +249,12 @@ void BackendArm64::_local_to_register_64(int offset, int r) {
 	insert_cmd(Asm::InstID::LDR, param_vreg(TypeInt64, r), param_local(TypeInt64, offset));
 }
 
+void BackendArm64::_global_to_register_64(int64 addr, int r) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::LDR, param_vreg(TypeInt64, r), param_deref_vreg(TypeInt64, reg));
+}
+
 void BackendArm64::_register_to_local_64(int r, int offset) {
 	insert_cmd(Asm::InstID::STR, param_vreg(TypeInt64, r), param_local(TypeInt64, offset));
 }
@@ -271,9 +289,9 @@ int BackendArm64::_to_register_64(const SerialNodeParam &p, int offset, int forc
 		if (offset != 0)
 			do_error("global lookup + offset");
 		_immediate_to_register_64((int64)(int_p)global_refs[p.p].p, reg);
-		/*} else if (p.kind == NodeKind::VAR_GLOBAL) {
-			auto var = (Variable*)p.p;
-			_global_to_register_32((int_p)var->memory + offset, reg);*/
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
+		auto var = (Variable*)p.p;
+		_global_to_register_64((int_p)var->memory + offset, reg);
 	} else {
 		do_error("evil read source..." + kind2str(p.kind));
 	}
@@ -314,15 +332,21 @@ int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, int force_
 	return reg;
 }
 
+void BackendArm64::_register_to_global_64(int r, int64 addr) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::STR, param_vreg(TypeInt64, r), param_deref_vreg(TypeInt64, reg));
+}
+
 void BackendArm64::_from_register_64(int reg, const SerialNodeParam &p, int offset) {
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
 		_register_to_local_64(reg, var->_offset + offset);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
 		_register_to_local_64(reg, p.p + offset);
-		/*} else if (p.kind == NodeKind::VAR_GLOBAL) {
-			auto var = (Variable*)p.p;
-			_register_to_global_32(reg, (int_p)var->memory + offset);*/
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
+		auto var = (Variable*)p.p;
+		_register_to_global_64(reg, (int_p)var->memory + offset);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(reg));
 		// *mem = reg
