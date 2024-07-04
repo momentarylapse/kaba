@@ -18,6 +18,7 @@ namespace Asm{
 namespace kaba {
 
 BackendArm64::BackendArm64(Serializer* serializer) : BackendARM(serializer) {
+	map_reg_root = {Asm::RegRoot::R0, Asm::RegRoot::R1, Asm::RegRoot::R2, Asm::RegRoot::R3};
 }
 
 void BackendArm64::process(Function *f, int index) {
