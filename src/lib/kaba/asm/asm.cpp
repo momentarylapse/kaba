@@ -349,6 +349,7 @@ const InstructionName instruction_names[(int)InstID::NUM_INSTRUCTION_NAMES + 1] 
 
 	{InstID::B,		"b"},
 	{InstID::BL,		"bl"},
+	{InstID::BLR,		"blr"},
 	{InstID::BLX,		"blx"},
 	{InstID::ADR,		"adr"},
 	{InstID::ADRP,		"adrp"},

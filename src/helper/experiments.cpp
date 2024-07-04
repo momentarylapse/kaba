@@ -103,6 +103,7 @@ string kjhsdf, kjhsdf2;
 
 // https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-160
 
+[[gnu::noinline]]
 string ggg(int i) {
 	//skdjfhsjkdfh = i;
 	kjhsdf = kjhsdf2;
@@ -164,6 +165,27 @@ namespace kaba {
 	void* get_nice_memory(int64 size, bool executable, Module *module);
 }
 
+[[gnu::noinline]]
+void ffff3() {
+	string x = ggg(13);
+}
+
+void ffff4() {
+
+	void *a, *b, *ret, *ff;
+	__asm__("mov x0, %1\n"
+		"mov x1, %2\n"
+		"mov x8, %3\n"
+		"mov x7, %0\n"
+		"blr x7"
+		 : : "r"(ff), "r"(a), "r"(b), "r"(ret) : "r0", "r1", "r8", "r7");
+
+}
+
+float ffff5(float a, float b) {
+	return a + b;
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -180,8 +202,10 @@ void do_experiments() {
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 #endif
 	//msg_write(disassemble((void*)&f_add, 64));
-	msg_write(disassemble((void*)&fff2, 64));
+	//msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
+	//msg_write(disassemble((void*)&ffff3, 64));
+	msg_write(disassemble((void*)&ffff5, 64));
 
 	return;
 

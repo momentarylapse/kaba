@@ -275,6 +275,7 @@ enum class InstID {
 	// ARM
 	B,
 	BL,
+	BLR,
 	BLX,
 	ADR,
 	ADRP,

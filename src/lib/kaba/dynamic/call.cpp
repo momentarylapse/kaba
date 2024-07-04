@@ -29,7 +29,9 @@ extern const Class *TypeCallableBase;
 #define CALL_DEBUG_X		0
 
 // call-by-reference dummy
-class CBR {};
+class CBR {
+	int _dummy_[1024];
+};
 
 class vec2 { float a; float b; };
 class vec3 { float a; float b; float c; };
@@ -41,9 +43,16 @@ void call0_void(void *ff, void *ret, const Array<void*> &param) {
 
 template<class R>
 void call0(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,R>::value) {
+	if constexpr (std::is_same<CBR,R>::value) {
 		//msg_write("CBR return (1p)!!!");
+#ifdef CPU_ARM64
+		__asm__("mov x8, %1\n"
+			"mov x7, %0\n"
+			"blr x7"
+			 : : "r"(ff), "r"(ret) : "r8", "r7");
+#else
 		((void(*)(void*))ff)(ret);
+#endif
 	} else {
 		*(R*)ret = ((R(*)())ff)();
 	}
@@ -51,7 +60,7 @@ void call0(void *ff, void *ret, const Array<void*> &param) {
 
 template<class A>
 void call1_void_x(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,A>::value) {
+	if constexpr (std::is_same<CBR,A>::value) {
 		db_out("CBR -> void");
 		((void(*)(void*))ff)(param[0]);
 	} else {
@@ -62,16 +71,37 @@ void call1_void_x(void *ff, void *ret, const Array<void*> &param) {
 
 template<class R, class A>
 void call1(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,R>::value) {
-		if (std::is_same<CBR,A>::value) {
+	if constexpr (std::is_same<CBR,R>::value) {
+		if constexpr (std::is_same<CBR,A>::value) {
 			db_out("CBR -> CBR");
+#ifdef CPU_ARM64
+			void *a = param[0];
+			__asm__("mov x0, %1\n"
+				"mov x8, %2\n"
+				"mov x7, %0\n"
+				"blr x7"
+				 : : "r"(ff), "r"(a), "r"(ret) : "r0", "r8", "r7");
+#else
 			((void(*)(void*, void*))ff)(ret, param[0]);
+#endif
 		} else {
 			db_out("x -> CBR");
+#ifdef CPU_ARM64
+			// at least int/float32   ...NOT float64!!!
+			int64 a;
+			memcpy(&a, param[0], sizeof(A));
+			__asm__("mov x0, %1\n"
+				"fmov s0, w0\n"
+				"mov x8, %2\n"
+				"mov x7, %0\n"
+				"blr x7"
+				 : : "r"(ff), "r"(a), "r"(ret) : "r0", "v0", "r8", "r7");
+#else
 			((void(*)(void*, A))ff)(ret, *(A*)param[0]);
+#endif
 		}
 	} else {
-		if (std::is_same<CBR,A>::value) {
+		if constexpr (std::is_same<CBR,A>::value) {
 			db_out("CBR -> x");
 			*(R*)ret = ((R(*)(void*))ff)(param[0]);
 		} else {
@@ -83,20 +113,60 @@ void call1(void *ff, void *ret, const Array<void*> &param) {
 
 template<class R, class A, class B>
 void call2(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,R>::value) {
-		if (std::is_same<CBR,A>::value and std::is_same<CBR,B>::value) {
+	if constexpr (std::is_same<CBR,R>::value) {
+		if constexpr (std::is_same<CBR,A>::value and std::is_same<CBR,B>::value) {
 			db_out("CBR CBR -> CBR");
+#ifdef CPU_ARM64
+			void *a = param[0];
+			void *b = param[1];
+		__asm__("mov x0, %1\n"
+			"mov x1, %2\n"
+			"mov x8, %3\n"
+			"mov x7, %0\n"
+			"blr x7"
+			 : : "r"(ff), "r"(a), "r"(b), "r"(ret) : "r0", "r1", "r8", "r7");
+#else
 			((void(*)(void*, void*, void*))ff)(ret, param[0], param[1]);
-		} else if (std::is_same<CBR,A>::value) {
+#endif
+		} else if constexpr (std::is_same<CBR,A>::value) {
 			db_out("CBR x -> CBR");
+#ifdef CPU_ARM64
+			void* a = param[0];
+			// at least int/float32   ...NOT float64!!!
+			int64 b;
+			memcpy(&b, param[1], sizeof(B));
+			__asm__("mov x0, %1\n"
+				"mov x1, %2\n"
+				"fmov s1, w1\n"
+				"mov x8, %3\n"
+				"mov x7, %0\n"
+				"blr x7"
+				 : : "r"(ff), "r"(a), "r"(b), "r"(ret) : "r0", "r1", "s1", "r8", "r7");
+#else
 			((void(*)(void*, void*, B))ff)(ret, param[0], *(B*)param[1]);
+#endif
 		} else {
 			db_out("x x -> CBR");
+#ifdef CPU_ARM64
+			// at least int/float32   ...NOT float64!!!
+			int64 a, b;
+			memcpy(&a, param[0], sizeof(A));
+			memcpy(&b, param[1], sizeof(B));
+			__asm__("mov x0, %1\n"
+				"fmov s0, w0\n"
+				"mov x1, %2\n"
+				"fmov s1, w1\n"
+				"mov x8, %3\n"
+				"mov x7, %0\n"
+				"blr x7"
+				 : : "r"(ff), "r"(a), "r"(b), "r"(ret) : "r0", "s0", "r1", "s1", "r8", "r7");
+#else
 			((void(*)(void*, A, B))ff)(ret, *(A*)param[0], *(B*)param[1]);
+#endif
 		}
 
 	} else {
-		if (std::is_same<CBR,A>::value) {
+		if constexpr (std::is_same<CBR,A>::value) {
 			db_out("CBR x -> x");
 			*(R*)ret = ((R(*)(void*, B))ff)(param[0], *(B*)param[1]);
 		} else {
@@ -108,8 +178,26 @@ void call2(void *ff, void *ret, const Array<void*> &param) {
 
 template<class R, class A, class B, class C>
 void call3(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,R>::value) {
+	if constexpr (std::is_same<CBR,R>::value) {
+#ifdef CPU_ARM64
+		// at least int/float32   ...NOT float64!!!
+		int64 a, b, c;
+		memcpy(&a, param[0], sizeof(A));
+		memcpy(&b, param[1], sizeof(B));
+		memcpy(&c, param[2], sizeof(C));
+		__asm__("mov x0, %1\n"
+			"fmov s0, w0\n"
+			"mov x1, %2\n"
+			"fmov s1, w1\n"
+			"mov x2, %3\n"
+			"fmov s2, w2\n"
+			"mov x8, %4\n"
+			"mov x7, %0\n"
+			"blr x7"
+			 : : "r"(ff), "r"(a), "r"(b), "r"(c), "r"(ret) : "r0", "s0", "r1", "s1", "r2", "s2", "r8", "r7");
+#else
 		((void(*)(void*, A, B, C))ff)(ret, *(A*)param[0], *(B*)param[1], *(C*)param[2]);
+#endif
 	} else {
 		*(R*)ret = ((R(*)(A, B, C))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2]);
 	}
@@ -117,8 +205,29 @@ void call3(void *ff, void *ret, const Array<void*> &param) {
 
 template<class R, class A, class B, class C, class D>
 void call4(void *ff, void *ret, const Array<void*> &param) {
-	if (std::is_same<CBR,R>::value) {
+	if constexpr (std::is_same<CBR,R>::value) {
+#ifdef CPU_ARM64
+		// at least int/float32   ...NOT float64!!!
+		int64 a, b, c, d;
+		memcpy(&a, param[0], sizeof(A));
+		memcpy(&b, param[1], sizeof(B));
+		memcpy(&c, param[2], sizeof(C));
+		memcpy(&d, param[3], sizeof(D));
+		__asm__("mov x0, %1\n"
+			"fmov s0, w0\n"
+			"mov x1, %2\n"
+			"fmov s1, w1\n"
+			"mov x2, %3\n"
+			"fmov s2, w2\n"
+			"mov x3, %4\n"
+			"fmov s3, w3\n"
+			"mov x8, %5\n"
+			"mov x7, %0\n"
+			"blr x7"
+			 : : "r"(ff), "r"(a), "r"(b), "r"(c), "r"(d), "r"(ret) : "r0", "s0", "r1", "s1", "r2", "s2", "r3", "s3", "r8", "r7");
+#else
 		((void(*)(void*, A, B, C, D))ff)(ret, *(A*)param[0], *(B*)param[1], *(C*)param[2], *(D*)param[3]);
+#endif
 	} else {
 		*(R*)ret = ((R(*)(A, B, C, D))ff)(*(A*)param[0], *(B*)param[1], *(C*)param[2], *(D*)param[3]);
 	}
