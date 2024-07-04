@@ -127,13 +127,14 @@ void BackendArm64::correct() {
 void BackendArm64::_immediate_to_register_32(int val, int r) {
 	// 16bit chunks
 	bool first = true;
-	int mask = 0x0000ffff;
+	unsigned int uval = (unsigned)val;
+	unsigned int mask = 0x0000ffff;
 	for (int k=0; k<2; k++) {
-		if (val & mask) {
+		if (uval & mask) {
 			if (first) {
-				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, (val & mask)));
+				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, (uval & mask)));
 			} else {
-				insert_cmd(Asm::InstID::MOV, param_preg(TypeInt, Asm::RegID::W5), param_imm(TypeInt, (val & mask)));
+				insert_cmd(Asm::InstID::MOV, param_preg(TypeInt, Asm::RegID::W5), param_imm(TypeInt, (uval & mask)));
 				insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_preg(TypeInt, Asm::RegID::W5));
 			}
 			first = false;
@@ -279,11 +280,13 @@ int BackendArm64::_to_register_64(const SerialNodeParam &p, int offset, int forc
 	return reg;
 }
 
-int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, const Class *type) {
+int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, int force_register, const Class *type) {
 	if (!type)
 		type = module->tree->get_pointer(p.type, -1);
 
-	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8);
+	int reg = force_register;
+	if (reg < 0)
+		reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8);
 
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		// TODO: simplify for offset=0
@@ -713,10 +716,6 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	int max_reg_params = 8;
 	int reg_param_offset = 0;
-	if (type->uses_return_by_memory()) {
-		max_reg_params --;
-		reg_param_offset = 1;
-	}
 
 
 	// map params...
@@ -762,8 +761,9 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 
 	// return as _very_ first parameter
 	if (type->uses_return_by_memory()) {
-		int reg = _reference_to_register_32(ret);
-		cmd.set_virtual_reg(reg, cmd.next_cmd_index - 1, -100); // -> call
+		int vreg = cmd.add_virtual_reg(Asm::RegID::R8);
+		_reference_to_register_64(ret, vreg);
+		cmd.set_virtual_reg(vreg, cmd.next_cmd_index - 1, -100); // -> call
 	}
 
 	// r0, r1, r2, r3

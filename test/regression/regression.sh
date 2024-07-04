@@ -87,7 +87,7 @@ rm -f out
 
 if [ $TOTAL_FAILED = 0 ]
 then
-	echo -e "${GREEN}all tests passed${NC}"
+	echo -e "${GREEN}all ${TOTAL_TESTS} tests passed${NC}"
 else
-	echo -e "${RED}$TOTAL_FAILED tests failed${NC}"
+	echo -e "${RED}${TOTAL_FAILED} out of ${TOTAL_TESTS} tests failed${NC}"
 fi

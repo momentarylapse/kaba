@@ -24,7 +24,7 @@ public:
 	void _local_to_register_64(int offset, int r);
 	void _register_to_local_64(int r, int offset);
 	int _to_register_64(const SerialNodeParam &p, int offset, int force_register = -1);
-	int _reference_to_register_64(const SerialNodeParam &p, const Class *type = nullptr);
+	int _reference_to_register_64(const SerialNodeParam &p, int force_register = -1, const Class *type = nullptr);
 	void _from_register_64(int reg, const SerialNodeParam &p, int offset);
 	void _immediate_to_register_32(int val, int r);
 	void _local_to_register_32(int offset, int r);
