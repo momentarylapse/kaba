@@ -23,49 +23,6 @@ static Array<CPUInstructionARM> cpu_instructions_arm;
 
 
 
-enum {
-	AP_NONE,
-	AP_REG_0,
-	AP_REG_0P5,
-	AP_WREG_0P5,
-	AP_FREG_0_5,
-	AP_REG_5P5,
-	AP_WREG_5P5,
-	AP_REG_8,
-	AP_REG_10P5,
-	AP_REG_12,
-	AP_FREG_12_22,
-	AP_REG_16, // arm32
-	AP_REG_16P5, // arm64
-	AP_REG_16_W21,
-	AP_WREG_16P5,
-	AP_FREG_16_7,
-	AP_REG_SET,
-	AP_OFFSET24_0,
-	AP_IMM12_0,
-	AP_IMM12_10,
-	AP_IMM12_10SH,
-	AP_IMM9_12,
-	AP_IMM16E2_5,
-	AP_IMM4_12,
-	AP_IMM4_19,
-	AP_IMM26X4REL_0, // relative to rip x4
-	AP_IMM14X4REL_5, // relative to rip x4
-	AP_IMM13SRNMASK_10,
-	AP_SHIFTED12_0,
-	AP_DEREF_REG_16_OFFSET,
-	AP_DEREF_S8_REG_5P5_PLUS_IMM12P10, // imm NOT scaled
-	AP_DEREF_S32_REG_5P5_PLUS_IMM12P10, // imm scaled x 4
-	AP_DEREF_S64_REG_5P5_PLUS_IMM12P10, // imm scaled x 8
-	AP_DEREF_S128_REG_5P5_PLUS_IMM7P15, // imm scaled x 16
-	AP_DEREF_S32_REG_5P5_PLUS_IMM9P12, // imm NOT scaled!
-	AP_DEREF_S64_REG_5P5_PLUS_IMM9P12, // imm NOT scaled!
-	AP_SHIFTER_0X12_I25,
-	AP_XX_R12_W21_UPI23,
-	AP_XX_R12_W21_UPI23_BYTE,
-};
-
-
 void add_inst_arm(InstID inst, unsigned int code, unsigned int filter, int param1, int param2 = AP_NONE, int param3 = AP_NONE) {
 	CPUInstructionARM i{
 		.inst = inst,
@@ -277,6 +234,8 @@ void arm64_init() {
 	add_inst_arm(InstID::B, 0x14000000, 0xfc000000, AP_IMM26X4REL_0);
 	add_inst_arm(InstID::BLR, 0xd63f0000, 0xfffffc1f, AP_REG_5P5);
 
+	add_inst_arm(InstID::B, 0x54000000, 0xff000010, AP_IMM19X4REL_5, AP_IMM4_0);
+
 	add_inst_arm(InstID::SUBS, 0xeb000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
 	add_inst_arm(InstID::SUBS, 0x6b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
 
@@ -481,6 +440,8 @@ InstructionParam disarm_param(int code, int p) {
 			return param_imm((code & 0x003ffc00) >> 10, SIZE_64);
 	} else if (p == AP_IMM9_12) {
 		return param_imm((code & 0x001ff000) >> 12, SIZE_64);
+	} else if (p == AP_IMM4_0) {
+		return param_imm((code & 0x0000000f), SIZE_8);
 	} else if (p == AP_IMM4_12) {
 		return param_imm((code & 0x0000f000) >> 12, SIZE_8);
 	} else if (p == AP_IMM4_19) {
@@ -498,6 +459,10 @@ InstructionParam disarm_param(int code, int p) {
 		if (code & 0x00040000) // sign
 			return param_imm(((code & 0x0007ffe0) >> 5) << 2 | 0xffffffffffff0000, SIZE_64);
 		return param_imm(((code & 0x0007ffe0) >> 5) << 2, SIZE_64);
+	} else if (p == AP_IMM19X4REL_5) {
+		if (code & 0x00800000) // sign
+			return param_imm(((code & 0x00ffffe0) >> 5) << 2 | 0xffffffffffe00000, SIZE_64);
+		return param_imm(((code & 0x00ffffe0) >> 5) << 2, SIZE_64);
 	} else if (p != AP_NONE) {
 		msg_error("disasm_param... unhandled " + i2s(p));
 	}
@@ -826,6 +791,70 @@ void InstructionWithParamsList::add_instruction_arm32(char *oc, int &ocs, int n)
 	ocs += 4;
 }
 
+
+bool arm_encode_imm(unsigned int&code, int pf, int64 value, bool already_relative) {
+	if (pf == AP_IMM12_10SH) {
+		if ((value & 0xfffffffffffff000) == 0)
+			code |= value << 10;
+		else if ((value & 0xffffffffff000fff) == 0)
+			code |= value >> 2;
+		else
+			return false; //raise_error("immediate not supported");
+		return true;
+	} else if (pf == AP_IMM12_10) {
+		if ((value & 0xfffffffffffff000) == 0)
+			code |= (int)value << 10;
+		else
+			return false;
+		return true;
+	} else if (pf == AP_IMM4_12) {
+		if ((value & 0xfffffffffffffff0) == 0)
+			code |= (unsigned int)value << 12;
+		else
+			return false;
+		return true;
+	} else if (pf == AP_IMM16E2_5) {
+		if ((value & 0xffffffffffff0000) == 0)
+			code |= (int)value << 5;
+		else if ((value & 0xffffffff0000ffff) == 0)
+			code |= (unsigned int)(value >> (16 - 5)) & 0x001fffe0 | 0x00200000;
+		else if ((value & 0xffff0000ffffffff) == 0)
+			code |= (unsigned int)(value >> (32 - 5)) & 0x001fffe0 | 0x00400000;
+		else if ((value & 0x0000ffffffffffff) == 0)
+			code |= (unsigned int)(value >> (48 - 5)) & 0x001fffe0 | 0x00600000;
+		else
+			return false;
+		return true;
+	} else if (pf == AP_IMM13SRNMASK_10) {
+		// TODO!
+		if (value == 0x01)
+			return true;
+		return false;
+	} else if (pf == AP_IMM26X4REL_0 or pf == AP_IMM19X4REL_5 or pf == AP_IMM14X4REL_5) {
+		int bits = 26;
+		int offset = 0;
+		if (pf == AP_IMM19X4REL_5) {
+			bits = 19;
+			offset = 5;
+		} else if (pf == AP_IMM14X4REL_5) {
+			bits = 14;
+			offset = 5;
+		}
+		int64 val = value;
+		if (!already_relative)
+			// TODO use CurrentMetaInfo->code_origin
+			val = value - (int_p)&code; // relative to rip
+		//if ((val & 0xfffffffff0000003) == 0)
+		if ((val < (2<<(bits+2))) and (val >= -((int64)2<<(bits+2))))
+			code |= (((unsigned int)(val) >> 2) & (0xffffffff >> (32 - bits))) << offset;
+		else
+			return false;
+		return true;
+	}
+	//msg_write("WRONG IMM");
+	return false;
+}
+
 bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, const InstructionParam& p, int pf) {
 	if (pf == AP_NONE and p.type == ParamType::NONE)
 		return true;
@@ -875,58 +904,12 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 		return false;
 	}
 	if (p.type == ParamType::IMMEDIATE) {
-		if (pf == AP_IMM12_10SH) {
-			if ((p.value & 0xfffffffffffff000) == 0)
-				code |= p.value << 10;
-			else if ((p.value & 0xffffffffff000fff) == 0)
-				code |= p.value >> 2;
-			else
-				return false; //raise_error("immediate not supported");
+		if (p.is_label) {
+			list.add_wanted_label(ocs, p.value, ocs/4, true, false, pf);
 			return true;
-		} else if (pf == AP_IMM12_10) {
-			if ((p.value & 0xfffffffffffff000) == 0)
-				code |= (int)p.value << 10;
-			else
-				return false;
-			return true;
-		} else if (pf == AP_IMM4_12) {
-			if ((p.value & 0xfffffffffffffff0) == 0)
-				code |= (unsigned int)p.value << 12;
-			else
-				return false;
-			return true;
-		} else if (pf == AP_IMM16E2_5) {
-			if ((p.value & 0xffffffffffff0000) == 0)
-				code |= (int)p.value << 5;
-			else if ((p.value & 0xffffffff0000ffff) == 0)
-				code |= (unsigned int)(p.value >> (16 - 5)) & 0x001fffe0 | 0x00200000;
-			else if ((p.value & 0xffff0000ffffffff) == 0)
-				code |= (unsigned int)(p.value >> (32 - 5)) & 0x001fffe0 | 0x00400000;
-			else if ((p.value & 0x0000ffffffffffff) == 0)
-				code |= (unsigned int)(p.value >> (48 - 5)) & 0x001fffe0 | 0x00600000;
-			else
-				return false;
-			return true;
-		} else if (pf == AP_IMM13SRNMASK_10) {
-			// TODO!
-			if (p.value == 0x01)
-				return true;
-			return false;
-		} else if (pf == AP_IMM26X4REL_0) {
-			int64 val = p.value - (int_p)&code; // relative to rip
-			if (p.is_label) {
-				list.add_wanted_label(ocs, p.value, ocs/4, true, false, SIZE_26X);
-				return true;
-			}
-			//if ((val & 0xfffffffff0000003) == 0)
-			if ((val < (2<<28)) and (val >= -(2<<28)))
-				code |= ((unsigned int)(val) >> 2) & 0x03ffffff;
-			else
-				return false;
-			return true;
+		} else {
+			return arm_encode_imm(code, pf, p.value, false);
 		}
-		//msg_write("WRONG IMM");
-		return false;
 	}
 	return false;
 }

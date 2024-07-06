@@ -1185,6 +1185,7 @@ void parse_parameter(InstructionParam &p, const string &param, InstructionWithPa
 		raise_error("unknown parameter:  \"" + param + "\"\n");
 }
 
+
 void insert_val(char *oc, int &ocs, int64 val, int size) {
 	if (size == SIZE_8) {
 		oc[ocs] = (char)val;
@@ -1201,8 +1202,9 @@ void insert_val(char *oc, int &ocs, int64 val, int size) {
 		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
 	} else if (size == SIZE_12) {
 		*(int*)&oc[ocs - 2] = (*(int*)&oc[ocs - 2] & 0xfffff000) | ((int)val & 0x00000fff);
-	} else if (size == SIZE_26X) {
-		*(int*)&oc[ocs] = (*(int*)&oc[ocs] & 0xfc000000) | ((int)val & 0x03ffffff);
+	} else if (size == AP_IMM26X4REL_0 or size == AP_IMM19X4REL_5 or size == AP_IMM14X4REL_5) {
+		if (!arm_encode_imm(*(unsigned int*)&oc[ocs], size, val, true))
+			msg_error("failed to insert target location");
 	} else if (size == SIZE_8S2) {
 		oc[ocs] = (char)(val >> 2);
 	} else if (size > 0) {
@@ -1224,16 +1226,16 @@ void InstructionWithParamsList::link_wanted_labels(void *oc) {
 				size = 2;
 			if (size == SIZE_8S2)
 				size = 1;
-			if (size == SIZE_26X)
+			if (size == AP_IMM26X4REL_0 or size == AP_IMM19X4REL_5 or size == AP_IMM14X4REL_5)
 				size = -4;
 
 			// TODO first byte after command
 			if (instruction_set.set == InstructionSet::ARM32 or instruction_set.set == InstructionSet::ARM64) {
 				value -= CurrentMetaInfo->code_origin + w.pos + size + 4;
-				InstID inst = (*this)[w.inst_no].inst;
+			/*	InstID inst = (*this)[w.inst_no].inst;
 				if ((inst == InstID::BL) or (inst == InstID::B) or (inst == InstID::CALL) or (inst == InstID::JMP)) {
 					value = value >> 2;
-				}
+				}*/
 			} else {
 				value -= CurrentMetaInfo->code_origin + w.pos + size;
 			}
