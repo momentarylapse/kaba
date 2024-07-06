@@ -131,7 +131,7 @@ void BackendArm64::_immediate_to_register_32(int val, int r) {
 	unsigned int uval = (unsigned)val;
 	unsigned int mask = 0x0000ffff;
 	for (int k=0; k<2; k++) {
-		if (uval & mask) {
+		if ((val & mask) or (val == 0 and k == 0)) {
 			if (first) {
 				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, (uval & mask)));
 			} else {
@@ -233,7 +233,7 @@ void BackendArm64::_immediate_to_register_64(int64 val, int r) {
 	bool first = true;
 	int64 mask = 0x000000000000ffff;
 	for (int k=0; k<4; k++) {
-		if (val & mask or (val == 0 and k == 0)) {
+		if ((val & mask) or (val == 0 and k == 0)) {
 			if (first) {
 				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt64, r), param_imm(TypeInt64, (val & mask)));
 			} else {
