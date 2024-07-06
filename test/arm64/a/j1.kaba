@@ -1,0 +1,6 @@
+func main()
+	if true
+		print("a")
+	else
+		print("b")
+	print("c")

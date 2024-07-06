@@ -171,7 +171,7 @@ void ffff3() {
 }
 
 void ffff4() {
-
+#ifdef CPU_ARM64
 	void *a, *b, *ret, *ff;
 	__asm__("mov x0, %1\n"
 		"mov x1, %2\n"
@@ -179,7 +179,7 @@ void ffff4() {
 		"mov x7, %0\n"
 		"blr x7"
 		 : : "r"(ff), "r"(a), "r"(b), "r"(ret) : "r0", "r1", "r8", "r7");
-
+#endif
 }
 
 float ffff5(float a, float b) {
@@ -228,6 +228,7 @@ void do_experiments() {
 	//test_optional();
 	//test_variant();
 
+#ifdef CPU_ARM64
 	auto m = kaba::default_context->create_empty_module("-test-");
 
 	kaba::Compiler c(m.get());
@@ -257,6 +258,7 @@ void do_experiments() {
 
 	int x = (*f)(1, 2);
 	msg_write(x);
+#endif
 }
 
 

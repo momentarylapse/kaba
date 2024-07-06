@@ -1,0 +1,5 @@
+func main()
+	asm {
+		add w0, w1, w2
+		add r0, r1, r2
+	}

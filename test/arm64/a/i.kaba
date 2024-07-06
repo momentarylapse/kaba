@@ -1,0 +1,5 @@
+func main()
+	var i = 13
+	let c = i==0
+	print(c)
+

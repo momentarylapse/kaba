@@ -1,0 +1,5 @@
+var i: int
+
+func main()
+	i = 8
+	_int_out(i)

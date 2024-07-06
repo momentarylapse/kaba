@@ -1,0 +1,11 @@
+func main()
+	var i: int
+	asm {
+		mov r0, 0x00000001
+		b _after1
+	_after1:
+		mov r0, 0x00000002
+	_after2:
+		str r0, [r31+0x00]
+	}
+	_int_out(i)

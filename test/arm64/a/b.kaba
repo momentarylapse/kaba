@@ -1,0 +1,7 @@
+func main(a: int, b: int) -> int
+#	return a + b
+	let c = a + b
+	var x,y,z: i64
+	return c
+
+

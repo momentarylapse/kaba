@@ -1,0 +1,5 @@
+func main()
+	var s: string
+	s = "hallo" + " Welt"
+	print(s)
+	

@@ -1,0 +1,5 @@
+func main()
+	var f = 3.0
+	var v = vec3(1,2,f) #rand(1.0))
+	_float_out(v.x)
+	print(v)

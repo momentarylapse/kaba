@@ -1,0 +1,4 @@
+func main()
+	var i = 13
+	_int_out(i)
+

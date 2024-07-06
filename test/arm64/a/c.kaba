@@ -1,0 +1,4 @@
+func main(a: int, b:int) -> int
+	_int_out(a)
+	return a
+

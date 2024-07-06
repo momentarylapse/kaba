@@ -1,0 +1,14 @@
+func @noframe xmain()
+	asm {
+		sub  r31,  r31,  0x0000000000000010
+		str  w0,  [r31+0x0c]
+		str  w1,  [r31+0x08]
+		ldr  w8,  [r31+0x0c]
+		ldr  w9,  [r31+0x08]
+		# test
+		mul  w0,  w8,  w9
+	#	add  r0, r0, 0x01
+		add  r31,  r31,  0x0000000000000010
+		ret
+	}
+

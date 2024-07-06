@@ -1,0 +1,5 @@
+func f()
+	_int_out(13)
+
+func main()
+	f()
