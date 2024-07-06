@@ -196,6 +196,12 @@ void ffff7(int a, int b) {
 		ffff4();
 }
 
+void ffff8() {
+	float a = 1.0f;
+	float b = 2.0f;
+	float c = a + b;
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -215,7 +221,7 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 	//msg_write(disassemble((void*)&ffff3, 64));
-	msg_write(disassemble((void*)&ffff7, 80));
+	msg_write(disassemble((void*)&ffff8, 80));
 
 	return;
 

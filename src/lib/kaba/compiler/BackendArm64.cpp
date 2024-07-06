@@ -458,19 +458,19 @@ int BackendArm64::_to_register_float(const SerialNodeParam &p, int offset, int f
 		do_error("explicit register needed for float");
 	int sreg = force_register;//cmd.add_virtual_reg(Asm::RegID::S1);
 	int reg = _to_register_32(p, offset);
-	insert_cmd(Asm::InstID::FMSR, param_vreg(TypeFloat32, sreg), param_vreg(TypeFloat32, reg));
+	insert_cmd(Asm::InstID::FMOV, param_vreg(TypeFloat32, sreg), param_vreg(TypeFloat32, reg));
 	return sreg;
 }
 
 void BackendArm64::_from_register_float(int sreg, const SerialNodeParam &p, int offset) {
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
-		insert_cmd(Asm::InstID::FSTS, param_local(TypeFloat32, var->_offset + offset), param_vreg(TypeFloat32, sreg));
+		insert_cmd(Asm::InstID::STR, param_vreg(TypeFloat32, sreg), param_local(TypeFloat32, var->_offset + offset));
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		insert_cmd(Asm::InstID::FSTS, param_local(TypeFloat32, p.p + offset), param_vreg(TypeFloat32, sreg));
+		insert_cmd(Asm::InstID::STR, param_vreg(TypeFloat32, sreg), param_local(TypeFloat32, p.p + offset));
 	} else {
 		int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
-		insert_cmd(Asm::InstID::FMRS, param_vreg(TypeFloat32, reg), param_vreg(TypeFloat32, sreg));
+		insert_cmd(Asm::InstID::FMOV, param_vreg(TypeFloat32, reg), param_vreg(TypeFloat32, sreg));
 		_from_register_32(reg, p, offset);
 	}
 }
@@ -551,22 +551,11 @@ void BackendArm64::correct_implement_commands() {
 				insert_cmd(inst, param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg1), param_vreg(TypeInt, reg2));
 				_from_register_32(reg1, p0, 0);
 			}
-
-#if 0
 		} else if ((c.inst == Asm::InstID::FADD) or (c.inst == Asm::InstID::FSUB) or (c.inst == Asm::InstID::FMUL) or (c.inst == Asm::InstID::FDIV)) {//or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) /*or (c.inst == Asm::InstID::IDIV)*/ or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR)) {
 			auto inst = c.inst;
-			if (inst ==  Asm::InstID::FADD)
-				inst = Asm::InstID::FADDS;
-			else if (inst ==  Asm::InstID::FSUB)
-				inst = Asm::InstID::FSUBS;
-			else if (inst ==  Asm::InstID::FMUL)
-				inst = Asm::InstID::FMULS;
-			else if (inst ==  Asm::InstID::FDIV)
-				inst = Asm::InstID::FDIVS;
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
 			auto p2 = c.p[2];
-			cmd.remove_cmd(i);
 
 			int sreg1 = cmd.add_virtual_reg(Asm::RegID::S0);
 			int sreg2 = cmd.add_virtual_reg(Asm::RegID::S1);
@@ -581,12 +570,10 @@ void BackendArm64::correct_implement_commands() {
 				_to_register_float(p2, 0, sreg2);
 			}
 
-			insert_cmd(inst, param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg1), param_vreg(TypeInt, sreg2));
+			insert_cmd(inst, param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, sreg1), param_vreg(TypeFloat32, sreg2));
 
 			_from_register_float(sreg1, p0, 0);
 
-			i = cmd.next_cmd_index - 1;
-#endif
 		} else if (c.inst == Asm::InstID::CMP) {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
