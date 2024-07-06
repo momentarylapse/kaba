@@ -1553,6 +1553,8 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 	if (true) {
 	// TODO super important!!!!!!
 	if (config.target.is_arm()) {
+		int align = (s > 4) ? 8 : 4;
+		stack_offset = mem_align(stack_offset, align);
 		v.stack_offset = stack_offset;
 		stack_offset += s;
 

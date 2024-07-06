@@ -786,7 +786,8 @@ namespace armhelper {
 inline void try_map_param_to_stack(SerialNodeParam &p, int v, SerialNodeParam &stackvar) {
 	if ((p.kind == NodeKind::VAR_TEMP) and (p.p == v)) {
 		p.kind = NodeKind::LOCAL_MEMORY;//stackvar.kind;
-		p.p = stackvar.p;
+		p.p = stackvar.p + p.shift;
+		p.shift = 0;
 	} else if ((p.kind == NodeKind::DEREF_VAR_TEMP) and (p.p == v)) {
 		p.kind = NodeKind::DEREF_LOCAL_MEMORY;
 		p.p = stackvar.p;
