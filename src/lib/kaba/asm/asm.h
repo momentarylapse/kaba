@@ -277,8 +277,11 @@ enum class InstID {
 	BL,
 	BLR,
 	BLX,
+	TBZ,
+	TBNZ,
 	ADR,
 	ADRP,
+	CSET,
 
 	MULS,
 	ADDS,

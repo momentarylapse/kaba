@@ -363,6 +363,30 @@ void BackendArm64::_from_register_64(int reg, const SerialNodeParam &p, int offs
 	}
 }
 
+void BackendArm64::_immediate_to_register_8(int val, int r) {
+	insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val & 0xff));
+}
+
+void BackendArm64::_local_to_register_8(int offset, int r) {
+	insert_cmd(Asm::InstID::LDRB, param_vreg(TypeInt8, r), param_local(TypeInt8, offset));
+}
+
+void BackendArm64::_global_to_register_8(int64 addr, int r) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::LDRB, param_vreg(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
+}
+
+void BackendArm64::_register_to_local_8(int r, int offset) {
+	insert_cmd(Asm::InstID::STRB, param_vreg(TypeInt8, r), param_local(TypeInt8, offset));
+}
+
+void BackendArm64::_register_to_global_8(int r, int64 addr) {
+	int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(r));
+	_immediate_to_register_64(addr, reg);
+	insert_cmd(Asm::InstID::STRB, param_vreg(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
+}
+
 int BackendArm64::_to_register_8(const SerialNodeParam &p, int offset, int force_register) {
 	//if (p.kind == NodeKind::REGISTER)
 	//	return p.p;
@@ -370,8 +394,7 @@ int BackendArm64::_to_register_8(const SerialNodeParam &p, int offset, int force
 	int reg = force_register;
 	if (reg < 0)
 		reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);//Asm::RegID::R0;
-	do_error("to reg 8");
-#if 0
+
 	if (p.kind == NodeKind::CONSTANT) {
 		auto cc = (Constant*)p.p;
 		_immediate_to_register_8(*((char*)cc->p() + offset), reg);
@@ -402,12 +425,11 @@ int BackendArm64::_to_register_8(const SerialNodeParam &p, int offset, int force
 	} else {
 		do_error("evil read source..." + kind2str(p.kind));
 	}
-#endif
 	return reg;
 }
 
 void BackendArm64::_from_register_8(int reg, const SerialNodeParam &p, int offset) {
-	/*if (p.kind == NodeKind::VAR_LOCAL) {
+	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
 		_register_to_local_8(reg, var->_offset + offset);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
@@ -427,8 +449,7 @@ void BackendArm64::_from_register_8(int reg, const SerialNodeParam &p, int offse
 		insert_cmd(Asm::InstID::STRB, param_vreg(TypeInt8, reg), param_deref_vreg(TypeInt8, reg2));
 	} else {
 		do_error("evil write target..." + kind2str(p.kind));
-	}*/
-	do_error("from reg 8");
+	}
 }
 
 
@@ -565,54 +586,48 @@ void BackendArm64::correct_implement_commands() {
 			_from_register_float(sreg1, p0, 0);
 
 			i = cmd.next_cmd_index - 1;
-
-
+#endif
 		} else if (c.inst == Asm::InstID::CMP) {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
-			cmd.remove_cmd(i);
 
-			int reg1 = find_unused_reg(i, i, 4);
-			int reg2 = find_unused_reg(i, i, 4, VREG_ROOT(reg1));
+			int reg1 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, p0.type->size);
+			int reg2 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, p0.type->size, VREG_ROOT(reg1));
 
 			if (p0.type->size == 1) {
 				_to_register_8(p0, 0, reg1);
 				_to_register_8(p1, 0, reg2);
-			} else {
+			} else if (p0.type->size == 4) {
 				_to_register_32(p0, 0, reg1);
 				_to_register_32(p1, 0, reg2);
+			} else if (p0.type->size == 8) {
+				_to_register_64(p0, 0, reg1);
+				_to_register_64(p1, 0, reg2);
 			}
 
-			insert_cmd(Asm::InstID::CMP, param_vreg(p0.type, reg1), param_vreg(p1.type, reg2));
-			i = cmd.next_cmd_index - 1;
+			insert_cmd(Asm::InstID::SUBS, param_vreg(p0.type, reg1), param_vreg(p0.type, reg1), param_vreg(p1.type, reg2));
 		} else if ((c.inst == Asm::InstID::SETZ) or (c.inst == Asm::InstID::SETNZ) or (c.inst == Asm::InstID::SETNLE) or (c.inst == Asm::InstID::SETNL) or (c.inst == Asm::InstID::SETLE) or (c.inst == Asm::InstID::SETL)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;
-			cmd.remove_cmd(i);
-			int reg = cmd.add_virtual_reg(Asm::RegID::R0);
-			insert_cmd(Asm::InstID::MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 1), p_none);
-			insert_cmd(Asm::InstID::MOV, param_vreg(p0.type, reg), param_imm(TypeBool, 0), p_none);
+			int reg = cmd.add_virtual_reg(Asm::RegID::W0);
+			Asm::ArmCond cond = Asm::ArmCond::Equal;
 			if (inst == Asm::InstID::SETZ) { // ==
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
+				cond = Asm::ArmCond::NotEqual;
 			} else if (inst == Asm::InstID::SETNZ) { // !=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::NOT_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
+				cond = Asm::ArmCond::Equal;
 			} else if (inst == Asm::InstID::SETNLE) { // >
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_THAN;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
+				cond = Asm::ArmCond::LessEqual;
 			} else if (inst == Asm::InstID::SETNL) { // >=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::GREATER_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
+				cond = Asm::ArmCond::LessThan;
 			} else if (inst == Asm::InstID::SETL) { // <
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_THAN;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
+				cond = Asm::ArmCond::GreaterEqual;
 			} else if (inst == Asm::InstID::SETLE) { // <=
-				cmd.cmd[cmd.next_cmd_index - 2].cond = Asm::ArmCond::LESS_EQUAL;
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
+				cond = Asm::ArmCond::GreaterThan;
 			}
+			insert_cmd(Asm::InstID::CSET, param_vreg(TypeInt32, reg), param_imm(TypeInt32, (int)cond));
+			insert_cmd(Asm::InstID::AND, param_vreg(TypeInt32, reg), param_vreg(TypeInt32, reg), param_imm(TypeInt32, 1));
 			_from_register_8(reg, p0, 0);
-			i = cmd.next_cmd_index - 1;
+#if 0
 		} else if ((c.inst == Asm::InstID::JMP) or (c.inst == Asm::InstID::JZ) or (c.inst == Asm::InstID::JNZ) or (c.inst == Asm::InstID::JNLE) or (c.inst == Asm::InstID::JNL) or (c.inst == Asm::InstID::JLE) or (c.inst == Asm::InstID::JL)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;

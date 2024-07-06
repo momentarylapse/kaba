@@ -186,6 +186,16 @@ float ffff5(float a, float b) {
 	return a + b;
 }
 
+bool ffff6(int a, int b) {
+	return a > b;
+}
+
+void ffff7(int a, int b) {
+	bool x = a > b;
+	if (x)
+		ffff4();
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -205,7 +215,7 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 	//msg_write(disassemble((void*)&ffff3, 64));
-	msg_write(disassemble((void*)&ffff5, 64));
+	msg_write(disassemble((void*)&ffff7, 80));
 
 	return;
 
