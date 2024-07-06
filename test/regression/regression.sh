@@ -32,6 +32,7 @@ done
 
 TOTAL_FAILED=0
 TOTAL_TESTS=0
+TOTAL_PASSED=0
 
 for D in *
 do
@@ -81,6 +82,7 @@ do
 	fi
 	TOTAL_TESTS=`expr $TOTAL_TESTS + $TESTS`
 	TOTAL_FAILED=`expr $TOTAL_FAILED + $FAILED`
+	TOTAL_PASSED=`expr $TOTAL_PASSED + $PASSED`
 done
 
 rm -f out
@@ -89,5 +91,5 @@ if [ $TOTAL_FAILED = 0 ]
 then
 	echo -e "${GREEN}all ${TOTAL_TESTS} tests passed${NC}"
 else
-	echo -e "${RED}${TOTAL_FAILED} out of ${TOTAL_TESTS} tests failed${NC}"
+	echo -e "${RED}${TOTAL_PASSED} out of ${TOTAL_TESTS} tests passed - ${TOTAL_FAILED} failed ${NC}"
 fi

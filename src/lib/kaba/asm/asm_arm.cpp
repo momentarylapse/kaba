@@ -233,7 +233,6 @@ void arm64_init() {
 	add_inst_arm(InstID::BL, 0x94000000, 0xfc000000, AP_IMM26X4REL_0);
 	add_inst_arm(InstID::B, 0x14000000, 0xfc000000, AP_IMM26X4REL_0);
 	add_inst_arm(InstID::BLR, 0xd63f0000, 0xfffffc1f, AP_REG_5P5);
-
 	add_inst_arm(InstID::B, 0x54000000, 0xff000010, AP_IMM19X4REL_5, AP_IMM4_0);
 
 	add_inst_arm(InstID::SUBS, 0xeb000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
@@ -807,6 +806,12 @@ bool arm_encode_imm(unsigned int&code, int pf, int64 value, bool already_relativ
 		else
 			return false;
 		return true;
+	} else if (pf == AP_IMM4_0) {
+		if ((value & 0xfffffffffffffff0) == 0)
+			code |= (int)value;
+		else
+			return false;
+		return true;
 	} else if (pf == AP_IMM4_12) {
 		if ((value & 0xfffffffffffffff0) == 0)
 			code |= (unsigned int)value << 12;
@@ -855,7 +860,7 @@ bool arm_encode_imm(unsigned int&code, int pf, int64 value, bool already_relativ
 	return false;
 }
 
-bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, const InstructionParam& p, int pf) {
+bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, const InstructionParam& p, int pf, bool allow_wanted_labels) {
 	if (pf == AP_NONE and p.type == ParamType::NONE)
 		return true;
 	if (p.type == ParamType::REGISTER and !p.deref) {
@@ -905,7 +910,8 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 	}
 	if (p.type == ParamType::IMMEDIATE) {
 		if (p.is_label) {
-			list.add_wanted_label(ocs, p.value, ocs/4, true, false, pf);
+			if (allow_wanted_labels)
+				list.add_wanted_label(ocs, p.value, ocs/4, true, false, pf);
 			return true;
 		} else {
 			return arm_encode_imm(code, pf, p.value, false);
@@ -932,13 +938,17 @@ void InstructionWithParamsList::add_instruction_arm64(char *oc, int &ocs, int n)
 		if (i.inst == iwp.inst) {
 			//msg_write("...");
 			code = i.code;
-			if (!apply_param(*this, ocs, code, iwp.p[0], i.p1))
+			if (!apply_param(*this, ocs, code, iwp.p[0], i.p1, false))
 				continue;
-			if (!apply_param(*this, ocs, code, iwp.p[1], i.p2))
+			if (!apply_param(*this, ocs, code, iwp.p[1], i.p2, false))
 				continue;
-			if (!apply_param(*this, ocs, code, iwp.p[2], i.p3))
+			if (!apply_param(*this, ocs, code, iwp.p[2], i.p3, false))
 				continue;
 			found = true;
+
+			apply_param(*this, ocs, code, iwp.p[0], i.p1, true);
+			apply_param(*this, ocs, code, iwp.p[1], i.p2, true);
+			apply_param(*this, ocs, code, iwp.p[2], i.p3, true);
 			break;
 		}
 

@@ -591,8 +591,10 @@ void BackendArm64::correct_implement_commands() {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
 
-			int reg1 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, p0.type->size);
-			int reg2 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, p0.type->size, VREG_ROOT(reg1));
+			int size = max((int)p0.type->size, 4);
+
+			int reg1 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, size);
+			int reg2 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, size, VREG_ROOT(reg1));
 
 			if (p0.type->size == 1) {
 				_to_register_8(p0, 0, reg1);
@@ -627,27 +629,27 @@ void BackendArm64::correct_implement_commands() {
 			insert_cmd(Asm::InstID::CSET, param_vreg(TypeInt32, reg), param_imm(TypeInt32, (int)cond));
 			insert_cmd(Asm::InstID::AND, param_vreg(TypeInt32, reg), param_vreg(TypeInt32, reg), param_imm(TypeInt32, 1));
 			_from_register_8(reg, p0, 0);
-#if 0
-		} else if ((c.inst == Asm::InstID::JMP) or (c.inst == Asm::InstID::JZ) or (c.inst == Asm::InstID::JNZ) or (c.inst == Asm::InstID::JNLE) or (c.inst == Asm::InstID::JNL) or (c.inst == Asm::InstID::JLE) or (c.inst == Asm::InstID::JL)) {
+		} else if (c.inst == Asm::InstID::JMP) {
+			auto p0 = c.p[0];
+			insert_cmd(Asm::InstID::B, p0);
+		} else if ((c.inst == Asm::InstID::JZ) or (c.inst == Asm::InstID::JNZ) or (c.inst == Asm::InstID::JNLE) or (c.inst == Asm::InstID::JNL) or (c.inst == Asm::InstID::JLE) or (c.inst == Asm::InstID::JL)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;
-			cmd.remove_cmd(i);
-			insert_cmd(Asm::InstID::B, p0);
+			Asm::ArmCond cond = Asm::ArmCond::EQUAL;
 			if (inst == Asm::InstID::JZ) { // ==
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::EQUAL;
+				cond = Asm::ArmCond::EQUAL;
 			} else if (inst == Asm::InstID::JNZ) { // !=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::NOT_EQUAL;
+				cond = Asm::ArmCond::NOT_EQUAL;
 			} else if (inst == Asm::InstID::JNLE) { // >
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_THAN;
+				cond = Asm::ArmCond::GREATER_THAN;
 			} else if (inst == Asm::InstID::JNL) { // >=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::GREATER_EQUAL;
+				cond = Asm::ArmCond::GREATER_EQUAL;
 			} else if (inst == Asm::InstID::JL) { // <
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_THAN;
+				cond = Asm::ArmCond::LESS_THAN;
 			} else if (inst == Asm::InstID::JLE) { // <=
-				cmd.cmd[cmd.next_cmd_index - 1].cond = Asm::ArmCond::LESS_EQUAL;
+				cond = Asm::ArmCond::LESS_EQUAL;
 			}
-			i = cmd.next_cmd_index - 1;
-#endif
+			insert_cmd(Asm::InstID::B, p0, param_imm(TypeInt8, (int)cond));
 		} else if (c.inst == Asm::InstID::LEA) {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
