@@ -713,7 +713,7 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 			//insert_cmd(Asm::InstID::FLDS, param_preg(TypeFloat32, reg), p);
 	}
 
-	// return as _very_ first parameter
+	// big return -> r8 (address)
 	if (type->uses_return_by_memory()) {
 		int vreg = cmd.add_virtual_reg(Asm::RegID::R8);
 		_reference_to_register_64(ret, vreg);
@@ -748,15 +748,10 @@ void BackendArm64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 			_from_register_float(sreg, ret, 0);
 		//else if (type == TypeFloat64)
 			//insert_cmd(Asm::InstID::MOVSD, ret, param_preg(TypeReg128, Asm::RegID::XMM0));
-		} else if ((type->size == 1) or (type->size == 4)) {
-			int v = cmd.add_virtual_reg(Asm::RegID::W0);
-			_from_register_32(v, ret, 0);
-			cmd.set_virtual_reg(v, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		} else {
-			do_error("unhandled function value receiving... " + type->long_name());
-			int v = cmd.add_virtual_reg(Asm::RegID::R0);
-			insert_cmd(Asm::InstID::MOV, ret, param_vreg_auto(TypeReg32, v));
-			cmd.set_virtual_reg(v, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
+			int vreg = cmd.add_virtual_reg(Asm::RegID::R0);
+			_from_register(vreg, ret);
+			cmd.set_virtual_reg(vreg, cmd.next_cmd_index - 2, cmd.next_cmd_index - 1);
 		}
 	}
 }
