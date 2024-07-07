@@ -21,6 +21,7 @@ public:
 	void implement_return(const SerialNodeParam &p);
 
 	SerialNodeParam param_vreg_auto(const Class *type, int vreg);
+	void _immediate_to_register(int64 val, int size, int vreg);
 	void _local_to_register(int offset, int size, int vreg);
 	int _to_register(const SerialNodeParam &p, int offset, int force_vreg = -1);
 

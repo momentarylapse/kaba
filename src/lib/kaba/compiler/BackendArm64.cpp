@@ -133,10 +133,10 @@ void BackendArm64::_immediate_to_register_32(int val, int r) {
 	for (int k=0; k<2; k++) {
 		if ((val & mask) or (val == 0 and k == 0)) {
 			if (first) {
-				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, (uval & mask)));
+				insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt, r), param_imm(TypeInt, (uval & mask)));
 			} else {
 				insert_cmd(Asm::InstID::MOV, param_preg(TypeInt, Asm::RegID::W5), param_imm(TypeInt, (uval & mask)));
-				insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt, r), param_vreg(TypeInt, r), param_preg(TypeInt, Asm::RegID::W5));
+				insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt, r), param_vreg_auto(TypeInt, r), param_preg(TypeInt, Asm::RegID::W5));
 			}
 			first = false;
 		}
@@ -227,7 +227,16 @@ void BackendArm64::_from_register_32(int reg, const SerialNodeParam &p, int offs
 	}
 }
 
-// TODO better use int64?
+void BackendArm64::_immediate_to_register(int64 val, int size, int vreg) {
+	if (size == 1) {
+		_immediate_to_register_8(val, vreg);
+	} else if (size == 4) {
+		_immediate_to_register_32(val, vreg);
+	} else if (size == 8) {
+		_immediate_to_register_64(val, vreg);
+	}
+}
+
 void BackendArm64::_immediate_to_register_64(int64 val, int r) {
 	// 16bit chunks
 	bool first = true;
@@ -235,10 +244,10 @@ void BackendArm64::_immediate_to_register_64(int64 val, int r) {
 	for (int k=0; k<4; k++) {
 		if ((val & mask) or (val == 0 and k == 0)) {
 			if (first) {
-				insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt64, r), param_imm(TypeInt64, (val & mask)));
+				insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt64, r), param_imm(TypeInt64, (val & mask)));
 			} else {
 				insert_cmd(Asm::InstID::MOV, param_preg(TypeInt64, Asm::RegID::R5), param_imm(TypeInt64, (val & mask)));
-				insert_cmd(Asm::InstID::ADD, param_vreg(TypeInt64, r), param_vreg(TypeInt64, r), param_preg(TypeInt64, Asm::RegID::R5));
+				insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, r), param_vreg_auto(TypeInt64, r), param_preg(TypeInt64, Asm::RegID::R5));
 			}
 			first = false;
 		}
@@ -285,28 +294,13 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int offset, int force_r
 		reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8);
 	if (p.kind == NodeKind::CONSTANT) {
 		auto cc = (Constant*)p.p;
-		if (size == 8)
-			_immediate_to_register_64(*((int64*)((char*)cc->p() + offset)), reg);
-		else if (size == 4)
-			_immediate_to_register_32(*((int*)((char*)cc->p() + offset)), reg);
-		else if (size == 1)
-			_immediate_to_register_8(*(((char*)cc->p() + offset)), reg);
+		_immediate_to_register(*((int64*)((char*)cc->p() + offset)), size, reg);
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
-		if (size == 8)
-			_immediate_to_register_64(*((int64*)((char*)p.p + offset)), reg);
-		else if (size == 4)
-			_immediate_to_register_32(*((int*)((char*)p.p + offset)), reg);
-		else if (size == 1)
-			_immediate_to_register_8(*(((char*)p.p + offset)), reg);
+		_immediate_to_register(*((int64*)((char*)p.p + offset)), size, reg);
 	} else if (p.kind == NodeKind::IMMEDIATE) {
 		if (offset + p.shift != 0)
 			do_error("immediate + offset");
-		if (size == 8)
-			_immediate_to_register_64(p.p, reg);
-		else if (size == 4)
-			_immediate_to_register_32(p.p, reg);
-		else if (size == 1)
-			_immediate_to_register_8(p.p, reg);
+		_immediate_to_register(p.p, size, reg);
 	} else if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var2 = (Variable*)p.p;
 		_local_to_register(var2->_offset + offset, size, reg);
@@ -443,7 +437,7 @@ void BackendArm64::_from_register_64(int reg, const SerialNodeParam &p, int offs
 }
 
 void BackendArm64::_immediate_to_register_8(int val, int r) {
-	insert_cmd(Asm::InstID::MOV, param_vreg(TypeInt, r), param_imm(TypeInt, val & 0xff));
+	insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt, r), param_imm(TypeInt, val & 0xff));
 }
 
 void BackendArm64::_local_to_register_8(int offset, int r) {
@@ -536,8 +530,8 @@ int BackendArm64::_to_register_float(const SerialNodeParam &p, int offset, int f
 	if (force_register < 0)
 		do_error("explicit register needed for float");
 	int sreg = force_register;//cmd.add_virtual_reg(Asm::RegID::S1);
-	int reg = _to_register_32(p, offset);
-	insert_cmd(Asm::InstID::FMOV, param_vreg(TypeFloat32, sreg), param_vreg(TypeFloat32, reg));
+	int reg = _to_register(p, offset);
+	insert_cmd(Asm::InstID::FMOV, param_vreg(TypeFloat32, sreg), param_vreg_auto(TypeFloat32, reg));
 	return sreg;
 }
 
@@ -855,19 +849,12 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 		cmd.set_virtual_reg(vreg, cmd.next_cmd_index - 1, -100); // -> call
 	}
 
-	// r0, r1, r2, r3
+	// r0, .., r7
 	foreachib(auto &p, reg_param, i) {
-		if (p.type->size == 8) {
-			int v = cmd.add_virtual_reg(Asm::r_reg(i + reg_param_offset));
-			_to_register_64(p, 0, v);
-			//insert_cmd(Asm::InstID::MOV, param_vreg(p.type, v), p);
-			cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call
-		} else if (p.type->size == 4) {
-			int v = cmd.add_virtual_reg(Asm::w_reg(i + reg_param_offset));
-			_to_register_32(p, 0, v);
-			//insert_cmd(Asm::InstID::MOV, param_vreg(p.type, v), p);
-			cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call
-		}
+		int v = cmd.add_virtual_reg(Asm::r_reg(i + reg_param_offset));
+		_to_register(p, 0, v);
+		//insert_cmd(Asm::InstID::MOV, param_vreg(p.type, v), p);
+		cmd.set_virtual_reg(v, cmd.next_cmd_index - 1, -100); // -> call
 	}
 
 	// extend reg channels to call
