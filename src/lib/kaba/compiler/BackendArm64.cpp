@@ -261,7 +261,9 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 		_local_to_register(var2->_offset + p.shift, size, reg);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(reg));
-		_local_to_register(p.p + p.shift, 8, reg2);
+		_local_to_register(p.p, 8, reg2);
+		if (p.shift != 0)
+			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
 		if (size == 1)
 			insert_cmd(Asm::InstID::LDRB, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
 		else
@@ -281,6 +283,13 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 			_global_to_register_32((int_p)var->memory + p.shift, reg);
 		else //if (size == 8)
 			_global_to_register_64((int_p)var->memory + p.shift, reg);
+	} else if (p.kind == NodeKind::MEMORY) {
+		if (size == 1)
+			_global_to_register_8(p.p + p.shift, reg);
+		else if (size == 4)
+			_global_to_register_32(p.p + p.shift, reg);
+		else //if (size == 8)
+			_global_to_register_64(p.p + p.shift, reg);
 	} else {
 		do_error("evil read source..." + kind2str(p.kind));
 	}
@@ -432,6 +441,28 @@ void BackendArm64::_from_register_float(int sreg, const SerialNodeParam &p, int 
 	}
 }
 
+bool is_8b_aligned(const SerialNodeParam& p) {
+	if (p.kind == NodeKind::REGISTER)
+		return true;
+	if (p.kind == NodeKind::CONSTANT) {
+		auto cc = (Constant*)p.p;
+		return (((int_p)cc->p() + p.shift) & 0x07) == 0;
+	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
+		return (((int_p)p.p + p.shift) & 0x07) == 0;
+	} else if (p.kind == NodeKind::VAR_LOCAL) {
+		auto var = (Variable*)p.p;
+		return ((var->_offset + p.shift) & 0x07) == 0;
+	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
+		return ((p.p + p.shift) & 0x07) == 0;
+	} else if (p.kind == NodeKind::VAR_GLOBAL) {
+		auto var = (Variable*)p.p;
+		return (((int_p)var->memory + p.shift) & 0x07) == 0;
+	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
+		return true; // I guess, we could enforce this with alignment rules... somehow
+	}
+	return false;
+}
+
 void BackendArm64::correct_implement_commands() {
 
 	Array<SerialNodeParam> func_params;
@@ -449,12 +480,13 @@ void BackendArm64::correct_implement_commands() {
 			auto p1 = c.p[1];
 
 			int offset = 0;
-			for (int k=0; k<size/8; k++) {
+			if (is_8b_aligned(p0) and is_8b_aligned(p1))
+			while (offset + 8 <= size) {
 				int reg = _to_register(param_shift(p1, offset, TypeInt64));
 				_from_register(reg, param_shift(p0, offset, TypeInt64));
 				offset += 8;
 			}
-			if (size >= offset + 4) {
+			while (offset + 4 <= size) {
 				int reg = _to_register(param_shift(p1, offset, TypeInt32));
 				_from_register(reg, param_shift(p0, offset, TypeInt32));
 				offset += 4;

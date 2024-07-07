@@ -977,17 +977,21 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 	}
 	if (p.type == ParamType::REGISTER and p.deref) {
 		if ((pf == AP_DEREF_S64_REG_5P5_PLUS_IMM12P10 or pf == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10 or pf == AP_DEREF_S8_REG_5P5_PLUS_IMM12P10) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
-			auto r = arm_reg_no(p.reg);
-			code |= r << 5;
 			int size = SIZE_64;
 			if (pf == AP_DEREF_S32_REG_5P5_PLUS_IMM12P10)
 				size = SIZE_32;
 			if (pf == AP_DEREF_S8_REG_5P5_PLUS_IMM12P10)
 				size = SIZE_8;
+			if ((p.value & (size - 1)) or ((p.value / size) & 0xfffffffffffff000))
+				return false;
+			auto r = arm_reg_no(p.reg);
+			code |= r << 5;
 			code |= ((int)(p.value / size) & 0x00000fff) << 10;
 			return true;
 		}
 		if ((pf == AP_DEREF_S128_REG_5P5_PLUS_IMM7P15) and (p.reg->id >= RegID::R0 and p.reg->id <= RegID::R31)) {
+			if ((p.value & 0x07) or (p.value & 0xfffffffffffffc00))
+				return false;
 			auto r = arm_reg_no(p.reg);
 			code |= r << 5;
 			code |= ((int)(p.value / SIZE_64) & 0x0000007f) << 15;

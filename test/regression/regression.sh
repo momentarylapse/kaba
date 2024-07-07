@@ -9,7 +9,11 @@ SUITES_FILTER=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
-		-v|--verbose)
+		-V|--verbose)
+			VERBOSE=2
+			shift
+			;;
+		-v|--files)
 			VERBOSE=1
 			shift
 			;;
@@ -59,7 +63,11 @@ do
 		x=`diff --strip-trailing-cr "$f" out`
 		if [ -n "$x" ]
 		then
-			if [ $VERBOSE -gt 0 ]
+			if [ $VERBOSE -eq 1 ]
+			then
+				echo -e "${RED}FAILED ${f}${NC}"
+			fi
+			if [ $VERBOSE -ge 2 ]
 			then
 				echo $f
 				echo -e "${RED}ERROR${NC}"
@@ -67,7 +75,10 @@ do
 			fi
 			FAILED=`expr $FAILED + 1`
 		else
-#			echo -e "${GREEN}ok${NC}"
+			if [ $VERBOSE -eq 1 ]
+			then
+				echo -e "${GREEN}ok     ${f}${NC}"
+			fi
 			PASSED=`expr $PASSED + 1`
 		fi
 		

@@ -1556,7 +1556,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 		int align = (s > 4) ? 8 : 4;
 		stack_offset = mem_align(stack_offset, align);
 		v.stack_offset = stack_offset;
-		stack_offset += s;
+		stack_offset += mem_align(s, align);
 
 	} else {
 		stack_offset += s;
@@ -1570,8 +1570,7 @@ void Serializer::add_stack_var(TempVar &v, SerialNodeParam &p) {
 			stack_offset = - v.stack_offset;
 		}
 	}
-//	msg_write("=>");
-//	msg_write(v.stack_offset);
+	//msg_write(format("STACK VAR  %s =>  %d", v.type->name, v.stack_offset));
 
 	if (stack_offset > stack_max_size)
 		stack_max_size = stack_offset;
