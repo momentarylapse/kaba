@@ -20,6 +20,10 @@ public:
 	void add_function_intro_params(Function *f);
 	void implement_return(const SerialNodeParam &p);
 
+	SerialNodeParam param_vreg_auto(const Class *type, int vreg);
+	void _local_to_register(int offset, int size, int vreg);
+	int _to_register(const SerialNodeParam &p, int offset, int force_vreg = -1);
+
 	void _immediate_to_register_64(int64 val, int r);
 	void _local_to_register_64(int offset, int r);
 	void _global_to_register_64(int64 addr, int r);
