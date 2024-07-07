@@ -312,8 +312,8 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int offset, int force_r
 		_local_to_register(var2->_offset + offset, size, reg);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 8, VREG_ROOT(reg));
-		_local_to_register(p.p + offset, size, reg2);
-		if (size == 8)
+		_local_to_register(p.p + offset, 8, reg2);
+		if (size == 1)
 			insert_cmd(Asm::InstID::LDRB, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
 		else
 			insert_cmd(Asm::InstID::LDR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
@@ -570,14 +570,21 @@ void BackendArm64::correct_implement_commands() {
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
 
-			for (int k=0; k<size/4; k++) {
-				int reg = _to_register_32(p1, k*4);
-				_from_register_32(reg, p0, k*4);
+			int offset = 0;
+			for (int k=0; k<size/8; k++) {
+				int reg = _to_register_64(p1, k*8);
+				_from_register_64(reg, p0, k*8);
+				offset += 8;
 			}
-			int offset = (size / 4) * 4;
-			for (int k=0; k<size%4; k++) {
-				int reg = _to_register_8(p1, offset + k);
-				_from_register_8(reg, p0, offset + k);
+			if (size >= offset + 4) {
+				int reg = _to_register_32(p1, offset);
+				_from_register_32(reg, p0, offset);
+				offset += 4;
+			}
+			while (offset < size) {
+				int reg = _to_register_8(p1, offset);
+				_from_register_8(reg, p0, offset);
+				offset += 1;
 			}
 #if 0
 		} else if (c.inst == Asm::InstID::MOVSX or c.inst == Asm::InstID::MOVZX) {
@@ -644,18 +651,10 @@ void BackendArm64::correct_implement_commands() {
 			int reg1 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, size);
 			int reg2 = find_unused_reg(cmd.cmd.num-1, cmd.cmd.num-1, size, VREG_ROOT(reg1));
 
-			if (p0.type->size == 1) {
-				_to_register_8(p0, 0, reg1);
-				_to_register_8(p1, 0, reg2);
-			} else if (p0.type->size == 4) {
-				_to_register_32(p0, 0, reg1);
-				_to_register_32(p1, 0, reg2);
-			} else if (p0.type->size == 8) {
-				_to_register_64(p0, 0, reg1);
-				_to_register_64(p1, 0, reg2);
-			}
+			_to_register(p0, 0, reg1);
+			_to_register(p1, 0, reg2);
 
-			insert_cmd(Asm::InstID::SUBS, param_vreg(p0.type, reg1), param_vreg(p0.type, reg1), param_vreg(p1.type, reg2));
+			insert_cmd(Asm::InstID::SUBS, param_vreg_auto(p0.type, reg1), param_vreg_auto(p0.type, reg1), param_vreg(p1.type, reg2));
 		} else if ((c.inst == Asm::InstID::SETZ) or (c.inst == Asm::InstID::SETNZ) or (c.inst == Asm::InstID::SETNLE) or (c.inst == Asm::InstID::SETNL) or (c.inst == Asm::InstID::SETLE) or (c.inst == Asm::InstID::SETL)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;
