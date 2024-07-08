@@ -400,11 +400,8 @@ const Class *TemplateManager::instantiate(SyntaxTree *tree, ClassTemplate &t, co
 		c = create_class(class_name_might_need_parantheses(params[0]) + "{}", Class::Type::DICT, config.target.dynamic_array_size, -1, TypeDictBase, params, token_id);
 	else if (c0 == TypeOptionalT)
 		c = create_class(class_name_might_need_parantheses(params[0]) + "?", Class::Type::OPTIONAL, _make_optional_size(params[0]), 0, nullptr, params, token_id);
-	else if (c0 == TypeProductT) {
+	else if (c0 == TypeProductT)
 		c = create_class(product_class_name(params), Class::Type::PRODUCT, product_class_size(params), 0, nullptr, params, token_id);
-		msg_error("PRODUCT:  " + product_class_name(params));
-		msg_write(product_class_size(params));
-	}
 	else if (c0 == TypeFutureT) {
 		c = create_class(format("%s[%s]", Identifier::FUTURE, params[0]->name), Class::Type::REGULAR, sizeof(base::future<void>), 0, nullptr, params, token_id);
 		AutoImplementerFuture ai(nullptr, tree);

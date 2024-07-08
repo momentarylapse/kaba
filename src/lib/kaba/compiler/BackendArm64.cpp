@@ -44,7 +44,7 @@ void BackendArm64::add_function_intro_params(Function *f) {
 	Array<Variable*> stack_param;
 	Array<Variable*> float_param;
 	for (Variable *p: param) {
-		if ((p->type == TypeInt) or (p->type == TypeInt64) or (p->type == TypeInt8) or (p->type == TypeBool) or p->type->is_some_pointer()) {
+		if ((p->type == TypeInt) or (p->type == TypeInt64) or (p->type == TypeInt8) or (p->type == TypeBool) or p->type->is_enum() or p->type->is_some_pointer()) {
 			if (reg_param.num < 8) {
 				reg_param.add(p);
 			} else {
@@ -57,7 +57,7 @@ void BackendArm64::add_function_intro_params(Function *f) {
 				stack_param.add(p);
 			}
 		} else {
-			do_error("parameter type currently not supported: " + p->type->name);
+			do_error("parameter type currently not supported 2: " + p->type->name);
 		}
 	}
 
@@ -706,7 +706,7 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 	Array<SerialNodeParam> stack_param;
 	Array<SerialNodeParam> float_param;
 	for (SerialNodeParam &p: params) {
-		if ((p.type == TypeInt) or (p.type == TypeInt64) or (p.type == TypeInt8) or (p.type == TypeBool) or p.type->is_some_pointer()) {
+		if ((p.type == TypeInt32) or (p.type == TypeInt64) or (p.type == TypeInt8) or (p.type == TypeBool) or p.type->is_enum() or p.type->is_some_pointer()) {
 			if (reg_param.num < max_reg_params) {
 				reg_param.add(p);
 			} else {
@@ -719,7 +719,7 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 				stack_param.add(p);
 			}
 		} else
-			do_error("parameter type currently not supported: " + p.type->name);
+			do_error("parameter type currently not supported 1: " + p.type->name);
 	}
 
 	// push parameters onto stack
