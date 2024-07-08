@@ -18,7 +18,7 @@ namespace Asm{
 namespace kaba {
 
 BackendArm64::BackendArm64(Serializer* serializer) : BackendARM(serializer) {
-	map_reg_root = {Asm::RegRoot::R0, Asm::RegRoot::R1, Asm::RegRoot::R2, Asm::RegRoot::R3};
+	map_reg_root = {Asm::RegRoot::R0, Asm::RegRoot::R1, Asm::RegRoot::R2, Asm::RegRoot::R3, Asm::RegRoot::R4, Asm::RegRoot::R5, Asm::RegRoot::R6, Asm::RegRoot::R7};
 }
 
 void BackendArm64::process(Function *f, int index) {
@@ -844,7 +844,8 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 			// function pointer will be shifted later...
 		} else {
 			int vreg = vreg_alloc(8);
-			_to_register(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), vreg);
+			//_to_register(param_lookup(TypePointer, add_global_ref((void*)(int_p)f->address)), vreg);
+			_to_register(param_imm(TypeInt64, (int_p)f->address), vreg);
 			insert_cmd(Asm::InstID::BLR, param_vreg_auto(TypePointer, vreg));
 			vreg_free(vreg);
 		}
