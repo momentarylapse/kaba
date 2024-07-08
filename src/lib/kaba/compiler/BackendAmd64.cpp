@@ -357,13 +357,6 @@ void BackendAmd64::add_function_intro_params(Function *f) {
 	}
 
 	// self: already in params!
-	/*if (!f->is_static()) {
-		for (Variable *v: weak(f->var))
-			if (v->name == Identifier::SELF) {
-				param.add(v);
-				break;
-			}
-	}*/
 
 	for (int i=0;i<f->num_params;i++)
 		param.add(f->var[i].get());

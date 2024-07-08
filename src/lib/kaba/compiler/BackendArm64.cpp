@@ -35,20 +35,7 @@ void BackendArm64::process(Function *f, int index) {
 void BackendArm64::add_function_intro_params(Function *f) {
 	// return, instance, params
 	Array<Variable*> param;
-	if (f->effective_return_type->uses_return_by_memory()) {
-		for (Variable *v: weak(f->var))
-			if (v->name == Identifier::RETURN_VAR) {
-				param.add(v);
-				break;
-			}
-	}
-	if (!f->is_static()) {
-		for (Variable *v: weak(f->var))
-			if (v->name == Identifier::SELF) {
-				param.add(v);
-				break;
-			}
-	}
+
 	for (int i=0;i<f->num_params;i++)
 		param.add(f->var[i].get());
 
@@ -93,6 +80,16 @@ void BackendArm64::add_function_intro_params(Function *f) {
 		/*int s = 8;
 		cmd.add_cmd(Asm::inst_push, p);
 		push_size += s;*/
+	}
+
+	if (f->effective_return_type->uses_return_by_memory()) {
+		for (Variable *v: weak(f->var))
+			if (v->name == Identifier::RETURN_VAR) {
+				int reg = cmd.add_virtual_reg(Asm::r_reg(8));
+				_from_register(reg, param_local(v->type, v->_offset));
+				cmd.set_virtual_reg(reg, cmd.cmd.num - 1, cmd.cmd.num - 1);
+				break;
+			}
 	}
 }
 
