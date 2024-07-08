@@ -168,12 +168,11 @@ void BackendArm64::_from_register_32(int reg, const SerialNodeParam &p) {
 		_register_to_global_32(reg, (int_p)var->memory + p.shift);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = vreg_alloc(8);
-		// *mem = reg
-		if (p.shift != 0)
-			do_error("deref local + shift...");
-
 		// reg2 = mem
 		_local_to_register_64(p.p, reg2);
+		if (p.shift != 0)
+			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
+
 		// [reg2] = reg
 		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt, reg), param_deref_vreg(TypeInt, reg2));
 		vreg_free(reg2);
@@ -409,12 +408,11 @@ void BackendArm64::_from_register_8(int reg, const SerialNodeParam &p) {
 		_register_to_global_8(reg, (int_p)var->memory + p.shift);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = vreg_alloc(8);
-		// *mem = reg
-		if (p.shift != 0)
-			do_error("deref local + shift...");
-
 		// reg2 = mem
 		_local_to_register_64(p.p, reg2);
+		if (p.shift != 0)
+			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
+
 		// [reg2] = reg
 		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, reg), param_deref_vreg(TypeInt8, reg2));
 		vreg_free(reg2);
