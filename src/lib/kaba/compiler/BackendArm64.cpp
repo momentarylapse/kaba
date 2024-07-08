@@ -573,7 +573,7 @@ void BackendArm64::correct_implement_commands() {
 			_to_register(p1, vreg2);
 
 			insert_cmd(Asm::InstID::SUBS, param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg1), param_vreg_auto(p1.type, vreg2));
-		} else if ((c.inst == Asm::InstID::SETZ) or (c.inst == Asm::InstID::SETNZ) or (c.inst == Asm::InstID::SETNLE) or (c.inst == Asm::InstID::SETNL) or (c.inst == Asm::InstID::SETLE) or (c.inst == Asm::InstID::SETL)) {
+		} else if ((c.inst == Asm::InstID::SETZ) or (c.inst == Asm::InstID::SETNZ) or (c.inst == Asm::InstID::SETNLE) or (c.inst == Asm::InstID::SETNL) or (c.inst == Asm::InstID::SETLE) or (c.inst == Asm::InstID::SETL) or (c.inst == Asm::InstID::SETNBE) or (c.inst == Asm::InstID::SETNB) or (c.inst == Asm::InstID::SETBE) or (c.inst == Asm::InstID::SETB)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;
 			int reg = cmd.add_virtual_reg(Asm::RegID::W0);
@@ -582,13 +582,13 @@ void BackendArm64::correct_implement_commands() {
 				cond = Asm::ArmCond::NotEqual;
 			} else if (inst == Asm::InstID::SETNZ) { // !=
 				cond = Asm::ArmCond::Equal;
-			} else if (inst == Asm::InstID::SETNLE) { // >
+			} else if (inst == Asm::InstID::SETNLE or inst == Asm::InstID::SETNBE) { // >
 				cond = Asm::ArmCond::LessEqual;
-			} else if (inst == Asm::InstID::SETNL) { // >=
+			} else if (inst == Asm::InstID::SETNL or inst == Asm::InstID::SETNB) { // >=
 				cond = Asm::ArmCond::LessThan;
-			} else if (inst == Asm::InstID::SETL) { // <
+			} else if (inst == Asm::InstID::SETL or inst == Asm::InstID::SETB) { // <
 				cond = Asm::ArmCond::GreaterEqual;
-			} else if (inst == Asm::InstID::SETLE) { // <=
+			} else if (inst == Asm::InstID::SETLE or inst == Asm::InstID::SETBE) { // <=
 				cond = Asm::ArmCond::GreaterThan;
 			}
 			insert_cmd(Asm::InstID::CSET, param_vreg_auto(TypeInt32, reg), param_imm(TypeInt32, (int)cond));
@@ -600,19 +600,19 @@ void BackendArm64::correct_implement_commands() {
 		} else if ((c.inst == Asm::InstID::JZ) or (c.inst == Asm::InstID::JNZ) or (c.inst == Asm::InstID::JNLE) or (c.inst == Asm::InstID::JNL) or (c.inst == Asm::InstID::JLE) or (c.inst == Asm::InstID::JL)) {
 			auto p0 = c.p[0];
 			auto inst = c.inst;
-			Asm::ArmCond cond = Asm::ArmCond::EQUAL;
+			Asm::ArmCond cond = Asm::ArmCond::Equal;
 			if (inst == Asm::InstID::JZ) { // ==
-				cond = Asm::ArmCond::EQUAL;
+				cond = Asm::ArmCond::Equal;
 			} else if (inst == Asm::InstID::JNZ) { // !=
-				cond = Asm::ArmCond::NOT_EQUAL;
+				cond = Asm::ArmCond::NotEqual;
 			} else if (inst == Asm::InstID::JNLE) { // >
-				cond = Asm::ArmCond::GREATER_THAN;
+				cond = Asm::ArmCond::GreaterThan;
 			} else if (inst == Asm::InstID::JNL) { // >=
-				cond = Asm::ArmCond::GREATER_EQUAL;
+				cond = Asm::ArmCond::GreaterEqual;
 			} else if (inst == Asm::InstID::JL) { // <
-				cond = Asm::ArmCond::LESS_THAN;
+				cond = Asm::ArmCond::LessThan;
 			} else if (inst == Asm::InstID::JLE) { // <=
-				cond = Asm::ArmCond::LESS_EQUAL;
+				cond = Asm::ArmCond::LessEqual;
 			}
 			insert_cmd(Asm::InstID::B, p0, param_imm(TypeInt8, (int)cond));
 		} else if (c.inst == Asm::InstID::LEA) {
