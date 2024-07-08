@@ -255,7 +255,6 @@ void arm64_init() {
 	add_inst_arm(InstID::AND, 0x8a000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64 bit
 	add_inst_arm(InstID::AND, 0x0a000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32 bit
 
-	// 1e2e1000
 	add_inst_arm(InstID::FMOV, 0x1e204000, 0xfffffc00, AP_SREG_0P5, AP_SREG_5P5); // f32
 	add_inst_arm(InstID::FMOV, 0x1e604000, 0xfffffc00, AP_DREG_0P5, AP_DREG_5P5); // f64
 	add_inst_arm(InstID::FMOV, 0x1e201000, 0xffe01fe0, AP_SREG_0P5, AP_IMM8F32_13); // f32
@@ -278,6 +277,9 @@ void arm64_init() {
 	add_inst_arm(InstID::FMUL, 0x1e600800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
 	add_inst_arm(InstID::FDIV, 0x1e201800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f32
 	add_inst_arm(InstID::FDIV, 0x1e601800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
+
+	add_inst_arm(InstID::FCMP, 0x1e202000, 0xffe0fc1f, AP_SREG_5P5, AP_SREG_16P5); // f32
+	add_inst_arm(InstID::FCMP, 0x1e602000, 0xffe0fc1f, AP_DREG_5P5, AP_DREG_16P5); // f64
 }
 
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;

@@ -64,7 +64,7 @@ void BackendArm64::add_function_intro_params(Function *f) {
 	// s0-7
 	foreachib(Variable *p, float_param, i) {
 		int reg = cmd.add_virtual_reg(Asm::s_reg(i));
-		_from_register_float(reg, param_local(p->type, p->_offset), 0);
+		_from_register_float(reg, param_local(p->type, p->_offset));
 	}
 
 	// r0-7
@@ -416,25 +416,25 @@ void BackendArm64::_from_register_8(int reg, const SerialNodeParam &p, int offse
 }
 
 
-int BackendArm64::_to_register_float(const SerialNodeParam &p, int offset, int force_register) {
+int BackendArm64::_to_register_float(const SerialNodeParam &p, int force_register) {
 	if (force_register < 0)
 		do_error("explicit register needed for float");
 	int sreg = force_register;//cmd.add_virtual_reg(Asm::RegID::S1);
-	int reg = _to_register(p, offset);
+	int reg = _to_register(p);
 	insert_cmd(Asm::InstID::FMOV, param_vreg_auto(TypeFloat32, sreg), param_vreg_auto(TypeFloat32, reg));
 	return sreg;
 }
 
-void BackendArm64::_from_register_float(int sreg, const SerialNodeParam &p, int offset) {
+void BackendArm64::_from_register_float(int sreg, const SerialNodeParam &p) {
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
-		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeFloat32, sreg), param_local(TypeFloat32, var->_offset + offset));
+		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeFloat32, sreg), param_local(TypeFloat32, var->_offset + p.shift));
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeFloat32, sreg), param_local(TypeFloat32, p.p + offset));
+		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeFloat32, sreg), param_local(TypeFloat32, p.p + p.shift));
 	} else {
 		int reg = find_unused_reg(cmd.next_cmd_index, cmd.next_cmd_index, 4);
 		insert_cmd(Asm::InstID::FMOV, param_vreg_auto(TypeFloat32, reg), param_vreg_auto(TypeFloat32, sreg));
-		_from_register_32(reg, p, offset);
+		_from_register_32(reg, p, 0);
 	}
 }
 
@@ -536,17 +536,29 @@ void BackendArm64::correct_implement_commands() {
 
 			if (p2.kind == NodeKind::NONE) {
 				// a += b
-				_to_register_float(p0, 0, sreg1);
-				_to_register_float(p1, 0, sreg2);
+				_to_register_float(p0, sreg1);
+				_to_register_float(p1, sreg2);
 			} else {
 				// a = b + c
-				_to_register_float(p1, 0, sreg1);
-				_to_register_float(p2, 0, sreg2);
+				_to_register_float(p1, sreg1);
+				_to_register_float(p2, sreg2);
 			}
 
 			insert_cmd(inst, param_vreg_auto(TypeFloat32, sreg1), param_vreg_auto(TypeFloat32, sreg1), param_vreg_auto(TypeFloat32, sreg2));
 
-			_from_register_float(sreg1, p0, 0);
+			_from_register_float(sreg1, p0);
+
+		} else if (c.inst == Asm::InstID::UCOMISS) {
+			auto inst = c.inst;
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+
+			int sreg1 = cmd.add_virtual_reg(Asm::RegID::S0);
+			int sreg2 = cmd.add_virtual_reg(Asm::RegID::S1);
+			_to_register_float(p0, sreg1);
+			_to_register_float(p1, sreg2);
+
+			insert_cmd(Asm::InstID::FCMP, param_vreg_auto(TypeFloat32, sreg1), param_vreg_auto(TypeFloat32, sreg2));
 
 		} else if (c.inst == Asm::InstID::CMP) {
 			auto p0 = c.p[0];
@@ -738,8 +750,7 @@ int BackendArm64::fc_begin(const Array<SerialNodeParam> &_params, const SerialNo
 		/*if (p.type == TypeFloat64)
 			insert_cmd(Asm::inst_movsd, param_reg(TypeReg128, reg), p);
 		else*/
-		_to_register_float(p, 0, cmd.add_virtual_reg(reg));
-			//insert_cmd(Asm::InstID::FLDS, param_preg(TypeFloat32, reg), p);
+		_to_register_float(p, cmd.add_virtual_reg(reg));
 	}
 
 	// big return -> r8 (address)
@@ -774,7 +785,7 @@ void BackendArm64::fc_end(int push_size, const Array<SerialNodeParam> &params, c
 	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
 		if (type == TypeFloat32) {
 			int sreg = cmd.add_virtual_reg(Asm::RegID::S0);
-			_from_register_float(sreg, ret, 0);
+			_from_register_float(sreg, ret);
 		//else if (type == TypeFloat64)
 			//insert_cmd(Asm::InstID::MOVSD, ret, param_preg(TypeReg128, Asm::RegID::XMM0));
 		} else {

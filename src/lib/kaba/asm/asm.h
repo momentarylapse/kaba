@@ -357,6 +357,7 @@ enum class InstID {
 	FLDS,
 	FSTS,
 	FMOV,
+	FCMP,
 
 	// fake
 	MODULO,

@@ -48,8 +48,8 @@ public:
 	void _global_to_register_8(int64 addr, int r);
 	void _from_register_8(int reg, const SerialNodeParam &p, int offset);
 
-	int _to_register_float(const SerialNodeParam &p, int offset, int force_register);
-	void _from_register_float(int sreg, const SerialNodeParam &p, int offset);
+	int _to_register_float(const SerialNodeParam &p, int force_register);
+	void _from_register_float(int sreg, const SerialNodeParam &p);
 
 	int fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
 	void fc_end(int push_size, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
