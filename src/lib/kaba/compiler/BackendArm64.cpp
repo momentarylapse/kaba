@@ -657,12 +657,11 @@ void BackendArm64::correct_implement_commands() {
 			vreg_free(vreg);
 		} else if (c.inst == Asm::InstID::PUSH) {
 			func_params.add(c.p[0]);
-		} else if (c.inst == Asm::InstID::CALL) {
+		} else if ((c.inst == Asm::InstID::CALL) or (c.inst == Asm::InstID::CALL_MEMBER)) {
 			if (c.p[1].type == TypeFunctionCodeRef) {
-				//do_error("indirect call...");
 				auto fp = c.p[1];
 				auto ret = c.p[0];
-				add_pointer_call(fp, func_params, ret);
+				add_pointer_call(fp, func_params, ret, (c.inst == Asm::InstID::CALL));
 //			} else if (is_typed_function_pointer(c.p[1].type)) {
 //				do_error("BACKEND: POINTER CALL");
 			} else {
@@ -853,6 +852,18 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 			vreg_free(vreg);
 		}
 	}
+
+	fc_end(call_data, params, ret);
+}
+
+void BackendArm64::add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret, bool is_static) {
+	serializer->call_used = true;
+	auto call_data = fc_begin(params, ret, is_static);
+
+	int vreg = _to_register(fp);
+	insert_cmd(Asm::InstID::BLR, param_vreg_auto(TypePointer, vreg));
+	//mark_regs_busy_at_call(cmd.next_cmd_index - 1);
+	vreg_free(vreg);
 
 	fc_end(call_data, params, ret);
 }

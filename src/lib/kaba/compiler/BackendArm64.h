@@ -59,6 +59,7 @@ public:
 	CallData fc_begin(const Array<SerialNodeParam> &_params, const SerialNodeParam &ret, bool is_static);
 	void fc_end(const CallData& d, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 	void add_function_call(Function *f, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
+	void add_pointer_call(const SerialNodeParam &fp, const Array<SerialNodeParam> &params, const SerialNodeParam &ret, bool is_static);
 
 	void assemble() override;
 
