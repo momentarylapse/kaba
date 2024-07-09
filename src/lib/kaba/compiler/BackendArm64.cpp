@@ -508,10 +508,12 @@ void BackendArm64::correct_implement_commands() {
 		} else if (c.inst == Asm::InstID::MOVSX or c.inst == Asm::InstID::MOVZX) {
 			do_error("no movsx yet");
 #endif
-		} else if ((c.inst == Asm::InstID::ADD) or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) /*or (c.inst == Asm::InstID::IDIV)*/ or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR)) {
+		} else if ((c.inst == Asm::InstID::ADD) or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) or (c.inst == Asm::InstID::IDIV) or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR) or (c.inst == Asm::InstID::XOR) or (c.inst == Asm::InstID::SHL) or (c.inst == Asm::InstID::SHR)) {
 			auto inst = c.inst;
 			if (inst ==  Asm::InstID::IMUL)
 				inst = Asm::InstID::MUL;
+			else if (inst ==  Asm::InstID::IDIV)
+				inst = Asm::InstID::DIV;
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
 			auto p2 = c.p[2];

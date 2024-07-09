@@ -1,0 +1,13 @@
+func main()
+	var a = 3
+	var b = 5
+	var big = 117
+	_int_out(a + b)
+	_int_out(a * b)
+	_int_out(big / b)
+#	_int_out(big % b)
+	_int_out(big << b)
+	_int_out(big >> b)
+	_int_out(a & b)
+	_int_out(a | b)
+

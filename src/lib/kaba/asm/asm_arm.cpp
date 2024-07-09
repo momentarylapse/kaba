@@ -200,8 +200,29 @@ void arm64_init() {
 	add_inst_arm(InstID::ADD,  0x91000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::ADD,  0x11000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
 
-	add_inst_arm(InstID::MUL,  0x9b007c00, 0xff00fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
-	add_inst_arm(InstID::MUL,  0x1b007c00, 0xff00fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::MUL,  0x9b007c00, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	add_inst_arm(InstID::MUL,  0x1b007c00, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+
+	// signed:
+	add_inst_arm(InstID::DIV, 0x9ac00c00, 0xffe0fc0, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::DIV, 0x1ac00c00, 0xffe0fc0, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	// unsigned:
+	//add_inst_arm(InstID::UDIV, 0x9ac00c00, 0xffe0fc0, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	//add_inst_arm(InstID::UDIV, 0x1ac00c00, 0xffe0fc0, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+
+	add_inst_arm(InstID::XOR, 0xca000000, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::XOR, 0x4a000000, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	add_inst_arm(InstID::OR, 0xaa000000, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::OR, 0x2a000000, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	add_inst_arm(InstID::AND, 0x8a000000, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::AND, 0x0a000000, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+
+	// "lsl"
+	add_inst_arm(InstID::SHL, 0x9ac02000, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::SHL, 0x1ac02000, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	// "lsr"
+	add_inst_arm(InstID::SHR, 0x9ac02400, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::SHR, 0x1ac02400, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
 
 	add_inst_arm(InstID::STR,  0xf9000000, 0xffc00000, AP_REG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10); // 64bit
 	add_inst_arm(InstID::STR,  0xb9000000, 0xffc00000, AP_WREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10); // 32bit
