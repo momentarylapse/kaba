@@ -504,10 +504,19 @@ void BackendArm64::correct_implement_commands() {
 				vreg_free(reg);
 				offset += 1;
 			}
-#if 0
-		} else if (c.inst == Asm::InstID::MOVSX or c.inst == Asm::InstID::MOVZX) {
-			do_error("no movsx yet");
-#endif
+		} else if (c.inst == Asm::InstID::MOVSX) {
+			int vreg = _to_register(c.p[1]);
+			insert_cmd(Asm::InstID::MOVSX, param_vreg_auto(TypeInt64, vreg), param_vreg_auto(TypeInt32, vreg));
+			_from_register(vreg, c.p[0]);
+			vreg_free(vreg);
+		} else if (c.inst == Asm::InstID::MOVZX) {
+			// hmmm, might not be enough... i8?!? meh, ok for now
+			int vreg1 = vreg_alloc(8);
+			int vreg2 = _to_register(c.p[1]);
+			insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt64, vreg1), param_vreg_auto(TypeInt64, vreg2));
+			_from_register(vreg1, c.p[0]);
+			vreg_free(vreg1);
+			vreg_free(vreg2);
 		} else if ((c.inst == Asm::InstID::ADD) or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) or (c.inst == Asm::InstID::IDIV) or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR) or (c.inst == Asm::InstID::XOR) or (c.inst == Asm::InstID::SHL) or (c.inst == Asm::InstID::SHR)) {
 			auto inst = c.inst;
 			if (inst ==  Asm::InstID::IMUL)
