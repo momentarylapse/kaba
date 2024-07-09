@@ -72,7 +72,7 @@ BackendAmd64::~BackendAmd64() {
 
 void BackendAmd64::implement_return(const SerialNodeParam &p) {
 	if (p.kind != NodeKind::NONE) {
-		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+		if (cur_func->effective_return_type->_return_in_float_registers()) {
 			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 			//		cmd.add_cmd(Asm::InstID::FLD, t);
 			if (cur_func->effective_return_type == TypeFloat32) {
@@ -144,7 +144,7 @@ void BackendAmd64::function_call_post(int push_size, const Array<SerialNodeParam
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and (!type->uses_return_by_memory())) {
-		if (type->_amd64_allow_pass_in_xmm()) {
+		if (type->_return_in_float_registers()) {
 			if (type == TypeFloat32) {
 				insert_cmd(Asm::InstID::MOVSS, ret, p_xmm0);
 			} else if (type == TypeFloat64) {

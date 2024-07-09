@@ -671,7 +671,7 @@ void BackendArm64::correct_implement_commands() {
 
 void BackendArm64::implement_return(const SerialNodeParam &p) {
 	if (p.kind != NodeKind::NONE) {
-		if (cur_func->effective_return_type->_amd64_allow_pass_in_xmm()) {
+		if (cur_func->effective_return_type->_return_in_float_registers()) {
 /*			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
 			//		cmd.add_cmd(Asm::InstID::FLD, t);
 			if (cur_func->effective_return_type == TypeFloat32) {

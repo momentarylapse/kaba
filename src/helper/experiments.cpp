@@ -10,6 +10,7 @@
 #include "../lib/base/optional.h"
 #include "../lib/base/variant.h"
 #include "../lib/base/iter.h"
+#include "../lib/math/vec3.h"
 
 void show_opt(const base::optional<string> &o) {
 	if (o.has_value())
@@ -196,10 +197,13 @@ void ffff7(int a, int b) {
 		ffff4();
 }
 
+
+vec3 ffv() {
+	return vec3(1,2,3);
+}
+
 void ffff8() {
-	float a = 1.0f;
-	float b = 2.0f;
-	float c = a + b;
+	vec3 v = ffv();
 }
 
 void do_experiments() {
@@ -221,7 +225,7 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 	//msg_write(disassemble((void*)&ffff3, 64));
-	msg_write(disassemble((void*)&ffff8, 80));
+	msg_write(disassemble((void*)&ffff8, 280));
 
 	return;
 
