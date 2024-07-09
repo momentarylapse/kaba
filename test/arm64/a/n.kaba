@@ -1,0 +1,8 @@
+func f(a: int[])
+#	_int_out(len(a))
+	_int_out(a[1])
+
+func main()
+	let a = [1,2,3]
+	f(a)
+

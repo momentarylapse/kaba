@@ -1,0 +1,6 @@
+func f() -> vec3
+	return vec3(1,2,3)
+
+func main()
+	let v = f()
+	print(v)

@@ -1,0 +1,6 @@
+func main()
+	var a: rect = rect(1,2,3,4)
+	var r = &a
+	var b: rect = rect(5,6,7,8)
+	r = b
+	print(a)

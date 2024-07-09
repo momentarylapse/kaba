@@ -670,32 +670,19 @@ void BackendArm64::correct_implement_commands() {
 }
 
 void BackendArm64::implement_return(const SerialNodeParam &p) {
+	Array<int> allocated_vgres;
 	if (p.kind != NodeKind::NONE) {
-		if (cur_func->effective_return_type->_return_in_float_registers()) {
-/*			// if ((config.instruction_set == Asm::INSTRUCTION_SET_AMD64) or (config.compile_os)) ???
-			//		cmd.add_cmd(Asm::InstID::FLD, t);
-			if (cur_func->effective_return_type == TypeFloat32) {
-				insert_cmd(Asm::InstID::MOVSS, p_xmm0, p);
-			} else if (cur_func->effective_return_type == TypeFloat64) {
-				insert_cmd(Asm::InstID::MOVSD, p_xmm0, p);
-			} else if (cur_func->effective_return_type->size == 8) {
-				// float[2]
-				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, p);
-			} else if (cur_func->effective_return_type->size == 12) {
-				// float[3]
-				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
-				insert_cmd(Asm::InstID::MOVSS, p_xmm1, param_shift(p, 8, TypeFloat32));
-			} else if (cur_func->effective_return_type->size == 16) {
-				// float[4]
-				insert_cmd(Asm::InstID::MOVLPS, p_xmm0, param_shift(p, 0, TypeReg64));
-				insert_cmd(Asm::InstID::MOVLPS, p_xmm1, param_shift(p, 8, TypeReg64));
-			} else {
-				do_error("...ret xmm " + cur_func->effective_return_type->long_name());
-			}*/
+		if (cur_func->effective_return_type->uses_return_by_memory()) {
+			do_error("return by memory not implemented yet!");
+		} else if (cur_func->effective_return_type->_return_in_float_registers()) {
+			for (int i=0; i<p.type->size/4; i++) {
+				int vreg = vreg_alloc(4, Asm::s_reg(i));
+				_to_register_float(param_shift(p, i*4, TypeFloat), vreg);
+				allocated_vgres.add(vreg);
+			}
+			// TODO: float64
 		} else {
 			// store return directly in eax / fpu stack (4 byte)
-			// TODO float
-
 			int vreg = vreg_alloc(8, Asm::RegID::R0);
 			_to_register(p, vreg);
 			vreg_free(vreg); // better to free at "ret"
@@ -814,12 +801,14 @@ void BackendArm64::fc_end(const CallData& d, const Array<SerialNodeParam> &param
 
 	// return > 4b already got copied to [ret] by the function!
 	if ((type != TypeVoid) and !type->uses_return_by_memory()) {
-		if (type == TypeFloat32) {
-			int sreg = vreg_alloc(4, Asm::RegID::S0);
-			_from_register_float(sreg, ret);
-			vreg_free(sreg);
-		//else if (type == TypeFloat64)
-			//insert_cmd(Asm::InstID::MOVSD, ret, param_preg(TypeReg128, Asm::RegID::XMM0));
+		if (type->_return_in_float_registers()) {
+			Array<int> vregs;
+			for (int i=0; i<type->size/4; i++)
+				vregs.add(vreg_alloc(4, Asm::s_reg(i)));
+			for (int i=0; i<type->size/4; i++) {
+				_from_register_float(vregs[i], param_shift(ret, i*4, TypeFloat32));
+				vreg_free(vregs[i]);
+			}
 		} else {
 			int vreg = vreg_alloc(8, Asm::RegID::R0);
 			_from_register(vreg, ret);
