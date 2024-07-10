@@ -1,0 +1,6 @@
+func main()
+	try
+		raise(new Exception("test"))
+	except Exception as e
+		print("catch!")
+

@@ -358,6 +358,8 @@ enum class InstID {
 	FSTS,
 	FMOV,
 	FCMP,
+	SCVTF,
+	FCVTZS,
 
 	// fake
 	MODULO,

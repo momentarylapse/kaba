@@ -1,0 +1,3 @@
+func main()
+	raise(new Exception("test"))
+

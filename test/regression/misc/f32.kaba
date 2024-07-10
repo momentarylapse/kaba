@@ -1,0 +1,13 @@
+func main()
+	var a = 1.2
+	var b = 2.0
+
+	_float_out(a + b)
+	_float_out(a - b)
+	_float_out(a * b)
+	_float_out(a / b)
+#	_float_out(a ^ b)
+	_int_out(int(a))
+	
+	var i = 13
+	_float_out(float(i))

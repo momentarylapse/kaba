@@ -575,7 +575,7 @@ void BackendArm64::correct_implement_commands() {
 			vreg_free(sreg1);
 			vreg_free(sreg2);
 
-		} else if (c.inst == Asm::InstID::UCOMISS) {
+		} else if (c.inst == Asm::InstID::UCOMISS) { // fcmp
 			auto inst = c.inst;
 			auto p0 = c.p[0];
 			auto p1 = c.p[1];
@@ -589,6 +589,41 @@ void BackendArm64::correct_implement_commands() {
 
 			vreg_free(sreg1);
 			vreg_free(sreg2);
+
+
+
+		} else if (c.inst == Asm::InstID::CVTSI2SS) {
+			// i32 -> f32
+			auto vregi = _to_register(c.p[1]);
+			int vregf = vreg_alloc(4, Asm::s_reg(0));
+			insert_cmd(Asm::InstID::SCVTF, param_vreg(c.p[0].type, vregf), param_vreg_auto(c.p[1].type, vregi));
+			_from_register_float(vregf, c.p[0]);
+			vreg_free(vregi);
+			vreg_free(vregf);
+		} else if (c.inst == Asm::InstID::CVTTSS2SI) {
+			// f32 -> i32
+			auto vregf = vreg_alloc(4, Asm::s_reg(0));
+			int vregi = vreg_alloc(4);
+			_to_register_float(c.p[1], vregf);
+			insert_cmd(Asm::InstID::FCVTZS, param_vreg_auto(c.p[0].type, vregi), param_vreg(c.p[1].type, vregf));
+			_from_register(vregi, c.p[0]);
+			vreg_free(vregi);
+			vreg_free(vregf);
+
+		/*} else if (c.inst == Asm::InstID::CVTSS2SD) {
+			// f32 -> f64
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			[[maybe_unused]] int veax = cmd.add_virtual_reg(Asm::RegID::XMM0);
+			insert_cmd(Asm::InstID::CVTSS2SD, p_xmm0, p2);
+			insert_cmd(Asm::InstID::MOVSD, p1, p_xmm0);
+		} else if (c.inst == Asm::InstID::CVTSD2SS) {
+			// f64 -> f32
+			auto p1 = c.p[0];
+			auto p2 = c.p[1];
+			[[maybe_unused]] int veax = cmd.add_virtual_reg(Asm::RegID::XMM0);
+			insert_cmd(Asm::InstID::CVTSD2SS, p_xmm0, p2);
+			insert_cmd(Asm::InstID::MOVSS, p1, p_xmm0);*/
 
 		} else if (c.inst == Asm::InstID::CMP) {
 			auto p0 = c.p[0];

@@ -304,6 +304,13 @@ void arm64_init() {
 
 	add_inst_arm(InstID::FCMP, 0x1e202000, 0xffe0fc1f, AP_SREG_5P5, AP_SREG_16P5); // f32
 	add_inst_arm(InstID::FCMP, 0x1e602000, 0xffe0fc1f, AP_DREG_5P5, AP_DREG_16P5); // f64
+
+	add_inst_arm(InstID::SCVTF, 0x1e220000, 0xfffffc00, AP_SREG_0P5, AP_WREG_5P5); // i32 -> f32
+	add_inst_arm(InstID::SCVTF, 0x1e620000, 0xfffffc00, AP_DREG_0P5, AP_WREG_5P5); // i32 -> f64
+	add_inst_arm(InstID::SCVTF, 0x9e220000, 0xfffffc00, AP_SREG_0P5, AP_REG_5P5); // i64 -> f32
+	add_inst_arm(InstID::SCVTF, 0x9e620000, 0xfffffc00, AP_DREG_0P5, AP_REG_5P5); // i64 -> f64
+
+	add_inst_arm(InstID::FCVTZS, 0x1e380000, 0xfffffc00, AP_WREG_0P5, AP_SREG_5P5); // f32 -> i32
 }
 
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;
