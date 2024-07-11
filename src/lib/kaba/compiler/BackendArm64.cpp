@@ -541,14 +541,39 @@ void BackendArm64::correct_implement_commands() {
 				_to_register(p1, vreg1);
 				_to_register(p2, vreg2);
 			}
-			if (size == 8) {
-				insert_cmd(inst, param_vreg_auto(TypeInt64, vreg1), param_vreg_auto(TypeInt64, vreg1), param_vreg_auto(TypeInt64, vreg2));
-			} else {
-				insert_cmd(inst, param_vreg_auto(TypeInt, vreg1), param_vreg_auto(TypeInt, vreg1), param_vreg_auto(TypeInt, vreg2));
-			}
+			insert_cmd(inst, param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg2));
 			_from_register(vreg1, p0);
 			vreg_free(vreg1);
 			vreg_free(vreg2);
+		} else if (c.inst == Asm::InstID::MODULO) {
+			auto p0 = c.p[0];
+			auto p1 = c.p[1];
+			auto p2 = c.p[2];
+
+			int size = max((int)p0.type->size, 4); // maximum size
+
+			int vreg1 = vreg_alloc(size);
+			int vreg2 = vreg_alloc(size);
+			int vreg3 = vreg_alloc(size);
+			int vreg4 = vreg_alloc(size);
+
+			if (p2.kind == NodeKind::NONE) {
+				// a %= b
+				_to_register(p0, vreg1);
+				_to_register(p1, vreg2);
+			} else {
+				// a = b % c
+				_to_register(p1, vreg1);
+				_to_register(p2, vreg2);
+			}
+			insert_cmd(Asm::InstID::DIV, param_vreg_auto(p0.type, vreg3), param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg2));
+			insert_cmd(Asm::InstID::MUL, param_vreg_auto(p0.type, vreg4), param_vreg_auto(p0.type, vreg3), param_vreg_auto(p0.type, vreg2));
+			insert_cmd(Asm::InstID::SUB, param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg1), param_vreg_auto(p0.type, vreg4));
+			_from_register(vreg1, p0);
+			vreg_free(vreg1);
+			vreg_free(vreg2);
+			vreg_free(vreg3);
+			vreg_free(vreg4);
 		} else if ((c.inst == Asm::InstID::FADD) or (c.inst == Asm::InstID::FSUB) or (c.inst == Asm::InstID::FMUL) or (c.inst == Asm::InstID::FDIV)) {//or (c.inst == Asm::InstID::SUB) or (c.inst == Asm::InstID::IMUL) /*or (c.inst == Asm::InstID::IDIV)*/ or (c.inst == Asm::InstID::AND) or (c.inst == Asm::InstID::OR)) {
 			auto inst = c.inst;
 			auto p0 = c.p[0];

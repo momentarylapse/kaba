@@ -207,8 +207,8 @@ void arm64_init() {
 	add_inst_arm(InstID::MUL,  0x1b007c00, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
 
 	// signed:
-	add_inst_arm(InstID::DIV, 0x9ac00c00, 0xffe0fc0, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
-	add_inst_arm(InstID::DIV, 0x1ac00c00, 0xffe0fc0, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
+	add_inst_arm(InstID::DIV, 0x9ac00c00, 0xffe0fc00, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
+	add_inst_arm(InstID::DIV, 0x1ac00c00, 0xffe0fc00, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
 	// unsigned:
 	//add_inst_arm(InstID::UDIV, 0x9ac00c00, 0xffe0fc0, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
 	//add_inst_arm(InstID::UDIV, 0x1ac00c00, 0xffe0fc0, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
