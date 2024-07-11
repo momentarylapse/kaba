@@ -196,6 +196,7 @@ void arm64_init() {
 
 	add_inst_arm(InstID::SUB,  0xd1000000, 0xff800000, AP_REG_0P5, AP_REG_5P5, AP_IMM12_10SH); // 64bit
 	add_inst_arm(InstID::SUB,  0x51000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_IMM12_10); // 32bit
+	add_inst_arm(InstID::SUB,  0xcb000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
 	add_inst_arm(InstID::SUB,  0x4b000000, 0xffe00000, AP_WREG_0P5, AP_WREG_5P5, AP_WREG_16P5); // 32bit
 
 	add_inst_arm(InstID::ADD,  0x8b000000, 0xffe00000, AP_REG_0P5, AP_REG_5P5, AP_REG_16P5); // 64bit
