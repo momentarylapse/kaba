@@ -748,7 +748,7 @@ void SyntaxTree::simplify_shift_deref() {
 }
 
 InlineID __get_pointer_add_int() {
-	if (config.target.instruction_set == Asm::InstructionSet::AMD64)
+	if (config.target.pointer_size == 8)
 		return InlineID::INT64_ADD_INT32;
 	return InlineID::INT32_ADD;
 }
