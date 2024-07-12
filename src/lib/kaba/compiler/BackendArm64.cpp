@@ -135,48 +135,6 @@ void BackendArm64::_immediate_to_register_32(int val, int r) {
 	}
 }
 
-void BackendArm64::_global_to_register_32(int64 addr, int r) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt, r), param_deref_vreg(TypeInt, reg));
-	vreg_free(reg);
-}
-
-void BackendArm64::_register_to_local_32(int r, int offset) {
-	insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt, r), param_local(TypeInt, offset));
-}
-
-void BackendArm64::_register_to_global_32(int r, int64 addr) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt, r), param_deref_vreg(TypeInt, reg));
-	vreg_free(reg);
-}
-
-void BackendArm64::_from_register_32(int reg, const SerialNodeParam &p) {
-	if (p.kind == NodeKind::VAR_LOCAL) {
-		auto var = (Variable*)p.p;
-		_register_to_local_32(reg, var->_offset + p.shift);
-	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		_register_to_local_32(reg, p.p + p.shift);
-	} else if (p.kind == NodeKind::VAR_GLOBAL) {
-		auto var = (Variable*)p.p;
-		_register_to_global_32(reg, (int_p)var->memory + p.shift);
-	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
-		int reg2 = vreg_alloc(8);
-		// reg2 = mem
-		_local_to_register_64(p.p, reg2);
-		if (p.shift != 0)
-			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
-
-		// [reg2] = reg
-		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt, reg), param_deref_vreg(TypeInt, reg2));
-		vreg_free(reg2);
-	} else {
-		do_error("evil write target..." + kind2str(p.kind));
-	}
-}
-
 void BackendArm64::_immediate_to_register(int64 val, int size, int vreg) {
 	if (size == 1) {
 		_immediate_to_register_8(val, vreg);
@@ -234,21 +192,6 @@ void BackendArm64::_local_to_register(int offset, int size, int vreg) {
 	}
 }
 
-void BackendArm64::_local_to_register_64(int offset, int r) {
-	insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt64, r), param_local(TypeInt64, offset));
-}
-
-void BackendArm64::_global_to_register_64(int64 addr, int r) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt64, r), param_deref_vreg(TypeInt64, reg));
-	vreg_free(reg);
-}
-
-void BackendArm64::_register_to_local_64(int r, int offset) {
-	insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt64, r), param_local(TypeInt64, offset));
-}
-
 int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 	//if (p.kind == NodeKind::REGISTER)
 	//	return p.p;
@@ -259,13 +202,14 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 	if (reg < 0)
 		reg = vreg_alloc(8);
 
-	auto global_mem = [this, size, reg] (int64 address) {
+	auto global_mem = [this, size, reg, &p] (int64 address) {
+		int reg2 = vreg_alloc(8);
+		_immediate_to_register_64(address, reg2);
 		if (size == 1)
-			_global_to_register_8(address, reg);
-		else if (size == 4)
-			_global_to_register_32(address, reg);
-		else //if (size == 8)
-			_global_to_register_64(address, reg);
+			insert_cmd(Asm::InstID::LDRB, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+		else
+			insert_cmd(Asm::InstID::LDR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+		vreg_free(reg2);
 	};
 
 	if (p.kind == NodeKind::CONSTANT) {
@@ -341,23 +285,35 @@ int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, int force_
 	return reg;
 }
 
-void BackendArm64::_register_to_global_64(int r, int64 addr) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt64, r), param_deref_vreg(TypeInt64, reg));
-	vreg_free(reg);
-}
-
 void BackendArm64::_from_register(int reg, const SerialNodeParam &p) {
 	int size = p.type->size;
 
-	auto local_mem = [this, reg, size](int offset) {
-		if (size == 8)
-			_register_to_local_64(reg, offset);
-		else if (size == 4)
-			_register_to_local_32(reg, offset);
-		else //if (size == 1)
-			_register_to_local_8(reg, offset);
+	auto local_mem = [this, reg, size, &p] (int offset) {
+		if (offset >= 0x1000 * size) {
+			int reg2 = vreg_alloc(8);
+			_immediate_to_register_64(offset, reg2);
+			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_preg(TypeInt64, Asm::RegID::R31));
+			if (size == 1)
+				insert_cmd(Asm::InstID::STRB, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+			else
+				insert_cmd(Asm::InstID::STR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+			vreg_free(reg2);
+		} else {
+			if (size == 1)
+				insert_cmd(Asm::InstID::STRB, param_vreg_auto(p.type, reg), param_local(p.type, offset));
+			else
+				insert_cmd(Asm::InstID::STR, param_vreg_auto(p.type, reg), param_local(p.type, offset));
+		}
+	};
+
+	auto global_mem = [this, reg, size, &p](int64 address) {
+		int reg2 = vreg_alloc(8);
+		_immediate_to_register_64(address, reg2);
+		if (size == 1)
+			insert_cmd(Asm::InstID::STR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+		else
+			insert_cmd(Asm::InstID::STR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+		vreg_free(reg2);
 	};
 
 	if (p.kind == NodeKind::VAR_LOCAL) {
@@ -367,23 +323,18 @@ void BackendArm64::_from_register(int reg, const SerialNodeParam &p) {
 		local_mem(p.p + p.shift);
 	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
-		if (size == 8)
-			_register_to_global_64(reg, (int_p)var->memory + p.shift);
-		else if (size == 4)
-			_register_to_global_32(reg, (int_p)var->memory + p.shift);
-		else //if (size == 1)
-			_register_to_global_8(reg, (int_p)var->memory + p.shift);
+		global_mem((int_p)var->memory + p.shift);
+	} else if (p.kind == NodeKind::MEMORY) {
+		global_mem(p.p + p.shift);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = vreg_alloc(8);
-		_local_to_register_64(p.p, reg2);
+		_local_to_register(p.p, 8, reg2);
 		if (p.shift != 0)
 			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
-		if (size == 8)
-			insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt64, reg), param_deref_vreg(TypeInt64, reg2));
-		else if (size == 4)
-			insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt32, reg), param_deref_vreg(TypeInt32, reg2));
-		else //if (size == 1)
-			insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, reg), param_deref_vreg(TypeInt8, reg2));
+		if (size == 1)
+			insert_cmd(Asm::InstID::STRB, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
+		else
+			insert_cmd(Asm::InstID::STR, param_vreg_auto(p.type, reg), param_deref_vreg(p.type, reg2));
 		vreg_free(reg2);
 	} else {
 		do_error("evil write target..." + kind2str(p.kind));
@@ -392,32 +343,6 @@ void BackendArm64::_from_register(int reg, const SerialNodeParam &p) {
 
 void BackendArm64::_immediate_to_register_8(int val, int r) {
 	insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt, r), param_imm(TypeInt, val & 0xff));
-}
-
-void BackendArm64::_global_to_register_8(int64 addr, int r) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::LDRB, param_vreg_auto(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
-	vreg_free(reg);
-}
-
-void BackendArm64::_register_to_local_8(int r, int offset) {
-	if (offset >= 0x1000) {
-		int reg = vreg_alloc(8);
-		_immediate_to_register_64(offset, reg);
-		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
-		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
-		vreg_free(reg);
-	} else {
-		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_local(TypeInt8, offset));
-	}
-}
-
-void BackendArm64::_register_to_global_8(int r, int64 addr) {
-	int reg = vreg_alloc(8);
-	_immediate_to_register_64(addr, reg);
-	insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
-	vreg_free(reg);
 }
 
 
@@ -440,7 +365,7 @@ void BackendArm64::_from_register_float(int sreg, const SerialNodeParam &p) {
 	} else {
 		int reg = vreg_alloc(4);
 		insert_cmd(Asm::InstID::FMOV, param_vreg_auto(TypeFloat32, reg), param_vreg_auto(TypeFloat32, sreg));
-		_from_register_32(reg, p);
+		_from_register(reg, p);
 		vreg_free(reg);
 	}
 }
