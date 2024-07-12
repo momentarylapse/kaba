@@ -254,7 +254,7 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 
 int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, int force_register, const Class *type) {
 	if (!type)
-		type = module->tree->get_pointer(p.type, -1);
+		type = module->tree->type_ref(p.type, -1);
 
 	int reg = force_register;
 	if (reg < 0)
