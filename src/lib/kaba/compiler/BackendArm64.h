@@ -35,7 +35,6 @@ public:
 	void _from_register_64(int reg, const SerialNodeParam &p);
 
 	void _immediate_to_register_32(int val, int r);
-	void _local_to_register_32(int offset, int r);
 	void _global_to_register_32(int64 addr, int r);
 	void _register_to_local_32(int r, int offset);
 	void _register_to_global_32(int r, int64 addr);
@@ -44,7 +43,6 @@ public:
 	void _immediate_to_register_8(int val, int r);
 	void _register_to_local_8(int r, int offset);
 	void _register_to_global_8(int r, int64 addr);
-	void _local_to_register_8(int offset, int r);
 	void _global_to_register_8(int64 addr, int r);
 	void _from_register_8(int reg, const SerialNodeParam &p);
 

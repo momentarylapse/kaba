@@ -135,10 +135,6 @@ void BackendArm64::_immediate_to_register_32(int val, int r) {
 	}
 }
 
-void BackendArm64::_local_to_register_32(int offset, int r) {
-	insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt, r), param_local(TypeInt, offset));
-}
-
 void BackendArm64::_global_to_register_32(int64 addr, int r) {
 	int reg = vreg_alloc(8);
 	_immediate_to_register_64(addr, reg);
@@ -217,12 +213,25 @@ SerialNodeParam BackendArm64::param_vreg_auto(const Class *type, int vreg) {
 }
 
 void BackendArm64::_local_to_register(int offset, int size, int vreg) {
-	if (size == 1)
-		insert_cmd(Asm::InstID::LDRB, param_vreg_auto(TypeInt8, vreg), param_local(TypeInt8, offset));
-	else if (size == 4)
-		insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt32, vreg), param_local(TypeInt32, offset));
-	else //if (size == 8)
-		insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt64, vreg), param_local(TypeInt64, offset));
+	if (offset >= 0x1000 * size) {
+		int reg2 = vreg_alloc(8);
+		_immediate_to_register_64(offset, reg2);
+		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_preg(TypeInt64, Asm::RegID::R31));
+		if (size == 1)
+			insert_cmd(Asm::InstID::LDRB, param_vreg_auto(TypeInt8, vreg), param_deref_vreg(TypeInt8, reg2));
+		else if (size == 4)
+			insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt32, vreg), param_deref_vreg(TypeInt32, reg2));
+		else //if (size == 8)
+			insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt64, vreg), param_deref_vreg(TypeInt64, reg2));
+		vreg_free(reg2);
+	} else {
+		if (size == 1)
+			insert_cmd(Asm::InstID::LDRB, param_vreg_auto(TypeInt8, vreg), param_local(TypeInt8, offset));
+		else if (size == 4)
+			insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt32, vreg), param_local(TypeInt32, offset));
+		else //if (size == 8)
+			insert_cmd(Asm::InstID::LDR, param_vreg_auto(TypeInt64, vreg), param_local(TypeInt64, offset));
+	}
 }
 
 void BackendArm64::_local_to_register_64(int offset, int r) {
@@ -307,24 +316,23 @@ int BackendArm64::_reference_to_register_64(const SerialNodeParam &p, int force_
 	if (reg < 0)
 		reg = vreg_alloc(8);
 
+	auto local_mem = [this, reg](int64 offset) {
+	// nope, this will interpret r31 as 0!
+		//		_immediate_to_register_64(var->_offset, reg);
+		//		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+	//	if (offset >= 4096)
+	//		do_error("local memory only referencable until 4k");
+		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31), param_imm(TypeInt64, offset & 0xfff));
+		if (offset >= 0x1000)
+			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_imm(TypeInt64, offset & 0xfff000));
+	};
+
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		// TODO: simplify for offset=0
 		auto var = (Variable*)p.p;
-//		_immediate_to_register_64(var->_offset, reg);
-//		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
-		if (var->_offset >= 4096)
-			do_error("local memory only referencable until 4k");
-		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31), param_imm(TypeInt64, var->_offset));
+		local_mem(var->_offset);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-	// nope, this will interpret r31 as 0!
-	//	_immediate_to_register_64(p.p, reg);
-	//	insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
-
-		if (p.p >= 4096)
-			do_error("local memory only referencable until 4k");
-
-		// FIXME for large offsets...
-		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31), param_imm(TypeInt64, p.p));
+		local_mem(p.p);
 	} else if (p.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		_immediate_to_register_64((int_p)((char*)p.p + p.shift), reg);
 	} else {
@@ -375,10 +383,6 @@ void BackendArm64::_immediate_to_register_8(int val, int r) {
 	insert_cmd(Asm::InstID::MOV, param_vreg_auto(TypeInt, r), param_imm(TypeInt, val & 0xff));
 }
 
-void BackendArm64::_local_to_register_8(int offset, int r) {
-	insert_cmd(Asm::InstID::LDRB, param_vreg_auto(TypeInt8, r), param_local(TypeInt8, offset));
-}
-
 void BackendArm64::_global_to_register_8(int64 addr, int r) {
 	int reg = vreg_alloc(8);
 	_immediate_to_register_64(addr, reg);
@@ -387,7 +391,15 @@ void BackendArm64::_global_to_register_8(int64 addr, int r) {
 }
 
 void BackendArm64::_register_to_local_8(int r, int offset) {
-	insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_local(TypeInt8, offset));
+	if (offset >= 0x1000) {
+		int reg = vreg_alloc(8);
+		_immediate_to_register_64(offset, reg);
+		insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg), param_vreg_auto(TypeInt64, reg), param_preg(TypeInt64, Asm::RegID::R31));
+		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
+		vreg_free(reg);
+	} else {
+		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_local(TypeInt8, offset));
+	}
 }
 
 void BackendArm64::_register_to_global_8(int r, int64 addr) {
@@ -771,7 +783,10 @@ void BackendArm64::implement_return(const SerialNodeParam &p) {
 	} else {
 		cmd.add_cmd(Asm::InstID::LDP, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size));
 	}
-	insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size + 16));
+	if (((stack_max_size + 16) & 0xfff) >= 0)
+		insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, (stack_max_size + 16) & 0xfff));
+	if (stack_max_size + 16 >= 0x1000)
+		insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, (stack_max_size + 16) & 0xfff000));
 
 	insert_cmd(Asm::InstID::RET);
 }
@@ -930,24 +945,21 @@ void BackendArm64::add_pointer_call(const SerialNodeParam &fp, const Array<Seria
 
 void BackendArm64::add_function_intro_frame(int stack_alloc_size) {
 	cmd.next_cmd_target(0);
-	//cmd.add_cmd(Asm::InstID::STMDB, param_preg(TypePointer, Asm::RegID::R13), param_imm(TypeInt, 0x6ff0)); // {r4,r5,r6,r7,r8,r9,r10,r11,r13,r14}
-	/*if (stack_max_size > 0) {
-		cmd.next_cmd_target(1);
-		cmd.add_cmd(Asm::InstID::SUB, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size + 8));
-	}*/
-	cmd.add_cmd(Asm::InstID::SUB, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size + 16));
-	cmd.next_cmd_target(1);
+	if (((stack_max_size + 16) & 0xfff) > 0)
+		insert_cmd(Asm::InstID::SUB, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, (stack_max_size + 16) & 0xfff));
+	if ((stack_max_size + 16) >= 0x1000)
+		insert_cmd(Asm::InstID::SUB, param_preg(TypePointer, Asm::RegID::R31), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, (stack_max_size + 16) & 0xfff000));
+
 	if (stack_max_size >= 0x200) {
-		cmd.add_cmd(Asm::InstID::STR, param_preg(TypePointer, Asm::RegID::R29), param_local(TypePointer, stack_max_size));
-		cmd.next_cmd_target(2);
-		cmd.add_cmd(Asm::InstID::STR, param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size + 8));
-		cmd.next_cmd_target(3);
-		cmd.add_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size));
+		insert_cmd(Asm::InstID::STR, param_preg(TypePointer, Asm::RegID::R29), param_local(TypePointer, stack_max_size));
+		insert_cmd(Asm::InstID::STR, param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size + 8));
 	} else {
-		cmd.add_cmd(Asm::InstID::STP, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size));
-		cmd.next_cmd_target(2);
-		cmd.add_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size));
+		insert_cmd(Asm::InstID::STP, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R30), param_local(TypePointer, stack_max_size));
 	}
+
+	insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R31), param_imm(TypeInt, stack_max_size & 0xfff));
+	if (stack_max_size >= 0x1000)
+		insert_cmd(Asm::InstID::ADD, param_preg(TypePointer, Asm::RegID::R29), param_preg(TypePointer, Asm::RegID::R29), param_imm(TypeInt, stack_max_size & 0xfff000));
 }
 
 void BackendArm64::assemble() {

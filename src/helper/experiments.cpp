@@ -206,6 +206,14 @@ void ffff8() {
 	vec3 v = ffv();
 }
 
+void ffff9() {
+	int dummy[1024];
+	int i = 13;
+	dummy[2] = 0;
+	ffff8();
+	i = 14;
+}
+
 void do_experiments() {
 #if 0
 	msg_write(str(13.3f));
@@ -225,7 +233,7 @@ void do_experiments() {
 	//msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 	//msg_write(disassemble((void*)&ffff3, 64));
-	msg_write(disassemble((void*)&ffff8, 280));
+	msg_write(disassemble((void*)&ffff9, 160));
 
 	return;
 
