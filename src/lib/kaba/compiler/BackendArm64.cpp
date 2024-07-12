@@ -258,6 +258,16 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 	int reg = force_register;
 	if (reg < 0)
 		reg = vreg_alloc(8);
+
+	auto global_mem = [this, size, reg] (int64 address) {
+		if (size == 1)
+			_global_to_register_8(address, reg);
+		else if (size == 4)
+			_global_to_register_32(address, reg);
+		else //if (size == 8)
+			_global_to_register_64(address, reg);
+	};
+
 	if (p.kind == NodeKind::CONSTANT) {
 		auto cc = (Constant*)p.p;
 		_immediate_to_register(*((int64*)((char*)cc->p() + p.shift)), size, reg);
@@ -289,19 +299,9 @@ int BackendArm64::_to_register(const SerialNodeParam &p, int force_register) {
 		_immediate_to_register((int64)(int_p)global_refs[p.p].p, size, reg);
 	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
-		if (size == 1)
-			_global_to_register_8((int_p)var->memory + p.shift, reg);
-		else if (size == 4)
-			_global_to_register_32((int_p)var->memory + p.shift, reg);
-		else //if (size == 8)
-			_global_to_register_64((int_p)var->memory + p.shift, reg);
+		global_mem((int_p)var->memory + p.shift);
 	} else if (p.kind == NodeKind::MEMORY) {
-		if (size == 1)
-			_global_to_register_8(p.p + p.shift, reg);
-		else if (size == 4)
-			_global_to_register_32(p.p + p.shift, reg);
-		else //if (size == 8)
-			_global_to_register_64(p.p + p.shift, reg);
+		global_mem(p.p + p.shift);
 	} else {
 		do_error("evil read source..." + kind2str(p.kind));
 	}
@@ -350,29 +350,40 @@ void BackendArm64::_register_to_global_64(int r, int64 addr) {
 
 void BackendArm64::_from_register(int reg, const SerialNodeParam &p) {
 	int size = p.type->size;
-	if (size == 8)
-		_from_register_64(reg, p);
-	else if (size == 4)
-		_from_register_32(reg, p);
-	else //if (size == 1)
-		_from_register_8(reg, p);
-}
 
-void BackendArm64::_from_register_64(int reg, const SerialNodeParam &p) {
+	auto local_mem = [this, reg, size](int offset) {
+		if (size == 8)
+			_register_to_local_64(reg, offset);
+		else if (size == 4)
+			_register_to_local_32(reg, offset);
+		else //if (size == 1)
+			_register_to_local_8(reg, offset);
+	};
+
 	if (p.kind == NodeKind::VAR_LOCAL) {
 		auto var = (Variable*)p.p;
-		_register_to_local_64(reg, var->_offset + p.shift);
+		local_mem(var->_offset + p.shift);
 	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		_register_to_local_64(reg, p.p + p.shift);
+		local_mem(p.p + p.shift);
 	} else if (p.kind == NodeKind::VAR_GLOBAL) {
 		auto var = (Variable*)p.p;
-		_register_to_global_64(reg, (int_p)var->memory + p.shift);
+		if (size == 8)
+			_register_to_global_64(reg, (int_p)var->memory + p.shift);
+		else if (size == 4)
+			_register_to_global_32(reg, (int_p)var->memory + p.shift);
+		else //if (size == 1)
+			_register_to_global_8(reg, (int_p)var->memory + p.shift);
 	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
 		int reg2 = vreg_alloc(8);
 		_local_to_register_64(p.p, reg2);
 		if (p.shift != 0)
 			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
-		insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt64, reg), param_deref_vreg(TypeInt64, reg2));
+		if (size == 8)
+			insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt64, reg), param_deref_vreg(TypeInt64, reg2));
+		else if (size == 4)
+			insert_cmd(Asm::InstID::STR, param_vreg_auto(TypeInt32, reg), param_deref_vreg(TypeInt32, reg2));
+		else //if (size == 1)
+			insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, reg), param_deref_vreg(TypeInt8, reg2));
 		vreg_free(reg2);
 	} else {
 		do_error("evil write target..." + kind2str(p.kind));
@@ -407,30 +418,6 @@ void BackendArm64::_register_to_global_8(int r, int64 addr) {
 	_immediate_to_register_64(addr, reg);
 	insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, r), param_deref_vreg(TypeInt8, reg));
 	vreg_free(reg);
-}
-
-void BackendArm64::_from_register_8(int reg, const SerialNodeParam &p) {
-	if (p.kind == NodeKind::VAR_LOCAL) {
-		auto var = (Variable*)p.p;
-		_register_to_local_8(reg, var->_offset + p.shift);
-	} else if (p.kind == NodeKind::LOCAL_MEMORY) {
-		_register_to_local_8(reg, p.p + p.shift);
-	} else if (p.kind == NodeKind::VAR_GLOBAL) {
-		auto var = (Variable*)p.p;
-		_register_to_global_8(reg, (int_p)var->memory + p.shift);
-	} else if (p.kind == NodeKind::DEREF_LOCAL_MEMORY) {
-		int reg2 = vreg_alloc(8);
-		// reg2 = mem
-		_local_to_register_64(p.p, reg2);
-		if (p.shift != 0)
-			insert_cmd(Asm::InstID::ADD, param_vreg_auto(TypeInt64, reg2), param_vreg_auto(TypeInt64, reg2), param_imm(TypeInt64, p.shift));
-
-		// [reg2] = reg
-		insert_cmd(Asm::InstID::STRB, param_vreg_auto(TypeInt8, reg), param_deref_vreg(TypeInt8, reg2));
-		vreg_free(reg2);
-	} else {
-		do_error("evil write target..." + kind2str(p.kind));
-	}
 }
 
 
