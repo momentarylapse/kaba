@@ -230,10 +230,10 @@ void do_experiments() {
 	//msg_write(disassemble(kaba::mf(&CCC::ff), -1));
 #endif
 	//msg_write(disassemble((void*)&f_add, 64));
-	//msg_write(disassemble((void*)&fff2, 64));
+	msg_write(disassemble((void*)&fff2, 64));
 	//msg_write(disassemble((void*)&f_xxx, -1));
 	//msg_write(disassemble((void*)&ffff3, 64));
-	msg_write(disassemble((void*)&ffff9, 160));
+	//msg_write(disassemble((void*)&ffff9, 160));
 
 	return;
 
