@@ -11,6 +11,20 @@
 #include "../lib/base/variant.h"
 #include "../lib/base/iter.h"
 #include "../lib/math/vec3.h"
+#include "../lib/kaba/kaba.h"
+#include "../lib/image/color.h"
+#include "../lib/math/complex.h"
+#include "../lib/kaba/compiler/Compiler.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
+namespace kaba {
+	void* get_nice_memory(int64 size, bool executable, Module *module);
+}
+
 
 void show_opt(const base::optional<string> &o) {
 	if (o.has_value())
@@ -63,11 +77,6 @@ void test_variant() {
 	msg_write(str(v.get<float>()));
 	msg_write(v.get<int>());
 }
-
-#include "../lib/kaba/kaba.h"
-#include "../lib/image/color.h"
-#include "../lib/math/complex.h"
-
 
 float fff(int i, int j, int k, float f1, float f2) {
 	return f1 + f2;
@@ -160,12 +169,6 @@ int f_add(int a, int b) {
 	return a + b;
 }
 
-#include "../lib/kaba/compiler/Compiler.h"
-
-namespace kaba {
-	void* get_nice_memory(int64 size, bool executable, Module *module);
-}
-
 [[gnu::noinline]]
 void ffff3() {
 	string x = ggg(13);
@@ -251,7 +254,9 @@ void do_experiments() {
 
 	auto mi = (unsigned int*)mem;
 	msg_write("A");
+#ifdef OS_MAC
 	pthread_jit_write_protect_np(0);
+#endif
 	msg_write("A2");
 	mi[0] = 0xd10043ff;
 	mi[1] = 0xb9000fe0;
@@ -262,7 +267,9 @@ void do_experiments() {
 	mi[6] = 0x910043ff;
 	mi[7] = 0xd65f03c0;
 	msg_write("B");
+#ifdef OS_MAC
 	pthread_jit_write_protect_np(1);
+#endif
 	msg_write("B2");
 
 	using funcp = int(*)(int, int);
@@ -272,6 +279,8 @@ void do_experiments() {
 	msg_write(x);
 #endif
 }
+
+#pragma GCC diagnostic pop
 
 
 
