@@ -45,9 +45,7 @@ const Class *TypeBool;
 const Class *TypeInt8;
 const Class *TypeInt16;
 const Class *TypeInt32;
-const Class *TypeInt;
 const Class *TypeInt64;
-const Class *TypeFloat;
 const Class *TypeFloat32;
 const Class *TypeFloat64;
 const Class *TypeString = nullptr;
@@ -347,7 +345,7 @@ const Class *add_type_func(const Class *ret_type, const Array<const Class*> &par
 	// simple register parameter?
 	auto ptr_param = [] (const Class *p) {
 		// ...kind of everything except float...
-		return p->is_pointer_raw() or p->uses_call_by_reference() or (p == TypeBool) or (p == TypeInt);
+		return p->is_pointer_raw() or p->uses_call_by_reference() or (p == TypeBool) or (p == TypeInt32);
 	};
 
 	add_class(ff);
@@ -606,7 +604,7 @@ void class_add_const(const string &name, const Class *type, const void *value) {
 	c->name = name;
 
 	// enums can't be referenced...
-	if (type == TypeInt or type->is_enum())
+	if (type == TypeInt32 or type->is_enum())
 		c->as_int64() = (int_p)value;
 		//*(const void**)c->p() = value;
 	else if (type == TypeString)
@@ -672,7 +670,7 @@ void func_add_param_def_x(const string &name, const Class *type, const void *p, 
 		//cur_func->mandatory_params = cur_func->num_params;
 
 		Constant *c = cur_package->tree->add_constant(type, cur_class);
-		if (type == TypeInt)
+		if (type == TypeInt32)
 			c->as_int() = *(int*)p;
 		if (type == TypeFloat32)
 			c->as_float() = *(float*)p;

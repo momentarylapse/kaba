@@ -94,7 +94,7 @@ const Class *Parser::get_constant_type(const string &str) {
 		return tree->flag_string_const_as_cstring ? TypeCString : TypeString;
 
 	// numerical (int/float)
-	const Class *type = TypeInt;
+	const Class *type = TypeInt32;
 	bool hex = (str.num > 1) and (str[0] == '0') and (str[1] == 'x');
 	char last = 0;
 	for (int ic=0;ic<str.num;ic++) {
@@ -115,7 +115,7 @@ const Class *Parser::get_constant_type(const string &str) {
 		}
 		last = c;
 	}
-	if (type == TypeInt) {
+	if (type == TypeInt32) {
 		if (hex) {
 			if (str.num == 4)
 				type = TypeInt8;
@@ -141,7 +141,7 @@ void Parser::get_constant_value(const string &str, Value &value) {
 		value.as_string() = str.sub(1, -1).unescape();
 	} else if (value.type == TypeCString) {
 		strcpy((char*)value.p(), str.sub(1, -1).unescape().c_str());
-	} else if (value.type == TypeInt) {
+	} else if (value.type == TypeInt32) {
 		value.as_int() = (int)s2i2(str);
 	} else if (value.type == TypeInt64) {
 		value.as_int64() = s2i2(str);
@@ -1535,7 +1535,7 @@ void Parser::parse_enum(Class *_namespace) {
 			if (try_consume("=")) {
 				expect_no_new_line();
 
-				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeInt);
+				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeInt32);
 				next_value = cv->as_const()->as_int();
 			}
 			c->as_int() = (next_value ++);
@@ -1663,7 +1663,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	expect_new_line();
 
 	if (flags_has(explicit_flags, Flags::SHARED)) {
-		parser_class_add_element(this, _class, Identifier::SHARED_COUNT, TypeInt, Flags::NONE, offset0, _class->token_id);
+		parser_class_add_element(this, _class, Identifier::SHARED_COUNT, TypeInt32, Flags::NONE, offset0, _class->token_id);
 	}
 
 	return _class;

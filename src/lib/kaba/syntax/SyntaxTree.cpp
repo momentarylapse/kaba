@@ -212,7 +212,7 @@ Constant *SyntaxTree::add_constant(const Class *type, Class *name_space) {
 }
 
 Constant *SyntaxTree::add_constant_int(int value) {
-	auto *c = add_constant(TypeInt);
+	auto *c = add_constant(TypeInt32);
 	c->as_int() = value;
 	return c;
 }
@@ -1076,7 +1076,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 
 		// ...for_var += 1
 		shared<Node> cmd_inc;
-		if (var->type == TypeInt) {
+		if (var->type == TypeInt32) {
 			if (step->as_const()->as_int() == 1)
 				cmd_inc = add_node_operator_by_inline(InlineID::INT32_INCREASE, var, nullptr);
 			else
@@ -1115,7 +1115,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		if (array->type->is_dict()) {
 			static int for_index_count = 0;
 			string index_name = format("-for_dict_index_%d-", for_index_count++);
-			index = add_node_local(b->add_var(index_name, TypeInt));
+			index = add_node_local(b->add_var(index_name, TypeInt32));
 		}
 
 
@@ -1129,7 +1129,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		shared<Node> val1;
 		if (array->type->usable_as_list() or array->type->is_dict()) {
 			// array.num
-			val1 = array->shift(config.target.pointer_size, TypeInt, array->token_id);
+			val1 = array->shift(config.target.pointer_size, TypeInt32, array->token_id);
 		} else {
 			// array.size
 			val1 = add_node_const(add_constant_int(array->type->array_length));
