@@ -2083,7 +2083,7 @@ Function *Parser::parse_function_header(const Class *default_type, Class *name_s
 
 void Parser::post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags) {
 	if (f->is_template()) {
-		context->template_manager->add_function_template(f, template_param_names);
+		context->template_manager->add_function_template(f, template_param_names, nullptr);
 		name_space->add_template_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
 	} else {
 		con.concretify_function_header(f);

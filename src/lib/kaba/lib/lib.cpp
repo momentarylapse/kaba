@@ -196,7 +196,7 @@ const Class *add_type_p_raw(const Class *sub_type) {
 	Class *t = new Class(Class::Type::POINTER_RAW, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeRawT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(cur_package->tree.get(), t, TypeRawT, {sub_type});
 	return t;
 }
 
@@ -205,7 +205,7 @@ const Class *add_type_ref(const Class *sub_type) {
 	Class *t = new Class(Class::Type::REFERENCE, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeReferenceT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(cur_package->tree.get(), t, TypeReferenceT, {sub_type});
 	return t;
 }
 
@@ -213,7 +213,7 @@ const Class *add_type_p_owned(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::OWNED, sub_type->name);
 	Class *t = new Class(Class::Type::POINTER_OWNED, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeOwnedT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(cur_package->tree.get(), t, TypeOwnedT, {sub_type});
 	return t;
 }
 
@@ -221,7 +221,9 @@ const Class *add_type_p_shared(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::SHARED, sub_type->name);
 	Class *t = new Class(Class::Type::POINTER_SHARED, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeSharedT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeSharedT, {sub_type});
 	return t;
 }
 
@@ -229,7 +231,9 @@ const Class *add_type_p_shared_not_null(const Class *sub_type) {
 	string name = format("%s![%s]", Identifier::SHARED, sub_type->name);
 	Class *t = new Class(Class::Type::POINTER_SHARED_NOT_NULL, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeSharedNotNullT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeSharedNotNullT, {sub_type});
 	return t;
 }
 
@@ -238,7 +242,9 @@ const Class *add_type_p_xfer(const Class *sub_type) {
 	Class *t = new Class(Class::Type::POINTER_XFER_NOT_NULL, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeXferT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeXferT, {sub_type});
 	return t;
 }
 
@@ -248,8 +254,9 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
 	t->array_length = array_length;
 	__add_class__(t, sub_type->name_space);
-	//cur_package->context->template_manager->add_implicit_legacy(t);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeArrayT, {sub_type}, array_length);
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeArrayT, {sub_type}, array_length);
 	return t;
 }
 
@@ -258,7 +265,9 @@ const Class *add_type_list(const Class *sub_type) {
 	string name = sub_type->name + "[]";
 	Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeListT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeListT, {sub_type});
 	return t;
 }
 
@@ -267,7 +276,9 @@ const Class *add_type_dict(const Class *sub_type) {
 	string name = sub_type->name + "{}";
 	Class *t = new Class(Class::Type::DICT, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeDictT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeDictT, {sub_type});
 	return t;
 }
 
@@ -289,7 +300,9 @@ const Class *add_type_optional(const Class *sub_type) {
 	string name = sub_type->name + "?";
 	Class *t = new Class(Class::Type::OPTIONAL, name, sub_type->size + 1, sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeOptionalT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeOptionalT, {sub_type});
 	return t;
 }
 
@@ -297,7 +310,9 @@ const Class *add_type_future(const Class *sub_type) {
 	string name = "future[" + sub_type->name + "]";
 	Class *t = new Class(Class::Type::REGULAR, name, sizeof(void*), config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeFutureT, {sub_type});
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(),
+			t, TypeFutureT, {sub_type});
 	return t;
 }
 
