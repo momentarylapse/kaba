@@ -158,8 +158,16 @@ void __add_class__(Class *t, const Class *name_space) {
 	}
 }
 
+// class: alignment later determined by members
 const Class *add_type(const string &name, int size, Flags flags, const Class *name_space) {
-	Class *t = new Class(Class::Type::REGULAR, name, size, cur_package->tree.get());
+	Class *t = new Class(Class::Type::REGULAR, name, size, 1, cur_package->tree.get());
+	flags_set(t->flags, flags);
+	__add_class__(t, name_space);
+	return t;
+}
+
+const Class *add_type_simple(const string &name, int size, int alignment, Flags flags, const Class *name_space) {
+	Class *t = new Class(Class::Type::REGULAR, name, size, alignment, cur_package->tree.get());
 	flags_set(t->flags, flags);
 	__add_class__(t, name_space);
 	return t;
@@ -187,7 +195,7 @@ extern const Class *TypeFutureT;
 const Class *add_type_p_raw(const Class *sub_type) {
 	//string name = format("%s[%s]", Identifier::RAW_POINTER, sub_type->name);
 	string name = sub_type->name + "*";
-	Class *t = new Class(Class::Type::POINTER_RAW, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_RAW, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeRawT, {sub_type});
@@ -196,7 +204,7 @@ const Class *add_type_p_raw(const Class *sub_type) {
 
 const Class *add_type_ref(const Class *sub_type) {
 	string name = sub_type->name + "&";
-	Class *t = new Class(Class::Type::REFERENCE, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::REFERENCE, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeReferenceT, {sub_type});
@@ -205,7 +213,7 @@ const Class *add_type_ref(const Class *sub_type) {
 
 const Class *add_type_p_owned(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::OWNED, sub_type->name);
-	Class *t = new Class(Class::Type::POINTER_OWNED, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_OWNED, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeOwnedT, {sub_type});
 	return t;
@@ -213,7 +221,7 @@ const Class *add_type_p_owned(const Class *sub_type) {
 
 const Class *add_type_p_shared(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::SHARED, sub_type->name);
-	Class *t = new Class(Class::Type::POINTER_SHARED, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_SHARED, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeSharedT, {sub_type});
 	return t;
@@ -221,7 +229,7 @@ const Class *add_type_p_shared(const Class *sub_type) {
 
 const Class *add_type_p_shared_not_null(const Class *sub_type) {
 	string name = format("%s![%s]", Identifier::SHARED, sub_type->name);
-	Class *t = new Class(Class::Type::POINTER_SHARED_NOT_NULL, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_SHARED_NOT_NULL, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeSharedNotNullT, {sub_type});
 	return t;
@@ -229,7 +237,7 @@ const Class *add_type_p_shared_not_null(const Class *sub_type) {
 
 const Class *add_type_p_xfer(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::XFER, sub_type->name);
-	Class *t = new Class(Class::Type::POINTER_XFER_NOT_NULL, name, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::POINTER_XFER_NOT_NULL, name, config.target.pointer_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeXferT, {sub_type});
@@ -239,7 +247,7 @@ const Class *add_type_p_xfer(const Class *sub_type) {
 // fixed array
 const Class *add_type_array(const Class *sub_type, int array_length) {
 	string name = sub_type->name + "[" + i2s(array_length) + "]";
-	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::ARRAY, name, sub_type->size * array_length, sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
 	t->array_length = array_length;
 	__add_class__(t, sub_type->name_space);
 	//cur_package->context->template_manager->add_implicit_legacy(t);
@@ -250,7 +258,7 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 // dynamic array
 const Class *add_type_list(const Class *sub_type) {
 	string name = sub_type->name + "[]";
-	Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeListT, {sub_type});
 	return t;
@@ -259,7 +267,7 @@ const Class *add_type_list(const Class *sub_type) {
 // dict
 const Class *add_type_dict(const Class *sub_type) {
 	string name = sub_type->name + "{}";
-	Class *t = new Class(Class::Type::DICT, name, config.target.dynamic_array_size, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::DICT, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeDictT, {sub_type});
 	return t;
@@ -273,7 +281,7 @@ void capture_implicit_type(const Class *_t, const string &name) {
 
 // enum
 const Class *add_type_enum(const string &name, const Class *_namespace) {
-	Class *t = new Class(Class::Type::ENUM, name, sizeof(int), cur_package->tree.get());
+	Class *t = new Class(Class::Type::ENUM, name, sizeof(int), sizeof(int), cur_package->tree.get());
 	flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
 	__add_class__(t, _namespace);
 	return t;
@@ -281,7 +289,7 @@ const Class *add_type_enum(const string &name, const Class *_namespace) {
 
 const Class *add_type_optional(const Class *sub_type) {
 	string name = sub_type->name + "?";
-	Class *t = new Class(Class::Type::OPTIONAL, name, sub_type->size + 1, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::OPTIONAL, name, sub_type->size + 1, sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeOptionalT, {sub_type});
 	return t;
@@ -289,7 +297,7 @@ const Class *add_type_optional(const Class *sub_type) {
 
 const Class *add_type_future(const Class *sub_type) {
 	string name = "future[" + sub_type->name + "]";
-	Class *t = new Class(Class::Type::REGULAR, name, sizeof(void*), cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::REGULAR, name, sizeof(void*), config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit(cur_package->tree.get(), t, TypeFutureT, {sub_type});
 	return t;
@@ -332,7 +340,7 @@ const Class *add_type_func(const Class *ret_type, const Array<const Class*> &par
 	params_ret.add(ret_type);
 
 	//auto ff = cur_package->syntax->make_class("Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, 0, nullptr, params_ret, cur_package->syntax->base_class);
-	Class *ff = new Class(Class::Type::CALLABLE_FUNCTION_POINTER, "XCallable[" + name + "]", /*TypeCallableBase->size*/ sizeof(KabaCallable<void()>), cur_package->tree.get(), nullptr, params_ret);
+	Class *ff = new Class(Class::Type::CALLABLE_FUNCTION_POINTER, "XCallable[" + name + "]", /*TypeCallableBase->size*/ sizeof(KabaCallable<void()>), config.target.pointer_size, cur_package->tree.get(), nullptr, params_ret);
 	__add_class__(ff, cur_package->tree->base_class);
 	cur_package->context->template_manager->add_implicit_legacy(ff);
 
@@ -448,6 +456,7 @@ Class *add_class(const Class *root_type) {
 
 void class_add_element_x(const string &name, const Class *type, int offset, Flags flag) {
 	cur_class->elements.add(ClassElement(name, type, offset));
+	cur_class->alignment = max(cur_class->alignment, type->alignment);
 }
 
 void class_derive_from(const Class *parent, DeriveFlags flags) {

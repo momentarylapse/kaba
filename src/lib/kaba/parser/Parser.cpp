@@ -1561,18 +1561,6 @@ void Parser::parse_enum(Class *_namespace) {
 	flags_set(_class->flags, Flags::FULLY_PARSED);
 }
 
-int type_alignment(const Class *t) {
-	if (t->is_array())
-		return type_alignment(t->get_array_element());
-	if (t->size >= 8 and config.target.pointer_size >= 8)
-		return 8;
-	if (t->size >= 4)
-		return 4;
-	if (t->size >= 2)
-		return 2;
-	return 1;
-}
-
 bool is_same_kind_of_pointer(const Class *a, const Class *b);
 
 void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int &_offset, int token_id) {
@@ -1604,12 +1592,11 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 		flags_set(v->flags, flags);
 		_class->static_variables.add(v);
 	} else {
-		int align = type_alignment(type);
-		_offset = mem_align(_offset, align);
+		_offset = mem_align(_offset, type->alignment);
 		_offset = p->context->external->process_class_offset(_class->cname(p->tree->base_class), name, _offset);
 		auto el = ClassElement(name, type, _offset);
-		_offset += mem_align((int)type->size, align);
 		_class->elements.add(el);
+		_offset += (int)type->size;
 	}
 }
 
@@ -1773,10 +1760,13 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 	}
 
 	int align = 1;
+	if (_class->parent)
+		align = _class->parent->alignment;
 	for (auto &e: _class->elements)
-		align = max(align, type_alignment(e.type));
+		align = max(align, e.type->alignment);
 	size = mem_align(size, align);
 	_class->size = external->process_class_size(_class->cname(tree->base_class), size);
+	_class->alignment = align;
 
 
 	auto_implementer.add_missing_function_headers_for_class(_class);

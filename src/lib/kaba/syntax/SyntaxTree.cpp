@@ -93,9 +93,9 @@ SyntaxTree::SyntaxTree(Module *_module) {
 	module = _module;
 	asm_meta_info = new Asm::MetaInfo(config.target.pointer_size);
 
-	base_class = new Class(Class::Type::NAMESPACE, "-base-", 0, this);
+	base_class = new Class(Class::Type::NAMESPACE, "-base-", 0, 1, this);
 	_base_class = base_class;
-	implicit_symbols = new Class(Class::Type::NAMESPACE, "-implicit-", 0, this);
+	implicit_symbols = new Class(Class::Type::NAMESPACE, "-implicit-", 0, 1, this);
 	root_of_all_evil = new Function("-root-", TypeVoid, base_class, Flags::STATIC);
 }
 
@@ -502,7 +502,7 @@ Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int si
 Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
 	//msg_write("CREATE " + name);
 
-	Class *t = new Class(type, name, size, this, parent, params);
+	Class *t = new Class(type, name, size, 1, this, parent, params);
 	t->token_id = token_id;
 	owned_classes.add(t);
 	

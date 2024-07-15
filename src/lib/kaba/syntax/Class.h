@@ -73,12 +73,13 @@ public:
 	};
 	
 	//Class();
-	Class(Type type, const string &name, int64 size, SyntaxTree *owner, const Class *parent = nullptr, const Array<const Class*> &param = {});
+	Class(Type type, const string &name, int64 size, int alignment, SyntaxTree *owner, const Class *parent = nullptr, const Array<const Class*> &param = {});
 	~Class();
 	string name;
 	string long_name() const;
 	string cname(const Class *ns = nullptr) const;
 	int64 size; // complete size of type
+	int alignment;
 	int array_length;
 	Type type;
 	Flags flags;
