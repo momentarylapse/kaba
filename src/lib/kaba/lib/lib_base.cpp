@@ -16,6 +16,8 @@
 #include <math.h>
 #include <cstdio>
 
+#include "future.h"
+
 namespace kaba {
 
 extern const Class *TypeDynamicArray;
@@ -346,10 +348,13 @@ void SIAddPackageBase(Context *c) {
 
 	// select default float type
 	TypeFloat = TypeFloat32;
-	(const_cast<Class*>(TypeFloat))->name = "float";
+//	(const_cast<Class*>(TypeFloat))->name = "float";
 	TypeInt = TypeInt32;
-	(const_cast<Class*>(TypeInt32))->name = "int";
+//	(const_cast<Class*>(TypeInt32))->name = "int";
 	// TODO type aliases
+
+	cur_package->tree->base_class->type_aliases.add({"int", TypeInt32});
+	cur_package->tree->base_class->type_aliases.add({"float", TypeFloat32});
 
 
 	add_class(TypeObject);
@@ -551,7 +556,7 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeInt8);
 		class_add_func(Identifier::Func::STR, TypeString, &kaba_int8_to_str, Flags::PURE);
 		//class_add_func(Identifier::Func::REPR, TypeString, &kaba_char_repr, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &kaba_cast<char,int>, Flags::PURE);
 			func_set_inline(InlineID::INT8_TO_INT32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt8, TypeInt8, InlineID::INT8_ASSIGN);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeInt8, TypeInt8, InlineID::INT8_EQUAL);
@@ -573,7 +578,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_element("low", TypeInt8, 0);
 		class_add_element("high", TypeInt8, 1);
 		class_add_func(Identifier::Func::STR, TypeString, &kaba_i16_to_str, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<unsigned short,int>, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &kaba_cast<unsigned short,int>, Flags::PURE);
 		//	func_set_inline(InlineID::INT16_TO_INT32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt16, InlineID::CHUNK_ASSIGN);
 		//add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt16, TypeInt32, InlineID::INT16_ASSIGN_INT32);
@@ -585,7 +590,7 @@ void SIAddPackageBase(Context *c) {
 		class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
 		class_add_func(Identifier::Func::FORMAT, TypeString, &kaba_int_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
-		class_add_func("__float__", TypeFloat32, &kaba_cast<int,float>, Flags::PURE);
+		class_add_func("__f32__", TypeFloat32, &kaba_cast<int,float>, Flags::PURE);
 			func_set_inline(InlineID::INT32_TO_FLOAT32);
 		class_add_func("__f64__", TypeFloat64, &kaba_cast<int,double>, Flags::PURE);
 		class_add_func("__i8__", TypeInt8, &kaba_cast<int,char>, Flags::PURE);
@@ -619,7 +624,7 @@ void SIAddPackageBase(Context *c) {
 
 	add_class(TypeInt64);
 		class_add_func(Identifier::Func::STR, TypeString, &i642s, Flags::PURE);
-		class_add_func("__int__", TypeInt, &kaba_cast<int64,int>, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &kaba_cast<int64,int>, Flags::PURE);
 			func_set_inline(InlineID::INT64_TO_INT32);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeInt64, TypeInt64, InlineID::INT64_ASSIGN);
 		add_operator(OperatorID::ADD, TypeInt64, TypeInt64, TypeInt64, InlineID::INT64_ADD, &op_int64_add);
@@ -652,7 +657,7 @@ void SIAddPackageBase(Context *c) {
 			func_add_param("decimals", TypeInt);
 		class_add_func(Identifier::Func::FORMAT, TypeString, &kaba_float_format, Flags::PURE);
 			func_add_param("fmt", TypeString);
-		class_add_func("__int__", TypeInt, &kaba_cast<float,int>, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &kaba_cast<float,int>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT32_TO_INT32);    // sometimes causes floating point exceptions...
 		class_add_func("__f64__", TypeFloat64, &kaba_cast<float,double>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT32_TO_FLOAT64);
@@ -677,9 +682,9 @@ void SIAddPackageBase(Context *c) {
 
 	add_class(TypeFloat64);
 		class_add_func(Identifier::Func::STR, TypeString, &kaba_float642str, Flags::PURE);
-		class_add_func("__float__", TypeFloat32, &kaba_cast<double,float>, Flags::PURE);
+		class_add_func("__f32__", TypeFloat32, &kaba_cast<double,float>, Flags::PURE);
 			func_set_inline(InlineID::FLOAT64_TO_FLOAT32);
-		class_add_func("__int__", TypeInt, &kaba_cast<double,int>, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &kaba_cast<double,int>, Flags::PURE);
 		add_operator(OperatorID::ASSIGN, TypeVoid, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ASSIGN);
 		add_operator(OperatorID::ADD, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_ADD, &op_double_add);
 		add_operator(OperatorID::SUBTRACT, TypeFloat64, TypeFloat64, TypeFloat64, InlineID::FLOAT64_SUBTRACT, &op_double_sub);
@@ -736,9 +741,9 @@ void SIAddPackageBase(Context *c) {
 		class_add_func("unhex", TypeBytes, &string::unhex, Flags::PURE);
 		class_add_func("match", TypeBool, &string::match, Flags::PURE);
 			func_add_param("glob", TypeString);
-		class_add_func("__int__", TypeInt, &string::_int, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &string::_int, Flags::PURE);
 		class_add_func("__i64__", TypeInt64, &string::i64, Flags::PURE);
-		class_add_func("__float__", TypeFloat32, &string::_float, Flags::PURE);
+		class_add_func("__f32__", TypeFloat32, &string::_float, Flags::PURE);
 		class_add_func("__f64__", TypeFloat64, &string::f64, Flags::PURE);
 		class_add_func("trim", TypeString, &string::trim, Flags::PURE);
 		class_add_func("escape", TypeString, &string::escape, Flags::PURE);
@@ -979,14 +984,14 @@ void SIAddPackageBase(Context *c) {
 	add_ext_var("_extern_variable", TypeInt, &extern_variable1);
 
 
-	add_type_cast(10, TypeInt, TypeFloat32, "int.__float__");
-	add_type_cast(10, TypeInt, TypeFloat64, "int.__f64__");
-	add_type_cast(10, TypeInt, TypeInt64, "int.__i64__");
-	add_type_cast(200, TypeInt64, TypeInt, "i64.__int__");
-	add_type_cast(10, TypeFloat32, TypeFloat64,"float.__f64__");
-	add_type_cast(200, TypeFloat32, TypeInt, "float.__int__");
-	add_type_cast(200, TypeInt, TypeInt8, "int.__i8__");
-	add_type_cast(20, TypeInt8, TypeInt, "i8.__int__");
+	add_type_cast(10, TypeInt, TypeFloat32, "i32.__f32__");
+	add_type_cast(10, TypeInt, TypeFloat64, "i32.__f64__");
+	add_type_cast(10, TypeInt, TypeInt64, "i32.__i64__");
+	add_type_cast(200, TypeInt64, TypeInt, "i64.__i32__");
+	add_type_cast(10, TypeFloat32, TypeFloat64,"f32.__f64__");
+	add_type_cast(200, TypeFloat32, TypeInt, "f32.__i32__");
+	add_type_cast(200, TypeInt, TypeInt8, "i32.__i8__");
+	add_type_cast(20, TypeInt8, TypeInt, "i8.__i32__");
 	//add_type_cast(30, TypeBoolList, TypeBool, "bool[].__bool__");
 	add_type_cast(50, TypePointer, TypeBool, "p2b");
 	//add_type_cast(50, TypePointer, TypeString, "p2s");

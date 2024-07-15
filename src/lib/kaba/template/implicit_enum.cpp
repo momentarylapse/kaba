@@ -29,7 +29,7 @@ void AutoImplementer::_add_missing_function_headers_for_enum(Class *t) {
 		func_set_inline(InlineID::PASSTHROUGH);
 		func_add_param("i", TypeInt);
 	//class_add_func(Identifier::Func::STR, TypeString, &i2s, Flags::PURE);
-	class_add_func("__int__", TypeInt, &kaba_int_passthrough, Flags::PURE);
+	class_add_func("__i32__", TypeInt, &kaba_int_passthrough, Flags::PURE);
 		func_set_inline(InlineID::PASSTHROUGH);
     if (!flags_has(t->flags, Flags::NOAUTO)) {
         class_add_func("parse", t, &enum_parse, Flags::STATIC | Flags::PURE);

@@ -3,6 +3,7 @@
 #define CLASS_H_
 
 #include "../../base/pointer.h"
+#include "../../base/map.h"
 
 namespace kaba {
 
@@ -108,12 +109,15 @@ public:
 	bool is_callable_fp() const;
 	bool is_callable_bind() const;
 	bool fully_parsed() const;
+
 	Array<ClassElement> elements;
 	Array<ClassInitializers> initializers;
 	shared_array<Function> functions;
 	shared_array<Variable> static_variables;
 	shared_array<Constant> constants;
 	shared_array<const Class> classes;
+	base::map<string, const Class*> type_aliases;
+
 	const Class *parent; // derived from
 	Array<const Class*> param; // for pointers/arrays etc
 	const Class *name_space;

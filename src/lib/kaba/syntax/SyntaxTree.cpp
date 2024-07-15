@@ -274,6 +274,9 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 
 	// recursively up the namespaces
 	while (ns) {
+		/*for (const auto&& [_name, t]: ns->type_aliases)
+			if (_name == name)
+				return {add_node_class(t, token_id)};*/
 
 		// named constants
 		for (auto *c: weak(ns->constants))

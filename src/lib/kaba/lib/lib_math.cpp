@@ -928,8 +928,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("key", TypeString);
 		class_add_func("keys", TypeStringList, &Any::keys, Flags::PURE);//, Flags::RAISES_EXCEPTIONS);
 		class_add_func("__bool__", TypeBool, &Any::_bool, Flags::PURE);
-		class_add_func("__int__", TypeInt, &Any::_int, Flags::PURE);
-		class_add_func("__float__", TypeFloat32, &Any::_float, Flags::PURE);
+		class_add_func("__i32__", TypeInt, &Any::_int, Flags::PURE);
+		class_add_func("__f32__", TypeFloat32, &Any::_float, Flags::PURE);
 		class_add_func(Identifier::Func::STR, TypeString, &Any::str, Flags::PURE);
 		class_add_func(Identifier::Func::REPR, TypeString, &Any::repr, Flags::PURE);
 		class_add_func("unwrap", TypeVoid, &KabaAny::unwrap, Flags::RAISES_EXCEPTIONS);

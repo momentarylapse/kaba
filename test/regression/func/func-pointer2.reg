@@ -1,8 +1,8 @@
 f...
-int->void
+i32->void
 nil
-[Callable[int->void]]
+[Callable[i32->void]]
 @CallableBase
-[int, void]
+[i32, void]
 ff 13
 ff 23
