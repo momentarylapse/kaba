@@ -296,9 +296,11 @@ const Class *add_type_enum(const string &name, const Class *_namespace) {
 	return t;
 }
 
+	int _make_optional_size(const Class *t);
+
 const Class *add_type_optional(const Class *sub_type) {
 	string name = sub_type->name + "?";
-	Class *t = new Class(Class::Type::OPTIONAL, name, sub_type->size + 1, sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(Class::Type::OPTIONAL, name, _make_optional_size(sub_type), sub_type->alignment, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit_class_instance(
 			cur_package->tree.get(),

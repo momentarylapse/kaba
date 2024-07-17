@@ -349,12 +349,8 @@ int product_class_alignment(const Array<const Class*> &classes) {
 	return align;
 }
 
-static int _make_optional_size(const Class *t) {
-	if (t->size >= 8)
-		return mem_align(t->size, 8) + 1;
-	if (t->size >= 4)
-		return mem_align(t->size, 4) + 1;
-	return t->size + 1;
+int _make_optional_size(const Class *t) {
+	return mem_align(t->size + 1, t->alignment);
 }
 
 const Class *TemplateManager::instantiate_class(SyntaxTree *tree, ClassTemplate &t, const Array<const Class*> &params, int array_size, int token_id) {

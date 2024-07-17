@@ -1,0 +1,14 @@
+
+
+
+func main()
+	print(sizeof(i32?))
+	print(sizeof(i64?))
+	print(sizeof(i8?))
+	print(sizeof(f32?))
+	print(sizeof(vec3?))
+	print(sizeof(color?))
+#	print(sizeof(string?))
+#	print(sizeof(i32[]?))
+#	print(sizeof(i32?[]))
+
