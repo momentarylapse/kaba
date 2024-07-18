@@ -73,7 +73,7 @@ Parser::Parser(SyntaxTree *t) :
 void Parser::parse_buffer(const string &buffer, bool just_analyse) {
 	Exp.analyse(tree, buffer);
 
-	parse_macros(just_analyse);
+	parse_legacy_macros(just_analyse);
 
 	parse();
 
@@ -2167,7 +2167,7 @@ void Parser::parse_all_function_bodies() {
 		auto f = function_needs_parsing[i];
 		if (!f->is_extern() and (f->token_id >= 0)) {
 			parse_abstract_function_body(f);
-			if (!f->is_template())
+			if (!f->is_template() and !f->is_macro())
 				con.concretify_function_body(f);
 		}
 	}
