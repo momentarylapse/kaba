@@ -1,0 +1,13 @@
+macro square(e: expr)
+	e*e
+
+macro xcall(f: ident, p: expr)
+	f(p)
+
+func main()
+	print(square(5+5))
+
+	xcall(print, "hi")
+
+	print(xcall(square, 1+1))
+

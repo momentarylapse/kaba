@@ -372,22 +372,25 @@ void Concretifier::concretify_all_params(shared<Node> &node, Block *block, const
 		}
 };
 
+shared<Node> apply_macro(Concretifier *con, Function* f, shared<Node> node, shared_array<Node>& params, Block *block, const Class *ns) {
+	if (f->num_params != params.num)
+		con->do_error(format("can not pass %d parameters to a macro expecting %d", params.num, f->num_params), node);
 
-shared<Node> check_macro(Concretifier *con, shared<Node> node, Block *block, const Class *ns) {
-	if (node->is_function()) {
-		auto f = node->as_func();
-		if (f->is_macro()) {
-			if (f->num_params > 0)
-				con->do_error("macro with parameters not allowed yet", node);
-			if (f->literal_return_type != TypeVoid)
-				con->do_error("macro with return value not allowed yet", node);
-
-			return (Node*)f->block.get();
+	auto b = cp_node(f->block.get());
+	con->tree->transform_block((Block*)b.get(), [con, f, params] (shared<Node> n) {
+		if (n->kind == NodeKind::ABSTRACT_TOKEN) {
+			for (int i=0; i<params.num; i++) {
+				if (n->as_token() == f->var[i]->name) {
+					//con->do_error("FOUND PARRAM", n);
+					return params[i];
+				}
+			}
 		}
-	}
-	return node;
-}
+		return n;
+	});
 
+	return con->concretify_block(b, block, ns);
+}
 
 shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, const Class *ns) {
 
@@ -405,10 +408,11 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 
 	auto params = node->params.sub_ref(1);
 
-
 	// make links callable
 	for (auto&& [i,l]: enumerate(weak(links))) {
 		if (l->kind == NodeKind::FUNCTION) {
+			if (l->as_func()->is_macro())
+				return apply_macro(this, l->as_func(), l, params, block, ns);
 			if (l->as_func()->is_template())
 				links[i] = make_func_node_callable(match_template_params(l, params, block, ns));
 			else
@@ -436,7 +440,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 			do_error(format("this %s does not seem callable", kind2str(l->kind)), l);
 		}
 	}
-	return check_macro(this, try_to_match_apply_params(links, params), block, ns);
+	return try_to_match_apply_params(links, params);
 }
 
 shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *block, const Class *ns) {

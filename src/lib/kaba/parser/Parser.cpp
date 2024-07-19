@@ -2085,6 +2085,8 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 	if (f->is_template()) {
 		context->template_manager->add_function_template(f, template_param_names, nullptr);
 		name_space->add_template_function(tree, f, flags_has(flags, Flags::VIRTUAL), flags_has(flags, Flags::OVERRIDE));
+	} else if (f->is_macro()) {
+		name_space->add_function(tree, f, false, flags_has(flags, Flags::OVERRIDE));
 	} else {
 		con.concretify_function_header(f);
 
