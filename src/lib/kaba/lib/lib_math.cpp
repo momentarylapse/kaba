@@ -85,6 +85,7 @@ extern const Class *TypeAny;
 extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
 
+extern Module* cur_package;
 
 float _cdecl f_sqr(float f) {
 	return f*f;
@@ -366,8 +367,18 @@ public:
 	}
 };
 
+	Module* package_math;
+
+Node* create_token(const string& t) {
+	if (package_math->tree->expressions.lines.num == 0)
+		package_math->tree->expressions.lines.resize(1);
+	package_math->tree->expressions.lines[0].tokens.add({t, 0});
+	return new Node(NodeKind::ABSTRACT_TOKEN, (int_p)package_math->tree.get(), TypeUnknown, Flags::NONE, package_math->tree->expressions.lines[0].tokens.num - 1);
+}
+
 void SIAddPackageMath(Context *c) {
 	add_package(c, "math", Flags::AUTO_IMPORT);
+	package_math = cur_package;
 
 	// types
 	TypeComplex = add_type("complex", sizeof(complex));
@@ -1138,6 +1149,65 @@ void SIAddPackageMath(Context *c) {
 	// complex
 	add_func("abs", TypeFloat32, &KabaVector<complex>::abs, Flags::STATIC | Flags::PURE);
 		func_add_param("z", TypeComplex);
+
+
+	auto FuncSumT = new Function("sumx", TypeUnknown, cur_package->base_class(), Flags::TEMPLATE | Flags::STATIC);
+	//FuncSumT->abstract_param_types = ...
+	FuncSumT->add_param("list", TypeUnknown, Flags::NONE);
+	FuncSumT->abstract_return_type = create_token("T");
+	{
+		auto n = new Node(NodeKind::ABSTRACT_TYPE_LIST, 0, TypeUnknown);
+		n->set_num_params(1);
+		n->set_param(0, create_token("T"));
+		FuncSumT->abstract_param_types = {n};
+	}
+
+	c->template_manager->add_function_template(FuncSumT, {"T"}, [c] (SyntaxTree* tree, const Array<const Class*>& params, int token_id) -> Function* {
+		auto t = params[0];
+		auto t_list = c->template_manager->request_list(tree, t, token_id);
+		auto f = new Function("sumx[" + t->name + "]", t, cur_package->base_class(), Flags::STATIC);
+		f->block->type = TypeUnknown;
+		f->abstract_return_type = add_node_class(t);
+		f->literal_return_type = t;
+		f->abstract_param_types = {add_node_class(t_list)};
+		[[maybe_unused]] auto v = f->add_param("list", t_list, Flags::NONE);
+
+		auto acc = f->block->add_var("acc", t);
+
+		if (t->can_memcpy()) {
+			auto cmd = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)&abstract_operators[(int)OperatorID::ASSIGN], TypeUnknown);
+			cmd->set_num_params(2);
+			cmd->set_param(0, add_node_local(acc, t));
+			auto c0 = tree->add_constant(t);
+			cmd->set_param(1, add_node_const(c0));
+			f->block->add(cmd);
+		} else if (!t->get_default_constructor()) {
+			tree->do_error(format("can not instantiate template because argument type (%s) can not be initialized", t->long_name()));
+		}
+		auto cmd_for = add_node_statement(StatementID::FOR_CONTAINER, token_id, TypeUnknown);
+		// [REF_VAR (token), KEY? (token), ARRAY, BLOCK]
+		f->block->add(cmd_for);
+
+		cmd_for->set_param(0, create_token("x"));
+		cmd_for->set_param(1, create_token("i"));
+		cmd_for->set_param(2, create_token("list"));
+
+		auto b = new Block(f, f->block.get(), TypeUnknown);
+		cmd_for->set_param(3, b);
+		auto cmd = new Node(NodeKind::ABSTRACT_OPERATOR, (int_p)&abstract_operators[(int)OperatorID::ADDS], TypeUnknown);
+		cmd->set_num_params(2);
+		cmd->set_param(0, add_node_local(acc, t));
+		cmd->set_param(1, create_token("x"));
+		b->add(cmd);
+
+		auto ret = add_node_statement(StatementID::RETURN, token_id, TypeUnknown);
+		ret->set_num_params(1);
+		ret->set_param(0, add_node_local(acc, t));
+		f->block->add(ret);
+
+		return f;
+	});
+	cur_package->tree->base_class->add_template_function(cur_package->tree.get(), FuncSumT, false, false);
 
 	// int[]
 	add_func("sum", TypeInt32, &XList<int>::sum, Flags::STATIC | Flags::PURE);
