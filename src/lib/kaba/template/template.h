@@ -45,7 +45,7 @@ public:
 
 // functions
 
-	using FunctionCreateF = std::function<const Function*(SyntaxTree*, const Array<const Class*>&, int)>;
+	using FunctionCreateF = std::function<Function*(SyntaxTree*, const Array<const Class*>&, int)>;
 	
 	void add_function_template(Function* f_template, const Array<string>& param_names, FunctionCreateF f_create = nullptr);
 	Function* request_function_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id);

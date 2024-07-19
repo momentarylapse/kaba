@@ -818,11 +818,8 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 	serializer->call_used = true;
 	auto call_data = fc_begin(params, ret, f->is_static());
 
-	if ((f->owner() == module->tree) and !f->is_extern()) {
-		insert_cmd(Asm::InstID::BL, param_label(TypePointer, f->_label));
-	} else {
-		if (f->address == 0)
-			module->do_error_link("could not link function " + f->long_name());
+
+	if (f->address != 0) {
 		if (reachable_arm64(f->address, this->module->opcode)) {
 			insert_cmd(Asm::InstID::BL, param_imm(TypePointer, f->address)); // the actual call
 			// function pointer will be shifted later...
@@ -831,6 +828,11 @@ void BackendArm64::add_function_call(Function *f, const Array<SerialNodeParam> &
 			insert_cmd(Asm::InstID::BLR, param_vreg_auto(TypePointer, vreg));
 			vreg_free(vreg);
 		}
+	} else if (f->_label >= 0) {
+		insert_cmd(Asm::InstID::BL, param_label(TypePointer, f->_label));
+		// TODO far lables?
+	} else {
+		serializer->do_error_link("could not link function " + f->signature());
 	}
 
 	fc_end(call_data, params, ret);

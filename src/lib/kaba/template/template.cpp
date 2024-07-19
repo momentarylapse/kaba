@@ -112,7 +112,7 @@ Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
 Function *TemplateManager::request_function_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
 	auto &t = get_function_template(tree, f0, token_id);
 	
-	// already instanciated?
+	// already instantiated?
 	for (auto &i: t.instances)
 		if (i.params == params)
 			return i.f;
@@ -199,11 +199,9 @@ Function *TemplateManager::request_function_instance_matching(SyntaxTree *tree, 
 	if (params.num != f0->abstract_param_types.num)
 		tree->do_error(format("not able to match all template parameters: %d parameters given, %d expected", params.num, f0->abstract_param_types.num), token_id);
 
-
 	for (auto&& [i,p]: enumerate(weak(params))) {
 		if (p->type == TypeUnknown)
 			tree->do_error(format("parameter #%d '%s' has undecided type when trying to match template arguments", i+1, f0->var[i]->name), token_id);
-		//f0->abstract_param_types[i]->show();
 		match_parameter_type(f0->abstract_param_types[i], p->type, set_match_type);
 	}
 
@@ -254,22 +252,26 @@ Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTempla
 	if (config.verbose)
 		msg_write("INSTANTIATE TEMPLATE");
 	Function *f0 = t.func;
-	auto f = full_copy(tree, f0);
-	f->name += format("[%s]", type_list_to_str(params));
 
-	// replace in parameters/return type
-	for (int i=0; i<f->num_params; i++) {
-		f->abstract_param_types[i] = node_replace(tree, f->abstract_param_types[i], t.params, params);
-		//f->abstract_param_types[i]->show();
+	Function *f = nullptr;
+	if (t.f_create) {
+		f = t.f_create(tree, params, token_id);
+	} else {
+		f = full_copy(tree, f0);
+		f->name += format("[%s]", type_list_to_str(params));
+
+		// replace in parameters/return type
+		for (int i=0; i<f->num_params; i++) {
+			f->abstract_param_types[i] = node_replace(tree, f->abstract_param_types[i], t.params, params);
+			//f->abstract_param_types[i]->show();
+		}
+		if (f->abstract_return_type)
+			f->abstract_return_type = node_replace(tree, f->abstract_return_type, t.params, params);
+
+		// replace in body
+		for (int i=0; i<f->block->params.num; i++)
+			f->block->params[i] = node_replace(tree, f->block->params[i], t.params, params);
 	}
-	if (f->abstract_return_type)
-		f->abstract_return_type = node_replace(tree, f->abstract_return_type, t.params, params);
-
-	// replace in body
-	for (int i=0; i<f->block->params.num; i++)
-		f->block->params[i] = node_replace(tree, f->block->params[i], t.params, params);
-	
-	//f->show();
 
 	// concretify
 	try {

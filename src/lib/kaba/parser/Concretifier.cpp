@@ -1943,7 +1943,9 @@ shared<Node> Concretifier::make_func_node_callable(const shared<Node> l) {
 
 shared<Node> Concretifier::match_template_params(const shared<Node> l, const shared_array<Node> &params, Block *block, const Class *ns) {
 	auto f0 = l->as_func();
-	auto ff = context->template_manager->request_function_instance_matching(tree, f0, params, block, ns, l->token_id);
+	auto _params = params;
+	force_concrete_types(_params);
+	auto ff = context->template_manager->request_function_instance_matching(tree, f0, _params, block, ns, l->token_id);
 	auto r = l->shallow_copy();
 	r->link_no = (int_p)ff;
 	return r;
