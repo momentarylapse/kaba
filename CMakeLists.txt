@@ -324,13 +324,14 @@ else()
 	target_compile_definitions(kaba PUBLIC HAS_LIB_UNWIND=0)
 endif()
 
-# lib: dl...
+# lib: dl (optional)
 if(WIN32)
 	target_compile_definitions(kaba PUBLIC HAS_LIB_DL=0)
 else()
 	list(APPEND DEPS ${CMAKE_DL_LIBS})
 	target_compile_definitions(kaba PUBLIC HAS_LIB_DL=1)
 endif()
+
 
 # lib: vulkan (optional)
 set(LIB_VULKAN_ENABLED true CACHE BOOL "Use vulkan library?")
