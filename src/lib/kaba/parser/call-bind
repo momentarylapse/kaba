@@ -1,0 +1,34 @@
+var a, b: int
+let f = func(i: int) a+i
+
+
+
+inner lambda
+* parse literally
+	(i: int)->int
+* add captured vars as parameters
+	captured nodes: [a]
+	(i: int, a: int)->int
+* prepend parameters as nil
+	captured nodes: [-,a]
+* capture by ref
+	[-,&a]
+
+=> create_bind()
+
+
+
+
+
+
+auto bind
+	func member_func(a: A, b: B) -> R
+	f(member_func)
+	captured nodes: [self,-,-]      NOT &self...
+=> create_bind()
+
+
+
+
+
+create_bind()

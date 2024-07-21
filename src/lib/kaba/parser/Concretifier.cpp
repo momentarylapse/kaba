@@ -2246,7 +2246,7 @@ shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const sh
 	return concretify_node(n, block, ns);
 }
 
-shared<Node> Concretifier::try_build_pipe_map_array(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
+shared<Node> Concretifier::try_build_pipe_map_array_unwrap(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
 	if (input->type->param[0] != pt)
 		return nullptr;
 	// -> map(func, array)
@@ -2288,7 +2288,7 @@ shared<Node> Concretifier::try_build_pipe_map_array(const shared<Node> &input, N
 	return rrr;
 }
 
-shared<Node> Concretifier::try_build_pipe_map_optional(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
+shared<Node> Concretifier::try_build_pipe_map_optional_unwrap(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
 	if (input->type->param[0] != pt)
 		return nullptr;
 
@@ -2296,7 +2296,12 @@ shared<Node> Concretifier::try_build_pipe_map_optional(const shared<Node> &input
 }
 
 shared<Node> Concretifier::try_build_pipe_map_direct(const shared<Node> &input, Node *f, const Class *rt, const Class *pt, Block *block, const Class *ns, int token_id) {
-	auto out = add_node_call(f->as_func(), f->token_id);
+
+	shared<Node> out;
+	if (f->as_func()->is_template())
+		out = make_func_node_callable(match_template_params(f, {input}, block, ns));
+	else
+		out = add_node_call(f->as_func(), f->token_id);
 
 	Array<CastingData> casts;
 	Array<const Class*> wanted;
@@ -2310,6 +2315,7 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 
 	auto funcs = concretify_node_multi(rhs, block, ns);
 	for (auto f: weak(funcs)) {
+		//f->show();
 
 
 		/*if (f->kind != NodeKind::SPECIAL_FUNCTION_NAME) {
@@ -2332,12 +2338,12 @@ shared<Node> Concretifier::build_pipe_map(const shared<Node> &input, const share
 
 		// array |> func
 		if (input->type->is_list())
-			if (auto x = try_build_pipe_map_array(input, f, rt, p[0], block, ns, token_id))
+			if (auto x = try_build_pipe_map_array_unwrap(input, f, rt, p[0], block, ns, token_id))
 				return x;
 
 		// optional |> func
 		if (input->type->is_optional())
-			if (auto x = try_build_pipe_map_optional(input, f, rt, p[0], block, ns, token_id))
+			if (auto x = try_build_pipe_map_optional_unwrap(input, f, rt, p[0], block, ns, token_id))
 				return x;
 
 		if (auto x = try_build_pipe_map_direct(input, f, rt, p[0], block, ns, token_id))
