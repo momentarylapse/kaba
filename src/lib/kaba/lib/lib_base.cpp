@@ -56,7 +56,8 @@ const Class *TypeReferenceT;
 const Class *TypeArrayT;
 const Class *TypeListT;
 const Class *TypeDictT;
-const Class *TypeCallableT;
+const Class *TypeCallableFPT;
+const Class *TypeCallableBindT;
 const Class *TypeOptionalT;
 const Class *TypeProductT;
 const Class *TypeFutureT;
@@ -407,6 +408,75 @@ class TemplateClassInstantiatorDict : public TemplateClassInstantiator {
 	}
 };
 
+
+string make_callable_signature_t(const Array<const Class*> &_params) {
+	auto ret = _params.back();
+	auto params = _params.sub_ref(0, _params.num - 1);
+	// maybe some day...
+	string signature;// = param->name;
+	for (int i=0; i<params.num; i++) {
+		if (i > 0)
+			signature += ",";
+		signature += class_name_might_need_parantheses(params[i]);
+	}
+	if (params.num == 0)
+		signature = "void";
+	if (params.num > 1)
+		signature = "(" + signature + ")";
+	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
+		signature = "void";
+	}
+	return signature + "->" + class_name_might_need_parantheses(ret);
+}
+
+class TemplateClassInstantiatorCallableFP : public TemplateClassInstantiator {
+	Class* declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) override {
+		string name = make_callable_signature_t(params);
+		return create_raw_class(tree, "@Callable[" + name + "]", Class::Type::CALLABLE_FUNCTION_POINTER, TypeCallableBase->size, config.target.pointer_size, 0, nullptr, params, token_id);
+	}
+	void add_function_headers(Class* c) override {
+		AutoImplementerInternal ai(nullptr, c->owner);
+		ai.complete_type(c);
+	}
+};
+
+class TemplateClassInstantiatorCallableBind : public TemplateClassInstantiator {
+	Class* declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) override {
+
+		static int unique_bind_counter = 0;
+		//	auto t = TemplateClassInstantiator::create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, config.target.pointer_size, magic, nullptr, outer_params_ret, token_id);
+		auto t = create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, config.target.pointer_size, array_size, nullptr, params, token_id);
+
+		auto pp = t->param;
+		t->derive_from(TypeCallableBase);
+		t->functions.clear(); // don't inherit call() with specific types!
+		t->param = pp;
+
+		int offset = t->size;
+		for (int i=0; i<16; i++)
+			if ((array_size & (1 << i))) {
+				auto b = params[i];
+				if ((array_size & ((1 << i) << 16)))
+					b = tree->request_implicit_class_reference(b, token_id);
+				offset = mem_align(offset, b->alignment);
+				auto el = ClassElement(format("capture%d", i), b, offset);
+				offset += b->size;
+				t->elements.add(el);
+			}
+		t->size = offset;
+
+		for (auto &e: t->elements)
+			if (e.name == "_fp")
+				e.type = tree->module->context->template_manager->request_callable_fp(tree, params.sub_ref(0, params.num-1), params.back(), token_id);
+
+		return t;
+	}
+	void add_function_headers(Class* c) override {
+		AutoImplementerInternal ai(nullptr, c->owner);
+		ai.add_missing_function_headers_for_class(c);
+	}
+};
+
 int _make_optional_size(const Class *t) {
 	return mem_align(t->size + 1, t->alignment);
 }
@@ -582,8 +652,8 @@ void SIAddPackageBase(Context *c) {
 	TypeArrayT = add_class_template("@Array", {"T"}, new TemplateClassInstantiatorArray);
 	TypeListT = add_class_template("@List", {"T"}, new TemplateClassInstantiatorList);
 	TypeDictT = add_class_template("@Dict", {"T"}, new TemplateClassInstantiatorDict);
-	TypeCallableT = add_class_template("@Callable", {"T..."}, nullptr);
-//	TypeCallableT = add_class_template("@Callable", {"T..."}, new TemplateClassInstantiatorCallable);
+	TypeCallableFPT = add_class_template("@CallableFP", {"T..."}, new TemplateClassInstantiatorCallableFP);
+	TypeCallableBindT = add_class_template("@Bind", {"T..."}, new TemplateClassInstantiatorCallableBind);
 	TypeOptionalT = add_class_template("@Optional", {"T"}, new TemplateClassInstantiatorOptional);
 	TypeProductT = add_class_template("@Product", {"T"}, new TemplateClassInstantiatorProduct);
 	TypeFutureCoreT = add_class_template("@FutureCore", {"T"}, new TemplateClassInstantiatorFutureCore);

@@ -1,0 +1,21 @@
+class XX
+	i: int
+	s: string
+	func __init__()
+		print("INIT")
+	func __assign__(o: XX)
+		print("ASSIGN...")
+	func ff()
+		#var f = func() g()
+		var f = g
+		f()
+	func g()
+		print(i)
+		print(s)
+
+func main()
+	var x: XX
+	x.i = 13
+	x.s = "hallo"
+	x.ff()
+

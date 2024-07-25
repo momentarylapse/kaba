@@ -470,12 +470,6 @@ Function *SyntaxTree::required_func_global(const string &name, int token_id) {
 	return links[0]->as_func();
 }
 
-
-void SyntaxTree::add_missing_function_headers_for_class(Class *t) {
-	AutoImplementerInternal a(nullptr, this);
-	a.add_missing_function_headers_for_class(t);
-}
-
 // expression naming a type
 // we are currently in <namespace>... (no explicit namespace for <name>)
 const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class *_namespace, bool allow_recursion) {

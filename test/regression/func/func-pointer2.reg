@@ -1,7 +1,7 @@
 f...
 i32->void
 nil
-[Callable[i32->void]]
+[@Callable[i32->void]]
 @CallableBase
 [i32, void]
 ff 13

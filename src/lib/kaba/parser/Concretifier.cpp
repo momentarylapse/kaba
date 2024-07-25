@@ -1163,7 +1163,8 @@ shared<Node> Concretifier::concretify_statement_raise(shared<Node> node, Block *
 }
 
 // inner_callable: (A,B,C,D,E)->R
-// captures:       [-,x0,-,-,x1]
+// captures:       [-,x,-,-,y]
+// => outer:       (A,  C,D  )->R
 shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable, const shared_array<Node> &captures, const Array<bool> &capture_via_ref) {
 	SyntaxTree *tree = concretifier->tree;
 	int token_id = inner_callable->token_id;
@@ -1184,8 +1185,9 @@ shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable
 			outer_call_types.add(param_types[i]);
 
 	auto bind_wrapper_type = tree->request_implicit_class_callable_bind(param_types, return_type, capture_types, capture_via_ref, token_id);
+	auto bind_return_type = tree->request_implicit_class_callable_fp(outer_call_types, return_type, token_id);
 
-	// "new bind(f, x0, x1, ...)"
+	// "new bind(f, x, y, ...)"
 	for (auto *cf: bind_wrapper_type->get_constructors()) {
 		auto cmd_new = add_node_statement(StatementID::NEW);
 		auto con = add_node_constructor(cf);
@@ -1197,7 +1199,7 @@ shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable
 		con->kind = NodeKind::CALL_FUNCTION;
 		con->type = TypeVoid;
 
-		cmd_new->type = tree->request_implicit_class_callable_fp(outer_call_types, return_type, token_id);
+		cmd_new->type = bind_return_type;
 		cmd_new->set_param(0, con);
 		cmd_new->token_id = inner_callable->token_id;
 		return cmd_new;
@@ -1255,22 +1257,22 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 
 	tree->base_class->add_function(tree, f, false, false);
 
-	// find captures
-	base::set<Variable*> captures;
-	auto find_captures = [block, &captures](shared<Node> n) {
+// --- find captures
+	base::set<Variable*> captured_variables;
+	auto find_captures = [block, &captured_variables](shared<Node> n) {
 		if (n->kind == NodeKind::VAR_LOCAL) {
 			auto v = n->as_local();
 			for (auto vv: block->function->var)
 				if (v == vv)
-					captures.add(v);
+					captured_variables.add(v);
 		}
 		return n;
 	};
 	tree->transform_block(f->block.get(), find_captures);
 
 
-	// no captures?
-	if (captures.num == 0) {
+// --- no captures?
+	if (captured_variables.num == 0) {
 		f->update_parameters_after_parsing();
 		return add_node_func_name(f);
 	}
@@ -1292,31 +1294,32 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 		return true;
 	};
 
-	// replace captured variables by adding more parameters to f
-	for (auto v: captures) {
+// --- replace captured variables by adding more parameters to f
+	for (auto v: captured_variables) {
 		if (config.verbose)
 			msg_write("  * " + v->name);
 
 		bool via_ref = should_capture_via_ref(v);
 		capture_via_ref.add(via_ref);
-		auto cap_type = via_ref ? tree->request_implicit_class_reference(v->type, -1) : v->type;
+		auto cap_type = via_ref ? tree->request_implicit_class_reference(v->type, node->token_id) : v->type;
 
 
-		auto vvv = f->add_param(v->name, cap_type, Flags::NONE);
+		auto new_param = f->add_param(v->name, cap_type, Flags::NONE);
 		//if (!flags_has(flags, Flags::OUT))
 		//flags_set(v->flags, Flags::CONST);
 
 
 
-		auto replace_local = [v,vvv,cap_type,via_ref](shared<Node> n) {
+		auto replace_local = [v,new_param,cap_type,via_ref](shared<Node> n) {
 			if (n->kind == NodeKind::VAR_LOCAL)
 				if (n->as_local() == v) {
 					if (via_ref) {
-						n->link_no = (int_p)vvv;
+						//return add_node_local(new_param)->deref();
+						n->link_no = (int_p)new_param;
 						n->type = cap_type;
 						return n->deref();
 					} else {
-						n->link_no = (int_p)vvv;
+						n->link_no = (int_p)new_param;
 					}
 				}
 			return n;
@@ -1326,10 +1329,10 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 
 	f->update_parameters_after_parsing();
 
-	auto create_inner_lambda = wrap_function_into_callable(f, node->token_id);
+	auto inner_lambda = wrap_function_into_callable(f, node->token_id);
 
 	shared_array<Node> capture_nodes;
-	for (auto&& [i,c]: enumerate(captures)) {
+	for (auto&& [i,c]: enumerate(captured_variables)) {
 		if (capture_via_ref[i])
 			capture_nodes.add(add_node_local(c)->ref(tree));
 		else
@@ -1340,7 +1343,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 		capture_via_ref.insert(false, 0);
 	}
 
-	return create_bind(this, create_inner_lambda, capture_nodes, capture_via_ref);
+	return create_bind(this, inner_lambda, capture_nodes, capture_via_ref);
 }
 
 shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block, const Class *ns) {
@@ -1822,16 +1825,13 @@ shared<Node> Concretifier::wrap_node_into_callable(shared<Node> node) {
 	auto f = node->as_func();
 	auto callable = wrap_function_into_callable(f, node->token_id);
 	if (f->is_member() and node->params.num > 0 and node->params[0]) {
-		//if (f->literal_param_type.num > 1)
-		//	do_error("wrapping member functions with parameters into callables currently not implemented...", node);
-		shared_array<Node> captures = {node->params[0]};
+		shared_array<Node> captures = {node->params[0]->ref(tree)}; // self
 		Array<bool> capture_via_ref = {true};
 		for (int i=1; i<f->literal_param_type.num; i++) {
 			captures.add(nullptr);
 			capture_via_ref.add(false);
 		}
-		auto b = create_bind(this, callable, captures, capture_via_ref);
-		return b;
+		return create_bind(this, callable, captures, capture_via_ref);
 	}
 	return callable;
 }

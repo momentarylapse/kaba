@@ -23,23 +23,6 @@ class Context;
 class TemplateManager;
 
 
-class ImplicitClassRegistry {
-public:
-	ImplicitClassRegistry(Context *c);
-	void copy_from(ImplicitClassRegistry *i);
-	void init();
-	const Class *find(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
-	void add(const Class* t);
-	void clear_from_module(Module *m);
-
-	Context *context;
-	Module *module = nullptr;
-	Array<const Class*> classes;
-};
-
-
-//using ClassCreateF = std::function<const Class*(SyntaxTree *, const Array<const Class*>&, int)>;
-
 
 class TemplateClassInstantiator {
 public:
@@ -93,8 +76,6 @@ public:
 	const Class *request_class_instance(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, int array_size, int token_id);
 	Class *declare_new_class(SyntaxTree *tree, const Class *c0, const Array<const Class*> &params, int array_size, int token_id);
 
-	const Class *find_implicit_legacy(const string &name, Class::Type type, int array_size, const Array<const Class*> &params);
-	void add_implicit_legacy(const Class* t);
 	void add_explicit_class_instance(SyntaxTree *tree, const Class* t_instance, const Class* t_template, const Array<const Class*> &params, int array_size = 0);
 
 
@@ -121,7 +102,6 @@ public:
 
 private:
 	Context *context;
-	owned<ImplicitClassRegistry> implicit_class_registry;
 
 	struct FunctionInstance {
 		Function *f;
