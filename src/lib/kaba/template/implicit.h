@@ -27,7 +27,6 @@ public:
 
 	void _add_missing_function_headers_for_regular(Class *t);
 	void _add_missing_function_headers_for_array(Class *t);
-	void _add_missing_function_headers_for_list(Class *t);
 	void _add_missing_function_headers_for_dict(Class *t);
 	void _add_missing_function_headers_for_optional(Class *t);
 	void _add_missing_function_headers_for_enum(Class *t);

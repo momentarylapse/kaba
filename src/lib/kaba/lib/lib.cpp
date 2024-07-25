@@ -262,9 +262,7 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 
 // dynamic array
 const Class *add_type_list(const Class *sub_type) {
-	auto t = cur_package->context->template_manager->declare_new_class(cur_package->tree.get(), TypeListT, {sub_type}, -1, -1);
-	//string name = sub_type->name + "[]";
-	//Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	auto t = cur_package->context->template_manager->declare_new_class(cur_package->tree.get(), TypeListT, {sub_type}, 0, -1);
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit_class_instance(
 			cur_package->tree.get(),

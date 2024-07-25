@@ -319,9 +319,7 @@ void AutoImplementerInternal::add_missing_function_headers_for_class(Class *t) {
 	if (t->is_pointer_raw() or t->is_reference())
 		return;
 
-	if (t->is_list()) {
-		_add_missing_function_headers_for_list(t);
-	} else if (t->is_array()) {
+	if (t->is_array()) {
 		_add_missing_function_headers_for_array(t);
 	} else if (t->is_dict()) {
 		_add_missing_function_headers_for_dict(t);
