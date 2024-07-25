@@ -214,16 +214,20 @@ string kaba_char2str(int c) {
 	//return string(&c, 1);
 }
 
-string kaba_int32_hex(int i) {
-	return format("%x", i);
+string kaba_int32_hex(unsigned int i) {
+	return format("0x%08x", i);
+}
+
+string kaba_int64_hex(int64 i) {
+	return format("0x%016x", i);
 }
 
 /*string kaba_char_repr(char c) {
 	return "'" + string(&c, 1).escape() + "'";
 }*/
 
-string kaba_int8_to_str(char c) {
-	return format("0x%02x", (int)c);//i2s((int)c);
+string kaba_int8_to_str(uint8_t c) {
+	return format("0x%02x", (unsigned int)c);
 }
 
 /*string kaba_char_repr(char c) {
@@ -941,6 +945,8 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("c", TypeInt32);
 	add_func("hex", TypeString, &kaba_int32_hex, Flags::STATIC | Flags::PURE);
 		func_add_param("i", TypeInt32);
+	add_func("hex", TypeString, &kaba_int64_hex, Flags::STATIC | Flags::PURE);
+		func_add_param("i", TypeInt64);
 	// debug output
 	/*add_func("cprint", TypeVoid, &_cstringout, Flags::STATIC);
 		func_add_param("str", TypeCString);*/
