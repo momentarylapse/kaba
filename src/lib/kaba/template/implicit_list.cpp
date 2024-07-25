@@ -11,6 +11,9 @@
 
 namespace kaba {
 
+extern const Class* TypeDynamicArray;
+string class_name_might_need_parantheses(const Class *t);
+
 static shared<Node> sa_num(shared<Node> node) {
 	return node->shift(config.target.pointer_size, TypeInt32);
 }
@@ -368,6 +371,22 @@ void AutoImplementer::_implement_functions_for_list(const Class *t) {
 	}
 	implement_list_assign(prepare_auto_impl(t, t->get_assign()), t);
 	implement_list_equal(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t})), t);
+}
+
+
+
+Class* TemplateClassInstantiatorList::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[]", Class::Type::LIST, config.target.dynamic_array_size, config.target.pointer_size, -1, TypeDynamicArray, params, token_id);
+}
+
+void TemplateClassInstantiatorList::add_function_headers(Class* c) {
+	//ai.complete_type(c, array_size, token_id);
+
+	c->derive_from(TypeDynamicArray); // we already set its size!
+	if (!class_can_default_construct(c->param[0]))
+		c->owner->do_error(format("can not create a dynamic array from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
 }
 
 }

@@ -479,7 +479,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		if (index->kind == NodeKind::CLASS) {
 			auto c1 = operand->as_class();
 			auto c2 = index->as_class();
-			if (auto cc = context->template_manager->request_class_instance(tree, c1, {c2}, block, ns, node->token_id)) {
+			if (auto cc = context->template_manager->request_class_instance(tree, c1, {c2}, node->token_id)) {
 				return add_node_class(cc, node->token_id);
 			}
 		}

@@ -172,8 +172,8 @@ const Class *add_type_simple(const string &name, int size, int alignment, Flags 
 }
 
 
-const Class *add_class_template(const string &name, const Array<string>& params, TemplateManager::ClassCreateF f) {
-	auto t = cur_package->context->template_manager->add_class_template(cur_package->tree.get(), name, params, f);
+const Class *add_class_template(const string &name, const Array<string>& params, TemplateClassInstantiator* instantiator) {
+	auto t = cur_package->context->template_manager->add_class_template(cur_package->tree.get(), name, params, instantiator);
 	__add_class__(t, nullptr);
 	return t;
 }
@@ -262,8 +262,9 @@ const Class *add_type_array(const Class *sub_type, int array_length) {
 
 // dynamic array
 const Class *add_type_list(const Class *sub_type) {
-	string name = sub_type->name + "[]";
-	Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
+	auto t = cur_package->context->template_manager->declare_new_class(cur_package->tree.get(), TypeListT, {sub_type}, -1, -1);
+	//string name = sub_type->name + "[]";
+	//Class *t = new Class(Class::Type::LIST, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package->context->template_manager->add_explicit_class_instance(
 			cur_package->tree.get(),
