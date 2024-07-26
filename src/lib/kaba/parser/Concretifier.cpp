@@ -86,13 +86,23 @@ const Class *give_useful_type(Concretifier *con, shared<Node> node) {
 // usable for pointer AND Callable class!
 Array<const Class*> get_callable_param_types(const Class *fp) {
 	if (fp->is_pointer_raw())
-		return fp->param[0]->param.sub_ref(0, -1); // skip return value
+		return get_callable_param_types(fp->param[0]);
+
+	// TODO look at call() signature
+
+	if (fp->is_callable_bind()) {
+		Array<const Class*> r;
+		for (int i=0; i<fp->param.num-1; i++)
+			if ((fp->array_length & (1 << i)) == 0)
+				r.add(fp->param[i]);
+		return r;
+	}
 	return fp->param.sub_ref(0, -1); // skip return value
 }
 
 const Class *get_callable_return_type(const Class *fp) {
 	if (fp->is_pointer_raw())
-		return fp->param[0]->param.back();
+		return get_callable_return_type(fp->param[0]);
 	return fp->param.back();
 }
 
