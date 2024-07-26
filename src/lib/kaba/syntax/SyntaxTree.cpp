@@ -856,14 +856,15 @@ shared<Node> SyntaxTree::transform_node(shared<Node> n, std::function<shared<Nod
 		return F(n);
 	} else {
 		shared<Node> r = n;
-		for (int i=0; i<n->params.num; i++) {
-			auto rr = transform_node(n->params[i], F);
-			if (rr != n->params[i].get()) {
-				if (r.get() == n.get())
-					r = n->shallow_copy();
-				r->set_param(i, rr);
+		for (int i=0; i<n->params.num; i++)
+			if (n->params[i]) {
+				auto rr = transform_node(n->params[i], F);
+				if (rr != n->params[i].get()) {
+					if (r.get() == n.get())
+						r = n->shallow_copy();
+					r->set_param(i, rr);
+				}
 			}
-		}
 		return F(r);
 	}
 }
@@ -874,14 +875,15 @@ shared<Node> SyntaxTree::transformb_node(shared<Node> n, Block *b, std::function
 		return F(n, b);
 	} else {
 		shared<Node> r = n;
-		for (int i=0; i<n->params.num; i++) {
-			auto rr = transformb_node(n->params[i], b, F);
-			if (rr != n->params[i].get()) {
-				if (r.get() == n.get())
-					r = n->shallow_copy();
-				r->set_param(i, rr);
+		for (int i=0; i<n->params.num; i++)
+			if (n->params[i]) {
+				auto rr = transformb_node(n->params[i], b, F);
+				if (rr != n->params[i].get()) {
+					if (r.get() == n.get())
+						r = n->shallow_copy();
+					r->set_param(i, rr);
+				}
 			}
-		}
 		return F(r, b);
 	}
 }
