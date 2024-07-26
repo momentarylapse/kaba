@@ -1826,7 +1826,7 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 	auto cv = parse_operand_greedy(block, true);
 
 	if (type) {
-		CastingData cast;
+		CastingDataSingle cast;
 		if (con.type_match_with_cast(cv, false, type, cast)) {
 			cv = con.apply_type_cast(cast, cv, type);
 		} else {

@@ -1,0 +1,18 @@
+func tmax[T](list: T[]) -> T
+	var m = list[0]
+	for x in list
+		if x > m
+			m = x
+	return m
+
+func tmax[T](a: T, b: T) -> T
+	if a > b
+		return a
+	return b
+
+
+func main()
+	print(tmax([1,2,3]))
+	print(tmax(1,2))
+	print([1,2,3] |> tmax)
+

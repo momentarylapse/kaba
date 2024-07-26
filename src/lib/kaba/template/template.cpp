@@ -101,7 +101,7 @@ Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
 	return f;
 }
 
-Function *TemplateManager::request_function_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+Function *TemplateManager::request_function_instance(SyntaxTree *tree, Function *f0, const Array<const Class*> &params, int token_id) {
 	auto &t = get_function_template(tree, f0, token_id);
 	
 	// already instantiated?
@@ -111,7 +111,7 @@ Function *TemplateManager::request_function_instance(SyntaxTree *tree, Function 
 	
 	// new
 	FunctionInstance ii;
-	ii.f = instantiate_function(tree, t, params, block, ns, token_id);
+	ii.f = instantiate_function(tree, t, params, token_id);
 	ii.params = params;
 	t.instances.add(ii);
 	return ii.f;
@@ -161,7 +161,7 @@ void TemplateManager::match_parameter_type(shared<Node> p, const Class *t, std::
 	}*/
 }
 
-Function *TemplateManager::request_function_instance_matching(SyntaxTree *tree, Function *f0, const shared_array<Node> &params, Block *block, const Class *ns, int token_id) {
+Function *TemplateManager::request_function_instance_matching(SyntaxTree *tree, Function *f0, const shared_array<Node> &params, int token_id) {
 	if (config.verbose)
 		msg_write("____MATCHING");
 	auto &t = get_function_template(tree, f0, token_id);
@@ -195,7 +195,7 @@ Function *TemplateManager::request_function_instance_matching(SyntaxTree *tree, 
 			tree->do_error("not able to match all template parameters", token_id);
 
 
-	return request_function_instance(tree, f0, arg_types, block, ns, token_id);
+	return request_function_instance(tree, f0, arg_types, token_id);
 }
 
 TemplateManager::FunctionTemplate &TemplateManager::get_function_template(SyntaxTree *tree, Function *f0, int token_id) {
@@ -233,7 +233,7 @@ shared<Node> TemplateManager::node_replace(SyntaxTree *tree, shared<Node> n, con
 	});
 }
 
-Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTemplate &t, const Array<const Class*> &params, Block *block, const Class *ns, int token_id) {
+Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTemplate &t, const Array<const Class*> &params, int token_id) {
 	if (config.verbose)
 		msg_write("INSTANTIATE TEMPLATE");
 	Function *f0 = t.func;
