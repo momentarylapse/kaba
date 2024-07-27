@@ -30,14 +30,6 @@ shared<Node> get_callable_fp(const Class *t, shared<Node> self) {
 static const Array<string> DUMMY_PARAMS = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"};
 
 
-void AutoImplementer::_add_missing_function_headers_for_callable_fp(Class *t) {
-	add_func_header(t, Identifier::Func::INIT, TypeVoid, {TypePointer}, {"p"}, nullptr, Flags::MUTABLE);
-	add_func_header(t, Identifier::Func::CALL,
-			get_callable_return_type(t),
-			get_callable_param_types(t),
-			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::NONE)->virtual_index = TypeCallableBase->get_call()->virtual_index;
-}
-
 Array<const Class*> suggest_callable_bind_param_types(const Class *fp) {
 	Array<const Class*> r;
 	for (int i=0; i<fp->param.num-1; i++)
@@ -46,16 +38,6 @@ Array<const Class*> suggest_callable_bind_param_types(const Class *fp) {
 	return r;
 }
 
-void AutoImplementer::_add_missing_function_headers_for_callable_bind(Class *t) {
-	auto types = get_callable_capture_types(t);
-	types.insert(TypePointer, 0);
-	add_func_header(t, Identifier::Func::INIT, TypeVoid, types,
-			{"p", "a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::MUTABLE);
-	add_func_header(t, Identifier::Func::CALL,
-			get_callable_return_type(t),
-			suggest_callable_bind_param_types(t),
-			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::NONE)->virtual_index = TypeCallableBase->get_call()->virtual_index;
-}
 
 void AutoImplementer::implement_callable_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
@@ -197,8 +179,16 @@ Class* TemplateClassInstantiatorCallableFP::declare_new_instance(SyntaxTree *tre
 	return create_raw_class(tree, "@Callable[" + name + "]", TypeCallableFPT, TypeCallableBase->size, config.target.pointer_size, 0, nullptr, params, token_id);
 }
 void TemplateClassInstantiatorCallableFP::add_function_headers(Class* c) {
-	AutoImplementerInternal ai(nullptr, c->owner);
-	ai.complete_type(c);
+	auto params = c->param; // ->derive_from() will overwrite params!!!
+	c->derive_from(TypeCallableBase);
+	c->functions.clear(); // don't inherit call() with specific types!
+	c->param = params;
+
+	add_func_header(c, Identifier::Func::INIT, TypeVoid, {TypePointer}, {"p"}, nullptr, Flags::MUTABLE);
+	add_func_header(c, Identifier::Func::CALL,
+			get_callable_return_type(c),
+			get_callable_param_types(c),
+			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::NONE)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 }
 
 Class* TemplateClassInstantiatorCallableBind::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
@@ -231,9 +221,28 @@ Class* TemplateClassInstantiatorCallableBind::declare_new_instance(SyntaxTree *t
 
 	return t;
 }
+
 void TemplateClassInstantiatorCallableBind::add_function_headers(Class* c) {
-	AutoImplementerInternal ai(nullptr, c->owner);
-	ai.add_missing_function_headers_for_class(c);
+#if 0
+	auto params = c->param; // ->derive_from() will overwrite params!!!
+
+	c->array_length = max(c->array_length, 0);
+	c->derive_from(TypeCallableBase);
+	c->functions.clear(); // don't inherit call() with specific types!
+	c->param = params;
+	//AutoImplementerInternal ai(nullptr, c->owner);
+	//ai.add_missing_function_headers_for_class(c); // later... depending on the bind variables
+#endif
+
+
+	auto types = get_callable_capture_types(c);
+	types.insert(TypePointer, 0);
+	add_func_header(c, Identifier::Func::INIT, TypeVoid, types,
+			{"p", "a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::MUTABLE);
+	add_func_header(c, Identifier::Func::CALL,
+			get_callable_return_type(c),
+			suggest_callable_bind_param_types(c),
+			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::NONE)->virtual_index = TypeCallableBase->get_call()->virtual_index;
 }
 
 }

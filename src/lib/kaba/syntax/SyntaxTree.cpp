@@ -507,9 +507,6 @@ Class *SyntaxTree::create_new_class_no_check(const string &name, const Class* fr
 	// link namespace
 	ns->classes.add(t);
 	t->name_space = ns;
-	
-	AutoImplementerInternal ai(nullptr, this);
-	ai.complete_type(t);
 	return t;
 }
 

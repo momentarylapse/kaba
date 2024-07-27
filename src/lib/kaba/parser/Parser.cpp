@@ -1518,7 +1518,7 @@ void Parser::parse_enum(Class *_namespace) {
 	if (try_consume(Identifier::AS))
 		_class->flags = parse_flags(_class->flags);
 
-	auto_implementer.add_missing_function_headers_for_class(_class);
+	context->template_manager->request_class_instance(tree, TypeEnumT, {_class}, token0);
 
 	expect_new_line_with_indent();
 	Exp.next_line();

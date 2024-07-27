@@ -373,6 +373,25 @@ Class* TemplateClassInstantiator::create_raw_class(SyntaxTree* tree, const strin
 	return t;
 }
 
+// skip the "self" parameter!
+Function* TemplateClassInstantiator::add_func_header(Class *t, const string &name, const Class *return_type, const Array<const Class*> &param_types, const Array<string> &param_names, Function *cf, Flags flags, const shared_array<Node> &def_params) {
+	Function *f = t->owner->add_function(name, return_type, t, flags); // always member-function??? no...?
+	f->auto_declared = true;
+	f->token_id = t->token_id;
+	for (auto&& [i,p]: enumerate(param_types)) {
+		f->literal_param_type.add(p);
+		f->block->add_var(param_names[i], p, Flags::NONE);
+		f->num_params ++;
+	}
+	f->default_parameters = def_params;
+	f->update_parameters_after_parsing();
+	if (config.verbose)
+		msg_write("ADD HEADER " + f->signature(TypeVoid));
+
+	bool override = cf;
+	t->add_function(t->owner, f, false, override);
+	return f;
+}
 
 
 const Class *TemplateManager::request_pointer(SyntaxTree *tree, const Class *base, int token_id) {
