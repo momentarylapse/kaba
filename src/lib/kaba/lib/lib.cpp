@@ -328,16 +328,16 @@ public:
 	Function *f;
 
 	KabaCallable(Function *_f) {
-		f = _f;
+		this->f = _f;
+		this->fp = reinterpret_cast<t_func*>(_f->address);
 	}
 	void __init__(Function *_f) {
 		new(this) KabaCallable<R(A...)>(_f);
 	}
 
 	R operator()(A... args) const override {
-		if (f) {
-			auto fp = (t_func*)f->address;
-			return fp(args...);
+		if (this->fp) {
+			return this->fp(args...);
 		} else {
 			throw EmptyCallableError();
 		}

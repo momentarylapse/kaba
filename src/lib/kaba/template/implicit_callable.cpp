@@ -172,11 +172,11 @@ string make_callable_signature_t(const Array<const Class*> &_params) {
 	return signature + "->" + class_name_might_need_parantheses(ret);
 }
 
-
-
 Class* TemplateClassInstantiatorCallableFP::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
 	string name = make_callable_signature_t(params);
-	return create_raw_class(tree, "@Callable[" + name + "]", TypeCallableFPT, TypeCallableBase->size, config.target.pointer_size, 0, nullptr, params, token_id);
+	//int size = sizeof(KabaCallable<void()>);
+	int size = TypeCallableBase->size + 8; // for additional Function*
+	return create_raw_class(tree, "@Callable[" + name + "]", TypeCallableFPT, size, config.target.pointer_size, 0, nullptr, params, token_id);
 }
 void TemplateClassInstantiatorCallableFP::add_function_headers(Class* c) {
 	auto params = c->param; // ->derive_from() will overwrite params!!!
