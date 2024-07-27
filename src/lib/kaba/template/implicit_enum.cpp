@@ -67,6 +67,18 @@ void AutoImplementer::_add_missing_function_headers_for_enum(Class *t) {
 void AutoImplementer::_implement_functions_for_enum(const Class *t) {
 }
 
+
+Class* TemplateClassInstantiatorEnum::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	auto c = const_cast<Class*>(params[0]);
+	c->from_template = TypeEnumT;
+	return c;
+}
+void TemplateClassInstantiatorEnum::add_function_headers(Class* c) {
+	/*AutoImplementerInternal ai(nullptr, c->owner);
+	ai.complete_type(c);*/
+	// TODO
+}
+
 }
 
 

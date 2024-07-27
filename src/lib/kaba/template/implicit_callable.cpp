@@ -169,6 +169,73 @@ void AutoImplementer::_implement_functions_for_callable_bind(const Class *t) {
 }
 
 
+
+string make_callable_signature_t(const Array<const Class*> &_params) {
+	auto ret = _params.back();
+	auto params = _params.sub_ref(0, _params.num - 1);
+	// maybe some day...
+	string signature;// = param->name;
+	for (int i=0; i<params.num; i++) {
+		if (i > 0)
+			signature += ",";
+		signature += class_name_might_need_parantheses(params[i]);
+	}
+	if (params.num == 0)
+		signature = "void";
+	if (params.num > 1)
+		signature = "(" + signature + ")";
+	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
+		signature = "void";
+	}
+	return signature + "->" + class_name_might_need_parantheses(ret);
+}
+
+
+
+Class* TemplateClassInstantiatorCallableFP::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	string name = make_callable_signature_t(params);
+	return create_raw_class(tree, "@Callable[" + name + "]", TypeCallableFPT, TypeCallableBase->size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorCallableFP::add_function_headers(Class* c) {
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.complete_type(c);
+}
+
+Class* TemplateClassInstantiatorCallableBind::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+
+	static int unique_bind_counter = 0;
+	//	auto t = TemplateClassInstantiator::create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, config.target.pointer_size, magic, nullptr, outer_params_ret, token_id);
+	auto t = create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), TypeCallableBindT, TypeCallableBase->size, config.target.pointer_size, array_size, nullptr, params, token_id);
+
+	auto pp = t->param;
+	t->derive_from(TypeCallableBase);
+	t->functions.clear(); // don't inherit call() with specific types!
+	t->param = pp;
+
+	int offset = t->size;
+	for (int i=0; i<16; i++)
+		if ((array_size & (1 << i))) {
+			auto b = params[i];
+			if ((array_size & ((1 << i) << 16)))
+				b = tree->request_implicit_class_reference(b, token_id);
+			offset = mem_align(offset, b->alignment);
+			auto el = ClassElement(format("capture%d", i), b, offset);
+			offset += b->size;
+			t->elements.add(el);
+		}
+	t->size = offset;
+
+	for (auto &e: t->elements)
+		if (e.name == "_fp")
+			e.type = tree->module->context->template_manager->request_callable_fp(tree, params.sub_ref(0, params.num-1), params.back(), token_id);
+
+	return t;
+}
+void TemplateClassInstantiatorCallableBind::add_function_headers(Class* c) {
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
 }
 
 

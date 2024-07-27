@@ -117,6 +117,44 @@ void AutoImplementer::_implement_functions_for_product(const Class *t) {
 }
 
 
+
+static string product_class_name(const Array<const Class*> &classes) {
+	string name;
+	for (auto &c: classes) {
+		if (name != "")
+			name += ",";
+		name += c->name;
+	}
+	return "("+name+")";
+}
+
+static int product_class_size(const Array<const Class*> &classes) {
+	int size = 0;
+	int total_align = 1;
+	for (auto &c: classes) {
+		total_align = max(total_align, c->alignment);
+		size = mem_align(size, c->alignment);
+		size += c->size;
+	}
+	size = mem_align(size, total_align);
+	return size;
+}
+
+static int product_class_alignment(const Array<const Class*> &classes) {
+	int align = 1;
+	for (auto &c: classes)
+		align = max(align, c->alignment);
+	return align;
+}
+
+Class* TemplateClassInstantiatorProduct::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, product_class_name(params), TypeProductT, product_class_size(params), product_class_alignment(params), 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorProduct::add_function_headers(Class* c) {
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.complete_type(c);
+}
+
 }
 
 

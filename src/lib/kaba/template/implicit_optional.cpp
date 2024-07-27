@@ -254,6 +254,23 @@ void AutoImplementer::_implement_functions_for_optional(const Class *t) {
 	implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::Func::EQUAL, TypeBool, {t->param[0]})), t);
 }
 
+
+
+int _make_optional_size(const Class *t) {
+	return mem_align(t->size + 1, t->alignment);
+}
+
+
+Class* TemplateClassInstantiatorOptional::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "?", TypeOptionalT, _make_optional_size(params[0]), params[0]->alignment, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorOptional::add_function_headers(Class* c) {
+	if (!class_can_default_construct(c->param[0]))
+		c->owner->do_error(format("can not create an optional from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
 }
 
 

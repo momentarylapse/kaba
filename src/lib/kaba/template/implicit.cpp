@@ -408,39 +408,7 @@ void AutoImplementerInternal::complete_type(Class *t) {
 	// ->derive_from() will overwrite params!!!
 
 	t->array_length = max(t->array_length, 0);
-	if (t->is_list() or t->is_dict()) {
-		t->derive_from(TypeDynamicArray); // we already set its size!
-		if (!class_can_default_construct(params[0]))
-			tree->do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()), t->token_id);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_array()) {
-		if (!class_can_default_construct(params[0]))
-			tree->do_error(format("can not create an array from type '%s', missing default constructor", params[0]->long_name()), t->token_id);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer_raw()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_reference()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_xfer_not_null()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_alias()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-	} else if (t->is_pointer_shared() or t->is_pointer_shared_not_null()) {
-		//t->derive_from(TypeSharedPointer);
-		//flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
-		flags_set(t->flags, Flags::FORCE_CALL_BY_VALUE);
-		t->param = params;
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_optional()) {
-		if (!class_can_default_construct(params[0]))
-			tree->do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), t->token_id);
-		add_missing_function_headers_for_class(t);
-	} else if (t->is_callable_fp()) {
+	if (t->is_callable_fp()) {
 		t->derive_from(TypeCallableBase);
 		t->functions.clear(); // don't inherit call() with specific types!
 		t->param = params;

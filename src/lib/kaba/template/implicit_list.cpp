@@ -357,10 +357,8 @@ void TemplateClassInstantiatorList::add_function_headers(Class* c) {
 	c->derive_from(TypeDynamicArray); // we already set its size!
 	if (!class_can_default_construct(c->param[0]))
 		c->owner->do_error(format("can not create a dynamic array from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
+
 	AutoImplementerInternal ai(nullptr, c->owner);
-	//ai.add_missing_function_headers_for_class(c);
-
-
 	ai.add_func_header(c, Identifier::Func::INIT, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	ai.add_func_header(c, Identifier::Func::DELETE, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	ai.add_func_header(c, "clear", TypeVoid, {}, {}, nullptr, Flags::MUTABLE);

@@ -92,6 +92,18 @@ void AutoImplementer::_implement_functions_for_array(const Class *t) {
 
 
 
+
+Class* TemplateClassInstantiatorArray::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[" + i2s(array_size) + "]", TypeArrayT, params[0]->size * array_size, params[0]->alignment, array_size, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorArray::add_function_headers(Class* c) {
+	AutoImplementerInternal ai(nullptr, c->owner);
+	if (!class_can_default_construct(c->param[0]))
+		c->owner->do_error(format("can not create an array from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
+	ai.add_missing_function_headers_for_class(c);
+}
+
+
 }
 
 

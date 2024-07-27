@@ -11,17 +11,19 @@
 
 namespace kaba {
 
-	extern const Class *TypeNoValueError;
-	extern const Class *TypeStringList;
+extern const Class* TypeNoValueError;
+extern const Class* TypeStringList;
+extern const Class* TypeDictBase;
+extern const Class* TypeDynamicArray;
 
-	Array<string> dict_get_keys(const DynamicArray& a);
+Array<string> dict_get_keys(const DynamicArray& a);
 
-	static shared<Node> sa_num(shared<Node> node) {
-		return node->shift(config.target.pointer_size, TypeInt32);
-	}
-	int dict_row_size(const Class *t_val) {
-		return mem_align(t_val->size,config.target.pointer_size) + TypeString->size;
-	}
+static shared<Node> sa_num(shared<Node> node) {
+	return node->shift(config.target.pointer_size, TypeInt32);
+}
+int dict_row_size(const Class *t_val) {
+	return mem_align(t_val->size,config.target.pointer_size) + TypeString->size;
+}
 
 void AutoImplementer::_add_missing_function_headers_for_dict(Class *t) {
 	auto t_value = t->param[0];
@@ -298,6 +300,21 @@ void AutoImplementer::_implement_functions_for_dict(const Class *t) {
 	implement_dict_get(prepare_auto_impl(t, t->get_member_func(Identifier::Func::GET, t->param[0], {TypeString})), t);
 	implement_dict_contains(prepare_auto_impl(t, t->get_member_func(Identifier::Func::CONTAINS, TypeBool, {TypeString})), t);
 	implement_dict_assign(prepare_auto_impl(t, t->get_assign()), t);
+}
+
+
+
+Class* TemplateClassInstantiatorDict::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "{}", TypeDictT, config.target.dynamic_array_size, config.target.pointer_size, 0, TypeDictBase, params, token_id);
+}
+void TemplateClassInstantiatorDict::add_function_headers(Class* c) {
+	AutoImplementerInternal ai(nullptr, c->owner);
+	auto params = c->param; // ->derive_from() will overwrite params!!!
+	c->derive_from(TypeDynamicArray); // we already set its size!
+	if (!class_can_default_construct(params[0]))
+		c->owner->do_error(format("can not create a dynamic array from type '%s', missing default constructor", params[0]->long_name()), c->token_id);
+	c->param = params;
+	ai.add_missing_function_headers_for_class(c);
 }
 
 }

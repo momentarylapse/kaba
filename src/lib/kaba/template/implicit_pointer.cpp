@@ -15,6 +15,7 @@ namespace kaba {
 
 extern const Class* TypeNone;
 
+
 /*static shared<Node> shared_p(shared<Node> n) {
 	return n->change_type(tree->get_pointer(t->param[0]));
 }*/
@@ -371,6 +372,83 @@ void AutoImplementer::_implement_functions_for_alias(const Class *t) {
 }
 
 
+
+Class* TemplateClassInstantiatorPointerRaw::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "*", TypeRawT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+	//return create_class(format("%s[%s]", Identifier::RAW_POINTER, params[0]->name), Class::Type::POINTER_RAW, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+
+void TemplateClassInstantiatorPointerRaw::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+};
+
+
+
+Class* TemplateClassInstantiatorReference::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "&", TypeReferenceT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorReference::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+}
+
+
+Class* TemplateClassInstantiatorPointerShared::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s[%s]", Identifier::SHARED, params[0]->name), TypeSharedT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorPointerShared::add_function_headers(Class* c) {
+	//flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
+	//c->derive_from(TypeSharedPointer);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
+
+Class* TemplateClassInstantiatorPointerSharedNotNull::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s![%s]", Identifier::SHARED, params[0]->name), TypeSharedNotNullT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorPointerSharedNotNull::add_function_headers(Class* c) {
+	//flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE); // FIXME why not?!?
+	//c->derive_from(TypeSharedPointer);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
+
+Class* TemplateClassInstantiatorPointerOwned::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s[%s]", Identifier::OWNED, params[0]->name), TypeOwnedT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorPointerOwned::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
+
+Class* TemplateClassInstantiatorPointerOwnedNotNull::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s![%s]", Identifier::OWNED, params[0]->name), TypeOwnedNotNullT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorPointerOwnedNotNull::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+	AutoImplementerInternal ai(nullptr, c->owner);
+	ai.add_missing_function_headers_for_class(c);
+}
+
+
+Class* TemplateClassInstantiatorPointerXfer::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s[%s]", Identifier::XFER, params[0]->name), TypeXferT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+void TemplateClassInstantiatorPointerXfer::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+}
+
+
+Class* TemplateClassInstantiatorPointerAlias::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
+	return create_raw_class(tree, format("%s[%s]", Identifier::ALIAS, params[0]->name), TypeAliasT, config.target.pointer_size, config.target.pointer_size, 0, nullptr, params, token_id);
+}
+
+void TemplateClassInstantiatorPointerAlias::add_function_headers(Class* c) {
+	flags_set(c->flags, Flags::FORCE_CALL_BY_VALUE);
+}
 
 }
 
