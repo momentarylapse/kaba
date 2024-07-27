@@ -57,7 +57,7 @@ bool func_pointer_match_up(const Class *given, const Class *wanted) {
 }
 
 bool is_same_kind_of_pointer(const Class *a, const Class *b) {
-	return (a->is_some_pointer() and (a->type == b->type));
+	return (a->is_some_pointer() and (a->from_template == b->from_template));
 }
 
 // can be re-interpreted as...?

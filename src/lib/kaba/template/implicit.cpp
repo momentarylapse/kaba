@@ -440,9 +440,6 @@ void AutoImplementerInternal::complete_type(Class *t) {
 		if (!class_can_default_construct(params[0]))
 			tree->do_error(format("can not create an optional from type '%s', missing default constructor", params[0]->long_name()), t->token_id);
 		add_missing_function_headers_for_class(t);
-	} else if (t->type == Class::Type::FUNCTION) {
-		t->derive_from(TypeFunction);
-		t->param = params;
 	} else if (t->is_callable_fp()) {
 		t->derive_from(TypeCallableBase);
 		t->functions.clear(); // don't inherit call() with specific types!

@@ -33,7 +33,7 @@ public:
 	const Class* create_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id);
 
 	// helpers
-	static Class* create_raw_class(SyntaxTree* tree, const string& name, Class::Type type, int size, int alignment, int array_size, const Class* parent, const Array<const Class*>& params, int token_id);
+	static Class* create_raw_class(SyntaxTree* tree, const string& name, const Class* from_template, int size, int alignment, int array_size, const Class* parent, const Array<const Class*>& params, int token_id);
 };
 
 class TemplateClassInstanceManager : public Sharable<base::Empty> {

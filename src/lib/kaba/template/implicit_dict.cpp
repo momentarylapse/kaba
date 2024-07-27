@@ -36,7 +36,7 @@ void AutoImplementer::_add_missing_function_headers_for_dict(Class *t) {
 	add_class(t);
 		class_add_func("keys", TypeStringList, &dict_get_keys, Flags::PURE);
 
-	[[maybe_unused]] auto t_row = tree->create_new_class_no_check("Row", Class::Type::REGULAR, dict_row_size(t_value), 0, nullptr, {}, t, -1);
+	[[maybe_unused]] auto t_row = tree->create_new_class_no_check("Row", nullptr, dict_row_size(t_value), 0, nullptr, {}, t, -1);
 }
 
 void AutoImplementer::implement_dict_constructor(Function *f, const Class *t) {

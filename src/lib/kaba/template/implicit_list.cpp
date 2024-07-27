@@ -348,7 +348,7 @@ void AutoImplementer::_implement_functions_for_list(const Class *t) {
 
 
 Class* TemplateClassInstantiatorList::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[]", Class::Type::LIST, config.target.dynamic_array_size, config.target.pointer_size, -1, TypeDynamicArray, params, token_id);
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[]", TypeListT, config.target.dynamic_array_size, config.target.pointer_size, -1, TypeDynamicArray, params, token_id);
 }
 
 void TemplateClassInstantiatorList::add_function_headers(Class* c) {

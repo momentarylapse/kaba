@@ -41,7 +41,7 @@ Class *TemplateManager::add_class_template(SyntaxTree *tree, const string &name,
 	if (config.verbose)
 		msg_write("ADD CLASS TEMPLATE " + name);
 	//msg_write("add class template  " + c->long_name());
-	Class *c = new Class(Class::Type::REGULAR, name, 0, 1, tree);
+	Class *c = new Class(nullptr, name, 0, 1, tree);
 	flags_set(c->flags, Flags::TEMPLATE);
 	auto m = new TemplateClassInstanceManager(c, param_names, instantiator);
 	class_managers.add(m);
@@ -355,14 +355,14 @@ Class* TemplateClassInstanceManager::declare_instance(SyntaxTree *tree, const Ar
 }
 
 
-Class* TemplateClassInstantiator::create_raw_class(SyntaxTree* tree, const string& name, Class::Type type, int size, int alignment, int array_size, const Class* parent, const Array<const Class*>& params, int token_id) {
+Class* TemplateClassInstantiator::create_raw_class(SyntaxTree* tree, const string& name, const Class* from_template, int size, int alignment, int array_size, const Class* parent, const Array<const Class*>& params, int token_id) {
 	/*msg_write("CREATE " + name);
 	msg_write(p2s(tree));
 	msg_write(p2s(tree->implicit_symbols.get()));*/
 
 	auto ns = tree->implicit_symbols.get();
 
-	Class *t = new Class(type, name, size, alignment, tree, parent, params);
+	Class *t = new Class(from_template, name, size, alignment, tree, parent, params);
 	t->token_id = token_id;
 	t->array_length = array_size;
 	tree->owned_classes.add(t);

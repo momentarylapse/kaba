@@ -93,9 +93,9 @@ SyntaxTree::SyntaxTree(Module *_module) {
 	module = _module;
 	asm_meta_info = new Asm::MetaInfo(config.target.pointer_size);
 
-	base_class = new Class(Class::Type::NAMESPACE, "-base-", 0, 1, this);
+	base_class = new Class(TypeNamespaceT, "-base-", 0, 1, this);
 	_base_class = base_class;
-	implicit_symbols = new Class(Class::Type::NAMESPACE, "-implicit-", 0, 1, this);
+	implicit_symbols = new Class(TypeNamespaceT, "-implicit-", 0, 1, this);
 	root_of_all_evil = new Function("-root-", TypeVoid, base_class, Flags::STATIC);
 }
 
@@ -489,17 +489,17 @@ const Class *SyntaxTree::find_root_type_by_name(const string &name, const Class 
 }
 
 // used by "class/enum XYZ"
-Class *SyntaxTree::create_new_class(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
+Class *SyntaxTree::create_new_class(const string &name, const Class* from_template, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
 	if (find_root_type_by_name(name, ns, false))
 		do_error(format("class '%s' already exists", name), token_id);
-	return create_new_class_no_check(name, type, size, array_size, parent, params, ns, token_id);
+	return create_new_class_no_check(name, from_template, size, array_size, parent, params, ns, token_id);
 }
 
 
-Class *SyntaxTree::create_new_class_no_check(const string &name, Class::Type type, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
+Class *SyntaxTree::create_new_class_no_check(const string &name, const Class* from_template, int size, int array_size, const Class *parent, const Array<const Class*> &params, Class *ns, int token_id) {
 	//msg_write("CREATE " + name);
 
-	Class *t = new Class(type, name, size, 1, this, parent, params);
+	Class *t = new Class(from_template, name, size, 1, this, parent, params);
 	t->token_id = token_id;
 	t->array_length = array_size;
 	owned_classes.add(t);
