@@ -55,6 +55,9 @@ Array<const char*> get_required_instance_extensions(bool glfw, bool validation) 
 
 	// default
 	extensions.add(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+#ifdef OS_MAC
+	extensions.add("VK_KHR_portability_enumeration");
+#endif
 
 	if (glfw) {
 		uint32_t glfw_extension_count = 0;
@@ -149,6 +152,9 @@ xfer<Instance> Instance::create(const Array<string> &op) {
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
+#ifdef OS_MAC
+	create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
 	auto extensions = get_required_instance_extensions(sa_contains(op, "glfw"), instance->using_validation_layers);
 	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.num);
@@ -163,8 +169,9 @@ xfer<Instance> Instance::create(const Array<string> &op) {
 		create_info.enabledLayerCount = 0;
 	}
 
-	if (vkCreateInstance(&create_info, nullptr, &instance->instance) != VK_SUCCESS)
-		throw Exception("failed to create instance!");
+	auto r = vkCreateInstance(&create_info, nullptr, &instance->instance);
+	if (r != VK_SUCCESS)
+		throw Exception("failed to create instance! " + i2s(r));
 
 
 	if (instance->using_validation_layers)

@@ -240,7 +240,7 @@ void Texture::_create_image(const void *image_data, VkImageType type, VkFormat f
 	int num_layers = cube ? 6 : 1;
 	int layer_size = width * height * depth * format_size(format);
 	//VkDeviceSize image_size = layer_size * num_layers;
-	mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+	mip_levels = static_cast<uint32_t>(std::floor(std::log2(max(width, height)))) + 1;
 	if (!allow_mip)
 		mip_levels = 1;
 

@@ -34,6 +34,9 @@ Device *default_device;
 			ext.add(VK_NV_RAY_TRACING_EXTENSION_NAME);
 			ext.add(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 		}
+#ifdef OS_MAC
+		ext.add("VK_KHR_portability_subset");
+#endif
 		return ext;
 	}
 
