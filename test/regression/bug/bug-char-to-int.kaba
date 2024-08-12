@@ -1,5 +1,5 @@
 
 func main()
-	var a = i8(200)
+	var a = u8(200)
 	var i: int = a
 	print(i)
