@@ -228,6 +228,12 @@ string kaba_int64_hex(int64 i) {
 	return format("0x%016x", i);
 }
 
+bytes kaba_bytes_reversed(const bytes& b) {
+	auto r = b;
+	r.reverse();
+	return r;
+}
+
 /*string kaba_char_repr(char c) {
 	return "'" + string(&c, 1).escape() + "'";
 }*/
@@ -465,7 +471,7 @@ void SIAddPackageBase(Context *c) {
 	lib_create_list<float>(TypeFloatList);
 	lib_create_list<double>(TypeFloat64List);
 	lib_create_list<char>(TypeString);
-	lib_create_list<uint8_t>(TypeBytes);
+	lib_create_list<uint8>(TypeBytes);
 	lib_create_list<string>(TypeStringList);
 
 
@@ -723,7 +729,8 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypeBytes);
 		add_operator(OperatorID::EQUAL, TypeBool, TypeBytes, TypeBytes, InlineID::NONE, &bytes::operator==);
 		add_operator(OperatorID::NOT_EQUAL, TypeBool, TypeBytes, TypeBytes, InlineID::NONE, &bytes::operator!=);
-		class_add_func("reverse", TypeString, &bytes::reverse, Flags::PURE);
+		class_add_func("reverse", TypeVoid, &bytes::reverse, Flags::MUTABLE);
+		class_add_func("reversed", TypeBytes, &kaba_bytes_reversed, Flags::PURE);
 		class_add_func("hash", TypeInt32, &bytes::hash, Flags::PURE);
 		class_add_func("md5", TypeString, &bytes::md5, Flags::PURE);
 		class_add_func("hex", TypeString, &bytes::hex, Flags::PURE);
