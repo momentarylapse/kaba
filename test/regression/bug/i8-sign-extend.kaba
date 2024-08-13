@@ -1,0 +1,6 @@
+func main()
+	let x = -8 as i8
+	_int_out(x)
+
+	let y = 0xf8
+	_int_out(y)
