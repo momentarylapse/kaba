@@ -1,0 +1,16 @@
+enum X
+	A
+	B
+	C
+
+func f(x: X) -> f32
+	return match x
+		X.A  => pi
+		X.B  => 1.234
+		*    => -1.0
+
+func main()
+	print(f(X.A))
+	print(f(X.B))
+	print(f(X.C))
+

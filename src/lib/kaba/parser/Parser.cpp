@@ -944,6 +944,66 @@ shared<Node> Parser::parse_abstract_statement_while(Block *block) {
 	return cmd_while;
 }
 
+// [INPUT, PATTERN1, RESULT1, ...]
+shared<Node> Parser::parse_abstract_statement_match(Block *block) {
+	int token0 = Exp.consume_token(); // "match"
+	auto cmd_input = parse_abstract_operand_greedy(block);
+
+	auto cmd_match = add_node_statement(StatementID::MATCH_ENUM, token0, TypeUnknown);
+	cmd_match->set_param(0, cmd_input);
+
+	expect_new_line_with_indent();
+	int indent = Exp.next_line_indent();
+	Exp.next_line();
+	for (int i=0;; i++) {
+
+		// pattern
+		shared<Node> pattern;
+		if (try_consume(Identifier::ELSE) or try_consume("*")) {
+			if (i == 0)
+				do_error("'match' must not begin with the default pattern", Exp.cur_token() - 1);
+			pattern = add_node_statement(StatementID::PASS);
+		} else {
+			pattern = parse_abstract_operand(block);
+		}
+
+		// =>
+		expect_identifier("=>", "'=>' expected after 'match' pattern");
+
+		// result
+		auto res_block = new Block(block->function, block, TypeUnknown);
+		if (Exp.end_of_line()) {
+			// indented block
+
+			int indent0 = Exp.cur_line->indent;
+			bool more_to_parse = true;
+
+			// instructions
+			while (more_to_parse) {
+				more_to_parse = parse_abstract_indented_command_into_block(res_block, indent0);
+			}
+			Exp.rewind();
+
+		} else {
+			// single expression
+			auto cmd = parse_abstract_operand_greedy(res_block);
+			res_block->add(cmd);
+		}
+
+		cmd_match->set_num_params(3 + 2*i);
+		cmd_match->set_param(1 + 2*i, pattern);
+		cmd_match->set_param(2 + 2*i, res_block);
+
+		if (Exp.next_line_indent() < indent)
+			break;
+		Exp.next_line();
+		if (pattern->kind == NodeKind::STATEMENT)
+			do_error("no more 'match' patterns allowed after default pattern", Exp.cur_token());
+	}
+
+	return cmd_match;
+}
+
 shared<Node> Parser::parse_abstract_statement_break() {
 	if (parser_loop_depth == 0)
 		do_error_exp("'break' only allowed inside a loop");
@@ -1110,7 +1170,7 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 			auto cmd_block = new Block(block->function, block, TypeUnknown);
 			cmd_if->set_param(2, cmd_block);
 			// parse the next if
-			parse_abstract_complete_command(cmd_block);
+			parse_abstract_complete_command_into_block(cmd_block);
 			return cmd_if;
 		}
 		// ...block
@@ -1312,7 +1372,7 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 
 	// instructions
 		while (more_to_parse) {
-			more_to_parse = parse_abstract_function_command(f, indent0);
+			more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
 		}
 		Exp.rewind();
 
@@ -1386,6 +1446,8 @@ shared<Node> Parser::parse_abstract_statement(Block *block) {
 		return parse_abstract_statement_raw_function_pointer(block);
 	} else if (Exp.cur == Identifier::TRUST_ME) {
 		return parse_abstract_statement_trust_me(block);
+	} else if (Exp.cur == Identifier::MATCH) {
+		return parse_abstract_statement_match(block);
 	}
 	do_error_exp("unhandled statement: " + Exp.cur);
 	return nullptr;
@@ -1430,7 +1492,7 @@ shared<Node> Parser::parse_abstract_block(Block *parent, Block *block) {
 
 	while (!Exp.end_of_file()) {
 
-		parse_abstract_complete_command(block);
+		parse_abstract_complete_command_into_block(block);
 
 		if (Exp.next_line_indent() < indent0)
 			break;
@@ -1441,7 +1503,7 @@ shared<Node> Parser::parse_abstract_block(Block *parent, Block *block) {
 }
 
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
-void Parser::parse_abstract_complete_command(Block *block) {
+void Parser::parse_abstract_complete_command_into_block(Block *block) {
 	// beginning of a line!
 
 	//bool is_type = tree->find_root_type_by_name(Exp.cur, block->name_space(), true);
@@ -1449,13 +1511,11 @@ void Parser::parse_abstract_complete_command(Block *block) {
 	// assembler block
 	if (try_consume("-asm-")) {
 		auto a = add_node_statement(StatementID::ASM);
-		a->params.add(add_node_const(tree->add_constant_int(tree->asm_blocks[next_asm_block ++].uuid), -1));
+		a->params.add(auto_implementer.const_int(tree->asm_blocks[next_asm_block ++].uuid));
 		block->add(a);
-
 	} else {
-
 		// commands (the actual code!)
-		block->add(parse_abstract_operand_greedy(block, true));
+		block->add( parse_abstract_operand_greedy(block, true));
 	}
 
 	expect_new_line();
@@ -1950,7 +2010,7 @@ bool peek_commands_super(ExpressionBuffer &Exp) {
 	return false;
 }
 
-bool Parser::parse_abstract_function_command(Function *f, int indent0) {
+bool Parser::parse_abstract_indented_command_into_block(Block* block, int indent0) {
 	if (Exp.end_of_file())
 		return false;
 
@@ -1965,7 +2025,7 @@ bool Parser::parse_abstract_function_command(Function *f, int indent0) {
 		return false;
 
 	// command or local definition
-	parse_abstract_complete_command(f->block.get());
+	parse_abstract_complete_command_into_block(block);
 	return true;
 }
 
@@ -2119,7 +2179,7 @@ void Parser::parse_abstract_function_body(Function *f) {
 	// auto implement constructor?
 	if (f->name == Identifier::Func::INIT) {
 		if (peek_commands_super(Exp)) {
-			more_to_parse = parse_abstract_function_command(f, indent0);
+			more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
 
 			auto_implementer.implement_regular_constructor(f, f->name_space, false);
 		} else {
@@ -2131,7 +2191,7 @@ void Parser::parse_abstract_function_body(Function *f) {
 
 // instructions
 	while (more_to_parse) {
-		more_to_parse = parse_abstract_function_command(f, indent0);
+		more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
 	}
 
 	if (config.verbose) {

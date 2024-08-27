@@ -11,6 +11,7 @@
 #include "../Context.h"
 #include "../lib/lib.h"
 #include "../dynamic/exception.h"
+#include "../dynamic/dynamic.h"
 #include "../../base/set.h"
 #include "../../base/iter.h"
 #include "../../os/msg.h"
@@ -1359,6 +1360,53 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	return create_bind(this, inner_lambda, capture_nodes, capture_via_ref);
 }
 
+shared<Node> Concretifier::concretify_statement_match(shared<Node> node, Block *block, const Class *ns) {
+	concretify_all_params(node, block, ns);
+
+	const int ncases = (node->params.num - 1) / 2;
+	const auto input_type = node->params[0]->type;
+	const auto output_type = node->params[2]->type;
+	bool has_default = false;
+	for (int i=0; i<ncases; i++) {
+
+		if (node->params[1+i*2]->kind == NodeKind::STATEMENT) {
+			has_default = true;
+		} else {
+			// TODO find a better place for this conversion
+			if (node->params[1+i*2]->kind == NodeKind::CLASS)
+				node->params[1+i*2] = add_node_const(tree->add_constant_pointer(TypeClassRef, node->params[1+i*2]->as_class()));
+
+			const auto case_type = node->params[1+i*2]->type;
+			if (node->params[1+i*2]->kind != NodeKind::CONSTANT)
+				do_error("constant expected for 'match' pattern", node->params[1+i*2]);
+			if (case_type != input_type)
+				do_error(format("'match' pattern type (%s) does not match input type (%s)", case_type->long_name(), input_type->long_name()), node->params[1+i*2]);
+		}
+		if (node->params[2+i*2]->type != output_type)
+			do_error("'match' must have consistent result types", node->params[2+i*2]);
+	}
+
+	node->type = output_type;
+
+	bool is_exhaustive = false;
+
+	if (!has_default) {
+		if (input_type->is_enum()) {
+			base::set<int> coverage;
+			for (int i=0; i<ncases; i++)
+				coverage.add(node->params[1+i*2]->as_const()->as_int());
+			// TODO check coverage
+			for (auto c: weak(input_type->constants))
+				if (c->type == input_type)
+					if (!coverage.contains(c->as_int()))
+						do_error(format("enum value not covered by 'match': %s (%d)", find_enum_label(input_type, c->as_int()), c->as_int()), node);
+		} else {
+			do_error("'match' requires a default pattern ('else =>'), except for fully covered enums", node);
+		}
+	}
+	return node;
+}
+
 shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block, const Class *ns) {
 	auto s = node->as_statement();
 	if (s->id == StatementID::RETURN) {
@@ -1383,6 +1431,8 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 		return concretify_statement_raise(node, block, ns);
 	} else if (s->id == StatementID::LAMBDA) {
 		return concretify_statement_lambda(node, block, ns);
+	} else if (s->id == StatementID::MATCH_ENUM) {
+		return concretify_statement_match(node, block, ns);
 	} else {
 		node->show();
 		do_error("INTERNAL: unexpected statement", node);

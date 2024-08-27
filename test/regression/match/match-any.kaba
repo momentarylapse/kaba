@@ -1,0 +1,12 @@
+func main()
+	f(dyn(13))
+	f(dyn("hi"))
+	f(dyn(true))
+	
+
+func f(a: any)
+	match a.type
+		int    => print("iii")
+		string => print("ssss")
+		else   => print("???")
+	

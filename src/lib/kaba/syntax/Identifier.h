@@ -71,6 +71,7 @@ namespace Identifier {
 	extern const string FOR;
 	extern const string IN;
 	extern const string AS;
+	extern const string MATCH;
 	extern const string BREAK;
 	extern const string CONTINUE;
 	extern const string PASS;

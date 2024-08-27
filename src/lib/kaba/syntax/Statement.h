@@ -40,7 +40,8 @@ enum class StatementID {
 	LAMBDA,
 	FUNC,
 	RAW_FUNCTION_POINTER,
-	TRUST_ME
+	TRUST_ME,
+	MATCH_ENUM
 };
 
 class Statement {

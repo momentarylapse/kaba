@@ -1206,6 +1206,38 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		//bb->show();
 		return bb;
 
+	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::MATCH_ENUM)) {
+
+		auto *vv = b->add_var(b->function->create_slightly_hidden_name(), n->params[0]->type);
+		auto temp = add_node_local(vv);
+
+		Block *bb = new Block(b->function, b);
+		bb->type = n->type;
+		auto& ai = parser->auto_implementer;
+		bb->add(ai.add_assign(b->function, "", temp, n->params[0]));
+
+		const int ncases = (n->params.num - 1) / 2;
+		shared<Node> cmd;
+		for (int i=ncases-1; i>=0; i--) {
+			const bool is_last = (i == ncases - 1);
+			if (is_last and n->params[1 + 2*i]->kind == NodeKind::STATEMENT) {
+				// default?
+				cmd = n->params[2 + 2*i];
+				continue;
+			}
+			auto cmd_if = add_node_statement(StatementID::IF, n->token_id, n->type);
+			cmd_if->set_num_params(is_last ? 2 : 3);
+			cmd_if->set_param(0, ai.add_equal(b->function, "", temp, n->params[1 + 2*i]));
+			cmd_if->set_param(1, n->params[2 + 2*i]);
+			// BLOCKS!!!!!
+			if (!is_last)
+				cmd_if->set_param(2, cmd);
+			cmd = cmd_if;
+		}
+		bb->add(cmd);
+
+		return bb;
+
 	} else if ((n->kind == NodeKind::STATEMENT) and (n->as_statement()->id == StatementID::RAW_FUNCTION_POINTER)) {
 		// only extract explicit raw_function_pointer()
 		// skip implicit from callable...

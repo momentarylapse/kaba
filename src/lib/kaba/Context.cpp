@@ -165,7 +165,7 @@ void Context::execute_single_command(const string &cmd) {
 
 	// parse
 	func->block->type = TypeUnknown;
-	parser->parse_abstract_complete_command(func->block.get());
+	parser->parse_abstract_complete_command_into_block(func->block.get());
 	if (config.verbose) {
 		msg_write("ABSTRACT SINGLE:");
 		func->block->show();

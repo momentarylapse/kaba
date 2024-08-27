@@ -28,7 +28,7 @@ class Context;
 
 class Parser {
 public:
-	Parser(SyntaxTree *syntax);
+	explicit Parser(SyntaxTree *syntax);
 
 	void parse_buffer(const string &buffer, bool just_analyse);
 
@@ -65,7 +65,7 @@ public:
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void skip_parsing_function_body(Function *f);
 	void parse_abstract_function_body(Function *f);
-	bool parse_abstract_function_command(Function *f, int indent0);
+	bool parse_abstract_indented_command_into_block(Block* block, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);
 	void parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0 = Flags::NONE);
@@ -94,7 +94,7 @@ public:
 	shared<Node> parse_operand_extension_call(const shared_array<Node> &operands, Block *block);
 
 	shared<Node> parse_abstract_single_func_param(Block *block);
-	void parse_abstract_complete_command(Block *block);
+	void parse_abstract_complete_command_into_block(Block *block);
 	shared<Node> parse_abstract_block(Block *parent, Block *block = nullptr);
 	shared<Node> parse_abstract_operand(Block *block, bool prefer_class = false);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false);
@@ -128,6 +128,7 @@ public:
 	shared<Node> parse_abstract_statement_lambda(Block *block);
 	shared<Node> parse_abstract_statement_raw_function_pointer(Block *block);
 	shared<Node> parse_abstract_statement_trust_me(Block *block);
+	shared<Node> parse_abstract_statement_match(Block *block);
 
 
 	shared<Node> parse_abstract_special_function(Block *block, SpecialFunction *s);

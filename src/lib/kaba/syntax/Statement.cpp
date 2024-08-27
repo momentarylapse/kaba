@@ -73,6 +73,7 @@ void SIAddStatements() {
 	add_statement(Identifier::FUNC, StatementID::FUNC);
 	add_statement(Identifier::RAW_FUNCTION_POINTER, StatementID::RAW_FUNCTION_POINTER, 1);
 	add_statement(Identifier::TRUST_ME, StatementID::TRUST_ME, 1); // [BLOCK]
+	add_statement(Identifier::MATCH, StatementID::MATCH_ENUM, 1); // [TERM, CASE1, INSTR1, ...]
 
 	add_special_function(Identifier::SIZEOF, SpecialFunctionID::SIZEOF, 1, 1);
 	add_special_function(Identifier::TYPEOF, SpecialFunctionID::TYPEOF, 1, 1);

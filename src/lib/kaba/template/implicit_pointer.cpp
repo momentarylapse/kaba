@@ -23,23 +23,6 @@ extern const Class* TypeNone;
 //#define SHARED_COUNTER(N) (SHARED_P(self)->deref()->shift(e.offset, e.type))
 
 
-
-struct XX {
-	void __init__() {
-		msg_write("XX.init");
-		msg_write(p2s(this));
-		p = nullptr;
-		msg_write(p2s(p));
-	}
-	void __del__() {
-		msg_write("XX.del");
-		msg_write(p2s(this));
-		msg_write(p2s(p));
-	}
-	int *p;
-};
-
-
 void AutoImplementer::implement_shared_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 
@@ -388,11 +371,7 @@ void TemplateClassInstantiatorPointerOwned::add_function_headers(Class* t) {
 	auto t_xfer = t->owner->request_implicit_class_xfer(t->param[0], -1);
 	add_func_header(t, Identifier::Func::INIT, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	add_func_header(t, Identifier::Func::DELETE, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
-	//	f->address_preprocess = mf(&XX::__del__);
-	//	f->address = (int_p)f->address_preprocess;
 	add_func_header(t, Identifier::Func::SHARED_CLEAR, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
-	//f->address_preprocess = mf(&XX::__del__);
-	//f->address = (int_p)f->address_preprocess;
 	add_func_header(t, Identifier::Func::OWNED_GIVE, t_xfer, {}, {}, nullptr, Flags::MUTABLE);
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {t_xfer}, {"other"}, nullptr, Flags::MUTABLE);
 	add_func_header(t, Identifier::Func::ASSIGN, TypeVoid, {TypeNone}, {"other"}, nullptr, Flags::MUTABLE);

@@ -71,6 +71,7 @@ namespace Identifier {
 	const string FOR = "for";
 	const string IN = "in";
 	const string AS = "as";
+	const string MATCH = "match";
 	const string BREAK = "break";
 	const string CONTINUE = "continue";
 	const string PASS = "pass";

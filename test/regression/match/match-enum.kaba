@@ -1,0 +1,23 @@
+enum X
+	A
+	B
+	C
+
+func f(x: X)
+	match x
+		X.A => print("A")
+		X.B => print("B")
+		X.C =>
+			print("yes, with block")
+			print("C")
+	#	else => print("???")
+	
+	match x
+		X.A  => print("A")
+		X.B  => print("B")
+		else => print("?")
+
+func main()
+	f(X.A)
+	f(X.B)
+	f(X.C)
