@@ -5,6 +5,7 @@
 #include "../../os/msg.h"
 #include "../../base/algo.h"
 #include "../../base/iter.h"
+#include "../template/implicit.h"
 
 
 namespace kaba {
@@ -125,6 +126,9 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 	if (param.kind == NodeKind::CONSTANT_BY_ADDRESS) {
 		ret.kind = NodeKind::IMMEDIATE;
 		ret.p = (int_p)((char*)param.p + param.shift);
+	} else if (param.kind == NodeKind::CONSTANT) {
+		ret.kind = NodeKind::IMMEDIATE;
+		ret.p = (int_p)reinterpret_cast<Constant*>((void*)(int_p)param.p)->address_runtime + param.shift;
 	} else if ((param.kind == NodeKind::IMMEDIATE) or (param.kind == NodeKind::MEMORY)) {
 		ret.kind = NodeKind::IMMEDIATE;
 		if (param.shift > 0)
@@ -133,6 +137,11 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 	} else if (param.kind == NodeKind::DEREF_VAR_TEMP) {
 		ret = param;
 		ret.kind = NodeKind::VAR_TEMP; // FIXME why was it param.kind ?!?!?
+	/*} else if (param.kind == NodeKind::VAR_TEMP) {
+		cmd.temp_var[param.p].referenced = true;
+		sdkjfhkjh
+		ret = param;
+		ret.kind = NodeKind::VAR_TEMP; // FIXME why was it param.kind ?!?!?*/
 	} else {
 		ret = add_temp(type);
 		cmd.add_cmd(Asm::InstID::LEA, ret, param);
@@ -444,6 +453,25 @@ void Serializer::add_function_outro(Function *f) {
 		cmd.add_cmd(Asm::InstID::RET);
 }
 
+
+void Serializer::serialize_assign(const SerialNodeParam& p1, const SerialNodeParam& p2, Block *block, int token_id) {
+	if (p1.type == TypeVoid)
+		return;
+	if (p1.type->can_memcpy()) {
+		cmd.add_cmd(Asm::InstID::MOV, p1, p2);
+	} else {
+		if (auto f = p1.type->get_assign()) {
+			auto type_ref = syntax_tree->request_implicit_class_reference(p1.type, token_id);
+			auto r1 = add_reference(p1, type_ref);
+			auto r2 = add_reference(p2, type_ref);
+			auto call = add_node_call(f, token_id);
+			add_function_call(f, {r1, r2}, p_none);
+		} else {
+			do_error(format("can not copy type '%s' out of if", p1.type->long_name()));
+		}
+	}
+}
+
 SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int index) {
 	auto statement = com->as_statement();
 	switch (statement->id) {
@@ -458,8 +486,6 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				cmd.add_label(label_after_true);
 			} else { // if/else
 				auto ret = add_temp(com->type, true);
-				if (com->type->needs_constructor())
-					module->do_error("currently only trivial types allowed in valued `if/else`", com->token_id);
 
 				int label_after_true = list->create_label("_IF_AFTER_TRUE_" + i2s(num_labels ++));
 				int label_after_false = list->create_label("_IF_AFTER_FALSE_" + i2s(num_labels ++));
@@ -467,14 +493,14 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				// cmp;  jz m1;  -block-  jmp m2;  m1;  -block-  m2;
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(TypeBool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
-				auto ret_true = serialize_node(com->params[1].get(), block, index);
+				const auto ret_true = serialize_node(com->params[1].get(), block, index);
 				if (com->type != TypeVoid)
-					cmd.add_cmd(Asm::InstID::MOV, ret, ret_true);
+					serialize_assign(ret, ret_true, block, com->token_id);
 				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
 				cmd.add_label(label_after_true);
 				auto ret_false = serialize_node(com->params[2].get(), block, index);
 				if (com->type != TypeVoid)
-					cmd.add_cmd(Asm::InstID::MOV, ret, ret_false);
+					serialize_assign(ret, ret_false, block, com->token_id);
 				cmd.add_label(label_after_false);
 
 				return ret;

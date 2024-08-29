@@ -103,6 +103,8 @@ public:
 	SerialNodeParam serialize_statement(Node *com, Block *block, int index);
 	void serialize_inline_function(Node *com, const Array<SerialNodeParam> &params, const SerialNodeParam &ret);
 
+	void serialize_assign(const SerialNodeParam& p1, const SerialNodeParam& p2, Block *block, int token_id);
+
 
 	void fix_return_by_ref();
 

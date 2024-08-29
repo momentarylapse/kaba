@@ -1,0 +1,9 @@
+func main()
+	let x = 13
+	
+	let y = match x
+		10 => "aaaa"
+		13 => "xxxx"
+		else => "????"
+	
+	print(y)
