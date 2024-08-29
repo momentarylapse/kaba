@@ -1,0 +1,20 @@
+func main()
+	var a = dyn({"a":[1,2], "b":"c"})
+	a["a"]!.add(3)
+	print(a)
+	print(a["a"])
+	print(a["b"])
+	print(a["x"])
+	
+	print(a["a"]![0])
+	
+	a["x"] = dyn(3)
+	print(a)
+	a["x"] = dyn(13)
+	print(a)
+	
+	for x in a["x"]
+		print(x)
+	for x in a["z"]
+		print(x)
+

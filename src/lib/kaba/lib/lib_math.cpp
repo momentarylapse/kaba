@@ -239,20 +239,35 @@ public:
 #pragma GCC optimize("0")
 
 
-
 class KabaAny : public Any {
 public:
-	Any _cdecl _map_get(const string &key)
+	const Class* _get_class() {
+		if (type == Any::TYPE_INT)
+			return TypeInt32;
+		if (type == Any::TYPE_FLOAT)
+			return TypeFloat32;
+		if (type == Any::TYPE_BOOL)
+			return TypeBool;
+		if (type == Any::TYPE_STRING)
+			return TypeString;
+		if (type == Any::TYPE_ARRAY)
+			return TypeAnyList;
+		if (type == Any::TYPE_MAP)
+			return TypeAnyDict;
+		return TypeVoid;
+	}
+
+	//Any _cdecl _map_get(const string &key)
 	//{ return map_get(key); }
-	{ KABA_EXCEPTION_WRAPPER(return map_get(key)); return Any(); }
-	void _cdecl _map_set(const string &key, Any &a)
-	{ KABA_EXCEPTION_WRAPPER(map_set(key, a)); }
-	Any _cdecl _array_get(int i)
-	{ KABA_EXCEPTION_WRAPPER(return array_get(i)); return Any(); }
-	void _cdecl _array_set(int i, Any &a)
-	{ KABA_EXCEPTION_WRAPPER(array_set(i, a)); }
-	void _cdecl _array_add(Any &a)
-	{ KABA_EXCEPTION_WRAPPER(add(a)); }
+	//{ KABA_EXCEPTION_WRAPPER(return map_get(key)); return Any(); }
+	//void _cdecl _map_set(const string &key, Any &a)
+	//{ KABA_EXCEPTION_WRAPPER(map_set(key, a)); }
+	//Any _cdecl _array_get(int i)
+	//{ KABA_EXCEPTION_WRAPPER(return array_get(i)); return Any(); }
+	//void _cdecl _array_set(int i, Any &a)
+	//{ KABA_EXCEPTION_WRAPPER(array_set(i, a)); }
+	//void _cdecl _array_add(Any &a)
+	//{ KABA_EXCEPTION_WRAPPER(add(a)); }
 	Array<Any> _as_array() {
 		if (type != TYPE_ARRAY)
 			kaba_raise_exception(new KabaException("not an array"));
@@ -402,6 +417,9 @@ void SIAddPackageMath(Context *c) {
 
 	const_cast<Class*>(TypeVec3)->alignment = 4; // would be updated too late, otherwise...
 	auto TypeVec3Optional = add_type_optional(TypeVec3);
+
+	auto TypeAnyRef = add_type_ref(TypeAny);
+	auto TypeAnyRefOptional = add_type_optional(TypeAnyRef);
 	
 	// dirty hack :P
 	/*if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)*/ {
@@ -902,28 +920,28 @@ void SIAddPackageMath(Context *c) {
 		add_operator(OperatorID::MULTIPLYS, TypeVoid, TypeVli, TypeVli, InlineID::NONE, algebra_p(&vli::operator*=));
 	
 	add_class(TypeAny);
-		class_add_element("type", TypeClassRef, &Any::_class);
 		class_add_element("data", TypePointer, &Any::data);
 		class_add_func(Identifier::Func::INIT, TypeVoid, &Any::__init__, Flags::MUTABLE);
 		class_add_func(Identifier::Func::DELETE, TypeVoid, &Any::__delete__, Flags::MUTABLE);
 		class_add_func(Identifier::Func::ASSIGN, TypeVoid, &Any::set, Flags::MUTABLE);
 			func_add_param("a", TypeAny);
+		class_add_func("type", TypeClassRef, &KabaAny::_get_class);
 		class_add_func("clear", TypeVoid, &Any::clear, Flags::MUTABLE);
 		class_add_func(Identifier::Func::LENGTH, TypeInt32, &Any::length, Flags::PURE);
-		class_add_func(Identifier::Func::GET, TypeAny, &KabaAny::_map_get, Flags::REF | Flags::RAISES_EXCEPTIONS);
+		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::map_get, Flags::REF);
 			func_add_param("key", TypeString);
-		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::_map_set, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
+		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::map_set, Flags::MUTABLE);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_func(Identifier::Func::GET, TypeAny, &KabaAny::_array_get, Flags::REF | Flags::RAISES_EXCEPTIONS);
+		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::array_get, Flags::REF);
 			func_add_param("index", TypeInt32);
-		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::_array_set, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
+		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::array_set, Flags::MUTABLE);
 			func_add_param("index", TypeInt32);
 			func_add_param("value", TypeAny);
 		class_add_func("is_empty", TypeBool, &Any::is_empty, Flags::PURE);
 		class_add_func("has", TypeBool, &Any::has, Flags::PURE);
 			func_add_param("key", TypeString);
-		class_add_func("add", TypeVoid, &KabaAny::_array_add, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
+		class_add_func("add", TypeVoid, &KabaAny::add, Flags::MUTABLE);
 			func_add_param("a", TypeAny);
 		class_add_func("drop", TypeVoid, &Any::map_drop, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
 			func_add_param("key", TypeString);
@@ -940,6 +958,10 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("s", TypeString);
 		add_operator(OperatorID::ADDS, TypeVoid, TypeAny, TypeAny, InlineID::NONE, &Any::_add);// operator+=);
 		add_operator(OperatorID::SUBTRACTS, TypeVoid, TypeAny, TypeAny, InlineID::NONE, &Any::_sub);// operator-);
+
+
+	lib_create_optional<void*>(TypeAnyRefOptional);
+
 
 	add_func("@int2any", TypeAny, &int2any, Flags::STATIC);
 		func_add_param("i", TypeInt32);

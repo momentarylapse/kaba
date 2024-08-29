@@ -6,8 +6,9 @@ func main()
 	a["r"] = a
 	print(a)
 	print(a["a"])
-	try
-		print(a["b"])
-	except
+	
+	for x in a["b"]
+		print(x)
+	else
 		print("nope")
 

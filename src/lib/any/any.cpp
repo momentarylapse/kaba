@@ -2,33 +2,6 @@
 #include "../base/map.h"
 #include "../os/msg.h"
 
-#if __has_include("../kaba/kaba.h")
-#include "../kaba/kaba.h"
-namespace kaba {
-	extern const Class *TypeAnyList;
-	extern const Class *TypeAnyDict;
-}
-const void *_get_class(int t) {
-	if (t == Any::TYPE_INT)
-		return kaba::TypeInt32;
-	if (t == Any::TYPE_FLOAT)
-		return kaba::TypeFloat32;
-	if (t == Any::TYPE_BOOL)
-		return kaba::TypeBool;
-	if (t == Any::TYPE_STRING)
-		return kaba::TypeString;
-	if (t == Any::TYPE_ARRAY)
-		return kaba::TypeAnyList;
-	if (t == Any::TYPE_MAP)
-		return kaba::TypeAnyDict;
-	return kaba::TypeVoid;
-}
-#else
-	const void *_get_class(int t) {
-		return nullptr;
-	}
-#endif
-
 
 string f2s_clean(float f, int dez);
 
@@ -69,13 +42,8 @@ static string type_name(int t) {
 
 Any::Any() {
 	type = TYPE_NONE;
-	data = NULL;
+	data = nullptr;
 	parent = nullptr;
-#ifdef _X_USE_KABA_
-	_class = kaba::TypeVoid;
-#else
-	_class = nullptr;
-#endif
 }
 
 void Any::__init__() {
@@ -138,7 +106,6 @@ Any Any::ref() {
 	r.parent = this;
 	r.type = type;
 	r.data = data;
-	r._class = _class;
 	any_db(format("ref  %s -> %s:   %s", p2s(this), p2s(parent), str()));
 	return r;
 }
@@ -152,7 +119,6 @@ void Any::create_type(int _type) {
 	}
 	clear();
 	type = _type;
-	_class = _get_class(type);
 	if (is_int()) {
 		data = new int;
 	} else if (is_float()) {
@@ -178,7 +144,6 @@ void Any::sync_to_parent() {
 		any_db(format("sync  %s -> %s:   %s", p2s(this), p2s(parent), str()));
 		parent->data = data;
 		parent->type = type;
-		parent->_class = _class;
 		parent->sync_to_parent();
 	}
 }
@@ -189,7 +154,6 @@ void Any::sync_from_parent() {
 		parent->sync_from_parent();
 		data = parent->data;
 		type = parent->type;
-		_class = parent->_class;
 	}
 }
 
@@ -229,7 +193,6 @@ void Any::clear() {
 		else if (!is_empty())
 			msg_error("any.clear(): " + type_name(type));
 		type = TYPE_NONE;
-		_class = _get_class(type);
 		data = NULL;
 	}
 }
@@ -560,17 +523,13 @@ void Any::add(const Any &a) {
 		any_db(format("parent add  %s -> %s:   %s", p2s(this), p2s(parent), str()));
 		return;
 	}
-	if (is_empty())
+	if (!is_array())
 		create_type(TYPE_ARRAY);
-	if (is_array()) {
-		if (&a == this) {
-			Any b = a;
-			as_array().add(b);
-		} else {
-			as_array().add(a);
-		}
+	if (&a == this) {
+		Any b = a;
+		as_array().add(b);
 	} else {
-		throw Exception("only allowed for arrays: " + type_name(type));
+		as_array().add(a);
 	}
 }
 
@@ -681,31 +640,35 @@ Array<Any>& Any::as_array() const {
 	return *(Array<Any>*)data;
 }
 
-Any Any::array_get(int i) {
+base::optional<Any*> Any::array_get(int i) {
 	if (!is_array())
-		throw Exception("not an array: " + type_name(type));
-	return (*this)[i].ref();
+		return base::None;
+	if (i < 0 or i >= as_array().num)
+		return base::None;
+	return &(*this)[i];
 }
 
 void Any::array_set(int i, const Any &value) {
+	if (i < 0)
+		return;
 	if (parent) {
 		parent->array_set(i, value);
 		sync_from_parent();
 		return;
 	}
-	if (is_empty())
-		create_type(TYPE_ARRAY);
 	if (!is_array())
-		throw Exception("not an array: " + type_name(type));
+		create_type(TYPE_ARRAY);
+	if (as_array().num <= i)
+		as_array().resize(i + 1);
 	(*this)[i] = value;
 }
 
-Any Any::map_get(const string &key) {
+base::optional<Any*> Any::map_get(const string &key) {
 	if (!is_map())
-		throw Exception("not a map: " + type_name(type));
+		return base::None;
 	if (!as_map().contains(key))
-		throw Exception("key not found: " + key);
-	return as_map()[key].ref();
+		return base::None;
+	return &as_map()[key];
 }
 
 void Any::map_set(const string &key, const Any &value) {
@@ -714,10 +677,8 @@ void Any::map_set(const string &key, const Any &value) {
 		sync_from_parent();
 		return;
 	}
-	if (is_empty())
-		create_type(TYPE_MAP);
 	if (!is_map())
-		throw Exception("not a map: " + type_name(type));
+		create_type(TYPE_MAP);
 	as_map().set(key, value);
 }
 
@@ -727,9 +688,8 @@ void Any::map_drop(const string &key) {
 		sync_from_parent();
 		return;
 	}
-	if (!is_map())
-		throw Exception("not a map: " + type_name(type));
-	as_map().drop(key);
+	if (is_map())
+		as_map().drop(key);
 }
 
 template<> string repr(const Any& a) {

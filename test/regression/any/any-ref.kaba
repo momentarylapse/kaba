@@ -2,7 +2,7 @@ func main()
 	var a = dyn({"a":[1,2], "b":"c"})
 	print(a)
 	print(a["a"])
-	a["a"].add(9)
+	a["a"]!.add(9)
 	print(a)
 	a["a"] = "k"
 	print(a)

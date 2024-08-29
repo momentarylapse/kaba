@@ -5,7 +5,7 @@ func main()
 	
 
 func f(a: any)
-	match a.type
+	match a.type()
 		int    => print("iii")
 		string => print("ssss")
 		else   => print("???")
