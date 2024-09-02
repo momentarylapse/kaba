@@ -7,6 +7,7 @@
 
 #include "../kaba.h"
 #include "implicit.h"
+#include "../../os/msg.h"
 #include "../parser/Parser.h"
 
 namespace kaba {
@@ -44,7 +45,10 @@ void AutoImplementer::implement_optional_constructor_wrap(Function *f, const Cla
 
 	{
 		// self.data = value
-		if (auto assign = parser->con.link_operator_id(OperatorID::ASSIGN,
+		auto op = OperatorID::ASSIGN;
+		if (value->type->is_reference())
+			op = OperatorID::REF_ASSIGN;
+		if (auto assign = parser->con.link_operator_id(op,
 													   optional_data(self),
 													   value))
 			f->block->add(assign);
@@ -103,7 +107,10 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 										optional_data(self)));
 		}
 
-		if (auto assign = parser->con.link_operator_id(OperatorID::ASSIGN,
+		auto op = OperatorID::ASSIGN;
+		if (self->type->param[0]->is_reference())
+			op = OperatorID::REF_ASSIGN;
+		if (auto assign = parser->con.link_operator_id(op,
 													   optional_data(self), optional_data(other)))
 			b->add(assign);
 		else
@@ -135,7 +142,10 @@ void AutoImplementer::implement_optional_assign_raw(Function *f, const Class *t)
 
 	{
 		// self.data = other
-		if (auto assign = parser->con.link_operator_id(OperatorID::ASSIGN,
+		auto op = OperatorID::ASSIGN;
+		if (other->type->is_reference())
+			op = OperatorID::REF_ASSIGN;
+		if (auto assign = parser->con.link_operator_id(op,
 													   optional_data(self),
 													   other))
 			f->block->add(assign);

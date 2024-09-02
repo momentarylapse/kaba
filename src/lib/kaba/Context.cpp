@@ -186,8 +186,9 @@ void Context::execute_single_command(const string &cmd) {
 		cmd->set_param(0, n_str);
 		func->block->params[0] = cmd;
 	}
-	for (auto *c: tree->owned_classes)
-		parser->auto_implementer.implement_functions(c);
+	//for (auto *c: tree->owned_classes)
+	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
+		parser->auto_implementer.implement_functions(tree->owned_classes[i]);
 	//ps->show("aaaa");
 
 

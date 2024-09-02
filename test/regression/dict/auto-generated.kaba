@@ -9,3 +9,7 @@ func main()
 
 	for k=>v in dict
 		print("{{k}} => {{v}}")
+		
+	print(dict["a"])
+	print(dict["a"]!)
+	print(dict["missing"])

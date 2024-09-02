@@ -3,6 +3,7 @@
 #include "../../base/base.h"
 #include "../../base/map.h"
 #include "../../base/future.h"
+#include "../../base/optional.h"
 #include "../kaba.h"
 #include "../dynamic/exception.h"
 
@@ -28,15 +29,16 @@ namespace kaba {
 		void __set(const string &k, const typename base::xparam<T>::t v) {
 			this->set(k, v);
 		}
-		T get_item(const string &k) {
-			KABA_EXCEPTION_WRAPPER(return (*this)[k]);
-			return T();
+		base::optional<T*> get_item(const string &k) {
+			if (this->contains(k))
+				return &(*this)[k];
+			return base::None;
 		}
 	};
 
 
 	template<class T>
-	void lib_create_dict(const Class *tt) {
+	void lib_create_dict(const Class* tt, const Class* get_return) {
 		auto t = const_cast<Class*>(tt);
 		auto t_element = tt->param[0];
 
@@ -48,7 +50,7 @@ namespace kaba {
 			class_add_func(Identifier::Func::SET, TypeVoid, &XDict<T>::__set, Flags::MUTABLE);
 				func_add_param("key", TypeString);
 				func_add_param("x", t_element);
-			class_add_func(Identifier::Func::GET, t_element, &XDict<T>::get_item, Flags::RAISES_EXCEPTIONS);
+			class_add_func(Identifier::Func::GET, get_return, &XDict<T>::get_item, Flags::REF);
 				func_add_param("key", TypeString);
 			class_add_func("clear", TypeVoid, &XDict<T>::clear, Flags::MUTABLE);
 			class_add_func(Identifier::Func::CONTAINS, TypeBool, &XDict<T>::contains);

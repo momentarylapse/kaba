@@ -116,6 +116,8 @@ void AutoImplementer::implement_dict_assign(Function *f, const Class *t) {
 
 void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 	auto te = t->get_array_element();
+	auto te_ref_opt = f->literal_return_type;
+	auto te_ref = te_ref_opt->param[0];
 
 	auto self = add_node_local(f->__get_var(Identifier::SELF));
 	auto in_key = add_node_local(f->__get_var("key"));
@@ -127,11 +129,18 @@ void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 
 	{
 		// if key == in_key
-		//     return value
+		//     return T&?(&value)
 		Block *b_if = new Block(f, b_loop);
 		auto ret = add_node_statement(StatementID::RETURN);
 		ret->set_num_params(1);
-		ret->set_param(0, add_node_local(var_val)->deref());
+		if (auto ff = te_ref_opt->get_func(Identifier::Func::INIT, TypeVoid, {nullptr, te_ref})) {
+			auto c = add_node_constructor(ff, t->token_id);
+			c->set_num_params(2);
+			c->set_param(1, add_node_local(var_val));
+			ret->set_param(0, c);
+		} else {
+			do_error_implicit(f, "aaaaa1");
+		}
 		b_if->add(ret);
 
 		auto eq = add_equal(f, "...", add_node_local(var_key)->deref(), in_key);
@@ -151,21 +160,16 @@ void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 	f->block->add(cmd_for);
 
 	{
-		// raise(...)
 
-		auto f_ex = TypeNoValueError->get_default_constructor();
-		auto cmd_call_ex = add_node_call(f_ex, -1);
-		cmd_call_ex->set_num_params(1);
-		cmd_call_ex->set_param(0, new Node(NodeKind::PLACEHOLDER, 0, TypeVoid));
-
-		auto cmd_new = add_node_statement(StatementID::NEW);
-		cmd_new->set_num_params(1);
-		cmd_new->set_param(0, cmd_call_ex);
-		cmd_new->type = TypeExceptionXfer;
-
-		auto cmd_raise = add_node_call(tree->required_func_global("raise"));
-		cmd_raise->set_param(0, cmd_new);
-		f->block->add(cmd_raise);
+		// return T&?()
+		auto ret = add_node_statement(StatementID::RETURN);
+		ret->set_num_params(1);
+		if (auto ff = te_ref_opt->get_default_constructor()) {
+			ret->set_param(0, add_node_constructor(ff, t->token_id));
+		} else {
+			do_error_implicit(f, "aaaaa");
+		}
+		f->block->add(ret);
 	}
 }
 
@@ -277,11 +281,13 @@ void AutoImplementer::implement_dict_contains(Function *f, const Class *t) {
 }
 
 void AutoImplementer::_implement_functions_for_dict(const Class *t) {
+	auto t_el = t->param[0];
+
 	implement_dict_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_dict_clear(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_dict_clear(prepare_auto_impl(t, t->get_member_func("clear", TypeVoid, {})), t);
 	implement_dict_set(prepare_auto_impl(t, t->get_member_func(Identifier::Func::SET, TypeVoid, {TypeString, nullptr})), t);
-	implement_dict_get(prepare_auto_impl(t, t->get_member_func(Identifier::Func::GET, t->param[0], {TypeString})), t);
+	implement_dict_get(prepare_auto_impl(t, t->get_get(TypeString)), t);
 	implement_dict_contains(prepare_auto_impl(t, t->get_member_func(Identifier::Func::CONTAINS, TypeBool, {TypeString})), t);
 	implement_dict_assign(prepare_auto_impl(t, t->get_assign()), t);
 }
@@ -299,11 +305,13 @@ void TemplateClassInstantiatorDict::add_function_headers(Class* c) {
 	c->param = params;
 
 	auto t_value = c->param[0];
+	auto t_value_ref = c->owner->request_implicit_class_reference(t_value, c->token_id);
+	auto t_value_ref_opt = c->owner->request_implicit_class_optional(t_value_ref, c->token_id);
 	add_func_header(c, Identifier::Func::INIT, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	add_func_header(c, Identifier::Func::DELETE, TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	add_func_header(c, "clear", TypeVoid, {}, {}, nullptr, Flags::MUTABLE);
 	add_func_header(c, Identifier::Func::SET, TypeVoid, {TypeString, t_value}, {"key", "value"}, nullptr, Flags::MUTABLE);
-	add_func_header(c, Identifier::Func::GET, t_value, {TypeString}, {"key"});
+	add_func_header(c, Identifier::Func::GET, t_value_ref_opt, {TypeString}, {"key"});
 	add_func_header(c, Identifier::Func::ASSIGN, TypeVoid, {c}, {"other"}, nullptr, Flags::MUTABLE);
 	add_func_header(c, Identifier::Func::CONTAINS, TypeBool, {TypeString}, {"key"}, nullptr, Flags::PURE);
 

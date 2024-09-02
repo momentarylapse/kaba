@@ -479,12 +479,24 @@ void SIAddPackageBase(Context *c) {
 	lib_create_list<string>(TypeStringList);
 
 
-	lib_create_dict<int>(TypeIntDict);
-	lib_create_dict<float>(TypeFloatDict);
-	lib_create_dict<string>(TypeStringDict);
-
-
 	lib_create_optional<int>(TypeIntOptional);
+
+
+	auto TypeInt32Ref = add_type_ref(TypeInt32);
+	auto TypeInt32RefOptional = add_type_optional(TypeInt32Ref);
+	auto TypeFloat32Ref = add_type_ref(TypeFloat32);
+	auto TypeFloat32RefOptional = add_type_optional(TypeFloat32Ref);
+	auto TypeStringRef = add_type_ref(TypeString);
+	auto TypeStringRefOptional = add_type_optional(TypeStringRef);
+
+	lib_create_optional<void*>(TypeInt32RefOptional);
+	lib_create_optional<void*>(TypeFloat32RefOptional);
+	lib_create_optional<void*>(TypeStringRefOptional);
+
+	lib_create_dict<int>(TypeIntDict, TypeInt32RefOptional);
+	lib_create_dict<float>(TypeFloatDict, TypeFloat32RefOptional);
+	lib_create_dict<string>(TypeStringDict, TypeStringRefOptional);
+
 
 
 	add_class(TypeCallableBase);

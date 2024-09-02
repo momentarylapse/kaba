@@ -1261,7 +1261,7 @@ void SIAddPackageMath(Context *c) {
 	lib_create_list<Any>(TypeAnyList);
 
 	TypeAnyDict = add_type_dict(TypeAny);
-	lib_create_dict<Any>(TypeAnyDict);
+	lib_create_dict<Any>(TypeAnyDict, TypeAnyRefOptional);
 
 
 	add_class(TypeAny);
