@@ -242,17 +242,17 @@ public:
 class KabaAny : public Any {
 public:
 	const Class* _get_class() {
-		if (type == Any::TYPE_INT)
+		if (type == Any::Type::Int)
 			return TypeInt32;
-		if (type == Any::TYPE_FLOAT)
+		if (type == Any::Type::Float)
 			return TypeFloat32;
-		if (type == Any::TYPE_BOOL)
+		if (type == Any::Type::Bool)
 			return TypeBool;
-		if (type == Any::TYPE_STRING)
+		if (type == Any::Type::String)
 			return TypeString;
-		if (type == Any::TYPE_ARRAY)
+		if (type == Any::Type::List)
 			return TypeAnyList;
-		if (type == Any::TYPE_MAP)
+		if (type == Any::Type::Dict)
 			return TypeAnyDict;
 		return TypeVoid;
 	}
@@ -268,18 +268,18 @@ public:
 	//{ KABA_EXCEPTION_WRAPPER(array_set(i, a)); }
 	//void _cdecl _array_add(Any &a)
 	//{ KABA_EXCEPTION_WRAPPER(add(a)); }
-	Array<Any> _as_array() {
-		if (type != TYPE_ARRAY)
-			kaba_raise_exception(new KabaException("not an array"));
+	Array<Any> _as_list() {
+		if (type != Type::List)
+			kaba_raise_exception(new KabaException("not a list"));
 		Array<Any> r;
-		r.set_ref(as_array());
+		r.set_ref(as_list());
 		return r;
 	}
-	Array<int> _as_map() { // FAKE TYPE!!!
-		if (type != TYPE_MAP)
-			kaba_raise_exception(new KabaException("not a map"));
+	Array<int> _as_dict() { // FAKE TYPE!!!
+		if (type != Type::Dict)
+			kaba_raise_exception(new KabaException("not a dict"));
 		Array<int> r;
-		r.set_ref((Array<int>&)as_map());
+		r.set_ref((Array<int>&)as_dict());
 		return r;
 	}
 	
@@ -294,22 +294,22 @@ public:
 			*(string*)var = aa.as_string();
 		} else if (type->is_pointer_raw()) {
 			*(const void**)var = aa.as_pointer();
-		} else if (type->is_list() and (aa.type == TYPE_ARRAY)) {
+		} else if (type->is_list() and (aa.type == Type::List)) {
 			auto *t_el = type->get_array_element();
 			auto *a = (DynamicArray*)var;
-			auto &b = aa.as_array();
+			auto &b = aa.as_list();
 			int n = b.num;
 			array_resize(var, type, n);
 			for (int i=0; i<n; i++)
 				unwrap(aa[i], (char*)a->data + i * t_el->size, t_el);
-		} else if (type->is_array() and (aa.type == TYPE_ARRAY)) {
+		} else if (type->is_array() and (aa.type == Type::List)) {
 			auto *t_el = type->get_array_element();
-			auto &b = aa.as_array();
+			auto &b = aa.as_list();
 			int n = min(type->array_length, b.num);
 			for (int i=0; i<n; i++)
 				unwrap(b[i], (char*)var + i*t_el->size, t_el);
-		} else if (aa.type == TYPE_MAP) {
-			[[maybe_unused]] auto &map = aa.as_map();
+		} else if (aa.type == Type::Dict) {
+			[[maybe_unused]] auto &map = aa.as_dict();
 			auto keys = aa.keys();
 			for (auto &e: type->elements)
 				for (string &k: keys)
@@ -928,14 +928,14 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("type", TypeClassRef, &KabaAny::_get_class);
 		class_add_func("clear", TypeVoid, &Any::clear, Flags::MUTABLE);
 		class_add_func(Identifier::Func::LENGTH, TypeInt32, &Any::length, Flags::PURE);
-		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::map_get, Flags::REF);
+		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::dict_get, Flags::REF);
 			func_add_param("key", TypeString);
-		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::map_set, Flags::MUTABLE);
+		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::dict_set, Flags::MUTABLE);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::array_get, Flags::REF);
+		class_add_func(Identifier::Func::GET, TypeAnyRefOptional, &KabaAny::list_get, Flags::REF);
 			func_add_param("index", TypeInt32);
-		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::array_set, Flags::MUTABLE);
+		class_add_func(Identifier::Func::SET, TypeVoid, &KabaAny::list_set, Flags::MUTABLE);
 			func_add_param("index", TypeInt32);
 			func_add_param("value", TypeAny);
 		class_add_func("is_empty", TypeBool, &Any::is_empty, Flags::PURE);
@@ -943,7 +943,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("key", TypeString);
 		class_add_func("add", TypeVoid, &KabaAny::add, Flags::MUTABLE);
 			func_add_param("a", TypeAny);
-		class_add_func("drop", TypeVoid, &Any::map_drop, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
+		class_add_func("drop", TypeVoid, &Any::dict_drop, Flags::RAISES_EXCEPTIONS | Flags::MUTABLE);
 			func_add_param("key", TypeString);
 		class_add_func("keys", TypeStringList, &Any::keys, Flags::PURE);//, Flags::RAISES_EXCEPTIONS);
 		class_add_func("__bool__", TypeBool, &Any::_bool, Flags::PURE);
@@ -1265,8 +1265,8 @@ void SIAddPackageMath(Context *c) {
 
 
 	add_class(TypeAny);
-		class_add_func("as_array", TypeAnyList, &KabaAny::_as_array, Flags::REF | Flags::RAISES_EXCEPTIONS);
-		class_add_func("as_map", TypeAnyDict, &KabaAny::_as_map, Flags::REF | Flags::RAISES_EXCEPTIONS);
+		class_add_func("as_list", TypeAnyList, &KabaAny::_as_list, Flags::REF | Flags::RAISES_EXCEPTIONS);
+		class_add_func("as_dict", TypeAnyDict, &KabaAny::_as_dict, Flags::REF | Flags::RAISES_EXCEPTIONS);
 
 
 	add_type_cast(50, TypeInt32, TypeAny, "math.@int2any");

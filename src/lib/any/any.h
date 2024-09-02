@@ -6,20 +6,20 @@
 #include "../base/optional.h"
 
 
-class AnyMap;
+class AnyDict;
 
 class Any {
 public:
 
-	enum {
-		TYPE_NONE,
-		TYPE_INT,
-		TYPE_FLOAT,
-		TYPE_BOOL,
-		TYPE_STRING,
-		TYPE_ARRAY,
-		TYPE_MAP,
-		TYPE_POINTER
+	enum class Type {
+		None,
+		Int,
+		Float,
+		Bool,
+		String,
+		List,
+		Dict,
+		Pointer
 	};
 
 	Any();
@@ -32,14 +32,14 @@ public:
 	Any(const void *p);
 	Any(const Array<Any> &a);
 	Any(const Array<int> &a);
-	Any(const AnyMap &m);
+	Any(const AnyDict &m);
 	~Any();
 
 	void clear();
 	Any ref();
 	void sync_to_parent();
 	void sync_from_parent();
-	void create_type(int type);
+	void create_type(Type type);
 
 	bool is_empty() const;
 	bool is_string() const;
@@ -47,8 +47,8 @@ public:
 	bool is_float() const;
 	bool is_bool() const;
 	bool is_pointer() const;
-	bool is_array() const;
-	bool is_map() const;
+	bool is_list() const;
+	bool is_dict() const;
 
 	string str() const;
 	string repr() const;
@@ -66,7 +66,7 @@ public:
 	bool operator==(const Any& other) const;
 	bool operator!=(const Any& other) const;
 
-	// array
+	// list
 	void add(const Any &a);
 	void append(const Any &a);
 	const Any &operator[] (int index) const;
@@ -78,8 +78,8 @@ public:
 	float& as_float() const;
 	bool& as_bool() const;
 	string& as_string() const;
-	Array<Any>& as_array() const;
-	AnyMap& as_map() const;
+	Array<Any>& as_list() const;
+	AnyDict& as_dict() const;
 	const void*& as_pointer() const;
 
 	// map/dict
@@ -89,7 +89,7 @@ public:
 	bool has(const string &key) const;
 
 	// data
-	int type;
+	Type type;
 	void *data;
 	Any *parent;
 
@@ -97,23 +97,17 @@ public:
 	void __init__();
 	void __delete__();
 	void set(const Any &a){	*this = a;	}
-	/*void _cdecl set_int(int i){	*this = i;	}
-	void _cdecl set_float(float f){	*this = f;	}
-	void _cdecl set_bool(bool b){	*this = b;	}
-	void _cdecl set_str(const string &s){	*this = s;	}
-	void _cdecl set_array(const Array<Any> &a){	*this = a;	}
-	void _cdecl set_map(const AnyMap &m){	*this = m;	}*/
 	void _add(const Any &a){	Any b = *this + a;	*this = b;	}
 	void _sub(const Any &a){	Any b = *this - a;	*this = b;	}
-	base::optional<Any*> array_get(int i);
-	void array_set(int i, const Any &value);
-	base::optional<Any*> map_get(const string &key);
-	void map_set(const string &key, const Any &value);
-	void map_drop(const string &key);
+	base::optional<Any*> list_get(int i);
+	void list_set(int i, const Any &value);
+	base::optional<Any*> dict_get(const string &key);
+	void dict_set(const string &key, const Any &value);
+	void dict_drop(const string &key);
 
 
-	static Any EmptyMap;
-	static Any EmptyArray;
+	static Any EmptyDict;
+	static Any EmptyList;
 	static bool allow_simple_output;
 };
 
