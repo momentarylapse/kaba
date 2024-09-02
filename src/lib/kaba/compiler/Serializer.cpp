@@ -137,6 +137,7 @@ SerialNodeParam Serializer::add_reference(const SerialNodeParam &param, const Cl
 	} else if (param.kind == NodeKind::DEREF_VAR_TEMP) {
 		ret = param;
 		ret.kind = NodeKind::VAR_TEMP; // FIXME why was it param.kind ?!?!?
+		ret.type = type;
 	/*} else if (param.kind == NodeKind::VAR_TEMP) {
 		cmd.temp_var[param.p].referenced = true;
 		sdkjfhkjh
