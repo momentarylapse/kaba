@@ -257,30 +257,15 @@ public:
 		return TypeVoid;
 	}
 
-	//Any _cdecl _map_get(const string &key)
-	//{ return map_get(key); }
-	//{ KABA_EXCEPTION_WRAPPER(return map_get(key)); return Any(); }
-	//void _cdecl _map_set(const string &key, Any &a)
-	//{ KABA_EXCEPTION_WRAPPER(map_set(key, a)); }
-	//Any _cdecl _array_get(int i)
-	//{ KABA_EXCEPTION_WRAPPER(return array_get(i)); return Any(); }
-	//void _cdecl _array_set(int i, Any &a)
-	//{ KABA_EXCEPTION_WRAPPER(array_set(i, a)); }
-	//void _cdecl _array_add(Any &a)
-	//{ KABA_EXCEPTION_WRAPPER(add(a)); }
-	Array<Any> _as_list() {
+	Array<Any>* _as_list() {
 		if (type != Type::List)
-			kaba_raise_exception(new KabaException("not a list"));
-		Array<Any> r;
-		r.set_ref(as_list());
-		return r;
+			return nullptr;
+		return &as_list();
 	}
-	Array<int> _as_dict() { // FAKE TYPE!!!
+	Array<int>* _as_dict() { // FAKE TYPE!!!
 		if (type != Type::Dict)
-			kaba_raise_exception(new KabaException("not a dict"));
-		Array<int> r;
-		r.set_ref((Array<int>&)as_dict());
-		return r;
+			return nullptr;
+		return (Array<int>*)&as_dict();
 	}
 	
 	static void unwrap(Any &aa, void *var, const Class *type) {
@@ -1259,14 +1244,16 @@ void SIAddPackageMath(Context *c) {
 	// needs to be defined after any
 	TypeAnyList = add_type_list(TypeAny);
 	lib_create_list<Any>(TypeAnyList);
+	auto TypeAnyListP = add_type_p_raw(TypeAnyList);
 
 	TypeAnyDict = add_type_dict(TypeAny);
 	lib_create_dict<Any>(TypeAnyDict, TypeAnyRefOptional);
+	auto TypeAnyDictP = add_type_p_raw(TypeAnyDict);
 
 
 	add_class(TypeAny);
-		class_add_func("as_list", TypeAnyList, &KabaAny::_as_list, Flags::REF | Flags::RAISES_EXCEPTIONS);
-		class_add_func("as_dict", TypeAnyDict, &KabaAny::_as_dict, Flags::REF | Flags::RAISES_EXCEPTIONS);
+		class_add_func("as_list", TypeAnyListP, &KabaAny::_as_list, Flags::REF);
+		class_add_func("as_dict", TypeAnyDictP, &KabaAny::_as_dict, Flags::REF);
 
 
 	add_type_cast(50, TypeInt32, TypeAny, "math.@int2any");
