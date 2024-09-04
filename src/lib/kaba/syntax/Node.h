@@ -53,7 +53,7 @@ enum class NodeKind {
 	BLOCK,              // = block of commands {...}
 	OPERATOR,
 	// data altering
-	ADDRESS_SHIFT,      // = . "struct"
+	ADDRESS_SHIFT,      // = struct.element
 	ARRAY,              // = []
 	POINTER_AS_ARRAY,   // = []
 	DYNAMIC_ARRAY,      // = []

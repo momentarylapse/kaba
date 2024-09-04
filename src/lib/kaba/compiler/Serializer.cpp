@@ -392,9 +392,9 @@ SerialNodeParam Serializer::serialize_block(Block *block) {
 
 		// end of loop?
 		// DEPRECATING...
-		if (loop.num > 0)
-			if ((loop.back().level == block->level) and (loop.back().index == i - 1))
-				loop.pop();
+		if (loop_stack.num > 0)
+			if ((loop_stack.back().level == block->level) and (loop_stack.back().index == i - 1))
+				loop_stack.pop();
 	}
 
 	insert_destructors_block(block);
@@ -519,9 +519,9 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 
 			// body of loop
 			LoopData l = {label_before_while, label_after_while, block->level, index};
-			loop.add(l);
+			loop_stack.add(l);
 			serialize_node(com->params[1].get(), block, index);
-			loop.pop();
+			loop_stack.pop();
 
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_before_while));
 			cmd.add_label(label_after_while);
@@ -540,9 +540,9 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 
 			// body of loop
 			LoopData l = {label_continue, label_after_for, block->level, index};
-			loop.add(l);
+			loop_stack.add(l);
 			serialize_node(com->params[2].get(), block, index);
-			loop.pop();
+			loop_stack.pop();
 
 			// "i++"
 			cmd.add_label(label_continue);
@@ -552,10 +552,12 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			cmd.add_label(label_after_for);
 			}break;
 		case StatementID::BREAK:
-			cmd.add_cmd(Asm::InstID::JMP, param_label32(loop.back().label_break));
+			// FIXME: destructors
+			cmd.add_cmd(Asm::InstID::JMP, param_label32(loop_stack.back().label_break));
 			break;
 		case StatementID::CONTINUE:
-			cmd.add_cmd(Asm::InstID::JMP, param_label32(loop.back().label_continue));
+			// FIXME: destructors
+			cmd.add_cmd(Asm::InstID::JMP, param_label32(loop_stack.back().label_continue));
 			break;
 		case StatementID::RETURN:
 			if (com->params.num > 0) {
@@ -602,21 +604,32 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			auto f = syntax_tree->required_func_global(block->is_in_try() ? Identifier::RAISE : "@die");
 			add_function_call(f, {param_global(TypePointer, e)}, p_none);
 			break;}
+		case StatementID::RAISE_LOCAL:{
+			// FIXME destructors!
+			cmd.add_cmd(Asm::InstID::JMP, param_label32(try_stack.back().label_except));
+			break;}
 		case StatementID::TRY:{
-			int label_finish = list->create_label("_TRY_AFTER_" + i2s(num_labels ++));
+			int label_except = list->create_label("_TRY_EXCEPT_" + i2s(num_labels ++));
+			int label_after = list->create_label("_TRY_AFTER_" + i2s(num_labels ++));
 
 			// try
+			try_stack.add({label_except, label_after});
 			serialize_node(com->params[0].get(), block, index);
-			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
+			try_stack.pop();
+			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after));
 
 			// except
 			for (int i=2; i<com->params.num; i+=2) {
+				if (i == com->params.num-1)
+					cmd.add_label(label_except);
 				serialize_node(com->params[i].get(), block, index);
 				if (i < com->params.num-1)
-					cmd.add_cmd(Asm::InstID::JMP, param_label32(label_finish));
+					cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after));
 			}
 
-			cmd.add_label(label_finish);
+			if (com->params.num == 1)
+				cmd.add_label(label_except);
+			cmd.add_label(label_after);
 			}break;
 		case StatementID::ASM:
 			cmd.add_cmd(Asm::InstID::ASM, param_imm(TypeInt32, com->params[0]->as_const()->as_int()));

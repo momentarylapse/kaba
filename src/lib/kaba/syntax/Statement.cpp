@@ -66,6 +66,7 @@ void SIAddStatements() {
 	add_statement(Identifier::VAR, StatementID::VAR);
 	add_statement(Identifier::ASM, StatementID::ASM);
 	add_statement(/*Identifier::RAISE*/ "-raise-", StatementID::RAISE, 1); // [EXCEPTION (pointer into static array)]
+	add_statement("-raise-local-", StatementID::RAISE_LOCAL);
 	add_statement(Identifier::TRY, StatementID::TRY); // return: ParamType will be defined by the parser!
 	add_statement(Identifier::EXCEPT, StatementID::EXCEPT); // return: ParamType will be defined by the parser!
 	add_statement(Identifier::PASS, StatementID::PASS);

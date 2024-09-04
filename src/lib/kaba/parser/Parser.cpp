@@ -1065,7 +1065,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	int ind = Exp.cur_line->indent;
 	int token0 = Exp.consume_token(); // "try"
 	auto cmd_try = add_node_statement(StatementID::TRY, token0, TypeUnknown);
-	cmd_try->set_num_params(3);
+	cmd_try->set_num_params(1);
 	// ...block
 	expect_new_line_with_indent();
 	Exp.next_line();

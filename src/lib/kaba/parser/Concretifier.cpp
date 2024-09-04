@@ -1761,10 +1761,16 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		return add_node_class(t, node->token_id);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_OPTIONAL) {
 		concretify_all_params(node, block, ns);
-		auto t = try_digest_type(tree, node->params[0]);
-		if (!t)
-			do_error("type expected before '?'", node->params[0]);
-		return add_node_class(tree->request_implicit_class_optional(t, node->token_id), node->token_id);
+		if (auto t = try_digest_type(tree, node->params[0]))
+			return add_node_class(tree->request_implicit_class_optional(t, node->token_id), node->token_id);
+		auto t = node->params[0]->type;
+		/*if (t->is_optional()) {
+			auto n = new Node(NodeKind::MAYBE, 0, t->param[0], node->flags, node->token_id);
+			n->set_num_params(1);
+			n->set_param(0, node->params[0]);
+			return n;
+		}*/
+		do_error("type expected before '?'", node->params[0]);
 	} else if (node->kind == NodeKind::ABSTRACT_TYPE_CALLABLE) {
 		concretify_all_params(node, block, ns);
 		auto t0 = try_digest_type(tree, node->params[0]);
@@ -1826,7 +1832,10 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			auto cmd_if = add_node_statement(StatementID::IF, node->token_id, TypeVoid);
 			if (auto f = t->get_member_func(Identifier::Func::OPTIONAL_HAS_VALUE, TypeBool, {}))
 				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, add_node_member_call(f, sub), nullptr, node->token_id));
-			cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
+			if (block->is_in_try())
+				cmd_if->set_param(1, add_node_statement(StatementID::RAISE_LOCAL, node->token_id, TypeVoid));
+			else
+				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
 			bb->add(cmd_if);
 			bb->add(sub->change_type(t->param[0]));
 			return concretify_node(bb, block, ns);
@@ -1843,7 +1852,10 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			auto cmd_p2b = add_node_call(f, node->token_id);
 			cmd_p2b->set_param(0, sub);
 			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BOOL_NOT, cmd_p2b, nullptr, node->token_id));
-			cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::NULL_POINTER));
+			if (block->is_in_try())
+				cmd_if->set_param(1, add_node_statement(StatementID::RAISE_LOCAL, node->token_id, TypeVoid));
+			else
+				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::NULL_POINTER));
 			bb->add(cmd_if);
 			bb->add(sub->change_type(t_def));
 			return concretify_node(bb, block, ns);

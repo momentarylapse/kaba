@@ -169,7 +169,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::BLOCK)
 		return (type == TypeVoid) ? "" : t; //p2s(as_block());
 	if (kind == NodeKind::ADDRESS_SHIFT)
-		return i2s(link_no) + t;
+		return ::str(link_no) + t;
 	if (kind == NodeKind::ARRAY)
 		return t;
 	if (kind == NodeKind::DYNAMIC_ARRAY)
@@ -183,7 +183,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::DEFINITELY)
 		return t;
 	if (kind == NodeKind::DEREF_ADDRESS_SHIFT)
-		return i2s(link_no) + t;
+		return ::str(link_no) + t;
 	if (kind == NodeKind::CLASS)
 		return as_class()->cname(ns);
 	if (kind == NodeKind::REGISTER)
@@ -196,7 +196,7 @@ string Node::signature(const Class *ns) const {
 		return i2h(link_no, config.target.pointer_size) + t;
 	if (kind == NodeKind::LOCAL_MEMORY)
 		return i2h(link_no, config.target.pointer_size) + t;
-	return i2s(link_no) + t;
+	return ::str(link_no) + t;
 }
 
 string Node::str(const Class *ns) const {

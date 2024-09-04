@@ -1,0 +1,20 @@
+
+func main()
+	var o = 13 as i32?
+	
+	try
+		print(o! + 2)
+
+	o = nil
+	try
+		print(o! + 2)
+
+	try
+		print(o! + 2)
+	except
+		print("nope...")
+
+	print("done")
+	
+#	print(o or -1)
+	
