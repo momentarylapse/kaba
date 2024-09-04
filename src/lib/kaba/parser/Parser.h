@@ -54,7 +54,7 @@ public:
 	void parse_top_level();
 	void parse_all_class_names_in_block(Class *ns, int indent0);
 	void parse_all_function_bodies();
-	Flags parse_flags(Flags initial = Flags::NONE);
+	Flags parse_flags(Flags initial = Flags::None);
 	void parse_import();
 	void parse_enum(Class *_namespace);
 	bool parse_class(Class *_namespace);
@@ -68,11 +68,11 @@ public:
 	bool parse_abstract_indented_command_into_block(Block* block, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);
-	void parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0 = Flags::NONE);
+	void parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0 = Flags::None);
 	void parse_class_use_statement(const Class *c);
 	void parse_named_const(Class *name_space, Block *block);
 	shared<Node> parse_and_eval_const(Block *block, const Class *type);
-	static AbstractOperator *which_abstract_operator(const string &name, OperatorFlags param_flags = OperatorFlags::BINARY);
+	static AbstractOperator *which_abstract_operator(const string &name, OperatorFlags param_flags = OperatorFlags::Binary);
 	static Statement *which_statement(const string &name);
 	static SpecialFunction *which_special_function(const string &name);
 

@@ -45,20 +45,20 @@ namespace kaba {
 		t->derive_from(TypeDictBase, DeriveFlags::SET_SIZE);
 
 		add_class(t);
-			class_add_func(Identifier::Func::INIT, TypeVoid, &XDict<T>::__init__, Flags::MUTABLE);
-			class_add_func(Identifier::Func::DELETE, TypeVoid, &XDict<T>::clear, Flags::MUTABLE);
-			class_add_func(Identifier::Func::SET, TypeVoid, &XDict<T>::__set, Flags::MUTABLE);
+			class_add_func(Identifier::func::Init, TypeVoid, &XDict<T>::__init__, Flags::Mutable);
+			class_add_func(Identifier::func::Delete, TypeVoid, &XDict<T>::clear, Flags::Mutable);
+			class_add_func(Identifier::func::Set, TypeVoid, &XDict<T>::__set, Flags::Mutable);
 				func_add_param("key", TypeString);
 				func_add_param("x", t_element);
-			class_add_func(Identifier::Func::GET, get_return, &XDict<T>::get_item, Flags::REF);
+			class_add_func(Identifier::func::Get, get_return, &XDict<T>::get_item, Flags::Ref);
 				func_add_param("key", TypeString);
-			class_add_func("clear", TypeVoid, &XDict<T>::clear, Flags::MUTABLE);
-			class_add_func(Identifier::Func::CONTAINS, TypeBool, &XDict<T>::contains);
+			class_add_func("clear", TypeVoid, &XDict<T>::clear, Flags::Mutable);
+			class_add_func(Identifier::func::Contains, TypeBool, &XDict<T>::contains);
 				func_add_param("key", TypeString);
-			class_add_func(Identifier::Func::ASSIGN, TypeVoid, &XDict<T>::assign, Flags::MUTABLE);
+			class_add_func(Identifier::func::Assign, TypeVoid, &XDict<T>::assign, Flags::Mutable);
 				func_add_param("other", t);
-			class_add_func("keys", TypeStringList, &dict_get_keys, Flags::PURE);
-			class_add_func(Identifier::Func::STR, TypeString, &XDict<T>::str);
+			class_add_func("keys", TypeStringList, &dict_get_keys, Flags::Pure);
+			class_add_func(Identifier::func::Str, TypeString, &XDict<T>::str);
 	}
 
 

@@ -158,7 +158,7 @@ void Context::execute_single_command(const string &cmd) {
 // analyse syntax
 
 	// create a main() function
-	Function *func = tree->add_function("--command-func--", TypeVoid, tree->base_class, Flags::STATIC);
+	Function *func = tree->add_function("--command-func--", TypeVoid, tree->base_class, Flags::Static);
 	func->_var_size = 0; // set to -1...
 
 	parser->Exp.reset_walker();

@@ -271,8 +271,8 @@ string _cdecl var_repr_str(const void *p, const Class *type, bool as_repr) {
 
 
 	// try user code
-	auto f_str = type->get_member_func(Identifier::Func::STR, TypeString, {});
-	auto f_repr = type->get_member_func(Identifier::Func::REPR, TypeString, {});
+	auto f_str = type->get_member_func(Identifier::func::Str, TypeString, {});
+	auto f_repr = type->get_member_func(Identifier::func::Repr, TypeString, {});
 	auto f = f_str;
 	if ((as_repr and f_repr) or !f_str)
 		f = f_repr;
