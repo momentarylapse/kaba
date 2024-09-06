@@ -132,7 +132,8 @@ static shaderc_compiler_t shaderc = nullptr;
 			parts.add(p);
 		}
 		if (has_fragment and !has_vertex) {
-			msg_write(" ...auto import " + vertex_module_default);
+			if (verbosity >= 1)
+				msg_write(" ...auto import " + vertex_module_default);
 			parts.add({VK_SHADER_STAGE_VERTEX_BIT, format("#import %s\n", vertex_module_default)});
 		}
 		return parts;
@@ -216,7 +217,8 @@ static shaderc_compiler_t shaderc = nullptr;
 			options = shaderc_compile_options_initialize();
 			shaderc_compile_options_add_macro_definition(options, "vulkan", 6, "1", 1);
 		}
-		//msg_write(">>>" + source + "<<<");
+		//msg_write(">>>----------------------------------------------------------------------------------- xxxx");
+		//msg_write(source);
 
 		auto result = shaderc_compile_into_spv(shaderc,
 				(const char*)&source[0], source.num,
@@ -275,14 +277,15 @@ static shaderc_compiler_t shaderc = nullptr;
 
 		ShaderMetaData meta;
 		for (auto p: parts) {
-			if (p.type == TYPE_MODULE) {
+			if ((int)p.type == TYPE_MODULE) {
 				ShaderModule m;
 				m.source = p.source;
 				m.meta = meta;
 				shader_modules.add(m);
-				msg_write("new module '" + m.meta.name + "'");
+				if (verbosity >= 1)
+					msg_write("new module '" + m.meta.name + "'");
 				return nullptr;
-			} else if (p.type == TYPE_LAYOUT) {
+			} else if ((int)p.type == TYPE_LAYOUT) {
 				meta = parse_meta(p.source);
 			} else {
 				auto mm = create_vk_shader(p.source, p.type, meta);

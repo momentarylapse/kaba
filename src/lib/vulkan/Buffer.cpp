@@ -74,6 +74,8 @@ void *Buffer::map() {
 
 void *Buffer::map_part(VkDeviceSize _offset, VkDeviceSize _size) {
 	void *p;
+	if (_size < 8) // for size=0 unmap() might complain
+		_size = 8;
 	vkMapMemory(device->device, memory, _offset, _size, 0, &p);
 	return p;
 }

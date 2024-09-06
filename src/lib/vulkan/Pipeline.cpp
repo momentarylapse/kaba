@@ -16,6 +16,7 @@
 #include "helper.h"
 #include "RenderPass.h"
 #include "VertexBuffer.h"
+#include "../base/sort.h"
 #include "../os/msg.h"
 #include "../math/rect.h"
 
@@ -47,7 +48,9 @@ Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
 		shader_stage_info.pName = "main";
 		shader_stages.add(shader_stage_info);
 	}
-	// TODO sort?
+	shader_stages = base::sorted(shader_stages, [](const auto& a, const auto& b) {
+		return (int)a.stage <= (int)b.stage;
+	});
 	return shader_stages;
 }
 
@@ -125,6 +128,9 @@ GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, in
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	input_assembly.topology = parse_topology(topology);
 	input_assembly.primitiveRestartEnable = VK_FALSE;
+#ifdef OS_MAC
+	input_assembly.primitiveRestartEnable = VK_TRUE; // molten vk/metal seem to lack the feature of "turning this off" (O_O)'
+#endif
 
 	for (int i=0; i<render_pass->num_color_attachments(subpass); i++) {
 		VkPipelineColorBlendAttachmentState a = {};

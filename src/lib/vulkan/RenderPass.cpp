@@ -115,7 +115,7 @@ namespace vulkan {
 
 	Array<VkFormat> parse_formats(const Array<string> &formats) {
 		Array<VkFormat> r;
-		for (auto f: formats)
+		for (auto& f: formats)
 			r.add(parse_format(f));
 		return r;
 	}
