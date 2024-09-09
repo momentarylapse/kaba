@@ -29,11 +29,11 @@ The extracted value is of reference type `X&`.
 
 References (as well as not-null-pointers `owned![X]`, `shared![X]`) will be dereferenced automativally:
 ```kaba
-var pointer: owned![X] = new X()
+var pointer = new X()    # type: owned![X]
 pointer.do_something()
 
 var x: X
-var r: X& = &!x
+var r = &x               # type: X&
 r.do_something()
 ```
 
@@ -76,7 +76,7 @@ func ownership_giver() -> xfer[X]
 ownership_taker(ownership_giver())
 ```
 
-Btw. `new X()` returns a type `xfer[X]`. But since no variables of type `xfer[X]` are allowed, new variables default to `owned![X]`:
+🔥 Btw. `new X()` returns a type `xfer[X]`. But since no variables of type `xfer[X]` are allowed, new variables default to `owned![X]`:
 ```kaba
 var p = new X()
 # -> owned![X]
@@ -95,7 +95,7 @@ b = nil
 # object is deleted
 ```
 
-`owned` and `shared` should not be mixed for the same object! Future plans for the language include more safe guards.
+🔥 `owned` and `shared` should not be mixed for the same object! Future plans for the language include more safe guards.
 
 ## Recommendations
 

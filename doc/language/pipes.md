@@ -1,8 +1,8 @@
-# Data pipes
+# Data pipelines
 
-## Mapping arrays
+## Mapping lists
 
-Arrays can be mapped/transformed element-wise by a function:
+Lists can be mapped/transformed element-wise by a function:
 ```kaba
 let out = [1.0, 2.0, 3.0] |> sqrt
 ```
@@ -16,23 +16,32 @@ for x in [1.0, 2.0, 3.0]
 
 Multiple mapping stages can be chained. It is advisable to keep each stage in a separate line:
 ```kaba
-let out = ["1", "2.1", "3"]
-    |> string.__float__
+["1", "2.1", "3"]
+    |> string.__f32__
     |> sqrt
     |> sin
 ```
 Functions' output types don't have to be the same as the input types, as long as consecutive stages match up.
 
-Functions can also act on the whole array. E.g. the some of squares can be computed with `func sum(a: float[]) -> float`:
+Functions can also act on the whole list. E.g. the some of squares can be computed with `func sum(a: f32[]) -> f32`:
 ```kaba
-let out = [1.0, 2.0, 3.0]
+[1.0, 2.0, 3.0]
     |> sqr
     |> sum
 ```
 
+## Mapping optionals
+
+Optionals can have their values be extracted, transformed and re-wrapped:
+```kaba
+(13.0 as f32?) |> sin
+```
+
+🔥 If the function returns an optional, then the additional wrapping will be skipped!
+
 ## Sorting
 
-"Simple" upwards sorting of basic values (can deal with `int`, `float`, `string`, `Path`):
+"Simple" ascending sorting of basic values (can deal with `i32`, `f32`, `string`, `Path`):
 ```kaba
 range(10.0)
     |> sin
@@ -46,9 +55,9 @@ Data structures can be sorted by elements of basic values:
 ```
 (sort 3d vectors by their x-component)
 
-Sort downwards:
+Sort descending:
 ```kaba
-array |> sort("-")
+list |> sort("-")
 ```
 
 ## Filtering

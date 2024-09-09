@@ -28,10 +28,10 @@ Assuming you are in the repository's root folder, type
 ```
 mkdir build
 cd build
-ccmake ..
+ccmake .. -GNinja
 # here, probably press C twice, then G
-make
-sudo make install   # optional
+ninja
+sudo ninja install   # optional
 ```
 
 
