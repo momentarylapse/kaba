@@ -9,8 +9,13 @@
 #ifndef _HUI_MENU_EXISTS_
 #define _HUI_MENU_EXISTS_
 
-#include "common.h"
+//#include "common.h"
 #include "../base/pointer.h"
+#include "Callback.h"
+//#include <gtk/gtk.h>
+
+typedef struct _GMenu GMenu;
+typedef struct _GtkWidget GtkWidget;
 
 namespace hui
 {
@@ -22,10 +27,10 @@ class Control;
 
 class Menu : public VirtualBase {
 public:
-	Menu(Panel *p);
-	~Menu();
+	explicit Menu(Panel *p);
+	~Menu() override;
 	void _cdecl __init__(Panel *p);
-	void _cdecl __delete__();
+	void _cdecl __delete__() override;
 	void _cdecl clear();
 	void _cdecl open_popup(Panel *panel);
 	void _cdecl add(const string &name, const string &id);
@@ -43,16 +48,14 @@ public:
 
 	void __update_language();
 	void set_panel(Panel *panel);
-	
-#ifdef HUI_API_GTK
+
 	void gtk_realize();
 	void gtk_unrealize();
-#if GTK_CHECK_VERSION(4,0,0)
+//#if GTK_CHECK_VERSION(4,0,0)
 	GMenu *gmenu;
-#else
+//#else
 	GtkWidget* widget;
-#endif
-#endif
+//#endif
 
 	shared_array<Control> items;
 	Panel *panel;

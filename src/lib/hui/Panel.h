@@ -8,11 +8,21 @@
 #ifndef HUIPANEL_H_
 #define HUIPANEL_H_
 
-#include "hui.h"
+#include "Event.h"
 #include "../base/pointer.h"
 
+//#include <gtk/gtk.h>
 
-class Painter;
+typedef void* gpointer;
+typedef struct _GVariant GVariant;
+typedef struct _GtkWidget GtkWidget;
+typedef struct _GtkSizeGroup GtkSizeGroup;
+typedef struct _GAction GAction;
+typedef struct _GSimpleAction GSimpleAction;
+typedef struct _GSimpleActionGroup GSimpleActionGroup;
+
+
+//class Painter;
 class rect;
 
 namespace hui
@@ -20,7 +30,7 @@ namespace hui
 
 class Menu;
 class Resource;
-class Painter;
+//class Painter;
 class Event;
 class EventListener;
 class EventKeyCode;
@@ -34,7 +44,7 @@ class Panel : public Sharable<EventHandler> {
 public:
 	Panel(const string &id, Panel *parent);
 	Panel();
-	virtual ~Panel();
+	~Panel() override;
 	void _ClearPanel_();
 
 	void activate(const string &control_id);
@@ -142,10 +152,8 @@ public:
 	void redraw(const string &id);
 	void redraw_rect(const string &_id, const rect &r);
 	Control *_get_control_(const string &id);
-#ifdef HUI_API_GTK
 	Control *_get_control_by_widget_(GtkWidget *widget);
 	string _get_id_by_widget_(GtkWidget *widget);
-#endif
 	string _get_cur_id_();
 	void _set_cur_id_(const string &id);
 	void set_border_width(int width);
@@ -157,9 +165,6 @@ public:
 protected:
 
 
-#ifdef HUI_API_WIN
-#endif
-#ifdef HUI_API_GTK
 public:
 	struct SizeGroup {
 		GtkSizeGroup *group;
@@ -170,7 +175,6 @@ public:
 //protected:
 	void _insert_control_(shared<Control> c, int x, int y);
 	int desired_width, desired_height;
-#endif
 
 	Control *target_control;
 	shared<Control> root_control;
@@ -194,13 +198,13 @@ public:
 	shared_array<Panel> children;
 
 
-#if GTK_CHECK_VERSION(4,0,0)
+//#if GTK_CHECK_VERSION(4,0,0)
 	static void _on_menu_action_(GSimpleAction *simple, GVariant *parameter, gpointer user_data);
 	GSimpleActionGroup *action_group = nullptr;
 	void _try_add_action_(const string &id, bool checkable);
 public:
 	GAction *_get_action(const string &id);
-#endif
+//#endif
 };
 
 };

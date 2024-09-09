@@ -6,9 +6,9 @@
  */
 
 #include "ControlProgressBar.h"
+#include "../language.h"
 
-
-#ifdef HUI_API_GTK
+#include <gtk/gtk.h>
 
 namespace hui
 {
@@ -45,4 +45,3 @@ void ControlProgressBar::__set_float(float f) {
 
 };
 
-#endif

@@ -9,7 +9,13 @@
 #ifndef _HUI_RESOURCE_EXISTS_
 #define _HUI_RESOURCE_EXISTS_
 
+class Path;
+
 namespace hui {
+
+	class Panel;
+	class Menu;
+	class Window;
 
 //----------------------------------------------------------------------------------
 // resource handling

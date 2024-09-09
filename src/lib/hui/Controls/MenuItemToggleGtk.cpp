@@ -6,8 +6,9 @@
  */
 
 #include "MenuItemToggle.h"
+#include "../language.h"
 
-#ifdef HUI_API_GTK
+#include <gtk/gtk.h>
 
 namespace hui
 {
@@ -52,5 +53,3 @@ bool MenuItemToggle::is_checked() {
 }
 
 };
-
-#endif

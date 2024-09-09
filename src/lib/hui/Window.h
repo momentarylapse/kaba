@@ -9,11 +9,12 @@
 #ifndef _HUI_WINDOW_EXISTS_
 #define _HUI_WINDOW_EXISTS_
 
-#include "Event.h"
 #include "Panel.h"
 #include "../base/future.h"
 
+typedef struct _GtkEventController GtkEventController;
 
+class vec2;
 class rect;
 class Painter;
 
@@ -141,14 +142,12 @@ public:
 private:
 
 
-#ifdef HUI_API_GTK
 public:
 	GtkWidget *window;
 public:
 	shared<Control> header_bar;
 	void _add_headerbar();
 	ControlBasicWindowLayout *basic_layout = nullptr;
-#endif
 	
 protected:
 	Menu *popup;
@@ -163,9 +162,9 @@ public:
 	Array<EventKeyCode> get_event_key_codes() const { return event_key_codes; }
 protected:
 
-#if GTK_CHECK_VERSION(4,0,0)
+//#if GTK_CHECK_VERSION(4,0,0)
 	GtkEventController *shortcut_controller = nullptr;
-#endif
+//#endif
 
 public:
 	base::promise<void> end_run_promise;
