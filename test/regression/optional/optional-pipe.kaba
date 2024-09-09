@@ -1,0 +1,18 @@
+func f(x: f32) -> f32
+	return x*x
+
+
+func g(x: f32) -> f32?
+	if x > 1
+		return x*x
+	else
+		return nil
+
+func main()
+	let o = 13.0 as f32?
+
+	print(o |> f |> f)
+
+	print(o |> g)
+	print(o |> sin |> g)
+
