@@ -12,7 +12,7 @@ There are several pointer types:
 
 ## Pointers as containers
 
-Pointers that can be null (`X*`, `owned[X]`, `shared[X]`) need additional unwrapping when using the "contained" value (i.e. the object pointed to by the pointer):
+Pointers that can be null (`X*`, `owned[X]`, `shared[X]`) need additional unwrapping when using the "contained" value (i.e. the object pointed to by the pointer) (see [error handling](error.md)):
 ```kaba
 var pointer: shared[X]
 for x in pointer

@@ -40,10 +40,12 @@ let x = [1.0, 2.0, 3.0] |> sin
 * [dictionaries](doc/language/dicts.md)
 * [functions](doc/language/functions.md)
 * [classes](doc/language/classes.md)
-* [pointers and memory model](doc/language/pointers.md)
+* [pointers and ownership](doc/language/pointers.md)
 * [data pipelines](doc/language/pipes.md)
+* [error handling](doc/language/error.md)
 * [async](doc/language/async.md)
 * [generics](doc/language/generics.md)
+* [modules](doc/language/modules.md)
 
 ## Libraries
 

@@ -27,7 +27,16 @@ func main(args: string[])
 
 ## Variables
 
-The basic types are integers (`i32`), floats (`f32`), [strings](strings.md) (`string`) and booleans (`bool`).
+The common basic types are:
+
+| Type     | Meaning                                            |
+|----------|----------------------------------------------------|
+| `i32`    | (32bit) signed integers                            |
+| `f32`    | (32bit) floating point numbers                     |
+| `string` | [strings](strings.md) ("text") of arbitrary length |
+| `bool`   | boolean truth values, can be `true` or `false`     |
+
+Less common are other signed integers (`i64`, `i16`, `i8`), unsigned 8bit integers (`u8`), 64 bit "doubles" (`f64`).
 
 Defining a variable:
 ```kaba
@@ -41,7 +50,7 @@ var i: i32 = 13
 i = 20
 ```
 
-Variables can change values, but they can never change their type!
+🔥 Variables can change values, but they can never change their type!
 
 If the variable does not need to be mutable, use `let`:
 ```kaba
