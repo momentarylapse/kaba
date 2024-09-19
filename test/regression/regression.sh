@@ -103,4 +103,5 @@ then
 	echo -e "${GREEN}all ${TOTAL_TESTS} tests passed${NC}"
 else
 	echo -e "${RED}${TOTAL_PASSED} out of ${TOTAL_TESTS} tests passed - ${TOTAL_FAILED} failed ${NC}"
+	exit 1
 fi
