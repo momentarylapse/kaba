@@ -1,0 +1,13 @@
+func main()
+	if @compiletime 1 < 2
+		print("<")
+	else
+		print(">")
+	
+	if @compiletime sizeof(int) == 4
+		print("a")
+	if @compiletime int == int
+		print("b")
+#	if @compiletime int.name == "int"
+#		print("c")
+

@@ -318,6 +318,13 @@ Array<int> enum_all(const Class *e) {
 	return r;
 }
 
+bool pointer_equal(const void* a, const void* b) {
+	return a == b;
+}
+
+bool pointer_not_equal(const void* a, const void* b) {
+	return a != b;
+}
 
 
 
@@ -517,8 +524,8 @@ void SIAddPackageBase(Context *c) {
 	add_class(TypePointer);
 		class_add_func(Identifier::func::Str, TypeString, &p2s, Flags::Pure);
 		add_operator(OperatorID::Assign, TypeVoid, TypePointer, TypePointer, InlineID::PointerAssign);
-		add_operator(OperatorID::Equal, TypeBool, TypePointer, TypePointer, InlineID::PointerEqual);
-		add_operator(OperatorID::NotEqual, TypeBool, TypePointer, TypePointer, InlineID::PointerNotEqual);
+		add_operator(OperatorID::Equal, TypeBool, TypePointer, TypePointer, InlineID::PointerEqual, &pointer_equal);
+		add_operator(OperatorID::NotEqual, TypeBool, TypePointer, TypePointer, InlineID::PointerNotEqual, &pointer_not_equal);
 
 
 	add_class(TypeReference);
