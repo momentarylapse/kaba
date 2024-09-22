@@ -1149,9 +1149,12 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 	int ind0 = Exp.cur_line->indent;
 	int token0 = Exp.consume_token(); // "if"
+
+	bool is_compiletime = try_consume(Identifier::Compiletime);
+
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
-	auto cmd_if = add_node_statement(StatementID::If, token0, TypeUnknown);
+	auto cmd_if = add_node_statement(is_compiletime ? StatementID::IfCompiletime : StatementID::If, token0, TypeUnknown);
 	cmd_if->set_param(0, cmd_cmp);
 	// ...block
 	expect_new_line_with_indent();

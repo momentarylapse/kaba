@@ -59,6 +59,7 @@ namespace Identifier {
 	const string Noauto = "@noauto";
 	const string Noframe = "@noframe";
 	const string Throws = "throws";
+	const string Compiletime = "@compiletime";
 	const string Use = "use";
 	const string Import = "import";
 	const string Return = "return";

@@ -59,6 +59,7 @@ namespace Identifier {
 	extern const string Noauto;
 	extern const string Noframe;
 	extern const string Throws;
+	extern const string Compiletime;
 	extern const string Use;
 	extern const string Import;
 	extern const string Return;
