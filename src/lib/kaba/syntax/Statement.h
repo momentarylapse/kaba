@@ -21,7 +21,6 @@ namespace kaba {
 enum class StatementID {
 	Return,
 	If,
-	IfUnwrap,
 	IfCompiletime,
 	While,
 	ForContainer,
