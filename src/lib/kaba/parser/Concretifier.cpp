@@ -977,13 +977,7 @@ shared<Node> Concretifier::concretify_special_function_sizeof(shared<Node> node,
 shared<Node> Concretifier::concretify_special_function_typeof(shared<Node> node, Block *block, const Class *ns) {
 	auto sub = concretify_node(node->params[0], block, block->name_space());
 	sub = force_concrete_type(sub);
-
-	auto c = add_node_const(tree->add_constant(TypeClassRef), node->token_id);
-	if (sub->kind == NodeKind::Class) {
-		return add_node_class(sub->as_class(), node->token_id);
-	} else {
-		return add_node_class(sub->type, node->token_id);
-	}
+	return add_node_class(sub->type, node->token_id);
 }
 
 shared<Node> implement_len(shared<Node> node, Concretifier *con, Block *block, const Class *ns, int token_id) {
