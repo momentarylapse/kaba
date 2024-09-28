@@ -321,6 +321,7 @@ add_executable(kaba
 	src/lib/kaba/lib/dict.cpp
 	src/lib/kaba/lib/extern.cpp
 	src/lib/kaba/lib/lib.cpp
+	src/lib/kaba/lib/lib_async.cpp
 	src/lib/kaba/lib/lib_base.cpp
 	src/lib/kaba/lib/lib_doc.cpp
 	src/lib/kaba/lib/lib_gl.cpp
