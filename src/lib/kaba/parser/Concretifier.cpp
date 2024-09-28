@@ -444,7 +444,7 @@ shared<Node> Concretifier::concretify_call(shared<Node> node, Block *block, cons
 		} else if (l->type->is_callable()) {
 			links[i] = make_func_pointer_node_callable(l);
 		} else if (auto c = l->type->get_call()) {
-			return add_node_member_call(c, l, {});
+			links[i] = add_node_member_call(c, l, node->token_id, {});
 		} else {
 			do_error(format("this %s does not seem callable", kind2str(l->kind)), l);
 		}
