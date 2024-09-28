@@ -1,0 +1,28 @@
+var pp: promise[void]
+
+
+func f() -> future[void]
+	var p: promise[void]
+	pp = p
+	return p.get_future()
+
+func main()
+	f().then_or_fail(func() print("success"), func() print("failed"))
+	
+	print("A")
+	pp()
+	print("B")
+	pp.fail()
+	print("C")
+	
+	
+	
+	var pp2: promise[string]
+	pp2.get_future().then_or_fail(func(s: string) print("success: {{s}}"), func() print("failed"))
+	
+	print("A2")
+	pp2("test")
+	print("B2")
+	pp2.fail()
+	print("C2")
+
