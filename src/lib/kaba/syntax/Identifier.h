@@ -54,6 +54,7 @@ namespace Identifier {
 	extern const string Alias;
 	extern const string RawPointer;
 	extern const string Future;
+	extern const string Promise;
 	extern const string TrustMe;
 	extern const string Pure;
 	extern const string Noauto;

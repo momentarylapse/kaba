@@ -18,6 +18,7 @@ namespace kaba {
 
 extern Module *cur_package;
 extern const Class *TypeFutureT;
+extern const Class *TypePromiseT;
 extern const Class* TypeCallback;
 
 template<class T>
@@ -53,6 +54,33 @@ struct KabaFuture : public base::future<T> {
 	}
 };
 
+template<class T>
+struct KabaPromise : base::promise<T> {
+	void __init__() {
+		new(this) KabaPromise<T>();
+	}
+	void __delete__() {
+		this->~KabaPromise<T>();
+	}
+	void assign(KabaPromise& other) {
+		*this = other;
+	}
+};
+
+template<class T>
+struct KabaPromiseX : KabaPromise<T> {
+	void call(typename base::xparam<T>::t value) {
+		(*this)(value);
+	}
+};
+
+template<>
+struct KabaPromiseX<void> : KabaPromise<void> {
+	void call() {
+		(*this)();
+	}
+};
+
 
 template<class T>
 void lib_create_future(const Class *tt, const Class *pp, const Class *t_cb) {
@@ -72,6 +100,29 @@ void lib_create_future(const Class *tt, const Class *pp, const Class *t_cb) {
 
 	cur_package->context->template_manager->add_explicit_class_instance(
 			cur_package->tree.get(), tt, TypeFutureT, {pp}, 0);
+}
+
+template<class T>
+void lib_create_promise(const Class *tt, const Class *pp, const Class *tfut) {
+	auto t = const_cast<Class*>(tt);
+	t->param = {pp};
+
+	add_class(t);
+	class_add_func(Identifier::func::Init, TypeVoid, &KabaPromise<T>::__init__, Flags::Mutable);
+	class_add_func(Identifier::func::Delete, TypeVoid, &KabaPromise<T>::__delete__, Flags::Mutable);
+	class_add_func(Identifier::func::Assign, TypeVoid, &KabaPromise<T>::assign, Flags::Mutable);
+	func_add_param("other", tt);
+	class_add_func("get_future", tfut, &KabaPromise<T>::get_future);
+	if (pp == TypeVoid) {
+		class_add_func(Identifier::func::Call, TypeVoid, &KabaPromiseX<T>::call);
+	} else {
+		class_add_func(Identifier::func::Call, TypeVoid, &KabaPromiseX<T>::call);
+		func_add_param("value", pp);
+	}
+	class_add_func("fail", TypeVoid, &KabaPromiseX<T>::fail);
+
+	cur_package->context->template_manager->add_explicit_class_instance(
+			cur_package->tree.get(), tt, TypePromiseT, {pp}, 0);
 }
 
 }

@@ -62,6 +62,7 @@ const Class *TypeCallableBindT;
 const Class *TypeOptionalT;
 const Class *TypeProductT;
 const Class *TypeFutureT;
+const Class *TypePromiseT;
 const Class *TypeFutureCoreT;
 const Class *TypeEnumT;
 const Class *TypeStructT;
@@ -398,6 +399,7 @@ void SIAddPackageBase(Context *c) {
 	TypeProductT = add_class_template("@Product", {"T"}, new TemplateClassInstantiatorProduct);
 	TypeFutureCoreT = add_class_template("@FutureCore", {"T"}, new TemplateClassInstantiatorFutureCore);
 	TypeFutureT = add_class_template("future", {"T"}, new TemplateClassInstantiatorFuture);
+	TypePromiseT = add_class_template("promise", {"T"}, new TemplateClassInstantiatorPromise);
 	TypeStructT = add_class_template("@Struct", {"T"}, nullptr);
 	TypeEnumT = add_class_template("@Enum", {"T"}, new TemplateClassInstantiatorEnum);
 	TypeInterfaceT = add_class_template("@Interface", {"T"}, nullptr);
