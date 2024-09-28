@@ -133,6 +133,8 @@ void SIAddPackageHui(Context *c) {
 	auto TypeHuiPathFuture = add_type("future[Path]", sizeof(base::future<Path>));
 	auto TypeHuiBoolFuture = add_type("future[bool]", sizeof(base::future<bool>));
 	auto TypeHuiVoidFuture = add_type("future[void]", sizeof(base::future<void>));
+	auto TypeHuiVoidPromise = add_type("promise[void]", sizeof(base::promise<void>));
+	auto TypeHuiStringPromise = add_type("promise[string]", sizeof(base::promise<string>));
 
 	auto TypeCallbackPainter = add_type_func(TypeVoid, {TypeHuiPainter});
 	auto TypeCallbackPath = add_type_func(TypeVoid, {TypePath});
@@ -150,6 +152,9 @@ void SIAddPackageHui(Context *c) {
 	lib_create_future<Path>(TypeHuiPathFuture, TypePath, TypeCallbackPath);
 	lib_create_future<bool>(TypeHuiBoolFuture, TypeBool, TypeCallbackBool);
 	lib_create_future<void>(TypeHuiVoidFuture, TypeVoid, TypeCallback);
+
+	lib_create_promise<void>(TypeHuiVoidPromise, TypeVoid, TypeHuiVoidFuture);
+	lib_create_promise<string>(TypeHuiStringPromise, TypeString, TypeHuiStringFuture);
 
 	add_class(TypeHuiMenu);
 		class_add_func(Identifier::func::Init, TypeVoid, hui_p(&hui::Menu::__init__), Flags::Mutable);
