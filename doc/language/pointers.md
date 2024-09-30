@@ -10,6 +10,14 @@ There are several pointer types:
 * `shared![X]` - shared ownership, not null
 * `xfer[X]` - ownership transfer
 
+## New
+
+🔥 Objects created with the `new` operator have ownership: 
+```kaba
+var a = new X()           # type: owned![X]
+var b = new shared X()    # type: shared![X]
+```
+
 ## Pointers as containers
 
 Pointers that can be null (`X*`, `owned[X]`, `shared[X]`) need additional unwrapping when using the "contained" value (i.e. the object pointed to by the pointer) (see [error handling](error.md)):

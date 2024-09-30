@@ -1,0 +1,8 @@
+class S as shared
+	i: i32
+	s: string
+
+func main()
+	#var s: shared![S] = new S()
+	var s = new shared S()
+	print(typeof(s))
