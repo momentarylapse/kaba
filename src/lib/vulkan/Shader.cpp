@@ -49,8 +49,8 @@ static shaderc_compiler_t shaderc = nullptr;
 
 
 
-	const int TYPE_LAYOUT = -41;
-	const int TYPE_MODULE = -42;
+	[[maybe_unused]] const int TYPE_LAYOUT = -41;
+	[[maybe_unused]] const int TYPE_MODULE = -42;
 
 
 	string vertex_module_default = "vertex-default-nix";

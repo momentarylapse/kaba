@@ -8,6 +8,7 @@
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
+#include "lib/kaba/lib/lib.h"
 #include "helper/elf.h"
 #include "helper/symbols.h"
 #include "helper/experiments.h"
@@ -24,6 +25,8 @@ base::future<string> xxx_fff() {
 namespace kaba {
 	extern int64 s2i2(const string &str);
 };
+
+KABA_LINK_GROUP_BEGIN
 
 class KabaApp : public hui::Application {
 public:
@@ -286,11 +289,6 @@ public:
 		return nullptr;
 	}
 
-#pragma GCC push_options
-#pragma GCC optimize("no-omit-frame-pointer")
-#pragma GCC optimize("no-inline")
-#pragma GCC optimize("0")
-
 	void execute(shared<kaba::Module> s, const Array<string> &args) {
 		if (kaba::config.target.interpreted) {
 			s->interpreter->run("main");
@@ -320,7 +318,6 @@ public:
 			die("no 'func main()' or 'func main(string[])' found");
 		}
 	}
-#pragma GCC pop_options
 
 	static void output_to_file_raw(shared<kaba::Module> s, const Path &_out_file) {
 		auto f = os::fs::open(_out_file, "wb");
@@ -344,6 +341,7 @@ public:
 		msg_write(Asm::disassemble(&s[data_size], s.num-data_size, true));
 	}
 };
+KABA_LINK_GROUP_END
 
 
 HUI_EXECUTE(KabaApp)

@@ -221,7 +221,7 @@ void CommandBuffer::next_subpass() {
 }
 
 void CommandBuffer::set_scissor(const rect &r) {
-	VkRect2D scissor = {(int)r.x1, (int)r.y1, (unsigned int)r.width(), (unsigned int)r.height()};
+	VkRect2D scissor = {{(int)r.x1, (int)r.y1}, {(unsigned int)r.width(), (unsigned int)r.height()}};
 	vkCmdSetScissor(buffer, 0, 1, &scissor);
 }
 
