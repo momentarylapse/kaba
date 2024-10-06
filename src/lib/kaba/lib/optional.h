@@ -19,11 +19,9 @@ namespace kaba {
 
 	extern const Class *TypeNone;
 
-#pragma GCC push_options
-#pragma GCC optimize("no-omit-frame-pointer")
-#pragma GCC optimize("no-inline")
-#pragma GCC optimize("0")
 
+
+KABA_LINK_GROUP_BEGIN
 
 template<class T>
 class XOptional : public base::optional<T> {
@@ -65,7 +63,7 @@ public:
 	}*/
 };
 
-#pragma GCC pop_options
+KABA_LINK_GROUP_END
 
 template<class T>
 void lib_create_optional(const Class *tt) {

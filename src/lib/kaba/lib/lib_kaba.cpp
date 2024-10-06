@@ -14,10 +14,9 @@ extern const Class* TypeSpecialFunctionRef;
 
 string function_link_name(Function *f);
 
-#pragma GCC push_options
-#pragma GCC optimize("no-omit-frame-pointer")
-#pragma GCC optimize("no-inline")
-#pragma GCC optimize("0")
+
+
+KABA_LINK_GROUP_BEGIN
 
 class KabaContext : public Context {
 public:
@@ -36,7 +35,7 @@ public:
 	}
 };
 
-#pragma GCC pop_options
+KABA_LINK_GROUP_END
 
 
 void show_func(Function *f) {

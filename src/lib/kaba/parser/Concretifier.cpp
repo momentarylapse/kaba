@@ -388,7 +388,7 @@ shared<Node> apply_macro(Concretifier *con, Function* f, shared<Node> node, shar
 		con->do_error(format("can not pass %d parameters to a macro expecting %d", params.num, f->num_params), node);
 
 	auto b = cp_node(f->block.get());
-	con->tree->transform_block((Block*)b.get(), [con, f, params] (shared<Node> n) {
+	con->tree->transform_block((Block*)b.get(), [f, params] (shared<Node> n) {
 		if (n->kind == NodeKind::AbstractToken) {
 			for (int i=0; i<params.num; i++) {
 				if (n->as_token() == f->var[i]->name) {
@@ -1416,7 +1416,7 @@ shared<Node> Concretifier::concretify_statement_match(shared<Node> node, Block *
 
 	node->type = output_type;
 
-	bool is_exhaustive = false;
+	[[maybe_unused]] bool is_exhaustive = false;
 
 	if (!has_default) {
 		if (input_type->is_enum()) {
@@ -1792,8 +1792,8 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		if (auto t = try_digest_type(tree, node->params[0]))
 			return add_node_class(tree->request_implicit_class_optional(t, node->token_id), node->token_id);
-		auto t = node->params[0]->type;
-		/*if (t->is_optional()) {
+		/*auto t = node->params[0]->type;
+		if (t->is_optional()) {
 			auto n = new Node(NodeKind::MAYBE, 0, t->param[0], node->flags, node->token_id);
 			n->set_num_params(1);
 			n->set_param(0, node->params[0]);

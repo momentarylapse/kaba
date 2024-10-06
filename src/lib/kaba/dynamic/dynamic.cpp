@@ -18,11 +18,7 @@ extern const Class *TypeSpecialFunction;
 	
 	
 
-#pragma GCC push_options
-#pragma GCC optimize("no-omit-frame-pointer")
-#pragma GCC optimize("no-inline")
-#pragma GCC optimize("0")
-
+KABA_LINK_GROUP_BEGIN
 
 void var_assign(void *pa, const void *pb, const Class *type) {
 	if ((type == TypeInt32) or (type == TypeFloat32)) {
@@ -381,7 +377,8 @@ DynamicArray array_map(void *fff, DynamicArray *a, const Class *ti, const Class 
 	return r;
 }
 
-#pragma GCC pop_options
+
+KABA_LINK_GROUP_END
 
 	
 	

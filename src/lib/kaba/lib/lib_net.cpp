@@ -23,12 +23,7 @@ namespace kaba {
 	#define GetDAAddress(x)			0
 #endif
 
-
-#pragma GCC push_options
-#pragma GCC optimize("no-omit-frame-pointer")
-#pragma GCC optimize("no-inline")
-#pragma GCC optimize("0")
-
+KABA_LINK_GROUP_BEGIN
 
 xfer<Socket> __socket_listen__(int port, bool block) {
 	KABA_EXCEPTION_WRAPPER( return Socket::listen(port, block); );
@@ -45,7 +40,7 @@ xfer<Socket> __socket_create_udp__(int port) {
 	return nullptr;
 }
 
-#pragma GCC pop_options
+KABA_LINK_GROUP_END
 
 void SIAddPackageNet(Context *c) {
 	add_package(c, "net");
