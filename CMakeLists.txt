@@ -6,8 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 
+
 #=======================================================================================
-#    libs
+#    libraries
 #=======================================================================================
 
 find_package(PkgConfig REQUIRED)
@@ -206,6 +207,7 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND DEPS Threads::Threads)
+
 
 #=======================================================================================
 #    target kaba
@@ -436,22 +438,32 @@ target_compile_options(kaba PUBLIC ${COMPILE_OPTIONS})
 target_compile_definitions(kaba PUBLIC ${COMPILE_DEFINITIONS} INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 target_link_libraries(kaba PUBLIC ${DEPS})
 
+
 #=======================================================================================
 #    install
 #=======================================================================================
 
-install(TARGETS kaba DESTINATION bin)
-install(FILES "static/icon.ico" DESTINATION share/kaba)
-install(FILES "static/icon.png" DESTINATION share/kaba)
+set(RESOURCE_DESTINATION share/kaba)
 
-# install .desktop file
-set(INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/static/michisoft-kaba.desktop" /tmp/michisoft-kaba.desktop NO_SOURCE_PERMISSIONS)
-install(FILES /tmp/michisoft-kaba.desktop DESTINATION share/applications)
+# binaries
+install(TARGETS kaba DESTINATION bin)	
 
-# install mime
-find_program(XDG_MIME_EXECUTABLE xdg-mime)
-if(NOT XDG_MIME_EXECUTABLE STREQUAL "XDG_MIME_EXECUTABLE_NOTFOUND")
-	install(CODE "message(STATUS \"installing mime file\")")
-	install(CODE "execute_process(COMMAND ${XDG_MIME_EXECUTABLE} install --novendor ${CMAKE_CURRENT_SOURCE_DIR}/static/michisoft-kaba.xml)")
+# resources
+install(DIRECTORY "static" DESTINATION ${RESOURCE_DESTINATION})
+
+
+if (UNIX AND NOT APPLE)
+	# install .desktop file
+	set(INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/static/michisoft-kaba.desktop" /tmp/michisoft-kaba.desktop NO_SOURCE_PERMISSIONS)
+	install(FILES /tmp/michisoft-kaba.desktop DESTINATION share/applications)
+endif ()
+
+if (UNIX AND NOT APPLE)
+	# install mime
+	find_program(XDG_MIME_EXECUTABLE xdg-mime)
+	if(NOT XDG_MIME_EXECUTABLE STREQUAL "XDG_MIME_EXECUTABLE_NOTFOUND")
+		install(CODE "message(STATUS \"installing mime file\")")
+		install(CODE "execute_process(COMMAND ${XDG_MIME_EXECUTABLE} install --novendor ${CMAKE_CURRENT_SOURCE_DIR}/static/michisoft-kaba.xml)")
+	endif()
 endif()
