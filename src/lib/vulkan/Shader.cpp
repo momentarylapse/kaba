@@ -121,6 +121,10 @@ static shaderc_compiler_t shaderc = nullptr;
 				p.type = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
 			} else if (tag == "RayMissShader") {
 				p.type = VK_SHADER_STAGE_MISS_BIT_KHR;
+			} else if (tag == "TaskShader") {
+				p.type = VK_SHADER_STAGE_TASK_BIT_NV;
+			} else if (tag == "MeshShader") {
+				p.type = VK_SHADER_STAGE_MESH_BIT_NV;
 			} else if (tag == "Module") {
 				p.type = (VkShaderStageFlagBits)TYPE_MODULE;
 			} else if (tag == "Layout") {

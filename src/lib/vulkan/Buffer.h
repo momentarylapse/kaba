@@ -18,7 +18,7 @@ namespace vulkan {
 
 	class Buffer {
 	public:
-		Buffer(Device *device);
+		explicit Buffer(Device *device);
 		~Buffer();
 		void create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void destroy();
@@ -39,7 +39,7 @@ namespace vulkan {
 
 	class UniformBuffer : public Buffer {
 	public:
-		UniformBuffer(int size);
+		explicit UniformBuffer(int size);
 		UniformBuffer(int size, int count);
 		~UniformBuffer();
 

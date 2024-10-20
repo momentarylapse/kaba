@@ -56,10 +56,10 @@ Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
 
 VkPipelineLayout create_pipeline_layout(Shader *shader, const Array<VkDescriptorSetLayout> &dset_layouts) {
 	VkPipelineLayoutCreateInfo info = {};
-	VkPushConstantRange pci = {0};
+	VkPushConstantRange pci = {VK_SHADER_STAGE_ALL, 0, (uint32_t)shader->push_size};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	if (shader and shader->push_size > 0) {
-		pci.stageFlags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
+		pci.stageFlags = VK_SHADER_STAGE_ALL; //VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
 		pci.offset = 0;
 		pci.size = shader->push_size;
 		info.pushConstantRangeCount = 1;

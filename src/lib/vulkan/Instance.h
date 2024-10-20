@@ -14,6 +14,8 @@
 
 namespace vulkan {
 
+	using Surface = VkSurfaceKHR;
+
 	class Device;
 
 	class Instance {
@@ -25,7 +27,10 @@ namespace vulkan {
 		Instance();
 		~Instance();
 
-		VkSurfaceKHR create_surface(GLFWwindow* window);
+#ifdef HAS_LIB_GLFW
+		Surface create_glfw_surface(GLFWwindow* window);
+#endif
+		Surface create_headless_surface();
 
 		void setup_debug_messenger();
 		void _ensure_rtx_extensions();

@@ -272,7 +272,23 @@ void Texture::_create_image(const void *image_data, VkImageType type, VkFormat f
 		image.generate_mipmaps(width, height, mip_levels, 0, num_layers, layout);
 	else
 		image.transition_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, mip_levels, 0, num_layers);
+}
 
+
+void Texture::read(void* data) {
+	int layer_size = width * height * depth * format_size(image.format);
+
+	image.transition_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 1, 0, 1);
+
+	Buffer staging(default_device);
+	staging.create(layer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	int layer = 0;
+	copy_image_to_buffer(image.image, width, height, depth, 0, layer, staging.buffer);
+
+	void* p = staging.map();
+	memcpy(data, p, layer_size);
+	staging.unmap();
 }
 
 void Texture::_create_sampler() const {

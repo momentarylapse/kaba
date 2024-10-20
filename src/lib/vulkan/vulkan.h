@@ -4,8 +4,11 @@
 
 #define VK_ENABLE_BETA_EXTENSIONS
 #include <vulkan/vulkan.h>
+
+#ifdef HAS_LIB_GLFW
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#endif
 
 #include "Instance.h"
 #include "Device.h"
@@ -28,10 +31,11 @@ namespace vulkan {
 
 	void rebuild_pipelines();
 
-
+#ifdef HAS_LIB_GLFW
 	xfer<GLFWwindow> create_window(const string &title, int width, int height);
 	bool window_handle(GLFWwindow *window);
 	void window_close(GLFWwindow *window);
+#endif
 
 	xfer<Instance> init(const Array<string> &op);
 

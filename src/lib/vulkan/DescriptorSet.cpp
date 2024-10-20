@@ -58,8 +58,8 @@ VkDescriptorType descriptor_type(const string &s) {
 		info.pPoolSizes = &pool_sizes[0];
 		info.maxSets = max_sets;
 
-		if (vkCreateDescriptorPool(default_device->device, &info, nullptr, &pool) != VK_SUCCESS)
-			throw Exception("failed to create descriptor pool!");
+		if (int r = vkCreateDescriptorPool(default_device->device, &info, nullptr, &pool) != VK_SUCCESS)
+			throw Exception("failed to create descriptor pool!  err=" + str(r));
 	}
 
 	DescriptorPool::~DescriptorPool() {
@@ -95,8 +95,8 @@ VkDescriptorType descriptor_type(const string &s) {
 		info.descriptorSetCount = 1;
 		info.pSetLayouts = &layout;
 
-		if (vkAllocateDescriptorSets(default_device->device, &info, &descriptor_set) != VK_SUCCESS)
-			throw Exception("failed to allocate descriptor sets!");
+		if (int r = vkAllocateDescriptorSets(default_device->device, &info, &descriptor_set) != VK_SUCCESS)
+			throw Exception("failed to allocate descriptor sets!  err=" + str(r));
 	}
 	DescriptorSet::~DescriptorSet() {
 		// no VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT...

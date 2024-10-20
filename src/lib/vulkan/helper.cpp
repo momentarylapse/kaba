@@ -212,6 +212,25 @@ void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32
 	end_single_time_commands(command_buffer);
 }
 
+void copy_image_to_buffer(VkImage image, uint32_t width, uint32_t height, uint32_t depth, uint32_t level, uint32_t layer, VkBuffer buffer) {
+	auto command_buffer = begin_single_time_commands();
+
+	VkBufferImageCopy region = {};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = level;
+	region.imageSubresource.baseArrayLayer = layer;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = {0, 0, 0};
+	region.imageExtent = {width, height, depth};
+
+	vkCmdCopyImageToBuffer(command_buffer->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region);
+
+	end_single_time_commands(command_buffer);
+}
+
 VkImageAspectFlags image_aspect(const ImageAndMemory &i, VkImageLayout new_layout) {
 	if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 		VkImageAspectFlags a = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -252,6 +271,12 @@ void ImageAndMemory::transition_layout(VkImageLayout old_layout, VkImageLayout n
 	} else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED and new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	} else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED and new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
 		source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;

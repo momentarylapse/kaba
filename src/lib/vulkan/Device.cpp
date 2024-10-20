@@ -37,6 +37,9 @@ Device *default_device;
 #ifdef OS_MAC
 		ext.add("VK_KHR_portability_subset");
 #endif
+		if (req & Requirements::MESH_SHADER)
+			ext.add("VK_NV_mesh_shader");
+			//ext.add("VK_EXT_mesh_shader"); // VK_EXT_MESH_SHADER_EXTENSION_NAME
 		return ext;
 	}
 
@@ -339,15 +342,15 @@ Requirements parse_requirements(const Array<string> &op) {
 			req = req | Requirements::ANISOTROPY;
 		else if (o == "rtx")
 			req = req | Requirements::RTX;
+		else if (o == "meshshader")
+			req = req | Requirements::MESH_SHADER;
 		else
 			throw Exception("unknown requirement: " + o);
 	}
 	return req;
 }
 
-xfer<Device> Device::create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op) {
-	auto surface = instance->create_surface(window);
-
+xfer<Device> Device::create_simple(Instance *instance, VkSurfaceKHR surface, const Array<string> &op) {
 	//op.append({"graphics", "present", "swapchain", "anisotropy"});
 	auto req = parse_requirements(op);
 	auto device = new Device();

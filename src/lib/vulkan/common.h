@@ -20,7 +20,8 @@ enum class Requirements {
 	GRAPHICS = 8,
 	COMPUTE = 16,
     VALIDATION = 32,
-    RTX = 64
+    RTX = 64,
+	MESH_SHADER = 128
 };
 inline bool operator&(Requirements a, Requirements b) {
 	return ((int)a & (int)b);

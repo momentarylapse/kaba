@@ -44,6 +44,7 @@ VkPresentModeKHR choose_swap_present_mode(const Array<VkPresentModeKHR> availabl
 	return best_mode;
 }
 
+#ifdef HAS_LIB_GLFW
 VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
@@ -64,6 +65,7 @@ VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFW
 		return actual_extent;
 	}
 }
+#endif
 
 
 Array<xfer<Texture>> SwapChain::create_textures() {
@@ -128,24 +130,25 @@ xfer<RenderPass> SwapChain::create_render_pass(DepthBuffer *depth_buffer, const 
 }
 
 
-void SwapChain::create() {
-	SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
+xfer<SwapChain> SwapChain::create(Device *device, int width, int height) {
+	auto swap_chain = new SwapChain(device);
+	const SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
 
-	VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
-	VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
-	auto extent = choose_swap_extent(swap_chain_support.capabilities, window);
-	width = extent.width;
-	height = extent.height;
+	const VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
+	const VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
+	const VkExtent2D extent = {(uint32_t)width, (uint32_t)height};
 
-	image_count = swap_chain_support.capabilities.minImageCount + 1;
-	if (swap_chain_support.capabilities.maxImageCount > 0 and image_count > swap_chain_support.capabilities.maxImageCount)
-		image_count = swap_chain_support.capabilities.maxImageCount;
+	swap_chain->image_count = swap_chain_support.capabilities.minImageCount + 1;
+	if (swap_chain_support.capabilities.maxImageCount > 0 and swap_chain->image_count > swap_chain_support.capabilities.maxImageCount)
+		swap_chain->image_count = swap_chain_support.capabilities.maxImageCount;
+	swap_chain->width = width;
+	swap_chain->height = height;
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	info.surface = device->surface;
 
-	info.minImageCount = image_count;
+	info.minImageCount = swap_chain->image_count;
 	info.imageFormat = surface_format.format;
 	info.imageColorSpace = surface_format.colorSpace;
 	info.imageExtent = extent;
@@ -168,17 +171,26 @@ void SwapChain::create() {
 	info.presentMode = present_mode;
 	info.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain->swap_chain) != VK_SUCCESS)
 		throw Exception("failed to create swap chain!");
 
-	image_format = surface_format.format;
+	swap_chain->image_format = surface_format.format;
+	return swap_chain;
 }
+
+#ifdef HAS_LIB_GLFW
+xfer<SwapChain> SwapChain::create_for_glfw(Device *device, GLFWwindow* window) {
+	const SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
+	auto extent = choose_swap_extent(swap_chain_support.capabilities, window);
+	return create(device, (int)extent.width, (int)extent.height);
+}
+#endif
 
 // well, no memory :P
 Array<VkImage> SwapChain::get_images() {
 	vkGetSwapchainImagesKHR(device->device, swap_chain, &image_count, nullptr);
 	Array<VkImage> images;
-	images.resize(image_count);
+	images.resize((int)image_count);
 	vkGetSwapchainImagesKHR(device->device, swap_chain, &image_count, &images[0]);
 	return images;
 }
@@ -197,18 +209,11 @@ Array<VkImageView> SwapChain::create_image_views(Array<VkImage> &images) {
 
 
 
-
-SwapChain::SwapChain(GLFWwindow* w, Device *d) {
-	window = w;
+SwapChain::SwapChain(Device *d) {
 	device = d;
-	create();
 }
 
 SwapChain::~SwapChain() {
-	cleanup();
-}
-
-void SwapChain::cleanup() {
 /*	for (auto frame_buffer: frame_buffers)
 		delete frame_buffer;
 	frame_buffers.clear();
@@ -224,12 +229,6 @@ void SwapChain::cleanup() {
 
 	vkDestroySwapchainKHR(device->device, swap_chain, nullptr);
 }
-
-void SwapChain::rebuild() {
-	cleanup();
-	create();
-}
-
 
 bool SwapChain::present(int image_index, const Array<Semaphore*> &wait_sem) {
 	auto wait_semaphores = extract_semaphores(wait_sem);

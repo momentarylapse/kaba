@@ -1,8 +1,11 @@
 #if HAS_LIB_VULKAN
 
 #include "vulkan.h"
+
+#ifdef HAS_LIB_GLFW
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#endif
 
 #include "helper.h"
 #include "../base/base.h"
@@ -26,8 +29,7 @@ Instance *init(const Array<string> &op) {
 
 
 
-
-
+#ifdef HAS_LIB_GLFW
 GLFWwindow* create_window(const string &title, int width, int height) {
 	glfwInit();
 
@@ -50,6 +52,7 @@ void window_close(GLFWwindow *window) {
 
 	glfwTerminate();
 }
+#endif
 
 
 }

@@ -9,9 +9,6 @@
 
 #if HAS_LIB_VULKAN
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include "../base/base.h"
 #include "../base/pointer.h"
 #include "Queue.h"
@@ -50,7 +47,7 @@ public:
 
 	string physical_name() const;
 
-	static xfer<Device> create_simple(Instance *instance, GLFWwindow* window, const Array<string> &op);
+	static xfer<Device> create_simple(Instance *instance, VkSurfaceKHR surface, const Array<string> &op);
 
 	void pick_physical_device(Instance *instance, VkSurfaceKHR surface, Requirements req);
 	void create_logical_device(VkSurfaceKHR surface, Requirements req);

@@ -34,6 +34,7 @@ namespace vulkan {
 		void _load(const Path &filename);
 		void write(const Image &image);
 		void writex(const void *image, int nx, int ny, int nz, const string &format);
+		void read(void* data);
 
 
 		void set_options(const string &op) const;
