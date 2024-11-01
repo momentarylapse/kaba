@@ -14,6 +14,8 @@
 #include "../base/pointer.h"
 #include "Texture.h"
 
+class rect;
+
 namespace vulkan {
 
 class RenderPass;
@@ -40,6 +42,8 @@ public:
 
 	void _create(RenderPass *rp, const shared_array<Texture> &attachments, int layer);
 	void _destroy();
+
+	rect area() const;
 
 	shared_array<Texture> attachments;
 	Array<VkImageView> cube_views;

@@ -55,7 +55,7 @@ namespace vulkan{
 
 	class CommandPool {
 	public:
-		CommandPool(Device *device);
+		explicit CommandPool(Device *device);
 		~CommandPool();
 
 		VkCommandPool command_pool;
@@ -66,7 +66,7 @@ namespace vulkan{
 
 	class CommandBuffer {
 	public:
-		CommandBuffer(CommandPool *pool);
+		explicit CommandBuffer(CommandPool *pool);
 		~CommandBuffer();
 
 		VkCommandBuffer buffer;
@@ -88,7 +88,7 @@ namespace vulkan{
 		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
 		void next_subpass();
 		void end_render_pass();
-		void clear(const Array<color> &col, base::optional<float> z);
+		void clear(const rect& area, const Array<color> &col, base::optional<float> z);
 		void draw(VertexBuffer *vb);
 		void draw_instanced(VertexBuffer *vb, int num_instances);
 

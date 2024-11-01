@@ -77,10 +77,12 @@ base::optional<QueueFamilyIndices> QueueFamilyIndices::query(VkPhysicalDevice de
 		if (family.queueFlags & VK_QUEUE_COMPUTE_BIT)
 			indices.compute_family = i;
 
-		VkBool32 present_support = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
-		if (present_support)
-			indices.present_family = i;
+		if (surface) {
+			VkBool32 present_support = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+			if (present_support)
+				indices.present_family = i;
+		}
 
 		if (indices.is_complete(req))
 			return indices;

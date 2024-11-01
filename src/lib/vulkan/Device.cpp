@@ -54,15 +54,19 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requireme
 	if (!check_device_extension_support(device, req))
 		return false;
 
-	SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device, surface);
-
-	if (req & Requirements::SWAP_CHAIN)
-		if (swapChainSupport.formats.num == 0)
+	if ((req & Requirements::SWAP_CHAIN) or (req & Requirements::PRESENT)) {
+		if (!surface)
 			return false;
+		SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device, surface);
 
-	if (req & Requirements::PRESENT)
-		if (swapChainSupport.present_modes.num == 0)
-			return false;
+		if (req & Requirements::SWAP_CHAIN)
+			if (swapChainSupport.formats.num == 0)
+				return false;
+
+		if (req & Requirements::PRESENT)
+			if (swapChainSupport.present_modes.num == 0)
+				return false;
+	}
 
 	if (req & Requirements::ANISOTROPY) {
 		VkPhysicalDeviceFeatures supported_features;

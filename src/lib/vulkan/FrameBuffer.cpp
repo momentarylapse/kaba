@@ -113,6 +113,10 @@ void FrameBuffer::_destroy() {
 	cube_views.clear();
 }
 
+rect FrameBuffer::area() const {
+	return {0, (float)width, 0, (float)height};
+}
+
 
 } /* namespace vulkan */
 

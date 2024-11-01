@@ -187,12 +187,16 @@ void CommandBuffer::begin_render_pass(RenderPass *rp, FrameBuffer *fb) {
 	vkCmdBeginRenderPass(buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::clear(const Array<color> &col, base::optional<float> z) {
+VkRect2D rect_to_vk(const rect& r) {
+	return {{(int)r.x1, (int)r.y1}, {(unsigned)r.width(), (unsigned)r.height()}};
+}
+
+void CommandBuffer::clear(const rect& area, const Array<color> &col, base::optional<float> z) {
 	if (!current_framebuffer)
 		return;
 	Array<VkClearAttachment> clear_attachments;
 	//Array<VkClearRect> clear_rects;
-	for (auto&& [i,c]: enumerate(col)) {
+	for (const auto& [i,c]: enumerate(col)) {
 		VkClearAttachment ca = {};
 		ca.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		ca.colorAttachment = i;
@@ -207,7 +211,7 @@ void CommandBuffer::clear(const Array<color> &col, base::optional<float> z) {
 		clear_attachments.add(ca);
 	}
 	VkClearRect clear_rect = {};
-	clear_rect.rect = {{0,0}, {(unsigned)current_framebuffer->width, (unsigned)current_framebuffer->height}};
+	clear_rect.rect = rect_to_vk(area);
 	clear_rect.baseArrayLayer = 0;
 	clear_rect.layerCount = 1;
 
