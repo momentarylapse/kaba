@@ -63,6 +63,8 @@ void arm32_init() {
 		add_reg(format("r%d", i), r_reg(i), RegGroup::GENERAL, SIZE_32, (RegRoot)((int)RegRoot::R0 + i));
 	for (int i=0; i<16; i++)
 		add_reg(format("s%d", i), s_reg(i), RegGroup::VFP, SIZE_32, (RegRoot)((int)RegRoot::S0 + i));
+	for (int i=0; i<16; i++)
+		add_reg(format("d%d", i), d_reg(i), RegGroup::VFP, SIZE_64, (RegRoot)((int)RegRoot::S0 + i * 2)); // :(
 
 	// create easy to access array
 	register_by_id.clear();
@@ -300,13 +302,13 @@ void arm64_init() {
 	add_inst_arm(InstID::LDR, 0xbd400000, 0xffe00000, AP_SREG_0P5, AP_DEREF_S32_REG_5P5_PLUS_IMM12P10); // f32
 	add_inst_arm(InstID::LDR, 0xfd400000, 0xffe00000, AP_DREG_0P5, AP_DEREF_S64_REG_5P5_PLUS_IMM12P10); // f64
 	add_inst_arm(InstID::FADD, 0x1e202800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f32
-	add_inst_arm(InstID::FADD, 0x1e602800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
+	add_inst_arm(InstID::FADD, 0x1e602800, 0xffe0fc00, AP_DREG_0P5, AP_DREG_5P5, AP_DREG_16P5); // f64
 	add_inst_arm(InstID::FSUB, 0x1e203800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f32
-	add_inst_arm(InstID::FSUB, 0x1e603800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
+	add_inst_arm(InstID::FSUB, 0x1e603800, 0xffe0fc00, AP_DREG_0P5, AP_DREG_5P5, AP_DREG_16P5); // f64
 	add_inst_arm(InstID::FMUL, 0x1e200800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f32
-	add_inst_arm(InstID::FMUL, 0x1e600800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
+	add_inst_arm(InstID::FMUL, 0x1e600800, 0xffe0fc00, AP_DREG_0P5, AP_DREG_5P5, AP_DREG_16P5); // f64
 	add_inst_arm(InstID::FDIV, 0x1e201800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f32
-	add_inst_arm(InstID::FDIV, 0x1e601800, 0xffe0fc00, AP_SREG_0P5, AP_SREG_5P5, AP_SREG_16P5); // f64
+	add_inst_arm(InstID::FDIV, 0x1e601800, 0xffe0fc00, AP_DREG_0P5, AP_DREG_5P5, AP_DREG_16P5); // f64
 
 	add_inst_arm(InstID::FCMP, 0x1e202000, 0xffe0fc1f, AP_SREG_5P5, AP_SREG_16P5); // f32
 	add_inst_arm(InstID::FCMP, 0x1e602000, 0xffe0fc1f, AP_DREG_5P5, AP_DREG_16P5); // f64
@@ -620,7 +622,7 @@ int arm_reg_no(Register *r) {
 			return (int)r->id - (int)RegID::W0;
 		if (((int)r->id >= (int)RegID::S0) and ((int)r->id <= (int)RegID::S31))
 			return (int)r->id - (int)RegID::S0;
-		if (((int)r->id >= (int)RegID::D0) and ((int)r->id <= (int)RegID::D31))
+		if (((int)r->id >= (int)RegID::D0) and ((int)r->id <= (int)RegID::D15))
 			return (int)r->id - (int)RegID::D0;
 	}
 	raise_error("ARM: invalid register: " + r->name);
@@ -1002,7 +1004,7 @@ bool apply_param(InstructionWithParamsList& list, int ocs, unsigned int&code, co
 				code |= r << 16;
 			return true;
 		}
-		if ((pf == AP_DREG_0P5 or pf == AP_DREG_5P5 or pf == AP_DREG_16P5) and (p.reg->id >= RegID::D0 and p.reg->id <= RegID::D31)) {
+		if ((pf == AP_DREG_0P5 or pf == AP_DREG_5P5 or pf == AP_DREG_16P5) and (p.reg->id >= RegID::D0 and p.reg->id <= RegID::D15)) {
 			auto r = arm_reg_no(p.reg);
 			if (pf == AP_DREG_0P5)
 				code |= r << 0;
