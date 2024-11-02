@@ -1,0 +1,14 @@
+func f(x: f64) -> f64
+	return x*x
+
+
+func main()
+	let a = 2.0
+	let b = a as f64
+	print(b)
+	
+	let x = 2.0 as f64 #f(2.0)
+	let y = f(x)
+	print(y)
+	let z = y as f32
+	print(z)

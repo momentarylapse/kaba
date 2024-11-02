@@ -319,6 +319,9 @@ void arm64_init() {
 	add_inst_arm(InstID::SCVTF, 0x9e620000, 0xfffffc00, AP_DREG_0P5, AP_REG_5P5); // i64 -> f64
 
 	add_inst_arm(InstID::FCVTZS, 0x1e380000, 0xfffffc00, AP_WREG_0P5, AP_SREG_5P5); // f32 -> i32
+
+	add_inst_arm(InstID::FCVT, 0x1e22c000, 0xfffffc00, AP_DREG_0P5, AP_SREG_5P5); // f32 -> f64
+	add_inst_arm(InstID::FCVT, 0x1e624000, 0xfffffc00, AP_SREG_0P5, AP_DREG_5P5); // f64 -> f32
 }
 
 const int NUM_ARM_DATA_INSTRUCTIONS = 32;

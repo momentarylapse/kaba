@@ -577,20 +577,25 @@ void BackendArm64::correct_implement_commands() {
 			vreg_free(vregi);
 			vreg_free(vregf);
 
-		/*} else if (c.inst == Asm::InstID::CVTSS2SD) {
+		} else if (c.inst == Asm::InstID::CVTSS2SD) {
 			// f32 -> f64
-			auto p1 = c.p[0];
-			auto p2 = c.p[1];
-			[[maybe_unused]] int veax = cmd.add_virtual_reg(Asm::RegID::XMM0);
-			insert_cmd(Asm::InstID::CVTSS2SD, p_xmm0, p2);
-			insert_cmd(Asm::InstID::MOVSD, p1, p_xmm0);
+			auto vreg1 = vreg_alloc(8, Asm::d_reg(0));
+			auto vreg2 = vreg_alloc(4, Asm::s_reg(1));
+			_to_register_float(c.p[1], vreg2);
+			insert_cmd(Asm::InstID::FCVT, param_vreg_auto(c.p[0].type, vreg1), param_vreg_auto(c.p[1].type, vreg2));
+			_from_register_float(vreg1, c.p[0]);
+			vreg_free(vreg2);
+			vreg_free(vreg1);
+
 		} else if (c.inst == Asm::InstID::CVTSD2SS) {
 			// f64 -> f32
-			auto p1 = c.p[0];
-			auto p2 = c.p[1];
-			[[maybe_unused]] int veax = cmd.add_virtual_reg(Asm::RegID::XMM0);
-			insert_cmd(Asm::InstID::CVTSD2SS, p_xmm0, p2);
-			insert_cmd(Asm::InstID::MOVSS, p1, p_xmm0);*/
+			auto vreg1 = vreg_alloc(4, Asm::s_reg(0));
+			auto vreg2 = vreg_alloc(8, Asm::d_reg(1));
+			_to_register_float(c.p[1], vreg2);
+			insert_cmd(Asm::InstID::FCVT, param_vreg_auto(c.p[0].type, vreg1), param_vreg_auto(c.p[1].type, vreg2));
+			_from_register_float(vreg1, c.p[0]);
+			vreg_free(vreg2);
+			vreg_free(vreg1);
 
 		} else if (c.inst == Asm::InstID::CMP) {
 			auto p0 = c.p[0];
