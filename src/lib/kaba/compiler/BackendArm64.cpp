@@ -33,12 +33,10 @@ void BackendArm64::process(Function *f, int index) {
 	correct();
 }
 
-Asm::RegID next_sd_reg(const Class* t, int& next_sreg) {
-	if (t == TypeFloat64) {
-		next_sreg = (next_sreg + 3) & 0xfffffffe;
-		return Asm::d_reg(next_sreg - 2);
-	}
-	return Asm::s_reg(next_sreg ++);
+Asm::RegID sd_reg(const Class* t, int no) {
+	if (t == TypeFloat64)
+		return Asm::d_reg(no);
+	return Asm::s_reg(no);
 }
 
 void BackendArm64::add_function_intro_params(Function *f) {
@@ -52,7 +50,6 @@ void BackendArm64::add_function_intro_params(Function *f) {
 	Array<Variable*> reg_param;
 	Array<Variable*> stack_param;
 	Array<Variable*> float_param;
-	Array<Asm::RegID> float_preg;
 	int next_sreg = 0;
 	for (Variable *p: param) {
 		if ((p->type == TypeInt32) or (p->type == TypeInt64) or (p->type == TypeInt8) or (p->type == TypeUInt8) or (p->type == TypeBool) or p->type->is_enum() or p->type->is_some_pointer()) {
@@ -64,7 +61,6 @@ void BackendArm64::add_function_intro_params(Function *f) {
 		} else if (p->type == TypeFloat32 or p->type == TypeFloat64) {
 			if (float_param.num < 8) {
 				float_param.add(p);
-				float_preg.add(next_sd_reg(p->type, next_sreg));
 			} else {
 				stack_param.add(p);
 			}
@@ -75,7 +71,7 @@ void BackendArm64::add_function_intro_params(Function *f) {
 
 	// s0-7
 	foreachib(Variable *p, float_param, i) {
-		int reg = cmd.add_virtual_reg(float_preg[i]);
+		int reg = cmd.add_virtual_reg(sd_reg(p->type, i));
 		_from_register_float(reg, param_local(p->type, p->_offset));
 	}
 
@@ -763,7 +759,6 @@ BackendArm64::CallData BackendArm64::fc_begin(const Array<SerialNodeParam> &_par
 	Array<SerialNodeParam> reg_param;
 	Array<SerialNodeParam> stack_param;
 	Array<SerialNodeParam> float_param;
-	Array<Asm::RegID> float_preg;
 	int next_sreg = 0;
 	for (SerialNodeParam &p: params) {
 		if ((p.type == TypeInt32) or (p.type == TypeInt64) or (p.type == TypeInt8) or (p.type == TypeUInt8) or (p.type == TypeBool) or p.type->is_enum() or p.type->is_some_pointer()) {
@@ -775,7 +770,6 @@ BackendArm64::CallData BackendArm64::fc_begin(const Array<SerialNodeParam> &_par
 		} else if (p.type == TypeFloat32 or (p.type == TypeFloat64)) {
 			if (float_param.num < 8) {
 				float_param.add(p);
-				float_preg.add(next_sd_reg(p.type, next_sreg));
 			} else {
 				stack_param.add(p);
 			}
@@ -795,7 +789,7 @@ BackendArm64::CallData BackendArm64::fc_begin(const Array<SerialNodeParam> &_par
 
 	// s0-7 or d0-7
 	foreachib(auto &p, float_param, i) {
-		int vreg = vreg_alloc(p.type->size, float_preg[i]);
+		int vreg = vreg_alloc(p.type->size, sd_reg(p.type, i));
 		_to_register_float(p, vreg);
 		r.allocated_vregs.add(vreg);
 	}

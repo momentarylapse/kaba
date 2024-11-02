@@ -181,17 +181,17 @@ bool call_function_pointer_arm64(void *ff, void *ret, const Array<void*> &param,
 		"add x20, x20, 0x08\n"
 		"ldr x5, [x20]\n"
 		"add x20, x20, 0x08\n"
-		"ldr s0, [x20]\n" // -> s0
+		"ldr d0, [x20]\n" // -> d0
 		"add x20, x20, 0x08\n"
-		"ldr s1, [x20]\n"
+		"ldr d1, [x20]\n"
 		"add x20, x20, 0x08\n"
-		"ldr s2, [x20]\n"
+		"ldr d2, [x20]\n"
 		"add x20, x20, 0x08\n"
-		"ldr s3, [x20]\n"
+		"ldr d3, [x20]\n"
 		"add x20, x20, 0x08\n"
-		"ldr s4, [x20]\n"
+		"ldr d4, [x20]\n"
 		"add x20, x20, 0x08\n"
-		"ldr s5, [x20]\n"
+		"ldr d5, [x20]\n"
 		"add x20, x20, 0x08\n"
 		"ldr x8, [x20]\n" // -> r8
 		"add x20, x20, 0x08\n"

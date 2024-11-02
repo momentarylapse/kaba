@@ -1,5 +1,5 @@
-func f(x: f64) -> f64
-	return x*x
+func f(x: f64, y: f64) -> f64
+	return x*y
 
 
 func main()
@@ -7,8 +7,11 @@ func main()
 	let b = a as f64
 	print(b)
 	
-	let x = 2.0 as f64 #f(2.0)
-	let y = f(x)
+	let x = 3.0 as f64 #f(2.0)
+	let y = f(x, b)
 	print(y)
 	let z = y as f32
 	print(z)
+
+	# check preprocessor call str(f64)
+	print(2.0 as f64)
