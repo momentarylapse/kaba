@@ -50,7 +50,6 @@ void BackendArm64::add_function_intro_params(Function *f) {
 	Array<Variable*> reg_param;
 	Array<Variable*> stack_param;
 	Array<Variable*> float_param;
-	int next_sreg = 0;
 	for (Variable *p: param) {
 		if ((p->type == TypeInt32) or (p->type == TypeInt64) or (p->type == TypeInt8) or (p->type == TypeUInt8) or (p->type == TypeBool) or p->type->is_enum() or p->type->is_some_pointer()) {
 			if (reg_param.num < 8) {
@@ -759,7 +758,6 @@ BackendArm64::CallData BackendArm64::fc_begin(const Array<SerialNodeParam> &_par
 	Array<SerialNodeParam> reg_param;
 	Array<SerialNodeParam> stack_param;
 	Array<SerialNodeParam> float_param;
-	int next_sreg = 0;
 	for (SerialNodeParam &p: params) {
 		if ((p.type == TypeInt32) or (p.type == TypeInt64) or (p.type == TypeInt8) or (p.type == TypeUInt8) or (p.type == TypeBool) or p.type->is_enum() or p.type->is_some_pointer()) {
 			if (reg_param.num < max_reg_params) {
