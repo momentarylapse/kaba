@@ -34,7 +34,7 @@ Buffer::~Buffer() {
 }
 
 void Buffer::create(VkDeviceSize _size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
-	size = _size;
+	size = max(_size, (VkDeviceSize)16);
 	VkBufferCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	info.size = size;
@@ -141,6 +141,13 @@ void UniformBuffer::update_single(void *source, int index) {
 }
 
 
+StorageBuffer::StorageBuffer(int _size) : Buffer(default_device) {
+	size = _size;
+	VkDeviceSize buffer_size = size;
+
+	auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+}
 
 
 

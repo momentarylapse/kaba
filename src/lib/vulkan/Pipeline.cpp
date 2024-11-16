@@ -315,7 +315,7 @@ void GraphicsPipeline::rebuild() {
 
 
 
-ComputePipeline::ComputePipeline(const string &dset_layouts, Shader *shader) : BasePipeline(VK_PIPELINE_BIND_POINT_COMPUTE, shader) { //DescriptorSet::parse_bindings(dset_layouts)) {
+ComputePipeline::ComputePipeline(Shader *shader) : BasePipeline(VK_PIPELINE_BIND_POINT_COMPUTE, shader) {
 	if (verbosity >= 2)
 		msg_write("creating compute pipeline...");
 	

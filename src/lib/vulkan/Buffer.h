@@ -51,6 +51,11 @@ namespace vulkan {
 		int count, size_single_aligned;
 	};
 
+	class StorageBuffer : public Buffer {
+	public:
+		explicit StorageBuffer(int size);
+	};
+
 }
 
 #endif

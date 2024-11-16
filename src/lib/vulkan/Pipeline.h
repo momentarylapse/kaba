@@ -117,7 +117,7 @@ namespace vulkan{
 
 	class ComputePipeline : public BasePipeline {
 	public:
-		ComputePipeline(const string &dset_layouts, Shader *shader);
+		explicit ComputePipeline(Shader *shader);
 	};
 
 	class RayPipeline : public BasePipeline {
