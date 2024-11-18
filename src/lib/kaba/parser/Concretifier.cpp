@@ -1876,7 +1876,14 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 		}
 	} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
 		// null-able pointer?
-		auto t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+		const Class* t_def;
+		if (t->is_pointer_raw())
+			t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+		if (t->is_pointer_owned())
+			t_def = tree->request_implicit_class_owned_not_null(t->param[0], node->token_id);
+		if (t->is_pointer_shared())
+			t_def = tree->request_implicit_class_shared_not_null(t->param[0], node->token_id);
+
 		if (block->is_trust_me()) {
 			return sub->change_type(t_def);
 		} else {
