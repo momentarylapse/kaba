@@ -80,12 +80,12 @@ AccelerationStructure::~AccelerationStructure() {
 }
 
 void AccelerationStructure::build(const Array<VkGeometryNV> &geo, const Array<VkAccelerationStructureInstanceKHR> &instances, bool update) {
-	if (verbosity >= 3)
+	if (verbosity >= 4)
 		msg_write("   AccStr build");
 
 	Buffer instances_buffer(default_device);
 	if (instances.num > 0) {
-		if (verbosity >= 3) {
+		if (verbosity >= 4) {
 			msg_write(p2s(&instances));
 			msg_write(format("instance buffer %d*%d", instances.num, instances.element_size));
 		}
@@ -135,7 +135,7 @@ static Array<VkGeometryNV> create_geometries(VertexBuffer *vb) {
 	Array<VkGeometryNV> geo;
 
 	//for (int i=0; i<vb.num; i++) {
-		if (verbosity >= 3)
+		if (verbosity >= 4)
 			msg_write(format("AS vertices=%d stride=%d", vb->vertex_count, vb->stride()));
 		VkGeometryNV geometry = {};
 		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;

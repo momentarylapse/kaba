@@ -44,8 +44,8 @@ namespace vulkan{
 	public:
 		~DescriptorSet();
 
-		void set_buffer(int binding, Buffer *b);
-		void set_buffer_with_offset(int binding, Buffer *b, int offset);
+		void set_uniform_buffer(int binding, Buffer *b);
+		void set_uniform_buffer_with_offset(int binding, Buffer *b, int offset);
 		void set_storage_buffer(int binding, Buffer *b);
 		void set_texture(int binding, Texture *t);
 		void set_storage_image(int binding, Texture *t);

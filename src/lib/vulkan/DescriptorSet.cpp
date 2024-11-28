@@ -128,7 +128,7 @@ VkDescriptorType descriptor_type(const string &s) {
 		i.info.sampler = VK_NULL_HANDLE; //t->sampler;
 	}
 
-	void DescriptorSet::set_buffer_with_offset(int binding, Buffer *u, int offset) {
+	void DescriptorSet::set_uniform_buffer_with_offset(int binding, Buffer *u, int offset) {
 		auto type = /*u->is_dynamic() ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC :*/ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		auto &i = get_for_binding(buffers, binding, type);
 		i.info.buffer = u->buffer;
@@ -151,8 +151,8 @@ VkDescriptorType descriptor_type(const string &s) {
 	    i.info.pAccelerationStructures = &a->structure;
 	}
 
-	void DescriptorSet::set_buffer(int binding, Buffer *u) {
-		set_buffer_with_offset(binding, u, 0);
+	void DescriptorSet::set_uniform_buffer(int binding, Buffer *u) {
+		set_uniform_buffer_with_offset(binding, u, 0);
 	}
 
 	void DescriptorSet::update() {

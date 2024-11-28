@@ -54,21 +54,21 @@ Array<VkPipelineShaderStageCreateInfo> create_shader_stages(Shader *shader) {
 	return shader_stages;
 }
 
-VkPipelineLayout create_pipeline_layout(Shader *shader, const Array<VkDescriptorSetLayout> &dset_layouts) {
+VkPipelineLayout create_pipeline_layout(int push_size, const Array<VkDescriptorSetLayout> &dset_layouts) {
 	VkPipelineLayoutCreateInfo info = {};
-	VkPushConstantRange pci = {VK_SHADER_STAGE_ALL, 0, (uint32_t)shader->push_size};
+	VkPushConstantRange pci = {VK_SHADER_STAGE_ALL, 0, (uint32_t)push_size};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	if (shader and shader->push_size > 0) {
+	if (push_size > 0) {
 		pci.stageFlags = VK_SHADER_STAGE_ALL; //VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
 		pci.offset = 0;
-		pci.size = shader->push_size;
+		pci.size = push_size;
 		info.pushConstantRangeCount = 1;
 		info.pPushConstantRanges = &pci;
 	}
 	info.setLayoutCount = dset_layouts.num;
 	info.pSetLayouts = &dset_layouts[0];
 	if (verbosity >= 2)
-		msg_write(format("create pipeline with %d layouts, %d push size", dset_layouts.num, shader ? shader->push_size : -1));
+		msg_write(format("create pipeline with %d layouts, %d push size", dset_layouts.num, push_size));
 
 	VkPipelineLayout layout = VK_NULL_HANDLE;
 	if (vkCreatePipelineLayout(default_device->device, &info, nullptr, &layout) != VK_SUCCESS)
@@ -83,13 +83,13 @@ BasePipeline::BasePipeline(VkPipelineBindPoint bp, Shader *s) {
 
 	shader_stages = create_shader_stages(shader);
 
-	layout = create_pipeline_layout(shader, descr_layouts);
+	layout = create_pipeline_layout(shader->push_size, descr_layouts);
 }
 
 BasePipeline::BasePipeline(VkPipelineBindPoint bp, const Array<VkDescriptorSetLayout> &dset_layouts) {
 	bind_point = bp;
 	descr_layouts = dset_layouts;
-	layout = create_pipeline_layout(nullptr, dset_layouts);
+	layout = create_pipeline_layout(0, dset_layouts);
 }
 
 BasePipeline::~BasePipeline() {
