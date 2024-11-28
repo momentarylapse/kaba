@@ -956,6 +956,8 @@ void SIAddPackageBase(Context *c) {
 		func_add_param("e", TypeExceptionXfer);
 	add_func("@die", TypeVoid, &kaba_die, Flags::Static | Flags::RaisesExceptions);
 		func_add_param("e", TypePointer);
+	add_func(Identifier::Assert, TypeVoid, &kaba_assert, Flags::Static | Flags::RaisesExceptions);
+		func_add_param("b", TypeBool);
 
 
 	// type casting
