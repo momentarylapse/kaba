@@ -977,7 +977,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("bits", TypeInt32);
 
 	add_class(TypeRandom);
-		class_add_func(Identifier::func::Init, TypeVoid, &Random::__init__, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init<Random>, Flags::Mutable);
 		class_add_func(Identifier::func::Assign, TypeVoid, &Random::__assign__, Flags::Mutable);
 			func_add_param("o", TypeRandom);
 		//class_add_element("n", TypeRandom, 0);
