@@ -227,8 +227,14 @@ public:
 	void init(float x1, float x2, float y1, float y2) {
 		*(rect*)this = rect(x1, x2, y1, y2);
 	}
+	void init2(const vec2& p00, const vec2& p11) {
+		*(rect*)this = rect(p00, p11);
+	}
 	static rect set(float x1, float x2, float y1, float y2) {
 		return rect(x1, x2, y1, y2);
+	}
+	static rect set2(const vec2& p00, const vec2& p11) {
+		return rect(p00, p11);
 	}
 };
 
@@ -647,6 +653,8 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("height", TypeFloat32, &rect::height, Flags::Pure);
 		class_add_func("area", TypeFloat32, &rect::area, Flags::Pure);
 		class_add_func("center", TypeVec2, &rect::center, Flags::Pure);
+		class_add_func("p00", TypeVec2, &rect::p00, Flags::Pure);
+		class_add_func("p11", TypeVec2, &rect::p11, Flags::Pure);
 		class_add_func("size", TypeVec2, &rect::size, Flags::Pure);
 		class_add_func("inside", TypeBool, &rect::inside, Flags::Pure);
 			func_add_param("p", TypeVec2);
@@ -657,11 +665,17 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("x2", TypeFloat32);
 			func_add_param("y1", TypeFloat32);
 			func_add_param("y2", TypeFloat32);
+		/*class_add_func("_create", TypeRect, &KabaRect::set2, Flags::Static | Flags::Pure);
+			func_add_param("p00", TypeVec2);
+			func_add_param("p11", TypeVec2);*/
 		class_add_func(Identifier::func::Init, TypeVoid, &KabaRect::init, Flags::Mutable);
 			func_add_param("x1", TypeFloat32);
 			func_add_param("x2", TypeFloat32);
 			func_add_param("y1", TypeFloat32);
 			func_add_param("y2", TypeFloat32);
+		/*class_add_func(Identifier::func::Init, TypeVoid, &KabaRect::init2, Flags::Mutable);
+			func_add_param("p00", TypeVec2);
+			func_add_param("p11", TypeVec2);*/
 		add_operator(OperatorID::Assign, TypeVoid, TypeRect, TypeRect, InlineID::ChunkAssign, &KabaRect::assign);
 		add_operator(OperatorID::Equal, TypeBool, TypeRect, TypeRect, InlineID::ChunkEqual, &rect::operator==);
 		add_operator(OperatorID::NotEqual, TypeBool, TypeRect, TypeRect, InlineID::ChunkNotEqual, &rect::operator!=);
@@ -1021,9 +1035,9 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("normalize", TypeVoid, &Interpolator<float>::normalize, Flags::Mutable);
 		class_add_func("get", TypeFloat32, &Interpolator<float>::get, Flags::Pure);
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_tang", TypeFloat32, &Interpolator<float>::getTang, Flags::Pure);
+		class_add_func("get_derivative", TypeFloat32, &Interpolator<float>::get_derivative, Flags::Pure);
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_list", TypeFloatList, &Interpolator<float>::getList, Flags::Pure);
+		class_add_func("get_list", TypeFloatList, &Interpolator<float>::get_list, Flags::Pure);
 			func_add_param("t", TypeFloatList);
 
 
@@ -1051,9 +1065,9 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("normalize", TypeVoid, &Interpolator<vec3>::normalize, Flags::Mutable);
 		class_add_func("get", TypeVec3, &Interpolator<vec3>::get, Flags::Pure);
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_tang", TypeVec3, &Interpolator<vec3>::getTang, Flags::Pure);
+		class_add_func("get_tang", TypeVec3, &Interpolator<vec3>::get_derivative, Flags::Pure);
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_list", TypeVec3List, &Interpolator<vec3>::getList, Flags::Pure);
+		class_add_func("get_list", TypeVec3List, &Interpolator<vec3>::get_list, Flags::Pure);
 			func_add_param("t", TypeFloatList);
 
 	add_class(TypeFFT);
