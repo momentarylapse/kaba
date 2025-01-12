@@ -23,7 +23,7 @@ namespace vulkan {
 
 	class VertexBuffer {
 	public:
-		VertexBuffer(const string &format);
+		explicit VertexBuffer(const string &format);
 		~VertexBuffer();
 
 		void _create_buffer(Buffer &buf, const DynamicArray &array);

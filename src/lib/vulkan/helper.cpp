@@ -19,7 +19,7 @@ void ImageAndMemory::_destroy() {
 	memory = nullptr;
 }
 
-void ImageAndMemory::create(VkImageType type, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, uint32_t num_layers, VkFormat _format, VkImageUsageFlags usage, bool cube) {
+void ImageAndMemory::create(VkImageType type, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, uint32_t num_layers, VkSampleCountFlagBits samples, VkFormat _format, VkImageUsageFlags usage, bool cube) {
 	format = _format;
 
 	VkImageCreateInfo image_info = {};
@@ -34,7 +34,7 @@ void ImageAndMemory::create(VkImageType type, uint32_t width, uint32_t height, u
 	image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 	image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	image_info.usage = usage;
-	image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+	image_info.samples = samples;
 	image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	if (cube)
 		image_info.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;

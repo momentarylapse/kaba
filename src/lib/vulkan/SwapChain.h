@@ -52,6 +52,8 @@ public:
 	explicit SwapChain(Device *device);
 	~SwapChain();
 
+	void rebuild(int w, int h);
+
 	static xfer<SwapChain> create(Device *device, int w, int h);
 #ifdef HAS_LIB_GLFW
 	static xfer<SwapChain> create_for_glfw(Device *device, GLFWwindow* window);

@@ -17,6 +17,7 @@
 
 namespace vulkan {
 
+	string result2str(VkResult r);
 
 
 
@@ -130,25 +131,26 @@ xfer<RenderPass> SwapChain::create_render_pass(DepthBuffer *depth_buffer, const 
 }
 
 
-xfer<SwapChain> SwapChain::create(Device *device, int width, int height) {
-	auto swap_chain = new SwapChain(device);
+void SwapChain::rebuild(int w, int h) {
+	width = w;
+	height = h;
+
 	const SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device->physical_device, device->surface);
 
 	const VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats);
 	const VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes);
 	const VkExtent2D extent = {(uint32_t)width, (uint32_t)height};
 
-	swap_chain->image_count = swap_chain_support.capabilities.minImageCount + 1;
-	if (swap_chain_support.capabilities.maxImageCount > 0 and swap_chain->image_count > swap_chain_support.capabilities.maxImageCount)
-		swap_chain->image_count = swap_chain_support.capabilities.maxImageCount;
-	swap_chain->width = width;
-	swap_chain->height = height;
+	image_count = swap_chain_support.capabilities.minImageCount + 1;
+	if (swap_chain_support.capabilities.maxImageCount > 0 and image_count > swap_chain_support.capabilities.maxImageCount)
+		image_count = swap_chain_support.capabilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	info.surface = device->surface;
 
-	info.minImageCount = swap_chain->image_count;
+	info.oldSwapchain = swap_chain;
+	info.minImageCount = image_count;
 	info.imageFormat = surface_format.format;
 	info.imageColorSpace = surface_format.colorSpace;
 	info.imageExtent = extent;
@@ -171,10 +173,17 @@ xfer<SwapChain> SwapChain::create(Device *device, int width, int height) {
 	info.presentMode = present_mode;
 	info.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain->swap_chain) != VK_SUCCESS)
-		throw Exception("failed to create swap chain!");
+	auto r = vkCreateSwapchainKHR(device->device, &info, nullptr, &swap_chain);
+	if (r != VK_SUCCESS)
+		throw Exception("failed to create swap chain!  " + result2str(r));
 
-	swap_chain->image_format = surface_format.format;
+	image_format = surface_format.format;
+}
+
+
+xfer<SwapChain> SwapChain::create(Device *device, int width, int height) {
+	auto swap_chain = new SwapChain(device);
+	swap_chain->rebuild(width, height);
 	return swap_chain;
 }
 
@@ -243,22 +252,20 @@ bool SwapChain::present(int image_index, const Array<Semaphore*> &wait_sem) {
 
 	VkResult result = vkQueuePresentKHR(device->present_queue.queue, &present_info);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR or result == VK_SUBOPTIMAL_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR or result == VK_SUBOPTIMAL_KHR)
 		return false;
-	} else if (result != VK_SUCCESS) {
-		throw Exception("failed to present swap chain image!");
-	}
+	if (result != VK_SUCCESS)
+		throw Exception("failed to present swap chain image!  " + result2str(result));
 	return true;
 }
 
 bool SwapChain::acquire_image(int *image_index, Semaphore *signal_sem) {
 	VkResult result = vkAcquireNextImageKHR(device->device, swap_chain, std::numeric_limits<uint64_t>::max(), signal_sem->semaphore, VK_NULL_HANDLE, (unsigned int*)image_index);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		return false;
-	} else if (result != VK_SUCCESS and result != VK_SUBOPTIMAL_KHR) {
-		throw Exception("failed to acquire swap chain image!");
-	}
+	if (result != VK_SUCCESS and result != VK_SUBOPTIMAL_KHR)
+		throw Exception("failed to acquire swap chain image!  " + result2str(result));
 	return true;
 }
 

@@ -138,13 +138,21 @@ namespace vulkan {
 			color_load_op = depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		}
 
+		auto samples = VK_SAMPLE_COUNT_1_BIT;
+		if (sa_contains(options, "samples=2"))
+			samples = VK_SAMPLE_COUNT_2_BIT;
+		if (sa_contains(options, "samples=4"))
+			samples = VK_SAMPLE_COUNT_4_BIT;
+		if (sa_contains(options, "samples=8"))
+			samples = VK_SAMPLE_COUNT_8_BIT;
+
 		// attachments
 		for (auto &f: formats) {
 			VkAttachmentDescription a = {};
 			a.format = f;
 			if (format_is_depth_buffer(f)) {
 				// depth buffer
-				a.samples = VK_SAMPLE_COUNT_1_BIT;
+				a.samples = samples;
 				a.loadOp = depth_load_op;
 				a.storeOp = VK_ATTACHMENT_STORE_OP_STORE;//VK_ATTACHMENT_STORE_OP_DONT_CARE; // ARGH, might be needed for shadow maps
 				a.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -153,7 +161,7 @@ namespace vulkan {
 				a.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			} else {
 				// color attachment
-				a.samples = VK_SAMPLE_COUNT_1_BIT;
+				a.samples = samples;
 				a.loadOp = color_load_op;
 				a.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				a.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

@@ -14,7 +14,7 @@ namespace vulkan{
 		VkDeviceMemory memory = nullptr;
 		VkFormat format = VK_FORMAT_UNDEFINED;
 
-		void create(VkImageType type, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, uint32_t num_layers, VkFormat format, VkImageUsageFlags usage, bool cube);
+		void create(VkImageType type, uint32_t width, uint32_t height, uint32_t depth, uint32_t mip_levels, uint32_t num_layers, VkSampleCountFlagBits samples, VkFormat format, VkImageUsageFlags usage, bool cube);
 		void _destroy();
 
 
