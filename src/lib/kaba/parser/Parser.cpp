@@ -412,9 +412,26 @@ shared_array<Node> Parser::parse_abstract_call_parameters(Block *block) {
 	// list of parameters
 	if (try_consume(")"))
 		return params;
+
+	bool named = false;
 	while (true) {
+
 		// find parameter
-		params.add(parse_abstract_operand_greedy(block));
+		if (Exp.peek_next() == "=") {
+			// names parameter:  name=...
+			if (params.num > 0 and !named)
+				do_error("can not mix named and unnamed parameters", Exp.cur_token());
+
+			int name_token = Exp.cur_token();
+			Exp.next();
+			Exp.next(); // =
+			params.add(add_node_named_parameter(tree, name_token, parse_abstract_operand_greedy(block)));
+			named = true;
+		} else {
+			if (params.num > 0 and named)
+				do_error("can not mix named and unnamed parameters", Exp.cur_token());
+			params.add(parse_abstract_operand_greedy(block));
+		}
 
 		if (!try_consume(",")) {
 			expect_identifier(")", "',' or ')' expected after parameter for function");
@@ -611,7 +628,7 @@ const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const C
 }
 
 shared<Node> Parser::parse_abstract_token() {
-	return new Node(NodeKind::AbstractToken, (int_p)tree, TypeUnknown, Flags::None, Exp.consume_token());
+	return add_node_token(tree, Exp.consume_token());
 }
 
 // minimal operand
