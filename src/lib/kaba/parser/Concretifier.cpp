@@ -1839,9 +1839,11 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::Slice) {
 		concretify_all_params(node, block, ns);
 		node->type = TypeVoid;
-		return node;
 	} else if (node->kind == NodeKind::Definitely) {
 		return concretify_definitely(node, block, ns);
+	} else if (node->kind == NodeKind::NamedParameter) {
+		node->params[1] = concretify_node(node->params[1], block, ns);
+		node->type = node->params[1]->type;
 	} else {
 		node->show();
 		do_error("INTERNAL ERROR: unexpected node", node);
@@ -2256,21 +2258,45 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 	//force_concrete_types(params);
 	// no, keep params FLEXIBLE
 
-	auto params = _params;
-	if (node_is_member_function_with_instance(links[0]))
-		params.insert(links[0]->params[0], 0);
+	if (links.num == 0)
+		do_error("can not call ...WTF??", -1); //, links[0]);
 
-	// direct match...
-	for (auto& operand: links) {
-		if (direct_param_match(operand, params))
-			return check_const_params(tree, apply_params_direct(operand, params));
-	}
-
-	// advanced match...
 	CastingDataCall casts;
 	casts.penalty = 10000000;
 	shared<Node> chosen;
+	shared_array<Node> chosen_params;
+
 	for (auto& operand: links) {
+
+		auto params = _params;
+		if (node_is_member_function_with_instance(operand))
+			params.insert(operand->params[0], 0);
+
+		if (_params.num >= 1 and _params.back()->kind == NodeKind::NamedParameter) {
+			if (!operand->is_function())
+				continue;
+			auto f = operand->as_func();
+			if (f->num_params < params.num)
+				continue;
+			for (auto p: weak(_params)) {
+				string name = p->params[0]->as_token();
+				bool found = false;
+				for (int i=0;i<f->num_params; i++)
+					if (f->var[i]->name == name) {
+						params[i] = p->params[1];
+						found = true;
+					}
+				if (!found)
+					continue;
+			}
+			//do_error("named....aaaa", links[0]);
+		}
+
+		// direct match...
+		if (direct_param_match(operand, params))
+			return check_const_params(tree, apply_params_direct(operand, params));
+
+		// advanced match...
 
 		// type casting?
 		CastingDataCall cur_casts;
@@ -2279,23 +2305,22 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		if (cur_casts.penalty < casts.penalty){
 			casts = cur_casts;
 			chosen = operand;
+			chosen_params = params;
 		}
 	}
 
 	if (chosen)
-		return check_const_params(tree, apply_params_with_cast(chosen, params, casts));
+		return check_const_params(tree, apply_params_with_cast(chosen, chosen_params, casts));
 
 
 // error messages
 
-	if (links.num == 0)
-		do_error("can not call ...WTF??", -1); //, links[0]);
 
 	for (auto operand: links) {
 		if (operand->kind == NodeKind::CallFunction) {
 			auto f = operand->as_func();
 			if (f->is_template()) {
-				if (auto ff = match_template_params(operand, params, true)) {
+				if (auto ff = match_template_params(operand, _params, true)) {
 				} else {
 					do_error("template parameter matching or instantiation failed", operand);
 				}
@@ -2303,7 +2328,8 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		}
 	}
 
-	if (links.num == 1) {
+	do_error("invalid parameters to call (TODO improve error)", links[0]);
+	/*if (links.num == 1) {
 		param_match_with_cast(links[0], params, casts);
 		do_error("invalid function parameters: " + param_match_with_cast_error(params, casts.wanted), links[0]);
 	}
@@ -2315,7 +2341,7 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		//available += format("\n * %s for %s", type_list_to_str(p), link->sig(tree->base_class));
 		available += format("\n * %s", link->signature(tree->base_class));
 	}
-	do_error(format("invalid function parameters: (%s) given, possible options:%s", found, available), links[0]);
+	do_error(format("invalid function parameters: (%s) given, possible options:%s", found, available), links[0]);*/
 	return shared<Node>();
 }
 
