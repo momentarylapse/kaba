@@ -413,22 +413,19 @@ shared_array<Node> Parser::parse_abstract_call_parameters(Block *block) {
 	if (try_consume(")"))
 		return params;
 
-	bool named = false;
+	bool has_named = false;
 	while (true) {
 
 		// find parameter
 		if (Exp.peek_next() == "=") {
 			// names parameter:  name=...
-			if (params.num > 0 and !named)
-				do_error("can not mix named and unnamed parameters", Exp.cur_token());
-
 			int name_token = Exp.cur_token();
 			Exp.next();
 			Exp.next(); // =
 			params.add(add_node_named_parameter(tree, name_token, parse_abstract_operand_greedy(block)));
-			named = true;
+			has_named = true;
 		} else {
-			if (params.num > 0 and named)
+			if (has_named)
 				do_error("can not mix named and unnamed parameters", Exp.cur_token());
 			params.add(parse_abstract_operand_greedy(block));
 		}

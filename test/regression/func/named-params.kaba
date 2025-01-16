@@ -1,0 +1,12 @@
+func f(a: i32 = -1, b: i32 = -2)
+	print("a: {{a}}   b: {{b}}")
+
+
+func main()
+	f(a=1, b=2)
+	f(b=13, a=14)
+	f(b=3)
+	f(a=3)
+	f(4)
+
+

@@ -2268,28 +2268,56 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 
 	for (auto& operand: links) {
 
-		auto params = _params;
-		if (node_is_member_function_with_instance(operand))
-			params.insert(operand->params[0], 0);
+		//auto params = _params;
+		int offset = 0;
+		shared_array<Node> params;
+		params.resize(get_num_wanted_params(operand));
 
-		if (_params.num >= 1 and _params.back()->kind == NodeKind::NamedParameter) {
-			if (!operand->is_function())
-				continue;
+		// self?
+		if (node_is_member_function_with_instance(operand)) {
+			params[0] = operand->params[0];
+			offset = 1;
+		}
+
+		if (offset + _params.num > params.num)
+			continue;
+
+		if (operand->is_function()) {
 			auto f = operand->as_func();
-			if (f->num_params < params.num)
-				continue;
+
+			bool any_not_found = false;
 			for (auto p: weak(_params)) {
-				string name = p->params[0]->as_token();
-				bool found = false;
-				for (int i=0;i<f->num_params; i++)
-					if (f->var[i]->name == name) {
-						params[i] = p->params[1];
-						found = true;
+				if (p->kind == NodeKind::NamedParameter) {
+					string name = p->params[0]->as_token();
+					bool found = false;
+					for (int i=0;i<f->num_params; i++)
+						if (f->var[i]->name == name) {
+							params[i] = p->params[1];
+							found = true;
+						}
+					if (!found) {
+						any_not_found = true;
+						break;
 					}
-				if (!found)
-					continue;
+				} else {
+					params[offset++] = p;
+				}
 			}
-			//do_error("named....aaaa", links[0]);
+			if (any_not_found)
+				continue;
+			for (int i=0; i<f->num_params; i++)
+				if (!params[i]) {
+					if (i >= f->mandatory_params and f->default_parameters[i]) {
+						params[i] = f->default_parameters[i];
+					} else {
+						any_not_found = true;
+						break;
+					}
+				}
+			if (any_not_found)
+				continue;
+		} else {
+			params = _params;
 		}
 
 		// direct match...
@@ -2623,6 +2651,22 @@ Array<const Class*> Concretifier::get_wanted_param_types(shared<Node> link, int 
 	return {};
 }
 
+int Concretifier::get_num_wanted_params(shared<Node> link) {
+	if (link->is_function()) {
+		auto f = link->as_func();
+		return f->num_params;
+	} else if (link->kind == NodeKind::Class) {
+		// should be caught earlier and turned to func...
+		const Class *t = link->as_class();
+		for (auto *c: t->get_constructors()) {
+			return c->num_params;
+		}
+	} else {
+		do_error("evil function...kind: "+kind2str(link->kind), link);
+	}
+	return 0;
+}
+
 // check, if the command <link> links to really has type <type>
 //   ...and try to cast, if not
 shared<Node> Concretifier::check_param_link(shared<Node> link, const Class *wanted, const string &f_name, int param_no, int num_params) {
@@ -2680,7 +2724,7 @@ bool Concretifier::param_match_with_cast(const shared<Node> _operand, const shar
 
 	int mandatory_params;
 	casts.wanted = get_wanted_param_types(operand, mandatory_params);
-	if ((params.num < mandatory_params) or (params.num > casts.wanted.num))
+	if (params.num != casts.wanted.num)
 		return false;
 	casts.params.resize(params.num);
 	casts.penalty = 0;
