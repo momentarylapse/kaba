@@ -2266,11 +2266,20 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 	shared<Node> chosen;
 	shared_array<Node> chosen_params;
 
-	for (auto& operand: links) {
+	struct ParamMapResult {
+		enum class Code {
+			Ok,
+			ErrorTooMany,
+			ErrorTooFew,
+			ErrorNameNotFound
+		};
+		Code code;
+		int index;
+	};
 
-		//auto params = _params;
+
+	auto sort_params = [this, &_params] (shared_array<Node>& params, shared<Node> operand) -> ParamMapResult {
 		int offset = 0;
-		shared_array<Node> params;
 		params.resize(get_num_wanted_params(operand));
 
 		// self?
@@ -2280,45 +2289,47 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		}
 
 		if (offset + _params.num > params.num)
-			continue;
+			return {ParamMapResult::Code::ErrorTooMany, params.num};
 
 		if (operand->is_function()) {
 			auto f = operand->as_func();
 
 			bool any_not_found = false;
-			for (auto p: weak(_params)) {
+			for (const auto& [i,p]: enumerate(weak(_params))) {
 				if (p->kind == NodeKind::NamedParameter) {
 					string name = p->params[0]->as_token();
 					bool found = false;
-					for (int i=0;i<f->num_params; i++)
-						if (f->var[i]->name == name) {
-							params[i] = p->params[1];
+					for (int k=0; k<f->num_params; k++)
+						if (f->var[k]->name == name) {
+							params[k] = p->params[1];
 							found = true;
 						}
-					if (!found) {
-						any_not_found = true;
-						break;
-					}
+					if (!found)
+						return {ParamMapResult::Code::ErrorNameNotFound, i};
 				} else {
 					params[offset++] = p;
 				}
 			}
-			if (any_not_found)
-				continue;
 			for (int i=0; i<f->num_params; i++)
 				if (!params[i]) {
 					if (i >= f->mandatory_params and f->default_parameters[i]) {
 						params[i] = f->default_parameters[i];
 					} else {
-						any_not_found = true;
-						break;
+						return {ParamMapResult::Code::ErrorTooFew, f->mandatory_params};
 					}
 				}
-			if (any_not_found)
-				continue;
 		} else {
 			params = _params;
 		}
+		return {ParamMapResult::Code::Ok, 0};
+	};
+
+	for (auto& operand: links) {
+
+		//auto params = _params;
+		shared_array<Node> params;
+		if (sort_params(params, operand).code != ParamMapResult::Code::Ok)
+			continue;
 
 		// direct match...
 		if (direct_param_match(operand, params))
@@ -2356,20 +2367,32 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		}
 	}
 
-	do_error("invalid parameters to call (TODO improve error)", links[0]);
-	/*if (links.num == 1) {
-		param_match_with_cast(links[0], params, casts);
-		do_error("invalid function parameters: " + param_match_with_cast_error(params, casts.wanted), links[0]);
+	//do_error("invalid parameters to call (TODO improve error)", links[0]);
+	if (links.num == 1) {
+		shared_array<Node> params;
+		const auto res = sort_params(params, links[0]);
+		if (res.code == ParamMapResult::Code::Ok) {
+			param_match_with_cast(links[0], params, casts);
+			do_error("invalid function parameters: " + param_match_with_cast_error(params, casts.wanted), links[0]);
+		} else if (res.code == ParamMapResult::Code::ErrorTooMany) {
+			do_error(format("too many function parameters: %d given, %d expected", _params.num, res.index), links[0]);
+		} else if (res.code == ParamMapResult::Code::ErrorTooFew) {
+			do_error(format("too few function parameters: %d given, %d expected", _params.num, res.index), links[0]);
+		} else if (res.code == ParamMapResult::Code::ErrorNameNotFound) {
+			do_error(format("named function parameter not found: '%s'", _params[res.index]->params[0]->as_token()), _params[res.index]);
+		} else {
+			do_error("invalid function parameters: ... not mappable", links[0]);
+		}
 	}
 
-	string found = type_list_to_str(type_list_from_nodes(params));
+	string found = type_list_to_str(type_list_from_nodes(_params));
 	string available;
 	for (auto link: links) {
 		//auto p = get_wanted_param_types(link);
 		//available += format("\n * %s for %s", type_list_to_str(p), link->sig(tree->base_class));
 		available += format("\n * %s", link->signature(tree->base_class));
 	}
-	do_error(format("invalid function parameters: (%s) given, possible options:%s", found, available), links[0]);*/
+	do_error(format("invalid function parameters: (%s) given, possible options:%s", found, available), links[0]);
 	return shared<Node>();
 }
 
