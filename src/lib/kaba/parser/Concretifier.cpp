@@ -2294,7 +2294,6 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 		if (operand->is_function()) {
 			auto f = operand->as_func();
 
-			bool any_not_found = false;
 			for (const auto& [i,p]: enumerate(weak(_params))) {
 				if (p->kind == NodeKind::NamedParameter) {
 					string name = p->params[0]->as_token();
