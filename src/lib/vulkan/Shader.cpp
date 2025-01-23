@@ -19,6 +19,13 @@
 #include "shaderc/shaderc.h"
 #endif
 
+string with_line_numbers(const string& s) {
+	auto xx = s.explode("\n");
+	string r;
+	for (int i=0; i<xx.num; i++)
+		r += format("%03d  %s\n", i+1, xx[i]);
+	return r;
+}
 
 namespace vulkan {
 
@@ -169,8 +176,9 @@ static shaderc_compiler_t shaderc = nullptr;
 			for (auto &m: shader_modules)
 				if (m.meta.name == imp) {
 					//msg_error("FOUND " + imp);
-					r = r.head(p) + "\n// <<\n" + m.source + "\n// >>\n" + r.sub(p2);
+					r = r.head(p) + "\n// << + " + imp + "\n" + m.source + "\n// >> " + imp + "\n" + r.sub(p2);
 					found = true;
+					break;
 				}
 			if (!found)
 				throw Exception(format("shader import '%s' not found", imp));
@@ -183,6 +191,11 @@ static shaderc_compiler_t shaderc = nullptr;
 			intro += "#extension " + e + " : require\n";
 		if (r.find("GL_ARB_separate_shader_objects", 0) < 0)
 			intro += "#extension GL_ARB_separate_shader_objects : enable\n";
+		if (false) {
+			msg_write("\n\n======================================");
+			msg_write(with_line_numbers(intro + r));
+			msg_write("======================================\n\n");
+		}
 		return intro + r;
 	}
 

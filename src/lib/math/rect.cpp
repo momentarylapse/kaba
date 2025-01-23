@@ -34,9 +34,22 @@ vec2 rect::p00() const {
 	return {x1, y1};
 }
 
+vec2 rect::p01() const {
+	return {x1, y2};
+}
+
+vec2 rect::p10() const {
+	return {x2, y1};
+}
+
 vec2 rect::p11() const {
 	return {x2, y2};
 }
+
+rect rect::canonical() const {
+	return {min(x1, x2), max(x1, x2), min(y1, y2), max(y1, y2)};
+}
+
 
 vec2 rect::size() const {
 	return {width(), height()};
