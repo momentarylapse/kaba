@@ -1,5 +1,5 @@
 func main()
-	var w: i16
+	var w: u16
 	w.high = 0xff
 	w.low = 0x00
 	
@@ -9,5 +9,5 @@ func main()
 	
 	print(sizeof(w))
 	print(w)
-	print(int(v))
+	print(i32(v))
 	
