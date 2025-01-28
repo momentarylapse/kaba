@@ -69,12 +69,12 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requireme
 				return false;
 	}
 
-	if (req & Requirements::ANISOTROPY) {
-		VkPhysicalDeviceFeatures supported_features;
-		vkGetPhysicalDeviceFeatures(device, &supported_features);
-		if (!supported_features.samplerAnisotropy)
-			return false;
-	}
+	VkPhysicalDeviceFeatures supported_features;
+	vkGetPhysicalDeviceFeatures(device, &supported_features);
+	if ((req & Requirements::ANISOTROPY) and !supported_features.samplerAnisotropy)
+		return false;
+	if ((req & Requirements::GEOMETRY_SHADER) and !supported_features.geometryShader)
+		return false;
 
 	return true;
 }
@@ -215,6 +215,8 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	}
 
 	VkPhysicalDeviceFeatures device_features = {};
+	if (req & Requirements::GEOMETRY_SHADER)
+		device_features.geometryShader = VK_TRUE;
 	if (req & Requirements::ANISOTROPY)
 		device_features.samplerAnisotropy = VK_TRUE;
 
@@ -345,6 +347,8 @@ Requirements parse_requirements(const Array<string> &op) {
 			req = req | Requirements::SWAP_CHAIN;
 		else if (o == "anisotropy")
 			req = req | Requirements::ANISOTROPY;
+		else if (o == "geometryshader")
+			req = req | Requirements::GEOMETRY_SHADER;
 		else if (o == "rtx")
 			req = req | Requirements::RTX;
 		else if (o == "meshshader")
