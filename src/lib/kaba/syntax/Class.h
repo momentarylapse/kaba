@@ -84,6 +84,7 @@ public:
 	bool is_callable() const;
 	bool is_callable_fp() const;
 	bool is_callable_bind() const;
+	bool is_template() const;
 	bool fully_parsed() const;
 
 	Array<ClassElement> elements;
