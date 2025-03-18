@@ -98,10 +98,11 @@ bool rect::operator!=(const rect &r) const {
 void range_intersect(float a1, float a2, float b1, float b2, float &o1, float &o2) {
 	o1 = max(a1, b1);
 	o2 = min(a2, b2);
-	//o2 = max(o1, o2);
+	o2 = max(o1, o2);
 }
 
 // intersection
+// assumes both canonical!
 rect rect::operator&&(const rect &r) const {
 	rect o = r;
 	range_intersect(x1, x2, r.x1, r.x2, o.x1, o.x2);
