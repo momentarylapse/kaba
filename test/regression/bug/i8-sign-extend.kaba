@@ -1,6 +1,15 @@
 func main()
 	let x = -8 as i8
 	_int_out(x)
+	
+	let x1 = (-8) as i8
+	_int_out(x1)
+	
+	let x2 = -(8 as i8)
+	_int_out(x2)
+	
+	let u = (-8) as u8
+	_int_out(u)
 
 	let y = 0xf8
 	_int_out(y)
