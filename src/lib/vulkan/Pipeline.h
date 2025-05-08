@@ -52,6 +52,18 @@ namespace vulkan{
 		FRONT = VK_CULL_MODE_FRONT_BIT
 	};
 
+	enum class PrimitiveTopology {
+		TRIANGLES = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		TRIANGLE_FAN = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+		LINES = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		LINE_STRIP = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+		POINTS = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+		PATCHES = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST
+	};
+
+
+	PrimitiveTopology parse_topology(const string &t);
+
 	class BasePipeline {
 	public:
 		BasePipeline(VkPipelineBindPoint bind_point, Shader *shader);
@@ -75,9 +87,9 @@ namespace vulkan{
 
 	class GraphicsPipeline : public BasePipeline {
 	public:
-		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
-		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, const string &format);
-		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, const string &topology, VertexBuffer *vb);
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, PrimitiveTopology topology, VkVertexInputBindingDescription binding_description, const Array<VkVertexInputAttributeDescription> &attribute_descriptions);
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, PrimitiveTopology topology, const string &format);
+		GraphicsPipeline(Shader *shader, RenderPass *render_pass, int subpass, PrimitiveTopology topology, VertexBuffer *vb);
 		~GraphicsPipeline();
 
 		void rebuild();
@@ -111,6 +123,7 @@ namespace vulkan{
 		VkPipelineMultisampleStateCreateInfo multisampling;
 		VkPipelineDepthStencilStateCreateInfo depth_stencil;
 		VkPipelineInputAssemblyStateCreateInfo input_assembly;
+		VkPipelineTessellationStateCreateInfo tesselation;
 	};
 
 

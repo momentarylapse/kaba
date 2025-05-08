@@ -61,7 +61,7 @@ bytes::bytes(const bytes &s) {
 	simple_assign(&s);
 }
 
-bytes::bytes(bytes &&s) {
+bytes::bytes(bytes &&s) noexcept {
 	init(sizeof(unsigned char));
 	exchange(s);
 	s.clear();
@@ -764,9 +764,9 @@ struct xf_format_data {
 			return s;
 		int len = s.utf8len();
 		if (left_justify)
-			return s + bytes_repeat(" ", width - len);
+			return s + string(" ").repeat(width - len);
 		else
-			return bytes_repeat(" ", width - len) + s;
+			return string(" ").repeat(width - len) + s;
 	}
 };
 

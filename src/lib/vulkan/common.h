@@ -22,7 +22,8 @@ enum class Requirements {
     VALIDATION = 32,
     RTX = 64,
 	MESH_SHADER = 128,
-	GEOMETRY_SHADER = 256
+	GEOMETRY_SHADER = 256,
+	TESSELATION_SHADER = 512
 };
 inline bool operator&(Requirements a, Requirements b) {
 	return ((int)a & (int)b);

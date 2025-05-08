@@ -114,9 +114,9 @@ static shaderc_compiler_t shaderc = nullptr;
 				has_fragment = true;
 			} else if (tag == "ComputeShader") {
 				p.type = VK_SHADER_STAGE_COMPUTE_BIT;
-			} else if (tag == "TessControlShader") {
+			} else if (tag == "TesselationControlShader") {
 				p.type = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-			} else if (tag == "TessEvaluationShader") {
+			} else if (tag == "TesselationEvaluationShader") {
 				p.type = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 			} else if (tag == "GeometryShader") {
 				p.type = VK_SHADER_STAGE_GEOMETRY_BIT;

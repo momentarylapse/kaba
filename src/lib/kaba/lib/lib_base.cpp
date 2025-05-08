@@ -13,7 +13,6 @@
 #include "../../os/terminal.h"
 #include "../../base/callable.h"
 #include "../../base/map.h"
-#include <algorithm>
 #include <math.h>
 #include <cstdio>
 

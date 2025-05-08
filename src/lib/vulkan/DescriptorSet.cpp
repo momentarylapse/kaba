@@ -23,22 +23,18 @@ namespace vulkan {
 
 string result2str(VkResult r);
 
-const string DESCRIPTOR_NAME_UNIFORM_BUFFER = "buffer";
-const string DESCRIPTOR_NAME_UNIFORM_BUFFER_DYNAMIC = "dbuffer";
-const string DESCRIPTOR_NAME_SAMPLER = "sampler";
-const string DESCRIPTOR_NAME_STORAGE_IMAGE = "image";
 const string DESCRIPTOR_NAME_ACCELERATION_STRUCTURE = "acceleration-structure";
 
 VkDescriptorType descriptor_type(const string &s) {
-	if (s == DESCRIPTOR_NAME_UNIFORM_BUFFER)
+	if (s == "uniform" or s == "ubo" or s == "buffer")
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	if (s == DESCRIPTOR_NAME_UNIFORM_BUFFER_DYNAMIC)
+	if (s == "dynamice" or s == "dbuffer")
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	if (s == "storage-buffer")
+	if (s == "storage" or s == "ssbo" or s == "storage-buffer")
 		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	if (s == DESCRIPTOR_NAME_SAMPLER)
+	if (s == "sampler")
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	if (s == DESCRIPTOR_NAME_STORAGE_IMAGE)
+	if (s == "image")
 		return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	if (s == DESCRIPTOR_NAME_ACCELERATION_STRUCTURE)
 		return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;

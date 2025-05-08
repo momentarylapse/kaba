@@ -16,7 +16,7 @@ class bytes : public Array<char> {
 	// constructors
 	bytes();
 	bytes(const bytes &s);
-	bytes(bytes &&s);
+	bytes(bytes &&s) noexcept;
 	bytes(const char *str);
 	bytes(const void *str, int l);
 	void _cdecl __init__();

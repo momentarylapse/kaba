@@ -75,6 +75,8 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requireme
 		return false;
 	if ((req & Requirements::GEOMETRY_SHADER) and !supported_features.geometryShader)
 		return false;
+	if ((req & Requirements::TESSELATION_SHADER) and !supported_features.tessellationShader)
+		return false;
 
 	return true;
 }
@@ -217,6 +219,8 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	VkPhysicalDeviceFeatures device_features = {};
 	if (req & Requirements::GEOMETRY_SHADER)
 		device_features.geometryShader = VK_TRUE;
+	if (req & Requirements::TESSELATION_SHADER)
+		device_features.tessellationShader = VK_TRUE;
 	if (req & Requirements::ANISOTROPY)
 		device_features.samplerAnisotropy = VK_TRUE;
 
@@ -349,6 +353,8 @@ Requirements parse_requirements(const Array<string> &op) {
 			req = req | Requirements::ANISOTROPY;
 		else if (o == "geometryshader")
 			req = req | Requirements::GEOMETRY_SHADER;
+		else if (o == "tesselationshader")
+			req = req | Requirements::TESSELATION_SHADER;
 		else if (o == "rtx")
 			req = req | Requirements::RTX;
 		else if (o == "meshshader")

@@ -115,6 +115,15 @@ enum class FogMode {
 	EXP2
 };
 
+enum class PrimitiveTopology {
+	TRIANGLES = 0x0004, //GL_TRIANGLES,
+	TRIANGLE_FAN = 0x0006, //GL_TRIANGLE_FAN;
+	LINES = 0x0001, //GL_LINES,
+	LINE_STRIP = 0x0003, //GL_LINE_STRIP,
+	POINTS = 0x0000, //GL_POINTS,
+	PATCHES = 0x000e, //GL_PATCHES
+};
+
 
 //extern int device_width, device_height;						// render target size (window, won't change)
 extern int target_width, target_height;						// current render target size (window/texture)

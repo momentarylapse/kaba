@@ -27,6 +27,11 @@ vec3 Box::to_relative(const vec3& p) const {
 	return vec3(q.x / s.x, q.y / s.y, q.z / s.z);
 }
 
+string Box::str() const {
+	return ::str(min) + ":" + ::str(max);
+}
+
+
 Box Box::operator||(const Box& b) const {
 	Box r = *this;
 	r.min._min(b.min);

@@ -22,19 +22,21 @@
 
 namespace vulkan {
 
-VkPrimitiveTopology parse_topology(const string &t) {
+PrimitiveTopology parse_topology(const string &t) {
 	if (t == "points")
-		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		return PrimitiveTopology::POINTS;
 	if (t == "lines")
-		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		return PrimitiveTopology::LINES;
 	if (t == "line-strip")
-		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		return PrimitiveTopology::LINE_STRIP;
 	if (t == "triangles")
-		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	if (t == "triangles-fan")
-		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+		return PrimitiveTopology::TRIANGLES;
+	if (t == "triangle-fan")
+		return PrimitiveTopology::TRIANGLE_FAN;
+	if (t == "patch-list")
+		return PrimitiveTopology::PATCHES;
 	msg_error("invalid topology: " + t);
-	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	return PrimitiveTopology::TRIANGLES;
 }
 
 
@@ -107,11 +109,11 @@ void BasePipeline::destroy() {
 Array<VkVertexInputAttributeDescription> parse_attr_descr(const string &format);
 VkVertexInputBindingDescription parse_binding_descr(const string &format);
 
-GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VertexBuffer *vb) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, vb->binding_description, vb->attribute_descriptions) {}
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, PrimitiveTopology topology, VertexBuffer *vb) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, vb->binding_description, vb->attribute_descriptions) {}
 
-GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, const string &format) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, parse_binding_descr(format), parse_attr_descr(format)) {}
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, PrimitiveTopology topology, const string &format) : GraphicsPipeline(_shader, _render_pass, _subpass, topology, parse_binding_descr(format), parse_attr_descr(format)) {}
 
-GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, const string &topology, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, _shader) {
+GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, int _subpass, PrimitiveTopology topology, VkVertexInputBindingDescription _binding_description, const Array<VkVertexInputAttributeDescription> &_attribute_descriptions) : BasePipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, _shader) {
 	render_pass = _render_pass;
 	subpass = _subpass;
 
@@ -126,7 +128,7 @@ GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, in
 
 	input_assembly = {};
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	input_assembly.topology = parse_topology(topology);
+	input_assembly.topology = (VkPrimitiveTopology)topology;
 	input_assembly.primitiveRestartEnable = VK_FALSE;
 #ifdef OS_MAC
 	input_assembly.primitiveRestartEnable = VK_TRUE; // molten vk/metal seem to lack the feature of "turning this off" (O_O)'
@@ -175,6 +177,13 @@ GraphicsPipeline::GraphicsPipeline(Shader *_shader, RenderPass *_render_pass, in
 	depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depth_stencil.depthBoundsTestEnable = VK_FALSE;
 	depth_stencil.stencilTestEnable = VK_FALSE;
+
+	tesselation = {};
+	if (input_assembly.topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+		// TODO expose
+		tesselation.patchControlPoints = 4;
+		rasterizer.polygonMode = VK_POLYGON_MODE_LINE; // for debugging...
+	}
 
 	dynamic_states.add(VK_DYNAMIC_STATE_VIEWPORT);
 	set_viewport(rect(0, 400, 0, 400)); // always override dynamically!
@@ -307,6 +316,7 @@ void GraphicsPipeline::rebuild() {
 	pipeline_info.renderPass = render_pass->render_pass;
 	pipeline_info.subpass = subpass;
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+	pipeline_info.pTessellationState = &tesselation;
 	pipeline_info.pDynamicState = &dynamic_state;
 
 	if (vkCreateGraphicsPipelines(default_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS)
