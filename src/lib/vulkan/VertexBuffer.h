@@ -9,7 +9,7 @@
 #include <vulkan/vulkan.h>
 #include "Buffer.h"
 
-class rect;
+struct rect;
 
 namespace vulkan {
 

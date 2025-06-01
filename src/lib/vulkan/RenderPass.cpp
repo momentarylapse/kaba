@@ -132,11 +132,12 @@ namespace vulkan {
 		auto_subpasses = false;
 		auto_dependencies = false;
 
-		VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-		VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-		if (sa_contains(options, "clear") or sa_contains(options, "autoclear")) {
+		VkAttachmentLoadOp color_load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		VkAttachmentLoadOp depth_load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		if (sa_contains(options, "load") or sa_contains(options, "continue"))
+			color_load_op = depth_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+		if (sa_contains(options, "clear") or sa_contains(options, "autoclear"))
 			color_load_op = depth_load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		}
 
 		auto samples = VK_SAMPLE_COUNT_1_BIT;
 		if (sa_contains(options, "samples=2"))

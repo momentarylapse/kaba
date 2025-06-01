@@ -46,10 +46,10 @@
 #include <math.h>
 #include "../base/base.h"
 
-class vec3;
-class rect;
-class mat4;
-class color;
+struct vec3;
+struct rect;
+struct mat4;
+struct color;
 
 
 typedef void callback_function();

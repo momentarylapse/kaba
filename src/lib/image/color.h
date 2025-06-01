@@ -5,8 +5,7 @@
 
 #include "../base/base.h"
 
-class color {
-public:
+struct color {
 	float r,g,b,a;
 	color() {};
 	color(float a,float r,float g,float b)

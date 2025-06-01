@@ -1,6 +1,9 @@
 #include "Box.h"
 
 
+const Box Box::ID{{0,0,0}, {1,1,1}};
+const Box Box::ID_SYM{{-1,-1,-1}, {1,1,1}};
+
 vec3 Box::center() const {
 	return (min + max) / 2;
 }

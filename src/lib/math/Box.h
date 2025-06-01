@@ -14,5 +14,8 @@ struct Box {
 
 	Box operator||(const Box& b) const;
 	Box operator&&(const Box& b) const;
+
+	static const Box ID;
+	static const Box ID_SYM;
 };
 

@@ -24,7 +24,8 @@ namespace vulkan {
 			IMAGE,
 			VOLUME,
 			MULTISAMPLE,
-			RENDERBUFFER
+			RENDERBUFFER,
+			ARRAY
 		};
 
 		Texture();
@@ -46,7 +47,7 @@ namespace vulkan {
 
 		Type type;
 		int width, height, depth;
-		int mip_levels;
+		int mip_levels, num_layers;
 		ImageAndMemory image;
 
 		mutable VkImageView view;
@@ -61,6 +62,11 @@ namespace vulkan {
 	class VolumeTexture : public Texture {
 	public:
 		VolumeTexture(int nx, int ny, int nz, const string &format);
+	};
+
+	class TextureArray : public Texture {
+	public:
+		TextureArray(int w, int h, int layers, const string &format);
 	};
 
 	class StorageTexture : public Texture {

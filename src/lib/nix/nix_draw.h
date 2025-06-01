@@ -9,7 +9,7 @@
 
 #pragma once
 
-class color;
+struct color;
 
 namespace nix{
 

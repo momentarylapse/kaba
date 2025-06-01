@@ -14,7 +14,7 @@
 #include "../base/pointer.h"
 #include "Texture.h"
 
-class rect;
+struct rect;
 
 namespace vulkan {
 

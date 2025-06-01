@@ -96,8 +96,8 @@ bool check_device_extension_support(VkPhysicalDevice device, Requirements req) {
 	if (verbosity >= 3)
 		msg_write("---- GPU-----");
 	for (const auto& extension : available_extensions) {
-		if (verbosity >= 3)
-			msg_write("   " + string(extension.extensionName));
+	//	if (verbosity >= 3)
+	//		msg_write("   " + string(extension.extensionName));
 		required_extensions.erase(extension.extensionName);
 	}
 
@@ -175,7 +175,7 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 	if (verbosity >= 2)
 		msg_write("  CHOSEN: " + physical_name());
-	if (verbosity >= 3) {
+	if (verbosity >= 3 and false) {
 		msg_write(" props:");
 		msg_write("  minUniformBufferOffsetAlignment  " + i2s(physical_device_properties.limits.minUniformBufferOffsetAlignment));
 		msg_write("  maxPushConstantsSize  " + i2s(physical_device_properties.limits.maxPushConstantsSize));
@@ -224,8 +224,13 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 	if (req & Requirements::ANISOTROPY)
 		device_features.samplerAnisotropy = VK_TRUE;
 
+	VkPhysicalDeviceVulkan12Features features12 = {};
+	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.hostQueryReset = VK_TRUE;
+
 	VkDeviceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	create_info.pNext = &features12;
 
 	create_info.queueCreateInfoCount = queue_create_infos.num;
 	create_info.pQueueCreateInfos = &queue_create_infos[0];
