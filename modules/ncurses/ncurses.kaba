@@ -1,0 +1,165 @@
+use os
+
+enum Attr
+	NORMAL = 0
+	COLOR = 0x0000ff00
+	REVERSE = 1<<(10+8)
+	UNDERLINE = 1<<(10+9)
+	BLINK = 1<<(11+8)
+	BOLD = 1<<(13+8)
+
+enum Color
+	BLACK
+	RED
+	GREEN
+	YELLOW
+	BLUE
+	MAGENTA
+	CYAN
+	WHITE
+
+func static pair(n: Color) -> int
+	return (int(n)<<8) & int(Attr.COLOR)
+
+enum Key
+	DOWN = 258
+	UP = 259
+	LEFT = 260
+	RIGHT = 261
+	MOUSE = 409
+	RESIZE = 410
+
+func extern _initscr() -> void*
+func extern curs_set(mode: int) -> int
+func extern has_colors() -> bool
+func extern start_color() -> int
+func extern use_default_colors() -> int
+func extern init_pair(i: int, a: Color, b: Color) -> int
+func extern _waddnstr(w: void*, p: u8*, n: int) -> int
+#func extern _waddnwstr(w: void*, p: int*, n: int) -> int
+func extern _wrefresh(w: void*) -> int
+func extern _getmaxx(w: void*) -> int
+func extern _getmaxy(w: void*) -> int
+func extern _wmove(w: void*, y: int, x: int) -> int
+func extern _wgetch(w: void*) -> int
+func extern _wclear(w: void*) -> int
+func extern _newwin(h: int, w: int, y: int, x: int) -> void*
+##func extern _wborder(w: void*, ls: int, rs: int, ts: int, bs: int, tl: int, tr: int, bl: int, br: int) -> int
+func extern _wattr_on(w: void*, a: int, xxx: void*) -> int
+func extern _wattr_off(w: void*, a: int, xxx: void*) -> int
+func extern _wbkgd(w: void*, c: int) -> int
+func extern _waddch(w: void*, c: int) -> int
+func extern endwin() -> int
+func extern raw() -> int
+func extern noraw() -> int
+func extern echo() -> int
+func extern noecho() -> int
+func extern _keypad(w: void*, b: bool) -> int
+
+func extern _setlocale(category: int, locale: u8*) -> u8*
+
+class Window
+	var w = nil
+	func __init__()
+	func __init__(width: int, height: int, x: int, y: int)
+		w = _newwin(height, width, y, x)
+	func background(c: int)
+		_wbkgd(w, c)
+	func print(s: string)
+		_waddnstr(w, &s[0], s.num)
+##	func printw(s: string)
+##		var ss = s.utf8_to_utf32()
+##		_waddnwstr(w, &ss[0], ss.num)
+	func addch(c: int)
+		_waddch(w, c)
+	func refresh()
+		_wrefresh(w)
+	func keypad(e: bool)
+		_keypad(w, e)
+	func move(x: int, y: int)
+		_wmove(w, y, x)
+	func attron(a: int)
+		_wattr_on(w, a, nil)
+	func attroff(a: int)
+		_wattr_off(w, a, nil)
+##	func border(s: string)
+##		_wborder(w, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
+	func clear()
+		_wclear(w)
+	func width() -> int
+		return _getmaxx(w)
+	func height() -> int
+		return _getmaxy(w)
+	func getch() -> int
+		return _wgetch(w)
+
+
+var stdwin: Window
+
+func init()
+	stdwin.w = _initscr()
+	var s: string
+	s.add(0)
+	_setlocale(0, &s[0]) # LC_CTYPE
+
+func main()
+	init()
+	raw()
+	noecho()
+	start_color()
+	use_default_colors()
+	curs_set(0)
+	stdwin.keypad(true)
+	var w = stdwin.width()
+	var h = stdwin.height()
+	init_pair(1, Color.RED, Color.BLACK)
+	stdwin.print("hallo {{w}} {{h}} {{has_colors()}}")
+##	stdwin.printw(" abc ö⼭ z")
+	stdwin.move(0, h-1)
+	stdwin.attron(int(Attr.REVERSE))
+	for x in 0:w
+		stdwin.print(" ")
+	stdwin.move(1, h-1)
+	stdwin.print("test")
+	stdwin.attroff(int(Attr.REVERSE))
+	stdwin.refresh()
+	#let p = _stdscr
+	
+	var ww = new Window(40, 8, 10, 10)
+##	ww.border("||--++++")
+	ww.background('~')
+	ww.move(1,1)
+	ww.attron(int(Attr.BOLD))
+	#ww.attron(1<<8)
+	#ww.attron(1<<11)
+	ww.print("hi test")
+	ww.attron(pair(Color.RED))
+	ww.print("red")
+	#ww.addch('A' | Color.pair(1))
+	ww.refresh()
+	
+	var r = stdwin.getch()
+	endwin()
+	print(r)
+
+
+#func _main()
+#	init()
+#	raw()
+#	noecho()
+#	start_color()
+#	use_default_colors()
+#	curs_set(0)
+#	stdwin.keypad(true)
+#	var w = stdwin.width()
+#	var h = stdwin.height()
+###	stdwin.printw("█▀▄▌▐∴∵∌∮")
+#	for i in 0:256
+#		init_pair(i+1, Color.from_int(i), Color.from_int(i))
+#		stdwin.attron(pair(Color.from_int(i+1)))
+#		stdwin.print("M")
+#	stdwin.refresh()
+#	
+#	var r = stdwin.getch()
+#	endwin()
+#	print(r)
