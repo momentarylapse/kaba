@@ -126,7 +126,7 @@ void CommandBuffer::bind_descriptor_set_dynamic(int index, DescriptorSet *dset, 
 	vkCmdBindDescriptorSets(buffer, cur_bind_point, current_pipeline->layout, index, 1, &dset->descriptor_set, offsets.num, (unsigned*)&offsets[0]);
 }
 
-void CommandBuffer::push_constant(int offset, int size, void *data) {
+void CommandBuffer::push_constant(int offset, int size, const void *data) {
 	//auto stage_flags = VK_SHADER_STAGE_VERTEX_BIT /*| VK_SHADER_STAGE_GEOMETRY_BIT*/ | VK_SHADER_STAGE_FRAGMENT_BIT;
 	auto stage_flags = VK_SHADER_STAGE_ALL;
 	vkCmdPushConstants(buffer, current_pipeline->layout, stage_flags, offset, size, data);

@@ -84,7 +84,7 @@ namespace vulkan{
 		void bind_pipeline(BasePipeline *p);
 		void bind_descriptor_set(int index, DescriptorSet *dset);
 		void bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices);
-		void push_constant(int offset, int size, void *data);
+		void push_constant(int offset, int size, const void *data);
 
 		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
 		void next_subpass();

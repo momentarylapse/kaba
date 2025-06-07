@@ -43,7 +43,9 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         
     - name: Install Dependencies
-      run: sudo apt-get install -y libgtk-4-dev libfftw3-dev libgl-dev libglfw3-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-4-dev libfftw3-dev libgl-dev libglfw3-dev
       
     - name: Configure CMake
       run: >

@@ -598,7 +598,7 @@ DynamicLibraryImport *get_dynamic_lib(const string &libname, Module *s) {
 	}
 	if (filename.is_empty())
 		s->do_error_link("can't find external library " + libname);
-	msg_write("LIB: " + str(filename));
+	//msg_write("LIB: " + str(filename));
 
 	d->handle = dlopen(filename.c_str(), RTLD_NOW);
 	if (!d->handle)
