@@ -1,0 +1,199 @@
+use os
+
+struct Termios
+	var iflag, oflag, cflag, lflag: int
+	var cc: int[32]
+	func __str__() -> string
+		return "i={{iflag|08x}} o={{oflag|08x}} c={{cflag|08x}} l={{lflag|08x}}"
+
+# default: iflag = IUTF8 + IMAXBEL + ICRNL
+#          oflag = 5
+#          cflag = 0o277 CREAD + CS8/CSIZE + ???
+#          lflag = 0o105073 = IEXTEN + ECHOKE + ECHOCTL + ECHOK + ECHOE + ECHO + ISIG + ICANON
+
+# iflag
+let IGNBRK = 0x0001
+let BRKINT = 0x0002
+let PARMRK = 0x0008
+let ISTRIP = 0x0020
+let INLCR  = 0x0040
+let IGNCR  = 0x0080
+let ICRNL  = 0x0100
+let IXON   = 0x0400
+let IUTF8  = 0x8000
+	
+# oflag
+let OPOST = 0x0001
+	
+# lflag
+let ISIG   = 0x0001
+let ICANON = 0x0002
+let ECHO   = 0x0008
+let ECHONL = 0x0040
+let IEXTEN = 0x8000
+	
+# cflag
+let CSIZE  = 0x0030
+let PARENB = 0x0100
+let CS8    = 0x0030
+	
+	
+let TCSANOW = 0
+let VTIME = 5
+let VMIN = 6
+
+func extern _tcgetattr(fno: int, t: Termios*) -> int
+func extern _tcsetattr(fno: int, opt: int, t: Termios*) -> int
+#extern void cfmakeraw(Termios* t)
+
+var _t_pre_raw: Termios
+
+func setraw()
+	var t: Termios
+	_tcgetattr(0, &t)
+	_t_pre_raw = t
+	#print("{{t}}\n")
+	t.iflag -= (t.iflag & (ISTRIP | INLCR | IGNCR | ICRNL | IXON))
+	#t.iflag -= (t.iflag & (IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON))
+	#t.oflag -= (t.oflag & OPOST)
+	t.lflag -= (t.lflag & (ECHO | ECHONL | ICANON | ISIG | IEXTEN))
+	t.cflag -= (t.cflag & CSIZE | PARENB)
+	t.cflag = t.cflag | CS8
+	#print(str(t))
+	_tcsetattr(0, TCSANOW, &t)
+func unsetraw()
+	var t: Termios
+	t.iflag = 0x4500
+	t.oflag = 5
+	t.cflag = 0x00bf
+	t.lflag = 0x8a3b
+	t = _t_pre_raw
+	#print("{{t}}\n")
+
+	_tcsetattr(0, TCSANOW, &t)
+
+let ESC = "\x1b"
+
+func clear_scr()
+	print(ESC + "[2J")
+
+class Key
+	#let BACKSPACE = [0x1b, 0x5b, 0x44]
+	let UP = [0x1b, 0x5b, 0x41]
+	let DOWN = [0x1b, 0x5b, 0x42]
+	let RIGHT = [0x1b, 0x5b, 0x43]
+	let LEFT = [0x1b, 0x5b, 0x44]
+	let END = [0x1b, 0x5b, 0x46]
+	let HOME = [0x1b, 0x5b, 0x48]
+	let DELETE = [0x1b, 0x5b, 0x33, 0x7e]
+	let BACKSPACE = [0x7f]
+	let ETX = [0x03]
+	let EOT = [0x04]
+	let CARRIAGE_RETURN = [0x0d]
+
+func move_cursor(dx: int, dy: int)
+	if dx > 0
+		print(ESC + "[{{dx}}C")
+	else if dx < 0
+		print(ESC + "[{{-dx}}D")
+
+
+class BreakSignal extends Exception
+
+func read_char() -> string
+	while true
+		let s = os.stdin.read(4)
+		#print(s.hex())
+		if len(s) == 0
+			continue
+		if s == Key.ETX
+			unsetraw()
+			raise(new BreakSignal("break"))
+		if s == Key.EOT
+			unsetraw()
+			raise(new BreakSignal("end"))
+		return s.utf8()
+
+func fancy_read_command(prompt: string, out history: string[]) -> string
+	var ppp = _print_postfix
+	_print_postfix = ""
+	setraw()
+	print(prompt)
+	var current: string
+	var cursor_pos = 0
+	var hist_index = len(history)
+	while true
+		let s = os.stdin.read(4)
+	#	print(s.hex())
+		if len(s) == 0
+			continue
+		if s == Key.ETX
+			unsetraw()
+			_print_postfix = ppp
+			raise(new BreakSignal("break"))
+		if s == Key.EOT
+			unsetraw()
+			_print_postfix = ppp
+			raise(new BreakSignal("end"))
+		else if s == Key.CARRIAGE_RETURN #"\n"
+			print("\n")
+			if current != ""
+				history.add(current)
+				hist_index = len(history)
+			unsetraw()
+			_print_postfix = ppp
+			return current
+		else if s == Key.UP
+			if hist_index > 0
+				move_cursor(-cursor_pos, 0)
+				for i in current
+					print(" ")
+				move_cursor(-len(current), 0)
+				hist_index --
+				current = history[hist_index]
+				print(current)
+				cursor_pos = len(current)
+		else if s == Key.DOWN
+			move_cursor(-cursor_pos, 0)
+			for i in current
+				print(" ")
+			move_cursor(-len(current), 0)
+			current = ""
+			if hist_index < len(history)-1
+				hist_index ++
+				current = history[hist_index]
+			print(current)
+			cursor_pos = len(current)
+		else if s == Key.RIGHT
+			if cursor_pos < len(current)
+				move_cursor(1, 0)
+				cursor_pos ++
+		else if s == Key.LEFT
+			if cursor_pos > 0
+				move_cursor(-1, 0)
+				cursor_pos --
+		else if s == Key.END
+			move_cursor(len(current)-cursor_pos, 0)
+			cursor_pos = len(current)
+		else if s == Key.HOME
+			move_cursor(-cursor_pos, 0)
+			cursor_pos = 0
+		else if s == Key.BACKSPACE
+			if cursor_pos > 0
+				#print(s)
+				move_cursor(-1, 0)
+				print(current[cursor_pos:] + " ")
+				move_cursor(-len(current[cursor_pos:])-1, 0)
+				current = current[:cursor_pos-1] + current[cursor_pos:]
+				cursor_pos --
+				#print(ESC + "[H")
+		else if s == Key.DELETE
+			if cursor_pos < len(current)
+				print(current[cursor_pos+1:] + " ")
+				move_cursor(-len(current[cursor_pos+1:])-1, 0)
+				current = current[:cursor_pos] + current[cursor_pos+1:]
+		else if len(s) == 1
+			print(s.utf8() + current[cursor_pos:])
+			move_cursor(-len(current[cursor_pos:]), 0)
+			current = current[:cursor_pos] + s.utf8() + current[cursor_pos:]
+			cursor_pos ++
