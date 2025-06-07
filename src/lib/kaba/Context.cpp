@@ -1,11 +1,16 @@
 #include "Context.h"
 #include "kaba.h"
 #include "Interpreter.h"
+#include "../os/file.h"
+#include "../os/filesystem.h"
 #include "parser/Parser.h"
 #include "parser/Concretifier.h"
 #include "template/template.h"
 #include "compiler/Compiler.h"
 #include "../os/msg.h"
+#if HAS_LIB_DL
+#include <dlfcn.h>
+#endif
 
 namespace kaba {
 
@@ -82,6 +87,58 @@ void Context::__delete__() {
 	this->Context::~Context();
 }
 
+class KabaExporter {
+public:
+	Context* ctx;
+	shared<Module> module;
+	KabaExporter(Context* _ctx, const shared<Module>& _module) {
+		ctx = _ctx;
+		module = _module;
+	}
+	virtual ~KabaExporter() = default;
+	virtual void declare_class_size(const string& name, int size) {
+		//msg_write("SIZE:  " + name);
+		ctx->external->declare_class_size(name, size);
+	}
+	virtual void declare_enum(const string& name, int value) {
+		ctx->external->declare_enum(name, value);
+	}
+	virtual void declare_class_element(const string& name, int offset) {
+		ctx->external->_declare_class_element(name, offset);
+	}
+	virtual void link(const string& name, void* p) {
+		//msg_write("LINK:  " + name);
+		ctx->external->link(name, p);
+	}
+	virtual void link_virtual(const string& name, void* p, void* instance) {
+		//msg_write("LINK VIRTUAL:  " + name);
+		ctx->external->_link_virtual(name, p, instance);
+	}
+};
+
+void try_import_dynamic_library_for_module(const Path& filename, Context* ctx, shared<Module> module) {
+#if HAS_LIB_DL
+	const auto dir = filename.parent();
+#ifdef OS_MAC
+	auto files = os::fs::search(dir, "lib*.dylib", "f");
+#elif defined(OS_LINUX)
+	auto files = os::fs::search(dir, "lib*.so", "f");
+#else
+	auto files = os::fs::search(dir, "lib*.dll", "f");
+#endif
+
+	if (files.num == 1) {
+		KabaExporter e(ctx, module);
+		auto handle = dlopen((dir | files[0]).c_str(), RTLD_NOW);
+		typedef void t_f(KabaExporter*);
+		if (auto f = (t_f*)dlsym(handle, "export_symbols")) {
+			(*f)(&e);
+		} else {
+		//	s->do_error_link("can't load symbol '" + name + "' from library " + libname);
+		}
+#endif
+	}
+}
 
 
 shared<Module> Context::load_module(const Path &filename, bool just_analyse) {
@@ -95,7 +152,9 @@ shared<Module> Context::load_module(const Path &filename, bool just_analyse) {
 			return ps;
 	
 	// load
-    auto s = create_empty_module(filename);
+	auto s = create_empty_module(filename);
+	if (!just_analyse)
+		try_import_dynamic_library_for_module(filename, this, s);
 	s->load(filename, just_analyse);
 
 	// store module in database
