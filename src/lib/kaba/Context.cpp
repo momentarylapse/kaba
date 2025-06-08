@@ -129,7 +129,7 @@ void try_import_dynamic_library_for_module(const Path& filename, Context* ctx, s
 
 	if (files.num == 1) {
 		KabaExporter e(ctx, module);
-		auto handle = dlopen((dir | files[0]).c_str(), RTLD_NOW);
+		auto handle = dlopen((dir | files[0]).c_str(), RTLD_NOW|RTLD_LOCAL);
 		typedef void t_f(KabaExporter*);
 		if (auto f = (t_f*)dlsym(handle, "export_symbols")) {
 			(*f)(&e);
