@@ -20,6 +20,7 @@
 #include "../../hui_minimal/Application.h"
 #elif __has_include("../../xhui/xhui.h")
 #include "../../xhui/xhui.h"
+#include "../../xhui/Application.h"
 #endif
 
 

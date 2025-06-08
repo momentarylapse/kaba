@@ -87,35 +87,6 @@ void Context::__delete__() {
 	this->Context::~Context();
 }
 
-class KabaExporter {
-public:
-	Context* ctx;
-	shared<Module> module;
-	KabaExporter(Context* _ctx, const shared<Module>& _module) {
-		ctx = _ctx;
-		module = _module;
-	}
-	virtual ~KabaExporter() = default;
-	virtual void declare_class_size(const string& name, int size) {
-		//msg_write("SIZE:  " + name);
-		ctx->external->declare_class_size(name, size);
-	}
-	virtual void declare_enum(const string& name, int value) {
-		ctx->external->declare_enum(name, value);
-	}
-	virtual void declare_class_element(const string& name, int offset) {
-		ctx->external->_declare_class_element(name, offset);
-	}
-	virtual void link(const string& name, void* p) {
-		//msg_write("LINK:  " + name);
-		ctx->external->link(name, p);
-	}
-	virtual void link_virtual(const string& name, void* p, void* instance) {
-		//msg_write("LINK VIRTUAL:  " + name);
-		ctx->external->_link_virtual(name, p, instance);
-	}
-};
-
 void try_import_dynamic_library_for_module(const Path& filename, Context* ctx, shared<Module> module) {
 #if HAS_LIB_DL
 	const auto dir = filename.parent();
@@ -128,9 +99,9 @@ void try_import_dynamic_library_for_module(const Path& filename, Context* ctx, s
 #endif
 
 	if (files.num == 1) {
-		KabaExporter e(ctx, module);
+		Exporter e(ctx, module.get());
 		auto handle = dlopen((dir | files[0]).c_str(), RTLD_NOW|RTLD_LOCAL);
-		typedef void t_f(KabaExporter*);
+		typedef void t_f(Exporter*);
 		if (auto f = (t_f*)dlsym(handle, "export_symbols")) {
 			(*f)(&e);
 		} else {
