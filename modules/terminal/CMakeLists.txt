@@ -33,6 +33,11 @@ target_link_directories(moduleterminal PUBLIC ${LINK_DIRECTORIES})
 target_compile_options(moduleterminal PUBLIC ${COMPILE_OPTIONS})
 target_compile_definitions(moduleterminal PUBLIC ${COMPILE_DEFINITIONS}  INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 target_link_libraries(moduleterminal PUBLIC ${DEPS})
+if (NOT WIN32)
+	target_compile_options(moduleterminal PUBLIC -fvisibility=hidden)
+endif()
+target_include_directories(moduleterminal PUBLIC src)
+target_include_directories(moduleterminal PUBLIC src/lib)
 
 
 #=======================================================================================

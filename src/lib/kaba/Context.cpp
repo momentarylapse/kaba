@@ -105,6 +105,7 @@ void try_import_dynamic_library_for_module(const Path& filename, Context* ctx, s
 		if (auto f = (t_f*)dlsym(handle, "export_symbols")) {
 			(*f)(&e);
 		} else {
+			msg_error(format("found dynami library %s, but no 'export_symbols()'", dir | files[0]));
 		//	s->do_error_link("can't load symbol '" + name + "' from library " + libname);
 		}
 #endif

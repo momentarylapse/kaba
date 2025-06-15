@@ -1,43 +1,14 @@
 #include "lib/base/base.h"
-//#include "lib/kaba/kaba.h"
-//#include "lib/kaba/lib/lib.h"
+#include "KabaExporter.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h>
-
-class KabaExporter {
-public:
-	virtual ~KabaExporter() = default;
-	virtual void declare_class_size(const string& name, int size) = 0;
-	virtual void declare_enum(const string& name, int value) = 0;
-	virtual void declare_class_element(const string& name, int offset) = 0;
-	virtual void link(const string& name, void* p) = 0;
-	virtual void link_virtual(const string& name, void* p, void* instance) = 0;
-};
 
 
 extern "C" {
 
-int _glfwVulkanSupported() {
-	return glfwVulkanSupported();
-}
-/*func extern _glfwCreateWindow(width: int, height: int, title: u8*, monitor: void*, share: void*) -> void*
-func extern _glfwWindowShouldClose(window: void*) -> int
-func extern _glfwSetWindowUserPointer(window: void*, p: void*)
-func extern _glfwGetWindowUserPointer(window: void*) -> void&
-func extern _glfwSetKeyCallback(window: void*, f: void*) -> void*
-func extern _glfwSetCursorPosCallback(window: void*, f: void*) -> void*
-func extern _glfwSetMouseButtonCallback(window: void*, f: void*) -> void*
-func extern _glfwGetCursorPos(window: void*, x: f64*, y: f64*)
-func extern _glfwWindowHint(hint: int, value: int)
-func extern _glfwPollEvents()
-func extern _glfwTerminate()
-func extern _glfwJoystickPresent(j: int) -> int
-func extern _glfwJoystickIsGamepad(j: int) -> int
-func extern _glfwGetJoystickName(j: int) -> u8[0]*
-func extern _glfwGetGamepadName(j: int) -> u8[0]*
-func extern _glfwGetGamepadState(j: int, p: void*) -> int*/
 
-void export_symbols(KabaExporter* e) {
+__attribute__ ((visibility ("default")))
+void export_symbols(kaba::Exporter* e) {
 	//printf("<glfw export>\n");
 	e->link("_glfwInit", (void*)&glfwInit);
 	e->link("_glfwVulkanSupported", (void*)&glfwVulkanSupported);

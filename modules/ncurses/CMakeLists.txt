@@ -42,6 +42,11 @@ target_link_directories(modulencurses PUBLIC ${LINK_DIRECTORIES})
 target_compile_options(modulencurses PUBLIC ${COMPILE_OPTIONS})
 target_compile_definitions(modulencurses PUBLIC ${COMPILE_DEFINITIONS}  INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 target_link_libraries(modulencurses PUBLIC ${DEPS})
+if (NOT WIN32)
+	target_compile_options(modulencurses PUBLIC -fvisibility=hidden)
+endif()
+target_include_directories(modulencurses PUBLIC src)
+target_include_directories(modulencurses PUBLIC src/lib)
 
 
 #=======================================================================================

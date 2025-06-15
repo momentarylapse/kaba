@@ -25,19 +25,10 @@ endif()
 
 
 
-# lib: glfw (optional)
-set(LIB_GLFW_ENABLED true CACHE BOOL "Use glfw library?")
-find_package(glfw3)
-if(glfw3_FOUND)
-else()
-	set(LIB_GLFW_ENABLED false CACHE BOOL "glfw library not found" FORCE)
-endif()
-if(${LIB_GLFW_ENABLED})
-	list(APPEND DEPS glfw)
-	list(APPEND COMPILE_DEFINITIONS HAS_LIB_GLFW=1)
-else()
-	list(APPEND COMPILE_DEFINITIONS HAS_LIB_GLFW=0)
-endif()
+# lib: glfw (mandatory)
+find_package(glfw3 REQUIRED)
+list(APPEND DEPS glfw)
+list(APPEND COMPILE_DEFINITIONS HAS_LIB_GLFW=1)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -58,6 +49,11 @@ target_link_directories(moduleglfw PUBLIC ${LINK_DIRECTORIES})
 target_compile_options(moduleglfw PUBLIC ${COMPILE_OPTIONS})
 target_compile_definitions(moduleglfw PUBLIC ${COMPILE_DEFINITIONS}  INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 target_link_libraries(moduleglfw PUBLIC ${DEPS})
+if (NOT WIN32)
+	target_compile_options(moduleglfw PUBLIC -fvisibility=hidden)
+endif()
+target_include_directories(moduleglfw PUBLIC src)
+target_include_directories(moduleglfw PUBLIC src/lib)
 
 
 #=======================================================================================
@@ -69,4 +65,4 @@ set(RESOURCE_DESTINATION share/mouduleglfw)
 # binaries	
 
 # resources
-install(FILES "glfw.kaba" DESTINATION ${RESOURCE_DESTINATION})
+install(DIRECTORY "static" DESTINATION ${RESOURCE_DESTINATION})
