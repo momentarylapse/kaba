@@ -1,0 +1,39 @@
+
+func extern _compressBound(l: i32) -> i64
+func extern _deflate() -> i32
+func extern _compress(dest: void&, dest_len: i64&, source: void&, source_len: i32) -> i32
+func extern _uncompress(dest: void&, dest_len: i64&, source: void&, source_len: i32) -> i32
+
+func compress(s: bytes) -> bytes
+	let ll = _compressBound(len(s)) + 1024
+	var o: bytes
+	o.resize(ll)
+	let r = _compress(&o[0], &ll, &s[0], len(s))
+	o.resize(ll)
+	return o
+
+func uncompress(s: bytes, len_max: i32) -> bytes
+	let ll: i64 = len_max + 1024
+	var o: bytes
+	o.resize(ll)
+	let r = _uncompress(&o[0], &ll, &s[0], len(s))
+	o.resize(ll)
+	return o
+
+func __main()
+	let a = "hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla"
+	print(len(a))
+	
+	let oo = compress(a.encode())
+	print(len(oo))
+	print(oo.hex())
+	
+	print(uncompress(oo, 65536))
