@@ -1,0 +1,151 @@
+let _SQLITE_OPEN_READWRITE = 2
+let _SQLITE_OPEN_CREATE = 4
+
+func extern sqlite3_libversion_number() -> i32
+func extern _sqlite3_open_v2(fn: u8*, db: void*, flags: i32, zzz: void*) -> i32
+func extern _sqlite3_close(db: void*) -> i32
+func extern _sqlite3_finalize(r: void*) -> i32
+func extern _sqlite3_prepare(db: void*, sql: u8*, len: i32, res: void*, zzz: void*) -> i32
+func extern _sqlite3_column_count(r: void*) -> i32
+func extern _sqlite3_column_text(r: void*, c: i32) -> u8[0]&
+func extern _sqlite3_column_int(r: void*, c: i32) -> i32
+func extern _sqlite3_column_double(r: void*, c: i32) -> f64
+func extern _sqlite3_step(r: void*) -> i32
+func extern _sqlite3_errmsg(db: void*) -> u8[0]&
+func extern _sqlite3_column_name(r: void*, c: i32) -> u8[0]&
+func extern _sqlite3_column_type(r: void*, c: i32) -> i32
+
+func _cstr2str(cs: u8[0]&) -> string
+	var s: string
+	for j in 0:10000
+		if cs[j] == 0
+			break
+		s.add(cs[j])
+	return s
+
+class Database
+	var db = nil
+	func __delete__()
+		_sqlite3_close(db)
+
+	func error() -> string
+		return _cstr2str(_sqlite3_errmsg(db))
+		
+	func query(sql: string) -> xfer[Query]
+		var s = sql
+		s.add(0)
+		var q = new Query()
+		if _sqlite3_prepare(db, &s[0], len(sql), &q.res, nil) != 0
+			raise(new Exception("sql query failed: " + error()))
+		return give(q)
+
+	func run(sql: string)
+		var q = query(sql)
+		q.step()
+	
+	func load_doc(table: string, id: any) -> any?
+		var sql = "select * from {{table}} where id = {{id}}"
+		print(sql)
+		var q = query(sql)
+	#	if not q.has_more()
+	#		return nil #raise(new Exception("{{id}} not found in {{table}}"))
+		return q.get_column()
+	
+	#any save_doc(string table, any id)
+	#	var q = query("select * from " + table + " where id = " + str(id))
+	#	if !q.has_more()
+	#		raise(new Exception(str(id) + " not found in " + table))
+	#	any r = q.get_column()
+	#	del q
+	#	return r
+
+class Query as shared
+	var res = nil
+	var step_result: i32
+	var needs_step = true
+	func __delete__()
+		_sqlite3_finalize(res)
+
+	func mut step()
+		step_result = _sqlite3_step(res)
+	
+	func mut has_more() -> bool
+		if needs_step
+			step()
+			needs_step = false
+		return step_result == 100
+	
+	func mut get_column_text() -> string[]
+		var r: string[]
+		if not has_more()
+			return r
+		let n = _sqlite3_column_count(res)
+		for i in 0:n
+			r.add(_cstr2str(_sqlite3_column_text(res, i)))
+		needs_step = true
+		return r
+
+	func mut get_column() -> any?
+		if not has_more()
+			return nil
+		var r: any
+		let n = _sqlite3_column_count(res)
+		for i in 0:n
+			let key = _cstr2str(_sqlite3_column_name(res, i))
+			let t = _sqlite3_column_type(res, i)
+			if t == 1 # int
+				r[key] = _sqlite3_column_int(res, i)
+			else if t == 2 # double
+				r[key] = float(_sqlite3_column_double(res, i))
+			else if t == 3 # text
+				r[key] = _cstr2str(_sqlite3_column_text(res, i))
+		needs_step = true
+		return r
+
+
+	func column_names() -> string[]
+		var r: string[]
+		let n = _sqlite3_column_count(res)
+		for i in 0:n
+			r.add(_cstr2str(_sqlite3_column_name(res, i)))
+		return r
+	
+
+func open(filename: string) -> xfer[Database]
+	var f = filename
+	f.add(0)
+	var db = new Database()
+	_sqlite3_open_v2(&f[0], &db.db, _SQLITE_OPEN_READWRITE, nil)
+	if not db.db
+		raise(new Exception("can't open database {{filename}}"))
+	return give(db)
+
+
+func create(filename: string) -> xfer[Database]
+	var f = filename
+	f.add(0)
+	var db = new Database()
+	_sqlite3_open_v2(&f[0], &db.db, _SQLITE_OPEN_READWRITE + _SQLITE_OPEN_CREATE, nil)
+	if not db.db
+		raise(new Exception("can't create database {{filename}}"))
+	return give(db)
+
+
+func main()
+	if true
+		var db = create("test.sqlite3")
+		db.run("create table michi (id text, a integer, b text)")
+		db.run("insert into michi (id,a,b) values ('1001',13,'xxx')")
+		db.run("insert into michi (id,a,b) values ('1002',14,'yyy')")
+		db.run("insert into michi (id,a,b) values ('1003',15,'zzz')")
+
+	if true
+		var db = open("test.sqlite3")
+	#	if true
+		var q = db.query("select * from michi")
+#		var q = db.query("SELECT * FROM sqlite_master where type='table'")
+#		print(q.column_names())
+		while q.has_more()
+			print(q.get_column())
+		#print(db.load_doc("michi", "1002"))
+
