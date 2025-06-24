@@ -723,7 +723,7 @@ void SIAddPackageHui(Context *c);
 void SIAddPackageGl(Context *c);
 void SIAddPackageNet(Context *c);
 void SIAddPackageImage(Context *c);
-void SIAddPackageDoc(Context *c);
+void SIAddPackagePdf(Context *c);
 void SIAddPackageVulkan(Context *c);
 
 
@@ -738,7 +738,7 @@ void init_lib(Context *c) {
 	SIAddPackageTime(c);
 	SIAddPackageOS(c);
 	SIAddPackageImage(c);
-	SIAddPackageDoc(c);
+	SIAddPackagePdf(c);
 	SIAddPackageHui(c); // depends on doc
 	SIAddPackageGl(c);
 	SIAddPackageNet(c);
