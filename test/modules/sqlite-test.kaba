@@ -1,0 +1,20 @@
+use sqlite.*
+
+
+func main()
+	if true
+		var db = create("test.sqlite3")
+		db.run("create table michi (id text, a integer, b text)")
+		db.run("insert into michi (id,a,b) values ('1001',13,'xxx')")
+		db.run("insert into michi (id,a,b) values ('1002',14,'yyy')")
+		db.run("insert into michi (id,a,b) values ('1003',15,'zzz')")
+
+	if true
+		var db = open("test.sqlite3")
+	#	if true
+		var q = db.query("select * from michi")
+#		var q = db.query("SELECT * FROM sqlite_master where type='table'")
+#		print(q.column_names())
+		while q.has_more()
+			print(q.get_column())
+		#print(db.load_doc("michi", "1002"))

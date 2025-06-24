@@ -164,13 +164,6 @@ class Window
 		return input.key[k]
 
 
-func main()
-	init([])
-	var w = new Window("test", 800, 600)
-	w.run()
-	print("done")
-	end()
-
 struct GamepadState
 	var _buttons: bool[16]
 	var axes: f32[6]
@@ -228,15 +221,3 @@ struct Gamepad extends GamepadState as shared
 	func static get(index: int) -> shared[Gamepad]
 		return new Gamepad(index)
 
-func _main()
-	init([])
-	for j in 0:8
-		print("{{_glfwJoystickPresent(j)}}  {{_glfwJoystickIsGamepad(j)}} {{cp2s(_glfwGetGamepadName(j))}}")
-		
-		
-	var state: GamepadState
-	while true
-		time.sleep(0.1)
-		_glfwGetGamepadState(0, &state)
-		print(str(state))
-	#end()

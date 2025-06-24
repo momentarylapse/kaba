@@ -1,0 +1,15 @@
+use artemis.*
+
+
+func _main()
+	for s in start()
+		run()
+
+
+func main()
+	var grid: RegularGrid
+	var f = create_scalar_field(grid, f32, SamplingMode.PER_VERTEX)
+	print(len(f.v32))
+	f.set(0,0,0, 99)
+	print(f.value(0,0,0))
+	

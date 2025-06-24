@@ -1,0 +1,20 @@
+use zlib.*
+
+func main()
+	let a = "hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla
+	hallo Welt, ein kleiner Test bla bla bla"
+	print(len(a))
+	
+	let oo = compress(a.encode())
+	print(len(oo))
+	print(oo.hex())
+	
+	print(uncompress(oo, 65536))
+	

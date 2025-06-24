@@ -1,0 +1,5 @@
+use y.*
+
+func main()
+	print(p2s(&cam))
+
