@@ -73,7 +73,7 @@ func _get_key(k: int) -> int
 	
 
 func _on_key(w: void*, a: i32, b: i32, c: i32, d: i32)
-#	print("ON KEY   {{a}} {{b}} {{c}} {{d}}")
+	#print("ON KEY   {{a}} {{b}} {{c}} {{d}}")
 	var win = _glfwGetWindowUserPointer(w) as Window&
 	var k = _get_key(a)
 	if k < 0
@@ -83,7 +83,7 @@ func _on_key(w: void*, a: i32, b: i32, c: i32, d: i32)
 		win.on_key_down(k)
 
 func _on_button(w: void*, a: i32, action: i32, c: i32)
-#	print("ON BUTTON   {{a}} {{action}} {{c}}")
+	#print("ON BUTTON   {{a}} {{action}} {{c}}")
 	var win = _glfwGetWindowUserPointer(w) as Window&
 	if action == 1
 		if a == 0
@@ -101,15 +101,12 @@ func _on_button(w: void*, a: i32, action: i32, c: i32)
 			win.on_right_button_up()
 
 func _on_cursor(w: void*, xx: f64, yy: f64)
-	var x = float(xx)
-	var y = float(yy)
-#	print("ON CURSOR   {{x}}  {{y}}")
+	let m = vec2(f32(xx), f32(yy))
+	#print("ON CURSOR   {{m}}")
 	var win = _glfwGetWindowUserPointer(w) as Window&
-	win.input.dx = x - win.input.x
-	win.input.dy = y - win.input.y
-	win.input.x = x
-	win.input.y = y
-	win.on_mouse_move()#x, y)
+	win.input.d = m - win.input.m
+	win.input.m = m
+	win.on_mouse_move()#m)
 
 
 class Window
@@ -117,7 +114,7 @@ class Window
 	class Input
 		var button: bool[3]
 		var key: bool[256]
-		var x, y, dx, dy: f32
+		var m, d: vec2
 		func __init__()
 			for mut b in button
 				b = false
@@ -142,10 +139,10 @@ class Window
 			_glfwPollEvents()
 			on_idle()
 	func virtual on_idle()
-	func get_mouse() -> complex
+	func get_mouse() -> vec2
 		var xx, yy: f64
 		_glfwGetCursorPos(win, &xx, &yy)
-		return complex(f32(xx), f32(yy))
+		return (f32(xx), f32(yy))
 	func virtual on_key_down(key: i32)
 		#print("key {{key}}")
 	func virtual on_mouse_move()
