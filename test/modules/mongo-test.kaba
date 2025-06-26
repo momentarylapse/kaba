@@ -1,0 +1,22 @@
+use mongo.*
+
+
+#void __main()
+#	void* b = json_to_bson("{\"a\":1,\"b\":2}")
+#	print(p2s(b))
+#	print(bson_to_json(b))
+#	bson_destroy(b)
+
+func main()
+	var m = new Mongo("localhost")
+	#let col = m.get_collection("wiki", "articles")
+	#let r = col.find("{\"name\":\"Hauptseite\"}")
+	var col = m.collection("alex", "files")
+#	var r = col.find(dyn({"id":"100222175"})) # 900942014
+#	var r = col.aggregate(dyn([{"$group": {"_id": "$artist", "num": {"$sum": 1} } }]))
+
+	var r = col.find(dyn({"author":{"$regex":".*einstein", "$options":"i"}})) # 900942014
+
+	while r.has_more()
+		#print(r.json())
+		print(r.get())

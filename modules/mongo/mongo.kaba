@@ -1,0 +1,206 @@
+func extern _mongoc_init()
+func extern _mongoc_cleanup()
+func extern _mongoc_client_new(uri: u8*) -> void*
+func extern _mongoc_client_get_collection(client: void*, db: u8*, col: u8*) -> void*
+func extern _mongoc_collection_find_with_opts(col: void*, filter: void*, _opts: void*, _prefs: void*) -> void*
+func extern _mongoc_collection_aggregate(col: void*, flags: int, pipeline: void*, x: void*, y: void*) -> void*
+func extern _mongoc_collection_insert_one(col: void*, doc: void*, _opts: void*, _reply: void*, _err: void*) -> bool
+func extern _mongoc_collection_replace_one(col: void*, sel: void*, doc: void*, opts: void*, reply: void*, err: void*) -> bool
+func extern _mongoc_collection_delete_one(col: void*, sel: void*, opts: void*, reply: void*, err: void*) -> bool
+func extern _mongoc_collection_delete_many(col: void*, sel: void*, opts: void*, reply: void*, err: void*) -> bool
+func extern _mongoc_cursor_next(cur: void*, bson: void*) -> bool
+func extern _mongoc_cursor_destroy(cur: void*)
+func extern _mongoc_collection_destroy(col: void*)
+func extern _mongoc_client_destroy(client: void*)
+
+func extern _bson_new_from_json(json: u8*, len: int, err: void*) -> void*
+func extern _bson_as_canonical_extended_json(bson: void*, __len: void*) -> u8[0]&
+func extern _bson_as_relaxed_extended_json(bson: void*, __len: void*) -> u8[0]&
+func extern _bson_free(str: void*)
+func extern _bson_destroy(bson: void*)
+func extern _bson_new_from_data(data: u8*, length: int) -> void*
+func extern _bson_iter_init(i: void*, bson: void*) -> bool
+func extern _bson_iter_next(i: void*) -> bool
+func extern _bson_iter_key(i: void*) -> u8[0]&
+func extern _bson_iter_int32(i: void*) -> int
+func extern _bson_iter_int64(i: void*) -> i64
+func extern _bson_iter_double(i: void*) -> f64
+func extern _bson_iter_utf8(i: void*, __len: void*) -> u8[0]&
+func extern _bson_iter_array(i: void*, len: int*, a: void*)
+func extern _bson_iter_oid(i: void*) -> void*
+func extern _bson_oid_to_string(oid: void*, str: u8*)
+func extern _bson_iter_type(i: void*) -> int
+
+func char_to_str(p: u8[0]&) -> string
+	var t: string
+	for i in 0:10000
+		if p[i] == 0
+			break
+		t.add(p[i])
+	return t
+
+func json_to_bson(json: string) -> void*
+	var t = json
+	t.add(0)
+	var b = _bson_new_from_json(&t[0], len(json), nil)
+	if !b
+		raise(new Exception("invalid json: {{json}}"))
+	return b
+
+func bson_to_json(bson: void*) -> string
+	#char[0]* x = bson_as_canonical_extended_json(bson, nil)
+	var x: u8[0]& = _bson_as_relaxed_extended_json(bson, nil)
+	var t = char_to_str(x)
+	_bson_free(x)
+	return t
+
+func bson_iter_key(i: void*) -> string
+	return char_to_str(_bson_iter_key(i))
+func bson_iter_str(i: void*) -> string
+	return char_to_str(_bson_iter_utf8(i, nil))
+
+func bson_iter_str_array(i: void*) -> string[]
+	var r: string[]
+	var itarray: int[160]
+	var length = 0
+	var array: u8*
+	_bson_iter_array(i, &length, &array)
+	var bson = _bson_new_from_data(array, length)
+	_bson_iter_init(&itarray, bson)
+	while _bson_iter_next(&itarray)
+		r.add(bson_iter_str(&itarray))
+	return r
+
+
+
+func bson_iter_to_any(iter: void*) -> any
+	var t = _bson_iter_type(iter)
+	if t == 2 # str utf8
+		return bson_iter_str(iter)
+	else if t == 16 # int
+		return _bson_iter_int32(iter)
+	else if t == 18 # int64
+		return int(_bson_iter_int64(iter))
+	else if t == 1 # double
+		return float(_bson_iter_double(iter))
+	else if t == 4 # array
+		var r: any
+		var itarray: int[160]
+		var length = 0
+		var array: u8*
+		_bson_iter_array(iter, &length, &array)
+		var bson = _bson_new_from_data(array, length)
+		_bson_iter_init(&itarray, bson)
+		while _bson_iter_next(&itarray)
+			r.add(bson_iter_to_any(&itarray))
+		return r
+	else if t == 7 # ID
+		var oid = _bson_iter_oid(iter)
+		var s: string
+		s.resize(25)
+		_bson_oid_to_string(oid, &s[0])
+		s.resize(24)
+		return s
+	else if t == 10 # null
+		var r: any
+		return r
+	raise(new Exception("UNKNOWN TYPE: {{t}}"))
+
+
+func bson_iter_map_to_any(iter: void*) -> any
+	var r: any
+	while _bson_iter_next(iter)
+		var key = bson_iter_key(iter)
+		r[key] = bson_iter_to_any(iter)
+	return r
+
+func bson_to_any(doc: void*) -> any
+	var iter: int[160]
+	_bson_iter_init(&iter, doc)
+	return bson_iter_map_to_any(&iter)
+
+class Mongo as shared
+	var client: void*
+	func __init__(host: string)
+		_any_allow_simple_output = false
+		_mongoc_init()
+		client = __mongo_client_new("mongodb://{{host}}:27017/?appname=kaba")
+		if !client
+			raise(new Exception("can not connect to {{host}}"))
+
+	func __delete__()
+		if client
+			_mongoc_client_destroy(client)
+		_mongoc_cleanup()
+
+	func collection(db: string, col: string) -> xfer[Collection]
+		var c = new Collection()
+		c.col = __mongoc_client_get_collection(client, db, col)
+		if !c.col
+			raise(new Exception("can not open collection"))
+		return give(c)
+
+
+class Collection as shared
+	var col: void* = nil
+	func __delete__()
+		if col
+			_mongoc_collection_destroy(col)
+	func find(filter: any) -> xfer[Result]
+		var b = json_to_bson(repr(filter))
+		return new Result(_mongoc_collection_find_with_opts(col, b, nil, nil))
+	func aggregate(pattern: any) -> xfer[Result]
+		var b = json_to_bson(repr(pattern))
+		return new Result(_mongoc_collection_aggregate(col, 0, b, nil, nil))
+	func insert(doc: any)
+		var b = json_to_bson(repr(doc))
+		if !_mongoc_collection_insert_one(col, b, nil, nil, nil)
+			raise(new Exception("can not insert"))
+	func replace(filter: any, doc: any)
+		var b = json_to_bson(repr(filter))
+		var d = json_to_bson(repr(doc))
+		if !_mongoc_collection_replace_one(col, b, d, nil, nil, nil)
+			raise(new Exception("can not replace"))
+	func delete_one(filter: any)
+		var b = json_to_bson(repr(filter))
+		if !_mongoc_collection_delete_one(col, b, nil, nil, nil)
+			raise(new Exception("can not delete"))
+	func delete_many(filter: any)
+		var b = json_to_bson(repr(filter))
+		var reply: int[160]
+		if !_mongoc_collection_delete_many(col, b, nil, &reply, nil)
+			raise(new Exception("can not delete"))
+		var r = bson_to_any(&reply)
+		print(repr(r))
+
+class Result as shared
+	var cur: void*
+	var doc: void*
+	func __init__(_cur: void*)
+		cur = _cur
+	func __delete__()
+		if cur
+			_mongoc_cursor_destroy(cur)
+	func has_more() -> bool
+		return _mongoc_cursor_next(cur, &doc)
+		# bson_to_json(doc)
+	func json() -> string
+		return bson_to_json(doc)
+	func get() -> any
+		return bson_to_any(doc)
+
+
+func __mongo_client_new(uri: string) -> void*
+	var t = uri
+	t.add(0)
+	return _mongoc_client_new(&t[0])
+
+func __mongoc_client_get_collection(client: void*, db: string, col: string) -> void*
+	var t1 = db
+	t1.add(0)
+	var t2 = col
+	t2.add(0)
+	return _mongoc_client_get_collection(client, &t1[0], &t2[0])
+
+
+
