@@ -1197,6 +1197,12 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("start", TypeFloat32);
 		func_add_param_def("end", TypeFloat32, (float)DynamicArray::MAGIC_END_INDEX);
 		func_add_param_def("step", TypeFloat32, 1.0f);
+	add_func("cubic_spline", TypeFloat32, &cubic_spline<float>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeFloatList);
+		func_add_param("t", TypeFloat32);
+	add_func("cubic_spline_d", TypeFloat32, &cubic_spline_d<float>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeFloatList);
+		func_add_param("t", TypeFloat32);
 
 	// float64[]
 	add_func("sum", TypeFloat64, &XList<double>::sum, Flags::Static | Flags::Pure);
@@ -1217,12 +1223,24 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("list", TypeVec2List);
 	add_func("sum_sqr", TypeFloat32, &VectorList<vec2>::sum_sqr, Flags::Static | Flags::Pure);
 		func_add_param("list", TypeVec2List);
+	add_func("cubic_spline", TypeVec2, &cubic_spline<vec2>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeVec2List);
+		func_add_param("t", TypeFloat32);
+	add_func("cubic_spline_d", TypeVec2, &cubic_spline_d<vec2>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeVec2List);
+		func_add_param("t", TypeFloat32);
 
 	// vec3[]
 	add_func("sum", TypeVec3, &VectorList<vec3>::sum, Flags::Static | Flags::Pure);
 		func_add_param("list", TypeVec3List);
 	add_func("sum_sqr", TypeFloat32, &VectorList<vec3>::sum_sqr, Flags::Static | Flags::Pure);
 		func_add_param("list", TypeVec3List);
+	add_func("cubic_spline", TypeVec3, &cubic_spline<vec3>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeVec3List);
+		func_add_param("t", TypeFloat32);
+	add_func("cubic_spline_d", TypeVec3, &cubic_spline_d<vec3>, Flags::Static | Flags::Pure);
+		func_add_param("points", TypeVec3List);
+		func_add_param("t", TypeFloat32);
 
 	// complex[]
 	add_func("sum", TypeComplex, &VectorList<complex>::sum, Flags::Static | Flags::Pure);
