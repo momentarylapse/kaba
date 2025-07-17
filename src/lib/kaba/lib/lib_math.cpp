@@ -1088,7 +1088,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("invers", TypeBool);
 
 
-	// int
+	// i32
 	add_func("clamp", TypeInt32, &clamp<int>, Flags::Static | Flags::Pure);
 		func_add_param("i", TypeInt32);
 		func_add_param("min", TypeInt32);
@@ -1107,6 +1107,22 @@ void SIAddPackageMath(Context *c) {
 	add_func("max", TypeInt32, &max<int>, Flags::Static | Flags::Pure);
 		func_add_param("a", TypeInt32);
 		func_add_param("b", TypeInt32);
+
+	// i64
+	add_func("clamp", TypeInt64, &clamp<int64>, Flags::Static | Flags::Pure);
+		func_add_param("i", TypeInt64);
+		func_add_param("min", TypeInt64);
+		func_add_param("max", TypeInt64);
+	add_func("abs", TypeInt64, &abs<int64>, Flags::Static | Flags::Pure);
+		func_add_param("i", TypeInt64);
+	add_func("sign", TypeInt64, &sign<int64>, Flags::Static | Flags::Pure);
+		func_add_param("i", TypeInt64);
+	add_func("min", TypeInt64, &min<int64>, Flags::Static | Flags::Pure);
+		func_add_param("a", TypeInt64);
+		func_add_param("b", TypeInt64);
+	add_func("max", TypeInt64, &max<int64>, Flags::Static | Flags::Pure);
+		func_add_param("a", TypeInt64);
+		func_add_param("b", TypeInt64);
 
 	// float
 	add_func("sin", TypeFloat32, &sinf, Flags::Static | Flags::Pure);
@@ -1153,6 +1169,22 @@ void SIAddPackageMath(Context *c) {
 	add_func("max", TypeFloat32, &max<float>, Flags::Static | Flags::Pure);
 		func_add_param("a", TypeFloat32);
 		func_add_param("b", TypeFloat32);
+
+	// f64
+	add_func("clamp", TypeFloat64, &clamp<double>, Flags::Static | Flags::Pure);
+		func_add_param("f", TypeFloat64);
+		func_add_param("min", TypeFloat64);
+		func_add_param("max", TypeFloat64);
+	add_func("abs", TypeFloat64, &abs<double>, Flags::Static | Flags::Pure);
+		func_add_param("f", TypeFloat64);
+	add_func("sign", TypeFloat64, &sign<double>, Flags::Static | Flags::Pure);
+		func_add_param("f", TypeFloat64);
+	add_func("min", TypeFloat64, &min<double>, Flags::Static | Flags::Pure);
+		func_add_param("a", TypeFloat64);
+		func_add_param("b", TypeFloat64);
+	add_func("max", TypeFloat64, &max<double>, Flags::Static | Flags::Pure);
+		func_add_param("a", TypeFloat64);
+		func_add_param("b", TypeFloat64);
 
 	// complex
 	add_func("abs", TypeFloat32, &KabaVector<complex>::abs, Flags::Static | Flags::Pure);
