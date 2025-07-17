@@ -438,6 +438,9 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	func_set_inline(inline_index);
 	if (inline_index != InlineID::None and cur_package->filename.extension() == "")
 		cur_package->context->global_operators.add(o);
+	else if (primitive_op == OperatorID::Negative and param_type1 == TypeFloat64)
+		// FIXME quick hack...
+		cur_package->context->global_operators.add(o);
 	else
 		delete o;
 }
