@@ -132,6 +132,11 @@ void CommandBuffer::push_constant(int offset, int size, const void *data) {
 	vkCmdPushConstants(buffer, current_pipeline->layout, stage_flags, offset, size, data);
 }
 
+void CommandBuffer::update_buffer(Buffer* _buffer, int offset, int size, const void* data) {
+	vkCmdUpdateBuffer(buffer, _buffer->buffer, offset, size, data);
+}
+
+
 void CommandBuffer::draw(VertexBuffer *vb) {
 	draw_instanced(vb, 1);
 }
@@ -239,13 +244,20 @@ void CommandBuffer::dispatch(int nx, int ny, int nz) {
 }
 
 void CommandBuffer::trace_rays(int nx, int ny, int nz) {
-	auto rtp = static_cast<RayPipeline*>(current_pipeline);
-	int hs = default_device->ray_tracing_properties.shaderGroupHandleSize;
-	_vkCmdTraceRaysNV(buffer,
-			rtp->sbt.buffer, 0,
-			rtp->sbt.buffer, rtp->miss_group_offset*hs, hs,
-			rtp->sbt.buffer, hs, hs,
-			VK_NULL_HANDLE, 0, 0,
+	auto pipeline = static_cast<RayPipeline*>(current_pipeline);
+	auto hs = default_device->ray_tracing_properties.shaderGroupHandleSize;
+	VkDeviceAddress addr = pipeline->sbt.get_device_address();
+
+	// TODO size...
+	VkStridedDeviceAddressRegionKHR raygen = {addr, hs, hs};
+	VkStridedDeviceAddressRegionKHR hit = {addr + hs, hs, hs};
+	VkStridedDeviceAddressRegionKHR miss = {addr + pipeline->miss_group_offset*hs, hs, hs};
+	VkStridedDeviceAddressRegionKHR callableShaderSbtEntry = {};
+	_vkCmdTraceRaysKHR(buffer,
+			&raygen,
+			&miss,
+			&hit,
+			&callableShaderSbtEntry,
 			nx, ny, nz);
 }
 
@@ -329,7 +341,7 @@ void CommandBuffer::copy_image(const Texture *source, const Texture *dest, const
 
 void CommandBuffer::timestamp(int id, bool after) {
 	vkCmdWriteTimestamp(buffer,
-			after ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			after ? VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			//(VkPipelineStageFlagBits)(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT),
 			default_device->query_pool, id);
 }

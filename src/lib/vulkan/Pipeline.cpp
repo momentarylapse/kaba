@@ -350,19 +350,20 @@ RayPipeline::RayPipeline(const string &dset_layouts, const Array<Shader*> &shade
 	create_groups(shaders);
 
 
-	VkRayTracingPipelineCreateInfoNV info = {};
-	info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+	VkRayTracingPipelineCreateInfoKHR info = {};
+	info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 	info.groupCount = groups.num;
 	info.pGroups = &groups[0];
 	info.stageCount = shader_stages.num;
 	info.pStages = &shader_stages[0];
-	info.maxRecursionDepth = recursion_depth;
+	info.maxPipelineRayRecursionDepth = recursion_depth;
 	info.layout = layout;
 	info.basePipelineHandle = VK_NULL_HANDLE;
 	info.basePipelineIndex = 0;
 
-	if (_vkCreateRayTracingPipelinesNV(default_device->device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
-		throw Exception("failed to create graphics pipeline!");
+	auto result = _vkCreateRayTracingPipelinesKHR(default_device->device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline);
+	if (result != VK_SUCCESS) {
+		throw Exception("failed to create ray pipeline! " + i2s(result));
 	}
 	if (verbosity >= 2)
 		msg_write("...done");
@@ -375,59 +376,59 @@ void RayPipeline::create_groups(const Array<Shader*> &shaders) {
 	stage.pName = "main";
 
 	// ray gen
-	stage.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-	stage.module = shaders[0]->get_module(VK_SHADER_STAGE_RAYGEN_BIT_NV);
+	stage.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+	stage.module = shaders[0]->get_module(VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 	shader_stages.add(stage);
 
-	VkRayTracingShaderGroupCreateInfoNV group_info = {};
-	group_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-	group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-	group_info.closestHitShader = VK_SHADER_UNUSED_NV;
-	group_info.anyHitShader = VK_SHADER_UNUSED_NV;
-	group_info.intersectionShader = VK_SHADER_UNUSED_NV;
+	VkRayTracingShaderGroupCreateInfoKHR group_info = {};
+	group_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+	group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+	group_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+	group_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+	group_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 	groups.add(group_info);
 
-    // hit groups
-    for (auto *s: shaders.sub_ref(1)) {
-        group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-        group_info.generalShader = VK_SHADER_UNUSED_NV;
-        group_info.closestHitShader = VK_SHADER_UNUSED_NV;
-        group_info.anyHitShader = VK_SHADER_UNUSED_NV;
-        group_info.intersectionShader = VK_SHADER_UNUSED_NV;
+	// hit groups
+	for (auto *s: shaders.sub_ref(1)) {
+		group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+		group_info.generalShader = VK_SHADER_UNUSED_KHR;
+		group_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+		group_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+		group_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    	Array<VkPipelineShaderStageCreateInfo> stages;
-    	if (s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
-    		group_info.closestHitShader = shader_stages.num + stages.num;
-    		stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-    		stage.module = s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    		stages.add(stage);
-    	}
-    	if (s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
-    		group_info.anyHitShader = shader_stages.num + stages.num;
-    		stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-    		stage.module = s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    		stages.add(stage);
-    	}
-    	//VK_SHADER_STAGE_INTERSECTION_BIT_NV
-    	shader_stages.append(stages);
-    	groups.add(group_info);
-    }
-    miss_group_offset = groups.num;
+		Array<VkPipelineShaderStageCreateInfo> stages;
+		if (s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
+			group_info.closestHitShader = shader_stages.num + stages.num;
+			stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+			stage.module = s->get_module(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+			stages.add(stage);
+		}
+		if (s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
+			group_info.anyHitShader = shader_stages.num + stages.num;
+			stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+			stage.module = s->get_module(VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
+			stages.add(stage);
+		}
+		//VK_SHADER_STAGE_INTERSECTION_BIT_KHR
+		shader_stages.append(stages);
+		groups.add(group_info);
+	}
+	miss_group_offset = groups.num;
 
-    // miss groups
-    for (auto *s: shaders.sub_ref(1))
-    	if (s->get_module(VK_SHADER_STAGE_MISS_BIT_NV)) {
-			group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+	// miss groups
+	for (auto *s: shaders.sub_ref(1))
+		if (s->get_module(VK_SHADER_STAGE_MISS_BIT_KHR)) {
+			group_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
 			group_info.generalShader = shader_stages.num;
-			group_info.closestHitShader = VK_SHADER_UNUSED_NV;
-			group_info.anyHitShader = VK_SHADER_UNUSED_NV;
-			group_info.intersectionShader = VK_SHADER_UNUSED_NV;
+			group_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+			group_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+			group_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    		stage.stage = VK_SHADER_STAGE_MISS_BIT_NV;
-    		stage.module = s->get_module(VK_SHADER_STAGE_MISS_BIT_NV);
-    		shader_stages.add(stage);
-    		groups.add(group_info);
-    	}
+			stage.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
+			stage.module = s->get_module(VK_SHADER_STAGE_MISS_BIT_KHR);
+			shader_stages.add(stage);
+			groups.add(group_info);
+		}
 }
 
 void RayPipeline::create_sbt() {
@@ -435,11 +436,12 @@ void RayPipeline::create_sbt() {
 		msg_write("SBT");
 	const size_t sbt_size = groups.num * default_device->ray_tracing_properties.shaderGroupHandleSize;
 
-	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	sbt.create(sbt_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 	void* mem = sbt.map();
-	if (_vkGetRayTracingShaderGroupHandlesNV(default_device->device, pipeline, 0, groups.num, sbt_size, mem))
-		throw Exception("vkGetRayTracingShaderGroupHandlesNV");
+	if (_vkGetRayTracingShaderGroupHandlesKHR(default_device->device, pipeline, 0, groups.num, sbt_size, mem))
+		throw Exception("vkGetRayTracingShaderGroupHandlesKHR");
 	sbt.unmap();
 	if (verbosity >= 2)
 		msg_write("   ok");

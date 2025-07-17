@@ -11,9 +11,8 @@
 #include "Buffer.h"
 #include "Device.h"
 #include <vulkan/vulkan.h>
-
 #include "helper.h"
-
+#include "../os/msg.h"
 
 namespace vulkan{
 
@@ -47,8 +46,13 @@ void Buffer::create(VkDeviceSize _size, VkBufferUsageFlags usage, VkMemoryProper
 	VkMemoryRequirements mem_requirements;
 	vkGetBufferMemoryRequirements(device->device, buffer, &mem_requirements);
 
-	VkMemoryAllocateInfo alloc_info = {};
+	VkMemoryAllocateFlagsInfo flags{};
+	flags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+	flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
+	VkMemoryAllocateInfo alloc_info{};
 	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	alloc_info.pNext = &flags;
 	alloc_info.allocationSize = mem_requirements.size;
 	alloc_info.memoryTypeIndex = device->find_memory_type(mem_requirements, properties);
 
@@ -91,7 +95,7 @@ void Buffer::update_part(const void *source, int offset, int update_size) {
 }
 
 void Buffer::update(void *source) {
-	update_part(source, 0, size);
+	update_part(source, 0, (int)size);
 }
 
 void Buffer::update_array(const DynamicArray &array, int offset) {
@@ -109,11 +113,11 @@ int64 Buffer::get_device_address() const {
 UniformBuffer::UniformBuffer(int _size) : Buffer(default_device) {
 	count = 0;
 	size = _size;
-	size_single = size;
-	size_single_aligned = size;
+	size_single = _size;
+	size_single_aligned = _size;
 	VkDeviceSize buffer_size = size;
 
-	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
@@ -125,7 +129,13 @@ UniformBuffer::UniformBuffer(int _size, int _count) : Buffer(default_device) {
 	size = size_single_aligned * count;
 	VkDeviceSize buffer_size = size;
 
-	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	if (size > 65536) {
+		msg_error(i2s((int)size));
+		int* p = nullptr;
+		*p = 13;
+	}
+
+	auto usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
@@ -145,7 +155,7 @@ StorageBuffer::StorageBuffer(int _size) : Buffer(default_device) {
 	size = _size;
 	VkDeviceSize buffer_size = size;
 
-	auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	create(buffer_size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 

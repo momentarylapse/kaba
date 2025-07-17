@@ -29,7 +29,7 @@ public:
 	VkDevice device = VK_NULL_HANDLE;
 	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 	VkPhysicalDeviceProperties physical_device_properties;
-	VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_properties;
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties;
 
 	VkSurfaceKHR surface = VK_NULL_HANDLE; // TODO extract
 

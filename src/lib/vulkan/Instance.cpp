@@ -238,15 +238,14 @@ VkSurfaceKHR Instance::create_headless_surface() {
 		if (!_##NAME) \
 			throw Exception("CAN NOT LOAD RTX EXTENSIONS");
 
-DECLARE_EXT(vkCmdTraceRaysNV);
-DECLARE_EXT(vkCreateRayTracingPipelinesNV);
-DECLARE_EXT(vkCmdBuildAccelerationStructureNV);
-DECLARE_EXT(vkCreateAccelerationStructureNV);
-DECLARE_EXT(vkDestroyAccelerationStructureNV);
-DECLARE_EXT(vkBindAccelerationStructureMemoryNV);
-DECLARE_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
-DECLARE_EXT(vkGetAccelerationStructureHandleNV);
-DECLARE_EXT(vkGetRayTracingShaderGroupHandlesNV);
+DECLARE_EXT(vkCmdTraceRaysKHR);
+DECLARE_EXT(vkCmdBuildAccelerationStructuresKHR);
+DECLARE_EXT(vkCreateAccelerationStructureKHR);
+DECLARE_EXT(vkDestroyAccelerationStructureKHR);
+DECLARE_EXT(vkGetAccelerationStructureBuildSizesKHR);
+DECLARE_EXT(vkCreateRayTracingPipelinesKHR);
+DECLARE_EXT(vkGetAccelerationStructureDeviceAddressKHR);
+DECLARE_EXT(vkGetRayTracingShaderGroupHandlesKHR);
 DECLARE_EXT(vkGetPhysicalDeviceProperties2);
 
 
@@ -254,36 +253,22 @@ void Instance::_ensure_rtx_extensions() {
 	if (rtx_extensions_loaded)
 		return;
 
-/*	VkPhysicalDeviceRaytracingPropertiesNV mRTProps;
-	mRTProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAYTRACING_PROPERTIES_NV;
-	mRTProps.pNext = nullptr;
-	mRTProps.maxRecursionDepth = 0;
-	mRTProps.shaderHeaderSize = 0;
-
-	VkPhysicalDeviceProperties2 devProps;
-	devProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	devProps.pNext = &mRTProps;
-	devProps.properties = { };
-
-	vkGetPhysicalDeviceProperties2(device, &devProps);*/
-
 	if (verbosity >= 1)
 		msg_write("loading rtx extensions...");
-	LOAD_EXT(vkCmdTraceRaysNV);
-	LOAD_EXT(vkCreateRayTracingPipelinesNV);
-	LOAD_EXT(vkCmdBuildAccelerationStructureNV);
-	LOAD_EXT(vkCreateAccelerationStructureNV);
-	LOAD_EXT(vkDestroyAccelerationStructureNV);
-	LOAD_EXT(vkBindAccelerationStructureMemoryNV);
-	LOAD_EXT(vkGetAccelerationStructureMemoryRequirementsNV);
-	LOAD_EXT(vkGetAccelerationStructureHandleNV);
-	LOAD_EXT(vkGetRayTracingShaderGroupHandlesNV);
+	LOAD_EXT(vkCmdTraceRaysKHR);
+	LOAD_EXT(vkCmdBuildAccelerationStructuresKHR);
+	LOAD_EXT(vkCreateAccelerationStructureKHR);
+	LOAD_EXT(vkDestroyAccelerationStructureKHR);
+	LOAD_EXT(vkGetAccelerationStructureBuildSizesKHR);
+	LOAD_EXT(vkCreateRayTracingPipelinesKHR);
+	LOAD_EXT(vkGetAccelerationStructureDeviceAddressKHR);
+	LOAD_EXT(vkGetRayTracingShaderGroupHandlesKHR);
 	LOAD_EXT(vkGetPhysicalDeviceProperties2);
 
-	if (!_vkCreateRayTracingPipelinesNV)
+	if (!_vkCreateRayTracingPipelinesKHR)
 		msg_error("CAN NOT LOAD RTX EXTENSIONS");
 	if (verbosity >= 3)
-		msg_write(" create pipeline: " + p2s((void*)_vkCreateRayTracingPipelinesNV));
+		msg_write(" create pipeline: " + p2s((void*)_vkCreateRayTracingPipelinesKHR));
 
 	rtx_extensions_loaded = true;
 }

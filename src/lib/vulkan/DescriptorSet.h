@@ -66,7 +66,7 @@ namespace vulkan{
 			VkDescriptorType type;
 		};
 		struct AccelerationData {
-			VkWriteDescriptorSetAccelerationStructureNV info;
+			VkWriteDescriptorSetAccelerationStructureKHR info;
 			int binding;
 			VkDescriptorType type;
 		};

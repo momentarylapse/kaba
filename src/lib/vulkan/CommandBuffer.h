@@ -28,6 +28,7 @@ namespace vulkan{
 	class Texture;
 	class Device;
 	class CommandBuffer;
+	class Buffer;
 
 
 	enum class AccessFlags {
@@ -50,7 +51,7 @@ namespace vulkan{
 
 	enum class PipelineBindPoint {
 		GRAPHICS = VK_PIPELINE_BIND_POINT_GRAPHICS,
-		RAY_TRACING = VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+		RAY_TRACING = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
 		COMPUTE = VK_PIPELINE_BIND_POINT_COMPUTE
 	};
 
@@ -85,6 +86,7 @@ namespace vulkan{
 		void bind_descriptor_set(int index, DescriptorSet *dset);
 		void bind_descriptor_set_dynamic(int index, DescriptorSet *dset, const Array<int> &indices);
 		void push_constant(int offset, int size, const void *data);
+		void update_buffer(Buffer* buffer, int offset, int size, const void *data);
 
 		void begin_render_pass(RenderPass *rp, FrameBuffer *fb);
 		void next_subpass();

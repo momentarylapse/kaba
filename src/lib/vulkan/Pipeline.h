@@ -141,7 +141,7 @@ namespace vulkan{
 		void create_sbt();
 
 		int miss_group_offset;
-	    Array<VkRayTracingShaderGroupCreateInfoNV> groups;
+	    Array<VkRayTracingShaderGroupCreateInfoKHR> groups;
 	    Buffer sbt;
 	};
 

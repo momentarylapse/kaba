@@ -42,15 +42,14 @@ namespace vulkan {
 
 #define DECLARE_EXT_H(NAME) extern PFN_##NAME _##NAME;
 
-	DECLARE_EXT_H(vkCmdTraceRaysNV);
-	DECLARE_EXT_H(vkCmdBuildAccelerationStructureNV);
-	DECLARE_EXT_H(vkCreateAccelerationStructureNV);
-	DECLARE_EXT_H(vkDestroyAccelerationStructureNV);
-	DECLARE_EXT_H(vkBindAccelerationStructureMemoryNV);
-	DECLARE_EXT_H(vkCreateRayTracingPipelinesNV);
-	DECLARE_EXT_H(vkGetAccelerationStructureMemoryRequirementsNV);
-	DECLARE_EXT_H(vkGetAccelerationStructureHandleNV);
-	DECLARE_EXT_H(vkGetRayTracingShaderGroupHandlesNV);
+	DECLARE_EXT_H(vkCmdTraceRaysKHR);
+	DECLARE_EXT_H(vkCmdBuildAccelerationStructuresKHR);
+	DECLARE_EXT_H(vkCreateAccelerationStructureKHR);
+	DECLARE_EXT_H(vkDestroyAccelerationStructureKHR);
+	DECLARE_EXT_H(vkGetAccelerationStructureBuildSizesKHR);
+	DECLARE_EXT_H(vkCreateRayTracingPipelinesKHR);
+	DECLARE_EXT_H(vkGetAccelerationStructureDeviceAddressKHR);
+	DECLARE_EXT_H(vkGetRayTracingShaderGroupHandlesKHR);
 	DECLARE_EXT_H(vkGetPhysicalDeviceProperties2);
 }
 

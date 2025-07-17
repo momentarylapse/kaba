@@ -37,7 +37,7 @@ VkDescriptorType descriptor_type(const string &s) {
 	if (s == "image")
 		return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	if (s == DESCRIPTOR_NAME_ACCELERATION_STRUCTURE)
-		return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+		return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 	throw Exception("unknown type: " + s);
 	return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 }
@@ -122,7 +122,6 @@ VkDescriptorType descriptor_type(const string &s) {
 	}
 
 	void DescriptorSet::set_storage_image(int binding, Texture *t) {
-		//msg_error("storage image");
 		auto &i = get_for_binding(images, binding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 		i.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		i.info.imageView = t->view;
@@ -146,8 +145,10 @@ VkDescriptorType descriptor_type(const string &s) {
 	}
 
 	void DescriptorSet::set_acceleration_structure(int binding, AccelerationStructure *a) {
-		auto &i = get_for_binding(accelerations, binding, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-	    i.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+		if (!a)
+			return;
+		auto &i = get_for_binding(accelerations, binding, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+	    i.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	    i.info.accelerationStructureCount = 1;
 	    i.info.pAccelerationStructures = &a->structure;
 	}
@@ -157,8 +158,7 @@ VkDescriptorType descriptor_type(const string &s) {
 	}
 
 	void DescriptorSet::update() {
-
-		//std::cout << "update dset with " << buffers.num << " buffers, " << images.num << " images\n";
+		//msg_write(format("update dset with %d buffers, %d images", buffers.num, images.num));
 
 		Array<VkWriteDescriptorSet> wds;
 		for (auto &b: buffers) {
@@ -196,6 +196,7 @@ VkDescriptorType descriptor_type(const string &s) {
 			wds.add(w);
 		}
 
+		//msg_write("dset update  " + p2s(descriptor_set));
 		vkUpdateDescriptorSets(default_device->device, static_cast<uint32_t>(wds.num), &wds[0], 0, nullptr);
 	}
 
@@ -209,9 +210,9 @@ VkDescriptorType descriptor_type(const string &s) {
 			lb.binding = binding_no[i];
 			lb.pImmutableSamplers = nullptr;
 			if (types[i] == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+				lb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 			else
-				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+				lb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
 			lb.stageFlags = VK_SHADER_STAGE_ALL;
 			bindings.add(lb);
 		}

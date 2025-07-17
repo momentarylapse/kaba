@@ -32,8 +32,10 @@ Device *default_device;
 		if (req & Requirements::SWAP_CHAIN)
 			ext.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		if (req & Requirements::RTX) {
-			ext.add(VK_NV_RAY_TRACING_EXTENSION_NAME);
+			ext.add(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+			ext.add(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 			ext.add(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+			ext.add(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 		}
 #ifdef OS_MAC
 		ext.add("VK_KHR_portability_subset");
@@ -47,59 +49,74 @@ Device *default_device;
 	//extern Array<const char*> validation_layers;
 
 
-bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
+int device_suitable_rating(VkPhysicalDevice device, VkSurfaceKHR surface, Requirements req) {
+
 	auto indices = QueueFamilyIndices::query(device, surface, req);
 	if (!indices)
-		return false;
+		return -1;
 
 	if (!check_device_extension_support(device, req))
-		return false;
+		return -1;
 
 	if ((req & Requirements::SWAP_CHAIN) or (req & Requirements::PRESENT)) {
 		if (!surface)
-			return false;
+			return -1;
 		SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device, surface);
 
 		if (req & Requirements::SWAP_CHAIN)
 			if (swapChainSupport.formats.num == 0)
-				return false;
+				return -1;
 
 		if (req & Requirements::PRESENT)
 			if (swapChainSupport.present_modes.num == 0)
-				return false;
+				return -1;
 	}
 
 	VkPhysicalDeviceFeatures supported_features;
 	vkGetPhysicalDeviceFeatures(device, &supported_features);
 	if ((req & Requirements::ANISOTROPY) and !supported_features.samplerAnisotropy)
-		return false;
+		return -1;
 	if ((req & Requirements::GEOMETRY_SHADER) and !supported_features.geometryShader)
-		return false;
+		return -1;
 	if ((req & Requirements::TESSELATION_SHADER) and !supported_features.tessellationShader)
-		return false;
+		return -1;
 
-	return true;
+	VkPhysicalDeviceProperties properties;
+	vkGetPhysicalDeviceProperties(device, &properties);
+	//msg_write(properties.deviceName);
+	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+		return 1; // simulated gpu :/
+	return 2;
 }
 
-bool check_device_extension_support(VkPhysicalDevice device, Requirements req) {
+Array<VkExtensionProperties> device_get_available_extensions(VkPhysicalDevice device) {
 	uint32_t extension_count;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
-	Array<VkExtensionProperties> available_extensions;
-	available_extensions.resize(extension_count);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, &available_extensions[0]);
+	Array<VkExtensionProperties> extensions;
+	extensions.resize((int)extension_count);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, &extensions[0]);
+	return extensions;
+}
+
+bool check_device_extension_support(VkPhysicalDevice device, Requirements req) {
+	const auto available_extensions = device_get_available_extensions(device);
 
 	base::set<string> required_extensions;
 	for (auto e: device_extensions(req))
 		required_extensions.add(e);
 
-	if (verbosity >= 3)
-		msg_write("---- GPU-----");
-	for (const auto& extension : available_extensions) {
-	//	if (verbosity >= 3)
-	//		msg_write("   " + string(extension.extensionName));
+//	if (verbosity >= 3)
+//		msg_write("---- GPU-----");
+//	for (const auto& extension : available_extensions)
+//		msg_write("  available:   " + string(extension.extensionName));
+//	for (const auto& extension : required_extensions)
+//		msg_write("  required:   " + extension);
+	for (const auto& extension : available_extensions)
 		required_extensions.erase(extension.extensionName);
-	}
+
+//	for (const auto& extension : required_extensions)
+//		msg_write("  missing:   " + extension);
 
 	return required_extensions.num == 0;
 }
@@ -160,12 +177,12 @@ void Device::pick_physical_device(Instance *_instance, VkSurfaceKHR _surface, Re
 		show_physical_devices(devices);
 
 	physical_device = VK_NULL_HANDLE;
+	int max_rating = 0;
 	for (const auto& dev: devices) {
-		if (is_device_suitable(dev, surface, req)) {
-			if (verbosity >= 2)
-				msg_write(" ok");
+		int rating = device_suitable_rating(dev, surface, req);
+		if (rating > max_rating) {
 			physical_device = dev;
-			break;
+			max_rating = rating;
 		}
 	}
 
@@ -216,26 +233,41 @@ void Device::create_logical_device(VkSurfaceKHR surface, Requirements req) {
 		queue_create_infos.add(queue_create_info);
 	}
 
-	VkPhysicalDeviceFeatures device_features = {};
-	if (req & Requirements::GEOMETRY_SHADER)
-		device_features.geometryShader = VK_TRUE;
-	if (req & Requirements::TESSELATION_SHADER)
-		device_features.tessellationShader = VK_TRUE;
-	if (req & Requirements::ANISOTROPY)
-		device_features.samplerAnisotropy = VK_TRUE;
-
 	VkPhysicalDeviceVulkan12Features features12 = {};
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	features12.hostQueryReset = VK_TRUE;
+	features12.bufferDeviceAddress = VK_TRUE;
+	features12.scalarBlockLayout = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 device_features = {};
+	device_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	device_features.pNext = &features12;
+
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_features = {};
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = {};
+	if (req & Requirements::GEOMETRY_SHADER)
+		device_features.features.geometryShader = VK_TRUE;
+	if (req & Requirements::TESSELATION_SHADER)
+		device_features.features.tessellationShader = VK_TRUE;
+	if (req & Requirements::ANISOTROPY)
+		device_features.features.samplerAnisotropy = VK_TRUE;
+	if (req & Requirements::RTX) {
+		rt_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+		rt_features.rayTracingPipeline = VK_TRUE;
+
+		as_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+		as_features.accelerationStructure = VK_TRUE;
+		as_features.pNext = &rt_features;
+
+		features12.pNext = &as_features;
+	}
 
 	VkDeviceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	create_info.pNext = &features12;
+	create_info.pNext = &device_features;
 
 	create_info.queueCreateInfoCount = queue_create_infos.num;
 	create_info.pQueueCreateInfos = &queue_create_infos[0];
-
-	create_info.pEnabledFeatures = &device_features;
 
 	auto extensions = device_extensions(req);
 	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.num);
@@ -391,7 +423,7 @@ xfer<Device> Device::create_simple(Instance *instance, VkSurfaceKHR surface, con
 void Device::get_rtx_properties() {
 
 	ray_tracing_properties = {};
-	ray_tracing_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+	ray_tracing_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 
 	VkPhysicalDeviceProperties2 dev_props = {};
 	dev_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -402,9 +434,9 @@ void Device::get_rtx_properties() {
 	_vkGetPhysicalDeviceProperties2(physical_device, &dev_props);
 	if (verbosity >= 3) {
 		msg_write("PROPS");
-		msg_write(ray_tracing_properties.maxShaderGroupStride);
-		msg_write(ray_tracing_properties.shaderGroupBaseAlignment);
-		msg_write(ray_tracing_properties.shaderGroupHandleSize);
+		msg_write(format("shader group stride: ", ray_tracing_properties.maxShaderGroupStride));
+		msg_write(format("shader group base alignment: ", ray_tracing_properties.shaderGroupBaseAlignment));
+		msg_write(format("shader group handle size: ", ray_tracing_properties.shaderGroupHandleSize));
 	}
 }
 

@@ -53,6 +53,7 @@ static shaderc_compiler_t shaderc = nullptr;
 
 
 	string overwrite_bindings;
+	int overwrite_push_size = -1;
 
 
 
@@ -129,9 +130,9 @@ static shaderc_compiler_t shaderc = nullptr;
 			} else if (tag == "RayMissShader") {
 				p.type = VK_SHADER_STAGE_MISS_BIT_KHR;
 			} else if (tag == "TaskShader") {
-				p.type = VK_SHADER_STAGE_TASK_BIT_NV;
+				p.type = VK_SHADER_STAGE_TASK_BIT_EXT;
 			} else if (tag == "MeshShader") {
-				p.type = VK_SHADER_STAGE_MESH_BIT_NV;
+				p.type = VK_SHADER_STAGE_MESH_BIT_EXT;
 			} else if (tag == "Module") {
 				p.type = (VkShaderStageFlagBits)TYPE_MODULE;
 			} else if (tag == "Layout") {
@@ -233,6 +234,7 @@ static shaderc_compiler_t shaderc = nullptr;
 			shaderc = shaderc_compiler_initialize();
 			options = shaderc_compile_options_initialize();
 			shaderc_compile_options_add_macro_definition(options, "vulkan", 6, "1", 1);
+			shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_6);
 		}
 		//msg_write(">>>----------------------------------------------------------------------------------- xxxx");
 		//msg_write(source);
@@ -254,7 +256,7 @@ static shaderc_compiler_t shaderc = nullptr;
 		return nullptr;
 	}
 
-	ShaderMetaData parse_meta(string source) {
+	ShaderMetaData parse_meta(const string& source) {
 		ShaderMetaData m;
 		for (auto &x: source.explode("\n")) {
 			auto y = x.explode("=");
@@ -280,6 +282,8 @@ static shaderc_compiler_t shaderc = nullptr;
 		}
 		if (overwrite_bindings != "")
 			m.bindings = overwrite_bindings;
+		if (overwrite_push_size >= 0)
+			m.push_size = overwrite_push_size;
 		return m;
 	}
 
@@ -375,13 +379,13 @@ static shaderc_compiler_t shaderc = nullptr;
 				} else if (tag == "ComputeShader") {
 					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_COMPUTE_BIT});
 				} else if (tag == "RayGenShader") {
-					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_RAYGEN_BIT_NV});
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_RAYGEN_BIT_KHR});
 				} else if (tag == "RayMissShader") {
-					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_MISS_BIT_NV});
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_MISS_BIT_KHR});
 				} else if (tag == "RayClosestHitShader") {
-					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV});
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR});
 				} else if (tag == "RayAnyHitShader") {
-					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_ANY_HIT_BIT_NV});
+					s->modules.add({create_shader_module(value), VK_SHADER_STAGE_ANY_HIT_BIT_KHR});
 				} else {
 					msg_write("WARNING: " + value);
 				}
