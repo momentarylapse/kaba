@@ -86,10 +86,6 @@ extern const Class *TypeAnyList;
 extern const Class *TypeAnyDict;
 
 
-float _cdecl f_sqr(float f) {
-	return f*f;
-}
-
 template<class T>
 class VectorList : public Array<T> {
 public:
@@ -1124,7 +1120,7 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("a", TypeInt64);
 		func_add_param("b", TypeInt64);
 
-	// float
+	// f32
 	add_func("sin", TypeFloat32, &sinf, Flags::Static | Flags::Pure);
 		func_add_param("x", TypeFloat32);
 	add_func("cos", TypeFloat32, &cosf, Flags::Static | Flags::Pure);
@@ -1142,7 +1138,7 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("y", TypeFloat32);
 	add_func("sqrt", TypeFloat32, &sqrtf, Flags::Static | Flags::Pure);
 		func_add_param("x", TypeFloat32);
-	add_func("sqr", TypeFloat32, &f_sqr, Flags::Static | Flags::Pure);
+	add_func("sqr", TypeFloat32, &sqr<float>, Flags::Static | Flags::Pure);
 		func_add_param("x", TypeFloat32);
 	add_func("exp", TypeFloat32, &expf, Flags::Static | Flags::Pure);
 		func_add_param("x", TypeFloat32);
@@ -1171,6 +1167,32 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("b", TypeFloat32);
 
 	// f64
+	add_func("sin", TypeFloat64, &sin, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("cos", TypeFloat64, &cos, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("tan", TypeFloat64, &tan, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("asin", TypeFloat64, &asin, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("acos", TypeFloat64, &acos, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("atan", TypeFloat64, &atan, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("atan2", TypeFloat64, &atan2, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+		func_add_param("y", TypeFloat64);
+	add_func("sqrt", TypeFloat64, &sqrt, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("sqr", TypeFloat64, &sqr<double>, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("exp", TypeFloat64, &exp, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("log", TypeFloat64, &log, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+	add_func("pow", TypeFloat64, &pow, Flags::Static | Flags::Pure);
+		func_add_param("x", TypeFloat64);
+		func_add_param("exp", TypeFloat64);
 	add_func("clamp", TypeFloat64, &clamp<double>, Flags::Static | Flags::Pure);
 		func_add_param("f", TypeFloat64);
 		func_add_param("min", TypeFloat64);
