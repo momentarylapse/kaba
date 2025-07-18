@@ -78,7 +78,6 @@ T cubic_spline_d(const Array<T>& points, float t) {
 	if (points.num < 4)
 		return T{};
 	const float tt = t*t;
-	const float ttt = tt*t;
 	return (6*tt-6*t) * points[0] + (3*tt-4*t+1) * points[1] + (-6*tt+6*t) * points[2] + (3*tt-2*t) * points[3];
 }
 
