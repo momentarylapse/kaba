@@ -91,10 +91,10 @@ Path find_installed_lib_import(const string &name) {
 		kaba_dir = App::directory.parent() | ".kaba";
 	Path kaba_dir_static = App::directory_static.parent() | "kaba";
 	for (auto &dir: Array<Path>({kaba_dir, kaba_dir_static})) {
-		auto path1 = (dir | "modules" | (name + ".kaba")).canonical();
+		auto path1 = (dir | "packages" | (name + ".kaba")).canonical();
 		if (os::fs::exists(path1))
 			return path1;
-		auto path2 = (dir | "modules" | name | (name + ".kaba")).canonical();
+		auto path2 = (dir | "packages" | name | (name + ".kaba")).canonical();
 		if (os::fs::exists(path2))
 			return path2;
 	}
