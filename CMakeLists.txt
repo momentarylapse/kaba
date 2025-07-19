@@ -334,7 +334,6 @@ add_executable(kaba
 	src/lib/kaba/lib/lib_math.cpp
 	src/lib/kaba/lib/lib_net.cpp
 	src/lib/kaba/lib/lib_os.cpp
-	src/lib/kaba/lib/lib_pdf.cpp
 	src/lib/kaba/lib/lib_threads.cpp
 	src/lib/kaba/lib/lib_time.cpp
 	src/lib/kaba/lib/lib_vulkan.cpp
