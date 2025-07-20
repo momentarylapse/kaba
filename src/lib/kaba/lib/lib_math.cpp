@@ -356,7 +356,7 @@ public:
 };
 
 void SIAddPackageMath(Context *c) {
-	add_package(c, "math", Flags::AutoImport);
+	add_internal_package(c, "math", Flags::AutoImport);
 
 	// types
 	TypeComplex = add_type("complex", sizeof(complex));
