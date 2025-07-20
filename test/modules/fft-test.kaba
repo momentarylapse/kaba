@@ -1,0 +1,9 @@
+use fft.*
+
+func main()
+	let i = [0.0, 1.0, 0.0, 0.0]
+	var o: complex[]
+
+	r2c(i, o)
+	print(o)
+

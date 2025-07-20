@@ -1,0 +1,6 @@
+use tsunami.*
+
+func main()
+	var b: AudioBuffer
+	b.resize(8)
+	print(b.c)

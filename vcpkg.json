@@ -1,6 +1,5 @@
 {
   "dependencies": [
-    "fftw3",
     "glfw3",
     "opengl",
     "shaderc",
