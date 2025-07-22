@@ -5,6 +5,7 @@
 #include "../../os/CommandLineParser.h"
 #include "../../os/config.h"
 #include "../../os/terminal.h"
+#include "../../os/app.h"
 #include "../kaba.h"
 #include "../../config.h"
 #include "lib.h"
@@ -528,6 +529,10 @@ void SIAddPackageOS(Context *c) {
 	add_func("shell_execute", TypeString, &kaba_shell_execute, Flags::Static | Flags::RaisesExceptions);
 		func_add_param("cmd", TypeString);
 		func_add_param_def("verbose", TypeBool, false);
+
+
+	add_ext_var("app_directory_dynamic", TypePath, &os::app::directory_dynamic);
+	add_ext_var("app_directory_static", TypePath, &os::app::directory_static);
 
 
 	add_type_cast(50, TypeString, TypePath, "os.Path.@from_str");

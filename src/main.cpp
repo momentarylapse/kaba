@@ -1,4 +1,5 @@
 #include "lib/base/base.h"
+#include "lib/os/app.h"
 #include "lib/os/file.h"
 #include "lib/os/filesystem.h"
 #include "lib/os/msg.h"
@@ -254,7 +255,7 @@ public:
 	}
 
 	static Path try_get_installed_app_file(const Path &filename) {
-		for (auto &dir: Array<Path>({directory, directory_static})) {
+		for (auto &dir: Array<Path>({os::app::directory_dynamic, os::app::directory_static})) {
 			Path dd = dir | "packages" | filename.str() | (filename.str() + ".kaba");
 			if (filename.str().find("/") >= 0)
 				dd = dir | "packages" | (filename.str() + ".kaba");
@@ -273,7 +274,7 @@ public:
 
 	shared<kaba::Module> compile_file(const Path &_filename) {
 		auto filename = _filename;
-		if (installed and filename.extension() != "kaba")
+		if (os::app::installed and filename.extension() != "kaba")
 			filename = try_get_installed_app_file(filename);
 
 		try {

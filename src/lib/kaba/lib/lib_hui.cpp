@@ -719,10 +719,6 @@ void SIAddPackageHui(Context *c) {
 	add_enum("NUM_KEYS", TypeInt32,hui::NUM_KEYS);
 	add_enum("KEY_ANY", TypeInt32, hui::KEY_ANY);
 
-	add_ext_var("app_filename", TypePath, hui_p(&hui::Application::filename));
-	add_ext_var("app_directory", TypePath, hui_p(&hui::Application::directory));
-	add_ext_var("app_directory_static", TypePath, hui_p(&hui::Application::directory_static));
-	//add_ext_var("filename", TypePath, hui_p(&hui::Filename));
 	add_ext_var("app_config", TypeOsConfiguration, hui_p(&hui::config));
 }
 
