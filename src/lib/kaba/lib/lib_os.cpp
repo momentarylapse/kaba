@@ -27,8 +27,8 @@ const Class *TypePathList;
 //const Class *TypeStreamP;
 //const Class *TypeStreamShared;
 
-const Class* TypeCallback;
-const Class* TypeCallbackString;
+extern const Class* TypeCallback;
+extern const Class* TypeCallbackString;
 
 extern const Class *TypeStringList;
 extern const Class *TypeAny;
@@ -314,8 +314,6 @@ void SIAddPackageOS(Context *c) {
 	TypeOsConfiguration = add_type("Configuration", sizeof(Configuration));
 	auto TypeTerminal = add_type("terminal", 0);
 
-	TypeCallback = add_type_func(TypeVoid, {});
-	TypeCallbackString = add_type_func(TypeVoid, {TypeString});
 	auto TypeCallbackStringList = add_type_func(TypeVoid, {TypeStringList});
 
 	lib_create_pointer_xfer(TypeStreamXfer);
