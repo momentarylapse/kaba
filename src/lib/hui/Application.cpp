@@ -46,6 +46,7 @@ base::map<string, string> Application::_properties_;
 
 Flags Application::flags = Flags::NONE;
 bool Application::adwaita_started = false;
+bool Application::allowed = true;
 
 Array<string> Application::_args;
 
@@ -84,7 +85,16 @@ void _init_global_css_classes_() {
 #endif
 }
 
+void init_low_level() {
+	_InitInput_();
+	new(&Application::_properties_) base::map<string, string>();
+
+	separator = "\\";
+	_using_language_ = false;
+}
+
 Application::Application(const string &app_name, const string &def_lang, Flags _flags) {
+	init_low_level();
 	flags = _flags;
 
 #ifdef HUI_API_GTK
@@ -94,10 +104,6 @@ Application::Application(const string &app_name, const string &def_lang, Flags _
 	os::app::detect(_args, app_name);
 
 
-	_InitInput_();
-
-	separator = "\\";
-	_using_language_ = false;
 	if ((flags & Flags::NO_ERROR_HANDLER) == 0)
 		SetDefaultErrorHandler(nullptr);
 
@@ -260,6 +266,8 @@ void Application::set_property(const string &name, const string &value) {
 }
 
 string Application::get_property(const string &name) {
+	if (!_properties_.contains(name))
+		return "";
 	try {
 		return _properties_[name];
 	} catch(...) {

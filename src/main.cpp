@@ -5,7 +5,8 @@
 #include "lib/os/msg.h"
 #include "lib/os/date.h"
 #include "lib/os/CommandLineParser.h"
-#include "lib/hui/hui.h"
+#include "lib/base/future.h"
+//#include "lib/hui/hui.h"
 #include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
@@ -29,13 +30,11 @@ namespace kaba {
 
 KABA_LINK_GROUP_BEGIN
 
-class KabaApp : public hui::Application {
+class KabaApp {
 public:
-	KabaApp() :
-		hui::Application("kaba", "", hui::Flags::DONT_LOAD_RESOURCE)
-	{
-		set_property("name", AppName);
-		set_property("version", AppVersion);
+	KabaApp() {
+		//set_property("name", AppName);
+		//set_property("version", AppVersion);
 		//hui::EndKeepMsgAlive = true;
 	}
 
@@ -53,7 +52,7 @@ public:
 	bool flag_interpret = false;
 	bool flag_clean_up = false;
 
-	hui::AppStatus on_startup_before_gui_init(const Array<string> &arg0) override {
+	int on_startup(const Array<string> &arg0) {
 
 		CommandLineParser p;
 		p.info(AppName, "compiler for the kaba language");
@@ -147,7 +146,7 @@ public:
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			msg_write("native arch: " + kaba::abi_name(kaba::guess_native_abi()));;
 			msg_write("kaba: " + kaba::Version);
-			msg_write("hui: " + hui::Version);
+			//msg_write("hui: " + hui::Version);
 		});
 		p.cmd("-h/--help", "", "show this help page", [&p] (const Array<string>&) {
 			p.show();
@@ -195,16 +194,16 @@ public:
 			kaba::clean_up();
 		//msg_end();
 
-		return hui::AppStatus::END;
+		return 0;//hui::AppStatus::END;
 	}
-	hui::AppStatus on_startup(const Array<string> &arg0) override {
+	/*hui::AppStatus on_startup(const Array<string> &arg0) override {
 		return hui::AppStatus::END;
-	}
+	}*/
 
 	void die(const string &msg) {
-		if (use_gui)
+		/*if (use_gui)
 			hui::error_box(NULL, _("Error in script"), msg);
-		else
+		else*/
 			msg_error(msg);
 		exit(1);
 	}
@@ -225,9 +224,9 @@ public:
 
 		// for huibui.kaba...
 		auto e = kaba::default_context->external.get();
-		e->link_class_func("Resource.str", &hui::Resource::to_string);
+/*		e->link_class_func("Resource.str", &hui::Resource::to_string);
 		e->link_class_func("Resource.show", &hui::Resource::show);
-		e->link("ParseResource", (void*)&hui::parse_resource);
+		e->link("ParseResource", (void*)&hui::parse_resource);*/
 
 		e->link("xxx_delete", (void*)&xxx_delete);
 		e->link("f", (void*)&xxx_fff);
@@ -345,4 +344,14 @@ public:
 KABA_LINK_GROUP_END
 
 
-HUI_EXECUTE(KabaApp)
+namespace os::app {
+	int main(const Array<string> &args) {
+		detect(args, "kaba");
+		auto app = new KabaApp();
+		int r = app->on_startup(args);
+		delete app;
+		return r;
+	}
+}
+
+

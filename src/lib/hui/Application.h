@@ -61,6 +61,7 @@ public:
 
 	static bool adwaita_started;
 	static Flags flags;
+	static bool allowed;
 
 	static Array<string> _args;
 
@@ -71,12 +72,14 @@ public:
 }
 
 #define HUI_EXECUTE(APP_CLASS) \
-int hui_main(const Array<string> &args) { \
+namespace os::app { \
+int main(const Array<string> &args) { \
 	APP_CLASS::_args = args; \
 	APP_CLASS *app = new APP_CLASS; \
 	int r = app->try_execute(args); \
 	delete app; \
 	return r; \
+} \
 }
 
 #endif /* HUIAPPLICATION_H_ */
