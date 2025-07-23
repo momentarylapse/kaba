@@ -190,7 +190,7 @@ void Function::add_self_parameter() {
 // * update_parameters_after_parsing() called
 Function *Function::create_dummy_clone(const Class *_name_space) const {
 	Function *f = new Function(name, literal_return_type, _name_space, flags);
-	flags_set(f->flags, Flags::NeedsOverride);
+	flags_set(f->flags, Flags::Unimplemented);
 
 	f->num_params = num_params;
 	f->default_parameters = default_parameters;
@@ -261,7 +261,7 @@ bool Function::is_macro() const {
 }
 
 bool Function::needs_overriding() const {
-	return flags_has(flags, Flags::NeedsOverride);
+	return flags_has(flags, Flags::Unimplemented) and !is_extern();
 }
 
 }

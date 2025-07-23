@@ -327,7 +327,7 @@ Function* AutoImplementer::prepare_auto_impl(const Class *t, Function *f) {
 		return nullptr;
 	if (!f->auto_declared)
 		return nullptr;
-	flags_clear(f->flags, Flags::NeedsOverride); // we're about to implement....
+	flags_clear(f->flags, Flags::Unimplemented); // we're about to implement....
 	return f;
 }
 
