@@ -3,6 +3,7 @@
 #include "../kabaexport/KabaExporter.h"
 
 
+#if HAS_LIB_GL
 
 #define gl_p(p)		p
 
@@ -250,5 +251,12 @@ void export_package_gl(kaba::Exporter* e) {
 
 //	add_ext_var("vb_temp", TypeVertexBufferRef, gl_p(&nix::vb_temp));
 }
+
+#else
+
+void export_package_gl(kaba::Exporter* e) {
+}
+
+#endif
 
 

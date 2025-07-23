@@ -25,11 +25,6 @@ namespace hui{
 
 
 #ifdef KABA_EXPORT_HUI
-	static hui::Event *_event;
-	static hui::Panel *_panel;
-	#define GetDAPanel(x)			int_p(&_panel->x)-int_p(_panel)
-	#define GetDAWindow(x)			int_p(&_win->x)-int_p(_win)
-	#define GetDAEvent(x)	int_p(&_event->x)-int_p(_event)
 
 	// capturing all function pointers as pointers or references!!!
 

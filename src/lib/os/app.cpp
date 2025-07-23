@@ -12,6 +12,8 @@ namespace os::app {
 	Path directory_dynamic;
 	Path directory_static;
 	Path initial_working_directory;
+	Path install_prefix;
+	Path source_root;
 	bool installed = false;
 
 	//   filename -> executable file
@@ -26,6 +28,17 @@ namespace os::app {
 
 		initial_working_directory = os::fs::current_directory();
 		installed = false;
+
+		// our build system should define these:
+#ifdef SOURCE_ROOT
+		source_root = SOURCE_ROOT;
+#endif
+#ifdef INSTALL_PREFIX
+		install_prefix = INSTALL_PREFIX;
+#else
+		// oh no... fall-back
+		install_prefix = "/usr/local";
+#endif
 
 
 		// executable file
@@ -42,21 +55,19 @@ namespace os::app {
 
 		// first, assume a local/non-installed version
 		directory_dynamic = initial_working_directory; //strip_dev_dirs(filename.parent());
-		directory_static = directory_dynamic | "static";
+		if (source_root)
+			directory_static = source_root | "static";
+		else
+			directory_static = directory_dynamic | "static";
 
-#ifdef INSTALL_PREFIX
-		// our build system should define this:
-		Path prefix = INSTALL_PREFIX;
-#else
-		// oh no... fall-back
-		Path prefix = "/usr/local";
-#endif
+
+		directory_static = source_root | "static";
 
 #if defined(OS_LINUX) || defined(OS_MAC) || defined(OS_MINGW) //defined(__GNUC__) || defined(OS_LINUX)
 		// installed version?
-		if (filename.is_in(prefix) or (filename.str().find("/") < 0)) {
+		if (filename.is_in(install_prefix) or (filename.str().find("/") < 0)) {
 			installed = true;
-			directory_static = prefix | "share" | app_name;
+			directory_static = install_prefix | "share" | app_name;
 		}
 
 		// inside an AppImage?
