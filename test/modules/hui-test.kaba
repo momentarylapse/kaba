@@ -1,22 +1,23 @@
 use hui
 use time
 
-class MyWindow extends hui.Window
+#class MyWindow extends hui.Window
 #	func override __init__()
 #		super.__init__("test", 800, 600)
 
 func main()
-	let w = new shared MyWindow("test", 800, 600)
-#	print(p2s(weak(w)))
-#	print(p2s(&w._shared_ref_count))
-#	print(w._shared_ref_count)
+	let w = new shared hui.Window("test", 800, 600)
+	print(p2s(&w))
+	print(p2s(weak(w)))
+	print(p2s(&w._shared_ref_count))
+	print(w._shared_ref_count)
 #	hui.fly_and_wait(w)
 
-	hui.info_box(weak(w), "a", "b")
+#	hui.info_box(weak(w), "a", "b").then(func() print("hi"))
 
 	while true
 		hui.do_single_main_loop()
-		time.sleep(0.1)
+		time.sleep(0.01)
 
 	#let w = new hui.Window("", 800, 600)
 	#hui.info_box(weak(w), "", "")
