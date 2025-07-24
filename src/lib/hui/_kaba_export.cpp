@@ -8,16 +8,6 @@
 
 
 namespace hui{
-#ifdef KABA_EXPORT_HUI_MINIMAL
-	typedef int Menu;
-	typedef int Toolbar;
-	class Panel : public Sharable<base::Empty> {
-	};
-	using Window = Panel;
-	using Dialog = Panel;
-	typedef int Event;
-	typedef int Painter;
-#endif
 #ifdef KABA_EXPORT_HUI
 	xfer<hui::Menu> create_menu_from_source(const string &source, hui::Panel*);
 #endif
@@ -354,6 +344,7 @@ void export_package_hui(kaba::Exporter* e) {
 	add_enum("NUM_KEYS", TypeInt32,hui::NUM_KEYS);
 	add_enum("KEY_ANY", TypeInt32, hui::KEY_ANY);
 #endif
+
 	e->link("app_config", &hui::config);
 }
 
