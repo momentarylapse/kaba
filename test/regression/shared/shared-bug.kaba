@@ -1,0 +1,34 @@
+class X as shared
+	func __init__()
+		print("X.init")
+	func __delete__()
+		print("X.del")
+	func f()
+		print("test {{_shared_ref_count}}")
+
+#shared[X] f()
+#	return new X()
+
+func ff() -> shared![X]
+	var x: shared![X] = new X()
+	return x
+
+func fff(x: shared![X]) -> shared![X]
+	print("fff 2 - {{x._shared_ref_count}}")
+	return x
+	
+func ggg(x: shared![X])
+	print("ggg 2 - {{x._shared_ref_count}}")
+
+func main()
+	var a = ff()
+	print("a   1 - {{a._shared_ref_count}}")
+	if true
+		ggg(a)
+		print("b   1 - {{a._shared_ref_count}}")
+		
+		var x = fff(a)
+		print("c   2 - {{a._shared_ref_count}}")
+		#x.f()
+	print("d   1 - {{a._shared_ref_count}}")
+	

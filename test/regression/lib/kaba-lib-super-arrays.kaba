@@ -1,5 +1,14 @@
 use kaba.*
 
+func test_list_func_count(p: Module, c: Class, name: string)
+	let n = c.functions |> filter(f => f.name == name) |> len
+	if n == 0
+		print("MISSING {{p.name}}.{{c.long_name()}}.{{name}}()")
+	if n >= 2
+		print("MULTIPLE {{p.name}}.{{c.long_name()}}.{{name}}()")
+		for ff in c.functions |> filter(f => f.name == name)
+			print(ff.signature(nil))
+
 func test_super_array(p: Module, c: Class)
 	if not c.get_func("__init__", void, [nil])
 		print("MISSING DEFAULT CONSTRUCTOR for {{p.name}}.{{c.long_name()}}")
@@ -7,6 +16,10 @@ func test_super_array(p: Module, c: Class)
 		print("MISSING DESTRUCTOR for {{p.name}}.{{c.long_name()}}")
 	if not c.get_func("__assign__", void, [nil, &c])
 		print("MISSING ASSIGN for {{p.name}}.{{c.long_name()}}")
+	
+	for name in ["__init__", "__delete__", "add", "clear", "remove", "resize", "__bitor__"]
+		test_list_func_count(p, c, name)
+		#"__assign__", "__contains__" ...might have multiple param types...
 
 func test_class(p: Module, c: Class)
 	if c.is_list()

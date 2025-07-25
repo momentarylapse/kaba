@@ -13,6 +13,9 @@ func test_class(p: Module, c: Class)
 	for cc in c.classes
 		test_class(p, cc)
 
+	if (c.functions |> filter(f => f.name == "__delete__") |> len) > 1
+		print("MULTIPLE {{p.name}}.{{c.name}}.__delete__()")
+
 
 func main()
 	for p in default_context.packages

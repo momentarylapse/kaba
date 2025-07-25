@@ -301,6 +301,8 @@ void lib_create_list(const Class *tt) {
 		add_operator(OperatorID::In, TypeBool, t, t_element, InlineID::None, &XList<T>::__contains__);
 		add_operator(OperatorID::BitOr, t, t, t, InlineID::None, &XList<T>::__add__);
 		//add_operator(OperatorID::BIT_OR_ASSIGN, TypeVoid, t, t, InlineID::NONE, &XList<T>::__adds__);
+
+	// TODO: ==, !=, +, +=
 }
 
 }
