@@ -477,7 +477,7 @@ void Class::link_virtual_table() {
 				msg_write("VIRTUAL   " + i2s(cf->virtual_index) + "   " + cf->signature());
 			vtable[cf->virtual_index] = (void*)cf->address;
 		}
-		if (cf->needs_overriding()) {
+		if (cf->is_unimplemented() and !cf->is_extern()) {
 			msg_error("needs overriding: " + cf->signature());
 		}
 	}
