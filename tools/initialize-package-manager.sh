@@ -1,7 +1,7 @@
 BASE=~/.kaba
 PACKAGES=$BASE/packages
 REPOS=$BASE/repos
-URL="https://github.com/momentarylapse/small-tools.git"
+URL="https://github.com/momentarylapse/common-kaba-packages.git"
 SOURCE_NAME="michi.common"
 
 if [ ! -d $BASE ]
