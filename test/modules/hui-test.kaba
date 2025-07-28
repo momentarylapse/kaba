@@ -11,13 +11,13 @@ func main()
 	print(p2s(weak(w)))
 	print(p2s(&w._shared_ref_count))
 	print(w._shared_ref_count)
-#	hui.fly_and_wait(w)
+	hui.fly_and_wait(w)
 
 #	hui.info_box(weak(w), "a", "b").then(func() print("hi"))
 
-	while true
-		hui.do_single_main_loop()
-		time.sleep(0.01)
+#	while true
+#		hui.do_single_main_loop()
+#		time.sleep(0.01)
 
 	#let w = new hui.Window("", 800, 600)
 	#hui.info_box(weak(w), "", "")
