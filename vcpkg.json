@@ -1,10 +1,5 @@
 {
   "dependencies": [
-    "glfw3",
-    "opengl",
-    "shaderc",
-    "vulkan",
-    "vulkan-headers",
     "zlib"
   ]
 }
