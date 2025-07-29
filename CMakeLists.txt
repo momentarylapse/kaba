@@ -211,76 +211,6 @@ add_executable(kaba
 	src/lib/doc/pdf.cpp
 	src/lib/doc/ttf.cpp
 	src/lib/doc/xml.cpp
-	src/lib/hui/Controls/Control.cpp
-	src/lib/hui/Controls/ControlButtonGtk.cpp
-	src/lib/hui/Controls/ControlCheckBoxGtk.cpp
-	src/lib/hui/Controls/ControlColorButtonGtk.cpp
-	src/lib/hui/Controls/ControlComboBoxGtk.cpp
-	src/lib/hui/Controls/ControlDrawingAreaGtk.cpp
-	src/lib/hui/Controls/ControlEditGtk.cpp
-	src/lib/hui/Controls/ControlExpanderGtk.cpp
-	src/lib/hui/Controls/ControlGridGtk.cpp
-	src/lib/hui/Controls/ControlGroupGtk.cpp
-	src/lib/hui/Controls/ControlHeaderBar.cpp
-	src/lib/hui/Controls/ControlLabelGtk.cpp
-	src/lib/hui/Controls/ControlListViewGtk.cpp
-	src/lib/hui/Controls/ControlMenuButtonGtk.cpp
-	src/lib/hui/Controls/ControlMultilineEditGtk.cpp
-	src/lib/hui/Controls/ControlPanedGtk.cpp
-	src/lib/hui/Controls/ControlProgressBarGtk.cpp
-	src/lib/hui/Controls/ControlRadioButtonGtk.cpp
-	src/lib/hui/Controls/ControlScrollerGtk.cpp
-	src/lib/hui/Controls/ControlSeparatorGtk.cpp
-	src/lib/hui/Controls/ControlSliderGtk.cpp
-	src/lib/hui/Controls/ControlSpinButtonGtk.cpp
-	src/lib/hui/Controls/ControlTabControlGtk.cpp
-	src/lib/hui/Controls/ControlToggleButtonGtk.cpp
-	src/lib/hui/Controls/ControlTreeViewGtk.cpp
-	src/lib/hui/Controls/MenuItemGtk.cpp
-	src/lib/hui/Controls/MenuItemSeparatorGtk.cpp
-	src/lib/hui/Controls/MenuItemSeparatorWin.cpp
-	src/lib/hui/Controls/MenuItemSubmenuGtk.cpp
-	src/lib/hui/Controls/MenuItemSubmenuWin.cpp
-	src/lib/hui/Controls/MenuItemToggleGtk.cpp
-	src/lib/hui/Controls/MenuItemToggleWin.cpp
-	src/lib/hui/Controls/MenuItemWin.cpp
-	src/lib/hui/Controls/ToolItemButtonGtk.cpp
-	src/lib/hui/Controls/ToolItemButtonWin.cpp
-	src/lib/hui/Controls/ToolItemMenuButtonGtk.cpp
-	src/lib/hui/Controls/ToolItemMenuButtonWin.cpp
-	src/lib/hui/Controls/ToolItemSeparatorGtk.cpp
-	src/lib/hui/Controls/ToolItemSeparatorWin.cpp
-	src/lib/hui/Controls/ToolItemToggleButtonGtk.cpp
-	src/lib/hui/Controls/ToolItemToggleButtonWin.cpp
-	src/lib/hui/_kaba_export.cpp
-	src/lib/hui/Application.cpp
-	src/lib/hui/Callback.cpp
-	src/lib/hui/Clipboard.cpp
-	src/lib/hui/common_dlg.cpp
-	src/lib/hui/common_dlg_gtk.cpp
-	src/lib/hui/common_dlg_win.cpp
-	src/lib/hui/error.cpp
-	src/lib/hui/Event.cpp
-	src/lib/hui/hui.cpp
-	src/lib/hui/language.cpp
-	src/lib/hui/main_gtk.cpp
-	src/lib/hui/main_win.cpp
-	src/lib/hui/Menu.cpp
-	src/lib/hui/MenuGtk.cpp
-	src/lib/hui/MenuWin.cpp
-	src/lib/hui/PainterGtk.cpp
-	src/lib/hui/Panel.cpp
-	src/lib/hui/Resource.cpp
-	src/lib/hui/Toolbar.cpp
-	src/lib/hui/ToolbarGtk.cpp
-	src/lib/hui/ToolbarWin.cpp
-	src/lib/hui/utility.cpp
-	src/lib/hui/Window.cpp
-	src/lib/hui/window_control.cpp
-	src/lib/hui/window_control_gtk.cpp
-	src/lib/hui/window_control_win.cpp
-	src/lib/hui/WindowGtk.cpp
-	src/lib/hui/WindowWin.cpp
 	src/lib/image/color.cpp
 	src/lib/image/image.cpp
 	src/lib/image/image_bmp.cpp
@@ -310,8 +240,6 @@ add_executable(kaba
 	src/lib/kaba/lib/lib.cpp
 	src/lib/kaba/lib/lib_async.cpp
 	src/lib/kaba/lib/lib_base.cpp
-	src/lib/kaba/lib/lib_gl.cpp
-	src/lib/kaba/lib/lib_hui.cpp
 	src/lib/kaba/lib/lib_image.cpp
 	src/lib/kaba/lib/lib_kaba.cpp
 	src/lib/kaba/lib/lib_math.cpp
@@ -319,7 +247,6 @@ add_executable(kaba
 	src/lib/kaba/lib/lib_os.cpp
 	src/lib/kaba/lib/lib_threads.cpp
 	src/lib/kaba/lib/lib_time.cpp
-	src/lib/kaba/lib/lib_vulkan.cpp
 	src/lib/kaba/lib/list.cpp
 	src/lib/kaba/parser/abstract.cpp
 	src/lib/kaba/parser/Concretifier.cpp
@@ -374,16 +301,6 @@ add_executable(kaba
 	src/lib/net/BinaryBuffer.cpp
 	src/lib/net/net.cpp
 	src/lib/net/Socket.cpp
-	src/lib/nix/_kaba_export.cpp
-	src/lib/nix/nix.cpp
-	src/lib/nix/nix_buffer.cpp
-	src/lib/nix/nix_draw.cpp
-	src/lib/nix/nix_framebuffer.cpp
-	src/lib/nix/nix_light.cpp
-	src/lib/nix/nix_shader.cpp
-	src/lib/nix/nix_textures.cpp
-	src/lib/nix/nix_vertexbuffer.cpp
-	src/lib/nix/nix_view.cpp
 	src/lib/os/app.cpp
 	src/lib/os/CommandLineParser.cpp
 	src/lib/os/config.cpp
@@ -400,23 +317,6 @@ add_executable(kaba
 	src/lib/threads/Thread.cpp
 	src/lib/threads/ThreadedWork.cpp
 	src/lib/threads/ThreadPool.cpp
-	src/lib/vulkan/AccelerationStructure.cpp
-	src/lib/vulkan/Buffer.cpp
-	src/lib/vulkan/CommandBuffer.cpp
-	src/lib/vulkan/DescriptorSet.cpp
-	src/lib/vulkan/Device.cpp
-	src/lib/vulkan/FrameBuffer.cpp
-	src/lib/vulkan/helper.cpp
-	src/lib/vulkan/Instance.cpp
-	src/lib/vulkan/Pipeline.cpp
-	src/lib/vulkan/Queue.cpp
-	src/lib/vulkan/RenderPass.cpp
-	src/lib/vulkan/Semaphore.cpp
-	src/lib/vulkan/Shader.cpp
-	src/lib/vulkan/SwapChain.cpp
-	src/lib/vulkan/Texture.cpp
-	src/lib/vulkan/VertexBuffer.cpp
-	src/lib/vulkan/vulkan.cpp
 	src/main.cpp)
 target_include_directories(kaba PUBLIC ${INCLUDE_DIRECTORIES})
 target_link_directories(kaba PUBLIC ${LINK_DIRECTORIES})

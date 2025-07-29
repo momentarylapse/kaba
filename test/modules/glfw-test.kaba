@@ -1,27 +1,29 @@
-use glfw.*
+use glfw
 use time
 
 
 func main()
-	init([])
-	var w = new Window("test", 800, 600)
-	w.run()
-	print("done")
-	end()
+	glfw.init([])
+	var w = new glfw.Window("test", 800, 600)
+	glfw.make_context_current(w)
+	while not w.should_close()
+		w.swap_buffers()
+		glfw.poll_events()
+	glfw.end()
 
 
 
 
-func _main()
-	init([])
-	for j in 0:8
-		print("{{_glfwJoystickPresent(j)}}  {{_glfwJoystickIsGamepad(j)}} {{cp2s(_glfwGetGamepadName(j))}}")
-		
-		
-	var state: GamepadState
-	while true
-		time.sleep(0.1)
-		_glfwGetGamepadState(0, &state)
-		print(str(state))
-	#end()
-
+#func _main()
+#	init([])
+#	for j in 0:8
+#		print("{{_glfwJoystickPresent(j)}}  {{_glfwJoystickIsGamepad(j)}} {{cp2s(_glfwGetGamepadName(j))}}")
+#		
+#		
+#	var state: GamepadState
+#	while true
+#		time.sleep(0.1)
+#		_glfwGetGamepadState(0, &state)
+#		print(str(state))
+#	#end()
+#
