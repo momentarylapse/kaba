@@ -47,3 +47,7 @@ else
 	cp -r $REPOS/$SOURCE_NAME/package $DIR
 fi
 
+echo "success"
+
+echo "   to see available packages, run 'kaba package list', and install packages via 'kaba package install NAME'"
+

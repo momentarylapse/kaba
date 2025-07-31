@@ -79,7 +79,19 @@ The kaba compiler provides several packages by default.
 
 `base.*` and `math.*` are automatically imported.
 
-Others include file management (`os`), image loading (`image`), networking (`net`), graphical user interfaces (`hui`), OpenGl (`gl`) and Vulkan (`vulkan`).
+Others include file management (`os`), image loading (`image`) and networking (`net`).
+
+
+## External packages
+
+Packages are considered "installed" in the system, when located in `~/.kaba/packages` and can be imported from all kaba files. These can optionally contain shared libraries written in c++, exposing symbols via a thin kaba file.
+
+A package manager is provided (run `bash tools/initialize-package-manager.sh` to set up) and a repository with [common packages](https://github.com/momentarylapse/common-kaba-packages) will automatically be added as a source.
+
+Important installable packages include graphical user interfaces (`hui`), OpenGl (`gl`) and Vulkan (`vulkan`).
+
+
+## Reference
 
 See: https://wiki.michi.is-a-geek.org/kaba.reference/
 
