@@ -1,0 +1,115 @@
+use os
+use xhui
+use yrenderer.*
+
+let W = 800
+let H = 600
+
+class Window extends xhui.Window
+	var ctx: owned[Context]
+	var xhui_renderer: owned[XhuiRenderer]
+	var hdr_tex: shared[Texture]
+	var hdr_depth: shared[DepthBuffer]
+	var hdr: owned[HDRResolver]
+	var scene_view: owned[SceneView]
+	var scene_renderer: owned[SceneRenderer]
+	var light: YLight
+	var cube: shared[CubeEmitter]
+	var t = 0.0
+	
+	func __init__()
+		super.__init__("test", W, H)
+		from_source("
+Dialog win 'bla'
+	Grid ? ''
+		Button b 'Test' noexpandy
+		---|
+		Button b2 'Test' noexpandy
+		---|
+		DrawingArea area '' expandy
+")
+		event("b", func() print("hi"))
+		event_xp("area", "hui:draw", xdraw)
+		event_xp("area", "hui:initialize", xinitialize)
+		event_xp("win", "hui:just-before-draw", xbefore_draw)
+		
+		xhui.run_repeated(0.01, func() redraw("area"))
+	
+	func override on_mouse_move(m: vec2)
+		#print(m)
+
+	func mut xinitialize(p: xhui.Painter)
+		print("INIT")
+		ctx = api_init_xhui(&p)
+		ctx!.create_managers("", os.app_directory_dynamic | "packages/yrenderer/shader", "")
+		xhui_renderer = new XhuiRenderer(ctx!)
+		
+
+		hdr_tex = new shared Texture(W, H, "rgba:f16")
+		hdr_tex!.set_options("wrap=clamp,minfilter=nearest")
+		hdr_depth = new shared DepthBuffer(W, H, "d:f32")
+		hdr = new HDRResolver(ctx!, hdr_tex!, hdr_depth!) # FIXME
+		hdr!.exposure = 0.2
+#		hdr.bloom_factor = 10
+	
+		scene_view = new SceneView()
+		scene_renderer = new SceneRenderer(ctx!, 1, weak(scene_view!))
+		scene_renderer!.background_color = [0.125,0.125,0.125,1]
+	
+		xhui_renderer!.add_child(weak(hdr!))
+		hdr!.add_child(weak(scene_renderer!))
+	
+	
+		cube = new shared CubeEmitter(ctx!)
+		cube!.material.emission = [0,0,0.7,1]
+		scene_renderer!.add_emitter(cube!)
+	
+		light.init([300,0,300,1], 100, -1)
+		light.pos = [0,8,-10]
+	
+	
+#		ctx.default_shader = "default.shader"
+		ctx!.load_shader_module("module-basic-interface.shader")
+		ctx!.load_shader_module("module-basic-data.shader")
+		let light_sources = "default"
+		ctx!.load_shader_module("module-light-sources-{{light_sources}}.shader")
+		let shadows_method = "pcf-hardening"
+		ctx!.load_shader_module("module-shadows-{{shadows_method}}.shader")
+		let lighting_method = "pbr"
+		ctx!.load_shader_module("module-lighting-{{lighting_method}}.shader")
+		ctx!.load_shader_module("module-vertex-default.shader")
+		ctx!.load_shader_module("module-vertex-animated.shader")
+		ctx!.load_shader_module("module-vertex-instanced.shader")
+		ctx!.load_shader_module("module-vertex-lines.shader")
+		ctx!.load_shader_module("module-vertex-points.shader")
+		ctx!.load_shader_module("module-vertex-fx.shader")
+		ctx!.load_shader_module("module-geometry-lines.shader")
+		ctx!.load_shader_module("module-geometry-points.shader")
+		ctx!.load_shader_module("forward/module-surface.shader")
+
+	func mut xbefore_draw(p: xhui.Painter)
+		for r in xhui_renderer
+			let params = r.extract_params(&p)
+		
+			cube!.matrix = mat4.rotation([t*0.4543,t*0.743,0])
+		
+			scene_renderer!.set_view(params, (vec3(0,0,-7), quaternion.ID, pi/4, 0.1, 1000))
+			scene_view!.choose_lights([&light])
+		
+		#	hdr!.exposure = exp(sin(t)*2-0.8)
+			cube!.material.emission.g = (1 + sin(t))*0.5
+			
+			r.before_draw(&p)
+			
+			t += 0.01
+		
+
+	func mut xdraw(p: xhui.Painter)
+		for r in xhui_renderer
+			r.draw(&p)
+
+
+func main()
+	var w = new Window()
+	xhui.run()
+	

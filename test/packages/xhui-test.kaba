@@ -1,0 +1,24 @@
+use xhui
+
+
+func xdraw(p: xhui.Painter)
+	print("draw {{p.width}}")
+	p.set_color(color.RED)
+	p.draw_rect([100,200,100,200])
+
+
+func main()
+	var w = new xhui.Window("test", 800, 600)
+	w.from_source("
+Dialog win 'bla'
+	Grid ? ''
+		Button b 'Test' noexpandy
+		---|
+		Button b2 'Test' noexpandy
+		---|
+		DrawingArea area '' expandy height=300
+")
+	w.event("b", func() print("hi"))
+	w.event_xp("area", "hui:draw", xdraw)
+	xhui.run()
+	

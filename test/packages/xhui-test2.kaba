@@ -1,0 +1,29 @@
+use xhui
+
+class Window extends xhui.Window
+	func __init__()
+		super.__init__("test", 800, 600)
+		from_source("
+Dialog win 'bla'
+	Grid ? ''
+		Button b 'Test' noexpandy
+		---|
+		Button b2 'Test' noexpandy
+		---|
+		DrawingArea area '' expandy height=300
+")
+		event("b", func() print("hi"))
+		event_xp("area", "hui:draw", xdraw)
+	
+	func override on_mouse_move(m: vec2)
+		print(m)
+
+	func xdraw(p: xhui.Painter)
+		p.set_color(color.RED)
+		p.draw_rect([100,200,100,200])
+
+
+func main()
+	var w = new Window()
+	xhui.run()
+	
