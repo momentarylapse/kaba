@@ -17,11 +17,7 @@ func main()
 	
 	var wr = new WindowRenderer(ctx, w.win)
 	
-
-	var hdr_tex = new shared Texture(W, H, "rgba:f16")
-	hdr_tex.set_options("wrap=clamp,minfilter=nearest")
-	var hdr_depth = new shared DepthBuffer(W, H, "d:f32")
-	var hdr = new HDRResolver(ctx, hdr_tex, hdr_depth) # FIXME
+	var hdr = new HDRResolver(ctx, W, H)
 	hdr.exposure = 0.2
 #	hdr.bloom_factor = 10
 	
