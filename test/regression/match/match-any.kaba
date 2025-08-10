@@ -4,7 +4,7 @@ func main()
 	f(dyn(true))
 	
 
-func f(a: any)
+func f(a: Any)
 	match a.type()
 		int    => print("iii")
 		string => print("ssss")

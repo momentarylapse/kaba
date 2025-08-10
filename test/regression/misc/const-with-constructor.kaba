@@ -1,4 +1,4 @@
-const c = [color.RED, color(1,2,3,4)]
+const c = [Color.RED, Color(1,2,3,4)]
 
 func main()
 	print(c)

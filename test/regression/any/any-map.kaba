@@ -1,6 +1,6 @@
 func main()
-	var a: any
-	var b: any = "hallo"
+	var a: Any
+	var b: Any = "hallo"
 	a.__set__("a", "hallo")
 	a["c"] = 13
 	a["r"] = a

@@ -1,9 +1,9 @@
 
-func get_plot_region() -> rect
-	return rect(0,0,0,0)
+func get_plot_region() -> Rect
+	return Rect(0,0,0,0)
 
 class GridData
-	var plot_rect: rect
+	var plot_rect: Rect
 
 	func mut draw_background()
 		plot_rect = get_plot_region()

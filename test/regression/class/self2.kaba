@@ -1,15 +1,15 @@
 
 class Test
-	var x, y: float
-	func projectx(_x: float) -> float
+	var x, y: f32
+	func projectx(_x: f32) -> f32
 		return x + _x
-	func projecty(_y: float) -> float
+	func projecty(_y: f32) -> f32
 		return y + _y
-	func project(z: complex) -> complex
-		return complex(projectx(z.x), projecty(z.y))
+	func project(z: Complex) -> Complex
+		return Complex(projectx(z.x), projecty(z.y))
 
 func main()
 	var t: Test
 	t.x = 2
 	t.y = 2
-	print(t.project(complex(10, 20)))
+	print(t.project(Complex(10, 20)))

@@ -1,6 +1,6 @@
 struct Test
-	func __init__(z: complex)
+	func __init__(z: Complex)
 		print(z)
 
 func main()
-	var x = Test(complex(1,2))
+	var x = Test(Complex(1,2))

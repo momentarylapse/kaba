@@ -4,5 +4,5 @@ func f[T]()
 
 func main()
 	f[string]()
-	f[int]()
-	f[complex]()
+	f[i32]()
+	f[Complex]()

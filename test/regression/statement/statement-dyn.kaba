@@ -1,13 +1,13 @@
 class Test
 	var v: vec3
 	var i: int[3]
-	var z: complex[]
+	var z: Complex[]
 	var p: void*
 	var s: string
 	func __init__()
 		v = vec3(1,2,3)
-		z.add(complex.I)
-		z.add(complex.I)
+		z.add(Complex.I)
+		z.add(Complex.I)
 		i[0] = 1
 		i[1] = 2
 		i[2] = 3

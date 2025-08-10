@@ -7,5 +7,5 @@ func main()
 #	print(f)
 	print(f(13))
 	print(f(13.0))
-	print(f(complex.I))
+	print(f(Complex.I))
 

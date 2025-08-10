@@ -369,20 +369,20 @@ void SIAddPackageMath(Context *c) {
 	add_internal_package(c, "math", Flags::AutoImport);
 
 	// types
-	TypeComplex = add_type("complex", sizeof(complex));
+	TypeComplex = add_type("Complex", sizeof(complex));
 	TypeComplexList = add_type_list(TypeComplex);
 	TypeVec2 = add_type("vec2", sizeof(vec2));
 	TypeVec2List = add_type_list(TypeVec2);
 	TypeVec3 = add_type("vec3", sizeof(vec3));
 	TypeVec3List = add_type_list(TypeVec3);
-	TypeRect = add_type("rect", sizeof(rect));
+	TypeRect = add_type("Rect", sizeof(rect));
 	TypeMat4 = add_type("mat4", sizeof(mat4));
-	TypeQuaternion = add_type("quaternion", sizeof(quaternion));
-	TypePlane = add_type("plane", sizeof(plane));
+	TypeQuaternion = add_type("Quaternion", sizeof(quaternion));
+	TypePlane = add_type("Plane", sizeof(plane));
 	TypePlaneList = add_type_list(TypePlane);
-	TypeColor = add_type("color", sizeof(color));
+	TypeColor = add_type("Color", sizeof(color));
 	TypeColorList = add_type_list(TypeColor);
-	auto TypeRay = add_type("ray", sizeof(Ray));
+	auto TypeRay = add_type("Ray", sizeof(Ray));
 	TypeMat3 = add_type("mat3", sizeof(mat3));
 	auto TypeFloatArray3 = add_type_array(TypeFloat32, 3);
 	auto TypeFloatArray4 = add_type_array(TypeFloat32, 4);
@@ -390,9 +390,9 @@ void SIAddPackageMath(Context *c) {
 	auto TypeFloatArray16 = add_type_array(TypeFloat32, 16);
 	auto TypeFloatArray3x3 = add_type_array(TypeFloatArray3, 3);
 	auto TypeFloatArray9 = add_type_array(TypeFloat32, 9);
-	auto TypeVli = add_type("vli", sizeof(vli));
-	auto TypeCrypto = add_type("Crypto", sizeof(Crypto));
-	TypeAny = add_type("any", sizeof(Any));
+	auto TypeVli = add_type("vli", sizeof(vli)); // TODO external package
+	auto TypeCrypto = add_type("Crypto", sizeof(Crypto)); // TODO external package
+	TypeAny = add_type("Any", sizeof(Any));
 	auto TypeFloatInterpolator = add_type("FloatInterpolator", sizeof(Interpolator<float>));
 	auto TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vec3>));
 	auto TypeRandom = add_type("Random", sizeof(Random));
