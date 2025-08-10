@@ -58,7 +58,7 @@ namespace kaba {
 
 extern const Class *TypeStringList;
 extern const Class *TypeComplexList;
-extern const Class *TypeFloatList;
+extern const Class *TypeFloat32List;
 extern const Class *TypeFloat64List;
 extern const Class *TypeVec3List;
 extern const Class *TypeVec2;
@@ -68,7 +68,7 @@ extern const Class *TypePlane;
 extern const Class *TypePlaneList;
 extern const Class *TypeColorList;
 extern const Class *TypeMat3;
-extern const Class *TypeIntList;
+extern const Class *TypeInt32List;
 extern const Class *TypeBoolList;
 extern const Class *TypeAny;
 extern const Class *TypeAnyList;
@@ -849,7 +849,7 @@ void SIAddPackageMath(Context *c) {
 
 	add_class(TypeVli);
 		class_add_element("sign", TypeBool, 0);
-		class_add_element("data", TypeIntList, 4);
+		class_add_element("data", TypeInt32List, 4);
 		class_add_func(Identifier::func::Init, TypeVoid, algebra_p(&vli::__init__), Flags::Mutable);
 		class_add_func(Identifier::func::Delete, TypeVoid, algebra_p(&vli::__delete__), Flags::Mutable);
 		class_add_func(Identifier::func::Assign, TypeVoid, algebra_p(&vli::set_vli), Flags::Mutable);
@@ -1008,8 +1008,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("t", TypeFloat32);
 		class_add_func("get_derivative", TypeFloat32, &Interpolator<float>::get_derivative, Flags::Pure);
 			func_add_param("t", TypeFloat32);
-		class_add_func("get_list", TypeFloatList, &Interpolator<float>::get_list, Flags::Pure);
-			func_add_param("t", TypeFloatList);
+		class_add_func("get_list", TypeFloat32List, &Interpolator<float>::get_list, Flags::Pure);
+			func_add_param("t", TypeFloat32List);
 
 
 	add_class(TypeVectorInterpolator);
@@ -1039,7 +1039,7 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("get_tang", TypeVec3, &Interpolator<vec3>::get_derivative, Flags::Pure);
 			func_add_param("t", TypeFloat32);
 		class_add_func("get_list", TypeVec3List, &Interpolator<vec3>::get_list, Flags::Pure);
-			func_add_param("t", TypeFloatList);
+			func_add_param("t", TypeFloat32List);
 
 
 	// i32
@@ -1172,48 +1172,48 @@ void SIAddPackageMath(Context *c) {
 
 	// i32[]
 	add_func("sum", TypeInt32, &XList<int>::sum, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
+		func_add_param("list", TypeInt32List);
 	add_func("sum_sqr", TypeInt32, &XList<int>::sum_sqr, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
+		func_add_param("list", TypeInt32List);
 	add_func("min", TypeInt32, &XList<int>::min, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
+		func_add_param("list", TypeInt32List);
 	add_func("max", TypeInt32, &XList<int>::max, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
+		func_add_param("list", TypeInt32List);
 	add_func("argmin", TypeInt32, &XList<int>::argmin, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
+		func_add_param("list", TypeInt32List);
 	add_func("argmax", TypeInt32, &XList<int>::argmax, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
-	add_func("unique", TypeIntList, &XList<int>::unique, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeIntList);
-	add_func("range", TypeIntList, (void*)&kaba_range<int>, Flags::Static | Flags::Pure);
+		func_add_param("list", TypeInt32List);
+	add_func("unique", TypeInt32List, &XList<int>::unique, Flags::Static | Flags::Pure);
+		func_add_param("list", TypeInt32List);
+	add_func("range", TypeInt32List, (void*)&kaba_range<int>, Flags::Static | Flags::Pure);
 		func_add_param("start", TypeInt32);
 		func_add_param_def("end", TypeInt32, DynamicArray::MAGIC_END_INDEX);
 		func_add_param_def("step", TypeInt32, 1);
 
 	// f32[]
 	add_func("sum", TypeFloat32, &XList<float>::sum, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
+		func_add_param("list", TypeFloat32List);
 	add_func("sum_sqr", TypeFloat32, &XList<float>::sum_sqr, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
+		func_add_param("list", TypeFloat32List);
 	add_func("min", TypeFloat32, &XList<float>::min, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
+		func_add_param("list", TypeFloat32List);
 	add_func("max", TypeFloat32, &XList<float>::max, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
+		func_add_param("list", TypeFloat32List);
 	add_func("argmin", TypeInt32, &XList<float>::argmin, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
+		func_add_param("list", TypeFloat32List);
 	add_func("argmax", TypeInt32, &XList<float>::argmax, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
-	add_func("unique", TypeFloatList, &XList<float>::unique, Flags::Static | Flags::Pure);
-		func_add_param("list", TypeFloatList);
-	add_func("range", TypeFloatList, (void*)&kaba_range<float>, Flags::Static | Flags::Pure);
+		func_add_param("list", TypeFloat32List);
+	add_func("unique", TypeFloat32List, &XList<float>::unique, Flags::Static | Flags::Pure);
+		func_add_param("list", TypeFloat32List);
+	add_func("range", TypeFloat32List, (void*)&kaba_range<float>, Flags::Static | Flags::Pure);
 		func_add_param("start", TypeFloat32);
 		func_add_param_def("end", TypeFloat32, (float)DynamicArray::MAGIC_END_INDEX);
 		func_add_param_def("step", TypeFloat32, 1.0f);
 	add_func("cubic_spline", TypeFloat32, &cubic_spline<float>, Flags::Static | Flags::Pure);
-		func_add_param("points", TypeFloatList);
+		func_add_param("points", TypeFloat32List);
 		func_add_param("t", TypeFloat32);
 	add_func("cubic_spline_d", TypeFloat32, &cubic_spline_d<float>, Flags::Static | Flags::Pure);
-		func_add_param("points", TypeFloatList);
+		func_add_param("points", TypeFloat32List);
 		func_add_param("t", TypeFloat32);
 
 	// float64[]
