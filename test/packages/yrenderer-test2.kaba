@@ -45,7 +45,7 @@ func main()
 		
 		cube.matrix = mat4.rotation([t*0.4543,t*0.743,0])
 		
-		rp.view = (vec3(0,0,-7), quaternion.ID, pi/4, 0.1, 1000)
+		rp.view = (vec3(0,0,-7), Quaternion.ID, pi/4, 0.1, 1000)
 		rp.set_lights([&light])
 		rp.prepare(params)
 		

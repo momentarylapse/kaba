@@ -68,7 +68,7 @@ Dialog win 'bla'
 		
 			cube!.matrix = mat4.rotation([t*0.4543,t*0.743,0])
 		
-			render_path!.set_view((vec3(0,0,-7), quaternion.ID, pi/4, 0.1, 1000))
+			render_path!.set_view((vec3(0,0,-7), Quaternion.ID, pi/4, 0.1, 1000))
 			render_path!.set_lights([&light])
 		
 		#	hdr!.exposure = exp(sin(t)*2-0.8)

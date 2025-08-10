@@ -3,7 +3,7 @@ use xhui
 
 func xdraw(p: xhui.Painter)
 	print("draw {{p.width}}")
-	p.set_color(color.RED)
+	p.set_color(Color.RED)
 	p.draw_rect([100,200,100,200])
 
 

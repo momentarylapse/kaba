@@ -19,7 +19,7 @@ Dialog win 'bla'
 		print(m)
 
 	func xdraw(p: xhui.Painter)
-		p.set_color(color.RED)
+		p.set_color(Color.RED)
 		p.draw_rect([100,200,100,200])
 
 
