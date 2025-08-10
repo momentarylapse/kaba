@@ -2,7 +2,7 @@
 func main()
 	var c = Color(2,3,4,1)
 	var d = Color(4,5,6,2)
-	var e = Color.interpolate(c, d, 0.5)
+	var e = Color.mix(c, d, 0.5)
 	print(e)
 	
 	var q1, q2, q3: Quaternion

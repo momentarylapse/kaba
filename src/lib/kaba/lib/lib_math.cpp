@@ -690,8 +690,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("h", TypeFloat32);
 			func_add_param("s", TypeFloat32);
 			func_add_param("b", TypeFloat32);
-			func_add_param("a", TypeFloat32);
-		class_add_func("interpolate", TypeColor, &color::interpolate, Flags::Static | Flags::Pure);
+			func_add_param_def("a", TypeFloat32, 1.0f);
+		class_add_func("mix", TypeColor, &color::interpolate, Flags::Static | Flags::Pure);
 			func_add_param("c1", TypeColor);
 			func_add_param("c2", TypeColor);
 			func_add_param("t", TypeFloat32);
@@ -705,7 +705,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("r", TypeFloat32);
 			func_add_param("g", TypeFloat32);
 			func_add_param("b", TypeFloat32);
-			func_add_param("a", TypeFloat32);
+			func_add_param_def("a", TypeFloat32, 1.0f);
 		add_operator(OperatorID::Assign, TypeVoid, TypeColor, TypeColor, InlineID::ChunkAssign, &KabaColor::assign);
 		add_operator(OperatorID::Equal, TypeBool, TypeColor, TypeColor, InlineID::ChunkEqual);
 		add_operator(OperatorID::NotEqual, TypeBool, TypeColor, TypeColor, InlineID::ChunkNotEqual);
