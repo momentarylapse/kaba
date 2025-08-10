@@ -7,6 +7,7 @@
 #include "../../math/mat4.h"
 #include "../../math/mat3.h"
 #include "../../math/plane.h"
+#include "../../math/Box.h"
 #include "../../math/ray.h"
 #include "../../math/rect.h"
 #include "../../math/interpolation.h"
@@ -206,15 +207,6 @@ public:
 
 class KabaRect : public rect {
 public:
-	void assign(const rect& o) {
-		*(rect*)this = o;
-	}
-	void init(float x1, float x2, float y1, float y2) {
-		*(rect*)this = rect(x1, x2, y1, y2);
-	}
-	void init2(const vec2& p00, const vec2& p11) {
-		*(rect*)this = rect(p00, p11);
-	}
 	static rect set(float x1, float x2, float y1, float y2) {
 		return rect(x1, x2, y1, y2);
 	}
@@ -350,13 +342,10 @@ public:
 	}
 };
 
-class KabaRay : public Ray {
-public:
-	void init() {
-		new(this) Ray();
-	}
-	void init_ex(const vec3& u, const vec3& v) {
-		new(this) Ray(u, v);
+struct KabaBox : public Box {
+	KabaBox(const vec3& min, const vec3& max) {
+		this->min = min;
+		this->max = max;
 	}
 };
 
@@ -376,6 +365,7 @@ void SIAddPackageMath(Context *c) {
 	TypeVec3 = add_type("vec3", sizeof(vec3));
 	TypeVec3List = add_type_list(TypeVec3);
 	TypeRect = add_type("Rect", sizeof(rect));
+	auto TypeBox = add_type("Box", sizeof(Box));
 	TypeMat4 = add_type("mat4", sizeof(mat4));
 	TypeQuaternion = add_type("Quaternion", sizeof(quaternion));
 	TypePlane = add_type("Plane", sizeof(plane));
@@ -653,7 +643,7 @@ void SIAddPackageMath(Context *c) {
 		/*class_add_func("_create", TypeRect, &KabaRect::set2, Flags::Static | Flags::Pure);
 			func_add_param("p00", TypeVec2);
 			func_add_param("p11", TypeVec2);*/
-		class_add_func(Identifier::func::Init, TypeVoid, &KabaRect::init, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init_ext<rect, float, float, float, float>, Flags::Mutable);
 			func_add_param("x1", TypeFloat32);
 			func_add_param("x2", TypeFloat32);
 			func_add_param("y1", TypeFloat32);
@@ -661,9 +651,31 @@ void SIAddPackageMath(Context *c) {
 		/*class_add_func(Identifier::func::Init, TypeVoid, &KabaRect::init2, Flags::Mutable);
 			func_add_param("p00", TypeVec2);
 			func_add_param("p11", TypeVec2);*/
-		add_operator(OperatorID::Assign, TypeVoid, TypeRect, TypeRect, InlineID::ChunkAssign, &KabaRect::assign);
+		add_operator(OperatorID::Assign, TypeVoid, TypeRect, TypeRect, InlineID::ChunkAssign, &generic_assign<rect>);
 		add_operator(OperatorID::Equal, TypeBool, TypeRect, TypeRect, InlineID::ChunkEqual, &rect::operator==);
 		add_operator(OperatorID::NotEqual, TypeBool, TypeRect, TypeRect, InlineID::ChunkNotEqual, &rect::operator!=);
+
+
+	add_class(TypeBox);
+		class_add_element("min", TypeVec3, &Box::min);
+		class_add_element("max", TypeVec3, &Box::max);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init<Box>, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init_ext<KabaBox, const vec3&, const vec3&>, Flags::Mutable);
+			func_add_param("min", TypeVec3);
+			func_add_param("max", TypeVec3);
+		class_add_func("size", TypeVec3, &Box::size, Flags::Pure);
+			class_add_func("center", TypeVec3, &Box::center, Flags::Pure);
+		class_add_func("is_inside", TypeBool, &Box::is_inside, Flags::Pure);
+			func_add_param("p", TypeVec3);
+		class_add_func("to_relative", TypeVec3, &Box::to_relative, Flags::Pure);
+			func_add_param("p", TypeVec3);
+		class_add_func("to_absolute", TypeVec3, &Box::to_absolute, Flags::Pure);
+			func_add_param("p", TypeVec3);
+		class_add_func(Identifier::func::Str, TypeString, &Box::str, Flags::Pure);
+		class_add_const("ID",  TypeBox, &Box::ID);
+		class_add_const("ID_SYM",  TypeBox, &Box::ID_SYM);
+		add_operator(OperatorID::Assign, TypeVoid, TypeBox, TypeBox, InlineID::ChunkAssign, &generic_assign<Box>);
+
 
 	add_class(TypeColor);
 		class_add_element("r", TypeFloat32, &color::r);
@@ -746,8 +758,8 @@ void SIAddPackageMath(Context *c) {
 	add_class(TypeRay);
 		class_add_element("u", TypeVec3, &Ray::u);
 		class_add_element("v", TypeVec3, &Ray::v);
-		class_add_func(Identifier::func::Init, TypeVoid, &KabaRay::init);
-		class_add_func(Identifier::func::Init, TypeVoid, &KabaRay::init_ex);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init<Ray>, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init_ext<Ray, const vec3&, const vec3&>, Flags::Mutable);
 			func_add_param("a", TypeVec3);
 			func_add_param("b", TypeVec3);
 		class_add_func("dot", TypeFloat32, &Ray::dot, Flags::Static | Flags::Pure);
