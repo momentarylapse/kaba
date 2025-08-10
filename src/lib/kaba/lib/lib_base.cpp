@@ -511,20 +511,11 @@ void SIAddPackageBase(Context *c) {
 	lib_create_optional<float>(TypeFloat32Optional);
 
 
-	auto TypeInt32Ref = add_type_ref(TypeInt32);
-	auto TypeInt32RefOptional = add_type_optional(TypeInt32Ref);
-	auto TypeFloat32Ref = add_type_ref(TypeFloat32);
-	auto TypeFloat32RefOptional = add_type_optional(TypeFloat32Ref);
-	auto TypeStringRef = add_type_ref(TypeString);
-	auto TypeStringRefOptional = add_type_optional(TypeStringRef);
+	auto TypeStringP = add_type_p_raw(TypeString);
 
-	lib_create_optional<void*>(TypeInt32RefOptional);
-	lib_create_optional<void*>(TypeFloat32RefOptional);
-	lib_create_optional<void*>(TypeStringRefOptional);
-
-	lib_create_dict<int>(TypeInt32Dict, TypeInt32RefOptional);
-	lib_create_dict<float>(TypeFloat32Dict, TypeFloat32RefOptional);
-	lib_create_dict<string>(TypeStringDict, TypeStringRefOptional);
+	lib_create_dict<int>(TypeInt32Dict, TypeInt32P);
+	lib_create_dict<float>(TypeFloat32Dict, TypeFloat32P);
+	lib_create_dict<string>(TypeStringDict, TypeStringP);
 
 
 

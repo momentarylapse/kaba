@@ -255,6 +255,11 @@ public:
 			return nullptr;
 		return (Array<int>*)&as_dict();
 	}
+
+	void set(const Any &a) {	*static_cast<Any*>(this) = a;	}
+	void _add(const Any &a) {	Any b = *this + a;	*static_cast<Any*>(this) = b;	}
+	void _sub(const Any &a) {	Any b = *this - a;	*static_cast<Any*>(this) = b;	}
+
 	
 	static void unwrap(Any &aa, void *var, const Class *type) {
 		if (type == TypeInt32) {
@@ -390,8 +395,7 @@ void SIAddPackageMath(Context *c) {
 	const_cast<Class*>(TypeVec3)->alignment = 4; // would be updated too late, otherwise...
 	auto TypeVec3Optional = add_type_optional(TypeVec3);
 
-	auto TypeAnyRef = add_type_ref(TypeAny);
-	auto TypeAnyRefOptional = add_type_optional(TypeAnyRef);
+	auto TypeAnyP = add_type_p_raw(TypeAny);
 	
 	// dirty hack :P
 	/*if (config.instruction_set == Asm::INSTRUCTION_SET_AMD64)*/ {
@@ -889,21 +893,21 @@ void SIAddPackageMath(Context *c) {
 
 	add_class(TypeAny);
 		class_add_element("data", TypePointer, &Any::data);
-		class_add_func(Identifier::func::Init, TypeVoid, &Any::__init__, Flags::Mutable);
-		class_add_func(Identifier::func::Delete, TypeVoid, &Any::__delete__, Flags::Mutable);
-		class_add_func(Identifier::func::Assign, TypeVoid, &Any::set, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init<Any>, Flags::Mutable);
+		class_add_func(Identifier::func::Delete, TypeVoid, &generic_delete<Any>, Flags::Mutable);
+		class_add_func(Identifier::func::Assign, TypeVoid, &KabaAny::set, Flags::Mutable);
 			func_add_param("a", TypeAny);
 		class_add_func("type", TypeClassRef, &KabaAny::_get_class);
 		class_add_func("clear", TypeVoid, &Any::clear, Flags::Mutable);
 		class_add_func(Identifier::func::Length, TypeInt32, &Any::length, Flags::Pure);
-		class_add_func(Identifier::func::Get, TypeAnyRefOptional, &KabaAny::dict_get, Flags::Ref);
+		class_add_func(Identifier::func::Get, TypeAnyP, &Any::dict_get, Flags::Ref);
 			func_add_param("key", TypeString);
-		class_add_func(Identifier::func::Set, TypeVoid, &KabaAny::dict_set, Flags::Mutable);
+		class_add_func(Identifier::func::Set, TypeVoid, &Any::dict_set, Flags::Mutable);
 			func_add_param("key", TypeString);
 			func_add_param("value", TypeAny);
-		class_add_func(Identifier::func::Get, TypeAnyRefOptional, &KabaAny::list_get, Flags::Ref);
+		class_add_func(Identifier::func::Get, TypeAnyP, &Any::list_get, Flags::Ref);
 			func_add_param("index", TypeInt32);
-		class_add_func(Identifier::func::Set, TypeVoid, &KabaAny::list_set, Flags::Mutable);
+		class_add_func(Identifier::func::Set, TypeVoid, &Any::list_set, Flags::Mutable);
 			func_add_param("index", TypeInt32);
 			func_add_param("value", TypeAny);
 		class_add_func("is_empty", TypeBool, &Any::is_empty, Flags::Pure);
@@ -924,11 +928,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("type", TypeClassRef);
 		class_add_func("parse", TypeAny, &KabaAny::parse, Flags::Static | Flags::RaisesExceptions);
 			func_add_param("s", TypeString);
-		add_operator(OperatorID::AddAssign, TypeVoid, TypeAny, TypeAny, InlineID::None, &Any::_add);// operator+=);
-		add_operator(OperatorID::SubtractAssign, TypeVoid, TypeAny, TypeAny, InlineID::None, &Any::_sub);// operator-);
-
-
-	lib_create_optional<void*>(TypeAnyRefOptional);
+		add_operator(OperatorID::AddAssign, TypeVoid, TypeAny, TypeAny, InlineID::None, &KabaAny::_add);// operator+=);
+		add_operator(OperatorID::SubtractAssign, TypeVoid, TypeAny, TypeAny, InlineID::None, &KabaAny::_sub);// operator-);
 
 
 	add_func("@int2any", TypeAny, &int2any, Flags::Static);
@@ -1293,7 +1294,7 @@ void SIAddPackageMath(Context *c) {
 	auto TypeAnyListP = add_type_p_raw(TypeAnyList);
 
 	TypeAnyDict = add_type_dict(TypeAny);
-	lib_create_dict<Any>(TypeAnyDict, TypeAnyRefOptional);
+	lib_create_dict<Any>(TypeAnyDict, TypeAnyP);
 	auto TypeAnyDictP = add_type_p_raw(TypeAnyDict);
 
 
