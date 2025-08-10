@@ -360,6 +360,11 @@ public:
 	}
 };
 
+template<class T>
+T kaba_xor(T a, T b) {
+	return a ^ b;
+}
+
 void SIAddPackageMath(Context *c) {
 	add_internal_package(c, "math", Flags::AutoImport);
 
@@ -1062,6 +1067,10 @@ void SIAddPackageMath(Context *c) {
 	add_func("max", TypeInt32, &max<int>, Flags::Static | Flags::Pure);
 		func_add_param("a", TypeInt32);
 		func_add_param("b", TypeInt32);
+	add_func("xor", TypeInt32, &kaba_xor<int>, Flags::Static | Flags::Pure);
+		func_set_inline(InlineID::Int32BitXOr);
+		func_add_param("a", TypeInt32);
+		func_add_param("b", TypeInt32);
 
 	// i64
 	add_func("clamp", TypeInt64, &clamp<int64>, Flags::Static | Flags::Pure);
@@ -1076,6 +1085,10 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("a", TypeInt64);
 		func_add_param("b", TypeInt64);
 	add_func("max", TypeInt64, &max<int64>, Flags::Static | Flags::Pure);
+		func_add_param("a", TypeInt64);
+		func_add_param("b", TypeInt64);
+	add_func("xor", TypeInt64, &kaba_xor<int64>, Flags::Static | Flags::Pure);
+		func_set_inline(InlineID::Int64BitXOr);
 		func_add_param("a", TypeInt64);
 		func_add_param("b", TypeInt64);
 
