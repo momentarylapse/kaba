@@ -128,7 +128,7 @@ bool Configuration::load(const Path &filename) {
 				string temp = f->read_str();
 				string key = temp.sub(3);
 				string value = f->read_str();
-				map.set(key, value);
+				map.set(key, Any(value));
 			}
 		} else if (t.head(3) == "// ") {
 			// semi old format
@@ -139,7 +139,7 @@ bool Configuration::load(const Path &filename) {
 					break;
 				string key = temp.sub(3).lower().replace(" ", "-");
 				string value = f->read_str();
-				map.set(key, value);
+				map.set(key, Any(value));
 			}
 		} else {
 			// new format

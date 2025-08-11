@@ -22,22 +22,19 @@ public:
 	};
 
 	Any();
-	Any(const Any &a);
-	Any(int i);
-	Any(float f);
-	Any(bool b);
-	Any(const string &s);
-	Any(const char *s);
-	Any(const void *p);
-	Any(const Array<Any> &a);
-	Any(const Array<int> &a);
-	Any(const Dict &m);
+	Any(const Any& a);
+	explicit Any(int i);
+	explicit Any(float f);
+	explicit Any(bool b);
+	explicit Any(const string& s);
+	explicit Any(const char* s);
+	explicit Any(const void* p);
+	Any(const Array<Any>& a);
+	explicit Any(const Array<int>& a);
+	Any(const Dict& m);
 	~Any();
 
 	void clear();
-	Any ref();
-	void sync_to_parent();
-	void sync_from_parent();
 	void create_type(Type type);
 
 	bool is_empty() const;
@@ -52,16 +49,16 @@ public:
 	string str() const;
 	string repr() const;
 
-	static Any parse(const string &s);
+	static Any parse(const string& s);
 
 
 	int _int() const;
 	float _float() const;
 	bool _bool() const;
-	void operator= (const Any &a);
-	Any operator+ (const Any &a) const;
-	Any operator- (const Any &a) const;
-	void operator+= (const Any &a);
+	void operator= (const Any& a);
+	Any operator+ (const Any& a) const;
+	Any operator- (const Any& a) const;
+	void operator+= (const Any& a);
 	bool operator==(const Any& other) const;
 	bool operator!=(const Any& other) const;
 
@@ -82,15 +79,14 @@ public:
 	const void*& as_pointer() const;
 
 	// map/dict
-	const Any &operator[] (const string &key) const;
-	Any &operator[] (const string &key);
+	const Any& operator[] (const string& key) const;
+	Any& operator[] (const string& key);
 	Array<string> keys() const;
-	bool has(const string &key) const;
+	bool has(const string& key) const;
 
 	// data
 	Type type;
 	void *data;
-	Any *parent;
 
 	// kaba
 	Any* list_get(int i);
