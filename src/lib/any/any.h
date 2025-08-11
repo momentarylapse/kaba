@@ -24,7 +24,9 @@ public:
 	Any();
 	Any(const Any& a);
 	explicit Any(int i);
+	explicit Any(int64 i);
 	explicit Any(float f);
+	explicit Any(double f);
 	explicit Any(bool b);
 	explicit Any(const string& s);
 	explicit Any(const char* s);
@@ -52,26 +54,28 @@ public:
 	static Any parse(const string& s);
 
 
-	int _int() const;
-	float _float() const;
-	bool _bool() const;
-	void operator= (const Any& a);
-	Any operator+ (const Any& a) const;
-	Any operator- (const Any& a) const;
-	void operator+= (const Any& a);
+	int to_i32() const;
+	int64 to_i64() const;
+	float to_f32() const;
+	double to_f64() const;
+	bool to_bool() const;
+	void operator=(const Any& a);
+	Any operator+(const Any& a) const;
+	Any operator-(const Any& a) const;
+	void operator+=(const Any& a);
 	bool operator==(const Any& other) const;
 	bool operator!=(const Any& other) const;
 
 	// list
-	void add(const Any &a);
-	void append(const Any &a);
+	void add(const Any& a);
+	void append(const Any& a);
 	const Any &operator[] (int index) const;
-	Any &operator[] (int index);
-	Any &_cdecl back();
+	Any& operator[] (int index);
+	Any& back() const;
 	int length() const;
 	
-	int& as_int() const;
-	float& as_float() const;
+	int64& as_int() const;
+	double& as_float() const;
 	bool& as_bool() const;
 	string& as_string() const;
 	Array<Any>& as_list() const;
@@ -90,10 +94,10 @@ public:
 
 	// kaba
 	Any* list_get(int i);
-	void list_set(int i, const Any &value);
-	Any* dict_get(const string &key);
-	void dict_set(const string &key, const Any &value);
-	void dict_drop(const string &key);
+	void list_set(int i, const Any& value);
+	Any* dict_get(const string& key);
+	void dict_set(const string& key, const Any& value);
+	void dict_drop(const string& key);
 
 	static Any EmptyDict;
 	static Any EmptyList;

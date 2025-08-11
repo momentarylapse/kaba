@@ -579,8 +579,8 @@ string f2s(float f, int dez) {
 	return t;
 }
 
-string f2s_clean(float f, int dez) {
-	auto s = f2s(f, dez);
+string f642s_clean(double f, int dez) {
+	auto s = f642s(f, dez);
 	for (int i=s.num-1; i>=0; i--)
 		if (s.back() == '0' and s[s.num-2] != '.')
 			s.pop();

@@ -3,7 +3,7 @@
 #include "../os/msg.h"
 
 
-string f2s_clean(float f, int dez);
+string f642s_clean(double f, int dez);
 
 Any::Dict _empty_dummy_map_;
 static DynamicArray _empty_dummy_array_ = {NULL, 0, 0, sizeof(Any)};
@@ -47,12 +47,16 @@ Any::Any(const Any &a) : Any() {
 	*this = a;
 }
 
-Any::Any(int i) : Any() {
+Any::Any(int i) : Any((int64)i) {}
+
+Any::Any(int64 i) : Any() {
 	create_type(Type::Int);
 	as_int() = i;
 }
 
-Any::Any(float f) : Any() {
+Any::Any(float f) : Any((double)f) {}
+
+Any::Any(double f) : Any() {
 	create_type(Type::Float);
 	as_float() = f;
 }
@@ -203,9 +207,9 @@ string minimal_key_repr(const string &k) {
 
 string Any::repr() const {
 	if (is_int()) {
-		return i2s(as_int());
+		return i642s(as_int());
 	} else if (is_float()) {
-		return f2s_clean(as_float(), 6);
+		return f642s_clean(as_float(), 6);
 	} else if (is_bool()) {
 		return b2s(as_bool());
 	} else if (is_string()) {
@@ -308,10 +312,10 @@ void any_parse_part(Any &a, const Array<string> &tokens, int &pos) {
 	} else if (str_is_number(cur)) {
 		if (cur.has_char('.')) {
 			a.create_type(Any::Type::Float);
-			a.as_float() = cur._float();
+			a.as_float() = (double)cur._float();
 		} else {
 			a.create_type(Any::Type::Int);
-			a.as_int() = cur._int();
+			a.as_int() = (int64)cur._int();
 		}
 		pos ++;
 	} else if (cur == "true" or cur == "false") {
@@ -344,7 +348,7 @@ Any Any::parse(const string &s) {
 	return r;
 }
 
-bool Any::_bool() const {
+bool Any::to_bool() const {
 	if (is_bool())
 		return as_bool();
 	if (is_int())
@@ -353,22 +357,30 @@ bool Any::_bool() const {
 	//throw Exception("can not interpret as bool: " + type_name(type));
 }
 
-int Any::_int() const {
+int Any::to_i32() const {
+	return (int)to_i64();
+}
+
+int64 Any::to_i64() const {
 	if (is_int())
 		return as_int();
 	if (is_bool())
-		return (int)as_bool();
+		return (int64)as_bool();
 	if (is_float())
-		return (int)as_float();
+		return (int64)as_float();
 	if (is_string())
 		return as_string()._int();
 	return 0;
 	//throw Exception("can not interpret as int: " + type_name(type));
 }
 
-float Any::_float() const {
+float Any::to_f32() const {
+	return (float)to_f64();
+}
+
+double Any::to_f64() const {
 	if (is_int())
-		return (float)as_int();
+		return (double)as_int();
 	if (is_float())
 		return as_float();
 	if (is_string())
@@ -405,9 +417,9 @@ void Any::operator = (const Any &a) {
 
 Any Any::operator + (const Any &a) const {
 	if (is_int() and a.is_int())
-		return Any(_int() + a._int());
+		return Any(to_i64() + a.to_i64());
 	if ((is_float() or is_int()) and (a.is_float() or a.is_int()))
-		return Any(_float() + a._float());
+		return Any(to_f64() + a.to_f64());
 	if (is_string() and a.is_string())
 		return Any(str() + a.str());
 	throw Exception(format("%s + %s not allowed", type_name(type), type_name(a.type)));
@@ -416,18 +428,18 @@ Any Any::operator + (const Any &a) const {
 
 Any Any::operator - (const Any &a) const {
 	if (is_int() and a.is_int())
-		return Any(_int() - a._int());
+		return Any(to_i64() - a.to_i64());
 	if ((is_float() or is_int()) and (a.is_float() or a.is_int()))
-		return Any(_float() - a._float());
+		return Any(to_f64() - a.to_f64());
 	throw Exception(format("%s - %s not allowed", type_name(type), type_name(a.type)));
 	return Any();
 }
 
 void Any::operator += (const Any &a) {
 	if (is_int() and (a.is_int() or a.is_float()))
-		as_int() += a._int();
+		as_int() += a.to_i64();
 	else if (is_float() and (a.is_float() or a.is_int()))
-		as_float() += a._float();
+		as_float() += a.to_f64();
 	else if (is_string() and a.is_string())
 		as_string() += a.str();
 	else if (is_list() and a.is_list())
@@ -511,7 +523,7 @@ const Any &Any::operator[] (int index) const {
 	return as_list()[index];
 }
 
-Any &Any::back() {
+Any &Any::back() const {
 	if (!is_list())
 		msg_error("only allowed for arrays: " + type_name(type));
 	return as_list().back();
@@ -545,12 +557,12 @@ bool Any::has(const string &key) const {
 	return sa_contains(as_dict().keys(), key);
 }
 
-int& Any::as_int() const {
-	return *(int*)data;
+int64& Any::as_int() const {
+	return *(int64*)data;
 }
 
-float& Any::as_float() const {
-	return *(float*)data;
+double& Any::as_float() const {
+	return *(double*)data;
 }
 
 bool& Any::as_bool() const {

@@ -223,9 +223,9 @@ class KabaAny : public Any {
 public:
 	const Class* _get_class() {
 		if (type == Any::Type::Int)
-			return TypeInt32;
+			return TypeInt32; // legacy...
 		if (type == Any::Type::Float)
-			return TypeFloat32;
+			return TypeFloat32; // legacy...
 		if (type == Any::Type::Bool)
 			return TypeBool;
 		if (type == Any::Type::String)
@@ -255,9 +255,13 @@ public:
 	
 	static void unwrap(Any &aa, void *var, const Class *type) {
 		if (type == TypeInt32) {
-			*(int*)var = aa.as_int();
+			*(int*)var = (int)aa.as_int();
+		} else if (type == TypeInt64) {
+			*(int64*)var = aa.as_int();
 		} else if (type == TypeFloat32) {
-			*(float*)var = aa.as_float();
+			*(float*)var = (float)aa.as_float();
+		} else if (type == TypeFloat64) {
+			*(double*)var = aa.as_float();
 		} else if (type == TypeBool) {
 			*(bool*)var = aa.as_bool();
 		} else if (type == TypeString) {
@@ -935,9 +939,11 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("drop", TypeVoid, &Any::dict_drop, Flags::RaisesExceptions | Flags::Mutable);
 			func_add_param("key", TypeString);
 		class_add_func("keys", TypeStringList, &Any::keys, Flags::Pure);//, Flags::RAISES_EXCEPTIONS);
-		class_add_func("__bool__", TypeBool, &Any::_bool, Flags::Pure);
-		class_add_func("__i32__", TypeInt32, &Any::_int, Flags::Pure);
-		class_add_func("__f32__", TypeFloat32, &Any::_float, Flags::Pure);
+		class_add_func("__bool__", TypeBool, &Any::to_bool, Flags::Pure);
+		class_add_func("__i32__", TypeInt32, &Any::to_i32, Flags::Pure);
+		class_add_func("__i64__", TypeInt32, &Any::to_i64, Flags::Pure);
+		class_add_func("__f32__", TypeFloat32, &Any::to_f32, Flags::Pure);
+		class_add_func("__f64__", TypeFloat64, &Any::to_f64, Flags::Pure);
 		class_add_func(Identifier::func::Str, TypeString, &Any::str, Flags::Pure);
 		class_add_func(Identifier::func::Repr, TypeString, &Any::repr, Flags::Pure);
 		class_add_func("unwrap", TypeVoid, &KabaAny::unwrap, Flags::RaisesExceptions);
