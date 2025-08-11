@@ -1,13 +1,13 @@
 
 
 func main()
-	var v: vli = "10000000000"
-	var w: vli = "3"
+	var v = vli("10000000000")
+	var w = vli("3")
 	
 	var r: vli
 	v.idiv(w, r)
 	print(str(v) + " mod " + str(r))
 	
-	v = "100000000000"
+	v = vli("100000000000")
 	v.idiv(w, r)
 	print(str(v) + " mod " + str(r))

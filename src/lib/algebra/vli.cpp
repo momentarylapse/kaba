@@ -186,25 +186,13 @@ vli::vli(const string &str) {
 	}
 }
 
-vli::~vli()
-{
+vli::~vli() {
 	data.clear();
 }
 
-void vli::__init__()
-{
-	new(this) vli;
-}
-
-void vli::__delete__()
-{
-	this->~vli();
-}
-
-void vli::shift_units(int n)
-{
+void vli::shift_units(int n) {
 	if (n > 0)
-		if (data[data.num - 1] != 0){
+		if (data[data.num - 1] != 0) {
 			//data.insert(data.begin(), n, 0);
 			data.resize(data.num + n);
 			for (int i=data.num-1;i>=n;i--)
@@ -548,31 +536,29 @@ string vli::dump() const
 	return s;
 }
 
-vli vli::pow(const vli &e) const
-{
+vli vli::pow(const vli &x, const vli &e) {
 	// number of bits in highest unit of exponent
 	int nex = 0;
 	for (int i=0;i<32;i++)
 		if ((e.data.back() & (1 << i)) > 0)
 			nex = i + 1;
 	vli r = 1;
-	vli t = *this;
-	for (int u=0;u<e.data.num;u++){
+	vli t = x;
+	for (int u=0;u<e.data.num;u++) {
 		int nmax = (u == e.data.num - 1) ? nex : 32;
-		for (int i=0;i<nmax;i++){
+		for (int i=0;i<nmax;i++) {
 			if ((e.data[u] & (1 << i)) > 0)
 				r *= t;
 			if ((i < nex - 1) or (u < e.data.num - 1))
 				t *= t;
 		}
 	}
-	r.sign = (sign and ((e.data[0] & 1) > 0));
+	r.sign = (x.sign and ((e.data[0] & 1) > 0));
 	return r;
 }
 
 // r = ((base ^ e) % m)
-vli vli::pow_mod(const vli &e, const vli &m) const
-{
+vli vli::pow_mod(const vli &x, const vli &e, const vli &m) {
 	// number of bits in highest unit of exponent
 	int nex = 0;
 	for (int i=0;i<32;i++)
@@ -582,18 +568,18 @@ vli vli::pow_mod(const vli &e, const vli &m) const
 	
 	vli r = 1;
 	vli t;
-	vli base2 = *this;
+	vli base2 = x;
 	base2.div(m, t); // t = (base % m)
-	for (int u=0;u<e.data.num;u++){
+	for (int u=0;u<e.data.num;u++) {
 		int nmax = (u == e.data.num - 1) ? nex : 32;
-		for (int i=0;i<nmax;i++){
-			if ((e.data[u] & (1 << i)) > 0){
+		for (int i=0;i<nmax;i++) {
+			if ((e.data[u] & (1 << i)) > 0) {
 				r *= t;
 				vli rr;
 				r.div(m, rr);
 				r = rr;
 			}
-			if ((i < nex - 1) or (u < e.data.num - 1)){
+			if ((i < nex - 1) or (u < e.data.num - 1)) {
 				t *= t;
 				vli tt;
 				t.div(m, tt);
@@ -601,17 +587,16 @@ vli vli::pow_mod(const vli &e, const vli &m) const
 			}
 		}
 	}
-	r.sign = sign;
+	r.sign = x.sign;
 	return r;
 }
 
-vli vli::gcd(const vli &v) const
-{
-	vli a = *this;
-	vli b = v;
+vli vli::gcd(const vli &_a, const vli &_b) {
+	vli a = _a;
+	vli b = _b;
 	vli vli0 = 0;
 	vli rem;
-	while (b != vli0){
+	while (b != vli0) {
 		a.div(b, rem);
 		a = b;
 		b = rem;

@@ -1,9 +1,7 @@
 #ifndef _VLI_INCLUDED_
 #define _VLI_INCLUDED_
 
-class vli
-{
-public:
+struct vli {
 	vli();
 	vli(const vli &v);
 	vli(int v);
@@ -47,19 +45,11 @@ public:
 	string _cdecl dump() const;
 
 	// higher functions
-	vli _cdecl pow(const vli &e) const;
-	vli _cdecl pow_mod(const vli &e, const vli &m) const;
-	vli _cdecl gcd(const vli &v) const;
+	static vli pow(const vli &x, const vli &e);
+	static vli pow_mod(const vli &x, const vli &e, const vli &m);
+	static vli gcd(const vli &a, const vli &b);
 	
 	// kaba
-	void _cdecl __init__();
-	void _cdecl __delete__();
-	void _cdecl set_vli(const vli &v)
-	{	*this = v;	}
-	void _cdecl set_int(int i)
-	{	*this = i;	}
-	void _cdecl set_str(const string &s)
-	{	*this = s;	}
 	void _cdecl idiv(const vli &d, vli &rem)
 	{	div(d, rem);	}
 	vli _cdecl _div(const vli &d, vli &rem) const

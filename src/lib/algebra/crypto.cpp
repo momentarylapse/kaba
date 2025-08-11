@@ -11,8 +11,7 @@
 #include "../math/math.h"
 #include <stdio.h>
 
-int vli_count_bits(vli &v)
-{
+int vli_count_bits(const vli &v) {
 	int bits = 32 * (v.data.num - 1);
 	for (int i=31;i>=0;i--)
 		if ((v.data.back() & (1 << i)) != 0){
@@ -22,8 +21,7 @@ int vli_count_bits(vli &v)
 	return bits;
 }
 
-void vli_rand(vli &v, int bits)
-{
+void vli_rand(vli &v, int bits) {
 	v.data.resize((bits-1)/32 + 1);
 	for (int i=0;i<v.data.num;i++)
 		for (int j=0;j<4;j++)
@@ -32,13 +30,12 @@ void vli_rand(vli &v, int bits)
 		v.data.back() &= 0xffffffff >> (32 - (bits % 32));
 }
 
-bool miller_rabin_prime(vli &p, int count)
-{
+bool miller_rabin_prime(const vli &p, int count) {
 	// decompose
 	int s = 0;
 	vli d = p-1;
 	// TODO improve me!!!
-	while ((d.data[0] & 1) == 0){
+	while ((d.data[0] & 1) == 0) {
 		unsigned int rem;
 		d.div(2, rem);
 		s ++;
@@ -47,25 +44,25 @@ bool miller_rabin_prime(vli &p, int count)
 
 	// trials...
 	vli p_mm = p - 1;
-	for (int i=0; i<count; i++){
+	for (int i=0; i<count; i++) {
 		vli a;
-		do{
+		do {
 			vli_rand(a, bits);
-		}while ((a > p) || (a <= 1));
+		} while ((a > p) || (a <= 1));
 
 		vli rem;
-		vli t = a.pow_mod(d, p);
+		vli t = vli::pow_mod(a, d, p);
 		if (t == 1)
 			continue;
 		if (t == p_mm)
 			continue;
 
 		bool passed = true;
-		for (int r=1;r<s;r++){
+		for (int r=1;r<s;r++) {
 			t *= t;
 			t.div(p, rem);
 			t = rem;
-			if (t == p_mm){
+			if (t == p_mm) {
 				passed = false;
 				break;
 			}
@@ -78,32 +75,29 @@ bool miller_rabin_prime(vli &p, int count)
 	return true;
 }
 
-void get_prime(vli &p, int bits)
-{
-	do{
+void get_prime(vli &p, int bits) {
+	do {
 		vli_rand(p, bits-1);
 		p = p * 2;
 		p += 1;
-	}while (!miller_rabin_prime(p, 30));
+	} while (!miller_rabin_prime(p, 30));
 }
 
-bool find_coprime(vli &e, vli &phi)
-{
+bool find_coprime(vli &e, vli &phi) {
 	int bits = vli_count_bits(phi);
-	do{
+	do {
 		vli_rand(e, bits);
-	}while (e >= phi);
+	} while (e >= phi);
 
-	while(e > 1){
-		if (e.gcd(phi) == 1)
+	while(e > 1) {
+		if (vli::gcd(e, phi) == 1)
 			return true;
 		e -= 1;
 	}
 	return false;
 }
 
-bool find_mod_inverse(vli &d, vli &e, vli &phi)
-{
+bool find_mod_inverse(vli &d, vli &e, vli &phi) {
 	/*d = 1;
 	while(d < e){
 		vli n = d * e;
@@ -124,7 +118,7 @@ bool find_mod_inverse(vli &d, vli &e, vli &phi)
 	vli last_y = 0;
 	vli vli0 = 0;
 	vli rem;
-	while (b != vli0){
+	while (b != vli0) {
 		vli q;
 		a.div(b, rem);
 		q = a;
@@ -147,7 +141,7 @@ bool find_mod_inverse(vli &d, vli &e, vli &phi)
 
 	vli ttt = d * e;
 	ttt._div(phi, rem);
-	if (rem != 1){
+	if (rem != 1) {
 		printf("--- 1=%s  (d=%s)\n", rem.to_string().c_str(), d.to_string().c_str());
 		return false;
 	}
@@ -186,8 +180,7 @@ void CryptoCreateKeys(Crypto &key1, Crypto &key2, const string &type, int bits)
 	throw "Crypto: no key found...";
 }
 
-vli str2vli(const string &str, int offset, int bytes)
-{
+vli str2vli(const string &str, int offset, int bytes) {
 	string t = str.sub(offset, offset + bytes);
 	t.resize(bytes);
 	vli v;
@@ -196,39 +189,36 @@ vli str2vli(const string &str, int offset, int bytes)
 	return v;
 }
 
-string vli2str(vli &v, int bytes)
-{
+string vli2str(vli &v, int bytes) {
 	string t;
 	t.resize(bytes);
 	memcpy(t.data, v.data.data, v.data.num * 4);
 	return t;
 }
 
-string Crypto::Encrypt(const string &s)
-{
+bytes Crypto::encrypt(const bytes &s) const {
 	string r;
 	int bytes = vli_count_bits(this->n) / 8;
 	int offset = 0;
-	do{
+	do {
 		vli m = str2vli(s, offset, bytes);
-		m = m.pow_mod(this->k, this->n);
+		m = vli::pow_mod(m, this->k, this->n);
 		r += vli2str(m, bytes + 1);
 		offset += bytes;
 	}while (offset < s.num);
 	return r;
 }
 
-string Crypto::Decrypt(const string &s, bool cut)
-{
+bytes Crypto::decrypt(const bytes &s, bool cut) const {
 	string r;
 	int bytes = vli_count_bits(this->n) / 8;
 	int offset = 0;
-	do{
+	do {
 		vli m = str2vli(s, offset, bytes+1);
-		m = m.pow_mod(this->k, this->n);
+		m = vli::pow_mod(m, this->k, this->n);
 		r += vli2str(m, bytes);
 		offset += bytes + 1;
-	}while (offset < s.num);
+	} while (offset < s.num);
 
 	if (cut)
 		for (int i=0;i<r.num;i++)
@@ -239,8 +229,7 @@ string Crypto::Decrypt(const string &s, bool cut)
 	return r;
 }
 
-void Crypto::from_str(const string &s)
-{
+void Crypto::from_str(const string &s) {
 	Array<string> ss = s.explode(":");
 	if (ss.num != 2)
 		return;
@@ -250,21 +239,10 @@ void Crypto::from_str(const string &s)
 	k = str2vli(h2, 0, h2.num);
 }
 
-string Crypto::str()
-{
+string Crypto::str() {
 	int bytes_n = (vli_count_bits(n) + 7) / 8;
 	int bytes_k = (vli_count_bits(k) + 7) / 8;
 	return vli2str(n, bytes_n).hex() + ":" + vli2str(k, bytes_k).hex();
 	//return n.dump() + " " + k.dump();
-}
-
-void Crypto::__init__()
-{
-	new(this) Crypto;
-}
-
-void Crypto::__delete__()
-{
-	this->~Crypto();
 }
 
