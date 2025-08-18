@@ -23,16 +23,16 @@ public:
 
 	Any();
 	Any(const Any& a);
-	explicit Any(int i);
-	explicit Any(int64 i);
-	explicit Any(float f);
-	explicit Any(double f);
-	explicit Any(bool b);
-	explicit Any(const string& s);
-	explicit Any(const char* s);
+	Any(int i);
+	Any(int64 i);
+	Any(float f);
+	Any(double f);
+	Any(bool b);
+	Any(const string& s);
+	Any(const char* s);
 	explicit Any(const void* p);
 	Any(const Array<Any>& a);
-	explicit Any(const Array<int>& a);
+	Any(const Array<int>& a);
 	Any(const Dict& m);
 	~Any();
 

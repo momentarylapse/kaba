@@ -98,9 +98,9 @@ void Any::create_type(Type _type) {
 	clear();
 	type = _type;
 	if (is_int()) {
-		data = new int;
+		data = new int64;
 	} else if (is_float()) {
-		data = new float;
+		data = new double;
 	} else if (is_bool()) {
 		data = new bool;
 	} else if (is_pointer()) {
