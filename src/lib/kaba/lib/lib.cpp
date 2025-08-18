@@ -103,7 +103,7 @@ const Class *add_type_simple(const string &name, int size, int alignment, Flags 
 
 
 const Class *add_class_template(const string &name, const Array<string>& params, TemplateClassInstantiator* instantiator) {
-	auto t = cur_package_module->context->template_manager->add_class_template(cur_package_module->tree.get(), name, params, instantiator);
+	auto t = cur_package_module->context->template_manager->create_class_template(cur_package_module->tree.get(), name, params, instantiator);
 	__add_class__(t, nullptr);
 	return t;
 }

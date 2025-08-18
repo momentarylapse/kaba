@@ -1671,6 +1671,23 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 		_class->from_template = class_type;
 	}
 
+	// template?
+	Array<string> template_param_names;
+	if (try_consume("[")) {
+		while (true) {
+			template_param_names.add(Exp.consume());
+			if (!try_consume(","))
+				break;
+		}
+		expect_identifier("]", "']' expected after template parameter");
+		flags_set(_class->flags, Flags::Template);
+		Exp.next();
+		context->template_manager->add_class_template(_class, template_param_names, [] (SyntaxTree* tree, const Array<const Class*>&, int) -> Class* {
+			tree->do_error("TEMPLATE INSTANCE...", -1);
+			return nullptr;
+		});
+	}
+
 	// parent class
 	if (try_consume(Identifier::Extends)) {
 		auto parent = parse_type(_namespace); // force
@@ -1712,6 +1729,9 @@ bool Parser::parse_class(Class *_namespace) {
 
 	auto _class = parse_class_header(_namespace, _offset);
 	if (!_class) // in case, not fully parsed
+		return false;
+
+	if (_class->is_template()) // parse later...
 		return false;
 
 	Array<int> sub_class_token_ids;
@@ -2282,7 +2302,8 @@ void Parser::parse_top_level() {
 
 		// class
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
-			parse_class(tree->base_class);
+			if (!parse_class(tree->base_class))
+				skip_parse_class();
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {

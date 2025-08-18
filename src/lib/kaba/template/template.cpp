@@ -42,9 +42,31 @@ void TemplateManager::add_function_template(Function *f_template, const Array<st
 	function_templates.add(t);
 }
 
-Class *TemplateManager::add_class_template(SyntaxTree *tree, const string &name, const Array<string> &param_names, TemplateClassInstantiator* instantiator) {
+
+class TemplateClassInstantiatorWrapper : public TemplateClassInstantiator {
+public:
+	TemplateManager::ClassCreateF f_create;
+	TemplateClassInstantiatorWrapper(const TemplateManager::ClassCreateF& _f_create) {
+		f_create = _f_create;
+	}
+	Class* declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) override {
+		return f_create(tree, params, array_size);
+	}
+	void add_function_headers(Class* c) override {
+	}
+};
+
+void TemplateManager::add_class_template(Class *c_template, const Array<string> &param_names, ClassCreateF f_create) {
 	if (config.verbose)
-		msg_write("ADD CLASS TEMPLATE " + name);
+		msg_write("ADD CLASS TEMPLATE");
+	auto instantiator = new TemplateClassInstantiatorWrapper(f_create);
+	auto m = new TemplateClassInstanceManager(c_template, param_names, instantiator);
+	class_managers.add(m);
+}
+
+Class *TemplateManager::create_class_template(SyntaxTree *tree, const string &name, const Array<string> &param_names, TemplateClassInstantiator* instantiator) {
+	if (config.verbose)
+		msg_write("CREATE CLASS TEMPLATE " + name);
 	//msg_write("add class template  " + c->long_name());
 	Class *c = new Class(nullptr, name, 0, 1, tree);
 	flags_set(c->flags, Flags::Template);
