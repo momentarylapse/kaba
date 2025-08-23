@@ -6,8 +6,6 @@
 #include "lib/os/date.h"
 #include "lib/os/CommandLineParser.h"
 #include "lib/base/future.h"
-//#include "lib/hui/hui.h"
-#include "lib/net/net.h"
 #include "lib/kaba/kaba.h"
 #include "lib/kaba/Interpreter.h"
 #include "lib/kaba/lib/lib.h"
@@ -217,7 +215,6 @@ public:
 
 	void init_environment() {
 		srand(Date::now().time*73 + Date::now().milli_second);
-		NetInit();
 		kaba::init(abi, flag_allow_std_lib);
 		ErrorHandler::init();
 

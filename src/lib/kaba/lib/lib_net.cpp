@@ -89,8 +89,8 @@ void SIAddPackageNet(Context *c) {
 
 	add_class(TypeBinaryBuffer);
 		class_add_element("data", TypeBytes, net_p(&BinaryBuffer::data));
-		class_add_func(Identifier::func::Init, TypeVoid, net_p(&BinaryBuffer::__init__), Flags::Mutable);
-		class_add_func(Identifier::func::Delete, TypeVoid, net_p(&BinaryBuffer::__delete__), Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, net_p(&kaba::generic_init<BinaryBuffer>), Flags::Mutable);
+		class_add_func(Identifier::func::Delete, TypeVoid, net_p(&kaba::generic_delete<BinaryBuffer>), Flags::Mutable);
 		class_add_func("__rshift__", TypeVoid, net_p((void(BinaryBuffer::*)(int&))&BinaryBuffer::operator>>), Flags::Mutable);
 			func_add_param("i", TypeInt32, Flags::Out);
 		class_add_func("__rshift__", TypeVoid, net_p((void(BinaryBuffer::*)(float&))&BinaryBuffer::operator>>), Flags::Mutable);

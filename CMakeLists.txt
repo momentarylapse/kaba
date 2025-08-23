@@ -62,6 +62,7 @@ add_executable(kaba
 	src/helper/ErrorHandler.cpp
 	src/helper/experiments.cpp
 	src/helper/symbols.cpp
+	src/lib/algebra/_kaba_export.cpp
 	src/lib/algebra/crypto.cpp
 	src/lib/algebra/vli.cpp
 	src/lib/any/any.cpp
@@ -161,6 +162,7 @@ add_executable(kaba
 	src/lib/math/vec2.cpp
 	src/lib/math/vec3.cpp
 	src/lib/math/vec4.cpp
+	src/lib/net/_kaba_export.cpp
 	src/lib/net/BinaryBuffer.cpp
 	src/lib/net/net.cpp
 	src/lib/net/Socket.cpp
