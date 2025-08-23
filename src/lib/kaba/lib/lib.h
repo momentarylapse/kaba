@@ -208,8 +208,9 @@ void generic_assign(T& a, const T& b) {
 template<class T>
 class generic_virtual : public T {
 public:
+	~generic_virtual() = default;
 	void __delete__() {
-		this->~T();
+		this->~generic_virtual();
 	}
 };
 

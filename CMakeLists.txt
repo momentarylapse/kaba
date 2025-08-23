@@ -65,6 +65,7 @@ add_executable(kaba
 	src/lib/algebra/crypto.cpp
 	src/lib/algebra/vli.cpp
 	src/lib/any/any.cpp
+	src/lib/any/conversion.cpp
 	src/lib/base/array.cpp
 	src/lib/base/pointer.cpp
 	src/lib/base/strings.cpp
@@ -185,6 +186,7 @@ target_link_directories(kaba PUBLIC ${LINK_DIRECTORIES})
 target_compile_options(kaba PUBLIC ${COMPILE_OPTIONS})
 target_compile_definitions(kaba PUBLIC ${COMPILE_DEFINITIONS}  SOURCE_ROOT="${CMAKE_SOURCE_DIR}" INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 target_link_libraries(kaba PUBLIC ${DEPS})
+target_include_directories(kaba PUBLIC src)
 
 
 #=======================================================================================
