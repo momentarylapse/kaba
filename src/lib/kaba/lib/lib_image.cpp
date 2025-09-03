@@ -31,7 +31,7 @@ void SIAddPackageImage(Context *c) {
 
 	TypeImage = add_type("Image", sizeof(Image));
 	auto TypeImageXfer = add_type_p_xfer(TypeImage);
-	TypeBasePainter = add_type("Painter", sizeof(Painter), Flags::None, TypeImage);
+	TypeBasePainter = add_type("Painter", sizeof(Painter), Flags::None);
 	TypeBasePainterP = add_type_p_raw(TypeBasePainter);
 	TypeBasePainterXfer = add_type_p_xfer(TypeBasePainter);
 
