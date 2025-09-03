@@ -30,7 +30,7 @@ namespace base {
 			_switch_type(2);
 			error() = e;
 		}
-		expected(const T& v) {
+		expected(const T& v) : expected() {
 			_switch_type(1);
 			value() = v;
 		}
