@@ -90,13 +90,13 @@ namespace base {
 		}
 
 		T& value() const {
-			if (type != 1)
-				throw Exception("no value");
+			//if (type != 1)
+			//	throw Exception("no value");
 			return *(T*)&_value;
 		}
 		T& value() {
-			if (type != 1)
-				throw Exception("no value");
+			//if (type != 1)
+			//	throw Exception("no value");
 			return *(T*)&_value;
 		}
 		T value_or(const T& alt) const {
@@ -105,13 +105,13 @@ namespace base {
 			return *(T*)&_value;
 		}
 		E& error() const {
-			if (type != 2)
-				throw Exception("no error");
+			//if (type != 2)
+			//	throw Exception("no error");
 			return *(E*)&_value;
 		}
 		E& error() {
-			if (type != 2)
-				throw Exception("no error");
+			//if (type != 2)
+			//	throw Exception("no error");
 			return *(E*)&_value;
 		}
 

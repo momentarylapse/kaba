@@ -28,16 +28,20 @@ constexpr size_t _max_type_size() {
 template<typename T, typename... Ts>
 class variant {
 public:
+	variant() {
+		_index = -1;
+		memset(data, 0, sizeof(data));
+	}
+
 	template<typename TT>
-	void operator=(TT &&t) {
-		if (_index != to_type_id<TT>())
-			_init<TT>();
-		*(TT *) &data[0] = t;
+	void operator=(TT&& t) {
+		_make<TT>();
+		*(TT*)&data[0] = t;
 	}
 
 	template<typename TT>
 	TT get() const {
-		if (_index != to_type_id<TT>())
+		if (is<TT>())
 			throw Exception("wrong type");
 		return *(TT *) &data[0];
 	}
@@ -49,6 +53,7 @@ public:
 	void clear() {
 		if (_index < 0)
 			return;
+		//_clear_if<>()
 		//variant<Ts...>::template _clear_if();
 		_index = -1;
 	}
@@ -60,7 +65,7 @@ public:
 
 private:
 	int _index = -1;
-	char data[_max_type_size<T, Ts...>()];
+	alignas(T) alignas(Ts...) char data[_max_type_size<T, Ts...>()];
 
 	template<typename TT>
 	void _clear_if() {
@@ -69,7 +74,9 @@ private:
 	}
 
 	template<typename TT>
-	void _init() {
+	void _make() {
+		if (is<TT>())
+			return;
 		clear();
 		new(&data[0]) TT();
 		_index = to_type_id<TT>();
