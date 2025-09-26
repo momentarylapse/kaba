@@ -198,14 +198,6 @@ install(TARGETS kaba DESTINATION bin)
 # resources
 install(DIRECTORY "static" DESTINATION ${RESOURCE_DESTINATION})
 
-
-if (UNIX AND NOT APPLE)
-	# install .desktop file
-	set(INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/static/michisoft-kaba.desktop" /tmp/michisoft-kaba.desktop NO_SOURCE_PERMISSIONS)
-	install(FILES /tmp/michisoft-kaba.desktop DESTINATION share/applications)
-endif ()
-
 if (UNIX AND NOT APPLE)
 	# install mime
 	find_program(XDG_MIME_EXECUTABLE xdg-mime)
