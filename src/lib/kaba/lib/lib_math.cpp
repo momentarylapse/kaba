@@ -300,9 +300,6 @@ public:
 	void assign(const color &o) {
 		*(color*)this = o;
 	}
-	static color set(float r, float g, float b, float a) {
-		return color(a, r, g, b);
-	}
 };
 
 struct KabaBox : public Box {
@@ -649,16 +646,16 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("hex", TypeString, &color::hex, Flags::Pure);
 		class_add_func("with_alpha", TypeColor, &color::with_alpha, Flags::Pure);
 			func_add_param("a", TypeFloat32);
-		class_add_func("hsb", TypeColor, &color::hsb, Flags::Static | Flags::Pure);
+		class_add_func("hsb", TypeColor, &color::from_hsb, Flags::Static | Flags::Pure);
 			func_add_param("h", TypeFloat32);
 			func_add_param("s", TypeFloat32);
 			func_add_param("b", TypeFloat32);
 			func_add_param_def("a", TypeFloat32, 1.0f);
-		class_add_func("mix", TypeColor, &color::interpolate, Flags::Static | Flags::Pure);
+		class_add_func("mix", TypeColor, &color::mix, Flags::Static | Flags::Pure);
 			func_add_param("c1", TypeColor);
 			func_add_param("c2", TypeColor);
 			func_add_param("t", TypeFloat32);
-		class_add_func("_create", TypeColor, &KabaColor::set, Flags::Static | Flags::Pure);
+		class_add_func("_create", TypeColor, &color::from_rgba, Flags::Static | Flags::Pure);
 			func_set_inline(InlineID::ColorSet);
 			func_add_param("r", TypeFloat32);
 			func_add_param("g", TypeFloat32);
