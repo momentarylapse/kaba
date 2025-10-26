@@ -1071,7 +1071,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		// ...for_var += 1
 		shared<Node> cmd_inc;
 		if (var->type == TypeInt32) {
-			if (step->as_const()->as_int() == 1)
+			if (step->kind == NodeKind::Constant and step->as_const()->as_int() == 1)
 				cmd_inc = add_node_operator_by_inline(InlineID::Int32Increase, var, nullptr);
 			else
 				cmd_inc = add_node_operator_by_inline(InlineID::Int32AddAssign, var, step);
