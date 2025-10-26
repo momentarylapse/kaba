@@ -58,7 +58,7 @@ Dialog win 'bla'
 		cube!.material.emission = [0,0,0.7,1]
 		render_path!.add_opaque_emitter(cube!)
 	
-		light.init([300,0,300,1], 100, -1)
+		light.init(LightType.POINT, [300,0,300,1])
 		light.pos = [0,8,-10]
 	
 

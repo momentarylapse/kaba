@@ -27,7 +27,7 @@ void SIAddPackageTime(Context *c) {
 
 
 	add_class(TypeTimer);
-		class_add_func(Identifier::func::Init, TypeVoid, &os::Timer::reset, Flags::Mutable);
+		class_add_func(Identifier::func::Init, TypeVoid, &generic_init<os::Timer>, Flags::Mutable);
 		class_add_func("get", TypeFloat32, &os::Timer::get, Flags::Mutable);
 		class_add_func("reset", TypeVoid, &os::Timer::reset, Flags::Mutable);
 		class_add_func("peek", TypeFloat32, &os::Timer::peek);

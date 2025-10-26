@@ -32,7 +32,7 @@ func main()
 	rp.add_opaque_emitter(cube)
 	
 	var light: YLight
-	light.init([300,0,300,1], 100, -1)
+	light.init(LightType.POINT, [300,0,300,1])
 	light.pos = [0,8,-10]
 	
 	var t = 0.0
