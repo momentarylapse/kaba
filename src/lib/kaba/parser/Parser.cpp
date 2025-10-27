@@ -2100,7 +2100,7 @@ Function *Parser::parse_function_header(const Class *default_type, Class *name_s
 			// default parameter?
 			if (try_consume("=")) {
 				f->default_parameters.resize(f->num_params - 1);
-				auto dp = parse_abstract_operand(block);
+				auto dp = parse_abstract_operand_greedy(block, false, 1);
 				f->default_parameters.add(dp);
 			}
 

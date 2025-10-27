@@ -2214,8 +2214,7 @@ void Concretifier::concretify_function_header(Function *f) {
 		// mandatory_params not yet
 		if ((i < f->default_parameters.num) and f->default_parameters[i]) {
 			f->default_parameters[i] = concretify_node(f->default_parameters[i], block, f->name_space);
-			if (f->default_parameters[i]->type != t)
-				do_error(format("trying to set a default value of type '%s' for a parameter of type '%s'", f->default_parameters[i]->type->name, t->name), f->default_parameters[i]);
+			f->default_parameters[i] = explicit_cast(f->default_parameters[i], t);
 		}
 	}
 	flags_clear(f->flags, Flags::Template);
