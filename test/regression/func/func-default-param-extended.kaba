@@ -1,0 +1,18 @@
+func f(x: f32 = 2 + 1)
+	print(x)
+
+func f2(x = 13)
+	print(x)
+
+func ff(p: i32* = nil)
+	for i in p
+		print(i)
+	else
+		print("nil")
+
+func main()
+	f()
+	f2()
+	ff()
+	ff(&5)
+

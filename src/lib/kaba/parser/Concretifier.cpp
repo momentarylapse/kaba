@@ -2206,7 +2206,8 @@ void Concretifier::concretify_function_header(Function *f) {
 	}
 	f->literal_param_type.resize(f->abstract_param_types.num);
 	for (auto&& [i,at]: enumerate(weak(f->abstract_param_types))) {
-		auto t = concretify_as_type(at, block, f->name_space);
+		// type might be null!
+		auto t = at ? concretify_as_type(at, block, f->name_space) : nullptr;
 		auto v = f->var[i].get();
 		v->type = t;
 		f->literal_param_type[i] = t;
@@ -2214,7 +2215,15 @@ void Concretifier::concretify_function_header(Function *f) {
 		// mandatory_params not yet
 		if ((i < f->default_parameters.num) and f->default_parameters[i]) {
 			f->default_parameters[i] = concretify_node(f->default_parameters[i], block, f->name_space);
-			f->default_parameters[i] = explicit_cast(f->default_parameters[i], t);
+			if (t) {
+				// auto cast
+				f->default_parameters[i] = explicit_cast(f->default_parameters[i], t);
+			} else {
+				// no explicit type -> set from default value
+				t = f->default_parameters[i]->type;
+				v->type = t;
+				f->literal_param_type[i] = t;
+			}
 		}
 	}
 	flags_clear(f->flags, Flags::Template);
