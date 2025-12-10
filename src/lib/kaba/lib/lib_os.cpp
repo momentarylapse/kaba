@@ -202,6 +202,10 @@ string _cdecl kaba_shell_execute(const string &cmd, bool verbose) {
 
 KABA_LINK_GROUP_END
 
+void kaba_os_exit(int status) {
+	exit(status);
+}
+
 class KabaPath : public Path {
 public:
 	Path cat_p(const Path &p) const {
@@ -527,6 +531,9 @@ void SIAddPackageOS(Context *c) {
 	add_func("shell_execute", TypeString, &kaba_shell_execute, Flags::Static | Flags::RaisesExceptions);
 		func_add_param("cmd", TypeString);
 		func_add_param_def("verbose", TypeBool, false);
+
+	add_func("exit", TypeVoid, &kaba_os_exit, Flags::Static);
+		func_add_param("status", TypeInt32);
 
 
 	add_ext_var("app_directory_dynamic", TypePath, &os::app::directory_dynamic);
