@@ -8,6 +8,7 @@
 #include "template/template.h"
 #include "compiler/Compiler.h"
 #include "../os/msg.h"
+#include "lib/os/app.h"
 #if HAS_LIB_DL
 #include <dlfcn.h>
 #endif
@@ -17,6 +18,8 @@ namespace kaba {
 VirtualTable* get_vtable(const VirtualBase *p);
 
 Context *default_context = nullptr;
+
+extern Array<shared<Module>> loading_module_stack;
 
 
 Exception::Exception(const string &_message, const string &_expression, int _line, int _column, Module *s) :
@@ -65,6 +68,9 @@ string Exception::message() const {
 }
 
 
+Path Package::data_directory() const {
+	return os::app::directory_home | ".kaba" | name;
+}
 
 
 Path absolute_module_path(const Path &filename) {
@@ -87,7 +93,8 @@ void Context::__delete__() {
 	this->Context::~Context();
 }
 
-void try_import_dynamic_library_for_module(const Path& dir, Context* ctx, shared<Module> module) {
+void try_import_dynamic_library_for_package(Package* p, Context* ctx) {
+	const Path dir = p->directory;
 #if HAS_LIB_DL
 #ifdef OS_MAC
 	auto files = os::fs::search(dir, "lib*.dylib", "f");
@@ -98,7 +105,7 @@ void try_import_dynamic_library_for_module(const Path& dir, Context* ctx, shared
 #endif
 
 	if (files.num == 1) {
-		Exporter e(ctx, module.get());
+		Exporter e(ctx, p);
 		auto handle = dlopen((dir | files[0]).c_str(), RTLD_NOW|RTLD_LOCAL);
 		typedef void t_f(Exporter*);
 		if (auto f = (t_f*)dlsym(handle, "export_symbols")) {
@@ -112,35 +119,40 @@ void try_import_dynamic_library_for_module(const Path& dir, Context* ctx, shared
 }
 
 // FIXME ...this needs a lot of reworking, sorry...  m(-_-)m
-void try_initiate_package_for_module(const Path& filename, Context* ctx, shared<Module> module) {
-	const auto dir = filename.parent();
+Package* get_package_containing_module(Module* m) {
+	auto ctx = m->context;
+	const auto dir = m->filename.parent();
 
 	// already initialized?
 	for (const auto p: weak(ctx->external_packages))
 		if (p->directory == dir)
-			return;
+			return p;
 
 	// is a package directory?
 	if (!os::fs::exists(dir | ".kaba-package"))
-		return;
+		return nullptr;
 	// TODO check parents...
 
-	Package* p = new Package;
-	p->directory = dir;
-	p->name = dir.basename();
-	ctx->external_packages.add(p);
+	// new package
+	auto package = new Package;
+	package->directory = dir;
+	package->name = dir.basename();
+	ctx->external_packages.add(package);
 
+	// package init override?
 	for (const auto& init: ctx->package_inits)
 		if (init.dir == dir) {
-			Exporter exporter(ctx, module.get());
+			Exporter exporter(ctx, package);
 			init.f(&exporter);
+			return package;
 		}
 
-	try_import_dynamic_library_for_module(dir, ctx, module);
+	// dll?
+	try_import_dynamic_library_for_package(package, ctx);
+	return package;
 }
 
-
-shared<Module> Context::load_module(const Path &filename, bool just_analyse) {
+shared<Module> Context::load_module(const Path& filename, bool just_analyse) {
 	//msg_write("loading " + filename.str());
 
 	auto _filename = absolute_module_path(filename);
@@ -151,32 +163,32 @@ shared<Module> Context::load_module(const Path &filename, bool just_analyse) {
 			return ps;
 	
 	// load
-	auto s = create_empty_module(filename);
+	auto module = create_empty_module(filename);
 	if (!just_analyse)
-		try_initiate_package_for_module(_filename, this, s);
-	s->load(filename, just_analyse);
+		get_package_containing_module(module.get());
+	module->load(filename, just_analyse);
 
 	// store module in database
-	public_modules.add(s);
-	return s;
+	public_modules.add(module);
+	return module;
 }
 
-shared<Module> Context::create_module_for_source(const string &buffer, bool just_analyse) {
-    auto s = create_empty_module("<from-source>");
-	s->just_analyse = just_analyse;
-	s->filename = config.default_filename;
-	s->tree->parser = new Parser(s->tree.get());
-	s->tree->default_import();
-	s->tree->parser->parse_buffer(buffer, just_analyse);
+shared<Module> Context::create_module_for_source(const string& source, bool just_analyse) {
+    auto module = create_empty_module("<from-source>");
+	module->just_analyse = just_analyse;
+	module->filename = config.default_filename;
+	module->tree->parser = new Parser(module->tree.get());
+	module->tree->default_import();
+	module->tree->parser->parse_buffer(source, just_analyse);
 
 	if (!just_analyse)
-		Compiler::compile(s.get());
+		Compiler::compile(module.get());
 
-	return s;
+	return module;
 }
 
 shared<Module> Context::create_empty_module(const Path &filename) {
-	shared<Module> s = new Module(this, filename);
+	shared s = new Module(this, filename);
     return s;
 }
 
@@ -197,6 +209,7 @@ void Context::execute_single_command(const string &cmd) {
 	//msg_write("command: " + cmd);
 
     auto s = create_empty_module("<command-line>");
+	loading_module_stack.add(s);
 	auto tree = s->tree.get();
 	tree->default_import();
 	auto parser = new Parser(tree);
@@ -209,9 +222,9 @@ void Context::execute_single_command(const string &cmd) {
 		return;
 	}
 	
-	for (auto p: internal_packages)
-		if (!p->used_by_default)
-			tree->import_data_selective(p->base_class(), nullptr, nullptr, nullptr, str(p->filename), -1);
+	for (auto p: weak(internal_packages))
+		if (!p->auto_import)
+			tree->import_data_selective(p->main_module->base_class(), nullptr, nullptr, nullptr, str(p->main_module->filename), -1);
 
 // analyse syntax
 

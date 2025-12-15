@@ -28,5 +28,5 @@ func test_class(p: Module, c: Class)
 		test_class(p, cc)
 func main()
 	for p in default_context.packages
-		for c in p.classes()
-			test_class(p, c)
+		for c in p.main_module.classes()
+			test_class(p.main_module, c)

@@ -71,9 +71,9 @@ Module *link_most_likely_internal_lib_module(Context *context, const string &nam
 	auto names = name.sub_ref(1).replace(":", ".").explode(".");
 
 	for (auto p: weak(context->internal_packages))
-		if (str(p->filename) == names[0])
-			return p;
-	return context->internal_packages[0].get(); // base
+		if (str(p->main_module->filename) == names[0])
+			return p->main_module.get();
+	return context->internal_packages[0]->main_module.get(); // base
 }
 
 // program variables - specific to the surrounding program, can't always be there...
@@ -165,9 +165,9 @@ int ExternalLinkData::process_class_num_virtuals(const string &class_name, int n
 
 
 
-Exporter::Exporter(Context* _ctx, Module* _module) {
+Exporter::Exporter(Context* _ctx, Package* _package) {
 	ctx = _ctx;
-	module = _module;
+	package = _package;
 }
 Exporter::~Exporter() = default;
 void Exporter::declare_class_size(const string& name, int size) {

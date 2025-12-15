@@ -398,8 +398,8 @@ void SIAddPackageBase(Context *c) {
 	TypeNoValueError    = add_type  ("NoValueError", sizeof(KabaException));
 
 	// type aliases
-	cur_package->tree->base_class->type_aliases.add({"int", TypeInt32});
-	cur_package->tree->base_class->type_aliases.add({"float", TypeFloat32});
+	cur_package_module->tree->base_class->type_aliases.add({"int", TypeInt32});
+	cur_package_module->tree->base_class->type_aliases.add({"float", TypeFloat32});
 
 
 

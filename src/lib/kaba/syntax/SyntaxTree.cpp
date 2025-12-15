@@ -100,9 +100,9 @@ SyntaxTree::SyntaxTree(Module *_module) {
 }
 
 void SyntaxTree::default_import() {
-	for (auto p: module->context->internal_packages)
-		if (p->used_by_default)
-			import_data_all(p->base_class(), -1);
+	for (auto p: weak(module->context->internal_packages))
+		if (p->auto_import)
+			import_data_all(p->main_module->base_class(), -1);
 }
 
 void SyntaxTree::digest() {

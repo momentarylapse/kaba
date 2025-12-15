@@ -16,7 +16,7 @@
 namespace kaba {
 
 
-extern Module *cur_package;
+extern Module *cur_package_module;
 extern const Class *TypeFutureT;
 extern const Class *TypePromiseT;
 extern const Class* TypeCallback;
@@ -98,8 +98,8 @@ void lib_create_future(const Class *tt, const Class *pp, const Class *t_cb) {
 			func_add_param("cb", t_cb);
 			func_add_param("cb_fail", TypeCallback);
 
-	cur_package->context->template_manager->add_explicit_class_instance(
-			cur_package->tree.get(), tt, TypeFutureT, {pp}, 0);
+	cur_package_module->context->template_manager->add_explicit_class_instance(
+			cur_package_module->tree.get(), tt, TypeFutureT, {pp}, 0);
 }
 
 template<class T>
@@ -121,8 +121,8 @@ void lib_create_promise(const Class *tt, const Class *pp, const Class *tfut) {
 	}
 	class_add_func("fail", TypeVoid, &KabaPromiseX<T>::fail);
 
-	cur_package->context->template_manager->add_explicit_class_instance(
-			cur_package->tree.get(), tt, TypePromiseT, {pp}, 0);
+	cur_package_module->context->template_manager->add_explicit_class_instance(
+			cur_package_module->tree.get(), tt, TypePromiseT, {pp}, 0);
 }
 
 }

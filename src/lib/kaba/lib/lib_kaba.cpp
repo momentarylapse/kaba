@@ -67,6 +67,18 @@ public:
 	}
 };
 
+extern Array<shared<Module>> loading_module_stack;
+Package* get_package_containing_module(Module* m);
+
+Module* get_current_module() {
+	return loading_module_stack.back().get();
+}
+
+Package* get_current_package() {
+	auto m = get_current_module();
+	return get_package_containing_module(m);
+}
+
 void SIAddPackageKaba(Context *c) {
 	add_internal_package(c, "kaba");
 
@@ -106,10 +118,15 @@ void SIAddPackageKaba(Context *c) {
 	lib_create_list<shared<Module>>(TypeModuleSharedList);
 	lib_create_list<Module*>(TypeModuleRefList);
 
+	auto TypePackage = add_type  ("Package", sizeof(Package));
+	auto TypePackageP = add_type_p_raw(TypePackage);
+	auto TypePackageRef = add_type_ref(TypePackage);
+	auto TypePackageRefList = add_type_list(TypePackageRef);
+	lib_create_list<Package*>(TypePackageRefList);
+
 	auto TypeContext = add_type  ("Context", sizeof(Context));
 	auto TypeContextRef = add_type_ref(TypeContext);
 	auto TypeContextXfer = add_type_p_xfer(TypeContext);
-
 	
 	auto TypeClassElement = add_type("ClassElement", sizeof(ClassElement));
 	auto TypeClassElementList = add_type_list(TypeClassElement);
@@ -206,9 +223,15 @@ void SIAddPackageKaba(Context *c) {
 		class_add_element("name", TypeString, &Constant::name);
 		class_add_element("type", TypeClassRef, &Constant::type);
 
+	add_class(TypePackage);
+		class_add_element("name", TypeString, &Package::name);
+		class_add_element("directory", TypePath, &Package::directory);
+		class_add_element("main_module", TypeModuleRef, &Package::main_module);
+		class_add_element("auto_import", TypeBool, &Package::auto_import);
+		class_add_func("data_directory", TypePath, &Package::data_directory);
+
 	add_class(TypeModule);
 		class_add_element("name", TypeString, &Module::filename);
-		class_add_element("used_by_default", TypeBool, &Module::used_by_default);
 		class_add_element(Identifier::SharedCount, TypeInt32, &Module::_pointer_ref_counter);
 		class_add_func("classes", TypeClassRefList, &Module::classes, Flags::Pure);
 		class_add_func("functions", TypeFunctionRefList, &Module::functions, Flags::Pure);
@@ -230,7 +253,7 @@ void SIAddPackageKaba(Context *c) {
 		class_add_element("max_params", TypeInt32, &SpecialFunction::max_params);
 
 	add_class(TypeContext);
-		class_add_element("packages", TypeModuleRefList, &Context::internal_packages);
+		class_add_element("packages", TypePackageRefList, &Context::internal_packages);
 		class_add_func(Identifier::func::Delete, TypeVoid, &Context::__delete__, Flags::Mutable);
 		class_add_func("load_module", TypeModuleShared, &KabaContext::__load_module__, Flags::RaisesExceptions | Flags::Mutable);
 			func_add_param("filename", TypePath);
@@ -253,6 +276,9 @@ void SIAddPackageKaba(Context *c) {
 
 	add_func("link_name", TypeString, &function_link_name, Flags::Static);
 		func_add_param("f", TypeFunction);
+
+	add_func("this_module", TypeModuleRef, &get_current_module, Flags::Static | Flags::Pure);
+	add_func("this_package", TypePackageP, &get_current_package, Flags::Static | Flags::Pure);
 
 	add_ext_var("default_context", TypeContextRef, (void*)&default_context);
 	add_ext_var("statements", TypeStatementRefList, (void*)&Statements);

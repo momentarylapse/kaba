@@ -273,6 +273,9 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 		} else if (return_type == TypeFloat32) {
 			call0<float>(ff, ret, param);
 			return true;
+		} else if (return_type->is_some_pointer()) {
+			call0<void*>(ff, ret, param);
+			return true;
 		} else if (return_type->uses_return_by_memory()) {
 			call0<CBR>(ff, ret, param);
 			return true;

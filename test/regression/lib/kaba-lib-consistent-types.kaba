@@ -19,8 +19,8 @@ func test_class(p: Module, c: Class)
 
 func main()
 	for p in default_context.packages
-		for i=>c in p.classes()
+		for i=>c in p.main_module.classes()
 			if not c
 				print("MISSING: class #{{i}} in {{p.name}}")
 				continue
-			test_class(p, c)
+			test_class(p.main_module, c)

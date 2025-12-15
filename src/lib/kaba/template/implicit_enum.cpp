@@ -13,7 +13,7 @@
 namespace kaba {
 
 extern const Class *TypeDynamicArray;
-extern Module *cur_package;
+extern Module *cur_package_module;
 
 int kaba_int_passthrough(int i);
 int op_int_add(int a, int b);
@@ -35,7 +35,7 @@ Class* TemplateClassInstantiatorEnum::declare_new_instance(SyntaxTree *tree, con
 	return c;
 }
 void TemplateClassInstantiatorEnum::add_function_headers(Class* t) {
-	cur_package = t->owner->module;
+	cur_package_module = t->owner->module;
 
 	class_add_func("from_int", t, &kaba_int_passthrough, Flags::Static | Flags::Pure);
 		func_set_inline(InlineID::Passthrough);
