@@ -18,6 +18,7 @@ namespace kaba {
 
 int get_virtual_index(void *func, const string &tname, const string &name);
 
+extern Context *_secret_lib_context_;
 
 ExternalLinkData::ExternalLinkData(Context *c) {
 	context = c;
@@ -164,10 +165,10 @@ int ExternalLinkData::process_class_num_virtuals(const string &class_name, int n
 }
 
 
-
 Exporter::Exporter(Context* _ctx, Package* _package) {
 	ctx = _ctx;
 	package = _package;
+	secret_lib_context = _secret_lib_context_;
 }
 Exporter::~Exporter() = default;
 void Exporter::declare_class_size(const string& name, int size) {

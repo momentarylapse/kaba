@@ -54,13 +54,13 @@ struct Package : Sharable<base::Empty> {
 
 class Context {
 public:
-    shared_array<Module> public_modules;
-    shared_array<Package> internal_packages;
-    Array<TypeCast> type_casts;
-    owned<TemplateManager> template_manager;
-    owned<ExternalLinkData> external;
+	shared_array<Module> public_modules;
+	shared_array<Package> internal_packages;
+	Array<TypeCast> type_casts;
+	owned<TemplateManager> template_manager;
+	owned<ExternalLinkData> external;
 
-    shared_array<Operator> global_operators;
+	shared_array<Operator> global_operators;
 
 	owned_array<Package> external_packages;
 
@@ -72,27 +72,28 @@ public:
 	Array<PackageInit> package_inits;
 	void register_package_init(const string& name, const Path& dir, std::function<void(Exporter*)> f);
 
-    Context();
-    ~Context();
+	Context();
+	~Context();
 
-    void __delete__();
-
-    void clean_up();
+	void clean_up();
 
 
-    shared<Module> load_module(const Path &filename, bool just_analyse = false);
-    shared<Module> create_module_for_source(const string &source, bool just_analyse = false);
-    shared<Module> create_empty_module(const Path &filename);
-    //void remove_module(Module *s);
-    
-    void execute_single_command(const string &cmd);
+	shared<Module> load_module(const Path &filename, bool just_analyse = false);
+	shared<Module> create_module_for_source(const string &source, bool just_analyse = false);
+	shared<Module> create_empty_module(const Path &filename);
+	//void remove_module(Module *s);
 
-    const Class *get_dynamic_type(const VirtualBase *p) const;
+	void execute_single_command(const string &cmd);
 
-    static xfer<Context> create();
+	const Class *get_dynamic_type(const VirtualBase *p) const;
+
+	// internal or already loaded
+	Package* get_package(const string& name) const;
+
+	static xfer<Context> create();
 	static Path installation_root();
 	static Path packages_root();
-};
+	};
 
 extern Context *default_context;
 

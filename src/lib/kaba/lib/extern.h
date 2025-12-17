@@ -92,6 +92,8 @@ class Exporter {
 public:
 	Context* ctx;
 	Package* package;
+	Context* secret_lib_context;
+
 	Exporter(Context* ctx, Package* package);
 	virtual ~Exporter();
 	virtual void declare_class_size(const string& name, int size);

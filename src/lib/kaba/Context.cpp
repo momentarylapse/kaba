@@ -84,10 +84,6 @@ Context::~Context() {
     clean_up();
 }
 
-void Context::__delete__() {
-	this->Context::~Context();
-}
-
 void try_import_dynamic_library_for_package(Package* p, Context* ctx) {
 	const Path dir = p->directory;
 #if HAS_LIB_DL
@@ -335,6 +331,16 @@ xfer<Context> Context::create() {
 	c->template_manager->copy_from(_secret_lib_context_->template_manager.get());
 	c->global_operators = _secret_lib_context_->global_operators;
 	return c;
+}
+
+Package *Context::get_package(const string &name) const {
+	for (auto p: weak(internal_packages))
+		if (p->name == name)
+			return p;
+	for (auto p: weak(external_packages))
+		if (p->name == name)
+			return p;
+	return nullptr;
 }
 
 Path Context::installation_root() {

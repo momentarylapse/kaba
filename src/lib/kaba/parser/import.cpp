@@ -70,6 +70,8 @@ Path import_dir_match(const Path &dir0, const string &name) {
 }
 
 Path find_installed_lib_import(const string &name) {
+	//const Path dir = Context::packages_root();
+
 	Path kaba_dir = os::app::directory_dynamic.parent() | "kaba";
 	if (os::app::directory_dynamic.basename()[0] == '.')
 		kaba_dir = os::app::directory_dynamic.parent() | ".kaba";

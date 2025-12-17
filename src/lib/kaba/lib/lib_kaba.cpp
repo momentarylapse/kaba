@@ -256,7 +256,7 @@ void SIAddPackageKaba(Context *c) {
 
 	add_class(TypeContext);
 		class_add_element("packages", TypePackageRefList, &Context::internal_packages);
-		class_add_func(Identifier::func::Delete, TypeVoid, &Context::__delete__, Flags::Mutable);
+		class_add_func(Identifier::func::Delete, TypeVoid, &generic_delete<Context>, Flags::Mutable);
 		class_add_func("load_module", TypeModuleShared, &KabaContext::__load_module__, Flags::RaisesExceptions | Flags::Mutable);
 			func_add_param("filename", TypePath);
 			func_add_param("just_analize", TypeBool);
