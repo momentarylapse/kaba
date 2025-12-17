@@ -68,11 +68,6 @@ string Exception::message() const {
 }
 
 
-Path Package::data_directory() const {
-	return os::app::directory_home | ".kaba" | name;
-}
-
-
 Path absolute_module_path(const Path &filename) {
 	if (filename.is_relative())
 		return (config.directory | filename).absolute().canonical();
@@ -134,9 +129,7 @@ Package* get_package_containing_module(Module* m) {
 	// TODO check parents...
 
 	// new package
-	auto package = new Package;
-	package->directory = dir;
-	package->name = dir.basename();
+	auto package = new Package(dir.basename(), dir);
 	ctx->external_packages.add(package);
 
 	// package init override?
@@ -150,6 +143,18 @@ Package* get_package_containing_module(Module* m) {
 	// dll?
 	try_import_dynamic_library_for_package(package, ctx);
 	return package;
+}
+
+Package::Package(const string& _name, const Path& _directory) {
+	name = _name;
+	directory = _directory;
+	directory_dynamic = Context::installation_root() | name;
+	is_installed = (directory == default_directory());
+	is_internal = directory.is_empty();
+}
+
+Path Package::default_directory() const {
+	return Context::packages_root() | name;
 }
 
 shared<Module> Context::load_module(const Path& filename, bool just_analyse) {
@@ -332,5 +337,11 @@ xfer<Context> Context::create() {
 	return c;
 }
 
+Path Context::installation_root() {
+	return os::app::directory_home | ".kaba";
+}
 
+Path Context::packages_root() {
+	return installation_root() | "packages";
+}
 }

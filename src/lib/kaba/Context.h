@@ -40,12 +40,16 @@ struct LinkerException : Exception{};
 struct LinkerException : Exception{};*/
 
 struct Package : Sharable<base::Empty> {
+	Package(const string& name, const Path& directory);
 	string name;
 	Path directory;
+	Path directory_dynamic;
+	bool is_installed;
+	bool is_internal;
 	owned<ExternalLinkData> external;
 	shared<Module> main_module;
 	bool auto_import = false;
-	Path data_directory() const;
+	Path default_directory() const;
 };
 
 class Context {
@@ -86,6 +90,8 @@ public:
     const Class *get_dynamic_type(const VirtualBase *p) const;
 
     static xfer<Context> create();
+	static Path installation_root();
+	static Path packages_root();
 };
 
 extern Context *default_context;

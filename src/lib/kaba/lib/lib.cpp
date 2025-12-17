@@ -142,8 +142,7 @@ void add_internal_package(Context* c, const string& name, Flags flags) {
 		}
 
 	// new
-	shared p = new Package;
-	p->name = name;
+	shared p = new Package(name, Path::EMPTY);
 	p->auto_import = flags_has(flags, Flags::AutoImport);
 	shared s = c->create_empty_module(name);
 	s->tree->base_class->name = name;

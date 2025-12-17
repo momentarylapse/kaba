@@ -226,9 +226,11 @@ void SIAddPackageKaba(Context *c) {
 	add_class(TypePackage);
 		class_add_element("name", TypeString, &Package::name);
 		class_add_element("directory", TypePath, &Package::directory);
+		class_add_element("directory_dynamic", TypePath, &Package::directory_dynamic);
+		class_add_element("is_installed", TypeBool, &Package::is_installed);
+		class_add_element("is_internal", TypeBool, &Package::is_internal);
 		class_add_element("main_module", TypeModuleRef, &Package::main_module);
 		class_add_element("auto_import", TypeBool, &Package::auto_import);
-		class_add_func("data_directory", TypePath, &Package::data_directory);
 
 	add_class(TypeModule);
 		class_add_element("name", TypeString, &Module::filename);
@@ -279,6 +281,8 @@ void SIAddPackageKaba(Context *c) {
 
 	add_func("this_module", TypeModuleRef, &get_current_module, Flags::Static | Flags::Pure);
 	add_func("this_package", TypePackageP, &get_current_package, Flags::Static | Flags::Pure);
+	add_func("install_root", TypePath, &Context::installation_root, Flags::Static | Flags::Pure);
+	add_func("packages_root", TypePath, &Context::packages_root, Flags::Static | Flags::Pure);
 
 	add_ext_var("default_context", TypeContextRef, (void*)&default_context);
 	add_ext_var("statements", TypeStatementRefList, (void*)&Statements);
