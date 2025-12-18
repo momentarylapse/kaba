@@ -12,6 +12,7 @@
 #include "../../base/base.h"
 #include "../../base/pointer.h"
 //#include "../lib/common.h"
+#include "Class.h"
 #include "Flags.h"
 
 namespace kaba {
@@ -30,7 +31,6 @@ class SpecialFunction;
 enum class StatementID;
 enum class SpecialFunctionID;
 enum class InlineID;
-extern const Class* TypeVoid;
 
 
 enum class NodeKind {
@@ -165,9 +165,9 @@ bool node_is_member_function_with_instance(shared<Node> n);
 bool is_type_tuple(const shared<Node> n);
 Array<const Class*> class_tuple_extract_classes(const shared<Node> n);
 
-shared<Node> add_node_statement(StatementID id, int token_id = -1, const Class *type = TypeVoid);//, const shared_array<Node> &params);
-shared<Node> add_node_special_function_call(SpecialFunctionID id, int token_id = -1, const Class *type = TypeVoid);
-shared<Node> add_node_special_function_name(SpecialFunctionID id, int token_id = -1, const Class *type = TypeVoid);
+shared<Node> add_node_statement(StatementID id, int token_id = -1, const Class *type = common_types._void);//, const shared_array<Node> &params);
+shared<Node> add_node_special_function_call(SpecialFunctionID id, int token_id = -1, const Class *type = common_types._void);
+shared<Node> add_node_special_function_name(SpecialFunctionID id, int token_id = -1, const Class *type = common_types._void);
 shared<Node> add_node_member_call(const Function *f, const shared<Node> inst, int token_id = -1, const shared_array<Node> &params = {}, bool force_non_virtual = false);
 shared<Node> add_node_func_name(const Function *f, int token_id = -1);
 shared<Node> add_node_class(const Class *c, int token_id = -1);

@@ -24,16 +24,13 @@ void crash() {
 	*p = 4;
 }
 
-extern const Class *TypeStringAutoCast;
-extern const Class *TypeSpecialFunctionRef;
-
 
 
 
 
 #if 0
 bool is_function_pointer(const Class *c) {
-	if (c ==  TypeFunctionP)
+	if (c ==  common_types.functionP)
 		return true;
 	return is_typed_function_pointer(c);
 }
@@ -87,14 +84,14 @@ void Parser::parse_buffer(const string &buffer, bool just_analyse) {
 const Class *Parser::get_constant_type(const string &str) {
 	// character '...'
 	if ((str[0] == '\'') and (str.back() == '\''))
-		return TypeUInt8;
+		return common_types.u8;
 
 	// string "..."
 	if ((str[0] == '"') and (str.back() == '"'))
-		return tree->flag_string_const_as_cstring ? TypeCString : TypeString;
+		return tree->flag_string_const_as_cstring ? common_types.cstring : common_types.string;
 
 	// numerical (int/float)
-	const Class *type = TypeInt32;
+	const Class *type = common_types.i32;
 	bool hex = (str.num > 1) and (str[0] == '0') and (str[1] == 'x');
 	char last = 0;
 	for (int ic=0;ic<str.num;ic++) {
@@ -102,28 +99,28 @@ const Class *Parser::get_constant_type(const string &str) {
 		if ((c < '0') or (c > '9')) {
 			if (hex) {
 				if ((ic >= 2) and (c < 'a') and (c > 'f'))
-					return TypeUnknown;
+					return common_types.unknown;
 			} else if (c == '.') {
-				type = TypeFloat32;
+				type = common_types.f32;
 			} else {
 				if ((ic != 0) or (c != '-')) { // allow sign
 					if ((c != 'e') and (c != 'E'))
 						if (((c != '+') and (c != '-')) or ((last != 'e') and (last != 'E')))
-							return TypeUnknown;
+							return common_types.unknown;
 				}
 			}
 		}
 		last = c;
 	}
-	if (type == TypeInt32) {
+	if (type == common_types.i32) {
 		if (hex) {
 			if (str.num == 4)
-				type = TypeUInt8;
+				type = common_types.u8;
 			if (str.num > 10)
-				type = TypeInt64;
+				type = common_types.i64;
 		} else {
 			if ((s2i2(str) >= 0x80000000) or (-s2i2(str) > 0x80000000))
-				type = TypeInt64;
+				type = common_types.i64;
 		}
 	}
 	return type;
@@ -132,22 +129,22 @@ const Class *Parser::get_constant_type(const string &str) {
 void Parser::get_constant_value(const string &str, Value &value) {
 	value.init(get_constant_type(str));
 // literal
-	if (value.type == TypeUInt8) {
+	if (value.type == common_types.u8) {
 		if (str[0] == '\'') // 'bla'
 			value.as_int() = str.unescape()[1];
 		else // 0x12
 			value.as_int() = (int)s2i2(str);
-	} else if (value.type == TypeString) {
+	} else if (value.type == common_types.string) {
 		value.as_string() = str.sub(1, -1).unescape();
-	} else if (value.type == TypeCString) {
+	} else if (value.type == common_types.cstring) {
 		strcpy((char*)value.p(), str.sub(1, -1).unescape().c_str());
-	} else if (value.type == TypeInt32) {
+	} else if (value.type == common_types.i32) {
 		value.as_int() = (int)s2i2(str);
-	} else if (value.type == TypeInt64) {
+	} else if (value.type == common_types.i64) {
 		value.as_int64() = s2i2(str);
-	} else if (value.type == TypeFloat32) {
+	} else if (value.type == common_types.f32) {
 		value.as_float() = str._float();
-	} else if (value.type == TypeFloat64) {
+	} else if (value.type == common_types.f64) {
 		value.as_float64() = str._float();
 	}
 }
@@ -184,7 +181,7 @@ void Parser::do_error_exp(const string &str, int override_token_id) {
 shared<Node> Parser::parse_abstract_operand_extension_element(shared<Node> operand) {
 	Exp.next(); // .
 
-	auto el = new Node(NodeKind::AbstractElement, 0, TypeUnknown);
+	auto el = new Node(NodeKind::AbstractElement, 0, common_types.unknown);
 	el->token_id = Exp.cur_token();
 	el->set_num_params(2);
 	el->set_param(0, operand);
@@ -193,7 +190,7 @@ shared<Node> Parser::parse_abstract_operand_extension_element(shared<Node> opera
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_definitely(shared<Node> operand) {
-	auto node = new Node(NodeKind::Definitely, 0, TypeUnknown);
+	auto node = new Node(NodeKind::Definitely, 0, common_types.unknown);
 	node->token_id = Exp.consume_token(); // "!"
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -203,7 +200,7 @@ shared<Node> Parser::parse_abstract_operand_extension_definitely(shared<Node> op
 shared<Node> Parser::parse_abstract_operand_extension_dict(shared<Node> operand) {
 	Exp.next(); // "{"
 
-	auto node = new Node(NodeKind::AbstractTypeDict, 0, TypeUnknown);
+	auto node = new Node(NodeKind::AbstractTypeDict, 0, common_types.unknown);
 	node->token_id = Exp.cur_token();
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -215,7 +212,7 @@ shared<Node> Parser::parse_abstract_operand_extension_dict(shared<Node> operand)
 shared<Node> Parser::parse_abstract_operand_extension_optional(shared<Node> operand) {
 	Exp.next(); // "?"
 
-	auto node = new Node(NodeKind::AbstractTypeOptional, 0, TypeUnknown);
+	auto node = new Node(NodeKind::AbstractTypeOptional, 0, common_types.unknown);
 	node->token_id = Exp.cur_token();
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -225,7 +222,7 @@ shared<Node> Parser::parse_abstract_operand_extension_optional(shared<Node> oper
 shared<Node> Parser::parse_abstract_operand_extension_callable(shared<Node> operand, Block *block) {
 	Exp.next(); // "->"
 
-	auto node = new Node(NodeKind::AbstractTypeCallable, 0, TypeUnknown);
+	auto node = new Node(NodeKind::AbstractTypeCallable, 0, common_types.unknown);
 	node->token_id = Exp.cur_token();
 	node->set_num_params(2);
 	node->set_param(0, operand);
@@ -234,7 +231,7 @@ shared<Node> Parser::parse_abstract_operand_extension_callable(shared<Node> oper
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_pointer(shared<Node> operand) {
-	auto node = new Node(NodeKind::AbstractTypeStar, 0, TypeUnknown);
+	auto node = new Node(NodeKind::AbstractTypeStar, 0, common_types.unknown);
 	node->token_id = Exp.consume_token(); // "*"
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -242,7 +239,7 @@ shared<Node> Parser::parse_abstract_operand_extension_pointer(shared<Node> opera
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_reference(shared<Node> operand) {
-	auto node = new Node(NodeKind::AbstractTypeReference, 0, TypeUnknown);
+	auto node = new Node(NodeKind::AbstractTypeReference, 0, common_types.unknown);
 	node->token_id = Exp.consume_token(); // "&"
 	node->set_num_params(1);
 	node->set_param(0, operand);
@@ -255,7 +252,7 @@ shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand
 
 
 	if (try_consume("]")) {
-		auto node = new Node(NodeKind::AbstractTypeList, 0, TypeUnknown, Flags::None, token0);
+		auto node = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown, Flags::None, token0);
 		node->set_num_params(1);
 		node->set_param(0, operand);
 		return node;
@@ -289,7 +286,7 @@ shared<Node> Parser::parse_abstract_operand_extension_array(shared<Node> operand
 	}
 	expect_identifier("]", "']' expected after array index");
 
-	return add_node_array(operand, index, TypeUnknown);
+	return add_node_array(operand, index, common_types.unknown);
 }
 
 shared<Node> Parser::parse_abstract_operand_extension_call(shared<Node> link, Block *block) {
@@ -297,7 +294,7 @@ shared<Node> Parser::parse_abstract_operand_extension_call(shared<Node> link, Bl
 	// parse all parameters
 	auto params = parse_abstract_call_parameters(block);
 
-	auto node = new Node(NodeKind::AbstractCall, 0, TypeUnknown, Flags::None, link->token_id);
+	auto node = new Node(NodeKind::AbstractCall, 0, common_types.unknown, Flags::None, link->token_id);
 	node->set_num_params(params.num + 1);
 	node->set_param(0, link);
 	for (auto&& [i,p]: enumerate(params))
@@ -373,9 +370,9 @@ shared<Node> Parser::parse_abstract_operand_extension(shared<Node> operand, Bloc
 	/*} else if (Exp.cur == Identifier::SHARED or Exp.cur == Identifier::OWNED) {
 		auto sub = operand;
 		if (Exp.cur == Identifier::SHARED) {
-			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, TypeUnknown);
+			operand = new Node(NodeKind::ABSTRACT_TYPE_SHARED, 0, common_types.unknown);
 		} else { //if (pre == Identifier::OWNED)
-			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, TypeUnknown);
+			operand = new Node(NodeKind::ABSTRACT_TYPE_OWNED, 0, common_types.unknown);
 		}
 		operand->token_id = Exp.consume_token();
 		operand->set_num_params(1);
@@ -441,7 +438,7 @@ shared_array<Node> Parser::parse_abstract_call_parameters(Block *block) {
 
 
 shared<Node> build_abstract_list(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::ArrayBuilder, 0, TypeUnknown);
+	auto c = new Node(NodeKind::ArrayBuilder, 0, common_types.unknown);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -449,7 +446,7 @@ shared<Node> build_abstract_list(const Array<shared<Node>> &el) {
 }
 
 shared<Node> build_abstract_dict(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::DictBuilder, 0, TypeUnknown);
+	auto c = new Node(NodeKind::DictBuilder, 0, common_types.unknown);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -457,7 +454,7 @@ shared<Node> build_abstract_dict(const Array<shared<Node>> &el) {
 }
 
 shared<Node> build_abstract_tuple(const Array<shared<Node>> &el) {
-	auto c = new Node(NodeKind::Tuple, 0, TypeUnknown);
+	auto c = new Node(NodeKind::Tuple, 0, common_types.unknown);
 	c->set_num_params(el.num);
 	for (int i=0; i<el.num; i++)
 		c->set_param(i, el[i]);
@@ -476,7 +473,7 @@ shared<Node> Parser::parse_abstract_set_builder(Block *block) {
 
 	expect_identifier("]", "] expected");
 
-	auto n = new Node(NodeKind::ArrayBuilderFor, 0, TypeUnknown);
+	auto n = new Node(NodeKind::ArrayBuilderFor, 0, common_types.unknown);
 	n->set_num_params(3);
 	n->set_param(0, n_for);
 	n->set_param(1, n_exp);
@@ -487,10 +484,10 @@ shared<Node> Parser::parse_abstract_set_builder(Block *block) {
 
 
 shared<Node> Parser::apply_format(shared<Node> n, const string &fmt) {
-	auto f = n->type->get_member_func(Identifier::func::Format, TypeString, {TypeString});
+	auto f = n->type->get_member_func(Identifier::func::Format, common_types.string, {common_types.string});
 	if (!f)
 		do_error(format("format string: no '%s.%s(string)' function found", n->type->long_name(), Identifier::func::Format), n);
-	auto *c = tree->add_constant(TypeString);
+	auto *c = tree->add_constant(common_types.string);
 	c->as_string() = fmt;
 	auto nf = add_node_call(f, n->token_id);
 	nf->set_instance(n);
@@ -511,7 +508,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 		// constant part before the next {{insert}}
 		int pe = (p0 < 0) ? s.num : p0;
 		if (pe > pos) {
-			auto *c = tree->add_constant(TypeString);
+			auto *c = tree->add_constant(common_types.string);
 			c->as_string() = s.sub(pos, pe);
 			parts.add(add_node_const(c, token_id));
 		}
@@ -553,7 +550,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 			if (fmt != "") {
 				n = apply_format(n, fmt);
 			} else {
-				n = con.check_param_link(n, TypeStringAutoCast, "", 0, 1);
+				n = con.check_param_link(n, common_types.string_auto_cast, "", 0, 1);
 			}
 			//n->show();
 			parts.add(n);
@@ -578,7 +575,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 	
 	// empty???
 	if (parts.num == 0) {
-		auto c = tree->add_constant(TypeString);
+		auto c = tree->add_constant(common_types.string);
 		return add_node_const(c, token_id);
 	}
 	
@@ -639,11 +636,11 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 		expect_identifier(")", "')' expected");
 	} else if (try_consume("&")) { // & -> address operator
 		int token = Exp.cur_token();
-		operand = parse_abstract_operand(block)->ref(TypeUnknown);
+		operand = parse_abstract_operand(block)->ref(common_types.unknown);
 		operand->token_id = token;
 	} else if (try_consume("*")) { // * -> dereference
 		int token = Exp.cur_token();
-		operand = parse_abstract_operand(block)->deref(TypeUnknown);
+		operand = parse_abstract_operand(block)->deref(common_types.unknown);
 		operand->token_id = token;
 	} else if (try_consume("[")) {
 		if (Exp.cur == "for") {
@@ -658,7 +655,7 @@ shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
 	//} else if (auto s = which_special_function(Exp.cur)) {
 	//	operand = parse_abstract_special_function(block, s);
 	} else if (auto w = which_abstract_operator(Exp.cur, OperatorFlags::UnaryRight)) { // negate/not...
-		operand = new Node(NodeKind::AbstractOperator, (int_p)w, TypeUnknown, Flags::None, Exp.cur_token());
+		operand = new Node(NodeKind::AbstractOperator, (int_p)w, common_types.unknown, Flags::None, Exp.cur_token());
 		Exp.next();
 		operand->set_num_params(1);
 		operand->set_param(0, parse_abstract_operand_greedy(block, false, 13)); // allow '*', don't allow '+'
@@ -680,7 +677,7 @@ shared<Node> Parser::parse_abstract_operator(OperatorFlags param_flags, int min_
 	if (!op or op->level < min_op_level)
 		return nullptr;
 
-	auto cmd = new Node(NodeKind::AbstractOperator, (int_p)op, TypeUnknown);
+	auto cmd = new Node(NodeKind::AbstractOperator, (int_p)op, common_types.unknown);
 	cmd->token_id = Exp.consume_token();
 
 	return cmd;
@@ -852,7 +849,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		if (try_consume(":"))
 			val_step = parse_abstract_operand_greedy(block);
 
-		auto cmd_for = add_node_statement(StatementID::ForRange, token0, TypeUnknown);
+		auto cmd_for = add_node_statement(StatementID::ForRange, token0, common_types.unknown);
 		cmd_for->set_param(0, var);
 		cmd_for->set_param(1, val0);
 		cmd_for->set_param(2, val1);
@@ -867,7 +864,7 @@ shared<Node> Parser::parse_abstract_for_header(Block *block) {
 		auto array = val0;
 
 
-		auto cmd_for = add_node_statement(StatementID::ForContainer, token0, TypeUnknown);
+		auto cmd_for = add_node_statement(StatementID::ForContainer, token0, common_types.unknown);
 		// [REF_VAR (token), KEY? (token), ARRAY, BLOCK]
 
 		cmd_for->set_param(0, var);
@@ -945,7 +942,7 @@ shared<Node> Parser::parse_abstract_statement_while(Block *block) {
 	int token0 = Exp.consume_token(); // "while"
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
-	auto cmd_while = add_node_statement(StatementID::While, token0, TypeUnknown);
+	auto cmd_while = add_node_statement(StatementID::While, token0, common_types.unknown);
 	cmd_while->set_param(0, cmd_cmp);
 
 	// ...block
@@ -963,7 +960,7 @@ shared<Node> Parser::parse_abstract_statement_match(Block *block) {
 	int token0 = Exp.consume_token(); // "match"
 	auto cmd_input = parse_abstract_operand_greedy(block);
 
-	auto cmd_match = add_node_statement(StatementID::Match, token0, TypeUnknown);
+	auto cmd_match = add_node_statement(StatementID::Match, token0, common_types.unknown);
 	cmd_match->set_param(0, cmd_input);
 
 	expect_new_line_with_indent();
@@ -985,7 +982,7 @@ shared<Node> Parser::parse_abstract_statement_match(Block *block) {
 		expect_identifier("=>", "'=>' expected after 'match' pattern");
 
 		// result
-		auto res_block = new Block(block->function, block, TypeUnknown);
+		auto res_block = new Block(block->function, block, common_types.unknown);
 		if (Exp.end_of_line()) {
 			// indented block
 
@@ -1036,7 +1033,7 @@ shared<Node> Parser::parse_abstract_statement_continue() {
 //  p[0]: value (if not void)
 shared<Node> Parser::parse_abstract_statement_return(Block *block) {
 	int token0 = Exp.consume_token(); // "return"
-	auto cmd = add_node_statement(StatementID::Return, token0, TypeUnknown);
+	auto cmd = add_node_statement(StatementID::Return, token0, common_types.unknown);
 	if (Exp.end_of_line()) {
 		cmd->set_num_params(0);
 	} else {
@@ -1058,7 +1055,7 @@ shared<Node> Parser::parse_abstract_statement_raise(Block *block) {
 	cmd->set_num_params(1);
 	cmd->set_param(0, cmd_ex);
 
-	/*if (block->function->return_type == TypeVoid) {
+	/*if (block->function->return_type == common_types._void) {
 		cmd->set_num_params(0);
 	} else {
 		auto cmd_value = CheckParamLink(GetCommand(block), block->function->return_type, Identifier::RETURN, 0);
@@ -1078,7 +1075,7 @@ shared<Node> Parser::parse_abstract_statement_raise(Block *block) {
 shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	int ind = Exp.cur_line->indent;
 	int token0 = Exp.consume_token(); // "try"
-	auto cmd_try = add_node_statement(StatementID::Try, token0, TypeUnknown);
+	auto cmd_try = add_node_statement(StatementID::Try, token0, common_types.unknown);
 	cmd_try->set_num_params(1);
 	// ...block
 	expect_new_line_with_indent();
@@ -1095,9 +1092,9 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	while (!Exp.end_of_file() and (Exp.cur == Identifier::Except) and (Exp.cur_line->indent == ind)) {
 		int token1 = Exp.consume_token(); // "except"
 
-		auto cmd_ex = add_node_statement(StatementID::Except, token1, TypeUnknown);
+		auto cmd_ex = add_node_statement(StatementID::Except, token1, common_types.unknown);
 
-		auto except_block = new Block(block->function, block, TypeUnknown);
+		auto except_block = new Block(block->function, block, common_types.unknown);
 
 		if (!Exp.end_of_line()) {
 			auto ex_type = parse_abstract_operand(block, true); // type
@@ -1168,7 +1165,7 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 
 	auto cmd_cmp = parse_abstract_operand_greedy(block);
 
-	auto cmd_if = add_node_statement(is_compiletime ? StatementID::IfCompiletime : StatementID::If, token0, TypeUnknown);
+	auto cmd_if = add_node_statement(is_compiletime ? StatementID::IfCompiletime : StatementID::If, token0, common_types.unknown);
 	cmd_if->set_param(0, cmd_cmp);
 	// ...block
 	expect_new_line_with_indent();
@@ -1184,7 +1181,7 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 		// iterative if
 		if (Exp.cur == Identifier::If) {
 			// sub-if's in a new block
-			auto cmd_block = new Block(block->function, block, TypeUnknown);
+			auto cmd_block = new Block(block->function, block, common_types.unknown);
 			cmd_if->set_param(2, cmd_block);
 			// parse the next if
 			parse_abstract_complete_command_into_block(cmd_block);
@@ -1213,7 +1210,7 @@ shared<Node> Parser::parse_abstract_statement_pass(Block *block) {
 shared<Node> Parser::parse_abstract_statement_new(Block *block) {
 	const int token0 = Exp.consume_token(); // "new"
 	const auto flags = parse_flags();
-	auto cmd = add_node_statement(StatementID::New, token0, TypeUnknown);
+	auto cmd = add_node_statement(StatementID::New, token0, common_types.unknown);
 	cmd->set_param(0, parse_abstract_operand(block));
 	flags_set(cmd->flags, flags);
 	return cmd;
@@ -1223,7 +1220,7 @@ shared<Node> Parser::parse_abstract_statement_new(Block *block) {
 //  p[0]: operand
 shared<Node> Parser::parse_abstract_statement_delete(Block *block) {
 	int token0 = Exp.consume_token(); // "del"
-	auto cmd = add_node_statement(StatementID::Delete, token0, TypeUnknown);
+	auto cmd = add_node_statement(StatementID::Delete, token0, common_types.unknown);
 	cmd->set_param(0, parse_abstract_operand(block));
 	return cmd;
 }
@@ -1288,7 +1285,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		assign->set_param(0, tuple);
 		assign->set_param(1, rhs);
 
-		auto node = new Node(NodeKind::AbstractVar, 0, TypeUnknown, flags);
+		auto node = new Node(NodeKind::AbstractVar, 0, common_types.unknown, flags);
 		node->set_num_params(3);
 		//node->set_param(0, type); // no type
 		node->set_param(1, cp_node(tuple));
@@ -1319,7 +1316,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 		assign->set_param(0, names[0]);
 		assign->set_param(1, rhs);
 
-		auto node = new Node(NodeKind::AbstractVar, 0, TypeUnknown, flags);
+		auto node = new Node(NodeKind::AbstractVar, 0, common_types.unknown, flags);
 		node->set_num_params(3);
 		node->set_param(0, type); // type
 		node->set_param(1, names[0]->shallow_copy()); // name
@@ -1331,7 +1328,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 	expect_new_line();
 
 	for (auto &n: names) {
-		auto node = new Node(NodeKind::AbstractVar, 0, TypeUnknown, flags);
+		auto node = new Node(NodeKind::AbstractVar, 0, common_types.unknown, flags);
 		node->set_num_params(2);
 		node->set_param(0, type); // type
 		node->set_param(1, n); // name
@@ -1341,7 +1338,7 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 }
 
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
-	auto f = parse_function_header(TypeUnknown, tree->base_class, Flags::Static);
+	auto f = parse_function_header(common_types.unknown, tree->base_class, Flags::Static);
 
 	// lambda body
 	if (Exp.end_of_line()) {
@@ -1362,7 +1359,7 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 		f->block->add(cmd);
 	}
 
-	auto node = add_node_statement(StatementID::Lambda, f->token_id, TypeUnknown);
+	auto node = add_node_statement(StatementID::Lambda, f->token_id, common_types.unknown);
 	node->set_num_params(1);
 	node->set_param(0, add_node_func_name(f));
 	return node;
@@ -1370,14 +1367,14 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 
 shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block) {
 	int token0 = Exp.consume_token(); // "raw_function_pointer"
-	auto node = add_node_statement(StatementID::RawFunctionPointer, token0, TypeUnknown);
+	auto node = add_node_statement(StatementID::RawFunctionPointer, token0, common_types.unknown);
 	node->set_param(0, parse_abstract_single_func_param(block));
 	return node;
 }
 
 shared<Node> Parser::parse_abstract_statement_trust_me(Block *block) {
 	[[maybe_unused]] int token0 = Exp.consume_token(); // "trust_me"
-	/*auto node = add_node_statement(StatementID::TRUST_ME, token0, TypeUnknown);
+	/*auto node = add_node_statement(StatementID::TRUST_ME, token0, common_types.unknown);
 	// ...block
 	expect_new_line_with_indent();
 	Exp.next_line();
@@ -1436,12 +1433,12 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 
 	// no call, just the name
 	if (Exp.cur != "(") {
-		auto node = add_node_special_function_name(s->id, token0, TypeSpecialFunctionRef);
+		auto node = add_node_special_function_name(s->id, token0, common_types.special_function_ref);
 		node->set_num_params(0);
 		return node;
 	}
 
-	auto node = add_node_special_function_call(s->id, token0, TypeUnknown);
+	auto node = add_node_special_function_call(s->id, token0, common_types.unknown);
 	auto params = parse_abstract_call_parameters(block);
 	node->params = params;
 	if (params.num < s->min_params or params.num > s->max_params) {
@@ -1455,7 +1452,7 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 		node->set_param(1, params[1]);
 	} else {
 		// empty string
-		node->set_param(1, add_node_const(tree->add_constant(TypeString)));
+		node->set_param(1, add_node_const(tree->add_constant(common_types.string)));
 	}*/
 	return node;
 }
@@ -1464,8 +1461,8 @@ shared<Node> Parser::parse_abstract_block(Block *parent, Block *block) {
 	int indent0 = Exp.cur_line->indent;
 
 	if (!block)
-		block = new Block(parent->function, parent, TypeUnknown);
-	block->type = TypeUnknown;
+		block = new Block(parent->function, parent, common_types.unknown);
+	block->type = common_types.unknown;
 
 	while (!Exp.end_of_file()) {
 
@@ -1549,13 +1546,13 @@ void Parser::parse_enum(Class *_namespace) {
 
 	// class name
 	int token0 = Exp.cur_token();
-	auto _class = tree->create_new_class(Exp.consume(), TypeEnumT, sizeof(int), -1, nullptr, {}, _namespace, token0);
+	auto _class = tree->create_new_class(Exp.consume(), common_types.enum_t, sizeof(int), -1, nullptr, {}, _namespace, token0);
 
 	// as shared|@noauto
 	if (try_consume(Identifier::As))
 		_class->flags = parse_flags(_class->flags);
 
-	context->template_manager->request_class_instance(tree, TypeEnumT, {_class}, token0);
+	context->template_manager->request_class_instance(tree, common_types.enum_t, {_class}, token0);
 
 	expect_new_line_with_indent();
 	Exp.next_line();
@@ -1572,7 +1569,7 @@ void Parser::parse_enum(Class *_namespace) {
 			if (try_consume("=")) {
 				expect_no_new_line();
 
-				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeInt32);
+				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), common_types.i32);
 				next_value = cv->as_const()->as_int();
 			} else {
 				// linked from host program?
@@ -1583,7 +1580,7 @@ void Parser::parse_enum(Class *_namespace) {
 			if (try_consume(Identifier::As)) {
 				expect_no_new_line();
 
-				auto cn = parse_and_eval_const(tree->root_of_all_evil->block.get(), TypeString);
+				auto cn = parse_and_eval_const(tree->root_of_all_evil->block.get(), common_types.string);
 				auto label = cn->as_const()->as_string();
 				add_enum_label(_class, c->as_int(), label);
 			}
@@ -1642,11 +1639,11 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 
 const Class* parse_class_type(const string& e) {
 	if (e == Identifier::Interface)
-		return TypeInterfaceT;
+		return common_types.interface_t;
 	if (e == Identifier::Namespace)
-		return TypeNamespaceT;
+		return common_types.namespace_t;
 	if (e == Identifier::Struct)
-		return TypeStructT;
+		return common_types.struct_t;
 	return nullptr;
 }
 
@@ -1703,7 +1700,7 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 	expect_new_line();
 
 	if (flags_has(explicit_flags, Flags::Shared)) {
-		parser_class_add_element(this, _class, Identifier::SharedCount, TypeInt32, Flags::None, offset0, _class->token_id);
+		parser_class_add_element(this, _class, Identifier::SharedCount, common_types.i32, Flags::None, offset0, _class->token_id);
 	}
 
 	return _class;
@@ -1741,7 +1738,7 @@ bool Parser::parse_class(Class *_namespace) {
 				flags_set(flags, Flags::Virtual);
 			if (_class->is_namespace())
 				flags_set(flags, Flags::Static);
-			auto f = parse_function_header(TypeVoid, _class, flags);
+			auto f = parse_function_header(common_types._void, _class, flags);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
@@ -1790,7 +1787,7 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 			for (ClassElement &e: _class->elements)
 				e.offset = external->process_class_offset(_class->cname(tree->base_class), e.name, e.offset + config.target.pointer_size);
 
-			auto el = ClassElement(Identifier::VtableVar, TypePointer, 0);
+			auto el = ClassElement(Identifier::VtableVar, common_types.pointer, 0);
 			_class->elements.insert(el, 0);
 			size += config.target.pointer_size;
 
@@ -1882,7 +1879,7 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 	});
 
 	if (cv->kind != NodeKind::Constant) {
-		//cv->show(TypeVoid);
+		//cv->show(common_types._void);
 		do_error("constant value expected, but expression can not be evaluated at compile time", cv);
 	}
 	return cv;
@@ -2098,7 +2095,7 @@ Function *Parser::parse_function_header(const Class *default_type, Class *name_s
 				f->abstract_param_types.add(parse_abstract_operand(block, true));
 			else
 				f->abstract_param_types.add(nullptr);
-			[[maybe_unused]] auto v = f->add_param(param_name, TypeUnknown, param_flags);
+			[[maybe_unused]] auto v = f->add_param(param_name, common_types.unknown, param_flags);
 
 			// default parameter?
 			if (try_consume("=")) {
@@ -2157,7 +2154,7 @@ void Parser::skip_parsing_function_body(Function *f) {
 
 void Parser::parse_abstract_function_body(Function *f) {
 	Exp.jump(f->token_id);
-	f->block->type = TypeUnknown; // abstract parsing
+	f->block->type = common_types.unknown; // abstract parsing
 
 	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
@@ -2289,13 +2286,13 @@ void Parser::parse_top_level() {
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {
-			auto f = parse_function_header(TypeVoid, tree->base_class, Flags::Static);
+			auto f = parse_function_header(common_types._void, tree->base_class, Flags::Static);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 
 		// macro
 		} else if (Exp.cur == Identifier::Macro) {
-			auto f = parse_function_header(TypeVoid, tree->base_class, Flags::Static | Flags::Macro);
+			auto f = parse_function_header(common_types._void, tree->base_class, Flags::Static | Flags::Macro);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 

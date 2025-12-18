@@ -12,11 +12,8 @@
 
 namespace kaba {
 
-extern const Class *TypeNoValueError;
-extern const Class *TypeNone;
-
 shared<Node> AutoImplementer::optional_has_value(shared<Node> node) {
-	return node->shift(node->type->param[0]->size, TypeBool);
+	return node->shift(node->type->param[0]->size, common_types._bool);
 }
 
 shared<Node> AutoImplementer::optional_data(shared<Node> node) {
@@ -235,16 +232,16 @@ void AutoImplementer::implement_optional_equal(Function *f, const Class *t) {
 
 void AutoImplementer::_implement_functions_for_optional(const Class *t) {
 	implement_optional_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
-	implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(Identifier::func::Init, TypeVoid, {TypeNone})), t);
-	implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(Identifier::func::Init, TypeVoid, {t->param[0]})), t);
+	implement_optional_constructor(prepare_auto_impl(t, t->get_member_func(Identifier::func::Init, common_types._void, {common_types.none})), t);
+	implement_optional_constructor_wrap(prepare_auto_impl(t, t->get_member_func(Identifier::func::Init, common_types._void, {t->param[0]})), t);
 	implement_optional_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-	implement_optional_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, TypeVoid, {t})), t);
-	implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, TypeVoid, {t->param[0]})), t);
-	implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, TypeVoid, {TypeNone})), t);
-	implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(Identifier::func::OptionalHasValue, TypeBool, {})), t);
-	implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("__bool__", TypeBool, {})), t);
-	implement_optional_equal(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, TypeBool, {t})), t);
-	implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, TypeBool, {t->param[0]})), t);
+	implement_optional_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {t})), t);
+	implement_optional_assign_raw(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {t->param[0]})), t);
+	implement_optional_assign_null(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {common_types.none})), t);
+	implement_optional_has_value(prepare_auto_impl(t, t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {})), t);
+	implement_optional_has_value(prepare_auto_impl(t, t->get_member_func("__bool__", common_types._bool, {})), t);
+	implement_optional_equal(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, common_types._bool, {t})), t);
+	implement_optional_equal_raw(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, common_types._bool, {t->param[0]})), t);
 }
 
 
@@ -255,26 +252,26 @@ int _make_optional_size(const Class *t) {
 
 
 Class* TemplateClassInstantiatorOptional::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "?", TypeOptionalT, _make_optional_size(params[0]), params[0]->alignment, 0, nullptr, params, token_id);
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "?", common_types.optional_t, _make_optional_size(params[0]), params[0]->alignment, 0, nullptr, params, token_id);
 }
 void TemplateClassInstantiatorOptional::add_function_headers(Class* t) {
 	if (!class_can_default_construct(t->param[0]))
 		t->owner->do_error(format("can not create an optional from type '%s', missing default constructor", t->param[0]->long_name()), t->token_id);
 
-	add_func_header(t, Identifier::func::Init, TypeVoid, {}, {}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::Init, TypeVoid, {t->param[0]}, {"value"}, nullptr, Flags::AutoCast | Flags::Mutable);
-	add_func_header(t, Identifier::func::Init, TypeVoid, {TypeNone}, {"value"}, nullptr, Flags::AutoCast | Flags::Mutable);
+	add_func_header(t, Identifier::func::Init, common_types._void, {}, {}, nullptr, Flags::Mutable);
+	add_func_header(t, Identifier::func::Init, common_types._void, {t->param[0]}, {"value"}, nullptr, Flags::AutoCast | Flags::Mutable);
+	add_func_header(t, Identifier::func::Init, common_types._void, {common_types.none}, {"value"}, nullptr, Flags::AutoCast | Flags::Mutable);
 	//if (t->param[0]->get_destructor())
-	add_func_header(t, Identifier::func::Delete, TypeVoid, {}, {}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::Assign, TypeVoid, {t}, {"other"}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::Assign, TypeVoid, {t->param[0]}, {"other"}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::Assign, TypeVoid, {TypeNone}, {"other"}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::OptionalHasValue, TypeBool, {}, {}, nullptr, Flags::Pure);
-	add_func_header(t, "__bool__", TypeBool, {}, {}, nullptr, Flags::Pure);
+	add_func_header(t, Identifier::func::Delete, common_types._void, {}, {}, nullptr, Flags::Mutable);
+	add_func_header(t, Identifier::func::Assign, common_types._void, {t}, {"other"}, nullptr, Flags::Mutable);
+	add_func_header(t, Identifier::func::Assign, common_types._void, {t->param[0]}, {"other"}, nullptr, Flags::Mutable);
+	add_func_header(t, Identifier::func::Assign, common_types._void, {common_types.none}, {"other"}, nullptr, Flags::Mutable);
+	add_func_header(t, Identifier::func::OptionalHasValue, common_types._bool, {}, {}, nullptr, Flags::Pure);
+	add_func_header(t, "__bool__", common_types._bool, {}, {}, nullptr, Flags::Pure);
 	//add_func_header(t, "_get_p", t->param[0], {}, {}, nullptr, Flags::REF);
-	if (t->param[0]->get_member_func(Identifier::func::Equal, TypeBool, {t->param[0]})) {
-		add_func_header(t, Identifier::func::Equal, TypeBool, {t}, {"other"}, nullptr, Flags::Pure);
-		add_func_header(t, Identifier::func::Equal, TypeBool, {t->param[0]}, {"other"}, nullptr, Flags::Pure);
+	if (t->param[0]->get_member_func(Identifier::func::Equal, common_types._bool, {t->param[0]})) {
+		add_func_header(t, Identifier::func::Equal, common_types._bool, {t}, {"other"}, nullptr, Flags::Pure);
+		add_func_header(t, Identifier::func::Equal, common_types._bool, {t->param[0]}, {"other"}, nullptr, Flags::Pure);
 	}
 }
 

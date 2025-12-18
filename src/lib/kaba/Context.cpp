@@ -230,13 +230,13 @@ void Context::execute_single_command(const string &cmd) {
 // analyse syntax
 
 	// create a main() function
-	Function *func = tree->add_function("--command-func--", TypeVoid, tree->base_class, Flags::Static);
+	Function *func = tree->add_function("--command-func--", common_types._void, tree->base_class, Flags::Static);
 	func->_var_size = 0; // set to -1...
 
 	parser->Exp.reset_walker();
 
 	// parse
-	func->block->type = TypeUnknown;
+	func->block->type = common_types.unknown;
 	parser->parse_abstract_complete_command_into_block(func->block.get());
 	if (config.verbose) {
 		msg_write("ABSTRACT SINGLE:");
@@ -250,7 +250,7 @@ void Context::execute_single_command(const string &cmd) {
 	auto node = func->block->params[0];
 	
 	// implicit print(...)?
-	if (node->type != TypeVoid) {
+	if (node->type != common_types._void) {
 		auto n_str = parser->con.add_converter_str(node, true);
 		auto f_print = tree->required_func_global("print");
 

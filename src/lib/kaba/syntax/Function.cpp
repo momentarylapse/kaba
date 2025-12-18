@@ -118,7 +118,7 @@ string Function::signature(const Class *ns) const {
 		r += literal_param_type[i]->cname(ns);
 	}
 	r += ")";
-	if (literal_return_type != TypeVoid)
+	if (literal_return_type != common_types._void)
 		r += " -> " + literal_return_type->cname(ns);
 	return r;
 }

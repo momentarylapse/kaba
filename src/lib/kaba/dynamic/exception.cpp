@@ -122,9 +122,9 @@ struct ExceptionBlockData {
 };
 
 inline bool ex_type_match(const Class *ex_type, const Class *catch_type) {
-	if (ex_type == TypeUnknown)
+	if (ex_type == common_types.unknown)
 		return true;
-	if (catch_type == TypeVoid)
+	if (catch_type == common_types._void)
 		return true;
 	return ex_type->is_derived_from(catch_type);
 }
@@ -194,7 +194,7 @@ const Class* _get_type(void *p, void *vtable, const Class *ns) {
 
 const Class* get_type(void *p) {
 	if (!p)
-		return TypeUnknown;
+		return common_types.unknown;
 	void *vtable = *(void**)p;
 	auto modules = default_context->public_modules;
 	for (auto p: weak(default_context->internal_packages))
@@ -204,7 +204,7 @@ const Class* get_type(void *p) {
 		if (r)
 			return r;
 	}
-	return TypeUnknown;
+	return common_types.unknown;
 }
 
 void just_die(KabaException *kaba_exception, const Array<StackFrameInfo> &trace) {
@@ -212,7 +212,7 @@ void just_die(KabaException *kaba_exception, const Array<StackFrameInfo> &trace)
 	const Class *ex_type = get_type(kaba_exception);
 	if (!kaba_exception)
 		msg_error("uncaught exception  (nil)");
-	else if (ex_type == TypeUnknown)
+	else if (ex_type == common_types.unknown)
 		msg_error("uncaught exception:  " + kaba_exception->message());
 	else
 		msg_error("uncaught " + get_type(kaba_exception)->name + ":  " + kaba_exception->message());

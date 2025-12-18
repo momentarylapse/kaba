@@ -1,3 +1,4 @@
+#include "Class.h"
 #include "../kaba.h"
 #include "../parser/Parser.h"
 #include "../dynamic/exception.h"
@@ -9,9 +10,6 @@ namespace kaba {
 //#define ScriptDebug
 
 
-extern const Class *TypeMat4;
-extern const Class *TypeVec2;
-extern const Class *TypeSpecialFunctionRef;
 
 bool is_func(shared<Node> n);
 
@@ -93,10 +91,10 @@ SyntaxTree::SyntaxTree(Module *_module) {
 	module = _module;
 	asm_meta_info = new Asm::MetaInfo(config.target.pointer_size);
 
-	base_class = new Class(TypeNamespaceT, "-base-", 0, 1, this);
+	base_class = new Class(common_types.namespace_t, "-base-", 0, 1, this);
 	_base_class = base_class;
-	implicit_symbols = new Class(TypeNamespaceT, "-implicit-", 0, 1, this);
-	root_of_all_evil = new Function("-root-", TypeVoid, base_class, Flags::Static);
+	implicit_symbols = new Class(common_types.namespace_t, "-implicit-", 0, 1, this);
+	root_of_all_evil = new Function("-root-", common_types._void, base_class, Flags::Static);
 }
 
 void SyntaxTree::default_import() {
@@ -212,7 +210,7 @@ Constant *SyntaxTree::add_constant(const Class *type, Class *name_space) {
 }
 
 Constant *SyntaxTree::add_constant_int(int value) {
-	auto *c = add_constant(TypeInt32);
+	auto *c = add_constant(common_types.i32);
 	c->as_int() = value;
 	return c;
 }
@@ -447,14 +445,14 @@ shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, c
 	// then the statements
 	/*if (auto s = Parser::which_statement(name)) {
 		//return {add_node_statement(s->id)};
-		auto n = new Node(NodeKind::STATEMENT, (int_p)s, TypeVoid);
+		auto n = new Node(NodeKind::STATEMENT, (int_p)s, common_types._void);
 		n->set_num_params(s->num_params);
 		return {n};
 	}*/
 
 	// operators
 	if (auto w = parser->which_abstract_operator(name, OperatorFlags::UnaryRight)) // negate/not...
-		return {new Node(NodeKind::AbstractOperator, (int_p)w, TypeUnknown, Flags::None, token_id)};
+		return {new Node(NodeKind::AbstractOperator, (int_p)w, common_types.unknown, Flags::None, token_id)};
 
 	// in include files (only global)...
 	links.append(global_scope.find(name, token_id));
@@ -651,12 +649,12 @@ shared<Node> SyntaxTree::conv_easyfy_shift_deref(shared<Node> c, int l) {
 	if ((c->kind == NodeKind::AddressShift) or (c->kind == NodeKind::Array)) {
 		if (c->params[0]->kind == NodeKind::Dereference) {
 			// unify 2 knots (remove 1)
-			c->show(TypeVoid);
+			c->show(common_types._void);
 			auto kind = (c->kind == NodeKind::AddressShift) ? NodeKind::DereferenceAddressShift : NodeKind::PointerAsArray;
 			auto r = new Node(kind, 0, c->type, c->flags);
 			r->set_param(0, c->params[0]->params[0]);
 			r->set_param(1, c->params[1]);
-			r->show(TypeVoid);
+			r->show(common_types._void);
 			return r;
 
 			/*auto t = c->params[0]->params[0];
@@ -702,7 +700,7 @@ void SyntaxTree::convert_call_by_reference() {
 		msg_write("ConvertCallByReference");
 	// convert functions
 	for (Function *f: functions) {
-		if (f->literal_return_type == TypeUnknown)
+		if (f->literal_return_type == common_types.unknown)
 			continue;
 
 		// parameter: array/class as reference
@@ -719,7 +717,7 @@ void SyntaxTree::convert_call_by_reference() {
 
 	// convert return...
 	for (Function *f: functions)
-		if (f->literal_return_type->uses_return_by_memory() and (f->literal_return_type != TypeUnknown))
+		if (f->literal_return_type->uses_return_by_memory() and (f->literal_return_type != common_types.unknown))
 			//convert_return_by_memory(this, f->block, f);
 			transform_block(f->block.get(), [this, f](shared<Node> n) {
 				return conv_return_by_memory(n, f);
@@ -952,15 +950,15 @@ bool node_is_executable(shared<Node> n) {
 shared<Node> SyntaxTree::conv_fake_constructors(shared<Node> n) {
 	if (n->kind != NodeKind::ConstructorAsFunction)
 		return n;
-	if ((n->type == TypeVec3) or (n->type == TypeVec2) or (n->type == TypeColor) or (n->type == TypeRect) or (n->type == TypeComplex)) {
+	if ((n->type == common_types.vec3) or (n->type == common_types.vec2) or (n->type == common_types.color) or (n->type == common_types.rect) or (n->type == common_types.complex)) {
 		return make_constructor_static(n, "_create");
 	}
-	if (n->type == TypeQuaternion) {
-		if (n->params.num == 2 and n->params[1]->type == TypeVec3)
+	if (n->type == common_types.quaternion) {
+		if (n->params.num == 2 and n->params[1]->type == common_types.vec3)
 			return make_constructor_static(n, "_rotation_v");
-		if (n->params.num == 3 and n->params[1]->type == TypeVec3)
+		if (n->params.num == 3 and n->params[1]->type == common_types.vec3)
 			return make_constructor_static(n, "_rotation_a");
-		if (n->params.num == 2 and n->params[1]->type == TypeMat4)
+		if (n->params.num == 2 and n->params[1]->type == common_types.mat4)
 			return make_constructor_static(n, "_rotation_m");
 	}
 	return n;
@@ -968,10 +966,10 @@ shared<Node> SyntaxTree::conv_fake_constructors(shared<Node> n) {
 
 shared<Node> SyntaxTree::conv_class_and_func_to_const(shared<Node> n) {
 	if (n->kind == NodeKind::Class) {
-		return add_node_const(add_constant_pointer(TypeClassRef, n->as_class()));
+		return add_node_const(add_constant_pointer(common_types.class_ref, n->as_class()));
 	}
 	if (n->kind == NodeKind::SpecialFunctionName) {
-		return add_node_const(add_constant_pointer(TypeSpecialFunctionRef, n->as_special_function()));
+		return add_node_const(add_constant_pointer(common_types.special_function_ref, n->as_special_function()));
 	}
 	return n;
 }
@@ -1003,7 +1001,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return dummy;
 	} else if (n->kind == NodeKind::ArrayBuilder) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_member_func("add", TypeVoid, {t_el});
+		Function *cf = n->type->get_member_func("add", common_types._void, {t_el});
 		if (!cf) {
 			msg_error("AAA");
 			n->show();
@@ -1027,7 +1025,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		return array;
 	} else if (n->kind == NodeKind::DictBuilder) {
 		auto *t_el = n->type->get_array_element();
-		Function *cf = n->type->get_member_func("__set__", TypeVoid, {TypeString, t_el});
+		Function *cf = n->type->get_member_func("__set__", common_types._void, {common_types.string, t_el});
 		if (!cf)
 			do_error(format("[..]: can not find '%s.__set__(string,%s)' function???", n->type->long_name(), t_el->long_name()));
 
@@ -1070,7 +1068,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 
 		// ...for_var += 1
 		shared<Node> cmd_inc;
-		if (var->type == TypeInt32) {
+		if (var->type == common_types.i32) {
 			if (step->kind == NodeKind::Constant and step->as_const()->as_int() == 1)
 				cmd_inc = add_node_operator_by_inline(InlineID::Int32Increase, var, nullptr);
 			else
@@ -1109,7 +1107,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		if (array->type->is_dict()) {
 			static int for_index_count = 0;
 			string index_name = format("-for_dict_index_%d-", for_index_count++);
-			index = add_node_local(b->add_var(index_name, TypeInt32));
+			index = add_node_local(b->add_var(index_name, common_types.i32));
 		}
 
 
@@ -1123,7 +1121,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		shared<Node> val1;
 		if (array->type->usable_as_list() or array->type->is_dict()) {
 			// array.num
-			val1 = array->shift(config.target.pointer_size, TypeInt32, array->token_id);
+			val1 = array->shift(config.target.pointer_size, common_types.i32, array->token_id);
 		} else {
 			// array.size
 			val1 = add_node_const(add_constant_int(array->type->array_length));
@@ -1141,20 +1139,20 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		if (array->type->is_dict()) {
 
 			auto row = add_node_operator_by_inline(__get_pointer_add_int(),
-					array->change_type(TypeReference),
+					array->change_type(common_types.reference),
 					add_node_operator_by_inline(InlineID::Int32Multiply,
 							index,
 							add_node_const(add_constant_int(dict_row_size(array->type->param[0])))),
 					n->token_id,
-					TypeReference)->deref();
+					common_types.reference)->deref();
 
 
 			// &for_var = &row.value
-			auto cmd_var_assign = add_node_operator_by_inline(InlineID::PointerAssign, var, row->shift(TypeString->size, array->type->param[0])->ref(this));
+			auto cmd_var_assign = add_node_operator_by_inline(InlineID::PointerAssign, var, row->shift(common_types.string->size, array->type->param[0])->ref(this));
 			block->params.insert(cmd_var_assign, 0);
 
 			// &for_var = &row.value
-			auto cmd_key_assign = add_node_operator_by_inline(InlineID::PointerAssign, key, row->change_type(TypeString)->ref(this));
+			auto cmd_key_assign = add_node_operator_by_inline(InlineID::PointerAssign, key, row->change_type(common_types.string)->ref(this));
 			block->params.insert(cmd_key_assign, 0);
 		} else {
 
@@ -1242,7 +1240,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		// only extract explicit raw_function_pointer()
 		// skip implicit from callable...
 		if (n->params[0]->kind == NodeKind::Constant) {
-			n->params[0]->as_const()->type = TypeFunctionCodeRef;
+			n->params[0]->as_const()->type = common_types.function_code_ref;
 			return n->params[0];
 		}
 	}
@@ -1251,9 +1249,9 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 	if (false and is_func(n)) {
 		auto f = n->as_func();
 		for (int i=0; i<f->num_params; i++)
-			if (f->literal_param_type[i] == TypeDynamic) {
+			if (f->literal_param_type[i] == common_types.dynamic) {
 				msg_error("conv dyn!");
-				auto c = add_constant(TypeClassRef);
+				auto c = add_constant(common_types.class_ref);
 				c->as_int64() = (int64)(int_p)n->params[i]->type;
 				n->params.insert(add_node_const(c), i+1);
 				n->show(base_class);

@@ -169,7 +169,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::AbstractOperator)
 		return as_abstract_op()->name;
 	if (kind == NodeKind::Block)
-		return (type == TypeVoid) ? "" : t; //p2s(as_block());
+		return (type == common_types._void) ? "" : t; //p2s(as_block());
 	if (kind == NodeKind::AddressShift)
 		return ::str(link_no) + t;
 	if (kind == NodeKind::Array)
@@ -443,7 +443,7 @@ shared<Node> add_node_const(const Constant *c, int token_id) {
 }
 
 /*shared<Node> add_node_block(Block *b) {
-	return new Node(NodeKind::BLOCK, (int_p)b, TypeVoid);
+	return new Node(NodeKind::BLOCK, (int_p)b, common_types._void);
 }*/
 
 shared<Node> add_node_statement(StatementID id, int token_id, const Class *type) {
@@ -490,11 +490,11 @@ shared<Node> add_node_call(const Function *f, int token_id) {
 }
 
 shared<Node> add_node_func_name(const Function *f, int token_id) {
-	return new Node(NodeKind::Function, (int_p)f, TypeUnknown, Flags::None, token_id);
+	return new Node(NodeKind::Function, (int_p)f, common_types.unknown, Flags::None, token_id);
 }
 
 shared<Node> add_node_class(const Class *c, int token_id) {
-	return new Node(NodeKind::Class, (int_p)c, TypeClassRef, Flags::None, token_id);
+	return new Node(NodeKind::Class, (int_p)c, common_types.class_ref, Flags::None, token_id);
 }
 
 
@@ -553,7 +553,7 @@ shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class 
 }
 
 shared<Node> add_node_slice(shared<Node> start, shared<Node> end) {
-	auto n = new Node(NodeKind::Slice, 0, TypeUnknown);
+	auto n = new Node(NodeKind::Slice, 0, common_types.unknown);
 	n->set_num_params(2);
 	n->set_param(0, start);
 	n->set_param(1, end);
@@ -580,7 +580,7 @@ shared<Node> add_node_named_parameter(SyntaxTree* tree, int name_token_id, share
 	return n;
 }
 shared<Node> add_node_token(SyntaxTree* tree, int token_id) {
-	return new Node(NodeKind::AbstractToken, (int_p)tree, TypeUnknown, Flags::None, token_id);
+	return new Node(NodeKind::AbstractToken, (int_p)tree, common_types.unknown, Flags::None, token_id);
 }
 
 shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, int token_id, const Class *override_type) {

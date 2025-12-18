@@ -57,7 +57,7 @@ void AutoImplementer::implement_array_assign(Function *f, const Class *t) {
 	//    el = other[i]
 
 	auto *v_el = f->block->add_var("el", tree->request_implicit_class_reference(t->get_array_element(), -1));
-	auto *v_i = f->block->add_var("i", TypeInt32);
+	auto *v_i = f->block->add_var("i", common_types.i32);
 
 	Block *b = new Block(f, f->block.get());
 
@@ -84,20 +84,20 @@ void AutoImplementer::_implement_functions_for_array(const Class *t) {
 
 
 Class* TemplateClassInstantiatorArray::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[" + i2s(array_size) + "]", TypeArrayT, params[0]->size * array_size, params[0]->alignment, array_size, nullptr, params, token_id);
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[" + i2s(array_size) + "]", common_types.array_t, params[0]->size * array_size, params[0]->alignment, array_size, nullptr, params, token_id);
 }
 void TemplateClassInstantiatorArray::add_function_headers(Class* c) {
 	if (!class_can_default_construct(c->param[0]))
 		c->owner->do_error(format("can not create an array from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
 
 	if (c->param[0]->needs_constructor() and class_can_default_construct(c->param[0]))
-		add_func_header(c, Identifier::func::Init, TypeVoid, {}, {}, nullptr, Flags::Mutable);
+		add_func_header(c, Identifier::func::Init, common_types._void, {}, {}, nullptr, Flags::Mutable);
 	if (c->param[0]->needs_destructor() and class_can_destruct(c->param[0]))
-		add_func_header(c, Identifier::func::Delete, TypeVoid, {}, {}, nullptr, Flags::Mutable);
+		add_func_header(c, Identifier::func::Delete, common_types._void, {}, {}, nullptr, Flags::Mutable);
 	if (class_can_assign(c->param[0]))
-		add_func_header(c, Identifier::func::Assign, TypeVoid, {c}, {"other"}, nullptr, Flags::Mutable);
+		add_func_header(c, Identifier::func::Assign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 	if (class_can_equal(c->param[0]) and false) // TODO
-		add_func_header(c, Identifier::func::Equal, TypeBool, {c}, {"other"}, nullptr, Flags::Pure);
+		add_func_header(c, Identifier::func::Equal, common_types._bool, {c}, {"other"}, nullptr, Flags::Pure);
 }
 
 

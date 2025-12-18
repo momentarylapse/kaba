@@ -12,12 +12,10 @@
 
 namespace kaba {
 
-extern const Class *TypeVoid;
-
 // {...}-block
 class Block : public Node {
 public:
-	Block(Function *f, Block *parent, const Class *type = TypeVoid);
+	Block(Function *f, Block *parent, const Class *type = common_types._void);
 	Array<Variable*> vars;
 	Function *function;
 	Block *parent;

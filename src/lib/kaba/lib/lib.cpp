@@ -26,82 +26,6 @@ namespace kaba {
 //                                             types                                              //
 //------------------------------------------------------------------------------------------------//
 
-const Class *TypeUnknown;
-const Class *TypeReg128;
-const Class *TypeReg64;
-const Class *TypeReg32;
-const Class *TypeReg16;
-const Class *TypeReg8;
-const Class *TypeVoid;
-const Class *TypePointer;
-const Class *TypeReference;
-const Class *TypeNone; // nil
-const Class *TypeObject;
-const Class *TypeObjectP;
-const Class *TypeBool;
-const Class *TypeInt8;
-const Class *TypeUInt8;
-const Class *TypeInt16;
-const Class *TypeUInt16;
-const Class *TypeInt32;
-const Class *TypeInt64;
-const Class *TypeFloat32;
-const Class *TypeFloat64;
-const Class *TypeString = nullptr;
-const Class *TypeStringAutoCast;
-const Class *TypeCString;
-const Class *TypeBytes = nullptr;
-
-const Class *TypeVec3;
-const Class *TypeRect;
-const Class *TypeColor;
-const Class *TypeQuaternion;
-const Class *TypeAny = nullptr;
-const Class *TypeAnyList;
-const Class *TypeAnyDict;
- // internal:
-const Class *TypeDynamic;
-const Class *TypeDynamicArray;
-const Class *TypeDictBase;
-const Class *TypeCallableBase;
-const Class *TypeSharedPointer;
-const Class *TypePointerList;
-const Class *TypeBoolList;
-const Class *TypeInt32P;
-const Class *TypeInt32List;
-const Class *TypeInt32Dict;
-const Class *TypeFloat32P;
-const Class *TypeFloat32List;
-const Class *TypeFloat32Dict;
-const Class *TypeFloat64List;
-const Class *TypeComplex;
-const Class *TypeComplexList;
-const Class *TypeStringList;
-const Class *TypeStringDict;
-const Class *TypeVec2;
-const Class *TypeVec2List;
-const Class *TypeVec3List;
-const Class *TypeMat4;
-const Class *TypePlane;
-const Class *TypePlaneList;
-const Class *TypeColorList;
-const Class *TypeMat3;
-const Class *TypeDate;
-const Class *TypeImage;
-
-const Class *TypeException;
-const Class *TypeExceptionXfer;
-const Class *TypeNoValueError;
-
-const Class *TypeClass;
-const Class *TypeClassRef;
-const Class *TypeFunction;
-const Class *TypeFunctionRef;
-const Class *TypeFunctionCode;
-const Class *TypeFunctionCodeRef;
-const Class *TypeSpecialFunction;
-const Class *TypeSpecialFunctionRef;
-
 Package* cur_package = nullptr;
 Module* cur_package_module = nullptr;
 
@@ -184,107 +108,94 @@ const Class *add_class_template(const string &name, const Array<string>& params,
 	return t;
 }
 
-extern const Class *TypeRawT;
-extern const Class *TypeSharedT;
-extern const Class *TypeSharedNotNullT;
-extern const Class *TypeOwnedT;
-extern const Class *TypeXferT;
-extern const Class *TypeReferenceT;
-extern const Class *TypeOptionalT;
-extern const Class *TypeArrayT;
-extern const Class *TypeListT;
-extern const Class *TypeDictT;
-extern const Class *TypeFutureT;
-extern const Class *TypeCallableFPT;
-
 const Class *add_type_p_raw(const Class *sub_type) {
 	//string name = format("%s[%s]", Identifier::RAW_POINTER, sub_type->name);
 	string name = sub_type->name + "*";
-	Class *t = new Class(TypeRawT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.raw_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::ForceCallByValue);
 	__add_class__(t, sub_type->name_space);
-	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, TypeRawT, {sub_type});
+	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, common_types.raw_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_ref(const Class *sub_type) {
 	string name = sub_type->name + "&";
-	Class *t = new Class(TypeReferenceT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.reference_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::ForceCallByValue);
 	__add_class__(t, sub_type->name_space);
-	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, TypeReferenceT, {sub_type});
+	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, common_types.reference_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_p_owned(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::Owned, sub_type->name);
-	Class *t = new Class(TypeOwnedT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.owned_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
-	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, TypeOwnedT, {sub_type});
+	cur_package_module->context->template_manager->add_explicit_class_instance(cur_package_module->tree.get(), t, common_types.owned_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_p_shared(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::Shared, sub_type->name);
-	Class *t = new Class(TypeSharedT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.shared_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeSharedT, {sub_type});
+			t, common_types.shared_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_p_shared_not_null(const Class *sub_type) {
 	string name = format("%s![%s]", Identifier::Shared, sub_type->name);
-	Class *t = new Class(TypeSharedNotNullT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.shared_not_null_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeSharedNotNullT, {sub_type});
+			t, common_types.shared_not_null_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_p_xfer(const Class *sub_type) {
 	string name = format("%s[%s]", Identifier::Xfer, sub_type->name);
-	Class *t = new Class(TypeXferT, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.xfer_t, name, config.target.pointer_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	flags_set(t->flags, Flags::ForceCallByValue);
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeXferT, {sub_type});
+			t, common_types.xfer_t, {sub_type});
 	return t;
 }
 
 // fixed array
 const Class *add_type_array(const Class *sub_type, int array_length) {
 	string name = sub_type->name + "[" + i2s(array_length) + "]";
-	Class *t = new Class(TypeArrayT, name, sub_type->size * array_length, sub_type->alignment, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.array_t, name, sub_type->size * array_length, sub_type->alignment, cur_package_module->tree.get(), nullptr, {sub_type});
 	t->array_length = array_length;
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeArrayT, {sub_type}, array_length);
+			t, common_types.array_t, {sub_type}, array_length);
 	return t;
 }
 
 // dynamic array
 const Class *add_type_list(const Class *sub_type) {
-	auto t = cur_package_module->context->template_manager->declare_new_class(cur_package_module->tree.get(), TypeListT, {sub_type}, 0, -1);
+	auto t = cur_package_module->context->template_manager->declare_new_class(cur_package_module->tree.get(), common_types.list_t, {sub_type}, 0, -1);
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeListT, {sub_type});
+			t, common_types.list_t, {sub_type});
 	return t;
 }
 
 // dict
 const Class *add_type_dict(const Class *sub_type) {
 	string name = sub_type->name + "{}";
-	Class *t = new Class(TypeDictT, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.dict_t, name, config.target.dynamic_array_size, config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeDictT, {sub_type});
+			t, common_types.dict_t, {sub_type});
 	return t;
 }
 
@@ -296,7 +207,7 @@ void capture_implicit_type(const Class *_t, const string &name) {
 
 // enum
 const Class *add_type_enum(const string &name, const Class *_namespace) {
-	Class *t = new Class(TypeEnumT, name, sizeof(int), sizeof(int), cur_package_module->tree.get());
+	Class *t = new Class(common_types.enum_t, name, sizeof(int), sizeof(int), cur_package_module->tree.get());
 	flags_set(t->flags, Flags::ForceCallByValue);
 	__add_class__(t, _namespace);
 	return t;
@@ -306,21 +217,21 @@ const Class *add_type_enum(const string &name, const Class *_namespace) {
 
 const Class *add_type_optional(const Class *sub_type) {
 	string name = sub_type->name + "?";
-	Class *t = new Class(TypeOptionalT, name, _make_optional_size(sub_type), sub_type->alignment, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.optional_t, name, _make_optional_size(sub_type), sub_type->alignment, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeOptionalT, {sub_type});
+			t, common_types.optional_t, {sub_type});
 	return t;
 }
 
 const Class *add_type_future(const Class *sub_type) {
 	string name = "future[" + sub_type->name + "]";
-	Class *t = new Class(TypeFutureT, name, sizeof(void*), config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
+	Class *t = new Class(common_types.future_t, name, sizeof(void*), config.target.pointer_size, cur_package_module->tree.get(), nullptr, {sub_type});
 	__add_class__(t, sub_type->name_space);
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
-			t, TypeFutureT, {sub_type});
+			t, common_types.future_t, {sub_type});
 	return t;
 }
 
@@ -355,37 +266,37 @@ string make_callable_signature(const Array<const Class*> &param, const Class *re
 const Class *add_type_func(const Class *ret_type, const Array<const Class*> &params) {
 
 	auto params_ret = params;
-	if ((params.num == 1) and (params[0] == TypeVoid))
+	if ((params.num == 1) and (params[0] == common_types._void))
 		params_ret = {};
 	params_ret.add(ret_type);
 
 
 	string name = make_callable_signature(params, ret_type);
 
-	auto ff = cur_package_module->context->template_manager->declare_new_class(cur_package_module->tree.get(), TypeCallableFPT, params_ret, 0, -1);
+	auto ff = cur_package_module->context->template_manager->declare_new_class(cur_package_module->tree.get(), common_types.callable_fp_t, params_ret, 0, -1);
 	__add_class__(ff, cur_package_module->tree->base_class);
 
 	// simple register parameter?
 	auto ptr_param = [] (const Class *p) {
 		// ...kind of everything except float...
-		return p->is_pointer_raw() or p->uses_call_by_reference() or (p == TypeBool) or (p == TypeInt32);
+		return p->is_pointer_raw() or p->uses_call_by_reference() or (p == common_types._bool) or (p == common_types.i32);
 	};
 
 	add_class(ff);
-	if (ret_type == TypeVoid) {
+	if (ret_type == common_types._void) {
 		if (params.num == 0) {
-			class_add_func(Identifier::func::Init, TypeVoid, &KabaCallable<void()>::__init__);
-				func_add_param("fp", TypePointer);
-			class_add_func_virtual("call", TypeVoid, &KabaCallable<void()>::operator());
+			class_add_func(Identifier::func::Init, common_types._void, &KabaCallable<void()>::__init__);
+				func_add_param("fp", common_types.pointer);
+			class_add_func_virtual("call", common_types._void, &KabaCallable<void()>::operator());
 		} else if (params.num == 1 and ptr_param(params[0])) {
-			class_add_func(Identifier::func::Init, TypeVoid, &KabaCallable<void(void*)>::__init__);
-				func_add_param("fp", TypePointer);
-			class_add_func_virtual("call", TypeVoid, &KabaCallable<void(void*)>::operator());
+			class_add_func(Identifier::func::Init, common_types._void, &KabaCallable<void(void*)>::__init__);
+				func_add_param("fp", common_types.pointer);
+			class_add_func_virtual("call", common_types._void, &KabaCallable<void(void*)>::operator());
 				func_add_param("a", params[0]);
 		} else if (params.num == 2 and ptr_param(params[0]) and ptr_param(params[1])) {
-			class_add_func(Identifier::func::Init, TypeVoid, &KabaCallable<void(void*,void*)>::__init__);
-				func_add_param("fp", TypePointer);
-			class_add_func_virtual("call", TypeVoid, &KabaCallable<void(void*,void*)>::operator());
+			class_add_func(Identifier::func::Init, common_types._void, &KabaCallable<void(void*,void*)>::__init__);
+				func_add_param("fp", common_types.pointer);
+			class_add_func_virtual("call", common_types._void, &KabaCallable<void(void*,void*)>::operator());
 				func_add_param("a", params[0]);
 				func_add_param("b", params[1]);
 		} else {
@@ -445,7 +356,7 @@ void add_operator_x(OperatorID primitive_op, const Class *return_type, const Cla
 	func_set_inline(inline_index);
 	if (inline_index != InlineID::None and cur_package_module->filename.extension() == "")
 		cur_package_module->context->global_operators.add(o);
-	else if (primitive_op == OperatorID::Negative and param_type1 == TypeFloat64)
+	else if (primitive_op == OperatorID::Negative and param_type1 == common_types.f64)
 		// FIXME quick hack...
 		cur_package_module->context->global_operators.add(o);
 	else
@@ -623,10 +534,10 @@ void class_add_const(const string &name, const Class *type, const void *value) {
 	c->name = name;
 
 	// enums can't be referenced...
-	if (type == TypeInt32 or type->is_enum())
+	if (type == common_types.i32 or type->is_enum())
 		c->as_int64() = (int_p)value;
 		//*(const void**)c->p() = value;
-	else if (type == TypeString)
+	else if (type == common_types.string)
 		c->as_string() = *(const string*)value;
 	else if (value)
 		memcpy(c->p(), value, type->size);
@@ -689,9 +600,9 @@ void func_add_param_def_x(const string &name, const Class *type, const void *p, 
 		//cur_func->mandatory_params = cur_func->num_params;
 
 		Constant *c = cur_package_module->tree->add_constant(type, cur_class);
-		if (type == TypeInt32)
+		if (type == common_types.i32)
 			c->as_int() = *(int*)p;
-		if (type == TypeFloat32)
+		if (type == common_types.f32)
 			c->as_float() = *(float*)p;
 		cur_func->default_parameters.resize(cur_func->num_params - 1);
 		cur_func->default_parameters.add(add_node_const(c));

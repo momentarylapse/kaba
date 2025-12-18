@@ -11,22 +11,21 @@
 
 namespace kaba {
 
-extern const Class* TypeDynamicArray;
 string class_name_might_need_parantheses(const Class *t);
 
 static shared<Node> sa_num(shared<Node> node) {
-	return node->shift(config.target.pointer_size, TypeInt32);
+	return node->shift(config.target.pointer_size, common_types.i32);
 }
 
 /*static shared<Node> sa_data(shared<Node> node) {
-	return node->shift(config.pointer_size, TypeInt32);
+	return node->shift(config.pointer_size, common_types.i32);
 }*/
 
 void AutoImplementer::implement_list_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
 	auto te = t->get_array_element();
-	auto ff = t->get_member_func("__mem_init__", TypeVoid, {TypeInt32});
+	auto ff = t->get_member_func("__mem_init__", common_types._void, {common_types.i32});
 	f->block->add(add_node_member_call(ff,
 			self, -1,
 			{const_int(te->size)}));
@@ -35,7 +34,7 @@ void AutoImplementer::implement_list_constructor(Function *f, const Class *t) {
 void AutoImplementer::implement_list_destructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
-	if (auto f_clear = t->get_member_func("clear", TypeVoid, {}))
+	if (auto f_clear = t->get_member_func("clear", common_types._void, {}))
 		f->block->add(add_node_member_call(f_clear, self));
 	else
 		do_error_implicit(f, "clear() missing");
@@ -48,7 +47,7 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 	auto n_other = add_node_local(f->__get_var("other"));
 	auto n_self = add_node_local(f->__get_var(Identifier::Self));
 
-	if (auto f_resize = t->get_member_func("resize", TypeVoid, {TypeInt32})) {
+	if (auto f_resize = t->get_member_func("resize", common_types._void, {common_types.i32})) {
 		// self.resize(other.num)
 		auto n_other_num = sa_num(n_other);
 
@@ -65,7 +64,7 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 		//    el = other[i]
 
 		auto *v_el = f->block->add_var("el", tree->type_ref(t_el));
-		auto *v_i = f->block->add_var("i", TypeInt32);
+		auto *v_i = f->block->add_var("i", common_types.i32);
 
 		Block *b = new Block(f, f->block.get());
 
@@ -92,7 +91,7 @@ void AutoImplementer::implement_list_clear(Function *f, const Class *t) {
 // delete...
 	if (auto f_del = te->get_destructor()) {
 
-		auto *var_i = f->block->add_var("i", TypeInt32);
+		auto *var_i = f->block->add_var("i", common_types.i32);
 		auto *var_el = f->block->add_var("el", tree->type_ref(t->get_array_element()));
 
 		Block *b = new Block(f, f->block.get());
@@ -114,7 +113,7 @@ void AutoImplementer::implement_list_clear(Function *f, const Class *t) {
 
 	{
 		// clear
-		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", TypeVoid, {}), self);
+		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", common_types._void, {}), self);
 		f->block->add(cmd_clear);
 	}
 }
@@ -123,8 +122,8 @@ void AutoImplementer::implement_list_resize(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto *var = f->block->add_var("i", TypeInt32);
-	f->block->add_var("num_old", TypeInt32);
+	auto *var = f->block->add_var("i", common_types.i32);
+	f->block->add_var("num_old", common_types.i32);
 
 	auto num = add_node_local(f->__get_var("num"));
 
@@ -165,7 +164,7 @@ void AutoImplementer::implement_list_resize(Function *f, const Class *t) {
 
 	{
 		// resize
-		auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", TypeVoid, {TypeInt32}), self);
+		auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", common_types._void, {common_types.i32}), self);
 		c_resize->set_param(1, num);
 		f->block->add(c_resize);
 	}
@@ -218,7 +217,7 @@ void AutoImplementer::implement_list_remove(Function *f, const Class *t) {
 
 	{
 		// resize
-		auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", TypeVoid, {TypeInt32}), self);
+		auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", common_types._void, {common_types.i32}), self);
 		c_remove->set_param(1, index);
 		f->block->params.add(c_remove);
 	}
@@ -236,7 +235,7 @@ void AutoImplementer::implement_list_add(Function *f, const Class *t) {
 	{
 		// resize(self.num + 1)
 		auto cmd_add = add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), const_int(1));
-		auto cmd_resize = add_node_member_call(t->get_member_func("resize", TypeVoid, {TypeInt32}), self);
+		auto cmd_resize = add_node_member_call(t->get_member_func("resize", common_types._void, {common_types.i32}), self);
 		cmd_resize->set_param(1, cmd_add);
 		b->add(cmd_resize);
 	}
@@ -269,7 +268,7 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 		//     if e != other[i]
 		//         return false
 		auto *v_el = f->block->add_var("el", tree->type_ref(t->get_array_element()));
-		auto *v_i = f->block->add_var("i", TypeInt32);
+		auto *v_i = f->block->add_var("i", common_types.i32);
 
 		Block *b = new Block(f, f->block.get());
 
@@ -319,7 +318,7 @@ void AutoImplementer::implement_list_give(Function *f, const Class *t) {
 
 	{
 		// self.forget()
-		f->block->add(add_node_member_call(t->get_member_func("__mem_forget__", TypeVoid, {}), self));
+		f->block->add(add_node_member_call(t->get_member_func("__mem_forget__", common_types._void, {}), self));
 	}
 
 	{
@@ -331,56 +330,56 @@ void AutoImplementer::implement_list_give(Function *f, const Class *t) {
 void AutoImplementer::_implement_functions_for_list(const Class *t) {
 	implement_list_constructor(prepare_auto_impl(t, t->get_default_constructor()), t);
 	implement_list_destructor(prepare_auto_impl(t, t->get_destructor()), t);
-	implement_list_clear(prepare_auto_impl(t, t->get_member_func("clear", TypeVoid, {})), t);
-	implement_list_resize(prepare_auto_impl(t, t->get_member_func("resize", TypeVoid, {TypeInt32})), t);
-	implement_list_remove(prepare_auto_impl(t, t->get_member_func("remove", TypeVoid, {TypeInt32})), t);
-	implement_list_add(prepare_auto_impl(t, t->get_member_func("add", TypeVoid, {nullptr})), t);
+	implement_list_clear(prepare_auto_impl(t, t->get_member_func("clear", common_types._void, {})), t);
+	implement_list_resize(prepare_auto_impl(t, t->get_member_func("resize", common_types._void, {common_types.i32})), t);
+	implement_list_remove(prepare_auto_impl(t, t->get_member_func("remove", common_types._void, {common_types.i32})), t);
+	implement_list_add(prepare_auto_impl(t, t->get_member_func("add", common_types._void, {nullptr})), t);
 	if (t->param[0]->is_pointer_owned() or t->param[0]->is_pointer_owned_not_null()) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
 		auto t_xfer_list = tree->request_implicit_class_list(t_xfer, -1);
 		implement_list_give(prepare_auto_impl(t, t->get_member_func(Identifier::func::OwnedGive, t_xfer_list, {})), t);
-		implement_list_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, TypeVoid, {t_xfer_list})), t);
+		implement_list_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {t_xfer_list})), t);
 	}
 	implement_list_assign(prepare_auto_impl(t, t->get_assign()), t);
-	implement_list_equal(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, TypeBool, {t})), t);
+	implement_list_equal(prepare_auto_impl(t, t->get_member_func(Identifier::func::Equal, common_types._bool, {t})), t);
 }
 
 
 
 Class* TemplateClassInstantiatorList::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[]", TypeListT, config.target.dynamic_array_size, config.target.pointer_size, -1, TypeDynamicArray, params, token_id);
+	return create_raw_class(tree, class_name_might_need_parantheses(params[0]) + "[]", common_types.list_t, config.target.dynamic_array_size, config.target.pointer_size, -1, common_types.dynamic_array, params, token_id);
 }
 
 void TemplateClassInstantiatorList::add_function_headers(Class* c) {
-	c->derive_from(TypeDynamicArray); // we already set its size!
+	c->derive_from(common_types.dynamic_array); // we already set its size!
 	if (!class_can_default_construct(c->param[0]))
 		c->owner->do_error(format("can not create a dynamic array from type '%s', missing default constructor", c->param[0]->long_name()), c->token_id);
 
-	add_func_header(c, Identifier::func::Init, TypeVoid, {}, {}, nullptr, Flags::Mutable);
-	add_func_header(c, Identifier::func::Delete, TypeVoid, {}, {}, nullptr, Flags::Mutable);
-	add_func_header(c, "clear", TypeVoid, {}, {}, nullptr, Flags::Mutable);
-	add_func_header(c, "resize", TypeVoid, {TypeInt32}, {"num"}, nullptr, Flags::Mutable);
+	add_func_header(c, Identifier::func::Init, common_types._void, {}, {}, nullptr, Flags::Mutable);
+	add_func_header(c, Identifier::func::Delete, common_types._void, {}, {}, nullptr, Flags::Mutable);
+	add_func_header(c, "clear", common_types._void, {}, {}, nullptr, Flags::Mutable);
+	add_func_header(c, "resize", common_types._void, {common_types.i32}, {"num"}, nullptr, Flags::Mutable);
 	if (c->param[0]->is_pointer_owned() or c->param[0]->is_pointer_owned_not_null()) {
 		auto t_xfer = c->owner->request_implicit_class_xfer(c->param[0]->param[0], -1);
 		auto t_xfer_list = c->owner->request_implicit_class_list(t_xfer, -1);
-		add_func_header(c, "add", TypeVoid, {t_xfer}, {"x"}, nullptr, Flags::Mutable);
+		add_func_header(c, "add", common_types._void, {t_xfer}, {"x"}, nullptr, Flags::Mutable);
 		add_func_header(c, Identifier::func::OwnedGive, t_xfer_list, {}, {}, nullptr, Flags::Mutable);
-		//add_func_header(c, Identifier::Func::ASSIGN, TypeVoid, {t_xfer_list}, {"other"});
-		add_func_header(c, Identifier::func::Assign, TypeVoid, {t_xfer_list}, {"other"}, nullptr, Flags::Mutable);
+		//add_func_header(c, Identifier::Func::ASSIGN, common_types._void, {t_xfer_list}, {"other"});
+		add_func_header(c, Identifier::func::Assign, common_types._void, {t_xfer_list}, {"other"}, nullptr, Flags::Mutable);
 	} else if (c->param[0]->is_pointer_xfer_not_null()) {
-		//	add_func_header(c, "add", TypeVoid, {c->param[0]}, {"x"});
-		add_func_header(c, Identifier::func::Assign, TypeVoid, {c}, {"other"}, nullptr, Flags::Mutable);
+		//	add_func_header(c, "add", common_types._void, {c->param[0]}, {"x"});
+		add_func_header(c, Identifier::func::Assign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 	} else if (c->param[0]->is_reference()) {
-		add_func_header(c, "add", TypeVoid, {c->param[0]}, {"x"});
-		add_func_header(c, Identifier::func::Assign, TypeVoid, {c}, {"other"}, nullptr, Flags::Mutable);
+		add_func_header(c, "add", common_types._void, {c->param[0]}, {"x"});
+		add_func_header(c, Identifier::func::Assign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 	} else {
-		add_func_header(c, "add", TypeVoid, {c->param[0]}, {"x"}, nullptr, Flags::Mutable);
+		add_func_header(c, "add", common_types._void, {c->param[0]}, {"x"}, nullptr, Flags::Mutable);
 		if (class_can_assign(c->param[0]))
-			add_func_header(c, Identifier::func::Assign, TypeVoid, {c}, {"other"}, nullptr, Flags::Mutable);
+			add_func_header(c, Identifier::func::Assign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 	}
-	add_func_header(c, "remove", TypeVoid, {TypeInt32}, {"index"}, nullptr, Flags::Mutable);
+	add_func_header(c, "remove", common_types._void, {common_types.i32}, {"index"}, nullptr, Flags::Mutable);
 	if (class_can_equal(c->param[0]))
-		add_func_header(c, Identifier::func::Equal, TypeBool, {c}, {"other"}, nullptr, Flags::Pure);
+		add_func_header(c, Identifier::func::Equal, common_types._bool, {c}, {"other"}, nullptr, Flags::Pure);
 }
 
 }

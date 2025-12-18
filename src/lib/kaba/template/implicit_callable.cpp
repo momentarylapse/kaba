@@ -12,8 +12,6 @@
 
 namespace kaba {
 
-extern const Class *TypeCallableBase;
-
 Array<const Class*> get_callable_param_types(const Class *fp);
 const Class *get_callable_return_type(const Class *fp);
 Array<const Class*> get_callable_capture_types(const Class *fp);
@@ -68,7 +66,7 @@ void AutoImplementer::implement_callable_fp_call(Function *f, const Class *t) {
 
 	// contains a Function* pointer, extract its raw pointer
 	auto raw = add_node_statement(StatementID::RawFunctionPointer);
-	raw->type = TypeFunctionCodeRef;
+	raw->type = common_types.function_code_ref;
 	raw->set_param(0, get_callable_fp(t, self));
 
 	// call its raw pointer
@@ -78,7 +76,7 @@ void AutoImplementer::implement_callable_fp_call(Function *f, const Class *t) {
 	for (int i=1; i<f->num_params; i++) // skip "self"
 		call->set_param(i, add_node_local(f->var[i].get()));
 
-	if (f->literal_return_type == TypeVoid) {
+	if (f->literal_return_type == common_types._void) {
 		f->block->add(call);
 	} else {
 		auto ret = add_node_statement(StatementID::Return);
@@ -128,7 +126,7 @@ void AutoImplementer::implement_callable_bind_call(Function *f, const Class *t) 
 	for (auto&& [i,p]: enumerate(params))
 		call->set_param(i+1, p);
 
-	if (f->literal_return_type == TypeVoid) {
+	if (f->literal_return_type == common_types._void) {
 		f->block->add(call);
 	} else {
 		auto ret = add_node_statement(StatementID::Return);
@@ -166,7 +164,7 @@ string make_callable_signature_t(const Array<const Class*> &_params) {
 		signature = "void";
 	if (params.num > 1)
 		signature = "(" + signature + ")";
-	if (params.num == 0 or (params.num == 1 and params[0] == TypeVoid)) {
+	if (params.num == 0 or (params.num == 1 and params[0] == common_types._void)) {
 		signature = "void";
 	}
 	return signature + "->" + class_name_might_need_parantheses(ret);
@@ -175,30 +173,30 @@ string make_callable_signature_t(const Array<const Class*> &_params) {
 Class* TemplateClassInstantiatorCallableFP::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
 	string name = make_callable_signature_t(params);
 	//int size = sizeof(KabaCallable<void()>);
-	int size = TypeCallableBase->size + 8; // for additional Function*
-	return create_raw_class(tree, "@Callable[" + name + "]", TypeCallableFPT, size, config.target.pointer_size, 0, nullptr, params, token_id);
+	int size = common_types.callable_base->size + 8; // for additional Function*
+	return create_raw_class(tree, "@Callable[" + name + "]", common_types.callable_fp_t, size, config.target.pointer_size, 0, nullptr, params, token_id);
 }
 void TemplateClassInstantiatorCallableFP::add_function_headers(Class* c) {
 	auto params = c->param; // ->derive_from() will overwrite params!!!
-	c->derive_from(TypeCallableBase);
+	c->derive_from(common_types.callable_base);
 	c->functions.clear(); // don't inherit call() with specific types!
 	c->param = params;
 
-	add_func_header(c, Identifier::func::Init, TypeVoid, {TypePointer}, {"p"}, nullptr, Flags::Mutable);
+	add_func_header(c, Identifier::func::Init, common_types._void, {common_types.pointer}, {"p"}, nullptr, Flags::Mutable);
 	add_func_header(c, Identifier::func::Call,
 			get_callable_return_type(c),
 			get_callable_param_types(c),
-			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::None)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::None)->virtual_index = common_types.callable_base->get_call()->virtual_index;
 }
 
 Class* TemplateClassInstantiatorCallableBind::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
 
 	static int unique_bind_counter = 0;
 	//	auto t = TemplateClassInstantiator::create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), Class::Type::CALLABLE_BIND, TypeCallableBase->size, config.target.pointer_size, magic, nullptr, outer_params_ret, token_id);
-	auto t = create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), TypeCallableBindT, TypeCallableBase->size, config.target.pointer_size, array_size, nullptr, params, token_id);
+	auto t = create_raw_class(tree, format(":bind-%d:", unique_bind_counter++), common_types.callable_bind_t, common_types.callable_base->size, config.target.pointer_size, array_size, nullptr, params, token_id);
 
 	auto pp = t->param;
-	t->derive_from(TypeCallableBase);
+	t->derive_from(common_types.callable_base);
 	t->functions.clear(); // don't inherit call() with specific types!
 	t->param = pp;
 
@@ -236,13 +234,13 @@ void TemplateClassInstantiatorCallableBind::add_function_headers(Class* c) {
 
 
 	auto types = get_callable_capture_types(c);
-	types.insert(TypePointer, 0);
-	add_func_header(c, Identifier::func::Init, TypeVoid, types,
+	types.insert(common_types.pointer, 0);
+	add_func_header(c, Identifier::func::Init, common_types._void, types,
 			{"p", "a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::Mutable);
 	add_func_header(c, Identifier::func::Call,
 			get_callable_return_type(c),
 			suggest_callable_bind_param_types(c),
-			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::None)->virtual_index = TypeCallableBase->get_call()->virtual_index;
+			{"a", "b", "c", "d", "e", "f", "g", "h"}, nullptr, Flags::None)->virtual_index = common_types.callable_base->get_call()->virtual_index;
 }
 
 }

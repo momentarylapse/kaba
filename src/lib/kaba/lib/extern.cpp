@@ -31,17 +31,15 @@ void ExternalLinkData::reset() {
 	class_sizes.clear();
 }
 
-extern const Class *TypeStringAutoCast;
-
 static const string LIB_LINK_PREFIX = "/";
 
 string decode_symbol_name(const string &_name) {
 	string name = _name.replace("lib__", "");
-	return name.replace("@list", "[]").replace("@optional", "?").replace("@@", ".").replace(TypeStringAutoCast->name, "string");//.replace("@", "");
+	return name.replace("@list", "[]").replace("@optional", "?").replace("@@", ".").replace(common_types.string_auto_cast->name, "string");//.replace("@", "");
 }
 
 string class_link_name(const Class *c) {
-	if (c == TypeStringAutoCast)
+	if (c == common_types.string_auto_cast)
 		return "string";
 	if (c->owner->module->is_system_module())
 		return c->long_name();
@@ -169,6 +167,7 @@ Exporter::Exporter(Context* _ctx, Package* _package) {
 	ctx = _ctx;
 	package = _package;
 	secret_lib_context = _secret_lib_context_;
+	x_common_types = &common_types;
 }
 Exporter::~Exporter() = default;
 void Exporter::declare_class_size(const string& name, int size) {
