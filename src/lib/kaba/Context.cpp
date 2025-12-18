@@ -78,6 +78,19 @@ Path absolute_module_path(const Path &filename) {
 Context::Context() {
 	template_manager = new TemplateManager(this);
 	external = new ExternalLinkData(this);
+
+	f_load_module = [this] (const Path& filename, bool x) {
+		return load_module(filename, x);
+	};
+	f_create_module_for_source = [this] (const string& source, bool x) {
+		return create_module_for_source(source, x);
+	};
+	f_execute_single_command = [this] (const string& cmd) {
+		execute_single_command(cmd);
+	};
+	f_create_new_context = [this] {
+		return create();
+	};
 }
 
 Context::~Context() {
