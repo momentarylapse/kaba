@@ -88,7 +88,7 @@ Context::Context() {
 	f_execute_single_command = [this] (const string& cmd) {
 		execute_single_command(cmd);
 	};
-	f_create_new_context = [this] {
+	f_create_new_context = [] {
 		return create();
 	};
 }

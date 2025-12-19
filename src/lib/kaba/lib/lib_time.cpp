@@ -18,7 +18,7 @@ void SIAddPackageTime(Context *c) {
 		class_add_func("format", common_types.string, &Date::format, Flags::Pure);
 			func_add_param("f", common_types.string);
 		class_add_func(Identifier::func::Str, common_types.string, &Date::str, Flags::Pure);
-		class_add_func(Identifier::func::Assign, common_types._void, &Date::__assign__, Flags::Mutable);
+		class_add_func(Identifier::func::Assign, common_types._void, &generic_assign<Date>, Flags::Mutable);
 			func_add_param("o", common_types.date);
 
 
