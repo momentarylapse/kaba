@@ -79,22 +79,43 @@ Context::Context() {
 	template_manager = new TemplateManager(this);
 	external = new ExternalLinkData(this);
 
-	f_load_module = [this] (const Path& filename, bool x) {
-		return load_module(filename, x);
+	f_load_module = [] (Context* ctx, const Path& filename, bool x) {
+		return ctx->load_module(filename, x);
 	};
-	f_create_module_for_source = [this] (const string& source, bool x) {
-		return create_module_for_source(source, x);
+	f_create_module_for_source = [] (Context* ctx, const string& source, bool x) {
+		return ctx->create_module_for_source(source, x);
 	};
-	f_execute_single_command = [this] (const string& cmd) {
-		execute_single_command(cmd);
+	f_execute_single_command = [] (Context* ctx, const string& cmd) {
+		ctx->execute_single_command(cmd);
 	};
-	f_create_new_context = [] {
-		return create();
+	f_create_new_context = [this] {
+		auto ctx = create();
+		ctx->f_load_module = f_load_module;
+		ctx->f_create_module_for_source = f_create_module_for_source;
+		ctx->f_execute_single_command = f_execute_single_command;
+		ctx->f_create_new_context = f_create_new_context;
+		return ctx;
 	};
 }
 
 Context::~Context() {
     clean_up();
+}
+
+shared<Module> Context::dll_load_module(const Path& filename, bool just_analyse) {
+	return f_load_module(this, filename, just_analyse);
+}
+
+shared<Module> Context::dll_create_module_for_source(const string& source, bool just_analyse) {
+	return f_create_module_for_source(this, source, just_analyse);
+}
+
+void Context::dll_execute_single_command(const string& cmd) {
+	f_execute_single_command(this, cmd);
+}
+
+xfer<Context> Context::dll_create_context() const {
+	return f_create_new_context();
 }
 
 void try_import_dynamic_library_for_package(Package* p, Context* ctx) {
