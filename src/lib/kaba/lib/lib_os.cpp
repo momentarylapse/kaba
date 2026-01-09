@@ -301,6 +301,9 @@ void SIAddPackageOS(Context *c) {
 	auto TypeCommandLineParser = add_type("CommandLineParser", sizeof(CommandLineParser));
 	common_types.os_configuration = add_type("Configuration", sizeof(Configuration));
 	auto TypeTerminal = add_type("terminal", 0);
+	const_cast<Class*>(TypeTerminal)->from_template = common_types.namespace_t;
+	auto TypeApp = add_type("app", 0);
+	const_cast<Class*>(TypeApp)->from_template = common_types.namespace_t;
 
 	auto TypeCallbackStringList = add_type_func(common_types._void, {common_types.string_list});
 
@@ -493,11 +496,13 @@ void SIAddPackageOS(Context *c) {
 		class_add_func("current_directory", common_types.path, &os::fs::current_directory, Flags::Static);
 		class_add_func("set_current_directory", common_types._void, &os::fs::set_current_directory, Flags::Static);
 			func_add_param("dir", common_types.path);
+		class_add_const("home_directory", common_types.path, &os::app::home_directory);
 		
 		if (!_kaba_stdin)
 			_kaba_stdin = new os::fs::FileStream(0, Stream::Mode::TEXT);
 		add_ext_var("stdin", TypeFileStreamSharedNN, &_kaba_stdin);
-	
+
+
 	add_class(TypeTerminal);
 		class_add_const("RED", common_types.string, &os::terminal::RED);
 		class_add_const("GREEN", common_types.string, &os::terminal::GREEN);
@@ -510,6 +515,13 @@ void SIAddPackageOS(Context *c) {
 		class_add_const("DARK_GRAY", common_types.string, &os::terminal::DARK_GRAY);
 		class_add_const("BOLD", common_types.string, &os::terminal::BOLD);
 		class_add_const("END", common_types.string, &os::terminal::END);
+
+
+	add_class(TypeApp);
+		class_add_const("directory_dynamic", common_types.path, &os::app::directory_dynamic);
+		class_add_const("directory_static", common_types.path, &os::app::directory_static);
+		class_add_const("user_name", common_types.string, &os::app::user_name);
+
 
 	// system
 	add_func("shell_execute", common_types.string, &kaba_shell_execute, Flags::Static | Flags::RaisesExceptions);

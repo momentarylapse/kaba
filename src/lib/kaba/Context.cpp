@@ -378,7 +378,7 @@ Package *Context::get_package(const string &name) const {
 }
 
 Path Context::installation_root() {
-	return os::app::directory_home | ".kaba";
+	return os::app::home_directory | ".kaba";
 }
 
 Path Context::packages_root() {
