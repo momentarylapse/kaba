@@ -100,6 +100,7 @@ public:
 
 	Exporter(Context* ctx, Package* package);
 	virtual ~Exporter();
+	virtual void package_info(const string& name, const string& version);
 	virtual void declare_class_size(const string& name, int size);
 	virtual void _declare_class_element(const string& name, int offset);
 	virtual void link(const string& name, void* p);

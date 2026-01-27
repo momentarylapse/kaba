@@ -7,7 +7,7 @@
 namespace kaba {
 
 void SIAddPackageTime(Context *c) {
-	add_internal_package(c, "time");
+	add_internal_package(c, "time", "1");
 
 	common_types.date = add_type("Date", sizeof(Date));
 	common_types.timer = add_type("Timer", sizeof(os::Timer));

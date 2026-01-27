@@ -40,8 +40,9 @@ struct LinkerException : Exception{};
 struct LinkerException : Exception{};*/
 
 struct Package : Sharable<base::Empty> {
-	Package(const string& name, const Path& directory);
+	Package(const string& name, const string& version, const Path& directory);
 	string name;
+	string version;
 	Path directory;
 	Path directory_dynamic;
 	bool is_installed;

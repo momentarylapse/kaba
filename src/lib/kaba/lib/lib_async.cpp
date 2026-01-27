@@ -4,7 +4,7 @@
 namespace kaba {
 
 void SIAddPackageAsync(Context *c) {
-	add_internal_package(c, "async");
+	add_internal_package(c, "async", "1");
 
 	common_types.future_core_t = add_class_template("@FutureCore", {"T"}, new TemplateClassInstantiatorFutureCore);
 	common_types.future_t = add_class_template("future", {"T"}, new TemplateClassInstantiatorFuture);

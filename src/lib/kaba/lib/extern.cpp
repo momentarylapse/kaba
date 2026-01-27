@@ -170,6 +170,12 @@ Exporter::Exporter(Context* _ctx, Package* _package) {
 	x_common_types = &common_types;
 }
 Exporter::~Exporter() = default;
+void Exporter::package_info(const string& name, const string& version) {
+	if (name != package->name)
+		msg_error(format("exporting symbols for wrong package: %s vs %s", name, package->name));
+	if (version != package->version)
+		msg_error(format("exporting symbols for wrong package version: %s vs %s (%s)", version, package->version, name));
+}
 void Exporter::declare_class_size(const string& name, int size) {
 	//msg_write("SIZE:  " + name);
 	ctx->external->declare_class_size(name, size);

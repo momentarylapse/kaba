@@ -322,7 +322,7 @@ void SIAddXCommands(Context *c) {
 }
 
 void SIAddPackageBase(Context *c) {
-	add_internal_package(c, "base", Flags::AutoImport);
+	add_internal_package(c, "base", "1", Flags::AutoImport);
 
 	// internal
 	common_types.unknown		= add_type  ("@unknown", 0); // should not appear anywhere....or else we're screwed up!

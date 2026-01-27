@@ -159,8 +159,16 @@ Package* get_package_containing_module(Module* m) {
 	// TODO check parents...
 
 	// new package
-	auto package = new Package(dir.basename(), dir);
+	auto package = new Package(dir.basename(), "0", dir);
 	ctx->external_packages.add(package);
+
+	// parse info
+	{
+		auto s = os::fs::read_text(dir | ".kaba-package");
+		for (const auto& l: s.explode("\n"))
+			if (l.head(8) == "version ")
+				package->version = l.sub(8);
+	}
 
 	// package init override?
 	for (const auto& init: ctx->package_inits)
@@ -175,8 +183,9 @@ Package* get_package_containing_module(Module* m) {
 	return package;
 }
 
-Package::Package(const string& _name, const Path& _directory) {
+Package::Package(const string& _name, const string& _version, const Path& _directory) {
 	name = _name;
+	version = _version;
 	directory = _directory;
 	directory_dynamic = Context::installation_root() | name;
 	is_installed = (directory == default_directory());

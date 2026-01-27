@@ -297,7 +297,7 @@ T kaba_xor(T a, T b) {
 }
 
 void SIAddPackageMath(Context *c) {
-	add_internal_package(c, "math", Flags::AutoImport);
+	add_internal_package(c, "math", "1", Flags::AutoImport);
 
 	// types
 	common_types.complex = add_type("Complex", sizeof(complex));

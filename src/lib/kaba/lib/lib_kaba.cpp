@@ -76,7 +76,7 @@ Package* get_current_package() {
 }
 
 void SIAddPackageKaba(Context *c) {
-	add_internal_package(c, "kaba");
+	add_internal_package(c, "kaba", "1");
 
 
 	common_types._class = add_type  ("Class", sizeof(Class));
@@ -221,6 +221,7 @@ void SIAddPackageKaba(Context *c) {
 
 	add_class(TypePackage);
 		class_add_element("name", common_types.string, &Package::name);
+		class_add_element("version", common_types.string, &Package::version);
 		class_add_element("directory", common_types.path, &Package::directory);
 		class_add_element("directory_dynamic", common_types.path, &Package::directory_dynamic);
 		class_add_element("is_installed", common_types._bool, &Package::is_installed);

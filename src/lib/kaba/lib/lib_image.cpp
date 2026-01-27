@@ -15,7 +15,7 @@ namespace kaba {
 
 
 void SIAddPackageImage(Context *c) {
-	add_internal_package(c, "image");
+	add_internal_package(c, "image", "1");
 
 	common_types.image = add_type("Image", sizeof(Image));
 	auto TypeImageXfer = add_type_p_xfer(common_types.image);

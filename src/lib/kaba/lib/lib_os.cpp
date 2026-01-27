@@ -210,7 +210,7 @@ public:
 };
 
 void SIAddPackageOSPath(Context *c) {
-	add_internal_package(c, "os");
+	add_internal_package(c, "os", "1");
 
 	common_types.path = add_type("Path", config.target.dynamic_array_size);
 
@@ -288,7 +288,7 @@ public:
 };
 
 void SIAddPackageOS(Context *c) {
-	add_internal_package(c, "os");
+	add_internal_package(c, "os", "(ignored)");
 
 	auto TypeStream = add_type("Stream", sizeof(Stream));
 	auto TypeStreamXfer = add_type_p_xfer(TypeStream);

@@ -57,7 +57,7 @@ Flags flags_mix(const Array<Flags> &f) {
 }
 
 
-void add_internal_package(Context* c, const string& name, Flags flags) {
+void add_internal_package(Context* c, const string& name, const string& version, Flags flags) {
 	for (auto p: weak(c->internal_packages))
 		if (p->name == name) {
 			cur_package = p;
@@ -66,7 +66,7 @@ void add_internal_package(Context* c, const string& name, Flags flags) {
 		}
 
 	// new
-	shared p = new Package(name, Path::EMPTY);
+	shared p = new Package(name, version, Path::EMPTY);
 	p->auto_import = flags_has(flags, Flags::AutoImport);
 	shared s = c->create_empty_module(name);
 	s->tree->base_class->name = name;
@@ -656,7 +656,7 @@ void init_lib(Context *c) {
 	SIAddPackageImage(c);
 	SIAddPackageThread(c);
 
-	add_internal_package(c, "base");
+	add_internal_package(c, "base", "(ignored...)");
 	SIAddXCommands(c);
 
 
