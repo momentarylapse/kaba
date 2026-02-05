@@ -62,9 +62,6 @@ add_executable(kaba
 	src/helper/ErrorHandler.cpp
 	src/helper/experiments.cpp
 	src/helper/symbols.cpp
-	src/lib/algebra/_kaba_export.cpp
-	src/lib/algebra/crypto.cpp
-	src/lib/algebra/vli.cpp
 	src/lib/any/any.cpp
 	src/lib/any/conversion.cpp
 	src/lib/base/array.cpp

@@ -1,7 +1,0 @@
-func main()
-	var a = vli(-31)
-	var b = vli(101)
-	a = vli.pow(a, b)
-	print(a >= b)
-	let r = a + b
-	print(r)

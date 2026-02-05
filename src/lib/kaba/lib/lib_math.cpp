@@ -23,14 +23,6 @@
 #include "../dynamic/exception.h"
 #include "../dynamic/dynamic.h"
 
-#if __has_include("../../algebra/algebra.h")
-	#include "../../algebra/algebra.h"
-	#define HAS_ALGEBRA
-#else
-	typedef int vli;
-	typedef int Crypto;
-#endif
-
 #if __has_include("../../any/any.h")
 	#include "../../any/any.h"
 	#define HAS_ANY
@@ -40,12 +32,6 @@
 #endif
 
 namespace kaba {
-
-#ifdef HAS_ALGEBRA
-	#define algebra_p(p)		p
-#else
-	#define algebra_p(p)		nullptr
-#endif
 
 #ifdef HAS_ANY
 	#define any_p(p)		p
@@ -322,8 +308,6 @@ void SIAddPackageMath(Context *c) {
 	auto TypeFloatArray16 = add_type_array(common_types.f32, 16);
 	auto TypeFloatArray3x3 = add_type_array(TypeFloatArray3, 3);
 	auto TypeFloatArray9 = add_type_array(common_types.f32, 9);
-	auto TypeVli = add_type("vli", sizeof(vli)); // TODO external package
-	auto TypeCrypto = add_type("Crypto", sizeof(Crypto)); // TODO external package
 	common_types.any = add_type("Any", sizeof(Any));
 	auto TypeFloatInterpolator = add_type("FloatInterpolator", sizeof(Interpolator<float>));
 	auto TypeVectorInterpolator = add_type("VectorInterpolator", sizeof(Interpolator<vec3>));
@@ -810,48 +794,6 @@ void SIAddPackageMath(Context *c) {
 		add_operator(OperatorID::Multiply, common_types.mat3, common_types.mat3, common_types.mat3, InlineID::None, &KabaMatrix<mat3>::mul);
 		add_operator(OperatorID::Multiply, common_types.vec3, common_types.mat3, common_types.vec3, InlineID::None, &KabaMatrix<mat3>::mul_v<vec3>);
 
-	add_class(TypeVli);
-		class_add_element("sign", common_types._bool, 0);
-		class_add_element("data", common_types.i32_list, 4);
-		class_add_func(Identifier::func::Init, common_types._void, algebra_p(&generic_init<vli>), Flags::Mutable);
-		class_add_func(Identifier::func::Init, common_types._void, algebra_p((&generic_init_ext<vli, const string&>)), Flags::Mutable);
-			func_add_param("s", common_types.string);
-		class_add_func(Identifier::func::Init, common_types._void, algebra_p((&generic_init_ext<vli, int>)), Flags::Mutable);
-			func_add_param("i", common_types.i32);
-		class_add_func(Identifier::func::Delete, common_types._void, algebra_p(&generic_delete<vli>), Flags::Mutable);
-		class_add_func(Identifier::func::Assign, common_types._void, algebra_p(&generic_assign<vli>), Flags::Mutable);
-			func_add_param("v", TypeVli);
-		class_add_func(Identifier::func::Str, common_types.string, algebra_p(&vli::to_string), Flags::Pure);
-		class_add_func("compare", common_types.i32, algebra_p(&vli::compare), Flags::Pure);
-			func_add_param("v", TypeVli);
-		class_add_func("idiv", common_types._void, algebra_p(&vli::idiv), Flags::Mutable);
-			func_add_param("div", TypeVli);
-			func_add_param("rem", TypeVli);
-		class_add_func("div", TypeVli, algebra_p(&vli::_div), Flags::Pure);
-			func_add_param("div", TypeVli);
-			func_add_param("rem", TypeVli);
-		class_add_func("pow", TypeVli, algebra_p(&vli::pow), Flags::Pure | Flags::Static);
-			func_add_param("x", TypeVli);
-			func_add_param("exp", TypeVli);
-		class_add_func("pow_mod", TypeVli, algebra_p(&vli::pow_mod), Flags::Pure | Flags::Static);
-			func_add_param("x", TypeVli);
-			func_add_param("exp", TypeVli);
-			func_add_param("mod", TypeVli);
-		class_add_func("gcd", TypeVli, algebra_p(&vli::gcd), Flags::Pure | Flags::Static);
-			func_add_param("a", TypeVli);
-			func_add_param("b", TypeVli);
-		add_operator(OperatorID::Equal, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator==));
-		add_operator(OperatorID::NotEqual, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator!=));
-		add_operator(OperatorID::Greater, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator<));
-		add_operator(OperatorID::Greater, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator>));
-		add_operator(OperatorID::SmallerEqual, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator<=));
-		add_operator(OperatorID::GreaterEqual, common_types._bool, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator>=));
-		add_operator(OperatorID::Add, TypeVli, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator+));
-		add_operator(OperatorID::Subtract, TypeVli, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator-));
-		add_operator(OperatorID::Multiply, TypeVli, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator*));
-		add_operator(OperatorID::AddAssign, common_types._void, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator+=));
-		add_operator(OperatorID::SubtractAssign, common_types._void, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator-=));
-		add_operator(OperatorID::MultiplyAssign, common_types._void, TypeVli, TypeVli, InlineID::None, algebra_p(&vli::operator*=));
 
 	add_class(common_types.any);
 		class_add_element("data", common_types.pointer, &Any::data);
@@ -907,26 +849,6 @@ void SIAddPackageMath(Context *c) {
 	add_func("@pointer2any", common_types.any, &pointer2any, Flags::Static);
 		func_add_param("p", common_types.pointer);
 
-
-	add_class(TypeCrypto);
-		class_add_element("n", TypeVli, 0);
-		class_add_element("k", TypeVli, sizeof(vli));
-		class_add_func(Identifier::func::Init, common_types._void, algebra_p(&generic_init<Crypto>), Flags::Mutable);
-		class_add_func(Identifier::func::Delete, common_types._void, algebra_p(&generic_delete<Crypto>), Flags::Mutable);
-		class_add_func(Identifier::func::Assign, common_types._void, algebra_p(&generic_assign<Crypto>), Flags::Mutable);
-		class_add_func(Identifier::func::Str, common_types.string, algebra_p(&Crypto::str), Flags::Pure);
-		class_add_func("from_str", common_types._void, algebra_p(&Crypto::from_str), Flags::Mutable);
-			func_add_param("str", common_types.string);
-		class_add_func("encrypt", common_types.bytes, algebra_p(&Crypto::encrypt), Flags::Pure);
-			func_add_param("data", common_types.bytes);
-		class_add_func("decrypt", common_types.bytes, algebra_p(&Crypto::decrypt), Flags::Pure);
-			func_add_param("data", common_types.bytes);
-			func_add_param("cut", common_types._bool);
-		class_add_func("create_keys", common_types._void, algebra_p(&CryptoCreateKeys), Flags::Static);
-			func_add_param("c1", TypeCrypto);
-			func_add_param("c2", TypeCrypto);
-			func_add_param("type", common_types.string);
-			func_add_param("bits", common_types.i32);
 
 	add_class(TypeRandom);
 		class_add_func(Identifier::func::Init, common_types._void, &generic_init<Random>, Flags::Mutable);

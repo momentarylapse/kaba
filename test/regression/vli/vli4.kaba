@@ -1,9 +1,0 @@
-
-
-func main()
-	var v = vli("999999998443")
-	var w = vli("29")
-	
-	var r: vli
-	v.idiv(w, r)
-	print(str(v) + " mod " + str(r))

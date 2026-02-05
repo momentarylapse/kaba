@@ -1,6 +1,0 @@
-func main()
-	var a = vli(12)
-	#print(str(a))
-	print(str(a).find("2", 0))
-	print(str(a).num)
-	#str(i).num
