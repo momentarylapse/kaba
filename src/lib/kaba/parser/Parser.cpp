@@ -625,6 +625,10 @@ shared<Node> Parser::parse_abstract_token() {
 	return add_node_token(tree, Exp.consume_token());
 }
 
+shared<Node> Parser::parse_abstract_type() {
+	return parse_abstract_operand(tree->root_of_all_evil->block.get(), true);
+}
+
 // minimal operand
 // but with A[...], A(...) etc
 shared<Node> Parser::parse_abstract_operand(Block *block, bool prefer_class) {
@@ -1600,7 +1604,7 @@ void Parser::parse_enum(Class *_namespace) {
 
 bool is_same_kind_of_pointer(const Class *a, const Class *b);
 
-void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int &_offset, int token_id) {
+void parser_class_add_element(Parser *p, Class *_class, const string &name, const Class *type, Flags flags, int64 &_offset, int token_id) {
 
 	// override?
 	ClassElement *orig = base::find_by_element(_class->elements, &ClassElement::name, name);
@@ -1647,32 +1651,77 @@ const Class* parse_class_type(const string& e) {
 	return nullptr;
 }
 
-Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
-	offset0 = 0;
-	auto class_type = parse_class_type(Exp.consume()); // class/struct/interface
-	bool overriding = try_consume(Identifier::Override);
+// [METACLASS, NAME, PARENT, TEMPLATEPARAM] + flags
+shared<Node> Parser::parse_abstract_class_header() {
+	auto node = new Node(NodeKind::AbstractClass, 0, common_types.unknown);
+	node->set_num_params(4);
+
+	// metaclass
+	node->set_param(0, parse_abstract_token()); // class/struct/interface
+
+	if (try_consume(Identifier::Override))
+		flags_set(node->flags, Flags::Override);
+
+	// name
 	string name = Exp.cur;
+	// TODO check name validity
+	node->set_param(1, parse_abstract_token());
+
+	// template?
+	Array<string> template_param_names;
+	if (try_consume("[")) {
+		flags_set(node->flags, Flags::Template);
+		while (true) {
+			node->set_param(3, parse_abstract_token());
+			if (!try_consume(","))
+				break;
+		}
+		expect_identifier("]", "']' expected after template parameter");
+		Exp.next();
+	}
+
+	// parent class / interface
+	if (try_consume(Identifier::Extends))
+		node->set_param(2, parse_abstract_type());
+	else if (try_consume(Identifier::Implements))
+		node->set_param(2, parse_abstract_type());
+
+	// as shared|@noauto
+	Flags explicit_flags = Flags::None;
+	if (try_consume(Identifier::As))
+		flags_set(node->flags, parse_flags(explicit_flags));
+
+	expect_new_line();
+
+	return node;
+}
+
+Class *Parser::parse_class_header(Class* _namespace, int64& var_offset0) {
+	var_offset0 = 0;
+
+	auto node = parse_abstract_class_header();
+
+	string name = node->params[1]->as_token();
 
 	Class *_class = nullptr;
-	if (overriding) {
+	if (flags_has(node->flags, Flags::Override)) {
 		// class override X
-		_class = const_cast<Class*>(parse_type(_namespace));
-		offset0 = _class->size;
+		_class = const_cast<Class*>(con.concretify_as_type(node->params[1], tree->root_of_all_evil->block.get(), _namespace));
+		var_offset0 = _class->size;
 		restore_namespace_mapping.add({_class, _class->name_space});
 		_class->name_space = _namespace;
 	} else {
-		int token_id = Exp.consume_token();
 		// create class
 		_class = const_cast<Class*>(tree->find_root_type_by_name(name, _namespace, false));
 		// already created...
 		if (!_class)
 			tree->module->do_error_internal("class declaration ...not found " + name);
-		_class->token_id = token_id;
-		_class->from_template = class_type;
+		_class->token_id = node->token_id;
+		_class->from_template = parse_class_type(node->params[0]->as_token()); // class/struct/interface;
 	}
 
 	// template?
-	Array<string> template_param_names;
+	/*Array<string> template_param_names;
 	if (try_consume("[")) {
 		while (true) {
 			template_param_names.add(Exp.consume());
@@ -1686,38 +1735,40 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 			tree->do_error("TEMPLATE INSTANCE...", -1);
 			return nullptr;
 		});
-	}
+	}*/
 
 	// parent class
-	if (try_consume(Identifier::Extends)) {
-		auto parent = parse_type(_namespace); // force
+	if (node->params[2]) {
+		auto parent = con.concretify_as_type(node->params[2], tree->root_of_all_evil->block.get(), _namespace); // force
 		if (!parent->fully_parsed())
 			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
 		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
 		_class->flags = parent->flags;
-		offset0 = _class->size;
+		var_offset0 = _class->size;
 	}
 
-	if (try_consume(Identifier::Implements)) {
+	/*if (try_consume(Identifier::Implements)) {
 		auto parent = parse_type(_namespace); // force
 		if (!parent->fully_parsed())
 			return nullptr;
 		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
-		offset0 = _class->size;
-	}
+		var_offset0 = _class->size;
+	}*/
 
 	// as shared|@noauto
-	Flags explicit_flags = Flags::None;
+	/*Flags explicit_flags = Flags::None;
 	if (try_consume(Identifier::As)) {
 		explicit_flags = parse_flags(explicit_flags);
 		flags_set(_class->flags, explicit_flags);
 	}
 
-	expect_new_line();
+	expect_new_line();*/
 
-	if (flags_has(explicit_flags, Flags::Shared)) {
-		parser_class_add_element(this, _class, Identifier::SharedCount, common_types.i32, Flags::None, offset0, _class->token_id);
+	flags_set(_class->flags, node->flags);
+
+	if (flags_has(node->flags, Flags::Shared)) {
+		parser_class_add_element(this, _class, Identifier::SharedCount, common_types.i32, Flags::None, var_offset0, _class->token_id);
 	}
 
 	return _class;
@@ -1725,9 +1776,9 @@ Class *Parser::parse_class_header(Class *_namespace, int &offset0) {
 
 bool Parser::parse_class(Class *_namespace) {
 	int indent0 = Exp.cur_line->indent;
-	int _offset = 0;
+	int64 var_offset = 0;
 
-	auto _class = parse_class_header(_namespace, _offset);
+	auto _class = parse_class_header(_namespace, var_offset);
 	if (!_class) // in case, not fully parsed
 		return false;
 
@@ -1764,15 +1815,15 @@ bool Parser::parse_class(Class *_namespace) {
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
 			parse_named_const(_class, tree->root_of_all_evil->block.get());
 		} else if (try_consume(Identifier::Var)) {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), _offset);
+			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), var_offset);
 		} else if (Exp.cur == Identifier::Use) {
 			parse_class_use_statement(_class);
 		} else {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), _offset);
+			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), var_offset);
 		}
 	}
 
-	post_process_newly_parsed_class(_class, _offset);
+	post_process_newly_parsed_class(_class, var_offset);
 
 
 	int cur_token = Exp.cur_token();
@@ -1924,7 +1975,46 @@ void Parser::parse_named_const(Class *name_space, Block *block) {
 	c->name = name;
 }
 
-void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int &_offset, Flags flags0) {
+// [[NAME, TYPE, VALUE], ...]
+shared_array<Node> Parser::parse_abstract_variable_declaration(Block* block, Flags flags0) {
+	shared_array<Node> nodes;
+	shared<Node> type, value;
+
+	Flags flags = parse_flags(flags0);
+
+	auto names = parse_comma_sep_token_list(this);
+
+	// explicit type?
+	if (try_consume(":")) {
+		type = parse_abstract_type();
+	} else {
+		expect_identifier("=", "':' or '=' expected after 'var' declaration", false);
+	}
+
+	if (try_consume("=")) {
+
+		//if (names.num != 1)
+		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
+
+		value = parse_abstract_operand(block);
+	}
+
+	expect_new_line();
+
+	for (auto& name: names) {
+		auto node = new Node(NodeKind::AbstractVar, 0, common_types.unknown, flags, name->token_id);
+		node->set_num_params(3);
+		node->set_param(0, name);
+		node->set_param(1, type);
+		node->set_param(2, value);
+
+		nodes.add(node);
+	}
+
+	return nodes;
+}
+
+void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int64 &_offset, Flags flags0) {
 	if (ns->is_interface())
 		do_error_exp("interfaces can not have data elements");
 
@@ -1932,6 +2022,7 @@ void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int
 	Flags flags = parse_flags(flags0);
 	if (ns->is_namespace())
 		flags_set(flags, Flags::Static);
+
 
 	auto names = parse_comma_sep_list(this);
 	const Class *type = nullptr;
@@ -2280,8 +2371,9 @@ Flags Parser::parse_flags(Flags initial) {
 	return flags;
 }
 
-void Parser::parse_top_level() {
+shared<Node> Parser::parse_abstract_top_level() {
 	cur_func = nullptr;
+	shared<Node> node = new Node(NodeKind::AbstractRoot, 0, common_types.unknown);
 
 	// syntax analysis
 
@@ -2321,7 +2413,7 @@ void Parser::parse_top_level() {
 			parse_named_const(tree->base_class, tree->root_of_all_evil->block.get());
 
 		} else if (try_consume(Identifier::Var)) {
-			int offset = 0;
+			int64 offset = 0;
 			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block.get(), offset, Flags::Static);
 
 		} else {
@@ -2330,6 +2422,7 @@ void Parser::parse_top_level() {
 		if (!Exp.end_of_file())
 			Exp.next_line();
 	}
+	return node;
 }
 
 // convert text into script data
@@ -2339,7 +2432,7 @@ void Parser::parse() {
 		do_error_exp("unexpected newline");
 	};
 
-	parse_top_level();
+	tree->root_node = parse_abstract_top_level();
 
 	parse_all_function_bodies();
 	

@@ -78,6 +78,9 @@ enum class NodeKind {
 	ConstructorAsFunction,
 	Slice,               // = A:B or A:B:C
 	// abstract syntax tree
+	AbstractRoot,
+	AbstractClass,
+	AbstractFunction,
 	AbstractToken,
 	AbstractOperator,
 	AbstractElement,

@@ -165,6 +165,7 @@ public:
 	owned_array<KabaException> raised_exceptions;
 
 	shared<Function> root_of_all_evil;
+	shared<Node> root_node;
 
 	Module *module;
 	owned<Parser> parser;
