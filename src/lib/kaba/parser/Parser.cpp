@@ -1342,7 +1342,8 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 }
 
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
-	auto f = parse_function_header(common_types.unknown, tree->base_class, Flags::Static);
+	auto n = parse_abstract_function_header(Flags::Static);
+	auto f = realize_function_header(n, common_types.unknown, tree->base_class);
 
 	// lambda body
 	if (Exp.end_of_line()) {
@@ -1696,10 +1697,8 @@ shared<Node> Parser::parse_abstract_class_header() {
 	return node;
 }
 
-Class *Parser::parse_class_header(Class* _namespace, int64& var_offset0) {
+Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64& var_offset0) {
 	var_offset0 = 0;
-
-	auto node = parse_abstract_class_header();
 
 	string name = node->params[1]->as_token();
 
@@ -1778,7 +1777,10 @@ bool Parser::parse_class(Class *_namespace) {
 	int indent0 = Exp.cur_line->indent;
 	int64 var_offset = 0;
 
-	auto _class = parse_class_header(_namespace, var_offset);
+
+	auto node = parse_abstract_class_header();
+
+	auto _class = realize_class_header(node, _namespace, var_offset);
 	if (!_class) // in case, not fully parsed
 		return false;
 
@@ -1809,7 +1811,8 @@ bool Parser::parse_class(Class *_namespace) {
 				flags_set(flags, Flags::Virtual);
 			if (_class->is_namespace())
 				flags_set(flags, Flags::Static);
-			auto f = parse_function_header(common_types._void, _class, flags);
+			auto n = parse_abstract_function_header(flags);
+			auto f = realize_function_header(n, common_types._void, _class);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
@@ -2151,71 +2154,66 @@ const Class *Parser::parse_type(const Class *ns) {
 	return con.concretify_as_type(cc, tree->root_of_all_evil->block.get(), ns);
 }
 
-Function *Parser::parse_function_header(const Class *default_type, Class *name_space, Flags flags) {
+// [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
+shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
+	auto node = new Node(NodeKind::AbstractFunction, 0, common_types.unknown, flags0);
+	node->token_id = Exp.cur_token();
+	node->set_num_params(5);
+
 	Exp.next(); // "func"
 
-	auto block = tree->root_of_all_evil->block.get();
+	auto __block = tree->root_of_all_evil->block.get();
 
-	flags = parse_flags(flags);
-	int token = Exp.cur_token();
+	node->flags = parse_flags(node->flags);
 
 	// name?
-	string name;
+	//string name;
 	if (Exp.cur == "(" or Exp.cur == "[") {
-		static int lambda_count = 0;
-		name = format(":lambda-%d:", lambda_count ++);
+		//static int lambda_count = 0;
+		//name = format(":lambda-%d:", lambda_count ++);
 	} else {
-		name = Exp.consume();
+		node->set_param(0, parse_abstract_token());
+		/*name = Exp.consume();
 		if ((name == Identifier::func::Init) or (name == Identifier::func::Delete) or (name == Identifier::func::Assign))
-			flags_set(flags, Flags::Mutable);
+			flags_set(node->flags, Flags::Mutable);*/
 	}
-
-	Function *f = tree->add_function(name, default_type, name_space, flags);
 
 	// template?
 	Array<string> template_param_names;
 	if (try_consume("[")) {
-		while (true) {
-			template_param_names.add(Exp.consume());
-			if (!try_consume(","))
-				break;
-		}
+		auto tnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
+		tnode->params = parse_comma_sep_token_list(this);
 		expect_identifier("]", "']' expected after template parameter");
-		flags_set(f->flags, Flags::Template);
+		node->set_param(3, tnode);
+		flags_set(node->flags, Flags::Template);
 	}
-
-	//if (config.verbose)
-	//	msg_write("PARSE HEAD  " + f->signature());
-	f->token_id = token;
-	cur_func = f;
 
 	// parameter list
 	expect_identifier("(", "'(' expected after function name");
 	if (!try_consume(")")) {
+		auto pnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
+		int nn = 0;
 		while (true) {
+			nn ++;
+			pnode->params.resize(nn * 3);
 			// like variable definitions
 
 			auto param_flags = parse_flags();
 
-			string param_name = Exp.consume();
+			pnode->set_param(nn*3-3, parse_abstract_token());
+			pnode->params[nn*3-3]->flags = param_flags;
 
 			//expect_identifier(":", "':' expected after parameter name");
 
 			// type of parameter variable
 			if (try_consume(":"))
-				f->abstract_param_types.add(parse_abstract_operand(block, true));
-			else
-				f->abstract_param_types.add(nullptr);
-			[[maybe_unused]] auto v = f->add_param(param_name, common_types.unknown, param_flags);
+				pnode->set_param(nn*3-2, parse_abstract_operand(__block, true));
 
 			// default parameter?
-			if (try_consume("=")) {
-				f->default_parameters.resize(f->num_params - 1);
-				auto dp = parse_abstract_operand_greedy(block, false, 1);
-				f->default_parameters.add(dp);
-			}
+			if (try_consume("="))
+				pnode->set_param(nn*3-1, parse_abstract_operand_greedy(__block, false, 1));
 
-			if (f->abstract_param_types.back() == nullptr and f->default_parameters.num < f->num_params)
+			if (!pnode->params[nn*3-2] and !pnode->params[nn*3-1])
 				do_error("':' or '=' expected after parameter name", Exp.cur_token());
 
 			if (try_consume(")"))
@@ -2223,13 +2221,63 @@ Function *Parser::parse_function_header(const Class *default_type, Class *name_s
 
 			expect_identifier(",", "',' or ')' expected after parameter");
 		}
+		node->set_param(2, pnode);
 	}
 
 	// return type
 	if (try_consume("->"))
-		f->abstract_return_type = parse_abstract_operand(tree->root_of_all_evil->block.get(), true);
+		node->set_param(1, parse_abstract_operand(__block, true));
 
-	post_process_function_header(f, template_param_names, name_space, flags);
+	return node;
+}
+
+Function *Parser::realize_function_header(shared<Node> node, const Class *default_type, Class *name_space) {
+	auto block = tree->root_of_all_evil->block.get();
+
+	// name?
+	string name;
+	if (!node->params[0]) {
+		static int lambda_count = 0;
+		name = format(":lambda-%d:", lambda_count ++);
+	} else {
+		name = node->params[0]->as_token();
+		if ((name == Identifier::func::Init) or (name == Identifier::func::Delete) or (name == Identifier::func::Assign))
+			flags_set(node->flags, Flags::Mutable);
+	}
+
+	Function *f = tree->add_function(name, default_type, name_space, node->flags);
+
+	// template?
+	Array<string> template_param_names;
+	if (node->params[3]) {
+		for (auto t: weak(node->params[3]->params))
+			template_param_names.add(t->as_token());
+		flags_set(f->flags, Flags::Template);
+	}
+
+	//if (config.verbose)
+	//	msg_write("PARSE HEAD  " + f->signature());
+	f->token_id = node->token_id;
+	cur_func = f;
+
+	// parameter list
+	if (auto pnode = node->params[2]) {
+		for (int i=0; i<pnode->params.num/3; i++) {
+			// type of parameter variable
+			f->abstract_param_types.add(pnode->params[i*3+1]);
+			[[maybe_unused]] auto v = f->add_param(pnode->params[i*3]->as_token(), common_types.unknown, pnode->params[i*3]->flags);
+
+			// default parameter?
+			if (pnode->params[i*3+2]) {
+				f->default_parameters.resize(i);
+				f->default_parameters.add(pnode->params[i*3+2]);
+			}
+		}
+	}
+
+	f->abstract_return_type = node->params[1];
+
+	post_process_function_header(f, template_param_names, name_space, node->flags);
 	cur_func = nullptr;
 
 	return f;
@@ -2395,17 +2443,20 @@ shared<Node> Parser::parse_abstract_top_level() {
 		// class
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
 			if (!parse_class(tree->base_class))
-				skip_parse_class();
+				msg_write("X");
+				//skip_parse_class();
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {
-			auto f = parse_function_header(common_types._void, tree->base_class, Flags::Static);
+			auto n = parse_abstract_function_header(Flags::Static);
+			auto f = realize_function_header(n, common_types._void, tree->base_class);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 
 		// macro
 		} else if (Exp.cur == Identifier::Macro) {
-			auto f = parse_function_header(common_types._void, tree->base_class, Flags::Static | Flags::Macro);
+			auto n = parse_abstract_function_header(Flags::Static | Flags::Macro);
+			auto f = realize_function_header(n, common_types._void, tree->base_class);
 			expect_new_line("newline expected after parameter list");
 			skip_parsing_function_body(f);
 

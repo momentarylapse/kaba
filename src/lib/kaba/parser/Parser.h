@@ -59,10 +59,11 @@ public:
 	void parse_enum(Class *_namespace);
 	bool parse_class(Class *_namespace);
 	shared<Node> parse_abstract_class_header();
-	Class *parse_class_header(Class* _namespace, int64& var_offset0);
+	Class *realize_class_header(shared<Node>, Class* _namespace, int64& var_offset0);
 	void post_process_newly_parsed_class(Class *c, int size);
 	void skip_parse_class();
-	Function *parse_function_header(const Class *default_type, Class *name_space, Flags flags0);
+	shared<Node> parse_abstract_function_header(Flags flags0);
+	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void skip_parsing_function_body(Function *f);
 	void parse_abstract_function_body(Function *f);
