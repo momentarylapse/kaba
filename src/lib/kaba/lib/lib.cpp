@@ -586,6 +586,7 @@ void func_add_param(const string &name, const Class *type, Flags flags) {
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;
 		cur_func->mandatory_params = cur_func->num_params;
+		cur_func->abstract_node->params[2]->params.resize(cur_func->num_params*3);
 	}
 }
 
@@ -598,14 +599,14 @@ void func_add_param_def_x(const string &name, const Class *type, const void *p, 
 		cur_func->literal_param_type.add(type);
 		cur_func->num_params ++;
 		//cur_func->mandatory_params = cur_func->num_params;
+		cur_func->abstract_node->params[2]->params.resize(cur_func->num_params*3);
 
 		Constant *c = cur_package_module->tree->add_constant(type, cur_class);
 		if (type == common_types.i32)
 			c->as_int() = *(int*)p;
 		if (type == common_types.f32)
 			c->as_float() = *(float*)p;
-		cur_func->default_parameters.resize(cur_func->num_params - 1);
-		cur_func->default_parameters.add(add_node_const(c));
+		cur_func->abstract_node->params[2]->set_param(cur_func->num_params*3-1, add_node_const(c));
 	}
 }
 

@@ -180,8 +180,11 @@ Function *AutoImplementer::add_func_header(Class *t, const string &name, const C
 		f->literal_param_type.add(p);
 		f->block->add_var(param_names[i], p, Flags::None);
 		f->num_params ++;
+		f->abstract_node->params[2]->params.resize(f->num_params * 3);
 	}
-	f->default_parameters = def_params;
+	for (auto&& [i, p]: enumerate(def_params))
+		f->abstract_node->params[2]->set_param(i*3+2, p);
+
 	f->update_parameters_after_parsing();
 	if (config.verbose)
 		msg_write("ADD HEADER " + f->signature(common_types._void));
@@ -223,7 +226,10 @@ void AutoImplementer::redefine_inherited_constructors(Class *t) {
 	for (auto *pcc: t->parent->get_constructors()) {
 		auto c = t->get_same_func(Identifier::func::Init, pcc);
 		if (needs_new(c)) {
-			add_func_header(t, Identifier::func::Init, common_types._void, pcc->literal_param_type, class_func_param_names(pcc), c, Flags::Mutable, pcc->default_parameters);
+			shared_array<Node> def_params;
+			for (int i=0; i<pcc->num_params; i++)
+				def_params.add(pcc->abstract_default_parameter(i));
+			add_func_header(t, Identifier::func::Init, common_types._void, pcc->literal_param_type, class_func_param_names(pcc), c, Flags::Mutable, def_params);
 		}
 	}
 }

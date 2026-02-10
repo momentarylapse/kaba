@@ -59,18 +59,18 @@ void TemplateClassInstantiatorEnum::add_function_headers(Class* t) {
 
 	for (auto f: weak(t->functions)) {
 		if (f->name == "parse") {
-			f->default_parameters.resize(2);
+			f->abstract_node->params[2]->set_num_params(2*3);
 			auto c = t->owner->add_constant(common_types.class_ref, t);
 			c->as_int64() = (int_p)t;
 			f->mandatory_params = 1;
-			f->default_parameters[1] = add_node_const(c, t->token_id);
+			f->abstract_node->params[2]->set_param(1*3+2, add_node_const(c, t->token_id));
 		} else if (f->name == "all") {
 			f->literal_return_type = t->owner->request_implicit_class_list(t, t->token_id);
-			f->default_parameters.resize(1);
+			f->abstract_node->params[2]->set_num_params(1*3);
 			auto c = t->owner->add_constant(common_types.class_ref, t);
 			c->as_int64() = (int_p)t;
 			f->mandatory_params = 0;
-			f->default_parameters[0] = add_node_const(c, t->token_id);
+			f->abstract_node->params[2]->set_param(0*3+2, add_node_const(c, t->token_id));
 		}
 	}
 }

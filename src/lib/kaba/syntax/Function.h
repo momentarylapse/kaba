@@ -34,9 +34,10 @@ public:
 	// parameters (linked to intern variables)
 	int num_params;
 	int mandatory_params;
-	shared_array<Node> default_parameters;
-	shared_array<Node> abstract_param_types;
-	shared<Node> abstract_return_type;
+	shared<Node> abstract_node;
+	shared<Node> abstract_default_parameter(int n) const;
+	shared<Node> abstract_param_type(int n) const;
+	shared<Node> abstract_return_type() const;
 	// block of code
 	shared<Block> block;
 	// local variables

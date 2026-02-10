@@ -208,13 +208,13 @@ Function *TemplateManager::request_function_instance_matching(SyntaxTree *tree, 
 			}
 	};
 
-	if (params.num != f0->abstract_param_types.num)
-		tree->do_error(format("not able to match all template parameters: %d parameters given, %d expected", params.num, f0->abstract_param_types.num), token_id);
+	if (params.num != f0->num_params)
+		tree->do_error(format("not able to match all template parameters: %d parameters given, %d expected", params.num, f0->num_params), token_id);
 
 	for (auto&& [i,p]: enumerate(weak(params))) {
 		if (p->type == common_types.unknown)
 			tree->do_error(format("parameter #%d '%s' has undecided type when trying to match template arguments", i+1, f0->var[i]->name), token_id);
-		match_parameter_type(f0->abstract_param_types[i], p->type, set_match_type);
+		match_parameter_type(f0->abstract_param_type(i), p->type, set_match_type);
 	}
 
 	for (auto t: arg_types)
@@ -273,12 +273,10 @@ Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTempla
 		f->name += format("[%s]", type_list_to_str(params));
 
 		// replace in parameters/return type
-		for (int i=0; i<f->num_params; i++) {
-			f->abstract_param_types[i] = node_replace(tree, f->abstract_param_types[i], t.params, params);
-			//f->abstract_param_types[i]->show();
-		}
-		if (f->abstract_return_type)
-			f->abstract_return_type = node_replace(tree, f->abstract_return_type, t.params, params);
+		for (int i=0; i<f->num_params; i++)
+			f->abstract_node->params[2]->set_param(i*3+1, node_replace(tree, f->abstract_param_type(i), t.params, params));
+		if (auto rt = f->abstract_return_type())
+			f->abstract_node->params[1] = node_replace(tree, rt, t.params, params);
 
 		// replace in body
 		for (int i=0; i<f->block->params.num; i++)
@@ -381,11 +379,11 @@ Function* TemplateClassInstantiator::add_func_header(Class *t, const string &nam
 	f->auto_declared = true;
 	f->token_id = t->token_id;
 	for (auto&& [i,p]: enumerate(param_types)) {
-		f->literal_param_type.add(p);
-		f->block->add_var(param_names[i], p, Flags::None);
-		f->num_params ++;
+		f->add_param(param_names[i], p, Flags::None);
 	}
-	f->default_parameters = def_params;
+	f->abstract_node->params[2]->params.resize(f->num_params * 3);
+	for (auto&& [i,p]: enumerate(def_params))
+		f->abstract_node->params[2]->set_param(i*3+2, p);
 	f->update_parameters_after_parsing();
 	if (config.verbose)
 		msg_write("ADD HEADER " + f->signature(common_types._void));

@@ -2183,21 +2183,22 @@ void check_function_signature_legal(Concretifier *c, Function *f) {
 	};
 
 	if (forbidden(f->literal_return_type))
-		c->do_error("return type must not be owned. Use xfer[...] instead", f->abstract_return_type);
+		c->do_error("return type must not be owned. Use xfer[...] instead", f->abstract_return_type());
 	for (int i=0; i<f->num_params; i++)
 		if (forbidden(f->literal_param_type[i]))
-			c->do_error("parameter must not be owned. Use xfer[...] instead", f->abstract_param_types[i]);
+			c->do_error("parameter must not be owned. Use xfer[...] instead", f->abstract_param_type(i));
 }
 
 void Concretifier::concretify_function_header(Function *f) {
 	auto block = tree->root_of_all_evil->block.get();
 
 	f->set_return_type(common_types._void);
-	if (f->abstract_return_type) {
-		f->set_return_type(concretify_as_type(f->abstract_return_type, block, f->name_space));
+	if (auto rt = f->abstract_return_type()) {
+		f->set_return_type(concretify_as_type(rt, block, f->name_space));
 	}
-	f->literal_param_type.resize(f->abstract_param_types.num);
-	for (auto&& [i,at]: enumerate(weak(f->abstract_param_types))) {
+	f->literal_param_type.resize(f->num_params);
+	for (int i=0; i<f->num_params; i++) {
+		auto at = f->abstract_param_type(i);
 		// type might be null!
 		auto t = at ? concretify_as_type(at, block, f->name_space) : nullptr;
 		auto v = f->var[i].get();
@@ -2205,17 +2206,18 @@ void Concretifier::concretify_function_header(Function *f) {
 		f->literal_param_type[i] = t;
 
 		// mandatory_params not yet
-		if ((i < f->default_parameters.num) and f->default_parameters[i]) {
-			f->default_parameters[i] = concretify_node(f->default_parameters[i], block, f->name_space);
+		if (auto dp = f->abstract_default_parameter(i)) {
+			dp = concretify_node(dp, block, f->name_space);
 			if (t) {
 				// auto cast
-				f->default_parameters[i] = explicit_cast(f->default_parameters[i], t);
+				dp = explicit_cast(dp, t);
 			} else {
 				// no explicit type -> set from default value
-				t = f->default_parameters[i]->type;
+				t = dp->type;
 				v->type = t;
 				f->literal_param_type[i] = t;
 			}
+			f->abstract_node->params[2]->params[i*3+2] = dp;
 		}
 	}
 	flags_clear(f->flags, Flags::Template);
@@ -2322,8 +2324,8 @@ shared<Node> Concretifier::try_to_match_apply_params(const shared_array<Node> &l
 			}
 			for (int i=0; i<f->num_params; i++)
 				if (!params[i]) {
-					if (i >= f->mandatory_params and f->default_parameters[i]) {
-						params[i] = f->default_parameters[i];
+					if (i >= f->mandatory_params and f->abstract_default_parameter(i)) {
+						params[i] = f->abstract_default_parameter(i);
 					} else {
 						return {ParamMapResult::Code::ErrorTooFew, f->mandatory_params};
 					}
@@ -2812,7 +2814,7 @@ shared<Node> Concretifier::apply_params_with_cast(shared<Node> operand, const sh
 	if (operand->is_function()) {
 		auto f = operand->as_func();
 		for (int p=params.num+offset; p<f->num_params; p++) {
-			r->set_param(p, f->default_parameters[p]);
+			r->set_param(p, f->abstract_default_parameter(p));
 		}
 	}
 	return r;

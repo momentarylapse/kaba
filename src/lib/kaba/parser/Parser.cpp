@@ -720,8 +720,8 @@ void analyse_func(Function *f) {
 	msg_write(b2s(f->is_member()));
 	for (auto p: f->literal_param_type)
 		msg_write("  LPT: " + p->long_name());
-	for (auto p: f->abstract_param_types)
-		if (p)
+	for (int i=0; i<f->num_params; i++)
+		if (auto p = f->abstract_param_type(i))
 			msg_write("  APT: " + p->str());
 		else
 			msg_write("  APT: <nil>");
@@ -2190,8 +2190,8 @@ shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 
 	// parameter list
 	expect_identifier("(", "'(' expected after function name");
+	auto pnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
 	if (!try_consume(")")) {
-		auto pnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
 		int nn = 0;
 		while (true) {
 			nn ++;
@@ -2221,8 +2221,8 @@ shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 
 			expect_identifier(",", "',' or ')' expected after parameter");
 		}
-		node->set_param(2, pnode);
 	}
+	node->set_param(2, pnode);
 
 	// return type
 	if (try_consume("->"))
@@ -2232,8 +2232,6 @@ shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 }
 
 Function *Parser::realize_function_header(shared<Node> node, const Class *default_type, Class *name_space) {
-	auto block = tree->root_of_all_evil->block.get();
-
 	// name?
 	string name;
 	if (!node->params[0]) {
@@ -2263,19 +2261,11 @@ Function *Parser::realize_function_header(shared<Node> node, const Class *defaul
 	// parameter list
 	if (auto pnode = node->params[2]) {
 		for (int i=0; i<pnode->params.num/3; i++) {
-			// type of parameter variable
-			f->abstract_param_types.add(pnode->params[i*3+1]);
 			[[maybe_unused]] auto v = f->add_param(pnode->params[i*3]->as_token(), common_types.unknown, pnode->params[i*3]->flags);
-
-			// default parameter?
-			if (pnode->params[i*3+2]) {
-				f->default_parameters.resize(i);
-				f->default_parameters.add(pnode->params[i*3+2]);
-			}
 		}
 	}
 
-	f->abstract_return_type = node->params[1];
+	f->abstract_node = node;
 
 	post_process_function_header(f, template_param_names, name_space, node->flags);
 	cur_func = nullptr;
