@@ -145,6 +145,7 @@ public:
 	void set_param(int index, shared<Node> p);
 	void set_instance(shared<Node> p);
 	void set_type(const Class *type);
+	void add(shared<Node> p);
 	string signature(const Class *ns = nullptr) const;
 	string str(const Class *ns = nullptr) const;
 	void show(const Class *ns = nullptr) const;

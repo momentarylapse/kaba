@@ -359,6 +359,10 @@ void Node::set_param(int index, shared<Node> p) {
 #endif
 }
 
+void Node::add(shared<Node> p) {
+	params.add(p);
+}
+
 shared<Node> Node::shallow_copy() const {
 	auto r = new Node(kind, link_no, type, flags, token_id);
 	r->params = params;

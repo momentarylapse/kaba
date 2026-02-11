@@ -1098,8 +1098,6 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 
 		auto cmd_ex = add_node_statement(StatementID::Except, token1, common_types.unknown);
 
-		auto except_block = new Block(block->function, block, common_types.unknown);
-
 		if (!Exp.end_of_line()) {
 			auto ex_type = parse_abstract_operand(block, true); // type
 			if (!ex_type)
@@ -1122,7 +1120,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 		//auto n = block->nodes.back();
 		//n->as_block()->
 
-		auto cmd_ex_block = parse_abstract_block(block, except_block);
+		auto cmd_ex_block = parse_abstract_block(block);
 
 		num_excepts ++;
 		cmd_try->set_num_params(1 + num_excepts * 2);
@@ -1462,12 +1460,10 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 	return node;
 }
 
-shared<Node> Parser::parse_abstract_block(Block *parent, Block *block) {
+shared<Node> Parser::parse_abstract_block(Block *parent) {
 	int indent0 = Exp.cur_line->indent;
 
-	if (!block)
-		block = new Block(parent->function, parent, common_types.unknown);
-	block->type = common_types.unknown;
+	auto block = new Block(parent->function, parent, common_types.unknown);
 
 	while (!Exp.end_of_file()) {
 
@@ -1811,10 +1807,7 @@ bool Parser::parse_class(Class *_namespace) {
 				flags_set(flags, Flags::Virtual);
 			if (_class->is_namespace())
 				flags_set(flags, Flags::Static);
-			auto n = parse_abstract_function_header(flags);
-			auto f = realize_function_header(n, common_types._void, _class);
-			expect_new_line("newline expected after parameter list");
-			skip_parsing_function_body(f);
+			parse_abstract_function(_class, flags);
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
 			parse_named_const(_class, tree->root_of_all_evil->block.get());
 		} else if (try_consume(Identifier::Var)) {
@@ -2288,21 +2281,7 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 	}
 }
 
-void Parser::skip_parsing_function_body(Function *f) {
-	int indent0 = Exp.cur_line->indent;
-	while (!Exp.end_of_file()) {
-		if (Exp.next_line_indent() <= indent0)
-			break;
-		Exp.next_line();
-	}
-
-	// jump to end of line
-	Exp.jump(Exp.cur_line->token_ids.back());
-	function_needs_parsing.add(f);
-}
-
 void Parser::parse_abstract_function_body(Function *f) {
-	Exp.jump(f->token_id);
 	f->block->type = common_types.unknown; // abstract parsing
 
 	int indent0 = Exp.cur_line->indent;
@@ -2314,12 +2293,26 @@ void Parser::parse_abstract_function_body(Function *f) {
 	while (more_to_parse) {
 		more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
 	}
+	Exp.rewind();
 
 
 	if (config.verbose) {
 		msg_write("ABSTRACT:");
 		f->block->show();
 	}
+}
+
+shared<Node> Parser::parse_abstract_function(Class *name_space, Flags flags0) {
+	auto n = parse_abstract_function_header(flags0);
+	auto f = realize_function_header(n, common_types._void, name_space);
+	expect_new_line("newline expected after parameter list");
+
+	if (!f->is_extern())
+		parse_abstract_function_body(f);
+
+	functions_to_concretify.add(f);
+
+	return f->abstract_node;
 }
 
 void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
@@ -2345,12 +2338,12 @@ void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
 	}
 }
 
-void Parser::parse_all_function_bodies() {
+void Parser::concretify_all_functions() {
 	//for (auto *f: function_needs_parsing)   might add lambda functions...
-	for (int i=0; i<function_needs_parsing.num; i++) {
-		auto f = function_needs_parsing[i];
+	for (int i=0; i<functions_to_concretify.num; i++) {
+		auto f = functions_to_concretify[i];
 		if (!f->is_extern() and (f->token_id >= 0)) {
-			parse_abstract_function_body(f);
+			//parse_abstract_function_body(f);
 			if (!f->is_template() and !f->is_macro())
 				con.concretify_function_body(f);
 		}
@@ -2428,17 +2421,11 @@ shared<Node> Parser::parse_abstract_top_level() {
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {
-			auto n = parse_abstract_function_header(Flags::Static);
-			auto f = realize_function_header(n, common_types._void, tree->base_class);
-			expect_new_line("newline expected after parameter list");
-			skip_parsing_function_body(f);
+			node->add(parse_abstract_function(tree->base_class, Flags::Static));
 
 		// macro
 		} else if (Exp.cur == Identifier::Macro) {
-			auto n = parse_abstract_function_header(Flags::Static | Flags::Macro);
-			auto f = realize_function_header(n, common_types._void, tree->base_class);
-			expect_new_line("newline expected after parameter list");
-			skip_parsing_function_body(f);
+			node->add(parse_abstract_function(tree->base_class, Flags::Static | Flags::Macro));
 
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
 			parse_named_const(tree->base_class, tree->root_of_all_evil->block.get());
@@ -2465,7 +2452,7 @@ void Parser::parse() {
 
 	tree->root_node = parse_abstract_top_level();
 
-	parse_all_function_bodies();
+	concretify_all_functions();
 	
 	tree->show("aaa");
 

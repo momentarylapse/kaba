@@ -53,7 +53,7 @@ public:
 	void parse();
 	shared<Node> parse_abstract_top_level();
 	void parse_all_class_names_in_block(Class *ns, int indent0);
-	void parse_all_function_bodies();
+	void concretify_all_functions();
 	Flags parse_flags(Flags initial = Flags::None);
 	void parse_import();
 	void parse_enum(Class *_namespace);
@@ -62,10 +62,10 @@ public:
 	Class *realize_class_header(shared<Node>, Class* _namespace, int64& var_offset0);
 	void post_process_newly_parsed_class(Class *c, int size);
 	void skip_parse_class();
+	shared<Node> parse_abstract_function(Class *name_space, Flags flags0);
 	shared<Node> parse_abstract_function_header(Flags flags0);
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
-	void skip_parsing_function_body(Function *f);
 	void parse_abstract_function_body(Function *f);
 	bool parse_abstract_indented_command_into_block(Block* block, int indent0);
 	const Class *parse_type(const Class *ns);
@@ -98,7 +98,7 @@ public:
 
 	shared<Node> parse_abstract_single_func_param(Block *block);
 	void parse_abstract_complete_command_into_block(Block *block);
-	shared<Node> parse_abstract_block(Block *parent, Block *block = nullptr);
+	shared<Node> parse_abstract_block(Block *parent);
 	shared<Node> parse_abstract_operand(Block *block, bool prefer_class = false);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false);
 	shared<Node> parse_abstract_operand_greedy(Block *block, bool allow_tuples = false, int min_op_level = -999);
@@ -149,7 +149,7 @@ public:
 	int parser_loop_depth;
 	bool found_dynamic_param;
 
-	Array<Function*> function_needs_parsing;
+	Array<Function*> functions_to_concretify;
 
 	struct NamespaceFix {
 		const Class *_class, *_namespace;
