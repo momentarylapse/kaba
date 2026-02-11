@@ -2308,23 +2308,13 @@ void Parser::parse_abstract_function_body(Function *f) {
 	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
 
-	// auto implement constructor?
-	if (f->name == Identifier::func::Init) {
-		if (peek_commands_super(Exp)) {
-			more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
-
-			auto_implementer.implement_regular_constructor(f, f->name_space, false);
-		} else {
-			auto_implementer.implement_regular_constructor(f, f->name_space, true);
-		}
-	}
-
 	parser_loop_depth = 0;
 
 // instructions
 	while (more_to_parse) {
 		more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
 	}
+
 
 	if (config.verbose) {
 		msg_write("ABSTRACT:");

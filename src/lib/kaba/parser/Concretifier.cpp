@@ -2225,7 +2225,41 @@ void Concretifier::concretify_function_header(Function *f) {
 	check_function_signature_legal(this, f);
 }
 
+bool calling_super_init(Function *f) {
+	if (f->block->params.num < 1)
+		return false;
+	auto c = f->block->params[0];
+	if (c->kind != NodeKind::AbstractCall)
+		return false;
+	if (c->params[0]->kind != NodeKind::AbstractElement)
+		return false;
+	if (c->params[0]->params[0]->kind != NodeKind::AbstractToken)
+		return false;
+	if (c->params[0]->params[0]->as_token() != "super")
+		return false;
+	if (c->params[0]->params[1]->as_token() != Identifier::func::Init)
+		return false;
+	return true;
+}
+
 void Concretifier::concretify_function_body(Function *f) {
+	int n0 = f->block->params.num;
+	int i0 = 0;
+
+	// auto implement constructor?
+	if (f->name == Identifier::func::Init) {
+		if (calling_super_init(f)) {
+			auto_implementer->implement_regular_constructor(f, f->name_space, false);
+			i0 = 1;
+		} else {
+			auto_implementer->implement_regular_constructor(f, f->name_space, true);
+		}
+	}
+
+	for (int i=0; i<f->block->params.num - n0; i++) {
+		f->block->params.move(n0 + i, i0 + i);
+	}
+
 	concretify_node(f->block.get(), f->block.get(), f->name_space);
 
 	// auto implement destructor?
