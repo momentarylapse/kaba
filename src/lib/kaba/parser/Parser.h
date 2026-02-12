@@ -67,7 +67,7 @@ public:
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void parse_abstract_function_body(Function *f);
-	bool parse_abstract_indented_command_into_block(Block* block, int indent0);
+	bool parse_abstract_indented_command_into_block(Node* block, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);
 	shared_array<Node> parse_abstract_variable_declaration(Block* block, Flags flags0 = Flags::None);
@@ -97,7 +97,7 @@ public:
 	shared<Node> parse_operand_extension_call(const shared_array<Node> &operands, Block *block);
 
 	shared<Node> parse_abstract_single_func_param(Block *block);
-	void parse_abstract_complete_command_into_block(Block *block);
+	void parse_abstract_complete_command_into_block(Node *block);
 	shared<Node> parse_abstract_block(Block *parent);
 	shared<Node> parse_abstract_operand(Block *block, bool prefer_class = false);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false);

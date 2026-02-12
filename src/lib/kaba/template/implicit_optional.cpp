@@ -25,7 +25,7 @@ void AutoImplementer::implement_optional_constructor(Function *f, const Class *t
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
 	// self.has_value = false
-	f->block->add(add_node_operator_by_inline(InlineID::BoolAssign,
+	f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 											  optional_has_value(self),
 											  node_false()));
 }
@@ -36,7 +36,7 @@ void AutoImplementer::implement_optional_constructor_wrap(Function *f, const Cla
 
 	if (auto f_con = t->param[0]->get_default_constructor()) {
 		// self.data.__init__()
-		f->block->add(add_node_member_call(f_con,
+		f->block_node->add(add_node_member_call(f_con,
 										   optional_data(self)));
 	}
 
@@ -48,14 +48,14 @@ void AutoImplementer::implement_optional_constructor_wrap(Function *f, const Cla
 		if (auto assign = parser->con.link_operator_id(op,
 													   optional_data(self),
 													   value))
-			f->block->add(assign);
+			f->block_node->add(assign);
 		else
 			do_error_implicit(f, format("no operator %s = %s found", t->param[0]->long_name(), t->param[0]->long_name()));
 	}
 
 	{
 		// self.has_value = true
-		f->block->add(add_node_operator_by_inline(InlineID::BoolAssign,
+		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
 												  node_true()));
 	}
@@ -74,7 +74,7 @@ void AutoImplementer::implement_optional_destructor(Function *f, const Class *t)
 		// if self.has_value
 		//     self.value.__delete()
 		auto n_del = add_node_member_call(f_des, optional_data(self));
-		f->block->add(node_if(optional_has_value(self), n_del));
+		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 }
 
@@ -87,7 +87,7 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		//     self.value.__delete()
 
 		auto n_del = add_node_member_call(f_des, optional_data(self));
-		f->block->add(node_if(optional_has_value(self), n_del));
+		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 
 
@@ -96,7 +96,7 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		//     self.data.__init__()
 		//     self.data = other.data
 
-		auto b = new Block(f, f->block.get());
+		auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 		if (auto f_con = t->param[0]->get_default_constructor()) {
 			// self.data.__init__()
@@ -113,7 +113,7 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		else
 			do_error_implicit(f, format("no operator %s = %s found", t->param[0]->long_name(), t->param[0]->long_name()));
 
-		f->block->add(node_if(optional_has_value(other), b));
+		f->block_node->add(node_if(optional_has_value(other), b));
 	}
 
 	{
@@ -121,7 +121,7 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		auto assign = add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
 												  optional_has_value(other));
-		f->block->add(assign);
+		f->block_node->add(assign);
 	}
 }
 
@@ -134,7 +134,7 @@ void AutoImplementer::implement_optional_assign_raw(Function *f, const Class *t)
 		//     self.value.__init__()
 		auto cmd_not = node_not(optional_has_value(self));
 		auto n_init = add_node_member_call(f_con, optional_data(self));
-		f->block->add(node_if(cmd_not, n_init));
+		f->block_node->add(node_if(cmd_not, n_init));
 	}
 
 	{
@@ -145,14 +145,14 @@ void AutoImplementer::implement_optional_assign_raw(Function *f, const Class *t)
 		if (auto assign = parser->con.link_operator_id(op,
 													   optional_data(self),
 													   other))
-			f->block->add(assign);
+			f->block_node->add(assign);
 		else
 			do_error_implicit(f, format("no operator %s = %s found", t->param[0]->long_name(), t->param[0]->long_name()));
 	}
 
 	{
 		// self.has_value = true
-		f->block->add(add_node_operator_by_inline(InlineID::BoolAssign,
+		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
 												  node_true()));
 	}
@@ -166,12 +166,12 @@ void AutoImplementer::implement_optional_assign_null(Function *f, const Class *t
 		//     self.data.__delete()
 
 		auto n_del = add_node_member_call(f_des, optional_data(self));
-		f->block->add(node_if(optional_has_value(self), n_del));
+		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 
 	{
 		// self.has_value = false
-		f->block->add(add_node_operator_by_inline(InlineID::BoolAssign,
+		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
 												  node_false()));
 	}
@@ -181,7 +181,7 @@ void AutoImplementer::implement_optional_has_value(Function *f, const Class *t) 
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
 	// return self.has_value
-	f->block->add(node_return(optional_has_value(self)));
+	f->block_node->add(node_return(optional_has_value(self)));
 }
 
 void AutoImplementer::implement_optional_equal_raw(Function *f, const Class *t) {
@@ -194,13 +194,13 @@ void AutoImplementer::implement_optional_equal_raw(Function *f, const Class *t) 
 		// if not self.has_value
 		//     return false
 		auto cmd_not = node_not(optional_has_value(self));
-		f->block->add(node_if(cmd_not, node_return(node_false())));
+		f->block_node->add(node_if(cmd_not, node_return(node_false())));
 	}
 
 	{
 		// return self.data == other
 		if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, optional_data(self), other))
-			f->block->add(node_return(n_eq));
+			f->block_node->add(node_return(n_eq));
 		else
 			do_error_implicit(f, format("no operator %s == %s found", t->param[0]->long_name(), t->param[0]->long_name()));
 	}
@@ -218,7 +218,7 @@ void AutoImplementer::implement_optional_equal(Function *f, const Class *t) {
 		auto cmd_and = add_node_operator_by_inline(InlineID::BoolAnd, optional_has_value(self), optional_has_value(other));
 
 		if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, optional_data(self), optional_data(other)))
-			f->block->add(node_if(cmd_and, node_return(n_eq)));
+			f->block_node->add(node_if(cmd_and, node_return(n_eq)));
 		else
 			do_error_implicit(f, format("no operator %s == %s found", t->param[0]->long_name(), t->param[0]->long_name()));
 	}
@@ -226,7 +226,7 @@ void AutoImplementer::implement_optional_equal(Function *f, const Class *t) {
 	{
 		// return self.has_value == other.has_value
 		auto n_eq = add_node_operator_by_inline(InlineID::BoolEqual, optional_has_value(self), optional_has_value(other));
-		f->block->add(node_return(n_eq));
+		f->block_node->add(node_return(n_eq));
 	}
 }
 

@@ -709,7 +709,7 @@ void SyntaxTree::convert_call_by_reference() {
 				v->type = type_ref(v->type, -1);
 
 				// usage inside the function
-				transform_block(f->block.get(), [this, v](shared<Node> n) {
+				transform_block(f->block_node.get(), [this, v](shared<Node> n) {
 					return conv_cbr(n, v);
 				});
 			}
@@ -719,7 +719,7 @@ void SyntaxTree::convert_call_by_reference() {
 	for (Function *f: functions)
 		if (f->literal_return_type->uses_return_by_memory() and (f->literal_return_type != common_types.unknown))
 			//convert_return_by_memory(this, f->block, f);
-			transform_block(f->block.get(), [this, f](shared<Node> n) {
+			transform_block(f->block_node.get(), [this, f](shared<Node> n) {
 				return conv_return_by_memory(n, f);
 			});
 
@@ -847,7 +847,7 @@ shared<Node> SyntaxTree::conv_break_down_low_level(shared<Node> c) {
 
 shared<Node> SyntaxTree::transform_node(shared<Node> n, std::function<shared<Node>(shared<Node>)> F) {
 	if (n->kind == NodeKind::Block) {
-		transform_block(n->as_block(), F);
+		transform_block(n.get(), F);
 		return F(n);
 	} else {
 		shared<Node> r = n;
@@ -866,7 +866,7 @@ shared<Node> SyntaxTree::transform_node(shared<Node> n, std::function<shared<Nod
 
 shared<Node> SyntaxTree::transformb_node(shared<Node> n, Block *b, std::function<shared<Node>(shared<Node>, Block*)> F) {
 	if (n->kind == NodeKind::Block) {
-		transformb_block(n->as_block(), F);
+		transformb_block(n.get(), F);
 		return F(n, b);
 	} else {
 		shared<Node> r = n;
@@ -890,7 +890,7 @@ shared<Node> SyntaxTree::transformb_node(shared<Node> n, Block *b, std::function
 #define POP_BLOCK_INSERT \
 	_transform_insert_before_ = XXX;
 
-void handle_insert_before(Block *block, int &i) {
+void handle_insert_before(Node *block, int &i) {
 	if (_transform_insert_before_.num > 0) {
 		for (auto *ib: weak(_transform_insert_before_)) {
 			if (config.verbose)
@@ -903,7 +903,7 @@ void handle_insert_before(Block *block, int &i) {
 }
 
 
-void SyntaxTree::transform_block(Block *block, std::function<shared<Node>(shared<Node>)> F) {
+void SyntaxTree::transform_block(Node *block, std::function<shared<Node>(shared<Node>)> F) {
 	PUSH_BLOCK_INSERT;
 	for (int i=0; i<block->params.num; i++) {
 		block->params[i] = transform_node(block->params[i], F);
@@ -912,10 +912,10 @@ void SyntaxTree::transform_block(Block *block, std::function<shared<Node>(shared
 	POP_BLOCK_INSERT;
 }
 
-void SyntaxTree::transformb_block(Block *block, std::function<shared<Node>(shared<Node>, Block*)> F) {
+void SyntaxTree::transformb_block(Node *block, std::function<shared<Node>(shared<Node>, Block*)> F) {
 	PUSH_BLOCK_INSERT;
 	for (int i=0; i<block->params.num; i++) {
-		block->params[i] = transformb_node(block->params[i], block, F);
+		block->params[i] = transformb_node(block->params[i], block->as_block(), F);
 		handle_insert_before(block, i);
 	}
 	POP_BLOCK_INSERT;
@@ -926,14 +926,14 @@ void SyntaxTree::transform(std::function<shared<Node>(shared<Node>)> F) {
 	for (Function *f: functions)
 		if (!f->is_template() and !f->is_macro()) {
 			parser->cur_func = f;
-			transform_block(f->block.get(), F);
+			transform_block(f->block_node.get(), F);
 		}
 }
 void SyntaxTree::transformb(std::function<shared<Node>(shared<Node>, Block*)> F) {
 	for (Function *f: functions)
 		if (!f->is_template() and !f->is_macro()) {
 			parser->cur_func = f;
-			transformb_block(f->block.get(), F);
+			transformb_block(f->block_node.get(), F);
 		}
 }
 
@@ -1015,7 +1015,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		auto array = add_node_local(vv);
 
-		Block *bb = new Block(f, b);
+		auto bb = add_node_block(new Block(f, b), common_types._void);
 		for (int i=0; i<n->params.num; i++){
 			auto cc = add_node_member_call(cf, array, n->token_id);
 			cc->set_param(1, n->params[i]);
@@ -1034,7 +1034,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->type);
 		auto array = add_node_local(vv);
 
-		Block *bb = new Block(f, b);
+		auto bb = add_node_block(new Block(f, b), common_types._void);
 		for (int i=0; i<n->params.num/2; i++){
 			auto cc = add_node_member_call(cf, array, n->token_id);
 			cc->set_param(1, n->params[i*2]);
@@ -1181,7 +1181,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		auto *vv = b->add_var(f->create_slightly_hidden_name(), n->params[0]->type);
 		auto temp = add_node_local(vv);
 
-		Block *bb = new Block(f, b);
+		auto bb = add_node_block(new Block(f, b), common_types._void);
 
 		// tuple assign -> temp
 		Function *cf = n->params[0]->type->get_assign();
@@ -1209,7 +1209,7 @@ shared<Node> SyntaxTree::conv_break_down_high_level(shared<Node> n, Block *b) {
 		auto *vv = b->add_var(b->function->create_slightly_hidden_name(), n->params[0]->type);
 		auto temp = add_node_local(vv);
 
-		Block *bb = new Block(b->function, b);
+		auto bb = add_node_block(new Block(b->function, b), common_types._void);
 		bb->type = n->type;
 		auto& ai = parser->auto_implementer;
 		bb->add(ai.add_assign(b->function, "", temp, n->params[0]));

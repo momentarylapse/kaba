@@ -51,6 +51,7 @@ enum class NodeKind {
 	CallSpecialFunction, // = len(), sorted() etc
 	SpecialFunctionName, // = len, sorted etc
 	Block,               // = block of commands {...}
+	Group,               // = block without metadata
 	Operator,
 	NamedParameter,
 	// data altering
@@ -119,7 +120,7 @@ public:
 	Flags flags;
 	bool is_mutable() const;
 
-	Node(NodeKind kind, int64 link_no, const Class *type, Flags flags = Flags::Mutable, int token_id = -1);
+	Node(NodeKind kind, int64 link_no, const Class *type, Flags flags = Flags::None, int token_id = -1);
 	/*Node(const Class *c);
 	Node(const Block *b);
 	Node(const Constant *c);*/
@@ -177,7 +178,7 @@ shared<Node> add_node_func_name(const Function *f, int token_id = -1);
 shared<Node> add_node_class(const Class *c, int token_id = -1);
 shared<Node> add_node_call(const Function *f, int token_id = -1);
 shared<Node> add_node_const(const Constant *c, int token_id = -1);
-//shared<Node> add_node_block(Block *b);
+shared<Node> add_node_block(Block *b, const Class *type /*= common_types.unknown*/, int token_id = -1);
 shared<Node> add_node_operator(const Operator *op, const shared<Node> p1, const shared<Node> p2, int token_id = -1, const Class *override_type = nullptr);
 shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, int token_id = -1, const Class *override_type = nullptr);
 shared<Node> add_node_global(const Variable *var, int token_id = -1);

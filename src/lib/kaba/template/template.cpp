@@ -95,13 +95,14 @@ void show_node_details(shared<Node> n) {
 
 void show_func_details(Function *f) {
 	msg_write("DETAILS:    " + f->signature() + "  " + p2s(f));
-	show_node_details(f->block.get());
+	show_node_details(f->block_node.get());
 }
 
 Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
 	//msg_error("FULL COPY");
 	auto f = f0->create_dummy_clone(f0->name_space);
-	f->block = cp_node(f0->block.get())->as_block();
+	f->block_node = cp_node(f0->block_node.get());
+	f->block = f->block_node->as_block();
 	flags_clear(f->flags, Flags::Unimplemented);
 
 	auto convert = [f] (shared<Node> n) {
@@ -118,7 +119,7 @@ Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
 	};
 
 	//convert(f->block.get())->as_block();
-	tree->transform_node(f->block.get(), convert);
+	tree->transform_node(f->block_node.get(), convert);
 
 	//show_func_details(f0);
 	//show_func_details(f);
@@ -279,8 +280,8 @@ Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTempla
 			f->abstract_node->params[1] = node_replace(tree, rt, t.params, params);
 
 		// replace in body
-		for (int i=0; i<f->block->params.num; i++)
-			f->block->params[i] = node_replace(tree, f->block->params[i], t.params, params);
+		for (int i=0; i<f->block_node->params.num; i++)
+			f->block_node->params[i] = node_replace(tree, f->block_node->params[i], t.params, params);
 	}
 
 	// concretify
@@ -293,7 +294,7 @@ Function *TemplateManager::instantiate_function(SyntaxTree *tree, FunctionTempla
 		tree->parser->con.concretify_function_body(f);
 
 		if (config.verbose)
-			f->block->show();
+			f->block_node->show();
 
 		auto __ns = const_cast<Class*>(f0->name_space);
 		__ns->add_function(tree, f, false, false);

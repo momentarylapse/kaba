@@ -20,6 +20,7 @@ Array<BindingTemplate*> binding_templates;
 Function::Function(const string &_name, const Class *_return_type, const Class *_name_space, Flags _flags) {
 	name = _name;
 	block = new Block(this, nullptr);
+	block_node = add_node_block(block, common_types._void);
 	num_params = 0;
 	mandatory_params = 0;
 	effective_return_type = _return_type;
@@ -81,7 +82,7 @@ void Function::show(const string &stage) const {
 		return;
 	auto ns = owner()->base_class;
 	msg_write("[function] " + signature(ns));
-	block->show(ns);
+	block_node->show(ns);
 }
 
 string Function::create_slightly_hidden_name() {
@@ -126,15 +127,15 @@ string Function::signature(const Class *ns) const {
 	return r;
 }
 
-void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
-	blocks.add(block);
+void blocks_add_recursive(Array<Block*> &blocks, Node *block) {
+	blocks.add(block->as_block());
 	for (auto n: weak(block->params)) {
 		if (n->kind == NodeKind::Block)
-			blocks_add_recursive(blocks, n->as_block());
+			blocks_add_recursive(blocks, n);
 		if (n->kind == NodeKind::Statement) {
 			for (auto p: weak(n->params))
 				if (p->kind == NodeKind::Block)
-					blocks_add_recursive(blocks, p->as_block());
+					blocks_add_recursive(blocks, p);
 		}
 	}
 }
@@ -142,7 +143,7 @@ void blocks_add_recursive(Array<Block*> &blocks, Block *block) {
 Array<Block*> Function::all_blocks() {
 	Array<Block*> blocks;
 	if (block)
-		blocks_add_recursive(blocks, block.get());
+		blocks_add_recursive(blocks, block_node.get());
 	return blocks;
 }
 

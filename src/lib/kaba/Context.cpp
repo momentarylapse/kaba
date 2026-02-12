@@ -279,18 +279,18 @@ void Context::execute_single_command(const string &cmd) {
 	parser->Exp.reset_walker();
 
 	// parse
-	func->block->type = common_types.unknown;
-	parser->parse_abstract_complete_command_into_block(func->block.get());
+	func->block_node->type = common_types.unknown;
+	parser->parse_abstract_complete_command_into_block(func->block_node.get());
 	if (config.verbose) {
 		msg_write("ABSTRACT SINGLE:");
-		func->block->show();
+		func->block_node->show();
 	}
-	parser->con.concretify_node(func->block.get(), func->block.get(), func->name_space);
+	parser->con.concretify_node(func->block_node.get(), func->block, func->name_space);
 
-	if (func->block->params.num == 0)
+	if (func->block_node->params.num == 0)
 		return;
 
-	auto node = func->block->params[0];
+	auto node = func->block_node->params[0];
 	
 	// implicit print(...)?
 	if (node->type != common_types._void) {
@@ -299,7 +299,7 @@ void Context::execute_single_command(const string &cmd) {
 
 		auto cmd = add_node_call(f_print);
 		cmd->set_param(0, n_str);
-		func->block->params[0] = cmd;
+		func->block_node->params[0] = cmd;
 	}
 	//for (auto *c: tree->owned_classes)
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...

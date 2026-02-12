@@ -429,7 +429,7 @@ void Compiler::map_constants_to_opcode() {
 
 void Compiler::map_address_constants_to_opcode() {
 	for (auto f: module->functions()) {
-		tree->transform_block(f->block.get(), [this] (shared<Node> n) {
+		tree->transform_block(f->block_node.get(), [this] (shared<Node> n) {
 			if (n->kind == NodeKind::Address) {
 				//msg_write(format("ADDRESS   %x", n->link_no));
 				memcpy(&module->opcode[module->opcode_size], &n->link_no, config.target.pointer_size);
@@ -839,7 +839,7 @@ void Compiler::assemble_function(int index, Function *f, Asm::InstructionWithPar
 			return;
 
 	if (config.verbose and config.allow_output(f, "ser:0"))
-		f->block->show(common_types._void);
+		f->block_node->show(common_types._void);
 
 	if (config.target.interpreted) {
 		auto serializer = new Serializer(module, list);

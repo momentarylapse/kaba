@@ -25,7 +25,7 @@ void AutoImplementer::implement_dict_constructor(Function *f, const Class *t) {
 
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", common_types._void, {common_types.i32});
-	f->block->add(add_node_member_call(ff,
+	f->block_node->add(add_node_member_call(ff,
 			self, -1,
 			{const_int(dict_row_size(te))}));
 }
@@ -40,7 +40,7 @@ void AutoImplementer::implement_dict_clear(Function *f, const Class *t) {
 	auto *var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
 	auto *var_val = f->block->add_var("v", tree->request_implicit_class_reference(te, -1));
 
-	Block *b = new Block(f, f->block.get());
+	auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 	// key.__delete__()
 	if (auto f_del = common_types.string->get_destructor()) {
@@ -64,12 +64,12 @@ void AutoImplementer::implement_dict_clear(Function *f, const Class *t) {
 	cmd_for->set_param(2, self);
 	cmd_for->set_param(3, b);
 
-	f->block->add(cmd_for);
+	f->block_node->add(cmd_for);
 
 	{
 		// clear
 		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", common_types._void, {}), self);
-		f->block->add(cmd_clear);
+		f->block_node->add(cmd_clear);
 	}
 }
 
@@ -87,10 +87,10 @@ void AutoImplementer::implement_dict_assign(Function *f, const Class *t) {
 	{
 		// self.clear()
 		auto cmd_clear = add_node_member_call(t->get_member_func("clear", common_types._void, {}), self);
-		f->block->add(cmd_clear);
+		f->block_node->add(cmd_clear);
 	}
 
-	Block *b_loop = new Block(f, f->block.get());
+	auto b_loop = add_node_block(new Block(f, f->block), common_types._void);
 
 	{
 		// other.set(key, value)
@@ -106,7 +106,7 @@ void AutoImplementer::implement_dict_assign(Function *f, const Class *t) {
 	cmd_for->set_param(2, other);
 	cmd_for->set_param(3, b_loop);
 
-	f->block->add(cmd_for);
+	f->block_node->add(cmd_for);
 }
 
 void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
@@ -117,15 +117,15 @@ void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 	auto in_key = add_node_local(f->__get_var("key"));
 
-	auto *var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
-	auto *var_val = f->block->add_var("v", tree->request_implicit_class_reference(te, -1));
+	auto var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
+	auto var_val = f->block->add_var("v", tree->request_implicit_class_reference(te, -1));
 
-	Block *b_loop = new Block(f, f->block.get());
+	auto b_loop = add_node_block(new Block(f, f->block), common_types._void);
 
 	{
 		// if key == in_key
 		//     return T&?(&value)
-		Block *b_if = new Block(f, b_loop);
+		auto b_if = add_node_block(new Block(f, b_loop->as_block()), common_types._void);
 		auto ret = add_node_statement(StatementID::Return);
 		ret->set_num_params(1);
 		if (auto ff = te_ref_opt->get_func(Identifier::func::Init, common_types._void, {nullptr, te_ref})) {
@@ -152,7 +152,7 @@ void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 	cmd_for->set_param(2, self);
 	cmd_for->set_param(3, b_loop);
 
-	f->block->add(cmd_for);
+	f->block_node->add(cmd_for);
 
 	{
 
@@ -164,7 +164,7 @@ void AutoImplementer::implement_dict_get(Function *f, const Class *t) {
 		} else {
 			do_error_implicit(f, "aaaaa");
 		}
-		f->block->add(ret);
+		f->block_node->add(ret);
 	}
 }
 
@@ -180,9 +180,9 @@ void AutoImplementer::implement_dict_set(Function *f, const Class *t) {
 	auto *var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
 	auto *var_val = f->block->add_var("v", tree->request_implicit_class_reference(te, -1));
 
-	Block *b_loop = new Block(f, f->block.get());
+	auto b_loop = add_node_block(new Block(f, f->block), common_types._void);
 
-	Block *b_if = new Block(f, b_loop);
+	auto b_if = add_node_block(new Block(f, b_loop->as_block()), common_types._void);
 	b_if->add(add_assign(f, "...", add_node_local(var_val)->deref(), in_value));
 	b_if->add(add_node_statement(StatementID::Return));
 
@@ -203,14 +203,14 @@ void AutoImplementer::implement_dict_set(Function *f, const Class *t) {
 	cmd_for->set_param(2, self);
 	cmd_for->set_param(3, b_loop);
 
-	f->block->add(cmd_for);
+	f->block_node->add(cmd_for);
 
 	{
 		// __mem_resize__(self.num + 1)
 		auto cmd_add = add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), const_int(1));
 		auto cmd_resize = add_node_member_call(t->get_member_func("__mem_resize__", common_types._void, {common_types.i32}), self);
 		cmd_resize->set_param(1, cmd_add);
-		f->block->add(cmd_resize);
+		f->block_node->add(cmd_resize);
 	}
 	auto t_row = t->classes[0].get();
 	auto cmd_sub = add_node_operator_by_inline(InlineID::Int32Subtract, sa_num(self), const_int(1));
@@ -219,31 +219,31 @@ void AutoImplementer::implement_dict_set(Function *f, const Class *t) {
 	auto back_value = back_row->shift(common_types.string->size, te, -1);
 	if (auto f_init = common_types.string->get_default_constructor()) {
 		// back.key.__init__()
-		f->block->add(add_node_member_call(f_init, back_key));
+		f->block_node->add(add_node_member_call(f_init, back_key));
 	}
 	if (auto f_init = te->get_default_constructor()) {
 		// back.value.__init__()
-		f->block->add(add_node_member_call(f_init, back_value));
+		f->block_node->add(add_node_member_call(f_init, back_value));
 	}
 	// back.key = in_key
-	f->block->add(add_assign(f, "...", back_key, in_key));
+	f->block_node->add(add_assign(f, "...", back_key, in_key));
 	// back.value = in_value
-	f->block->add(add_assign(f, "...", back_value, in_value));
+	f->block_node->add(add_assign(f, "...", back_value, in_value));
 }
 
 void AutoImplementer::implement_dict_contains(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 	auto in_key = add_node_local(f->__get_var("key"));
 
-	auto *var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
-	auto *var_val = f->block->add_var("v", common_types.reference);
+	auto var_key = f->block->add_var("k", tree->request_implicit_class_reference(common_types.string, -1));
+	auto var_val = f->block->add_var("v", common_types.reference);
 
-	Block *b_loop = new Block(f, f->block.get());
+	auto b_loop = add_node_block(new Block(f, f->block), common_types._void);
 
 	{
 		// if key == in_key
 		//     return true
-		Block *b_if = new Block(f, b_loop);
+		auto b_if = add_node_block(new Block(f, b_loop->as_block()), common_types._void);
 		auto ret = add_node_statement(StatementID::Return);
 		ret->set_num_params(1);
 		ret->set_param(0, node_true());
@@ -263,14 +263,14 @@ void AutoImplementer::implement_dict_contains(Function *f, const Class *t) {
 	cmd_for->set_param(2, self);
 	cmd_for->set_param(3, b_loop);
 
-	f->block->add(cmd_for);
+	f->block_node->add(cmd_for);
 
 	{
 		// return false
 		auto ret = add_node_statement(StatementID::Return);
 		ret->set_num_params(1);
 		ret->set_param(0, node_false());
-		f->block->add(ret);
+		f->block_node->add(ret);
 	}
 //	f->block->show();
 }

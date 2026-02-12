@@ -14,26 +14,15 @@
 
 namespace kaba {
 
-Block::Block(Function *f, Block *_parent, const Class *t) :
-	Node(NodeKind::Block, (int_p)this, t)
-{
+Block::Block(Function *f, Block *_parent) {
 	level = 0;
 	function = f;
 	parent = _parent;
 	if (parent)
 		level = parent->level + 1;
+	flags = Flags::None;
 	_start = _end = nullptr;
 	_label_start = _label_end = -1;
-}
-
-
-void Block::add(shared<Node> c) {
-	if (c)
-		params.add(c);
-}
-
-void Block::set(int index, shared<Node> c) {
-	params[index] = c;
 }
 
 bool Block::is_trust_me() const {

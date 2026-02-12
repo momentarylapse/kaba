@@ -129,6 +129,22 @@ inline bool ex_type_match(const Class *ex_type, const Class *catch_type) {
 	return ex_type->is_derived_from(catch_type);
 }
 
+Node* find_block(Node* node, Block* block) {
+	if (node->kind == NodeKind::Block and node->as_block() == block)
+		return node;
+	for (auto n: weak(node->params))
+		if (auto nn = find_block(n, block))
+			return nn;
+	return nullptr;
+}
+
+Array<Node*> block_get_nodes(Block* block) {
+	if (auto n = find_block(block->function->block_node.get(), block))
+		return weak(n->params);
+	msg_error("try/except could not resolve block");
+	return {};
+}
+
 ExceptionBlockData get_blocks(shared<Module> s, Function *f, void* rip, const Class *ex_type) {
 	ExceptionBlockData ebd;
 	ebd.except_block = nullptr;
@@ -157,7 +173,7 @@ ExceptionBlockData get_blocks(shared<Module> s, Function *f, void* rip, const Cl
 			continue;
 
 		// are we in a try block?
-		for (auto n: weak(b->parent->params)) {
+		for (auto n: block_get_nodes(b->parent)) {
 			if ((n->kind == NodeKind::Statement) and (n->as_statement()->id == StatementID::Try)) {
 				if (n->params[0]->as_block() == b) {
 					dbo("found try block");

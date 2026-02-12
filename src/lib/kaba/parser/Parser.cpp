@@ -626,7 +626,7 @@ shared<Node> Parser::parse_abstract_token() {
 }
 
 shared<Node> Parser::parse_abstract_type() {
-	return parse_abstract_operand(tree->root_of_all_evil->block.get(), true);
+	return parse_abstract_operand(tree->root_of_all_evil->block, true);
 }
 
 // minimal operand
@@ -986,7 +986,7 @@ shared<Node> Parser::parse_abstract_statement_match(Block *block) {
 		expect_identifier("=>", "'=>' expected after 'match' pattern");
 
 		// result
-		auto res_block = new Block(block->function, block, common_types.unknown);
+		auto res_block = add_node_block(new Block(block->function, block), common_types.unknown);
 		if (Exp.end_of_line()) {
 			// indented block
 
@@ -995,13 +995,13 @@ shared<Node> Parser::parse_abstract_statement_match(Block *block) {
 
 			// instructions
 			while (more_to_parse) {
-				more_to_parse = parse_abstract_indented_command_into_block(res_block, indent0);
+				more_to_parse = parse_abstract_indented_command_into_block(res_block.get(), indent0);
 			}
 			Exp.rewind();
 
 		} else {
 			// single expression
-			auto cmd = parse_abstract_operand_greedy(res_block);
+			auto cmd = parse_abstract_operand_greedy(res_block->as_block());
 			res_block->add(cmd);
 		}
 
@@ -1089,6 +1089,7 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	Exp.next_line();
 
 	flags_set(cmd_try->params[0]->flags, Flags::Try);
+	flags_set(cmd_try->params[0]->as_block()->flags, Flags::Try);
 
 	int num_excepts = 0;
 
@@ -1183,10 +1184,10 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 		// iterative if
 		if (Exp.cur == Identifier::If) {
 			// sub-if's in a new block
-			auto cmd_block = new Block(block->function, block, common_types.unknown);
+			auto cmd_block = add_node_block(new Block(block->function, block), common_types.unknown);
 			cmd_if->set_param(2, cmd_block);
 			// parse the next if
-			parse_abstract_complete_command_into_block(cmd_block);
+			parse_abstract_complete_command_into_block(cmd_block.get());
 			return cmd_if;
 		}
 		// ...block
@@ -1329,14 +1330,20 @@ shared<Node> Parser::parse_abstract_statement_var(Block *block) {
 
 	expect_new_line();
 
+	/*if (names.num > 1)
+		do_error("FIXME allow multi var statement", Exp.cur_token());*/
+
+	auto group = new Node(NodeKind::Group, 0, common_types.unknown);
+
 	for (auto &n: names) {
 		auto node = new Node(NodeKind::AbstractVar, 0, common_types.unknown, flags);
 		node->set_num_params(2);
 		node->set_param(0, type); // type
 		node->set_param(1, n); // name
-		block->add(node);
+		group->add(node);
+		//return node;
 	}
-	return add_node_statement(StatementID::Pass);
+	return group;//add_node_statement(StatementID::Pass);
 }
 
 shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
@@ -1352,14 +1359,14 @@ shared<Node> Parser::parse_abstract_statement_lambda(Block *block) {
 
 	// instructions
 		while (more_to_parse) {
-			more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
+			more_to_parse = parse_abstract_indented_command_into_block(f->block_node.get(), indent0);
 		}
 		Exp.rewind();
 
 	} else {
 		// single expression
-		auto cmd = parse_abstract_operand_greedy(f->block.get());
-		f->block->add(cmd);
+		auto cmd = parse_abstract_operand_greedy(f->block);
+		f->block_node->add(cmd);
 	}
 
 	auto node = add_node_statement(StatementID::Lambda, f->token_id, common_types.unknown);
@@ -1377,19 +1384,19 @@ shared<Node> Parser::parse_abstract_statement_raw_function_pointer(Block *block)
 
 shared<Node> Parser::parse_abstract_statement_trust_me(Block *block) {
 	[[maybe_unused]] int token0 = Exp.consume_token(); // "trust_me"
-	/*auto node = add_node_statement(StatementID::TRUST_ME, token0, common_types.unknown);
+	auto node = add_node_statement(StatementID::TrustMe, token0, common_types.unknown);
 	// ...block
 	expect_new_line_with_indent();
 	Exp.next_line();
 	node->set_param(0, parse_abstract_block(block));
-	flags_set(node->flags, Flags::TRUST_ME);
-	return node;*/
+	//flags_set(node->flags, Flags::TrustMe);
+	return node;
 
-	expect_new_line_with_indent();
+	/*expect_new_line_with_indent();
 	Exp.next_line();
 	auto b = parse_abstract_block(block);
 	flags_set(b->flags, Flags::TrustMe);
-	return b;
+	return b;*/
 }
 
 shared<Node> Parser::parse_abstract_statement(Block *block) {
@@ -1463,11 +1470,11 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 shared<Node> Parser::parse_abstract_block(Block *parent) {
 	int indent0 = Exp.cur_line->indent;
 
-	auto block = new Block(parent->function, parent, common_types.unknown);
+	auto block = add_node_block(new Block(parent->function, parent), common_types.unknown);
 
 	while (!Exp.end_of_file()) {
 
-		parse_abstract_complete_command_into_block(block);
+		parse_abstract_complete_command_into_block(block.get());
 
 		if (Exp.next_line_indent() < indent0)
 			break;
@@ -1478,7 +1485,7 @@ shared<Node> Parser::parse_abstract_block(Block *parent) {
 }
 
 // we already are in the line to analyse ...indentation for a new block should compare to the last line
-void Parser::parse_abstract_complete_command_into_block(Block *block) {
+void Parser::parse_abstract_complete_command_into_block(Node *block) {
 	// beginning of a line!
 
 	//bool is_type = tree->find_root_type_by_name(Exp.cur, block->name_space(), true);
@@ -1490,7 +1497,7 @@ void Parser::parse_abstract_complete_command_into_block(Block *block) {
 		block->add(a);
 	} else {
 		// commands (the actual code!)
-		block->add( parse_abstract_operand_greedy(block, true));
+		block->add( parse_abstract_operand_greedy(block->as_block(), true));
 	}
 
 	expect_new_line();
@@ -1570,7 +1577,7 @@ void Parser::parse_enum(Class *_namespace) {
 			if (try_consume("=")) {
 				expect_no_new_line();
 
-				auto cv = parse_and_eval_const(tree->root_of_all_evil->block.get(), common_types.i32);
+				auto cv = parse_and_eval_const(tree->root_of_all_evil->block, common_types.i32);
 				next_value = cv->as_const()->as_int();
 			} else {
 				// linked from host program?
@@ -1581,7 +1588,7 @@ void Parser::parse_enum(Class *_namespace) {
 			if (try_consume(Identifier::As)) {
 				expect_no_new_line();
 
-				auto cn = parse_and_eval_const(tree->root_of_all_evil->block.get(), common_types.string);
+				auto cn = parse_and_eval_const(tree->root_of_all_evil->block, common_types.string);
 				auto label = cn->as_const()->as_string();
 				add_enum_label(_class, c->as_int(), label);
 			}
@@ -1701,7 +1708,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	Class *_class = nullptr;
 	if (flags_has(node->flags, Flags::Override)) {
 		// class override X
-		_class = const_cast<Class*>(con.concretify_as_type(node->params[1], tree->root_of_all_evil->block.get(), _namespace));
+		_class = const_cast<Class*>(con.concretify_as_type(node->params[1], tree->root_of_all_evil->block, _namespace));
 		var_offset0 = _class->size;
 		restore_namespace_mapping.add({_class, _class->name_space});
 		_class->name_space = _namespace;
@@ -1734,7 +1741,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 
 	// parent class
 	if (node->params[2]) {
-		auto parent = con.concretify_as_type(node->params[2], tree->root_of_all_evil->block.get(), _namespace); // force
+		auto parent = con.concretify_as_type(node->params[2], tree->root_of_all_evil->block, _namespace); // force
 		if (!parent->fully_parsed())
 			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
@@ -1809,13 +1816,13 @@ bool Parser::parse_class(Class *_namespace) {
 				flags_set(flags, Flags::Static);
 			parse_abstract_function(_class, flags);
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			parse_named_const(_class, tree->root_of_all_evil->block.get());
+			parse_named_const(_class, tree->root_of_all_evil->block);
 		} else if (try_consume(Identifier::Var)) {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), var_offset);
+			parse_class_variable_declaration(_class, tree->root_of_all_evil->block, var_offset);
 		} else if (Exp.cur == Identifier::Use) {
 			parse_class_use_statement(_class);
 		} else {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block.get(), var_offset);
+			parse_class_variable_declaration(_class, tree->root_of_all_evil->block, var_offset);
 		}
 	}
 
@@ -2094,7 +2101,7 @@ bool peek_commands_super(ExpressionBuffer &Exp) {
 	return false;
 }
 
-bool Parser::parse_abstract_indented_command_into_block(Block* block, int indent0) {
+bool Parser::parse_abstract_indented_command_into_block(Node* block, int indent0) {
 	if (Exp.end_of_file())
 		return false;
 
@@ -2143,8 +2150,8 @@ bool Parser::parse_abstract_indented_command_into_block(Block* block, int indent
 // complicated types like "int[]*[4]" etc
 // greedy
 const Class *Parser::parse_type(const Class *ns) {
-	auto cc = parse_abstract_operand(tree->root_of_all_evil->block.get(), true);
-	return con.concretify_as_type(cc, tree->root_of_all_evil->block.get(), ns);
+	auto cc = parse_abstract_operand(tree->root_of_all_evil->block, true);
+	return con.concretify_as_type(cc, tree->root_of_all_evil->block, ns);
 }
 
 // [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
@@ -2155,7 +2162,7 @@ shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 
 	Exp.next(); // "func"
 
-	auto __block = tree->root_of_all_evil->block.get();
+	auto __block = tree->root_of_all_evil->block;
 
 	node->flags = parse_flags(node->flags);
 
@@ -2282,7 +2289,7 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 }
 
 void Parser::parse_abstract_function_body(Function *f) {
-	f->block->type = common_types.unknown; // abstract parsing
+	f->block_node->type = common_types.unknown; // abstract parsing
 
 	int indent0 = Exp.cur_line->indent;
 	bool more_to_parse = true;
@@ -2291,14 +2298,14 @@ void Parser::parse_abstract_function_body(Function *f) {
 
 // instructions
 	while (more_to_parse) {
-		more_to_parse = parse_abstract_indented_command_into_block(f->block.get(), indent0);
+		more_to_parse = parse_abstract_indented_command_into_block(f->block_node.get(), indent0);
 	}
 	Exp.rewind();
 
 
 	if (config.verbose) {
 		msg_write("ABSTRACT:");
-		f->block->show();
+		f->block_node->show();
 	}
 }
 
@@ -2428,11 +2435,11 @@ shared<Node> Parser::parse_abstract_top_level() {
 			node->add(parse_abstract_function(tree->base_class, Flags::Static | Flags::Macro));
 
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			parse_named_const(tree->base_class, tree->root_of_all_evil->block.get());
+			parse_named_const(tree->base_class, tree->root_of_all_evil->block);
 
 		} else if (try_consume(Identifier::Var)) {
 			int64 offset = 0;
-			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block.get(), offset, Flags::Static);
+			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block, offset, Flags::Static);
 
 		} else {
 			do_error_exp("unknown top level definition");
@@ -2457,13 +2464,13 @@ void Parser::parse() {
 	tree->show("aaa");
 
 	for (auto *f: tree->functions)
-		test_node_recursion(f->block.get(), tree->base_class, "a " + f->long_name());
+		test_node_recursion(f->block_node.get(), tree->base_class, "a " + f->long_name());
 
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
 		auto_implementer.implement_functions(tree->owned_classes[i]);
 
 	for (auto *f: tree->functions)
-		test_node_recursion(f->block.get(), tree->base_class, "b " + f->long_name());
+		test_node_recursion(f->block_node.get(), tree->base_class, "b " + f->long_name());
 }
 
 }

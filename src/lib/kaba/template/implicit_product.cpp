@@ -27,7 +27,7 @@ void AutoImplementer::implement_product_equal(Function *f, const Class *t) {
 		auto cmd_if = add_node_statement(StatementID::If);
 		cmd_if->set_param(0, add_not_equal(f, "", self->shift(e.offset, e.type), other->shift(e.offset, e.type)));
 
-		auto b = new Block(f, f->block.get());
+		auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 		auto cmd_ret = add_node_statement(StatementID::Return);
 		cmd_ret->set_num_params(1);
@@ -35,7 +35,7 @@ void AutoImplementer::implement_product_equal(Function *f, const Class *t) {
 		b->add(cmd_ret);
 
 		cmd_if->set_param(1, b);
-		f->block->add(cmd_if);
+		f->block_node->add(cmd_if);
 	}
 
 	{
@@ -43,7 +43,7 @@ void AutoImplementer::implement_product_equal(Function *f, const Class *t) {
 		auto cmd_ret = add_node_statement(StatementID::Return);
 		cmd_ret->set_num_params(1);
 		cmd_ret->set_param(0, node_true());
-		f->block->add(cmd_ret);
+		f->block_node->add(cmd_ret);
 	}
 }
 
@@ -60,7 +60,7 @@ void AutoImplementer::implement_product_not_equal(Function *f, const Class *t) {
 		auto cmd_if = add_node_statement(StatementID::If);
 		cmd_if->set_param(0, add_equal(f, "", self->shift(e.offset, e.type), other->shift(e.offset, e.type)));
 
-		auto b = new Block(f, f->block.get());
+		auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 		auto cmd_ret = add_node_statement(StatementID::Return);
 		cmd_ret->set_num_params(1);
@@ -68,7 +68,7 @@ void AutoImplementer::implement_product_not_equal(Function *f, const Class *t) {
 		b->add(cmd_ret);
 
 		cmd_if->set_param(1, b);
-		f->block->add(cmd_if);
+		f->block_node->add(cmd_if);
 	}
 
 	{
@@ -76,7 +76,7 @@ void AutoImplementer::implement_product_not_equal(Function *f, const Class *t) {
 		auto cmd_ret = add_node_statement(StatementID::Return);
 		cmd_ret->set_num_params(1);
 		cmd_ret->set_param(0, node_true());
-		f->block->add(cmd_ret);
+		f->block_node->add(cmd_ret);
 	}
 }
 

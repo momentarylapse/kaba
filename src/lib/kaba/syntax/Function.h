@@ -39,7 +39,8 @@ public:
 	shared<Node> abstract_param_type(int n) const;
 	shared<Node> abstract_return_type() const;
 	// block of code
-	shared<Block> block;
+	shared<Node> block_node; // TODO make consistent
+	Block* block;
 	// local variables
 	shared_array<Variable> var;
 	Array<const Class*> literal_param_type;

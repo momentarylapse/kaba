@@ -25,7 +25,7 @@ void AutoImplementer::implement_shared_constructor(Function *f, const Class *t) 
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
 	// self.p = nil
-	f->block->add(add_node_operator_by_inline(InlineID::PointerAssign,
+	f->block_node->add(add_node_operator_by_inline(InlineID::PointerAssign,
 			SHARED_P(self),
 			node_nil()));
 }
@@ -35,7 +35,7 @@ void AutoImplementer::implement_shared_destructor(Function *f, const Class *t) {
 
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::func::SharedClear, common_types._void, {}))
-		f->block->add(add_node_member_call(f_clear, self));
+		f->block_node->add(add_node_member_call(f_clear, self));
 	else
 		do_error_implicit(f, Identifier::func::SharedClear + "() missing");
 }
@@ -50,11 +50,11 @@ void AutoImplementer::implement_shared_assign(Function *f, const Class *t) {
 	if (!f_clear)
 		do_error_implicit(f, Identifier::func::SharedClear + "() missing");
 	auto call_clear = add_node_member_call(f_clear, self);
-	f->block->add(call_clear);
+	f->block_node->add(call_clear);
 
 
 	auto op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), other);
-	f->block->add(op);
+	f->block_node->add(op);
 
 
 	// if other
@@ -65,9 +65,9 @@ void AutoImplementer::implement_shared_assign(Function *f, const Class *t) {
 	auto cmd_cmp = add_node_call(ff);
 	cmd_cmp->set_param(0, other);
 
-	auto b = new Block(f, f->block.get());
+	auto b = add_node_block(new Block(f, f->block), common_types._void);
 
-	f->block->add(node_if(cmd_cmp, b));
+	f->block_node->add(node_if(cmd_cmp, b));
 
 	auto tt = self->type->param[0];
 	bool found = false;
@@ -101,7 +101,7 @@ void AutoImplementer::implement_shared_clear(Function *f, const Class *t) {
 	auto cmd_cmp = add_node_call(ff);
 	cmd_cmp->set_param(0, SHARED_P(self));
 
-	auto b = new Block(f, f->block.get());
+	auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 
 	shared<Node> count;
@@ -122,7 +122,7 @@ void AutoImplementer::implement_shared_clear(Function *f, const Class *t) {
 	auto cmp = add_node_operator_by_inline(InlineID::Int32Equal, count, const_int(0));
 	cmd_if_del->set_param(0, cmp);
 
-	auto b2 = new Block(f, b);
+	auto b2 = add_node_block(new Block(f, b->as_block()), common_types._void);
 
 
 	// del self.p
@@ -137,7 +137,7 @@ void AutoImplementer::implement_shared_clear(Function *f, const Class *t) {
 	auto n_op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), node_nil());
 	b->add(n_op);
 
-	f->block->add(node_if(cmd_cmp, b));
+	f->block_node->add(node_if(cmd_cmp, b));
 }
 
 
@@ -150,20 +150,20 @@ void AutoImplementer::implement_shared_create(Function *f, const Class *t) {
 	if (auto f_assign = t->get_member_func(Identifier::func::Assign, common_types._void, {p->type})) {
 		auto call_assign = add_node_member_call(f_assign, r);
 		call_assign->set_param(1, p);
-		f->block->add(call_assign);
+		f->block_node->add(call_assign);
 	} else {
 		do_error_implicit(f, "= missing...");
 	}
 
 	// return r
-	f->block->add(node_return(r));
+	f->block_node->add(node_return(r));
 }
 
 void AutoImplementer::implement_owned_constructor(Function *f, const Class *t) {
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
 	// self.p = nil
-	f->block->add(add_node_operator_by_inline(InlineID::PointerAssign,
+	f->block_node->add(add_node_operator_by_inline(InlineID::PointerAssign,
 			SHARED_P(self),
 			node_nil()));
 }
@@ -175,7 +175,7 @@ void AutoImplementer::implement_owned_destructor(Function *f, const Class *t) {
 
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::func::SharedClear, common_types._void, {}))
-		f->block->add(add_node_member_call(f_clear, self));
+		f->block_node->add(add_node_member_call(f_clear, self));
 	else
 		do_error_implicit(f, Identifier::func::SharedClear + "() missing");
 	//db_add_print_label(f->block.get(), "owned del b");
@@ -189,7 +189,7 @@ void AutoImplementer::implement_owned_assign_raw(Function *f, const Class *t) {
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::func::SharedClear, common_types._void, {})) {
 		auto call_clear = add_node_member_call(f_clear, self);
-		f->block->add(call_clear);
+		f->block_node->add(call_clear);
 	} else {
 		do_error_implicit(f, Identifier::func::SharedClear + "() missing");
 	}
@@ -197,7 +197,7 @@ void AutoImplementer::implement_owned_assign_raw(Function *f, const Class *t) {
 	{
 		// self.p = other
 		auto op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), other);
-		f->block->add(op);
+		f->block_node->add(op);
 	}
 }
 
@@ -211,7 +211,7 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 	// self.clear()
 	if (auto f_clear = t->get_member_func(Identifier::func::SharedClear, common_types._void, {})) {
 		auto call_clear = add_node_member_call(f_clear, self);
-		f->block->add(call_clear);
+		f->block_node->add(call_clear);
 	} else {
 		do_error_implicit(f, Identifier::func::SharedClear + "() missing");
 	}
@@ -220,14 +220,14 @@ void AutoImplementer::implement_owned_assign(Function *f, const Class *t) {
 	{
 		// self.p = other.p
 		auto op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), SHARED_P(other));
-		f->block->add(op);
+		f->block_node->add(op);
 	}
 
 	{
 		// "forget"
 		// other.p = nil
 		auto op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(other), node_nil());
-		f->block->add(op);
+		f->block_node->add(op);
 	}
 	//db_add_print_label(f->block.get(), "owned = c");
 }
@@ -246,7 +246,7 @@ void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 	auto cmd_cmp = add_node_call(ff);
 	cmd_cmp->set_param(0, SHARED_P(self));
 
-	auto b = new Block(f, f->block.get());
+	auto b = add_node_block(new Block(f, f->block), common_types._void);
 
 
 	// del self.p
@@ -259,7 +259,7 @@ void AutoImplementer::implement_owned_clear(Function *f, const Class *t) {
 	auto n_op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), node_nil());
 	b->add(n_op);
 
-	f->block->add(node_if(cmd_cmp, b));
+	f->block_node->add(node_if(cmd_cmp, b));
 }
 
 void AutoImplementer::implement_owned_give(Function *f, const Class *t) {
@@ -269,18 +269,18 @@ void AutoImplementer::implement_owned_give(Function *f, const Class *t) {
 	// let r = self.p
 	{
 		auto op = add_node_operator_by_inline(InlineID::PointerAssign, r, SHARED_P(self));
-		f->block->add(op);
+		f->block_node->add(op);
 	}
 
 	// "forget"
 	// self.p = nil
 	{
 		auto op = add_node_operator_by_inline(InlineID::PointerAssign, SHARED_P(self), node_nil());
-		f->block->add(op);
+		f->block_node->add(op);
 	}
 
 	// return r
-	f->block->add(node_return(r));
+	f->block_node->add(node_return(r));
 }
 
 void AutoImplementer::_implement_functions_for_shared(const Class *t) {

@@ -306,7 +306,9 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 		// for/while can't pre-serialize params, because they need a label to this point
 		return serialize_statement(com, block, index);
 	} else if (com->kind == NodeKind::Block) {
-		return serialize_block(com->as_block());
+		return serialize_block(com);
+	} else if (com->kind == NodeKind::Group) {
+		return serialize_group(com, block);
 	}
 
 
@@ -366,30 +368,23 @@ SerialNodeParam Serializer::serialize_node(Node *com, Block *block, int index) {
 	return ret;
 }
 
-SerialNodeParam Serializer::serialize_block(Block *block) {
-	block->_label_start = list->create_label("_BLOCK_START_" + p2s(block));
-	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
-	cmd.add_label(block->_label_start);
 
+SerialNodeParam Serializer::serialize_group(Node* node, Block* block) {
 	SerialNodeParam ret{};
 
-	cur_block_level ++;
-
-	insert_constructors_block(block);
-
-	for (int i=0; i<block->params.num; i++) {
+	for (int i=0; i<node->params.num; i++) {
 		stack_offset = cur_func->_var_size;
 
 		// serialize
-		ret = serialize_node(block->params[i].get(), block, i);
+		ret = serialize_node(node->params[i].get(), block, i);
 
 		// keep return temp vars alive longer...
-		if (i == block->params.num - 1 and ret.kind == NodeKind::VarTemp) {
+		if (i == node->params.num - 1 and ret.kind == NodeKind::VarTemp) {
 			for (int k=0; k<inserted_temp.num; k++)
 				if (inserted_temp[k].param.p == ret.p)
 					inserted_temp[k].block_level = cur_block_level - 1;
 		}
-		
+
 		// destruct new temp vars
 		insert_destructors_temp();
 
@@ -399,6 +394,20 @@ SerialNodeParam Serializer::serialize_block(Block *block) {
 			if ((loop_stack.back().level == block->level) and (loop_stack.back().index == i - 1))
 				loop_stack.pop();
 	}
+	return ret;
+}
+
+SerialNodeParam Serializer::serialize_block(Node* node) {
+	auto block = node->as_block();
+	block->_label_start = list->create_label("_BLOCK_START_" + p2s(block));
+	block->_label_end = list->create_label("_BLOCK_END_" + p2s(block));
+	cmd.add_label(block->_label_start);
+
+	cur_block_level ++;
+
+	insert_constructors_block(block);
+
+	auto ret = serialize_group(node, block);
 
 	insert_destructors_block(block);
 
@@ -1672,7 +1681,7 @@ void Serializer::serialize_function(Function *f) {
 
 	// function
 
-	serialize_block(f->block.get());
+	serialize_block(f->block_node.get());
 	insert_destructors_temp();
 	scan_temp_var_usage();
 
@@ -1682,8 +1691,8 @@ void Serializer::serialize_function(Function *f) {
 
 	// outro (if last command != return)
 	bool need_outro = true;
-	if (f->block->params.num > 0)
-		if ((f->block->params.back()->kind == NodeKind::Statement) and (f->block->params.back()->as_statement()->id == StatementID::Return))
+	if (f->block_node->params.num > 0)
+		if ((f->block_node->params.back()->kind == NodeKind::Statement) and (f->block_node->params.back()->as_statement()->id == StatementID::Return))
 			need_outro = false;
 	if (need_outro)
 		add_function_outro(f);

@@ -46,7 +46,7 @@ void AutoImplementer::implement_callable_constructor(Function *f, const Class *t
 	{
 		auto n_p = add_node_local(f->__get_var("p"));
 		auto fp = get_callable_fp(t, self);
-		f->block->add(add_assign(f, "", format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"), fp, n_p));
+		f->block_node->add(add_assign(f, "", format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), "_fp"), fp, n_p));
 	}
 
 	int i_capture = 0;
@@ -54,7 +54,7 @@ void AutoImplementer::implement_callable_constructor(Function *f, const Class *t
 		if (e.name.head(7) == "capture") {
 			auto n_p = add_node_local(f->__get_var(DUMMY_PARAMS[i_capture ++]));
 			auto fp = self->shift(e.offset, e.type);
-			f->block->add(add_assign(f, "", format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), e.name), fp, n_p));
+			f->block_node->add(add_assign(f, "", format("no operator %s = %s for element \"%s\"", fp->type->long_name(), fp->type->long_name(), e.name), fp, n_p));
 		}
 }
 
@@ -77,12 +77,12 @@ void AutoImplementer::implement_callable_fp_call(Function *f, const Class *t) {
 		call->set_param(i, add_node_local(f->var[i].get()));
 
 	if (f->literal_return_type == common_types._void) {
-		f->block->add(call);
+		f->block_node->add(call);
 	} else {
 		auto ret = add_node_statement(StatementID::Return);
 		ret->set_num_params(1);
 		ret->set_param(0, call);
-		f->block->add(ret);
+		f->block_node->add(ret);
 	}
 }
 
@@ -127,12 +127,12 @@ void AutoImplementer::implement_callable_bind_call(Function *f, const Class *t) 
 		call->set_param(i+1, p);
 
 	if (f->literal_return_type == common_types._void) {
-		f->block->add(call);
+		f->block_node->add(call);
 	} else {
 		auto ret = add_node_statement(StatementID::Return);
 		ret->set_num_params(1);
 		ret->set_param(0, call);
-		f->block->add(ret);
+		f->block_node->add(ret);
 	}
 }
 
