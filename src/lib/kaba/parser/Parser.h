@@ -67,7 +67,6 @@ public:
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void parse_abstract_function_body(Function *f);
-	bool parse_abstract_indented_command_into_block(Node* block, int indent0);
 	const Class *parse_type(const Class *ns);
 	//const Class *parse_product_type(const Class *ns);
 	shared_array<Node> parse_abstract_variable_declaration(Flags flags0 = Flags::None);

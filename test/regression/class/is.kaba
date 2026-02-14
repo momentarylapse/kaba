@@ -1,8 +1,10 @@
 class Base
 	func virtual x()
+		pass
 
 class Derived extends Base
 	func override x()
+		pass
 
 func main()
 	var a: owned[Base] = new Base()

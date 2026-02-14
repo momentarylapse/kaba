@@ -9,3 +9,4 @@ class GridData
 		plot_rect = get_plot_region()
 
 func main()
+	pass

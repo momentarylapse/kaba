@@ -1865,7 +1865,7 @@ void Parser::expect_new_line(const string &error_msg) {
 void Parser::expect_new_line_with_indent() {
 	if (!Exp.end_of_line())
 		do_error_exp("newline expected");
-	if (Exp.next_line_indent() <= Exp.cur_line->indent)
+	if (!Exp.next_line_is_indented())
 		do_error_exp("additional indent expected");
 }
 
@@ -2047,35 +2047,6 @@ void Parser::parse_class_use_statement(const Class *c) {
 	expect_new_line();
 }
 
-bool peek_commands_super(ExpressionBuffer &Exp) {
-	ExpressionBuffer::Line *l = Exp.cur_line + 1;
-	if (l->tokens.num < 3)
-		return false;
-	if ((l->tokens[0].name == Identifier::Super) and (l->tokens[1].name == ".") and (l->tokens[2].name == Identifier::func::Init))
-		return true;
-	return false;
-}
-
-bool Parser::parse_abstract_indented_command_into_block(Node* block, int indent0) {
-	if (Exp.end_of_file())
-		return false;
-
-	Exp.next_line();
-
-	// end of file
-	if (Exp.end_of_file())
-		return false;
-
-	// end of function
-	if (Exp.cur_line->indent <= indent0)
-		return false;
-
-	// command or local definition
-	parse_abstract_complete_command_into_block(block);
-	return true;
-}
-
-
 
 /*const Class *Parser::parse_product_type(const Class *ns) {
 	Exp.next(); // (
@@ -2242,19 +2213,13 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 }
 
 void Parser::parse_abstract_function_body(Function *f) {
-	f->block_node->type = common_types.unknown; // abstract parsing
-
-	int indent0 = Exp.cur_line->indent;
-	bool more_to_parse = true;
-
 	parser_loop_depth = 0;
 
-// instructions
-	while (more_to_parse) {
-		more_to_parse = parse_abstract_indented_command_into_block(f->block_node.get(), indent0);
+	if (Exp.next_line_is_indented()) {
+		Exp.next_line();
+		f->block_node = parse_abstract_block();
+		f->block_node->link_no = (int_p)f->block;
 	}
-	Exp.rewind();
-
 
 	if (config.verbose) {
 		msg_write("ABSTRACT:");
