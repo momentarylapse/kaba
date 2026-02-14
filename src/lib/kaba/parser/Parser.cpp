@@ -986,7 +986,7 @@ shared<Node> Parser::parse_abstract_statement_match(Block *block) {
 		expect_identifier("=>", "'=>' expected after 'match' pattern");
 
 		// result
-		auto res_block = add_node_block(new Block(block->function, block), common_types.unknown);
+		auto res_block = add_node_block(nullptr, common_types.unknown);
 		if (Exp.end_of_line()) {
 			// indented block
 
@@ -1107,16 +1107,9 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 			}
 		}
 
-		//int last_indent = Exp.indent_0;
-
 		// ...block
 		expect_new_line_with_indent();
 		Exp.next_line();
-		//ParseCompleteCommand(block);
-		//Exp.next_line();
-
-		//auto n = block->nodes.back();
-		//n->as_block()->
 
 		auto cmd_ex_block = parse_abstract_block(block);
 
@@ -1130,26 +1123,6 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	}
 
 	Exp.jump(token0); // undo next_line()
-
-
-
-	//shared<Node> cmd_ex_block = add_node_block(new_block);
-	/*block->nodes.add(cmd_ex_block);
-
-	Exp.indented = false;
-
-	for (int i=0;true;i++) {
-		if (((i > 0) and (Exp.cur_line->indent <= last_indent)) or (Exp.end_of_file()))
-			break;
-
-		ParseCompleteCommand(new_block);
-		Exp.next_line();
-	}
-	Exp.cur_line --;
-	Exp.indent_0 = Exp.cur_line->indent;
-	Exp.indented = false;
-	Exp.cur_exp = Exp.cur_line->exp.num - 1;
-	Exp.cur = Exp.cur_line->exp[Exp.cur_exp].name;*/
 	return cmd_try;
 }
 
@@ -1181,7 +1154,7 @@ shared<Node> Parser::parse_abstract_statement_if(Block *block) {
 		// iterative if
 		if (Exp.cur == Identifier::If) {
 			// sub-if's in a new block
-			auto cmd_block = add_node_block(new Block(block->function, block), common_types.unknown);
+			auto cmd_block = add_node_block(nullptr, common_types.unknown);
 			cmd_if->set_param(2, cmd_block);
 			// parse the next if
 			parse_abstract_complete_command_into_block(cmd_block.get());
@@ -1467,7 +1440,7 @@ shared<Node> Parser::parse_abstract_special_function(Block *block, SpecialFuncti
 shared<Node> Parser::parse_abstract_block(Block *parent) {
 	int indent0 = Exp.cur_line->indent;
 
-	auto block = add_node_block(new Block(parent->function, parent), common_types.unknown);
+	auto block = add_node_block(nullptr, common_types.unknown);
 
 	while (!Exp.end_of_file()) {
 

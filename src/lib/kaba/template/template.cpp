@@ -118,8 +118,10 @@ Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
 		return n;
 	};
 
-	//convert(f->block.get())->as_block();
-	tree->transform_node(f->block_node.get(), convert);
+	// only convert top level variables (function parameters)
+	// TODO this can be removed after function header realization in Concretifier
+	f->block_node = convert(f->block_node.get());
+	//tree->transform_node(f->block_node.get(), convert);
 
 	//show_func_details(f0);
 	//show_func_details(f);

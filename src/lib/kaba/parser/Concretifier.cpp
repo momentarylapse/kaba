@@ -1177,6 +1177,7 @@ shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *bl
 		auto ex = node->params[1 + 2*i];
 
 		auto ex_block = node->params[2 + 2*i];
+		ex_block->link_no = (int_p)new Block(block->function, block); // we need block/variables BEFORE actually concretifying the block...
 
 		if (ex->params.num > 0) {
 			auto ex_type = ex->params[0];
@@ -1573,8 +1574,11 @@ bool is_non_owning_pointer(const Class *t) {
 }
 
 shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, const Class *ns) {
-	if (node->kind == NodeKind::Block)
+	if (node->kind == NodeKind::Block) {
+		if (!node->as_block())
+			node->link_no = (int_p)new Block(block->function, block);
 		block = node->as_block();
+	}
 
 	for (int i=0; i<node->params.num; i++) {
 		node->params[i] = concretify_node(node->params[i], block, ns);
