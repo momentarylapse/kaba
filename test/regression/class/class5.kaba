@@ -1,5 +1,5 @@
 class Test
-	var x: int
+	var x: i32
 	func __init__()
 		self.x = -1
 		print("init")

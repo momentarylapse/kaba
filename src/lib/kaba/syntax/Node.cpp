@@ -101,6 +101,12 @@ string kind2str(NodeKind kind) {
 		return "constructor function";
 	if (kind == NodeKind::Slice)
 		return "slice";
+	if (kind == NodeKind::AbstractRoot)
+		return "root";
+	if (kind == NodeKind::AbstractFunction)
+		return "function def";
+	if (kind == NodeKind::AbstractClass)
+		return "class def";
 	if (kind == NodeKind::VarTemp)
 		return "temp";
 	if (kind == NodeKind::DereferenceVarTemp)

@@ -1731,19 +1731,20 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	return _class;
 }
 
-bool Parser::parse_class(Class *_namespace) {
+shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
 	int indent0 = Exp.cur_line->indent;
 	int64 var_offset = 0;
+	*finished = false;
 
 
 	auto node = parse_abstract_class_header();
 
 	auto _class = realize_class_header(node, _namespace, var_offset);
 	if (!_class) // in case, not fully parsed
-		return false;
+		return node;
 
 	if (_class->is_template()) // parse later...
-		return false;
+		return node;
 
 	Array<int> sub_class_token_ids;
 
@@ -1759,7 +1760,9 @@ bool Parser::parse_class(Class *_namespace) {
 			parse_enum(_class);
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
 			int cur_token = Exp.cur_token();
-			if (!parse_class(_class)) {
+			bool _finished;
+			node->add(parse_abstract_class(_class, &_finished));
+			if (!_finished) {
 				sub_class_token_ids.add(cur_token);
 				skip_parse_class();
 			}
@@ -1769,31 +1772,42 @@ bool Parser::parse_class(Class *_namespace) {
 				flags_set(flags, Flags::Virtual);
 			if (_class->is_namespace())
 				flags_set(flags, Flags::Static);
-			parse_abstract_function(_class, flags);
+			node->add(parse_abstract_function(_class, flags));
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
 			parse_named_const(_class, tree->root_of_all_evil->block);
 		} else if (try_consume(Identifier::Var)) {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block, var_offset);
+			auto nodes = parse_abstract_variable_declaration();
+			for (auto n: weak(nodes)) {
+				node->add(n);
+				realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
+			}
 		} else if (Exp.cur == Identifier::Use) {
 			parse_class_use_statement(_class);
 		} else {
-			parse_class_variable_declaration(_class, tree->root_of_all_evil->block, var_offset);
+			auto nodes = parse_abstract_variable_declaration();
+			for (auto n: weak(nodes)) {
+				node->add(n);
+				realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
+			}
 		}
 	}
 
-	post_process_newly_parsed_class(_class, var_offset);
+	post_process_newly_parsed_class(_class, (int)var_offset);
 
 
 	int cur_token = Exp.cur_token();
 
 	for (int id: sub_class_token_ids) {
 		Exp.jump(id);
-		if (!parse_class(_class))
+		bool _finished;
+		auto nn = parse_abstract_class(_class, &_finished);
+		if (!_finished)
 			do_error(format("parent class not fully parsed yet"), id);
 	}
 
 	Exp.jump(cur_token-1);
-	return true;
+	*finished = true;
+	return node;
 }
 
 void Parser::post_process_newly_parsed_class(Class *_class, int size) {
@@ -1884,13 +1898,8 @@ bool Parser::try_consume(const string &identifier) {
 	return false;
 }
 
-
-
-shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
-
-	// find const value
-	auto cv = parse_operand_greedy(block, true);
-
+shared<Node> Parser::eval_to_const(shared<Node> cv, Block *block, const Class *type) {
+	cv = con.concretify_node(cv, block, block->name_space());
 	if (type) {
 		CastingDataSingle cast;
 		if (con.type_match_with_cast(cv, false, type, cast)) {
@@ -1912,6 +1921,15 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 		do_error("constant value expected, but expression can not be evaluated at compile time", cv);
 	}
 	return cv;
+}
+
+shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
+	// find const value
+	auto cv = parse_abstract_operand_greedy(true);
+	if (config.verbose)
+		cv->show();
+	return eval_to_const(cv, block, type);
+
 }
 
 void Parser::parse_named_const(Class *name_space, Block *block) {
@@ -1954,7 +1972,7 @@ shared_array<Node> Parser::parse_abstract_variable_declaration(Flags flags0) {
 		//if (names.num != 1)
 		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
-		value = parse_abstract_operand();
+		value = parse_abstract_operand_greedy();
 	}
 
 	expect_new_line();
@@ -1972,63 +1990,41 @@ shared_array<Node> Parser::parse_abstract_variable_declaration(Flags flags0) {
 	return nodes;
 }
 
-void Parser::parse_class_variable_declaration(const Class *ns, Block *block, int64 &_offset, Flags flags0) {
+void Parser::realize_class_variable_declaration(shared<Node> node, const Class *ns, Block *block, int64 &_offset, Flags flags0) {
 	if (ns->is_interface())
 		do_error_exp("interfaces can not have data elements");
 
-	int token0 = Exp.cur_token();
 	Flags flags = parse_flags(flags0);
+	flags_set(flags, node->flags);
 	if (ns->is_namespace())
 		flags_set(flags, Flags::Static);
 
+	auto cc = const_cast<Class*>(ns);
 
-	auto names = parse_comma_sep_list(this);
 	const Class *type = nullptr;
 
 	// explicit type?
-	if (try_consume(":")) {
-		type = parse_type(ns);
-	} else {
-		expect_identifier("=", "':' or '=' expected after 'var' declaration", false);
-	}
+	if (node->params[1])
+		type = con.concretify_as_type(node->params[1], tree->root_of_all_evil->block, ns);
 
 	Constant *c_value = nullptr;
-	if (try_consume("=")) {
+	if (node->params[2]) {
 
-		//if (names.num != 1)
+		//if (nodes.num != 1)
 		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
-		auto cv = parse_and_eval_const(block, type);
+		auto cv = eval_to_const(node->params[2], block, type);
 		c_value = cv->as_const();
 		if (!type)
 			type = cv->type;
-
-		/*auto rhs = parse_operand_super_greedy(block);
-		if (!type) {
-			rhs = force_concrete_type(rhs);
-			type = rhs->type;
-		}
-		auto *var = block->add_var(names[0], type);
-		auto cmd = link_operator_id(OperatorID::ASSIGN, add_node_local(var), rhs);
-		if (!cmd)
-			do_error(format("var: no operator '%s' = '%s'", type->long_name(), rhs->type->long_name()));
-		return cmd;*/
 	}
 
-	expect_new_line();
 
-	for (auto &n: names) {
-		auto cc = const_cast<Class*>(ns);
-		//block->add_var(n, type);
-		parser_class_add_element(this, cc, n, type, flags, _offset, token0);
-		/*auto *v = new Variable(n, type);
-		flags_set(v->flags, flags);
-		tree->base_class->static_variables.add(v);*/
+	parser_class_add_element(this, cc, node->params[0]->as_token(), type, flags, _offset, node->params[0]->token_id);
 
-		if (c_value) {
-			ClassInitializers init = {ns->elements.num - 1, c_value};
-			cc->initializers.add(init);
-		}
+	if (node->params[2]) {
+		ClassInitializers init = {ns->elements.num - 1, c_value};
+		cc->initializers.add(init);
 	}
 }
 
@@ -2268,7 +2264,6 @@ void Parser::concretify_all_functions() {
 	for (int i=0; i<functions_to_concretify.num; i++) {
 		auto f = functions_to_concretify[i];
 		if (!f->is_extern() and (f->token_id >= 0)) {
-			//parse_abstract_function_body(f);
 			if (!f->is_template() and !f->is_macro())
 				con.concretify_function_body(f);
 		}
@@ -2340,9 +2335,10 @@ shared<Node> Parser::parse_abstract_top_level() {
 
 		// class
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
-			if (!parse_class(tree->base_class))
+			bool finished;
+			node->add(parse_abstract_class(tree->base_class, &finished));
+			if (!finished)
 				msg_write("X");
-				//skip_parse_class();
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {
@@ -2357,7 +2353,11 @@ shared<Node> Parser::parse_abstract_top_level() {
 
 		} else if (try_consume(Identifier::Var)) {
 			int64 offset = 0;
-			parse_class_variable_declaration(tree->base_class, tree->root_of_all_evil->block, offset, Flags::Static);
+			auto nodes = parse_abstract_variable_declaration();
+			for (auto n: weak(nodes)) {
+				node->add(n);
+				realize_class_variable_declaration(n, tree->base_class, tree->root_of_all_evil->block, offset, Flags::Static);
+			}
 
 		} else {
 			do_error_exp("unknown top level definition");
@@ -2365,6 +2365,8 @@ shared<Node> Parser::parse_abstract_top_level() {
 		if (!Exp.end_of_file())
 			Exp.next_line();
 	}
+	//node->show();
+
 	return node;
 }
 
