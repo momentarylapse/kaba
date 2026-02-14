@@ -20,25 +20,8 @@ Block::Block(Function *f, Block *_parent) {
 	parent = _parent;
 	if (parent)
 		level = parent->level + 1;
-	flags = Flags::None;
 	_start = _end = nullptr;
 	_label_start = _label_end = -1;
-}
-
-bool Block::is_trust_me() const {
-	if (flags_has(flags, Flags::TrustMe))
-		return true;
-	if (parent)
-		return parent->is_trust_me();
-	return false;
-}
-
-bool Block::is_in_try() const {
-	if (flags_has(flags, Flags::Try))
-		return true;
-	if (parent)
-		return parent->is_in_try();
-	return false;
 }
 
 Variable *Block::add_var(const string &name, const Class *type, Flags flags) {

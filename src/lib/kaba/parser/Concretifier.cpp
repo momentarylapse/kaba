@@ -1165,6 +1165,8 @@ shared<Node> Concretifier::concretify_statement_raw_function_pointer(shared<Node
 shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *block, const Class *ns) {
 	// [TRY-BLOCK, EX:[TYPE, NAME], EX-BLOCK, ...]
 
+	_try_level ++;
+
 	auto try_block = concretify_node(node->params[0], block, block->name_space());
 	node->params[0] = try_block;
 
@@ -1202,7 +1204,16 @@ shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *bl
 		node->params[2 + 2*i] = ex_block;
 	}
 	node->type = common_types._void;
+	_try_level --;
 	return node;
+}
+
+bool Concretifier::is_in_trust_me() const {
+	return _trust_me_level > 0;
+}
+
+bool Concretifier::is_in_try() const {
+	return _try_level > 0;
 }
 
 shared<Node> Concretifier::concretify_statement_raise(shared<Node> node, Block *block, const Class *ns) {
@@ -1210,9 +1221,10 @@ shared<Node> Concretifier::concretify_statement_raise(shared<Node> node, Block *
 }
 
 shared<Node> Concretifier::concretify_statement_trust_me(shared<Node> node, Block *block, const Class *ns) {
+	_trust_me_level ++;
 	auto sub = node->params[0];
-	flags_set(sub->as_block()->flags, Flags::TrustMe);
 	sub = concretify_node(sub, block, ns);
+	_trust_me_level --;
 	return sub;
 }
 
@@ -1742,7 +1754,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 	} else if (node->kind == NodeKind::Dereference) {
 		concretify_all_params(node, block, ns);
 		auto sub = node->params[0];//deref_if_reference(node->params[0]);
-		if (block->is_trust_me()) {
+		if (is_in_trust_me()) {
 			if (!sub->type->is_some_pointer())
 				do_error("only pointers can be dereferenced using '*' inside 'trust_me'", node);
 		} else {
@@ -1877,7 +1889,7 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 	auto t = sub->type;
 	if (t->is_optional()) {
 		// optional?
-		if (block->is_trust_me()) {
+		if (is_in_trust_me()) {
 			return sub->change_type(t->param[0]);
 		} else {
 			// value or raise
@@ -1886,7 +1898,7 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
 			if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
 				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, sub), nullptr, node->token_id));
-			if (block->is_in_try())
+			if (is_in_try())
 				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
 			else
 				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
@@ -1904,7 +1916,7 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 		if (t->is_pointer_shared())
 			t_def = tree->request_implicit_class_shared_not_null(t->param[0], node->token_id);
 
-		if (block->is_trust_me()) {
+		if (is_in_trust_me()) {
 			return sub->change_type(t_def);
 		} else {
 			auto bb = add_node_block(new Block(block->function, block), common_types.unknown);
@@ -1914,7 +1926,7 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			auto cmd_p2b = add_node_call(f, node->token_id);
 			cmd_p2b->set_param(0, sub);
 			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, cmd_p2b, nullptr, node->token_id));
-			if (block->is_in_try())
+			if (is_in_try())
 				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
 			else
 				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::NULL_POINTER));

@@ -1088,9 +1088,6 @@ shared<Node> Parser::parse_abstract_statement_try(Block *block) {
 	token0 = Exp.cur_token();
 	Exp.next_line();
 
-	flags_set(cmd_try->params[0]->flags, Flags::Try);
-	flags_set(cmd_try->params[0]->as_block()->flags, Flags::Try);
-
 	int num_excepts = 0;
 
 	// except?

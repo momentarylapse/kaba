@@ -177,6 +177,10 @@ public:
 	Parser *parser;
 	AutoImplementer *auto_implementer;
 	int for_index_count = 0;
+	int _try_level = 0;
+	int _trust_me_level = 0;
+	bool is_in_try() const;
+	bool is_in_trust_me() const;
 };
 
 }

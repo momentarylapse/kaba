@@ -19,12 +19,9 @@ public:
 	Array<Variable*> vars;
 	Function *function;
 	Block *parent;
-	Flags flags;
 	void *_start, *_end; // opcode range
 	int _label_start, _label_end;
 	int level;
-	bool is_trust_me() const;
-	bool is_in_try() const;
 
 	const Class *name_space() const;
 

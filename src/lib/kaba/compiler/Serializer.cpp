@@ -613,7 +613,7 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 			break;}
 		case StatementID::Raise:{
 			auto e = com->params[0]->as_const_p();
-			auto f = syntax_tree->required_func_global(block->is_in_try() ? Identifier::Raise : "@die");
+			auto f = syntax_tree->required_func_global(is_in_try() ? Identifier::Raise : "@die");
 			add_function_call(f, {param_global(common_types.pointer, e)}, p_none);
 			break;}
 		case StatementID::RaiseLocal:{
@@ -626,7 +626,9 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 
 			// try
 			try_stack.add({label_except, label_after});
+			_try_level ++;
 			serialize_node(com->params[0].get(), block, index);
+			_try_level --;
 			try_stack.pop();
 			cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after));
 
@@ -1783,4 +1785,7 @@ void Serializer::do_error_link(const string &msg) {
 	module->do_error_link(msg);
 }
 
+bool Serializer::is_in_try() const {
+	return _try_level > 0;
+}
 };

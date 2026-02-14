@@ -69,6 +69,8 @@ public:
 	void vr_list_out();
 
 
+	int _try_level = 0;
+	bool is_in_try() const;
 
 	int cur_block_level = 0;
 	struct SerialNodeParamWithLevel {
