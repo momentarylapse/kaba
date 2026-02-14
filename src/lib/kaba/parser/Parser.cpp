@@ -986,27 +986,19 @@ shared<Node> Parser::parse_abstract_statement_match() {
 		expect_identifier("=>", "'=>' expected after 'match' pattern");
 
 		// result
-		auto res_block = add_node_block(nullptr, common_types.unknown);
+		shared<Node> result;
 		if (Exp.end_of_line()) {
+			Exp.next_line();
 			// indented block
-
-			int indent0 = Exp.cur_line->indent;
-			bool more_to_parse = true;
-
-			// instructions
-			while (more_to_parse) {
-				more_to_parse = parse_abstract_indented_command_into_block(res_block.get(), indent0);
-			}
-			Exp.rewind();
-
+			result = parse_abstract_block();
 		} else {
 			// single expression
-			res_block->add(parse_abstract_operand_greedy());
+			result = parse_abstract_operand_greedy();
 		}
 
 		cmd_match->set_num_params(3 + 2*i);
 		cmd_match->set_param(1 + 2*i, pattern);
-		cmd_match->set_param(2 + 2*i, res_block);
+		cmd_match->set_param(2 + 2*i, result);
 
 		if (Exp.next_line_indent() < indent)
 			break;
@@ -1321,17 +1313,10 @@ shared<Node> Parser::parse_abstract_statement_lambda() {
 
 	// lambda body
 	if (Exp.end_of_line()) {
-		//parse_abstract_block(parent, f->block.get());
-
-		int indent0 = Exp.cur_line->indent;
-		bool more_to_parse = true;
-
-	// instructions
-		while (more_to_parse) {
-			more_to_parse = parse_abstract_indented_command_into_block(f->block_node.get(), indent0);
-		}
-		Exp.rewind();
-
+		// indented block
+		Exp.next_line();
+		f->block_node = parse_abstract_block();
+		f->block_node->link_no = (int_p)f->block;
 	} else {
 		// single expression
 		auto cmd = parse_abstract_operand_greedy();
@@ -1574,6 +1559,7 @@ void Parser::parse_enum(Class *_namespace) {
 
 	flags_set(_class->flags, Flags::FullyParsed);
 }
+
 
 bool is_same_kind_of_pointer(const Class *a, const Class *b);
 
