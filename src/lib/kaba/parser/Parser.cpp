@@ -1638,7 +1638,7 @@ const Class* parse_class_type(const string& e) {
 
 // [METACLASS, NAME, PARENT, TEMPLATEPARAM] + flags
 shared<Node> Parser::parse_abstract_class_header() {
-	auto node = new Node(NodeKind::AbstractClass, 0, common_types.unknown);
+	auto node = new Node(NodeKind::AbstractClass, 0, common_types.unknown, Flags::None, Exp.cur_token());
 	node->set_num_params(4);
 
 	// metaclass
@@ -1757,22 +1757,11 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	return _class;
 }
 
-shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
+shared<Node> Parser::parse_abstract_class() {
 	int indent0 = Exp.cur_line->indent;
-	int64 var_offset = 0;
-	*finished = false;
-
-
 	auto node = parse_abstract_class_header();
+	string meta = node->params[0]->as_token();
 
-	auto _class = realize_class_header(node, _namespace, var_offset);
-	if (!_class) // in case, not fully parsed
-		return node;
-
-	if (_class->is_template()) // parse later...
-		return node;
-
-	Array<int> sub_class_token_ids;
 
 	// body
 	while (!Exp.end_of_file()) {
@@ -1783,63 +1772,77 @@ shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
 			break;
 
 		if (Exp.cur == Identifier::Enum) {
-			auto n = parse_abstract_enum();
-			node->add(n);
-			realize_enum(n, _class);
+			node->add(parse_abstract_enum());
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
-			int cur_token = Exp.cur_token();
-			bool _finished;
-			node->add(parse_abstract_class(_class, &_finished));
-			if (!_finished) {
-				sub_class_token_ids.add(cur_token);
-				skip_parse_class();
-			}
+			auto n = parse_abstract_class();
+			node->add(n);
 		} else if (Exp.cur == Identifier::Func) {
 			auto flags = Flags::None;
-			if (_class->is_interface())
+			if (meta == "interface")
 				flags_set(flags, Flags::Virtual);
-			if (_class->is_namespace())
+			if (meta == "namespace")
 				flags_set(flags, Flags::Static);
-			node->add(parse_abstract_function(_class, flags));
+			node->add(parse_abstract_function(flags));
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			auto n = parse_abstract_named_const();
-			node->add(n);
-			realize_named_const(n, _class, tree->root_of_all_evil->block);
+			node->add(parse_abstract_named_const());
 		} else if (Exp.cur == Identifier::Var) {
 			auto nodes = parse_abstract_variable_declaration();
-			for (auto n: weak(nodes)) {
+			for (auto n: weak(nodes))
 				node->add(n);
-				realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
-			}
 		} else if (Exp.cur == Identifier::Use) {
-			auto n = parse_abstract_class_use_statement();
-			node->add(n);
-			realize_class_use_statement(n, _class);
+			node->add(parse_abstract_class_use_statement());
 		} else {
 			auto nodes = parse_abstract_variable_declaration();
-			for (auto n: weak(nodes)) {
+			for (auto n: weak(nodes))
 				node->add(n);
-				realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
-			}
 		}
 	}
+	Exp.rewind();
+
+	return node;
+}
+
+Class* Parser::realize_class(shared<Node> node, Class* name_space) {
+	int64 var_offset = 0;
+	auto _class = realize_class_header(node, name_space, var_offset);
+	if (!_class) // in case, not fully parsed
+		return nullptr;
+	node->link_no = (int_p)_class;
+
+	if (_class->is_template()) // parse later...
+		return _class;
+	Array<int> sub_class_ids;
+
+	for (auto&& [i,n]: enumerate(weak(node->params))) {
+		if (!n)
+			continue;
+		if (n->kind == NodeKind::AbstractEnum) {
+			realize_enum(n, _class);
+		} else if (n->kind == NodeKind::AbstractClass) {
+			if (!realize_class(n, _class))
+				sub_class_ids.add(i); // try again later...
+		} else if (n->kind == NodeKind::AbstractFunction) {
+			realize_function(n, _class);
+		} else if (n->kind == NodeKind::AbstractLet) {
+			realize_named_const(n, _class, tree->root_of_all_evil->block);
+		} else if (n->kind == NodeKind::AbstractVar) {
+			realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
+		} else if (n->kind == NodeKind::AbstractUseClassElement) {
+			realize_class_use_statement(n, _class);
+		}
+	}
+
 
 	post_process_newly_parsed_class(_class, (int)var_offset);
 
 
-	int cur_token = Exp.cur_token();
-
-	for (int id: sub_class_token_ids) {
-		Exp.jump(id);
-		bool _finished;
-		auto nn = parse_abstract_class(_class, &_finished);
-		if (!_finished)
+	for (int id: sub_class_ids) {
+		auto nn = realize_class(node->params[id], _class);
+		if (!nn)
 			do_error(format("parent class not fully parsed yet"), id);
 	}
 
-	Exp.jump(cur_token-1);
-	*finished = true;
-	return node;
+	return _class;
 }
 
 void Parser::post_process_newly_parsed_class(Class *_class, int size) {
@@ -2224,32 +2227,32 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 	}
 }
 
-void Parser::parse_abstract_function_body(Function *f) {
-	parser_loop_depth = 0;
-
-	if (Exp.next_line_is_indented()) {
-		Exp.next_line();
-		f->block_node = parse_abstract_block();
-		f->block_node->link_no = (int_p)f->block;
-	}
-
-	if (config.verbose) {
-		msg_write("ABSTRACT:");
-		f->block_node->show();
-	}
-}
-
-shared<Node> Parser::parse_abstract_function(Class *name_space, Flags flags0) {
+shared<Node> Parser::parse_abstract_function(Flags flags0) {
 	auto n = parse_abstract_function_header(flags0);
-	auto f = realize_function_header(n, common_types._void, name_space);
 	expect_new_line("newline expected after parameter list");
 
-	if (!f->is_extern())
-		parse_abstract_function_body(f);
+	if (!flags_has(n->flags, Flags::Extern) and Exp.next_line_is_indented()) {
+		parser_loop_depth = 0;
+		Exp.next_line();
+
+		n->set_param(4, parse_abstract_block());
+	}
+	return n;
+}
+
+void Parser::realize_function(shared<Node> node, Class* name_space) {
+	auto f = realize_function_header(node, common_types._void, name_space);
+	if (node->params[4]) {
+		f->block_node = node->params[4];
+		f->block_node->link_no = (int_p)f->block;
+
+		if (config.verbose) {
+			msg_write("ABSTRACT:");
+			f->block_node->show();
+		}
+	}
 
 	functions_to_concretify.add(f);
-
-	return f->abstract_node;
 }
 
 void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
@@ -2347,37 +2350,27 @@ shared<Node> Parser::parse_abstract_top_level() {
 
 		// enum
 		} else if (Exp.cur == Identifier::Enum) {
-			auto n = parse_abstract_enum();
-			node->add(n);
-			realize_enum(n, tree->base_class);
+			node->add(parse_abstract_enum());
 
 		// class
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
-			bool finished;
-			node->add(parse_abstract_class(tree->base_class, &finished));
-			if (!finished)
-				msg_write("X");
+			node->add(parse_abstract_class());
 
 		// func
 		} else if (Exp.cur == Identifier::Func) {
-			node->add(parse_abstract_function(tree->base_class, Flags::Static));
+			node->add(parse_abstract_function(Flags::Static));
 
 		// macro
 		} else if (Exp.cur == Identifier::Macro) {
-			node->add(parse_abstract_function(tree->base_class, Flags::Static | Flags::Macro));
+			node->add(parse_abstract_function(Flags::Static | Flags::Macro));
 
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			auto n = parse_abstract_named_const();
-			node->add(n);
-			realize_named_const(n, tree->base_class, tree->root_of_all_evil->block);
+			node->add(parse_abstract_named_const());
 
 		} else if (Exp.cur == Identifier::Var) {
-			int64 offset = 0;
 			auto nodes = parse_abstract_variable_declaration();
-			for (auto n: weak(nodes)) {
+			for (auto n: weak(nodes))
 				node->add(n);
-				realize_class_variable_declaration(n, tree->base_class, tree->root_of_all_evil->block, offset, Flags::Static);
-			}
 
 		} else {
 			do_error_exp("unknown top level definition");
@@ -2385,6 +2378,25 @@ shared<Node> Parser::parse_abstract_top_level() {
 		if (!Exp.end_of_file())
 			Exp.next_line();
 	}
+
+
+	for (auto&& [i,n]: enumerate(weak(node->params))) {
+		if (!n)
+			continue;
+		if (n->kind == NodeKind::AbstractEnum) {
+			realize_enum(n, tree->base_class);
+		} else if (n->kind == NodeKind::AbstractClass) {
+			realize_class(n, tree->base_class);
+		} else if (n->kind == NodeKind::AbstractFunction) {
+			realize_function(n, tree->base_class);
+		} else if (n->kind == NodeKind::AbstractLet) {
+			realize_named_const(n, tree->base_class, tree->root_of_all_evil->block);
+		} else if (n->kind == NodeKind::AbstractVar) {
+			int64 var_offset = 0;
+			realize_class_variable_declaration(n, tree->base_class, tree->root_of_all_evil->block, var_offset);
+		}
+	}
+
 	//node->show();
 
 	return node;
