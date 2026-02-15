@@ -72,7 +72,8 @@ public:
 	shared_array<Node> parse_abstract_variable_declaration(Flags flags0 = Flags::None);
 	void realize_class_variable_declaration(shared<Node> node, const Class *ns, Block *block, int64 &_offset, Flags flags0 = Flags::None);
 	void parse_class_use_statement(const Class *c);
-	void parse_named_const(Class *name_space, Block *block);
+	shared<Node> parse_abstract_named_const();
+	void realize_named_const(shared<Node> node, Class *name_space, Block *block);
 	shared<Node> parse_and_eval_const(Block *block, const Class *type);
 	shared<Node> eval_to_const(shared<Node> node, Block *block, const Class *type);
 	static AbstractOperator *which_abstract_operator(const string &name, OperatorFlags param_flags = OperatorFlags::Binary);

@@ -1774,8 +1774,10 @@ shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
 				flags_set(flags, Flags::Static);
 			node->add(parse_abstract_function(_class, flags));
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			parse_named_const(_class, tree->root_of_all_evil->block);
-		} else if (try_consume(Identifier::Var)) {
+			auto n = parse_abstract_named_const();
+			node->add(n);
+			realize_named_const(n, _class, tree->root_of_all_evil->block);
+		} else if (Exp.cur == Identifier::Var) {
 			auto nodes = parse_abstract_variable_declaration();
 			for (auto n: weak(nodes)) {
 				node->add(n);
@@ -1932,29 +1934,47 @@ shared<Node> Parser::parse_and_eval_const(Block *block, const Class *type) {
 
 }
 
-void Parser::parse_named_const(Class *name_space, Block *block) {
+shared<Node> Parser::parse_abstract_named_const() {
 	Exp.next(); // 'const' / 'let'
-	string name = Exp.consume();
 
-	const Class *type = nullptr;
+	auto node = new Node(NodeKind::AbstractLet, 0, common_types.unknown);
+	node->set_num_params(3);
+	node->set_param(0, parse_abstract_token());
+	node->token_id = node->params[0]->token_id;
+
 	if (try_consume(":"))
-		type = parse_type(name_space);
+		node->set_param(1, parse_abstract_type());
 
 	expect_identifier("=", "'=' expected after const name");
+	node->set_param(2, parse_abstract_operand_greedy());
+
+	expect_new_line();
+	return node;
+}
+
+void Parser::realize_named_const(shared<Node> node, Class *name_space, Block *block) {
+
+	// explicit type?
+	const Class *type = nullptr;
+	if (node->params[1])
+		type = con.concretify_as_type(node->params[1], tree->root_of_all_evil->block, name_space);
 
 	// find const value
-	auto cv = parse_and_eval_const(block, type);
+	auto cv = eval_to_const(node->params[2], block, type);
 	Constant *c_value = cv->as_const();
 
 	auto *c = tree->add_constant(c_value->type.get(), name_space);
 	c->set(*c_value);
-	c->name = name;
+	c->name = node->params[0]->as_token();
 }
 
 // [[NAME, TYPE, VALUE], ...]
 shared_array<Node> Parser::parse_abstract_variable_declaration(Flags flags0) {
 	shared_array<Node> nodes;
 	shared<Node> type, value;
+
+	try_consume("var");
+	flags_set(flags0, Flags::Mutable);
 
 	Flags flags = parse_flags(flags0);
 
@@ -2001,9 +2021,8 @@ void Parser::realize_class_variable_declaration(shared<Node> node, const Class *
 
 	auto cc = const_cast<Class*>(ns);
 
-	const Class *type = nullptr;
-
 	// explicit type?
+	const Class *type = nullptr;
 	if (node->params[1])
 		type = con.concretify_as_type(node->params[1], tree->root_of_all_evil->block, ns);
 
@@ -2349,9 +2368,11 @@ shared<Node> Parser::parse_abstract_top_level() {
 			node->add(parse_abstract_function(tree->base_class, Flags::Static | Flags::Macro));
 
 		} else if ((Exp.cur == Identifier::Const) or (Exp.cur == Identifier::Let)) {
-			parse_named_const(tree->base_class, tree->root_of_all_evil->block);
+			auto n = parse_abstract_named_const();
+			node->add(n);
+			realize_named_const(n, tree->base_class, tree->root_of_all_evil->block);
 
-		} else if (try_consume(Identifier::Var)) {
+		} else if (Exp.cur == Identifier::Var) {
 			int64 offset = 0;
 			auto nodes = parse_abstract_variable_declaration();
 			for (auto n: weak(nodes)) {
