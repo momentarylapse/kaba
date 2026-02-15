@@ -95,6 +95,7 @@ enum class NodeKind {
 	AbstractVar,         // var x ...
 	AbstractLet,         // let x ...
 	AbstractEnum,
+	AbstractUseClassElement, // 'use' inside class
 	// compilation
 	VarTemp,
 	DereferenceVarTemp,

@@ -1812,7 +1812,9 @@ shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
 				realize_class_variable_declaration(n, _class, tree->root_of_all_evil->block, var_offset);
 			}
 		} else if (Exp.cur == Identifier::Use) {
-			parse_class_use_statement(_class);
+			auto n = parse_abstract_class_use_statement();
+			node->add(n);
+			realize_class_use_statement(n, _class);
 		} else {
 			auto nodes = parse_abstract_variable_declaration();
 			for (auto n: weak(nodes)) {
@@ -2075,9 +2077,16 @@ void Parser::realize_class_variable_declaration(shared<Node> node, const Class *
 	}
 }
 
-void Parser::parse_class_use_statement(const Class *c) {
+shared<Node> Parser::parse_abstract_class_use_statement() {
 	Exp.next(); // "use"
-	string name = Exp.consume();
+	auto node = new Node(NodeKind::AbstractUseClassElement, 0, common_types.unknown, Flags::None, Exp.cur_token());
+	node->add(parse_abstract_token());
+	expect_new_line();
+	return node;
+}
+
+void Parser::realize_class_use_statement(shared<Node> node, const Class *c) {
+	string name = node->params[0]->as_token();
 	bool found = false;
 	for (auto &e: c->elements)
 		if (e.name == name) {
@@ -2086,8 +2095,6 @@ void Parser::parse_class_use_statement(const Class *c) {
 		}
 	if (!found)
 		do_error_exp(format("use: class '%s' does not have an element '%s'", c->name, name));
-
-	expect_new_line();
 }
 
 // [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
