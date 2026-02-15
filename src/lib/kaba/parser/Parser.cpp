@@ -1501,50 +1501,43 @@ void Parser::parse_import() {
 }
 
 
-void Parser::parse_enum(Class *_namespace) {
+shared<Node> Parser::parse_abstract_enum() {
 	Exp.next(); // 'enum'
 
 	expect_no_new_line("name expected (anonymous enum is deprecated)");
 
+	auto node = new Node(NodeKind::AbstractEnum, 0, common_types.unknown);
+	node->token_id = Exp.cur_token();
+	node->set_num_params(1);
+
 	// class name
-	int token0 = Exp.cur_token();
-	auto _class = tree->create_new_class(Exp.consume(), common_types.enum_t, sizeof(int), -1, nullptr, {}, _namespace, token0);
+	node->set_param(0, parse_abstract_token());
 
 	// as shared|@noauto
 	if (try_consume(Identifier::As))
-		_class->flags = parse_flags(_class->flags);
-
-	context->template_manager->request_class_instance(tree, common_types.enum_t, {_class}, token0);
+		node->flags = parse_flags();
 
 	expect_new_line_with_indent();
 	Exp.next_line();
 	int indent0 = Exp.cur_line->indent;
 
-	int next_value = 0;
-
 	while (!Exp.end_of_file()) {
 		while (!Exp.end_of_line()) {
-			auto *c = tree->add_constant(_class, _class);
-			c->name = Exp.consume();
+			node->add(parse_abstract_token());
 
 			// explicit value
 			if (try_consume("=")) {
 				expect_no_new_line();
-
-				auto cv = parse_and_eval_const(tree->root_of_all_evil->block, common_types.i32);
-				next_value = cv->as_const()->as_int();
+				node->add(parse_abstract_operand_greedy());
 			} else {
-				// linked from host program?
-				next_value = context->external->process_class_offset(_class->cname(_namespace), c->name, next_value);
+				node->add(nullptr);
 			}
-			c->as_int() = (next_value ++);
 
 			if (try_consume(Identifier::As)) {
 				expect_no_new_line();
-
-				auto cn = parse_and_eval_const(tree->root_of_all_evil->block, common_types.string);
-				auto label = cn->as_const()->as_string();
-				add_enum_label(_class, c->as_int(), label);
+				node->add(parse_abstract_operand());
+			} else {
+				node->add(nullptr);
 			}
 
 			if (Exp.end_of_line())
@@ -1555,6 +1548,39 @@ void Parser::parse_enum(Class *_namespace) {
 		if (Exp.next_line_indent() < indent0)
 			break;
 		Exp.next_line();
+	}
+
+	return node;
+}
+
+void Parser::realize_enum(shared<Node> node, Class *_namespace) {
+	auto _class = tree->create_new_class(node->params[0]->as_token(), common_types.enum_t, sizeof(int), -1, nullptr, {}, _namespace, node->token_id);
+	_class->flags = node->flags;
+
+	context->template_manager->request_class_instance(tree, common_types.enum_t, {_class}, node->token_id);
+
+	int next_value = 0;
+
+	for (int i=0; i<node->params.num/3; i++) {
+
+		auto *c = tree->add_constant(_class, _class);
+		c->name = node->params[i*3+1]->as_token();
+
+		// explicit value
+		if (node->params[i*3+2]) {
+			auto cv = eval_to_const(node->params[i*3+2], tree->root_of_all_evil->block, common_types.i32);
+			next_value = cv->as_const()->as_int();
+		} else {
+			// linked from host program?
+			next_value = context->external->process_class_offset(_class->cname(_namespace), c->name, next_value);
+		}
+		c->as_int() = (next_value ++);
+
+		if (node->params[i*3+3]) {
+			auto cn = eval_to_const(node->params[i*3+3], tree->root_of_all_evil->block, common_types.string);
+			auto label = cn->as_const()->as_string();
+			add_enum_label(_class, c->as_int(), label);
+		}
 	}
 
 	flags_set(_class->flags, Flags::FullyParsed);
@@ -1757,7 +1783,9 @@ shared<Node> Parser::parse_abstract_class(Class *_namespace, bool* finished) {
 			break;
 
 		if (Exp.cur == Identifier::Enum) {
-			parse_enum(_class);
+			auto n = parse_abstract_enum();
+			node->add(n);
+			realize_enum(n, _class);
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
 			int cur_token = Exp.cur_token();
 			bool _finished;
@@ -2062,39 +2090,6 @@ void Parser::parse_class_use_statement(const Class *c) {
 	expect_new_line();
 }
 
-
-/*const Class *Parser::parse_product_type(const Class *ns) {
-	Exp.next(); // (
-	Array<const Class*> types;
-	types.add(parse_type(ns));
-
-	while (Exp.cur == ",") {
-		Exp.next();
-		types.add(parse_type(ns));
-	}
-	if (Exp.cur != ")")
-		do_error("',' or ')' in type list expected");
-	Exp.next();
-	if (types.num == 1)
-		return types[0];
-
-	int size = 0;
-	string name = types[0]->name;
-	for (int i=1; i<types.num; i++) {
-		name += "," + types[i]->name;
-	}
-
-	auto t = tree->make_class("(" + name + ")", Class::Type::OTHER, size, -1, nullptr, nullptr, ns);
-	return t;
-}*/
-
-// complicated types like "int[]*[4]" etc
-// greedy
-const Class *Parser::parse_type(const Class *ns) {
-	auto cc = parse_abstract_operand(true);
-	return con.concretify_as_type(cc, tree->root_of_all_evil->block, ns);
-}
-
 // [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
 shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 	auto node = new Node(NodeKind::AbstractFunction, 0, common_types.unknown, flags0);
@@ -2106,15 +2101,10 @@ shared<Node> Parser::parse_abstract_function_header(Flags flags0) {
 	node->flags = parse_flags(node->flags);
 
 	// name?
-	//string name;
 	if (Exp.cur == "(" or Exp.cur == "[") {
-		//static int lambda_count = 0;
-		//name = format(":lambda-%d:", lambda_count ++);
+		// lambda -> generate name later
 	} else {
 		node->set_param(0, parse_abstract_token());
-		/*name = Exp.consume();
-		if ((name == Identifier::func::Init) or (name == Identifier::func::Delete) or (name == Identifier::func::Assign))
-			flags_set(node->flags, Flags::Mutable);*/
 	}
 
 	// template?
@@ -2350,7 +2340,9 @@ shared<Node> Parser::parse_abstract_top_level() {
 
 		// enum
 		} else if (Exp.cur == Identifier::Enum) {
-			parse_enum(tree->base_class);
+			auto n = parse_abstract_enum();
+			node->add(n);
+			realize_enum(n, tree->base_class);
 
 		// class
 		} else if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {

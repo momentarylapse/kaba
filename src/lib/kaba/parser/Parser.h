@@ -56,7 +56,8 @@ public:
 	void concretify_all_functions();
 	Flags parse_flags(Flags initial = Flags::None);
 	void parse_import();
-	void parse_enum(Class *_namespace);
+	shared<Node> parse_abstract_enum();
+	void realize_enum(shared<Node> node, Class *_namespace);
 	shared<Node> parse_abstract_class(Class *_namespace, bool* finished);
 	shared<Node> parse_abstract_class_header();
 	Class *realize_class_header(shared<Node>, Class* _namespace, int64& var_offset0);
@@ -67,8 +68,6 @@ public:
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
 	void parse_abstract_function_body(Function *f);
-	const Class *parse_type(const Class *ns);
-	//const Class *parse_product_type(const Class *ns);
 	shared_array<Node> parse_abstract_variable_declaration(Flags flags0 = Flags::None);
 	void realize_class_variable_declaration(shared<Node> node, const Class *ns, Block *block, int64 &_offset, Flags flags0 = Flags::None);
 	void parse_class_use_statement(const Class *c);
