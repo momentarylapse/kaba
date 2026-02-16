@@ -231,38 +231,10 @@ Function *SyntaxTree::add_function(const string &name, const Class *return_type,
 	return f;
 }
 
-
-
-AbstractOperator *Parser::which_abstract_operator(const string &name, OperatorFlags param_flags) {
-	for (int i=0; i<(int)OperatorID::_Count_; i++)
-		if ((name == abstract_operators[i].name) and ((int)param_flags == (abstract_operators[i].flags & OperatorFlags::Binary)))
-			return &abstract_operators[i];
-
-	// old hack
-	if (name == "!")
-		return &abstract_operators[(int)OperatorID::Negate];
-
-	return nullptr;
-}
-
 const Class *SyntaxTree::which_owned_class(const string &name) {
 	for (auto *c: weak(base_class->classes))
 		if (name == c->name)
 			return c;
-	return nullptr;
-}
-
-Statement *Parser::which_statement(const string &name) {
-	for (auto *s: Statements)
-		if (name == s->name)
-			return s;
-	return nullptr;
-}
-
-SpecialFunction *Parser::which_special_function(const string &name) {
-	for (auto *s: special_functions)
-		if (name == s->name)
-			return s;
 	return nullptr;
 }
 
