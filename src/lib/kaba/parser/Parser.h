@@ -9,6 +9,7 @@
 #define SRC_LIB_KABA_PARSER_PARSER_H_
 
 #include "lexical.h"
+#include "AbstractParser.h"
 #include "Concretifier.h"
 #include "../template/implicit.h"
 #include "../syntax/SyntaxTree.h"
@@ -26,7 +27,7 @@ enum class Flags;
 struct CastingData;
 class Context;
 
-class Parser {
+class Parser : public AbstractParser {
 public:
 	explicit Parser(SyntaxTree *syntax);
 
@@ -34,15 +35,6 @@ public:
 
 	void parse_legacy_macros(bool just_analyse);
 	void handle_legacy_macro(int &line_no, int &NumIfDefs, bool *IfDefed, bool just_analyse);
-
-	void do_error(const string &msg, shared<Node> node);
-	void do_error(const string &msg, int token_id);
-	void do_error_exp(const string &msg, int override_token_id = -1);
-	void expect_no_new_line(const string &error_msg = "");
-	void expect_new_line(const string &error_msg = "");
-	void expect_new_line_with_indent();
-	void expect_identifier(const string &identifier, const string &error_msg, bool consume = true);
-	bool try_consume(const string &identifier);
 
 	shared<Node> parse_abstract_list();
 	shared<Node> parse_abstract_dict();
@@ -104,7 +96,6 @@ public:
 	shared<Node> parse_abstract_operand(bool prefer_class = false);
 	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false);
 	shared<Node> parse_abstract_operand_greedy(bool allow_tuples = false, int min_op_level = -999);
-	shared<Node> parse_operand_super_greedy(Block *block);
 	shared<Node> parse_abstract_set_builder();
 	shared<Node> parse_abstract_token();
 	shared<Node> parse_abstract_type();
@@ -139,10 +130,10 @@ public:
 	shared<Node> parse_abstract_special_function(SpecialFunction *s);
 
 
-	Context *context;
-	SyntaxTree *tree;
+	//Context *context;
+	//SyntaxTree *tree;
 	Function *cur_func;
-	ExpressionBuffer &Exp;
+	//ExpressionBuffer &Exp;
 	int next_asm_block = 0;
 
 	Concretifier con;
