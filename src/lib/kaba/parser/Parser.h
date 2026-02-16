@@ -44,7 +44,8 @@ public:
 
 	void parse();
 	shared<Node> parse_abstract_top_level();
-	void parse_all_class_names_in_block(Class *ns, int indent0);
+	void realize_tree(shared<Node> node);
+	void prerealize_all_class_names_in_block(shared<Node> node, Class *ns);
 	void concretify_all_functions();
 	Flags parse_flags(Flags initial = Flags::None);
 	void parse_import();

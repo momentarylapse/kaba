@@ -2198,26 +2198,14 @@ void Parser::realize_function(shared<Node> node, Class* name_space) {
 	functions_to_concretify.add(f);
 }
 
-void Parser::parse_all_class_names_in_block(Class *ns, int indent0) {
-	while (!Exp.end_of_file()) {
-		if ((Exp.cur_line->indent == indent0) and (Exp.cur_line->tokens.num >= 2)) {
-			if ((Exp.cur == Identifier::Class) or (Exp.cur == Identifier::Struct) or (Exp.cur == Identifier::Interface) or (Exp.cur == Identifier::Namespace)) {
-				Exp.next();
-				if (Exp.cur == Identifier::Override)
-					continue;
-				Class *t = tree->create_new_class(Exp.cur, nullptr, 0, 0, nullptr, {}, ns, Exp.cur_token());
-				flags_clear(t->flags, Flags::FullyParsed);
+void Parser::prerealize_all_class_names_in_block(shared<Node> node, Class *ns) {
+	for (auto n: weak(node->params)) {
+		if (n and n->kind == NodeKind::AbstractClass and !flags_has(n->flags, Flags::Override)) {
+			Class *t = tree->create_new_class(n->params[1]->as_token(), nullptr, 0, 0, nullptr, {}, ns, n->token_id);
+			flags_clear(t->flags, Flags::FullyParsed);
 
-				Exp.next_line();
-				parse_all_class_names_in_block(t, indent0 + 1);
-				continue;
-			}
+			prerealize_all_class_names_in_block(n, t);
 		}
-		if (Exp.end_of_file())
-			break;
-		if (Exp.cur_line->indent < indent0)
-			break;
-		Exp.next_line();
 	}
 }
 
@@ -2281,9 +2269,6 @@ shared<Node> Parser::parse_abstract_top_level() {
 	// syntax analysis
 
 	Exp.reset_walker();
-	parse_all_class_names_in_block(tree->base_class, 0);
-
-	Exp.reset_walker();
 
 	// global definitions (enum, class, variables and functions)
 	while (!Exp.end_of_file()) {
@@ -2321,6 +2306,11 @@ shared<Node> Parser::parse_abstract_top_level() {
 		if (!Exp.end_of_file())
 			Exp.next_line();
 	}
+	return node;
+}
+
+void Parser::realize_tree(shared<Node> node) {
+	prerealize_all_class_names_in_block(node, tree->base_class);
 
 	// realize all lambdas
 	node = tree->transform_node(node, [this] (shared<Node> n) {
@@ -2347,10 +2337,6 @@ shared<Node> Parser::parse_abstract_top_level() {
 			realize_class_variable_declaration(n, tree->base_class, tree->root_of_all_evil->block, var_offset);
 		}
 	}
-
-	//node->show();
-
-	return node;
 }
 
 // convert text into script data
@@ -2361,6 +2347,8 @@ void Parser::parse() {
 	};
 
 	tree->root_node = parse_abstract_top_level();
+
+	realize_tree(tree->root_node);
 
 	concretify_all_functions();
 	
