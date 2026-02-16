@@ -1274,24 +1274,34 @@ shared<Node> Parser::parse_abstract_statement_var() {
 
 shared<Node> Parser::parse_abstract_statement_lambda() {
 	auto n = parse_abstract_function_header(Flags::Static);
-	auto f = realize_function_header(n, common_types.unknown, tree->base_class);
 
 	// lambda body
 	if (Exp.end_of_line()) {
 		// indented block
 		Exp.next_line();
-		f->block_node = parse_abstract_block();
-		f->block_node->link_no = (int_p)f->block;
+		n->set_param(4, parse_abstract_block());
 	} else {
 		// single expression
-		auto cmd = parse_abstract_operand_greedy();
-		f->block_node->add(cmd);
+		auto b = add_node_block(nullptr, common_types.unknown);
+		b->add(parse_abstract_operand_greedy());
+		n->set_param(4, b);
 	}
 
-	auto node = add_node_statement(StatementID::Lambda, f->token_id, common_types.unknown);
-	node->set_num_params(1);
-	node->set_param(0, add_node_func_name(f));
+	auto node = add_node_statement(StatementID::Lambda, n->token_id, common_types.unknown);
+	node->set_num_params(2);
+	node->set_param(1, n);
+
 	return node;
+}
+
+Function* Parser::realize_lambda(shared<Node> node, Class* name_space) {
+	auto f = realize_function_header(node->params[1], common_types.unknown, name_space);
+
+	f->block_node = node->params[1]->params[4];
+	f->block_node->link_no = (int_p)f->block;
+
+	node->set_param(0, add_node_func_name(f));
+	return f;
 }
 
 shared<Node> Parser::parse_abstract_statement_raw_function_pointer() {
@@ -2311,6 +2321,14 @@ shared<Node> Parser::parse_abstract_top_level() {
 		if (!Exp.end_of_file())
 			Exp.next_line();
 	}
+
+	// realize all lambdas
+	node = tree->transform_node(node, [this] (shared<Node> n) {
+		if (n->kind == NodeKind::Statement and n->as_statement()->id == StatementID::Lambda) {
+			realize_lambda(n, tree->base_class);
+		}
+		return n;
+	});
 
 
 	for (auto&& [i,n]: enumerate(weak(node->params))) {

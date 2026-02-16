@@ -61,6 +61,7 @@ public:
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);
 	void realize_function(shared<Node> node, Class* name_space);
 	void post_process_function_header(Function *f, const Array<string> &template_param_names, Class *name_space, Flags flags);
+	Function* realize_lambda(shared<Node> node, Class* name_space);
 	shared_array<Node> parse_abstract_variable_declaration(Flags flags0 = Flags::None);
 	void realize_class_variable_declaration(shared<Node> node, const Class *ns, Block *block, int64 &_offset, Flags flags0 = Flags::None);
 	shared<Node> parse_abstract_class_use_statement();
