@@ -45,8 +45,8 @@ public:
 	void concretify_all_functions();
 	void parse_import();
 	void realize_enum(shared<Node> node, Class *_namespace);
-	Class *realize_class(shared<Node>, Class *name_space);
-	Class *realize_class_header(shared<Node>, Class* _namespace, int64& var_offset0);
+	Class *realize_class(shared<Node>, Class *name_space, const string& name_overwrite = "");
+	Class *realize_class_header(shared<Node>, Class* _namespace, int64& var_offset0, const string& name_overwrite = "");
 	void post_process_newly_parsed_class(Class *c, int size);
 	void skip_parse_class();
 	Function *realize_function_header(shared<Node> node, const Class *default_type, Class *name_space);

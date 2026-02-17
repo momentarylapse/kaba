@@ -1196,7 +1196,7 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 }
 
 
-	shared<Node> AbstractParser::parse_abstract_enum() {
+shared<Node> AbstractParser::parse_abstract_enum() {
 	Exp.next(); // 'enum'
 
 	expect_no_new_line("name expected (anonymous enum is deprecated)");
@@ -1248,8 +1248,8 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	// [METACLASS, NAME, PARENT, TEMPLATEPARAM] + flags
-	shared<Node> AbstractParser::parse_abstract_class_header() {
+// [METACLASS, NAME, PARENT, TEMPLATEPARAM] + flags
+shared<Node> AbstractParser::parse_abstract_class_header() {
 	auto node = new Node(NodeKind::AbstractClass, 0, common_types.unknown, Flags::None, Exp.cur_token());
 	node->set_num_params(4);
 
@@ -1272,9 +1272,9 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 			node->set_param(3, parse_abstract_token());
 			if (!try_consume(","))
 				break;
+			do_error("template classes only allowed with single parameter", Exp.cur_token());
 		}
 		expect_identifier("]", "']' expected after template parameter");
-		Exp.next();
 	}
 
 	// parent class / interface
@@ -1293,7 +1293,7 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	shared<Node> AbstractParser::parse_abstract_class() {
+shared<Node> AbstractParser::parse_abstract_class() {
 	int indent0 = Exp.cur_line->indent;
 	auto node = parse_abstract_class_header();
 	string meta = node->params[0]->as_token();
@@ -1338,7 +1338,7 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	shared<Node> AbstractParser::parse_abstract_named_const() {
+shared<Node> AbstractParser::parse_abstract_named_const() {
 	Exp.next(); // 'const' / 'let'
 
 	auto node = new Node(NodeKind::AbstractLet, 0, common_types.unknown);
@@ -1356,8 +1356,8 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	// [[NAME, TYPE, VALUE], ...]
-	shared_array<Node> AbstractParser::parse_abstract_variable_declaration(Flags flags0) {
+// [[NAME, TYPE, VALUE], ...]
+shared_array<Node> AbstractParser::parse_abstract_variable_declaration(Flags flags0) {
 	shared_array<Node> nodes;
 	shared<Node> type, value;
 
@@ -1398,7 +1398,7 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return nodes;
 }
 
-	shared<Node> AbstractParser::parse_abstract_class_use_statement() {
+shared<Node> AbstractParser::parse_abstract_class_use_statement() {
 	Exp.next(); // "use"
 	auto node = new Node(NodeKind::AbstractUseClassElement, 0, common_types.unknown, Flags::None, Exp.cur_token());
 	node->add(parse_abstract_token());
@@ -1406,8 +1406,8 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	// [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
-	shared<Node> AbstractParser::parse_abstract_function_header(Flags flags0) {
+// [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
+shared<Node> AbstractParser::parse_abstract_function_header(Flags flags0) {
 	auto node = new Node(NodeKind::AbstractFunction, 0, common_types.unknown, flags0);
 	node->token_id = Exp.cur_token();
 	node->set_num_params(5);
@@ -1476,7 +1476,7 @@ void AbstractParser::parse_abstract_complete_command_into_block(Node *block) {
 	return node;
 }
 
-	shared<Node> AbstractParser::parse_abstract_function(Flags flags0) {
+shared<Node> AbstractParser::parse_abstract_function(Flags flags0) {
 	auto n = parse_abstract_function_header(flags0);
 	expect_new_line("newline expected after parameter list");
 

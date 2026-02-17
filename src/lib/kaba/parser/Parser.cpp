@@ -471,10 +471,12 @@ const Class* parse_class_type(const string& e) {
 	return nullptr;
 }
 
-Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64& var_offset0) {
+Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64& var_offset0, const string& name_overwrite) {
 	var_offset0 = 0;
 
-	string name = node->params[1]->as_token();
+	string name = name_overwrite;
+	if (name == "" and node->params[1])
+		name = node->params[1]->as_token();
 
 	Class *_class = nullptr;
 	if (flags_has(node->flags, Flags::Override)) {
@@ -494,21 +496,38 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	}
 
 	// template?
-	/*Array<string> template_param_names;
-	if (try_consume("[")) {
-		while (true) {
-			template_param_names.add(Exp.consume());
-			if (!try_consume(","))
-				break;
-		}
-		expect_identifier("]", "']' expected after template parameter");
+	Array<string> template_param_names;
+	if (flags_has(node->flags, Flags::Template)) {
+		template_param_names.add(node->params[3]->as_token());
 		flags_set(_class->flags, Flags::Template);
-		Exp.next();
-		context->template_manager->add_class_template(_class, template_param_names, [] (SyntaxTree* tree, const Array<const Class*>&, int) -> Class* {
+		context->template_manager->add_class_template(_class, template_param_names, [this, _nn = node, template_param_names, _namespace] (SyntaxTree* tree, const Array<const Class*>& tparams, int) -> Class* {
+			auto nn = cp_node(_nn);
+			nn->link_no = 0;
+			flags_clear(nn->flags, Flags::Template);
+
+			auto convert = [template_param_names, tparams] (shared<Node> n) {
+				if (n->kind == NodeKind::AbstractToken) {
+					for (int i=0; i<tparams.num; i++)
+						if (n->as_token() == template_param_names[i])
+							return add_node_class(tparams[i], n->token_id);
+				}
+				return n;
+			};
+
+			nn = SyntaxTree::transform_node(nn, convert);
+
+			string _name = format("%s[%s]", _nn->params[1]->as_token(), tparams[0]->name);
+
+			Class *t = tree->create_new_class(_name, _nn->as_class(), 0, 0, nullptr, {}, _namespace, _nn->token_id);
+			flags_clear(t->flags, Flags::FullyParsed);
+
+			realize_class(nn, _namespace, _name);
+			return t;
+
 			tree->do_error("TEMPLATE INSTANCE...", -1);
 			return nullptr;
 		});
-	}*/
+	}
 
 	// parent class
 	if (node->params[2]) {
@@ -547,9 +566,9 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	return _class;
 }
 
-Class* Parser::realize_class(shared<Node> node, Class* name_space) {
+Class* Parser::realize_class(shared<Node> node, Class* name_space, const string& name_overwrite) {
 	int64 var_offset = 0;
-	auto _class = realize_class_header(node, name_space, var_offset);
+	auto _class = realize_class_header(node, name_space, var_offset, name_overwrite);
 	if (!_class) // in case, not fully parsed
 		return nullptr;
 	node->link_no = (int_p)_class;

@@ -1,0 +1,27 @@
+struct Pair[X]
+	var a: X
+	var b: X
+	
+	func f(x: X) -> X
+		print(a + x)
+		return x + a
+
+func main()
+	var x: Pair[i32]
+	x.a = 13
+	x.b = 7
+	print(str(x))
+	
+	var y: Pair[i32]
+	y = x
+	y.a += 1000
+	print(y)
+	
+	var z: Pair[string]
+	z = ("a", "b")
+	print(z)
+#	z = x
+
+
+	print(x.f(11))
+	print(z.f("xxx"))
