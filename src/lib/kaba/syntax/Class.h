@@ -13,6 +13,7 @@ class Class;
 class Function;
 class Constant;
 class Variable;
+class Node;
 enum class Flags;
 
 
@@ -32,7 +33,8 @@ public:
 class ClassInitializers {
 public:
 	int element;
-	shared<Constant> value;
+	//shared<Constant> value;
+	shared<Node> value;
 };
 
 typedef void *VirtualTable;

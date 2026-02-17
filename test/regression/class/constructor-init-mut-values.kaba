@@ -1,0 +1,13 @@
+func f() -> f32
+	return 1.2
+
+class B
+	var c = Complex(f(),2)
+	func __init__()
+		print("B.init  {{c}}")
+
+func main()
+	var b: B
+	print(b)
+	
+

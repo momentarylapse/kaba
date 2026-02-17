@@ -119,7 +119,7 @@ void AutoImplementer::implement_add_child_constructors(shared<Node> n_self, Func
 	// auto initializers
 	for (auto &init: t->initializers) {
 		auto &e = t->elements[init.element];
-		f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), add_node_const(init.value.get())));
+		f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), init.value));
 	}
 
 	if (flags_has(t->flags, Flags::Shared)) {

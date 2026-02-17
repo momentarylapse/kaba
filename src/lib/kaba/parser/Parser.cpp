@@ -730,23 +730,24 @@ void Parser::realize_class_variable_declaration(shared<Node> node, const Class *
 	if (node->params[1])
 		type = con.concretify_as_type(node->params[1], tree->root_of_all_evil->block, ns);
 
-	Constant *c_value = nullptr;
+	shared<Node> value;
 	if (node->params[2]) {
 
 		//if (nodes.num != 1)
 		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
-		auto cv = eval_to_const(node->params[2], block, type);
-		c_value = cv->as_const();
+
+		//auto cv = eval_to_const(node->params[2], block, type);
+		value = con.force_concrete_type(con.concretify_node(node->params[2], block, ns));
 		if (!type)
-			type = cv->type;
+			type = value->type;
 	}
 
 
 	parser_class_add_element(this, cc, node->params[0]->as_token(), type, flags, _offset, node->params[0]->token_id);
 
 	if (node->params[2]) {
-		ClassInitializers init = {ns->elements.num - 1, c_value};
+		ClassInitializers init = {ns->elements.num - 1, value};
 		cc->initializers.add(init);
 	}
 }
