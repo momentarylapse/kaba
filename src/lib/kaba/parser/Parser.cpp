@@ -521,7 +521,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 			Class *t = tree->create_new_class(_name, _nn->as_class(), 0, 0, nullptr, {}, _namespace, _nn->token_id);
 			flags_clear(t->flags, Flags::FullyParsed);
 
-			realize_class(nn, _namespace, _name);
+			tree->parser->realize_class(nn, _namespace, _name);
 			return t;
 
 			tree->do_error("TEMPLATE INSTANCE...", -1);
@@ -573,7 +573,7 @@ Class* Parser::realize_class(shared<Node> node, Class* name_space, const string&
 		return nullptr;
 	node->link_no = (int_p)_class;
 
-	if (_class->is_template()) // parse later...
+	if (_class->is_template()) // realize body later...
 		return _class;
 	Array<int> sub_class_ids;
 
