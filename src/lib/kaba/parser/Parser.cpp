@@ -500,7 +500,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	if (flags_has(node->flags, Flags::Template)) {
 		template_param_names.add(node->params[3]->as_token());
 		flags_set(_class->flags, Flags::Template);
-		context->template_manager->add_class_template(_class, template_param_names, [this, _nn = node, template_param_names, _namespace] (SyntaxTree* tree, const Array<const Class*>& tparams, int) -> Class* {
+		context->template_manager->add_class_template(_class, template_param_names, [_nn = node, template_param_names, _namespace] (SyntaxTree* tree, const Array<const Class*>& tparams, int) -> Class* {
 			auto nn = cp_node(_nn);
 			nn->link_no = 0;
 			flags_clear(nn->flags, Flags::Template);
