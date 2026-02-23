@@ -261,6 +261,18 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 	return call_function_pointer_arm64(ff, ret, param, return_type, ptype);
 #else
 
+	auto is_gpr = [] (const Class* t) -> bool {
+		if (t == common_types.i64 or t->is_pointer_raw())
+			return true;
+		if (t == common_types.i32 or t->is_enum())
+			return true;
+		if (t == common_types.i16 or t == common_types.u16)
+			return true;
+		if (t == common_types.i8 or t == common_types.u8 or t == common_types._bool)
+			return true;
+		return false;
+	};
+
 	if (ptype.num == 0) {
 		if (return_type == common_types._void) {
 			call0_void(ff, ret, param);
@@ -280,8 +292,8 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 		}
 	} else if (ptype.num == 1) {
 		if (return_type == common_types._void) {
-			if (ptype[0] == common_types.i32) {
-				call1_void_x<int>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1_void_x<int64>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == common_types.f32) {
 				call1_void_x<float>(ff, ret, param);
@@ -308,11 +320,8 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type == common_types.i32) {
-			if (ptype[0] == common_types.i32 or ptype[0]->is_enum()) {
-				call1<int,int>(ff, ret, param);
-				return true;
-			} else if (ptype[0] == common_types.i8) {
-				call1<int,char>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1<int,int64>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == common_types.f32) {
 				call1<int,float>(ff, ret, param);
@@ -322,13 +331,13 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type == common_types.i64) {
-			if (ptype[0] == common_types.i32) {
-				call1<int64,int>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1<int64,int64>(ff, ret, param);
 				return true;
 			}
 		} else if (return_type == common_types._bool or return_type == common_types.i8) {
-			if (ptype[0] == common_types.i32) {
-				call1<char,int>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1<char,int64>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == common_types.f32) {
 				call1<char,float>(ff, ret, param);
@@ -338,8 +347,8 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type == common_types.f32) {
-			if (ptype[0] == common_types.i32) {
-				call1<float,int>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1<float,int64>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == common_types.f32) {
 				call1<float,float>(ff, ret, param);
@@ -367,8 +376,8 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type->uses_return_by_memory()) {
-			if (ptype[0] == common_types.i32) {
-				call1<CBR,int>(ff, ret, param);
+			if (is_gpr(ptype[0])) {
+				call1<CBR,int64>(ff, ret, param);
 				return true;
 			} else if (ptype[0] == common_types.f32) {
 				call1<CBR,float>(ff, ret, param);
@@ -383,25 +392,25 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 		}
 	} else if (ptype.num == 2) {
 		if (return_type == common_types.i32) {
-			if ((ptype[0] == common_types.i32) and (ptype[1] == common_types.i32)) {
-				call2<int,int,int>(ff, ret, param);
+			if (is_gpr(ptype[0]) and is_gpr(ptype[1])) {
+				call2<int,int64,int64>(ff, ret, param);
 				return true;
 			}
-			if ((ptype[0]->uses_call_by_reference()) and (ptype[1] == common_types.i32)) {
-				call2<int,CBR,int>(ff, ret, param);
+			if (ptype[0]->uses_call_by_reference() and is_gpr(ptype[1])) {
+				call2<int,CBR,int64>(ff, ret, param);
 				return true;
 			}
-			if ((ptype[0]->uses_call_by_reference()) and (ptype[1] == common_types.f32)) {
+			if (ptype[0]->uses_call_by_reference() and (ptype[1] == common_types.f32)) {
 				call2<int,CBR,float>(ff, ret, param);
 				return true;
 			}
-			if ((ptype[0]->uses_call_by_reference()) and (ptype[1]->uses_call_by_reference())) {
+			if (ptype[0]->uses_call_by_reference() and (ptype[1]->uses_call_by_reference())) {
 				call2<int,CBR,CBR>(ff, ret, param);
 				return true;
 			}
 		} else if (return_type == common_types._bool) {
-			if ((ptype[0] == common_types.i32) and (ptype[1] == common_types.i32)) {
-				call2<bool,int,int>(ff, ret, param);
+			if (is_gpr(ptype[0]) and is_gpr(ptype[1])) {
+				call2<bool,int64,int64>(ff, ret, param);
 				return true;
 			}
 			if (ptype[0]->is_some_pointer() and ptype[1]->is_some_pointer()) {
@@ -430,11 +439,8 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type == common_types.i64) {
-			if ((ptype[0] == common_types.i64) and (ptype[1] == common_types.i64)) {
+			if (is_gpr(ptype[0]) and is_gpr(ptype[1])) {
 				call2<int64,int64,int64>(ff, ret, param);
-				return true;
-			} else if ((ptype[0] == common_types.i64) and (ptype[1] == common_types.i32)) {
-				call2<int64,int64,int>(ff, ret, param);
 				return true;
 			}
 		} else if (return_type == common_types.complex) {
@@ -448,19 +454,19 @@ bool call_function_pointer(void *ff, void *ret, const Array<void*> &param, const
 				return true;
 			}
 		} else if (return_type->uses_return_by_memory()) {
-			if ((ptype[0] == common_types.i32) and (ptype[1] == common_types.i32)) {
-				call2<CBR,int,int>(ff, ret, param);
+			if (is_gpr(ptype[0]) and is_gpr(ptype[1])) {
+				call2<CBR,int64,int64>(ff, ret, param);
 				return true;
 			} else if ((ptype[0] == common_types.f32) and (ptype[1] == common_types.f32)) {
 				call2<CBR,float,float>(ff, ret, param);
 				return true;
-			} else if ((ptype[0]->uses_call_by_reference()) and (ptype[1] == common_types.i32)) {
-				call2<CBR,CBR,int>(ff, ret, param);
+			} else if (ptype[0]->uses_call_by_reference() and is_gpr(ptype[1])) {
+				call2<CBR,CBR,int64>(ff, ret, param);
 				return true;
-			} else if ((ptype[0]->uses_call_by_reference()) and (ptype[1] == common_types.f32)) {
+			} else if (ptype[0]->uses_call_by_reference() and (ptype[1] == common_types.f32)) {
 				call2<CBR,CBR,float>(ff, ret, param);
 				return true;
-			} else if ((ptype[0]->uses_call_by_reference()) and (ptype[1]->uses_call_by_reference())) {
+			} else if (ptype[0]->uses_call_by_reference() and (ptype[1]->uses_call_by_reference())) {
 				call2<CBR,CBR,CBR>(ff, ret, param);
 				return true;
 			}
