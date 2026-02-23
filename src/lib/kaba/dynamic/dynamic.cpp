@@ -317,6 +317,8 @@ Any _cdecl dynify(const void *var, const Class *type) {
 		return Any(*(bool*)var);
 	if (type == common_types.string)
 		return Any(*(string*)var);
+	if (type == common_types.path)
+		return Any(str(*(Path*)var));
 	if (type == common_types.vec3)
 		return vec3_to_any(*(vec3*)var);
 	if (type == common_types.vec2)
@@ -375,6 +377,8 @@ void unwrap_any(const Any &aa, void *var, const Class *type) {
 		*(bool*)var = aa.to_bool();
 	} else if (type == common_types.string) {
 		*(string*)var = aa.str();
+	} else if (type == common_types.path) {
+		*(Path*)var = aa.str();
 	} else if (type == common_types.vec3) {
 		*(vec3*)var = any_to_vec3(aa);
 	} else if (type == common_types.vec2) {
