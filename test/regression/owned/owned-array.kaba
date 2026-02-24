@@ -3,9 +3,9 @@ func main()
 	
 	a.add(new string())
 	a.add(new string())
-	for x in a[0]
+	for mut x in a[0]
 		x = "b"
-	for x in a[1]
+	for mut x in a[1]
 		x = "a"
 	print(a)
 	

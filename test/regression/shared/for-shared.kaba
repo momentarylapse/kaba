@@ -14,7 +14,7 @@ func main()
 		print(typeof(x))
 #		print(p2s(&x))
 		x.f()
-	for shared x in a
+	for mut shared x in a
 		print(typeof(x))
 #		print(p2s(weak(x)))
 		x.f()

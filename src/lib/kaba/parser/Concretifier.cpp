@@ -743,6 +743,8 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> 
 	auto t_out = tree->request_implicit_class_alias(t0->param[0], node->token_id);
 
 	auto *var = block_x->as_block()->add_var(var_name, t_out);
+	if (!node->is_mutable())
+		flags_clear(var->flags, Flags::Mutable);
 	block_x->add(add_node_operator_by_inline(InlineID::PointerAssign, add_node_local(var), expr->change_type(t_out)));
 
 	auto n_if = add_node_statement(StatementID::If, node->token_id);
@@ -772,6 +774,8 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer_shared(shared
 	auto t_out = tree->request_implicit_class_shared_not_null(t0->param[0], node->token_id);
 
 	auto var = block_x->as_block()->add_var(var_name, t_out);
+	if (!node->is_mutable())
+		flags_clear(var->flags, Flags::Mutable);
 	block_x->add(parser->con.link_operator_id(OperatorID::Assign, add_node_local(var), expr->change_type(t_out)));
 
 	auto n_if = add_node_statement(StatementID::If, node->token_id);
@@ -802,6 +806,8 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_optional(shared<Node>
 	auto t_out = tree->request_implicit_class_alias(t0->param[0], node->token_id);
 
 	auto *var = block_x->as_block()->add_var(var_name, t_out);
+	if (!node->is_mutable())
+		flags_clear(var->flags, Flags::Mutable);
 	auto assign = add_node_operator_by_inline(InlineID::PointerAssign, add_node_local(var), expr->ref(t_out));
 
 	auto n_if = add_node_statement(StatementID::If, node->token_id);
@@ -883,6 +889,10 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
 	container = deref_if_reference(container);
+
+	if (node->is_mutable() and !container->is_mutable())
+		do_error("can not iterate mutating over a constant container", node);
+
 	auto t_c = container->type;
 	if (t_c->is_pointer_shared() and flags_has(node->flags, Flags::Shared))
 		return concretify_statement_for_unwrap_pointer_shared(node, container, block, ns);
@@ -938,7 +948,7 @@ shared<Node> Concretifier::concretify_statement_for_dict(shared<Node> node, shar
 	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto key_type = tree->request_implicit_class_alias(common_types.string, node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type);
-	if (!container->is_mutable())
+	if (!node->is_mutable())
 		flags_clear(var->flags, Flags::Mutable);
 	node->set_param(0, add_node_local(var));
 

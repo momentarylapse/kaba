@@ -8,7 +8,7 @@ class X
 
 func f() -> xfer[X]
 	var p: owned[X] = new X()
-	for x in p
+	for mut x in p
 		x.s = "hallo"
 	print("---a")
 	return give(p)

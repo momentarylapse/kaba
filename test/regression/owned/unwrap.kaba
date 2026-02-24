@@ -1,7 +1,7 @@
 func test_owned()
 	var o : owned[string] = new string()
 	
-	for s in o
+	for mut s in o
 		s = "hallo"
 
 	for s in o
@@ -19,7 +19,7 @@ func test_owned()
 
 func test_optional()
 	var o: int? = 13
-	for i in o
+	for mut i in o
 		print(typeof(i))
 		print(i)
 		i = 28
