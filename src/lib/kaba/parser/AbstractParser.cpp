@@ -1507,6 +1507,8 @@ Flags AbstractParser::parse_flags(Flags initial) {
 			flags_set(flags, Flags::Override);
 		} else if (Exp.cur == Identifier::Selfref or Exp.cur == Identifier::Ref) {
 			flags_set(flags, Flags::Ref);
+		} else if (Exp.cur == Identifier::Globalref) {
+			flags_set(flags, Flags::Globalref);
 		} else if (Exp.cur == Identifier::Shared) {
 			flags_set(flags, Flags::Shared);
 		} else if (Exp.cur == Identifier::Owned) {

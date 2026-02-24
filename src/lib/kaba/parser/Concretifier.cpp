@@ -2321,8 +2321,11 @@ shared<Node> check_const_params(SyntaxTree *tree, shared<Node> n) {
 		auto f = n->as_func();
 		int offset = 0;
 
-		// "ref" parameter -> return mut/const depends on param!
-		if (f->num_params >= 1) {
+		if (flags_has(f->flags, Flags::Globalref)) {
+			n->set_mutable(true);
+
+		} else if (f->num_params >= 1) {
+			// "ref" parameter -> return mut/const depends on param!
 			if (flags_has(f->var[0]->flags, Flags::Ref) or flags_has(f->flags, Flags::Ref))
 				n->set_mutable(n->params[0]->is_mutable());
 		}
