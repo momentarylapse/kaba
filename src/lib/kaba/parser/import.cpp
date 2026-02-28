@@ -69,37 +69,66 @@ Path import_dir_match(const Path &dir0, const string &name) {
 	return Path::EMPTY;
 }
 
-Path find_installed_lib_import(const string &name) {
-	//const Path dir = Context::packages_root();
+Path find_installed_package_import(Context* ctx, const string &name) {
+	//msg_write(name);
 
-	Path kaba_dir = os::app::directory_dynamic.parent() | "kaba";
+	// packages provided by program
+	for (auto& i: ctx->package_inits)
+		if (i.name == name) {
+			const auto fn = i.dir | (name + ".kaba");
+			if (os::fs::exists(fn))
+				return fn;
+		}
+
+	//const Path dir00 = Context::packages_root();
+
+	// system wide install
+	auto path = (Context::packages_root() | name | (name + ".kaba")).canonical();
+	if (os::fs::exists(path))
+		return path;
+
+	/*Path kaba_dir = os::app::directory_dynamic.parent() | "kaba";
 	if (os::app::directory_dynamic.basename()[0] == '.')
 		kaba_dir = os::app::directory_dynamic.parent() | ".kaba";
 	Path kaba_dir_static = os::app::directory_static.parent() | "kaba";
+
+	//msg_error(str(dir00));
+	//msg_error(str(kaba_dir));
+	//msg_error(str(kaba_dir_static));
+
 	for (auto &dir: Array<Path>({kaba_dir, kaba_dir_static})) {
-		auto path1 = (dir | "packages" | (name + ".kaba")).canonical();
-		if (os::fs::exists(path1))
-			return path1;
-		auto path2 = (dir | "packages" | name | (name + ".kaba")).canonical();
-		if (os::fs::exists(path2))
-			return path2;
-	}
+		auto path = (dir | "packages" | name | (name + ".kaba")).canonical();
+		if (os::fs::exists(path))
+			return path;
+	}*/
 	return Path::EMPTY;
 }
 
-Path find_import(Module *s, const string &_name) {
+Path find_import_module_file(Module *s, const string &_name) {
 	string name = _name.replace(".kaba", "");
 	name = name.replace(".", "/");
 
-	for (int i=0; i<MAX_IMPORT_DIRECTORY_PARENTS; i++) {
-		Path filename = import_dir_match((s->filename.parent() | string("../").repeat(i)).canonical(), name + ".kaba");
+	if (name.head(1) == "/") {
+		// relative....
+
+		// TODO count leading /s
+		Path filename = import_dir_match(s->filename.parent().canonical(), name.sub(1) + ".kaba");
 		if (filename)
 			return filename;
+	} else {
+		// "absolute"...
+
+		// installed?
+		if (auto fn = find_installed_package_import(s->context, name))
+			return fn;
+
+		// local/relative path
+		for (int i=0; i<MAX_IMPORT_DIRECTORY_PARENTS; i++) {
+			Path filename = import_dir_match((s->filename.parent() | string("../").repeat(i)).canonical(), name + ".kaba");
+			if (filename)
+				return filename;
+		}
 	}
-
-	// installed?
-	return find_installed_lib_import(name);
-
 	return Path::EMPTY;
 }
 
@@ -110,7 +139,7 @@ shared<Module> get_import_module(Parser* parser, const string& name, int token_i
 		if (p->main_module->filename.str() == name)
 			return p->main_module;
 
-	Path filename = find_import(parser->tree->module, name);
+	Path filename = find_import_module_file(parser->tree->module, name);
 	if (!filename)
 		return nullptr;
 		//parser->do_error(format("can not find import '%s'", name), token_id);
@@ -192,6 +221,7 @@ ImportSource resolve_import_source(Parser *parser, const Array<string> &name, in
 	if (!source.module)
 		parser->do_error(format("can not find import '%s'", implode(name, ".")), token);
 
+	// symbol in module...
 	for (int i=i_module+1; i<name.num; i++) {
 		if (source._class) {
 			source = resolve_import_sub(source, name[i]);
