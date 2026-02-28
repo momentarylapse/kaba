@@ -1,4 +1,4 @@
-use sourceforward.*
+use .source_forward.*
 
 func main()
 	f()

@@ -20,7 +20,7 @@ namespace kaba {
 extern Array<shared<Module>> loading_module_stack;
 void SetImmortal(SyntaxTree *ps);
 
-string canonical_import_name(const string &s) {
+/*string canonical_import_name(const string &s) {
 	return s.lower().replace(" ", "").replace("_", "").replace("-", "");
 }
 
@@ -67,40 +67,33 @@ Path import_dir_match(const Path &dir0, const string &name) {
 	if (os::fs::exists(dir0 | name))
 		return dir0 | name;
 	return Path::EMPTY;
+}*/
+
+Path check_package_dir(const Path& dir, const string& name) {
+	//msg_write(format("CHECK %s  %s", dir, name));
+	auto xx = name.explode("/");
+	string name2 = name;
+	if (xx.num >= 2)
+		name2 = implode(xx.sub_ref(1), "/");
+
+	const auto fn = dir | (name2 + ".kaba");
+	if (os::fs::exists(fn))
+		return fn;
+	return Path::EMPTY;
 }
 
-Path find_installed_package_import(Context* ctx, const string &name) {
-	//msg_write(name);
+Path find_installed_package_import(Context* ctx, string& package_name, const string &name) {
 
-	// packages provided by program
+	// packages provided by host program
 	for (auto& i: ctx->package_inits)
-		if (i.name == name) {
-			const auto fn = i.dir | (name + ".kaba");
-			if (os::fs::exists(fn))
+		if (i.name == package_name)
+			if (auto fn = check_package_dir(i.dir, name))
 				return fn;
-		}
-
-	//const Path dir00 = Context::packages_root();
 
 	// system wide install
-	auto path = (Context::packages_root() | name | (name + ".kaba")).canonical();
-	if (os::fs::exists(path))
-		return path;
+	if (auto fn = check_package_dir(Context::packages_root() | package_name, name))
+		return fn;
 
-	/*Path kaba_dir = os::app::directory_dynamic.parent() | "kaba";
-	if (os::app::directory_dynamic.basename()[0] == '.')
-		kaba_dir = os::app::directory_dynamic.parent() | ".kaba";
-	Path kaba_dir_static = os::app::directory_static.parent() | "kaba";
-
-	//msg_error(str(dir00));
-	//msg_error(str(kaba_dir));
-	//msg_error(str(kaba_dir_static));
-
-	for (auto &dir: Array<Path>({kaba_dir, kaba_dir_static})) {
-		auto path = (dir | "packages" | name | (name + ".kaba")).canonical();
-		if (os::fs::exists(path))
-			return path;
-	}*/
 	return Path::EMPTY;
 }
 
@@ -111,22 +104,35 @@ Path find_import_module_file(Module *s, const string &_name) {
 	if (name.head(1) == "/") {
 		// relative....
 
-		// TODO count leading /s
-		Path filename = import_dir_match(s->filename.parent().canonical(), name.sub(1) + ".kaba");
-		if (filename)
+		// count leading /s
+		int n = 0;
+		while (n < name.num and name[n] == '/')
+			n++;
+
+		Path filename = (s->filename.parent() | string("../").repeat(n-1)).canonical() | (name.sub(n) + ".kaba");
+		if (os::fs::exists(filename))
 			return filename;
-	} else {
+	} else if (name.num > 0) {
 		// "absolute"...
 
+		string package_name = name.explode("/")[0];
+
+		// already loaded package
+		for (auto p: s->context->external_packages)
+			if (p->name == package_name)
+				if (auto fn = check_package_dir(p->directory, name))
+					return fn;
+
 		// installed?
-		if (auto fn = find_installed_package_import(s->context, name))
+		if (auto fn = find_installed_package_import(s->context, package_name, name))
 			return fn;
 
 		// local/relative path
 		for (int i=0; i<MAX_IMPORT_DIRECTORY_PARENTS; i++) {
-			Path filename = import_dir_match((s->filename.parent() | string("../").repeat(i)).canonical(), name + ".kaba");
-			if (filename)
-				return filename;
+			if (auto fn = check_package_dir((s->filename.parent() | string("../").repeat(i)).canonical() | package_name, name))
+				return fn;
+			if (auto fn = check_package_dir((s->filename.parent() | string("../").repeat(i)).canonical(), name))
+				return fn;
 		}
 	}
 	return Path::EMPTY;
