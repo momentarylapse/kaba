@@ -1,6 +1,7 @@
-use xhui
+use xhui as hui
+#use hui
 
-class Window extends xhui.Window
+class Window extends hui.Window
 	func __init__()
 		super.__init__("test", 800, 600)
 		from_source("
@@ -13,17 +14,17 @@ Dialog win 'bla'
 		DrawingArea area '' expandy height=300
 ")
 		event("b", func() print("hi"))
-		event_xp("area", "hui:draw", xdraw)
+		event_x("area", "hui:draw", xdraw)
 	
 	func override on_mouse_move(m: vec2)
 		print(m)
 
-	func xdraw(p: xhui.Painter)
+	func xdraw(p: hui.Painter)
 		p.set_color(Color.RED)
 		p.draw_rect([100,200,100,200])
 
 
 func main()
-	var w = new Window()
-	xhui.run()
+	var w = new shared Window()
+	hui.fly_and_wait(w)
 	

@@ -1,14 +1,15 @@
-use xhui
+use xhui as hui
+#use hui
 
 
-func xdraw(p: xhui.Painter)
+func xdraw(p: hui.Painter)
 	print("draw {{p.width}}")
 	p.set_color(Color.RED)
 	p.draw_rect([100,200,100,200])
 
 
 func main()
-	var w = new xhui.Window("test", 800, 600)
+	var w = new shared hui.Window("test", 800, 600)
 	w.from_source("
 Dialog win 'bla'
 	Grid ? ''
@@ -19,6 +20,6 @@ Dialog win 'bla'
 		DrawingArea area '' expandy height=300
 ")
 	w.event("b", func() print("hi"))
-	w.event_xp("area", "hui:draw", xdraw)
-	xhui.run()
+	w.event_x("area", "hui:draw", xdraw)
+	hui.fly_and_wait(w)
 	

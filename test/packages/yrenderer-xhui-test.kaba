@@ -1,11 +1,11 @@
 use os
-use xhui
+use xhui as hui
 use yrenderer.*
 
 let W = 800
 let H = 600
 
-class Window extends xhui.Window
+class Window extends hui.Window
 	var ctx: owned[Context]
 	var xhui_renderer: owned[XhuiRenderer]
 	var hdr: owned[HDRResolver]
@@ -26,16 +26,16 @@ Dialog win 'bla'
 		DrawingArea area '' expandy
 ")
 		event("b", func() print("hi"))
-		event_xp("area", "hui:draw", xdraw)
-		event_xp("area", "hui:initialize", xinitialize)
-		event_xp("win", "hui:just-before-draw", xbefore_draw)
+		event_x("area", "hui:draw", xdraw)
+		event_x("area", "hui:initialize", xinitialize)
+		event_x("win", "hui:just-before-draw", xbefore_draw)
 		
-		xhui.run_repeated(0.01, func() redraw("area"))
+		hui.run_repeated(0.01, func() redraw("area"))
 	
 	func override on_mouse_move(m: vec2)
 		#print(m)
 
-	func mut xinitialize(p: xhui.Painter)
+	func mut xinitialize(p: hui.Painter)
 		print("INIT")
 		ctx = api_init_xhui(&p)
 		ctx!.create_managers("", os.app_directory_dynamic | "packages/yrenderer/shader", "")
@@ -62,7 +62,7 @@ Dialog win 'bla'
 		light.pos = [0,8,-10]
 	
 
-	func mut xbefore_draw(p: xhui.Painter)
+	func mut xbefore_draw(p: hui.Painter)
 		for r in xhui_renderer
 			let params = r.extract_params(&p)
 		
@@ -79,12 +79,12 @@ Dialog win 'bla'
 			t += 0.01
 		
 
-	func mut xdraw(p: xhui.Painter)
+	func mut xdraw(p: hui.Painter)
 		for r in xhui_renderer
 			r.draw(&p)
 
 
 func main()
-	var w = new Window()
-	xhui.run()
+	var w = new shared Window()
+	hui.fly_and_wait(w)
 	
