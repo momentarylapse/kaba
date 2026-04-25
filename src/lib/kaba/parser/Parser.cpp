@@ -691,7 +691,7 @@ shared<Node> Parser::eval_to_const(shared<Node> cv, Block *block, const Class *t
 		return add_node_const(tree->add_constant_pointer(common_types.class_ref, cv->as_class()));
 
 	if (cv->kind != NodeKind::Constant) {
-		//cv->show(common_types._void);
+		cv->show(common_types._void);
 		do_error("constant value expected, but expression can not be evaluated at compile time", cv);
 	}
 	return cv;
