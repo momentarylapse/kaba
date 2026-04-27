@@ -82,8 +82,8 @@ Context::Context() {
 	f_load_module = [] (Context* ctx, const Path& filename, bool x) {
 		return ctx->load_module(filename, x);
 	};
-	f_create_module_for_source = [] (Context* ctx, const string& source, bool x) {
-		return ctx->create_module_for_source(source, x);
+	f_create_module_for_source = [] (Context* ctx, const string& source, const Path& filename, bool x) {
+		return ctx->create_module_for_source(source, filename, x);
 	};
 	f_execute_single_command = [] (Context* ctx, const string& cmd) {
 		ctx->execute_single_command(cmd);
@@ -106,8 +106,8 @@ shared<Module> Context::dll_load_module(const Path& filename, bool just_analyse)
 	return f_load_module(this, filename, just_analyse);
 }
 
-shared<Module> Context::dll_create_module_for_source(const string& source, bool just_analyse) {
-	return f_create_module_for_source(this, source, just_analyse);
+shared<Module> Context::dll_create_module_for_source(const string& source, const Path& filename, bool just_analyse) {
+	return f_create_module_for_source(this, source, filename, just_analyse);
 }
 
 void Context::dll_execute_single_command(const string& cmd) {
@@ -217,10 +217,10 @@ shared<Module> Context::load_module(const Path& filename, bool just_analyse) {
 	return module;
 }
 
-shared<Module> Context::create_module_for_source(const string& source, bool just_analyse) {
-    auto module = create_empty_module("<from-source>");
+shared<Module> Context::create_module_for_source(const string& source, const Path& filename, bool just_analyse) {
+    auto module = create_empty_module(filename);
 	module->just_analyse = just_analyse;
-	module->filename = config.default_filename;
+	module->filename = filename;
 	module->tree->parser = new Parser(module->tree.get());
 	module->tree->default_import();
 	module->tree->parser->parse_buffer(source, just_analyse);
