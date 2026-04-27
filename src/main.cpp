@@ -272,6 +272,8 @@ public:
 		auto filename = _filename;
 		if (os::app::installed and filename.extension() != "kaba")
 			filename = try_get_installed_app_file(filename);
+		else
+			filename = filename.absolute().canonical();
 
 		try {
 			auto s = kaba::default_context->load_module(filename, flag_just_check_syntax);
