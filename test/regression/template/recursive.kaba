@@ -1,0 +1,9 @@
+func f[X](list: X[])
+	print(list)
+	if len(list) > 1
+		pass
+		f(list[1:])
+
+
+func main()
+	f(range(5))
