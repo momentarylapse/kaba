@@ -119,6 +119,12 @@ void AutoImplementer::implement_add_child_constructors(shared<Node> n_self, Func
 	// auto initializers
 	for (auto &init: t->initializers) {
 		auto &e = t->elements[init.element];
+		// replace "self" with current function's "self"
+		init.value = tree->transform_node(init.value, [&n_self] (shared<Node> n) {
+			if (n->kind == NodeKind::VarLocal and n->as_local()->name == Identifier::Self)
+				return n_self;
+			return n;
+		});
 		f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), init.value));
 	}
 

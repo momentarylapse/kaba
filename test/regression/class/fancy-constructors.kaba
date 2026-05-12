@@ -1,0 +1,17 @@
+class A
+	func __init__()
+		print("init")
+	func __init__(s: string, i: i32)
+		print("init {{s}}  {{i}}")
+	func __delete__()
+		print("del")
+	func __assign__(o: A)
+		print("assign")
+
+class B
+	var a = A("x", 13)
+
+func main()
+	var b: B
+	var a = A("x", 13)
+
