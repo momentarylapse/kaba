@@ -225,7 +225,7 @@ void AutoImplementer::implement_regular_assign(Function *f, const Class *t) {
 	if (t->parent) {
 		auto p = n_self->change_type(t->parent);
 		auto o = n_other->change_type(t->parent);
-		f->block_node->add(add_assign(f, "", "missing parent default constructor", p, o));
+		f->block_node->add(add_assign(f, "", "missing parent assign operator", p, o));
 	}
 
 	// call child assignment
