@@ -125,7 +125,17 @@ void AutoImplementer::implement_add_child_constructors(shared<Node> n_self, Func
 				return n_self;
 			return n;
 		});
-		f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), init.value));
+		if (init.value->kind == NodeKind::ConstructorAsFunction) {
+			// skip assignment and init in-place...
+			// FIXME skip default init + make more universal
+			auto nn = init.value;
+			nn->kind = NodeKind::CallFunction;
+			nn->set_param(0, n_self->shift(e.offset, e.type));
+			nn->type = common_types._void;
+			f->block_node->add(nn);
+		} else {
+			f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), init.value));
+		}
 	}
 
 	if (flags_has(t->flags, Flags::Shared)) {

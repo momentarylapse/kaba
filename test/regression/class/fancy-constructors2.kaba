@@ -1,10 +1,14 @@
 class Node
 	var a = "z"
+	var xname: string
+	func __init__(n: string)
+		print("Node.init {{n}}")
+		xname = n
 
-struct Port
+class Port
 	func __init__(n: Node, name: string)
+		print("Port: " + name)
 		node := &n
-		print(name)
 		print(node.a)
 
 	var node: Node&
@@ -13,6 +17,10 @@ struct Port
 class X extends Node
 	var name = "abc"
 	var p = Port(self, a + "." + name)
+
+	func __init__()
+		super.__init__("x")
+		print("X.init...")
 
 func main()
 	var x: X
