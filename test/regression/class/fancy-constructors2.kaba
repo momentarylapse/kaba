@@ -1,16 +1,18 @@
 class Node
+	var a = "z"
 
 struct Port
-	func __init__(n: Node&, name: string)
-		node := n
+	func __init__(n: Node, name: string)
+		node := &n
 		print(name)
+		print(node.a)
 
 	var node: Node&
 
 
 class X extends Node
 	var name = "abc"
-	var p = Port(&self, name)
+	var p = Port(self, a + "." + name)
 
 func main()
 	var x: X

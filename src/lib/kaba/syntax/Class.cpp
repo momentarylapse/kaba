@@ -646,6 +646,8 @@ void Class::derive_from(const Class* root, DeriveFlags derive_flags) {
 	for (auto *f: weak(parent->functions)) {
 		if (f->name == Identifier::func::Assign)
 			continue;
+		if (f->name == Identifier::func::AutoInit)
+			continue;
 		Function *ff = f;
 		if (f->name == Identifier::func::Init) {
 			if (!(derive_flags & DeriveFlags::KEEP_CONSTRUCTORS))
