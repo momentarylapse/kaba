@@ -39,7 +39,7 @@ void import_symbols(const Path &symbols_in_file) {
 		if (name == "#")
 			break;
 		int pos = f->read_int();
-		kaba::default_context->external->link(name, (void*)(int_p)pos);
+		reinterpret_cast<kaba::Context*>(kaba::default_context)->external->link(name, (void*)(int_p)pos);
 	}
 	delete f;
 }

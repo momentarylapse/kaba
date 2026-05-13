@@ -220,7 +220,7 @@ public:
 
 
 		// for huibui.kaba...
-		auto e = kaba::default_context->external.get();
+		auto e = reinterpret_cast<kaba::Context*>(kaba::default_context)->external.get();
 /*		e->link_class_func("Resource.str", &hui::Resource::to_string);
 		e->link_class_func("Resource.show", &hui::Resource::show);
 		e->link("ParseResource", (void*)&hui::parse_resource);*/

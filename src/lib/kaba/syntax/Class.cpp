@@ -7,8 +7,6 @@
 
 namespace kaba {
 
-CommonTypes common_types;
-
 void remove_enum_labels(const Class *type);
 
 base::set<Class*> _all_classes_;
