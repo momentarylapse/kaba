@@ -1,0 +1,8 @@
+func main()
+	print(Rect(1,2,3,4))
+	print(Rect(vec2(1,2), vec2(3,4)))
+
+	let a = vec2(1,2)
+	let b = vec2(3,4)
+	print(Rect(a, b))
+
