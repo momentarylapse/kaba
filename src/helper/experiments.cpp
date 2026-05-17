@@ -244,7 +244,7 @@ void do_experiments() {
 	//test_variant();
 
 #ifdef CPU_ARM64
-	auto m = kaba::default_context->create_empty_module("-test-");
+	auto m = reinterpret_cast<kaba::Context*>(kaba::default_context)->create_empty_module("-test-");
 
 	kaba::Compiler c(m.get());
 	//c.allocate_memory()
