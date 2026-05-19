@@ -95,6 +95,11 @@ public:
 	Any dynify(const void* p, const Class* type) const override;
 	void unwrap_any(const Any &aa, void *var, const Class *type) const override;
 
+	Array<string> list_keywords() const override;
+	Array<string> list_modifiers() const override;
+	Array<string> list_special_functions() const override;
+	Array<string> list_operator_functions() const override;
+
 	static xfer<Context> create();
 	static Path installation_root();
 	static Path packages_root();

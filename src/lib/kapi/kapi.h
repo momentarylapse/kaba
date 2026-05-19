@@ -29,6 +29,10 @@ public:
 	virtual Any dynify(const void* p, const Class* type) const = 0;
 	virtual void unwrap_any(const Any &aa, void *var, const Class *type) const = 0;
 	virtual void register_package_init(const string& name, const Path& dir, std::function<void(IExporter*)> f) = 0;
+	virtual Array<string> list_keywords() const = 0;
+	virtual Array<string> list_modifiers() const = 0;
+	virtual Array<string> list_special_functions() const = 0;
+	virtual Array<string> list_operator_functions() const = 0;
 
 	shared_array<Module> public_modules;
 	shared_array<Package> internal_packages;
