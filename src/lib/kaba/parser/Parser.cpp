@@ -567,6 +567,20 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 					if (init.element == i)
 						_class->initializers.add(init);
 			}
+
+			for (auto f: weak(trait->functions)) {
+				if (f->name == Identifier::func::Init or f->name == Identifier::func::AutoInit or f->name == Identifier::func::Delete)
+					continue;
+
+				auto nn = cp_node(f->abstract_node);
+				if (f->is_member()) {
+					// workaround to avoid adding "self" twice (-_-)'
+					nn->params[2]->params.erase(0);
+					nn->params[2]->params.erase(0);
+					nn->params[2]->params.erase(0);
+				}
+				realize_function(nn, _class);
+			}
 		}
 
 	flags_set(_class->flags, node->flags);
@@ -809,9 +823,9 @@ Function *Parser::realize_function_header(shared<Node> node, const Class *defaul
 	cur_func = f;
 
 	// parameter list
-	if (auto pnode = node->params[2]) {
+	if (const auto& pnode = node->params[2]) {
 		for (int i=0; i<pnode->params.num/3; i++) {
-			auto p = pnode->params[i*3];
+			const auto& p = pnode->params[i*3];
 			[[maybe_unused]] auto v = f->add_param(p->as_token(), common_types.unknown, p->token_id, p->flags);
 		}
 	}

@@ -1,0 +1,12 @@
+trait MyTrait
+	var z = "zzzz"
+	func f()
+		print(z)
+
+class X implements MyTrait
+	var x = "test"
+
+func main()
+	var x: X
+	print(x)
+	x.f()
