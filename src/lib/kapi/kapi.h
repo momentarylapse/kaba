@@ -138,6 +138,7 @@ struct CommonTypes {
 	const Class* struct_t;
 	const Class* interface_t;
 	const Class* namespace_t;
+	const Class* trait_t;
 
 
 	const Class* image;
@@ -162,6 +163,9 @@ struct CommonTypes {
 	const Class* string_promise;
 	const Class* path_future;
 	const Class* bool_future;
+
+	const Class* sharable_trait;
+	const Class* noauto_trait;
 };
 extern CommonTypes common_types;
 }

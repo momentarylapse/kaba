@@ -1,4 +1,4 @@
-class Test as shared
+class Test as Sharable
 	func __init__()
 		print("init")
 	func __delete__()

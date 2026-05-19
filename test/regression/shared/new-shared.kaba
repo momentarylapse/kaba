@@ -1,4 +1,4 @@
-class S as shared
+class S as Sharable
 	i: i32
 	s: string
 

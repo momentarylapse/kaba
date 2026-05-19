@@ -42,7 +42,7 @@ void TemplateClassInstantiatorEnum::add_function_headers(Class* t) {
 	//class_add_func(Identifier::Func::STR, common_types.string, &i2s, Flags::PURE);
 	class_add_func("__i32__", common_types.i32, &kaba_int_passthrough, Flags::Pure);
 		func_set_inline(InlineID::Passthrough);
-	if (!flags_has(t->flags, Flags::Noauto)) {
+	if (!t->has_trait(common_types.noauto_trait)) {
 		class_add_func("parse", t, &enum_parse, Flags::Static | Flags::Pure);
 			func_add_param("label", common_types.string);
 			func_add_param("type", common_types.class_ref);

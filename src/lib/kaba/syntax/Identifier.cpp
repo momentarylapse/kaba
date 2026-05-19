@@ -14,6 +14,7 @@ namespace Identifier {
 	const string Class = "class";
 	const string Struct = "struct";
 	const string Interface = "interface";
+	const string Trait = "trait";
 	const string Func = "func";
 	const string Macro = "macro";
 	const string Super = "super";

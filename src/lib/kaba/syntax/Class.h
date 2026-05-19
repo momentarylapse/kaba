@@ -81,12 +81,14 @@ public:
 	bool is_enum() const;
 	bool is_namespace() const;
 	bool is_interface() const;
+	bool is_trait() const;
 	bool is_product() const;
 	bool is_optional() const;
 	bool is_callable() const;
 	bool is_callable_fp() const;
 	bool is_callable_bind() const;
 	bool is_template() const;
+	bool has_trait(const Class* trait) const;
 	bool fully_parsed() const;
 
 	Array<ClassElement> elements;
@@ -98,6 +100,7 @@ public:
 	base::map<string, const Class*> type_aliases;
 
 	const Class *parent; // derived from
+	Array<const Class*> traits;
 	Array<const Class*> param; // for pointers/arrays etc
 	const Class *name_space;
 	SyntaxTree *owner; // to share and be able to delete...

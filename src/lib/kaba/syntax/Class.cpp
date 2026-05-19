@@ -85,6 +85,10 @@ bool Class::is_template() const {
 	return flags_has(flags, Flags::Template);
 }
 
+bool Class::has_trait(const Class* trait) const {
+	return traits.find(trait) >= 0;
+}
+
 bool reachable_from(const Class *ns, const Class *observer_ns) {
 	if (ns == observer_ns)
 		return true;
@@ -198,6 +202,10 @@ bool Class::is_interface() const {
 	return from_template == common_types.interface_t;
 }
 
+bool Class::is_trait() const {
+	return from_template == common_types.trait_t;
+}
+
 bool Class::is_dict() const {
 	return from_template == common_types.dict_t;
 }
@@ -285,7 +293,7 @@ const Class *Class::get_array_element() const {
 
 // hmmm, very vague concept...
 bool Class::needs_constructor() const {
-	if (!uses_call_by_reference() or flags_has(flags, Flags::Noauto)) // int/float/pointer etc
+	if (!uses_call_by_reference() or has_trait(common_types.noauto_trait)) // int/float/pointer etc
 		return false;
 	if (is_list() or is_dict() or is_optional())
 		return true;

@@ -15,6 +15,7 @@ namespace Identifier {
 	extern const string Class;
 	extern const string Struct;
 	extern const string Interface;
+	extern const string Trait;
 	extern const string Func;
 	extern const string Macro;
 	extern const string Super;

@@ -468,6 +468,8 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 const Class* parse_class_type(const string& e) {
 	if (e == Identifier::Interface)
 		return common_types.interface_t;
+	if (e == Identifier::Trait)
+		return common_types.trait_t;
 	if (e == Identifier::Namespace)
 		return common_types.namespace_t;
 	if (e == Identifier::Struct)
@@ -544,6 +546,31 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 		var_offset0 = _class->size;
 	}
 
+	// traits
+	if (node->params[4])
+		for (auto& p: node->params[4]->params) {
+			auto trait = con.concretify_as_type(p, tree->root_of_all_evil->block, _namespace); // force
+			if (!trait->fully_parsed()) {
+				do_error(format("trait class '%s' not defined or nor fully parsed yet", trait->long_name()), p);
+				//return nullptr;
+			}
+			if (trait == common_types.shared_t)
+				trait = common_types.sharable_trait; // allow legacy notation
+			if (trait->is_template())
+				do_error("trait can not be a template", p);
+			_class->traits.add(trait);
+			for (const auto& e: trait->elements) {
+				parser_class_add_element(this, _class, e.name, e.type, Flags::Mutable, var_offset0, p->token_id);
+				_class->size = var_offset0;
+
+				// TODO initializers...
+				/*if (node->params[2]) {
+					ClassInitializers init = {ns->elements.num - 1, value};
+					cc->initializers.add(init);
+				}*/
+			}
+		}
+
 	/*if (try_consume(Identifier::Implements)) {
 		auto parent = parse_type(_namespace); // force
 		if (!parent->fully_parsed())
@@ -552,20 +579,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 		var_offset0 = _class->size;
 	}*/
 
-	// as shared|@noauto
-	/*Flags explicit_flags = Flags::None;
-	if (try_consume(Identifier::As)) {
-		explicit_flags = parse_flags(explicit_flags);
-		flags_set(_class->flags, explicit_flags);
-	}
-
-	expect_new_line();*/
-
 	flags_set(_class->flags, node->flags);
-
-	if (flags_has(node->flags, Flags::Shared)) {
-		parser_class_add_element(this, _class, Identifier::SharedCount, common_types.i32, Flags::None, var_offset0, _class->token_id);
-	}
 
 	return _class;
 }

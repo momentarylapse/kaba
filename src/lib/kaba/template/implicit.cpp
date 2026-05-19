@@ -270,7 +270,7 @@ bool class_can_default_construct(const Class *t) {
 		return true;
 	if (t->get_default_constructor())
 		return true;
-	if (t->is_struct() and !flags_has(t->flags, Flags::Noauto))
+	if (t->is_struct() and !t->has_trait(common_types.noauto_trait))
 		return true;
 	if (t->is_array())
 		return class_can_default_construct(t->param[0]);
@@ -282,7 +282,7 @@ bool class_can_destruct(const Class *t) {
 		return true;
 	if (t->get_destructor())
 		return true;
-	if (t->is_struct() and !flags_has(t->flags, Flags::Noauto))
+	if (t->is_struct() and !t->has_trait(common_types.noauto_trait))
 		return true;
 	if (t->is_array())
 		return class_can_destruct(t->param[0]);
@@ -294,7 +294,7 @@ bool class_can_assign(const Class *t) {
 		return true;
 	if (t->get_assign())
 		return true;
-	if (t->is_struct() and !flags_has(t->flags, Flags::Noauto))
+	if (t->is_struct() and !t->has_trait(common_types.noauto_trait))
 		return true;
 	if (t->is_array())
 		return class_can_assign(t->param[0]);

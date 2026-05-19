@@ -1,4 +1,4 @@
-class X as shared
+class X as Sharable
 #shared class X
 	func __init__()
 		print("X.init")

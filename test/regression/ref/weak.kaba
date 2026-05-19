@@ -1,4 +1,4 @@
-class X as shared
+class X as Sharable
 	s: string
 
 func main()
