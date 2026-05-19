@@ -384,7 +384,7 @@ Class *add_class(const Class *root_type) {
 }
 
 void class_add_element_x(const string &name, const Class *type, int offset, Flags flag) {
-	cur_class->elements.add(ClassElement(name, type, offset));
+	cur_class->elements.add(ClassElement(name, type, offset, -1));
 	cur_class->alignment = max(cur_class->alignment, type->alignment);
 }
 

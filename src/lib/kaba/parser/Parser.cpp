@@ -459,7 +459,7 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	} else {
 		_offset = mem_align(_offset, type->alignment);
 		_offset = p->context->external->process_class_offset(_class->cname(p->tree->base_class), name, _offset);
-		auto el = ClassElement(name, type, _offset);
+		auto el = ClassElement(name, type, _offset, token_id);
 		_class->elements.add(el);
 		_offset += (int)type->size;
 	}
@@ -484,6 +484,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 	if (name == "" and node->params[1])
 		name = node->params[1]->as_token();
 
+	// find create class
 	Class *_class = nullptr;
 	if (flags_has(node->flags, Flags::Override)) {
 		// class override X
@@ -541,8 +542,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 		if (!parent->fully_parsed())
 			return nullptr;
 			//do_error(format("parent class '%s' not fully parsed yet", parent->long_name()));
-		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
-		_class->flags = parent->flags;
+		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE | DeriveFlags::COPY_FLAGS);
 		var_offset0 = _class->size;
 	}
 
@@ -556,28 +556,18 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 			}
 			if (trait == common_types.shared_t)
 				trait = common_types.sharable_trait; // allow legacy notation
-			if (trait->is_template())
-				do_error("trait can not be a template", p);
+			if (!trait->is_trait())
+				do_error("trait expected", p);
 			_class->traits.add(trait);
-			for (const auto& e: trait->elements) {
+			for (auto&& [i,e]: enumerate(trait->elements)) {
 				parser_class_add_element(this, _class, e.name, e.type, Flags::Mutable, var_offset0, p->token_id);
 				_class->size = var_offset0;
 
-				// TODO initializers...
-				/*if (node->params[2]) {
-					ClassInitializers init = {ns->elements.num - 1, value};
-					cc->initializers.add(init);
-				}*/
+				for (const auto& init: trait->initializers)
+					if (init.element == i)
+						_class->initializers.add(init);
 			}
 		}
-
-	/*if (try_consume(Identifier::Implements)) {
-		auto parent = parse_type(_namespace); // force
-		if (!parent->fully_parsed())
-			return nullptr;
-		_class->derive_from(parent, DeriveFlags::SET_SIZE | DeriveFlags::KEEP_CONSTRUCTORS | DeriveFlags::COPY_VTABLE);
-		var_offset0 = _class->size;
-	}*/
 
 	flags_set(_class->flags, node->flags);
 
@@ -647,7 +637,7 @@ void Parser::post_process_newly_parsed_class(Class *_class, int size) {
 			for (ClassElement &e: _class->elements)
 				e.offset = external->process_class_offset(_class->cname(tree->base_class), e.name, e.offset + config.target.pointer_size);
 
-			auto el = ClassElement(Identifier::VtableVar, common_types.pointer, 0);
+			auto el = ClassElement(Identifier::VtableVar, common_types.pointer, 0, _class->token_id);
 			_class->elements.insert(el, 0);
 			size += config.target.pointer_size;
 

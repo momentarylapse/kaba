@@ -15,13 +15,15 @@ ClassElement::ClassElement() {
 	offset = 0;
 	type = nullptr;
 	allow_indirect_use = false;
+	token_id = -1;
 }
 
-ClassElement::ClassElement(const string &_name, const Class *_type, int64 _offset) {
+ClassElement::ClassElement(const string &_name, const Class *_type, int64 _offset, int _token_id) {
 	name = _name;
 	offset = _offset;
 	type = _type;
 	allow_indirect_use = false;
+	token_id = _token_id;
 }
 
 string ClassElement::signature(bool include_class) const {
@@ -684,6 +686,9 @@ void Class::derive_from(const Class* root, DeriveFlags derive_flags) {
 	vtable = parent->vtable;
 	_vtable_location_compiler_ = vtable.data;
 	_vtable_location_target_ = vtable.data;
+
+	if (derive_flags & DeriveFlags::COPY_FLAGS)
+		flags = parent->flags;
 }
 
 void *Class::create_instance() const {

@@ -23,8 +23,9 @@ public:
 	const Class *type;
 	int64 offset;
 	bool allow_indirect_use;
+	int token_id;
 	ClassElement();
-	ClassElement(const string &name, const Class *type, int64 offset);
+	ClassElement(const string &name, const Class *type, int64 offset, int token_id);
 	string signature(bool include_class) const;
 	bool hidden() const;
 	string str() const;
@@ -45,6 +46,7 @@ enum class DeriveFlags {
 	SET_SIZE = 1,
 	COPY_VTABLE = 2,
 	KEEP_CONSTRUCTORS = 4,
+	COPY_FLAGS = 8,
 };
 DeriveFlags operator|(DeriveFlags a, DeriveFlags b);
 

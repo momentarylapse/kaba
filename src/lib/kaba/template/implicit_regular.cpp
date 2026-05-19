@@ -137,16 +137,6 @@ void AutoImplementer::implement_add_child_constructors(shared<Node> n_self, Func
 			f->block_node->add(add_assign(f, "auto init", n_self->shift(e.offset, e.type), init.value));
 		}
 	}
-
-	if (t->has_trait(common_types.sharable_trait)) {
-		// TODO use trait initializers!
-		for (auto &e: t->elements)
-			if (e.name == Identifier::SharedCount and e.type == common_types.i32) {
-				f->block_node->add(add_node_operator_by_inline(InlineID::Int32Assign,
-						n_self->shift(e.offset, e.type),
-						add_node_const(tree->add_constant_int(0))));
-			}
-	}
 }
 
 void AutoImplementer::implement_regular_constructor(Function *f, const Class *t, bool allow_parent_constructor) {

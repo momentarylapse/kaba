@@ -378,6 +378,9 @@ void SIAddPackageBase(Context *c) {
 	common_types.namespace_t = add_class_template("@Namespace", {"T"}, nullptr);
 	common_types.trait_t = add_class_template("@Trait", {"T"}, nullptr);
 
+	add_const(":0", common_types.i32, nullptr);
+	auto c_zero = weak(cur_package_module->tree->base_class->constants).back();
+
 	// traits
 	common_types.noauto_trait	= add_type  ("@noauto", 0);
 		const_cast<Class*>(common_types.noauto_trait)->from_template = common_types.trait_t;
@@ -385,6 +388,7 @@ void SIAddPackageBase(Context *c) {
 	add_class(common_types.sharable_trait);
 		const_cast<Class*>(common_types.sharable_trait)->from_template = common_types.trait_t;
 		class_add_element(Identifier::SharedCount, common_types.i32, 0);
+		const_cast<Class*>(common_types.sharable_trait)->initializers.add({0, add_node_const(c_zero)});
 
 
 	add_class(common_types.object);
