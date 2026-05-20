@@ -1,0 +1,10 @@
+trait MyTrait
+	var x = "test"
+	func f(a: i32)
+		print(a)
+
+class X as MyTrait
+
+func main()
+	var x: X
+	x.f(7)

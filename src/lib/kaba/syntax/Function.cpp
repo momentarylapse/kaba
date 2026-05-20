@@ -210,7 +210,7 @@ void Function::add_self_parameter() {
 // * NOT added to namespace
 // * update_parameters_after_parsing() called
 Function *Function::create_dummy_clone(const Class *_name_space) const {
-	Function *f = new Function(name, literal_return_type, _name_space, flags);
+	auto f = new Function(name, literal_return_type, _name_space, flags);
 	flags_set(f->flags, Flags::Unimplemented);
 	flags_clear(f->flags, Flags::Extern);
 
@@ -219,11 +219,8 @@ Function *Function::create_dummy_clone(const Class *_name_space) const {
 	f->param_default_values.resize(num_params);
 	f->literal_param_type = literal_param_type;
 	for (int i=0; i<num_params; i++) {
-		auto type = var[i]->type;
-		if (is_member() and (i == 0)) { // adapt the "self" parameter
-			type = _name_space;
-			f->literal_param_type[0] = type;
-		}
+		if (is_member() and (i == 0)) // adapt the "self" parameter
+			f->literal_param_type[0] = _name_space;
 		f->block->add_var(var[i]->name, var[i]->type, var[i]->token_id);
 		f->var[i]->flags = var[i]->flags;
 		if (i < param_default_values.num and param_default_values[i])

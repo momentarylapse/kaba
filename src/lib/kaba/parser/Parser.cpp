@@ -571,15 +571,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 			for (auto f: weak(trait->functions)) {
 				if (f->name == Identifier::func::Init or f->name == Identifier::func::AutoInitContext or f->name == Identifier::func::Delete)
 					continue;
-
-				auto nn = cp_node(f->abstract_node);
-				if (f->is_member()) {
-					// workaround to avoid adding "self" twice (-_-)'
-					nn->params[2]->params.erase(0);
-					nn->params[2]->params.erase(0);
-					nn->params[2]->params.erase(0);
-				}
-				realize_function(nn, _class);
+				realize_function(cp_node(f->abstract_node), _class);
 			}
 		}
 
