@@ -273,14 +273,18 @@ Function *TemplateManager::instantiate_function_abstract(SyntaxTree *tree, Funct
 	if (t.f_create) {
 		f = t.f_create(tree, params, token_id);
 	} else {
+		// TODO just realize from node_replace(f0->abstract_node, ...)
+
 		f = full_copy(f0);
 		f->name += format("[%s]", type_list_to_str(params));
 
-		// replace in parameters/return type
+		f->abstract_node = node_replace(f->abstract_node, t.params, params);
+
+/*		// replace in parameters/return type
 		for (int i=0; i<f->num_params; i++)
 			f->abstract_node->params[2]->set_param(i*3+1, node_replace(f->abstract_param_type(i), t.params, params));
 		if (auto rt = f->abstract_return_type())
-			f->abstract_node->params[1] = node_replace(rt, t.params, params);
+			f->abstract_node->params[1] = node_replace(rt, t.params, params);*/
 
 		// replace in body
 		for (int i=0; i<f->block_node->params.num; i++)
@@ -291,8 +295,6 @@ Function *TemplateManager::instantiate_function_abstract(SyntaxTree *tree, Funct
 	try {
 
 		tree->parser->con.concretify_function_header(f);
-
-		f->update_parameters_after_parsing();
 
 		auto __ns = const_cast<Class*>(f0->name_space);
 		__ns->add_function(tree, f, false, false);
@@ -394,10 +396,8 @@ Function* TemplateClassInstantiator::add_func_header(Class *t, const string &nam
 	for (auto&& [i,p]: enumerate(param_types)) {
 		f->add_param(param_names[i], p, t->token_id, Flags::None);
 	}
-	f->abstract_node->params[2]->params.resize(f->num_params * 3);
-	for (auto&& [i,p]: enumerate(def_params))
-		f->abstract_node->params[2]->set_param(i*3+2, p);
-	f->update_parameters_after_parsing();
+	f->param_default_values = def_params;
+	f->update_parameters_after_realizing();
 	if (config.verbose)
 		msg_write("ADD HEADER " + f->signature(common_types._void));
 

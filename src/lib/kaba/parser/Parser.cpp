@@ -764,7 +764,7 @@ void Parser::realize_class_variable_declaration(shared<Node> node, const Class *
 		auto ff = ns->get_member_func(Identifier::func::AutoInitContext, common_types._void, {});
 		if (!ff) {
 			ff = new Function(Identifier::func::AutoInitContext, common_types._void, ns, Flags::Mutable);
-			ff->update_parameters_after_parsing();
+			ff->update_parameters_after_realizing();
 			cc->add_function(tree, ff);
 		}
 
@@ -846,8 +846,6 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 		name_space->add_function(tree, f, false, flags_has(flags, Flags::Override));
 	} else {
 		con.concretify_function_header(f);
-
-		f->update_parameters_after_parsing();
 
 		name_space->add_function(tree, f, flags_has(flags, Flags::Virtual), flags_has(flags, Flags::Override));
 	}
