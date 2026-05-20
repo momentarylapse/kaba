@@ -98,7 +98,7 @@ void show_func_details(Function *f) {
 	show_node_details(f->block_node.get());
 }
 
-Function *TemplateManager::full_copy(SyntaxTree *tree, Function *f0) {
+Function *TemplateManager::full_copy(Function *f0) {
 	//msg_error("FULL COPY");
 	auto f = f0->create_dummy_clone(f0->name_space);
 	f->block_node = cp_node(f0->block_node.get());
@@ -251,9 +251,9 @@ TemplateClassInstanceManager& TemplateManager::get_class_manager(SyntaxTree *tre
 	return parser->concretify_as_type(n, block, ns);
 }*/
 
-shared<Node> TemplateManager::node_replace(SyntaxTree *tree, shared<Node> n, const Array<string> &names, const Array<const Class*> &params) {
+shared<Node> TemplateManager::node_replace(shared<Node> n, const Array<string> &names, const Array<const Class*> &params) {
 	//return parser->concretify_as_type(n, block, ns);
-	return tree->transform_node(n, [&names, &params] (shared<Node> nn) {
+	return SyntaxTree::transform_node(n, [&names, &params] (shared<Node> nn) {
 		if (nn->kind == NodeKind::AbstractToken) {
 			string token = nn->as_token();
 			for (int i=0; i<names.num; i++)
@@ -273,18 +273,18 @@ Function *TemplateManager::instantiate_function_abstract(SyntaxTree *tree, Funct
 	if (t.f_create) {
 		f = t.f_create(tree, params, token_id);
 	} else {
-		f = full_copy(tree, f0);
+		f = full_copy(f0);
 		f->name += format("[%s]", type_list_to_str(params));
 
 		// replace in parameters/return type
 		for (int i=0; i<f->num_params; i++)
-			f->abstract_node->params[2]->set_param(i*3+1, node_replace(tree, f->abstract_param_type(i), t.params, params));
+			f->abstract_node->params[2]->set_param(i*3+1, node_replace(f->abstract_param_type(i), t.params, params));
 		if (auto rt = f->abstract_return_type())
-			f->abstract_node->params[1] = node_replace(tree, rt, t.params, params);
+			f->abstract_node->params[1] = node_replace(rt, t.params, params);
 
 		// replace in body
 		for (int i=0; i<f->block_node->params.num; i++)
-			f->block_node->params[i] = node_replace(tree, f->block_node->params[i], t.params, params);
+			f->block_node->params[i] = node_replace(f->block_node->params[i], t.params, params);
 	}
 
 	// (partially) concretify
