@@ -569,7 +569,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 			}
 
 			for (auto f: weak(trait->functions)) {
-				if (f->name == Identifier::func::Init or f->name == Identifier::func::AutoInit or f->name == Identifier::func::Delete)
+				if (f->name == Identifier::func::Init or f->name == Identifier::func::AutoInitContext or f->name == Identifier::func::Delete)
 					continue;
 
 				auto nn = cp_node(f->abstract_node);
@@ -761,9 +761,9 @@ void Parser::realize_class_variable_declaration(shared<Node> node, const Class *
 		//if (nodes.num != 1)
 		//	do_error(format("'var' declaration with '=' only allowed with a single variable name, %d given", names.num));
 
-		auto ff = ns->get_member_func(Identifier::func::AutoInit, common_types._void, {});
+		auto ff = ns->get_member_func(Identifier::func::AutoInitContext, common_types._void, {});
 		if (!ff) {
-			ff = new Function(Identifier::func::AutoInit, common_types._void, ns, Flags::Mutable);
+			ff = new Function(Identifier::func::AutoInitContext, common_types._void, ns, Flags::Mutable);
 			ff->update_parameters_after_parsing();
 			cc->add_function(tree, ff);
 		}
@@ -856,7 +856,7 @@ void Parser::post_process_function_header(Function *f, const Array<string> &temp
 void Parser::realize_function(shared<Node> node, Class* name_space) {
 	auto f = realize_function_header(node, common_types._void, name_space);
 	if (node->params[4]) {
-		f->block_node = node->params[4];
+		f->block_node = cp_node(node->params[4]);
 		f->block_node->link_no = (int_p)f->block;
 
 		if (config.verbose) {

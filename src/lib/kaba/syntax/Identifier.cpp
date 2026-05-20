@@ -136,7 +136,7 @@ namespace Identifier {
 		const string Contains = "__contains__";
 		const string Format = "format";
 		const string OptionalHasValue = "has_value";
-		const string AutoInit = ":autoinit:"; // internal
+		const string AutoInitContext = ":autoinit:"; // internal context for parsing member initializers
 	}
 }
 
