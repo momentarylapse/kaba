@@ -1,0 +1,8 @@
+
+func f() -> i32?
+	print("x")
+	return 13
+
+func main()
+	for p in f()
+		print(p)
