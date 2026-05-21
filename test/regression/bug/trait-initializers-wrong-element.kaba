@@ -1,0 +1,9 @@
+
+struct GamepadState
+	var _buttons: bool[16]
+
+struct Gamepad extends GamepadState as Sharable
+	# this tried to initialize the first element (_buttons) to 0 (counter from Sharable trait)
+
+func main()
+
