@@ -1,0 +1,16 @@
+enum E
+	A
+	B
+	C
+
+func f(e: E) -> string
+	match e
+		E.A => return "a"
+		E.B => return "b"
+		else => return "?"
+	return "..."
+
+func main()
+	print(f(E.A))
+#	print(f(E.B))
+#	print(f(E.C))

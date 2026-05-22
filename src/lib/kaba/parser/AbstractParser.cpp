@@ -744,7 +744,9 @@ shared<Node> AbstractParser::parse_abstract_statement_match() {
 			result = parse_abstract_block();
 		} else {
 			// single expression
-			result = parse_abstract_operand_greedy();
+			
+			result = add_node_block(nullptr, common_types.unknown);
+			result->add(parse_abstract_operand_greedy());
 		}
 
 		cmd_match->set_num_params(3 + 2*i);
