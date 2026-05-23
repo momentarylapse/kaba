@@ -744,7 +744,7 @@ shared<Node> AbstractParser::parse_abstract_statement_match() {
 			result = parse_abstract_block();
 		} else {
 			// single expression
-			
+
 			result = add_node_block(nullptr, common_types.unknown);
 			result->add(parse_abstract_operand_greedy());
 		}
@@ -1207,6 +1207,9 @@ shared<Node> AbstractParser::parse_abstract_enum() {
 	node->token_id = Exp.cur_token();
 	node->set_num_params(1);
 
+	// extern?
+	node->flags = parse_flags(node->flags);
+
 	// class name
 	node->set_param(0, parse_abstract_token());
 
@@ -1258,8 +1261,8 @@ shared<Node> AbstractParser::parse_abstract_class_header() {
 	// metaclass
 	node->set_param(0, parse_abstract_token()); // class/struct/interface
 
-	if (try_consume(Identifier::Override))
-		flags_set(node->flags, Flags::Override);
+	// extern/override?
+	node->flags = parse_flags(node->flags);
 
 	// name
 	string name = Exp.cur;
