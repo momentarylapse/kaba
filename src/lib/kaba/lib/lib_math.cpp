@@ -596,7 +596,7 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("min", common_types.vec3);
 			func_add_param("max", common_types.vec3);
 		class_add_func("size", common_types.vec3, &Box::size, Flags::Pure);
-			class_add_func("center", common_types.vec3, &Box::center, Flags::Pure);
+		class_add_func("center", common_types.vec3, &Box::center, Flags::Pure);
 		class_add_func("is_inside", common_types._bool, &Box::is_inside, Flags::Pure);
 			func_add_param("p", common_types.vec3);
 		class_add_func("to_relative", common_types.vec3, &Box::to_relative, Flags::Pure);
@@ -607,6 +607,10 @@ void SIAddPackageMath(Context *c) {
 		class_add_const("ID",  TypeBox, &Box::ID);
 		class_add_const("ID_SYM",  TypeBox, &Box::ID_SYM);
 		add_operator(OperatorID::Assign, common_types._void, TypeBox, TypeBox, InlineID::ChunkAssign, &generic_assign<Box>);
+		add_operator(OperatorID::Equal, common_types._bool, TypeBox, TypeBox, InlineID::ChunkEqual, &Box::operator==);
+		add_operator(OperatorID::NotEqual, common_types._bool, TypeBox, TypeBox, InlineID::ChunkNotEqual, &Box::operator!=);
+		add_operator(OperatorID::Or, TypeBox, TypeBox, TypeBox, InlineID::None, &Box::operator||);
+		add_operator(OperatorID::And, TypeBox, TypeBox, TypeBox, InlineID::None, &Box::operator&&);
 
 
 	add_class(common_types.color);
