@@ -1009,9 +1009,17 @@ void SIAddPackageMath(Context *c) {
 		func_add_param("x", common_types.f32);
 	add_func("log", common_types.f32, &logf, Flags::Static | Flags::Pure);
 		func_add_param("x", common_types.f32);
+	add_func("log10", common_types.f32, &log10f, Flags::Static | Flags::Pure);
+		func_add_param("x", common_types.f32);
 	add_func("pow", common_types.f32, &powf, Flags::Static | Flags::Pure);
 		func_add_param("x", common_types.f32);
 		func_add_param("exp", common_types.f32);
+	add_func("round", common_types.f32, &roundf, Flags::Static | Flags::Pure);
+		func_add_param("x", common_types.f32);
+	add_func("floor", common_types.f32, &floorf, Flags::Static | Flags::Pure);
+		func_add_param("x", common_types.f32);
+	add_func("ceil", common_types.f32, &ceilf, Flags::Static | Flags::Pure);
+		func_add_param("x", common_types.f32);
 	add_func("clamp", common_types.f32, &clamp<float>, Flags::Static | Flags::Pure);
 		func_add_param("f", common_types.f32);
 		func_add_param("min", common_types.f32);
