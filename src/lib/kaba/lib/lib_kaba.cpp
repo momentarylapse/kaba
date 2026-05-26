@@ -63,6 +63,16 @@ public:
 	}
 };
 
+class ModuleX : public Module {
+public:
+	void *match_function_x(const string& name, const Class* ret, const Array<const Class*>& _params) {
+		Array<string> params;
+		for (auto p: _params)
+			params.add(p->name);
+		return match_function(name, ret->name, params);
+	}
+};
+
 extern Array<shared<Module>> loading_module_stack;
 Package* get_package_containing_module(Module* m);
 
@@ -92,6 +102,7 @@ void SIAddPackageKaba(Context *c) {
 	common_types.function_ref = add_type_ref(common_types.function);
 	auto TypeFunctionRefList = add_type_list(common_types.function_ref);
 	common_types.function_code = add_type  ("code", 32); // whatever
+	auto TypeCodeP = add_type_p_raw(common_types.function_code);
 	common_types.function_code_ref = add_type_ref(common_types.function_code);
 	common_types.special_function = add_type  ("SpecialFunction", sizeof(SpecialFunction));
 	//TypeSpecialFunctionP = add_type_p(TypeSpecialFunction);
@@ -243,6 +254,14 @@ void SIAddPackageKaba(Context *c) {
 		class_add_func("base_class", common_types.class_ref, &Module::base_class, Flags::Pure);
 		//class_add_func("delete", common_types._void, &remove_module, Flags::STATIC);
 		//	func_add_param("script", TypeModule);
+		class_add_func("match_function", TypeCodeP, &ModuleX::match_function_x);
+			func_add_param("name", common_types.string);
+			func_add_param("ret", common_types.class_ref);
+			func_add_param("params", TypeClassRefList);
+		class_add_func("match_function", TypeCodeP, &Module::match_function);
+			func_add_param("name", common_types.string);
+			func_add_param("ret", common_types.string);
+			func_add_param("params", common_types.string_list);
 	
 	add_class(TypeStatement);
 		class_add_element("name", common_types.string, &Statement::name);
