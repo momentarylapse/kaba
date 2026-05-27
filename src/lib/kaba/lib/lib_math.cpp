@@ -565,6 +565,9 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("p", common_types.vec2);
 		class_add_func("grow", common_types.rect, &rect::grow, Flags::Pure);
 			func_add_param("d", common_types.f32);
+		class_add_func("canonical", common_types.rect, &rect::canonical, Flags::Pure);
+		class_add_func("overlaps", common_types._bool, &rect::overlaps, Flags::Pure);
+			func_add_param("o", common_types.rect);
 		class_add_func(Identifier::func::Str, common_types.string, &rect::str, Flags::Pure);
 		class_add_func("_create", common_types.rect, &KabaRect::set, Flags::Static | Flags::Pure);
 			func_set_inline(InlineID::RectSet);
