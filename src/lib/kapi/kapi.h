@@ -170,6 +170,8 @@ struct CommonTypes {
 
 	const Class* sharable_trait;
 	const Class* noauto_trait;
+
+	const Class* i32_ref;
 };
 extern CommonTypes common_types;
 }

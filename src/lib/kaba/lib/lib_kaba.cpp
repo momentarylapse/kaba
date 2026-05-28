@@ -233,6 +233,7 @@ void SIAddPackageKaba(Context *c) {
 	add_class(TypeConstant);
 		class_add_element("name", common_types.string, &Constant::name);
 		class_add_element("type", common_types.class_ref, &Constant::type);
+		class_add_func("as_int", common_types.i32_ref, &Constant::as_int);
 
 	add_class(TypePackage);
 		class_add_element("name", common_types.string, &Package::name);
