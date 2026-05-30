@@ -10,6 +10,7 @@
 #include "../../config.h"
 #include "lib.h"
 #include "list.h"
+#include "optional.h"
 #include "shared.h"
 #include "../dynamic/exception.h"
 #include "../../base/callable.h"
@@ -303,6 +304,9 @@ void SIAddPackageOS(Context *c) {
 	auto TypeApp = add_type("app", 0);
 	const_cast<Class*>(TypeApp)->from_template = common_types.namespace_t;
 
+	auto TypeStringOptional = add_type_optional(common_types.string);
+	lib_create_optional<string>(TypeStringOptional);
+
 	auto TypeCallbackStringList = add_type_func(common_types._void, {common_types.string_list});
 
 	lib_create_pointer_xfer(TypeStreamXfer);
@@ -546,6 +550,9 @@ void SIAddPackageOS(Context *c) {
 
 	add_func("exit", common_types._void, &kaba_os_exit, Flags::Static);
 		func_add_param("status", common_types.i32);
+
+	add_func("get_env", TypeStringOptional, &os::app::get_env, Flags::Static);
+		func_add_param("var", common_types.string);
 
 
 	add_ext_var("app_directory_dynamic", common_types.path, &os::app::directory_dynamic);

@@ -33,6 +33,9 @@ public:
 	virtual Array<string> list_modifiers() const = 0;
 	virtual Array<string> list_special_functions() const = 0;
 	virtual Array<string> list_operator_functions() const = 0;
+	virtual Path installation_root() const = 0;
+	virtual Path packages_root() const = 0;
+	virtual void set_installation_root(const Path& dir) = 0;
 
 	shared_array<Module> public_modules;
 	shared_array<Package> internal_packages;

@@ -85,6 +85,14 @@ Package* get_current_package() {
 	return get_package_containing_module(m);
 }
 
+Path get_installation_root() {
+	return default_context->installation_root();
+}
+
+Path get_packages_root() {
+	return default_context->packages_root();
+}
+
 void SIAddPackageKaba(Context *c) {
 	add_internal_package(c, "kaba", "1");
 
@@ -289,6 +297,8 @@ void SIAddPackageKaba(Context *c) {
 		class_add_func("get_dynamic_type", TypeClassP, &Context::get_dynamic_type, Flags::Pure);
 			func_add_param("p", common_types.pointer);
 		class_add_func("create", TypeContextXfer, &Context::create, Flags::Static);
+		class_add_func_virtual("installation_root", common_types.path, &Context::installation_root);
+		class_add_func_virtual("packages_root", common_types.path, &Context::packages_root);
 
 	add_func("disassemble", common_types.string, &Asm::disassemble, Flags::Static | Flags::Pure);
 		func_add_param("p", common_types.pointer);
@@ -302,8 +312,8 @@ void SIAddPackageKaba(Context *c) {
 
 	add_func("this_module", TypeModuleRef, &get_current_module, Flags::Static | Flags::Pure);
 	add_func("this_package", TypePackageP, &get_current_package, Flags::Static | Flags::Pure);
-	add_func("install_root", common_types.path, &Context::installation_root, Flags::Static | Flags::Pure);
-	add_func("packages_root", common_types.path, &Context::packages_root, Flags::Static | Flags::Pure);
+	add_func("install_root", common_types.path, &get_installation_root, Flags::Static | Flags::Pure);
+	add_func("packages_root", common_types.path, &get_packages_root, Flags::Static | Flags::Pure);
 
 	add_ext_var("default_context", TypeContextRef, (void*)&default_context);
 	add_ext_var("statements", TypeStatementRefList, (void*)&Statements);

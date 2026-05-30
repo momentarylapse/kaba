@@ -144,7 +144,7 @@ public:
 			msg_write("--- " + AppName + " " + AppVersion + " ---");
 			msg_write("native arch: " + kaba::abi_name(kaba::guess_native_abi()));;
 			msg_write("kaba: " + kaba::Version);
-			//msg_write("hui: " + hui::Version);
+			msg_write("env: " + str(kaba::guess_environment_path()));
 		});
 		p.cmd("-h/--help", "", "show this help page", [&p] (const Array<string>&) {
 			p.show();
@@ -218,12 +218,10 @@ public:
 		kaba::init(abi, flag_allow_std_lib);
 		ErrorHandler::init();
 
+		kaba::default_context->set_installation_root(kaba::guess_environment_path());
 
-		// for huibui.kaba...
+
 		auto e = reinterpret_cast<kaba::Context*>(kaba::default_context)->external.get();
-/*		e->link_class_func("Resource.str", &hui::Resource::to_string);
-		e->link_class_func("Resource.show", &hui::Resource::show);
-		e->link("ParseResource", (void*)&hui::parse_resource);*/
 
 		e->link("xxx_delete", (void*)&xxx_delete);
 		e->link("f", (void*)&xxx_fff);
@@ -251,10 +249,10 @@ public:
 	}
 
 	static Path try_get_installed_app_file(const Path &filename) {
-		for (auto &dir: Array<Path>({os::app::directory_dynamic, os::app::directory_static})) {
-			Path dd = dir | "packages" | filename.str() | (filename.str() + ".kaba");
+		for (auto &dir: Array<Path>({kaba::default_context->packages_root()})) {
+			Path dd = dir | filename.str() | (filename.str() + ".kaba");
 			if (filename.str().find("/") >= 0)
-				dd = dir | "packages" | (filename.str() + ".kaba");
+				dd = dir | (filename.str() + ".kaba");
 			if (os::fs::exists(dd))
 				return dd;
 		}
