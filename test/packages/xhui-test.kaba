@@ -6,6 +6,7 @@ func xdraw(p: hui.Painter)
 	print("draw {{p.width}}")
 	p.set_color(Color.RED)
 	p.draw_rect([100,200,100,200])
+	p.draw_line([300,300], [400,400])
 
 
 func main()

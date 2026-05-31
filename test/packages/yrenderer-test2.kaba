@@ -8,7 +8,10 @@ let H = 600
 
 
 func main()
-	glfw.init(["vulkan"])
+	match api()
+		Api.VULKAN => glfw.init(["vulkan"])
+		Api.OPEN_GL => glfw.init([])
+		else => pass
 	var w = new glfw.Window("test", W, H)
 	glfw.make_context_current(w)
 	
