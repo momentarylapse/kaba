@@ -1,5 +1,5 @@
 
-class c
+class C
 	var x: int
 	func __init__()
 		self.x = -1
@@ -7,19 +7,19 @@ class c
 	func __delete__()
 		print("delete")
 		print(self.x)
-	func __assign__(other: c)
+	func __assign__(other: C)
 		print("assign")
 		self.x = other.x
 
 func main()
 	print("--------------")
-	var a: c[]
+	var a: C[]
 	a.resize(10)
 	print("--------------")
-	var cc: c
+	var cc: C
 	cc.x = 13
 	a.add(cc)
 	print("--------------")
-	
+
 	#print a.num
 	#print a[10].x
