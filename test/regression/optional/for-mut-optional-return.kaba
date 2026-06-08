@@ -1,0 +1,20 @@
+struct S
+	s: string
+	i: i32&
+
+
+class C
+	var i = 13
+	func selfref f() -> S?
+		return S("a", &i)
+
+
+func main()
+	var c: C
+	for mut s in c.f()
+		print(s.i)
+		s.i = 42
+		print(s.i)
+
+
+
