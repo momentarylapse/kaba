@@ -1,4 +1,5 @@
 use yrenderer.*
+use polymesh.*
 use glfw
 use time
 use os
@@ -6,6 +7,28 @@ use kaba
 
 let W = 800
 let H = 600
+
+
+class XEmitter extends MeshEmitter
+	var vb: owned![VertexBuffer]
+	var material: Material&
+	var matrix = mat4.ID
+
+	func __init__(ctx: Context&)
+		super.__init__(ctx, "test")
+		vb = new VertexBuffer("3f,3f,2f")
+		material := ctx.load_material("")
+
+		var m = create_teapot([0,0,0], 1, 4)
+		m.smoothen()
+		var buf: Vertex[]
+		m.build(buf)
+		vb.update(buf)
+
+	func override emit(params: RenderParams, rvd: RenderViewData, shadow_pass: bool)
+		var shader = rvd.get_shader(material, 0, "default", "", "")
+		var rd = rvd.start(params, matrix, shader, material, 0, PrimitiveTopology.TRIANGLES, vb)
+		rd.draw_triangles(params, weak(vb))
 
 
 func main()
@@ -16,44 +39,45 @@ func main()
 
 	var w = new glfw.Window("test", W, H)
 	glfw.make_context_current(w)
-	
+
 	var ctx = api_init_glfw(w.win)
 	ctx.create_managers("", kaba.packages_root() | "yrenderer/shader", "")
-	
+
 	var wr = new WindowRenderer(ctx, w.win)
-	
+
 	var hdr = new HDRResolver(ctx, W, H)
 	hdr.exposure = 0.2
 #	hdr.bloom_factor = 10
 
 	var rp = new RenderPathForward(ctx, 1024)
 	rp.background_color = [0.125,0.125,0.125,1]
-#	
+#
 	wr.add_child(weak(hdr))
 	hdr.add_child(weak(rp))
-	
-	var cube = new shared CubeEmitter(ctx)
+
+	#var cube = new shared CubeEmitter(ctx)
+	var cube = new shared XEmitter(ctx)
 	cube.material.emission = [0,0,0.7,1]
 	rp.add_opaque_emitter(cube)
-	
+
 	var light: YLight
 	light.init(LightType.POINT, [300,0,300,1])
 	light.pos = [0,8,-10]
-	
+
 	var t = 0.0
-	
+
 	while not w.should_close()
 		glfw.poll_events()
 		if !wr.start_frame()
 			return
 		let params = wr.create_params(1.3)
-		
+
 		cube.matrix = mat4.rotation([t*0.4543,t*0.743,0])
-		
+
 		rp.view = (vec3(0,0,-7), Quaternion.ID, pi/4, 0.1, 1000)
 		rp.set_lights([&light])
 		rp.prepare(params)
-		
+
 	#	hdr.exposure = exp(sin(t)*2-0.8)
 		cube.material.emission.g = (1 + sin(t))*0.5
 		wr.prepare(params)

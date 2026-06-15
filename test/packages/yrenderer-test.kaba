@@ -2,6 +2,7 @@ use yrenderer.*
 use glfw
 use time
 use os
+use kaba
 
 let W = 800
 let H = 600
@@ -17,7 +18,7 @@ func main()
 	glfw.make_context_current(w)
 	
 	var ctx = api_init_glfw(w.win)
-	ctx.create_managers("", os.app_directory_dynamic | "packages/yrenderer/shader", "")
+	ctx.create_managers("", kaba.packages_root() | "yrenderer/shader", "")
 	
 	var wr = new WindowRenderer(ctx, w.win)
 	
