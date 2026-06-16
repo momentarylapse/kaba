@@ -41,12 +41,12 @@ jobs:
       run: |
         echo "build-output-exe=${{ github.workspace }}/build/kaba" >> "$GITHUB_OUTPUT"
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        
+
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-4-dev libfftw3-dev libgl-dev libglfw3-dev
-      
+        sudo apt-get install -y cmake ninja-build clang build-essential libgtk-4-dev libfftw3-dev libgl-dev libglfw3-dev
+
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -58,7 +58,7 @@ jobs:
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-      
+
     - name: Tests
       run: >
         cd ${{ github.workspace }};
@@ -71,4 +71,4 @@ jobs:
 #        recipe: "./AppImageBuilder.yml"
 #      env:
 #        UPDATE_INFO: gh-releases-zsync|momentarylapse|kaba|latest|*x86_64.AppImage.zsync
-            
+
