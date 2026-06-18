@@ -268,7 +268,7 @@ public:
 
 	shared<kaba::Module> compile_file(const Path &_filename) {
 		auto filename = _filename;
-		if (os::app::installed and filename.extension() != "kaba")
+		if (filename.extension() != "kaba")
 			filename = try_get_installed_app_file(filename);
 		else
 			filename = filename.absolute().canonical();

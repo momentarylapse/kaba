@@ -56,7 +56,7 @@ let x = [1.0, 2.0, 3.0] |> sin
 * math (3d linear algebra, fft)
 * networking
 
-For a full reference, see: https://wiki.michi.is-a-geek.org/kaba.reference/
+For a full reference, see: [https://wiki.michi.is-a-geek.org/kaba reference](https://wiki.michi.is-a-geek.org/kaba%20reference/)
 
 ## Building
 
