@@ -1,13 +1,12 @@
 use os
 
-func test(filename: string) -> bool
-	var s = filename.head(filename.num - 4)
-	s += ".kaba"
+func test(filename: os.Path) -> bool
+	var s = str(filename).head(len(str(filename)) - 4) + ".kaba"
 	try
-		var r1 = shell_execute("kaba '{{s}}'")
-		var r2 = Filesystem.read(filename)
+		var r1 = os.shell_execute("kaba '{{s}}'")
+		var r2 = os.fs.read(filename)
 
-	
+
 		for i in s.num:42
 			s.add(' ')
 		if r1 == r2
@@ -28,6 +27,6 @@ func test(filename: string) -> bool
 		return false
 
 func main()
-	var list = Filesystem.search(".", "*.reg", false)
+	var list = os.fs.search(".", "*.reg", "fr")
 	for e in list
-		test(e)
+		let x = test(e)
