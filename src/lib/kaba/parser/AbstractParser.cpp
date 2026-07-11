@@ -1425,7 +1425,6 @@ shared<Node> AbstractParser::parse_abstract_class_use_statement() {
 	return node;
 }
 
-// [NAME?, RETURN?, [PARAMS]?, [TEMPLATEARGS]?, BLOCK]
 shared<Node> AbstractParser::parse_abstract_function_header(Flags flags0) {
 	auto node = new Node(NodeKind::AbstractFunction, 0, common_types.unknown, flags0);
 	node->token_id = Exp.cur_token();

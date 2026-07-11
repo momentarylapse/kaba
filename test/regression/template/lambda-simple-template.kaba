@@ -1,0 +1,7 @@
+func fff(f: f32->f32)
+	print(f(2))
+
+
+func main()
+	fff(x => x^2)
+
