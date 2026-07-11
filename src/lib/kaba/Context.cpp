@@ -264,6 +264,7 @@ void Context::execute_single_command(const string &cmd) {
 		msg_write("ABSTRACT SINGLE:");
 		func->block_node->show();
 	}
+	parser->realize_tree(func->block_node.get());
 	parser->con.concretify_node(func->block_node.get(), func->block, func->name_space);
 
 	if (func->block_node->params.num == 0)

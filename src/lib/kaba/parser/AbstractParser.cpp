@@ -1068,8 +1068,8 @@ shared<Node> AbstractParser::parse_abstract_statement_lambda() {
 	}
 
 	auto node = add_node_statement(StatementID::Lambda, n->token_id, common_types.unknown);
-	node->set_num_params(2);
-	node->set_param(1, n);
+	node->set_num_params(1);
+	node->set_param(0, n);
 
 	return node;
 }

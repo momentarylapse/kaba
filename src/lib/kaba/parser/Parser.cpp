@@ -336,9 +336,9 @@ Array<string> parse_comma_sep_list(Parser *p) {
 }
 
 Function* Parser::realize_lambda(shared<Node> node, Class* name_space) {
-	auto f = realize_function_header(node->params[1], common_types.unknown, name_space);
+	auto f = realize_function_header(node->params[0], common_types.unknown, name_space);
 
-	f->block_node = node->params[1]->params[4];
+	f->block_node = node->params[0]->params[4];
 	f->block_node->link_no = (int_p)f->block;
 
 	node->set_param(0, add_node_func_name(f));
