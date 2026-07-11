@@ -166,6 +166,7 @@ add_executable(kaba
 	src/lib/os/stream.cpp
 	src/lib/os/terminal.cpp
 	src/lib/os/time.cpp
+	src/lib/threads/_kaba_export.cpp
 	src/lib/threads/Mutex.cpp
 	src/lib/threads/Thread.cpp
 	src/lib/threads/ThreadedWork.cpp
@@ -186,7 +187,7 @@ target_include_directories(kaba PUBLIC src)
 set(RESOURCE_DESTINATION share/kaba)
 
 # binaries
-install(TARGETS kaba DESTINATION bin)	
+install(TARGETS kaba DESTINATION bin)
 
 # resources
 install(DIRECTORY "static" DESTINATION ${RESOURCE_DESTINATION})

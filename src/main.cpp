@@ -49,6 +49,7 @@ public:
 	string output_format = "raw";
 	bool flag_interpret = false;
 	bool flag_clean_up = false;
+	Array<string> additional_import_packages;
 
 	int on_startup(const Array<string> &arg0) {
 
@@ -136,7 +137,10 @@ public:
 		p.option("--clean", "clean up after execution", [this] {
 			flag_clean_up = true;
 		});
-		p.cmd("--xxx", "", "some experiment", [this] (const Array<string>&) {
+		p.option("-i/--import", "PACKAGE1,...", "import before executing single command", [this] (const string& a) {
+			additional_import_packages = a.explode(",");
+		});
+		p.cmd("@hidden --xxx", "", "some experiment", [this] (const Array<string>&) {
 			kaba::init(abi, flag_allow_std_lib);
 			do_experiments();
 		});
@@ -155,6 +159,7 @@ public:
 		p.cmd("-c/--command", "CODE", "compile and run a single command", [this] (const Array<string> &a) {
 			init_environment();
 			try {
+				static_cast<kaba::Context*>(kaba::default_context)->additional_import_packages = additional_import_packages;
 				kaba::default_context->execute_single_command(a[0]);
 			} catch (Exception &e) {
 				die(e.message());
