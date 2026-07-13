@@ -88,6 +88,8 @@ public:
 	void _declare_class_element(const string& name, int offset) override;
 	void link(const string& name, void* p) override;
 	void _link_virtual(const string& name, void* p, void* instance) override;
+
+	IContext* context() override;
 };
 
 
