@@ -2764,6 +2764,8 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 
 
 shared<Node> Concretifier::build_lambda_template(const shared<Node>& param, const shared<Node>& expression, Block *block, const Class* ns, int token_id) {
+	if (param->kind != NodeKind::AbstractToken)
+		do_error("single parameter name expected to the left of mapping '=>'", param);
 
 	static int lambda_count = 0;
 	string name = format(":lambda-evil-%d:", lambda_count ++);
