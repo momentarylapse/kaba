@@ -1,0 +1,14 @@
+
+enum Type
+	FLOAT_32
+	FLOAT_64
+
+
+func xtype_size(t: Type) -> i32
+	return match t
+		Type.FLOAT_32 => 4
+		Type.FLOAT_64 => 4
+
+
+func main()
+

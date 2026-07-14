@@ -1496,6 +1496,8 @@ shared<Node> Concretifier::concretify_statement_match(shared<Node> node, Block *
 		} else {
 			do_error("'match' requires a default pattern ('else =>'), except for fully covered enums", node);
 		}
+		// turn into "else" case, to make block-returns easier
+		node->params[ncases*2-1] = add_node_statement(StatementID::Pass, node->params[ncases*2-1]->token_id, common_types._void);
 	}
 	return node;
 }

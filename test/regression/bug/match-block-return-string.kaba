@@ -1,0 +1,16 @@
+
+enum Type
+	FLOAT_32
+	FLOAT_64
+
+
+func f(t: Type) -> string
+	return match t
+		Type.FLOAT_32 => "a"
+		Type.FLOAT_64 => "b"
+
+
+func main()
+	print(f(Type.FLOAT_32))
+	print(f(Type.FLOAT_64))
+
