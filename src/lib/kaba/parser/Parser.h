@@ -10,7 +10,7 @@
 
 #include "lexical.h"
 #include "AbstractParser.h"
-#include "Concretifier.h"
+#include "concretifier/Concretifier.h"
 #include "../template/implicit.h"
 #include "../syntax/SyntaxTree.h"
 

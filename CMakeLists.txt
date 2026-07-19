@@ -112,14 +112,18 @@ add_executable(kaba
 	src/lib/kaba/lib/lib_threads.cpp
 	src/lib/kaba/lib/lib_time.cpp
 	src/lib/kaba/lib/list.cpp
+	src/lib/kaba/parser/concretifier/Concretifier.cpp
+	src/lib/kaba/parser/concretifier/pipe.cpp
+	src/lib/kaba/parser/concretifier/special_function.cpp
+	src/lib/kaba/parser/concretifier/statement.cpp
+	src/lib/kaba/parser/concretifier/statement_for.cpp
+	src/lib/kaba/parser/concretifier/type_matching.cpp
 	src/lib/kaba/parser/AbstractParser.cpp
-	src/lib/kaba/parser/Concretifier.cpp
 	src/lib/kaba/parser/import.cpp
 	src/lib/kaba/parser/lexical.cpp
 	src/lib/kaba/parser/macros.cpp
 	src/lib/kaba/parser/Parser.cpp
 	src/lib/kaba/parser/Transformer.cpp
-	src/lib/kaba/parser/type_matching.cpp
 	src/lib/kaba/syntax/Block.cpp
 	src/lib/kaba/syntax/Class.cpp
 	src/lib/kaba/syntax/Constant.cpp

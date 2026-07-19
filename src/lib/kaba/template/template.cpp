@@ -7,11 +7,11 @@
 
 #include "../kaba.h"
 #include "../parser/Parser.h"
-#include "../parser/Concretifier.h"
+#include "../parser/concretifier/Concretifier.h"
 #include "template.h"
-#include "../../os/msg.h"
-#include "../../base/iter.h"
-#include "../../base/algo.h"
+#include <lib/os/msg.h>
+#include <lib/base/iter.h>
+#include <lib/base/algo.h>
 
 namespace kaba {
 

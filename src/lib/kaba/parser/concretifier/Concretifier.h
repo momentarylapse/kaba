@@ -8,8 +8,7 @@
 #ifndef SRC_LIB_KABA_PARSER_CONCRETIFIER_H_
 #define SRC_LIB_KABA_PARSER_CONCRETIFIER_H_
 
-#include "../syntax/SyntaxTree.h"
-#include "lexical.h"
+#include "../../syntax/SyntaxTree.h"
 
 namespace kaba {
 
