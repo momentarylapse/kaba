@@ -253,7 +253,7 @@ TemplateClassInstanceManager& TemplateManager::get_class_manager(SyntaxTree *tre
 
 shared<Node> TemplateManager::node_replace(shared<Node> n, const Array<string> &names, const Array<const Class*> &params) {
 	//return parser->concretify_as_type(n, block, ns);
-	return SyntaxTree::transform_node(n, [&names, &params] (shared<Node> nn) {
+	return Transformer::transform_node(n, [&names, &params] (shared<Node> nn) {
 		if (nn->kind == NodeKind::AbstractToken) {
 			string token = nn->as_token();
 			for (int i=0; i<names.num; i++)

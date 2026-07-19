@@ -16,16 +16,16 @@
 
 namespace kaba {
 
-class Class;
-class Function;
-class Block;
-class SyntaxTree;
-class Statement;
-class SpecialFunction;
-class AbstractOperator;
+struct Class;
+struct Function;
+struct Block;
+struct SyntaxTree;
+struct Statement;
+struct SpecialFunction;
+struct AbstractOperator;
 enum class Flags;
 struct CastingData;
-class Context;
+struct Context;
 
 class Parser : public AbstractParser {
 public:
@@ -78,6 +78,7 @@ public:
 	int next_asm_block = 0;
 
 	Concretifier con;
+	Transformer transformer;
 	AutoImplementerInternal auto_implementer;
 
 	bool found_dynamic_param;

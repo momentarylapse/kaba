@@ -2,14 +2,21 @@
 // Created by michi on 2/16/26.
 //
 
-#ifndef KABA_ABSTRACTPARSER_H
-#define KABA_ABSTRACTPARSER_H
+#pragma once
+
+#include "../syntax/Flags.h"
+#include "../syntax/Operator.h"
 
 namespace kaba {
 
-class ExpressionBuffer;
-class Context;
-class SyntaxTree;
+struct ExpressionBuffer;
+struct Context;
+struct SyntaxTree;
+enum class Flags;
+enum class OperatorFlags;
+struct SpecialFunction;
+struct AbstractOperator;
+struct Statement;
 
 class AbstractParser {
 public:
@@ -97,5 +104,3 @@ public:
 };
 
 }
-
-#endif //KABA_ABSTRACTPARSER_H

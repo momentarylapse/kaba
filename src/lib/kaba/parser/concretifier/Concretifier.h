@@ -9,18 +9,19 @@
 #define SRC_LIB_KABA_PARSER_CONCRETIFIER_H_
 
 #include "../../syntax/SyntaxTree.h"
+#include "../Transformer.h"
 
 namespace kaba {
 
-class Class;
-class Function;
-class Block;
-class SyntaxTree;
-class Statement;
+struct Class;
+struct Function;
+struct Block;
+struct SyntaxTree;
+struct Statement;
 enum class Flags;
 class Parser;
 class AutoImplementer;
-class Context;
+struct Context;
 
 struct CastingDataSingle {
 	int cast;
@@ -176,6 +177,7 @@ public:
 	Context *context;
 	SyntaxTree *tree;
 	Parser *parser;
+	Transformer transformer;
 	AutoImplementer *auto_implementer;
 	int for_index_count = 0;
 	int _try_level = 0;

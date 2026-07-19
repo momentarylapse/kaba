@@ -54,7 +54,7 @@ void* mf(T tmf) {
 }
 
 namespace kaba {
-	class IContext;
+	struct IContext;
 	class KabaException;
 
 KabaException* create_kaba_exception(const string& message);

@@ -123,6 +123,7 @@ add_executable(kaba
 	src/lib/kaba/parser/lexical.cpp
 	src/lib/kaba/parser/macros.cpp
 	src/lib/kaba/parser/Parser.cpp
+	src/lib/kaba/parser/preprocessor.cpp
 	src/lib/kaba/parser/Transformer.cpp
 	src/lib/kaba/syntax/Block.cpp
 	src/lib/kaba/syntax/Class.cpp
@@ -131,7 +132,6 @@ add_executable(kaba
 	src/lib/kaba/syntax/Identifier.cpp
 	src/lib/kaba/syntax/Node.cpp
 	src/lib/kaba/syntax/Operator.cpp
-	src/lib/kaba/syntax/preprocessor.cpp
 	src/lib/kaba/syntax/Statement.cpp
 	src/lib/kaba/syntax/SyntaxTree.cpp
 	src/lib/kaba/syntax/Variable.cpp

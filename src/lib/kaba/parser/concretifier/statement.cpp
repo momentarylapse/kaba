@@ -9,6 +9,8 @@
 #include <lib/base/iter.h>
 #include <lib/os/msg.h>
 
+#include "lib/kaba/parser/Transformer.h"
+
 namespace kaba {
 
 	const Class *try_digest_type(SyntaxTree *tree, shared<Node> n);
@@ -53,8 +55,9 @@ shared<Node> Concretifier::concretify_statement_if_compiletime(shared<Node> node
 	auto cond = concretify_node(node->params[0], block, ns);
 
 	// try to eval condition
-	cond = tree->transform_node(cond, [this] (shared<Node> n) {
-		return tree->conv_eval_const_func(n);
+	Transformer t(tree);
+	cond = Transformer::transform_node(cond, [&t] (shared<Node> n) {
+		return t.conv_eval_const_func(n);
 	});
 
 	if (cond->kind != NodeKind::Constant)
@@ -319,7 +322,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 		}
 		return n;
 	};
-	tree->transform_block(f->block_node.get(), find_captures);
+	Transformer::transform_block(f->block_node.get(), find_captures);
 
 
 // --- no captures?
@@ -375,7 +378,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 				}
 			return n;
 		};
-		tree->transform_block(f->block_node.get(), replace_local);
+		Transformer::transform_block(f->block_node.get(), replace_local);
 	}
 
 	f->update_parameters_after_realizing();

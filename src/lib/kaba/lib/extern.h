@@ -15,11 +15,9 @@ namespace kaba {
 	struct Package;
 	class Module;
 
-class Context;
+struct Context;
 
-class ExternalLinkData {
-public:
-
+struct ExternalLinkData {
 	Context* context;
 	struct ExternalLink {
 		string name;

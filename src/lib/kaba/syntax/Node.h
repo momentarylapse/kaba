@@ -17,17 +17,17 @@
 
 namespace kaba {
 
-class Class;
-class Block;
-class SyntaxTree;
+struct Class;
+struct Block;
+struct SyntaxTree;
 class Module;
-class Function;
-class Variable;
-class Constant;
-class Operator;
-class AbstractOperator;
-class Statement;
-class SpecialFunction;
+struct Function;
+struct Variable;
+struct Constant;
+struct Operator;
+struct AbstractOperator;
+struct Statement;
+struct SpecialFunction;
 enum class StatementID;
 enum class SpecialFunctionID;
 enum class InlineID;
@@ -110,8 +110,7 @@ enum class NodeKind {
 };
 
 // single operand/command
-class Node : public Sharable<base::Empty> {
-public:
+struct Node : Sharable<base::Empty> {
 	NodeKind kind;
 	int token_id;
 	int64 link_no;

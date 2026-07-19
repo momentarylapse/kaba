@@ -130,7 +130,7 @@ const Class *node_call_return_type(shared<Node> node) {
 }
 
 
-Concretifier::Concretifier(Context *c, Parser *_parser, SyntaxTree *_tree) {
+Concretifier::Concretifier(Context *c, Parser *_parser, SyntaxTree *_tree) : transformer(_tree) {
 	parser = _parser;
 	tree = _tree;
 	context = c;
@@ -389,7 +389,7 @@ shared<Node> apply_macro(Concretifier *con, Function* f, shared<Node> node, shar
 		con->do_error(format("can not pass %d parameters to a macro expecting %d", params.num, f->num_params), node);
 
 	auto b = cp_node(f->block_node.get());
-	con->tree->transform_block(b.get(), [f, params] (shared<Node> n) {
+	Transformer::transform_block(b.get(), [f, params] (shared<Node> n) {
 		if (n->kind == NodeKind::AbstractToken) {
 			for (int i=0; i<params.num; i++) {
 				if (n->as_token() == f->var[i]->name) {
@@ -503,8 +503,8 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	// int[3]
 	if (operand->kind == NodeKind::Class) {
 		// find array size
-		index = tree->transform_node(index, [this] (shared<Node> n) {
-			return tree->conv_eval_const_func(n);
+		index = Transformer::transform_node(index, [this] (shared<Node> n) {
+			return transformer.conv_eval_const_func(n);
 		});
 
 		if (index->type != common_types.i32)
@@ -567,8 +567,8 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 
 	// tuple
 	if (operand->type->is_product()) {
-		index = tree->transform_node(index, [this] (shared<Node> n) {
-			return tree->conv_eval_const_func(n);
+		index = Transformer::transform_node(index, [this] (shared<Node> n) {
+			return transformer.conv_eval_const_func(n);
 		});
 		if (index->type != common_types.i32)
 			do_error("tuple index must be of type 'i32'", index);
@@ -592,8 +592,8 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	if (index->type != common_types.i32)
 		do_error(format("array index needs to be of type 'i32', not '%s'", index->type->long_name()), index);
 
-	index = tree->transform_node(index, [this] (shared<Node> n) {
-		return tree->conv_eval_const_func(n);
+	index = Transformer::transform_node(index, [this] (shared<Node> n) {
+		return transformer.conv_eval_const_func(n);
 	});
 	auto is_directly_accessible = [] (NodeKind k) {
 		return k == NodeKind::VarGlobal or k == NodeKind::VarLocal or k == NodeKind::Constant;
@@ -1497,7 +1497,7 @@ void Concretifier::concretify_function_body(Function *f) {
 	if (f->literal_return_type == common_types.unknown) {
 		// guess return type
 		f->set_return_type(common_types._void);
-		SyntaxTree::transform_node(f->block_node, [f] (shared<Node> n) {
+		Transformer::transform_node(f->block_node, [f] (shared<Node> n) {
 			if (n->kind == NodeKind::Statement and n->as_statement()->id == StatementID::Return) {
 				f->set_return_type(n->params[0]->type);
 			}
