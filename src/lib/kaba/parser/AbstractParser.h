@@ -53,8 +53,8 @@ public:
 	void parse_abstract_complete_command_into_block(Node* block);
 	shared<Node> parse_abstract_block();
 	shared<Node> parse_abstract_operand(bool prefer_class = false);
-	shared<Node> parse_operand_greedy(Block *block, bool allow_tuples = false);
 	shared<Node> parse_abstract_operand_greedy(bool allow_tuples = false, int min_op_level = -999);
+	shared<Node> parse_abstract_value_or_slice();
 	shared<Node> parse_abstract_set_builder();
 	shared<Node> parse_abstract_token();
 	shared<Node> parse_abstract_type();

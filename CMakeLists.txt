@@ -1,6 +1,8 @@
 # created by xmake
 
 cmake_minimum_required(VERSION 3.21)
+cmake_policy(SET CMP0091 NEW)
+
 project(kaba)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -48,9 +50,16 @@ else()
 endif()
 
 
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND DEPS Threads::Threads)
+
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+	list(APPEND DEPS ${MATH_LIBRARY})
+endif()
 
 
 #=======================================================================================

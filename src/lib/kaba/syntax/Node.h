@@ -190,7 +190,7 @@ shared<Node> add_node_local(const Variable *var, const Class *type, int token_id
 shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type);
 shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index);
 shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class *override_type = nullptr);
-shared<Node> add_node_slice(shared<Node> start, shared<Node> end);
+shared<Node> add_node_slice(shared<Node> start, shared<Node> end, shared<Node> step);
 shared<Node> add_node_constructor(const Function *f, int token_id = -1);
 shared<Node> make_constructor_static(shared<Node> n, const string &name);
 shared<Node> add_node_named_parameter(SyntaxTree* tree, int name_token_id, shared<Node> param);

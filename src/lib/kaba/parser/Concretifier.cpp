@@ -373,7 +373,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 
 void Concretifier::concretify_all_params(shared<Node> &node, Block *block, const Class *ns) {
 	for (int p=0; p<node->params.num; p++)
-		if (node->params[p]->type == common_types.unknown) {
+		if (node->params[p] and node->params[p]->type == common_types.unknown) {
 			node->params[p] = concretify_node(node->params[p], block, ns);
 		}
 }
@@ -865,57 +865,7 @@ shared<Node> Concretifier::concretify_statement_while(shared<Node> node, Block *
 	return node;
 }
 
-shared<Node> Concretifier::concretify_statement_for_range(shared<Node> node, Block *block, const Class *ns) {
-	// [VAR, VALUE0, VALUE1, STEP, BLOCK]
-
-	auto var_name = node->params[0]->as_token();
-	auto val0 = force_concrete_type(concretify_node(node->params[1], block, ns));
-	auto val1 = force_concrete_type(concretify_node(node->params[2], block, ns));
-	auto step = node->params[3];
-	if (step)
-		step = force_concrete_type(concretify_node(step, block, ns));
-
-	// type?
-	const Class *t = val0->type;
-	if (val1->type == common_types.f32)
-		t = val1->type;
-	if (step)
-		if (step->type == common_types.f32)
-			t = step->type;
-
-	if (!step) {
-		if (t) {
-			step = add_node_const(tree->add_constant_int(1));
-		} else {
-			step = add_node_const(tree->add_constant(common_types.f32, -1));
-			step->as_const()->as_float() = 1.0f;
-		}
-	}
-
-	val0 = check_param_link(val0, t, "for", 1, 2);
-	val1 = check_param_link(val1, t, "for", 1, 2);
-	if (step)
-		step = check_param_link(step, t, "for", 1, 2);
-
-	node->params[1] = val0;
-	node->params[2] = val1;
-	node->params[3] = step;
-
-	// variable...
-	auto *var = block->add_var(var_name, t, node->token_id);
-	node->set_param(0, add_node_local(var));
-
-	// block
-	node->params[4] = concretify_node(node->params[4], block, ns);
-	parser->post_process_for(node);
-	if (node->params[4]->type != common_types._void and !flags_has(node->flags, Flags::Extern))
-		do_error("typed block not allowed in for loop A", node);
-
-	node->type = common_types._void;
-	return node;
-}
-
-shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_statement_for(shared<Node> node, Block *block, const Class *ns) {
 	// [VAR, INDEX, ARRAY, BLOCK]
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
@@ -925,6 +875,8 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 		do_error("can not iterate mutating over a constant container", node);
 
 	auto t_c = container->type;
+	if (container->kind == NodeKind::Slice)
+		return concretify_statement_for_slice(node, container, block, ns);
 	if (t_c->is_pointer_shared() and flags_has(node->flags, Flags::Shared))
 		return concretify_statement_for_unwrap_pointer_shared(node, container, block, ns);
 	if (t_c->is_pointer_shared() or t_c->is_pointer_owned() or t_c->is_pointer_raw())
@@ -938,6 +890,40 @@ shared<Node> Concretifier::concretify_statement_for_container(shared<Node> node,
 
 	do_error(format("unable to iterate over type '%s' - array/list/dict/shared/owned/optional expected as second parameter in 'for . in .'", t_c->long_name()), container);
 	return nullptr;
+}
+
+shared<Node> Concretifier::concretify_statement_for_slice(shared<Node> node, shared<Node> container, Block *block, const Class *ns) {
+
+	auto var_name = node->params[0]->as_token();
+	auto val0 = container->params[0];
+	auto val1 = container->params[1];
+	auto step = container->params[2];
+
+	// type?
+	const Class *t = val0->type;
+
+	val0 = check_param_link(val0, t, "for", 1, 2);
+	val1 = check_param_link(val1, t, "for", 1, 2);
+	step = check_param_link(step, t, "for", 1, 2);
+
+	auto cmd_for = add_node_statement(StatementID::ForRange, node->token_id, common_types.unknown);
+	cmd_for->flags = container->flags;
+	cmd_for->set_param(1, val0);
+	cmd_for->set_param(2, val1);
+	cmd_for->set_param(3, step);
+
+	// variable...
+	auto *var = block->add_var(var_name, t, node->token_id);
+	cmd_for->set_param(0, add_node_local(var));
+
+	// block
+	cmd_for->params[4] = concretify_node(node->params[3], block, ns);
+	parser->post_process_for(cmd_for);
+	if (cmd_for->params[4]->type != common_types._void and !flags_has(node->flags, Flags::Extern))
+		do_error("typed block not allowed in for loop A", cmd_for);
+
+	cmd_for->type = common_types._void;
+	return cmd_for;
 }
 
 shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, shared<Node> container, Block *block, const Class *ns) {
@@ -1512,10 +1498,8 @@ shared<Node> Concretifier::concretify_statement(shared<Node> node, Block *block,
 		return concretify_statement_if_compiletime(node, block, ns);
 	if (s->id == StatementID::While)
 		return concretify_statement_while(node, block, ns);
-	if (s->id == StatementID::ForRange)
-		return concretify_statement_for_range(node, block, ns);
-	if (s->id == StatementID::ForContainer)
-		return concretify_statement_for_container(node, block, ns);
+	if (s->id == StatementID::For)
+		return concretify_statement_for(node, block, ns);
 	if (s->id == StatementID::New)
 		return concretify_statement_new(node, block, ns);
 	if (s->id == StatementID::Delete)
@@ -1916,8 +1900,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		concretify_all_params(node, block, ns);
 		node->type = node->as_func()->literal_return_type;
 	} else if (node->kind == NodeKind::Slice) {
-		concretify_all_params(node, block, ns);
-		node->type = common_types._void;
+		return concretify_slice(node, block, ns);
 	} else if (node->kind == NodeKind::Definitely) {
 		return concretify_definitely(node, block, ns);
 	} else if (node->kind == NodeKind::NamedParameter) {
@@ -1928,6 +1911,45 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		do_error("INTERNAL ERROR: unexpected node", node);
 	}
 
+	return node;
+}
+
+shared<Node> Concretifier::concretify_slice(shared<Node> node, Block *block, const Class *ns) {
+	concretify_all_params(node, block, ns);
+	node->type = common_types._void;
+
+
+	auto val0 = force_concrete_type(concretify_node(node->params[0], block, ns));
+	auto val1 = force_concrete_type(concretify_node(node->params[1], block, ns));
+	auto step = node->params[2];
+	if (step)
+		step = force_concrete_type(concretify_node(step, block, ns));
+
+	// type?
+	const Class* type = val0->type;
+	if (val1->type == common_types.f32)
+		type = val1->type;
+	if (step)
+		if (step->type == common_types.f32)
+			type = step->type;
+	if (type != common_types.i32 and type != common_types.f32)
+		do_error("slice (a:b) only allowed for i32 or f32", node);
+
+	if (!step) {
+		if (type) {
+			step = add_node_const(tree->add_constant_int(1));
+		} else {
+			step = add_node_const(tree->add_constant(common_types.f32, -1));
+			step->as_const()->as_float() = 1.0f;
+		}
+	}
+
+	node->set_param(0, check_param_link(val0, type, "slice", 0, 3));
+	node->set_param(1, check_param_link(val1, type, "slice", 1, 3));
+	node->set_param(2, check_param_link(step, type, "slice", 2, 3));
+	/*val1 = check_param_link(val1, t, "for", 1, 2);
+	if (step)
+		step = check_param_link(step, t, "for", 1, 2);*/
 	return node;
 }
 
@@ -2579,7 +2601,7 @@ shared<Node> Concretifier::build_pipe_filter(const shared<Node> &input, const sh
 		do_error("lambda expression 'var => expression' expected inside 'filter(...)'", rhs);
 
 //  p = [REF_VAR, KEY, ARRAY]
-	auto n_for = add_node_statement(StatementID::ForContainer, token_id, common_types.unknown);
+	auto n_for = add_node_statement(StatementID::For, token_id, common_types.unknown);
 	n_for->set_param(0, l->params[0]); // token variable
 	//n_for->set_param(1, key);
 	n_for->set_param(2, input);
@@ -2600,7 +2622,7 @@ shared<Node> Concretifier::try_build_pipe_map_array_unwrap(const shared<Node> &i
 
 
 	// [VAR, INDEX, ARRAY, BLOCK]
-	auto n_for = add_node_statement(StatementID::ForContainer, token_id, common_types._void);
+	auto n_for = add_node_statement(StatementID::For, token_id, common_types._void);
 	n_for->set_param(2, input);
 
 	auto el_type = input->type->get_array_element();

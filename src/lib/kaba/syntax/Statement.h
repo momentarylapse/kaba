@@ -23,7 +23,7 @@ enum class StatementID {
 	If,
 	IfCompiletime,
 	While,
-	ForContainer,
+	For,
 	ForRange,
 	ForDigest,
 	Break,

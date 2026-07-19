@@ -74,13 +74,14 @@ public:
 	shared<Node> concretify_block(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_definitely(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_call(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_slice(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_return(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_if(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_if_compiletime(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_statement_while(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_statement_for_range(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_statement_for_container(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_statement_for_slice(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_array(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_dict(shared<Node> node, shared<Node> container, Block *block, const Class *ns);
 	shared<Node> concretify_statement_for_unwrap_pointer(shared<Node> node, shared<Node> container, Block *block, const Class *ns);

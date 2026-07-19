@@ -316,7 +316,7 @@ void Parser::post_process_for(shared<Node> cmd_for) {
 
 	// force for_var out of scope...
 	var->name = ":" + var->name;
-	if (cmd_for->as_statement()->id == StatementID::ForContainer) {
+	if (cmd_for->as_statement()->id == StatementID::For) {
 		auto *index = cmd_for->params[1]->as_local();
 		index->name = ":" + index->name;
 	}
