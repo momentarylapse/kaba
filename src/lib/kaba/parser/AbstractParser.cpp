@@ -371,7 +371,7 @@ shared<Node> AbstractParser::parse_abstract_set_builder() {
 }
 
 
-	shared<Node> AbstractParser::parse_abstract_list() {
+shared<Node> AbstractParser::parse_abstract_list() {
 	shared_array<Node> el;
 	if (!try_consume("]"))
 		while (true) {
@@ -558,14 +558,14 @@ shared<Node> AbstractParser::parse_abstract_operand_greedy(bool allow_tuples, in
 //  * for_var in for "Block"
 
 // Node structure
-//  p = [VAR, START, STOP, STEP]
-//  p = [REF_VAR, KEY, ARRAY]
+//  p = [REF_VAR, KEY, CONTAINER]
 shared<Node> AbstractParser::parse_abstract_for_header() {
 
 	// variable name
 	int token0 = Exp.consume_token(); // for
 	auto flags = parse_flags(Flags::None);
 	auto var = parse_abstract_token();
+	flags_set(var->flags, flags);
 
 	// index
 	shared<Node> key;
@@ -578,17 +578,14 @@ shared<Node> AbstractParser::parse_abstract_for_header() {
 
 	expect_identifier(Identifier::In, "'in' expected after variable in 'for ...'");
 
-	auto container = parse_abstract_value_or_slice();
-
 	auto cmd_for = add_node_statement(StatementID::For, token0, common_types.unknown);
 	// [REF_VAR (token), KEY? (token), ARRAY, BLOCK]
 
 	cmd_for->set_param(0, var);
 	cmd_for->set_param(1, key);
-	cmd_for->set_param(2, container);
+	cmd_for->set_param(2, parse_abstract_value_or_slice()); // container
 	//cmd_for->set_uparam(3, loop_block);
 
-	flags_set(cmd_for->flags, flags);
 	return cmd_for;
 }
 

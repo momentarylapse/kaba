@@ -8,6 +8,7 @@ namespace kaba {
 
 
 
+
 shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> node, shared<Node> container, Block *block, const Class *ns) {
 	// [OUT-VAR, ---, EXPRESSION, TRUE-BLOCK, [FALSE-BLOCK]]
 	auto expr = container;//concretify_node(node->params[2], block, ns);
@@ -19,7 +20,7 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer(shared<Node> 
 	auto t_out = tree->request_implicit_class_alias(t0->param[0], node->token_id);
 
 	auto *var = block_x->as_block()->add_var(var_name, t_out, node->token_id);
-	if (!node->is_mutable())
+	if (!node->params[0]->is_mutable())
 		flags_clear(var->flags, Flags::Mutable);
 	block_x->add(add_node_operator_by_inline(InlineID::PointerAssign, add_node_local(var), expr->change_type(t_out)));
 
@@ -50,7 +51,7 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_pointer_shared(shared
 	auto t_out = tree->request_implicit_class_shared_not_null(t0->param[0], node->token_id);
 
 	auto var = block_x->as_block()->add_var(var_name, t_out, node->token_id);
-	if (!node->is_mutable())
+	if (!node->params[0]->is_mutable())
 		flags_clear(var->flags, Flags::Mutable);
 	block_x->add(parser->con.link_operator_id(OperatorID::Assign, add_node_local(var), expr->change_type(t_out)));
 
@@ -93,7 +94,7 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_optional(shared<Node>
 
 	// alias pointer
 	auto var_p = block_x->as_block()->add_var(var_name, t_out, node->token_id);
-	if (!node->is_mutable())
+	if (!node->params[0]->is_mutable())
 		flags_clear(var_p->flags, Flags::Mutable);
 
 	if (is_temporary) {
@@ -127,18 +128,18 @@ shared<Node> Concretifier::concretify_statement_for_unwrap_optional(shared<Node>
 }
 
 shared<Node> Concretifier::concretify_statement_for(shared<Node> node, Block *block, const Class *ns) {
-	// [VAR, INDEX, ARRAY, BLOCK]
+	// [VAR, INDEX, CONTAINER, BLOCK]
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
 	container = deref_if_reference(container);
 
-	if (node->is_mutable() and !container->is_mutable())
+	if (node->params[0]->is_mutable() and !container->is_mutable())
 		do_error("can not iterate mutating over a constant container", node);
 
 	auto t_c = container->type;
 	if (container->kind == NodeKind::Slice)
 		return concretify_statement_for_slice(node, container, block, ns);
-	if (t_c->is_pointer_shared() and flags_has(node->flags, Flags::Shared))
+	if (t_c->is_pointer_shared() and flags_has(node->params[0]->flags, Flags::Shared))
 		return concretify_statement_for_unwrap_pointer_shared(node, container, block, ns);
 	if (t_c->is_pointer_shared() or t_c->is_pointer_owned() or t_c->is_pointer_raw())
 		return concretify_statement_for_unwrap_pointer(node, container, block, ns);
@@ -174,7 +175,7 @@ shared<Node> Concretifier::concretify_statement_for_slice(shared<Node> node, sha
 	cmd_for->set_param(3, step);
 
 	// variable...
-	auto *var = block->add_var(var_name, t, node->token_id);
+	auto var = block->add_var(var_name, t, node->token_id);
 	cmd_for->set_param(0, add_node_local(var));
 
 	// block
@@ -194,12 +195,8 @@ shared<Node> Concretifier::concretify_statement_for_array(shared<Node> node, sha
 	auto var_name = node->params[0]->as_token();
 	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type, node->token_id);
-	if (node->is_mutable()) {
-		if (!container->is_mutable())
-			do_error("can not iterate mutating over a constant container", node);
-	} else {
+	if (!node->params[0]->is_mutable())
 		flags_clear(var->flags, Flags::Mutable);
-	}
 	node->set_param(0, add_node_local(var));
 
 	string index_name = format("-for_index_%d-", for_index_count ++);
@@ -226,7 +223,7 @@ shared<Node> Concretifier::concretify_statement_for_dict(shared<Node> node, shar
 	auto var_type = tree->request_implicit_class_alias(container->type->get_array_element(), node->params[0]->token_id);
 	auto key_type = tree->request_implicit_class_alias(common_types.string, node->params[0]->token_id);
 	auto var = block->add_var(var_name, var_type, node->token_id);
-	if (!node->is_mutable())
+	if (!node->params[0]->is_mutable())
 		flags_clear(var->flags, Flags::Mutable);
 	node->set_param(0, add_node_local(var));
 
