@@ -594,6 +594,16 @@ shared<Node> AbstractParser::parse_abstract_statement_for() {
 	int ind0 = Exp.cur_line->indent;
 
 	auto cmd_for = parse_abstract_for_header();
+	auto inner = cmd_for;
+
+	// nested loops? (for a in ..., b in ...)
+	while (Exp.cur == ",") {
+		auto f2 = parse_abstract_for_header();
+		auto block = add_node_block(nullptr, common_types.unknown);
+		block->add(f2);
+		inner->set_param(inner->params.num - 1, block);
+		inner = f2;
+	}
 
 	// ...block
 	expect_new_line_with_indent();
@@ -602,7 +612,7 @@ shared<Node> AbstractParser::parse_abstract_statement_for() {
 	auto loop_block = parse_abstract_block();
 	parser_loop_depth --;
 
-	cmd_for->set_param(cmd_for->params.num - 1, loop_block);
+	inner->set_param(inner->params.num - 1, loop_block);
 
 	// else?
 	int token_id = Exp.cur_token();

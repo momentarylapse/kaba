@@ -1,0 +1,4 @@
+func main()
+	for i in range(10), j in range(5)
+		print("{{i}}  {{j}}")
+
