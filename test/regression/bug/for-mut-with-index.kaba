@@ -1,0 +1,7 @@
+func main()
+	var x = 5
+	var aa: i32&[] = [&x, &x]
+	for mut i=>a in aa
+		a = i + 13
+	print(aa)
+

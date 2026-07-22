@@ -565,7 +565,6 @@ shared<Node> AbstractParser::parse_abstract_for_header() {
 	int token0 = Exp.consume_token(); // for
 	auto flags = parse_flags(Flags::None);
 	auto var = parse_abstract_token();
-	flags_set(var->flags, flags);
 
 	// index
 	shared<Node> key;
@@ -574,6 +573,7 @@ shared<Node> AbstractParser::parse_abstract_for_header() {
 		key = var;
 		var = parse_abstract_token();
 	}
+	flags_set(var->flags, flags);
 
 
 	expect_identifier(Identifier::In, "'in' expected after variable in 'for ...'");
