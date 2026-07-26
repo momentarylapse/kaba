@@ -341,8 +341,8 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 					t1_best = op->param_type_1;
 					t2_best = op->param_type_2;
 				}
-	for (auto *cf: weak(p1->functions))
-		if (cf->name == op_func_name) {
+	for (auto cf: weak(p1->functions))
+		if (cf->name == op_func_name and cf->literal_param_type.num >= 2) {
 			if (type_match_with_cast(param2, false, cf->literal_param_type[1], c2)) {
 				if (c2.penalty < c2_best.penalty) {
 					op_cf_found = cf;
