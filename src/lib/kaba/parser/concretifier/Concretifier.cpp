@@ -169,6 +169,7 @@ shared<Node> Concretifier::link_special_operator_is(shared<Node> param1, shared<
 }
 
 shared<Node> Concretifier::link_special_operator_in(shared<Node> param1, shared<Node> param2, int token_id) {
+	param1 = force_concrete_type(param1);
 	param2 = force_concrete_type(param2);
 	auto *f = param2->type->get_member_func(Identifier::func::Contains, common_types._bool, {param1->type});
 	if (!f)

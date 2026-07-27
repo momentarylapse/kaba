@@ -124,7 +124,7 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeModuleSharedList = add_type_list(TypeModuleShared);
 	auto TypeModuleRef = add_type_ref(TypeModule);
 	auto TypeModuleRefList = add_type_list(TypeModuleRef);
-	lib_create_list<shared<Module>>(TypeModuleSharedList);
+	lib_create_list<shared<Module>, true, false>(TypeModuleSharedList);
 	lib_create_list<Module*>(TypeModuleRefList);
 
 	auto TypePackage = add_type  ("Package", sizeof(Package));
@@ -145,7 +145,7 @@ void SIAddPackageKaba(Context *c) {
 	auto TypeConstant = add_type("Constant", sizeof(Constant));
 	auto TypeConstantRef = add_type_ref(TypeConstant);
 	auto TypeConstantRefList = add_type_list(TypeConstantRef);
-	lib_create_list<ClassElement>(TypeClassElementList);
+	lib_create_list<ClassElement, true, false>(TypeClassElementList); // too lazy for == op / c++20 default
 	lib_create_list<Variable*>(TypeVariableRefList);
 	lib_create_list<Constant*>(TypeConstantRefList);
 	
