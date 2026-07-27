@@ -522,6 +522,8 @@ Array<string> Context::list_operator_functions() const {
 		Identifier::func::Negative,
 		Identifier::func::BitAnd,
 		Identifier::func::BitOr,
+		Identifier::func::BitAndAssign,
+		Identifier::func::BitOrAssign,
 		Identifier::func::MapsTo,
 		Identifier::func::Call
 	};
