@@ -264,16 +264,27 @@ void namespace_import_contents(SyntaxTree *tree, Scope &dest, const Class *sourc
 		if (!ok)
 			tree->do_error(format("can not import class '%s' since symbol '%s' is already in scope", source->long_name(), name));
 	};
+	auto filter = [] (const string& name) {
+		if (name.head(1) == "_" or name.head(1) == "-")
+			return false;
+		if (name == "EXPORT_IMPORTS") // :P
+			return false;
+		return true;
+	};
 	for (const auto&& [name, type]: source->type_aliases)
-		check(dest.add_class(name, type), name);
-	for (auto *c: weak(source->classes))
-		check(dest.add_class(c->name, c), c->name);
-	for (auto *f: weak(source->functions))
-		check(dest.add_function(f->name, f), f->name);
-	for (auto *v: weak(source->static_variables))
-		check(dest.add_variable(v->name, v), v->name);
-	for (auto *c: weak(source->constants))
-		if (c->name.head(1) != "-" and c->name != "EXPORT_IMPORTS")
+		if (filter(name))
+			check(dest.add_class(name, type), name);
+	for (auto c: weak(source->classes))
+		if (filter(c->name))
+			check(dest.add_class(c->name, c), c->name);
+	for (auto f: weak(source->functions))
+		if (filter(f->name))
+			check(dest.add_function(f->name, f), f->name);
+	for (auto v: weak(source->static_variables))
+		//if (filter(v->name))   _print_postfix_ etc... :P
+			check(dest.add_variable(v->name, v), v->name);
+	for (auto c: weak(source->constants))
+		if (filter(c->name))
 			check(dest.add_const(c->name, c), c->name);
 }
 
