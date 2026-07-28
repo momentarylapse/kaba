@@ -511,7 +511,7 @@ void TemplateClassInstantiatorList::add_function_headers(Class* c) {
 			add_func_header(c, Identifier::func::Assign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 	}
 	add_func_header(c, "remove", common_types._void, {common_types.i32}, {"index"}, nullptr, Flags::Mutable);
-	if (!single_ownership) {
+	if (!single_ownership and class_can_assign(el)) {
 		add_func_header(c, Identifier::func::BitOrAssign, common_types._void, {c}, {"other"}, nullptr, Flags::Mutable);
 		add_func_header(c, Identifier::func::BitOr, c, {c}, {"other"}, nullptr, Flags::Pure);
 	}
