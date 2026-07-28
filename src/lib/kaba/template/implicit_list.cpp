@@ -403,7 +403,6 @@ void AutoImplementer::implement_list_join_into(Function *f, const Class *t) {
 void AutoImplementer::implement_list_join(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto te = t->get_array_element();
 	auto other = add_node_local(f->__get_var("other"));
 	auto self = add_node_local(f->__get_var(Identifier::Self));
 
