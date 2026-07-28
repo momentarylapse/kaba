@@ -386,12 +386,15 @@ void Parser::parse_import() {
 	// resolve
 	auto source = resolve_import_source(this, name, token);
 
+	if (recursively and !source.is_scope and !source._class)
+		do_error_exp("only the contents of modules and classes can be imported with *");
+
 	if (as_name == "")
 		as_name = name.back();
 	if (recursively)
-		tree->import_data_all(source._class, token);
+		tree->import_data_all(source, token, also_export);
 	else
-		tree->import_data_selective(source._class, source.func, source.var, source._const, as_name, token);
+		tree->import_data_single_item(source, as_name, token, also_export);
 }
 
 void Parser::realize_enum(shared<Node> node, Class *_namespace) {

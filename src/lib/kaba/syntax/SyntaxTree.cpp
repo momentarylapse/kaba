@@ -4,6 +4,7 @@
 #include "../dynamic/exception.h"
 #include "../../os/msg.h"
 #include "../../base/iter.h"
+#include "lib/kaba/parser/import.h"
 #include "lib/kaba/parser/Transformer.h"
 
 namespace kaba {
@@ -107,7 +108,7 @@ SyntaxTree::SyntaxTree(Module *_module) {
 void SyntaxTree::default_import() {
 	for (auto p: weak(module->context->internal_packages))
 		if (p->auto_import)
-			import_data_all(p->main_module->base_class(), -1);
+			import_data_all(ImportSource{p->main_module.get(), true}, -1, false);
 }
 
 void SyntaxTree::digest() {
