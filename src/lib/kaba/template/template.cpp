@@ -76,6 +76,11 @@ Class *TemplateManager::create_class_template(SyntaxTree *tree, const string &na
 }
 
 void TemplateManager::clear_from_module(Module *m) {
+	for (auto manager: weak(class_managers)) {
+		base::remove_if(manager->instances, [m] (const TemplateClassInstanceManager::ClassInstance& i) {
+			return i.c->owner->module == m;
+		});
+	}
 }
 
 
