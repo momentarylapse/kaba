@@ -1,4 +1,2 @@
-use .source.*
-
-let EXPORT_IMPORTS = true
+use out .source.*
 

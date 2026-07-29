@@ -27,14 +27,16 @@ shared_array<Node> Scope::find(const string &name, int token_id) const {
 	shared_array<Node> r;
 	for (auto &e: entries)
 		if (e.name == name) {
+			if (e.kind == NodeKind::Module)
+				r.add(add_node_module(reinterpret_cast<const Module*>(e.p), token_id));
 			if (e.kind == NodeKind::Class)
-				r.add(add_node_class(reinterpret_cast<const Class *>(e.p), token_id));
+				r.add(add_node_class(reinterpret_cast<const Class*>(e.p), token_id));
 			if (e.kind == NodeKind::Function)
-				r.add(add_node_func_name(reinterpret_cast<const Function *>(e.p), token_id));
+				r.add(add_node_func_name(reinterpret_cast<const Function*>(e.p), token_id));
 			if (e.kind == NodeKind::VarGlobal)
-				r.add(add_node_global(reinterpret_cast<const Variable *>(e.p), token_id));
+				r.add(add_node_global(reinterpret_cast<const Variable*>(e.p), token_id));
 			if (e.kind == NodeKind::Constant)
-				r.add(add_node_const(reinterpret_cast<const Constant *>(e.p), token_id));
+				r.add(add_node_const(reinterpret_cast<const Constant*>(e.p), token_id));
 		}
 	return r;
 }
@@ -46,6 +48,16 @@ bool Scope::add_class(const string &name, const Class *c) {
 		return false;
 	}
 	entries.add(Entry{name, NodeKind::Class, c});
+	return true;
+}
+
+bool Scope::add_module(const string &name, const Module *c) {
+	for (const auto& x: find(name, -1)) {
+		if (x->kind == NodeKind::Module and x->as_module() == c)
+			return true;
+		return false;
+	}
+	entries.add(Entry{name, NodeKind::Module, c});
 	return true;
 }
 
@@ -229,10 +241,19 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 	const Class *type = operand->type;
 	bool deref = false;
 	bool allow_member = true;
+	shared_array<Node> links;
 
 	if (operand->kind == NodeKind::Class) {
-		// referencing class functions
+		// referencing static functions etc
 		type = operand->as_class();
+		allow_member = false;
+	} else if (operand->kind == NodeKind::Module) {
+		// referencing global symbols
+		auto m = operand->as_module();
+		links = m->tree->import_export_scope.find(name, token_id);
+		if (links.num > 0)
+			return links;
+		type = operand->as_module()->tree->base_class;
 		allow_member = false;
 	//} else if (type->is_some_pointer()) {
 	} else if (type->is_some_pointer_not_null()) {
@@ -306,7 +327,6 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		operand = operand->deref();
 
 	// class function?
-	shared_array<Node> links;
 	for (auto *cf: weak(type->functions))
 		if (name == cf->name) {
 			links.add(add_node_func_name(cf, token_id));
@@ -491,7 +511,6 @@ void delete_all_constants(Class *c) {
 // no included modules may be deleted before us!!!
 SyntaxTree::~SyntaxTree() {
 	// delete all classes, functions etc created by this module
-
 	delete_all_constants(base_class);
 
 	module->context->template_manager->clear_from_module(module);

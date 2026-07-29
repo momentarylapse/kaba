@@ -375,7 +375,7 @@ void Parser::parse_import() {
 	}
 
 	// alias
-	string as_name;
+	string as_name = name.back();
 	if (try_consume(Identifier::As)) {
 		expect_no_new_line("name expected after 'as'");
 		if (recursively)
@@ -389,8 +389,6 @@ void Parser::parse_import() {
 	if (recursively and !source.is_scope and !source._class)
 		do_error_exp("only the contents of modules and classes can be imported with *");
 
-	if (as_name == "")
-		as_name = name.back();
 	if (recursively)
 		tree->import_data_all(source, token, also_export);
 	else

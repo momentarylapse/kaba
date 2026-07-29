@@ -9,6 +9,7 @@
 #include "../Parser.h"
 #include "../../template/template.h"
 #include "../../Context.h"
+#include "../../Module.h"
 #include "../../lib/lib.h"
 #include "../../dynamic/exception.h"
 #include "../../dynamic/dynamic.h"
@@ -56,16 +57,20 @@ const Class *try_digest_type(SyntaxTree *tree, shared<Node> n) {
 	return nullptr;
 }
 
-const Class *get_user_friendly_type(shared<Node> operand) {
+string user_friendly_description(shared<Node> operand) {
 	const Class *type = operand->type;
 
-	if (operand->kind == NodeKind::Class) {
+	if (operand->kind == NodeKind::Module) {
+		return "<module " + operand->as_module()->filename.basename_no_ext() + ">";
+	} else if (operand->kind == NodeKind::Class) {
 		// referencing class functions
-		return operand->as_class();
+		return "<class " + operand->as_class()->long_name() + ">";
+	} else if (operand->kind == NodeKind::Dereference) {
+		return user_friendly_description(operand->params[0]);
 	} else if (type->is_reference()) {
-		return type->param[0];
+		return type->param[0]->long_name();
 	}
-	return type;
+	return type->long_name();
 }
 
 
@@ -466,7 +471,7 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 
 	base = force_concrete_type(base);
 
-	if (base->kind == NodeKind::Class) {
+	if (base->kind == NodeKind::Class or base->kind == NodeKind::Module) {
 		auto links = tree->get_element_of(base, el, token_id);
 		if (links.num > 0)
 			return links;
@@ -483,7 +488,7 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 	if (links.num > 0)
 		return links;
 
-	do_error(format("unknown element of '%s'", get_user_friendly_type(base)->long_name()), node->params[1]);
+	do_error(format("unknown element of '%s'", user_friendly_description(base)), node->params[1]);
 	return {};
 }
 

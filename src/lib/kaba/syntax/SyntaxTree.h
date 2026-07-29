@@ -45,6 +45,7 @@ struct Scope {
 	//base::map<string, Entry> entries;
 	Array<Entry> entries;
 	shared_array<Node> find(const string &name, int token_id) const;
+	bool add_module(const string &name, const Module *m);
 	bool add_class(const string &name, const Class *c);
 	bool add_function(const string &name, const Function *f);
 	bool add_variable(const string &name, const Variable *v);

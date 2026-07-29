@@ -312,41 +312,46 @@ void import_flags(SyntaxTree *me, SyntaxTree *source) {
 void SyntaxTree::import_data_all(const ImportSource& source, int token_id, bool also_export) {
 	import_flags(this, source.module->tree.get());
 	auto source_class = source._class;
-	if (source.is_scope)
+	if (source.is_scope) {
 		source_class = source.module->tree->base_class;
+		global_scope.entries.append(source.module->tree->import_export_scope.entries);
+		if (also_export)
+			import_export_scope.entries.append(source.module->tree->import_export_scope.entries);
+	}
 	namespace_import_contents(this, global_scope, source_class, token_id);
 	if (also_export)
 		namespace_import_contents(this, import_export_scope, source_class, token_id);
-
-
-	// hack: package auto import
-	for (auto c: weak(source_class->constants))
-		if (c->name == "EXPORT_IMPORTS") {
-			for (auto i: weak(source.module->tree->includes))
-				if (!i->is_system_module())
-					import_data_all({i, true}, token_id, also_export);
-		}
 }
 
 void SyntaxTree::import_data_single_item(const ImportSource& source, const string &as_name, int token_id, bool also_export) {
 	if (source.is_scope) {
 		import_flags(this, source.module->tree.get());
-		if (global_scope.add_class(as_name, source.module->tree->base_class))
+		if (also_export)
+			import_export_scope.add_module(as_name, source.module.get());
+		if (global_scope.add_module(as_name, source.module.get()))
 			return;
 	} else if (source._class) {
 		import_flags(this, source._class->owner);
+		if (also_export)
+			import_export_scope.add_class(as_name, source._class);
 		if (global_scope.add_class(as_name, source._class))
 			return;
 	} else if (source.func) {
 		import_flags(this, source.func->owner());
+		if (also_export)
+			import_export_scope.add_function(as_name, source.func);
 		if (global_scope.add_function(as_name, source.func))
 			return;
 	} else if (source.var) {
 		//general_import(this, v->);
+		if (also_export)
+			import_export_scope.add_variable(as_name, source.var);
 		if (global_scope.add_variable(as_name, source.var))
 			return;
 	} else if (source._const) {
 		import_flags(this, source._const->owner);
+		if (also_export)
+			import_export_scope.add_const(as_name, source._const);
 		if (global_scope.add_const(as_name, source._const))
 			return;
 	}
