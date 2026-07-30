@@ -60,6 +60,7 @@ struct Context : IContext {
 	Array<TypeCast> type_casts;
 	owned<TemplateManager> template_manager;
 	owned<ExternalLinkData> external;
+	shared_array<Module> created_modules;
 
 	shared_array<Operator> global_operators;
 

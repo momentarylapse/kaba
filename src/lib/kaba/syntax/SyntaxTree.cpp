@@ -512,8 +512,6 @@ void delete_all_constants(Class *c) {
 SyntaxTree::~SyntaxTree() {
 	// delete all classes, functions etc created by this module
 	delete_all_constants(base_class);
-
-	module->context->template_manager->clear_from_module(module);
 }
 
 void SyntaxTree::show(const string &stage) {

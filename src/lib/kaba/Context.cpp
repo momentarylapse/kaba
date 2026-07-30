@@ -203,6 +203,7 @@ shared<Module> Context::create_module_for_source(const string& source, const Pat
 	module->tree->parser = new Parser(module->tree.get());
 	module->tree->default_import();
 	module->tree->parser->parse_buffer(source, just_analyse);
+	created_modules.add(module);
 
 	if (!just_analyse)
 		Compiler::compile(module.get());
