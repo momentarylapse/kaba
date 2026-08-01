@@ -87,6 +87,8 @@ string kind2str(NodeKind kind) {
 		return "class";
 	if (kind == NodeKind::Module)
 		return "module";
+	if (kind == NodeKind::ClassElement)
+		return "element";
 	if (kind == NodeKind::ArrayBuilder)
 		return "array builder";
 	if (kind == NodeKind::ArrayBuilderFor)
@@ -200,6 +202,8 @@ string Node::signature(const Class *ns) const {
 		return as_class()->cname(ns);
 	if (kind == NodeKind::Module)
 		return as_class()->cname(ns);
+	if (kind == NodeKind::ClassElement)
+		return ((const ClassElement*)(const void*)link_no)->name;
 	if (kind == NodeKind::Register)
 		return Asm::get_reg_name((Asm::RegID)link_no) + t;
 	if (kind == NodeKind::Address)

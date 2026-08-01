@@ -71,6 +71,7 @@ enum class NodeKind {
 	// special
 	Class,
 	Module,
+	ClassElement,        // mostly for errors
 	ArrayBuilder,        // = [X,Y,...]
 	ArrayBuilderFor,
 	ArrayBuilderForIf,

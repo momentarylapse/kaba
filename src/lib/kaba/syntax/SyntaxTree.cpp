@@ -192,7 +192,7 @@ const Class *SyntaxTree::which_owned_class(const string &name) {
 	return nullptr;
 }
 
-shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Class *ns, int token_id) {
+shared_array<Node> SyntaxTree::get_existence_global(const string& name, const Class* ns, int token_id) {
 	shared_array<Node> links;
 
 
@@ -225,6 +225,10 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 		if (name == Identifier::SelfClass)
 			return {add_node_class(ns, token_id)};
 
+		for (const auto& e: ns->elements)
+			if (e.name == name)
+				return {new Node(NodeKind::ClassElement, (int_p)&e, common_types.unknown, Flags::None, token_id)};
+
 		// prefer class...
 		if (links.num > 0)
 			return links;
@@ -236,7 +240,7 @@ shared_array<Node> SyntaxTree::get_existence_global(const string &name, const Cl
 	return {};
 }
 
-shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string &name, int token_id) {
+shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string &name, int token_id, bool check_errors) {
 	//operand = force_concrete_type(operand);
 	const Class *type = operand->type;
 	bool deref = false;
@@ -333,10 +337,21 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 			if (cf->is_member() and allow_member)
 				links.back()->params.add(cp_node(operand));
 		}
+
+
+	// include illegal...
+	if (links.num == 0 and !allow_member)
+		for (const auto& e: type->elements)
+			if (e.name == name) {
+				if (check_errors)
+					do_error("using non-static element of class without instance", token_id);
+				links.add({new Node(NodeKind::ClassElement, (int_p)&e, e.type, Flags::None, token_id)});
+			}
+
 	return links;
 }
 
-shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *block, int token_id) {
+shared_array<Node> SyntaxTree::get_existence_block(const string &name, const Block *block, int token_id) {
 	Function *f = block->function;
 
 	// first test local variables
@@ -348,7 +363,7 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 	}
 
 	// self.x?
-	if (f->is_member()) {
+	if (f->is_member() and !f->is_template()) {
 		auto self = add_node_local(f->__get_var(Identifier::Self), token_id);
 		auto links = get_element_of(self, name, token_id);
 		if (links.num > 0)
@@ -364,7 +379,7 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, Block *bl
 	return {};
 }
 
-shared_array<Node> SyntaxTree::get_existence(const string &name, Block *block, const Class *ns, int token_id) {
+shared_array<Node> SyntaxTree::get_existence(const string &name, const Block *block, const Class *ns, int token_id) {
 	if (block) {
 		auto n = get_existence_block(name, block, token_id);
 		if (n.num > 0)
