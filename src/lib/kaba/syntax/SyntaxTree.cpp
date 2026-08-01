@@ -372,10 +372,10 @@ shared_array<Node> SyntaxTree::get_existence_block(const string &name, const Blo
 
 	for (auto *v: weak(f->name_space->static_variables))
 		if (v->name == name)
-			return {add_node_global(v)};
+			return {add_node_global(v, token_id)};
 
 	if (name == Identifier::ReturnClass)
-		return {add_node_class(f->literal_return_type)};
+		return {add_node_class(f->literal_return_type, token_id)};
 	return {};
 }
 

@@ -284,7 +284,7 @@ void Context::execute_single_command(const string &cmd) {
 		auto n_str = parser->con.add_converter_str(node, true);
 		auto f_print = tree->required_func_global("print");
 
-		auto cmd = add_node_call(f_print);
+		auto cmd = add_node_call(f_print, node->token_id);
 		cmd->set_param(0, n_str);
 		func->block_node->params[0] = cmd;
 	}

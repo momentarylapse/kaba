@@ -608,7 +608,7 @@ void func_add_param_def_x(const string &name, const Class *type, const void *p, 
 			c->as_int() = *(int*)p;
 		if (type == common_types.f32)
 			c->as_float() = *(float*)p;
-		cur_func->param_default_values[cur_func->num_params-1] = add_node_const(c);
+		cur_func->param_default_values[cur_func->num_params-1] = add_node_const(c, -1);
 	}
 }
 

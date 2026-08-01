@@ -22,22 +22,22 @@ shared<Node> AutoImplementer::optional_data(shared<Node> node) {
 
 
 void AutoImplementer::implement_optional_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	// self.has_value = false
 	f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 											  optional_has_value(self),
-											  node_false()));
+											  node_false(), -1));
 }
 
 void AutoImplementer::implement_optional_constructor_wrap(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto value = add_node_local(f->__get_var("value"));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto value = add_node_local(f->__get_var("value"), -1);
 
 	if (auto f_con = t->param[0]->get_default_constructor()) {
 		// self.data.__init__()
 		f->block_node->add(add_node_member_call(f_con,
-										   optional_data(self)));
+										   optional_data(self), -1));
 	}
 
 	{
@@ -57,7 +57,7 @@ void AutoImplementer::implement_optional_constructor_wrap(Function *f, const Cla
 		// self.has_value = true
 		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
-												  node_true()));
+												  node_true(), -1));
 	}
 }
 
@@ -68,25 +68,25 @@ void AutoImplementer::implement_optional_destructor(Function *f, const Class *t)
 	if (!f_des)
 		return;
 
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	{
 		// if self.has_value
 		//     self.value.__delete()
-		auto n_del = add_node_member_call(f_des, optional_data(self));
+		auto n_del = add_node_member_call(f_des, optional_data(self), -1);
 		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 }
 
 void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto other = add_node_local(f->__get_var("other"));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto other = add_node_local(f->__get_var("other"), -1);
 
 	if (auto f_des = t->param[0]->get_destructor()) {
 		// if self.has_value
 		//     self.value.__delete()
 
-		auto n_del = add_node_member_call(f_des, optional_data(self));
+		auto n_del = add_node_member_call(f_des, optional_data(self), -1);
 		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 
@@ -96,12 +96,12 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		//     self.data.__init__()
 		//     self.data = other.data
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		if (auto f_con = t->param[0]->get_default_constructor()) {
 			// self.data.__init__()
 			b->add(add_node_member_call(f_con,
-										optional_data(self)));
+										optional_data(self), -1));
 		}
 
 		auto op = OperatorID::Assign;
@@ -120,20 +120,20 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 		// self.has_value = other.has_value
 		auto assign = add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
-												  optional_has_value(other));
+												  optional_has_value(other), -1);
 		f->block_node->add(assign);
 	}
 }
 
 void AutoImplementer::implement_optional_assign_raw(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto other = add_node_local(f->__get_var("other"));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto other = add_node_local(f->__get_var("other"), -1);
 
 	if (auto f_con = t->param[0]->get_default_constructor()) {
 		// if not self.has_value
 		//     self.value.__init__()
 		auto cmd_not = node_not(optional_has_value(self));
-		auto n_init = add_node_member_call(f_con, optional_data(self));
+		auto n_init = add_node_member_call(f_con, optional_data(self), -1);
 		f->block_node->add(node_if(cmd_not, n_init));
 	}
 
@@ -154,18 +154,18 @@ void AutoImplementer::implement_optional_assign_raw(Function *f, const Class *t)
 		// self.has_value = true
 		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
-												  node_true()));
+												  node_true(), -1));
 	}
 }
 
 void AutoImplementer::implement_optional_assign_null(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	if (auto f_des = t->param[0]->get_destructor()) {
 		// if self.has_value
 		//     self.data.__delete()
 
-		auto n_del = add_node_member_call(f_des, optional_data(self));
+		auto n_del = add_node_member_call(f_des, optional_data(self), -1);
 		f->block_node->add(node_if(optional_has_value(self), n_del));
 	}
 
@@ -173,12 +173,12 @@ void AutoImplementer::implement_optional_assign_null(Function *f, const Class *t
 		// self.has_value = false
 		f->block_node->add(add_node_operator_by_inline(InlineID::BoolAssign,
 												  optional_has_value(self),
-												  node_false()));
+												  node_false(), -1));
 	}
 }
 
 void AutoImplementer::implement_optional_has_value(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	// return self.has_value
 	f->block_node->add(node_return(optional_has_value(self)));
@@ -187,8 +187,8 @@ void AutoImplementer::implement_optional_has_value(Function *f, const Class *t) 
 void AutoImplementer::implement_optional_equal_raw(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto other = add_node_local(f->__get_var("other"));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto other = add_node_local(f->__get_var("other"), -1);
 
 	{
 		// if not self.has_value
@@ -209,13 +209,13 @@ void AutoImplementer::implement_optional_equal_raw(Function *f, const Class *t) 
 void AutoImplementer::implement_optional_equal(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto other = add_node_local(f->__get_var("other"));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto other = add_node_local(f->__get_var("other"), -1);
 
 	{
 		// if self.has_value and other.has_value
 		//     return self.data == other.data
-		auto cmd_and = add_node_operator_by_inline(InlineID::BoolAnd, optional_has_value(self), optional_has_value(other));
+		auto cmd_and = add_node_operator_by_inline(InlineID::BoolAnd, optional_has_value(self), optional_has_value(other), -1);
 
 		if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, optional_data(self), optional_data(other)))
 			f->block_node->add(node_if(cmd_and, node_return(n_eq)));
@@ -225,7 +225,7 @@ void AutoImplementer::implement_optional_equal(Function *f, const Class *t) {
 
 	{
 		// return self.has_value == other.has_value
-		auto n_eq = add_node_operator_by_inline(InlineID::BoolEqual, optional_has_value(self), optional_has_value(other));
+		auto n_eq = add_node_operator_by_inline(InlineID::BoolEqual, optional_has_value(self), optional_has_value(other), -1);
 		f->block_node->add(node_return(n_eq));
 	}
 }

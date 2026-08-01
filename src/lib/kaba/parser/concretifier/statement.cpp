@@ -181,8 +181,8 @@ shared<Node> Concretifier::concretify_statement_try(shared<Node> node, Block *bl
 				do_error("Exception class expected", ex_type);
 			ex->type = type;
 
-			auto *v = ex_block->as_block()->add_var(var_name, tree->get_pointer(type, -1), node->token_id);
-			ex->set_param(0, add_node_local(v));
+			auto *v = ex_block->as_block()->add_var(var_name, tree->get_pointer(type, node->token_id), node->token_id);
+			ex->set_param(0, add_node_local(v, node->token_id));
 		} else {
 			ex->type = common_types._void;
 		}
@@ -243,8 +243,8 @@ shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable
 
 	// "new bind(f, x, y, ...)"
 	for (auto *cf: bind_wrapper_type->get_constructors()) {
-		auto cmd_new = add_node_statement(StatementID::New);
-		auto con = add_node_constructor(cf);
+		auto cmd_new = add_node_statement(StatementID::New, token_id);
+		auto con = add_node_constructor(cf, token_id);
 		shared_array<Node> params = {inner_callable.get()};
 		for (auto c: weak(captures))
 			if (c)
@@ -289,7 +289,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 		if (cmd->type == common_types._void) {
 			f->block_node->params[0] = cmd;
 		} else {
-			auto ret = add_node_statement(StatementID::Return);
+			auto ret = add_node_statement(StatementID::Return, node->token_id);
 			ret->set_num_params(1);
 			ret->params[0] = cmd;
 			f->block_node->params[0] = ret;
@@ -328,7 +328,7 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 // --- no captures?
 	if (captured_variables.num == 0) {
 		f->update_parameters_after_realizing();
-		return add_node_func_name(f);
+		return add_node_func_name(f, node->token_id);
 	}
 
 	auto explicit_param_types = f->literal_param_type;
@@ -388,9 +388,9 @@ shared<Node> Concretifier::concretify_statement_lambda(shared<Node> node, Block 
 	shared_array<Node> capture_nodes;
 	for (auto&& [i,c]: enumerate(captured_variables)) {
 		if (capture_via_ref[i])
-			capture_nodes.add(add_node_local(c)->ref(tree));
+			capture_nodes.add(add_node_local(c, node->token_id)->ref(tree));
 		else
-			capture_nodes.add(add_node_local(c));
+			capture_nodes.add(add_node_local(c, node->token_id));
 	}
 	for ([[maybe_unused]] auto e: explicit_param_types) {
 		capture_nodes.insert(nullptr, 0);

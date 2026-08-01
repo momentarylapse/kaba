@@ -343,7 +343,7 @@ Function* Parser::realize_lambda(shared<Node> node, Class* name_space) {
 	f->block_node = node->params[0]->params[4];
 	f->block_node->link_no = (int_p)f->block;
 
-	node->set_param(0, add_node_func_name(f));
+	node->set_param(0, add_node_func_name(f, node->token_id));
 	return f;
 }
 
@@ -718,7 +718,7 @@ shared<Node> Parser::eval_to_const(shared<Node> cv, Block *block, const Class *t
 	});
 
 	if (cv->kind == NodeKind::Class)
-		return add_node_const(tree->add_constant_pointer(common_types.class_ref, cv->as_class()));
+		return add_node_const(tree->add_constant_pointer(common_types.class_ref, cv->as_class()), cv->token_id);
 
 	if (cv->kind != NodeKind::Constant) {
 		cv->show(common_types._void);

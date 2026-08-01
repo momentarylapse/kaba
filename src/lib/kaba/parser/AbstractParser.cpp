@@ -173,14 +173,14 @@ shared<Node> AbstractParser::parse_abstract_operand_extension_reference(shared<N
 shared<Node> AbstractParser::parse_abstract_value_or_slice() {
 	shared<Node> start;
 	if (Exp.cur == ":") {
-		start = add_node_const(tree->add_constant_int(0));
+		start = add_node_const(tree->add_constant_int(0), Exp.cur_token());
 	} else {
 		start = parse_abstract_operand_greedy();
 	}
 	if (try_consume(":")) {
 		shared<Node> end;
 		if (Exp.cur == "]" or Exp.cur == "," or Exp.cur == ":") {
-			end = add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX));
+			end = add_node_const(tree->add_constant_int(DynamicArray::MAGIC_END_INDEX), Exp.cur_token());
 			// magic value (-_-)'
 		} else {
 			end = parse_abstract_operand_greedy();
@@ -599,7 +599,7 @@ shared<Node> AbstractParser::parse_abstract_statement_for() {
 	// nested loops? (for a in ..., b in ...)
 	while (Exp.cur == ",") {
 		auto f2 = parse_abstract_for_header();
-		auto block = add_node_block(nullptr, common_types.unknown);
+		auto block = add_node_block(nullptr, common_types.unknown, f2->token_id);
 		block->add(f2);
 		inner->set_param(inner->params.num - 1, block);
 		inner = f2;
@@ -670,7 +670,7 @@ shared<Node> AbstractParser::parse_abstract_statement_match() {
 		if (try_consume(Identifier::Else) or try_consume("*")) {
 			if (i == 0)
 				do_error("'match' must not begin with the default pattern", Exp.cur_token() - 1);
-			pattern = add_node_statement(StatementID::Pass);
+			pattern = add_node_statement(StatementID::Pass, Exp.cur_token() - 1);
 		} else {
 			pattern = parse_abstract_operand();
 		}
@@ -688,7 +688,7 @@ shared<Node> AbstractParser::parse_abstract_statement_match() {
 		} else {
 			// single expression
 
-			result = add_node_block(nullptr, common_types.unknown);
+			result = add_node_block(nullptr, common_types.unknown, Exp.cur_token());
 			result->add(parse_abstract_operand_greedy());
 		}
 
@@ -841,7 +841,7 @@ shared<Node> AbstractParser::parse_abstract_statement_if() {
 		// iterative if
 		if (Exp.cur == Identifier::If) {
 			// sub-if's in a new block
-			auto cmd_block = add_node_block(nullptr, common_types.unknown);
+			auto cmd_block = add_node_block(nullptr, common_types.unknown, Exp.cur_token());
 			cmd_if->set_param(2, cmd_block);
 			// parse the next if
 			parse_abstract_complete_command_into_block(cmd_block.get());
@@ -1003,7 +1003,7 @@ shared<Node> AbstractParser::parse_abstract_statement_lambda() {
 		n->set_param(4, parse_abstract_block());
 	} else {
 		// single expression
-		auto b = add_node_block(nullptr, common_types.unknown);
+		auto b = add_node_block(nullptr, common_types.unknown, Exp.cur_token());
 		b->add(parse_abstract_operand_greedy());
 		n->set_param(4, b);
 	}
@@ -1110,7 +1110,7 @@ shared<Node> AbstractParser::parse_abstract_special_function(SpecialFunction *s)
 shared<Node> AbstractParser::parse_abstract_block() {
 	int indent0 = Exp.cur_line->indent;
 
-	auto block = add_node_block(nullptr, common_types.unknown);
+	auto block = add_node_block(nullptr, common_types.unknown, Exp.cur_token());
 
 	while (!Exp.end_of_file()) {
 

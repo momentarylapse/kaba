@@ -388,7 +388,7 @@ void SIAddPackageBase(Context *c) {
 	add_class(common_types.sharable_trait);
 		const_cast<Class*>(common_types.sharable_trait)->from_template = common_types.trait_t;
 		class_add_element(Identifier::SharedCount, common_types.i32, 0);
-		const_cast<Class*>(common_types.sharable_trait)->initializers.add({0, add_node_const(c_zero)});
+		const_cast<Class*>(common_types.sharable_trait)->initializers.add({0, add_node_const(c_zero, -1)});
 
 
 	add_class(common_types.object);

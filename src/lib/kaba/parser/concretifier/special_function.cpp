@@ -85,7 +85,7 @@ shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, B
 		node = cp_node(node);
 		node->set_num_params(2);
 		auto crit = tree->add_constant(common_types.string, -1);
-		node->set_param(1, add_node_const(crit));
+		node->set_param(1, add_node_const(crit, node->token_id));
 	}
 
 	auto array = force_concrete_type(node->params[0]);
@@ -100,7 +100,7 @@ shared<Node> Concretifier::concretify_special_function_sort(shared<Node> node, B
 
 	auto cmd = add_node_call(f, node->token_id);
 	cmd->set_param(0, array);
-	cmd->set_param(1, add_node_class(array->type));
+	cmd->set_param(1, add_node_class(array->type, array->token_id));
 	cmd->set_param(2, crit);
 	cmd->type = array->type;
 	return cmd;
@@ -135,13 +135,13 @@ shared<Node> Concretifier::concretify_special_function_give(shared<Node> node, B
 	if (/*t->is_pointer_shared() or*/ t->is_pointer_owned() or t->is_pointer_owned_not_null()) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0], -1);
 		if (auto f = t->get_member_func(Identifier::func::OwnedGive, t_xfer, {}))
-			return add_node_member_call(f, sub);
+			return add_node_member_call(f, sub, node->token_id);
 		do_error("give...aaaa", sub);
 	} else if (t->is_list() and (t->get_array_element()->is_pointer_owned() or t->get_array_element()->is_pointer_owned_not_null())) {
 		auto t_xfer = tree->request_implicit_class_xfer(t->param[0]->param[0], -1);
 		auto t_xfer_list = tree->request_implicit_class_list(t_xfer, -1);
 		if (auto f = t->get_member_func(Identifier::func::OwnedGive, t_xfer_list, {}))
-			return add_node_member_call(f, sub);
+			return add_node_member_call(f, sub, node->token_id);
 		do_error("give...aaaa", sub);
 	}
 	do_error("give() expects an owned pointer", sub);

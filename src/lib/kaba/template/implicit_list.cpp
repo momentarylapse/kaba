@@ -22,7 +22,7 @@ static shared<Node> sa_num(shared<Node> node) {
 }*/
 
 void AutoImplementer::implement_list_constructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	auto te = t->get_array_element();
 	auto ff = t->get_member_func("__mem_init__", common_types._void, {common_types.i32});
@@ -32,10 +32,10 @@ void AutoImplementer::implement_list_constructor(Function *f, const Class *t) {
 }
 
 void AutoImplementer::implement_list_destructor(Function *f, const Class *t) {
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	if (auto f_clear = t->get_member_func("clear", common_types._void, {}))
-		f->block_node->add(add_node_member_call(f_clear, self));
+		f->block_node->add(add_node_member_call(f_clear, self, -1));
 	else
 		do_error_implicit(f, "clear() missing");
 }
@@ -44,14 +44,14 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto t_el = t->get_array_element();
-	auto n_other = add_node_local(f->__get_var("other"));
-	auto n_self = add_node_local(f->__get_var(Identifier::Self));
+	auto n_other = add_node_local(f->__get_var("other"), -1);
+	auto n_self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	if (auto f_resize = t->get_member_func("resize", common_types._void, {common_types.i32})) {
 		// self.resize(other.num)
 		auto n_other_num = sa_num(n_other);
 
-		auto n_resize = add_node_member_call(f_resize, n_self);
+		auto n_resize = add_node_member_call(f_resize, n_self, -1);
 		n_resize->set_num_params(2);
 		n_resize->set_param(1, n_other_num);
 		f->block_node->add(n_resize);
@@ -66,17 +66,17 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 		auto v_el = f->block->add_var("el", tree->type_ref(t_el), -1);
 		auto v_i = f->block->add_var("i", common_types.i32, -1);
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// other[i]
-		auto n_other_el = add_node_dyn_array(n_other, add_node_local(v_i));
+		auto n_other_el = add_node_dyn_array(n_other, add_node_local(v_i, -1));
 
-		b->add(add_assign(f, "", add_node_local(v_el)->deref(), n_other_el));
+		b->add(add_assign(f, "", add_node_local(v_el, -1)->deref(), n_other_el));
 
-		auto n_for = add_node_statement(StatementID::For);
+		auto n_for = add_node_statement(StatementID::For, -1);
 		// [VAR, INDEX, ARRAY, BLOCK]
-		n_for->set_param(0, add_node_local(v_el));
-		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(0, add_node_local(v_el, -1));
+		n_for->set_param(1, add_node_local(v_i, -1));
 		n_for->set_param(2, n_self);
 		n_for->set_param(3, b);
 		f->block_node->add(n_for);
@@ -86,7 +86,7 @@ void AutoImplementer::implement_list_assign(Function *f, const Class *t) {
 void AutoImplementer::implement_list_clear(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 // delete...
 	if (auto f_del = te->get_destructor()) {
@@ -94,15 +94,15 @@ void AutoImplementer::implement_list_clear(Function *f, const Class *t) {
 		auto *var_i = f->block->add_var("i", common_types.i32, -1);
 		auto *var_el = f->block->add_var("el", tree->type_ref(t->get_array_element()), -1);
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// __delete__
-		auto cmd_delete = add_node_member_call(f_del, add_node_local(var_el)->deref());
+		auto cmd_delete = add_node_member_call(f_del, add_node_local(var_el, -1)->deref(), -1);
 		b->add(cmd_delete);
 
-		auto cmd_for = add_node_statement(StatementID::For);
-		cmd_for->set_param(0, add_node_local(var_el));
-		cmd_for->set_param(1, add_node_local(var_i));
+		auto cmd_for = add_node_statement(StatementID::For, -1);
+		cmd_for->set_param(0, add_node_local(var_el, -1));
+		cmd_for->set_param(1, add_node_local(var_i, -1));
 		cmd_for->set_param(2, self);
 		cmd_for->set_param(3, b);
 
@@ -113,7 +113,7 @@ void AutoImplementer::implement_list_clear(Function *f, const Class *t) {
 
 	{
 		// clear
-		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", common_types._void, {}), self);
+		auto cmd_clear = add_node_member_call(t->get_member_func("__mem_clear__", common_types._void, {}), self, -1);
 		f->block_node->add(cmd_clear);
 	}
 }
@@ -125,33 +125,33 @@ void AutoImplementer::implement_list_resize(Function *f, const Class *t) {
 	auto *var = f->block->add_var("i", common_types.i32, -1);
 	f->block->add_var("num_old", common_types.i32, -1);
 
-	auto num = add_node_local(f->__get_var("num"));
+	auto num = add_node_local(f->__get_var("num"), -1);
 
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	auto self_num = sa_num(self);
 
-	auto num_old = add_node_local(f->__get_var("num_old"));
+	auto num_old = add_node_local(f->__get_var("num_old"), -1);
 
 	{
 		// num_old = self.num
-		f->block_node->add(add_node_operator_by_inline(InlineID::Int32Assign, num_old, self_num));
+		f->block_node->add(add_node_operator_by_inline(InlineID::Int32Assign, num_old, self_num, -1));
 	}
 
 // delete...
 	if (auto f_del = te->get_destructor()) {
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// el := self[i]
-		auto el = add_node_dyn_array(self, add_node_local(var));
+		auto el = add_node_dyn_array(self, add_node_local(var, -1));
 
 		// __delete__
-		auto cmd_delete = add_node_member_call(f_del, el);
+		auto cmd_delete = add_node_member_call(f_del, el, -1);
 		b->add(cmd_delete);
 
 		//  [VAR, START, STOP, STEP, BLOCK]
-		auto cmd_for = add_node_statement(StatementID::ForRange);
-		cmd_for->set_param(0, add_node_local(var));
+		auto cmd_for = add_node_statement(StatementID::ForRange, -1);
+		cmd_for->set_param(0, add_node_local(var, -1));
 		cmd_for->set_param(1, num);
 		cmd_for->set_param(2, self_num);
 		cmd_for->set_param(3, const_int(1));
@@ -164,25 +164,25 @@ void AutoImplementer::implement_list_resize(Function *f, const Class *t) {
 
 	{
 		// resize
-		auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", common_types._void, {common_types.i32}), self);
+		auto c_resize = add_node_member_call(t->get_member_func("__mem_resize__", common_types._void, {common_types.i32}), self, -1);
 		c_resize->set_param(1, num);
 		f->block_node->add(c_resize);
 	}
 
 	// new...
 	if (auto f_init = te->get_default_constructor()) {
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// el := self[i]
-		auto el = add_node_dyn_array(self, add_node_local(var));
+		auto el = add_node_dyn_array(self, add_node_local(var, -1));
 
 		// __init__
-		auto cmd_init = add_node_member_call(f_init, el);
+		auto cmd_init = add_node_member_call(f_init, el, -1);
 		b->add(cmd_init);
 
 		//  [VAR, START, STOP, STEP, BLOCK]
-		auto cmd_for = add_node_statement(StatementID::ForRange);
-		cmd_for->set_param(0, add_node_local(var));
+		auto cmd_for = add_node_statement(StatementID::ForRange, -1);
+		cmd_for->set_param(0, add_node_local(var, -1));
 		cmd_for->set_param(1, num_old);
 		cmd_for->set_param(2, self_num);
 		cmd_for->set_param(3, const_int(1));
@@ -199,8 +199,8 @@ void AutoImplementer::implement_list_remove(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto index = add_node_local(f->__get_var("index"));
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto index = add_node_local(f->__get_var("index"), -1);
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	// delete...
 	if (auto f_del = te->get_destructor()) {
@@ -209,7 +209,7 @@ void AutoImplementer::implement_list_remove(Function *f, const Class *t) {
 		auto cmd_el = add_node_dyn_array(self, index);
 
 		// __delete__
-		auto cmd_delete = add_node_member_call(f_del, cmd_el);
+		auto cmd_delete = add_node_member_call(f_del, cmd_el, -1);
 		f->block_node->add(cmd_delete);
 	} else if (te->needs_destructor()) {
 		do_error_implicit(f, "element destructor missing");
@@ -217,7 +217,7 @@ void AutoImplementer::implement_list_remove(Function *f, const Class *t) {
 
 	{
 		// resize
-		auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", common_types._void, {common_types.i32}), self);
+		auto c_remove = add_node_member_call(t->get_member_func("__mem_remove__", common_types._void, {common_types.i32}), self, -1);
 		c_remove->set_param(1, index);
 		f->block_node->add(c_remove);
 	}
@@ -227,21 +227,21 @@ void AutoImplementer::implement_list_add(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto item = add_node_local(f->__get_var("x"));
+	auto item = add_node_local(f->__get_var("x"), -1);
 
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	{
 		// resize(self.num + 1)
-		auto cmd_add = add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), const_int(1));
-		auto cmd_resize = add_node_member_call(t->get_member_func("resize", common_types._void, {common_types.i32}), self);
+		auto cmd_add = add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), const_int(1), -1);
+		auto cmd_resize = add_node_member_call(t->get_member_func("resize", common_types._void, {common_types.i32}), self, -1);
 		cmd_resize->set_param(1, cmd_add);
 		f->block_node->add(cmd_resize);
 	}
 
 	{
 		// el := self.data[self.num - 1]
-		auto cmd_sub = add_node_operator_by_inline(InlineID::Int32Subtract, sa_num(self), const_int(1));
+		auto cmd_sub = add_node_operator_by_inline(InlineID::Int32Subtract, sa_num(self), const_int(1), -1);
 		auto cmd_el = add_node_dyn_array(self, cmd_sub);
 
 		f->block_node->add(add_assign(f, "", format("no operator %s = %s for elements found", te->long_name(), te->long_name()), cmd_el, item));
@@ -252,13 +252,13 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto other = add_node_local(f->__get_var("other"));
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto other = add_node_local(f->__get_var("other"), -1);
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	{
 		// if self.num != other.num
 		//     return false
-		auto n_eq = add_node_operator_by_inline(InlineID::Int32NotEqual,  sa_num(self), sa_num(other));
+		auto n_eq = add_node_operator_by_inline(InlineID::Int32NotEqual,  sa_num(self), sa_num(other), -1);
 		f->block_node->add(node_if(n_eq, node_return(node_false())));
 	}
 
@@ -269,29 +269,29 @@ void AutoImplementer::implement_list_equal(Function *f, const Class *t) {
 		auto v_el = f->block->add_var("el", tree->type_ref(t->get_array_element()), -1);
 		auto v_i = f->block->add_var("i", common_types.i32, -1);
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// other[i]
-		auto n_other_el = add_node_dyn_array(other, add_node_local(v_i));
+		auto n_other_el = add_node_dyn_array(other, add_node_local(v_i, -1));
 
-		auto n_if = add_node_statement(StatementID::If);
+		auto n_if = add_node_statement(StatementID::If, -1);
 		n_if->set_num_params(2);
 		n_if->set_param(1, node_return(node_false()));
 		b->add(n_if);
 
-		if (auto n_neq = parser->con.link_operator_id(OperatorID::NotEqual, add_node_local(v_el)->deref(), n_other_el)) {
+		if (auto n_neq = parser->con.link_operator_id(OperatorID::NotEqual, add_node_local(v_el, -1)->deref(), n_other_el)) {
 			n_if->set_param(0, n_neq);
-		} else if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, add_node_local(v_el)->deref(), n_other_el)) {
-			n_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, n_eq, nullptr));
+		} else if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, add_node_local(v_el, -1)->deref(), n_other_el)) {
+			n_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, n_eq, nullptr, -1));
 		} else {
 			do_error_implicit(f, format("neither operator %s != %s nor == found", te->long_name(), te->long_name()));
 		}
 
 
-		auto n_for = add_node_statement(StatementID::For);
+		auto n_for = add_node_statement(StatementID::For, -1);
 		// [VAR, INDEX, ARRAY, BLOCK]
-		n_for->set_param(0, add_node_local(v_el));
-		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(0, add_node_local(v_el, -1));
+		n_for->set_param(1, add_node_local(v_i, -1));
 		n_for->set_param(2, self);
 		n_for->set_param(3, b);
 		f->block_node->add(n_for);
@@ -307,8 +307,8 @@ void AutoImplementer::implement_list_contains(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto other = add_node_local(f->__get_var("x"));
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto other = add_node_local(f->__get_var("x"), -1);
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	{
 		// for i=>e in self
@@ -317,26 +317,26 @@ void AutoImplementer::implement_list_contains(Function *f, const Class *t) {
 		auto v_el = f->block->add_var("el", tree->type_ref(t->get_array_element()), -1);
 		auto v_i = f->block->add_var("i", common_types.i32, -1);
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
-		auto n_if = add_node_statement(StatementID::If);
+		auto n_if = add_node_statement(StatementID::If, -1);
 		n_if->set_num_params(2);
 		n_if->set_param(1, node_return(node_true()));
 		b->add(n_if);
 
-		if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, add_node_local(v_el)->deref(), other)) {
+		if (auto n_eq = parser->con.link_operator_id(OperatorID::Equal, add_node_local(v_el, -1)->deref(), other)) {
 			n_if->set_param(0, n_eq);
-		} else if (auto n_neq = parser->con.link_operator_id(OperatorID::NotEqual, add_node_local(v_el)->deref(), other)) {
-			n_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, n_neq, nullptr));
+		} else if (auto n_neq = parser->con.link_operator_id(OperatorID::NotEqual, add_node_local(v_el, -1)->deref(), other)) {
+			n_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, n_neq, nullptr, -1));
 		} else {
 			do_error_implicit(f, format("neither operator %s != %s nor == found", te->long_name(), te->long_name()));
 		}
 
 
-		auto n_for = add_node_statement(StatementID::For);
+		auto n_for = add_node_statement(StatementID::For, -1);
 		// [VAR, INDEX, ARRAY, BLOCK]
-		n_for->set_param(0, add_node_local(v_el));
-		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(0, add_node_local(v_el, -1));
+		n_for->set_param(1, add_node_local(v_i, -1));
 		n_for->set_param(2, self);
 		n_for->set_param(3, b);
 		f->block_node->add(n_for);
@@ -352,14 +352,14 @@ void AutoImplementer::implement_list_join_into(Function *f, const Class *t) {
 	if (!f)
 		return;
 	auto te = t->get_array_element();
-	auto other = add_node_local(f->__get_var("other"));
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto other = add_node_local(f->__get_var("other"), -1);
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	auto i0 = f->block->add_var("i0", common_types.i32, -1);
 
 	{
 		// i0 = len(self)
-		f->block_node->add(add_assign(f, "", add_node_local(i0), sa_num(self)));
+		f->block_node->add(add_assign(f, "", add_node_local(i0, -1), sa_num(self)));
 	}
 
 
@@ -367,9 +367,9 @@ void AutoImplementer::implement_list_join_into(Function *f, const Class *t) {
 		// self.resize(self.num + other.num)
 		auto other_num = sa_num(other);
 
-		auto n_resize = add_node_member_call(f_resize, self);
+		auto n_resize = add_node_member_call(f_resize, self, -1);
 		n_resize->set_num_params(2);
-		n_resize->set_param(1, add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), sa_num(other)));
+		n_resize->set_param(1, add_node_operator_by_inline(InlineID::Int32Add, sa_num(self), sa_num(other), -1));
 		f->block_node->add(n_resize);
 	} else {
 		do_error_implicit(f, format("no %s.resize(int) found", t->long_name()));
@@ -383,17 +383,17 @@ void AutoImplementer::implement_list_join_into(Function *f, const Class *t) {
 		auto v_el = f->block->add_var("el", tree->type_ref(te), -1);
 		auto v_i = f->block->add_var("i", common_types.i32, -1);
 
-		auto b = add_node_block(new Block(f, f->block), common_types._void);
+		auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 		// self[i + i0]
-		auto self_el = add_node_dyn_array(self, add_node_operator_by_inline(InlineID::Int32Add, add_node_local(v_i), add_node_local(i0)));
+		auto self_el = add_node_dyn_array(self, add_node_operator_by_inline(InlineID::Int32Add, add_node_local(v_i, -1), add_node_local(i0, -1), -1));
 
-		b->add(add_assign(f, "", self_el, add_node_local(v_el)->deref()));
+		b->add(add_assign(f, "", self_el, add_node_local(v_el, -1)->deref()));
 
-		auto n_for = add_node_statement(StatementID::For);
+		auto n_for = add_node_statement(StatementID::For, -1);
 		// [VAR, INDEX, ARRAY, BLOCK]
-		n_for->set_param(0, add_node_local(v_el));
-		n_for->set_param(1, add_node_local(v_i));
+		n_for->set_param(0, add_node_local(v_el, -1));
+		n_for->set_param(1, add_node_local(v_i, -1));
 		n_for->set_param(2, other);
 		n_for->set_param(3, b);
 		f->block_node->add(n_for);
@@ -403,20 +403,20 @@ void AutoImplementer::implement_list_join_into(Function *f, const Class *t) {
 void AutoImplementer::implement_list_join(Function *f, const Class *t) {
 	if (!f)
 		return;
-	auto other = add_node_local(f->__get_var("other"));
-	auto self = add_node_local(f->__get_var(Identifier::Self));
+	auto other = add_node_local(f->__get_var("other"), -1);
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
 
 	auto r = f->block->add_var("r", t, -1);
 
 	{
 		// r = self
-		f->block_node->add(add_assign(f, "", add_node_local(r), self));
+		f->block_node->add(add_assign(f, "", add_node_local(r, -1), self));
 	}
 
 	if (auto f_join = t->get_member_func(Identifier::func::BitOrAssign, common_types._void, {t})) {
 		// r |= other
 
-		auto n_join = add_node_member_call(f_join, add_node_local(r));
+		auto n_join = add_node_member_call(f_join, add_node_local(r, -1), -1);
 		n_join->set_num_params(2);
 		n_join->set_param(1, other);
 		f->block_node->add(n_join);
@@ -427,7 +427,7 @@ void AutoImplementer::implement_list_join(Function *f, const Class *t) {
 
 	{
 		// return r
-		f->block_node->add(node_return(add_node_local(r)));
+		f->block_node->add(node_return(add_node_local(r, -1)));
 	}
 }
 
@@ -435,17 +435,17 @@ void AutoImplementer::implement_list_give(Function *f, const Class *t) {
 	auto t_el = t->get_array_element();
 	auto t_xfer = tree->request_implicit_class_xfer(t_el->param[0], -1);
 	auto t_xfer_list = tree->request_implicit_class_list(t_xfer, -1);
-	auto self = add_node_local(f->__get_var(Identifier::Self));
-	auto temp = add_node_local(f->block->add_var("temp", t_xfer_list, -1));
+	auto self = add_node_local(f->__get_var(Identifier::Self), -1);
+	auto temp = add_node_local(f->block->add_var("temp", t_xfer_list, -1), -1);
 
 	{
 		// memcpy(temp, self)
-		f->block_node->add(add_node_operator_by_inline(InlineID::ChunkAssign, temp, self));
+		f->block_node->add(add_node_operator_by_inline(InlineID::ChunkAssign, temp, self, -1));
 	}
 
 	{
 		// self.forget()
-		f->block_node->add(add_node_member_call(t->get_member_func("__mem_forget__", common_types._void, {}), self));
+		f->block_node->add(add_node_member_call(t->get_member_func("__mem_forget__", common_types._void, {}), self, -1));
 	}
 
 	{

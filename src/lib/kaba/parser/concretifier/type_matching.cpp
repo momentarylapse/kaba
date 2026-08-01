@@ -441,7 +441,7 @@ shared<Node> Concretifier::apply_type_cast_basic(const CastingDataSingle &cast, 
 			if (!type_match_with_cast(e, false, f->literal_param_type[i+1], c.params[i])) {
 				do_error("tuple as constructor...mismatch", e);
 			}
-		auto cmd = add_node_constructor(f);
+		auto cmd = add_node_constructor(f, node->token_id);
 		c.wanted = f->literal_param_type.sub_ref(1);
 		return apply_params_with_cast(cmd, node->params, c, 1);
 	}
@@ -451,7 +451,7 @@ shared<Node> Concretifier::apply_type_cast_basic(const CastingDataSingle &cast, 
 		if (!type_match_with_cast(node, false, f->literal_param_type[1], c)) {
 			do_error("auto constructor...mismatch", node);
 		}
-		auto cmd = add_node_constructor(f);
+		auto cmd = add_node_constructor(f, node->token_id);
 		CastingDataCall cc;
 		cc.params = {c};
 		cc.wanted = f->literal_param_type.sub_ref(1);

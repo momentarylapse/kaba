@@ -433,22 +433,22 @@ shared<Node> Node::change_type(const Class *type, int token_id) const {
 
 
 // recursive
-shared<Node> cp_node(shared<Node> c, Block *parent_block) {
+shared<Node> cp_node(shared<Node> c, Block *parent_block, int override_token_id) {
 	shared<Node> cmd;
 	if (c->kind == NodeKind::Block and c->as_block()) {
 		if (!parent_block)
 			parent_block = c->as_block()->parent;
-		cmd = add_node_block(new Block(c->as_block()->function, parent_block), c->type);
+		cmd = add_node_block(new Block(c->as_block()->function, parent_block), c->type, c->token_id);
 		cmd->as_block()->vars = c->as_block()->vars;
 		parent_block = cmd->as_block();
 	} else {
 		cmd = new Node(c->kind, c->link_no, c->type, c->flags);
 	}
-	cmd->token_id = c->token_id;
+	cmd->token_id = (override_token_id >= 0) ? override_token_id : c->token_id;
 	cmd->set_num_params(c->params.num);
 	for (int i=0;i<c->params.num;i++)
 		if (c->params[i])
-			cmd->set_param(i, cp_node(c->params[i], parent_block));
+			cmd->set_param(i, cp_node(c->params[i], parent_block, override_token_id));
 	return cmd;
 }
 
