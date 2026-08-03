@@ -201,7 +201,7 @@ string Node::signature(const Class *ns) const {
 	if (kind == NodeKind::Class)
 		return as_class()->cname(ns);
 	if (kind == NodeKind::Module)
-		return as_class()->cname(ns);
+		return as_module()->filename.basename();
 	if (kind == NodeKind::ClassElement)
 		return ((const ClassElement*)(const void*)link_no)->name;
 	if (kind == NodeKind::Register)

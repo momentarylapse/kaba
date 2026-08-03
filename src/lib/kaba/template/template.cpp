@@ -344,7 +344,7 @@ TemplateClassInstanceManager::TemplateClassInstanceManager(const Class* template
 }
 
 const Class* TemplateClassInstanceManager::request_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	// already instanciated?
+	// already instantiated?
 	for (auto &i: instances)
 		if (i.params == params and i.array_size == array_size)
 			return i.c;

@@ -543,9 +543,6 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 
 			tree->parser->realize_class(nn, _namespace, _name);
 			return t;
-
-			tree->do_error("TEMPLATE INSTANCE...", -1);
-			return nullptr;
 		});
 	}
 
