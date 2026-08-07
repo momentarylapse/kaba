@@ -44,8 +44,9 @@ bool type_match_up(const Class *given, const Class *wanted);
 
 
 
-Class::Class(const Class* _from_template, const string &_name, int64 _size, int _alignment, SyntaxTree *_owner, const Class *_parent, const Array<const Class*> &_param) {
+Class::Class(MetaClass _meta, const Class* _from_template, const string &_name, int64 _size, int _alignment, SyntaxTree *_owner, const Class *_parent, const Array<const Class*> &_param) {
 	flags = Flags::FullyParsed;
+	meta_class = _meta;
 	name = _name;
 	owner = _owner;
 	size = _size;
@@ -127,11 +128,11 @@ string Class::cname(const Class *ns) const {
 }
 
 bool Class::is_regular() const {
-	return from_template == nullptr;
+	return from_template == nullptr and meta_class == MetaClass::NONE;
 }
 
 bool Class::is_struct() const {
-	return from_template == common_types.struct_t;
+	return meta_class == MetaClass::STRUCT;
 }
 
 bool Class::is_array() const {
@@ -193,19 +194,20 @@ bool Class::is_reference() const {
 }
 
 bool Class::is_enum() const {
-	return from_template == common_types.enum_t;
+	return meta_class == MetaClass::ENUM;
+	//return from_template == common_types.enum_t;
 }
 
 bool Class::is_namespace() const {
-	return from_template == common_types.namespace_t;
+	return meta_class == MetaClass::NAMESPACE;
 }
 
 bool Class::is_interface() const {
-	return from_template == common_types.interface_t;
+	return meta_class == MetaClass::INTERFACE;
 }
 
 bool Class::is_trait() const {
-	return from_template == common_types.trait_t;
+	return meta_class == MetaClass::TRAIT;
 }
 
 bool Class::is_dict() const {

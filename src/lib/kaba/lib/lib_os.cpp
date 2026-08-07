@@ -294,15 +294,15 @@ void SIAddPackageOS(Context *c) {
 	auto TypeFileStreamXfer = add_type_p_xfer(TypeFileStream);
 	auto TypeFileStreamSharedNN = add_type_p_shared_not_null(TypeFileStream);
 	auto TypeFilesystem = add_type("fs", 0);
-	const_cast<Class*>(TypeFilesystem)->from_template = common_types.namespace_t;
+	const_cast<Class*>(TypeFilesystem)->meta_class = MetaClass::NAMESPACE;
 	auto TypeFileError = add_type("FileError", sizeof(KabaFileError));
 	auto TypeCommandLineParser = add_type("CommandLineParser", sizeof(CommandLineParser));
 	common_types.os_configuration = add_type("Configuration", sizeof(Configuration));
 	auto TypeSystemType = add_type_enum("SystemType");
 	auto TypeTerminal = add_type("terminal", 0);
-	const_cast<Class*>(TypeTerminal)->from_template = common_types.namespace_t;
+	const_cast<Class*>(TypeTerminal)->meta_class = MetaClass::NAMESPACE;
 	auto TypeApp = add_type("app", 0);
-	const_cast<Class*>(TypeApp)->from_template = common_types.namespace_t;
+	const_cast<Class*>(TypeApp)->meta_class = MetaClass::NAMESPACE;
 
 	auto TypeStringOptional = add_type_optional(common_types.string);
 	lib_create_optional<string>(TypeStringOptional);

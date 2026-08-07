@@ -47,10 +47,19 @@ enum class DeriveFlags {
 };
 DeriveFlags operator|(DeriveFlags a, DeriveFlags b);
 
+enum class MetaClass {
+	NONE,
+	STRUCT,
+	ENUM,
+	TRAIT,
+	INTERFACE,
+	NAMESPACE
+};
+
 struct Class : Sharable<base::Empty> {
 	
 	//Class();
-	Class(const Class* from_template, const string &name, int64 size, int alignment, SyntaxTree *owner, const Class *parent = nullptr, const Array<const Class*> &param = {});
+	Class(MetaClass meta, const Class* from_template, const string &name, int64 size, int alignment, SyntaxTree *owner, const Class *parent = nullptr, const Array<const Class*> &param = {});
 	~Class();
 	string name;
 	string long_name() const;
@@ -60,6 +69,7 @@ struct Class : Sharable<base::Empty> {
 	int array_length;
 	const Class* from_template;
 	Flags flags;
+	MetaClass meta_class;
 
 	bool is_regular() const;
 	bool is_struct() const;

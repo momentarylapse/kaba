@@ -396,7 +396,7 @@ void Parser::parse_import() {
 }
 
 void Parser::realize_enum(shared<Node> node, Class *_namespace) {
-	auto _class = tree->create_new_class(node->params[0]->as_token(), common_types.enum_t, sizeof(int), -1, nullptr, {}, _namespace, node->token_id);
+	auto _class = tree->create_new_class(node->params[0]->as_token(), MetaClass::ENUM, common_types.enum_t, sizeof(int), -1, nullptr, {}, _namespace, node->token_id);
 	_class->flags = node->flags;
 	if (node->params[1]) {
 		// as @noauto
@@ -476,16 +476,16 @@ void parser_class_add_element(Parser *p, Class *_class, const string &name, cons
 	}
 }
 
-const Class* parse_class_type(const string& e) {
+MetaClass parse_meta_class(const string& e) {
 	if (e == Identifier::Interface)
-		return common_types.interface_t;
+		return MetaClass::INTERFACE;
 	if (e == Identifier::Trait)
-		return common_types.trait_t;
+		return MetaClass::TRAIT;
 	if (e == Identifier::Namespace)
-		return common_types.namespace_t;
+		return MetaClass::NAMESPACE;
 	if (e == Identifier::Struct)
-		return common_types.struct_t;
-	return nullptr;
+		return MetaClass::STRUCT;
+	return MetaClass::NONE;
 }
 
 Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64& var_offset0, const string& name_overwrite) {
@@ -510,7 +510,7 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 		if (!_class)
 			tree->module->do_error_internal("class declaration ...not found " + name);
 		_class->token_id = node->token_id;
-		_class->from_template = parse_class_type(node->params[0]->as_token()); // class/struct/interface;
+		_class->meta_class = parse_meta_class(node->params[0]->as_token()); // class/struct/interface;
 		if (flags_has(node->flags, Flags::Extern))
 			flags_set(_class->flags, Flags::Extern);
 	}
@@ -538,7 +538,9 @@ Class *Parser::realize_class_header(shared<Node> node, Class* _namespace, int64&
 
 			string _name = format("%s[%s]", _nn->params[1]->as_token(), tparams[0]->name);
 
-			Class *t = tree->create_new_class(_name, _nn->as_class(), 0, 0, nullptr, {}, _namespace, _nn->token_id);
+			// TODO MetaClass...
+			auto _template = _nn->as_class();
+			Class *t = tree->create_new_class(_name, _template->meta_class, _template, 0, 0, nullptr, {}, _namespace, _nn->token_id);
 			flags_clear(t->flags, Flags::FullyParsed);
 
 			tree->parser->realize_class(nn, _namespace, _name);
@@ -879,7 +881,7 @@ Function* Parser::realize_function(shared<Node> node, const Class* default_type,
 void Parser::prerealize_all_class_names_in_block(shared<Node> node, Class *ns) {
 	for (auto n: weak(node->params)) {
 		if (n and n->kind == NodeKind::AbstractClass and !flags_has(n->flags, Flags::Override)) {
-			Class *t = tree->create_new_class(n->params[1]->as_token(), nullptr, 0, 0, nullptr, {}, ns, n->token_id);
+			Class *t = tree->create_new_class(n->params[1]->as_token(), MetaClass::NONE, nullptr, 0, 0, nullptr, {}, ns, n->token_id);
 			flags_clear(t->flags, Flags::FullyParsed);
 
 			prerealize_all_class_names_in_block(n, t);

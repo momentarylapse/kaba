@@ -312,7 +312,7 @@ void TemplateClassInstantiatorDict::add_function_headers(Class* c) {
 	add_class(c);
 		class_add_func("keys", common_types.string_list, &XDict<int>::keys, Flags::Pure); // happens to work for generic types :p
 
-	[[maybe_unused]] auto t_row = c->owner->create_new_class_no_check("Row", nullptr, dict_row_size(t_value), 0, nullptr, {}, c, -1);
+	[[maybe_unused]] auto t_row = c->owner->create_new_class_no_check("Row", MetaClass::NONE, nullptr, dict_row_size(t_value), 0, nullptr, {}, c, -1);
 }
 
 }
