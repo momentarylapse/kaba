@@ -709,8 +709,16 @@ shared<Node> Concretifier::concretify_operator(shared<Node> node, Block *block, 
 		auto param1 = node->params[0];
 		auto param2 = force_concrete_type_if_function(node->params[1]);
 		auto op = link_operator(op_no, param1, param2, node->token_id);
-		if (!op)
+		if (!op) {
+			if (op_no->id == OperatorID::NotEqual) {
+				// A!=B  ->  not(A==B)
+				op = link_operator(&abstract_operators[(int)OperatorID::Equal], param1, param2, node->token_id);
+				if (op)
+					if (auto _not = link_unary_operator(&abstract_operators[(int)OperatorID::Negate], op, block, node->token_id))
+						return _not;
+			}
 			do_error(format("no operator found: '%s %s %s'", force_concrete_type(param1)->type->long_name(), op_no->name, give_useful_type(this, param2)->long_name()), node);
+		}
 		return op;
 	} else {
 		return link_unary_operator(op_no, node->params[0], block, node->token_id);

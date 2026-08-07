@@ -13,14 +13,6 @@ namespace kaba {
 
 string class_name_might_need_parantheses(const Class *t);
 
-static shared<Node> sa_num(shared<Node> node) {
-	return node->shift(config.target.pointer_size, common_types.i32);
-}
-
-/*static shared<Node> sa_data(shared<Node> node) {
-	return node->shift(config.pointer_size, common_types.i32);
-}*/
-
 void AutoImplementer::implement_list_constructor(Function *f, const Class *t) {
 	auto te = t->get_array_element();
 	implement_from_code(f, format("__mem_init__(%d)", te->size));
