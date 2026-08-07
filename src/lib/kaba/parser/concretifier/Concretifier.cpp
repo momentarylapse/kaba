@@ -1021,7 +1021,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		if (operands.num > 1) {
 			for (auto o: weak(operands))
 				o->show();
-			msg_write(format("WARNING: node not unique:  %s  -  line %d", node->as_token(), reinterpret_cast<SyntaxTree*>(node->link_no)->expressions.token_physical_line_no(node->token_id) + 1));
+			msg_write(format("WARNING: node not unique:  %s  -  line %d", node->as_token(), reinterpret_cast<ExpressionBuffer*>(node->link_no)->token_physical_line_no(node->token_id) + 1));
 		}
 		if (operands.num > 0)
 			return operands[0];
