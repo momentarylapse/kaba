@@ -371,7 +371,7 @@ shared<Node> Concretifier::link_operator(AbstractOperator *primop, shared<Node> 
 		return op;
 	}
 
-	if (p1->is_some_pointer_not_null())
+	if (p1->is_some_pointer_not_null() and !flags_has(param1->flags, Flags::Noderef))
 		return link_operator(primop, param1->deref(), param2, token_id);
 
 	return nullptr;
@@ -479,10 +479,12 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 		msg_write("FFF");
 	}
 
-	base = deref_if_reference(base);
+	base = try_auto_deref(base);
 
-	if (base->type->is_some_pointer() and !base->type->is_some_pointer_not_null())
+	if (base->type->is_some_pointer() and !base->type->is_some_pointer_not_null() and !flags_has(base->flags, Flags::Noderef)) {
+		msg_write(base->type->long_name());
 		do_error("can not implicitly dereference a pointer that can be null. Use '!' or 'for . in .'", node);
+	}
 
 	auto links = tree->get_element_of(base, el, token_id);
 	if (links.num > 0)
@@ -550,7 +552,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 	operand = force_concrete_type(operand);
 
 	// auto deref?
-	operand = deref_if_reference(operand);
+	operand = try_auto_deref(operand);
 
 	if (operand->type->is_pointer_raw())
 		do_error(format("using pointer type '%s' as an array (like in C) is deprecated", operand->type->long_name()), index);
@@ -779,7 +781,9 @@ shared<Node> Concretifier::concretify_var_declaration(shared<Node> node, Block *
 		auto rhs = force_concrete_type(concretify_node(node->params[2]->params[1], block, ns));
 		node->params[2]->params[1] = rhs;
 		// don't create xfer[X] variables!
-		type = type_ownify_xfer(tree, rhs->type, node->token_id);
+		type = rhs->type;
+		if (!flags_has(rhs->flags, Flags::Noderef))
+			type = type_ownify_xfer(tree, rhs->type, node->token_id);
 	}
 
 	//as_const

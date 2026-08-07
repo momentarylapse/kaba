@@ -67,7 +67,8 @@ enum class SpecialFunctionID {
 	Filter,
 	Dyn,
 	Weak,
-	Give
+	Give,
+	Noderef
 };
 
 struct SpecialFunction {

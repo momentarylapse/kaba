@@ -221,7 +221,7 @@ shared<Node> Parser::try_parse_format_string(Block *block, Value &v, int token_i
 		
 		//try {
 			auto n = parse_operand_greedy(block, false);
-			n = con.deref_if_reference(n);
+			n = con.try_auto_deref(n);
 
 			if (fmt != "") {
 				n = apply_format(n, fmt);

@@ -131,7 +131,7 @@ shared<Node> Concretifier::concretify_statement_for(shared<Node> node, Block *bl
 	// [VAR, INDEX, CONTAINER, BLOCK]
 
 	auto container = force_concrete_type(concretify_node(node->params[2], block, ns));
-	container = deref_if_reference(container);
+	container = try_auto_deref(container);
 
 	if (node->params[0]->is_mutable() and !container->is_mutable())
 		do_error("can not iterate mutating over a constant container", node);

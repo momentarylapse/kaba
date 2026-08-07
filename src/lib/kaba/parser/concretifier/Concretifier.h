@@ -43,8 +43,7 @@ public:
 
 	enum TypeCastId {
 		NONE = -1,
-		DEREFERENCE = -2,
-		REFERENCE = -3,
+		REFERENCE = -2,
 		OWN_STRING = -10,
 		ABSTRACT_LIST = -20,
 		ABSTRACT_TUPLE = -21,
@@ -106,6 +105,7 @@ public:
 	shared<Node> concretify_special_function_filter(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_weak(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_special_function_give(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_special_function_noderef(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> force_concrete_type(shared<Node> node);
 	shared<Node> force_concrete_type_if_function(shared<Node> node);
 	void force_concrete_types(shared_array<Node> &nodes);
@@ -144,7 +144,7 @@ public:
 	shared<Node> check_param_link(shared<Node> link, const Class *type, const string &f_name = "", int param_no = -1, int num_params = 1);
 
 
-	shared<Node> deref_if_reference(shared<Node> node);
+	shared<Node> try_auto_deref(shared<Node> node);
 	shared<Node> add_converter_str(shared<Node> sub, bool repr);
 
 	shared<Node> link_special_operator_is(shared<Node> param1, shared<Node> param2, int token_id);

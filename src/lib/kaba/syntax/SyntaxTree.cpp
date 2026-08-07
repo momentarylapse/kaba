@@ -260,7 +260,7 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 		type = operand->as_module()->tree->base_class;
 		allow_member = false;
 	//} else if (type->is_some_pointer()) {
-	} else if (type->is_some_pointer_not_null()) {
+	} else if (type->is_some_pointer_not_null() and !flags_has(operand->flags, Flags::Noderef)) {
 		// pointer -> dereference
 		type = type->param[0];
 		deref = true;

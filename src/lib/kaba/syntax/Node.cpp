@@ -72,7 +72,7 @@ string kind2str(NodeKind kind) {
 	if (kind == NodeKind::Array)
 		return "array element";
 	if (kind == NodeKind::DynamicArray)
-		return "dynamic array element";
+		return "list element";
 	if (kind == NodeKind::PointerAsArray)
 		return "pointer as array element";
 	if (kind == NodeKind::Reference)

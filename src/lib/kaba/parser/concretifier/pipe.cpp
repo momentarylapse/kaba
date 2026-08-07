@@ -214,7 +214,7 @@ shared<Node> Concretifier::build_function_pipe(const shared<Node> &abs_input, co
 	if (input->type == common_types.unknown)
 		input = concretify_node(input, block, ns);
 	input = force_concrete_type(input);
-	input = deref_if_reference(input);
+	input = try_auto_deref(input);
 
 	if ((rhs->kind == NodeKind::AbstractToken)) {
 		if (auto s = parser->which_special_function(rhs->as_token())) {

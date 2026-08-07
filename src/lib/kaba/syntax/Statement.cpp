@@ -86,6 +86,7 @@ void SIAddStatements() {
 	add_special_function(Identifier::Dyn, SpecialFunctionID::Dyn, 1, 1);
 	add_special_function(Identifier::Weak, SpecialFunctionID::Weak, 1, 1);
 	add_special_function(Identifier::Give, SpecialFunctionID::Give, 1, 1);
+	add_special_function(Identifier::Noderef, SpecialFunctionID::Noderef, 1, 1);
 }
 
 
