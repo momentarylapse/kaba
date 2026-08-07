@@ -55,7 +55,7 @@ int64 s2i2(const string &str) {
 }
 
 Parser::Parser(SyntaxTree *t) :
-	AbstractParser(t),
+	AbstractParser(t, t->expressions),
 	con(t->module->context, this, t),
 	transformer(t),
 	auto_implementer(this, t)

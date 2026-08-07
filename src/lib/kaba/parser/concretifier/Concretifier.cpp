@@ -1706,11 +1706,11 @@ shared<Node> Concretifier::build_lambda_template(const shared<Node>& param, cons
 	auto pnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
 	pnode->set_num_params(3);
 	pnode->params[0] = param;
-	pnode->params[1] = add_node_token(tree, ExpressionBuffer::TOKEN_X);
+	pnode->params[1] = add_node_token(&tree->expressions, ExpressionBuffer::TOKEN_X);
 	node->set_param(2, pnode);
 
 	auto tnode = new Node(NodeKind::AbstractTypeList, 0, common_types.unknown);
-	tnode->params = {add_node_token(tree, ExpressionBuffer::TOKEN_X)};
+	tnode->params = {add_node_token(&tree->expressions, ExpressionBuffer::TOKEN_X)};
 	node->set_param(3, tnode);
 
 	auto _block = add_node_block(nullptr, common_types.unknown, token_id);

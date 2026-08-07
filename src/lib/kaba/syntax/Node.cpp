@@ -332,7 +332,7 @@ AbstractOperator *Node::as_abstract_op() const {
 }
 
 string Node::as_token() const {
-	return reinterpret_cast<SyntaxTree*>((int_p)link_no)->expressions.get_token(token_id);
+	return reinterpret_cast<ExpressionBuffer*>((int_p)link_no)->get_token(token_id);
 }
 
 void Node::set_instance(shared<Node> p) {
@@ -601,15 +601,15 @@ shared<Node> make_constructor_static(shared<Node> n, const string &name) {
 	return n;
 }
 
-shared<Node> add_node_named_parameter(SyntaxTree* tree, int name_token_id, shared<Node> param) {
+shared<Node> add_node_named_parameter(ExpressionBuffer* buf, int name_token_id, shared<Node> param) {
 	auto n = new Node(NodeKind::NamedParameter, 0, param->type, Flags::None, name_token_id);
 	n->set_num_params(2);
-	n->set_param(0, add_node_token(tree, name_token_id));
+	n->set_param(0, add_node_token(buf, name_token_id));
 	n->set_param(1, param);
 	return n;
 }
-shared<Node> add_node_token(SyntaxTree* tree, int token_id) {
-	return new Node(NodeKind::AbstractToken, (int_p)tree, common_types.unknown, Flags::None, token_id);
+shared<Node> add_node_token(ExpressionBuffer* buf, int token_id) {
+	return new Node(NodeKind::AbstractToken, (int_p)buf, common_types.unknown, Flags::None, token_id);
 }
 
 shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Node> p1, const shared<Node> p2, int token_id, const Class *override_type) {

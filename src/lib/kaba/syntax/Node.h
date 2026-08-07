@@ -21,6 +21,7 @@ struct Class;
 struct Block;
 struct SyntaxTree;
 class Module;
+struct ExpressionBuffer;
 struct Function;
 struct Variable;
 struct Constant;
@@ -196,8 +197,8 @@ shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class 
 shared<Node> add_node_slice(shared<Node> start, shared<Node> end, shared<Node> step);
 shared<Node> add_node_constructor(const Function *f, int token_id);
 shared<Node> make_constructor_static(shared<Node> n, const string &name);
-shared<Node> add_node_named_parameter(SyntaxTree* tree, int name_token_id, shared<Node> param);
-shared<Node> add_node_token(SyntaxTree* tree, int token_id);
+shared<Node> add_node_named_parameter(ExpressionBuffer* buf, int name_token_id, shared<Node> param);
+shared<Node> add_node_token(ExpressionBuffer* buf, int token_id);
 
 string kind2str(NodeKind kind);
 string node2str(SyntaxTree *s, Node *n);

@@ -7,8 +7,8 @@ namespace kaba {
 
 shared<Node> build_abstract_tuple(const Array<shared<Node>> &el);
 
-AbstractParser::AbstractParser(SyntaxTree* t):
-		Exp(t->expressions) {
+AbstractParser::AbstractParser(SyntaxTree* t, ExpressionBuffer& buf):
+		Exp(buf) {
 
 	context = t->module->context;
 	tree = t;
@@ -308,7 +308,7 @@ shared_array<Node> AbstractParser::parse_abstract_call_parameters() {
 			int name_token = Exp.cur_token();
 			Exp.next();
 			Exp.next(); // =
-			params.add(add_node_named_parameter(tree, name_token, parse_abstract_operand_greedy()));
+			params.add(add_node_named_parameter(&Exp, name_token, parse_abstract_operand_greedy()));
 			has_named = true;
 		} else {
 			if (has_named)
@@ -399,7 +399,7 @@ shared<Node> AbstractParser::parse_abstract_list() {
 }
 
 shared<Node> AbstractParser::parse_abstract_token() {
-	return add_node_token(tree, Exp.consume_token());
+	return add_node_token(&Exp, Exp.consume_token());
 }
 
 shared<Node> AbstractParser::parse_abstract_type() {
