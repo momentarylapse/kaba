@@ -32,7 +32,7 @@ InlineID __get_pointer_add_int() {
 bool node_is_executable(shared<Node> n) {
 	if ((n->kind == NodeKind::Constant) or (n->kind == NodeKind::VarLocal) or (n->kind == NodeKind::VarGlobal))
 		return false;
-	if ((n->kind == NodeKind::AddressShift) or (n->kind == NodeKind::Array) or (n->kind == NodeKind::DynamicArray)
+	if ((n->kind == NodeKind::AddressShift) or (n->kind == NodeKind::ArrayElement) or (n->kind == NodeKind::ListElement)
 			or (n->kind == NodeKind::Reference) or (n->kind == NodeKind::Dereference)
 			or (n->kind == NodeKind::DereferenceAddressShift))
 		return node_is_executable(n->params[0]);
@@ -47,9 +47,9 @@ Transformer::~Transformer() = default;
 
 
 shared<Node> Transformer::conv_break_down_med_level(shared<Node> c) {
-	if (c->kind == NodeKind::DynamicArray) {
+	if (c->kind == NodeKind::ListElement) {
 		return conv_break_down_low_level(
-				add_node_parray(
+				add_node_parray_element(
 						c->params[0]->change_type(tree->type_ref(c->type, c->token_id)),
 						c->params[1], c->type));
 	}
@@ -240,9 +240,9 @@ shared<Node> Transformer::conv_break_down_high_level(shared<Node> n, Block *b) {
 			// array[index]
 			shared<Node> el;
 			if (array->type->usable_as_list()) {
-				el = add_node_dyn_array(array, index);
+				el = add_node_list_element(array, index);
 			} else {
-				el = add_node_array(array, index);
+				el = add_node_array_element(array, index);
 			}
 
 			// &for_var = &array[index]
@@ -423,11 +423,11 @@ shared<Node> Transformer::conv_easyfy_ref_deref(shared<Node> c, int l) {
 
 // remove (*x)[] and (*x).y
 shared<Node> Transformer::conv_easyfy_shift_deref(shared<Node> c, int l) {
-	if ((c->kind == NodeKind::AddressShift) or (c->kind == NodeKind::Array)) {
+	if ((c->kind == NodeKind::AddressShift) or (c->kind == NodeKind::ArrayElement)) {
 		if (c->params[0]->kind == NodeKind::Dereference) {
 			// unify 2 knots (remove 1)
 			c->show(common_types._void);
-			auto kind = (c->kind == NodeKind::AddressShift) ? NodeKind::DereferenceAddressShift : NodeKind::PointerAsArray;
+			auto kind = (c->kind == NodeKind::AddressShift) ? NodeKind::DereferenceAddressShift : NodeKind::PointerArrayElement;
 			auto r = new Node(kind, 0, c->type, c->flags);
 			r->set_param(0, c->params[0]->params[0]);
 			r->set_param(1, c->params[1]);
@@ -523,7 +523,7 @@ void Transformer::simplify_shift_deref() {
 
 shared<Node> Transformer::conv_break_down_low_level(shared<Node> c) {
 
-	if (c->kind == NodeKind::Array) {
+	if (c->kind == NodeKind::ArrayElement) {
 
 		auto *el_type = c->type;
 
@@ -542,7 +542,7 @@ shared<Node> Transformer::conv_break_down_low_level(shared<Node> c) {
 				c->token_id,
 				tree->type_ref(el_type, c->token_id))->deref();
 
-	} else if (c->kind == NodeKind::PointerAsArray) {
+	} else if (c->kind == NodeKind::PointerArrayElement) {
 
 		auto *el_type = c->type;
 

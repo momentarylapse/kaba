@@ -215,7 +215,7 @@ shared<Node> AbstractParser::parse_abstract_operand_extension_array(shared<Node>
 	}
 	expect_identifier("]", "']' expected after array index");
 
-	return add_node_array(operand, index, common_types.unknown);
+	return add_node_array_element(operand, index, common_types.unknown);
 }
 
 shared<Node> AbstractParser::parse_abstract_operand_extension_call(shared<Node> link) {

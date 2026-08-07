@@ -69,11 +69,11 @@ string kind2str(NodeKind kind) {
 		return "group";
 	if (kind == NodeKind::AddressShift)
 		return "address shift";
-	if (kind == NodeKind::Array)
+	if (kind == NodeKind::ArrayElement)
 		return "array element";
-	if (kind == NodeKind::DynamicArray)
+	if (kind == NodeKind::ListElement)
 		return "list element";
-	if (kind == NodeKind::PointerAsArray)
+	if (kind == NodeKind::PointerArrayElement)
 		return "pointer as array element";
 	if (kind == NodeKind::Reference)
 		return "reference operator";
@@ -184,11 +184,11 @@ string Node::signature(const Class *ns) const {
 		return (type == common_types._void) ? "" : t; //p2s(as_block());
 	if (kind == NodeKind::AddressShift)
 		return ::str(link_no) + t;
-	if (kind == NodeKind::Array)
+	if (kind == NodeKind::ArrayElement)
 		return t;
-	if (kind == NodeKind::DynamicArray)
+	if (kind == NodeKind::ListElement)
 		return t;
-	if (kind == NodeKind::PointerAsArray)
+	if (kind == NodeKind::PointerArrayElement)
 		return t;
 	if (kind == NodeKind::Reference)
 		return t;
@@ -554,26 +554,26 @@ shared<Node> add_node_global(const Variable *v, int token_id) {
 	return new Node(NodeKind::VarGlobal, (int_p)v, v->type, v->flags, token_id);
 }
 
-shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type) {
-	shared<Node> cmd_el = new Node(NodeKind::PointerAsArray, 0, type, p->flags, index->token_id);
+shared<Node> add_node_parray_element(shared<Node> p, shared<Node> index, const Class *type) {
+	shared<Node> cmd_el = new Node(NodeKind::PointerArrayElement, 0, type, p->flags, index->token_id);
 	cmd_el->set_num_params(2);
 	cmd_el->set_param(0, p);
 	cmd_el->set_param(1, index);
 	return cmd_el;
 }
 
-shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index) {
-	shared<Node> cmd_el = new Node(NodeKind::DynamicArray, 0, array->type->get_array_element(), array->flags, index->token_id);
+shared<Node> add_node_list_element(shared<Node> array, shared<Node> index) {
+	shared<Node> cmd_el = new Node(NodeKind::ListElement, 0, array->type->get_array_element(), array->flags, index->token_id);
 	cmd_el->set_num_params(2);
 	cmd_el->set_param(0, array);
 	cmd_el->set_param(1, index);
 	return cmd_el;
 }
 
-shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class *type) {
+shared<Node> add_node_array_element(shared<Node> array, shared<Node> index, const Class *type) {
 	if (!type)
 		type = array->type->param[0];
-	auto *el = new Node(NodeKind::Array, 0, type, array->flags, index->token_id);
+	auto *el = new Node(NodeKind::ArrayElement, 0, type, array->flags, index->token_id);
 	el->set_num_params(2);
 	el->set_param(0, array);
 	el->set_param(1, index);

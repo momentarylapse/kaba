@@ -494,7 +494,7 @@ shared_array<Node> Concretifier::concretify_element(shared<Node> node, Block *bl
 	return {};
 }
 
-shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, const Class *ns) {
+shared<Node> Concretifier::concretify_array_element(shared<Node> node, Block *block, const Class *ns) {
 	auto operand = concretify_node(node->params[0], block, ns);
 	auto index = concretify_node(node->params[1], block, ns);
 
@@ -508,7 +508,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		}
 	}
 
-	// int[3]
+	// i32[3]
 	if (operand->kind == NodeKind::Class) {
 		// find array size
 		index = Transformer::transform_node(index, [this] (shared<Node> n) {
@@ -524,7 +524,7 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 		return add_node_class(t, operand->token_id);
 	}
 
-	// min[float]()
+	// min[f32]()
 	if (operand->kind == NodeKind::Function) {
 		auto links = concretify_node_multi(node->params[0], block, ns);
 		Array<const Class*> tt;
@@ -620,9 +620,9 @@ shared<Node> Concretifier::concretify_array(shared<Node> node, Block *block, con
 
 	shared<Node> array_element;
 	if (operand->type->usable_as_list())
-		array_element = add_node_dyn_array(operand, index);
+		array_element = add_node_list_element(operand, index);
 	else if (operand->type->is_array())
-		array_element = add_node_array(operand, index);
+		array_element = add_node_array_element(operand, index);
 	else
 		do_error(format("type '%s' is neither an array nor does it have a function %s(%s)", operand->type->long_name(), Identifier::func::Get, index->type->long_name()), index);
 	array_element->set_mutable(operand->is_mutable());
@@ -934,8 +934,8 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		node->set_mutable(sub->is_mutable());
 	} else if (node->kind == NodeKind::AbstractCall) {
 		return concretify_call(node, block, ns);
-	} else if (node->kind == NodeKind::Array) {
-		return concretify_array(node, block, ns);
+	} else if (node->kind == NodeKind::ArrayElement) {
+		return concretify_array_element(node, block, ns);
 	} else if (node->kind == NodeKind::Tuple) {
 		concretify_all_params(node, block, ns);
 		// NOT specifying the type

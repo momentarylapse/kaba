@@ -172,7 +172,7 @@ shared<Node> Transformer::conv_eval_const_func(shared<Node> c) {
 }
 
 shared<Node> Transformer::conv_eval_const_func_nofunc(shared<Node> c) {
-	if (c->kind == NodeKind::DynamicArray) {
+	if (c->kind == NodeKind::ListElement) {
 		if (all_params_are_const(c)) {
 			auto cr = add_node_const(tree->add_constant(c->type, c->token_id), c->token_id);
 			DynamicArray *da = &c->params[0]->as_const()->as_array();
@@ -180,7 +180,7 @@ shared<Node> Transformer::conv_eval_const_func_nofunc(shared<Node> c) {
 			rec_assign(cr->as_const()->p(), (char*)da->data + index * da->element_size, c->type);
 			return cr;
 		}
-	} else if (c->kind == NodeKind::Array) {
+	} else if (c->kind == NodeKind::ArrayElement) {
 		// hmmm, not existing, I guess....
 		if (all_params_are_const(c)) {
 			auto cr = add_node_const(tree->add_constant(c->type, c->token_id), c->token_id);

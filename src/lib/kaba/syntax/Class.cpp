@@ -269,7 +269,7 @@ bool Class::can_memcpy() const {
 		return false;
 	//if (get_assign())
 	//	return false;
-	for (ClassElement &e: elements)
+	for (const auto& e: elements)
 		if (!e.type->can_memcpy())
 			return false;
 	return true;
@@ -278,8 +278,6 @@ bool Class::can_memcpy() const {
 bool Class::usable_as_list() const {
 	if (is_list())
 		return true;
-	if (is_array() or is_dict() or is_pointer_raw())
-		return false;
 	if (parent)
 		return parent->usable_as_list();
 	return false;
@@ -314,7 +312,7 @@ bool Class::needs_constructor() const {
 	if (parent)
 		if (parent->needs_constructor())
 			return true;
-	for (ClassElement &e: elements)
+	for (const auto& e: elements)
 		if (e.type->needs_constructor() or e.type->get_default_constructor())
 			return true;
 	return false;
@@ -327,7 +325,7 @@ bool Class::is_size_known() const {
 		return false;
 	if (is_optional())
 		return param[0]->is_size_known();
-	for (ClassElement &e: elements)
+	for (const auto& e: elements)
 		if (!e.type->is_size_known())
 			return false;
 	return true;
@@ -346,7 +344,7 @@ bool Class::needs_destructor() const {
 		if (parent->needs_destructor())
 			return true;
 	}
-	for (ClassElement &e: elements) {
+	for (const auto& e: elements) {
 		if (e.type->get_destructor())
 			return true;
 		if (e.type->needs_destructor())
@@ -358,8 +356,6 @@ bool Class::needs_destructor() const {
 bool Class::is_derived_from(const Class *root) const {
 	if (this == root)
 		return true;
-	/*if (is_super_array() or is_array() or is_dict() or is_pointer())
-		return false;*/  // since parent/param split
 	if (!parent)
 		return false;
 	return parent->is_derived_from(root);
@@ -368,8 +364,6 @@ bool Class::is_derived_from(const Class *root) const {
 bool Class::is_derived_from_s(const string &root) const {
 	if (long_name().match(root))
 		return true;
-	/*if (is_super_array() or is_array() or is_dict() or is_pointer())
-		return false;*/
 	if (!parent)
 		return false;
 	return parent->is_derived_from_s(root);
@@ -698,7 +692,7 @@ void Class::derive_from(const Class* root, DeriveFlags derive_flags) {
 void *Class::create_instance() const {
 	void *p = malloc(size);
 	memset(p, 0, size);
-	if (Function *c = get_default_constructor()) {
+	if (auto c = get_default_constructor()) {
 		typedef void con_func(void *);
 		if (const auto f = reinterpret_cast<con_func*>(c->address))
 			f(p);

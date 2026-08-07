@@ -64,7 +64,7 @@ public:
 	shared_array<Node> concretify_node_multi(shared<Node> node, Block *block, const Class *ns);
 	shared_array<Node> concretify_token(shared<Node> node, Block *block, const Class *ns);
 	const Class *concretify_as_type(shared<Node> node, Block *block, const Class *ns);
-	shared<Node> concretify_array(shared<Node> node, Block *block, const Class *ns);
+	shared<Node> concretify_array_element(shared<Node> node, Block *block, const Class *ns);
 	shared_array<Node> concretify_element(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_var_declaration(shared<Node> node, Block *block, const Class *ns);
 	shared<Node> concretify_array_builder_for(shared<Node> node, Block *block, const Class *ns);

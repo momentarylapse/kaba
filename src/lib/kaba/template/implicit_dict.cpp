@@ -213,7 +213,7 @@ void AutoImplementer::implement_dict_set(Function *f, const Class *t) {
 	}
 	auto t_row = t->classes[0].get();
 	auto cmd_sub = add_node_operator_by_inline(InlineID::Int32Subtract, sa_num(self), const_int(1), -1);
-	auto back_row = add_node_parray(self->change_type(tree->type_ref(t_row, -1)), cmd_sub, t_row);
+	auto back_row = add_node_parray_element(self->change_type(tree->type_ref(t_row, -1)), cmd_sub, t_row);
 	auto back_key = back_row->change_type(common_types.string);
 	auto back_value = back_row->shift(common_types.string->size, te, -1);
 	if (auto f_init = common_types.string->get_default_constructor()) {

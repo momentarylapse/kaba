@@ -57,9 +57,9 @@ enum class NodeKind {
 	NamedParameter,
 	// data altering
 	AddressShift,        // = struct.element
-	Array,               // = []
-	PointerAsArray,      // = []
-	DynamicArray,        // = []
+	ArrayElement,        // = [i]
+	PointerArrayElement, // = [i]
+	ListElement,         // = [i]
 	Reference,           // = &
 	Dereference,         // = *
 	DereferenceAddressShift,// = ->
@@ -191,9 +191,9 @@ shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Nod
 shared<Node> add_node_global(const Variable *var, int token_id);
 shared<Node> add_node_local(const Variable *var, int token_id);
 shared<Node> add_node_local(const Variable *var, const Class *type, int token_id);
-shared<Node> add_node_parray(shared<Node> p, shared<Node> index, const Class *type);
-shared<Node> add_node_dyn_array(shared<Node> array, shared<Node> index);
-shared<Node> add_node_array(shared<Node> array, shared<Node> index, const Class *override_type = nullptr);
+shared<Node> add_node_parray_element(shared<Node> p, shared<Node> index, const Class *type);
+shared<Node> add_node_list_element(shared<Node> array, shared<Node> index);
+shared<Node> add_node_array_element(shared<Node> array, shared<Node> index, const Class *override_type = nullptr);
 shared<Node> add_node_slice(shared<Node> start, shared<Node> end, shared<Node> step);
 shared<Node> add_node_constructor(const Function *f, int token_id);
 shared<Node> make_constructor_static(shared<Node> n, const string &name);

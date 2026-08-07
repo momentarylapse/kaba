@@ -62,7 +62,7 @@ void AutoImplementer::implement_array_assign(Function *f, const Class *t) {
 	auto b = add_node_block(new Block(f, f->block), common_types._void, -1);
 
 	// other[i]
-	shared<Node> n_other_el = add_node_array(n_other, add_node_local(v_i, -1));
+	shared<Node> n_other_el = add_node_array_element(n_other, add_node_local(v_i, -1));
 
 	b->add(add_assign(f, "", add_node_local(v_el, -1)->deref(), n_other_el));
 
