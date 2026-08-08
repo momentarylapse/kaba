@@ -325,6 +325,10 @@ shared_array<Node> SyntaxTree::get_element_of(shared<Node> operand, const string
 	for (auto *c: weak(type->classes))
 		if (name == c->name)
 			return {add_node_class(c, token_id)};
+	// type aliases
+	for (const auto& [k, v]: type->type_aliases)
+		if (name == k)
+			return {add_node_class(v, token_id)};
 
 
 	if (deref and allow_member)

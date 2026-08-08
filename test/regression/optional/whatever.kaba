@@ -1,0 +1,5 @@
+func main()
+	var x = ([vec3.EX] as vec3[]?)
+
+	print(x == [vec3.EX])
+	print(x == [vec3.EY])

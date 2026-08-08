@@ -948,14 +948,18 @@ void Parser::parse() {
 	
 	tree->show("aaa");
 
+#ifndef _NDEBUG
 	for (auto *f: tree->functions)
 		test_node_recursion(f->block_node.get(), tree->base_class, "a " + f->long_name());
+#endif
 
 	for (int i=0; i<tree->owned_classes.num; i++) // array might change...
 		auto_implementer.implement_functions(tree->owned_classes[i]);
 
+#ifndef _NDEBUG
 	for (auto *f: tree->functions)
 		test_node_recursion(f->block_node.get(), tree->base_class, "b " + f->long_name());
+#endif
 }
 
 }

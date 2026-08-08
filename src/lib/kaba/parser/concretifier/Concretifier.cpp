@@ -904,11 +904,18 @@ KabaException* create_exception(ErrorID code) {
 	return new KabaException("???");
 }
 
-shared<Node> add_raise(SyntaxTree* tree, int token_id, ErrorID code) {
+shared<Node> add_raise_by_id(SyntaxTree* tree, int token_id, ErrorID code) {
 	auto e = create_exception(code);
 	tree->raised_exceptions.add(e);
 	auto node = add_node_statement(StatementID::Raise, token_id);
 	node->set_param(0, add_node_const(tree->add_constant_pointer(common_types.pointer, e), token_id));
+	return node;
+}
+
+shared<Node> add_raise_by_msg(SyntaxTree* tree, int token_id, shared<Node> msg) {
+	auto f = tree->required_func_global("@die_msg");
+	auto node = add_node_call(f, token_id);
+	node->set_param(0, msg);
 	return node;
 }
 
@@ -934,6 +941,7 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 			if (!sub->type->is_some_pointer_not_null()) //   is_pointer_raw()) // and !sub->type->is_reference())
 				do_error("only not-null pointers (references, shared![X], owned![X]) can be dereferenced using '*'", node);
 		}
+		node->set_mutable(sub->is_mutable()); // NOT SURE :P
 		node->type = sub->type->param[0];
 	} else if (node->kind == NodeKind::Reference) {
 		concretify_all_params(node, block, ns);
@@ -1116,7 +1124,26 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			if (is_in_try())
 				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
 			else
-				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
+				cmd_if->set_param(1, add_raise_by_id(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
+			bb->add(cmd_if);
+			bb->add(sub->change_type(t->param[0]));
+			return concretify_node(bb, block, ns);
+		}
+	} else if (t->is_result()) {
+		// optional?
+		if (is_in_trust_me()) {
+			return sub->change_type(t->param[0]);
+		} else {
+			// value or raise
+			auto bb = add_node_block(new Block(block->function, block), common_types.unknown, node->token_id);
+			bb->set_mutable(sub->is_mutable());
+			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
+			if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
+				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, sub, node->token_id), nullptr, node->token_id));
+			if (is_in_try())
+				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
+			else
+				cmd_if->set_param(1, add_raise_by_msg(tree, node->token_id, sub->change_type(common_types.string, node->token_id)));
 			bb->add(cmd_if);
 			bb->add(sub->change_type(t->param[0]));
 			return concretify_node(bb, block, ns);
@@ -1144,7 +1171,7 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 			if (is_in_try())
 				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
 			else
-				cmd_if->set_param(1, add_raise(tree, node->token_id, ErrorID::NULL_POINTER));
+				cmd_if->set_param(1, add_raise_by_id(tree, node->token_id, ErrorID::NULL_POINTER));
 			bb->add(cmd_if);
 			bb->add(sub->change_type(t_def));
 			return concretify_node(bb, block, ns);

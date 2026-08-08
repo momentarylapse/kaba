@@ -224,15 +224,8 @@ const Class* get_type(void *p) {
 	return common_types.unknown;
 }
 
-void just_die(KabaException *kaba_exception, const Array<StackFrameInfo> &trace) {
-	// uncaught...
-	const Class *ex_type = get_type(kaba_exception);
-	if (!kaba_exception)
-		msg_error("uncaught exception  (nil)");
-	else if (ex_type == common_types.unknown)
-		msg_error("uncaught exception:  " + kaba_exception->message());
-	else
-		msg_error("uncaught " + get_type(kaba_exception)->name + ":  " + kaba_exception->message());
+void just_die_msg(const string& msg, const Array<StackFrameInfo>& trace) {
+	msg_error(msg);
 
 	// stack trace
 	msg_write("stack trace:");
@@ -241,6 +234,17 @@ void just_die(KabaException *kaba_exception, const Array<StackFrameInfo> &trace)
 			msg_write(r.str());
 
 	os::app::exit(1);
+}
+
+void just_die_exception(KabaException* kaba_exception, const Array<StackFrameInfo>& trace) {
+	// uncaught...
+	const Class *ex_type = get_type(kaba_exception);
+	if (!kaba_exception)
+		just_die_msg("uncaught exception  (nil)", trace);
+	else if (ex_type == common_types.unknown)
+		just_die_msg("uncaught exception:  " + kaba_exception->message(), trace);
+	else
+		just_die_msg("uncaught " + get_type(kaba_exception)->name + ":  " + kaba_exception->message(), trace);
 }
 
 void clean_up_block(Block *b, const StackFrameInfo& r) {
@@ -393,12 +397,12 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception) {
 
 		// uncaught?
 		if (!return_rsp)
-			just_die(kaba_exception, trace);
+			just_die_exception(kaba_exception, trace);
 	}
 	relink_return(return_rip, frame.rbp, return_rsp);
 
 #else
-	just_die(kaba_exception, {});
+	just_die_exception(kaba_exception, {});
 #endif
 }
 
@@ -525,10 +529,10 @@ void kaba_raise_exception(KabaException *kaba_exception) {
 	if (return_frame.rip)
 		relink_return(return_frame);
 
-	just_die(kaba_exception, trace);
+	just_die_exception(kaba_exception, trace);
 
 #else
-	just_die(kaba_exception, {});
+	just_die_exception(kaba_exception, {});
 #endif
 }
 
@@ -563,14 +567,29 @@ KabaException* create_kaba_exception(const string& message) {
 void kaba_die(KabaException* e) {
 	auto frame = get_current_stack_frame();
 	auto trace = get_stack_trace(frame);
-	just_die(e, trace);
+	just_die_exception(e, trace);
+}
+
+void kaba_die_msg(const string& msg) {
+	auto frame = get_current_stack_frame();
+	auto trace = get_stack_trace(frame);
+	just_die_msg(msg, trace);
+}
+
+void kaba_die_id(ErrorID id) {
+	switch (id) {
+		case ErrorID::NULL_POINTER:
+			kaba_die_msg("null pointer");
+		case ErrorID::OPTIONAL_NO_VALUE:
+			kaba_die_msg("no value");
+		default:
+			kaba_die_msg("???");
+	}
 }
 
 void kaba_assert(bool b) {
-	if (!b) {
-		auto e = new KabaException("assert failed");
-		kaba_die(e);
-	}
+	if (!b)
+		kaba_die_msg("assert failed");
 }
 
 }

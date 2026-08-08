@@ -46,6 +46,8 @@ enum class ErrorID {
 void kaba_raise_exception(KabaException* kaba_exception);
 KabaException* create_kaba_exception(const string& message);
 void kaba_die(KabaException* e);
+void kaba_die_msg(const string& msg);
+void kaba_die_id(ErrorID id);
 void kaba_assert(bool b);
 
 

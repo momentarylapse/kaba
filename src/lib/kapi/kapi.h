@@ -143,8 +143,8 @@ struct CommonTypes {
 	const Class* future_core_t;
 	const Class* promise_t;
 	const Class* enum_t;
-	const Class* ____struct_t;
-	const Class* ____interface_t;
+	const Class* result_t;
+	const Class* error;
 	const Class* ____namespace_t;
 	const Class* ____trait_t;
 

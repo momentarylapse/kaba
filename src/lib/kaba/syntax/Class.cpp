@@ -222,6 +222,10 @@ bool Class::is_optional() const {
 	return from_template == common_types.optional_t;
 }
 
+bool Class::is_result() const {
+	return from_template == common_types.result_t;
+}
+
 bool Class::is_callable() const {
 	if (is_pointer_raw())
 		return param[0]->is_callable_fp() or param[0]->is_callable_bind();

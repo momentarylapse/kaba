@@ -7,9 +7,9 @@ class X as Sharable
 		print("test {{_shared_ref_count}}")
 
 func f() -> shared[X]
-	# return new X()
-	var x = new X()
-	return give(x)
+	# return new shared X()
+	var x = new shared X()
+	return x
 
 func main()
 	var p = f()

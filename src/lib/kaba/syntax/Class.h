@@ -92,6 +92,7 @@ struct Class : Sharable<base::Empty> {
 	bool is_trait() const;
 	bool is_product() const;
 	bool is_optional() const;
+	bool is_result() const;
 	bool is_callable() const;
 	bool is_callable_fp() const;
 	bool is_callable_bind() const;
