@@ -166,6 +166,11 @@ shared<Node> Transformer::conv_eval_const_func(shared<Node> c) {
 	} else if (c->kind == NodeKind::ConstructorAsFunction) {
 		return eval_constructor_function(tree, c, c->as_func());
 	} else if (c->kind == NodeKind::CallFunction) {
+		// x + 0 -> x
+		if (c->as_func()->inline_no == InlineID::Int32Add or c->as_func()->inline_no == InlineID::Int64Add or c->as_func()->inline_no == InlineID::Float32Add or c->as_func()->inline_no == InlineID::Float64Add)
+			if (c->params[1]->kind == NodeKind::Constant)
+				if (c->params[1]->as_const()->as_int64() == 0)
+					return c->params[0];
 		return eval_function_call(tree, c, c->as_func());
 	}
 	return conv_eval_const_func_nofunc(c);
