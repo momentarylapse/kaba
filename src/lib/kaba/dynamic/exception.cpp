@@ -573,7 +573,7 @@ void kaba_die(KabaException* e) {
 void kaba_die_msg(const string& msg) {
 	auto frame = get_current_stack_frame();
 	auto trace = get_stack_trace(frame);
-	just_die_msg(msg, trace);
+	just_die_msg(format("uncaught Error: '%s'", msg), trace);
 }
 
 void kaba_die_id(ErrorID id) {

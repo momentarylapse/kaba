@@ -1,0 +1,7 @@
+func f() -> i32?
+	print("f()...")
+	return 13
+
+
+func main()
+	print(f()!)

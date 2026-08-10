@@ -24,6 +24,7 @@ namespace kaba {
 bool type_match_up(const Class *given, const Class *wanted);
 const Class *merge_type_tuple_into_product(SyntaxTree *tree, const Array<const Class*> &classes, int token_id);
 shared<Node> create_bind(Concretifier *concretifier, shared<Node> inner_callable, const shared_array<Node> &captures, const Array<bool> &capture_via_ref);
+bool node_is_executable(shared<Node> n);
 
 string type_list_to_str(const Array<const Class*> &tt) {
 	string s;
@@ -1110,42 +1111,32 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 	concretify_all_params(node, block, ns);
 	auto sub = node->params[0];
 	auto t = sub->type;
-	if (t->is_optional()) {
+	if (t->is_optional() or t->is_result()) {
 		// optional?
 		if (is_in_trust_me()) {
 			return sub->change_type(t->param[0]);
 		} else {
 			// value or raise
 			auto bb = add_node_block(new Block(block->function, block), common_types.unknown, node->token_id);
-			bb->set_mutable(sub->is_mutable());
+			Variable* v = nullptr;
+			auto subx = sub;
+			if (node_is_executable(sub)) {
+				v = bb->as_block()->add_var(":temp", t, node->token_id, Flags::Mutable);//sub->flags);
+				bb->add(link_operator_id(OperatorID::Assign, add_node_local(v, node->token_id), sub));
+				subx = add_node_local(v, node->token_id);
+			}
+			//bb->set_mutable(sub->is_mutable());
 			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
 			if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
-				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, sub, node->token_id), nullptr, node->token_id));
+				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, subx, node->token_id), nullptr, node->token_id));
 			if (is_in_try())
 				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
+			else if (t->is_result())
+				cmd_if->set_param(1, add_raise_by_msg(tree, node->token_id, cp_node(subx)->change_type(common_types.string, node->token_id)));
 			else
 				cmd_if->set_param(1, add_raise_by_id(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
 			bb->add(cmd_if);
-			bb->add(sub->change_type(t->param[0]));
-			return concretify_node(bb, block, ns);
-		}
-	} else if (t->is_result()) {
-		// optional?
-		if (is_in_trust_me()) {
-			return sub->change_type(t->param[0]);
-		} else {
-			// value or raise
-			auto bb = add_node_block(new Block(block->function, block), common_types.unknown, node->token_id);
-			bb->set_mutable(sub->is_mutable());
-			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
-			if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
-				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, sub, node->token_id), nullptr, node->token_id));
-			if (is_in_try())
-				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
-			else
-				cmd_if->set_param(1, add_raise_by_msg(tree, node->token_id, sub->change_type(common_types.string, node->token_id)));
-			bb->add(cmd_if);
-			bb->add(sub->change_type(t->param[0]));
+			bb->add(cp_node(subx)->change_type(t->param[0]));
 			return concretify_node(bb, block, ns);
 		}
 	} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
