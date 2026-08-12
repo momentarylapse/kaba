@@ -13,6 +13,9 @@
 namespace base {
 	struct Error {
 		string msg;
+		Error() = default;
+		Error(const string& s) { msg = s; }
+		string str() const { return msg; }
 	};
 
 	inline constexpr size_t _size_max(size_t a, size_t b) {
@@ -157,7 +160,7 @@ string str(const base::result<T, E>& e) {
 	if (e.has_value())
 		return str(e.value());
 	if (e.has_error())
-		return str("ERROR: " + e.error());
+		return "ERROR: " + str(e.error());
 	return "nil";
 }
 

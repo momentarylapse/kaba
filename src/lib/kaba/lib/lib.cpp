@@ -215,6 +215,7 @@ const Class *add_type_enum(const string &name, const Class *_namespace) {
 }
 
 	int _make_optional_size(const Class *t);
+	int _make_result_size(const Class *t);
 
 const Class *add_type_optional(const Class *sub_type) {
 	string name = sub_type->name + "?";
@@ -224,6 +225,17 @@ const Class *add_type_optional(const Class *sub_type) {
 	cur_package_module->context->template_manager->add_explicit_class_instance(
 			cur_package_module->tree.get(),
 			t, common_types.optional_t, {sub_type});
+	return t;
+}
+
+const Class *add_type_result(const Class *sub_type) {
+	string name = "result[" + sub_type->name + "]";
+	Class *t = new Class(MetaClass::NONE, common_types.result_t, name, _make_result_size(sub_type), sub_type->alignment, cur_package_module->tree.get(), nullptr, {sub_type});
+	__add_class__(t, sub_type->name_space);
+	t->type_aliases.set("X", sub_type);
+	cur_package_module->context->template_manager->add_explicit_class_instance(
+			cur_package_module->tree.get(),
+			t, common_types.result_t, {sub_type});
 	return t;
 }
 

@@ -137,8 +137,6 @@ void AutoImplementer::implement_optional_assign(Function *f, const Class *t) {
 }
 
 void AutoImplementer::implement_result_assign(Function *f, const Class *t) {
-	if (t->param[0]->is_reference())
-		do_error_implicit(f, "result of reference...");
 	string code;
 	code += "if self._state != other._state";
 	if (t->param[0]->get_destructor())
@@ -149,7 +147,10 @@ void AutoImplementer::implement_result_assign(Function *f, const Class *t) {
 		code += "\n\tif self._state == 0x01\n\t\t@noderef(*(&self as X&)).__init__()";
 	code += "\n\tif self._state == 0x02\n\t\t(&self as string&).__init__()";
 
-	code += "\nif self._state == 0x01\n\t@noderef(*(&self as X&)) = @noderef(*(&other as X&))";
+	if (t->param[0]->is_reference())
+		code += "\nif self._state == 0x01\n\t@noderef(*(&self as X&)) := @noderef(*(&other as X&))";
+	else
+		code += "\nif self._state == 0x01\n\t@noderef(*(&self as X&)) = @noderef(*(&other as X&))";
 	code += "\nif self._state == 0x02\n\t(&self as string&) = (&other as string&)";
 	implement_from_code(f, code);
 }
@@ -312,9 +313,10 @@ void AutoImplementer::_implement_functions_for_result(const Class *t) {
 }
 
 Class* TemplateClassInstantiatorResult::declare_new_instance(SyntaxTree *tree, const Array<const Class*> &params, int array_size, int token_id) {
-	auto c = create_raw_class(tree, "result[" + params[0]->name + "]", common_types.result_t, _make_result_size(params[0]), 8, 0, nullptr, params, token_id);
-	c->type_aliases.set("X", params[0]);
-	c->elements.add({"_state", common_types.u8, max((int)params[0]->size, config.target.dynamic_array_size), -1});
+	auto v = (params[0] == common_types._void) ? common_types.i32 : params[0];
+	auto c = create_raw_class(tree, "result[" + params[0]->name + "]", common_types.result_t, _make_result_size(v), 8, 0, nullptr, {v}, token_id);
+	c->type_aliases.set("X", v);
+	c->elements.add({"_state", common_types.u8, max((int)v->size, config.target.dynamic_array_size), -1});
 	return c;
 }
 void TemplateClassInstantiatorResult::add_function_headers(Class* t) {

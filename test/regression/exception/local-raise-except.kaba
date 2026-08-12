@@ -1,0 +1,7 @@
+use os
+
+func main()
+	try
+		raise Error("new Error!")
+	except Error as e
+		print(str(e))

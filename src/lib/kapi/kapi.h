@@ -177,6 +177,10 @@ struct CommonTypes {
 
 	const Class* i32_ref;
 	const Class* box;
+
+	const Class* result_void;
+	const Class* result_bytes;
+	const Class* result_string;
 };
 extern CommonTypes common_types;
 }

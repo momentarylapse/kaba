@@ -33,6 +33,7 @@ enum class StatementID {
 	Asm,
 	Raise,
 	RaiseLocal,
+	RaiseLegacy,
 	Try,
 	Except,
 	Pass,

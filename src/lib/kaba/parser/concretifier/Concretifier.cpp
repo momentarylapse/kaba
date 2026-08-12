@@ -752,6 +752,8 @@ shared<Node> Concretifier::concretify_block(shared<Node> node, Block *block, con
 		node->params[i] = concretify_node(node->params[i], block, ns);
 		if (node->params[i]->type->is_pointer_xfer_not_null())
 			do_error("xfer[..] values must not be discarded", node->params[i]);
+		if (node->params[i]->type->is_result() and !is_in_try() and node->params[i]->type->is_result())
+			do_error("result[...] values must not be discarded. Use ! or try", node->params[i]);
 	}
 	//concretify_all_params(node, block, ns, this);
 
@@ -1105,72 +1107,76 @@ shared<Node> Concretifier::concretify_slice(shared<Node> node, Block *block, con
 	return node;
 }
 
-// TODO: wrap in block + save input in variable
-// TODO: variable life-time ... maybe in outer block?
 shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block, const Class *ns) {
 	concretify_all_params(node, block, ns);
 	auto sub = node->params[0];
 	auto t = sub->type;
-	if (t->is_optional() or t->is_result()) {
-		// optional?
-		if (is_in_trust_me()) {
-			return sub->change_type(t->param[0]);
-		} else {
-			// value or raise
-			auto bb = add_node_block(new Block(block->function, block), common_types.unknown, node->token_id);
-			Variable* v = nullptr;
-			auto subx = sub;
-			if (node_is_executable(sub)) {
-				v = bb->as_block()->add_var(":temp", t, node->token_id, Flags::Mutable);//sub->flags);
-				bb->add(link_operator_id(OperatorID::Assign, add_node_local(v, node->token_id), sub));
-				subx = add_node_local(v, node->token_id);
-			}
-			//bb->set_mutable(sub->is_mutable());
-			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
-			if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
-				cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, subx, node->token_id), nullptr, node->token_id));
-			if (is_in_try())
-				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
-			else if (t->is_result())
-				cmd_if->set_param(1, add_raise_by_msg(tree, node->token_id, cp_node(subx)->change_type(common_types.string, node->token_id)));
-			else
-				cmd_if->set_param(1, add_raise_by_id(tree, node->token_id, ErrorID::OPTIONAL_NO_VALUE));
-			bb->add(cmd_if);
-			bb->add(cp_node(subx)->change_type(t->param[0]));
-			return concretify_node(bb, block, ns);
-		}
-	} else if (t->is_pointer_raw() or t->is_pointer_owned() or t->is_pointer_shared()) {
-		// null-able pointer?
-		const Class* t_def;
-		if (t->is_pointer_raw())
-			t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
-		if (t->is_pointer_owned())
-			t_def = tree->request_implicit_class_owned_not_null(t->param[0], node->token_id);
-		if (t->is_pointer_shared())
-			t_def = tree->request_implicit_class_shared_not_null(t->param[0], node->token_id);
 
-		if (is_in_trust_me()) {
-			return sub->change_type(t_def);
-		} else {
-			auto bb = add_node_block(new Block(block->function, block), common_types.unknown, node->token_id);
-			bb->set_mutable(sub->is_mutable());
-			auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
-			auto f = tree->required_func_global("p2b", node->token_id);
-			auto cmd_p2b = add_node_call(f, node->token_id);
-			cmd_p2b->set_param(0, sub);
-			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, cmd_p2b, nullptr, node->token_id));
-			if (is_in_try())
-				cmd_if->set_param(1, add_node_statement(StatementID::RaiseLocal, node->token_id, common_types._void));
-			else
-				cmd_if->set_param(1, add_raise_by_id(tree, node->token_id, ErrorID::NULL_POINTER));
-			bb->add(cmd_if);
-			bb->add(sub->change_type(t_def));
-			return concretify_node(bb, block, ns);
-		}
-	} else {
+	const Class* t_def = nullptr;
+	if (t->is_optional() or t->is_result())
+		t_def = t->param[0];
+	else if (t->is_pointer_raw())
+		t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+	else if (t->is_pointer_owned())
+		t_def = tree->request_implicit_class_owned_not_null(t->param[0], node->token_id);
+	else if (t->is_pointer_shared())
+		t_def = tree->request_implicit_class_shared_not_null(t->param[0], node->token_id);
+	else
 		do_error("'!' only allowed for optional values and null-able pointers", node);
+
+	if (is_in_trust_me())
+		// failure -> undefined
+		return sub->change_type(t_def);
+
+	auto group = new Node(NodeKind::Group, 0, t_def);
+	// cache value?
+	auto subx = sub;
+	if (node_is_executable(sub)) {
+		auto v = block->add_var(block->function->create_slightly_hidden_name(), t, node->token_id, Flags::Mutable);//sub->flags);
+		group->add(link_operator_id(OperatorID::Assign, add_node_local(v, node->token_id), sub));
+		subx = add_node_local(v, node->token_id);
 	}
-	return node;
+
+
+	auto create_error = [this, t, subx, node, block, ns] () {
+		if (t->is_result()) {
+			return subx->change_type(common_types.error);
+		} else {
+			auto c = add_node_constructor(common_types.error->get_constructors()[1], node->token_id);
+			auto cc = tree->add_constant(common_types.string, node->token_id);
+			if (t->is_optional())
+				cc->as_string() = "no value";
+			else
+				cc->as_string() = "null pointer";
+			c->set_param(1, add_node_const(cc, node->token_id));
+			c = concretify_node(c, block, ns);
+			return c;
+		}
+	};
+
+	// check value
+	auto cmd_if = add_node_statement(StatementID::If, node->token_id, common_types._void);
+	if (t->is_optional() or t->is_result()) {
+		if (auto f = t->get_member_func(Identifier::func::OptionalHasValue, common_types._bool, {}))
+			cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, add_node_member_call(f, subx, node->token_id), nullptr, node->token_id));
+	} else { // pointer
+		auto f = tree->required_func_global("p2b", node->token_id);
+		auto cmd_p2b = add_node_call(f, node->token_id);
+		cmd_p2b->set_param(0, sub);
+		cmd_if->set_param(0, add_node_operator_by_inline(InlineID::BoolNot, cmd_p2b, nullptr, node->token_id));
+	}
+
+	// raise
+	auto raise = add_node_statement(StatementID::Raise, node->token_id, common_types.unknown);
+	raise->set_param(0, create_error());
+	raise = concretify_statement_raise(raise, block, ns); // raise -> die/return/raise-local
+	cmd_if->set_param(1, raise);
+	group->add(cmd_if);
+
+	// actual value
+	group->add(cp_node(subx)->change_type(t_def));
+	group->set_mutable(sub->is_mutable());
+	return group;
 }
 
 const Class *Concretifier::concretify_as_type(shared<Node> node, Block *block, const Class *ns) {

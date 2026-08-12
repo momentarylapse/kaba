@@ -1,0 +1,17 @@
+func f() -> X?
+
+
+# die/stack trace
+f()!.more()
+
+# undefined
+trust_me
+	f()!.more()
+
+# jump out
+try
+	f()!.more()
+
+# return nil
+func g() -> Y?
+	f()!.more()

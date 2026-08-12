@@ -9,7 +9,8 @@
 #include "../kaba.h"
 #include "../../os/app.h"
 #include "../../os/msg.h"
-#include "../../base/iter.h"
+#include <lib/base/error.h>
+#include <lib/base/iter.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -230,7 +231,7 @@ void just_die_msg(const string& msg, const Array<StackFrameInfo>& trace) {
 	// stack trace
 	msg_write("stack trace:");
 	for (const auto& r: trace)
-		if (!r.f or r.f->name != "@die")
+		if (!r.f or r.f->name.head(4) != "@die")
 			msg_write(r.str());
 
 	os::app::exit(1);
@@ -382,7 +383,7 @@ void _cdecl kaba_raise_exception(KabaException *kaba_exception) {
 			if (ebd.except_block) {
 				dbo("except_block block: " + p2s(ebd.except_block));
 
-				if (ebd.except->params.num > 0) {
+				if (ebd.except->params[0]) {
 					auto v = ebd.except_block->vars[0];
 					void **p = (void**)((int_p)r.rbp + v->_offset);
 					*p = kaba_exception;
@@ -564,10 +565,14 @@ KabaException* create_kaba_exception(const string& message) {
 }
 
 
-void kaba_die(KabaException* e) {
+void kaba_die_exception(KabaException* e) {
 	auto frame = get_current_stack_frame();
 	auto trace = get_stack_trace(frame);
 	just_die_exception(e, trace);
+}
+
+void kaba_die_error(base::Error* e) {
+	kaba_die_msg(e->msg);
 }
 
 void kaba_die_msg(const string& msg) {
