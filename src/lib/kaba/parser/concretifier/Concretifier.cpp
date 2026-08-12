@@ -1113,16 +1113,21 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 	auto t = sub->type;
 
 	const Class* t_def = nullptr;
-	if (t->is_optional() or t->is_result())
+	if (t->is_optional() or t->is_result()) {
 		t_def = t->param[0];
-	else if (t->is_pointer_raw())
+	} else if (t->is_pointer_raw()) {
 		t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
-	else if (t->is_pointer_owned())
-		t_def = tree->request_implicit_class_owned_not_null(t->param[0], node->token_id);
-	else if (t->is_pointer_shared())
+	} else if (t->is_pointer_owned()) {
+		//t_def = tree->request_implicit_class_owned_not_null(t->param[0], node->token_id);
+		// get rid of ownership! - mostly for caching the result... but also producing a new value with ownership does not make sense here
+		t_def = tree->request_implicit_class_reference(t->param[0], node->token_id);
+		t = tree->request_implicit_class_pointer(t->param[0], node->token_id);
+		sub = sub->change_type(t, sub->token_id);
+	} else if (t->is_pointer_shared()) {
 		t_def = tree->request_implicit_class_shared_not_null(t->param[0], node->token_id);
-	else
+	} else {
 		do_error("'!' only allowed for optional values and null-able pointers", node);
+	}
 
 	if (is_in_trust_me())
 		// failure -> undefined
