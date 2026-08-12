@@ -1,6 +1,6 @@
 use os.*
 
 func main()
-	var f = fs.open("__test__", "wb")
+	var f = fs.open("__test__", "wb")!
 	#var f: shared![FileStream] = fs.open("__test__", "wb")
 	f << 1

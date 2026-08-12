@@ -190,7 +190,7 @@ public:
 			}
 		});
 
-		p.parse(arg0);
+		p.parse_or_die(arg0);
 
 		// end
 		if (flag_clean_up)
@@ -208,7 +208,7 @@ public:
 			hui::error_box(NULL, _("Error in script"), msg);
 		else*/
 			msg_error(msg);
-		exit(1);
+		os::app::exit(1);
 	}
 
 	static void xxx_delete(VirtualBase* v) {

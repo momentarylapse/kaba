@@ -6,9 +6,9 @@ class F #extends BinaryFormatter
 
 func main()
 	#var a = new F(fs.open("__test__", "wb"))
-	var a = fs.open("__test__", "wb")
+	var a = fs.open("__test__", "wb")!
 	a << 2
-	
+
 	var b: F
 	b.f()
 	#del a
