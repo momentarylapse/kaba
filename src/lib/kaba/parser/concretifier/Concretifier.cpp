@@ -1175,7 +1175,9 @@ shared<Node> Concretifier::concretify_definitely(shared<Node> node, Block *block
 	auto raise = add_node_statement(StatementID::Raise, node->token_id, common_types.unknown);
 	raise->set_param(0, create_error());
 	raise = concretify_statement_raise(raise, block, ns); // raise -> die/return/raise-local
-	cmd_if->set_param(1, raise);
+	auto bb = add_node_block(new Block(block->function, block), common_types._void, node->token_id);
+	bb->add(raise);
+	cmd_if->set_param(1, bb);
 	group->add(cmd_if);
 
 	// actual value
