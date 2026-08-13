@@ -14,33 +14,6 @@ string function_link_name(Function *f);
 
 
 
-KABA_LINK_GROUP_BEGIN
-
-struct KabaContext : Context {
-	base::result<shared<Module>> __load_module__(const string &filename, bool just_analyse) {
-		try {
-			return load_module(filename, just_analyse);
-		} catch (::Exception& e) {
-			return base::Error(e.message());
-		}
-	}
-
-	base::result<shared<Module>> __create_from_source__(const string &source, bool just_analyse) {
-		try {
-			return create_module_for_source(source, "<from-source>", just_analyse);
-		} catch (::Exception& e) {
-			return base::Error(e.message());
-		}
-	}
-
-	base::result_void __execute_single_command__(const string &cmd) {
-		KABA_EXCEPTION_WRAPPER_RESULT_VOID( execute_single_command(cmd); );
-	}
-};
-
-KABA_LINK_GROUP_END
-
-
 void show_func(Function *f) {
 	bool v = config.verbose;
 	config.verbose = true;
@@ -161,7 +134,14 @@ void SIAddPackageKaba(Context *c) {
 	
 	lib_create_pointer_xfer(TypeContextXfer);
 	lib_create_pointer_shared<Module>(TypeModuleSharedNN, TypeModuleXfer);
-	
+
+	auto TypeCompilerFlags = add_type_enum("CompilerFlags");
+
+	add_class(TypeCompilerFlags);
+		class_add_enum("NONE", TypeCompilerFlags, CompilerFlags::None);
+		class_add_enum("JUST_PARSE", TypeCompilerFlags, CompilerFlags::JustParse);
+
+
 	add_class(TypeClassElement);
 		class_add_element("name", common_types.string, &ClassElement::name);
 		class_add_element("type", common_types.class_ref, &ClassElement::type);
@@ -290,13 +270,13 @@ void SIAddPackageKaba(Context *c) {
 	add_class(TypeContext);
 		class_add_element("packages", TypePackageRefList, &Context::internal_packages);
 		class_add_func(Identifier::func::Delete, common_types._void, &generic_delete<Context>, Flags::Mutable);
-		class_add_func("load_module", TypeModuleSharedResult, &KabaContext::__load_module__, Flags::Mutable);
+		class_add_func_virtual("load_module", TypeModuleSharedResult, &Context::load_module, Flags::Mutable);
 			func_add_param("filename", common_types.path);
-			func_add_param("just_analize", common_types._bool);
-		class_add_func("create_module_for_source", TypeModuleSharedResult, &KabaContext::__create_from_source__, Flags::Mutable);
+			func_add_param_def("flags", TypeCompilerFlags, CompilerFlags::None);
+		class_add_func_virtual("create_module_for_source", TypeModuleSharedResult, &Context::create_module_for_source, Flags::Mutable);
 			func_add_param("source", common_types.string);
-			func_add_param("just_analize", common_types._bool);
-		class_add_func("execute_single_command", common_types.result_void, &KabaContext::__execute_single_command__, Flags::Mutable);
+			func_add_param_def("flags", TypeCompilerFlags, CompilerFlags::None);
+		class_add_func_virtual("execute_single_command", common_types.result_void, &Context::execute_single_command, Flags::Mutable);
 			func_add_param("cmd", common_types.string);
 		class_add_func("get_dynamic_type", TypeClassP, &Context::get_dynamic_type, Flags::Pure);
 			func_add_param("p", common_types.pointer);

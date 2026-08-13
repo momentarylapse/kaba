@@ -2,7 +2,9 @@
 
 #include <lib/base/base.h>
 #include <lib/base/pointer.h>
+#include <lib/base/error.h>
 #include <functional>
+
 
 class Path;
 class Any;
@@ -14,13 +16,19 @@ struct Context;
 struct Class;
 struct Package;
 class IExporter;
+struct CompilerError;
+
+enum class CompilerFlags {
+	None,
+	JustParse
+};
 
 struct IContext {
 	virtual ~IContext() = default;
-	virtual shared<Module> load_module(const Path& filename, bool just_analyse) = 0;
-	virtual shared<Module> create_module_for_source(const string& source, const Path& filename, bool just_analyse) = 0;
+	virtual shared<Module> _load_module_throw(const Path& filename, bool just_analyse) = 0;
+	virtual shared<Module> _create_module_for_source_throw(const string& source, const Path& filename, bool just_analyse) = 0;
 	virtual xfer<Context> create_new_context() const = 0;
-	virtual void execute_single_command(const string& cmd) = 0;
+	virtual void _execute_single_command_throw(const string& cmd) = 0;
 	virtual void clean_up() = 0;
 	virtual const Class* get_dynamic_type(const VirtualBase* o) const = 0;
 	virtual Package* get_package(const string& name) const = 0;
@@ -36,6 +44,11 @@ struct IContext {
 	virtual Path packages_root() const = 0;
 	virtual void set_installation_root(const Path& dir) = 0;
 	virtual void* get_global_symbol(const string& package, const string& name) = 0;
+
+	virtual base::result<shared<Module>> load_module(const Path& filename, CompilerFlags flags=CompilerFlags::None) = 0;
+	virtual base::result<shared<Module>> create_module_for_source(const string& source, const Path& filename, CompilerFlags flags=CompilerFlags::None) = 0;
+	virtual base::result_void execute_single_command(const string& cmd) = 0;
+	virtual Array<CompilerError>& get_errors() = 0;
 
 	shared_array<Module> public_modules;
 	shared_array<Package> internal_packages;

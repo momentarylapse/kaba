@@ -160,7 +160,7 @@ public:
 			init_environment();
 			try {
 				static_cast<kaba::Context*>(kaba::default_context)->additional_import_packages = additional_import_packages;
-				kaba::default_context->execute_single_command(a[0]);
+				kaba::default_context->_execute_single_command_throw(a[0]);
 			} catch (Exception &e) {
 				die(e.message());
 			}
@@ -279,7 +279,7 @@ public:
 			filename = filename.absolute().canonical();
 
 		try {
-			auto s = kaba::default_context->load_module(filename, flag_just_check_syntax);
+			auto s = kaba::default_context->_load_module_throw(filename, flag_just_check_syntax);
 			if (symbols_out_file)
 				export_symbols(s, symbols_out_file);
 			if (flag_show_consts)

@@ -617,7 +617,7 @@ shared<Node> add_node_operator_by_inline(InlineID inline_index, const shared<Nod
 		if (op->f->inline_no == inline_index)
 			return add_node_operator(op, p1, p2, token_id, override_type);
 
-	throw Exception(format("INTERNAL ERROR: operator inline index not found: %d", (int)inline_index), "", -1, -1, nullptr);
+	throw Exception(format("INTERNAL ERROR: operator inline index not found: %d", (int)inline_index), "", -1, -1, -1, nullptr);
 	return nullptr;
 }
 
