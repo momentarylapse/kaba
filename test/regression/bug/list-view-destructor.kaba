@@ -1,0 +1,29 @@
+struct S
+	var s: string
+	var i: i32 = 0
+	func __delete__()
+		print("del S")
+
+
+func main()
+	var a: S[] = [["a", 13], ["b", 14], ["c", 15]]
+	print(a)
+
+	# former bug: list view -> destruct -> damage original list
+	var b = a[1:]
+	print(a)
+
+	# b should be a copy -> no changes to a
+	b[0].i = 7
+	print(a)
+
+	# a[...] should be a view -> changes to a
+	a[1:][0].i = 7
+	print(a)
+
+	# testing if list destructor still works
+	a.clear()
+	print("--")
+
+
+#	var c = a[0]

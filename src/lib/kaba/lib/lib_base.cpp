@@ -398,6 +398,7 @@ void SIAddPackageBase(Context *c) {
 
 	add_class(common_types.dynamic_array);
 		class_add_element("num", common_types.i32, config.target.pointer_size);
+		class_add_element("_allocated", common_types.i32, config.target.pointer_size + 4);
 		class_add_func("swap", common_types._void, &DynamicArray::simple_swap, Flags::Mutable);
 			func_add_param("i1", common_types.i32);
 			func_add_param("i2", common_types.i32);
