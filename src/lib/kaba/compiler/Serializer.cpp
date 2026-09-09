@@ -512,13 +512,23 @@ SerialNodeParam Serializer::serialize_statement(Node *com, Block *block, int ind
 				cmd.add_cmd(Asm::InstID::CMP, cond, param_imm(common_types._bool, 0x0));
 				cmd.add_cmd(Asm::InstID::JZ, param_label32(label_after_true)); // jz ...
 				const auto ret_true = serialize_node(com->params[1].get(), block, index);
-				if (com->type != common_types._void)
+				if (com->type != common_types._void) {
 					serialize_assign(ret, ret_true, block, com->token_id);
+					add_cmd_destructor(ret_true);
+					base::remove_if(inserted_temp, [&ret_true] (auto &t) {
+						return t.param.p == ret_true.p;
+					});
+				}
 				cmd.add_cmd(Asm::InstID::JMP, param_label32(label_after_false));
 				cmd.add_label(label_after_true);
 				auto ret_false = serialize_node(com->params[2].get(), block, index);
-				if (com->type != common_types._void)
+				if (com->type != common_types._void) {
 					serialize_assign(ret, ret_false, block, com->token_id);
+					add_cmd_destructor(ret_false);
+					base::remove_if(inserted_temp, [&ret_false] (auto &t) {
+						return t.param.p == ret_false.p;
+					});
+				}
 				cmd.add_label(label_after_false);
 
 				return ret;

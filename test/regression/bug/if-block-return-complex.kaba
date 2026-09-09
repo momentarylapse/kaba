@@ -1,0 +1,11 @@
+func f() -> string
+	return "a"
+
+
+func main()
+	let s = if true
+		f()
+	else
+		f()
+	print(s)
+
