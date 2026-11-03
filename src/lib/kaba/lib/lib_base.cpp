@@ -356,8 +356,8 @@ void SIAddPackageBase(Context *c) {
 	common_types.error    = add_type  ("Error", config.target.dynamic_array_size);
 
 	// type aliases
-	cur_package_module->tree->base_class->type_aliases.add({"int", common_types.i32});
-	cur_package_module->tree->base_class->type_aliases.add({"float", common_types.f32});
+	cur_package_module->tree->base_class->type_aliases.set("int", common_types.i32);
+	cur_package_module->tree->base_class->type_aliases.set("float", common_types.f32);
 
 
 	common_types.raw_t = add_class_template("ptr", {"T"}, new TemplateClassInstantiatorPointerRaw);
