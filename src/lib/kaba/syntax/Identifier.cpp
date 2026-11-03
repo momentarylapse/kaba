@@ -81,6 +81,7 @@ namespace Identifier {
 	const string Break = "break";
 	const string Continue = "continue";
 	const string Pass = "pass";
+	const string End = "end";
 	const string And = "and";
 	const string Or = "or";
 	const string Xor = "xor";

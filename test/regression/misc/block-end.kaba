@@ -1,0 +1,9 @@
+func ff(f: void->void, i:i32)
+	f()
+
+func main()
+	ff(func() print("hi"), 5)
+	ff(func()
+		print("hi")
+		print("...")
+	end, 5)

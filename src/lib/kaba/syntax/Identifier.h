@@ -81,6 +81,7 @@ namespace Identifier {
 	extern const string Break;
 	extern const string Continue;
 	extern const string Pass;
+	extern const string End;
 	extern const string And;
 	extern const string Or;
 	extern const string Xor;

@@ -494,6 +494,7 @@ Array<string> Context::list_keywords() const {
 		Identifier::Try,
 		Identifier::Except,
 		Identifier::Pass,
+		Identifier::End,
 		Identifier::Let,
 		Identifier::Var,
 		Identifier::Lambda,
