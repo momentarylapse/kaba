@@ -247,8 +247,7 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			return true;
 		return false;
 	};*/
-	if ((wanted->is_pointer_shared() or wanted->is_pointer_shared_not_null())
-			and given->is_pointer_xfer_not_null()) {
+	if ((wanted->is_pointer_shared() or wanted->is_pointer_shared_not_null()) and given->is_pointer_xfer_not_null()) {
 		if (type_match_up(given->param[0], wanted->param[0])) {
 			auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
 			cd.penalty = 10;
@@ -256,6 +255,15 @@ bool Concretifier::type_match_with_cast(shared<Node> node, bool is_modifiable, c
 			cd.f = wanted->get_func(Identifier::func::SharedCreate, wanted, {t_xfer});
 			return true;
 		}
+	}
+
+	// nil -> shared?
+	if (wanted->is_pointer_shared() and given == common_types.none) {
+		auto t_xfer = tree->request_implicit_class_xfer(wanted->param[0], -1);
+		cd.penalty = 10;
+		cd.cast = TypeCastId::MAKE_SHARED;
+		cd.f = wanted->get_func(Identifier::func::SharedCreate, wanted, {t_xfer});
+		return true;
 	}
 
 	// ???  ->  raw

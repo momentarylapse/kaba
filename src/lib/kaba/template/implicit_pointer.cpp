@@ -289,7 +289,6 @@ void AutoImplementer::_implement_functions_for_shared(const Class *t) {
 	implement_shared_destructor(prepare_auto_impl(t, t->get_destructor()), t);
 	implement_shared_clear(prepare_auto_impl(t, t->get_member_func(Identifier::func::SharedClear, common_types._void, {})), t);
 	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {t_xfer})), t);
-	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {common_types.none})), t);
 	implement_shared_assign(prepare_auto_impl(t, t->get_member_func(Identifier::func::Assign, common_types._void, {t})), t);
 	implement_shared_create(prepare_auto_impl(t, t->get_func(Identifier::func::SharedCreate, t, {t_xfer})), t);
 }
@@ -347,7 +346,6 @@ void TemplateClassInstantiatorPointerShared::add_function_headers(Class* t) {
 	add_func_header(t, Identifier::func::SharedClear, common_types._void, {}, {}, nullptr, Flags::Mutable);
 	// do we really need this, or can we use auto cast xfer[X] -> shared[X]?!?
 	add_func_header(t, Identifier::func::Assign, common_types._void, {t_xfer}, {"other"}, nullptr, Flags::Mutable);
-	add_func_header(t, Identifier::func::Assign, common_types._void, {common_types.none}, {"other"}, nullptr, Flags::Mutable);
 	add_func_header(t, Identifier::func::Assign, common_types._void, {t}, {"other"}, nullptr, Flags::Mutable);
 	add_func_header(t, Identifier::func::SharedCreate, t, {t_xfer}, {"p"}, nullptr, Flags::Static);
 }
