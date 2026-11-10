@@ -61,7 +61,7 @@ public:
 	Array<Asm::WantedLabel> functions_to_link;
 	Array<int> function_vars_to_link;
 
-	bool just_analyse, show_compiler_stats;
+	bool just_analyse;
 
 	owned<Interpreter> interpreter;
 

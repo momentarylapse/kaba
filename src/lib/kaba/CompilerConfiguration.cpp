@@ -115,7 +115,6 @@ CompilerConfiguration::CompilerConfiguration() {
 	native_target = {};
 	verbose_func_filter = "*";
 	verbose_stage_filter = "*";
-	show_compiler_stats = true;
 
 	function_address_offset = element_offset(&Function::address); // offsetof(Function, address);
 }

@@ -75,8 +75,8 @@ struct CompilerConfiguration {
 	bool allow_output(const Function *f, const string &stage) const;
 	bool allow_output_func(const Function *f) const;
 	bool allow_output_stage(const string &stage) const;
-	bool compile_silently = false;
-	bool show_compiler_stats = true;
+	bool show_filenames = false;
+	bool show_compiler_stats = false;
 
 	bool fully_linear_output = false;
 	bool remove_unused = false;

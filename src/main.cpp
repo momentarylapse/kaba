@@ -245,7 +245,8 @@ public:
 				debug_stage_filter += ",dasm*";
 		}
 
-		kaba::config.compile_silently = !flag_verbose;
+		kaba::config.show_filenames = flag_verbose;
+		kaba::config.show_compiler_stats = flag_verbose;
 		kaba::config.verbose = flag_verbose;
 		kaba::config.verbose_func_filter = debug_func_filter;
 		kaba::config.verbose_stage_filter = debug_stage_filter;
