@@ -8,7 +8,7 @@ NC='\033[0m'
 #-------------------------------------------------
 # checks
 
-BASE=$1
+BASE=`realpath $1`
 if [ -z "$BASE" ]
 then
 	echo -e "${RED}where?${NC}"
@@ -71,12 +71,16 @@ echo -e "${ORANGE}building kaba compiler${NC}"
 TEMP="$BASE/temp"
 mkdir "$TEMP"
 echo $TEMP
-cd "$TEMP"
+pushd "$TEMP"
 pwd
-cmake "$BASE/repos/kaba" -GNinja
-ninja
+cmake "$BASE/repos/kaba" -DLIB_UNWIND_ENABLED=OFF -GNinja && ninja
+if [ $? != 0 ]
+then
+	echo -e "${RED}failed${NC}"
+	exit 1
+fi
 cp kaba "$BASE/kaba"
-cd -
+popd
 rm -rf "$TEMP"
 
 #-------------------------------------------------
@@ -85,8 +89,8 @@ rm -rf "$TEMP"
 echo -e "${ORANGE}installing package manager${NC}"
 cp -r "$BASE/repos/michi.common/package" "$BASE/packages"
 
-echo "repo michi.common $URL_LIB" > "$BASE/sources"
-
+echo "repo kaba $URL_KABA" > "$BASE/sources"
+echo "repo michi.common $URL_LIB" >> "$BASE/sources"
 
 
 echo "PATH=\"$BASE/kaba:\$PATH\"" > "$BASE/activate"
