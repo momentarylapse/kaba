@@ -47,8 +47,7 @@ shared<Node> __digest_type(SyntaxTree *tree, shared<Node> n) {
 	return add_node_class(merge_type_tuple_into_product(tree, classes, n->token_id), n->token_id);
 }
 
-
-const Class *try_digest_type(SyntaxTree *tree, shared<Node> n) {
+const Class* try_digest_type(SyntaxTree* tree, shared<Node> n) {
 	if (n->kind == NodeKind::Class)
 		return n->as_class();
 	if (is_type_tuple(n)) {
@@ -56,6 +55,14 @@ const Class *try_digest_type(SyntaxTree *tree, shared<Node> n) {
 		return merge_type_tuple_into_product(tree, classes, n->token_id);
 	}
 	return nullptr;
+}
+
+Array<const Class*> try_digest_type_list(SyntaxTree* tree, shared<Node> n) {
+	if (n->kind == NodeKind::Class)
+		return {n->as_class()};
+	if (is_type_tuple(n))
+		return class_tuple_extract_classes(n);
+	return {};
 }
 
 string user_friendly_description(shared<Node> operand) {
@@ -1020,13 +1027,13 @@ shared<Node> Concretifier::concretify_node(shared<Node> node, Block *block, cons
 		do_error("type expected before '?'", node->params[0]);
 	} else if (node->kind == NodeKind::AbstractTypeCallable) {
 		concretify_all_params(node, block, ns);
-		auto t0 = try_digest_type(tree, node->params[0]);
-		auto t1 = try_digest_type(tree, node->params[1]);
-		if (!t0)
-			do_error("type expected before '->'", node->params[0]);
-		if (!t1)
+		auto params = try_digest_type_list(tree, node->params[0]);
+		auto ret = try_digest_type(tree, node->params[1]);
+		if (params.num == 0)
+			do_error("type(s) expected before '->'", node->params[0]);
+		if (!ret)
 			do_error("type expected before '->'", node->params[1]);
-		return add_node_class(tree->request_implicit_class_callable_fp({t0}, t1, node->token_id), node->token_id);
+		return add_node_class(tree->request_implicit_class_callable_fp(params, ret, node->token_id), node->token_id);
 	} else if ((node->kind == NodeKind::AbstractToken) or (node->kind == NodeKind::AbstractElement)) {
 		auto operands = concretify_node_multi(node, block, ns);
 		if (operands.num > 1) {

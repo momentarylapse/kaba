@@ -150,7 +150,7 @@ shared<Node> AbstractParser::parse_abstract_operand_extension_callable(shared<No
 	auto node = new Node(NodeKind::AbstractTypeCallable, 0, common_types.unknown);
 	node->token_id = Exp.cur_token();
 	node->set_num_params(2);
-	node->set_param(0, operand);
+	node->set_param(0, operand); // might be a tuple of types...
 	node->set_param(1, parse_abstract_operand());
 	return node;
 }

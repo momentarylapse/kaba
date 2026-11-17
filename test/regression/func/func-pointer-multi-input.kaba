@@ -1,0 +1,11 @@
+func fff(s: string, i: i32)
+	print(s)
+	print(i)
+
+func g(f: (string,i32)->void)
+	f("hi", 13)
+
+func main()
+	g(fff)
+
+
