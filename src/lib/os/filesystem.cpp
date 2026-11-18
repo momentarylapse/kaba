@@ -45,6 +45,21 @@ bool is_directory(const Path& path) {
 	return std::filesystem::is_directory(path.c_str(), e);
 }
 
+bool is_symlink(const Path& path) {
+	std::error_code e;
+	return std::filesystem::is_symlink(path.c_str(), e);
+}
+
+base::result<Path> read_symlink(const Path& path, bool auto_convert) {
+	std::error_code e;
+	const auto l = std::filesystem::read_symlink(path.c_str(), e);
+	if (e)
+		return base::Error(format("read_symlink '%s': %s", path, e.message().c_str()));
+	if (auto_convert)
+		return path.parent() | l.c_str();
+	return Path(l.c_str());
+}
+
 
 base::result_void create_directory(const Path& dir) {
 	if (dir.is_empty())
@@ -102,6 +117,23 @@ base::result_void copy(const Path& source, const Path& target) {
 	std::filesystem::copy(source.c_str(), target.c_str(), e);
 	if (e)
 		return base::Error(format("copy '%s' -> '%s': %s", source, target, e.message().c_str()));
+	return base::result_success();
+}
+
+base::result_void create_symlink(const Path& source, const Path& target) {
+	if (!target.parent().is_empty())
+		RESULT_PROPAGATE_ERROR_VOID(create_directory(target.parent()));
+
+	if (exists(target))
+		return base::Error("target exists");
+
+	std::error_code e;
+	if (is_directory(source))
+		std::filesystem::create_directory_symlink(source.c_str(), target.c_str(), e);
+	else
+		std::filesystem::create_symlink(source.c_str(), target.c_str(), e);
+	if (e)
+		return base::Error(format("create_symlink '%s' -> '%s': %s", source, target, e.message().c_str()));
 	return base::result_success();
 }
 

@@ -291,10 +291,12 @@ void SIAddPackageOS(Context *c) {
 
 	auto TypeDateResult = add_type_result(common_types.date);
 	auto TypeInt64Result = add_type_result(common_types.i64);
+	auto TypePathResult = add_type_result(common_types.path);
 
 	lib_create_result<void*>(TypeFileStreamXferResult);
 	lib_create_result<Date>(TypeDateResult);
 	lib_create_result<int64>(TypeInt64Result);
+	lib_create_result<Path>(TypePathResult);
 
 	auto TypeCallbackStringList = add_type_func(common_types._void, {common_types.string_list});
 
@@ -464,6 +466,11 @@ void SIAddPackageOS(Context *c) {
 			func_add_param("filename", common_types.path);
 		class_add_func("is_directory", common_types._bool, &os::fs::is_directory, Flags::Static);
 			func_add_param("filename", common_types.path);
+		class_add_func("is_symlink", common_types._bool, &os::fs::is_symlink, Flags::Static);
+			func_add_param("filename", common_types.path);
+		class_add_func("read_symlink", TypePathResult, &os::fs::read_symlink, Flags::Static);
+			func_add_param("filename", common_types.path);
+			func_add_param_def("auto_convert", common_types._bool, false);
 		class_add_func("hash", common_types.result_string, &os::fs::hash, Flags::Static);
 			func_add_param("filename", common_types.path);
 			func_add_param("type", common_types.string);
@@ -474,6 +481,9 @@ void SIAddPackageOS(Context *c) {
 			func_add_param("source", common_types.path);
 			func_add_param("dest", common_types.path);
 		class_add_func("copy", common_types.result_void, &os::fs::copy, Flags::Static);
+			func_add_param("source", common_types.path);
+			func_add_param("dest", common_types.path);
+		class_add_func("create_symlink", common_types.result_void, &os::fs::create_symlink, Flags::Static);
 			func_add_param("source", common_types.path);
 			func_add_param("dest", common_types.path);
 		class_add_func("delete", common_types.result_void, &os::fs::remove, Flags::Static);
