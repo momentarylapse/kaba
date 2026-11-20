@@ -267,10 +267,7 @@ public:
 		return *this * c;
 	}
 	void init(float r, float g, float b, float a) {
-		*(color*)this = color(a, r, g, b);
-	}
-	void assign(const color &o) {
-		*(color*)this = o;
+		*(color*)this = color::from_rgba(r, g, b, a);
 	}
 };
 
@@ -559,6 +556,8 @@ void SIAddPackageMath(Context *c) {
 		class_add_func("area", common_types.f32, &rect::area, Flags::Pure);
 		class_add_func("center", common_types.vec2, &rect::center, Flags::Pure);
 		class_add_func("p00", common_types.vec2, &rect::p00, Flags::Pure);
+		class_add_func("p01", common_types.vec2, &rect::p01, Flags::Pure);
+		class_add_func("p10", common_types.vec2, &rect::p10, Flags::Pure);
 		class_add_func("p11", common_types.vec2, &rect::p11, Flags::Pure);
 		class_add_func("size", common_types.vec2, &rect::size, Flags::Pure);
 		class_add_func("inside", common_types._bool, &rect::inside, Flags::Pure);
@@ -644,6 +643,8 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("c1", common_types.color);
 			func_add_param("c2", common_types.color);
 			func_add_param("t", common_types.f32);
+		class_add_func("parse", common_types.color, &color::parse, Flags::Static | Flags::Pure);
+			func_add_param("s", common_types.string);
 		class_add_func("_create", common_types.color, &color::from_rgba, Flags::Static | Flags::Pure);
 			func_set_inline(InlineID::ColorSet);
 			func_add_param("r", common_types.f32);
@@ -655,7 +656,13 @@ void SIAddPackageMath(Context *c) {
 			func_add_param("g", common_types.f32);
 			func_add_param("b", common_types.f32);
 			func_add_param_def("a", common_types.f32, 1.0f);
-		add_operator(OperatorID::Assign, common_types._void, common_types.color, common_types.color, InlineID::ChunkAssign, &KabaColor::assign);
+		class_add_func("srgb_to_linear", common_types.color, &color::srgb_to_linear, Flags::Pure);
+		class_add_func("linear_to_srgb", common_types.color, &color::linear_to_srgb, Flags::Pure);
+		class_add_func("brightness", common_types.f32, &color::brightness, Flags::Pure);
+		class_add_func("hsb_brightness", common_types.f32, &color::hsb_brightness, Flags::Pure);
+		class_add_func("hue", common_types.f32, &color::hue, Flags::Pure);
+		class_add_func("saturation", common_types.f32, &color::saturation, Flags::Pure);
+		add_operator(OperatorID::Assign, common_types._void, common_types.color, common_types.color, InlineID::ChunkAssign, &generic_assign<color>);
 		add_operator(OperatorID::Equal, common_types._bool, common_types.color, common_types.color, InlineID::ChunkEqual);
 		add_operator(OperatorID::NotEqual, common_types._bool, common_types.color, common_types.color, InlineID::ChunkNotEqual);
 		add_operator(OperatorID::Add, common_types.color, common_types.color, common_types.color, InlineID::None, &color::operator+);

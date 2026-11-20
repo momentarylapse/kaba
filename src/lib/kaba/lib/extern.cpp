@@ -179,7 +179,8 @@ Exporter::Exporter(Context* _ctx, Package* _package) {
 Exporter::~Exporter() = default;
 void Exporter::package_info(const string& name, const string& version) {
 	if (name != package->name)
-		msg_error(format("exporting symbols for wrong package: %s vs %s", name, package->name));
+		if (package->name.head(name.num + 1) != (name + "@"))
+			msg_error(format("exporting symbols for wrong package: %s vs %s", name, package->name));
 	if (version != package->version)
 		msg_error(format("exporting symbols for wrong package version: %s vs %s (%s)", version, package->version, name));
 }
