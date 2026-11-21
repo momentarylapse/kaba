@@ -114,7 +114,7 @@ base::result_void copy(const Path& source, const Path& target) {
 		RESULT_PROPAGATE_ERROR_VOID(remove(target));
 
 	std::error_code e;
-	std::filesystem::copy(source.c_str(), target.c_str(), e);
+	std::filesystem::copy(source.c_str(), target.c_str(), std::filesystem::copy_options::recursive | std::filesystem::copy_options::copy_symlinks, e);
 	if (e)
 		return base::Error(format("copy '%s' -> '%s': %s", source, target, e.message().c_str()));
 	return base::result_success();
